@@ -57,15 +57,48 @@ def generate_args(mod_name, sig, device, dtype, B=4, H=8, N=512, D=64):
         x = torch.randn(B * 8, 1024, device=device, dtype=dtype)
         return [x, 32], {{}}
     elif mod_name == "block_diag_gemm":
-        # x: [B, N, D], weights: [G, D//G, D//G]
         G = 4
         x = torch.randn(B, N, D, device=device, dtype=dtype)
         w = torch.randn(G, D // G, D // G, device=device, dtype=dtype)
         return [x, w], {{}}
     elif mod_name == "latent_kv_attn":
         q = torch.randn(B, H, N, D, device=device, dtype=dtype)
-        kv = torch.randn(B, N, D, device=device, dtype=dtype)
-        return [q, kv], {{}}
+        c_kv = torch.randn(B, N, D, device=device, dtype=dtype)
+        u_k = torch.randn(D, D, device=device, dtype=dtype)
+        u_v = torch.randn(D, D, device=device, dtype=dtype)
+        return [q, c_kv, u_k, u_v], {{}}
+    elif mod_name == "hadamard_gemm":
+        M_dim, N_dim, K_dim = 128, 256, 256
+        x_gemm = torch.randn(M_dim, K_dim, device=device, dtype=dtype)
+        w_p = torch.randint(0, 255, (N_dim, K_dim // 2), device=device, dtype=torch.uint8)
+        sc = torch.randn(K_dim // 32, N_dim, device=device, dtype=dtype)
+        zr = torch.zeros(K_dim // 32, N_dim, device=device, dtype=dtype)
+        return [x_gemm, w_p, sc, zr], {{"group_size": 32}}
+    elif mod_name == "ternary_gemm":
+        M_dim, N_dim, K_dim = 64, 128, 256
+        x_gemm = torch.randn(M_dim, K_dim, device=device, dtype=dtype)
+        w_p = torch.randint(0, 255, (N_dim, K_dim // 4), device=device, dtype=torch.uint8)
+        sc = torch.randn(N_dim, device=device, dtype=dtype)
+        return [x_gemm, w_p, sc], {{}}
+    elif mod_name == "lut_gemm":
+        M_dim, N_dim, K_dim = 64, 128, 256
+        x_gemm = torch.randn(M_dim, K_dim, device=device, dtype=dtype)
+        w_p = torch.randint(0, 15, (N_dim, K_dim // 2), device=device, dtype=torch.uint8)
+        cb = torch.randn(16, device=device, dtype=dtype)
+        return [x_gemm, w_p, cb], {{"group_size": 64}}
+    elif mod_name == "rotational_svd":
+        M_dim, N_dim, K_dim, R = 64, 128, 128, 32
+        x_gemm = torch.randn(M_dim, K_dim, device=device, dtype=dtype)
+        r_in = torch.randn(K_dim, K_dim, device=device, dtype=dtype)
+        v_r = torch.randn(K_dim, R, device=device, dtype=dtype)
+        u_r = torch.randn(R, N_dim, device=device, dtype=dtype)
+        return [x_gemm, r_in, v_r, u_r], {{}}
+    elif mod_name == "rpca_sparse_svd":
+        M_dim, N_dim, K_dim, R = 64, 128, 128, 32
+        x_gemm = torch.randn(M_dim, K_dim, device=device, dtype=dtype)
+        v_r = torch.randn(K_dim, R, device=device, dtype=dtype)
+        u_r = torch.randn(R, N_dim, device=device, dtype=dtype)
+        return [x_gemm, v_r, u_r], {{}}
     elif mod_name == "layernorm":
         x = torch.randn(B * 8, D * 8, device=device, dtype=dtype)
         w = torch.randn(D * 8, device=device, dtype=dtype)
@@ -78,6 +111,178 @@ def generate_args(mod_name, sig, device, dtype, B=4, H=8, N=512, D=64):
     elif mod_name == "channel_shuffle":
         x = torch.randn(B, 16, 32, 32, device=device, dtype=dtype)
         return [x, 4], {{}}
+    elif mod_name == "moe_routing":
+        tokens = torch.randn(B * 8, D, device=device, dtype=dtype)
+        gate_logits = torch.randn(B * 8, 8, device=device, dtype=dtype)
+        expert = torch.nn.Linear(D, D, device=device, dtype=dtype)
+        return [tokens, gate_logits, expert], {{"top_k": 2}}
+    elif mod_name == "selective_scan":
+        u = torch.randn(B, 64, N, device=device, dtype=dtype)
+        delta = torch.randn(B, 64, N, device=device, dtype=dtype)
+        A = torch.randn(64, 16, device=device, dtype=torch.float32)
+        B_t = torch.randn(B, 16, N, device=device, dtype=dtype)
+        C_t = torch.randn(B, 16, N, device=device, dtype=dtype)
+        D_t = torch.randn(64, device=device, dtype=torch.float32)
+        return [u, delta, A, B_t, C_t, D_t], {{}}
+    elif mod_name == "selective_ssm":
+        x = torch.randn(B, N, D, device=device, dtype=dtype)
+        dt = torch.randn(B, N, D, device=device, dtype=dtype)
+        A = torch.randn(D, device=device, dtype=dtype)
+        B_vec = torch.randn(B, N, D, device=device, dtype=dtype)
+        C_vec = torch.randn(B, N, D, device=device, dtype=dtype)
+        return [x, dt, A, B_vec, C_vec], {{}}
+    elif mod_name == "simple_ssm":
+        x = torch.randn(B, N, D, device=device, dtype=dtype)
+        decay = torch.randn(B, N, D, device=device, dtype=dtype)
+        scale = torch.tensor(1.0, device=device, dtype=dtype)
+        return [x, decay, scale], {{}}
+    elif mod_name == "quantized_gemm":
+        M_dim, N_dim, K_dim = 128, 512, 512
+        num_g = K_dim // 128
+        x_gemm = torch.randn(M_dim, K_dim, device=device, dtype=dtype)
+        w_p = torch.randint(0, 255, (N_dim, K_dim // 2), device=device, dtype=torch.uint8)
+        sc = torch.randn(num_g, N_dim, device=device, dtype=dtype)
+        zr = torch.zeros(num_g, N_dim, device=device, dtype=dtype)
+        return [x_gemm, w_p, sc, zr], {{"group_size": 128}}
+    elif mod_name == "sparse_attention":
+        bs = 64
+        nb = N // bs
+        q = torch.randn(B, H, N, D, device=device, dtype=dtype)
+        k = torch.randn(B, H, N, D, device=device, dtype=dtype)
+        v = torch.randn(B, H, N, D, device=device, dtype=dtype)
+        mask_2d = torch.ones(nb, nb, device=device, dtype=torch.int32)
+        return [q, k, v, mask_2d], {{"block_size": bs}}
+    elif mod_name == "decay_linear_attention":
+        q = torch.randn(B, H, N, D, device=device, dtype=dtype)
+        k = torch.randn(B, H, N, D, device=device, dtype=dtype)
+        v = torch.randn(B, H, N, D, device=device, dtype=dtype)
+        gamma = torch.full((H,), 0.99, device=device, dtype=torch.float32)
+        return [q, k, v, gamma], {{}}
+    elif mod_name in ["causal_conv1d", "dynamic_conv1d"]:
+        x = torch.randn(B, D, N, device=device, dtype=dtype)
+        weight = torch.randn(D, 1, 4, device=device, dtype=dtype)
+        return [x, weight], {{}}
+    elif mod_name == "fused_rope":
+        q = torch.randn(B, H, N, D, device=device, dtype=dtype)
+        cos = torch.randn(N, D, device=device, dtype=dtype)
+        sin = torch.randn(N, D, device=device, dtype=dtype)
+        return [q, cos, sin], {{}}
+    elif mod_name == "recurrent_gla_step":
+        q = torch.randn(B, H, D, device=device, dtype=dtype)
+        k = torch.randn(B, H, D, device=device, dtype=dtype)
+        v = torch.randn(B, H, D, device=device, dtype=dtype)
+        h = torch.randn(B, H, D, D, device=device, dtype=dtype)
+        g = torch.full((B, H), 0.99, device=device, dtype=dtype)
+        return [q, k, v, h, g], {{}}
+    elif mod_name in ["hgrn2_scan", "hgrn2_spatial_scan"]:
+        x = torch.randn(B, H, N, D, device=device, dtype=dtype)
+        g = torch.randn(B, H, N, D, device=device, dtype=dtype)
+        return [x, g], {{}}
+    elif mod_name == "linear_rnn_attention":
+        x = torch.randn(B, N, D, device=device, dtype=dtype)
+        a = torch.randn(B, N, D, device=device, dtype=dtype)
+        b = torch.randn(B, N, D, device=device, dtype=dtype)
+        return [x, a, b], {{}}
+    elif mod_name == "nasc_attention":
+        q = torch.randn(B, H, N, D, device=device, dtype=dtype)
+        k = torch.randn(B, H, N, D, device=device, dtype=dtype)
+        v = torch.randn(B, H, N, D, device=device, dtype=dtype)
+        decay = torch.randn(B, H, N, D, device=device, dtype=dtype)
+        return [q, k, v, decay], {{}}
+    elif mod_name == "nystrom_attention":
+        q_l = torch.randn(B, H, 32, D, device=device, dtype=dtype)
+        k_l = torch.randn(B, H, 32, D, device=device, dtype=dtype)
+        v_l = torch.randn(B, H, D, D, device=device, dtype=dtype)
+        p_l = torch.randn(B, H, D, D, device=device, dtype=dtype)
+        return [q_l, k_l, v_l, p_l], {{}}
+    elif mod_name == "paged_attention":
+        num_seqs, num_heads, num_kv_heads, head_dim, block_sz, max_blocks = 4, 8, 2, 64, 16, 8
+        q = torch.randn(num_seqs, num_heads, head_dim, device=device, dtype=dtype)
+        num_total_blocks = num_seqs * max_blocks
+        k_cache = torch.randn(num_total_blocks, num_kv_heads, head_dim, block_sz, device=device, dtype=dtype)
+        v_cache = torch.randn(num_total_blocks, num_kv_heads, head_dim, block_sz, device=device, dtype=dtype)
+        context_lens = torch.tensor([16, 32, 48, 64], device=device, dtype=torch.int32)
+        block_tables = torch.zeros(num_seqs, max_blocks, device=device, dtype=torch.int32)
+        for i in range(num_seqs):
+            nb = int(context_lens[i].item()) // block_sz
+            block_tables[i, :nb] = torch.arange(i * max_blocks, i * max_blocks + nb, device=device)
+        return [q, k_cache, v_cache, block_tables, context_lens], {{"block_size": block_sz}}
+    elif mod_name == "paged_kv_cache":
+        nb, num_h, head_d, block_sz = 16, 8, 64, 16
+        src_k = torch.randn(nb, num_h, head_d, block_sz, device=device, dtype=dtype)
+        src_v = torch.randn(nb, num_h, head_d, block_sz, device=device, dtype=dtype)
+        dst_k = torch.zeros_like(src_k)
+        dst_v = torch.zeros_like(src_v)
+        b_map = torch.tensor([[0, 2], [1, 5], [3, 7]], device=device, dtype=torch.int32)
+        return [dst_k, dst_v, src_k, src_v, b_map, block_sz, num_h, head_d], {{}}
+    elif mod_name == "paged_kv_evict":
+        k_in = torch.randn(64, 8, 64, device=device, dtype=dtype)
+        v_in = torch.randn(64, 8, 64, device=device, dtype=dtype)
+        keep = torch.arange(32, device=device, dtype=torch.int64)
+        return [k_in, v_in, keep], {{}}
+    elif mod_name == "paged_recurrent_step":
+        q = torch.randn(B, H, D, device=device, dtype=dtype)
+        k = torch.randn(B, H, D, device=device, dtype=dtype)
+        v = torch.randn(B, H, D, device=device, dtype=dtype)
+        page_pool = torch.randn(32, H, D, D, device=device, dtype=dtype)
+        block_tables = torch.arange(B, device=device, dtype=torch.int64)
+        return [q, k, v, page_pool, block_tables], {{}}
+    elif mod_name == "rfa_attention":
+        phi_q = torch.randn(B, H, N, D, device=device, dtype=dtype)
+        phi_k = torch.randn(B, H, N, D, device=device, dtype=dtype)
+        v = torch.randn(B, H, N, D, device=device, dtype=dtype)
+        return [phi_q, phi_k, v], {{}}
+    elif mod_name == "rwkv6":
+        r = torch.randn(B, H, N, D, device=device, dtype=dtype)
+        k = torch.randn(B, H, N, D, device=device, dtype=dtype)
+        v = torch.randn(B, H, N, D, device=device, dtype=dtype)
+        w = torch.randn(B, H, N, D, device=device, dtype=dtype)
+        u = torch.randn(H, D, device=device, dtype=dtype)
+        return [r, k, v, w, u], {{}}
+    elif mod_name == "spectraformer_attention":
+        x = torch.randn(B, N, D, device=device, dtype=dtype)
+        c_basis = torch.randn(B, N, D, device=device, dtype=dtype)
+        s_basis = torch.randn(B, N, D, device=device, dtype=dtype)
+        return [x, c_basis, s_basis], {{}}
+    elif mod_name == "spectral_mamba":
+        x = torch.randn(B, N, D, device=device, dtype=dtype)
+        freq = torch.randn(B, N, D, device=device, dtype=dtype)
+        return [x, freq], {{"threshold": 0.01}}
+    elif mod_name == "spectral_shrinkage":
+        x_re = torch.randn(B, N, D, device=device, dtype=dtype)
+        x_im = torch.randn(B, N, D, device=device, dtype=dtype)
+        w_re = torch.randn(B, N, D, device=device, dtype=dtype)
+        w_im = torch.randn(B, N, D, device=device, dtype=dtype)
+        tau = torch.tensor(0.01, device=device, dtype=dtype)
+        return [x_re, x_im, w_re, w_im, tau], {{}}
+    elif mod_name == "tt_contraction":
+        core0 = torch.randn(1, 16, 4, device=device, dtype=dtype)
+        core1 = torch.randn(4, 16, 1, device=device, dtype=dtype)
+        return [core0, core1, (16, 16), (16, 16)], {{}}
+    elif mod_name == "upi_stuffed_mamba":
+        x = torch.randn(B, N, D, device=device, dtype=dtype)
+        upi_tok = torch.randn(B, 16, D, device=device, dtype=dtype)
+        return [x, upi_tok], {{"blend_weight": 0.2}}
+    elif mod_name == "vspec":
+        x = torch.randn(B, N, D, device=device, dtype=dtype)
+        spec_gate = torch.randn(B, N, D, device=device, dtype=dtype)
+        decay = torch.randn(B, N, D, device=device, dtype=dtype)
+        return [x, spec_gate, decay], {{}}
+    elif mod_name == "hymba_transx":
+        x = torch.randn(B, N, D, device=device, dtype=dtype)
+        meta_tok = torch.randn(B, 16, D, device=device, dtype=dtype)
+        cross_gate = torch.randn(B, N, D, device=device, dtype=dtype)
+        return [x, meta_tok, cross_gate], {{}}
+    elif mod_name == "jamba_info":
+        x = torch.randn(B, N, D, device=device, dtype=dtype)
+        bw = torch.randn(D, D, device=device, dtype=dtype)
+        return [x, bw], {{}}
+    elif mod_name == "state_update":
+        q = torch.randn(B, H, D, device=device, dtype=dtype)
+        k = torch.randn(B, H, D, device=device, dtype=dtype)
+        v = torch.randn(B, H, D, device=device, dtype=dtype)
+        state = torch.randn(B, H, D, D, device=device, dtype=dtype)
+        return [q, k, v, state], {{}}
 
     # Generic parameter resolution
     for param_name, param in sig.parameters.items():
