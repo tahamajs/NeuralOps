@@ -6,6 +6,12 @@
 namespace neuralops { namespace cuda {
 
 // Fused dual-branch SSM and Attention interpolation with register gating
+// Form: out = g * mamba + (1 - g) * attn = fmaf(g, mamba - attn, attn)
+//
+// Hardware-level optimization:
+// 1. Grid-stride 1D loop: Ensures uniform SM saturation.
+// 2. Fast fused interpolation via fmaf.
+// 3. Quoted dispatch string in AT_DISPATCH_FLOATING_TYPES_AND2.
 template <typename scalar_t>
 __global__ void __launch_bounds__(256) jamba_mix_fwd_kernel(
     scalar_t* __restrict__ out,
@@ -21,7 +27,7 @@ __global__ void __launch_bounds__(256) jamba_mix_fwd_kernel(
         const float m_val = to_float(mamba[idx]);
         const float a_val = to_float(attn[idx]);
         const float g_val = 1.0f / (1.0f + expf(-to_float(gate[idx])));
-        const float mixed = g_val * m_val + (1.0f - g_val) * a_val;
+        const float mixed = fmaf(g_val, m_val - a_val, a_val);
         out[idx] = from_float<scalar_t>(mixed);
     }
 }
@@ -37,6 +43,9 @@ torch::Tensor jamba_mix_fwd(
     CHECK_INPUT(attn_out);
     CHECK_INPUT(gate);
 
+    TORCH_CHECK(attn_out.sizes() == mamba_out.sizes(), "attn_out shape mismatch");
+    TORCH_CHECK(gate.sizes() == mamba_out.sizes(), "gate shape mismatch");
+
     auto out = torch::empty_like(mamba_out);
     const int total = mamba_out.numel();
     if (total == 0) return out;
@@ -51,7 +60,7 @@ torch::Tensor jamba_mix_fwd(
 
     AT_DISPATCH_FLOATING_TYPES_AND2(
         at::ScalarType::Half, at::ScalarType::BFloat16,
-        mamba_out.scalar_type(), jamba_mix_fwd, ([&] {
+        mamba_out.scalar_type(), "jamba_mix_fwd", ([&] {
             neuralops::cuda::jamba_mix_fwd_kernel<scalar_t><<<blocks, THREADS, 0, stream>>>(
                 out.data_ptr<scalar_t>(),
                 m_c.data_ptr<scalar_t>(),
@@ -62,5 +71,6 @@ torch::Tensor jamba_mix_fwd(
         })
     );
 
+    CUDA_KERNEL_LAUNCH_CHECK();
     return out;
 }
