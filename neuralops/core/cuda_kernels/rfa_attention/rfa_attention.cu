@@ -46,7 +46,7 @@ __global__ void __launch_bounds__(128) rfa_fwd_kernel(
         denom += k_val;
 
         const float q_val = to_float(phi_q[idx]);
-        const float norm = fmaxf(denom, 1e-6f);
+        const float norm = fmaxf(fabsf(denom), 1e-5f);
         out[idx] = from_float<scalar_t>((q_val * s) / norm);
     }
 }

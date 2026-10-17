@@ -99,6 +99,7 @@ torch::Tensor flash_decoding_attention_fwd(
     const int N_q = q.size(2);
     const int D = q.size(3);
     const int N_kv = k.size(2);
+    TORCH_CHECK(D <= 256, "flash_decoding_fwd: D=", D, " > 256 not supported");
 
     auto out = torch::empty_like(q);
     const float scale = 1.0f / sqrtf(static_cast<float>(D));

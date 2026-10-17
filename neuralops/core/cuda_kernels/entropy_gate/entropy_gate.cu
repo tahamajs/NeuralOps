@@ -91,6 +91,7 @@ torch::Tensor spectral_entropy_svd_gate_fwd(
     }
     const int R_MAX = V.size(0);
     const int eff_r = std::min(effective_rank, R_MAX);
+    TORCH_CHECK(eff_r <= 128, "spectral_entropy_svd_gate_fwd: eff_r=", eff_r, " > 128 not supported");
 
     if (U.size(0) != R_MAX && U.size(1) == R_MAX) {
         U = U.t().contiguous();

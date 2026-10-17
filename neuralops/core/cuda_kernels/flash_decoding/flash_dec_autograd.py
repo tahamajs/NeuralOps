@@ -67,6 +67,8 @@ def flash_decoding_attention(
         )
 
     triton_fn = _get_triton_impl()
+    if q.shape[-1] > 256:
+        cuda_fn = None
 
     return dispatch(
         cuda_fn,

@@ -78,6 +78,10 @@ def spectral_entropy_svd_gate(
         )
 
     triton_fn = _get_triton_impl()
+    r_max = V_r.shape[1] if V_r.shape[0] == x.shape[-1] else V_r.shape[0]
+    eff_r = min(int(effective_rank), r_max)
+    if eff_r > 128:
+        cuda_fn = None
 
     return dispatch(
         cuda_fn,

@@ -40,9 +40,10 @@ __global__ void __launch_bounds__(128) selective_ssm_fwd_kernel(
         const float b_val = to_float(B_vec[idx]);
         const float c_val = to_float(C_vec[idx]);
 
-        const float dA = expf(delta * a_val);
+        const float dA = expf(-fmaxf(delta * fabsf(a_val), 0.0f));
         const float dB = delta * b_val;
         h = dA * h + dB * x_val;
+        h = fminf(fmaxf(h, -65504.0f), 65504.0f);
         out[idx] = from_float<scalar_t>(h * c_val);
     }
 }

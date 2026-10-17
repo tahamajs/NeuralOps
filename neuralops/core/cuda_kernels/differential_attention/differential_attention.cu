@@ -151,6 +151,7 @@ torch::Tensor diff_attn_fwd(
     const int H = q1.size(1);
     const int N = q1.size(2);
     const int D = q1.size(3);
+    TORCH_CHECK(D <= 128, "differential_attention_fwd: D=", D, " exceeds max 128");
 
     auto out = torch::empty_like(q1);
     if (B == 0 || H == 0 || N == 0 || D == 0) return out;

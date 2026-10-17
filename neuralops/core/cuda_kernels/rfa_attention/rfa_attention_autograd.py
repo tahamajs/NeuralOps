@@ -17,12 +17,16 @@ def _get_module():
 def rfa_attention_ref(phi_q: torch.Tensor, phi_k: torch.Tensor, v: torch.Tensor) -> torch.Tensor:
     B, H, N, D = phi_q.shape
     out = torch.empty_like(phi_q)
-    s = torch.zeros(B, H, D, device=phi_q.device, dtype=phi_q.dtype)
-    denom = torch.zeros(B, H, D, device=phi_q.device, dtype=phi_q.dtype)
+    s = torch.zeros(B, H, D, device=phi_q.device, dtype=torch.float32)
+    denom = torch.zeros(B, H, D, device=phi_q.device, dtype=torch.float32)
+    phi_q_f = phi_q.float()
+    phi_k_f = phi_k.float()
+    v_f = v.float()
     for t in range(N):
-        s = s + phi_k[:, :, t, :] * v[:, :, t, :]
-        denom = denom + phi_k[:, :, t, :]
-        out[:, :, t, :] = (phi_q[:, :, t, :] * s) / denom.clamp_min(1e-6)
+        s = s + phi_k_f[:, :, t, :] * v_f[:, :, t, :]
+        denom = denom + phi_k_f[:, :, t, :]
+        norm = torch.clamp(torch.abs(denom), min=1e-5)
+        out[:, :, t, :] = ((phi_q_f[:, :, t, :] * s) / norm).to(phi_q.dtype)
     return out
 
 def rfa_attention(phi_q: torch.Tensor, phi_k: torch.Tensor, v: torch.Tensor) -> torch.Tensor:
