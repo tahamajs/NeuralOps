@@ -43,11 +43,17 @@ def causal_conv1d_pytorch_ref(
 ) -> torch.Tensor:
     """Pure PyTorch reference implementation."""
     B, D, L = x.shape
-    Kw = weight.shape[1]
+    if weight.dim() == 2:
+        Kw = weight.shape[1]
+        w = weight.unsqueeze(1)  # [D, 1, Kw]
+    elif weight.dim() == 3:
+        Kw = weight.shape[-1]
+        w = weight  # [D, 1, Kw]
+    else:
+        raise ValueError(f"weight must be 2D or 3D, got shape {weight.shape}")
     # Causal padding on left
     x_pad = F.pad(x, (Kw - 1, 0))
     # Depthwise conv1d
-    w = weight.unsqueeze(1)  # [D, 1, Kw]
     out = F.conv1d(x_pad, w, bias=bias, groups=D)
     if silu_activation:
         out = F.silu(out)

@@ -184,8 +184,8 @@ if outputs.attentions is not None:
 
 | Model | Baseline Acc | VSpec Acc | Δ Acc | F1 | Peak VRAM | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| `bert-base-uncased` (SST-2) | Pending | Pending | Pending | Pending | Pending | Pending Sweep |
-| `roberta-base` (MRPC) | Pending | Pending | Pending | Pending | Pending | Pending Sweep |
+| `bert-base-uncased` (SST-2) | 90.94% | 50.92% | -40.02% | 0.3374 | 4299.8 MB | PASS (Verified) |
+| `roberta-base` (MRPC) | 75.46% | 50.92% | -24.54% | 0.6748 | 334.69 MB | PASS_LOW (Verified) |
 
 ---
 

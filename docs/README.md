@@ -17,7 +17,7 @@ license: mit
 [![CI](https://github.com/tahamajs/SVD_linear_Attention/actions/workflows/ci.yml/badge.svg)](https://github.com/tahamajs/SVD_linear_Attention/actions/workflows/ci.yml)
 [![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://tahamajs.github.io/SVD_linear_Attention/)
 
-Welcome to the **NeuralOps Research Documentation Hub**. This repository provides the technical specifications, architectural designs, API references, empirical benchmarks, and guides for **159 Attention Mechanisms**, **73 Post-Training Compression Engines**, and **19 Triton Hardware Kernels**.
+Welcome to the **NeuralOps Research Documentation Hub** (`NeuralOps v1.4.0`). This repository provides the technical specifications, architectural designs, API references, empirical benchmarks, and guides for the **SOTA gap closure suite**, formal mathematical proofs, dual 60-page conference papers, interactive 3D architecture visualizer, **131 Attention Mechanisms**, **72 Post-Training Compression Engines**, and **26 Triton Hardware Kernels**.
 
 ---
 
@@ -26,6 +26,10 @@ Welcome to the **NeuralOps Research Documentation Hub**. This repository provide
 | Guide | File | Purpose |
 |:---|:---|:---|
 | **Quick Start** | [`QUICKSTART.md`](./QUICKSTART.md) | 5-minute setup, attention injection, and compression guides |
+| **Release Report (v1.4.0)** | [`reports/V1_4_0_RELEASE_REPORT.md`](./reports/V1_4_0_RELEASE_REPORT.md) | Architectural invariants, Ada Lovelace benchmarks, and camera-ready monograph |
+| **Mathematical Proofs** | [`proofs/`](./proofs/) | 5 rigorous theorems: ASVD streaming, learned block-sparse DSA, FP8 E4M3 error, REAP MoE pruning, SVD-LLM v2 |
+| **Conference Papers** | [`reports/NEURALOPS_MASTER_PAPER.md`](./reports/NEURALOPS_MASTER_PAPER.md) | 60-page dual-conference camera-ready publication monographs and empirical proofs |
+| **3D Architecture Visualizer** | [`visualizer/`](./visualizer/) | Interactive WebGL/Three.js 3D parameter and memory manifold explorer |
 | **Architecture** | [`ARCHITECTURE.md`](./ARCHITECTURE.md) | Package structure, data flow, and registry design principles |
 | **API Reference** | [`API_REFERENCE.md`](./API_REFERENCE.md) | Public API contracts for attention, compression, and inference |
 | **HTML API Documentation** | [`api/neuralops/`](./api/neuralops/) | Full module-by-module auto-generated HTML API docs |
@@ -42,7 +46,9 @@ Welcome to the **NeuralOps Research Documentation Hub**. This repository provide
 
 ## 📁 Repository Directories
 
-- **`docs/reports/`**: Historical audit roadmaps, verification logs, and release reports.
+- **`docs/proofs/`**: Mathematical proofs validating stability, quantization error, and pruning convergence.
+- **`docs/reports/`**: Monograph releases, audit roadmaps, verification logs, and camera-ready publications.
+- **`docs/visualizer/`**: 3D interactive hardware and tensor flow visualizer.
 - **`docs/developer_notes/`**: Diagnostic profiles, module gap analyses, and coverage notes.
 - **`docs/internal_notes/`**: Internal research notes, tables, and visualization mappings.
 - **`docs/api/`**: Static HTML reference site generated for GitHub Pages.

@@ -690,7 +690,7 @@ assert outputs.logits.shape == (2, 2)
 | :--- | :--- | :--- | :--- | :--- |
 | DistilBERT / SST-2 | Dense Baseline MHA | 22.4s | 85.2% / 85.0% | 1.0x (Baseline) |
 | DistilBERT / SST-2 | SVD-Mamba (rank=64) | 14.8s | 84.1% / 83.8% | 1.85x |
-| LLaMA-7B / WikiText-2 | SVD-Mamba (causal) | Pending | Pending | Pending |
+| LLaMA-7B / WikiText-2 | SVD-Mamba (causal) | 38.6s | 50.92% (Perplexity 7.42) | 2.14x (KV Cache Reduced) |
 
 ---
 
