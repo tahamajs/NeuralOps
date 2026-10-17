@@ -25,20 +25,20 @@ def _get_module():
         )
     return _MODULE
 
-def logcumsumexp_pytorch_ref(x):
-    return torch.logcumsumexp(x.float(), dim=-1).to(x.dtype)
-def logcumsumexp_triton_ref(x):
-    return logcumsumexp_pytorch_ref(x)
+def logcumsumexp_pytorch_ref(x, dim=-1):
+    return torch.logcumsumexp(x.float(), dim=dim).to(x.dtype)
+def logcumsumexp_triton_ref(x, dim=-1):
+    return logcumsumexp_pytorch_ref(x, dim=dim)
 
-def logcumsumexp(x: torch.Tensor) -> torch.Tensor:
-    def cuda_fn(*args, **kwargs):
+def logcumsumexp(x: torch.Tensor, dim: int = -1) -> torch.Tensor:
+    def cuda_fn(x, dim=-1):
         mod = _get_module()
-        fn = getattr(mod, "logcumsumexp_fwd")
-        return fn(*args, **kwargs)
+        return mod.logcumsumexp_fwd(x.contiguous(), dim)
     return dispatch(
         cuda_fn,
         logcumsumexp_triton_ref,
         logcumsumexp_pytorch_ref,
         x,
+        dim=dim,
         kernel_name="logcumsumexp",
     )
