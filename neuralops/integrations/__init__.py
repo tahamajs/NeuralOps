@@ -56,13 +56,21 @@ __all__ = [
     "SGLangRadixAdapter",
     "RadixPrefixNode",
     "TensorRTLLMPluginBuilder",
+    "CompressedTensorsExporter",
+    "NeuralOpsLinearMethod",
+    "register_neuralops_linear_method",
 ]
 
+from neuralops.integrations.compressed_tensors import CompressedTensorsExporter
+from neuralops.integrations.vllm_plugin import NeuralOpsLinearMethod, register_neuralops_linear_method
+
 # Auto-wired package members
+from neuralops.integrations import compressed_tensors
 from neuralops.integrations import distributed_compile
 from neuralops.integrations import hf_automodel
 from neuralops.integrations import serving
 from neuralops.integrations import vllm
+from neuralops.integrations import vllm_plugin
 from neuralops.integrations import tgi
 from neuralops.integrations import sglang
 from neuralops.integrations import tensorrt_llm
