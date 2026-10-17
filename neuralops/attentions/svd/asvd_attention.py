@@ -706,7 +706,6 @@ class ASVDAttention(BaseAttention):
                     if w is not None:
                         extracted_weights[proj] = (w, b)
                 except Exception as e:
-                    print(f"copy_weights failed: {e}")
                     logger.warning(f"copy_weights failed: {e}")
 
         # 6. Check for missing essential projections and Frobenius norm verification

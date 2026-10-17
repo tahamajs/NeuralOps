@@ -27,20 +27,25 @@ def _get_module():
 
 from neuralops.core.triton_kernels.fused_rope import fused_unified_rope_offset_pytorch, fused_unified_rope_offset_triton
 
-unified_rope_offset_pytorch_ref = fused_unified_rope_offset_pytorch
-unified_rope_offset_ref = fused_unified_rope_offset_pytorch
+def unified_rope_offset_pytorch_ref(x: torch.Tensor, cos: torch.Tensor, sin: torch.Tensor, rotary_dim: int, offset: int = 0) -> torch.Tensor:
+    N = x.shape[2]
+    c = cos[offset:offset + N] if cos.dim() >= 2 and cos.shape[0] >= offset + N else cos
+    s = sin[offset:offset + N] if sin.dim() >= 2 and sin.shape[0] >= offset + N else sin
+    return fused_unified_rope_offset_pytorch(x, c, s, rotary_dim)
+
+unified_rope_offset_ref = unified_rope_offset_pytorch_ref
 
 def unified_rope_offset(x: torch.Tensor, cos: torch.Tensor, sin: torch.Tensor, rotary_dim: int, offset: int = 0) -> torch.Tensor:
     assert cos.shape[0] >= x.shape[2] + offset, \
         f"cos table length {cos.shape[0]} < N + offset = {x.shape[2] + offset}"
-    def cuda_fn(*args, **kwargs):
+    def cuda_fn(x, cos, sin, rotary_dim, offset=0):
         mod = _get_module()
         fn = getattr(mod, "unified_rope_offset_fwd")
-        return fn(*args, **kwargs)
+        return fn(x.contiguous(), cos.contiguous(), sin.contiguous(), rotary_dim, offset)
     return dispatch(
         cuda_fn,
-        fused_unified_rope_offset_triton,
-        fused_unified_rope_offset_pytorch,
-        x, cos, sin, rotary_dim,
+        None,
+        unified_rope_offset_pytorch_ref,
+        x, cos, sin, rotary_dim, offset=offset,
         kernel_name="unified_rope_offset",
     )

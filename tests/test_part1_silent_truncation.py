@@ -161,7 +161,7 @@ def test_dynamic_conv1d_silent_truncation():
     from neuralops.core.cuda_kernels.dynamic_conv1d.dynamic_conv1d_autograd import (
         _get_module,
         dynamic_conv1d,
-        fused_dynamic_conv1d_pytorch,
+        dynamic_conv1d_ref,
     )
     mod = _get_module()
 
@@ -170,7 +170,7 @@ def test_dynamic_conv1d_silent_truncation():
     x_3d = torch.randn(B, D, L, device="cuda", dtype=torch.float16) * 0.1
     w_3d_valid = torch.randn(D, 8, device="cuda", dtype=torch.float16) * 0.1
     out_valid = dynamic_conv1d(x_3d, w_3d_valid)
-    ref_valid = fused_dynamic_conv1d_pytorch(x_3d, w_3d_valid)
+    ref_valid = dynamic_conv1d_ref(x_3d, w_3d_valid)
     assert (out_valid - ref_valid).abs().max() < 1e-3
 
     # 3D path: oversized K > 16
@@ -179,7 +179,7 @@ def test_dynamic_conv1d_silent_truncation():
         mod.dynamic_conv1d_fwd(x_3d, w_3d_over, None)
 
     out_fallback_3d = dynamic_conv1d(x_3d, w_3d_over)
-    ref_fallback_3d = fused_dynamic_conv1d_pytorch(x_3d, w_3d_over)
+    ref_fallback_3d = dynamic_conv1d_ref(x_3d, w_3d_over)
     assert (out_fallback_3d - ref_fallback_3d).abs().max() < 1e-3
 
     # 4D path: valid D <= 128
@@ -187,7 +187,7 @@ def test_dynamic_conv1d_silent_truncation():
     x_4d = torch.randn(B, H, T + K - 1, 64, device="cuda", dtype=torch.float16) * 0.1
     w_4d = torch.randn(B, H, N, K, device="cuda", dtype=torch.float16) * 0.1
     out_4d_valid = dynamic_conv1d(x_4d, w_4d)
-    ref_4d_valid = fused_dynamic_conv1d_pytorch(x_4d, w_4d)
+    ref_4d_valid = dynamic_conv1d_ref(x_4d, w_4d)
     assert (out_4d_valid - ref_4d_valid).abs().max() < 1e-3
 
     # 4D path: oversized D > 128
@@ -196,7 +196,7 @@ def test_dynamic_conv1d_silent_truncation():
         mod.dynamic_conv1d_fwd(x_4d_over, w_4d, None)
 
     out_fallback_4d = dynamic_conv1d(x_4d_over, w_4d)
-    ref_fallback_4d = fused_dynamic_conv1d_pytorch(x_4d_over, w_4d)
+    ref_fallback_4d = dynamic_conv1d_ref(x_4d_over, w_4d)
     assert (out_fallback_4d - ref_fallback_4d).abs().max() < 1e-3
 
 
@@ -271,7 +271,7 @@ def test_fms_scan_silent_truncation():
     )
     mod = _get_module()
     B, H, L = 2, 4, 32
-    decay = torch.full((B, H, L), 0.95, device="cuda", dtype=torch.float32)
+    decay = torch.full((H,), 0.95, device="cuda", dtype=torch.float32)
 
     # Valid D <= 128
     D_valid = 64
@@ -343,7 +343,7 @@ def test_latent_kv_attn_silent_truncation():
     R_valid = 32
     q = torch.randn(B, H, L_Q, D_K, device="cuda", dtype=torch.float16) * 0.1
     c_kv = torch.randn(B, L_KV, R_valid, device="cuda", dtype=torch.float16) * 0.1
-    u_k = torch.randn(R_valid, D_K, device="cuda", dtype=torch.float16) * 0.1
+    u_k = torch.randn(D_K, R_valid, device="cuda", dtype=torch.float16) * 0.1
     u_v = torch.randn(R_valid, D_V, device="cuda", dtype=torch.float16) * 0.1
     out_valid = latent_kv_cache_attention(q, c_kv, u_k, u_v)
     ref_valid = latent_kv_cache_attention_pytorch_ref(q, c_kv, u_k, u_v)
@@ -352,7 +352,7 @@ def test_latent_kv_attn_silent_truncation():
     # Oversized R > 128
     R_over = 160
     c_kv_over = torch.randn(B, L_KV, R_over, device="cuda", dtype=torch.float16) * 0.1
-    u_k_over = torch.randn(R_over, D_K, device="cuda", dtype=torch.float16) * 0.1
+    u_k_over = torch.randn(D_K, R_over, device="cuda", dtype=torch.float16) * 0.1
     u_v_over = torch.randn(R_over, D_V, device="cuda", dtype=torch.float16) * 0.1
 
     with pytest.raises(RuntimeError, match="> 128 not supported"):
