@@ -24,6 +24,9 @@ __all__ = [
     "CustomEvaluationSuite",
     "run_gpt2_sweep",
     "run_quality_sweep",
+    "BenchmarkRunner",
+    "BenchmarkMetric",
+    "HardwareProfile",
 ]
 
 _LAZY_BENCHMARK_SYMBOLS: dict[str, tuple[str, str]] = {
@@ -46,6 +49,9 @@ _LAZY_BENCHMARK_SYMBOLS: dict[str, tuple[str, str]] = {
     "CustomEvaluationSuite": ("neuralops.benchmarks.eval_suite", "CustomEvaluationSuite"),
     "run_quality_sweep": ("neuralops.benchmarks.run_quality_sweep", "run_quality_sweep"),
     "run_gpt2_sweep": ("neuralops.benchmarks.run_gpt2_sweep", "run_gpt2_sweep"),
+    "BenchmarkRunner": ("neuralops.benchmarks.harness", "BenchmarkRunner"),
+    "BenchmarkMetric": ("neuralops.benchmarks.harness", "BenchmarkMetric"),
+    "HardwareProfile": ("neuralops.benchmarks.harness", "HardwareProfile"),
 }
 
 

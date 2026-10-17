@@ -94,7 +94,6 @@ def shutdown_logging() -> None:
     """
     Stop all background QueueListener workers and flush pending log events.
     """
-    global _ACTIVE_LISTENERS
     for listener in _ACTIVE_LISTENERS:
         try:
             listener.stop()

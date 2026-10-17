@@ -7,7 +7,7 @@ SSM, and sliding-window attention mechanisms, eliminating O(T) KV-cache explosio
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import torch
 import torch.nn as nn

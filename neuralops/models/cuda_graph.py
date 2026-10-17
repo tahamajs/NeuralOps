@@ -8,7 +8,7 @@ completely bypassing Python dispatch overhead and PyTorch launch latency.
 from __future__ import annotations
 
 import logging
-from typing import Any, Optional, Tuple, Dict, List
+from typing import Any, Optional, Tuple, Dict, List, Union
 import torch
 import torch.nn as nn
 

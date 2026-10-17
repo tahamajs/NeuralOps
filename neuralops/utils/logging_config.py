@@ -68,7 +68,6 @@ def warn_once(
     level : int, default=logging.WARNING
         Logging level.
     """
-    global _SEEN_WARNING_KEYS
     if key in _SEEN_WARNING_KEYS:
         return
     _SEEN_WARNING_KEYS.add(key)

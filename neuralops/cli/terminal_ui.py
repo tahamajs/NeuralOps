@@ -10,6 +10,7 @@ import os
 import sys
 import time
 from typing import Any, List, Optional
+from neuralops.benchmarks.discovery import CATALOG_PATH
 
 try:
     from rich.console import Console

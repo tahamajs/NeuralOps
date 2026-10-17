@@ -12,7 +12,7 @@ Supports:
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Optional
 
 import torch
 import torch.nn.functional as F
@@ -448,6 +448,7 @@ def bwd(
             sin_weight=sin_weight,
             **kwargs,
         )
+        g_q, g_k, g_v = torch.autograd.grad(out, [q_req, k_req, v_req], grad_out, retain_graph=False)
     return g_q, g_k, g_v
 
 

@@ -5,6 +5,7 @@ Tests initialization, compression, shape preservation, and forward pass across a
 """
 import os
 import sys
+from pathlib import Path
 import neuralops.compression_engine
 import pytest
 import torch

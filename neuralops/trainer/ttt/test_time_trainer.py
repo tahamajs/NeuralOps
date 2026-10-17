@@ -7,7 +7,7 @@ preconditioned gradient descent on reconstruction loss.
 from __future__ import annotations
 
 import math
-from typing import Optional
+from typing import Any, Optional
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
