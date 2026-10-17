@@ -69,7 +69,8 @@ __global__ void flash_gqa_kernel(
 
     for (int tile_idx = 0; tile_idx < num_kv_tiles; ++tile_idx) {
         const int k_start = tile_idx * BLOCK_N;
-        if (is_causal && k_start > cur_q_idx + (N_KV - N_Q)) {
+        const int max_q_idx_in_block = q_tile_idx * TILE_Q + TILE_Q - 1;
+        if (is_causal && k_start > max_q_idx_in_block + (N_KV - N_Q)) {
             break;
         }
 
