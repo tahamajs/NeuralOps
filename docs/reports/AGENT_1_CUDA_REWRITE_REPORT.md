@@ -39,6 +39,7 @@ All benchmarks measured over 50 iterations with CUDA device synchronization on R
 | 18 | spectral_mamba | Frequency-filtered Spectral SSM | 0.00e+00 | 0.0036 | 0.0177 | **4.94x** | True | **PASS** |
 | 19 | griffin_ssd | Griffin Semi-Separable Decay Scan | 2.38e-07 | 0.0126 | 1.6866 | **134.39x** | True | **PASS** |
 | 20 | recurrent_hgrn2_step | Single-step HGRN2 Hidden State Step | 4.77e-07 | 0.0087 | 0.0164 | **1.88x** | True | **PASS** |
+| 21 | retnet_retention | Multi-Scale Retention Scan | 7.63e-06 | 0.0385 | 1.8983 | **49.29x** | True | **PASS** |
 
 ---
 

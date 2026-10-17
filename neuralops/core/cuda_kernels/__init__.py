@@ -179,10 +179,6 @@ from neuralops.core.cuda_kernels.alibi_attention import (
     alibi_attention,
     alibi_attention_pytorch_ref,
 )
-from neuralops.core.cuda_kernels.multi_scale_retention import (
-    multi_scale_retention,
-    multi_scale_retention_pytorch_ref,
-)
 from neuralops.core.cuda_kernels.flash_gqa import (
     flash_gqa,
     flash_gqa_pytorch_ref,
@@ -556,8 +552,6 @@ __all__ = [
     "speculative_verify_pytorch_ref",
     "alibi_attention",
     "alibi_attention_pytorch_ref",
-    "multi_scale_retention",
-    "multi_scale_retention_pytorch_ref",
     # Additional Native CUDA Operators
     "flash_gqa",
     "flash_gqa_pytorch_ref",
@@ -701,5 +695,7 @@ __all__ = [
     "rwkv6",
     "rwkv6_ref",
 ]
+
+
 
 
