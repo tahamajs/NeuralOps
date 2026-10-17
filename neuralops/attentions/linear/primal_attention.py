@@ -36,6 +36,14 @@ logger = logging.getLogger(__name__)
 
 @ATTENTION_REGISTRY.register("primal_attention")
 class PrimalAttention(BaseAttention):
+    """PrimalAttention neural operator.
+
+    Primal Attention: Self-Attention through Asymmetric Kernel SVD in Primal Representation.
+
+    Attributes:
+        supports_causal (bool): Whether causal autoregressive masking is supported.
+        is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
+    """
     is_custom_attention: bool = True
 
     def __init__(

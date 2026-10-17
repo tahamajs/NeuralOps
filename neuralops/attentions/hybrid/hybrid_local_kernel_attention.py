@@ -348,6 +348,14 @@ def _global_linear_attention_v2(
 @ATTENTION_REGISTRY.register("aegis_hybrid", supports_causal=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("aegis_spectron_fp8", supports_causal=True, supports_gqa=True)
 class HybridLocalKernelAttention(BaseAttention):
+    """HybridLocalKernelAttention neural operator.
+
+    Hybrid Local Kernel Attention implementation.
+
+    Attributes:
+        supports_causal (bool): Whether causal autoregressive masking is supported.
+        is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
+    """
     supports_causal: bool = True
     supports_gqa: bool = True
     is_custom_attention: bool = True

@@ -56,6 +56,14 @@ _ATTN_NAMES = {
 
 @COMPRESSOR_REGISTRY.register("erc_svd")
 class ERCCompressor(BaseCompressor):
+    """ERCCompressor neural operator.
+
+    ERC-SVD: Error-Controlled SVD with Bounded Frobenius Truncation Error. Registered as 'erc' and 'erc_svd'.
+
+    Attributes:
+        supports_causal (bool): Whether causal autoregressive masking is supported.
+        is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
+    """
     is_custom_attention: bool = True
     """
     Error-Controlled SVD (ERC-SVD) Compressor.

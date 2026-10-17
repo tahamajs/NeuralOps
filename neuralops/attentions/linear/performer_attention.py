@@ -88,6 +88,14 @@ def _resolve_config_value(
     supports_gqa=True,
 )
 class PerformerAttention(BaseAttention):
+    """PerformerAttention neural operator.
+
+    Performer Attention – Fast Attention via Positive Orthogonal Random Features (FAVOR+).
+
+    Attributes:
+        supports_causal (bool): Whether causal autoregressive masking is supported.
+        is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
+    """
     is_custom_attention: bool = True
     triton_kernel = "linear_attn"
 

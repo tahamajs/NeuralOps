@@ -380,6 +380,14 @@ def _state_recurrence_jit(u: torch.Tensor, gamma: torch.Tensor, reverse: bool = 
 
 @ATTENTION_REGISTRY.register("spectron_fp8", supports_causal=True, supports_gqa=True)
 class SpectronFP8Attention(BaseAttention):
+    """SpectronFP8Attention neural operator.
+
+    Aegis-Spectron-FP8 Hybrid Attention .
+
+    Attributes:
+        supports_causal (bool): Whether causal autoregressive masking is supported.
+        is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
+    """
     is_custom_attention = True
 
     def __init__(

@@ -244,6 +244,14 @@ def _autocast_off(x: torch.Tensor):
 # ======================================================================
 @ATTENTION_REGISTRY.register("spectron", supports_causal=True, supports_gqa=True)
 class SpectronAttention(BaseAttention):
+    """SpectronAttention neural operator.
+
+    SpectronAttention: Importance-Aware Low-Rank + Sparse Attention (Activation-Aware).
+
+    Attributes:
+        supports_causal (bool): Whether causal autoregressive masking is supported.
+        is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
+    """
     supports_causal: bool = True
     supports_gqa: bool = True
     is_custom_attention: bool = True

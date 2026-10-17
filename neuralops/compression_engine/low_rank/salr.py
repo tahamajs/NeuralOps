@@ -153,6 +153,14 @@ class SALRLayer(nn.Module):
 
 @COMPRESSOR_REGISTRY.register("salr")
 class SALRCompressor(BaseCompressor):
+    """SALRCompressor neural operator.
+
+    SALR: Structure-Aware / Sparse Low-Rank compression combining SVD with bottleneck pruning. Registered in COMPRESSOR_REGISTRY as 'salr', 'salr_factory', and 'salr_compressor_factory'.
+
+    Attributes:
+        supports_causal (bool): Whether causal autoregressive masking is supported.
+        is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
+    """
     is_custom_attention: bool = True
     """
     SALR Compressor: Structure-Aware Low-Rank and Sparse Pruning.

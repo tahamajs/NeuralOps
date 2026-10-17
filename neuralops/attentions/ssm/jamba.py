@@ -124,6 +124,14 @@ class SVDMambaSub(nn.Module):
     "jamba", supports_causal=True, supports_bidirectional=True, supports_gqa=True
 )
 class Jamba2Block(BaseAttention):
+    """Jamba2Block neural operator.
+
+    Jamba Hybrid Transformer: SVD-Mamba + MHA + MoE Attention Block (Production-Hardened).
+
+    Attributes:
+        supports_causal (bool): Whether causal autoregressive masking is supported.
+        is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
+    """
     is_custom_attention: bool = True
 
     def __init__(

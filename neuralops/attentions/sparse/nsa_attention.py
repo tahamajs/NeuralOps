@@ -51,6 +51,14 @@ from neuralops.core.utils.rope import _rotate_half
     supports_gqa=True,
 )
 class NativeSparseAttention(BaseAttention):
+    """NativeSparseAttention neural operator.
+
+    Native Sparse Attention (NSA) Module (Production-Hardened).
+
+    Attributes:
+        supports_causal (bool): Whether causal autoregressive masking is supported.
+        is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
+    """
     is_custom_attention: bool = True
 
     def __init__(

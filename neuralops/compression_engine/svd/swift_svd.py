@@ -26,6 +26,14 @@ logger = logging.getLogger(__name__)
 
 @COMPRESSOR_REGISTRY.register("swift_svd")
 class SwiftSVDCompressor(BaseCompressor):
+    """SwiftSVDCompressor neural operator.
+
+    Swift-SVD: fast closed-form truncated SVD with symmetric square-root singular value distribution. Registered as 'swift_svd'.
+
+    Attributes:
+        supports_causal (bool): Whether causal autoregressive masking is supported.
+        is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
+    """
     is_custom_attention: bool = True
     """
     Swift-SVD Compressor: Fast Closed-Form Truncated SVD.

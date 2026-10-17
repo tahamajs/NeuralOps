@@ -392,6 +392,14 @@ class KMeansLinear(nn.Module):
 # Compressor
 # ===========================================================================
 class KMeansCompressor(BaseCompressor):
+    """KMeansCompressor neural operator.
+
+    KMeans-based weight clustering quantizer with Straight-Through Estimator.
+
+    Attributes:
+        supports_causal (bool): Whether causal autoregressive masking is supported.
+        is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
+    """
     is_custom_attention: bool = False
 
     def __init__(

@@ -39,6 +39,14 @@ from neuralops.utils.model_family import ModelAdapter
     supports_gqa=True,
 )
 class CompressedAttentionLayer(BaseAttention):
+    """CompressedAttentionLayer neural operator.
+
+    Compressed Multi-Head Attention via Truncated Singular Value Decomposition (SVD).
+
+    Attributes:
+        supports_causal (bool): Whether causal autoregressive masking is supported.
+        is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
+    """
     supports_causal: bool = True
     supports_bidirectional: bool = True
     supports_gqa: bool = True

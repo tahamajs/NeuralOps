@@ -40,6 +40,14 @@ logger = logging.getLogger(__name__)
     "eat_attention", supports_causal=True, supports_bidirectional=True, supports_gqa=True
 )
 class EATBlock(BaseAttention):
+    """EATBlock neural operator.
+
+    EAT: Efficient Attention Transformer with Progressive Token Pruning.
+
+    Attributes:
+        supports_causal (bool): Whether causal autoregressive masking is supported.
+        is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
+    """
     is_custom_attention: bool = True
 
     def __init__(

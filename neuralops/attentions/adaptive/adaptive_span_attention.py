@@ -198,6 +198,14 @@ class IdentityOutProj(nn.Identity):
 
 @ATTENTION_REGISTRY.register("adaptive_span_attention")
 class AdaptiveSpanAttention(BaseAttention):
+    """AdaptiveSpanAttention neural operator.
+
+    Adaptive Span Attention
+
+    Attributes:
+        supports_causal (bool): Whether causal autoregressive masking is supported.
+        is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
+    """
     supports_causal: bool = True
     supports_bidirectional: bool = False
     supports_gqa: bool = True

@@ -303,6 +303,14 @@ class SpectraformerRectify(nn.Module):
 # ===========================================================================
 @ATTENTION_REGISTRY.register("nexus", supports_causal=True, supports_gqa=True)
 class NEXUSAttention(BaseAttention):
+    """NEXUSAttention neural operator.
+
+    NEXUS: Neural Efficient X-scoring Unified Sparse Attention.
+
+    Attributes:
+        supports_causal (bool): Whether causal autoregressive masking is supported.
+        is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
+    """
     supports_causal: bool = True
     supports_gqa: bool = True
     is_custom_attention: bool = True

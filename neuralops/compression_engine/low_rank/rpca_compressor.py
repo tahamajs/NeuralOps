@@ -90,6 +90,14 @@ class RPCALinear(nn.Module):
 
 @COMPRESSOR_REGISTRY.register("rpca_compressor")
 class RPCACompressor(BaseCompressor):
+    """RPCACompressor neural operator.
+
+    Robust PCA: decompose W = L + S, factorizing low-rank component L with structural SVDLinear. Registered in COMPRESSOR_REGISTRY as 'rpca', 'rpca_factory', and 'rpca_compressor_factory'.
+
+    Attributes:
+        supports_causal (bool): Whether causal autoregressive masking is supported.
+        is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
+    """
     is_custom_attention: bool = True
     """
     Robust Principal Component Analysis (RPCA) Low-Rank Compressor.

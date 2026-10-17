@@ -259,6 +259,14 @@ class SVDLinear(nn.Module):
 # ===========================================================================
 @COMPRESSOR_REGISTRY.register("aa_svd_compressor")
 class AASVDCompressor(BaseCompressor):
+    """AASVDCompressor neural operator.
+
+    Activation-Aware SVD (AASVD) Compressor — Production-Hardened (v2).
+
+    Attributes:
+        supports_causal (bool): Whether causal autoregressive masking is supported.
+        is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
+    """
     is_custom_attention: bool = False
 
     def __init__(

@@ -36,6 +36,14 @@ logger = logging.getLogger(__name__)
 
 @COMPRESSOR_REGISTRY.register("saes_svd_v2")
 class SAESSVDCompressorV2(BaseCompressor):
+    """SAESSVDCompressorV2 neural operator.
+
+    SAES-SVD v2: Spectrum-Aware Error-Suppressed Singular Value Decomposition. Registered in COMPRESSOR_REGISTRY as 'saes_svd_v2' and 'saes'.
+
+    Attributes:
+        supports_causal (bool): Whether causal autoregressive masking is supported.
+        is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
+    """
     is_custom_attention: bool = True
     """
     SAES-SVD v2 Compressor with iterative spectrum-aware residual correction,

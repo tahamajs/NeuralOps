@@ -34,6 +34,14 @@ logger = logging.getLogger(__name__)
 # ===========================================================================
 @ATTENTION_REGISTRY.register("refined_landmark_attention")
 class RefinedLandmarkAttention(BaseAttention):
+    """RefinedLandmarkAttention neural operator.
+
+    LEKAv3: Linear-time Efficient Kernel Attention with Value-Scored Landmarks.
+
+    Attributes:
+        supports_causal (bool): Whether causal autoregressive masking is supported.
+        is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
+    """
     supports_causal: bool = True
     supports_gqa: bool = True
     is_custom_attention: bool = True

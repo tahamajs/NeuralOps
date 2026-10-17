@@ -57,6 +57,14 @@ except Exception:
 
 @ATTENTION_REGISTRY.register("hamming_attention", supports_causal=True, supports_gqa=True)
 class HammingAttention(BaseAttention):
+    """HammingAttention neural operator.
+
+    Hamming Attention Distillation (HAD) Module.
+
+    Attributes:
+        supports_causal (bool): Whether causal autoregressive masking is supported.
+        is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
+    """
     supports_causal: bool = True
     supports_gqa: bool = True
     supports_rope: bool = True

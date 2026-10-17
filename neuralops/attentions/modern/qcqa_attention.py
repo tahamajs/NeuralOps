@@ -45,6 +45,14 @@ from neuralops.core.utils.rope import _rotate_half
     supports_rope=True,
 )
 class QCQAAttention(BaseAttention):
+    """QCQAAttention neural operator.
+
+    Quality and Capacity-Aware Grouped Query Attention (QCQA).
+
+    Attributes:
+        supports_causal (bool): Whether causal autoregressive masking is supported.
+        is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
+    """
     supports_causal: bool = True
     supports_gqa: bool = True
     supports_rope: bool = True

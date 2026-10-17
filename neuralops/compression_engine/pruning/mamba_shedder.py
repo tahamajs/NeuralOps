@@ -187,6 +187,14 @@ class MambaShedderPrunedLinear(nn.Module):
 # Compressor
 # ===========================================================================
 class MambaShedderCompressor(BaseCompressor):
+    """MambaShedderCompressor neural operator.
+
+    Mamba-Shedder: Sensitivity-Based Structured Pruning and Layer Shedding Compressor.
+
+    Attributes:
+        supports_causal (bool): Whether causal autoregressive masking is supported.
+        is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
+    """
     is_custom_attention: bool = False  # MS-FIX-01
 
     def __init__(
