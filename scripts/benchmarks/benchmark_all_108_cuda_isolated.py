@@ -141,7 +141,7 @@ def generate_args(mod_name, sig, device, dtype, B=4, H=8, N=512, D=64):
     elif mod_name == "simple_ssm":
         x = torch.randn(B, N, D, device=device, dtype=dtype) * 0.1
         decay = torch.full((B, N, D), 0.95, device=device, dtype=dtype)
-        scale = torch.tensor(1.0, device=device, dtype=dtype)
+        scale = torch.ones(D, device=device, dtype=dtype)
         return [x, decay, scale], {{}}
     elif mod_name == "quantized_gemm":
         M_dim, N_dim, K_dim = 64, 128, 256
@@ -165,6 +165,11 @@ def generate_args(mod_name, sig, device, dtype, B=4, H=8, N=512, D=64):
         v = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
         gamma = torch.full((H, D), 0.95, device=device, dtype=dtype)
         return [q, k, v, gamma], {{}}
+    elif mod_name == "linear_attention":
+        q = torch.nn.functional.elu(torch.randn(B, H, N, D, device=device, dtype=dtype)) + 1.0
+        k = torch.nn.functional.elu(torch.randn(B, H, N, D, device=device, dtype=dtype)) + 1.0
+        v = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
+        return [q, k, v], {{}}
     elif mod_name == "causal_conv1d":
         x = torch.randn(B, D, N, device=device, dtype=dtype) * 0.1
         weight = torch.randn(D, 1, 4, device=device, dtype=dtype) * 0.1
