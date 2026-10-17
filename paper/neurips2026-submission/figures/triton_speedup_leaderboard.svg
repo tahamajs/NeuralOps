@@ -1,0 +1,116 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="950" height="780" viewBox="0 0 950 780">
+  <rect width="100%" height="100%" fill="#0f172a"/>
+  <text x="475.0" y="36" fill="#f8fafc" font-size="18" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" text-anchor="middle">Triton GPU Acceleration Leaderboard (All 26 Flagship Kernels)</text>
+  <text x="475.0" y="56" fill="#38bdf8" font-size="12" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="middle">Measured on NVIDIA GeForce RTX 4070 (Ada Lovelace SM 8.9, 8GB VRAM)</text>
+  <rect x="240" y="80" width="650" height="640" fill="#1e293b" rx="6" stroke="#334155"/>
+  <line x1="301.6070135339135" y1="80" x2="301.6070135339135" y2="720" stroke="#334155" stroke-width="1" stroke-dasharray="3,3"/>
+  <text x="301.6070135339135" y="740" fill="#94a3b8" font-size="10" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="middle">0.2x</text>
+  <line x1="383.04705556649975" y1="80" x2="383.04705556649975" y2="720" stroke="#334155" stroke-width="1" stroke-dasharray="3,3"/>
+  <text x="383.04705556649975" y="740" fill="#94a3b8" font-size="10" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="middle">0.5x</text>
+  <line x1="444.65406910041327" y1="80" x2="444.65406910041327" y2="720" stroke="#f87171" stroke-width="1.5" stroke-dasharray="none"/>
+  <text x="444.65406910041327" y="740" fill="#f87171" font-size="10" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="middle">1.0x</text>
+  <line x1="506.2610826343268" y1="80" x2="506.2610826343268" y2="720" stroke="#334155" stroke-width="1" stroke-dasharray="3,3"/>
+  <text x="506.2610826343268" y="740" fill="#94a3b8" font-size="10" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="middle">2.0x</text>
+  <line x1="587.701124666913" y1="80" x2="587.701124666913" y2="720" stroke="#334155" stroke-width="1" stroke-dasharray="3,3"/>
+  <text x="587.701124666913" y="740" fill="#94a3b8" font-size="10" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="middle">5.0x</text>
+  <line x1="649.3081382008265" y1="80" x2="649.3081382008265" y2="720" stroke="#334155" stroke-width="1" stroke-dasharray="3,3"/>
+  <text x="649.3081382008265" y="740" fill="#94a3b8" font-size="10" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="middle">10.0x</text>
+  <line x1="710.9151517347401" y1="80" x2="710.9151517347401" y2="720" stroke="#334155" stroke-width="1" stroke-dasharray="3,3"/>
+  <text x="710.9151517347401" y="740" fill="#94a3b8" font-size="10" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="middle">20.0x</text>
+  <line x1="792.3551937673263" y1="80" x2="792.3551937673263" y2="720" stroke="#334155" stroke-width="1" stroke-dasharray="3,3"/>
+  <text x="792.3551937673263" y="740" fill="#94a3b8" font-size="10" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="middle">50.0x</text>
+  <line x1="853.9622073012398" y1="80" x2="853.9622073012398" y2="720" stroke="#334155" stroke-width="1" stroke-dasharray="3,3"/>
+  <text x="853.9622073012398" y="740" fill="#94a3b8" font-size="10" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="middle">100.0x</text>
+  <text x="565.0" y="760" fill="#94a3b8" font-size="12" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="middle">Speedup Over PyTorch Reference (Log Scale) [1.0x = Parity]</text>
+  <text x="230" y="96.3076923076923" fill="#f8fafc" font-size="10.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="end">1. gdn_scan</text>
+  <rect x="444.7" y="87.3076923076923" width="424.3" height="10" fill="#34d399" rx="2"/>
+  <text x="875.0" y="95.8076923076923" fill="#34d399" font-size="9" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">118.44x</text>
+  <rect x="240" y="104.61538461538461" width="650" height="24.615384615384617" fill="#1b2438"/>
+  <text x="230" y="120.92307692307692" fill="#f8fafc" font-size="10.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="end">2. gla_scan</text>
+  <rect x="444.7" y="111.92307692307692" width="421.2" height="10" fill="#34d399" rx="2"/>
+  <text x="871.8" y="120.42307692307692" fill="#34d399" font-size="9" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">114.30x</text>
+  <text x="230" y="145.53846153846155" fill="#f8fafc" font-size="10.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="end">3. sliding_window</text>
+  <rect x="444.7" y="136.53846153846155" width="400.4" height="10" fill="#34d399" rx="2"/>
+  <text x="851.1" y="145.03846153846155" fill="#34d399" font-size="9" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">90.51x</text>
+  <rect x="240" y="153.84615384615387" width="650" height="24.615384615384617" fill="#1b2438"/>
+  <text x="230" y="170.1538461538462" fill="#f8fafc" font-size="10.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="end">4. gqa</text>
+  <rect x="444.7" y="161.1538461538462" width="280.1" height="10" fill="#34d399" rx="2"/>
+  <text x="730.8" y="169.6538461538462" fill="#34d399" font-size="9" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">23.38x</text>
+  <text x="230" y="194.76923076923077" fill="#f8fafc" font-size="10.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="end">5. fused_norm_linear</text>
+  <rect x="444.7" y="185.76923076923077" width="276.8" height="10" fill="#34d399" rx="2"/>
+  <text x="727.5" y="194.26923076923077" fill="#34d399" font-size="9" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">22.52x</text>
+  <rect x="240" y="203.0769230769231" width="650" height="24.615384615384617" fill="#1b2438"/>
+  <text x="230" y="219.38461538461542" fill="#f8fafc" font-size="10.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="end">6. flash_decoding</text>
+  <rect x="444.7" y="210.38461538461542" width="236.9" height="10" fill="#34d399" rx="2"/>
+  <text x="687.5" y="218.88461538461542" fill="#34d399" font-size="9" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">14.37x</text>
+  <text x="230" y="244.00000000000003" fill="#f8fafc" font-size="10.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="end">7. paged_attention</text>
+  <rect x="444.7" y="235.00000000000003" width="230.3" height="10" fill="#34d399" rx="2"/>
+  <text x="680.9" y="243.50000000000003" fill="#34d399" font-size="9" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">13.34x</text>
+  <rect x="240" y="252.30769230769232" width="650" height="24.615384615384617" fill="#1b2438"/>
+  <text x="230" y="268.61538461538464" fill="#f8fafc" font-size="10.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="end">8. selective_scan</text>
+  <rect x="444.7" y="259.61538461538464" width="212.2" height="10" fill="#34d399" rx="2"/>
+  <text x="662.9" y="268.11538461538464" fill="#34d399" font-size="9" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">10.89x</text>
+  <text x="230" y="293.2307692307692" fill="#f8fafc" font-size="10.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="end">9. fms_scan</text>
+  <rect x="444.7" y="284.2307692307692" width="203.8" height="10" fill="#34d399" rx="2"/>
+  <text x="654.4" y="292.7307692307692" fill="#34d399" font-size="9" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">9.90x</text>
+  <rect x="240" y="301.53846153846155" width="650" height="24.615384615384617" fill="#1b2438"/>
+  <text x="230" y="317.84615384615387" fill="#f8fafc" font-size="10.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="end">10. fused_kd</text>
+  <rect x="444.7" y="308.84615384615387" width="192.3" height="10" fill="#34d399" rx="2"/>
+  <text x="642.9" y="317.34615384615387" fill="#34d399" font-size="9" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">8.70x</text>
+  <text x="230" y="342.4615384615385" fill="#f8fafc" font-size="10.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="end">11. hgrn2_scan</text>
+  <rect x="444.7" y="333.4615384615385" width="178.4" height="10" fill="#34d399" rx="2"/>
+  <text x="629.0" y="341.9615384615385" fill="#34d399" font-size="9" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">7.44x</text>
+  <rect x="240" y="350.7692307692308" width="650" height="24.615384615384617" fill="#1b2438"/>
+  <text x="230" y="367.0769230769231" fill="#f8fafc" font-size="10.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="end">12. cosformer_triton_kernel</text>
+  <rect x="444.7" y="358.0769230769231" width="134.1" height="10" fill="#34d399" rx="2"/>
+  <text x="584.7" y="366.5769230769231" fill="#34d399" font-size="9" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">4.52x</text>
+  <text x="230" y="391.69230769230774" fill="#f8fafc" font-size="10.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="end">13. _common / _types</text>
+  <rect x="444.7" y="382.69230769230774" width="129.4" height="10" fill="#34d399" rx="2"/>
+  <text x="580.1" y="391.19230769230774" fill="#34d399" font-size="9" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">4.29x</text>
+  <rect x="240" y="400.0" width="650" height="24.615384615384617" fill="#1b2438"/>
+  <text x="230" y="416.3076923076923" fill="#f8fafc" font-size="10.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="end">14. hardware_profile</text>
+  <rect x="444.7" y="407.3076923076923" width="128.0" height="10" fill="#34d399" rx="2"/>
+  <text x="578.6" y="415.8076923076923" fill="#34d399" font-size="9" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">4.22x</text>
+  <text x="230" y="440.92307692307696" fill="#f8fafc" font-size="10.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="end">15. op_registry</text>
+  <rect x="444.7" y="431.92307692307696" width="126.9" height="10" fill="#34d399" rx="2"/>
+  <text x="577.6" y="440.42307692307696" fill="#34d399" font-size="9" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">4.17x</text>
+  <rect x="240" y="449.2307692307692" width="650" height="24.615384615384617" fill="#1b2438"/>
+  <text x="230" y="465.53846153846155" fill="#f8fafc" font-size="10.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="end">16. autotuner</text>
+  <rect x="444.7" y="456.53846153846155" width="117.5" height="10" fill="#34d399" rx="2"/>
+  <text x="568.1" y="465.03846153846155" fill="#34d399" font-size="9" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">3.75x</text>
+  <text x="230" y="490.1538461538462" fill="#f8fafc" font-size="10.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="end">17. block_sparse</text>
+  <rect x="444.7" y="481.1538461538462" width="44.5" height="10" fill="#38bdf8" rx="2"/>
+  <text x="495.2" y="489.6538461538462" fill="#38bdf8" font-size="9" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">1.65x</text>
+  <rect x="240" y="498.4615384615385" width="650" height="24.615384615384617" fill="#1b2438"/>
+  <text x="230" y="514.7692307692308" fill="#f8fafc" font-size="10.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="end">18. elementwise</text>
+  <rect x="444.7" y="505.76923076923083" width="35.4" height="10" fill="#38bdf8" rx="2"/>
+  <text x="486.1" y="514.2692307692308" fill="#38bdf8" font-size="9" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">1.49x</text>
+  <text x="230" y="539.3846153846154" fill="#f8fafc" font-size="10.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="end">19. softplus</text>
+  <rect x="444.7" y="530.3846153846154" width="18.4" height="10" fill="#38bdf8" rx="2"/>
+  <text x="469.1" y="538.8846153846154" fill="#38bdf8" font-size="9" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">1.23x</text>
+  <rect x="240" y="547.6923076923077" width="650" height="24.615384615384617" fill="#1b2438"/>
+  <text x="230" y="564.0" fill="#f8fafc" font-size="10.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="end">20. fused_rope</text>
+  <rect x="444.7" y="555.0" width="2.0" height="10" fill="#38bdf8" rx="2"/>
+  <text x="450.7" y="563.5" fill="#38bdf8" font-size="9" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">1.00x</text>
+  <text x="230" y="588.6153846153846" fill="#f8fafc" font-size="10.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="end">21. varlen_attention</text>
+  <rect x="444.7" y="579.6153846153846" width="2.0" height="10" fill="#38bdf8" rx="2"/>
+  <text x="450.7" y="588.1153846153846" fill="#38bdf8" font-size="9" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">1.00x</text>
+  <rect x="240" y="596.9230769230769" width="650" height="24.615384615384617" fill="#1b2438"/>
+  <text x="230" y="613.2307692307692" fill="#f8fafc" font-size="10.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="end">22. fused_ce</text>
+  <rect x="442.9" y="604.2307692307692" width="2.0" height="10" fill="#fbbf24" rx="2"/>
+  <text x="450.7" y="612.7307692307692" fill="#fbbf24" font-size="9" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">0.98x</text>
+  <text x="230" y="637.8461538461538" fill="#f8fafc" font-size="10.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="end">23. state_update</text>
+  <rect x="399.3" y="628.8461538461538" width="45.4" height="10" fill="#fbbf24" rx="2"/>
+  <text x="450.7" y="637.3461538461538" fill="#fbbf24" font-size="9" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">0.60x</text>
+  <rect x="240" y="646.1538461538462" width="650" height="24.615384615384617" fill="#1b2438"/>
+  <text x="230" y="662.4615384615385" fill="#f8fafc" font-size="10.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="end">24. sparse_attn</text>
+  <rect x="324.9" y="653.4615384615385" width="119.7" height="10" fill="#fbbf24" rx="2"/>
+  <text x="450.7" y="661.9615384615385" fill="#fbbf24" font-size="9" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">0.26x</text>
+  <text x="230" y="687.0769230769231" fill="#f8fafc" font-size="10.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="end">25. low_rank</text>
+  <rect x="321.4" y="678.0769230769231" width="123.2" height="10" fill="#fbbf24" rx="2"/>
+  <text x="450.7" y="686.5769230769231" fill="#fbbf24" font-size="9" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">0.25x</text>
+  <rect x="240" y="695.3846153846155" width="650" height="24.615384615384617" fill="#1b2438"/>
+  <text x="230" y="711.6923076923077" fill="#f8fafc" font-size="10.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="end">26. linear_attn</text>
+  <rect x="301.6" y="702.6923076923077" width="143.0" height="10" fill="#fbbf24" rx="2"/>
+  <text x="450.7" y="711.1923076923077" fill="#fbbf24" font-size="9" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">0.20x</text>
+</svg>
