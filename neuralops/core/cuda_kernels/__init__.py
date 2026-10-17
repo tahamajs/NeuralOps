@@ -461,6 +461,13 @@ from neuralops.core.cuda_kernels.rwkv6 import (
     rwkv6_ref,
 )
 
+from neuralops.core.cuda_kernels.multi_scale_retention import (
+    multi_scale_retention,
+    multi_scale_retention_pytorch_ref,
+)
+retnet_retention = multi_scale_retention
+retnet_retention_pytorch_ref = multi_scale_retention_pytorch_ref
+
 from neuralops.core.cuda_kernels.liquid_attention import (
     liquid_attention,
     liquid_attention_ref,
@@ -719,6 +726,10 @@ __all__ = [
     "linformer_attention_ref",
     "rwkv6",
     "rwkv6_ref",
+    "multi_scale_retention",
+    "multi_scale_retention_pytorch_ref",
+    "retnet_retention",
+    "retnet_retention_pytorch_ref",
     "liquid_attention",
     "liquid_attention_ref",
     "mamba2_block",
