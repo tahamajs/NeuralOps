@@ -54,7 +54,7 @@ torch::Tensor soa_attn_fwd(
 
     AT_DISPATCH_FLOATING_TYPES_AND2(
         at::ScalarType::Half, at::ScalarType::BFloat16,
-        q.scalar_type(), soa_attn_fwd, ([&] {
+        q.scalar_type(), "soa_attn_fwd", ([&] {
             neuralops::cuda::soa_attn_fwd_kernel<scalar_t><<<blocks, THREADS, 0, stream>>>(
                 out.data_ptr<scalar_t>(),
                 q_c.data_ptr<scalar_t>(),
@@ -66,5 +66,6 @@ torch::Tensor soa_attn_fwd(
         })
     );
 
+    CUDA_KERNEL_LAUNCH_CHECK();
     return out;
 }

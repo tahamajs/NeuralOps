@@ -51,7 +51,7 @@ torch::Tensor spectra_v2_fwd(
 
     AT_DISPATCH_FLOATING_TYPES_AND2(
         at::ScalarType::Half, at::ScalarType::BFloat16,
-        x.scalar_type(), spectra_v2_fwd, ([&] {
+        x.scalar_type(), "spectra_v2_fwd", ([&] {
             neuralops::cuda::spectra_v2_fwd_kernel<scalar_t><<<blocks, THREADS, 0, stream>>>(
                 out.data_ptr<scalar_t>(),
                 x_c.data_ptr<scalar_t>(),
@@ -63,5 +63,6 @@ torch::Tensor spectra_v2_fwd(
         })
     );
 
+    CUDA_KERNEL_LAUNCH_CHECK();
     return out;
 }

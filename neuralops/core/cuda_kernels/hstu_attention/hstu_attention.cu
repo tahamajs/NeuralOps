@@ -64,7 +64,7 @@ torch::Tensor hstu_fwd(
 
     AT_DISPATCH_FLOATING_TYPES_AND2(
         at::ScalarType::Half, at::ScalarType::BFloat16,
-        u.scalar_type(), hstu_fwd, ([&] {
+        u.scalar_type(), "hstu_fwd", ([&] {
             neuralops::cuda::hstu_fwd_kernel<scalar_t><<<grid, THREADS, 0, stream>>>(
                 out.data_ptr<scalar_t>(),
                 u_c.data_ptr<scalar_t>(),
@@ -75,5 +75,6 @@ torch::Tensor hstu_fwd(
         })
     );
 
+    CUDA_KERNEL_LAUNCH_CHECK();
     return out;
 }

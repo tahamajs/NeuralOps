@@ -84,5 +84,6 @@ torch::Tensor hymba_transx_fwd(
         })
     );
 
+    CUDA_KERNEL_LAUNCH_CHECK();
     return out;
 }

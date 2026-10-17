@@ -5,6 +5,7 @@
 #include <c10/cuda/CUDAException.h>
 
 template<typename scalar_t>
+__launch_bounds__(128)
 __global__ void moe_gather_fast_kernel(
     scalar_t* __restrict__ out_tokens,               // [num_tokens, hidden_dim]
     const scalar_t* __restrict__ expert_outputs,     // [total_assignments, hidden_dim]
@@ -50,6 +51,7 @@ __global__ void moe_gather_fast_kernel(
 }
 
 template<typename scalar_t>
+__launch_bounds__(256)
 __global__ void moe_gather_kernel(
     scalar_t* __restrict__ out_tokens,               // [num_tokens, hidden_dim]
     const scalar_t* __restrict__ expert_outputs,     // [total_assignments, hidden_dim]

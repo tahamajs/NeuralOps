@@ -14,6 +14,7 @@ __device__ __forceinline__ float elu_plus_one(float x) {
 // Cosformer Attention Forward Kernel
 // q, k, v: [B, H, L, D] -> out: [B, H, L, D]
 template <typename scalar_t, int MAX_D>
+__launch_bounds__(128)
 __global__ void cosformer_fwd_kernel(
     scalar_t* __restrict__ out,
     const scalar_t* __restrict__ q,

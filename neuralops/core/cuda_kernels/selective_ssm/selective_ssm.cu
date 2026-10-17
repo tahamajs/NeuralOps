@@ -95,5 +95,6 @@ torch::Tensor selective_ssm_fwd(
         })
     );
 
+    CUDA_KERNEL_LAUNCH_CHECK();
     return out;
 }

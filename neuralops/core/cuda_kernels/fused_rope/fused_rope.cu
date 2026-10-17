@@ -13,6 +13,7 @@ namespace cuda {
 // out[..., :D/2] = x1 * cos - x2 * sin
 // out[..., D/2:] = x2 * cos + x1 * sin
 template <typename scalar_t>
+__launch_bounds__(128)
 __global__ void fused_rope_fwd_kernel(
     scalar_t* __restrict__ out,
     const scalar_t* __restrict__ x,
@@ -72,6 +73,7 @@ __global__ void fused_rope_fwd_kernel(
 
 // Backward Kernel (adjoint rotation: inverse rotation has -s instead of s)
 template <typename scalar_t>
+__launch_bounds__(128)
 __global__ void fused_rope_bwd_kernel(
     scalar_t* __restrict__ dx,
     const scalar_t* __restrict__ dout,
