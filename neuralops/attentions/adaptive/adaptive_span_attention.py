@@ -142,7 +142,6 @@ def _build_keep_mask(
         mask = causal.unsqueeze(0).unsqueeze(0)  # (1, 1, N_q, N_k)
 
     def _combine(am: torch.Tensor) -> torch.Tensor:
-        nonlocal mask
         if am.dim() == 2:
             am_b = am[:, None, None, :]
         elif am.dim() == 3:
