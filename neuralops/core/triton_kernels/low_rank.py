@@ -244,7 +244,7 @@ class _TritonLowRankAutogradFunction(torch.autograd.Function):
             BLOCK_M = 64
             BLOCK_N = 64
             BLOCK_K = 32
-            BLOCK_R = min(32, triton.next_power_of_2(Rank))
+            BLOCK_R = max(16, min(32, triton.next_power_of_2(Rank)))
             grid = (triton.cdiv(M, BLOCK_M), triton.cdiv(D_out, BLOCK_N))
 
             _fused_low_rank_gemm_fwd_kernel[grid](
@@ -331,7 +331,7 @@ class _TritonLowRankAutogradFunction(torch.autograd.Function):
                 BLOCK_M = 64
                 BLOCK_D = 64
                 BLOCK_N = 32
-                BLOCK_R = min(32, triton.next_power_of_2(Rank))
+                BLOCK_R = max(16, min(32, triton.next_power_of_2(Rank)))
                 grid_dx = (triton.cdiv(M, BLOCK_M), triton.cdiv(D_in, BLOCK_D))
                 _fused_low_rank_gemm_bwd_dx_kernel[grid_dx](
                     grad_out_2d, U_mat, V_mat, s_t, g_x_2d,
