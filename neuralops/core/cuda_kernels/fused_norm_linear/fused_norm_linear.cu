@@ -260,11 +260,11 @@ std::vector<torch::Tensor> fused_norm_linear_fwd(
     return {out.reshape(out_final_shape), x_hat.reshape(orig_shape)};
 }
 
-std::vector<torch::Tensor> fused_norm_linear_bwd(
+torch::Tensor fused_norm_linear_bwd_dx(
     const torch::Tensor& dout,
-    const torch::Tensor& x,
     const torch::Tensor& weight,
-    float eps = 1e-5f
+    const torch::Tensor& x,
+    const float eps
 ) {
     CHECK_INPUT(dout);
     CHECK_INPUT(x);
@@ -287,7 +287,7 @@ std::vector<torch::Tensor> fused_norm_linear_bwd(
 
     AT_DISPATCH_FLOATING_TYPES_AND2(
         at::ScalarType::Half, at::ScalarType::BFloat16,
-        x.scalar_type(), "fused_norm_linear_bwd", ([&] {
+        x.scalar_type(), "fused_norm_linear_bwd_dx", ([&] {
             neuralops::cuda::fused_norm_linear_bwd_dx_vectorized_kernel<scalar_t><<<M, threads, shared_mem, stream>>>(
                 dx.data_ptr<scalar_t>(),
                 dout_2d.data_ptr<scalar_t>(),
@@ -299,6 +299,6 @@ std::vector<torch::Tensor> fused_norm_linear_bwd(
     );
 
     CUDA_KERNEL_LAUNCH_CHECK();
-    auto dw = torch::matmul(dout_2d.t(), x_2d);
-    return {dx.reshape(orig_shape), dw};
+    return dx.reshape(orig_shape);
 }
+
