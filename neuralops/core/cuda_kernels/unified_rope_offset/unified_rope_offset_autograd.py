@@ -27,6 +27,9 @@ def _get_module():
 
 from neuralops.core.triton_kernels.fused_rope import fused_unified_rope_offset_pytorch, fused_unified_rope_offset_triton
 
+unified_rope_offset_pytorch_ref = fused_unified_rope_offset_pytorch
+unified_rope_offset_ref = fused_unified_rope_offset_pytorch
+
 def unified_rope_offset(x: torch.Tensor, cos: torch.Tensor, sin: torch.Tensor, rotary_dim: int) -> torch.Tensor:
     def cuda_fn(*args, **kwargs):
         mod = _get_module()
