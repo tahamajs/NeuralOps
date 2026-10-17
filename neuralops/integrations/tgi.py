@@ -60,6 +60,10 @@ class TGIRequest:
         self.finish_reason: Optional[str] = None
         self.created_at: float = time.time()
         self.stream_queue: queue.Queue[Optional[Tuple[int, str, bool]]] = queue.Queue()
+ 
+ 
+# Alias for backwards compatibility
+TGIRequestSlot = TGIRequest
 
 
 class TGIRequestBatch:
@@ -463,6 +467,7 @@ class TGIServingAdapter:
 
 __all__ = [
     "TGIRequest",
+    "TGIRequestSlot",
     "TGIRequestBatch",
     "TGIStreamingIterator",
     "TGIServingAdapter",
