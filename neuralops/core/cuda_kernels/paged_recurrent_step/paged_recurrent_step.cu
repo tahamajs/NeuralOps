@@ -84,7 +84,7 @@ torch::Tensor paged_recurrent_step_fwd(
 
     AT_DISPATCH_FLOATING_TYPES_AND2(
         at::ScalarType::Half, at::ScalarType::BFloat16,
-        q.scalar_type(), paged_recurrent_step_fwd, ([&] {
+        q.scalar_type(), "paged_recurrent_step_fwd", ([&] {
             neuralops::cuda::paged_recurrent_step_kernel<scalar_t><<<grid, THREADS, 0, stream>>>(
                 page_pool.data_ptr<scalar_t>(),
                 out.data_ptr<scalar_t>(),
@@ -97,5 +97,6 @@ torch::Tensor paged_recurrent_step_fwd(
         })
     );
 
+    CUDA_KERNEL_LAUNCH_CHECK();
     return out;
 }

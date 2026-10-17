@@ -62,7 +62,7 @@ torch::Tensor samba_m3_mix_fwd(
 
     AT_DISPATCH_FLOATING_TYPES_AND2(
         at::ScalarType::Half, at::ScalarType::BFloat16,
-        mamba1.scalar_type(), samba_m3_mix_fwd, ([&] {
+        mamba1.scalar_type(), "samba_m3_mix_fwd", ([&] {
             neuralops::cuda::samba_m3_mix_fwd_kernel<scalar_t><<<blocks, THREADS, 0, stream>>>(
                 out.data_ptr<scalar_t>(),
                 m1_c.data_ptr<scalar_t>(),
@@ -75,5 +75,6 @@ torch::Tensor samba_m3_mix_fwd(
         })
     );
 
+    CUDA_KERNEL_LAUNCH_CHECK();
     return out;
 }

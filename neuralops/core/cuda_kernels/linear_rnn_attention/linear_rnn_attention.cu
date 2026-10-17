@@ -62,7 +62,7 @@ torch::Tensor linear_rnn_fwd(
 
     AT_DISPATCH_FLOATING_TYPES_AND2(
         at::ScalarType::Half, at::ScalarType::BFloat16,
-        x.scalar_type(), linear_rnn_fwd, ([&] {
+        x.scalar_type(), "linear_rnn_fwd", ([&] {
             neuralops::cuda::linear_rnn_fwd_kernel<scalar_t><<<grid, THREADS, 0, stream>>>(
                 out.data_ptr<scalar_t>(),
                 x_c.data_ptr<scalar_t>(),
@@ -73,5 +73,6 @@ torch::Tensor linear_rnn_fwd(
         })
     );
 
+    CUDA_KERNEL_LAUNCH_CHECK();
     return out;
 }
