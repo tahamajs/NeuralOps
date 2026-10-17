@@ -26,4 +26,9 @@ def differential_attention(q1: torch.Tensor, k1: torch.Tensor, q2: torch.Tensor,
         return mod.diff_attn_fwd(q1.contiguous(), k1.contiguous(), q2.contiguous(), k2.contiguous(), v.contiguous(), float(lambda_val))
     if q1.shape[-1] > 128:
         cuda_fn = None
-    return dispatch(cuda_fn, differential_attention_ref, differential_attention_ref, q1, k1=k1, q2=q2, k2=k2, v=v, lambda_val=lambda_val, kernel_name="differential_attention")
+    try:
+        from neuralops.core.triton_kernels.differential_attention import triton_differential_attention
+        triton_fn = triton_differential_attention
+    except Exception:
+        triton_fn = differential_attention_ref
+    return dispatch(cuda_fn, triton_fn, differential_attention_ref, q1, k1=k1, q2=q2, k2=k2, v=v, lambda_val=lambda_val, kernel_name="differential_attention")
