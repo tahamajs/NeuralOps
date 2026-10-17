@@ -28,8 +28,8 @@ def _get_module():
 def gdn_delta_rule_pytorch_ref(q, k, v, beta):
     from neuralops.core.triton_kernels.gdn_scan import gdn_scan_pytorch
     alpha = torch.ones_like(beta)
-    y, _ = gdn_scan_pytorch(q, k, v, beta, alpha)
-    return y
+    res = gdn_scan_pytorch(q, k, v, beta, alpha)
+    return res[0] if isinstance(res, tuple) else res
 def gdn_delta_rule_triton_ref(q, k, v, beta):
     from neuralops.core.triton_kernels.gdn_scan import gdn_scan_triton
     alpha = torch.ones_like(beta)
