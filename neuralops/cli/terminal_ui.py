@@ -42,7 +42,7 @@ SUBCOMMAND_GROUPS = [
     {
         "title": "Model Surgery, Composition & Compression",
         "commands": [
-            ("transplant", "1-line surgical attention replacement + closed-form Ridge calibration"),
+            ("surgery", "1-line surgical attention replacement, Ridge calibration, and micro-healing (alias: transplant)"),
             ("compose", "Declarative algebraic builder for custom attention via ComposableAttention"),
             ("recommend", "Hardware-aware advisor recommending optimal attention & compression recipes"),
             ("calibrate", "Closed-form layerwise Ridge/subspace output alignment for surgical models"),
@@ -52,32 +52,35 @@ SUBCOMMAND_GROUPS = [
         ],
     },
     {
-        "title": "Inference Acceleration & Long-Context Evaluation",
+        "title": "Inference Acceleration & Serving Runtime",
         "commands": [
+            ("serve", "Launch high-throughput ContinuousBatcher & PagedKVCache serving runtime"),
             ("generate", "Run lossless generation with self-speculative draft-and-verify decoding"),
             ("niah", "Execute Needle-In-A-Haystack passkey benchmark & generate 2D heatmaps"),
             ("benchmark-fused", "Benchmark fused Triton kernels (W4A16 dequant-GEMM, O(1) state step)"),
         ],
     },
     {
-        "title": "Benchmarking & Training Suite",
+        "title": "Distillation, Benchmarking & Training Suite",
         "commands": [
-            ("run", "Train, fine-tune, or benchmark any of the 131 attentions or 72 compressors"),
+            ("distill", "Execute 6-pillar multi-level attention & logit knowledge distillation"),
+            ("benchmark", "Run empirical benchmark suite with Rich telemetry across models & datasets (alias: run)"),
             ("plan", "Dry-run and compute estimated compute hours, memory, and combinations"),
-            ("results", "Inspect, summarize, and display benchmark results tables"),
+            ("results", "Inspect, summarize, and display benchmark results tables (alias: ledger)"),
             ("resume", "Resume an interrupted empirical benchmark sweep from state journal"),
         ],
     },
     {
-        "title": "System Diagnostics & Module Registry",
+        "title": "System Diagnostics & Telemetry Studio",
         "commands": [
+            ("monitor", "Launch real-time telemetry, benchmark database & Web Documentation Studio (:8080)"),
+            ("doctor", "Run comprehensive health diagnostics on GPU, Triton, and certified registry counts"),
+            ("info", "Print detailed GPU hardware telemetry and registry metrics"),
             ("inspect", "UNIX-style architectural specification sheet for any registered module"),
             ("roofline", "Hardware Roofline & Arithmetic Intensity Analyzer for compiled Triton kernels"),
             ("validate", "Automated 6-point contract diagnostic check for any module"),
             ("scaffold", "Generate production-ready boilerplate for new custom attention or compressor"),
             ("list", "List and filter 131 attention mechanisms and 72 compressors"),
-            ("doctor", "Run comprehensive health diagnostics on GPU, Triton, and packages"),
-            ("info", "Print detailed GPU hardware telemetry and registry metrics"),
             ("verify", "Fast environment sanity check (PyTorch, CUDA, MPS)"),
             ("ui", "Launch minimalist flat two-pane terminal inspector (fzf-style)"),
         ],
@@ -120,13 +123,13 @@ def print_banner() -> None:
     """Prints the styled NeuralOps CLI banner."""
     if not HAS_RICH or console is None:
         print("================================================================")
-        print("                   NeuralOps CLI (v1.3.7)                       ")
+        print("                   NeuralOps CLI (v1.4.0)                       ")
         print("     High-Performance Attention Zoo, SVD Compression & Triton   ")
         print("================================================================")
         return
 
     banner_text = Text(BANNER_ART, style="bold cyan")
-    tagline = Text("NeuralOps v1.3.7 — High-Performance Attention Zoo, SVD Compression & Fused Triton Kernels\n", style="bold white")
+    tagline = Text("NeuralOps v1.4.0 — High-Performance Attention Zoo, SVD Compression & Fused Triton Kernels\n", style="bold white")
     tagline.append("https://github.com/tahamajs/SVD_linear_Attention", style="dim underline blue")
 
     panel = Panel(

@@ -115,17 +115,23 @@ class _Multi_scale_retentionFunction(torch.autograd.Function):
                 inputs.append(nt)
         with torch.enable_grad():
             out_p = multi_scale_retention_pytorch_ref(*inputs)
-        tensor_inputs = [inp for inp, is_t in zip(inputs, ctx.tensors_mask) if is_t]
+        req_inputs = [inp for inp, is_t in zip(inputs, ctx.tensors_mask) if is_t and inp.requires_grad]
         dout_val = douts[0] if len(douts) == 1 else douts
-        grads = torch.autograd.grad(out_p, tensor_inputs, dout_val, allow_unused=True)
-        grads = list(grads)
+        if len(req_inputs) > 0:
+            grads = list(torch.autograd.grad(out_p, req_inputs, dout_val, allow_unused=True))
+        else:
+            grads = []
         res = []
-        for is_t in ctx.tensors_mask:
+        for is_t, inp in zip(ctx.tensors_mask, inputs):
             if is_t:
-                res.append(grads.pop(0))
+                if inp.requires_grad and len(grads) > 0:
+                    res.append(grads.pop(0))
+                else:
+                    res.append(None)
             else:
                 res.append(None)
         return tuple(res)
+
 
 def multi_scale_retention(q, k, v, gammas):
     if any(isinstance(t, torch.Tensor) and t.requires_grad for t in (q, k, v, gammas)):

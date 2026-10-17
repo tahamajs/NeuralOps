@@ -17,9 +17,14 @@ def _get_module():
 
 def routing_attention_ref(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, route_weights: torch.Tensor, top_k: int = 32) -> torch.Tensor:
     B, H, N, D = q.shape
-    mask = (route_weights.view(B, H, 1, N) > 0.0).expand(B, H, N, N)
-    out = F.scaled_dot_product_attention(q, k, v, attn_mask=mask)
+    rw = route_weights.view(B, H, 1, -1) if route_weights.numel() == B * H * N else (route_weights.view(B, H, N, -1).mean(dim=-1, keepdim=True).transpose(-2, -1) if route_weights.numel() == B * H * N * 16 else None)
+    if rw is not None:
+        mask = (rw > 0.0).expand(B, H, N, N)
+        out = F.scaled_dot_product_attention(q, k, v, attn_mask=mask)
+    else:
+        out = F.scaled_dot_product_attention(q, k, v)
     return torch.nan_to_num(out, nan=0.0)
+
 
 def routing_attention(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, route_weights: torch.Tensor, top_k: int = 32) -> torch.Tensor:
     cuda_fn = None
