@@ -742,6 +742,7 @@ ALIASES = {
 def main():
     parser = argparse.ArgumentParser(description="Subprocess-Isolated Master Benchmark for CUDA Modules")
     parser.add_argument("--classify-strict", action="store_true", help="Apply strict PASS/FAIL classification")
+    parser.add_argument("--output", type=str, default=None, help="Output JSON results path")
     args = parser.parse_args()
 
     print("=" * 115)
@@ -820,6 +821,15 @@ def main():
     print("=" * 115, flush=True)
 
     out_file = repo_root / "results" / "master_108_cuda_modules_benchmark.json"
+    if args.output:
+        custom_out = Path(args.output)
+        if not custom_out.is_absolute():
+            custom_out = repo_root / custom_out
+        custom_out.parent.mkdir(parents=True, exist_ok=True)
+        with open(custom_out, "w", encoding="utf-8") as f:
+            json.dump(results, f, indent=2)
+        print(f"Benchmark results also saved to: {custom_out}", flush=True)
+
     out_file.parent.mkdir(parents=True, exist_ok=True)
     with open(out_file, "w", encoding="utf-8") as f:
         json.dump(results, f, indent=2)
