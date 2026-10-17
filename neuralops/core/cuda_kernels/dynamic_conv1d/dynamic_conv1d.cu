@@ -5,9 +5,16 @@
 
 namespace neuralops { namespace cuda {
 
-// Causal dynamic depthwise 1D convolution with in-register temporal sliding window
-template <typename scalar_t>
-__global__ void __launch_bounds__(256) dynamic_conv1d_fwd_kernel(
+// Dynamic 1D Causal Convolution with Shared Memory Window Tiling:
+// Form: out[b, d, t] = bias[d] + \sum_{k=0}^{K-1} weight[d, k] * x[b, d, t - (K - 1 - k)]
+//
+// Hardware-level optimization:
+// 1. Decoupled 2D Grid: dim3 grid(ceil(L / 128), B * D) with 128 threads/block.
+// 2. Shared Memory Sliding Window: Caches the chunk of input x in SRAM to minimize global DRAM reads.
+// 3. Register-based Weight Caching: Weights weight[d, 0..K-1] are loaded into thread registers.
+// 4. Strict FP32 intermediate accumulation with optional fused bias.
+template <typename scalar_t, int BLOCK_L = 128, int MAX_K = 16>
+__global__ void __launch_bounds__(128) dynamic_conv1d_fwd_kernel(
     scalar_t* __restrict__ out,
     const scalar_t* __restrict__ x,
     const scalar_t* __restrict__ weight,
@@ -19,25 +26,57 @@ __global__ void __launch_bounds__(256) dynamic_conv1d_fwd_kernel(
     const bool has_bias
 ) {
     const int bd = blockIdx.y;
+    if (bd >= B * D) return;
+
     const int b = bd / D;
     const int d = bd % D;
-    const int t = blockIdx.x * blockDim.x + threadIdx.x;
+    const int tid = threadIdx.x;
+    const int t_base = blockIdx.x * BLOCK_L;
+    const int t = t_base + tid;
 
-    if (b >= B || d >= D || t >= L) return;
-
-    float acc = has_bias ? to_float(bias[d]) : 0.0f;
-
+    // Cache dynamic weights into registers
+    float w_reg[MAX_K];
     #pragma unroll
-    for (int k = 0; k < K; ++k) {
-        const int in_t = t - (K - 1 - k);
-        if (in_t >= 0 && in_t < L) {
-            const float x_val = to_float(x[b * D * L + d * L + in_t]);
-            const float w_val = to_float(weight[d * K + k]);
-            acc += x_val * w_val;
+    for (int k = 0; k < MAX_K; ++k) {
+        w_reg[k] = (k < K) ? to_float(weight[d * K + k]) : 0.0f;
+    }
+
+    const float bias_val = (has_bias && bias != nullptr) ? to_float(bias[d]) : 0.0f;
+
+    // Shared Memory buffer with halo of size (K - 1)
+    extern __shared__ float s_window[]; // size: BLOCK_L + K - 1
+    const int halo = K - 1;
+
+    // Collaborative load of sequence data into shared memory
+    const int x_row_offset = b * D * L + d * L;
+
+    // Load halo (preceding tokens)
+    for (int idx = tid; idx < halo; idx += blockDim.x) {
+        const int in_t = t_base - halo + idx;
+        s_window[idx] = (in_t >= 0 && in_t < L) ? to_float(x[x_row_offset + in_t]) : 0.0f;
+    }
+
+    // Load main block
+    for (int idx = tid; idx < BLOCK_L; idx += blockDim.x) {
+        const int in_t = t_base + idx;
+        s_window[halo + idx] = (in_t < L) ? to_float(x[x_row_offset + in_t]) : 0.0f;
+    }
+    __syncthreads();
+
+    if (t >= L) return;
+
+    // Compute convolution strictly out of Shared Memory
+    float acc = bias_val;
+    #pragma unroll
+    for (int k = 0; k < MAX_K; ++k) {
+        if (k < K) {
+            // Window index corresponding to: t - (K - 1 - k)
+            const int smem_idx = tid + k;
+            acc = fmaf(s_window[smem_idx], w_reg[k], acc);
         }
     }
 
-    out[b * D * L + d * L + t] = from_float<scalar_t>(acc);
+    out[x_row_offset + t] = from_float<scalar_t>(acc);
 }
 
 }} // namespace neuralops::cuda
@@ -50,6 +89,10 @@ torch::Tensor dynamic_conv1d_fwd(
     CHECK_INPUT(x);
     CHECK_INPUT(weight);
 
+    TORCH_CHECK(x.dim() == 3, "x must be 3D [B, D, L]");
+    TORCH_CHECK(weight.dim() == 2, "weight must be 2D [D, K]");
+    TORCH_CHECK(x.size(1) == weight.size(0), "Hidden dimension D mismatch");
+
     const int B = x.size(0);
     const int D = x.size(1);
     const int L = x.size(2);
@@ -61,18 +104,19 @@ torch::Tensor dynamic_conv1d_fwd(
     const bool has_bias = bias_opt.has_value() && bias_opt.value().defined();
     auto bias = has_bias ? bias_opt.value().contiguous() : torch::empty(0, x.options());
 
-    constexpr int THREADS = 256;
-    const int blocks_x = (L + THREADS - 1) / THREADS;
+    constexpr int BLOCK_L = 128;
+    const int blocks_x = (L + BLOCK_L - 1) / BLOCK_L;
     dim3 grid(blocks_x, B * D);
 
+    const size_t shared_mem_bytes = (BLOCK_L + K) * sizeof(float);
     auto stream = c10::cuda::getCurrentCUDAStream();
     auto x_c = x.contiguous();
     auto w_c = weight.contiguous();
 
     AT_DISPATCH_FLOATING_TYPES_AND2(
         at::ScalarType::Half, at::ScalarType::BFloat16,
-        x.scalar_type(), dynamic_conv1d_fwd, ([&] {
-            neuralops::cuda::dynamic_conv1d_fwd_kernel<scalar_t><<<grid, THREADS, 0, stream>>>(
+        x.scalar_type(), "dynamic_conv1d_fwd", ([&] {
+            neuralops::cuda::dynamic_conv1d_fwd_kernel<scalar_t, BLOCK_L, 16><<<grid, BLOCK_L, shared_mem_bytes, stream>>>(
                 out.data_ptr<scalar_t>(),
                 x_c.data_ptr<scalar_t>(),
                 w_c.data_ptr<scalar_t>(),
@@ -82,5 +126,6 @@ torch::Tensor dynamic_conv1d_fwd(
         })
     );
 
+    CUDA_KERNEL_LAUNCH_CHECK();
     return out;
 }
