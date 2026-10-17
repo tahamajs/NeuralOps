@@ -18,6 +18,7 @@ __global__ void __launch_bounds__(256) paged_recurrent_step_kernel(
     const int H,
     const int D,
     const int page_slot,
+    const int max_pages,
     const float decay
 ) {
     const int bh = blockIdx.y;
@@ -27,7 +28,7 @@ __global__ void __launch_bounds__(256) paged_recurrent_step_kernel(
 
     if (b >= B || h >= H || d2 >= D) return;
 
-    const int64_t phys_page = block_tables[b];
+    const int64_t phys_page = (max_pages > 1) ? block_tables[b * max_pages + page_slot] : block_tables[b];
     const int page_stride = H * D * D;
     const int head_stride = D * D;
 
@@ -69,6 +70,7 @@ torch::Tensor paged_recurrent_step_fwd(
     const int B = q.size(0);
     const int H = q.size(1);
     const int D = q.size(2);
+    const int max_pages = (block_tables.dim() > 1) ? block_tables.size(1) : 1;
 
     auto out = torch::empty_like(q);
     if (B == 0 || H == 0 || D == 0) return out;
@@ -93,7 +95,7 @@ torch::Tensor paged_recurrent_step_fwd(
                 k_c.data_ptr<scalar_t>(),
                 v_c.data_ptr<scalar_t>(),
                 bt_c.data_ptr<int64_t>(),
-                B, H, D, page_slot, decay
+                B, H, D, page_slot, max_pages, decay
             );
         })
     );
