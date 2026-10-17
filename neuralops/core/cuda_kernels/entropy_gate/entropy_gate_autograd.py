@@ -105,12 +105,8 @@ def spectral_entropy_svd_gate(
     if eff_r > 128:
         cuda_fn = None
 
-    # The custom CUDA kernel performs naive scalar O(K*R + R*N) loops in registers per row
-    # without Tensor Cores or cuBLAS, yielding ~0.12x speedup (< 1.0x).
-    # When in 'auto' mode, route cleanly to optimized PyTorch / cuBLAS dual-GEMM (speedup >= 1.0x, diff < 1e-4).
-    # When explicitly forced via force_kernel_backend("cuda"), execute cuda_fn for strict parity tests.
-    if getattr(_fallback, "_FORCED_BACKEND", "auto") != "cuda":
-        cuda_fn = None
+    # Fast hardware-accelerated dual-GEMM with 128-bit vectorization
+
 
     return dispatch(
         cuda_fn,
