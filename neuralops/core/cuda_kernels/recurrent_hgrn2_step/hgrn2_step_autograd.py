@@ -1,3 +1,4 @@
+from typing import Any
 """
 Recurrent HGRN2 Step Interface and 3-Level Fallback.
 Target: SM 8.9 (NVIDIA Ada Lovelace RTX 4070 Laptop GPU, 8GB VRAM).
@@ -54,7 +55,7 @@ def _get_triton_impl():
         return None
 
 
-def recurrent_hgrn2_step(
+def _recurrent_hgrn2_step_dispatch(
     x_t: torch.Tensor,
     g_t: torch.Tensor,
     alpha_t: torch.Tensor,
@@ -81,3 +82,41 @@ def recurrent_hgrn2_step(
         h_prev,
         kernel_name="recurrent_hgrn2_step",
     )
+
+
+class _Recurrent_hgrn2_stepFunction(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx: Any, x, g, alpha, prev_state):
+        out = _recurrent_hgrn2_step_dispatch(x, g, alpha, prev_state)
+        ctx.save_for_backward(*[t for t in (x, g, alpha, prev_state) if isinstance(t, torch.Tensor)])
+        ctx.tensors_mask = [isinstance(t, torch.Tensor) for t in (x, g, alpha, prev_state)]
+        ctx.non_tensors = [t if not isinstance(t, torch.Tensor) else None for t in (x, g, alpha, prev_state)]
+        return out
+
+    @staticmethod
+    def backward(ctx: Any, dout):
+        saved = list(ctx.saved_tensors)
+        inputs = []
+        for is_t, nt in zip(ctx.tensors_mask, ctx.non_tensors):
+            if is_t:
+                t = saved.pop(0)
+                inputs.append(t.detach().requires_grad_(t.requires_grad))
+            else:
+                inputs.append(nt)
+        with torch.enable_grad():
+            out_p = recurrent_hgrn2_step_pytorch_ref(*inputs)
+        tensor_inputs = [inp for inp, is_t in zip(inputs, ctx.tensors_mask) if is_t]
+        grads = torch.autograd.grad(out_p, tensor_inputs, dout, allow_unused=True)
+        grads = list(grads)
+        res = []
+        for is_t in ctx.tensors_mask:
+            if is_t:
+                res.append(grads.pop(0))
+            else:
+                res.append(None)
+        return tuple(res)
+
+def recurrent_hgrn2_step(x, g, alpha, prev_state):
+    if any(isinstance(t, torch.Tensor) and t.requires_grad for t in (x, g, alpha, prev_state)):
+        return _Recurrent_hgrn2_stepFunction.apply(x, g, alpha, prev_state)
+    return _recurrent_hgrn2_step_dispatch(x, g, alpha, prev_state)

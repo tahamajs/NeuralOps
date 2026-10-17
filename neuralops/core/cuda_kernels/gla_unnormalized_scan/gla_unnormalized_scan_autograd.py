@@ -1,3 +1,4 @@
+from typing import Any
 from __future__ import annotations
 from pathlib import Path
 from typing import Optional
@@ -46,7 +47,7 @@ def gla_unnormalized_scan_pytorch_ref(q: torch.Tensor, k: torch.Tensor, v: torch
 def gla_unnormalized_scan_triton_ref(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, decay: torch.Tensor) -> torch.Tensor:
     return gla_unnormalized_scan_pytorch_ref(q, k, v, decay)
 
-def gla_unnormalized_scan(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, decay: torch.Tensor) -> torch.Tensor:
+def _gla_unnormalized_scan_dispatch(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, decay: torch.Tensor) -> torch.Tensor:
     def cuda_fn(*args, **kwargs):
         mod = _get_module()
         fn = getattr(mod, "gla_unnormalized_scan_fwd")
@@ -58,3 +59,41 @@ def gla_unnormalized_scan(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, dec
         q, k, v, decay,
         kernel_name="gla_unnormalized_scan",
     )
+
+
+class _Gla_unnormalized_scanFunction(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx: Any, q, k, v, decay):
+        out = _gla_unnormalized_scan_dispatch(q, k, v, decay)
+        ctx.save_for_backward(*[t for t in (q, k, v, decay) if isinstance(t, torch.Tensor)])
+        ctx.tensors_mask = [isinstance(t, torch.Tensor) for t in (q, k, v, decay)]
+        ctx.non_tensors = [t if not isinstance(t, torch.Tensor) else None for t in (q, k, v, decay)]
+        return out
+
+    @staticmethod
+    def backward(ctx: Any, dout):
+        saved = list(ctx.saved_tensors)
+        inputs = []
+        for is_t, nt in zip(ctx.tensors_mask, ctx.non_tensors):
+            if is_t:
+                t = saved.pop(0)
+                inputs.append(t.detach().requires_grad_(t.requires_grad))
+            else:
+                inputs.append(nt)
+        with torch.enable_grad():
+            out_p = gla_unnormalized_scan_pytorch_ref(*inputs)
+        tensor_inputs = [inp for inp, is_t in zip(inputs, ctx.tensors_mask) if is_t]
+        grads = torch.autograd.grad(out_p, tensor_inputs, dout, allow_unused=True)
+        grads = list(grads)
+        res = []
+        for is_t in ctx.tensors_mask:
+            if is_t:
+                res.append(grads.pop(0))
+            else:
+                res.append(None)
+        return tuple(res)
+
+def gla_unnormalized_scan(q, k, v, decay):
+    if any(isinstance(t, torch.Tensor) and t.requires_grad for t in (q, k, v, decay)):
+        return _Gla_unnormalized_scanFunction.apply(q, k, v, decay)
+    return _gla_unnormalized_scan_dispatch(q, k, v, decay)

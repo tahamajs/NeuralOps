@@ -1,3 +1,4 @@
+from typing import Any
 from __future__ import annotations
 from pathlib import Path
 from typing import Optional
@@ -53,7 +54,7 @@ def hgrn2_spatial_scan_pytorch_ref(*args, **kwargs) -> torch.Tensor:
         out = q_mul * out
     return out
 
-def hgrn2_spatial_scan(*args, **kwargs) -> torch.Tensor:
+def _hgrn2_spatial_scan_dispatch(*args, **kwargs) -> torch.Tensor:
     def cuda_fn(*call_args, **call_kwargs):
         mod = _get_module()
         fn = getattr(mod, "hgrn2_spatial_scan_fwd")
@@ -81,3 +82,41 @@ def hgrn2_spatial_scan(*args, **kwargs) -> torch.Tensor:
         kernel_name="hgrn2_spatial_scan",
         **kwargs,
     )
+
+
+class _Hgrn2_spatial_scanFunction(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx: Any, x, g):
+        out = _hgrn2_spatial_scan_dispatch(x, g)
+        ctx.save_for_backward(*[t for t in (x, g) if isinstance(t, torch.Tensor)])
+        ctx.tensors_mask = [isinstance(t, torch.Tensor) for t in (x, g)]
+        ctx.non_tensors = [t if not isinstance(t, torch.Tensor) else None for t in (x, g)]
+        return out
+
+    @staticmethod
+    def backward(ctx: Any, dout):
+        saved = list(ctx.saved_tensors)
+        inputs = []
+        for is_t, nt in zip(ctx.tensors_mask, ctx.non_tensors):
+            if is_t:
+                t = saved.pop(0)
+                inputs.append(t.detach().requires_grad_(t.requires_grad))
+            else:
+                inputs.append(nt)
+        with torch.enable_grad():
+            out_p = hgrn2_spatial_scan_pytorch_ref(*inputs)
+        tensor_inputs = [inp for inp, is_t in zip(inputs, ctx.tensors_mask) if is_t]
+        grads = torch.autograd.grad(out_p, tensor_inputs, dout, allow_unused=True)
+        grads = list(grads)
+        res = []
+        for is_t in ctx.tensors_mask:
+            if is_t:
+                res.append(grads.pop(0))
+            else:
+                res.append(None)
+        return tuple(res)
+
+def hgrn2_spatial_scan(x, g):
+    if any(isinstance(t, torch.Tensor) and t.requires_grad for t in (x, g)):
+        return _Hgrn2_spatial_scanFunction.apply(x, g)
+    return _hgrn2_spatial_scan_dispatch(x, g)
