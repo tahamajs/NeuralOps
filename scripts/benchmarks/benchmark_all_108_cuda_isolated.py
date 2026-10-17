@@ -212,7 +212,7 @@ def generate_args(mod_name, sig, device, dtype, B=4, H=8, N=512, D=64):
         q = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
         k = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
         v = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
-        decay = torch.full((H,), 0.95, device=device, dtype=torch.float32)
+        decay = torch.full((B, H, N, D), -0.05, device=device, dtype=dtype)
         return [q, k, v, decay], {{}}
     elif mod_name == "recurrent_gla_step":
         q = torch.randn(B, H, D, device=device, dtype=dtype) * 0.1
@@ -395,16 +395,11 @@ def generate_args(mod_name, sig, device, dtype, B=4, H=8, N=512, D=64):
         v_proj = torch.randn(B, H, K_proj, D, device=device, dtype=dtype) * 0.1
         return [q, k_proj, v_proj], {{}}
     elif mod_name == "entropy_gate":
-        M_dim, N_dim, K_dim = 64, 128, 128
+        M_dim, N_dim, K_dim, R = 64, 128, 128, 32
         x_gemm = torch.randn(M_dim, K_dim, device=device, dtype=dtype) * 0.1
-        w_mat = torch.randn(K_dim, N_dim, device=device, dtype=dtype) * 0.1
-        return [x_gemm, w_mat], {{}}
-    elif mod_name == "gdn_scan":
-        q = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
-        k = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
-        v = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
-        beta = torch.full((B, H, N), 0.95, device=device, dtype=dtype)
-        return [q, k, v, beta], {{}}
+        v_r = torch.randn(K_dim, R, device=device, dtype=dtype) * 0.1
+        u_r = torch.randn(R, N_dim, device=device, dtype=dtype) * 0.1
+        return [x_gemm, v_r, u_r, 16], {{}}
     elif mod_name == "fused_dropout_add":
         x = torch.randn(B, N, D, device=device, dtype=dtype) * 0.1
         residual = torch.randn(B, N, D, device=device, dtype=dtype) * 0.1

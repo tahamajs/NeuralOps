@@ -98,6 +98,7 @@ def benchmark_gap_2_asvd_kv_cache(device: torch.device) -> Dict[str, Any]:
         num_heads=H,
         rank=rank,
         mode="exact",
+        is_decoder=True,
     ).to(device)
     attn.eval()
 
@@ -174,8 +175,8 @@ def benchmark_gap_4_dsa_block_sparse(device: torch.device) -> Dict[str, Any]:
     top_k = 4
 
     nsa = NativeSparseAttention(
-        d_model=D,
-        n_heads=4,
+        dim=D,
+        num_heads=4,
         block_size=block_size,
         top_k=top_k,
     ).to(device)
