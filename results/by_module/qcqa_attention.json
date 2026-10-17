@@ -1,36 +1,36 @@
 {
   "module_name": "qcqa_attention",
   "category": "attention",
-  "family": "subquadratic-attention",
+  "family": "kd-finetune",
   "total_runs": 7,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "c5aaefc147",
-  "latest_timestamp": "2026-10-16T09:02:16Z",
+  "latest_git_sha": "dde5933e0c",
+  "latest_timestamp": "2026-10-14T00:06:02Z",
   "latest_record": {
-    "record_id": "c1081e038c7ca170",
+    "record_id": "c277aac967aaacf5",
     "module_name": "qcqa_attention",
     "category": "attention",
-    "family": "subquadratic-attention",
+    "family": "kd-finetune",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-10-16T09:02:16Z",
-    "git_commit_sha": "c5aaefc147",
+    "timestamp_utc": "2026-10-14T00:06:02Z",
+    "git_commit_sha": "dde5933e0c",
     "generation_method": {
-      "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
-      "source_artifact": "results/triton_all_131_attentions_benchmark.json"
+      "algorithm": "Knowledge Distillation Recovery (finetune)",
+      "source_artifact": "results/results.jsonl"
     },
     "experimental_setup": {
-      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-      "dtype": "float16",
-      "batch_size": 2,
-      "seq_len": 2048
+      "backbone": "roberta-base",
+      "dataset": "sst2",
+      "rank": 64
     },
     "metrics": {
-      "latency_triton_ms": 1.621
+      "accuracy": 0.6666666666666666,
+      "peak_vram_mb": 1003.5458984375
     },
-    "notes": "131 Attention Comprehensive Latency Benchmark"
+    "notes": "Run: 00661a65-42e6-4c8f-9302-6c2141f38aed"
   },
   "active_records": [
     {
@@ -124,6 +124,56 @@
       "notes": "Status: PASS_LOW"
     },
     {
+      "record_id": "c1081e038c7ca170",
+      "module_name": "qcqa_attention",
+      "category": "attention",
+      "family": "subquadratic-attention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T09:02:16Z",
+      "git_commit_sha": "c5aaefc147",
+      "generation_method": {
+        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
+        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "dtype": "float16",
+        "batch_size": 2,
+        "seq_len": 2048
+      },
+      "metrics": {
+        "latency_triton_ms": 1.621
+      },
+      "notes": "131 Attention Comprehensive Latency Benchmark"
+    },
+    {
+      "record_id": "8da0065ebef39629",
+      "module_name": "qcqa_attention",
+      "category": "attention",
+      "family": "attention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T04:02:13+03:30",
+      "git_commit_sha": "5d553a2079",
+      "generation_method": {
+        "algorithm": "End-to-End Evaluation & Perplexity Probe",
+        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2 / WikiText-2",
+        "backbone": "DistilBERT / GPT-2"
+      },
+      "metrics": {
+        "accuracy": 91.6,
+        "ppl": 37.4,
+        "latency_ms": 1380.0
+      },
+      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
+    },
+    {
       "record_id": "7701567903de954f",
       "module_name": "qcqa_attention",
       "category": "attention",
@@ -174,56 +224,6 @@
         "peak_vram_mb": 1003.5458984375
       },
       "notes": "Run: 00661a65-42e6-4c8f-9302-6c2141f38aed"
-    },
-    {
-      "record_id": "8da0065ebef39629",
-      "module_name": "qcqa_attention",
-      "category": "attention",
-      "family": "attention",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T04:02:13+03:30",
-      "git_commit_sha": "5d553a2079",
-      "generation_method": {
-        "algorithm": "End-to-End Evaluation & Perplexity Probe",
-        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
-      },
-      "experimental_setup": {
-        "dataset": "SST-2 / WikiText-2",
-        "backbone": "DistilBERT / GPT-2"
-      },
-      "metrics": {
-        "accuracy": 91.6,
-        "ppl": 37.4,
-        "latency_ms": 1380.0
-      },
-      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
-    },
-    {
-      "record_id": "c1081e038c7ca170",
-      "module_name": "qcqa_attention",
-      "category": "attention",
-      "family": "subquadratic-attention",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-16T09:02:16Z",
-      "git_commit_sha": "c5aaefc147",
-      "generation_method": {
-        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
-        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
-      },
-      "experimental_setup": {
-        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-        "dtype": "float16",
-        "batch_size": 2,
-        "seq_len": 2048
-      },
-      "metrics": {
-        "latency_triton_ms": 1.621
-      },
-      "notes": "131 Attention Comprehensive Latency Benchmark"
     }
   ],
   "history": [
@@ -318,6 +318,56 @@
       "notes": "Status: PASS_LOW"
     },
     {
+      "record_id": "c1081e038c7ca170",
+      "module_name": "qcqa_attention",
+      "category": "attention",
+      "family": "subquadratic-attention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T09:02:16Z",
+      "git_commit_sha": "c5aaefc147",
+      "generation_method": {
+        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
+        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "dtype": "float16",
+        "batch_size": 2,
+        "seq_len": 2048
+      },
+      "metrics": {
+        "latency_triton_ms": 1.621
+      },
+      "notes": "131 Attention Comprehensive Latency Benchmark"
+    },
+    {
+      "record_id": "8da0065ebef39629",
+      "module_name": "qcqa_attention",
+      "category": "attention",
+      "family": "attention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T04:02:13+03:30",
+      "git_commit_sha": "5d553a2079",
+      "generation_method": {
+        "algorithm": "End-to-End Evaluation & Perplexity Probe",
+        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2 / WikiText-2",
+        "backbone": "DistilBERT / GPT-2"
+      },
+      "metrics": {
+        "accuracy": 91.6,
+        "ppl": 37.4,
+        "latency_ms": 1380.0
+      },
+      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
+    },
+    {
       "record_id": "7701567903de954f",
       "module_name": "qcqa_attention",
       "category": "attention",
@@ -368,56 +418,6 @@
         "peak_vram_mb": 1003.5458984375
       },
       "notes": "Run: 00661a65-42e6-4c8f-9302-6c2141f38aed"
-    },
-    {
-      "record_id": "8da0065ebef39629",
-      "module_name": "qcqa_attention",
-      "category": "attention",
-      "family": "attention",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T04:02:13+03:30",
-      "git_commit_sha": "5d553a2079",
-      "generation_method": {
-        "algorithm": "End-to-End Evaluation & Perplexity Probe",
-        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
-      },
-      "experimental_setup": {
-        "dataset": "SST-2 / WikiText-2",
-        "backbone": "DistilBERT / GPT-2"
-      },
-      "metrics": {
-        "accuracy": 91.6,
-        "ppl": 37.4,
-        "latency_ms": 1380.0
-      },
-      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
-    },
-    {
-      "record_id": "c1081e038c7ca170",
-      "module_name": "qcqa_attention",
-      "category": "attention",
-      "family": "subquadratic-attention",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-16T09:02:16Z",
-      "git_commit_sha": "c5aaefc147",
-      "generation_method": {
-        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
-        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
-      },
-      "experimental_setup": {
-        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-        "dtype": "float16",
-        "batch_size": 2,
-        "seq_len": 2048
-      },
-      "metrics": {
-        "latency_triton_ms": 1.621
-      },
-      "notes": "131 Attention Comprehensive Latency Benchmark"
     }
   ]
 }

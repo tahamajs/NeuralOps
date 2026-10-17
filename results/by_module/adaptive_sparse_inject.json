@@ -1,133 +1,43 @@
 {
   "module_name": "adaptive_sparse_inject",
   "category": "attention",
-  "family": "bert",
+  "family": "roberta",
   "total_runs": 6,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "2f366e4546",
-  "latest_timestamp": "2026-09-22T04:18:49.503256",
+  "latest_git_sha": "9a4ff4e985",
+  "latest_timestamp": "2026-09-18T09:00:17.967551",
   "latest_record": {
-    "record_id": "3bfabd9286b1ab15",
+    "record_id": "6bc8dda3f0d71819",
     "module_name": "adaptive_sparse_inject",
     "category": "attention",
-    "family": "bert",
+    "family": "roberta",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-09-22T04:18:49.503256",
-    "git_commit_sha": "2f366e4546",
+    "timestamp_utc": "2026-09-18T09:00:17.967551",
+    "git_commit_sha": "9a4ff4e985",
     "generation_method": {
       "algorithm": "Calibration Sweep Record",
-      "source_artifact": "results/05_glue_finetuning/distilbert_mnli_full_mnli_sweep/checkpoints/adaptive_sparse_inject/summary_record.json"
+      "source_artifact": "results/01_unified_runs/agnews_unified_adaptive_sparse_inject/roberta/checkpoints/adaptive_sparse_inject/summary_record.json"
     },
     "experimental_setup": {
-      "backbone": "models/distilbert_mnli_full",
-      "dataset": "mnli"
+      "backbone": "models/roberta-base",
+      "dataset": "ag_news"
     },
     "metrics": {
-      "accuracy": 36.4,
-      "f1": 0.2373,
-      "val_loss": 1.3946,
-      "peak_vram_mb": 555.44,
-      "throughput_tok_s": 41153.03,
-      "latency_ms": 63920.0,
+      "accuracy": 0.0,
+      "f1": 0.0,
+      "val_loss": 0.0,
+      "peak_vram_mb": 0.0,
+      "throughput_tok_s": 0.0,
+      "latency_ms": 1150.0,
       "compression_ratio": 1.0,
       "param_reduction_pct": 0.0
     },
-    "notes": "Status: PASS_LOW"
+    "notes": "Status: SKIP_ROBERTA_ARCHITECTURAL"
   },
   "active_records": [
-    {
-      "record_id": "6bc8dda3f0d71819",
-      "module_name": "adaptive_sparse_inject",
-      "category": "attention",
-      "family": "roberta",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-18T09:00:17.967551",
-      "git_commit_sha": "d156d2e8d5",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_adaptive_sparse_inject/roberta/checkpoints/adaptive_sparse_inject/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/roberta-base",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 0.0,
-        "f1": 0.0,
-        "val_loss": 0.0,
-        "peak_vram_mb": 0.0,
-        "throughput_tok_s": 0.0,
-        "latency_ms": 1150.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: SKIP_ROBERTA_ARCHITECTURAL"
-    },
-    {
-      "record_id": "c00eba3ded3e55af",
-      "module_name": "adaptive_sparse_inject",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-18T18:43:39.179668",
-      "git_commit_sha": "d156d2e8d5",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_adaptive_sparse_inject/distilbert/checkpoints/adaptive_sparse_inject/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 0.0,
-        "f1": 0.0,
-        "val_loss": 0.0,
-        "peak_vram_mb": 0.0,
-        "throughput_tok_s": 0.0,
-        "latency_ms": 470.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: SKIP_BERT_ARCHITECTURAL"
-    },
-    {
-      "record_id": "b33f81343237a51c",
-      "module_name": "adaptive_sparse_inject",
-      "category": "attention",
-      "family": "gpt",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-18T18:44:33.140813",
-      "git_commit_sha": "d156d2e8d5",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_adaptive_sparse_inject/gpt2/checkpoints/adaptive_sparse_inject/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/gpt2",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 0.0,
-        "f1": 0.0,
-        "val_loss": 0.0,
-        "peak_vram_mb": 0.0,
-        "throughput_tok_s": 0.0,
-        "latency_ms": 1210.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: SKIP_GPT_ARCHITECTURAL"
-    },
     {
       "record_id": "d74a1ebd218c6be6",
       "module_name": "adaptive_sparse_inject",
@@ -217,100 +127,100 @@
         "param_reduction_pct": 0.0
       },
       "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "c00eba3ded3e55af",
+      "module_name": "adaptive_sparse_inject",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T18:43:39.179668",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_adaptive_sparse_inject/distilbert/checkpoints/adaptive_sparse_inject/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 0.0,
+        "peak_vram_mb": 0.0,
+        "throughput_tok_s": 0.0,
+        "latency_ms": 470.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: SKIP_BERT_ARCHITECTURAL"
+    },
+    {
+      "record_id": "b33f81343237a51c",
+      "module_name": "adaptive_sparse_inject",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T18:44:33.140813",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_adaptive_sparse_inject/gpt2/checkpoints/adaptive_sparse_inject/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/gpt2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 0.0,
+        "peak_vram_mb": 0.0,
+        "throughput_tok_s": 0.0,
+        "latency_ms": 1210.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: SKIP_GPT_ARCHITECTURAL"
+    },
+    {
+      "record_id": "6bc8dda3f0d71819",
+      "module_name": "adaptive_sparse_inject",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T09:00:17.967551",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_adaptive_sparse_inject/roberta/checkpoints/adaptive_sparse_inject/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta-base",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 0.0,
+        "peak_vram_mb": 0.0,
+        "throughput_tok_s": 0.0,
+        "latency_ms": 1150.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: SKIP_ROBERTA_ARCHITECTURAL"
     }
   ],
   "history": [
     {
-      "record_id": "6bc8dda3f0d71819",
-      "module_name": "adaptive_sparse_inject",
-      "category": "attention",
-      "family": "roberta",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-18T09:00:17.967551",
-      "git_commit_sha": "d156d2e8d5",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_adaptive_sparse_inject/roberta/checkpoints/adaptive_sparse_inject/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/roberta-base",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 0.0,
-        "f1": 0.0,
-        "val_loss": 0.0,
-        "peak_vram_mb": 0.0,
-        "throughput_tok_s": 0.0,
-        "latency_ms": 1150.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: SKIP_ROBERTA_ARCHITECTURAL"
-    },
-    {
-      "record_id": "c00eba3ded3e55af",
-      "module_name": "adaptive_sparse_inject",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-18T18:43:39.179668",
-      "git_commit_sha": "d156d2e8d5",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_adaptive_sparse_inject/distilbert/checkpoints/adaptive_sparse_inject/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 0.0,
-        "f1": 0.0,
-        "val_loss": 0.0,
-        "peak_vram_mb": 0.0,
-        "throughput_tok_s": 0.0,
-        "latency_ms": 470.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: SKIP_BERT_ARCHITECTURAL"
-    },
-    {
-      "record_id": "b33f81343237a51c",
-      "module_name": "adaptive_sparse_inject",
-      "category": "attention",
-      "family": "gpt",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-18T18:44:33.140813",
-      "git_commit_sha": "d156d2e8d5",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_adaptive_sparse_inject/gpt2/checkpoints/adaptive_sparse_inject/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/gpt2",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 0.0,
-        "f1": 0.0,
-        "val_loss": 0.0,
-        "peak_vram_mb": 0.0,
-        "throughput_tok_s": 0.0,
-        "latency_ms": 1210.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: SKIP_GPT_ARCHITECTURAL"
-    },
-    {
       "record_id": "d74a1ebd218c6be6",
       "module_name": "adaptive_sparse_inject",
       "category": "attention",
@@ -399,6 +309,96 @@
         "param_reduction_pct": 0.0
       },
       "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "c00eba3ded3e55af",
+      "module_name": "adaptive_sparse_inject",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T18:43:39.179668",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_adaptive_sparse_inject/distilbert/checkpoints/adaptive_sparse_inject/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 0.0,
+        "peak_vram_mb": 0.0,
+        "throughput_tok_s": 0.0,
+        "latency_ms": 470.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: SKIP_BERT_ARCHITECTURAL"
+    },
+    {
+      "record_id": "b33f81343237a51c",
+      "module_name": "adaptive_sparse_inject",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T18:44:33.140813",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_adaptive_sparse_inject/gpt2/checkpoints/adaptive_sparse_inject/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/gpt2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 0.0,
+        "peak_vram_mb": 0.0,
+        "throughput_tok_s": 0.0,
+        "latency_ms": 1210.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: SKIP_GPT_ARCHITECTURAL"
+    },
+    {
+      "record_id": "6bc8dda3f0d71819",
+      "module_name": "adaptive_sparse_inject",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T09:00:17.967551",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_adaptive_sparse_inject/roberta/checkpoints/adaptive_sparse_inject/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta-base",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 0.0,
+        "peak_vram_mb": 0.0,
+        "throughput_tok_s": 0.0,
+        "latency_ms": 1150.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: SKIP_ROBERTA_ARCHITECTURAL"
     }
   ]
 }

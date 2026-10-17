@@ -1,127 +1,43 @@
 {
   "module_name": "compot_compressor",
   "category": "compressor",
-  "family": "matrix-compression",
+  "family": "roberta",
   "total_runs": 7,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "25d9fe36fa",
-  "latest_timestamp": "2026-10-16T09:08:37Z",
+  "latest_git_sha": "9a4ff4e985",
+  "latest_timestamp": "2026-09-18T22:35:14.705877",
   "latest_record": {
-    "record_id": "4aea8402f07e290e",
+    "record_id": "2d0c55bb5a2fdcb5",
     "module_name": "compot_compressor",
     "category": "compressor",
-    "family": "matrix-compression",
+    "family": "roberta",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-10-16T09:08:37Z",
-    "git_commit_sha": "25d9fe36fa",
+    "timestamp_utc": "2026-09-18T22:35:14.705877",
+    "git_commit_sha": "9a4ff4e985",
     "generation_method": {
-      "algorithm": "Low-Rank SVD / Structured Quantization Factorizer",
-      "source_artifact": "results/triton_all_72_compressors_benchmark.json"
+      "algorithm": "Calibration Sweep Record",
+      "source_artifact": "results/01_unified_runs/agnews_unified_compot_compressor/roberta/checkpoints/compot_compressor/summary_record.json"
     },
     "experimental_setup": {
-      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-      "dtype": "float16"
+      "backbone": "models/roberta-base",
+      "dataset": "ag_news"
     },
     "metrics": {
-      "compress_ms": 42.2,
-      "relative_error": 0.1851
+      "accuracy": 82.3,
+      "f1": 0.8112,
+      "val_loss": 0.5469,
+      "peak_vram_mb": 371.82,
+      "throughput_tok_s": 111887.15,
+      "latency_ms": 12480.0,
+      "compression_ratio": 1.0,
+      "param_reduction_pct": 0.0
     },
-    "notes": "72 Compressor Matrix Compression Benchmark"
+    "notes": "Status: PASS_NO_COMPRESSION"
   },
   "active_records": [
-    {
-      "record_id": "d72064ecd19b61d4",
-      "module_name": "compot_compressor",
-      "category": "compressor",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-18T22:35:06.217384",
-      "git_commit_sha": "d156d2e8d5",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_compot_compressor/distilbert/checkpoints/compot_compressor/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 55.3,
-        "f1": 0.5195,
-        "val_loss": 1.106,
-        "peak_vram_mb": 249.7,
-        "throughput_tok_s": 90916.56,
-        "latency_ms": 15670.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
-      "record_id": "2d0c55bb5a2fdcb5",
-      "module_name": "compot_compressor",
-      "category": "compressor",
-      "family": "roberta",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-18T22:35:14.705877",
-      "git_commit_sha": "d156d2e8d5",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_compot_compressor/roberta/checkpoints/compot_compressor/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/roberta-base",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 82.3,
-        "f1": 0.8112,
-        "val_loss": 0.5469,
-        "peak_vram_mb": 371.82,
-        "throughput_tok_s": 111887.15,
-        "latency_ms": 12480.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
-      "record_id": "ddc4126c5a6288d4",
-      "module_name": "compot_compressor",
-      "category": "compressor",
-      "family": "gpt",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-18T22:36:27.773690",
-      "git_commit_sha": "d156d2e8d5",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_compot_compressor/gpt2/checkpoints/compot_compressor/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/gpt2",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 80.8,
-        "f1": 0.8062,
-        "val_loss": 0.5197,
-        "peak_vram_mb": 743.2,
-        "throughput_tok_s": 50601.49,
-        "latency_ms": 12460.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
     {
       "record_id": "ea16a409405264f4",
       "module_name": "compot_compressor",
@@ -235,100 +151,100 @@
         "relative_error": 0.1851
       },
       "notes": "72 Compressor Matrix Compression Benchmark"
+    },
+    {
+      "record_id": "d72064ecd19b61d4",
+      "module_name": "compot_compressor",
+      "category": "compressor",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T22:35:06.217384",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_compot_compressor/distilbert/checkpoints/compot_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 55.3,
+        "f1": 0.5195,
+        "val_loss": 1.106,
+        "peak_vram_mb": 249.7,
+        "throughput_tok_s": 90916.56,
+        "latency_ms": 15670.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "ddc4126c5a6288d4",
+      "module_name": "compot_compressor",
+      "category": "compressor",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T22:36:27.773690",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_compot_compressor/gpt2/checkpoints/compot_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/gpt2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 80.8,
+        "f1": 0.8062,
+        "val_loss": 0.5197,
+        "peak_vram_mb": 743.2,
+        "throughput_tok_s": 50601.49,
+        "latency_ms": 12460.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "2d0c55bb5a2fdcb5",
+      "module_name": "compot_compressor",
+      "category": "compressor",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T22:35:14.705877",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_compot_compressor/roberta/checkpoints/compot_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta-base",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 82.3,
+        "f1": 0.8112,
+        "val_loss": 0.5469,
+        "peak_vram_mb": 371.82,
+        "throughput_tok_s": 111887.15,
+        "latency_ms": 12480.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
     }
   ],
   "history": [
     {
-      "record_id": "d72064ecd19b61d4",
-      "module_name": "compot_compressor",
-      "category": "compressor",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-18T22:35:06.217384",
-      "git_commit_sha": "d156d2e8d5",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_compot_compressor/distilbert/checkpoints/compot_compressor/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 55.3,
-        "f1": 0.5195,
-        "val_loss": 1.106,
-        "peak_vram_mb": 249.7,
-        "throughput_tok_s": 90916.56,
-        "latency_ms": 15670.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
-      "record_id": "2d0c55bb5a2fdcb5",
-      "module_name": "compot_compressor",
-      "category": "compressor",
-      "family": "roberta",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-18T22:35:14.705877",
-      "git_commit_sha": "d156d2e8d5",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_compot_compressor/roberta/checkpoints/compot_compressor/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/roberta-base",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 82.3,
-        "f1": 0.8112,
-        "val_loss": 0.5469,
-        "peak_vram_mb": 371.82,
-        "throughput_tok_s": 111887.15,
-        "latency_ms": 12480.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
-      "record_id": "ddc4126c5a6288d4",
-      "module_name": "compot_compressor",
-      "category": "compressor",
-      "family": "gpt",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-18T22:36:27.773690",
-      "git_commit_sha": "d156d2e8d5",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_compot_compressor/gpt2/checkpoints/compot_compressor/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/gpt2",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 80.8,
-        "f1": 0.8062,
-        "val_loss": 0.5197,
-        "peak_vram_mb": 743.2,
-        "throughput_tok_s": 50601.49,
-        "latency_ms": 12460.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
       "record_id": "ea16a409405264f4",
       "module_name": "compot_compressor",
       "category": "compressor",
@@ -441,6 +357,96 @@
         "relative_error": 0.1851
       },
       "notes": "72 Compressor Matrix Compression Benchmark"
+    },
+    {
+      "record_id": "d72064ecd19b61d4",
+      "module_name": "compot_compressor",
+      "category": "compressor",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T22:35:06.217384",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_compot_compressor/distilbert/checkpoints/compot_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 55.3,
+        "f1": 0.5195,
+        "val_loss": 1.106,
+        "peak_vram_mb": 249.7,
+        "throughput_tok_s": 90916.56,
+        "latency_ms": 15670.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "ddc4126c5a6288d4",
+      "module_name": "compot_compressor",
+      "category": "compressor",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T22:36:27.773690",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_compot_compressor/gpt2/checkpoints/compot_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/gpt2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 80.8,
+        "f1": 0.8062,
+        "val_loss": 0.5197,
+        "peak_vram_mb": 743.2,
+        "throughput_tok_s": 50601.49,
+        "latency_ms": 12460.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "2d0c55bb5a2fdcb5",
+      "module_name": "compot_compressor",
+      "category": "compressor",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T22:35:14.705877",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_compot_compressor/roberta/checkpoints/compot_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta-base",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 82.3,
+        "f1": 0.8112,
+        "val_loss": 0.5469,
+        "peak_vram_mb": 371.82,
+        "throughput_tok_s": 111887.15,
+        "latency_ms": 12480.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
     }
   ]
 }

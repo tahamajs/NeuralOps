@@ -1,39 +1,41 @@
 {
   "module_name": "mla",
   "category": "attention",
-  "family": "O(N^2) Low-Rank KV",
+  "family": "bert",
   "total_runs": 11,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "b3e2b3ad08",
-  "latest_timestamp": "2026-10-15T00:07:14+03:30",
+  "latest_git_sha": "9a4ff4e985",
+  "latest_timestamp": "2026-09-16T03:12:50.714992",
   "latest_record": {
-    "record_id": "be195f3e41e2f693",
+    "record_id": "ffb68fae01773728",
     "module_name": "mla",
     "category": "attention",
-    "family": "O(N^2) Low-Rank KV",
+    "family": "bert",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-10-15T00:07:14+03:30",
-    "git_commit_sha": "b3e2b3ad08",
+    "timestamp_utc": "2026-09-16T03:12:50.714992",
+    "git_commit_sha": "9a4ff4e985",
     "generation_method": {
-      "algorithm": "Master Benchmark Suite",
-      "source_artifact": "results/master_benchmark_summary.csv"
+      "algorithm": "Calibration Sweep Record",
+      "source_artifact": "results/01_unified_runs/mnli_unified_mla/distilbert/checkpoints/mla/summary_record.json"
     },
     "experimental_setup": {
-      "dataset": "c4",
-      "complexity": "O(N^2) Low-Rank KV"
+      "backbone": "models/distilbert_sst2",
+      "dataset": "mnli"
     },
     "metrics": {
-      "ppl": 11.3,
-      "val_loss": 2.4248,
-      "throughput_tok_s": 341333.0,
-      "peak_vram_mb": 50.8,
-      "speedup_x": 8.53,
-      "latency_ms": 1.5
+      "accuracy": 34.7,
+      "f1": 0.2494,
+      "val_loss": 1.1073,
+      "peak_vram_mb": 322.06,
+      "throughput_tok_s": 76236.51,
+      "latency_ms": 4630.0,
+      "compression_ratio": 1.0968,
+      "param_reduction_pct": 8.82
     },
-    "notes": "Status: SUCCESS"
+    "notes": "Status: PASS_LOW"
   },
   "active_records": [
     {
@@ -93,66 +95,6 @@
         "latency_ms": 21070.0,
         "compression_ratio": 1.1137,
         "param_reduction_pct": 10.21
-      },
-      "notes": "Status: PASS_LOW"
-    },
-    {
-      "record_id": "ffb68fae01773728",
-      "module_name": "mla",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-16T03:12:50.714992",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/mnli_unified_mla/distilbert/checkpoints/mla/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 34.7,
-        "f1": 0.2494,
-        "val_loss": 1.1073,
-        "peak_vram_mb": 322.06,
-        "throughput_tok_s": 76236.51,
-        "latency_ms": 4630.0,
-        "compression_ratio": 1.0968,
-        "param_reduction_pct": 8.82
-      },
-      "notes": "Status: PASS_LOW"
-    },
-    {
-      "record_id": "ac7f12a3a44bf7c0",
-      "module_name": "mla",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-16T08:14:32.432325",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_mla/distilbert/checkpoints/mla/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 31.6,
-        "f1": 0.2256,
-        "val_loss": 1.3648,
-        "peak_vram_mb": 501.03,
-        "throughput_tok_s": 168719.13,
-        "latency_ms": 9220.0,
-        "compression_ratio": 1.0968,
-        "param_reduction_pct": 8.82
       },
       "notes": "Status: PASS_LOW"
     },
@@ -277,32 +219,6 @@
       "notes": "Status: FAIL_BELOW_CHANCE"
     },
     {
-      "record_id": "fbf981936fb95181",
-      "module_name": "mla",
-      "category": "attention",
-      "family": "general",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T00:07:14+03:30",
-      "git_commit_sha": "b3e2b3ad08",
-      "generation_method": {
-        "algorithm": "Master Aggregated Evaluation Suite",
-        "source_artifact": "results/master_aggregated_results.csv"
-      },
-      "experimental_setup": {
-        "dataset": "SST-2",
-        "backbone": "DistilBERT"
-      },
-      "metrics": {
-        "accuracy": 50.92,
-        "roberta_acc": 50.92,
-        "gpt2_acc": 57.22,
-        "latency_ms": 97.3
-      },
-      "notes": "Master Aggregated Results"
-    },
-    {
       "record_id": "4bb3c40b938cc5bc",
       "module_name": "mla",
       "category": "attention",
@@ -357,6 +273,92 @@
         "latency_ms": 1.5
       },
       "notes": "Status: SUCCESS"
+    },
+    {
+      "record_id": "fbf981936fb95181",
+      "module_name": "mla",
+      "category": "attention",
+      "family": "general",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Master Aggregated Evaluation Suite",
+        "source_artifact": "results/master_aggregated_results.csv"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2",
+        "backbone": "DistilBERT"
+      },
+      "metrics": {
+        "accuracy": 50.92,
+        "roberta_acc": 50.92,
+        "gpt2_acc": 57.22,
+        "latency_ms": 97.3
+      },
+      "notes": "Master Aggregated Results"
+    },
+    {
+      "record_id": "ac7f12a3a44bf7c0",
+      "module_name": "mla",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T08:14:32.432325",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_mla/distilbert/checkpoints/mla/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 31.6,
+        "f1": 0.2256,
+        "val_loss": 1.3648,
+        "peak_vram_mb": 501.03,
+        "throughput_tok_s": 168719.13,
+        "latency_ms": 9220.0,
+        "compression_ratio": 1.0968,
+        "param_reduction_pct": 8.82
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "ffb68fae01773728",
+      "module_name": "mla",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T03:12:50.714992",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/mnli_unified_mla/distilbert/checkpoints/mla/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 34.7,
+        "f1": 0.2494,
+        "val_loss": 1.1073,
+        "peak_vram_mb": 322.06,
+        "throughput_tok_s": 76236.51,
+        "latency_ms": 4630.0,
+        "compression_ratio": 1.0968,
+        "param_reduction_pct": 8.82
+      },
+      "notes": "Status: PASS_LOW"
     }
   ],
   "history": [
@@ -421,66 +423,6 @@
       "notes": "Status: PASS_LOW"
     },
     {
-      "record_id": "ffb68fae01773728",
-      "module_name": "mla",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-16T03:12:50.714992",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/mnli_unified_mla/distilbert/checkpoints/mla/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 34.7,
-        "f1": 0.2494,
-        "val_loss": 1.1073,
-        "peak_vram_mb": 322.06,
-        "throughput_tok_s": 76236.51,
-        "latency_ms": 4630.0,
-        "compression_ratio": 1.0968,
-        "param_reduction_pct": 8.82
-      },
-      "notes": "Status: PASS_LOW"
-    },
-    {
-      "record_id": "ac7f12a3a44bf7c0",
-      "module_name": "mla",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-16T08:14:32.432325",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_mla/distilbert/checkpoints/mla/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 31.6,
-        "f1": 0.2256,
-        "val_loss": 1.3648,
-        "peak_vram_mb": 501.03,
-        "throughput_tok_s": 168719.13,
-        "latency_ms": 9220.0,
-        "compression_ratio": 1.0968,
-        "param_reduction_pct": 8.82
-      },
-      "notes": "Status: PASS_LOW"
-    },
-    {
       "record_id": "76de51356aed15c9",
       "module_name": "mla",
       "category": "attention",
@@ -601,32 +543,6 @@
       "notes": "Status: FAIL_BELOW_CHANCE"
     },
     {
-      "record_id": "fbf981936fb95181",
-      "module_name": "mla",
-      "category": "attention",
-      "family": "general",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T00:07:14+03:30",
-      "git_commit_sha": "b3e2b3ad08",
-      "generation_method": {
-        "algorithm": "Master Aggregated Evaluation Suite",
-        "source_artifact": "results/master_aggregated_results.csv"
-      },
-      "experimental_setup": {
-        "dataset": "SST-2",
-        "backbone": "DistilBERT"
-      },
-      "metrics": {
-        "accuracy": 50.92,
-        "roberta_acc": 50.92,
-        "gpt2_acc": 57.22,
-        "latency_ms": 97.3
-      },
-      "notes": "Master Aggregated Results"
-    },
-    {
       "record_id": "4bb3c40b938cc5bc",
       "module_name": "mla",
       "category": "attention",
@@ -681,6 +597,92 @@
         "latency_ms": 1.5
       },
       "notes": "Status: SUCCESS"
+    },
+    {
+      "record_id": "fbf981936fb95181",
+      "module_name": "mla",
+      "category": "attention",
+      "family": "general",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Master Aggregated Evaluation Suite",
+        "source_artifact": "results/master_aggregated_results.csv"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2",
+        "backbone": "DistilBERT"
+      },
+      "metrics": {
+        "accuracy": 50.92,
+        "roberta_acc": 50.92,
+        "gpt2_acc": 57.22,
+        "latency_ms": 97.3
+      },
+      "notes": "Master Aggregated Results"
+    },
+    {
+      "record_id": "ac7f12a3a44bf7c0",
+      "module_name": "mla",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T08:14:32.432325",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_mla/distilbert/checkpoints/mla/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 31.6,
+        "f1": 0.2256,
+        "val_loss": 1.3648,
+        "peak_vram_mb": 501.03,
+        "throughput_tok_s": 168719.13,
+        "latency_ms": 9220.0,
+        "compression_ratio": 1.0968,
+        "param_reduction_pct": 8.82
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "ffb68fae01773728",
+      "module_name": "mla",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T03:12:50.714992",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/mnli_unified_mla/distilbert/checkpoints/mla/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 34.7,
+        "f1": 0.2494,
+        "val_loss": 1.1073,
+        "peak_vram_mb": 322.06,
+        "throughput_tok_s": 76236.51,
+        "latency_ms": 4630.0,
+        "compression_ratio": 1.0968,
+        "param_reduction_pct": 8.82
+      },
+      "notes": "Status: PASS_LOW"
     }
   ]
 }

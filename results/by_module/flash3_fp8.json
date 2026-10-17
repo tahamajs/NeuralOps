@@ -1,48 +1,41 @@
 {
   "module_name": "flash3_fp8",
   "category": "attention",
-  "family": "roberta",
+  "family": "bert",
   "total_runs": 9,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "2f366e4546",
-  "latest_timestamp": "2026-09-24T18:26:43.900400",
+  "latest_git_sha": "9a4ff4e985",
+  "latest_timestamp": "2026-09-16T03:26:50.574566",
   "latest_record": {
-    "record_id": "8b655cfa26843eff",
+    "record_id": "25b044479843ecbc",
     "module_name": "flash3_fp8",
     "category": "attention",
-    "family": "roberta",
+    "family": "bert",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-09-24T18:26:43.900400",
-    "git_commit_sha": "2f366e4546",
+    "timestamp_utc": "2026-09-16T03:26:50.574566",
+    "git_commit_sha": "9a4ff4e985",
     "generation_method": {
       "algorithm": "Calibration Sweep Record",
-      "source_artifact": "results/01_unified_runs/unified_runs/unified_flash3_fp8/roberta/checkpoints/flash3_fp8/summary_record.json"
+      "source_artifact": "results/01_unified_runs/mnli_unified_flash3_fp8/distilbert/checkpoints/flash3_fp8/summary_record.json"
     },
     "experimental_setup": {
-      "backbone": "models\\roberta_sst2",
-      "dataset": "sst2"
+      "backbone": "models/distilbert_sst2",
+      "dataset": "mnli"
     },
     "metrics": {
-      "accuracy": 93.35,
-      "f1": 0.9351,
-      "val_loss": 0.1989,
-      "peak_vram_mb": 407.67,
-      "throughput_tok_s": 12498.85,
-      "latency_ms": 23240.0,
+      "accuracy": 34.5,
+      "f1": 0.1869,
+      "val_loss": 1.1001,
+      "peak_vram_mb": 333.55,
+      "throughput_tok_s": 67167.44,
+      "latency_ms": 4390.0,
       "compression_ratio": 1.0,
       "param_reduction_pct": 0.0
     },
-    "notes": "Status: MODERATE_EXPANSION",
-    "fp8_quantization": {
-      "enabled": true,
-      "format": "E4M3 / E5M2 hybrid",
-      "scale_delayed": true,
-      "gemm_backend": "Triton FP8 / CUTLASS",
-      "numerical_stability_gate": "PASS"
-    }
+    "notes": "Status: PASS_NO_COMPRESSION"
   },
   "active_records": [
     {
@@ -73,341 +66,6 @@
         "compression_ratio": 1.0,
         "param_reduction_pct": 0.0
       },
-      "notes": "Status: PASS_NO_COMPRESSION",
-      "fp8_quantization": {
-        "enabled": true,
-        "format": "E4M3 / E5M2 hybrid",
-        "scale_delayed": true,
-        "gemm_backend": "Triton FP8 / CUTLASS",
-        "numerical_stability_gate": "PASS"
-      }
-    },
-    {
-      "record_id": "d06911c5bce5c053",
-      "module_name": "flash3_fp8",
-      "category": "attention",
-      "family": "gpt",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-15T14:59:14.881809",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/07_misc_tests/archive_unified/unified_flash3_fp8/gpt2/checkpoints/flash3_fp8/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models\\gpt2",
-        "dataset": "sst2"
-      },
-      "metrics": {
-        "accuracy": 79.24,
-        "f1": 0.7973,
-        "val_loss": 0.484,
-        "peak_vram_mb": 567.91,
-        "throughput_tok_s": 14975.55,
-        "latency_ms": 19410.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION",
-      "fp8_quantization": {
-        "enabled": true,
-        "format": "E4M3 / E5M2 hybrid",
-        "scale_delayed": true,
-        "gemm_backend": "Triton FP8 / CUTLASS",
-        "numerical_stability_gate": "PASS"
-      }
-    },
-    {
-      "record_id": "25b044479843ecbc",
-      "module_name": "flash3_fp8",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-16T03:26:50.574566",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/mnli_unified_flash3_fp8/distilbert/checkpoints/flash3_fp8/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 34.5,
-        "f1": 0.1869,
-        "val_loss": 1.1001,
-        "peak_vram_mb": 333.55,
-        "throughput_tok_s": 67167.44,
-        "latency_ms": 4390.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION",
-      "fp8_quantization": {
-        "enabled": true,
-        "format": "E4M3 / E5M2 hybrid",
-        "scale_delayed": true,
-        "gemm_backend": "Triton FP8 / CUTLASS",
-        "numerical_stability_gate": "PASS"
-      }
-    },
-    {
-      "record_id": "ada2bdfa19c7d7ec",
-      "module_name": "flash3_fp8",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-17T01:09:10.410435",
-      "git_commit_sha": "d156d2e8d5",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_flash3_fp8/distilbert/checkpoints/flash3_fp8/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 63.4,
-        "f1": 0.6298,
-        "val_loss": 0.9746,
-        "peak_vram_mb": 462.64,
-        "throughput_tok_s": 194643.53,
-        "latency_ms": 4670.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION",
-      "fp8_quantization": {
-        "enabled": true,
-        "format": "E4M3 / E5M2 hybrid",
-        "scale_delayed": true,
-        "gemm_backend": "Triton FP8 / CUTLASS",
-        "numerical_stability_gate": "PASS"
-      }
-    },
-    {
-      "record_id": "ac7a19ab5286b19d",
-      "module_name": "flash3_fp8",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-19T01:48:25.387083",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/flash3_fp8/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models\\distilbert_sst2",
-        "dataset": "sst2"
-      },
-      "metrics": {
-        "accuracy": 0.0,
-        "f1": 0.9091,
-        "val_loss": 0.2752,
-        "peak_vram_mb": 326.45,
-        "throughput_tok_s": 58161.58,
-        "latency_ms": 7820.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_LOW",
-      "fp8_quantization": {
-        "enabled": true,
-        "format": "E4M3 / E5M2 hybrid",
-        "scale_delayed": true,
-        "gemm_backend": "Triton FP8 / CUTLASS",
-        "numerical_stability_gate": "PASS"
-      }
-    },
-    {
-      "record_id": "2156bc7dc3c26958",
-      "module_name": "flash3_fp8",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-19T06:02:18.456976",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/flash3_fp8/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "distilbert-base-uncased",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 34.2,
-        "f1": 0.1736,
-        "val_loss": 1.1056,
-        "peak_vram_mb": 306.07,
-        "throughput_tok_s": 30181.76,
-        "latency_ms": 10190.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_LOW",
-      "fp8_quantization": {
-        "enabled": true,
-        "format": "E4M3 / E5M2 hybrid",
-        "scale_delayed": true,
-        "gemm_backend": "Triton FP8 / CUTLASS",
-        "numerical_stability_gate": "PASS"
-      }
-    },
-    {
-      "record_id": "3f7d5e74c4812bf8",
-      "module_name": "flash3_fp8",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-19T19:51:50.260546",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_agnews_full/checkpoints/flash3_fp8/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models\\distilbert_agnews_full",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 94.2,
-        "f1": 0.938,
-        "val_loss": 0.1876,
-        "peak_vram_mb": 329.2,
-        "throughput_tok_s": 52383.19,
-        "latency_ms": 13160.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: REJECTED_EXPANSION",
-      "fp8_quantization": {
-        "enabled": true,
-        "format": "E4M3 / E5M2 hybrid",
-        "scale_delayed": true,
-        "gemm_backend": "Triton FP8 / CUTLASS",
-        "numerical_stability_gate": "PASS"
-      }
-    },
-    {
-      "record_id": "23f569e61a008ad4",
-      "module_name": "flash3_fp8",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-19T22:02:18.061089",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full_lora2/checkpoints/flash3_fp8/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models\\distilbert_mnli_full",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 58.7,
-        "f1": 0.5827,
-        "val_loss": 0.9014,
-        "peak_vram_mb": 307.27,
-        "throughput_tok_s": 27096.58,
-        "latency_ms": 16620.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: REJECTED_EXPANSION",
-      "fp8_quantization": {
-        "enabled": true,
-        "format": "E4M3 / E5M2 hybrid",
-        "scale_delayed": true,
-        "gemm_backend": "Triton FP8 / CUTLASS",
-        "numerical_stability_gate": "PASS"
-      }
-    },
-    {
-      "record_id": "8b655cfa26843eff",
-      "module_name": "flash3_fp8",
-      "category": "attention",
-      "family": "roberta",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-24T18:26:43.900400",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/unified_runs/unified_flash3_fp8/roberta/checkpoints/flash3_fp8/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models\\roberta_sst2",
-        "dataset": "sst2"
-      },
-      "metrics": {
-        "accuracy": 93.35,
-        "f1": 0.9351,
-        "val_loss": 0.1989,
-        "peak_vram_mb": 407.67,
-        "throughput_tok_s": 12498.85,
-        "latency_ms": 23240.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: MODERATE_EXPANSION",
-      "fp8_quantization": {
-        "enabled": true,
-        "format": "E4M3 / E5M2 hybrid",
-        "scale_delayed": true,
-        "gemm_backend": "Triton FP8 / CUTLASS",
-        "numerical_stability_gate": "PASS"
-      }
-    }
-  ],
-  "history": [
-    {
-      "record_id": "9262eb0d5443af5c",
-      "module_name": "flash3_fp8",
-      "category": "attention",
-      "family": "roberta",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-15T14:58:24.915501",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/07_misc_tests/archive_unified/unified_flash3_fp8/roberta/checkpoints/flash3_fp8/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models\\roberta-base",
-        "dataset": "sst2"
-      },
-      "metrics": {
-        "accuracy": 62.61,
-        "f1": 0.6502,
-        "val_loss": 0.7882,
-        "peak_vram_mb": 648.38,
-        "throughput_tok_s": 15659.71,
-        "latency_ms": 18720.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
       "notes": "Status: PASS_NO_COMPRESSION"
     },
     {
@@ -435,66 +93,6 @@
         "peak_vram_mb": 567.91,
         "throughput_tok_s": 14975.55,
         "latency_ms": 19410.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
-      "record_id": "25b044479843ecbc",
-      "module_name": "flash3_fp8",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-16T03:26:50.574566",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/mnli_unified_flash3_fp8/distilbert/checkpoints/flash3_fp8/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 34.5,
-        "f1": 0.1869,
-        "val_loss": 1.1001,
-        "peak_vram_mb": 333.55,
-        "throughput_tok_s": 67167.44,
-        "latency_ms": 4390.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
-      "record_id": "ada2bdfa19c7d7ec",
-      "module_name": "flash3_fp8",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-17T01:09:10.410435",
-      "git_commit_sha": "d156d2e8d5",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_flash3_fp8/distilbert/checkpoints/flash3_fp8/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 63.4,
-        "f1": 0.6298,
-        "val_loss": 0.9746,
-        "peak_vram_mb": 462.64,
-        "throughput_tok_s": 194643.53,
-        "latency_ms": 4670.0,
         "compression_ratio": 1.0,
         "param_reduction_pct": 0.0
       },
@@ -649,13 +247,338 @@
         "param_reduction_pct": 0.0
       },
       "notes": "Status: MODERATE_EXPANSION"
+    },
+    {
+      "record_id": "ada2bdfa19c7d7ec",
+      "module_name": "flash3_fp8",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-17T01:09:10.410435",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_flash3_fp8/distilbert/checkpoints/flash3_fp8/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 63.4,
+        "f1": 0.6298,
+        "val_loss": 0.9746,
+        "peak_vram_mb": 462.64,
+        "throughput_tok_s": 194643.53,
+        "latency_ms": 4670.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "25b044479843ecbc",
+      "module_name": "flash3_fp8",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T03:26:50.574566",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/mnli_unified_flash3_fp8/distilbert/checkpoints/flash3_fp8/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 34.5,
+        "f1": 0.1869,
+        "val_loss": 1.1001,
+        "peak_vram_mb": 333.55,
+        "throughput_tok_s": 67167.44,
+        "latency_ms": 4390.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
     }
   ],
-  "fp8_quantization": {
-    "enabled": true,
-    "format": "E4M3 / E5M2 hybrid",
-    "scale_delayed": true,
-    "gemm_backend": "Triton FP8 / CUTLASS",
-    "numerical_stability_gate": "PASS"
-  }
+  "history": [
+    {
+      "record_id": "9262eb0d5443af5c",
+      "module_name": "flash3_fp8",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-15T14:58:24.915501",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_flash3_fp8/roberta/checkpoints/flash3_fp8/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta-base",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 62.61,
+        "f1": 0.6502,
+        "val_loss": 0.7882,
+        "peak_vram_mb": 648.38,
+        "throughput_tok_s": 15659.71,
+        "latency_ms": 18720.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "d06911c5bce5c053",
+      "module_name": "flash3_fp8",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-15T14:59:14.881809",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_flash3_fp8/gpt2/checkpoints/flash3_fp8/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\gpt2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 79.24,
+        "f1": 0.7973,
+        "val_loss": 0.484,
+        "peak_vram_mb": 567.91,
+        "throughput_tok_s": 14975.55,
+        "latency_ms": 19410.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "ac7a19ab5286b19d",
+      "module_name": "flash3_fp8",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T01:48:25.387083",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/flash3_fp8/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.9091,
+        "val_loss": 0.2752,
+        "peak_vram_mb": 326.45,
+        "throughput_tok_s": 58161.58,
+        "latency_ms": 7820.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "2156bc7dc3c26958",
+      "module_name": "flash3_fp8",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T06:02:18.456976",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/flash3_fp8/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 34.2,
+        "f1": 0.1736,
+        "val_loss": 1.1056,
+        "peak_vram_mb": 306.07,
+        "throughput_tok_s": 30181.76,
+        "latency_ms": 10190.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "3f7d5e74c4812bf8",
+      "module_name": "flash3_fp8",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T19:51:50.260546",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_agnews_full/checkpoints/flash3_fp8/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_agnews_full",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 94.2,
+        "f1": 0.938,
+        "val_loss": 0.1876,
+        "peak_vram_mb": 329.2,
+        "throughput_tok_s": 52383.19,
+        "latency_ms": 13160.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: REJECTED_EXPANSION"
+    },
+    {
+      "record_id": "23f569e61a008ad4",
+      "module_name": "flash3_fp8",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T22:02:18.061089",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full_lora2/checkpoints/flash3_fp8/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 58.7,
+        "f1": 0.5827,
+        "val_loss": 0.9014,
+        "peak_vram_mb": 307.27,
+        "throughput_tok_s": 27096.58,
+        "latency_ms": 16620.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: REJECTED_EXPANSION"
+    },
+    {
+      "record_id": "8b655cfa26843eff",
+      "module_name": "flash3_fp8",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-24T18:26:43.900400",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/unified_runs/unified_flash3_fp8/roberta/checkpoints/flash3_fp8/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 93.35,
+        "f1": 0.9351,
+        "val_loss": 0.1989,
+        "peak_vram_mb": 407.67,
+        "throughput_tok_s": 12498.85,
+        "latency_ms": 23240.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    },
+    {
+      "record_id": "ada2bdfa19c7d7ec",
+      "module_name": "flash3_fp8",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-17T01:09:10.410435",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_flash3_fp8/distilbert/checkpoints/flash3_fp8/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 63.4,
+        "f1": 0.6298,
+        "val_loss": 0.9746,
+        "peak_vram_mb": 462.64,
+        "throughput_tok_s": 194643.53,
+        "latency_ms": 4670.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "25b044479843ecbc",
+      "module_name": "flash3_fp8",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T03:26:50.574566",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/mnli_unified_flash3_fp8/distilbert/checkpoints/flash3_fp8/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 34.5,
+        "f1": 0.1869,
+        "val_loss": 1.1001,
+        "peak_vram_mb": 333.55,
+        "throughput_tok_s": 67167.44,
+        "latency_ms": 4390.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    }
+  ]
 }

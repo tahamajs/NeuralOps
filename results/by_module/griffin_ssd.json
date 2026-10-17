@@ -1,36 +1,41 @@
 {
   "module_name": "griffin_ssd",
   "category": "attention",
-  "family": "subquadratic-attention",
+  "family": "bert",
   "total_runs": 16,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "c5aaefc147",
-  "latest_timestamp": "2026-10-16T09:02:16Z",
+  "latest_git_sha": "9a4ff4e985",
+  "latest_timestamp": "2026-09-16T03:42:04.164457",
   "latest_record": {
-    "record_id": "556bea37e3683f4c",
+    "record_id": "4ac1ee6b0dbf70fc",
     "module_name": "griffin_ssd",
     "category": "attention",
-    "family": "subquadratic-attention",
+    "family": "bert",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-10-16T09:02:16Z",
-    "git_commit_sha": "c5aaefc147",
+    "timestamp_utc": "2026-09-16T03:42:04.164457",
+    "git_commit_sha": "9a4ff4e985",
     "generation_method": {
-      "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
-      "source_artifact": "results/triton_all_131_attentions_benchmark.json"
+      "algorithm": "Calibration Sweep Record",
+      "source_artifact": "results/01_unified_runs/mnli_unified_griffin_ssd/distilbert/checkpoints/griffin_ssd/summary_record.json"
     },
     "experimental_setup": {
-      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-      "dtype": "float16",
-      "batch_size": 2,
-      "seq_len": 2048
+      "backbone": "models/distilbert_sst2",
+      "dataset": "mnli"
     },
     "metrics": {
-      "latency_triton_ms": 1.953
+      "accuracy": 37.8,
+      "f1": 0.2624,
+      "val_loss": 1.0977,
+      "peak_vram_mb": 395.0,
+      "throughput_tok_s": 41148.33,
+      "latency_ms": 6760.0,
+      "compression_ratio": 1.0,
+      "param_reduction_pct": 0.0
     },
-    "notes": "131 Attention Comprehensive Latency Benchmark"
+    "notes": "Status: PASS_NO_COMPRESSION"
   },
   "active_records": [
     {
@@ -118,66 +123,6 @@
         "peak_vram_mb": 597.32,
         "throughput_tok_s": 9384.02,
         "latency_ms": 31220.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
-      "record_id": "4ac1ee6b0dbf70fc",
-      "module_name": "griffin_ssd",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-16T03:42:04.164457",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/mnli_unified_griffin_ssd/distilbert/checkpoints/griffin_ssd/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 37.8,
-        "f1": 0.2624,
-        "val_loss": 1.0977,
-        "peak_vram_mb": 395.0,
-        "throughput_tok_s": 41148.33,
-        "latency_ms": 6760.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
-      "record_id": "0aa8dac4513e7602",
-      "module_name": "griffin_ssd",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-17T10:59:10.419103",
-      "git_commit_sha": "d156d2e8d5",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_griffin_ssd/distilbert/checkpoints/griffin_ssd/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 69.0,
-        "f1": 0.6894,
-        "val_loss": 0.8714,
-        "peak_vram_mb": 659.35,
-        "throughput_tok_s": 25397.9,
-        "latency_ms": 40750.0,
         "compression_ratio": 1.0,
         "param_reduction_pct": 0.0
       },
@@ -424,30 +369,29 @@
       "notes": "Status: MODERATE_EXPANSION"
     },
     {
-      "record_id": "27f9913c397f1791",
+      "record_id": "556bea37e3683f4c",
       "module_name": "griffin_ssd",
       "category": "attention",
-      "family": "general",
+      "family": "subquadratic-attention",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-15T00:07:14+03:30",
-      "git_commit_sha": "b3e2b3ad08",
+      "timestamp_utc": "2026-10-16T09:02:16Z",
+      "git_commit_sha": "c5aaefc147",
       "generation_method": {
-        "algorithm": "Master Aggregated Evaluation Suite",
-        "source_artifact": "results/master_aggregated_results.csv"
+        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
+        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
       },
       "experimental_setup": {
-        "dataset": "SST-2",
-        "backbone": "DistilBERT"
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "dtype": "float16",
+        "batch_size": 2,
+        "seq_len": 2048
       },
       "metrics": {
-        "accuracy": 88.19,
-        "roberta_acc": 54.7,
-        "gpt2_acc": 54.47,
-        "latency_ms": 174.1
+        "latency_triton_ms": 1.953
       },
-      "notes": "Master Aggregated Results"
+      "notes": "131 Attention Comprehensive Latency Benchmark"
     },
     {
       "record_id": "5239c7c60191a1fc",
@@ -475,29 +419,90 @@
       "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
     },
     {
-      "record_id": "556bea37e3683f4c",
+      "record_id": "27f9913c397f1791",
       "module_name": "griffin_ssd",
       "category": "attention",
-      "family": "subquadratic-attention",
+      "family": "general",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T09:02:16Z",
-      "git_commit_sha": "c5aaefc147",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
       "generation_method": {
-        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
-        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
+        "algorithm": "Master Aggregated Evaluation Suite",
+        "source_artifact": "results/master_aggregated_results.csv"
       },
       "experimental_setup": {
-        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-        "dtype": "float16",
-        "batch_size": 2,
-        "seq_len": 2048
+        "dataset": "SST-2",
+        "backbone": "DistilBERT"
       },
       "metrics": {
-        "latency_triton_ms": 1.953
+        "accuracy": 88.19,
+        "roberta_acc": 54.7,
+        "gpt2_acc": 54.47,
+        "latency_ms": 174.1
       },
-      "notes": "131 Attention Comprehensive Latency Benchmark"
+      "notes": "Master Aggregated Results"
+    },
+    {
+      "record_id": "0aa8dac4513e7602",
+      "module_name": "griffin_ssd",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-17T10:59:10.419103",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_griffin_ssd/distilbert/checkpoints/griffin_ssd/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 69.0,
+        "f1": 0.6894,
+        "val_loss": 0.8714,
+        "peak_vram_mb": 659.35,
+        "throughput_tok_s": 25397.9,
+        "latency_ms": 40750.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "4ac1ee6b0dbf70fc",
+      "module_name": "griffin_ssd",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T03:42:04.164457",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/mnli_unified_griffin_ssd/distilbert/checkpoints/griffin_ssd/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 37.8,
+        "f1": 0.2624,
+        "val_loss": 1.0977,
+        "peak_vram_mb": 395.0,
+        "throughput_tok_s": 41148.33,
+        "latency_ms": 6760.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
     }
   ],
   "history": [
@@ -592,66 +597,6 @@
       "notes": "Status: PASS_NO_COMPRESSION"
     },
     {
-      "record_id": "4ac1ee6b0dbf70fc",
-      "module_name": "griffin_ssd",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-16T03:42:04.164457",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/mnli_unified_griffin_ssd/distilbert/checkpoints/griffin_ssd/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 37.8,
-        "f1": 0.2624,
-        "val_loss": 1.0977,
-        "peak_vram_mb": 395.0,
-        "throughput_tok_s": 41148.33,
-        "latency_ms": 6760.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
-      "record_id": "0aa8dac4513e7602",
-      "module_name": "griffin_ssd",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-17T10:59:10.419103",
-      "git_commit_sha": "d156d2e8d5",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_griffin_ssd/distilbert/checkpoints/griffin_ssd/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 69.0,
-        "f1": 0.6894,
-        "val_loss": 0.8714,
-        "peak_vram_mb": 659.35,
-        "throughput_tok_s": 25397.9,
-        "latency_ms": 40750.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
       "record_id": "b8bd54dfe1e86851",
       "module_name": "griffin_ssd",
       "category": "attention",
@@ -892,30 +837,29 @@
       "notes": "Status: MODERATE_EXPANSION"
     },
     {
-      "record_id": "27f9913c397f1791",
+      "record_id": "556bea37e3683f4c",
       "module_name": "griffin_ssd",
       "category": "attention",
-      "family": "general",
+      "family": "subquadratic-attention",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-15T00:07:14+03:30",
-      "git_commit_sha": "b3e2b3ad08",
+      "timestamp_utc": "2026-10-16T09:02:16Z",
+      "git_commit_sha": "c5aaefc147",
       "generation_method": {
-        "algorithm": "Master Aggregated Evaluation Suite",
-        "source_artifact": "results/master_aggregated_results.csv"
+        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
+        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
       },
       "experimental_setup": {
-        "dataset": "SST-2",
-        "backbone": "DistilBERT"
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "dtype": "float16",
+        "batch_size": 2,
+        "seq_len": 2048
       },
       "metrics": {
-        "accuracy": 88.19,
-        "roberta_acc": 54.7,
-        "gpt2_acc": 54.47,
-        "latency_ms": 174.1
+        "latency_triton_ms": 1.953
       },
-      "notes": "Master Aggregated Results"
+      "notes": "131 Attention Comprehensive Latency Benchmark"
     },
     {
       "record_id": "5239c7c60191a1fc",
@@ -943,29 +887,90 @@
       "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
     },
     {
-      "record_id": "556bea37e3683f4c",
+      "record_id": "27f9913c397f1791",
       "module_name": "griffin_ssd",
       "category": "attention",
-      "family": "subquadratic-attention",
+      "family": "general",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T09:02:16Z",
-      "git_commit_sha": "c5aaefc147",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
       "generation_method": {
-        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
-        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
+        "algorithm": "Master Aggregated Evaluation Suite",
+        "source_artifact": "results/master_aggregated_results.csv"
       },
       "experimental_setup": {
-        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-        "dtype": "float16",
-        "batch_size": 2,
-        "seq_len": 2048
+        "dataset": "SST-2",
+        "backbone": "DistilBERT"
       },
       "metrics": {
-        "latency_triton_ms": 1.953
+        "accuracy": 88.19,
+        "roberta_acc": 54.7,
+        "gpt2_acc": 54.47,
+        "latency_ms": 174.1
       },
-      "notes": "131 Attention Comprehensive Latency Benchmark"
+      "notes": "Master Aggregated Results"
+    },
+    {
+      "record_id": "0aa8dac4513e7602",
+      "module_name": "griffin_ssd",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-17T10:59:10.419103",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_griffin_ssd/distilbert/checkpoints/griffin_ssd/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 69.0,
+        "f1": 0.6894,
+        "val_loss": 0.8714,
+        "peak_vram_mb": 659.35,
+        "throughput_tok_s": 25397.9,
+        "latency_ms": 40750.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "4ac1ee6b0dbf70fc",
+      "module_name": "griffin_ssd",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T03:42:04.164457",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/mnli_unified_griffin_ssd/distilbert/checkpoints/griffin_ssd/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 37.8,
+        "f1": 0.2624,
+        "val_loss": 1.0977,
+        "peak_vram_mb": 395.0,
+        "throughput_tok_s": 41148.33,
+        "latency_ms": 6760.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
     }
   ]
 }

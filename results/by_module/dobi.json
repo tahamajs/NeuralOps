@@ -1,99 +1,43 @@
 {
   "module_name": "dobi",
   "category": "attention",
-  "family": "general",
+  "family": "bert",
   "total_runs": 6,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "b3e2b3ad08",
-  "latest_timestamp": "2026-10-15T00:07:14+03:30",
+  "latest_git_sha": "9a4ff4e985",
+  "latest_timestamp": "2026-09-16T03:13:12.313826",
   "latest_record": {
-    "record_id": "8f9f4f305cd58b1e",
+    "record_id": "d3354bc24a345d34",
     "module_name": "dobi",
     "category": "attention",
-    "family": "general",
+    "family": "bert",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-10-15T00:07:14+03:30",
-    "git_commit_sha": "b3e2b3ad08",
+    "timestamp_utc": "2026-09-16T03:13:12.313826",
+    "git_commit_sha": "9a4ff4e985",
     "generation_method": {
-      "algorithm": "Master Aggregated Evaluation Suite",
-      "source_artifact": "results/master_aggregated_results.csv"
+      "algorithm": "Calibration Sweep Record",
+      "source_artifact": "results/01_unified_runs/mnli_unified_dobi/distilbert/checkpoints/dobi/summary_record.json"
     },
     "experimental_setup": {
-      "dataset": "SST-2",
-      "backbone": "DistilBERT"
+      "backbone": "models/distilbert_sst2",
+      "dataset": "mnli"
     },
     "metrics": {
-      "accuracy": 0.0,
-      "roberta_acc": 0.0,
-      "gpt2_acc": 0.0,
-      "latency_ms": 167.8
+      "accuracy": 41.1,
+      "f1": 0.3087,
+      "val_loss": 1.0808,
+      "peak_vram_mb": 319.55,
+      "throughput_tok_s": 112285.64,
+      "latency_ms": 3350.0,
+      "compression_ratio": 1.0,
+      "param_reduction_pct": 0.0
     },
-    "notes": "Master Aggregated Results"
+    "notes": "Status: PASS_NO_COMPRESSION"
   },
   "active_records": [
-    {
-      "record_id": "d3354bc24a345d34",
-      "module_name": "dobi",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-16T03:13:12.313826",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/mnli_unified_dobi/distilbert/checkpoints/dobi/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 41.1,
-        "f1": 0.3087,
-        "val_loss": 1.0808,
-        "peak_vram_mb": 319.55,
-        "throughput_tok_s": 112285.64,
-        "latency_ms": 3350.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
-      "record_id": "36ad329ba887a078",
-      "module_name": "dobi",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-16T04:24:33.430864",
-      "git_commit_sha": "d156d2e8d5",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_dobi/distilbert/checkpoints/dobi/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 70.7,
-        "f1": 0.7041,
-        "val_loss": 0.8413,
-        "peak_vram_mb": 449.77,
-        "throughput_tok_s": 244854.42,
-        "latency_ms": 2720.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
     {
       "record_id": "b471ea489ab72110",
       "module_name": "dobi",
@@ -209,70 +153,70 @@
         "latency_ms": 167.8
       },
       "notes": "Master Aggregated Results"
+    },
+    {
+      "record_id": "36ad329ba887a078",
+      "module_name": "dobi",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T04:24:33.430864",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_dobi/distilbert/checkpoints/dobi/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 70.7,
+        "f1": 0.7041,
+        "val_loss": 0.8413,
+        "peak_vram_mb": 449.77,
+        "throughput_tok_s": 244854.42,
+        "latency_ms": 2720.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "d3354bc24a345d34",
+      "module_name": "dobi",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T03:13:12.313826",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/mnli_unified_dobi/distilbert/checkpoints/dobi/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 41.1,
+        "f1": 0.3087,
+        "val_loss": 1.0808,
+        "peak_vram_mb": 319.55,
+        "throughput_tok_s": 112285.64,
+        "latency_ms": 3350.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
     }
   ],
   "history": [
     {
-      "record_id": "d3354bc24a345d34",
-      "module_name": "dobi",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-16T03:13:12.313826",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/mnli_unified_dobi/distilbert/checkpoints/dobi/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 41.1,
-        "f1": 0.3087,
-        "val_loss": 1.0808,
-        "peak_vram_mb": 319.55,
-        "throughput_tok_s": 112285.64,
-        "latency_ms": 3350.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
-      "record_id": "36ad329ba887a078",
-      "module_name": "dobi",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-16T04:24:33.430864",
-      "git_commit_sha": "d156d2e8d5",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_dobi/distilbert/checkpoints/dobi/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 70.7,
-        "f1": 0.7041,
-        "val_loss": 0.8413,
-        "peak_vram_mb": 449.77,
-        "throughput_tok_s": 244854.42,
-        "latency_ms": 2720.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
       "record_id": "b471ea489ab72110",
       "module_name": "dobi",
       "category": "attention",
@@ -387,6 +331,66 @@
         "latency_ms": 167.8
       },
       "notes": "Master Aggregated Results"
+    },
+    {
+      "record_id": "36ad329ba887a078",
+      "module_name": "dobi",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T04:24:33.430864",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_dobi/distilbert/checkpoints/dobi/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 70.7,
+        "f1": 0.7041,
+        "val_loss": 0.8413,
+        "peak_vram_mb": 449.77,
+        "throughput_tok_s": 244854.42,
+        "latency_ms": 2720.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "d3354bc24a345d34",
+      "module_name": "dobi",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T03:13:12.313826",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/mnli_unified_dobi/distilbert/checkpoints/dobi/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 41.1,
+        "f1": 0.3087,
+        "val_loss": 1.0808,
+        "peak_vram_mb": 319.55,
+        "throughput_tok_s": 112285.64,
+        "latency_ms": 3350.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
     }
   ]
 }

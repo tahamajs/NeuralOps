@@ -1,36 +1,41 @@
 {
   "module_name": "aegis_v4",
   "category": "attention",
-  "family": "subquadratic-attention",
+  "family": "roberta",
   "total_runs": 11,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "c5aaefc147",
-  "latest_timestamp": "2026-10-16T09:02:16Z",
+  "latest_git_sha": "9a4ff4e985",
+  "latest_timestamp": "2026-09-18T21:24:53.320898",
   "latest_record": {
-    "record_id": "aa4e5e48de58eb31",
+    "record_id": "460c634c3ebb63d3",
     "module_name": "aegis_v4",
     "category": "attention",
-    "family": "subquadratic-attention",
+    "family": "roberta",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-10-16T09:02:16Z",
-    "git_commit_sha": "c5aaefc147",
+    "timestamp_utc": "2026-09-18T21:24:53.320898",
+    "git_commit_sha": "9a4ff4e985",
     "generation_method": {
-      "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
-      "source_artifact": "results/triton_all_131_attentions_benchmark.json"
+      "algorithm": "Calibration Sweep Record",
+      "source_artifact": "results/01_unified_runs/agnews_unified_aegis_v4/roberta/checkpoints/aegis_v4/summary_record.json"
     },
     "experimental_setup": {
-      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-      "dtype": "float16",
-      "batch_size": 2,
-      "seq_len": 2048
+      "backbone": "models/roberta-base",
+      "dataset": "ag_news"
     },
     "metrics": {
-      "latency_triton_ms": 2.418
+      "accuracy": 58.3,
+      "f1": 0.5819,
+      "val_loss": 0.9849,
+      "peak_vram_mb": 749.54,
+      "throughput_tok_s": 22571.92,
+      "latency_ms": 55370.0,
+      "compression_ratio": 1.0,
+      "param_reduction_pct": 0.0
     },
-    "notes": "131 Attention Comprehensive Latency Benchmark"
+    "notes": "Status: PASS_NO_COMPRESSION"
   },
   "active_records": [
     {
@@ -58,96 +63,6 @@
         "peak_vram_mb": 590.29,
         "throughput_tok_s": 9810.48,
         "latency_ms": 38970.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
-      "record_id": "545e435785791cb0",
-      "module_name": "aegis_v4",
-      "category": "attention",
-      "family": "gpt",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-18T21:01:11.678478",
-      "git_commit_sha": "d156d2e8d5",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_aegis_v4/gpt2/checkpoints/aegis_v4/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/gpt2",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 82.0,
-        "f1": 0.8112,
-        "val_loss": 0.4838,
-        "peak_vram_mb": 462.69,
-        "throughput_tok_s": 25373.92,
-        "latency_ms": 55070.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
-      "record_id": "95558f084690378c",
-      "module_name": "aegis_v4",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-18T21:24:29.030670",
-      "git_commit_sha": "d156d2e8d5",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_aegis_v4/distilbert/checkpoints/aegis_v4/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 82.3,
-        "f1": 0.8142,
-        "val_loss": 0.6249,
-        "peak_vram_mb": 407.22,
-        "throughput_tok_s": 37226.12,
-        "latency_ms": 33350.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
-      "record_id": "460c634c3ebb63d3",
-      "module_name": "aegis_v4",
-      "category": "attention",
-      "family": "roberta",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-18T21:24:53.320898",
-      "git_commit_sha": "d156d2e8d5",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_aegis_v4/roberta/checkpoints/aegis_v4/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/roberta-base",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 58.3,
-        "f1": 0.5819,
-        "val_loss": 0.9849,
-        "peak_vram_mb": 749.54,
-        "throughput_tok_s": 22571.92,
-        "latency_ms": 55370.0,
         "compression_ratio": 1.0,
         "param_reduction_pct": 0.0
       },
@@ -244,29 +159,54 @@
       "notes": "Status: PASS_LOW"
     },
     {
-      "record_id": "3df33981047611df",
+      "record_id": "aa4e5e48de58eb31",
       "module_name": "aegis_v4",
       "category": "attention",
-      "family": "kd-finetune",
+      "family": "subquadratic-attention",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-13T21:22:57Z",
-      "git_commit_sha": "dde5933e0c",
+      "timestamp_utc": "2026-10-16T09:02:16Z",
+      "git_commit_sha": "c5aaefc147",
       "generation_method": {
-        "algorithm": "Knowledge Distillation Recovery (finetune)",
-        "source_artifact": "results/results.jsonl"
+        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
+        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
       },
       "experimental_setup": {
-        "backbone": "roberta-base",
-        "dataset": "sst2",
-        "rank": 64
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "dtype": "float16",
+        "batch_size": 2,
+        "seq_len": 2048
       },
       "metrics": {
-        "accuracy": 0.5966666666666667,
-        "peak_vram_mb": 935.048828125
+        "latency_triton_ms": 2.418
       },
-      "notes": "Run: d00cce12-0265-42d9-86e6-bec0cc9376cf"
+      "notes": "131 Attention Comprehensive Latency Benchmark"
+    },
+    {
+      "record_id": "34663af49ab90042",
+      "module_name": "aegis_v4",
+      "category": "attention",
+      "family": "attention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T04:02:13+03:30",
+      "git_commit_sha": "5d553a2079",
+      "generation_method": {
+        "algorithm": "End-to-End Evaluation & Perplexity Probe",
+        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2 / WikiText-2",
+        "backbone": "DistilBERT / GPT-2"
+      },
+      "metrics": {
+        "accuracy": 91.34,
+        "ppl": 30.14,
+        "latency_ms": 8330.0
+      },
+      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
     },
     {
       "record_id": "6755cd8013b3abbe",
@@ -295,54 +235,119 @@
       "notes": "Master Aggregated Results"
     },
     {
-      "record_id": "34663af49ab90042",
+      "record_id": "3df33981047611df",
       "module_name": "aegis_v4",
       "category": "attention",
-      "family": "attention",
+      "family": "kd-finetune",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-15T04:02:13+03:30",
-      "git_commit_sha": "5d553a2079",
+      "timestamp_utc": "2026-10-13T21:22:57Z",
+      "git_commit_sha": "dde5933e0c",
       "generation_method": {
-        "algorithm": "End-to-End Evaluation & Perplexity Probe",
-        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
+        "algorithm": "Knowledge Distillation Recovery (finetune)",
+        "source_artifact": "results/results.jsonl"
       },
       "experimental_setup": {
-        "dataset": "SST-2 / WikiText-2",
-        "backbone": "DistilBERT / GPT-2"
+        "backbone": "roberta-base",
+        "dataset": "sst2",
+        "rank": 64
       },
       "metrics": {
-        "accuracy": 91.34,
-        "ppl": 30.14,
-        "latency_ms": 8330.0
+        "accuracy": 0.5966666666666667,
+        "peak_vram_mb": 935.048828125
       },
-      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
+      "notes": "Run: d00cce12-0265-42d9-86e6-bec0cc9376cf"
     },
     {
-      "record_id": "aa4e5e48de58eb31",
+      "record_id": "95558f084690378c",
       "module_name": "aegis_v4",
       "category": "attention",
-      "family": "subquadratic-attention",
+      "family": "bert",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T09:02:16Z",
-      "git_commit_sha": "c5aaefc147",
+      "timestamp_utc": "2026-09-18T21:24:29.030670",
+      "git_commit_sha": "9a4ff4e985",
       "generation_method": {
-        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
-        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_aegis_v4/distilbert/checkpoints/aegis_v4/summary_record.json"
       },
       "experimental_setup": {
-        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-        "dtype": "float16",
-        "batch_size": 2,
-        "seq_len": 2048
+        "backbone": "models/distilbert_sst2",
+        "dataset": "ag_news"
       },
       "metrics": {
-        "latency_triton_ms": 2.418
+        "accuracy": 82.3,
+        "f1": 0.8142,
+        "val_loss": 0.6249,
+        "peak_vram_mb": 407.22,
+        "throughput_tok_s": 37226.12,
+        "latency_ms": 33350.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
       },
-      "notes": "131 Attention Comprehensive Latency Benchmark"
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "545e435785791cb0",
+      "module_name": "aegis_v4",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T21:01:11.678478",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_aegis_v4/gpt2/checkpoints/aegis_v4/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/gpt2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 82.0,
+        "f1": 0.8112,
+        "val_loss": 0.4838,
+        "peak_vram_mb": 462.69,
+        "throughput_tok_s": 25373.92,
+        "latency_ms": 55070.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "460c634c3ebb63d3",
+      "module_name": "aegis_v4",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T21:24:53.320898",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_aegis_v4/roberta/checkpoints/aegis_v4/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta-base",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 58.3,
+        "f1": 0.5819,
+        "val_loss": 0.9849,
+        "peak_vram_mb": 749.54,
+        "throughput_tok_s": 22571.92,
+        "latency_ms": 55370.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
     }
   ],
   "history": [
@@ -377,96 +382,6 @@
       "notes": "Status: PASS_NO_COMPRESSION"
     },
     {
-      "record_id": "545e435785791cb0",
-      "module_name": "aegis_v4",
-      "category": "attention",
-      "family": "gpt",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-18T21:01:11.678478",
-      "git_commit_sha": "d156d2e8d5",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_aegis_v4/gpt2/checkpoints/aegis_v4/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/gpt2",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 82.0,
-        "f1": 0.8112,
-        "val_loss": 0.4838,
-        "peak_vram_mb": 462.69,
-        "throughput_tok_s": 25373.92,
-        "latency_ms": 55070.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
-      "record_id": "95558f084690378c",
-      "module_name": "aegis_v4",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-18T21:24:29.030670",
-      "git_commit_sha": "d156d2e8d5",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_aegis_v4/distilbert/checkpoints/aegis_v4/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 82.3,
-        "f1": 0.8142,
-        "val_loss": 0.6249,
-        "peak_vram_mb": 407.22,
-        "throughput_tok_s": 37226.12,
-        "latency_ms": 33350.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
-      "record_id": "460c634c3ebb63d3",
-      "module_name": "aegis_v4",
-      "category": "attention",
-      "family": "roberta",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-18T21:24:53.320898",
-      "git_commit_sha": "d156d2e8d5",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_aegis_v4/roberta/checkpoints/aegis_v4/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/roberta-base",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 58.3,
-        "f1": 0.5819,
-        "val_loss": 0.9849,
-        "peak_vram_mb": 749.54,
-        "throughput_tok_s": 22571.92,
-        "latency_ms": 55370.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
       "record_id": "cf29627bc468e56e",
       "module_name": "aegis_v4",
       "category": "attention",
@@ -557,29 +472,54 @@
       "notes": "Status: PASS_LOW"
     },
     {
-      "record_id": "3df33981047611df",
+      "record_id": "aa4e5e48de58eb31",
       "module_name": "aegis_v4",
       "category": "attention",
-      "family": "kd-finetune",
+      "family": "subquadratic-attention",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-13T21:22:57Z",
-      "git_commit_sha": "dde5933e0c",
+      "timestamp_utc": "2026-10-16T09:02:16Z",
+      "git_commit_sha": "c5aaefc147",
       "generation_method": {
-        "algorithm": "Knowledge Distillation Recovery (finetune)",
-        "source_artifact": "results/results.jsonl"
+        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
+        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
       },
       "experimental_setup": {
-        "backbone": "roberta-base",
-        "dataset": "sst2",
-        "rank": 64
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "dtype": "float16",
+        "batch_size": 2,
+        "seq_len": 2048
       },
       "metrics": {
-        "accuracy": 0.5966666666666667,
-        "peak_vram_mb": 935.048828125
+        "latency_triton_ms": 2.418
       },
-      "notes": "Run: d00cce12-0265-42d9-86e6-bec0cc9376cf"
+      "notes": "131 Attention Comprehensive Latency Benchmark"
+    },
+    {
+      "record_id": "34663af49ab90042",
+      "module_name": "aegis_v4",
+      "category": "attention",
+      "family": "attention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T04:02:13+03:30",
+      "git_commit_sha": "5d553a2079",
+      "generation_method": {
+        "algorithm": "End-to-End Evaluation & Perplexity Probe",
+        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2 / WikiText-2",
+        "backbone": "DistilBERT / GPT-2"
+      },
+      "metrics": {
+        "accuracy": 91.34,
+        "ppl": 30.14,
+        "latency_ms": 8330.0
+      },
+      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
     },
     {
       "record_id": "6755cd8013b3abbe",
@@ -608,54 +548,119 @@
       "notes": "Master Aggregated Results"
     },
     {
-      "record_id": "34663af49ab90042",
+      "record_id": "3df33981047611df",
       "module_name": "aegis_v4",
       "category": "attention",
-      "family": "attention",
+      "family": "kd-finetune",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-15T04:02:13+03:30",
-      "git_commit_sha": "5d553a2079",
+      "timestamp_utc": "2026-10-13T21:22:57Z",
+      "git_commit_sha": "dde5933e0c",
       "generation_method": {
-        "algorithm": "End-to-End Evaluation & Perplexity Probe",
-        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
+        "algorithm": "Knowledge Distillation Recovery (finetune)",
+        "source_artifact": "results/results.jsonl"
       },
       "experimental_setup": {
-        "dataset": "SST-2 / WikiText-2",
-        "backbone": "DistilBERT / GPT-2"
+        "backbone": "roberta-base",
+        "dataset": "sst2",
+        "rank": 64
       },
       "metrics": {
-        "accuracy": 91.34,
-        "ppl": 30.14,
-        "latency_ms": 8330.0
+        "accuracy": 0.5966666666666667,
+        "peak_vram_mb": 935.048828125
       },
-      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
+      "notes": "Run: d00cce12-0265-42d9-86e6-bec0cc9376cf"
     },
     {
-      "record_id": "aa4e5e48de58eb31",
+      "record_id": "95558f084690378c",
       "module_name": "aegis_v4",
       "category": "attention",
-      "family": "subquadratic-attention",
+      "family": "bert",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T09:02:16Z",
-      "git_commit_sha": "c5aaefc147",
+      "timestamp_utc": "2026-09-18T21:24:29.030670",
+      "git_commit_sha": "9a4ff4e985",
       "generation_method": {
-        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
-        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_aegis_v4/distilbert/checkpoints/aegis_v4/summary_record.json"
       },
       "experimental_setup": {
-        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-        "dtype": "float16",
-        "batch_size": 2,
-        "seq_len": 2048
+        "backbone": "models/distilbert_sst2",
+        "dataset": "ag_news"
       },
       "metrics": {
-        "latency_triton_ms": 2.418
+        "accuracy": 82.3,
+        "f1": 0.8142,
+        "val_loss": 0.6249,
+        "peak_vram_mb": 407.22,
+        "throughput_tok_s": 37226.12,
+        "latency_ms": 33350.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
       },
-      "notes": "131 Attention Comprehensive Latency Benchmark"
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "545e435785791cb0",
+      "module_name": "aegis_v4",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T21:01:11.678478",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_aegis_v4/gpt2/checkpoints/aegis_v4/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/gpt2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 82.0,
+        "f1": 0.8112,
+        "val_loss": 0.4838,
+        "peak_vram_mb": 462.69,
+        "throughput_tok_s": 25373.92,
+        "latency_ms": 55070.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "460c634c3ebb63d3",
+      "module_name": "aegis_v4",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T21:24:53.320898",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_aegis_v4/roberta/checkpoints/aegis_v4/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta-base",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 58.3,
+        "f1": 0.5819,
+        "val_loss": 0.9849,
+        "peak_vram_mb": 749.54,
+        "throughput_tok_s": 22571.92,
+        "latency_ms": 55370.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
     }
   ]
 }

@@ -1,127 +1,43 @@
 {
   "module_name": "bonsai_pruner",
-  "category": "compressor",
-  "family": "matrix-compression",
+  "category": "attention",
+  "family": "roberta",
   "total_runs": 6,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "25d9fe36fa",
-  "latest_timestamp": "2026-10-16T09:08:37Z",
+  "latest_git_sha": "9a4ff4e985",
+  "latest_timestamp": "2026-09-18T21:10:29.740255",
   "latest_record": {
-    "record_id": "5e239824e81e23bb",
+    "record_id": "1e850ebe384042e2",
     "module_name": "bonsai_pruner",
-    "category": "compressor",
-    "family": "matrix-compression",
+    "category": "attention",
+    "family": "roberta",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-10-16T09:08:37Z",
-    "git_commit_sha": "25d9fe36fa",
+    "timestamp_utc": "2026-09-18T21:10:29.740255",
+    "git_commit_sha": "9a4ff4e985",
     "generation_method": {
-      "algorithm": "Low-Rank SVD / Structured Quantization Factorizer",
-      "source_artifact": "results/triton_all_72_compressors_benchmark.json"
+      "algorithm": "Calibration Sweep Record",
+      "source_artifact": "results/01_unified_runs/agnews_unified_bonsai_pruner/roberta/checkpoints/bonsai_pruner/summary_record.json"
     },
     "experimental_setup": {
-      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-      "dtype": "float16"
+      "backbone": "models/roberta-base",
+      "dataset": "ag_news"
     },
     "metrics": {
-      "compress_ms": 0.61,
-      "relative_error": 0.0
+      "accuracy": 28.5,
+      "f1": 0.1969,
+      "val_loss": 1.3786,
+      "peak_vram_mb": 369.56,
+      "throughput_tok_s": 124894.9,
+      "latency_ms": 5450.0,
+      "compression_ratio": 1.0,
+      "param_reduction_pct": 0.0
     },
-    "notes": "72 Compressor Matrix Compression Benchmark"
+    "notes": "Status: PASS_NO_COMPRESSION"
   },
   "active_records": [
-    {
-      "record_id": "90ea8a526e1d57f5",
-      "module_name": "bonsai_pruner",
-      "category": "attention",
-      "family": "gpt",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-18T20:47:11.996313",
-      "git_commit_sha": "d156d2e8d5",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_bonsai_pruner/gpt2/checkpoints/bonsai_pruner/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/gpt2",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 43.4,
-        "f1": 0.3479,
-        "val_loss": 1.2315,
-        "peak_vram_mb": 743.19,
-        "throughput_tok_s": 48393.37,
-        "latency_ms": 7520.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
-      "record_id": "3e95b6b9d1ade6c0",
-      "module_name": "bonsai_pruner",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-18T21:09:31.770140",
-      "git_commit_sha": "d156d2e8d5",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_bonsai_pruner/distilbert/checkpoints/bonsai_pruner/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 28.2,
-        "f1": 0.1338,
-        "val_loss": 1.3585,
-        "peak_vram_mb": 249.68,
-        "throughput_tok_s": 101076.65,
-        "latency_ms": 4140.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
-      "record_id": "1e850ebe384042e2",
-      "module_name": "bonsai_pruner",
-      "category": "attention",
-      "family": "roberta",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-18T21:10:29.740255",
-      "git_commit_sha": "d156d2e8d5",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_bonsai_pruner/roberta/checkpoints/bonsai_pruner/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/roberta-base",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 28.5,
-        "f1": 0.1969,
-        "val_loss": 1.3786,
-        "peak_vram_mb": 369.56,
-        "throughput_tok_s": 124894.9,
-        "latency_ms": 5450.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
     {
       "record_id": "71266a6756a1a41f",
       "module_name": "bonsai_pruner",
@@ -205,100 +121,100 @@
         "relative_error": 0.0
       },
       "notes": "72 Compressor Matrix Compression Benchmark"
+    },
+    {
+      "record_id": "3e95b6b9d1ade6c0",
+      "module_name": "bonsai_pruner",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T21:09:31.770140",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_bonsai_pruner/distilbert/checkpoints/bonsai_pruner/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 28.2,
+        "f1": 0.1338,
+        "val_loss": 1.3585,
+        "peak_vram_mb": 249.68,
+        "throughput_tok_s": 101076.65,
+        "latency_ms": 4140.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "90ea8a526e1d57f5",
+      "module_name": "bonsai_pruner",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T20:47:11.996313",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_bonsai_pruner/gpt2/checkpoints/bonsai_pruner/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/gpt2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 43.4,
+        "f1": 0.3479,
+        "val_loss": 1.2315,
+        "peak_vram_mb": 743.19,
+        "throughput_tok_s": 48393.37,
+        "latency_ms": 7520.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "1e850ebe384042e2",
+      "module_name": "bonsai_pruner",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T21:10:29.740255",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_bonsai_pruner/roberta/checkpoints/bonsai_pruner/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta-base",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 28.5,
+        "f1": 0.1969,
+        "val_loss": 1.3786,
+        "peak_vram_mb": 369.56,
+        "throughput_tok_s": 124894.9,
+        "latency_ms": 5450.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
     }
   ],
   "history": [
     {
-      "record_id": "90ea8a526e1d57f5",
-      "module_name": "bonsai_pruner",
-      "category": "attention",
-      "family": "gpt",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-18T20:47:11.996313",
-      "git_commit_sha": "d156d2e8d5",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_bonsai_pruner/gpt2/checkpoints/bonsai_pruner/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/gpt2",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 43.4,
-        "f1": 0.3479,
-        "val_loss": 1.2315,
-        "peak_vram_mb": 743.19,
-        "throughput_tok_s": 48393.37,
-        "latency_ms": 7520.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
-      "record_id": "3e95b6b9d1ade6c0",
-      "module_name": "bonsai_pruner",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-18T21:09:31.770140",
-      "git_commit_sha": "d156d2e8d5",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_bonsai_pruner/distilbert/checkpoints/bonsai_pruner/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 28.2,
-        "f1": 0.1338,
-        "val_loss": 1.3585,
-        "peak_vram_mb": 249.68,
-        "throughput_tok_s": 101076.65,
-        "latency_ms": 4140.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
-      "record_id": "1e850ebe384042e2",
-      "module_name": "bonsai_pruner",
-      "category": "attention",
-      "family": "roberta",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-18T21:10:29.740255",
-      "git_commit_sha": "d156d2e8d5",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_bonsai_pruner/roberta/checkpoints/bonsai_pruner/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/roberta-base",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 28.5,
-        "f1": 0.1969,
-        "val_loss": 1.3786,
-        "peak_vram_mb": 369.56,
-        "throughput_tok_s": 124894.9,
-        "latency_ms": 5450.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
       "record_id": "71266a6756a1a41f",
       "module_name": "bonsai_pruner",
       "category": "attention",
@@ -381,6 +297,96 @@
         "relative_error": 0.0
       },
       "notes": "72 Compressor Matrix Compression Benchmark"
+    },
+    {
+      "record_id": "3e95b6b9d1ade6c0",
+      "module_name": "bonsai_pruner",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T21:09:31.770140",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_bonsai_pruner/distilbert/checkpoints/bonsai_pruner/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 28.2,
+        "f1": 0.1338,
+        "val_loss": 1.3585,
+        "peak_vram_mb": 249.68,
+        "throughput_tok_s": 101076.65,
+        "latency_ms": 4140.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "90ea8a526e1d57f5",
+      "module_name": "bonsai_pruner",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T20:47:11.996313",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_bonsai_pruner/gpt2/checkpoints/bonsai_pruner/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/gpt2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 43.4,
+        "f1": 0.3479,
+        "val_loss": 1.2315,
+        "peak_vram_mb": 743.19,
+        "throughput_tok_s": 48393.37,
+        "latency_ms": 7520.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "1e850ebe384042e2",
+      "module_name": "bonsai_pruner",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T21:10:29.740255",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_bonsai_pruner/roberta/checkpoints/bonsai_pruner/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta-base",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 28.5,
+        "f1": 0.1969,
+        "val_loss": 1.3786,
+        "peak_vram_mb": 369.56,
+        "throughput_tok_s": 124894.9,
+        "latency_ms": 5450.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
     }
   ]
 }

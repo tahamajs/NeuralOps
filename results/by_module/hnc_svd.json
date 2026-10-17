@@ -41,8 +41,8 @@
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T13:58:12+03:30",
-      "git_commit_sha": "e65ad0b5ee",
+      "timestamp_utc": "2026-10-17T21:34:36+03:30",
+      "git_commit_sha": "ba32ad26a8",
       "generation_method": {
         "algorithm": "Naive DirectSVD",
         "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
@@ -69,8 +69,8 @@
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T13:58:12+03:30",
-      "git_commit_sha": "e65ad0b5ee",
+      "timestamp_utc": "2026-10-17T21:34:36+03:30",
+      "git_commit_sha": "ba32ad26a8",
       "generation_method": {
         "algorithm": "HNC-SVD (Ours)",
         "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
@@ -97,8 +97,8 @@
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T13:58:12+03:30",
-      "git_commit_sha": "e65ad0b5ee",
+      "timestamp_utc": "2026-10-17T21:34:36+03:30",
+      "git_commit_sha": "ba32ad26a8",
       "generation_method": {
         "algorithm": "Naive DirectSVD",
         "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
@@ -125,8 +125,8 @@
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T13:58:12+03:30",
-      "git_commit_sha": "e65ad0b5ee",
+      "timestamp_utc": "2026-10-17T21:34:36+03:30",
+      "git_commit_sha": "ba32ad26a8",
       "generation_method": {
         "algorithm": "HNC-SVD (Ours)",
         "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
@@ -153,8 +153,8 @@
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T13:58:12+03:30",
-      "git_commit_sha": "e65ad0b5ee",
+      "timestamp_utc": "2026-10-17T21:34:36+03:30",
+      "git_commit_sha": "ba32ad26a8",
       "generation_method": {
         "algorithm": "Naive DirectSVD",
         "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
@@ -181,8 +181,8 @@
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T13:58:12+03:30",
-      "git_commit_sha": "e65ad0b5ee",
+      "timestamp_utc": "2026-10-17T21:34:36+03:30",
+      "git_commit_sha": "ba32ad26a8",
       "generation_method": {
         "algorithm": "HNC-SVD (Ours)",
         "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
@@ -209,8 +209,8 @@
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T13:58:12+03:30",
-      "git_commit_sha": "e65ad0b5ee",
+      "timestamp_utc": "2026-10-17T21:34:36+03:30",
+      "git_commit_sha": "ba32ad26a8",
       "generation_method": {
         "algorithm": "Naive DirectSVD",
         "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
@@ -237,8 +237,8 @@
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T13:58:12+03:30",
-      "git_commit_sha": "e65ad0b5ee",
+      "timestamp_utc": "2026-10-17T21:34:36+03:30",
+      "git_commit_sha": "ba32ad26a8",
       "generation_method": {
         "algorithm": "HNC-SVD (Ours)",
         "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
@@ -265,8 +265,8 @@
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T13:58:12+03:30",
-      "git_commit_sha": "e65ad0b5ee",
+      "timestamp_utc": "2026-10-17T21:34:36+03:30",
+      "git_commit_sha": "ba32ad26a8",
       "generation_method": {
         "algorithm": "Raw Truncated SVD",
         "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
@@ -291,8 +291,8 @@
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T13:58:12+03:30",
-      "git_commit_sha": "e65ad0b5ee",
+      "timestamp_utc": "2026-10-17T21:34:36+03:30",
+      "git_commit_sha": "ba32ad26a8",
       "generation_method": {
         "algorithm": "HNC Aligned SVD (Ours)",
         "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
@@ -317,8 +317,8 @@
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T13:58:12+03:30",
-      "git_commit_sha": "e65ad0b5ee",
+      "timestamp_utc": "2026-10-17T21:34:36+03:30",
+      "git_commit_sha": "ba32ad26a8",
       "generation_method": {
         "algorithm": "Raw Truncated SVD",
         "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
@@ -343,8 +343,8 @@
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T13:58:12+03:30",
-      "git_commit_sha": "e65ad0b5ee",
+      "timestamp_utc": "2026-10-17T21:34:36+03:30",
+      "git_commit_sha": "ba32ad26a8",
       "generation_method": {
         "algorithm": "HNC Aligned SVD (Ours)",
         "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
@@ -369,8 +369,8 @@
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T13:58:12+03:30",
-      "git_commit_sha": "e65ad0b5ee",
+      "timestamp_utc": "2026-10-17T21:34:36+03:30",
+      "git_commit_sha": "ba32ad26a8",
       "generation_method": {
         "algorithm": "Raw Truncated SVD",
         "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
@@ -395,8 +395,8 @@
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T13:58:12+03:30",
-      "git_commit_sha": "e65ad0b5ee",
+      "timestamp_utc": "2026-10-17T21:34:36+03:30",
+      "git_commit_sha": "ba32ad26a8",
       "generation_method": {
         "algorithm": "HNC Aligned SVD (Ours)",
         "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
@@ -421,8 +421,8 @@
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T13:58:12+03:30",
-      "git_commit_sha": "e65ad0b5ee",
+      "timestamp_utc": "2026-10-17T21:34:36+03:30",
+      "git_commit_sha": "ba32ad26a8",
       "generation_method": {
         "algorithm": "Raw Truncated SVD",
         "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
@@ -447,8 +447,8 @@
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T13:58:12+03:30",
-      "git_commit_sha": "e65ad0b5ee",
+      "timestamp_utc": "2026-10-17T21:34:36+03:30",
+      "git_commit_sha": "ba32ad26a8",
       "generation_method": {
         "algorithm": "HNC Aligned SVD (Ours)",
         "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
@@ -473,8 +473,8 @@
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T13:58:12+03:30",
-      "git_commit_sha": "e65ad0b5ee",
+      "timestamp_utc": "2026-10-17T21:34:36+03:30",
+      "git_commit_sha": "ba32ad26a8",
       "generation_method": {
         "algorithm": "Raw Truncated SVD",
         "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
@@ -498,8 +498,8 @@
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T13:58:12+03:30",
-      "git_commit_sha": "e65ad0b5ee",
+      "timestamp_utc": "2026-10-17T21:34:36+03:30",
+      "git_commit_sha": "ba32ad26a8",
       "generation_method": {
         "algorithm": "HNC Aligned SVD (Ours)",
         "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
@@ -523,8 +523,8 @@
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T13:58:12+03:30",
-      "git_commit_sha": "e65ad0b5ee",
+      "timestamp_utc": "2026-10-17T21:34:36+03:30",
+      "git_commit_sha": "ba32ad26a8",
       "generation_method": {
         "algorithm": "HNC-SVD",
         "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
@@ -548,8 +548,8 @@
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T13:58:12+03:30",
-      "git_commit_sha": "e65ad0b5ee",
+      "timestamp_utc": "2026-10-17T21:34:36+03:30",
+      "git_commit_sha": "ba32ad26a8",
       "generation_method": {
         "algorithm": "HNC-SVD",
         "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
@@ -572,8 +572,8 @@
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T13:58:12+03:30",
-      "git_commit_sha": "e65ad0b5ee",
+      "timestamp_utc": "2026-10-17T21:34:36+03:30",
+      "git_commit_sha": "ba32ad26a8",
       "generation_method": {
         "algorithm": "HNC-SVD",
         "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
@@ -596,8 +596,8 @@
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T13:58:12+03:30",
-      "git_commit_sha": "e65ad0b5ee",
+      "timestamp_utc": "2026-10-17T21:34:36+03:30",
+      "git_commit_sha": "ba32ad26a8",
       "generation_method": {
         "algorithm": "HNC-SVD",
         "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
@@ -620,8 +620,8 @@
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T13:58:12+03:30",
-      "git_commit_sha": "e65ad0b5ee",
+      "timestamp_utc": "2026-10-17T21:34:36+03:30",
+      "git_commit_sha": "ba32ad26a8",
       "generation_method": {
         "algorithm": "HNC-SVD",
         "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
@@ -646,8 +646,8 @@
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T13:58:12+03:30",
-      "git_commit_sha": "e65ad0b5ee",
+      "timestamp_utc": "2026-10-17T21:34:36+03:30",
+      "git_commit_sha": "ba32ad26a8",
       "generation_method": {
         "algorithm": "Naive DirectSVD",
         "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
@@ -674,8 +674,8 @@
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T13:58:12+03:30",
-      "git_commit_sha": "e65ad0b5ee",
+      "timestamp_utc": "2026-10-17T21:34:36+03:30",
+      "git_commit_sha": "ba32ad26a8",
       "generation_method": {
         "algorithm": "HNC-SVD (Ours)",
         "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
@@ -702,8 +702,8 @@
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T13:58:12+03:30",
-      "git_commit_sha": "e65ad0b5ee",
+      "timestamp_utc": "2026-10-17T21:34:36+03:30",
+      "git_commit_sha": "ba32ad26a8",
       "generation_method": {
         "algorithm": "Naive DirectSVD",
         "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
@@ -730,8 +730,8 @@
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T13:58:12+03:30",
-      "git_commit_sha": "e65ad0b5ee",
+      "timestamp_utc": "2026-10-17T21:34:36+03:30",
+      "git_commit_sha": "ba32ad26a8",
       "generation_method": {
         "algorithm": "HNC-SVD (Ours)",
         "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
@@ -758,8 +758,8 @@
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T13:58:12+03:30",
-      "git_commit_sha": "e65ad0b5ee",
+      "timestamp_utc": "2026-10-17T21:34:36+03:30",
+      "git_commit_sha": "ba32ad26a8",
       "generation_method": {
         "algorithm": "Naive DirectSVD",
         "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
@@ -786,8 +786,8 @@
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T13:58:12+03:30",
-      "git_commit_sha": "e65ad0b5ee",
+      "timestamp_utc": "2026-10-17T21:34:36+03:30",
+      "git_commit_sha": "ba32ad26a8",
       "generation_method": {
         "algorithm": "HNC-SVD (Ours)",
         "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
@@ -814,8 +814,8 @@
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T13:58:12+03:30",
-      "git_commit_sha": "e65ad0b5ee",
+      "timestamp_utc": "2026-10-17T21:34:36+03:30",
+      "git_commit_sha": "ba32ad26a8",
       "generation_method": {
         "algorithm": "Naive DirectSVD",
         "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
@@ -842,8 +842,8 @@
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T13:58:12+03:30",
-      "git_commit_sha": "e65ad0b5ee",
+      "timestamp_utc": "2026-10-17T21:34:36+03:30",
+      "git_commit_sha": "ba32ad26a8",
       "generation_method": {
         "algorithm": "HNC-SVD (Ours)",
         "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
@@ -870,8 +870,8 @@
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T13:58:12+03:30",
-      "git_commit_sha": "e65ad0b5ee",
+      "timestamp_utc": "2026-10-17T21:34:36+03:30",
+      "git_commit_sha": "ba32ad26a8",
       "generation_method": {
         "algorithm": "Raw Truncated SVD",
         "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
@@ -896,8 +896,8 @@
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T13:58:12+03:30",
-      "git_commit_sha": "e65ad0b5ee",
+      "timestamp_utc": "2026-10-17T21:34:36+03:30",
+      "git_commit_sha": "ba32ad26a8",
       "generation_method": {
         "algorithm": "HNC Aligned SVD (Ours)",
         "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
@@ -922,8 +922,8 @@
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T13:58:12+03:30",
-      "git_commit_sha": "e65ad0b5ee",
+      "timestamp_utc": "2026-10-17T21:34:36+03:30",
+      "git_commit_sha": "ba32ad26a8",
       "generation_method": {
         "algorithm": "Raw Truncated SVD",
         "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
@@ -948,8 +948,8 @@
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T13:58:12+03:30",
-      "git_commit_sha": "e65ad0b5ee",
+      "timestamp_utc": "2026-10-17T21:34:36+03:30",
+      "git_commit_sha": "ba32ad26a8",
       "generation_method": {
         "algorithm": "HNC Aligned SVD (Ours)",
         "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
@@ -974,8 +974,8 @@
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T13:58:12+03:30",
-      "git_commit_sha": "e65ad0b5ee",
+      "timestamp_utc": "2026-10-17T21:34:36+03:30",
+      "git_commit_sha": "ba32ad26a8",
       "generation_method": {
         "algorithm": "Raw Truncated SVD",
         "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
@@ -1000,8 +1000,8 @@
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T13:58:12+03:30",
-      "git_commit_sha": "e65ad0b5ee",
+      "timestamp_utc": "2026-10-17T21:34:36+03:30",
+      "git_commit_sha": "ba32ad26a8",
       "generation_method": {
         "algorithm": "HNC Aligned SVD (Ours)",
         "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
@@ -1026,8 +1026,8 @@
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T13:58:12+03:30",
-      "git_commit_sha": "e65ad0b5ee",
+      "timestamp_utc": "2026-10-17T21:34:36+03:30",
+      "git_commit_sha": "ba32ad26a8",
       "generation_method": {
         "algorithm": "Raw Truncated SVD",
         "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
@@ -1052,8 +1052,8 @@
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T13:58:12+03:30",
-      "git_commit_sha": "e65ad0b5ee",
+      "timestamp_utc": "2026-10-17T21:34:36+03:30",
+      "git_commit_sha": "ba32ad26a8",
       "generation_method": {
         "algorithm": "HNC Aligned SVD (Ours)",
         "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
@@ -1078,8 +1078,8 @@
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T13:58:12+03:30",
-      "git_commit_sha": "e65ad0b5ee",
+      "timestamp_utc": "2026-10-17T21:34:36+03:30",
+      "git_commit_sha": "ba32ad26a8",
       "generation_method": {
         "algorithm": "Raw Truncated SVD",
         "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
@@ -1103,8 +1103,8 @@
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T13:58:12+03:30",
-      "git_commit_sha": "e65ad0b5ee",
+      "timestamp_utc": "2026-10-17T21:34:36+03:30",
+      "git_commit_sha": "ba32ad26a8",
       "generation_method": {
         "algorithm": "HNC Aligned SVD (Ours)",
         "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
@@ -1128,8 +1128,8 @@
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T13:58:12+03:30",
-      "git_commit_sha": "e65ad0b5ee",
+      "timestamp_utc": "2026-10-17T21:34:36+03:30",
+      "git_commit_sha": "ba32ad26a8",
       "generation_method": {
         "algorithm": "HNC-SVD",
         "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
@@ -1153,8 +1153,8 @@
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T13:58:12+03:30",
-      "git_commit_sha": "e65ad0b5ee",
+      "timestamp_utc": "2026-10-17T21:34:36+03:30",
+      "git_commit_sha": "ba32ad26a8",
       "generation_method": {
         "algorithm": "HNC-SVD",
         "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
@@ -1177,8 +1177,8 @@
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T13:58:12+03:30",
-      "git_commit_sha": "e65ad0b5ee",
+      "timestamp_utc": "2026-10-17T21:34:36+03:30",
+      "git_commit_sha": "ba32ad26a8",
       "generation_method": {
         "algorithm": "HNC-SVD",
         "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
@@ -1201,8 +1201,8 @@
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T13:58:12+03:30",
-      "git_commit_sha": "e65ad0b5ee",
+      "timestamp_utc": "2026-10-17T21:34:36+03:30",
+      "git_commit_sha": "ba32ad26a8",
       "generation_method": {
         "algorithm": "HNC-SVD",
         "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
@@ -1225,8 +1225,8 @@
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T13:58:12+03:30",
-      "git_commit_sha": "e65ad0b5ee",
+      "timestamp_utc": "2026-10-17T21:34:36+03:30",
+      "git_commit_sha": "ba32ad26a8",
       "generation_method": {
         "algorithm": "HNC-SVD",
         "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"

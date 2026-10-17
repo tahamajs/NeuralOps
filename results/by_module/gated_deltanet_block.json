@@ -1,36 +1,41 @@
 {
   "module_name": "gated_deltanet_block",
   "category": "attention",
-  "family": "subquadratic-attention",
+  "family": "bert",
   "total_runs": 7,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "c5aaefc147",
-  "latest_timestamp": "2026-10-16T09:02:16Z",
+  "latest_git_sha": "9a4ff4e985",
+  "latest_timestamp": "2026-09-16T03:41:38.753983",
   "latest_record": {
-    "record_id": "820cf465ee5e797b",
+    "record_id": "ab85c7b4ab6bbf3c",
     "module_name": "gated_deltanet_block",
     "category": "attention",
-    "family": "subquadratic-attention",
+    "family": "bert",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-10-16T09:02:16Z",
-    "git_commit_sha": "c5aaefc147",
+    "timestamp_utc": "2026-09-16T03:41:38.753983",
+    "git_commit_sha": "9a4ff4e985",
     "generation_method": {
-      "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
-      "source_artifact": "results/triton_all_131_attentions_benchmark.json"
+      "algorithm": "Calibration Sweep Record",
+      "source_artifact": "results/01_unified_runs/mnli_unified_gated_deltanet_block/distilbert/checkpoints/gated_deltanet_block/summary_record.json"
     },
     "experimental_setup": {
-      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-      "dtype": "float16",
-      "batch_size": 2,
-      "seq_len": 2048
+      "backbone": "models/distilbert_sst2",
+      "dataset": "mnli"
     },
     "metrics": {
-      "latency_triton_ms": 6.114
+      "accuracy": 34.0,
+      "f1": 0.1692,
+      "val_loss": 1.1059,
+      "peak_vram_mb": 455.49,
+      "throughput_tok_s": 871.47,
+      "latency_ms": 426380.0,
+      "compression_ratio": 1.0,
+      "param_reduction_pct": 0.0
     },
-    "notes": "131 Attention Comprehensive Latency Benchmark"
+    "notes": "Status: PASS_NO_COMPRESSION"
   },
   "active_records": [
     {
@@ -124,34 +129,54 @@
       "notes": "Status: PASS_NO_COMPRESSION"
     },
     {
-      "record_id": "ab85c7b4ab6bbf3c",
+      "record_id": "820cf465ee5e797b",
       "module_name": "gated_deltanet_block",
       "category": "attention",
-      "family": "bert",
+      "family": "subquadratic-attention",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-09-16T03:41:38.753983",
-      "git_commit_sha": "2f366e4546",
+      "timestamp_utc": "2026-10-16T09:02:16Z",
+      "git_commit_sha": "c5aaefc147",
       "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/mnli_unified_gated_deltanet_block/distilbert/checkpoints/gated_deltanet_block/summary_record.json"
+        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
+        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
       },
       "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "mnli"
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "dtype": "float16",
+        "batch_size": 2,
+        "seq_len": 2048
       },
       "metrics": {
-        "accuracy": 34.0,
-        "f1": 0.1692,
-        "val_loss": 1.1059,
-        "peak_vram_mb": 455.49,
-        "throughput_tok_s": 871.47,
-        "latency_ms": 426380.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
+        "latency_triton_ms": 6.114
       },
-      "notes": "Status: PASS_NO_COMPRESSION"
+      "notes": "131 Attention Comprehensive Latency Benchmark"
+    },
+    {
+      "record_id": "a18545e7633d8ba3",
+      "module_name": "gated_deltanet_block",
+      "category": "attention",
+      "family": "attention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T04:02:13+03:30",
+      "git_commit_sha": "5d553a2079",
+      "generation_method": {
+        "algorithm": "End-to-End Evaluation & Perplexity Probe",
+        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2 / WikiText-2",
+        "backbone": "DistilBERT / GPT-2"
+      },
+      "metrics": {
+        "accuracy": 90.8,
+        "ppl": 29.6,
+        "latency_ms": 2230.0
+      },
+      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
     },
     {
       "record_id": "dd59079080dc0a36",
@@ -180,54 +205,34 @@
       "notes": "Master Aggregated Results"
     },
     {
-      "record_id": "a18545e7633d8ba3",
+      "record_id": "ab85c7b4ab6bbf3c",
       "module_name": "gated_deltanet_block",
       "category": "attention",
-      "family": "attention",
+      "family": "bert",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-15T04:02:13+03:30",
-      "git_commit_sha": "5d553a2079",
+      "timestamp_utc": "2026-09-16T03:41:38.753983",
+      "git_commit_sha": "9a4ff4e985",
       "generation_method": {
-        "algorithm": "End-to-End Evaluation & Perplexity Probe",
-        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/mnli_unified_gated_deltanet_block/distilbert/checkpoints/gated_deltanet_block/summary_record.json"
       },
       "experimental_setup": {
-        "dataset": "SST-2 / WikiText-2",
-        "backbone": "DistilBERT / GPT-2"
+        "backbone": "models/distilbert_sst2",
+        "dataset": "mnli"
       },
       "metrics": {
-        "accuracy": 90.8,
-        "ppl": 29.6,
-        "latency_ms": 2230.0
+        "accuracy": 34.0,
+        "f1": 0.1692,
+        "val_loss": 1.1059,
+        "peak_vram_mb": 455.49,
+        "throughput_tok_s": 871.47,
+        "latency_ms": 426380.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
       },
-      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
-    },
-    {
-      "record_id": "820cf465ee5e797b",
-      "module_name": "gated_deltanet_block",
-      "category": "attention",
-      "family": "subquadratic-attention",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-16T09:02:16Z",
-      "git_commit_sha": "c5aaefc147",
-      "generation_method": {
-        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
-        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
-      },
-      "experimental_setup": {
-        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-        "dtype": "float16",
-        "batch_size": 2,
-        "seq_len": 2048
-      },
-      "metrics": {
-        "latency_triton_ms": 6.114
-      },
-      "notes": "131 Attention Comprehensive Latency Benchmark"
+      "notes": "Status: PASS_NO_COMPRESSION"
     }
   ],
   "history": [
@@ -322,34 +327,54 @@
       "notes": "Status: PASS_NO_COMPRESSION"
     },
     {
-      "record_id": "ab85c7b4ab6bbf3c",
+      "record_id": "820cf465ee5e797b",
       "module_name": "gated_deltanet_block",
       "category": "attention",
-      "family": "bert",
+      "family": "subquadratic-attention",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-09-16T03:41:38.753983",
-      "git_commit_sha": "2f366e4546",
+      "timestamp_utc": "2026-10-16T09:02:16Z",
+      "git_commit_sha": "c5aaefc147",
       "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/mnli_unified_gated_deltanet_block/distilbert/checkpoints/gated_deltanet_block/summary_record.json"
+        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
+        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
       },
       "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "mnli"
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "dtype": "float16",
+        "batch_size": 2,
+        "seq_len": 2048
       },
       "metrics": {
-        "accuracy": 34.0,
-        "f1": 0.1692,
-        "val_loss": 1.1059,
-        "peak_vram_mb": 455.49,
-        "throughput_tok_s": 871.47,
-        "latency_ms": 426380.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
+        "latency_triton_ms": 6.114
       },
-      "notes": "Status: PASS_NO_COMPRESSION"
+      "notes": "131 Attention Comprehensive Latency Benchmark"
+    },
+    {
+      "record_id": "a18545e7633d8ba3",
+      "module_name": "gated_deltanet_block",
+      "category": "attention",
+      "family": "attention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T04:02:13+03:30",
+      "git_commit_sha": "5d553a2079",
+      "generation_method": {
+        "algorithm": "End-to-End Evaluation & Perplexity Probe",
+        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2 / WikiText-2",
+        "backbone": "DistilBERT / GPT-2"
+      },
+      "metrics": {
+        "accuracy": 90.8,
+        "ppl": 29.6,
+        "latency_ms": 2230.0
+      },
+      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
     },
     {
       "record_id": "dd59079080dc0a36",
@@ -378,54 +403,34 @@
       "notes": "Master Aggregated Results"
     },
     {
-      "record_id": "a18545e7633d8ba3",
+      "record_id": "ab85c7b4ab6bbf3c",
       "module_name": "gated_deltanet_block",
       "category": "attention",
-      "family": "attention",
+      "family": "bert",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-15T04:02:13+03:30",
-      "git_commit_sha": "5d553a2079",
+      "timestamp_utc": "2026-09-16T03:41:38.753983",
+      "git_commit_sha": "9a4ff4e985",
       "generation_method": {
-        "algorithm": "End-to-End Evaluation & Perplexity Probe",
-        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/mnli_unified_gated_deltanet_block/distilbert/checkpoints/gated_deltanet_block/summary_record.json"
       },
       "experimental_setup": {
-        "dataset": "SST-2 / WikiText-2",
-        "backbone": "DistilBERT / GPT-2"
+        "backbone": "models/distilbert_sst2",
+        "dataset": "mnli"
       },
       "metrics": {
-        "accuracy": 90.8,
-        "ppl": 29.6,
-        "latency_ms": 2230.0
+        "accuracy": 34.0,
+        "f1": 0.1692,
+        "val_loss": 1.1059,
+        "peak_vram_mb": 455.49,
+        "throughput_tok_s": 871.47,
+        "latency_ms": 426380.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
       },
-      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
-    },
-    {
-      "record_id": "820cf465ee5e797b",
-      "module_name": "gated_deltanet_block",
-      "category": "attention",
-      "family": "subquadratic-attention",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-16T09:02:16Z",
-      "git_commit_sha": "c5aaefc147",
-      "generation_method": {
-        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
-        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
-      },
-      "experimental_setup": {
-        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-        "dtype": "float16",
-        "batch_size": 2,
-        "seq_len": 2048
-      },
-      "metrics": {
-        "latency_triton_ms": 6.114
-      },
-      "notes": "131 Attention Comprehensive Latency Benchmark"
+      "notes": "Status: PASS_NO_COMPRESSION"
     }
   ]
 }

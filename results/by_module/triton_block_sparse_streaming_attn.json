@@ -33,15 +33,7 @@
       "peak_vram_mb": 41.8994140625,
       "relative_error": 0.0004350261006038636
     },
-    "notes": "Target: nsa_attention, moba_attention",
-    "dsa_router": {
-      "enabled": true,
-      "routing_mechanism": "learned block-sparse router (DSA)",
-      "block_size_B": 64,
-      "top_k_blocks": 8,
-      "gradient_alignment_preservation": ">= 95%",
-      "theoretical_speedup": "4.0x - 32.0x"
-    }
+    "notes": "Target: nsa_attention, moba_attention"
   },
   "active_records": [
     {
@@ -70,15 +62,7 @@
         "peak_vram_mb": 41.8994140625,
         "relative_error": 0.0004350261006038636
       },
-      "notes": "Target: nsa_attention, moba_attention",
-      "dsa_router": {
-        "enabled": true,
-        "routing_mechanism": "learned block-sparse router (DSA)",
-        "block_size_B": 64,
-        "top_k_blocks": 8,
-        "gradient_alignment_preservation": ">= 95%",
-        "theoretical_speedup": "4.0x - 32.0x"
-      }
+      "notes": "Target: nsa_attention, moba_attention"
     }
   ],
   "history": [
@@ -110,13 +94,5 @@
       },
       "notes": "Target: nsa_attention, moba_attention"
     }
-  ],
-  "dsa_router": {
-    "enabled": true,
-    "routing_mechanism": "learned block-sparse router (DSA)",
-    "block_size_B": 64,
-    "top_k_blocks": 8,
-    "gradient_alignment_preservation": ">= 95%",
-    "theoretical_speedup": "4.0x - 32.0x"
-  }
+  ]
 }

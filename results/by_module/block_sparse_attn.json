@@ -5,8 +5,8 @@
   "total_runs": 2,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "9ed147b99c",
-  "latest_timestamp": "2026-10-16T21:00:09+03:30",
+  "latest_git_sha": "2395ff7d5a",
+  "latest_timestamp": "2026-10-17T18:26:51+03:30",
   "latest_record": {
     "record_id": "a55d6dd8b3ef9fda",
     "module_name": "block_sparse_attn",
@@ -15,8 +15,8 @@
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-10-16T21:00:09+03:30",
-    "git_commit_sha": "9ed147b99c",
+    "timestamp_utc": "2026-10-17T18:26:51+03:30",
+    "git_commit_sha": "2395ff7d5a",
     "generation_method": {
       "algorithm": "3-Level Native CUDA C++ vs Triton JIT vs PyTorch",
       "source_artifact": "results/benchmark_3level_cuda_triton_pytorch.json"
@@ -25,20 +25,12 @@
       "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)"
     },
     "metrics": {
-      "latency_cuda_ms": 0.3968204879760742,
-      "latency_triton_ms": 1.6604281616210939,
-      "latency_pytorch_ms": 1.9916697692871095,
-      "speedup_x": 5.019069906005445
+      "latency_cuda_ms": 0.3652323150634766,
+      "latency_triton_ms": 1.5287705993652343,
+      "latency_pytorch_ms": 1.8188067626953126,
+      "speedup_x": 4.979862645448577
     },
-    "notes": "3-Level Execution Hierarchy Benchmark",
-    "dsa_router": {
-      "enabled": true,
-      "routing_mechanism": "learned block-sparse router (DSA)",
-      "block_size_B": 64,
-      "top_k_blocks": 8,
-      "gradient_alignment_preservation": ">= 95%",
-      "theoretical_speedup": "4.0x - 32.0x"
-    }
+    "notes": "3-Level Execution Hierarchy Benchmark"
   },
   "active_records": [
     {
@@ -64,15 +56,7 @@
         "latency_pytorch_ms": 1.9916697692871095,
         "speedup_x": 5.019069906005445
       },
-      "notes": "3-Level Execution Hierarchy Benchmark",
-      "dsa_router": {
-        "enabled": true,
-        "routing_mechanism": "learned block-sparse router (DSA)",
-        "block_size_B": 64,
-        "top_k_blocks": 8,
-        "gradient_alignment_preservation": ">= 95%",
-        "theoretical_speedup": "4.0x - 32.0x"
-      }
+      "notes": "3-Level Execution Hierarchy Benchmark"
     },
     {
       "record_id": "a55d6dd8b3ef9fda",
@@ -82,8 +66,8 @@
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T21:00:09+03:30",
-      "git_commit_sha": "9ed147b99c",
+      "timestamp_utc": "2026-10-17T18:26:51+03:30",
+      "git_commit_sha": "2395ff7d5a",
       "generation_method": {
         "algorithm": "3-Level Native CUDA C++ vs Triton JIT vs PyTorch",
         "source_artifact": "results/benchmark_3level_cuda_triton_pytorch.json"
@@ -92,20 +76,12 @@
         "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)"
       },
       "metrics": {
-        "latency_cuda_ms": 0.3968204879760742,
-        "latency_triton_ms": 1.6604281616210939,
-        "latency_pytorch_ms": 1.9916697692871095,
-        "speedup_x": 5.019069906005445
+        "latency_cuda_ms": 0.3652323150634766,
+        "latency_triton_ms": 1.5287705993652343,
+        "latency_pytorch_ms": 1.8188067626953126,
+        "speedup_x": 4.979862645448577
       },
-      "notes": "3-Level Execution Hierarchy Benchmark",
-      "dsa_router": {
-        "enabled": true,
-        "routing_mechanism": "learned block-sparse router (DSA)",
-        "block_size_B": 64,
-        "top_k_blocks": 8,
-        "gradient_alignment_preservation": ">= 95%",
-        "theoretical_speedup": "4.0x - 32.0x"
-      }
+      "notes": "3-Level Execution Hierarchy Benchmark"
     }
   ],
   "history": [
@@ -142,8 +118,8 @@
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T21:00:09+03:30",
-      "git_commit_sha": "9ed147b99c",
+      "timestamp_utc": "2026-10-17T18:26:51+03:30",
+      "git_commit_sha": "2395ff7d5a",
       "generation_method": {
         "algorithm": "3-Level Native CUDA C++ vs Triton JIT vs PyTorch",
         "source_artifact": "results/benchmark_3level_cuda_triton_pytorch.json"
@@ -152,20 +128,12 @@
         "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)"
       },
       "metrics": {
-        "latency_cuda_ms": 0.3968204879760742,
-        "latency_triton_ms": 1.6604281616210939,
-        "latency_pytorch_ms": 1.9916697692871095,
-        "speedup_x": 5.019069906005445
+        "latency_cuda_ms": 0.3652323150634766,
+        "latency_triton_ms": 1.5287705993652343,
+        "latency_pytorch_ms": 1.8188067626953126,
+        "speedup_x": 4.979862645448577
       },
       "notes": "3-Level Execution Hierarchy Benchmark"
     }
-  ],
-  "dsa_router": {
-    "enabled": true,
-    "routing_mechanism": "learned block-sparse router (DSA)",
-    "block_size_B": 64,
-    "top_k_blocks": 8,
-    "gradient_alignment_preservation": ">= 95%",
-    "theoretical_speedup": "4.0x - 32.0x"
-  }
+  ]
 }

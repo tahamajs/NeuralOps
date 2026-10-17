@@ -1,36 +1,41 @@
 {
   "module_name": "orion",
   "category": "attention",
-  "family": "subquadratic-attention",
+  "family": "bert",
   "total_runs": 13,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "c5aaefc147",
-  "latest_timestamp": "2026-10-16T09:02:16Z",
+  "latest_git_sha": "9a4ff4e985",
+  "latest_timestamp": "2026-09-16T03:50:06.123855",
   "latest_record": {
-    "record_id": "837003a070bf715c",
+    "record_id": "12f9b57a5eea6c42",
     "module_name": "orion",
     "category": "attention",
-    "family": "subquadratic-attention",
+    "family": "bert",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-10-16T09:02:16Z",
-    "git_commit_sha": "c5aaefc147",
+    "timestamp_utc": "2026-09-16T03:50:06.123855",
+    "git_commit_sha": "9a4ff4e985",
     "generation_method": {
-      "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
-      "source_artifact": "results/triton_all_131_attentions_benchmark.json"
+      "algorithm": "Calibration Sweep Record",
+      "source_artifact": "results/01_unified_runs/mnli_unified_orion/distilbert/checkpoints/orion/summary_record.json"
     },
     "experimental_setup": {
-      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-      "dtype": "float16",
-      "batch_size": 2,
-      "seq_len": 2048
+      "backbone": "models/distilbert_sst2",
+      "dataset": "mnli"
     },
     "metrics": {
-      "latency_triton_ms": 2.713
+      "accuracy": 36.3,
+      "f1": 0.2879,
+      "val_loss": 1.1108,
+      "peak_vram_mb": 347.88,
+      "throughput_tok_s": 34796.23,
+      "latency_ms": 8820.0,
+      "compression_ratio": 1.201,
+      "param_reduction_pct": 16.74
     },
-    "notes": "131 Attention Comprehensive Latency Benchmark"
+    "notes": "Status: PASS_LOW"
   },
   "active_records": [
     {
@@ -90,66 +95,6 @@
         "latency_ms": 47540.0,
         "compression_ratio": 1.2485,
         "param_reduction_pct": 19.91
-      },
-      "notes": "Status: PASS_LOW"
-    },
-    {
-      "record_id": "12f9b57a5eea6c42",
-      "module_name": "orion",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-16T03:50:06.123855",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/mnli_unified_orion/distilbert/checkpoints/orion/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 36.3,
-        "f1": 0.2879,
-        "val_loss": 1.1108,
-        "peak_vram_mb": 347.88,
-        "throughput_tok_s": 34796.23,
-        "latency_ms": 8820.0,
-        "compression_ratio": 1.201,
-        "param_reduction_pct": 16.74
-      },
-      "notes": "Status: PASS_LOW"
-    },
-    {
-      "record_id": "2573bbb55068b9b6",
-      "module_name": "orion",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-17T15:41:15.032726",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_orion/distilbert/checkpoints/orion/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 28.2,
-        "f1": 0.133,
-        "val_loss": 1.4709,
-        "peak_vram_mb": 640.6,
-        "throughput_tok_s": 9450.98,
-        "latency_ms": 107820.0,
-        "compression_ratio": 1.201,
-        "param_reduction_pct": 16.74
       },
       "notes": "Status: PASS_LOW"
     },
@@ -304,29 +249,54 @@
       "notes": "Status: PASS_LOW"
     },
     {
-      "record_id": "3cf14e202194e951",
+      "record_id": "837003a070bf715c",
       "module_name": "orion",
       "category": "attention",
-      "family": "kd-finetune",
+      "family": "subquadratic-attention",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-13T23:51:18Z",
-      "git_commit_sha": "dde5933e0c",
+      "timestamp_utc": "2026-10-16T09:02:16Z",
+      "git_commit_sha": "c5aaefc147",
       "generation_method": {
-        "algorithm": "Knowledge Distillation Recovery (finetune)",
-        "source_artifact": "results/results.jsonl"
+        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
+        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
       },
       "experimental_setup": {
-        "backbone": "roberta-base",
-        "dataset": "sst2",
-        "rank": 64
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "dtype": "float16",
+        "batch_size": 2,
+        "seq_len": 2048
       },
       "metrics": {
-        "accuracy": 0.5166666666666667,
-        "peak_vram_mb": 973.525390625
+        "latency_triton_ms": 2.713
       },
-      "notes": "Run: 6b5e7fec-8074-4808-80cf-1465eaa13532"
+      "notes": "131 Attention Comprehensive Latency Benchmark"
+    },
+    {
+      "record_id": "4ebebcc3640399a6",
+      "module_name": "orion",
+      "category": "attention",
+      "family": "attention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T04:02:13+03:30",
+      "git_commit_sha": "5d553a2079",
+      "generation_method": {
+        "algorithm": "End-to-End Evaluation & Perplexity Probe",
+        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2 / WikiText-2",
+        "backbone": "DistilBERT / GPT-2"
+      },
+      "metrics": {
+        "accuracy": 93.59,
+        "ppl": 33.39,
+        "latency_ms": 9230.0
+      },
+      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
     },
     {
       "record_id": "ab34fe62b256bbfc",
@@ -355,54 +325,89 @@
       "notes": "Master Aggregated Results"
     },
     {
-      "record_id": "4ebebcc3640399a6",
+      "record_id": "3cf14e202194e951",
       "module_name": "orion",
       "category": "attention",
-      "family": "attention",
+      "family": "kd-finetune",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-15T04:02:13+03:30",
-      "git_commit_sha": "5d553a2079",
+      "timestamp_utc": "2026-10-13T23:51:18Z",
+      "git_commit_sha": "dde5933e0c",
       "generation_method": {
-        "algorithm": "End-to-End Evaluation & Perplexity Probe",
-        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
+        "algorithm": "Knowledge Distillation Recovery (finetune)",
+        "source_artifact": "results/results.jsonl"
       },
       "experimental_setup": {
-        "dataset": "SST-2 / WikiText-2",
-        "backbone": "DistilBERT / GPT-2"
+        "backbone": "roberta-base",
+        "dataset": "sst2",
+        "rank": 64
       },
       "metrics": {
-        "accuracy": 93.59,
-        "ppl": 33.39,
-        "latency_ms": 9230.0
+        "accuracy": 0.5166666666666667,
+        "peak_vram_mb": 973.525390625
       },
-      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
+      "notes": "Run: 6b5e7fec-8074-4808-80cf-1465eaa13532"
     },
     {
-      "record_id": "837003a070bf715c",
+      "record_id": "2573bbb55068b9b6",
       "module_name": "orion",
       "category": "attention",
-      "family": "subquadratic-attention",
+      "family": "bert",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T09:02:16Z",
-      "git_commit_sha": "c5aaefc147",
+      "timestamp_utc": "2026-09-17T15:41:15.032726",
+      "git_commit_sha": "9a4ff4e985",
       "generation_method": {
-        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
-        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_orion/distilbert/checkpoints/orion/summary_record.json"
       },
       "experimental_setup": {
-        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-        "dtype": "float16",
-        "batch_size": 2,
-        "seq_len": 2048
+        "backbone": "models/distilbert_sst2",
+        "dataset": "ag_news"
       },
       "metrics": {
-        "latency_triton_ms": 2.713
+        "accuracy": 28.2,
+        "f1": 0.133,
+        "val_loss": 1.4709,
+        "peak_vram_mb": 640.6,
+        "throughput_tok_s": 9450.98,
+        "latency_ms": 107820.0,
+        "compression_ratio": 1.201,
+        "param_reduction_pct": 16.74
       },
-      "notes": "131 Attention Comprehensive Latency Benchmark"
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "12f9b57a5eea6c42",
+      "module_name": "orion",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T03:50:06.123855",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/mnli_unified_orion/distilbert/checkpoints/orion/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 36.3,
+        "f1": 0.2879,
+        "val_loss": 1.1108,
+        "peak_vram_mb": 347.88,
+        "throughput_tok_s": 34796.23,
+        "latency_ms": 8820.0,
+        "compression_ratio": 1.201,
+        "param_reduction_pct": 16.74
+      },
+      "notes": "Status: PASS_LOW"
     }
   ],
   "history": [
@@ -467,66 +472,6 @@
       "notes": "Status: PASS_LOW"
     },
     {
-      "record_id": "12f9b57a5eea6c42",
-      "module_name": "orion",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-16T03:50:06.123855",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/mnli_unified_orion/distilbert/checkpoints/orion/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 36.3,
-        "f1": 0.2879,
-        "val_loss": 1.1108,
-        "peak_vram_mb": 347.88,
-        "throughput_tok_s": 34796.23,
-        "latency_ms": 8820.0,
-        "compression_ratio": 1.201,
-        "param_reduction_pct": 16.74
-      },
-      "notes": "Status: PASS_LOW"
-    },
-    {
-      "record_id": "2573bbb55068b9b6",
-      "module_name": "orion",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-17T15:41:15.032726",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_orion/distilbert/checkpoints/orion/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 28.2,
-        "f1": 0.133,
-        "val_loss": 1.4709,
-        "peak_vram_mb": 640.6,
-        "throughput_tok_s": 9450.98,
-        "latency_ms": 107820.0,
-        "compression_ratio": 1.201,
-        "param_reduction_pct": 16.74
-      },
-      "notes": "Status: PASS_LOW"
-    },
-    {
       "record_id": "a57f7ef8572e7ca1",
       "module_name": "orion",
       "category": "attention",
@@ -677,29 +622,54 @@
       "notes": "Status: PASS_LOW"
     },
     {
-      "record_id": "3cf14e202194e951",
+      "record_id": "837003a070bf715c",
       "module_name": "orion",
       "category": "attention",
-      "family": "kd-finetune",
+      "family": "subquadratic-attention",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-13T23:51:18Z",
-      "git_commit_sha": "dde5933e0c",
+      "timestamp_utc": "2026-10-16T09:02:16Z",
+      "git_commit_sha": "c5aaefc147",
       "generation_method": {
-        "algorithm": "Knowledge Distillation Recovery (finetune)",
-        "source_artifact": "results/results.jsonl"
+        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
+        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
       },
       "experimental_setup": {
-        "backbone": "roberta-base",
-        "dataset": "sst2",
-        "rank": 64
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "dtype": "float16",
+        "batch_size": 2,
+        "seq_len": 2048
       },
       "metrics": {
-        "accuracy": 0.5166666666666667,
-        "peak_vram_mb": 973.525390625
+        "latency_triton_ms": 2.713
       },
-      "notes": "Run: 6b5e7fec-8074-4808-80cf-1465eaa13532"
+      "notes": "131 Attention Comprehensive Latency Benchmark"
+    },
+    {
+      "record_id": "4ebebcc3640399a6",
+      "module_name": "orion",
+      "category": "attention",
+      "family": "attention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T04:02:13+03:30",
+      "git_commit_sha": "5d553a2079",
+      "generation_method": {
+        "algorithm": "End-to-End Evaluation & Perplexity Probe",
+        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2 / WikiText-2",
+        "backbone": "DistilBERT / GPT-2"
+      },
+      "metrics": {
+        "accuracy": 93.59,
+        "ppl": 33.39,
+        "latency_ms": 9230.0
+      },
+      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
     },
     {
       "record_id": "ab34fe62b256bbfc",
@@ -728,54 +698,89 @@
       "notes": "Master Aggregated Results"
     },
     {
-      "record_id": "4ebebcc3640399a6",
+      "record_id": "3cf14e202194e951",
       "module_name": "orion",
       "category": "attention",
-      "family": "attention",
+      "family": "kd-finetune",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-15T04:02:13+03:30",
-      "git_commit_sha": "5d553a2079",
+      "timestamp_utc": "2026-10-13T23:51:18Z",
+      "git_commit_sha": "dde5933e0c",
       "generation_method": {
-        "algorithm": "End-to-End Evaluation & Perplexity Probe",
-        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
+        "algorithm": "Knowledge Distillation Recovery (finetune)",
+        "source_artifact": "results/results.jsonl"
       },
       "experimental_setup": {
-        "dataset": "SST-2 / WikiText-2",
-        "backbone": "DistilBERT / GPT-2"
+        "backbone": "roberta-base",
+        "dataset": "sst2",
+        "rank": 64
       },
       "metrics": {
-        "accuracy": 93.59,
-        "ppl": 33.39,
-        "latency_ms": 9230.0
+        "accuracy": 0.5166666666666667,
+        "peak_vram_mb": 973.525390625
       },
-      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
+      "notes": "Run: 6b5e7fec-8074-4808-80cf-1465eaa13532"
     },
     {
-      "record_id": "837003a070bf715c",
+      "record_id": "2573bbb55068b9b6",
       "module_name": "orion",
       "category": "attention",
-      "family": "subquadratic-attention",
+      "family": "bert",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T09:02:16Z",
-      "git_commit_sha": "c5aaefc147",
+      "timestamp_utc": "2026-09-17T15:41:15.032726",
+      "git_commit_sha": "9a4ff4e985",
       "generation_method": {
-        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
-        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_orion/distilbert/checkpoints/orion/summary_record.json"
       },
       "experimental_setup": {
-        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-        "dtype": "float16",
-        "batch_size": 2,
-        "seq_len": 2048
+        "backbone": "models/distilbert_sst2",
+        "dataset": "ag_news"
       },
       "metrics": {
-        "latency_triton_ms": 2.713
+        "accuracy": 28.2,
+        "f1": 0.133,
+        "val_loss": 1.4709,
+        "peak_vram_mb": 640.6,
+        "throughput_tok_s": 9450.98,
+        "latency_ms": 107820.0,
+        "compression_ratio": 1.201,
+        "param_reduction_pct": 16.74
       },
-      "notes": "131 Attention Comprehensive Latency Benchmark"
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "12f9b57a5eea6c42",
+      "module_name": "orion",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T03:50:06.123855",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/mnli_unified_orion/distilbert/checkpoints/orion/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 36.3,
+        "f1": 0.2879,
+        "val_loss": 1.1108,
+        "peak_vram_mb": 347.88,
+        "throughput_tok_s": 34796.23,
+        "latency_ms": 8820.0,
+        "compression_ratio": 1.201,
+        "param_reduction_pct": 16.74
+      },
+      "notes": "Status: PASS_LOW"
     }
   ]
 }

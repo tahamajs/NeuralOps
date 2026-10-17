@@ -1,69 +1,43 @@
 {
   "module_name": "svd_projection",
   "category": "attention",
-  "family": "general",
+  "family": "bert",
   "total_runs": 3,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "b3e2b3ad08",
-  "latest_timestamp": "2026-10-15T00:07:14+03:30",
+  "latest_git_sha": "ffb470590f",
+  "latest_timestamp": "2026-09-16T03:56:41.954385",
   "latest_record": {
-    "record_id": "ea34db436c7cc638",
+    "record_id": "a865fd59559a9de9",
     "module_name": "svd_projection",
     "category": "attention",
-    "family": "general",
+    "family": "bert",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-10-15T00:07:14+03:30",
-    "git_commit_sha": "b3e2b3ad08",
+    "timestamp_utc": "2026-09-16T03:56:41.954385",
+    "git_commit_sha": "ffb470590f",
     "generation_method": {
-      "algorithm": "Master Aggregated Evaluation Suite",
-      "source_artifact": "results/master_aggregated_results.csv"
+      "algorithm": "Calibration Sweep Record",
+      "source_artifact": "results/01_unified_runs/mnli_unified_svd_projection/distilbert/checkpoints/svd_projection/summary_record.json"
     },
     "experimental_setup": {
-      "dataset": "SST-2",
-      "backbone": "DistilBERT"
+      "backbone": "models/distilbert_sst2",
+      "dataset": "mnli"
     },
     "metrics": {
-      "accuracy": 76.15,
-      "roberta_acc": 50.92,
-      "gpt2_acc": 50.92,
-      "latency_ms": 89.7
+      "accuracy": 34.4,
+      "f1": 0.1779,
+      "val_loss": 1.1117,
+      "peak_vram_mb": 304.17,
+      "throughput_tok_s": 50876.37,
+      "latency_ms": 6610.0,
+      "compression_ratio": 1.201,
+      "param_reduction_pct": 16.74
     },
-    "notes": "Master Aggregated Results"
+    "notes": "Status: PASS_LOW"
   },
   "active_records": [
-    {
-      "record_id": "a865fd59559a9de9",
-      "module_name": "svd_projection",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-16T03:56:41.954385",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/mnli_unified_svd_projection/distilbert/checkpoints/svd_projection/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 34.4,
-        "f1": 0.1779,
-        "val_loss": 1.1117,
-        "peak_vram_mb": 304.17,
-        "throughput_tok_s": 50876.37,
-        "latency_ms": 6610.0,
-        "compression_ratio": 1.201,
-        "param_reduction_pct": 16.74
-      },
-      "notes": "Status: PASS_LOW"
-    },
     {
       "record_id": "d68cb974b3d9f60f",
       "module_name": "svd_projection",
@@ -119,40 +93,40 @@
         "latency_ms": 89.7
       },
       "notes": "Master Aggregated Results"
+    },
+    {
+      "record_id": "a865fd59559a9de9",
+      "module_name": "svd_projection",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T03:56:41.954385",
+      "git_commit_sha": "ffb470590f",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/mnli_unified_svd_projection/distilbert/checkpoints/svd_projection/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 34.4,
+        "f1": 0.1779,
+        "val_loss": 1.1117,
+        "peak_vram_mb": 304.17,
+        "throughput_tok_s": 50876.37,
+        "latency_ms": 6610.0,
+        "compression_ratio": 1.201,
+        "param_reduction_pct": 16.74
+      },
+      "notes": "Status: PASS_LOW"
     }
   ],
   "history": [
     {
-      "record_id": "a865fd59559a9de9",
-      "module_name": "svd_projection",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-16T03:56:41.954385",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/mnli_unified_svd_projection/distilbert/checkpoints/svd_projection/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 34.4,
-        "f1": 0.1779,
-        "val_loss": 1.1117,
-        "peak_vram_mb": 304.17,
-        "throughput_tok_s": 50876.37,
-        "latency_ms": 6610.0,
-        "compression_ratio": 1.201,
-        "param_reduction_pct": 16.74
-      },
-      "notes": "Status: PASS_LOW"
-    },
-    {
       "record_id": "d68cb974b3d9f60f",
       "module_name": "svd_projection",
       "category": "attention",
@@ -207,6 +181,36 @@
         "latency_ms": 89.7
       },
       "notes": "Master Aggregated Results"
+    },
+    {
+      "record_id": "a865fd59559a9de9",
+      "module_name": "svd_projection",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T03:56:41.954385",
+      "git_commit_sha": "ffb470590f",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/mnli_unified_svd_projection/distilbert/checkpoints/svd_projection/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 34.4,
+        "f1": 0.1779,
+        "val_loss": 1.1117,
+        "peak_vram_mb": 304.17,
+        "throughput_tok_s": 50876.37,
+        "latency_ms": 6610.0,
+        "compression_ratio": 1.201,
+        "param_reduction_pct": 16.74
+      },
+      "notes": "Status: PASS_LOW"
     }
   ]
 }

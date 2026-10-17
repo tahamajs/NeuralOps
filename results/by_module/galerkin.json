@@ -1,34 +1,37 @@
 {
   "module_name": "galerkin",
   "category": "attention",
-  "family": "GroupB_LinearAttention",
+  "family": "general",
   "total_runs": 15,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
   "latest_git_sha": "b3e2b3ad08",
   "latest_timestamp": "2026-10-15T00:07:14+03:30",
   "latest_record": {
-    "record_id": "d671c74d024d7285",
+    "record_id": "ddfee6104845cabf",
     "module_name": "galerkin",
     "category": "attention",
-    "family": "GroupB_LinearAttention",
+    "family": "general",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
     "timestamp_utc": "2026-10-15T00:07:14+03:30",
     "git_commit_sha": "b3e2b3ad08",
     "generation_method": {
-      "algorithm": "Sequence Length Scaling Benchmark",
-      "source_artifact": "results/SEQLEN_SCALING_MASTER.csv"
+      "algorithm": "Master Aggregated Evaluation Suite",
+      "source_artifact": "results/master_aggregated_results.csv"
     },
     "experimental_setup": {
-      "seq_len": 1024,
-      "group": "GroupB_LinearAttention"
+      "dataset": "SST-2",
+      "backbone": "DistilBERT"
     },
     "metrics": {
-      "latency_ms": 0.0467
+      "accuracy": 50.92,
+      "roberta_acc": 50.92,
+      "gpt2_acc": 51.26,
+      "latency_ms": 149.6
     },
-    "notes": "Sequence Length Scaling Master Suite"
+    "notes": "Master Aggregated Results"
   },
   "active_records": [
     {
@@ -332,32 +335,6 @@
       "notes": "Status: MODERATE_EXPANSION"
     },
     {
-      "record_id": "ddfee6104845cabf",
-      "module_name": "galerkin",
-      "category": "attention",
-      "family": "general",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T00:07:14+03:30",
-      "git_commit_sha": "b3e2b3ad08",
-      "generation_method": {
-        "algorithm": "Master Aggregated Evaluation Suite",
-        "source_artifact": "results/master_aggregated_results.csv"
-      },
-      "experimental_setup": {
-        "dataset": "SST-2",
-        "backbone": "DistilBERT"
-      },
-      "metrics": {
-        "accuracy": 50.92,
-        "roberta_acc": 50.92,
-        "gpt2_acc": 51.26,
-        "latency_ms": 149.6
-      },
-      "notes": "Master Aggregated Results"
-    },
-    {
       "record_id": "7176960875a26656",
       "module_name": "galerkin",
       "category": "attention",
@@ -448,6 +425,32 @@
         "latency_ms": 0.0467
       },
       "notes": "Sequence Length Scaling Master Suite"
+    },
+    {
+      "record_id": "ddfee6104845cabf",
+      "module_name": "galerkin",
+      "category": "attention",
+      "family": "general",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Master Aggregated Evaluation Suite",
+        "source_artifact": "results/master_aggregated_results.csv"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2",
+        "backbone": "DistilBERT"
+      },
+      "metrics": {
+        "accuracy": 50.92,
+        "roberta_acc": 50.92,
+        "gpt2_acc": 51.26,
+        "latency_ms": 149.6
+      },
+      "notes": "Master Aggregated Results"
     }
   ],
   "history": [
@@ -752,32 +755,6 @@
       "notes": "Status: MODERATE_EXPANSION"
     },
     {
-      "record_id": "ddfee6104845cabf",
-      "module_name": "galerkin",
-      "category": "attention",
-      "family": "general",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T00:07:14+03:30",
-      "git_commit_sha": "b3e2b3ad08",
-      "generation_method": {
-        "algorithm": "Master Aggregated Evaluation Suite",
-        "source_artifact": "results/master_aggregated_results.csv"
-      },
-      "experimental_setup": {
-        "dataset": "SST-2",
-        "backbone": "DistilBERT"
-      },
-      "metrics": {
-        "accuracy": 50.92,
-        "roberta_acc": 50.92,
-        "gpt2_acc": 51.26,
-        "latency_ms": 149.6
-      },
-      "notes": "Master Aggregated Results"
-    },
-    {
       "record_id": "7176960875a26656",
       "module_name": "galerkin",
       "category": "attention",
@@ -868,6 +845,32 @@
         "latency_ms": 0.0467
       },
       "notes": "Sequence Length Scaling Master Suite"
+    },
+    {
+      "record_id": "ddfee6104845cabf",
+      "module_name": "galerkin",
+      "category": "attention",
+      "family": "general",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Master Aggregated Evaluation Suite",
+        "source_artifact": "results/master_aggregated_results.csv"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2",
+        "backbone": "DistilBERT"
+      },
+      "metrics": {
+        "accuracy": 50.92,
+        "roberta_acc": 50.92,
+        "gpt2_acc": 51.26,
+        "latency_ms": 149.6
+      },
+      "notes": "Master Aggregated Results"
     }
   ]
 }

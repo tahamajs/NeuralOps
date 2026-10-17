@@ -1,98 +1,43 @@
 {
   "module_name": "svd_mamba",
   "category": "attention",
-  "family": "subquadratic-attention",
+  "family": "bert",
   "total_runs": 7,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "c5aaefc147",
-  "latest_timestamp": "2026-10-16T09:02:16Z",
+  "latest_git_sha": "ffb470590f",
+  "latest_timestamp": "2026-09-16T03:09:19.710962",
   "latest_record": {
-    "record_id": "ecdbd2a5474a5d6a",
+    "record_id": "823b12317d5b0b58",
     "module_name": "svd_mamba",
     "category": "attention",
-    "family": "subquadratic-attention",
+    "family": "bert",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-10-16T09:02:16Z",
-    "git_commit_sha": "c5aaefc147",
+    "timestamp_utc": "2026-09-16T03:09:19.710962",
+    "git_commit_sha": "ffb470590f",
     "generation_method": {
-      "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
-      "source_artifact": "results/triton_all_131_attentions_benchmark.json"
+      "algorithm": "Calibration Sweep Record",
+      "source_artifact": "results/01_unified_runs/mnli_unified_svd_mamba/distilbert/checkpoints/svd_mamba/summary_record.json"
     },
     "experimental_setup": {
-      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-      "dtype": "float16",
-      "batch_size": 2,
-      "seq_len": 2048
+      "backbone": "models/distilbert_sst2",
+      "dataset": "mnli"
     },
     "metrics": {
-      "latency_triton_ms": 11.874
+      "accuracy": 34.5,
+      "f1": 0.1796,
+      "val_loss": 1.1103,
+      "peak_vram_mb": 1282.76,
+      "throughput_tok_s": 10824.67,
+      "latency_ms": 66940.0,
+      "compression_ratio": 1.0,
+      "param_reduction_pct": 0.0
     },
-    "notes": "131 Attention Comprehensive Latency Benchmark"
+    "notes": "Status: PASS_NO_COMPRESSION"
   },
   "active_records": [
-    {
-      "record_id": "823b12317d5b0b58",
-      "module_name": "svd_mamba",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-16T03:09:19.710962",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/mnli_unified_svd_mamba/distilbert/checkpoints/svd_mamba/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 34.5,
-        "f1": 0.1796,
-        "val_loss": 1.1103,
-        "peak_vram_mb": 1282.76,
-        "throughput_tok_s": 10824.67,
-        "latency_ms": 66940.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
-      "record_id": "2292d80f729184a0",
-      "module_name": "svd_mamba",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-16T04:20:30.606075",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_svd_mamba/distilbert/checkpoints/svd_mamba/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 49.6,
-        "f1": 0.4444,
-        "val_loss": 1.137,
-        "peak_vram_mb": 4155.17,
-        "throughput_tok_s": 2535.06,
-        "latency_ms": 361840.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
     {
       "record_id": "5f7fffc53fba6f42",
       "module_name": "svd_mamba",
@@ -154,30 +99,29 @@
       "notes": "Status: MODERATE_EXPANSION"
     },
     {
-      "record_id": "57203f7c634dda62",
+      "record_id": "ecdbd2a5474a5d6a",
       "module_name": "svd_mamba",
       "category": "attention",
-      "family": "general",
+      "family": "subquadratic-attention",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-15T00:07:14+03:30",
-      "git_commit_sha": "b3e2b3ad08",
+      "timestamp_utc": "2026-10-16T09:02:16Z",
+      "git_commit_sha": "c5aaefc147",
       "generation_method": {
-        "algorithm": "Master Aggregated Evaluation Suite",
-        "source_artifact": "results/master_aggregated_results.csv"
+        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
+        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
       },
       "experimental_setup": {
-        "dataset": "SST-2",
-        "backbone": "DistilBERT"
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "dtype": "float16",
+        "batch_size": 2,
+        "seq_len": 2048
       },
       "metrics": {
-        "accuracy": 50.92,
-        "roberta_acc": 50.92,
-        "gpt2_acc": 50.23,
-        "latency_ms": 1200.2
+        "latency_triton_ms": 11.874
       },
-      "notes": "Master Aggregated Results"
+      "notes": "131 Attention Comprehensive Latency Benchmark"
     },
     {
       "record_id": "8553df81dd8877cd",
@@ -205,93 +149,94 @@
       "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
     },
     {
-      "record_id": "ecdbd2a5474a5d6a",
+      "record_id": "57203f7c634dda62",
       "module_name": "svd_mamba",
       "category": "attention",
-      "family": "subquadratic-attention",
+      "family": "general",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T09:02:16Z",
-      "git_commit_sha": "c5aaefc147",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
       "generation_method": {
-        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
-        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
+        "algorithm": "Master Aggregated Evaluation Suite",
+        "source_artifact": "results/master_aggregated_results.csv"
       },
       "experimental_setup": {
-        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-        "dtype": "float16",
-        "batch_size": 2,
-        "seq_len": 2048
+        "dataset": "SST-2",
+        "backbone": "DistilBERT"
       },
       "metrics": {
-        "latency_triton_ms": 11.874
+        "accuracy": 50.92,
+        "roberta_acc": 50.92,
+        "gpt2_acc": 50.23,
+        "latency_ms": 1200.2
       },
-      "notes": "131 Attention Comprehensive Latency Benchmark"
+      "notes": "Master Aggregated Results"
+    },
+    {
+      "record_id": "2292d80f729184a0",
+      "module_name": "svd_mamba",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T04:20:30.606075",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_svd_mamba/distilbert/checkpoints/svd_mamba/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 49.6,
+        "f1": 0.4444,
+        "val_loss": 1.137,
+        "peak_vram_mb": 4155.17,
+        "throughput_tok_s": 2535.06,
+        "latency_ms": 361840.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "823b12317d5b0b58",
+      "module_name": "svd_mamba",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T03:09:19.710962",
+      "git_commit_sha": "ffb470590f",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/mnli_unified_svd_mamba/distilbert/checkpoints/svd_mamba/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 34.5,
+        "f1": 0.1796,
+        "val_loss": 1.1103,
+        "peak_vram_mb": 1282.76,
+        "throughput_tok_s": 10824.67,
+        "latency_ms": 66940.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
     }
   ],
   "history": [
     {
-      "record_id": "823b12317d5b0b58",
-      "module_name": "svd_mamba",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-16T03:09:19.710962",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/mnli_unified_svd_mamba/distilbert/checkpoints/svd_mamba/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 34.5,
-        "f1": 0.1796,
-        "val_loss": 1.1103,
-        "peak_vram_mb": 1282.76,
-        "throughput_tok_s": 10824.67,
-        "latency_ms": 66940.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
-      "record_id": "2292d80f729184a0",
-      "module_name": "svd_mamba",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-16T04:20:30.606075",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_svd_mamba/distilbert/checkpoints/svd_mamba/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 49.6,
-        "f1": 0.4444,
-        "val_loss": 1.137,
-        "peak_vram_mb": 4155.17,
-        "throughput_tok_s": 2535.06,
-        "latency_ms": 361840.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
       "record_id": "5f7fffc53fba6f42",
       "module_name": "svd_mamba",
       "category": "attention",
@@ -352,30 +297,29 @@
       "notes": "Status: MODERATE_EXPANSION"
     },
     {
-      "record_id": "57203f7c634dda62",
+      "record_id": "ecdbd2a5474a5d6a",
       "module_name": "svd_mamba",
       "category": "attention",
-      "family": "general",
+      "family": "subquadratic-attention",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-15T00:07:14+03:30",
-      "git_commit_sha": "b3e2b3ad08",
+      "timestamp_utc": "2026-10-16T09:02:16Z",
+      "git_commit_sha": "c5aaefc147",
       "generation_method": {
-        "algorithm": "Master Aggregated Evaluation Suite",
-        "source_artifact": "results/master_aggregated_results.csv"
+        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
+        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
       },
       "experimental_setup": {
-        "dataset": "SST-2",
-        "backbone": "DistilBERT"
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "dtype": "float16",
+        "batch_size": 2,
+        "seq_len": 2048
       },
       "metrics": {
-        "accuracy": 50.92,
-        "roberta_acc": 50.92,
-        "gpt2_acc": 50.23,
-        "latency_ms": 1200.2
+        "latency_triton_ms": 11.874
       },
-      "notes": "Master Aggregated Results"
+      "notes": "131 Attention Comprehensive Latency Benchmark"
     },
     {
       "record_id": "8553df81dd8877cd",
@@ -403,29 +347,90 @@
       "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
     },
     {
-      "record_id": "ecdbd2a5474a5d6a",
+      "record_id": "57203f7c634dda62",
       "module_name": "svd_mamba",
       "category": "attention",
-      "family": "subquadratic-attention",
+      "family": "general",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T09:02:16Z",
-      "git_commit_sha": "c5aaefc147",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
       "generation_method": {
-        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
-        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
+        "algorithm": "Master Aggregated Evaluation Suite",
+        "source_artifact": "results/master_aggregated_results.csv"
       },
       "experimental_setup": {
-        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-        "dtype": "float16",
-        "batch_size": 2,
-        "seq_len": 2048
+        "dataset": "SST-2",
+        "backbone": "DistilBERT"
       },
       "metrics": {
-        "latency_triton_ms": 11.874
+        "accuracy": 50.92,
+        "roberta_acc": 50.92,
+        "gpt2_acc": 50.23,
+        "latency_ms": 1200.2
       },
-      "notes": "131 Attention Comprehensive Latency Benchmark"
+      "notes": "Master Aggregated Results"
+    },
+    {
+      "record_id": "2292d80f729184a0",
+      "module_name": "svd_mamba",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T04:20:30.606075",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_svd_mamba/distilbert/checkpoints/svd_mamba/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 49.6,
+        "f1": 0.4444,
+        "val_loss": 1.137,
+        "peak_vram_mb": 4155.17,
+        "throughput_tok_s": 2535.06,
+        "latency_ms": 361840.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "823b12317d5b0b58",
+      "module_name": "svd_mamba",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T03:09:19.710962",
+      "git_commit_sha": "ffb470590f",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/mnli_unified_svd_mamba/distilbert/checkpoints/svd_mamba/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 34.5,
+        "f1": 0.1796,
+        "val_loss": 1.1103,
+        "peak_vram_mb": 1282.76,
+        "throughput_tok_s": 10824.67,
+        "latency_ms": 66940.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
     }
   ]
 }

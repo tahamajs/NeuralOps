@@ -1,129 +1,43 @@
 {
   "module_name": "adaptive_compressor",
-  "category": "attention",
-  "family": "general",
+  "category": "compressor",
+  "family": "bert",
   "total_runs": 5,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "b3e2b3ad08",
-  "latest_timestamp": "2026-10-15T00:07:14+03:30",
+  "latest_git_sha": "9a4ff4e985",
+  "latest_timestamp": "2026-09-18T09:02:54.996154",
   "latest_record": {
-    "record_id": "d62a3bfc8e322fe8",
+    "record_id": "153cdb6f846a72e7",
     "module_name": "adaptive_compressor",
-    "category": "attention",
-    "family": "general",
+    "category": "compressor",
+    "family": "bert",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-10-15T00:07:14+03:30",
-    "git_commit_sha": "b3e2b3ad08",
+    "timestamp_utc": "2026-09-18T09:02:54.996154",
+    "git_commit_sha": "9a4ff4e985",
     "generation_method": {
-      "algorithm": "Master Aggregated Evaluation Suite",
-      "source_artifact": "results/master_aggregated_results.csv"
+      "algorithm": "Calibration Sweep Record",
+      "source_artifact": "results/01_unified_runs/mnli_unified_adaptive_compressor/distilbert/checkpoints/adaptive_compressor/summary_record.json"
     },
     "experimental_setup": {
-      "dataset": "SST-2",
-      "backbone": "DistilBERT"
+      "backbone": "models/distilbert_sst2",
+      "dataset": "mnli"
     },
     "metrics": {
-      "accuracy": 90.37,
-      "roberta_acc": 72.13,
-      "gpt2_acc": 52.75,
-      "latency_ms": 86.1
+      "accuracy": 43.2,
+      "f1": 0.3445,
+      "val_loss": 1.0501,
+      "peak_vram_mb": 249.69,
+      "throughput_tok_s": 98420.6,
+      "latency_ms": 15580.0,
+      "compression_ratio": 1.0,
+      "param_reduction_pct": 0.0
     },
-    "notes": "Master Aggregated Results"
+    "notes": "Status: PASS_NO_COMPRESSION"
   },
   "active_records": [
-    {
-      "record_id": "5c4efe1169af7818",
-      "module_name": "adaptive_compressor",
-      "category": "compressor",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-18T08:50:22.811382",
-      "git_commit_sha": "d156d2e8d5",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_adaptive_compressor/distilbert/checkpoints/adaptive_compressor/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 55.5,
-        "f1": 0.5241,
-        "val_loss": 1.1063,
-        "peak_vram_mb": 249.69,
-        "throughput_tok_s": 251728.47,
-        "latency_ms": 6710.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
-      "record_id": "9a7813da146280da",
-      "module_name": "adaptive_compressor",
-      "category": "compressor",
-      "family": "roberta",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-18T08:51:06.470480",
-      "git_commit_sha": "d156d2e8d5",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_adaptive_compressor/roberta/checkpoints/adaptive_compressor/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/roberta-base",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 83.6,
-        "f1": 0.8253,
-        "val_loss": 0.5365,
-        "peak_vram_mb": 371.82,
-        "throughput_tok_s": 112383.65,
-        "latency_ms": 13580.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
-      "record_id": "153cdb6f846a72e7",
-      "module_name": "adaptive_compressor",
-      "category": "compressor",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-18T09:02:54.996154",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/mnli_unified_adaptive_compressor/distilbert/checkpoints/adaptive_compressor/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 43.2,
-        "f1": 0.3445,
-        "val_loss": 1.0501,
-        "peak_vram_mb": 249.69,
-        "throughput_tok_s": 98420.6,
-        "latency_ms": 15580.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
     {
       "record_id": "f8888f1899154b73",
       "module_name": "adaptive_compressor",
@@ -179,100 +93,100 @@
         "latency_ms": 86.1
       },
       "notes": "Master Aggregated Results"
+    },
+    {
+      "record_id": "5c4efe1169af7818",
+      "module_name": "adaptive_compressor",
+      "category": "compressor",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T08:50:22.811382",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_adaptive_compressor/distilbert/checkpoints/adaptive_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 55.5,
+        "f1": 0.5241,
+        "val_loss": 1.1063,
+        "peak_vram_mb": 249.69,
+        "throughput_tok_s": 251728.47,
+        "latency_ms": 6710.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "9a7813da146280da",
+      "module_name": "adaptive_compressor",
+      "category": "compressor",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T08:51:06.470480",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_adaptive_compressor/roberta/checkpoints/adaptive_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta-base",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 83.6,
+        "f1": 0.8253,
+        "val_loss": 0.5365,
+        "peak_vram_mb": 371.82,
+        "throughput_tok_s": 112383.65,
+        "latency_ms": 13580.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "153cdb6f846a72e7",
+      "module_name": "adaptive_compressor",
+      "category": "compressor",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T09:02:54.996154",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/mnli_unified_adaptive_compressor/distilbert/checkpoints/adaptive_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 43.2,
+        "f1": 0.3445,
+        "val_loss": 1.0501,
+        "peak_vram_mb": 249.69,
+        "throughput_tok_s": 98420.6,
+        "latency_ms": 15580.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
     }
   ],
   "history": [
     {
-      "record_id": "5c4efe1169af7818",
-      "module_name": "adaptive_compressor",
-      "category": "compressor",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-18T08:50:22.811382",
-      "git_commit_sha": "d156d2e8d5",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_adaptive_compressor/distilbert/checkpoints/adaptive_compressor/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 55.5,
-        "f1": 0.5241,
-        "val_loss": 1.1063,
-        "peak_vram_mb": 249.69,
-        "throughput_tok_s": 251728.47,
-        "latency_ms": 6710.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
-      "record_id": "9a7813da146280da",
-      "module_name": "adaptive_compressor",
-      "category": "compressor",
-      "family": "roberta",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-18T08:51:06.470480",
-      "git_commit_sha": "d156d2e8d5",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_adaptive_compressor/roberta/checkpoints/adaptive_compressor/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/roberta-base",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 83.6,
-        "f1": 0.8253,
-        "val_loss": 0.5365,
-        "peak_vram_mb": 371.82,
-        "throughput_tok_s": 112383.65,
-        "latency_ms": 13580.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
-      "record_id": "153cdb6f846a72e7",
-      "module_name": "adaptive_compressor",
-      "category": "compressor",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-18T09:02:54.996154",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/mnli_unified_adaptive_compressor/distilbert/checkpoints/adaptive_compressor/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 43.2,
-        "f1": 0.3445,
-        "val_loss": 1.0501,
-        "peak_vram_mb": 249.69,
-        "throughput_tok_s": 98420.6,
-        "latency_ms": 15580.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
       "record_id": "f8888f1899154b73",
       "module_name": "adaptive_compressor",
       "category": "compressor",
@@ -327,6 +241,96 @@
         "latency_ms": 86.1
       },
       "notes": "Master Aggregated Results"
+    },
+    {
+      "record_id": "5c4efe1169af7818",
+      "module_name": "adaptive_compressor",
+      "category": "compressor",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T08:50:22.811382",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_adaptive_compressor/distilbert/checkpoints/adaptive_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 55.5,
+        "f1": 0.5241,
+        "val_loss": 1.1063,
+        "peak_vram_mb": 249.69,
+        "throughput_tok_s": 251728.47,
+        "latency_ms": 6710.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "9a7813da146280da",
+      "module_name": "adaptive_compressor",
+      "category": "compressor",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T08:51:06.470480",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_adaptive_compressor/roberta/checkpoints/adaptive_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta-base",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 83.6,
+        "f1": 0.8253,
+        "val_loss": 0.5365,
+        "peak_vram_mb": 371.82,
+        "throughput_tok_s": 112383.65,
+        "latency_ms": 13580.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "153cdb6f846a72e7",
+      "module_name": "adaptive_compressor",
+      "category": "compressor",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T09:02:54.996154",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/mnli_unified_adaptive_compressor/distilbert/checkpoints/adaptive_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 43.2,
+        "f1": 0.3445,
+        "val_loss": 1.0501,
+        "peak_vram_mb": 249.69,
+        "throughput_tok_s": 98420.6,
+        "latency_ms": 15580.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
     }
   ]
 }

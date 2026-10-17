@@ -1,35 +1,37 @@
 {
   "module_name": "swift_svd_act",
-  "category": "compressor",
-  "family": "matrix-compression",
+  "category": "attention",
+  "family": "general",
   "total_runs": 9,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "25d9fe36fa",
-  "latest_timestamp": "2026-10-16T09:08:37Z",
+  "latest_git_sha": "b3e2b3ad08",
+  "latest_timestamp": "2026-10-15T00:07:14+03:30",
   "latest_record": {
-    "record_id": "c455703a654174f2",
+    "record_id": "bdcd0c719d3a75aa",
     "module_name": "swift_svd_act",
-    "category": "compressor",
-    "family": "matrix-compression",
+    "category": "attention",
+    "family": "general",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-10-16T09:08:37Z",
-    "git_commit_sha": "25d9fe36fa",
+    "timestamp_utc": "2026-10-15T00:07:14+03:30",
+    "git_commit_sha": "b3e2b3ad08",
     "generation_method": {
-      "algorithm": "Low-Rank SVD / Structured Quantization Factorizer",
-      "source_artifact": "results/triton_all_72_compressors_benchmark.json"
+      "algorithm": "Master Aggregated Evaluation Suite",
+      "source_artifact": "results/master_aggregated_results.csv"
     },
     "experimental_setup": {
-      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-      "dtype": "float16"
+      "dataset": "SST-2",
+      "backbone": "DistilBERT"
     },
     "metrics": {
-      "compress_ms": 40.33,
-      "relative_error": 0.1873
+      "accuracy": 90.48,
+      "roberta_acc": 72.02,
+      "gpt2_acc": 60.09,
+      "latency_ms": 91.0
     },
-    "notes": "72 Compressor Matrix Compression Benchmark"
+    "notes": "Master Aggregated Results"
   },
   "active_records": [
     {
@@ -243,6 +245,30 @@
       "notes": "Status: PASS_NO_COMPRESSION"
     },
     {
+      "record_id": "c455703a654174f2",
+      "module_name": "swift_svd_act",
+      "category": "compressor",
+      "family": "matrix-compression",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T09:08:37Z",
+      "git_commit_sha": "25d9fe36fa",
+      "generation_method": {
+        "algorithm": "Low-Rank SVD / Structured Quantization Factorizer",
+        "source_artifact": "results/triton_all_72_compressors_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "dtype": "float16"
+      },
+      "metrics": {
+        "compress_ms": 40.33,
+        "relative_error": 0.1873
+      },
+      "notes": "72 Compressor Matrix Compression Benchmark"
+    },
+    {
       "record_id": "bdcd0c719d3a75aa",
       "module_name": "swift_svd_act",
       "category": "attention",
@@ -267,30 +293,6 @@
         "latency_ms": 91.0
       },
       "notes": "Master Aggregated Results"
-    },
-    {
-      "record_id": "c455703a654174f2",
-      "module_name": "swift_svd_act",
-      "category": "compressor",
-      "family": "matrix-compression",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-16T09:08:37Z",
-      "git_commit_sha": "25d9fe36fa",
-      "generation_method": {
-        "algorithm": "Low-Rank SVD / Structured Quantization Factorizer",
-        "source_artifact": "results/triton_all_72_compressors_benchmark.json"
-      },
-      "experimental_setup": {
-        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-        "dtype": "float16"
-      },
-      "metrics": {
-        "compress_ms": 40.33,
-        "relative_error": 0.1873
-      },
-      "notes": "72 Compressor Matrix Compression Benchmark"
     }
   ],
   "history": [
@@ -505,6 +507,30 @@
       "notes": "Status: PASS_NO_COMPRESSION"
     },
     {
+      "record_id": "c455703a654174f2",
+      "module_name": "swift_svd_act",
+      "category": "compressor",
+      "family": "matrix-compression",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T09:08:37Z",
+      "git_commit_sha": "25d9fe36fa",
+      "generation_method": {
+        "algorithm": "Low-Rank SVD / Structured Quantization Factorizer",
+        "source_artifact": "results/triton_all_72_compressors_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "dtype": "float16"
+      },
+      "metrics": {
+        "compress_ms": 40.33,
+        "relative_error": 0.1873
+      },
+      "notes": "72 Compressor Matrix Compression Benchmark"
+    },
+    {
       "record_id": "bdcd0c719d3a75aa",
       "module_name": "swift_svd_act",
       "category": "attention",
@@ -529,30 +555,6 @@
         "latency_ms": 91.0
       },
       "notes": "Master Aggregated Results"
-    },
-    {
-      "record_id": "c455703a654174f2",
-      "module_name": "swift_svd_act",
-      "category": "compressor",
-      "family": "matrix-compression",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-16T09:08:37Z",
-      "git_commit_sha": "25d9fe36fa",
-      "generation_method": {
-        "algorithm": "Low-Rank SVD / Structured Quantization Factorizer",
-        "source_artifact": "results/triton_all_72_compressors_benchmark.json"
-      },
-      "experimental_setup": {
-        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-        "dtype": "float16"
-      },
-      "metrics": {
-        "compress_ms": 40.33,
-        "relative_error": 0.1873
-      },
-      "notes": "72 Compressor Matrix Compression Benchmark"
     }
   ]
 }

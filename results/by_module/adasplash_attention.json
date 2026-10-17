@@ -1,128 +1,43 @@
 {
   "module_name": "adasplash_attention",
   "category": "attention",
-  "family": "subquadratic-attention",
+  "family": "roberta",
   "total_runs": 7,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "c5aaefc147",
-  "latest_timestamp": "2026-10-16T09:02:16Z",
+  "latest_git_sha": "9a4ff4e985",
+  "latest_timestamp": "2026-09-18T18:46:10.386202",
   "latest_record": {
-    "record_id": "f92984cff2b1758a",
+    "record_id": "4aaa1ee750f20a52",
     "module_name": "adasplash_attention",
     "category": "attention",
-    "family": "subquadratic-attention",
+    "family": "roberta",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-10-16T09:02:16Z",
-    "git_commit_sha": "c5aaefc147",
+    "timestamp_utc": "2026-09-18T18:46:10.386202",
+    "git_commit_sha": "9a4ff4e985",
     "generation_method": {
-      "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
-      "source_artifact": "results/triton_all_131_attentions_benchmark.json"
+      "algorithm": "Calibration Sweep Record",
+      "source_artifact": "results/01_unified_runs/agnews_unified_adasplash_attention/roberta/checkpoints/adasplash_attention/summary_record.json"
     },
     "experimental_setup": {
-      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-      "dtype": "float16",
-      "batch_size": 2,
-      "seq_len": 2048
+      "backbone": "models/roberta-base",
+      "dataset": "ag_news"
     },
     "metrics": {
-      "latency_triton_ms": 1.543
+      "accuracy": 85.0,
+      "f1": 0.842,
+      "val_loss": 0.4562,
+      "peak_vram_mb": 574.81,
+      "throughput_tok_s": 10892.69,
+      "latency_ms": 52080.0,
+      "compression_ratio": 1.0,
+      "param_reduction_pct": 0.0
     },
-    "notes": "131 Attention Comprehensive Latency Benchmark"
+    "notes": "Status: PASS_NO_COMPRESSION"
   },
   "active_records": [
-    {
-      "record_id": "e9bfd9ee603b1c42",
-      "module_name": "adasplash_attention",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-18T09:01:15.303972",
-      "git_commit_sha": "d156d2e8d5",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_adasplash_attention/distilbert/checkpoints/adasplash_attention/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 75.0,
-        "f1": 0.7464,
-        "val_loss": 0.8659,
-        "peak_vram_mb": 400.29,
-        "throughput_tok_s": 20236.04,
-        "latency_ms": 23330.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
-      "record_id": "4aaa1ee750f20a52",
-      "module_name": "adasplash_attention",
-      "category": "attention",
-      "family": "roberta",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-18T18:46:10.386202",
-      "git_commit_sha": "d156d2e8d5",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_adasplash_attention/roberta/checkpoints/adasplash_attention/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/roberta-base",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 85.0,
-        "f1": 0.842,
-        "val_loss": 0.4562,
-        "peak_vram_mb": 574.81,
-        "throughput_tok_s": 10892.69,
-        "latency_ms": 52080.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
-      "record_id": "7f4bde4e0f541fe3",
-      "module_name": "adasplash_attention",
-      "category": "attention",
-      "family": "gpt",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-18T18:47:59.136088",
-      "git_commit_sha": "d156d2e8d5",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_adasplash_attention/gpt2/checkpoints/adasplash_attention/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/gpt2",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 82.5,
-        "f1": 0.8181,
-        "val_loss": 0.5045,
-        "peak_vram_mb": 516.46,
-        "throughput_tok_s": 9866.18,
-        "latency_ms": 55390.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
     {
       "record_id": "8c6d43c4b9748406",
       "module_name": "adasplash_attention",
@@ -154,29 +69,29 @@
       "notes": "Status: MODERATE_EXPANSION"
     },
     {
-      "record_id": "be2cf69e91353c85",
+      "record_id": "f92984cff2b1758a",
       "module_name": "adasplash_attention",
       "category": "attention",
-      "family": "kd-finetune",
+      "family": "subquadratic-attention",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-13T21:10:54Z",
-      "git_commit_sha": "dde5933e0c",
+      "timestamp_utc": "2026-10-16T09:02:16Z",
+      "git_commit_sha": "c5aaefc147",
       "generation_method": {
-        "algorithm": "Knowledge Distillation Recovery (finetune)",
-        "source_artifact": "results/results.jsonl"
+        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
+        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
       },
       "experimental_setup": {
-        "backbone": "roberta-base",
-        "dataset": "sst2",
-        "rank": 64
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "dtype": "float16",
+        "batch_size": 2,
+        "seq_len": 2048
       },
       "metrics": {
-        "accuracy": 0.8733333333333333,
-        "peak_vram_mb": 1019.20361328125
+        "latency_triton_ms": 1.543
       },
-      "notes": "Run: 01ccd02a-1975-4a1c-b681-5ef40fe4a359"
+      "notes": "131 Attention Comprehensive Latency Benchmark"
     },
     {
       "record_id": "0b71d57e0ed4f08e",
@@ -204,123 +119,123 @@
       "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
     },
     {
-      "record_id": "f92984cff2b1758a",
+      "record_id": "be2cf69e91353c85",
       "module_name": "adasplash_attention",
       "category": "attention",
-      "family": "subquadratic-attention",
+      "family": "kd-finetune",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T09:02:16Z",
-      "git_commit_sha": "c5aaefc147",
+      "timestamp_utc": "2026-10-13T21:10:54Z",
+      "git_commit_sha": "dde5933e0c",
       "generation_method": {
-        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
-        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
+        "algorithm": "Knowledge Distillation Recovery (finetune)",
+        "source_artifact": "results/results.jsonl"
       },
       "experimental_setup": {
-        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-        "dtype": "float16",
-        "batch_size": 2,
-        "seq_len": 2048
+        "backbone": "roberta-base",
+        "dataset": "sst2",
+        "rank": 64
       },
       "metrics": {
-        "latency_triton_ms": 1.543
+        "accuracy": 0.8733333333333333,
+        "peak_vram_mb": 1019.20361328125
       },
-      "notes": "131 Attention Comprehensive Latency Benchmark"
+      "notes": "Run: 01ccd02a-1975-4a1c-b681-5ef40fe4a359"
+    },
+    {
+      "record_id": "e9bfd9ee603b1c42",
+      "module_name": "adasplash_attention",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T09:01:15.303972",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_adasplash_attention/distilbert/checkpoints/adasplash_attention/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 75.0,
+        "f1": 0.7464,
+        "val_loss": 0.8659,
+        "peak_vram_mb": 400.29,
+        "throughput_tok_s": 20236.04,
+        "latency_ms": 23330.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "7f4bde4e0f541fe3",
+      "module_name": "adasplash_attention",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T18:47:59.136088",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_adasplash_attention/gpt2/checkpoints/adasplash_attention/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/gpt2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 82.5,
+        "f1": 0.8181,
+        "val_loss": 0.5045,
+        "peak_vram_mb": 516.46,
+        "throughput_tok_s": 9866.18,
+        "latency_ms": 55390.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "4aaa1ee750f20a52",
+      "module_name": "adasplash_attention",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T18:46:10.386202",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_adasplash_attention/roberta/checkpoints/adasplash_attention/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta-base",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 85.0,
+        "f1": 0.842,
+        "val_loss": 0.4562,
+        "peak_vram_mb": 574.81,
+        "throughput_tok_s": 10892.69,
+        "latency_ms": 52080.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
     }
   ],
   "history": [
     {
-      "record_id": "e9bfd9ee603b1c42",
-      "module_name": "adasplash_attention",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-18T09:01:15.303972",
-      "git_commit_sha": "d156d2e8d5",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_adasplash_attention/distilbert/checkpoints/adasplash_attention/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 75.0,
-        "f1": 0.7464,
-        "val_loss": 0.8659,
-        "peak_vram_mb": 400.29,
-        "throughput_tok_s": 20236.04,
-        "latency_ms": 23330.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
-      "record_id": "4aaa1ee750f20a52",
-      "module_name": "adasplash_attention",
-      "category": "attention",
-      "family": "roberta",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-18T18:46:10.386202",
-      "git_commit_sha": "d156d2e8d5",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_adasplash_attention/roberta/checkpoints/adasplash_attention/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/roberta-base",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 85.0,
-        "f1": 0.842,
-        "val_loss": 0.4562,
-        "peak_vram_mb": 574.81,
-        "throughput_tok_s": 10892.69,
-        "latency_ms": 52080.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
-      "record_id": "7f4bde4e0f541fe3",
-      "module_name": "adasplash_attention",
-      "category": "attention",
-      "family": "gpt",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-18T18:47:59.136088",
-      "git_commit_sha": "d156d2e8d5",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_adasplash_attention/gpt2/checkpoints/adasplash_attention/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/gpt2",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 82.5,
-        "f1": 0.8181,
-        "val_loss": 0.5045,
-        "peak_vram_mb": 516.46,
-        "throughput_tok_s": 9866.18,
-        "latency_ms": 55390.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
       "record_id": "8c6d43c4b9748406",
       "module_name": "adasplash_attention",
       "category": "attention",
@@ -351,29 +266,29 @@
       "notes": "Status: MODERATE_EXPANSION"
     },
     {
-      "record_id": "be2cf69e91353c85",
+      "record_id": "f92984cff2b1758a",
       "module_name": "adasplash_attention",
       "category": "attention",
-      "family": "kd-finetune",
+      "family": "subquadratic-attention",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-13T21:10:54Z",
-      "git_commit_sha": "dde5933e0c",
+      "timestamp_utc": "2026-10-16T09:02:16Z",
+      "git_commit_sha": "c5aaefc147",
       "generation_method": {
-        "algorithm": "Knowledge Distillation Recovery (finetune)",
-        "source_artifact": "results/results.jsonl"
+        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
+        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
       },
       "experimental_setup": {
-        "backbone": "roberta-base",
-        "dataset": "sst2",
-        "rank": 64
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "dtype": "float16",
+        "batch_size": 2,
+        "seq_len": 2048
       },
       "metrics": {
-        "accuracy": 0.8733333333333333,
-        "peak_vram_mb": 1019.20361328125
+        "latency_triton_ms": 1.543
       },
-      "notes": "Run: 01ccd02a-1975-4a1c-b681-5ef40fe4a359"
+      "notes": "131 Attention Comprehensive Latency Benchmark"
     },
     {
       "record_id": "0b71d57e0ed4f08e",
@@ -401,29 +316,119 @@
       "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
     },
     {
-      "record_id": "f92984cff2b1758a",
+      "record_id": "be2cf69e91353c85",
       "module_name": "adasplash_attention",
       "category": "attention",
-      "family": "subquadratic-attention",
+      "family": "kd-finetune",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T09:02:16Z",
-      "git_commit_sha": "c5aaefc147",
+      "timestamp_utc": "2026-10-13T21:10:54Z",
+      "git_commit_sha": "dde5933e0c",
       "generation_method": {
-        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
-        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
+        "algorithm": "Knowledge Distillation Recovery (finetune)",
+        "source_artifact": "results/results.jsonl"
       },
       "experimental_setup": {
-        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-        "dtype": "float16",
-        "batch_size": 2,
-        "seq_len": 2048
+        "backbone": "roberta-base",
+        "dataset": "sst2",
+        "rank": 64
       },
       "metrics": {
-        "latency_triton_ms": 1.543
+        "accuracy": 0.8733333333333333,
+        "peak_vram_mb": 1019.20361328125
       },
-      "notes": "131 Attention Comprehensive Latency Benchmark"
+      "notes": "Run: 01ccd02a-1975-4a1c-b681-5ef40fe4a359"
+    },
+    {
+      "record_id": "e9bfd9ee603b1c42",
+      "module_name": "adasplash_attention",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T09:01:15.303972",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_adasplash_attention/distilbert/checkpoints/adasplash_attention/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 75.0,
+        "f1": 0.7464,
+        "val_loss": 0.8659,
+        "peak_vram_mb": 400.29,
+        "throughput_tok_s": 20236.04,
+        "latency_ms": 23330.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "7f4bde4e0f541fe3",
+      "module_name": "adasplash_attention",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T18:47:59.136088",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_adasplash_attention/gpt2/checkpoints/adasplash_attention/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/gpt2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 82.5,
+        "f1": 0.8181,
+        "val_loss": 0.5045,
+        "peak_vram_mb": 516.46,
+        "throughput_tok_s": 9866.18,
+        "latency_ms": 55390.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "4aaa1ee750f20a52",
+      "module_name": "adasplash_attention",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T18:46:10.386202",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_adasplash_attention/roberta/checkpoints/adasplash_attention/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta-base",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 85.0,
+        "f1": 0.842,
+        "val_loss": 0.4562,
+        "peak_vram_mb": 574.81,
+        "throughput_tok_s": 10892.69,
+        "latency_ms": 52080.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
     }
   ]
 }

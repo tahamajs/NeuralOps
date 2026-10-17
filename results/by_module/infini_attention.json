@@ -1,37 +1,41 @@
 {
   "module_name": "infini_attention",
   "category": "attention",
-  "family": "general",
+  "family": "bert",
   "total_runs": 9,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "b3e2b3ad08",
-  "latest_timestamp": "2026-10-15T00:07:14+03:30",
+  "latest_git_sha": "9a4ff4e985",
+  "latest_timestamp": "2026-09-16T04:12:50.412906",
   "latest_record": {
-    "record_id": "dd6d0b1cf91333aa",
+    "record_id": "033e48669b7a5233",
     "module_name": "infini_attention",
     "category": "attention",
-    "family": "general",
+    "family": "bert",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-10-15T00:07:14+03:30",
-    "git_commit_sha": "b3e2b3ad08",
+    "timestamp_utc": "2026-09-16T04:12:50.412906",
+    "git_commit_sha": "9a4ff4e985",
     "generation_method": {
-      "algorithm": "Master Aggregated Evaluation Suite",
-      "source_artifact": "results/master_aggregated_results.csv"
+      "algorithm": "Calibration Sweep Record",
+      "source_artifact": "results/01_unified_runs/agnews_unified_infini_attention/distilbert/checkpoints/infini_attention/summary_record.json"
     },
     "experimental_setup": {
-      "dataset": "SST-2",
-      "backbone": "DistilBERT"
+      "backbone": "models/distilbert_sst2",
+      "dataset": "ag_news"
     },
     "metrics": {
-      "accuracy": 90.25,
-      "roberta_acc": 56.54,
-      "gpt2_acc": 51.26,
-      "latency_ms": 72.3
+      "accuracy": 63.5,
+      "f1": 0.6312,
+      "val_loss": 0.9751,
+      "peak_vram_mb": 611.15,
+      "throughput_tok_s": 113076.73,
+      "latency_ms": 7290.0,
+      "compression_ratio": 1.0,
+      "param_reduction_pct": 0.0
     },
-    "notes": "Master Aggregated Results"
+    "notes": "Status: PASS_NO_COMPRESSION"
   },
   "active_records": [
     {
@@ -155,36 +159,6 @@
       "notes": "Status: PASS_NO_COMPRESSION"
     },
     {
-      "record_id": "033e48669b7a5233",
-      "module_name": "infini_attention",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-16T04:12:50.412906",
-      "git_commit_sha": "d156d2e8d5",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_infini_attention/distilbert/checkpoints/infini_attention/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 63.5,
-        "f1": 0.6312,
-        "val_loss": 0.9751,
-        "peak_vram_mb": 611.15,
-        "throughput_tok_s": 113076.73,
-        "latency_ms": 7290.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
       "record_id": "bc13731e23ad60ce",
       "module_name": "infini_attention",
       "category": "attention",
@@ -299,6 +273,36 @@
         "latency_ms": 72.3
       },
       "notes": "Master Aggregated Results"
+    },
+    {
+      "record_id": "033e48669b7a5233",
+      "module_name": "infini_attention",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T04:12:50.412906",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_infini_attention/distilbert/checkpoints/infini_attention/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 63.5,
+        "f1": 0.6312,
+        "val_loss": 0.9751,
+        "peak_vram_mb": 611.15,
+        "throughput_tok_s": 113076.73,
+        "latency_ms": 7290.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
     }
   ],
   "history": [
@@ -423,36 +427,6 @@
       "notes": "Status: PASS_NO_COMPRESSION"
     },
     {
-      "record_id": "033e48669b7a5233",
-      "module_name": "infini_attention",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-16T04:12:50.412906",
-      "git_commit_sha": "d156d2e8d5",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_infini_attention/distilbert/checkpoints/infini_attention/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 63.5,
-        "f1": 0.6312,
-        "val_loss": 0.9751,
-        "peak_vram_mb": 611.15,
-        "throughput_tok_s": 113076.73,
-        "latency_ms": 7290.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
       "record_id": "bc13731e23ad60ce",
       "module_name": "infini_attention",
       "category": "attention",
@@ -567,6 +541,36 @@
         "latency_ms": 72.3
       },
       "notes": "Master Aggregated Results"
+    },
+    {
+      "record_id": "033e48669b7a5233",
+      "module_name": "infini_attention",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T04:12:50.412906",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_infini_attention/distilbert/checkpoints/infini_attention/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 63.5,
+        "f1": 0.6312,
+        "val_loss": 0.9751,
+        "peak_vram_mb": 611.15,
+        "throughput_tok_s": 113076.73,
+        "latency_ms": 7290.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
     }
   ]
 }

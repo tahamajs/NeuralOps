@@ -1,127 +1,43 @@
 {
   "module_name": "armor_pruner",
-  "category": "compressor",
-  "family": "matrix-compression",
+  "category": "attention",
+  "family": "roberta",
   "total_runs": 4,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "25d9fe36fa",
-  "latest_timestamp": "2026-10-16T09:08:37Z",
+  "latest_git_sha": "9a4ff4e985",
+  "latest_timestamp": "2026-09-18T20:39:21.780219",
   "latest_record": {
-    "record_id": "0d90f94f595c159c",
+    "record_id": "91aef326e5603868",
     "module_name": "armor_pruner",
-    "category": "compressor",
-    "family": "matrix-compression",
+    "category": "attention",
+    "family": "roberta",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-10-16T09:08:37Z",
-    "git_commit_sha": "25d9fe36fa",
+    "timestamp_utc": "2026-09-18T20:39:21.780219",
+    "git_commit_sha": "9a4ff4e985",
     "generation_method": {
-      "algorithm": "Low-Rank SVD / Structured Quantization Factorizer",
-      "source_artifact": "results/triton_all_72_compressors_benchmark.json"
+      "algorithm": "Calibration Sweep Record",
+      "source_artifact": "results/01_unified_runs/agnews_unified_armor_pruner/roberta/checkpoints/armor_pruner/summary_record.json"
     },
     "experimental_setup": {
-      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-      "dtype": "float16"
+      "backbone": "models/roberta-base",
+      "dataset": "ag_news"
     },
     "metrics": {
-      "compress_ms": 43.37,
-      "relative_error": 0.1017
+      "accuracy": 82.0,
+      "f1": 0.8069,
+      "val_loss": 0.5874,
+      "peak_vram_mb": 371.82,
+      "throughput_tok_s": 78521.99,
+      "latency_ms": 20630.0,
+      "compression_ratio": 1.0,
+      "param_reduction_pct": 0.0
     },
-    "notes": "72 Compressor Matrix Compression Benchmark"
+    "notes": "Status: PASS_NO_COMPRESSION"
   },
   "active_records": [
-    {
-      "record_id": "8332b83e2f8451f5",
-      "module_name": "armor_pruner",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-18T20:38:36.923065",
-      "git_commit_sha": "d156d2e8d5",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_armor_pruner/distilbert/checkpoints/armor_pruner/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 26.8,
-        "f1": 0.1057,
-        "val_loss": NaN,
-        "peak_vram_mb": 249.7,
-        "throughput_tok_s": 32472.12,
-        "latency_ms": 44340.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
-      "record_id": "91aef326e5603868",
-      "module_name": "armor_pruner",
-      "category": "attention",
-      "family": "roberta",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-18T20:39:21.780219",
-      "git_commit_sha": "d156d2e8d5",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_armor_pruner/roberta/checkpoints/armor_pruner/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/roberta-base",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 82.0,
-        "f1": 0.8069,
-        "val_loss": 0.5874,
-        "peak_vram_mb": 371.82,
-        "throughput_tok_s": 78521.99,
-        "latency_ms": 20630.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
-      "record_id": "7b15505ecc6c2d26",
-      "module_name": "armor_pruner",
-      "category": "attention",
-      "family": "gpt",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-18T20:41:26.353126",
-      "git_commit_sha": "d156d2e8d5",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_armor_pruner/gpt2/checkpoints/armor_pruner/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/gpt2",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 62.7,
-        "f1": 0.6296,
-        "val_loss": 0.9259,
-        "peak_vram_mb": 743.2,
-        "throughput_tok_s": 15957.51,
-        "latency_ms": 39220.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
     {
       "record_id": "0d90f94f595c159c",
       "module_name": "armor_pruner",
@@ -145,100 +61,100 @@
         "relative_error": 0.1017
       },
       "notes": "72 Compressor Matrix Compression Benchmark"
+    },
+    {
+      "record_id": "8332b83e2f8451f5",
+      "module_name": "armor_pruner",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T20:38:36.923065",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_armor_pruner/distilbert/checkpoints/armor_pruner/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 26.8,
+        "f1": 0.1057,
+        "val_loss": NaN,
+        "peak_vram_mb": 249.7,
+        "throughput_tok_s": 32472.12,
+        "latency_ms": 44340.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "7b15505ecc6c2d26",
+      "module_name": "armor_pruner",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T20:41:26.353126",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_armor_pruner/gpt2/checkpoints/armor_pruner/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/gpt2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 62.7,
+        "f1": 0.6296,
+        "val_loss": 0.9259,
+        "peak_vram_mb": 743.2,
+        "throughput_tok_s": 15957.51,
+        "latency_ms": 39220.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "91aef326e5603868",
+      "module_name": "armor_pruner",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T20:39:21.780219",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_armor_pruner/roberta/checkpoints/armor_pruner/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta-base",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 82.0,
+        "f1": 0.8069,
+        "val_loss": 0.5874,
+        "peak_vram_mb": 371.82,
+        "throughput_tok_s": 78521.99,
+        "latency_ms": 20630.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
     }
   ],
   "history": [
     {
-      "record_id": "8332b83e2f8451f5",
-      "module_name": "armor_pruner",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-18T20:38:36.923065",
-      "git_commit_sha": "d156d2e8d5",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_armor_pruner/distilbert/checkpoints/armor_pruner/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 26.8,
-        "f1": 0.1057,
-        "val_loss": NaN,
-        "peak_vram_mb": 249.7,
-        "throughput_tok_s": 32472.12,
-        "latency_ms": 44340.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
-      "record_id": "91aef326e5603868",
-      "module_name": "armor_pruner",
-      "category": "attention",
-      "family": "roberta",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-18T20:39:21.780219",
-      "git_commit_sha": "d156d2e8d5",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_armor_pruner/roberta/checkpoints/armor_pruner/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/roberta-base",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 82.0,
-        "f1": 0.8069,
-        "val_loss": 0.5874,
-        "peak_vram_mb": 371.82,
-        "throughput_tok_s": 78521.99,
-        "latency_ms": 20630.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
-      "record_id": "7b15505ecc6c2d26",
-      "module_name": "armor_pruner",
-      "category": "attention",
-      "family": "gpt",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-18T20:41:26.353126",
-      "git_commit_sha": "d156d2e8d5",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_armor_pruner/gpt2/checkpoints/armor_pruner/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/gpt2",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 62.7,
-        "f1": 0.6296,
-        "val_loss": 0.9259,
-        "peak_vram_mb": 743.2,
-        "throughput_tok_s": 15957.51,
-        "latency_ms": 39220.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
       "record_id": "0d90f94f595c159c",
       "module_name": "armor_pruner",
       "category": "compressor",
@@ -261,6 +177,96 @@
         "relative_error": 0.1017
       },
       "notes": "72 Compressor Matrix Compression Benchmark"
+    },
+    {
+      "record_id": "8332b83e2f8451f5",
+      "module_name": "armor_pruner",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T20:38:36.923065",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_armor_pruner/distilbert/checkpoints/armor_pruner/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 26.8,
+        "f1": 0.1057,
+        "val_loss": NaN,
+        "peak_vram_mb": 249.7,
+        "throughput_tok_s": 32472.12,
+        "latency_ms": 44340.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "7b15505ecc6c2d26",
+      "module_name": "armor_pruner",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T20:41:26.353126",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_armor_pruner/gpt2/checkpoints/armor_pruner/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/gpt2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 62.7,
+        "f1": 0.6296,
+        "val_loss": 0.9259,
+        "peak_vram_mb": 743.2,
+        "throughput_tok_s": 15957.51,
+        "latency_ms": 39220.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "91aef326e5603868",
+      "module_name": "armor_pruner",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T20:39:21.780219",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_armor_pruner/roberta/checkpoints/armor_pruner/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta-base",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 82.0,
+        "f1": 0.8069,
+        "val_loss": 0.5874,
+        "peak_vram_mb": 371.82,
+        "throughput_tok_s": 78521.99,
+        "latency_ms": 20630.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
     }
   ]
 }

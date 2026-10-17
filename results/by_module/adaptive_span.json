@@ -1,35 +1,41 @@
 {
   "module_name": "adaptive_span",
-  "category": "compressor",
-  "family": "unified-4models",
+  "category": "attention",
+  "family": "bert",
   "total_runs": 14,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "b3e2b3ad08",
-  "latest_timestamp": "2026-10-15T00:07:14+03:30",
+  "latest_git_sha": "9a4ff4e985",
+  "latest_timestamp": "2026-09-16T03:02:32.929518",
   "latest_record": {
-    "record_id": "9f1f108e868b5a54",
+    "record_id": "b2bdaac546825966",
     "module_name": "adaptive_span",
-    "category": "compressor",
-    "family": "unified-4models",
+    "category": "attention",
+    "family": "bert",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-10-15T00:07:14+03:30",
-    "git_commit_sha": "b3e2b3ad08",
+    "timestamp_utc": "2026-09-16T03:02:32.929518",
+    "git_commit_sha": "9a4ff4e985",
     "generation_method": {
-      "algorithm": "4-Model Unified Evaluation Suite",
-      "source_artifact": "results/01_unified_runs/unified_adaptive_span/4models_summary.json"
+      "algorithm": "Calibration Sweep Record",
+      "source_artifact": "results/01_unified_runs/mnli_unified_adaptive_span/distilbert/checkpoints/adaptive_span/summary_record.json"
     },
     "experimental_setup": {
-      "backbone": "gpt_neo",
-      "dataset": "SST-2"
+      "backbone": "models/distilbert_sst2",
+      "dataset": "mnli"
     },
     "metrics": {
-      "accuracy": 0.0,
-      "latency_ms": 27.466613292694092
+      "accuracy": 42.2,
+      "f1": 0.3255,
+      "val_loss": 1.0717,
+      "peak_vram_mb": 348.94,
+      "throughput_tok_s": 52040.43,
+      "latency_ms": 5340.0,
+      "compression_ratio": 1.0,
+      "param_reduction_pct": 0.0
     },
-    "notes": "Status: SKIP_NO_WEIGHTS"
+    "notes": "Status: PASS_NO_COMPRESSION"
   },
   "active_records": [
     {
@@ -57,66 +63,6 @@
         "peak_vram_mb": 567.91,
         "throughput_tok_s": 11187.59,
         "latency_ms": 25090.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
-      "record_id": "b2bdaac546825966",
-      "module_name": "adaptive_span",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-16T03:02:32.929518",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/mnli_unified_adaptive_span/distilbert/checkpoints/adaptive_span/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 42.2,
-        "f1": 0.3255,
-        "val_loss": 1.0717,
-        "peak_vram_mb": 348.94,
-        "throughput_tok_s": 52040.43,
-        "latency_ms": 5340.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
-      "record_id": "fc1630cb93ed960c",
-      "module_name": "adaptive_span",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-17T03:24:15.922641",
-      "git_commit_sha": "d156d2e8d5",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_adaptive_span/distilbert/checkpoints/adaptive_span/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 71.0,
-        "f1": 0.7075,
-        "val_loss": 0.8356,
-        "peak_vram_mb": 522.6,
-        "throughput_tok_s": 132820.94,
-        "latency_ms": 6450.0,
         "compression_ratio": 1.0,
         "param_reduction_pct": 0.0
       },
@@ -427,6 +373,66 @@
         "latency_ms": 27.466613292694092
       },
       "notes": "Status: SKIP_NO_WEIGHTS"
+    },
+    {
+      "record_id": "fc1630cb93ed960c",
+      "module_name": "adaptive_span",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-17T03:24:15.922641",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_adaptive_span/distilbert/checkpoints/adaptive_span/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 71.0,
+        "f1": 0.7075,
+        "val_loss": 0.8356,
+        "peak_vram_mb": 522.6,
+        "throughput_tok_s": 132820.94,
+        "latency_ms": 6450.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "b2bdaac546825966",
+      "module_name": "adaptive_span",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T03:02:32.929518",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/mnli_unified_adaptive_span/distilbert/checkpoints/adaptive_span/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 42.2,
+        "f1": 0.3255,
+        "val_loss": 1.0717,
+        "peak_vram_mb": 348.94,
+        "throughput_tok_s": 52040.43,
+        "latency_ms": 5340.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
     }
   ],
   "history": [
@@ -461,66 +467,6 @@
       "notes": "Status: PASS_NO_COMPRESSION"
     },
     {
-      "record_id": "b2bdaac546825966",
-      "module_name": "adaptive_span",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-16T03:02:32.929518",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/mnli_unified_adaptive_span/distilbert/checkpoints/adaptive_span/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 42.2,
-        "f1": 0.3255,
-        "val_loss": 1.0717,
-        "peak_vram_mb": 348.94,
-        "throughput_tok_s": 52040.43,
-        "latency_ms": 5340.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
-      "record_id": "fc1630cb93ed960c",
-      "module_name": "adaptive_span",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-17T03:24:15.922641",
-      "git_commit_sha": "d156d2e8d5",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_adaptive_span/distilbert/checkpoints/adaptive_span/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 71.0,
-        "f1": 0.7075,
-        "val_loss": 0.8356,
-        "peak_vram_mb": 522.6,
-        "throughput_tok_s": 132820.94,
-        "latency_ms": 6450.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
       "record_id": "0c40a238e32483cb",
       "module_name": "adaptive_span",
       "category": "attention",
@@ -825,6 +771,66 @@
         "latency_ms": 27.466613292694092
       },
       "notes": "Status: SKIP_NO_WEIGHTS"
+    },
+    {
+      "record_id": "fc1630cb93ed960c",
+      "module_name": "adaptive_span",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-17T03:24:15.922641",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_adaptive_span/distilbert/checkpoints/adaptive_span/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 71.0,
+        "f1": 0.7075,
+        "val_loss": 0.8356,
+        "peak_vram_mb": 522.6,
+        "throughput_tok_s": 132820.94,
+        "latency_ms": 6450.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "b2bdaac546825966",
+      "module_name": "adaptive_span",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T03:02:32.929518",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/mnli_unified_adaptive_span/distilbert/checkpoints/adaptive_span/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 42.2,
+        "f1": 0.3255,
+        "val_loss": 1.0717,
+        "peak_vram_mb": 348.94,
+        "throughput_tok_s": 52040.43,
+        "latency_ms": 5340.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
     }
   ]
 }

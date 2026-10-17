@@ -1,98 +1,43 @@
 {
   "module_name": "unified_rope",
   "category": "attention",
-  "family": "subquadratic-attention",
+  "family": "bert",
   "total_runs": 7,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "c5aaefc147",
-  "latest_timestamp": "2026-10-16T09:02:16Z",
+  "latest_git_sha": "81683bdbf8",
+  "latest_timestamp": "2026-09-16T03:13:59.804323",
   "latest_record": {
-    "record_id": "fd3a153dd22ffbab",
+    "record_id": "6f72aea7adde332b",
     "module_name": "unified_rope",
     "category": "attention",
-    "family": "subquadratic-attention",
+    "family": "bert",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-10-16T09:02:16Z",
-    "git_commit_sha": "c5aaefc147",
+    "timestamp_utc": "2026-09-16T03:13:59.804323",
+    "git_commit_sha": "81683bdbf8",
     "generation_method": {
-      "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
-      "source_artifact": "results/triton_all_131_attentions_benchmark.json"
+      "algorithm": "Calibration Sweep Record",
+      "source_artifact": "results/01_unified_runs/mnli_unified_unified_rope/distilbert/checkpoints/unified_rope/summary_record.json"
     },
     "experimental_setup": {
-      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-      "dtype": "float16",
-      "batch_size": 2,
-      "seq_len": 2048
+      "backbone": "models/distilbert_sst2",
+      "dataset": "mnli"
     },
     "metrics": {
-      "latency_triton_ms": 1.472
+      "accuracy": 38.8,
+      "f1": 0.2853,
+      "val_loss": 1.0933,
+      "peak_vram_mb": 367.2,
+      "throughput_tok_s": 47127.85,
+      "latency_ms": 5930.0,
+      "compression_ratio": 1.0,
+      "param_reduction_pct": 0.0
     },
-    "notes": "131 Attention Comprehensive Latency Benchmark"
+    "notes": "Status: PASS_NO_COMPRESSION"
   },
   "active_records": [
-    {
-      "record_id": "6f72aea7adde332b",
-      "module_name": "unified_rope",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-16T03:13:59.804323",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/mnli_unified_unified_rope/distilbert/checkpoints/unified_rope/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 38.8,
-        "f1": 0.2853,
-        "val_loss": 1.0933,
-        "peak_vram_mb": 367.2,
-        "throughput_tok_s": 47127.85,
-        "latency_ms": 5930.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
-      "record_id": "599fcbc93669c17b",
-      "module_name": "unified_rope",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-16T04:25:26.118367",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_unified_rope/distilbert/checkpoints/unified_rope/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 74.0,
-        "f1": 0.734,
-        "val_loss": 0.7802,
-        "peak_vram_mb": 558.67,
-        "throughput_tok_s": 113027.27,
-        "latency_ms": 7430.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
     {
       "record_id": "317c8a23ef73baa4",
       "module_name": "unified_rope",
@@ -184,6 +129,31 @@
       "notes": "Status: PASS_NO_COMPRESSION"
     },
     {
+      "record_id": "fd3a153dd22ffbab",
+      "module_name": "unified_rope",
+      "category": "attention",
+      "family": "subquadratic-attention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T09:02:16Z",
+      "git_commit_sha": "c5aaefc147",
+      "generation_method": {
+        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
+        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "dtype": "float16",
+        "batch_size": 2,
+        "seq_len": 2048
+      },
+      "metrics": {
+        "latency_triton_ms": 1.472
+      },
+      "notes": "131 Attention Comprehensive Latency Benchmark"
+    },
+    {
       "record_id": "c8ba985c4cd96ad9",
       "module_name": "unified_rope",
       "category": "attention",
@@ -209,93 +179,68 @@
       "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
     },
     {
-      "record_id": "fd3a153dd22ffbab",
+      "record_id": "599fcbc93669c17b",
       "module_name": "unified_rope",
       "category": "attention",
-      "family": "subquadratic-attention",
+      "family": "bert",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T09:02:16Z",
-      "git_commit_sha": "c5aaefc147",
+      "timestamp_utc": "2026-09-16T04:25:26.118367",
+      "git_commit_sha": "9a4ff4e985",
       "generation_method": {
-        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
-        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_unified_rope/distilbert/checkpoints/unified_rope/summary_record.json"
       },
       "experimental_setup": {
-        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-        "dtype": "float16",
-        "batch_size": 2,
-        "seq_len": 2048
+        "backbone": "models/distilbert_sst2",
+        "dataset": "ag_news"
       },
       "metrics": {
-        "latency_triton_ms": 1.472
+        "accuracy": 74.0,
+        "f1": 0.734,
+        "val_loss": 0.7802,
+        "peak_vram_mb": 558.67,
+        "throughput_tok_s": 113027.27,
+        "latency_ms": 7430.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
       },
-      "notes": "131 Attention Comprehensive Latency Benchmark"
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "6f72aea7adde332b",
+      "module_name": "unified_rope",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T03:13:59.804323",
+      "git_commit_sha": "81683bdbf8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/mnli_unified_unified_rope/distilbert/checkpoints/unified_rope/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 38.8,
+        "f1": 0.2853,
+        "val_loss": 1.0933,
+        "peak_vram_mb": 367.2,
+        "throughput_tok_s": 47127.85,
+        "latency_ms": 5930.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
     }
   ],
   "history": [
     {
-      "record_id": "6f72aea7adde332b",
-      "module_name": "unified_rope",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-16T03:13:59.804323",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/mnli_unified_unified_rope/distilbert/checkpoints/unified_rope/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 38.8,
-        "f1": 0.2853,
-        "val_loss": 1.0933,
-        "peak_vram_mb": 367.2,
-        "throughput_tok_s": 47127.85,
-        "latency_ms": 5930.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
-      "record_id": "599fcbc93669c17b",
-      "module_name": "unified_rope",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-16T04:25:26.118367",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_unified_rope/distilbert/checkpoints/unified_rope/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 74.0,
-        "f1": 0.734,
-        "val_loss": 0.7802,
-        "peak_vram_mb": 558.67,
-        "throughput_tok_s": 113027.27,
-        "latency_ms": 7430.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
       "record_id": "317c8a23ef73baa4",
       "module_name": "unified_rope",
       "category": "attention",
@@ -386,6 +331,31 @@
       "notes": "Status: PASS_NO_COMPRESSION"
     },
     {
+      "record_id": "fd3a153dd22ffbab",
+      "module_name": "unified_rope",
+      "category": "attention",
+      "family": "subquadratic-attention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T09:02:16Z",
+      "git_commit_sha": "c5aaefc147",
+      "generation_method": {
+        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
+        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "dtype": "float16",
+        "batch_size": 2,
+        "seq_len": 2048
+      },
+      "metrics": {
+        "latency_triton_ms": 1.472
+      },
+      "notes": "131 Attention Comprehensive Latency Benchmark"
+    },
+    {
       "record_id": "c8ba985c4cd96ad9",
       "module_name": "unified_rope",
       "category": "attention",
@@ -411,29 +381,64 @@
       "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
     },
     {
-      "record_id": "fd3a153dd22ffbab",
+      "record_id": "599fcbc93669c17b",
       "module_name": "unified_rope",
       "category": "attention",
-      "family": "subquadratic-attention",
+      "family": "bert",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T09:02:16Z",
-      "git_commit_sha": "c5aaefc147",
+      "timestamp_utc": "2026-09-16T04:25:26.118367",
+      "git_commit_sha": "9a4ff4e985",
       "generation_method": {
-        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
-        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_unified_rope/distilbert/checkpoints/unified_rope/summary_record.json"
       },
       "experimental_setup": {
-        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-        "dtype": "float16",
-        "batch_size": 2,
-        "seq_len": 2048
+        "backbone": "models/distilbert_sst2",
+        "dataset": "ag_news"
       },
       "metrics": {
-        "latency_triton_ms": 1.472
+        "accuracy": 74.0,
+        "f1": 0.734,
+        "val_loss": 0.7802,
+        "peak_vram_mb": 558.67,
+        "throughput_tok_s": 113027.27,
+        "latency_ms": 7430.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
       },
-      "notes": "131 Attention Comprehensive Latency Benchmark"
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "6f72aea7adde332b",
+      "module_name": "unified_rope",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T03:13:59.804323",
+      "git_commit_sha": "81683bdbf8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/mnli_unified_unified_rope/distilbert/checkpoints/unified_rope/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 38.8,
+        "f1": 0.2853,
+        "val_loss": 1.0933,
+        "peak_vram_mb": 367.2,
+        "throughput_tok_s": 47127.85,
+        "latency_ms": 5930.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
     }
   ]
 }

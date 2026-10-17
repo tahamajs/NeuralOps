@@ -1,39 +1,41 @@
 {
   "module_name": "linformer",
   "category": "attention",
-  "family": "O(N^2) Softmax",
+  "family": "bert",
   "total_runs": 11,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "b3e2b3ad08",
-  "latest_timestamp": "2026-10-15T00:07:14+03:30",
+  "latest_git_sha": "9a4ff4e985",
+  "latest_timestamp": "2026-09-16T03:45:37.548517",
   "latest_record": {
-    "record_id": "9abab790238a44c2",
+    "record_id": "12acd6dd3f52e291",
     "module_name": "linformer",
     "category": "attention",
-    "family": "O(N^2) Softmax",
+    "family": "bert",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-10-15T00:07:14+03:30",
-    "git_commit_sha": "b3e2b3ad08",
+    "timestamp_utc": "2026-09-16T03:45:37.548517",
+    "git_commit_sha": "9a4ff4e985",
     "generation_method": {
-      "algorithm": "Master Benchmark Suite",
-      "source_artifact": "results/master_benchmark_summary.csv"
+      "algorithm": "Calibration Sweep Record",
+      "source_artifact": "results/01_unified_runs/mnli_unified_linformer/distilbert/checkpoints/linformer/summary_record.json"
     },
     "experimental_setup": {
-      "dataset": "c4",
-      "complexity": "O(N^2) Softmax"
+      "backbone": "models/distilbert_sst2",
+      "dataset": "mnli"
     },
     "metrics": {
-      "ppl": 11.25,
-      "val_loss": 2.4204,
-      "throughput_tok_s": 341333.0,
-      "peak_vram_mb": 50.8,
-      "speedup_x": 8.53,
-      "latency_ms": 1.5
+      "accuracy": 40.1,
+      "f1": 0.2921,
+      "val_loss": 1.0853,
+      "peak_vram_mb": 354.69,
+      "throughput_tok_s": 48700.58,
+      "latency_ms": 5650.0,
+      "compression_ratio": 1.0,
+      "param_reduction_pct": 0.0
     },
-    "notes": "Status: SUCCESS"
+    "notes": "Status: PASS_NO_COMPRESSION"
   },
   "active_records": [
     {
@@ -121,66 +123,6 @@
         "peak_vram_mb": 572.67,
         "throughput_tok_s": 10723.23,
         "latency_ms": 26360.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
-      "record_id": "12acd6dd3f52e291",
-      "module_name": "linformer",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-16T03:45:37.548517",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/mnli_unified_linformer/distilbert/checkpoints/linformer/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 40.1,
-        "f1": 0.2921,
-        "val_loss": 1.0853,
-        "peak_vram_mb": 354.69,
-        "throughput_tok_s": 48700.58,
-        "latency_ms": 5650.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
-      "record_id": "29bd0709e7dcdd0c",
-      "module_name": "linformer",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-17T13:00:12.905104",
-      "git_commit_sha": "d156d2e8d5",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_linformer/distilbert/checkpoints/linformer/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 70.5,
-        "f1": 0.7018,
-        "val_loss": 0.8606,
-        "peak_vram_mb": 512.31,
-        "throughput_tok_s": 15740.18,
-        "latency_ms": 61880.0,
         "compression_ratio": 1.0,
         "param_reduction_pct": 0.0
       },
@@ -277,32 +219,6 @@
       "notes": "Status: MODERATE_EXPANSION"
     },
     {
-      "record_id": "4a4440d0547d6f29",
-      "module_name": "linformer",
-      "category": "attention",
-      "family": "general",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T00:07:14+03:30",
-      "git_commit_sha": "b3e2b3ad08",
-      "generation_method": {
-        "algorithm": "Master Aggregated Evaluation Suite",
-        "source_artifact": "results/master_aggregated_results.csv"
-      },
-      "experimental_setup": {
-        "dataset": "SST-2",
-        "backbone": "DistilBERT"
-      },
-      "metrics": {
-        "accuracy": 90.83,
-        "roberta_acc": 50.92,
-        "gpt2_acc": 51.03,
-        "latency_ms": 73.5
-      },
-      "notes": "Master Aggregated Results"
-    },
-    {
       "record_id": "9a2eb29b1a16f454",
       "module_name": "linformer",
       "category": "attention",
@@ -357,6 +273,92 @@
         "latency_ms": 1.5
       },
       "notes": "Status: SUCCESS"
+    },
+    {
+      "record_id": "4a4440d0547d6f29",
+      "module_name": "linformer",
+      "category": "attention",
+      "family": "general",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Master Aggregated Evaluation Suite",
+        "source_artifact": "results/master_aggregated_results.csv"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2",
+        "backbone": "DistilBERT"
+      },
+      "metrics": {
+        "accuracy": 90.83,
+        "roberta_acc": 50.92,
+        "gpt2_acc": 51.03,
+        "latency_ms": 73.5
+      },
+      "notes": "Master Aggregated Results"
+    },
+    {
+      "record_id": "29bd0709e7dcdd0c",
+      "module_name": "linformer",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-17T13:00:12.905104",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_linformer/distilbert/checkpoints/linformer/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 70.5,
+        "f1": 0.7018,
+        "val_loss": 0.8606,
+        "peak_vram_mb": 512.31,
+        "throughput_tok_s": 15740.18,
+        "latency_ms": 61880.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "12acd6dd3f52e291",
+      "module_name": "linformer",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T03:45:37.548517",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/mnli_unified_linformer/distilbert/checkpoints/linformer/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 40.1,
+        "f1": 0.2921,
+        "val_loss": 1.0853,
+        "peak_vram_mb": 354.69,
+        "throughput_tok_s": 48700.58,
+        "latency_ms": 5650.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
     }
   ],
   "history": [
@@ -451,66 +453,6 @@
       "notes": "Status: PASS_NO_COMPRESSION"
     },
     {
-      "record_id": "12acd6dd3f52e291",
-      "module_name": "linformer",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-16T03:45:37.548517",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/mnli_unified_linformer/distilbert/checkpoints/linformer/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 40.1,
-        "f1": 0.2921,
-        "val_loss": 1.0853,
-        "peak_vram_mb": 354.69,
-        "throughput_tok_s": 48700.58,
-        "latency_ms": 5650.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
-      "record_id": "29bd0709e7dcdd0c",
-      "module_name": "linformer",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-17T13:00:12.905104",
-      "git_commit_sha": "d156d2e8d5",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_linformer/distilbert/checkpoints/linformer/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 70.5,
-        "f1": 0.7018,
-        "val_loss": 0.8606,
-        "peak_vram_mb": 512.31,
-        "throughput_tok_s": 15740.18,
-        "latency_ms": 61880.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
       "record_id": "f8f81523f104e6d5",
       "module_name": "linformer",
       "category": "attention",
@@ -601,32 +543,6 @@
       "notes": "Status: MODERATE_EXPANSION"
     },
     {
-      "record_id": "4a4440d0547d6f29",
-      "module_name": "linformer",
-      "category": "attention",
-      "family": "general",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T00:07:14+03:30",
-      "git_commit_sha": "b3e2b3ad08",
-      "generation_method": {
-        "algorithm": "Master Aggregated Evaluation Suite",
-        "source_artifact": "results/master_aggregated_results.csv"
-      },
-      "experimental_setup": {
-        "dataset": "SST-2",
-        "backbone": "DistilBERT"
-      },
-      "metrics": {
-        "accuracy": 90.83,
-        "roberta_acc": 50.92,
-        "gpt2_acc": 51.03,
-        "latency_ms": 73.5
-      },
-      "notes": "Master Aggregated Results"
-    },
-    {
       "record_id": "9a2eb29b1a16f454",
       "module_name": "linformer",
       "category": "attention",
@@ -681,6 +597,92 @@
         "latency_ms": 1.5
       },
       "notes": "Status: SUCCESS"
+    },
+    {
+      "record_id": "4a4440d0547d6f29",
+      "module_name": "linformer",
+      "category": "attention",
+      "family": "general",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Master Aggregated Evaluation Suite",
+        "source_artifact": "results/master_aggregated_results.csv"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2",
+        "backbone": "DistilBERT"
+      },
+      "metrics": {
+        "accuracy": 90.83,
+        "roberta_acc": 50.92,
+        "gpt2_acc": 51.03,
+        "latency_ms": 73.5
+      },
+      "notes": "Master Aggregated Results"
+    },
+    {
+      "record_id": "29bd0709e7dcdd0c",
+      "module_name": "linformer",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-17T13:00:12.905104",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_linformer/distilbert/checkpoints/linformer/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 70.5,
+        "f1": 0.7018,
+        "val_loss": 0.8606,
+        "peak_vram_mb": 512.31,
+        "throughput_tok_s": 15740.18,
+        "latency_ms": 61880.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "12acd6dd3f52e291",
+      "module_name": "linformer",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T03:45:37.548517",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/mnli_unified_linformer/distilbert/checkpoints/linformer/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 40.1,
+        "f1": 0.2921,
+        "val_loss": 1.0853,
+        "peak_vram_mb": 354.69,
+        "throughput_tok_s": 48700.58,
+        "latency_ms": 5650.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
     }
   ]
 }

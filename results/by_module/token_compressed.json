@@ -1,69 +1,43 @@
 {
   "module_name": "token_compressed",
   "category": "attention",
-  "family": "general",
+  "family": "bert",
   "total_runs": 8,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "b3e2b3ad08",
-  "latest_timestamp": "2026-10-15T00:07:14+03:30",
+  "latest_git_sha": "ffb470590f",
+  "latest_timestamp": "2026-09-16T03:57:31.189625",
   "latest_record": {
-    "record_id": "810bef7216c3c8c9",
+    "record_id": "4cb0e123231b7348",
     "module_name": "token_compressed",
     "category": "attention",
-    "family": "general",
+    "family": "bert",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-10-15T00:07:14+03:30",
-    "git_commit_sha": "b3e2b3ad08",
+    "timestamp_utc": "2026-09-16T03:57:31.189625",
+    "git_commit_sha": "ffb470590f",
     "generation_method": {
-      "algorithm": "Master Aggregated Evaluation Suite",
-      "source_artifact": "results/master_aggregated_results.csv"
+      "algorithm": "Calibration Sweep Record",
+      "source_artifact": "results/01_unified_runs/mnli_unified_token_compressed/distilbert/checkpoints/token_compressed/summary_record.json"
     },
     "experimental_setup": {
-      "dataset": "SST-2",
-      "backbone": "DistilBERT"
+      "backbone": "models/distilbert_sst2",
+      "dataset": "mnli"
     },
     "metrics": {
-      "accuracy": 78.21,
-      "roberta_acc": 50.92,
-      "gpt2_acc": 51.38,
-      "latency_ms": 77.1
+      "accuracy": 35.4,
+      "f1": 0.2658,
+      "val_loss": 1.1163,
+      "peak_vram_mb": 334.68,
+      "throughput_tok_s": 39154.77,
+      "latency_ms": 6520.0,
+      "compression_ratio": 1.0,
+      "param_reduction_pct": 0.0
     },
-    "notes": "Master Aggregated Results"
+    "notes": "Status: PASS_NO_COMPRESSION"
   },
   "active_records": [
-    {
-      "record_id": "4cb0e123231b7348",
-      "module_name": "token_compressed",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-16T03:57:31.189625",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/mnli_unified_token_compressed/distilbert/checkpoints/token_compressed/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 35.4,
-        "f1": 0.2658,
-        "val_loss": 1.1163,
-        "peak_vram_mb": 334.68,
-        "throughput_tok_s": 39154.77,
-        "latency_ms": 6520.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
     {
       "record_id": "b4960fd16139886f",
       "module_name": "token_compressed",
@@ -269,40 +243,40 @@
         "latency_ms": 77.1
       },
       "notes": "Master Aggregated Results"
+    },
+    {
+      "record_id": "4cb0e123231b7348",
+      "module_name": "token_compressed",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T03:57:31.189625",
+      "git_commit_sha": "ffb470590f",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/mnli_unified_token_compressed/distilbert/checkpoints/token_compressed/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 35.4,
+        "f1": 0.2658,
+        "val_loss": 1.1163,
+        "peak_vram_mb": 334.68,
+        "throughput_tok_s": 39154.77,
+        "latency_ms": 6520.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
     }
   ],
   "history": [
     {
-      "record_id": "4cb0e123231b7348",
-      "module_name": "token_compressed",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-16T03:57:31.189625",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/mnli_unified_token_compressed/distilbert/checkpoints/token_compressed/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 35.4,
-        "f1": 0.2658,
-        "val_loss": 1.1163,
-        "peak_vram_mb": 334.68,
-        "throughput_tok_s": 39154.77,
-        "latency_ms": 6520.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
       "record_id": "b4960fd16139886f",
       "module_name": "token_compressed",
       "category": "attention",
@@ -507,6 +481,36 @@
         "latency_ms": 77.1
       },
       "notes": "Master Aggregated Results"
+    },
+    {
+      "record_id": "4cb0e123231b7348",
+      "module_name": "token_compressed",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T03:57:31.189625",
+      "git_commit_sha": "ffb470590f",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/mnli_unified_token_compressed/distilbert/checkpoints/token_compressed/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 35.4,
+        "f1": 0.2658,
+        "val_loss": 1.1163,
+        "peak_vram_mb": 334.68,
+        "throughput_tok_s": 39154.77,
+        "latency_ms": 6520.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
     }
   ]
 }

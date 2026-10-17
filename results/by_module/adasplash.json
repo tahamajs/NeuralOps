@@ -5,7 +5,7 @@
   "total_runs": 9,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "2f366e4546",
+  "latest_git_sha": "81683bdbf8",
   "latest_timestamp": "2026-09-24T16:20:31.470413",
   "latest_record": {
     "record_id": "da7208c4f783dba8",
@@ -16,7 +16,7 @@
     "revision": 1,
     "status": "active",
     "timestamp_utc": "2026-09-24T16:20:31.470413",
-    "git_commit_sha": "2f366e4546",
+    "git_commit_sha": "81683bdbf8",
     "generation_method": {
       "algorithm": "Calibration Sweep Record",
       "source_artifact": "results/01_unified_runs/unified_runs/unified_adasplash/roberta/checkpoints/adasplash/summary_record.json"
@@ -93,66 +93,6 @@
         "peak_vram_mb": 581.78,
         "throughput_tok_s": 2424.6,
         "latency_ms": 93680.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
-      "record_id": "29fecd16a3594108",
-      "module_name": "adasplash",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-16T03:03:08.531430",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/mnli_unified_adasplash/distilbert/checkpoints/adasplash/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 40.7,
-        "f1": 0.3042,
-        "val_loss": 1.0868,
-        "peak_vram_mb": 406.89,
-        "throughput_tok_s": 12649.06,
-        "latency_ms": 17270.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
-      "record_id": "51bd58044c72822d",
-      "module_name": "adasplash",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-17T03:39:01.229997",
-      "git_commit_sha": "d156d2e8d5",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_adasplash/distilbert/checkpoints/adasplash/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 74.2,
-        "f1": 0.7335,
-        "val_loss": 0.7574,
-        "peak_vram_mb": 752.66,
-        "throughput_tok_s": 17187.63,
-        "latency_ms": 26830.0,
         "compression_ratio": 1.0,
         "param_reduction_pct": 0.0
       },
@@ -279,6 +219,66 @@
       "notes": "Status: REJECTED_EXPANSION"
     },
     {
+      "record_id": "51bd58044c72822d",
+      "module_name": "adasplash",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-17T03:39:01.229997",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_adasplash/distilbert/checkpoints/adasplash/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 74.2,
+        "f1": 0.7335,
+        "val_loss": 0.7574,
+        "peak_vram_mb": 752.66,
+        "throughput_tok_s": 17187.63,
+        "latency_ms": 26830.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "29fecd16a3594108",
+      "module_name": "adasplash",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T03:03:08.531430",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/mnli_unified_adasplash/distilbert/checkpoints/adasplash/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 40.7,
+        "f1": 0.3042,
+        "val_loss": 1.0868,
+        "peak_vram_mb": 406.89,
+        "throughput_tok_s": 12649.06,
+        "latency_ms": 17270.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
       "record_id": "da7208c4f783dba8",
       "module_name": "adasplash",
       "category": "attention",
@@ -287,7 +287,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-24T16:20:31.470413",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "81683bdbf8",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/01_unified_runs/unified_runs/unified_adasplash/roberta/checkpoints/adasplash/summary_record.json"
@@ -371,66 +371,6 @@
       "notes": "Status: PASS_NO_COMPRESSION"
     },
     {
-      "record_id": "29fecd16a3594108",
-      "module_name": "adasplash",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-16T03:03:08.531430",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/mnli_unified_adasplash/distilbert/checkpoints/adasplash/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 40.7,
-        "f1": 0.3042,
-        "val_loss": 1.0868,
-        "peak_vram_mb": 406.89,
-        "throughput_tok_s": 12649.06,
-        "latency_ms": 17270.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
-      "record_id": "51bd58044c72822d",
-      "module_name": "adasplash",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-17T03:39:01.229997",
-      "git_commit_sha": "d156d2e8d5",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_adasplash/distilbert/checkpoints/adasplash/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 74.2,
-        "f1": 0.7335,
-        "val_loss": 0.7574,
-        "peak_vram_mb": 752.66,
-        "throughput_tok_s": 17187.63,
-        "latency_ms": 26830.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
       "record_id": "23a2edd76bcb338a",
       "module_name": "adasplash",
       "category": "attention",
@@ -551,6 +491,66 @@
       "notes": "Status: REJECTED_EXPANSION"
     },
     {
+      "record_id": "51bd58044c72822d",
+      "module_name": "adasplash",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-17T03:39:01.229997",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_adasplash/distilbert/checkpoints/adasplash/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 74.2,
+        "f1": 0.7335,
+        "val_loss": 0.7574,
+        "peak_vram_mb": 752.66,
+        "throughput_tok_s": 17187.63,
+        "latency_ms": 26830.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "29fecd16a3594108",
+      "module_name": "adasplash",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T03:03:08.531430",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/mnli_unified_adasplash/distilbert/checkpoints/adasplash/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 40.7,
+        "f1": 0.3042,
+        "val_loss": 1.0868,
+        "peak_vram_mb": 406.89,
+        "throughput_tok_s": 12649.06,
+        "latency_ms": 17270.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
       "record_id": "da7208c4f783dba8",
       "module_name": "adasplash",
       "category": "attention",
@@ -559,7 +559,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-24T16:20:31.470413",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "81683bdbf8",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/01_unified_runs/unified_runs/unified_adasplash/roberta/checkpoints/adasplash/summary_record.json"

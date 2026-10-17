@@ -1,38 +1,41 @@
 {
   "module_name": "gqa",
-  "category": "triton_kernel",
-  "family": "Attention Softmax",
+  "category": "attention",
+  "family": "bert",
   "total_runs": 14,
-  "latest_version": "v1.3.6",
+  "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "0911d2c0ce",
-  "latest_timestamp": "2026-10-15T12:02:42+03:30",
+  "latest_git_sha": "9a4ff4e985",
+  "latest_timestamp": "2026-09-16T03:01:44.199769",
   "latest_record": {
-    "record_id": "215fe8754a196f6d",
+    "record_id": "509e2eb022dab839",
     "module_name": "gqa",
-    "category": "triton_kernel",
-    "family": "Attention Softmax",
-    "version_tag": "v1.3.6",
+    "category": "attention",
+    "family": "bert",
+    "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-10-15T12:02:42+03:30",
-    "git_commit_sha": "0911d2c0ce",
+    "timestamp_utc": "2026-09-16T03:01:44.199769",
+    "git_commit_sha": "9a4ff4e985",
     "generation_method": {
-      "algorithm": "Triton vs PyTorch Benchmark v136",
-      "primitive": "fused_weighted_gqa_online_softmax_triton",
-      "source_artifact": "results/triton_full_leaderboard_v136.json"
+      "algorithm": "Calibration Sweep Record",
+      "source_artifact": "results/01_unified_runs/mnli_unified_gqa/distilbert/checkpoints/gqa/summary_record.json"
     },
     "experimental_setup": {
-      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-      "shape": "B=2, Hq=12, Hkv=2, T=1024"
+      "backbone": "models/distilbert_sst2",
+      "dataset": "mnli"
     },
     "metrics": {
-      "latency_triton_ms": 0.215,
-      "latency_pytorch_ms": 5.033,
-      "speedup_x": 23.38,
-      "sram_bytes_saved_mb": 48.0
+      "accuracy": 33.9,
+      "f1": 0.1739,
+      "val_loss": 1.1113,
+      "peak_vram_mb": 343.22,
+      "throughput_tok_s": 53972.49,
+      "latency_ms": 5370.0,
+      "compression_ratio": 1.0474,
+      "param_reduction_pct": 4.52
     },
-    "notes": "Parity: PASS"
+    "notes": "Status: PASS_LOW"
   },
   "active_records": [
     {
@@ -122,36 +125,6 @@
         "latency_ms": 26720.0,
         "compression_ratio": 1.0511,
         "param_reduction_pct": 4.87
-      },
-      "notes": "Status: PASS_LOW"
-    },
-    {
-      "record_id": "509e2eb022dab839",
-      "module_name": "gqa",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-16T03:01:44.199769",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/mnli_unified_gqa/distilbert/checkpoints/gqa/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 33.9,
-        "f1": 0.1739,
-        "val_loss": 1.1113,
-        "peak_vram_mb": 343.22,
-        "throughput_tok_s": 53972.49,
-        "latency_ms": 5370.0,
-        "compression_ratio": 1.0474,
-        "param_reduction_pct": 4.52
       },
       "notes": "Status: PASS_LOW"
     },
@@ -447,6 +420,36 @@
         "sram_bytes_saved_mb": 48.0
       },
       "notes": "Parity: PASS"
+    },
+    {
+      "record_id": "509e2eb022dab839",
+      "module_name": "gqa",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T03:01:44.199769",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/mnli_unified_gqa/distilbert/checkpoints/gqa/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 33.9,
+        "f1": 0.1739,
+        "val_loss": 1.1113,
+        "peak_vram_mb": 343.22,
+        "throughput_tok_s": 53972.49,
+        "latency_ms": 5370.0,
+        "compression_ratio": 1.0474,
+        "param_reduction_pct": 4.52
+      },
+      "notes": "Status: PASS_LOW"
     }
   ],
   "history": [
@@ -541,36 +544,6 @@
       "notes": "Status: PASS_LOW"
     },
     {
-      "record_id": "509e2eb022dab839",
-      "module_name": "gqa",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-16T03:01:44.199769",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/mnli_unified_gqa/distilbert/checkpoints/gqa/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 33.9,
-        "f1": 0.1739,
-        "val_loss": 1.1113,
-        "peak_vram_mb": 343.22,
-        "throughput_tok_s": 53972.49,
-        "latency_ms": 5370.0,
-        "compression_ratio": 1.0474,
-        "param_reduction_pct": 4.52
-      },
-      "notes": "Status: PASS_LOW"
-    },
-    {
       "record_id": "29ed1594a5e20a7c",
       "module_name": "gqa",
       "category": "attention",
@@ -862,6 +835,36 @@
         "sram_bytes_saved_mb": 48.0
       },
       "notes": "Parity: PASS"
+    },
+    {
+      "record_id": "509e2eb022dab839",
+      "module_name": "gqa",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T03:01:44.199769",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/mnli_unified_gqa/distilbert/checkpoints/gqa/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 33.9,
+        "f1": 0.1739,
+        "val_loss": 1.1113,
+        "peak_vram_mb": 343.22,
+        "throughput_tok_s": 53972.49,
+        "latency_ms": 5370.0,
+        "compression_ratio": 1.0474,
+        "param_reduction_pct": 4.52
+      },
+      "notes": "Status: PASS_LOW"
     }
   ]
 }

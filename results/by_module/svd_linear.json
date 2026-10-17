@@ -1,67 +1,43 @@
 {
   "module_name": "svd_linear",
-  "category": "compressor",
-  "family": "matrix-compression",
+  "category": "attention",
+  "family": "bert",
   "total_runs": 10,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "25d9fe36fa",
-  "latest_timestamp": "2026-10-16T09:08:37Z",
+  "latest_git_sha": "103e53b8d4",
+  "latest_timestamp": "2026-09-16T03:09:45.248459",
   "latest_record": {
-    "record_id": "fe25793380cc4b4e",
+    "record_id": "7edfc5cecbcdaa48",
     "module_name": "svd_linear",
-    "category": "compressor",
-    "family": "matrix-compression",
+    "category": "attention",
+    "family": "bert",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-10-16T09:08:37Z",
-    "git_commit_sha": "25d9fe36fa",
+    "timestamp_utc": "2026-09-16T03:09:45.248459",
+    "git_commit_sha": "103e53b8d4",
     "generation_method": {
-      "algorithm": "Low-Rank SVD / Structured Quantization Factorizer",
-      "source_artifact": "results/triton_all_72_compressors_benchmark.json"
+      "algorithm": "Calibration Sweep Record",
+      "source_artifact": "results/01_unified_runs/mnli_unified_svd_linear/distilbert/checkpoints/svd_linear/summary_record.json"
     },
     "experimental_setup": {
-      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-      "dtype": "float16"
+      "backbone": "models/distilbert_sst2",
+      "dataset": "mnli"
     },
     "metrics": {
-      "compress_ms": 32.4,
-      "relative_error": 0.1903
+      "accuracy": 37.3,
+      "f1": 0.2862,
+      "val_loss": 1.1093,
+      "peak_vram_mb": 298.09,
+      "throughput_tok_s": 50078.0,
+      "latency_ms": 7020.0,
+      "compression_ratio": 1.1998,
+      "param_reduction_pct": 16.65
     },
-    "notes": "72 Compressor Matrix Compression Benchmark"
+    "notes": "Status: PASS_LOW"
   },
   "active_records": [
-    {
-      "record_id": "7edfc5cecbcdaa48",
-      "module_name": "svd_linear",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-16T02:56:05.186257",
-      "git_commit_sha": "6267bfb8a8",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/_archive/old_tests/test_mnli_distilbert/checkpoints/svd_linear/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 37.3,
-        "f1": 0.2862,
-        "val_loss": 1.1093,
-        "peak_vram_mb": 298.09,
-        "throughput_tok_s": 46796.45,
-        "latency_ms": 7650.0,
-        "compression_ratio": 1.1998,
-        "param_reduction_pct": 16.65
-      },
-      "notes": "Status: PASS_LOW"
-    },
     {
       "record_id": "f68b53b9dc1cbfd1",
       "module_name": "svd_linear",
@@ -153,32 +129,6 @@
       "notes": "Status: MODERATE_EXPANSION"
     },
     {
-      "record_id": "38e283394733d3b9",
-      "module_name": "svd_linear",
-      "category": "attention",
-      "family": "general",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T00:07:14+03:30",
-      "git_commit_sha": "b3e2b3ad08",
-      "generation_method": {
-        "algorithm": "Master Aggregated Evaluation Suite",
-        "source_artifact": "results/master_aggregated_results.csv"
-      },
-      "experimental_setup": {
-        "dataset": "SST-2",
-        "backbone": "DistilBERT"
-      },
-      "metrics": {
-        "accuracy": 86.58,
-        "roberta_acc": 54.01,
-        "gpt2_acc": 57.22,
-        "latency_ms": 98.4
-      },
-      "notes": "Master Aggregated Results"
-    },
-    {
       "record_id": "41bf50e888c42909",
       "module_name": "svd_linear",
       "category": "attention",
@@ -235,31 +185,6 @@
       "notes": "Status: SUCCESS"
     },
     {
-      "record_id": "a2f3af44f1269199",
-      "module_name": "svd_linear",
-      "category": "attention",
-      "family": "attention",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T04:02:13+03:30",
-      "git_commit_sha": "5d553a2079",
-      "generation_method": {
-        "algorithm": "End-to-End Evaluation & Perplexity Probe",
-        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
-      },
-      "experimental_setup": {
-        "dataset": "SST-2 / WikiText-2",
-        "backbone": "DistilBERT / GPT-2"
-      },
-      "metrics": {
-        "accuracy": 92.91,
-        "ppl": 35.71,
-        "latency_ms": 4660.0
-      },
-      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
-    },
-    {
       "record_id": "347a8774710142dd",
       "module_name": "svd_linear",
       "category": "attention",
@@ -307,40 +232,91 @@
         "relative_error": 0.1903
       },
       "notes": "72 Compressor Matrix Compression Benchmark"
+    },
+    {
+      "record_id": "a2f3af44f1269199",
+      "module_name": "svd_linear",
+      "category": "attention",
+      "family": "attention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T04:02:13+03:30",
+      "git_commit_sha": "5d553a2079",
+      "generation_method": {
+        "algorithm": "End-to-End Evaluation & Perplexity Probe",
+        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2 / WikiText-2",
+        "backbone": "DistilBERT / GPT-2"
+      },
+      "metrics": {
+        "accuracy": 92.91,
+        "ppl": 35.71,
+        "latency_ms": 4660.0
+      },
+      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
+    },
+    {
+      "record_id": "38e283394733d3b9",
+      "module_name": "svd_linear",
+      "category": "attention",
+      "family": "general",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Master Aggregated Evaluation Suite",
+        "source_artifact": "results/master_aggregated_results.csv"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2",
+        "backbone": "DistilBERT"
+      },
+      "metrics": {
+        "accuracy": 86.58,
+        "roberta_acc": 54.01,
+        "gpt2_acc": 57.22,
+        "latency_ms": 98.4
+      },
+      "notes": "Master Aggregated Results"
+    },
+    {
+      "record_id": "7edfc5cecbcdaa48",
+      "module_name": "svd_linear",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T03:09:45.248459",
+      "git_commit_sha": "103e53b8d4",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/mnli_unified_svd_linear/distilbert/checkpoints/svd_linear/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 37.3,
+        "f1": 0.2862,
+        "val_loss": 1.1093,
+        "peak_vram_mb": 298.09,
+        "throughput_tok_s": 50078.0,
+        "latency_ms": 7020.0,
+        "compression_ratio": 1.1998,
+        "param_reduction_pct": 16.65
+      },
+      "notes": "Status: PASS_LOW"
     }
   ],
   "history": [
     {
-      "record_id": "7edfc5cecbcdaa48",
-      "module_name": "svd_linear",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-16T02:56:05.186257",
-      "git_commit_sha": "6267bfb8a8",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/_archive/old_tests/test_mnli_distilbert/checkpoints/svd_linear/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 37.3,
-        "f1": 0.2862,
-        "val_loss": 1.1093,
-        "peak_vram_mb": 298.09,
-        "throughput_tok_s": 46796.45,
-        "latency_ms": 7650.0,
-        "compression_ratio": 1.1998,
-        "param_reduction_pct": 16.65
-      },
-      "notes": "Status: PASS_LOW"
-    },
-    {
       "record_id": "f68b53b9dc1cbfd1",
       "module_name": "svd_linear",
       "category": "attention",
@@ -431,32 +407,6 @@
       "notes": "Status: MODERATE_EXPANSION"
     },
     {
-      "record_id": "38e283394733d3b9",
-      "module_name": "svd_linear",
-      "category": "attention",
-      "family": "general",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T00:07:14+03:30",
-      "git_commit_sha": "b3e2b3ad08",
-      "generation_method": {
-        "algorithm": "Master Aggregated Evaluation Suite",
-        "source_artifact": "results/master_aggregated_results.csv"
-      },
-      "experimental_setup": {
-        "dataset": "SST-2",
-        "backbone": "DistilBERT"
-      },
-      "metrics": {
-        "accuracy": 86.58,
-        "roberta_acc": 54.01,
-        "gpt2_acc": 57.22,
-        "latency_ms": 98.4
-      },
-      "notes": "Master Aggregated Results"
-    },
-    {
       "record_id": "41bf50e888c42909",
       "module_name": "svd_linear",
       "category": "attention",
@@ -513,31 +463,6 @@
       "notes": "Status: SUCCESS"
     },
     {
-      "record_id": "a2f3af44f1269199",
-      "module_name": "svd_linear",
-      "category": "attention",
-      "family": "attention",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T04:02:13+03:30",
-      "git_commit_sha": "5d553a2079",
-      "generation_method": {
-        "algorithm": "End-to-End Evaluation & Perplexity Probe",
-        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
-      },
-      "experimental_setup": {
-        "dataset": "SST-2 / WikiText-2",
-        "backbone": "DistilBERT / GPT-2"
-      },
-      "metrics": {
-        "accuracy": 92.91,
-        "ppl": 35.71,
-        "latency_ms": 4660.0
-      },
-      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
-    },
-    {
       "record_id": "347a8774710142dd",
       "module_name": "svd_linear",
       "category": "attention",
@@ -585,6 +510,87 @@
         "relative_error": 0.1903
       },
       "notes": "72 Compressor Matrix Compression Benchmark"
+    },
+    {
+      "record_id": "a2f3af44f1269199",
+      "module_name": "svd_linear",
+      "category": "attention",
+      "family": "attention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T04:02:13+03:30",
+      "git_commit_sha": "5d553a2079",
+      "generation_method": {
+        "algorithm": "End-to-End Evaluation & Perplexity Probe",
+        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2 / WikiText-2",
+        "backbone": "DistilBERT / GPT-2"
+      },
+      "metrics": {
+        "accuracy": 92.91,
+        "ppl": 35.71,
+        "latency_ms": 4660.0
+      },
+      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
+    },
+    {
+      "record_id": "38e283394733d3b9",
+      "module_name": "svd_linear",
+      "category": "attention",
+      "family": "general",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Master Aggregated Evaluation Suite",
+        "source_artifact": "results/master_aggregated_results.csv"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2",
+        "backbone": "DistilBERT"
+      },
+      "metrics": {
+        "accuracy": 86.58,
+        "roberta_acc": 54.01,
+        "gpt2_acc": 57.22,
+        "latency_ms": 98.4
+      },
+      "notes": "Master Aggregated Results"
+    },
+    {
+      "record_id": "7edfc5cecbcdaa48",
+      "module_name": "svd_linear",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T03:09:45.248459",
+      "git_commit_sha": "103e53b8d4",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/mnli_unified_svd_linear/distilbert/checkpoints/svd_linear/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 37.3,
+        "f1": 0.2862,
+        "val_loss": 1.1093,
+        "peak_vram_mb": 298.09,
+        "throughput_tok_s": 50078.0,
+        "latency_ms": 7020.0,
+        "compression_ratio": 1.1998,
+        "param_reduction_pct": 16.65
+      },
+      "notes": "Status: PASS_LOW"
     }
   ]
 }

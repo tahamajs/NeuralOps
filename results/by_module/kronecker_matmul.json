@@ -5,8 +5,8 @@
   "total_runs": 2,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "9ed147b99c",
-  "latest_timestamp": "2026-10-16T21:00:09+03:30",
+  "latest_git_sha": "2395ff7d5a",
+  "latest_timestamp": "2026-10-17T18:26:51+03:30",
   "latest_record": {
     "record_id": "3cfe8ca315ab93eb",
     "module_name": "kronecker_matmul",
@@ -15,8 +15,8 @@
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-10-16T21:00:09+03:30",
-    "git_commit_sha": "9ed147b99c",
+    "timestamp_utc": "2026-10-17T18:26:51+03:30",
+    "git_commit_sha": "2395ff7d5a",
     "generation_method": {
       "algorithm": "3-Level Native CUDA C++ vs Triton JIT vs PyTorch",
       "source_artifact": "results/benchmark_3level_cuda_triton_pytorch.json"
@@ -25,10 +25,10 @@
       "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)"
     },
     "metrics": {
-      "latency_cuda_ms": 0.30867456436157226,
-      "latency_triton_ms": 0.026021440029144288,
-      "latency_pytorch_ms": 0.030638399124145507,
-      "speedup_x": 0.09925793266288242
+      "latency_cuda_ms": 0.017049599885940552,
+      "latency_triton_ms": 0.025332159996032715,
+      "latency_pytorch_ms": 0.030402560234069825,
+      "speedup_x": 1.7831832088411879
     },
     "notes": "3-Level Execution Hierarchy Benchmark"
   },
@@ -66,8 +66,8 @@
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T21:00:09+03:30",
-      "git_commit_sha": "9ed147b99c",
+      "timestamp_utc": "2026-10-17T18:26:51+03:30",
+      "git_commit_sha": "2395ff7d5a",
       "generation_method": {
         "algorithm": "3-Level Native CUDA C++ vs Triton JIT vs PyTorch",
         "source_artifact": "results/benchmark_3level_cuda_triton_pytorch.json"
@@ -76,10 +76,10 @@
         "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)"
       },
       "metrics": {
-        "latency_cuda_ms": 0.30867456436157226,
-        "latency_triton_ms": 0.026021440029144288,
-        "latency_pytorch_ms": 0.030638399124145507,
-        "speedup_x": 0.09925793266288242
+        "latency_cuda_ms": 0.017049599885940552,
+        "latency_triton_ms": 0.025332159996032715,
+        "latency_pytorch_ms": 0.030402560234069825,
+        "speedup_x": 1.7831832088411879
       },
       "notes": "3-Level Execution Hierarchy Benchmark"
     }
@@ -118,8 +118,8 @@
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T21:00:09+03:30",
-      "git_commit_sha": "9ed147b99c",
+      "timestamp_utc": "2026-10-17T18:26:51+03:30",
+      "git_commit_sha": "2395ff7d5a",
       "generation_method": {
         "algorithm": "3-Level Native CUDA C++ vs Triton JIT vs PyTorch",
         "source_artifact": "results/benchmark_3level_cuda_triton_pytorch.json"
@@ -128,10 +128,10 @@
         "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)"
       },
       "metrics": {
-        "latency_cuda_ms": 0.30867456436157226,
-        "latency_triton_ms": 0.026021440029144288,
-        "latency_pytorch_ms": 0.030638399124145507,
-        "speedup_x": 0.09925793266288242
+        "latency_cuda_ms": 0.017049599885940552,
+        "latency_triton_ms": 0.025332159996032715,
+        "latency_pytorch_ms": 0.030402560234069825,
+        "speedup_x": 1.7831832088411879
       },
       "notes": "3-Level Execution Hierarchy Benchmark"
     }
