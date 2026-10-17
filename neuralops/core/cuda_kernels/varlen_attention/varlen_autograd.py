@@ -108,6 +108,8 @@ def varlen_attention(
         )
 
     triton_fn = _get_triton_impl()
+    if q.shape[-1] > 128:
+        cuda_fn = None
 
     return dispatch(
         cuda_fn,
