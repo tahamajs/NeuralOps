@@ -94,8 +94,8 @@ def dispatch(
     """
     global _DISPATCH_STATS
 
-    # CPU fast-path: Pure PyTorch Reference immediately
-    if _is_first_tensor_cpu(*args, **kwargs):
+    # CPU fast-path: Pure PyTorch Reference immediately for real kernels when CPU tensor is given
+    if kernel_name != "unknown" and _is_first_tensor_cpu(*args, **kwargs):
         _DISPATCH_STATS["pytorch"] += 1
         return pytorch_fn(*args, **kwargs)
 
