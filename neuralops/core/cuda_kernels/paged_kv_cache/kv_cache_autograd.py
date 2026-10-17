@@ -49,13 +49,15 @@ def copy_blocks_cow_pytorch_ref(
     max_src = src_k.shape[0]
     max_dst = dst_k.shape[0]
 
-    for i in range(block_mapping.shape[0]):
-        src_idx = int(block_mapping[i, 0].item())
-        dst_idx = int(block_mapping[i, 1].item())
-        if src_idx < 0 or dst_idx < 0 or src_idx >= max_src or dst_idx >= max_dst:
-            continue
-        dst_k[dst_idx].copy_(src_k[src_idx])
-        dst_v[dst_idx].copy_(src_v[src_idx])
+    src_idx = block_mapping[:, 0].long()
+    dst_idx = block_mapping[:, 1].long()
+    valid_mask = (src_idx >= 0) & (src_idx < max_src) & (dst_idx >= 0) & (dst_idx < max_dst)
+    valid_src = src_idx[valid_mask]
+    valid_dst = dst_idx[valid_mask]
+
+    if valid_dst.numel() > 0:
+        dst_k[valid_dst] = src_k[valid_src]
+        dst_v[valid_dst] = src_v[valid_src]
 
     return dst_k, dst_v
 
