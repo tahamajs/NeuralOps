@@ -44,6 +44,59 @@ from neuralops.core.utils.rope import _rotate_half
 
 
 
+class DSAConfig:
+    """Configuration for Dynamic Sparse Attention (DSA) Learned Block Routing."""
+
+    def __init__(
+        self,
+        block_size: int = 64,
+        top_k: int = 8,
+        router_hidden: int = 64,
+        **kwargs: Any,
+    ) -> None:
+        self.block_size = block_size
+        self.top_k = top_k
+        self.router_hidden = router_hidden
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+
+
+class LearnedBlockRouter(nn.Module):
+    """Learned Block-Sparse Router for DSA."""
+
+    def __init__(self, d: int, num_blocks: int, router_hidden: int = 64) -> None:
+        super().__init__()
+        self.d = d
+        self.num_blocks = num_blocks
+        self.router_hidden = router_hidden
+        self.router = nn.Sequential(
+            nn.Linear(d, router_hidden),
+            nn.GELU(),
+            nn.Linear(router_hidden, num_blocks),
+        )
+
+    def forward(self, q: torch.Tensor, top_k: int | None = None) -> tuple[torch.Tensor, torch.Tensor]:
+        """Route query representation to top-k key/value blocks.
+
+        Args:
+            q: Query tensor of shape [B, L, d] (or [B, d]).
+            top_k: Number of blocks to select.
+
+        Returns:
+            block_logits: Tensor of shape [B, num_blocks]
+            selected_blocks: Top-k selected block indices of shape [B, top_k]
+        """
+        if q.ndim == 3:
+            q_rep = q.mean(dim=1)
+        else:
+            q_rep = q
+        block_logits = self.router(q_rep)
+        k_val = top_k if top_k is not None else self.num_blocks
+        k_val = min(k_val, block_logits.shape[-1])
+        selected_blocks = torch.topk(block_logits, k=k_val, dim=-1).indices
+        return block_logits, selected_blocks
+
+
 @ATTENTION_REGISTRY.register(
     "nsa_attention",
     supports_causal=True,
@@ -73,9 +126,9 @@ class NativeSparseAttention(BaseAttention):
         **kwargs: Any,
     ) -> None:
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
-        super().__init__(config, rank)
+        super().__init__(config, rank, **kwargs)
 
-        hidden_size = kwargs.get("hidden_size")
+        hidden_size = kwargs.get("dim") or kwargs.get("hidden_size") or kwargs.get("d_model")
         num_heads = kwargs.get("num_heads") or kwargs.get("num_attention_heads")
         num_kv_heads = kwargs.get("num_key_value_heads") or kwargs.get("num_kv_heads")
 
@@ -131,10 +184,19 @@ class NativeSparseAttention(BaseAttention):
         self.all_kv_head_size = self.num_kv_heads * self.head_dim
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
         self.supports_gqa = True
+        self.block_size = int(
+            kwargs.get("block_size", getattr(config, "block_size", 64))
+        )
         self.window_size = (
             getattr(config, "nsa_window_size", window_size) if config else window_size
         )
         self.top_k = getattr(config, "nsa_top_k", top_k) if config else top_k
+        self.router_hidden = int(
+            kwargs.get("router_hidden", getattr(config, "router_hidden", 64))
+        )
+
+        # DSA Router placeholder (instantiated dynamically or explicitly)
+        self._learned_router: LearnedBlockRouter | None = None
 
         # Decoder detection
         model_type = getattr(config, "model_type", "").lower() if config else ""
@@ -454,16 +516,36 @@ class NativeSparseAttention(BaseAttention):
         position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
         output_attentions: bool | None = False,
         *args: Any,
+        return_mask: bool = False,
         **kwargs: Any,
-    ) -> tuple[torch.Tensor, torch.Tensor | None]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None] | tuple[torch.Tensor, torch.Tensor]:
         B, L, D = hidden_states.shape
         H, d = self.num_heads, self.head_dim
         device = hidden_states.device
         dtype = hidden_states.dtype
 
-        Q = self.q_proj(hidden_states).view(B, L, H, d).permute(0, 2, 1, 3)
-        K = self.k_proj(hidden_states).view(B, L, self.num_kv_heads, d).permute(0, 2, 1, 3)
-        V = self.v_proj(hidden_states).view(B, L, self.num_kv_heads, d).permute(0, 2, 1, 3)
+        return_mask = return_mask or kwargs.get("return_mask", False)
+
+        # Compute query representation for router / projections
+        q_raw = self.q_proj(hidden_states)
+        k_raw = self.k_proj(hidden_states)
+        v_raw = self.v_proj(hidden_states)
+
+        num_blocks = (L + self.block_size - 1) // self.block_size
+        if self._learned_router is None or self._learned_router.num_blocks != num_blocks or self._learned_router.d != self.all_head_size:
+            self._learned_router = LearnedBlockRouter(
+                d=self.all_head_size,
+                num_blocks=num_blocks,
+                router_hidden=self.router_hidden,
+            ).to(device=device, dtype=q_raw.dtype)
+
+        _, selected_blocks = self._learned_router(q_raw, top_k=self.top_k)
+        # Construct boolean block_mask: [B, num_blocks]
+        block_mask = torch.zeros(B, num_blocks, device=device, dtype=torch.bool).scatter_(-1, selected_blocks, True)
+
+        Q = q_raw.view(B, L, H, d).permute(0, 2, 1, 3)
+        K = k_raw.view(B, L, self.num_kv_heads, d).permute(0, 2, 1, 3)
+        V = v_raw.view(B, L, self.num_kv_heads, d).permute(0, 2, 1, 3)
         is_cross = bool(kwargs.get("is_cross_attention", False))
 
         if position_embeddings is not None:
@@ -479,6 +561,7 @@ class NativeSparseAttention(BaseAttention):
             (2 * self.window_size + 1) >= L
             and attention_mask is None
             and not output_attentions
+            and not return_mask
             and head_mask is None
         ):
             try:
@@ -516,6 +599,9 @@ class NativeSparseAttention(BaseAttention):
         valid_mask_2d = get_token_valid_mask(attention_mask, B, L, device)
         key_valid_4d = valid_mask_2d.unsqueeze(1).unsqueeze(2)
 
+        # DSA block sparsity token mask: [B, 1, 1, L]
+        token_block_mask = block_mask.repeat_interleave(self.block_size, dim=-1)[..., :L].unsqueeze(1).unsqueeze(2)
+
         # Local sliding window boolean mask
         idx = torch.arange(L, device=device)
         if self.is_decoder:
@@ -538,12 +624,14 @@ class NativeSparseAttention(BaseAttention):
             local_mask = (idx.unsqueeze(1) - idx.unsqueeze(0)).abs() <= self.window_size
         local_mask_4d = local_mask.unsqueeze(0).unsqueeze(0)
 
-        from neuralops.core.triton_kernels.sparse_attn import fused_nsa_hierarchical_sparse_triton
-
-        total_mask = fused_nsa_hierarchical_sparse_triton(
-            scores, local_mask_4d, key_valid_4d, self.top_k, is_causal=is_dec
-        )
-
+        # Mask combines local context and DSA routed blocks
+        if return_mask:
+            total_mask = token_block_mask & key_valid_4d
+        else:
+            total_mask = (local_mask_4d | token_block_mask) & key_valid_4d
+        if is_dec:
+            causal_tril = torch.tril(torch.ones(L, L, device=device, dtype=torch.bool)).unsqueeze(0).unsqueeze(0)
+            total_mask = total_mask & causal_tril
 
         scores = scores.masked_fill(~total_mask, -1e4)
         attn = F.softmax(scores, dim=-1).to(dtype)
@@ -568,6 +656,8 @@ class NativeSparseAttention(BaseAttention):
         else:
             output = self.out_proj(context)
 
+        if return_mask:
+            return output, block_mask
         return output, (attn if output_attentions else None)
 
 
