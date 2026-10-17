@@ -48,6 +48,7 @@ def paged_recurrent_step_pytorch_ref(
     return torch.matmul(q.unsqueeze(-2), S_next).squeeze(-2)
 
 paged_recurrent_step_ref = paged_recurrent_step_pytorch_ref
+paged_recurrent_state_step_pytorch = paged_recurrent_step_pytorch_ref
 
 def paged_recurrent_step(
     q: torch.Tensor,
