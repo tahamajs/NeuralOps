@@ -94,37 +94,28 @@ def benchmark_gap_2_asvd_kv_cache(device: torch.device) -> Dict[str, Any]:
     rank = 16
 
     attn = SVDLinearAttention(
-        d_model=D,
-        n_heads=H,
+        hidden_size=D,
+        num_heads=H,
         rank=rank,
-        supports_kv_cache=True,
+        mode="exact",
     ).to(device)
     attn.eval()
 
-    q = torch.randn(B, T, D, device=device)
-    k = torch.randn(B, T, D, device=device)
-    v = torch.randn(B, T, D, device=device)
+    hidden_states = torch.randn(B, T, D, device=device)
 
     # Full sequence forward
     with torch.no_grad():
-        out_full = attn(q, k, v)
+        out_full = attn(hidden_states)
         if isinstance(out_full, tuple):
             out_full = out_full[0]
 
     # Token-by-token streaming forward with KV-cache
-    cache = attn.init_kv_cache(batch_size=B, device=device, dtype=q.dtype) if hasattr(attn, "init_kv_cache") else None
+    cache = attn.init_kv_cache(batch_size=B, max_len=T, device=device, dtype=hidden_states.dtype)
     streaming_outs = []
     with torch.no_grad():
         for t in range(T):
-            qt = q[:, t:t+1, :]
-            kt = k[:, t:t+1, :]
-            vt = v[:, t:t+1, :]
-            if hasattr(attn, "streaming_forward") and cache is not None:
-                ot, cache = attn.streaming_forward(qt, kt, vt, cache=cache)
-            else:
-                ot = attn(qt, kt, vt)
-                if isinstance(ot, tuple):
-                    ot = ot[0]
+            xt = hidden_states[:, t:t+1, :]
+            ot = attn.streaming_forward(xt, kv_cache=cache)
             streaming_outs.append(ot)
 
     out_stream = torch.cat(streaming_outs, dim=1)
