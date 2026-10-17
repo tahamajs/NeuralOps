@@ -1,0 +1,361 @@
+{
+  "metadata": {
+    "title": "NeuralOps Analytical vs Numerical Finite Difference Gradcheck Audit",
+    "timestamp": "2026-10-17 21:59:20 UTC",
+    "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "pytorch_version": "2.11.0+cu128",
+    "cuda_version": "12.8",
+    "total_modules_audited": 40,
+    "total_passed": 38,
+    "pass_rate_pct": 95.0,
+    "precision": "torch.float64",
+    "finite_difference_eps": 1e-05,
+    "atol": 0.001,
+    "rtol": 0.01
+  },
+  "audit_records": [
+    {
+      "module": "full_attention",
+      "type": "attention",
+      "precision": "float64",
+      "status": "PASSED",
+      "gradcheck_passed": true,
+      "elapsed_ms": 164.22,
+      "jacobian_error_norm": 0.0
+    },
+    {
+      "module": "cosformer",
+      "type": "attention",
+      "precision": "float64",
+      "status": "PASSED",
+      "gradcheck_passed": true,
+      "elapsed_ms": 88.61,
+      "jacobian_error_norm": 0.0
+    },
+    {
+      "module": "gla_attention",
+      "type": "attention",
+      "precision": "float64",
+      "status": "FAILED",
+      "gradcheck_passed": false,
+      "error": "Jacobian mismatch for output 0 with respect to input 0,\nnumerical:-5.819558556010381\nanalytical:-0.03872709806443925\n\nTh"
+    },
+    {
+      "module": "gated_delta_net",
+      "type": "attention",
+      "precision": "float64",
+      "status": "PASSED",
+      "gradcheck_passed": true,
+      "elapsed_ms": 170.79,
+      "jacobian_error_norm": 0.0
+    },
+    {
+      "module": "mla_attention",
+      "type": "attention",
+      "precision": "float64",
+      "status": "PASSED",
+      "gradcheck_passed": true,
+      "elapsed_ms": 5.01,
+      "jacobian_error_norm": 0.0
+    },
+    {
+      "module": "gqa_attention",
+      "type": "attention",
+      "precision": "float64",
+      "status": "PASSED",
+      "gradcheck_passed": true,
+      "elapsed_ms": 24.18,
+      "jacobian_error_norm": 0.0
+    },
+    {
+      "module": "svd_linear_attention",
+      "type": "attention",
+      "precision": "float64",
+      "status": "PASSED",
+      "gradcheck_passed": true,
+      "elapsed_ms": 9.24,
+      "jacobian_error_norm": 0.0
+    },
+    {
+      "module": "primal_attention",
+      "type": "attention",
+      "precision": "float64",
+      "status": "PASSED",
+      "gradcheck_passed": true,
+      "elapsed_ms": 33.23,
+      "jacobian_error_norm": 0.0
+    },
+    {
+      "module": "linformer_attention",
+      "type": "attention",
+      "precision": "float64",
+      "status": "PASSED",
+      "gradcheck_passed": true,
+      "elapsed_ms": 7.07,
+      "jacobian_error_norm": 0.0
+    },
+    {
+      "module": "performer_attention",
+      "type": "attention",
+      "precision": "float64",
+      "status": "PASSED",
+      "gradcheck_passed": true,
+      "elapsed_ms": 6.13,
+      "jacobian_error_norm": 0.0
+    },
+    {
+      "module": "sink_attention",
+      "type": "attention",
+      "precision": "float64",
+      "status": "PASSED",
+      "gradcheck_passed": true,
+      "elapsed_ms": 3.72,
+      "jacobian_error_norm": 0.0
+    },
+    {
+      "module": "nystrom_attention",
+      "type": "attention",
+      "precision": "float64",
+      "status": "PASSED",
+      "gradcheck_passed": true,
+      "elapsed_ms": 3.85,
+      "jacobian_error_norm": 0.0
+    },
+    {
+      "module": "routing_attention",
+      "type": "attention",
+      "precision": "float64",
+      "status": "PASSED",
+      "gradcheck_passed": true,
+      "elapsed_ms": 45.55,
+      "jacobian_error_norm": 0.0
+    },
+    {
+      "module": "adaptive_sparse_attention",
+      "type": "attention",
+      "precision": "float64",
+      "status": "PASSED",
+      "gradcheck_passed": true,
+      "elapsed_ms": 5.21,
+      "jacobian_error_norm": 0.0
+    },
+    {
+      "module": "spectraformer_attention",
+      "type": "attention",
+      "precision": "float64",
+      "status": "FAILED",
+      "gradcheck_passed": false,
+      "error": "Jacobian mismatch for output 0 with respect to input 0,\nnumerical:1.1678047721078388\nanalytical:0.15189295362614202\n\nThe"
+    },
+    {
+      "module": "hgrn2_gated_deltanet",
+      "type": "attention",
+      "precision": "float64",
+      "status": "PASSED",
+      "gradcheck_passed": true,
+      "elapsed_ms": 212.27,
+      "jacobian_error_norm": 0.0
+    },
+    {
+      "module": "mamba_block",
+      "type": "attention",
+      "precision": "float64",
+      "status": "PASSED",
+      "gradcheck_passed": true,
+      "elapsed_ms": 15.34,
+      "jacobian_error_norm": 0.0
+    },
+    {
+      "module": "flash_attention3",
+      "type": "attention",
+      "precision": "float64",
+      "status": "PASSED",
+      "gradcheck_passed": true,
+      "elapsed_ms": 4.56,
+      "jacobian_error_norm": 0.0
+    },
+    {
+      "module": "split_head_hybrid",
+      "type": "attention",
+      "precision": "float64",
+      "status": "PASSED",
+      "gradcheck_passed": true,
+      "elapsed_ms": 5.35,
+      "jacobian_error_norm": 0.0
+    },
+    {
+      "module": "tri_branch_hybrid",
+      "type": "attention",
+      "precision": "float64",
+      "status": "PASSED",
+      "gradcheck_passed": true,
+      "elapsed_ms": 9.8,
+      "jacobian_error_norm": 0.0
+    },
+    {
+      "module": "regla_attention",
+      "type": "attention",
+      "precision": "float64",
+      "status": "PASSED",
+      "gradcheck_passed": true,
+      "elapsed_ms": 6.84,
+      "jacobian_error_norm": 0.0
+    },
+    {
+      "module": "chela_slay",
+      "type": "attention",
+      "precision": "float64",
+      "status": "PASSED",
+      "gradcheck_passed": true,
+      "elapsed_ms": 12.09,
+      "jacobian_error_norm": 0.0
+    },
+    {
+      "module": "salt_attention",
+      "type": "attention",
+      "precision": "float64",
+      "status": "PASSED",
+      "gradcheck_passed": true,
+      "elapsed_ms": 5.36,
+      "jacobian_error_norm": 0.0
+    },
+    {
+      "module": "zeros_attention",
+      "type": "attention",
+      "precision": "float64",
+      "status": "PASSED",
+      "gradcheck_passed": true,
+      "elapsed_ms": 14.2,
+      "jacobian_error_norm": 0.0
+    },
+    {
+      "module": "decay_linear_attention",
+      "type": "attention",
+      "precision": "float64",
+      "status": "PASSED",
+      "gradcheck_passed": true,
+      "elapsed_ms": 54.36,
+      "jacobian_error_norm": 0.0
+    },
+    {
+      "module": "direct_svd",
+      "type": "compressor",
+      "precision": "float64",
+      "status": "PASSED",
+      "gradcheck_passed": true,
+      "elapsed_ms": 1.75
+    },
+    {
+      "module": "aa_svd_compressor",
+      "type": "compressor",
+      "precision": "float64",
+      "status": "PASSED",
+      "gradcheck_passed": true,
+      "elapsed_ms": 1.05
+    },
+    {
+      "module": "adasvd_compressor",
+      "type": "compressor",
+      "precision": "float64",
+      "status": "PASSED",
+      "gradcheck_passed": true,
+      "elapsed_ms": 1.0
+    },
+    {
+      "module": "residual_svd_compressor",
+      "type": "compressor",
+      "precision": "float64",
+      "status": "PASSED",
+      "gradcheck_passed": true,
+      "elapsed_ms": 1.01
+    },
+    {
+      "module": "rpca_compressor",
+      "type": "compressor",
+      "precision": "float64",
+      "status": "PASSED",
+      "gradcheck_passed": true,
+      "elapsed_ms": 0.97
+    },
+    {
+      "module": "frandi_compressor",
+      "type": "compressor",
+      "precision": "float64",
+      "status": "PASSED",
+      "gradcheck_passed": true,
+      "elapsed_ms": 1.17
+    },
+    {
+      "module": "sdrm_compressor",
+      "type": "compressor",
+      "precision": "float64",
+      "status": "PASSED",
+      "gradcheck_passed": true,
+      "elapsed_ms": 0.92
+    },
+    {
+      "module": "cr_compressor",
+      "type": "compressor",
+      "precision": "float64",
+      "status": "PASSED",
+      "gradcheck_passed": true,
+      "elapsed_ms": 1.35
+    },
+    {
+      "module": "cur_compressor",
+      "type": "compressor",
+      "precision": "float64",
+      "status": "PASSED",
+      "gradcheck_passed": true,
+      "elapsed_ms": 1.39
+    },
+    {
+      "module": "grecodec_compressor",
+      "type": "compressor",
+      "precision": "float64",
+      "status": "PASSED",
+      "gradcheck_passed": true,
+      "elapsed_ms": 0.94
+    },
+    {
+      "module": "a3_compressor",
+      "type": "compressor",
+      "precision": "float64",
+      "status": "PASSED",
+      "gradcheck_passed": true,
+      "elapsed_ms": 1.02
+    },
+    {
+      "module": "slim_compressor",
+      "type": "compressor",
+      "precision": "float64",
+      "status": "PASSED",
+      "gradcheck_passed": true,
+      "elapsed_ms": 0.95
+    },
+    {
+      "module": "svd_llm_compressor",
+      "type": "compressor",
+      "precision": "float64",
+      "status": "PASSED",
+      "gradcheck_passed": true,
+      "elapsed_ms": 1.87
+    },
+    {
+      "module": "kronecker_compressor",
+      "type": "compressor",
+      "precision": "float64",
+      "status": "PASSED",
+      "gradcheck_passed": true,
+      "elapsed_ms": 1.21
+    },
+    {
+      "module": "tt_compressor",
+      "type": "compressor",
+      "precision": "float64",
+      "status": "PASSED",
+      "gradcheck_passed": true,
+      "elapsed_ms": 1.54
+    }
+  ]
+}
