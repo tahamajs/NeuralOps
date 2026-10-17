@@ -421,6 +421,172 @@ class ResultsLedger:
             for r in rows:
                 f.write(r[0] + "\n")
 
+    def rebuild_sqlite_index(self) -> int:
+        """
+        Reads all records from jsonl_path, deduplicates by record_id (keeping latest),
+        rewrites jsonl_path with 0 duplicate lines, and rebuilds the SQLite results table
+        from scratch to achieve exact 1:1 parity.
+        """
+        if not self.jsonl_path.exists():
+            return 0
+
+        dedup_records: Dict[str, ResultRecord] = {}
+        with open(self.jsonl_path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    data = json.loads(line)
+                    rec = ResultRecord.from_dict(data)
+                    if not rec.record_id:
+                        rec.record_id = rec.compute_hash()
+                    dedup_records[rec.record_id] = rec
+                except Exception:
+                    continue
+
+        # Sort deduplicated records chronologically
+        sorted_records = sorted(dedup_records.values(), key=lambda r: r.timestamp_utc)
+
+        # Rewrite JSONL file cleanly
+        with open(self.jsonl_path, "w", encoding="utf-8") as f:
+            for r in sorted_records:
+                f.write(json.dumps(r.to_dict(), ensure_ascii=False) + "\n")
+
+        # Rebuild SQLite table
+        conn = sqlite3.connect(str(self.sqlite_path))
+        cur = conn.cursor()
+        cur.execute("DROP TABLE IF EXISTS results")
+        conn.commit()
+        conn.close()
+
+        self._init_sqlite()
+
+        conn = sqlite3.connect(str(self.sqlite_path))
+        cur = conn.cursor()
+        for rec in sorted_records:
+            cur.execute(
+                """
+                INSERT OR REPLACE INTO results (
+                    record_id, module_name, category, family, version_tag, revision,
+                    status, timestamp_utc, git_commit_sha, algorithm, backbone,
+                    dataset, rank, seq_len, batch_size, dtype, hardware,
+                    accuracy, retention_pct, ppl, latency_triton_ms,
+                    latency_pytorch_ms, speedup_x, peak_vram_mb,
+                    throughput_tok_s, cosine_sim, raw_json
+                ) VALUES (
+                    ?, ?, ?, ?, ?, ?,
+                    ?, ?, ?, ?, ?,
+                    ?, ?, ?, ?, ?, ?,
+                    ?, ?, ?, ?,
+                    ?, ?, ?,
+                    ?, ?, ?
+                )
+                """,
+                (
+                    rec.record_id,
+                    rec.module_name,
+                    rec.category,
+                    rec.family,
+                    rec.version_tag,
+                    rec.revision,
+                    rec.status,
+                    rec.timestamp_utc,
+                    rec.git_commit_sha,
+                    rec.generation_method.get("algorithm", "") if isinstance(rec.generation_method, dict) else str(rec.generation_method),
+                    rec.experimental_setup.get("backbone", "") if isinstance(rec.experimental_setup, dict) else "",
+                    rec.experimental_setup.get("dataset", "") if isinstance(rec.experimental_setup, dict) else "",
+                    rec.experimental_setup.get("rank") if isinstance(rec.experimental_setup, dict) else None,
+                    rec.experimental_setup.get("seq_len") if isinstance(rec.experimental_setup, dict) else None,
+                    rec.experimental_setup.get("batch_size") if isinstance(rec.experimental_setup, dict) else None,
+                    rec.experimental_setup.get("dtype", "") if isinstance(rec.experimental_setup, dict) else "",
+                    rec.experimental_setup.get("hardware", "") if isinstance(rec.experimental_setup, dict) else "",
+                    rec.metrics.get("accuracy") if isinstance(rec.metrics, dict) else None,
+                    rec.metrics.get("retention_pct") if isinstance(rec.metrics, dict) else None,
+                    rec.metrics.get("ppl"),
+                    rec.metrics.get("latency_triton_ms"),
+                    rec.metrics.get("latency_pytorch_ms"),
+                    rec.metrics.get("speedup_x"),
+                    rec.metrics.get("peak_vram_mb"),
+                    rec.metrics.get("throughput_tok_s"),
+                    rec.metrics.get("cosine_sim"),
+                    json.dumps(rec.to_dict(), ensure_ascii=False),
+                ),
+            )
+        conn.commit()
+        cur.execute("SELECT COUNT(*) FROM results")
+        total = cur.fetchone()[0]
+        conn.close()
+        return total
+
+    def get_summary_stats(self) -> Dict[str, Any]:
+        """Queries SQLite and returns complete summary metrics across categories and versions."""
+        conn = sqlite3.connect(str(self.sqlite_path))
+        cur = conn.cursor()
+
+        cur.execute("SELECT COUNT(*) FROM results")
+        total_records = cur.fetchone()[0]
+
+        cur.execute("SELECT COUNT(*) FROM results WHERE status = 'active'")
+        active_records = cur.fetchone()[0]
+
+        cur.execute("SELECT COUNT(DISTINCT module_name) FROM results")
+        distinct_modules = cur.fetchone()[0]
+
+        cur.execute("SELECT category, COUNT(*) FROM results GROUP BY category")
+        by_category = {row[0]: row[1] for row in cur.fetchall()}
+
+        cur.execute("SELECT version_tag, COUNT(*) FROM results GROUP BY version_tag")
+        by_version = {row[0]: row[1] for row in cur.fetchall()}
+
+        conn.close()
+        return {
+            "total_records": total_records,
+            "active_records": active_records,
+            "distinct_modules": distinct_modules,
+            "by_category": by_category,
+            "by_version": by_version,
+        }
+
+    def generate_all_dossiers(self) -> int:
+        """Iterates over all distinct module_names in the ledger and synchronizes their dossiers."""
+        conn = sqlite3.connect(str(self.sqlite_path))
+        cur = conn.cursor()
+        cur.execute("SELECT DISTINCT module_name FROM results WHERE module_name IS NOT NULL AND module_name != ''")
+        modules = [row[0] for row in cur.fetchall()]
+        conn.close()
+
+        count = 0
+        for mod in modules:
+            # Skip non-module utility filenames
+            if mod in ("_common / _types.py", "_common____types", "_types", "_common"):
+                continue
+            self._sync_module_dossier(mod)
+            count += 1
+        return count
+
+    def regenerate_category_summaries(self) -> Dict[str, int]:
+        """Regenerates all category Markdown summaries without truncation."""
+        cats = [
+            ("attentions", "attention", "Comprehensive Master Registry of Evaluated Attention Mechanisms"),
+            ("compressors", "compressor", "Comprehensive Master Registry of Evaluated Compression Engines"),
+            ("triton_kernels", "triton_kernel", "Hardware Benchmarks of Triton JIT Accelerated Kernels"),
+            ("cuda_kernels", "cuda_kernel", "Hardware Benchmarks of 3-Level Native CUDA C++ Operators"),
+            ("ablations_and_kd", "ablation", "Mathematical Ablations, HNC-SVD Homotopy & RoBERTa GLUE Audits"),
+        ]
+        counts: Dict[str, int] = {}
+        for folder, cat_filter, heading in cats:
+            recs = self.query(category=cat_filter, limit=None)
+            md_text = f"# 📊 {heading}\n\n"
+            md_text += f"**Category Filter:** `{cat_filter}` | **Total Verified Records:** {len(recs)}\n\n"
+            md_text += self.export_table(recs, format="markdown", include_provenance=True)
+            summary_file = self.by_category_dir / folder / "SUMMARY.md"
+            summary_file.parent.mkdir(parents=True, exist_ok=True)
+            with open(summary_file, "w", encoding="utf-8") as f:
+                f.write(md_text + "\n")
+            counts[cat_filter] = len(recs)
+        return counts
+
     def query(
         self,
         module_name: Optional[str] = None,

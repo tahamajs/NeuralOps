@@ -18,9 +18,9 @@ __global__ void moe_dispatch_kernel(
     const int top_k,
     const int total_assignments
 ) {
-    const int tok_idx = blockIdx.x;
-    const int k_idx = blockIdx.y;
-    const int d = threadIdx.x;
+    const int tok_idx = blockIdx.y;
+    const int k_idx = blockIdx.z;
+    const int d = blockIdx.x * blockDim.x + threadIdx.x;
 
     if (tok_idx >= num_tokens || k_idx >= top_k) return;
 
@@ -33,11 +33,11 @@ __global__ void moe_dispatch_kernel(
         using vec_t = int4;
         const vec_t* __restrict__ src_vec = reinterpret_cast<const vec_t*>(tokens + tok_idx * hidden_dim);
         vec_t* __restrict__ dst_vec = reinterpret_cast<vec_t*>(dispatched_tokens + target_slot * hidden_dim);
-        for (int i = d; i < num_vecs; i += blockDim.x) {
+        for (int i = d; i < num_vecs; i += blockDim.x * gridDim.x) {
             dst_vec[i] = src_vec[i];
         }
     } else {
-        for (int i = d; i < hidden_dim; i += blockDim.x) {
+        for (int i = d; i < hidden_dim; i += blockDim.x * gridDim.x) {
             dispatched_tokens[target_slot * hidden_dim + i] = tokens[tok_idx * hidden_dim + i];
         }
     }
@@ -66,8 +66,11 @@ void moe_dispatch_cuda(
         return;
     }
 
-    dim3 grid(num_tokens, top_k);
-    dim3 block(std::min(256, ((hidden_dim * static_cast<int>(tokens.element_size())) % 16 == 0) ? (hidden_dim / (16 / static_cast<int>(tokens.element_size()))) : hidden_dim));
+    const int block_size = 256;
+    const int effective_d = ((hidden_dim * static_cast<int>(tokens.element_size())) % 16 == 0) ? (hidden_dim / (16 / static_cast<int>(tokens.element_size()))) : hidden_dim;
+    const int grid_x = (effective_d + block_size - 1) / block_size;
+    dim3 grid(grid_x, num_tokens, top_k);
+    dim3 block(block_size);
     cudaStream_t stream = c10::cuda::getCurrentCUDAStream().stream();
 
     const int32_t* expert_offsets_ptr = (expert_offsets.defined() && expert_offsets.numel() > 0) ? expert_offsets.data_ptr<int32_t>() : nullptr;
