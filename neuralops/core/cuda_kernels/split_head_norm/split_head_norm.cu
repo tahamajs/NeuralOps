@@ -47,17 +47,21 @@ __global__ void __launch_bounds__(256) split_head_norm_kernel(
 
 torch::Tensor split_head_norm_fwd(
     const torch::Tensor& x,
-    const torch::Tensor& weight,
-    float eps
+    const c10::optional<torch::Tensor>& weight_opt = c10::nullopt,
+    float eps = 1e-5f
 ) {
     CHECK_INPUT(x);
-    CHECK_INPUT(weight);
 
     const int D = x.size(-1);
     const int total_rows = x.numel() / D;
     auto out = torch::empty_like(x);
 
     if (total_rows == 0 || D == 0) return out;
+
+    const bool has_weight = weight_opt.has_value() && weight_opt.value().defined();
+    auto weight = has_weight ? weight_opt.value().contiguous() : torch::ones(D, x.options());
+    CHECK_INPUT(weight);
+
 
     int threads = std::min(256, ((D + 31) / 32) * 32);
     if (threads < 32) threads = 32;
