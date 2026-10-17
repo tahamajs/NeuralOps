@@ -207,6 +207,54 @@ def fused_mqa_bias_scale_pytorch(
     return scaled
 
 
+if HAS_TRITON and tl is not None:
+    @triton.jit
+    def _fused_mqa_bias_scale_kernel(
+        scores_ptr,
+        out_ptr,
+        scale,
+        past_len,
+        N_q,
+        N_k,
+        IS_CAUSAL: tl.constexpr,
+        BLOCK_Q: tl.constexpr,
+        BLOCK_K: tl.constexpr,
+        stride_b,
+        stride_h,
+        stride_q,
+        stride_k,
+        stride_ob,
+        stride_oh,
+        stride_oq,
+        stride_ok,
+    ):
+        pid_bh = tl.program_id(0)
+        pid_q = tl.program_id(1)
+
+        b = pid_bh // stride_b
+        h = pid_bh % stride_b
+
+        offs_q = pid_q * BLOCK_Q + tl.arange(0, BLOCK_Q)
+        offs_k = tl.arange(0, BLOCK_K)
+
+        mask_q = offs_q < N_q
+        mask_k = offs_k < N_k
+
+        ptr_in = scores_ptr + pid_bh * stride_h + offs_q[:, None] * stride_q + offs_k[None, :] * stride_k
+        ptr_out = out_ptr + pid_bh * stride_oh + offs_q[:, None] * stride_oq + offs_k[None, :] * stride_ok
+
+        val = tl.load(ptr_in, mask=mask_q[:, None] & mask_k[None, :], other=0.0)
+        val = val * scale
+
+        if IS_CAUSAL:
+            q_pos = offs_q[:, None] + past_len
+            k_pos = offs_k[None, :]
+            is_masked = k_pos > q_pos
+            val = tl.where(is_masked, -1e4, val)
+
+        tl.store(ptr_out, val, mask=mask_q[:, None] & mask_k[None, :])
+
+
 def fused_mqa_bias_scale_triton(
     scores: torch.Tensor,
     scale: float,
@@ -220,15 +268,34 @@ def fused_mqa_bias_scale_triton(
         return fused_mqa_bias_scale_pytorch(scores, scale, is_causal=is_causal, past_len=past_len)
 
     try:
-        scaled = scores * scale
-        if is_causal:
-            B, H, N_q, N_k = scores.shape
-            device = scores.device
-            q_idx = torch.arange(N_q, device=device).unsqueeze(1) + past_len
-            k_idx = torch.arange(N_k, device=device).unsqueeze(0)
-            causal_mask = (k_idx > q_idx).unsqueeze(0).unsqueeze(0)
-            scaled = scaled.masked_fill(causal_mask, -1e4)
-        return scaled
+        B, H, N_q, N_k = scores.shape
+        scores_c = scores.contiguous()
+        out = torch.empty_like(scores_c)
+        BLOCK_Q = 32
+        BLOCK_K = min(1024, triton.next_power_of_2(N_k))
+        grid = (B * H, triton.cdiv(N_q, BLOCK_Q))
+
+        _fused_mqa_bias_scale_kernel[grid](
+            scores_c,
+            out,
+            float(scale),
+            int(past_len),
+            N_q,
+            N_k,
+            IS_CAUSAL=is_causal,
+            BLOCK_Q=BLOCK_Q,
+            BLOCK_K=BLOCK_K,
+            stride_b=scores_c.stride(0),
+            stride_h=scores_c.stride(1),
+            stride_q=scores_c.stride(2),
+            stride_k=scores_c.stride(3),
+            stride_ob=out.stride(0),
+            stride_oh=out.stride(1),
+            stride_oq=out.stride(2),
+            stride_ok=out.stride(3),
+            num_warps=4,
+        )
+        return out
     except Exception:
         return fused_mqa_bias_scale_pytorch(scores, scale, is_causal=is_causal, past_len=past_len)
 
