@@ -16,12 +16,14 @@ def _get_module():
 
 def vspec_ref(x: torch.Tensor, spec_gate: torch.Tensor, decay: torch.Tensor, eps: float = 1e-6) -> torch.Tensor:
     B, N, D = x.shape
-    g = torch.sigmoid(spec_gate)
+    g = torch.sigmoid(spec_gate.float())
     out = torch.empty_like(x)
-    s = torch.zeros(B, D, device=x.device, dtype=x.dtype)
+    s = torch.zeros(B, D, device=x.device, dtype=torch.float32)
+    x_f = x.float()
+    decay_f = decay.float()
     for t in range(N):
-        s = decay[:, t, :] * s + (x[:, t, :] * g[:, t, :])
-        out[:, t, :] = s * torch.rsqrt(s.pow(2) + eps)
+        s = decay_f[:, t, :] * s + (x_f[:, t, :] * g[:, t, :])
+        out[:, t, :] = (s * torch.rsqrt(s.pow(2) + eps)).to(x.dtype)
     return out
 
 def vspec(x: torch.Tensor, spec_gate: torch.Tensor, decay: torch.Tensor, eps: float = 1e-6) -> torch.Tensor:

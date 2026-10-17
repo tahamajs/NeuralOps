@@ -77,6 +77,8 @@ def latent_kv_cache_attention(
         )
 
     triton_fn = _get_triton_impl()
+    if c_kv.shape[-1] > 128:
+        cuda_fn = None
 
     return dispatch(
         cuda_fn,

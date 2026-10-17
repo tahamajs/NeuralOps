@@ -26,4 +26,6 @@ def linformer_attention(q: torch.Tensor, k_proj: torch.Tensor, v_proj: torch.Ten
     def cuda_fn(q, k_proj, v_proj):
         mod = _get_module()
         return mod.linformer_attn_fwd(q.contiguous(), k_proj.contiguous(), v_proj.contiguous())
+    if k_proj.shape[-2] > 128:
+        cuda_fn = None
     return dispatch(cuda_fn, linformer_attention_ref, linformer_attention_ref, q, k_proj=k_proj, v_proj=v_proj, kernel_name="linformer_attention")
