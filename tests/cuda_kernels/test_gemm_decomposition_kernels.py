@@ -42,7 +42,7 @@ import torch
 import torch.nn.functional as F
 
 from neuralops.core.cuda_kernels import force_kernel_backend
-from tests.cuda_kernels.conftest import (
+from .conftest import (
     assert_numerical_parity,
     check_tensor_validity,
     create_non_contiguous,
