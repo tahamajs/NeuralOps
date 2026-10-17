@@ -3,11 +3,18 @@ from __future__ import annotations
 
 import sys
 from neuralops.training.checkpointing import checkpoint_selective, SelectiveCheckpointModule
-from neuralops.trainer.base_trainer import BaseTrainer
+from neuralops.trainer.base_trainer import BaseTrainer, Trainer
 from neuralops.trainer.custom_loop_trainer import CustomLoopTrainer
 from neuralops.trainer.hf_trainer import HuggingFaceTrainer
 from neuralops.trainer.registry import TrainerRegistry
-from neuralops.trainer.trainer import SVDAwareTrainer
+from neuralops.trainer.trainer import (
+    SVDAwareTrainer,
+    MixedPrecisionTrainer,
+    LoRATrainer,
+    train_epoch_mixed_precision,
+)
+from neuralops.trainer.rl_trainer import RLTrainer
+from neuralops.trainer.foundation_pretrainer import InfiniteContextFoundationPretrainer
 from neuralops.trainer.utils import train_model
 from neuralops.benchmarks.core.training import (
     finetune_classification,
@@ -49,10 +56,16 @@ __all__ = [
     "checkpoint_selective",
     "SelectiveCheckpointModule",
     "BaseTrainer",
+    "Trainer",
     "CustomLoopTrainer",
     "HuggingFaceTrainer",
     "TrainerRegistry",
     "SVDAwareTrainer",
+    "MixedPrecisionTrainer",
+    "LoRATrainer",
+    "RLTrainer",
+    "InfiniteContextFoundationPretrainer",
+    "train_epoch_mixed_precision",
     "train_model",
     "finetune_classification",
     "train_kd",
