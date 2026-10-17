@@ -646,11 +646,11 @@ def run_test(mod_name):
     else:
         # Bug B — Aliasing check
         if isinstance(cuda_out, torch.Tensor) and isinstance(ref_out, torch.Tensor):
-            assert cuda_out.data_ptr() != ref_out.data_ptr(), f"{mod_name}: cuda_out and ref_out alias the same storage"
+            assert cuda_out.data_ptr() != ref_out.data_ptr(), f"{{mod_name}}: cuda_out and ref_out alias the same storage"
         elif isinstance(cuda_out, (tuple, list)) and isinstance(ref_out, (tuple, list)):
             for o_elem, r_elem in zip(cuda_out, ref_out):
                 if isinstance(o_elem, torch.Tensor) and isinstance(r_elem, torch.Tensor):
-                    assert o_elem.data_ptr() != r_elem.data_ptr(), f"{mod_name}: cuda_out and ref_out tuple elements alias the same storage"
+                    assert o_elem.data_ptr() != r_elem.data_ptr(), f"{{mod_name}}: cuda_out and ref_out tuple elements alias the same storage"
 
         # Compute max_diff
         if mod_name == "bitonic_topk":
@@ -679,22 +679,23 @@ def run_test(mod_name):
         tolerance = 0.05
         if is_bit_identical:
             status = "DISPATCH_FAILURE"
-            reason = f"{mod_name}: max_diff=0.0 but tensors are bit-identical — dispatch fallback suspected"
+            reason = f"{{mod_name}}: max_diff=0.0 but tensors are bit-identical — dispatch fallback suspected"
         elif math.isnan(max_diff):
             status = "FAIL_NAN"
             reason = "max_diff is NaN"
         elif max_diff >= tolerance:
             status = "FAIL"
-            reason = f"max_diff={max_diff:.4f} >= {tolerance}"
+            reason = f"max_diff={{max_diff:.4f}} >= {{tolerance}}"
         elif cuda_ms > ref_ms * 0.95:
             status = "PASS_SLOW"
-            reason = f"speedup={speedup:.2f}x < 1.05x — slower than reference"
+            reason = f"speedup={{speedup:.2f}}x < 1.05x — slower than reference"
         elif max_diff >= 1e-3:
             status = "PASS_HIGH_DIFF"
-            reason = f"max_diff={max_diff:.4e} >= 1e-3"
+            reason = f"max_diff={{max_diff:.4e}} >= 1e-3"
         else:
             status = "PASS_FAST"
-            reason = f"speedup={speedup:.2f}x, max_diff={max_diff:.4e}"
+            reason = f"speedup={{speedup:.2f}}x, max_diff={{max_diff:.4e}}"
+
 
     return {{
         "status": status,
