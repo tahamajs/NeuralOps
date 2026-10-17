@@ -39,9 +39,10 @@ Standard self-attention suffers from an intrinsic quadratic time and memory bott
 **NeuralOps unifies this landscape into a single, production-tested, publication-grade platform.** Under a clean, standardized PyTorch interface, NeuralOps provides:
 - **131 Canonical Attention Mechanisms**: Linear, Gated Recurrent, State-Space Models (Mamba/RWKV), SVD Low-Rank, Sparse/Windowed, and Hybrids.
 - **72 Compression Engines**: Activation-aware SVD, Tensor-Train, Fisher-Weighted factorizations, FP8/INT4 quantization, and structured pruning.
+- **Universal Multi-Hardware Support (Like FLA & PyTorch)**: Seamless execution across NVIDIA CUDA (SM 7.0–12.0), AMD ROCm (HIP/CDNA), Apple Silicon MPS (Metal Performance Shaders), Intel XPU, and Generic CPU (AVX-512/ARM NEON) with 3-tier zero-crash fallback routing.
 - **108 Native CUDA C++ Kernels**: Custom NVCC warp-shuffle primitives, tensor core MMA intrinsics, shared memory caching, and register tiling.
 - **26 Production Triton JIT Kernels**: Dynamic hardware-autotuned kernels achieving up to **161.2x speedup** over unoptimized reference paths.
-- **Strict 3-Level Fallback Dispatch**: Level 1 (CUDA C++ SM $\ge$ 7.0) $	o$ Level 2 (OpenAI Triton JIT) $	o$ Level 3 (Pure Vectorized PyTorch / CPU / Apple Metal).
+- **Strict 3-Level Fallback Dispatch**: Level 1 (CUDA C++ SM $\ge$ 7.0 / ROCm HIP) $\to$ Level 2 (OpenAI Triton JIT) $\to$ Level 3 (Pure Vectorized PyTorch / CPU / Apple Metal).
 - **High-Throughput Production Serving**: PagedKVCache with Copy-on-Write (77.5% VRAM savings), dynamic eviction (87.5% savings), and Self-Speculative Decoding (**7.59x throughput speedup** at 1,422 tokens/sec).
 - **Master 11-Jupyter-Notebook Suite**: Exhaustive interactive walkthroughs from zero-shot surgery to roofline modeling and production serving.
 - **Real-Time Telemetry & Web Dashboard**: FastAPI/Uvicorn streaming server with interactive Roofline charts, WebGL manifold visualizer, and SQLite telemetry.
