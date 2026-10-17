@@ -8,10 +8,8 @@ Measures:
 5. Status PASS
 """
 
-import math
 import time
 import torch
-import torch.nn.functional as F
 
 from neuralops.core.cuda_kernels.alibi_attention.alibi_autograd import (
     alibi_attention, alibi_attention_pytorch_ref
@@ -51,169 +49,189 @@ from neuralops.core.cuda_kernels.local_attention.local_attention_autograd import
 )
 
 
-def benchmark_fn(fn, args, kwargs=None, warmup=5, iters=20):
-    kwargs = kwargs or {}
+def time_fn(fn, warmup=5, iters=20):
     for _ in range(warmup):
-        fn(*args, **kwargs)
+        fn()
     torch.cuda.synchronize()
     start = time.perf_counter()
     for _ in range(iters):
-        fn(*args, **kwargs)
+        fn()
     torch.cuda.synchronize()
     return (time.perf_counter() - start) / iters * 1000.0
 
 
-def run_all_benchmarks():
+def benchmark_module(name, cuda_fn, ref_fn):
+    out_cuda = cuda_fn()
+    out_ref = ref_fn()
+    diff = (out_cuda - out_ref).abs().max().item()
+
+    cuda_ms = time_fn(cuda_fn)
+    ref_ms = time_fn(ref_fn)
+    speedup = ref_ms / cuda_ms if cuda_ms > 0 else 1.0
+    status = "PASS" if diff < 1e-3 else "FAIL_ACCURACY"
+
+    return {
+        "name": name,
+        "cuda_ms": cuda_ms,
+        "ref_ms": ref_ms,
+        "speedup": speedup,
+        "diff": diff,
+        "status": status,
+    }
+
+
+def main():
     device = torch.device("cuda:0")
     dtype = torch.float16
-
-    modules = {}
+    results = []
 
     # 1. alibi_attention
     B, H, L, D = 2, 8, 256, 64
-    q = torch.randn(B, H, L, D, device=device, dtype=dtype) * 0.1
-    k = torch.randn(B, H, L, D, device=device, dtype=dtype) * 0.1
-    v = torch.randn(B, H, L, D, device=device, dtype=dtype) * 0.1
-    slopes = torch.randn(H, device=device, dtype=torch.float32)
-    modules["alibi_attention"] = {
-        "cuda_fn": lambda: alibi_attention(q, k, v, slopes, is_causal=True),
-        "ref_fn": lambda: alibi_attention_pytorch_ref(q, k, v, slopes, is_causal=True),
-    }
+    q1 = torch.randn(B, H, L, D, device=device, dtype=dtype) * 0.1
+    k1 = torch.randn(B, H, L, D, device=device, dtype=dtype) * 0.1
+    v1 = torch.randn(B, H, L, D, device=device, dtype=dtype) * 0.1
+    slopes1 = torch.randn(H, device=device, dtype=torch.float32)
+    results.append(benchmark_module(
+        "alibi_attention",
+        lambda: alibi_attention(q1, k1, v1, slopes1, is_causal=True),
+        lambda: alibi_attention_pytorch_ref(q1, k1, v1, slopes1, is_causal=True),
+    ))
 
     # 2. cluster_attention
     B, H, N, D, K_clust = 2, 8, 256, 64, 32
-    q = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
-    c_cen = torch.randn(B, H, K_clust, D, device=device, dtype=dtype) * 0.1
-    v = torch.randn(B, H, K_clust, D, device=device, dtype=dtype) * 0.1
-    c_idx = torch.randint(0, K_clust, (B, H, N), device=device, dtype=torch.int32)
-    modules["cluster_attention"] = {
-        "cuda_fn": lambda: cluster_attention(q, c_cen, v, c_idx),
-        "ref_fn": lambda: cluster_attention_ref(q, c_cen, v, c_idx),
-    }
+    q2 = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
+    c2 = torch.randn(B, H, K_clust, D, device=device, dtype=dtype) * 0.1
+    v2 = torch.randn(B, H, K_clust, D, device=device, dtype=dtype) * 0.1
+    idx2 = torch.randint(0, K_clust, (B, H, N), device=device, dtype=torch.int32)
+    results.append(benchmark_module(
+        "cluster_attention",
+        lambda: cluster_attention(q2, c2, v2, idx2),
+        lambda: cluster_attention_ref(q2, c2, v2, idx2),
+    ))
 
     # 3. cross_attention
     B, H, L_q, L_kv, D = 2, 8, 256, 256, 64
-    q = torch.randn(B, H, L_q, D, device=device, dtype=dtype) * 0.1
-    k = torch.randn(B, H, L_kv, D, device=device, dtype=dtype) * 0.1
-    v = torch.randn(B, H, L_kv, D, device=device, dtype=dtype) * 0.1
-    modules["cross_attention"] = {
-        "cuda_fn": lambda: cross_attention(q, k, v),
-        "ref_fn": lambda: cross_attention_pytorch_ref(q, k, v),
-    }
+    q3 = torch.randn(B, H, L_q, D, device=device, dtype=dtype) * 0.1
+    k3 = torch.randn(B, H, L_kv, D, device=device, dtype=dtype) * 0.1
+    v3 = torch.randn(B, H, L_kv, D, device=device, dtype=dtype) * 0.1
+    results.append(benchmark_module(
+        "cross_attention",
+        lambda: cross_attention(q3, k3, v3),
+        lambda: cross_attention_pytorch_ref(q3, k3, v3),
+    ))
 
     # 4. differential_attention
     B, H, N, D = 2, 8, 256, 64
-    q1 = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
-    k1 = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
-    q2 = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
-    k2 = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
-    v = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
-    modules["differential_attention"] = {
-        "cuda_fn": lambda: differential_attention(q1, k1, q2, k2, v, lambda_val=0.8),
-        "ref_fn": lambda: differential_attention_ref(q1, k1, q2, k2, v, lambda_val=0.8),
-    }
+    q4_1 = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
+    k4_1 = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
+    q4_2 = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
+    k4_2 = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
+    v4 = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
+    results.append(benchmark_module(
+        "differential_attention",
+        lambda: differential_attention(q4_1, k4_1, q4_2, k4_2, v4, lambda_val=0.8),
+        lambda: differential_attention_ref(q4_1, k4_1, q4_2, k4_2, v4, lambda_val=0.8),
+    ))
 
     # 5. dynamic_conv1d
     B, D_conv, L_conv, K_conv = 4, 64, 512, 8
-    x_3d = torch.randn(B, D_conv, L_conv, device=device, dtype=dtype) * 0.1
-    w_3d = torch.randn(D_conv, K_conv, device=device, dtype=dtype) * 0.1
-    modules["dynamic_conv1d"] = {
-        "cuda_fn": lambda: dynamic_conv1d(x_3d, w_3d),
-        "ref_fn": lambda: dynamic_conv1d_ref(x_3d, w_3d),
-    }
+    x5 = torch.randn(B, D_conv, L_conv, device=device, dtype=dtype) * 0.1
+    w5 = torch.randn(D_conv, K_conv, device=device, dtype=dtype) * 0.1
+    results.append(benchmark_module(
+        "dynamic_conv1d",
+        lambda: dynamic_conv1d(x5, w5),
+        lambda: dynamic_conv1d_ref(x5, w5),
+    ))
 
     # 6. entropy_gate
     B, M, K_dim, N_dim, R = 4, 128, 128, 128, 32
-    x = torch.randn(B, M, K_dim, device=device, dtype=dtype) * 0.1
-    V_r = torch.randn(K_dim, R, device=device, dtype=dtype) * 0.1
-    U_r = torch.randn(R, N_dim, device=device, dtype=dtype) * 0.1
+    x6 = torch.randn(B, M, K_dim, device=device, dtype=dtype) * 0.1
+    V6 = torch.randn(K_dim, R, device=device, dtype=dtype) * 0.1
+    U6 = torch.randn(R, N_dim, device=device, dtype=dtype) * 0.1
     eff_r = 16
-    modules["entropy_gate"] = {
-        "cuda_fn": lambda: spectral_entropy_svd_gate(x, V_r, U_r, eff_r),
-        "ref_fn": lambda: spectral_entropy_svd_gate_pytorch_ref(x, V_r, U_r, eff_r),
-    }
+    results.append(benchmark_module(
+        "entropy_gate",
+        lambda: spectral_entropy_svd_gate(x6, V6, U6, eff_r),
+        lambda: spectral_entropy_svd_gate_pytorch_ref(x6, V6, U6, eff_r),
+    ))
 
     # 7. flash_decoding
     B, H, N_q, N_kv, D = 4, 8, 1, 1024, 128
-    q = torch.randn(B, H, N_q, D, device=device, dtype=dtype) * 0.1
-    k = torch.randn(B, H, N_kv, D, device=device, dtype=dtype) * 0.1
-    v = torch.randn(B, H, N_kv, D, device=device, dtype=dtype) * 0.1
-    modules["flash_decoding"] = {
-        "cuda_fn": lambda: flash_decoding_attention(q, k, v),
-        "ref_fn": lambda: flash_decoding_attention_pytorch_ref(q, k, v),
-    }
+    q7 = torch.randn(B, H, N_q, D, device=device, dtype=dtype) * 0.1
+    k7 = torch.randn(B, H, N_kv, D, device=device, dtype=dtype) * 0.1
+    v7 = torch.randn(B, H, N_kv, D, device=device, dtype=dtype) * 0.1
+    results.append(benchmark_module(
+        "flash_decoding",
+        lambda: flash_decoding_attention(q7, k7, v7),
+        lambda: flash_decoding_attention_pytorch_ref(q7, k7, v7),
+    ))
 
     # 8. fms_scan
     B, H, L, D = 2, 8, 256, 64
-    decay = torch.full((H,), 0.95, device=device, dtype=torch.float32)
-    q = torch.randn(B, H, L, D, device=device, dtype=dtype) * 0.1
-    k = torch.randn(B, H, L, D, device=device, dtype=dtype) * 0.1
-    v = torch.randn(B, H, L, D, device=device, dtype=dtype) * 0.1
-    modules["fms_scan"] = {
-        "cuda_fn": lambda: fms_scan(q, k, v, decay),
-        "ref_fn": lambda: fms_scan_pytorch_ref(q, k, v, decay),
-    }
+    decay8 = torch.full((H,), 0.95, device=device, dtype=torch.float32)
+    q8 = torch.randn(B, H, L, D, device=device, dtype=dtype) * 0.1
+    k8 = torch.randn(B, H, L, D, device=device, dtype=dtype) * 0.1
+    v8 = torch.randn(B, H, L, D, device=device, dtype=dtype) * 0.1
+    results.append(benchmark_module(
+        "fms_scan",
+        lambda: fms_scan(q8, k8, v8, decay8),
+        lambda: fms_scan_pytorch_ref(q8, k8, v8, decay8),
+    ))
 
     # 9. gla_scan
     B, H, L, D = 2, 8, 256, 64
-    q = torch.randn(B, H, L, D, device=device, dtype=dtype) * 0.1
-    k = torch.randn(B, H, L, D, device=device, dtype=dtype) * 0.1
-    v = torch.randn(B, H, L, D, device=device, dtype=dtype) * 0.1
-    modules["gla_scan"] = {
-        "cuda_fn": lambda: gla_scan(q, k, v),
-        "ref_fn": lambda: gla_scan_pytorch_ref(q, k, v),
-    }
+    q9 = torch.randn(B, H, L, D, device=device, dtype=dtype) * 0.1
+    k9 = torch.randn(B, H, L, D, device=device, dtype=dtype) * 0.1
+    v9 = torch.randn(B, H, L, D, device=device, dtype=dtype) * 0.1
+    results.append(benchmark_module(
+        "gla_scan",
+        lambda: gla_scan(q9, k9, v9),
+        lambda: gla_scan_pytorch_ref(q9, k9, v9),
+    ))
 
     # 10. latent_kv_attn
     B, H, L_Q, L_KV, D_K, D_V, R = 2, 8, 128, 256, 64, 64, 32
-    q = torch.randn(B, H, L_Q, D_K, device=device, dtype=dtype) * 0.1
-    c_kv = torch.randn(B, L_KV, R, device=device, dtype=dtype) * 0.1
-    u_k = torch.randn(D_K, R, device=device, dtype=dtype) * 0.1
-    u_v = torch.randn(R, D_V, device=device, dtype=dtype) * 0.1
-    modules["latent_kv_attn"] = {
-        "cuda_fn": lambda: latent_kv_cache_attention(q, c_kv, u_k, u_v),
-        "ref_fn": lambda: latent_kv_cache_attention_pytorch_ref(q, c_kv, u_k, u_v),
-    }
+    q10 = torch.randn(B, H, L_Q, D_K, device=device, dtype=dtype) * 0.1
+    c10 = torch.randn(B, L_KV, R, device=device, dtype=dtype) * 0.1
+    uk10 = torch.randn(D_K, R, device=device, dtype=dtype) * 0.1
+    uv10 = torch.randn(R, D_V, device=device, dtype=dtype) * 0.1
+    results.append(benchmark_module(
+        "latent_kv_attn",
+        lambda: latent_kv_cache_attention(q10, c10, uk10, uv10),
+        lambda: latent_kv_cache_attention_pytorch_ref(q10, c10, uk10, uv10),
+    ))
 
     # 11. linformer_attention
     B, H, N, D, K_proj_len = 2, 8, 256, 64, 32
-    q = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
-    k_proj = torch.randn(B, H, K_proj_len, D, device=device, dtype=dtype) * 0.1
-    v_proj = torch.randn(B, H, K_proj_len, D, device=device, dtype=dtype) * 0.1
-    modules["linformer_attention"] = {
-        "cuda_fn": lambda: linformer_attention(q, k_proj, v_proj),
-        "ref_fn": lambda: linformer_attention_ref(q, k_proj, v_proj),
-    }
+    q11 = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
+    kp11 = torch.randn(B, H, K_proj_len, D, device=device, dtype=dtype) * 0.1
+    vp11 = torch.randn(B, H, K_proj_len, D, device=device, dtype=dtype) * 0.1
+    results.append(benchmark_module(
+        "linformer_attention",
+        lambda: linformer_attention(q11, kp11, vp11),
+        lambda: linformer_attention_ref(q11, kp11, vp11),
+    ))
 
     # 12. local_attention
     B, H, N, D = 2, 8, 256, 64
-    q = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
-    k = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
-    v = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
-    modules["local_attention"] = {
-        "cuda_fn": lambda: local_attention(q, k, v, window_size=64),
-        "ref_fn": lambda: local_attention_ref(q, k, v, window_size=64),
-    }
+    q12 = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
+    k12 = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
+    v12 = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
+    results.append(benchmark_module(
+        "local_attention",
+        lambda: local_attention(q12, k12, v12, window_size=64),
+        lambda: local_attention_ref(q12, k12, v12, window_size=64),
+    ))
 
     print("=" * 105)
     print(f"{'Idx':<4} | {'Module Name':<25} | {'CUDA (ms)':<10} | {'Ref (ms)':<10} | {'Speedup':<9} | {'Max Diff':<12} | {'Status'}")
     print("-" * 105)
 
     all_pass = True
-    for idx, (name, mod) in enumerate(modules.items(), 1):
-        out_cuda = mod["cuda_fn"]()
-        out_ref = mod["ref_fn"]()
-        max_diff = (out_cuda - out_ref).abs().max().item()
-
-        cuda_ms = benchmark_fn(mod["cuda_fn"], [])
-        ref_ms = benchmark_fn(mod["ref_fn"], [])
-        speedup = ref_ms / cuda_ms if cuda_ms > 0 else 1.0
-
-        status = "PASS" if max_diff < 1e-3 else "FAIL_ACCURACY"
-        if status != "PASS":
+    for idx, r in enumerate(results, 1):
+        print(f"{idx:<4} | {r['name']:<25} | {r['cuda_ms']:<10.4f} | {r['ref_ms']:<10.4f} | {r['speedup']:<9.2f}x | {r['diff']:<12.6e} | {r['status']}")
+        if r['status'] != "PASS":
             all_pass = False
-
-        print(f"{idx:<4} | {name:<25} | {cuda_ms:<10.4f} | {ref_ms:<10.4f} | {speedup:<9.2f}x | {max_diff:<12.6e} | {status}")
 
     print("=" * 105)
     assert all_pass, "Some modules failed accuracy checks!"
@@ -221,4 +239,4 @@ def run_all_benchmarks():
 
 
 if __name__ == "__main__":
-    run_all_benchmarks()
+    main()

@@ -123,8 +123,12 @@ __device__ __forceinline__ float block_reduce_sum(float val) {
     val = (threadIdx.x < (blockDim.x + 31) / 32) ? s_warp_sum[threadIdx.x] : 0.0f;
     if (wid == 0) {
         val = warp_reduce_sum(val);
+        if (lane == 0) {
+            s_warp_sum[0] = val;
+        }
     }
-    return val;
+    __syncthreads();
+    return s_warp_sum[0];
 }
 
 __device__ __forceinline__ float block_reduce_max(float val) {
@@ -139,8 +143,12 @@ __device__ __forceinline__ float block_reduce_max(float val) {
     val = (threadIdx.x < (blockDim.x + 31) / 32) ? s_warp_max[threadIdx.x] : -1e30f;
     if (wid == 0) {
         val = warp_reduce_max(val);
+        if (lane == 0) {
+            s_warp_max[0] = val;
+        }
     }
-    return val;
+    __syncthreads();
+    return s_warp_max[0];
 }
 
 } // namespace cuda

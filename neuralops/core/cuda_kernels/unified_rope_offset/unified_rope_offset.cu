@@ -42,16 +42,16 @@ __global__ void __launch_bounds__(128) unified_rope_offset_kernel(
     const float c = cos_tab[tab_idx];
     const float s = sin_tab[tab_idx];
 
-    // Load channel pair into registers
-    const float x0 = to_float(x[base_idx + 2 * i]);
-    const float x1 = to_float(x[base_idx + 2 * i + 1]);
+    // Load channel pair into registers (split-half convention)
+    const float x0 = to_float(x[base_idx + i]);
+    const float x1 = to_float(x[base_idx + half_rope + i]);
 
     // Fast FMA rotation
     const float r0 = fmaf(x0, c, -(x1 * s));
     const float r1 = fmaf(x0, s, x1 * c);
 
-    out[base_idx + 2 * i] = from_float<scalar_t>(r0);
-    out[base_idx + 2 * i + 1] = from_float<scalar_t>(r1);
+    out[base_idx + i] = from_float<scalar_t>(r0);
+    out[base_idx + half_rope + i] = from_float<scalar_t>(r1);
 }
 
 }} // namespace neuralops::cuda
