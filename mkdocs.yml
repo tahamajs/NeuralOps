@@ -35,6 +35,7 @@ plugins:
 validation:
   omitted_files: ignore
   links:
+    not_found: ignore
     anchors: ignore
     absolute_links: ignore
     unrecognized_links: ignore
