@@ -111,5 +111,6 @@ torch::Tensor gdn_delta_rule_fwd(
         })
     );
 
+    CUDA_KERNEL_LAUNCH_CHECK();
     return out;
 }

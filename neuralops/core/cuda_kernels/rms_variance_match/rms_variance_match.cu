@@ -101,5 +101,6 @@ torch::Tensor rms_variance_match_fwd(
         })
     );
 
+    CUDA_KERNEL_LAUNCH_CHECK();
     return out;
 }

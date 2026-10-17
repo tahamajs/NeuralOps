@@ -64,7 +64,7 @@ std::vector<torch::Tensor> paged_kv_compact_fwd(
 
     AT_DISPATCH_FLOATING_TYPES_AND2(
         at::ScalarType::Half, at::ScalarType::BFloat16,
-        k_in.scalar_type(), paged_kv_compact_fwd, ([&] {
+        k_in.scalar_type(), "paged_kv_compact_fwd", ([&] {
             neuralops::cuda::paged_kv_compact_kernel<scalar_t><<<grid, THREADS, 0, stream>>>(
                 k_out.data_ptr<scalar_t>(),
                 v_out.data_ptr<scalar_t>(),
@@ -77,5 +77,6 @@ std::vector<torch::Tensor> paged_kv_compact_fwd(
         })
     );
 
+    CUDA_KERNEL_LAUNCH_CHECK();
     return {k_out, v_out};
 }

@@ -48,7 +48,7 @@ torch::Tensor phantom_fwd(
 
     AT_DISPATCH_FLOATING_TYPES_AND2(
         at::ScalarType::Half, at::ScalarType::BFloat16,
-        x.scalar_type(), phantom_fwd, ([&] {
+        x.scalar_type(), "phantom_fwd", ([&] {
             neuralops::cuda::phantom_fwd_kernel<scalar_t><<<blocks, THREADS, 0, stream>>>(
                 out.data_ptr<scalar_t>(),
                 x_c.data_ptr<scalar_t>(),
@@ -59,5 +59,6 @@ torch::Tensor phantom_fwd(
         })
     );
 
+    CUDA_KERNEL_LAUNCH_CHECK();
     return out;
 }

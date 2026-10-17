@@ -67,7 +67,7 @@ torch::Tensor split_head_norm_fwd(
 
     AT_DISPATCH_FLOATING_TYPES_AND2(
         at::ScalarType::Half, at::ScalarType::BFloat16,
-        x.scalar_type(), split_head_norm_fwd, ([&] {
+        x.scalar_type(), "split_head_norm_fwd", ([&] {
             neuralops::cuda::split_head_norm_kernel<scalar_t><<<grid, threads, 0, stream>>>(
                 out.data_ptr<scalar_t>(),
                 x_c.data_ptr<scalar_t>(),
@@ -79,5 +79,6 @@ torch::Tensor split_head_norm_fwd(
         })
     );
 
+    CUDA_KERNEL_LAUNCH_CHECK();
     return out;
 }

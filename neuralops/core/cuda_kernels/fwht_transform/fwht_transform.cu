@@ -63,7 +63,7 @@ torch::Tensor fwht_fwd(const torch::Tensor& x, int B_dim) {
 
     AT_DISPATCH_FLOATING_TYPES_AND2(
         at::ScalarType::Half, at::ScalarType::BFloat16,
-        x.scalar_type(), fwht_fwd, ([&] {
+        x.scalar_type(), "fwht_fwd", ([&] {
             neuralops::cuda::fwht_kernel<scalar_t><<<grid, threads, shmem_size, stream>>>(
                 out.data_ptr<scalar_t>(),
                 x_c.data_ptr<scalar_t>(),
@@ -73,5 +73,6 @@ torch::Tensor fwht_fwd(const torch::Tensor& x, int B_dim) {
         })
     );
 
+    CUDA_KERNEL_LAUNCH_CHECK();
     return out;
 }

@@ -78,5 +78,6 @@ torch::Tensor samba_moe_combine_fwd(
         })
     );
 
+    CUDA_KERNEL_LAUNCH_CHECK();
     return out;
 }

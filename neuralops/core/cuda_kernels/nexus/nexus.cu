@@ -88,5 +88,6 @@ torch::Tensor nexus_fwd(
         })
     );
 
+    CUDA_KERNEL_LAUNCH_CHECK();
     return out;
 }

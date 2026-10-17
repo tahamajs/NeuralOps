@@ -10,6 +10,7 @@ namespace cuda {
 // x: [M, K], indices_packed: [N, K / 2] (uint8), codebook: [num_groups, 16], bias: [N] (optional)
 // out: [M, N]
 template <typename scalar_t>
+__launch_bounds__(64)
 __global__ void lut_codebook_dequant_gemm_kernel(
     scalar_t* __restrict__ out,
     const scalar_t* __restrict__ x,

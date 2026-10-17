@@ -115,5 +115,6 @@ torch::Tensor linformer_attn_fwd(
         })
     );
 
+    CUDA_KERNEL_LAUNCH_CHECK();
     return out;
 }

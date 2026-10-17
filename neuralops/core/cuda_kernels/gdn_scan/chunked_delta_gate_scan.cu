@@ -12,6 +12,7 @@ namespace cuda {
 // out: [B, H, L, D_V]
 // Recurrence: S = alpha_t * S; pred_v = S @ k_t; v_corr = v_t - pred_v; S += beta_t * outer(v_corr, k_t); y_t = S @ q_t
 template <typename scalar_t, int MAX_DK, int MAX_DV>
+__launch_bounds__(64)
 __global__ void chunked_delta_gate_scan_fwd_kernel(
     scalar_t* __restrict__ out,
     const scalar_t* __restrict__ q,
