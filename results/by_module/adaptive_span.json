@@ -1,41 +1,35 @@
 {
   "module_name": "adaptive_span",
-  "category": "attention",
-  "family": "bert",
+  "category": "compressor",
+  "family": "unified-4models",
   "total_runs": 14,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "9a4ff4e985",
-  "latest_timestamp": "2026-09-16T03:02:32.929518",
+  "latest_git_sha": "b3e2b3ad08",
+  "latest_timestamp": "2026-10-15T00:07:14+03:30",
   "latest_record": {
-    "record_id": "b2bdaac546825966",
+    "record_id": "9f1f108e868b5a54",
     "module_name": "adaptive_span",
-    "category": "attention",
-    "family": "bert",
+    "category": "compressor",
+    "family": "unified-4models",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-09-16T03:02:32.929518",
-    "git_commit_sha": "9a4ff4e985",
+    "timestamp_utc": "2026-10-15T00:07:14+03:30",
+    "git_commit_sha": "b3e2b3ad08",
     "generation_method": {
-      "algorithm": "Calibration Sweep Record",
-      "source_artifact": "results/01_unified_runs/mnli_unified_adaptive_span/distilbert/checkpoints/adaptive_span/summary_record.json"
+      "algorithm": "4-Model Unified Evaluation Suite",
+      "source_artifact": "results/01_unified_runs/unified_adaptive_span/4models_summary.json"
     },
     "experimental_setup": {
-      "backbone": "models/distilbert_sst2",
-      "dataset": "mnli"
+      "backbone": "gpt_neo",
+      "dataset": "SST-2"
     },
     "metrics": {
-      "accuracy": 42.2,
-      "f1": 0.3255,
-      "val_loss": 1.0717,
-      "peak_vram_mb": 348.94,
-      "throughput_tok_s": 52040.43,
-      "latency_ms": 5340.0,
-      "compression_ratio": 1.0,
-      "param_reduction_pct": 0.0
+      "accuracy": 0.0,
+      "latency_ms": 27.466613292694092
     },
-    "notes": "Status: PASS_NO_COMPRESSION"
+    "notes": "Status: SKIP_NO_WEIGHTS"
   },
   "active_records": [
     {
@@ -47,7 +41,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-15T13:46:31.104065",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_adaptive_span/gpt2/checkpoints/adaptive_span/summary_record.json"
@@ -69,6 +63,66 @@
       "notes": "Status: PASS_NO_COMPRESSION"
     },
     {
+      "record_id": "b2bdaac546825966",
+      "module_name": "adaptive_span",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T03:02:32.929518",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/mnli_unified_adaptive_span/distilbert/checkpoints/adaptive_span/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 42.2,
+        "f1": 0.3255,
+        "val_loss": 1.0717,
+        "peak_vram_mb": 348.94,
+        "throughput_tok_s": 52040.43,
+        "latency_ms": 5340.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "fc1630cb93ed960c",
+      "module_name": "adaptive_span",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-17T03:24:15.922641",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_adaptive_span/distilbert/checkpoints/adaptive_span/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 71.0,
+        "f1": 0.7075,
+        "val_loss": 0.8356,
+        "peak_vram_mb": 522.6,
+        "throughput_tok_s": 132820.94,
+        "latency_ms": 6450.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
       "record_id": "0c40a238e32483cb",
       "module_name": "adaptive_span",
       "category": "attention",
@@ -77,7 +131,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T01:53:26.696205",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/adaptive_span/summary_record.json"
@@ -107,7 +161,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T02:54:02.422451",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/roberta/checkpoints/adaptive_span/summary_record.json"
@@ -137,7 +191,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T05:49:21.263170",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/adaptive_span/summary_record.json"
@@ -167,7 +221,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T21:57:25.694783",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full_lora2/checkpoints/adaptive_span/summary_record.json"
@@ -197,7 +251,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-20T08:11:34.603178",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_agnews_full/checkpoints/adaptive_span/summary_record.json"
@@ -227,7 +281,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-21T07:57:05.175180",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/distilbert_mnli_full_mnli_sweep/checkpoints/adaptive_span/summary_record.json"
@@ -257,7 +311,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-21T18:48:55.797355",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/distilbert_sst2_sst2_sweep/checkpoints/adaptive_span/summary_record.json"
@@ -373,66 +427,6 @@
         "latency_ms": 27.466613292694092
       },
       "notes": "Status: SKIP_NO_WEIGHTS"
-    },
-    {
-      "record_id": "fc1630cb93ed960c",
-      "module_name": "adaptive_span",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-17T03:24:15.922641",
-      "git_commit_sha": "9a4ff4e985",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_adaptive_span/distilbert/checkpoints/adaptive_span/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 71.0,
-        "f1": 0.7075,
-        "val_loss": 0.8356,
-        "peak_vram_mb": 522.6,
-        "throughput_tok_s": 132820.94,
-        "latency_ms": 6450.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
-      "record_id": "b2bdaac546825966",
-      "module_name": "adaptive_span",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-16T03:02:32.929518",
-      "git_commit_sha": "9a4ff4e985",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/mnli_unified_adaptive_span/distilbert/checkpoints/adaptive_span/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 42.2,
-        "f1": 0.3255,
-        "val_loss": 1.0717,
-        "peak_vram_mb": 348.94,
-        "throughput_tok_s": 52040.43,
-        "latency_ms": 5340.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
     }
   ],
   "history": [
@@ -445,7 +439,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-15T13:46:31.104065",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_adaptive_span/gpt2/checkpoints/adaptive_span/summary_record.json"
@@ -467,6 +461,66 @@
       "notes": "Status: PASS_NO_COMPRESSION"
     },
     {
+      "record_id": "b2bdaac546825966",
+      "module_name": "adaptive_span",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T03:02:32.929518",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/mnli_unified_adaptive_span/distilbert/checkpoints/adaptive_span/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 42.2,
+        "f1": 0.3255,
+        "val_loss": 1.0717,
+        "peak_vram_mb": 348.94,
+        "throughput_tok_s": 52040.43,
+        "latency_ms": 5340.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "fc1630cb93ed960c",
+      "module_name": "adaptive_span",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-17T03:24:15.922641",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_adaptive_span/distilbert/checkpoints/adaptive_span/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 71.0,
+        "f1": 0.7075,
+        "val_loss": 0.8356,
+        "peak_vram_mb": 522.6,
+        "throughput_tok_s": 132820.94,
+        "latency_ms": 6450.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
       "record_id": "0c40a238e32483cb",
       "module_name": "adaptive_span",
       "category": "attention",
@@ -475,7 +529,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T01:53:26.696205",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/adaptive_span/summary_record.json"
@@ -505,7 +559,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T02:54:02.422451",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/roberta/checkpoints/adaptive_span/summary_record.json"
@@ -535,7 +589,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T05:49:21.263170",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/adaptive_span/summary_record.json"
@@ -565,7 +619,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T21:57:25.694783",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full_lora2/checkpoints/adaptive_span/summary_record.json"
@@ -595,7 +649,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-20T08:11:34.603178",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_agnews_full/checkpoints/adaptive_span/summary_record.json"
@@ -625,7 +679,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-21T07:57:05.175180",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/distilbert_mnli_full_mnli_sweep/checkpoints/adaptive_span/summary_record.json"
@@ -655,7 +709,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-21T18:48:55.797355",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/distilbert_sst2_sst2_sweep/checkpoints/adaptive_span/summary_record.json"
@@ -771,66 +825,6 @@
         "latency_ms": 27.466613292694092
       },
       "notes": "Status: SKIP_NO_WEIGHTS"
-    },
-    {
-      "record_id": "fc1630cb93ed960c",
-      "module_name": "adaptive_span",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-17T03:24:15.922641",
-      "git_commit_sha": "9a4ff4e985",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_adaptive_span/distilbert/checkpoints/adaptive_span/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 71.0,
-        "f1": 0.7075,
-        "val_loss": 0.8356,
-        "peak_vram_mb": 522.6,
-        "throughput_tok_s": 132820.94,
-        "latency_ms": 6450.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
-      "record_id": "b2bdaac546825966",
-      "module_name": "adaptive_span",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-16T03:02:32.929518",
-      "git_commit_sha": "9a4ff4e985",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/mnli_unified_adaptive_span/distilbert/checkpoints/adaptive_span/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 42.2,
-        "f1": 0.3255,
-        "val_loss": 1.0717,
-        "peak_vram_mb": 348.94,
-        "throughput_tok_s": 52040.43,
-        "latency_ms": 5340.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
     }
   ]
 }

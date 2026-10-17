@@ -875,7 +875,8 @@ def benchmark_all(
 
 def get_version() -> str:
     """Return the current NeuralOps release version."""
-    return "1.3.7"
+    import neuralops
+    return getattr(neuralops, "__version__", "1.4.0")
 
 
 def has_triton() -> bool:

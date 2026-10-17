@@ -1,37 +1,36 @@
 {
   "module_name": "granite_hybrid",
   "category": "attention",
-  "family": "general",
+  "family": "subquadratic-attention",
   "total_runs": 10,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "b3e2b3ad08",
-  "latest_timestamp": "2026-10-15T00:07:14+03:30",
+  "latest_git_sha": "c5aaefc147",
+  "latest_timestamp": "2026-10-16T09:02:16Z",
   "latest_record": {
-    "record_id": "4aedd1d7d9faa8a7",
+    "record_id": "475994a9817a5496",
     "module_name": "granite_hybrid",
     "category": "attention",
-    "family": "general",
+    "family": "subquadratic-attention",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-10-15T00:07:14+03:30",
-    "git_commit_sha": "b3e2b3ad08",
+    "timestamp_utc": "2026-10-16T09:02:16Z",
+    "git_commit_sha": "c5aaefc147",
     "generation_method": {
-      "algorithm": "Master Aggregated Evaluation Suite",
-      "source_artifact": "results/master_aggregated_results.csv"
+      "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
+      "source_artifact": "results/triton_all_131_attentions_benchmark.json"
     },
     "experimental_setup": {
-      "dataset": "SST-2",
-      "backbone": "DistilBERT"
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+      "dtype": "float16",
+      "batch_size": 2,
+      "seq_len": 2048
     },
     "metrics": {
-      "accuracy": 63.65,
-      "roberta_acc": 53.33,
-      "gpt2_acc": 51.72,
-      "latency_ms": 295.3
+      "latency_triton_ms": 7.497
     },
-    "notes": "Master Aggregated Results"
+    "notes": "131 Attention Comprehensive Latency Benchmark"
   },
   "active_records": [
     {
@@ -43,7 +42,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T06:08:44.206961",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/granite_hybrid/summary_record.json"
@@ -73,7 +72,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-22T00:43:48.186418",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/granite_hybrid/summary_record.json"
@@ -103,7 +102,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-22T05:49:51.577091",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/distilbert_mnli_full_mnli_sweep/checkpoints/granite_hybrid/summary_record.json"
@@ -133,7 +132,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-23T14:32:09.765897",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/distilbert_sst2_sst2_sweep/checkpoints/granite_hybrid/summary_record.json"
@@ -163,7 +162,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-24T01:39:32.458239",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/gpt2_wikitext2_sweep/checkpoints/granite_hybrid/summary_record.json"
@@ -193,7 +192,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-24T18:55:14.412735",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/01_unified_runs/unified_runs/unified_granite_hybrid/roberta/checkpoints/granite_hybrid/summary_record.json"
@@ -223,7 +222,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-24T19:26:32.161899",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/01_unified_runs/unified_runs/unified_granite_hybrid/distilbert/checkpoints/granite_hybrid/summary_record.json"
@@ -245,29 +244,30 @@
       "notes": "Status: EXTREME_EXPANSION"
     },
     {
-      "record_id": "475994a9817a5496",
+      "record_id": "4aedd1d7d9faa8a7",
       "module_name": "granite_hybrid",
       "category": "attention",
-      "family": "subquadratic-attention",
+      "family": "general",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T09:02:16Z",
-      "git_commit_sha": "c5aaefc147",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
       "generation_method": {
-        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
-        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
+        "algorithm": "Master Aggregated Evaluation Suite",
+        "source_artifact": "results/master_aggregated_results.csv"
       },
       "experimental_setup": {
-        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-        "dtype": "float16",
-        "batch_size": 2,
-        "seq_len": 2048
+        "dataset": "SST-2",
+        "backbone": "DistilBERT"
       },
       "metrics": {
-        "latency_triton_ms": 7.497
+        "accuracy": 63.65,
+        "roberta_acc": 53.33,
+        "gpt2_acc": 51.72,
+        "latency_ms": 295.3
       },
-      "notes": "131 Attention Comprehensive Latency Benchmark"
+      "notes": "Master Aggregated Results"
     },
     {
       "record_id": "a4aae168da7f00e3",
@@ -295,30 +295,29 @@
       "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
     },
     {
-      "record_id": "4aedd1d7d9faa8a7",
+      "record_id": "475994a9817a5496",
       "module_name": "granite_hybrid",
       "category": "attention",
-      "family": "general",
+      "family": "subquadratic-attention",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-15T00:07:14+03:30",
-      "git_commit_sha": "b3e2b3ad08",
+      "timestamp_utc": "2026-10-16T09:02:16Z",
+      "git_commit_sha": "c5aaefc147",
       "generation_method": {
-        "algorithm": "Master Aggregated Evaluation Suite",
-        "source_artifact": "results/master_aggregated_results.csv"
+        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
+        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
       },
       "experimental_setup": {
-        "dataset": "SST-2",
-        "backbone": "DistilBERT"
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "dtype": "float16",
+        "batch_size": 2,
+        "seq_len": 2048
       },
       "metrics": {
-        "accuracy": 63.65,
-        "roberta_acc": 53.33,
-        "gpt2_acc": 51.72,
-        "latency_ms": 295.3
+        "latency_triton_ms": 7.497
       },
-      "notes": "Master Aggregated Results"
+      "notes": "131 Attention Comprehensive Latency Benchmark"
     }
   ],
   "history": [
@@ -331,7 +330,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T06:08:44.206961",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/granite_hybrid/summary_record.json"
@@ -361,7 +360,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-22T00:43:48.186418",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/granite_hybrid/summary_record.json"
@@ -391,7 +390,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-22T05:49:51.577091",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/distilbert_mnli_full_mnli_sweep/checkpoints/granite_hybrid/summary_record.json"
@@ -421,7 +420,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-23T14:32:09.765897",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/distilbert_sst2_sst2_sweep/checkpoints/granite_hybrid/summary_record.json"
@@ -451,7 +450,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-24T01:39:32.458239",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/gpt2_wikitext2_sweep/checkpoints/granite_hybrid/summary_record.json"
@@ -481,7 +480,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-24T18:55:14.412735",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/01_unified_runs/unified_runs/unified_granite_hybrid/roberta/checkpoints/granite_hybrid/summary_record.json"
@@ -511,7 +510,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-24T19:26:32.161899",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/01_unified_runs/unified_runs/unified_granite_hybrid/distilbert/checkpoints/granite_hybrid/summary_record.json"
@@ -533,29 +532,30 @@
       "notes": "Status: EXTREME_EXPANSION"
     },
     {
-      "record_id": "475994a9817a5496",
+      "record_id": "4aedd1d7d9faa8a7",
       "module_name": "granite_hybrid",
       "category": "attention",
-      "family": "subquadratic-attention",
+      "family": "general",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T09:02:16Z",
-      "git_commit_sha": "c5aaefc147",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
       "generation_method": {
-        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
-        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
+        "algorithm": "Master Aggregated Evaluation Suite",
+        "source_artifact": "results/master_aggregated_results.csv"
       },
       "experimental_setup": {
-        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-        "dtype": "float16",
-        "batch_size": 2,
-        "seq_len": 2048
+        "dataset": "SST-2",
+        "backbone": "DistilBERT"
       },
       "metrics": {
-        "latency_triton_ms": 7.497
+        "accuracy": 63.65,
+        "roberta_acc": 53.33,
+        "gpt2_acc": 51.72,
+        "latency_ms": 295.3
       },
-      "notes": "131 Attention Comprehensive Latency Benchmark"
+      "notes": "Master Aggregated Results"
     },
     {
       "record_id": "a4aae168da7f00e3",
@@ -583,30 +583,29 @@
       "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
     },
     {
-      "record_id": "4aedd1d7d9faa8a7",
+      "record_id": "475994a9817a5496",
       "module_name": "granite_hybrid",
       "category": "attention",
-      "family": "general",
+      "family": "subquadratic-attention",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-15T00:07:14+03:30",
-      "git_commit_sha": "b3e2b3ad08",
+      "timestamp_utc": "2026-10-16T09:02:16Z",
+      "git_commit_sha": "c5aaefc147",
       "generation_method": {
-        "algorithm": "Master Aggregated Evaluation Suite",
-        "source_artifact": "results/master_aggregated_results.csv"
+        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
+        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
       },
       "experimental_setup": {
-        "dataset": "SST-2",
-        "backbone": "DistilBERT"
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "dtype": "float16",
+        "batch_size": 2,
+        "seq_len": 2048
       },
       "metrics": {
-        "accuracy": 63.65,
-        "roberta_acc": 53.33,
-        "gpt2_acc": 51.72,
-        "latency_ms": 295.3
+        "latency_triton_ms": 7.497
       },
-      "notes": "Master Aggregated Results"
+      "notes": "131 Attention Comprehensive Latency Benchmark"
     }
   ]
 }

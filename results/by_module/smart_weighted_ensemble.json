@@ -43,7 +43,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-21T22:32:20.357457",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/distilbert_sst2_sst2_sweep/checkpoints/smart_weighted_ensemble/summary_record.json"
@@ -73,7 +73,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-22T03:09:39.466287",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/smart_weighted_ensemble/summary_record.json"
@@ -103,7 +103,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-22T13:26:11.529471",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/distilbert_mnli_full_mnli_sweep/checkpoints/smart_weighted_ensemble/summary_record.json"
@@ -161,7 +161,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-21T22:32:20.357457",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/distilbert_sst2_sst2_sweep/checkpoints/smart_weighted_ensemble/summary_record.json"
@@ -191,7 +191,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-22T03:09:39.466287",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/smart_weighted_ensemble/summary_record.json"
@@ -221,7 +221,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-22T13:26:11.529471",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/distilbert_mnli_full_mnli_sweep/checkpoints/smart_weighted_ensemble/summary_record.json"

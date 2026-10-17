@@ -1,40 +1,65 @@
 {
   "module_name": "fused_norm_linear",
-  "category": "triton_kernel",
-  "family": "Norm + GEMM / Gate",
+  "category": "cuda_kernel",
+  "family": "native-cuda-acceleration",
   "total_runs": 3,
-  "latest_version": "v1.3.6",
+  "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "0911d2c0ce",
-  "latest_timestamp": "2026-10-15T12:02:42+03:30",
+  "latest_git_sha": "2395ff7d5a",
+  "latest_timestamp": "2026-10-17T18:26:51+03:30",
   "latest_record": {
-    "record_id": "b2f8b30c856967bb",
+    "record_id": "548abd979b244984",
     "module_name": "fused_norm_linear",
-    "category": "triton_kernel",
-    "family": "Norm + GEMM / Gate",
-    "version_tag": "v1.3.6",
+    "category": "cuda_kernel",
+    "family": "native-cuda-acceleration",
+    "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-10-15T12:02:42+03:30",
-    "git_commit_sha": "0911d2c0ce",
+    "timestamp_utc": "2026-10-17T18:26:51+03:30",
+    "git_commit_sha": "2395ff7d5a",
     "generation_method": {
-      "algorithm": "Triton vs PyTorch Benchmark v136",
-      "primitive": "fused_rmsnorm_gate_triton",
-      "source_artifact": "results/triton_full_leaderboard_v136.json"
+      "algorithm": "3-Level Native CUDA C++ vs Triton JIT vs PyTorch",
+      "source_artifact": "results/benchmark_3level_cuda_triton_pytorch.json"
     },
     "experimental_setup": {
-      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-      "shape": "M=4096, D=768, FP16"
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)"
     },
     "metrics": {
-      "latency_triton_ms": 0.016,
-      "latency_pytorch_ms": 0.354,
-      "speedup_x": 22.52,
-      "sram_bytes_saved_mb": 12.0
+      "latency_cuda_ms": 0.13872127532958983,
+      "latency_triton_ms": 0.02012160062789917,
+      "latency_pytorch_ms": 0.014284800291061401,
+      "speedup_x": 0.1029748339403739
     },
-    "notes": "Parity: PASS"
+    "notes": "3-Level Execution Hierarchy Benchmark"
   },
   "active_records": [
+    {
+      "record_id": "b2f8b30c856967bb",
+      "module_name": "fused_norm_linear",
+      "category": "triton_kernel",
+      "family": "Norm + GEMM / Gate",
+      "version_tag": "v1.3.6",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T12:02:42+03:30",
+      "git_commit_sha": "0911d2c0ce",
+      "generation_method": {
+        "algorithm": "Triton vs PyTorch Benchmark v136",
+        "primitive": "fused_rmsnorm_gate_triton",
+        "source_artifact": "results/triton_full_leaderboard_v136.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "shape": "M=4096, D=768, FP16"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.016,
+        "latency_pytorch_ms": 0.354,
+        "speedup_x": 22.52,
+        "sram_bytes_saved_mb": 12.0
+      },
+      "notes": "Parity: PASS"
+    },
     {
       "record_id": "49a3e7712611477a",
       "module_name": "fused_norm_linear",
@@ -84,37 +109,37 @@
         "speedup_x": 0.1029748339403739
       },
       "notes": "3-Level Execution Hierarchy Benchmark"
-    },
-    {
-      "record_id": "b2f8b30c856967bb",
-      "module_name": "fused_norm_linear",
-      "category": "triton_kernel",
-      "family": "Norm + GEMM / Gate",
-      "version_tag": "v1.3.6",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T12:02:42+03:30",
-      "git_commit_sha": "0911d2c0ce",
-      "generation_method": {
-        "algorithm": "Triton vs PyTorch Benchmark v136",
-        "primitive": "fused_rmsnorm_gate_triton",
-        "source_artifact": "results/triton_full_leaderboard_v136.json"
-      },
-      "experimental_setup": {
-        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-        "shape": "M=4096, D=768, FP16"
-      },
-      "metrics": {
-        "latency_triton_ms": 0.016,
-        "latency_pytorch_ms": 0.354,
-        "speedup_x": 22.52,
-        "sram_bytes_saved_mb": 12.0
-      },
-      "notes": "Parity: PASS"
     }
   ],
   "history": [
     {
+      "record_id": "b2f8b30c856967bb",
+      "module_name": "fused_norm_linear",
+      "category": "triton_kernel",
+      "family": "Norm + GEMM / Gate",
+      "version_tag": "v1.3.6",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T12:02:42+03:30",
+      "git_commit_sha": "0911d2c0ce",
+      "generation_method": {
+        "algorithm": "Triton vs PyTorch Benchmark v136",
+        "primitive": "fused_rmsnorm_gate_triton",
+        "source_artifact": "results/triton_full_leaderboard_v136.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "shape": "M=4096, D=768, FP16"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.016,
+        "latency_pytorch_ms": 0.354,
+        "speedup_x": 22.52,
+        "sram_bytes_saved_mb": 12.0
+      },
+      "notes": "Parity: PASS"
+    },
+    {
       "record_id": "49a3e7712611477a",
       "module_name": "fused_norm_linear",
       "category": "cuda_kernel",
@@ -163,33 +188,6 @@
         "speedup_x": 0.1029748339403739
       },
       "notes": "3-Level Execution Hierarchy Benchmark"
-    },
-    {
-      "record_id": "b2f8b30c856967bb",
-      "module_name": "fused_norm_linear",
-      "category": "triton_kernel",
-      "family": "Norm + GEMM / Gate",
-      "version_tag": "v1.3.6",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T12:02:42+03:30",
-      "git_commit_sha": "0911d2c0ce",
-      "generation_method": {
-        "algorithm": "Triton vs PyTorch Benchmark v136",
-        "primitive": "fused_rmsnorm_gate_triton",
-        "source_artifact": "results/triton_full_leaderboard_v136.json"
-      },
-      "experimental_setup": {
-        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-        "shape": "M=4096, D=768, FP16"
-      },
-      "metrics": {
-        "latency_triton_ms": 0.016,
-        "latency_pytorch_ms": 0.354,
-        "speedup_x": 22.52,
-        "sram_bytes_saved_mb": 12.0
-      },
-      "notes": "Parity: PASS"
     }
   ]
 }

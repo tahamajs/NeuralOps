@@ -1,43 +1,69 @@
 {
   "module_name": "aasvd",
   "category": "attention",
-  "family": "roberta",
+  "family": "general",
   "total_runs": 5,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "9a4ff4e985",
-  "latest_timestamp": "2026-09-18T09:01:44.962533",
+  "latest_git_sha": "b3e2b3ad08",
+  "latest_timestamp": "2026-10-15T00:07:14+03:30",
   "latest_record": {
-    "record_id": "d10afbae85ece548",
+    "record_id": "b9a1a183c834fea2",
     "module_name": "aasvd",
     "category": "attention",
-    "family": "roberta",
+    "family": "general",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-09-18T09:01:44.962533",
-    "git_commit_sha": "9a4ff4e985",
+    "timestamp_utc": "2026-10-15T00:07:14+03:30",
+    "git_commit_sha": "b3e2b3ad08",
     "generation_method": {
-      "algorithm": "Calibration Sweep Record",
-      "source_artifact": "results/01_unified_runs/mnli_unified_aasvd/roberta/checkpoints/aasvd/summary_record.json"
+      "algorithm": "Master Aggregated Evaluation Suite",
+      "source_artifact": "results/master_aggregated_results.csv"
     },
     "experimental_setup": {
-      "backbone": "models/roberta-base",
-      "dataset": "mnli"
+      "dataset": "SST-2",
+      "backbone": "DistilBERT"
     },
     "metrics": {
-      "accuracy": 0.0,
-      "f1": 0.0,
-      "val_loss": 0.0,
-      "peak_vram_mb": 0.0,
-      "throughput_tok_s": 0.0,
-      "latency_ms": 7870.0,
-      "compression_ratio": 1.0,
-      "param_reduction_pct": 0.0
+      "accuracy": 89.45,
+      "roberta_acc": 88.07,
+      "gpt2_acc": 50.92,
+      "latency_ms": 112.7
     },
-    "notes": "Status: FAIL"
+    "notes": "Master Aggregated Results"
   },
   "active_records": [
+    {
+      "record_id": "d10afbae85ece548",
+      "module_name": "aasvd",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T09:01:44.962533",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/mnli_unified_aasvd/roberta/checkpoints/aasvd/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta-base",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 0.0,
+        "peak_vram_mb": 0.0,
+        "throughput_tok_s": 0.0,
+        "latency_ms": 7870.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: FAIL"
+    },
     {
       "record_id": "256a91bea44b088d",
       "module_name": "aasvd",
@@ -47,7 +73,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T01:30:38.888760",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/aasvd/summary_record.json"
@@ -77,7 +103,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T05:48:55.424647",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/aasvd/summary_record.json"
@@ -107,7 +133,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-25T20:41:25.390962",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/qwen2.5_0.5b_instruct_sst2_sweep/checkpoints/aasvd/summary_record.json"
@@ -153,40 +179,40 @@
         "latency_ms": 112.7
       },
       "notes": "Master Aggregated Results"
-    },
-    {
-      "record_id": "d10afbae85ece548",
-      "module_name": "aasvd",
-      "category": "attention",
-      "family": "roberta",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-18T09:01:44.962533",
-      "git_commit_sha": "9a4ff4e985",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/mnli_unified_aasvd/roberta/checkpoints/aasvd/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/roberta-base",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 0.0,
-        "f1": 0.0,
-        "val_loss": 0.0,
-        "peak_vram_mb": 0.0,
-        "throughput_tok_s": 0.0,
-        "latency_ms": 7870.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: FAIL"
     }
   ],
   "history": [
     {
+      "record_id": "d10afbae85ece548",
+      "module_name": "aasvd",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T09:01:44.962533",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/mnli_unified_aasvd/roberta/checkpoints/aasvd/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta-base",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 0.0,
+        "peak_vram_mb": 0.0,
+        "throughput_tok_s": 0.0,
+        "latency_ms": 7870.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: FAIL"
+    },
+    {
       "record_id": "256a91bea44b088d",
       "module_name": "aasvd",
       "category": "attention",
@@ -195,7 +221,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T01:30:38.888760",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/aasvd/summary_record.json"
@@ -225,7 +251,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T05:48:55.424647",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/aasvd/summary_record.json"
@@ -255,7 +281,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-25T20:41:25.390962",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/qwen2.5_0.5b_instruct_sst2_sweep/checkpoints/aasvd/summary_record.json"
@@ -301,36 +327,6 @@
         "latency_ms": 112.7
       },
       "notes": "Master Aggregated Results"
-    },
-    {
-      "record_id": "d10afbae85ece548",
-      "module_name": "aasvd",
-      "category": "attention",
-      "family": "roberta",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-18T09:01:44.962533",
-      "git_commit_sha": "9a4ff4e985",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/mnli_unified_aasvd/roberta/checkpoints/aasvd/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/roberta-base",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 0.0,
-        "f1": 0.0,
-        "val_loss": 0.0,
-        "peak_vram_mb": 0.0,
-        "throughput_tok_s": 0.0,
-        "latency_ms": 7870.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: FAIL"
     }
   ]
 }

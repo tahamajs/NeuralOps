@@ -2,7 +2,7 @@
   "module_name": "zerokv_neo_compressor",
   "category": "compressor",
   "family": "matrix-compression",
-  "total_runs": 1,
+  "total_runs": 2,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
   "latest_git_sha": "25d9fe36fa",
@@ -33,6 +33,36 @@
   },
   "active_records": [
     {
+      "record_id": "74263e5700ddd617",
+      "module_name": "zerokv_neo_compressor",
+      "category": "compressor",
+      "family": "compression-sweep-roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-14T17:22:33+03:30",
+      "git_commit_sha": "885276e92e",
+      "generation_method": {
+        "algorithm": "RoBERTa-base 72-Compressor Empirical Benchmark",
+        "source_artifact": "results/v13_deep_empirical_suite/roberta_72_compressors/results.json"
+      },
+      "experimental_setup": {
+        "backbone": "RoBERTa-base",
+        "dataset": "SST-2",
+        "batch_size": 16
+      },
+      "metrics": {
+        "accuracy": 52.0,
+        "f1": 0.6842,
+        "val_loss": 0.7331,
+        "param_reduction_pct": 0.0,
+        "compression_ratio": 1.0,
+        "peak_vram_mb": 2227.8,
+        "latency_ms": 7690.0
+      },
+      "notes": "RoBERTa 72 Compressors Benchmark. Status: success"
+    },
+    {
       "record_id": "6632a0fd4e8a2fc1",
       "module_name": "zerokv_neo_compressor",
       "category": "compressor",
@@ -58,6 +88,36 @@
     }
   ],
   "history": [
+    {
+      "record_id": "74263e5700ddd617",
+      "module_name": "zerokv_neo_compressor",
+      "category": "compressor",
+      "family": "compression-sweep-roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-14T17:22:33+03:30",
+      "git_commit_sha": "885276e92e",
+      "generation_method": {
+        "algorithm": "RoBERTa-base 72-Compressor Empirical Benchmark",
+        "source_artifact": "results/v13_deep_empirical_suite/roberta_72_compressors/results.json"
+      },
+      "experimental_setup": {
+        "backbone": "RoBERTa-base",
+        "dataset": "SST-2",
+        "batch_size": 16
+      },
+      "metrics": {
+        "accuracy": 52.0,
+        "f1": 0.6842,
+        "val_loss": 0.7331,
+        "param_reduction_pct": 0.0,
+        "compression_ratio": 1.0,
+        "peak_vram_mb": 2227.8,
+        "latency_ms": 7690.0
+      },
+      "notes": "RoBERTa 72 Compressors Benchmark. Status: success"
+    },
     {
       "record_id": "6632a0fd4e8a2fc1",
       "module_name": "zerokv_neo_compressor",

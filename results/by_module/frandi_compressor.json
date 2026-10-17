@@ -2,7 +2,7 @@
   "module_name": "frandi_compressor",
   "category": "compressor",
   "family": "matrix-compression",
-  "total_runs": 5,
+  "total_runs": 6,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
   "latest_git_sha": "25d9fe36fa",
@@ -41,7 +41,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-24T21:05:21.299429",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/gpt2_wikitext2_sweep/checkpoints/frandi_compressor/summary_record.json"
@@ -71,7 +71,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-25T14:28:04.376513",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/deep_rank_distilbert/frandi_compressor/rank_64/checkpoints/frandi_compressor/summary_record.json"
@@ -101,7 +101,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-25T14:36:04.223693",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/deep_rank_roberta/frandi_compressor/rank_64/checkpoints/frandi_compressor/summary_record.json"
@@ -131,7 +131,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-27T07:55:44.396563",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/02_rank_sweeps/04_rank_sweeps/roberta/deep_rank_roberta/frandi_compressor/rank_32/checkpoints/frandi_compressor/summary_record.json"
@@ -151,6 +151,36 @@
         "param_reduction_pct": 63.88
       },
       "notes": "Status: FAIL_BELOW_CHANCE"
+    },
+    {
+      "record_id": "3aaa3edceecfee9a",
+      "module_name": "frandi_compressor",
+      "category": "compressor",
+      "family": "compression-sweep-roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-14T17:22:33+03:30",
+      "git_commit_sha": "885276e92e",
+      "generation_method": {
+        "algorithm": "RoBERTa-base 72-Compressor Empirical Benchmark",
+        "source_artifact": "results/v13_deep_empirical_suite/roberta_72_compressors/results.json"
+      },
+      "experimental_setup": {
+        "backbone": "RoBERTa-base",
+        "dataset": "SST-2",
+        "batch_size": 16
+      },
+      "metrics": {
+        "accuracy": 52.0,
+        "f1": 0.6842,
+        "val_loss": 0.6956,
+        "param_reduction_pct": 63.88,
+        "compression_ratio": 2.7686,
+        "peak_vram_mb": 1004.6,
+        "latency_ms": 4830.0
+      },
+      "notes": "RoBERTa 72 Compressors Benchmark. Status: success"
     },
     {
       "record_id": "c180c0c4925e9742",
@@ -187,7 +217,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-24T21:05:21.299429",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/gpt2_wikitext2_sweep/checkpoints/frandi_compressor/summary_record.json"
@@ -217,7 +247,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-25T14:28:04.376513",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/deep_rank_distilbert/frandi_compressor/rank_64/checkpoints/frandi_compressor/summary_record.json"
@@ -247,7 +277,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-25T14:36:04.223693",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/deep_rank_roberta/frandi_compressor/rank_64/checkpoints/frandi_compressor/summary_record.json"
@@ -277,7 +307,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-27T07:55:44.396563",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/02_rank_sweeps/04_rank_sweeps/roberta/deep_rank_roberta/frandi_compressor/rank_32/checkpoints/frandi_compressor/summary_record.json"
@@ -297,6 +327,36 @@
         "param_reduction_pct": 63.88
       },
       "notes": "Status: FAIL_BELOW_CHANCE"
+    },
+    {
+      "record_id": "3aaa3edceecfee9a",
+      "module_name": "frandi_compressor",
+      "category": "compressor",
+      "family": "compression-sweep-roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-14T17:22:33+03:30",
+      "git_commit_sha": "885276e92e",
+      "generation_method": {
+        "algorithm": "RoBERTa-base 72-Compressor Empirical Benchmark",
+        "source_artifact": "results/v13_deep_empirical_suite/roberta_72_compressors/results.json"
+      },
+      "experimental_setup": {
+        "backbone": "RoBERTa-base",
+        "dataset": "SST-2",
+        "batch_size": 16
+      },
+      "metrics": {
+        "accuracy": 52.0,
+        "f1": 0.6842,
+        "val_loss": 0.6956,
+        "param_reduction_pct": 63.88,
+        "compression_ratio": 2.7686,
+        "peak_vram_mb": 1004.6,
+        "latency_ms": 4830.0
+      },
+      "notes": "RoBERTa 72 Compressors Benchmark. Status: success"
     },
     {
       "record_id": "c180c0c4925e9742",

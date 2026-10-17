@@ -1,36 +1,36 @@
 {
   "module_name": "asvd_attention",
   "category": "attention",
-  "family": "kd-finetune",
+  "family": "subquadratic-attention",
   "total_runs": 4,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "dde5933e0c",
-  "latest_timestamp": "2026-10-13T21:28:51Z",
+  "latest_git_sha": "c5aaefc147",
+  "latest_timestamp": "2026-10-16T09:02:16Z",
   "latest_record": {
-    "record_id": "424167139e617df9",
+    "record_id": "a818a209284bf1ad",
     "module_name": "asvd_attention",
     "category": "attention",
-    "family": "kd-finetune",
+    "family": "subquadratic-attention",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-10-13T21:28:51Z",
-    "git_commit_sha": "dde5933e0c",
+    "timestamp_utc": "2026-10-16T09:02:16Z",
+    "git_commit_sha": "c5aaefc147",
     "generation_method": {
-      "algorithm": "Knowledge Distillation Recovery (finetune)",
-      "source_artifact": "results/results.jsonl"
+      "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
+      "source_artifact": "results/triton_all_131_attentions_benchmark.json"
     },
     "experimental_setup": {
-      "backbone": "roberta-base",
-      "dataset": "sst2",
-      "rank": 64
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+      "dtype": "float16",
+      "batch_size": 2,
+      "seq_len": 2048
     },
     "metrics": {
-      "accuracy": 0.6333333333333333,
-      "peak_vram_mb": 1021.326171875
+      "latency_triton_ms": 1.914
     },
-    "notes": "Run: 1dabc04c-9131-47fa-ac84-6e7f3c323826"
+    "notes": "131 Attention Comprehensive Latency Benchmark"
   },
   "active_records": [
     {
@@ -42,7 +42,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-21T23:47:19.869993",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/asvd_attention/summary_record.json"
@@ -64,29 +64,29 @@
       "notes": "Status: MODERATE_EXPANSION"
     },
     {
-      "record_id": "a818a209284bf1ad",
+      "record_id": "424167139e617df9",
       "module_name": "asvd_attention",
       "category": "attention",
-      "family": "subquadratic-attention",
+      "family": "kd-finetune",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T09:02:16Z",
-      "git_commit_sha": "c5aaefc147",
+      "timestamp_utc": "2026-10-13T21:28:51Z",
+      "git_commit_sha": "dde5933e0c",
       "generation_method": {
-        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
-        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
+        "algorithm": "Knowledge Distillation Recovery (finetune)",
+        "source_artifact": "results/results.jsonl"
       },
       "experimental_setup": {
-        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-        "dtype": "float16",
-        "batch_size": 2,
-        "seq_len": 2048
+        "backbone": "roberta-base",
+        "dataset": "sst2",
+        "rank": 64
       },
       "metrics": {
-        "latency_triton_ms": 1.914
+        "accuracy": 0.6333333333333333,
+        "peak_vram_mb": 1021.326171875
       },
-      "notes": "131 Attention Comprehensive Latency Benchmark"
+      "notes": "Run: 1dabc04c-9131-47fa-ac84-6e7f3c323826"
     },
     {
       "record_id": "1db955d7834c1cee",
@@ -114,29 +114,29 @@
       "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
     },
     {
-      "record_id": "424167139e617df9",
+      "record_id": "a818a209284bf1ad",
       "module_name": "asvd_attention",
       "category": "attention",
-      "family": "kd-finetune",
+      "family": "subquadratic-attention",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-13T21:28:51Z",
-      "git_commit_sha": "dde5933e0c",
+      "timestamp_utc": "2026-10-16T09:02:16Z",
+      "git_commit_sha": "c5aaefc147",
       "generation_method": {
-        "algorithm": "Knowledge Distillation Recovery (finetune)",
-        "source_artifact": "results/results.jsonl"
+        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
+        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
       },
       "experimental_setup": {
-        "backbone": "roberta-base",
-        "dataset": "sst2",
-        "rank": 64
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "dtype": "float16",
+        "batch_size": 2,
+        "seq_len": 2048
       },
       "metrics": {
-        "accuracy": 0.6333333333333333,
-        "peak_vram_mb": 1021.326171875
+        "latency_triton_ms": 1.914
       },
-      "notes": "Run: 1dabc04c-9131-47fa-ac84-6e7f3c323826"
+      "notes": "131 Attention Comprehensive Latency Benchmark"
     }
   ],
   "history": [
@@ -149,7 +149,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-21T23:47:19.869993",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/asvd_attention/summary_record.json"
@@ -171,29 +171,29 @@
       "notes": "Status: MODERATE_EXPANSION"
     },
     {
-      "record_id": "a818a209284bf1ad",
+      "record_id": "424167139e617df9",
       "module_name": "asvd_attention",
       "category": "attention",
-      "family": "subquadratic-attention",
+      "family": "kd-finetune",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T09:02:16Z",
-      "git_commit_sha": "c5aaefc147",
+      "timestamp_utc": "2026-10-13T21:28:51Z",
+      "git_commit_sha": "dde5933e0c",
       "generation_method": {
-        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
-        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
+        "algorithm": "Knowledge Distillation Recovery (finetune)",
+        "source_artifact": "results/results.jsonl"
       },
       "experimental_setup": {
-        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-        "dtype": "float16",
-        "batch_size": 2,
-        "seq_len": 2048
+        "backbone": "roberta-base",
+        "dataset": "sst2",
+        "rank": 64
       },
       "metrics": {
-        "latency_triton_ms": 1.914
+        "accuracy": 0.6333333333333333,
+        "peak_vram_mb": 1021.326171875
       },
-      "notes": "131 Attention Comprehensive Latency Benchmark"
+      "notes": "Run: 1dabc04c-9131-47fa-ac84-6e7f3c323826"
     },
     {
       "record_id": "1db955d7834c1cee",
@@ -221,29 +221,29 @@
       "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
     },
     {
-      "record_id": "424167139e617df9",
+      "record_id": "a818a209284bf1ad",
       "module_name": "asvd_attention",
       "category": "attention",
-      "family": "kd-finetune",
+      "family": "subquadratic-attention",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-13T21:28:51Z",
-      "git_commit_sha": "dde5933e0c",
+      "timestamp_utc": "2026-10-16T09:02:16Z",
+      "git_commit_sha": "c5aaefc147",
       "generation_method": {
-        "algorithm": "Knowledge Distillation Recovery (finetune)",
-        "source_artifact": "results/results.jsonl"
+        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
+        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
       },
       "experimental_setup": {
-        "backbone": "roberta-base",
-        "dataset": "sst2",
-        "rank": 64
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "dtype": "float16",
+        "batch_size": 2,
+        "seq_len": 2048
       },
       "metrics": {
-        "accuracy": 0.6333333333333333,
-        "peak_vram_mb": 1021.326171875
+        "latency_triton_ms": 1.914
       },
-      "notes": "Run: 1dabc04c-9131-47fa-ac84-6e7f3c323826"
+      "notes": "131 Attention Comprehensive Latency Benchmark"
     }
   ]
 }

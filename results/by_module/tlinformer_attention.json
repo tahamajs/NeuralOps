@@ -43,7 +43,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-21T23:00:29.587328",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/distilbert_sst2_sst2_sweep/checkpoints/tlinformer_attention/summary_record.json"
@@ -73,7 +73,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-22T03:42:58.535277",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/tlinformer_attention/summary_record.json"
@@ -131,7 +131,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-21T23:00:29.587328",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/distilbert_sst2_sst2_sweep/checkpoints/tlinformer_attention/summary_record.json"
@@ -161,7 +161,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-22T03:42:58.535277",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/tlinformer_attention/summary_record.json"

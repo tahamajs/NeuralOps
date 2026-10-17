@@ -41,7 +41,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T01:53:40.417953",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/adaptive_svd/summary_record.json"
@@ -71,7 +71,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T02:55:15.886967",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/roberta/checkpoints/adaptive_svd/summary_record.json"
@@ -101,7 +101,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T05:50:14.565621",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/adaptive_svd/summary_record.json"
@@ -229,7 +229,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T01:53:40.417953",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/adaptive_svd/summary_record.json"
@@ -259,7 +259,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T02:55:15.886967",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/roberta/checkpoints/adaptive_svd/summary_record.json"
@@ -289,7 +289,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T05:50:14.565621",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/adaptive_svd/summary_record.json"

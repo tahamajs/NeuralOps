@@ -43,7 +43,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-15T11:45:27.698766",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_cur_moe/roberta/checkpoints/cur_moe/summary_record.json"
@@ -73,7 +73,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-15T11:46:15.844477",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_cur_moe/gpt2/checkpoints/cur_moe/summary_record.json"
@@ -103,7 +103,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T01:42:48.901588",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/cur_moe/summary_record.json"
@@ -133,7 +133,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T05:58:23.798132",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/cur_moe/summary_record.json"
@@ -163,7 +163,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-20T00:47:59.203757",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/02_rank_sweeps/rank_ablation/mnli_rank256/checkpoints/cur_moe/summary_record.json"
@@ -193,7 +193,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-20T04:01:43.460881",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/02_rank_sweeps/rank_ablation/agnews_rank256/checkpoints/cur_moe/summary_record.json"
@@ -223,7 +223,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-24T17:59:51.768992",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "81683bdbf8",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/01_unified_runs/unified_runs/unified_cur_moe/roberta/checkpoints/cur_moe/summary_record.json"
@@ -253,7 +253,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-24T18:02:43.551984",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "81683bdbf8",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/01_unified_runs/unified_runs/unified_cur_moe/gpt2/checkpoints/cur_moe/summary_record.json"
@@ -283,7 +283,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-24T20:55:00.216549",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/gpt2_wikitext2_sweep/checkpoints/cur_moe/summary_record.json"
@@ -313,7 +313,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-27T04:07:26.970006",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/02_glue_sweeps/distilbert/sst2_4parallel/checkpoints/cur_moe/summary_record.json"
@@ -343,7 +343,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-27T09:04:22.246339",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/02_rank_sweeps/04_rank_sweeps/distilbert/deep_rank_distilbert/cur_moe/rank_64/checkpoints/cur_moe/summary_record.json"
@@ -401,7 +401,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-15T11:45:27.698766",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_cur_moe/roberta/checkpoints/cur_moe/summary_record.json"
@@ -431,7 +431,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-15T11:46:15.844477",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_cur_moe/gpt2/checkpoints/cur_moe/summary_record.json"
@@ -461,7 +461,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T01:42:48.901588",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/cur_moe/summary_record.json"
@@ -491,7 +491,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T05:58:23.798132",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/cur_moe/summary_record.json"
@@ -521,7 +521,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-20T00:47:59.203757",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/02_rank_sweeps/rank_ablation/mnli_rank256/checkpoints/cur_moe/summary_record.json"
@@ -551,7 +551,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-20T04:01:43.460881",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/02_rank_sweeps/rank_ablation/agnews_rank256/checkpoints/cur_moe/summary_record.json"
@@ -581,7 +581,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-24T17:59:51.768992",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "81683bdbf8",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/01_unified_runs/unified_runs/unified_cur_moe/roberta/checkpoints/cur_moe/summary_record.json"
@@ -611,7 +611,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-24T18:02:43.551984",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "81683bdbf8",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/01_unified_runs/unified_runs/unified_cur_moe/gpt2/checkpoints/cur_moe/summary_record.json"
@@ -641,7 +641,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-24T20:55:00.216549",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/gpt2_wikitext2_sweep/checkpoints/cur_moe/summary_record.json"
@@ -671,7 +671,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-27T04:07:26.970006",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/02_glue_sweeps/distilbert/sst2_4parallel/checkpoints/cur_moe/summary_record.json"
@@ -701,7 +701,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-27T09:04:22.246339",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/02_rank_sweeps/04_rank_sweeps/distilbert/deep_rank_distilbert/cur_moe/rank_64/checkpoints/cur_moe/summary_record.json"

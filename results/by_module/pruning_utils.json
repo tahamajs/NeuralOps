@@ -5,7 +5,7 @@
   "total_runs": 3,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "6267bfb8a8",
+  "latest_git_sha": "866fe45a1a",
   "latest_timestamp": "2026-09-22T12:06:09.928569",
   "latest_record": {
     "record_id": "cef89813dc77d9c8",
@@ -16,7 +16,7 @@
     "revision": 1,
     "status": "active",
     "timestamp_utc": "2026-09-22T12:06:09.928569",
-    "git_commit_sha": "6267bfb8a8",
+    "git_commit_sha": "866fe45a1a",
     "generation_method": {
       "algorithm": "Calibration Sweep Record",
       "source_artifact": "results/_archive/duplicates_20261008/05_glue_finetuning/distilbert_mnli_full_mnli_sweep/checkpoints/pruning_utils/summary_record.json"
@@ -47,7 +47,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-21T21:57:37.907169",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/distilbert_sst2_sst2_sweep/checkpoints/pruning_utils/summary_record.json"
@@ -77,7 +77,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-22T02:39:29.370645",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/pruning_utils/summary_record.json"
@@ -107,7 +107,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-22T12:06:09.928569",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/_archive/duplicates_20261008/05_glue_finetuning/distilbert_mnli_full_mnli_sweep/checkpoints/pruning_utils/summary_record.json"
@@ -139,7 +139,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-21T21:57:37.907169",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/distilbert_sst2_sst2_sweep/checkpoints/pruning_utils/summary_record.json"
@@ -169,7 +169,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-22T02:39:29.370645",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/pruning_utils/summary_record.json"
@@ -199,7 +199,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-22T12:06:09.928569",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/_archive/duplicates_20261008/05_glue_finetuning/distilbert_mnli_full_mnli_sweep/checkpoints/pruning_utils/summary_record.json"

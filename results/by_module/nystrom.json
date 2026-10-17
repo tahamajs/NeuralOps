@@ -1,41 +1,39 @@
 {
   "module_name": "nystrom",
   "category": "attention",
-  "family": "bert",
+  "family": "O(N^2) Softmax",
   "total_runs": 11,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "9a4ff4e985",
-  "latest_timestamp": "2026-09-16T03:13:35.788849",
+  "latest_git_sha": "b3e2b3ad08",
+  "latest_timestamp": "2026-10-15T00:07:14+03:30",
   "latest_record": {
-    "record_id": "a5c091fa8ca3f47f",
+    "record_id": "f4df30da0a6989a8",
     "module_name": "nystrom",
     "category": "attention",
-    "family": "bert",
+    "family": "O(N^2) Softmax",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-09-16T03:13:35.788849",
-    "git_commit_sha": "9a4ff4e985",
+    "timestamp_utc": "2026-10-15T00:07:14+03:30",
+    "git_commit_sha": "b3e2b3ad08",
     "generation_method": {
-      "algorithm": "Calibration Sweep Record",
-      "source_artifact": "results/01_unified_runs/mnli_unified_nystrom/distilbert/checkpoints/nystrom/summary_record.json"
+      "algorithm": "Master Benchmark Suite",
+      "source_artifact": "results/master_benchmark_summary.csv"
     },
     "experimental_setup": {
-      "backbone": "models/distilbert_sst2",
-      "dataset": "mnli"
+      "dataset": "c4",
+      "complexity": "O(N^2) Softmax"
     },
     "metrics": {
-      "accuracy": 41.1,
-      "f1": 0.3086,
-      "val_loss": 1.0806,
-      "peak_vram_mb": 344.0,
-      "throughput_tok_s": 52931.47,
-      "latency_ms": 5270.0,
-      "compression_ratio": 1.0,
-      "param_reduction_pct": 0.0
+      "ppl": 11.25,
+      "val_loss": 2.4204,
+      "throughput_tok_s": 341333.0,
+      "peak_vram_mb": 50.8,
+      "speedup_x": 8.53,
+      "latency_ms": 1.5
     },
-    "notes": "Status: PASS_NO_COMPRESSION"
+    "notes": "Status: SUCCESS"
   },
   "active_records": [
     {
@@ -47,7 +45,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-15T22:26:39.607556",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_nystrom/distilbert/checkpoints/nystrom/summary_record.json"
@@ -77,7 +75,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-15T22:27:30.224850",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_nystrom/roberta/checkpoints/nystrom/summary_record.json"
@@ -107,7 +105,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-15T22:28:24.926601",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_nystrom/gpt2/checkpoints/nystrom/summary_record.json"
@@ -129,6 +127,66 @@
       "notes": "Status: PASS_NO_COMPRESSION"
     },
     {
+      "record_id": "a5c091fa8ca3f47f",
+      "module_name": "nystrom",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T03:13:35.788849",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/mnli_unified_nystrom/distilbert/checkpoints/nystrom/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 41.1,
+        "f1": 0.3086,
+        "val_loss": 1.0806,
+        "peak_vram_mb": 344.0,
+        "throughput_tok_s": 52931.47,
+        "latency_ms": 5270.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "61967486e884ab05",
+      "module_name": "nystrom",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T04:24:58.079126",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_nystrom/distilbert/checkpoints/nystrom/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 71.1,
+        "f1": 0.7087,
+        "val_loss": 0.8356,
+        "peak_vram_mb": 498.6,
+        "throughput_tok_s": 133799.76,
+        "latency_ms": 6300.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
       "record_id": "e9770676dd0131cd",
       "module_name": "nystrom",
       "category": "attention",
@@ -137,7 +195,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T17:38:49.799169",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full/checkpoints/nystrom/summary_record.json"
@@ -167,7 +225,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T21:41:38.286349",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_agnews_full/checkpoints/nystrom/summary_record.json"
@@ -197,7 +255,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-25T15:55:46.025845",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/attn_roberta/nystrom/checkpoints/nystrom/summary_record.json"
@@ -217,6 +275,32 @@
         "param_reduction_pct": 0.0
       },
       "notes": "Status: MODERATE_EXPANSION"
+    },
+    {
+      "record_id": "8215f0c18f1056a3",
+      "module_name": "nystrom",
+      "category": "attention",
+      "family": "general",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Master Aggregated Evaluation Suite",
+        "source_artifact": "results/master_aggregated_results.csv"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2",
+        "backbone": "DistilBERT"
+      },
+      "metrics": {
+        "accuracy": 88.07,
+        "roberta_acc": 52.18,
+        "gpt2_acc": 51.03,
+        "latency_ms": 89.3
+      },
+      "notes": "Master Aggregated Results"
     },
     {
       "record_id": "efd403f75452399e",
@@ -273,92 +357,6 @@
         "latency_ms": 1.5
       },
       "notes": "Status: SUCCESS"
-    },
-    {
-      "record_id": "8215f0c18f1056a3",
-      "module_name": "nystrom",
-      "category": "attention",
-      "family": "general",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T00:07:14+03:30",
-      "git_commit_sha": "b3e2b3ad08",
-      "generation_method": {
-        "algorithm": "Master Aggregated Evaluation Suite",
-        "source_artifact": "results/master_aggregated_results.csv"
-      },
-      "experimental_setup": {
-        "dataset": "SST-2",
-        "backbone": "DistilBERT"
-      },
-      "metrics": {
-        "accuracy": 88.07,
-        "roberta_acc": 52.18,
-        "gpt2_acc": 51.03,
-        "latency_ms": 89.3
-      },
-      "notes": "Master Aggregated Results"
-    },
-    {
-      "record_id": "61967486e884ab05",
-      "module_name": "nystrom",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-16T04:24:58.079126",
-      "git_commit_sha": "9a4ff4e985",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_nystrom/distilbert/checkpoints/nystrom/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 71.1,
-        "f1": 0.7087,
-        "val_loss": 0.8356,
-        "peak_vram_mb": 498.6,
-        "throughput_tok_s": 133799.76,
-        "latency_ms": 6300.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
-      "record_id": "a5c091fa8ca3f47f",
-      "module_name": "nystrom",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-16T03:13:35.788849",
-      "git_commit_sha": "9a4ff4e985",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/mnli_unified_nystrom/distilbert/checkpoints/nystrom/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 41.1,
-        "f1": 0.3086,
-        "val_loss": 1.0806,
-        "peak_vram_mb": 344.0,
-        "throughput_tok_s": 52931.47,
-        "latency_ms": 5270.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
     }
   ],
   "history": [
@@ -371,7 +369,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-15T22:26:39.607556",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_nystrom/distilbert/checkpoints/nystrom/summary_record.json"
@@ -401,7 +399,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-15T22:27:30.224850",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_nystrom/roberta/checkpoints/nystrom/summary_record.json"
@@ -431,7 +429,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-15T22:28:24.926601",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_nystrom/gpt2/checkpoints/nystrom/summary_record.json"
@@ -453,6 +451,66 @@
       "notes": "Status: PASS_NO_COMPRESSION"
     },
     {
+      "record_id": "a5c091fa8ca3f47f",
+      "module_name": "nystrom",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T03:13:35.788849",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/mnli_unified_nystrom/distilbert/checkpoints/nystrom/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 41.1,
+        "f1": 0.3086,
+        "val_loss": 1.0806,
+        "peak_vram_mb": 344.0,
+        "throughput_tok_s": 52931.47,
+        "latency_ms": 5270.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "61967486e884ab05",
+      "module_name": "nystrom",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T04:24:58.079126",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_nystrom/distilbert/checkpoints/nystrom/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 71.1,
+        "f1": 0.7087,
+        "val_loss": 0.8356,
+        "peak_vram_mb": 498.6,
+        "throughput_tok_s": 133799.76,
+        "latency_ms": 6300.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
       "record_id": "e9770676dd0131cd",
       "module_name": "nystrom",
       "category": "attention",
@@ -461,7 +519,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T17:38:49.799169",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full/checkpoints/nystrom/summary_record.json"
@@ -491,7 +549,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T21:41:38.286349",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_agnews_full/checkpoints/nystrom/summary_record.json"
@@ -521,7 +579,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-25T15:55:46.025845",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/attn_roberta/nystrom/checkpoints/nystrom/summary_record.json"
@@ -541,6 +599,32 @@
         "param_reduction_pct": 0.0
       },
       "notes": "Status: MODERATE_EXPANSION"
+    },
+    {
+      "record_id": "8215f0c18f1056a3",
+      "module_name": "nystrom",
+      "category": "attention",
+      "family": "general",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Master Aggregated Evaluation Suite",
+        "source_artifact": "results/master_aggregated_results.csv"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2",
+        "backbone": "DistilBERT"
+      },
+      "metrics": {
+        "accuracy": 88.07,
+        "roberta_acc": 52.18,
+        "gpt2_acc": 51.03,
+        "latency_ms": 89.3
+      },
+      "notes": "Master Aggregated Results"
     },
     {
       "record_id": "efd403f75452399e",
@@ -597,92 +681,6 @@
         "latency_ms": 1.5
       },
       "notes": "Status: SUCCESS"
-    },
-    {
-      "record_id": "8215f0c18f1056a3",
-      "module_name": "nystrom",
-      "category": "attention",
-      "family": "general",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T00:07:14+03:30",
-      "git_commit_sha": "b3e2b3ad08",
-      "generation_method": {
-        "algorithm": "Master Aggregated Evaluation Suite",
-        "source_artifact": "results/master_aggregated_results.csv"
-      },
-      "experimental_setup": {
-        "dataset": "SST-2",
-        "backbone": "DistilBERT"
-      },
-      "metrics": {
-        "accuracy": 88.07,
-        "roberta_acc": 52.18,
-        "gpt2_acc": 51.03,
-        "latency_ms": 89.3
-      },
-      "notes": "Master Aggregated Results"
-    },
-    {
-      "record_id": "61967486e884ab05",
-      "module_name": "nystrom",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-16T04:24:58.079126",
-      "git_commit_sha": "9a4ff4e985",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_nystrom/distilbert/checkpoints/nystrom/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 71.1,
-        "f1": 0.7087,
-        "val_loss": 0.8356,
-        "peak_vram_mb": 498.6,
-        "throughput_tok_s": 133799.76,
-        "latency_ms": 6300.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
-      "record_id": "a5c091fa8ca3f47f",
-      "module_name": "nystrom",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-16T03:13:35.788849",
-      "git_commit_sha": "9a4ff4e985",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/mnli_unified_nystrom/distilbert/checkpoints/nystrom/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 41.1,
-        "f1": 0.3086,
-        "val_loss": 1.0806,
-        "peak_vram_mb": 344.0,
-        "throughput_tok_s": 52931.47,
-        "latency_ms": 5270.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
     }
   ]
 }

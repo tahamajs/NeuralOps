@@ -43,7 +43,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-15T01:08:12.131798",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_wgqa_rerun/roberta/checkpoints/wgqa/summary_record.json"
@@ -73,7 +73,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-15T01:09:02.630123",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_wgqa_rerun/gpt2/checkpoints/wgqa/summary_record.json"
@@ -103,7 +103,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T22:38:59.985212",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full_lora2/checkpoints/wgqa/summary_record.json"
@@ -161,7 +161,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-15T01:08:12.131798",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_wgqa_rerun/roberta/checkpoints/wgqa/summary_record.json"
@@ -191,7 +191,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-15T01:09:02.630123",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_wgqa_rerun/gpt2/checkpoints/wgqa/summary_record.json"
@@ -221,7 +221,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T22:38:59.985212",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full_lora2/checkpoints/wgqa/summary_record.json"

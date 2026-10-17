@@ -2,7 +2,7 @@
   "module_name": "coopq_quantizer",
   "category": "compressor",
   "family": "matrix-compression",
-  "total_runs": 4,
+  "total_runs": 5,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
   "latest_git_sha": "25d9fe36fa",
@@ -41,7 +41,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-24T22:18:39.977342",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/gpt2_wikitext2_sweep/checkpoints/coopq_quantizer/summary_record.json"
@@ -71,7 +71,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-25T10:59:41.615612",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/batch3_distilbert/coopq_quantizer/checkpoints/coopq_quantizer/summary_record.json"
@@ -101,7 +101,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-25T11:00:30.808017",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/batch3_roberta/coopq_quantizer/checkpoints/coopq_quantizer/summary_record.json"
@@ -121,6 +121,36 @@
         "param_reduction_pct": 0.0
       },
       "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "e94494b9d310e8c9",
+      "module_name": "coopq_quantizer",
+      "category": "compressor",
+      "family": "compression-sweep-roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-14T17:22:33+03:30",
+      "git_commit_sha": "885276e92e",
+      "generation_method": {
+        "algorithm": "RoBERTa-base 72-Compressor Empirical Benchmark",
+        "source_artifact": "results/v13_deep_empirical_suite/roberta_72_compressors/results.json"
+      },
+      "experimental_setup": {
+        "backbone": "RoBERTa-base",
+        "dataset": "SST-2",
+        "batch_size": 16
+      },
+      "metrics": {
+        "accuracy": 48.0,
+        "f1": 0.0,
+        "val_loss": 0.6924,
+        "param_reduction_pct": 0.0,
+        "compression_ratio": 1.0,
+        "peak_vram_mb": 2229.8,
+        "latency_ms": 11360.0
+      },
+      "notes": "RoBERTa 72 Compressors Benchmark. Status: success"
     },
     {
       "record_id": "5a1ca64e6e2be46a",
@@ -157,7 +187,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-24T22:18:39.977342",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/gpt2_wikitext2_sweep/checkpoints/coopq_quantizer/summary_record.json"
@@ -187,7 +217,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-25T10:59:41.615612",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/batch3_distilbert/coopq_quantizer/checkpoints/coopq_quantizer/summary_record.json"
@@ -217,7 +247,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-25T11:00:30.808017",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/batch3_roberta/coopq_quantizer/checkpoints/coopq_quantizer/summary_record.json"
@@ -237,6 +267,36 @@
         "param_reduction_pct": 0.0
       },
       "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "e94494b9d310e8c9",
+      "module_name": "coopq_quantizer",
+      "category": "compressor",
+      "family": "compression-sweep-roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-14T17:22:33+03:30",
+      "git_commit_sha": "885276e92e",
+      "generation_method": {
+        "algorithm": "RoBERTa-base 72-Compressor Empirical Benchmark",
+        "source_artifact": "results/v13_deep_empirical_suite/roberta_72_compressors/results.json"
+      },
+      "experimental_setup": {
+        "backbone": "RoBERTa-base",
+        "dataset": "SST-2",
+        "batch_size": 16
+      },
+      "metrics": {
+        "accuracy": 48.0,
+        "f1": 0.0,
+        "val_loss": 0.6924,
+        "param_reduction_pct": 0.0,
+        "compression_ratio": 1.0,
+        "peak_vram_mb": 2229.8,
+        "latency_ms": 11360.0
+      },
+      "notes": "RoBERTa 72 Compressors Benchmark. Status: success"
     },
     {
       "record_id": "5a1ca64e6e2be46a",

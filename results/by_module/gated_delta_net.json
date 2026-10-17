@@ -1,41 +1,46 @@
 {
   "module_name": "gated_delta_net",
   "category": "attention",
-  "family": "bert",
-  "total_runs": 10,
+  "family": "hardware-roofline",
+  "total_runs": 11,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "9a4ff4e985",
-  "latest_timestamp": "2026-09-16T03:34:14.257310",
+  "latest_git_sha": "121c52d80e",
+  "latest_timestamp": "2026-10-17T16:08:45.389452+00:00",
   "latest_record": {
-    "record_id": "67a35ca23c7fcb4c",
+    "record_id": "8a5e8ca8ca59c9e7",
     "module_name": "gated_delta_net",
     "category": "attention",
-    "family": "bert",
+    "family": "hardware-roofline",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-09-16T03:34:14.257310",
-    "git_commit_sha": "9a4ff4e985",
+    "timestamp_utc": "2026-10-17T16:08:45.389452+00:00",
+    "git_commit_sha": "121c52d80e",
     "generation_method": {
-      "algorithm": "Calibration Sweep Record",
-      "source_artifact": "results/01_unified_runs/mnli_unified_gated_delta_net/distilbert/checkpoints/gated_delta_net/summary_record.json"
+      "algorithm": "Hardware Roofline Dual-Path CUDA Event Profiler",
+      "source_component": "neuralops.core.roofline.profile_roofline"
     },
     "experimental_setup": {
-      "backbone": "models/distilbert_sst2",
-      "dataset": "mnli"
+      "batch_size": 2,
+      "seq_len": 1024,
+      "embed_dim": 768,
+      "num_heads": 12,
+      "head_dim": 64,
+      "dtype": "float16",
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)"
     },
     "metrics": {
-      "accuracy": 34.0,
-      "f1": 0.1692,
-      "val_loss": 1.1066,
-      "peak_vram_mb": 454.58,
-      "throughput_tok_s": 931.05,
-      "latency_ms": 399430.0,
-      "compression_ratio": 1.0,
-      "param_reduction_pct": 0.0
+      "latency_triton_ms": 3.040153694152832,
+      "latency_pytorch_ms": 163.1440226236979,
+      "speedup_x": 53.663083855752085,
+      "achieved_tflops": 4.2961849860158425,
+      "achieved_bandwidth_gb_s": 7.209251967146827,
+      "peak_vram_mb": 76.4033203125,
+      "sram_bytes_saved_mb": 384.625,
+      "arithmetic_intensity_fused": 595.9265962119125
     },
-    "notes": "Status: PASS_NO_COMPRESSION"
+    "notes": "Bottleneck regime: Compute-Bound (Tensor Core Saturated)"
   },
   "active_records": [
     {
@@ -47,7 +52,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-15T16:38:16.955094",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_gated_delta_net/gpt2/checkpoints/gated_delta_net/summary_record.json"
@@ -77,7 +82,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-16T02:54:42.849914",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_gated_delta_net/roberta/checkpoints/gated_delta_net/summary_record.json"
@@ -99,6 +104,36 @@
       "notes": "Status: PASS_NO_COMPRESSION"
     },
     {
+      "record_id": "67a35ca23c7fcb4c",
+      "module_name": "gated_delta_net",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T03:34:14.257310",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/mnli_unified_gated_delta_net/distilbert/checkpoints/gated_delta_net/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 34.0,
+        "f1": 0.1692,
+        "val_loss": 1.1066,
+        "peak_vram_mb": 454.58,
+        "throughput_tok_s": 931.05,
+        "latency_ms": 399430.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
       "record_id": "3bb286ad6cc165d9",
       "module_name": "gated_delta_net",
       "category": "attention",
@@ -107,7 +142,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-17T01:47:14.839964",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/gpt2_ag_news_sweep/checkpoints/gated_delta_net/summary_record.json"
@@ -127,139 +162,6 @@
         "param_reduction_pct": 0.0
       },
       "notes": "Status: FAIL"
-    },
-    {
-      "record_id": "a9a597a5f09519ad",
-      "module_name": "gated_delta_net",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-17T05:42:48.541433",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/07_misc_tests/archive_unified/unified_gated_delta_net/distilbert/checkpoints/gated_delta_net/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models\\distilbert_sst2",
-        "dataset": "sst2"
-      },
-      "metrics": {
-        "accuracy": 0.0,
-        "f1": 0.9099,
-        "val_loss": 0.3027,
-        "peak_vram_mb": 379.42,
-        "throughput_tok_s": 6388.39,
-        "latency_ms": 22590.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: FAIL"
-    },
-    {
-      "record_id": "8b141150da358834",
-      "module_name": "gated_delta_net",
-      "category": "attention",
-      "family": "subquadratic-attention",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-16T09:02:16Z",
-      "git_commit_sha": "c5aaefc147",
-      "generation_method": {
-        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
-        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
-      },
-      "experimental_setup": {
-        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-        "dtype": "float16",
-        "batch_size": 2,
-        "seq_len": 2048
-      },
-      "metrics": {
-        "latency_triton_ms": 6.094
-      },
-      "notes": "131 Attention Comprehensive Latency Benchmark"
-    },
-    {
-      "record_id": "372e2333613318b7",
-      "module_name": "gated_delta_net",
-      "category": "attention",
-      "family": "NeuralOps (Triton Fused)",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-16T08:05:46Z",
-      "git_commit_sha": "328e7ec002",
-      "generation_method": {
-        "algorithm": "NeuralOps (Triton Fused)",
-        "source_artifact": "results/competitive_comparison_v137.json"
-      },
-      "experimental_setup": {
-        "seq_len": null,
-        "batch_size": 2,
-        "embed_dim": 768,
-        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)"
-      },
-      "metrics": {
-        "latency_triton_ms": 8.126,
-        "throughput_tok_s": 1008133.1,
-        "peak_vram_mb": 219.28
-      },
-      "notes": "Cross-Framework Competitive Benchmark"
-    },
-    {
-      "record_id": "a9178530784fdcc8",
-      "module_name": "gated_delta_net",
-      "category": "attention",
-      "family": "attention",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T04:02:13+03:30",
-      "git_commit_sha": "5d553a2079",
-      "generation_method": {
-        "algorithm": "End-to-End Evaluation & Perplexity Probe",
-        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
-      },
-      "experimental_setup": {
-        "dataset": "SST-2 / WikiText-2",
-        "backbone": "DistilBERT / GPT-2"
-      },
-      "metrics": {
-        "accuracy": 94.48,
-        "ppl": 33.28,
-        "latency_ms": 2280.0
-      },
-      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
-    },
-    {
-      "record_id": "fcf18d2fb85ee850",
-      "module_name": "gated_delta_net",
-      "category": "attention",
-      "family": "general",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T00:07:14+03:30",
-      "git_commit_sha": "b3e2b3ad08",
-      "generation_method": {
-        "algorithm": "Master Aggregated Evaluation Suite",
-        "source_artifact": "results/master_aggregated_results.csv"
-      },
-      "experimental_setup": {
-        "dataset": "SST-2",
-        "backbone": "DistilBERT"
-      },
-      "metrics": {
-        "accuracy": 50.92,
-        "roberta_acc": 50.92,
-        "gpt2_acc": 49.54,
-        "latency_ms": 227.8
-      },
-      "notes": "Master Aggregated Results"
     },
     {
       "record_id": "6e383827d670ff5c",
@@ -292,34 +194,172 @@
       "notes": "Status: FAIL"
     },
     {
-      "record_id": "67a35ca23c7fcb4c",
+      "record_id": "a9a597a5f09519ad",
       "module_name": "gated_delta_net",
       "category": "attention",
       "family": "bert",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-09-16T03:34:14.257310",
-      "git_commit_sha": "9a4ff4e985",
+      "timestamp_utc": "2026-09-17T05:42:48.541433",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/mnli_unified_gated_delta_net/distilbert/checkpoints/gated_delta_net/summary_record.json"
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_gated_delta_net/distilbert/checkpoints/gated_delta_net/summary_record.json"
       },
       "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "mnli"
+        "backbone": "models\\distilbert_sst2",
+        "dataset": "sst2"
       },
       "metrics": {
-        "accuracy": 34.0,
-        "f1": 0.1692,
-        "val_loss": 1.1066,
-        "peak_vram_mb": 454.58,
-        "throughput_tok_s": 931.05,
-        "latency_ms": 399430.0,
+        "accuracy": 0.0,
+        "f1": 0.9099,
+        "val_loss": 0.3027,
+        "peak_vram_mb": 379.42,
+        "throughput_tok_s": 6388.39,
+        "latency_ms": 22590.0,
         "compression_ratio": 1.0,
         "param_reduction_pct": 0.0
       },
-      "notes": "Status: PASS_NO_COMPRESSION"
+      "notes": "Status: FAIL"
+    },
+    {
+      "record_id": "fcf18d2fb85ee850",
+      "module_name": "gated_delta_net",
+      "category": "attention",
+      "family": "general",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Master Aggregated Evaluation Suite",
+        "source_artifact": "results/master_aggregated_results.csv"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2",
+        "backbone": "DistilBERT"
+      },
+      "metrics": {
+        "accuracy": 50.92,
+        "roberta_acc": 50.92,
+        "gpt2_acc": 49.54,
+        "latency_ms": 227.8
+      },
+      "notes": "Master Aggregated Results"
+    },
+    {
+      "record_id": "a9178530784fdcc8",
+      "module_name": "gated_delta_net",
+      "category": "attention",
+      "family": "attention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T04:02:13+03:30",
+      "git_commit_sha": "5d553a2079",
+      "generation_method": {
+        "algorithm": "End-to-End Evaluation & Perplexity Probe",
+        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2 / WikiText-2",
+        "backbone": "DistilBERT / GPT-2"
+      },
+      "metrics": {
+        "accuracy": 94.48,
+        "ppl": 33.28,
+        "latency_ms": 2280.0
+      },
+      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
+    },
+    {
+      "record_id": "372e2333613318b7",
+      "module_name": "gated_delta_net",
+      "category": "attention",
+      "family": "NeuralOps (Triton Fused)",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T08:05:46Z",
+      "git_commit_sha": "328e7ec002",
+      "generation_method": {
+        "algorithm": "NeuralOps (Triton Fused)",
+        "source_artifact": "results/competitive_comparison_v137.json"
+      },
+      "experimental_setup": {
+        "seq_len": null,
+        "batch_size": 2,
+        "embed_dim": 768,
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)"
+      },
+      "metrics": {
+        "latency_triton_ms": 8.126,
+        "throughput_tok_s": 1008133.1,
+        "peak_vram_mb": 219.28
+      },
+      "notes": "Cross-Framework Competitive Benchmark"
+    },
+    {
+      "record_id": "8b141150da358834",
+      "module_name": "gated_delta_net",
+      "category": "attention",
+      "family": "subquadratic-attention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T09:02:16Z",
+      "git_commit_sha": "c5aaefc147",
+      "generation_method": {
+        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
+        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "dtype": "float16",
+        "batch_size": 2,
+        "seq_len": 2048
+      },
+      "metrics": {
+        "latency_triton_ms": 6.094
+      },
+      "notes": "131 Attention Comprehensive Latency Benchmark"
+    },
+    {
+      "record_id": "8a5e8ca8ca59c9e7",
+      "module_name": "gated_delta_net",
+      "category": "attention",
+      "family": "hardware-roofline",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-17T16:08:45.389452+00:00",
+      "git_commit_sha": "121c52d80e",
+      "generation_method": {
+        "algorithm": "Hardware Roofline Dual-Path CUDA Event Profiler",
+        "source_component": "neuralops.core.roofline.profile_roofline"
+      },
+      "experimental_setup": {
+        "batch_size": 2,
+        "seq_len": 1024,
+        "embed_dim": 768,
+        "num_heads": 12,
+        "head_dim": 64,
+        "dtype": "float16",
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)"
+      },
+      "metrics": {
+        "latency_triton_ms": 3.040153694152832,
+        "latency_pytorch_ms": 163.1440226236979,
+        "speedup_x": 53.663083855752085,
+        "achieved_tflops": 4.2961849860158425,
+        "achieved_bandwidth_gb_s": 7.209251967146827,
+        "peak_vram_mb": 76.4033203125,
+        "sram_bytes_saved_mb": 384.625,
+        "arithmetic_intensity_fused": 595.9265962119125
+      },
+      "notes": "Bottleneck regime: Compute-Bound (Tensor Core Saturated)"
     }
   ],
   "history": [
@@ -332,7 +372,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-15T16:38:16.955094",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_gated_delta_net/gpt2/checkpoints/gated_delta_net/summary_record.json"
@@ -362,7 +402,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-16T02:54:42.849914",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_gated_delta_net/roberta/checkpoints/gated_delta_net/summary_record.json"
@@ -384,6 +424,36 @@
       "notes": "Status: PASS_NO_COMPRESSION"
     },
     {
+      "record_id": "67a35ca23c7fcb4c",
+      "module_name": "gated_delta_net",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T03:34:14.257310",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/mnli_unified_gated_delta_net/distilbert/checkpoints/gated_delta_net/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 34.0,
+        "f1": 0.1692,
+        "val_loss": 1.1066,
+        "peak_vram_mb": 454.58,
+        "throughput_tok_s": 931.05,
+        "latency_ms": 399430.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
       "record_id": "3bb286ad6cc165d9",
       "module_name": "gated_delta_net",
       "category": "attention",
@@ -392,7 +462,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-17T01:47:14.839964",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/gpt2_ag_news_sweep/checkpoints/gated_delta_net/summary_record.json"
@@ -412,139 +482,6 @@
         "param_reduction_pct": 0.0
       },
       "notes": "Status: FAIL"
-    },
-    {
-      "record_id": "a9a597a5f09519ad",
-      "module_name": "gated_delta_net",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-17T05:42:48.541433",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/07_misc_tests/archive_unified/unified_gated_delta_net/distilbert/checkpoints/gated_delta_net/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models\\distilbert_sst2",
-        "dataset": "sst2"
-      },
-      "metrics": {
-        "accuracy": 0.0,
-        "f1": 0.9099,
-        "val_loss": 0.3027,
-        "peak_vram_mb": 379.42,
-        "throughput_tok_s": 6388.39,
-        "latency_ms": 22590.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: FAIL"
-    },
-    {
-      "record_id": "8b141150da358834",
-      "module_name": "gated_delta_net",
-      "category": "attention",
-      "family": "subquadratic-attention",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-16T09:02:16Z",
-      "git_commit_sha": "c5aaefc147",
-      "generation_method": {
-        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
-        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
-      },
-      "experimental_setup": {
-        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-        "dtype": "float16",
-        "batch_size": 2,
-        "seq_len": 2048
-      },
-      "metrics": {
-        "latency_triton_ms": 6.094
-      },
-      "notes": "131 Attention Comprehensive Latency Benchmark"
-    },
-    {
-      "record_id": "372e2333613318b7",
-      "module_name": "gated_delta_net",
-      "category": "attention",
-      "family": "NeuralOps (Triton Fused)",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-16T08:05:46Z",
-      "git_commit_sha": "328e7ec002",
-      "generation_method": {
-        "algorithm": "NeuralOps (Triton Fused)",
-        "source_artifact": "results/competitive_comparison_v137.json"
-      },
-      "experimental_setup": {
-        "seq_len": null,
-        "batch_size": 2,
-        "embed_dim": 768,
-        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)"
-      },
-      "metrics": {
-        "latency_triton_ms": 8.126,
-        "throughput_tok_s": 1008133.1,
-        "peak_vram_mb": 219.28
-      },
-      "notes": "Cross-Framework Competitive Benchmark"
-    },
-    {
-      "record_id": "a9178530784fdcc8",
-      "module_name": "gated_delta_net",
-      "category": "attention",
-      "family": "attention",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T04:02:13+03:30",
-      "git_commit_sha": "5d553a2079",
-      "generation_method": {
-        "algorithm": "End-to-End Evaluation & Perplexity Probe",
-        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
-      },
-      "experimental_setup": {
-        "dataset": "SST-2 / WikiText-2",
-        "backbone": "DistilBERT / GPT-2"
-      },
-      "metrics": {
-        "accuracy": 94.48,
-        "ppl": 33.28,
-        "latency_ms": 2280.0
-      },
-      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
-    },
-    {
-      "record_id": "fcf18d2fb85ee850",
-      "module_name": "gated_delta_net",
-      "category": "attention",
-      "family": "general",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T00:07:14+03:30",
-      "git_commit_sha": "b3e2b3ad08",
-      "generation_method": {
-        "algorithm": "Master Aggregated Evaluation Suite",
-        "source_artifact": "results/master_aggregated_results.csv"
-      },
-      "experimental_setup": {
-        "dataset": "SST-2",
-        "backbone": "DistilBERT"
-      },
-      "metrics": {
-        "accuracy": 50.92,
-        "roberta_acc": 50.92,
-        "gpt2_acc": 49.54,
-        "latency_ms": 227.8
-      },
-      "notes": "Master Aggregated Results"
     },
     {
       "record_id": "6e383827d670ff5c",
@@ -577,34 +514,172 @@
       "notes": "Status: FAIL"
     },
     {
-      "record_id": "67a35ca23c7fcb4c",
+      "record_id": "a9a597a5f09519ad",
       "module_name": "gated_delta_net",
       "category": "attention",
       "family": "bert",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-09-16T03:34:14.257310",
-      "git_commit_sha": "9a4ff4e985",
+      "timestamp_utc": "2026-09-17T05:42:48.541433",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/mnli_unified_gated_delta_net/distilbert/checkpoints/gated_delta_net/summary_record.json"
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_gated_delta_net/distilbert/checkpoints/gated_delta_net/summary_record.json"
       },
       "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "mnli"
+        "backbone": "models\\distilbert_sst2",
+        "dataset": "sst2"
       },
       "metrics": {
-        "accuracy": 34.0,
-        "f1": 0.1692,
-        "val_loss": 1.1066,
-        "peak_vram_mb": 454.58,
-        "throughput_tok_s": 931.05,
-        "latency_ms": 399430.0,
+        "accuracy": 0.0,
+        "f1": 0.9099,
+        "val_loss": 0.3027,
+        "peak_vram_mb": 379.42,
+        "throughput_tok_s": 6388.39,
+        "latency_ms": 22590.0,
         "compression_ratio": 1.0,
         "param_reduction_pct": 0.0
       },
-      "notes": "Status: PASS_NO_COMPRESSION"
+      "notes": "Status: FAIL"
+    },
+    {
+      "record_id": "fcf18d2fb85ee850",
+      "module_name": "gated_delta_net",
+      "category": "attention",
+      "family": "general",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Master Aggregated Evaluation Suite",
+        "source_artifact": "results/master_aggregated_results.csv"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2",
+        "backbone": "DistilBERT"
+      },
+      "metrics": {
+        "accuracy": 50.92,
+        "roberta_acc": 50.92,
+        "gpt2_acc": 49.54,
+        "latency_ms": 227.8
+      },
+      "notes": "Master Aggregated Results"
+    },
+    {
+      "record_id": "a9178530784fdcc8",
+      "module_name": "gated_delta_net",
+      "category": "attention",
+      "family": "attention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T04:02:13+03:30",
+      "git_commit_sha": "5d553a2079",
+      "generation_method": {
+        "algorithm": "End-to-End Evaluation & Perplexity Probe",
+        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2 / WikiText-2",
+        "backbone": "DistilBERT / GPT-2"
+      },
+      "metrics": {
+        "accuracy": 94.48,
+        "ppl": 33.28,
+        "latency_ms": 2280.0
+      },
+      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
+    },
+    {
+      "record_id": "372e2333613318b7",
+      "module_name": "gated_delta_net",
+      "category": "attention",
+      "family": "NeuralOps (Triton Fused)",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T08:05:46Z",
+      "git_commit_sha": "328e7ec002",
+      "generation_method": {
+        "algorithm": "NeuralOps (Triton Fused)",
+        "source_artifact": "results/competitive_comparison_v137.json"
+      },
+      "experimental_setup": {
+        "seq_len": null,
+        "batch_size": 2,
+        "embed_dim": 768,
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)"
+      },
+      "metrics": {
+        "latency_triton_ms": 8.126,
+        "throughput_tok_s": 1008133.1,
+        "peak_vram_mb": 219.28
+      },
+      "notes": "Cross-Framework Competitive Benchmark"
+    },
+    {
+      "record_id": "8b141150da358834",
+      "module_name": "gated_delta_net",
+      "category": "attention",
+      "family": "subquadratic-attention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T09:02:16Z",
+      "git_commit_sha": "c5aaefc147",
+      "generation_method": {
+        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
+        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "dtype": "float16",
+        "batch_size": 2,
+        "seq_len": 2048
+      },
+      "metrics": {
+        "latency_triton_ms": 6.094
+      },
+      "notes": "131 Attention Comprehensive Latency Benchmark"
+    },
+    {
+      "record_id": "8a5e8ca8ca59c9e7",
+      "module_name": "gated_delta_net",
+      "category": "attention",
+      "family": "hardware-roofline",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-17T16:08:45.389452+00:00",
+      "git_commit_sha": "121c52d80e",
+      "generation_method": {
+        "algorithm": "Hardware Roofline Dual-Path CUDA Event Profiler",
+        "source_component": "neuralops.core.roofline.profile_roofline"
+      },
+      "experimental_setup": {
+        "batch_size": 2,
+        "seq_len": 1024,
+        "embed_dim": 768,
+        "num_heads": 12,
+        "head_dim": 64,
+        "dtype": "float16",
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)"
+      },
+      "metrics": {
+        "latency_triton_ms": 3.040153694152832,
+        "latency_pytorch_ms": 163.1440226236979,
+        "speedup_x": 53.663083855752085,
+        "achieved_tflops": 4.2961849860158425,
+        "achieved_bandwidth_gb_s": 7.209251967146827,
+        "peak_vram_mb": 76.4033203125,
+        "sram_bytes_saved_mb": 384.625,
+        "arithmetic_intensity_fused": 595.9265962119125
+      },
+      "notes": "Bottleneck regime: Compute-Bound (Tensor Core Saturated)"
     }
   ]
 }

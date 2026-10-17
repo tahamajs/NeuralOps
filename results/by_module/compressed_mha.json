@@ -1,41 +1,34 @@
 {
   "module_name": "compressed_mha",
   "category": "attention",
-  "family": "bert",
+  "family": "GroupA_Softmax",
   "total_runs": 15,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "9a4ff4e985",
-  "latest_timestamp": "2026-09-16T03:58:46.305259",
+  "latest_git_sha": "79ea70f3f1",
+  "latest_timestamp": "2026-10-17T19:12:53+03:30",
   "latest_record": {
-    "record_id": "c587fd7c49d032a4",
+    "record_id": "697211ebf638e872",
     "module_name": "compressed_mha",
     "category": "attention",
-    "family": "bert",
+    "family": "GroupA_Softmax",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-09-16T03:58:46.305259",
-    "git_commit_sha": "9a4ff4e985",
+    "timestamp_utc": "2026-10-17T19:12:53+03:30",
+    "git_commit_sha": "79ea70f3f1",
     "generation_method": {
-      "algorithm": "Calibration Sweep Record",
-      "source_artifact": "results/01_unified_runs/mnli_unified_compressed_mha/distilbert/checkpoints/compressed_mha/summary_record.json"
+      "algorithm": "Sequence Length Scaling Benchmark",
+      "source_artifact": "results/SEQLEN_SCALING_MASTER.csv"
     },
     "experimental_setup": {
-      "backbone": "models/distilbert_sst2",
-      "dataset": "mnli"
+      "seq_len": 1024,
+      "group": "GroupA_Softmax"
     },
     "metrics": {
-      "accuracy": 34.1,
-      "f1": 0.1695,
-      "val_loss": 1.1078,
-      "peak_vram_mb": 335.1,
-      "throughput_tok_s": 65276.77,
-      "latency_ms": 5930.0,
-      "compression_ratio": 1.2171,
-      "param_reduction_pct": 17.84
+      "latency_ms": 0.0516
     },
-    "notes": "Status: PASS_LOW"
+    "notes": "Sequence Length Scaling Master Suite"
   },
   "active_records": [
     {
@@ -47,7 +40,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-16T00:16:14.943112",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_compressed_mha/gpt2/checkpoints/compressed_mha/summary_record.json"
@@ -67,364 +60,6 @@
         "param_reduction_pct": 20.62
       },
       "notes": "Status: PASS_LOW"
-    },
-    {
-      "record_id": "c902d35054496061",
-      "module_name": "compressed_mha",
-      "category": "attention",
-      "family": "roberta",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-19T03:11:55.942408",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/roberta/checkpoints/compressed_mha/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models\\roberta-base",
-        "dataset": "sst2"
-      },
-      "metrics": {
-        "accuracy": 50.92,
-        "f1": 0.6748,
-        "val_loss": 0.7251,
-        "peak_vram_mb": 618.17,
-        "throughput_tok_s": 25614.2,
-        "latency_ms": 25010.0,
-        "compression_ratio": 1.1558,
-        "param_reduction_pct": 13.48
-      },
-      "notes": "Status: PASS_LOW"
-    },
-    {
-      "record_id": "fe3fa037b1c26952",
-      "module_name": "compressed_mha",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-19T04:52:01.793813",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/compressed_mha/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models\\distilbert_sst2",
-        "dataset": "sst2"
-      },
-      "metrics": {
-        "accuracy": 90.83,
-        "f1": 0.9097,
-        "val_loss": 0.3289,
-        "peak_vram_mb": 357.39,
-        "throughput_tok_s": 28203.29,
-        "latency_ms": 15540.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: REJECTED_EXPANSION"
-    },
-    {
-      "record_id": "db7e4b9971b475bd",
-      "module_name": "compressed_mha",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-19T05:57:27.347807",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/compressed_mha/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "distilbert-base-uncased",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 34.0,
-        "f1": 0.1692,
-        "val_loss": 1.0985,
-        "peak_vram_mb": 284.49,
-        "throughput_tok_s": 27037.71,
-        "latency_ms": 13570.0,
-        "compression_ratio": 1.2171,
-        "param_reduction_pct": 17.84
-      },
-      "notes": "Status: PASS_LOW"
-    },
-    {
-      "record_id": "9df4b9de296018d9",
-      "module_name": "compressed_mha",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-19T12:46:26.248714",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full/checkpoints/compressed_mha/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models\\distilbert_mnli_full",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 34.1,
-        "f1": 0.1695,
-        "val_loss": 1.1185,
-        "peak_vram_mb": 285.26,
-        "throughput_tok_s": 28182.6,
-        "latency_ms": 53150.0,
-        "compression_ratio": 1.2171,
-        "param_reduction_pct": 17.84
-      },
-      "notes": "Status: PASS_LOW"
-    },
-    {
-      "record_id": "3c4ec0ff1c9fa3df",
-      "module_name": "compressed_mha",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-19T20:27:53.892752",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_agnews_full/checkpoints/compressed_mha/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models\\distilbert_agnews_full",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 94.5,
-        "f1": 0.9415,
-        "val_loss": 0.191,
-        "peak_vram_mb": 408.83,
-        "throughput_tok_s": 55395.85,
-        "latency_ms": 13930.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: REJECTED_EXPANSION"
-    },
-    {
-      "record_id": "a2e9233fbde6e213",
-      "module_name": "compressed_mha",
-      "category": "attention",
-      "family": "roberta",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-21T23:58:05.906870",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/compressed_mha/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/roberta_sst2",
-        "dataset": "sst2"
-      },
-      "metrics": {
-        "accuracy": 50.92,
-        "f1": 0.6748,
-        "val_loss": 0.7283,
-        "peak_vram_mb": 580.56,
-        "throughput_tok_s": 8692.47,
-        "latency_ms": 24170.0,
-        "compression_ratio": 1.0521,
-        "param_reduction_pct": 4.96
-      },
-      "notes": "Status: PASS_LOW"
-    },
-    {
-      "record_id": "7c816b2b43b656b8",
-      "module_name": "compressed_mha",
-      "category": "attention",
-      "family": "roberta",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-24T19:17:00.773459",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/unified_runs/unified_compressed_mha/roberta/checkpoints/compressed_mha/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models\\roberta_sst2",
-        "dataset": "sst2"
-      },
-      "metrics": {
-        "accuracy": 50.92,
-        "f1": 0.6748,
-        "val_loss": 0.6998,
-        "peak_vram_mb": 369.37,
-        "throughput_tok_s": 16516.2,
-        "latency_ms": 18870.0,
-        "compression_ratio": 1.0521,
-        "param_reduction_pct": 4.96
-      },
-      "notes": "Status: PASS_LOW"
-    },
-    {
-      "record_id": "8871b64996025deb",
-      "module_name": "compressed_mha",
-      "category": "attention",
-      "family": "gpt",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-24T21:47:02.451994",
-      "git_commit_sha": "6267bfb8a8",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/07_misc_tests/gpt2_wikitext2_sweep/checkpoints/compressed_mha/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/gpt2",
-        "dataset": "wikitext2"
-      },
-      "metrics": {
-        "accuracy": 0.0,
-        "f1": 0.0,
-        "val_loss": 5.369930781157435,
-        "peak_vram_mb": 1162.0634765625,
-        "throughput_tok_s": 680.5076775010953,
-        "latency_ms": 393310.0,
-        "compression_ratio": 1.1193,
-        "param_reduction_pct": 10.66
-      },
-      "notes": "Status: FAIL_PPL_DIVERGED"
-    },
-    {
-      "record_id": "5fc19f2b512b0b0f",
-      "module_name": "compressed_mha",
-      "category": "attention",
-      "family": "GroupA_Softmax",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T00:07:14+03:30",
-      "git_commit_sha": "b3e2b3ad08",
-      "generation_method": {
-        "algorithm": "Sequence Length Scaling Benchmark",
-        "source_artifact": "results/SEQLEN_SCALING_MASTER.csv"
-      },
-      "experimental_setup": {
-        "seq_len": 128,
-        "group": "GroupA_Softmax"
-      },
-      "metrics": {
-        "latency_ms": 0.4579
-      },
-      "notes": "Sequence Length Scaling Master Suite"
-    },
-    {
-      "record_id": "74a5c41669f9fcf8",
-      "module_name": "compressed_mha",
-      "category": "attention",
-      "family": "GroupA_Softmax",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T00:07:14+03:30",
-      "git_commit_sha": "b3e2b3ad08",
-      "generation_method": {
-        "algorithm": "Sequence Length Scaling Benchmark",
-        "source_artifact": "results/SEQLEN_SCALING_MASTER.csv"
-      },
-      "experimental_setup": {
-        "seq_len": 256,
-        "group": "GroupA_Softmax"
-      },
-      "metrics": {
-        "latency_ms": 0.224
-      },
-      "notes": "Sequence Length Scaling Master Suite"
-    },
-    {
-      "record_id": "fd956d29b028aec2",
-      "module_name": "compressed_mha",
-      "category": "attention",
-      "family": "GroupA_Softmax",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T00:07:14+03:30",
-      "git_commit_sha": "b3e2b3ad08",
-      "generation_method": {
-        "algorithm": "Sequence Length Scaling Benchmark",
-        "source_artifact": "results/SEQLEN_SCALING_MASTER.csv"
-      },
-      "experimental_setup": {
-        "seq_len": 512,
-        "group": "GroupA_Softmax"
-      },
-      "metrics": {
-        "latency_ms": 0.1108
-      },
-      "notes": "Sequence Length Scaling Master Suite"
-    },
-    {
-      "record_id": "697211ebf638e872",
-      "module_name": "compressed_mha",
-      "category": "attention",
-      "family": "GroupA_Softmax",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T00:07:14+03:30",
-      "git_commit_sha": "b3e2b3ad08",
-      "generation_method": {
-        "algorithm": "Sequence Length Scaling Benchmark",
-        "source_artifact": "results/SEQLEN_SCALING_MASTER.csv"
-      },
-      "experimental_setup": {
-        "seq_len": 1024,
-        "group": "GroupA_Softmax"
-      },
-      "metrics": {
-        "latency_ms": 0.0516
-      },
-      "notes": "Sequence Length Scaling Master Suite"
-    },
-    {
-      "record_id": "78850b7bf4a17123",
-      "module_name": "compressed_mha",
-      "category": "attention",
-      "family": "general",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T00:07:14+03:30",
-      "git_commit_sha": "b3e2b3ad08",
-      "generation_method": {
-        "algorithm": "Master Aggregated Evaluation Suite",
-        "source_artifact": "results/master_aggregated_results.csv"
-      },
-      "experimental_setup": {
-        "dataset": "SST-2",
-        "backbone": "DistilBERT"
-      },
-      "metrics": {
-        "accuracy": 50.92,
-        "roberta_acc": 50.92,
-        "gpt2_acc": 50.92,
-        "latency_ms": 140.3
-      },
-      "notes": "Master Aggregated Results"
     },
     {
       "record_id": "c587fd7c49d032a4",
@@ -455,6 +90,364 @@
         "param_reduction_pct": 17.84
       },
       "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "c902d35054496061",
+      "module_name": "compressed_mha",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T03:11:55.942408",
+      "git_commit_sha": "866fe45a1a",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/roberta/checkpoints/compressed_mha/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta-base",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 50.92,
+        "f1": 0.6748,
+        "val_loss": 0.7251,
+        "peak_vram_mb": 618.17,
+        "throughput_tok_s": 25614.2,
+        "latency_ms": 25010.0,
+        "compression_ratio": 1.1558,
+        "param_reduction_pct": 13.48
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "fe3fa037b1c26952",
+      "module_name": "compressed_mha",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T04:52:01.793813",
+      "git_commit_sha": "866fe45a1a",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/compressed_mha/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.83,
+        "f1": 0.9097,
+        "val_loss": 0.3289,
+        "peak_vram_mb": 357.39,
+        "throughput_tok_s": 28203.29,
+        "latency_ms": 15540.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: REJECTED_EXPANSION"
+    },
+    {
+      "record_id": "db7e4b9971b475bd",
+      "module_name": "compressed_mha",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T05:57:27.347807",
+      "git_commit_sha": "866fe45a1a",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/compressed_mha/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 34.0,
+        "f1": 0.1692,
+        "val_loss": 1.0985,
+        "peak_vram_mb": 284.49,
+        "throughput_tok_s": 27037.71,
+        "latency_ms": 13570.0,
+        "compression_ratio": 1.2171,
+        "param_reduction_pct": 17.84
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "9df4b9de296018d9",
+      "module_name": "compressed_mha",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T12:46:26.248714",
+      "git_commit_sha": "866fe45a1a",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full/checkpoints/compressed_mha/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 34.1,
+        "f1": 0.1695,
+        "val_loss": 1.1185,
+        "peak_vram_mb": 285.26,
+        "throughput_tok_s": 28182.6,
+        "latency_ms": 53150.0,
+        "compression_ratio": 1.2171,
+        "param_reduction_pct": 17.84
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "3c4ec0ff1c9fa3df",
+      "module_name": "compressed_mha",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T20:27:53.892752",
+      "git_commit_sha": "866fe45a1a",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_agnews_full/checkpoints/compressed_mha/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_agnews_full",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 94.5,
+        "f1": 0.9415,
+        "val_loss": 0.191,
+        "peak_vram_mb": 408.83,
+        "throughput_tok_s": 55395.85,
+        "latency_ms": 13930.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: REJECTED_EXPANSION"
+    },
+    {
+      "record_id": "a2e9233fbde6e213",
+      "module_name": "compressed_mha",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-21T23:58:05.906870",
+      "git_commit_sha": "866fe45a1a",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/compressed_mha/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 50.92,
+        "f1": 0.6748,
+        "val_loss": 0.7283,
+        "peak_vram_mb": 580.56,
+        "throughput_tok_s": 8692.47,
+        "latency_ms": 24170.0,
+        "compression_ratio": 1.0521,
+        "param_reduction_pct": 4.96
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "7c816b2b43b656b8",
+      "module_name": "compressed_mha",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-24T19:17:00.773459",
+      "git_commit_sha": "81683bdbf8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/unified_runs/unified_compressed_mha/roberta/checkpoints/compressed_mha/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 50.92,
+        "f1": 0.6748,
+        "val_loss": 0.6998,
+        "peak_vram_mb": 369.37,
+        "throughput_tok_s": 16516.2,
+        "latency_ms": 18870.0,
+        "compression_ratio": 1.0521,
+        "param_reduction_pct": 4.96
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "8871b64996025deb",
+      "module_name": "compressed_mha",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-24T21:47:02.451994",
+      "git_commit_sha": "866fe45a1a",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/gpt2_wikitext2_sweep/checkpoints/compressed_mha/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/gpt2",
+        "dataset": "wikitext2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 5.369930781157435,
+        "peak_vram_mb": 1162.0634765625,
+        "throughput_tok_s": 680.5076775010953,
+        "latency_ms": 393310.0,
+        "compression_ratio": 1.1193,
+        "param_reduction_pct": 10.66
+      },
+      "notes": "Status: FAIL_PPL_DIVERGED"
+    },
+    {
+      "record_id": "78850b7bf4a17123",
+      "module_name": "compressed_mha",
+      "category": "attention",
+      "family": "general",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Master Aggregated Evaluation Suite",
+        "source_artifact": "results/master_aggregated_results.csv"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2",
+        "backbone": "DistilBERT"
+      },
+      "metrics": {
+        "accuracy": 50.92,
+        "roberta_acc": 50.92,
+        "gpt2_acc": 50.92,
+        "latency_ms": 140.3
+      },
+      "notes": "Master Aggregated Results"
+    },
+    {
+      "record_id": "5fc19f2b512b0b0f",
+      "module_name": "compressed_mha",
+      "category": "attention",
+      "family": "GroupA_Softmax",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-17T19:12:53+03:30",
+      "git_commit_sha": "79ea70f3f1",
+      "generation_method": {
+        "algorithm": "Sequence Length Scaling Benchmark",
+        "source_artifact": "results/SEQLEN_SCALING_MASTER.csv"
+      },
+      "experimental_setup": {
+        "seq_len": 128,
+        "group": "GroupA_Softmax"
+      },
+      "metrics": {
+        "latency_ms": 0.4579
+      },
+      "notes": "Sequence Length Scaling Master Suite"
+    },
+    {
+      "record_id": "74a5c41669f9fcf8",
+      "module_name": "compressed_mha",
+      "category": "attention",
+      "family": "GroupA_Softmax",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-17T19:12:53+03:30",
+      "git_commit_sha": "79ea70f3f1",
+      "generation_method": {
+        "algorithm": "Sequence Length Scaling Benchmark",
+        "source_artifact": "results/SEQLEN_SCALING_MASTER.csv"
+      },
+      "experimental_setup": {
+        "seq_len": 256,
+        "group": "GroupA_Softmax"
+      },
+      "metrics": {
+        "latency_ms": 0.224
+      },
+      "notes": "Sequence Length Scaling Master Suite"
+    },
+    {
+      "record_id": "fd956d29b028aec2",
+      "module_name": "compressed_mha",
+      "category": "attention",
+      "family": "GroupA_Softmax",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-17T19:12:53+03:30",
+      "git_commit_sha": "79ea70f3f1",
+      "generation_method": {
+        "algorithm": "Sequence Length Scaling Benchmark",
+        "source_artifact": "results/SEQLEN_SCALING_MASTER.csv"
+      },
+      "experimental_setup": {
+        "seq_len": 512,
+        "group": "GroupA_Softmax"
+      },
+      "metrics": {
+        "latency_ms": 0.1108
+      },
+      "notes": "Sequence Length Scaling Master Suite"
+    },
+    {
+      "record_id": "697211ebf638e872",
+      "module_name": "compressed_mha",
+      "category": "attention",
+      "family": "GroupA_Softmax",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-17T19:12:53+03:30",
+      "git_commit_sha": "79ea70f3f1",
+      "generation_method": {
+        "algorithm": "Sequence Length Scaling Benchmark",
+        "source_artifact": "results/SEQLEN_SCALING_MASTER.csv"
+      },
+      "experimental_setup": {
+        "seq_len": 1024,
+        "group": "GroupA_Softmax"
+      },
+      "metrics": {
+        "latency_ms": 0.0516
+      },
+      "notes": "Sequence Length Scaling Master Suite"
     }
   ],
   "history": [
@@ -467,7 +460,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-16T00:16:14.943112",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_compressed_mha/gpt2/checkpoints/compressed_mha/summary_record.json"
@@ -487,364 +480,6 @@
         "param_reduction_pct": 20.62
       },
       "notes": "Status: PASS_LOW"
-    },
-    {
-      "record_id": "c902d35054496061",
-      "module_name": "compressed_mha",
-      "category": "attention",
-      "family": "roberta",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-19T03:11:55.942408",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/roberta/checkpoints/compressed_mha/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models\\roberta-base",
-        "dataset": "sst2"
-      },
-      "metrics": {
-        "accuracy": 50.92,
-        "f1": 0.6748,
-        "val_loss": 0.7251,
-        "peak_vram_mb": 618.17,
-        "throughput_tok_s": 25614.2,
-        "latency_ms": 25010.0,
-        "compression_ratio": 1.1558,
-        "param_reduction_pct": 13.48
-      },
-      "notes": "Status: PASS_LOW"
-    },
-    {
-      "record_id": "fe3fa037b1c26952",
-      "module_name": "compressed_mha",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-19T04:52:01.793813",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/compressed_mha/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models\\distilbert_sst2",
-        "dataset": "sst2"
-      },
-      "metrics": {
-        "accuracy": 90.83,
-        "f1": 0.9097,
-        "val_loss": 0.3289,
-        "peak_vram_mb": 357.39,
-        "throughput_tok_s": 28203.29,
-        "latency_ms": 15540.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: REJECTED_EXPANSION"
-    },
-    {
-      "record_id": "db7e4b9971b475bd",
-      "module_name": "compressed_mha",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-19T05:57:27.347807",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/compressed_mha/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "distilbert-base-uncased",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 34.0,
-        "f1": 0.1692,
-        "val_loss": 1.0985,
-        "peak_vram_mb": 284.49,
-        "throughput_tok_s": 27037.71,
-        "latency_ms": 13570.0,
-        "compression_ratio": 1.2171,
-        "param_reduction_pct": 17.84
-      },
-      "notes": "Status: PASS_LOW"
-    },
-    {
-      "record_id": "9df4b9de296018d9",
-      "module_name": "compressed_mha",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-19T12:46:26.248714",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full/checkpoints/compressed_mha/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models\\distilbert_mnli_full",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 34.1,
-        "f1": 0.1695,
-        "val_loss": 1.1185,
-        "peak_vram_mb": 285.26,
-        "throughput_tok_s": 28182.6,
-        "latency_ms": 53150.0,
-        "compression_ratio": 1.2171,
-        "param_reduction_pct": 17.84
-      },
-      "notes": "Status: PASS_LOW"
-    },
-    {
-      "record_id": "3c4ec0ff1c9fa3df",
-      "module_name": "compressed_mha",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-19T20:27:53.892752",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_agnews_full/checkpoints/compressed_mha/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models\\distilbert_agnews_full",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 94.5,
-        "f1": 0.9415,
-        "val_loss": 0.191,
-        "peak_vram_mb": 408.83,
-        "throughput_tok_s": 55395.85,
-        "latency_ms": 13930.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: REJECTED_EXPANSION"
-    },
-    {
-      "record_id": "a2e9233fbde6e213",
-      "module_name": "compressed_mha",
-      "category": "attention",
-      "family": "roberta",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-21T23:58:05.906870",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/compressed_mha/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/roberta_sst2",
-        "dataset": "sst2"
-      },
-      "metrics": {
-        "accuracy": 50.92,
-        "f1": 0.6748,
-        "val_loss": 0.7283,
-        "peak_vram_mb": 580.56,
-        "throughput_tok_s": 8692.47,
-        "latency_ms": 24170.0,
-        "compression_ratio": 1.0521,
-        "param_reduction_pct": 4.96
-      },
-      "notes": "Status: PASS_LOW"
-    },
-    {
-      "record_id": "7c816b2b43b656b8",
-      "module_name": "compressed_mha",
-      "category": "attention",
-      "family": "roberta",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-24T19:17:00.773459",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/unified_runs/unified_compressed_mha/roberta/checkpoints/compressed_mha/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models\\roberta_sst2",
-        "dataset": "sst2"
-      },
-      "metrics": {
-        "accuracy": 50.92,
-        "f1": 0.6748,
-        "val_loss": 0.6998,
-        "peak_vram_mb": 369.37,
-        "throughput_tok_s": 16516.2,
-        "latency_ms": 18870.0,
-        "compression_ratio": 1.0521,
-        "param_reduction_pct": 4.96
-      },
-      "notes": "Status: PASS_LOW"
-    },
-    {
-      "record_id": "8871b64996025deb",
-      "module_name": "compressed_mha",
-      "category": "attention",
-      "family": "gpt",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-24T21:47:02.451994",
-      "git_commit_sha": "6267bfb8a8",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/07_misc_tests/gpt2_wikitext2_sweep/checkpoints/compressed_mha/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/gpt2",
-        "dataset": "wikitext2"
-      },
-      "metrics": {
-        "accuracy": 0.0,
-        "f1": 0.0,
-        "val_loss": 5.369930781157435,
-        "peak_vram_mb": 1162.0634765625,
-        "throughput_tok_s": 680.5076775010953,
-        "latency_ms": 393310.0,
-        "compression_ratio": 1.1193,
-        "param_reduction_pct": 10.66
-      },
-      "notes": "Status: FAIL_PPL_DIVERGED"
-    },
-    {
-      "record_id": "5fc19f2b512b0b0f",
-      "module_name": "compressed_mha",
-      "category": "attention",
-      "family": "GroupA_Softmax",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T00:07:14+03:30",
-      "git_commit_sha": "b3e2b3ad08",
-      "generation_method": {
-        "algorithm": "Sequence Length Scaling Benchmark",
-        "source_artifact": "results/SEQLEN_SCALING_MASTER.csv"
-      },
-      "experimental_setup": {
-        "seq_len": 128,
-        "group": "GroupA_Softmax"
-      },
-      "metrics": {
-        "latency_ms": 0.4579
-      },
-      "notes": "Sequence Length Scaling Master Suite"
-    },
-    {
-      "record_id": "74a5c41669f9fcf8",
-      "module_name": "compressed_mha",
-      "category": "attention",
-      "family": "GroupA_Softmax",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T00:07:14+03:30",
-      "git_commit_sha": "b3e2b3ad08",
-      "generation_method": {
-        "algorithm": "Sequence Length Scaling Benchmark",
-        "source_artifact": "results/SEQLEN_SCALING_MASTER.csv"
-      },
-      "experimental_setup": {
-        "seq_len": 256,
-        "group": "GroupA_Softmax"
-      },
-      "metrics": {
-        "latency_ms": 0.224
-      },
-      "notes": "Sequence Length Scaling Master Suite"
-    },
-    {
-      "record_id": "fd956d29b028aec2",
-      "module_name": "compressed_mha",
-      "category": "attention",
-      "family": "GroupA_Softmax",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T00:07:14+03:30",
-      "git_commit_sha": "b3e2b3ad08",
-      "generation_method": {
-        "algorithm": "Sequence Length Scaling Benchmark",
-        "source_artifact": "results/SEQLEN_SCALING_MASTER.csv"
-      },
-      "experimental_setup": {
-        "seq_len": 512,
-        "group": "GroupA_Softmax"
-      },
-      "metrics": {
-        "latency_ms": 0.1108
-      },
-      "notes": "Sequence Length Scaling Master Suite"
-    },
-    {
-      "record_id": "697211ebf638e872",
-      "module_name": "compressed_mha",
-      "category": "attention",
-      "family": "GroupA_Softmax",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T00:07:14+03:30",
-      "git_commit_sha": "b3e2b3ad08",
-      "generation_method": {
-        "algorithm": "Sequence Length Scaling Benchmark",
-        "source_artifact": "results/SEQLEN_SCALING_MASTER.csv"
-      },
-      "experimental_setup": {
-        "seq_len": 1024,
-        "group": "GroupA_Softmax"
-      },
-      "metrics": {
-        "latency_ms": 0.0516
-      },
-      "notes": "Sequence Length Scaling Master Suite"
-    },
-    {
-      "record_id": "78850b7bf4a17123",
-      "module_name": "compressed_mha",
-      "category": "attention",
-      "family": "general",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T00:07:14+03:30",
-      "git_commit_sha": "b3e2b3ad08",
-      "generation_method": {
-        "algorithm": "Master Aggregated Evaluation Suite",
-        "source_artifact": "results/master_aggregated_results.csv"
-      },
-      "experimental_setup": {
-        "dataset": "SST-2",
-        "backbone": "DistilBERT"
-      },
-      "metrics": {
-        "accuracy": 50.92,
-        "roberta_acc": 50.92,
-        "gpt2_acc": 50.92,
-        "latency_ms": 140.3
-      },
-      "notes": "Master Aggregated Results"
     },
     {
       "record_id": "c587fd7c49d032a4",
@@ -875,6 +510,364 @@
         "param_reduction_pct": 17.84
       },
       "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "c902d35054496061",
+      "module_name": "compressed_mha",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T03:11:55.942408",
+      "git_commit_sha": "866fe45a1a",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/roberta/checkpoints/compressed_mha/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta-base",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 50.92,
+        "f1": 0.6748,
+        "val_loss": 0.7251,
+        "peak_vram_mb": 618.17,
+        "throughput_tok_s": 25614.2,
+        "latency_ms": 25010.0,
+        "compression_ratio": 1.1558,
+        "param_reduction_pct": 13.48
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "fe3fa037b1c26952",
+      "module_name": "compressed_mha",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T04:52:01.793813",
+      "git_commit_sha": "866fe45a1a",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/compressed_mha/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.83,
+        "f1": 0.9097,
+        "val_loss": 0.3289,
+        "peak_vram_mb": 357.39,
+        "throughput_tok_s": 28203.29,
+        "latency_ms": 15540.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: REJECTED_EXPANSION"
+    },
+    {
+      "record_id": "db7e4b9971b475bd",
+      "module_name": "compressed_mha",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T05:57:27.347807",
+      "git_commit_sha": "866fe45a1a",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/compressed_mha/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 34.0,
+        "f1": 0.1692,
+        "val_loss": 1.0985,
+        "peak_vram_mb": 284.49,
+        "throughput_tok_s": 27037.71,
+        "latency_ms": 13570.0,
+        "compression_ratio": 1.2171,
+        "param_reduction_pct": 17.84
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "9df4b9de296018d9",
+      "module_name": "compressed_mha",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T12:46:26.248714",
+      "git_commit_sha": "866fe45a1a",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full/checkpoints/compressed_mha/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 34.1,
+        "f1": 0.1695,
+        "val_loss": 1.1185,
+        "peak_vram_mb": 285.26,
+        "throughput_tok_s": 28182.6,
+        "latency_ms": 53150.0,
+        "compression_ratio": 1.2171,
+        "param_reduction_pct": 17.84
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "3c4ec0ff1c9fa3df",
+      "module_name": "compressed_mha",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T20:27:53.892752",
+      "git_commit_sha": "866fe45a1a",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_agnews_full/checkpoints/compressed_mha/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_agnews_full",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 94.5,
+        "f1": 0.9415,
+        "val_loss": 0.191,
+        "peak_vram_mb": 408.83,
+        "throughput_tok_s": 55395.85,
+        "latency_ms": 13930.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: REJECTED_EXPANSION"
+    },
+    {
+      "record_id": "a2e9233fbde6e213",
+      "module_name": "compressed_mha",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-21T23:58:05.906870",
+      "git_commit_sha": "866fe45a1a",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/compressed_mha/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 50.92,
+        "f1": 0.6748,
+        "val_loss": 0.7283,
+        "peak_vram_mb": 580.56,
+        "throughput_tok_s": 8692.47,
+        "latency_ms": 24170.0,
+        "compression_ratio": 1.0521,
+        "param_reduction_pct": 4.96
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "7c816b2b43b656b8",
+      "module_name": "compressed_mha",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-24T19:17:00.773459",
+      "git_commit_sha": "81683bdbf8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/unified_runs/unified_compressed_mha/roberta/checkpoints/compressed_mha/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 50.92,
+        "f1": 0.6748,
+        "val_loss": 0.6998,
+        "peak_vram_mb": 369.37,
+        "throughput_tok_s": 16516.2,
+        "latency_ms": 18870.0,
+        "compression_ratio": 1.0521,
+        "param_reduction_pct": 4.96
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "8871b64996025deb",
+      "module_name": "compressed_mha",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-24T21:47:02.451994",
+      "git_commit_sha": "866fe45a1a",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/gpt2_wikitext2_sweep/checkpoints/compressed_mha/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/gpt2",
+        "dataset": "wikitext2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 5.369930781157435,
+        "peak_vram_mb": 1162.0634765625,
+        "throughput_tok_s": 680.5076775010953,
+        "latency_ms": 393310.0,
+        "compression_ratio": 1.1193,
+        "param_reduction_pct": 10.66
+      },
+      "notes": "Status: FAIL_PPL_DIVERGED"
+    },
+    {
+      "record_id": "78850b7bf4a17123",
+      "module_name": "compressed_mha",
+      "category": "attention",
+      "family": "general",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Master Aggregated Evaluation Suite",
+        "source_artifact": "results/master_aggregated_results.csv"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2",
+        "backbone": "DistilBERT"
+      },
+      "metrics": {
+        "accuracy": 50.92,
+        "roberta_acc": 50.92,
+        "gpt2_acc": 50.92,
+        "latency_ms": 140.3
+      },
+      "notes": "Master Aggregated Results"
+    },
+    {
+      "record_id": "5fc19f2b512b0b0f",
+      "module_name": "compressed_mha",
+      "category": "attention",
+      "family": "GroupA_Softmax",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-17T19:12:53+03:30",
+      "git_commit_sha": "79ea70f3f1",
+      "generation_method": {
+        "algorithm": "Sequence Length Scaling Benchmark",
+        "source_artifact": "results/SEQLEN_SCALING_MASTER.csv"
+      },
+      "experimental_setup": {
+        "seq_len": 128,
+        "group": "GroupA_Softmax"
+      },
+      "metrics": {
+        "latency_ms": 0.4579
+      },
+      "notes": "Sequence Length Scaling Master Suite"
+    },
+    {
+      "record_id": "74a5c41669f9fcf8",
+      "module_name": "compressed_mha",
+      "category": "attention",
+      "family": "GroupA_Softmax",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-17T19:12:53+03:30",
+      "git_commit_sha": "79ea70f3f1",
+      "generation_method": {
+        "algorithm": "Sequence Length Scaling Benchmark",
+        "source_artifact": "results/SEQLEN_SCALING_MASTER.csv"
+      },
+      "experimental_setup": {
+        "seq_len": 256,
+        "group": "GroupA_Softmax"
+      },
+      "metrics": {
+        "latency_ms": 0.224
+      },
+      "notes": "Sequence Length Scaling Master Suite"
+    },
+    {
+      "record_id": "fd956d29b028aec2",
+      "module_name": "compressed_mha",
+      "category": "attention",
+      "family": "GroupA_Softmax",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-17T19:12:53+03:30",
+      "git_commit_sha": "79ea70f3f1",
+      "generation_method": {
+        "algorithm": "Sequence Length Scaling Benchmark",
+        "source_artifact": "results/SEQLEN_SCALING_MASTER.csv"
+      },
+      "experimental_setup": {
+        "seq_len": 512,
+        "group": "GroupA_Softmax"
+      },
+      "metrics": {
+        "latency_ms": 0.1108
+      },
+      "notes": "Sequence Length Scaling Master Suite"
+    },
+    {
+      "record_id": "697211ebf638e872",
+      "module_name": "compressed_mha",
+      "category": "attention",
+      "family": "GroupA_Softmax",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-17T19:12:53+03:30",
+      "git_commit_sha": "79ea70f3f1",
+      "generation_method": {
+        "algorithm": "Sequence Length Scaling Benchmark",
+        "source_artifact": "results/SEQLEN_SCALING_MASTER.csv"
+      },
+      "experimental_setup": {
+        "seq_len": 1024,
+        "group": "GroupA_Softmax"
+      },
+      "metrics": {
+        "latency_ms": 0.0516
+      },
+      "notes": "Sequence Length Scaling Master Suite"
     }
   ]
 }

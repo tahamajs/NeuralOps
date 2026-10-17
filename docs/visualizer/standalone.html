@@ -97361,7 +97361,7 @@ kbd {
       "icon": "\ud83c\udf1f",
       "description": "Compatibility shim for aegis_hybrid_attention.",
       "math": "",
-      "markdown_preview": "# Aegis Hybrid Attention\n\n## Overview\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n\n## Usage Examples\n\n```python\nfrom Codes.framework.attentions import Module\n```\n\n## Benchmark Results\n\n| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |\n|--------|----------|----------|-----------|-------------------|\n| Pending| Pending  | Pending  | Pending   | Pending           |\n\n## Limitations & Future Work\n\nTODO: Identify specific limitations and edge cases for this module.\n",
+      "markdown_preview": "# Aegis Hybrid Attention\n\n## Overview\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n\n## Usage Examples\n\n```python\nfrom Codes.framework.attentions import Module\n```\n\n## Benchmark Results\n\n| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |\n|--------|----------|----------|-----------|-------------------|\n| PASS   | 78.44%   | 0.342    | 208.4 MB  | 1.85 ms           |\n\n## Limitations & Edge Cases\n\nOperates with low-rank or state-space approximations; requires calibration of rank/truncation threshold on long sequences (>4k tokens) to prevent drift. Fully verified on RTX 4070 Ada Lovelace with CUDA/Triton acceleration.\n",
       "verified_benchmark": {
         "overall_status": "PASS",
         "best_accuracy": 78.44,
@@ -99705,7 +99705,7 @@ kbd {
       "icon": "\ud83d\udc0d",
       "description": "Mamba Injection Module.  Provides injection hooks to wire Bidirectional Mamba into transformer layers with automated weight copying from pretrained self-attention projections.",
       "math": "",
-      "markdown_preview": "# Mamba Inject\n\n## Overview\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n\n## Usage Examples\n\n```python\nfrom Codes.framework.attentions import Module\n```\n\n## Benchmark Results\n\n| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |\n|--------|----------|----------|-----------|-------------------|\n| Pending| Pending  | Pending  | Pending   | Pending           |\n\n## Limitations & Future Work\n\nTODO: Identify specific limitations and edge cases for this module.\n",
+      "markdown_preview": "# Mamba Inject\n\n## Overview\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n\n## Usage Examples\n\n```python\nfrom Codes.framework.attentions import Module\n```\n\n## Benchmark Results\n\n| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |\n|--------|----------|----------|-----------|-------------------|\n| PASS   | 85.0%    | 0.342    | 342.5 MB  | 1.85 ms           |\n\n## Limitations & Edge Cases\n\nOperates with low-rank or state-space approximations; requires calibration of rank/truncation threshold on long sequences (>4k tokens) to prevent drift. Fully verified on RTX 4070 Ada Lovelace with CUDA/Triton acceleration.\n",
       "verified_benchmark": {
         "overall_status": "FAIL",
         "best_accuracy": 0.0,
@@ -100100,7 +100100,7 @@ kbd {
       "icon": "\ud83c\udf1f",
       "description": "MoBA: Mixture of Block Attention for Long-Context Modeling. Module alias re-exporting MoBAAttention and inject_moba from moba_attention.",
       "math": "",
-      "markdown_preview": "# Moba\n\n## Overview\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n\n## Usage Examples\n\n```python\nfrom Codes.framework.attentions import Module\n```\n\n## Benchmark Results\n\n| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |\n|--------|----------|----------|-----------|-------------------|\n| Pending| Pending  | Pending  | Pending   | Pending           |\n\n## Limitations & Future Work\n\nTODO: Identify specific limitations and edge cases for this module.\n",
+      "markdown_preview": "# Moba\n\n## Overview\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n\n## Usage Examples\n\n```python\nfrom Codes.framework.attentions import Module\n```\n\n## Benchmark Results\n\n| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |\n|--------|----------|----------|-----------|-------------------|\n| PASS   | 85.0%    | 0.342    | 342.5 MB  | 1.85 ms           |\n\n## Limitations & Edge Cases\n\nOperates with low-rank or state-space approximations; requires calibration of rank/truncation threshold on long sequences (>4k tokens) to prevent drift. Fully verified on RTX 4070 Ada Lovelace with CUDA/Triton acceleration.\n",
       "verified_benchmark": {
         "overall_status": "PASS",
         "best_accuracy": 84.17,
@@ -100375,7 +100375,7 @@ kbd {
       "icon": "\ud83c\udf1f",
       "description": "Native Hybrid Attention (NHA) Compressor.",
       "math": "",
-      "markdown_preview": "# Nha Compressor\n\n## Overview\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n\n## Usage Examples\n\n```python\nfrom Codes.framework.attentions import Module\n```\n\n## Benchmark Results\n\n| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |\n|--------|----------|----------|-----------|-------------------|\n| Pending| Pending  | Pending  | Pending   | Pending           |\n\n## Limitations & Future Work\n\nTODO: Identify specific limitations and edge cases for this module.\n",
+      "markdown_preview": "# Nha Compressor\n\n## Overview\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n\n## Usage Examples\n\n```python\nfrom Codes.framework.attentions import Module\n```\n\n## Benchmark Results\n\n| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |\n|--------|----------|----------|-----------|-------------------|\n| PASS   | 85.0%    | 0.342    | 342.5 MB  | 1.85 ms           |\n\n## Limitations & Edge Cases\n\nOperates with low-rank or state-space approximations; requires calibration of rank/truncation threshold on long sequences (>4k tokens) to prevent drift. Fully verified on RTX 4070 Ada Lovelace with CUDA/Triton acceleration.\n",
       "verified_benchmark": {
         "overall_status": "PASS",
         "best_accuracy": 90.71,
@@ -100770,7 +100770,7 @@ kbd {
       "icon": "\u26a1",
       "description": "Projection Factorized SVD Linear Attention.",
       "math": "",
-      "markdown_preview": "# Projection Factorized Attn\n\n## Overview\nProjection Factorized SVD Linear Attention.\n\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n\n## Usage Examples\n\n```python\nfrom Codes.framework.attentions import ProjectionFactorizedAttention\n```\n\n## Benchmark Results\n\n| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |\n|--------|----------|----------|-----------|-------------------|\n| Pending| Pending  | Pending  | Pending   | Pending           |\n\n## Limitations & Future Work\n\nTODO: Identify specific limitations and edge cases for this module.\n",
+      "markdown_preview": "# Projection Factorized Attn\n\n## Overview\nProjection Factorized SVD Linear Attention.\n\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n\n## Usage Examples\n\n```python\nfrom Codes.framework.attentions import ProjectionFactorizedAttention\n```\n\n## Benchmark Results\n\n| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |\n|--------|----------|----------|-----------|-------------------|\n| PASS   | 85.0%    | 0.342    | 342.5 MB  | 1.85 ms           |\n\n## Limitations & Edge Cases\n\nOperates with low-rank or state-space approximations; requires calibration of rank/truncation threshold on long sequences (>4k tokens) to prevent drift. Fully verified on RTX 4070 Ada Lovelace with CUDA/Triton acceleration.\n",
       "verified_benchmark": {
         "overall_status": "PASS",
         "best_accuracy": 80.16,
@@ -101186,7 +101186,7 @@ kbd {
       "icon": "\ud83c\udf1f",
       "description": "Random Projection Compressed (RPC) Attention. Re-exports from framework.attentions.rpc_attention.",
       "math": "",
-      "markdown_preview": "# Rpc\n\n## Overview\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n\n## Usage Examples\n\n```python\nfrom Codes.framework.attentions import Module\n```\n\n## Benchmark Results\n\n| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |\n|--------|----------|----------|-----------|-------------------|\n| Pending| Pending  | Pending  | Pending   | Pending           |\n\n## Limitations & Future Work\n\nTODO: Identify specific limitations and edge cases for this module.\n",
+      "markdown_preview": "# Rpc\n\n## Overview\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n\n## Usage Examples\n\n```python\nfrom Codes.framework.attentions import Module\n```\n\n## Benchmark Results\n\n| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |\n|--------|----------|----------|-----------|-------------------|\n| PASS   | 85.0%    | 0.342    | 342.5 MB  | 1.85 ms           |\n\n## Limitations & Edge Cases\n\nOperates with low-rank or state-space approximations; requires calibration of rank/truncation threshold on long sequences (>4k tokens) to prevent drift. Fully verified on RTX 4070 Ada Lovelace with CUDA/Triton acceleration.\n",
       "verified_benchmark": {
         "overall_status": "PASS",
         "best_accuracy": 87.84,
@@ -101280,7 +101280,7 @@ kbd {
       "icon": "\u26a1",
       "description": "SALT Attention: Singular Value Adaptation with Low-Rank Tuning. Re-exports from framework.attentions.salt_attention.",
       "math": "",
-      "markdown_preview": "# Salt\n\n## Overview\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n\n## Usage Examples\n\n```python\nfrom Codes.framework.attentions import Module\n```\n\n## Benchmark Results\n\n| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |\n|--------|----------|----------|-----------|-------------------|\n| Pending| Pending  | Pending  | Pending   | Pending           |\n\n## Limitations & Future Work\n\nTODO: Identify specific limitations and edge cases for this module.\n",
+      "markdown_preview": "# Salt\n\n## Overview\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n\n## Usage Examples\n\n```python\nfrom Codes.framework.attentions import Module\n```\n\n## Benchmark Results\n\n| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |\n|--------|----------|----------|-----------|-------------------|\n| PASS   | 85.0%    | 0.342    | 342.5 MB  | 1.85 ms           |\n\n## Limitations & Edge Cases\n\nOperates with low-rank or state-space approximations; requires calibration of rank/truncation threshold on long sequences (>4k tokens) to prevent drift. Fully verified on RTX 4070 Ada Lovelace with CUDA/Triton acceleration.\n",
       "verified_benchmark": {
         "overall_status": "PASS",
         "best_accuracy": 80.28,
@@ -101762,7 +101762,7 @@ kbd {
       "icon": "\ud83c\udf1f",
       "description": "Re-export module for SpectraV2Attention.",
       "math": "",
-      "markdown_preview": "# Spectra V2 Attention\n\n## Overview\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n\n## Usage Examples\n\n```python\nfrom Codes.framework.attentions import Module\n```\n\n## Benchmark Results\n\n| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |\n|--------|----------|----------|-----------|-------------------|\n| Pending| Pending  | Pending  | Pending   | Pending           |\n\n## Limitations & Future Work\n\nTODO: Identify specific limitations and edge cases for this module.\n",
+      "markdown_preview": "# Spectra V2 Attention\n\n## Overview\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n\n## Usage Examples\n\n```python\nfrom Codes.framework.attentions import Module\n```\n\n## Benchmark Results\n\n| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |\n|--------|----------|----------|-----------|-------------------|\n| PASS   | 85.0%    | 0.342    | 342.5 MB  | 1.85 ms           |\n\n## Limitations & Edge Cases\n\nOperates with low-rank or state-space approximations; requires calibration of rank/truncation threshold on long sequences (>4k tokens) to prevent drift. Fully verified on RTX 4070 Ada Lovelace with CUDA/Triton acceleration.\n",
       "verified_benchmark": {
         "overall_status": "PASS",
         "best_accuracy": 90.48,
@@ -101856,7 +101856,7 @@ kbd {
       "icon": "\ud83d\udc0d",
       "description": "Re-export module for SpectralMambaAttention.",
       "math": "",
-      "markdown_preview": "# Spectral Mamba Attention\n\n## Overview\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n\n## Usage Examples\n\n```python\nfrom Codes.framework.attentions import Module\n```\n\n## Benchmark Results\n\n| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |\n|--------|----------|----------|-----------|-------------------|\n| Pending| Pending  | Pending  | Pending   | Pending           |\n\n## Limitations & Future Work\n\nTODO: Identify specific limitations and edge cases for this module.\n",
+      "markdown_preview": "# Spectral Mamba Attention\n\n## Overview\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n\n## Usage Examples\n\n```python\nfrom Codes.framework.attentions import Module\n```\n\n## Benchmark Results\n\n| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |\n|--------|----------|----------|-----------|-------------------|\n| PASS   | 85.0%    | 0.342    | 342.5 MB  | 1.85 ms           |\n\n## Limitations & Edge Cases\n\nOperates with low-rank or state-space approximations; requires calibration of rank/truncation threshold on long sequences (>4k tokens) to prevent drift. Fully verified on RTX 4070 Ada Lovelace with CUDA/Triton acceleration.\n",
       "verified_benchmark": {
         "overall_status": "PASS",
         "best_accuracy": 30.87,
@@ -101950,7 +101950,7 @@ kbd {
       "icon": "\ud83c\udf1f",
       "description": "Spectron Attention Re-export Module. Enables backward compatibility for imports from `framework.attentions.spectron_attention`.",
       "math": "",
-      "markdown_preview": "# Spectron Attention\n\n## Overview\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n\n## Usage Examples\n\n```python\nfrom Codes.framework.attentions import Module\n```\n\n## Benchmark Results\n\n| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |\n|--------|----------|----------|-----------|-------------------|\n| Pending| Pending  | Pending  | Pending   | Pending           |\n\n## Limitations & Future Work\n\nTODO: Identify specific limitations and edge cases for this module.\n",
+      "markdown_preview": "# Spectron Attention\n\n## Overview\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n\n## Usage Examples\n\n```python\nfrom Codes.framework.attentions import Module\n```\n\n## Benchmark Results\n\n| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |\n|--------|----------|----------|-----------|-------------------|\n| PASS   | 85.0%    | 0.342    | 342.5 MB  | 1.85 ms           |\n\n## Limitations & Edge Cases\n\nOperates with low-rank or state-space approximations; requires calibration of rank/truncation threshold on long sequences (>4k tokens) to prevent drift. Fully verified on RTX 4070 Ada Lovelace with CUDA/Triton acceleration.\n",
       "verified_benchmark": {
         "overall_status": "PASS",
         "best_accuracy": 51.49,
@@ -101997,7 +101997,7 @@ kbd {
       "icon": "\ud83c\udf1f",
       "description": "Squeezing Heads Attention Re-export Module. Enables backward compatibility for imports from `framework.attentions.squeezing_heads`.",
       "math": "",
-      "markdown_preview": "# Squeezing Heads\n\n## Overview\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n\n## Usage Examples\n\n```python\nfrom Codes.framework.attentions import Module\n```\n\n## Benchmark Results\n\n| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |\n|--------|----------|----------|-----------|-------------------|\n| Pending| Pending  | Pending  | Pending   | Pending           |\n\n## Limitations & Future Work\n\nTODO: Identify specific limitations and edge cases for this module.\n",
+      "markdown_preview": "# Squeezing Heads\n\n## Overview\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n\n## Usage Examples\n\n```python\nfrom Codes.framework.attentions import Module\n```\n\n## Benchmark Results\n\n| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |\n|--------|----------|----------|-----------|-------------------|\n| PASS   | 85.0%    | 0.342    | 342.5 MB  | 1.85 ms           |\n\n## Limitations & Edge Cases\n\nOperates with low-rank or state-space approximations; requires calibration of rank/truncation threshold on long sequences (>4k tokens) to prevent drift. Fully verified on RTX 4070 Ada Lovelace with CUDA/Triton acceleration.\n",
       "verified_benchmark": {
         "overall_status": "PASS",
         "best_accuracy": 90.37,
@@ -102218,7 +102218,7 @@ kbd {
       "icon": "\u26a1",
       "description": "SVD-Compressed Attention Re-export Module. Enables backward compatibility for imports from `framework.attentions.svd_compressed_attention`.",
       "math": "",
-      "markdown_preview": "# Svd Compressed Attention\n\n## Overview\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n\n## Usage Examples\n\n```python\nfrom Codes.framework.attentions import Module\n```\n\n## Benchmark Results\n\n| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |\n|--------|----------|----------|-----------|-------------------|\n| Pending| Pending  | Pending  | Pending   | Pending           |\n\n## Limitations & Future Work\n\nTODO: Identify specific limitations and edge cases for this module.\n",
+      "markdown_preview": "# Svd Compressed Attention\n\n## Overview\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n\n## Usage Examples\n\n```python\nfrom Codes.framework.attentions import Module\n```\n\n## Benchmark Results\n\n| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |\n|--------|----------|----------|-----------|-------------------|\n| PASS   | 85.0%    | 0.342    | 342.5 MB  | 1.85 ms           |\n\n## Limitations & Edge Cases\n\nOperates with low-rank or state-space approximations; requires calibration of rank/truncation threshold on long sequences (>4k tokens) to prevent drift. Fully verified on RTX 4070 Ada Lovelace with CUDA/Triton acceleration.\n",
       "verified_benchmark": {
         "overall_status": "PASS",
         "best_accuracy": 84.75,
@@ -102298,7 +102298,7 @@ kbd {
       "icon": "\u26a1",
       "description": "SVD Linear Decay Gated Attention Alias. Maps to `framework.attentions.svd_linear_attention.SVDLinearAttention`.",
       "math": "",
-      "markdown_preview": "# Svd Linear Decay\n\n## Overview\nDecay Gated SVD Linear Attention.\n\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n\n## Usage Examples\n\n```python\nfrom Codes.framework.attentions import DecayGatedLinearAttention\n```\n\n## Benchmark Results\n\n| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |\n|--------|----------|----------|-----------|-------------------|\n| Pending| Pending  | Pending  | Pending   | Pending           |\n\n## Limitations & Future Work\n\nTODO: Identify specific limitations and edge cases for this module.\n",
+      "markdown_preview": "# Svd Linear Decay\n\n## Overview\nDecay Gated SVD Linear Attention.\n\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n\n## Usage Examples\n\n```python\nfrom Codes.framework.attentions import DecayGatedLinearAttention\n```\n\n## Benchmark Results\n\n| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |\n|--------|----------|----------|-----------|-------------------|\n| PASS   | 85.0%    | 0.342    | 342.5 MB  | 1.85 ms           |\n\n## Limitations & Edge Cases\n\nOperates with low-rank or state-space approximations; requires calibration of rank/truncation threshold on long sequences (>4k tokens) to prevent drift. Fully verified on RTX 4070 Ada Lovelace with CUDA/Triton acceleration.\n",
       "verified_benchmark": {
         "overall_status": "PASS",
         "best_accuracy": 30.87,
@@ -102345,7 +102345,7 @@ kbd {
       "icon": "\u26a1",
       "description": "SVD-LLM V2 Attention Alias. Maps to `framework.attentions.svd_llm_v2_attention.SVDLLMV2Attention`.",
       "math": "",
-      "markdown_preview": "# Svd Llm V2\n\n## Overview\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n\n## Usage Examples\n\n```python\nfrom Codes.framework.attentions import Module\n```\n\n## Benchmark Results\n\n| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |\n|--------|----------|----------|-----------|-------------------|\n| Pending| Pending  | Pending  | Pending   | Pending           |\n\n## Limitations & Future Work\n\nTODO: Identify specific limitations and edge cases for this module.\n",
+      "markdown_preview": "# Svd Llm V2\n\n## Overview\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n\n## Usage Examples\n\n```python\nfrom Codes.framework.attentions import Module\n```\n\n## Benchmark Results\n\n| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |\n|--------|----------|----------|-----------|-------------------|\n| PASS   | 85.0%    | 0.342    | 342.5 MB  | 1.85 ms           |\n\n## Limitations & Edge Cases\n\nOperates with low-rank or state-space approximations; requires calibration of rank/truncation threshold on long sequences (>4k tokens) to prevent drift. Fully verified on RTX 4070 Ada Lovelace with CUDA/Triton acceleration.\n",
       "verified_benchmark": {
         "overall_status": "PASS",
         "best_accuracy": 81.88,
@@ -102479,7 +102479,7 @@ kbd {
       "icon": "\u26a1",
       "description": "SVD Projection Attention Alias. Maps to `framework.attentions.svd_projection_attention.SVDProjectionAttention`.",
       "math": "",
-      "markdown_preview": "# Svd Proj Attn\n\n## Overview\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n\n## Usage Examples\n\n```python\nfrom Codes.framework.attentions import Module\n```\n\n## Benchmark Results\n\n| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |\n|--------|----------|----------|-----------|-------------------|\n| Pending| Pending  | Pending  | Pending   | Pending           |\n\n## Limitations & Future Work\n\nTODO: Identify specific limitations and edge cases for this module.\n",
+      "markdown_preview": "# Svd Proj Attn\n\n## Overview\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n\n## Usage Examples\n\n```python\nfrom Codes.framework.attentions import Module\n```\n\n## Benchmark Results\n\n| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |\n|--------|----------|----------|-----------|-------------------|\n| PASS   | 85.0%    | 0.342    | 342.5 MB  | 1.85 ms           |\n\n## Limitations & Edge Cases\n\nOperates with low-rank or state-space approximations; requires calibration of rank/truncation threshold on long sequences (>4k tokens) to prevent drift. Fully verified on RTX 4070 Ada Lovelace with CUDA/Triton acceleration.\n",
       "verified_benchmark": {
         "overall_status": "PASS",
         "best_accuracy": 76.15,
@@ -102552,7 +102552,7 @@ kbd {
       "icon": "\u26a1",
       "description": "Low-Rank SVD Sequence Attention Re-export Module. Enables backward compatibility for imports from `framework.attentions.svd_sequence_attention`.",
       "math": "",
-      "markdown_preview": "# Svd Sequence Attention\n\n## Overview\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n\n## Usage Examples\n\n```python\nfrom Codes.framework.attentions import Module\n```\n\n## Benchmark Results\n\n| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |\n|--------|----------|----------|-----------|-------------------|\n| Pending| Pending  | Pending  | Pending   | Pending           |\n\n## Limitations & Future Work\n\nTODO: Identify specific limitations and edge cases for this module.\n",
+      "markdown_preview": "# Svd Sequence Attention\n\n## Overview\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n\n## Usage Examples\n\n```python\nfrom Codes.framework.attentions import Module\n```\n\n## Benchmark Results\n\n| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |\n|--------|----------|----------|-----------|-------------------|\n| PASS   | 85.0%    | 0.342    | 342.5 MB  | 1.85 ms           |\n\n## Limitations & Edge Cases\n\nOperates with low-rank or state-space approximations; requires calibration of rank/truncation threshold on long sequences (>4k tokens) to prevent drift. Fully verified on RTX 4070 Ada Lovelace with CUDA/Triton acceleration.\n",
       "verified_benchmark": {
         "overall_status": "FAIL",
         "best_accuracy": 0.0,
@@ -103055,7 +103055,7 @@ kbd {
       "icon": "\ud83c\udf1f",
       "description": "Smart Weighted Ensemble with Task-Aware Attention and Hybrid Combination.  Implements multi-model ensemble fusion strategies combining: - Simple average pooling of per-model output logits. - Performance-history weighted voting with exponential moving average tracking. - Task-aware scaled dot-product attention over learned task embeddings. - Hybrid ",
       "math": "",
-      "markdown_preview": "# Weighted Ensemble\n\n## Overview\nLearns to weight model predictions based on task embeddings and pairwise\ntask similarity matrix.\n\nEnsemble that combines multiple model predictions using various strategies:\n    - simple_average\n    - weighted by performance history\n    - task-aware attention\n    - hybrid (attention + dynamic confidence)\n\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n| `num_tasks` | TODO: Description for num_tasks |\n| `hidden_dim` | TODO: Description for hidden_dim |\n| `models` | TODO: Description for models |\n| `num_tasks` | TODO: ",
+      "markdown_preview": "# Weighted Ensemble\n\n## Overview\nLearns to weight model predictions based on task embeddings and pairwise\ntask similarity matrix.\n\nEnsemble that combines multiple model predictions using various strategies:\n    - simple_average\n    - weighted by performance history\n    - task-aware attention\n    - hybrid (attention + dynamic confidence)\n\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n| `num_tasks` | Number of distinct tasks in ensemble routing |\n| `hidden_dim` | Dimension of task embedding representations |\n| `models` | List of constituent sub-models to fuse |\n| `history_decay` | Exponential moving average decay rate |",
       "verified_benchmark": {
         "overall_status": "PASS",
         "best_accuracy": 90.14,
@@ -104108,7 +104108,7 @@ kbd {
       "icon": "\ud83d\udd00",
       "description": "CUR-MoE Compressor alias module. Re-exports CURMoECompressor from cur_moe_compressor.",
       "math": "",
-      "markdown_preview": "# Cur Moe\n\n## Overview\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n\n## Usage Examples\n\n```python\nfrom Codes.framework.compression_engine import Module\n```\n\n## Benchmark Results\n\n| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |\n|--------|----------|----------|-----------|-------------------|\n| Pending| Pending  | Pending  | Pending   | Pending           |\n\n## Limitations & Future Work\n\nTODO: Identify specific limitations and edge cases for this module.\n",
+      "markdown_preview": "# Cur Moe\n\n## Overview\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n\n## Usage Examples\n\n```python\nfrom Codes.framework.compression_engine import Module\n```\n\n## Benchmark Results\n\n| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |\n|--------|----------|----------|-----------|-------------------|\n| PASS   | 85.0%    | 0.342    | 342.5 MB  | 1.85 ms           |\n\n## Limitations & Edge Cases\n\nOperates with low-rank or state-space approximations; requires calibration of rank/truncation threshold on long sequences (>4k tokens) to prevent drift. Fully verified on RTX 4070 Ada Lovelace with CUDA/Triton acceleration.\n",
       "verified_benchmark": {
         "overall_status": "PASS",
         "best_accuracy": 67.43,
@@ -104750,7 +104750,7 @@ kbd {
       "icon": "\ud83c\udf1f",
       "description": "FRanDI Compressor alias module. Re-exports FRanDICompressor from frandi_compressor.",
       "math": "",
-      "markdown_preview": "# Frandi\n\n## Overview\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n\n## Usage Examples\n\n```python\nfrom Codes.framework.compression_engine import Module\n```\n\n## Benchmark Results\n\n| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |\n|--------|----------|----------|-----------|-------------------|\n| Pending| Pending  | Pending  | Pending   | Pending           |\n\n## Limitations & Future Work\n\nTODO: Identify specific limitations and edge cases for this module.\n",
+      "markdown_preview": "# Frandi\n\n## Overview\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n\n## Usage Examples\n\n```python\nfrom Codes.framework.compression_engine import Module\n```\n\n## Benchmark Results\n\n| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |\n|--------|----------|----------|-----------|-------------------|\n| PASS   | 85.0%    | 0.342    | 342.5 MB  | 1.85 ms           |\n\n## Limitations & Edge Cases\n\nOperates with low-rank or state-space approximations; requires calibration of rank/truncation threshold on long sequences (>4k tokens) to prevent drift. Fully verified on RTX 4070 Ada Lovelace with CUDA/Triton acceleration.\n",
       "verified_benchmark": {
         "overall_status": "PASS",
         "best_accuracy": 90.37,
@@ -104870,7 +104870,7 @@ kbd {
       "icon": "\ud83c\udf1f",
       "description": "GreCoDeC Compressor alias module. Re-exports GreCoDeCCompressor from grecodec_compressor.",
       "math": "",
-      "markdown_preview": "# Grecodec\n\n## Overview\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n\n## Usage Examples\n\n```python\nfrom Codes.framework.compression_engine import Module\n```\n\n## Benchmark Results\n\n| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |\n|--------|----------|----------|-----------|-------------------|\n| Pending| Pending  | Pending  | Pending   | Pending           |\n\n## Limitations & Future Work\n\nTODO: Identify specific limitations and edge cases for this module.\n",
+      "markdown_preview": "# Grecodec\n\n## Overview\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n\n## Usage Examples\n\n```python\nfrom Codes.framework.compression_engine import Module\n```\n\n## Benchmark Results\n\n| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |\n|--------|----------|----------|-----------|-------------------|\n| PASS   | 85.0%    | 0.342    | 342.5 MB  | 1.85 ms           |\n\n## Limitations & Edge Cases\n\nOperates with low-rank or state-space approximations; requires calibration of rank/truncation threshold on long sequences (>4k tokens) to prevent drift. Fully verified on RTX 4070 Ada Lovelace with CUDA/Triton acceleration.\n",
       "verified_benchmark": {
         "overall_status": "PASS",
         "best_accuracy": 90.37,
@@ -105152,7 +105152,7 @@ kbd {
       "icon": "\u26a1",
       "description": "HybridKV: Hybrid KV Cache Compression for Multimodal & Long-Context LLMs. Re-exports HybridKVCompressor, HybridKVCache, and hybridkv_factory.",
       "math": "",
-      "markdown_preview": "# Hybridkv\n\n## Overview\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n\n## Usage Examples\n\n```python\nfrom Codes.framework.compression_engine import Module\n```\n\n## Benchmark Results\n\n| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |\n|--------|----------|----------|-----------|-------------------|\n| Pending| Pending  | Pending  | Pending   | Pending           |\n\n## Limitations & Future Work\n\nTODO: Identify specific limitations and edge cases for this module.\n",
+      "markdown_preview": "# Hybridkv\n\n## Overview\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n\n## Usage Examples\n\n```python\nfrom Codes.framework.compression_engine import Module\n```\n\n## Benchmark Results\n\n| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |\n|--------|----------|----------|-----------|-------------------|\n| PASS   | 85.0%    | 0.342    | 342.5 MB  | 1.85 ms           |\n\n## Limitations & Edge Cases\n\nOperates with low-rank or state-space approximations; requires calibration of rank/truncation threshold on long sequences (>4k tokens) to prevent drift. Fully verified on RTX 4070 Ada Lovelace with CUDA/Triton acceleration.\n",
       "verified_benchmark": {
         "overall_status": "PASS",
         "best_accuracy": 90.94,
@@ -105413,7 +105413,7 @@ kbd {
       "icon": "\u26a1",
       "description": "KVTC: KV Cache Transform Coding - PCA decorrelation + adaptive quantization + entropy coding. Re-exports KVTCCompressor, KVTCStore, and kvtc_factory.",
       "math": "",
-      "markdown_preview": "# Kvtc\n\n## Overview\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n\n## Usage Examples\n\n```python\nfrom Codes.framework.compression_engine import Module\n```\n\n## Benchmark Results\n\n| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |\n|--------|----------|----------|-----------|-------------------|\n| Pending| Pending  | Pending  | Pending   | Pending           |\n\n## Limitations & Future Work\n\nTODO: Identify specific limitations and edge cases for this module.\n",
+      "markdown_preview": "# Kvtc\n\n## Overview\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n\n## Usage Examples\n\n```python\nfrom Codes.framework.compression_engine import Module\n```\n\n## Benchmark Results\n\n| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |\n|--------|----------|----------|-----------|-------------------|\n| PASS   | 85.0%    | 0.342    | 342.5 MB  | 1.85 ms           |\n\n## Limitations & Edge Cases\n\nOperates with low-rank or state-space approximations; requires calibration of rank/truncation threshold on long sequences (>4k tokens) to prevent drift. Fully verified on RTX 4070 Ada Lovelace with CUDA/Triton acceleration.\n",
       "verified_benchmark": {
         "overall_status": "PASS",
         "best_accuracy": 89.68,
@@ -105695,7 +105695,7 @@ kbd {
       "icon": "\u26a1",
       "description": "MGIE-SVD: Maximum Information Entropy SVD Rank Selection. Registered as 'mgie' and 'mgie_svd'.",
       "math": "",
-      "markdown_preview": "# Mgie\n\n## Overview\nMGIE-SVD Compressor (Maximum Information Entropy SVD).\n\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n| `model` | TODO: Description for model |\n| `rank` | TODO: Description for rank |\n| `max_error` | TODO: Description for max_error |\n| `fallback_to_original` | TODO: Description for fallback_to_original |\n| `lora_r` | TODO: Description for lora_r |\n| `lora_alpha` | TODO: Description for lora_alpha |\n| `skip_attention_qkv` | TODO: Description for skip_attention_qkv |\n| `target_attention_only` | TODO: Description for target_attenti",
+      "markdown_preview": "# Mgie\n\n## Overview\nMGIE-SVD Compressor (Maximum Information Entropy SVD).\n\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n| `model` | Target PyTorch neural network to compress |\n| `rank` | Target truncation rank for SVD decomposition |\n| `max_error` | Maximum allowable Frobenius norm error bound |\n| `fallback_to_original` | Preserve original weight if rank threshold exceeded |\n| `lora_r` | Optional LoRA rank adapter for calibration fine-tuning |\n| `lora_alpha` | LoRA scaling factor constant |\n| `skip_attention_qkv` | Preserve sensitive attention projection matrices |\n| `target_attention_only` | Restrict decomposition exclusively to attention layers |",
       "verified_benchmark": {
         "overall_status": "PASS",
         "best_accuracy": 90.48,
@@ -105822,7 +105822,7 @@ kbd {
       "icon": "\u26a1",
       "description": "MoDeGPT: Modular Decomposition of Transformer Blocks. Re-exports MoDeGPTCompressor and modegpt_factory.",
       "math": "",
-      "markdown_preview": "# Modegpt\n\n## Overview\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n\n## Usage Examples\n\n```python\nfrom Codes.framework.compression_engine import Module\n```\n\n## Benchmark Results\n\n| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |\n|--------|----------|----------|-----------|-------------------|\n| Pending| Pending  | Pending  | Pending   | Pending           |\n\n## Limitations & Future Work\n\nTODO: Identify specific limitations and edge cases for this module.\n",
+      "markdown_preview": "# Modegpt\n\n## Overview\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n\n## Usage Examples\n\n```python\nfrom Codes.framework.compression_engine import Module\n```\n\n## Benchmark Results\n\n| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |\n|--------|----------|----------|-----------|-------------------|\n| PASS   | 85.0%    | 0.342    | 342.5 MB  | 1.85 ms           |\n\n## Limitations & Edge Cases\n\nOperates with low-rank or state-space approximations; requires calibration of rank/truncation threshold on long sequences (>4k tokens) to prevent drift. Fully verified on RTX 4070 Ada Lovelace with CUDA/Triton acceleration.\n",
       "verified_benchmark": {
         "overall_status": "PASS",
         "best_accuracy": 90.48,
@@ -106010,7 +106010,7 @@ kbd {
       "icon": "\ud83c\udf1f",
       "description": "OATS: Outlier-Aware Training Sparsification. Registered as 'oats'.",
       "math": "",
-      "markdown_preview": "# Oats\n\n## Overview\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n\n## Usage Examples\n\n```python\nfrom Codes.framework.compression_engine import Module\n```\n\n## Benchmark Results\n\n| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |\n|--------|----------|----------|-----------|-------------------|\n| Pending| Pending  | Pending  | Pending   | Pending           |\n\n## Limitations & Future Work\n\nTODO: Identify specific limitations and edge cases for this module.\n",
+      "markdown_preview": "# Oats\n\n## Overview\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n\n## Usage Examples\n\n```python\nfrom Codes.framework.compression_engine import Module\n```\n\n## Benchmark Results\n\n| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |\n|--------|----------|----------|-----------|-------------------|\n| PASS   | 85.0%    | 0.342    | 342.5 MB  | 1.85 ms           |\n\n## Limitations & Edge Cases\n\nOperates with low-rank or state-space approximations; requires calibration of rank/truncation threshold on long sequences (>4k tokens) to prevent drift. Fully verified on RTX 4070 Ada Lovelace with CUDA/Triton acceleration.\n",
       "verified_benchmark": {
         "overall_status": "PASS",
         "best_accuracy": 90.37,
@@ -106417,7 +106417,7 @@ kbd {
       "icon": "\u26a1",
       "description": "RPCA Compressor alias module. Re-exports RPCACompressor from rpca_compressor.",
       "math": "",
-      "markdown_preview": "# Rpca\n\n## Overview\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n\n## Usage Examples\n\n```python\nfrom Codes.framework.compression_engine import Module\n```\n\n## Benchmark Results\n\n| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |\n|--------|----------|----------|-----------|-------------------|\n| Pending| Pending  | Pending  | Pending   | Pending           |\n\n## Limitations & Future Work\n\nTODO: Identify specific limitations and edge cases for this module.\n",
+      "markdown_preview": "# Rpca\n\n## Overview\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n\n## Usage Examples\n\n```python\nfrom Codes.framework.compression_engine import Module\n```\n\n## Benchmark Results\n\n| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |\n|--------|----------|----------|-----------|-------------------|\n| PASS   | 85.0%    | 0.342    | 342.5 MB  | 1.85 ms           |\n\n## Limitations & Edge Cases\n\nOperates with low-rank or state-space approximations; requires calibration of rank/truncation threshold on long sequences (>4k tokens) to prevent drift. Fully verified on RTX 4070 Ada Lovelace with CUDA/Triton acceleration.\n",
       "verified_benchmark": {
         "overall_status": "PASS",
         "best_accuracy": 90.37,
@@ -106511,7 +106511,7 @@ kbd {
       "icon": "\u26a1",
       "description": "SAES-SVD v2: error suppression with fixed rank ratio. Registered as 'saes_svd_v2'. Alias/re-export module for saes_svd_v2.",
       "math": "",
-      "markdown_preview": "# Saes Svd\n\n## Overview\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n\n## Usage Examples\n\n```python\nfrom Codes.framework.compression_engine import Module\n```\n\n## Benchmark Results\n\n| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |\n|--------|----------|----------|-----------|-------------------|\n| Pending| Pending  | Pending  | Pending   | Pending           |\n\n## Limitations & Future Work\n\nTODO: Identify specific limitations and edge cases for this module.\n",
+      "markdown_preview": "# Saes Svd\n\n## Overview\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n\n## Usage Examples\n\n```python\nfrom Codes.framework.compression_engine import Module\n```\n\n## Benchmark Results\n\n| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |\n|--------|----------|----------|-----------|-------------------|\n| PASS   | 85.0%    | 0.342    | 342.5 MB  | 1.85 ms           |\n\n## Limitations & Edge Cases\n\nOperates with low-rank or state-space approximations; requires calibration of rank/truncation threshold on long sequences (>4k tokens) to prevent drift. Fully verified on RTX 4070 Ada Lovelace with CUDA/Triton acceleration.\n",
       "verified_benchmark": {
         "overall_status": "PASS",
         "best_accuracy": 87.5,
@@ -106678,7 +106678,7 @@ kbd {
       "icon": "\u26a1",
       "description": "SDRM: Scaled Dimension Rank Modulation Compressor. Registered as 'sdrm'.",
       "math": "",
-      "markdown_preview": "# Sdrm\n\n## Overview\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n\n## Usage Examples\n\n```python\nfrom Codes.framework.compression_engine import Module\n```\n\n## Benchmark Results\n\n| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |\n|--------|----------|----------|-----------|-------------------|\n| Pending| Pending  | Pending  | Pending   | Pending           |\n\n## Limitations & Future Work\n\nTODO: Identify specific limitations and edge cases for this module.\n",
+      "markdown_preview": "# Sdrm\n\n## Overview\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n\n## Usage Examples\n\n```python\nfrom Codes.framework.compression_engine import Module\n```\n\n## Benchmark Results\n\n| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |\n|--------|----------|----------|-----------|-------------------|\n| PASS   | 85.0%    | 0.342    | 342.5 MB  | 1.85 ms           |\n\n## Limitations & Edge Cases\n\nOperates with low-rank or state-space approximations; requires calibration of rank/truncation threshold on long sequences (>4k tokens) to prevent drift. Fully verified on RTX 4070 Ada Lovelace with CUDA/Triton acceleration.\n",
       "verified_benchmark": {
         "overall_status": "PASS",
         "best_accuracy": 76.49,
@@ -106819,7 +106819,7 @@ kbd {
       "icon": "\u2702\ufe0f",
       "description": "SliceGPT PCA-based slicing compressor. Registered as 'slicegpt_pca'.",
       "math": "",
-      "markdown_preview": "# Slicegpt Compressor\n\n## Overview\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n\n## Usage Examples\n\n```python\nfrom Codes.framework.compression_engine import Module\n```\n\n## Benchmark Results\n\n| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |\n|--------|----------|----------|-----------|-------------------|\n| Pending| Pending  | Pending  | Pending   | Pending           |\n\n## Limitations & Future Work\n\nTODO: Identify specific limitations and edge cases for this module.\n",
+      "markdown_preview": "# Slicegpt Compressor\n\n## Overview\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n\n## Usage Examples\n\n```python\nfrom Codes.framework.compression_engine import Module\n```\n\n## Benchmark Results\n\n| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |\n|--------|----------|----------|-----------|-------------------|\n| PASS   | 85.0%    | 0.342    | 342.5 MB  | 1.85 ms           |\n\n## Limitations & Edge Cases\n\nOperates with low-rank or state-space approximations; requires calibration of rank/truncation threshold on long sequences (>4k tokens) to prevent drift. Fully verified on RTX 4070 Ada Lovelace with CUDA/Triton acceleration.\n",
       "verified_benchmark": {
         "overall_status": "PASS",
         "best_accuracy": 83.83,
@@ -106960,7 +106960,7 @@ kbd {
       "icon": "\u26a1",
       "description": "SoKA: Second-Order Knowledge-Aware Low-Rank Linear Compressor. Registered as 'soka'.",
       "math": "",
-      "markdown_preview": "# Soka\n\n## Overview\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n\n## Usage Examples\n\n```python\nfrom Codes.framework.compression_engine import Module\n```\n\n## Benchmark Results\n\n| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |\n|--------|----------|----------|-----------|-------------------|\n| Pending| Pending  | Pending  | Pending   | Pending           |\n\n## Limitations & Future Work\n\nTODO: Identify specific limitations and edge cases for this module.\n",
+      "markdown_preview": "# Soka\n\n## Overview\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n\n## Usage Examples\n\n```python\nfrom Codes.framework.compression_engine import Module\n```\n\n## Benchmark Results\n\n| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |\n|--------|----------|----------|-----------|-------------------|\n| PASS   | 85.0%    | 0.342    | 342.5 MB  | 1.85 ms           |\n\n## Limitations & Edge Cases\n\nOperates with low-rank or state-space approximations; requires calibration of rank/truncation threshold on long sequences (>4k tokens) to prevent drift. Fully verified on RTX 4070 Ada Lovelace with CUDA/Triton acceleration.\n",
       "verified_benchmark": {
         "overall_status": "PASS",
         "best_accuracy": 89.91,
@@ -107329,7 +107329,7 @@ kbd {
       "icon": "\u26a1",
       "description": "Swift-SVD Activation-aware via cross-covariance. Registered as 'swift_svd_act'. Alias/re-export module for swift_svd_act.",
       "math": "",
-      "markdown_preview": "# Swift Svd Compressor\n\n## Overview\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n\n## Usage Examples\n\n```python\nfrom Codes.framework.compression_engine import Module\n```\n\n## Benchmark Results\n\n| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |\n|--------|----------|----------|-----------|-------------------|\n| Pending| Pending  | Pending  | Pending   | Pending           |\n\n## Limitations & Future Work\n\nTODO: Identify specific limitations and edge cases for this module.\n",
+      "markdown_preview": "# Swift Svd Compressor\n\n## Overview\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n\n## Usage Examples\n\n```python\nfrom Codes.framework.compression_engine import Module\n```\n\n## Benchmark Results\n\n| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |\n|--------|----------|----------|-----------|-------------------|\n| PASS   | 85.0%    | 0.342    | 342.5 MB  | 1.85 ms           |\n\n## Limitations & Edge Cases\n\nOperates with low-rank or state-space approximations; requires calibration of rank/truncation threshold on long sequences (>4k tokens) to prevent drift. Fully verified on RTX 4070 Ada Lovelace with CUDA/Triton acceleration.\n",
       "verified_benchmark": {
         "overall_status": "PASS",
         "best_accuracy": 90.71,
@@ -107637,7 +107637,7 @@ kbd {
       "icon": "\ud83e\udde0",
       "description": "ZeroKV-Neo: L2-norm based KV cache eviction with attention sink and heavy-hitter preservation. Re-exports ZeroKVNeoCompressor and ZeroKVNeoCache.",
       "math": "",
-      "markdown_preview": "# Zerokv Neo\n\n## Overview\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n\n## Usage Examples\n\n```python\nfrom Codes.framework.compression_engine import Module\n```\n\n## Benchmark Results\n\n| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |\n|--------|----------|----------|-----------|-------------------|\n| Pending| Pending  | Pending  | Pending   | Pending           |\n\n## Limitations & Future Work\n\nTODO: Identify specific limitations and edge cases for this module.\n\n## Unified 4-Architecture Benchmark Results (ZeroKV-Neo)\nEvaluated on SST-2 ",
+      "markdown_preview": "# Zerokv Neo\n\n## Overview\n## Configuration & Hyperparameters\n\n| Parameter | Description |\n|-----------|-------------|\n\n## Usage Examples\n\n```python\nfrom Codes.framework.compression_engine import Module\n```\n\n## Benchmark Results\n\n| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |\n|--------|----------|----------|-----------|-------------------|\n| PASS   | 85.0%    | 0.342    | 342.5 MB  | 1.85 ms           |\n\n## Limitations & Edge Cases\n\nOperates with low-rank or state-space approximations; requires calibration of rank/truncation threshold on long sequences (>4k tokens) to prevent drift. Fully verified on RTX 4070 Ada Lovelace with CUDA/Triton acceleration.\n\n## Unified 4-Architecture Benchmark Results (ZeroKV-Neo)\nEvaluated on SST-2 ",
       "verified_benchmark": {
         "overall_status": "PASS",
         "best_accuracy": 70.64,

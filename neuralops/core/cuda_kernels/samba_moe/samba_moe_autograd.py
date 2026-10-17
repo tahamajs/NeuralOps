@@ -23,4 +23,4 @@ def samba_moe(expert_out1: torch.Tensor, expert_out2: torch.Tensor, routing_weig
     def cuda_fn(expert_out1, expert_out2, routing_weights):
         mod = _get_module()
         return mod.samba_moe_combine_fwd(expert_out1.contiguous(), expert_out2.contiguous(), routing_weights.contiguous())
-    return dispatch(cuda_fn, samba_moe_ref, samba_moe_ref, expert_out1, expert_out2=expert_out2, routing_weights=routing_weights, kernel_name="samba_moe")
+    return dispatch(cuda_fn, samba_moe_ref, samba_moe_ref, expert_out1, expert_out2, routing_weights, kernel_name="samba_moe")

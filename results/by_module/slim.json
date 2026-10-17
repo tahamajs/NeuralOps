@@ -43,7 +43,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-27T06:11:48.242265",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/02_glue_sweeps/distilbert/sst2_4parallel/checkpoints/slim/summary_record.json"
@@ -73,7 +73,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-27T09:25:15.591006",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/02_rank_sweeps/04_rank_sweeps/roberta/deep_rank_roberta/slim/rank_64/checkpoints/slim/summary_record.json"
@@ -131,7 +131,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-27T06:11:48.242265",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/02_glue_sweeps/distilbert/sst2_4parallel/checkpoints/slim/summary_record.json"
@@ -161,7 +161,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-27T09:25:15.591006",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/02_rank_sweeps/04_rank_sweeps/roberta/deep_rank_roberta/slim/rank_64/checkpoints/slim/summary_record.json"

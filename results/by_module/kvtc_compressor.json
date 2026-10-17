@@ -2,7 +2,7 @@
   "module_name": "kvtc_compressor",
   "category": "compressor",
   "family": "matrix-compression",
-  "total_runs": 4,
+  "total_runs": 5,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
   "latest_git_sha": "25d9fe36fa",
@@ -41,7 +41,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-22T06:57:04.730582",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/distilbert_mnli_full_mnli_sweep/checkpoints/kvtc_compressor/summary_record.json"
@@ -71,7 +71,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-25T11:10:03.100547",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/batch3_distilbert/kvtc_compressor/checkpoints/kvtc_compressor/summary_record.json"
@@ -101,7 +101,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-25T11:11:19.563099",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/batch3_roberta/kvtc_compressor/checkpoints/kvtc_compressor/summary_record.json"
@@ -121,6 +121,36 @@
         "param_reduction_pct": 0.0
       },
       "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "f0baa2f9702b888a",
+      "module_name": "kvtc_compressor",
+      "category": "compressor",
+      "family": "compression-sweep-roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-14T17:22:33+03:30",
+      "git_commit_sha": "885276e92e",
+      "generation_method": {
+        "algorithm": "RoBERTa-base 72-Compressor Empirical Benchmark",
+        "source_artifact": "results/v13_deep_empirical_suite/roberta_72_compressors/results.json"
+      },
+      "experimental_setup": {
+        "backbone": "RoBERTa-base",
+        "dataset": "SST-2",
+        "batch_size": 16
+      },
+      "metrics": {
+        "accuracy": 60.0,
+        "f1": 0.5652,
+        "val_loss": 0.6806,
+        "param_reduction_pct": 68.14,
+        "compression_ratio": 3.1387,
+        "peak_vram_mb": 1095.3,
+        "latency_ms": 9090.0
+      },
+      "notes": "RoBERTa 72 Compressors Benchmark. Status: success"
     },
     {
       "record_id": "a3ac5b42b566b7ee",
@@ -157,7 +187,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-22T06:57:04.730582",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/distilbert_mnli_full_mnli_sweep/checkpoints/kvtc_compressor/summary_record.json"
@@ -187,7 +217,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-25T11:10:03.100547",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/batch3_distilbert/kvtc_compressor/checkpoints/kvtc_compressor/summary_record.json"
@@ -217,7 +247,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-25T11:11:19.563099",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/batch3_roberta/kvtc_compressor/checkpoints/kvtc_compressor/summary_record.json"
@@ -237,6 +267,36 @@
         "param_reduction_pct": 0.0
       },
       "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "f0baa2f9702b888a",
+      "module_name": "kvtc_compressor",
+      "category": "compressor",
+      "family": "compression-sweep-roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-14T17:22:33+03:30",
+      "git_commit_sha": "885276e92e",
+      "generation_method": {
+        "algorithm": "RoBERTa-base 72-Compressor Empirical Benchmark",
+        "source_artifact": "results/v13_deep_empirical_suite/roberta_72_compressors/results.json"
+      },
+      "experimental_setup": {
+        "backbone": "RoBERTa-base",
+        "dataset": "SST-2",
+        "batch_size": 16
+      },
+      "metrics": {
+        "accuracy": 60.0,
+        "f1": 0.5652,
+        "val_loss": 0.6806,
+        "param_reduction_pct": 68.14,
+        "compression_ratio": 3.1387,
+        "peak_vram_mb": 1095.3,
+        "latency_ms": 9090.0
+      },
+      "notes": "RoBERTa 72 Compressors Benchmark. Status: success"
     },
     {
       "record_id": "a3ac5b42b566b7ee",

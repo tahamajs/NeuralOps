@@ -1,41 +1,36 @@
 {
   "module_name": "hymba_transx",
   "category": "attention",
-  "family": "bert",
+  "family": "subquadratic-attention",
   "total_runs": 15,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "9a4ff4e985",
-  "latest_timestamp": "2026-09-16T03:42:44.281945",
+  "latest_git_sha": "c5aaefc147",
+  "latest_timestamp": "2026-10-16T09:02:16Z",
   "latest_record": {
-    "record_id": "a421f39749fced2b",
+    "record_id": "c3689cd945bf59e3",
     "module_name": "hymba_transx",
     "category": "attention",
-    "family": "bert",
+    "family": "subquadratic-attention",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-09-16T03:42:44.281945",
-    "git_commit_sha": "9a4ff4e985",
+    "timestamp_utc": "2026-10-16T09:02:16Z",
+    "git_commit_sha": "c5aaefc147",
     "generation_method": {
-      "algorithm": "Calibration Sweep Record",
-      "source_artifact": "results/01_unified_runs/mnli_unified_hymba_transx/distilbert/checkpoints/hymba_transx/summary_record.json"
+      "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
+      "source_artifact": "results/triton_all_131_attentions_benchmark.json"
     },
     "experimental_setup": {
-      "backbone": "models/distilbert_sst2",
-      "dataset": "mnli"
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+      "dtype": "float16",
+      "batch_size": 2,
+      "seq_len": 2048
     },
     "metrics": {
-      "accuracy": 34.0,
-      "f1": 0.1692,
-      "val_loss": 1.11,
-      "peak_vram_mb": 593.47,
-      "throughput_tok_s": 12682.59,
-      "latency_ms": 21240.0,
-      "compression_ratio": 1.0,
-      "param_reduction_pct": 0.0
+      "latency_triton_ms": 4.275
     },
-    "notes": "Status: PASS_NO_COMPRESSION"
+    "notes": "131 Attention Comprehensive Latency Benchmark"
   },
   "active_records": [
     {
@@ -47,7 +42,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-15T20:59:56.131740",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_hymba_transx/distilbert/checkpoints/hymba_transx/summary_record.json"
@@ -77,7 +72,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-15T21:02:59.017939",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_hymba_transx/roberta/checkpoints/hymba_transx/summary_record.json"
@@ -107,7 +102,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-15T21:05:07.583236",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_hymba_transx/gpt2/checkpoints/hymba_transx/summary_record.json"
@@ -123,317 +118,6 @@
         "peak_vram_mb": 808.48,
         "throughput_tok_s": 4594.53,
         "latency_ms": 95790.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
-      "record_id": "99642a515b538c44",
-      "module_name": "hymba_transx",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-19T06:11:13.647277",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/hymba_transx/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "distilbert-base-uncased",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 34.0,
-        "f1": 0.1692,
-        "val_loss": 1.128,
-        "peak_vram_mb": 643.07,
-        "throughput_tok_s": 2595.05,
-        "latency_ms": 119130.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_LOW"
-    },
-    {
-      "record_id": "c4c19d20b36966c5",
-      "module_name": "hymba_transx",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-19T13:07:00.447515",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full/checkpoints/hymba_transx/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models\\distilbert_mnli_full",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 47.1,
-        "f1": 0.4345,
-        "val_loss": 1.0639,
-        "peak_vram_mb": 644.02,
-        "throughput_tok_s": 2768.21,
-        "latency_ms": 496990.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: REJECTED_EXPANSION"
-    },
-    {
-      "record_id": "ae3061b5e91a0448",
-      "module_name": "hymba_transx",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-19T20:16:03.215134",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_agnews_full/checkpoints/hymba_transx/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models\\distilbert_agnews_full",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 89.1,
-        "f1": 0.8864,
-        "val_loss": 0.3245,
-        "peak_vram_mb": 590.25,
-        "throughput_tok_s": 2651.94,
-        "latency_ms": 411800.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: REJECTED_EXPANSION"
-    },
-    {
-      "record_id": "232c169fd07ee6e5",
-      "module_name": "hymba_transx",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-21T20:45:44.426353",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/05_glue_finetuning/distilbert_sst2_sst2_sweep/checkpoints/hymba_transx/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "sst2"
-      },
-      "metrics": {
-        "accuracy": 83.37,
-        "f1": 0.8419,
-        "val_loss": 0.3677,
-        "peak_vram_mb": 790.3,
-        "throughput_tok_s": 8312.47,
-        "latency_ms": 108170.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: EXTREME_EXPANSION"
-    },
-    {
-      "record_id": "8f3f8dd479189f1e",
-      "module_name": "hymba_transx",
-      "category": "attention",
-      "family": "roberta",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-22T01:08:43.069369",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/hymba_transx/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/roberta_sst2",
-        "dataset": "sst2"
-      },
-      "metrics": {
-        "accuracy": 77.41,
-        "f1": 0.8111,
-        "val_loss": 0.5632,
-        "peak_vram_mb": 875.35,
-        "throughput_tok_s": 757.01,
-        "latency_ms": 264970.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: EXTREME_EXPANSION"
-    },
-    {
-      "record_id": "2798621043ac81eb",
-      "module_name": "hymba_transx",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-22T06:14:41.828641",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/05_glue_finetuning/distilbert_mnli_full_mnli_sweep/checkpoints/hymba_transx/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_mnli_full",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 0.0,
-        "f1": 0.0,
-        "val_loss": 0.0,
-        "peak_vram_mb": 0.0,
-        "throughput_tok_s": 0.0,
-        "latency_ms": 280100.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: FAIL"
-    },
-    {
-      "record_id": "c3689cd945bf59e3",
-      "module_name": "hymba_transx",
-      "category": "attention",
-      "family": "subquadratic-attention",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-16T09:02:16Z",
-      "git_commit_sha": "c5aaefc147",
-      "generation_method": {
-        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
-        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
-      },
-      "experimental_setup": {
-        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-        "dtype": "float16",
-        "batch_size": 2,
-        "seq_len": 2048
-      },
-      "metrics": {
-        "latency_triton_ms": 4.275
-      },
-      "notes": "131 Attention Comprehensive Latency Benchmark"
-    },
-    {
-      "record_id": "327bc2e999eb8db3",
-      "module_name": "hymba_transx",
-      "category": "attention",
-      "family": "attention",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T04:02:13+03:30",
-      "git_commit_sha": "5d553a2079",
-      "generation_method": {
-        "algorithm": "End-to-End Evaluation & Perplexity Probe",
-        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
-      },
-      "experimental_setup": {
-        "dataset": "SST-2 / WikiText-2",
-        "backbone": "DistilBERT / GPT-2"
-      },
-      "metrics": {
-        "accuracy": 93.0,
-        "ppl": 38.5,
-        "latency_ms": 1730.0
-      },
-      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
-    },
-    {
-      "record_id": "4d4051d217bf63d8",
-      "module_name": "hymba_transx",
-      "category": "attention",
-      "family": "general",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T00:07:14+03:30",
-      "git_commit_sha": "b3e2b3ad08",
-      "generation_method": {
-        "algorithm": "Master Aggregated Evaluation Suite",
-        "source_artifact": "results/master_aggregated_results.csv"
-      },
-      "experimental_setup": {
-        "dataset": "SST-2",
-        "backbone": "DistilBERT"
-      },
-      "metrics": {
-        "accuracy": 0.0,
-        "roberta_acc": 51.15,
-        "gpt2_acc": 57.57,
-        "latency_ms": 381.2
-      },
-      "notes": "Master Aggregated Results"
-    },
-    {
-      "record_id": "306f47c94a4b210b",
-      "module_name": "hymba_transx",
-      "category": "attention",
-      "family": "kd-finetune",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-13T23:14:09Z",
-      "git_commit_sha": "dde5933e0c",
-      "generation_method": {
-        "algorithm": "Knowledge Distillation Recovery (finetune)",
-        "source_artifact": "results/results.jsonl"
-      },
-      "experimental_setup": {
-        "backbone": "roberta-base",
-        "dataset": "sst2",
-        "rank": 64
-      },
-      "metrics": {
-        "accuracy": 0.82,
-        "peak_vram_mb": 1195.24560546875
-      },
-      "notes": "Run: ed699db8-2bac-455c-a2b8-1353a3e1e521"
-    },
-    {
-      "record_id": "eceaf344cc9e4784",
-      "module_name": "hymba_transx",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-17T11:18:55.040298",
-      "git_commit_sha": "9a4ff4e985",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_hymba_transx/distilbert/checkpoints/hymba_transx/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 38.8,
-        "f1": 0.2906,
-        "val_loss": 1.1944,
-        "peak_vram_mb": 1201.0,
-        "throughput_tok_s": 3060.73,
-        "latency_ms": 367340.0,
         "compression_ratio": 1.0,
         "param_reduction_pct": 0.0
       },
@@ -468,6 +152,317 @@
         "param_reduction_pct": 0.0
       },
       "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "eceaf344cc9e4784",
+      "module_name": "hymba_transx",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-17T11:18:55.040298",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_hymba_transx/distilbert/checkpoints/hymba_transx/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 38.8,
+        "f1": 0.2906,
+        "val_loss": 1.1944,
+        "peak_vram_mb": 1201.0,
+        "throughput_tok_s": 3060.73,
+        "latency_ms": 367340.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "99642a515b538c44",
+      "module_name": "hymba_transx",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T06:11:13.647277",
+      "git_commit_sha": "866fe45a1a",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/hymba_transx/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 34.0,
+        "f1": 0.1692,
+        "val_loss": 1.128,
+        "peak_vram_mb": 643.07,
+        "throughput_tok_s": 2595.05,
+        "latency_ms": 119130.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "c4c19d20b36966c5",
+      "module_name": "hymba_transx",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T13:07:00.447515",
+      "git_commit_sha": "866fe45a1a",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full/checkpoints/hymba_transx/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 47.1,
+        "f1": 0.4345,
+        "val_loss": 1.0639,
+        "peak_vram_mb": 644.02,
+        "throughput_tok_s": 2768.21,
+        "latency_ms": 496990.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: REJECTED_EXPANSION"
+    },
+    {
+      "record_id": "ae3061b5e91a0448",
+      "module_name": "hymba_transx",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T20:16:03.215134",
+      "git_commit_sha": "866fe45a1a",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_agnews_full/checkpoints/hymba_transx/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_agnews_full",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 89.1,
+        "f1": 0.8864,
+        "val_loss": 0.3245,
+        "peak_vram_mb": 590.25,
+        "throughput_tok_s": 2651.94,
+        "latency_ms": 411800.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: REJECTED_EXPANSION"
+    },
+    {
+      "record_id": "232c169fd07ee6e5",
+      "module_name": "hymba_transx",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-21T20:45:44.426353",
+      "git_commit_sha": "866fe45a1a",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/distilbert_sst2_sst2_sweep/checkpoints/hymba_transx/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 83.37,
+        "f1": 0.8419,
+        "val_loss": 0.3677,
+        "peak_vram_mb": 790.3,
+        "throughput_tok_s": 8312.47,
+        "latency_ms": 108170.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: EXTREME_EXPANSION"
+    },
+    {
+      "record_id": "8f3f8dd479189f1e",
+      "module_name": "hymba_transx",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-22T01:08:43.069369",
+      "git_commit_sha": "866fe45a1a",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/hymba_transx/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 77.41,
+        "f1": 0.8111,
+        "val_loss": 0.5632,
+        "peak_vram_mb": 875.35,
+        "throughput_tok_s": 757.01,
+        "latency_ms": 264970.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: EXTREME_EXPANSION"
+    },
+    {
+      "record_id": "2798621043ac81eb",
+      "module_name": "hymba_transx",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-22T06:14:41.828641",
+      "git_commit_sha": "866fe45a1a",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/distilbert_mnli_full_mnli_sweep/checkpoints/hymba_transx/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 0.0,
+        "peak_vram_mb": 0.0,
+        "throughput_tok_s": 0.0,
+        "latency_ms": 280100.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: FAIL"
+    },
+    {
+      "record_id": "306f47c94a4b210b",
+      "module_name": "hymba_transx",
+      "category": "attention",
+      "family": "kd-finetune",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-13T23:14:09Z",
+      "git_commit_sha": "dde5933e0c",
+      "generation_method": {
+        "algorithm": "Knowledge Distillation Recovery (finetune)",
+        "source_artifact": "results/results.jsonl"
+      },
+      "experimental_setup": {
+        "backbone": "roberta-base",
+        "dataset": "sst2",
+        "rank": 64
+      },
+      "metrics": {
+        "accuracy": 0.82,
+        "peak_vram_mb": 1195.24560546875
+      },
+      "notes": "Run: ed699db8-2bac-455c-a2b8-1353a3e1e521"
+    },
+    {
+      "record_id": "4d4051d217bf63d8",
+      "module_name": "hymba_transx",
+      "category": "attention",
+      "family": "general",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Master Aggregated Evaluation Suite",
+        "source_artifact": "results/master_aggregated_results.csv"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2",
+        "backbone": "DistilBERT"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "roberta_acc": 51.15,
+        "gpt2_acc": 57.57,
+        "latency_ms": 381.2
+      },
+      "notes": "Master Aggregated Results"
+    },
+    {
+      "record_id": "327bc2e999eb8db3",
+      "module_name": "hymba_transx",
+      "category": "attention",
+      "family": "attention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T04:02:13+03:30",
+      "git_commit_sha": "5d553a2079",
+      "generation_method": {
+        "algorithm": "End-to-End Evaluation & Perplexity Probe",
+        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2 / WikiText-2",
+        "backbone": "DistilBERT / GPT-2"
+      },
+      "metrics": {
+        "accuracy": 93.0,
+        "ppl": 38.5,
+        "latency_ms": 1730.0
+      },
+      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
+    },
+    {
+      "record_id": "c3689cd945bf59e3",
+      "module_name": "hymba_transx",
+      "category": "attention",
+      "family": "subquadratic-attention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T09:02:16Z",
+      "git_commit_sha": "c5aaefc147",
+      "generation_method": {
+        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
+        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "dtype": "float16",
+        "batch_size": 2,
+        "seq_len": 2048
+      },
+      "metrics": {
+        "latency_triton_ms": 4.275
+      },
+      "notes": "131 Attention Comprehensive Latency Benchmark"
     }
   ],
   "history": [
@@ -480,7 +475,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-15T20:59:56.131740",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_hymba_transx/distilbert/checkpoints/hymba_transx/summary_record.json"
@@ -510,7 +505,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-15T21:02:59.017939",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_hymba_transx/roberta/checkpoints/hymba_transx/summary_record.json"
@@ -540,7 +535,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-15T21:05:07.583236",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_hymba_transx/gpt2/checkpoints/hymba_transx/summary_record.json"
@@ -556,317 +551,6 @@
         "peak_vram_mb": 808.48,
         "throughput_tok_s": 4594.53,
         "latency_ms": 95790.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
-      "record_id": "99642a515b538c44",
-      "module_name": "hymba_transx",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-19T06:11:13.647277",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/hymba_transx/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "distilbert-base-uncased",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 34.0,
-        "f1": 0.1692,
-        "val_loss": 1.128,
-        "peak_vram_mb": 643.07,
-        "throughput_tok_s": 2595.05,
-        "latency_ms": 119130.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_LOW"
-    },
-    {
-      "record_id": "c4c19d20b36966c5",
-      "module_name": "hymba_transx",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-19T13:07:00.447515",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full/checkpoints/hymba_transx/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models\\distilbert_mnli_full",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 47.1,
-        "f1": 0.4345,
-        "val_loss": 1.0639,
-        "peak_vram_mb": 644.02,
-        "throughput_tok_s": 2768.21,
-        "latency_ms": 496990.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: REJECTED_EXPANSION"
-    },
-    {
-      "record_id": "ae3061b5e91a0448",
-      "module_name": "hymba_transx",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-19T20:16:03.215134",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_agnews_full/checkpoints/hymba_transx/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models\\distilbert_agnews_full",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 89.1,
-        "f1": 0.8864,
-        "val_loss": 0.3245,
-        "peak_vram_mb": 590.25,
-        "throughput_tok_s": 2651.94,
-        "latency_ms": 411800.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: REJECTED_EXPANSION"
-    },
-    {
-      "record_id": "232c169fd07ee6e5",
-      "module_name": "hymba_transx",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-21T20:45:44.426353",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/05_glue_finetuning/distilbert_sst2_sst2_sweep/checkpoints/hymba_transx/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "sst2"
-      },
-      "metrics": {
-        "accuracy": 83.37,
-        "f1": 0.8419,
-        "val_loss": 0.3677,
-        "peak_vram_mb": 790.3,
-        "throughput_tok_s": 8312.47,
-        "latency_ms": 108170.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: EXTREME_EXPANSION"
-    },
-    {
-      "record_id": "8f3f8dd479189f1e",
-      "module_name": "hymba_transx",
-      "category": "attention",
-      "family": "roberta",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-22T01:08:43.069369",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/hymba_transx/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/roberta_sst2",
-        "dataset": "sst2"
-      },
-      "metrics": {
-        "accuracy": 77.41,
-        "f1": 0.8111,
-        "val_loss": 0.5632,
-        "peak_vram_mb": 875.35,
-        "throughput_tok_s": 757.01,
-        "latency_ms": 264970.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: EXTREME_EXPANSION"
-    },
-    {
-      "record_id": "2798621043ac81eb",
-      "module_name": "hymba_transx",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-22T06:14:41.828641",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/05_glue_finetuning/distilbert_mnli_full_mnli_sweep/checkpoints/hymba_transx/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_mnli_full",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 0.0,
-        "f1": 0.0,
-        "val_loss": 0.0,
-        "peak_vram_mb": 0.0,
-        "throughput_tok_s": 0.0,
-        "latency_ms": 280100.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: FAIL"
-    },
-    {
-      "record_id": "c3689cd945bf59e3",
-      "module_name": "hymba_transx",
-      "category": "attention",
-      "family": "subquadratic-attention",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-16T09:02:16Z",
-      "git_commit_sha": "c5aaefc147",
-      "generation_method": {
-        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
-        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
-      },
-      "experimental_setup": {
-        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-        "dtype": "float16",
-        "batch_size": 2,
-        "seq_len": 2048
-      },
-      "metrics": {
-        "latency_triton_ms": 4.275
-      },
-      "notes": "131 Attention Comprehensive Latency Benchmark"
-    },
-    {
-      "record_id": "327bc2e999eb8db3",
-      "module_name": "hymba_transx",
-      "category": "attention",
-      "family": "attention",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T04:02:13+03:30",
-      "git_commit_sha": "5d553a2079",
-      "generation_method": {
-        "algorithm": "End-to-End Evaluation & Perplexity Probe",
-        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
-      },
-      "experimental_setup": {
-        "dataset": "SST-2 / WikiText-2",
-        "backbone": "DistilBERT / GPT-2"
-      },
-      "metrics": {
-        "accuracy": 93.0,
-        "ppl": 38.5,
-        "latency_ms": 1730.0
-      },
-      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
-    },
-    {
-      "record_id": "4d4051d217bf63d8",
-      "module_name": "hymba_transx",
-      "category": "attention",
-      "family": "general",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T00:07:14+03:30",
-      "git_commit_sha": "b3e2b3ad08",
-      "generation_method": {
-        "algorithm": "Master Aggregated Evaluation Suite",
-        "source_artifact": "results/master_aggregated_results.csv"
-      },
-      "experimental_setup": {
-        "dataset": "SST-2",
-        "backbone": "DistilBERT"
-      },
-      "metrics": {
-        "accuracy": 0.0,
-        "roberta_acc": 51.15,
-        "gpt2_acc": 57.57,
-        "latency_ms": 381.2
-      },
-      "notes": "Master Aggregated Results"
-    },
-    {
-      "record_id": "306f47c94a4b210b",
-      "module_name": "hymba_transx",
-      "category": "attention",
-      "family": "kd-finetune",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-13T23:14:09Z",
-      "git_commit_sha": "dde5933e0c",
-      "generation_method": {
-        "algorithm": "Knowledge Distillation Recovery (finetune)",
-        "source_artifact": "results/results.jsonl"
-      },
-      "experimental_setup": {
-        "backbone": "roberta-base",
-        "dataset": "sst2",
-        "rank": 64
-      },
-      "metrics": {
-        "accuracy": 0.82,
-        "peak_vram_mb": 1195.24560546875
-      },
-      "notes": "Run: ed699db8-2bac-455c-a2b8-1353a3e1e521"
-    },
-    {
-      "record_id": "eceaf344cc9e4784",
-      "module_name": "hymba_transx",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-17T11:18:55.040298",
-      "git_commit_sha": "9a4ff4e985",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_hymba_transx/distilbert/checkpoints/hymba_transx/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 38.8,
-        "f1": 0.2906,
-        "val_loss": 1.1944,
-        "peak_vram_mb": 1201.0,
-        "throughput_tok_s": 3060.73,
-        "latency_ms": 367340.0,
         "compression_ratio": 1.0,
         "param_reduction_pct": 0.0
       },
@@ -901,6 +585,317 @@
         "param_reduction_pct": 0.0
       },
       "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "eceaf344cc9e4784",
+      "module_name": "hymba_transx",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-17T11:18:55.040298",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_hymba_transx/distilbert/checkpoints/hymba_transx/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 38.8,
+        "f1": 0.2906,
+        "val_loss": 1.1944,
+        "peak_vram_mb": 1201.0,
+        "throughput_tok_s": 3060.73,
+        "latency_ms": 367340.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "99642a515b538c44",
+      "module_name": "hymba_transx",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T06:11:13.647277",
+      "git_commit_sha": "866fe45a1a",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/hymba_transx/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 34.0,
+        "f1": 0.1692,
+        "val_loss": 1.128,
+        "peak_vram_mb": 643.07,
+        "throughput_tok_s": 2595.05,
+        "latency_ms": 119130.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "c4c19d20b36966c5",
+      "module_name": "hymba_transx",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T13:07:00.447515",
+      "git_commit_sha": "866fe45a1a",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full/checkpoints/hymba_transx/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 47.1,
+        "f1": 0.4345,
+        "val_loss": 1.0639,
+        "peak_vram_mb": 644.02,
+        "throughput_tok_s": 2768.21,
+        "latency_ms": 496990.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: REJECTED_EXPANSION"
+    },
+    {
+      "record_id": "ae3061b5e91a0448",
+      "module_name": "hymba_transx",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T20:16:03.215134",
+      "git_commit_sha": "866fe45a1a",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_agnews_full/checkpoints/hymba_transx/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_agnews_full",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 89.1,
+        "f1": 0.8864,
+        "val_loss": 0.3245,
+        "peak_vram_mb": 590.25,
+        "throughput_tok_s": 2651.94,
+        "latency_ms": 411800.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: REJECTED_EXPANSION"
+    },
+    {
+      "record_id": "232c169fd07ee6e5",
+      "module_name": "hymba_transx",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-21T20:45:44.426353",
+      "git_commit_sha": "866fe45a1a",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/distilbert_sst2_sst2_sweep/checkpoints/hymba_transx/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 83.37,
+        "f1": 0.8419,
+        "val_loss": 0.3677,
+        "peak_vram_mb": 790.3,
+        "throughput_tok_s": 8312.47,
+        "latency_ms": 108170.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: EXTREME_EXPANSION"
+    },
+    {
+      "record_id": "8f3f8dd479189f1e",
+      "module_name": "hymba_transx",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-22T01:08:43.069369",
+      "git_commit_sha": "866fe45a1a",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/hymba_transx/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 77.41,
+        "f1": 0.8111,
+        "val_loss": 0.5632,
+        "peak_vram_mb": 875.35,
+        "throughput_tok_s": 757.01,
+        "latency_ms": 264970.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: EXTREME_EXPANSION"
+    },
+    {
+      "record_id": "2798621043ac81eb",
+      "module_name": "hymba_transx",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-22T06:14:41.828641",
+      "git_commit_sha": "866fe45a1a",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/distilbert_mnli_full_mnli_sweep/checkpoints/hymba_transx/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 0.0,
+        "peak_vram_mb": 0.0,
+        "throughput_tok_s": 0.0,
+        "latency_ms": 280100.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: FAIL"
+    },
+    {
+      "record_id": "306f47c94a4b210b",
+      "module_name": "hymba_transx",
+      "category": "attention",
+      "family": "kd-finetune",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-13T23:14:09Z",
+      "git_commit_sha": "dde5933e0c",
+      "generation_method": {
+        "algorithm": "Knowledge Distillation Recovery (finetune)",
+        "source_artifact": "results/results.jsonl"
+      },
+      "experimental_setup": {
+        "backbone": "roberta-base",
+        "dataset": "sst2",
+        "rank": 64
+      },
+      "metrics": {
+        "accuracy": 0.82,
+        "peak_vram_mb": 1195.24560546875
+      },
+      "notes": "Run: ed699db8-2bac-455c-a2b8-1353a3e1e521"
+    },
+    {
+      "record_id": "4d4051d217bf63d8",
+      "module_name": "hymba_transx",
+      "category": "attention",
+      "family": "general",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Master Aggregated Evaluation Suite",
+        "source_artifact": "results/master_aggregated_results.csv"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2",
+        "backbone": "DistilBERT"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "roberta_acc": 51.15,
+        "gpt2_acc": 57.57,
+        "latency_ms": 381.2
+      },
+      "notes": "Master Aggregated Results"
+    },
+    {
+      "record_id": "327bc2e999eb8db3",
+      "module_name": "hymba_transx",
+      "category": "attention",
+      "family": "attention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T04:02:13+03:30",
+      "git_commit_sha": "5d553a2079",
+      "generation_method": {
+        "algorithm": "End-to-End Evaluation & Perplexity Probe",
+        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2 / WikiText-2",
+        "backbone": "DistilBERT / GPT-2"
+      },
+      "metrics": {
+        "accuracy": 93.0,
+        "ppl": 38.5,
+        "latency_ms": 1730.0
+      },
+      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
+    },
+    {
+      "record_id": "c3689cd945bf59e3",
+      "module_name": "hymba_transx",
+      "category": "attention",
+      "family": "subquadratic-attention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T09:02:16Z",
+      "git_commit_sha": "c5aaefc147",
+      "generation_method": {
+        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
+        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "dtype": "float16",
+        "batch_size": 2,
+        "seq_len": 2048
+      },
+      "metrics": {
+        "latency_triton_ms": 4.275
+      },
+      "notes": "131 Attention Comprehensive Latency Benchmark"
     }
   ]
 }

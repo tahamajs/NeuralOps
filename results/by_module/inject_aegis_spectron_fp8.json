@@ -5,7 +5,7 @@
   "total_runs": 4,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "2f366e4546",
+  "latest_git_sha": "866fe45a1a",
   "latest_timestamp": "2026-09-23T02:55:15.400996",
   "latest_record": {
     "record_id": "c45e4c4f6f4e53d4",
@@ -16,7 +16,7 @@
     "revision": 1,
     "status": "active",
     "timestamp_utc": "2026-09-23T02:55:15.400996",
-    "git_commit_sha": "2f366e4546",
+    "git_commit_sha": "866fe45a1a",
     "generation_method": {
       "algorithm": "Calibration Sweep Record",
       "source_artifact": "results/07_misc_tests/aegis_hybrid_fixed/checkpoints/inject_aegis_spectron_fp8/summary_record.json"
@@ -35,14 +35,7 @@
       "compression_ratio": 1.0,
       "param_reduction_pct": 0.0
     },
-    "notes": "Status: MODERATE_EXPANSION",
-    "fp8_quantization": {
-      "enabled": true,
-      "format": "E4M3 / E5M2 hybrid",
-      "scale_delayed": true,
-      "gemm_backend": "Triton FP8 / CUTLASS",
-      "numerical_stability_gate": "PASS"
-    }
+    "notes": "Status: MODERATE_EXPANSION"
   },
   "active_records": [
     {
@@ -54,157 +47,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T04:22:44.429293",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/inject_aegis_spectron_fp8/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models\\distilbert_sst2",
-        "dataset": "sst2"
-      },
-      "metrics": {
-        "accuracy": 50.92,
-        "f1": 0.6748,
-        "val_loss": 0.694,
-        "peak_vram_mb": 361.45,
-        "throughput_tok_s": 7723.82,
-        "latency_ms": 52260.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_LOW",
-      "fp8_quantization": {
-        "enabled": true,
-        "format": "E4M3 / E5M2 hybrid",
-        "scale_delayed": true,
-        "gemm_backend": "Triton FP8 / CUTLASS",
-        "numerical_stability_gate": "PASS"
-      }
-    },
-    {
-      "record_id": "8ae67739cd9eee12",
-      "module_name": "inject_aegis_spectron_fp8",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-19T06:11:24.501629",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/inject_aegis_spectron_fp8/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "distilbert-base-uncased",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 34.0,
-        "f1": 0.1692,
-        "val_loss": 1.1025,
-        "peak_vram_mb": 360.65,
-        "throughput_tok_s": 6287.24,
-        "latency_ms": 43620.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_LOW",
-      "fp8_quantization": {
-        "enabled": true,
-        "format": "E4M3 / E5M2 hybrid",
-        "scale_delayed": true,
-        "gemm_backend": "Triton FP8 / CUTLASS",
-        "numerical_stability_gate": "PASS"
-      }
-    },
-    {
-      "record_id": "8fc44621c8c1c054",
-      "module_name": "inject_aegis_spectron_fp8",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-19T13:16:52.838090",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full/checkpoints/inject_aegis_spectron_fp8/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models\\distilbert_mnli_full",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 32.4,
-        "f1": 0.2123,
-        "val_loss": 1.0993,
-        "peak_vram_mb": 361.29,
-        "throughput_tok_s": 4571.92,
-        "latency_ms": 190030.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: REJECTED_EXPANSION",
-      "fp8_quantization": {
-        "enabled": true,
-        "format": "E4M3 / E5M2 hybrid",
-        "scale_delayed": true,
-        "gemm_backend": "Triton FP8 / CUTLASS",
-        "numerical_stability_gate": "PASS"
-      }
-    },
-    {
-      "record_id": "c45e4c4f6f4e53d4",
-      "module_name": "inject_aegis_spectron_fp8",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-23T02:55:15.400996",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/07_misc_tests/aegis_hybrid_fixed/checkpoints/inject_aegis_spectron_fp8/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "sst2"
-      },
-      "metrics": {
-        "accuracy": 88.53,
-        "f1": 0.8941,
-        "val_loss": 0.4096,
-        "peak_vram_mb": 357.37,
-        "throughput_tok_s": 3352.03,
-        "latency_ms": 108700.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: MODERATE_EXPANSION",
-      "fp8_quantization": {
-        "enabled": true,
-        "format": "E4M3 / E5M2 hybrid",
-        "scale_delayed": true,
-        "gemm_backend": "Triton FP8 / CUTLASS",
-        "numerical_stability_gate": "PASS"
-      }
-    }
-  ],
-  "history": [
-    {
-      "record_id": "99a6e4e40c06ffb7",
-      "module_name": "inject_aegis_spectron_fp8",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-19T04:22:44.429293",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/inject_aegis_spectron_fp8/summary_record.json"
@@ -234,7 +77,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T06:11:24.501629",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/inject_aegis_spectron_fp8/summary_record.json"
@@ -264,7 +107,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T13:16:52.838090",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full/checkpoints/inject_aegis_spectron_fp8/summary_record.json"
@@ -294,7 +137,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-23T02:55:15.400996",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/aegis_hybrid_fixed/checkpoints/inject_aegis_spectron_fp8/summary_record.json"
@@ -316,11 +159,126 @@
       "notes": "Status: MODERATE_EXPANSION"
     }
   ],
-  "fp8_quantization": {
-    "enabled": true,
-    "format": "E4M3 / E5M2 hybrid",
-    "scale_delayed": true,
-    "gemm_backend": "Triton FP8 / CUTLASS",
-    "numerical_stability_gate": "PASS"
-  }
+  "history": [
+    {
+      "record_id": "99a6e4e40c06ffb7",
+      "module_name": "inject_aegis_spectron_fp8",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T04:22:44.429293",
+      "git_commit_sha": "866fe45a1a",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/inject_aegis_spectron_fp8/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 50.92,
+        "f1": 0.6748,
+        "val_loss": 0.694,
+        "peak_vram_mb": 361.45,
+        "throughput_tok_s": 7723.82,
+        "latency_ms": 52260.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "8ae67739cd9eee12",
+      "module_name": "inject_aegis_spectron_fp8",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T06:11:24.501629",
+      "git_commit_sha": "866fe45a1a",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/inject_aegis_spectron_fp8/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 34.0,
+        "f1": 0.1692,
+        "val_loss": 1.1025,
+        "peak_vram_mb": 360.65,
+        "throughput_tok_s": 6287.24,
+        "latency_ms": 43620.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "8fc44621c8c1c054",
+      "module_name": "inject_aegis_spectron_fp8",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T13:16:52.838090",
+      "git_commit_sha": "866fe45a1a",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full/checkpoints/inject_aegis_spectron_fp8/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 32.4,
+        "f1": 0.2123,
+        "val_loss": 1.0993,
+        "peak_vram_mb": 361.29,
+        "throughput_tok_s": 4571.92,
+        "latency_ms": 190030.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: REJECTED_EXPANSION"
+    },
+    {
+      "record_id": "c45e4c4f6f4e53d4",
+      "module_name": "inject_aegis_spectron_fp8",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-23T02:55:15.400996",
+      "git_commit_sha": "866fe45a1a",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/aegis_hybrid_fixed/checkpoints/inject_aegis_spectron_fp8/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 88.53,
+        "f1": 0.8941,
+        "val_loss": 0.4096,
+        "peak_vram_mb": 357.37,
+        "throughput_tok_s": 3352.03,
+        "latency_ms": 108700.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    }
+  ]
 }

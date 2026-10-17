@@ -1,41 +1,36 @@
 {
   "module_name": "eat",
   "category": "attention",
-  "family": "bert",
+  "family": "subquadratic-attention",
   "total_runs": 15,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "9a4ff4e985",
-  "latest_timestamp": "2026-09-16T03:06:11.392859",
+  "latest_git_sha": "c5aaefc147",
+  "latest_timestamp": "2026-10-16T09:02:16Z",
   "latest_record": {
-    "record_id": "551e737ba70fd4c0",
+    "record_id": "58a78bf54593b8d7",
     "module_name": "eat",
     "category": "attention",
-    "family": "bert",
+    "family": "subquadratic-attention",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-09-16T03:06:11.392859",
-    "git_commit_sha": "9a4ff4e985",
+    "timestamp_utc": "2026-10-16T09:02:16Z",
+    "git_commit_sha": "c5aaefc147",
     "generation_method": {
-      "algorithm": "Calibration Sweep Record",
-      "source_artifact": "results/01_unified_runs/mnli_unified_eat/distilbert/checkpoints/eat/summary_record.json"
+      "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
+      "source_artifact": "results/triton_all_131_attentions_benchmark.json"
     },
     "experimental_setup": {
-      "backbone": "models/distilbert_sst2",
-      "dataset": "mnli"
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+      "dtype": "float16",
+      "batch_size": 2,
+      "seq_len": 2048
     },
     "metrics": {
-      "accuracy": 34.6,
-      "f1": 0.1888,
-      "val_loss": 1.1001,
-      "peak_vram_mb": 349.17,
-      "throughput_tok_s": 56861.25,
-      "latency_ms": 5020.0,
-      "compression_ratio": 1.0,
-      "param_reduction_pct": 0.0
+      "latency_triton_ms": 1.229
     },
-    "notes": "Status: PASS_NO_COMPRESSION"
+    "notes": "131 Attention Comprehensive Latency Benchmark"
   },
   "active_records": [
     {
@@ -47,7 +42,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-15T14:50:08.744873",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_eat/roberta/checkpoints/eat/summary_record.json"
@@ -77,7 +72,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-15T14:51:00.981477",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_eat/gpt2/checkpoints/eat/summary_record.json"
@@ -93,356 +88,6 @@
         "peak_vram_mb": 567.91,
         "throughput_tok_s": 12889.99,
         "latency_ms": 22430.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
-      "record_id": "c012603606d410c9",
-      "module_name": "eat",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-19T01:45:36.153507",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/eat/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models\\distilbert_sst2",
-        "dataset": "sst2"
-      },
-      "metrics": {
-        "accuracy": 0.0,
-        "f1": 0.9111,
-        "val_loss": 0.2715,
-        "peak_vram_mb": 344.45,
-        "throughput_tok_s": 53705.63,
-        "latency_ms": 8570.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_LOW"
-    },
-    {
-      "record_id": "85accad605a6f8cf",
-      "module_name": "eat",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-19T06:00:28.287751",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/eat/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "distilbert-base-uncased",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 34.2,
-        "f1": 0.1736,
-        "val_loss": 1.1053,
-        "peak_vram_mb": 317.56,
-        "throughput_tok_s": 23318.43,
-        "latency_ms": 12770.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_LOW"
-    },
-    {
-      "record_id": "91eaf9d1a6c295b5",
-      "module_name": "eat",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-19T19:49:01.321168",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_agnews_full/checkpoints/eat/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models\\distilbert_agnews_full",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 94.3,
-        "f1": 0.939,
-        "val_loss": 0.1883,
-        "peak_vram_mb": 347.2,
-        "throughput_tok_s": 51560.27,
-        "latency_ms": 15100.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: REJECTED_EXPANSION"
-    },
-    {
-      "record_id": "9ce9fd33cf700187",
-      "module_name": "eat",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-19T22:01:16.972846",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full_lora2/checkpoints/eat/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models\\distilbert_mnli_full",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 58.2,
-        "f1": 0.5788,
-        "val_loss": 0.9159,
-        "peak_vram_mb": 318.76,
-        "throughput_tok_s": 27161.25,
-        "latency_ms": 16470.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: REJECTED_EXPANSION"
-    },
-    {
-      "record_id": "e7a36a6db187eea4",
-      "module_name": "eat",
-      "category": "attention",
-      "family": "roberta",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-22T00:14:18.160208",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/eat/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/roberta_sst2",
-        "dataset": "sst2"
-      },
-      "metrics": {
-        "accuracy": 53.44,
-        "f1": 0.3886,
-        "val_loss": 0.6929,
-        "peak_vram_mb": 520.9,
-        "throughput_tok_s": 9429.65,
-        "latency_ms": 22580.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_LOW"
-    },
-    {
-      "record_id": "ff0932b15c0546ab",
-      "module_name": "eat",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-22T05:10:44.559306",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/05_glue_finetuning/distilbert_mnli_full_mnli_sweep/checkpoints/eat/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_mnli_full",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 38.2,
-        "f1": 0.358,
-        "val_loss": 1.0879,
-        "peak_vram_mb": 459.34,
-        "throughput_tok_s": 148939.42,
-        "latency_ms": 35210.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_LOW"
-    },
-    {
-      "record_id": "ad57910778714d00",
-      "module_name": "eat",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-23T12:45:43.655546",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/05_glue_finetuning/distilbert_sst2_sst2_sweep/checkpoints/eat/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "sst2"
-      },
-      "metrics": {
-        "accuracy": 51.72,
-        "f1": 0.6744,
-        "val_loss": 0.6887,
-        "peak_vram_mb": 539.22,
-        "throughput_tok_s": 47801.5,
-        "latency_ms": 9100.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: EXTREME_EXPANSION"
-    },
-    {
-      "record_id": "10d3150d227307cf",
-      "module_name": "eat",
-      "category": "attention",
-      "family": "roberta",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-24T18:12:30.861146",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/unified_runs/unified_eat/roberta/checkpoints/eat/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models\\roberta_sst2",
-        "dataset": "sst2"
-      },
-      "metrics": {
-        "accuracy": 50.92,
-        "f1": 0.6748,
-        "val_loss": 0.958,
-        "peak_vram_mb": 544.3,
-        "throughput_tok_s": 4676.86,
-        "latency_ms": 39240.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: EXTREME_EXPANSION"
-    },
-    {
-      "record_id": "82e904b84371509c",
-      "module_name": "eat",
-      "category": "attention",
-      "family": "gpt",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-24T18:15:03.575933",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/unified_runs/unified_eat/gpt2/checkpoints/eat/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models\\gpt2_sst2",
-        "dataset": "sst2"
-      },
-      "metrics": {
-        "accuracy": 49.08,
-        "f1": 0.0,
-        "val_loss": 0.7014,
-        "peak_vram_mb": 546.67,
-        "throughput_tok_s": 4180.22,
-        "latency_ms": 48150.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: EXTREME_EXPANSION"
-    },
-    {
-      "record_id": "58a78bf54593b8d7",
-      "module_name": "eat",
-      "category": "attention",
-      "family": "subquadratic-attention",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-16T09:02:16Z",
-      "git_commit_sha": "c5aaefc147",
-      "generation_method": {
-        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
-        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
-      },
-      "experimental_setup": {
-        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-        "dtype": "float16",
-        "batch_size": 2,
-        "seq_len": 2048
-      },
-      "metrics": {
-        "latency_triton_ms": 1.229
-      },
-      "notes": "131 Attention Comprehensive Latency Benchmark"
-    },
-    {
-      "record_id": "3ba292664d37b54a",
-      "module_name": "eat",
-      "category": "attention",
-      "family": "attention",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T04:02:13+03:30",
-      "git_commit_sha": "5d553a2079",
-      "generation_method": {
-        "algorithm": "End-to-End Evaluation & Perplexity Probe",
-        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
-      },
-      "experimental_setup": {
-        "dataset": "SST-2 / WikiText-2",
-        "backbone": "DistilBERT / GPT-2"
-      },
-      "metrics": {
-        "accuracy": 90.0,
-        "ppl": 31.19,
-        "latency_ms": 1750.0
-      },
-      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
-    },
-    {
-      "record_id": "3e11a935b1b358f8",
-      "module_name": "eat",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-16T04:12:24.984762",
-      "git_commit_sha": "9a4ff4e985",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_eat/distilbert/checkpoints/eat/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 63.5,
-        "f1": 0.631,
-        "val_loss": 0.9747,
-        "peak_vram_mb": 522.64,
-        "throughput_tok_s": 138060.62,
-        "latency_ms": 6100.0,
         "compression_ratio": 1.0,
         "param_reduction_pct": 0.0
       },
@@ -477,6 +122,356 @@
         "param_reduction_pct": 0.0
       },
       "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "3e11a935b1b358f8",
+      "module_name": "eat",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T04:12:24.984762",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_eat/distilbert/checkpoints/eat/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 63.5,
+        "f1": 0.631,
+        "val_loss": 0.9747,
+        "peak_vram_mb": 522.64,
+        "throughput_tok_s": 138060.62,
+        "latency_ms": 6100.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "c012603606d410c9",
+      "module_name": "eat",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T01:45:36.153507",
+      "git_commit_sha": "866fe45a1a",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/eat/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.9111,
+        "val_loss": 0.2715,
+        "peak_vram_mb": 344.45,
+        "throughput_tok_s": 53705.63,
+        "latency_ms": 8570.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "85accad605a6f8cf",
+      "module_name": "eat",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T06:00:28.287751",
+      "git_commit_sha": "866fe45a1a",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/eat/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 34.2,
+        "f1": 0.1736,
+        "val_loss": 1.1053,
+        "peak_vram_mb": 317.56,
+        "throughput_tok_s": 23318.43,
+        "latency_ms": 12770.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "91eaf9d1a6c295b5",
+      "module_name": "eat",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T19:49:01.321168",
+      "git_commit_sha": "866fe45a1a",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_agnews_full/checkpoints/eat/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_agnews_full",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 94.3,
+        "f1": 0.939,
+        "val_loss": 0.1883,
+        "peak_vram_mb": 347.2,
+        "throughput_tok_s": 51560.27,
+        "latency_ms": 15100.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: REJECTED_EXPANSION"
+    },
+    {
+      "record_id": "9ce9fd33cf700187",
+      "module_name": "eat",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T22:01:16.972846",
+      "git_commit_sha": "866fe45a1a",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full_lora2/checkpoints/eat/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 58.2,
+        "f1": 0.5788,
+        "val_loss": 0.9159,
+        "peak_vram_mb": 318.76,
+        "throughput_tok_s": 27161.25,
+        "latency_ms": 16470.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: REJECTED_EXPANSION"
+    },
+    {
+      "record_id": "e7a36a6db187eea4",
+      "module_name": "eat",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-22T00:14:18.160208",
+      "git_commit_sha": "866fe45a1a",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/eat/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 53.44,
+        "f1": 0.3886,
+        "val_loss": 0.6929,
+        "peak_vram_mb": 520.9,
+        "throughput_tok_s": 9429.65,
+        "latency_ms": 22580.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "ff0932b15c0546ab",
+      "module_name": "eat",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-22T05:10:44.559306",
+      "git_commit_sha": "866fe45a1a",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/distilbert_mnli_full_mnli_sweep/checkpoints/eat/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 38.2,
+        "f1": 0.358,
+        "val_loss": 1.0879,
+        "peak_vram_mb": 459.34,
+        "throughput_tok_s": 148939.42,
+        "latency_ms": 35210.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "ad57910778714d00",
+      "module_name": "eat",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-23T12:45:43.655546",
+      "git_commit_sha": "866fe45a1a",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/distilbert_sst2_sst2_sweep/checkpoints/eat/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 51.72,
+        "f1": 0.6744,
+        "val_loss": 0.6887,
+        "peak_vram_mb": 539.22,
+        "throughput_tok_s": 47801.5,
+        "latency_ms": 9100.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: EXTREME_EXPANSION"
+    },
+    {
+      "record_id": "10d3150d227307cf",
+      "module_name": "eat",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-24T18:12:30.861146",
+      "git_commit_sha": "81683bdbf8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/unified_runs/unified_eat/roberta/checkpoints/eat/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 50.92,
+        "f1": 0.6748,
+        "val_loss": 0.958,
+        "peak_vram_mb": 544.3,
+        "throughput_tok_s": 4676.86,
+        "latency_ms": 39240.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: EXTREME_EXPANSION"
+    },
+    {
+      "record_id": "82e904b84371509c",
+      "module_name": "eat",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-24T18:15:03.575933",
+      "git_commit_sha": "81683bdbf8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/unified_runs/unified_eat/gpt2/checkpoints/eat/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\gpt2_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 49.08,
+        "f1": 0.0,
+        "val_loss": 0.7014,
+        "peak_vram_mb": 546.67,
+        "throughput_tok_s": 4180.22,
+        "latency_ms": 48150.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: EXTREME_EXPANSION"
+    },
+    {
+      "record_id": "3ba292664d37b54a",
+      "module_name": "eat",
+      "category": "attention",
+      "family": "attention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T04:02:13+03:30",
+      "git_commit_sha": "5d553a2079",
+      "generation_method": {
+        "algorithm": "End-to-End Evaluation & Perplexity Probe",
+        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2 / WikiText-2",
+        "backbone": "DistilBERT / GPT-2"
+      },
+      "metrics": {
+        "accuracy": 90.0,
+        "ppl": 31.19,
+        "latency_ms": 1750.0
+      },
+      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
+    },
+    {
+      "record_id": "58a78bf54593b8d7",
+      "module_name": "eat",
+      "category": "attention",
+      "family": "subquadratic-attention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T09:02:16Z",
+      "git_commit_sha": "c5aaefc147",
+      "generation_method": {
+        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
+        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "dtype": "float16",
+        "batch_size": 2,
+        "seq_len": 2048
+      },
+      "metrics": {
+        "latency_triton_ms": 1.229
+      },
+      "notes": "131 Attention Comprehensive Latency Benchmark"
     }
   ],
   "history": [
@@ -489,7 +484,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-15T14:50:08.744873",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_eat/roberta/checkpoints/eat/summary_record.json"
@@ -519,7 +514,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-15T14:51:00.981477",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_eat/gpt2/checkpoints/eat/summary_record.json"
@@ -535,356 +530,6 @@
         "peak_vram_mb": 567.91,
         "throughput_tok_s": 12889.99,
         "latency_ms": 22430.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
-      "record_id": "c012603606d410c9",
-      "module_name": "eat",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-19T01:45:36.153507",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/eat/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models\\distilbert_sst2",
-        "dataset": "sst2"
-      },
-      "metrics": {
-        "accuracy": 0.0,
-        "f1": 0.9111,
-        "val_loss": 0.2715,
-        "peak_vram_mb": 344.45,
-        "throughput_tok_s": 53705.63,
-        "latency_ms": 8570.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_LOW"
-    },
-    {
-      "record_id": "85accad605a6f8cf",
-      "module_name": "eat",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-19T06:00:28.287751",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/eat/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "distilbert-base-uncased",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 34.2,
-        "f1": 0.1736,
-        "val_loss": 1.1053,
-        "peak_vram_mb": 317.56,
-        "throughput_tok_s": 23318.43,
-        "latency_ms": 12770.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_LOW"
-    },
-    {
-      "record_id": "91eaf9d1a6c295b5",
-      "module_name": "eat",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-19T19:49:01.321168",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_agnews_full/checkpoints/eat/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models\\distilbert_agnews_full",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 94.3,
-        "f1": 0.939,
-        "val_loss": 0.1883,
-        "peak_vram_mb": 347.2,
-        "throughput_tok_s": 51560.27,
-        "latency_ms": 15100.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: REJECTED_EXPANSION"
-    },
-    {
-      "record_id": "9ce9fd33cf700187",
-      "module_name": "eat",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-19T22:01:16.972846",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full_lora2/checkpoints/eat/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models\\distilbert_mnli_full",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 58.2,
-        "f1": 0.5788,
-        "val_loss": 0.9159,
-        "peak_vram_mb": 318.76,
-        "throughput_tok_s": 27161.25,
-        "latency_ms": 16470.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: REJECTED_EXPANSION"
-    },
-    {
-      "record_id": "e7a36a6db187eea4",
-      "module_name": "eat",
-      "category": "attention",
-      "family": "roberta",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-22T00:14:18.160208",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/eat/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/roberta_sst2",
-        "dataset": "sst2"
-      },
-      "metrics": {
-        "accuracy": 53.44,
-        "f1": 0.3886,
-        "val_loss": 0.6929,
-        "peak_vram_mb": 520.9,
-        "throughput_tok_s": 9429.65,
-        "latency_ms": 22580.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_LOW"
-    },
-    {
-      "record_id": "ff0932b15c0546ab",
-      "module_name": "eat",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-22T05:10:44.559306",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/05_glue_finetuning/distilbert_mnli_full_mnli_sweep/checkpoints/eat/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_mnli_full",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 38.2,
-        "f1": 0.358,
-        "val_loss": 1.0879,
-        "peak_vram_mb": 459.34,
-        "throughput_tok_s": 148939.42,
-        "latency_ms": 35210.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_LOW"
-    },
-    {
-      "record_id": "ad57910778714d00",
-      "module_name": "eat",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-23T12:45:43.655546",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/05_glue_finetuning/distilbert_sst2_sst2_sweep/checkpoints/eat/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "sst2"
-      },
-      "metrics": {
-        "accuracy": 51.72,
-        "f1": 0.6744,
-        "val_loss": 0.6887,
-        "peak_vram_mb": 539.22,
-        "throughput_tok_s": 47801.5,
-        "latency_ms": 9100.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: EXTREME_EXPANSION"
-    },
-    {
-      "record_id": "10d3150d227307cf",
-      "module_name": "eat",
-      "category": "attention",
-      "family": "roberta",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-24T18:12:30.861146",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/unified_runs/unified_eat/roberta/checkpoints/eat/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models\\roberta_sst2",
-        "dataset": "sst2"
-      },
-      "metrics": {
-        "accuracy": 50.92,
-        "f1": 0.6748,
-        "val_loss": 0.958,
-        "peak_vram_mb": 544.3,
-        "throughput_tok_s": 4676.86,
-        "latency_ms": 39240.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: EXTREME_EXPANSION"
-    },
-    {
-      "record_id": "82e904b84371509c",
-      "module_name": "eat",
-      "category": "attention",
-      "family": "gpt",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-24T18:15:03.575933",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/unified_runs/unified_eat/gpt2/checkpoints/eat/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models\\gpt2_sst2",
-        "dataset": "sst2"
-      },
-      "metrics": {
-        "accuracy": 49.08,
-        "f1": 0.0,
-        "val_loss": 0.7014,
-        "peak_vram_mb": 546.67,
-        "throughput_tok_s": 4180.22,
-        "latency_ms": 48150.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: EXTREME_EXPANSION"
-    },
-    {
-      "record_id": "58a78bf54593b8d7",
-      "module_name": "eat",
-      "category": "attention",
-      "family": "subquadratic-attention",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-16T09:02:16Z",
-      "git_commit_sha": "c5aaefc147",
-      "generation_method": {
-        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
-        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
-      },
-      "experimental_setup": {
-        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-        "dtype": "float16",
-        "batch_size": 2,
-        "seq_len": 2048
-      },
-      "metrics": {
-        "latency_triton_ms": 1.229
-      },
-      "notes": "131 Attention Comprehensive Latency Benchmark"
-    },
-    {
-      "record_id": "3ba292664d37b54a",
-      "module_name": "eat",
-      "category": "attention",
-      "family": "attention",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T04:02:13+03:30",
-      "git_commit_sha": "5d553a2079",
-      "generation_method": {
-        "algorithm": "End-to-End Evaluation & Perplexity Probe",
-        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
-      },
-      "experimental_setup": {
-        "dataset": "SST-2 / WikiText-2",
-        "backbone": "DistilBERT / GPT-2"
-      },
-      "metrics": {
-        "accuracy": 90.0,
-        "ppl": 31.19,
-        "latency_ms": 1750.0
-      },
-      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
-    },
-    {
-      "record_id": "3e11a935b1b358f8",
-      "module_name": "eat",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-16T04:12:24.984762",
-      "git_commit_sha": "9a4ff4e985",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_eat/distilbert/checkpoints/eat/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 63.5,
-        "f1": 0.631,
-        "val_loss": 0.9747,
-        "peak_vram_mb": 522.64,
-        "throughput_tok_s": 138060.62,
-        "latency_ms": 6100.0,
         "compression_ratio": 1.0,
         "param_reduction_pct": 0.0
       },
@@ -919,6 +564,356 @@
         "param_reduction_pct": 0.0
       },
       "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "3e11a935b1b358f8",
+      "module_name": "eat",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T04:12:24.984762",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_eat/distilbert/checkpoints/eat/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 63.5,
+        "f1": 0.631,
+        "val_loss": 0.9747,
+        "peak_vram_mb": 522.64,
+        "throughput_tok_s": 138060.62,
+        "latency_ms": 6100.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "c012603606d410c9",
+      "module_name": "eat",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T01:45:36.153507",
+      "git_commit_sha": "866fe45a1a",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/eat/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.9111,
+        "val_loss": 0.2715,
+        "peak_vram_mb": 344.45,
+        "throughput_tok_s": 53705.63,
+        "latency_ms": 8570.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "85accad605a6f8cf",
+      "module_name": "eat",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T06:00:28.287751",
+      "git_commit_sha": "866fe45a1a",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/eat/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 34.2,
+        "f1": 0.1736,
+        "val_loss": 1.1053,
+        "peak_vram_mb": 317.56,
+        "throughput_tok_s": 23318.43,
+        "latency_ms": 12770.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "91eaf9d1a6c295b5",
+      "module_name": "eat",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T19:49:01.321168",
+      "git_commit_sha": "866fe45a1a",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_agnews_full/checkpoints/eat/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_agnews_full",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 94.3,
+        "f1": 0.939,
+        "val_loss": 0.1883,
+        "peak_vram_mb": 347.2,
+        "throughput_tok_s": 51560.27,
+        "latency_ms": 15100.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: REJECTED_EXPANSION"
+    },
+    {
+      "record_id": "9ce9fd33cf700187",
+      "module_name": "eat",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T22:01:16.972846",
+      "git_commit_sha": "866fe45a1a",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full_lora2/checkpoints/eat/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 58.2,
+        "f1": 0.5788,
+        "val_loss": 0.9159,
+        "peak_vram_mb": 318.76,
+        "throughput_tok_s": 27161.25,
+        "latency_ms": 16470.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: REJECTED_EXPANSION"
+    },
+    {
+      "record_id": "e7a36a6db187eea4",
+      "module_name": "eat",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-22T00:14:18.160208",
+      "git_commit_sha": "866fe45a1a",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/eat/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 53.44,
+        "f1": 0.3886,
+        "val_loss": 0.6929,
+        "peak_vram_mb": 520.9,
+        "throughput_tok_s": 9429.65,
+        "latency_ms": 22580.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "ff0932b15c0546ab",
+      "module_name": "eat",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-22T05:10:44.559306",
+      "git_commit_sha": "866fe45a1a",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/distilbert_mnli_full_mnli_sweep/checkpoints/eat/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 38.2,
+        "f1": 0.358,
+        "val_loss": 1.0879,
+        "peak_vram_mb": 459.34,
+        "throughput_tok_s": 148939.42,
+        "latency_ms": 35210.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "ad57910778714d00",
+      "module_name": "eat",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-23T12:45:43.655546",
+      "git_commit_sha": "866fe45a1a",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/distilbert_sst2_sst2_sweep/checkpoints/eat/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 51.72,
+        "f1": 0.6744,
+        "val_loss": 0.6887,
+        "peak_vram_mb": 539.22,
+        "throughput_tok_s": 47801.5,
+        "latency_ms": 9100.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: EXTREME_EXPANSION"
+    },
+    {
+      "record_id": "10d3150d227307cf",
+      "module_name": "eat",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-24T18:12:30.861146",
+      "git_commit_sha": "81683bdbf8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/unified_runs/unified_eat/roberta/checkpoints/eat/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 50.92,
+        "f1": 0.6748,
+        "val_loss": 0.958,
+        "peak_vram_mb": 544.3,
+        "throughput_tok_s": 4676.86,
+        "latency_ms": 39240.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: EXTREME_EXPANSION"
+    },
+    {
+      "record_id": "82e904b84371509c",
+      "module_name": "eat",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-24T18:15:03.575933",
+      "git_commit_sha": "81683bdbf8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/unified_runs/unified_eat/gpt2/checkpoints/eat/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\gpt2_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 49.08,
+        "f1": 0.0,
+        "val_loss": 0.7014,
+        "peak_vram_mb": 546.67,
+        "throughput_tok_s": 4180.22,
+        "latency_ms": 48150.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: EXTREME_EXPANSION"
+    },
+    {
+      "record_id": "3ba292664d37b54a",
+      "module_name": "eat",
+      "category": "attention",
+      "family": "attention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T04:02:13+03:30",
+      "git_commit_sha": "5d553a2079",
+      "generation_method": {
+        "algorithm": "End-to-End Evaluation & Perplexity Probe",
+        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2 / WikiText-2",
+        "backbone": "DistilBERT / GPT-2"
+      },
+      "metrics": {
+        "accuracy": 90.0,
+        "ppl": 31.19,
+        "latency_ms": 1750.0
+      },
+      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
+    },
+    {
+      "record_id": "58a78bf54593b8d7",
+      "module_name": "eat",
+      "category": "attention",
+      "family": "subquadratic-attention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T09:02:16Z",
+      "git_commit_sha": "c5aaefc147",
+      "generation_method": {
+        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
+        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "dtype": "float16",
+        "batch_size": 2,
+        "seq_len": 2048
+      },
+      "metrics": {
+        "latency_triton_ms": 1.229
+      },
+      "notes": "131 Attention Comprehensive Latency Benchmark"
     }
   ]
 }

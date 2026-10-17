@@ -1,97 +1,37 @@
 {
   "module_name": "adaptive_ranks",
-  "category": "attention",
-  "family": "roberta",
-  "total_runs": 4,
+  "category": "compressor",
+  "family": "matrix-compression",
+  "total_runs": 5,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "9a4ff4e985",
-  "latest_timestamp": "2026-09-18T08:55:54.329078",
+  "latest_git_sha": "25d9fe36fa",
+  "latest_timestamp": "2026-10-16T09:08:37Z",
   "latest_record": {
-    "record_id": "d6e813896136fc7e",
+    "record_id": "8f0f88d91c1323c8",
     "module_name": "adaptive_ranks",
-    "category": "attention",
-    "family": "roberta",
+    "category": "compressor",
+    "family": "matrix-compression",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-09-18T08:55:54.329078",
-    "git_commit_sha": "9a4ff4e985",
+    "timestamp_utc": "2026-10-16T09:08:37Z",
+    "git_commit_sha": "25d9fe36fa",
     "generation_method": {
-      "algorithm": "Calibration Sweep Record",
-      "source_artifact": "results/01_unified_runs/agnews_unified_adaptive_ranks/roberta/checkpoints/adaptive_ranks/summary_record.json"
+      "algorithm": "Low-Rank SVD / Structured Quantization Factorizer",
+      "source_artifact": "results/triton_all_72_compressors_benchmark.json"
     },
     "experimental_setup": {
-      "backbone": "models/roberta-base",
-      "dataset": "ag_news"
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+      "dtype": "float16"
     },
     "metrics": {
-      "accuracy": 83.6,
-      "f1": 0.8253,
-      "val_loss": 0.5365,
-      "peak_vram_mb": 371.82,
-      "throughput_tok_s": 62360.89,
-      "latency_ms": 26980.0,
-      "compression_ratio": 1.0,
-      "param_reduction_pct": 0.0
+      "compress_ms": 81.18,
+      "relative_error": 0.1255
     },
-    "notes": "Status: PASS_NO_COMPRESSION"
+    "notes": "72 Compressor Matrix Compression Benchmark"
   },
   "active_records": [
-    {
-      "record_id": "444a1b55c99e6ed7",
-      "module_name": "adaptive_ranks",
-      "category": "attention",
-      "family": "gpt2",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-26T01:43:33.944717",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/04_baselines/c4_baselines/adaptive_ranks/checkpoints/adaptive_ranks/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/gpt2",
-        "dataset": "c4"
-      },
-      "metrics": {
-        "accuracy": 0.0,
-        "f1": 0.0,
-        "val_loss": 4.7857821003461956,
-        "peak_vram_mb": 2173.4365234375,
-        "throughput_tok_s": 7813.001318170266,
-        "latency_ms": 136420.0,
-        "compression_ratio": 1.0765,
-        "param_reduction_pct": 7.11
-      },
-      "notes": "Status: FAIL_PPL_DIVERGED"
-    },
-    {
-      "record_id": "8f0f88d91c1323c8",
-      "module_name": "adaptive_ranks",
-      "category": "compressor",
-      "family": "matrix-compression",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-16T09:08:37Z",
-      "git_commit_sha": "25d9fe36fa",
-      "generation_method": {
-        "algorithm": "Low-Rank SVD / Structured Quantization Factorizer",
-        "source_artifact": "results/triton_all_72_compressors_benchmark.json"
-      },
-      "experimental_setup": {
-        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-        "dtype": "float16"
-      },
-      "metrics": {
-        "compress_ms": 81.18,
-        "relative_error": 0.1255
-      },
-      "notes": "72 Compressor Matrix Compression Benchmark"
-    },
     {
       "record_id": "e0a916a652fdeb96",
       "module_name": "adaptive_ranks",
@@ -151,64 +91,94 @@
         "param_reduction_pct": 0.0
       },
       "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "444a1b55c99e6ed7",
+      "module_name": "adaptive_ranks",
+      "category": "attention",
+      "family": "gpt2",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-26T01:43:33.944717",
+      "git_commit_sha": "866fe45a1a",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/04_baselines/c4_baselines/adaptive_ranks/checkpoints/adaptive_ranks/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/gpt2",
+        "dataset": "c4"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 4.7857821003461956,
+        "peak_vram_mb": 2173.4365234375,
+        "throughput_tok_s": 7813.001318170266,
+        "latency_ms": 136420.0,
+        "compression_ratio": 1.0765,
+        "param_reduction_pct": 7.11
+      },
+      "notes": "Status: FAIL_PPL_DIVERGED"
+    },
+    {
+      "record_id": "56ba98de58d67704",
+      "module_name": "adaptive_ranks",
+      "category": "compressor",
+      "family": "compression-sweep-roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-14T17:22:33+03:30",
+      "git_commit_sha": "885276e92e",
+      "generation_method": {
+        "algorithm": "RoBERTa-base 72-Compressor Empirical Benchmark",
+        "source_artifact": "results/v13_deep_empirical_suite/roberta_72_compressors/results.json"
+      },
+      "experimental_setup": {
+        "backbone": "RoBERTa-base",
+        "dataset": "SST-2",
+        "batch_size": 16
+      },
+      "metrics": {
+        "accuracy": 45.0,
+        "f1": 0.5802,
+        "val_loss": 0.6978,
+        "param_reduction_pct": 17.09,
+        "compression_ratio": 1.2062,
+        "peak_vram_mb": 1927.0,
+        "latency_ms": 13550.0
+      },
+      "notes": "RoBERTa 72 Compressors Benchmark. Status: success"
+    },
+    {
+      "record_id": "8f0f88d91c1323c8",
+      "module_name": "adaptive_ranks",
+      "category": "compressor",
+      "family": "matrix-compression",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T09:08:37Z",
+      "git_commit_sha": "25d9fe36fa",
+      "generation_method": {
+        "algorithm": "Low-Rank SVD / Structured Quantization Factorizer",
+        "source_artifact": "results/triton_all_72_compressors_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "dtype": "float16"
+      },
+      "metrics": {
+        "compress_ms": 81.18,
+        "relative_error": 0.1255
+      },
+      "notes": "72 Compressor Matrix Compression Benchmark"
     }
   ],
   "history": [
     {
-      "record_id": "444a1b55c99e6ed7",
-      "module_name": "adaptive_ranks",
-      "category": "attention",
-      "family": "gpt2",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-26T01:43:33.944717",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/04_baselines/c4_baselines/adaptive_ranks/checkpoints/adaptive_ranks/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/gpt2",
-        "dataset": "c4"
-      },
-      "metrics": {
-        "accuracy": 0.0,
-        "f1": 0.0,
-        "val_loss": 4.7857821003461956,
-        "peak_vram_mb": 2173.4365234375,
-        "throughput_tok_s": 7813.001318170266,
-        "latency_ms": 136420.0,
-        "compression_ratio": 1.0765,
-        "param_reduction_pct": 7.11
-      },
-      "notes": "Status: FAIL_PPL_DIVERGED"
-    },
-    {
-      "record_id": "8f0f88d91c1323c8",
-      "module_name": "adaptive_ranks",
-      "category": "compressor",
-      "family": "matrix-compression",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-16T09:08:37Z",
-      "git_commit_sha": "25d9fe36fa",
-      "generation_method": {
-        "algorithm": "Low-Rank SVD / Structured Quantization Factorizer",
-        "source_artifact": "results/triton_all_72_compressors_benchmark.json"
-      },
-      "experimental_setup": {
-        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-        "dtype": "float16"
-      },
-      "metrics": {
-        "compress_ms": 81.18,
-        "relative_error": 0.1255
-      },
-      "notes": "72 Compressor Matrix Compression Benchmark"
-    },
-    {
       "record_id": "e0a916a652fdeb96",
       "module_name": "adaptive_ranks",
       "category": "attention",
@@ -267,6 +237,90 @@
         "param_reduction_pct": 0.0
       },
       "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "444a1b55c99e6ed7",
+      "module_name": "adaptive_ranks",
+      "category": "attention",
+      "family": "gpt2",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-26T01:43:33.944717",
+      "git_commit_sha": "866fe45a1a",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/04_baselines/c4_baselines/adaptive_ranks/checkpoints/adaptive_ranks/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/gpt2",
+        "dataset": "c4"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 4.7857821003461956,
+        "peak_vram_mb": 2173.4365234375,
+        "throughput_tok_s": 7813.001318170266,
+        "latency_ms": 136420.0,
+        "compression_ratio": 1.0765,
+        "param_reduction_pct": 7.11
+      },
+      "notes": "Status: FAIL_PPL_DIVERGED"
+    },
+    {
+      "record_id": "56ba98de58d67704",
+      "module_name": "adaptive_ranks",
+      "category": "compressor",
+      "family": "compression-sweep-roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-14T17:22:33+03:30",
+      "git_commit_sha": "885276e92e",
+      "generation_method": {
+        "algorithm": "RoBERTa-base 72-Compressor Empirical Benchmark",
+        "source_artifact": "results/v13_deep_empirical_suite/roberta_72_compressors/results.json"
+      },
+      "experimental_setup": {
+        "backbone": "RoBERTa-base",
+        "dataset": "SST-2",
+        "batch_size": 16
+      },
+      "metrics": {
+        "accuracy": 45.0,
+        "f1": 0.5802,
+        "val_loss": 0.6978,
+        "param_reduction_pct": 17.09,
+        "compression_ratio": 1.2062,
+        "peak_vram_mb": 1927.0,
+        "latency_ms": 13550.0
+      },
+      "notes": "RoBERTa 72 Compressors Benchmark. Status: success"
+    },
+    {
+      "record_id": "8f0f88d91c1323c8",
+      "module_name": "adaptive_ranks",
+      "category": "compressor",
+      "family": "matrix-compression",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T09:08:37Z",
+      "git_commit_sha": "25d9fe36fa",
+      "generation_method": {
+        "algorithm": "Low-Rank SVD / Structured Quantization Factorizer",
+        "source_artifact": "results/triton_all_72_compressors_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "dtype": "float16"
+      },
+      "metrics": {
+        "compress_ms": 81.18,
+        "relative_error": 0.1255
+      },
+      "notes": "72 Compressor Matrix Compression Benchmark"
     }
   ]
 }

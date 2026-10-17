@@ -1,178 +1,38 @@
 {
   "module_name": "cluster_attention",
   "category": "attention",
-  "family": "bert",
+  "family": "subquadratic-attention",
   "total_runs": 6,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "9a4ff4e985",
-  "latest_timestamp": "2026-09-18T21:29:23.285662",
+  "latest_git_sha": "c5aaefc147",
+  "latest_timestamp": "2026-10-16T09:02:16Z",
   "latest_record": {
-    "record_id": "2b390fa86f3adae1",
+    "record_id": "3b1b3e54c19a0d24",
     "module_name": "cluster_attention",
     "category": "attention",
-    "family": "bert",
+    "family": "subquadratic-attention",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-09-18T21:29:23.285662",
-    "git_commit_sha": "9a4ff4e985",
+    "timestamp_utc": "2026-10-16T09:02:16Z",
+    "git_commit_sha": "c5aaefc147",
     "generation_method": {
-      "algorithm": "Calibration Sweep Record",
-      "source_artifact": "results/01_unified_runs/agnews_unified_cluster_attention/distilbert/checkpoints/cluster_attention/summary_record.json"
+      "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
+      "source_artifact": "results/triton_all_131_attentions_benchmark.json"
     },
     "experimental_setup": {
-      "backbone": "models/distilbert_sst2",
-      "dataset": "ag_news"
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+      "dtype": "float16",
+      "batch_size": 2,
+      "seq_len": 2048
     },
     "metrics": {
-      "accuracy": 56.0,
-      "f1": 0.4895,
-      "val_loss": 1.1197,
-      "peak_vram_mb": 342.23,
-      "throughput_tok_s": 22824.56,
-      "latency_ms": 27420.0,
-      "compression_ratio": 1.0,
-      "param_reduction_pct": 0.0
+      "latency_triton_ms": 3.104
     },
-    "notes": "Status: PASS_NO_COMPRESSION"
+    "notes": "131 Attention Comprehensive Latency Benchmark"
   },
   "active_records": [
-    {
-      "record_id": "0cb5a36ac2e833cf",
-      "module_name": "cluster_attention",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-21T14:17:26.787310",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/05_glue_finetuning/distilbert_sst2_sst2_sweep/checkpoints/cluster_attention/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "sst2"
-      },
-      "metrics": {
-        "accuracy": 90.25,
-        "f1": 0.9067,
-        "val_loss": 0.337,
-        "peak_vram_mb": 433.08,
-        "throughput_tok_s": 32145.6,
-        "latency_ms": 51340.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: MODERATE_EXPANSION"
-    },
-    {
-      "record_id": "2c6b4cc0b6da3537",
-      "module_name": "cluster_attention",
-      "category": "attention",
-      "family": "roberta",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-21T23:54:15.613589",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/cluster_attention/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/roberta_sst2",
-        "dataset": "sst2"
-      },
-      "metrics": {
-        "accuracy": 93.35,
-        "f1": 0.9357,
-        "val_loss": 0.2932,
-        "peak_vram_mb": 634.55,
-        "throughput_tok_s": 2516.65,
-        "latency_ms": 70570.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: MODERATE_EXPANSION"
-    },
-    {
-      "record_id": "3b1b3e54c19a0d24",
-      "module_name": "cluster_attention",
-      "category": "attention",
-      "family": "subquadratic-attention",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-16T09:02:16Z",
-      "git_commit_sha": "c5aaefc147",
-      "generation_method": {
-        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
-        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
-      },
-      "experimental_setup": {
-        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-        "dtype": "float16",
-        "batch_size": 2,
-        "seq_len": 2048
-      },
-      "metrics": {
-        "latency_triton_ms": 3.104
-      },
-      "notes": "131 Attention Comprehensive Latency Benchmark"
-    },
-    {
-      "record_id": "64d17e349f3b1d15",
-      "module_name": "cluster_attention",
-      "category": "attention",
-      "family": "attention",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T04:02:13+03:30",
-      "git_commit_sha": "5d553a2079",
-      "generation_method": {
-        "algorithm": "End-to-End Evaluation & Perplexity Probe",
-        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
-      },
-      "experimental_setup": {
-        "dataset": "SST-2 / WikiText-2",
-        "backbone": "DistilBERT / GPT-2"
-      },
-      "metrics": {
-        "accuracy": 94.0,
-        "ppl": 30.89,
-        "latency_ms": 1610.0
-      },
-      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
-    },
-    {
-      "record_id": "beafcb0b389c1bf7",
-      "module_name": "cluster_attention",
-      "category": "attention",
-      "family": "kd-finetune",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-13T21:36:28Z",
-      "git_commit_sha": "dde5933e0c",
-      "generation_method": {
-        "algorithm": "Knowledge Distillation Recovery (finetune)",
-        "source_artifact": "results/results.jsonl"
-      },
-      "experimental_setup": {
-        "backbone": "roberta-base",
-        "dataset": "sst2",
-        "rank": 64
-      },
-      "metrics": {
-        "accuracy": 0.87,
-        "peak_vram_mb": 1027.666015625
-      },
-      "notes": "Run: 1701a82a-34c3-42fc-b1b4-dc290f12d988"
-    },
     {
       "record_id": "2b390fa86f3adae1",
       "module_name": "cluster_attention",
@@ -202,10 +62,175 @@
         "param_reduction_pct": 0.0
       },
       "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "0cb5a36ac2e833cf",
+      "module_name": "cluster_attention",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-21T14:17:26.787310",
+      "git_commit_sha": "866fe45a1a",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/distilbert_sst2_sst2_sweep/checkpoints/cluster_attention/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.25,
+        "f1": 0.9067,
+        "val_loss": 0.337,
+        "peak_vram_mb": 433.08,
+        "throughput_tok_s": 32145.6,
+        "latency_ms": 51340.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    },
+    {
+      "record_id": "2c6b4cc0b6da3537",
+      "module_name": "cluster_attention",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-21T23:54:15.613589",
+      "git_commit_sha": "866fe45a1a",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/cluster_attention/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 93.35,
+        "f1": 0.9357,
+        "val_loss": 0.2932,
+        "peak_vram_mb": 634.55,
+        "throughput_tok_s": 2516.65,
+        "latency_ms": 70570.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    },
+    {
+      "record_id": "beafcb0b389c1bf7",
+      "module_name": "cluster_attention",
+      "category": "attention",
+      "family": "kd-finetune",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-13T21:36:28Z",
+      "git_commit_sha": "dde5933e0c",
+      "generation_method": {
+        "algorithm": "Knowledge Distillation Recovery (finetune)",
+        "source_artifact": "results/results.jsonl"
+      },
+      "experimental_setup": {
+        "backbone": "roberta-base",
+        "dataset": "sst2",
+        "rank": 64
+      },
+      "metrics": {
+        "accuracy": 0.87,
+        "peak_vram_mb": 1027.666015625
+      },
+      "notes": "Run: 1701a82a-34c3-42fc-b1b4-dc290f12d988"
+    },
+    {
+      "record_id": "64d17e349f3b1d15",
+      "module_name": "cluster_attention",
+      "category": "attention",
+      "family": "attention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T04:02:13+03:30",
+      "git_commit_sha": "5d553a2079",
+      "generation_method": {
+        "algorithm": "End-to-End Evaluation & Perplexity Probe",
+        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2 / WikiText-2",
+        "backbone": "DistilBERT / GPT-2"
+      },
+      "metrics": {
+        "accuracy": 94.0,
+        "ppl": 30.89,
+        "latency_ms": 1610.0
+      },
+      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
+    },
+    {
+      "record_id": "3b1b3e54c19a0d24",
+      "module_name": "cluster_attention",
+      "category": "attention",
+      "family": "subquadratic-attention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T09:02:16Z",
+      "git_commit_sha": "c5aaefc147",
+      "generation_method": {
+        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
+        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "dtype": "float16",
+        "batch_size": 2,
+        "seq_len": 2048
+      },
+      "metrics": {
+        "latency_triton_ms": 3.104
+      },
+      "notes": "131 Attention Comprehensive Latency Benchmark"
     }
   ],
   "history": [
     {
+      "record_id": "2b390fa86f3adae1",
+      "module_name": "cluster_attention",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T21:29:23.285662",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_cluster_attention/distilbert/checkpoints/cluster_attention/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 56.0,
+        "f1": 0.4895,
+        "val_loss": 1.1197,
+        "peak_vram_mb": 342.23,
+        "throughput_tok_s": 22824.56,
+        "latency_ms": 27420.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
       "record_id": "0cb5a36ac2e833cf",
       "module_name": "cluster_attention",
       "category": "attention",
@@ -214,7 +239,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-21T14:17:26.787310",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/distilbert_sst2_sst2_sweep/checkpoints/cluster_attention/summary_record.json"
@@ -244,7 +269,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-21T23:54:15.613589",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/cluster_attention/summary_record.json"
@@ -264,56 +289,6 @@
         "param_reduction_pct": 0.0
       },
       "notes": "Status: MODERATE_EXPANSION"
-    },
-    {
-      "record_id": "3b1b3e54c19a0d24",
-      "module_name": "cluster_attention",
-      "category": "attention",
-      "family": "subquadratic-attention",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-16T09:02:16Z",
-      "git_commit_sha": "c5aaefc147",
-      "generation_method": {
-        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
-        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
-      },
-      "experimental_setup": {
-        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-        "dtype": "float16",
-        "batch_size": 2,
-        "seq_len": 2048
-      },
-      "metrics": {
-        "latency_triton_ms": 3.104
-      },
-      "notes": "131 Attention Comprehensive Latency Benchmark"
-    },
-    {
-      "record_id": "64d17e349f3b1d15",
-      "module_name": "cluster_attention",
-      "category": "attention",
-      "family": "attention",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T04:02:13+03:30",
-      "git_commit_sha": "5d553a2079",
-      "generation_method": {
-        "algorithm": "End-to-End Evaluation & Perplexity Probe",
-        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
-      },
-      "experimental_setup": {
-        "dataset": "SST-2 / WikiText-2",
-        "backbone": "DistilBERT / GPT-2"
-      },
-      "metrics": {
-        "accuracy": 94.0,
-        "ppl": 30.89,
-        "latency_ms": 1610.0
-      },
-      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
     },
     {
       "record_id": "beafcb0b389c1bf7",
@@ -341,34 +316,54 @@
       "notes": "Run: 1701a82a-34c3-42fc-b1b4-dc290f12d988"
     },
     {
-      "record_id": "2b390fa86f3adae1",
+      "record_id": "64d17e349f3b1d15",
       "module_name": "cluster_attention",
       "category": "attention",
-      "family": "bert",
+      "family": "attention",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-09-18T21:29:23.285662",
-      "git_commit_sha": "9a4ff4e985",
+      "timestamp_utc": "2026-10-15T04:02:13+03:30",
+      "git_commit_sha": "5d553a2079",
       "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_cluster_attention/distilbert/checkpoints/cluster_attention/summary_record.json"
+        "algorithm": "End-to-End Evaluation & Perplexity Probe",
+        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
       },
       "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "ag_news"
+        "dataset": "SST-2 / WikiText-2",
+        "backbone": "DistilBERT / GPT-2"
       },
       "metrics": {
-        "accuracy": 56.0,
-        "f1": 0.4895,
-        "val_loss": 1.1197,
-        "peak_vram_mb": 342.23,
-        "throughput_tok_s": 22824.56,
-        "latency_ms": 27420.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
+        "accuracy": 94.0,
+        "ppl": 30.89,
+        "latency_ms": 1610.0
       },
-      "notes": "Status: PASS_NO_COMPRESSION"
+      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
+    },
+    {
+      "record_id": "3b1b3e54c19a0d24",
+      "module_name": "cluster_attention",
+      "category": "attention",
+      "family": "subquadratic-attention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T09:02:16Z",
+      "git_commit_sha": "c5aaefc147",
+      "generation_method": {
+        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
+        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "dtype": "float16",
+        "batch_size": 2,
+        "seq_len": 2048
+      },
+      "metrics": {
+        "latency_triton_ms": 3.104
+      },
+      "notes": "131 Attention Comprehensive Latency Benchmark"
     }
   ]
 }

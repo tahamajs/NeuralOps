@@ -5,7 +5,7 @@
   "total_runs": 4,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "2f366e4546",
+  "latest_git_sha": "866fe45a1a",
   "latest_timestamp": "2026-09-23T14:18:41.283790",
   "latest_record": {
     "record_id": "0b4a80ab3d90531d",
@@ -16,7 +16,7 @@
     "revision": 1,
     "status": "active",
     "timestamp_utc": "2026-09-23T14:18:41.283790",
-    "git_commit_sha": "2f366e4546",
+    "git_commit_sha": "866fe45a1a",
     "generation_method": {
       "algorithm": "Calibration Sweep Record",
       "source_artifact": "results/05_glue_finetuning/distilbert_sst2_sst2_sweep/checkpoints/goldfinch/summary_record.json"
@@ -47,7 +47,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T06:04:59.092312",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/goldfinch/summary_record.json"
@@ -77,7 +77,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T22:04:04.412519",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full_lora2/checkpoints/goldfinch/summary_record.json"
@@ -107,7 +107,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-20T08:20:36.140051",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_agnews_full/checkpoints/goldfinch/summary_record.json"
@@ -137,7 +137,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-23T14:18:41.283790",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/distilbert_sst2_sst2_sweep/checkpoints/goldfinch/summary_record.json"
@@ -169,7 +169,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T06:04:59.092312",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/goldfinch/summary_record.json"
@@ -199,7 +199,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T22:04:04.412519",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full_lora2/checkpoints/goldfinch/summary_record.json"
@@ -229,7 +229,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-20T08:20:36.140051",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_agnews_full/checkpoints/goldfinch/summary_record.json"
@@ -259,7 +259,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-23T14:18:41.283790",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/distilbert_sst2_sst2_sweep/checkpoints/goldfinch/summary_record.json"

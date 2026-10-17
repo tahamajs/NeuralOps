@@ -7,15 +7,43 @@
 namespace neuralops {
 namespace cuda {
 
-// Fused RPCA Low-Rank + Sparse GEMM Forward: Y = (X @ V.T) @ U.T + (X @ S.T) + bias
-// X: [M, K], V: [R, K], U: [N, R], S: [N, K] (optional), bias: [N] (optional)
-template <typename scalar_t, int MAX_R>
-__launch_bounds__(128)
-__global__ void rpca_sparse_svd_fwd_kernel(
-    scalar_t* __restrict__ out,
+// Production 2D Block-Tiled RPCA Low-Rank + Sparse GEMM Forward:
+// Y = (X @ V.T) @ U.T + (X @ S.T) + bias
+// Stage 1: Z[m, r] = X[m, :] @ V[r, :].T              [M, K] x [R, K]^T -> [M, R]
+// Stage 2: Out[m, n] = Z[m, :] @ U[n, :].T + (X @ S.T) + bias [M, R] x [N, R]^T -> [M, N]
+
+template <typename scalar_t>
+__launch_bounds__(256)
+__global__ void rpca_stage1_2d_kernel(
+    scalar_t* __restrict__ Z,
     const scalar_t* __restrict__ X,
     const scalar_t* __restrict__ V,
+    const int M,
+    const int K,
+    const int R
+) {
+    const int r = blockIdx.x * blockDim.x + threadIdx.x;
+    const int m = blockIdx.y * blockDim.y + threadIdx.y;
+    if (m >= M || r >= R) return;
+
+    float acc = 0.0f;
+    const int x_base = m * K;
+    const int v_base = r * K;
+
+    #pragma unroll 4
+    for (int k = 0; k < K; ++k) {
+        acc += to_float(X[x_base + k]) * to_float(V[v_base + k]);
+    }
+    Z[m * R + r] = from_float<scalar_t>(acc);
+}
+
+template <typename scalar_t>
+__launch_bounds__(256)
+__global__ void rpca_stage2_2d_kernel(
+    scalar_t* __restrict__ out,
+    const scalar_t* __restrict__ Z,
     const scalar_t* __restrict__ U,
+    const scalar_t* __restrict__ X,
     const scalar_t* __restrict__ S,
     const scalar_t* __restrict__ bias,
     const int M,
@@ -25,48 +53,34 @@ __global__ void rpca_sparse_svd_fwd_kernel(
     const bool has_sparse,
     const bool has_bias
 ) {
-    const int m = blockIdx.x * blockDim.x + threadIdx.x;
-    if (m >= M) return;
+    const int n = blockIdx.x * blockDim.x + threadIdx.x;
+    const int m = blockIdx.y * blockDim.y + threadIdx.y;
+    if (m >= M || n >= N) return;
 
-    // Register-resident low-rank latent accumulator
-    float z[MAX_R];
-    #pragma unroll
-    for (int r = 0; r < MAX_R; ++r) {
-        z[r] = 0.0f;
+    float acc = (has_bias && bias != nullptr) ? to_float(bias[n]) : 0.0f;
+    const int z_base = m * R;
+    const int u_base = n * R;
+
+    #pragma unroll 4
+    for (int r = 0; r < R; ++r) {
+        acc += to_float(Z[z_base + r]) * to_float(U[u_base + r]);
     }
 
-    // Stage 1: z = X[m, :] @ V.T
-    for (int k = 0; k < K; ++k) {
-        const float x_val = to_float(X[m * K + k]);
-        for (int r = 0; r < R && r < MAX_R; ++r) {
-            z[r] += x_val * to_float(V[r * K + k]);
-        }
-    }
-
-    // Stage 2: out[m, n] = z @ U[n, :] + (X[m, :] @ S[n, :].T) + bias[n]
-    for (int n = 0; n < N; ++n) {
-        float y = 0.0f;
-        for (int r = 0; r < R && r < MAX_R; ++r) {
-            y += z[r] * to_float(U[n * R + r]);
-        }
-
-        if (has_sparse && S != nullptr) {
-            float sp_acc = 0.0f;
-            for (int k = 0; k < K; ++k) {
-                const float s_val = to_float(S[n * K + k]);
-                if (s_val != 0.0f) {
-                    sp_acc += to_float(X[m * K + k]) * s_val;
-                }
+    if (has_sparse && S != nullptr) {
+        const int x_base = m * K;
+        const int s_base = n * K;
+        float sp_acc = 0.0f;
+        #pragma unroll 4
+        for (int k = 0; k < K; ++k) {
+            const float s_val = to_float(S[s_base + k]);
+            if (s_val != 0.0f) {
+                sp_acc += to_float(X[x_base + k]) * s_val;
             }
-            y += sp_acc;
         }
-
-        if (has_bias && bias != nullptr) {
-            y += to_float(bias[n]);
-        }
-
-        out[m * N + n] = from_float<scalar_t>(y);
+        acc += sp_acc;
     }
+
+    out[m * N + n] = from_float<scalar_t>(acc);
 }
 
 } // namespace cuda
@@ -96,7 +110,6 @@ torch::Tensor rpca_sparse_svd_fwd(
         V = V.t().contiguous();
     }
     const int R = V.size(0);
-    TORCH_CHECK(R <= 128, "rpca_sparse_svd_fwd: R=", R, " > 128 not supported");
 
     if (U.size(1) != R && U.size(0) == R) {
         U = U.t().contiguous();
@@ -104,6 +117,7 @@ torch::Tensor rpca_sparse_svd_fwd(
     const int N = U.size(0);
 
     auto out = torch::empty({M, N}, x.options());
+    if (M == 0 || N == 0) return out;
 
     const bool has_sparse = s.has_value() && s.value().defined();
     const bool has_bias = bias.has_value() && bias.value().defined();
@@ -120,54 +134,34 @@ torch::Tensor rpca_sparse_svd_fwd(
     torch::Tensor bias_c;
     if (has_bias) bias_c = bias.value().contiguous();
 
-    const int threads = 128;
-    const int blocks = (M + threads - 1) / threads;
+    auto Z = torch::empty({M, R}, x.options());
+
+    dim3 block(16, 16);
+    dim3 grid_z((R + 15) / 16, (M + 15) / 16);
+    dim3 grid_y((N + 15) / 16, (M + 15) / 16);
     auto stream = c10::cuda::getCurrentCUDAStream();
 
     AT_DISPATCH_FLOATING_TYPES_AND2(
         at::ScalarType::Half, at::ScalarType::BFloat16,
         x.scalar_type(), "rpca_sparse_svd_fwd", ([&] {
-            if (R <= 16) {
-                neuralops::cuda::rpca_sparse_svd_fwd_kernel<scalar_t, 16><<<blocks, threads, 0, stream>>>(
-                    out.data_ptr<scalar_t>(),
-                    x_2d.data_ptr<scalar_t>(),
-                    V.data_ptr<scalar_t>(),
-                    U.data_ptr<scalar_t>(),
-                    has_sparse ? s_dense.data_ptr<scalar_t>() : nullptr,
-                    has_bias ? bias_c.data_ptr<scalar_t>() : nullptr,
-                    M, K, R, N, has_sparse, has_bias
-                );
-            } else if (R <= 32) {
-                neuralops::cuda::rpca_sparse_svd_fwd_kernel<scalar_t, 32><<<blocks, threads, 0, stream>>>(
-                    out.data_ptr<scalar_t>(),
-                    x_2d.data_ptr<scalar_t>(),
-                    V.data_ptr<scalar_t>(),
-                    U.data_ptr<scalar_t>(),
-                    has_sparse ? s_dense.data_ptr<scalar_t>() : nullptr,
-                    has_bias ? bias_c.data_ptr<scalar_t>() : nullptr,
-                    M, K, R, N, has_sparse, has_bias
-                );
-            } else if (R <= 64) {
-                neuralops::cuda::rpca_sparse_svd_fwd_kernel<scalar_t, 64><<<blocks, threads, 0, stream>>>(
-                    out.data_ptr<scalar_t>(),
-                    x_2d.data_ptr<scalar_t>(),
-                    V.data_ptr<scalar_t>(),
-                    U.data_ptr<scalar_t>(),
-                    has_sparse ? s_dense.data_ptr<scalar_t>() : nullptr,
-                    has_bias ? bias_c.data_ptr<scalar_t>() : nullptr,
-                    M, K, R, N, has_sparse, has_bias
-                );
-            } else {
-                neuralops::cuda::rpca_sparse_svd_fwd_kernel<scalar_t, 128><<<blocks, threads, 0, stream>>>(
-                    out.data_ptr<scalar_t>(),
-                    x_2d.data_ptr<scalar_t>(),
-                    V.data_ptr<scalar_t>(),
-                    U.data_ptr<scalar_t>(),
-                    has_sparse ? s_dense.data_ptr<scalar_t>() : nullptr,
-                    has_bias ? bias_c.data_ptr<scalar_t>() : nullptr,
-                    M, K, R, N, has_sparse, has_bias
-                );
-            }
+            // Stage 1
+            neuralops::cuda::rpca_stage1_2d_kernel<scalar_t><<<grid_z, block, 0, stream>>>(
+                Z.data_ptr<scalar_t>(),
+                x_2d.data_ptr<scalar_t>(),
+                V.data_ptr<scalar_t>(),
+                M, K, R
+            );
+
+            // Stage 2
+            neuralops::cuda::rpca_stage2_2d_kernel<scalar_t><<<grid_y, block, 0, stream>>>(
+                out.data_ptr<scalar_t>(),
+                Z.data_ptr<scalar_t>(),
+                U.data_ptr<scalar_t>(),
+                x_2d.data_ptr<scalar_t>(),
+                has_sparse ? s_dense.data_ptr<scalar_t>() : nullptr,
+                has_bias ? bias_c.data_ptr<scalar_t>() : nullptr,
+                M, K, R, N, has_sparse, has_bias
+            );
         })
     );
 

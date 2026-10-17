@@ -5,7 +5,7 @@
   "total_runs": 1,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "2f366e4546",
+  "latest_git_sha": "866fe45a1a",
   "latest_timestamp": "2026-09-27T06:05:08.979138",
   "latest_record": {
     "record_id": "2df7b38c0876fac3",
@@ -16,7 +16,7 @@
     "revision": 1,
     "status": "active",
     "timestamp_utc": "2026-09-27T06:05:08.979138",
-    "git_commit_sha": "2f366e4546",
+    "git_commit_sha": "866fe45a1a",
     "generation_method": {
       "algorithm": "Calibration Sweep Record",
       "source_artifact": "results/05_glue_finetuning/02_glue_sweeps/distilbert/sst2_4parallel/checkpoints/saes/summary_record.json"
@@ -47,7 +47,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-27T06:05:08.979138",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/02_glue_sweeps/distilbert/sst2_4parallel/checkpoints/saes/summary_record.json"
@@ -79,7 +79,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-27T06:05:08.979138",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/02_glue_sweeps/distilbert/sst2_4parallel/checkpoints/saes/summary_record.json"

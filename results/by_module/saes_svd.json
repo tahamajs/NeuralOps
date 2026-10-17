@@ -5,7 +5,7 @@
   "total_runs": 3,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "2f366e4546",
+  "latest_git_sha": "866fe45a1a",
   "latest_timestamp": "2026-09-27T07:44:50.829612",
   "latest_record": {
     "record_id": "c068187f78826876",
@@ -16,7 +16,7 @@
     "revision": 1,
     "status": "active",
     "timestamp_utc": "2026-09-27T07:44:50.829612",
-    "git_commit_sha": "2f366e4546",
+    "git_commit_sha": "866fe45a1a",
     "generation_method": {
       "algorithm": "Calibration Sweep Record",
       "source_artifact": "results/02_rank_sweeps/04_rank_sweeps/distilbert/deep_rank_distilbert/saes_svd/rank_32/checkpoints/saes_svd/summary_record.json"
@@ -47,7 +47,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-25T16:38:22.867165",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/deep_rank_distilbert/saes_svd/rank_64/checkpoints/saes_svd/summary_record.json"
@@ -77,7 +77,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-25T17:29:17.173759",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/deep_rank_roberta/saes_svd/rank_64/checkpoints/saes_svd/summary_record.json"
@@ -107,7 +107,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-27T07:44:50.829612",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/02_rank_sweeps/04_rank_sweeps/distilbert/deep_rank_distilbert/saes_svd/rank_32/checkpoints/saes_svd/summary_record.json"
@@ -139,7 +139,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-25T16:38:22.867165",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/deep_rank_distilbert/saes_svd/rank_64/checkpoints/saes_svd/summary_record.json"
@@ -169,7 +169,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-25T17:29:17.173759",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/deep_rank_roberta/saes_svd/rank_64/checkpoints/saes_svd/summary_record.json"
@@ -199,7 +199,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-27T07:44:50.829612",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/02_rank_sweeps/04_rank_sweeps/distilbert/deep_rank_distilbert/saes_svd/rank_32/checkpoints/saes_svd/summary_record.json"

@@ -2,7 +2,7 @@
   "module_name": "enlighten_compressor",
   "category": "compressor",
   "family": "matrix-compression",
-  "total_runs": 4,
+  "total_runs": 5,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
   "latest_git_sha": "25d9fe36fa",
@@ -41,7 +41,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-21T19:22:51.789759",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/distilbert_sst2_sst2_sweep/checkpoints/enlighten_compressor/summary_record.json"
@@ -71,7 +71,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-22T00:15:23.032117",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/enlighten_compressor/summary_record.json"
@@ -101,7 +101,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-22T05:11:40.365161",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/distilbert_mnli_full_mnli_sweep/checkpoints/enlighten_compressor/summary_record.json"
@@ -121,6 +121,36 @@
         "param_reduction_pct": 0.0
       },
       "notes": "Status: FAIL"
+    },
+    {
+      "record_id": "675d4605825af4af",
+      "module_name": "enlighten_compressor",
+      "category": "compressor",
+      "family": "compression-sweep-roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-14T17:22:33+03:30",
+      "git_commit_sha": "885276e92e",
+      "generation_method": {
+        "algorithm": "RoBERTa-base 72-Compressor Empirical Benchmark",
+        "source_artifact": "results/v13_deep_empirical_suite/roberta_72_compressors/results.json"
+      },
+      "experimental_setup": {
+        "backbone": "RoBERTa-base",
+        "dataset": "SST-2",
+        "batch_size": 16
+      },
+      "metrics": {
+        "accuracy": 52.0,
+        "f1": 0.6842,
+        "val_loss": 0.6935,
+        "param_reduction_pct": 0.0,
+        "compression_ratio": 1.0,
+        "peak_vram_mb": 2228.5,
+        "latency_ms": 6690.0
+      },
+      "notes": "RoBERTa 72 Compressors Benchmark. Status: success"
     },
     {
       "record_id": "74b0bb630e0f18d7",
@@ -157,7 +187,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-21T19:22:51.789759",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/distilbert_sst2_sst2_sweep/checkpoints/enlighten_compressor/summary_record.json"
@@ -187,7 +217,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-22T00:15:23.032117",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/enlighten_compressor/summary_record.json"
@@ -217,7 +247,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-22T05:11:40.365161",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/distilbert_mnli_full_mnli_sweep/checkpoints/enlighten_compressor/summary_record.json"
@@ -237,6 +267,36 @@
         "param_reduction_pct": 0.0
       },
       "notes": "Status: FAIL"
+    },
+    {
+      "record_id": "675d4605825af4af",
+      "module_name": "enlighten_compressor",
+      "category": "compressor",
+      "family": "compression-sweep-roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-14T17:22:33+03:30",
+      "git_commit_sha": "885276e92e",
+      "generation_method": {
+        "algorithm": "RoBERTa-base 72-Compressor Empirical Benchmark",
+        "source_artifact": "results/v13_deep_empirical_suite/roberta_72_compressors/results.json"
+      },
+      "experimental_setup": {
+        "backbone": "RoBERTa-base",
+        "dataset": "SST-2",
+        "batch_size": 16
+      },
+      "metrics": {
+        "accuracy": 52.0,
+        "f1": 0.6842,
+        "val_loss": 0.6935,
+        "param_reduction_pct": 0.0,
+        "compression_ratio": 1.0,
+        "peak_vram_mb": 2228.5,
+        "latency_ms": 6690.0
+      },
+      "notes": "RoBERTa 72 Compressors Benchmark. Status: success"
     },
     {
       "record_id": "74b0bb630e0f18d7",

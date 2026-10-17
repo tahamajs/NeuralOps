@@ -1,37 +1,36 @@
 {
   "module_name": "full",
   "category": "attention",
-  "family": "general",
+  "family": "subquadratic-attention",
   "total_runs": 12,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "b3e2b3ad08",
-  "latest_timestamp": "2026-10-15T00:07:14+03:30",
+  "latest_git_sha": "c5aaefc147",
+  "latest_timestamp": "2026-10-16T09:02:16Z",
   "latest_record": {
-    "record_id": "87e007c811a9c98a",
+    "record_id": "17f5f75df09d92ff",
     "module_name": "full",
     "category": "attention",
-    "family": "general",
+    "family": "subquadratic-attention",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-10-15T00:07:14+03:30",
-    "git_commit_sha": "b3e2b3ad08",
+    "timestamp_utc": "2026-10-16T09:02:16Z",
+    "git_commit_sha": "c5aaefc147",
     "generation_method": {
-      "algorithm": "Master Aggregated Evaluation Suite",
-      "source_artifact": "results/master_aggregated_results.csv"
+      "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
+      "source_artifact": "results/triton_all_131_attentions_benchmark.json"
     },
     "experimental_setup": {
-      "dataset": "SST-2",
-      "backbone": "DistilBERT"
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+      "dtype": "float16",
+      "batch_size": 2,
+      "seq_len": 2048
     },
     "metrics": {
-      "accuracy": 0.0,
-      "roberta_acc": 0.0,
-      "gpt2_acc": 0.0,
-      "latency_ms": 170.4
+      "latency_triton_ms": 1.246
     },
-    "notes": "Master Aggregated Results"
+    "notes": "131 Attention Comprehensive Latency Benchmark"
   },
   "active_records": [
     {
@@ -43,7 +42,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-16T04:01:09.085293",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/04_baselines/roberta_mnli_baseline/checkpoints/full/summary_record.json"
@@ -73,7 +72,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-18T23:19:59.875913",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/distilbert_sst2_sst2_sweep/checkpoints/full/summary_record.json"
@@ -103,7 +102,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T01:30:05.502959",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/full/summary_record.json"
@@ -133,7 +132,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T03:19:37.273091",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/roberta/checkpoints/full/summary_record.json"
@@ -163,7 +162,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T06:52:26.725247",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/full/summary_record.json"
@@ -193,7 +192,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-23T09:39:59.081265",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/distilbert_base_uncased_sst2_sweep/checkpoints/full/summary_record.json"
@@ -223,7 +222,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-24T14:43:40.658915",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/_archive/old_tests/test_gpt2_base/checkpoints/full/summary_record.json"
@@ -243,6 +242,32 @@
         "param_reduction_pct": 0.0
       },
       "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "87e007c811a9c98a",
+      "module_name": "full",
+      "category": "attention",
+      "family": "general",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Master Aggregated Evaluation Suite",
+        "source_artifact": "results/master_aggregated_results.csv"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2",
+        "backbone": "DistilBERT"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "roberta_acc": 0.0,
+        "gpt2_acc": 0.0,
+        "latency_ms": 170.4
+      },
+      "notes": "Master Aggregated Results"
     },
     {
       "record_id": "46271fefb415713d",
@@ -301,31 +326,6 @@
       "notes": "Status: SUCCESS"
     },
     {
-      "record_id": "17f5f75df09d92ff",
-      "module_name": "full",
-      "category": "attention",
-      "family": "subquadratic-attention",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-16T09:02:16Z",
-      "git_commit_sha": "c5aaefc147",
-      "generation_method": {
-        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
-        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
-      },
-      "experimental_setup": {
-        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-        "dtype": "float16",
-        "batch_size": 2,
-        "seq_len": 2048
-      },
-      "metrics": {
-        "latency_triton_ms": 1.246
-      },
-      "notes": "131 Attention Comprehensive Latency Benchmark"
-    },
-    {
       "record_id": "933259c112b69068",
       "module_name": "full",
       "category": "attention",
@@ -351,30 +351,29 @@
       "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
     },
     {
-      "record_id": "87e007c811a9c98a",
+      "record_id": "17f5f75df09d92ff",
       "module_name": "full",
       "category": "attention",
-      "family": "general",
+      "family": "subquadratic-attention",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-15T00:07:14+03:30",
-      "git_commit_sha": "b3e2b3ad08",
+      "timestamp_utc": "2026-10-16T09:02:16Z",
+      "git_commit_sha": "c5aaefc147",
       "generation_method": {
-        "algorithm": "Master Aggregated Evaluation Suite",
-        "source_artifact": "results/master_aggregated_results.csv"
+        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
+        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
       },
       "experimental_setup": {
-        "dataset": "SST-2",
-        "backbone": "DistilBERT"
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "dtype": "float16",
+        "batch_size": 2,
+        "seq_len": 2048
       },
       "metrics": {
-        "accuracy": 0.0,
-        "roberta_acc": 0.0,
-        "gpt2_acc": 0.0,
-        "latency_ms": 170.4
+        "latency_triton_ms": 1.246
       },
-      "notes": "Master Aggregated Results"
+      "notes": "131 Attention Comprehensive Latency Benchmark"
     }
   ],
   "history": [
@@ -387,7 +386,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-16T04:01:09.085293",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/04_baselines/roberta_mnli_baseline/checkpoints/full/summary_record.json"
@@ -417,7 +416,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-18T23:19:59.875913",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/distilbert_sst2_sst2_sweep/checkpoints/full/summary_record.json"
@@ -447,7 +446,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T01:30:05.502959",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/full/summary_record.json"
@@ -477,7 +476,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T03:19:37.273091",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/roberta/checkpoints/full/summary_record.json"
@@ -507,7 +506,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T06:52:26.725247",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/full/summary_record.json"
@@ -537,7 +536,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-23T09:39:59.081265",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/distilbert_base_uncased_sst2_sweep/checkpoints/full/summary_record.json"
@@ -567,7 +566,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-24T14:43:40.658915",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/_archive/old_tests/test_gpt2_base/checkpoints/full/summary_record.json"
@@ -587,6 +586,32 @@
         "param_reduction_pct": 0.0
       },
       "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "87e007c811a9c98a",
+      "module_name": "full",
+      "category": "attention",
+      "family": "general",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Master Aggregated Evaluation Suite",
+        "source_artifact": "results/master_aggregated_results.csv"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2",
+        "backbone": "DistilBERT"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "roberta_acc": 0.0,
+        "gpt2_acc": 0.0,
+        "latency_ms": 170.4
+      },
+      "notes": "Master Aggregated Results"
     },
     {
       "record_id": "46271fefb415713d",
@@ -645,31 +670,6 @@
       "notes": "Status: SUCCESS"
     },
     {
-      "record_id": "17f5f75df09d92ff",
-      "module_name": "full",
-      "category": "attention",
-      "family": "subquadratic-attention",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-16T09:02:16Z",
-      "git_commit_sha": "c5aaefc147",
-      "generation_method": {
-        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
-        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
-      },
-      "experimental_setup": {
-        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-        "dtype": "float16",
-        "batch_size": 2,
-        "seq_len": 2048
-      },
-      "metrics": {
-        "latency_triton_ms": 1.246
-      },
-      "notes": "131 Attention Comprehensive Latency Benchmark"
-    },
-    {
       "record_id": "933259c112b69068",
       "module_name": "full",
       "category": "attention",
@@ -695,30 +695,29 @@
       "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
     },
     {
-      "record_id": "87e007c811a9c98a",
+      "record_id": "17f5f75df09d92ff",
       "module_name": "full",
       "category": "attention",
-      "family": "general",
+      "family": "subquadratic-attention",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-15T00:07:14+03:30",
-      "git_commit_sha": "b3e2b3ad08",
+      "timestamp_utc": "2026-10-16T09:02:16Z",
+      "git_commit_sha": "c5aaefc147",
       "generation_method": {
-        "algorithm": "Master Aggregated Evaluation Suite",
-        "source_artifact": "results/master_aggregated_results.csv"
+        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
+        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
       },
       "experimental_setup": {
-        "dataset": "SST-2",
-        "backbone": "DistilBERT"
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "dtype": "float16",
+        "batch_size": 2,
+        "seq_len": 2048
       },
       "metrics": {
-        "accuracy": 0.0,
-        "roberta_acc": 0.0,
-        "gpt2_acc": 0.0,
-        "latency_ms": 170.4
+        "latency_triton_ms": 1.246
       },
-      "notes": "Master Aggregated Results"
+      "notes": "131 Attention Comprehensive Latency Benchmark"
     }
   ]
 }

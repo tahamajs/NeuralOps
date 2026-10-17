@@ -1,41 +1,37 @@
 {
   "module_name": "leka_v3",
   "category": "attention",
-  "family": "bert",
+  "family": "general",
   "total_runs": 11,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "9a4ff4e985",
-  "latest_timestamp": "2026-09-16T03:45:13.802989",
+  "latest_git_sha": "b3e2b3ad08",
+  "latest_timestamp": "2026-10-15T00:07:14+03:30",
   "latest_record": {
-    "record_id": "a438b1f82de0e019",
+    "record_id": "a3d6177cecf996b0",
     "module_name": "leka_v3",
     "category": "attention",
-    "family": "bert",
+    "family": "general",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-09-16T03:45:13.802989",
-    "git_commit_sha": "9a4ff4e985",
+    "timestamp_utc": "2026-10-15T00:07:14+03:30",
+    "git_commit_sha": "b3e2b3ad08",
     "generation_method": {
-      "algorithm": "Calibration Sweep Record",
-      "source_artifact": "results/01_unified_runs/mnli_unified_leka_v3/distilbert/checkpoints/leka_v3/summary_record.json"
+      "algorithm": "Master Aggregated Evaluation Suite",
+      "source_artifact": "results/master_aggregated_results.csv"
     },
     "experimental_setup": {
-      "backbone": "models/distilbert_sst2",
-      "dataset": "mnli"
+      "dataset": "SST-2",
+      "backbone": "DistilBERT"
     },
     "metrics": {
-      "accuracy": 33.5,
-      "f1": 0.2341,
-      "val_loss": 1.1114,
-      "peak_vram_mb": 405.24,
-      "throughput_tok_s": 30045.74,
-      "latency_ms": 8550.0,
-      "compression_ratio": 1.0,
-      "param_reduction_pct": 0.0
+      "accuracy": 70.53,
+      "roberta_acc": 50.92,
+      "gpt2_acc": 50.92,
+      "latency_ms": 78.2
     },
-    "notes": "Status: PASS_NO_COMPRESSION"
+    "notes": "Master Aggregated Results"
   },
   "active_records": [
     {
@@ -47,7 +43,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-15T21:39:01.378780",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_leka_v3/distilbert/checkpoints/leka_v3/summary_record.json"
@@ -77,7 +73,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-15T21:40:05.676513",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_leka_v3/roberta/checkpoints/leka_v3/summary_record.json"
@@ -107,7 +103,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-15T21:41:15.033914",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_leka_v3/gpt2/checkpoints/leka_v3/summary_record.json"
@@ -129,6 +125,66 @@
       "notes": "Status: PASS_NO_COMPRESSION"
     },
     {
+      "record_id": "a438b1f82de0e019",
+      "module_name": "leka_v3",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T03:45:13.802989",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/mnli_unified_leka_v3/distilbert/checkpoints/leka_v3/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 33.5,
+        "f1": 0.2341,
+        "val_loss": 1.1114,
+        "peak_vram_mb": 405.24,
+        "throughput_tok_s": 30045.74,
+        "latency_ms": 8550.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "8babf0bbf36a6de5",
+      "module_name": "leka_v3",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-17T12:43:14.435725",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_leka_v3/distilbert/checkpoints/leka_v3/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 63.5,
+        "f1": 0.6364,
+        "val_loss": 0.9754,
+        "peak_vram_mb": 742.24,
+        "throughput_tok_s": 9814.4,
+        "latency_ms": 90770.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
       "record_id": "08a6482d5778065b",
       "module_name": "leka_v3",
       "category": "attention",
@@ -137,7 +193,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T22:08:24.140237",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full_lora2/checkpoints/leka_v3/summary_record.json"
@@ -167,7 +223,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-20T08:24:20.111680",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_agnews_full/checkpoints/leka_v3/summary_record.json"
@@ -197,7 +253,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-21T21:06:27.623128",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/distilbert_sst2_sst2_sweep/checkpoints/leka_v3/summary_record.json"
@@ -227,7 +283,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-22T01:40:14.087261",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/leka_v3/summary_record.json"
@@ -257,7 +313,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-22T07:03:34.946456",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/distilbert_mnli_full_mnli_sweep/checkpoints/leka_v3/summary_record.json"
@@ -303,66 +359,6 @@
         "latency_ms": 78.2
       },
       "notes": "Master Aggregated Results"
-    },
-    {
-      "record_id": "8babf0bbf36a6de5",
-      "module_name": "leka_v3",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-17T12:43:14.435725",
-      "git_commit_sha": "9a4ff4e985",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_leka_v3/distilbert/checkpoints/leka_v3/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 63.5,
-        "f1": 0.6364,
-        "val_loss": 0.9754,
-        "peak_vram_mb": 742.24,
-        "throughput_tok_s": 9814.4,
-        "latency_ms": 90770.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
-      "record_id": "a438b1f82de0e019",
-      "module_name": "leka_v3",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-16T03:45:13.802989",
-      "git_commit_sha": "9a4ff4e985",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/mnli_unified_leka_v3/distilbert/checkpoints/leka_v3/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 33.5,
-        "f1": 0.2341,
-        "val_loss": 1.1114,
-        "peak_vram_mb": 405.24,
-        "throughput_tok_s": 30045.74,
-        "latency_ms": 8550.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
     }
   ],
   "history": [
@@ -375,7 +371,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-15T21:39:01.378780",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_leka_v3/distilbert/checkpoints/leka_v3/summary_record.json"
@@ -405,7 +401,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-15T21:40:05.676513",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_leka_v3/roberta/checkpoints/leka_v3/summary_record.json"
@@ -435,7 +431,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-15T21:41:15.033914",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_leka_v3/gpt2/checkpoints/leka_v3/summary_record.json"
@@ -457,6 +453,66 @@
       "notes": "Status: PASS_NO_COMPRESSION"
     },
     {
+      "record_id": "a438b1f82de0e019",
+      "module_name": "leka_v3",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T03:45:13.802989",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/mnli_unified_leka_v3/distilbert/checkpoints/leka_v3/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 33.5,
+        "f1": 0.2341,
+        "val_loss": 1.1114,
+        "peak_vram_mb": 405.24,
+        "throughput_tok_s": 30045.74,
+        "latency_ms": 8550.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "8babf0bbf36a6de5",
+      "module_name": "leka_v3",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-17T12:43:14.435725",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_leka_v3/distilbert/checkpoints/leka_v3/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 63.5,
+        "f1": 0.6364,
+        "val_loss": 0.9754,
+        "peak_vram_mb": 742.24,
+        "throughput_tok_s": 9814.4,
+        "latency_ms": 90770.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
       "record_id": "08a6482d5778065b",
       "module_name": "leka_v3",
       "category": "attention",
@@ -465,7 +521,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T22:08:24.140237",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full_lora2/checkpoints/leka_v3/summary_record.json"
@@ -495,7 +551,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-20T08:24:20.111680",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_agnews_full/checkpoints/leka_v3/summary_record.json"
@@ -525,7 +581,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-21T21:06:27.623128",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/distilbert_sst2_sst2_sweep/checkpoints/leka_v3/summary_record.json"
@@ -555,7 +611,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-22T01:40:14.087261",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/leka_v3/summary_record.json"
@@ -585,7 +641,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-22T07:03:34.946456",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/distilbert_mnli_full_mnli_sweep/checkpoints/leka_v3/summary_record.json"
@@ -631,66 +687,6 @@
         "latency_ms": 78.2
       },
       "notes": "Master Aggregated Results"
-    },
-    {
-      "record_id": "8babf0bbf36a6de5",
-      "module_name": "leka_v3",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-17T12:43:14.435725",
-      "git_commit_sha": "9a4ff4e985",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_leka_v3/distilbert/checkpoints/leka_v3/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "ag_news"
-      },
-      "metrics": {
-        "accuracy": 63.5,
-        "f1": 0.6364,
-        "val_loss": 0.9754,
-        "peak_vram_mb": 742.24,
-        "throughput_tok_s": 9814.4,
-        "latency_ms": 90770.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
-      "record_id": "a438b1f82de0e019",
-      "module_name": "leka_v3",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-16T03:45:13.802989",
-      "git_commit_sha": "9a4ff4e985",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/mnli_unified_leka_v3/distilbert/checkpoints/leka_v3/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 33.5,
-        "f1": 0.2341,
-        "val_loss": 1.1114,
-        "peak_vram_mb": 405.24,
-        "throughput_tok_s": 30045.74,
-        "latency_ms": 8550.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
     }
   ]
 }

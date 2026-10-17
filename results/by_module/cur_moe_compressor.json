@@ -2,7 +2,7 @@
   "module_name": "cur_moe_compressor",
   "category": "compressor",
   "family": "matrix-compression",
-  "total_runs": 1,
+  "total_runs": 2,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
   "latest_git_sha": "25d9fe36fa",
@@ -33,6 +33,36 @@
   },
   "active_records": [
     {
+      "record_id": "5fc64f8c5ec0ea26",
+      "module_name": "cur_moe_compressor",
+      "category": "compressor",
+      "family": "compression-sweep-roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-14T17:22:33+03:30",
+      "git_commit_sha": "885276e92e",
+      "generation_method": {
+        "algorithm": "RoBERTa-base 72-Compressor Empirical Benchmark",
+        "source_artifact": "results/v13_deep_empirical_suite/roberta_72_compressors/results.json"
+      },
+      "experimental_setup": {
+        "backbone": "RoBERTa-base",
+        "dataset": "SST-2",
+        "batch_size": 16
+      },
+      "metrics": {
+        "accuracy": 48.0,
+        "f1": 0.0,
+        "val_loss": 0.6995,
+        "param_reduction_pct": 40.0,
+        "compression_ratio": 1.6668,
+        "peak_vram_mb": 1471.3,
+        "latency_ms": 14770.0
+      },
+      "notes": "RoBERTa 72 Compressors Benchmark. Status: success"
+    },
+    {
       "record_id": "50ee1e5751d3c2eb",
       "module_name": "cur_moe_compressor",
       "category": "compressor",
@@ -58,6 +88,36 @@
     }
   ],
   "history": [
+    {
+      "record_id": "5fc64f8c5ec0ea26",
+      "module_name": "cur_moe_compressor",
+      "category": "compressor",
+      "family": "compression-sweep-roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-14T17:22:33+03:30",
+      "git_commit_sha": "885276e92e",
+      "generation_method": {
+        "algorithm": "RoBERTa-base 72-Compressor Empirical Benchmark",
+        "source_artifact": "results/v13_deep_empirical_suite/roberta_72_compressors/results.json"
+      },
+      "experimental_setup": {
+        "backbone": "RoBERTa-base",
+        "dataset": "SST-2",
+        "batch_size": 16
+      },
+      "metrics": {
+        "accuracy": 48.0,
+        "f1": 0.0,
+        "val_loss": 0.6995,
+        "param_reduction_pct": 40.0,
+        "compression_ratio": 1.6668,
+        "peak_vram_mb": 1471.3,
+        "latency_ms": 14770.0
+      },
+      "notes": "RoBERTa 72 Compressors Benchmark. Status: success"
+    },
     {
       "record_id": "50ee1e5751d3c2eb",
       "module_name": "cur_moe_compressor",

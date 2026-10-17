@@ -1,36 +1,36 @@
 {
   "module_name": "decay_linear_attn",
   "category": "attention",
-  "family": "kd-finetune",
+  "family": "subquadratic-attention",
   "total_runs": 9,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "dde5933e0c",
-  "latest_timestamp": "2026-10-13T21:46:13Z",
+  "latest_git_sha": "c5aaefc147",
+  "latest_timestamp": "2026-10-16T09:02:16Z",
   "latest_record": {
-    "record_id": "17fa2c34e9ba4365",
+    "record_id": "9897ee1e234c761b",
     "module_name": "decay_linear_attn",
     "category": "attention",
-    "family": "kd-finetune",
+    "family": "subquadratic-attention",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-10-13T21:46:13Z",
-    "git_commit_sha": "dde5933e0c",
+    "timestamp_utc": "2026-10-16T09:02:16Z",
+    "git_commit_sha": "c5aaefc147",
     "generation_method": {
-      "algorithm": "Knowledge Distillation Recovery (finetune)",
-      "source_artifact": "results/results.jsonl"
+      "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
+      "source_artifact": "results/triton_all_131_attentions_benchmark.json"
     },
     "experimental_setup": {
-      "backbone": "roberta-base",
-      "dataset": "sst2",
-      "rank": 64
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+      "dtype": "float16",
+      "batch_size": 2,
+      "seq_len": 2048
     },
     "metrics": {
-      "accuracy": 0.6,
-      "peak_vram_mb": 1029.94921875
+      "latency_triton_ms": 4.66
     },
-    "notes": "Run: 216c3f9f-95d5-4961-a0f3-5485069b8387"
+    "notes": "131 Attention Comprehensive Latency Benchmark"
   },
   "active_records": [
     {
@@ -42,7 +42,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T01:44:04.667319",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/decay_linear_attn/summary_record.json"
@@ -72,7 +72,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T05:59:47.140412",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/decay_linear_attn/summary_record.json"
@@ -102,7 +102,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T22:02:22.969136",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full_lora2/checkpoints/decay_linear_attn/summary_record.json"
@@ -132,7 +132,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-20T08:17:02.724959",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_agnews_full/checkpoints/decay_linear_attn/summary_record.json"
@@ -162,7 +162,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-20T22:02:23.178405",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/distilbert_mnli_full_mnli_sweep/checkpoints/decay_linear_attn/summary_record.json"
@@ -192,7 +192,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-23T12:26:13.511357",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/distilbert_sst2_sst2_sweep/checkpoints/decay_linear_attn/summary_record.json"
@@ -214,29 +214,29 @@
       "notes": "Status: MODERATE_EXPANSION"
     },
     {
-      "record_id": "9897ee1e234c761b",
+      "record_id": "17fa2c34e9ba4365",
       "module_name": "decay_linear_attn",
       "category": "attention",
-      "family": "subquadratic-attention",
+      "family": "kd-finetune",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T09:02:16Z",
-      "git_commit_sha": "c5aaefc147",
+      "timestamp_utc": "2026-10-13T21:46:13Z",
+      "git_commit_sha": "dde5933e0c",
       "generation_method": {
-        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
-        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
+        "algorithm": "Knowledge Distillation Recovery (finetune)",
+        "source_artifact": "results/results.jsonl"
       },
       "experimental_setup": {
-        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-        "dtype": "float16",
-        "batch_size": 2,
-        "seq_len": 2048
+        "backbone": "roberta-base",
+        "dataset": "sst2",
+        "rank": 64
       },
       "metrics": {
-        "latency_triton_ms": 4.66
+        "accuracy": 0.6,
+        "peak_vram_mb": 1029.94921875
       },
-      "notes": "131 Attention Comprehensive Latency Benchmark"
+      "notes": "Run: 216c3f9f-95d5-4961-a0f3-5485069b8387"
     },
     {
       "record_id": "5f26f78aac86411c",
@@ -264,29 +264,29 @@
       "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
     },
     {
-      "record_id": "17fa2c34e9ba4365",
+      "record_id": "9897ee1e234c761b",
       "module_name": "decay_linear_attn",
       "category": "attention",
-      "family": "kd-finetune",
+      "family": "subquadratic-attention",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-13T21:46:13Z",
-      "git_commit_sha": "dde5933e0c",
+      "timestamp_utc": "2026-10-16T09:02:16Z",
+      "git_commit_sha": "c5aaefc147",
       "generation_method": {
-        "algorithm": "Knowledge Distillation Recovery (finetune)",
-        "source_artifact": "results/results.jsonl"
+        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
+        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
       },
       "experimental_setup": {
-        "backbone": "roberta-base",
-        "dataset": "sst2",
-        "rank": 64
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "dtype": "float16",
+        "batch_size": 2,
+        "seq_len": 2048
       },
       "metrics": {
-        "accuracy": 0.6,
-        "peak_vram_mb": 1029.94921875
+        "latency_triton_ms": 4.66
       },
-      "notes": "Run: 216c3f9f-95d5-4961-a0f3-5485069b8387"
+      "notes": "131 Attention Comprehensive Latency Benchmark"
     }
   ],
   "history": [
@@ -299,7 +299,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T01:44:04.667319",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/decay_linear_attn/summary_record.json"
@@ -329,7 +329,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T05:59:47.140412",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/decay_linear_attn/summary_record.json"
@@ -359,7 +359,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T22:02:22.969136",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full_lora2/checkpoints/decay_linear_attn/summary_record.json"
@@ -389,7 +389,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-20T08:17:02.724959",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_agnews_full/checkpoints/decay_linear_attn/summary_record.json"
@@ -419,7 +419,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-20T22:02:23.178405",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/distilbert_mnli_full_mnli_sweep/checkpoints/decay_linear_attn/summary_record.json"
@@ -449,7 +449,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-23T12:26:13.511357",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/distilbert_sst2_sst2_sweep/checkpoints/decay_linear_attn/summary_record.json"
@@ -471,29 +471,29 @@
       "notes": "Status: MODERATE_EXPANSION"
     },
     {
-      "record_id": "9897ee1e234c761b",
+      "record_id": "17fa2c34e9ba4365",
       "module_name": "decay_linear_attn",
       "category": "attention",
-      "family": "subquadratic-attention",
+      "family": "kd-finetune",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T09:02:16Z",
-      "git_commit_sha": "c5aaefc147",
+      "timestamp_utc": "2026-10-13T21:46:13Z",
+      "git_commit_sha": "dde5933e0c",
       "generation_method": {
-        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
-        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
+        "algorithm": "Knowledge Distillation Recovery (finetune)",
+        "source_artifact": "results/results.jsonl"
       },
       "experimental_setup": {
-        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-        "dtype": "float16",
-        "batch_size": 2,
-        "seq_len": 2048
+        "backbone": "roberta-base",
+        "dataset": "sst2",
+        "rank": 64
       },
       "metrics": {
-        "latency_triton_ms": 4.66
+        "accuracy": 0.6,
+        "peak_vram_mb": 1029.94921875
       },
-      "notes": "131 Attention Comprehensive Latency Benchmark"
+      "notes": "Run: 216c3f9f-95d5-4961-a0f3-5485069b8387"
     },
     {
       "record_id": "5f26f78aac86411c",
@@ -521,29 +521,29 @@
       "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
     },
     {
-      "record_id": "17fa2c34e9ba4365",
+      "record_id": "9897ee1e234c761b",
       "module_name": "decay_linear_attn",
       "category": "attention",
-      "family": "kd-finetune",
+      "family": "subquadratic-attention",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-13T21:46:13Z",
-      "git_commit_sha": "dde5933e0c",
+      "timestamp_utc": "2026-10-16T09:02:16Z",
+      "git_commit_sha": "c5aaefc147",
       "generation_method": {
-        "algorithm": "Knowledge Distillation Recovery (finetune)",
-        "source_artifact": "results/results.jsonl"
+        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
+        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
       },
       "experimental_setup": {
-        "backbone": "roberta-base",
-        "dataset": "sst2",
-        "rank": 64
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "dtype": "float16",
+        "batch_size": 2,
+        "seq_len": 2048
       },
       "metrics": {
-        "accuracy": 0.6,
-        "peak_vram_mb": 1029.94921875
+        "latency_triton_ms": 4.66
       },
-      "notes": "Run: 216c3f9f-95d5-4961-a0f3-5485069b8387"
+      "notes": "131 Attention Comprehensive Latency Benchmark"
     }
   ]
 }

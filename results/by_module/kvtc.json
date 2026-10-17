@@ -43,7 +43,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-25T11:10:00.705245",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/batch3_distilbert/kvtc/checkpoints/kvtc/summary_record.json"
@@ -73,7 +73,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-25T11:10:24.480209",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/batch3_roberta/kvtc/checkpoints/kvtc/summary_record.json"
@@ -131,7 +131,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-25T11:10:00.705245",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/batch3_distilbert/kvtc/checkpoints/kvtc/summary_record.json"
@@ -161,7 +161,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-25T11:10:24.480209",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/batch3_roberta/kvtc/checkpoints/kvtc/summary_record.json"

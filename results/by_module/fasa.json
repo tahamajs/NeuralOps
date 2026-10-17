@@ -5,7 +5,7 @@
   "total_runs": 7,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "2f366e4546",
+  "latest_git_sha": "81683bdbf8",
   "latest_timestamp": "2026-09-24T18:20:56.131922",
   "latest_record": {
     "record_id": "9608ba39f0c449f0",
@@ -16,7 +16,7 @@
     "revision": 1,
     "status": "active",
     "timestamp_utc": "2026-09-24T18:20:56.131922",
-    "git_commit_sha": "2f366e4546",
+    "git_commit_sha": "81683bdbf8",
     "generation_method": {
       "algorithm": "Calibration Sweep Record",
       "source_artifact": "results/01_unified_runs/unified_runs/unified_fasa/roberta/checkpoints/fasa/summary_record.json"
@@ -47,7 +47,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-15T12:23:29.565630",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_fasa/roberta/checkpoints/fasa/summary_record.json"
@@ -77,7 +77,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-15T12:24:23.106083",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_fasa/gpt2/checkpoints/fasa/summary_record.json"
@@ -107,7 +107,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T01:47:44.826907",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/fasa/summary_record.json"
@@ -137,7 +137,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T06:01:36.538641",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/fasa/summary_record.json"
@@ -167,7 +167,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T19:51:06.018420",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_agnews_full/checkpoints/fasa/summary_record.json"
@@ -197,7 +197,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T22:01:19.653434",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full_lora2/checkpoints/fasa/summary_record.json"
@@ -227,7 +227,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-24T18:20:56.131922",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "81683bdbf8",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/01_unified_runs/unified_runs/unified_fasa/roberta/checkpoints/fasa/summary_record.json"
@@ -259,7 +259,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-15T12:23:29.565630",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_fasa/roberta/checkpoints/fasa/summary_record.json"
@@ -289,7 +289,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-15T12:24:23.106083",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_fasa/gpt2/checkpoints/fasa/summary_record.json"
@@ -319,7 +319,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T01:47:44.826907",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/fasa/summary_record.json"
@@ -349,7 +349,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T06:01:36.538641",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/fasa/summary_record.json"
@@ -379,7 +379,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T19:51:06.018420",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_agnews_full/checkpoints/fasa/summary_record.json"
@@ -409,7 +409,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T22:01:19.653434",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full_lora2/checkpoints/fasa/summary_record.json"
@@ -439,7 +439,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-24T18:20:56.131922",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "81683bdbf8",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/01_unified_runs/unified_runs/unified_fasa/roberta/checkpoints/fasa/summary_record.json"

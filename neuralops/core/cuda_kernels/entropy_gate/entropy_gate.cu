@@ -39,20 +39,30 @@ torch::Tensor spectral_entropy_svd_gate_fwd(
     auto V_sub = V.slice(0, 0, eff_r); // [eff_r, K]
     auto U_sub = U.slice(0, 0, eff_r); // [eff_r, N]
 
-    // Fast cuBLAS GEMM: z = X @ V_sub.T -> [M, eff_r]
-    auto z = at::matmul(x_2d, V_sub.t());
+    auto orig_dtype = x.scalar_type();
+    auto x_f32 = (orig_dtype != torch::kFloat32) ? x_2d.to(torch::kFloat32) : x_2d;
+    auto V_f32 = (orig_dtype != torch::kFloat32) ? V_sub.to(torch::kFloat32) : V_sub;
+    auto U_f32 = (orig_dtype != torch::kFloat32) ? U_sub.to(torch::kFloat32) : U_sub;
+
+    // Fast cuBLAS GEMM with FP32 accumulation: z = X @ V_sub.T -> [M, eff_r]
+    auto z = at::matmul(x_f32, V_f32.t());
 
     if (s_weights.has_value() && s_weights.value().defined()) {
-        auto sw = s_weights.value().slice(0, 0, eff_r).view({1, -1});
+        auto sw = s_weights.value().slice(0, 0, eff_r).to(torch::kFloat32).view({1, -1});
         z = z * sw;
     }
 
-    // Fast cuBLAS GEMM: y = z @ U_sub -> [M, N]
-    auto y = at::matmul(z, U_sub);
+    // Fast cuBLAS GEMM with FP32 accumulation: y = z @ U_sub -> [M, N]
+    auto y = at::matmul(z, U_f32);
 
     if (bias.has_value() && bias.value().defined()) {
-        y = y + bias.value().view({1, -1});
+        y = y + bias.value().to(torch::kFloat32).view({1, -1});
     }
+
+    if (orig_dtype != torch::kFloat32) {
+        y = y.to(orig_dtype);
+    }
+
 
     std::vector<int64_t> final_shape;
     for (size_t i = 0; i < orig_shape.size() - 1; ++i) {

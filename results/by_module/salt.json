@@ -1,43 +1,69 @@
 {
   "module_name": "salt",
   "category": "attention",
-  "family": "bert",
+  "family": "general",
   "total_runs": 3,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "9a4ff4e985",
-  "latest_timestamp": "2026-09-16T03:55:24.443220",
+  "latest_git_sha": "b3e2b3ad08",
+  "latest_timestamp": "2026-10-15T00:07:14+03:30",
   "latest_record": {
-    "record_id": "cd02b762f590ac67",
+    "record_id": "65694b5863b1c307",
     "module_name": "salt",
     "category": "attention",
-    "family": "bert",
+    "family": "general",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-09-16T03:55:24.443220",
-    "git_commit_sha": "9a4ff4e985",
+    "timestamp_utc": "2026-10-15T00:07:14+03:30",
+    "git_commit_sha": "b3e2b3ad08",
     "generation_method": {
-      "algorithm": "Calibration Sweep Record",
-      "source_artifact": "results/01_unified_runs/mnli_unified_salt/distilbert/checkpoints/salt/summary_record.json"
+      "algorithm": "Master Aggregated Evaluation Suite",
+      "source_artifact": "results/master_aggregated_results.csv"
     },
     "experimental_setup": {
-      "backbone": "models/distilbert_sst2",
-      "dataset": "mnli"
+      "dataset": "SST-2",
+      "backbone": "DistilBERT"
     },
     "metrics": {
-      "accuracy": 37.4,
-      "f1": 0.2855,
-      "val_loss": 1.1114,
-      "peak_vram_mb": 370.56,
-      "throughput_tok_s": 51912.37,
-      "latency_ms": 15770.0,
-      "compression_ratio": 1.2138,
-      "param_reduction_pct": 17.62
+      "accuracy": 80.28,
+      "roberta_acc": 50.92,
+      "gpt2_acc": 50.92,
+      "latency_ms": 99.3
     },
-    "notes": "Status: PASS_LOW"
+    "notes": "Master Aggregated Results"
   },
   "active_records": [
+    {
+      "record_id": "cd02b762f590ac67",
+      "module_name": "salt",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T03:55:24.443220",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/mnli_unified_salt/distilbert/checkpoints/salt/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 37.4,
+        "f1": 0.2855,
+        "val_loss": 1.1114,
+        "peak_vram_mb": 370.56,
+        "throughput_tok_s": 51912.37,
+        "latency_ms": 15770.0,
+        "compression_ratio": 1.2138,
+        "param_reduction_pct": 17.62
+      },
+      "notes": "Status: PASS_LOW"
+    },
     {
       "record_id": "daa696dd54c286fb",
       "module_name": "salt",
@@ -47,7 +73,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-22T02:59:09.037240",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/salt/summary_record.json"
@@ -93,40 +119,40 @@
         "latency_ms": 99.3
       },
       "notes": "Master Aggregated Results"
-    },
-    {
-      "record_id": "cd02b762f590ac67",
-      "module_name": "salt",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-16T03:55:24.443220",
-      "git_commit_sha": "9a4ff4e985",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/mnli_unified_salt/distilbert/checkpoints/salt/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 37.4,
-        "f1": 0.2855,
-        "val_loss": 1.1114,
-        "peak_vram_mb": 370.56,
-        "throughput_tok_s": 51912.37,
-        "latency_ms": 15770.0,
-        "compression_ratio": 1.2138,
-        "param_reduction_pct": 17.62
-      },
-      "notes": "Status: PASS_LOW"
     }
   ],
   "history": [
     {
+      "record_id": "cd02b762f590ac67",
+      "module_name": "salt",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T03:55:24.443220",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/mnli_unified_salt/distilbert/checkpoints/salt/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 37.4,
+        "f1": 0.2855,
+        "val_loss": 1.1114,
+        "peak_vram_mb": 370.56,
+        "throughput_tok_s": 51912.37,
+        "latency_ms": 15770.0,
+        "compression_ratio": 1.2138,
+        "param_reduction_pct": 17.62
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
       "record_id": "daa696dd54c286fb",
       "module_name": "salt",
       "category": "attention",
@@ -135,7 +161,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-22T02:59:09.037240",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/salt/summary_record.json"
@@ -181,36 +207,6 @@
         "latency_ms": 99.3
       },
       "notes": "Master Aggregated Results"
-    },
-    {
-      "record_id": "cd02b762f590ac67",
-      "module_name": "salt",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-16T03:55:24.443220",
-      "git_commit_sha": "9a4ff4e985",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/mnli_unified_salt/distilbert/checkpoints/salt/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 37.4,
-        "f1": 0.2855,
-        "val_loss": 1.1114,
-        "peak_vram_mb": 370.56,
-        "throughput_tok_s": 51912.37,
-        "latency_ms": 15770.0,
-        "compression_ratio": 1.2138,
-        "param_reduction_pct": 17.62
-      },
-      "notes": "Status: PASS_LOW"
     }
   ]
 }

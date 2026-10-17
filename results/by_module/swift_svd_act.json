@@ -1,37 +1,35 @@
 {
   "module_name": "swift_svd_act",
-  "category": "attention",
-  "family": "general",
-  "total_runs": 9,
+  "category": "compressor",
+  "family": "matrix-compression",
+  "total_runs": 10,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "b3e2b3ad08",
-  "latest_timestamp": "2026-10-15T00:07:14+03:30",
+  "latest_git_sha": "25d9fe36fa",
+  "latest_timestamp": "2026-10-16T09:08:37Z",
   "latest_record": {
-    "record_id": "bdcd0c719d3a75aa",
+    "record_id": "c455703a654174f2",
     "module_name": "swift_svd_act",
-    "category": "attention",
-    "family": "general",
+    "category": "compressor",
+    "family": "matrix-compression",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-10-15T00:07:14+03:30",
-    "git_commit_sha": "b3e2b3ad08",
+    "timestamp_utc": "2026-10-16T09:08:37Z",
+    "git_commit_sha": "25d9fe36fa",
     "generation_method": {
-      "algorithm": "Master Aggregated Evaluation Suite",
-      "source_artifact": "results/master_aggregated_results.csv"
+      "algorithm": "Low-Rank SVD / Structured Quantization Factorizer",
+      "source_artifact": "results/triton_all_72_compressors_benchmark.json"
     },
     "experimental_setup": {
-      "dataset": "SST-2",
-      "backbone": "DistilBERT"
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+      "dtype": "float16"
     },
     "metrics": {
-      "accuracy": 90.48,
-      "roberta_acc": 72.02,
-      "gpt2_acc": 60.09,
-      "latency_ms": 91.0
+      "compress_ms": 40.33,
+      "relative_error": 0.1873
     },
-    "notes": "Master Aggregated Results"
+    "notes": "72 Compressor Matrix Compression Benchmark"
   },
   "active_records": [
     {
@@ -43,7 +41,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-24T19:50:40.591391",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/06_adhoc_experiments/smoke_test_swift_svd_act/checkpoints/swift_svd_act/summary_record.json"
@@ -73,7 +71,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-24T20:06:12.385281",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/concurrent_test/checkpoints/swift_svd_act/summary_record.json"
@@ -103,7 +101,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-24T21:34:45.001356",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/gpt2_wikitext2_sweep/checkpoints/swift_svd_act/summary_record.json"
@@ -133,7 +131,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-25T17:23:27.375568",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/deep_rank_distilbert/swift_svd_act/rank_64/checkpoints/swift_svd_act/summary_record.json"
@@ -163,7 +161,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-25T19:08:16.356484",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/deep_rank_roberta/swift_svd_act/rank_64/checkpoints/swift_svd_act/summary_record.json"
@@ -193,7 +191,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-26T01:49:48.516638",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/04_baselines/c4_baselines/swift_svd_act/checkpoints/swift_svd_act/summary_record.json"
@@ -223,7 +221,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-27T07:57:08.794200",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/02_rank_sweeps/04_rank_sweeps/distilbert/deep_rank_distilbert/swift_svd_act/rank_32/checkpoints/swift_svd_act/summary_record.json"
@@ -245,28 +243,34 @@
       "notes": "Status: PASS_NO_COMPRESSION"
     },
     {
-      "record_id": "c455703a654174f2",
+      "record_id": "feafaf4e1753ce68",
       "module_name": "swift_svd_act",
       "category": "compressor",
-      "family": "matrix-compression",
+      "family": "compression-sweep-roberta",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T09:08:37Z",
-      "git_commit_sha": "25d9fe36fa",
+      "timestamp_utc": "2026-10-14T17:22:33+03:30",
+      "git_commit_sha": "885276e92e",
       "generation_method": {
-        "algorithm": "Low-Rank SVD / Structured Quantization Factorizer",
-        "source_artifact": "results/triton_all_72_compressors_benchmark.json"
+        "algorithm": "RoBERTa-base 72-Compressor Empirical Benchmark",
+        "source_artifact": "results/v13_deep_empirical_suite/roberta_72_compressors/results.json"
       },
       "experimental_setup": {
-        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-        "dtype": "float16"
+        "backbone": "RoBERTa-base",
+        "dataset": "SST-2",
+        "batch_size": 16
       },
       "metrics": {
-        "compress_ms": 40.33,
-        "relative_error": 0.1873
+        "accuracy": 52.0,
+        "f1": 0.6842,
+        "val_loss": 0.6981,
+        "param_reduction_pct": 63.88,
+        "compression_ratio": 2.7686,
+        "peak_vram_mb": 1004.4,
+        "latency_ms": 7630.0
       },
-      "notes": "72 Compressor Matrix Compression Benchmark"
+      "notes": "RoBERTa 72 Compressors Benchmark. Status: success"
     },
     {
       "record_id": "bdcd0c719d3a75aa",
@@ -293,6 +297,30 @@
         "latency_ms": 91.0
       },
       "notes": "Master Aggregated Results"
+    },
+    {
+      "record_id": "c455703a654174f2",
+      "module_name": "swift_svd_act",
+      "category": "compressor",
+      "family": "matrix-compression",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T09:08:37Z",
+      "git_commit_sha": "25d9fe36fa",
+      "generation_method": {
+        "algorithm": "Low-Rank SVD / Structured Quantization Factorizer",
+        "source_artifact": "results/triton_all_72_compressors_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "dtype": "float16"
+      },
+      "metrics": {
+        "compress_ms": 40.33,
+        "relative_error": 0.1873
+      },
+      "notes": "72 Compressor Matrix Compression Benchmark"
     }
   ],
   "history": [
@@ -305,7 +333,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-24T19:50:40.591391",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/06_adhoc_experiments/smoke_test_swift_svd_act/checkpoints/swift_svd_act/summary_record.json"
@@ -335,7 +363,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-24T20:06:12.385281",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/concurrent_test/checkpoints/swift_svd_act/summary_record.json"
@@ -365,7 +393,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-24T21:34:45.001356",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/gpt2_wikitext2_sweep/checkpoints/swift_svd_act/summary_record.json"
@@ -395,7 +423,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-25T17:23:27.375568",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/deep_rank_distilbert/swift_svd_act/rank_64/checkpoints/swift_svd_act/summary_record.json"
@@ -425,7 +453,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-25T19:08:16.356484",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/deep_rank_roberta/swift_svd_act/rank_64/checkpoints/swift_svd_act/summary_record.json"
@@ -455,7 +483,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-26T01:49:48.516638",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/04_baselines/c4_baselines/swift_svd_act/checkpoints/swift_svd_act/summary_record.json"
@@ -485,7 +513,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-27T07:57:08.794200",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/02_rank_sweeps/04_rank_sweeps/distilbert/deep_rank_distilbert/swift_svd_act/rank_32/checkpoints/swift_svd_act/summary_record.json"
@@ -507,28 +535,34 @@
       "notes": "Status: PASS_NO_COMPRESSION"
     },
     {
-      "record_id": "c455703a654174f2",
+      "record_id": "feafaf4e1753ce68",
       "module_name": "swift_svd_act",
       "category": "compressor",
-      "family": "matrix-compression",
+      "family": "compression-sweep-roberta",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T09:08:37Z",
-      "git_commit_sha": "25d9fe36fa",
+      "timestamp_utc": "2026-10-14T17:22:33+03:30",
+      "git_commit_sha": "885276e92e",
       "generation_method": {
-        "algorithm": "Low-Rank SVD / Structured Quantization Factorizer",
-        "source_artifact": "results/triton_all_72_compressors_benchmark.json"
+        "algorithm": "RoBERTa-base 72-Compressor Empirical Benchmark",
+        "source_artifact": "results/v13_deep_empirical_suite/roberta_72_compressors/results.json"
       },
       "experimental_setup": {
-        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-        "dtype": "float16"
+        "backbone": "RoBERTa-base",
+        "dataset": "SST-2",
+        "batch_size": 16
       },
       "metrics": {
-        "compress_ms": 40.33,
-        "relative_error": 0.1873
+        "accuracy": 52.0,
+        "f1": 0.6842,
+        "val_loss": 0.6981,
+        "param_reduction_pct": 63.88,
+        "compression_ratio": 2.7686,
+        "peak_vram_mb": 1004.4,
+        "latency_ms": 7630.0
       },
-      "notes": "72 Compressor Matrix Compression Benchmark"
+      "notes": "RoBERTa 72 Compressors Benchmark. Status: success"
     },
     {
       "record_id": "bdcd0c719d3a75aa",
@@ -555,6 +589,30 @@
         "latency_ms": 91.0
       },
       "notes": "Master Aggregated Results"
+    },
+    {
+      "record_id": "c455703a654174f2",
+      "module_name": "swift_svd_act",
+      "category": "compressor",
+      "family": "matrix-compression",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T09:08:37Z",
+      "git_commit_sha": "25d9fe36fa",
+      "generation_method": {
+        "algorithm": "Low-Rank SVD / Structured Quantization Factorizer",
+        "source_artifact": "results/triton_all_72_compressors_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "dtype": "float16"
+      },
+      "metrics": {
+        "compress_ms": 40.33,
+        "relative_error": 0.1873
+      },
+      "notes": "72 Compressor Matrix Compression Benchmark"
     }
   ]
 }

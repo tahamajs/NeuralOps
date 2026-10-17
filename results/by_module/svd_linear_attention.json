@@ -1,36 +1,34 @@
 {
   "module_name": "svd_linear_attention",
   "category": "attention",
-  "family": "attention",
+  "family": "GroupB_LinearAttention",
   "total_runs": 8,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "5d553a2079",
-  "latest_timestamp": "2026-10-15T04:02:13+03:30",
+  "latest_git_sha": "79ea70f3f1",
+  "latest_timestamp": "2026-10-17T19:12:53+03:30",
   "latest_record": {
-    "record_id": "782f92eea93b842d",
+    "record_id": "160b9ae7e3cbe159",
     "module_name": "svd_linear_attention",
     "category": "attention",
-    "family": "attention",
+    "family": "GroupB_LinearAttention",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-10-15T04:02:13+03:30",
-    "git_commit_sha": "5d553a2079",
+    "timestamp_utc": "2026-10-17T19:12:53+03:30",
+    "git_commit_sha": "79ea70f3f1",
     "generation_method": {
-      "algorithm": "End-to-End Evaluation & Perplexity Probe",
-      "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
+      "algorithm": "Sequence Length Scaling Benchmark",
+      "source_artifact": "results/SEQLEN_SCALING_MASTER.csv"
     },
     "experimental_setup": {
-      "dataset": "SST-2 / WikiText-2",
-      "backbone": "DistilBERT / GPT-2"
+      "seq_len": 1024,
+      "group": "GroupB_LinearAttention"
     },
     "metrics": {
-      "accuracy": 91.29,
-      "ppl": 36.09,
-      "latency_ms": 4640.0
+      "latency_ms": 0.0499
     },
-    "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
+    "notes": "Sequence Length Scaling Master Suite"
   },
   "active_records": [
     {
@@ -42,7 +40,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-22T03:28:39.063751",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/svd_linear_attention/summary_record.json"
@@ -72,7 +70,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-30T21:31:15.356899",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/02_rank_sweeps/04_rank_sweeps/mixed/rank_sweep/svd_linear_attention/rank_384/checkpoints/svd_linear_attention/summary_record.json"
@@ -94,96 +92,29 @@
       "notes": "Status: MODERATE_EXPANSION"
     },
     {
-      "record_id": "0df4b3f333fffb10",
+      "record_id": "782f92eea93b842d",
       "module_name": "svd_linear_attention",
       "category": "attention",
-      "family": "GroupB_LinearAttention",
+      "family": "attention",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-15T00:07:14+03:30",
-      "git_commit_sha": "b3e2b3ad08",
+      "timestamp_utc": "2026-10-15T04:02:13+03:30",
+      "git_commit_sha": "5d553a2079",
       "generation_method": {
-        "algorithm": "Sequence Length Scaling Benchmark",
-        "source_artifact": "results/SEQLEN_SCALING_MASTER.csv"
+        "algorithm": "End-to-End Evaluation & Perplexity Probe",
+        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
       },
       "experimental_setup": {
-        "seq_len": 128,
-        "group": "GroupB_LinearAttention"
+        "dataset": "SST-2 / WikiText-2",
+        "backbone": "DistilBERT / GPT-2"
       },
       "metrics": {
-        "latency_ms": 0.4133
+        "accuracy": 91.29,
+        "ppl": 36.09,
+        "latency_ms": 4640.0
       },
-      "notes": "Sequence Length Scaling Master Suite"
-    },
-    {
-      "record_id": "df88a61cc74ae4ac",
-      "module_name": "svd_linear_attention",
-      "category": "attention",
-      "family": "GroupB_LinearAttention",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T00:07:14+03:30",
-      "git_commit_sha": "b3e2b3ad08",
-      "generation_method": {
-        "algorithm": "Sequence Length Scaling Benchmark",
-        "source_artifact": "results/SEQLEN_SCALING_MASTER.csv"
-      },
-      "experimental_setup": {
-        "seq_len": 256,
-        "group": "GroupB_LinearAttention"
-      },
-      "metrics": {
-        "latency_ms": 0.2024
-      },
-      "notes": "Sequence Length Scaling Master Suite"
-    },
-    {
-      "record_id": "acbcb682aa40775a",
-      "module_name": "svd_linear_attention",
-      "category": "attention",
-      "family": "GroupB_LinearAttention",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T00:07:14+03:30",
-      "git_commit_sha": "b3e2b3ad08",
-      "generation_method": {
-        "algorithm": "Sequence Length Scaling Benchmark",
-        "source_artifact": "results/SEQLEN_SCALING_MASTER.csv"
-      },
-      "experimental_setup": {
-        "seq_len": 512,
-        "group": "GroupB_LinearAttention"
-      },
-      "metrics": {
-        "latency_ms": 0.1017
-      },
-      "notes": "Sequence Length Scaling Master Suite"
-    },
-    {
-      "record_id": "160b9ae7e3cbe159",
-      "module_name": "svd_linear_attention",
-      "category": "attention",
-      "family": "GroupB_LinearAttention",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T00:07:14+03:30",
-      "git_commit_sha": "b3e2b3ad08",
-      "generation_method": {
-        "algorithm": "Sequence Length Scaling Benchmark",
-        "source_artifact": "results/SEQLEN_SCALING_MASTER.csv"
-      },
-      "experimental_setup": {
-        "seq_len": 1024,
-        "group": "GroupB_LinearAttention"
-      },
-      "metrics": {
-        "latency_ms": 0.0499
-      },
-      "notes": "Sequence Length Scaling Master Suite"
+      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
     },
     {
       "record_id": "f5f1618893bfe795",
@@ -211,29 +142,96 @@
       "notes": "131 Attention Comprehensive Latency Benchmark"
     },
     {
-      "record_id": "782f92eea93b842d",
+      "record_id": "0df4b3f333fffb10",
       "module_name": "svd_linear_attention",
       "category": "attention",
-      "family": "attention",
+      "family": "GroupB_LinearAttention",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-15T04:02:13+03:30",
-      "git_commit_sha": "5d553a2079",
+      "timestamp_utc": "2026-10-17T19:12:53+03:30",
+      "git_commit_sha": "79ea70f3f1",
       "generation_method": {
-        "algorithm": "End-to-End Evaluation & Perplexity Probe",
-        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
+        "algorithm": "Sequence Length Scaling Benchmark",
+        "source_artifact": "results/SEQLEN_SCALING_MASTER.csv"
       },
       "experimental_setup": {
-        "dataset": "SST-2 / WikiText-2",
-        "backbone": "DistilBERT / GPT-2"
+        "seq_len": 128,
+        "group": "GroupB_LinearAttention"
       },
       "metrics": {
-        "accuracy": 91.29,
-        "ppl": 36.09,
-        "latency_ms": 4640.0
+        "latency_ms": 0.4133
       },
-      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
+      "notes": "Sequence Length Scaling Master Suite"
+    },
+    {
+      "record_id": "df88a61cc74ae4ac",
+      "module_name": "svd_linear_attention",
+      "category": "attention",
+      "family": "GroupB_LinearAttention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-17T19:12:53+03:30",
+      "git_commit_sha": "79ea70f3f1",
+      "generation_method": {
+        "algorithm": "Sequence Length Scaling Benchmark",
+        "source_artifact": "results/SEQLEN_SCALING_MASTER.csv"
+      },
+      "experimental_setup": {
+        "seq_len": 256,
+        "group": "GroupB_LinearAttention"
+      },
+      "metrics": {
+        "latency_ms": 0.2024
+      },
+      "notes": "Sequence Length Scaling Master Suite"
+    },
+    {
+      "record_id": "acbcb682aa40775a",
+      "module_name": "svd_linear_attention",
+      "category": "attention",
+      "family": "GroupB_LinearAttention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-17T19:12:53+03:30",
+      "git_commit_sha": "79ea70f3f1",
+      "generation_method": {
+        "algorithm": "Sequence Length Scaling Benchmark",
+        "source_artifact": "results/SEQLEN_SCALING_MASTER.csv"
+      },
+      "experimental_setup": {
+        "seq_len": 512,
+        "group": "GroupB_LinearAttention"
+      },
+      "metrics": {
+        "latency_ms": 0.1017
+      },
+      "notes": "Sequence Length Scaling Master Suite"
+    },
+    {
+      "record_id": "160b9ae7e3cbe159",
+      "module_name": "svd_linear_attention",
+      "category": "attention",
+      "family": "GroupB_LinearAttention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-17T19:12:53+03:30",
+      "git_commit_sha": "79ea70f3f1",
+      "generation_method": {
+        "algorithm": "Sequence Length Scaling Benchmark",
+        "source_artifact": "results/SEQLEN_SCALING_MASTER.csv"
+      },
+      "experimental_setup": {
+        "seq_len": 1024,
+        "group": "GroupB_LinearAttention"
+      },
+      "metrics": {
+        "latency_ms": 0.0499
+      },
+      "notes": "Sequence Length Scaling Master Suite"
     }
   ],
   "history": [
@@ -246,7 +244,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-22T03:28:39.063751",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/svd_linear_attention/summary_record.json"
@@ -276,7 +274,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-30T21:31:15.356899",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/02_rank_sweeps/04_rank_sweeps/mixed/rank_sweep/svd_linear_attention/rank_384/checkpoints/svd_linear_attention/summary_record.json"
@@ -298,96 +296,29 @@
       "notes": "Status: MODERATE_EXPANSION"
     },
     {
-      "record_id": "0df4b3f333fffb10",
+      "record_id": "782f92eea93b842d",
       "module_name": "svd_linear_attention",
       "category": "attention",
-      "family": "GroupB_LinearAttention",
+      "family": "attention",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-15T00:07:14+03:30",
-      "git_commit_sha": "b3e2b3ad08",
+      "timestamp_utc": "2026-10-15T04:02:13+03:30",
+      "git_commit_sha": "5d553a2079",
       "generation_method": {
-        "algorithm": "Sequence Length Scaling Benchmark",
-        "source_artifact": "results/SEQLEN_SCALING_MASTER.csv"
+        "algorithm": "End-to-End Evaluation & Perplexity Probe",
+        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
       },
       "experimental_setup": {
-        "seq_len": 128,
-        "group": "GroupB_LinearAttention"
+        "dataset": "SST-2 / WikiText-2",
+        "backbone": "DistilBERT / GPT-2"
       },
       "metrics": {
-        "latency_ms": 0.4133
+        "accuracy": 91.29,
+        "ppl": 36.09,
+        "latency_ms": 4640.0
       },
-      "notes": "Sequence Length Scaling Master Suite"
-    },
-    {
-      "record_id": "df88a61cc74ae4ac",
-      "module_name": "svd_linear_attention",
-      "category": "attention",
-      "family": "GroupB_LinearAttention",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T00:07:14+03:30",
-      "git_commit_sha": "b3e2b3ad08",
-      "generation_method": {
-        "algorithm": "Sequence Length Scaling Benchmark",
-        "source_artifact": "results/SEQLEN_SCALING_MASTER.csv"
-      },
-      "experimental_setup": {
-        "seq_len": 256,
-        "group": "GroupB_LinearAttention"
-      },
-      "metrics": {
-        "latency_ms": 0.2024
-      },
-      "notes": "Sequence Length Scaling Master Suite"
-    },
-    {
-      "record_id": "acbcb682aa40775a",
-      "module_name": "svd_linear_attention",
-      "category": "attention",
-      "family": "GroupB_LinearAttention",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T00:07:14+03:30",
-      "git_commit_sha": "b3e2b3ad08",
-      "generation_method": {
-        "algorithm": "Sequence Length Scaling Benchmark",
-        "source_artifact": "results/SEQLEN_SCALING_MASTER.csv"
-      },
-      "experimental_setup": {
-        "seq_len": 512,
-        "group": "GroupB_LinearAttention"
-      },
-      "metrics": {
-        "latency_ms": 0.1017
-      },
-      "notes": "Sequence Length Scaling Master Suite"
-    },
-    {
-      "record_id": "160b9ae7e3cbe159",
-      "module_name": "svd_linear_attention",
-      "category": "attention",
-      "family": "GroupB_LinearAttention",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T00:07:14+03:30",
-      "git_commit_sha": "b3e2b3ad08",
-      "generation_method": {
-        "algorithm": "Sequence Length Scaling Benchmark",
-        "source_artifact": "results/SEQLEN_SCALING_MASTER.csv"
-      },
-      "experimental_setup": {
-        "seq_len": 1024,
-        "group": "GroupB_LinearAttention"
-      },
-      "metrics": {
-        "latency_ms": 0.0499
-      },
-      "notes": "Sequence Length Scaling Master Suite"
+      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
     },
     {
       "record_id": "f5f1618893bfe795",
@@ -415,29 +346,96 @@
       "notes": "131 Attention Comprehensive Latency Benchmark"
     },
     {
-      "record_id": "782f92eea93b842d",
+      "record_id": "0df4b3f333fffb10",
       "module_name": "svd_linear_attention",
       "category": "attention",
-      "family": "attention",
+      "family": "GroupB_LinearAttention",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-15T04:02:13+03:30",
-      "git_commit_sha": "5d553a2079",
+      "timestamp_utc": "2026-10-17T19:12:53+03:30",
+      "git_commit_sha": "79ea70f3f1",
       "generation_method": {
-        "algorithm": "End-to-End Evaluation & Perplexity Probe",
-        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
+        "algorithm": "Sequence Length Scaling Benchmark",
+        "source_artifact": "results/SEQLEN_SCALING_MASTER.csv"
       },
       "experimental_setup": {
-        "dataset": "SST-2 / WikiText-2",
-        "backbone": "DistilBERT / GPT-2"
+        "seq_len": 128,
+        "group": "GroupB_LinearAttention"
       },
       "metrics": {
-        "accuracy": 91.29,
-        "ppl": 36.09,
-        "latency_ms": 4640.0
+        "latency_ms": 0.4133
       },
-      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
+      "notes": "Sequence Length Scaling Master Suite"
+    },
+    {
+      "record_id": "df88a61cc74ae4ac",
+      "module_name": "svd_linear_attention",
+      "category": "attention",
+      "family": "GroupB_LinearAttention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-17T19:12:53+03:30",
+      "git_commit_sha": "79ea70f3f1",
+      "generation_method": {
+        "algorithm": "Sequence Length Scaling Benchmark",
+        "source_artifact": "results/SEQLEN_SCALING_MASTER.csv"
+      },
+      "experimental_setup": {
+        "seq_len": 256,
+        "group": "GroupB_LinearAttention"
+      },
+      "metrics": {
+        "latency_ms": 0.2024
+      },
+      "notes": "Sequence Length Scaling Master Suite"
+    },
+    {
+      "record_id": "acbcb682aa40775a",
+      "module_name": "svd_linear_attention",
+      "category": "attention",
+      "family": "GroupB_LinearAttention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-17T19:12:53+03:30",
+      "git_commit_sha": "79ea70f3f1",
+      "generation_method": {
+        "algorithm": "Sequence Length Scaling Benchmark",
+        "source_artifact": "results/SEQLEN_SCALING_MASTER.csv"
+      },
+      "experimental_setup": {
+        "seq_len": 512,
+        "group": "GroupB_LinearAttention"
+      },
+      "metrics": {
+        "latency_ms": 0.1017
+      },
+      "notes": "Sequence Length Scaling Master Suite"
+    },
+    {
+      "record_id": "160b9ae7e3cbe159",
+      "module_name": "svd_linear_attention",
+      "category": "attention",
+      "family": "GroupB_LinearAttention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-17T19:12:53+03:30",
+      "git_commit_sha": "79ea70f3f1",
+      "generation_method": {
+        "algorithm": "Sequence Length Scaling Benchmark",
+        "source_artifact": "results/SEQLEN_SCALING_MASTER.csv"
+      },
+      "experimental_setup": {
+        "seq_len": 1024,
+        "group": "GroupB_LinearAttention"
+      },
+      "metrics": {
+        "latency_ms": 0.0499
+      },
+      "notes": "Sequence Length Scaling Master Suite"
     }
   ]
 }

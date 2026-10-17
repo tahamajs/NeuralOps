@@ -5,7 +5,7 @@
   "total_runs": 6,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "6267bfb8a8",
+  "latest_git_sha": "866fe45a1a",
   "latest_timestamp": "2026-09-27T07:47:14.186438",
   "latest_record": {
     "record_id": "9f9fa7193e4fbccb",
@@ -16,7 +16,7 @@
     "revision": 1,
     "status": "active",
     "timestamp_utc": "2026-09-27T07:47:14.186438",
-    "git_commit_sha": "6267bfb8a8",
+    "git_commit_sha": "866fe45a1a",
     "generation_method": {
       "algorithm": "Calibration Sweep Record",
       "source_artifact": "results/_archive/duplicates_20261008/02_rank_sweeps/04_rank_sweeps/roberta/deep_rank_roberta/cure/rank_32/checkpoints/cure/summary_record.json"
@@ -47,7 +47,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-25T13:41:17.290878",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/mnli_deep_sweep/cure/checkpoints/cure/summary_record.json"
@@ -77,7 +77,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-25T15:07:21.100392",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/_archive/duplicates_20261008/07_misc_tests/multiseed_rigor_distilbert/cure/seed_456/checkpoints/cure/summary_record.json"
@@ -107,7 +107,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-25T15:09:23.383047",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/_archive/duplicates_20261008/07_misc_tests/multiseed_rigor_roberta/cure/seed_456/checkpoints/cure/summary_record.json"
@@ -137,7 +137,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-25T17:51:57.933441",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/agnews_deep_sweep/cure/checkpoints/cure/summary_record.json"
@@ -167,7 +167,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-27T07:16:22.426792",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/_archive/duplicates_20261008/02_rank_sweeps/04_rank_sweeps/distilbert/deep_rank_distilbert/cure/rank_32/checkpoints/cure/summary_record.json"
@@ -197,7 +197,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-27T07:47:14.186438",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/_archive/duplicates_20261008/02_rank_sweeps/04_rank_sweeps/roberta/deep_rank_roberta/cure/rank_32/checkpoints/cure/summary_record.json"
@@ -229,7 +229,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-25T13:41:17.290878",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/mnli_deep_sweep/cure/checkpoints/cure/summary_record.json"
@@ -259,7 +259,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-25T15:07:21.100392",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/_archive/duplicates_20261008/07_misc_tests/multiseed_rigor_distilbert/cure/seed_456/checkpoints/cure/summary_record.json"
@@ -289,7 +289,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-25T15:09:23.383047",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/_archive/duplicates_20261008/07_misc_tests/multiseed_rigor_roberta/cure/seed_456/checkpoints/cure/summary_record.json"
@@ -319,7 +319,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-25T17:51:57.933441",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/agnews_deep_sweep/cure/checkpoints/cure/summary_record.json"
@@ -349,7 +349,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-27T07:16:22.426792",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/_archive/duplicates_20261008/02_rank_sweeps/04_rank_sweeps/distilbert/deep_rank_distilbert/cure/rank_32/checkpoints/cure/summary_record.json"
@@ -379,7 +379,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-27T07:47:14.186438",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/_archive/duplicates_20261008/02_rank_sweeps/04_rank_sweeps/roberta/deep_rank_roberta/cure/rank_32/checkpoints/cure/summary_record.json"

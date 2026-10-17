@@ -43,7 +43,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-15T10:38:22.955014",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/_archive/duplicates_20261008/07_misc_tests/archive_unified/unified_aegis_v4_module/distilbert/checkpoints/aegis_v4_module/summary_record.json"
@@ -73,7 +73,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-15T10:39:58.996183",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/_archive/duplicates_20261008/07_misc_tests/archive_unified/unified_aegis_v4_module/roberta/checkpoints/aegis_v4_module/summary_record.json"
@@ -103,7 +103,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-15T10:41:21.331798",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/_archive/duplicates_20261008/07_misc_tests/archive_unified/unified_aegis_v4_module/gpt2/checkpoints/aegis_v4_module/summary_record.json"
@@ -161,7 +161,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-15T10:38:22.955014",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/_archive/duplicates_20261008/07_misc_tests/archive_unified/unified_aegis_v4_module/distilbert/checkpoints/aegis_v4_module/summary_record.json"
@@ -191,7 +191,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-15T10:39:58.996183",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/_archive/duplicates_20261008/07_misc_tests/archive_unified/unified_aegis_v4_module/roberta/checkpoints/aegis_v4_module/summary_record.json"
@@ -221,7 +221,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-15T10:41:21.331798",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/_archive/duplicates_20261008/07_misc_tests/archive_unified/unified_aegis_v4_module/gpt2/checkpoints/aegis_v4_module/summary_record.json"

@@ -43,7 +43,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-15T10:46:46.081109",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_aegis_v5_module/distilbert/checkpoints/aegis_v5_module/summary_record.json"
@@ -73,7 +73,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-15T10:48:24.948949",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_aegis_v5_module/roberta/checkpoints/aegis_v5_module/summary_record.json"
@@ -103,7 +103,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-15T10:49:49.879388",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_aegis_v5_module/gpt2/checkpoints/aegis_v5_module/summary_record.json"
@@ -133,7 +133,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-24T19:10:26.698182",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "81683bdbf8",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/01_unified_runs/unified_runs/unified_aegis_v5_module/roberta/checkpoints/aegis_v5_module/summary_record.json"
@@ -163,7 +163,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-24T19:14:45.101793",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "81683bdbf8",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/01_unified_runs/unified_runs/unified_aegis_v5_module/gpt2/checkpoints/aegis_v5_module/summary_record.json"
@@ -221,7 +221,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-15T10:46:46.081109",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_aegis_v5_module/distilbert/checkpoints/aegis_v5_module/summary_record.json"
@@ -251,7 +251,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-15T10:48:24.948949",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_aegis_v5_module/roberta/checkpoints/aegis_v5_module/summary_record.json"
@@ -281,7 +281,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-15T10:49:49.879388",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_aegis_v5_module/gpt2/checkpoints/aegis_v5_module/summary_record.json"
@@ -311,7 +311,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-24T19:10:26.698182",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "81683bdbf8",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/01_unified_runs/unified_runs/unified_aegis_v5_module/roberta/checkpoints/aegis_v5_module/summary_record.json"
@@ -341,7 +341,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-24T19:14:45.101793",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "81683bdbf8",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/01_unified_runs/unified_runs/unified_aegis_v5_module/gpt2/checkpoints/aegis_v5_module/summary_record.json"

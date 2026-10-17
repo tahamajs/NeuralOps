@@ -43,7 +43,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T06:09:30.812100",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/infini/summary_record.json"
@@ -73,7 +73,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T22:05:51.676581",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/_archive/duplicates_20261008/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full_lora2/checkpoints/infini/summary_record.json"
@@ -103,7 +103,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-20T08:22:11.177161",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_agnews_full/checkpoints/infini/summary_record.json"
@@ -133,7 +133,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-21T08:11:43.832791",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/_archive/duplicates_20261008/05_glue_finetuning/distilbert_mnli_full_mnli_sweep/checkpoints/infini/summary_record.json"
@@ -163,7 +163,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-23T21:40:19.988122",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/distilbert_sst2_sst2_sweep/checkpoints/infini/summary_record.json"
@@ -221,7 +221,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T06:09:30.812100",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/infini/summary_record.json"
@@ -251,7 +251,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T22:05:51.676581",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/_archive/duplicates_20261008/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full_lora2/checkpoints/infini/summary_record.json"
@@ -281,7 +281,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-20T08:22:11.177161",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_agnews_full/checkpoints/infini/summary_record.json"
@@ -311,7 +311,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-21T08:11:43.832791",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/_archive/duplicates_20261008/05_glue_finetuning/distilbert_mnli_full_mnli_sweep/checkpoints/infini/summary_record.json"
@@ -341,7 +341,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-23T21:40:19.988122",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/distilbert_sst2_sst2_sweep/checkpoints/infini/summary_record.json"

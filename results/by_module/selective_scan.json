@@ -1,40 +1,65 @@
 {
   "module_name": "selective_scan",
-  "category": "triton_kernel",
-  "family": "Recurrent Scan",
+  "category": "cuda_kernel",
+  "family": "native-cuda-acceleration",
   "total_runs": 3,
-  "latest_version": "v1.3.6",
+  "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "0911d2c0ce",
-  "latest_timestamp": "2026-10-15T12:02:42+03:30",
+  "latest_git_sha": "2395ff7d5a",
+  "latest_timestamp": "2026-10-17T18:26:51+03:30",
   "latest_record": {
-    "record_id": "178a30b9cb24d433",
+    "record_id": "c7b0738bb948b1eb",
     "module_name": "selective_scan",
-    "category": "triton_kernel",
-    "family": "Recurrent Scan",
-    "version_tag": "v1.3.6",
+    "category": "cuda_kernel",
+    "family": "native-cuda-acceleration",
+    "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-10-15T12:02:42+03:30",
-    "git_commit_sha": "0911d2c0ce",
+    "timestamp_utc": "2026-10-17T18:26:51+03:30",
+    "git_commit_sha": "2395ff7d5a",
     "generation_method": {
-      "algorithm": "Triton vs PyTorch Benchmark v136",
-      "primitive": "selective_scan_fn",
-      "source_artifact": "results/triton_full_leaderboard_v136.json"
+      "algorithm": "3-Level Native CUDA C++ vs Triton JIT vs PyTorch",
+      "source_artifact": "results/benchmark_3level_cuda_triton_pytorch.json"
     },
     "experimental_setup": {
-      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-      "shape": "B=2, T=2048, D=768, N=16"
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)"
     },
     "metrics": {
-      "latency_triton_ms": 5.02,
-      "latency_pytorch_ms": 54.677,
-      "speedup_x": 10.89,
-      "sram_bytes_saved_mb": 288.0
+      "latency_cuda_ms": 0.2737868881225586,
+      "latency_triton_ms": 14.33913330078125,
+      "latency_pytorch_ms": 29.93615966796875,
+      "speedup_x": 109.34110056639403
     },
-    "notes": "Parity: PASS (FP16)"
+    "notes": "3-Level Execution Hierarchy Benchmark"
   },
   "active_records": [
+    {
+      "record_id": "178a30b9cb24d433",
+      "module_name": "selective_scan",
+      "category": "triton_kernel",
+      "family": "Recurrent Scan",
+      "version_tag": "v1.3.6",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T12:02:42+03:30",
+      "git_commit_sha": "0911d2c0ce",
+      "generation_method": {
+        "algorithm": "Triton vs PyTorch Benchmark v136",
+        "primitive": "selective_scan_fn",
+        "source_artifact": "results/triton_full_leaderboard_v136.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "shape": "B=2, T=2048, D=768, N=16"
+      },
+      "metrics": {
+        "latency_triton_ms": 5.02,
+        "latency_pytorch_ms": 54.677,
+        "speedup_x": 10.89,
+        "sram_bytes_saved_mb": 288.0
+      },
+      "notes": "Parity: PASS (FP16)"
+    },
     {
       "record_id": "387656453596a23d",
       "module_name": "selective_scan",
@@ -84,37 +109,37 @@
         "speedup_x": 109.34110056639403
       },
       "notes": "3-Level Execution Hierarchy Benchmark"
-    },
-    {
-      "record_id": "178a30b9cb24d433",
-      "module_name": "selective_scan",
-      "category": "triton_kernel",
-      "family": "Recurrent Scan",
-      "version_tag": "v1.3.6",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T12:02:42+03:30",
-      "git_commit_sha": "0911d2c0ce",
-      "generation_method": {
-        "algorithm": "Triton vs PyTorch Benchmark v136",
-        "primitive": "selective_scan_fn",
-        "source_artifact": "results/triton_full_leaderboard_v136.json"
-      },
-      "experimental_setup": {
-        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-        "shape": "B=2, T=2048, D=768, N=16"
-      },
-      "metrics": {
-        "latency_triton_ms": 5.02,
-        "latency_pytorch_ms": 54.677,
-        "speedup_x": 10.89,
-        "sram_bytes_saved_mb": 288.0
-      },
-      "notes": "Parity: PASS (FP16)"
     }
   ],
   "history": [
     {
+      "record_id": "178a30b9cb24d433",
+      "module_name": "selective_scan",
+      "category": "triton_kernel",
+      "family": "Recurrent Scan",
+      "version_tag": "v1.3.6",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T12:02:42+03:30",
+      "git_commit_sha": "0911d2c0ce",
+      "generation_method": {
+        "algorithm": "Triton vs PyTorch Benchmark v136",
+        "primitive": "selective_scan_fn",
+        "source_artifact": "results/triton_full_leaderboard_v136.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "shape": "B=2, T=2048, D=768, N=16"
+      },
+      "metrics": {
+        "latency_triton_ms": 5.02,
+        "latency_pytorch_ms": 54.677,
+        "speedup_x": 10.89,
+        "sram_bytes_saved_mb": 288.0
+      },
+      "notes": "Parity: PASS (FP16)"
+    },
+    {
       "record_id": "387656453596a23d",
       "module_name": "selective_scan",
       "category": "cuda_kernel",
@@ -163,33 +188,6 @@
         "speedup_x": 109.34110056639403
       },
       "notes": "3-Level Execution Hierarchy Benchmark"
-    },
-    {
-      "record_id": "178a30b9cb24d433",
-      "module_name": "selective_scan",
-      "category": "triton_kernel",
-      "family": "Recurrent Scan",
-      "version_tag": "v1.3.6",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T12:02:42+03:30",
-      "git_commit_sha": "0911d2c0ce",
-      "generation_method": {
-        "algorithm": "Triton vs PyTorch Benchmark v136",
-        "primitive": "selective_scan_fn",
-        "source_artifact": "results/triton_full_leaderboard_v136.json"
-      },
-      "experimental_setup": {
-        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-        "shape": "B=2, T=2048, D=768, N=16"
-      },
-      "metrics": {
-        "latency_triton_ms": 5.02,
-        "latency_pytorch_ms": 54.677,
-        "speedup_x": 10.89,
-        "sram_bytes_saved_mb": 288.0
-      },
-      "notes": "Parity: PASS (FP16)"
     }
   ]
 }

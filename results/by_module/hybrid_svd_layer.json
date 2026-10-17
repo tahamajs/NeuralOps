@@ -1,62 +1,66 @@
 {
   "module_name": "hybrid_svd_layer",
-  "category": "attention",
-  "family": "general",
-  "total_runs": 2,
+  "category": "compressor",
+  "family": "matrix-compression",
+  "total_runs": 3,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "b3e2b3ad08",
-  "latest_timestamp": "2026-10-15T00:07:14+03:30",
+  "latest_git_sha": "25d9fe36fa",
+  "latest_timestamp": "2026-10-16T09:08:37Z",
   "latest_record": {
-    "record_id": "9467c3120c7b8794",
+    "record_id": "1b3055c21c014e95",
     "module_name": "hybrid_svd_layer",
-    "category": "attention",
-    "family": "general",
+    "category": "compressor",
+    "family": "matrix-compression",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-10-15T00:07:14+03:30",
-    "git_commit_sha": "b3e2b3ad08",
+    "timestamp_utc": "2026-10-16T09:08:37Z",
+    "git_commit_sha": "25d9fe36fa",
     "generation_method": {
-      "algorithm": "Master Aggregated Evaluation Suite",
-      "source_artifact": "results/master_aggregated_results.csv"
+      "algorithm": "Low-Rank SVD / Structured Quantization Factorizer",
+      "source_artifact": "results/triton_all_72_compressors_benchmark.json"
     },
     "experimental_setup": {
-      "dataset": "SST-2",
-      "backbone": "DistilBERT"
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+      "dtype": "float16"
     },
     "metrics": {
-      "accuracy": 77.18,
-      "roberta_acc": 50.92,
-      "gpt2_acc": 51.15,
-      "latency_ms": 84.4
+      "compress_ms": 42.89,
+      "relative_error": 0.1274
     },
-    "notes": "Master Aggregated Results"
+    "notes": "72 Compressor Matrix Compression Benchmark"
   },
   "active_records": [
     {
-      "record_id": "1b3055c21c014e95",
+      "record_id": "0015e330707526bb",
       "module_name": "hybrid_svd_layer",
       "category": "compressor",
-      "family": "matrix-compression",
+      "family": "compression-sweep-roberta",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T09:08:37Z",
-      "git_commit_sha": "25d9fe36fa",
+      "timestamp_utc": "2026-10-14T17:22:33+03:30",
+      "git_commit_sha": "885276e92e",
       "generation_method": {
-        "algorithm": "Low-Rank SVD / Structured Quantization Factorizer",
-        "source_artifact": "results/triton_all_72_compressors_benchmark.json"
+        "algorithm": "RoBERTa-base 72-Compressor Empirical Benchmark",
+        "source_artifact": "results/v13_deep_empirical_suite/roberta_72_compressors/results.json"
       },
       "experimental_setup": {
-        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-        "dtype": "float16"
+        "backbone": "RoBERTa-base",
+        "dataset": "SST-2",
+        "batch_size": 16
       },
       "metrics": {
-        "compress_ms": 42.89,
-        "relative_error": 0.1274
+        "accuracy": 47.0,
+        "f1": 0.2535,
+        "val_loss": 0.6953,
+        "param_reduction_pct": 51.11,
+        "compression_ratio": 2.0452,
+        "peak_vram_mb": 1261.6,
+        "latency_ms": 5600.0
       },
-      "notes": "72 Compressor Matrix Compression Benchmark"
+      "notes": "RoBERTa 72 Compressors Benchmark. Status: success"
     },
     {
       "record_id": "9467c3120c7b8794",
@@ -83,32 +87,62 @@
         "latency_ms": 84.4
       },
       "notes": "Master Aggregated Results"
+    },
+    {
+      "record_id": "1b3055c21c014e95",
+      "module_name": "hybrid_svd_layer",
+      "category": "compressor",
+      "family": "matrix-compression",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T09:08:37Z",
+      "git_commit_sha": "25d9fe36fa",
+      "generation_method": {
+        "algorithm": "Low-Rank SVD / Structured Quantization Factorizer",
+        "source_artifact": "results/triton_all_72_compressors_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "dtype": "float16"
+      },
+      "metrics": {
+        "compress_ms": 42.89,
+        "relative_error": 0.1274
+      },
+      "notes": "72 Compressor Matrix Compression Benchmark"
     }
   ],
   "history": [
     {
-      "record_id": "1b3055c21c014e95",
+      "record_id": "0015e330707526bb",
       "module_name": "hybrid_svd_layer",
       "category": "compressor",
-      "family": "matrix-compression",
+      "family": "compression-sweep-roberta",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T09:08:37Z",
-      "git_commit_sha": "25d9fe36fa",
+      "timestamp_utc": "2026-10-14T17:22:33+03:30",
+      "git_commit_sha": "885276e92e",
       "generation_method": {
-        "algorithm": "Low-Rank SVD / Structured Quantization Factorizer",
-        "source_artifact": "results/triton_all_72_compressors_benchmark.json"
+        "algorithm": "RoBERTa-base 72-Compressor Empirical Benchmark",
+        "source_artifact": "results/v13_deep_empirical_suite/roberta_72_compressors/results.json"
       },
       "experimental_setup": {
-        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-        "dtype": "float16"
+        "backbone": "RoBERTa-base",
+        "dataset": "SST-2",
+        "batch_size": 16
       },
       "metrics": {
-        "compress_ms": 42.89,
-        "relative_error": 0.1274
+        "accuracy": 47.0,
+        "f1": 0.2535,
+        "val_loss": 0.6953,
+        "param_reduction_pct": 51.11,
+        "compression_ratio": 2.0452,
+        "peak_vram_mb": 1261.6,
+        "latency_ms": 5600.0
       },
-      "notes": "72 Compressor Matrix Compression Benchmark"
+      "notes": "RoBERTa 72 Compressors Benchmark. Status: success"
     },
     {
       "record_id": "9467c3120c7b8794",
@@ -135,6 +169,30 @@
         "latency_ms": 84.4
       },
       "notes": "Master Aggregated Results"
+    },
+    {
+      "record_id": "1b3055c21c014e95",
+      "module_name": "hybrid_svd_layer",
+      "category": "compressor",
+      "family": "matrix-compression",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T09:08:37Z",
+      "git_commit_sha": "25d9fe36fa",
+      "generation_method": {
+        "algorithm": "Low-Rank SVD / Structured Quantization Factorizer",
+        "source_artifact": "results/triton_all_72_compressors_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "dtype": "float16"
+      },
+      "metrics": {
+        "compress_ms": 42.89,
+        "relative_error": 0.1274
+      },
+      "notes": "72 Compressor Matrix Compression Benchmark"
     }
   ]
 }

@@ -43,7 +43,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-15T03:57:40.370594",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_hamming/roberta/checkpoints/hamming/summary_record.json"
@@ -73,7 +73,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T06:06:33.453389",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/hamming/summary_record.json"
@@ -103,7 +103,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T22:05:19.475862",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full_lora2/checkpoints/hamming/summary_record.json"
@@ -133,7 +133,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-20T08:21:36.546704",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_agnews_full/checkpoints/hamming/summary_record.json"
@@ -163,7 +163,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-21T08:09:03.191290",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/distilbert_mnli_full_mnli_sweep/checkpoints/hamming/summary_record.json"
@@ -193,7 +193,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-24T18:53:47.302875",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/01_unified_runs/unified_runs/unified_hamming/roberta/checkpoints/hamming/summary_record.json"
@@ -251,7 +251,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-15T03:57:40.370594",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_hamming/roberta/checkpoints/hamming/summary_record.json"
@@ -281,7 +281,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T06:06:33.453389",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/hamming/summary_record.json"
@@ -311,7 +311,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T22:05:19.475862",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full_lora2/checkpoints/hamming/summary_record.json"
@@ -341,7 +341,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-20T08:21:36.546704",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_agnews_full/checkpoints/hamming/summary_record.json"
@@ -371,7 +371,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-21T08:09:03.191290",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/distilbert_mnli_full_mnli_sweep/checkpoints/hamming/summary_record.json"
@@ -401,7 +401,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-24T18:53:47.302875",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/01_unified_runs/unified_runs/unified_hamming/roberta/checkpoints/hamming/summary_record.json"

@@ -3,6 +3,7 @@
 % ==============================================================================
 
 \section{خانواده اول: مکانیزم‌های فاکتورسازی تانسوری، تقریب کم‌مرتبه و تجزیه مقادیر منفرد (Low-Rank \& SVD)}
+\label{sec:family_lowrank}
 این خانواده بر پایه تقریب ماتریس‌های تصویر و ماتریس توجه از طریق فاکتورسازی کم‌مرتبه و تجزیه مقادیر منفرد (SVD) بنا شده‌اند تا پیچیدگی محاسباتی و ردپای حافظه پارامترها را کاهش دهند.
 
 \input{attentions_latex/individual_modules/adaptive_svd_attention.tex}
@@ -24,6 +25,7 @@
 \input{attentions_latex/individual_modules/tt.tex}
 
 \section{خانواده دوم: مدل‌های حالت‌فضا، شبکه‌های دلتا و ساختارهای ترکیبی مامبا (State-Space \& Mamba Hybrids)}
+\label{sec:family_ssm}
 این دسته از مکانیزم‌ها از تئوری سیستم‌های خطی تغییرناپذیر با زمان و مدل‌های بازگشتی حالت‌فضا بهره می‌برند تا با هزینه حافظه $\mathcal{O}(1)$ در زمان استنتاج، زمینه طولانی را مدل‌سازی کنند.
 
 \input{attentions_latex/individual_modules/gated_delta_net.tex}
@@ -37,6 +39,7 @@
 \input{attentions_latex/individual_modules/simple_ssm.tex}
 
 \section{خانواده سوم: مکانیزم‌های توجه خلوت، الگوهای محلی، ساختاریافته و بلوکی (Sparse \& Local Attention)}
+\label{sec:family_sparse}
 این مکانیزم‌ها با محدود ساختن میدان دید توجه به الگوهای محلی، پنجره‌های لغزان، یا نمونه‌برداری‌های تنک، پیوند درجه دوم را به درجه اول تقلیل می‌دهند.
 
 \input{attentions_latex/individual_modules/adaptive_sparse_attention.tex}
@@ -45,6 +48,7 @@
 \input{attentions_latex/individual_modules/nsa_attention.tex}
 
 \section{خانواده چهارم: مکانیزم‌های هرس، کوانتایزاسیون و فشرده‌سازی توکن و سرها (Token Pruning \& Compression)}
+\label{sec:family_pruning}
 این ماژول‌ها بر پایه حذف توکن‌های حاشیه‌ای و کم‌اهمیت، ادغام سرهای مشابه و فشرده‌سازی بافر کلید/مقدار طراحی شده‌اند.
 
 \input{attentions_latex/individual_modules/compressed_mha.tex}
@@ -53,6 +57,7 @@
 \input{attentions_latex/individual_modules/token_compressed_attention.tex}
 
 \section{خانواده پنجم: معماری‌های مخلوط متخصصان و مسیریابی پویا (MoE \& Dynamic Routing)}
+\label{sec:family_moe}
 در این معماری‌ها، فعال‌سازی مشروط و تخصیص پویای منابع به توکن‌های ورودی بر اساس مکانیزم‌های مسیریابی و خوشه‌بندی انجام می‌پذیرد.
 
 \input{attentions_latex/individual_modules/bam_umoe.tex}
@@ -64,6 +69,7 @@
 \input{attentions_latex/individual_modules/routing_attention.tex}
 
 \section{خانواده ششم: مکانیزم‌های توجه خطی و تقریب کِرنلی (Linear \& Kernel-based Attention)}
+\label{sec:family_linear}
 این خانواده با استفاده از نگاشت‌های ویژگی کِرنل و تعویض ترتیب ضرب ماتریسی بر اساس خاصیت شرکت‌پذیری، توجه استاندارد را با پیچیدگی خطی $\mathcal{O}(N)$ بازفرمول‌بندی می‌کنند.
 
 \input{attentions_latex/individual_modules/SOAFusedAttention.tex}
@@ -164,6 +170,14 @@
 \input{attentions_latex/individual_modules/vig_attention}
 \input{attentions_latex/individual_modules/wgqa_attention}
 \input{attentions_latex/individual_modules/zeros_attention}
+
+% ==============================================================================
+% کالبدشکافی موتورهای پیشرفته فشرده‌سازی مدل‌های زبانی
+% ==============================================================================
+\section{کالبدشکافی موتورهای پیشرفته فشرده‌سازی مدل‌های زبانی (Compression Engines)}
+\label{sec:family_compression_engines}
+در این بخش، مشخصات تحلیلی، فرمول‌بندی بهینه‌سازی، و کارنامه تجربی ۷۲ موتور متعارف فشرده‌سازی مدل‌های زبانی در قالب ۵ پارادایم فاکتورسازی تانسوری، تقریب کم‌مرتبه آگاه از فعال‌سازی، هرس ساختاریافته، کوانتایزاسیون برداری و مدیریت فشرده بافر کلید-مقدار (\lr{KV Cache}) به صورت موشکافانه ارائه می‌گردد (فهرست کامل این موتورها در جدول \ref{tab:app_all_72_compressors} در پیوست ب مستند شده است).
+
 \input{attentions_latex/individual_modules/a3_compressor}
 \input{attentions_latex/individual_modules/aa_svd_compressor}
 \input{attentions_latex/individual_modules/aatc_xkv_compressor}

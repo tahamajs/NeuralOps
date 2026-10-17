@@ -1,36 +1,37 @@
 {
   "module_name": "rala_compressor",
   "category": "attention",
-  "family": "kd-finetune",
+  "family": "general",
   "total_runs": 5,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "dde5933e0c",
-  "latest_timestamp": "2026-10-14T00:08:29Z",
+  "latest_git_sha": "b3e2b3ad08",
+  "latest_timestamp": "2026-10-15T00:07:14+03:30",
   "latest_record": {
-    "record_id": "dae6e83f84c413f0",
+    "record_id": "5180bca8da69fece",
     "module_name": "rala_compressor",
     "category": "attention",
-    "family": "kd-finetune",
+    "family": "general",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-10-14T00:08:29Z",
-    "git_commit_sha": "dde5933e0c",
+    "timestamp_utc": "2026-10-15T00:07:14+03:30",
+    "git_commit_sha": "b3e2b3ad08",
     "generation_method": {
-      "algorithm": "Knowledge Distillation Recovery (finetune)",
-      "source_artifact": "results/results.jsonl"
+      "algorithm": "Master Aggregated Evaluation Suite",
+      "source_artifact": "results/master_aggregated_results.csv"
     },
     "experimental_setup": {
-      "backbone": "roberta-base",
-      "dataset": "sst2",
-      "rank": 64
+      "dataset": "SST-2",
+      "backbone": "DistilBERT"
     },
     "metrics": {
-      "accuracy": 0.6166666666666667,
-      "peak_vram_mb": 1011.677734375
+      "accuracy": 60.09,
+      "roberta_acc": 50.8,
+      "gpt2_acc": 58.03,
+      "latency_ms": 259.0
     },
-    "notes": "Run: bf57ace3-df46-490b-9cda-3984243481cd"
+    "notes": "Master Aggregated Results"
   },
   "active_records": [
     {
@@ -42,7 +43,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-21T22:02:27.270788",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/distilbert_sst2_sst2_sweep/checkpoints/rala_compressor/summary_record.json"
@@ -72,7 +73,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-22T02:43:01.486177",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/rala_compressor/summary_record.json"
@@ -102,7 +103,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-22T12:09:26.687229",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/distilbert_mnli_full_mnli_sweep/checkpoints/rala_compressor/summary_record.json"
@@ -122,6 +123,31 @@
         "param_reduction_pct": 0.0
       },
       "notes": "Status: MODERATE_EXPANSION"
+    },
+    {
+      "record_id": "dae6e83f84c413f0",
+      "module_name": "rala_compressor",
+      "category": "attention",
+      "family": "kd-finetune",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-14T00:08:29Z",
+      "git_commit_sha": "dde5933e0c",
+      "generation_method": {
+        "algorithm": "Knowledge Distillation Recovery (finetune)",
+        "source_artifact": "results/results.jsonl"
+      },
+      "experimental_setup": {
+        "backbone": "roberta-base",
+        "dataset": "sst2",
+        "rank": 64
+      },
+      "metrics": {
+        "accuracy": 0.6166666666666667,
+        "peak_vram_mb": 1011.677734375
+      },
+      "notes": "Run: bf57ace3-df46-490b-9cda-3984243481cd"
     },
     {
       "record_id": "5180bca8da69fece",
@@ -148,31 +174,6 @@
         "latency_ms": 259.0
       },
       "notes": "Master Aggregated Results"
-    },
-    {
-      "record_id": "dae6e83f84c413f0",
-      "module_name": "rala_compressor",
-      "category": "attention",
-      "family": "kd-finetune",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-14T00:08:29Z",
-      "git_commit_sha": "dde5933e0c",
-      "generation_method": {
-        "algorithm": "Knowledge Distillation Recovery (finetune)",
-        "source_artifact": "results/results.jsonl"
-      },
-      "experimental_setup": {
-        "backbone": "roberta-base",
-        "dataset": "sst2",
-        "rank": 64
-      },
-      "metrics": {
-        "accuracy": 0.6166666666666667,
-        "peak_vram_mb": 1011.677734375
-      },
-      "notes": "Run: bf57ace3-df46-490b-9cda-3984243481cd"
     }
   ],
   "history": [
@@ -185,7 +186,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-21T22:02:27.270788",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/distilbert_sst2_sst2_sweep/checkpoints/rala_compressor/summary_record.json"
@@ -215,7 +216,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-22T02:43:01.486177",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/rala_compressor/summary_record.json"
@@ -245,7 +246,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-22T12:09:26.687229",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/distilbert_mnli_full_mnli_sweep/checkpoints/rala_compressor/summary_record.json"
@@ -265,6 +266,31 @@
         "param_reduction_pct": 0.0
       },
       "notes": "Status: MODERATE_EXPANSION"
+    },
+    {
+      "record_id": "dae6e83f84c413f0",
+      "module_name": "rala_compressor",
+      "category": "attention",
+      "family": "kd-finetune",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-14T00:08:29Z",
+      "git_commit_sha": "dde5933e0c",
+      "generation_method": {
+        "algorithm": "Knowledge Distillation Recovery (finetune)",
+        "source_artifact": "results/results.jsonl"
+      },
+      "experimental_setup": {
+        "backbone": "roberta-base",
+        "dataset": "sst2",
+        "rank": 64
+      },
+      "metrics": {
+        "accuracy": 0.6166666666666667,
+        "peak_vram_mb": 1011.677734375
+      },
+      "notes": "Run: bf57ace3-df46-490b-9cda-3984243481cd"
     },
     {
       "record_id": "5180bca8da69fece",
@@ -291,31 +317,6 @@
         "latency_ms": 259.0
       },
       "notes": "Master Aggregated Results"
-    },
-    {
-      "record_id": "dae6e83f84c413f0",
-      "module_name": "rala_compressor",
-      "category": "attention",
-      "family": "kd-finetune",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-14T00:08:29Z",
-      "git_commit_sha": "dde5933e0c",
-      "generation_method": {
-        "algorithm": "Knowledge Distillation Recovery (finetune)",
-        "source_artifact": "results/results.jsonl"
-      },
-      "experimental_setup": {
-        "backbone": "roberta-base",
-        "dataset": "sst2",
-        "rank": 64
-      },
-      "metrics": {
-        "accuracy": 0.6166666666666667,
-        "peak_vram_mb": 1011.677734375
-      },
-      "notes": "Run: bf57ace3-df46-490b-9cda-3984243481cd"
     }
   ]
 }

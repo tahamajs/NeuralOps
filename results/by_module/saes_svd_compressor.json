@@ -43,7 +43,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-25T16:43:29.183193",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/deep_rank_distilbert/saes_svd_compressor/rank_64/checkpoints/saes_svd_compressor/summary_record.json"
@@ -73,7 +73,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-25T18:38:53.703783",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/deep_rank_roberta/saes_svd_compressor/rank_64/checkpoints/saes_svd_compressor/summary_record.json"
@@ -103,7 +103,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-25T23:27:22.737094",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/gpt2_r384/saes_svd_compressor/rank_384/checkpoints/saes_svd_compressor/summary_record.json"
@@ -133,7 +133,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-26T01:49:44.220713",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/04_baselines/c4_baselines/saes_svd/checkpoints/saes_svd_compressor/summary_record.json"
@@ -163,7 +163,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-27T07:46:11.182078",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/02_rank_sweeps/04_rank_sweeps/distilbert/deep_rank_distilbert/saes_svd_compressor/rank_32/checkpoints/saes_svd_compressor/summary_record.json"
@@ -221,7 +221,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-25T16:43:29.183193",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/deep_rank_distilbert/saes_svd_compressor/rank_64/checkpoints/saes_svd_compressor/summary_record.json"
@@ -251,7 +251,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-25T18:38:53.703783",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/deep_rank_roberta/saes_svd_compressor/rank_64/checkpoints/saes_svd_compressor/summary_record.json"
@@ -281,7 +281,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-25T23:27:22.737094",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/gpt2_r384/saes_svd_compressor/rank_384/checkpoints/saes_svd_compressor/summary_record.json"
@@ -311,7 +311,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-26T01:49:44.220713",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/04_baselines/c4_baselines/saes_svd/checkpoints/saes_svd_compressor/summary_record.json"
@@ -341,7 +341,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-27T07:46:11.182078",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/02_rank_sweeps/04_rank_sweeps/distilbert/deep_rank_distilbert/saes_svd_compressor/rank_32/checkpoints/saes_svd_compressor/summary_record.json"

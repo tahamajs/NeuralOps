@@ -1,97 +1,37 @@
 {
   "module_name": "ast_pruner",
-  "category": "attention",
-  "family": "roberta",
-  "total_runs": 5,
+  "category": "compressor",
+  "family": "matrix-compression",
+  "total_runs": 6,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "9a4ff4e985",
-  "latest_timestamp": "2026-09-18T20:41:24.701190",
+  "latest_git_sha": "25d9fe36fa",
+  "latest_timestamp": "2026-10-16T09:08:37Z",
   "latest_record": {
-    "record_id": "19befe2d5a6fc616",
+    "record_id": "178eedf373185e51",
     "module_name": "ast_pruner",
-    "category": "attention",
-    "family": "roberta",
+    "category": "compressor",
+    "family": "matrix-compression",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-09-18T20:41:24.701190",
-    "git_commit_sha": "9a4ff4e985",
+    "timestamp_utc": "2026-10-16T09:08:37Z",
+    "git_commit_sha": "25d9fe36fa",
     "generation_method": {
-      "algorithm": "Calibration Sweep Record",
-      "source_artifact": "results/01_unified_runs/agnews_unified_ast_pruner/roberta/checkpoints/ast_pruner/summary_record.json"
+      "algorithm": "Low-Rank SVD / Structured Quantization Factorizer",
+      "source_artifact": "results/triton_all_72_compressors_benchmark.json"
     },
     "experimental_setup": {
-      "backbone": "models/roberta-base",
-      "dataset": "ag_news"
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+      "dtype": "float16"
     },
     "metrics": {
-      "accuracy": 81.9,
-      "f1": 0.8058,
-      "val_loss": 0.5516,
-      "peak_vram_mb": 371.82,
-      "throughput_tok_s": 32356.56,
-      "latency_ms": 31610.0,
-      "compression_ratio": 1.0,
-      "param_reduction_pct": 0.0
+      "compress_ms": 2.47,
+      "relative_error": 0.1175
     },
-    "notes": "Status: PASS_NO_COMPRESSION"
+    "notes": "72 Compressor Matrix Compression Benchmark"
   },
   "active_records": [
-    {
-      "record_id": "1e8b3cd7995ecfd2",
-      "module_name": "ast_pruner",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-25T10:56:59.457790",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/07_misc_tests/batch3_distilbert/ast_pruner/checkpoints/ast_pruner/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "sst2"
-      },
-      "metrics": {
-        "accuracy": 90.71,
-        "f1": 0.9091,
-        "val_loss": 0.2926,
-        "peak_vram_mb": 456.34,
-        "throughput_tok_s": 61084.14,
-        "latency_ms": 10440.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
-      "record_id": "178eedf373185e51",
-      "module_name": "ast_pruner",
-      "category": "compressor",
-      "family": "matrix-compression",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-16T09:08:37Z",
-      "git_commit_sha": "25d9fe36fa",
-      "generation_method": {
-        "algorithm": "Low-Rank SVD / Structured Quantization Factorizer",
-        "source_artifact": "results/triton_all_72_compressors_benchmark.json"
-      },
-      "experimental_setup": {
-        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-        "dtype": "float16"
-      },
-      "metrics": {
-        "compress_ms": 2.47,
-        "relative_error": 0.1175
-      },
-      "notes": "72 Compressor Matrix Compression Benchmark"
-    },
     {
       "record_id": "9e016b574c6bab38",
       "module_name": "ast_pruner",
@@ -117,6 +57,36 @@
         "peak_vram_mb": 249.7,
         "throughput_tok_s": 54970.0,
         "latency_ms": 13040.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "19befe2d5a6fc616",
+      "module_name": "ast_pruner",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T20:41:24.701190",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_ast_pruner/roberta/checkpoints/ast_pruner/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta-base",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 81.9,
+        "f1": 0.8058,
+        "val_loss": 0.5516,
+        "peak_vram_mb": 371.82,
+        "throughput_tok_s": 32356.56,
+        "latency_ms": 31610.0,
         "compression_ratio": 1.0,
         "param_reduction_pct": 0.0
       },
@@ -153,92 +123,92 @@
       "notes": "Status: PASS_NO_COMPRESSION"
     },
     {
-      "record_id": "19befe2d5a6fc616",
+      "record_id": "1e8b3cd7995ecfd2",
       "module_name": "ast_pruner",
       "category": "attention",
-      "family": "roberta",
+      "family": "bert",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-09-18T20:41:24.701190",
-      "git_commit_sha": "9a4ff4e985",
+      "timestamp_utc": "2026-09-25T10:56:59.457790",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_ast_pruner/roberta/checkpoints/ast_pruner/summary_record.json"
+        "source_artifact": "results/07_misc_tests/batch3_distilbert/ast_pruner/checkpoints/ast_pruner/summary_record.json"
       },
       "experimental_setup": {
-        "backbone": "models/roberta-base",
-        "dataset": "ag_news"
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
       },
       "metrics": {
-        "accuracy": 81.9,
-        "f1": 0.8058,
-        "val_loss": 0.5516,
-        "peak_vram_mb": 371.82,
-        "throughput_tok_s": 32356.56,
-        "latency_ms": 31610.0,
+        "accuracy": 90.71,
+        "f1": 0.9091,
+        "val_loss": 0.2926,
+        "peak_vram_mb": 456.34,
+        "throughput_tok_s": 61084.14,
+        "latency_ms": 10440.0,
         "compression_ratio": 1.0,
         "param_reduction_pct": 0.0
       },
       "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "36a1ccf57c59673f",
+      "module_name": "ast_pruner",
+      "category": "compressor",
+      "family": "compression-sweep-roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-14T17:22:33+03:30",
+      "git_commit_sha": "885276e92e",
+      "generation_method": {
+        "algorithm": "RoBERTa-base 72-Compressor Empirical Benchmark",
+        "source_artifact": "results/v13_deep_empirical_suite/roberta_72_compressors/results.json"
+      },
+      "experimental_setup": {
+        "backbone": "RoBERTa-base",
+        "dataset": "SST-2",
+        "batch_size": 16
+      },
+      "metrics": {
+        "accuracy": 51.0,
+        "f1": 0.1091,
+        "val_loss": 0.6906,
+        "param_reduction_pct": 0.0,
+        "compression_ratio": 1.0,
+        "peak_vram_mb": 2556.8,
+        "latency_ms": 11970.0
+      },
+      "notes": "RoBERTa 72 Compressors Benchmark. Status: success"
+    },
+    {
+      "record_id": "178eedf373185e51",
+      "module_name": "ast_pruner",
+      "category": "compressor",
+      "family": "matrix-compression",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T09:08:37Z",
+      "git_commit_sha": "25d9fe36fa",
+      "generation_method": {
+        "algorithm": "Low-Rank SVD / Structured Quantization Factorizer",
+        "source_artifact": "results/triton_all_72_compressors_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "dtype": "float16"
+      },
+      "metrics": {
+        "compress_ms": 2.47,
+        "relative_error": 0.1175
+      },
+      "notes": "72 Compressor Matrix Compression Benchmark"
     }
   ],
   "history": [
     {
-      "record_id": "1e8b3cd7995ecfd2",
-      "module_name": "ast_pruner",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-25T10:56:59.457790",
-      "git_commit_sha": "2f366e4546",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/07_misc_tests/batch3_distilbert/ast_pruner/checkpoints/ast_pruner/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "sst2"
-      },
-      "metrics": {
-        "accuracy": 90.71,
-        "f1": 0.9091,
-        "val_loss": 0.2926,
-        "peak_vram_mb": 456.34,
-        "throughput_tok_s": 61084.14,
-        "latency_ms": 10440.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
-    },
-    {
-      "record_id": "178eedf373185e51",
-      "module_name": "ast_pruner",
-      "category": "compressor",
-      "family": "matrix-compression",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-16T09:08:37Z",
-      "git_commit_sha": "25d9fe36fa",
-      "generation_method": {
-        "algorithm": "Low-Rank SVD / Structured Quantization Factorizer",
-        "source_artifact": "results/triton_all_72_compressors_benchmark.json"
-      },
-      "experimental_setup": {
-        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-        "dtype": "float16"
-      },
-      "metrics": {
-        "compress_ms": 2.47,
-        "relative_error": 0.1175
-      },
-      "notes": "72 Compressor Matrix Compression Benchmark"
-    },
-    {
       "record_id": "9e016b574c6bab38",
       "module_name": "ast_pruner",
       "category": "attention",
@@ -263,6 +233,36 @@
         "peak_vram_mb": 249.7,
         "throughput_tok_s": 54970.0,
         "latency_ms": 13040.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "19befe2d5a6fc616",
+      "module_name": "ast_pruner",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T20:41:24.701190",
+      "git_commit_sha": "9a4ff4e985",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_ast_pruner/roberta/checkpoints/ast_pruner/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta-base",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 81.9,
+        "f1": 0.8058,
+        "val_loss": 0.5516,
+        "peak_vram_mb": 371.82,
+        "throughput_tok_s": 32356.56,
+        "latency_ms": 31610.0,
         "compression_ratio": 1.0,
         "param_reduction_pct": 0.0
       },
@@ -299,34 +299,88 @@
       "notes": "Status: PASS_NO_COMPRESSION"
     },
     {
-      "record_id": "19befe2d5a6fc616",
+      "record_id": "1e8b3cd7995ecfd2",
       "module_name": "ast_pruner",
       "category": "attention",
-      "family": "roberta",
+      "family": "bert",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-09-18T20:41:24.701190",
-      "git_commit_sha": "9a4ff4e985",
+      "timestamp_utc": "2026-09-25T10:56:59.457790",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/agnews_unified_ast_pruner/roberta/checkpoints/ast_pruner/summary_record.json"
+        "source_artifact": "results/07_misc_tests/batch3_distilbert/ast_pruner/checkpoints/ast_pruner/summary_record.json"
       },
       "experimental_setup": {
-        "backbone": "models/roberta-base",
-        "dataset": "ag_news"
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
       },
       "metrics": {
-        "accuracy": 81.9,
-        "f1": 0.8058,
-        "val_loss": 0.5516,
-        "peak_vram_mb": 371.82,
-        "throughput_tok_s": 32356.56,
-        "latency_ms": 31610.0,
+        "accuracy": 90.71,
+        "f1": 0.9091,
+        "val_loss": 0.2926,
+        "peak_vram_mb": 456.34,
+        "throughput_tok_s": 61084.14,
+        "latency_ms": 10440.0,
         "compression_ratio": 1.0,
         "param_reduction_pct": 0.0
       },
       "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "36a1ccf57c59673f",
+      "module_name": "ast_pruner",
+      "category": "compressor",
+      "family": "compression-sweep-roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-14T17:22:33+03:30",
+      "git_commit_sha": "885276e92e",
+      "generation_method": {
+        "algorithm": "RoBERTa-base 72-Compressor Empirical Benchmark",
+        "source_artifact": "results/v13_deep_empirical_suite/roberta_72_compressors/results.json"
+      },
+      "experimental_setup": {
+        "backbone": "RoBERTa-base",
+        "dataset": "SST-2",
+        "batch_size": 16
+      },
+      "metrics": {
+        "accuracy": 51.0,
+        "f1": 0.1091,
+        "val_loss": 0.6906,
+        "param_reduction_pct": 0.0,
+        "compression_ratio": 1.0,
+        "peak_vram_mb": 2556.8,
+        "latency_ms": 11970.0
+      },
+      "notes": "RoBERTa 72 Compressors Benchmark. Status: success"
+    },
+    {
+      "record_id": "178eedf373185e51",
+      "module_name": "ast_pruner",
+      "category": "compressor",
+      "family": "matrix-compression",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T09:08:37Z",
+      "git_commit_sha": "25d9fe36fa",
+      "generation_method": {
+        "algorithm": "Low-Rank SVD / Structured Quantization Factorizer",
+        "source_artifact": "results/triton_all_72_compressors_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "dtype": "float16"
+      },
+      "metrics": {
+        "compress_ms": 2.47,
+        "relative_error": 0.1175
+      },
+      "notes": "72 Compressor Matrix Compression Benchmark"
     }
   ]
 }

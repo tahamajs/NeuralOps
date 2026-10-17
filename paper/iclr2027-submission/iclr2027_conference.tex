@@ -40,9 +40,9 @@ In this work, we present \textbf{NeuralOps} (v1.4.0), a comprehensive empirical 
 
 Our investigations reveal four core findings:
 (1) \textbf{The Rank-Collapse vs.\ Coordinate-Span Dichotomy}: Low-rank truncation methods achieve 90.71\% on SST-2 at $1.05\times$ compression but suffer catastrophic subspace rank collapse on MNLI, dropping to 72.20\% (A3) or 34.10\% (naive SVD) due to an algebraic rank bottleneck on cross-attention bilinear matching ($r \le 320$). Conversely, vector quantization (k-means VQ \citep{stock2020and, kmeans_quantization_2024}) preserves the full $d=768$ coordinate span, maintaining 81.40\% on MNLI at $2.73\times$ compression with $11.7\times$ lower Frobenius reconstruction error.
-(2) \textbf{The Simplex Conservation Law in WGQA}: In Weighted Grouped-Query Attention \citep{ainslie2023gqa}, unnormalized head weights induce severe inter-layer logit temperature drift, exploding GPT-2 perplexity to $4.2 \times 10^6$. We formulate and prove the Simplex Budget Conservation Law ($\sum_{h=1}^{H_{\text{kv}}} \text{scale}_h = H_{\text{kv}}$), which mathematically preserves KV energy and restores exact baseline perplexity (22.79).
+(2) \textbf{The Simplex Conservation Law in WGQA}: In Weighted Grouped-Query Attention \citep{ainslie2023gqa}, unnormalized head weights induce severe inter-layer logit temperature drift, exploding GPT-2 perplexity to $4.2 \times 10^6$. We formulate and prove the Simplex Budget Conservation Law ($\sum_{h=1}^{H_{\text{kv}}} \text{scale}_h = H_{\text{kv}}$), which mathematically preserves KV energy and restores stable language modeling perplexity (146.41, matching standard GQA parity).
 (3) \textbf{Enforcement of the Non-Expansion Invariant}: Under the strict constraint $|\theta(M')| \le |\theta(M_0)|$, we discover that 80 popular attention mechanisms inflate parameters by up to $+139.5\%$ on DistilBERT, invalidating edge deployment claims.
-(4) \textbf{Hardware Acceleration via Triton JIT}: Our 26 Triton GPU kernels achieve up to $2.14\times$ physical speedup over PyTorch baselines on NVIDIA RTX 4070 (SM 8.9), with linear attention scaling achieving $1.46\times$ lower latency and 47.1\% memory reduction at $T=8,192$.
+(4) \textbf{Hardware Acceleration via Triton JIT}: Our 26 Triton GPU kernels achieve up to $2.14\times$ physical speedup over PyTorch baselines on NVIDIA RTX 4070 (SM 8.9), with linear attention scaling achieving $1.47\times$ lower latency and 47.1\% memory reduction at $T=8,192$.
 All code, kernels, and fine-tuned checkpoints are publicly released.
 \end{abstract}
 
@@ -76,7 +76,7 @@ To resolve these deficiencies, we develop \textbf{NeuralOps v1.4.0}, the largest
     \item \textbf{Subspace Rank Collapse Proof:} We mathematically prove that low-rank truncation bounds the composite bilinear attention matching matrix by $\text{rank}(QK^\top) \le r \le 320$, destroying high-frequency cross-sentence alignment coordinates and dropping MNLI accuracy by up to 47.7 points. Conversely, we prove that vector quantization preserves the full $d=768$ coordinate span, maintaining 81.40\% accuracy on MNLI at $2.73\times$ compression with $11.7\times$ lower reconstruction error.
     \item \textbf{The Simplex Budget Conservation Law:} We identify and resolve the perplexity explosion in Weighted Grouped-Query Attention (WGQA) on causal language models, proving that softmax simplex normalization strictly preserves total KV energy and eliminates inter-layer logit drift.
     \item \textbf{Enforcement of the Non-Expansion Guarantee:} We establish that 80 popular attention mechanisms violate edge compression constraints, inflating parameter budgets by up to $+139.5\%$.
-    \item \textbf{Hardware-Optimized Triton Kernels:} We demonstrate that our 26 custom Triton kernels deliver up to $2.14\times$ physical speedup, with linear attention achieving $1.46\times$ wall-clock speedup and 47.1\% memory reduction at $T=8,192$.
+    \item \textbf{Hardware-Optimized Triton Kernels:} We demonstrate that our 26 custom Triton kernels deliver up to $2.14\times$ physical speedup, with linear attention achieving $1.47\times$ wall-clock speedup and 47.1\% memory reduction at $T=8,192$.
 \end{itemize}
 
 \section{Why Naive SVD Fails and Activation-Aware Compression Succeeds}
@@ -568,7 +568,7 @@ The composite bilinear matching matrix is:
 \begin{equation}
     M = \frac{1}{\sqrt{d_k}} \hat{W}_q \hat{W}_k^\top = \frac{1}{\sqrt{d_k}} (U_q \Sigma_q V_q^\top) (V_k \Sigma_k U_k^\top) = \frac{1}{\sqrt{d_k}} U_q (\Sigma_q V_q^\top V_k \Sigma_k) U_k^\top
 \end{equation}
-The inner factor $\Omega = \Sigma_q V_q^\top V_k \Sigma_k \in \mathbb{R}^{r \times r}$ has size at most $r \times r$. Therefore:
+The inner factor $\Omega = \Sigma_q V_q^\top V_k \Sigma_k \in \mathbb{R}^{r \times r}$ has size at most $r \times r$. Applying Sylvester's rank inequality (Lemma~\ref{lem:sylvester}):
 \begin{equation}
     \operatorname{rank}(M) = \operatorname{rank}\left(U_q \Omega U_k^\top\right) \le \operatorname{rank}(\Omega) \le r
 \end{equation}
@@ -892,7 +892,7 @@ Therefore:
 \begin{equation}
     (\tilde{W} - \hat{\tilde{W}}_r) \hat{\tilde{W}}_r^\top = 0 \implies \operatorname{Tr}\left( (\tilde{W} - \hat{\tilde{W}}_r) \hat{\tilde{W}}_r^\top \right) = 0
 \end{equation}
-Thus, the approximation error is strictly orthogonal to the reconstructed signal. Orthogonality prevents error constructive interference, breaking the cascading amplification loop across sequential Transformer blocks.
+Thus, by Proposition~\ref{prop:cholesky_orthogonalization}, the approximation error is strictly orthogonal to the reconstructed signal. Orthogonality prevents error constructive interference, breaking the cascading amplification loop across sequential Transformer blocks.
 \end{proof}
 
 \subsection{PAC-Bayesian Generalization Guarantees under Subspace Truncation}
@@ -1068,7 +1068,7 @@ Table~\ref{tab:cross_arch} presents the primary cross-architecture empirical ben
 The empirical results in Table~\ref{tab:cross_arch} reveal stark contrasts across architectural families and task modalities:
 \begin{itemize}
     \item \textbf{Vector Quantization Non-Domination}: Vector Quantization (\texttt{kmeans}) emerges as the clear overall leader across all evaluation dimensions. On DistilBERT, it achieves 90.37\% on SST-2 and 81.40\% on MNLI (within 0.40 percentage points of the dense teacher's 81.80\%) while simultaneously achieving a $2.73\times$ parameter compression ratio, reducing peak VRAM from 176.4 MB to 142.0 MB, and boosting throughput to 68,410 tok/s. This superior behavior is explained by Proposition~\ref{prop:geometric_span}: because discrete codebooks preserve coordinate independence across the entire $d=768$ space, VQ avoids the rank bottleneck that cripples SVD methods.
-    \item \textbf{The Rank-Collapse Dichotomy}: Low-rank factorizations (\texttt{a3}, \texttt{adaptive\_svd}, \texttt{aasvd}) deliver competitive accuracy on single-sequence classification (e.g., \texttt{a3} achieves 90.71\% on SST-2 and 89.30\% on AG News at $1.05\times$ compression). However, they suffer steep performance degradation on sentence-pair entailment (MNLI), dropping to 72.20\% (\texttt{a3}) and 68.60\% (\texttt{aasvd}). As proven in Theorem~\ref{thm:subspace_rank_collapse}, bounding the composite matching matrix by $\operatorname{rank}(M) \le r \le 320$ completely eliminates at least 448 orthogonal coordinate dimensions, obliterating fine-grained cross-sentence alignment.
+    \item \textbf{The Rank-Collapse Dichotomy}: Low-rank factorizations (\texttt{a3}, \texttt{adaptive\_svd}, \texttt{aasvd}) deliver competitive accuracy on single-sequence classification (e.g., \texttt{a3} achieves 90.71\% on SST-2 and 89.30\% on AG News at $1.05\times$ compression). However, they suffer steep performance degradation on sentence-pair entailment (MNLI), dropping to 72.20\% (\texttt{a3}) and 68.60\% (\texttt{aasvd}). As proven in Theorem~\ref{thm:subspace_rank_collapse} and the PAC-Bayesian bound of Theorem~\ref{thm:pac_bayes}, bounding the composite matching matrix by $\operatorname{rank}(M) \le r \le 320$ completely eliminates at least 448 orthogonal coordinate dimensions, obliterating fine-grained cross-sentence alignment and loosening generalization guarantees.
     \item \textbf{Causal SSM and Recurrent Failure on Masked Encoders}: Recurrent and state-space attention mechanisms (\texttt{mamba\_block}, \texttt{gla}, \texttt{hgrn2\_outer}) suffer complete representational collapse when transplanted into bidirectional encoders. On MNLI, Mamba drops to exactly 34.10\%, which is indistinguishable from random chance guessing on a 3-class classification problem. This catastrophic failure stems from the fundamental conflict between unidirectional causal scans and bidirectional masked token representations: masking future tokens forces the causal hidden state $h_t$ to discard backward syntactic dependencies, destroying the bidirectional contextual field required by masked language models.
     \item \textbf{Severe Silent Parameter Inflation in Hybrid and MoE Models}: As highlighted in the status column of Table~\ref{tab:cross_arch}, hybrid and MoE mechanisms drastically violate the Non-Expansion Invariant (Definition~\ref{def:non_expansion}). While \texttt{jamba} retains 87.73\% on SST-2, it inflates total model parameters by $+139.5\%$ (expanding memory footprint to 480.0 MB and degrading throughput to 42,100 tok/s). Similarly, \texttt{samba\_moe} expands parameters by $+86.7\%$, dropping MNLI accuracy to 33.80\% while increasing peak memory to 510.0 MB.
 \end{itemize}
@@ -1081,7 +1081,7 @@ Table~\ref{tab:baselines} contrasts NeuralOps against published low-rank baselin
 \paragraph{Algorithmic Analysis of Baseline Compression Mechanics:}
 The direct comparison against established compression methods illustrates the necessity of activation-aware calibration and rank budgeting:
 \begin{itemize}
-    \item \textbf{Catastrophic Failure of Naive Direct SVD}: Unweighted singular value truncation collapses on MNLI to 34.10\% and on SST-2 to 52.64\% (essentially majority class random guessing). Because naive SVD relies solely on static Frobenius weight magnitude $\|W - \hat{W}\|_F$, it preferentially discards low-magnitude weight singular vectors that align with high-magnitude activation channels, triggering the logit variance collapse formulated in Theorem~\ref{thm:logit_variance_collapse}.
+    \item \textbf{Catastrophic Failure of Naive Direct SVD}: Unweighted singular value truncation collapses on MNLI to 34.10\% and on SST-2 to 52.64\% (essentially majority class random guessing). Because naive SVD relies solely on static Frobenius weight magnitude $\|W - \hat{W}\|_F$, it preferentially discards low-magnitude weight singular vectors that align with high-magnitude activation channels, triggering the logit variance collapse formulated in Theorem~\ref{thm:logit_variance_collapse} and the generalization error bound inflation of Theorem~\ref{thm:pac_bayes}.
     \item \textbf{The False Compression Illusion in ASVD and FWSVD}: While ASVD \citep{yuan2023asvd} and FWSVD \citep{fwsvd_2026} retain high downstream accuracies (82.00\% and 81.80\% on MNLI respectively), our rigorous parameter accounting reveals that they fail to compress the model. FWSVD achieves a compression ratio of exactly $1.00\times$ (0\% parameter reduction), while ASVD exhibits an expansion factor of $0.96\times$ (inflating parameter count and increasing peak VRAM to 203 MB) due to the introduction of non-fused scaling diagonal matrices and unmerged compensation terms.
     \item \textbf{SVD-LLM Rank Sensitivity \& SVD-LLM v2 Recovery}: SVD-LLM \citep{wang2024svdllm} achieves $1.20\times$ compression but suffers an acute collapse on MNLI, dropping to 43.50\% (a 38.30 percentage point deficit compared to the dense baseline). This failure occurs because SVD-LLM's truncation threshold is tuned exclusively on autoregressive perplexity, which fails to protect the sensitive cross-attention bilinear coordinates necessary for relational sentence inference. In contrast, our implemented \textbf{SVD-LLM v2} with Cholesky activation whitening (Theorem~\ref{thm:svd_llm_v2_proof}) completely eliminates naive truncation error (from 28.6789 down to 0.0000, representing a $+100.00\%$ empirical improvement), achieving 76.80\% MNLI accuracy at $1.25\times$ compression with only 168 MB peak VRAM.
     \item \textbf{NeuralOps Superiority}: Our \texttt{a3} engine strikes a validated balance, achieving $1.05\times$ true compression with 72.20\% MNLI accuracy (+38.10 points over naive SVD) and 170 MB peak VRAM. Meanwhile, our \texttt{kmeans} engine outperforms all published baselines, retaining 81.40\% MNLI accuracy at $2.73\times$ compression with only 142 MB peak memory.
@@ -1141,9 +1141,17 @@ Autoregressive language modeling imposes strict causality constraints where pred
 \end{itemize}
 
 \subsection{Long-Context Scaling: Latency and Memory Footprint}
-Table~\ref{tab:long_context} tracks physical latency and peak VRAM scaling from $T=512$ to $T=8,192$ on RTX 4070 hardware.
+Table~\ref{tab:long_context} and Figure~\ref{fig:context_scaling} track physical latency and peak VRAM scaling from $T=512$ to $T=8,192$ on RTX 4070 hardware.
 
 \input{tables/table7_long_context.tex}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.72\textwidth]{figures/sequence_length_scaling.png}
+\caption{\textbf{Empirical Context Sequence Length Scaling on NVIDIA GeForce RTX 4070 (Ada Lovelace, SM 8.9).} 
+Physical wall-clock latency (ms) and peak activation memory footprint across context lengths $T \in \{512, 1024, 2048, 4096, 8192\}$. At $T=8,192$, Chunk GLA delivers a $1.47\times$ physical speedup over FlashAttention-2 (PyTorch SDPA) with strictly linear activation memory scaling.}
+\label{fig:context_scaling}
+\end{figure}
 
 \paragraph{Algorithmic Analysis of Computational Complexity and Asymptotics:}
 Physical benchmarking across context sequence lengths $T \in \{512, 1024, 2048, 4096, 8192\}$ illustrates the hardware crossover dynamics between quadratic and linear attention:
@@ -1162,7 +1170,7 @@ Table~\ref{tab:roberta_hnc} demonstrates how Cholesky activation whitening in HN
 \paragraph{Algorithmic Analysis of Cross-Layer Error Mitigation:}
 Evaluating multi-layer compression across progressive network depth on RoBERTa-base reveals how activation whitening halts cascading representational collapse:
 \begin{itemize}
-    \item \textbf{Depth-Compounding Collapse in Naive SVD}: Compressing a single layer (Layer 0) at rank $r=128$ incurs moderate accuracy loss in Naive DirectSVD (90.14\% accuracy, 0.9375 cosine similarity). However, when compression is extended across 2 layers (0--1), accuracy collapses to 51.83\% with cosine similarity dropping to 0.0494. When extended to 4 sequential layers (0--3), Naive DirectSVD collapses catastrophically to \textbf{47.82\%} (falling below the 50.0\% random majority baseline) with directional cosine alignment completely destroyed ($-0.0157$). As formulated in Section~\ref{sec:why_naive_svd_fails}, each unwhitened projection introduces subspace truncation errors that propagate through the non-linear Lipschitz recurrence $\|h_\ell - h_\ell^*\| \le \Lambda_\ell \|h_{\ell-1} - h_{\ell-1}^*\| + \|\Delta W_\ell\| \|h_{\ell-1}^*\|$, rapidly extinguishing contextual signal.
+    \item \textbf{Depth-Compounding Collapse in Naive SVD}: Compressing a single layer (Layer 0) at rank $r=128$ incurs moderate accuracy loss in Naive DirectSVD (90.14\% accuracy, 0.9375 cosine similarity). However, when compression is extended across 2 layers (0--1), accuracy collapses to 51.83\% with cosine similarity dropping to 0.0494. When extended to 4 sequential layers (0--3), Naive DirectSVD collapses catastrophically to \textbf{47.82\%} (falling below the 50.0\% random majority baseline) with directional cosine alignment completely destroyed ($-0.0157$). As formulated in Section~\ref{sec:why_naive_svd_fails} and rigorously proven in Theorem~\ref{thm:spectral_compounding}, each unwhitened projection introduces subspace truncation errors that propagate through the non-linear Lipschitz recurrence $\|h_\ell - h_\ell^*\| \le \Lambda_\ell \|h_{\ell-1} - h_{\ell-1}^*\| + \|\Delta W_\ell\| \|h_{\ell-1}^*\|$, rapidly compounding across network depth and extinguishing contextual signal.
     \item \textbf{Householder Nullspace Invariant Protection}: Our proposed HNC-SVD algorithm completely suppresses this cascading decay. Under identical 4-layer compression at rank $r=128$, HNC-SVD sustains \textbf{71.67\% accuracy (+23.85\% absolute improvement over naive SVD)} and preserves robust directional cosine alignment of \textbf{0.5529} (compared to $-0.0157$ for naive SVD). By projecting activation covariances through Cholesky whitening and enforcing Householder nullspace constraints (Theorem~\ref{thm:hnc_svd_optimality}), HNC-SVD ensures that approximation errors are strictly orthogonal to high-energy activation coordinates, preventing residual stream attenuation and preserving signal transmission across network depth.
 \end{itemize}
 
@@ -1215,19 +1223,19 @@ The stage-wise ablation on DistilBERT MNLI ($r=64$) isolates the precise perform
 \end{itemize}
 
 \subsection{High-Performance Hardware Acceleration: 26 Triton Kernels}
-NeuralOps features a comprehensive hardware acceleration suite comprising 26 custom Triton JIT GPU kernels running on NVIDIA Ada Lovelace and Pascal architectures. All kernels guarantee double-precision numerical parity ($\cos(y_{\text{triton}}, y_{\text{ref}}) \ge 0.99999$) against FP32/FP64 PyTorch baselines while achieving up to $2.84\times$ physical wall-clock speedup. The complete architecture, kernel paths, and speedup leaderboard are reported in Appendix~\ref{app:triton_kernels} (Table~\ref{tab:triton_kernels}).
+NeuralOps features a comprehensive hardware acceleration suite comprising 26 custom Triton JIT GPU kernels running on NVIDIA Ada Lovelace and Pascal architectures. All kernels guarantee double-precision numerical parity ($\cos(y_{\text{triton}}, y_{\text{ref}}) \ge 0.99999$) against FP32/FP64 PyTorch baselines while achieving up to $2.84\times$ physical wall-clock speedup. The complete architecture, kernel paths, and speedup leaderboard are reported in Appendix~\ref{app:triton_kernels} (Table~\ref{tab:triton_kernels} and Figure~\ref{fig:hardware_acceleration_suite}).
 
 \paragraph{Algorithmic Analysis of GPU Hardware Acceleration Mechanics:}
 The physical speedups delivered by our custom Triton and native CUDA acceleration suite stem from three core micro-architectural optimizations:
 \begin{itemize}
     \item \textbf{Elimination of Intermediate Memory Bandwidth Traffic}: Standard PyTorch implementations of sub-quadratic attention (such as GLA, GDN, and Cosformer) execute sequentially launched ATen kernel operators, writing large intermediate state tensors back to GPU High-Bandwidth Memory (HBM) after each elementwise operation. In our custom Triton kernels (e.g., \texttt{chunk\_gla\_fwd}, \texttt{delta\_rule\_fwd}), intermediate recurrent states are retained entirely within on-chip Shared Memory (SRAM) and register files across sequence chunks of size $B_T = 64$ or $128$, achieving near-theoretical peak arithmetic intensity ($\mathcal{I} = \text{FLOPs} / \text{Bytes}$) and reducing HBM memory traffic by over $4.2\times$.
-    \item \textbf{Massive Recurrent Scan Acceleration}: In recurrent associative memory mechanisms, sequential token-by-token state updates traditionally cause severe GPU underutilization due to serial loop dependencies. As detailed in Appendix~\ref{app:triton_kernels} (Table~\ref{tab:flagship_triton_kernels}), our chunked delta-gate scan kernel delivers an extraordinary \textbf{$743.23\times$ speedup} over un-fused PyTorch loops, while block-sparse streaming attention achieves \textbf{$275.87\times$ speedup}. Similarly, our native CUDA C++ kernels with 3-level fallback dispatch (Table~\ref{tab:18_native_cuda_kernels_3level}) deliver up to \textbf{$422.60\times$ speedup} for HGRN2 fused backward scans and \textbf{$167.81\times$ speedup} for linear attention, demonstrating that custom hardware compilation is essential to unlocking the practical benefits of sub-quadratic algorithms.
+    \item \textbf{Massive Recurrent Scan Acceleration}: In recurrent associative memory mechanisms, sequential token-by-token state updates traditionally cause severe GPU underutilization due to serial loop dependencies. As detailed in Appendix~\ref{app:triton_kernels} (Table~\ref{tab:flagship_triton_kernels} and Figure~\ref{fig:triton_speedup}), our chunked delta-gate scan kernel delivers an extraordinary \textbf{$743.23\times$ speedup} over un-fused PyTorch loops, while block-sparse streaming attention achieves \textbf{$275.87\times$ speedup}. Similarly, our native CUDA C++ kernels with 3-level fallback dispatch (Table~\ref{tab:18_native_cuda_kernels_3level} and Figure~\ref{fig:three_level_latency}) deliver up to \textbf{$422.60\times$ speedup} for HGRN2 fused backward scans and \textbf{$167.81\times$ speedup} for linear attention, demonstrating that custom hardware compilation is essential to unlocking the practical benefits of sub-quadratic algorithms.
     \item \textbf{Numerical Precision Preservation}: Through careful accumulation in 32-bit floating-point registers before down-casting to 16-bit floating-point outputs, all 26 Triton kernels achieve exact numerical parity with double-precision reference implementations ($\cos(y_{\text{triton}}, y_{\text{ref}}) \ge 0.99999$), ensuring that runtime acceleration does not compromise downstream model accuracy.
 \end{itemize}
 
 \subsection{Deep Forensic Analysis of Five SOTA Gap Closures}
 \label{sec:sota_gap_eval}
-To bridge the critical performance and algorithmic divides identified in recent literature, we executed a dedicated benchmark campaign evaluating five SOTA Gap Closures on physical hardware (NVIDIA RTX 4070 SM 8.9), systematically tracked in \texttt{results/SOTA\_GAP\_CLOSURE\_REPORT.md}. All five modules achieved 100\% test pass rates, validating our theoretical bounds:
+To bridge the critical performance and algorithmic divides identified in recent literature, we executed a dedicated benchmark campaign evaluating five SOTA Gap Closures on physical hardware (NVIDIA RTX 4070 SM 8.9), systematically tracked in \texttt{results/SOTA\_GAP\_CLOSURE\_REPORT.md}. As summarized in Table~\ref{tab:sota_gap_closures} and visualized in Figure~\ref{fig:sota_gaps_suite}, all five modules achieved 100\% physical verification pass rate across numerical parity, memory bounds, and gradient alignment, validating our theoretical bounds:
 
 \begin{table}[ht]
 \centering
@@ -1249,13 +1257,33 @@ All modules achieved 100\% physical verification pass rate across numerical pari
 \end{tabular}
 \end{table}
 
+\begin{figure}[t]
+\centering
+\begin{subfigure}[b]{0.48\textwidth}
+\centering
+\includegraphics[width=\textwidth]{figures/svd_llm_v2_truncation_optimality.png}
+\caption{SVD-LLM v2 Truncation Optimality.}
+\label{fig:svd_llm_v2_opt}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.48\textwidth}
+\centering
+\includegraphics[width=\textwidth]{figures/kv_cache_latent_memory_scaling.png}
+\caption{ASVD KV-Cache Latent Memory Scaling.}
+\label{fig:kv_cache_scaling}
+\end{subfigure}
+\caption{\textbf{Physical Hardware Validation of SOTA Gap Closures on NVIDIA GeForce RTX 4070.} 
+(a) Activation-weighted Frobenius reconstruction error across truncation ranks comparing unwhitened Naive SVD against SVD-LLM v2 with Cholesky preconditioning. (b) KV-cache memory bandwidth scaling comparing standard dense attention buffers against compressed latent streaming states.}
+\label{fig:sota_gaps_suite}
+\end{figure}
+
 \paragraph{Gap 1: Activation-Aware SVD-LLM v2 Truncation Optimality:}
 In standard post-training compression, naive Eckart-Young SVD minimizes unweighted weight error $\|W - \hat{W}\|_F$, treating all input channels symmetrically. As proven in Theorem~\ref{thm:svd_llm_v2_proof}, this induces severe error along dominant activation coordinates, yielding an empirical reconstruction error of \textbf{28.6789}. 
-Our \texttt{SVDLLMv2Compressor} and \texttt{HessianNullSpaceSVDContinuation} resolve this by computing Cholesky factors $L L^\top = H_X + \epsilon I$ and executing SVD in the whitened coordinate space $\widetilde{W} = W L$. On benchmark calibration sequences, SVD-LLM v2 drives the activation-weighted error down to \textbf{0.0000}, achieving a \textbf{+100.00\% error elimination gain}. This explains why activation whitening rescues deep models from the logit variance collapse documented in Section~\ref{sec:why_naive_svd_fails}.
+Our \texttt{SVDLLMv2Compressor} and \texttt{HessianNullSpaceSVDContinuation} resolve this by computing Cholesky factors $L L^\top = H_X + \epsilon I$ and executing SVD in the whitened coordinate space $\widetilde{W} = W L$. On benchmark calibration sequences, SVD-LLM v2 drives the activation-weighted error down to \textbf{0.0000}, achieving a \textbf{+100.00\% error elimination gain} (Figure~\ref{fig:svd_llm_v2_opt}). This explains why activation whitening rescues deep models from the logit variance collapse documented in Section~\ref{sec:why_naive_svd_fails}.
 
 \paragraph{Gap 2: ASVD KV-Cache Latent State Streaming Parity:}
 Autoregressive decoding is severely memory-bandwidth bound due to the massive volume of cached Key-Value vectors fetched at each token generation step. Standard low-rank implementations re-project full Key vectors to dimension $d_k$, forfeiting cache memory reductions. 
-As proven in Theorem~\ref{thm:asvd_kv_cache_proof}, \texttt{SVDLinearAttention} stores compressed latent coordinates $C_t = x_t V_r^\top \in \mathbb{R}^{B \times 1 \times r}$ directly in circular streaming ring buffers, decompressing on-the-fly during attention scoring. Evaluated on physical RTX 4070 hardware across sequence lengths up to $L=2,048$, the maximum absolute divergence between full-rank dense attention and streaming latent attention was \textbf{0.000000} (far surpassing the strict $< 0.05$ analytical tolerance bound), confirming bit-exact numerical stability while compressing KV cache storage by $\frac{d_k}{r} = 2.40\times$.
+As proven in Theorem~\ref{thm:asvd_kv_cache_proof}, \texttt{SVDLinearAttention} stores compressed latent coordinates $C_t = x_t V_r^\top \in \mathbb{R}^{B \times 1 \times r}$ directly in circular streaming ring buffers, decompressing on-the-fly during attention scoring. Evaluated on physical RTX 4070 hardware across sequence lengths up to $L=2,048$, the maximum absolute divergence between full-rank dense attention and streaming latent attention was \textbf{0.000000} (far surpassing the strict $< 0.05$ analytical tolerance bound), confirming bit-exact numerical stability while compressing KV cache storage by $\frac{d_k}{r} = 2.40\times$ (Figure~\ref{fig:kv_cache_scaling}).
 
 \paragraph{Gap 3: FP8 E4M3fn Quantization Precision Stability:}
 Transitioning foundation model inference to 8-bit floating-point (FP8) architectures provides $2\times$ memory compression and up to $2\times$ tensor core acceleration. However, the E4M3 format (with only 3 mantissa bits) risks severe clipping and underflow distortion when applied to transformer weights. 
@@ -1522,7 +1550,7 @@ Table~\ref{tab:all_72_compressors} lists all 72 canonical compression engines im
 \clearpage
 \section{Complete Architecture \& Specifications of All 26 Custom Triton JIT GPU Kernels}
 \label{app:triton_kernels}
-Table~\ref{tab:triton_kernels} details the complete specifications, source paths in \texttt{neuralops/core/triton\_kernels/}, architectural functionalities, and physical wall-clock speedup ratios for all 26 custom Triton JIT GPU kernels running on NVIDIA GeForce RTX 4070 (Ada Lovelace, SM 8.9) and GTX 1060 (Pascal, SM 6.1). All kernels guarantee double-precision numerical parity ($\cos(y_{\text{triton}}, y_{\text{ref}}) \ge 0.99999$).
+Table~\ref{tab:triton_kernels} and Figure~\ref{fig:hardware_acceleration_suite} detail the complete specifications, source paths in \texttt{neuralops/core/triton\_kernels/}, architectural functionalities, and physical wall-clock speedup ratios for all 26 custom Triton JIT GPU kernels running on NVIDIA GeForce RTX 4070 (Ada Lovelace, SM 8.9) and GTX 1060 (Pascal, SM 6.1). All kernels guarantee double-precision numerical parity ($\cos(y_{\text{triton}}, y_{\text{ref}}) \ge 0.99999$).
 \input{tables/table_triton_kernels.tex}
 
 \vspace{0.5em}
@@ -1532,6 +1560,32 @@ In Table~\ref{tab:flagship_triton_kernels}, we provide empirical micro-benchmark
 \vspace{0.5em}
 In Table~\ref{tab:18_native_cuda_kernels_3level}, we report physical execution benchmarks for our suite of 18 high-performance native CUDA C++ kernels featuring 3-level fallback dispatch (\texttt{cuda} $\to$ \texttt{triton} $\to$ \texttt{pytorch}). Evaluated on NVIDIA GeForce RTX 4070 (Ada Lovelace, SM 8.9), our custom fused CUDA kernels achieve massive speedups up to $422.60\times$ for HGRN2 fused backward scans and up to $167.81\times$ for linear attention relative to un-fused PyTorch baselines, with 100\% numerical parity ($\cos \ge 0.99999$).
 \input{tables/table_18_native_cuda_kernels_3level.tex}
+
+\begin{figure}[htbp]
+\centering
+\begin{subfigure}[b]{0.48\textwidth}
+\centering
+\includegraphics[width=\textwidth]{figures/triton_speedup_leaderboard.png}
+\caption{Triton JIT Speedup Leaderboard.}
+\label{fig:triton_speedup}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.48\textwidth}
+\centering
+\includegraphics[width=\textwidth]{figures/three_level_latency_comparison.png}
+\caption{3-Level Execution Latency Hierarchy.}
+\label{fig:three_level_latency}
+\end{subfigure}
+\caption{\textbf{Hardware Acceleration Profiling on NVIDIA GeForce RTX 4070 (Ada Lovelace, SM 8.9).} 
+(a) Wall-clock speedup ratios across all 26 custom Triton JIT kernels relative to PyTorch reference baselines. (b) Micro-benchmark execution latencies across the 3-level fallback hierarchy (PyTorch $\to$ Triton JIT $\to$ Native CUDA C++).}
+\label{fig:hardware_acceleration_suite}
+\end{figure}
+
+\clearpage
+\section{Comprehensive Master Benchmark Matrix Across Representative Modules}
+\label{app:master_benchmark_matrix}
+In Table~\ref{tab:master_benchmark_matrix}, we provide physical GPU execution benchmarks from the consolidated master ledger spanning representative attention mechanisms, compression engines, and custom acceleration kernels on NVIDIA GeForce RTX 4070 (Ada Lovelace, SM 8.9).
+\input{tables/table_master_benchmark_matrix.tex}
 
 \clearpage
 \section{Top-50 PASS Modules Ranked by MNLI Accuracy}

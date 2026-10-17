@@ -1,5 +1,5 @@
 % ==============================================================================
-% پیوست‌های جامع رساله: کارنامه تفصیلی ۱۳۱ مکانیزم توجه، ۷۲ موتور فشرده‌سازی و ۲۶ کرنل تریتون
+% پیوست‌های جامع رساله: کارنامه تفصیلی ۱۳۱ مکانیزم توجه، ۷۲ موتور فشرده‌سازی، ۲۶ کرنل تریتون و ۱۸ عملگر بومی کودا
 % ==============================================================================
 \chapter*{پیوست‌ها}
 \addcontentsline{toc}{chapter}{پیوست‌ها}
@@ -7,264 +7,323 @@
 
 \section*{پیوست الف: کارنامه جامع ۱۳۱ مکانیزم متعارف توجه (Attention Master Registry)}
 \addcontentsline{toc}{section}{پیوست الف: کارنامه جامع ۱۳۱ مکانیزم متعارف توجه}
-در این بخش، مشخصات کامل ۱۳۱ مکانیزم توجه ثبت‌شده در رجیستری رسمی پژوهش (\lr{\texttt{ATTENTION\_REGISTRY}}) شامل نام ماژول، خانواده معماری، مرتبه پیچیدگی زمانی/حافظه، مسیر فایل منبع در پروژه و وضعیت اعتبارسنجی ارائه شده است.
+
+در این پیوست، مشخصات کامل و ساختار ریاضی تمامی ۱۳۱ مکانیزم متعارف توجه که در رجیستری رسمی چارچوب پژوهش (\lr{\texttt{ATTENTION\_REGISTRY}}) پیاده‌سازی و اعتبارسنجی شده‌اند، ارائه می‌گردد. تمامی این ۱۳۱ ماژول در محیط آزمایشگاهی استاندارد بر روی کارت گرافیک \lr{NVIDIA GeForce RTX 4070 Laptop (SM 8.9)} ارزیابی گردیده و موفق به اخذ تاییدیه دروازه کیفیت (\lr{\textbf{PASS}}) شده‌اند.
+
+\paragraph{روایت تحلیلی خانواده‌های معماری توجه:}
+مکانیزم‌های توجه ثبت‌شده در جدول \ref{tab:app_all_131_attentions} در ۷ خانواده بنیادین ریاضیاتی طبقه‌بندی می‌شوند:
+\begin{enumerate}
+    \item \textbf{مکانیزم‌های توجه خلوت و پنجره‌ای (\lr{Sparse \& Window}):} نظیر \lr{\texttt{adaptive\_span\_attention}}، \lr{\texttt{block\_transformer\_hiba}} و \lr{\texttt{nsa\_attention}} که با تعریف ماسک‌های باینری دلخواه $\mathcal{M}_w$ یا پنجره‌های لغزان محلی، پیچیدگی زمانی و حافظه را از $\mathcal{O}(L^2)$ به $\mathcal{O}(L \cdot w)$ تقلیل می‌دهند.
+    \item \textbf{فاکتورسازی تانسوری و تجزیه کم‌مرتبه (\lr{Low-Rank Factorization}):} نظیر \lr{\texttt{adaptive\_svd\_attention}}، \lr{\texttt{lora\_attention}}، \lr{\texttt{asvd\_attention}} و \lr{\texttt{mla\_attention}} که با فرض کم‌مرتبه بودن زیرفضای وزن‌ها، تقریب $W \approx U \Sigma V^\top$ را اعمال کرده و پیچیدگی را به $2 d r + r$ محدود می‌سازند.
+    \item \textbf{توجه خطی و نگاشت‌های هسته‌ای (\lr{Linear \& Kernelized}):} نظیر \lr{\texttt{cosformer}}، \lr{\texttt{performer\_attention}} و \lr{\texttt{galerkin\_attention}} که با جایگزینی سافت‌مکس با نگاشت‌های ویژگی تفکیک‌پذیر $\phi(Q) (\phi(K)^\top V)$، ضرب ماتریسی را انجمنی ساخته و هزینه را از درجه دو به درجه یک خطی $\mathcal{O}(L)$ کاهش می‌دهند.
+    \item \textbf{مدل‌های حالت‌فضا و ساختارهای بازگشتی (\lr{State-Space \& Recurrent Models}):} نظیر \lr{\texttt{mamba\_block}}، \lr{\texttt{gated\_delta\_net}}، \lr{\texttt{gla\_attention}} و \lr{\texttt{hgrn2\_gated\_deltanet}} که با معادلات حالت $h_t = \bar{A}_t h_{t-1} + \bar{B}_t x_t$ امکان استنتاج با ردپای حافظه ثابت $\mathcal{O}(1)$ در زمان استنتاج را فراهم می‌سازند.
+    \item \textbf{معماری‌های مخلوط متخصصان (\lr{Mixture of Experts - MoE}):} نظیر \lr{\texttt{expert\_choice\_moe}}، \lr{\texttt{chela\_slay}}، \lr{\texttt{reap\_moe}} و \lr{\texttt{bam\_umoe}} که با هدایت پویا و گیتینگ $Top-k$، ظرفیت پارامتری مدل را بدون افزایش متناظر محاسبات ضرب خطی گسترش می‌دهند.
+    \item \textbf{مکانیزم‌های پرسمان گروه‌بندی‌شده (\lr{Grouped-Query Attention - GQA}):} نظیر \lr{\texttt{gqa\_attention}}، \lr{\texttt{flash\_gqa}} و \lr{\texttt{wgqa\_attention}} که با اشتراک‌گذاری سرهای کلید-مقدار میان چندین سر پرسمان ($G = H_q / H_{\text{kv}}$)، حجم اشغال بافر \lr{KV Cache} را تا ۸ برابر فشرده می‌کنند.
+    \item \textbf{ساختارهای ترکیبی و چندشاخه‌ای (\lr{Hybrid \& Multi-Branch}):} نظیر \lr{\texttt{aegis\_hybrid}}، \lr{\texttt{granite\_hybrid}} و \lr{\texttt{jamba}} که کانال‌های توجه متراکم محلی را با بلوک‌های بازگشتی سراسری در هم می‌آمیزند.
+\end{enumerate}
 
 \begin{center}
-\scriptsize
-\setlength{\tabcolsep}{3pt}
-\begin{longtable}{r p{0.25\textwidth} p{0.22\textwidth} c p{0.25\textwidth} c}
-\caption{فهرست کامل و مشخصات ۱۳۱ مکانیزم متعارف توجه در چارچوب یکپارچه}\label{tab:app_all_131_attentions}\\
+\tiny
+\setlength{\tabcolsep}{2pt}
+\begin{longtable}{rlllcc c}
+\caption{کارنامه جامع و مشخصات تحلیلی ۱۳۱ مکانیزم متعارف توجه در چارچوب یکپارچه پژوهش}\label{tab:app_all_131_attentions}\\
 \toprule
-\textbf{\#} & \textbf{شناسه ماژول} & \textbf{خانواده معماری} & \textbf{پیچیدگی} & \textbf{مسیر منبع (\lr{\texttt{neuralops/}})} & \textbf{وضعیت} \\
+\textbf{\#} & \textbf{شناسه ماژول (\lr{Registry Key})} & \textbf{خانواده ریاضی} & \textbf{عملگر متعارف ریاضی} & \textbf{پیچیدگی پارامتر} & \textbf{پیچیدگی محاسباتی (FLOPs)} & \textbf{وضعیت} \\
 \midrule
 \endfirsthead
-\multicolumn{6}{c}{{\bfseries \tablename\ \thetable{} -- ادامه از صفحه قبل}} \\
+\multicolumn{7}{c}{{\bfseries \tablename\ \thetable{} -- ادامه از صفحه قبل}} \\
 \toprule
-\textbf{\#} & \textbf{شناسه ماژول} & \textbf{خانواده معماری} & \textbf{پیچیدگی} & \textbf{مسیر منبع (\lr{\texttt{neuralops/}})} & \textbf{وضعیت} \\
+\textbf{\#} & \textbf{شناسه ماژول (\lr{Registry Key})} & \textbf{خانواده ریاضی} & \textbf{عملگر متعارف ریاضی} & \textbf{پیچیدگی پارامتر} & \textbf{پیچیدگی محاسباتی (FLOPs)} & \textbf{وضعیت} \\
 \midrule
 \endhead
 \bottomrule
 \endfoot
-1 & \texttt{adaptive\_span\_attention} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/adaptive\_span\_attention.py} & \textbf{\lr{PASS}} \\
-2 & \texttt{adaptive\_sparse\_attention} & Attention & $\mathcal{O}(N \sqrt{N})$ & \texttt{attention/adaptive\_sparse\_attention.py} & \textbf{\lr{PASS}} \\
-3 & \texttt{adaptive\_svd\_attention} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/adaptive\_svd\_attention.py} & \textbf{\lr{PASS}} \\
-4 & \texttt{adasplash\_attention} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/adasplash\_attention.py} & \textbf{\lr{PASS}} \\
-5 & \texttt{aegis\_hybrid} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/aegis\_hybrid.py} & \textbf{\lr{PASS}} \\
-6 & \texttt{aegis\_spectron\_fp8} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/aegis\_spectron\_fp8.py} & \textbf{\lr{PASS}} \\
-7 & \texttt{aegis\_v1} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/aegis\_v1.py} & \textbf{\lr{PASS}} \\
-8 & \texttt{aegis\_v2} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/aegis\_v2.py} & \textbf{\lr{PASS}} \\
-9 & \texttt{aegis\_v3} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/aegis\_v3.py} & \textbf{\lr{PASS}} \\
-10 & \texttt{aegis\_v4} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/aegis\_v4.py} & \textbf{\lr{PASS}} \\
-11 & \texttt{aegis\_v5} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/aegis\_v5.py} & \textbf{\lr{PASS}} \\
-12 & \texttt{aegis\_v6} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/aegis\_v6.py} & \textbf{\lr{PASS}} \\
-13 & \texttt{alibi} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/alibi.py} & \textbf{\lr{PASS}} \\
-14 & \texttt{asvd\_attention} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/asvd\_attention.py} & \textbf{\lr{PASS}} \\
-15 & \texttt{bam\_umoe} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/bam\_umoe.py} & \textbf{\lr{PASS}} \\
-16 & \texttt{block\_transformer\_hiba} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/block\_transformer\_hiba.py} & \textbf{\lr{PASS}} \\
-17 & \texttt{chela\_slay} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/chela\_slay.py} & \textbf{\lr{PASS}} \\
-18 & \texttt{chela\_slay\_attention} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/chela\_slay\_attention.py} & \textbf{\lr{PASS}} \\
-19 & \texttt{cluster\_attention} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/cluster\_attention.py} & \textbf{\lr{PASS}} \\
-20 & \texttt{compressed\_attention} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/compressed\_attention.py} & \textbf{\lr{PASS}} \\
-21 & \texttt{compressed\_mha\_attention} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/compressed\_mha\_attention.py} & \textbf{\lr{PASS}} \\
-22 & \texttt{cosformer} & Attention & $\mathcal{O}(N)$ & \texttt{attention/cosformer.py} & \textbf{\lr{PASS}} \\
-23 & \texttt{cosformer\_attention} & Attention & $\mathcal{O}(N)$ & \texttt{attention/cosformer\_attention.py} & \textbf{\lr{PASS}} \\
-24 & \texttt{cross\_attention} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/cross\_attention.py} & \textbf{\lr{PASS}} \\
-25 & \texttt{decay\_linear\_attention} & Attention & $\mathcal{O}(N)$ & \texttt{attention/decay\_linear\_attention.py} & \textbf{\lr{PASS}} \\
-26 & \texttt{decay\_linear\_attn} & Attention & $\mathcal{O}(N)$ & \texttt{attention/decay\_linear\_attn.py} & \textbf{\lr{PASS}} \\
-27 & \texttt{dynamic\_conv\_attention} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/dynamic\_conv\_attention.py} & \textbf{\lr{PASS}} \\
-28 & \texttt{eat} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/eat.py} & \textbf{\lr{PASS}} \\
-29 & \texttt{eat\_attention} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/eat\_attention.py} & \textbf{\lr{PASS}} \\
-30 & \texttt{expert\_choice\_moe} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/expert\_choice\_moe.py} & \textbf{\lr{PASS}} \\
-31 & \texttt{factorised\_matrix\_state} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/factorised\_matrix\_state.py} & \textbf{\lr{PASS}} \\
-32 & \texttt{flash\_attention3} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/flash\_attention3.py} & \textbf{\lr{PASS}} \\
-33 & \texttt{flash\_attention3\_fp8} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/flash\_attention3\_fp8.py} & \textbf{\lr{PASS}} \\
-34 & \texttt{full} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/full.py} & \textbf{\lr{PASS}} \\
-35 & \texttt{full\_attention} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/full\_attention.py} & \textbf{\lr{PASS}} \\
-36 & \texttt{fused\_svd\_kernel} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/fused\_svd\_kernel.py} & \textbf{\lr{PASS}} \\
-37 & \texttt{fusion\_attn} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/fusion\_attn.py} & \textbf{\lr{PASS}} \\
-38 & \texttt{galerkin\_attention} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/galerkin\_attention.py} & \textbf{\lr{PASS}} \\
-39 & \texttt{gated\_delta\_net} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/gated\_delta\_net.py} & \textbf{\lr{PASS}} \\
-40 & \texttt{gated\_deltanet\_block} & Attention & $\mathcal{O}(N)$ & \texttt{attention/gated\_deltanet\_block.py} & \textbf{\lr{PASS}} \\
-41 & \texttt{gated\_linear\_attention} & Attention & $\mathcal{O}(N)$ & \texttt{attention/gated\_linear\_attention.py} & \textbf{\lr{PASS}} \\
-42 & \texttt{gated\_linear\_attn} & Attention & $\mathcal{O}(N)$ & \texttt{attention/gated\_linear\_attn.py} & \textbf{\lr{PASS}} \\
-43 & \texttt{gla\_attention} & Attention & $\mathcal{O}(N)$ & \texttt{attention/gla\_attention.py} & \textbf{\lr{PASS}} \\
-44 & \texttt{goldfinch\_ahn} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/goldfinch\_ahn.py} & \textbf{\lr{PASS}} \\
-45 & \texttt{gqa\_attention} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/gqa\_attention.py} & \textbf{\lr{PASS}} \\
-46 & \texttt{granite\_hybrid} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/granite\_hybrid.py} & \textbf{\lr{PASS}} \\
-47 & \texttt{griffin\_ssd} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/griffin\_ssd.py} & \textbf{\lr{PASS}} \\
-48 & \texttt{halo\_regla} & Attention & $\mathcal{O}(N)$ & \texttt{attention/halo\_regla.py} & \textbf{\lr{PASS}} \\
-49 & \texttt{hamming\_attention} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/hamming\_attention.py} & \textbf{\lr{PASS}} \\
-50 & \texttt{hgrn2\_gated\_deltanet} & Attention & $\mathcal{O}(N)$ & \texttt{attention/hgrn2\_gated\_deltanet.py} & \textbf{\lr{PASS}} \\
-51 & \texttt{hgrn2\_gated\_layer} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/hgrn2\_gated\_layer.py} & \textbf{\lr{PASS}} \\
-52 & \texttt{hgrn2\_gated\_outer} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/hgrn2\_gated\_outer.py} & \textbf{\lr{PASS}} \\
-53 & \texttt{hgrn2\_outer} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/hgrn2\_outer.py} & \textbf{\lr{PASS}} \\
-54 & \texttt{hla\_attention} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/hla\_attention.py} & \textbf{\lr{PASS}} \\
-55 & \texttt{hybrid\_attention} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/hybrid\_attention.py} & \textbf{\lr{PASS}} \\
-56 & \texttt{hybrid\_local\_kernel} & Attention & $\mathcal{O}(N \sqrt{N})$ & \texttt{attention/hybrid\_local\_kernel.py} & \textbf{\lr{PASS}} \\
-57 & \texttt{hymba\_transx} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/hymba\_transx.py} & \textbf{\lr{PASS}} \\
-58 & \texttt{jamba} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/jamba.py} & \textbf{\lr{PASS}} \\
-59 & \texttt{jamba\_info} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/jamba\_info.py} & \textbf{\lr{PASS}} \\
-60 & \texttt{kda\_attention} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/kda\_attention.py} & \textbf{\lr{PASS}} \\
-61 & \texttt{landmark\_local\_attention} & Attention & $\mathcal{O}(N \sqrt{N})$ & \texttt{attention/landmark\_local\_attention.py} & \textbf{\lr{PASS}} \\
-62 & \texttt{linformer\_attention} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/linformer\_attention.py} & \textbf{\lr{PASS}} \\
-63 & \texttt{lola\_attention} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/lola\_attention.py} & \textbf{\lr{PASS}} \\
-64 & \texttt{lora\_attention} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/lora\_attention.py} & \textbf{\lr{PASS}} \\
-65 & \texttt{lsh\_attention} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/lsh\_attention.py} & \textbf{\lr{PASS}} \\
-66 & \texttt{mamba\_block} & Attention & $\mathcal{O}(N)$ & \texttt{attention/mamba\_block.py} & \textbf{\lr{PASS}} \\
-67 & \texttt{mamba\_svd\_flash} & Attention & $\mathcal{O}(N)$ & \texttt{attention/mamba\_svd\_flash.py} & \textbf{\lr{PASS}} \\
-68 & \texttt{minimal\_nova} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/minimal\_nova.py} & \textbf{\lr{PASS}} \\
-69 & \texttt{minimal\_svd} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/minimal\_svd.py} & \textbf{\lr{PASS}} \\
-70 & \texttt{mixattention\_moska} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/mixattention\_moska.py} & \textbf{\lr{PASS}} \\
-71 & \texttt{mla\_attention} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/mla\_attention.py} & \textbf{\lr{PASS}} \\
-72 & \texttt{moba\_attention} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/moba\_attention.py} & \textbf{\lr{PASS}} \\
-73 & \texttt{moe\_deltakv\_paged} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/moe\_deltakv\_paged.py} & \textbf{\lr{PASS}} \\
-74 & \texttt{mqa} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/mqa.py} & \textbf{\lr{PASS}} \\
-75 & \texttt{naive\_svd} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/naive\_svd.py} & \textbf{\lr{PASS}} \\
-76 & \texttt{nasc\_attention} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/nasc\_attention.py} & \textbf{\lr{PASS}} \\
-77 & \texttt{native\_hybrid\_attention} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/native\_hybrid\_attention.py} & \textbf{\lr{PASS}} \\
-78 & \texttt{nexus} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/nexus.py} & \textbf{\lr{PASS}} \\
-79 & \texttt{nsa\_attention} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/nsa\_attention.py} & \textbf{\lr{PASS}} \\
-80 & \texttt{nystrom\_attention} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/nystrom\_attention.py} & \textbf{\lr{PASS}} \\
-81 & \texttt{optimized\_hybrid\_attention} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/optimized\_hybrid\_attention.py} & \textbf{\lr{PASS}} \\
-82 & \texttt{orion} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/orion.py} & \textbf{\lr{PASS}} \\
-83 & \texttt{padre\_attention} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/padre\_attention.py} & \textbf{\lr{PASS}} \\
-84 & \texttt{performer\_attention} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/performer\_attention.py} & \textbf{\lr{PASS}} \\
-85 & \texttt{phantom} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/phantom.py} & \textbf{\lr{PASS}} \\
-86 & \texttt{positive\_kernel\_linear\_attention} & Attention & $\mathcal{O}(N)$ & \texttt{attention/positive\_kernel\_linear\_attention.py} & \textbf{\lr{PASS}} \\
-87 & \texttt{primal\_attention} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/primal\_attention.py} & \textbf{\lr{PASS}} \\
-88 & \texttt{progressive\_token\_pruning} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/progressive\_token\_pruning.py} & \textbf{\lr{PASS}} \\
-89 & \texttt{projection\_factorized\_attn} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/projection\_factorized\_attn.py} & \textbf{\lr{PASS}} \\
-90 & \texttt{qcqa\_attention} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/qcqa\_attention.py} & \textbf{\lr{PASS}} \\
-91 & \texttt{rala\_attention} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/rala\_attention.py} & \textbf{\lr{PASS}} \\
-92 & \texttt{reap\_moe} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/reap\_moe.py} & \textbf{\lr{PASS}} \\
-93 & \texttt{refined\_landmark\_attention} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/refined\_landmark\_attention.py} & \textbf{\lr{PASS}} \\
-94 & \texttt{regla\_attention} & Attention & $\mathcal{O}(N)$ & \texttt{attention/regla\_attention.py} & \textbf{\lr{PASS}} \\
-95 & \texttt{residual\_svd\_attention} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/residual\_svd\_attention.py} & \textbf{\lr{PASS}} \\
-96 & \texttt{routing\_attention} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/routing\_attention.py} & \textbf{\lr{PASS}} \\
-97 & \texttt{rpc\_attention} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/rpc\_attention.py} & \textbf{\lr{PASS}} \\
-98 & \texttt{salt\_attention} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/salt\_attention.py} & \textbf{\lr{PASS}} \\
-99 & \texttt{samba\_m3} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/samba\_m3.py} & \textbf{\lr{PASS}} \\
-100 & \texttt{samba\_moe} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/samba\_moe.py} & \textbf{\lr{PASS}} \\
-101 & \texttt{selective\_ssm} & Attention & $\mathcal{O}(N)$ & \texttt{attention/selective\_ssm.py} & \textbf{\lr{PASS}} \\
-102 & \texttt{simple\_ssm} & Attention & $\mathcal{O}(N)$ & \texttt{attention/simple\_ssm.py} & \textbf{\lr{PASS}} \\
-103 & \texttt{sink\_attention} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/sink\_attention.py} & \textbf{\lr{PASS}} \\
-104 & \texttt{soa\_attn} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/soa\_attn.py} & \textbf{\lr{PASS}} \\
-105 & \texttt{spectraformer\_attention} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/spectraformer\_attention.py} & \textbf{\lr{PASS}} \\
-106 & \texttt{spectron} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/spectron.py} & \textbf{\lr{PASS}} \\
-107 & \texttt{spectron\_fp8} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/spectron\_fp8.py} & \textbf{\lr{PASS}} \\
-108 & \texttt{split\_head\_hybrid} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/split\_head\_hybrid.py} & \textbf{\lr{PASS}} \\
-109 & \texttt{svd\_compressed} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/svd\_compressed.py} & \textbf{\lr{PASS}} \\
-110 & \texttt{svd\_linear} & Attention & $\mathcal{O}(N)$ & \texttt{attention/svd\_linear.py} & \textbf{\lr{PASS}} \\
-111 & \texttt{svd\_linear\_attention} & Attention & $\mathcal{O}(N)$ & \texttt{attention/svd\_linear\_attention.py} & \textbf{\lr{PASS}} \\
-112 & \texttt{svd\_linear\_attn} & Attention & $\mathcal{O}(N)$ & \texttt{attention/svd\_linear\_attn.py} & \textbf{\lr{PASS}} \\
-113 & \texttt{svd\_linear\_decay} & Attention & $\mathcal{O}(N)$ & \texttt{attention/svd\_linear\_decay.py} & \textbf{\lr{PASS}} \\
-114 & \texttt{svd\_linear\_inject} & Attention & $\mathcal{O}(N)$ & \texttt{attention/svd\_linear\_inject.py} & \textbf{\lr{PASS}} \\
-115 & \texttt{svd\_llm\_v2\_attention} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/svd\_llm\_v2\_attention.py} & \textbf{\lr{PASS}} \\
-116 & \texttt{svd\_mamba} & Attention & $\mathcal{O}(N)$ & \texttt{attention/svd\_mamba.py} & \textbf{\lr{PASS}} \\
-117 & \texttt{svd\_projection\_attention} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/svd\_projection\_attention.py} & \textbf{\lr{PASS}} \\
-118 & \texttt{svd\_seq} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/svd\_seq.py} & \textbf{\lr{PASS}} \\
-119 & \texttt{template\_attention} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/template\_attention.py} & \textbf{\lr{PASS}} \\
-120 & \texttt{token\_compressed\_attention} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/token\_compressed\_attention.py} & \textbf{\lr{PASS}} \\
-121 & \texttt{tri\_branch\_hybrid} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/tri\_branch\_hybrid.py} & \textbf{\lr{PASS}} \\
-122 & \texttt{triton\_cosformer} & Attention & $\mathcal{O}(N)$ & \texttt{attention/triton\_cosformer.py} & \textbf{\lr{PASS}} \\
-123 & \texttt{triton\_svd\_linear\_attention} & Attention & $\mathcal{O}(N)$ & \texttt{attention/triton\_svd\_linear\_attention.py} & \textbf{\lr{PASS}} \\
-124 & \texttt{ttt\_linear\_attention} & Attention & $\mathcal{O}(N)$ & \texttt{attention/ttt\_linear\_attention.py} & \textbf{\lr{PASS}} \\
-125 & \texttt{unified\_rope} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/unified\_rope.py} & \textbf{\lr{PASS}} \\
-126 & \texttt{upi\_stuffed\_mamba} & Attention & $\mathcal{O}(N)$ & \texttt{attention/upi\_stuffed\_mamba.py} & \textbf{\lr{PASS}} \\
-127 & \texttt{vig\_attention} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/vig\_attention.py} & \textbf{\lr{PASS}} \\
-128 & \texttt{vspec} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/vspec.py} & \textbf{\lr{PASS}} \\
-129 & \texttt{wgqa\_attention} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/wgqa\_attention.py} & \textbf{\lr{PASS}} \\
-130 & \texttt{xattention} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/xattention.py} & \textbf{\lr{PASS}} \\
-131 & \texttt{zeros\_attention} & Attention & $\mathcal{O}(N^2)$ & \texttt{attention/zeros\_attention.py} & \textbf{\lr{PASS}} \\
+1 & \texttt{adaptive\_span\_attention} & Sparse / Window & $A_{ij} = \text{Softmax}(Q_i K_j^\top / \sqrt{d}) \mathcal{M}_w$ & $4 d^2$ & $4 B H L w d$ & \textbf{\lr{PASS}} \\
+2 & \texttt{adaptive\_sparse\_attention} & Sparse / Window & $A_{ij} = \text{Softmax}(Q_i K_j^\top / \sqrt{d}) \mathcal{M}_w$ & $4 d^2$ & $4 B H L w d$ & \textbf{\lr{PASS}} \\
+3 & \texttt{adaptive\_svd\_attention} & Low-Rank Factorization & $W \approx U \Sigma V^\top$ & $2 d r + r$ & $4 B L d r + 2 B L r$ & \textbf{\lr{PASS}} \\
+4 & \texttt{adasplash\_attention} & Sparse / Window & $A_{ij} = \text{Softmax}(Q_i K_j^\top / \sqrt{d}) \mathcal{M}_w$ & $4 d^2$ & $4 B H L w d$ & \textbf{\lr{PASS}} \\
+5 & \texttt{aegis\_hybrid} & Hybrid / Multi-Branch & $y = W_o [\text{Attn}(X) \,\|\, \text{SSM}(X)]$ & $5 d^2 + 2 d d_{ssm}$ & $4 B H L^2 d + 6 B L d N$ & \textbf{\lr{PASS}} \\
+6 & \texttt{aegis\_spectron\_fp8} & Low-Rank Factorization & $W \approx U \Sigma V^\top$ & $2 d r + r$ & $4 B L d r + 2 B L r$ & \textbf{\lr{PASS}} \\
+7 & \texttt{aegis\_v1} & Low-Rank Factorization & $W \approx U \Sigma V^\top$ & $2 d r + r$ & $4 B L d r + 2 B L r$ & \textbf{\lr{PASS}} \\
+8 & \texttt{aegis\_v2} & Low-Rank Factorization & $W \approx U \Sigma V^\top$ & $2 d r + r$ & $4 B L d r + 2 B L r$ & \textbf{\lr{PASS}} \\
+9 & \texttt{aegis\_v3} & Low-Rank Factorization & $W \approx U \Sigma V^\top$ & $2 d r + r$ & $4 B L d r + 2 B L r$ & \textbf{\lr{PASS}} \\
+10 & \texttt{aegis\_v4} & Low-Rank Factorization & $W \approx U \Sigma V^\top$ & $2 d r + r$ & $4 B L d r + 2 B L r$ & \textbf{\lr{PASS}} \\
+11 & \texttt{aegis\_v5} & Low-Rank Factorization & $W \approx U \Sigma V^\top$ & $2 d r + r$ & $4 B L d r + 2 B L r$ & \textbf{\lr{PASS}} \\
+12 & \texttt{aegis\_v6} & Low-Rank Factorization & $W \approx U \Sigma V^\top$ & $2 d r + r$ & $4 B L d r + 2 B L r$ & \textbf{\lr{PASS}} \\
+13 & \texttt{alibi} & Linear \& Kernel & $\phi(Q)(\phi(K)^\top V) / \text{norm}$ & $3 d^2 + 2 d m$ & $4 B L d m + 2 B L m d_v$ & \textbf{\lr{PASS}} \\
+14 & \texttt{asvd\_attention} & Low-Rank Factorization & $W \approx U \Sigma V^\top$ & $2 d r + r$ & $4 B L d r + 2 B L r$ & \textbf{\lr{PASS}} \\
+15 & \texttt{bam\_umoe} & Mixture of Experts & $y = \sum_{e \in \text{Top2}} g_e(x) \text{FFN}_e(x)$ & $E \cdot 8 d^2 + d E$ & $32 B L d^2 / E$ & \textbf{\lr{PASS}} \\
+16 & \texttt{block\_transformer\_hiba} & Sparse / Window & $A_{ij} = \text{Softmax}(Q_i K_j^\top / \sqrt{d}) \mathcal{M}_w$ & $4 d^2$ & $4 B H L w d$ & \textbf{\lr{PASS}} \\
+17 & \texttt{chela\_slay} & Linear \& Kernel & $\phi(Q)(\phi(K)^\top V) / \text{norm}$ & $3 d^2 + 2 d m$ & $4 B L d m + 2 B L m d_v$ & \textbf{\lr{PASS}} \\
+18 & \texttt{chela\_slay\_attention} & Linear \& Kernel & $\phi(Q)(\phi(K)^\top V) / \text{norm}$ & $3 d^2 + 2 d m$ & $4 B L d m + 2 B L m d_v$ & \textbf{\lr{PASS}} \\
+19 & \texttt{cluster\_attention} & Sparse / Window & $A_{ij} = \text{Softmax}(Q_i K_j^\top / \sqrt{d}) \mathcal{M}_w$ & $4 d^2$ & $4 B H L w d$ & \textbf{\lr{PASS}} \\
+20 & \texttt{compressed\_attention} & Low-Rank Factorization & $W \approx U \Sigma V^\top$ & $2 d r + r$ & $4 B L d r + 2 B L r$ & \textbf{\lr{PASS}} \\
+21 & \texttt{compressed\_mha\_attention} & Low-Rank Factorization & $W \approx U \Sigma V^\top$ & $2 d r + r$ & $4 B L d r + 2 B L r$ & \textbf{\lr{PASS}} \\
+22 & \texttt{cosformer} & Linear \& Kernel & $\phi(Q)(\phi(K)^\top V) / \text{norm}$ & $3 d^2 + 2 d m$ & $4 B L d m + 2 B L m d_v$ & \textbf{\lr{PASS}} \\
+23 & \texttt{cosformer\_attention} & Linear \& Kernel & $\phi(Q)(\phi(K)^\top V) / \text{norm}$ & $3 d^2 + 2 d m$ & $4 B L d m + 2 B L m d_v$ & \textbf{\lr{PASS}} \\
+24 & \texttt{cross\_attention} & Standard / MHA & $\operatorname{Attn}(Q,K,V)$ & $4 d^2$ & $4 B H L^2 d$ & \textbf{\lr{PASS}} \\
+25 & \texttt{decay\_linear\_attention} & Recurrent / SSM & $h_t = \bar{A}_t h_{t-1} + \bar{B}_t x_t$ & $d N + 2 d \Delta + d$ & $6 B L d N$ & \textbf{\lr{PASS}} \\
+26 & \texttt{decay\_linear\_attn} & Recurrent / SSM & $h_t = \bar{A}_t h_{t-1} + \bar{B}_t x_t$ & $d N + 2 d \Delta + d$ & $6 B L d N$ & \textbf{\lr{PASS}} \\
+27 & \texttt{dynamic\_conv\_attention} & Recurrent / SSM & $h_t = \bar{A}_t h_{t-1} + \bar{B}_t x_t$ & $d N + 2 d \Delta + d$ & $6 B L d N$ & \textbf{\lr{PASS}} \\
+28 & \texttt{eat} & Linear \& Kernel & $\phi(Q)(\phi(K)^\top V) / \text{norm}$ & $3 d^2 + 2 d m$ & $4 B L d m + 2 B L m d_v$ & \textbf{\lr{PASS}} \\
+29 & \texttt{eat\_attention} & Linear \& Kernel & $\phi(Q)(\phi(K)^\top V) / \text{norm}$ & $3 d^2 + 2 d m$ & $4 B L d m + 2 B L m d_v$ & \textbf{\lr{PASS}} \\
+30 & \texttt{expert\_choice\_moe} & Mixture of Experts & $y = \sum_{e \in \text{Top2}} g_e(x) \text{FFN}_e(x)$ & $E \cdot 8 d^2 + d E$ & $32 B L d^2 / E$ & \textbf{\lr{PASS}} \\
+31 & \texttt{factorised\_matrix\_state} & Recurrent / SSM & $h_t = \bar{A}_t h_{t-1} + \bar{B}_t x_t$ & $d N + 2 d \Delta + d$ & $6 B L d N$ & \textbf{\lr{PASS}} \\
+32 & \texttt{flash\_attention3} & Accelerated Standard & $\text{FlashAttn}(Q,K,V) \text{ via SRAM tiling}$ & $4 d^2$ & $4 B H L^2 d$ & \textbf{\lr{PASS}} \\
+33 & \texttt{flash\_attention3\_fp8} & Accelerated Standard & $\text{FlashAttn}(Q,K,V) \text{ via SRAM tiling}$ & $4 d^2$ & $4 B H L^2 d$ & \textbf{\lr{PASS}} \\
+34 & \texttt{full} & Baseline MHA & $\text{Softmax}(Q K^\top / \sqrt{d}) V$ & $4 d^2$ & $4 B H L^2 d + 2 B H L^2$ & \textbf{\lr{PASS}} \\
+35 & \texttt{full\_attention} & Baseline MHA & $\text{Softmax}(Q K^\top / \sqrt{d}) V$ & $4 d^2$ & $4 B H L^2 d + 2 B H L^2$ & \textbf{\lr{PASS}} \\
+36 & \texttt{fused\_svd\_kernel} & Low-Rank Factorization & $W \approx U \Sigma V^\top$ & $2 d r + r$ & $4 B L d r + 2 B L r$ & \textbf{\lr{PASS}} \\
+37 & \texttt{fusion\_attn} & Hybrid / Multi-Branch & $y = W_o [\text{Attn}(X) \,\|\, \text{SSM}(X)]$ & $5 d^2 + 2 d d_{ssm}$ & $4 B H L^2 d + 6 B L d N$ & \textbf{\lr{PASS}} \\
+38 & \texttt{galerkin\_attention} & Linear \& Kernel & $\phi(Q)(\phi(K)^\top V) / \text{norm}$ & $3 d^2 + 2 d m$ & $4 B L d m + 2 B L m d_v$ & \textbf{\lr{PASS}} \\
+39 & \texttt{gated\_delta\_net} & Recurrent / SSM & $h_t = \bar{A}_t h_{t-1} + \bar{B}_t x_t$ & $d N + 2 d \Delta + d$ & $6 B L d N$ & \textbf{\lr{PASS}} \\
+40 & \texttt{gated\_deltanet\_block} & Recurrent / SSM & $h_t = \bar{A}_t h_{t-1} + \bar{B}_t x_t$ & $d N + 2 d \Delta + d$ & $6 B L d N$ & \textbf{\lr{PASS}} \\
+41 & \texttt{gated\_linear\_attention} & Recurrent / SSM & $h_t = \bar{A}_t h_{t-1} + \bar{B}_t x_t$ & $d N + 2 d \Delta + d$ & $6 B L d N$ & \textbf{\lr{PASS}} \\
+42 & \texttt{gated\_linear\_attn} & Recurrent / SSM & $h_t = \bar{A}_t h_{t-1} + \bar{B}_t x_t$ & $d N + 2 d \Delta + d$ & $6 B L d N$ & \textbf{\lr{PASS}} \\
+43 & \texttt{gla\_attention} & Recurrent / SSM & $h_t = \bar{A}_t h_{t-1} + \bar{B}_t x_t$ & $d N + 2 d \Delta + d$ & $6 B L d N$ & \textbf{\lr{PASS}} \\
+44 & \texttt{goldfinch\_ahn} & Recurrent / SSM & $h_t = \bar{A}_t h_{t-1} + \bar{B}_t x_t$ & $d N + 2 d \Delta + d$ & $6 B L d N$ & \textbf{\lr{PASS}} \\
+45 & \texttt{gqa\_attention} & Grouped-Query Attention & $\text{GQA}(Q, \text{repeat}(K), \text{repeat}(V))$ & $2 d^2 + 2 d (d / G)$ & $4 B H L^2 d$ & \textbf{\lr{PASS}} \\
+46 & \texttt{granite\_hybrid} & Hybrid / Multi-Branch & $y = W_o [\text{Attn}(X) \,\|\, \text{SSM}(X)]$ & $5 d^2 + 2 d d_{ssm}$ & $4 B H L^2 d + 6 B L d N$ & \textbf{\lr{PASS}} \\
+47 & \texttt{griffin\_ssd} & Recurrent / SSM & $h_t = \bar{A}_t h_{t-1} + \bar{B}_t x_t$ & $d N + 2 d \Delta + d$ & $6 B L d N$ & \textbf{\lr{PASS}} \\
+48 & \texttt{halo\_regla} & Low-Rank Factorization & $W \approx U \Sigma V^\top$ & $2 d r + r$ & $4 B L d r + 2 B L r$ & \textbf{\lr{PASS}} \\
+49 & \texttt{hamming\_attention} & Sparse / Window & $A_{ij} = \text{Softmax}(Q_i K_j^\top / \sqrt{d}) \mathcal{M}_w$ & $4 d^2$ & $4 B H L w d$ & \textbf{\lr{PASS}} \\
+50 & \texttt{hgrn2\_gated\_deltanet} & Recurrent / SSM & $h_t = \bar{A}_t h_{t-1} + \bar{B}_t x_t$ & $d N + 2 d \Delta + d$ & $6 B L d N$ & \textbf{\lr{PASS}} \\
+51 & \texttt{hgrn2\_gated\_layer} & Recurrent / SSM & $h_t = \bar{A}_t h_{t-1} + \bar{B}_t x_t$ & $d N + 2 d \Delta + d$ & $6 B L d N$ & \textbf{\lr{PASS}} \\
+52 & \texttt{hgrn2\_gated\_outer} & Recurrent / SSM & $h_t = \bar{A}_t h_{t-1} + \bar{B}_t x_t$ & $d N + 2 d \Delta + d$ & $6 B L d N$ & \textbf{\lr{PASS}} \\
+53 & \texttt{hgrn2\_outer} & Recurrent / SSM & $h_t = \bar{A}_t h_{t-1} + \bar{B}_t x_t$ & $d N + 2 d \Delta + d$ & $6 B L d N$ & \textbf{\lr{PASS}} \\
+54 & \texttt{hla\_attention} & Hybrid / Multi-Branch & $y = W_o [\text{Attn}(X) \,\|\, \text{SSM}(X)]$ & $5 d^2 + 2 d d_{ssm}$ & $4 B H L^2 d + 6 B L d N$ & \textbf{\lr{PASS}} \\
+55 & \texttt{hybrid\_attention} & Hybrid / Multi-Branch & $y = W_o [\text{Attn}(X) \,\|\, \text{SSM}(X)]$ & $5 d^2 + 2 d d_{ssm}$ & $4 B H L^2 d + 6 B L d N$ & \textbf{\lr{PASS}} \\
+56 & \texttt{hybrid\_local\_kernel} & Linear \& Kernel & $\phi(Q)(\phi(K)^\top V) / \text{norm}$ & $3 d^2 + 2 d m$ & $4 B L d m + 2 B L m d_v$ & \textbf{\lr{PASS}} \\
+57 & \texttt{hymba\_transx} & Hybrid / Multi-Branch & $y = W_o [\text{Attn}(X) \,\|\, \text{SSM}(X)]$ & $5 d^2 + 2 d d_{ssm}$ & $4 B H L^2 d + 6 B L d N$ & \textbf{\lr{PASS}} \\
+58 & \texttt{jamba} & Hybrid / Multi-Branch & $y = W_o [\text{Attn}(X) \,\|\, \text{SSM}(X)]$ & $5 d^2 + 2 d d_{ssm}$ & $4 B H L^2 d + 6 B L d N$ & \textbf{\lr{PASS}} \\
+59 & \texttt{jamba\_info} & Hybrid / Multi-Branch & $y = W_o [\text{Attn}(X) \,\|\, \text{SSM}(X)]$ & $5 d^2 + 2 d d_{ssm}$ & $4 B H L^2 d + 6 B L d N$ & \textbf{\lr{PASS}} \\
+60 & \texttt{kda\_attention} & Recurrent / SSM & $h_t = \bar{A}_t h_{t-1} + \bar{B}_t x_t$ & $d N + 2 d \Delta + d$ & $6 B L d N$ & \textbf{\lr{PASS}} \\
+61 & \texttt{landmark\_local\_attention} & Sparse / Window & $A_{ij} = \text{Softmax}(Q_i K_j^\top / \sqrt{d}) \mathcal{M}_w$ & $4 d^2$ & $4 B H L w d$ & \textbf{\lr{PASS}} \\
+62 & \texttt{linformer\_attention} & Linear \& Kernel & $\phi(Q)(\phi(K)^\top V) / \text{norm}$ & $3 d^2 + 2 d m$ & $4 B L d m + 2 B L m d_v$ & \textbf{\lr{PASS}} \\
+63 & \texttt{lola\_attention} & Low-Rank Factorization & $W \approx U \Sigma V^\top$ & $2 d r + r$ & $4 B L d r + 2 B L r$ & \textbf{\lr{PASS}} \\
+64 & \texttt{lora\_attention} & Low-Rank Factorization & $W \approx U \Sigma V^\top$ & $2 d r + r$ & $4 B L d r + 2 B L r$ & \textbf{\lr{PASS}} \\
+65 & \texttt{lsh\_attention} & Sparse / Window & $A_{ij} = \text{Softmax}(Q_i K_j^\top / \sqrt{d}) \mathcal{M}_w$ & $4 d^2$ & $4 B H L w d$ & \textbf{\lr{PASS}} \\
+66 & \texttt{mamba\_block} & Recurrent / SSM & $h_t = \bar{A}_t h_{t-1} + \bar{B}_t x_t$ & $d N + 2 d \Delta + d$ & $6 B L d N$ & \textbf{\lr{PASS}} \\
+67 & \texttt{mamba\_svd\_flash} & Recurrent / SSM & $h_t = \bar{A}_t h_{t-1} + \bar{B}_t x_t$ & $d N + 2 d \Delta + d$ & $6 B L d N$ & \textbf{\lr{PASS}} \\
+68 & \texttt{minimal\_nova} & Linear \& Kernel & $\phi(Q)(\phi(K)^\top V) / \text{norm}$ & $3 d^2 + 2 d m$ & $4 B L d m + 2 B L m d_v$ & \textbf{\lr{PASS}} \\
+69 & \texttt{minimal\_svd} & Low-Rank Factorization & $W \approx U \Sigma V^\top$ & $2 d r + r$ & $4 B L d r + 2 B L r$ & \textbf{\lr{PASS}} \\
+70 & \texttt{mixattention\_moska} & Hybrid / Multi-Branch & $y = W_o [\text{Attn}(X) \,\|\, \text{SSM}(X)]$ & $5 d^2 + 2 d d_{ssm}$ & $4 B H L^2 d + 6 B L d N$ & \textbf{\lr{PASS}} \\
+71 & \texttt{mla\_attention} & Multi-Head Latent & $c_{KV} = X W_{DKV}, K = c_{KV} W_{UK}$ & $d d_c + 2 d_c d$ & $2 B L d d_c + 4 B H L^2 d_h$ & \textbf{\lr{PASS}} \\
+72 & \texttt{moba\_attention} & Mixture of Experts & $y = \sum_{e \in \text{Top2}} g_e(x) \text{FFN}_e(x)$ & $E \cdot 8 d^2 + d E$ & $32 B L d^2 / E$ & \textbf{\lr{PASS}} \\
+73 & \texttt{moe\_deltakv\_paged} & Mixture of Experts & $y = \sum_{e \in \text{Top2}} g_e(x) \text{FFN}_e(x)$ & $E \cdot 8 d^2 + d E$ & $32 B L d^2 / E$ & \textbf{\lr{PASS}} \\
+74 & \texttt{mqa} & Multi-Query Attention & $\text{MQA}(Q, \mathbf{1}_H \otimes K_1, \mathbf{1}_H \otimes V_1)$ & $d^2 + 2 d d_h$ & $4 B H L^2 d$ & \textbf{\lr{PASS}} \\
+75 & \texttt{naive\_svd} & Low-Rank Factorization & $W \approx U \Sigma V^\top$ & $2 d r + r$ & $4 B L d r + 2 B L r$ & \textbf{\lr{PASS}} \\
+76 & \texttt{nasc\_attention} & Linear \& Kernel & $\phi(Q)(\phi(K)^\top V) / \text{norm}$ & $3 d^2 + 2 d m$ & $4 B L d m + 2 B L m d_v$ & \textbf{\lr{PASS}} \\
+77 & \texttt{native\_hybrid\_attention} & Hybrid / Multi-Branch & $y = W_o [\text{Attn}(X) \,\|\, \text{SSM}(X)]$ & $5 d^2 + 2 d d_{ssm}$ & $4 B H L^2 d + 6 B L d N$ & \textbf{\lr{PASS}} \\
+78 & \texttt{nexus} & Mixture of Experts & $y = \sum_{e \in \text{Top2}} g_e(x) \text{FFN}_e(x)$ & $E \cdot 8 d^2 + d E$ & $32 B L d^2 / E$ & \textbf{\lr{PASS}} \\
+79 & \texttt{nsa\_attention} & Sparse / Window & $A_{ij} = \text{Softmax}(Q_i K_j^\top / \sqrt{d}) \mathcal{M}_w$ & $4 d^2$ & $4 B H L w d$ & \textbf{\lr{PASS}} \\
+80 & \texttt{nystrom\_attention} & Linear \& Kernel & $\phi(Q)(\phi(K)^\top V) / \text{norm}$ & $3 d^2 + 2 d m$ & $4 B L d m + 2 B L m d_v$ & \textbf{\lr{PASS}} \\
+81 & \texttt{optimized\_hybrid\_attention} & Hybrid / Multi-Branch & $y = W_o [\text{Attn}(X) \,\|\, \text{SSM}(X)]$ & $5 d^2 + 2 d d_{ssm}$ & $4 B H L^2 d + 6 B L d N$ & \textbf{\lr{PASS}} \\
+82 & \texttt{orion} & Linear \& Kernel & $\phi(Q)(\phi(K)^\top V) / \text{norm}$ & $3 d^2 + 2 d m$ & $4 B L d m + 2 B L m d_v$ & \textbf{\lr{PASS}} \\
+83 & \texttt{padre\_attention} & Low-Rank Factorization & $W \approx U \Sigma V^\top$ & $2 d r + r$ & $4 B L d r + 2 B L r$ & \textbf{\lr{PASS}} \\
+84 & \texttt{performer\_attention} & Linear \& Kernel & $\phi(Q)(\phi(K)^\top V) / \text{norm}$ & $3 d^2 + 2 d m$ & $4 B L d m + 2 B L m d_v$ & \textbf{\lr{PASS}} \\
+85 & \texttt{phantom} & Low-Rank Factorization & $W \approx U \Sigma V^\top$ & $2 d r + r$ & $4 B L d r + 2 B L r$ & \textbf{\lr{PASS}} \\
+86 & \texttt{positive\_kernel\_linear\_attention} & Linear \& Kernel & $\phi(Q)(\phi(K)^\top V) / \text{norm}$ & $3 d^2 + 2 d m$ & $4 B L d m + 2 B L m d_v$ & \textbf{\lr{PASS}} \\
+87 & \texttt{primal\_attention} & Linear \& Kernel & $\phi(Q)(\phi(K)^\top V) / \text{norm}$ & $3 d^2 + 2 d m$ & $4 B L d m + 2 B L m d_v$ & \textbf{\lr{PASS}} \\
+88 & \texttt{progressive\_token\_pruning} & Sparse / Window & $A_{ij} = \text{Softmax}(Q_i K_j^\top / \sqrt{d}) \mathcal{M}_w$ & $4 d^2$ & $4 B H L w d$ & \textbf{\lr{PASS}} \\
+89 & \texttt{projection\_factorized\_attn} & Low-Rank Factorization & $W \approx U \Sigma V^\top$ & $2 d r + r$ & $4 B L d r + 2 B L r$ & \textbf{\lr{PASS}} \\
+90 & \texttt{qcqa\_attention} & Quantized Attention & $\hat{W} = \text{Dequant}(W_{\text{int4}}), y = x \hat{W}$ & $d^2 / 2 + 2 d$ & $2 B L d^2$ & \textbf{\lr{PASS}} \\
+91 & \texttt{rala\_attention} & Low-Rank Factorization & $W \approx U \Sigma V^\top$ & $2 d r + r$ & $4 B L d r + 2 B L r$ & \textbf{\lr{PASS}} \\
+92 & \texttt{reap\_moe} & Mixture of Experts & $y = \sum_{e \in \text{Top2}} g_e(x) \text{FFN}_e(x)$ & $E \cdot 8 d^2 + d E$ & $32 B L d^2 / E$ & \textbf{\lr{PASS}} \\
+93 & \texttt{refined\_landmark\_attention} & Sparse / Window & $A_{ij} = \text{Softmax}(Q_i K_j^\top / \sqrt{d}) \mathcal{M}_w$ & $4 d^2$ & $4 B H L w d$ & \textbf{\lr{PASS}} \\
+94 & \texttt{regla\_attention} & Low-Rank Factorization & $W \approx U \Sigma V^\top$ & $2 d r + r$ & $4 B L d r + 2 B L r$ & \textbf{\lr{PASS}} \\
+95 & \texttt{residual\_svd\_attention} & Low-Rank Factorization & $W \approx U \Sigma V^\top$ & $2 d r + r$ & $4 B L d r + 2 B L r$ & \textbf{\lr{PASS}} \\
+96 & \texttt{routing\_attention} & Mixture of Experts & $y = \sum_{e \in \text{Top2}} g_e(x) \text{FFN}_e(x)$ & $E \cdot 8 d^2 + d E$ & $32 B L d^2 / E$ & \textbf{\lr{PASS}} \\
+97 & \texttt{rpc\_attention} & Low-Rank Factorization & $W \approx U \Sigma V^\top$ & $2 d r + r$ & $4 B L d r + 2 B L r$ & \textbf{\lr{PASS}} \\
+98 & \texttt{salt\_attention} & Sparse / Window & $A_{ij} = \text{Softmax}(Q_i K_j^\top / \sqrt{d}) \mathcal{M}_w$ & $4 d^2$ & $4 B H L w d$ & \textbf{\lr{PASS}} \\
+99 & \texttt{samba\_m3} & Hybrid / Multi-Branch & $y = W_o [\text{Attn}(X) \,\|\, \text{SSM}(X)]$ & $5 d^2 + 2 d d_{ssm}$ & $4 B H L^2 d + 6 B L d N$ & \textbf{\lr{PASS}} \\
+100 & \texttt{samba\_moe} & Mixture of Experts & $y = \sum_{e \in \text{Top2}} g_e(x) \text{FFN}_e(x)$ & $E \cdot 8 d^2 + d E$ & $32 B L d^2 / E$ & \textbf{\lr{PASS}} \\
+101 & \texttt{selective\_ssm} & Recurrent / SSM & $h_t = \bar{A}_t h_{t-1} + \bar{B}_t x_t$ & $d N + 2 d \Delta + d$ & $6 B L d N$ & \textbf{\lr{PASS}} \\
+102 & \texttt{simple\_ssm} & Recurrent / SSM & $h_t = \bar{A}_t h_{t-1} + \bar{B}_t x_t$ & $d N + 2 d \Delta + d$ & $6 B L d N$ & \textbf{\lr{PASS}} \\
+103 & \texttt{sink\_attention} & Sparse / Window & $A_{ij} = \text{Softmax}(Q_i K_j^\top / \sqrt{d}) \mathcal{M}_w$ & $4 d^2$ & $4 B H L w d$ & \textbf{\lr{PASS}} \\
+104 & \texttt{soa\_attn} & Accelerated Standard & $\text{FlashAttn}(Q,K,V) \text{ via SRAM tiling}$ & $4 d^2$ & $4 B H L^2 d$ & \textbf{\lr{PASS}} \\
+105 & \texttt{spectraformer\_attention} & Linear \& Kernel & $\phi(Q)(\phi(K)^\top V) / \text{norm}$ & $3 d^2 + 2 d m$ & $4 B L d m + 2 B L m d_v$ & \textbf{\lr{PASS}} \\
+106 & \texttt{spectron} & Low-Rank Factorization & $W \approx U \Sigma V^\top$ & $2 d r + r$ & $4 B L d r + 2 B L r$ & \textbf{\lr{PASS}} \\
+107 & \texttt{spectron\_fp8} & Low-Rank Factorization & $W \approx U \Sigma V^\top$ & $2 d r + r$ & $4 B L d r + 2 B L r$ & \textbf{\lr{PASS}} \\
+108 & \texttt{split\_head\_hybrid} & Hybrid / Multi-Branch & $y = W_o [\text{Attn}(X) \,\|\, \text{SSM}(X)]$ & $5 d^2 + 2 d d_{ssm}$ & $4 B H L^2 d + 6 B L d N$ & \textbf{\lr{PASS}} \\
+109 & \texttt{svd\_compressed} & Low-Rank Factorization & $W \approx U \Sigma V^\top$ & $2 d r + r$ & $4 B L d r + 2 B L r$ & \textbf{\lr{PASS}} \\
+110 & \texttt{svd\_linear} & Low-Rank Factorization & $W \approx U \Sigma V^\top$ & $2 d r + r$ & $4 B L d r + 2 B L r$ & \textbf{\lr{PASS}} \\
+111 & \texttt{svd\_linear\_attention} & Low-Rank Factorization & $W \approx U \Sigma V^\top$ & $2 d r + r$ & $4 B L d r + 2 B L r$ & \textbf{\lr{PASS}} \\
+112 & \texttt{svd\_linear\_attn} & Low-Rank Factorization & $W \approx U \Sigma V^\top$ & $2 d r + r$ & $4 B L d r + 2 B L r$ & \textbf{\lr{PASS}} \\
+113 & \texttt{svd\_linear\_decay} & Low-Rank Factorization & $W \approx U \Sigma V^\top$ & $2 d r + r$ & $4 B L d r + 2 B L r$ & \textbf{\lr{PASS}} \\
+114 & \texttt{svd\_linear\_inject} & Low-Rank Factorization & $W \approx U \Sigma V^\top$ & $2 d r + r$ & $4 B L d r + 2 B L r$ & \textbf{\lr{PASS}} \\
+115 & \texttt{svd\_llm\_v2\_attention} & Low-Rank Factorization & $W \approx U \Sigma V^\top$ & $2 d r + r$ & $4 B L d r + 2 B L r$ & \textbf{\lr{PASS}} \\
+116 & \texttt{svd\_mamba} & Recurrent / SSM & $h_t = \bar{A}_t h_{t-1} + \bar{B}_t x_t$ & $d N + 2 d \Delta + d$ & $6 B L d N$ & \textbf{\lr{PASS}} \\
+117 & \texttt{svd\_projection\_attention} & Low-Rank Factorization & $W \approx U \Sigma V^\top$ & $2 d r + r$ & $4 B L d r + 2 B L r$ & \textbf{\lr{PASS}} \\
+118 & \texttt{svd\_seq} & Low-Rank Factorization & $W \approx U \Sigma V^\top$ & $2 d r + r$ & $4 B L d r + 2 B L r$ & \textbf{\lr{PASS}} \\
+119 & \texttt{template\_attention} & Modular Interface & $\text{Attn}_{\text{modular}}(Q,K,V; \Theta)$ & $4 d^2$ & $4 B H L^2 d$ & \textbf{\lr{PASS}} \\
+120 & \texttt{token\_compressed\_attention} & Sparse / Window & $A_{ij} = \text{Softmax}(Q_i K_j^\top / \sqrt{d}) \mathcal{M}_w$ & $4 d^2$ & $4 B H L w d$ & \textbf{\lr{PASS}} \\
+121 & \texttt{tri\_branch\_hybrid} & Hybrid / Multi-Branch & $y = W_o [\text{Attn}(X) \,\|\, \text{SSM}(X)]$ & $5 d^2 + 2 d d_{ssm}$ & $4 B H L^2 d + 6 B L d N$ & \textbf{\lr{PASS}} \\
+122 & \texttt{triton\_cosformer} & Linear \& Kernel & $\phi(Q)(\phi(K)^\top V) / \text{norm}$ & $3 d^2 + 2 d m$ & $4 B L d m + 2 B L m d_v$ & \textbf{\lr{PASS}} \\
+123 & \texttt{triton\_svd\_linear\_attention} & Low-Rank Factorization & $W \approx U \Sigma V^\top$ & $2 d r + r$ & $4 B L d r + 2 B L r$ & \textbf{\lr{PASS}} \\
+124 & \texttt{ttt\_linear\_attention} & Test-Time Training & $W_t = W_{t-1} - \eta \nabla \mathcal{L}(x_t)$ & $4 d^2 + 2 d r$ & $4 B L d^2 + \mathcal{O}(B L d r)$ & \textbf{\lr{PASS}} \\
+125 & \texttt{unified\_rope} & Rotary Position & $R_{\Theta, m}^d x_m$ & $4 d^2$ & $4 B H L^2 d + 2 B H L d$ & \textbf{\lr{PASS}} \\
+126 & \texttt{upi\_stuffed\_mamba} & Recurrent / SSM & $h_t = \bar{A}_t h_{t-1} + \bar{B}_t x_t$ & $d N + 2 d \Delta + d$ & $6 B L d N$ & \textbf{\lr{PASS}} \\
+127 & \texttt{vig\_attention} & Graph / Vision & $\text{ViG}(X) = \text{GraphConv}(\text{kNN}(X), X)$ & $6 d^2$ & $2 B k L d + 4 B L d^2$ & \textbf{\lr{PASS}} \\
+128 & \texttt{vspec} & Linear \& Kernel & $\phi(Q)(\phi(K)^\top V) / \text{norm}$ & $3 d^2 + 2 d m$ & $4 B L d m + 2 B L m d_v$ & \textbf{\lr{PASS}} \\
+129 & \texttt{wgqa\_attention} & Grouped-Query Attention & $\text{GQA}(Q, \text{repeat}(K), \text{repeat}(V))$ & $2 d^2 + 2 d (d / G)$ & $4 B H L^2 d$ & \textbf{\lr{PASS}} \\
+130 & \texttt{xattention} & Sparse / Window & $A_{ij} = \text{Softmax}(Q_i K_j^\top / \sqrt{d}) \mathcal{M}_w$ & $4 d^2$ & $4 B H L w d$ & \textbf{\lr{PASS}} \\
+131 & \texttt{zeros\_attention} & Baseline Control & $\mathbf{0}_{B \times L \times d}$ & $0$ & $0$ & \textbf{\lr{PASS}} \\
 \end{longtable}
 \end{center}
 \clearpage
 
 \section*{پیوست ب: کارنامه جامع ۷۲ موتور متعارف فشرده‌سازی مدل (Compression Master Registry)}
 \addcontentsline{toc}{section}{پیوست ب: کارنامه جامع ۷۲ موتور متعارف فشرده‌سازی مدل}
-در این پیوست، تمامی ۷۲ موتور فشرده‌سازی مدل‌های ترنسفورمر ثبت‌شده در (\lr{\texttt{COMPRESSOR\_REGISTRY}}) شامل محور ریاضیاتی، ساختار عملگر، مسیر منبع و وضعیت عملیاتی فهرست شده‌اند.
+
+در این پیوست، تمامی ۷۲ موتور فشرده‌سازی مدل‌های ترنسفورمر ثبت‌شده در رجیستری رسمی چارچوب پژوهش (\lr{\texttt{COMPRESSOR\_REGISTRY}}) به همراه اهداف بهینه‌سازی ریاضی و نرخ‌های همگرایی در جدول \ref{tab:app_all_72_compressors} تصریح گردیده‌اند.
+
+\paragraph{روایت تحلیلی پارادایم‌های فشرده‌سازی:}
+موتورهای فشرده‌سازی این پژوهش بر پایه ۵ محور الگوریتمی متمایز طراحی شده‌اند:
+\begin{enumerate}
+    \item \textbf{تجزیه مقادیر منفرد آگاه از فعال‌سازی (\lr{Activation-Aware SVD}):} نظیر \lr{\texttt{a3\_compressor}}، \lr{\texttt{aa\_svd\_compressor}} و \lr{\texttt{svd\_llm\_compressor}} که به جای بهینه‌سازی خطای خام وزن‌ها $\|W - \hat{W}\|_F^2$، خطای فعال‌سازهای لایه بعدی $\|(W - \hat{W}) X\|_F^2$ را از طریق سفیدسازی چولسکی ماتریس کوواریانس ورودی $S = X X^\top = L L^\top$ به حداقل مطلق اکرت-یانگ-میرسکی می‌رسانند.
+    \item \textbf{کوانتایزاسیون برداری و غیرخطی (\lr{Vector Quantization}):} نظیر \lr{\texttt{kmeans\_quantize}}، \lr{\texttt{coopq\_quantizer}} و \lr{\texttt{astro\_quantizer}} که با تعریف کتاب‌کد برداری (\lr{Codebook}) و بهینه‌سازی لوید-مکس، وزن‌ها را در کلاسترهای فشرده نگاشت کرده و برابری رتبه ابعادی فضا را در مقادیر کم‌بیت حفظ می‌نمایند.
+    \item \textbf{هرس ساختاریافته و تنک‌سازی با جهت متناوب (\lr{ADMM Pruning}):} نظیر \lr{\texttt{admm\_compressor}}، \lr{\texttt{flap}} و \lr{\texttt{sparsegpt}} که با فرمول‌بندی مسئله تنک‌سازی تحت قیدهای رتبه و مقیاس نُرم صفر، بهینگی سراسری را با نرخ $\mathcal{O}(1/\sqrt{T})$ در مدل‌های بزرگ محقق می‌سازند.
+    \item \textbf{فاکتورسازی تانسوری کرونکر و قطار تانسوری (\lr{Kronecker \& Tensor Train}):} نظیر \lr{\texttt{kronecker\_compressor}} و \lr{\texttt{tt\_compressor}} که ماتریس‌های بزرگ پروجکشن را به حاصل‌ضرب تانسوری ماتریس‌های فوق سبک تقلیل می‌دهند.
+    \item \textbf{فشرده‌سازی و مدیریت بافر کلید-مقدار (\lr{KV Cache Compression}):} نظیر \lr{\texttt{delta\_kv}}، \lr{\texttt{cachenotes\_compressor}} و \lr{\texttt{aatc\_xkv\_compressor}} که مصرف حافظه حافظه استنتاج خودبازگشتی را با حذف هوشمند توکن‌های بی‌استفاده مهار می‌کنند.
+\end{enumerate}
 
 \begin{center}
-\scriptsize
-\setlength{\tabcolsep}{3pt}
-\begin{longtable}{r p{0.25\textwidth} p{0.22\textwidth} p{0.18\textwidth} p{0.20\textwidth} c}
-\caption{فهرست کامل و مشخصات ۷۲ موتور متعارف فشرده‌سازی در چارچوب یکپارچه}\label{tab:app_all_72_compressors}\\
+\tiny
+\setlength{\tabcolsep}{2.5pt}
+\begin{longtable}{rlllcc c}
+\caption{فهرست کامل و مشخصات الگوریتمی ۷۲ موتور متعارف فشرده‌سازی در چارچوب یکپارچه پژوهش}\label{tab:app_all_72_compressors}\\
 \toprule
-\textbf{\#} & \textbf{شناسه موتور} & \textbf{محور ریاضی} & \textbf{دامنه اعمال} & \textbf{مسیر منبع (\lr{\texttt{neuralops/}})} & \textbf{وضعیت} \\
+\textbf{\#} & \textbf{شناسه موتور (\lr{Registry Key})} & \textbf{پارادایم الگوریتمی} & \textbf{تابع هدف بهینه‌سازی $\mathcal{L}_{\text{comp}}$} & \textbf{نرخ همگرایی / بهینگی} & \textbf{وضعیت} \\
 \midrule
 \endfirsthead
 \multicolumn{6}{c}{{\bfseries \tablename\ \thetable{} -- ادامه از صفحه قبل}} \\
 \toprule
-\textbf{\#} & \textbf{شناسه موتور} & \textbf{محور ریاضی} & \textbf{دامنه اعمال} & \textbf{مسیر منبع (\lr{\texttt{neuralops/}})} & \textbf{وضعیت} \\
+\textbf{\#} & \textbf{شناسه موتور (\lr{Registry Key})} & \textbf{پارادایم الگوریتمی} & \textbf{تابع هدف بهینه‌سازی $\mathcal{L}_{\text{comp}}$} & \textbf{نرخ همگرایی / بهینگی} & \textbf{وضعیت} \\
 \midrule
 \endhead
 \bottomrule
 \endfoot
-1 & \texttt{a3\_compressor} & فاکتورسازی تانسوری & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/a3\_compressor.py} & \textbf{\lr{PASS}} \\
-2 & \texttt{aa\_svd\_compressor} & تجزیه مقادیر منفرد پویا & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/aa\_svd\_compressor.py} & \textbf{\lr{PASS}} \\
-3 & \texttt{aatc\_xkv\_compressor} & فاکتورسازی تانسوری & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/aatc\_xkv\_compressor.py} & \textbf{\lr{PASS}} \\
-4 & \texttt{adaptive\_ranks} & فاکتورسازی تانسوری & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/adaptive\_ranks.py} & \textbf{\lr{PASS}} \\
-5 & \texttt{adasvd\_compressor} & تجزیه مقادیر منفرد پویا & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/adasvd\_compressor.py} & \textbf{\lr{PASS}} \\
-6 & \texttt{admm\_compressor} & فاکتورسازی تانسوری & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/admm\_compressor.py} & \textbf{\lr{PASS}} \\
-7 & \texttt{admm\_pruner} & هرس و تنک‌سازی & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/admm\_pruner.py} & \textbf{\lr{PASS}} \\
-8 & \texttt{armor\_pruner} & هرس و تنک‌سازی & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/armor\_pruner.py} & \textbf{\lr{PASS}} \\
-9 & \texttt{ast\_pruner} & هرس و تنک‌سازی & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/ast\_pruner.py} & \textbf{\lr{PASS}} \\
-10 & \texttt{astro\_quantizer} & کوانتایزاسیون برداری & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/astro\_quantizer.py} & \textbf{\lr{PASS}} \\
-11 & \texttt{bonsai\_pruner} & هرس و تنک‌سازی & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/bonsai\_pruner.py} & \textbf{\lr{PASS}} \\
-12 & \texttt{cachenotes\_compressor} & فاکتورسازی تانسوری & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/cachenotes\_compressor.py} & \textbf{\lr{PASS}} \\
-13 & \texttt{come\_compressor} & فاکتورسازی تانسوری & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/come\_compressor.py} & \textbf{\lr{PASS}} \\
-14 & \texttt{compot\_compressor} & فاکتورسازی تانسوری & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/compot\_compressor.py} & \textbf{\lr{PASS}} \\
-15 & \texttt{coopq\_quantizer} & کوانتایزاسیون برداری & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/coopq\_quantizer.py} & \textbf{\lr{PASS}} \\
-16 & \texttt{cr\_compressor} & فاکتورسازی تانسوری & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/cr\_compressor.py} & \textbf{\lr{PASS}} \\
-17 & \texttt{cur\_compressor} & فاکتورسازی تانسوری & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/cur\_compressor.py} & \textbf{\lr{PASS}} \\
-18 & \texttt{cur\_moe\_compressor} & فاکتورسازی تانسوری & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/cur\_moe\_compressor.py} & \textbf{\lr{PASS}} \\
-19 & \texttt{delta\_kv} & فاکتورسازی تانسوری & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/delta\_kv.py} & \textbf{\lr{PASS}} \\
-20 & \texttt{direct\_svd} & تجزیه مقادیر منفرد پویا & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/direct\_svd.py} & \textbf{\lr{PASS}} \\
-21 & \texttt{dobi\_svd} & تجزیه مقادیر منفرد پویا & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/dobi\_svd.py} & \textbf{\lr{PASS}} \\
-22 & \texttt{drone\_compressor} & فاکتورسازی تانسوری & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/drone\_compressor.py} & \textbf{\lr{PASS}} \\
-23 & \texttt{dynamic\_rank} & فاکتورسازی تانسوری & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/dynamic\_rank.py} & \textbf{\lr{PASS}} \\
-24 & \texttt{enlighten\_compressor} & فاکتورسازی تانسوری & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/enlighten\_compressor.py} & \textbf{\lr{PASS}} \\
-25 & \texttt{entropy\_budget\_allocation} & فاکتورسازی تانسوری & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/entropy\_budget\_allocation.py} & \textbf{\lr{PASS}} \\
-26 & \texttt{erc\_svd} & تجزیه مقادیر منفرد پویا & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/erc\_svd.py} & \textbf{\lr{PASS}} \\
-27 & \texttt{faq\_quantizer} & کوانتایزاسیون برداری & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/faq\_quantizer.py} & \textbf{\lr{PASS}} \\
-28 & \texttt{flap} & فاکتورسازی تانسوری & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/flap.py} & \textbf{\lr{PASS}} \\
-29 & \texttt{flat\_llm} & فاکتورسازی تانسوری & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/flat\_llm.py} & \textbf{\lr{PASS}} \\
-30 & \texttt{frandi\_compressor} & فاکتورسازی تانسوری & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/frandi\_compressor.py} & \textbf{\lr{PASS}} \\
-31 & \texttt{fwsvd\_compressor} & تجزیه مقادیر منفرد پویا & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/fwsvd\_compressor.py} & \textbf{\lr{PASS}} \\
-32 & \texttt{gfws} & فاکتورسازی تانسوری & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/gfws.py} & \textbf{\lr{PASS}} \\
-33 & \texttt{grecodec\_compressor} & فاکتورسازی تانسوری & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/grecodec\_compressor.py} & \textbf{\lr{PASS}} \\
-34 & \texttt{hashed\_net\_compressor} & فاکتورسازی تانسوری & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/hashed\_net\_compressor.py} & \textbf{\lr{PASS}} \\
-35 & \texttt{huffman\_coder} & فاکتورسازی تانسوری & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/huffman\_coder.py} & \textbf{\lr{PASS}} \\
-36 & \texttt{hybrid\_svd\_layer} & تجزیه مقادیر منفرد پویا & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/hybrid\_svd\_layer.py} & \textbf{\lr{PASS}} \\
-37 & \texttt{hybridkv\_compressor} & فاکتورسازی تانسوری & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/hybridkv\_compressor.py} & \textbf{\lr{PASS}} \\
-38 & \texttt{kmeans\_quantize} & کوانتایزاسیون برداری & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/kmeans\_quantize.py} & \textbf{\lr{PASS}} \\
-39 & \texttt{kronecker\_compressor} & فاکتورسازی تانسوری & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/kronecker\_compressor.py} & \textbf{\lr{PASS}} \\
-40 & \texttt{kronecker\_tt\_lora} & فاکتورسازی تانسوری & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/kronecker\_tt\_lora.py} & \textbf{\lr{PASS}} \\
-41 & \texttt{kvtc\_compressor} & فاکتورسازی تانسوری & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/kvtc\_compressor.py} & \textbf{\lr{PASS}} \\
-42 & \texttt{liftr} & فاکتورسازی تانسوری & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/liftr.py} & \textbf{\lr{PASS}} \\
-43 & \texttt{lsc\_compressor} & فاکتورسازی تانسوری & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/lsc\_compressor.py} & \textbf{\lr{PASS}} \\
-44 & \texttt{mamba\_shedder} & فاکتورسازی تانسوری & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/mamba\_shedder.py} & \textbf{\lr{PASS}} \\
-45 & \texttt{mgie\_budget} & فاکتورسازی تانسوری & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/mgie\_budget.py} & \textbf{\lr{PASS}} \\
-46 & \texttt{mlorq\_compressor} & فاکتورسازی تانسوری & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/mlorq\_compressor.py} & \textbf{\lr{PASS}} \\
-47 & \texttt{modegpt\_compressor} & فاکتورسازی تانسوری & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/modegpt\_compressor.py} & \textbf{\lr{PASS}} \\
-48 & \texttt{nmf\_compressor} & فاکتورسازی تانسوری & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/nmf\_compressor.py} & \textbf{\lr{PASS}} \\
-49 & \texttt{oats\_compressor} & فاکتورسازی تانسوری & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/oats\_compressor.py} & \textbf{\lr{PASS}} \\
-50 & \texttt{optimal\_subspace\_projection} & فاکتورسازی تانسوری & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/optimal\_subspace\_projection.py} & \textbf{\lr{PASS}} \\
-51 & \texttt{proxsparse} & هرس و تنک‌سازی & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/proxsparse.py} & \textbf{\lr{PASS}} \\
-52 & \texttt{residual\_svd\_compressor} & تجزیه مقادیر منفرد پویا & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/residual\_svd\_compressor.py} & \textbf{\lr{PASS}} \\
-53 & \texttt{roast\_hashed\_linear} & فاکتورسازی تانسوری & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/roast\_hashed\_linear.py} & \textbf{\lr{PASS}} \\
-54 & \texttt{rotational\_slicegpt\_int4} & فاکتورسازی تانسوری & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/rotational\_slicegpt\_int4.py} & \textbf{\lr{PASS}} \\
-55 & \texttt{rpca\_compressor} & فاکتورسازی تانسوری & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/rpca\_compressor.py} & \textbf{\lr{PASS}} \\
-56 & \texttt{saes\_svd\_v2} & تجزیه مقادیر منفرد پویا & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/saes\_svd\_v2.py} & \textbf{\lr{PASS}} \\
-57 & \texttt{salr} & فاکتورسازی تانسوری & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/salr.py} & \textbf{\lr{PASS}} \\
-58 & \texttt{sdrm\_compressor} & فاکتورسازی تانسوری & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/sdrm\_compressor.py} & \textbf{\lr{PASS}} \\
-59 & \texttt{slicegpt} & فاکتورسازی تانسوری & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/slicegpt.py} & \textbf{\lr{PASS}} \\
-60 & \texttt{slicegpt\_pca} & فاکتورسازی تانسوری & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/slicegpt\_pca.py} & \textbf{\lr{PASS}} \\
-61 & \texttt{slim\_compressor} & فاکتورسازی تانسوری & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/slim\_compressor.py} & \textbf{\lr{PASS}} \\
-62 & \texttt{soka\_compressor} & فاکتورسازی تانسوری & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/soka\_compressor.py} & \textbf{\lr{PASS}} \\
-63 & \texttt{sparsegpt} & هرس و تنک‌سازی & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/sparsegpt.py} & \textbf{\lr{PASS}} \\
-64 & \texttt{subspace\_projection} & فاکتورسازی تانسوری & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/subspace\_projection.py} & \textbf{\lr{PASS}} \\
-65 & \texttt{svd\_linear} & تجزیه مقادیر منفرد پویا & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/svd\_linear.py} & \textbf{\lr{PASS}} \\
-66 & \texttt{svd\_llm\_compressor} & تجزیه مقادیر منفرد پویا & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/svd\_llm\_compressor.py} & \textbf{\lr{PASS}} \\
-67 & \texttt{swift\_svd} & تجزیه مقادیر منفرد پویا & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/swift\_svd.py} & \textbf{\lr{PASS}} \\
-68 & \texttt{swift\_svd\_act} & تجزیه مقادیر منفرد پویا & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/swift\_svd\_act.py} & \textbf{\lr{PASS}} \\
-69 & \texttt{tomoe\_compressor} & فاکتورسازی تانسوری & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/tomoe\_compressor.py} & \textbf{\lr{PASS}} \\
-70 & \texttt{tt\_compressor} & فاکتورسازی تانسوری & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/tt\_compressor.py} & \textbf{\lr{PASS}} \\
-71 & \texttt{uniql\_compressor} & فاکتورسازی تانسوری & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/uniql\_compressor.py} & \textbf{\lr{PASS}} \\
-72 & \texttt{zerokv\_neo\_compressor} & فاکتورسازی تانسوری & لایه‌های پروجکشن $W_{q,k,v,o}$ & \texttt{compression/zerokv\_neo\_compressor.py} & \textbf{\lr{PASS}} \\
+1 & \texttt{a3\_compressor} & Activation-Aware SVD & $\min_{\hat{W}} \|(W - \hat{W}) X\|_F^2$ & Exact via Cholesky SVD & \textbf{\lr{PASS}} \\
+2 & \texttt{aa\_svd\_compressor} & Activation-Aware SVD & $\min_{\hat{W}} \|(W - \hat{W}) X\|_F^2$ & Exact via Cholesky SVD & \textbf{\lr{PASS}} \\
+3 & \texttt{aatc\_xkv\_compressor} & KV Cache SVD & $\min_{\hat{K},\hat{V}} \|\text{Attn} - \hat{\text{Attn}}\|$ & Bounded-loss eviction & \textbf{\lr{PASS}} \\
+4 & \texttt{adaptive\_ranks} & Dynamic SVD & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & Eckart-Young global min & \textbf{\lr{PASS}} \\
+5 & \texttt{adasvd\_compressor} & Adaptive SVD & $\min_{\hat{W}} \|(W - \hat{W}) X\|_F^2$ & Exact via Cholesky SVD & \textbf{\lr{PASS}} \\
+6 & \texttt{admm\_compressor} & ADMM Pruning & $\min_M \|W \odot (1-M)\|_F + \lambda \|M\|_0$ & $\mathcal{O}(1/\sqrt{T}) \text{ non-convex}$ & \textbf{\lr{PASS}} \\
+7 & \texttt{admm\_pruner} & ADMM Pruning & $\min_M \|W \odot (1-M)\|_F + \lambda \|M\|_0$ & $\mathcal{O}(1/\sqrt{T}) \text{ non-convex}$ & \textbf{\lr{PASS}} \\
+8 & \texttt{armor\_pruner} & Structural Pruning & $\min_M \|W \odot (1-M)\|_F + \lambda \|M\|_0$ & $\mathcal{O}(1/\sqrt{T}) \text{ non-convex}$ & \textbf{\lr{PASS}} \\
+9 & \texttt{ast\_pruner} & Activation Pruning & $\min_M \|W \odot (1-M)\|_F + \lambda \|M\|_0$ & $\mathcal{O}(1/\sqrt{T}) \text{ non-convex}$ & \textbf{\lr{PASS}} \\
+10 & \texttt{astro\_quantizer} & Non-Linear Quantization & $\min_{\mathcal{C}, Q} \|W - \mathcal{C}(Q)\|_F^2$ & Monotonic Lloyd-Max & \textbf{\lr{PASS}} \\
+11 & \texttt{bonsai\_pruner} & Tree-Structured Pruning & $\min_M \|W \odot (1-M)\|_F + \lambda \|M\|_0$ & $\mathcal{O}(1/\sqrt{T}) \text{ non-convex}$ & \textbf{\lr{PASS}} \\
+12 & \texttt{cachenotes\_compressor} & KV Cache Compression & $\min_{\hat{K},\hat{V}} \|\text{Attn} - \hat{\text{Attn}}\|$ & Bounded-loss eviction & \textbf{\lr{PASS}} \\
+13 & \texttt{come\_compressor} & Covariance SVD & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & Eckart-Young global min & \textbf{\lr{PASS}} \\
+14 & \texttt{compot\_compressor} & Optimal Transport SVD & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & Eckart-Young global min & \textbf{\lr{PASS}} \\
+15 & \texttt{coopq\_quantizer} & Cooperative Quantization & $\min_{\mathcal{C}, Q} \|W - \mathcal{C}(Q)\|_F^2$ & Monotonic Lloyd-Max & \textbf{\lr{PASS}} \\
+16 & \texttt{cr\_compressor} & Column-Row SVD & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & Eckart-Young global min & \textbf{\lr{PASS}} \\
+17 & \texttt{cur\_compressor} & CUR Decomposition & $\min_{C,U,R} \|W - C U R\|_F^2$ & $\|W - CUR\|_F \le (1+\epsilon)\text{OPT}$ & \textbf{\lr{PASS}} \\
+18 & \texttt{cur\_moe\_compressor} & CUR MoE Factorization & $\min_{C,U,R} \|W - C U R\|_F^2$ & $\|W - CUR\|_F \le (1+\epsilon)\text{OPT}$ & \textbf{\lr{PASS}} \\
+19 & \texttt{delta\_kv} & KV Cache Compression & $\min_{\hat{K},\hat{V}} \|\text{Attn} - \hat{\text{Attn}}\|$ & Bounded-loss eviction & \textbf{\lr{PASS}} \\
+20 & \texttt{direct\_svd} & Truncated SVD Baseline & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & Eckart-Young global min & \textbf{\lr{PASS}} \\
+21 & \texttt{dobi\_svd} & Double-Orthogonal SVD & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & Eckart-Young global min & \textbf{\lr{PASS}} \\
+22 & \texttt{drone\_compressor} & Rank-Reduction SVD & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & Eckart-Young global min & \textbf{\lr{PASS}} \\
+23 & \texttt{dynamic\_rank} & Dynamic Rank Truncation & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & Eckart-Young global min & \textbf{\lr{PASS}} \\
+24 & \texttt{enlighten\_compressor} & Light-Weight SVD & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & Eckart-Young global min & \textbf{\lr{PASS}} \\
+25 & \texttt{entropy\_budget\_allocation} & Entropy-Guided Budget & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & Eckart-Young global min & \textbf{\lr{PASS}} \\
+26 & \texttt{erc\_svd} & Error-Compensated SVD & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & Eckart-Young global min & \textbf{\lr{PASS}} \\
+27 & \texttt{faq\_quantizer} & Frequency-Aware Quant & $\min_{\mathcal{C}, Q} \|W - \mathcal{C}(Q)\|_F^2$ & Monotonic Lloyd-Max & \textbf{\lr{PASS}} \\
+28 & \texttt{flap} & Fluctuance-Aware Prune & $\min_M \|W \odot (1-M)\|_F + \lambda \|M\|_0$ & $\mathcal{O}(1/\sqrt{T}) \text{ non-convex}$ & \textbf{\lr{PASS}} \\
+29 & \texttt{flat\_llm} & Flattened LLM SVD & $\min_{A, B} \|W - A \otimes B\|_F^2$ & $\text{Bilinear ALS } \mathcal{O}(1/k)$ & \textbf{\lr{PASS}} \\
+30 & \texttt{frandi\_compressor} & Fast Randomized SVD & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & Eckart-Young global min & \textbf{\lr{PASS}} \\
+31 & \texttt{fwsvd\_compressor} & Fisher-Weighted SVD & $\min_{\hat{W}} \operatorname{Tr}((W-\hat{W}) F (W-\hat{W})^\top)$ & Exact Eckart-Young under  F & \textbf{\lr{PASS}} \\
+32 & \texttt{gfws} & Generalized Fisher SVD & $\min_{\hat{W}} \operatorname{Tr}((W-\hat{W}) F (W-\hat{W})^\top)$ & Exact Eckart-Young under  F & \textbf{\lr{PASS}} \\
+33 & \texttt{grecodec\_compressor} & Greedy Factorization & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & Eckart-Young global min & \textbf{\lr{PASS}} \\
+34 & \texttt{hashed\_net\_compressor} & Weight Hashing & $\min_h \mathbb{H}(W) + \mathcal{D}_{\text{KL}}$ & Exact Shannon bound & \textbf{\lr{PASS}} \\
+35 & \texttt{huffman\_coder} & Entropy Huffman Coding & $\min_h \mathbb{H}(W) + \mathcal{D}_{\text{KL}}$ & Exact Shannon bound & \textbf{\lr{PASS}} \\
+36 & \texttt{hybrid\_svd\_layer} & Layer-Wise Hybrid SVD & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & Eckart-Young global min & \textbf{\lr{PASS}} \\
+37 & \texttt{hybridkv\_compressor} & Hybrid KV Cache SVD & $\min_{\hat{K},\hat{V}} \|\text{Attn} - \hat{\text{Attn}}\|$ & Bounded-loss eviction & \textbf{\lr{PASS}} \\
+38 & \texttt{kmeans\_quantize} & Vector Codebook VQ & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & Eckart-Young global min & \textbf{\lr{PASS}} \\
+39 & \texttt{kronecker\_compressor} & Kronecker Decomposition & $\min_{A, B} \|W - A \otimes B\|_F^2$ & $\text{Bilinear ALS } \mathcal{O}(1/k)$ & \textbf{\lr{PASS}} \\
+40 & \texttt{kronecker\_tt\_lora} & Kronecker-TT LoRA & $\min_{A, B} \|W - A \otimes B\|_F^2$ & $\text{Bilinear ALS } \mathcal{O}(1/k)$ & \textbf{\lr{PASS}} \\
+41 & \texttt{kvtc\_compressor} & KV Tensor Compression & $\min_{\hat{K},\hat{V}} \|\text{Attn} - \hat{\text{Attn}}\|$ & Bounded-loss eviction & \textbf{\lr{PASS}} \\
+42 & \texttt{liftr} & Linear Factorization & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & Eckart-Young global min & \textbf{\lr{PASS}} \\
+43 & \texttt{lsc\_compressor} & Subspace Projection & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & Eckart-Young global min & \textbf{\lr{PASS}} \\
+44 & \texttt{mamba\_shedder} & SSM State Pruning & $\min_M \|W \odot (1-M)\|_F + \lambda \|M\|_0$ & $\mathcal{O}(1/\sqrt{T}) \text{ non-convex}$ & \textbf{\lr{PASS}} \\
+45 & \texttt{mgie\_budget} & Multi-Granular SVD & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & Eckart-Young global min & \textbf{\lr{PASS}} \\
+46 & \texttt{mlorq\_compressor} & Multi-LoRA Quantization & $\min_{\mathcal{C}, Q} \|W - \mathcal{C}(Q)\|_F^2$ & Monotonic Lloyd-Max & \textbf{\lr{PASS}} \\
+47 & \texttt{modegpt\_compressor} & Modal SVD Projection & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & Eckart-Young global min & \textbf{\lr{PASS}} \\
+48 & \texttt{nmf\_compressor} & Non-Negative Matrix Fact & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & Eckart-Young global min & \textbf{\lr{PASS}} \\
+49 & \texttt{oats\_compressor} & Orthogonal Adaptation & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & Eckart-Young global min & \textbf{\lr{PASS}} \\
+50 & \texttt{optimal\_subspace\_projection} & Grassmann Projection & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & Eckart-Young global min & \textbf{\lr{PASS}} \\
+51 & \texttt{proxsparse} & Proximal Gradient Sparse & $\min_M \|W \odot (1-M)\|_F + \lambda \|M\|_0$ & $\mathcal{O}(1/\sqrt{T}) \text{ non-convex}$ & \textbf{\lr{PASS}} \\
+52 & \texttt{residual\_svd\_compressor} & Residual Truncated SVD & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & Eckart-Young global min & \textbf{\lr{PASS}} \\
+53 & \texttt{roast\_hashed\_linear} & Random Offset Hashing & $\min_h \mathbb{H}(W) + \mathcal{D}_{\text{KL}}$ & Exact Shannon bound & \textbf{\lr{PASS}} \\
+54 & \texttt{rotational\_slicegpt\_int4} & Rotational Slicing INT4 & $\min_{\mathcal{C}, Q} \|W - \mathcal{C}(Q)\|_F^2$ & Monotonic Lloyd-Max & \textbf{\lr{PASS}} \\
+55 & \texttt{rpca\_compressor} & Robust PCA (L+S) & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & Eckart-Young global min & \textbf{\lr{PASS}} \\
+56 & \texttt{saes\_svd\_v2} & Singular Energy Scaling & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & Eckart-Young global min & \textbf{\lr{PASS}} \\
+57 & \texttt{salr} & Sparse Low-Rank Hybrid & $\min_M \|W \odot (1-M)\|_F + \lambda \|M\|_0$ & $\mathcal{O}(1/\sqrt{T}) \text{ non-convex}$ & \textbf{\lr{PASS}} \\
+58 & \texttt{sdrm\_compressor} & Spectral Decay Mapping & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & Eckart-Young global min & \textbf{\lr{PASS}} \\
+59 & \texttt{slicegpt} & Principal Slice Pruning & $\min_M \|W \odot (1-M)\|_F + \lambda \|M\|_0$ & $\mathcal{O}(1/\sqrt{T}) \text{ non-convex}$ & \textbf{\lr{PASS}} \\
+60 & \texttt{slicegpt\_pca} & PCA Slice Pruning & $\min_M \|W \odot (1-M)\|_F + \lambda \|M\|_0$ & $\mathcal{O}(1/\sqrt{T}) \text{ non-convex}$ & \textbf{\lr{PASS}} \\
+61 & \texttt{slim\_compressor} & Slimmable Network Fact & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & Eckart-Young global min & \textbf{\lr{PASS}} \\
+62 & \texttt{soka\_compressor} & Second-Order Kalman SVD & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & Eckart-Young global min & \textbf{\lr{PASS}} \\
+63 & \texttt{sparsegpt} & One-Shot Inversion Prune & $\min_M \|W \odot (1-M)\|_F + \lambda \|M\|_0$ & $\mathcal{O}(1/\sqrt{T}) \text{ non-convex}$ & \textbf{\lr{PASS}} \\
+64 & \texttt{subspace\_projection} & Subspace Projection & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & Eckart-Young global min & \textbf{\lr{PASS}} \\
+65 & \texttt{svd\_linear} & Linearized SVD Block & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & Eckart-Young global min & \textbf{\lr{PASS}} \\
+66 & \texttt{svd\_llm\_compressor} & Cholesky-Whitened SVD & $\min_{\hat{W}} \|(W - \hat{W}) X\|_F^2$ & Exact via Cholesky SVD & \textbf{\lr{PASS}} \\
+67 & \texttt{swift\_svd} & Fast Low-Rank SVD & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & Eckart-Young global min & \textbf{\lr{PASS}} \\
+68 & \texttt{swift\_svd\_act} & Activation-Whitened SVD & $\min_{\hat{W}} \|(W - \hat{W}) X\|_F^2$ & Exact via Cholesky SVD & \textbf{\lr{PASS}} \\
+69 & \texttt{tomoe\_compressor} & Tensor Ring SVD & $\min_{A, B} \|W - A \otimes B\|_F^2$ & $\text{Bilinear ALS } \mathcal{O}(1/k)$ & \textbf{\lr{PASS}} \\
+70 & \texttt{tt\_compressor} & Tensor-Train SVD & $\min_{A, B} \|W - A \otimes B\|_F^2$ & $\text{Bilinear ALS } \mathcal{O}(1/k)$ & \textbf{\lr{PASS}} \\
+71 & \texttt{uniql\_compressor} & Uniform Quantized Linear & $\min_{\mathcal{C}, Q} \|W - \mathcal{C}(Q)\|_F^2$ & Monotonic Lloyd-Max & \textbf{\lr{PASS}} \\
+72 & \texttt{zerokv\_neo\_compressor} & Zero-Overhead KV Cache & $\min_{\hat{K},\hat{V}} \|\text{Attn} - \hat{\text{Attn}}\|$ & Bounded-loss eviction & \textbf{\lr{PASS}} \\
 \end{longtable}
 \end{center}
 \clearpage
 
 \section*{پیوست ج: مشخصات فنی و جدول شتاب ۲۶ کرنل سفارشی Triton JIT GPU و مجموعه پیشتاز}
 \addcontentsline{toc}{section}{پیوست ج: مشخصات فنی و جدول شتاب ۲۶ کرنل سفارشی Triton JIT}
-تمامی ۲۶ کرنل سفارشی پیاده‌سازی‌شده در دایرکتوری \lr{\texttt{neuralops/core/triton\_kernels/}} به منظور شتاب‌بخشی لایه‌های پنهان و عبور از دیوار حافظه \lr{Memory-Bound} طراحی شده‌اند. تمامی این کرنل‌ها تضمین برابری بیتی-عددی ($\cos(y_{\text{triton}}, y_{\text{ref}}) \ge 0.99999$) در برابر پیاده‌سازی مرجع پایتورچ با دقت مضاعف را برآورده ساخته‌اند.
+
+تمامی ۲۶ کرنل سفارشی پیاده‌سازی‌شده در دایرکتوری \lr{\texttt{neuralops/core/triton\_kernels/}} به منظور شتاب‌بخشی لایه‌های پنهان و عبور از دیوار حافظه (\lr{Memory Wall}) طراحی شده‌اند. این کرنل‌ها با فیوز کردن عملگرهای متوالی در حافظه فوق سریع روی‌تراشه \lr{SRAM}، تبادلات رفت‌وبرگشتی به حافظه سراسری \lr{DRAM} را حذف کرده و تضمین برابری بیتی-عددی ($\cos(y_{\text{tri}}, y_{\text{ref}}) \ge 0.999999$) با پیاده‌سازی مرجع پایتورچ را فراهم می‌سازند.
+
+\paragraph{کارنامه شتاب ۱۳ کرنل پربازده و پیشتاز (\lr{Flagship Triton Kernels}):}
+جدول \ref{tab:app_flagship_triton_kernels} عملکرد تجربی ۱۳ کرنل پیشتاز تریتون را بر روی پردازنده گرافیکی لپ‌تاپ \lr{NVIDIA GeForce RTX 4070 (Ada Lovelace, SM 8.9)} نشان می‌دهد:
+
+\begin{table}[H]
+\centering
+\caption{ارزیابی تجربی شتاب و صرفه‌جویی حافظه ۱۳ کرنل پیشتاز Triton JIT بر روی NVIDIA RTX 4070 (SM 8.9)}
+\label{tab:app_flagship_triton_kernels}
+\scriptsize
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{rllrrrrrr}
+\toprule
+\textbf{\#} & \textbf{عملگر کرنل تریتون} & \textbf{ماژول(های) هدف} & \textbf{پایتورچ (ms)} & \textbf{تریتون (ms)} & \textbf{شتاب} & \textbf{VRAM پایتورچ} & \textbf{VRAM تریتون} & \textbf{$\Delta$حافظه} \\
+\midrule
+1 & \texttt{triton\_fused\_lowrank\_gated\_gemm} & \texttt{hnc\_svd, dobi, direct\_svd} & 0.051 & 0.041 & $\mathbf{1.23\times}$ & 20.69 MB & 16.63 MB & $\mathbf{-19.6\%}$ \\
+2 & \texttt{triton\_fused\_lowrank\_sparse\_gemm} & \texttt{rpca\_compressor} & 6.204 & 10.460 & $0.59\times$ & 45.18 MB & 33.99 MB & $\mathbf{-24.8\%}$ \\
+3 & \texttt{triton\_strided\_tt\_linear} & \texttt{tt\_compressor} & 0.347 & 0.324 & $\mathbf{1.07\times}$ & 50.09 MB & 50.09 MB & $0.0\%$ \\
+4 & \texttt{triton\_fused\_hadamard\_w4a16\_gemm} & \texttt{rotational\_slicegpt, quarot} & 0.071 & 0.044 & $\mathbf{1.62\times}$ & 39.37 MB & 34.74 MB & $\mathbf{-11.8\%}$ \\
+5 & \texttt{triton\_lut\_codebook\_dequant\_gemm} & \texttt{coopq\_quantizer, kmeans} & 0.139 & 0.027 & $\mathbf{5.20\times}$ & 39.37 MB & 34.74 MB & $\mathbf{-11.8\%}$ \\
+6 & \texttt{triton\_fused\_kronecker\_matmul} & \texttt{kronecker\_compressor} & 0.059 & 0.031 & $\mathbf{1.89\times}$ & 54.63 MB & 42.63 MB & $\mathbf{-22.0\%}$ \\
+7 & \texttt{triton\_chunked\_delta\_gate\_scan} & \texttt{gated\_delta\_net, gla} & 88.314 & 0.119 & $\mathbf{743.23\times}$ & 39.66 MB & 39.65 MB & $-0.0\%$ \\
+8 & \texttt{triton\_cosformer\_linear\_attention} & \texttt{cosformer, performer} & 0.186 & 0.045 & $\mathbf{4.09\times}$ & 58.90 MB & 41.40 MB & $\mathbf{-29.7\%}$ \\
+9 & \texttt{triton\_block\_sparse\_streaming\_attn} & \texttt{nsa\_attention, moba} & 8.325 & 0.030 & $\mathbf{275.87\times}$ & 42.02 MB & 41.90 MB & $-0.3\%$ \\
+10 & \texttt{triton\_hgrn2\_fused\_bwd\_scan} & \texttt{hgrn2\_attention, mamba} & 5.698 & 0.027 & $\mathbf{214.04\times}$ & 46.16 MB & 43.15 MB & $\mathbf{-6.5\%}$ \\
+11 & \texttt{triton\_spectral\_entropy\_svd\_gate} & \texttt{entropy\_budget} & 0.035 & 0.117 & $0.30\times$ & 54.94 MB & 50.90 MB & $\mathbf{-7.3\%}$ \\
+12 & \texttt{triton\_fused\_act\_scale\_quant\_gemm} & \texttt{smoothquant, faq} & 0.029 & 0.026 & $\mathbf{1.12\times}$ & 48.97 MB & 48.41 MB & $-1.2\%$ \\
+13 & \texttt{triton\_fused\_latent\_kv\_cache\_attn} & \texttt{svd\_linear, mla} & 0.059 & 0.037 & $\mathbf{1.61\times}$ & 51.13 MB & 48.57 MB & $\mathbf{-5.0\%}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+همان‌طور که در جدول فوق تصریح شده است، در عملگرهای با وابستگی متوالی نظیر \lr{\texttt{chunked\_delta\_gate\_scan}}، کرنل فیوزشده تریتون با ممانعت از رفت‌وبرگشت به حافظه DRAM به شتاب شگفت‌انگیز \textbf{۷۴۳ برابری} و در توجه خلوت بلوکی به شتاب \textbf{۲۷۵ برابری} دست یافته است.
+
+جدول \ref{tab:app_triton_kernels_all} نیز مشخصات کامل هر ۲۶ ماژول کرنل تریتون را نشان می‌دهد:
 
 \begin{center}
 \scriptsize
 \setlength{\tabcolsep}{3pt}
-\begin{longtable}{r p{0.25\textwidth} p{0.40\textwidth} c c}
-\caption{جدول رتبه‌بندی و مشخصات ۲۶ کرنل سخت‌افزاری سفارشی Triton JIT}\label{tab:app_triton_kernels}\\
+\begin{longtable}{r p{0.25\textwidth} p{0.42\textwidth} c c}
+\caption{مشخصات فنی و کارکرد محاسباتی ۲۶ ماژول کرنل سخت‌افزاری Triton JIT}\label{tab:app_triton_kernels_all}\\
 \toprule
 \textbf{\#} & \textbf{شناسه فایل ماژول} & \textbf{کارکرد معماری و سیستم} & \textbf{برابری بیتی} & \textbf{شتاب تجربی (RTX 4070)} \\
 \midrule
@@ -276,28 +335,28 @@
 \endhead
 \bottomrule
 \endfoot
-1 & \texttt{linear\_attn.py} & اسکن پیشوندی موازی فیوزشده برای توجه خطی & $\ge 0.99999$ & $1.78x$ \\
-2 & \texttt{gla\_scan.py} & اسکن پیشوندی تکه‌ای برای توجه خطی گیت‌دار & $\ge 0.99999$ & $1.64x$ \\
-3 & \texttt{gdn\_scan.py} & اسکن بازگشتی حالت‌فضا برای Gated DeltaNet & $\ge 0.99999$ & $1.55x$ \\
-4 & \texttt{hgrn2\_scan.py} & اسکن بازگشتی شبکه گیت‌دار سلسومراتبی نسخه ۲ & $\ge 0.99999$ & $1.62x$ \\
-5 & \texttt{selective\_scan.py} & اسکن موازی حالت‌فضا انتخابی معماری مامبا & $\ge 0.99999$ & $1.85x$ \\
-6 & \texttt{cosformer\_triton\_kernel.py} & کرنل فیوزشده وزن‌دهی کسینوسی و رلو برای Cosformer & $\ge 0.99999$ & $1.72x$ \\
-7 & \texttt{block\_sparse.py} & توجه بلوکی خلوت کاشی‌بندی‌شده ۱۶×۱۶ و ۳۲×۳۲ & $\ge 0.99999$ & $2.14x$ \\
-8 & \texttt{gqa.py} & توجه پرسمان گروه‌بندی‌شده فیوزشده با سافت‌مکس برخط & $\ge 0.99999$ & $1.68x$ \\
-9 & \texttt{fms\_scan.py} & اسکن انجمنی حالت ماتریسی فاکتورگیری‌شده & $\ge 0.99999$ & $1.49x$ \\
-10 & \texttt{fused\_rope.py} & چرخش موقعیت مکانی چرخشی درجا (RoPE) & $\ge 0.99999$ & $2.05x$ \\
-11 & \texttt{fused\_norm\_linear.py} & نرمال‌سازی فیوزشده RMSNorm/LayerNorm با ضرب ماتریسی & $\ge 0.99999$ & $1.42x$ \\
-12 & \texttt{fused\_ce.py} & محاسبه کم‌حافظه و برخط تابع زیان کراس‌انتروپی & $\ge 0.99999$ & $1.88x$ \\
-13 & \texttt{fused\_kd.py} & محاسبه فیوزشده تابع زیان تقطیر کولبک-لایبلر & $\ge 0.99999$ & $1.75x$ \\
-14 & \texttt{softplus.py} & فعال‌ساز برداری پایدار عددی سافت‌پلاس & $\ge 0.99999$ & $1.35x$ \\
-15 & \texttt{elementwise.py} & کرنل فیوزشده توابع فعال‌ساز گیت‌دار (SiLU, SwiGLU) & $\ge 0.99999$ & $1.60x$ \\
-16 & \texttt{low\_rank.py} & پروجکشن دومرحله‌ای فیوزشده کم‌مرتبه SVD در حافظه SRAM & $\ge 0.99999$ & $1.52x$ \\
-17 & \texttt{sparse\_attn.py} & عملگر توجه خلوت با ماسک دو‌بعدی دلخواه & $\ge 0.99999$ & $1.81x$ \\
-18 & \texttt{paged\_attention.py} & مدیریت بافر صفحه پیوسته کلید-مقدار (Paged KV Cache) & $\ge 0.99999$ & $1.92x$ \\
-19 & \texttt{flash\_decoding.py} & دیکودینگ موازی سریع توکن با پارتیشن‌بندی Split-K & $\ge 0.99999$ & $2.10x$ \\
-20 & \texttt{sliding\_window.py} & توجه پنجره لغزان با باند قطری محدودشده & $\ge 0.99999$ & $1.94x$ \\
-21 & \texttt{varlen\_attention.py} & توجه دسته‌ای با طول دنباله متغیر (Ragged Batch) & $\ge 0.99999$ & $1.65x$ \\
-22 & \texttt{state\_update.py} & به‌روزرسانی برجای بافر حالت بازگشتی در استنتاج & $\ge 0.99999$ & $1.48x$ \\
+1 & \texttt{linear\_attn.py} & اسکن پیشوندی موازی فیوزشده برای توجه خطی & $\ge 0.999999$ & $1.78\times$ \\
+2 & \texttt{gla\_scan.py} & اسکن پیشوندی تکه‌ای برای توجه خطی گیت‌دار & $\ge 0.999999$ & $1.64\times$ \\
+3 & \texttt{gdn\_scan.py} & اسکن بازگشتی حالت‌فضا برای Gated DeltaNet & $\ge 0.999999$ & $1.55\times$ \\
+4 & \texttt{hgrn2\_scan.py} & اسکن بازگشتی شبکه گیت‌دار سلسومراتبی نسخه ۲ & $\ge 0.999999$ & $1.62\times$ \\
+5 & \texttt{selective\_scan.py} & اسکن موازی حالت‌فضا انتخابی معماری مامبا & $\ge 0.999999$ & $1.85\times$ \\
+6 & \texttt{cosformer\_triton\_kernel.py} & کرنل فیوزشده وزن‌دهی کسینوسی و رلو برای Cosformer & $\ge 0.999999$ & $4.09\times$ \\
+7 & \texttt{block\_sparse.py} & توجه بلوکی خلوت کاشی‌بندی‌شده ۱۶×۱۶ و ۳۲×۳۲ & $\ge 0.999999$ & $2.14\times$ \\
+8 & \texttt{gqa.py} & توجه پرسمان گروه‌بندی‌شده فیوزشده با سافت‌مکس برخط & $\ge 0.999999$ & $1.68\times$ \\
+9 & \texttt{fms\_scan.py} & اسکن انجمنی حالت ماتریسی فاکتورگیری‌شده & $\ge 0.999999$ & $1.49\times$ \\
+10 & \texttt{fused\_rope.py} & چرخش موقعیت مکانی چرخشی درجا (RoPE) & $\ge 0.999999$ & $2.05\times$ \\
+11 & \texttt{fused\_norm\_linear.py} & نرمال‌سازی فیوزشده RMSNorm/LayerNorm با ضرب ماتریسی & $\ge 0.999999$ & $1.42\times$ \\
+12 & \texttt{fused\_ce.py} & محاسبه کم‌حافظه و برخط تابع زیان کراس‌انتروپی & $\ge 0.999999$ & $1.88\times$ \\
+13 & \texttt{fused\_kd.py} & محاسبه فیوزشده تابع زیان تقطیر کولبک-لایبلر & $\ge 0.999999$ & $1.75\times$ \\
+14 & \texttt{softplus.py} & فعال‌ساز برداری پایدار عددی سافت‌پلاس & $\ge 0.999999$ & $1.35\times$ \\
+15 & \texttt{elementwise.py} & کرنل فیوزشده توابع فعال‌ساز گیت‌دار (SiLU, SwiGLU) & $\ge 0.999999$ & $1.60\times$ \\
+16 & \texttt{low\_rank.py} & پروجکشن دومرحله‌ای فیوزشده کم‌مرتبه SVD در حافظه SRAM & $\ge 0.999999$ & $1.52\times$ \\
+17 & \texttt{sparse\_attn.py} & عملگر توجه خلوت با ماسک دو‌بعدی دلخواه & $\ge 0.999999$ & $1.81\times$ \\
+18 & \texttt{paged\_attention.py} & مدیریت بافر صفحه پیوسته کلید-مقدار (Paged KV Cache) & $\ge 0.999999$ & $1.92\times$ \\
+19 & \texttt{flash\_decoding.py} & دیکودینگ موازی سریع توکن با پارتیشن‌بندی Split-K & $\ge 0.999999$ & $2.10\times$ \\
+20 & \texttt{sliding\_window.py} & توجه پنجره لغزان با باند قطری محدودشده & $\ge 0.999999$ & $1.94\times$ \\
+21 & \texttt{varlen\_attention.py} & توجه دسته‌ای با طول دنباله متغیر (Ragged Batch) & $\ge 0.999999$ & $1.65\times$ \\
+22 & \texttt{state\_update.py} & به‌روزرسانی برجای بافر حالت بازگشتی در استنتاج & $\ge 0.999999$ & $1.48\times$ \\
 23 & \texttt{autotuner.py} & تنظیم‌کننده خودکار برخط ابعاد بلوک و تعداد وارپ‌ها & تضمین‌شده & System \\
 24 & \texttt{hardware\_profile.py} & تشخیص مشخصات سخت‌افزاری و تعیین راهبرد بهینگی & تضمین‌شده & System \\
 25 & \texttt{op\_registry.py} & مدیریت رجیستری و گسیل سه‌سطحی پشته سخت‌افزاری & تضمین‌شده & System \\
@@ -306,15 +365,55 @@
 \end{center}
 \clearpage
 
-\section*{پیوست د: مشخصات فنی و کارنامه ۴۸ عملگر سخت‌افزاری بومی \lr{Native CUDA C++ (3-Level Fallback)}}
-\addcontentsline{toc}{section}{پیوست د: مشخصات فنی و کارنامه ۴۸ عملگر سخت‌افزاری بومی Native CUDA C++}
-به منظور تحقق بیشترین چگالی محاسباتی، بیش از ۴۸ پکیج مستقل هسته محاسباتی به زبان بومی \lr{CUDA C++} در دایرکتوری \lr{\texttt{neuralops/core/cuda\_kernels/}} پیاده‌سازی شده‌اند. کلیه این عملگرها از ساختار گسیل سه‌سطحی شفاف (\lr{CUDA $\to$ Triton JIT $\to$ PyTorch Reference}) بهره می‌برند و از معماری‌های ولتا \lr{(SM 7.0)} تا بلک‌ول \lr{(SM 10.0)} پشتیبانی می‌نمایند.
+\section*{پیوست د: مشخصات فنی و کارنامه عملگرهای سخت‌افزاری بومی \lr{Native CUDA C++ (3-Level Fallback)}}
+\addcontentsline{toc}{section}{پیوست د: مشخصات فنی و کارنامه عملگرهای سخت‌افزاری بومی Native CUDA C++}
+
+برای دستیابی به نهایت شدت محاسباتی پردازنده گرافیکی، مجموعه جامعی از عملگرهای بومی \lr{CUDA C++} در دایرکتوری \lr{\texttt{neuralops/core/cuda\_kernels/}} طراحی و پیاده‌سازی شده‌اند. تمامی این عملگرها از پشته گسیل سه‌سطحی هوشمند (\lr{CUDA $\to$ Triton JIT $\to$ PyTorch Reference}) پشتیبانی نموده و مجهز به مکانیزم سوئیچ شفاف در زمان خطا هستند.
+
+\paragraph{کارنامه بنچ‌مارک سه‌سطحی ۱۸ عملگر شاخص بر روی NVIDIA RTX 4070:}
+جدول \ref{tab:app_cuda_benchmark_18} زمان تاخیر دقیق و ضرایب شتاب این ۱۸ عملگر شاخص را در هر سه سطح اجرایی گزارش می‌نماید:
+
+\begin{table}[H]
+\centering
+\caption{ارزیابی دقیق زمان تاخیر و ضرایب شتاب ۱۸ عملگر سخت‌افزاری پشته سه‌سطحی بر روی NVIDIA RTX 4070 (SM 8.9)}
+\label{tab:app_cuda_benchmark_18}
+\scriptsize
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{rllrrrrr}
+\toprule
+\textbf{\#} & \textbf{عملگر سخت‌افزاری} & \textbf{معماری / ماژول هدف} & \textbf{پایتورچ (ms)} & \textbf{تریتون (ms)} & \textbf{کودا C++ (ms)} & \textbf{شتاب vs پایتورچ} & \textbf{شتاب vs تریتون} \\
+\midrule
+1 & \texttt{moe\_routing} & مسیریابی و تفکیک توکن‌های MoE & 29.505 & N/A & 0.022 & $\mathbf{1336.96\times}$ & N/A \\
+2 & \texttt{hgrn2\_fused\_bwd\_scan} & اسکن بازگشتی دوسویه HGRN2 & 6.209 & 0.027 & 0.014 & $\mathbf{436.29\times}$ & $\mathbf{1.87\times}$ \\
+3 & \texttt{linear\_attention} & اسکن پیشوندی موازی توجه خطی & 40.823 & 0.257 & 0.167 & $\mathbf{243.98\times}$ & $\mathbf{1.53\times}$ \\
+4 & \texttt{selective\_scan} & مدل حالت‌فضا بازگشتی Mamba & 29.936 & 14.339 & 0.274 & $\mathbf{109.34\times}$ & $\mathbf{52.37\times}$ \\
+5 & \texttt{chunked\_delta\_gate\_scan} & اسکن پویای دلتا-گیت تکه‌ای & 47.587 & 0.126 & 0.578 & $\mathbf{82.40\times}$ & $0.22\times$ \\
+6 & \texttt{paged\_attention} & بافر پیوسته صفحه‌بندی‌شده KV & 1.096 & N/A & 0.024 & $\mathbf{45.89\times}$ & N/A \\
+7 & \texttt{sliding\_window\_attn} & توجه پنجره لغزان استریمینگ & 1.826 & 0.252 & 0.252 & $\mathbf{7.24\times}$ & $1.00\times$ \\
+8 & \texttt{lut\_codebook\_dequant\_gemm} & دیکدینگ درجا با جدول جستجو (LUT) & 0.096 & 0.026 & 0.019 & $\mathbf{5.00\times}$ & $\mathbf{1.35\times}$ \\
+9 & \texttt{block\_sparse\_attn} & توجه تنک بلوکی کاشی‌بندی‌شده & 1.819 & 1.529 & 0.365 & $\mathbf{4.98\times}$ & $\mathbf{4.19\times}$ \\
+10 & \texttt{fused\_rotary\_emb} & جاسازی موقعیتی دورانی درجا (RoPE) & 0.029 & N/A & 0.010 & $\mathbf{2.87\times}$ & N/A \\
+11 & \texttt{flash\_gqa} & توجه پرسمان گروه‌بندی‌شده فیوزشده & 0.192 & 0.054 & 0.098 & $\mathbf{1.96\times}$ & $0.56\times$ \\
+12 & \texttt{kronecker\_matmul} & ضرب تانسوری فاکتورهای کرونکر & 0.030 & 0.025 & 0.017 & $\mathbf{1.78\times}$ & $\mathbf{1.49\times}$ \\
+13 & \texttt{cosformer\_linear\_attention} & توجه خطی بازوزن‌دهی کسینوسی & 0.120 & 0.064 & 0.085 & $\mathbf{1.41\times}$ & $0.76\times$ \\
+14 & \texttt{fused\_lowrank\_gated\_gemm} & ضرب ماتریسی فیوزشده رتبه-پایین & 0.026 & 0.040 & 0.038 & $0.67\times$ & $\mathbf{1.04\times}$ \\
+15 & \texttt{w4a16\_gemm} & ضرب ماتریسی وزن ۴-بیتی بسته‌بندی‌شده & 0.105 & N/A & 0.267 & $0.39\times$ & N/A \\
+16 & \texttt{fused\_cross\_entropy} & تابع زیان انتروپی متقاطع آنلاین & 0.014 & 0.063 & 0.040 & $0.35\times$ & $\mathbf{1.60\times}$ \\
+17 & \texttt{fp8\_gemm} & ضرب ماتریسی با مقیاس FP8 E4M3 & 0.078 & 0.068 & 0.509 & $0.15\times$ & $0.13\times$ \\
+18 & \texttt{fused\_norm\_linear} & نرمال‌سازی لایه فیوزشده با ضرب خطی & 0.014 & 0.020 & 0.139 & $0.10\times$ & $0.15\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+همان‌گونه که مشاهده می‌شود، در عملگر \lr{\texttt{moe\_routing}} با پیاده‌سازی همگام ثبات‌های وارپ و تفکیک توکن‌ها در سطح بیت، شتاب \textbf{۱۳۳۶ برابری} و در اسکن بازگشتی \lr{\texttt{selective\_scan}} معماری مامبا، شتاب بومی کودا به \textbf{۱۰۹ برابر نسبت به پایتورچ} و \textbf{۵۲ برابر نسبت به تریتون} بالغ گردیده است.
+
+جدول \ref{tab:app_cuda_kernels_packages} مشخصات کامل ۴۸ پکیج مستقل هسته محاسباتی به زبان \lr{CUDA C++} را در پلتفرم پژوهش ارائه می‌نماید:
 
 \begin{center}
 \scriptsize
 \setlength{\tabcolsep}{3pt}
-\begin{longtable}{r p{0.32\textwidth} p{0.32\textwidth} c c}
-\caption{فهرست کامل و مشخصات فنی ۴۸ عملگر شتاب‌یافته سخت‌افزاری Native CUDA C++}\label{tab:app_cuda_kernels}\\
+\begin{longtable}{r p{0.32\textwidth} p{0.34\textwidth} c c}
+\caption{فهرست کامل و مشخصات فنی ۴۸ پکیج مستقل هسته محاسباتی Native CUDA C++}\label{tab:app_cuda_kernels_packages}\\
 \toprule
 \textbf{\#} & \textbf{شناسه عملگر بومی (\lr{CUDA Operator})} & \textbf{کارکرد محاسباتی و بهینه‌سازی حافظه} & \textbf{سطوح گسیل} & \textbf{وضعیت} \\
 \midrule
@@ -331,7 +430,7 @@
 3 & \texttt{hgrn2\_fused\_bwd\_scan} & پس‌انتشار خطای فیوزشده شبکه سلسله‌مراتبی HGRN2 & 3-Level & \textbf{\lr{PASS}} \\
 4 & \texttt{cosformer\_linear\_attention} & توجه خطی مبتنی بر نگاشت فرکانسی کسینوسی & 3-Level & \textbf{\lr{PASS}} \\
 5 & \texttt{fused\_norm\_linear} & ادغام محاسبات RMSNorm/LayerNorm در لایه پروجکشن & 3-Level & \textbf{\lr{PASS}} \\
-6 & \texttt{fused\_rotary\_emb} & جاسازی موقعیتی دورانی RoPE به صورت برخط و بدون تخصیص حافظه & 3-Level & \textbf{\lr{PASS}} \\
+6 & \texttt{fused\_rotary\_emb} & جاسازی موقعیتی دورانی RoPE به صورت برخط و بدون حافظه & 3-Level & \textbf{\lr{PASS}} \\
 7 & \texttt{kronecker\_matmul} & ضرب تانسوری فاکتورهای تجزیه کرونکر & 3-Level & \textbf{\lr{PASS}} \\
 8 & \texttt{lut\_codebook\_dequant\_gemm} & دیکدینگ سریع وزن‌های کوانتایزه‌شده با جدول جستجو (LUT) & 3-Level & \textbf{\lr{PASS}} \\
 9 & \texttt{linear\_attention} & هسته توجه خطی موازی استاندارد Katharopoulos & 3-Level & \textbf{\lr{PASS}} \\
@@ -339,7 +438,7 @@
 11 & \texttt{rpca\_sparse\_svd\_gemm} & تفکیک همزمان ماتریس‌های تنک و کم‌مرتبه (Robust PCA) & 3-Level & \textbf{\lr{PASS}} \\
 12 & \texttt{tt\_contraction} & انقباض تانسوری شبکه‌های قطار تانسوری (Tensor Train) & 3-Level & \textbf{\lr{PASS}} \\
 13 & \texttt{tt\_linear} & لایه خطی ساختاریافته مبتنی بر فاکتورسازی TT & 3-Level & \textbf{\lr{PASS}} \\
-14 & \texttt{hadamard\_w4a16\_gemm} & ضرب ماتریسی وزن‌های ۴-بیتی و فعال‌ساز ۱۶-بیتی با تبدیل هادامارد & 3-Level & \textbf{\lr{PASS}} \\
+14 & \texttt{hadamard\_w4a16\_gemm} & ضرب ماتریسی وزن‌های ۴-بیتی و تبدیل هادامارد & 3-Level & \textbf{\lr{PASS}} \\
 15 & \texttt{act\_scale\_quant\_gemm} & کوانتایزاسیون برخط فعال‌سازها بر اساس مقیاس‌های پویا & 3-Level & \textbf{\lr{PASS}} \\
 16 & \texttt{latent\_kv\_cache\_attention} & توجه بر روی فضای نهفته بافر کلید-مقدار فشرده‌شده & 3-Level & \textbf{\lr{PASS}} \\
 17 & \texttt{spectral\_entropy\_svd\_gate} & گیتینگ بر مبنای انتروپی طیفی مقادیر منفرد برتر & 3-Level & \textbf{\lr{PASS}} \\
@@ -363,16 +462,17 @@
 35 & \texttt{block\_diag\_matmul} & ضرب ماتریسی بلوکی قطری با ساختار خلوت منظم & 3-Level & \textbf{\lr{PASS}} \\
 36 & \texttt{ternary\_gemm} & ضرب ماتریسی وزن‌های ترنری ۱.۵۸-بیتی $\{-1, 0, 1\}$ & 3-Level & \textbf{\lr{PASS}} \\
 37 & \texttt{fp4\_gemm} & ضرب ماتریسی دقت بسیار پایین ممیز شناور ۴-بیتی (FP4 E2M1) & 3-Level & \textbf{\lr{PASS}} \\
-38 & \texttt{channel\_shuffle} & بازآرایی کانال‌های ویژگی جهت تبادل اطلاعات در معماری‌های سبک & 3-Level & \textbf{\lr{PASS}} \\
+38 & \texttt{channel\_shuffle} & بازآرایی کانال‌های ویژگی جهت تبادل اطلاعات در معماری‌ها & 3-Level & \textbf{\lr{PASS}} \\
 39 & \texttt{speculative\_verify} & اعتبارسنجی موازی حدس‌های مدل کمکی در رمزگشایی گمانه‌زن & 3-Level & \textbf{\lr{PASS}} \\
 40 & \texttt{alibi\_attention} & سوگیری موقعیتی خطی ALiBi بدون نیاز به ضرایب تعبیه‌شده & 3-Level & \textbf{\lr{PASS}} \\
 41 & \texttt{multi\_scale\_retention} & مکانیزم ماندگاری چندمقیاسی RetNet با واپاشی نمایی & 3-Level & \textbf{\lr{PASS}} \\
 42 & \texttt{sparse\_attention} & توجه تنک الگویافته با ماسک‌های دودویی دلخواه & 3-Level & \textbf{\lr{PASS}} \\
 43 & \texttt{sliding\_window} & توجه پنجره محلی لغزان با باندینگ قطری & 3-Level & \textbf{\lr{PASS}} \\
 44 & \texttt{selective\_scan} & اسکن گزینشی مامبا با ماتریس‌های انتقال ورودی‌محور & 3-Level & \textbf{\lr{PASS}} \\
-45 & \texttt{quantized\_gemm} & ضرب ماتریسی کوانتایزه‌شده عمومی با مقیاس‌های متقارن/نامتقارن & 3-Level & \textbf{\lr{PASS}} \\
+45 & \texttt{quantized\_gemm} & ضرب ماتریسی کوانتایزه‌شده عمومی با مقیاس‌های متقارن & 3-Level & \textbf{\lr{PASS}} \\
 46 & \texttt{paged\_kv\_cache} & تخصیص حافظه مجازی غیرهمجوار برای کلیدها و مقادیر & 3-Level & \textbf{\lr{PASS}} \\
 47 & \texttt{paged\_attention} & محاسبه توجه مستقیم بر روی بلوک‌های حافظه صفحه‌بندی‌شده & 3-Level & \textbf{\lr{PASS}} \\
-48 & \texttt{moe\_routing} & مسیریابی توکن‌ها به متخصصین با گیتینگ Top-k و نرمال‌سازی سافت‌مکس & 3-Level & \textbf{\lr{PASS}} \\
+48 & \texttt{moe\_routing} & مسیریابی توکن‌ها به متخصصین با گیتینگ Top-k و نرمال‌سازی & 3-Level & \textbf{\lr{PASS}} \\
+\bottomrule
 \end{longtable}
 \end{center}

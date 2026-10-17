@@ -1,43 +1,69 @@
 {
   "module_name": "spectra_v2",
   "category": "attention",
-  "family": "bert",
+  "family": "general",
   "total_runs": 4,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "103e53b8d4",
-  "latest_timestamp": "2026-09-16T03:58:21.605645",
+  "latest_git_sha": "b3e2b3ad08",
+  "latest_timestamp": "2026-10-15T00:07:14+03:30",
   "latest_record": {
-    "record_id": "850de7cd08724b84",
+    "record_id": "9061dcac2b706c7b",
     "module_name": "spectra_v2",
     "category": "attention",
-    "family": "bert",
+    "family": "general",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-09-16T03:58:21.605645",
-    "git_commit_sha": "103e53b8d4",
+    "timestamp_utc": "2026-10-15T00:07:14+03:30",
+    "git_commit_sha": "b3e2b3ad08",
     "generation_method": {
-      "algorithm": "Calibration Sweep Record",
-      "source_artifact": "results/01_unified_runs/mnli_unified_spectra_v2/distilbert/checkpoints/spectra_v2/summary_record.json"
+      "algorithm": "Master Aggregated Evaluation Suite",
+      "source_artifact": "results/master_aggregated_results.csv"
     },
     "experimental_setup": {
-      "backbone": "models/distilbert_sst2",
-      "dataset": "mnli"
+      "dataset": "SST-2",
+      "backbone": "DistilBERT"
     },
     "metrics": {
-      "accuracy": 41.0,
-      "f1": 0.308,
-      "val_loss": 1.0805,
-      "peak_vram_mb": 354.32,
-      "throughput_tok_s": 54080.63,
-      "latency_ms": 5300.0,
-      "compression_ratio": 1.0,
-      "param_reduction_pct": 0.0
+      "accuracy": 90.48,
+      "roberta_acc": 75.57,
+      "gpt2_acc": 59.98,
+      "latency_ms": 85.2
     },
-    "notes": "Status: PASS_NO_COMPRESSION"
+    "notes": "Master Aggregated Results"
   },
   "active_records": [
+    {
+      "record_id": "850de7cd08724b84",
+      "module_name": "spectra_v2",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T03:58:21.605645",
+      "git_commit_sha": "103e53b8d4",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/mnli_unified_spectra_v2/distilbert/checkpoints/spectra_v2/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 41.0,
+        "f1": 0.308,
+        "val_loss": 1.0805,
+        "peak_vram_mb": 354.32,
+        "throughput_tok_s": 54080.63,
+        "latency_ms": 5300.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
     {
       "record_id": "7ab76b9181303185",
       "module_name": "spectra_v2",
@@ -47,7 +73,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-20T08:02:45.786585",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full/checkpoints/spectra_v2/summary_record.json"
@@ -77,7 +103,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-22T03:15:30.346488",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/spectra_v2/summary_record.json"
@@ -123,40 +149,40 @@
         "latency_ms": 85.2
       },
       "notes": "Master Aggregated Results"
-    },
-    {
-      "record_id": "850de7cd08724b84",
-      "module_name": "spectra_v2",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-16T03:58:21.605645",
-      "git_commit_sha": "103e53b8d4",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/mnli_unified_spectra_v2/distilbert/checkpoints/spectra_v2/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 41.0,
-        "f1": 0.308,
-        "val_loss": 1.0805,
-        "peak_vram_mb": 354.32,
-        "throughput_tok_s": 54080.63,
-        "latency_ms": 5300.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
     }
   ],
   "history": [
     {
+      "record_id": "850de7cd08724b84",
+      "module_name": "spectra_v2",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T03:58:21.605645",
+      "git_commit_sha": "103e53b8d4",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/mnli_unified_spectra_v2/distilbert/checkpoints/spectra_v2/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 41.0,
+        "f1": 0.308,
+        "val_loss": 1.0805,
+        "peak_vram_mb": 354.32,
+        "throughput_tok_s": 54080.63,
+        "latency_ms": 5300.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
       "record_id": "7ab76b9181303185",
       "module_name": "spectra_v2",
       "category": "attention",
@@ -165,7 +191,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-20T08:02:45.786585",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full/checkpoints/spectra_v2/summary_record.json"
@@ -195,7 +221,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-22T03:15:30.346488",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/spectra_v2/summary_record.json"
@@ -241,36 +267,6 @@
         "latency_ms": 85.2
       },
       "notes": "Master Aggregated Results"
-    },
-    {
-      "record_id": "850de7cd08724b84",
-      "module_name": "spectra_v2",
-      "category": "attention",
-      "family": "bert",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-09-16T03:58:21.605645",
-      "git_commit_sha": "103e53b8d4",
-      "generation_method": {
-        "algorithm": "Calibration Sweep Record",
-        "source_artifact": "results/01_unified_runs/mnli_unified_spectra_v2/distilbert/checkpoints/spectra_v2/summary_record.json"
-      },
-      "experimental_setup": {
-        "backbone": "models/distilbert_sst2",
-        "dataset": "mnli"
-      },
-      "metrics": {
-        "accuracy": 41.0,
-        "f1": 0.308,
-        "val_loss": 1.0805,
-        "peak_vram_mb": 354.32,
-        "throughput_tok_s": 54080.63,
-        "latency_ms": 5300.0,
-        "compression_ratio": 1.0,
-        "param_reduction_pct": 0.0
-      },
-      "notes": "Status: PASS_NO_COMPRESSION"
     }
   ]
 }

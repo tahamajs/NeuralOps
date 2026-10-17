@@ -116,9 +116,17 @@ def main() -> None:
     parser.add_argument("--pdf", action="store_true", help="Compile to PDF via pandoc")
     args = parser.parse_args()
 
-    base_dir = Path(__file__).resolve().parent / "PerModulePaper"
-    if not base_dir.is_dir():
-        base_dir = Path(__file__).resolve().parent / "build_paper"
+    candidates = [
+        Path(__file__).resolve().parent / "build_paper",
+        Path(__file__).resolve().parent / "per_module",
+        Path(__file__).resolve().parent / "PerModulePaper",
+        Path(__file__).resolve().parent.parent / "build_paper",
+        Path(__file__).resolve().parent.parent / "per_module",
+        Path(__file__).resolve().parent.parent / "PerModulePaper",
+    ]
+    base_dir = next((c for c in candidates if c.is_dir()), None)
+    if base_dir is None:
+        raise FileNotFoundError(f"Could not locate module papers directory from {__file__}")
 
     if args.all:
         built = 0

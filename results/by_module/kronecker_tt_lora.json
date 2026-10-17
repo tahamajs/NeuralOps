@@ -1,37 +1,35 @@
 {
   "module_name": "kronecker_tt_lora",
-  "category": "attention",
-  "family": "general",
-  "total_runs": 8,
+  "category": "compressor",
+  "family": "matrix-compression",
+  "total_runs": 9,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "b3e2b3ad08",
-  "latest_timestamp": "2026-10-15T00:07:14+03:30",
+  "latest_git_sha": "25d9fe36fa",
+  "latest_timestamp": "2026-10-16T09:08:37Z",
   "latest_record": {
-    "record_id": "b4d2dbcf10000e5a",
+    "record_id": "40c37dc21ad2bbde",
     "module_name": "kronecker_tt_lora",
-    "category": "attention",
-    "family": "general",
+    "category": "compressor",
+    "family": "matrix-compression",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-10-15T00:07:14+03:30",
-    "git_commit_sha": "b3e2b3ad08",
+    "timestamp_utc": "2026-10-16T09:08:37Z",
+    "git_commit_sha": "25d9fe36fa",
     "generation_method": {
-      "algorithm": "Master Aggregated Evaluation Suite",
-      "source_artifact": "results/master_aggregated_results.csv"
+      "algorithm": "Low-Rank SVD / Structured Quantization Factorizer",
+      "source_artifact": "results/triton_all_72_compressors_benchmark.json"
     },
     "experimental_setup": {
-      "dataset": "SST-2",
-      "backbone": "DistilBERT"
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+      "dtype": "float16"
     },
     "metrics": {
-      "accuracy": 90.6,
-      "roberta_acc": 83.72,
-      "gpt2_acc": 55.16,
-      "latency_ms": 202.9
+      "compress_ms": 50.11,
+      "relative_error": 0.1865
     },
-    "notes": "Master Aggregated Results"
+    "notes": "72 Compressor Matrix Compression Benchmark"
   },
   "active_records": [
     {
@@ -43,7 +41,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T04:55:06.885770",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/kronecker_tt_lora/summary_record.json"
@@ -73,7 +71,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T22:07:14.389842",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full_lora2/checkpoints/kronecker_tt_lora/summary_record.json"
@@ -103,7 +101,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-20T08:22:54.156416",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_agnews_full/checkpoints/kronecker_tt_lora/summary_record.json"
@@ -133,7 +131,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-22T06:56:25.022631",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/distilbert_mnli_full_mnli_sweep/checkpoints/kronecker_tt_lora/summary_record.json"
@@ -163,7 +161,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-23T07:38:01.905573",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/ktl_r8/checkpoints/kronecker_tt_lora/summary_record.json"
@@ -193,7 +191,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-25T15:49:00.587264",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/deep_rank_roberta/kronecker_tt_lora/rank_64/checkpoints/kronecker_tt_lora/summary_record.json"
@@ -215,28 +213,34 @@
       "notes": "Status: MODERATE_EXPANSION"
     },
     {
-      "record_id": "40c37dc21ad2bbde",
+      "record_id": "e9b6f22959e9e8e5",
       "module_name": "kronecker_tt_lora",
       "category": "compressor",
-      "family": "matrix-compression",
+      "family": "compression-sweep-roberta",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T09:08:37Z",
-      "git_commit_sha": "25d9fe36fa",
+      "timestamp_utc": "2026-10-14T17:22:33+03:30",
+      "git_commit_sha": "885276e92e",
       "generation_method": {
-        "algorithm": "Low-Rank SVD / Structured Quantization Factorizer",
-        "source_artifact": "results/triton_all_72_compressors_benchmark.json"
+        "algorithm": "RoBERTa-base 72-Compressor Empirical Benchmark",
+        "source_artifact": "results/v13_deep_empirical_suite/roberta_72_compressors/results.json"
       },
       "experimental_setup": {
-        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-        "dtype": "float16"
+        "backbone": "RoBERTa-base",
+        "dataset": "SST-2",
+        "batch_size": 16
       },
       "metrics": {
-        "compress_ms": 50.11,
-        "relative_error": 0.1865
+        "accuracy": 48.0,
+        "f1": 0.0,
+        "val_loss": 0.6959,
+        "param_reduction_pct": -7.13,
+        "compression_ratio": 0.9335,
+        "peak_vram_mb": 2244.1,
+        "latency_ms": 12530.0
       },
-      "notes": "72 Compressor Matrix Compression Benchmark"
+      "notes": "RoBERTa 72 Compressors Benchmark. Status: success"
     },
     {
       "record_id": "b4d2dbcf10000e5a",
@@ -263,6 +267,30 @@
         "latency_ms": 202.9
       },
       "notes": "Master Aggregated Results"
+    },
+    {
+      "record_id": "40c37dc21ad2bbde",
+      "module_name": "kronecker_tt_lora",
+      "category": "compressor",
+      "family": "matrix-compression",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T09:08:37Z",
+      "git_commit_sha": "25d9fe36fa",
+      "generation_method": {
+        "algorithm": "Low-Rank SVD / Structured Quantization Factorizer",
+        "source_artifact": "results/triton_all_72_compressors_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "dtype": "float16"
+      },
+      "metrics": {
+        "compress_ms": 50.11,
+        "relative_error": 0.1865
+      },
+      "notes": "72 Compressor Matrix Compression Benchmark"
     }
   ],
   "history": [
@@ -275,7 +303,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T04:55:06.885770",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/kronecker_tt_lora/summary_record.json"
@@ -305,7 +333,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-19T22:07:14.389842",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full_lora2/checkpoints/kronecker_tt_lora/summary_record.json"
@@ -335,7 +363,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-20T08:22:54.156416",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_agnews_full/checkpoints/kronecker_tt_lora/summary_record.json"
@@ -365,7 +393,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-22T06:56:25.022631",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/05_glue_finetuning/distilbert_mnli_full_mnli_sweep/checkpoints/kronecker_tt_lora/summary_record.json"
@@ -395,7 +423,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-23T07:38:01.905573",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/ktl_r8/checkpoints/kronecker_tt_lora/summary_record.json"
@@ -425,7 +453,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-25T15:49:00.587264",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/deep_rank_roberta/kronecker_tt_lora/rank_64/checkpoints/kronecker_tt_lora/summary_record.json"
@@ -447,28 +475,34 @@
       "notes": "Status: MODERATE_EXPANSION"
     },
     {
-      "record_id": "40c37dc21ad2bbde",
+      "record_id": "e9b6f22959e9e8e5",
       "module_name": "kronecker_tt_lora",
       "category": "compressor",
-      "family": "matrix-compression",
+      "family": "compression-sweep-roberta",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T09:08:37Z",
-      "git_commit_sha": "25d9fe36fa",
+      "timestamp_utc": "2026-10-14T17:22:33+03:30",
+      "git_commit_sha": "885276e92e",
       "generation_method": {
-        "algorithm": "Low-Rank SVD / Structured Quantization Factorizer",
-        "source_artifact": "results/triton_all_72_compressors_benchmark.json"
+        "algorithm": "RoBERTa-base 72-Compressor Empirical Benchmark",
+        "source_artifact": "results/v13_deep_empirical_suite/roberta_72_compressors/results.json"
       },
       "experimental_setup": {
-        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-        "dtype": "float16"
+        "backbone": "RoBERTa-base",
+        "dataset": "SST-2",
+        "batch_size": 16
       },
       "metrics": {
-        "compress_ms": 50.11,
-        "relative_error": 0.1865
+        "accuracy": 48.0,
+        "f1": 0.0,
+        "val_loss": 0.6959,
+        "param_reduction_pct": -7.13,
+        "compression_ratio": 0.9335,
+        "peak_vram_mb": 2244.1,
+        "latency_ms": 12530.0
       },
-      "notes": "72 Compressor Matrix Compression Benchmark"
+      "notes": "RoBERTa 72 Compressors Benchmark. Status: success"
     },
     {
       "record_id": "b4d2dbcf10000e5a",
@@ -495,6 +529,30 @@
         "latency_ms": 202.9
       },
       "notes": "Master Aggregated Results"
+    },
+    {
+      "record_id": "40c37dc21ad2bbde",
+      "module_name": "kronecker_tt_lora",
+      "category": "compressor",
+      "family": "matrix-compression",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T09:08:37Z",
+      "git_commit_sha": "25d9fe36fa",
+      "generation_method": {
+        "algorithm": "Low-Rank SVD / Structured Quantization Factorizer",
+        "source_artifact": "results/triton_all_72_compressors_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "dtype": "float16"
+      },
+      "metrics": {
+        "compress_ms": 50.11,
+        "relative_error": 0.1865
+      },
+      "notes": "72 Compressor Matrix Compression Benchmark"
     }
   ]
 }

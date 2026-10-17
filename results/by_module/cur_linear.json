@@ -5,7 +5,7 @@
   "total_runs": 4,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "6267bfb8a8",
+  "latest_git_sha": "866fe45a1a",
   "latest_timestamp": "2026-09-27T07:45:28.194353",
   "latest_record": {
     "record_id": "e32f3d1f190d5e38",
@@ -16,7 +16,7 @@
     "revision": 1,
     "status": "active",
     "timestamp_utc": "2026-09-27T07:45:28.194353",
-    "git_commit_sha": "6267bfb8a8",
+    "git_commit_sha": "866fe45a1a",
     "generation_method": {
       "algorithm": "Calibration Sweep Record",
       "source_artifact": "results/_archive/duplicates_20261008/02_rank_sweeps/04_rank_sweeps/roberta/deep_rank_roberta/cur_linear/rank_32/checkpoints/cur_linear/summary_record.json"
@@ -47,7 +47,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-25T12:07:14.898505",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/_archive/duplicates_20261008/07_misc_tests/deep_rank_distilbert/cur_linear/rank_64/checkpoints/cur_linear/summary_record.json"
@@ -77,7 +77,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-25T12:31:28.014042",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/_archive/duplicates_20261008/07_misc_tests/deep_rank_roberta/cur_linear/rank_64/checkpoints/cur_linear/summary_record.json"
@@ -107,7 +107,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-27T07:15:12.791514",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/_archive/duplicates_20261008/02_rank_sweeps/04_rank_sweeps/distilbert/deep_rank_distilbert/cur_linear/rank_32/checkpoints/cur_linear/summary_record.json"
@@ -137,7 +137,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-27T07:45:28.194353",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/_archive/duplicates_20261008/02_rank_sweeps/04_rank_sweeps/roberta/deep_rank_roberta/cur_linear/rank_32/checkpoints/cur_linear/summary_record.json"
@@ -169,7 +169,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-25T12:07:14.898505",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/_archive/duplicates_20261008/07_misc_tests/deep_rank_distilbert/cur_linear/rank_64/checkpoints/cur_linear/summary_record.json"
@@ -199,7 +199,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-25T12:31:28.014042",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/_archive/duplicates_20261008/07_misc_tests/deep_rank_roberta/cur_linear/rank_64/checkpoints/cur_linear/summary_record.json"
@@ -229,7 +229,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-27T07:15:12.791514",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/_archive/duplicates_20261008/02_rank_sweeps/04_rank_sweeps/distilbert/deep_rank_distilbert/cur_linear/rank_32/checkpoints/cur_linear/summary_record.json"
@@ -259,7 +259,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-27T07:45:28.194353",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/_archive/duplicates_20261008/02_rank_sweeps/04_rank_sweeps/roberta/deep_rank_roberta/cur_linear/rank_32/checkpoints/cur_linear/summary_record.json"

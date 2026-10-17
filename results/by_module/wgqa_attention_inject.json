@@ -5,7 +5,7 @@
   "total_runs": 1,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "6267bfb8a8",
+  "latest_git_sha": "866fe45a1a",
   "latest_timestamp": "2026-09-21T05:57:52.746500",
   "latest_record": {
     "record_id": "53ec6f853bf7b0ea",
@@ -16,7 +16,7 @@
     "revision": 1,
     "status": "active",
     "timestamp_utc": "2026-09-21T05:57:52.746500",
-    "git_commit_sha": "6267bfb8a8",
+    "git_commit_sha": "866fe45a1a",
     "generation_method": {
       "algorithm": "Calibration Sweep Record",
       "source_artifact": "results/07_misc_tests/gpt2_wikitext2_sweep/checkpoints/wgqa_attention_inject/summary_record.json"
@@ -47,7 +47,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-21T05:57:52.746500",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/gpt2_wikitext2_sweep/checkpoints/wgqa_attention_inject/summary_record.json"
@@ -79,7 +79,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-09-21T05:57:52.746500",
-      "git_commit_sha": "6267bfb8a8",
+      "git_commit_sha": "866fe45a1a",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/07_misc_tests/gpt2_wikitext2_sweep/checkpoints/wgqa_attention_inject/summary_record.json"
