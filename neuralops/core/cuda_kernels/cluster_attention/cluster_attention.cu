@@ -126,6 +126,7 @@ torch::Tensor cluster_attn_fwd(
     const int N = q.size(2);
     const int D = q.size(3);
     const int K = cluster_centroids.size(2);
+    TORCH_CHECK(D <= 128, "cluster_attn_fwd: D=", D, " exceeds max 128");
 
     auto out = torch::empty_like(q);
     if (B == 0 || H == 0 || N == 0 || D == 0 || K == 0) return out;

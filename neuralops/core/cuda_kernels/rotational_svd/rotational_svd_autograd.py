@@ -84,6 +84,9 @@ def rotational_svd(
         )
 
     triton_fn = _get_triton_impl()
+    R = v_r.shape[1] if v_r.shape[0] == x.shape[-1] else v_r.shape[0]
+    if R > 64:
+        cuda_fn = None
 
     return dispatch(
         cuda_fn,

@@ -34,6 +34,9 @@ __global__ void linear_attention_fwd_kernel(
     // Shared memory for S [MAX_DK, MAX_DV] and z [MAX_DK]
     __shared__ float s_S[MAX_DK][MAX_DV];
     __shared__ float s_z[MAX_DK];
+    __shared__ float s_k[MAX_DK];
+    __shared__ float s_v[MAX_DV];
+    __shared__ float s_q[MAX_DK];
 
     // Initialize state
     for (int idx = tid; idx < D_K * D_V; idx += num_threads) {
@@ -52,23 +55,32 @@ __global__ void linear_attention_fwd_kernel(
         const int qk_offset = (base_bh + t) * D_K;
         const int v_offset = (base_bh + t) * D_V;
 
+        if (tid < D_K) {
+            s_k[tid] = to_float(k[qk_offset + tid]);
+            s_q[tid] = to_float(q[qk_offset + tid]);
+        }
+        if (tid < D_V) {
+            s_v[tid] = to_float(v[v_offset + tid]);
+        }
+        __syncthreads();
+
         // Step 1: Update z += k_t
         if (tid < D_K) {
-            s_z[tid] += to_float(k[qk_offset + tid]);
+            s_z[tid] += s_k[tid];
         }
 
         // Step 2: Update S += k_t^T @ v_t
         for (int idx = tid; idx < D_K * D_V; idx += num_threads) {
             int r = idx / D_V; // dim in D_K
             int c = idx % D_V; // dim in D_V
-            s_S[r][c] += to_float(k[qk_offset + r]) * to_float(v[v_offset + c]);
+            s_S[r][c] += s_k[r] * s_v[c];
         }
         __syncthreads();
 
         // Step 3: Compute denominator = q_t @ z
         float local_denom = 0.0f;
         for (int i = tid; i < D_K; i += num_threads) {
-            local_denom += to_float(q[qk_offset + i]) * s_z[i];
+            local_denom += s_q[i] * s_z[i];
         }
         local_denom = block_reduce_sum(local_denom);
         __shared__ float s_denom;
@@ -82,7 +94,7 @@ __global__ void linear_attention_fwd_kernel(
         for (int col = tid; col < D_V; col += num_threads) {
             float num = 0.0f;
             for (int r = 0; r < D_K; ++r) {
-                num += to_float(q[qk_offset + r]) * s_S[r][col];
+                num += s_q[r] * s_S[r][col];
             }
             out[v_offset + col] = from_float<scalar_t>(num / denom);
         }
@@ -107,6 +119,9 @@ torch::Tensor linear_attention_fwd(
     const int L = q.size(2);
     const int D_K = q.size(3);
     const int D_V = v.size(3);
+
+    TORCH_CHECK(D_K <= 64, "linear_attention_fwd: D_K=", D_K, " exceeds max 64");
+    TORCH_CHECK(D_V <= 64, "linear_attention_fwd: D_V=", D_V, " exceeds max 64");
 
     auto out = torch::empty_like(v);
     const dim3 grid(B, H);

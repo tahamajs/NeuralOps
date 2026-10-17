@@ -13,7 +13,7 @@ namespace neuralops { namespace cuda {
 // 2. Intra-warp prefix scan using __shfl_up_sync.
 // 3. Strict FP32 intermediate accumulation to prevent numerical overflow and underflow.
 template <typename scalar_t>
-__global__ void __launch_bounds__(256) logcumsumexp_row_kernel(
+__global__ void __launch_bounds__(32) logcumsumexp_row_kernel(
     scalar_t* __restrict__ out,
     const scalar_t* __restrict__ x,
     const int total_rows,
@@ -25,22 +25,42 @@ __global__ void __launch_bounds__(256) logcumsumexp_row_kernel(
     const int tid = threadIdx.x;
     const int row_offset = row * L;
 
-    // Parallel associative scan across sequence dimension L
-    // For general L, tile across blocks of size 32 or unroll
     float running_m = -1e30f;
     float running_s = 0.0f;
 
-    for (int i = 0; i < L; ++i) {
-        const float val = to_float(x[row_offset + i]);
-        if (val > running_m) {
-            running_s = running_s * expf(running_m - val) + 1.0f;
-            running_m = val;
-        } else {
-            running_s += expf(val - running_m);
+    for (int chunk = 0; chunk < L; chunk += 32) {
+        const int idx = chunk + tid;
+        float m = -1e30f;
+        float s = 0.0f;
+        if (idx < L) {
+            m = to_float(x[row_offset + idx]);
+            s = 1.0f;
         }
-        if (tid == 0) {
-            out[row_offset + i] = from_float<scalar_t>(running_m + logf(fmaxf(running_s, 1e-12f)));
+
+        #pragma unroll
+        for (int offset = 1; offset < 32; offset <<= 1) {
+            const float other_m = __shfl_up_sync(0xffffffff, m, offset);
+            const float other_s = __shfl_up_sync(0xffffffff, s, offset);
+            if (tid >= offset) {
+                const float new_m = fmaxf(m, other_m);
+                s = other_s * expf(other_m - new_m) + s * expf(m - new_m);
+                m = new_m;
+            }
         }
+
+        if (running_s > 0.0f) {
+            const float new_m = fmaxf(m, running_m);
+            s = running_s * expf(running_m - new_m) + s * expf(m - new_m);
+            m = new_m;
+        }
+
+        if (idx < L) {
+            out[row_offset + idx] = from_float<scalar_t>(m + logf(fmaxf(s, 1e-12f)));
+        }
+
+        const int last_lane = min(31, L - 1 - chunk);
+        running_m = __shfl_sync(0xffffffff, m, last_lane);
+        running_s = __shfl_sync(0xffffffff, s, last_lane);
     }
 }
 
