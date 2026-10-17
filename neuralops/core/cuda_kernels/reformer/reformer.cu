@@ -119,6 +119,7 @@ torch::Tensor reformer_fwd(
     const int H = qk.size(1);
     const int N = qk.size(2);
     const int D = qk.size(3);
+    TORCH_CHECK(D <= 128, "reformer_fwd: D=", D, " > 128 not supported");
 
     auto out = torch::empty_like(qk);
     if (B == 0 || H == 0 || N == 0 || D == 0) return out;

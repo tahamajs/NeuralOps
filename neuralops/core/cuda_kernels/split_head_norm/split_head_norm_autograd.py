@@ -25,23 +25,30 @@ def _get_module():
         )
     return _MODULE
 
-def split_head_norm_pytorch_ref(x, eps=1e-5):
+def split_head_norm_pytorch_ref(x, weight=None, eps=1e-5):
     gf = x.float()
     rms = torch.rsqrt(gf.pow(2).mean(dim=-1, keepdim=True) + eps)
-    return (gf * rms).to(x.dtype)
-def split_head_norm_triton_ref(x, eps=1e-5):
-    from neuralops.core.triton_kernels.elementwise import fused_split_head_hybrid_concat_norm_triton
-    return fused_split_head_hybrid_concat_norm_triton([x], eps=eps)
+    out = gf * rms
+    if weight is not None:
+        out = out * weight.float()
+    return out.to(x.dtype)
 
-def split_head_norm(x: torch.Tensor, eps: float = 1e-5) -> torch.Tensor:
-    def cuda_fn(*args, **kwargs):
+def split_head_norm_triton_ref(x, weight=None, eps=1e-5):
+    from neuralops.core.triton_kernels.elementwise import fused_split_head_hybrid_concat_norm_triton
+    out = fused_split_head_hybrid_concat_norm_triton([x], eps=eps)
+    if weight is not None:
+        out = out * weight
+    return out
+
+def split_head_norm(x: torch.Tensor, weight: Optional[torch.Tensor] = None, eps: float = 1e-5) -> torch.Tensor:
+    def cuda_fn(x, weight=None, eps=1e-5):
         mod = _get_module()
-        fn = getattr(mod, "split_head_norm_fwd")
-        return fn(*args, **kwargs)
+        w = weight.contiguous() if weight is not None else None
+        return mod.split_head_norm_fwd(x.contiguous(), w, eps)
     return dispatch(
         cuda_fn,
         split_head_norm_triton_ref,
         split_head_norm_pytorch_ref,
-        x, eps=eps,
+        x, weight=weight, eps=eps,
         kernel_name="split_head_norm",
     )

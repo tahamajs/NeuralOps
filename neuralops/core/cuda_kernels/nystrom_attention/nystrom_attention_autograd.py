@@ -19,7 +19,10 @@ def nystrom_attention_ref(q_landmarks: torch.Tensor, k_landmarks: torch.Tensor, 
     return torch.matmul(torch.matmul(q_landmarks, pinv_landmarks), v_landmarks)
 
 def nystrom_attention(q_landmarks: torch.Tensor, k_landmarks: torch.Tensor, v_landmarks: torch.Tensor, pinv_landmarks: torch.Tensor) -> torch.Tensor:
-    def cuda_fn(q_landmarks, k_landmarks, v_landmarks, pinv_landmarks):
-        mod = _get_module()
-        return mod.nystrom_attn_fwd(q_landmarks.contiguous(), k_landmarks.contiguous(), v_landmarks.contiguous(), pinv_landmarks.contiguous())
+    cuda_fn = None
+    if q_landmarks.shape[-1] <= 64:
+        def _cuda_fn(q_landmarks, k_landmarks, v_landmarks, pinv_landmarks):
+            mod = _get_module()
+            return mod.nystrom_attn_fwd(q_landmarks.contiguous(), k_landmarks.contiguous(), v_landmarks.contiguous(), pinv_landmarks.contiguous())
+        cuda_fn = _cuda_fn
     return dispatch(cuda_fn, nystrom_attention_ref, nystrom_attention_ref, q_landmarks, k_landmarks=k_landmarks, v_landmarks=v_landmarks, pinv_landmarks=pinv_landmarks, kernel_name="nystrom_attention")

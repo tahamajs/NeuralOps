@@ -29,7 +29,10 @@ def longformer_ref(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, window_siz
     return torch.matmul(probs, v)
 
 def longformer(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, window_size: int = 64, num_global_tokens: int = 4) -> torch.Tensor:
-    def cuda_fn(q, k, v, window_size=64, num_global_tokens=4):
-        mod = _get_module()
-        return mod.longformer_fwd(q.contiguous(), k.contiguous(), v.contiguous(), int(window_size), int(num_global_tokens))
+    cuda_fn = None
+    if q.shape[-1] <= 128:
+        def _cuda_fn(q, k, v, window_size=64, num_global_tokens=4):
+            mod = _get_module()
+            return mod.longformer_fwd(q.contiguous(), k.contiguous(), v.contiguous(), int(window_size), int(num_global_tokens))
+        cuda_fn = _cuda_fn
     return dispatch(cuda_fn, longformer_ref, longformer_ref, q, k, v, window_size=window_size, num_global_tokens=num_global_tokens, kernel_name="longformer")

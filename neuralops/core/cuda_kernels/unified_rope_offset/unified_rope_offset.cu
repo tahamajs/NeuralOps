@@ -78,6 +78,11 @@ torch::Tensor unified_rope_offset_fwd(
     const int D = x.size(3);
     const int half_rope = rope_dim / 2;
 
+    const int max_pos = cos_tab.size(0);
+    TORCH_CHECK(N + offset <= max_pos,
+                "unified_rope_offset_fwd: N + offset = ", N + offset,
+                " exceeds cos_tab.size(0) = ", max_pos);
+
     auto out = x.clone();
     if (B == 0 || H == 0 || N == 0 || half_rope == 0) return out;
 

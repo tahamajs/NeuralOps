@@ -81,6 +81,7 @@ torch::Tensor rotational_svd_fwd(
         V = V.t().contiguous();
     }
     const int R = V.size(0);
+    TORCH_CHECK(R <= 64, "rotational_svd_fwd: R=", R, " > 64 not supported");
     if (U.size(1) != R && U.size(0) == R) {
         U = U.t().contiguous();
     }
@@ -88,6 +89,8 @@ torch::Tensor rotational_svd_fwd(
 
     auto out = torch::empty({M, N}, x.options());
     const bool has_bias = bias.has_value() && bias.value().defined();
+    torch::Tensor bias_c;
+    if (has_bias) bias_c = bias.value().contiguous();
 
     const int threads = 128;
     const int blocks = (M + threads - 1) / threads;
@@ -105,7 +108,7 @@ torch::Tensor rotational_svd_fwd(
                     rin_c.data_ptr<scalar_t>(),
                     V.data_ptr<scalar_t>(),
                     U.data_ptr<scalar_t>(),
-                    has_bias ? bias.value().contiguous().data_ptr<scalar_t>() : nullptr,
+                    has_bias ? bias_c.data_ptr<scalar_t>() : nullptr,
                     M, K, R, N, has_bias
                 );
             } else if (R <= 32) {
@@ -115,7 +118,7 @@ torch::Tensor rotational_svd_fwd(
                     rin_c.data_ptr<scalar_t>(),
                     V.data_ptr<scalar_t>(),
                     U.data_ptr<scalar_t>(),
-                    has_bias ? bias.value().contiguous().data_ptr<scalar_t>() : nullptr,
+                    has_bias ? bias_c.data_ptr<scalar_t>() : nullptr,
                     M, K, R, N, has_bias
                 );
             } else {
@@ -125,7 +128,7 @@ torch::Tensor rotational_svd_fwd(
                     rin_c.data_ptr<scalar_t>(),
                     V.data_ptr<scalar_t>(),
                     U.data_ptr<scalar_t>(),
-                    has_bias ? bias.value().contiguous().data_ptr<scalar_t>() : nullptr,
+                    has_bias ? bias_c.data_ptr<scalar_t>() : nullptr,
                     M, K, R, N, has_bias
                 );
             }

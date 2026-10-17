@@ -33,8 +33,11 @@ __global__ void chunked_delta_gate_scan_fwd_kernel(
     const int tid = threadIdx.x;
     const int num_threads = blockDim.x;
 
-    // Allocate shared memory state matrix S of shape [MAX_DV, MAX_DK]
+    // Allocate shared memory state matrix S of shape [MAX_DV, MAX_DK] and token buffers
     __shared__ float s_state[MAX_DV][MAX_DK];
+    __shared__ float s_k[MAX_DK];
+    __shared__ float s_q[MAX_DK];
+    __shared__ float s_v[MAX_DV];
 
     // Initialize state to zero
     for (int idx = tid; idx < D_V * D_K; idx += num_threads) {
@@ -53,6 +56,15 @@ __global__ void chunked_delta_gate_scan_fwd_kernel(
         const int qk_offset = ((b * H + h) * L + t) * D_K;
         const int v_offset = ((b * H + h) * L + t) * D_V;
 
+        if (tid < D_K) {
+            s_k[tid] = to_float(k[qk_offset + tid]);
+            s_q[tid] = to_float(q[qk_offset + tid]);
+        }
+        if (tid < D_V) {
+            s_v[tid] = to_float(v[v_offset + tid]);
+        }
+        __syncthreads();
+
         // Step 1: scale S by alpha_t
         for (int idx = tid; idx < D_V * D_K; idx += num_threads) {
             int r = idx / D_K;
@@ -65,14 +77,15 @@ __global__ void chunked_delta_gate_scan_fwd_kernel(
         for (int r = tid; r < D_V; r += num_threads) {
             float pred = 0.0f;
             for (int c = 0; c < D_K; ++c) {
-                pred += s_state[r][c] * to_float(k[qk_offset + c]);
+                pred += s_state[r][c] * s_k[c];
             }
-            float v_val = to_float(v[v_offset + r]);
+            float v_val = s_v[r];
             float v_corr = v_val - pred;
+            const float b_corr = b_t * v_corr;
 
             // Step 3: update row r of S: S[r, c] += b_t * v_corr * k_t[c]
             for (int c = 0; c < D_K; ++c) {
-                s_state[r][c] += b_t * v_corr * to_float(k[qk_offset + c]);
+                s_state[r][c] += b_corr * s_k[c];
             }
         }
         __syncthreads();
@@ -81,7 +94,7 @@ __global__ void chunked_delta_gate_scan_fwd_kernel(
         for (int r = tid; r < D_V; r += num_threads) {
             float y_val = 0.0f;
             for (int c = 0; c < D_K; ++c) {
-                y_val += s_state[r][c] * to_float(q[qk_offset + c]);
+                y_val += s_state[r][c] * s_q[c];
             }
             out[v_offset + r] = from_float<scalar_t>(y_val);
         }

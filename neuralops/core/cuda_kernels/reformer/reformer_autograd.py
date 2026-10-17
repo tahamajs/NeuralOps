@@ -26,7 +26,10 @@ def reformer_ref(qk: torch.Tensor, v: torch.Tensor, hash_buckets: torch.Tensor) 
     return torch.matmul(probs, v)
 
 def reformer(qk: torch.Tensor, v: torch.Tensor, hash_buckets: torch.Tensor) -> torch.Tensor:
-    def cuda_fn(qk, v, hash_buckets):
-        mod = _get_module()
-        return mod.reformer_fwd(qk.contiguous(), v.contiguous(), hash_buckets.contiguous().int())
+    cuda_fn = None
+    if qk.shape[-1] <= 128:
+        def _cuda_fn(qk, v, hash_buckets):
+            mod = _get_module()
+            return mod.reformer_fwd(qk.contiguous(), v.contiguous(), hash_buckets.contiguous().int())
+        cuda_fn = _cuda_fn
     return dispatch(cuda_fn, reformer_ref, reformer_ref, qk, v=v, hash_buckets=hash_buckets, kernel_name="reformer")
