@@ -23,7 +23,7 @@ __global__ void recurrent_linear_step_kernel(
     const int Dv,
     const float eps
 ) {
-    const int bh = blockIdx.x;
+    const int bh = blockIdx.y;
     if (bh >= B * H) return;
 
     const int tid = threadIdx.x;
@@ -48,6 +48,7 @@ __global__ void recurrent_linear_step_kernel(
 
     // Compute denominator = sum_k q_t[k] * z_new[k] + eps
     float denom_acc = 0.0f;
+    #pragma unroll 4
     for (int k = tid; k < Dk && k < MAX_DK; k += blockDim.x) {
         denom_acc += s_q[k] * s_z[k];
     }
@@ -69,6 +70,7 @@ __global__ void recurrent_linear_step_kernel(
         const float v_val = to_float(v_t[v_offset + v]);
         float num_acc = 0.0f;
 
+        #pragma unroll 4
         for (int k = 0; k < Dk && k < MAX_DK; ++k) {
             const int idx = kv_offset + k * Dv + v;
             const float kv_val = to_float(kv_state[idx]) + s_k[k] * v_val;
@@ -102,7 +104,7 @@ std::vector<torch::Tensor> recurrent_linear_step_fwd(
 
     auto out = torch::empty({B, H, Dv}, q_t.options());
 
-    const int blocks = B * H;
+    const dim3 grid(1, B * H);
     const int threads = 128;
     auto stream = c10::cuda::getCurrentCUDAStream();
 
@@ -114,7 +116,7 @@ std::vector<torch::Tensor> recurrent_linear_step_fwd(
         at::ScalarType::Half, at::ScalarType::BFloat16,
         q_t.scalar_type(), "recurrent_linear_step_fwd", ([&] {
             if (Dk <= 64) {
-                neuralops::cuda::recurrent_linear_step_kernel<scalar_t, 64><<<blocks, threads, 0, stream>>>(
+                neuralops::cuda::recurrent_linear_step_kernel<scalar_t, 64><<<grid, threads, 0, stream>>>(
                     out.data_ptr<scalar_t>(),
                     kv_state.data_ptr<scalar_t>(),
                     z_state.data_ptr<scalar_t>(),
@@ -124,7 +126,7 @@ std::vector<torch::Tensor> recurrent_linear_step_fwd(
                     B, H, Dk, Dv, eps
                 );
             } else {
-                neuralops::cuda::recurrent_linear_step_kernel<scalar_t, 128><<<blocks, threads, 0, stream>>>(
+                neuralops::cuda::recurrent_linear_step_kernel<scalar_t, 128><<<grid, threads, 0, stream>>>(
                     out.data_ptr<scalar_t>(),
                     kv_state.data_ptr<scalar_t>(),
                     z_state.data_ptr<scalar_t>(),

@@ -20,16 +20,16 @@ __global__ void multi_scale_retention_fwd_kernel(
     const int L,
     const int D
 ) {
-    const int bh = blockIdx.x;
+    const int bh = blockIdx.y;
     if (bh >= B * H) return;
 
     const int h = bh % H;
     const float gamma = gammas[h];
 
     float S[MAX_D][MAX_D];
-    #pragma unroll
+    #pragma unroll 4
     for (int i = 0; i < MAX_D; ++i) {
-        #pragma unroll
+        #pragma unroll 4
         for (int j = 0; j < MAX_D; ++j) {
             S[i][j] = 0.0f;
         }
@@ -41,16 +41,20 @@ __global__ void multi_scale_retention_fwd_kernel(
         const int tok_offset = head_offset + t * D;
 
         // 1. S_t = gamma * S_{t-1} + k_t * v_t^T
+        #pragma unroll 4
         for (int i = 0; i < D && i < MAX_D; ++i) {
             const float k_val = to_float(K[tok_offset + i]);
+            #pragma unroll 4
             for (int j = 0; j < D && j < MAX_D; ++j) {
                 S[i][j] = gamma * S[i][j] + k_val * to_float(V[tok_offset + j]);
             }
         }
 
         // 2. y_t = q_t * S_t
+        #pragma unroll 4
         for (int j = 0; j < D && j < MAX_D; ++j) {
             float y_acc = 0.0f;
+            #pragma unroll 4
             for (int i = 0; i < D && i < MAX_D; ++i) {
                 y_acc += to_float(Q[tok_offset + i]) * S[i][j];
             }
@@ -79,8 +83,8 @@ torch::Tensor multi_scale_retention_fwd(
 
     auto out = torch::empty_like(q);
 
-    const int blocks = B * H;
-    const int threads = 1;
+    const dim3 grid(1, B * H);
+    const int threads = 32;
     auto stream = c10::cuda::getCurrentCUDAStream();
 
     auto q_c = q.contiguous();
@@ -92,7 +96,7 @@ torch::Tensor multi_scale_retention_fwd(
         at::ScalarType::Half, at::ScalarType::BFloat16,
         q.scalar_type(), "multi_scale_retention_fwd", ([&] {
             if (D <= 16) {
-                neuralops::cuda::multi_scale_retention_fwd_kernel<scalar_t, 16><<<blocks, threads, 0, stream>>>(
+                neuralops::cuda::multi_scale_retention_fwd_kernel<scalar_t, 16><<<grid, threads, 0, stream>>>(
                     out.data_ptr<scalar_t>(),
                     q_c.data_ptr<scalar_t>(),
                     k_c.data_ptr<scalar_t>(),
@@ -101,7 +105,7 @@ torch::Tensor multi_scale_retention_fwd(
                     B, H, L, D
                 );
             } else if (D <= 32) {
-                neuralops::cuda::multi_scale_retention_fwd_kernel<scalar_t, 32><<<blocks, threads, 0, stream>>>(
+                neuralops::cuda::multi_scale_retention_fwd_kernel<scalar_t, 32><<<grid, threads, 0, stream>>>(
                     out.data_ptr<scalar_t>(),
                     q_c.data_ptr<scalar_t>(),
                     k_c.data_ptr<scalar_t>(),
@@ -110,7 +114,7 @@ torch::Tensor multi_scale_retention_fwd(
                     B, H, L, D
                 );
             } else if (D <= 64) {
-                neuralops::cuda::multi_scale_retention_fwd_kernel<scalar_t, 64><<<blocks, threads, 0, stream>>>(
+                neuralops::cuda::multi_scale_retention_fwd_kernel<scalar_t, 64><<<grid, threads, 0, stream>>>(
                     out.data_ptr<scalar_t>(),
                     q_c.data_ptr<scalar_t>(),
                     k_c.data_ptr<scalar_t>(),
@@ -119,7 +123,7 @@ torch::Tensor multi_scale_retention_fwd(
                     B, H, L, D
                 );
             } else {
-                neuralops::cuda::multi_scale_retention_fwd_kernel<scalar_t, 128><<<blocks, threads, 0, stream>>>(
+                neuralops::cuda::multi_scale_retention_fwd_kernel<scalar_t, 128><<<grid, threads, 0, stream>>>(
                     out.data_ptr<scalar_t>(),
                     q_c.data_ptr<scalar_t>(),
                     k_c.data_ptr<scalar_t>(),
