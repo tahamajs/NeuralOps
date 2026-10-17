@@ -83,6 +83,7 @@ class _Hgrn2_fused_bwd_scanFunction(torch.autograd.Function):
 
     @staticmethod
     def backward(ctx: Any, *douts):
+        dout = douts[0] if len(douts) == 1 else douts
         saved = list(ctx.saved_tensors)
         inputs = []
         for is_t, nt in zip(ctx.tensors_mask, ctx.non_tensors):
