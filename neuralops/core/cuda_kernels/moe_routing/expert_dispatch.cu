@@ -3,6 +3,8 @@
 #include <torch/extension.h>
 #include <c10/cuda/CUDAStream.h>
 #include <c10/cuda/CUDAException.h>
+#include "_common.cuh"
+
 
 template<typename scalar_t>
 __launch_bounds__(128)
@@ -91,6 +93,16 @@ void moe_gather_cuda(
     int top_k,
     int total_assignments
 ) {
+    CHECK_INPUT(out_tokens);
+    CHECK_INPUT(expert_outputs);
+    CHECK_INPUT(routing_weights);
+    if (topk_indices.defined() && topk_indices.numel() > 0) {
+        CHECK_INPUT(topk_indices);
+    }
+    if (expert_offsets.defined() && expert_offsets.numel() > 0) {
+        CHECK_INPUT(expert_offsets);
+    }
+
     if (num_tokens <= 0 || hidden_dim <= 0 || top_k <= 0 || total_assignments <= 0) {
         return;
     }
