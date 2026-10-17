@@ -1525,6 +1525,13 @@ class SVDLinearAttention(BaseAttention):
         # Record into circular buffer
         kv_cache["C_k"][:, slot : slot + 1, :].copy_(c_k_t)
         kv_cache["C_v"][:, slot : slot + 1, :].copy_(c_v_t)
+
+        if "K_buf" not in kv_cache:
+            kv_cache["K_buf"] = torch.zeros(B, max_len, self.all_kv_head_size, device=x_t.device, dtype=x_t.dtype)
+            kv_cache["V_buf"] = torch.zeros(B, max_len, self.all_kv_head_size, device=x_t.device, dtype=x_t.dtype)
+        kv_cache["K_buf"][:, slot : slot + 1, :] = self.k_proj(x_t)
+        kv_cache["V_buf"][:, slot : slot + 1, :] = self.v_proj(x_t)
+
         kv_cache["step"] = step + 1
 
         curr_len = min(step + 1, max_len)
@@ -1533,6 +1540,16 @@ class SVDLinearAttention(BaseAttention):
             k_all = kv_cache["K_all"]
             v_all = kv_cache["V_all"]
             curr_len = k_all.shape[-2]
+        elif not self.is_decoder and kv_cache.get("full_seq_len"):
+            tot = kv_cache["full_seq_len"]
+            k_d = kv_cache["K_buf"][:, :tot, :]
+            v_d = kv_cache["V_buf"][:, :tot, :]
+            curr_len = tot
+            k_all = k_d.view(B, curr_len, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+            v_all = v_d.view(B, curr_len, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+            if self.num_kv_heads < self.num_heads:
+                k_all = repeat_kv(k_all, self.kv_repeat)
+                v_all = repeat_kv(v_all, self.kv_repeat)
         else:
             if step + 1 <= max_len:
                 active_c_k = kv_cache["C_k"][:, :curr_len, :]
