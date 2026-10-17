@@ -53,6 +53,15 @@ void moe_dispatch_cuda(
     int top_k,
     int total_assignments
 ) {
+    CHECK_INPUT(dispatched_tokens);
+    CHECK_INPUT(tokens);
+    if (topk_indices.defined() && topk_indices.numel() > 0) {
+        CHECK_INPUT(topk_indices);
+    }
+    if (expert_offsets.defined() && expert_offsets.numel() > 0) {
+        CHECK_INPUT(expert_offsets);
+    }
+
     if (num_tokens <= 0 || hidden_dim <= 0 || top_k <= 0 || total_assignments <= 0) {
         return;
     }
@@ -178,6 +187,12 @@ void moe_fused_dispatch_cuda(
     int num_experts,
     int top_k
 ) {
+    CHECK_INPUT(dispatched_tokens);
+    CHECK_INPUT(routing_weights);
+    CHECK_INPUT(topk_indices);
+    CHECK_INPUT(tokens);
+    CHECK_INPUT(gate_logits);
+
     if (num_tokens <= 0 || hidden_dim <= 0 || top_k <= 0 || num_experts <= 0) {
         return;
     }
