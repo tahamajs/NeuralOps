@@ -30,15 +30,22 @@ from neuralops.core.triton_kernels.paged_attention import paged_recurrent_state_
 paged_recurrent_step_pytorch_ref = paged_recurrent_state_step_pytorch
 paged_recurrent_step_ref = paged_recurrent_state_step_pytorch
 
-def paged_recurrent_step(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, page_pool: torch.Tensor, block_tables: torch.Tensor, decay: float = 1.0) -> torch.Tensor:
-    def cuda_fn(*args, **kwargs):
+def paged_recurrent_step(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, page_pool: torch.Tensor, block_tables: torch.Tensor, decay: float = 1.0, page_slot: int = 0) -> torch.Tensor:
+    def cuda_fn(q, k, v, page_pool, block_tables, decay=1.0, page_slot=0, **kwargs):
         mod = _get_module()
-        fn = getattr(mod, "paged_recurrent_step_fwd")
-        return fn(*args, **kwargs)
+        return mod.paged_recurrent_step_fwd(
+            page_pool.contiguous(),
+            q.contiguous(),
+            k.contiguous(),
+            v.contiguous(),
+            block_tables.contiguous(),
+            int(page_slot),
+            float(decay),
+        )
     return dispatch(
         cuda_fn,
         paged_recurrent_state_step_triton,
         paged_recurrent_state_step_pytorch,
-        q, k, v, page_pool, block_tables, decay=decay,
+        q, k, v, page_pool, block_tables, decay=decay, page_slot=page_slot,
         kernel_name="paged_recurrent_step",
     )
