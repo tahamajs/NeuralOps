@@ -47,10 +47,9 @@ def gdn_delta_rule_triton_ref(q, k, v, beta):
     return gdn_delta_rule_pytorch_ref(q, k, v, beta)
 
 def gdn_delta_rule(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, beta: torch.Tensor) -> torch.Tensor:
-    def cuda_fn(*args, **kwargs):
+    def cuda_fn(q, k, v, beta, **kwargs):
         mod = _get_module()
-        fn = getattr(mod, "gdn_delta_rule_fwd")
-        return fn(*args, **kwargs)
+        return mod.gdn_delta_rule_fwd(q.contiguous(), k.contiguous(), v.contiguous(), beta.contiguous())
     return dispatch(
         cuda_fn,
         gdn_delta_rule_triton_ref,
