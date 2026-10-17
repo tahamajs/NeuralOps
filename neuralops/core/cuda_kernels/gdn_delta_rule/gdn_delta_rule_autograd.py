@@ -66,6 +66,7 @@ class _GDNDeltaRuleFunction(torch.autograd.Function):
 
     @staticmethod
     def backward(ctx: Any, *douts):
+        dout = douts[0] if len(douts) == 1 else douts
         q, k, v, beta = ctx.saved_tensors
         q_p = q.detach().requires_grad_(q.requires_grad)
         k_p = k.detach().requires_grad_(k.requires_grad)

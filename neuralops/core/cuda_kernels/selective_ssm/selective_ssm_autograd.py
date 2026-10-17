@@ -47,6 +47,7 @@ class _SelectiveSSMFunction(torch.autograd.Function):
 
     @staticmethod
     def backward(ctx: Any, *douts):
+        dout = douts[0] if len(douts) == 1 else douts
         x, dt, A, B_vec, C_vec = ctx.saved_tensors
         x_p = x.detach().requires_grad_(x.requires_grad)
         dt_p = dt.detach().requires_grad_(dt.requires_grad)

@@ -35,6 +35,7 @@ class _SpectralMambaFunction(torch.autograd.Function):
 
     @staticmethod
     def backward(ctx: Any, *douts):
+        dout = douts[0] if len(douts) == 1 else douts
         x, freq_coeffs = ctx.saved_tensors
         x_p = x.detach().requires_grad_(x.requires_grad)
         fc_p = freq_coeffs.detach().requires_grad_(freq_coeffs.requires_grad)
