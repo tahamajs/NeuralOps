@@ -9,6 +9,7 @@ namespace cuda {
 
 // Fused Activation Scaling + GEMM: Y[m, n] = sum_k (X[m, k] * s_inv[k]) * W[n, k] + bias[n]
 template <typename scalar_t>
+__launch_bounds__(128)
 __global__ void act_scale_quant_gemm_kernel(
     scalar_t* __restrict__ out,
     const scalar_t* __restrict__ X,
@@ -78,6 +79,8 @@ torch::Tensor act_scale_quant_gemm_fwd(
             );
         })
     );
+
+    CUDA_KERNEL_LAUNCH_CHECK();
 
     std::vector<int64_t> final_shape;
     for (size_t i = 0; i < orig_shape.size() - 1; ++i) {

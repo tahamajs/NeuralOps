@@ -8,6 +8,7 @@
 #define WARP_SIZE 32
 
 template<int HEAD_DIM, int BLOCK_SIZE>
+__launch_bounds__(32)
 __global__ void paged_attention_kernel(
     float* __restrict__ out,                // [num_seqs, num_heads, HEAD_DIM]
     const float* __restrict__ q,            // [num_seqs, num_heads, HEAD_DIM]
@@ -109,6 +110,7 @@ __global__ void paged_attention_kernel(
 }
 
 // True dynamic fallback kernel for non-standard head_dim / block_size combinations
+__launch_bounds__(32)
 __global__ void paged_attention_dynamic_kernel(
     float* __restrict__ out,
     const float* __restrict__ q,

@@ -5,6 +5,7 @@
 #include <float.h>
 
 template<int D_STATE>
+__launch_bounds__(128)
 __global__ void selective_scan_fwd_kernel(
     float* __restrict__ out,         // [B, D, L]
     float* __restrict__ last_state,  // [B, D, D_STATE]
@@ -65,6 +66,7 @@ __global__ void selective_scan_fwd_kernel(
     }
 }
 
+__launch_bounds__(128)
 __global__ void selective_scan_fwd_generic_kernel(
     float* __restrict__ out,
     float* __restrict__ last_state,
@@ -123,6 +125,7 @@ __global__ void selective_scan_fwd_generic_kernel(
 }
 
 template<int D_STATE>
+__launch_bounds__(128)
 __global__ void selective_scan_bwd_kernel(
     float* __restrict__ du,          // [B, D, L]
     float* __restrict__ ddelta,      // [B, D, L]
@@ -197,6 +200,7 @@ __global__ void selective_scan_bwd_kernel(
     }
 }
 
+__launch_bounds__(128)
 __global__ void selective_scan_bwd_generic_kernel(
     float* __restrict__ du,
     float* __restrict__ ddelta,

@@ -5,6 +5,7 @@
 #include <float.h>
 
 template<int HEAD_DIM, int BLOCK_SIZE>
+__launch_bounds__(128)
 __global__ void block_sparse_attn_warp_kernel(
     float* __restrict__ out,               // [B, H, N, HEAD_DIM]
     const float* __restrict__ q,           // [B, H, N, HEAD_DIM]

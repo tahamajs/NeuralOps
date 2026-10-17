@@ -3,6 +3,7 @@
 #include <c10/cuda/CUDAStream.h>
 #include <c10/cuda/CUDAException.h>
 
+__launch_bounds__(1024)
 __global__ void fp8_gemm_tiled_kernel(
     float* __restrict__ out,
     const float* __restrict__ A,
@@ -59,6 +60,7 @@ __global__ void fp8_gemm_tiled_kernel(
     }
 }
 
+__launch_bounds__(1024)
 __global__ void fp8_gemm_bwd_da_kernel(
     float* __restrict__ dA,
     const float* __restrict__ dout,
@@ -112,6 +114,7 @@ __global__ void fp8_gemm_bwd_da_kernel(
     }
 }
 
+__launch_bounds__(1024)
 __global__ void fp8_gemm_bwd_db_kernel(
     float* __restrict__ dB,
     const float* __restrict__ A,

@@ -4,6 +4,7 @@
 #include <c10/cuda/CUDAException.h>
 
 template<typename scalar_t>
+__launch_bounds__(256)
 __global__ void kv_cache_copy_cow_kernel(
     scalar_t* __restrict__ dst_k,
     scalar_t* __restrict__ dst_v,

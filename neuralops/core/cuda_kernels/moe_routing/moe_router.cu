@@ -5,6 +5,7 @@
 #include <c10/cuda/CUDAException.h>
 
 template<typename scalar_t>
+__launch_bounds__(256)
 __global__ void moe_dispatch_kernel(
     scalar_t* __restrict__ dispatched_tokens,     // [total_assignments, hidden_dim]
     const scalar_t* __restrict__ tokens,          // [num_tokens, hidden_dim]
@@ -84,6 +85,7 @@ void moe_dispatch_cuda(
 }
 
 template<typename scalar_t>
+__launch_bounds__(128)
 __global__ void moe_fused_dispatch_kernel(
     scalar_t* __restrict__ dispatched_tokens, // [num_tokens * top_k, hidden_dim]
     scalar_t* __restrict__ routing_weights,   // [num_tokens, top_k]
