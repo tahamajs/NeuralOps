@@ -15,12 +15,13 @@ def _get_module():
     return _MODULE
 
 def phantom_ref(x: torch.Tensor, gate: torch.Tensor, threshold: float = 0.5) -> torch.Tensor:
-    g = torch.sigmoid(gate)
-    mask = torch.where(g >= threshold, g, torch.zeros_like(g))
+    """Pure PyTorch reference implementation with FP32 precision for threshold boundary."""
+    g = torch.sigmoid(gate.float())
+    mask = torch.where(g >= threshold, g, torch.zeros_like(g)).to(x.dtype)
     return x * mask
 
 def phantom(x: torch.Tensor, gate: torch.Tensor, threshold: float = 0.5) -> torch.Tensor:
-    def cuda_fn(x, gate, threshold=0.5):
+    def cuda_fn(x, gate, threshold=0.5, **kwargs):
         mod = _get_module()
         return mod.phantom_fwd(x.contiguous(), gate.contiguous(), float(threshold))
-    return dispatch(cuda_fn, phantom_ref, phantom_ref, x, gate=gate, threshold=threshold, kernel_name="phantom")
+    return dispatch(cuda_fn, phantom_ref, phantom_ref, x, gate, threshold=threshold, kernel_name="phantom")

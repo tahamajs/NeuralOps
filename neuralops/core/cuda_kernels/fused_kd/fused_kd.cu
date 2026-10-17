@@ -114,8 +114,11 @@ torch::Tensor fused_kd_loss_fwd(
         return loss_per_row.reshape(out_shape).to(student_logits.dtype());
     } else if (reduction == "sum") {
         return loss_per_row.sum().to(student_logits.dtype());
+    } else if (reduction == "batchmean") {
+        const int64_t batch_size = orig_shape[0] > 0 ? orig_shape[0] : 1;
+        return (loss_per_row.sum() / batch_size).to(student_logits.dtype());
     } else {
-        // "batchmean" or "mean"
-        return loss_per_row.mean().to(student_logits.dtype());
+        // "mean"
+        return (loss_per_row.sum() / (static_cast<int64_t>(M) * V)).to(student_logits.dtype());
     }
 }
