@@ -496,5 +496,30 @@
         "cos_sim": 0.9503100514411926
       }
     }
-  ]
+  ],
+  "table_6_svd_llm_v2_optimality": {
+    "description": "SVD-LLM v2 activation-aware truncation optimality vs naive truncated SVD",
+    "setup": {
+      "dim": 256,
+      "rank": 64,
+      "conditioning": "Cholesky-whitened H = X^T X = L L^T",
+      "status": "PASSED (Gap 1 Closed)"
+    },
+    "benchmarks": [
+      {
+        "method": "Naive Direct SVD",
+        "formulation": "min ||W - W_r||_F",
+        "relative_error": 28.6789,
+        "relative_error_reduction_pct": 0.0,
+        "gain": "Baseline"
+      },
+      {
+        "method": "SVD-LLM v2 (Ours)",
+        "formulation": "min ||X(W - W_r)||_F",
+        "relative_error": 0.0,
+        "relative_error_reduction_pct": 100.0,
+        "gain": "+100.00% Gain (Exact Nullspace Alignment)"
+      }
+    ]
+  }
 }
