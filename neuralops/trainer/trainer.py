@@ -2,13 +2,11 @@
 SVDAwareTrainer – custom HuggingFace Trainer with SVD compression callbacks.
 """
 
-import contextlib
 import gc
 from collections.abc import Callable
 from typing import Any
 
 import torch
-import torch.nn as nn
 from transformers import Trainer, TrainingArguments
 
 
@@ -276,91 +274,29 @@ def setup_ddp_training(model, *args, **kwargs):
     return model
 
 class MixedPrecisionTrainer:
-    """Mixed precision trainer supporting FP16/BF16 AMP, GPU device-awareness, and flexible batch schemas."""
-
-    def __init__(
-        self,
-        model: nn.Module | None = None,
-        optimizer: torch.optim.Optimizer | None = None,
-        loss_fn: Any | None = None,
-        enabled: bool = True,
-        precision: str = "fp16",
-        device: torch.device | str | None = None,
-        *args: Any,
-        **kwargs: Any,
-    ) -> None:
+    def __init__(self, model=None, optimizer=None, loss_fn=None, enabled=True, *args, **kwargs):
         self.model = model
         self.optimizer = optimizer
-        self.loss_fn = loss_fn if loss_fn is not None else nn.CrossEntropyLoss()
+        self.loss_fn = loss_fn
         self.enabled = enabled
-        self.precision = precision.lower() if isinstance(precision, str) else "fp16"
-        self.device = (
-            torch.device(device)
-            if device is not None
-            else (
-                torch.device("cuda" if torch.cuda.is_available() else "cpu")
-                if model is None
-                else next(model.parameters()).device
-            )
-        )
-        self.amp_dtype = (
-            torch.bfloat16
-            if self.precision == "bf16"
-            else torch.float16
-        )
-        use_cuda = self.device.type == "cuda"
-        self.scaler = (
-            torch.amp.GradScaler("cuda", enabled=(self.enabled and use_cuda and self.amp_dtype == torch.float16))
-            if hasattr(torch.amp, "GradScaler")
-            else None
-        )
 
-    def train_step(self, x: Any, y: Any) -> float:
-        """Perform a single mixed precision training step."""
-        if self.optimizer is None or self.model is None:
-            return 0.0
-        self.optimizer.zero_grad(set_to_none=True)
-        if isinstance(x, torch.Tensor):
-            x = x.to(self.device, non_blocking=True)
-        elif isinstance(x, dict):
-            x = {k: v.to(self.device, non_blocking=True) if isinstance(v, torch.Tensor) else v for k, v in x.items()}
-        if isinstance(y, torch.Tensor):
-            y = y.to(self.device, non_blocking=True)
-
-        autocast_ctx = (
-            torch.autocast(device_type=self.device.type, dtype=self.amp_dtype, enabled=self.enabled)
-            if self.device.type in ("cuda", "cpu")
-            else contextlib.nullcontext()
-        )
-        with autocast_ctx:
-            if isinstance(x, dict):
-                out = self.model(**x)
-            else:
-                out = self.model(x)
-            logits = out.logits if hasattr(out, "logits") else out
-            loss = self.loss_fn(logits, y)
-
-        if self.scaler is not None and self.scaler.is_enabled():
-            self.scaler.scale(loss).backward()
-            self.scaler.step(self.optimizer)
-            self.scaler.update()
-        else:
-            loss.backward()
-            self.optimizer.step()
+    def train_step(self, x, y):
+        self.optimizer.zero_grad()
+        out = self.model(x)
+        loss = self.loss_fn(out, y)
+        loss.backward()
+        self.optimizer.step()
         return float(loss.item())
 
-    def train_epoch(self, dataloader: Any, *args: Any, **kwargs: Any) -> float:
-        """Train across a full dataloader epoch."""
+    def train_epoch(self, dataloader, *args, **kwargs):
         total_loss = 0.0
         count = 0
-        if self.model is not None:
-            self.model.train()
         for batch in dataloader:
             if isinstance(batch, (tuple, list)) and len(batch) >= 2:
                 x, y = batch[0], batch[1]
             elif isinstance(batch, dict):
-                x = batch.get("input_ids", batch.get("x"))
-                y = batch.get("labels", batch.get("label", batch.get("y")))
+                x = batch.get('input_ids', batch.get('x'))
+                y = batch.get('labels', batch.get('y'))
             else:
                 continue
             total_loss += self.train_step(x, y)
