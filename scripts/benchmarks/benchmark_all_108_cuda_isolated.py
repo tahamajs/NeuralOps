@@ -156,25 +156,41 @@ def generate_args(mod_name, sig, device, dtype, B=4, H=8, N=512, D=64):
         q = torch.randn(B, H, N, D, device=device, dtype=dtype)
         k = torch.randn(B, H, N, D, device=device, dtype=dtype)
         v = torch.randn(B, H, N, D, device=device, dtype=dtype)
-        gamma = torch.full((H,), 0.99, device=device, dtype=torch.float32)
+        gamma = torch.full((H, D), 0.99, device=device, dtype=dtype)
         return [q, k, v, gamma], {{}}
-    elif mod_name in ["causal_conv1d", "dynamic_conv1d"]:
+    elif mod_name == "causal_conv1d":
         x = torch.randn(B, D, N, device=device, dtype=dtype)
         weight = torch.randn(D, 1, 4, device=device, dtype=dtype)
         return [x, weight], {{}}
-    elif mod_name == "fused_rope":
+    elif mod_name == "dynamic_conv1d":
+        K_conv = 4
+        N_conv = 128
+        v_full = torch.randn(B, H, N_conv + K_conv - 1, D, device=device, dtype=dtype)
+        dyn_w = torch.randn(B, H, N_conv, K_conv, device=device, dtype=dtype)
+        return [v_full, dyn_w], {{}}
+    elif mod_name == "flash_decode_stage2":
+        num_splits = 8
+        mid_out = torch.randn(B, H, num_splits, D, device=device, dtype=dtype)
+        mid_lse = torch.randn(B, H, num_splits, device=device, dtype=torch.float32)
+        return [mid_out, mid_lse], {{}}
+    elif mod_name == "goldfinch_ahn":
         q = torch.randn(B, H, N, D, device=device, dtype=dtype)
-        cos = torch.randn(N, D, device=device, dtype=dtype)
-        sin = torch.randn(N, D, device=device, dtype=dtype)
-        return [q, cos, sin], {{}}
-    elif mod_name == "recurrent_gla_step":
-        q = torch.randn(B, H, D, device=device, dtype=dtype)
-        k = torch.randn(B, H, D, device=device, dtype=dtype)
-        v = torch.randn(B, H, D, device=device, dtype=dtype)
-        h = torch.randn(B, H, D, D, device=device, dtype=dtype)
-        g = torch.full((B, H), 0.99, device=device, dtype=dtype)
-        return [q, k, v, h, g], {{}}
-    elif mod_name in ["hgrn2_scan", "hgrn2_spatial_scan"]:
+        k = torch.randn(B, H, N, D, device=device, dtype=dtype)
+        v = torch.randn(B, H, N, D, device=device, dtype=dtype)
+        beta = torch.rand(B, H, N, D, device=device, dtype=dtype)
+        return [q, k, v, beta], {{}}
+    elif mod_name == "griffin_ssd":
+        x = torch.randn(B, N, D, device=device, dtype=dtype)
+        r = torch.randn(B, N, D, device=device, dtype=dtype)
+        decay = torch.rand(B, N, D, device=device, dtype=dtype)
+        return [x, r, decay], {{}}
+    elif mod_name == "hgrn2_spatial_scan":
+        q = torch.randn(B, H, N, D, device=device, dtype=dtype)
+        k = torch.randn(B, H, N, D, device=device, dtype=dtype)
+        v = torch.randn(B, H, N, D, device=device, dtype=dtype)
+        g = torch.randn(B, H, N, D, device=device, dtype=dtype)
+        return [q, k, v, g], {{}}
+    elif mod_name == "hgrn2_scan":
         x = torch.randn(B, H, N, D, device=device, dtype=dtype)
         g = torch.randn(B, H, N, D, device=device, dtype=dtype)
         return [x, g], {{}}
@@ -281,8 +297,9 @@ def generate_args(mod_name, sig, device, dtype, B=4, H=8, N=512, D=64):
         q = torch.randn(B, H, D, device=device, dtype=dtype)
         k = torch.randn(B, H, D, device=device, dtype=dtype)
         v = torch.randn(B, H, D, device=device, dtype=dtype)
-        state = torch.randn(B, H, D, D, device=device, dtype=dtype)
-        return [q, k, v, state], {{}}
+        kv_state = torch.randn(B, H, D, D, device=device, dtype=dtype)
+        z_state = torch.randn(B, H, D, device=device, dtype=dtype)
+        return [q, k, v, kv_state, z_state], {{"eps": 1e-6}}
 
     # Generic parameter resolution
     for param_name, param in sig.parameters.items():
@@ -483,36 +500,36 @@ def main():
                     ref_str = f"{ref_ms:.4f}" if ref_ms > 0 else "N/A"
                     sp_str = f"{speedup:.2f}x" if ref_ms > 0 else "1.00x"
                     diff_str = f"{diff:.2e}" if ref_ms > 0 else "N/A"
-                    print(f"{idx:<4} | {mod_name:<28} | {cuda_ms:<10.4f} | {ref_str:<10} | {sp_str:<9} | {diff_str:<10} | PASS")
+                    print(f"{idx:<4} | {mod_name:<28} | {cuda_ms:<10.4f} | {ref_str:<10} | {sp_str:<9} | {diff_str:<10} | PASS", flush=True)
                     results.append({"module": mod_name, "status": "PASS", **res_data})
                 else:
                     failed += 1
                     err_msg = res_data.get("status", "FAIL")
-                    print(f"{idx:<4} | {mod_name:<28} | {'-':<10} | {'-':<10} | {'-':<9} | {'-':<10} | FAIL ({err_msg})")
+                    print(f"{idx:<4} | {mod_name:<28} | {'-':<10} | {'-':<10} | {'-':<9} | {'-':<10} | FAIL ({err_msg})", flush=True)
                     results.append({"module": mod_name, "status": "FAIL", "error": err_msg})
             else:
                 failed += 1
                 err = (stderr or stdout).strip().split("\n")[-1][:40]
-                print(f"{idx:<4} | {mod_name:<28} | {'-':<10} | {'-':<10} | {'-':<9} | {'-':<10} | CRASH: {err}")
+                print(f"{idx:<4} | {mod_name:<28} | {'-':<10} | {'-':<10} | {'-':<9} | {'-':<10} | CRASH: {err}", flush=True)
                 results.append({"module": mod_name, "status": "CRASH", "error": err})
         except subprocess.TimeoutExpired:
             failed += 1
-            print(f"{idx:<4} | {mod_name:<28} | {'-':<10} | {'-':<10} | {'-':<9} | {'-':<10} | TIMEOUT (30s)")
+            print(f"{idx:<4} | {mod_name:<28} | {'-':<10} | {'-':<10} | {'-':<9} | {'-':<10} | TIMEOUT (30s)", flush=True)
             results.append({"module": mod_name, "status": "TIMEOUT"})
         except Exception as e:
             failed += 1
-            print(f"{idx:<4} | {mod_name:<28} | {'-':<10} | {'-':<10} | {'-':<9} | {'-':<10} | SUBPROC ERR: {str(e)[:30]}")
+            print(f"{idx:<4} | {mod_name:<28} | {'-':<10} | {'-':<10} | {'-':<9} | {'-':<10} | SUBPROC ERR: {str(e)[:30]}", flush=True)
             results.append({"module": mod_name, "status": "ERROR", "error": str(e)})
 
-    print("=" * 105)
-    print(f"MASTER ISOLATED BENCHMARK COMPLETED: {passed}/{len(subdirs)} PASSED ({passed/len(subdirs)*100:.1f}%), {failed} FAILED.")
-    print("=" * 105)
+    print("=" * 105, flush=True)
+    print(f"MASTER ISOLATED BENCHMARK COMPLETED: {passed}/{len(subdirs)} PASSED ({passed/len(subdirs)*100:.1f}%), {failed} FAILED.", flush=True)
+    print("=" * 105, flush=True)
 
     out_file = repo_root / "results" / "master_108_cuda_modules_benchmark.json"
     out_file.parent.mkdir(parents=True, exist_ok=True)
     with open(out_file, "w", encoding="utf-8") as f:
         json.dump(results, f, indent=2)
-    print(f"Master benchmark results saved to: {out_file}")
+    print(f"Master benchmark results saved to: {out_file}", flush=True)
 
 
 if __name__ == "__main__":
