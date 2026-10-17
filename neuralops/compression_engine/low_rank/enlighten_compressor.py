@@ -80,6 +80,14 @@ def unstructured_prune(residual: torch.Tensor, sparsity: float) -> torch.Tensor:
 
 @COMPRESSOR_REGISTRY.register("enlighten_compressor")
 class ENLightenCompressor(BaseCompressor):
+    """ENLightenCompressor neural operator.
+
+    ENLighten: Low-Rank SVD + 2:4 Structured Sparsity (Photonic-Aligned). Registered as 'enlighten' and 'enlighten_compressor'. Production hardened for multi-architecture compatibility (DistilBERT, RoBERTa, GPT-2, Qwen3.5) with vectorization, error validation, and safe fallback.
+
+    Attributes:
+        supports_causal (bool): Whether causal autoregressive masking is supported.
+        is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
+    """
     is_custom_attention: bool = True
     """
     ENLighten Compressor: Low-Rank SVD + 2:4 Structured Sparsity.

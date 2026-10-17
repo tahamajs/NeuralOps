@@ -267,6 +267,14 @@ def lsh_attention(
 
 @ATTENTION_REGISTRY.register("phantom")
 class PHANTOMAttention(BaseAttention):
+    """PHANTOMAttention neural operator.
+
+    Phantom: Parameter-Hashed AttentioN with Token-wise Orthogonal Mapping.
+
+    Attributes:
+        supports_causal (bool): Whether causal autoregressive masking is supported.
+        is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
+    """
     is_custom_attention: bool = True
 
     def __init__(

@@ -219,6 +219,14 @@ class LSCPrunedLoRALinear(nn.Module):
 
 
 class LSCCompressor(BaseCompressor):
+    """LSCCompressor neural operator.
+
+    LSC: Low-Rank Spectral & Fourier-Domain Linear Compressor. Registered as 'lsc', 'lsc_class', 'lsc_compressor', 'lsc_factory'.
+
+    Attributes:
+        supports_causal (bool): Whether causal autoregressive masking is supported.
+        is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
+    """
     # LSC-FIX-01: this is a compressor, not an attention layer.
     is_custom_attention: bool = False
 

@@ -42,6 +42,14 @@ _DENOM_EPS = 1e-5
 
 @ATTENTION_REGISTRY.register("native_hybrid_attention")
 class NativeHybridAttention(BaseAttention):
+    """NativeHybridAttention neural operator.
+
+    Native Hybrid Attention (NHA) — Optimized & Production-Hardened.
+
+    Attributes:
+        supports_causal (bool): Whether causal autoregressive masking is supported.
+        is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
+    """
     is_custom_attention: bool = True
     supports_causal: bool = True
     supports_bidirectional: bool = True

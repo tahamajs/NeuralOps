@@ -47,6 +47,14 @@ from neuralops.utils.model_family import ModelAdapter
     supports_gqa=True,
 )
 class ZeroSAttention(BaseAttention):
+    """ZeroSAttention neural operator.
+
+    Zero-Mean Linear Attention (ZeroS Attention).
+
+    Attributes:
+        supports_causal (bool): Whether causal autoregressive masking is supported.
+        is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
+    """
     supports_causal: bool = True
     supports_bidirectional: bool = True
     supports_gqa: bool = True

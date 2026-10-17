@@ -42,6 +42,14 @@ from neuralops.utils.model_family import ModelAdapter
     supports_gqa=True,
 )
 class AdaptiveSparseAttention(BaseAttention):
+    """AdaptiveSparseAttention neural operator.
+
+    Adaptive Sparse Attention Module (Production-Hardened). Implements dynamic top-k and threshold-based adaptive sparse attention with LoRA adapters, multi-architecture weight extraction, RoPE rotary embeddings, causal/bidirectional masking, and safe injection.
+
+    Attributes:
+        supports_causal (bool): Whether causal autoregressive masking is supported.
+        is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
+    """
     is_custom_attention: bool = True
     supports_causal = True
     supports_bidirectional = True

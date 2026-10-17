@@ -291,6 +291,14 @@ class _LinearizedAttentionWrapper(nn.Module):
 
 
 class LIFTRCompressor(BaseCompressor):
+    """LIFTRCompressor neural operator.
+
+    LIFTR – Linearized Function Trick Compressor. Registered as 'liftr', 'liftr_compressor', 'liftr_class'.
+
+    Attributes:
+        supports_causal (bool): Whether causal autoregressive masking is supported.
+        is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
+    """
     # LIFTR-FIX-01: this is a compressor, not an attention.
     is_custom_attention: bool = False
 

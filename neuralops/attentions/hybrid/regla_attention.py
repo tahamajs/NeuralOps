@@ -33,6 +33,14 @@ logger = logging.getLogger(__name__)
 # ===========================================================================
 @ATTENTION_REGISTRY.register("regla_attention")
 class ReGLAAttention(BaseAttention):
+    """ReGLAAttention neural operator.
+
+    Refined Gated Linear Attention (ReGLA)
+
+    Attributes:
+        supports_causal (bool): Whether causal autoregressive masking is supported.
+        is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
+    """
     is_custom_attention: bool = True
 
     def __init__(

@@ -736,6 +736,14 @@ def _joint_svd_shared_basis(
 # =========================================================================
 @COMPRESSOR_REGISTRY.register("aatc_xkv_compressor")
 class AATC_XKVCompressor(BaseCompressor):
+    """AATC_XKVCompressor neural operator.
+
+    AATC-XKV: Attention-Aware Cross-Layer KV Cache Compression (Production-Ready v2).
+
+    Attributes:
+        supports_causal (bool): Whether causal autoregressive masking is supported.
+        is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
+    """
     # AXKV-FIX-01
     is_custom_attention: bool = False
     IS_DYNAMIC_KV_CACHE = True

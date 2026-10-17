@@ -228,6 +228,14 @@ class FactorisedLinear(nn.Module):
 
 @ATTENTION_REGISTRY.register("orion", supports_causal=True, supports_gqa=True)
 class ORIONAttention(BaseAttention):
+    """ORIONAttention neural operator.
+
+    ORION: Optimized Rectified Input-aware Orthogonal Network.
+
+    Attributes:
+        supports_causal (bool): Whether causal autoregressive masking is supported.
+        is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
+    """
     is_custom_attention: bool = True
 
     def __init__(

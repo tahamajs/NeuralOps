@@ -42,6 +42,14 @@ _ATTN_NAMES = {
 @COMPRESSOR_REGISTRY.register("hnc_svd", is_alias=True)
 @COMPRESSOR_REGISTRY.register("hnc_svd_compressor", is_alias=True)
 class DirectSVDCompressor(BaseCompressor):
+    """DirectSVDCompressor neural operator.
+
+    Direct SVD Compressor: Truncated SVD low-rank factorized layer replacement. Registered as 'direct_svd'. Production hardened for multi-architecture compatibility (DistilBERT, RoBERTa, GPT-2, Qwen3.5) with error validation, Conv1D support, rank bounds, and safe fallback.
+
+    Attributes:
+        supports_causal (bool): Whether causal autoregressive masking is supported.
+        is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
+    """
     is_custom_attention: bool = True
     """
     Direct SVD Compressor.

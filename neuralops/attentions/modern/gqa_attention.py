@@ -45,6 +45,14 @@ logger = logging.getLogger(__name__)
     supports_rope=True,
 )
 class GroupedQueryAttention(BaseAttention):
+    """GroupedQueryAttention neural operator.
+
+    Grouped-Query Attention (GQA) — rank-aware, KV-cache aware, SDPA-accelerated.
+
+    Attributes:
+        supports_causal (bool): Whether causal autoregressive masking is supported.
+        is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
+    """
     supports_causal: bool = True
     supports_bidirectional: bool = True
     supports_gqa: bool = True

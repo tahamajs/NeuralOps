@@ -37,6 +37,14 @@ logger = logging.getLogger(__name__)
 
 @ATTENTION_REGISTRY.register("simple_ssm")
 class SimpleSSM(BaseAttention):
+    """SimpleSSM neural operator.
+
+    Simple SSM: Simplified State Space Attention Block.
+
+    Attributes:
+        supports_causal (bool): Whether causal autoregressive masking is supported.
+        is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
+    """
     is_custom_attention: bool = True
     supports_causal: bool = True
     supports_bidirectional: bool = True

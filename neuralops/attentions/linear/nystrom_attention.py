@@ -40,6 +40,14 @@ logger = logging.getLogger(__name__)
     supports_gqa=True,
 )
 class NystromAttention(BaseAttention):
+    """NystromAttention neural operator.
+
+    Nyströmformer Attention with Chunked Causal Nyström for decoders.
+
+    Attributes:
+        supports_causal (bool): Whether causal autoregressive masking is supported.
+        is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
+    """
     is_custom_attention: bool = True
     # NOTE: No Triton kernel — uses pure PyTorch.
 

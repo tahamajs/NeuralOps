@@ -439,6 +439,14 @@ def causal_kernel_linear_attention(
 
 @ATTENTION_REGISTRY.register("split_head_hybrid", supports_causal=True, supports_gqa=True)
 class SplitHeadHybridAttention(BaseAttention):
+    """SplitHeadHybridAttention neural operator.
+
+    AEGIS-Attention V5 : Adaptive Enhanced Global-Local Integrated Sparse Attention.
+
+    Attributes:
+        supports_causal (bool): Whether causal autoregressive masking is supported.
+        is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
+    """
     supports_causal: bool = True
     supports_gqa: bool = True
     is_custom_attention: bool = True

@@ -60,6 +60,14 @@ _ATTN_NAMES = {
 
 
 class LiLLaMADistiller(BaseCompressor):
+    """LiLLaMADistiller neural operator.
+
+    LiLLaMA: Local Distillation via Activation Cross-Covariance SVD. Registered as 'lillama_class', 'lillama_compressor_class', 'lillama_factory' and 'lillama' / 'lillama_compressor' as factory aliases.
+
+    Attributes:
+        supports_causal (bool): Whether causal autoregressive masking is supported.
+        is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
+    """
     # LL-FIX-01: this is a local distillation / weight-rewriter, not standard factorized attention.
     is_custom_attention: bool = False
     category: str = "weight_rewriting"

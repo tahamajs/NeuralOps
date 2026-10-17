@@ -453,6 +453,14 @@ class SpectralResidualLoRA(ResSVDCompressor):
 # Register under canonical name
 @COMPRESSOR_REGISTRY.register("residual_svd_compressor")
 class ResidualSVDCompressor(ResSVDCompressor):
+    """ResidualSVDCompressor neural operator.
+
+    Spectral Residual Low-Rank Adaptation (Res-SVD / Spectral Residual LoRA).
+
+    Attributes:
+        supports_causal (bool): Whether causal autoregressive masking is supported.
+        is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
+    """
     pass
 
 

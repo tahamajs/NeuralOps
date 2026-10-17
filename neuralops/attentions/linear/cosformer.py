@@ -53,6 +53,14 @@ def _neg_inf(dtype: torch.dtype) -> float:
 @ATTENTION_REGISTRY.register("cosformer", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("cosformer_attention", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
 class CosformerAttention(BaseAttention):
+    """CosformerAttention neural operator.
+
+    Cosformer — Production-Hardened (Hybrid Local Attention + Fixed Math).
+
+    Attributes:
+        supports_causal (bool): Whether causal autoregressive masking is supported.
+        is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
+    """
     is_custom_attention: bool = True
     supports_causal: bool = True
     supports_bidirectional: bool = True

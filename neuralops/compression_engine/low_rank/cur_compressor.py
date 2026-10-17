@@ -266,6 +266,14 @@ class CURLinear(nn.Module):
 
 @COMPRESSOR_REGISTRY.register("cur_compressor")
 class CURCompressor(BaseCompressor):
+    """CURCompressor neural operator.
+
+    CUR Compressor: replaces Linear and Conv1D layers with CUR decomposition. Uses leverage score sampling or energy sampling for column/row selection. Registered in COMPRESSOR_REGISTRY as 'cur' and 'cur_compressor'.
+
+    Attributes:
+        supports_causal (bool): Whether causal autoregressive masking is supported.
+        is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
+    """
     def __init__(
         self,
         model: nn.Module | None = None,

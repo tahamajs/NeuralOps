@@ -203,6 +203,14 @@ class REAPMoE(nn.Module):
 # ===========================================================================
 @ATTENTION_REGISTRY.register("reap_moe")
 class REAPMoEAttention(BaseAttention):
+    """REAPMoEAttention neural operator.
+
+    REAP-MoE: Robust Expert Allocation and Pruning Mixture of Experts Attention Module.
+
+    Attributes:
+        supports_causal (bool): Whether causal autoregressive masking is supported.
+        is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
+    """
     is_custom_attention: bool = True
 
     def __init__(
