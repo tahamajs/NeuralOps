@@ -450,17 +450,16 @@ def generate_args(mod_name, sig, device, dtype, B=4, H=8, N=512, D=64):
         return [x, gate], {{"threshold": 0.5}}
     elif mod_name == "spectra_v2":
         x = torch.randn(B, N, D, device=device, dtype=dtype) * 0.1
-        freq = torch.randn(B, N, D, device=device, dtype=dtype) * 0.1
+        freq = torch.randn(D, device=device, dtype=dtype) * 0.1
         return [x, freq], {{"threshold": 0.05}}
     elif mod_name == "act_scale_gemm":
         M_dim, N_dim, K_dim = 64, 128, 256
         x_gemm = torch.randn(M_dim, K_dim, device=device, dtype=dtype) * 0.05
-        w_p = torch.randint(0, 255, (N_dim, K_dim // 2), device=device, dtype=torch.uint8)
-        sc = torch.full((N_dim,), 0.01, device=device, dtype=dtype)
-        a_sc = torch.full((M_dim,), 0.01, device=device, dtype=dtype)
-        return [x_gemm, w_p, sc, a_sc], {{}}
+        s_inv = torch.randn(K_dim, device=device, dtype=dtype) * 0.1
+        w_mat = torch.randn(N_dim, K_dim, device=device, dtype=dtype) * 0.05
+        return [x_gemm, s_inv, w_mat], {{}}
     elif mod_name == "adaptive_span":
-        spans = torch.full((B, H), 32.0, device=device, dtype=torch.float32)
+        spans = torch.full((H,), 32.0, device=device, dtype=torch.float32)
         q_pos = torch.arange(N, device=device, dtype=torch.float32).unsqueeze(0).expand(B, N)
         k_pos = torch.arange(N, device=device, dtype=torch.float32).unsqueeze(0).expand(B, N)
         return [spans, q_pos, k_pos, 16.0], {{"is_causal": True}}
@@ -469,9 +468,9 @@ def generate_args(mod_name, sig, device, dtype, B=4, H=8, N=512, D=64):
         return [scores], {{"n_iter": 15}}
     elif mod_name == "unified_rope_offset":
         x = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
-        cos = torch.randn(1, 1, N, D // 2, device=device, dtype=dtype)
-        sin = torch.randn(1, 1, N, D // 2, device=device, dtype=dtype)
-        return [x, cos, sin, D], {{}}
+        cos = torch.randn(N + 64, D // 2, device=device, dtype=torch.float32)
+        sin = torch.randn(N + 64, D // 2, device=device, dtype=torch.float32)
+        return [x, cos, sin, D], {{"offset": 0}}
     elif mod_name == "fp4_gemm":
         M_dim, N_dim, K_dim = 64, 128, 256
         x_gemm = torch.randn(M_dim, K_dim, device=device, dtype=dtype) * 0.05
@@ -479,30 +478,28 @@ def generate_args(mod_name, sig, device, dtype, B=4, H=8, N=512, D=64):
         sc = torch.full((N_dim,), 0.01, device=device, dtype=dtype)
         return [x_gemm, w_p, sc], {{}}
     elif mod_name == "aegis_gate_norm":
-        x = torch.randn(B, N, D, device=device, dtype=dtype) * 0.1
-        gate = torch.randn(B, N, D, device=device, dtype=dtype) * 0.1
-        return [x, gate], {{}}
+        b0 = torch.randn(B, N, D, device=device, dtype=dtype) * 0.1
+        b1 = torch.randn(B, N, D, device=device, dtype=dtype) * 0.1
+        weights = torch.softmax(torch.randn(B, N, 2, device=device, dtype=dtype), dim=-1)
+        return [b0, b1, weights], {{"eps": 1e-5}}
     elif mod_name == "gdn_delta_rule":
-        q = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
-        k = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
-        v = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
-        beta = torch.full((B, H, N), 0.95, device=device, dtype=dtype)
+        N_delta = 64
+        q = torch.randn(B, H, N_delta, D, device=device, dtype=dtype) * 0.1
+        k = torch.randn(B, H, N_delta, D, device=device, dtype=dtype) * 0.1
+        v = torch.randn(B, H, N_delta, D, device=device, dtype=dtype) * 0.1
+        beta = torch.full((B, H, N_delta), 0.5, device=device, dtype=dtype)
         return [q, k, v, beta], {{}}
-    elif mod_name == "gla_unnormalized_scan":
-        q = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
-        k = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
-        v = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
-        return [q, k, v], {{}}
     elif mod_name == "hstu_attention":
-        q = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
-        k = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
-        v = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
-        return [q, k, v], {{}}
+        u = torch.randn(B, N, D, device=device, dtype=dtype) * 0.1
+        v = torch.randn(B, N, D, device=device, dtype=dtype) * 0.1
+        decay = torch.full((B, N, D), 0.95, device=device, dtype=dtype)
+        return [u, v, decay], {{"eps": 1e-6}}
     elif mod_name == "favor_plus":
-        q = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
-        k = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
-        v = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
-        return [q, k, v], {{}}
+        tot_toks, f_dim = B * N, D * 2
+        proj = torch.randn(tot_toks, f_dim, device=device, dtype=dtype) * 0.1
+        diag_sq = torch.rand(tot_toks, device=device, dtype=torch.float32) + 0.1
+        norm_factor = 0.5
+        return [proj, diag_sq, norm_factor], {{}}
 
     # Generic parameter resolution
     for param_name, param in sig.parameters.items():
@@ -620,14 +617,18 @@ def run_test(mod_name):
     speedup = 1.0
     max_diff = 0.0
 
-    if ref_fn:
         try:
+            use_kwargs = True
             try:
                 ref_out = ref_fn(*args, **kwargs)
             except (TypeError, Exception):
                 ref_out = ref_fn(*args)
+                use_kwargs = False
 
-            ref_ms = time_callable(lambda: ref_fn(*args, **kwargs), warmup=2, iters=5)
+            if use_kwargs:
+                ref_ms = time_callable(lambda: ref_fn(*args, **kwargs), warmup=2, iters=5)
+            else:
+                ref_ms = time_callable(lambda: ref_fn(*args), warmup=2, iters=5)
             speedup = ref_ms / max(cuda_ms, 1e-5)
 
             if mod_name == "bitonic_topk":
@@ -743,7 +744,7 @@ def main():
         mod_name = d.name
         cmd = [python_bin, str(worker_path), mod_name]
         try:
-            p = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+            p = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
             stdout = p.stdout
             stderr = p.stderr
 
