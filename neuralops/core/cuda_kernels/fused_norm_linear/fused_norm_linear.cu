@@ -104,15 +104,30 @@ __global__ void fused_norm_linear_fwd_vectorized_kernel(
     __syncthreads();
 
     // Step 4: Compute out[m, n] = x_hat @ weight.T + bias
+    const int num_vec_K_inner = K / 4;
+    const int rem_start_K_inner = num_vec_K_inner * 4;
+
     for (int n = tid; n < N; n += num_threads) {
-        float y = 0.0f;
+        float y = (has_bias && bias != nullptr) ? to_float(bias[n]) : 0.0f;
         const int w_row = n * K;
-        #pragma unroll 4
-        for (int k = 0; k < K; ++k) {
-            y = fmaf(s_x_hat[k], to_float(weight[w_row + k]), y);
+
+        for (int vk = 0; vk < num_vec_K_inner; ++vk) {
+            const int k = vk * 4;
+            if constexpr (std::is_same_v<scalar_t, float>) {
+                const float4 w4 = *reinterpret_cast<const float4*>(weight + w_row + k);
+                y = fmaf(s_x_hat[k], w4.x, y);
+                y = fmaf(s_x_hat[k + 1], w4.y, y);
+                y = fmaf(s_x_hat[k + 2], w4.z, y);
+                y = fmaf(s_x_hat[k + 3], w4.w, y);
+            } else {
+                #pragma unroll
+                for (int j = 0; j < 4; ++j) {
+                    y = fmaf(s_x_hat[k + j], to_float(weight[w_row + k + j]), y);
+                }
+            }
         }
-        if (has_bias && bias != nullptr) {
-            y += to_float(bias[n]);
+        for (int k = rem_start_K_inner; k < K; ++k) {
+            y = fmaf(s_x_hat[k], to_float(weight[w_row + k]), y);
         }
         out[m * N + n] = from_float<scalar_t>(y);
     }
