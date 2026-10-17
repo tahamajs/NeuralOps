@@ -74,9 +74,15 @@ def multi_scale_retention(
     if q.shape[-1] > 128:
         cuda_fn = None
 
+    try:
+        from neuralops.core.triton_kernels.retnet_retention import triton_multi_scale_retention
+        triton_fn = triton_multi_scale_retention
+    except Exception:
+        triton_fn = None
+
     return dispatch(
         cuda_fn,
-        None,
+        triton_fn,
         multi_scale_retention_pytorch_ref,
         q,
         k,

@@ -168,11 +168,10 @@ class CURLinear(nn.Module):
         suitable, _ = check_triton_suitability(x, "low_rank")
         if not FORCE_PYTORCH_FALLBACK and suitable and x.is_cuda:
             try:
+                from neuralops.core.triton_kernels.cur_linear import triton_cur_linear
                 from neuralops.core.triton_kernels.low_rank import fused_down_up_gemm_bias_triton
-                # Effective factorized down/up: W_down = U @ R (rank, in_features), W_up = C (out_features, rank)
-                w_down = torch.matmul(self.U, self.R)
                 base_bias = self.bias if (self.lora_r == 0 or self.lora_A is None) else None
-                out = fused_down_up_gemm_bias_triton(x, w_down, self.C.t().contiguous(), bias=base_bias)
+                out = triton_cur_linear(x, self.R, self.U, self.C, bias=base_bias)
                 if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
                     lora_out = fused_down_up_gemm_bias_triton(x, self.lora_A, self.lora_B.t().contiguous(), bias=self.bias) * self.scaling
                     return out + lora_out

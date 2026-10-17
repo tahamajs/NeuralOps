@@ -550,9 +550,15 @@ def fused_dsa_sparse_attn_triton(
     top_k = active_indices.shape[-1]
     active_block_indices = active_indices.unsqueeze(1).unsqueeze(2).expand(B, H, num_blocks, top_k).contiguous()
 
-    out_4d = triton_block_sparse_streaming_attn(
-        q_4d, k_4d, v_4d, active_block_indices, block_size=block_size, sm_scale=sm_scale
-    )
+    try:
+        from neuralops.core.triton_kernels.dynamic_sparse_attention import triton_dynamic_sparse_attention
+        out_4d = triton_dynamic_sparse_attention(
+            q_4d, k_4d, v_4d, active_block_indices, block_size=block_size, sm_scale=sm_scale
+        )
+    except Exception:
+        out_4d = triton_block_sparse_streaming_attn(
+            q_4d, k_4d, v_4d, active_block_indices, block_size=block_size, sm_scale=sm_scale
+        )
 
     if is_3d:
         return out_4d.permute(0, 2, 1, 3).contiguous().view(B, L, D)
