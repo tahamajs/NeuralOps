@@ -22,7 +22,7 @@ __global__ void fms_scan_fwd_kernel(
     const int D,
     const float inv_sqrt_d
 ) {
-    const int bh = blockIdx.x;
+    const int bh = blockIdx.y;
     if (bh >= B * H) return;
 
     const int h = bh % H;
@@ -32,10 +32,10 @@ __global__ void fms_scan_fwd_kernel(
     float S[MAX_D][MAX_D];
     float Z[MAX_D];
 
-    #pragma unroll
+    #pragma unroll 4
     for (int i = 0; i < MAX_D; ++i) {
         Z[i] = 0.0f;
-        #pragma unroll
+        #pragma unroll 4
         for (int j = 0; j < MAX_D; ++j) {
             S[i][j] = 0.0f;
         }
@@ -51,6 +51,7 @@ __global__ void fms_scan_fwd_kernel(
         float k_f[MAX_D];
         float v_f[MAX_D];
 
+        #pragma unroll 4
         for (int d = 0; d < D && d < MAX_D; ++d) {
             const float q_val = to_float(Q[tok_offset + d]);
             const float k_val = to_float(K[tok_offset + d]);
@@ -61,8 +62,10 @@ __global__ void fms_scan_fwd_kernel(
         }
 
         // 2. Recurrent update: S_t = decay * S_{t-1} + k_t @ v_t
+        #pragma unroll 4
         for (int i = 0; i < D && i < MAX_D; ++i) {
             Z[i] = d_val * Z[i] + k_f[i];
+            #pragma unroll 4
             for (int j = 0; j < D && j < MAX_D; ++j) {
                 S[i][j] = d_val * S[i][j] + k_f[i] * v_f[j];
             }
@@ -70,6 +73,7 @@ __global__ void fms_scan_fwd_kernel(
 
         // 3. Compute denominator: sum_i q_f[i] * Z[i]
         float den = 0.0f;
+        #pragma unroll 4
         for (int i = 0; i < D && i < MAX_D; ++i) {
             den += q_f[i] * Z[i];
         }
@@ -77,8 +81,10 @@ __global__ void fms_scan_fwd_kernel(
         const float inv_den = 1.0f / den;
 
         // 4. Compute numerator and output: num_j = sum_i q_f[i] * S[i, j]
+        #pragma unroll 4
         for (int j = 0; j < D && j < MAX_D; ++j) {
             float num = 0.0f;
+            #pragma unroll 4
             for (int i = 0; i < D && i < MAX_D; ++i) {
                 num += q_f[i] * S[i][j];
             }
@@ -110,8 +116,8 @@ torch::Tensor fms_scan_fwd(
 
     auto decay_1d = decay.reshape({-1}).contiguous().to(torch::kFloat32);
 
-    const int blocks = B * H;
-    const int threads = 1;
+    const dim3 grid(1, B * H);
+    const int threads = 32;
     auto stream = c10::cuda::getCurrentCUDAStream();
 
     auto q_c = q.contiguous();
@@ -122,7 +128,7 @@ torch::Tensor fms_scan_fwd(
         at::ScalarType::Half, at::ScalarType::BFloat16,
         q.scalar_type(), "fms_scan_fwd", ([&] {
             if (D <= 16) {
-                neuralops::cuda::fms_scan_fwd_kernel<scalar_t, 16><<<blocks, threads, 0, stream>>>(
+                neuralops::cuda::fms_scan_fwd_kernel<scalar_t, 16><<<grid, threads, 0, stream>>>(
                     out.data_ptr<scalar_t>(),
                     q_c.data_ptr<scalar_t>(),
                     k_c.data_ptr<scalar_t>(),
@@ -131,7 +137,7 @@ torch::Tensor fms_scan_fwd(
                     B, H, L, D, inv_sqrt_d
                 );
             } else if (D <= 32) {
-                neuralops::cuda::fms_scan_fwd_kernel<scalar_t, 32><<<blocks, threads, 0, stream>>>(
+                neuralops::cuda::fms_scan_fwd_kernel<scalar_t, 32><<<grid, threads, 0, stream>>>(
                     out.data_ptr<scalar_t>(),
                     q_c.data_ptr<scalar_t>(),
                     k_c.data_ptr<scalar_t>(),
@@ -140,7 +146,7 @@ torch::Tensor fms_scan_fwd(
                     B, H, L, D, inv_sqrt_d
                 );
             } else if (D <= 64) {
-                neuralops::cuda::fms_scan_fwd_kernel<scalar_t, 64><<<blocks, threads, 0, stream>>>(
+                neuralops::cuda::fms_scan_fwd_kernel<scalar_t, 64><<<grid, threads, 0, stream>>>(
                     out.data_ptr<scalar_t>(),
                     q_c.data_ptr<scalar_t>(),
                     k_c.data_ptr<scalar_t>(),
@@ -149,7 +155,7 @@ torch::Tensor fms_scan_fwd(
                     B, H, L, D, inv_sqrt_d
                 );
             } else {
-                neuralops::cuda::fms_scan_fwd_kernel<scalar_t, 128><<<blocks, threads, 0, stream>>>(
+                neuralops::cuda::fms_scan_fwd_kernel<scalar_t, 128><<<grid, threads, 0, stream>>>(
                     out.data_ptr<scalar_t>(),
                     q_c.data_ptr<scalar_t>(),
                     k_c.data_ptr<scalar_t>(),

@@ -24,13 +24,13 @@ __global__ void gla_scan_fwd_kernel(
     const float scale,
     const bool has_alpha
 ) {
-    const int bh = blockIdx.x;
+    const int bh = blockIdx.y;
     if (bh >= B * H) return;
 
     float S[MAX_D][MAX_D];
-    #pragma unroll
+    #pragma unroll 4
     for (int i = 0; i < MAX_D; ++i) {
-        #pragma unroll
+        #pragma unroll 4
         for (int j = 0; j < MAX_D; ++j) {
             S[i][j] = 0.0f;
         }
@@ -48,16 +48,20 @@ __global__ void gla_scan_fwd_kernel(
         }
 
         // 1. Decay state and accumulate S_t = a_val * S_{t-1} + k_t * v_t^T
+        #pragma unroll 4
         for (int i = 0; i < D && i < MAX_D; ++i) {
             const float k_val = to_float(K[tok_offset + i]);
+            #pragma unroll 4
             for (int j = 0; j < D && j < MAX_D; ++j) {
                 S[i][j] = a_val * S[i][j] + k_val * to_float(V[tok_offset + j]);
             }
         }
 
         // 2. Compute y_t = (q_t * S_t) * scale
+        #pragma unroll 4
         for (int j = 0; j < D && j < MAX_D; ++j) {
             float y_acc = 0.0f;
+            #pragma unroll 4
             for (int i = 0; i < D && i < MAX_D; ++i) {
                 y_acc += to_float(Q[tok_offset + i]) * S[i][j];
             }
@@ -88,8 +92,8 @@ torch::Tensor gla_scan_fwd(
     const float scale = 1.0f / sqrtf(static_cast<float>(D));
     const bool has_alpha = alpha.has_value() && alpha.value().defined();
 
-    const int blocks = B * H;
-    const int threads = 1;
+    const dim3 grid(1, B * H);
+    const int threads = 32;
     auto stream = c10::cuda::getCurrentCUDAStream();
 
     auto q_c = q.contiguous();
@@ -100,7 +104,7 @@ torch::Tensor gla_scan_fwd(
         at::ScalarType::Half, at::ScalarType::BFloat16,
         q.scalar_type(), "gla_scan_fwd", ([&] {
             if (D <= 16) {
-                neuralops::cuda::gla_scan_fwd_kernel<scalar_t, 16><<<blocks, threads, 0, stream>>>(
+                neuralops::cuda::gla_scan_fwd_kernel<scalar_t, 16><<<grid, threads, 0, stream>>>(
                     out.data_ptr<scalar_t>(),
                     q_c.data_ptr<scalar_t>(),
                     k_c.data_ptr<scalar_t>(),
@@ -109,7 +113,7 @@ torch::Tensor gla_scan_fwd(
                     B, H, L, D, scale, has_alpha
                 );
             } else if (D <= 32) {
-                neuralops::cuda::gla_scan_fwd_kernel<scalar_t, 32><<<blocks, threads, 0, stream>>>(
+                neuralops::cuda::gla_scan_fwd_kernel<scalar_t, 32><<<grid, threads, 0, stream>>>(
                     out.data_ptr<scalar_t>(),
                     q_c.data_ptr<scalar_t>(),
                     k_c.data_ptr<scalar_t>(),
@@ -118,7 +122,7 @@ torch::Tensor gla_scan_fwd(
                     B, H, L, D, scale, has_alpha
                 );
             } else if (D <= 64) {
-                neuralops::cuda::gla_scan_fwd_kernel<scalar_t, 64><<<blocks, threads, 0, stream>>>(
+                neuralops::cuda::gla_scan_fwd_kernel<scalar_t, 64><<<grid, threads, 0, stream>>>(
                     out.data_ptr<scalar_t>(),
                     q_c.data_ptr<scalar_t>(),
                     k_c.data_ptr<scalar_t>(),
@@ -127,7 +131,7 @@ torch::Tensor gla_scan_fwd(
                     B, H, L, D, scale, has_alpha
                 );
             } else {
-                neuralops::cuda::gla_scan_fwd_kernel<scalar_t, 128><<<blocks, threads, 0, stream>>>(
+                neuralops::cuda::gla_scan_fwd_kernel<scalar_t, 128><<<grid, threads, 0, stream>>>(
                     out.data_ptr<scalar_t>(),
                     q_c.data_ptr<scalar_t>(),
                     k_c.data_ptr<scalar_t>(),
