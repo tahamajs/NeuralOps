@@ -25,7 +25,7 @@ if str(repo_root) not in sys.path:
     sys.path.insert(0, str(repo_root))
 
 WORKER_CODE = """
-import sys, os, time, json, inspect, importlib.util
+import sys, os, time, json, inspect, importlib.util, math
 from pathlib import Path
 import torch
 
