@@ -1,0 +1,514 @@
+{
+  "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+  "total_vram_gb": 7.62,
+  "leak_tests": [
+    {
+      "module": "GLAttention (Linear)",
+      "iterations": 1000,
+      "batch_size": 4,
+      "seq_len": 256,
+      "dim": 768,
+      "elapsed_sec": 9.073,
+      "ms_per_iter": 9.073,
+      "baseline_allocated_mb": 26.31,
+      "final_allocated_mb": 26.31,
+      "peak_allocated_mb": 109.02,
+      "final_reserved_mb": 160.0,
+      "peak_reserved_mb": 160.0,
+      "alloc_drift_mb": 0.0,
+      "reserved_drift_mb": 0.0,
+      "fragmentation_ratio": 0.8356,
+      "checkpoints": {
+        "100": {
+          "allocated_mb": 26.310546875,
+          "max_allocated_mb": 109.01513671875,
+          "reserved_mb": 160.0,
+          "max_reserved_mb": 160.0
+        },
+        "200": {
+          "allocated_mb": 26.310546875,
+          "max_allocated_mb": 109.01513671875,
+          "reserved_mb": 160.0,
+          "max_reserved_mb": 160.0
+        },
+        "300": {
+          "allocated_mb": 26.310546875,
+          "max_allocated_mb": 109.01513671875,
+          "reserved_mb": 160.0,
+          "max_reserved_mb": 160.0
+        },
+        "400": {
+          "allocated_mb": 26.310546875,
+          "max_allocated_mb": 109.01513671875,
+          "reserved_mb": 160.0,
+          "max_reserved_mb": 160.0
+        },
+        "500": {
+          "allocated_mb": 26.310546875,
+          "max_allocated_mb": 109.01513671875,
+          "reserved_mb": 160.0,
+          "max_reserved_mb": 160.0
+        },
+        "600": {
+          "allocated_mb": 26.310546875,
+          "max_allocated_mb": 109.01513671875,
+          "reserved_mb": 160.0,
+          "max_reserved_mb": 160.0
+        },
+        "700": {
+          "allocated_mb": 26.310546875,
+          "max_allocated_mb": 109.01513671875,
+          "reserved_mb": 160.0,
+          "max_reserved_mb": 160.0
+        },
+        "800": {
+          "allocated_mb": 26.310546875,
+          "max_allocated_mb": 109.01513671875,
+          "reserved_mb": 160.0,
+          "max_reserved_mb": 160.0
+        },
+        "900": {
+          "allocated_mb": 26.310546875,
+          "max_allocated_mb": 109.01513671875,
+          "reserved_mb": 160.0,
+          "max_reserved_mb": 160.0
+        },
+        "1000": {
+          "allocated_mb": 26.310546875,
+          "max_allocated_mb": 109.01513671875,
+          "reserved_mb": 160.0,
+          "max_reserved_mb": 160.0
+        }
+      }
+    },
+    {
+      "module": "CosformerAttention (Linear)",
+      "iterations": 1000,
+      "batch_size": 4,
+      "seq_len": 256,
+      "dim": 768,
+      "elapsed_sec": 4.253,
+      "ms_per_iter": 4.253,
+      "baseline_allocated_mb": 28.98,
+      "final_allocated_mb": 28.98,
+      "peak_allocated_mb": 122.64,
+      "final_reserved_mb": 148.0,
+      "peak_reserved_mb": 148.0,
+      "alloc_drift_mb": 0.0,
+      "reserved_drift_mb": 0.0,
+      "fragmentation_ratio": 0.8042,
+      "checkpoints": {
+        "100": {
+          "allocated_mb": 28.98388671875,
+          "max_allocated_mb": 122.63720703125,
+          "reserved_mb": 148.0,
+          "max_reserved_mb": 148.0
+        },
+        "200": {
+          "allocated_mb": 28.98388671875,
+          "max_allocated_mb": 122.63720703125,
+          "reserved_mb": 148.0,
+          "max_reserved_mb": 148.0
+        },
+        "300": {
+          "allocated_mb": 28.98388671875,
+          "max_allocated_mb": 122.63720703125,
+          "reserved_mb": 148.0,
+          "max_reserved_mb": 148.0
+        },
+        "400": {
+          "allocated_mb": 28.98388671875,
+          "max_allocated_mb": 122.63720703125,
+          "reserved_mb": 148.0,
+          "max_reserved_mb": 148.0
+        },
+        "500": {
+          "allocated_mb": 28.98388671875,
+          "max_allocated_mb": 122.63720703125,
+          "reserved_mb": 148.0,
+          "max_reserved_mb": 148.0
+        },
+        "600": {
+          "allocated_mb": 28.98388671875,
+          "max_allocated_mb": 122.63720703125,
+          "reserved_mb": 148.0,
+          "max_reserved_mb": 148.0
+        },
+        "700": {
+          "allocated_mb": 28.98388671875,
+          "max_allocated_mb": 122.63720703125,
+          "reserved_mb": 148.0,
+          "max_reserved_mb": 148.0
+        },
+        "800": {
+          "allocated_mb": 28.98388671875,
+          "max_allocated_mb": 122.63720703125,
+          "reserved_mb": 148.0,
+          "max_reserved_mb": 148.0
+        },
+        "900": {
+          "allocated_mb": 28.98388671875,
+          "max_allocated_mb": 122.63720703125,
+          "reserved_mb": 148.0,
+          "max_reserved_mb": 148.0
+        },
+        "1000": {
+          "allocated_mb": 28.98388671875,
+          "max_allocated_mb": 122.63720703125,
+          "reserved_mb": 148.0,
+          "max_reserved_mb": 148.0
+        }
+      }
+    },
+    {
+      "module": "GatedDeltaNet (Recurrent/Delta)",
+      "iterations": 1000,
+      "batch_size": 4,
+      "seq_len": 256,
+      "dim": 768,
+      "elapsed_sec": 7.68,
+      "ms_per_iter": 7.68,
+      "baseline_allocated_mb": 29.06,
+      "final_allocated_mb": 29.06,
+      "peak_allocated_mb": 489.12,
+      "final_reserved_mb": 510.0,
+      "peak_reserved_mb": 510.0,
+      "alloc_drift_mb": 0.0,
+      "reserved_drift_mb": 0.0,
+      "fragmentation_ratio": 0.943,
+      "checkpoints": {
+        "100": {
+          "allocated_mb": 29.05517578125,
+          "max_allocated_mb": 489.12353515625,
+          "reserved_mb": 510.0,
+          "max_reserved_mb": 510.0
+        },
+        "200": {
+          "allocated_mb": 29.05517578125,
+          "max_allocated_mb": 489.12353515625,
+          "reserved_mb": 510.0,
+          "max_reserved_mb": 510.0
+        },
+        "300": {
+          "allocated_mb": 29.05517578125,
+          "max_allocated_mb": 489.12353515625,
+          "reserved_mb": 510.0,
+          "max_reserved_mb": 510.0
+        },
+        "400": {
+          "allocated_mb": 29.05517578125,
+          "max_allocated_mb": 489.12353515625,
+          "reserved_mb": 510.0,
+          "max_reserved_mb": 510.0
+        },
+        "500": {
+          "allocated_mb": 29.05517578125,
+          "max_allocated_mb": 489.12353515625,
+          "reserved_mb": 510.0,
+          "max_reserved_mb": 510.0
+        },
+        "600": {
+          "allocated_mb": 29.05517578125,
+          "max_allocated_mb": 489.12353515625,
+          "reserved_mb": 510.0,
+          "max_reserved_mb": 510.0
+        },
+        "700": {
+          "allocated_mb": 29.05517578125,
+          "max_allocated_mb": 489.12353515625,
+          "reserved_mb": 510.0,
+          "max_reserved_mb": 510.0
+        },
+        "800": {
+          "allocated_mb": 29.05517578125,
+          "max_allocated_mb": 489.12353515625,
+          "reserved_mb": 510.0,
+          "max_reserved_mb": 510.0
+        },
+        "900": {
+          "allocated_mb": 29.05517578125,
+          "max_allocated_mb": 489.12353515625,
+          "reserved_mb": 510.0,
+          "max_reserved_mb": 510.0
+        },
+        "1000": {
+          "allocated_mb": 29.05517578125,
+          "max_allocated_mb": 489.12353515625,
+          "reserved_mb": 510.0,
+          "max_reserved_mb": 510.0
+        }
+      }
+    },
+    {
+      "module": "SVDLinearAttention (SVD)",
+      "iterations": 1000,
+      "batch_size": 4,
+      "seq_len": 256,
+      "dim": 768,
+      "elapsed_sec": 1.791,
+      "ms_per_iter": 1.791,
+      "baseline_allocated_mb": 18.42,
+      "final_allocated_mb": 18.42,
+      "peak_allocated_mb": 52.41,
+      "final_reserved_mb": 68.0,
+      "peak_reserved_mb": 68.0,
+      "alloc_drift_mb": 0.0,
+      "reserved_drift_mb": 0.0,
+      "fragmentation_ratio": 0.7291,
+      "checkpoints": {
+        "100": {
+          "allocated_mb": 18.42236328125,
+          "max_allocated_mb": 52.41064453125,
+          "reserved_mb": 68.0,
+          "max_reserved_mb": 68.0
+        },
+        "200": {
+          "allocated_mb": 18.42236328125,
+          "max_allocated_mb": 52.41064453125,
+          "reserved_mb": 68.0,
+          "max_reserved_mb": 68.0
+        },
+        "300": {
+          "allocated_mb": 18.42236328125,
+          "max_allocated_mb": 52.41064453125,
+          "reserved_mb": 68.0,
+          "max_reserved_mb": 68.0
+        },
+        "400": {
+          "allocated_mb": 18.42236328125,
+          "max_allocated_mb": 52.41064453125,
+          "reserved_mb": 68.0,
+          "max_reserved_mb": 68.0
+        },
+        "500": {
+          "allocated_mb": 18.42236328125,
+          "max_allocated_mb": 52.41064453125,
+          "reserved_mb": 68.0,
+          "max_reserved_mb": 68.0
+        },
+        "600": {
+          "allocated_mb": 18.42236328125,
+          "max_allocated_mb": 52.41064453125,
+          "reserved_mb": 68.0,
+          "max_reserved_mb": 68.0
+        },
+        "700": {
+          "allocated_mb": 18.42236328125,
+          "max_allocated_mb": 52.41064453125,
+          "reserved_mb": 68.0,
+          "max_reserved_mb": 68.0
+        },
+        "800": {
+          "allocated_mb": 18.42236328125,
+          "max_allocated_mb": 52.41064453125,
+          "reserved_mb": 68.0,
+          "max_reserved_mb": 68.0
+        },
+        "900": {
+          "allocated_mb": 18.42236328125,
+          "max_allocated_mb": 52.41064453125,
+          "reserved_mb": 68.0,
+          "max_reserved_mb": 68.0
+        },
+        "1000": {
+          "allocated_mb": 18.42236328125,
+          "max_allocated_mb": 52.41064453125,
+          "reserved_mb": 68.0,
+          "max_reserved_mb": 68.0
+        }
+      }
+    },
+    {
+      "module": "TritonCosformerAttention (Triton)",
+      "iterations": 1000,
+      "batch_size": 4,
+      "seq_len": 256,
+      "dim": 768,
+      "elapsed_sec": 2.3,
+      "ms_per_iter": 2.3,
+      "baseline_allocated_mb": 26.26,
+      "final_allocated_mb": 26.26,
+      "peak_allocated_mb": 93.73,
+      "final_reserved_mb": 106.0,
+      "peak_reserved_mb": 106.0,
+      "alloc_drift_mb": 0.0,
+      "reserved_drift_mb": 0.0,
+      "fragmentation_ratio": 0.7522,
+      "checkpoints": {
+        "100": {
+          "allocated_mb": 26.26171875,
+          "max_allocated_mb": 93.7265625,
+          "reserved_mb": 106.0,
+          "max_reserved_mb": 106.0
+        },
+        "200": {
+          "allocated_mb": 26.26171875,
+          "max_allocated_mb": 93.7265625,
+          "reserved_mb": 106.0,
+          "max_reserved_mb": 106.0
+        },
+        "300": {
+          "allocated_mb": 26.26171875,
+          "max_allocated_mb": 93.7265625,
+          "reserved_mb": 106.0,
+          "max_reserved_mb": 106.0
+        },
+        "400": {
+          "allocated_mb": 26.26171875,
+          "max_allocated_mb": 93.7265625,
+          "reserved_mb": 106.0,
+          "max_reserved_mb": 106.0
+        },
+        "500": {
+          "allocated_mb": 26.26171875,
+          "max_allocated_mb": 93.7265625,
+          "reserved_mb": 106.0,
+          "max_reserved_mb": 106.0
+        },
+        "600": {
+          "allocated_mb": 26.26171875,
+          "max_allocated_mb": 93.7265625,
+          "reserved_mb": 106.0,
+          "max_reserved_mb": 106.0
+        },
+        "700": {
+          "allocated_mb": 26.26171875,
+          "max_allocated_mb": 93.7265625,
+          "reserved_mb": 106.0,
+          "max_reserved_mb": 106.0
+        },
+        "800": {
+          "allocated_mb": 26.26171875,
+          "max_allocated_mb": 93.7265625,
+          "reserved_mb": 106.0,
+          "max_reserved_mb": 106.0
+        },
+        "900": {
+          "allocated_mb": 26.26171875,
+          "max_allocated_mb": 93.7265625,
+          "reserved_mb": 106.0,
+          "max_reserved_mb": 106.0
+        },
+        "1000": {
+          "allocated_mb": 26.26171875,
+          "max_allocated_mb": 93.7265625,
+          "reserved_mb": 106.0,
+          "max_reserved_mb": 106.0
+        }
+      }
+    },
+    {
+      "module": "TritonSVDLinearAttention (Triton)",
+      "iterations": 1000,
+      "batch_size": 4,
+      "seq_len": 256,
+      "dim": 768,
+      "elapsed_sec": 1.324,
+      "ms_per_iter": 1.324,
+      "baseline_allocated_mb": 20.07,
+      "final_allocated_mb": 20.07,
+      "peak_allocated_mb": 62.56,
+      "final_reserved_mb": 86.0,
+      "peak_reserved_mb": 86.0,
+      "alloc_drift_mb": 0.0,
+      "reserved_drift_mb": 0.0,
+      "fragmentation_ratio": 0.7666,
+      "checkpoints": {
+        "100": {
+          "allocated_mb": 20.07421875,
+          "max_allocated_mb": 62.55908203125,
+          "reserved_mb": 86.0,
+          "max_reserved_mb": 86.0
+        },
+        "200": {
+          "allocated_mb": 20.07421875,
+          "max_allocated_mb": 62.55908203125,
+          "reserved_mb": 86.0,
+          "max_reserved_mb": 86.0
+        },
+        "300": {
+          "allocated_mb": 20.07421875,
+          "max_allocated_mb": 62.55908203125,
+          "reserved_mb": 86.0,
+          "max_reserved_mb": 86.0
+        },
+        "400": {
+          "allocated_mb": 20.07421875,
+          "max_allocated_mb": 62.55908203125,
+          "reserved_mb": 86.0,
+          "max_reserved_mb": 86.0
+        },
+        "500": {
+          "allocated_mb": 20.07421875,
+          "max_allocated_mb": 62.55908203125,
+          "reserved_mb": 86.0,
+          "max_reserved_mb": 86.0
+        },
+        "600": {
+          "allocated_mb": 20.07421875,
+          "max_allocated_mb": 62.55908203125,
+          "reserved_mb": 86.0,
+          "max_reserved_mb": 86.0
+        },
+        "700": {
+          "allocated_mb": 20.07421875,
+          "max_allocated_mb": 62.55908203125,
+          "reserved_mb": 86.0,
+          "max_reserved_mb": 86.0
+        },
+        "800": {
+          "allocated_mb": 20.07421875,
+          "max_allocated_mb": 62.55908203125,
+          "reserved_mb": 86.0,
+          "max_reserved_mb": 86.0
+        },
+        "900": {
+          "allocated_mb": 20.07421875,
+          "max_allocated_mb": 62.55908203125,
+          "reserved_mb": 86.0,
+          "max_reserved_mb": 86.0
+        },
+        "1000": {
+          "allocated_mb": 20.07421875,
+          "max_allocated_mb": 62.55908203125,
+          "reserved_mb": 86.0,
+          "max_reserved_mb": 86.0
+        }
+      }
+    },
+    {
+      "module": "MambaBlock (SSM Recurrent)",
+      "iterations": 100,
+      "batch_size": 4,
+      "seq_len": 256,
+      "dim": 768,
+      "elapsed_sec": 352.401,
+      "ms_per_iter": 3524.009,
+      "baseline_allocated_mb": 32.49,
+      "final_allocated_mb": 32.49,
+      "peak_allocated_mb": 813.13,
+      "final_reserved_mb": 998.0,
+      "peak_reserved_mb": 998.0,
+      "alloc_drift_mb": 0.0,
+      "reserved_drift_mb": 0.0,
+      "fragmentation_ratio": 0.9674,
+      "checkpoints": {
+        "100": {
+          "allocated_mb": 32.490234375,
+          "max_allocated_mb": 813.1298828125,
+          "reserved_mb": 998.0,
+          "max_reserved_mb": 998.0
+        }
+      }
+    }
+  ],
+  "multistream_test": {
+    "num_rounds": 200,
+    "seq_time_sec": 1.2156,
+    "par_time_sec": 1.5045,
+    "stream_speedup": 0.808,
+    "max_diff_attn": 0.0,
+    "max_diff_gemm": 0.0,
+    "concurrency_clean": true
+  }
+}
