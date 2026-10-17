@@ -225,7 +225,6 @@ void paged_attention_v1_cuda(
     const torch::Tensor& block_tables,
     const torch::Tensor& context_lens,
     int block_size,
-    int max_context_len,
     float scale
 ) {
     CHECK_INPUT(out);

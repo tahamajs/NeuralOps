@@ -81,6 +81,7 @@ torch::Tensor nystrom_attn_fwd(
     const int N = q_landmarks.size(2);
     const int M = q_landmarks.size(3);
     const int D = v_landmarks.size(3);
+    TORCH_CHECK(M <= 64, "nystrom_attention_fwd: M=", M, " > 64 not supported");
 
     auto out = torch::empty({B, H, N, D}, q_landmarks.options());
     if (B == 0 || H == 0 || N == 0 || D == 0 || M == 0) return out;

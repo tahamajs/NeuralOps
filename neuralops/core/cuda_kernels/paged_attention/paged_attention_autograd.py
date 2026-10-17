@@ -41,8 +41,8 @@ def paged_attention_pytorch_reference(
     block_tables: torch.Tensor,
     context_lens: torch.Tensor,
     block_size: int = 16,
-    max_context_len: int | None = None,
     scale: float | None = None,
+    max_context_len: int | None = None,
 ) -> torch.Tensor:
     num_seqs, num_heads, head_dim = q.shape
     num_kv_heads = k_cache.shape[1]
@@ -103,12 +103,12 @@ def _paged_attention_triton_fallback(
     block_tables: torch.Tensor,
     context_lens: torch.Tensor,
     block_size: int = 16,
-    max_context_len: int | None = None,
     scale: float | None = None,
+    max_context_len: int | None = None,
 ) -> torch.Tensor:
     """Triton-level fallback implementation for PagedAttention."""
     return paged_attention_pytorch_reference(
-        q, k_cache, v_cache, block_tables, context_lens, block_size, max_context_len, scale
+        q, k_cache, v_cache, block_tables, context_lens, block_size=block_size, scale=scale
     )
 
 
@@ -122,7 +122,6 @@ class _PagedAttentionAutograd(torch.autograd.Function):
         block_tables: torch.Tensor,
         context_lens: torch.Tensor,
         block_size: int,
-        max_context_len: int | None,
         scale: float,
     ) -> torch.Tensor:
         mod = _get_module()
@@ -138,7 +137,6 @@ class _PagedAttentionAutograd(torch.autograd.Function):
             block_tables,
             context_lens,
             block_size,
-            max_context_len,
             scale,
             kernel_name="paged_attention",
         )
@@ -232,7 +230,7 @@ class _PagedAttentionAutograd(torch.autograd.Function):
                 grad_k_cache[p_idx, :, :, :cur_len] += gk_slice.to(k_cache.dtype)
                 grad_v_cache[p_idx, :, :, :cur_len] += gv_slice.to(v_cache.dtype)
 
-        return grad_q, grad_k_cache, grad_v_cache, None, None, None, None, None
+        return grad_q, grad_k_cache, grad_v_cache, None, None, None, None
 
 
 def paged_attention(
@@ -248,12 +246,9 @@ def paged_attention(
     if scale is None:
         scale = 1.0 / (q.shape[-1] ** 0.5)
 
-    if max_context_len is None:
-        max_context_len = int(context_lens.max().item()) if context_lens.numel() > 0 else 0
-
     if torch.is_grad_enabled() and (q.requires_grad or k_cache.requires_grad or v_cache.requires_grad):
         return _PagedAttentionAutograd.apply(
-            q, k_cache, v_cache, block_tables, context_lens, block_size, max_context_len, scale
+            q, k_cache, v_cache, block_tables, context_lens, block_size, scale
         )
 
     mod = _get_module()
@@ -269,7 +264,6 @@ def paged_attention(
         block_tables,
         context_lens,
         block_size,
-        max_context_len,
         scale,
         kernel_name="paged_attention",
     )

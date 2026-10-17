@@ -5,5 +5,6 @@ torch::Tensor fused_dropout_add_fwd(
     const torch::Tensor& x,
     const torch::Tensor& residual,
     const float p,
-    const bool training
+    const bool training,
+    const uint64_t seed
 );

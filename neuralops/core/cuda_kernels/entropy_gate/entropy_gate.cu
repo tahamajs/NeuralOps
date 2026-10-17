@@ -102,6 +102,11 @@ torch::Tensor spectral_entropy_svd_gate_fwd(
     const bool has_weights = s_weights.has_value() && s_weights.value().defined();
     const bool has_bias = bias.has_value() && bias.value().defined();
 
+    torch::Tensor s_weights_c;
+    if (has_weights) s_weights_c = s_weights.value().contiguous();
+    torch::Tensor bias_c;
+    if (has_bias) bias_c = bias.value().contiguous();
+
     const int threads = 128;
     const int blocks = (M + threads - 1) / threads;
     auto stream = c10::cuda::getCurrentCUDAStream();
@@ -115,8 +120,8 @@ torch::Tensor spectral_entropy_svd_gate_fwd(
                     x_2d.data_ptr<scalar_t>(),
                     V.data_ptr<scalar_t>(),
                     U.data_ptr<scalar_t>(),
-                    has_weights ? s_weights.value().contiguous().data_ptr<scalar_t>() : nullptr,
-                    has_bias ? bias.value().contiguous().data_ptr<scalar_t>() : nullptr,
+                    has_weights ? s_weights_c.data_ptr<scalar_t>() : nullptr,
+                    has_bias ? bias_c.data_ptr<scalar_t>() : nullptr,
                     M, K, eff_r, R_MAX, N, has_weights, has_bias
                 );
             } else if (eff_r <= 32) {
@@ -125,8 +130,8 @@ torch::Tensor spectral_entropy_svd_gate_fwd(
                     x_2d.data_ptr<scalar_t>(),
                     V.data_ptr<scalar_t>(),
                     U.data_ptr<scalar_t>(),
-                    has_weights ? s_weights.value().contiguous().data_ptr<scalar_t>() : nullptr,
-                    has_bias ? bias.value().contiguous().data_ptr<scalar_t>() : nullptr,
+                    has_weights ? s_weights_c.data_ptr<scalar_t>() : nullptr,
+                    has_bias ? bias_c.data_ptr<scalar_t>() : nullptr,
                     M, K, eff_r, R_MAX, N, has_weights, has_bias
                 );
             } else if (eff_r <= 64) {
@@ -135,8 +140,8 @@ torch::Tensor spectral_entropy_svd_gate_fwd(
                     x_2d.data_ptr<scalar_t>(),
                     V.data_ptr<scalar_t>(),
                     U.data_ptr<scalar_t>(),
-                    has_weights ? s_weights.value().contiguous().data_ptr<scalar_t>() : nullptr,
-                    has_bias ? bias.value().contiguous().data_ptr<scalar_t>() : nullptr,
+                    has_weights ? s_weights_c.data_ptr<scalar_t>() : nullptr,
+                    has_bias ? bias_c.data_ptr<scalar_t>() : nullptr,
                     M, K, eff_r, R_MAX, N, has_weights, has_bias
                 );
             } else {
@@ -145,8 +150,8 @@ torch::Tensor spectral_entropy_svd_gate_fwd(
                     x_2d.data_ptr<scalar_t>(),
                     V.data_ptr<scalar_t>(),
                     U.data_ptr<scalar_t>(),
-                    has_weights ? s_weights.value().contiguous().data_ptr<scalar_t>() : nullptr,
-                    has_bias ? bias.value().contiguous().data_ptr<scalar_t>() : nullptr,
+                    has_weights ? s_weights_c.data_ptr<scalar_t>() : nullptr,
+                    has_bias ? bias_c.data_ptr<scalar_t>() : nullptr,
                     M, K, eff_r, R_MAX, N, has_weights, has_bias
                 );
             }

@@ -160,6 +160,7 @@ torch::Tensor fused_ce_fwd(
 
     const int N = logits.size(0);
     const int V = logits.size(1);
+    if (N == 0) return torch::empty({0}, logits.options().dtype(torch::kFloat32));
 
     auto loss = torch::empty({N}, logits.options().dtype(torch::kFloat32));
     const int threads = 256;
@@ -191,6 +192,7 @@ torch::Tensor fused_ce_bwd(
 
     const int N = logits.size(0);
     const int V = logits.size(1);
+    if (N == 0) return torch::empty({0}, logits.options().dtype(torch::kFloat32));
 
     auto grad_logits = torch::empty_like(logits);
     const int threads = 256;

@@ -163,6 +163,9 @@ torch::Tensor fp4_gemm_fwd(
         TORCH_CHECK(bias.value().numel() == N, "Bias size mismatch");
     }
 
+    torch::Tensor bias_c;
+    if (has_bias) bias_c = bias.value().contiguous();
+
     constexpr int THREADS = 256;
     constexpr int BM = 16;
     constexpr int BN = 32;
@@ -182,7 +185,7 @@ torch::Tensor fp4_gemm_fwd(
                 x_2d.data_ptr<scalar_t>(),
                 reinterpret_cast<const uint8_t*>(w_c.data_ptr()),
                 s_c.data_ptr<float>(),
-                has_bias ? bias.value().contiguous().data_ptr<scalar_t>() : nullptr,
+                has_bias ? bias_c.data_ptr<scalar_t>() : nullptr,
                 M, K, N, has_bias
             );
         })

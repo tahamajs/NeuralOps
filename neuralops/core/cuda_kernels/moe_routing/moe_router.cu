@@ -196,6 +196,8 @@ void moe_fused_dispatch_cuda(
     CHECK_INPUT(tokens);
     CHECK_INPUT(gate_logits);
 
+    TORCH_CHECK(top_k <= 8, "moe_fused_dispatch_cuda: top_k=", top_k, " exceeds kernel max of 8");
+
     if (num_tokens <= 0 || hidden_dim <= 0 || top_k <= 0 || num_experts <= 0) {
         return;
     }

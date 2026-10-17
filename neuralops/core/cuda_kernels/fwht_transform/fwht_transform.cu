@@ -48,6 +48,8 @@ __global__ void __launch_bounds__(256) fwht_kernel(
 
 torch::Tensor fwht_fwd(const torch::Tensor& x, int B_dim) {
     CHECK_INPUT(x);
+    TORCH_CHECK((B_dim & (B_dim - 1)) == 0,
+                "fwht_fwd: B_dim=", B_dim, " must be a power of 2");
 
     auto out = torch::empty_like(x);
     const int total_elements = x.numel();

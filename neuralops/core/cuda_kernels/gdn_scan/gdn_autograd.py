@@ -62,11 +62,14 @@ def chunked_delta_gate_scan(
     beta: torch.Tensor,
 ) -> torch.Tensor:
     """3-Level Dispatched Chunked Delta-Gate Recurrent Scan."""
-    def cuda_fn(q, k, v, alpha, beta):
-        mod = _get_module()
-        return mod.chunked_delta_gate_scan_fwd(
-            q.contiguous(), k.contiguous(), v.contiguous(), alpha.contiguous(), beta.contiguous()
-        )
+    if q.shape[-1] > 64 or v.shape[-1] > 64:
+        cuda_fn = None
+    else:
+        def cuda_fn(q, k, v, alpha, beta):
+            mod = _get_module()
+            return mod.chunked_delta_gate_scan_fwd(
+                q.contiguous(), k.contiguous(), v.contiguous(), alpha.contiguous(), beta.contiguous()
+            )
 
     triton_fn = _get_triton_impl()
 

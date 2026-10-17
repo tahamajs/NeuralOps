@@ -7,8 +7,8 @@ namespace neuralops {
 namespace cuda {
 
 // Simple high-throughput LCG hash for uniform [0, 1) float
-__device__ inline float lcg_rand(unsigned int seed, unsigned int idx) {
-    unsigned int x = seed + idx * 1664525u + 1013904223u;
+__device__ inline float lcg_rand(uint64_t seed, unsigned int idx) {
+    unsigned int x = static_cast<unsigned int>(seed) + idx * 1664525u + 1013904223u;
     x ^= x >> 16;
     x *= 0x45d9f3b;
     x ^= x >> 16;
@@ -24,7 +24,7 @@ __global__ void fused_dropout_add_kernel(
     const int total_elements,
     const float p,
     const float scale,
-    const unsigned int seed,
+    const uint64_t seed,
     const bool training
 ) {
     const int idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -49,20 +49,21 @@ torch::Tensor fused_dropout_add_fwd(
     const torch::Tensor& x,
     const torch::Tensor& residual,
     const float p,
-    const bool training
+    const bool training,
+    const uint64_t seed = 42ULL
 ) {
-    TORCH_CHECK(x.is_cuda(), "x must be a CUDA tensor");
-    TORCH_CHECK(residual.is_cuda(), "residual must be a CUDA tensor");
+    CHECK_INPUT(x);
+    CHECK_INPUT(residual);
 
     auto out = torch::empty_like(x);
     const int total = x.numel();
+    if (total == 0) return out;
 
     const int threads = 256;
     const int blocks = (total + threads - 1) / threads;
     auto stream = c10::cuda::getCurrentCUDAStream();
 
     const float scale = (training && p < 1.0f) ? (1.0f / (1.0f - p)) : 1.0f;
-    const unsigned int seed = 42u;
 
     auto x_c = x.contiguous();
     auto r_c = residual.contiguous();

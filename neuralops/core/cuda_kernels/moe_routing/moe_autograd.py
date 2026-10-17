@@ -212,7 +212,7 @@ def moe_dispatch_gather(
         out = _MoEGatherAutograd.apply(expert_outputs, routing_weights, topk_indices, expert_offsets)
     else:
         mod = _get_module()
-        if mod is not None and tokens.is_cuda and gate_logits.is_cuda and hasattr(mod, "moe_fused_dispatch") and gate_logits.size(1) <= 64:
+        if mod is not None and tokens.is_cuda and gate_logits.is_cuda and hasattr(mod, "moe_fused_dispatch") and gate_logits.size(1) <= 64 and top_k <= 8:
             try:
                 dispatched, routing_weights, topk_indices = mod.moe_fused_dispatch(tokens, gate_logits, top_k)
                 expert_outputs = expert_fn(dispatched)
