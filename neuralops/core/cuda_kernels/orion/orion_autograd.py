@@ -18,16 +18,14 @@ def _get_module():
 
 def orion_ref(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, temperature: float = 1.0) -> torch.Tensor:
     B, H, N, D = q.shape
-    phi_q = F.elu(q / float(temperature)) + 1.0
-    phi_k = F.elu(k / float(temperature)) + 1.0
+    phi_q = torch.exp(-0.5 * q.float().pow(2) * float(temperature))
+    phi_k = torch.exp(-0.5 * k.float().pow(2) * float(temperature))
     out = torch.empty_like(v)
     s = torch.zeros(B, H, D, device=q.device, dtype=torch.float32)
-    phi_k_f = phi_k.float()
     v_f = v.float()
-    phi_q_f = phi_q.float()
     for t in range(N):
-        s = s + phi_k_f[:, :, t, :] * v_f[:, :, t, :]
-        out[:, :, t, :] = (phi_q_f[:, :, t, :] * s).to(q.dtype)
+        s = s + phi_k[:, :, t, :] * v_f[:, :, t, :]
+        out[:, :, t, :] = (phi_q[:, :, t, :] * s).to(v.dtype)
     return out
 
 def _orion_fwd_dispatch(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, temperature: float = 1.0) -> torch.Tensor:
