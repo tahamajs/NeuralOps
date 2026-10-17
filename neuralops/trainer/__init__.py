@@ -2,7 +2,7 @@
 Training module – unified trainers, results management, metrics, and callbacks.
 """
 
-from .base_trainer import BaseTrainer
+from .base_trainer import BaseTrainer, Trainer
 from .callbacks import (
     GradientNormCallback,
     MemoryCallback,
@@ -48,6 +48,7 @@ from .utils import (
 
 __all__ = [
     "BaseTrainer",
+    "Trainer",
     "TrainerRegistry",
     "get_trainer",
     "TRAINER_FACTORY_REGISTRY",
