@@ -424,11 +424,14 @@
                     <span class="badge badge-cyan" id="blocks-badge">20 / 64 Blocks Allocated</span>
                 </div>
                 <div class="blocks-grid" id="blocksGrid"></div>
-                <div style="display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--text-muted);">
+                <div style="display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;">
                     <span>■ Allocated (PagedKV)</span>
                     <span>■ In-Flight Decode</span>
                     <span>■ Free Memory Pool</span>
                     <span id="fragmentation-label">Fragmentation: 3.8%</span>
+                </div>
+                <div style="height: 140px; margin-top: 10px;">
+                    <canvas id="fragChart"></canvas>
                 </div>
             </div>
         </section>
@@ -547,6 +550,30 @@
             const target = current === 'dark' ? 'light' : 'dark';
             document.documentElement.setAttribute('data-theme', target);
             themeBtn.innerText = target === 'dark' ? '☀️ Light' : '🌙 Dark';
+        });
+
+        // Initialize Memory Fragmentation Chart
+        const fragCtx = document.getElementById('fragChart').getContext('2d');
+        const fragChart = new Chart(fragCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Allocated (Dense)', 'Active In-Flight', 'Internal Frag', 'Free Pool'],
+                datasets: [{
+                    label: 'Blocks Memory Distribution (%)',
+                    data: [31.2, 18.5, 3.8, 46.5],
+                    backgroundColor: ['#38bdf8', '#a855f7', '#f59e0b', '#10b981'],
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { min: 0, max: 100, grid: { color: 'rgba(255, 255, 255, 0.05)' } },
+                    x: { grid: { display: false } }
+                },
+                plugins: { legend: { display: false } }
+            }
         });
 
         // Initialize Speculative Decoding Chart
