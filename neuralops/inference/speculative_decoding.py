@@ -60,7 +60,12 @@ class SelfSpeculativeDecoder:
             
         with torch.no_grad():
             outputs = model(input_ids)
-            logits = outputs.logits if hasattr(outputs, "logits") else outputs[0]
+            if hasattr(outputs, "logits"):
+                logits = outputs.logits
+            elif isinstance(outputs, torch.Tensor):
+                logits = outputs
+            else:
+                logits = outputs[0]
         return logits
 
     @torch.no_grad()

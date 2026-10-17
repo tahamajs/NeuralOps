@@ -1,6 +1,6 @@
 from __future__ import annotations
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 import torch
 import torch.nn.functional as F
 
@@ -25,14 +25,15 @@ def _get_module():
         )
     return _MODULE
 
-def svd_prefix_scan_pytorch_ref(q, k, v, eps=1e-4):
-    kv = torch.einsum('bhld,bhle->bhlde', k.float(), v.float())
+def svd_prefix_scan_pytorch_ref(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, eps: float = 1e-4) -> torch.Tensor:
+    kv = torch.einsum("bhld,bhle->bhlde", k.float(), v.float())
     s = kv.cumsum(dim=2)
-    return torch.einsum('bhld,bhlde->bhle', q.float(), s).to(q.dtype)
-def svd_prefix_scan_triton_ref(q, k, v, eps=1e-4):
+    return torch.einsum("bhld,bhlde->bhle", q.float(), s).to(q.dtype)
+
+def svd_prefix_scan_triton_ref(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, eps: float = 1e-4) -> torch.Tensor:
     return svd_prefix_scan_pytorch_ref(q, k, v, eps=eps)
 
-def svd_prefix_scan(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, eps: float = 1e-4) -> torch.Tensor:
+def _svd_prefix_scan_fwd_dispatch(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, eps: float = 1e-4) -> torch.Tensor:
     def cuda_fn(q, k, v, eps=1e-4, **kwargs):
         mod = _get_module()
         return mod.svd_prefix_scan_fwd(q.contiguous(), k.contiguous(), v.contiguous(), float(eps))
@@ -43,3 +44,29 @@ def svd_prefix_scan(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, eps: floa
         q, k, v, float(eps),
         kernel_name="svd_prefix_scan",
     )
+
+class _SvdPrefixScanFunction(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx: Any, q, k, v, eps: float = 1e-4):
+        out = _svd_prefix_scan_fwd_dispatch(q, k, v, eps)
+        ctx.save_for_backward(q, k, v)
+        ctx.eps = eps
+        return out
+
+    @staticmethod
+    def backward(ctx: Any, dout):
+        q, k, v = ctx.saved_tensors
+        q_p = q.detach().requires_grad_(q.requires_grad)
+        k_p = k.detach().requires_grad_(k.requires_grad)
+        v_p = v.detach().requires_grad_(v.requires_grad)
+
+        with torch.enable_grad():
+            out_p = svd_prefix_scan_pytorch_ref(q_p, k_p, v_p, ctx.eps)
+
+        grads = torch.autograd.grad(out_p, [q_p, k_p, v_p], dout, allow_unused=True)
+        return grads[0], grads[1], grads[2], None
+
+def svd_prefix_scan(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, eps: float = 1e-4) -> torch.Tensor:
+    if any(t.requires_grad for t in (q, k, v) if isinstance(t, torch.Tensor)):
+        return _SvdPrefixScanFunction.apply(q, k, v, eps)
+    return _svd_prefix_scan_fwd_dispatch(q, k, v, eps)
