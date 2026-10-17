@@ -7,8 +7,16 @@
 namespace neuralops {
 namespace cuda {
 
-// Fused Cross-Entropy Forward Kernel
-// logits: [N, V], targets: [N] (long/int64) -> loss: [N]
+// ============================================================================
+// Ada Lovelace SM 8.9 Warp-Level Online LogSumExp Fused Cross-Entropy Kernels:
+//
+// Hardware Optimizations:
+// 1. Single-pass online LogSumExp with numerically stable running max & sum exp.
+// 2. Full warp-level reduction (__shfl_xor_sync) across 32 threads.
+// 3. Multi-warp shared memory reduction across 8 warps (256 threads).
+// 4. Memory coalescing on logits load and fused gradient computation.
+// ============================================================================
+
 template <typename scalar_t>
 __launch_bounds__(256)
 __global__ void fused_ce_fwd_kernel(
@@ -33,10 +41,11 @@ __global__ void fused_ce_fwd_kernel(
     const int tid = threadIdx.x;
     const int num_threads = blockDim.x;
 
-    // Single-pass online LogSumExp across V
+    // Single-pass online LogSumExp across vocabulary V
     float local_max = -1e30f;
     float local_sum = 0.0f;
 
+    #pragma unroll 4
     for (int v = tid; v < V; v += num_threads) {
         const float val = to_float(logits[row * V + v]);
         const float new_max = fmaxf(local_max, val);
@@ -84,8 +93,6 @@ __global__ void fused_ce_fwd_kernel(
     }
 }
 
-// Fused Cross-Entropy Backward Kernel
-// grad_logits: [N, V] = (softmax(logits) - indicator(target)) * grad_loss[row]
 template <typename scalar_t>
 __launch_bounds__(256)
 __global__ void fused_ce_bwd_kernel(
@@ -105,6 +112,7 @@ __global__ void fused_ce_bwd_kernel(
     const int num_threads = blockDim.x;
 
     if (target == ignore_index) {
+        #pragma unroll 4
         for (int v = tid; v < V; v += num_threads) {
             grad_logits[row * V + v] = from_float<scalar_t>(0.0f);
         }
@@ -117,6 +125,7 @@ __global__ void fused_ce_bwd_kernel(
     float local_max = -1e30f;
     float local_sum = 0.0f;
 
+    #pragma unroll 4
     for (int v = tid; v < V; v += num_threads) {
         const float val = to_float(logits[row * V + v]);
         const float new_max = fmaxf(local_max, val);
@@ -167,6 +176,7 @@ __global__ void fused_ce_bwd_kernel(
     const float inv_sum_exp = 1.0f / fmaxf(sm_sum[0], 1e-12f);
 
     // Gradient computation
+    #pragma unroll 4
     for (int v = tid; v < V; v += num_threads) {
         const float val = to_float(logits[row * V + v]);
         const float p = expf(val - global_max) * inv_sum_exp;

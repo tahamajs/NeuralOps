@@ -13,20 +13,23 @@ namespace cuda {
 // 10 -> +1.0
 // 11 ->  0.0 (reserved / zero)
 __device__ __forceinline__ float decode_ternary_fast(uint8_t code) {
-    // Branchless LUT / arithmetic conversion: code 0 -> -1, 1 -> 0, 2 -> 1
     return (code == 0) ? -1.0f : ((code == 2) ? 1.0f : 0.0f);
 }
 
-// Block-Tiled 1.58-Bit Packed Ternary Linear GEMM Kernel:
+// ============================================================================
+// Ada Lovelace SM 8.9 Optimized 1.58-Bit Ternary GEMM:
 // Form: y = (X @ (W_unpacked * scale)^T) + bias
 //
-// Hardware-level optimization:
-// 1. Grid/Block mapping: 2D block tiling across rows M and output features N.
-// 2. Direct register unpacking of 2-bit weights: Avoids expanding dense memory in DRAM.
-// 3. Multiplication elimination: Weight values {-1, 0, 1} are accumulated directly as additions/subtractions.
-// 4. Single scale multiplication: Floating-point scale is applied exactly once per output coordinate.
+// Hardware Optimizations:
+// 1. Thread block: 16 threads along N, 8 threads along M (128 threads = 4 warps).
+// 2. Vectorized 32-bit (uint32_t = 4 bytes = 16 ternary weights) loads.
+// 3. Complete branchless arithmetic for ternary accumulation.
+// 4. Coalesced global memory writes and warp scheduling.
+// ============================================================================
+
 template <typename scalar_t>
-__global__ void __launch_bounds__(128) ternary_gemm_fwd_kernel(
+__launch_bounds__(128)
+__global__ void ternary_gemm_opt_fwd_kernel(
     scalar_t* __restrict__ out,
     const scalar_t* __restrict__ X,
     const uint8_t* __restrict__ W_packed,
@@ -37,8 +40,8 @@ __global__ void __launch_bounds__(128) ternary_gemm_fwd_kernel(
     const int N,
     const bool has_bias
 ) {
-    const int m = blockIdx.y;
-    const int n = blockIdx.x * blockDim.x + threadIdx.x;
+    const int n = blockIdx.x * 16 + (threadIdx.x % 16);
+    const int m = blockIdx.y * 8 + (threadIdx.x / 16);
 
     if (m >= M || n >= N) return;
 
@@ -48,8 +51,33 @@ __global__ void __launch_bounds__(128) ternary_gemm_fwd_kernel(
 
     float acc = 0.0f;
 
+    const uint32_t* __restrict__ w_u32 = reinterpret_cast<const uint32_t*>(W_packed + w_base);
+    const int num_u32 = K_packed / 4;
+
     #pragma unroll 4
-    for (int kp = 0; kp < K_packed; ++kp) {
+    for (int u = 0; u < num_u32; ++u) {
+        uint32_t word = w_u32[u];
+        const int k_base = x_base + (u * 16);
+
+        #pragma unroll 4
+        for (int byte_i = 0; byte_i < 4; ++byte_i) {
+            uint8_t byte_val = (word >> (byte_i * 8)) & 0xFF;
+            const int sub_k = k_base + (byte_i * 4);
+
+            uint8_t c0 = (byte_val >> 0) & 0x03;
+            uint8_t c1 = (byte_val >> 2) & 0x03;
+            uint8_t c2 = (byte_val >> 4) & 0x03;
+            uint8_t c3 = (byte_val >> 6) & 0x03;
+
+            acc += to_float(X[sub_k + 0]) * decode_ternary_fast(c0);
+            acc += to_float(X[sub_k + 1]) * decode_ternary_fast(c1);
+            acc += to_float(X[sub_k + 2]) * decode_ternary_fast(c2);
+            acc += to_float(X[sub_k + 3]) * decode_ternary_fast(c3);
+        }
+    }
+
+    // Remainder loop
+    for (int kp = num_u32 * 4; kp < K_packed; ++kp) {
         const uint8_t byte_val = W_packed[w_base + kp];
         const int k_base = x_base + (kp << 2);
 
@@ -58,19 +86,13 @@ __global__ void __launch_bounds__(128) ternary_gemm_fwd_kernel(
         const uint8_t c2 = (byte_val >> 4) & 0x03;
         const uint8_t c3 = (byte_val >> 6) & 0x03;
 
-        const float x0 = to_float(X[k_base + 0]);
-        const float x1 = to_float(X[k_base + 1]);
-        const float x2 = to_float(X[k_base + 2]);
-        const float x3 = to_float(X[k_base + 3]);
-
-        acc += x0 * decode_ternary_fast(c0);
-        acc += x1 * decode_ternary_fast(c1);
-        acc += x2 * decode_ternary_fast(c2);
-        acc += x3 * decode_ternary_fast(c3);
+        acc += to_float(X[k_base + 0]) * decode_ternary_fast(c0);
+        acc += to_float(X[k_base + 1]) * decode_ternary_fast(c1);
+        acc += to_float(X[k_base + 2]) * decode_ternary_fast(c2);
+        acc += to_float(X[k_base + 3]) * decode_ternary_fast(c3);
     }
 
-    const float s = scales[n];
-    float y = acc * s;
+    float y = acc * scales[n];
     if (has_bias && bias != nullptr) {
         y += to_float(bias[n]);
     }
@@ -108,9 +130,8 @@ torch::Tensor ternary_gemm_fwd(
         TORCH_CHECK(bias.value().numel() == N, "Bias size mismatch");
     }
 
-    constexpr int THREADS = 128;
-    const int blocks_x = (N + THREADS - 1) / THREADS;
-    dim3 grid(blocks_x, M);
+    dim3 threads(128);
+    dim3 grid((N + 15) / 16, (M + 7) / 8);
 
     auto stream = c10::cuda::getCurrentCUDAStream();
     auto w_c = w_packed.contiguous();
@@ -119,7 +140,7 @@ torch::Tensor ternary_gemm_fwd(
     AT_DISPATCH_FLOATING_TYPES_AND2(
         at::ScalarType::Half, at::ScalarType::BFloat16,
         x.scalar_type(), "ternary_gemm_fwd", ([&] {
-            neuralops::cuda::ternary_gemm_fwd_kernel<scalar_t><<<grid, THREADS, 0, stream>>>(
+            neuralops::cuda::ternary_gemm_opt_fwd_kernel<scalar_t><<<grid, threads, 0, stream>>>(
                 out.data_ptr<scalar_t>(),
                 x_2d.data_ptr<scalar_t>(),
                 reinterpret_cast<const uint8_t*>(w_c.data_ptr()),
