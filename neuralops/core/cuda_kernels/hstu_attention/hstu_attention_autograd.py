@@ -15,17 +15,21 @@ def _get_module():
     return _MODULE
 
 def hstu_attention_ref(u: torch.Tensor, v: torch.Tensor, decay: torch.Tensor, eps: float = 1e-6) -> torch.Tensor:
+    """Pure PyTorch reference implementation with FP32 accumulator precision."""
     B, N, D = u.shape
     out = torch.empty_like(u)
-    s = torch.zeros(B, D, device=u.device, dtype=u.dtype)
+    s = torch.zeros(B, D, device=u.device, dtype=torch.float32)
+    u_f = u.float()
+    v_f = v.float()
+    decay_f = decay.float()
     for t in range(N):
-        s = decay[:, t, :] * s + v[:, t, :]
+        s = decay_f[:, t, :] * s + v_f[:, t, :]
         norm = s.abs() + eps
-        out[:, t, :] = u[:, t, :] * (s / norm)
+        out[:, t, :] = (u_f[:, t, :] * (s / norm)).to(u.dtype)
     return out
 
 def hstu_attention(u: torch.Tensor, v: torch.Tensor, decay: torch.Tensor, eps: float = 1e-6) -> torch.Tensor:
-    def cuda_fn(u, v, decay, eps=1e-6):
+    def cuda_fn(u, v, decay, eps=1e-6, **kwargs):
         mod = _get_module()
         return mod.hstu_fwd(u.contiguous(), v.contiguous(), decay.contiguous(), float(eps))
-    return dispatch(cuda_fn, hstu_attention_ref, hstu_attention_ref, u, v=v, decay=decay, eps=eps, kernel_name="hstu_attention")
+    return dispatch(cuda_fn, hstu_attention_ref, hstu_attention_ref, u, v, decay, eps=eps, kernel_name="hstu_attention")
