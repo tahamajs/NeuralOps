@@ -73,6 +73,59 @@ def _is_first_tensor_cpu(*args: Any, **kwargs: Any) -> bool:
     return False
 
 
+class _AutogradBridge(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, fwd_fn, bwd_ref_fn, reconstruct, *tensors):
+        with torch.no_grad():
+            args, kwargs = reconstruct(tensors)
+            out = fwd_fn(*args, **kwargs)
+        ctx.bwd_ref_fn = bwd_ref_fn
+        ctx.reconstruct = reconstruct
+        ctx.save_for_backward(*tensors)
+        return out
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        saved = ctx.saved_tensors
+        with torch.enable_grad():
+            detached = [t.detach().requires_grad_(t.requires_grad) for t in saved]
+            args, kwargs = ctx.reconstruct(detached)
+            ref_out = ctx.bwd_ref_fn(*args, **kwargs)
+            req_tensors = [t for t in detached if t.requires_grad]
+            grads = torch.autograd.grad(ref_out, req_tensors, grad_output, allow_unused=True)
+
+        grad_iter = iter(grads)
+        tensor_grads = tuple(next(grad_iter) if t.requires_grad else None for t in detached)
+        return (None, None, None, *tensor_grads)
+
+
+def _pack_for_autograd(args: tuple, kwargs: dict):
+    tensor_list = []
+    arg_is_tensor = []
+    for a in args:
+        if isinstance(a, torch.Tensor):
+            arg_is_tensor.append(True)
+            tensor_list.append(a)
+        else:
+            arg_is_tensor.append(False)
+
+    kw_is_tensor = {}
+    for k, v in kwargs.items():
+        if isinstance(v, torch.Tensor):
+            kw_is_tensor[k] = True
+            tensor_list.append(v)
+        else:
+            kw_is_tensor[k] = False
+
+    def reconstruct(t_list):
+        t_iter = iter(t_list)
+        new_args = tuple(next(t_iter) if is_t else a for is_t, a in zip(arg_is_tensor, args))
+        new_kwargs = {k: next(t_iter) if kw_is_tensor[k] else v for k, v in kwargs.items()}
+        return new_args, new_kwargs
+
+    return tensor_list, reconstruct
+
+
 def dispatch(
     cuda_fn: Callable[..., Any] | None,
     triton_fn: Callable[..., Any] | None,
@@ -101,6 +154,63 @@ def dispatch(
 
     # Forced Level 3
     if forced == "pytorch":
+        _DISPATCH_STATS["pytorch"] += 1
+        return pytorch_fn(*args, **kwargs)
+
+    has_grad = any(isinstance(arg, torch.Tensor) and arg.requires_grad for arg in args) or any(
+        isinstance(val, torch.Tensor) and val.requires_grad for val in kwargs.values()
+    )
+
+    if has_grad:
+        tensor_list, reconstruct = _pack_for_autograd(args, kwargs)
+
+        if forced == "cuda":
+            if cuda_fn is None:
+                _DISPATCH_STATS["cuda_failures"] += 1
+                raise RuntimeError(f"[{kernel_name}] Backend forced to 'cuda', but no CUDA C++ implementation is available.")
+            try:
+                res = _AutogradBridge.apply(cuda_fn, pytorch_fn, reconstruct, *tensor_list)
+                if res is not None or allow_none:
+                    _DISPATCH_STATS["cuda"] += 1
+                    return res
+            except Exception as e:
+                _DISPATCH_STATS["cuda_failures"] += 1
+                raise RuntimeError(f"[{kernel_name}] Backend forced to 'cuda', but execution failed: {e}") from e
+
+        if forced == "triton":
+            if triton_fn is None:
+                _DISPATCH_STATS["triton_failures"] += 1
+                raise RuntimeError(f"[{kernel_name}] Backend forced to 'triton', but no Triton implementation is available.")
+            try:
+                res = _AutogradBridge.apply(triton_fn, pytorch_fn, reconstruct, *tensor_list)
+                if res is not None or allow_none:
+                    _DISPATCH_STATS["triton"] += 1
+                    return res
+            except Exception as e:
+                _DISPATCH_STATS["triton_failures"] += 1
+                raise RuntimeError(f"[{kernel_name}] Backend forced to 'triton', but execution failed: {e}") from e
+
+        # AUTO mode with autograd:
+        if cuda_fn is not None:
+            try:
+                res = _AutogradBridge.apply(cuda_fn, pytorch_fn, reconstruct, *tensor_list)
+                if res is not None or allow_none:
+                    _DISPATCH_STATS["cuda"] += 1
+                    return res
+            except Exception as e:
+                _DISPATCH_STATS["cuda_failures"] += 1
+                logger.debug(f"[{kernel_name}] CUDA C++ autograd path failed: {e}. Falling back.")
+
+        if triton_fn is not None:
+            try:
+                res = _AutogradBridge.apply(triton_fn, pytorch_fn, reconstruct, *tensor_list)
+                if res is not None or allow_none:
+                    _DISPATCH_STATS["triton"] += 1
+                    return res
+            except Exception as e:
+                _DISPATCH_STATS["triton_failures"] += 1
+                logger.debug(f"[{kernel_name}] Triton autograd path failed: {e}. Falling back.")
+
         _DISPATCH_STATS["pytorch"] += 1
         return pytorch_fn(*args, **kwargs)
 
@@ -170,4 +280,5 @@ def dispatch(
     if debug_dispatch:
         print(f"[dispatch] {kernel_name}: executed branch = PYTORCH_FALLBACK", file=sys.stderr)
     return pytorch_fn(*args, **kwargs)
+
 

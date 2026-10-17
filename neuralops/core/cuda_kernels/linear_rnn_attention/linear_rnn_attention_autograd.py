@@ -41,7 +41,7 @@ class _Linear_rnn_attentionFunction(torch.autograd.Function):
         return out
 
     @staticmethod
-    def backward(ctx: Any, dout):
+    def backward(ctx: Any, *douts):
         saved = list(ctx.saved_tensors)
         inputs = []
         for is_t, nt in zip(ctx.tensors_mask, ctx.non_tensors):
@@ -53,7 +53,8 @@ class _Linear_rnn_attentionFunction(torch.autograd.Function):
         with torch.enable_grad():
             out_p = linear_rnn_attention_ref(*inputs)
         tensor_inputs = [inp for inp, is_t in zip(inputs, ctx.tensors_mask) if is_t]
-        grads = torch.autograd.grad(out_p, tensor_inputs, dout, allow_unused=True)
+        dout_val = douts[0] if len(douts) == 1 else douts
+        grads = torch.autograd.grad(out_p, tensor_inputs, dout_val, allow_unused=True)
         grads = list(grads)
         res = []
         for is_t in ctx.tensors_mask:
