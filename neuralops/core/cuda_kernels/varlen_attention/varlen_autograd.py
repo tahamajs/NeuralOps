@@ -45,11 +45,10 @@ def varlen_attention_pytorch_ref(
     max_seqlen_k: int,
     is_causal: bool = False,
 ) -> torch.Tensor:
-    """Pure PyTorch reference implementation."""
+    """Vectorized PyTorch reference implementation using F.scaled_dot_product_attention."""
     out = torch.empty_like(q)
     num_seqs = len(cu_seqlens_q) - 1
     scale = 1.0 / math.sqrt(q.shape[-1])
-    H = q.shape[1]
 
     for b in range(num_seqs):
         qs = cu_seqlens_q[b].item()
@@ -57,20 +56,12 @@ def varlen_attention_pytorch_ref(
         ks = cu_seqlens_k[b].item()
         ke = cu_seqlens_k[b + 1].item()
 
-        qb = q[qs:qe].permute(1, 0, 2)  # [H, Lq, D]
-        kb = k[ks:ke].permute(1, 0, 2)  # [H, Lk, D]
-        vb = v[ks:ke].permute(1, 0, 2)  # [H, Lk, D]
+        qb = q[qs:qe].transpose(0, 1).unsqueeze(0)  # [1, H, Lq, D]
+        kb = k[ks:ke].transpose(0, 1).unsqueeze(0)  # [1, H, Lk, D]
+        vb = v[ks:ke].transpose(0, 1).unsqueeze(0)  # [1, H, Lk, D]
 
-        scores = torch.matmul(qb.float(), kb.float().transpose(-1, -2)) * scale
-        if is_causal:
-            Lq = qe - qs
-            Lk = ke - ks
-            mask = torch.triu(torch.ones(Lq, Lk, device=q.device, dtype=torch.bool), diagonal=1)
-            scores = scores.masked_fill(mask.unsqueeze(0), float("-inf"))
-
-        weights = F.softmax(scores, dim=-1)
-        ob = torch.matmul(weights, vb.float()).permute(1, 0, 2).to(q.dtype)
-        out[qs:qe] = ob
+        ob = F.scaled_dot_product_attention(qb, kb, vb, is_causal=is_causal, scale=scale)
+        out[qs:qe] = ob.squeeze(0).transpose(0, 1)
 
     return out
 
