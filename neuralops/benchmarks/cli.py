@@ -344,6 +344,13 @@ def handle_verify(args: argparse.Namespace) -> None:
     import torch
     import neuralops.attentions
     import neuralops.compression_engine
+    from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
+    from neuralops.core.triton_kernels import HAS_TRITON
+    import os
+
+    triton_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "core", "triton_kernels")
+    kernel_count = len([f for f in os.listdir(triton_dir) if f.endswith(".py") and not f.startswith("__")]) - 1
+
     print("System Environment Verification:")
     print(f"  Platform:         {platform.platform()}")
     print(f"  Python Version:   {platform.python_version()}")
@@ -353,8 +360,10 @@ def handle_verify(args: argparse.Namespace) -> None:
         print(f"  Device Name:      {torch.cuda.get_device_name(0)}")
         print(f"  Device Count:     {torch.cuda.device_count()}")
     print(f"  MPS Available:    {torch.backends.mps.is_available()}")
-    print(f"  Attention Reg:    {len(ATTENTION_REGISTRY)} modules")
-    print(f"  Compressor Reg:   {len(COMPRESSOR_REGISTRY)} modules")
+    print(f"  Triton Available: {HAS_TRITON}")
+    print(f"  Attention Reg:    {len(ATTENTION_REGISTRY)} modules (Canonical: 131)")
+    print(f"  Compressor Reg:   {len(COMPRESSOR_REGISTRY)} modules (Canonical: 72)")
+    print(f"  Triton Kernels:   {kernel_count} modules (Canonical: 26)")
 
 
 
