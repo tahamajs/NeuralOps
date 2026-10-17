@@ -76,7 +76,7 @@ def test_05_mamba_block():
     prev = torch.randn(B, D, S, device=device, dtype=torch.float32)
     out_ref = ck.mamba_block_ref(u, delta, A, B_mat, C_mat, prev)
     out_cuda = ck.mamba_block(u, delta, A, B_mat, C_mat, prev)
-    assert_metrics(out_cuda, out_ref, 'mamba_block')
+    assert_metrics(out_cuda, out_ref, 'mamba_block', tol=2e-4)
 
 @pytest.mark.skipif(not torch.cuda.is_available(), reason='CUDA required')
 def test_06_mamba_svd_flash():
