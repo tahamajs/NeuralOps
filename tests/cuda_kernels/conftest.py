@@ -44,7 +44,12 @@ def assert_numerical_parity(
         assert (cuda_out == ref_out).all(), f"AssertionError: Boolean mask mismatch in {name}!"
         return
 
-    max_diff = (cuda_out.float() - ref_out.float()).abs().max().item()
+    if torch.is_complex(cuda_out):
+        diff_re = (cuda_out.real.float() - ref_out.real.float()).abs().max().item()
+        diff_im = (cuda_out.imag.float() - ref_out.imag.float()).abs().max().item()
+        max_diff = max(diff_re, diff_im)
+    else:
+        max_diff = (cuda_out.float() - ref_out.float()).abs().max().item()
     assert max_diff <= atol, (
         f"AssertionError: Numerical parity failure in {name} ({dtype})! "
         f"max_diff = {max_diff:.6e} > tolerance = {atol:.6e}"
