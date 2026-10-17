@@ -297,3 +297,5 @@ SVD-LLM V2:
 
 ---
 \end{lstlisting}
+\subsection{SOTA Enhancement: SVD-LLM v2 Activation Truncation}
+To suppress outlier-driven reconstruction error without inflating parameter budgets, SVD-LLM v2 incorporates activation-aware singular value thresholding (activation truncation). Let  \in \mathbb{R}^{B \times N \times D}$ denote calibration activations with empirical covariance $\Sigma_X = \frac{1}{BN} X^\top X$. Rather than computing standard unweighted SVD  = U \Sigma V^\top$, we apply scaled decomposition on  \Sigma_X^{1/2} = \tilde{U} \tilde{\Sigma} \tilde{V}^\top$, truncating singular components whose cumulative energy falls below $\eta = 0.95$ after clipping activations beyond the 99.9th percentile. This isolates outlier dimensions and guarantees bounded post-truncation Frobenius distortion $\|W - \hat{W}\|_{F} \le \epsilon_{\text{outlier}}$.
