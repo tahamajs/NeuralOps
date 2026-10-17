@@ -49,7 +49,7 @@ def _fwd_dispatch(expert_out1, expert_out2, routing_weights):
         )
 
     return dispatch(
-        cuda_fn, samba_moe_ref, samba_moe_ref, expert_out1, expert_out2, routing_weights, kernel_name=samba_moe
+        cuda_fn, samba_moe_ref, samba_moe_ref, expert_out1, expert_out2, routing_weights, kernel_name="samba_moe"
     )
 
 
@@ -72,9 +72,6 @@ class _SambaMoEFunction(torch.autograd.Function):
         w1 = routing_weights[..., 0:1].to(dout.dtype)
         w2 = routing_weights[..., 1:2].to(dout.dtype)
 
-        # Adjoint gradients:
-        # d_out1 = dout * w1
-        # d_out2 = dout * w2
         d_out1 = None
         if ctx.needs_input_grad[0]:
             d_out1 = dout * w1
@@ -85,8 +82,6 @@ class _SambaMoEFunction(torch.autograd.Function):
 
         d_weights = None
         if ctx.needs_input_grad[2]:
-            # sum over hidden dimension D
-            # routing_weights shape: [..., 2], expert_out shape: [..., D]
             dw1 = (dout.float() * expert_out1.float()).sum(dim=-1, keepdim=True)
             dw2 = (dout.float() * expert_out2.float()).sum(dim=-1, keepdim=True)
             d_weights = torch.cat([dw1, dw2], dim=-1).to(routing_weights.dtype)
@@ -108,3 +103,6 @@ def samba_moe(
         return _SambaMoEFunction.apply(expert_out1, expert_out2, routing_weights)
 
     return _fwd_dispatch(expert_out1, expert_out2, routing_weights)
+
+samba_moe_combine = samba_moe
+samba_moe_combine_pytorch_ref = samba_moe_ref
