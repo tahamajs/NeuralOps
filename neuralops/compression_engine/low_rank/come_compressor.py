@@ -800,7 +800,11 @@ class CoMeCompressor(BaseCompressor):
                     else:
                         bridged_module_list.append(layer)
 
-                setattr(parent, attr_name, bridged_module_list)
+                if isinstance(layers, nn.Sequential):
+                    container = nn.Sequential(*bridged_module_list)
+                else:
+                    container = bridged_module_list
+                setattr(parent, attr_name, container)
                 self.compressed_layers.append(f"{attr_name} (shed {orig_len - keep_len} layers)")
         else:
             # Fallback SVD compression (still supported)
