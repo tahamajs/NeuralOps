@@ -9,8 +9,8 @@ def _get_module():
     global _MODULE
     if _MODULE is None:
         curr_dir = Path(__file__).parent
-        with open(curr_dir / "hydra_binding.cpp", "r", encoding="utf-8") as f: cpp_src = f.read()
-        with open(curr_dir / "hydra.cu", "r", encoding="utf-8") as f: cuda_src = f.read()
+        with open(curr_dir / "hydra_attention_binding.cpp", "r", encoding="utf-8") as f: cpp_src = f.read()
+        with open(curr_dir / "hydra_attention.cu", "r", encoding="utf-8") as f: cuda_src = f.read()
         _MODULE = load_cuda_module("cuda_hydra", cpp_src, cuda_src, ["hydra_fwd"])
     return _MODULE
 
