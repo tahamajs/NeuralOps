@@ -3,6 +3,7 @@
 #include <c10/cuda/CUDAStream.h>
 #include <c10/cuda/CUDAException.h>
 
+__launch_bounds__(1024)
 __global__ void w4a16_gemm_tiled_kernel(
     float* __restrict__ out,              // [M, N]
     const float* __restrict__ A,          // [M, K]
@@ -66,6 +67,7 @@ __global__ void w4a16_gemm_tiled_kernel(
     }
 }
 
+__launch_bounds__(1024)
 __global__ void w4a16_gemm_bwd_tiled_kernel(
     float* __restrict__ dA,               // [M, K]
     const float* __restrict__ dout,       // [M, N]
