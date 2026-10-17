@@ -15,6 +15,7 @@ from __future__ import annotations
 
 from typing import Any
 import math
+import warnings
 
 import torch
 import torch.nn.functional as F
@@ -2524,7 +2525,9 @@ def triton_fused_lowrank_sparse_gemm(
             if hasattr(s, "_cached_csr") and getattr(s, "_cached_csr", None) is not None:
                 s_csr = s._cached_csr
             else:
-                s_csr = s.to_sparse_csr()
+                with warnings.catch_warnings():
+                    warnings.filterwarnings("ignore", category=UserWarning, message=".*Sparse CSR tensor support.*")
+                    s_csr = s.to_sparse_csr()
                 try:
                     s._cached_csr = s_csr
                 except Exception:
