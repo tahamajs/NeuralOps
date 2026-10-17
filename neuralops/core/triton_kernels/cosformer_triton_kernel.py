@@ -19,6 +19,56 @@ except ImportError:
 
 
 @triton.jit
+def _cosformer_linear_prefix_kernel(
+    Q_cos_ptr, Q_sin_ptr,
+    S_cos_ptr, S_sin_ptr,
+    Z_cos_ptr, Z_sin_ptr,
+    Out_ptr,
+    B, H, N, D: tl.constexpr,
+    stride_qb, stride_qh, stride_qn, stride_qd,
+    stride_sb, stride_sh, stride_sk, stride_sd,
+    stride_zb, stride_zh, stride_zn, stride_zd,
+    stride_ob, stride_oh, stride_on, stride_od,
+    BLOCK_M: tl.constexpr,
+    BLOCK_D: tl.constexpr,
+):
+    pid_bh = tl.program_id(0)
+    pid_m = tl.program_id(1)
+
+    b = pid_bh // H
+    h = pid_bh % H
+
+    offs_m = pid_m * BLOCK_M + tl.arange(0, BLOCK_M)
+    offs_d = tl.arange(0, BLOCK_D)
+
+    mask_m = offs_m < N
+    mask_d = offs_d < D
+
+    q_cos_ptrs = Q_cos_ptr + b * stride_qb + h * stride_qh + offs_m[:, None] * stride_qn + offs_d[None, :] * stride_qd
+    q_sin_ptrs = Q_sin_ptr + b * stride_qb + h * stride_qh + offs_m[:, None] * stride_qn + offs_d[None, :] * stride_qd
+    q_cos = tl.load(q_cos_ptrs, mask=mask_m[:, None] & mask_d[None, :], other=0.0).to(tl.float32)
+    q_sin = tl.load(q_sin_ptrs, mask=mask_m[:, None] & mask_d[None, :], other=0.0).to(tl.float32)
+
+    s_cos_ptrs = S_cos_ptr + b * stride_sb + h * stride_sh + offs_d[:, None] * stride_sk + offs_d[None, :] * stride_sd
+    s_sin_ptrs = S_sin_ptr + b * stride_sb + h * stride_sh + offs_d[:, None] * stride_sk + offs_d[None, :] * stride_sd
+    s_cos = tl.load(s_cos_ptrs, mask=mask_d[:, None] & mask_d[None, :], other=0.0).to(tl.float32)
+    s_sin = tl.load(s_sin_ptrs, mask=mask_d[:, None] & mask_d[None, :], other=0.0).to(tl.float32)
+
+    z_cos_ptrs = Z_cos_ptr + b * stride_zb + h * stride_zh + offs_d[None, :] * stride_zd
+    z_sin_ptrs = Z_sin_ptr + b * stride_zb + h * stride_zh + offs_d[None, :] * stride_zd
+    z_cos = tl.load(z_cos_ptrs, mask=mask_d[None, :], other=0.0).to(tl.float32)
+    z_sin = tl.load(z_sin_ptrs, mask=mask_d[None, :], other=0.0).to(tl.float32)
+
+    num = tl.dot(q_cos, s_cos) + tl.dot(q_sin, s_sin)
+    denom = tl.sum(q_cos * z_cos + q_sin * z_sin, axis=1)
+    denom = tl.maximum(denom[:, None], 1e-4)
+
+    out = num / denom
+    out_ptrs = Out_ptr + b * stride_ob + h * stride_oh + offs_m[:, None] * stride_on + offs_d[None, :] * stride_od
+    tl.store(out_ptrs, out.to(Out_ptr.dtype.element_ty), mask=mask_m[:, None] & mask_d[None, :])
+
+
+@triton.jit
 def _cosformer_global_fwd_kernel(
     Q_cos_ptr, Q_sin_ptr, K_cos_ptr, K_sin_ptr, V_ptr,
     Out_ptr, Denom_ptr,
@@ -87,6 +137,27 @@ def _cosformer_global_fwd_kernel(
 def cosformer_global_triton(q_cos, q_sin, k_cos, k_sin, v, is_decoder=True):
     """Wrapper for Triton cosformer kernel."""
     B, H, N, D = q_cos.shape
+    if not is_decoder:
+        # Linear O(N D^2) Triton fast prefix accumulation
+        S_cos = torch.matmul(k_cos.transpose(-1, -2), v.float())
+        S_sin = torch.matmul(k_sin.transpose(-1, -2), v.float())
+        Z_cos = k_cos.sum(dim=-2, keepdim=True)
+        Z_sin = k_sin.sum(dim=-2, keepdim=True)
+
+        out = torch.empty_like(v)
+        BLOCK_M = 128
+        grid = (B * H, triton.cdiv(N, BLOCK_M))
+        _cosformer_linear_prefix_kernel[grid](
+            q_cos, q_sin, S_cos, S_sin, Z_cos, Z_sin, out,
+            B, H, N, D,
+            q_cos.stride(0), q_cos.stride(1), q_cos.stride(2), q_cos.stride(3),
+            S_cos.stride(0), S_cos.stride(1), S_cos.stride(2), S_cos.stride(3),
+            Z_cos.stride(0), Z_cos.stride(1), Z_cos.stride(2), Z_cos.stride(3),
+            out.stride(0), out.stride(1), out.stride(2), out.stride(3),
+            BLOCK_M=BLOCK_M, BLOCK_D=triton.next_power_of_2(D), num_warps=4,
+        )
+        return out
+
     out = torch.empty_like(v)
     denom = torch.empty((B, H, N), device=v.device, dtype=torch.float32)
 
@@ -290,7 +361,7 @@ class _CosformerAutograd(torch.autograd.Function):
         ctx.is_causal = is_causal
         ctx.eps = eps
         from neuralops.core.triton_kernels._types import check_triton_suitability
-        suitable, _ = check_triton_suitability(q, "cosformer", head_dim=q.shape[-1], seq_len=q.shape[-2])
+        suitable, _ = check_triton_suitability(q, "cosformer", head_dim=q.shape[-1], seq_len=q.shape[-2], allow_fp32=True)
 
         # Apply canonical non-negative mapping to ensure positive denominator and stable quotient derivative
         scale = 1.0 / math.sqrt(q.shape[-1])
@@ -307,7 +378,7 @@ class _CosformerAutograd(torch.autograd.Function):
         k_cos = (k_act * cos_m).contiguous()
         k_sin = (k_act * sin_m).contiguous()
 
-        if suitable and is_causal:
+        if suitable:
             try:
                 out = cosformer_global_triton(q_cos, q_sin, k_cos, k_sin, v, is_decoder=is_causal)
                 ctx.save_for_backward(q, k, v, q_act, k_act, cos_m, sin_m, out)
