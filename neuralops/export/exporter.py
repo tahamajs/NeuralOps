@@ -500,37 +500,40 @@ def compile_to_so(
     pt2_path = out_file.with_suffix(".pt2")
 
     if exported_program is not None and hasattr(torch, "_inductor"):
-        # Option A: aoti_compile_and_package (requires .pt2 target)
-        if hasattr(torch._inductor, "aoti_compile_and_package"):
-            try:
-                result_path = torch._inductor.aoti_compile_and_package(
-                    exported_program,
-                    package_path=str(pt2_path),
-                )
-                if Path(result_path).exists() and out_file.suffix.lower() == ".so":
-                    # Create companion .so symlink or copy if applicable
-                    try:
-                        import shutil
-                        shutil.copyfile(result_path, str(out_file))
-                    except Exception:
-                        pass
-                compiled_success = True
-            except Exception as e:
-                logger.warning("aoti_compile_and_package failed (%s). Trying aot_compile.", e)
-
-        # Option B: aot_compile directly to .so
-        if not compiled_success and hasattr(torch._inductor, "aot_compile"):
-            try:
-                so_path = torch._inductor.aot_compile(
-                    exported_program.module(),
-                    sample_tuple,
-                )
-                if Path(so_path).exists():
-                    import shutil
-                    shutil.copyfile(so_path, str(out_file))
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=DeprecationWarning)
+            warnings.filterwarnings("ignore", category=UserWarning)
+            # Option A: aoti_compile_and_package (requires .pt2 target)
+            if hasattr(torch._inductor, "aoti_compile_and_package"):
+                try:
+                    result_path = torch._inductor.aoti_compile_and_package(
+                        exported_program,
+                        package_path=str(pt2_path),
+                    )
+                    if Path(result_path).exists() and out_file.suffix.lower() == ".so":
+                        # Create companion .so symlink or copy if applicable
+                        try:
+                            import shutil
+                            shutil.copyfile(result_path, str(out_file))
+                        except Exception:
+                            pass
                     compiled_success = True
-            except Exception as e:
-                logger.warning("aot_compile failed (%s).", e)
+                except Exception as e:
+                    logger.warning("aoti_compile_and_package failed (%s). Trying aot_compile.", e)
+
+            # Option B: aot_compile directly to .so
+            if not compiled_success and hasattr(torch._inductor, "aot_compile"):
+                try:
+                    so_path = torch._inductor.aot_compile(
+                        exported_program.module(),
+                        sample_tuple,
+                    )
+                    if Path(so_path).exists():
+                        import shutil
+                        shutil.copyfile(so_path, str(out_file))
+                        compiled_success = True
+                except Exception as e:
+                    logger.warning("aot_compile failed (%s).", e)
 
     # 3. Graceful Fallback if environment lacks C++ linker / AOTInductor
     fallback_mod = None
@@ -549,8 +552,9 @@ def compile_to_so(
     return AOTICompiledModelRunner(
         artifact_path=pt2_path if pt2_path.exists() else out_file,
         device=device,
-        fallback_module=fallback_mod or wrapper,
+        fallback_module=fallback_mod if fallback_mod is not None else wrapper,
     )
+
 
 
 
