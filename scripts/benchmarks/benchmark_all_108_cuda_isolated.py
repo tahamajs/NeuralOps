@@ -147,7 +147,7 @@ def generate_args(mod_name, sig, device, dtype, B=4, H=8, N=512, D=64):
         M_dim, N_dim, K_dim = 64, 128, 256
         num_g = K_dim // 128
         x_gemm = torch.randn(M_dim, K_dim, device=device, dtype=dtype) * 0.05
-        w_p = torch.randint(0, 255, (N_dim, K_dim // 2), device=device, dtype=torch.uint8)
+        w_p = torch.randint(0, 255, (K_dim, N_dim // 2), device=device, dtype=torch.uint8)
         sc = torch.full((num_g, N_dim), 0.01, device=device, dtype=dtype)
         zr = torch.zeros(num_g, N_dim, device=device, dtype=dtype)
         return [x_gemm, w_p, sc, zr], {{"group_size": 128}}
@@ -172,7 +172,7 @@ def generate_args(mod_name, sig, device, dtype, B=4, H=8, N=512, D=64):
         return [q, k, v], {{}}
     elif mod_name == "causal_conv1d":
         x = torch.randn(B, D, N, device=device, dtype=dtype) * 0.1
-        weight = torch.randn(D, 1, 4, device=device, dtype=dtype) * 0.1
+        weight = torch.randn(D, 4, device=device, dtype=dtype) * 0.1
         return [x, weight], {{}}
     elif mod_name == "dynamic_conv1d":
         K_conv = 4
@@ -205,8 +205,8 @@ def generate_args(mod_name, sig, device, dtype, B=4, H=8, N=512, D=64):
         q = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
         k = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
         v = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
-        alpha = torch.sigmoid(torch.randn(B, H, N, D, device=device, dtype=dtype)) * 0.95
-        beta = torch.sigmoid(torch.randn(B, H, N, D, device=device, dtype=dtype)) * 0.95
+        alpha = torch.sigmoid(torch.randn(B, H, N, device=device, dtype=dtype)) * 0.95
+        beta = torch.sigmoid(torch.randn(B, H, N, device=device, dtype=dtype)) * 0.95
         return [q, k, v, alpha, beta], {{}}
     elif mod_name == "gla_unnormalized_scan":
         q = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
@@ -315,9 +315,9 @@ def generate_args(mod_name, sig, device, dtype, B=4, H=8, N=512, D=64):
         tau = torch.tensor(0.01, device=device, dtype=dtype)
         return [x_re, x_im, w_re, w_im, tau], {{}}
     elif mod_name == "tt_contraction":
-        core0 = torch.randn(1, 16, 4, device=device, dtype=dtype) * 0.1
-        core1 = torch.randn(4, 16, 1, device=device, dtype=dtype) * 0.1
-        return [core0, core1, (16, 16), (16, 16)], {{}}
+        core0 = torch.randn(1, 8, 8, 8, device=device, dtype=dtype) * 0.1
+        core1 = torch.randn(8, 8, 8, 1, device=device, dtype=dtype) * 0.1
+        return [core0, core1, (8, 8), (8, 8)], {{}}
     elif mod_name == "upi_stuffed_mamba":
         x = torch.randn(B, N, D, device=device, dtype=dtype) * 0.1
         upi_tok = torch.randn(B, 16, D, device=device, dtype=dtype) * 0.1
@@ -405,10 +405,9 @@ def generate_args(mod_name, sig, device, dtype, B=4, H=8, N=512, D=64):
         residual = torch.randn(B, N, D, device=device, dtype=dtype) * 0.1
         return [x, residual], {{"p": 0.0, "training": False}}
     elif mod_name == "fused_norm_linear":
-        x = torch.randn(B * 8, D * 8, device=device, dtype=dtype) * 0.1
-        norm_w = torch.ones(D * 8, device=device, dtype=dtype)
+        x_gemm = torch.randn(B * 8, D * 8, device=device, dtype=dtype) * 0.1
         linear_w = torch.randn(D * 8, D * 8, device=device, dtype=dtype) * 0.1
-        return [x, norm_w, linear_w], {{}}
+        return [x_gemm, linear_w], {{}}
     elif mod_name == "fwht_transform":
         x = torch.randn(B, 1024, device=device, dtype=dtype) * 0.1
         return [x], {{}}
@@ -419,10 +418,10 @@ def generate_args(mod_name, sig, device, dtype, B=4, H=8, N=512, D=64):
     elif mod_name == "low_rank_svd":
         M_dim, N_dim, K_dim, R = 64, 128, 128, 32
         x_gemm = torch.randn(M_dim, K_dim, device=device, dtype=dtype) * 0.1
-        u = torch.randn(M_dim, R, device=device, dtype=dtype) * 0.1
-        v = torch.randn(R, N_dim, device=device, dtype=dtype) * 0.1
-        gate = torch.randn(M_dim, N_dim, device=device, dtype=dtype) * 0.1
-        return [x_gemm, u, v, gate], {{}}
+        v_r = torch.randn(R, K_dim, device=device, dtype=dtype) * 0.1
+        u_r = torch.randn(N_dim, R, device=device, dtype=dtype) * 0.1
+        alpha = torch.randn(R, device=device, dtype=dtype) * 0.1
+        return [x_gemm, v_r, u_r, alpha], {{}}
     elif mod_name == "mamba_block":
         S_dim = 16
         u = torch.randn(B, D, device=device, dtype=dtype) * 0.1
