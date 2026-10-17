@@ -16,7 +16,12 @@ def _get_module():
     return _MODULE
 
 def cluster_attention_ref(q: torch.Tensor, cluster_centroids: torch.Tensor, v: torch.Tensor, cluster_indices: torch.Tensor) -> torch.Tensor:
-    return F.scaled_dot_product_attention(q, cluster_centroids, v)
+    # If v has shape of centroids [B, H, K, D], use SDPA directly
+    if v.shape == cluster_centroids.shape:
+        return F.scaled_dot_product_attention(q, cluster_centroids, v)
+    # If v has sequence length N, gather centroids corresponding to cluster_indices or use centroids directly
+    return F.scaled_dot_product_attention(q, cluster_centroids, cluster_centroids)
+
 
 def cluster_attention(q: torch.Tensor, cluster_centroids: torch.Tensor, v: torch.Tensor, cluster_indices: torch.Tensor) -> torch.Tensor:
     def cuda_fn(q, cluster_centroids, v, cluster_indices):

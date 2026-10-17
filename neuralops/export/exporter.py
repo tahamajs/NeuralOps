@@ -74,6 +74,21 @@ def export_model(
     if base_name:
         manifest.base_model_name = str(base_name)
 
+    def _json_sanitize(obj: Any) -> Any:
+        if isinstance(obj, (torch.Tensor, nn.Parameter)):
+            return f"<Tensor: shape={list(obj.shape)}, dtype={str(obj.dtype)}>"
+        elif isinstance(obj, dict):
+            return {k: _json_sanitize(v) for k, v in obj.items() if not k.startswith("_tensor")}
+        elif isinstance(obj, (list, tuple)):
+            return [_json_sanitize(x) for x in obj]
+        elif isinstance(obj, (int, float, str, bool)) or obj is None:
+            return obj
+        else:
+            return str(obj)
+
+    clean_metadata = _json_sanitize(recorded_metadata or [])
+    clean_kwargs = _json_sanitize(kwargs)
+
     # Build architecture and surgery metadata
     meta = {
         "format": fmt,
@@ -81,11 +96,11 @@ def export_model(
         "attention_type": attention_type,
         "compression_method": compression_method,
         "rank": rank,
-        "_neuralops_metadata": recorded_metadata or [],
-        "surgery_history": recorded_metadata or [],
+        "_neuralops_metadata": clean_metadata,
+        "surgery_history": clean_metadata,
         "framework": "neuralops",
         "pytorch_version": torch.__version__,
-        "extra_kwargs": kwargs,
+        "extra_kwargs": clean_kwargs,
     }
 
     # Always persist both legacy neuralops_config.json and rich neuralops_surgery_config.json
