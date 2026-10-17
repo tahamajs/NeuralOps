@@ -1,6 +1,15 @@
+"""
+Bitonic Top-K Selection Interface, Autograd Function, and 3-Level Fallback.
+Target: SM 8.9 (NVIDIA Ada Lovelace RTX 4070 Laptop GPU, 8GB VRAM).
+Returns indices of top-K values. Discrete indices are non-differentiable; backward pass
+safely returns None/zero gradient according to autograd specifications.
+"""
+
 from __future__ import annotations
+
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
+
 import torch
 import torch.nn.functional as F
 
@@ -8,6 +17,7 @@ from neuralops.core.cuda_kernels._bindings import load_cuda_module
 from neuralops.core.cuda_kernels._fallback import dispatch
 
 _MODULE = None
+
 
 def _get_module():
     global _MODULE
@@ -25,20 +35,45 @@ def _get_module():
         )
     return _MODULE
 
-def bitonic_topk_pytorch_ref(x, K):
+
+def bitonic_topk_pytorch_ref(x: torch.Tensor, K: int) -> torch.Tensor:
+    """Pure PyTorch reference implementation."""
     return torch.topk(x, k=K, dim=-1).indices
-def bitonic_topk_triton_ref(x, K):
+
+
+def bitonic_topk_triton_ref(x: torch.Tensor, K: int) -> torch.Tensor:
     return bitonic_topk_pytorch_ref(x, K)
 
-def bitonic_topk(x: torch.Tensor, K: int) -> torch.Tensor:
+
+def _fwd_dispatch(x: torch.Tensor, K: int) -> torch.Tensor:
     def cuda_fn(*args, **kwargs):
         mod = _get_module()
-        fn = getattr(mod, "bitonic_topk_indices_fwd")
+        fn = getattr(mod, bitonic_topk_indices_fwd)
         return fn(*args, **kwargs)
+
     return dispatch(
         cuda_fn,
         bitonic_topk_triton_ref,
         bitonic_topk_pytorch_ref,
-        x, K,
-        kernel_name="bitonic_topk",
+        x,
+        K,
+        kernel_name=bitonic_topk,
     )
+
+
+class _BitonicTopKFunction(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx: Any, x: torch.Tensor, K: int) -> torch.Tensor:
+        return _fwd_dispatch(x, K)
+
+    @staticmethod
+    def backward(ctx: Any, dout: torch.Tensor) -> tuple[torch.Tensor | None, ...]:
+        # Indices are integer/discrete tensors with zero continuous gradient
+        return None, None
+
+
+def bitonic_topk(x: torch.Tensor, K: int) -> torch.Tensor:
+    """3-Level Dispatched Bitonic Top-K with autograd function support."""
+    if x.requires_grad:
+        return _BitonicTopKFunction.apply(x, K)
+    return _fwd_dispatch(x, K)

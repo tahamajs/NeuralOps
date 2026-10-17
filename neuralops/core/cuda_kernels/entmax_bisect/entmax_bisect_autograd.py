@@ -1,6 +1,14 @@
+"""
+Entmax-1.5 Bisection Interface, Autograd Function, and 3-Level Fallback.
+Target: SM 8.9 (NVIDIA Ada Lovelace RTX 4070 Laptop GPU, 8GB VRAM).
+Backward computes exact adjoint gradient for entmax 1.5 probabilities.
+"""
+
 from __future__ import annotations
+
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
+
 import torch
 import torch.nn.functional as F
 
@@ -8,6 +16,7 @@ from neuralops.core.cuda_kernels._bindings import load_cuda_module
 from neuralops.core.cuda_kernels._fallback import dispatch
 
 _MODULE = None
+
 
 def _get_module():
     global _MODULE
@@ -25,19 +34,58 @@ def _get_module():
         )
     return _MODULE
 
+
 from neuralops.core.triton_kernels.elementwise import fused_entmax_bisect_pytorch, fused_entmax_bisect_triton
 
 entmax_bisect_pytorch_ref = fused_entmax_bisect_pytorch
 entmax_bisect_ref = fused_entmax_bisect_pytorch
 
-def entmax_bisect(scores: torch.Tensor, n_iter: int = 15) -> torch.Tensor:
+
+def _fwd_dispatch(scores, n_iter=15):
     def cuda_fn(scores, n_iter=15):
         mod = _get_module()
         return mod.entmax15_fwd(scores.contiguous(), int(n_iter))
+
     return dispatch(
         cuda_fn,
         fused_entmax_bisect_triton,
         fused_entmax_bisect_pytorch,
-        scores, n_iter=n_iter,
-        kernel_name="entmax_bisect",
+        scores,
+        n_iter=n_iter,
+        kernel_name=entmax_bisect,
     )
+
+
+class _Entmax15Function(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx: Any, scores: torch.Tensor, n_iter: int) -> torch.Tensor:
+        p = _fwd_dispatch(scores, n_iter=n_iter)
+        ctx.save_for_backward(p)
+        return p
+
+    @staticmethod
+    def backward(ctx: Any, dout: torch.Tensor) -> tuple[torch.Tensor | None, ...]:
+        (p,) = ctx.saved_tensors
+        # Exact analytical adjoint gradient for alpha=1.5:
+        # S = {i : p_i > 0}
+        # dL/ds_i = sqrt(p_i) * (dout_i - sum_{k in S} (dout_k * sqrt(p_k)) / sum_{k in S} sqrt(p_k))
+        p_f = p.float()
+        dout_f = dout.float()
+
+        sp = torch.sqrt(torch.clamp(p_f, min=0.0))
+        mask = (p_f > 1e-9).float()
+        sp = sp * mask
+
+        sum_sp = sp.sum(dim=-1, keepdim=True).clamp(min=1e-9)
+        sum_dout_sp = (dout_f * sp).sum(dim=-1, keepdim=True)
+
+        ds = sp * (dout_f - (sum_dout_sp / sum_sp))
+        return ds.to(p.dtype), None
+
+
+def entmax_bisect(scores: torch.Tensor, n_iter: int = 15) -> torch.Tensor:
+    """3-Level Dispatched Entmax-1.5 Bisection with full autograd support."""
+    if scores.requires_grad:
+        return _Entmax15Function.apply(scores, n_iter)
+
+    return _fwd_dispatch(scores, n_iter=n_iter)

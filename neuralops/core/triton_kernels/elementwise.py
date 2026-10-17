@@ -940,23 +940,28 @@ if HAS_TRITON and tl is not None:
     @triton.jit
     def _favor_plus_act_kernel(
         Proj_ptr, DiagSq_ptr, Out_ptr,
-        total_elements, F_dim: tl.constexpr, norm_factor,
-        BLOCK_SIZE: tl.constexpr,
+        total_tokens, F_dim: tl.constexpr, norm_factor,
+        stride_pn, stride_pf,
+        stride_dn,
+        stride_on, stride_of,
+        BLOCK_F: tl.constexpr,
     ):
         """Fused in-SRAM exponential activation with diagonal norm shift: exp(proj - 0.5*|x|^2) / sqrt(m)."""
         pid = tl.program_id(0)
-        offs = pid * BLOCK_SIZE + tl.arange(0, BLOCK_SIZE)
-        mask = offs < total_elements
+        if pid >= total_tokens:
+            return
 
-        token_idx = offs // F_dim
-        diag_sq = tl.load(DiagSq_ptr + token_idx, mask=mask, other=0.0)
-        proj = tl.load(Proj_ptr + offs, mask=mask, other=0.0).to(tl.float32)
+        offs_f = tl.arange(0, BLOCK_F)
+        mask = offs_f < F_dim
+
+        diag_sq = tl.load(DiagSq_ptr + pid * stride_dn)
+        proj = tl.load(Proj_ptr + pid * stride_pn + offs_f * stride_pf, mask=mask, other=0.0).to(tl.float32)
 
         diff = proj - diag_sq
         diff_clamped = tl.maximum(-20.0, tl.minimum(8.0, diff))
         phi = tl.exp(diff_clamped) * norm_factor
 
-        tl.store(Out_ptr + offs, phi.to(Out_ptr.dtype.element_ty), mask=mask)
+        tl.store(Out_ptr + pid * stride_on + offs_f * stride_of, phi.to(Out_ptr.dtype.element_ty), mask=mask)
 
 
 def fused_favor_plus_feature_map_triton(
@@ -979,23 +984,25 @@ def fused_favor_plus_feature_map_triton(
         if kernel_type in ("favor_plus", "exp", "favor"):
             orig_shape = proj.shape
             F_dim = orig_shape[-1]
-            total_tokens = x.numel() // x.shape[-1]
-            x_2d = x.contiguous().view(total_tokens, x.shape[-1])
-            diag_sq = (torch.sum(x_2d**2, dim=-1) * 0.5).contiguous()
+            proj_2d = proj.contiguous().view(-1, F_dim)
+            x_2d = x.contiguous().view(-1, x.shape[-1])
+            total_tokens = proj_2d.shape[0]
 
-            proj_c = proj.contiguous()
-            out = torch.empty_like(proj_c)
-            total_elements = proj_c.numel()
+            diag_sq = (torch.sum(x_2d**2, dim=-1, keepdim=True) * 0.5).contiguous()
+            out_2d = torch.empty_like(proj_2d)
 
-            BLOCK_SIZE = 1024
-            grid = (triton.cdiv(total_elements, BLOCK_SIZE),)
+            block_f = triton.next_power_of_2(F_dim)
             norm_factor = 1.0 / math.sqrt(num_features)
+            grid = (total_tokens,)
             _favor_plus_act_kernel[grid](
-                proj_c, diag_sq, out,
-                total_elements, F_dim=F_dim, norm_factor=float(norm_factor),
-                BLOCK_SIZE=BLOCK_SIZE, num_warps=4,
+                proj_2d, diag_sq, out_2d,
+                total_tokens, F_dim=F_dim, norm_factor=float(norm_factor),
+                stride_pn=proj_2d.stride(0), stride_pf=proj_2d.stride(1),
+                stride_dn=diag_sq.stride(0),
+                stride_on=out_2d.stride(0), stride_of=out_2d.stride(1),
+                BLOCK_F=block_f,
             )
-            return out
+            return out_2d.view(orig_shape)
         elif kernel_type == "elu":
             phi = (F.elu(proj) + 1.0) / math.sqrt(num_features)
             return phi

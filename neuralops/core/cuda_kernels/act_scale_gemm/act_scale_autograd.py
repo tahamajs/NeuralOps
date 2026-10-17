@@ -1,6 +1,8 @@
 """
-Fused Activation Scaling GEMM Interface and 3-Level Fallback.
+Activation-Scaling Quantized GEMM Interface, Autograd Function, and 3-Level Fallback.
 Target: SM 8.9 (NVIDIA Ada Lovelace RTX 4070 Laptop GPU, 8GB VRAM).
+Forward: Y = (X * s_inv) @ W.T + bias
+Backward computes exact analytical adjoint gradients for X, s_inv, W, bias.
 """
 
 from __future__ import annotations
@@ -53,13 +55,7 @@ def _get_triton_impl():
         return None
 
 
-def act_scale_quant_gemm(
-    x: torch.Tensor,
-    s_inv: torch.Tensor,
-    w: torch.Tensor,
-    bias: Optional[torch.Tensor] = None,
-) -> torch.Tensor:
-    """3-Level Dispatched Act-Scale GEMM."""
+def _fwd_dispatch(x, s_inv, w, bias):
     def cuda_fn(x, s_inv, w, bias=None, **kwargs):
         mod = _get_module()
         return mod.act_scale_quant_gemm_fwd(
@@ -79,5 +75,82 @@ def act_scale_quant_gemm(
         s_inv,
         w,
         bias=bias,
-        kernel_name="act_scale_quant_gemm",
+        kernel_name=act_scale_quant_gemm,
     )
+
+
+class _ActScaleQuantGemmFunction(torch.autograd.Function):
+    @staticmethod
+    def forward(
+        ctx: Any,
+        x: torch.Tensor,
+        s_inv: torch.Tensor,
+        w: torch.Tensor,
+        bias: torch.Tensor | None,
+    ) -> torch.Tensor:
+        orig_shape = x.shape
+        K = orig_shape[-1]
+        x_2d = x.reshape(-1, K)
+        N = w.shape[0]
+
+        out_2d = _fwd_dispatch(x_2d, s_inv, w, bias)
+
+        ctx.save_for_backward(x_2d, s_inv, w)
+        ctx.has_bias = bias is not None
+        ctx.orig_shape = orig_shape
+        ctx.out_features = N
+
+        return out_2d.reshape(*orig_shape[:-1], N)
+
+    @staticmethod
+    def backward(ctx: Any, dout: torch.Tensor) -> tuple[torch.Tensor | None, ...]:
+        x_2d, s_inv, w = ctx.saved_tensors
+        dout_2d = dout.reshape(-1, ctx.out_features)
+
+        # Exact analytical adjoint gradients:
+        # Y = (x_2d * s_inv) @ w.T + bias
+        # x_smooth = x_2d * s_inv
+        # dout_2d: [M, N]
+        s_inv_row = s_inv.view(1, -1)
+        x_smooth = x_2d * s_inv_row
+
+        # dx_smooth = dout_2d @ w  [M, K]
+        dx_smooth = torch.matmul(dout_2d, w)
+
+        # dx = dx_smooth * s_inv
+        dx_2d = dx_smooth * s_inv_row
+        dx = dx_2d.reshape(ctx.orig_shape)
+
+        # ds_inv = sum(dx_smooth * x_2d, dim=0)  [K]
+        ds_inv = None
+        if ctx.needs_input_grad[1]:
+            ds_inv = (dx_smooth * x_2d).sum(dim=0).to(s_inv.dtype)
+
+        # dw = dout_2d.T @ x_smooth  [N, K]
+        dw = None
+        if ctx.needs_input_grad[2]:
+            dw = torch.matmul(dout_2d.t(), x_smooth)
+
+        # dbias = dout_2d.sum(dim=0)  [N]
+        dbias = None
+        if ctx.has_bias and ctx.needs_input_grad[3]:
+            dbias = dout_2d.sum(dim=0)
+
+        return dx, ds_inv, dw, dbias
+
+
+def act_scale_quant_gemm(
+    x: torch.Tensor,
+    s_inv: torch.Tensor,
+    w: torch.Tensor,
+    bias: Optional[torch.Tensor] = None,
+) -> torch.Tensor:
+    """3-Level Dispatched Act-Scale GEMM with full autograd support."""
+    needs_grad = torch.is_grad_enabled() and any(
+        t.requires_grad for t in (x, s_inv, w, bias) if isinstance(t, torch.Tensor)
+    )
+
+    if needs_grad:
+        return _ActScaleQuantGemmFunction.apply(x, s_inv, w, bias)
+
+    return _fwd_dispatch(x, s_inv, w, bias)

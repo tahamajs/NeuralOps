@@ -1,6 +1,8 @@
 """
-Hadamard W4A16 GEMM Interface and 3-Level Fallback.
+Hadamard W4A16 GEMM Interface, Autograd Function, and 3-Level Fallback.
 Target: SM 8.9 (NVIDIA Ada Lovelace RTX 4070 Laptop GPU, 8GB VRAM).
+Forward: Y = X @ W_dequant.T + bias
+Backward computes exact adjoint gradient for X and bias with dequantized weight matrix.
 """
 
 from __future__ import annotations
@@ -58,16 +60,7 @@ def _get_triton_impl():
         return None
 
 
-def hadamard_w4a16_gemm(
-    x: torch.Tensor,
-    w_packed: torch.Tensor,
-    scales: torch.Tensor,
-    zeros: torch.Tensor,
-    group_size: int = 32,
-    bias: Optional[torch.Tensor] = None,
-    apply_hadamard: bool = False,
-) -> torch.Tensor:
-    """3-Level Dispatched Hadamard W4A16 GEMM."""
+def _fwd_dispatch(x, w_packed, scales, zeros, group_size=32, bias=None, apply_hadamard=False):
     def cuda_fn(x, w_packed, scales, zeros, group_size=32, bias=None, apply_hadamard=False, **kwargs):
         mod = _get_module()
         return mod.hadamard_w4a16_gemm_fwd(
@@ -92,5 +85,97 @@ def hadamard_w4a16_gemm(
         group_size=group_size,
         bias=bias,
         apply_hadamard=apply_hadamard,
-        kernel_name="hadamard_w4a16_gemm",
+        kernel_name=hadamard_w4a16_gemm,
+    )
+
+
+class _HadamardW4A16GemmFunction(torch.autograd.Function):
+    @staticmethod
+    def forward(
+        ctx: Any,
+        x: torch.Tensor,
+        w_packed: torch.Tensor,
+        scales: torch.Tensor,
+        zeros: torch.Tensor,
+        group_size: int,
+        bias: torch.Tensor | None,
+        apply_hadamard: bool,
+    ) -> torch.Tensor:
+        orig_shape = x.shape
+        K = orig_shape[-1]
+        x_2d = x.reshape(-1, K)
+        N = w_packed.shape[0]
+
+        out_2d = _fwd_dispatch(
+            x_2d, w_packed, scales, zeros, group_size=group_size, bias=bias, apply_hadamard=apply_hadamard
+        )
+
+        ctx.save_for_backward(w_packed, scales, zeros)
+        ctx.group_size = group_size
+        ctx.has_bias = bias is not None
+        ctx.apply_hadamard = apply_hadamard
+        ctx.orig_shape = orig_shape
+        ctx.out_features = N
+        ctx.in_features = K
+        ctx.x_dtype = x.dtype
+        ctx.x_device = x.device
+
+        return out_2d.reshape(*orig_shape[:-1], N)
+
+    @staticmethod
+    def backward(ctx: Any, dout: torch.Tensor) -> tuple[torch.Tensor | None, ...]:
+        w_packed, scales, zeros = ctx.saved_tensors
+        dout_2d = dout.reshape(-1, ctx.out_features)
+        K = ctx.in_features
+        group_size = ctx.group_size
+
+        # Unpack and dequantize W for exact adjoint backpropagation
+        low = (w_packed & 0x0F).to(torch.int32)
+        high = ((w_packed >> 4) & 0x0F).to(torch.int32)
+        w_unpacked = torch.empty((ctx.out_features, K), dtype=torch.int32, device=w_packed.device)
+        w_unpacked[:, 0::2] = low
+        w_unpacked[:, 1::2] = high
+
+        num_groups = K // group_size
+        scales_expanded = scales.repeat_interleave(group_size, dim=1)[:, :K].to(ctx.x_dtype)
+        zeros_expanded = zeros.repeat_interleave(group_size, dim=1)[:, :K].to(ctx.x_dtype)
+        w_dequant = (w_unpacked.to(ctx.x_dtype) - zeros_expanded) * scales_expanded
+
+        # Adjoint gradient: dx_2d = dout_2d @ w_dequant
+        dx_2d = torch.matmul(dout_2d, w_dequant)
+
+        if ctx.apply_hadamard:
+            from neuralops.core.triton_kernels.elementwise import fast_hadamard_transform
+            dx_2d = fast_hadamard_transform(dx_2d)
+
+        dx = dx_2d.reshape(ctx.orig_shape)
+
+        dbias = None
+        if ctx.has_bias and ctx.needs_input_grad[5]:
+            dbias = dout_2d.sum(dim=0)
+
+        return dx, None, None, None, None, dbias, None
+
+
+def hadamard_w4a16_gemm(
+    x: torch.Tensor,
+    w_packed: torch.Tensor,
+    scales: torch.Tensor,
+    zeros: torch.Tensor,
+    group_size: int = 32,
+    bias: Optional[torch.Tensor] = None,
+    apply_hadamard: bool = False,
+) -> torch.Tensor:
+    """3-Level Dispatched Hadamard W4A16 GEMM with full autograd support."""
+    needs_grad = torch.is_grad_enabled() and any(
+        t.requires_grad for t in (x, bias) if isinstance(t, torch.Tensor)
+    )
+
+    if needs_grad:
+        return _HadamardW4A16GemmFunction.apply(
+            x, w_packed, scales, zeros, group_size, bias, apply_hadamard
+        )
+
+    return _fwd_dispatch(
+        x, w_packed, scales, zeros, group_size=group_size, bias=bias, apply_hadamard=apply_hadamard
     )
