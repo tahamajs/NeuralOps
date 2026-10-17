@@ -723,6 +723,97 @@ def run_ingestion():
                 ledger.add_or_replace(rec, mode="upsert")
                 total_ingested += 1
 
+    # 16. Ingest results/v13_deep_empirical_suite/roberta_72_compressors/results.json
+    f_rob72 = repo_root / "results" / "v13_deep_empirical_suite" / "roberta_72_compressors" / "results.json"
+    if f_rob72.exists():
+        sha, ts = get_file_git_provenance(f_rob72, repo_root)
+        with open(f_rob72, "r", encoding="utf-8") as f:
+            rob72_data = json.load(f)
+        for item in rob72_data:
+            cname = item.get("compressor")
+            if not cname or cname == "baseline_roberta":
+                continue
+            m = clean_metrics({
+                "accuracy": (item.get("accuracy", 0.0) * 100.0) if item.get("accuracy") is not None else None,
+                "f1": item.get("f1"),
+                "val_loss": item.get("loss"),
+                "param_reduction_pct": item.get("param_reduction_pct"),
+                "compression_ratio": item.get("compression_ratio"),
+                "peak_vram_mb": item.get("peak_vram_mb"),
+                "latency_ms": (item.get("duration_s", 0.0) * 1000.0) if item.get("duration_s") else None,
+            })
+            if not m:
+                continue
+            rec = ResultRecord(
+                record_id="",
+                module_name=cname,
+                category="compressor",
+                family="compression-sweep-roberta",
+                version_tag="v1.3.7",
+                revision=1,
+                status="active",
+                timestamp_utc=ts,
+                git_commit_sha=sha,
+                generation_method={
+                    "algorithm": "RoBERTa-base 72-Compressor Empirical Benchmark",
+                    "source_artifact": str(f_rob72.relative_to(repo_root)),
+                },
+                experimental_setup={
+                    "backbone": "RoBERTa-base",
+                    "dataset": "SST-2",
+                    "batch_size": 16,
+                },
+                metrics=m,
+                notes=f"RoBERTa 72 Compressors Benchmark. Status: {item.get('status')}",
+            )
+            ledger.add_or_replace(rec, mode="upsert")
+            total_ingested += 1
+
+    # 17. Ingest results/v13_deep_empirical_suite/ablation_6pillar/ablation_summary.json
+    f_abl6 = repo_root / "results" / "v13_deep_empirical_suite" / "ablation_6pillar" / "ablation_summary.json"
+    if f_abl6.exists():
+        sha, ts = get_file_git_provenance(f_abl6, repo_root)
+        with open(f_abl6, "r", encoding="utf-8") as f:
+            abl6_data = json.load(f)
+        for item in abl6_data:
+            arch = item.get("architecture")
+            reg = item.get("regime")
+            if not arch or not reg:
+                continue
+            m = clean_metrics({
+                "cosine_sim": item.get("cosine_sim"),
+                "kl_div": item.get("kl_div"),
+                "peak_vram_mb": item.get("peak_vram_mb"),
+                "step_time_s": item.get("time_sec"),
+            })
+            if not m:
+                continue
+            rec = ResultRecord(
+                record_id="",
+                module_name=f"{arch}_{reg}",
+                category="ablation",
+                family="kd-6pillar-ablation",
+                version_tag="v1.3.7",
+                revision=1,
+                status="active",
+                timestamp_utc=ts,
+                git_commit_sha=sha,
+                generation_method={
+                    "algorithm": item.get("regime_label", reg),
+                    "source_artifact": str(f_abl6.relative_to(repo_root)),
+                },
+                experimental_setup={
+                    "architecture": item.get("arch_label", arch),
+                    "regime": reg,
+                    "steps": 50,
+                    "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+                },
+                metrics=m,
+                notes=f"6-Pillar KD Ablation: {item.get('arch_label')} under {item.get('regime_label')}",
+            )
+            ledger.add_or_replace(rec, mode="upsert")
+            total_ingested += 1
+
     print(f"[✓] Initial ingestion complete. Total records ingested: {total_ingested}")
 
     # Rebuild SQLite index and guarantee 100% 1:1 parity with deduplication
