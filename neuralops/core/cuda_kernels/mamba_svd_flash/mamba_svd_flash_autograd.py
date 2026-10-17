@@ -25,8 +25,9 @@ def mamba_svd_flash_ref(u: torch.Tensor, svd_u: torch.Tensor, svd_vt: torch.Tens
     return decay * proj
 
 def mamba_svd_flash(u: torch.Tensor, svd_u: torch.Tensor, svd_vt: torch.Tensor, decay: torch.Tensor) -> torch.Tensor:
-    def cuda_fn(u_in, svd_u_in, svd_vt_in, decay_in, **kwargs):
+    def cuda_fn(u_in, svd_u_in, svd_vt_in, decay_in):
         mod = _get_module()
         return mod.mamba_svd_flash_fwd(u_in, svd_u_in, svd_vt_in, decay_in)
-    return dispatch(cuda_fn, mamba_svd_flash_ref, mamba_svd_flash_ref, u, svd_u=svd_u, svd_vt=svd_vt, decay=decay, kernel_name="mamba_svd_flash")
+    return dispatch(cuda_fn, mamba_svd_flash_ref, mamba_svd_flash_ref, u, svd_u, svd_vt, decay, kernel_name="mamba_svd_flash")
+
 
