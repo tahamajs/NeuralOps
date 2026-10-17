@@ -10,6 +10,7 @@ namespace cuda {
 // Fused Spectral Entropy SVD Dynamic Gate Forward:
 // X: [M, K], V: [R_MAX, K], U: [N, R_MAX], s_weights: [R_MAX] (optional), bias: [N] (optional)
 template <typename scalar_t, int MAX_R>
+__launch_bounds__(128)
 __global__ void spectral_entropy_svd_gate_fwd_kernel(
     scalar_t* __restrict__ out,
     const scalar_t* __restrict__ X,
@@ -151,6 +152,8 @@ torch::Tensor spectral_entropy_svd_gate_fwd(
             }
         })
     );
+
+    CUDA_KERNEL_LAUNCH_CHECK();
 
     std::vector<int64_t> final_shape;
     for (size_t i = 0; i < orig_shape.size() - 1; ++i) {

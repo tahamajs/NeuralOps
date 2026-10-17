@@ -9,6 +9,7 @@ namespace cuda {
 
 // Fused Cross Attention Forward: Q: [B, H, L_q, D], K: [B, H, L_kv, D], V: [B, H, L_kv, D]
 template <typename scalar_t, int MAX_D>
+__launch_bounds__(128)
 __global__ void cross_attention_fwd_kernel(
     scalar_t* __restrict__ out,
     const scalar_t* __restrict__ Q,
@@ -140,5 +141,6 @@ torch::Tensor cross_attention_fwd(
         })
     );
 
+    CUDA_KERNEL_LAUNCH_CHECK();
     return out;
 }
