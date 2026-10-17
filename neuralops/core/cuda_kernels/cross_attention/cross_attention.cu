@@ -97,6 +97,7 @@ torch::Tensor cross_attention_fwd(
     const int L_q = q.size(2);
     const int D = q.size(3);
     const int L_kv = k.size(2);
+    TORCH_CHECK(D <= 128, "cross_attention_fwd: D=", D, " exceeds max 128");
 
     auto out = torch::empty_like(q);
     const float scale = 1.0f / sqrtf(static_cast<float>(D));

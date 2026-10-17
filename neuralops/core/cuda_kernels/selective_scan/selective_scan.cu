@@ -300,6 +300,7 @@ void selective_scan_fwd_cuda(
     const int D_sz = static_cast<int>(u.size(1));
     const int L_sz = static_cast<int>(u.size(2));
     const int D_STATE = static_cast<int>(A.size(1));
+    TORCH_CHECK(D_STATE <= 128, "selective_scan_fwd: D_STATE=", D_STATE, " > 128 not supported by generic kernel");
 
     if (B_sz <= 0 || D_sz <= 0 || L_sz <= 0 || D_STATE <= 0) return;
 

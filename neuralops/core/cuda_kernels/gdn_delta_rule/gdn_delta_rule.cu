@@ -48,8 +48,9 @@ __global__ void __launch_bounds__(256) gdn_delta_rule_kernel(
                 s_old += s_matrix[d1 * D + d2] * to_float(k[tok_offset + d1]);
             }
             const float delta_v = to_float(v[tok_offset + d2]) - s_old;
+            const float b_delta = b * delta_v;
             for (int d1 = 0; d1 < D; ++d1) {
-                s_matrix[d1 * D + d2] += b * to_float(k[tok_offset + d1]) * delta_v;
+                s_matrix[d1 * D + d2] += b_delta * to_float(k[tok_offset + d1]);
             }
         }
         __syncthreads();
@@ -91,6 +92,9 @@ torch::Tensor gdn_delta_rule_fwd(
     if (threads < 32) threads = 32;
 
     const size_t shared_mem = D * D * sizeof(float);
+    TORCH_CHECK(D * D * sizeof(float) <= 96 * 1024,
+                "gdn_delta_rule_fwd: D=", D, " requires ",
+                D * D * sizeof(float), " bytes shared memory (max 96 KB)");
     auto stream = c10::cuda::getCurrentCUDAStream();
     auto q_c = q.contiguous();
     auto k_c = k.contiguous();
@@ -100,6 +104,13 @@ torch::Tensor gdn_delta_rule_fwd(
     AT_DISPATCH_FLOATING_TYPES_AND2(
         at::ScalarType::Half, at::ScalarType::BFloat16,
         q.scalar_type(), "gdn_delta_rule_fwd", ([&] {
+            if (shared_mem > 48 * 1024) {
+                cudaFuncSetAttribute(
+                    reinterpret_cast<const void*>(
+                        neuralops::cuda::gdn_delta_rule_kernel<scalar_t>),
+                    cudaFuncAttributeMaxDynamicSharedMemorySize,
+                    static_cast<int>(shared_mem));
+            }
             neuralops::cuda::gdn_delta_rule_kernel<scalar_t><<<B * H, threads, shared_mem, stream>>>(
                 out.data_ptr<scalar_t>(),
                 q_c.data_ptr<scalar_t>(),

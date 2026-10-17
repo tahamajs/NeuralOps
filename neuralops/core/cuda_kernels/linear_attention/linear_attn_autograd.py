@@ -77,9 +77,12 @@ def linear_attention(
     v: torch.Tensor,
 ) -> torch.Tensor:
     """3-Level Dispatched Causal Linear Attention."""
-    def cuda_fn(q, k, v):
-        mod = _get_module()
-        return mod.linear_attention_fwd(q.contiguous(), k.contiguous(), v.contiguous())
+    if q.shape[-1] > 64 or v.shape[-1] > 64:
+        cuda_fn = None
+    else:
+        def cuda_fn(q, k, v):
+            mod = _get_module()
+            return mod.linear_attention_fwd(q.contiguous(), k.contiguous(), v.contiguous())
 
     triton_fn = _get_triton_impl()
 
