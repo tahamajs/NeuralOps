@@ -8,6 +8,7 @@ namespace cuda {
 
 // Multi-Scale Retention (RetNet) Forward Scan: S_t = gamma_h * S_{t-1} + k_t * v_t^T, y_t = q_t * S_t
 template <typename scalar_t, int MAX_D>
+__launch_bounds__(32)
 __global__ void multi_scale_retention_fwd_kernel(
     scalar_t* __restrict__ out,
     const scalar_t* __restrict__ Q,
@@ -130,5 +131,6 @@ torch::Tensor multi_scale_retention_fwd(
         })
     );
 
+    CUDA_KERNEL_LAUNCH_CHECK();
     return out;
 }
