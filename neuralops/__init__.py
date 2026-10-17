@@ -260,6 +260,7 @@ _LAZY_EXPORTS = {
     "RetrainPolicy": ("neuralops.evaluation.retraining", "RetrainPolicy"),
     "RetrainingOrchestrator": ("neuralops.evaluation.retraining", "RetrainingOrchestrator"),
     "TaskType": ("neuralops.data.base", "TaskType"),
+    "Trainer": ("neuralops.trainer", "Trainer"),
     "TrainerRegistry": ("neuralops.trainer.registry", "TrainerRegistry"),
     "UnifiedTransformerConfig": ("neuralops.core.model_wrapper", "UnifiedTransformerConfig"),
     "UnifiedTransformerModel": ("neuralops.core.model_wrapper", "UnifiedTransformerModel"),

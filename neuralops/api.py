@@ -203,6 +203,21 @@ def compress(
             out_model.config.neuralops_history = []
         out_model.config.neuralops_history.append(meta_entry)
 
+    # Enable transparent tuple unpacking: model_c, stats = compress(...)
+    # while preserving full nn.Module functionality if used as model = compress(...)
+    orig_cls = out_model.__class__
+    if not getattr(orig_cls, "_supports_compress_unpack", False):
+        class _CompressibleModelProxy(orig_cls):
+            _supports_compress_unpack = True
+
+            def __iter__(self):
+                stats = getattr(self, "_compression_stats", {})
+                return iter((self, stats))
+
+        _CompressibleModelProxy.__name__ = orig_cls.__name__
+        _CompressibleModelProxy.__qualname__ = orig_cls.__qualname__
+        out_model.__class__ = _CompressibleModelProxy
+
     return out_model
 
 
