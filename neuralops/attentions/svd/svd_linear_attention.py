@@ -1527,8 +1527,8 @@ class SVDLinearAttention(BaseAttention):
         kv_cache["C_v"][:, slot : slot + 1, :].copy_(c_v_t)
 
         if "K_buf" not in kv_cache:
-            kv_cache["K_buf"] = torch.zeros(B, max_len, self.all_kv_head_size, device=x_t.device, dtype=x_t.dtype)
-            kv_cache["V_buf"] = torch.zeros(B, max_len, self.all_kv_head_size, device=x_t.device, dtype=x_t.dtype)
+            kv_cache["K_buf"] = torch.zeros(B, max_len, self.kv_head_size, device=x_t.device, dtype=x_t.dtype)
+            kv_cache["V_buf"] = torch.zeros(B, max_len, self.kv_head_size, device=x_t.device, dtype=x_t.dtype)
         kv_cache["K_buf"][:, slot : slot + 1, :] = self.k_proj(x_t)
         kv_cache["V_buf"][:, slot : slot + 1, :] = self.v_proj(x_t)
 
