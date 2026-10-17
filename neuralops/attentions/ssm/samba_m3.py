@@ -23,7 +23,6 @@ import torch.nn.functional as F
 from neuralops.core.adapters import UniversalAdapter
 from neuralops.core.utils.gqa import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
-from neuralops.core.utils.rope import _rotate_half
 
 try:
     from neuralops.attentions.simple_ssm import SimpleSSM

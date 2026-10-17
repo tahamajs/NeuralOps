@@ -28,7 +28,6 @@ import torch.nn.functional as F
 
 from neuralops.core.base import BaseAttention
 from neuralops.core.registry import ATTENTION_REGISTRY
-from neuralops.core.utils.rope import _rotate_half
 
 try:
     from flash_attn_interface import flash_attn_func
@@ -756,7 +755,7 @@ class FlashAttention3FP8(BaseAttention):
                     major, minor = torch.cuda.get_device_capability(device)
                     if not FORCE_PYTORCH_FALLBACK and (major > 8 or (major == 8 and minor >= 9)):
                         from neuralops.core.triton_kernels.low_rank import fp8_tensorcore_matmul_triton
-                        scale = 1.0 / math.sqrt(dh)
+                        scale = 1.0 / math.sqrt(Dh)
                         # Q: (B, H, L, Dh), K: (B, H, L, Dh)
                         # Compute attention scores via FP8 GEMM on Ada Tensor Cores
                         scores = torch.matmul(q.float(), k.float().transpose(-1, -2).contiguous()) * scale
@@ -772,7 +771,7 @@ class FlashAttention3FP8(BaseAttention):
                             attn = self.dropout(attn)
                         # Value reduction: (B, H, L, L) @ (B, H, L, Dh) -> (B, H, L, Dh) via Ada FP8 Tensor Cores
                         attn_2d = attn.contiguous().view(B * self.num_heads * L, L)
-                        v_2d = v.contiguous().view(B * self.num_heads, L, dh).view(B * self.num_heads * L, dh)
+                        v_2d = v.contiguous().view(B * self.num_heads, L, Dh).view(B * self.num_heads * L, Dh)
                         # For per-head GEMM:
                         out_heads = []
                         for h_idx in range(self.num_heads):

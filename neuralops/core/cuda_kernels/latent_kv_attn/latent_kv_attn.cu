@@ -11,7 +11,7 @@ namespace cuda {
 // q: [B, H, L_Q, D_K], c_kv: [B, L_KV, R], u_k: [D_K, R], u_v: [R, D_V]
 // Out: [B, H, L_Q, D_V]
 template <typename scalar_t, int MAX_R>
-__launch_bounds__(128)
+__launch_bounds__(128, 2)
 __global__ void latent_kv_attn_fwd_kernel(
     scalar_t* __restrict__ out,
     const scalar_t* __restrict__ Q,
@@ -29,10 +29,9 @@ __global__ void latent_kv_attn_fwd_kernel(
 ) {
     const int q_idx = blockIdx.x * blockDim.x + threadIdx.x;
     const int total_q = B * H * L_Q;
-    if (q_idx >= total_q) return;
 
-    const int b = q_idx / (H * L_Q);
-    const int rem = q_idx % (H * L_Q);
+    const int b = (q_idx < total_q) ? (q_idx / (H * L_Q)) : 0;
+    const int rem = (q_idx < total_q) ? (q_idx % (H * L_Q)) : 0;
     const int h = rem / L_Q;
     const int i = rem % L_Q;
 
@@ -43,15 +42,21 @@ __global__ void latent_kv_attn_fwd_kernel(
         q_lat[r] = 0.0f;
     }
 
-    const int q_offset = b * (H * L_Q * D_K) + h * (L_Q * D_K) + i * D_K;
-    for (int d = 0; d < D_K; ++d) {
-        const float q_val = to_float(Q[q_offset + d]);
-        for (int r = 0; r < R && r < MAX_R; ++r) {
-            q_lat[r] += q_val * to_float(U_K[d * R + r]);
+    if (q_idx < total_q) {
+        const int q_offset = b * (H * L_Q * D_K) + h * (L_Q * D_K) + i * D_K;
+        for (int d = 0; d < D_K; ++d) {
+            const float q_val = to_float(Q[q_offset + d]);
+            for (int r = 0; r < R && r < MAX_R; ++r) {
+                q_lat[r] += q_val * to_float(U_K[d * R + r]);
+            }
         }
     }
 
-    // 2. Online softmax accumulation over L_KV
+    // 2. Online softmax accumulation over L_KV with SMEM tiling for C_KV
+    constexpr int TILE_KV = 16;
+    constexpr int R_PAD = MAX_R + 8;
+    __shared__ float s_c[TILE_KV][R_PAD];
+
     float max_s = -1e38f;
     float sum_exp = 0.0f;
     float acc_lat[MAX_R];
@@ -60,45 +65,95 @@ __global__ void latent_kv_attn_fwd_kernel(
         acc_lat[r] = 0.0f;
     }
 
+    const int tid = threadIdx.x;
+    const int total_threads = blockDim.x;
     const int c_base = b * (L_KV * R);
-    for (int j = 0; j < L_KV; ++j) {
-        const int c_offset = c_base + j * R;
-        float score = 0.0f;
-        for (int r = 0; r < R && r < MAX_R; ++r) {
-            score += q_lat[r] * to_float(C_KV[c_offset + r]);
-        }
-        score *= sm_scale;
 
-        if (score > max_s) {
-            const float rescale = expf(max_s - score);
-            sum_exp = sum_exp * rescale + 1.0f;
-            for (int r = 0; r < R && r < MAX_R; ++r) {
-                acc_lat[r] = acc_lat[r] * rescale + to_float(C_KV[c_offset + r]);
+    for (int tile_start = 0; tile_start < L_KV; tile_start += TILE_KV) {
+        __syncthreads();
+        // Cooperatively load C_KV tile into SMEM with 128-bit uint4 if R % 8 == 0
+        if (sizeof(scalar_t) == 2 && (R % 8 == 0)) {
+            const int uint4_per_tok = R / 8;
+            const int total_uint4 = TILE_KV * uint4_per_tok;
+            for (int idx = tid; idx < total_uint4; idx += total_threads) {
+                const int t = idx / uint4_per_tok;
+                const int chunk = idx % uint4_per_tok;
+                const int r_base = chunk * 8;
+                const int global_j = tile_start + t;
+
+                if (global_j < L_KV) {
+                    const int g_off = c_base + global_j * R + r_base;
+                    const uint4 raw_c = reinterpret_cast<const uint4*>(C_KV + g_off)[0];
+                    const scalar_t* p_c = reinterpret_cast<const scalar_t*>(&raw_c);
+                    #pragma unroll
+                    for (int elem = 0; elem < 8; ++elem) {
+                        s_c[t][r_base + elem] = to_float(p_c[elem]);
+                    }
+                } else {
+                    #pragma unroll
+                    for (int elem = 0; elem < 8; ++elem) {
+                        s_c[t][r_base + elem] = 0.0f;
+                    }
+                }
             }
-            max_s = score;
         } else {
-            const float weight = expf(score - max_s);
-            sum_exp += weight;
-            for (int r = 0; r < R && r < MAX_R; ++r) {
-                acc_lat[r] += weight * to_float(C_KV[c_offset + r]);
+            const int tile_elements = TILE_KV * R;
+            for (int idx = tid; idx < tile_elements; idx += total_threads) {
+                const int t = idx / R;
+                const int r = idx % R;
+                const int global_j = tile_start + t;
+                if (global_j < L_KV) {
+                    s_c[t][r] = to_float(C_KV[c_base + global_j * R + r]);
+                } else {
+                    s_c[t][r] = 0.0f;
+                }
+            }
+        }
+        __syncthreads();
+
+        if (q_idx < total_q) {
+            const int max_t = min(TILE_KV, L_KV - tile_start);
+            for (int t = 0; t < max_t; ++t) {
+                float score = 0.0f;
+                for (int r = 0; r < R && r < MAX_R; ++r) {
+                    score += q_lat[r] * s_c[t][r];
+                }
+                score *= sm_scale;
+
+                if (score > max_s) {
+                    const float rescale = expf(max_s - score);
+                    sum_exp = sum_exp * rescale + 1.0f;
+                    for (int r = 0; r < R && r < MAX_R; ++r) {
+                        acc_lat[r] = acc_lat[r] * rescale + s_c[t][r];
+                    }
+                    max_s = score;
+                } else {
+                    const float weight = expf(score - max_s);
+                    sum_exp += weight;
+                    for (int r = 0; r < R && r < MAX_R; ++r) {
+                        acc_lat[r] += weight * s_c[t][r];
+                    }
+                }
             }
         }
     }
 
-    // Normalize latent accumulator
-    const float inv_sum = 1.0f / (sum_exp + 1e-8f);
-    for (int r = 0; r < R && r < MAX_R; ++r) {
-        acc_lat[r] *= inv_sum;
-    }
-
-    // 3. Project out: Out[b, h, i, dv] = sum_r acc_lat[r] * U_V[r, dv]
-    const int out_offset = b * (H * L_Q * D_V) + h * (L_Q * D_V) + i * D_V;
-    for (int dv = 0; dv < D_V; ++dv) {
-        float o_val = 0.0f;
+    if (q_idx < total_q) {
+        // Normalize latent accumulator
+        const float inv_sum = 1.0f / (sum_exp + 1e-8f);
         for (int r = 0; r < R && r < MAX_R; ++r) {
-            o_val += acc_lat[r] * to_float(U_V[r * D_V + dv]);
+            acc_lat[r] *= inv_sum;
         }
-        out[out_offset + dv] = from_float<scalar_t>(o_val);
+
+        // 3. Project out: Out[b, h, i, dv] = sum_r acc_lat[r] * U_V[r, dv]
+        const int out_offset = b * (H * L_Q * D_V) + h * (L_Q * D_V) + i * D_V;
+        for (int dv = 0; dv < D_V; ++dv) {
+            float o_val = 0.0f;
+            for (int r = 0; r < R && r < MAX_R; ++r) {
+                o_val += acc_lat[r] * to_float(U_V[r * D_V + dv]);
+            }
+            out[out_offset + dv] = from_float<scalar_t>(o_val);
+        }
     }
 }
 

@@ -31,7 +31,7 @@ from neuralops.core.model_utils import (
     detect_return_format,
 )
 from neuralops.core.registry import ATTENTION_REGISTRY
-from neuralops.core.rope import apply_rotary_pos_emb
+from neuralops.core.utils.rope import apply_rotary_pos_emb
 
 logger = logging.getLogger(__name__)
 
