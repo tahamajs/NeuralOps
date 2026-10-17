@@ -5,8 +5,8 @@
   "total_runs": 1,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "70b04318e2",
-  "latest_timestamp": "2026-10-17T03:04:00.670373+00:00",
+  "latest_git_sha": "1a2ee47690",
+  "latest_timestamp": "2026-10-17T14:54:30.243913+00:00",
   "latest_record": {
     "record_id": "89442b08464fa597",
     "module_name": "surgical_micro_healing",
@@ -15,28 +15,28 @@
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-10-17T03:04:00.670373+00:00",
-    "git_commit_sha": "70b04318e2",
+    "timestamp_utc": "2026-10-17T14:54:30.243913+00:00",
+    "git_commit_sha": "1a2ee47690",
     "generation_method": {
       "algorithm": "Fast Layerwise Subspace Micro-Healing",
       "pipeline_stages": [
-        "analytical_ridge_init",
+        "none",
         "adamw_cosine_micro_tuning"
       ],
       "source_component": "neuralops.core._attention_surgery.heal_replaced_model"
     },
     "experimental_setup": {
-      "steps": 5,
-      "lr": 0.001,
-      "also_ridge_init": true,
-      "num_healed_layers": 1
+      "steps": 2,
+      "lr": 0.002,
+      "also_ridge_init": false,
+      "num_healed_layers": 12
     },
     "metrics": {
-      "initial_mse": 1.047372100017626,
-      "final_mse": 0.7608671724584535,
-      "initial_cosine_sim": 0.2369363158941269,
-      "final_cosine_sim": 0.45646363496780396,
-      "elapsed_sec": 0.01798001099996327
+      "initial_mse": 1.1579534602644295,
+      "final_mse": 0.7770660193737461,
+      "initial_cosine_sim": 0.10410487682869037,
+      "final_cosine_sim": 0.5412229398886362,
+      "elapsed_sec": 3.5141762660059612
     },
     "notes": "Layerwise attention surgery alignment metrics"
   },
@@ -49,28 +49,28 @@
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-17T03:04:00.670373+00:00",
-      "git_commit_sha": "70b04318e2",
+      "timestamp_utc": "2026-10-17T14:54:30.243913+00:00",
+      "git_commit_sha": "1a2ee47690",
       "generation_method": {
         "algorithm": "Fast Layerwise Subspace Micro-Healing",
         "pipeline_stages": [
-          "analytical_ridge_init",
+          "none",
           "adamw_cosine_micro_tuning"
         ],
         "source_component": "neuralops.core._attention_surgery.heal_replaced_model"
       },
       "experimental_setup": {
-        "steps": 5,
-        "lr": 0.001,
-        "also_ridge_init": true,
-        "num_healed_layers": 1
+        "steps": 2,
+        "lr": 0.002,
+        "also_ridge_init": false,
+        "num_healed_layers": 12
       },
       "metrics": {
-        "initial_mse": 1.047372100017626,
-        "final_mse": 0.7608671724584535,
-        "initial_cosine_sim": 0.2369363158941269,
-        "final_cosine_sim": 0.45646363496780396,
-        "elapsed_sec": 0.01798001099996327
+        "initial_mse": 1.1579534602644295,
+        "final_mse": 0.7770660193737461,
+        "initial_cosine_sim": 0.10410487682869037,
+        "final_cosine_sim": 0.5412229398886362,
+        "elapsed_sec": 3.5141762660059612
       },
       "notes": "Layerwise attention surgery alignment metrics"
     }
@@ -84,28 +84,28 @@
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-17T03:04:00.670373+00:00",
-      "git_commit_sha": "70b04318e2",
+      "timestamp_utc": "2026-10-17T14:54:30.243913+00:00",
+      "git_commit_sha": "1a2ee47690",
       "generation_method": {
         "algorithm": "Fast Layerwise Subspace Micro-Healing",
         "pipeline_stages": [
-          "analytical_ridge_init",
+          "none",
           "adamw_cosine_micro_tuning"
         ],
         "source_component": "neuralops.core._attention_surgery.heal_replaced_model"
       },
       "experimental_setup": {
-        "steps": 5,
-        "lr": 0.001,
-        "also_ridge_init": true,
-        "num_healed_layers": 1
+        "steps": 2,
+        "lr": 0.002,
+        "also_ridge_init": false,
+        "num_healed_layers": 12
       },
       "metrics": {
-        "initial_mse": 1.047372100017626,
-        "final_mse": 0.7608671724584535,
-        "initial_cosine_sim": 0.2369363158941269,
-        "final_cosine_sim": 0.45646363496780396,
-        "elapsed_sec": 0.01798001099996327
+        "initial_mse": 1.1579534602644295,
+        "final_mse": 0.7770660193737461,
+        "initial_cosine_sim": 0.10410487682869037,
+        "final_cosine_sim": 0.5412229398886362,
+        "elapsed_sec": 3.5141762660059612
       },
       "notes": "Layerwise attention surgery alignment metrics"
     }

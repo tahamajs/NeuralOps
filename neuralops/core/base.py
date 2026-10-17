@@ -58,6 +58,22 @@ class BaseAttention(nn.Module):
             ),
         )
 
+    @property
+    def device(self) -> torch.device:
+        """Infer module device from parameter tensor."""
+        try:
+            return next(self.parameters()).device
+        except StopIteration:
+            return torch.device("cpu")
+
+    @property
+    def dtype(self) -> torch.dtype:
+        """Infer module dtype from parameter tensor."""
+        try:
+            return next(self.parameters()).dtype
+        except StopIteration:
+            return torch.float32
+
     @abstractmethod
     def forward(
         self,

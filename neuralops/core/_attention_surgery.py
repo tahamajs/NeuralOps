@@ -553,6 +553,7 @@ def calibrate_surgically_replaced_model(
     sample_inputs: dict[str, torch.Tensor] | torch.Tensor,
     ridge_lambda: float = 1e-3,
     blend_alpha: float = 0.25,
+    attach_convex_anchor: bool = False,
 ) -> nn.Module:
     """
     Closed-Form Layerwise Ridge Output Calibration & Convex Subspace Anchoring.
@@ -561,7 +562,7 @@ def calibrate_surgically_replaced_model(
     with the pretrained convex-combination feature subspace of the original attention layer:
         W_align = (Z^T Z + lambda * I)^{-1} Z^T Y_orig
         b_align = mu_Y - mu_Z W_align
-    and attaches a convex residual subspace anchor to heal covariate collapse.
+    and optionally attaches a convex residual subspace anchor.
     """
     orig_model.eval()
     surg_model.eval()
@@ -705,19 +706,17 @@ def calibrate_surgically_replaced_model(
                     return (1.0 - blend_alpha) * out + blend_alpha * (torch.matmul(out.float(), W_hook.float()) + b_hook.float()).to(out.dtype)
             surg_mod.register_forward_hook(_affine_forward_hook)
 
-    # 4. Attach Convex Subspace Anchoring between orig_mod and surg_mod
-    # In RoBERTa: model.roberta.encoder.layer[i].attention.self
-    # In GPT2: model.transformer.h[i].attn
-    if hasattr(orig_model, "roberta") and hasattr(surg_model, "roberta"):
-        for mb, ms in zip(orig_model.roberta.encoder.layer, surg_model.roberta.encoder.layer):
-            if hasattr(ms.attention, "self") and hasattr(mb.attention, "self"):
-                ms.attention.self = SubspaceAnchorWrapper(mb.attention.self, ms.attention.self, alpha=blend_alpha)
-            else:
-                ms.attention = SubspaceAnchorWrapper(mb.attention, ms.attention, alpha=blend_alpha)
-    elif hasattr(orig_model, "transformer") and hasattr(surg_model, "transformer"):
-        for mb, ms in zip(orig_model.transformer.h, surg_model.transformer.h):
-            ms.attn = SubspaceAnchorWrapper(mb.attn, ms.attn, alpha=blend_alpha)
-
+    # 4. Optionally attach Convex Subspace Anchoring between orig_mod and surg_mod
+    if attach_convex_anchor:
+        if hasattr(orig_model, "roberta") and hasattr(surg_model, "roberta"):
+            for mb, ms in zip(orig_model.roberta.encoder.layer, surg_model.roberta.encoder.layer):
+                if hasattr(ms.attention, "self") and hasattr(mb.attention, "self"):
+                    ms.attention.self = SubspaceAnchorWrapper(mb.attention.self, ms.attention.self, alpha=blend_alpha)
+                else:
+                    ms.attention = SubspaceAnchorWrapper(mb.attention, ms.attention, alpha=blend_alpha)
+        elif hasattr(orig_model, "transformer") and hasattr(surg_model, "transformer"):
+            for mb, ms in zip(orig_model.transformer.h, surg_model.transformer.h):
+                ms.attn = SubspaceAnchorWrapper(mb.attn, ms.attn, alpha=blend_alpha)
     return surg_model
 
 
@@ -727,6 +726,7 @@ def calibrate_attention_subspace(
     calibration_inputs: Union[torch.Tensor, Sequence[torch.Tensor], Dict[str, torch.Tensor]],
     ridge_lambda: float = 1e-3,
     blend_alpha: float = 0.25,
+    attach_convex_anchor: bool = False,
 ) -> nn.Module:
     """Convenience alias for calibrate_surgically_replaced_model."""
     return calibrate_surgically_replaced_model(
@@ -735,6 +735,7 @@ def calibrate_attention_subspace(
         sample_inputs=calibration_inputs,
         ridge_lambda=ridge_lambda,
         blend_alpha=blend_alpha,
+        attach_convex_anchor=attach_convex_anchor,
     )
 
 
