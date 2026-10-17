@@ -317,8 +317,8 @@ class ZeroSAttention(BaseAttention):
                                 target.lora_A.data.copy_(src_lA.data)
                                 target.lora_A.requires_grad = True
                             else:
-                                print(
-                                    f"Warning: lora_A shape mismatch for {proj_key}; keeping zero-init."
+                                logger.warning(
+                                    f"lora_A shape mismatch for {proj_key}; keeping zero-init."
                                 )
                         if hasattr(src_lB, "data") and target.lora_B is not None:
                             if (
@@ -328,8 +328,8 @@ class ZeroSAttention(BaseAttention):
                                 target.lora_B.data.copy_(src_lB.data)
                                 target.lora_B.requires_grad = True
                             else:
-                                print(
-                                    f"Warning: lora_B shape mismatch for {proj_key}; keeping zero-init."
+                                logger.warning(
+                                    f"lora_B shape mismatch for {proj_key}; keeping zero-init."
                                 )
                         if hasattr(sub, "lora_scaling"):
                             target.lora_scaling = sub.lora_scaling

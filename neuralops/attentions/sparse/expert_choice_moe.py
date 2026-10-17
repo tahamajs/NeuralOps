@@ -460,7 +460,6 @@ class ExpertChoiceMoEAttention(BaseAttention):
                 try:
                     c_attn_mod.merge()
                 except Exception as e:
-                    print(f"copy_weights failed: {e}")
                     logger.warning(f"copy_weights failed: {e}")
             base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
             c_w = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None))
