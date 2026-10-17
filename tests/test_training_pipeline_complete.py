@@ -134,6 +134,7 @@ def test_loss_functions_and_schedulers():
 
     # Step through scheduler
     for _ in range(5):
+        opt.step()
         sched.step()
     assert opt.param_groups[0]["lr"] > 0
 
