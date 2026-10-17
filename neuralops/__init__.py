@@ -11,7 +11,7 @@ from __future__ import annotations
 import importlib
 from typing import Any
 
-__version__ = "1.3.7"
+__version__ = "1.4.0"
 
 import importlib.machinery
 import importlib.util
@@ -348,9 +348,13 @@ _API_EXPORTS = {
     "fused_w4a16_gemm_triton": "neuralops.core.triton_kernels.low_rank",
     "fast_hadamard_transform": "neuralops.core.triton_kernels.elementwise",
     "HadamardIncoherentSVDCompressor": "neuralops.compression_engine.svd.hadamard_incoherent_svd",
-    # Self-Speculative Decoding & Evaluation
+    # Self-Speculative Decoding & Evaluation & Paged State/Cache
     "SelfSpeculativeDecoder": "neuralops.inference.speculative_decoding",
     "SpeculativeDecodeStats": "neuralops.inference.speculative_decoding",
+    "PagedKVCache": "neuralops.inference.paged_cache",
+    "PagedStateTable": "neuralops.models.paged_state",
+    "ATTENTION_REGISTRY": "neuralops.core.registry",
+    "COMPRESSOR_REGISTRY": "neuralops.core.registry",
     "NeedleInAHaystackEvaluator": "neuralops.evaluation.niah_passkey",
     "plot_niah_heatmap": "neuralops.evaluation.niah_passkey",
     "NeuralOpsLMEvalAdapter": "neuralops.evaluation.lm_eval_adapter",
