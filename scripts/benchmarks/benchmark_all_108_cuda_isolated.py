@@ -780,7 +780,9 @@ def main():
     subdirs = sorted([d for d in cuda_dir.iterdir() if d.is_dir() and not d.name.startswith(("_", "."))])
 
     # Write worker script
-    worker_path = repo_root / "scripts" / "benchmarks" / "_isolated_worker.py"
+    artifact_dir = Path("/Users/tahamajs/.gemini/antigravity-cli/brain/b32aaef5-4133-4108-b33b-dffeed12f1de")
+    artifact_dir.mkdir(parents=True, exist_ok=True)
+    worker_path = artifact_dir / "_isolated_worker.py"
     worker_content = WORKER_CODE.format(
         repo_root=str(repo_root),
         aliases_json=json.dumps(ALIASES),
@@ -847,7 +849,7 @@ def main():
     print(f"  CRASH          (import/exec error) : {stats.get('CRASH', 0)}   <- must be 0 for release", flush=True)
     print("=" * 115, flush=True)
 
-    out_file = repo_root / "results" / "master_108_cuda_modules_benchmark.json"
+    out_file = artifact_dir / "master_108_cuda_modules_benchmark.json"
     if args.output:
         custom_out = Path(args.output)
         if not custom_out.is_absolute():
@@ -862,7 +864,7 @@ def main():
         json.dump(results, f, indent=2)
     print(f"Master benchmark results saved to: {out_file}", flush=True)
 
-    csv_file = repo_root / "results" / "master_108_cuda_modules_benchmark.csv"
+    csv_file = artifact_dir / "master_108_cuda_modules_benchmark.csv"
     import csv
     with open(csv_file, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
