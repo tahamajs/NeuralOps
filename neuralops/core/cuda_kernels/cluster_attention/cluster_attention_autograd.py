@@ -16,11 +16,7 @@ def _get_module():
     return _MODULE
 
 def cluster_attention_ref(q: torch.Tensor, cluster_centroids: torch.Tensor, v: torch.Tensor, cluster_indices: torch.Tensor) -> torch.Tensor:
-    B, H, N, D = q.shape
-    scale = 1.0 / (D ** 0.5)
-    scores = torch.matmul(q, cluster_centroids.transpose(-2, -1)) * scale
-    probs = F.softmax(scores, dim=-1)
-    return torch.matmul(probs, v)
+    return F.scaled_dot_product_attention(q, cluster_centroids, v)
 
 def cluster_attention(q: torch.Tensor, cluster_centroids: torch.Tensor, v: torch.Tensor, cluster_indices: torch.Tensor) -> torch.Tensor:
     def cuda_fn(q, cluster_centroids, v, cluster_indices):

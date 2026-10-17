@@ -43,18 +43,10 @@ def block_sparse_attn_pytorch_ref(
     scale: float | None = None,
 ) -> torch.Tensor:
     B, H, N, D = q.shape
-    if scale is None:
-        scale = 1.0 / (D ** 0.5)
-
-    scores = torch.matmul(q, k.transpose(-1, -2)) * scale  # [B, H, N, N]
-
-    # Expand block mask [num_q_blocks, num_kv_blocks] to dense [N, N]
-    dense_mask = block_mask.repeat_interleave(block_size, dim=0).repeat_interleave(block_size, dim=1)[:N, :N]
-    scores = scores.masked_fill(~dense_mask.bool().unsqueeze(0).unsqueeze(0), float("-inf"))
-
-    probs = F.softmax(scores, dim=-1)
-    probs = torch.nan_to_num(probs, nan=0.0)
-    return torch.matmul(probs, v)
+    dense_mask = block_mask.repeat_interleave(block_size, dim=0).repeat_interleave(block_size, dim=1)[:N, :N].bool()
+    dense_mask = dense_mask.unsqueeze(0).unsqueeze(0).expand(B, H, N, N)
+    out = F.scaled_dot_product_attention(q, k, v, attn_mask=dense_mask, scale=scale)
+    return torch.nan_to_num(out, nan=0.0)
 
 
 def _block_sparse_triton_wrapper(
