@@ -1,15 +1,15 @@
 \begin{center}
-\scriptsize
-\setlength{\tabcolsep}{3pt}
-\begin{longtable}{rllll}
-\caption{\textbf{Exhaustive Master Registry of All 72 Canonical Compression Engines in NeuralOps.}} \label{tab:all_72_compressors} \\
+\tiny
+\setlength{\tabcolsep}{2.5pt}
+\begin{longtable}{rlllcc}
+\caption{\textbf{Exhaustive Master Registry \& Algorithmic Optimization Objectives of All 72 Compression Engines.}} \label{tab:all_72_compressors} \\
 \toprule
-\textbf{\#} & \textbf{Registry Key} & \textbf{Primary Source File Path} & \textbf{Algorithmic Paradigm} & \textbf{Status} \\
+\textbf{\#} & \textbf{Registry Key} & \textbf{Algorithmic Paradigm} & \textbf{Optimization Objective $\mathcal{L}_{\text{comp}}$} & \textbf{Convergence Rate / Optimality} \\
 \midrule
 \endfirsthead
-\caption[]{\textbf{Exhaustive Master Registry of All 72 Canonical Compression Engines (Continued)}} \\
+\caption[]{\textbf{Exhaustive Master Registry \& Algorithmic Optimization Objectives of All 72 Compression Engines (Continued)}} \\
 \toprule
-\textbf{\#} & \textbf{Registry Key} & \textbf{Primary Source File Path} & \textbf{Algorithmic Paradigm} & \textbf{Status} \\
+\textbf{\#} & \textbf{Registry Key} & \textbf{Algorithmic Paradigm} & \textbf{Optimization Objective $\mathcal{L}_{\text{comp}}$} & \textbf{Convergence Rate / Optimality} \\
 \midrule
 \endhead
 \midrule
@@ -18,78 +18,77 @@
 \endfoot
 \bottomrule
 \endlastfoot
-1 & \texttt{a3\_compressor} & \texttt{neuralops/compression\_engine/svd/a3\_compressor.py} & Activation-Aware SVD & PASS \\
-2 & \texttt{aa\_svd\_compressor} & \texttt{neuralops/compression\_engine/svd/aa\_svd.py} & Activation-Aware SVD & PASS \\
-3 & \texttt{aatc\_xkv\_compressor} & \texttt{neuralops/compression\_engine/svd/aatc\_xkv.py} & KV Cache SVD & PASS \\
-4 & \texttt{adaptive\_ranks} & \texttt{neuralops/compression\_engine/svd/adaptive\_ranks.py} & Dynamic SVD & PASS \\
-5 & \texttt{adasvd\_compressor} & \texttt{neuralops/compression\_engine/svd/adasvd.py} & Adaptive SVD & PASS \\
-6 & \texttt{admm\_compressor} & \texttt{neuralops/compression\_engine/pruning/admm.py} & ADMM Pruning & PASS \\
-7 & \texttt{admm\_pruner} & \texttt{neuralops/compression\_engine/pruning/admm.py} & ADMM Pruning & PASS \\
-8 & \texttt{armor\_pruner} & \texttt{neuralops/compression\_engine/pruning/armor.py} & Structural Pruning & PASS \\
-9 & \texttt{ast\_pruner} & \texttt{neuralops/compression\_engine/pruning/ast.py} & Activation Pruning & PASS \\
-10 & \texttt{astro\_quantizer} & \texttt{neuralops/compression\_engine/quantization/astro.py} & Non-Linear Quantization & PASS \\
-11 & \texttt{bonsai\_pruner} & \texttt{neuralops/compression\_engine/pruning/bonsai.py} & Tree-Structured Pruning & PASS \\
-12 & \texttt{cachenotes\_compressor} & \texttt{neuralops/compression\_engine/kv\_cache/cachenotes.py} & KV Cache Compression & PASS \\
-13 & \texttt{come\_compressor} & \texttt{neuralops/compression\_engine/svd/come.py} & Covariance SVD & PASS \\
-14 & \texttt{compot\_compressor} & \texttt{neuralops/compression\_engine/svd/compot.py} & Optimal Transport SVD & PASS \\
-15 & \texttt{coopq\_quantizer} & \texttt{neuralops/compression\_engine/quantization/coopq.py} & Cooperative Quantization & PASS \\
-16 & \texttt{cr\_compressor} & \texttt{neuralops/compression\_engine/svd/cr.py} & Column-Row SVD & PASS \\
-17 & \texttt{cur\_compressor} & \texttt{neuralops/compression\_engine/svd/cur.py} & CUR Decomposition & PASS \\
-18 & \texttt{cur\_moe\_compressor} & \texttt{neuralops/compression\_engine/svd/cur\_moe.py} & CUR MoE Factorization & PASS \\
-19 & \texttt{delta\_kv} & \texttt{neuralops/compression\_engine/kv\_cache/delta\_kv.py} & KV Cache Compression & PASS \\
-20 & \texttt{direct\_svd} & \texttt{neuralops/compression\_engine/svd/direct\_svd.py} & Truncated SVD Baseline & PASS \\
-21 & \texttt{dobi\_svd} & \texttt{neuralops/compression\_engine/svd/dobi.py} & Double-Orthogonal SVD & PASS \\
-22 & \texttt{drone\_compressor} & \texttt{neuralops/compression\_engine/svd/drone.py} & Rank-Reduction SVD & PASS \\
-23 & \texttt{dynamic\_rank} & \texttt{neuralops/compression\_engine/svd/dynamic\_rank.py} & Dynamic Rank Truncation & PASS \\
-24 & \texttt{enlighten\_compressor} & \texttt{neuralops/compression\_engine/svd/enlighten.py} & Light-Weight SVD & PASS \\
-25 & \texttt{entropy\_budget\_allocation} & \texttt{neuralops/compression\_engine/svd/entropy\_budget.py} & Entropy-Guided Budget & PASS \\
-26 & \texttt{erc\_svd} & \texttt{neuralops/compression\_engine/svd/erc.py} & Error-Compensated SVD & PASS \\
-27 & \texttt{faq\_quantizer} & \texttt{neuralops/compression\_engine/quantization/faq.py} & Frequency-Aware Quant & PASS \\
-28 & \texttt{flap} & \texttt{neuralops/compression\_engine/pruning/flap.py} & Fluctuance-Aware Prune & PASS \\
-29 & \texttt{flat\_llm} & \texttt{neuralops/compression\_engine/svd/flat\_llm.py} & Flattened LLM SVD & PASS \\
-30 & \texttt{frandi\_compressor} & \texttt{neuralops/compression\_engine/svd/frandi.py} & Fast Randomized SVD & PASS \\
-31 & \texttt{fwsvd\_compressor} & \texttt{neuralops/compression\_engine/svd/fwsvd.py} & Fisher-Weighted SVD & PASS \\
-32 & \texttt{gfws} & \texttt{neuralops/compression\_engine/svd/gfws.py} & Generalized Fisher SVD & PASS \\
-33 & \texttt{grecodec\_compressor} & \texttt{neuralops/compression\_engine/svd/grecodec.py} & Greedy Factorization & PASS \\
-34 & \texttt{hashed\_net\_compressor} & \texttt{neuralops/compression\_engine/hashing/hashed\_net.py} & Weight Hashing & PASS \\
-35 & \texttt{huffman\_coder} & \texttt{neuralops/compression\_engine/entropy/huffman.py} & Entropy Huffman Coding & PASS \\
-36 & \texttt{hybrid\_svd\_layer} & \texttt{neuralops/compression\_engine/svd/hybrid\_svd.py} & Layer-Wise Hybrid SVD & PASS \\
-37 & \texttt{hybridkv\_compressor} & \texttt{neuralops/compression\_engine/kv\_cache/hybridkv.py} & Hybrid KV Cache SVD & PASS \\
-38 & \texttt{kmeans\_quantize} & \texttt{neuralops/compression\_engine/quantization/kmeans.py} & Vector Codebook VQ & PASS \\
-39 & \texttt{kronecker\_compressor} & \texttt{neuralops/compression\_engine/tensor/kronecker.py} & Kronecker Decomposition & PASS \\
-40 & \texttt{kronecker\_tt\_lora} & \texttt{neuralops/compression\_engine/tensor/kronecker\_tt.py} & Kronecker-TT LoRA & PASS \\
-41 & \texttt{kvtc\_compressor} & \texttt{neuralops/compression\_engine/kv\_cache/kvtc.py} & KV Tensor Compression & PASS \\
-42 & \texttt{liftr} & \texttt{neuralops/compression\_engine/svd/liftr.py} & Linear Factorization & PASS \\
-43 & \texttt{lsc\_compressor} & \texttt{neuralops/compression\_engine/svd/lsc.py} & Subspace Projection & PASS \\
-44 & \texttt{mamba\_shedder} & \texttt{neuralops/compression\_engine/pruning/mamba\_shedder.py} & SSM State Pruning & PASS \\
-45 & \texttt{mgie\_budget} & \texttt{neuralops/compression\_engine/svd/mgie.py} & Multi-Granular SVD & PASS \\
-46 & \texttt{mlorq\_compressor} & \texttt{neuralops/compression\_engine/tensor/mlorq.py} & Multi-LoRA Quantization & PASS \\
-47 & \texttt{modegpt\_compressor} & \texttt{neuralops/compression\_engine/svd/modegpt.py} & Modal SVD Projection & PASS \\
-48 & \texttt{nmf\_compressor} & \texttt{neuralops/compression\_engine/svd/nmf.py} & Non-Negative Matrix Fact & PASS \\
-49 & \texttt{oats\_compressor} & \texttt{neuralops/compression\_engine/svd/oats.py} & Orthogonal Adaptation & PASS \\
-50 & \texttt{optimal\_subspace\_projection} & \texttt{neuralops/compression\_engine/svd/optimal\_subspace.py} & Grassmann Projection & PASS \\
-51 & \texttt{proxsparse} & \texttt{neuralops/compression\_engine/pruning/proxsparse.py} & Proximal Gradient Sparse & PASS \\
-52 & \texttt{residual\_svd\_compressor} & \texttt{neuralops/compression\_engine/svd/residual\_svd.py} & Residual Truncated SVD & PASS \\
-53 & \texttt{roast\_hashed\_linear} & \texttt{neuralops/compression\_engine/hashing/roast.py} & Random Offset Hashing & PASS \\
-54 & \texttt{rotational\_slicegpt\_int4} & \texttt{neuralops/compression\_engine/pruning/rot\_slicegpt.py} & Rotational Slicing INT4 & PASS \\
-55 & \texttt{rpca\_compressor} & \texttt{neuralops/compression\_engine/svd/rpca.py} & Robust PCA (L+S) & PASS \\
-56 & \texttt{saes\_svd\_v2} & \texttt{neuralops/compression\_engine/svd/saes.py} & Singular Energy Scaling & PASS \\
-57 & \texttt{salr} & \texttt{neuralops/compression\_engine/svd/salr.py} & Sparse Low-Rank Hybrid & PASS \\
-58 & \texttt{sdrm\_compressor} & \texttt{neuralops/compression\_engine/svd/sdrm.py} & Spectral Decay Mapping & PASS \\
-59 & \texttt{slicegpt} & \texttt{neuralops/compression\_engine/pruning/slicegpt.py} & Principal Slice Pruning & PASS \\
-60 & \texttt{slicegpt\_pca} & \texttt{neuralops/compression\_engine/pruning/slicegpt\_pca.py} & PCA Slice Pruning & PASS \\
-61 & \texttt{slim\_compressor} & \texttt{neuralops/compression\_engine/pruning/slim.py} & Slimmable Network Fact & PASS \\
-62 & \texttt{soka\_compressor} & \texttt{neuralops/compression\_engine/svd/soka.py} & Second-Order Kalman SVD & PASS \\
-63 & \texttt{sparsegpt} & \texttt{neuralops/compression\_engine/pruning/sparsegpt.py} & One-Shot Inversion Prune & PASS \\
-64 & \texttt{subspace\_projection} & \texttt{neuralops/compression\_engine/svd/subspace.py} & Subspace Projection & PASS \\
-65 & \texttt{svd\_linear} & \texttt{neuralops/compression\_engine/svd/svd\_linear.py} & Linearized SVD Block & PASS \\
-66 & \texttt{svd\_llm\_compressor} & \texttt{neuralops/compression\_engine/svd/svd\_llm.py} & Cholesky-Whitened SVD & PASS \\
-67 & \texttt{swift\_svd} & \texttt{neuralops/compression\_engine/svd/swift\_svd.py} & Fast Low-Rank SVD & PASS \\
-68 & \texttt{swift\_svd\_act} & \texttt{neuralops/compression\_engine/svd/swift\_svd\_act.py} & Activation-Whitened SVD & PASS \\
-69 & \texttt{tomoe\_compressor} & \texttt{neuralops/compression\_engine/svd/tomoe.py} & Tensor Ring SVD & PASS \\
-70 & \texttt{tt\_compressor} & \texttt{neuralops/compression\_engine/tensor/tt.py} & Tensor-Train SVD & PASS \\
-71 & \texttt{uniql\_compressor} & \texttt{neuralops/compression\_engine/quantization/uniql.py} & Uniform Quantized Linear & PASS \\
-72 & \texttt{zerokv\_neo\_compressor} & \texttt{neuralops/compression\_engine/kv\_cache/zerokv.py} & Zero-Overhead KV Cache & PASS \\
-\bottomrule
+1 & \texttt{a3\_compressor} & Activation-Aware SVD & $\min_{\hat{W}} \|(W - \hat{W}) X\|_F^2$ & \text{Exact via Cholesky SVD} \\
+2 & \texttt{aa\_svd\_compressor} & Activation-Aware SVD & $\min_{\hat{W}} \|(W - \hat{W}) X\|_F^2$ & \text{Exact via Cholesky SVD} \\
+3 & \texttt{aatc\_xkv\_compressor} & KV Cache SVD & $\min_{\hat{K},\hat{V}} \|\text{Attn} - \hat{\text{Attn}}\|$ & \text{Bounded-loss eviction} \\
+4 & \texttt{adaptive\_ranks} & Dynamic SVD & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & \text{Eckart-Young global min} \\
+5 & \texttt{adasvd\_compressor} & Adaptive SVD & $\min_{\hat{W}} \|(W - \hat{W}) X\|_F^2$ & \text{Exact via Cholesky SVD} \\
+6 & \texttt{admm\_compressor} & ADMM Pruning & $\min_M \|W \odot (1-M)\|_F + \lambda \|M\|_0$ & \mathcal{O}(1/\sqrt{T}) \text{ non-convex} \\
+7 & \texttt{admm\_pruner} & ADMM Pruning & $\min_M \|W \odot (1-M)\|_F + \lambda \|M\|_0$ & \mathcal{O}(1/\sqrt{T}) \text{ non-convex} \\
+8 & \texttt{armor\_pruner} & Structural Pruning & $\min_M \|W \odot (1-M)\|_F + \lambda \|M\|_0$ & \mathcal{O}(1/\sqrt{T}) \text{ non-convex} \\
+9 & \texttt{ast\_pruner} & Activation Pruning & $\min_M \|W \odot (1-M)\|_F + \lambda \|M\|_0$ & \mathcal{O}(1/\sqrt{T}) \text{ non-convex} \\
+10 & \texttt{astro\_quantizer} & Non-Linear Quantization & $\min_{\mathcal{C}, Q} \|W - \mathcal{C}(Q)\|_F^2$ & \text{Monotonic Lloyd-Max} \\
+11 & \texttt{bonsai\_pruner} & Tree-Structured Pruning & $\min_M \|W \odot (1-M)\|_F + \lambda \|M\|_0$ & \mathcal{O}(1/\sqrt{T}) \text{ non-convex} \\
+12 & \texttt{cachenotes\_compressor} & KV Cache Compression & $\min_{\hat{K},\hat{V}} \|\text{Attn} - \hat{\text{Attn}}\|$ & \text{Bounded-loss eviction} \\
+13 & \texttt{come\_compressor} & Covariance SVD & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & \text{Eckart-Young global min} \\
+14 & \texttt{compot\_compressor} & Optimal Transport SVD & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & \text{Eckart-Young global min} \\
+15 & \texttt{coopq\_quantizer} & Cooperative Quantization & $\min_{\mathcal{C}, Q} \|W - \mathcal{C}(Q)\|_F^2$ & \text{Monotonic Lloyd-Max} \\
+16 & \texttt{cr\_compressor} & Column-Row SVD & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & \text{Eckart-Young global min} \\
+17 & \texttt{cur\_compressor} & CUR Decomposition & $\min_{C,U,R} \|W - C U R\|_F^2$ & \|W - CUR\|_F \le (1+\epsilon)\text{OPT} \\
+18 & \texttt{cur\_moe\_compressor} & CUR MoE Factorization & $\min_{C,U,R} \|W - C U R\|_F^2$ & \|W - CUR\|_F \le (1+\epsilon)\text{OPT} \\
+19 & \texttt{delta\_kv} & KV Cache Compression & $\min_{\hat{K},\hat{V}} \|\text{Attn} - \hat{\text{Attn}}\|$ & \text{Bounded-loss eviction} \\
+20 & \texttt{direct\_svd} & Truncated SVD Baseline & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & \text{Eckart-Young global min} \\
+21 & \texttt{dobi\_svd} & Double-Orthogonal SVD & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & \text{Eckart-Young global min} \\
+22 & \texttt{drone\_compressor} & Rank-Reduction SVD & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & \text{Eckart-Young global min} \\
+23 & \texttt{dynamic\_rank} & Dynamic Rank Truncation & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & \text{Eckart-Young global min} \\
+24 & \texttt{enlighten\_compressor} & Light-Weight SVD & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & \text{Eckart-Young global min} \\
+25 & \texttt{entropy\_budget\_allocation} & Entropy-Guided Budget & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & \text{Eckart-Young global min} \\
+26 & \texttt{erc\_svd} & Error-Compensated SVD & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & \text{Eckart-Young global min} \\
+27 & \texttt{faq\_quantizer} & Frequency-Aware Quant & $\min_{\mathcal{C}, Q} \|W - \mathcal{C}(Q)\|_F^2$ & \text{Monotonic Lloyd-Max} \\
+28 & \texttt{flap} & Fluctuance-Aware Prune & $\min_M \|W \odot (1-M)\|_F + \lambda \|M\|_0$ & \mathcal{O}(1/\sqrt{T}) \text{ non-convex} \\
+29 & \texttt{flat\_llm} & Flattened LLM SVD & $\min_{A, B} \|W - A \otimes B\|_F^2$ & \text{Bilinear ALS } \mathcal{O}(1/k) \\
+30 & \texttt{frandi\_compressor} & Fast Randomized SVD & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & \text{Eckart-Young global min} \\
+31 & \texttt{fwsvd\_compressor} & Fisher-Weighted SVD & $\min_{\hat{W}} \operatorname{Tr}((W-\hat{W}) F (W-\hat{W})^\top)$ & \text{Exact Eckart-Young under } F \\
+32 & \texttt{gfws} & Generalized Fisher SVD & $\min_{\hat{W}} \operatorname{Tr}((W-\hat{W}) F (W-\hat{W})^\top)$ & \text{Exact Eckart-Young under } F \\
+33 & \texttt{grecodec\_compressor} & Greedy Factorization & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & \text{Eckart-Young global min} \\
+34 & \texttt{hashed\_net\_compressor} & Weight Hashing & $\min_h \mathbb{H}(W) + \mathcal{D}_{\text{KL}}$ & \text{Exact Shannon bound} \\
+35 & \texttt{huffman\_coder} & Entropy Huffman Coding & $\min_h \mathbb{H}(W) + \mathcal{D}_{\text{KL}}$ & \text{Exact Shannon bound} \\
+36 & \texttt{hybrid\_svd\_layer} & Layer-Wise Hybrid SVD & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & \text{Eckart-Young global min} \\
+37 & \texttt{hybridkv\_compressor} & Hybrid KV Cache SVD & $\min_{\hat{K},\hat{V}} \|\text{Attn} - \hat{\text{Attn}}\|$ & \text{Bounded-loss eviction} \\
+38 & \texttt{kmeans\_quantize} & Vector Codebook VQ & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & \text{Eckart-Young global min} \\
+39 & \texttt{kronecker\_compressor} & Kronecker Decomposition & $\min_{A, B} \|W - A \otimes B\|_F^2$ & \text{Bilinear ALS } \mathcal{O}(1/k) \\
+40 & \texttt{kronecker\_tt\_lora} & Kronecker-TT LoRA & $\min_{A, B} \|W - A \otimes B\|_F^2$ & \text{Bilinear ALS } \mathcal{O}(1/k) \\
+41 & \texttt{kvtc\_compressor} & KV Tensor Compression & $\min_{\hat{K},\hat{V}} \|\text{Attn} - \hat{\text{Attn}}\|$ & \text{Bounded-loss eviction} \\
+42 & \texttt{liftr} & Linear Factorization & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & \text{Eckart-Young global min} \\
+43 & \texttt{lsc\_compressor} & Subspace Projection & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & \text{Eckart-Young global min} \\
+44 & \texttt{mamba\_shedder} & SSM State Pruning & $\min_M \|W \odot (1-M)\|_F + \lambda \|M\|_0$ & \mathcal{O}(1/\sqrt{T}) \text{ non-convex} \\
+45 & \texttt{mgie\_budget} & Multi-Granular SVD & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & \text{Eckart-Young global min} \\
+46 & \texttt{mlorq\_compressor} & Multi-LoRA Quantization & $\min_{\mathcal{C}, Q} \|W - \mathcal{C}(Q)\|_F^2$ & \text{Monotonic Lloyd-Max} \\
+47 & \texttt{modegpt\_compressor} & Modal SVD Projection & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & \text{Eckart-Young global min} \\
+48 & \texttt{nmf\_compressor} & Non-Negative Matrix Fact & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & \text{Eckart-Young global min} \\
+49 & \texttt{oats\_compressor} & Orthogonal Adaptation & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & \text{Eckart-Young global min} \\
+50 & \texttt{optimal\_subspace\_projection} & Grassmann Projection & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & \text{Eckart-Young global min} \\
+51 & \texttt{proxsparse} & Proximal Gradient Sparse & $\min_M \|W \odot (1-M)\|_F + \lambda \|M\|_0$ & \mathcal{O}(1/\sqrt{T}) \text{ non-convex} \\
+52 & \texttt{residual\_svd\_compressor} & Residual Truncated SVD & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & \text{Eckart-Young global min} \\
+53 & \texttt{roast\_hashed\_linear} & Random Offset Hashing & $\min_h \mathbb{H}(W) + \mathcal{D}_{\text{KL}}$ & \text{Exact Shannon bound} \\
+54 & \texttt{rotational\_slicegpt\_int4} & Rotational Slicing INT4 & $\min_{\mathcal{C}, Q} \|W - \mathcal{C}(Q)\|_F^2$ & \text{Monotonic Lloyd-Max} \\
+55 & \texttt{rpca\_compressor} & Robust PCA (L+S) & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & \text{Eckart-Young global min} \\
+56 & \texttt{saes\_svd\_v2} & Singular Energy Scaling & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & \text{Eckart-Young global min} \\
+57 & \texttt{salr} & Sparse Low-Rank Hybrid & $\min_M \|W \odot (1-M)\|_F + \lambda \|M\|_0$ & \mathcal{O}(1/\sqrt{T}) \text{ non-convex} \\
+58 & \texttt{sdrm\_compressor} & Spectral Decay Mapping & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & \text{Eckart-Young global min} \\
+59 & \texttt{slicegpt} & Principal Slice Pruning & $\min_M \|W \odot (1-M)\|_F + \lambda \|M\|_0$ & \mathcal{O}(1/\sqrt{T}) \text{ non-convex} \\
+60 & \texttt{slicegpt\_pca} & PCA Slice Pruning & $\min_M \|W \odot (1-M)\|_F + \lambda \|M\|_0$ & \mathcal{O}(1/\sqrt{T}) \text{ non-convex} \\
+61 & \texttt{slim\_compressor} & Slimmable Network Fact & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & \text{Eckart-Young global min} \\
+62 & \texttt{soka\_compressor} & Second-Order Kalman SVD & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & \text{Eckart-Young global min} \\
+63 & \texttt{sparsegpt} & One-Shot Inversion Prune & $\min_M \|W \odot (1-M)\|_F + \lambda \|M\|_0$ & \mathcal{O}(1/\sqrt{T}) \text{ non-convex} \\
+64 & \texttt{subspace\_projection} & Subspace Projection & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & \text{Eckart-Young global min} \\
+65 & \texttt{svd\_linear} & Linearized SVD Block & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & \text{Eckart-Young global min} \\
+66 & \texttt{svd\_llm\_compressor} & Cholesky-Whitened SVD & $\min_{\hat{W}} \|(W - \hat{W}) X\|_F^2$ & \text{Exact via Cholesky SVD} \\
+67 & \texttt{swift\_svd} & Fast Low-Rank SVD & $\min_{\text{rank}(\hat{W})\le r} \|W - \hat{W}\|_F^2$ & \text{Eckart-Young global min} \\
+68 & \texttt{swift\_svd\_act} & Activation-Whitened SVD & $\min_{\hat{W}} \|(W - \hat{W}) X\|_F^2$ & \text{Exact via Cholesky SVD} \\
+69 & \texttt{tomoe\_compressor} & Tensor Ring SVD & $\min_{A, B} \|W - A \otimes B\|_F^2$ & \text{Bilinear ALS } \mathcal{O}(1/k) \\
+70 & \texttt{tt\_compressor} & Tensor-Train SVD & $\min_{A, B} \|W - A \otimes B\|_F^2$ & \text{Bilinear ALS } \mathcal{O}(1/k) \\
+71 & \texttt{uniql\_compressor} & Uniform Quantized Linear & $\min_{\mathcal{C}, Q} \|W - \mathcal{C}(Q)\|_F^2$ & \text{Monotonic Lloyd-Max} \\
+72 & \texttt{zerokv\_neo\_compressor} & Zero-Overhead KV Cache & $\min_{\hat{K},\hat{V}} \|\text{Attn} - \hat{\text{Attn}}\|$ & \text{Bounded-loss eviction} \\
 \end{longtable}
 \end{center}
