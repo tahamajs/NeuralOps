@@ -9,24 +9,24 @@ Comparing Pure PyTorch Reference (Level 3), OpenAI Triton JIT (Level 2), and Nat
 \toprule
 \textbf{\#} & \textbf{Operator} & \textbf{Target Architecture / Module} & \textbf{PyTorch (ms)} & \textbf{Triton (ms)} & \textbf{CUDA C++ (ms)} & \textbf{Speedup vs. Py} & \textbf{Speedup vs. Tri} \\
 \midrule
-1 & \texttt{moe\_routing} & MoE Dispatch + Gather Routing & 361.454 & N/A & 0.013 & $\mathbf{28466.32\times}$ & N/A \\
-2 & \texttt{hgrn2\_fused\_bwd\_scan} & Bidirectional Recurrent Scan (HGRN2) & 5.686 & 0.026 & 0.013 & $\mathbf{422.60\times}$ & $\mathbf{1.93\times}$ \\
-3 & \texttt{linear\_attention} & Parallel Prefix Linear Attention & 40.532 & 0.262 & 0.242 & $\mathbf{167.81\times}$ & $\mathbf{1.09\times}$ \\
-4 & \texttt{selective\_scan} & Mamba State-Space Model (SSM) & 27.227 & 13.810 & 0.296 & $\mathbf{92.08\times}$ & $\mathbf{46.71\times}$ \\
-5 & \texttt{chunked\_delta\_gate\_scan} & Gated DeltaNet State Recurrence & 43.208 & 0.123 & 0.592 & $\mathbf{72.98\times}$ & $0.21\times$ \\
-6 & \texttt{paged\_attention} & vLLM-Compatible Paged KV-Cache & 1.654 & N/A & 0.162 & $\mathbf{10.18\times}$ & N/A \\
-7 & \texttt{sliding\_window\_attn} & Mistral / Longformer Streaming Window & 2.000 & 0.276 & 0.277 & $\mathbf{7.22\times}$ & $1.00\times$ \\
-8 & \texttt{block\_sparse\_attn} & NSA / MoBA Block-Sparse Attention & 1.992 & 1.660 & 0.397 & $\mathbf{5.02\times}$ & $\mathbf{4.18\times}$ \\
-9 & \texttt{lut\_codebook\_dequant\_gemm} & In-Register Codebook Dequant (CoopQ) & 0.096 & 0.027 & 0.021 & $\mathbf{4.50\times}$ & $\mathbf{1.26\times}$ \\
-10 & \texttt{flash\_gqa} & Grouped-Query Attention (LLaMA-3) & 0.208 & 0.034 & 0.084 & $\mathbf{2.49\times}$ & $0.40\times$ \\
-11 & \texttt{cosformer\_linear\_attention} & Cosine Reweighting Linear Attention & 0.111 & 0.025 & 0.059 & $\mathbf{1.88\times}$ & $0.42\times$ \\
-12 & \texttt{fused\_rotary\_emb} & Rotary Position Embeddings (RoPE) & 0.029 & N/A & 0.020 & $\mathbf{1.47\times}$ & N/A \\
-13 & \texttt{fp8\_gemm} & Scaled E4M3 FP8 Matrix Multiply & 0.215 & 0.074 & 0.372 & $0.58\times$ & $0.20\times$ \\
-14 & \texttt{w4a16\_gemm} & Packed INT4 Bit-Shift Dequant GEMM & 0.114 & N/A & 0.212 & $0.54\times$ & N/A \\
-15 & \texttt{fused\_cross\_entropy} & Online Softmax Fused Cross-Entropy & 0.013 & 0.064 & 0.045 & $0.30\times$ & $\mathbf{1.43\times}$ \\
-16 & \texttt{fused\_norm\_linear} & LayerNorm / RMSNorm + Linear GEMM & 0.014 & 0.021 & 0.117 & $0.12\times$ & $0.18\times$ \\
-17 & \texttt{kronecker\_matmul} & Two-Stage Kronecker Product Matmul & 0.031 & 0.026 & 0.309 & $0.10\times$ & $0.08\times$ \\
-18 & \texttt{fused\_lowrank\_gated\_gemm} & Low-Rank SVD Gated GEMM & 0.027 & 0.041 & 0.870 & $0.03\times$ & $0.05\times$ \\
+1 & \texttt{moe\_routing} & MoE Dispatch + Gather Routing & 29.505 & N/A & 0.022 & $\mathbf{1336.96\times}$ & N/A \\
+2 & \texttt{hgrn2\_fused\_bwd\_scan} & Bidirectional Recurrent Scan (HGRN2) & 6.209 & 0.027 & 0.014 & $\mathbf{436.29\times}$ & $\mathbf{1.87\times}$ \\
+3 & \texttt{linear\_attention} & Parallel Prefix Linear Attention & 40.823 & 0.257 & 0.167 & $\mathbf{243.98\times}$ & $\mathbf{1.53\times}$ \\
+4 & \texttt{selective\_scan} & Mamba State-Space Model (SSM) & 29.936 & 14.339 & 0.274 & $\mathbf{109.34\times}$ & $\mathbf{52.37\times}$ \\
+5 & \texttt{chunked\_delta\_gate\_scan} & Gated DeltaNet State Recurrence & 47.587 & 0.126 & 0.578 & $\mathbf{82.40\times}$ & $0.22\times$ \\
+6 & \texttt{paged\_attention} & vLLM-Compatible Paged KV-Cache & 1.096 & N/A & 0.024 & $\mathbf{45.89\times}$ & N/A \\
+7 & \texttt{sliding\_window\_attn} & Mistral / Longformer Streaming Window & 1.826 & 0.252 & 0.252 & $\mathbf{7.24\times}$ & $1.00\times$ \\
+8 & \texttt{lut\_codebook\_dequant\_gemm} & In-Register Codebook Dequant (CoopQ) & 0.096 & 0.026 & 0.019 & $\mathbf{5.00\times}$ & $\mathbf{1.35\times}$ \\
+9 & \texttt{block\_sparse\_attn} & NSA / MoBA Block-Sparse Attention & 1.819 & 1.529 & 0.365 & $\mathbf{4.98\times}$ & $\mathbf{4.19\times}$ \\
+10 & \texttt{fused\_rotary\_emb} & Rotary Position Embeddings (RoPE) & 0.029 & N/A & 0.010 & $\mathbf{2.87\times}$ & N/A \\
+11 & \texttt{flash\_gqa} & Grouped-Query Attention (LLaMA-3) & 0.192 & 0.054 & 0.098 & $\mathbf{1.96\times}$ & $0.56\times$ \\
+12 & \texttt{kronecker\_matmul} & Two-Stage Kronecker Product Matmul & 0.030 & 0.025 & 0.017 & $\mathbf{1.78\times}$ & $\mathbf{1.49\times}$ \\
+13 & \texttt{cosformer\_linear\_attention} & Cosine Reweighting Linear Attention & 0.120 & 0.064 & 0.085 & $\mathbf{1.41\times}$ & $0.76\times$ \\
+14 & \texttt{fused\_lowrank\_gated\_gemm} & Low-Rank SVD Gated GEMM & 0.026 & 0.040 & 0.038 & $0.67\times$ & $\mathbf{1.04\times}$ \\
+15 & \texttt{w4a16\_gemm} & Packed INT4 Bit-Shift Dequant GEMM & 0.105 & N/A & 0.267 & $0.39\times$ & N/A \\
+16 & \texttt{fused\_cross\_entropy} & Online Softmax Fused Cross-Entropy & 0.014 & 0.063 & 0.040 & $0.35\times$ & $\mathbf{1.60\times}$ \\
+17 & \texttt{fp8\_gemm} & Scaled E4M3 FP8 Matrix Multiply & 0.078 & 0.068 & 0.509 & $0.15\times$ & $0.13\times$ \\
+18 & \texttt{fused\_norm\_linear} & LayerNorm / RMSNorm + Linear GEMM & 0.014 & 0.020 & 0.139 & $0.10\times$ & $0.15\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}

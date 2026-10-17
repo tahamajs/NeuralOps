@@ -1,32 +1,26 @@
 \begin{table}[t]
 \centering
-\caption{\textbf{Context Scaling: Physical Latency (ms) and Peak VRAM (MB) on NVIDIA RTX 4070 (SM 8.9).}
-Evaluated with $B=2, H=12, d=768$ across context lengths $T \in \{512, 1024, 2048, 4096, 8192\}$.
-While FlashAttention (PyTorch SDPA) is fast at short sequences, its latency scales quadratically at $T=8,192$ (28.53 ms), whereas Chunk GLA scales strictly linearly, achieving \textbf{19.56 ms ($1.46\times$ wall-clock speedup)} with \textbf{47.1\% lower peak VRAM} (620.8 MB vs.\ 1,174.5 MB).}
+\caption{\textbf{Empirical Context Scaling: Physical Latency (ms) and Peak VRAM (MB) on NVIDIA GeForce RTX 4070 Laptop GPU (Ada Lovelace SM 8.9, 8GB VRAM).}
+Evaluated with batch size $B=2$, number of heads $H=12$, and head dimension $D=64$ across context sequence lengths $T \in \{512, 1024, 2048, 4096, 8192\}$.
+While Dense PyTorch SDPA is rapid at shorter horizons, its latency scales quadratically at extended sequences ($10.11$ ms at $T=8,192$), whereas NeuralOps Chunk GLA scales linearly, delivering \textbf{6.88 ms ($1.47\times$ physical speedup)} with strictly linear cache footprint.}
 \label{tab:long_context}
 \scriptsize
-\setlength{\tabcolsep}{3.5pt}
+\setlength{\tabcolsep}{4.5pt}
 \begin{tabular}{llccccc}
 \toprule
-\textbf{Mechanism} & \textbf{Metric} & \textbf{$T = 512$} & \textbf{$T = 1,024$} & \textbf{$T = 2,048$} & \textbf{$T = 4,096$} & \textbf{$T = 8,192$} \\
+\textbf{Attention Mechanism} & \textbf{Physical Metric} & \textbf{$T = 512$} & \textbf{$T = 1,024$} & \textbf{$T = 2,048$} & \textbf{$T = 4,096$} & \textbf{$T = 8,192$} \\
 \midrule
-\multirow{2}{*}{\textbf{PyTorch SDPA (Dense)}} & Latency (ms) $\downarrow$ & \textbf{1.44} & \textbf{1.83} & \textbf{3.42} & 8.87 & 28.53 \\
- & Peak VRAM (MB) $\downarrow$ & \textbf{73.5} & \textbf{146.9} & 293.7 & 587.3 & 1,174.5 \\
+\multirow{2}{*}{\textbf{PyTorch SDPA (Dense Baseline)}} & Latency (ms) $\downarrow$ & \textbf{0.06} & \textbf{0.18} & \textbf{0.65} & \textbf{2.59} & 10.11 \\
+ & Peak VRAM (MB) $\downarrow$ & 6.1 & 12.2 & 24.3 & 48.7 & 97.3 \\
 \midrule
-\multirow{2}{*}{\textbf{Chunk GLA (Triton)}} & Latency (ms) $\downarrow$ & 2.53 & 3.42 & 5.86 & 10.42 & \textbf{19.56} \\
- & Peak VRAM (MB) $\downarrow$ & 140.8 & 172.8 & \textbf{236.8} & \textbf{364.8} & \textbf{620.8} \\
+\multirow{2}{*}{\textbf{Chunk GLA (Triton JIT)}} & Latency (ms) $\downarrow$ & 0.41 & 0.66 & 1.32 & 3.44 & \textbf{6.88} \\
+ & Peak VRAM (MB) $\downarrow$ & \textbf{6.0} & \textbf{12.1} & \textbf{24.1} & \textbf{48.3} & \textbf{96.6} \\
 \midrule
-\multirow{2}{*}{\textbf{PGDN (Triton)}} & Latency (ms) $\downarrow$ & 3.12 & 4.56 & 7.89 & 13.45 & 22.15 \\
- & Peak VRAM (MB) $\downarrow$ & 135.2 & 168.4 & 234.8 & 368.1 & 634.5 \\
+\multirow{2}{*}{\textbf{Chunk GDN (Triton JIT)}} & Latency (ms) $\downarrow$ & 0.48 & 0.77 & 1.54 & 4.05 & 8.10 \\
+ & Peak VRAM (MB) $\downarrow$ & \textbf{6.0} & \textbf{12.1} & 24.2 & 48.4 & 96.8 \\
 \midrule
-\multirow{2}{*}{\textbf{GDN-2 (Triton)}} & Latency (ms) $\downarrow$ & 4.81 & 7.23 & 12.45 & 23.10 & 45.52 \\
- & Peak VRAM (MB) $\downarrow$ & 138.4 & 174.2 & 245.6 & 388.9 & 655.2 \\
-\midrule
-\multirow{2}{*}{\textbf{Chunk GDN (Triton)}} & Latency (ms) $\downarrow$ & 6.12 & 9.85 & 18.23 & 34.61 & 68.42 \\
- & Peak VRAM (MB) $\downarrow$ & 142.1 & 185.3 & 260.4 & 420.7 & 720.5 \\
-\midrule
-\multirow{2}{*}{\textbf{Cosformer (Triton)}} & Latency (ms) $\downarrow$ & 4.59 & 12.31 & 13.44 & 30.20 & 74.19 \\
- & Peak VRAM (MB) $\downarrow$ & 115.0 & 226.2 & 349.4 & 674.7 & 1,324.5 \\
+\multirow{2}{*}{\textbf{Cosformer (Triton JIT)}} & Latency (ms) $\downarrow$ & 0.25 & 0.90 & 3.53 & 13.68 & 54.46 \\
+ & Peak VRAM (MB) $\downarrow$ & \textbf{6.0} & \textbf{12.1} & 24.2 & 48.4 & 96.8 \\
 \bottomrule
 \end{tabular}
 \end{table}
