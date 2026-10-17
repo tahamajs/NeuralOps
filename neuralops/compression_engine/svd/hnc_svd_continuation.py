@@ -471,7 +471,59 @@ class HessianNullSpaceSVDContinuation:
         self.relinearize_every = relinearize_every
         self.anneal_sigma = anneal_sigma
         self.use_whitening = bool(kwargs.get("use_whitening", True))
+        self.truncate_activations = bool(kwargs.get("truncate_activations", True))
         self.device = torch.device(device or ("cuda:0" if torch.cuda.is_available() else "cpu"))
+
+    @staticmethod
+    def truncation_aware_whitening(
+        W: torch.Tensor,
+        calibration_activations: torch.Tensor,
+        rank: int,
+        eps: float = 1e-5,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Compute optimal activation-aware whitened low-rank factors (SVD-LLM v2).
+        
+        Given activations X [N, d_in] and weight matrix W [d_out, d_in],
+        computes empirical covariance H_X = X^T X / N and its Cholesky factor L:
+            L L^T = H_X + eps * I
+        Whitens weights W_white = W @ L, performs truncated SVD to rank r,
+        and unwhitens:
+            W_r = U_r @ (V_r^T @ L^{-1})
+        Returns (A_r, B_r) such that W_r = A_r @ B_r.
+        """
+        orig_device = W.device
+        orig_dtype = W.dtype
+        W_f = W.float()
+        X_f = calibration_activations.reshape(-1, W.shape[1]).float().to(W.device)
+        N = X_f.shape[0]
+        d_in = W.shape[1]
+        
+        # 1. Activation covariance H_X
+        H_X = torch.matmul(X_f.t(), X_f) / max(N, 1)
+        
+        # 2. Regularized Cholesky factor L (lower triangular)
+        reg = eps * (torch.trace(H_X) / float(d_in)).item() + 1e-6
+        S_X = H_X + reg * torch.eye(d_in, device=orig_device, dtype=torch.float32)
+        L = torch.linalg.cholesky(S_X)
+        
+        # 3. Whiten weights: W_white = W @ L
+        W_white = torch.matmul(W_f, L)
+        
+        # 4. Truncate W_white to rank r via SVD
+        r = max(1, min(rank, min(W.shape) - 1)) if min(W.shape) > 1 else 1
+        U, S, Vh = torch.linalg.svd(W_white, full_matrices=False)
+        U_r = U[:, :r] * torch.sqrt(S[:r]).unsqueeze(0)
+        V_white_r = torch.sqrt(S[:r]).unsqueeze(1) * Vh[:r, :]
+        
+        # 5. Unwhiten: V_r = (L^{-1})^T @ V_white_r^T = (L^{-T} @ V_white_r^T)^T
+        # via torch.linalg.solve_triangular: L^T @ V_unwhiten^T = V_white_r^T
+        V_unwhitened = torch.linalg.solve_triangular(
+            L.t(), V_white_r.t(), upper=True
+        ).t()
+        
+        A_r = U_r.to(device=orig_device, dtype=orig_dtype)
+        B_r = V_unwhitened.to(device=orig_device, dtype=orig_dtype)
+        return A_r, B_r
 
     def run_continuation(
         self,
