@@ -68,6 +68,61 @@ __global__ void fused_lowrank_single_pass_kernel(
     }
 }
 
+// 2D Block-Tiled Single-Pass Fused Low-Rank Gated GEMM Backward Kernel:
+// dX = (dout @ U * sigmoid(alpha)) @ V
+// dout: [M, N], U: [N, R], V: [R, K]
+// Grid: ((K + 15) / 16, (M + 15) / 16), Block: (16, 16)
+template <typename scalar_t, int MAX_R = 64>
+__launch_bounds__(256)
+__global__ void fused_lowrank_gated_gemm_bwd_2d_kernel(
+    scalar_t* __restrict__ dX,
+    const scalar_t* __restrict__ dout,
+    const scalar_t* __restrict__ V,
+    const scalar_t* __restrict__ U,
+    const scalar_t* __restrict__ alpha,
+    const int M,
+    const int K,
+    const int R,
+    const int N,
+    const bool has_alpha
+) {
+    __shared__ scalar_t s_dz[16][MAX_R];
+
+    const int ty = threadIdx.y;
+    const int tx = threadIdx.x;
+    const int m = blockIdx.y * 16 + ty;
+
+    // Step 1: Compute s_dz[ty][r] = (dout[m, :] @ U[:, r]) * sigmoid(alpha[r])
+    for (int r = tx; r < R; r += 16) {
+        float acc = 0.0f;
+        if (m < M) {
+            const scalar_t* __restrict__ dout_row = dout + m * N;
+            #pragma unroll 4
+            for (int n = 0; n < N; ++n) {
+                acc += to_float(dout_row[n]) * to_float(U[n * R + r]);
+            }
+            if (has_alpha && alpha != nullptr) {
+                const float a = to_float(alpha[r]);
+                acc *= (1.0f / (1.0f + expf(-a)));
+            }
+        }
+        s_dz[ty][r] = from_float<scalar_t>(acc);
+    }
+
+    __syncthreads();
+
+    // Step 2: Compute dX[m, k] = s_dz[ty, :] @ V[:, k]
+    const int k = blockIdx.x * 16 + tx;
+    if (m < M && k < K) {
+        float acc = 0.0f;
+        #pragma unroll 4
+        for (int r = 0; r < R; ++r) {
+            acc += to_float(s_dz[ty][r]) * to_float(V[r * K + k]);
+        }
+        dX[m * K + k] = from_float<scalar_t>(acc);
+    }
+}
+
 // Fallback Two-Stage Kernels for R > 64
 template <typename scalar_t>
 __launch_bounds__(256)
@@ -128,55 +183,6 @@ __global__ void fused_lowrank_stage2_kernel(
         acc += to_float(bias[n]);
     }
     out[m * N + n] = from_float<scalar_t>(acc);
-}
-
-// Backward Kernel: computes dX, dV, dU
-template <typename scalar_t, int MAX_R>
-__launch_bounds__(128)
-__global__ void fused_lowrank_gated_gemm_bwd_kernel(
-    scalar_t* __restrict__ dX,
-    const scalar_t* __restrict__ dout,
-    const scalar_t* __restrict__ X,
-    const scalar_t* __restrict__ V,
-    const scalar_t* __restrict__ U,
-    const scalar_t* __restrict__ alpha,
-    const int M,
-    const int K,
-    const int R,
-    const int N,
-    const bool has_alpha
-) {
-    const int m = blockIdx.x * blockDim.x + threadIdx.x;
-    if (m >= M) return;
-
-    float dz[MAX_R];
-    #pragma unroll
-    for (int r = 0; r < MAX_R; ++r) {
-        dz[r] = 0.0f;
-    }
-
-    for (int n = 0; n < N; ++n) {
-        const float do_val = to_float(dout[m * N + n]);
-        for (int r = 0; r < R && r < MAX_R; ++r) {
-            dz[r] += do_val * to_float(U[n * R + r]);
-        }
-    }
-
-    if (has_alpha && alpha != nullptr) {
-        for (int r = 0; r < R && r < MAX_R; ++r) {
-            const float a = to_float(alpha[r]);
-            const float sig = 1.0f / (1.0f + expf(-a));
-            dz[r] *= sig;
-        }
-    }
-
-    for (int k = 0; k < K; ++k) {
-        float dx_val = 0.0f;
-        for (int r = 0; r < R && r < MAX_R; ++r) {
-            dx_val += dz[r] * to_float(V[r * K + k]);
-        }
-        dX[m * K + k] = from_float<scalar_t>(dx_val);
-    }
 }
 
 } // namespace cuda
@@ -271,28 +277,20 @@ torch::Tensor fused_lowrank_gated_gemm_bwd(
     auto dX = torch::empty_like(X);
     const bool has_alpha = alpha.defined() && alpha.numel() > 0;
 
-    const int threads = 128;
-    const int blocks = (M + threads - 1) / threads;
     cudaStream_t stream = c10::cuda::getCurrentCUDAStream().stream();
+
+    dim3 threads(16, 16);
+    dim3 blocks((K + 15) / 16, (M + 15) / 16);
 
     AT_DISPATCH_FLOATING_TYPES_AND2(
         at::ScalarType::Half, at::ScalarType::BFloat16,
         X.scalar_type(), "fused_lowrank_gated_gemm_bwd", ([&] {
-            if (R <= 32) {
-                neuralops::cuda::fused_lowrank_gated_gemm_bwd_kernel<scalar_t, 32><<<blocks, threads, 0, stream>>>(
-                    dX.data_ptr<scalar_t>(), dout.data_ptr<scalar_t>(), X.data_ptr<scalar_t>(),
-                    V.data_ptr<scalar_t>(), U.data_ptr<scalar_t>(),
-                    has_alpha ? alpha.data_ptr<scalar_t>() : nullptr,
-                    M, K, R, N, has_alpha
-                );
-            } else {
-                neuralops::cuda::fused_lowrank_gated_gemm_bwd_kernel<scalar_t, 64><<<blocks, threads, 0, stream>>>(
-                    dX.data_ptr<scalar_t>(), dout.data_ptr<scalar_t>(), X.data_ptr<scalar_t>(),
-                    V.data_ptr<scalar_t>(), U.data_ptr<scalar_t>(),
-                    has_alpha ? alpha.data_ptr<scalar_t>() : nullptr,
-                    M, K, R, N, has_alpha
-                );
-            }
+            neuralops::cuda::fused_lowrank_gated_gemm_bwd_2d_kernel<scalar_t, 64><<<blocks, threads, 0, stream>>>(
+                dX.data_ptr<scalar_t>(), dout.data_ptr<scalar_t>(), V.data_ptr<scalar_t>(),
+                U.data_ptr<scalar_t>(),
+                has_alpha ? alpha.data_ptr<scalar_t>() : nullptr,
+                M, K, R, N, has_alpha
+            );
         })
     );
 

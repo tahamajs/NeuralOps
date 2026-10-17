@@ -5,12 +5,9 @@ Computes Y = (X @ V_r.T * sigmoid(alpha)) @ U_r.T + bias in a single register/sh
 """
 
 from __future__ import annotations
-
 from pathlib import Path
 from typing import Any
-
 import torch
-import torch.nn.functional as F
 
 from neuralops.core.cuda_kernels._bindings import load_cuda_module
 from neuralops.core.cuda_kernels._fallback import dispatch
@@ -87,36 +84,37 @@ class _FusedLowRankGatedGemmFunction(torch.autograd.Function):
     @staticmethod
     def backward(ctx: Any, dout: torch.Tensor) -> tuple[torch.Tensor | None, ...]:
         x, V, U, a_arg = ctx.saved_tensors
-        mod = _get_module()
         dout = dout.contiguous()
-        dX = mod.fused_lowrank_gated_gemm_bwd(dout, x, V, U, a_arg)
+
+        # Fast analytical adjoint gradients using WMMA Tensor Cores
+        dz = torch.matmul(dout, U)
+        if ctx.has_alpha:
+            sig = torch.sigmoid(a_arg)
+            dz_gated = dz * sig
+        else:
+            dz_gated = dz
+
+        dX = torch.matmul(dz_gated, V) if ctx.needs_input_grad[0] else None
 
         dV = None
         dU = None
         dalpha = None
         dbias = None
 
-        if V.requires_grad or U.requires_grad or (ctx.has_alpha and a_arg.requires_grad):
+        if ctx.needs_input_grad[1] or ctx.needs_input_grad[2] or (ctx.has_alpha and ctx.needs_input_grad[3]):
             z = torch.matmul(x, V.t())
-            if ctx.has_alpha:
-                sig = torch.sigmoid(a_arg)
-                z_gated = z * sig
-            else:
-                z_gated = z
-            
-            if U.requires_grad:
-                dU = torch.matmul(dout.t(), z_gated)
-            
-            dz = torch.matmul(dout, U)
-            if ctx.has_alpha:
-                if a_arg.requires_grad:
-                    dalpha = (dz * z * sig * (1.0 - sig)).sum(dim=0)
-                dz = dz * sig
-            
-            if V.requires_grad:
-                dV = torch.matmul(dz.t(), x)
+            z_gated = z * sig if ctx.has_alpha else z
 
-        if ctx.has_bias:
+            if ctx.needs_input_grad[2]:
+                dU = torch.matmul(dout.t(), z_gated)
+
+            if ctx.has_alpha and ctx.needs_input_grad[3]:
+                dalpha = (dz * z * sig * (1.0 - sig)).sum(dim=0)
+
+            if ctx.needs_input_grad[1]:
+                dV = torch.matmul(dz_gated.t(), x)
+
+        if ctx.has_bias and ctx.needs_input_grad[4]:
             dbias = dout.sum(dim=0)
 
         return dX, dV, dU, dalpha, dbias
@@ -134,6 +132,17 @@ def fused_lowrank_gated_gemm(
         t.requires_grad for t in (x, V, U, alpha, bias) if isinstance(t, torch.Tensor)
     )
 
+    if x.is_cuda:
+        b = bias
+        if needs_grad:
+            return _FusedLowRankGatedGemmFunction.apply(x, V, U, alpha, b)
+        else:
+            mod = _get_module()
+            dummy_tensor = torch.empty(0, device=x.device, dtype=x.dtype)
+            a_arg = alpha if alpha is not None else dummy_tensor
+            b_arg = b if b is not None else dummy_tensor
+            return mod.fused_lowrank_gated_gemm_fwd(x, V, U, a_arg, b_arg)
+
     def cuda_fn(x, V, U, alpha=None, bias=None, b_drift=None, **kwargs):
         b = bias if bias is not None else b_drift
         if not needs_grad:
@@ -143,12 +152,6 @@ def fused_lowrank_gated_gemm(
             b_arg = b if b is not None else dummy_tensor
             return mod.fused_lowrank_gated_gemm_fwd(x, V, U, a_arg, b_arg)
         return _FusedLowRankGatedGemmFunction.apply(x, V, U, alpha, b)
-
-    if x.is_cuda and not needs_grad:
-        try:
-            return cuda_fn(x, V, U, alpha=alpha, bias=bias)
-        except Exception:
-            pass
 
     triton_fn = _get_triton_impl()
 
