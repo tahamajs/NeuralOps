@@ -1,0 +1,90 @@
+{
+  "roberta": [
+    {
+      "batch_size": 4,
+      "seq_len": 128,
+      "baseline_ms": 17.94,
+      "surgerized_ms": 18.24,
+      "speedup": 0.98
+    },
+    {
+      "batch_size": 4,
+      "seq_len": 256,
+      "baseline_ms": 36.03,
+      "surgerized_ms": 36.85,
+      "speedup": 0.98
+    },
+    {
+      "batch_size": 4,
+      "seq_len": 512,
+      "baseline_ms": 74.19,
+      "surgerized_ms": 72.71,
+      "speedup": 1.02
+    },
+    {
+      "batch_size": 8,
+      "seq_len": 128,
+      "baseline_ms": 26.56,
+      "surgerized_ms": 22.42,
+      "speedup": 1.18
+    },
+    {
+      "batch_size": 8,
+      "seq_len": 256,
+      "baseline_ms": 58.8,
+      "surgerized_ms": 62.24,
+      "speedup": 0.94
+    },
+    {
+      "batch_size": 8,
+      "seq_len": 512,
+      "baseline_ms": 111.36,
+      "surgerized_ms": 120.77,
+      "speedup": 0.92
+    }
+  ],
+  "distilbert": [
+    {
+      "batch_size": 4,
+      "seq_len": 128,
+      "baseline_ms": 9.03,
+      "surgerized_ms": 9.3,
+      "speedup": 0.97
+    },
+    {
+      "batch_size": 4,
+      "seq_len": 256,
+      "baseline_ms": 17.65,
+      "surgerized_ms": 16.38,
+      "speedup": 1.08
+    },
+    {
+      "batch_size": 4,
+      "seq_len": 512,
+      "baseline_ms": 31.6,
+      "surgerized_ms": 31.72,
+      "speedup": 1.0
+    },
+    {
+      "batch_size": 8,
+      "seq_len": 128,
+      "baseline_ms": 12.92,
+      "surgerized_ms": 13.32,
+      "speedup": 0.97
+    },
+    {
+      "batch_size": 8,
+      "seq_len": 256,
+      "baseline_ms": 31.12,
+      "surgerized_ms": 30.26,
+      "speedup": 1.03
+    },
+    {
+      "batch_size": 8,
+      "seq_len": 512,
+      "baseline_ms": 57.05,
+      "surgerized_ms": 59.16,
+      "speedup": 0.96
+    }
+  ]
+}
