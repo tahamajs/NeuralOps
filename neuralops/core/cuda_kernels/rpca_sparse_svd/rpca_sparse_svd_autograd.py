@@ -22,16 +22,16 @@ def _get_module():
     global _MODULE
     if _MODULE is None:
         curr_dir = Path(__file__).parent
-        with open(curr_dir / rpca_sparse_svd_binding.cpp, r, encoding=utf-8) as f:
+        with open(curr_dir / "rpca_sparse_svd_binding.cpp", "r", encoding="utf-8") as f:
             cpp_src = f.read()
-        with open(curr_dir / rpca_sparse_svd.cu, r, encoding=utf-8) as f:
+        with open(curr_dir / "rpca_sparse_svd.cu", "r", encoding="utf-8") as f:
             cuda_src = f.read()
 
         _MODULE = load_cuda_module(
-            name=cuda_rpca_sparse_svd,
+            name="cuda_rpca_sparse_svd",
             cpp_sources=cpp_src,
             cuda_sources=cuda_src,
-            functions=[rpca_sparse_svd_fwd],
+            functions=["rpca_sparse_svd_fwd"],
         )
     return _MODULE
 

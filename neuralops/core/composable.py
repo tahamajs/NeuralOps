@@ -12,8 +12,11 @@ Fully compatible with neuralops.replace_attention and standard PyTorch / Hugging
 
 from __future__ import annotations
 
+import logging
 import math
 import re
+
+logger = logging.getLogger(__name__)
 from typing import Any, Callable
 
 import torch

@@ -7,7 +7,9 @@ os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
 import argparse
 import platform
 import sys
+import time
 from typing import Any
+import torch
 
 from neuralops import __version__
 from neuralops.benchmarks.discovery import discover_all_modules

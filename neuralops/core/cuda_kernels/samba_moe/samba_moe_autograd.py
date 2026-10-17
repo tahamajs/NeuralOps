@@ -26,7 +26,7 @@ def _get_module():
             cpp_src = f.read()
         with open(curr_dir / "samba_moe.cu", "r", encoding="utf-8") as f:
             cuda_src = f.read()
-        _MODULE = load_cuda_module(cuda_samba_moe, cpp_src, cuda_src, [samba_moe_combine_fwd])
+        _MODULE = load_cuda_module("cuda_samba_moe", cpp_src, cuda_src, ["samba_moe_combine_fwd"])
     return _MODULE
 
 

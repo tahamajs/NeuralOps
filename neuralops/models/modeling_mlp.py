@@ -7,7 +7,7 @@ import torch.nn as nn
 from transformers.activations import ACT2FN
 
 
-__all__ = ["NeuralOpsMLP", "NeuralOpsSwiGLU"]
+__all__ = ["NeuralOpsMLP", "NeuralOpsStandardMLP", "NeuralOpsSwiGLU", "build_mlp"]
 
 
 class NeuralOpsSwiGLU(nn.Module):
@@ -56,6 +56,9 @@ class NeuralOpsStandardMLP(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.fc2(self.act_fn(self.fc1(x)))
+
+
+NeuralOpsMLP = NeuralOpsStandardMLP
 
 
 def build_mlp(

@@ -27,7 +27,7 @@ def _get_module():
             cpp_src = f.read()
         with open(curr_dir / "vspec.cu", "r", encoding="utf-8") as f:
             cuda_src = f.read()
-        _MODULE = load_cuda_module(cuda_vspec, cpp_src, cuda_src, [vspec_fwd])
+        _MODULE = load_cuda_module("cuda_vspec", cpp_src, cuda_src, ["vspec_fwd"])
     return _MODULE
 
 

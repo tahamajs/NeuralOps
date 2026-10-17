@@ -1,7 +1,10 @@
+import logging
 from typing import Any
 
 import torch
 import torch.nn as nn
+
+logger = logging.getLogger(__name__)
 
 from neuralops.utils.qwen_compat import bypass_qwen_rope, qwen_attention_mask
 
