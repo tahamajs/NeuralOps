@@ -112,6 +112,7 @@ torch::Tensor varlen_attention_fwd(
     const int total_q = q.size(0);
     const int H = q.size(1);
     const int D = q.size(2);
+    TORCH_CHECK(D <= 128, "varlen_attention_fwd: D=", D, " > 128 not supported");
     const int num_seqs = cu_seqlens_q.size(0) - 1;
 
     auto out = torch::empty_like(q);
