@@ -146,8 +146,8 @@ class SVDLinear(nn.Module):
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
 
-        # AASVD-FIX-07: input mean is not tracked; remove the buffer.
-        self._input_mean: torch.Tensor | None = None
+        # Input mean buffer for mean-shifted SVD calibration and serialization
+        self.register_buffer("_input_mean", None, persistent=True)
 
         self.reset_parameters()
 
@@ -242,6 +242,20 @@ class SVDLinear(nn.Module):
         if self.bias is not None:
             out = out + self.bias.to(out.dtype)
         return out
+
+    def _load_from_state_dict(
+        self, state_dict, prefix, local_metadata, strict, missing_keys, unexpected_keys, error_msgs
+    ):
+        mean_key = prefix + "_input_mean"
+        if mean_key in state_dict:
+            val = state_dict[mean_key]
+            if val is not None:
+                self.register_buffer("_input_mean", val.clone(), persistent=True)
+            if mean_key in unexpected_keys:
+                unexpected_keys.remove(mean_key)
+        super()._load_from_state_dict(
+            state_dict, prefix, local_metadata, strict, missing_keys, unexpected_keys, error_msgs
+        )
 
     def set_low_rank_factors(self, U_factor: torch.Tensor, V_factor: torch.Tensor) -> None:
         with torch.no_grad():

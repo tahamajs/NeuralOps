@@ -188,6 +188,24 @@ __all__ = [
     "triton_fused_act_scale_quant_gemm_pytorch_ref",
     "triton_fused_latent_kv_cache_attention",
     "triton_fused_latent_kv_cache_attention_pytorch_ref",
+    # Flagship Hardware Kernels (v1.4.0 Extended Suite)
+    "triton_differential_attention",
+    "triton_differential_attention_pytorch_ref",
+    "TritonDifferentialAttentionFunction",
+    "triton_hydra_attention",
+    "triton_hydra_attention_pytorch_ref",
+    "TritonHydraAttentionFunction",
+    "triton_multi_scale_retention",
+    "triton_retnet_retention",
+    "triton_multi_scale_retention_pytorch_ref",
+    "triton_retnet_retention_pytorch_ref",
+    "TritonRetNetRetentionFunction",
+    "triton_dynamic_sparse_attention",
+    "triton_dynamic_sparse_attention_pytorch_ref",
+    "TritonDynamicSparseAttentionFunction",
+    "triton_cur_linear",
+    "triton_cur_linear_pytorch_ref",
+    "TritonCURLinearFunction",
     # 10 High-Performance Production Kernels
     "flash_decoding_attention",
     "flash_decoding_stage1_kernel",
@@ -271,6 +289,33 @@ from neuralops.core.triton_kernels.elementwise import (
     fused_aegis_multibranch_gate_norm_triton,
     fused_split_head_hybrid_concat_norm_triton,
 )
+from neuralops.core.triton_kernels.differential_attention import (
+    triton_differential_attention,
+    triton_differential_attention_pytorch_ref,
+    TritonDifferentialAttentionFunction,
+)
+from neuralops.core.triton_kernels.hydra_attention import (
+    triton_hydra_attention,
+    triton_hydra_attention_pytorch_ref,
+    TritonHydraAttentionFunction,
+)
+from neuralops.core.triton_kernels.retnet_retention import (
+    triton_multi_scale_retention,
+    triton_retnet_retention,
+    triton_multi_scale_retention_pytorch_ref,
+    triton_retnet_retention_pytorch_ref,
+    TritonRetNetRetentionFunction,
+)
+from neuralops.core.triton_kernels.dynamic_sparse_attention import (
+    triton_dynamic_sparse_attention,
+    triton_dynamic_sparse_attention_pytorch_ref,
+    TritonDynamicSparseAttentionFunction,
+)
+from neuralops.core.triton_kernels.cur_linear import (
+    triton_cur_linear,
+    triton_cur_linear_pytorch_ref,
+    TritonCURLinearFunction,
+)
 
 
 try:
@@ -306,4 +351,9 @@ from neuralops.core.triton_kernels import sliding_window
 from neuralops.core.triton_kernels import softplus
 from neuralops.core.triton_kernels import sparse_attn
 from neuralops.core.triton_kernels import state_update
+from neuralops.core.triton_kernels import differential_attention
+from neuralops.core.triton_kernels import hydra_attention
+from neuralops.core.triton_kernels import retnet_retention
+from neuralops.core.triton_kernels import dynamic_sparse_attention
+from neuralops.core.triton_kernels import cur_linear
 from neuralops.core.triton_kernels import varlen_attention

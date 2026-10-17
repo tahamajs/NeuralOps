@@ -71,15 +71,14 @@ if HAS_TRITON:
         h = pid_bh % H
 
         offs_l = pid_l * BLOCK_L + tl.arange(0, BLOCK_L)
-        offs_d = tl.arange(0, BLOCK_D)
+        offs_d = tl.arange(0, D)
 
         mask_l = offs_l < L
-        mask_d = offs_d < D
 
-        s = tl.load(S_ptr + b * stride_sb + h * stride_sh + offs_d * stride_sd, mask=mask_d, other=0.0)
+        s = tl.load(S_ptr + b * stride_sb + h * stride_sh + offs_d * stride_sd)
         q = tl.load(
             Q_ptr + b * stride_qb + h * stride_qh + offs_l[:, None] * stride_ql + offs_d[None, :] * stride_qd,
-            mask=mask_l[:, None] & mask_d[None, :],
+            mask=mask_l[:, None],
             other=0.0,
         )
 
@@ -88,15 +87,14 @@ if HAS_TRITON:
         tl.store(
             Out_ptr + b * stride_ob + h * stride_oh + offs_l[:, None] * stride_ol + offs_d[None, :] * stride_od,
             out,
-            mask=mask_l[:, None] & mask_d[None, :],
+            mask=mask_l[:, None],
         )
 
     @triton.autotune(
         configs=[
-            triton.Config({"BLOCK_L": 64, "BLOCK_D": 32}, num_warps=4, num_stages=2),
-            triton.Config({"BLOCK_L": 128, "BLOCK_D": 32}, num_warps=4, num_stages=3),
-            triton.Config({"BLOCK_L": 128, "BLOCK_D": 64}, num_warps=4, num_stages=3),
-            triton.Config({"BLOCK_L": 64, "BLOCK_D": 64}, num_warps=4, num_stages=2),
+            triton.Config({"BLOCK_L": 64}, num_warps=4, num_stages=2),
+            triton.Config({"BLOCK_L": 128}, num_warps=4, num_stages=3),
+            triton.Config({"BLOCK_L": 256}, num_warps=4, num_stages=3),
         ],
         key=["L", "D"],
     )
@@ -117,7 +115,6 @@ if HAS_TRITON:
         B, H, L,
         D: tl.constexpr,
         BLOCK_L: tl.constexpr,
-        BLOCK_D: tl.constexpr,
     ):
         pid_l = tl.program_id(0)
         pid_bh = tl.program_id(1)
@@ -126,27 +123,26 @@ if HAS_TRITON:
         h = pid_bh % H
 
         offs_l = pid_l * BLOCK_L + tl.arange(0, BLOCK_L)
-        offs_d = tl.arange(0, BLOCK_D)
+        offs_d = tl.arange(0, D)
 
         mask_l = offs_l < L
-        mask_d = offs_d < D
 
-        s = tl.load(S_ptr + b * stride_sb + h * stride_sh + offs_d * stride_sd, mask=mask_d, other=0.0)
-        t = tl.load(T_ptr + b * stride_tb + h * stride_th + offs_d * stride_td, mask=mask_d, other=0.0)
+        s = tl.load(S_ptr + b * stride_sb + h * stride_sh + offs_d * stride_sd)
+        t = tl.load(T_ptr + b * stride_tb + h * stride_th + offs_d * stride_td)
 
         dout = tl.load(
             Dout_ptr + b * stride_dout_b + h * stride_dout_h + offs_l[:, None] * stride_dout_l + offs_d[None, :] * stride_dout_d,
-            mask=mask_l[:, None] & mask_d[None, :],
+            mask=mask_l[:, None],
             other=0.0,
         )
         k = tl.load(
             K_ptr + b * stride_kb + h * stride_kh + offs_l[:, None] * stride_kl + offs_d[None, :] * stride_kd,
-            mask=mask_l[:, None] & mask_d[None, :],
+            mask=mask_l[:, None],
             other=0.0,
         )
         v = tl.load(
             V_ptr + b * stride_vb + h * stride_vh + offs_l[:, None] * stride_vl + offs_d[None, :] * stride_vd,
-            mask=mask_l[:, None] & mask_d[None, :],
+            mask=mask_l[:, None],
             other=0.0,
         )
 
@@ -157,17 +153,17 @@ if HAS_TRITON:
         tl.store(
             Dq_ptr + b * stride_dq_b + h * stride_dq_h + offs_l[:, None] * stride_dq_l + offs_d[None, :] * stride_dq_d,
             dq,
-            mask=mask_l[:, None] & mask_d[None, :],
+            mask=mask_l[:, None],
         )
         tl.store(
             Dk_ptr + b * stride_dk_b + h * stride_dk_h + offs_l[:, None] * stride_dk_l + offs_d[None, :] * stride_dk_d,
             dk,
-            mask=mask_l[:, None] & mask_d[None, :],
+            mask=mask_l[:, None],
         )
         tl.store(
             Dv_ptr + b * stride_dv_b + h * stride_dv_h + offs_l[:, None] * stride_dv_l + offs_d[None, :] * stride_dv_d,
             dv,
-            mask=mask_l[:, None] & mask_d[None, :],
+            mask=mask_l[:, None],
         )
 else:
     def _hydra_fwd_kernel(*args, **kwargs): pass

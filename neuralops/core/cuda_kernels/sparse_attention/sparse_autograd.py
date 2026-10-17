@@ -43,10 +43,17 @@ def block_sparse_attn_pytorch_ref(
     scale: float | None = None,
 ) -> torch.Tensor:
     B, H, N, D = q.shape
-    dense_mask = block_mask.repeat_interleave(block_size, dim=0).repeat_interleave(block_size, dim=1)[:N, :N].bool()
-    dense_mask = dense_mask.unsqueeze(0).unsqueeze(0).expand(B, H, N, N)
+    if block_mask.dim() == 4:
+        bm = block_mask
+        dense_mask = bm.repeat_interleave(block_size, dim=-2).repeat_interleave(block_size, dim=-1)[..., :N, :N].bool()
+    elif block_mask.dim() == 2:
+        dense_mask = block_mask.repeat_interleave(block_size, dim=0).repeat_interleave(block_size, dim=1)[:N, :N].bool()
+        dense_mask = dense_mask.unsqueeze(0).unsqueeze(0).expand(B, H, N, N)
+    else:
+        dense_mask = None
     out = F.scaled_dot_product_attention(q, k, v, attn_mask=dense_mask, scale=scale)
     return torch.nan_to_num(out, nan=0.0)
+
 
 
 def _block_sparse_triton_wrapper(
@@ -111,8 +118,16 @@ class _BlockSparseAttnAutograd(torch.autograd.Function):
 
         B, H, N, D = q.shape
         scores = torch.matmul(q.float(), k.float().transpose(-1, -2)) * scale
-        dense_mask = block_mask.repeat_interleave(block_size, dim=0).repeat_interleave(block_size, dim=1)[:N, :N]
-        scores = scores.masked_fill(~dense_mask.bool().unsqueeze(0).unsqueeze(0), float("-inf"))
+        if block_mask.dim() == 4:
+            dense_mask = block_mask.repeat_interleave(block_size, dim=-2).repeat_interleave(block_size, dim=-1)[..., :N, :N].bool()
+        elif block_mask.dim() == 2:
+            dense_mask = block_mask.repeat_interleave(block_size, dim=0).repeat_interleave(block_size, dim=1)[:N, :N].bool()
+            dense_mask = dense_mask.unsqueeze(0).unsqueeze(0).expand(B, H, N, N)
+        else:
+            dense_mask = torch.ones(B, H, N, N, device=q.device, dtype=torch.bool)
+        scores = scores.masked_fill(~dense_mask, float("-inf"))
+
+
 
         p = F.softmax(scores, dim=-1)
         p = torch.nan_to_num(p, nan=0.0)

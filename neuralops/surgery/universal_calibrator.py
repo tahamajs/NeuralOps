@@ -201,6 +201,8 @@ def compress_model_universal(
         comp_step["layer_indices"] = layers
     if calib_stats is not None:
         comp_step["calibration_stats"] = calib_stats
+    if calibration_data is not None and "calibration_data" not in comp_step:
+        comp_step["calibration_data"] = calibration_data
 
     from neuralops.core.compression_pipeline import compress_model
     return compress_model(model=model, config={"compressors": [comp_step]})

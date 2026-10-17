@@ -683,8 +683,9 @@ class AdaSVDCompressor(BaseCompressor):
                     inputs = {k: v.to(dev) for k, v in inputs.items()}
                     self.model(**inputs)
                 else:
+                    v_size = getattr(getattr(self.model, "config", None), "vocab_size", 2000)
                     gen = torch.Generator(device="cpu").manual_seed(42)
-                    dummy_ids = torch.randint(100, 2000, (8, 64), generator=gen).to(dev)
+                    dummy_ids = torch.randint(0, max(2, v_size), (8, 64), generator=gen).to(dev)
                     try:
                         self.model(input_ids=dummy_ids)
                     except Exception:
