@@ -170,7 +170,7 @@ __global__ void moe_fused_dispatch_kernel(
     float inv_sum = 1.0f / (sum_exp > 0.0f ? sum_exp : 1.0f);
 
     if (lane < top_k) {
-        routing_weights[tok_idx * top_k + lane] = from_float<scalar_t>(exp_val * inv_sum);
+        routing_weights[tok_idx * top_k + lane] = neuralops::cuda::from_float<scalar_t>(exp_val * inv_sum);
         topk_indices[tok_idx * top_k + lane] = idx;
     }
 
