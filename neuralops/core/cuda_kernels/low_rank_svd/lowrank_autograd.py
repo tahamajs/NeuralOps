@@ -91,7 +91,6 @@ class _FusedLowRankGatedGemmFunction(torch.autograd.Function):
         dout = dout.contiguous()
         dX = mod.fused_lowrank_gated_gemm_bwd(dout, x, V, U, a_arg)
 
-        # PyTorch analytical fallback for dV, dU, dalpha, dbias if grads needed
         dV = None
         dU = None
         dalpha = None
@@ -131,9 +130,25 @@ def fused_lowrank_gated_gemm(
     bias: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """3-Level Dispatched Fused Low-Rank Gated GEMM."""
+    needs_grad = torch.is_grad_enabled() and any(
+        t.requires_grad for t in (x, V, U, alpha, bias) if isinstance(t, torch.Tensor)
+    )
+
     def cuda_fn(x, V, U, alpha=None, bias=None, b_drift=None, **kwargs):
         b = bias if bias is not None else b_drift
+        if not needs_grad:
+            mod = _get_module()
+            dummy_tensor = torch.empty(0, device=x.device, dtype=x.dtype)
+            a_arg = alpha if alpha is not None else dummy_tensor
+            b_arg = b if b is not None else dummy_tensor
+            return mod.fused_lowrank_gated_gemm_fwd(x, V, U, a_arg, b_arg)
         return _FusedLowRankGatedGemmFunction.apply(x, V, U, alpha, b)
+
+    if x.is_cuda and not needs_grad:
+        try:
+            return cuda_fn(x, V, U, alpha=alpha, bias=bias)
+        except Exception:
+            pass
 
     triton_fn = _get_triton_impl()
 

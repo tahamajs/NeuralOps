@@ -6,10 +6,69 @@
 namespace neuralops {
 namespace cuda {
 
-// Fused Low-Rank Gated GEMM Forward Kernel: Y = (X @ V_r.T * sigmoid(alpha)) @ U_r.T + bias
+// Unified Single-Pass Fused Low-Rank Gated GEMM Forward Kernel:
+// Y = (X @ V_r.T * sigmoid(alpha)) @ U_r.T + bias
 // X: [M, K], V_r: [R, K], U_r: [N, R], alpha: [R] (optional), bias: [N] (optional)
 // Out: [M, N]
-// Stage 1 Kernel: Z[m, r] = (X[m, :] @ V[r, :].T) * gate[r]
+template <typename scalar_t, int MAX_R = 64>
+__launch_bounds__(256)
+__global__ void fused_lowrank_single_pass_kernel(
+    scalar_t* __restrict__ out,
+    const scalar_t* __restrict__ X,
+    const scalar_t* __restrict__ V,
+    const scalar_t* __restrict__ U,
+    const scalar_t* __restrict__ alpha,
+    const scalar_t* __restrict__ bias,
+    const int M,
+    const int K,
+    const int R,
+    const int N,
+    const bool has_alpha,
+    const bool has_bias
+) {
+    __shared__ scalar_t s_Z[16][MAX_R];
+
+    const int ty = threadIdx.y;
+    const int tx = threadIdx.x;
+    const int m = blockIdx.y * 16 + ty;
+
+    // Step 1: Collaborative computation of s_Z[ty][r] for r in [0, R)
+    for (int r = tx; r < R; r += 16) {
+        float acc = 0.0f;
+        if (m < M) {
+            const scalar_t* __restrict__ x_row = X + m * K;
+            const scalar_t* __restrict__ v_row = V + r * K;
+            #pragma unroll 4
+            for (int k = 0; k < K; ++k) {
+                acc += to_float(x_row[k]) * to_float(v_row[k]);
+            }
+            if (has_alpha && alpha != nullptr) {
+                const float a = to_float(alpha[r]);
+                acc *= (1.0f / (1.0f + expf(-a)));
+            }
+        }
+        s_Z[ty][r] = from_float<scalar_t>(acc);
+    }
+
+    __syncthreads();
+
+    // Step 2: Compute out[m, n]
+    const int n = blockIdx.x * 16 + tx;
+    if (m < M && n < N) {
+        float acc = 0.0f;
+        if (has_bias && bias != nullptr) {
+            acc = to_float(bias[n]);
+        }
+        const scalar_t* __restrict__ u_row = U + n * R;
+        #pragma unroll 4
+        for (int r = 0; r < R; ++r) {
+            acc += to_float(s_Z[ty][r]) * to_float(u_row[r]);
+        }
+        out[m * N + n] = from_float<scalar_t>(acc);
+    }
+}
+
+// Fallback Two-Stage Kernels for R > 64
 template <typename scalar_t>
 __launch_bounds__(256)
 __global__ void fused_lowrank_stage1_kernel(
@@ -41,7 +100,6 @@ __global__ void fused_lowrank_stage1_kernel(
     Z[m * R + r] = from_float<scalar_t>(acc);
 }
 
-// Stage 2 Kernel: Out[m, n] = Z[m, :] @ U[n, :].T + bias[n]
 template <typename scalar_t>
 __launch_bounds__(256)
 __global__ void fused_lowrank_stage2_kernel(
@@ -72,8 +130,6 @@ __global__ void fused_lowrank_stage2_kernel(
     out[m * N + n] = from_float<scalar_t>(acc);
 }
 
-
-
 // Backward Kernel: computes dX, dV, dU
 template <typename scalar_t, int MAX_R>
 __launch_bounds__(128)
@@ -93,7 +149,6 @@ __global__ void fused_lowrank_gated_gemm_bwd_kernel(
     const int m = blockIdx.x * blockDim.x + threadIdx.x;
     if (m >= M) return;
 
-    // Compute dz = dout[m, :] @ U
     float dz[MAX_R];
     #pragma unroll
     for (int r = 0; r < MAX_R; ++r) {
@@ -115,7 +170,6 @@ __global__ void fused_lowrank_gated_gemm_bwd_kernel(
         }
     }
 
-    // dX[m, k] = dz @ V[:, k]
     for (int k = 0; k < K; ++k) {
         float dx_val = 0.0f;
         for (int r = 0; r < R && r < MAX_R; ++r) {
@@ -145,39 +199,53 @@ torch::Tensor fused_lowrank_gated_gemm_fwd(
     const int N = U.size(0);
 
     auto out = torch::empty({M, N}, X.options());
-    auto Z = torch::empty({M, R}, X.options());
     const bool has_alpha = alpha.defined() && alpha.numel() > 0;
     const bool has_bias = bias.defined() && bias.numel() > 0;
 
-
     cudaStream_t stream = c10::cuda::getCurrentCUDAStream().stream();
 
-    // Stage 1: Z = X @ V^T * gate
-    dim3 threads1(16, 16);
-    dim3 blocks1((R + 15) / 16, (M + 15) / 16);
+    if (R <= 64) {
+        dim3 threads(16, 16);
+        dim3 blocks((N + 15) / 16, (M + 15) / 16);
 
-    // Stage 2: Out = Z @ U^T + bias
-    dim3 threads2(16, 16);
-    dim3 blocks2((N + 15) / 16, (M + 15) / 16);
+        AT_DISPATCH_FLOATING_TYPES_AND2(
+            at::ScalarType::Half, at::ScalarType::BFloat16,
+            X.scalar_type(), "fused_lowrank_gated_gemm_fwd", ([&] {
+                neuralops::cuda::fused_lowrank_single_pass_kernel<scalar_t, 64><<<blocks, threads, 0, stream>>>(
+                    out.data_ptr<scalar_t>(),
+                    X.data_ptr<scalar_t>(),
+                    V.data_ptr<scalar_t>(),
+                    U.data_ptr<scalar_t>(),
+                    has_alpha ? alpha.data_ptr<scalar_t>() : nullptr,
+                    has_bias ? bias.data_ptr<scalar_t>() : nullptr,
+                    M, K, R, N, has_alpha, has_bias
+                );
+            })
+        );
+    } else {
+        auto Z = torch::empty({M, R}, X.options());
+        dim3 threads1(16, 16);
+        dim3 blocks1((R + 15) / 16, (M + 15) / 16);
+        dim3 threads2(16, 16);
+        dim3 blocks2((N + 15) / 16, (M + 15) / 16);
 
-    AT_DISPATCH_FLOATING_TYPES_AND2(
-        at::ScalarType::Half, at::ScalarType::BFloat16,
-        X.scalar_type(), "fused_lowrank_gated_gemm_fwd", ([&] {
-            neuralops::cuda::fused_lowrank_stage1_kernel<scalar_t><<<blocks1, threads1, 0, stream>>>(
-                Z.data_ptr<scalar_t>(), X.data_ptr<scalar_t>(), V.data_ptr<scalar_t>(),
-                has_alpha ? alpha.data_ptr<scalar_t>() : nullptr,
-                M, K, R, has_alpha
-            );
+        AT_DISPATCH_FLOATING_TYPES_AND2(
+            at::ScalarType::Half, at::ScalarType::BFloat16,
+            X.scalar_type(), "fused_lowrank_gated_gemm_fwd", ([&] {
+                neuralops::cuda::fused_lowrank_stage1_kernel<scalar_t><<<blocks1, threads1, 0, stream>>>(
+                    Z.data_ptr<scalar_t>(), X.data_ptr<scalar_t>(), V.data_ptr<scalar_t>(),
+                    has_alpha ? alpha.data_ptr<scalar_t>() : nullptr,
+                    M, K, R, has_alpha
+                );
 
-            neuralops::cuda::fused_lowrank_stage2_kernel<scalar_t><<<blocks2, threads2, 0, stream>>>(
-                out.data_ptr<scalar_t>(), Z.data_ptr<scalar_t>(), U.data_ptr<scalar_t>(),
-                has_bias ? bias.data_ptr<scalar_t>() : nullptr,
-                M, R, N, has_bias
-            );
-        })
-    );
-
-
+                neuralops::cuda::fused_lowrank_stage2_kernel<scalar_t><<<blocks2, threads2, 0, stream>>>(
+                    out.data_ptr<scalar_t>(), Z.data_ptr<scalar_t>(), U.data_ptr<scalar_t>(),
+                    has_bias ? bias.data_ptr<scalar_t>() : nullptr,
+                    M, R, N, has_bias
+                );
+            })
+        );
+    }
 
     CUDA_KERNEL_LAUNCH_CHECK();
     return out;

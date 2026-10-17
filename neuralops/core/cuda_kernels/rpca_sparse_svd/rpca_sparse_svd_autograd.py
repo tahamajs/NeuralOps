@@ -62,6 +62,10 @@ def rpca_sparse_svd_gemm(
     bias: Optional[torch.Tensor] = None,
 ) -> torch.Tensor:
     """3-Level Dispatched RPCA Low-Rank + Sparse GEMM."""
+    needs_grad = torch.is_grad_enabled() and any(
+        t.requires_grad for t in (x, v_r, u_r, s, bias) if isinstance(t, torch.Tensor)
+    )
+
     def cuda_fn(x, v_r, u_r, s=None, bias=None, **kwargs):
         mod = _get_module()
         s_tensor = s if isinstance(s, torch.Tensor) else None
@@ -73,8 +77,14 @@ def rpca_sparse_svd_gemm(
             bias.contiguous() if bias is not None else None,
         )
 
-    triton_fn = _get_triton_impl()
     R = v_r.shape[1] if v_r.shape[0] == x.shape[-1] else v_r.shape[0]
+    if R <= 128 and x.is_cuda and not needs_grad:
+        try:
+            return cuda_fn(x, v_r, u_r, s=s, bias=bias)
+        except Exception:
+            pass
+
+    triton_fn = _get_triton_impl()
     if R > 128:
         cuda_fn = None
 
