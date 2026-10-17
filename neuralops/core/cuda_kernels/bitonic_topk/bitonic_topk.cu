@@ -6,22 +6,12 @@
 
 namespace neuralops { namespace cuda {
 
-// Next power of 2 helper
-__device__ inline int next_power_of_2(int n) {
-    int count = 0;
-    if (n > 0 && (n & (n - 1)) == 0) return n;
-    while (n != 0) {
-        n >>= 1;
-        count += 1;
-    }
-    return 1 << count;
-}
-
-// Robust Bitonic Top-K Indices Kernel:
-// Handles arbitrary N (including non-power-of-2) via power-of-2 padding with -FLT_MAX in shared memory.
-// All comparisons read from fast shared memory rather than global memory.
+// Highly Optimized, Race-Free Bitonic Top-K Sort Kernel:
+// Performs cooperative bitonic sorting in shared memory with guaranteed disjoint pair mapping.
+// Correctly sorts power-of-2 and non-power-of-2 dimensions via -FLT_MAX sentinel padding.
+// Supports arbitrary row batching and zero-copy top-K index emission.
 template <typename scalar_t>
-__global__ void __launch_bounds__(512) bitonic_topk_kernel(
+__global__ void __launch_bounds__(512) bitonic_topk_disjoint_kernel(
     int64_t* __restrict__ out_indices,
     const scalar_t* __restrict__ x,
     const int rows,
@@ -37,7 +27,7 @@ __global__ void __launch_bounds__(512) bitonic_topk_kernel(
     int64_t* s_indices = reinterpret_cast<int64_t*>(smem_raw);
     float* s_values = reinterpret_cast<float*>(s_indices + pad_N);
 
-    // Initialize shared memory indices and values with -FLT_MAX sentinel padding
+    // Initialize shared memory with input values and -FLT_MAX padding
     for (int i = tid; i < pad_N; i += blockDim.x) {
         s_indices[i] = i;
         if (i < N) {
@@ -48,42 +38,35 @@ __global__ void __launch_bounds__(512) bitonic_topk_kernel(
     }
     __syncthreads();
 
-    // Cooperative Bitonic Sort in Shared Memory
-    for (int k = 2; k <= pad_N; k *= 2) {
-        for (int j = k / 2; j > 0; j /= 2) {
-            for (int i = tid; i < pad_N; i += blockDim.x) {
-                const int ixj = i ^ j;
-                if (ixj > i && ixj < pad_N) {
-                    if ((i & k) == 0) {
-                        // Descending sort
-                        if (s_values[i] < s_values[ixj]) {
-                            const float temp_v = s_values[i];
-                            s_values[i] = s_values[ixj];
-                            s_values[ixj] = temp_v;
+    const int total_pairs = pad_N >> 1;
 
-                            const int64_t temp_idx = s_indices[i];
-                            s_indices[i] = s_indices[ixj];
-                            s_indices[ixj] = temp_idx;
-                        }
-                    } else {
-                        // Ascending sort
-                        if (s_values[i] > s_values[ixj]) {
-                            const float temp_v = s_values[i];
-                            s_values[i] = s_values[ixj];
-                            s_values[ixj] = temp_v;
+    // Disjoint Bitonic Sorting Network in Shared Memory
+    for (int k = 2; k <= pad_N; k <<= 1) {
+        for (int j = k >> 1; j > 0; j >>= 1) {
+            for (int pair_idx = tid; pair_idx < total_pairs; pair_idx += blockDim.x) {
+                // Unique, collision-free index mapping
+                const int i = ((pair_idx & ~(j - 1)) << 1) | (pair_idx & (j - 1));
+                const int ixj = i | j;
 
-                            const int64_t temp_idx = s_indices[i];
-                            s_indices[i] = s_indices[ixj];
-                            s_indices[ixj] = temp_idx;
-                        }
-                    }
+                const bool descending = ((i & k) == 0);
+                const float val_i = s_values[i];
+                const float val_ixj = s_values[ixj];
+
+                const bool should_swap = descending ? (val_i < val_ixj) : (val_i > val_ixj);
+                if (should_swap) {
+                    s_values[i] = val_ixj;
+                    s_values[ixj] = val_i;
+
+                    const int64_t idx_i = s_indices[i];
+                    s_indices[i] = s_indices[ixj];
+                    s_indices[ixj] = idx_i;
                 }
             }
             __syncthreads();
         }
     }
 
-    // Write top K indices to global memory
+    // Write top K indices to output
     for (int k = tid; k < K; k += blockDim.x) {
         out_indices[r * K + k] = s_indices[k];
     }
@@ -103,8 +86,7 @@ torch::Tensor bitonic_topk_indices_fwd(const torch::Tensor& x, int K) {
         pad_N <<= 1;
     }
 
-    int threads = std::min(512, ((pad_N + 31) / 32) * 32);
-    if (threads < 32) threads = 32;
+    int threads = std::min(512, std::max(32, ((pad_N / 2 + 31) / 32) * 32));
 
     const size_t shared_mem = pad_N * sizeof(int64_t) + pad_N * sizeof(float);
     auto stream = c10::cuda::getCurrentCUDAStream();
@@ -113,7 +95,7 @@ torch::Tensor bitonic_topk_indices_fwd(const torch::Tensor& x, int K) {
     AT_DISPATCH_FLOATING_TYPES_AND2(
         at::ScalarType::Half, at::ScalarType::BFloat16,
         x.scalar_type(), "bitonic_topk_indices_fwd", ([&] {
-            neuralops::cuda::bitonic_topk_kernel<scalar_t><<<rows, threads, shared_mem, stream>>>(
+            neuralops::cuda::bitonic_topk_disjoint_kernel<scalar_t><<<rows, threads, shared_mem, stream>>>(
                 out.data_ptr<int64_t>(),
                 x_c.data_ptr<scalar_t>(),
                 rows,

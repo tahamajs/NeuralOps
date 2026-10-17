@@ -6,19 +6,18 @@
 namespace neuralops {
 namespace cuda {
 
-// Fused Kronecker Product Matmul Forward Kernel with Shared Memory Tiling:
+// Fused Kronecker Product Matmul Forward Kernel:
 // Form: out = (A \otimes B) @ X + bias
 // Stage 1: T = X @ B^T
 // Stage 2: Y = A @ T + bias
 //
 // Hardware-level optimization:
-// 1. Eliminates register spilling: Stages matrices A, B, and intermediate contraction T in fast Shared Memory (SRAM).
-// 2. Cooperative Thread Block Processing: Threads in block collaboratively compute contractions.
-// 3. Strict FP32 intermediate accumulation.
-// 4. Memory latency hiding via register caching.
+// 1. 128-bit float4 vectorized inner contractions along N2 dimension.
+// 2. Strict FP32 intermediate accumulation using hardware fmaf.
+// 3. Fused bias addition directly in registers.
 template <typename scalar_t>
 __launch_bounds__(256)
-__global__ void kronecker_gemm_fwd_kernel(
+__global__ void kronecker_gemm_fwd_vectorized_kernel(
     scalar_t* __restrict__ out,
     const scalar_t* __restrict__ x,
     const scalar_t* __restrict__ A,
@@ -36,17 +35,43 @@ __global__ void kronecker_gemm_fwd_kernel(
     const int m2 = blockIdx.x * blockDim.x + threadIdx.x;
     if (m >= M || m1 >= M1 || m2 >= M2) return;
 
+    const int num_vec_N2 = N2 / 4;
+    const int rem_start_N2 = num_vec_N2 * 4;
+
     float acc = 0.0f;
-    #pragma unroll
     for (int n1 = 0; n1 < N1; ++n1) {
         const float a_val = to_float(A[m1 * N1 + n1]);
         float inner = 0.0f;
-        #pragma unroll
-        for (int n2 = 0; n2 < N2; ++n2) {
-            const float x_val = to_float(x[m * (N1 * N2) + n1 * N2 + n2]);
-            const float b_val = to_float(B[m2 * N2 + n2]);
+
+        const int x_row_base = m * (N1 * N2) + n1 * N2;
+        const int b_row_base = m2 * N2;
+
+        for (int v = 0; v < num_vec_N2; ++v) {
+            const int n2 = v * 4;
+            if constexpr (std::is_same_v<scalar_t, float>) {
+                const float4 x4 = *reinterpret_cast<const float4*>(x + x_row_base + n2);
+                const float4 b4 = *reinterpret_cast<const float4*>(B + b_row_base + n2);
+
+                inner = fmaf(x4.x, b4.x, inner);
+                inner = fmaf(x4.y, b4.y, inner);
+                inner = fmaf(x4.z, b4.z, inner);
+                inner = fmaf(x4.w, b4.w, inner);
+            } else {
+                #pragma unroll
+                for (int k = 0; k < 4; ++k) {
+                    const float x_val = to_float(x[x_row_base + n2 + k]);
+                    const float b_val = to_float(B[b_row_base + n2 + k]);
+                    inner = fmaf(x_val, b_val, inner);
+                }
+            }
+        }
+
+        for (int n2 = rem_start_N2; n2 < N2; ++n2) {
+            const float x_val = to_float(x[x_row_base + n2]);
+            const float b_val = to_float(B[b_row_base + n2]);
             inner = fmaf(x_val, b_val, inner);
         }
+
         acc = fmaf(a_val, inner, acc);
     }
 
@@ -96,7 +121,7 @@ torch::Tensor kronecker_gemm_fwd(
     AT_DISPATCH_FLOATING_TYPES_AND2(
         at::ScalarType::Half, at::ScalarType::BFloat16,
         x.scalar_type(), "kronecker_gemm_fwd", ([&] {
-            neuralops::cuda::kronecker_gemm_fwd_kernel<scalar_t><<<grid, block, 0, stream>>>(
+            neuralops::cuda::kronecker_gemm_fwd_vectorized_kernel<scalar_t><<<grid, block, 0, stream>>>(
                 out.data_ptr<scalar_t>(),
                 x_c.data_ptr<scalar_t>(),
                 a_c.data_ptr<scalar_t>(),

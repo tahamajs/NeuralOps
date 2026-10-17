@@ -6,8 +6,11 @@
 namespace neuralops { namespace cuda {
 
 // Second-order attention polynomial feature expansion kernel
+// Fused polynomial transformation: phi(q, k) = (q * k) + alpha * (q * k)^2
+// Output: out = phi(q, k) * v
+// Employs 128-bit float4 vectorized memory loads and stores for peak global memory bandwidth.
 template <typename scalar_t>
-__global__ void __launch_bounds__(256) soa_attn_fwd_kernel(
+__global__ void __launch_bounds__(256) soa_attn_fwd_vectorized_kernel(
     scalar_t* __restrict__ out,
     const scalar_t* __restrict__ q,
     const scalar_t* __restrict__ k,
@@ -15,15 +18,51 @@ __global__ void __launch_bounds__(256) soa_attn_fwd_kernel(
     const int total_elements,
     const float alpha
 ) {
+    const int num_vec = total_elements / 4;
     const int tid = blockIdx.x * blockDim.x + threadIdx.x;
     const int stride = blockDim.x * gridDim.x;
 
-    for (int idx = tid; idx < total_elements; idx += stride) {
+    for (int idx = tid; idx < num_vec; idx += stride) {
+        if constexpr (std::is_same_v<scalar_t, float>) {
+            const float4 q4 = *reinterpret_cast<const float4*>(q + idx * 4);
+            const float4 k4 = *reinterpret_cast<const float4*>(k + idx * 4);
+            const float4 v4 = *reinterpret_cast<const float4*>(v + idx * 4);
+            float4 out4;
+
+            #define COMPUTE_SOA(q_elem, k_elem, v_elem, out_elem) { \
+                const float qk = (q_elem) * (k_elem); \
+                const float phi = fmaf(alpha, qk * qk, qk); \
+                (out_elem) = phi * (v_elem); \
+            }
+            COMPUTE_SOA(q4.x, k4.x, v4.x, out4.x);
+            COMPUTE_SOA(q4.y, k4.y, v4.y, out4.y);
+            COMPUTE_SOA(q4.z, k4.z, v4.z, out4.z);
+            COMPUTE_SOA(q4.w, k4.w, v4.w, out4.w);
+            #undef COMPUTE_SOA
+
+            *reinterpret_cast<float4*>(out + idx * 4) = out4;
+        } else {
+            #pragma unroll
+            for (int j = 0; j < 4; ++j) {
+                const int elem_idx = idx * 4 + j;
+                const float q_val = to_float(q[elem_idx]);
+                const float k_val = to_float(k[elem_idx]);
+                const float v_val = to_float(v[elem_idx]);
+                const float qk = q_val * k_val;
+                const float phi = fmaf(alpha, qk * qk, qk);
+                out[elem_idx] = from_float<scalar_t>(phi * v_val);
+            }
+        }
+    }
+
+    // Remainder loop
+    const int rem_start = num_vec * 4;
+    for (int idx = rem_start + tid; idx < total_elements; idx += stride) {
         const float q_val = to_float(q[idx]);
         const float k_val = to_float(k[idx]);
         const float v_val = to_float(v[idx]);
         const float qk = q_val * k_val;
-        const float phi = qk + alpha * (qk * qk);
+        const float phi = fmaf(alpha, qk * qk, qk);
         out[idx] = from_float<scalar_t>(phi * v_val);
     }
 }
@@ -44,8 +83,9 @@ torch::Tensor soa_attn_fwd(
     const int total = q.numel();
     if (total == 0) return out;
 
+    const int vec_count = (total + 3) / 4;
     constexpr int THREADS = 256;
-    const int blocks = std::min(65535, (total + THREADS - 1) / THREADS);
+    const int blocks = std::min(65535, (vec_count + THREADS - 1) / THREADS);
 
     auto stream = c10::cuda::getCurrentCUDAStream();
     auto q_c = q.contiguous();
@@ -55,7 +95,7 @@ torch::Tensor soa_attn_fwd(
     AT_DISPATCH_FLOATING_TYPES_AND2(
         at::ScalarType::Half, at::ScalarType::BFloat16,
         q.scalar_type(), "soa_attn_fwd", ([&] {
-            neuralops::cuda::soa_attn_fwd_kernel<scalar_t><<<blocks, THREADS, 0, stream>>>(
+            neuralops::cuda::soa_attn_fwd_vectorized_kernel<scalar_t><<<blocks, THREADS, 0, stream>>>(
                 out.data_ptr<scalar_t>(),
                 q_c.data_ptr<scalar_t>(),
                 k_c.data_ptr<scalar_t>(),

@@ -30,14 +30,13 @@ __global__ void act_scale_quant_gemm_tiled_kernel(
     const int by = blockIdx.y; // along M
 
     const int tid = threadIdx.x;
-    const int row = tid / BLOCK_N; // [0, BLOCK_M - 1]
-    const int col = tid % BLOCK_N; // [0, BLOCK_N - 1]
+    const int row = tid / BLOCK_N;
+    const int col = tid % BLOCK_N;
 
     const int global_m = by * BLOCK_M + row;
     const int global_n = bx * BLOCK_N + col;
 
     float acc = 0.0f;
-
     const int num_k_tiles = (K + BLOCK_K - 1) / BLOCK_K;
 
     for (int t = 0; t < num_k_tiles; ++t) {
@@ -69,9 +68,9 @@ __global__ void act_scale_quant_gemm_tiled_kernel(
 
         __syncthreads();
 
-        #pragma unroll
+        #pragma unroll 8
         for (int k = 0; k < BLOCK_K; ++k) {
-            acc += s_X[row][k] * s_W[col][k];
+            acc = fmaf(s_X[row][k], s_W[col][k], acc);
         }
 
         __syncthreads();
@@ -125,7 +124,7 @@ torch::Tensor act_scale_quant_gemm_fwd(
     constexpr int BLOCK_M = 16;
     constexpr int BLOCK_N = 16;
     constexpr int BLOCK_K = 32;
-    constexpr int THREADS = BLOCK_M * BLOCK_N; // 256 threads
+    constexpr int THREADS = BLOCK_M * BLOCK_N;
 
     dim3 grid((N + BLOCK_N - 1) / BLOCK_N, (M + BLOCK_M - 1) / BLOCK_M);
     auto stream = c10::cuda::getCurrentCUDAStream();

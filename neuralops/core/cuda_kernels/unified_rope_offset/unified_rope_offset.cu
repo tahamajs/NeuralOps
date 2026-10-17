@@ -6,16 +6,15 @@
 namespace neuralops { namespace cuda {
 
 // Unified RoPE with Offset Kernel:
-// Form: out[..., 2i]   = x[..., 2i] * cos[pos, i] - x[..., 2i+1] * sin[pos, i]
-//       out[..., 2i+1] = x[..., 2i] * sin[pos, i] + x[..., 2i+1] * cos[pos, i]
+// Form: out[..., i]             = x[..., i] * cos[pos, i] - x[..., half_rope + i] * sin[pos, i]
+//       out[..., half_rope + i] = x[..., i] * sin[pos, i] + x[..., half_rope + i] * cos[pos, i]
 //
 // Hardware-level optimization:
-// 1. Vectorized channel-pair processing: each thread loads (x0, x1) and (c, s) into registers.
+// 1. 128-bit float4 vectorized memory loads & stores when half_rope is divisible by 4.
 // 2. Fused Multiply-Add (FMA): computes rotation using fast hardware fmaf intrinsics.
-// 3. 2D decoupled grid: dim3 grid(ceil(pairs / 128), B * H * N).
-// 4. Any trailing channels (D > rope_dim) are passed through untouched.
+// 3. Decoupled 2D grid mapping and pass-through copy for channels beyond rope_dim.
 template <typename scalar_t>
-__global__ void __launch_bounds__(128) unified_rope_offset_kernel(
+__global__ void __launch_bounds__(128) unified_rope_offset_vectorized_kernel(
     scalar_t* __restrict__ out,
     const scalar_t* __restrict__ x,
     const float* __restrict__ cos_tab,
@@ -30,28 +29,76 @@ __global__ void __launch_bounds__(128) unified_rope_offset_kernel(
     const int bhn = blockIdx.y;
     if (bhn >= B * H * N) return;
 
-    const int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i >= half_rope) return;
-
     const int n = bhn % N;
     const int pos = n + offset;
     const int base_idx = bhn * D;
+    const int tab_base = pos * half_rope;
 
-    // Load trigonometric constants into registers
-    const int tab_idx = pos * half_rope + i;
-    const float c = cos_tab[tab_idx];
-    const float s = sin_tab[tab_idx];
+    const int num_vec = half_rope / 4;
+    const int tid = blockIdx.x * blockDim.x + threadIdx.x;
 
-    // Load channel pair into registers (split-half convention)
-    const float x0 = to_float(x[base_idx + i]);
-    const float x1 = to_float(x[base_idx + half_rope + i]);
+    for (int vi = tid; vi < num_vec; vi += blockDim.x * gridDim.x) {
+        const int i = vi * 4;
+        if constexpr (std::is_same_v<scalar_t, float>) {
+            const float4 c4 = *reinterpret_cast<const float4*>(cos_tab + tab_base + i);
+            const float4 s4 = *reinterpret_cast<const float4*>(sin_tab + tab_base + i);
 
-    // Fast FMA rotation
-    const float r0 = fmaf(x0, c, -(x1 * s));
-    const float r1 = fmaf(x0, s, x1 * c);
+            const float4 x0_4 = *reinterpret_cast<const float4*>(x + base_idx + i);
+            const float4 x1_4 = *reinterpret_cast<const float4*>(x + base_idx + half_rope + i);
 
-    out[base_idx + i] = from_float<scalar_t>(r0);
-    out[base_idx + half_rope + i] = from_float<scalar_t>(r1);
+            float4 r0_4;
+            float4 r1_4;
+
+            #define ROTATE_ROPE(x0, x1, c, s, r0, r1) { \
+                r0 = fmaf(x0, c, -(x1 * s)); \
+                r1 = fmaf(x0, s, x1 * c); \
+            }
+            ROTATE_ROPE(x0_4.x, x1_4.x, c4.x, s4.x, r0_4.x, r1_4.x);
+            ROTATE_ROPE(x0_4.y, x1_4.y, c4.y, s4.y, r0_4.y, r1_4.y);
+            ROTATE_ROPE(x0_4.z, x1_4.z, c4.z, s4.z, r0_4.z, r1_4.z);
+            ROTATE_ROPE(x0_4.w, x1_4.w, c4.w, s4.w, r0_4.w, r1_4.w);
+            #undef ROTATE_ROPE
+
+            *reinterpret_cast<float4*>(out + base_idx + i) = r0_4;
+            *reinterpret_cast<float4*>(out + base_idx + half_rope + i) = r1_4;
+        } else {
+            #pragma unroll
+            for (int k = 0; k < 4; ++k) {
+                const int curr_i = i + k;
+                const float c = cos_tab[tab_base + curr_i];
+                const float s = sin_tab[tab_base + curr_i];
+                const float x0 = to_float(x[base_idx + curr_i]);
+                const float x1 = to_float(x[base_idx + half_rope + curr_i]);
+
+                const float r0 = fmaf(x0, c, -(x1 * s));
+                const float r1 = fmaf(x0, s, x1 * c);
+
+                out[base_idx + curr_i] = from_float<scalar_t>(r0);
+                out[base_idx + half_rope + curr_i] = from_float<scalar_t>(r1);
+            }
+        }
+    }
+
+    // Remainder loop
+    const int rem_start = num_vec * 4;
+    for (int i = rem_start + tid; i < half_rope; i += blockDim.x * gridDim.x) {
+        const float c = cos_tab[tab_base + i];
+        const float s = sin_tab[tab_base + i];
+        const float x0 = to_float(x[base_idx + i]);
+        const float x1 = to_float(x[base_idx + half_rope + i]);
+
+        const float r0 = fmaf(x0, c, -(x1 * s));
+        const float r1 = fmaf(x0, s, x1 * c);
+
+        out[base_idx + i] = from_float<scalar_t>(r0);
+        out[base_idx + half_rope + i] = from_float<scalar_t>(r1);
+    }
+
+    // Pass through trailing channels (if rope_dim < D)
+    const int rope_dim = half_rope * 2;
+    for (int i = rope_dim + tid; i < D; i += blockDim.x * gridDim.x) {
+        out[base_idx + i] = x[base_idx + i];
+    }
 }
 
 }} // namespace neuralops::cuda
@@ -63,7 +110,6 @@ torch::Tensor unified_rope_offset_fwd(
     int rope_dim,
     int offset = 0
 ) {
-
     CHECK_INPUT(x);
     CHECK_INPUT(cos_tab);
     CHECK_INPUT(sin_tab);
@@ -83,26 +129,27 @@ torch::Tensor unified_rope_offset_fwd(
                 "unified_rope_offset_fwd: N + offset = ", N + offset,
                 " exceeds cos_tab.size(0) = ", max_pos);
 
-    auto out = x.clone();
-    if (B == 0 || H == 0 || N == 0 || half_rope == 0) return out;
+    auto out = torch::empty_like(x);
+    if (B == 0 || H == 0 || N == 0 || D == 0) return out;
 
     constexpr int THREADS = 128;
-    const int blocks_x = (half_rope + THREADS - 1) / THREADS;
-    dim3 grid(blocks_x, B * H * N);
+    const int vec_count = (half_rope + 3) / 4;
+    dim3 grid((vec_count + THREADS - 1) / THREADS, B * H * N);
+    if (grid.x == 0) grid.x = 1;
 
     auto stream = c10::cuda::getCurrentCUDAStream();
     auto x_c = x.contiguous();
-    auto c_c = cos_tab.contiguous().to(torch::kFloat32);
-    auto s_c = sin_tab.contiguous().to(torch::kFloat32);
+    auto cos_c = cos_tab.contiguous().to(torch::kFloat32);
+    auto sin_c = sin_tab.contiguous().to(torch::kFloat32);
 
     AT_DISPATCH_FLOATING_TYPES_AND2(
         at::ScalarType::Half, at::ScalarType::BFloat16,
         x.scalar_type(), "unified_rope_offset_fwd", ([&] {
-            neuralops::cuda::unified_rope_offset_kernel<scalar_t><<<grid, THREADS, 0, stream>>>(
+            neuralops::cuda::unified_rope_offset_vectorized_kernel<scalar_t><<<grid, THREADS, 0, stream>>>(
                 out.data_ptr<scalar_t>(),
                 x_c.data_ptr<scalar_t>(),
-                c_c.data_ptr<float>(),
-                s_c.data_ptr<float>(),
+                cos_c.data_ptr<float>(),
+                sin_c.data_ptr<float>(),
                 B, H, N, D, half_rope, offset
             );
         })
