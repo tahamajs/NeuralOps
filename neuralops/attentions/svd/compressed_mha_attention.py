@@ -39,6 +39,14 @@ from neuralops.utils.model_family import ModelAdapter
     supports_gqa=True,
 )
 class CompressedDistilBertAttention(BaseAttention):
+    """CompressedDistilBertAttention neural operator.
+
+    Compressed Multi-Head Attention for DistilBERT and Multi-Architecture via Joint Truncated SVD.
+
+    Attributes:
+        supports_causal (bool): Whether causal autoregressive masking is supported.
+        is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
+    """
     supports_causal: bool = True
     supports_bidirectional: bool = True
     supports_gqa: bool = True

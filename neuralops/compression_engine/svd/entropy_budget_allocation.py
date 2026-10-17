@@ -39,6 +39,14 @@ _ATTN_NAMES = {
 
 @COMPRESSOR_REGISTRY.register("entropy_budget_allocation")
 class EntropyBudgetCompressor(BaseCompressor):
+    """EntropyBudgetCompressor neural operator.
+
+    EntropyBudgetAllocation: global rank assignment via whitened activation entropy. Registered as 'entropy_budget' and 'entropy_budget_allocation'.
+
+    Attributes:
+        supports_causal (bool): Whether causal autoregressive masking is supported.
+        is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
+    """
     is_custom_attention: bool = True
     """
     Entropy Budget Low-Rank SVD Compressor.

@@ -275,6 +275,14 @@ class FusedQKVSVDLinear(nn.Module):
 # ============================================================================
 @COMPRESSOR_REGISTRY.register("adasvd_compressor")
 class AdaSVDCompressor(BaseCompressor):
+    """AdaSVDCompressor neural operator.
+
+    AdaSVD: Adaptive SVD with Activation Whitening, Two-Sided Weighted ALS, and Mean-Shift Bias Absorption.
+
+    Attributes:
+        supports_causal (bool): Whether causal autoregressive masking is supported.
+        is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
+    """
     is_custom_attention: bool = False
 
     def __init__(

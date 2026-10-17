@@ -433,6 +433,14 @@ class KroneckerTTLoRALayer(nn.Module):
 
 
 class KroneckerTTLoRACompressor(BaseCompressor):
+    """KroneckerTTLoRACompressor neural operator.
+
+    Kronecker-TT-LoRA Hybrid Compression Engine Adapter.
+
+    Attributes:
+        supports_causal (bool): Whether causal autoregressive masking is supported.
+        is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
+    """
     is_custom_attention: bool = False
 
     def __init__(

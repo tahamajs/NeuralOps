@@ -62,6 +62,14 @@ def _safe_low_rank(x: torch.Tensor, up_weight: torch.Tensor, down_weight: torch.
 # ===========================================================================
 @ATTENTION_REGISTRY.register("mla_attention", supports_causal=True, supports_gqa=True)
 class MLAAttention(BaseAttention):
+    """MLAAttention neural operator.
+
+    Multi-Head Latent Attention (MLA) — DeepSeek-V2 style.
+
+    Attributes:
+        supports_causal (bool): Whether causal autoregressive masking is supported.
+        is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
+    """
     supports_causal: bool = True
     supports_gqa: bool = True
     is_custom_attention: bool = True

@@ -108,6 +108,14 @@ class InfoMambaConceptBottleneck(nn.Module):
 
 @ATTENTION_REGISTRY.register("jamba_info", supports_causal=True, supports_gqa=True)
 class JambaInfoBlock(BaseAttention):
+    """JambaInfoBlock neural operator.
+
+    Information-Bottlenecked Jamba Architecture with Dual Operational Modes. Differential attention with concept-bottlenecked SSM branch.
+
+    Attributes:
+        supports_causal (bool): Whether causal autoregressive masking is supported.
+        is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
+    """
     is_custom_attention: bool = True
 
     def __init__(

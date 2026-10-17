@@ -110,6 +110,14 @@ AdaptiveSVDLinear = SVDLinear
 
 @COMPRESSOR_REGISTRY.register("adaptive_ranks")
 class AdaptiveRanksCompressor(BaseCompressor):
+    """AdaptiveRanksCompressor neural operator.
+
+    Adaptive Ranks SVD Compressor: dynamic rank selection per layer based on singular value energy spectra.
+
+    Attributes:
+        supports_causal (bool): Whether causal autoregressive masking is supported.
+        is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
+    """
     is_custom_attention: bool = True
     r"""
     Adaptive Ranks SVD Compressor.

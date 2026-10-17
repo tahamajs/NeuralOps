@@ -37,6 +37,14 @@ logger = logging.getLogger(__name__)
 
 @ATTENTION_REGISTRY.register("rpc_attention")
 class RPCAttention(BaseAttention):
+    """RPCAttention neural operator.
+
+    Random Projection Compressed (RPC) Attention.
+
+    Attributes:
+        supports_causal (bool): Whether causal autoregressive masking is supported.
+        is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
+    """
     is_custom_attention: bool = True
 
     def __init__(

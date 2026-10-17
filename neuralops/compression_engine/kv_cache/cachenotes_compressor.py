@@ -404,6 +404,14 @@ class CacheNotesKVCache:
 
 @COMPRESSOR_REGISTRY.register("cachenotes_compressor")
 class CacheNotesCompressor(BaseCompressor):
+    """CacheNotesCompressor neural operator.
+
+    CacheNotes: Task-Aware Key-Value Cache Compression and Static Weight Compression with Learnable Continuous CPT (Compression-Planning-Token) Generator.
+
+    Attributes:
+        supports_causal (bool): Whether causal autoregressive masking is supported.
+        is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
+    """
     is_custom_attention: bool = True
     """
     CacheNotes Compressor: Decouples static weight compression from KV cache dynamic pruning

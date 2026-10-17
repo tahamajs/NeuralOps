@@ -558,6 +558,14 @@ _ATTN_NAMES = {
 
 
 class KroneckerCompressor(BaseCompressor):
+    """KroneckerCompressor neural operator.
+
+    Kronecker Product Compressor: replaces nn.Linear and Conv1D layers with KroneckerLinear. Registered as 'kronecker_class', 'kronecker_compressor_class', and (factory) 'kronecker', 'kronecker_compressor', 'kronecker_factory'.
+
+    Attributes:
+        supports_causal (bool): Whether causal autoregressive masking is supported.
+        is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
+    """
     # KC-FIX-01
     is_custom_attention: bool = False
 

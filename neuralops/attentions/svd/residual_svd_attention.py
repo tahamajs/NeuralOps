@@ -35,6 +35,14 @@ logger = logging.getLogger(__name__)
 
 @ATTENTION_REGISTRY.register("residual_svd_attention")
 class ResidualSVDAttention(BaseAttention):
+    """ResidualSVDAttention neural operator.
+
+    Spectral Residual Low-Rank SVD Attention (Res-SVD Attention).
+
+    Attributes:
+        supports_causal (bool): Whether causal autoregressive masking is supported.
+        is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
+    """
     is_custom_attention: bool = True
 
     def __init__(

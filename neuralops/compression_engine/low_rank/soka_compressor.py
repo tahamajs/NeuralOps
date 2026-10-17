@@ -89,6 +89,14 @@ class LowRankLinear(nn.Module):
 
 
 class LowRankCompressor(BaseCompressor):
+    """LowRankCompressor neural operator.
+
+    SoKA: Second-Order Knowledge-Aware Low-Rank Linear Compressor. Registered in COMPRESSOR_REGISTRY as 'soka'.
+
+    Attributes:
+        supports_causal (bool): Whether causal autoregressive masking is supported.
+        is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
+    """
     is_custom_attention: bool = True
     """
     SoKA Low-Rank Linear Compressor.

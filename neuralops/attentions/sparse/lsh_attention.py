@@ -46,6 +46,14 @@ logger = logging.getLogger(__name__)
 
 @ATTENTION_REGISTRY.register("lsh_attention", supports_causal=True, supports_gqa=True)
 class LSHAttention(BaseAttention):
+    """LSHAttention neural operator.
+
+    Locality-Sensitive Hashing (LSH) Attention – Reformer style .
+
+    Attributes:
+        supports_causal (bool): Whether causal autoregressive masking is supported.
+        is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
+    """
     supports_causal: bool = True
     supports_gqa: bool = True
     is_custom_attention: bool = True

@@ -26,6 +26,14 @@ logger = logging.getLogger(__name__)
 
 
 class SDRMCompressor(BaseCompressor):
+    """SDRMCompressor neural operator.
+
+    SDRM: Scaled Dimension Rank Modulation. Assigns layer rank proportional to parameter budget for edge inference and factorizes into low-rank SVDLinear layers to achieve physical parameter reduction. Registered as 'sdrm', 'sdrm_factory', and 'sdrm_compressor_factory'.
+
+    Attributes:
+        supports_causal (bool): Whether causal autoregressive masking is supported.
+        is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
+    """
     is_custom_attention: bool = True
     """
     SDRM: Scaled Dimension Rank Modulation.

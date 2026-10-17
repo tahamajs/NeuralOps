@@ -186,6 +186,14 @@ _ATTN_NAMES = {
 
 
 class DeltaKVCompressor(BaseCompressor):
+    """DeltaKVCompressor neural operator.
+
+    DeltaKV: Residual-Based KV Cache Compression via Long-Range Similarity. Registered as 'delta_kv', 'delta_kv_class', 'delta_kv_compressor', 'delta_kv_factory'.
+
+    Attributes:
+        supports_causal (bool): Whether causal autoregressive masking is supported.
+        is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
+    """
     # DKV-FIX-01: this is a compressor, not attention.
     is_custom_attention: bool = False
 

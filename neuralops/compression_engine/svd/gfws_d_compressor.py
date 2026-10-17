@@ -129,6 +129,14 @@ class GFWSLoRALinear(nn.Module):
 
 @COMPRESSOR_REGISTRY.register("gfws")
 class GFWSCompressor(BaseCompressor):
+    """GFWSCompressor neural operator.
+
+    GFWSVD: Fisher-weighted / Covariance-weighted SVD. Registered as 'gfws' and 'gfws_d'.
+
+    Attributes:
+        supports_causal (bool): Whether causal autoregressive masking is supported.
+        is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
+    """
     is_custom_attention: bool = True
     """
     Generalized Fisher / Covariance-Weighted SVD Compressor.
