@@ -56,9 +56,10 @@ torch::Tensor paged_recurrent_step_fwd(
     const torch::Tensor& k,
     const torch::Tensor& v,
     const torch::Tensor& block_tables,
-    int page_slot,
-    float decay
+    int page_slot = 0,
+    float decay = 1.0f
 ) {
+
     CHECK_INPUT(page_pool);
     CHECK_INPUT(q);
     CHECK_INPUT(k);

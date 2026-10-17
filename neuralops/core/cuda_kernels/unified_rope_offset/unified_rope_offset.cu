@@ -61,8 +61,9 @@ torch::Tensor unified_rope_offset_fwd(
     const torch::Tensor& cos_tab,
     const torch::Tensor& sin_tab,
     int rope_dim,
-    int offset
+    int offset = 0
 ) {
+
     CHECK_INPUT(x);
     CHECK_INPUT(cos_tab);
     CHECK_INPUT(sin_tab);
