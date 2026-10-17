@@ -11,12 +11,6 @@
     "sig": "(spans: 'torch.Tensor', q_pos: 'torch.Tensor', k_pos: 'torch.Tensor', ramp_size: 'float', is_causal: 'bool' = True) -> 'torch.Tensor'",
     "file": "adaptive_span_autograd.py"
   },
-  "adasplash_attention": {
-    "main_fn": "adasplash_attention",
-    "ref_fn": "adasplash_attention_ref",
-    "sig": "(q: 'torch.Tensor', k: 'torch.Tensor', v: 'torch.Tensor', threshold: 'float' = 0.1, window_size: 'int' = 64) -> 'torch.Tensor'",
-    "file": "adasplash_attention_autograd.py"
-  },
   "aegis_gate_norm": {
     "main_fn": "aegis_gate_norm",
     "ref_fn": "aegis_gate_norm_pytorch_ref",

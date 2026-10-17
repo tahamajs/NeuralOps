@@ -16,16 +16,10 @@ def _get_module():
     return _MODULE
 
 def linformer_attention_ref(q: torch.Tensor, k_proj: torch.Tensor, v_proj: torch.Tensor) -> torch.Tensor:
-    B, H, N, D = q.shape
-    scale = 1.0 / (D ** 0.5)
-    scores = torch.matmul(q, k_proj.transpose(-2, -1)) * scale
-    probs = F.softmax(scores, dim=-1)
-    return torch.matmul(probs, v_proj)
+    return F.scaled_dot_product_attention(q, k_proj, v_proj)
 
 def linformer_attention(q: torch.Tensor, k_proj: torch.Tensor, v_proj: torch.Tensor) -> torch.Tensor:
     def cuda_fn(q, k_proj, v_proj):
         mod = _get_module()
         return mod.linformer_attn_fwd(q.contiguous(), k_proj.contiguous(), v_proj.contiguous())
-    if k_proj.shape[-2] > 128:
-        cuda_fn = None
     return dispatch(cuda_fn, linformer_attention_ref, linformer_attention_ref, q, k_proj=k_proj, v_proj=v_proj, kernel_name="linformer_attention")

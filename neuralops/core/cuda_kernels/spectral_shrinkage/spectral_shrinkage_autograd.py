@@ -37,8 +37,12 @@ def spectral_shrinkage_triton_ref(x_re, x_im, w_re, w_im, tau):
 def spectral_shrinkage(x_re: torch.Tensor, x_im: torch.Tensor, w_re: torch.Tensor, w_im: torch.Tensor, tau: torch.Tensor):
     def cuda_fn(xr, xi, wr, wi, t, **kwargs):
         mod = _get_module()
+        total = xr.numel()
+        wr_c = wr.reshape(-1)[:total].reshape_as(xr).contiguous() if wr.numel() >= total else wr.expand_as(xr).contiguous()
+        wi_c = wi.reshape(-1)[:total].reshape_as(xr).contiguous() if wi.numel() >= total else wi.expand_as(xr).contiguous()
+        t_c = t.expand_as(xr).contiguous() if t.numel() != total else t.contiguous()
         out = mod.spectral_shrinkage_fwd(
-            xr.contiguous(), xi.contiguous(), wr.contiguous(), wi.contiguous(), t.contiguous()
+            xr.contiguous(), xi.contiguous(), wr_c, wi_c, t_c
         )
         return torch.complex(out[0], out[1])
     return dispatch(

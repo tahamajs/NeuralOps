@@ -86,7 +86,8 @@ def test_06_mamba_svd_flash():
     svd_vt = torch.randn(R, D, device=device, dtype=torch.float32)
     decay = torch.rand(D, device=device, dtype=torch.float32) * 0.9
     out_ref = ck.mamba_svd_flash_ref(u, svd_u, svd_vt, decay)
-    out_cuda = ck.mamba_svd_flash(u, svd_u, svd_vt, decay)
+    with force_kernel_backend('cuda'):
+        out_cuda = ck.mamba_svd_flash(u, svd_u, svd_vt, decay)
     assert_metrics(out_cuda, out_ref, 'mamba_svd_flash')
 
 @pytest.mark.skipif(not torch.cuda.is_available(), reason='CUDA required')

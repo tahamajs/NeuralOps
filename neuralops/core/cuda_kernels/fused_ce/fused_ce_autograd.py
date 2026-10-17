@@ -71,12 +71,11 @@ class _FusedCrossEntropyFunction(torch.autograd.Function):
         loss_per_token = mod.fused_ce_fwd(logits_flat, targets_flat, ignore_index)
 
         valid_mask = targets_flat != ignore_index
-        total_valid = valid_mask.sum().clamp(min=1).item()
+        total_valid = valid_mask.sum().clamp(min=1)
 
-        ctx.save_for_backward(logits_flat, targets_flat)
+        ctx.save_for_backward(logits_flat, targets_flat, total_valid)
         ctx.ignore_index = ignore_index
         ctx.reduction = reduction
-        ctx.total_valid = total_valid
         ctx.orig_shape = orig_shape
 
         if reduction == "mean":
@@ -88,19 +87,18 @@ class _FusedCrossEntropyFunction(torch.autograd.Function):
 
     @staticmethod
     def backward(ctx: Any, grad_output: torch.Tensor) -> tuple[torch.Tensor | None, ...]:
-        logits_flat, targets_flat = ctx.saved_tensors
+        logits_flat, targets_flat, total_valid = ctx.saved_tensors
         ignore_index = ctx.ignore_index
         reduction = ctx.reduction
-        total_valid = ctx.total_valid
         N_tokens = logits_flat.shape[0]
 
         if reduction == "mean":
             scale = (grad_output / total_valid).to(torch.float32)
-            grad_loss = scale.repeat(N_tokens)
+            grad_loss = scale.expand(N_tokens).contiguous()
         elif reduction == "sum":
-            grad_loss = grad_output.to(torch.float32).repeat(N_tokens)
+            grad_loss = grad_output.to(torch.float32).expand(N_tokens).contiguous()
         else:
-            grad_loss = grad_output.reshape(-1).to(torch.float32)
+            grad_loss = grad_output.reshape(-1).to(torch.float32).contiguous()
 
         mod = _get_module()
         grad_logits = mod.fused_ce_bwd(logits_flat, targets_flat, grad_loss, ignore_index)

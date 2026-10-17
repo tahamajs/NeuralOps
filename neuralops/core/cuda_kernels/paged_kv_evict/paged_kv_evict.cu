@@ -44,17 +44,20 @@ std::vector<torch::Tensor> paged_kv_compact_fwd(
     CHECK_INPUT(keep_indices);
 
     const int num_keep = keep_indices.size(0);
-    const int D = k_in.size(-1);
+    const int64_t slice_size = k_in.numel() / k_in.size(0);
 
-    auto k_out = torch::empty({num_keep, D}, k_in.options());
-    auto v_out = torch::empty({num_keep, D}, v_in.options());
+    std::vector<int64_t> out_shape = k_in.sizes().vec();
+    out_shape[0] = num_keep;
 
-    if (num_keep == 0 || D == 0) {
+    auto k_out = torch::empty(out_shape, k_in.options());
+    auto v_out = torch::empty(out_shape, v_in.options());
+
+    if (num_keep == 0 || slice_size == 0) {
         return {k_out, v_out};
     }
 
     constexpr int THREADS = 256;
-    const int blocks_x = std::min(64, (D + THREADS - 1) / THREADS);
+    const int blocks_x = std::min(64, static_cast<int>((slice_size + THREADS - 1) / THREADS));
     dim3 grid(blocks_x, num_keep);
 
     auto stream = c10::cuda::getCurrentCUDAStream();
@@ -72,7 +75,7 @@ std::vector<torch::Tensor> paged_kv_compact_fwd(
                 v_c.data_ptr<scalar_t>(),
                 idx_c.data_ptr<int64_t>(),
                 num_keep,
-                D
+                static_cast<int>(slice_size)
             );
         })
     );

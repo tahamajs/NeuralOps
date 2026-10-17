@@ -780,7 +780,8 @@ def main():
     subdirs = sorted([d for d in cuda_dir.iterdir() if d.is_dir() and not d.name.startswith(("_", "."))])
 
     # Write worker script
-    artifact_dir = Path("/Users/tahamajs/.gemini/antigravity-cli/brain/b32aaef5-4133-4108-b33b-dffeed12f1de")
+    # Write worker script
+    artifact_dir = repo_root / "scratch"
     artifact_dir.mkdir(parents=True, exist_ok=True)
     worker_path = artifact_dir / "_isolated_worker.py"
     worker_content = WORKER_CODE.format(
