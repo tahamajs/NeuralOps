@@ -1,0 +1,125 @@
+\begin{center}
+\tiny
+\setlength{\tabcolsep}{2.5pt}
+\begin{longtable}{lllccccccr}
+\caption{\textbf{Comprehensive Master Benchmark Matrix: Physical GPU Runs across Representative Attentions, Compressors, and Kernels.}} \label{tab:master_benchmark_matrix} \\
+\toprule
+\textbf{Module Name} & \textbf{Category} & \textbf{Family} & \textbf{CR} & \textbf{SST-2 (\%)} & \textbf{MNLI (\%)} & \textbf{AG News (\%)} & \textbf{PPL} & \textbf{VRAM (MB)} & \textbf{Speedup} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Module Name} & \textbf{Category} & \textbf{Family} & \textbf{CR} & \textbf{SST-2 (\%)} & \textbf{MNLI (\%)} & \textbf{AG News (\%)} & \textbf{PPL} & \textbf{VRAM (MB)} & \textbf{Speedup} \\
+\midrule
+\endhead
+\midrule
+\multicolumn{10}{r}{\emph{Continued on next page\dots}} \\
+\endfoot
+\bottomrule
+\endlastfoot
+\texttt{a3} & attention & gpt & 1.05x$\times$ & 53.67\% & 36.10\% & 25.30\% & - & 204.70 & - \\
+\texttt{aa\_svd\_factory} & attention & gpt & 1.22x$\times$ & - & - & - & - & - & - \\
+\texttt{aasvd} & attention & roberta & 1.13x$\times$ & 92.10\% & 37.10\% & - & - & 189.90 & - \\
+\texttt{adaptive} & attention & bert & 1.04x$\times$ & 92.80\% & - & - & - & 280.10 & - \\
+\texttt{adaptive\_compressor} & attention & general & - & 90.37\% & - & - & - & - & - \\
+\texttt{adaptive\_ranks} & attention & bert & 1.08x$\times$ & - & - & 83.60\% & - & 249.70 & - \\
+\texttt{adaptive\_span} & attention & gpt & 1.00x$\times$ & 81.08\% & 81.80\% & 94.30\% & - & 189.90 & - \\
+\texttt{adaptive\_span\_attention} & attention & bert & 1.00x$\times$ & 95.00\% & - & - & 38.50 & 454.40 & - \\
+\texttt{adaptive\_span\_inject} & attention & roberta & 1.00x$\times$ & 0.00\% & 0.00\% & 0.00\% & - & - & - \\
+\texttt{adaptive\_sparse} & attention & bert & 1.00x$\times$ & 93.12\% & 36.40\% & 90.80\% & - & 376.40 & - \\
+\texttt{adaptive\_sparse\_attention} & attention & bert & 1.00x$\times$ & 93.00\% & 36.40\% & 64.70\% & 27.54 & 411.90 & - \\
+\texttt{adaptive\_sparse\_attention\_attention} & attention & bert & 1.00x$\times$ & 99.72\% & - & - & - & 383.00 & - \\
+\texttt{adaptive\_sparse\_inject} & attention & roberta & 1.00x$\times$ & 92.20\% & 36.40\% & 0.00\% & - & 419.10 & - \\
+\texttt{adaptive\_svd} & attention & bert & 1.15x$\times$ & 92.30\% & 34.10\% & - & - & 279.10 & - \\
+\texttt{adaptive\_svd\_attention} & attention & roberta & 1.20x$\times$ & 92.52\% & - & - & 35.32 & 228.80 & - \\
+\texttt{adaptive\_svd\_attn} & attention & general & - & 85.89\% & - & - & - & - & - \\
+\texttt{adaptive\_svd\_factory} & attention & gpt & 1.06x$\times$ & - & - & - & - & 1093.30 & - \\
+\texttt{adasplash} & attention & roberta & 1.00x$\times$ & 92.20\% & 78.90\% & 94.20\% & - & 218.20 & - \\
+\texttt{adasplash\_attention} & attention & bert & 1.00x$\times$ & 95.00\% & - & 85.00\% & 38.50 & 400.30 & - \\
+\texttt{adasplash\_inject} & attention & bert & 1.00x$\times$ & 91.74\% & - & 0.00\% & - & 647.00 & - \\
+\texttt{adasvd} & attention & bert & 1.16x$\times$ & 0.00\% & 34.00\% & - & - & 349.50 & - \\
+\texttt{adasvd\_factory} & attention & gpt & 1.14x$\times$ & - & - & - & - & 1041.10 & - \\
+\texttt{admm} & attention & gpt & 1.00x$\times$ & 79.36\% & 36.50\% & - & - & 303.30 & - \\
+\texttt{admm\_pruner} & attention & bert & 1.00x$\times$ & 53.78\% & 33.00\% & - & - & 528.10 & - \\
+\texttt{aegis\_hybrid} & attention & bert & 1.18x$\times$ & 94.20\% & 34.00\% & - & 11.25 & 298.90 & 0.03x$\times$ \\
+\texttt{aegis\_hybrid\_attention} & attention & roberta & 1.12x$\times$ & 50.92\% & - & - & - & 572.90 & - \\
+\texttt{aegis\_spectron\_fp8} & attention & bert & 1.19x$\times$ & 92.65\% & 34.00\% & 27.70\% & 11.25 & 284.10 & 0.07x$\times$ \\
+\texttt{aegis\_v1} & attention & gpt & 1.00x$\times$ & 94.85\% & 71.50\% & 81.80\% & 32.65 & 190.80 & - \\
+\texttt{aegis\_v1\_module} & attention & bert & 1.00x$\times$ & 79.13\% & - & - & - & 193.80 & - \\
+\texttt{aegis\_v2} & attention & gpt & 1.23x$\times$ & 93.44\% & 37.40\% & 81.80\% & 31.24 & 288.30 & - \\
+\texttt{aegis\_v3} & attention & gpt & 1.20x$\times$ & 92.42\% & 34.10\% & 82.20\% & 30.22 & 277.30 & - \\
+\texttt{aegis\_v3\_module} & attention & bert & 1.00x$\times$ & 83.72\% & - & - & - & 208.30 & - \\
+\texttt{aegis\_v4} & attention & gpt & 1.20x$\times$ & 91.34\% & 34.00\% & 82.30\% & 30.14 & 266.70 & - \\
+\texttt{aegis\_v4\_module} & attention & bert & 1.00x$\times$ & 85.21\% & - & - & - & 331.30 & - \\
+\texttt{aegis\_v5} & attention & gpt & 1.20x$\times$ & 92.98\% & 37.90\% & 82.20\% & 32.78 & 266.70 & - \\
+\texttt{aegis\_v5\_module} & attention & bert & 1.17x$\times$ & 85.21\% & - & - & - & 333.80 & - \\
+\texttt{aegis\_v6} & attention & gpt & 1.28x$\times$ & 93.30\% & 34.40\% & 24.80\% & 30.10 & 292.70 & - \\
+\texttt{alibi} & attention & kd-finetune & 1.00x$\times$ & 91.00\% & - & - & 38.50 & 1010.20 & - \\
+\texttt{armor} & attention & bert & 1.00x$\times$ & 54.36\% & 35.80\% & - & - & 304.60 & - \\
+\texttt{armor\_pruner} & attention & bert & 1.00x$\times$ & - & - & 82.00\% & - & 249.70 & - \\
+\texttt{ast} & attention & bert & 1.00x$\times$ & 90.37\% & 35.90\% & - & - & 303.30 & - \\
+\texttt{ast\_pruner} & attention & bert & 1.00x$\times$ & 90.71\% & - & 82.20\% & - & 249.70 & - \\
+\texttt{astro} & attention & bert & 1.00x$\times$ & 94.50\% & 36.80\% & - & - & 303.30 & - \\
+\texttt{asvd} & attention & roberta & 1.00x$\times$ & 90.14\% & 82.10\% & 94.10\% & - & 333.50 & - \\
+\texttt{asvd\_attention} & attention & roberta & 1.00x$\times$ & 89.50\% & - & - & 36.50 & 660.10 & - \\
+\texttt{a3\_compressor} & compressor & bert & 1.01x$\times$ & 50.00\% & 43.00\% & 80.50\% & - & 312.90 & - \\
+\texttt{aa\_svd\_compressor} & compressor & gpt & 1.22x$\times$ & 50.00\% & - & - & - & - & - \\
+\texttt{aatc\_xkv\_compressor} & compressor & matrix-compres & 1.00x$\times$ & 55.00\% & - & - & - & - & - \\
+\texttt{adaptive\_compressor} & compressor & bert & 1.06x$\times$ & - & 43.20\% & 83.60\% & - & 249.70 & - \\
+\texttt{adaptive\_compressor\_factory} & compressor & gpt & 1.06x$\times$ & - & - & - & - & 1093.30 & - \\
+\texttt{adaptive\_ranks} & compressor & matrix-compres & 1.17x$\times$ & 82.11\% & - & - & - & - & - \\
+\texttt{adaptive\_span} & compressor & unified-4model & - & 82.91\% & - & - & - & - & - \\
+\texttt{adaptive\_svd} & compressor & unified-4model & 1.15x$\times$ & 92.30\% & - & - & - & 311.80 & - \\
+\texttt{adasvd\_compressor} & compressor & bert & 1.20x$\times$ & 55.00\% & - & 0.00\% & - & 3516.20 & - \\
+\texttt{admm\_compressor} & compressor & gpt & 1.00x$\times$ & 50.00\% & - & 82.80\% & - & 743.20 & - \\
+\texttt{admm\_pruner} & compressor & matrix-compres & 1.00x$\times$ & 90.25\% & - & - & - & - & - \\
+\texttt{armor\_pruner} & compressor & matrix-compres & 0.97x$\times$ & 92.66\% & - & - & - & - & - \\
+\texttt{ast\_pruner} & compressor & matrix-compres & 1.00x$\times$ & 50.00\% & - & - & - & - & - \\
+\texttt{astro\_quantizer} & compressor & matrix-compres & 1.00x$\times$ & 40.00\% & - & - & - & - & - \\
+\texttt{bonsai\_pruner} & compressor & matrix-compres & 1.00x$\times$ & 50.00\% & - & - & - & - & - \\
+\texttt{cachenotes\_compressor} & compressor & matrix-compres & 1.00x$\times$ & 50.00\% & - & - & - & - & - \\
+\texttt{come\_compressor} & compressor & matrix-compres & 1.00x$\times$ & 50.00\% & - & - & - & - & - \\
+\texttt{compot\_compressor} & compressor & bert & 1.12x$\times$ & 94.04\% & - & 82.30\% & - & 249.70 & - \\
+\texttt{compot\_compressor\_class} & compressor & bert & 1.00x$\times$ & 90.48\% & 36.40\% & - & - & 303.30 & - \\
+\texttt{compot\_compressor\_factory} & compressor & gpt & 1.00x$\times$ & - & - & - & - & 816.20 & - \\
+\texttt{coopq\_quantizer} & compressor & matrix-compres & 1.00x$\times$ & 55.00\% & - & - & - & - & - \\
+\texttt{cr\_compressor} & compressor & bert & 1.00x$\times$ & 94.38\% & - & - & - & 291.90 & - \\
+\texttt{cur\_compressor} & compressor & bert & 1.00x$\times$ & 94.38\% & - & - & - & 291.90 & - \\
+\texttt{cur\_moe\_compressor} & compressor & matrix-compres & 1.00x$\times$ & 50.00\% & - & - & - & - & - \\
+\texttt{delta\_kv} & compressor & matrix-compres & 1.00x$\times$ & 95.00\% & - & - & - & 326.50 & - \\
+\texttt{direct\_svd} & compressor & matrix-compres & 1.03x$\times$ & 92.43\% & - & - & - & - & - \\
+\texttt{dobi\_svd} & compressor & matrix-compres & 1.00x$\times$ & 94.38\% & - & - & - & - & - \\
+\texttt{dobi\_svd\_compressor} & compressor & gpt & 1.00x$\times$ & - & - & - & - & 816.20 & - \\
+\texttt{drone\_compressor} & compressor & gpt & 1.00x$\times$ & 45.00\% & - & - & - & 816.20 & - \\
+\texttt{dynamic\_entropy\_compressor} & compressor & gpt & 1.00x$\times$ & - & - & - & - & 816.20 & - \\
+\texttt{dynamic\_rank} & compressor & matrix-compres & 1.00x$\times$ & 70.00\% & - & - & - & - & - \\
+\texttt{enlighten\_compressor} & compressor & bert & 1.00x$\times$ & 35.00\% & 0.00\% & - & - & - & - \\
+\texttt{entropy\_budget\_allocation} & compressor & matrix-compres & 1.00x$\times$ & 35.00\% & - & - & - & - & - \\
+\texttt{erc\_svd} & compressor & matrix-compres & 1.00x$\times$ & 50.00\% & - & - & - & - & - \\
+\texttt{faq\_quantizer} & compressor & matrix-compres & 1.00x$\times$ & 50.00\% & - & - & - & - & - \\
+\texttt{block\_sparse\_attn} & cuda\_kernel & 3-level-native & - & - & - & - & - & 26.90 & 5.02x$\times$ \\
+\texttt{chunked\_delta\_gate\_scan} & cuda\_kernel & 3-level-native & - & - & - & - & - & 38.80 & 82.40x$\times$ \\
+\texttt{cosformer\_linear\_attention} & cuda\_kernel & 3-level-native & - & - & - & - & - & 39.70 & 1.88x$\times$ \\
+\texttt{flash\_gqa} & cuda\_kernel & 3-level-native & - & - & - & - & - & 34.00 & 2.49x$\times$ \\
+\texttt{fp8\_gemm} & cuda\_kernel & 3-level-native & - & - & - & - & - & 30.00 & 0.58x$\times$ \\
+\texttt{fused\_cross\_entropy} & cuda\_kernel & 3-level-native & - & - & - & - & - & 45.70 & 0.35x$\times$ \\
+\texttt{fused\_lowrank\_gated\_gemm} & cuda\_kernel & 3-level-native & - & - & - & - & - & 38.30 & 0.67x$\times$ \\
+\texttt{fused\_norm\_linear} & cuda\_kernel & 3-level-native & - & - & - & - & - & 41.30 & 0.12x$\times$ \\
+\texttt{fused\_rotary\_emb} & cuda\_kernel & 3-level-native & - & - & - & - & - & 45.20 & 2.87x$\times$ \\
+\texttt{hgrn2\_fused\_bwd\_scan} & cuda\_kernel & 3-level-native & - & - & - & - & - & 39.40 & 436.29x$\times$ \\
+\texttt{kronecker\_matmul} & cuda\_kernel & 3-level-native & - & - & - & - & - & 43.30 & 1.78x$\times$ \\
+\texttt{linear\_attention} & cuda\_kernel & 3-level-native & - & - & - & - & - & 43.90 & 243.98x$\times$ \\
+\texttt{lut\_codebook\_dequant\_gemm} & cuda\_kernel & 3-level-native & - & - & - & - & - & 43.40 & 5.00x$\times$ \\
+\texttt{moe\_routing} & cuda\_kernel & 3-level-native & - & - & - & - & - & 44.00 & 28466.32x$\times$ \\
+\texttt{paged\_attention} & cuda\_kernel & 3-level-native & - & - & - & - & - & 36.10 & 45.89x$\times$ \\
+\texttt{selective\_scan} & cuda\_kernel & 3-level-native & - & - & - & - & - & 10.90 & 109.34x$\times$ \\
+\texttt{sliding\_window\_attn} & cuda\_kernel & 3-level-native & - & - & - & - & - & 26.90 & 7.24x$\times$ \\
+\texttt{w4a16\_gemm} & cuda\_kernel & 3-level-native & - & - & - & - & - & 24.50 & 0.54x$\times$ \\
+\texttt{\_common / \_types} & triton\_kernel & Pointers \& Lay & - & - & - & - & - & - & 4.29x$\times$ \\
+\texttt{autotuner} & triton\_kernel & Compiler Infra & - & - & - & - & - & - & 3.75x$\times$ \\
+\texttt{block\_sparse} & triton\_kernel & Sparse/Routing & - & - & - & - & - & - & 1.65x$\times$ \\
+\texttt{cosformer\_triton\_kernel} & triton\_kernel & Linear Attenti & - & - & - & - & - & - & 4.52x$\times$ \\
+\texttt{elementwise} & triton\_kernel & Elementwise/Ac & - & - & - & - & - & - & 1.49x$\times$ \\
+\texttt{flash\_decoding} & triton\_kernel & Flash Decoding & - & - & - & - & - & - & 14.37x$\times$ \\
+\texttt{fms\_scan} & triton\_kernel & Recurrent Scan & - & - & - & - & - & - & 9.90x$\times$ \\
+\end{longtable}
+\end{center}

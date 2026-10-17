@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="600" viewBox="0 0 900 600">
+  <rect width="100%" height="100%" fill="#0f172a"/>
+  <text x="450.0" y="36" fill="#f8fafc" font-size="18" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" text-anchor="middle">Pareto Frontier: Downstream Accuracy vs. Compression Ratio</text>
+  <text x="450.0" y="56" fill="#38bdf8" font-size="12" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="middle">Evaluated on DistilBERT / RoBERTa Benchmarks (RTX 4070 SM 8.9)</text>
+  <rect x="100" y="80" width="740" height="460" fill="#1e293b" rx="6" stroke="#334155"/>
+  <line x1="100.0" y1="80" x2="100.0" y2="540" stroke="#334155" stroke-dasharray="3,3"/>
+  <text x="100.0" y="560" fill="#94a3b8" font-size="11" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="middle">1.0x</text>
+  <line x1="247.99999999999997" y1="80" x2="247.99999999999997" y2="540" stroke="#334155" stroke-dasharray="3,3"/>
+  <text x="247.99999999999997" y="560" fill="#94a3b8" font-size="11" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="middle">1.4x</text>
+  <line x1="396.0" y1="80" x2="396.0" y2="540" stroke="#334155" stroke-dasharray="3,3"/>
+  <text x="396.0" y="560" fill="#94a3b8" font-size="11" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="middle">1.8x</text>
+  <line x1="544.0" y1="80" x2="544.0" y2="540" stroke="#334155" stroke-dasharray="3,3"/>
+  <text x="544.0" y="560" fill="#94a3b8" font-size="11" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="middle">2.2x</text>
+  <line x1="692.0" y1="80" x2="692.0" y2="540" stroke="#334155" stroke-dasharray="3,3"/>
+  <text x="692.0" y="560" fill="#94a3b8" font-size="11" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="middle">2.6x</text>
+  <line x1="840.0" y1="80" x2="840.0" y2="540" stroke="#334155" stroke-dasharray="3,3"/>
+  <text x="840.0" y="560" fill="#94a3b8" font-size="11" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="middle">3.0x</text>
+  <line x1="100" y1="540.0" x2="840" y2="540.0" stroke="#334155" stroke-dasharray="3,3"/>
+  <text x="88" y="544.0" fill="#94a3b8" font-size="11" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="end">30%</text>
+  <line x1="100" y1="463.33333333333337" x2="840" y2="463.33333333333337" stroke="#334155" stroke-dasharray="3,3"/>
+  <text x="88" y="467.33333333333337" fill="#94a3b8" font-size="11" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="end">40%</text>
+  <line x1="100" y1="386.6666666666667" x2="840" y2="386.6666666666667" stroke="#334155" stroke-dasharray="3,3"/>
+  <text x="88" y="390.6666666666667" fill="#94a3b8" font-size="11" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="end">50%</text>
+  <line x1="100" y1="310.0" x2="840" y2="310.0" stroke="#334155" stroke-dasharray="3,3"/>
+  <text x="88" y="314.0" fill="#94a3b8" font-size="11" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="end">60%</text>
+  <line x1="100" y1="233.33333333333337" x2="840" y2="233.33333333333337" stroke="#334155" stroke-dasharray="3,3"/>
+  <text x="88" y="237.33333333333337" fill="#94a3b8" font-size="11" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="end">70%</text>
+  <line x1="100" y1="156.66666666666663" x2="840" y2="156.66666666666663" stroke="#334155" stroke-dasharray="3,3"/>
+  <text x="88" y="160.66666666666663" fill="#94a3b8" font-size="11" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="end">80%</text>
+  <line x1="100" y1="80.0" x2="840" y2="80.0" stroke="#334155" stroke-dasharray="3,3"/>
+  <text x="88" y="84.0" fill="#94a3b8" font-size="11" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="end">90%</text>
+  <text x="470.0" y="585" fill="#94a3b8" font-size="13" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="middle">Compression Ratio (x) [Higher is More Compressed]</text>
+  <text x="35" y="310.0" fill="#94a3b8" font-size="13" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="middle" transform="rotate(-90 35 310.0)">Accuracy Retention (%) [Higher is Better]</text>
+  <path d="M 100.0 142.9 L 114.8 188.9 L 581.0 221.8 L 740.1 145.9" fill="none" stroke="#22d3ee" stroke-width="2.5" stroke-dasharray="5,4"/>
+  <circle cx="100.0" cy="142.9" r="8" fill="#e2e8f0" stroke="#f8fafc" stroke-width="1.5"/>
+  <text x="100.0" y="130.9" fill="#e2e8f0" font-size="10" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" text-anchor="middle">Dense Baseline</text>
+  <circle cx="740.1" cy="145.9" r="8" fill="#34d399" stroke="#f8fafc" stroke-width="1.5"/>
+  <text x="740.1" y="133.9" fill="#34d399" font-size="10" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" text-anchor="middle">kmeans (VQ)</text>
+  <circle cx="114.8" cy="188.9" r="8" fill="#38bdf8" stroke="#f8fafc" stroke-width="1.5"/>
+  <text x="114.8" y="176.9" fill="#38bdf8" font-size="10" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" text-anchor="middle">adaptive</text>
+  <circle cx="118.5" cy="216.5" r="6" fill="#38bdf8" stroke="none" stroke-width="1.5"/>
+  <text x="118.5" y="230.5" fill="#38bdf8" font-size="10" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="normal" text-anchor="middle">a3</text>
+  <circle cx="155.5" cy="241.8" r="6" fill="#38bdf8" stroke="none" stroke-width="1.5"/>
+  <text x="155.5" y="255.8" fill="#38bdf8" font-size="10" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="normal" text-anchor="middle">adaptive_svd</text>
+  <circle cx="148.1" cy="244.1" r="6" fill="#38bdf8" stroke="none" stroke-width="1.5"/>
+  <text x="148.1" y="258.1" fill="#38bdf8" font-size="10" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="normal" text-anchor="middle">aasvd</text>
+  <circle cx="262.8" cy="372.1" r="6" fill="#38bdf8" stroke="none" stroke-width="1.5"/>
+  <text x="262.8" y="386.1" fill="#38bdf8" font-size="10" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="normal" text-anchor="middle">swift_svd</text>
+  <circle cx="177.7" cy="371.3" r="6" fill="#38bdf8" stroke="none" stroke-width="1.5"/>
+  <text x="177.7" y="385.3" fill="#38bdf8" font-size="10" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="normal" text-anchor="middle">salt</text>
+  <circle cx="444.1" cy="471.0" r="6" fill="#c084fc" stroke="none" stroke-width="1.5"/>
+  <text x="444.1" y="485.0" fill="#c084fc" font-size="10" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="normal" text-anchor="middle">kronecker</text>
+  <circle cx="436.7" cy="482.5" r="6" fill="#38bdf8" stroke="none" stroke-width="1.5"/>
+  <text x="436.7" y="496.5" fill="#38bdf8" font-size="10" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="normal" text-anchor="middle">hybrid_svd</text>
+  <circle cx="470.0" cy="277.8" r="6" fill="#fbbf24" stroke="none" stroke-width="1.5"/>
+  <text x="470.0" y="291.8" fill="#fbbf24" font-size="10" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="normal" text-anchor="middle">bonsai_pruner</text>
+  <circle cx="581.0" cy="221.8" r="6" fill="#fbbf24" stroke="none" stroke-width="1.5"/>
+  <text x="581.0" y="235.8" fill="#fbbf24" font-size="10" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="normal" text-anchor="middle">reap_pruner</text>
+  <rect x="120" y="100" width="240" height="120" fill="#0f172a" rx="4" stroke="#334155" opacity="0.9"/>
+  <text x="130" y="118" fill="#f8fafc" font-size="11" font-weight="bold" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">Method Category</text>
+  <circle cx="138" cy="136" r="5" fill="#e2e8f0"/>
+  <text x="152" y="140" fill="#94a3b8" font-size="10" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">Baseline</text>
+  <circle cx="138" cy="154" r="5" fill="#34d399"/>
+  <text x="152" y="158" fill="#94a3b8" font-size="10" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">Quantization</text>
+  <circle cx="138" cy="172" r="5" fill="#38bdf8"/>
+  <text x="152" y="176" fill="#94a3b8" font-size="10" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">Low-Rank</text>
+  <circle cx="138" cy="190" r="5" fill="#fbbf24"/>
+  <text x="152" y="194" fill="#94a3b8" font-size="10" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">Pruning</text>
+  <circle cx="138" cy="208" r="5" fill="#c084fc"/>
+  <text x="152" y="212" fill="#94a3b8" font-size="10" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">Structured</text>
+</svg>
