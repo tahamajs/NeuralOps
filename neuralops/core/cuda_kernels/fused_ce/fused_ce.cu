@@ -33,34 +33,54 @@ __global__ void fused_ce_fwd_kernel(
     const int tid = threadIdx.x;
     const int num_threads = blockDim.x;
 
-    // Step 1: Max reduction across V
+    // Single-pass online LogSumExp across V
     float local_max = -1e30f;
-    for (int v = tid; v < V; v += num_threads) {
-        float val = to_float(logits[row * V + v]);
-        local_max = fmaxf(local_max, val);
-    }
-    local_max = block_reduce_max(local_max);
-    __shared__ float s_max;
-    if (tid == 0) s_max = local_max;
-    __syncthreads();
-    const float m = s_max;
-
-    // Step 2: Sum exp reduction across V
     float local_sum = 0.0f;
-    for (int v = tid; v < V; v += num_threads) {
-        float val = to_float(logits[row * V + v]);
-        local_sum += expf(val - m);
-    }
-    local_sum = block_reduce_sum(local_sum);
-    __shared__ float s_sum;
-    if (tid == 0) s_sum = local_sum;
-    __syncthreads();
-    const float sum_exp = s_sum;
 
-    if (tid == 0) {
-        float target_val = to_float(logits[row * V + target]);
-        float log_sum_exp = logf(sum_exp) + m;
-        loss[row] = log_sum_exp - target_val;
+    for (int v = tid; v < V; v += num_threads) {
+        const float val = to_float(logits[row * V + v]);
+        const float new_max = fmaxf(local_max, val);
+        local_sum = local_sum * expf(local_max - new_max) + expf(val - new_max);
+        local_max = new_max;
+    }
+
+    // Warp-level online reduction
+    #pragma unroll
+    for (int mask = 16; mask > 0; mask >>= 1) {
+        const float other_max = __shfl_xor_sync(0xffffffff, local_max, mask);
+        const float other_sum = __shfl_xor_sync(0xffffffff, local_sum, mask);
+        const float m_new = fmaxf(local_max, other_max);
+        local_sum = local_sum * expf(local_max - m_new) + other_sum * expf(other_max - m_new);
+        local_max = m_new;
+    }
+
+    __shared__ float sm_max[8];
+    __shared__ float sm_sum[8];
+    const int lane = tid % 32;
+    const int wid = tid / 32;
+
+    if (lane == 0) {
+        sm_max[wid] = local_max;
+        sm_sum[wid] = local_sum;
+    }
+    __syncthreads();
+
+    if (wid == 0) {
+        float warp_max = (lane < 8) ? sm_max[lane] : -1e30f;
+        float warp_sum = (lane < 8) ? sm_sum[lane] : 0.0f;
+        #pragma unroll
+        for (int mask = 4; mask > 0; mask >>= 1) {
+            const float other_max = __shfl_xor_sync(0xffffffff, warp_max, mask);
+            const float other_sum = __shfl_xor_sync(0xffffffff, warp_sum, mask);
+            const float m_new = fmaxf(warp_max, other_max);
+            warp_sum = warp_sum * expf(warp_max - m_new) + other_sum * expf(other_max - m_new);
+            warp_max = m_new;
+        }
+        if (lane == 0) {
+            const float target_val = to_float(logits[row * V + target]);
+            const float log_sum_exp = logf(fmaxf(warp_sum, 1e-12f)) + warp_max;
+            loss[row] = log_sum_exp - target_val;
+        }
     }
 }
 

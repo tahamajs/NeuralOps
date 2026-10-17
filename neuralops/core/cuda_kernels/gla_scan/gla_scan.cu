@@ -10,7 +10,7 @@ namespace cuda {
 
 // GLA Scan: S_t = alpha_t * S_{t-1} + k_t * v_t^T, y_t = q_t * S_t
 template <typename scalar_t, int MAX_D>
-__launch_bounds__(32)
+__launch_bounds__(128)
 __global__ void gla_scan_fwd_kernel(
     scalar_t* __restrict__ out,
     const scalar_t* __restrict__ Q,
@@ -27,46 +27,46 @@ __global__ void gla_scan_fwd_kernel(
     const int bh = blockIdx.y;
     if (bh >= B * H) return;
 
-    float S[MAX_D][MAX_D];
-    #pragma unroll 4
+    const int j = threadIdx.x; // column index
+
+    float S_col[MAX_D];
+    #pragma unroll
     for (int i = 0; i < MAX_D; ++i) {
-        #pragma unroll 4
-        for (int j = 0; j < MAX_D; ++j) {
-            S[i][j] = 0.0f;
-        }
+        S_col[i] = 0.0f;
     }
+
+    __shared__ float s_k[MAX_D];
+    __shared__ float s_q[MAX_D];
 
     const int head_offset = bh * (L * D);
 
     for (int t = 0; t < L; ++t) {
         const int tok_offset = head_offset + t * D;
 
-        // Optional decay factor
+        if (j < D && j < MAX_D) {
+            s_k[j] = to_float(K[tok_offset + j]);
+            s_q[j] = to_float(Q[tok_offset + j]);
+        }
+        __syncthreads();
+
         float a_val = 1.0f;
         if (has_alpha && alpha != nullptr) {
             a_val = to_float(alpha[bh * L + t]);
         }
 
-        // 1. Decay state and accumulate S_t = a_val * S_{t-1} + k_t * v_t^T
-        #pragma unroll 4
+        const float v_j = (j < D) ? to_float(V[tok_offset + j]) : 0.0f;
+
+        float y_acc = 0.0f;
+        #pragma unroll
         for (int i = 0; i < D && i < MAX_D; ++i) {
-            const float k_val = to_float(K[tok_offset + i]);
-            #pragma unroll 4
-            for (int j = 0; j < D && j < MAX_D; ++j) {
-                S[i][j] = a_val * S[i][j] + k_val * to_float(V[tok_offset + j]);
-            }
+            S_col[i] = a_val * S_col[i] + s_k[i] * v_j;
+            y_acc += s_q[i] * S_col[i];
         }
 
-        // 2. Compute y_t = (q_t * S_t) * scale
-        #pragma unroll 4
-        for (int j = 0; j < D && j < MAX_D; ++j) {
-            float y_acc = 0.0f;
-            #pragma unroll 4
-            for (int i = 0; i < D && i < MAX_D; ++i) {
-                y_acc += to_float(Q[tok_offset + i]) * S[i][j];
-            }
+        if (j < D) {
             out[tok_offset + j] = from_float<scalar_t>(y_acc * scale);
         }
+        __syncthreads();
     }
 }
 
@@ -93,7 +93,7 @@ torch::Tensor gla_scan_fwd(
     const bool has_alpha = alpha.has_value() && alpha.value().defined();
 
     const dim3 grid(1, B * H);
-    const int threads = 32;
+    const int threads = (D <= 64) ? 64 : 128;
     auto stream = c10::cuda::getCurrentCUDAStream();
 
     auto q_c = q.contiguous();
@@ -103,16 +103,7 @@ torch::Tensor gla_scan_fwd(
     AT_DISPATCH_FLOATING_TYPES_AND2(
         at::ScalarType::Half, at::ScalarType::BFloat16,
         q.scalar_type(), "gla_scan_fwd", ([&] {
-            if (D <= 16) {
-                neuralops::cuda::gla_scan_fwd_kernel<scalar_t, 16><<<grid, threads, 0, stream>>>(
-                    out.data_ptr<scalar_t>(),
-                    q_c.data_ptr<scalar_t>(),
-                    k_c.data_ptr<scalar_t>(),
-                    v_c.data_ptr<scalar_t>(),
-                    has_alpha ? alpha.value().contiguous().data_ptr<scalar_t>() : nullptr,
-                    B, H, L, D, scale, has_alpha
-                );
-            } else if (D <= 32) {
+            if (D <= 32) {
                 neuralops::cuda::gla_scan_fwd_kernel<scalar_t, 32><<<grid, threads, 0, stream>>>(
                     out.data_ptr<scalar_t>(),
                     q_c.data_ptr<scalar_t>(),
