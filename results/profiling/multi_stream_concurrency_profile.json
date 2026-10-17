@@ -1,0 +1,100 @@
+{
+  "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+  "iterations": 100,
+  "workload": {
+    "stream1_flash_attn": {
+      "batch": 4,
+      "heads": 8,
+      "seq_len": 1024,
+      "head_dim": 64,
+      "dtype": "fp16"
+    },
+    "stream2_selective_scan": {
+      "batch": 4,
+      "dim": 64,
+      "seq_len": 1024,
+      "d_state": 16,
+      "dtype": "fp32"
+    },
+    "stream3_lowrank_svd": {
+      "M": 4096,
+      "K": 768,
+      "R": 64,
+      "dtype": "fp16"
+    }
+  },
+  "standalone_latencies_ms": {
+    "stream1_flash_attn": 1.0312,
+    "stream2_selective_scan": 0.673,
+    "stream3_lowrank_svd": 0.0433,
+    "sum_individual_ms": 1.7476,
+    "critical_path_ms": 1.0312
+  },
+  "benchmark_timings": {
+    "sequential_cuda_ms_per_iter": 1.6463,
+    "concurrent_cuda_ms_per_iter": 1.3702,
+    "speedup_cuda_events": 1.201,
+    "sequential_wall_total_sec": 0.1647,
+    "concurrent_wall_total_sec": 0.137,
+    "speedup_wall_clock": 1.202,
+    "stream_overlap_efficiency_pct": 52.67
+  },
+  "numerical_integrity": {
+    "stream1": {
+      "nans": 0,
+      "infs": 0,
+      "max_diff_vs_seq": 0.0
+    },
+    "stream2": {
+      "nans": 0,
+      "infs": 0,
+      "max_diff_vs_seq": 0.0
+    },
+    "stream3": {
+      "nans": 0,
+      "infs": 0,
+      "max_diff_vs_seq": 0.0
+    },
+    "clean_numerical_integrity": true
+  },
+  "vram_memory": {
+    "initial_mb": 47.9575,
+    "final_mb": 36.9575,
+    "peak_allocated_mb": 85.9595,
+    "peak_reserved_mb": 130.0,
+    "drift_iter1_to_100_mb": 0.0,
+    "checkpoints": {
+      "1": {
+        "allocated_mb": 58.9575,
+        "max_allocated_mb": 59.4575,
+        "reserved_mb": 90.0,
+        "max_reserved_mb": 90.0
+      },
+      "25": {
+        "allocated_mb": 58.9575,
+        "max_allocated_mb": 59.4575,
+        "reserved_mb": 90.0,
+        "max_reserved_mb": 90.0
+      },
+      "50": {
+        "allocated_mb": 58.9575,
+        "max_allocated_mb": 59.4575,
+        "reserved_mb": 90.0,
+        "max_reserved_mb": 90.0
+      },
+      "75": {
+        "allocated_mb": 58.9575,
+        "max_allocated_mb": 59.4575,
+        "reserved_mb": 90.0,
+        "max_reserved_mb": 90.0
+      },
+      "100": {
+        "allocated_mb": 58.9575,
+        "max_allocated_mb": 59.4575,
+        "reserved_mb": 90.0,
+        "max_reserved_mb": 90.0
+      }
+    },
+    "zero_leak_verified": true
+  }
+}
