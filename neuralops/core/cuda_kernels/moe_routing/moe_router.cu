@@ -127,13 +127,13 @@ __global__ void moe_fused_dispatch_kernel(
 
     const scalar_t* g_row = gate_logits + tok_idx * num_experts;
     if (lane < num_experts) {
-        val = to_float(g_row[lane]);
+        val = neuralops::cuda::to_float(g_row[lane]);
         idx = lane;
     }
 
     // If num_experts > 32, fold subsequent experts into the 32 lanes
     for (int e = lane + 32; e < num_experts; e += 32) {
-        float cand_val = to_float(g_row[e]);
+        float cand_val = neuralops::cuda::to_float(g_row[e]);
         if (cand_val > val) {
             val = cand_val;
             idx = e;
