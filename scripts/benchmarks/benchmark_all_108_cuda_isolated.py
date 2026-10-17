@@ -184,12 +184,42 @@ def generate_args(mod_name, sig, device, dtype, B=4, H=8, N=512, D=64):
         r = torch.randn(B, N, D, device=device, dtype=dtype)
         decay = torch.rand(B, N, D, device=device, dtype=dtype)
         return [x, r, decay], {{}}
+    elif mod_name == "fused_rope":
+        x = torch.randn(B, H, N, D, device=device, dtype=dtype)
+        cos = torch.randn(1, 1, N, D // 2, device=device, dtype=dtype)
+        sin = torch.randn(1, 1, N, D // 2, device=device, dtype=dtype)
+        return [x, cos, sin], {{}}
+    elif mod_name == "recurrent_gla_step":
+        q = torch.randn(B, H, D, device=device, dtype=dtype)
+        k = torch.randn(B, H, D, device=device, dtype=dtype)
+        v = torch.randn(B, H, D, device=device, dtype=dtype)
+        s_state = torch.randn(B, H, D, D, device=device, dtype=dtype)
+        alpha = torch.full((B, H), 0.99, device=device, dtype=dtype)
+        return [q, k, v, s_state, alpha], {{}}
+    elif mod_name == "varlen_attention":
+        total_toks = 512
+        seq_len = 128
+        q = torch.randn(total_toks, H, D, device=device, dtype=dtype)
+        k = torch.randn(total_toks, H, D, device=device, dtype=dtype)
+        v = torch.randn(total_toks, H, D, device=device, dtype=dtype)
+        cu_seqlens = torch.arange(0, total_toks + 1, seq_len, device=device, dtype=torch.int32)
+        return [q, k, v, cu_seqlens, cu_seqlens, seq_len, seq_len], {{"is_causal": False}}
+    elif mod_name == "fused_rope":
+        x = torch.randn(B, H, N, D, device=device, dtype=dtype)
+        cos = torch.randn(N, D, device=device, dtype=dtype)
+        sin = torch.randn(N, D, device=device, dtype=dtype)
+        return [x, cos, sin], {{}}
+    elif mod_name == "recurrent_gla_step":
+        q_t = torch.randn(B, H, D, device=device, dtype=dtype)
+        k_t = torch.randn(B, H, D, device=device, dtype=dtype)
+        v_t = torch.randn(B, H, D, device=device, dtype=dtype)
+        s_state = torch.randn(B, H, D, D, device=device, dtype=dtype)
+        alpha_t = torch.randn(B, H, device=device, dtype=dtype)
+        return [q_t, k_t, v_t, s_state, alpha_t], {{}}
     elif mod_name == "hgrn2_spatial_scan":
-        q = torch.randn(B, H, N, D, device=device, dtype=dtype)
-        k = torch.randn(B, H, N, D, device=device, dtype=dtype)
-        v = torch.randn(B, H, N, D, device=device, dtype=dtype)
+        x = torch.randn(B, H, N, D, device=device, dtype=dtype)
         g = torch.randn(B, H, N, D, device=device, dtype=dtype)
-        return [q, k, v, g], {{}}
+        return [x, g], {{}}
     elif mod_name == "hgrn2_scan":
         x = torch.randn(B, H, N, D, device=device, dtype=dtype)
         g = torch.randn(B, H, N, D, device=device, dtype=dtype)
@@ -530,6 +560,21 @@ def main():
     with open(out_file, "w", encoding="utf-8") as f:
         json.dump(results, f, indent=2)
     print(f"Master benchmark results saved to: {out_file}", flush=True)
+
+    csv_file = repo_root / "results" / "master_108_cuda_modules_benchmark.csv"
+    import csv
+    with open(csv_file, "w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerow(["Module", "CUDA (ms)", "Ref (ms)", "Speedup", "Max Abs Diff", "Status"])
+        for r in results:
+            mod = r.get("module", "")
+            stat = r.get("status", "")
+            c_ms = r.get("cuda_ms", "")
+            r_ms = r.get("ref_ms", "")
+            sp = f"{r.get('speedup', '')}x" if r.get("speedup") else ""
+            diff = r.get("max_diff", "")
+            writer.writerow([mod, c_ms, r_ms, sp, diff, stat])
+    print(f"Master benchmark CSV saved to: {csv_file}", flush=True)
 
 
 if __name__ == "__main__":
