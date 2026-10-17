@@ -56,7 +56,7 @@ torch::Tensor moe_dispatch(
     const int top_k = static_cast<int>(topk_indices.size(1));
     const int total_assignments = static_cast<int>(total_slots);
 
-    auto dispatched = torch::empty({total_slots, hidden_dim}, tokens.options());
+    auto dispatched = torch::zeros({total_slots, hidden_dim}, tokens.options());
     if (num_tokens == 0 || hidden_dim == 0 || total_assignments == 0) {
         return dispatched;
     }
