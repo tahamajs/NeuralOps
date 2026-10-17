@@ -3,8 +3,10 @@ import importlib
 
 
 def cmd_doctor():
+    import neuralops
+    ver = getattr(neuralops, "__version__", "1.3.7")
     print("=" * 60)
-    print("NeuralOps Production Environment & Hardware Diagnostics (v1.3.0)")
+    print(f"NeuralOps Production Environment & Hardware Diagnostics (v{ver})")
     print("=" * 60)
     print()
 
