@@ -78,7 +78,7 @@ __global__ void __launch_bounds__(128) routing_attn_fwd_kernel(
 
         const float m_new = fmaxf(m_prev, dot_local);
         const float alpha = expf(m_prev - m_new);
-        const float p = expf(dot_local - m_new) * r_ij;
+        const float p = expf(dot_local - m_new);
         d_prev = d_prev * alpha + p;
         m_prev = m_new;
 
