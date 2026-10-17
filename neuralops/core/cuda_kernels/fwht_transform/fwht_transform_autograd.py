@@ -27,16 +27,17 @@ def _get_module():
 
 from neuralops.core.triton_kernels.elementwise import fast_hadamard_transform
 
+def fwht_transform_pytorch_ref(x: torch.Tensor, B_dim: int = 128) -> torch.Tensor:
+    return fast_hadamard_transform(x, block_size=B_dim)
+
 def fwht_transform(x: torch.Tensor, B_dim: int = 128) -> torch.Tensor:
     def cuda_fn(x, B_dim=128):
         mod = _get_module()
         return mod.fwht_fwd(x.contiguous(), B_dim)
-    def ref_fn(x, B_dim=128):
-        return fast_hadamard_transform(x, block_size=B_dim)
     return dispatch(
         cuda_fn,
-        ref_fn,
-        ref_fn,
+        fwht_transform_pytorch_ref,
+        fwht_transform_pytorch_ref,
         x, B_dim=B_dim,
         kernel_name="fwht_transform",
     )

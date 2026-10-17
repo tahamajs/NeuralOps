@@ -27,6 +27,12 @@ def _get_module():
 
 from neuralops.core.triton_kernels.elementwise import fused_rms_variance_match_triton
 
+def rms_variance_match_pytorch_ref(y: torch.Tensor, v_ref: torch.Tensor, clamp_min: float = 0.25, clamp_max: float = 4.0) -> torch.Tensor:
+    v_rms = torch.sqrt(torch.mean(v_ref.float() ** 2, dim=-1, keepdim=True).clamp_min(1e-8))
+    y_rms = torch.sqrt(torch.mean(y.float() ** 2, dim=-1, keepdim=True).clamp_min(1e-8))
+    gain = (v_rms / y_rms).clamp(clamp_min, clamp_max).to(y.dtype)
+    return y * gain
+
 def rms_variance_match(y: torch.Tensor, v_ref: torch.Tensor, clamp_min: float = 0.25, clamp_max: float = 4.0) -> torch.Tensor:
     def cuda_fn(*args, **kwargs):
         mod = _get_module()
@@ -35,7 +41,7 @@ def rms_variance_match(y: torch.Tensor, v_ref: torch.Tensor, clamp_min: float = 
     return dispatch(
         cuda_fn,
         fused_rms_variance_match_triton,
-        fused_rms_variance_match_triton,
+        rms_variance_match_pytorch_ref,
         y, v_ref, clamp_min=clamp_min, clamp_max=clamp_max,
         kernel_name="rms_variance_match",
     )
