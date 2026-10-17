@@ -27,6 +27,9 @@ def _get_module():
 
 from neuralops.core.triton_kernels.elementwise import fused_entmax_bisect_pytorch, fused_entmax_bisect_triton
 
+entmax_bisect_pytorch_ref = fused_entmax_bisect_pytorch
+entmax_bisect_ref = fused_entmax_bisect_pytorch
+
 def entmax_bisect(scores: torch.Tensor, n_iter: int = 15) -> torch.Tensor:
     def cuda_fn(*args, **kwargs):
         mod = _get_module()

@@ -27,6 +27,9 @@ def _get_module():
 
 from neuralops.core.triton_kernels.paged_attention import paged_recurrent_state_step_pytorch, paged_recurrent_state_step_triton
 
+paged_recurrent_step_pytorch_ref = paged_recurrent_state_step_pytorch
+paged_recurrent_step_ref = paged_recurrent_state_step_pytorch
+
 def paged_recurrent_step(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, page_pool: torch.Tensor, block_tables: torch.Tensor, decay: float = 1.0) -> torch.Tensor:
     def cuda_fn(*args, **kwargs):
         mod = _get_module()

@@ -27,6 +27,9 @@ def _get_module():
 
 from neuralops.core.triton_kernels.elementwise import fused_adaptive_span_penalty_pytorch, fused_adaptive_span_penalty_triton
 
+adaptive_span_pytorch_ref = fused_adaptive_span_penalty_pytorch
+adaptive_span_ref = fused_adaptive_span_penalty_pytorch
+
 def adaptive_span(spans: torch.Tensor, q_pos: torch.Tensor, k_pos: torch.Tensor, ramp_size: float, is_causal: bool = True) -> torch.Tensor:
     def cuda_fn(*args, **kwargs):
         mod = _get_module()

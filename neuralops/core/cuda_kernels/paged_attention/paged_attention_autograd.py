@@ -91,6 +91,9 @@ def paged_attention_pytorch_reference(
         out[seq_idx] = o_seq
 
     return out
+ 
+paged_attention_pytorch_ref = paged_attention_pytorch_reference
+paged_attention_ref = paged_attention_pytorch_reference
 
 
 def _paged_attention_triton_fallback(
