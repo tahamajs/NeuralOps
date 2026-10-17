@@ -55,14 +55,10 @@ def sliding_window_pytorch_ref(
 
     causal = k_idx <= q_idx
     in_window = k_idx >= (q_idx - window_size + 1)
-    is_sink = k_idx < num_sinks
-
     valid_mask = causal & (in_window | is_sink)
-    scores = scores.masked_fill(~valid_mask.unsqueeze(0).unsqueeze(0), float("-inf"))
-
-    probs = F.softmax(scores, dim=-1)
-    probs = torch.nan_to_num(probs, nan=0.0)
-    return torch.matmul(probs, v.float()).to(q.dtype)
+    mask = valid_mask.unsqueeze(0).unsqueeze(0).expand(B, H, N, N)
+    out = F.scaled_dot_product_attention(q, k, v, attn_mask=mask, scale=scale)
+    return torch.nan_to_num(out, nan=0.0)
 
 
 def _sliding_window_triton_fallback(
