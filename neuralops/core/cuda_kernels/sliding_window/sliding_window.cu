@@ -5,6 +5,7 @@
 #include <float.h>
 
 template<int HEAD_DIM, int BLOCK_M>
+__launch_bounds__(128)
 __global__ void sliding_window_attn_warp_kernel(
     float* __restrict__ out,      // [B, H, N, HEAD_DIM]
     const float* __restrict__ q,  // [B, H, N, HEAD_DIM]
@@ -127,6 +128,7 @@ __global__ void sliding_window_attn_warp_kernel(
 }
 
 template<int BLOCK_M>
+__launch_bounds__(128)
 __global__ void sliding_window_attn_generic_kernel(
     float* __restrict__ out,
     const float* __restrict__ q,

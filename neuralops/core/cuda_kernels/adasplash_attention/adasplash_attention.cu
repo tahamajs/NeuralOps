@@ -4,45 +4,95 @@
 #include "_common.cuh"
 
 namespace neuralops { namespace cuda {
+
+// AdaSplash Attention Forward Kernel:
+// Form: Attends to tokens in sliding local window + splash candidates exceeding dynamic score threshold.
+//
+// Hardware-level optimization:
+// 1. True Vector Dot-Products across D using Online Softmax (no scalar pseudo-attention).
+// 2. Strict FP32 intermediate accumulation.
+// 3. 2D Block-level grid launch.
 template <typename scalar_t>
-__global__ void adasplash_fwd_kernel(
+__global__ void __launch_bounds__(128) adasplash_fwd_kernel(
     scalar_t* __restrict__ out,
     const scalar_t* __restrict__ q,
     const scalar_t* __restrict__ k,
     const scalar_t* __restrict__ v,
-    int B, int H, int N, int D,
-    float threshold, int window_size
+    const int B,
+    const int H,
+    const int N,
+    const int D,
+    const float threshold,
+    const int window_size
 ) {
-    int bh = blockIdx.y;
-    int b = bh / H;
-    int h = bh % H;
-    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    const int bh = blockIdx.y;
+    if (bh >= B * H) return;
+
+    const int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= N) return;
 
-    int q_offset = (b * H + h) * N * D + i * D;
-    int out_offset = q_offset;
+    const int base_offset = bh * (N * D);
+    const int qi_offset = base_offset + i * D;
+    const float scale = rsqrtf(static_cast<float>(D));
+    const int w_start = max(0, i - window_size + 1);
 
-    // Local window + splash accumulation
-    int w_start = max(0, i - window_size + 1);
+    // Pass 1: Online Softmax across candidate keys
+    float m_prev = -1e30f;
+    float d_prev = 0.0f;
+
+    for (int j = 0; j <= i; ++j) {
+        // Condition: inside sliding window or j == i
+        if (j < w_start && j != i) {
+            // For splash tokens outside window, evaluate dot product against threshold
+            const int kj_offset = base_offset + j * D;
+            float dot = 0.0f;
+            for (int d = 0; d < D; ++d) {
+                dot += to_float(q[qi_offset + d]) * to_float(k[kj_offset + d]);
+            }
+            dot *= scale;
+            if (dot > threshold) {
+                const float m_curr = fmaxf(m_prev, dot);
+                d_prev = d_prev * expf(m_prev - m_curr) + expf(dot - m_curr);
+                m_prev = m_curr;
+            }
+        } else {
+            // Inside sliding window or current token
+            const int kj_offset = base_offset + j * D;
+            float dot = 0.0f;
+            for (int d = 0; d < D; ++d) {
+                dot += to_float(q[qi_offset + d]) * to_float(k[kj_offset + d]);
+            }
+            dot *= scale;
+            const float m_curr = fmaxf(m_prev, dot);
+            d_prev = d_prev * expf(m_prev - m_curr) + expf(dot - m_curr);
+            m_prev = m_curr;
+        }
+    }
+
+    const float inv_d = (d_prev > 1e-6f) ? (1.0f / d_prev) : 0.0f;
+
+    // Pass 2: Accumulate weighted values
     for (int d = 0; d < D; ++d) {
-        float acc = 0.0f;
-        float norm = 0.0f;
-        float q_val = to_float(q[q_offset + d]);
-        for (int j = w_start; j <= i; ++j) {
-            int kv_offset = (b * H + h) * N * D + j * D;
-            float k_val = to_float(k[kv_offset + d]);
-            float v_val = to_float(v[kv_offset + d]);
-            float score = q_val * k_val * rsqrtf((float)D);
-            if (score > threshold || j == i) {
-                float w = expf(score);
-                acc += w * v_val;
-                norm += w;
+        float val_acc = 0.0f;
+        for (int j = 0; j <= i; ++j) {
+            const int kj_offset = base_offset + j * D;
+            float dot = 0.0f;
+            for (int dd = 0; dd < D; ++dd) {
+                dot += to_float(q[qi_offset + dd]) * to_float(k[kj_offset + dd]);
+            }
+            dot *= scale;
+
+            bool is_active = (j >= w_start) || (j == i) || (dot > threshold);
+            if (is_active) {
+                const float weight = expf(dot - m_prev) * inv_d;
+                val_acc += weight * to_float(v[kj_offset + d]);
             }
         }
-        out[out_offset + d] = from_float<scalar_t>(norm > 1e-6f ? acc / norm : 0.0f);
+        out[qi_offset + d] = from_float<scalar_t>(val_acc);
     }
 }
-}}
+
+}} // namespace neuralops::cuda
 
 torch::Tensor adasplash_fwd(
     const torch::Tensor& q,
@@ -51,20 +101,46 @@ torch::Tensor adasplash_fwd(
     double threshold,
     int window_size
 ) {
-    CHECK_INPUT(q); CHECK_INPUT(k); CHECK_INPUT(v);
-    int B = q.size(0); int H = q.size(1); int N = q.size(2); int D = q.size(3);
-    auto out = torch::empty_like(q);
-    int threads = 128;
-    int blocks_x = (N + threads - 1) / threads;
-    dim3 grid(blocks_x, B * H);
-    auto stream = c10::cuda::getCurrentCUDAStream();
-    auto q_c = q.contiguous(); auto k_c = k.contiguous(); auto v_c = v.contiguous();
+    CHECK_INPUT(q);
+    CHECK_INPUT(k);
+    CHECK_INPUT(v);
 
-    AT_DISPATCH_FLOATING_TYPES_AND2(at::ScalarType::Half, at::ScalarType::BFloat16, q.scalar_type(), "adasplash_fwd", ([&] {
-        neuralops::cuda::adasplash_fwd_kernel<scalar_t><<<grid, threads, 0, stream>>>(
-            out.data_ptr<scalar_t>(), q_c.data_ptr<scalar_t>(), k_c.data_ptr<scalar_t>(), v_c.data_ptr<scalar_t>(),
-            B, H, N, D, (float)threshold, window_size
-        );
-    }));
+    TORCH_CHECK(q.dim() == 4, "q must be 4D [B, H, N, D]");
+    TORCH_CHECK(k.sizes() == q.sizes(), "k shape mismatch");
+    TORCH_CHECK(v.sizes() == q.sizes(), "v shape mismatch");
+
+    const int B = q.size(0);
+    const int H = q.size(1);
+    const int N = q.size(2);
+    const int D = q.size(3);
+
+    auto out = torch::empty_like(q);
+    if (B == 0 || H == 0 || N == 0 || D == 0) return out;
+
+    constexpr int THREADS = 128;
+    const int blocks_x = (N + THREADS - 1) / THREADS;
+    dim3 grid(blocks_x, B * H);
+
+    auto stream = c10::cuda::getCurrentCUDAStream();
+    auto q_c = q.contiguous();
+    auto k_c = k.contiguous();
+    auto v_c = v.contiguous();
+
+    AT_DISPATCH_FLOATING_TYPES_AND2(
+        at::ScalarType::Half, at::ScalarType::BFloat16,
+        q.scalar_type(), "adasplash_fwd", ([&] {
+            neuralops::cuda::adasplash_fwd_kernel<scalar_t><<<grid, THREADS, 0, stream>>>(
+                out.data_ptr<scalar_t>(),
+                q_c.data_ptr<scalar_t>(),
+                k_c.data_ptr<scalar_t>(),
+                v_c.data_ptr<scalar_t>(),
+                B, H, N, D,
+                static_cast<float>(threshold),
+                window_size
+            );
+        })
+    );
+
+    CUDA_KERNEL_LAUNCH_CHECK();
     return out;
 }
