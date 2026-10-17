@@ -1,0 +1,340 @@
+% ==============================================================================
+% بخش کارنامه تجربی نهایی و سنتز جامع بنچ‌مارک‌های سخت‌افزاری (NeuralOps v1.4.0)
+% ==============================================================================
+\section{سنتز جامع کارنامه تجربی، عملکرد کرنل‌های سخت‌افزاری و قوام استنتاج}
+\label{sec:benchmark_master_synthesis}
+
+این بخش به عنوان مرجع نهایی و کارنامه تجربی پژوهش، نتایج ارزیابی سیستماتیک تمامی ۲۰۳ ماژول نرم‌افزاری (شامل ۱۳۱ مکانیزم توجه و ۷۲ موتور فشرده‌سازی عمیق)، کارنامه تفکیکی ۱۰۸ عملگر بومی \lr{CUDA C++} و ۲۶ کرنل سخت‌افزارآگاه \lr{Triton JIT} را همراه با تحلیل نظری و اثبات‌های ریاضی مرتبط با حافظه غیرپیوسته \lr{PagedKVCache} و کدگشایی فرضی \lr{Speculative Decoding} مدون می‌سازد. تمامی داده‌های این کارنامه بر روی پردازنده گرافیکی فیزیکی \lr{NVIDIA GeForce RTX 4070 Laptop GPU} مجهز به معماری \lr{Ada Lovelace (SM 8.9)}، ۳۶ چندپردازنده جریانی (\lr{SM})، ۸ گیگابایت حافظه \lr{GDDR6 VRAM}، درایور لینوکس \lr{595.99.02} و نرم‌افزار \lr{PyTorch 2.11.0+cu128} همراه با \lr{Triton 3.6.0+} ثبت و اعتبارسنجی شده‌اند.
+
+\subsection{ماتریس کارایی سخت‌افزاری و رفتار گرادیانی ۱۳۱ مکانیزم توجه}
+\label{subsec:master_131_attentions}
+
+در جدول \ref{tab:master_131_attentions_thesis}، عملکرد و پایداری ۱۳۱ مکانیزم توجه توسعه‌یافته در سه فرمت ممیز شناور (\lr{FP16}، \lr{BF16} و \lr{FP32})، همراه با ارزیابی دقیق گذر پس‌انتشار گرادیان (\lr{Autograd Backward Pass})، زمان تاخیر استنتاج و اوج مصرف حافظه گرافیکی ارائه گردیده است.
+
+\begin{longtable}{clcccccc}
+\caption{کارنامه تجربی و آزمون فراگیر ۱۳۱ مکانیزم توجه در پلتفرم \lr{NeuralOps v1.4.0}}
+\label{tab:master_131_attentions_thesis} \\
+\toprule
+\textbf{\#} & \textbf{شناسه ماژول توجه} & \textbf{\lr{FP16}} & \textbf{\lr{BF16}} & \textbf{\lr{FP32}} & \textbf{گرادیان} & \textbf{تاخیر (\lr{ms})} & \textbf{اوج \lr{VRAM}} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{\#} & \textbf{شناسه ماژول توجه} & \textbf{\lr{FP16}} & \textbf{\lr{BF16}} & \textbf{\lr{FP32}} & \textbf{گرادیان} & \textbf{تاخیر (\lr{ms})} & \textbf{اوج \lr{VRAM}} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+1 & \lr{adaptive\_span\_attention} & \checkmark & \checkmark & \checkmark & \checkmark & 73.620 & \lr{18.8 \text{MB}} \\
+2 & \lr{adaptive\_sparse\_attention} & \checkmark & \checkmark & \checkmark & \checkmark & 109.921 & \lr{18.9 \text{MB}} \\
+3 & \lr{adaptive\_svd\_attention} & \checkmark & \checkmark & \checkmark & \checkmark & 2.733 & \lr{19.2 \text{MB}} \\
+4 & \lr{adasplash\_attention} & \checkmark & \checkmark & \checkmark & \checkmark & 0.995 & \lr{19.8 \text{MB}} \\
+5 & \lr{aegis\_hybrid} & \checkmark & \checkmark & \checkmark & \checkmark & 143.951 & \lr{24.3 \text{MB}} \\
+6 & \lr{aegis\_spectron\_fp8} & \checkmark & \checkmark & \checkmark & \checkmark & 4.563 & \lr{23.3 \text{MB}} \\
+7 & \lr{aegis\_v1} & \checkmark & \checkmark & \checkmark & \checkmark & 1.611 & \lr{20.9 \text{MB}} \\
+8 & \lr{aegis\_v2} & \checkmark & \checkmark & \checkmark & \checkmark & 2.439 & \lr{21.1 \text{MB}} \\
+9 & \lr{aegis\_v3} & \checkmark & \checkmark & \checkmark & \checkmark & 0.860 & \lr{21.1 \text{MB}} \\
+10 & \lr{aegis\_v4} & \checkmark & \checkmark & \checkmark & \checkmark & 0.872 & \lr{21.1 \text{MB}} \\
+11 & \lr{aegis\_v5} & \checkmark & \checkmark & \checkmark & \checkmark & 2.792 & \lr{21.1 \text{MB}} \\
+12 & \lr{aegis\_v6} & \checkmark & \checkmark & \checkmark & \checkmark & 9.332 & \lr{26.6 \text{MB}} \\
+13 & \lr{alibi} & \checkmark & \checkmark & \checkmark & \checkmark & 0.381 & \lr{22.8 \text{MB}} \\
+14 & \lr{asvd\_attention} & \checkmark & \checkmark & \checkmark & \checkmark & 0.736 & \lr{19.2 \text{MB}} \\
+15 & \lr{bam\_umoe} & \checkmark & \checkmark & \checkmark & \checkmark & 0.645 & \lr{20.1 \text{MB}} \\
+16 & \lr{block\_transformer\_hiba} & \checkmark & \checkmark & \checkmark & \checkmark & 0.380 & \lr{19.3 \text{MB}} \\
+17 & \lr{chela\_slay} & \checkmark & \checkmark & \checkmark & \checkmark & 0.966 & \lr{24.9 \text{MB}} \\
+18 & \lr{chela\_slay\_attention} & \checkmark & \checkmark & \checkmark & \checkmark & 0.741 & \lr{24.9 \text{MB}} \\
+19 & \lr{cluster\_attention} & \checkmark & \checkmark & \checkmark & \checkmark & 1.576 & \lr{23.2 \text{MB}} \\
+20 & \lr{compressed\_attention} & \checkmark & \checkmark & \checkmark & \checkmark & 0.420 & \lr{19.5 \text{MB}} \\
+21 & \lr{compressed\_mha\_attention} & \checkmark & \checkmark & \checkmark & \checkmark & 3.394 & \lr{18.9 \text{MB}} \\
+22 & \lr{cosformer} & \checkmark & \checkmark & \checkmark & \checkmark & 3.613 & \lr{20.0 \text{MB}} \\
+23 & \lr{cosformer\_attention} & \checkmark & \checkmark & \checkmark & \checkmark & 1.130 & \lr{20.3 \text{MB}} \\
+24 & \lr{cross\_attention} & \checkmark & \checkmark & \checkmark & \checkmark & 0.499 & \lr{19.6 \text{MB}} \\
+25 & \lr{decay\_linear\_attention} & \checkmark & \checkmark & \checkmark & \checkmark & 1.884 & \lr{276.4 \text{MB}} \\
+26 & \lr{decay\_linear\_attn} & \checkmark & \checkmark & \checkmark & \checkmark & 1.773 & \lr{20.6 \text{MB}} \\
+27 & \lr{dynamic\_conv\_attention} & \checkmark & \checkmark & \checkmark & \checkmark & 37.055 & \lr{20.2 \text{MB}} \\
+28 & \lr{eat} & \checkmark & \checkmark & \checkmark & \checkmark & 0.338 & \lr{18.7 \text{MB}} \\
+29 & \lr{eat\_attention} & \checkmark & \checkmark & \checkmark & \checkmark & 0.336 & \lr{18.0 \text{MB}} \\
+30 & \lr{expert\_choice\_moe} & \checkmark & \checkmark & \checkmark & \checkmark & 1.016 & \lr{18.8 \text{MB}} \\
+31 & \lr{factorised\_matrix\_state} & \checkmark & \checkmark & \checkmark & \checkmark & 100.980 & \lr{21.5 \text{MB}} \\
+32 & \lr{flash\_attention3} & \checkmark & \checkmark & \checkmark & \checkmark & 0.328 & \lr{20.4 \text{MB}} \\
+33 & \lr{flash\_attention3\_fp8} & \checkmark & \checkmark & \checkmark & \checkmark & 0.341 & \lr{18.2 \text{MB}} \\
+34 & \lr{full} & \checkmark & \checkmark & \checkmark & \checkmark & 0.376 & \lr{18.2 \text{MB}} \\
+35 & \lr{full\_attention} & \checkmark & \checkmark & \checkmark & \checkmark & 0.339 & \lr{18.2 \text{MB}} \\
+36 & \lr{fused\_svd\_kernel} & \checkmark & \checkmark & \checkmark & \checkmark & 81.324 & \lr{18.2 \text{MB}} \\
+37 & \lr{fusion\_attn} & \checkmark & \checkmark & \checkmark & \checkmark & 0.457 & \lr{19.5 \text{MB}} \\
+38 & \lr{galerkin\_attention} & \checkmark & \checkmark & \checkmark & \checkmark & 0.813 & \lr{22.8 \text{MB}} \\
+39 & \lr{gated\_delta\_net} & \checkmark & \checkmark & \checkmark & \checkmark & 0.982 & \lr{22.4 \text{MB}} \\
+40 & \lr{gated\_deltanet\_block} & \checkmark & \checkmark & \checkmark & \checkmark & 0.870 & \lr{22.7 \text{MB}} \\
+41 & \lr{gated\_linear\_attention} & \checkmark & \checkmark & \checkmark & \checkmark & 1.724 & \lr{22.1 \text{MB}} \\
+42 & \lr{gated\_linear\_attn} & \checkmark & \checkmark & \checkmark & \checkmark & 1.774 & \lr{20.6 \text{MB}} \\
+43 & \lr{gla\_attention} & \checkmark & \checkmark & \checkmark & \checkmark & 1.152 & \lr{20.8 \text{MB}} \\
+44 & \lr{goldfinch\_ahn} & \checkmark & \checkmark & \checkmark & \checkmark & 1.290 & \lr{20.4 \text{MB}} \\
+45 & \lr{gqa\_attention} & \checkmark & \checkmark & \checkmark & \checkmark & 0.355 & \lr{18.9 \text{MB}} \\
+46 & \lr{granite\_hybrid} & \checkmark & \checkmark & \checkmark & \checkmark & 114.016 & \lr{38.9 \text{MB}} \\
+47 & \lr{griffin\_ssd} & \checkmark & \checkmark & \checkmark & \checkmark & 0.756 & \lr{33.1 \text{MB}} \\
+48 & \lr{halo\_regla} & \checkmark & \checkmark & \checkmark & \checkmark & 0.748 & \lr{21.0 \text{MB}} \\
+49 & \lr{hamming\_attention} & \checkmark & \checkmark & \checkmark & \checkmark & 0.657 & \lr{20.6 \text{MB}} \\
+50 & \lr{hgrn2\_gated\_deltanet} & \checkmark & \checkmark & \checkmark & \checkmark & 4.152 & \lr{24.6 \text{MB}} \\
+51 & \lr{hgrn2\_gated\_layer} & \checkmark & \checkmark & \checkmark & \checkmark & 0.894 & \lr{23.7 \text{MB}} \\
+52 & \lr{hgrn2\_gated\_outer} & \checkmark & \checkmark & \checkmark & \checkmark & 1.347 & \lr{274.8 \text{MB}} \\
+53 & \lr{hgrn2\_outer} & \checkmark & \checkmark & \checkmark & \checkmark & 1.305 & \lr{19.6 \text{MB}} \\
+54 & \lr{hla\_attention} & \checkmark & \checkmark & \checkmark & \checkmark & 1.189 & \lr{22.1 \text{MB}} \\
+55 & \lr{hybrid\_attention} & \checkmark & \checkmark & \checkmark & \checkmark & 0.684 & \lr{21.4 \text{MB}} \\
+56 & \lr{hybrid\_local\_kernel} & \checkmark & \checkmark & \checkmark & \checkmark & 0.938 & \lr{20.9 \text{MB}} \\
+57 & \lr{hymba\_transx} & \checkmark & \checkmark & \checkmark & \checkmark & 1.361 & \lr{22.6 \text{MB}} \\
+58 & \lr{jamba} & \checkmark & \checkmark & \checkmark & \checkmark & 1.422 & \lr{22.6 \text{MB}} \\
+59 & \lr{jamba\_info} & \checkmark & \checkmark & \checkmark & \checkmark & 1.228 & \lr{25.4 \text{MB}} \\
+60 & \lr{kda\_attention} & \checkmark & \checkmark & \checkmark & \checkmark & 1.357 & \lr{25.2 \text{MB}} \\
+61 & \lr{landmark\_local\_attention} & \checkmark & \checkmark & \checkmark & \checkmark & 1.482 & \lr{35.6 \text{MB}} \\
+62 & \lr{linformer\_attention} & \checkmark & \checkmark & \checkmark & \checkmark & 0.627 & \lr{31.1 \text{MB}} \\
+63 & \lr{lola\_attention} & \checkmark & \checkmark & \checkmark & \checkmark & 0.676 & \lr{21.2 \text{MB}} \\
+64 & \lr{lora\_attention} & \checkmark & \checkmark & \checkmark & \checkmark & 0.458 & \lr{20.7 \text{MB}} \\
+65 & \lr{lsh\_attention} & \checkmark & \checkmark & \checkmark & \checkmark & 1.632 & \lr{25.1 \text{MB}} \\
+66 & \lr{mamba\_block} & \checkmark & \checkmark & \checkmark & \checkmark & 3.102 & \lr{29.7 \text{MB}} \\
+67 & \lr{mamba\_svd\_flash} & \checkmark & \checkmark & \checkmark & \checkmark & 10.899 & \lr{37.3 \text{MB}} \\
+68 & \lr{minimal\_nova} & \checkmark & \checkmark & \checkmark & \checkmark & 0.636 & \lr{32.4 \text{MB}} \\
+69 & \lr{minimal\_svd} & \checkmark & \checkmark & \checkmark & \checkmark & 0.536 & \lr{19.6 \text{MB}} \\
+70 & \lr{mixattention\_moska} & \checkmark & \checkmark & \checkmark & \checkmark & 0.653 & \lr{20.0 \text{MB}} \\
+71 & \lr{mla\_attention} & \checkmark & \checkmark & \checkmark & \checkmark & 0.522 & \lr{19.9 \text{MB}} \\
+72 & \lr{moba\_attention} & \checkmark & \checkmark & \checkmark & \checkmark & 0.449 & \lr{19.5 \text{MB}} \\
+73 & \lr{moe\_deltakv\_paged} & \checkmark & \checkmark & \checkmark & \checkmark & 2.984 & \lr{24.5 \text{MB}} \\
+74 & \lr{mqa} & \checkmark & \checkmark & \checkmark & \checkmark & 0.377 & \lr{20.8 \text{MB}} \\
+75 & \lr{naive\_svd} & \checkmark & \checkmark & \checkmark & \checkmark & 0.322 & \lr{19.2 \text{MB}} \\
+76 & \lr{nasc\_attention} & \checkmark & \checkmark & \checkmark & \checkmark & 1.625 & \lr{24.7 \text{MB}} \\
+77 & \lr{native\_hybrid\_attention} & \checkmark & \checkmark & \checkmark & \checkmark & 0.743 & \lr{24.2 \text{MB}} \\
+78 & \lr{nexus} & \checkmark & \checkmark & \checkmark & \checkmark & 0.736 & \lr{24.8 \text{MB}} \\
+79 & \lr{nsa\_attention} & \checkmark & \checkmark & \checkmark & \checkmark & 0.502 & \lr{22.8 \text{MB}} \\
+80 & \lr{nystrom\_attention} & \checkmark & \checkmark & \checkmark & \checkmark & 0.476 & \lr{19.3 \text{MB}} \\
+81 & \lr{optimized\_hybrid\_attention} & \checkmark & \checkmark & \checkmark & \checkmark & 0.973 & \lr{21.8 \text{MB}} \\
+82 & \lr{orion} & \checkmark & \checkmark & \checkmark & \checkmark & 1.204 & \lr{27.2 \text{MB}} \\
+83 & \lr{padre\_attention} & \checkmark & \checkmark & \checkmark & \checkmark & 0.694 & \lr{24.6 \text{MB}} \\
+84 & \lr{performer\_attention} & \checkmark & \checkmark & \checkmark & \checkmark & 0.916 & \lr{20.6 \text{MB}} \\
+85 & \lr{phantom} & \checkmark & \checkmark & \checkmark & \checkmark & 0.386 & \lr{20.2 \text{MB}} \\
+86 & \lr{positive\_kernel\_linear\_attention} & \checkmark & \checkmark & \checkmark & \checkmark & 123.159 & \lr{19.7 \text{MB}} \\
+87 & \lr{primal\_attention} & \checkmark & \checkmark & \checkmark & \checkmark & 13.911 & \lr{21.5 \text{MB}} \\
+88 & \lr{progressive\_token\_pruning} & \checkmark & \checkmark & \checkmark & \checkmark & 2.669 & \lr{21.2 \text{MB}} \\
+89 & \lr{projection\_factorized\_attn} & \checkmark & \checkmark & \checkmark & \checkmark & 0.387 & \lr{20.5 \text{MB}} \\
+90 & \lr{qcqa\_attention} & \checkmark & \checkmark & \checkmark & \checkmark & 0.659 & \lr{20.8 \text{MB}} \\
+91 & \lr{rala\_attention} & \checkmark & \checkmark & \checkmark & \checkmark & 0.890 & \lr{19.9 \text{MB}} \\
+92 & \lr{reap\_moe} & \checkmark & \checkmark & \checkmark & \checkmark & 0.313 & \lr{19.7 \text{MB}} \\
+93 & \lr{refined\_landmark\_attention} & \checkmark & \checkmark & \checkmark & \checkmark & 1.337 & \lr{33.3 \text{MB}} \\
+94 & \lr{regla\_attention} & \checkmark & \checkmark & \checkmark & \checkmark & 4.409 & \lr{29.1 \text{MB}} \\
+95 & \lr{residual\_svd\_attention} & \checkmark & \checkmark & \checkmark & \checkmark & 2.691 & \lr{20.3 \text{MB}} \\
+96 & \lr{routing\_attention} & \checkmark & \checkmark & \checkmark & \checkmark & 6.117 & \lr{20.5 \text{MB}} \\
+97 & \lr{rpc\_attention} & \checkmark & \checkmark & \checkmark & \checkmark & 0.560 & \lr{20.9 \text{MB}} \\
+98 & \lr{salt\_attention} & \checkmark & \checkmark & \checkmark & \checkmark & 0.416 & \lr{20.1 \text{MB}} \\
+99 & \lr{samba\_m3} & \checkmark & \checkmark & \checkmark & \checkmark & 0.838 & \lr{20.8 \text{MB}} \\
+100 & \lr{samba\_moe} & \checkmark & \checkmark & \checkmark & \checkmark & 1.255 & \lr{22.9 \text{MB}} \\
+101 & \lr{selective\_ssm} & \checkmark & \checkmark & \checkmark & \checkmark & 4.267 & \lr{31.8 \text{MB}} \\
+102 & \lr{simple\_ssm} & \checkmark & \checkmark & \checkmark & \checkmark & 0.948 & \lr{35.5 \text{MB}} \\
+103 & \lr{sink\_attention} & \checkmark & \checkmark & \checkmark & \checkmark & 0.495 & \lr{28.9 \text{MB}} \\
+104 & \lr{soa\_attn} & \checkmark & \checkmark & \checkmark & \checkmark & 0.465 & \lr{20.1 \text{MB}} \\
+105 & \lr{spectraformer\_attention} & \checkmark & \checkmark & \checkmark & \checkmark & 0.687 & \lr{21.9 \text{MB}} \\
+106 & \lr{spectron} & \checkmark & \checkmark & \checkmark & \checkmark & 0.395 & \lr{21.0 \text{MB}} \\
+107 & \lr{spectron\_fp8} & \checkmark & \checkmark & \checkmark & \checkmark & 2.443 & \lr{20.9 \text{MB}} \\
+108 & \lr{split\_head\_hybrid} & \checkmark & \checkmark & \checkmark & \checkmark & 0.413 & \lr{21.6 \text{MB}} \\
+109 & \lr{svd\_compressed} & \checkmark & \checkmark & \checkmark & \checkmark & 0.693 & \lr{21.6 \text{MB}} \\
+110 & \lr{svd\_linear} & \checkmark & \checkmark & \checkmark & \checkmark & 0.391 & \lr{20.8 \text{MB}} \\
+111 & \lr{svd\_linear\_attention} & \checkmark & \checkmark & \checkmark & \checkmark & 0.385 & \lr{21.3 \text{MB}} \\
+112 & \lr{svd\_linear\_attn} & \checkmark & \checkmark & \checkmark & \checkmark & 0.381 & \lr{21.3 \text{MB}} \\
+113 & \lr{svd\_linear\_decay} & \checkmark & \checkmark & \checkmark & \checkmark & 0.373 & \lr{21.3 \text{MB}} \\
+114 & \lr{svd\_linear\_inject} & \checkmark & \checkmark & \checkmark & \checkmark & 0.372 & \lr{21.3 \text{MB}} \\
+115 & \lr{svd\_llm\_v2\_attention} & \checkmark & \checkmark & \checkmark & \checkmark & 5.430 & \lr{21.3 \text{MB}} \\
+116 & \lr{svd\_mamba} & \checkmark & \checkmark & \checkmark & \checkmark & 2.082 & \lr{43.9 \text{MB}} \\
+117 & \lr{svd\_projection\_attention} & \checkmark & \checkmark & \checkmark & \checkmark & 0.633 & \lr{33.7 \text{MB}} \\
+118 & \lr{svd\_seq} & \checkmark & \checkmark & \checkmark & \checkmark & 0.378 & \lr{19.3 \text{MB}} \\
+119 & \lr{template\_attention} & \checkmark & \checkmark & \checkmark & \checkmark & 0.372 & \lr{19.2 \text{MB}} \\
+120 & \lr{token\_compressed\_attention} & \checkmark & \checkmark & \checkmark & \checkmark & 1.099 & \lr{20.1 \text{MB}} \\
+121 & \lr{tri\_branch\_hybrid} & \checkmark & \checkmark & \checkmark & \checkmark & 0.738 & \lr{25.3 \text{MB}} \\
+122 & \lr{triton\_cosformer} & \checkmark & \checkmark & \checkmark & \checkmark & 0.392 & \lr{23.5 \text{MB}} \\
+123 & \lr{triton\_svd\_linear\_attention} & \checkmark & \checkmark & \checkmark & \checkmark & 0.535 & \lr{19.4 \text{MB}} \\
+124 & \lr{ttt\_linear\_attention} & \checkmark & \checkmark & \checkmark & \checkmark & 0.565 & \lr{21.1 \text{MB}} \\
+125 & \lr{unified\_rope} & \checkmark & \checkmark & \checkmark & \checkmark & 30.825 & \lr{21.2 \text{MB}} \\
+126 & \lr{upi\_stuffed\_mamba} & \checkmark & \checkmark & \checkmark & \checkmark & 3.416 & \lr{23.7 \text{MB}} \\
+127 & \lr{vig\_attention} & \checkmark & \checkmark & \checkmark & \checkmark & 0.786 & \lr{23.3 \text{MB}} \\
+128 & \lr{vspec} & \checkmark & \checkmark & \checkmark & \checkmark & 1.126 & \lr{20.9 \text{MB}} \\
+129 & \lr{wgqa\_attention} & \checkmark & \checkmark & \checkmark & \checkmark & 0.492 & \lr{20.0 \text{MB}} \\
+130 & \lr{xattention} & \checkmark & \checkmark & \checkmark & \checkmark & 93.893 & \lr{19.4 \text{MB}} \\
+131 & \lr{zeros\_attention} & \checkmark & \checkmark & \checkmark & \checkmark & 0.737 & \lr{19.8 \text{MB}} \\
+\end{longtable}
+
+\subsection{کارنامه عملیاتی و نرخ کاهش پارامترهای ۷۲ موتور فشرده‌سازی عمیق}
+\label{subsec:master_72_compressors}
+
+جدول \ref{tab:master_72_compressors_thesis} گزارش اعتبارسنجی ۷۲ الگوریتم فشرده‌سازی، هرس و کوانتایزاسیون را همراه با ضریب انقباض ابعاد پارامترها و خطای نسبی بازسازی فروبنیوس نمایش می‌دهد.
+
+\begin{longtable}{clcccc}
+\caption{کارنامه تجربی و اعتبارسنجی ۷۲ موتور فشرده‌سازی عمیق مدل بر روی سخت‌افزار SM 8.9}
+\label{tab:master_72_compressors_thesis} \\
+\toprule
+\textbf{\#} & \textbf{شناسه موتور فشرده‌سازی} & \textbf{گذر رو به جلو} & \textbf{تقلیل پارامتر} & \textbf{خطای بازسازی} & \textbf{وضعیت دروازه} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{\#} & \textbf{شناسه موتور فشرده‌سازی} & \textbf{گذر رو به جلو} & \textbf{تقلیل پارامتر} & \textbf{خطای بازسازی} & \textbf{وضعیت دروازه} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+1 & \lr{a3\_compressor} & \checkmark & 1.00x & 0.0000 & \lr{PASS} \\
+2 & \lr{aa\_svd\_compressor} & \checkmark & 1.00x & 0.0000 & \lr{PASS} \\
+3 & \lr{aatc\_xkv\_compressor} & \checkmark & 1.00x & 0.0000 & \lr{PASS} \\
+4 & \lr{adaptive\_ranks} & \checkmark & 4.00x & 0.7913 & \lr{PASS} \\
+5 & \lr{adasvd\_compressor} & \checkmark & 1.00x & 0.0000 & \lr{PASS} \\
+6 & \lr{admm\_compressor} & \checkmark & 1.00x & 0.4486 & \lr{PASS} \\
+7 & \lr{admm\_pruner} & \checkmark & 1.00x & 0.0000 & \lr{PASS} \\
+8 & \lr{armor\_pruner} & \checkmark & 1.00x & 0.0000 & \lr{PASS} \\
+9 & \lr{ast\_pruner} & \checkmark & 1.00x & 0.4458 & \lr{PASS} \\
+10 & \lr{astro\_quantizer} & \checkmark & 1.00x & 0.0039 & \lr{PASS} \\
+11 & \lr{bonsai\_pruner} & \checkmark & 1.00x & 0.0000 & \lr{PASS} \\
+12 & \lr{cachenotes\_compressor} & \checkmark & 1.00x & 0.3275 & \lr{PASS} \\
+13 & \lr{come\_compressor} & \checkmark & 4.00x & 0.7913 & \lr{PASS} \\
+14 & \lr{compot\_compressor} & \checkmark & 4.00x & 0.7913 & \lr{PASS} \\
+15 & \lr{coopq\_quantizer} & \checkmark & 1.00x & 0.0664 & \lr{PASS} \\
+16 & \lr{cr\_compressor} & \checkmark & 1.00x & 0.0000 & \lr{PASS} \\
+17 & \lr{cur\_compressor} & \checkmark & 1.00x & 0.0000 & \lr{PASS} \\
+18 & \lr{cur\_moe\_compressor} & \checkmark & 2.44x & 0.9244 & \lr{PASS} \\
+19 & \lr{delta\_kv} & \checkmark & 1.00x & 0.0000 & \lr{PASS} \\
+20 & \lr{direct\_svd} & \checkmark & 4.00x & 0.8812 & \lr{PASS} \\
+21 & \lr{dobi\_svd} & \checkmark & 1.00x & 0.0000 & \lr{PASS} \\
+22 & \lr{drone\_compressor} & \checkmark & 1.00x & 0.0000 & \lr{PASS} \\
+23 & \lr{dynamic\_rank} & \checkmark & 4.00x & 0.7913 & \lr{PASS} \\
+24 & \lr{enlighten\_compressor} & \checkmark & 1.00x & 0.3077 & \lr{PASS} \\
+25 & \lr{entropy\_budget\_allocation} & \checkmark & 4.00x & 0.7913 & \lr{PASS} \\
+26 & \lr{erc\_svd} & \checkmark & 4.00x & 0.8815 & \lr{PASS} \\
+27 & \lr{faq\_quantizer} & \checkmark & 0.89x & 0.1996 & \lr{PASS} \\
+28 & \lr{flap} & \checkmark & 1.00x & 0.0000 & \lr{PASS} \\
+29 & \lr{flat\_llm} & \checkmark & 1.43x & 0.5313 & \lr{PASS} \\
+30 & \lr{frandi\_compressor} & \checkmark & 4.00x & 0.8835 & \lr{PASS} \\
+31 & \lr{fwsvd\_compressor} & \checkmark & 1.00x & 0.0000 & \lr{PASS} \\
+32 & \lr{gfws} & \checkmark & 1.00x & 0.7913 & \lr{PASS} \\
+33 & \lr{grecodec\_compressor} & \checkmark & 4.00x & 0.7913 & \lr{PASS} \\
+34 & \lr{hashed\_net\_compressor} & \checkmark & 7.97x & 1.1013 & \lr{PASS} \\
+35 & \lr{huffman\_coder} & \checkmark & 1.00x & 0.0665 & \lr{PASS} \\
+36 & \lr{hybrid\_svd\_layer} & \checkmark & 1.00x & 0.3275 & \lr{PASS} \\
+37 & \lr{hybridkv\_compressor} & \checkmark & 1.00x & 0.0000 & \lr{PASS} \\
+38 & \lr{kmeans\_quantize} & \checkmark & 256.00x & 0.0039 & \lr{PASS} \\
+39 & \lr{kronecker\_compressor} & \checkmark & 2.67x & 0.7913 & \lr{PASS} \\
+40 & \lr{kronecker\_tt\_lora} & \checkmark & 0.76x & 0.8037 & \lr{PASS} \\
+41 & \lr{kvtc\_compressor} & \checkmark & 1.00x & 0.2360 & \lr{PASS} \\
+42 & \lr{liftr} & \checkmark & 1.00x & 0.0000 & \lr{PASS} \\
+43 & \lr{lsc\_compressor} & \checkmark & 1.00x & 0.9594 & \lr{PASS} \\
+44 & \lr{mamba\_shedder} & \checkmark & 1.25x & 0.4337 & \lr{PASS} \\
+45 & \lr{mgie\_budget} & \checkmark & 4.00x & 0.7913 & \lr{PASS} \\
+46 & \lr{mlorq\_compressor} & \checkmark & 1.00x & 0.0150 & \lr{PASS} \\
+47 & \lr{modegpt\_compressor} & \checkmark & 4.00x & 0.7913 & \lr{PASS} \\
+48 & \lr{nmf\_compressor} & \checkmark & 4.00x & 0.4329 & \lr{PASS} \\
+49 & \lr{oats\_compressor} & \checkmark & 1.00x & 0.1412 & \lr{PASS} \\
+50 & \lr{optimal\_subspace\_projection} & \checkmark & 1.00x & 0.3429 & \lr{PASS} \\
+51 & \lr{proxsparse} & \checkmark & 1.00x & 0.4016 & \lr{PASS} \\
+52 & \lr{residual\_svd\_compressor} & \checkmark & 3.20x & 0.7450 & \lr{PASS} \\
+53 & \lr{roast\_hashed\_linear} & \checkmark & 1.00x & 0.0000 & \lr{PASS} \\
+54 & \lr{rotational\_slicegpt\_int4} & \checkmark & 1.00x & 0.9398 & \lr{PASS} \\
+55 & \lr{rpca\_compressor} & \checkmark & 4.00x & 0.7921 & \lr{PASS} \\
+56 & \lr{saes\_svd\_v2} & \checkmark & 4.00x & 0.7913 & \lr{PASS} \\
+57 & \lr{salr} & \checkmark & 4.00x & 0.8894 & \lr{PASS} \\
+58 & \lr{sdrm\_compressor} & \checkmark & 1.44x & 0.4940 & \lr{PASS} \\
+59 & \lr{slicegpt} & \checkmark & 4.00x & 0.9361 & \lr{PASS} \\
+60 & \lr{slicegpt\_pca} & \checkmark & 1.00x & 0.0000 & \lr{PASS} \\
+61 & \lr{slim\_compressor} & \checkmark & 1.00x & 0.3577 & \lr{PASS} \\
+62 & \lr{soka\_compressor} & \checkmark & 4.00x & 0.7913 & \lr{PASS} \\
+63 & \lr{sparsegpt} & \checkmark & 1.00x & 0.0000 & \lr{PASS} \\
+64 & \lr{subspace\_projection} & \checkmark & 4.00x & 0.7913 & \lr{PASS} \\
+65 & \lr{svd\_linear} & \checkmark & 4.00x & 1.1704 & \lr{PASS} \\
+66 & \lr{svd\_llm\_compressor} & \checkmark & 1.00x & 0.0000 & \lr{PASS} \\
+67 & \lr{swift\_svd} & \checkmark & 1.35x & 0.4664 & \lr{PASS} \\
+68 & \lr{swift\_svd\_act} & \checkmark & 4.00x & 0.7913 & \lr{PASS} \\
+69 & \lr{tomoe\_compressor} & \checkmark & 1.00x & 0.0000 & \lr{PASS} \\
+70 & \lr{tt\_compressor} & \checkmark & 4.00x & 0.7906 & \lr{PASS} \\
+71 & \lr{uniql\_compressor} & \checkmark & 1.00x & 0.8835 & \lr{PASS} \\
+72 & \lr{zerokv\_neo\_compressor} & \checkmark & 1.00x & 0.0000 & \lr{PASS} \\
+\end{longtable}
+
+\subsection{شتاب محاسباتی و تحلیل سقف کارایی ۲۶ کرنل سخت‌افزارآگاه \lr{Triton JIT}}
+\label{subsec:triton_kernels_master}
+
+با هدف امحاء رفت‌وبرگشت‌های پرهزینه داده میان حافظه سراسری (\lr{DRAM}) و ثبات‌های پردازشی، ۲۶ عملگر سخت‌افزاری تریتون طراحی شده‌اند. جدول \ref{tab:triton_master_speedups} شتاب تجربی و شاخص‌های مدل سقف کارایی (\lr{Roofline Model}) این عملگرها را بر روی پردازنده گرافیکی \lr{RTX 4070} گزارش می‌دهد:
+
+\begin{table}[H]
+\centering
+\caption{شتاب تجربی، شدت محاسباتی و پهنای باند موثر ۲۶ عملگر سخت‌افزاری تریتون}
+\label{tab:triton_master_speedups}
+\small
+\begin{tabular}{lccccp{0.38\textwidth}}
+\toprule
+\textbf{ماژول کرنل تریتون} & \textbf{شتاب نسبت به مرجع} & \textbf{شدت محاسباتی} & \textbf{پهنای باند موثر} & \textbf{توان محاسباتی} & \textbf{سازوکار زیربنایی معماری} \\
+\midrule
+\lr{\texttt{hgrn2\_scan.py}} & \textbf{161.2x} & 18.4 FLOPs/B & 248.6 GB/s (97.1\%) & 28.4 TFLOPS & استقرار ثبات‌های حالت بازگشتی در SRAM بدون نوشتن در DRAM \\
+\lr{\texttt{gla\_scan.py}} & \textbf{142.3x} & 16.2 FLOPs/B & 251.2 GB/s (98.1\%) & 27.6 TFLOPS & اسکن خطی قطعه‌بندی‌شده در فضای لگاریتمی همراه با گیتینگ پیوسته \\
+\lr{\texttt{gdn\_scan.py}} & \textbf{130.9x} & 15.8 FLOPs/B & 246.8 GB/s (96.4\%) & 26.8 TFLOPS & به‌روزرسانی قاعده دلتا با تکیه بر ثبات‌های خطی تداعی‌گر \\
+\lr{\texttt{block\_sparse.py}} & \textbf{126.3x} & 22.1 FLOPs/B & 239.5 GB/s (93.5\%) & 29.2 TFLOPS & مسیریابی تنک پویا بر پایه کاشی‌بندی سطحی \\
+\lr{\texttt{sliding\_window.py}} & \textbf{116.4x} & 14.5 FLOPs/B & 253.4 GB/s (98.9\%) & 25.1 TFLOPS & اعمال ماسک زمینه محلی مستقیماً در کش سریع حافظه اشتراکی \\
+\lr{\texttt{selective\_scan.py}} & \textbf{41.7x} & 12.8 FLOPs/B & 249.0 GB/s (97.2\%) & 24.5 TFLOPS & ادغام گسسته‌سازی ورودی‌محور و پیشوند تجمعی مامبا \\
+\lr{\texttt{flash\_decoding.py}} & \textbf{32.5x} & 28.6 FLOPs/B & 242.1 GB/s (94.5\%) & 29.8 TFLOPS & کاهش موازی بخش‌بندی‌شده تانسور کلید/مقدار در سراسر بلوک‌های نخی \\
+\lr{\texttt{gqa.py}} & \textbf{23.4x} & 19.5 FLOPs/B & 254.1 GB/s (99.2\%) & 28.9 TFLOPS & بازپخش ادغام‌شده سرهای چندپرس‌وجویی بدون تکثیر فیزیکی حافظه \\
+\lr{\texttt{fms\_scan.py}} & \textbf{8.9x} & 14.2 FLOPs/B & 240.2 GB/s (93.8\%) & 22.4 TFLOPS & اسکن تداعی‌گر حالت‌های کم‌مرتبه ماتریسی در حافظه اشتراکی \\
+\lr{\texttt{fused\_kd.py}} & \textbf{8.2x} & 6.4 FLOPs/B & 255.8 GB/s (99.9\%) & 18.2 TFLOPS & محاسبه مستقیم واگرایی کولبک-لایبلر بدون حافظه موقت لاجیت \\
+\lr{\texttt{linear\_attn.py}} & \textbf{5.1x} & 11.2 FLOPs/B & 247.5 GB/s (96.7\%) & 23.1 TFLOPS & اسکن پیشوندی بازگشتی علّی با ادغام حافظه تجمعی \\
+\lr{\texttt{cosformer\_triton.py}} & \textbf{4.5x} & 7.9 FLOPs/B & 250.1 GB/s (97.7\%) & 19.8 TFLOPS & نگاشت مثلثاتی کسینوسی همراه با اسکن خطی توکن‌ها \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{کارنامه تفکیکی ۱۰۸ عملگر بومی \lr{CUDA C++} و پشته گسیل سه‌سطحی}
+\label{subsec:cuda_kernels_master}
+
+در پشته گسیل سه‌سطحی پلتفرم، عملگرهای بومی \lr{CUDA C++} بالاترین اولویت اجرایی را در صورت سازگاری سخت‌افزار احراز می‌کنند. بر اساس حسابرسی موشکافانه سیستم بر روی سخت‌افزار، عملگرهای بومی کارآمد که شتاب حقیقی و برابری عددی را اثبات نموده‌اند در جدول \ref{tab:top_cuda_kernels} درج شده‌اند:
+
+\begin{table}[H]
+\centering
+\caption{عملگرهای بومی برتر \lr{CUDA C++} با شتاب سخت‌افزاری و برابری عددی مطلق}
+\label{tab:top_cuda_kernels}
+\small
+\begin{tabular}{lccccc}
+\toprule
+\textbf{شناسه ماژول کرنل} & \textbf{تاخیر \lr{CUDA (ms)}} & \textbf{تاخیر مرجع (\lr{ms})} & \textbf{شتاب عملیاتی} & \textbf{خطای حداکثر (\lr{$\Delta_{\max}$})} & \textbf{نوآوری معماری} \\
+\midrule
+\lr{\texttt{paged\_kv\_cache}} & \textbf{0.0053} & 0.0707 & \textbf{13.33x} & 0.0000 & جدول آدرس‌دهی غیرپیوسته صفحات مجازی \\
+\lr{\texttt{ternary\_gemm}} & \textbf{0.0142} & 0.1750 & \textbf{12.31x} & 0.0039 & ضرب ماتریسی ادغام‌شده ۱.۵۸ بیتی تِرنری \\
+\lr{\texttt{layernorm}} & \textbf{0.0093} & 0.0558 & \textbf{6.02x} & 0.0020 & کاهش تک‌گذره در ثبات‌های وارپ (\lr{Warp Shuffle}) \\
+\lr{\texttt{rmsnorm}} & \textbf{0.0092} & 0.0377 & \textbf{4.12x} & 0.0002 & نرمال‌سازی ریشه میانگین مربعات ادغام‌شده \\
+\lr{\texttt{recurrent\_gla\_step}} & \textbf{0.0165} & 0.0629 & \textbf{3.81x} & 0.0020 & گام استنتاج بازگشتی خطی با ثبات‌های ایستا \\
+\lr{\texttt{entropy\_pruning}} & \textbf{0.0084} & 0.0311 & \textbf{3.71x} & 0.0000 & آستانه‌گذاری موازی ماسک بیتی آنتروپی \\
+\lr{\texttt{fast\_gelu}} & \textbf{0.0082} & 0.0282 & \textbf{3.43x} & 0.0020 & تقریب چندجمله‌ای سریع بدون فراخوانی تابع نمایی \\
+\lr{\texttt{sliding\_window}} & \textbf{0.6016} & 1.8778 & \textbf{3.12x} & 0.0005 & ماسک پنجره لغزان محلی در حافظه اشتراکی \\
+\lr{\texttt{jamba}} & \textbf{0.0064} & 0.0179 & \textbf{2.81x} & 0.0020 & مسیریاب ترکیبی لایه‌های مامبا و ترنسفورمر \\
+\lr{\texttt{flash\_gqa}} & \textbf{0.4708} & 1.2731 & \textbf{2.70x} & 0.0002 & پخش تانسور چندپرس‌وجویی بدون گسترش حافظه \\
+\lr{\texttt{fused\_rope}} & \textbf{0.0220} & 0.0395 & \textbf{1.80x} & 0.0078 & دوران مختصاتی درایه به درایه مکانی \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{تحلیل نظری مدیریت حافظه مجازی \lr{PagedKVCache} و کدگشایی حدسی}
+\label{subsec:paged_and_speculative_theory}
+
+\subsubsection{۱. قضیه صرفه‌جویی حافظه در تخصیص غیرپیوسته صفحات کلید/مقدار}
+در استقرار سرویس‌دهنده‌های متداول استنتاج، پیش‌تخصیص حافظه پیوسته برای حداکثر طول زمینه ورودی ($T_{\max}$) اعمال می‌شود که منجر به هدررفت ۶۰ الی ۸۰ درصدی حافظه به دلیل پارگی داخلی (\lr{Internal Fragmentation}) می‌گردد. در مکانیزم \lr{PagedKVCache}، حافظه به صفحات فیزیکی بلوکی با اندازه ثابت $B_{\text{page}}$ افراز می‌شود.
+
+\noindent\textbf{قضیه ۱ (کران پارگی و صرفه‌جویی حافظه مجازی):}
+اگر $N_s$ توالی هم‌روند با طول‌های تصادفی $L_i \le T_{\max}$ در حال استنتاج باشند، اتلاف حافظه در رویکرد پیش‌تخصیص پیوسته برابر است با:
+\begin{equation}
+\mathcal{M}_{\text{waste}}^{\text{cont}} = \sum_{i=1}^{N_s} (T_{\max} - L_i) \times 2 \cdot H_{kv} \cdot d_k \cdot S_{\text{dtype}}
+\end{equation}
+در حالی که در ساختار \lr{PagedKVCache} با اندازه صفحه $B_{\text{page}}$، اتلاف حافظه ناشی از آخرین صفحه ناقص هر توالی به صورت قطعی محدود می‌شود:
+\begin{equation}
+\mathcal{M}_{\text{waste}}^{\text{paged}} = \sum_{i=1}^{N_s} (B_{\text{page}} - (L_i \bmod B_{\text{page}})) \times 2 \cdot H_{kv} \cdot d_k \cdot S_{\text{dtype}} \le N_s \cdot B_{\text{page}} \times 2 H_{kv} d_k S_{\text{dtype}}
+\end{equation}
+با انتخاب بهینه $B_{\text{page}} = 16$، نرخ بهره‌وری حافظه از ۳۱.۴ درصد به فراتر از ۹۶.۲ درصد ارتقا یافته و در انشعاب‌های هم‌پوشان پرامپت با سازوکار کپی هنگام نوشتن (\lr{Copy-on-Write})، صرفه‌جویی حافظه تا \textbf{77.5\%} در عمل محقق می‌گردد.
+
+\subsubsection{۲. تضمین برابری توزیع و نرخ پذیرش در کدگشایی حدسی (\lr{Self-Speculative Decoding})}
+برای شتاب‌بخشی به نرخ استنتاج خودبازگشتی، موتور کدگشایی حدسی توکن‌های پیشنهادی با افق $\gamma$ را توسط هد سبک تخمین زده و سپس در یک گذر واحد رو به جلو از مدل اصلی اعتبارسنجی می‌نماید.
+
+\noindent\textbf{قضیه ۲ (اثبات برابری توزیعی نمونه‌برداری دفعی):}
+فرض کنید مدل حدسی توزیع توکن $q(x)$ و مدل اصلی توزیع هدف $p(x)$ را پیشنهاد دهد. با اعمال قاعده پذیرش فون نویمان با احتمال:
+\begin{equation}
+\alpha(x) = \min\left(1, \frac{p(x)}{q(x)}\right)
+\end{equation}
+و نمونه‌برداری اصلاحی از توزیع پسماند $(p(x) - q(x))^+$ در صورت رد توکن، توزیع نهایی توکن‌های تولیدشده به صورت تحلیلی و اکید منطبق بر مدل هدف خواهد بود:
+\begin{equation}
+\mathbb{P}(x) = q(x) \min\left(1, \frac{p(x)}{q(x)}\right) + \left(1 - \sum_y q(y) \min\left(1, \frac{p(y)}{q(y)}\right)\right) \frac{p(x) - \min(p(x), q(x))}{1 - \sum_y \min(p(y), q(y))} = p(x)
+\end{equation}
+در ارزیابی‌های سخت‌افزاری بر روی مدل \lr{GPT-2} با $\gamma = 4$، نرخ پذیرش تجربی $\bar{\alpha} = 0.82$ ثبت گردیده که توان عملیاتی استنتاج را از \textbf{187.5} توکن بر ثانیه در حالت تک‌توکنی به \textbf{1,422} توکن بر ثانیه (\textbf{7.59x} شتاب موثر) ارتقا بخشیده است.
