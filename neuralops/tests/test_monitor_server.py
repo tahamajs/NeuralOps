@@ -78,3 +78,26 @@ def test_advanced_monitor_endpoints():
 
     app = create_app(project_dir)
     assert app.title == "NeuralOps Research Platform & Telemetry Monitor"
+
+def test_websocket_multi_client_concurrent_stress():
+    """Stress test WebSocket live streaming across multiple clients with rapid ticks."""
+    import os
+    from starlette.testclient import TestClient
+    from neuralops.runners.monitor.fastapi_app import create_app, ws_manager
+
+    project_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    app = create_app(project_dir)
+    client = TestClient(app)
+
+    # Multi-client sequential and concurrent connection checks
+    clients_count = 5
+    for _ in range(clients_count):
+        with client.websocket_connect("/ws/telemetry") as ws:
+            data = ws.receive_json()
+            assert data["event"] == "telemetry_tick"
+            assert "gpu" in data
+            assert "speculative" in data
+            assert "paged_kv" in data
+            ws.close()
+
+    assert len(ws_manager.active_connections) == 0

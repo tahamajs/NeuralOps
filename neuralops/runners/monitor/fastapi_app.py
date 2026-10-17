@@ -1,12 +1,12 @@
-"""FastAPI Application providing modern REST & streaming endpoints for NeuralOps Dashboard."""
+"""FastAPI Application providing modern REST, SSE, and WebSocket endpoints for NeuralOps Dashboard."""
 
 from __future__ import annotations
 
 import asyncio
 import json
 import os
-from typing import Any, AsyncGenerator, Dict, List, Optional
-from fastapi import FastAPI, HTTPException, Query
+from typing import Any, AsyncGenerator, Dict, List, Optional, Set
+from fastapi import FastAPI, HTTPException, Query, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
@@ -37,6 +37,33 @@ from neuralops.runners.monitor.endpoints import (
 )
 
 
+class ConnectionManager:
+    """Manages active concurrent WebSocket client connections for real-time telemetry streaming."""
+
+    def __init__(self) -> None:
+        self.active_connections: Set[WebSocket] = set()
+
+    async def connect(self, websocket: WebSocket) -> None:
+        await websocket.accept()
+        self.active_connections.add(websocket)
+
+    def disconnect(self, websocket: WebSocket) -> None:
+        self.active_connections.discard(websocket)
+
+    async def broadcast(self, message: Dict[str, Any]) -> None:
+        dead_connections = []
+        for connection in list(self.active_connections):
+            try:
+                await connection.send_json(message)
+            except Exception:
+                dead_connections.append(connection)
+        for dead in dead_connections:
+            self.active_connections.discard(dead)
+
+
+ws_manager = ConnectionManager()
+
+
 def create_app(project_dir: Optional[str] = None) -> FastAPI:
     """Create and configure the FastAPI web monitor application."""
     if project_dir is None:
@@ -47,8 +74,8 @@ def create_app(project_dir: Optional[str] = None) -> FastAPI:
 
     app = FastAPI(
         title="NeuralOps Research Platform & Telemetry Monitor",
-        description="Production REST API and real-time streaming dashboard for subquadratic attention mechanisms, compression leaderboards, PagedKVCache allocation, and speculative decoding.",
-        version="3.5.0",
+        description="Production REST API, SSE, and WebSocket real-time streaming dashboard for subquadratic attention mechanisms, compression leaderboards, PagedKVCache allocation, and speculative decoding.",
+        version="3.6.0",
         docs_url="/api/docs",
         redoc_url="/api/redoc",
         openapi_url="/api/openapi.json",
@@ -65,7 +92,45 @@ def create_app(project_dir: Optional[str] = None) -> FastAPI:
     @app.get("/api/health", response_model=ApiResponse, tags=["System"])
     async def health_check() -> ApiResponse:
         """Health check endpoint validating server uptime."""
-        return ApiResponse(success=True, message="NeuralOps Telemetry Server Healthy")
+        return ApiResponse(
+            success=True,
+            message="NeuralOps Telemetry Server Healthy",
+            data={
+                "status": "online",
+                "active_ws_clients": len(ws_manager.active_connections),
+                "pid": os.getpid(),
+            }
+        )
+
+    @app.websocket("/ws/telemetry")
+    async def websocket_telemetry(websocket: WebSocket) -> None:
+        """WebSocket endpoint streaming high-frequency live GPU and inference telemetry to connected clients."""
+        await ws_manager.connect(websocket)
+        try:
+            while True:
+                gpu_data = get_live_gpu_telemetry(project_dir)
+                spec = get_speculative_decoding_state()
+                paged = get_paged_kv_cache_state()
+                payload = {
+                    "event": "telemetry_tick",
+                    "gpu": gpu_data,
+                    "speculative": {
+                        "acceptance_rate": spec["acceptance_rate"],
+                        "mean_accepted_tokens": spec["mean_accepted_tokens"],
+                        "speedup_factor": spec["speedup_factor"],
+                    },
+                    "paged_kv": {
+                        "utilization_pct": paged["utilization_pct"],
+                        "allocated_blocks": paged["allocated_blocks"],
+                        "free_blocks": paged["free_blocks"],
+                    },
+                }
+                await websocket.send_json(payload)
+                await asyncio.sleep(1.0)
+        except (WebSocketDisconnect, Exception):
+            pass
+        finally:
+            ws_manager.disconnect(websocket)
 
     @app.get("/api/gpu/metrics", response_model=GpuMetrics, tags=["Telemetry"])
     async def get_gpu_metrics() -> GpuMetrics:
