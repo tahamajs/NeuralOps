@@ -31,8 +31,8 @@ class ComprehensiveStudioHandler(http.server.SimpleHTTPRequestHandler):
     """HTTP request handler routing telemetry, API, and static file endpoints."""
 
     project_dir: str = os.getcwd()
-    web_dir: str = os.path.join(os.getcwd(), "Docs")
-    docs_dir: str = os.path.join(os.getcwd(), "Docs")
+    web_dir: str = os.path.join(os.getcwd(), "docs")
+    docs_dir: str = os.path.join(os.getcwd(), "docs")
     harvested_json: str = os.path.join(os.getcwd(), "results", "harvested_benchmark_data.json")
     is_local_gpu: bool = False
 
@@ -162,13 +162,34 @@ class ComprehensiveStudioHandler(http.server.SimpleHTTPRequestHandler):
             self.end_headers()
 
 
-def run_server(port: int = 8080) -> None:
-    """Run monitor server forever on target port."""
-    import socketserver
+def run_server(
+    port: int = 8080,
+    host: str = "0.0.0.0",
+    use_fastapi: bool = True,
+    project_dir: str | None = None,
+    docs_dir: str | None = None,
+) -> None:
+    """Run monitor server on target host and port using FastAPI/Uvicorn or fallback standard HTTP."""
+    if use_fastapi:
+        try:
+            import uvicorn
+            from neuralops.runners.monitor.fastapi_app import create_app
 
+            app = create_app(project_dir=project_dir, docs_dir=docs_dir)
+            print(f"Starting FastAPI + WebSocket Telemetry Server on http://{host}:{port}")
+            uvicorn.run(app, host=host, port=port, log_level="info")
+            return
+        except ImportError as e:
+            print(f"FastAPI or Uvicorn not installed ({e}). Falling back to standard TCPServer.")
+
+    import socketserver
     socketserver.ThreadingTCPServer.allow_reuse_address = True
-    with socketserver.ThreadingTCPServer(("", port), ComprehensiveStudioHandler) as httpd:
-        print(f"Full Studio UI & Telemetry API active on http://localhost:{port}")
+    ComprehensiveStudioHandler.project_dir = project_dir or ComprehensiveStudioHandler.project_dir
+    ComprehensiveStudioHandler.docs_dir = docs_dir or ComprehensiveStudioHandler.docs_dir
+    ComprehensiveStudioHandler.web_dir = docs_dir or ComprehensiveStudioHandler.web_dir
+
+    with socketserver.ThreadingTCPServer((host, port), ComprehensiveStudioHandler) as httpd:
+        print(f"Standard Studio UI active on http://{host}:{port}")
         httpd.serve_forever()
 
 
