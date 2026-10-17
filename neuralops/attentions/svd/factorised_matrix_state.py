@@ -17,7 +17,6 @@ Hardened for production across DistilBERT, RoBERTa/BERT, GPT-2, and Qwen/LLaMA a
 - Numerically stable FP32 state accumulation with nan_to_num protection
 - Safe injection factory returning None on extraction failures
 """
-from neuralops.core.common import _cfg_get
 from neuralops.core.common import repeat_kv
 
 from neuralops.core.attention_utils import (
@@ -37,7 +36,6 @@ import torch.nn.functional as F
 
 from neuralops.core.base import BaseAttention
 from neuralops.core.registry import ATTENTION_REGISTRY
-from neuralops.core.utils.rope import _rotate_half
 
 try:
     from neuralops.core.triton_kernels.fms_scan import MAX_REGISTER_DIM, fms_scan_triton

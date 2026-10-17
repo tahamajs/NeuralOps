@@ -15,7 +15,6 @@ from neuralops.core.attention_utils import (
 )
 
 import logging
-import math
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -26,7 +25,6 @@ import torch.nn.functional as F
 
 from neuralops.core.base import BaseAttention
 from neuralops.core.registry import ATTENTION_REGISTRY
-from neuralops.core.utils.rope import _rotate_half
 
 try:
     from flash_attn_interface import flash_attn_func

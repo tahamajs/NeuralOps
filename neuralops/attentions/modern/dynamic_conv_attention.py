@@ -16,7 +16,6 @@ from neuralops.core.attention_utils import (
 )
 
 import logging
-import math
 from typing import Any
 
 import torch

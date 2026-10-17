@@ -14,7 +14,6 @@ from neuralops.core.common import _env_float, _unpack_weight_bias
 
 import logging
 import math
-import os
 from typing import Any
 
 import torch

@@ -1,6 +1,5 @@
 """GFWSVD: Fisher-weighted / Covariance-weighted SVD. Registered as 'gfws' and 'gfws_d'."""
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
 
 
 import logging

@@ -36,7 +36,6 @@ from neuralops.core.attention_utils import (
 
 import logging
 import math
-import os
 import warnings
 from typing import Any
 
@@ -50,7 +49,6 @@ from neuralops.core.base import BaseAttention
 from neuralops.core.common import _cfg_get
 from neuralops.core.utils.gqa import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
-from neuralops.core.utils.rope import _rotate_half
 
 warnings.filterwarnings("ignore", category=UserWarning)
 log = logging.getLogger(__name__)
