@@ -77,6 +77,8 @@ torch::Tensor adaptive_span_fwd(
     return out;
 }
 
+namespace neuralops { namespace cuda {
+
 template <typename scalar_t>
 __global__ void __launch_bounds__(256) adaptive_span_penalty_kernel(
     float* __restrict__ out,

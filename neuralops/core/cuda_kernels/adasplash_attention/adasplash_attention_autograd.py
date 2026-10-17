@@ -10,8 +10,8 @@ def _get_module():
     global _MODULE
     if _MODULE is None:
         curr_dir = Path(__file__).parent
-        with open(curr_dir / "adasplash_binding.cpp", "r", encoding="utf-8") as f: cpp_src = f.read()
-        with open(curr_dir / "adasplash.cu", "r", encoding="utf-8") as f: cuda_src = f.read()
+        with open(curr_dir / "adasplash_attention_binding.cpp", "r", encoding="utf-8") as f: cpp_src = f.read()
+        with open(curr_dir / "adasplash_attention.cu", "r", encoding="utf-8") as f: cuda_src = f.read()
         _MODULE = load_cuda_module("cuda_adasplash", cpp_src, cuda_src, ["adasplash_fwd"])
     return _MODULE
 

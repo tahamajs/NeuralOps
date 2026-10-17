@@ -23,9 +23,8 @@ def differential_attention_ref(q1: torch.Tensor, k1: torch.Tensor, q2: torch.Ten
     causal = torch.triu(torch.full((N, N), float('-inf'), device=q1.device), diagonal=1)
     a1 = F.softmax(s1 + causal, dim=-1)
     a2 = F.softmax(s2 + causal, dim=-1)
-    diff = F.relu(a1 - lambda_val * a2)
-    norm = diff.sum(dim=-1, keepdim=True).clamp_min(1e-6)
-    return torch.matmul(diff / norm, v)
+    diff = a1 - lambda_val * a2
+    return torch.matmul(diff, v)
 
 def differential_attention(q1: torch.Tensor, k1: torch.Tensor, q2: torch.Tensor, k2: torch.Tensor, v: torch.Tensor, lambda_val: float = 0.8) -> torch.Tensor:
     def cuda_fn(q1, k1, q2, k2, v, lambda_val=0.8):
