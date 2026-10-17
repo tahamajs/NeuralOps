@@ -21,9 +21,10 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
 from neuralops.core.attention_utils import inject_attention
