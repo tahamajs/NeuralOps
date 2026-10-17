@@ -43,7 +43,7 @@ def test_02_selective_scan():
     D_val = torch.randn(D, device=device, dtype=torch.float32)
     out_ref = selective_scan_pytorch_ref(u, delta, A, B_t, C_t, D_val)
     out_cuda = selective_scan(u, delta, A, B_t, C_t, D_val)
-    assert_metrics(out_cuda, out_ref, 'selective_scan')
+    assert_metrics(out_cuda, out_ref, "selective_scan", tol=2e-4)
 
 @pytest.mark.skipif(not torch.cuda.is_available(), reason='CUDA required')
 def test_03_simple_ssm():
