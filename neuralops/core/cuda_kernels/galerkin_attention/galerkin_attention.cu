@@ -4,48 +4,101 @@
 #include "_common.cuh"
 
 namespace neuralops { namespace cuda {
+
+// Galerkin Attention Integral Approximation Kernel:
+// Form: G = \sum_{t=0}^{N-1} (k_t \cdot v_t) \cdot h_{\text{step}}
+//       out_t = q_t \cdot G
+//
+// Hardware-level optimization:
+// 1. Decoupled 2D Grid: dim3 grid(ceil(D / 128), B * H) with 128 threads/block.
+// 2. Strict FP32 intermediate accumulation in registers.
+// 3. Loop unrolling: 4-way unroll over sequence length N.
+// 4. Eliminates threads = D anti-pattern; supports arbitrary feature dimensions D.
 template <typename scalar_t>
-__global__ void galerkin_fwd_kernel(
+__global__ void __launch_bounds__(128) galerkin_fwd_kernel(
     scalar_t* __restrict__ out,
     const scalar_t* __restrict__ q,
     const scalar_t* __restrict__ k,
     const scalar_t* __restrict__ v,
-    int B, int H, int N, int D, float h_step
+    const int B,
+    const int H,
+    const int N,
+    const int D,
+    const float h_step
 ) {
-    int bh = blockIdx.x;
-    int b = bh / H;
-    int h = bh % H;
-    int d = threadIdx.x;
+    const int bh = blockIdx.y;
+    if (bh >= B * H) return;
+
+    const int d = blockIdx.x * blockDim.x + threadIdx.x;
     if (d >= D) return;
 
-    // Integral operator approximation: G = sum_t (K_t * V_t) * h_step
+    const int head_offset = bh * (N * D) + d;
+
+    // Pass 1: Integral accumulation
     float g = 0.0f;
+    #pragma unroll 4
     for (int t = 0; t < N; ++t) {
-        int idx = (b * H + h) * N * D + t * D + d;
-        float k_val = to_float(k[idx]);
-        float v_val = to_float(v[idx]);
-        g += k_val * v_val * h_step;
+        const int idx = head_offset + t * D;
+        const float k_val = to_float(k[idx]);
+        const float v_val = to_float(v[idx]);
+        g = fmaf(k_val * v_val, h_step, g);
     }
+
+    // Pass 2: Projection onto Queries
+    #pragma unroll 4
     for (int t = 0; t < N; ++t) {
-        int idx = (b * H + h) * N * D + t * D + d;
-        float q_val = to_float(q[idx]);
+        const int idx = head_offset + t * D;
+        const float q_val = to_float(q[idx]);
         out[idx] = from_float<scalar_t>(q_val * g);
     }
 }
-}}
 
-torch::Tensor galerkin_fwd(const torch::Tensor& q, const torch::Tensor& k, const torch::Tensor& v, double h_step) {
-    CHECK_INPUT(q); CHECK_INPUT(k); CHECK_INPUT(v);
-    int B = q.size(0); int H = q.size(1); int N = q.size(2); int D = q.size(3);
+}} // namespace neuralops::cuda
+
+torch::Tensor galerkin_fwd(
+    const torch::Tensor& q,
+    const torch::Tensor& k,
+    const torch::Tensor& v,
+    double h_step
+) {
+    CHECK_INPUT(q);
+    CHECK_INPUT(k);
+    CHECK_INPUT(v);
+
+    TORCH_CHECK(q.dim() == 4, "q must be 4D [B, H, N, D]");
+    TORCH_CHECK(k.sizes() == q.sizes(), "k shape mismatch");
+    TORCH_CHECK(v.sizes() == q.sizes(), "v shape mismatch");
+
+    const int B = q.size(0);
+    const int H = q.size(1);
+    const int N = q.size(2);
+    const int D = q.size(3);
+
     auto out = torch::empty_like(q);
-    int threads = D;
-    int blocks = B * H;
+    if (B == 0 || H == 0 || N == 0 || D == 0) return out;
+
+    constexpr int THREADS = 128;
+    const int blocks_x = (D + THREADS - 1) / THREADS;
+    dim3 grid(blocks_x, B * H);
+
     auto stream = c10::cuda::getCurrentCUDAStream();
-    auto q_c = q.contiguous(); auto k_c = k.contiguous(); auto v_c = v.contiguous();
-    AT_DISPATCH_FLOATING_TYPES_AND2(at::ScalarType::Half, at::ScalarType::BFloat16, q.scalar_type(), "galerkin_fwd", ([&] {
-        neuralops::cuda::galerkin_fwd_kernel<scalar_t><<<blocks, threads, 0, stream>>>(
-            out.data_ptr<scalar_t>(), q_c.data_ptr<scalar_t>(), k_c.data_ptr<scalar_t>(), v_c.data_ptr<scalar_t>(), B, H, N, D, (float)h_step
-        );
-    }));
+    auto q_c = q.contiguous();
+    auto k_c = k.contiguous();
+    auto v_c = v.contiguous();
+
+    AT_DISPATCH_FLOATING_TYPES_AND2(
+        at::ScalarType::Half, at::ScalarType::BFloat16,
+        q.scalar_type(), "galerkin_fwd", ([&] {
+            neuralops::cuda::galerkin_fwd_kernel<scalar_t><<<grid, THREADS, 0, stream>>>(
+                out.data_ptr<scalar_t>(),
+                q_c.data_ptr<scalar_t>(),
+                k_c.data_ptr<scalar_t>(),
+                v_c.data_ptr<scalar_t>(),
+                B, H, N, D, static_cast<float>(h_step)
+            );
+        })
+    );
+
+    CUDA_KERNEL_LAUNCH_CHECK();
     return out;
 }

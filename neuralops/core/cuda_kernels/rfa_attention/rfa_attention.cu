@@ -4,47 +4,98 @@
 #include "_common.cuh"
 
 namespace neuralops { namespace cuda {
+
+// Random Feature Attention (RFA) Kernel:
+// Form: s_t = s_{t-1} + \phi(k_t) \cdot v_t
+//       z_t = z_{t-1} + \phi(k_t)
+//       out_t = (\phi(q_t) \cdot s_t) / \max(z_t, \epsilon)
+//
+// Hardware-level optimization:
+// 1. Decoupled 2D Grid: dim3 grid(ceil(D / 128), B * H) with 128 threads/block.
+// 2. Strict FP32 intermediate register accumulation.
+// 3. 4-way loop unrolling for memory latency hiding.
+// 4. Eliminates threads = D anti-pattern.
 template <typename scalar_t>
-__global__ void rfa_fwd_kernel(
+__global__ void __launch_bounds__(128) rfa_fwd_kernel(
     scalar_t* __restrict__ out,
     const scalar_t* __restrict__ phi_q,
     const scalar_t* __restrict__ phi_k,
     const scalar_t* __restrict__ v,
-    int B, int H, int N, int D
+    const int B,
+    const int H,
+    const int N,
+    const int D
 ) {
-    int bh = blockIdx.x;
-    int b = bh / H;
-    int h = bh % H;
-    int d = threadIdx.x;
+    const int bh = blockIdx.y;
+    if (bh >= B * H) return;
+
+    const int d = blockIdx.x * blockDim.x + threadIdx.x;
     if (d >= D) return;
+
+    const int head_offset = bh * (N * D) + d;
 
     float s = 0.0f;
     float denom = 0.0f;
+
+    #pragma unroll 4
     for (int t = 0; t < N; ++t) {
-        int idx = (b * H + h) * N * D + t * D + d;
-        float k_val = to_float(phi_k[idx]);
-        float v_val = to_float(v[idx]);
-        s += k_val * v_val;
+        const int idx = head_offset + t * D;
+        const float k_val = to_float(phi_k[idx]);
+        const float v_val = to_float(v[idx]);
+        s = fmaf(k_val, v_val, s);
         denom += k_val;
-        float q_val = to_float(phi_q[idx]);
-        float norm = fmaxf(denom, 1e-6f);
+
+        const float q_val = to_float(phi_q[idx]);
+        const float norm = fmaxf(denom, 1e-6f);
         out[idx] = from_float<scalar_t>((q_val * s) / norm);
     }
 }
-}}
 
-torch::Tensor rfa_fwd(const torch::Tensor& phi_q, const torch::Tensor& phi_k, const torch::Tensor& v) {
-    CHECK_INPUT(phi_q); CHECK_INPUT(phi_k); CHECK_INPUT(v);
-    int B = phi_q.size(0); int H = phi_q.size(1); int N = phi_q.size(2); int D = phi_q.size(3);
+}} // namespace neuralops::cuda
+
+torch::Tensor rfa_fwd(
+    const torch::Tensor& phi_q,
+    const torch::Tensor& phi_k,
+    const torch::Tensor& v
+) {
+    CHECK_INPUT(phi_q);
+    CHECK_INPUT(phi_k);
+    CHECK_INPUT(v);
+
+    TORCH_CHECK(phi_q.dim() == 4, "phi_q must be 4D [B, H, N, D]");
+    TORCH_CHECK(phi_k.sizes() == phi_q.sizes(), "phi_k shape mismatch");
+    TORCH_CHECK(v.sizes() == phi_q.sizes(), "v shape mismatch");
+
+    const int B = phi_q.size(0);
+    const int H = phi_q.size(1);
+    const int N = phi_q.size(2);
+    const int D = phi_q.size(3);
+
     auto out = torch::empty_like(phi_q);
-    int threads = D;
-    int blocks = B * H;
+    if (B == 0 || H == 0 || N == 0 || D == 0) return out;
+
+    constexpr int THREADS = 128;
+    const int blocks_x = (D + THREADS - 1) / THREADS;
+    dim3 grid(blocks_x, B * H);
+
     auto stream = c10::cuda::getCurrentCUDAStream();
-    auto q_c = phi_q.contiguous(); auto k_c = phi_k.contiguous(); auto v_c = v.contiguous();
-    AT_DISPATCH_FLOATING_TYPES_AND2(at::ScalarType::Half, at::ScalarType::BFloat16, phi_q.scalar_type(), "rfa_fwd", ([&] {
-        neuralops::cuda::rfa_fwd_kernel<scalar_t><<<blocks, threads, 0, stream>>>(
-            out.data_ptr<scalar_t>(), q_c.data_ptr<scalar_t>(), k_c.data_ptr<scalar_t>(), v_c.data_ptr<scalar_t>(), B, H, N, D
-        );
-    }));
+    auto q_c = phi_q.contiguous();
+    auto k_c = phi_k.contiguous();
+    auto v_c = v.contiguous();
+
+    AT_DISPATCH_FLOATING_TYPES_AND2(
+        at::ScalarType::Half, at::ScalarType::BFloat16,
+        phi_q.scalar_type(), "rfa_fwd", ([&] {
+            neuralops::cuda::rfa_fwd_kernel<scalar_t><<<grid, THREADS, 0, stream>>>(
+                out.data_ptr<scalar_t>(),
+                q_c.data_ptr<scalar_t>(),
+                k_c.data_ptr<scalar_t>(),
+                v_c.data_ptr<scalar_t>(),
+                B, H, N, D
+            );
+        })
+    );
+
+    CUDA_KERNEL_LAUNCH_CHECK();
     return out;
 }
