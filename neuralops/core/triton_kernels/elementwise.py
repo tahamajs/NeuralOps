@@ -1314,7 +1314,7 @@ def fused_entmax_bisect_pytorch(
     inv_alpha_m1 = 1.0 / alpha_m1
     scores_valid = scores_cl.masked_fill(~valid_mask, -10000.0) if valid_mask is not None else scores_cl
 
-    low = scores_valid.max(dim=dim, keepdim=True)[0] - 1.0
+    low = scores_valid.max(dim=dim, keepdim=True)[0] - 2.0
     high = scores_valid.max(dim=dim, keepdim=True)[0]
 
     for _ in range(n_iter):
@@ -1359,8 +1359,8 @@ if HAS_TRITON:
         # 1. Row max
         m = tl.max(tl.where(mask, x, -10000.0), axis=0)
 
-        # 2. Bisection bounds: low = m - 1.0, high = m
-        low = m - 1.0
+        # 2. Bisection bounds: low = m - 2.0, high = m
+        low = m - 2.0
         high = m
 
         for _ in range(N_ITER):
