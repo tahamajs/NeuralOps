@@ -49,7 +49,7 @@ def ternary_gemm_pytorch_ref(
     w_unpacked = torch.empty((N, K), dtype=torch.float32, device=x.device)
     for i in range(4):
         code = (w_packed >> (2 * i)) & 0x03
-        val = torch.where(code == 0, -1.0, torch.where(code == 1, 0.0, 1.0))
+        val = torch.where(code == 0, -1.0, torch.where(code == 2, 1.0, 0.0))
         w_unpacked[:, i::4] = val
 
     w_scaled = w_unpacked * scales.unsqueeze(-1)
