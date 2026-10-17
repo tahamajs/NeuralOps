@@ -24,7 +24,7 @@ __global__ void recurrent_gla_step_kernel(
     const int Dv,
     const float scale
 ) {
-    const int bh = blockIdx.x;
+    const int bh = blockIdx.y;
     if (bh >= B * H) return;
 
     const int tid = threadIdx.x;
@@ -48,6 +48,7 @@ __global__ void recurrent_gla_step_kernel(
         const float v_val = to_float(v_t[v_offset + v]);
         float y_acc = 0.0f;
 
+        #pragma unroll 4
         for (int k = 0; k < Dk && k < MAX_DK; ++k) {
             const int idx = s_offset + k * Dv + v;
             const float s_new = a_val * to_float(s_state[idx]) + s_k[k] * v_val;
@@ -81,7 +82,7 @@ std::vector<torch::Tensor> recurrent_gla_step_fwd(
     auto out = torch::empty({B, H, Dv}, q_t.options());
     const float scale = 1.0f / sqrtf(static_cast<float>(Dk));
 
-    const int blocks = B * H;
+    const dim3 grid(1, B * H);
     const int threads = 128;
     auto stream = c10::cuda::getCurrentCUDAStream();
 
@@ -94,7 +95,7 @@ std::vector<torch::Tensor> recurrent_gla_step_fwd(
         at::ScalarType::Half, at::ScalarType::BFloat16,
         q_t.scalar_type(), "recurrent_gla_step_fwd", ([&] {
             if (Dk <= 64) {
-                neuralops::cuda::recurrent_gla_step_kernel<scalar_t, 64><<<blocks, threads, 0, stream>>>(
+                neuralops::cuda::recurrent_gla_step_kernel<scalar_t, 64><<<grid, threads, 0, stream>>>(
                     out.data_ptr<scalar_t>(),
                     s_state.data_ptr<scalar_t>(),
                     q_c.data_ptr<scalar_t>(),
@@ -104,7 +105,7 @@ std::vector<torch::Tensor> recurrent_gla_step_fwd(
                     B, H, Dk, Dv, scale
                 );
             } else {
-                neuralops::cuda::recurrent_gla_step_kernel<scalar_t, 128><<<blocks, threads, 0, stream>>>(
+                neuralops::cuda::recurrent_gla_step_kernel<scalar_t, 128><<<grid, threads, 0, stream>>>(
                     out.data_ptr<scalar_t>(),
                     s_state.data_ptr<scalar_t>(),
                     q_c.data_ptr<scalar_t>(),

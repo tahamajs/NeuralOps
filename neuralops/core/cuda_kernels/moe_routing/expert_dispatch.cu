@@ -64,13 +64,14 @@ __global__ void moe_gather_kernel(
     const int top_k,
     const int total_assignments
 ) {
-    const int tok_idx = blockIdx.x;
-    const int d = threadIdx.x;
+    const int tok_idx = blockIdx.y;
+    const int d = blockIdx.x * blockDim.x + threadIdx.x;
 
     if (tok_idx >= num_tokens) return;
 
-    for (int i = d; i < hidden_dim; i += blockDim.x) {
+    for (int i = d; i < hidden_dim; i += blockDim.x * gridDim.x) {
         float acc = 0.0f;
+        #pragma unroll 4
         for (int k_idx = 0; k_idx < top_k; ++k_idx) {
             const int slot = (expert_offsets != nullptr) ? expert_offsets[tok_idx * top_k + k_idx] : (tok_idx * top_k + k_idx);
             if (slot >= 0 && slot < total_assignments) {
@@ -130,8 +131,10 @@ void moe_gather_cuda(
             })
         );
     } else {
-        dim3 grid(num_tokens);
-        dim3 block(std::min(256, hidden_dim));
+        const int block_size = 256;
+        const int grid_x = (hidden_dim + block_size - 1) / block_size;
+        dim3 grid(grid_x, num_tokens);
+        dim3 block(block_size);
         AT_DISPATCH_FLOATING_TYPES_AND2(
             at::ScalarType::Half,
             at::ScalarType::BFloat16,
