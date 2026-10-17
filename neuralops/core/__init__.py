@@ -69,6 +69,19 @@ _MODULE_MAP: dict[str, str] = {
     "_apply_rope": "common",
     "LoRALinear": "common",
     "FactorizedLinear": "common",
+    "probe_hardware": "hardware",
+    "HardwareTopology": "hardware",
+    "HardwareBackend": "hardware",
+    "HardwareVendor": "hardware",
+    "get_current_device": "device",
+    "safe_to_device": "device",
+    "device_scope": "device",
+    "UniversalDispatcher": "device",
+    "harmonize_dtype": "device",
+    "is_mps_available": "device",
+    "is_cuda_available": "device",
+    "is_rocm_available": "device",
+    "is_xpu_available": "device",
 }
 
 
