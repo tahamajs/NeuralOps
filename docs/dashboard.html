@@ -382,6 +382,20 @@
             </div>
         </section>
 
+        <!-- 3D Latent Manifold & SVD Spectral Decay Visualizer Panel -->
+        <section class="panel">
+            <div class="panel-header">
+                <span class="panel-title">
+                    <span>3D Latent Manifold & SVD Spectral Decay Visualizer</span>
+                    <span class="badge badge-cyan">Three.js / WebGL</span>
+                </span>
+                <button id="toggle-manifold-btn" class="theme-toggle-btn">Expand 3D View</button>
+            </div>
+            <div id="manifold-container" style="display: none; height: 420px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-color);">
+                <iframe src="visualizer/latent_manifold.html" style="width: 100%; height: 100%; border: none;"></iframe>
+            </div>
+        </section>
+
         <!-- Interactive Head-to-Head Comparison Studio Widget -->
         <section class="panel">
             <div class="panel-header">
@@ -543,6 +557,15 @@
     </main>
 
     <script>
+        // Toggle 3D Latent Manifold
+        const manifoldBtn = document.getElementById('toggle-manifold-btn');
+        const manifoldContainer = document.getElementById('manifold-container');
+        manifoldBtn.addEventListener('click', () => {
+            const isHidden = manifoldContainer.style.display === 'none';
+            manifoldContainer.style.display = isHidden ? 'block' : 'none';
+            manifoldBtn.innerText = isHidden ? 'Collapse 3D View' : 'Expand 3D View';
+        });
+
         // Theme Toggle
         const themeBtn = document.getElementById('theme-btn');
         themeBtn.addEventListener('click', () => {

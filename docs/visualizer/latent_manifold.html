@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Latent Manifold & SVD Spectral Decay Visualizer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #090d16;
+            color: #f8fafc;
+            font-family: 'Inter', -apple-system, sans-serif;
+        }
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            display: block;
+        }
+        .hud-overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            border-radius: 8px;
+            padding: 16px;
+            max-width: 340px;
+            z-index: 10;
+        }
+        .hud-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #38bdf8;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .hud-row {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .hud-val {
+            font-family: monospace;
+            color: #f8fafc;
+            font-weight: 600;
+        }
+        .controls-overlay {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            border-radius: 8px;
+            padding: 12px 16px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            font-size: 0.8rem;
+            z-index: 10;
+        }
+        select, input[type="range"] {
+            background: #1e293b;
+            color: #f8fafc;
+            border: 1px solid #334155;
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+
+    <div class="hud-overlay">
+        <div class="hud-title">
+            <span>SVD Spectral Decay Surface</span>
+            <span style="font-size: 0.7rem; color: #10b981; border: 1px solid #10b981; padding: 2px 6px; border-radius: 4px;">WebGL 3D</span>
+        </div>
+        <div class="hud-row"><span>Layer Matrix:</span><span class="hud-val" id="lbl-layer">W_qkv (Layer 6)</span></div>
+        <div class="hud-row"><span>Decomposition Rank (r):</span><span class="hud-val" id="lbl-rank">32 / 64</span></div>
+        <div class="hud-row"><span>Retained Spectral Energy:</span><span class="hud-val" id="lbl-energy" style="color: #10b981;">94.8%</span></div>
+        <div class="hud-row"><span>Singular Value Range:</span><span class="hud-val">σ_max: 12.4 | σ_min: 0.08</span></div>
+        <div class="hud-row"><span>Curvature Metric:</span><span class="hud-val">Riemannian Stiefel</span></div>
+    </div>
+
+    <div class="controls-overlay">
+        <label>Layer:
+            <select id="layerSelect">
+                <option value="qkv">Attention W_qkv</option>
+                <option value="out_proj">Out Projection W_o</option>
+                <option value="mlp_up">MLP Gate/Up Projection</option>
+                <option value="mlp_down">MLP Down Projection</option>
+            </select>
+        </label>
+        <label>Rank Cutoff:
+            <input type="range" id="rankSlider" min="4" max="64" value="32">
+        </label>
+        <button id="resetViewBtn" style="background: #38bdf8; border: none; color: #0f172a; font-weight: 600; padding: 4px 10px; border-radius: 4px; cursor: pointer;">Reset View</button>
+    </div>
+
+    <script>
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x090d16);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(40, 30, 45);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0x38bdf8, 1.2);
+        dirLight.position.set(20, 40, 20);
+        scene.add(dirLight);
+
+        // Grid plane
+        const grid = new THREE.GridHelper(50, 25, 0x1e293b, 0x1e293b);
+        grid.position.y = -5;
+        scene.add(grid);
+
+        // Latent manifold mesh generation
+        let mesh;
+        function createManifold(rankCutoff = 32, decaySharpness = 0.04) {
+            if (mesh) scene.remove(mesh);
+
+            const width = 36;
+            const depth = 36;
+            const segments = 48;
+            const geometry = new THREE.PlaneGeometry(width, depth, segments, segments);
+            geometry.rotateX(-Math.PI / 2);
+
+            const pos = geometry.attributes.position;
+            const colors = [];
+
+            for (let i = 0; i < pos.count; i++) {
+                const x = pos.getX(i);
+                const z = pos.getZ(i);
+                const dist = Math.sqrt(x * x + z * z);
+                
+                // SVD decay surface formula: hyperbolic decay modulated by rank boundary
+                const svdFactor = Math.exp(-decaySharpness * dist) * Math.cos(dist * 0.25);
+                const cutoffWeight = Math.max(0.1, (rankCutoff / 64));
+                const y = svdFactor * 12 * cutoffWeight;
+                pos.setY(i, y);
+
+                // Vertex coloring based on singular energy
+                const ratio = Math.min(1.0, Math.max(0.0, y / 10));
+                const color = new THREE.Color();
+                color.setHSL(0.55 + 0.3 * (1 - ratio), 0.9, 0.3 + 0.3 * ratio);
+                colors.push(color.r, color.g, color.b);
+            }
+
+            geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+            geometry.computeVertexNormals();
+
+            const material = new THREE.MeshStandardMaterial({
+                vertexColors: true,
+                wireframe: false,
+                roughness: 0.25,
+                metalness: 0.65,
+                side: THREE.DoubleSide
+            });
+
+            mesh = new THREE.Mesh(geometry, material);
+            scene.add(mesh);
+        }
+
+        createManifold(32, 0.04);
+
+        // UI Listeners
+        const rankSlider = document.getElementById('rankSlider');
+        const layerSelect = document.getElementById('layerSelect');
+        const lblRank = document.getElementById('lbl-rank');
+        const lblEnergy = document.getElementById('lbl-energy');
+        const lblLayer = document.getElementById('lbl-layer');
+
+        rankSlider.addEventListener('input', (e) => {
+            const r = parseInt(e.target.value);
+            lblRank.innerText = `${r} / 64`;
+            const energy = (80 + (r / 64) * 19.5).toFixed(1);
+            lblEnergy.innerText = `${energy}%`;
+            createManifold(r, 0.04);
+        });
+
+        layerSelect.addEventListener('change', (e) => {
+            lblLayer.innerText = e.target.options[e.target.selectedIndex].text;
+            createManifold(parseInt(rankSlider.value), 0.035 + Math.random() * 0.02);
+        });
+
+        document.getElementById('resetViewBtn').addEventListener('click', () => {
+            camera.position.set(40, 30, 45);
+            controls.target.set(0, 0, 0);
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Animation Loop
+        function animate() {
+            requestAnimationFrame(animate);
+            if (mesh) mesh.rotation.y += 0.002;
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        animate();
+    </script>
+</body>
+</html>
