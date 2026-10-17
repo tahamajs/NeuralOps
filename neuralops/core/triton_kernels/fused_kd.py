@@ -350,9 +350,19 @@ def fused_kd_loss_pytorch(
     else:
         s_flat = student_logits
         t_flat = teacher_logits
+    N_tokens, V = s_flat.shape
     p_s = F.log_softmax(s_flat / temperature, dim=-1)
     p_t = F.softmax(t_flat / temperature, dim=-1)
-    return F.kl_div(p_s, p_t, reduction=reduction) * (temperature * temperature)
+    loss_per_token = (p_t * (p_t.log() - p_s)).sum(dim=-1) * (temperature * temperature)
+    if reduction == "batchmean":
+        batch_size = orig_shape[0] if orig_shape[0] > 0 else 1
+        return loss_per_token.sum() / batch_size
+    elif reduction == "mean":
+        return loss_per_token.sum() / (N_tokens * V)
+    elif reduction == "sum":
+        return loss_per_token.sum()
+    else:
+        return loss_per_token.view(orig_shape[:-1])
 
 
 def fused_kd_loss(
