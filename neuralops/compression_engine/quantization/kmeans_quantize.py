@@ -801,6 +801,10 @@ def kmeans_factory(
     _depth: int = 0,
     **kwargs: Any,
 ) -> Any:
+    """Factory function for KMeans-based weight clustering quantization.
+
+    Applies vectorized 1D Lloyd-Max clustering to weight tensors with STE gradient estimation.
+    """
     if _depth > 4:
         logger.warning("kmeans_factory: recursion depth exceeded.")
         return model
