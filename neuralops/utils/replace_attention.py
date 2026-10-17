@@ -744,6 +744,15 @@ def replace_attention(model, attention_key=None, layer_indices=None, new_attenti
     }
     if not hasattr(model, "_neuralops_metadata"):
         model._neuralops_metadata = []
-    model._neuralops_metadata.append(meta_entry)
-
     return model
+
+
+# Backward compatibility alias
+replace_attention_in_model = replace_attention
+
+__all__ = [
+    "replace_attention",
+    "replace_attention_in_model",
+    "UniversalAttentionWrapper",
+]
+
