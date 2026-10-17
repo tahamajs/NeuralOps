@@ -42,7 +42,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-10-05T02:50:03.457853",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "8f65f3efe9",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/01_unified_runs/unified_adaptive_svd_attention/roberta/checkpoints/adaptive_svd_attention/summary_record.json"
@@ -72,7 +72,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-10-05T02:52:22.412782",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "8f65f3efe9",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/01_unified_runs/unified_adaptive_svd_attention/distilbert/checkpoints/adaptive_svd_attention/summary_record.json"
@@ -205,7 +205,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-10-05T02:50:03.457853",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "8f65f3efe9",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/01_unified_runs/unified_adaptive_svd_attention/roberta/checkpoints/adaptive_svd_attention/summary_record.json"
@@ -235,7 +235,7 @@
       "revision": 1,
       "status": "active",
       "timestamp_utc": "2026-10-05T02:52:22.412782",
-      "git_commit_sha": "2f366e4546",
+      "git_commit_sha": "8f65f3efe9",
       "generation_method": {
         "algorithm": "Calibration Sweep Record",
         "source_artifact": "results/01_unified_runs/unified_adaptive_svd_attention/distilbert/checkpoints/adaptive_svd_attention/summary_record.json"

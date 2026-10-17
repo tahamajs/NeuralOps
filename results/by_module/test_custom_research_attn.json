@@ -1,0 +1,119 @@
+{
+  "module_name": "test_custom_research_attn",
+  "category": "attention",
+  "family": "hardware-roofline",
+  "total_runs": 1,
+  "latest_version": "v1.3.7",
+  "latest_revision": 1,
+  "latest_git_sha": "70b04318e2",
+  "latest_timestamp": "2026-10-17T03:03:59.778244+00:00",
+  "latest_record": {
+    "record_id": "c4881c58bd63dbc6",
+    "module_name": "test_custom_research_attn",
+    "category": "attention",
+    "family": "hardware-roofline",
+    "version_tag": "v1.3.7",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-10-17T03:03:59.778244+00:00",
+    "git_commit_sha": "70b04318e2",
+    "generation_method": {
+      "algorithm": "Hardware Roofline Dual-Path CUDA Event Profiler",
+      "source_component": "neuralops.core.roofline.profile_roofline"
+    },
+    "experimental_setup": {
+      "batch_size": 1,
+      "seq_len": 64,
+      "embed_dim": 64,
+      "num_heads": 4,
+      "head_dim": 16,
+      "dtype": "float16",
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)"
+    },
+    "metrics": {
+      "latency_triton_ms": 0.13926400244235992,
+      "latency_pytorch_ms": 0.10345599800348282,
+      "speedup_x": 0.742876810870794,
+      "achieved_tflops": 0.016941176173480225,
+      "achieved_bandwidth_gb_s": 0.5294117554212571,
+      "peak_vram_mb": 17.3828125,
+      "sram_bytes_saved_mb": 0.25,
+      "arithmetic_intensity_fused": 32.0
+    },
+    "notes": "Bottleneck regime: SRAM-Fused Transition Regime (Memory Wall Mitigated)"
+  },
+  "active_records": [
+    {
+      "record_id": "c4881c58bd63dbc6",
+      "module_name": "test_custom_research_attn",
+      "category": "attention",
+      "family": "hardware-roofline",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-17T03:03:59.778244+00:00",
+      "git_commit_sha": "70b04318e2",
+      "generation_method": {
+        "algorithm": "Hardware Roofline Dual-Path CUDA Event Profiler",
+        "source_component": "neuralops.core.roofline.profile_roofline"
+      },
+      "experimental_setup": {
+        "batch_size": 1,
+        "seq_len": 64,
+        "embed_dim": 64,
+        "num_heads": 4,
+        "head_dim": 16,
+        "dtype": "float16",
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.13926400244235992,
+        "latency_pytorch_ms": 0.10345599800348282,
+        "speedup_x": 0.742876810870794,
+        "achieved_tflops": 0.016941176173480225,
+        "achieved_bandwidth_gb_s": 0.5294117554212571,
+        "peak_vram_mb": 17.3828125,
+        "sram_bytes_saved_mb": 0.25,
+        "arithmetic_intensity_fused": 32.0
+      },
+      "notes": "Bottleneck regime: SRAM-Fused Transition Regime (Memory Wall Mitigated)"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "c4881c58bd63dbc6",
+      "module_name": "test_custom_research_attn",
+      "category": "attention",
+      "family": "hardware-roofline",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-17T03:03:59.778244+00:00",
+      "git_commit_sha": "70b04318e2",
+      "generation_method": {
+        "algorithm": "Hardware Roofline Dual-Path CUDA Event Profiler",
+        "source_component": "neuralops.core.roofline.profile_roofline"
+      },
+      "experimental_setup": {
+        "batch_size": 1,
+        "seq_len": 64,
+        "embed_dim": 64,
+        "num_heads": 4,
+        "head_dim": 16,
+        "dtype": "float16",
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.13926400244235992,
+        "latency_pytorch_ms": 0.10345599800348282,
+        "speedup_x": 0.742876810870794,
+        "achieved_tflops": 0.016941176173480225,
+        "achieved_bandwidth_gb_s": 0.5294117554212571,
+        "peak_vram_mb": 17.3828125,
+        "sram_bytes_saved_mb": 0.25,
+        "arithmetic_intensity_fused": 32.0
+      },
+      "notes": "Bottleneck regime: SRAM-Fused Transition Regime (Memory Wall Mitigated)"
+    }
+  ]
+}
