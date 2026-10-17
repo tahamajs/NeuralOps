@@ -16,11 +16,12 @@ __global__ void w4a16_gemm_tiled_kernel(
     const int K,
     const int group_size
 ) {
-    __shared__ float A_smem[32][32];
-    __shared__ float W_smem[32][32];
+    __shared__ float A_smem[32][33];
+    __shared__ float W_smem[32][33];
 
     const int tx = threadIdx.x;
     const int ty = threadIdx.y;
+
 
     const int row = blockIdx.y * 32 + ty;
     const int col = blockIdx.x * 32 + tx;
