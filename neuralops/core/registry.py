@@ -135,6 +135,7 @@ def _make_universal_attention_class(target_cls: type) -> type:
     UniversalAttentionWrapper.__name__ = target_cls.__name__
     UniversalAttentionWrapper.__qualname__ = target_cls.__qualname__
     UniversalAttentionWrapper.__module__ = target_cls.__module__
+    UniversalAttentionWrapper.__doc__ = target_cls.__doc__
     _UNIVERSAL_WRAPPER_CACHE[target_cls] = UniversalAttentionWrapper
     return UniversalAttentionWrapper
 
