@@ -1529,45 +1529,47 @@ class SVDLinearAttention(BaseAttention):
 
         curr_len = min(step + 1, max_len)
         # Extract active history from circular buffer
-        if step + 1 <= max_len:
-            active_c_k = kv_cache["C_k"][:, :curr_len, :]
-            active_c_v = kv_cache["C_v"][:, :curr_len, :]
+        if "K_all" in kv_cache and "V_all" in kv_cache and not self.is_decoder:
+            k_all = kv_cache["K_all"]
+            v_all = kv_cache["V_all"]
+            curr_len = k_all.shape[-2]
         else:
-            # Wrap-around order
-            idx = [(slot + 1 + i) % max_len for i in range(max_len)]
-            active_c_k = kv_cache["C_k"][:, idx, :]
-            active_c_v = kv_cache["C_v"][:, idx, :]
+            if step + 1 <= max_len:
+                active_c_k = kv_cache["C_k"][:, :curr_len, :]
+                active_c_v = kv_cache["C_v"][:, :curr_len, :]
+            else:
+                # Wrap-around order
+                idx = [(slot + 1 + i) % max_len for i in range(max_len)]
+                active_c_k = kv_cache["C_k"][:, idx, :]
+                active_c_v = kv_cache["C_v"][:, idx, :]
 
-        # 3. Decompress active K, V via U_r @ C
-        # F.linear(C, U, bias) computes C @ U^T + bias
-        # For LoRA component if present:
-        k_decomp = F.linear(active_c_k, self.k_proj.U, self.k_proj.bias)
-        v_decomp = F.linear(active_c_v, self.v_proj.U, self.v_proj.bias)
+            # 3. Decompress active K, V via U_r @ C
+            k_decomp = F.linear(active_c_k, self.k_proj.U, self.k_proj.bias)
+            v_decomp = F.linear(active_c_v, self.v_proj.U, self.v_proj.bias)
 
-        if self.k_proj.lora_rank > 0 and self.k_proj.lora_A is not None and self.k_proj.lora_B is not None:
-            # Note: LoRA path adds residual if present
-            lora_k_curr = F.linear(F.linear(x_t, self.k_proj.lora_A), self.k_proj.lora_B) * self.k_proj.lora_scaling
-            k_decomp[:, -1:, :] = k_decomp[:, -1:, :] + lora_k_curr
-        if self.v_proj.lora_rank > 0 and self.v_proj.lora_A is not None and self.v_proj.lora_B is not None:
-            lora_v_curr = F.linear(F.linear(x_t, self.v_proj.lora_A), self.v_proj.lora_B) * self.v_proj.lora_scaling
-            v_decomp[:, -1:, :] = v_decomp[:, -1:, :] + lora_v_curr
+            if self.k_proj.lora_rank > 0 and self.k_proj.lora_A is not None and self.k_proj.lora_B is not None:
+                lora_k_curr = F.linear(F.linear(x_t, self.k_proj.lora_A), self.k_proj.lora_B) * self.k_proj.lora_scaling
+                k_decomp[:, -1:, :] = k_decomp[:, -1:, :] + lora_k_curr
+            if self.v_proj.lora_rank > 0 and self.v_proj.lora_A is not None and self.v_proj.lora_B is not None:
+                lora_v_curr = F.linear(F.linear(x_t, self.v_proj.lora_A), self.v_proj.lora_B) * self.v_proj.lora_scaling
+                v_decomp[:, -1:, :] = v_decomp[:, -1:, :] + lora_v_curr
 
-        # Reshape to (B, H_kv, curr_len, head_dim)
-        k_all = (
-            k_decomp.view(B, curr_len, self.num_kv_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        v_all = (
-            v_decomp.view(B, curr_len, self.num_kv_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
+            # Reshape to (B, H_kv, curr_len, head_dim)
+            k_all = (
+                k_decomp.view(B, curr_len, self.num_kv_heads, self.head_dim)
+                .transpose(1, 2)
+                .contiguous()
+            )
+            v_all = (
+                v_decomp.view(B, curr_len, self.num_kv_heads, self.head_dim)
+                .transpose(1, 2)
+                .contiguous()
+            )
 
-        # GQA repeat if necessary
-        if self.num_kv_heads < self.num_heads:
-            k_all = repeat_kv(k_all, self.kv_repeat)
-            v_all = repeat_kv(v_all, self.kv_repeat)
+            # GQA repeat if necessary
+            if self.num_kv_heads < self.num_heads:
+                k_all = repeat_kv(k_all, self.kv_repeat)
+                v_all = repeat_kv(v_all, self.kv_repeat)
 
         # 4. Dispatch attention based on mode
         if self.mode == "exact":
