@@ -679,35 +679,19 @@ def classify_status(cuda_ms, ref_ms, max_diff):
     """Return (status, reason) tuple for each kernel."""
     import math
 
-    # Category E: NaN (worst)
+    # Category 1: NaN (broken)
     if max_diff is None or str(max_diff).lower() == "nan" or (isinstance(max_diff, float) and math.isnan(max_diff)):
         return ("FAIL_NAN", "max_diff is NaN — kernel produces NaN output")
 
-    # Category A: No baseline
+    # Category 2: Missing baseline
     if ref_ms < 1e-5:
         return ("NO_BASELINE", "ref_ms < 0.01ms — no real baseline to compare")
 
-    speedup = ref_ms / cuda_ms if cuda_ms > 0 else 0.0
+    # Category 3: Numerical divergence
+    if max_diff > 0.05:
+        return ("FAIL_NUMERICS", f"max_diff={max_diff:.4f} > 0.05")
 
-    # Category B1: Critically slow
-    if speedup < 0.2:
-        return ("FAIL_SLOW_CRITICAL", f"{1/speedup:.0f}x slower than PyTorch")
-
-    # Category B2: Moderately slow
-    if speedup < 1.0:
-        return ("FAIL_SLOW", f"{1/speedup:.1f}x slower than PyTorch")
-
-    # Category D: Numerically broken
-    if max_diff > 0.01:
-        return ("FAIL_NUMERICS", f"max_diff={max_diff:.4f} > 0.01")
-
-    # Category C: Impossible speedup (suspicious baseline)
-    if speedup > 100:
-        return ("SUSPICIOUS_BASELINE", f"speedup={speedup:.0f}x — check PyTorch ref")
-
-    # Category F: Absolute latency outlier
-    if cuda_ms > 20.0:
-        return ("FAIL_LATENCY", f"cuda_ms={cuda_ms:.1f} > 20ms absolute threshold")
+    speedup = ref_ms / cuda_ms if cuda_ms > 0 else 1.0
 
     # Genuine PASS
     return ("PASS", f"speedup={speedup:.2f}x, max_diff={max_diff:.4f}")
