@@ -5,7 +5,9 @@
 #include <c10/cuda/CUDAException.h>
 #include "_common.cuh"
 
-
+// ═══════════════════════════════════════════════════════════════════════
+// MoE Dispatch Kernel: Vectorized 128-bit Token Scattering
+// ═══════════════════════════════════════════════════════════════════════
 template<typename scalar_t>
 __launch_bounds__(256)
 __global__ void moe_dispatch_kernel(
@@ -98,6 +100,9 @@ void moe_dispatch_cuda(
     C10_CUDA_KERNEL_LAUNCH_CHECK();
 }
 
+// ═══════════════════════════════════════════════════════════════════════
+// Bitonic MoE Router: Parallel Warp-Shuffle Top-K Selection & Softmax
+// ═══════════════════════════════════════════════════════════════════════
 template<typename scalar_t>
 __launch_bounds__(128)
 __global__ void moe_fused_dispatch_kernel(
@@ -116,45 +121,60 @@ __global__ void moe_fused_dispatch_kernel(
 
     if (tok_idx >= num_tokens) return;
 
-    if (lane == 0) {
-        float best_val[8];
-        int best_indices[8];
-        for (int j = 0; j < top_k && j < 8; ++j) {
-            best_val[j] = -1e30f;
-            best_indices[j] = 0;
-        }
+    // Bitonic Top-K selection across 32 lanes
+    float val = -1e30f;
+    int idx = 0;
 
-        const scalar_t* g_row = gate_logits + tok_idx * num_experts;
-        for (int e = 0; e < num_experts; ++e) {
-            float val = static_cast<float>(g_row[e]);
-            for (int j = 0; j < top_k && j < 8; ++j) {
-                if (val > best_val[j]) {
-                    for (int m = std::min(top_k - 1, 7); m > j; --m) {
-                        best_val[m] = best_val[m - 1];
-                        best_indices[m] = best_indices[m - 1];
-                    }
-                    best_val[j] = val;
-                    best_indices[j] = e;
-                    break;
-                }
-            }
-        }
+    const scalar_t* g_row = gate_logits + tok_idx * num_experts;
+    if (lane < num_experts) {
+        val = to_float(g_row[lane]);
+        idx = lane;
+    }
 
-        float max_val = best_val[0];
-        float sum_exp = 0.0f;
-        float weights[8];
-        for (int j = 0; j < top_k && j < 8; ++j) {
-            weights[j] = expf(best_val[j] - max_val);
-            sum_exp += weights[j];
-        }
-        float inv_sum = 1.0f / (sum_exp > 0.0f ? sum_exp : 1.0f);
-        for (int j = 0; j < top_k && j < 8; ++j) {
-            routing_weights[tok_idx * top_k + j] = static_cast<scalar_t>(weights[j] * inv_sum);
-            topk_indices[tok_idx * top_k + j] = best_indices[j];
+    // If num_experts > 32, fold subsequent experts into the 32 lanes
+    for (int e = lane + 32; e < num_experts; e += 32) {
+        float cand_val = to_float(g_row[e]);
+        if (cand_val > val) {
+            val = cand_val;
+            idx = e;
         }
     }
 
-    // Parallel vectorized copy of tokens[tok_idx] to dispatched[tok_idx * top_k + j]
+    // 32-element Bitonic Sorting Network in pure register shuffle space
+    #pragma unroll
+    for (int size = 2; size <= 32; size *= 2) {
+        #pragma unroll
+        for (int stride = size / 2; stride > 0; stride /= 2) {
+            float other_val = __shfl_xor_sync(0xffffffff, val, stride);
+            int other_idx = __shfl_xor_sync(0xffffffff, idx, stride);
+            bool dir = ((lane & size) == 0); // descending for first half
+            bool swap = dir ? (val < other_val) : (val > other_val);
+            if (swap) {
+                val = other_val;
+                idx = other_idx;
+            }
+        }
+    }
+
+    // Lanes 0 to (top_k - 1) now hold the sorted top-k values and expert indices!
+    float max_val = __shfl_sync(0xffffffff, val, 0);
+    float exp_val = (lane < top_k) ? expf(val - max_val) : 0.0f;
+
+    // Warp-level sum reduction for softmax normalizer
+    float sum_exp = exp_val;
+    #pragma unroll
+    for (int offset = 16; offset > 0; offset /= 2) {
+        sum_exp += __shfl_down_sync(0xffffffff, sum_exp, offset);
+    }
+    sum_exp = __shfl_sync(0xffffffff, sum_exp, 0);
+    float inv_sum = 1.0f / (sum_exp > 0.0f ? sum_exp : 1.0f);
+
+    if (lane < top_k) {
+        routing_weights[tok_idx * top_k + lane] = from_float<scalar_t>(exp_val * inv_sum);
+        topk_indices[tok_idx * top_k + lane] = idx;
+    }
+
+    // Parallel vectorized 128-bit streaming copy of tokens[tok_idx] to dispatched[tok_idx * top_k + j]
     const scalar_t* __restrict__ src_tok = tokens + tok_idx * hidden_dim;
     if ((hidden_dim * sizeof(scalar_t)) % 16 == 0) {
         constexpr int VEC_SIZE = 16 / sizeof(scalar_t);
@@ -164,6 +184,7 @@ __global__ void moe_fused_dispatch_kernel(
 
         for (int i = lane; i < num_vecs; i += 32) {
             const vec_t v = src_vec[i];
+            #pragma unroll
             for (int j = 0; j < top_k; ++j) {
                 vec_t* __restrict__ dst_vec = reinterpret_cast<vec_t*>(dispatched_tokens + (tok_idx * top_k + j) * hidden_dim);
                 dst_vec[i] = v;
@@ -172,6 +193,7 @@ __global__ void moe_fused_dispatch_kernel(
     } else {
         for (int i = lane; i < hidden_dim; i += 32) {
             const scalar_t v = src_tok[i];
+            #pragma unroll
             for (int j = 0; j < top_k; ++j) {
                 dispatched_tokens[(tok_idx * top_k + j) * hidden_dim + i] = v;
             }
@@ -196,7 +218,7 @@ void moe_fused_dispatch_cuda(
     CHECK_INPUT(tokens);
     CHECK_INPUT(gate_logits);
 
-    TORCH_CHECK(top_k <= 8, "moe_fused_dispatch_cuda: top_k=", top_k, " exceeds kernel max of 8");
+    TORCH_CHECK(top_k <= 32, "moe_fused_dispatch_cuda: top_k=", top_k, " exceeds warp width");
 
     if (num_tokens <= 0 || hidden_dim <= 0 || top_k <= 0 || num_experts <= 0) {
         return;
@@ -228,4 +250,3 @@ void moe_fused_dispatch_cuda(
 
     C10_CUDA_KERNEL_LAUNCH_CHECK();
 }
-

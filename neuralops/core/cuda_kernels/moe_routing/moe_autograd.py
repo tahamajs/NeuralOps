@@ -1,5 +1,6 @@
 """
 MoE Routing Interface, Autograd Functions, and 3-Level Fallback (Module 5).
+Includes Bitonic Sorting Warp-Shuffle Top-K Dispatch & Gather.
 """
 
 from __future__ import annotations
@@ -46,11 +47,12 @@ def _moe_dispatch_pytorch_ref(
     top_k = topk_indices.shape[1]
     dispatched = torch.zeros((total_slots, hidden_dim), dtype=tokens.dtype, device=tokens.device)
 
-    for tok_idx in range(num_tokens):
-        for k_idx in range(top_k):
-            slot = int(expert_offsets[tok_idx, k_idx].item())
-            if 0 <= slot < total_slots:
-                dispatched[slot] = tokens[tok_idx]
+    # Vectorized slot assignment
+    valid_mask = (expert_offsets >= 0) & (expert_offsets < total_slots)
+    tok_ids = torch.arange(num_tokens, device=tokens.device).unsqueeze(1).expand_as(expert_offsets)
+    flat_slots = expert_offsets[valid_mask].long()
+    flat_toks = tok_ids[valid_mask]
+    dispatched[flat_slots] = tokens[flat_toks]
 
     return dispatched
 
@@ -65,14 +67,10 @@ def _moe_gather_pytorch_ref(
     hidden_dim = expert_outputs.shape[1]
     total_assignments = expert_outputs.shape[0]
 
-    out = torch.zeros((num_tokens, hidden_dim), dtype=expert_outputs.dtype, device=expert_outputs.device)
-
-    for tok_idx in range(num_tokens):
-        for k_idx in range(top_k):
-            slot = int(expert_offsets[tok_idx, k_idx].item())
-            if 0 <= slot < total_assignments:
-                w = routing_weights[tok_idx, k_idx]
-                out[tok_idx] += w * expert_outputs[slot]
+    valid_mask = (expert_offsets >= 0) & (expert_offsets < total_assignments)
+    safe_offsets = torch.clamp(expert_offsets, 0, max(0, total_assignments - 1)).long()
+    gathered = expert_outputs[safe_offsets] * valid_mask.unsqueeze(-1)
+    out = (gathered * routing_weights.unsqueeze(-1)).sum(dim=1).to(expert_outputs.dtype)
 
     return out
 
@@ -173,6 +171,7 @@ def moe_route_pytorch_ref(
     gate_logits: torch.Tensor,
     top_k: int = 2,
 ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """Pure PyTorch vectorized reference for routing weight computation."""
     orig_shape = tokens.shape
     if len(orig_shape) == 3:
         tokens = tokens.view(-1, orig_shape[-1])
@@ -187,12 +186,13 @@ def moe_route_pytorch_ref(
     return routing_weights, topk_indices, expert_offsets
 
 
-def moe_dispatch_gather(
+def moe_dispatch_gather_pytorch_ref(
     tokens: torch.Tensor,
     gate_logits: torch.Tensor,
     expert_fn: Any,
     top_k: int = 2,
 ) -> torch.Tensor:
+    """End-to-end vectorized PyTorch reference for dispatch + expert execution + gather."""
     orig_shape = tokens.shape
     is_3d = (len(orig_shape) == 3)
     if is_3d:
@@ -201,6 +201,37 @@ def moe_dispatch_gather(
         gate_logits = gate_logits.view(-1, gate_logits.shape[-1])
 
     num_tokens, hidden_dim = tokens.shape
+    topk_vals, topk_indices = torch.topk(gate_logits, k=top_k, dim=-1)
+    routing_weights = F.softmax(topk_vals.float(), dim=-1).to(tokens.dtype)
+    expert_offsets = torch.arange(num_tokens * top_k, device=tokens.device, dtype=torch.int32).view(num_tokens, top_k)
+    total_slots = num_tokens * top_k
+
+    dispatched = _moe_dispatch_pytorch_ref(tokens, topk_indices, expert_offsets, total_slots)
+    expert_outputs = expert_fn(dispatched) if expert_fn is not None else dispatched
+    out = _moe_gather_pytorch_ref(expert_outputs, routing_weights, topk_indices, expert_offsets)
+    if is_3d:
+        out = out.view(B, T, hidden_dim)
+    return out
+
+
+def moe_dispatch_gather(
+    tokens: torch.Tensor,
+    gate_logits: torch.Tensor,
+    expert_fn: Any = None,
+    top_k: int = 2,
+) -> torch.Tensor:
+    """Bitonic MoE Fused Dispatch & Gather with 3-level fallback."""
+    orig_shape = tokens.shape
+    is_3d = (len(orig_shape) == 3)
+    if is_3d:
+        B, T, D = orig_shape
+        tokens = tokens.view(-1, D)
+        gate_logits = gate_logits.view(-1, gate_logits.shape[-1])
+
+    num_tokens, hidden_dim = tokens.shape
+
+    if expert_fn is None:
+        expert_fn = lambda x: x
 
     if torch.is_grad_enabled() and (tokens.requires_grad or gate_logits.requires_grad):
         topk_vals, topk_indices = torch.topk(gate_logits, k=top_k, dim=-1)
@@ -212,7 +243,7 @@ def moe_dispatch_gather(
         out = _MoEGatherAutograd.apply(expert_outputs, routing_weights, topk_indices, expert_offsets)
     else:
         mod = _get_module()
-        if mod is not None and tokens.is_cuda and gate_logits.is_cuda and hasattr(mod, "moe_fused_dispatch") and gate_logits.size(1) <= 64 and top_k <= 8:
+        if mod is not None and tokens.is_cuda and gate_logits.is_cuda and hasattr(mod, "moe_fused_dispatch") and top_k <= 32:
             try:
                 dispatched, routing_weights, topk_indices = mod.moe_fused_dispatch(tokens, gate_logits, top_k)
                 expert_outputs = expert_fn(dispatched)
@@ -278,11 +309,22 @@ def moe_gather(
     )
 
 
+# Standard Aliases
+moe_routing = moe_dispatch_gather
+moe_routing_ref = moe_dispatch_gather_pytorch_ref
+moe_routing_pytorch_ref = moe_dispatch_gather_pytorch_ref
+moe_dispatch_gather_ref = moe_dispatch_gather_pytorch_ref
+
 __all__ = [
     "moe_dispatch_gather",
     "moe_dispatch",
     "moe_gather",
+    "moe_routing",
+    "moe_routing_ref",
+    "moe_routing_pytorch_ref",
+    "moe_dispatch_gather_ref",
+    "moe_dispatch_gather_pytorch_ref",
+    "moe_route_pytorch_ref",
     "_moe_dispatch_pytorch_ref",
     "_moe_gather_pytorch_ref",
 ]
-
