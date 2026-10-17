@@ -5,16 +5,15 @@
 
 namespace neuralops { namespace cuda {
 
-// Cluster Attention Forward Kernel:
+// Single-Pass Warp-Per-Query Flash Cluster Attention Forward Kernel:
 // Form: S_{i, c} = \frac{1}{\sqrt{D}} \sum_{d=0}^{D-1} Q_{i, d} \cdot \text{Centroid}_{c, d}
 //       w_{i, c} = \text{Softmax}_c(S_{i, c})
 //       out_{i, d} = \sum_{c=0}^{K-1} w_{i, c} \cdot V_{c, d}
 //
 // Hardware-level optimization:
-// 1. True Vector Dot-Product: Evaluates inner products over full head dimension D using online softmax.
-// 2. Online Softmax Tracking: Tracks running maximum m_i and normalizer l_i across cluster centroids K.
-// 3. Grid/Block mapping: dim3 grid(ceil(N / 32), B * H) with 32 threads/block.
-// 4. Strict FP32 intermediate accumulation to prevent numerical overflow and underflow.
+// 1. Warp-Per-Query (32 threads/query token): 100% coalesced vector loads across lane and zero register spilling.
+// 2. Single-pass fused online softmax rescaling and value accumulation in registers.
+// 3. Strict FP32 intermediate accumulation to prevent numerical overflow and underflow.
 template <typename scalar_t>
 __global__ void __launch_bounds__(128) cluster_attn_fwd_kernel(
     scalar_t* __restrict__ out,
@@ -31,47 +30,78 @@ __global__ void __launch_bounds__(128) cluster_attn_fwd_kernel(
     const int bh = blockIdx.y;
     if (bh >= B * H) return;
 
-    const int i = blockIdx.x * blockDim.x + threadIdx.x;
+    const int warp_id = threadIdx.x / 32;
+    const int lane = threadIdx.x % 32;
+    const int i = blockIdx.x * (blockDim.x / 32) + warp_id;
     if (i >= N) return;
 
     const int q_offset = bh * (N * D) + i * D;
     const int c_base_offset = bh * (K * D);
     const float scale = rsqrtf(static_cast<float>(D));
 
-    // Pass 1: Online Softmax over K centroids
+    // Register cache for query vectors (up to D=128, e.g. 2 elements per lane for D=64, 4 for D=128)
+    constexpr int MAX_E = 4;
+    float q_reg[MAX_E];
+
+    #pragma unroll
+    for (int e = 0; e < MAX_E; ++e) {
+        const int d = lane + e * 32;
+        if (d < D) {
+            q_reg[e] = to_float(q[q_offset + d]) * scale;
+        } else {
+            q_reg[e] = 0.0f;
+        }
+    }
+
+    // Single-pass FlashAttention across K centroids
     float m_prev = -1e30f;
     float d_prev = 0.0f;
+    float acc[MAX_E] = {0.0f};
 
     for (int c = 0; c < K; ++c) {
-        float dot = 0.0f;
+        float dot_local = 0.0f;
         const int c_offset = c_base_offset + c * D;
-        for (int d = 0; d < D; ++d) {
-            dot += to_float(q[q_offset + d]) * to_float(centroids[c_offset + d]);
-        }
-        dot *= scale;
 
-        const float m_curr = fmaxf(m_prev, dot);
-        const float exp_curr = expf(dot - m_curr);
-        d_prev = d_prev * expf(m_prev - m_curr) + exp_curr;
+        #pragma unroll
+        for (int e = 0; e < MAX_E; ++e) {
+            const int d = lane + e * 32;
+            if (d < D) {
+                dot_local = fmaf(q_reg[e], to_float(centroids[c_offset + d]), dot_local);
+            }
+        }
+
+        // Warp reduction across 32 lanes
+        #pragma unroll
+        for (int offset = 16; offset > 0; offset /= 2) {
+            dot_local += __shfl_xor_sync(0xffffffff, dot_local, offset);
+        }
+
+        // Online softmax update
+        const float m_curr = fmaxf(m_prev, dot_local);
+        const float alpha = expf(m_prev - m_curr);
+        const float p = expf(dot_local - m_curr);
+        d_prev = d_prev * alpha + p;
         m_prev = m_curr;
+
+        // Rescale prior accumulation and add current p * v
+        #pragma unroll
+        for (int e = 0; e < MAX_E; ++e) {
+            const int d = lane + e * 32;
+            if (d < D) {
+                const float v_val = to_float(v[c_offset + d]);
+                acc[e] = acc[e] * alpha + p * v_val;
+            }
+        }
     }
 
     const float inv_d = (d_prev > 1e-6f) ? (1.0f / d_prev) : 0.0f;
 
-    // Pass 2: Weighted combination of value vectors V
-    for (int d = 0; d < D; ++d) {
-        float val_acc = 0.0f;
-        for (int c = 0; c < K; ++c) {
-            float dot = 0.0f;
-            const int c_offset = c_base_offset + c * D;
-            for (int dd = 0; dd < D; ++dd) {
-                dot += to_float(q[q_offset + dd]) * to_float(centroids[c_offset + dd]);
-            }
-            dot *= scale;
-            const float weight = expf(dot - m_prev) * inv_d;
-            val_acc += weight * to_float(v[c_base_offset + c * D + d]);
+    #pragma unroll
+    for (int e = 0; e < MAX_E; ++e) {
+        const int d = lane + e * 32;
+        if (d < D) {
+            out[q_offset + d] = from_float<scalar_t>(acc[e] * inv_d);
         }
-        out[q_offset + d] = from_float<scalar_t>(val_acc);
     }
 }
 
@@ -100,8 +130,9 @@ torch::Tensor cluster_attn_fwd(
     auto out = torch::empty_like(q);
     if (B == 0 || H == 0 || N == 0 || D == 0 || K == 0) return out;
 
-    constexpr int THREADS = 128;
-    const int blocks_x = (N + THREADS - 1) / THREADS;
+    constexpr int THREADS = 128; // 4 warps per block -> 4 queries per block
+    constexpr int WARPS_PER_BLOCK = THREADS / 32;
+    const int blocks_x = (N + WARPS_PER_BLOCK - 1) / WARPS_PER_BLOCK;
     dim3 grid(blocks_x, B * H);
 
     auto stream = c10::cuda::getCurrentCUDAStream();
