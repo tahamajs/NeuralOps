@@ -207,6 +207,8 @@
         .badge-green { background: rgba(16, 185, 129, 0.15); color: var(--accent-green); }
         .badge-cyan { background: rgba(56, 189, 248, 0.15); color: var(--accent-cyan); }
         .badge-amber { background: rgba(245, 158, 11, 0.15); color: var(--accent-amber); }
+        .badge-purple { background: rgba(168, 85, 247, 0.15); color: var(--accent-purple); }
+        
         .blocks-grid {
             display: grid;
             grid-template-columns: repeat(16, 1fr);
@@ -238,11 +240,6 @@
             border-color: var(--accent-cyan);
             color: #ffffff;
         }
-        .block-cell.busy {
-            background: rgba(168, 85, 247, 0.45);
-            border-color: var(--accent-purple);
-            color: #ffffff;
-        }
         .search-box {
             background: var(--bg-secondary);
             border: 1px solid var(--border-color);
@@ -252,6 +249,96 @@
             font-size: 0.85rem;
             width: 240px;
         }
+
+        /* Notebooks Grid */
+        .notebooks-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 12px;
+        }
+        .notebook-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            text-decoration: none;
+            color: var(--text-primary);
+            transition: border-color 0.2s, transform 0.15s;
+        }
+        .notebook-card:hover {
+            border-color: var(--accent-cyan);
+            transform: translateY(-2px);
+        }
+        .notebook-title {
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        .notebook-tag {
+            font-size: 0.7rem;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--accent-cyan);
+        }
+
+        /* Interactive Comparison Widget */
+        .comparison-widget {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .select-row {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .select-box {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            flex: 1;
+            min-width: 200px;
+        }
+        .vs-label {
+            font-weight: 700;
+            color: var(--accent-cyan);
+            font-size: 0.9rem;
+        }
+        .comparison-cards-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        .comp-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .comp-card-title {
+            font-weight: 600;
+            color: var(--accent-cyan);
+            font-size: 1rem;
+        }
+        .comp-stat-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.82rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 4px 0;
+        }
+        .comp-stat-val {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -259,6 +346,7 @@
         <div class="brand">
             <span>NeuralOps</span>
             <span class="brand-badge">Systems & Architecture Hub</span>
+            <span class="badge badge-green" id="stream-status" style="margin-left: 8px;">● WebSocket Live</span>
         </div>
         <nav class="nav-links">
             <a href="index.html" class="nav-link">Documentation</a>
@@ -291,6 +379,25 @@
                 <span class="metric-title">Paged KV Utilization</span>
                 <span class="metric-value" id="kv-util">31.2%</span>
                 <span class="metric-sub" id="kv-active-seqs">5 Active Sequences (Continuous Batching)</span>
+            </div>
+        </section>
+
+        <!-- Interactive Head-to-Head Comparison Studio Widget -->
+        <section class="panel">
+            <div class="panel-header">
+                <span class="panel-title">Interactive Architecture Benchmark Comparison Studio</span>
+                <span class="badge badge-purple">Head-to-Head Delta</span>
+            </div>
+            <div class="comparison-widget">
+                <div class="select-row">
+                    <select id="select-module-a" class="select-box"></select>
+                    <span class="vs-label">VS</span>
+                    <select id="select-module-b" class="select-box"></select>
+                </div>
+                <div class="comparison-cards-grid" id="comparison-cards-grid">
+                    <div class="comp-card" id="card-module-a"></div>
+                    <div class="comp-card" id="card-module-b"></div>
+                </div>
             </div>
         </section>
 
@@ -376,6 +483,60 @@
                 </div>
             </div>
         </section>
+
+        <!-- 11 Master Notebooks Suite Directory -->
+        <section class="panel">
+            <div class="panel-header">
+                <span class="panel-title">11 Master Research & Systems Notebooks</span>
+                <span class="badge badge-green">Executable & Reproducible</span>
+            </div>
+            <div class="notebooks-grid">
+                <a href="../notebooks/00_master_neuralops_complete_system_walkthrough.ipynb" class="notebook-card">
+                    <span class="notebook-title">00. Complete System Walkthrough</span>
+                    <span class="notebook-tag">End-to-End</span>
+                </a>
+                <a href="../notebooks/01_quickstart_surgery_and_healing.ipynb" class="notebook-card">
+                    <span class="notebook-title">01. Surgery & Healing Quickstart</span>
+                    <span class="notebook-tag">Surgery</span>
+                </a>
+                <a href="../notebooks/02_roofline_and_triton_kernels.ipynb" class="notebook-card">
+                    <span class="notebook-title">02. Roofline & Triton Kernels</span>
+                    <span class="notebook-tag">Hardware</span>
+                </a>
+                <a href="../notebooks/03_custom_plugins_and_extensibility.ipynb" class="notebook-card">
+                    <span class="notebook-title">03. Custom Plugins & Extensibility</span>
+                    <span class="notebook-tag">Plugins</span>
+                </a>
+                <a href="../notebooks/04_end_to_end_3level_benchmarking.ipynb" class="notebook-card">
+                    <span class="notebook-title">04. 3-Level Latency Benchmarking</span>
+                    <span class="notebook-tag">Bench</span>
+                </a>
+                <a href="../notebooks/05_master_108_cuda_and_26_triton_kernels_benchmark.ipynb" class="notebook-card">
+                    <span class="notebook-title">05. 108 CUDA & 26 Triton Suite</span>
+                    <span class="notebook-tag">Kernels</span>
+                </a>
+                <a href="../notebooks/05_paper_empirical_results_master.ipynb" class="notebook-card">
+                    <span class="notebook-title">05b. Paper Empirical Results Master</span>
+                    <span class="notebook-tag">Paper</span>
+                </a>
+                <a href="../notebooks/06_master_all_131_attention_mechanisms_interactive.ipynb" class="notebook-card">
+                    <span class="notebook-title">06. All 131 Attention Mechanisms</span>
+                    <span class="notebook-tag">131 Attn</span>
+                </a>
+                <a href="../notebooks/07_master_all_72_compression_engines_quant_and_svd.ipynb" class="notebook-card">
+                    <span class="notebook-title">07. All 72 Compression Engines</span>
+                    <span class="notebook-tag">72 Comp</span>
+                </a>
+                <a href="../notebooks/08_six_pillar_distillation_and_surgical_recovery.ipynb" class="notebook-card">
+                    <span class="notebook-title">08. 6-Pillar Surgical Recovery</span>
+                    <span class="notebook-tag">Distill</span>
+                </a>
+                <a href="../notebooks/09_production_serving_paged_cache_and_speculative_decoding.ipynb" class="notebook-card">
+                    <span class="notebook-title">09. Paged Cache & Speculative Serving</span>
+                    <span class="notebook-tag">Production</span>
+                </a>
+            </div>
+        </section>
     </main>
 
     <script>
@@ -415,13 +576,20 @@
             }
         });
 
-        // Load Live Data & APIs
-        async function fetchDashboardData() {
+        // WebSocket Streaming Connection with SSE / HTTP Fallback
+        function connectTelemetryWebSocket() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/ws/telemetry`;
+            const statusEl = document.getElementById('stream-status');
+
             try {
-                // Fetch GPU metrics
-                const gpuRes = await fetch('/api/stats');
-                if (gpuRes.ok) {
-                    const data = await gpuRes.json();
+                const ws = new WebSocket(wsUrl);
+                ws.onopen = () => {
+                    statusEl.innerText = '● WebSocket Live';
+                    statusEl.className = 'badge badge-green';
+                };
+                ws.onmessage = (event) => {
+                    const data = JSON.parse(event.data);
                     if (data.gpu) {
                         document.getElementById('gpu-util').innerText = `${data.gpu.gpu_util || 0.0}%`;
                         const used = ((data.gpu.mem_used_mb || 0) / 1024).toFixed(1);
@@ -430,13 +598,36 @@
                         document.getElementById('gpu-name').innerText = data.gpu.name || 'NVIDIA GPU';
                         document.getElementById('gpu-temp').innerText = `Temp: ${data.gpu.temp_c || 42}°C · Power: ${data.gpu.power_w || 85}W`;
                     }
-                }
+                    if (data.speculative) {
+                        document.getElementById('spec-acc').innerText = `${(data.speculative.acceptance_rate * 100).toFixed(1)}%`;
+                        document.getElementById('spec-speedup').innerText = `${data.speculative.speedup_factor}x Wall-Clock Speedup`;
+                    }
+                    if (data.paged_kv) {
+                        document.getElementById('kv-util').innerText = `${data.paged_kv.utilization_pct}%`;
+                    }
+                };
+                ws.onerror = () => {
+                    statusEl.innerText = '● HTTP Polling';
+                    statusEl.className = 'badge badge-amber';
+                };
+                ws.onclose = () => {
+                    setTimeout(connectTelemetryWebSocket, 5000);
+                };
+            } catch (e) {
+                statusEl.innerText = '● HTTP Polling';
+                statusEl.className = 'badge badge-amber';
+            }
+        }
 
+        // Fetch All Initial Data
+        async function fetchInitialData() {
+            try {
                 // Fetch 131 Attentions
                 const attnRes = await fetch('/api/attentions');
                 if (attnRes.ok) {
                     window.attentionsData = await attnRes.json();
                     renderAttentions(window.attentionsData);
+                    populateComparisonDropdowns(window.attentionsData);
                 }
 
                 // Fetch 72 Compressors
@@ -455,15 +646,20 @@
                     renderBlocks(kv.blocks);
                 }
 
-                // Fetch Speculative Decoding
-                const specRes = await fetch('/api/speculative_decoding');
-                if (specRes.ok) {
-                    const spec = await specRes.json();
-                    document.getElementById('spec-acc').innerText = `${(spec.acceptance_rate * 100).toFixed(1)}%`;
-                    document.getElementById('spec-speedup').innerText = `${spec.speedup_factor}x Wall-Clock Speedup`;
+                // Initial REST GPU fetch
+                const gpuRes = await fetch('/api/stats');
+                if (gpuRes.ok) {
+                    const data = await gpuRes.json();
+                    if (data.gpu) {
+                        document.getElementById('gpu-util').innerText = `${data.gpu.gpu_util || 0.0}%`;
+                        const used = ((data.gpu.mem_used_mb || 0) / 1024).toFixed(1);
+                        const total = ((data.gpu.mem_total_mb || 8192) / 1024).toFixed(1);
+                        document.getElementById('gpu-vram').innerText = `${used} / ${total} GB`;
+                        document.getElementById('gpu-name').innerText = data.gpu.name || 'NVIDIA GPU';
+                    }
                 }
             } catch (err) {
-                console.warn('Dashboard live fetch fallback:', err);
+                console.warn('Initial fetch error:', err);
             }
         }
 
@@ -505,6 +701,49 @@
             `).join('');
         }
 
+        // Comparison Studio Logic
+        function populateComparisonDropdowns(modules) {
+            const selA = document.getElementById('select-module-a');
+            const selB = document.getElementById('select-module-b');
+            selA.innerHTML = '';
+            selB.innerHTML = '';
+            modules.forEach(m => {
+                selA.add(new Option(m.name, m.name));
+                selB.add(new Option(m.name, m.name));
+            });
+            if (modules.length > 1) {
+                selA.selectedIndex = 0;
+                selB.selectedIndex = 1;
+            }
+            updateComparison();
+            selA.addEventListener('change', updateComparison);
+            selB.addEventListener('change', updateComparison);
+        }
+
+        function updateComparison() {
+            if (!window.attentionsData) return;
+            const nameA = document.getElementById('select-module-a').value;
+            const nameB = document.getElementById('select-module-b').value;
+            const modA = window.attentionsData.find(m => m.name === nameA);
+            const modB = window.attentionsData.find(m => m.name === nameB);
+
+            if (modA) renderCompCard('card-module-a', modA);
+            if (modB) renderCompCard('card-module-b', modB);
+        }
+
+        function renderCompCard(elementId, mod) {
+            const card = document.getElementById(elementId);
+            card.innerHTML = `
+                <div class="comp-card-title">${mod.name}</div>
+                <div class="comp-stat-row"><span>Algorithmic Family:</span><span class="comp-stat-val">${mod.family || 'linear'}</span></div>
+                <div class="comp-stat-row"><span>Time Complexity:</span><span class="comp-stat-val">${mod.complexity_time || 'O(N)'}</span></div>
+                <div class="comp-stat-row"><span>Space Complexity:</span><span class="comp-stat-val">${mod.complexity_space || 'O(1)'}</span></div>
+                <div class="comp-stat-row"><span>Triton Latency:</span><span class="comp-stat-val">${mod.latency_ms ? `${mod.latency_ms.toFixed(2)} ms` : '—'}</span></div>
+                <div class="comp-stat-row"><span>Downstream Accuracy:</span><span class="comp-stat-val">${mod.accuracy_pct ? `${mod.accuracy_pct.toFixed(1)}%` : '—'}</span></div>
+                <div class="comp-stat-row"><span>Language Perplexity:</span><span class="comp-stat-val">${mod.perplexity ? mod.perplexity.toFixed(1) : '—'}</span></div>
+            `;
+        }
+
         // Live Filtering
         document.getElementById('attnSearch').addEventListener('input', (e) => {
             const q = e.target.value.toLowerCase();
@@ -522,9 +761,9 @@
             }
         });
 
-        // Initialize and poll
-        fetchDashboardData();
-        setInterval(fetchDashboardData, 3000);
+        // Initialize WebSocket & Fetch Initial Data
+        fetchInitialData();
+        connectTelemetryWebSocket();
     </script>
 </body>
 </html>
