@@ -31,11 +31,16 @@ def _get_module():
     return _MODULE
 
 def spectral_shrinkage_pytorch_ref(x_re, x_im, w_re, w_im, tau):
-    x = torch.complex(x_re, x_im)
-    w = torch.complex(w_re, w_im)
+    x = torch.complex(x_re.float(), x_im.float())
+    total = x_re.numel()
+    wr_c = w_re.reshape(-1)[:total].reshape_as(x_re).contiguous() if w_re.numel() >= total else w_re.expand_as(x_re).contiguous()
+    wi_c = w_im.reshape(-1)[:total].reshape_as(x_im).contiguous() if w_im.numel() >= total else w_im.expand_as(x_im).contiguous()
+    w = torch.complex(wr_c.float(), wi_c.float())
     z = x * w
-    r = torch.abs(z)
-    scale = torch.clamp(1.0 - tau / (r + 1e-8), min=0.0)
+    mag = torch.sqrt(z.real * z.real + z.imag * z.imag + 1e-12)
+    t_c = tau.expand_as(x_re).float() if tau.numel() != total else tau.float()
+    sig_tau = torch.sigmoid(t_c)
+    scale = torch.clamp((mag - sig_tau) / mag, min=0.0)
     return z * scale
 
 def spectral_shrinkage_triton_ref(x_re, x_im, w_re, w_im, tau):
