@@ -46,7 +46,7 @@ def test_dynamo_explain_zero_graph_breaks():
     k = torch.randn(B, H, T, D, device=device, dtype=dtype)
     v = torch.randn(B, H, T, D, device=device, dtype=dtype)
 
-    explanation = torch._dynamo.explain(model, x, q, k, v)
+    explanation = torch._dynamo.explain(model)(x, q, k, v)
     assert explanation.graph_break_count == 0, f"Expected 0 graph breaks, got {explanation.graph_break_count}: {explanation.graph_breaks}"
 
     # Also test compile execution (Inductor requires SM >= 7.0)
