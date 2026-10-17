@@ -1,10 +1,14 @@
 """Production SmoothQuant: outlier migration from activations to weights."""
 
 from __future__ import annotations
+from typing import Any, Dict, List, Optional, Tuple
 import torch
 import torch.nn as nn
 
-__all__ = ["smoothquant_layer", "smoothquant_model", "SmoothQuantLinear"]
+from neuralops.core.base import BaseCompressor
+from neuralops.core.registry import COMPRESSOR_REGISTRY
+
+__all__ = ["smoothquant_layer", "smoothquant_model", "SmoothQuantLinear", "SmoothQuantCompressor"]
 
 
 class SmoothQuantLinear(nn.Module):
@@ -87,7 +91,7 @@ def smoothquant_layer(
 
 def smoothquant_model(
     model: nn.Module,
-    calib_data: list[torch.Tensor],
+    calib_data: list[torch.Tensor] | None = None,
     alpha: float = 0.5,
 ) -> dict[str, torch.Tensor]:
     """Applies SmoothQuant to eligible nn.Linear layers in model, protecting task heads."""
@@ -101,3 +105,72 @@ def smoothquant_model(
             scales[name] = s
     return scales
 
+
+@COMPRESSOR_REGISTRY.register("smoothquant_real", is_alias=True)
+@COMPRESSOR_REGISTRY.register("smoothquant_compressor", is_alias=True)
+class SmoothQuantCompressor(BaseCompressor):
+    """Unified BaseCompressor wrapper for SmoothQuant W8A8 with compressed-tensors support."""
+
+    def __init__(
+        self,
+        model: nn.Module,
+        alpha: float = 0.5,
+        bits: int = 8,
+        calib_data: Optional[list[torch.Tensor]] = None,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(model, name="smoothquant", **kwargs)
+        self.alpha = alpha
+        self.bits = bits
+        self.calib_data = calib_data
+        self.scales: dict[str, torch.Tensor] = {}
+
+    def compress(self) -> tuple[nn.Module, dict[str, Any]]:
+        """Applies SmoothQuant across all linear layers in the model."""
+        stats = {"alpha": self.alpha, "bits": self.bits, "layers": []}
+        for name, module in self.model.named_modules():
+            if isinstance(module, nn.Linear):
+                _, s = smoothquant_layer(module, alpha=self.alpha, calib_data=self.calib_data)
+                self.scales[name or "root"] = s
+                stats["layers"].append(name or "root")
+        if not stats["layers"] and isinstance(self.model, nn.Linear):
+            _, s = smoothquant_layer(self.model, alpha=self.alpha, calib_data=self.calib_data)
+            self.scales["root"] = s
+            stats["layers"].append("root")
+        return self.model, stats
+
+    def compress_to_tensors(self, model: Optional[nn.Module] = None) -> dict[str, torch.Tensor]:
+        """Returns compressed tensor dictionary compatible with compressed-tensors / safetensors."""
+        m = model if model is not None else self.model
+        tensors: dict[str, torch.Tensor] = {}
+        for name, param in m.named_parameters():
+            tensors[name] = param.data
+        for name, buffer in m.named_buffers():
+            tensors[name] = buffer.data
+        return tensors
+
+    def get_quantization_config(self) -> dict[str, Any]:
+        """Returns quantization configuration compatible with compressed-tensors and vLLM."""
+        return {
+            "quant_method": "compressed-tensors",
+            "format": "W8A8",
+            "bits": self.bits,
+            "alpha": self.alpha,
+            "config_groups": {
+                "group_0": {
+                    "weights": {
+                        "num_bits": self.bits,
+                        "type": "int",
+                        "symmetric": True,
+                        "strategy": "channel",
+                    },
+                    "input_activations": {
+                        "num_bits": self.bits,
+                        "type": "int",
+                        "symmetric": True,
+                        "strategy": "token",
+                    },
+                    "targets": ["Linear"],
+                }
+            },
+        }
