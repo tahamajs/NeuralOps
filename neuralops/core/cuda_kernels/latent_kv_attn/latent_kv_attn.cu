@@ -11,6 +11,7 @@ namespace cuda {
 // q: [B, H, L_Q, D_K], c_kv: [B, L_KV, R], u_k: [D_K, R], u_v: [R, D_V]
 // Out: [B, H, L_Q, D_V]
 template <typename scalar_t, int MAX_R>
+__launch_bounds__(128)
 __global__ void latent_kv_attn_fwd_kernel(
     scalar_t* __restrict__ out,
     const scalar_t* __restrict__ Q,
@@ -180,5 +181,6 @@ torch::Tensor latent_kv_cache_attention_fwd(
         })
     );
 
+    CUDA_KERNEL_LAUNCH_CHECK();
     return out;
 }

@@ -9,6 +9,7 @@ namespace cuda {
 
 // Fused W4A16 GEMM: computes Y[m, n] = sum_k X[m, k] * dequant(W_packed[n, k/2]) + bias[n]
 template <typename scalar_t>
+__launch_bounds__(128)
 __global__ void hadamard_w4a16_gemm_kernel(
     scalar_t* __restrict__ out,
     const scalar_t* __restrict__ X,
@@ -109,6 +110,8 @@ torch::Tensor hadamard_w4a16_gemm_fwd(
             );
         })
     );
+
+    CUDA_KERNEL_LAUNCH_CHECK();
 
     std::vector<int64_t> final_shape;
     for (size_t i = 0; i < orig_shape.size() - 1; ++i) {
