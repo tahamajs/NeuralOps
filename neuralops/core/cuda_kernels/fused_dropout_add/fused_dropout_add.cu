@@ -91,7 +91,7 @@ torch::Tensor fused_dropout_add_fwd(
     const torch::Tensor& residual,
     const float p,
     const bool training,
-    const int64_t seed
+    const uint64_t seed
 ) {
     TORCH_CHECK(x.is_cuda(), "x must be a CUDA tensor");
     TORCH_CHECK(residual.is_cuda(), "residual must be a CUDA tensor");

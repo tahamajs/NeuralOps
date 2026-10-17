@@ -63,25 +63,28 @@ __global__ void __launch_bounds__(256) fwht_vectorized_kernel(
         s_next = tmp;
     }
 
-    // Write back with 128-bit float4
+    const float norm = 1.0f / sqrtf(static_cast<float>(B_dim));
+
+    // Write back with 128-bit float4 and orthonormal normalization
     for (int i = tid; i < num_vec; i += blockDim.x) {
         if constexpr (std::is_same_v<scalar_t, float>) {
             float4 out4;
-            out4.x = s_curr[i * 4 + 0];
-            out4.y = s_curr[i * 4 + 1];
-            out4.z = s_curr[i * 4 + 2];
-            out4.w = s_curr[i * 4 + 3];
+            out4.x = s_curr[i * 4 + 0] * norm;
+            out4.y = s_curr[i * 4 + 1] * norm;
+            out4.z = s_curr[i * 4 + 2] * norm;
+            out4.w = s_curr[i * 4 + 3] * norm;
             *reinterpret_cast<float4*>(out + row * B_dim + i * 4) = out4;
         } else {
             #pragma unroll
             for (int k = 0; k < 4; ++k) {
-                out[row * B_dim + i * 4 + k] = from_float<scalar_t>(s_curr[i * 4 + k]);
+                out[row * B_dim + i * 4 + k] = from_float<scalar_t>(s_curr[i * 4 + k] * norm);
             }
         }
     }
     for (int i = rem_start + tid; i < B_dim; i += blockDim.x) {
-        out[row * B_dim + i] = from_float<scalar_t>(s_curr[i]);
+        out[row * B_dim + i] = from_float<scalar_t>(s_curr[i] * norm);
     }
+
 }
 
 }} // namespace neuralops::cuda
