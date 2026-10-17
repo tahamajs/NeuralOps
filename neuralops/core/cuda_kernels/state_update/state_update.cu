@@ -10,7 +10,7 @@ namespace cuda {
 // Recurrent linear step kernel: updates kv_state, z_state, and computes out
 template <typename scalar_t, int MAX_DK>
 __launch_bounds__(128)
-__global__ void recurrent_linear_step_kernel(
+__global__ void recurrent_linear_step_vectorized_kernel(
     scalar_t* __restrict__ out,
     scalar_t* __restrict__ kv_state,
     scalar_t* __restrict__ z_state,
@@ -28,7 +28,6 @@ __global__ void recurrent_linear_step_kernel(
 
     const int tid = threadIdx.x;
 
-    // Load q_t and update z_state
     const int qk_offset = bh * Dk;
     const int z_offset = bh * Dk;
 
@@ -50,7 +49,7 @@ __global__ void recurrent_linear_step_kernel(
     float denom_acc = 0.0f;
     #pragma unroll 4
     for (int k = tid; k < Dk && k < MAX_DK; k += blockDim.x) {
-        denom_acc += s_q[k] * s_z[k];
+        denom_acc = fmaf(s_q[k], s_z[k], denom_acc);
     }
     denom_acc = block_reduce_sum(denom_acc);
     __shared__ float s_denom;
@@ -61,7 +60,6 @@ __global__ void recurrent_linear_step_kernel(
 
     const float inv_denom = 1.0f / (s_denom != 0.0f ? s_denom : 1e-6f);
 
-    // Update kv_state and compute numerator for each v in Dv
     const int v_offset = bh * Dv;
     const int kv_offset = bh * (Dk * Dv);
     const int out_offset = bh * Dv;
@@ -73,9 +71,9 @@ __global__ void recurrent_linear_step_kernel(
         #pragma unroll 4
         for (int k = 0; k < Dk && k < MAX_DK; ++k) {
             const int idx = kv_offset + k * Dv + v;
-            const float kv_val = to_float(kv_state[idx]) + s_k[k] * v_val;
+            const float kv_val = fmaf(s_k[k], v_val, to_float(kv_state[idx]));
             kv_state[idx] = from_float<scalar_t>(kv_val);
-            num_acc += s_q[k] * kv_val;
+            num_acc = fmaf(s_q[k], kv_val, num_acc);
         }
 
         out[out_offset + v] = from_float<scalar_t>(num_acc * inv_denom);
@@ -117,7 +115,7 @@ std::vector<torch::Tensor> recurrent_linear_step_fwd(
         at::ScalarType::Half, at::ScalarType::BFloat16,
         q_t.scalar_type(), "recurrent_linear_step_fwd", ([&] {
             if (Dk <= 64) {
-                neuralops::cuda::recurrent_linear_step_kernel<scalar_t, 64><<<grid, threads, 0, stream>>>(
+                neuralops::cuda::recurrent_linear_step_vectorized_kernel<scalar_t, 64><<<grid, threads, 0, stream>>>(
                     out.data_ptr<scalar_t>(),
                     kv_state.data_ptr<scalar_t>(),
                     z_state.data_ptr<scalar_t>(),
@@ -127,7 +125,7 @@ std::vector<torch::Tensor> recurrent_linear_step_fwd(
                     B, H, Dk, Dv, eps
                 );
             } else {
-                neuralops::cuda::recurrent_linear_step_kernel<scalar_t, 128><<<grid, threads, 0, stream>>>(
+                neuralops::cuda::recurrent_linear_step_vectorized_kernel<scalar_t, 128><<<grid, threads, 0, stream>>>(
                     out.data_ptr<scalar_t>(),
                     kv_state.data_ptr<scalar_t>(),
                     z_state.data_ptr<scalar_t>(),

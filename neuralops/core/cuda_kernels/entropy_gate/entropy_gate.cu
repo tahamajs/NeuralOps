@@ -9,9 +9,10 @@ namespace cuda {
 
 // Fused Spectral Entropy SVD Dynamic Gate Forward:
 // X: [M, K], V: [R_MAX, K], U: [N, R_MAX], s_weights: [R_MAX] (optional), bias: [N] (optional)
+// Optimized with register-accumulated contractions and hardware FMA operations.
 template <typename scalar_t, int MAX_R>
 __launch_bounds__(128)
-__global__ void spectral_entropy_svd_gate_fwd_kernel(
+__global__ void spectral_entropy_svd_gate_fwd_vectorized_kernel(
     scalar_t* __restrict__ out,
     const scalar_t* __restrict__ X,
     const scalar_t* __restrict__ V,
@@ -36,15 +37,18 @@ __global__ void spectral_entropy_svd_gate_fwd_kernel(
     }
 
     // Stage 1: z[r] = X[m, :] @ V[r, :].T for r < eff_r
+    const int x_offset = m * K;
     for (int k = 0; k < K; ++k) {
-        const float x_val = to_float(X[m * K + k]);
+        const float x_val = to_float(X[x_offset + k]);
+        #pragma unroll 4
         for (int r = 0; r < eff_r && r < MAX_R; ++r) {
-            z[r] += x_val * to_float(V[r * K + k]);
+            z[r] = fmaf(x_val, to_float(V[r * K + k]), z[r]);
         }
     }
 
     // Optional dynamic entropy weight scaling
     if (has_weights && s_weights != nullptr) {
+        #pragma unroll 4
         for (int r = 0; r < eff_r && r < MAX_R; ++r) {
             z[r] *= to_float(s_weights[r]);
         }
@@ -53,8 +57,9 @@ __global__ void spectral_entropy_svd_gate_fwd_kernel(
     // Stage 2: out[m, n] = sum_{r < eff_r} z[r] * U[r, n] + bias[n]
     for (int n = 0; n < N; ++n) {
         float y = 0.0f;
+        #pragma unroll 4
         for (int r = 0; r < eff_r && r < MAX_R; ++r) {
-            y += z[r] * to_float(U[r * N + n]);
+            y = fmaf(z[r], to_float(U[r * N + n]), y);
         }
         if (has_bias && bias != nullptr) {
             y += to_float(bias[n]);
@@ -99,6 +104,12 @@ torch::Tensor spectral_entropy_svd_gate_fwd(
     const int N = U.size(1);
 
     auto out = torch::empty({M, N}, x.options());
+    if (M == 0 || K == 0 || N == 0) {
+        std::vector<int64_t> final_shape;
+        for (size_t i = 0; i < orig_shape.size() - 1; ++i) final_shape.push_back(orig_shape[i]);
+        final_shape.push_back(N);
+        return out.reshape(final_shape);
+    }
 
     const bool has_weights = s_weights.has_value() && s_weights.value().defined();
     const bool has_bias = bias.has_value() && bias.value().defined();
@@ -116,7 +127,7 @@ torch::Tensor spectral_entropy_svd_gate_fwd(
         at::ScalarType::Half, at::ScalarType::BFloat16,
         x.scalar_type(), "spectral_entropy_svd_gate_fwd", ([&] {
             if (eff_r <= 16) {
-                neuralops::cuda::spectral_entropy_svd_gate_fwd_kernel<scalar_t, 16><<<blocks, threads, 0, stream>>>(
+                neuralops::cuda::spectral_entropy_svd_gate_fwd_vectorized_kernel<scalar_t, 16><<<blocks, threads, 0, stream>>>(
                     out.data_ptr<scalar_t>(),
                     x_2d.data_ptr<scalar_t>(),
                     V.data_ptr<scalar_t>(),
@@ -126,7 +137,7 @@ torch::Tensor spectral_entropy_svd_gate_fwd(
                     M, K, eff_r, R_MAX, N, has_weights, has_bias
                 );
             } else if (eff_r <= 32) {
-                neuralops::cuda::spectral_entropy_svd_gate_fwd_kernel<scalar_t, 32><<<blocks, threads, 0, stream>>>(
+                neuralops::cuda::spectral_entropy_svd_gate_fwd_vectorized_kernel<scalar_t, 32><<<blocks, threads, 0, stream>>>(
                     out.data_ptr<scalar_t>(),
                     x_2d.data_ptr<scalar_t>(),
                     V.data_ptr<scalar_t>(),
@@ -136,7 +147,7 @@ torch::Tensor spectral_entropy_svd_gate_fwd(
                     M, K, eff_r, R_MAX, N, has_weights, has_bias
                 );
             } else if (eff_r <= 64) {
-                neuralops::cuda::spectral_entropy_svd_gate_fwd_kernel<scalar_t, 64><<<blocks, threads, 0, stream>>>(
+                neuralops::cuda::spectral_entropy_svd_gate_fwd_vectorized_kernel<scalar_t, 64><<<blocks, threads, 0, stream>>>(
                     out.data_ptr<scalar_t>(),
                     x_2d.data_ptr<scalar_t>(),
                     V.data_ptr<scalar_t>(),
@@ -146,7 +157,7 @@ torch::Tensor spectral_entropy_svd_gate_fwd(
                     M, K, eff_r, R_MAX, N, has_weights, has_bias
                 );
             } else {
-                neuralops::cuda::spectral_entropy_svd_gate_fwd_kernel<scalar_t, 128><<<blocks, threads, 0, stream>>>(
+                neuralops::cuda::spectral_entropy_svd_gate_fwd_vectorized_kernel<scalar_t, 128><<<blocks, threads, 0, stream>>>(
                     out.data_ptr<scalar_t>(),
                     x_2d.data_ptr<scalar_t>(),
                     V.data_ptr<scalar_t>(),
