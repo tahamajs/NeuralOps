@@ -22,4 +22,9 @@ def hydra_attention(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor) -> torch.
     def cuda_fn(q, k, v):
         mod = _get_module()
         return mod.hydra_fwd(q.contiguous(), k.contiguous(), v.contiguous())
-    return dispatch(cuda_fn, hydra_attention_ref, hydra_attention_ref, q, k, v, kernel_name="hydra_attention")
+    try:
+        from neuralops.core.triton_kernels.hydra_attention import triton_hydra_attention
+        triton_fn = triton_hydra_attention
+    except Exception:
+        triton_fn = hydra_attention_ref
+    return dispatch(cuda_fn, triton_fn, hydra_attention_ref, q, k, v, kernel_name="hydra_attention")

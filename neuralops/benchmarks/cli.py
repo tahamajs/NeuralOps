@@ -8,12 +8,7 @@ import argparse
 import platform
 import sys
 import time
-from typing import Any
-import torch
-
 from neuralops import __version__
-from neuralops.benchmarks.discovery import discover_all_modules
-from neuralops.benchmarks.api import Runner
 
 # Rich terminal output support
 try:
