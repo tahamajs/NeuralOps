@@ -28,7 +28,10 @@ All benchmarks were evaluated live on the physical RTX 4070 GPU host using `/mnt
 | `hgrn2_scan` | 1024 | 0.156 ms | 45.344 ms | **291.2x** | 2.38e-07 | 14.12 MB | **PASS (0)** |
 | `hgrn2_scan` | 2048 | 0.320 ms | 90.050 ms | **281.2x** | 2.38e-07 | 20.12 MB | **PASS (0)** |
 | `hgrn2_scan` | 4096 | 0.650 ms | 190.268 ms | **292.5x** | 2.98e-07 | 32.12 MB | **PASS (0)** |
-| `hgrn2_scan` | 8192 | 2.132 ms | 359.998 ms | **168.9x** | 2.38e-07 | 56.12 MB | **PASS (0)** |
+| `gdn_delta_rule` | 1024 | 3.598 ms | 467.818 ms | **130.0x** | 5.72e-06 | 16.00 MB | **PASS (0)** |
+| `gdn_delta_rule` | 2048 | 6.941 ms | 732.332 ms | **105.5x** | 6.68e-06 | 32.00 MB | **PASS (0)** |
+| `gdn_delta_rule` | 4096 | 12.815 ms | 1470.653 ms | **114.8x** | 6.68e-06 | 64.00 MB | **PASS (0)** |
+| `gdn_delta_rule` | 8192 | 36.980 ms | 3102.230 ms | **83.9x** | 7.63e-06 | 128.00 MB | **PASS (0)** |
 | `liquid_attention` | 1024 | 0.054 ms | 28.170 ms | **525.5x** | 6.63e-07 | 9.63 MB | **PASS (0)** |
 | `liquid_attention` | 2048 | 0.105 ms | 56.164 ms | **535.6x** | 6.80e-07 | 11.13 MB | **PASS (0)** |
 | `liquid_attention` | 4096 | 0.224 ms | 113.016 ms | **505.4x** | 7.15e-07 | 14.13 MB | **PASS (0)** |
