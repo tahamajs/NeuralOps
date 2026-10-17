@@ -37,7 +37,7 @@ def _jit_guard(fn):
 
 
 @_jit_guard
-def _fused_cross_entropy_fwd_kernel(
+def _fused_cross_entropy_online_fwd_kernel(
     logits_ptr,
     targets_ptr,
     loss_ptr,
@@ -45,7 +45,7 @@ def _fused_cross_entropy_fwd_kernel(
     stride_logits_col,
     stride_targets,
     V: tl.constexpr,
-    BLOCK_SIZE: tl.constexpr,
+    BLOCK_V: tl.constexpr,
     IGNORE_INDEX: tl.constexpr,
 ):
     row_idx = tl.program_id(0)
@@ -55,34 +55,30 @@ def _fused_cross_entropy_fwd_kernel(
         tl.store(loss_ptr + row_idx, 0.0)
         return
 
-    col_offsets = tl.arange(0, BLOCK_SIZE)
-    mask = col_offsets < V
+    # Single-pass online softmax across arbitrary vocabulary length V
+    m = -float("inf")
+    d = 0.0
+    for v_start in range(0, V, BLOCK_V):
+        col_offsets = v_start + tl.arange(0, BLOCK_V)
+        mask = col_offsets < V
+        logits_chunk = tl.load(
+            logits_ptr + row_idx * stride_logits_row + col_offsets * stride_logits_col,
+            mask=mask,
+            other=-float("inf"),
+        )
+        chunk_max = tl.max(logits_chunk, axis=0)
+        new_m = tl.maximum(m, chunk_max)
+        d = d * tl.exp(m - new_m) + tl.sum(tl.exp(logits_chunk - new_m), axis=0)
+        m = new_m
 
-    logits_row = tl.load(
-        logits_ptr + row_idx * stride_logits_row + col_offsets * stride_logits_col,
-        mask=mask,
-        other=-float("inf"),
-    )
-
-    # Online softmax max
-    m = tl.max(logits_row, axis=0)
-    # Exponentiate shifted logits
-    exp_logits = tl.exp(logits_row - m)
-    # Sum exp
-    sum_exp = tl.sum(exp_logits, axis=0)
-    # Logsumexp
-    log_sum_exp = m + tl.log(sum_exp)
-
-    # Target logit
-    target_logit = tl.load(
-        logits_ptr + row_idx * stride_logits_row + target_idx * stride_logits_col
-    )
+    log_sum_exp = m + tl.log(d)
+    target_logit = tl.load(logits_ptr + row_idx * stride_logits_row + target_idx * stride_logits_col)
     loss = log_sum_exp - target_logit
     tl.store(loss_ptr + row_idx, loss)
 
 
 @_jit_guard
-def _fused_cross_entropy_bwd_kernel(
+def _fused_cross_entropy_online_bwd_kernel(
     logits_ptr,
     targets_ptr,
     grad_loss_ptr,
@@ -93,47 +89,58 @@ def _fused_cross_entropy_bwd_kernel(
     stride_gl_row,
     stride_gl_col,
     V: tl.constexpr,
-    BLOCK_SIZE: tl.constexpr,
+    BLOCK_V: tl.constexpr,
     IGNORE_INDEX: tl.constexpr,
 ):
     row_idx = tl.program_id(0)
     target_idx = tl.load(targets_ptr + row_idx * stride_targets)
     g_loss = tl.load(grad_loss_ptr + row_idx)
 
-    col_offsets = tl.arange(0, BLOCK_SIZE)
-    mask = col_offsets < V
-
     if target_idx == IGNORE_INDEX:
-        tl.store(
-            grad_logits_ptr + row_idx * stride_gl_row + col_offsets * stride_gl_col,
-            0.0,
-            mask=mask,
-        )
+        for v_start in range(0, V, BLOCK_V):
+            col_offsets = v_start + tl.arange(0, BLOCK_V)
+            mask = col_offsets < V
+            tl.store(
+                grad_logits_ptr + row_idx * stride_gl_row + col_offsets * stride_gl_col,
+                0.0,
+                mask=mask,
+            )
         return
 
-    logits_row = tl.load(
-        logits_ptr + row_idx * stride_logits_row + col_offsets * stride_logits_col,
-        mask=mask,
-        other=-float("inf"),
-    )
+    # Pass 1: compute log_sum_exp with online softmax
+    m = -float("inf")
+    d = 0.0
+    for v_start in range(0, V, BLOCK_V):
+        col_offsets = v_start + tl.arange(0, BLOCK_V)
+        mask = col_offsets < V
+        logits_chunk = tl.load(
+            logits_ptr + row_idx * stride_logits_row + col_offsets * stride_logits_col,
+            mask=mask,
+            other=-float("inf"),
+        )
+        chunk_max = tl.max(logits_chunk, axis=0)
+        new_m = tl.maximum(m, chunk_max)
+        d = d * tl.exp(m - new_m) + tl.sum(tl.exp(logits_chunk - new_m), axis=0)
+        m = new_m
 
-    m = tl.max(logits_row, axis=0)
-    exp_logits = tl.exp(logits_row - m)
-    sum_exp = tl.sum(exp_logits, axis=0)
-
-    # Softmax probabilities
-    probs = exp_logits / sum_exp
-
-    # Gradient: (probs - indicator) * grad_loss
-    is_target = col_offsets == target_idx
-    target_val = tl.where(is_target, 1.0, 0.0)
-    d_logits = (probs - target_val) * g_loss
-
-    tl.store(
-        grad_logits_ptr + row_idx * stride_gl_row + col_offsets * stride_gl_col,
-        d_logits,
-        mask=mask,
-    )
+    # Pass 2: compute softmax probabilities and analytical gradient: (probs - indicator) * g_loss
+    for v_start in range(0, V, BLOCK_V):
+        col_offsets = v_start + tl.arange(0, BLOCK_V)
+        mask = col_offsets < V
+        logits_chunk = tl.load(
+            logits_ptr + row_idx * stride_logits_row + col_offsets * stride_logits_col,
+            mask=mask,
+            other=-float("inf"),
+        )
+        probs_chunk = tl.exp(logits_chunk - m) / d
+        is_target = col_offsets == target_idx
+        target_val = tl.where(is_target, 1.0, 0.0)
+        d_logits_chunk = (probs_chunk - target_val) * g_loss
+        tl.store(
+            grad_logits_ptr + row_idx * stride_gl_row + col_offsets * stride_gl_col,
+            d_logits_chunk,
+            mask=mask,
+        )
 
 
 class _FusedCrossEntropyFunction(torch.autograd.Function):
@@ -147,10 +154,10 @@ class _FusedCrossEntropyFunction(torch.autograd.Function):
         targets_flat = targets.reshape(-1).contiguous()
         N_tokens, V = logits_flat.shape
 
-        if TRITON_AVAILABLE and logits.is_cuda and V <= 4096:
+        if TRITON_AVAILABLE and logits.is_cuda:
             loss_per_token = torch.empty((N_tokens,), device=logits.device, dtype=torch.float32)
-            BLOCK_SIZE = min(4096, triton.next_power_of_2(V))
-            _fused_cross_entropy_fwd_kernel[(N_tokens,)](
+            BLOCK_V = min(4096, triton.next_power_of_2(min(V, 4096)))
+            _fused_cross_entropy_online_fwd_kernel[(N_tokens,)](
                 logits_flat,
                 targets_flat,
                 loss_per_token,
@@ -158,8 +165,9 @@ class _FusedCrossEntropyFunction(torch.autograd.Function):
                 logits_flat.stride(1),
                 targets_flat.stride(0),
                 V=V,
-                BLOCK_SIZE=BLOCK_SIZE,
+                BLOCK_V=BLOCK_V,
                 IGNORE_INDEX=ignore_index,
+                num_warps=8 if BLOCK_V >= 2048 else 4,
             )
         else:
             loss_per_token = F.cross_entropy(
@@ -196,9 +204,9 @@ class _FusedCrossEntropyFunction(torch.autograd.Function):
             grad_per_token = grad_output.reshape(-1)
 
         grad_logits = torch.empty_like(logits_flat)
-        if TRITON_AVAILABLE and logits_flat.is_cuda and V <= 4096:
-            BLOCK_SIZE = min(4096, triton.next_power_of_2(V))
-            _fused_cross_entropy_bwd_kernel[(N_tokens,)](
+        if TRITON_AVAILABLE and logits_flat.is_cuda:
+            BLOCK_V = min(4096, triton.next_power_of_2(min(V, 4096)))
+            _fused_cross_entropy_online_bwd_kernel[(N_tokens,)](
                 logits_flat,
                 targets_flat,
                 grad_per_token.contiguous(),
@@ -209,8 +217,9 @@ class _FusedCrossEntropyFunction(torch.autograd.Function):
                 grad_logits.stride(0),
                 grad_logits.stride(1),
                 V=V,
-                BLOCK_SIZE=BLOCK_SIZE,
+                BLOCK_V=BLOCK_V,
                 IGNORE_INDEX=ignore_index,
+                num_warps=8 if BLOCK_V >= 2048 else 4,
             )
         else:
             probs = F.softmax(logits_flat, dim=-1)
