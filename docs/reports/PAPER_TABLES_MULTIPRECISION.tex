@@ -1,0 +1,43 @@
+% Auto-generated Multi-Precision Cross-Validation & Regression Audit
+% Target: NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9 Ada Lovelace)
+\begin{table*}[t]
+\centering
+\small
+\caption{Multi-Precision Numerical Cross-Validation and Throughput Comparison across Flagship NeuralOps Kernels. Evaluated on NVIDIA RTX 4070 Laptop GPU (Ada Lovelace, SM 8.9). Relative error is Frobenius norm relative to FP32 baseline.}
+\label{tab:multiprecision_crossval}
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Kernel} & \textbf{Precision} & \textbf{Latency (ms)} & \textbf{Throughput (TFLOPS)} & \textbf{Rel. Error ($\|\Delta\|_F/\|Y\|_F$)} & \textbf{Zero-NaN/Inf} \\
+\midrule
+\textbf{gla\_scan} & FP32 & 0.593 & 0.45 & Baseline ($0.0$) & \checkmark \\
+ & FP16 & 0.535 & 0.50 & 4.18e-04 & \checkmark \\
+ & BF16 & 0.633 & 0.42 & 3.32e-03 & \checkmark \\
+ & FP8\_E4M3 & 0.597 & 0.45 & 4.59e-02 & \checkmark \\
+ & FP8\_E5M2 & 0.646 & 0.42 & 9.05e-02 & \checkmark \\
+\midrule
+\textbf{differential\_attention} & FP32 & 0.259 & 8.31 & Baseline ($0.0$) & \checkmark \\
+ & FP16 & 0.135 & 15.94 & 1.59e-03 & \checkmark \\
+ & BF16 & 0.210 & 10.22 & 6.89e-03 & \checkmark \\
+ & FP8\_E4M3 & 0.365 & 5.88 & 2.68e-02 & \checkmark \\
+ & FP8\_E5M2 & 0.315 & 6.81 & 5.30e-02 & \checkmark \\
+\midrule
+\textbf{sparse\_attention} & FP32 & 0.152 & 0.44 & Baseline ($0.0$) & \checkmark \\
+ & FP16 & 0.232 & 0.29 & 2.94e-04 & \checkmark \\
+ & BF16 & 0.219 & 0.31 & 2.35e-03 & \checkmark \\
+ & FP8\_E4M3 & 0.109 & 0.61 & 2.65e-02 & \checkmark \\
+ & FP8\_E5M2 & 0.196 & 0.34 & 5.26e-02 & \checkmark \\
+\midrule
+\textbf{rotational\_svd} & FP32 & 0.104 & 0.24 & Baseline ($0.0$) & \checkmark \\
+ & FP16 & 0.071 & 0.35 & 4.62e-04 & \checkmark \\
+ & BF16 & 0.065 & 0.38 & 3.77e-03 & \checkmark \\
+ & FP8\_E4M3 & 0.048 & 0.52 & 4.64e-02 & \checkmark \\
+ & FP8\_E5M2 & 0.060 & 0.42 & 9.15e-02 & \checkmark \\
+\midrule
+\textbf{fp8\_gemm} & FP32 & 0.074 & 3.65 & Baseline ($0.0$) & \checkmark \\
+ & FP16 & 0.037 & 7.16 & 3.60e-04 & \checkmark \\
+ & BF16 & 0.012 & 21.83 & 2.88e-03 & \checkmark \\
+ & FP8\_E4M3 & 0.052 & 5.13 & 5.92e-02 & \checkmark \\
+ & FP8\_E5M2 & 0.051 & 5.30 & 5.92e-02 & \checkmark \\
+\bottomrule
+\end{tabular}
+\end{table*}

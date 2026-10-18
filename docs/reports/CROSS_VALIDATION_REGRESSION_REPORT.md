@@ -415,6 +415,51 @@ The full serialized execution matrix and per-module breakdown across all 3 seeds
 
 ---
 
+## 8.6 Multi-Precision Flagship Kernel Cross-Validation & Throughput Audit
+
+To establish theoretical and empirical numerical precision boundaries for publication, cross-validation was conducted across 5 flagship kernels under 5 precision modes: **FP32**, **FP16**, **BF16**, **FP8 (E4M3)**, and **FP8 (E5M2)** on the NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9 Ada Lovelace).
+
+### 8.6.1 Methodology & Metrics
+- **Frobenius Relative Error**: $\frac{\|Y_{\text{prec}} - Y_{\text{FP32}}\|_F}{\|Y_{\text{FP32}}\|_F}$ evaluating cumulative quantization error relative to FP32 reference execution.
+- **Hardware Throughput**: Effective compute throughput in TFLOPS computed via exact algorithmic FLOPs over measured wall-clock kernel latency.
+- **Numerical Health**: Verification of strict non-existence of NaNs and Infs (`Zero-NaN/Inf == True`).
+
+### 8.6.2 Benchmark Results Summary
+
+| Kernel | Precision | Latency (ms) | Throughput (TFLOPS) | Frobenius Rel. Error | Zero-NaN/Inf Status |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| **gla_scan** | FP32 | 0.593 | 0.45 | Baseline ($0.0$) | Pass (Zero NaNs/Infs) |
+| | FP16 | 0.535 | 0.50 | $4.18 \times 10^{-4}$ | Pass (Zero NaNs/Infs) |
+| | BF16 | 0.633 | 0.42 | $3.32 \times 10^{-3}$ | Pass (Zero NaNs/Infs) |
+| | FP8 (E4M3) | 0.597 | 0.45 | $4.59 \times 10^{-2}$ | Pass (Zero NaNs/Infs) |
+| | FP8 (E5M2) | 0.646 | 0.42 | $9.05 \times 10^{-2}$ | Pass (Zero NaNs/Infs) |
+| **differential_attention** | FP32 | 0.259 | 8.31 | Baseline ($0.0$) | Pass (Zero NaNs/Infs) |
+| | FP16 | 0.135 | 15.94 | $1.59 \times 10^{-3}$ | Pass (Zero NaNs/Infs) |
+| | BF16 | 0.210 | 10.22 | $6.89 \times 10^{-3}$ | Pass (Zero NaNs/Infs) |
+| | FP8 (E4M3) | 0.365 | 5.88 | $2.68 \times 10^{-2}$ | Pass (Zero NaNs/Infs) |
+| | FP8 (E5M2) | 0.315 | 6.81 | $5.30 \times 10^{-2}$ | Pass (Zero NaNs/Infs) |
+| **sparse_attention** | FP32 | 0.152 | 0.44 | Baseline ($0.0$) | Pass (Zero NaNs/Infs) |
+| | FP16 | 0.232 | 0.29 | $2.94 \times 10^{-4}$ | Pass (Zero NaNs/Infs) |
+| | BF16 | 0.219 | 0.31 | $2.35 \times 10^{-3}$ | Pass (Zero NaNs/Infs) |
+| | FP8 (E4M3) | 0.109 | 0.61 | $2.65 \times 10^{-2}$ | Pass (Zero NaNs/Infs) |
+| | FP8 (E5M2) | 0.196 | 0.34 | $5.26 \times 10^{-2}$ | Pass (Zero NaNs/Infs) |
+| **rotational_svd** | FP32 | 0.104 | 0.24 | Baseline ($0.0$) | Pass (Zero NaNs/Infs) |
+| | FP16 | 0.071 | 0.35 | $4.62 \times 10^{-4}$ | Pass (Zero NaNs/Infs) |
+| | BF16 | 0.065 | 0.38 | $3.77 \times 10^{-3}$ | Pass (Zero NaNs/Infs) |
+| | FP8 (E4M3) | 0.048 | 0.52 | $4.64 \times 10^{-2}$ | Pass (Zero NaNs/Infs) |
+| | FP8 (E5M2) | 0.060 | 0.42 | $9.15 \times 10^{-2}$ | Pass (Zero NaNs/Infs) |
+| **fp8_gemm** | FP32 | 0.074 | 3.65 | Baseline ($0.0$) | Pass (Zero NaNs/Infs) |
+| | FP16 | 0.037 | 7.16 | $3.60 \times 10^{-4}$ | Pass (Zero NaNs/Infs) |
+| | BF16 | 0.012 | 21.83 | $2.88 \times 10^{-3}$ | Pass (Zero NaNs/Infs) |
+| | FP8 (E4M3) | 0.052 | 5.13 | $5.92 \times 10^{-2}$ | Pass (Zero NaNs/Infs) |
+| | FP8 (E5M2) | 0.051 | 5.30 | $5.92 \times 10^{-2}$ | Pass (Zero NaNs/Infs) |
+
+Full raw data and publication artifacts exported to:
+- `docs/benchmarks/paper_benchmarks_multiprecision_crossval.csv`
+- `docs/reports/PAPER_TABLES_MULTIPRECISION.tex`
+
+---
+
 ## 9. Worktree Synchronization & Repository Integrity
 
 - **Primary Working Directory**: `/mnt/d/SVD_linear_Attention`
