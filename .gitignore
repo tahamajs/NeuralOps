@@ -252,4 +252,6 @@ logs/
 audit/
 scratch/
 grading.log
+neuralops/data/
+*.arrow
 
