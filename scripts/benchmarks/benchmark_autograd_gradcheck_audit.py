@@ -71,8 +71,8 @@ def test_attention_gradcheck(attn_name, stream=None):
     if cls is None:
         return {"status": "not_found", "module": attn_name}
 
-    B, L, D, H = 1, 8, 32, 2
-    ctx = torch.cuda.stream(stream) if stream else torch.no_grad()
+    B, L = 2, 8
+    D, H = (64, 4) if attn_name in ("gla_attention", "decay_linear_attention") else (32, 4)
 
     result = {
         "module": attn_name,
@@ -92,9 +92,9 @@ def test_attention_gradcheck(attn_name, stream=None):
                     mod = cls(D).to(device=DEVICE, dtype=torch.float64)
 
             mod.eval()
-            # Disable non-differentiable / stochastic elements
-            if hasattr(mod, "dropout"):
-                mod.dropout.p = 0.0
+            for m in mod.modules():
+                if isinstance(m, nn.Dropout):
+                    m.p = 0.0
 
             x = torch.randn(B, L, D, device=DEVICE, dtype=torch.float64, requires_grad=True)
 

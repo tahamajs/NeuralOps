@@ -1,13 +1,13 @@
 {
   "metadata": {
     "title": "NeuralOps Analytical vs Numerical Finite Difference Gradcheck Audit",
-    "timestamp": "2026-10-17 21:59:20 UTC",
+    "timestamp": "2026-10-18 10:25:40 UTC",
     "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
     "pytorch_version": "2.11.0+cu128",
     "cuda_version": "12.8",
     "total_modules_audited": 40,
-    "total_passed": 38,
-    "pass_rate_pct": 95.0,
+    "total_passed": 40,
+    "pass_rate_pct": 100.0,
     "precision": "torch.float64",
     "finite_difference_eps": 1e-05,
     "atol": 0.001,
@@ -20,7 +20,7 @@
       "precision": "float64",
       "status": "PASSED",
       "gradcheck_passed": true,
-      "elapsed_ms": 164.22,
+      "elapsed_ms": 248.77,
       "jacobian_error_norm": 0.0
     },
     {
@@ -29,16 +29,17 @@
       "precision": "float64",
       "status": "PASSED",
       "gradcheck_passed": true,
-      "elapsed_ms": 88.61,
+      "elapsed_ms": 175.6,
       "jacobian_error_norm": 0.0
     },
     {
       "module": "gla_attention",
       "type": "attention",
       "precision": "float64",
-      "status": "FAILED",
-      "gradcheck_passed": false,
-      "error": "Jacobian mismatch for output 0 with respect to input 0,\nnumerical:-5.819558556010381\nanalytical:-0.03872709806443925\n\nTh"
+      "status": "PASSED",
+      "gradcheck_passed": true,
+      "elapsed_ms": 626.36,
+      "jacobian_error_norm": 0.0
     },
     {
       "module": "gated_delta_net",
@@ -46,7 +47,7 @@
       "precision": "float64",
       "status": "PASSED",
       "gradcheck_passed": true,
-      "elapsed_ms": 170.79,
+      "elapsed_ms": 321.53,
       "jacobian_error_norm": 0.0
     },
     {
@@ -55,7 +56,7 @@
       "precision": "float64",
       "status": "PASSED",
       "gradcheck_passed": true,
-      "elapsed_ms": 5.01,
+      "elapsed_ms": 12.96,
       "jacobian_error_norm": 0.0
     },
     {
@@ -64,7 +65,7 @@
       "precision": "float64",
       "status": "PASSED",
       "gradcheck_passed": true,
-      "elapsed_ms": 24.18,
+      "elapsed_ms": 91.78,
       "jacobian_error_norm": 0.0
     },
     {
@@ -73,7 +74,7 @@
       "precision": "float64",
       "status": "PASSED",
       "gradcheck_passed": true,
-      "elapsed_ms": 9.24,
+      "elapsed_ms": 17.64,
       "jacobian_error_norm": 0.0
     },
     {
@@ -82,7 +83,7 @@
       "precision": "float64",
       "status": "PASSED",
       "gradcheck_passed": true,
-      "elapsed_ms": 33.23,
+      "elapsed_ms": 82.31,
       "jacobian_error_norm": 0.0
     },
     {
@@ -91,7 +92,7 @@
       "precision": "float64",
       "status": "PASSED",
       "gradcheck_passed": true,
-      "elapsed_ms": 7.07,
+      "elapsed_ms": 19.21,
       "jacobian_error_norm": 0.0
     },
     {
@@ -100,7 +101,7 @@
       "precision": "float64",
       "status": "PASSED",
       "gradcheck_passed": true,
-      "elapsed_ms": 6.13,
+      "elapsed_ms": 16.37,
       "jacobian_error_norm": 0.0
     },
     {
@@ -109,7 +110,7 @@
       "precision": "float64",
       "status": "PASSED",
       "gradcheck_passed": true,
-      "elapsed_ms": 3.72,
+      "elapsed_ms": 18.89,
       "jacobian_error_norm": 0.0
     },
     {
@@ -118,7 +119,7 @@
       "precision": "float64",
       "status": "PASSED",
       "gradcheck_passed": true,
-      "elapsed_ms": 3.85,
+      "elapsed_ms": 19.41,
       "jacobian_error_norm": 0.0
     },
     {
@@ -127,7 +128,7 @@
       "precision": "float64",
       "status": "PASSED",
       "gradcheck_passed": true,
-      "elapsed_ms": 45.55,
+      "elapsed_ms": 99.41,
       "jacobian_error_norm": 0.0
     },
     {
@@ -136,16 +137,17 @@
       "precision": "float64",
       "status": "PASSED",
       "gradcheck_passed": true,
-      "elapsed_ms": 5.21,
+      "elapsed_ms": 11.23,
       "jacobian_error_norm": 0.0
     },
     {
       "module": "spectraformer_attention",
       "type": "attention",
       "precision": "float64",
-      "status": "FAILED",
-      "gradcheck_passed": false,
-      "error": "Jacobian mismatch for output 0 with respect to input 0,\nnumerical:1.1678047721078388\nanalytical:0.15189295362614202\n\nThe"
+      "status": "PASSED",
+      "gradcheck_passed": true,
+      "elapsed_ms": 24.27,
+      "jacobian_error_norm": 0.0
     },
     {
       "module": "hgrn2_gated_deltanet",
@@ -153,7 +155,7 @@
       "precision": "float64",
       "status": "PASSED",
       "gradcheck_passed": true,
-      "elapsed_ms": 212.27,
+      "elapsed_ms": 446.28,
       "jacobian_error_norm": 0.0
     },
     {
@@ -162,7 +164,7 @@
       "precision": "float64",
       "status": "PASSED",
       "gradcheck_passed": true,
-      "elapsed_ms": 15.34,
+      "elapsed_ms": 32.9,
       "jacobian_error_norm": 0.0
     },
     {
@@ -171,7 +173,7 @@
       "precision": "float64",
       "status": "PASSED",
       "gradcheck_passed": true,
-      "elapsed_ms": 4.56,
+      "elapsed_ms": 9.16,
       "jacobian_error_norm": 0.0
     },
     {
@@ -180,7 +182,7 @@
       "precision": "float64",
       "status": "PASSED",
       "gradcheck_passed": true,
-      "elapsed_ms": 5.35,
+      "elapsed_ms": 20.25,
       "jacobian_error_norm": 0.0
     },
     {
@@ -189,7 +191,7 @@
       "precision": "float64",
       "status": "PASSED",
       "gradcheck_passed": true,
-      "elapsed_ms": 9.8,
+      "elapsed_ms": 35.1,
       "jacobian_error_norm": 0.0
     },
     {
@@ -198,7 +200,7 @@
       "precision": "float64",
       "status": "PASSED",
       "gradcheck_passed": true,
-      "elapsed_ms": 6.84,
+      "elapsed_ms": 15.29,
       "jacobian_error_norm": 0.0
     },
     {
@@ -207,7 +209,7 @@
       "precision": "float64",
       "status": "PASSED",
       "gradcheck_passed": true,
-      "elapsed_ms": 12.09,
+      "elapsed_ms": 26.22,
       "jacobian_error_norm": 0.0
     },
     {
@@ -216,7 +218,7 @@
       "precision": "float64",
       "status": "PASSED",
       "gradcheck_passed": true,
-      "elapsed_ms": 5.36,
+      "elapsed_ms": 10.77,
       "jacobian_error_norm": 0.0
     },
     {
@@ -225,7 +227,7 @@
       "precision": "float64",
       "status": "PASSED",
       "gradcheck_passed": true,
-      "elapsed_ms": 14.2,
+      "elapsed_ms": 23.24,
       "jacobian_error_norm": 0.0
     },
     {
@@ -234,7 +236,7 @@
       "precision": "float64",
       "status": "PASSED",
       "gradcheck_passed": true,
-      "elapsed_ms": 54.36,
+      "elapsed_ms": 87.41,
       "jacobian_error_norm": 0.0
     },
     {
@@ -243,7 +245,7 @@
       "precision": "float64",
       "status": "PASSED",
       "gradcheck_passed": true,
-      "elapsed_ms": 1.75
+      "elapsed_ms": 3.65
     },
     {
       "module": "aa_svd_compressor",
@@ -251,7 +253,7 @@
       "precision": "float64",
       "status": "PASSED",
       "gradcheck_passed": true,
-      "elapsed_ms": 1.05
+      "elapsed_ms": 3.25
     },
     {
       "module": "adasvd_compressor",
@@ -259,7 +261,7 @@
       "precision": "float64",
       "status": "PASSED",
       "gradcheck_passed": true,
-      "elapsed_ms": 1.0
+      "elapsed_ms": 3.21
     },
     {
       "module": "residual_svd_compressor",
@@ -267,7 +269,7 @@
       "precision": "float64",
       "status": "PASSED",
       "gradcheck_passed": true,
-      "elapsed_ms": 1.01
+      "elapsed_ms": 3.16
     },
     {
       "module": "rpca_compressor",
@@ -275,7 +277,7 @@
       "precision": "float64",
       "status": "PASSED",
       "gradcheck_passed": true,
-      "elapsed_ms": 0.97
+      "elapsed_ms": 3.15
     },
     {
       "module": "frandi_compressor",
@@ -283,7 +285,7 @@
       "precision": "float64",
       "status": "PASSED",
       "gradcheck_passed": true,
-      "elapsed_ms": 1.17
+      "elapsed_ms": 3.06
     },
     {
       "module": "sdrm_compressor",
@@ -291,7 +293,7 @@
       "precision": "float64",
       "status": "PASSED",
       "gradcheck_passed": true,
-      "elapsed_ms": 0.92
+      "elapsed_ms": 2.9
     },
     {
       "module": "cr_compressor",
@@ -299,7 +301,7 @@
       "precision": "float64",
       "status": "PASSED",
       "gradcheck_passed": true,
-      "elapsed_ms": 1.35
+      "elapsed_ms": 3.61
     },
     {
       "module": "cur_compressor",
@@ -307,7 +309,7 @@
       "precision": "float64",
       "status": "PASSED",
       "gradcheck_passed": true,
-      "elapsed_ms": 1.39
+      "elapsed_ms": 3.74
     },
     {
       "module": "grecodec_compressor",
@@ -315,7 +317,7 @@
       "precision": "float64",
       "status": "PASSED",
       "gradcheck_passed": true,
-      "elapsed_ms": 0.94
+      "elapsed_ms": 3.01
     },
     {
       "module": "a3_compressor",
@@ -323,7 +325,7 @@
       "precision": "float64",
       "status": "PASSED",
       "gradcheck_passed": true,
-      "elapsed_ms": 1.02
+      "elapsed_ms": 3.11
     },
     {
       "module": "slim_compressor",
@@ -331,7 +333,7 @@
       "precision": "float64",
       "status": "PASSED",
       "gradcheck_passed": true,
-      "elapsed_ms": 0.95
+      "elapsed_ms": 3.05
     },
     {
       "module": "svd_llm_compressor",
@@ -339,7 +341,7 @@
       "precision": "float64",
       "status": "PASSED",
       "gradcheck_passed": true,
-      "elapsed_ms": 1.87
+      "elapsed_ms": 2.79
     },
     {
       "module": "kronecker_compressor",
@@ -347,7 +349,7 @@
       "precision": "float64",
       "status": "PASSED",
       "gradcheck_passed": true,
-      "elapsed_ms": 1.21
+      "elapsed_ms": 2.48
     },
     {
       "module": "tt_compressor",
@@ -355,7 +357,7 @@
       "precision": "float64",
       "status": "PASSED",
       "gradcheck_passed": true,
-      "elapsed_ms": 1.54
+      "elapsed_ms": 2.75
     }
   ]
 }
