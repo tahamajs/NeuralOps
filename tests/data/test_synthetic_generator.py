@@ -1,6 +1,7 @@
 """Tests for neuralops.data.synthetic_generator module."""
 
 import pytest
+pytest.importorskip("neuralops.data.synthetic_generator")
 import torch
 from collections import Counter
 

@@ -3,6 +3,7 @@
 import json
 import pandas as pd
 import pytest
+pytest.importorskip("neuralops.data.multi_choice")
 import torch
 from unittest.mock import MagicMock
 

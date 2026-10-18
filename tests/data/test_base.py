@@ -1,6 +1,7 @@
 """Tests for neuralops.data.base module."""
 
 import pytest
+pytest.importorskip("neuralops.data.base")
 import torch
 from unittest.mock import MagicMock
 from torch.utils.data import DataLoader, Dataset
