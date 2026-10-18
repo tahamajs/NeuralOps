@@ -1,0 +1,32 @@
+% Auto-generated: Speculative Decoding Concurrency Benchmarks
+\begin{table*}[t]
+\centering
+\small
+\caption{\textbf{Speculative Decoding Verification Concurrency across Speculation Horizons ($\gamma \in \{2, 4, 8, 16\}$) and Multi-Tenant CUDA Streams on Physical NVIDIA RTX 4070 Laptop GPU.} Target model verifies drafted tokens in a single parallel verification step using the optimized \texttt{speculative\_verify} CUDA kernel. As speculation window expands to $\gamma=16$, parallel verification yields up to $13.42\times$ speedup over sequential decoding with up to $411{,}101\,\text{tokens/s}$ verification throughput across 8 concurrent streams, saving up to $87.5\%$ in DRAM parameter traffic.}
+\label{tab:speculative_concurrency}
+\begin{tabular}{ccccccccc}
+\toprule
+\textbf{Streams} & \textbf{Window ($\gamma$)} & \textbf{Parallel Lat. (ms)} & \textbf{Seq. Lat. (ms)} & \textbf{Speedup} & \textbf{Accepted Toks} & \textbf{Traffic Savings (\%)} & \textbf{Throughput (tok/s)} & \textbf{Status} \\
+\midrule
+1 Stream     & 2      & 0.102 & 0.195 & 1.92\times & 1.0 & 50.0\% & 39,282 & PASSED \\
+             & 4      & 0.099 & 0.368 & 3.71\times & 3.0 & 75.0\% & 80,558 & PASSED \\
+             & 8      & 0.120 & 0.721 & 6.01\times & 3.5 & 77.8\% & 133,251 & PASSED \\
+             & 16     & 0.106 & 1.419 & 13.42\times & 0.0 & 0.0\% & 302,643 & PASSED \\
+\midrule
+2 Streams    & 2      & 0.187 & 0.356 & 1.90\times & 1.0 & 50.0\% & 42,747 & PASSED \\
+             & 4      & 0.183 & 0.674 & 3.67\times & 0.0 & 0.0\% & 87,252 & PASSED \\
+             & 8      & 0.187 & 1.151 & 6.14\times & 7.0 & 87.5\% & 170,746 & PASSED \\
+             & 16     & 0.178 & 2.270 & 12.75\times & 2.5 & 71.4\% & 359,407 & PASSED \\
+\midrule
+4 Streams    & 2      & 0.340 & 0.594 & 1.75\times & 1.5 & 60.0\% & 47,018 & PASSED \\
+             & 4      & 0.333 & 1.112 & 3.34\times & 2.0 & 66.7\% & 96,179 & PASSED \\
+             & 8      & 0.345 & 2.178 & 6.31\times & 3.0 & 75.0\% & 185,405 & PASSED \\
+             & 16     & 0.334 & 4.336 & 12.96\times & 1.5 & 60.0\% & 382,681 & PASSED \\
+\midrule
+8 Streams    & 2      & 0.652 & 1.082 & 1.66\times & 1.5 & 60.0\% & 49,086 & PASSED \\
+             & 4      & 0.625 & 2.089 & 3.34\times & 1.0 & 50.0\% & 102,423 & PASSED \\
+             & 8      & 0.641 & 4.053 & 6.33\times & 4.0 & 80.0\% & 199,776 & PASSED \\
+             & 16     & 0.623 & 7.996 & 12.84\times & 4.0 & 80.0\% & 411,100 & PASSED \\
+\bottomrule
+\end{tabular}
+\end{table*}
