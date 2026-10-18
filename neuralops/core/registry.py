@@ -164,7 +164,7 @@ class Registry:
 
     def register(
         self,
-        key: str | None = None,
+        key: str | None | Callable = None,
         supports_causal: bool | None = None,
         supports_bidirectional: bool | None = None,
         supports_cross_attention: bool | None = None,
@@ -178,7 +178,47 @@ class Registry:
         Usage:
             @ATTENTION_REGISTRY.register("griffin", supports_causal=True, supports_bidirectional=False)
             class GriffinAttention(BaseAttention): ...
+
+            @ATTENTION_REGISTRY.register
+            class GriffinAttention(BaseAttention): ...
         """
+        if callable(key) and not isinstance(key, str):
+            obj = key
+            final_key = getattr(obj, "__name__", str(obj))
+            k = final_key.lower()
+            if is_alias:
+                self._aliases[k] = obj
+            else:
+                self._dict[k] = obj
+            caps = {
+                "supports_causal": getattr(
+                    obj,
+                    "supports_causal",
+                    True if supports_causal is None else supports_causal,
+                ),
+                "supports_bidirectional": getattr(
+                    obj,
+                    "supports_bidirectional",
+                    True if supports_bidirectional is None else supports_bidirectional,
+                ),
+                "supports_cross_attention": getattr(
+                    obj,
+                    "supports_cross_attention",
+                    (True if supports_cross_attention is None else supports_cross_attention),
+                ),
+                "supports_gqa": getattr(
+                    obj, "supports_gqa", False if supports_gqa is None else supports_gqa
+                ),
+            }
+            if self.name == "compressors":
+                caps["hardware_accelerated"] = getattr(
+                    obj,
+                    "hardware_accelerated",
+                    extra_metadata.get("hardware_accelerated", True),
+                )
+            caps.update(extra_metadata)
+            self._metadata[k] = caps
+            return obj
 
         def decorator(obj: Callable) -> Callable:
             """Inner registration decorator wrapping target callable.
@@ -515,6 +555,80 @@ ATTENTION_REGISTRY = Registry("attentions")  # attention modules (Nexus, LEKA, .
 COMPRESSOR_REGISTRY = Registry("compressors")  # compression strategies (SVD, TT, ...)
 METHOD_REGISTRY = Registry("methods")  # training methods (LoRA, R-Drop, ...)
 AUX_REGISTRY = Registry("auxiliary")  # auxiliary modules (RoPE, SSM, token pruning, ...)
+
+
+def register_attention(
+    key: str | None | Callable = None,
+    supports_causal: bool | None = None,
+    supports_bidirectional: bool | None = None,
+    supports_cross_attention: bool | None = None,
+    supports_gqa: bool | None = None,
+    is_alias: bool = False,
+    **extra_metadata: Any,
+) -> Callable:
+    """Decorator or helper to register attention mechanism with capability metadata."""
+    if callable(key) and not isinstance(key, str):
+        target = key
+        return ATTENTION_REGISTRY.register(
+            supports_causal=supports_causal,
+            supports_bidirectional=supports_bidirectional,
+            supports_cross_attention=supports_cross_attention,
+            supports_gqa=supports_gqa,
+            is_alias=is_alias,
+            **extra_metadata,
+        )(target)
+    return ATTENTION_REGISTRY.register(
+        key=key,
+        supports_causal=supports_causal,
+        supports_bidirectional=supports_bidirectional,
+        supports_cross_attention=supports_cross_attention,
+        supports_gqa=supports_gqa,
+        is_alias=is_alias,
+        **extra_metadata,
+    )
+
+
+def register_compressor(
+    key: str | None | Callable = None,
+    is_alias: bool = False,
+    hardware_accelerated: bool = True,
+    **extra_metadata: Any,
+) -> Callable:
+    """Decorator or helper to register compression strategy with capability metadata."""
+    if callable(key) and not isinstance(key, str):
+        target = key
+        return COMPRESSOR_REGISTRY.register(
+            is_alias=is_alias,
+            hardware_accelerated=hardware_accelerated,
+            **extra_metadata,
+        )(target)
+    return COMPRESSOR_REGISTRY.register(
+        key=key,
+        is_alias=is_alias,
+        hardware_accelerated=hardware_accelerated,
+        **extra_metadata,
+    )
+
+
+def list_attention_mechanisms() -> list[str]:
+    """Returns canonical list of all registered attention mechanisms."""
+    return ATTENTION_REGISTRY.keys()
+
+
+def list_attentions() -> list[str]:
+    """Returns canonical list of all registered attention mechanisms."""
+    return ATTENTION_REGISTRY.keys()
+
+
+def list_compressors() -> list[str]:
+    """Returns canonical list of all registered compressor names."""
+    return COMPRESSOR_REGISTRY.keys()
+
+
+# Dynamically attach list_attention_mechanisms to neuralops top-level package if loaded
+import sys as _sys
+if "neuralops" in _sys.modules:
+    setattr(_sys.modules["neuralops"], "list_attention_mechanisms", list_attention_mechanisms)
 
 # Optional registries (if needed)
 MODEL_REGISTRY = Registry("models")  # different base models
