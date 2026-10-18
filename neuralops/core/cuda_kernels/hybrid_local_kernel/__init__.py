@@ -9,6 +9,8 @@ from neuralops.core.cuda_kernels.hybrid_local_kernel.hybrid_local_kernel_autogra
     hybrid_local_attn_ref,
     hybrid_two_branch_blend,
     hybrid_two_branch_blend_ref,
+    hybrid_three_branch_blend,
+    hybrid_three_branch_blend_ref,
 )
 
 __all__ = [
@@ -16,4 +18,6 @@ __all__ = [
     "hybrid_local_attn_ref",
     "hybrid_two_branch_blend",
     "hybrid_two_branch_blend_ref",
+    "hybrid_three_branch_blend",
+    "hybrid_three_branch_blend_ref",
 ]
