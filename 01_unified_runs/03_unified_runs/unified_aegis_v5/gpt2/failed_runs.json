@@ -1,0 +1,12 @@
+[
+  {
+    "module": "aegis_v5",
+    "model": "models\\gpt2_sst2",
+    "dataset": "sst2",
+    "status": "SKIP_GPT_TIMEOUT",
+    "perplexity": "",
+    "accuracy_pct": 0.0,
+    "error": "Module pipeline exceeded hard 180s timeout",
+    "timestamp": "2026-09-24T19:14:29.956072"
+  }
+]

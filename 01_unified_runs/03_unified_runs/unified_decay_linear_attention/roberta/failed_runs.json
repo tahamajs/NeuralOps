@@ -1,0 +1,12 @@
+[
+  {
+    "module": "decay_linear_attention",
+    "model": "models\\roberta_sst2",
+    "dataset": "sst2",
+    "status": "MODERATE_EXPANSION",
+    "perplexity": "",
+    "accuracy_pct": 73.17,
+    "error": "base_before=124647170 base_after=131845154 delta=+5.77%",
+    "timestamp": "2026-09-24T18:06:02.419054"
+  }
+]

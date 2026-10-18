@@ -1,0 +1,145 @@
+{
+  "run_metadata": {
+    "run_id": "kd_flash_attention3_C_20261012_010847",
+    "run_name": "kd_flash_attention3_gpt2_C",
+    "timestamp_start": "2026-10-12T01:13:41.231670+00:00",
+    "timestamp_end": "2026-10-12T01:13:41.231835+00:00",
+    "wall_clock_duration_s": 0.0,
+    "total_duration_s": 0.0,
+    "training_duration_s": 0.0,
+    "evaluation_duration_s": 0.0,
+    "git_commit": "f08bf0729612e1e883ba2c95e1cedbe5ea9a6c5a",
+    "git_commit_short": "f08bf07296",
+    "git_branch": "main",
+    "git_dirty": true,
+    "git_diff": "results/delta_sweep/attention_flash_attention3.log | 37 ++++++++++++++++++++++\n 1 file changed, 37 insertions(+)",
+    "session_id": "ab73ae6d-b93a-439c-853a-5c913298b661",
+    "parent_run_id": null
+  },
+  "module": {
+    "name": "flash_attention3",
+    "type": "attention",
+    "rank": 32
+  },
+  "model": {
+    "name": "gpt2"
+  },
+  "dataset": {
+    "name": "wikitext2",
+    "task_type": "language_modeling"
+  },
+  "config": {
+    "method": "C",
+    "rank": 32,
+    "training_type": "kd",
+    "recovery_steps": 300,
+    "learning_rate": 0.0003,
+    "batch_size": 8,
+    "seq_len": 256
+  },
+  "environment": {
+    "python_version": "3.14.7",
+    "python_executable": "/mnt/d/venv/bin/python3",
+    "platform": "Linux",
+    "platform_version": "Linux-7.0.0-38-generic-x86_64-with-glibc2.43",
+    "cpu_model": "",
+    "cpu_count": 16,
+    "ram_gb": 0.0,
+    "gpu_model": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "gpu_count": 1,
+    "gpu_vram_gb": 7.62,
+    "cuda_version": "12.8",
+    "cudnn_version": "91900",
+    "torch_version": "2.11.0+cu128",
+    "torchvision_version": "0.26.0+cu128",
+    "transformers_version": "5.19.0",
+    "datasets_version": "5.1.0",
+    "triton_version": "3.6.0",
+    "numpy_version": "2.5.2",
+    "pandas_version": "3.0.6",
+    "scipy_version": "1.18.1",
+    "neuralops_version": "0.1.0",
+    "all_installed_packages": {},
+    "env_vars_used": {}
+  },
+  "hardware_usage": {
+    "peak_vram_mb": 0.0,
+    "avg_vram_mb": 0.0,
+    "peak_ram_mb": 0.0,
+    "gpu_utilization_avg": null,
+    "gpu_temperature_max": null,
+    "gpu_power_avg": null
+  },
+  "training_history": {},
+  "metrics": {
+    "pre_ppl": 36.22,
+    "post_ppl": 29.02,
+    "post_ppl_stage1": 33.92,
+    "post_ppl_stage2": 29.02,
+    "kd_gain": 2.3,
+    "recovery_pct": 100.0
+  },
+  "baseline_comparison": {
+    "baseline_accuracy": null,
+    "baseline_f1": null,
+    "baseline_loss": null,
+    "accuracy_drop": null,
+    "f1_drop": null,
+    "loss_increase": null,
+    "compression_ratio": 1.0,
+    "speedup_ratio": 1.0,
+    "params_reduction_pct": 0.0
+  },
+  "resources": {
+    "peak_vram_mb": 2840.77,
+    "train_duration_s": 275.83
+  },
+  "status": "success",
+  "error": null,
+  "traceback": null,
+  "warnings": [],
+  "timed_out": false,
+  "timeout_s": 1800,
+  "retry_count": 0,
+  "max_retries": 2,
+  "reproducibility": {
+    "random_seed": 42,
+    "cublas_workspace_config": ":4096:8",
+    "torch_deterministic": false,
+    "torch_benchmark": false,
+    "env_vars_hash": "",
+    "reproduction_command": "",
+    "reproduction_script": "",
+    "expected_duration_s": 0.0,
+    "expected_peak_vram_mb": 0.0
+  },
+  "artifacts": {
+    "log_file": "",
+    "jsonl_file": "",
+    "json_file": "",
+    "plot_files": [],
+    "checkpoint_files": [],
+    "git_push_url": ""
+  },
+  "push_info": {
+    "pushed_to_git": false,
+    "pushed_to_hf": false,
+    "git_remote_url": "",
+    "hf_repo_id": "",
+    "hf_commit_hash": "",
+    "push_timestamp": ""
+  },
+  "training_type": "finetune",
+  "kd_config": {},
+  "recovery_config": {},
+  "baseline_metrics": {},
+  "delta_metrics": {},
+  "checksum": "16c80adf932018ba",
+  "run_id": "kd_flash_attention3_C_20261012_010847",
+  "run_name": "kd_flash_attention3_gpt2_C",
+  "timestamp_start": "2026-10-12T01:13:41.231670+00:00",
+  "timestamp_end": "2026-10-12T01:13:41.231835+00:00",
+  "git_commit": "f08bf0729612e1e883ba2c95e1cedbe5ea9a6c5a",
+  "git_dirty": true,
+  "run_key": "flash_attention3__gpt2__wikitext2__rank32__7cdc20fee34c"
+}

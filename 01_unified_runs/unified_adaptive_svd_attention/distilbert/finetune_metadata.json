@@ -1,0 +1,1 @@
+{"classification_head_trained": true, "fix_version": "v2_unfreeze_pre_classifier", "finetune_mode": "head", "steps": 350, "model": "distilbert-base-uncased", "dataset": "sst2", "seed": 42}

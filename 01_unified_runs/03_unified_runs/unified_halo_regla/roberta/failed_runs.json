@@ -1,0 +1,12 @@
+[
+  {
+    "module": "halo_regla",
+    "model": "models\\roberta_sst2",
+    "dataset": "sst2",
+    "status": "MODERATE_EXPANSION",
+    "perplexity": "",
+    "accuracy_pct": 93.81,
+    "error": "base_before=124647170 base_after=131845010 delta=+5.77%",
+    "timestamp": "2026-09-24T18:53:03.827563"
+  }
+]

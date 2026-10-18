@@ -1,0 +1,12 @@
+[
+  {
+    "module": "simple_ssm",
+    "model": "models/roberta_sst2",
+    "dataset": "sst2",
+    "status": "FAIL",
+    "perplexity": "",
+    "accuracy_pct": 0.0,
+    "error": "OutOfMemoryError: CUDA out of memory. Tried to allocate 384.00 MiB. GPU 0 has a total capacity of 8.00 GiB of which 3.14 GiB is free. 4.00 GiB allowed; Of the allocated memory 3.60 GiB is allocated by PyTorch, and 107.31 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)",
+    "timestamp": "2026-09-25T14:39:58.307108"
+  }
+]

@@ -1,0 +1,12 @@
+[
+  {
+    "module": "expert_choice_moe",
+    "model": "models\\distilbert_sst2",
+    "dataset": "sst2",
+    "status": "MODERATE_EXPANSION",
+    "perplexity": "",
+    "accuracy_pct": 89.68,
+    "error": "base_before=66955010 base_after=70523912 delta=+5.33%",
+    "timestamp": "2026-09-24T18:13:15.116514"
+  }
+]

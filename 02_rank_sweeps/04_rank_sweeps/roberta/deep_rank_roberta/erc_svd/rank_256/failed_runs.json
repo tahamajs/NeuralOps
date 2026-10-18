@@ -1,0 +1,12 @@
+[
+  {
+    "module": "erc_svd",
+    "model": "models/roberta_sst2",
+    "dataset": "sst2",
+    "status": "FAIL_BELOW_CHANCE",
+    "perplexity": "",
+    "accuracy_pct": 52.06,
+    "error": "FAIL: accuracy (52.06%) below chance threshold (56.00%)",
+    "timestamp": "2026-09-25T14:15:02.627367"
+  }
+]

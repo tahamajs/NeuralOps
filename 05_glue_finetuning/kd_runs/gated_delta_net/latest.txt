@@ -1,0 +1,1 @@
+D:\SVD_Project\results\kd_runs\gated_delta_net\20260930_223206_bs4_seq128_lr5e-06_noclr_C

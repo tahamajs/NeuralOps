@@ -1,0 +1,145 @@
+{
+  "run_metadata": {
+    "run_id": "kd_aegis_hybrid_C_20261012_171540",
+    "run_name": "kd_aegis_hybrid_gpt2_C",
+    "timestamp_start": "2026-10-12T17:17:01.854318+00:00",
+    "timestamp_end": "2026-10-12T17:17:01.854323+00:00",
+    "wall_clock_duration_s": 0.0,
+    "total_duration_s": 0.0,
+    "training_duration_s": 0.0,
+    "evaluation_duration_s": 0.0,
+    "git_commit": "6c1843470979189d5442495d8a65567d21e1f96a",
+    "git_commit_short": "6c18434709",
+    "git_branch": "main",
+    "git_dirty": true,
+    "git_diff": "module_results.csv                                 |   22 +-\n neuralops/attentions/gated/hgrn2_gated_outer.py    |   11 +-\n .../hybrid/tri_branch_hybrid_attention.py          |    2 +-\n .../kv_cache/aatc_xkv_compressor.py                |    2 +-\n .../kv_cache/hybridkv_compressor.py                |    2 +-\n neuralops/core/deprecated_aliases.json             |    4 -\n results/delta_sweep/summary.csv                    |    2 +-\n results/kd_runs/aatc_xkv_compressor/latest.txt     |    2 +-\n results/kd_runs/gated_linear_attention/latest.txt  |    2 +-\n results/kd_runs/hybridkv_compressor/latest.txt     |    2 +-\n results/kd_runs/registry.json                      | 5834 ++++++++++++++++++++\n results/kd_runs/svd_linear/latest.txt              |    2 +-\n results/results.csv                                |    7 +\n results/results.parquet                            |  Bin 27016 -> 27431 bytes\n 14 files changed, 5865 insertions(+), 29 deletions(-)",
+    "session_id": "9dae17a6-114c-4f66-80eb-9cfc286f20e1",
+    "parent_run_id": null
+  },
+  "module": {
+    "name": "aegis_hybrid",
+    "type": "attention",
+    "rank": 32
+  },
+  "model": {
+    "name": "gpt2"
+  },
+  "dataset": {
+    "name": "wikitext2",
+    "task_type": "language_modeling"
+  },
+  "config": {
+    "method": "C",
+    "rank": 32,
+    "training_type": "kd",
+    "recovery_steps": 20,
+    "learning_rate": 5e-05,
+    "batch_size": 4,
+    "seq_len": 256
+  },
+  "environment": {
+    "python_version": "3.14.7",
+    "python_executable": "/mnt/d/venv/bin/python3",
+    "platform": "Linux",
+    "platform_version": "Linux-7.0.0-38-generic-x86_64-with-glibc2.43",
+    "cpu_model": "",
+    "cpu_count": 16,
+    "ram_gb": 0.0,
+    "gpu_model": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "gpu_count": 1,
+    "gpu_vram_gb": 7.62,
+    "cuda_version": "12.8",
+    "cudnn_version": "91900",
+    "torch_version": "2.11.0+cu128",
+    "torchvision_version": "0.26.0+cu128",
+    "transformers_version": "5.19.0",
+    "datasets_version": "5.1.0",
+    "triton_version": "3.6.0",
+    "numpy_version": "2.5.2",
+    "pandas_version": "3.0.6",
+    "scipy_version": "1.18.1",
+    "neuralops_version": "0.1.0",
+    "all_installed_packages": {},
+    "env_vars_used": {}
+  },
+  "hardware_usage": {
+    "peak_vram_mb": 0.0,
+    "avg_vram_mb": 0.0,
+    "peak_ram_mb": 0.0,
+    "gpu_utilization_avg": null,
+    "gpu_temperature_max": null,
+    "gpu_power_avg": null
+  },
+  "training_history": {},
+  "metrics": {
+    "pre_ppl": 3671.02,
+    "post_ppl": 3995.8,
+    "post_ppl_stage1": 3671.02,
+    "post_ppl_stage2": 3995.8,
+    "kd_gain": 0.0,
+    "recovery_pct": -8.94
+  },
+  "baseline_comparison": {
+    "baseline_accuracy": null,
+    "baseline_f1": null,
+    "baseline_loss": null,
+    "accuracy_drop": null,
+    "f1_drop": null,
+    "loss_increase": null,
+    "compression_ratio": 1.0,
+    "speedup_ratio": 1.0,
+    "params_reduction_pct": 0.0
+  },
+  "resources": {
+    "peak_vram_mb": 1646.1,
+    "train_duration_s": 12.57
+  },
+  "status": "success",
+  "error": null,
+  "traceback": null,
+  "warnings": [],
+  "timed_out": false,
+  "timeout_s": 1800,
+  "retry_count": 0,
+  "max_retries": 2,
+  "reproducibility": {
+    "random_seed": 42,
+    "cublas_workspace_config": ":4096:8",
+    "torch_deterministic": false,
+    "torch_benchmark": false,
+    "env_vars_hash": "",
+    "reproduction_command": "",
+    "reproduction_script": "",
+    "expected_duration_s": 0.0,
+    "expected_peak_vram_mb": 0.0
+  },
+  "artifacts": {
+    "log_file": "",
+    "jsonl_file": "",
+    "json_file": "",
+    "plot_files": [],
+    "checkpoint_files": [],
+    "git_push_url": ""
+  },
+  "push_info": {
+    "pushed_to_git": false,
+    "pushed_to_hf": false,
+    "git_remote_url": "",
+    "hf_repo_id": "",
+    "hf_commit_hash": "",
+    "push_timestamp": ""
+  },
+  "training_type": "finetune",
+  "kd_config": {},
+  "recovery_config": {},
+  "baseline_metrics": {},
+  "delta_metrics": {},
+  "checksum": "20678f191fc25485",
+  "run_id": "kd_aegis_hybrid_C_20261012_171540",
+  "run_name": "kd_aegis_hybrid_gpt2_C",
+  "timestamp_start": "2026-10-12T17:17:01.854318+00:00",
+  "timestamp_end": "2026-10-12T17:17:01.854323+00:00",
+  "git_commit": "6c1843470979189d5442495d8a65567d21e1f96a",
+  "git_dirty": true,
+  "run_key": "aegis_hybrid__gpt2__wikitext2__rank32__598e9ec0410c"
+}

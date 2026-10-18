@@ -1,0 +1,12 @@
+[
+  {
+    "module": "block_transformer_hiba",
+    "model": "models\\gpt2_sst2",
+    "dataset": "sst2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": "",
+    "accuracy_pct": 88.88,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-24T17:32:06.434665"
+  }
+]

@@ -1,0 +1,12 @@
+[
+  {
+    "module": "kronecker_tt_lora",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "MODERATE_EXPANSION",
+    "perplexity": "",
+    "accuracy_pct": 90.71,
+    "error": "base_before=66955010 base_after=68627714 delta=+2.50%",
+    "timestamp": "2026-09-25T15:34:26.916181"
+  }
+]

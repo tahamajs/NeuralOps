@@ -1,0 +1,16 @@
+{
+  "dataset": "mnli",
+  "method": "a3",
+  "status": "PASS",
+  "accuracy_pct": 77.5,
+  "f1_score": 0.7732,
+  "compression_rate": 1.0984,
+  "compression_ratio_pct": 8.96,
+  "peak_vram_mb": 169.61,
+  "latency_ms_per_token": 1.49,
+  "throughput_tok_per_sec": 85782.96,
+  "elapsed_s": 17.79,
+  "total_params_before": 66955779,
+  "total_params_after": 60956163,
+  "timestamp": "2026-09-20T07:24:28"
+}

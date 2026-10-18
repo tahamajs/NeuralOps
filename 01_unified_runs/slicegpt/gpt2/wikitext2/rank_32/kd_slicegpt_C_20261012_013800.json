@@ -1,0 +1,147 @@
+{
+  "run_metadata": {
+    "run_id": "kd_slicegpt_C_20261012_013800",
+    "run_name": "kd_slicegpt_gpt2_C",
+    "timestamp_start": "2026-10-12T01:38:20.738607+00:00",
+    "timestamp_end": "2026-10-12T01:38:20.738616+00:00",
+    "wall_clock_duration_s": 0.0,
+    "total_duration_s": 0.0,
+    "training_duration_s": 0.0,
+    "evaluation_duration_s": 0.0,
+    "git_commit": "29815e815a81d7d328cc5626295be6ea6b19f4d6",
+    "git_commit_short": "29815e815a",
+    "git_branch": "main",
+    "git_dirty": true,
+    "git_diff": "neuralops/__init__.py                              |    2 +\n .../hybrid/gated_hybrid_kernel_attention.py        |    5 +-\n .../hybrid/hybrid_local_kernel_attention.py        |    8 +\n neuralops/attentions/ssm/mamba_svd_flash.py        |    2 +\n neuralops/core/triton_kernels/gla_scan.py          |    3 +-\n neuralops/tests/test_triton_fms_scan.py            |    2 +-\n neuralops/tests/test_triton_gdn_scan.py            |    4 +-\n neuralops/tests/test_triton_gla_scan.py            |    2 +-\n neuralops/tests/test_triton_hgrn2_scan.py          |    2 +-\n neuralops/tests/test_triton_selective_scan.py      |    2 +-\n .../delta_sweep/attention_galerkin_attention.json  |    4 +-\n .../delta_sweep/attention_galerkin_attention.log   |   46 +\n results/delta_sweep/attention_gated_delta_net.err  |   50 +-\n results/delta_sweep/attention_gated_delta_net.json |    6 +-\n results/delta_sweep/attention_gated_delta_net.log  |  194 +-\n .../delta_sweep/attention_gated_deltanet_block.err |   12 +-\n .../delta_sweep/attention_gated_deltanet_block.log |  170 +-\n results/delta_sweep/compressor_salr.json           |   20 +-\n .../delta_sweep/compressor_soka_compressor.json    |   20 +-\n .../compressor_subspace_projection.json            |   20 +-\n results/delta_sweep/compressor_swift_svd_act.json  |   20 +-\n .../delta_sweep/compressor_tomoe_compressor.json   |   20 +-\n results/delta_sweep/summary.csv                    |    2 +\n results/kd_runs/galerkin_attention/latest.txt      |    2 +-\n results/kd_runs/gated_delta_net/latest.txt         |    2 +-\n results/kd_runs/registry.json                      | 9945 ++++++++++++++++++++\n results/kd_runs/rpca_compressor/latest.txt         |    2 +-\n results/kd_runs/salr/latest.txt                    |    2 +-\n results/kd_runs/soka_compressor/latest.txt         |    2 +-\n results/kd_runs/subspace_projection/latest.txt     |    2 +-\n results/kd_runs/svd_linear/latest.txt              |    2 +-\n results/kd_runs/swift_svd_act/latest.txt           |    2 +-\n results/kd_runs/tomoe_compressor/latest.txt        |    2 +-\n results/results.csv                                |    9 +\n results/results.parquet                            |  Bin 17207 -> 17653 bytes\n 35 files changed, 10268 insertions(+), 320 deletions(-)",
+    "session_id": "a9f07a32-a73a-4762-9bcd-f0b96a1c3ce8",
+    "parent_run_id": null
+  },
+  "module": {
+    "name": "slicegpt",
+    "type": "attention",
+    "rank": 32
+  },
+  "model": {
+    "name": "gpt2"
+  },
+  "dataset": {
+    "name": "wikitext2",
+    "task_type": "language_modeling"
+  },
+  "config": {
+    "method": "C",
+    "rank": 32,
+    "training_type": "kd",
+    "recovery_steps": 0,
+    "learning_rate": 0.0003,
+    "batch_size": 4,
+    "seq_len": 256
+  },
+  "environment": {
+    "python_version": "3.14.7",
+    "python_executable": "/mnt/d/venv/bin/python3",
+    "platform": "Linux",
+    "platform_version": "Linux-7.0.0-38-generic-x86_64-with-glibc2.43",
+    "cpu_model": "",
+    "cpu_count": 16,
+    "ram_gb": 0.0,
+    "gpu_model": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "gpu_count": 1,
+    "gpu_vram_gb": 7.62,
+    "cuda_version": "12.8",
+    "cudnn_version": "91900",
+    "torch_version": "2.11.0+cu128",
+    "torchvision_version": "0.26.0+cu128",
+    "transformers_version": "5.19.0",
+    "datasets_version": "5.1.0",
+    "triton_version": "3.6.0",
+    "numpy_version": "2.5.2",
+    "pandas_version": "3.0.6",
+    "scipy_version": "1.18.1",
+    "neuralops_version": "0.1.0",
+    "all_installed_packages": {},
+    "env_vars_used": {
+      "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True"
+    }
+  },
+  "hardware_usage": {
+    "peak_vram_mb": 0.0,
+    "avg_vram_mb": 0.0,
+    "peak_ram_mb": 0.0,
+    "gpu_utilization_avg": null,
+    "gpu_temperature_max": null,
+    "gpu_power_avg": null
+  },
+  "training_history": {},
+  "metrics": {
+    "pre_ppl": 5722.1,
+    "post_ppl": 5722.1,
+    "post_ppl_stage1": 5722.1,
+    "post_ppl_stage2": 5722.1,
+    "kd_gain": 0.0,
+    "recovery_pct": 0.0
+  },
+  "baseline_comparison": {
+    "baseline_accuracy": null,
+    "baseline_f1": null,
+    "baseline_loss": null,
+    "accuracy_drop": null,
+    "f1_drop": null,
+    "loss_increase": null,
+    "compression_ratio": 1.0,
+    "speedup_ratio": 1.0,
+    "params_reduction_pct": 0.0
+  },
+  "resources": {
+    "peak_vram_mb": 854.21,
+    "train_duration_s": 0.0
+  },
+  "status": "success",
+  "error": null,
+  "traceback": null,
+  "warnings": [],
+  "timed_out": false,
+  "timeout_s": 1800,
+  "retry_count": 0,
+  "max_retries": 2,
+  "reproducibility": {
+    "random_seed": 42,
+    "cublas_workspace_config": ":4096:8",
+    "torch_deterministic": false,
+    "torch_benchmark": false,
+    "env_vars_hash": "",
+    "reproduction_command": "",
+    "reproduction_script": "",
+    "expected_duration_s": 0.0,
+    "expected_peak_vram_mb": 0.0
+  },
+  "artifacts": {
+    "log_file": "",
+    "jsonl_file": "",
+    "json_file": "",
+    "plot_files": [],
+    "checkpoint_files": [],
+    "git_push_url": ""
+  },
+  "push_info": {
+    "pushed_to_git": false,
+    "pushed_to_hf": false,
+    "git_remote_url": "",
+    "hf_repo_id": "",
+    "hf_commit_hash": "",
+    "push_timestamp": ""
+  },
+  "training_type": "finetune",
+  "kd_config": {},
+  "recovery_config": {},
+  "baseline_metrics": {},
+  "delta_metrics": {},
+  "checksum": "e4c701953d150719",
+  "run_id": "kd_slicegpt_C_20261012_013800",
+  "run_name": "kd_slicegpt_gpt2_C",
+  "timestamp_start": "2026-10-12T01:38:20.738607+00:00",
+  "timestamp_end": "2026-10-12T01:38:20.738616+00:00",
+  "git_commit": "29815e815a81d7d328cc5626295be6ea6b19f4d6",
+  "git_dirty": true,
+  "run_key": "slicegpt__gpt2__wikitext2__rank32__cf433ea6f321"
+}

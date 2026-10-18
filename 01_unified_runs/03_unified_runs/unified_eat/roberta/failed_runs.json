@@ -1,0 +1,12 @@
+[
+  {
+    "module": "eat",
+    "model": "models\\roberta_sst2",
+    "dataset": "sst2",
+    "status": "EXTREME_EXPANSION",
+    "perplexity": "",
+    "accuracy_pct": 50.92,
+    "error": "base_before=124647170 base_after=153568526 delta=+23.2%",
+    "timestamp": "2026-09-24T18:12:30.861146"
+  }
+]

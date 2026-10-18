@@ -1,0 +1,16 @@
+{
+  "dataset": "sst2",
+  "method": "svd_llm_v2",
+  "status": "PASS",
+  "accuracy_pct": 82.8,
+  "f1_score": 0.8428,
+  "compression_rate": 1.201,
+  "compression_ratio_pct": 16.74,
+  "peak_vram_mb": 220.59,
+  "latency_ms_per_token": 3.14,
+  "throughput_tok_per_sec": 40727.74,
+  "elapsed_s": 14.23,
+  "total_params_before": 66955010,
+  "total_params_after": 55749890,
+  "timestamp": "2026-09-20T07:22:59"
+}

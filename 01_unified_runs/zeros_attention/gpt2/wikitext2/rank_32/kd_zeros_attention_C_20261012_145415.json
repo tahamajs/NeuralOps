@@ -1,0 +1,145 @@
+{
+  "run_metadata": {
+    "run_id": "kd_zeros_attention_C_20261012_145415",
+    "run_name": "kd_zeros_attention_gpt2_C",
+    "timestamp_start": "2026-10-12T14:54:42.564003+00:00",
+    "timestamp_end": "2026-10-12T14:54:42.564009+00:00",
+    "wall_clock_duration_s": 0.0,
+    "total_duration_s": 0.0,
+    "training_duration_s": 0.0,
+    "evaluation_duration_s": 0.0,
+    "git_commit": "38527665ca03fa61f6f27cd1c54c80de39f35b41",
+    "git_commit_short": "38527665ca",
+    "git_branch": "main",
+    "git_dirty": true,
+    "git_diff": "results/delta_sweep/summary.csv           |    4 +\n results/kd_runs/kda_attention/latest.txt  |    2 +-\n results/kd_runs/rala_attention/latest.txt |    2 +-\n results/kd_runs/registry.json             | 3923 +++++++++++++++++++++++++++++\n results/results.csv                       |    5 +\n results/results.parquet                   |  Bin 25858 -> 26097 bytes\n 6 files changed, 3934 insertions(+), 2 deletions(-)",
+    "session_id": "2650f93b-c7b2-430e-8a85-748539aac6f6",
+    "parent_run_id": null
+  },
+  "module": {
+    "name": "zeros_attention",
+    "type": "attention",
+    "rank": 32
+  },
+  "model": {
+    "name": "gpt2"
+  },
+  "dataset": {
+    "name": "wikitext2",
+    "task_type": "language_modeling"
+  },
+  "config": {
+    "method": "C",
+    "rank": 32,
+    "training_type": "kd",
+    "recovery_steps": 5,
+    "learning_rate": 0.0003,
+    "batch_size": 8,
+    "seq_len": 256
+  },
+  "environment": {
+    "python_version": "3.14.7",
+    "python_executable": "/mnt/d/venv/bin/python3",
+    "platform": "Linux",
+    "platform_version": "Linux-7.0.0-38-generic-x86_64-with-glibc2.43",
+    "cpu_model": "",
+    "cpu_count": 16,
+    "ram_gb": 0.0,
+    "gpu_model": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "gpu_count": 1,
+    "gpu_vram_gb": 7.62,
+    "cuda_version": "12.8",
+    "cudnn_version": "91900",
+    "torch_version": "2.11.0+cu128",
+    "torchvision_version": "0.26.0+cu128",
+    "transformers_version": "5.19.0",
+    "datasets_version": "5.1.0",
+    "triton_version": "3.6.0",
+    "numpy_version": "2.5.2",
+    "pandas_version": "3.0.6",
+    "scipy_version": "1.18.1",
+    "neuralops_version": "0.1.0",
+    "all_installed_packages": {},
+    "env_vars_used": {}
+  },
+  "hardware_usage": {
+    "peak_vram_mb": 0.0,
+    "avg_vram_mb": 0.0,
+    "peak_ram_mb": 0.0,
+    "gpu_utilization_avg": null,
+    "gpu_temperature_max": null,
+    "gpu_power_avg": null
+  },
+  "training_history": {},
+  "metrics": {
+    "pre_ppl": 42415.44,
+    "post_ppl": 14439.43,
+    "post_ppl_stage1": 28337.51,
+    "post_ppl_stage2": 14439.43,
+    "kd_gain": 14077.93,
+    "recovery_pct": 66.01
+  },
+  "baseline_comparison": {
+    "baseline_accuracy": null,
+    "baseline_f1": null,
+    "baseline_loss": null,
+    "accuracy_drop": null,
+    "f1_drop": null,
+    "loss_increase": null,
+    "compression_ratio": 1.0,
+    "speedup_ratio": 1.0,
+    "params_reduction_pct": 0.0
+  },
+  "resources": {
+    "peak_vram_mb": 2837.34,
+    "train_duration_s": 13.37
+  },
+  "status": "success",
+  "error": null,
+  "traceback": null,
+  "warnings": [],
+  "timed_out": false,
+  "timeout_s": 1800,
+  "retry_count": 0,
+  "max_retries": 2,
+  "reproducibility": {
+    "random_seed": 42,
+    "cublas_workspace_config": ":4096:8",
+    "torch_deterministic": false,
+    "torch_benchmark": false,
+    "env_vars_hash": "",
+    "reproduction_command": "",
+    "reproduction_script": "",
+    "expected_duration_s": 0.0,
+    "expected_peak_vram_mb": 0.0
+  },
+  "artifacts": {
+    "log_file": "",
+    "jsonl_file": "",
+    "json_file": "",
+    "plot_files": [],
+    "checkpoint_files": [],
+    "git_push_url": ""
+  },
+  "push_info": {
+    "pushed_to_git": false,
+    "pushed_to_hf": false,
+    "git_remote_url": "",
+    "hf_repo_id": "",
+    "hf_commit_hash": "",
+    "push_timestamp": ""
+  },
+  "training_type": "finetune",
+  "kd_config": {},
+  "recovery_config": {},
+  "baseline_metrics": {},
+  "delta_metrics": {},
+  "checksum": "c032d1ffdaf61667",
+  "run_id": "kd_zeros_attention_C_20261012_145415",
+  "run_name": "kd_zeros_attention_gpt2_C",
+  "timestamp_start": "2026-10-12T14:54:42.564003+00:00",
+  "timestamp_end": "2026-10-12T14:54:42.564009+00:00",
+  "git_commit": "38527665ca03fa61f6f27cd1c54c80de39f35b41",
+  "git_dirty": true,
+  "run_key": "zeros_attention__gpt2__wikitext2__rank32__9f9cb97d6a1c"
+}

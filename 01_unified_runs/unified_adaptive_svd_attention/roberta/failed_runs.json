@@ -1,0 +1,12 @@
+[
+  {
+    "module": "adaptive_svd_attention",
+    "model": "roberta-base",
+    "dataset": "sst2",
+    "status": "FAIL_BELOW_CHANCE",
+    "perplexity": "",
+    "accuracy_pct": 51.26,
+    "error": "FAIL: accuracy (51.26%) below pass threshold (72.75%, baseline=77.75%)",
+    "timestamp": "2026-10-05T02:50:03.457853"
+  }
+]
