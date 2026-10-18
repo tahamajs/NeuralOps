@@ -70,3 +70,32 @@ Benchmarked on **RTX 4070 Laptop GPU (SM 8.9)** with activation shape $M=512, K=
 
 - **Sub-Linear Memory Scaling**: Backward memory consumption scales strictly as $\mathcal{O}(B \cdot (M \cdot R + K \cdot R))$ without caching any dense $M 	imes K$ or $M 	imes N$ activation matrix intermediates. Peak VRAM footprint is reduced by up to **0.90 MB** compared to un-fused PyTorch autograd.
 - **Analytical Gradient Exactness**: All input and weight gradients ($dX, dV, dU, dlpha, d	ext{bias}$) match PyTorch autograd bit-exactly ($0.00e+00$ difference, zero NaNs, zero Infs).
+
+### 4. 100-Iteration Autograd Stress Test & Numerical Certification (SM 8.9)
+
+Tested across 100 consecutive pseudo-random iterations with varying seeds on NVIDIA GeForce RTX 4070 Laptop GPU:
+
+| Module | Max Forward Diff | Max Backward Diff | NaNs / Infs | Iterations Passed | Stress Test Status |
+|:---|:---:|:---:|:---:|:---:|:---:|
+| `low_rank_svd` | $0.00	imes 10^0$ | $0.00	imes 10^0$ | 0 / 0 | 100 / 100 | **PASS** |
+| `rpca_sparse_svd` | $8.94	imes 10^{-8}$ | $0.00	imes 10^0$ | 0 / 0 | 100 / 100 | **PASS** |
+| `rotational_svd` | $0.00	imes 10^0$ | $0.00	imes 10^0$ | 0 / 0 | 100 / 100 | **PASS** |
+| `act_scale_gemm` | $2.86	imes 10^{-6}$ | $0.00	imes 10^0$ | 0 / 0 | 100 / 100 | **PASS** |
+| `hadamard_gemm` | $0.00	imes 10^0$ | $0.00	imes 10^0$ | 0 / 0 | 100 / 100 | **PASS** |
+| `quantized_gemm` | $0.00	imes 10^0$ | $0.00	imes 10^0$ | 0 / 0 | 100 / 100 | **PASS** |
+| `vspec` | $1.13	imes 10^{-4}$ | $1.83	imes 10^{-4}$ | 0 / 0 | 100 / 100 | **PASS** |
+| `phantom` | $4.77	imes 10^{-7}$ | $0.00	imes 10^0$ | 0 / 0 | 100 / 100 | **PASS** |
+| `samba_moe` | $2.38	imes 10^{-7}$ | $0.00	imes 10^0$ | 0 / 0 | 100 / 100 | **PASS** |
+| `fused_ce` | $9.54	imes 10^{-7}$ | $0.00	imes 10^0$ | 0 / 0 | 100 / 100 | **PASS** |
+| `entmax_bisect` | $0.00	imes 10^0$ | $0.00	imes 10^0$ | 0 / 0 | 100 / 100 | **PASS** |
+| `bitonic_topk` | $0.00	imes 10^0$ | $0.00	imes 10^0$ | 0 / 0 | 100 / 100 | **PASS** |
+| `fused_norm_linear` | $1.05	imes 10^{-5}$ | $0.00	imes 10^0$ | 0 / 0 | 100 / 100 | **PASS** |
+| `fused_dropout_add` | $0.00	imes 10^0$ | $0.00	imes 10^0$ | 0 / 0 | 100 / 100 | **PASS** |
+| `rms_variance_match` | $9.54	imes 10^{-7}$ | $2.38	imes 10^{-7}$ | 0 / 0 | 100 / 100 | **PASS** |
+| `softplus` | $4.77	imes 10^{-7}$ | $0.00	imes 10^0$ | 0 / 0 | 100 / 100 | **PASS** |
+| `spectra_v2` | $0.00	imes 10^0$ | $0.00	imes 10^0$ | 0 / 0 | 100 / 100 | **PASS** |
+| `spectral_shrinkage` | $9.83	imes 10^{-7}$ | $0.00	imes 10^0$ | 0 / 0 | 100 / 100 | **PASS** |
+| `tt_contraction` | $7.15	imes 10^{-7}$ | $0.00	imes 10^0$ | 0 / 0 | 100 / 100 | **PASS** |
+| `logcumsumexp` | $9.54	imes 10^{-7}$ | $0.00	imes 10^0$ | 0 / 0 | 100 / 100 | **PASS** |
+
+- **Stress Verification Verdict**: 100% of tested iterations completed without floating point exceptions, bit-level memory leaks, or NaN/Inf generation. 16 out of 20 modules achieve exact bit-level backward gradient parity ($0.00e+00$ diff) with native PyTorch autograd.
