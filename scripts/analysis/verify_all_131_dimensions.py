@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# Author: Taha Majlesi
 """
 Verify Forward + Causal Mask + Backward (out.sum().backward())
 across all 131 attention mechanisms in ATTENTION_REGISTRY

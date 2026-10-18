@@ -19,3 +19,10 @@ torch::Tensor hybrid_two_branch_blend_fwd(
     const torch::Tensor& b1,
     const torch::Tensor& alpha
 );
+
+torch::Tensor hybrid_three_branch_blend_fwd(
+    const torch::Tensor& b0,
+    const torch::Tensor& b1,
+    const torch::Tensor& b2,
+    const torch::Tensor& alpha
+);

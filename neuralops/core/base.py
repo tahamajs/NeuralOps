@@ -215,6 +215,8 @@ class BaseAttention(nn.Module):
 class BaseCompressor:
     """Base class for all compressors. Not a nn.Module to avoid parameter storage."""
 
+    hardware_accelerated: bool = True
+
     def __init__(self, model: nn.Module, name: str = "base", **kwargs) -> None:
         self.model = model
         self.name = name

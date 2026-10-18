@@ -272,12 +272,15 @@ class Registry:
             return dict(self._metadata[k])
         obj = self.get(key)
         if obj is not None:
-            return {
+            res = {
                 "supports_causal": getattr(obj, "supports_causal", True),
                 "supports_bidirectional": getattr(obj, "supports_bidirectional", True),
                 "supports_cross_attention": getattr(obj, "supports_cross_attention", True),
                 "supports_gqa": getattr(obj, "supports_gqa", False),
             }
+            if self.name == "compressors":
+                res["hardware_accelerated"] = getattr(obj, "hardware_accelerated", True)
+            return res
         return {}
 
     def _try_lazy_load(self, key: str) -> None:

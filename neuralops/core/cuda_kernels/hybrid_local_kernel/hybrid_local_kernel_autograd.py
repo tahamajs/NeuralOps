@@ -33,7 +33,7 @@ def _get_module():
             name="cuda_hybrid_local_kernel",
             cpp_sources=cpp_src,
             cuda_sources=cuda_src,
-            functions=["hybrid_local_attn_fwd", "hybrid_two_branch_blend_fwd"],
+            functions=["hybrid_local_attn_fwd", "hybrid_two_branch_blend_fwd", "hybrid_three_branch_blend_fwd"],
         )
     return _MODULE
 
@@ -142,4 +142,54 @@ def hybrid_two_branch_blend(
         b1=b1,
         alpha=alpha,
         kernel_name="hybrid_two_branch_blend",
+    )
+
+
+def hybrid_three_branch_blend_ref(
+    b0: torch.Tensor,
+    b1: torch.Tensor,
+    b2: torch.Tensor,
+    alpha: torch.Tensor,
+) -> torch.Tensor:
+    """Pure PyTorch reference 3-branch blend."""
+    if alpha.shape[-1] == 3:
+        a0 = alpha[..., 0:1]
+        a1 = alpha[..., 1:2]
+        a2 = alpha[..., 2:3]
+    else:
+        a0, a1, a2 = alpha[:, 0:1], alpha[:, 1:2], alpha[:, 2:3]
+    return a0 * b0 + a1 * b1 + a2 * b2
+
+
+def hybrid_three_branch_blend(
+    b0: torch.Tensor,
+    b1: torch.Tensor,
+    b2: torch.Tensor,
+    alpha: torch.Tensor,
+) -> torch.Tensor:
+    """3-Tier Dispatched Three Branch Gated Blend."""
+    def cuda_fn(b0, b1, b2, alpha):
+        mod = _get_module()
+        if mod is None:
+            return None
+        return mod.hybrid_three_branch_blend_fwd(
+            b0.contiguous(), b1.contiguous(), b2.contiguous(), alpha.contiguous()
+        )
+
+    def triton_fn(b0, b1, b2, alpha):
+        try:
+            from neuralops.kernels.triton.hybrid_local_kernel_triton import hybrid_three_branch_blend_triton
+            return hybrid_three_branch_blend_triton(b0, b1, b2, alpha)
+        except Exception:
+            return None
+
+    return dispatch(
+        cuda_fn,
+        triton_fn,
+        hybrid_three_branch_blend_ref,
+        b0,
+        b1=b1,
+        b2=b2,
+        alpha=alpha,
+        kernel_name="hybrid_three_branch_blend",
     )

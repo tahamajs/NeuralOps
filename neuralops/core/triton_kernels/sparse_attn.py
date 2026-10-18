@@ -631,27 +631,51 @@ if HAS_TRITON:
 
 
 def fused_topk_sparse_route_and_combine_triton(
-    branch_outputs: list[torch.Tensor],
+    branch_outputs: list[torch.Tensor] | torch.Tensor,
     router_weights: torch.Tensor,
+    top_k: int | None = None,
+    **kwargs: Any,
 ) -> torch.Tensor:
     """Combines multi-scale branch outputs using router weights in a single SRAM pass.
 
     Args:
-        branch_outputs: List of M tensors each [B, T, D]
-        router_weights: [B, T, M] or [B, 1, M] normalized routing probabilities
+        branch_outputs: List of M tensors each [B, T, D] or stacked tensor [B, T, M, D] / [M, B, T, D]
+        router_weights: [B, T, M] or [B, 1, M] routing probabilities or logits
+        top_k: Optional number of top-k experts to route to
     Returns:
         Combined output tensor [B, T, D]
     """
-    M = len(branch_outputs)
-    if M == 1:
-        return branch_outputs[0]
+    if isinstance(branch_outputs, torch.Tensor):
+        if branch_outputs.dim() == 4:
+            if branch_outputs.shape[-2] == router_weights.shape[-1]:
+                branch_list = [branch_outputs[:, :, i, :] for i in range(branch_outputs.shape[-2])]
+            elif branch_outputs.shape[0] == router_weights.shape[-1]:
+                branch_list = [branch_outputs[i] for i in range(branch_outputs.shape[0])]
+            elif branch_outputs.shape[-1] == router_weights.shape[-1]:
+                branch_list = [branch_outputs[..., i] for i in range(branch_outputs.shape[-1])]
+            else:
+                branch_list = list(branch_outputs.unbind(dim=-2))
+        else:
+            branch_list = [branch_outputs]
+    else:
+        branch_list = list(branch_outputs)
 
-    b0 = branch_outputs[0]
+    M = len(branch_list)
+    if M == 1:
+        return branch_list[0]
+
+    if top_k is not None and top_k < router_weights.shape[-1]:
+        topk_vals, topk_indices = torch.topk(router_weights, top_k, dim=-1)
+        router_weights = torch.zeros_like(router_weights).scatter_(-1, topk_indices, F.softmax(topk_vals, dim=-1))
+    elif router_weights.min() < 0.0 or router_weights.max() > 1.0 or not torch.allclose(router_weights.sum(dim=-1), torch.ones_like(router_weights.sum(dim=-1)), atol=1e-2):
+        router_weights = F.softmax(router_weights, dim=-1)
+
+    b0 = branch_list[0]
     B, T, D = b0.shape
     suitable, _ = check_triton_suitability(b0, "sparse_attn")
     if b0.is_cuda and HAS_TRITON and suitable:
         try:
-            stacked_branches = torch.stack(branch_outputs, dim=0).contiguous()  # [M, B, T, D]
+            stacked_branches = torch.stack(branch_list, dim=0).contiguous()  # [M, B, T, D]
             w_c = router_weights.expand(B, T, M).contiguous()
             out = torch.empty((B, T, D), device=b0.device, dtype=b0.dtype)
             BLOCK_D = triton.next_power_of_2(D)
@@ -671,7 +695,7 @@ def fused_topk_sparse_route_and_combine_triton(
             pass
 
     # Exact PyTorch Fallback
-    stacked = torch.stack(branch_outputs, dim=-1)  # [B, T, D, M]
+    stacked = torch.stack(branch_list, dim=-1)  # [B, T, D, M]
     w = router_weights.unsqueeze(-2)              # [B, T, 1, M]
     return (stacked * w).sum(dim=-1).to(b0.dtype)
 
