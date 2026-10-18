@@ -693,9 +693,17 @@ def create_compressor(name: str, model: Any = None, rank: int | None = None, **k
 # Register HNC-SVD Compressor aliases without altering canonical 72 counts
 try:
     from neuralops.compression_engine.svd.direct_svd import DirectSVDCompressor
+    COMPRESSOR_REGISTRY.register("svd", is_alias=True)(DirectSVDCompressor)
     COMPRESSOR_REGISTRY.register("hnc_svd", is_alias=True)(DirectSVDCompressor)
     COMPRESSOR_REGISTRY.register("hnc_svd_compressor", is_alias=True)(DirectSVDCompressor)
 except Exception as _e_hnc:
     logger.debug("Failed registering hnc_svd aliases: %s", _e_hnc)
+
+try:
+    from neuralops.compression_engine.low_rank.svd_llm_compressor import SVDLLMCompressor
+    COMPRESSOR_REGISTRY.register("svd_llm", is_alias=True)(SVDLLMCompressor)
+except Exception as _e_svd_llm:
+    logger.debug("Failed registering svd_llm alias: %s", _e_svd_llm)
+
 
 

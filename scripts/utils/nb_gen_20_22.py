@@ -111,7 +111,7 @@ print(f"  TensorRT-LLM Available:      {TensorRTLLMPluginBuilder.is_available()}
         # Cell 6: HuggingFace AutoModel Patching Execution
         create_code_cell(r"""# Cell 4: HuggingFace AutoModel Transformer Surgery & Equivalence Check
 class MiniCausalLM(nn.Module):
-    """Representative 4-layer Decoder-only Transformer model."""
+    '''Representative 4-layer Decoder-only Transformer model.'''
     def __init__(self, vocab_size=1000, embed_dim=256, num_heads=4, num_layers=4):
         super().__init__()
         self.embed = nn.Embedding(vocab_size, embed_dim)
@@ -671,7 +671,7 @@ We construct a multi-layer Transformer model, apply low-rank SVD factorization t
         # Cell 6: Model Construction Code
         create_code_cell(r"""# Cell 4: Architecture Definition with SVD Low-Rank Layers
 class SVDLinearLayer(nn.Module):
-    """Factored Low-Rank Linear Layer W = U * V^T."""
+    '''Factored Low-Rank Linear Layer W = U * V^T.'''
     def __init__(self, in_features, out_features, rank):
         super().__init__()
         self.in_features = in_features
@@ -684,7 +684,7 @@ class SVDLinearLayer(nn.Module):
         return self.u_proj(self.v_proj(x))
 
 class MultiLayerTransformer(nn.Module):
-    """Multi-layer Transformer with SVD low-rank factorized projections."""
+    '''Multi-layer Transformer with SVD low-rank factorized projections.'''
     def __init__(self, d_model=512, rank=64, num_layers=4):
         super().__init__()
         self.d_model = d_model
@@ -1316,8 +1316,49 @@ assert max(grad_q_err, grad_k_err, grad_v_err) < 1e-4, "Gradient mismatch in con
 print("✅ PASSED: Exact analytical autograd gradient flow verified.")
 """),
 
-        # Cell 11: Analytical Interconnect Communication Modeling
-        create_markdown_cell(r"""## 5. Collective Communication Overhead Modeling
+        # Cell 11: Context Parallel VRAM Scaling Formulation
+        create_markdown_cell(r"""## 5. Memory Footprint Modeling: Context Parallelism vs Softmax Attention
+
+In standard quadratic self-attention, intermediate attention matrices require dedicated VRAM scaling as $\mathcal{O}(B \cdot H \cdot T^2)$. When sequence context $T$ extends to $32,768$, standard attention consumes $16.0\,\text{GB}$ VRAM, exceeding physical single-GPU capacity.
+
+In contrast, Context-Parallel Linear Attention decomposes the sequence into $W$ chunks of size $T_c = T / W$. Each worker maintains only the recurrent state $S_p \in \mathbb{R}^{d_k \times d_v}$:
+$$M_{\text{CP}}(T, W) = \mathcal{O}\left(B \cdot H \cdot \frac{T}{W} \cdot d\right) + \mathcal{O}(B \cdot H \cdot d_k \cdot d_v)$$
+which scales linearly in chunk length and maintains constant recurrent memory overhead.
+"""),
+
+        # Cell 12: Context Parallel VRAM Scaling Code
+        create_code_cell(r"""# Cell 7: VRAM Memory Scaling Comparison Across Sequence Lengths
+seq_lengths = [1024, 2048, 4096, 8192, 16384, 32768]
+B_val, H_val, D_val = 1, 8, 64
+cp_workers = 4
+
+vram_comparison = []
+for t in seq_lengths:
+    # Standard quadratic attention logit memory: 2 bytes * B * H * T^2
+    std_attn_bytes = 2 * B_val * H_val * (t ** 2)
+    std_vram_mb = std_attn_bytes / (1024 ** 2)
+    
+    # Context Parallel linear attention memory per GPU (chunk = t / 4)
+    chunk_t = t // cp_workers
+    cp_state_bytes = 2 * B_val * H_val * D_val * D_val
+    cp_chunk_bytes = 2 * B_val * H_val * chunk_t * D_val * 4 # activations
+    cp_vram_mb = (cp_state_bytes + cp_chunk_bytes) / (1024 ** 2)
+    
+    vram_comparison.append({
+        "sequence_length": t,
+        "standard_softmax_attn_mb": round(std_vram_mb, 2),
+        "context_parallel_vram_per_gpu_mb": round(cp_vram_mb, 2),
+        "vram_reduction_factor": round(std_vram_mb / max(cp_vram_mb, 0.01), 1),
+        "single_gpu_oom": (std_vram_mb > 8192) # 8GB GPU bound
+    })
+
+df_vram = pd.DataFrame(vram_comparison)
+print("--- VRAM Memory Scaling: Standard Attention vs Context Parallelism ---")
+display(df_vram)
+"""),
+
+        # Cell 13: Collective Communication Overhead Modeling
+        create_markdown_cell(r"""## 6. Collective Communication Overhead Modeling
 
 We model Ring All-Reduce latency under standard vs SVD-factored tensor parallelism across three hardware interconnects:
 1. **NVIDIA NVLink 4.0**: $\alpha = 0.5\,\mu\text{s}, \beta = 900\,\text{GB/s}$

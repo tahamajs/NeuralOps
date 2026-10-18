@@ -89,6 +89,8 @@ COMPRESSOR_FILE_MAP: dict[str, str] = {
     "entropy_rank_allocator": "dynamic_rank",
     "res_svd": "res_svd",
     "spectral_residual_lora": "res_svd",
+    "svd": "direct_svd",
+    "svd_llm": "svd_llm_compressor",
 }
 
 
