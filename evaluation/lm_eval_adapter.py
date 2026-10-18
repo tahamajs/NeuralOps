@@ -56,10 +56,18 @@ class NeuralOpsLMEvalAdapter(BaseLM):
         self.model = model
         self.tokenizer = tokenizer
         self.batch_size = batch_size
-        self.max_length = max_length
-        self.device = torch.device(device if torch.cuda.is_available() and device == "cuda" else "cpu")
+        target_dev = torch.device(device if torch.cuda.is_available() and device == "cuda" else "cpu")
+        self._device = target_dev
         self.model.eval()
-        self.model.to(self.device)
+        self.model.to(self._device)
+
+    @property
+    def device(self) -> torch.device:
+        return getattr(self, "_device", torch.device("cpu"))
+
+    @device.setter
+    def device(self, val: torch.device | str) -> None:
+        self._device = torch.device(val)
 
     def loglikelihood(self, requests: List[Tuple[str, str]]) -> List[Tuple[float, bool]]:
         """
