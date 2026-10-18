@@ -242,9 +242,25 @@ class Registry:
         except ValueError:
             k = key.lower()
         if self.name == "attentions" and k in _ATTENTION_FILE_MAP:
-            k = _ATTENTION_FILE_MAP[k].lower()
+            mapped = _ATTENTION_FILE_MAP[k].lower()
+            self._try_lazy_load(mapped)
+            if k in self._metadata:
+                return dict(self._metadata[k])
+            if mapped in self._metadata:
+                return dict(self._metadata[mapped])
+            bare = mapped.split(".")[-1]
+            if bare in self._metadata:
+                return dict(self._metadata[bare])
         elif self.name == "compressors" and k in _COMPRESSOR_FILE_MAP:
-            k = _COMPRESSOR_FILE_MAP[k].lower()
+            mapped = _COMPRESSOR_FILE_MAP[k].lower()
+            self._try_lazy_load(mapped)
+            if k in self._metadata:
+                return dict(self._metadata[k])
+            if mapped in self._metadata:
+                return dict(self._metadata[mapped])
+            bare = mapped.split(".")[-1]
+            if bare in self._metadata:
+                return dict(self._metadata[bare])
         self._try_lazy_load(k)
         if k in self._metadata:
             return dict(self._metadata[k])
@@ -272,7 +288,16 @@ class Registry:
                 if k not in self._dict and k not in self._aliases:
                     import importlib
 
-                    importlib.import_module(f"neuralops.compression_engine.{canonical}")
+                    try:
+                        importlib.import_module(f"neuralops.compression_engine.{canonical}")
+                    except (ImportError, ModuleNotFoundError):
+                        bare = canonical.split(".")[-1]
+                        for subpkg in ('svd', 'quantization', 'pruning', 'low_rank', 'tensor_decomp', 'kv_cache', 'experimental'):
+                            try:
+                                importlib.import_module(f"neuralops.compression_engine.{subpkg}.{bare}")
+                                break
+                            except (ImportError, ModuleNotFoundError):
+                                continue
             except ImportError:
                 pass
             except Exception as e:
@@ -296,7 +321,16 @@ class Registry:
                 if k not in self._dict and k not in self._aliases:
                     import importlib
 
-                    importlib.import_module(f"neuralops.attentions.{canonical}")
+                    try:
+                        importlib.import_module(f"neuralops.attentions.{canonical}")
+                    except (ImportError, ModuleNotFoundError):
+                        bare = canonical.split(".")[-1]
+                        for subpkg in ('modern', 'svd', 'adaptive', 'gated', 'linear', 'sparse', 'ssm', 'hybrid', 'dense', 'fast_kernels', 'experimental'):
+                            try:
+                                importlib.import_module(f"neuralops.attentions.{subpkg}.{bare}")
+                                break
+                            except (ImportError, ModuleNotFoundError):
+                                continue
             except ImportError:
                 pass
             except Exception as e:
@@ -329,11 +363,13 @@ class Registry:
         if obj is None and self.name == "attentions" and k_lower in _ATTENTION_FILE_MAP:
             can = _ATTENTION_FILE_MAP[k_lower]
             self._try_lazy_load(can)
-            obj = self._dict.get(can.lower()) or self._aliases.get(can.lower())
+            bare = can.split(".")[-1].lower()
+            obj = self._dict.get(can.lower()) or self._aliases.get(can.lower()) or self._dict.get(bare) or self._aliases.get(bare)
         if obj is None and self.name == "compressors" and k_lower in _COMPRESSOR_FILE_MAP:
             can = _COMPRESSOR_FILE_MAP[k_lower]
             self._try_lazy_load(can)
-            obj = self._dict.get(can.lower()) or self._aliases.get(can.lower())
+            bare = can.split(".")[-1].lower()
+            obj = self._dict.get(can.lower()) or self._aliases.get(can.lower()) or self._dict.get(bare) or self._aliases.get(bare)
         if unwrap:
             return obj
         if obj is not None and self.name == "attentions" and isinstance(obj, type):
@@ -363,11 +399,13 @@ class Registry:
         if obj is None and self.name == "attentions" and k_lower in _ATTENTION_FILE_MAP:
             can = _ATTENTION_FILE_MAP[k_lower]
             self._try_lazy_load(can)
-            obj = self._dict.get(can.lower()) or self._aliases.get(can.lower())
+            bare = can.split(".")[-1].lower()
+            obj = self._dict.get(can.lower()) or self._aliases.get(can.lower()) or self._dict.get(bare) or self._aliases.get(bare)
         if obj is None and self.name == "compressors" and k_lower in _COMPRESSOR_FILE_MAP:
             can = _COMPRESSOR_FILE_MAP[k_lower]
             self._try_lazy_load(can)
-            obj = self._dict.get(can.lower()) or self._aliases.get(can.lower())
+            bare = can.split(".")[-1].lower()
+            obj = self._dict.get(can.lower()) or self._aliases.get(can.lower()) or self._dict.get(bare) or self._aliases.get(bare)
         if obj is None:
             raise KeyError(
                 f"Unknown {self.name.rstrip('s')} '{key}'. Available: {list(self._dict.keys())}"
@@ -444,11 +482,13 @@ class Registry:
         if self.name == "attentions" and k_lower in _ATTENTION_FILE_MAP:
             can = _ATTENTION_FILE_MAP[k_lower].lower()
             self._try_lazy_load(can)
-            return (can in self._dict) or (can in self._aliases)
+            bare = can.split(".")[-1]
+            return (can in self._dict) or (can in self._aliases) or (bare in self._dict) or (bare in self._aliases)
         if self.name == "compressors" and k_lower in _COMPRESSOR_FILE_MAP:
             can = _COMPRESSOR_FILE_MAP[k_lower].lower()
             self._try_lazy_load(can)
-            return (can in self._dict) or (can in self._aliases)
+            bare = can.split(".")[-1]
+            return (can in self._dict) or (can in self._aliases) or (bare in self._dict) or (bare in self._aliases)
         return False
 
     def __len__(self) -> int:

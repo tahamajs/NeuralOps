@@ -63,7 +63,13 @@ class SpectralMamba(nn.Module):
         is_2d = (x.dim() == 2)
         x_in = x.unsqueeze(1) if is_2d else x
 
-        out = self.mamba(x_in, **kwargs)
+        if isinstance(self.mamba, nn.Identity):
+            out = self.mamba(x_in)
+        else:
+            try:
+                out = self.mamba(x_in, **kwargs)
+            except TypeError:
+                out = self.mamba(x_in)
         present_state = None
         if isinstance(out, tuple):
             if len(out) > 1:

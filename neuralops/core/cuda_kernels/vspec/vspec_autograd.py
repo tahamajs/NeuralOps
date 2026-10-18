@@ -55,7 +55,7 @@ def _fwd_dispatch(x, spec_gate, decay, eps=1e-6):
         mod = _get_module()
         return mod.vspec_fwd(x.contiguous(), spec_gate.contiguous(), decay.contiguous(), float(eps))
 
-    return dispatch(cuda_fn, vspec_ref, vspec_ref, x, spec_gate=spec_gate, decay=decay, eps=eps, kernel_name=vspec)
+    return dispatch(cuda_fn, vspec_ref, vspec_ref, x, spec_gate=spec_gate, decay=decay, eps=eps, kernel_name="vspec")
 
 
 class _VSPECFunction(torch.autograd.Function):
