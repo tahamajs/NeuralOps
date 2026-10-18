@@ -8,6 +8,7 @@
 namespace neuralops {
 namespace cuda {
 
+// Single-pass cooperative warp shuffle reduction RMSNorm with fused register scale multiplication
 template <typename scalar_t>
 __launch_bounds__(256)
 __global__ void rmsnorm_fwd_kernel(
@@ -24,6 +25,9 @@ __global__ void rmsnorm_fwd_kernel(
     if (m >= M) return;
 
     const int tid = threadIdx.x;
+    const int lane = tid & 31;
+    const int wid = tid >> 5;
+    const int num_warps = blockDim.x >> 5;
     const int offset = m * D;
 
     float sum_sq = 0.0f;
@@ -35,15 +39,32 @@ __global__ void rmsnorm_fwd_kernel(
         sum_sq += val * val;
     }
 
-    sum_sq = block_reduce_sum(sum_sq);
+    // Cooperative warp shuffle reduction using __shfl_down_sync
+    #pragma unroll
+    for (int mask = 16; mask > 0; mask >>= 1) {
+        sum_sq += __shfl_down_sync(0xffffffff, sum_sq, mask);
+    }
+
+    __shared__ float s_warp_sums[32];
+    if (lane == 0) {
+        s_warp_sums[wid] = sum_sq;
+    }
+    __syncthreads();
 
     __shared__ float s_rrms;
     if (tid == 0) {
-        s_rrms = rsqrtf(sum_sq / static_cast<float>(D) + eps);
+        float block_sum = 0.0f;
+        #pragma unroll
+        for (int w = 0; w < 8; ++w) {
+            if (w < num_warps) block_sum += s_warp_sums[w];
+        }
+        s_rrms = rsqrtf(block_sum / static_cast<float>(D) + eps);
     }
     __syncthreads();
 
     const float rrms = s_rrms;
+
+    // Fused normalization and scale multiplication directly in registers
     for (int d = tid; d < D; d += blockDim.x) {
         float val = to_float(x[offset + d]);
         if (has_residual && residual != nullptr) {
@@ -74,7 +95,7 @@ torch::Tensor rmsnorm_fwd(
     auto out = torch::empty_like(x_2d);
     const bool has_residual = residual.has_value() && residual.value().defined();
 
-    const int threads = std::min(256, D);
+    const int threads = (D <= 32) ? 32 : ((D <= 64) ? 64 : ((D <= 128) ? 128 : 256));
     const int blocks = M;
     auto stream = c10::cuda::getCurrentCUDAStream();
 
