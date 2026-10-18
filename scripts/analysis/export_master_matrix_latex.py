@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Author: Taha Majlesi
 import csv
 
 input_csv = 'results/MASTER_RESULTS_MATRIX.csv'
@@ -24,7 +26,7 @@ def fmt(v, default='-'):
         if f == int(f) and '.' not in str(v):
             return str(int(f))
         return f'{f:.2f}'
-    except:
+    except (ValueError, TypeError):
         return v.replace('_', r'\_')
 
 def esc(s):

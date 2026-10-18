@@ -990,11 +990,12 @@ class SpectronFP8Attention(BaseAttention):
         if out_loc.is_cuda:
             try:
                 from neuralops.core.cuda_kernels.hybrid_local_kernel import hybrid_three_branch_blend
+                alpha_h = alpha.unsqueeze(1).expand(B, self.num_heads, N, 3).contiguous()
                 fused = hybrid_three_branch_blend(
                     out_loc.to(target_dt),
                     out_glob.to(target_dt),
                     out_lin.to(target_dt),
-                    alpha.to(target_dt),
+                    alpha_h.to(target_dt),
                 )
             except Exception:
                 fused = (

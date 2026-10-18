@@ -118,7 +118,8 @@ if wikitext_json.exists():
 \\midrule
 """
     for r in top_10:
-        tex_pareto += f"{r['compressor'].replace('_', '\\_')} & {r['perplexity']:.2f} & {r['param_reduction_pct']:.1f}\\% & {r['peak_vram_mb']:.1f} & {r['latency_ms_per_token']:.3f} \\\\\n"
+        c_name = r['compressor'].replace('_', '\\_')
+        tex_pareto += f"{c_name} & {r['perplexity']:.2f} & {r['param_reduction_pct']:.1f}\\% & {r['peak_vram_mb']:.1f} & {r['latency_ms_per_token']:.3f} \\\\\n"
     tex_pareto += """\\bottomrule
 \\end{tabular}
 \\end{table}

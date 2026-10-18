@@ -262,7 +262,8 @@ def run_benchmarks():
         f.write("\\midrule\n")
         for row in results:
             shape_str = f"({row['batch']}, {row['seq_len']}, {row['head_dim']})"
-            f.write(f"{row['kernel'].replace('_', '\\_')} & {shape_str} & {row['ref_fwd_ms']} & {row['cuda_fwd_ms']} & {row['speedup_fwd']} & {row['ref_bwd_ms']} & {row['cuda_bwd_ms']} & {row['speedup_bwd']} \\\\\n")
+            k_name = row['kernel'].replace('_', '\\_')
+            f.write(f"{k_name} & {shape_str} & {row['ref_fwd_ms']} & {row['cuda_fwd_ms']} & {row['speedup_fwd']} & {row['ref_bwd_ms']} & {row['cuda_bwd_ms']} & {row['speedup_bwd']} \\\\\n")
         f.write("\\bottomrule\n")
         f.write("\\end{tabular}\n")
         f.write("\\end{table*}\n")
