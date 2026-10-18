@@ -102,7 +102,7 @@ if HAS_TRITON:
                 v = tl.load(v_ptrs, mask=mask_k[:, None], other=0.0)
 
                 # Compute S_ij = Q_i @ K_j^T * sm_scale
-                s = tl.dot(q, tl.trans(k)) * sm_scale
+                s = (tl.dot(q, tl.trans(k)) * sm_scale).to(tl.float32)
 
                 if IS_CAUSAL:
                     causal_cond = offs_q[:, None] >= offs_k[None, :]
@@ -180,7 +180,7 @@ if HAS_TRITON and tl is not None:
                 k_ptrs = K_ptr + pid_bh * stride_kb + offs_k[None, :] * stride_kn + offs_d[:, None] * stride_kd
                 k = tl.load(k_ptrs, mask=mask_k[None, :], other=0.0)
 
-                s = tl.dot(q, k) * sm_scale
+                s = (tl.dot(q, k) * sm_scale).to(tl.float32)
                 if IS_CAUSAL:
                     causal_cond = offs_q[:, None] >= offs_k[None, :]
                     s = tl.where(causal_cond & mask_q[:, None] & mask_k[None, :], s, float("-inf"))
@@ -212,7 +212,7 @@ if HAS_TRITON and tl is not None:
                 k = tl.load(k_ptrs, mask=mask_k[:, None], other=0.0)
                 v = tl.load(v_ptrs, mask=mask_k[:, None], other=0.0)
 
-                s = tl.dot(q, tl.trans(k)) * sm_scale
+                s = (tl.dot(q, tl.trans(k)) * sm_scale).to(tl.float32)
                 if IS_CAUSAL:
                     causal_cond = offs_q[:, None] >= offs_k[None, :]
                     s = tl.where(causal_cond & mask_q[:, None] & mask_k[None, :], s, float("-inf"))
