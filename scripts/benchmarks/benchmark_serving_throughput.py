@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# Author: Taha Majlesi
 """Continuous Serving Multi-Concurrency, TTFT, ITL, and PagedKVCache Benchmark.
 
 Measures:
@@ -79,13 +80,14 @@ class MockDecoderLayer(nn.Module):
 
 
 def benchmark_serving(
-    concurrencies: list[int] = [1, 4, 8, 16, 32],
+    concurrencies: list[int] | None = None,
     prefill_len: int = 128,
     decode_steps: int = 16,
     hidden_dim: int = 512,
     num_heads: int = 8,
     device: str = "cuda:0",
 ) -> dict:
+    concurrencies = [1, 4, 8, 16, 32] if concurrencies is None else concurrencies
     dev = torch.device(device if torch.cuda.is_available() else "cpu")
     runner = BenchmarkRunner(device=dev, warmup_iters=2, benchmark_iters=5)
     model = MockDecoderLayer(hidden_dim=hidden_dim, num_heads=num_heads).to(device=dev, dtype=torch.float16).eval()

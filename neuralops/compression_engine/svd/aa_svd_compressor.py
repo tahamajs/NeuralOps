@@ -190,6 +190,16 @@ class SVDLinear(nn.Module):
             except Exception as e:
                 logger.debug("SVDLinear fused kernel failed (%s); using F.linear.", e)
 
+        if getattr(self, "use_triton", True) and x.is_cuda and (self.lora_rank == 0 or self.lora_A is None):
+            try:
+                from neuralops.core.triton_kernels._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
+                suitable, _ = check_triton_suitability(x, "low_rank")
+                if not FORCE_PYTORCH_FALLBACK and suitable:
+                    from neuralops.core.triton_kernels.low_rank import _TritonLowRankAutogradFunction
+                    return _TritonLowRankAutogradFunction.apply(x, self.U, self.V, self.bias, None)
+            except Exception as e:
+                logger.debug("Triton low-rank autograd kernel failed (%s); fallback", e)
+
         if getattr(self, "use_triton", True) and x.is_cuda and not self.training and (self.lora_rank == 0 or self.lora_A is None):
             try:
                 from neuralops.core.triton_kernels.low_rank import triton_fused_lowrank_gated_gemm

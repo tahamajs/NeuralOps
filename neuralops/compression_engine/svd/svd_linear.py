@@ -150,6 +150,16 @@ class SVDLinearLayer(nn.Module):
                 use_rms_norm=self.use_rms_norm,
             )
 
+        if x.is_cuda and (self.lora_r <= 0 or self.lora_A is None) and not self.use_rms_norm:
+            try:
+                from neuralops.core.triton_kernels._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
+                suitable, _ = check_triton_suitability(x, "low_rank")
+                if not FORCE_PYTORCH_FALLBACK and suitable:
+                    from neuralops.core.triton_kernels.low_rank import _TritonLowRankAutogradFunction
+                    return _TritonLowRankAutogradFunction.apply(x, self.U, self.V, self.bias, None)
+            except Exception:
+                pass
+
         if x.is_cuda and not self.training:
             try:
                 from neuralops.core.triton_kernels.low_rank import fused_down_up_gemm_bias_triton, fused_svd_lora_sparse_attn_triton

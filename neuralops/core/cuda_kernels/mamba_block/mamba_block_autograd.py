@@ -79,7 +79,9 @@ class _MambaBlockFunction(torch.autograd.Function):
         return out, next_state
 
     @staticmethod
-    def backward(ctx: Any, dout, dnext_state=None):
+    def backward(ctx: Any, *grad_outputs: Any) -> tuple[torch.Tensor | None, ...]:
+        dout = grad_outputs[0] if len(grad_outputs) > 0 else None
+        dnext_state = grad_outputs[1] if len(grad_outputs) > 1 else None
         u, delta, A, B_mat, C_mat, prev_state = ctx.saved_tensors
         u_p = u.detach().requires_grad_(u.requires_grad)
         delta_p = delta.detach().requires_grad_(delta.requires_grad)
@@ -92,10 +94,10 @@ class _MambaBlockFunction(torch.autograd.Function):
             out_p, next_s_p = mamba_block_ref(u_p, delta_p, A_p, B_p, C_p, prev_p)
 
         outputs = [out_p]
-        grad_outputs = [dout]
+        actual_grads = [dout]
         if dnext_state is not None:
             outputs.append(next_s_p)
-            grad_outputs.append(dnext_state)
+            actual_grads.append(dnext_state)
 
         inputs = [u_p, delta_p, A_p, B_p, C_p, prev_p]
         diff_inputs = [inp for inp in inputs if inp.requires_grad]
@@ -105,7 +107,7 @@ class _MambaBlockFunction(torch.autograd.Function):
         grads = torch.autograd.grad(
             outputs,
             diff_inputs,
-            grad_outputs,
+            actual_grads,
             allow_unused=True,
         )
         grad_map = dict(zip(diff_inputs, grads))

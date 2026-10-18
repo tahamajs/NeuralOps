@@ -68,7 +68,8 @@ class _CrossAttentionFunction(torch.autograd.Function):
         return out
 
     @staticmethod
-    def backward(ctx, grad_output):
+    def backward(ctx, *grad_outputs):
+        grad_output = grad_outputs[0]
         q, k, v = ctx.saved_tensors
         mod = _get_module()
         if mod is not None and hasattr(mod, "cross_attention_bwd") and q.is_cuda and q.shape[-1] <= 128:

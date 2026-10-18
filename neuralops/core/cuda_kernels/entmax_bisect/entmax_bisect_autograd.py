@@ -82,7 +82,8 @@ class _Entmax15Function(torch.autograd.Function):
         return p
 
     @staticmethod
-    def backward(ctx: Any, dout: torch.Tensor) -> tuple[torch.Tensor | None, ...]:
+    def backward(ctx: Any, *grad_outputs: Any) -> tuple[torch.Tensor | None, ...]:
+        dout = grad_outputs[0]
         (p,) = ctx.saved_tensors
         if not ctx.needs_input_grad[0]:
             return None, None

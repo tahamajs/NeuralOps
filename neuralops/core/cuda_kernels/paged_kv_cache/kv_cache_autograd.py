@@ -113,7 +113,9 @@ class _CopyBlocksCoWAutograd(torch.autograd.Function):
         return dst_k, dst_v
 
     @staticmethod
-    def backward(ctx, grad_dst_k, grad_dst_v):
+    def backward(ctx: Any, *grad_outputs: Any) -> tuple[torch.Tensor | None, ...]:
+        grad_dst_k = grad_outputs[0] if len(grad_outputs) > 0 else None
+        grad_dst_v = grad_outputs[1] if len(grad_outputs) > 1 else None
         block_mapping, = ctx.saved_tensors
         grad_src_k = torch.zeros(ctx.src_shape, dtype=ctx.dtype, device=ctx.device)
         grad_src_v = torch.zeros(ctx.src_shape, dtype=ctx.dtype, device=ctx.device)
@@ -129,8 +131,10 @@ class _CopyBlocksCoWAutograd(torch.autograd.Function):
             if valid_map.numel() > 0:
                 src_idx = valid_map[:, 0].long()
                 dst_idx = valid_map[:, 1].long()
-                grad_src_k.index_add_(0, src_idx, grad_dst_k[dst_idx])
-                grad_src_v.index_add_(0, src_idx, grad_dst_v[dst_idx])
+                if grad_dst_k is not None:
+                    grad_src_k.index_add_(0, src_idx, grad_dst_k[dst_idx])
+                if grad_dst_v is not None:
+                    grad_src_v.index_add_(0, src_idx, grad_dst_v[dst_idx])
 
         return None, None, grad_src_k, grad_src_v, None, None, None, None
 

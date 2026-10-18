@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# Author: Taha Majlesi
 """Self-Speculative Decoding Benchmark across lookahead steps gamma in {1, 2, 3, 4, 6, 8}.
 
 Measures:
@@ -63,10 +64,11 @@ class SyntheticLanguageModel(nn.Module):
 
 def run_speculative_gamma_benchmark(
     device: str = "cuda:0",
-    gammas: list[int] = [1, 2, 3, 4, 6, 8],
+    gammas: list[int] | None = None,
     tokens_to_generate: int = 32,
     out_file: str = "results/benchmarks_speculative_gamma_sweep.json",
 ):
+    gammas = [1, 2, 3, 4, 6, 8] if gammas is None else gammas
     dev = torch.device(device if torch.cuda.is_available() else "cpu")
     print(f"=== Self-Speculative Decoding Gamma Sweep Benchmark ===")
     print(f"Device: {dev} | Gamma Steps: {gammas} | Tokens to Generate: {tokens_to_generate}\n")

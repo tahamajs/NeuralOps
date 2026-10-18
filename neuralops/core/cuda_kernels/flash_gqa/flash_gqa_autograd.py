@@ -136,7 +136,8 @@ class _FlashGQAAutograd(torch.autograd.Function):
         return out
 
     @staticmethod
-    def backward(ctx, grad_output):
+    def backward(ctx, *grad_outputs):
+        grad_output = grad_outputs[0]
         q, k, v, out = ctx.saved_tensors
         is_causal = ctx.is_causal
         scale = ctx.scale

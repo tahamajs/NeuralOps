@@ -74,7 +74,8 @@ class _FusedRoPEFunction(torch.autograd.Function):
         return out
 
     @staticmethod
-    def backward(ctx: Any, dout: torch.Tensor) -> tuple[torch.Tensor | None, ...]:
+    def backward(ctx: Any, *grad_outputs: Any) -> tuple[torch.Tensor | None, ...]:
+        dout = grad_outputs[0]
         cos, sin = ctx.saved_tensors
         mod = _get_module()
         dx = mod.fused_rope_bwd(dout.contiguous(), cos.contiguous(), sin.contiguous())
