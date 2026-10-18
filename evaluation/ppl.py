@@ -56,6 +56,7 @@ class PerplexityEvaluator:
         dtype: Union[str, torch.dtype] = "float16",
         tokenizer: Optional[Any] = None,
     ) -> None:
+        """Execute init routine."""
         self.device = torch.device(device if (torch.cuda.is_available() and device != "cpu") else "cpu")
         self.block_size = int(block_size)
         self.bucket_size = int(bucket_size)
@@ -263,6 +264,7 @@ class PerplexityEvaluator:
 
 
 def main() -> None:
+    """Execute main routine."""
     parser = argparse.ArgumentParser(description="FLA-grade Positional & Block Perplexity Evaluator")
     parser.add_argument("--path", type=str, default="gpt2", help="Model path or name")
     parser.add_argument("--module-name", type=str, default=None, help="NeuralOps attention/compressor name")

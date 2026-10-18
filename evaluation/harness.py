@@ -52,6 +52,7 @@ except (ImportError, AttributeError, ModuleNotFoundError):
         register_model = lambda *names: lambda cls: cls
     except (ImportError, AttributeError, ModuleNotFoundError):
         class BaseLM:
+            """Baselm definition."""
             pass
         register_model = lambda *names: lambda cls: cls
         HAS_LM_EVAL = False
@@ -77,6 +78,7 @@ class NeuralOpsLMWrapper(BaseLM):
         trust_remote_code: bool = True,
         **kwargs: Any,
     ) -> None:
+        """Execute init routine."""
         super().__init__()
         
         self._device = torch.device(device if (torch.cuda.is_available() and device != "cpu") else "cpu")
@@ -148,31 +150,38 @@ class NeuralOpsLMWrapper(BaseLM):
 
     @property
     def eot_token_id(self) -> int:
+        """Execute eot token id routine."""
         return self.tokenizer.eos_token_id
 
     @property
     def max_length(self) -> int:
+        """Execute max length routine."""
         return self._max_length
 
     @property
     def max_gen_toks(self) -> int:
+        """Execute max gen toks routine."""
         return 256
 
     @property
     def batch_size(self) -> int:
+        """Execute batch size routine."""
         return self._batch_size
 
     @property
     def device(self) -> torch.device:
+        """Execute device routine."""
         return self._device
 
     def tok_encode(self, string: str, left_truncate_len: Optional[int] = None, add_special_tokens: bool = False) -> List[int]:
+        """Execute tok encode routine."""
         enc = self.tokenizer.encode(string, add_special_tokens=add_special_tokens)
         if left_truncate_len:
             enc = enc[-left_truncate_len:]
         return enc
 
     def tok_decode(self, tokens: List[int]) -> str:
+        """Execute tok decode routine."""
         return self.tokenizer.decode(tokens)
 
     def loglikelihood(self, requests: List[Any], disable_tqdm: bool = False) -> List[Tuple[float, bool]]:
@@ -355,6 +364,7 @@ def run_evaluation(
 
 
 def main() -> None:
+    """Execute main routine."""
     parser = argparse.ArgumentParser(description="NeuralOps & FLA LM-Evaluation Harness Entrypoint")
     parser.add_argument("--model", type=str, default="gpt2", help="HuggingFace model path or name")
     parser.add_argument("--module-name", type=str, default=None, help="NeuralOps attention or compressor module")

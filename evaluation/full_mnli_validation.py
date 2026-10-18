@@ -49,6 +49,7 @@ def wilson_ci(n_correct: int, n_total: int, z: float = 1.96):
 
 
 def encode_batch(tokenizer, texts, seq_len, device):
+    """Execute encode batch routine."""
     enc = tokenizer(
         texts,
         padding="max_length",
@@ -142,6 +143,7 @@ def eval_on_dataset(model, tokenizer, val_ds, seq_len: int, batch_size: int, dev
 
 
 def main():
+    """Execute main routine."""
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", required=True, help="Path to base fine-tuned model dir")
     ap.add_argument("--sweep_csv", required=True, help="Path to summary.csv from the sweep")

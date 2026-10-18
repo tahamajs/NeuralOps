@@ -44,6 +44,7 @@ class LabelQualityDetector:
     """
 
     def __init__(self, threshold: float = 0.1, seed: int = 42) -> None:
+        """Execute init routine."""
         self.threshold = threshold
         self.seed = seed
 

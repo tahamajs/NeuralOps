@@ -405,14 +405,17 @@ class EvaluationReport:
     """Structured container for end-to-end evaluation runs."""
 
     def __init__(self, run_name: str, config: Dict[str, Any]) -> None:
+        """Execute init routine."""
         self.run_name = run_name
         self.config = config
         self.records: List[Dict[str, Any]] = []
 
     def add_entry(self, entry: Dict[str, Any]) -> None:
+        """Execute add entry routine."""
         self.records.append(entry)
 
     def to_dict(self) -> Dict[str, Any]:
+        """Execute to dict routine."""
         return {
             "run_name": self.run_name,
             "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),

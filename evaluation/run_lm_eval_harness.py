@@ -57,6 +57,7 @@ LOG = logging.getLogger("LMEvalHarness")
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    """Execute parse args routine."""
     parser = argparse.ArgumentParser(
         description="Run LM Evaluation Harness on GPT-2 with an injected attention or compressor module."
     )

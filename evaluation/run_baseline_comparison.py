@@ -107,6 +107,7 @@ CSV_FIELDS = [
 
 
 def parse_args():
+    """Execute parse args routine."""
     parser = argparse.ArgumentParser(
         description="Run comparative evaluation of literature baselines against proposed method",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -143,6 +144,7 @@ def parse_args():
 
 
 def main():
+    """Execute main routine."""
     args = parse_args()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
