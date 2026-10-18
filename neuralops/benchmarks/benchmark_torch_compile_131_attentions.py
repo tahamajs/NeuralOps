@@ -30,13 +30,18 @@ TRITON_KERNELS_REQUIRE_HALF = {
     "gla_scan", "gdn_scan", "hgrn2_scan", "selective_scan", "fms_scan",
     "state_update", "cosformer_triton_kernel", "block_sparse",
     "varlen_attention", "softplus", "elementwise",
+    "sparse", "gla", "gdn", "hgrn2", "cosformer", "sliding_window", "paged",
 }
 
 
-def get_benchmark_dtype(attn_name: str) -> torch.dtype:
+def get_benchmark_dtype(attn_name: str, cls=None) -> torch.dtype:
     name = attn_name.lower()
     if name in TRITON_KERNELS_REQUIRE_HALF or any(k in name for k in TRITON_KERNELS_REQUIRE_HALF):
         return torch.float16
+    if cls is not None:
+        tk = getattr(cls, "triton_kernel", None)
+        if tk and (tk in TRITON_KERNELS_REQUIRE_HALF or any(k in tk for k in TRITON_KERNELS_REQUIRE_HALF)):
+            return torch.float16
     return torch.float32
 
 
@@ -79,9 +84,9 @@ def benchmark_torch_compile(strict_compile_check: bool = True, output_path: str 
     total_recompilations = 0
     records_for_csv = []
 
-    print("\n" + "=" * 135)
-    print(f"| {'Module':<32} | {'Status':<16} | {'Reliability':<14} | {'CUDA (ms)':<10} | {'PyTorch (ms)':<12} | {'Speedup':<9} | {'Recompiles':<10} | {'Zero-NaN':<8} |")
-    print("|" + "-" * 34 + "|" + "-" * 18 + "|" + "-" * 16 + "|" + "-" * 12 + "|" + "-" * 14 + "|" + "-" * 11 + "|" + "-" * 12 + "|" + "-" * 10 + "|")
+    print("\n" + "=" * 135, flush=True)
+    print(f"| {'Module':<32} | {'Status':<16} | {'Reliability':<14} | {'CUDA (ms)':<10} | {'PyTorch (ms)':<12} | {'Speedup':<9} | {'Recompiles':<10} | {'Zero-NaN':<8} |", flush=True)
+    print("|" + "-" * 34 + "|" + "-" * 18 + "|" + "-" * 16 + "|" + "-" * 12 + "|" + "-" * 14 + "|" + "-" * 11 + "|" + "-" * 12 + "|" + "-" * 10 + "|", flush=True)
 
     for idx, attn_name in enumerate(attn_keys, 1):
         cls = ATTENTION_REGISTRY.get(attn_name)
@@ -105,7 +110,7 @@ def benchmark_torch_compile(strict_compile_check: bool = True, output_path: str 
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
 
-            dtype = get_benchmark_dtype(attn_name) if device == "cuda" else torch.float32
+            dtype = get_benchmark_dtype(attn_name, cls) if device == "cuda" else torch.float32
 
             # Instantiate module with causal safety awareness
             inst_kwargs = {"dim": DIM, "num_heads": NUM_HEADS, "is_decoder": True}
@@ -281,7 +286,7 @@ def benchmark_torch_compile(strict_compile_check: bool = True, output_path: str 
         recomp = str(mod_rec["recompilations"])
         nan_flag = "PASS" if mod_rec["zero_nan"] else "FAIL"
 
-        print(f"| {attn_name:<32} | {stat:<16} | {rel:<14} | {c_ms:>10} | {p_ms:>12} | {spd:>9} | {recomp:>10} | {nan_flag:>8} |")
+        print(f"| {attn_name:<32} | {stat:<16} | {rel:<14} | {c_ms:>10} | {p_ms:>12} | {spd:>9} | {recomp:>10} | {nan_flag:>8} |", flush=True)
 
         records_for_csv.append({
             "Module": attn_name,
