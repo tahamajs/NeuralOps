@@ -35,13 +35,13 @@ def bench_op(name, fn_fwd, warmup=5, iters=20):
         torch.cuda.synchronize()
 
     for _ in range(warmup):
-        out = fn_fwd()
+        _ = fn_fwd()
     if device == 'cuda':
         torch.cuda.synchronize()
 
     t0 = time.perf_counter()
     for _ in range(iters):
-        out = fn_fwd()
+        _ = fn_fwd()
     if device == 'cuda':
         torch.cuda.synchronize()
     fwd_ms = (time.perf_counter() - t0) / iters * 1000.0

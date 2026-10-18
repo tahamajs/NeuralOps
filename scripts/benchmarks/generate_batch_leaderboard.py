@@ -82,7 +82,7 @@ def main():
             f.write("| Compressor | Type / Family | " + " | ".join([f"{m} (RelErr ± std)" for m in MODELS]) + " | Ratio vs `direct_svd` | Verdict |\n")
             f.write("|:---|:---|" + "|".join([":---:"] * len(MODELS)) + "|:---:|:---:|\n")
 
-            base_key = f"direct_svd_rank{rank}"
+            _base_key = f"direct_svd_rank{rank}"
             for method in VALID_RANK_SENSITIVE:
                 row = f"| **`{method}`** | "
                 # Family tag

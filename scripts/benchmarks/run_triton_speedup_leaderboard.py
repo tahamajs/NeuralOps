@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# Author: Taha Majlesi
 """Comprehensive Empirical Hardware Speedup & Roofline Leaderboard for NeuralOps.
 Benchmarks across 3 distinct tiers on NVIDIA RTX 4070 Ada GPU:
   Tier 1: Direct Micro-Benchmark of all 26 core Triton Kernel Modules vs PyTorch references
@@ -14,13 +15,10 @@ Generates:
 from __future__ import annotations
 
 import csv
-import gc
 import json
-import math
+import logging
 import os
-import sys
-import time
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List
 
 import torch
 import torch.nn as nn
@@ -28,9 +26,11 @@ import torch.nn.functional as F
 
 import neuralops
 from neuralops import export_benchmark_table, profile_roofline
-from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
+from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.core.roofline import get_device_roofline_specs
-import neuralops.core.triton_kernels._types as triton_types
+import neuralops.core.triton_kernels as triton_types
+
+logger = logging.getLogger("run_triton_speedup_leaderboard")
 
 # Set seeds
 torch.manual_seed(42)
@@ -700,16 +700,16 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
 
     # 22. varlen_attention.py
     try:
-        from neuralops.core.triton_kernels.varlen_attention import _varlen_attention_fwd, varlen_attention_pytorch
+        from neuralops.core.triton_kernels.varlen_attention import varlen_attention_triton, varlen_attention_pytorch
         total_tokens, H, D_h = 4096, 8, 64
         q_vl = torch.randn(total_tokens, H, D_h, device=device, dtype=torch.float16)
         k_vl = torch.randn(total_tokens, H, D_h, device=device, dtype=torch.float16)
         v_vl = torch.randn(total_tokens, H, D_h, device=device, dtype=torch.float16)
         cu_seqlens = torch.tensor([0, 1024, 2560, 4096], device=device, dtype=torch.int32)
 
-        t_tri = measure_ms(_varlen_attention_fwd, q_vl, k_vl, v_vl, cu_seqlens, cu_seqlens, False)
+        t_tri = measure_ms(varlen_attention_triton, q_vl, k_vl, v_vl, cu_seqlens, cu_seqlens, False)
         t_pt = measure_ms(varlen_attention_pytorch, q_vl, k_vl, v_vl, cu_seqlens, cu_seqlens, False)
-        err = float((_varlen_attention_fwd(q_vl, k_vl, v_vl, cu_seqlens, cu_seqlens, False) - varlen_attention_pytorch(q_vl, k_vl, v_vl, cu_seqlens, cu_seqlens, False)).abs().max().item())
+        err = float((varlen_attention_triton(q_vl, k_vl, v_vl, cu_seqlens, cu_seqlens, False) - varlen_attention_pytorch(q_vl, k_vl, v_vl, cu_seqlens, cu_seqlens, False)).abs().max().item())
         sram_saved = round((total_tokens * H * D_h * 2 * 2) / (1024 * 1024), 2)
         results.append({
             "kernel_module": "varlen_attention.py",
@@ -790,7 +790,7 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
 
     # 26. _types.py / _common.py
     try:
-        from neuralops.core.triton_kernels._common import pad_to_triton_power_of_2, unpad_from_triton_power_of_2
+        from neuralops.core.triton_kernels import pad_to_triton_power_of_2, unpad_from_triton_power_of_2
         raw_t = torch.randn(2, 50, device=device, dtype=torch.float16)
         (padded_t,), orig_d = pad_to_triton_power_of_2(raw_t)
         unpadded_t = unpad_from_triton_power_of_2(padded_t, orig_d)

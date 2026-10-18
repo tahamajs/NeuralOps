@@ -213,11 +213,11 @@ def run_e2e_model_surgery_benchmarks(device: str = "cuda") -> List[Dict[str, Any
         x = torch.randint(0, 50257, (B, N), device=device)
 
         # Baseline MHA
-        ms_mha, vram_mha = measure_peak_memory_and_latency(lambda: base_mha(x), warmup=3, iters=10)
+        ms_mha, vram_mha = measure_peak_memory_and_latency(lambda _x=x: base_mha(_x), warmup=3, iters=10)
         tok_mha = (B * N) / (ms_mha / 1000.0)
 
         # Linear Attention Surgery
-        ms_lin, vram_lin = measure_peak_memory_and_latency(lambda: linear_model(x), warmup=3, iters=10)
+        ms_lin, vram_lin = measure_peak_memory_and_latency(lambda _x=x: linear_model(_x), warmup=3, iters=10)
         tok_lin = (B * N) / (ms_lin / 1000.0)
 
         speedup = ms_mha / ms_lin

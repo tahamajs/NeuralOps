@@ -62,14 +62,18 @@ def main():
                 if spec and spec.loader:
                     py_mod = importlib.util.module_from_spec(spec)
                     spec.loader.exec_module(py_mod)
-                    if hasattr(py_mod, "_get_module"):
+                    if hasattr(py_mod, "get_module"):
                         t_comp0 = time.perf_counter()
-                        loaded_mod = py_mod._get_module()
+                        loaded_mod = py_mod.get_module()
+                        res_entry["compile_ms"] = round((time.perf_counter() - t_comp0) * 1000.0, 2)
+                    elif hasattr(py_mod, "_get_module"):
+                        t_comp0 = time.perf_counter()
+                        loaded_mod = getattr(py_mod, "_get_module")()
                         res_entry["compile_ms"] = round((time.perf_counter() - t_comp0) * 1000.0, 2)
 
             if loaded_mod is None:
-                # Try generic load via _bindings
-                from neuralops.core.cuda_kernels._bindings import load_cuda_module
+                # Try generic load via public cuda_kernels export
+                from neuralops.core.cuda_kernels import load_cuda_module
                 binding_files = list(d.glob("*binding*.cpp"))
                 if binding_files and cu_files:
                     cpp_src = binding_files[0].read_text(encoding="utf-8")

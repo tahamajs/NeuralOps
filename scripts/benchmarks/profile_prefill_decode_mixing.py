@@ -56,8 +56,8 @@ tok_decode_1 = torch.randn(1, D, device=device, dtype=torch.float16)
 def decode_step(stream, tok, k_cache, v_cache):
     with torch.cuda.stream(stream):
         q_step = torch.matmul(tok, W_q).view(1, 1, H, D_HEAD).transpose(1, 2)
-        k_step = torch.matmul(tok, W_k).view(H, D_HEAD)
-        v_step = torch.matmul(tok, W_v).view(H, D_HEAD)
+        _k_step = torch.matmul(tok, W_k).view(H, D_HEAD)
+        _v_step = torch.matmul(tok, W_v).view(H, D_HEAD)
         
         k_active = k_cache.view(1, decode_cache_len, H, D_HEAD).transpose(1, 2)
         v_active = v_cache.view(1, decode_cache_len, H, D_HEAD).transpose(1, 2)
