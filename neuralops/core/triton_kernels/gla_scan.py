@@ -1133,7 +1133,7 @@ def fused_chunk_svd_decay_linear_triton(
         num_inter = torch.matmul(qc, S_chunk) * decay_from_past
         den_inter = torch.matmul(qc, Z_chunk) * decay_from_past
 
-        out_c = (num_intra + num_inter) / (den_intra + den_inter + eps)
+        out_c = (num_intra + num_inter) / (den_intra + den_inter + eps).clamp(min=1e-6)
         outputs.append(out_c)
 
         total_chunk_decay = torch.exp(torch.clamp(log_gamma_c[:, :, -1:], max=0.0)).unsqueeze(-1)
@@ -1280,7 +1280,7 @@ def gla_recurrent_step_triton(
     state_z.copy_((lam_z * state_z.float() + k_t.float()).to(state_z.dtype))
 
     num = torch.matmul(q_t.unsqueeze(-2).float(), state_s.float()).squeeze(-2)
-    den = (q_t.float() * state_z.float()).sum(dim=-1, keepdim=True) + 1e-4
+    den = ((q_t.float() * state_z.float()).sum(dim=-1, keepdim=True) + 1e-4).clamp(min=1e-6)
     y = (num / den).to(q_t.dtype)
     return (y.unsqueeze(2) if has_l_dim else y), state_s, state_z
 

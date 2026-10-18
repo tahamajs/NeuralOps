@@ -49,4 +49,4 @@ jobs:
         env:
           PYTHONPATH: .
         run: |
-          pytest neuralops/tests/test_triton_*.py -v
+          pytest tests/test_triton_*.py -v

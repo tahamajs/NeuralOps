@@ -14,6 +14,7 @@ from neuralops.core.attention_utils import (
 )
 
 import logging
+import math
 from typing import Any
 
 import torch
@@ -572,7 +573,7 @@ class WeightedGroupedQueryAttention(BaseAttention):
         else:
             K_full, V_full = K, V
 
-        scale = d ** -0.5
+        scale = 1.0 / math.sqrt(int(d))
         is_cross = bool(kwargs.get("is_cross_attention", False)) or is_cross_attention
 
         # -------- [FIX] Accelerated SDPA Execution Path --------

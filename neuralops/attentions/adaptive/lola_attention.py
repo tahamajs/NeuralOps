@@ -956,7 +956,7 @@ class LoLAAttention(BaseAttention):
             K = repeat_kv(K, self.kv_repeat)
             V = repeat_kv(V, self.kv_repeat)
 
-        scale = d**-0.5
+        scale = 1.0 / math.sqrt(int(d))
 
         # ---- Attention scores (no cache yet) ----
         scores_lr = torch.matmul(Q, K.transpose(-2, -1).contiguous()) * scale

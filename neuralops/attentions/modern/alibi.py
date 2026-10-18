@@ -598,14 +598,7 @@ class ALiBiAttention(BaseAttention):
                 _k = K_full.to(dtype)
                 _v = V_full.to(dtype)
 
-                # برای کستینگ بایاس روی GPU از حافظه کش استفاده می‌کنیم
-                cache_key_bias = ("bias", _q.dtype, str(device))
-                if not hasattr(self, "_alibi_cache"):
-                    self._alibi_cache = {}
-                if cache_key_bias not in self._alibi_cache or self._alibi_cache[cache_key_bias].shape != alibi_bias.shape:
-                    self._alibi_cache[cache_key_bias] = alibi_bias.to(_q.dtype)
-
-                _bias = self._alibi_cache[cache_key_bias]
+                _bias = alibi_bias.to(_q.dtype)
 
                 out = F.scaled_dot_product_attention(
                     _q, _k, _v,

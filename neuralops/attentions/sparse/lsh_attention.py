@@ -24,6 +24,7 @@ from neuralops.core.attention_utils import (
 )
 
 import logging
+import math
 from typing import Any
 
 import torch
@@ -594,7 +595,7 @@ class LSHAttention(BaseAttention):
         B, H, N, d = Q.shape
         device = Q.device
         dtype = Q.dtype
-        scale = d**-0.5
+        scale = 1.0 / math.sqrt(int(d))
 
         num_chunks = max(1, (N + 63) // 64)
         chunk_size = (N + num_chunks - 1) // num_chunks
@@ -717,7 +718,7 @@ class LSHAttention(BaseAttention):
         use_exact = self.is_decoder or is_cross or N_q <= self.num_buckets
 
         if use_exact:
-            scale = d**-0.5
+            scale = 1.0 / math.sqrt(int(d))
             scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
 
             if valid_mask is not None:

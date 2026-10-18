@@ -1127,7 +1127,7 @@ class _ZerosLinearScanFunction(torch.autograd.Function):
             Z = torch.cumsum(k_hat, dim=2)
             
             num = torch.einsum("bhld,bhlde->bhle", q_hat, S)
-            den = (q_hat * Z).sum(dim=-1, keepdim=True).clamp(min=eps)
+            den = (q_hat * Z).sum(dim=-1, keepdim=True).clamp(min=max(eps, 1e-6))
             out_ = num / den
             out_.backward(dout)
             
@@ -1156,7 +1156,7 @@ def fused_zeros_linear_scan_triton(q: torch.Tensor, k: torch.Tensor, v: torch.Te
         S = torch.cumsum(k_hat.unsqueeze(-1) * v_v.unsqueeze(-2), dim=2)
         Z = torch.cumsum(k_hat, dim=2)
         num = torch.einsum("bhld,bhlde->bhle", q_hat, S)
-        den = (q_hat * Z).sum(dim=-1, keepdim=True).clamp(min=eps)
+        den = (q_hat * Z).sum(dim=-1, keepdim=True).clamp(min=max(eps, 1e-6))
         return (num / den).to(orig_dtype)
 
     return _ZerosLinearScanFunction.apply(q.contiguous(), k.contiguous(), v.contiguous(), valid_mask, eps)

@@ -19,6 +19,7 @@ from neuralops.core.attention_utils import (
 )
 
 import logging
+import math
 import os
 from typing import Any
 
@@ -691,7 +692,7 @@ class GoldFinchAHNBlock(BaseAttention):
                 raise RuntimeError("mask not bool")
         except Exception as e:
             logger.debug("Goldfinch SDPA failed (%s); using manual path.", e)
-            scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * (d ** -0.5)
+            scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * (1.0 / math.sqrt(int(d)))
             scores = scores.masked_fill(~valid_local_4d, -1e4)
             if head_mask is not None:
                 hm = head_mask

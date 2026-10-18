@@ -897,7 +897,7 @@ class AdaptiveSpanAttention(BaseAttention):
             K_full, V_full = K, V
 
         # ---- Scores (in FP32 for stability) ----
-        scale = d**-0.5
+        scale = 1.0 / math.sqrt(int(d))
         scores = (torch.matmul(Q.float(), K_full.float().transpose(-2, -1).contiguous()) * scale)
 
         # ---- Relative position bias ----

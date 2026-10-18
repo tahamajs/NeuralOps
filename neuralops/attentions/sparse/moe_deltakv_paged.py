@@ -41,7 +41,7 @@ def ste_quantize(x: torch.Tensor, bits: int = 4) -> torch.Tensor:
     """
     if x.numel() == 0 or bits <= 0:
         return x
-    qmax = float((1 << (bits - 1)) - 1)
+    qmax = float((1 << (int(bits) - 1)) - 1)
     scale = x.abs().amax(dim=-1, keepdim=True).clamp_min(1e-8) / qmax
     x_q = torch.clamp(torch.round(x / scale), -qmax - 1, qmax) * scale
     return x + (x_q - x).detach()

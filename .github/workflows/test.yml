@@ -29,4 +29,4 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - run: pip install -e .[dev]
-      - run: pytest neuralops/tests/test_all_attention_modules.py neuralops/tests/test_all_compressor_modules.py -q --tb=short
+      - run: pytest tests/test_fast.py tests/test_framework_completeness.py -q --tb=short

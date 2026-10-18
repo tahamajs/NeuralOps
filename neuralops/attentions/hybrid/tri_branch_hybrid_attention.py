@@ -144,7 +144,7 @@ def _local_window_attention_chunked(
         except Exception:
             pass
 
-    scale = D**-0.5
+    scale = 1.0 / math.sqrt(int(D))
     device = Q.device
 
     # FIX 6: avoid .item() — compute q_min/q_max from past_len + indices

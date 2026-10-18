@@ -24,6 +24,7 @@ from neuralops.core.attention_utils import (
 )
 
 import logging
+import math
 from typing import Any
 
 import torch
@@ -586,7 +587,7 @@ class FUSIONATTN(BaseAttention):
     ) -> tuple[torch.Tensor, torch.Tensor | None]:
         B, H, N, D = q.shape
         N_kv = k.shape[2]
-        scale = D**-0.5
+        scale = 1.0 / math.sqrt(int(D))
 
         use_sdpa = (
             not output_attentions
@@ -758,7 +759,7 @@ class FUSIONATTN(BaseAttention):
             valid_sel = None
 
         # --- Attention ---
-        scale = D**-0.5
+        scale = 1.0 / math.sqrt(int(D))
         scores = (
             torch.matmul(q_blocks.float(), k_sel.float().transpose(-2, -1).contiguous()) * scale
         )

@@ -1,5 +1,6 @@
 """Block-sparse attention with butterfly patterns and autograd backward support."""
 from __future__ import annotations
+import math
 import torch
 
 __all__ = ["butterfly_mask", "block_sparse_attention"]
@@ -31,7 +32,7 @@ def _block_sparse_attention_fwd(
     v: torch.Tensor,
     mask: torch.Tensor,
 ) -> torch.Tensor:
-    scale = q.shape[-1] ** -0.5
+    scale = 1.0 / math.sqrt(int(q.shape[-1]))
     scores = torch.matmul(q, k.transpose(-2, -1)) * scale
     scores = scores.masked_fill(~mask, float("-inf"))
     attn = torch.softmax(scores, dim=-1)

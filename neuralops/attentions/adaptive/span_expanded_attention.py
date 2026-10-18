@@ -24,6 +24,7 @@ from neuralops.core.attention_utils import (
 )
 
 import logging
+import math
 from typing import Any
 
 import torch
@@ -720,7 +721,7 @@ class SpanExpandedAttention(BaseAttention):
                 pass  # fall through
 
         # ---- 10) Manual attention ----
-        scale = Dh ** -0.5
+        scale = 1.0 / math.sqrt(int(Dh))
         scores = torch.matmul(
             q.float(), attn_k_exp.float().transpose(-2, -1).contiguous()
         ) * scale  # (B, H, L, N_k)

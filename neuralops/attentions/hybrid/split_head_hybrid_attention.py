@@ -303,7 +303,7 @@ def local_window_attention(
         except Exception:
             pass
 
-    scale = (D**-0.5) / max(1e-4, float(softpick_temperature))
+    scale = (1.0 / math.sqrt(int(D))) / max(1e-4, float(softpick_temperature))
 
     abs_q = (past_len + torch.arange(N, device=Q.device)).unsqueeze(1)  # (N, 1)
     abs_k = torch.arange(N_k, device=Q.device).unsqueeze(0)  # (1, N_k)

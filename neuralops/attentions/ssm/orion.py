@@ -815,7 +815,7 @@ class ORIONAttention(BaseAttention):
         if Hf == 0:
             return torch.zeros(B, 0, N, D, device=Q.device, dtype=Q.dtype)
 
-        scale = self.head_dim**-0.5
+        scale = 1.0 / math.sqrt(int(self.head_dim))
         is_causal = bool(self.is_decoder) and (N > 1 or past_len > 0)
 
         # Build additive attention bias for padding

@@ -187,7 +187,7 @@ def _local_window_attention(
     B, h, N, d = Q.shape
     N_k = K.shape[2]
     radius = window // 2
-    scale = d**-0.5
+    scale = 1.0 / math.sqrt(int(d))
 
     abs_q = (past_len + torch.arange(N, device=Q.device)).unsqueeze(1)  # (N, 1)
     abs_k = torch.arange(N_k, device=Q.device).unsqueeze(0)  # (1, N_k)

@@ -424,7 +424,7 @@ class _TritonCosformerAutogradFunction(torch.autograd.Function):
                         inter_num = torch.matmul(qc_c, S_cos) + torch.matmul(qs_c, S_sin)
                         inter_denom = torch.matmul(qc_c, Z_cos) + torch.matmul(qs_c, Z_sin)
 
-                        out_c = (intra_num + inter_num) / (intra_denom + inter_denom + eps)
+                        out_c = (intra_num + inter_num) / (intra_denom + inter_denom + eps).clamp(min=1e-6)
                         outputs.append(out_c)
 
                         # Update recurrent running states
@@ -446,7 +446,7 @@ class _TritonCosformerAutogradFunction(torch.autograd.Function):
                         torch.matmul(qc, Z_cos.transpose(-1, -2))
                         + torch.matmul(qs, Z_sin.transpose(-1, -2))
                         + eps
-                    )
+                    ).clamp(min=1e-6)
                     out = (num / denom).to(q.dtype)
 
         ctx.save_for_backward(q, k, v)
@@ -518,7 +518,7 @@ class _TritonCosformerAutogradFunction(torch.autograd.Function):
                     inter_num = torch.matmul(qc_c, S_cos) + torch.matmul(qs_c, S_sin)
                     inter_denom = torch.matmul(qc_c, Z_cos) + torch.matmul(qs_c, Z_sin)
 
-                    out_c = (intra_num + inter_num) / (intra_denom + inter_denom + eps)
+                    out_c = (intra_num + inter_num) / (intra_denom + inter_denom + eps).clamp(min=1e-6)
                     outputs.append(out_c)
 
                     S_cos = S_cos + torch.matmul(kc_c.transpose(-1, -2), v_c)
@@ -538,7 +538,7 @@ class _TritonCosformerAutogradFunction(torch.autograd.Function):
                     torch.matmul(qc, Z_cos.transpose(-1, -2))
                     + torch.matmul(qs, Z_sin.transpose(-1, -2))
                     + eps
-                )
+                ).clamp(min=1e-6)
                 out = (num / denom).to(q.dtype)
 
             dq, dk, dv = torch.autograd.grad(

@@ -213,13 +213,8 @@ class AdaSplashLinear(nn.Module):
         return out
 
 
-@ATTENTION_REGISTRY.register(
-    "adasplash_attention",
-    supports_causal=True,
-    supports_bidirectional=True,
-    supports_gqa=True,
-    supports_rope=True,
-)
+# DEPRECATED / PURGED: adasplash_attention permanently removed from ATTENTION_REGISTRY
+# due to unfixable quadratic O(N^2) memory leak. Retained for historical reference only.
 class AdaSplashAttention(BaseAttention):
     r"""
     AdaSplash Attention Layer with α-Entmax and Local Splash Radius.
@@ -681,7 +676,7 @@ class AdaSplashAttention(BaseAttention):
             k = repeat_kv(k, self.kv_repeat)
             v = repeat_kv(v, self.kv_repeat)
 
-        scale = Dh**-0.5
+        scale = 1.0 / math.sqrt(int(Dh))
         logits = torch.matmul(q, k.transpose(-2, -1).contiguous()) * scale
 
         position_bias = kwargs.get("position_bias")

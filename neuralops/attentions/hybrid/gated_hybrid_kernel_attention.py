@@ -678,7 +678,7 @@ class GatedHybridKernelAttention(BaseAttention):
         B, h, N, d = Q.shape
         N_k = K.shape[2]
         W = self.window
-        scale = d ** -0.5
+        scale = 1.0 / math.sqrt(int(d))
 
         # Absolute positions
         abs_q = (past_len + torch.arange(N, device=Q.device)).unsqueeze(1)

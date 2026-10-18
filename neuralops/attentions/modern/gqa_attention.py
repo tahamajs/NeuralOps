@@ -15,6 +15,7 @@ from neuralops.core.attention_utils import (
 )
 
 import logging
+import math
 from typing import Any
 
 import torch
@@ -671,7 +672,7 @@ class GroupedQueryAttention(BaseAttention):
             try:
                 if Q.is_cuda and not self.training:
                     context = fused_weighted_gqa_online_softmax_triton(
-                        Q, K, V, head_weights=None, is_causal=is_causal, scale=d**-0.5
+                        Q, K, V, head_weights=None, is_causal=is_causal, scale=1.0 / math.sqrt(int(d))
                     )
                 else:
                     context = F.scaled_dot_product_attention(
@@ -687,7 +688,7 @@ class GroupedQueryAttention(BaseAttention):
                 use_sdpa = False
 
         if not use_sdpa:
-            scale = d**-0.5
+            scale = 1.0 / math.sqrt(int(d))
             scores = torch.matmul(Q.float(), K_full.float().transpose(-2, -1).contiguous()) * scale
 
             if is_causal:
