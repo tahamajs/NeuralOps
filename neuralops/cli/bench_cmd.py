@@ -149,7 +149,10 @@ def cmd_bench(args):
         ]
         return subprocess.call(cmd)
     else:
-        from neuralops.evaluation.eval_pipeline import evaluate_single_combination_opt
+        try:
+            from evaluation.eval_pipeline import evaluate_single_combination_opt
+        except ImportError:
+            from neuralops.evaluation.eval_pipeline import evaluate_single_combination_opt
         dev = torch.device(device)
         res = evaluate_single_combination_opt(
             track="cli_bench",
