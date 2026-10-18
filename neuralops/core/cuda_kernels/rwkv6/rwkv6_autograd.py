@@ -16,25 +16,43 @@ def _get_module():
     return _MODULE
 
 def rwkv6_ref(r: torch.Tensor, k: torch.Tensor, v: torch.Tensor, w: torch.Tensor, u: torch.Tensor) -> torch.Tensor:
+    orig_3d = (r.dim() == 3)
+    if orig_3d:
+        r = r.unsqueeze(1)
+        k = k.unsqueeze(1)
+        v = v.unsqueeze(1)
+        w = w.unsqueeze(1)
     B, H, N, D = r.shape
     out = torch.empty_like(r)
     s = torch.zeros(B, H, D, device=r.device, dtype=r.dtype)
     r_gate = torch.sigmoid(r)
     k_exp = torch.exp(k)
     decay = torch.exp(-torch.exp(w))
-    u_exp = u.view(1, H, 1, D)
+    u_vec = u.view(1, H, 1, D) if (u.numel() == H * D or u.dim() == 2) else u.view(1, 1, 1, -1)[:, :, :, :D]
+    u_val = u_vec.squeeze(2)
     for t in range(N):
         kv = k_exp[:, :, t, :] * v[:, :, t, :]
-        y = r_gate[:, :, t, :] * (u_exp.squeeze(2) * kv + s)
+        y = r_gate[:, :, t, :] * (u_val * kv + s)
         s = decay[:, :, t, :] * s + kv
         out[:, :, t, :] = y
-    return out
+    return out.squeeze(1) if orig_3d else out
 
 def _rwkv6_dispatch(r: torch.Tensor, k: torch.Tensor, v: torch.Tensor, w: torch.Tensor, u: torch.Tensor) -> torch.Tensor:
-    def cuda_fn(r, k, v, w, u):
+    orig_3d = (r.dim() == 3)
+    r_in = r.unsqueeze(1) if orig_3d else r
+    k_in = k.unsqueeze(1) if orig_3d else k
+    v_in = v.unsqueeze(1) if orig_3d else v
+    w_in = w.unsqueeze(1) if orig_3d else w
+    B, H, N, D = r_in.shape
+    u_in = u.reshape(H, D).contiguous() if u.numel() == H * D else u.reshape(-1)[:D].repeat(H, 1).contiguous()
+    
+    def cuda_fn(r_t, k_t, v_t, w_t, u_t):
         mod = _get_module()
-        return mod.rwkv6_time_mix_fwd(r.contiguous(), k.contiguous(), v.contiguous(), w.contiguous(), u.contiguous())
-    return dispatch(cuda_fn, rwkv6_ref, rwkv6_ref, r, k=k, v=v, w=w, u=u, kernel_name="rwkv6")
+        res = mod.rwkv6_time_mix_fwd(r_t.contiguous(), k_t.contiguous(), v_t.contiguous(), w_t.contiguous(), u_t.contiguous())
+        return res
+        
+    res = dispatch(cuda_fn, rwkv6_ref, rwkv6_ref, r_in, k=k_in, v=v_in, w=w_in, u=u_in, kernel_name="rwkv6")
+    return res.squeeze(1) if orig_3d and res.dim() == 4 else res
 
 
 class _Rwkv6Function(torch.autograd.Function):
@@ -59,17 +77,13 @@ class _Rwkv6Function(torch.autograd.Function):
                 inputs.append(nt)
         with torch.enable_grad():
             out_p = rwkv6_ref(*inputs)
-        tensor_inputs = [inp for inp, is_t in zip(inputs, ctx.tensors_mask) if is_t]
+        diff_inputs = [inp for inp, is_t in zip(inputs, ctx.tensors_mask) if (is_t and inp.requires_grad)]
         dout_val = douts[0] if len(douts) == 1 else douts
-        grads = torch.autograd.grad(out_p, tensor_inputs, dout_val, allow_unused=True)
-        grads = list(grads)
-        res = []
-        for is_t in ctx.tensors_mask:
-            if is_t:
-                res.append(grads.pop(0))
-            else:
-                res.append(None)
-        return tuple(res)
+        if not diff_inputs:
+            return tuple([None] * len(ctx.tensors_mask))
+        grads = torch.autograd.grad(out_p, diff_inputs, dout_val, allow_unused=True)
+        grad_map = dict(zip(diff_inputs, grads))
+        return tuple(grad_map.get(inp, None) if (is_t and inp.requires_grad) else None for inp, is_t in zip(inputs, ctx.tensors_mask))
 
 def rwkv6(r, k, v, w, u):
     if any(isinstance(t, torch.Tensor) and t.requires_grad for t in (r, k, v, w, u)):
