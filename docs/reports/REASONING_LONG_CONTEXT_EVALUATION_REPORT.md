@@ -251,7 +251,26 @@ To evaluate relational compositional reasoning across multi-step dependency grap
 
 ---
 
-## 13. Summary & Publication Artifacts
+## 13. Multi-Hop Graph Reasoning under Distractor Scaling ($D_{\text{noise}} \in \{10 \dots 500\}$)
+
+To benchmark associative robustness under increasing noise density, the 5-hop relational reasoning chain was stress-tested against background distractor sets scaling from 10 to 500 noise relations on the NVIDIA RTX 4070 Laptop GPU:
+
+| Distractor Count ($D_{\text{noise}}$) | Standard MHA Accuracy | MHA Mean SNR | SVD Linear Attention Accuracy | SVD Linear SNR | Recurrent GLA Scan Accuracy | GLA Scan SNR | Robustness Status |
+| :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **10 Distractors** | **100.0%** | **1,230.4$\times$** | **100.0%** | 163.0$\times$ | **100.0%** | 142.6$\times$ | **ROBUST (PASS)** |
+| **50 Distractors** | **100.0%** | 148.4$\times$ | **100.0%** | 138.1$\times$ | **100.0%** | **1,871.6$\times$** | **ROBUST (PASS)** |
+| **100 Distractors** | **100.0%** | 317.6$\times$ | **100.0%** | 189.9$\times$ | **100.0%** | 592.9$\times$ | **ROBUST (PASS)** |
+| **250 Distractors** | **100.0%** | 188.2$\times$ | **100.0%** | **425.9$\times$** | 0.0% | 294.2$\times$ | **ROBUST (SVD / MHA)** |
+| **500 Distractors** | **100.0%** | 177.4$\times$ | **100.0%** | 243.3$\times$ | 0.0% | 17.1$\times$ | **ROBUST (SVD / MHA)** |
+
+**Key Findings:**
+1. **Uncompressed SVD Linear Attention Robustness**: SVD Linear Attention maintained **100.0%** 5-hop reasoning accuracy across all distractor scales up to 500 noise relations, demonstrating that linear outer-product accumulation preserves clear algebraic separation ($243.3\times$ SNR at $D_{\text{noise}}=500$).
+2. **GLA Recurrent Scan Capacity Boundary**: Recurrent GLA Scan preserved 100% accuracy through 100 concurrent distractors ($592.9\times$ SNR); beyond 100 distractors ($D_{\text{noise}} \ge 250$), recurrent decay dilution causes intermediate associative hop drift.
+3. **Standard Softmax Baseline**: Standard MHA sustained 100% accuracy via selective exponentiated attention masking.
+
+---
+
+## 14. Summary & Publication Artifacts
 
 All validation scripts, empirical outputs, CSV benchmark exports, and LaTeX tables have been harvested and synchronized:
 - Master Report: [`docs/reports/REASONING_LONG_CONTEXT_EVALUATION_REPORT.md`](file:///Users/tahamajs/Documents/uni/Project/docs/reports/REASONING_LONG_CONTEXT_EVALUATION_REPORT.md)
@@ -261,23 +280,27 @@ All validation scripts, empirical outputs, CSV benchmark exports, and LaTeX tabl
   - [`docs/benchmarks/paper_benchmarks_multiturn_dialogue.csv`](file:///Users/tahamajs/Documents/uni/Project/docs/benchmarks/paper_benchmarks_multiturn_dialogue.csv)
   - [`docs/benchmarks/paper_benchmarks_topic_switching.csv`](file:///Users/tahamajs/Documents/uni/Project/docs/benchmarks/paper_benchmarks_topic_switching.csv)
   - [`docs/benchmarks/paper_benchmarks_multihop_reasoning.csv`](file:///Users/tahamajs/Documents/uni/Project/docs/benchmarks/paper_benchmarks_multihop_reasoning.csv)
+  - [`docs/benchmarks/paper_benchmarks_distractor_scaling.csv`](file:///Users/tahamajs/Documents/uni/Project/docs/benchmarks/paper_benchmarks_distractor_scaling.csv)
 - Publication LaTeX Tables:
   - [`docs/reports/PAPER_TABLES_LONG_CONTEXT.tex`](file:///Users/tahamajs/Documents/uni/Project/docs/reports/PAPER_TABLES_LONG_CONTEXT.tex)
   - [`docs/reports/PAPER_TABLES_NEEDLE_RETRIEVAL.tex`](file:///Users/tahamajs/Documents/uni/Project/docs/reports/PAPER_TABLES_NEEDLE_RETRIEVAL.tex)
   - [`docs/reports/PAPER_TABLES_MULTITURN_DIALOGUE.tex`](file:///Users/tahamajs/Documents/uni/Project/docs/reports/PAPER_TABLES_MULTITURN_DIALOGUE.tex)
   - [`docs/reports/PAPER_TABLES_TOPIC_SWITCHING.tex`](file:///Users/tahamajs/Documents/uni/Project/docs/reports/PAPER_TABLES_TOPIC_SWITCHING.tex)
   - [`docs/reports/PAPER_TABLES_MULTIHOP_REASONING.tex`](file:///Users/tahamajs/Documents/uni/Project/docs/reports/PAPER_TABLES_MULTIHOP_REASONING.tex)
+  - [`docs/reports/PAPER_TABLES_DISTRACTOR_SCALING.tex`](file:///Users/tahamajs/Documents/uni/Project/docs/reports/PAPER_TABLES_DISTRACTOR_SCALING.tex)
 - Raw Host Artifacts:
   - `/mnt/d/SVD_linear_Attention/paper_benchmarks_long_context.csv`
   - `/mnt/d/SVD_linear_Attention/paper_benchmarks_needle_retrieval.csv`
   - `/mnt/d/SVD_linear_Attention/paper_benchmarks_multiturn_dialogue.csv`
   - `/mnt/d/SVD_linear_Attention/paper_benchmarks_topic_switching.csv`
   - `/mnt/d/SVD_linear_Attention/paper_benchmarks_multihop_reasoning.csv`
+  - `/mnt/d/SVD_linear_Attention/paper_benchmarks_distractor_scaling.csv`
   - `/mnt/d/SVD_linear_Attention/PAPER_TABLES_LONG_CONTEXT.tex`
   - `/mnt/d/SVD_linear_Attention/PAPER_TABLES_NEEDLE_RETRIEVAL.tex`
   - `/mnt/d/SVD_linear_Attention/PAPER_TABLES_MULTITURN_DIALOGUE.tex`
   - `/mnt/d/SVD_linear_Attention/PAPER_TABLES_TOPIC_SWITCHING.tex`
   - `/mnt/d/SVD_linear_Attention/PAPER_TABLES_MULTIHOP_REASONING.tex`
+  - `/mnt/d/SVD_linear_Attention/PAPER_TABLES_DISTRACTOR_SCALING.tex`
 - Synchronized Worktrees: `/mnt/d/SVD_linear_Attention` and `/mnt/d/SVD_Project`
 
 
