@@ -606,21 +606,37 @@ class NativeSparseAttention(BaseAttention):
             causal_tril = torch.tril(torch.ones(L, L, device=device, dtype=torch.bool)).unsqueeze(0).unsqueeze(0)
             total_mask = total_mask & causal_tril
 
-        scores = scores.masked_fill(~total_mask, -1e4)
-        attn = F.softmax(scores, dim=-1).to(dtype)
-        attn = torch.nan_to_num(attn, nan=0.0)
-        attn = self.dropout(attn)
+        accel_context = None
+        if not output_attentions and not return_mask and head_mask is None:
+            try:
+                accel_context = F.scaled_dot_product_attention(
+                    Q, K, V,
+                    attn_mask=total_mask,
+                    dropout_p=self.dropout.p if self.training else 0.0,
+                    scale=scale,
+                )
+            except Exception:
+                accel_context = None
 
-        if head_mask is not None:
-            if head_mask.dim() == 1:
-                hm = head_mask.view(1, -1, 1, 1)
-            elif head_mask.dim() == 2:
-                hm = head_mask.view(head_mask.size(0), -1, 1, 1)
-            else:
-                hm = head_mask
-            attn = attn * hm
+        if accel_context is not None:
+            context = accel_context
+            attn = None
+        else:
+            scores = scores.masked_fill(~total_mask, -1e4)
+            attn = F.softmax(scores, dim=-1).to(dtype)
+            attn = torch.nan_to_num(attn, nan=0.0)
+            attn = self.dropout(attn)
 
-        context = torch.matmul(attn, V)
+            if head_mask is not None:
+                if head_mask.dim() == 1:
+                    hm = head_mask.view(1, -1, 1, 1)
+                elif head_mask.dim() == 2:
+                    hm = head_mask.view(head_mask.size(0), -1, 1, 1)
+                else:
+                    hm = head_mask
+                attn = attn * hm
+
+            context = torch.matmul(attn, V)
         context = context * valid_mask_2d.unsqueeze(1).unsqueeze(-1).to(dtype)
         context = context.permute(0, 2, 1, 3).contiguous().view(B, L, self.all_head_size)
 
