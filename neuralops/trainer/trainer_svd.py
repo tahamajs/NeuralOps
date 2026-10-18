@@ -77,6 +77,7 @@ def evaluate_model(model, data_loader, device, num_labels, is_multichoice=False)
     all_labels = []
     with torch.no_grad():
         for batch in data_loader:
+            preds: Any = None
             if is_multichoice:
                 input_ids = batch["input_ids"].to(device)
                 attention_mask = batch["attention_mask"].to(device)
@@ -98,6 +99,7 @@ def evaluate_model(model, data_loader, device, num_labels, is_multichoice=False)
                 preds = torch.argmax(outputs["logits"], dim=-1).cpu().numpy()
                 all_preds.extend(preds)
                 all_labels.extend(batch["labels"].numpy())
+            assert preds is not None, "preds must not be None"
     if len(all_preds) == 0:
         return 0.0
     return accuracy_score(all_labels, all_preds)

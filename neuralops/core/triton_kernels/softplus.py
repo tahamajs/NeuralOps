@@ -116,5 +116,6 @@ def softplus_fn(x: torch.Tensor, beta: float = 1.0, threshold: float = 20.0) -> 
 
 softplus_fwd = softplus_fn
 softplus_pytorch = _softplus_pytorch
+softplus_triton = softplus_fn
 
-__all__ = ["softplus", "softplus_fn", "_softplus_pytorch", "softplus_fwd", "softplus_pytorch"]
+__all__ = ["softplus", "softplus_fn", "_softplus_pytorch", "softplus_fwd", "softplus_pytorch", "softplus_triton"]
