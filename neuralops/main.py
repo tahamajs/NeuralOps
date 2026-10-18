@@ -111,7 +111,7 @@ def _import_framework():
         get_device,
         set_seed,
     )
-    from neuralops.experiment_utils.config import ExperimentConfig
+    from neuralops.config.experiment_config import ExperimentConfig
     from neuralops.results_saver.pipeline.result_writer import ResultWriter
     from neuralops.trainer.callbacks import (
         MemoryCallback,
