@@ -109,7 +109,8 @@ class _MoEDispatchAutograd(torch.autograd.Function):
         return dispatched
 
     @staticmethod
-    def backward(ctx, grad_dispatched: torch.Tensor):
+    def backward(ctx, *grad_outputs):
+        grad_dispatched = grad_outputs[0]
         expert_offsets, = ctx.saved_tensors
         total_slots = grad_dispatched.size(0)
 
@@ -148,7 +149,8 @@ class _MoEGatherAutograd(torch.autograd.Function):
         return out
 
     @staticmethod
-    def backward(ctx, grad_out: torch.Tensor):
+    def backward(ctx, *grad_outputs):
+        grad_out = grad_outputs[0]
         expert_outputs, routing_weights, expert_offsets = ctx.saved_tensors
         hidden_dim = expert_outputs.shape[1]
         total_slots = expert_outputs.shape[0]

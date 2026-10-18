@@ -76,7 +76,8 @@ def benchmark_step_throughput(device, models=None):
     return results
 
 
-def benchmark_sequence_scaling(device, seq_lens=[512, 1024, 2048, 4096]):
+def benchmark_sequence_scaling(device, seq_lens=None):
+    seq_lens = [512, 1024, 2048, 4096] if seq_lens is None else seq_lens
     results = {}
     dim = 256
     heads = 4

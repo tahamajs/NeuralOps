@@ -116,7 +116,8 @@ class _W4A16GemmFunction(torch.autograd.Function):
         return out
 
     @staticmethod
-    def backward(ctx, dout):
+    def backward(ctx, *grad_outputs):
+        dout = grad_outputs[0]
         W_q, scales, zeros = ctx.saved_tensors
         mod = _get_module()
         if mod is not None and dout.is_cuda:
@@ -210,7 +211,8 @@ class _FP8GemmFunction(torch.autograd.Function):
         return out
 
     @staticmethod
-    def backward(ctx, dout):
+    def backward(ctx, *grad_outputs):
+        dout = grad_outputs[0]
         A, B, scale_a, scale_b = ctx.saved_tensors
         mod = _get_module()
         if mod is not None and dout.is_cuda:
