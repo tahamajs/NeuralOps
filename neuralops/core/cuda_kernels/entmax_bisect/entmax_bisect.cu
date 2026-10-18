@@ -8,12 +8,6 @@ namespace neuralops { namespace cuda {
 // Entmax15 (alpha=1.5) Bisection Root Finding Kernel:
 // Form: p_i = [ (x_i - \tau) / 2 ]_+^2
 // Root condition: \sum_i p_i = 1.0
-//
-// Hardware-level optimization:
-// 1. Shared-memory row cache: Eliminates redundant global memory loads across all bisection iterations.
-// 2. 128-bit float4 vectorized score loading into shared memory.
-// 3. Fast block-level reductions (max and sum) with zero inter-block synchronization overhead.
-// 4. Strict FP32 intermediate precision and branchless fmaxf.
 template <typename scalar_t>
 __global__ void __launch_bounds__(256) entmax15_shared_kernel(
     scalar_t* __restrict__ out,
@@ -178,6 +172,85 @@ __global__ void __launch_bounds__(256) entmax15_shared_kernel(
     }
 }
 
+// Analytical Entmax15 (alpha=1.5) Backward Kernel:
+// JVP: ds_i = sqrt(p_i) * (dout_i - sum_{k in S}(dout_k * sqrt(p_k)) / sum_{k in S}(sqrt(p_k)))
+template <typename scalar_t>
+__global__ void __launch_bounds__(256) entmax15_bwd_kernel(
+    scalar_t* __restrict__ dscores,
+    const scalar_t* __restrict__ dout,
+    const scalar_t* __restrict__ p,
+    const int rows,
+    const int N
+) {
+    const int r = blockIdx.x;
+    if (r >= rows) return;
+
+    const int tid = threadIdx.x;
+    const int lane = tid & 31;
+    const int wid = tid >> 5;
+    const int num_warps = (blockDim.x + 31) >> 5;
+    const int row_offset = r * N;
+
+    float local_sum_sp = 0.0f;
+    float local_sum_dout_sp = 0.0f;
+
+    for (int i = tid; i < N; i += blockDim.x) {
+        const float p_val = to_float(p[row_offset + i]);
+        const float dout_val = to_float(dout[row_offset + i]);
+
+        if (p_val > 1e-9f) {
+            const float sp = sqrtf(p_val);
+            local_sum_sp += sp;
+            local_sum_dout_sp = fmaf(dout_val, sp, local_sum_dout_sp);
+        }
+    }
+
+    // Cooperative warp shuffle reduction
+    #pragma unroll
+    for (int mask = 16; mask > 0; mask >>= 1) {
+        local_sum_sp += __shfl_down_sync(0xffffffff, local_sum_sp, mask);
+        local_sum_dout_sp += __shfl_down_sync(0xffffffff, local_sum_dout_sp, mask);
+    }
+
+    __shared__ float s_warp_sp[32];
+    __shared__ float s_warp_dout_sp[32];
+
+    if (lane == 0) {
+        s_warp_sp[wid] = local_sum_sp;
+        s_warp_dout_sp[wid] = local_sum_dout_sp;
+    }
+    __syncthreads();
+
+    __shared__ float s_ratio;
+    if (tid == 0) {
+        float sum_sp = 0.0f;
+        float sum_dout_sp = 0.0f;
+        #pragma unroll
+        for (int w = 0; w < 8; ++w) {
+            if (w < num_warps) {
+                sum_sp += s_warp_sp[w];
+                sum_dout_sp += s_warp_dout_sp[w];
+            }
+        }
+        s_ratio = sum_dout_sp / fmaxf(sum_sp, 1e-9f);
+    }
+    __syncthreads();
+
+    const float ratio = s_ratio;
+
+    // Second pass: compute exact dscore directly in registers
+    for (int i = tid; i < N; i += blockDim.x) {
+        const float p_val = to_float(p[row_offset + i]);
+        float ds = 0.0f;
+        if (p_val > 1e-9f) {
+            const float dout_val = to_float(dout[row_offset + i]);
+            const float sp = sqrtf(p_val);
+            ds = sp * (dout_val - ratio);
+        }
+        dscores[row_offset + i] = from_float<scalar_t>(ds);
+    }
+}
+
 }} // namespace neuralops::cuda
 
 torch::Tensor entmax15_fwd(const torch::Tensor& scores, int n_iter) {
@@ -211,4 +284,35 @@ torch::Tensor entmax15_fwd(const torch::Tensor& scores, int n_iter) {
 
     CUDA_KERNEL_LAUNCH_CHECK();
     return out;
+}
+
+torch::Tensor entmax15_bwd(const torch::Tensor& dout, const torch::Tensor& p) {
+    CHECK_INPUT(dout);
+    CHECK_INPUT(p);
+
+    auto dscores = torch::empty_like(dout);
+    const int N = dout.size(-1);
+    const int rows = dout.numel() / N;
+    if (rows == 0 || N == 0) return dscores;
+
+    const int threads = std::min(256, std::max(32, ((N + 31) / 32) * 32));
+    auto stream = c10::cuda::getCurrentCUDAStream();
+    auto dout_c = dout.contiguous();
+    auto p_c = p.contiguous();
+
+    AT_DISPATCH_FLOATING_TYPES_AND2(
+        at::ScalarType::Half, at::ScalarType::BFloat16,
+        dout.scalar_type(), "entmax15_bwd", ([&] {
+            neuralops::cuda::entmax15_bwd_kernel<scalar_t><<<rows, threads, 0, stream>>>(
+                dscores.data_ptr<scalar_t>(),
+                dout_c.data_ptr<scalar_t>(),
+                p_c.data_ptr<scalar_t>(),
+                rows,
+                N
+            );
+        })
+    );
+
+    CUDA_KERNEL_LAUNCH_CHECK();
+    return dscores;
 }
