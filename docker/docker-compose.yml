@@ -1,0 +1,35 @@
+services:
+  neuralops-gpu:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.gpu
+    image: neuralops:v1.4.0-gpu
+    container_name: neuralops-gpu-runtime
+    ipc: host
+    ulimits:
+      memlock: -1
+      stack: 67108864
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      - TORCHDYNAMO_CAPTURE_SCALAR_OUTPUTS=1
+      - PYTHONPATH=/workspace
+    volumes:
+      - ../:/workspace
+      - neuralops-hf-cache:/root/.cache/huggingface
+      - neuralops-triton-cache:/root/.triton/cache
+    ports:
+      - "8080:8080"   # Real-Time Telemetry Dashboard
+      - "8888:8888"   # JupyterLab Server
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    command: /bin/bash
+
+volumes:
+  neuralops-hf-cache:
+  neuralops-triton-cache:
