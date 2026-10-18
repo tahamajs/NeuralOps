@@ -1,11 +1,12 @@
 """
-Fused Softplus Interface and 3-Level Fallback.
+Fused Softplus Interface, Autograd Function, and 3-Level Fallback.
 Target: SM 8.9 (NVIDIA Ada Lovelace RTX 4070 Laptop GPU, 8GB VRAM).
 """
 
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 import torch
 import torch.nn.functional as F
@@ -29,7 +30,7 @@ def _get_module():
             name="cuda_softplus",
             cpp_sources=cpp_src,
             cuda_sources=cuda_src,
-            functions=["softplus_fwd"],
+            functions=["softplus_fwd", "softplus_bwd"],
         )
     return _MODULE
 
@@ -51,13 +52,43 @@ def _get_triton_impl():
         return None
 
 
+class _FusedSoftplusFunction(torch.autograd.Function):
+    @staticmethod
+    def forward(
+        ctx: Any,
+        x: torch.Tensor,
+        beta: float,
+        threshold: float,
+    ) -> torch.Tensor:
+        mod = _get_module()
+        out = mod.softplus_fwd(x.contiguous(), float(beta), float(threshold))
+        ctx.save_for_backward(x)
+        ctx.beta = float(beta)
+        ctx.threshold = float(threshold)
+        return out
+
+    @staticmethod
+    def backward(ctx: Any, dout: torch.Tensor) -> tuple[torch.Tensor | None, ...]:
+        (x,) = ctx.saved_tensors
+        mod = _get_module()
+        dx = mod.softplus_bwd(dout.contiguous(), x.contiguous(), ctx.beta, ctx.threshold)
+        return dx, None, None
+
+
 def fused_softplus(
     x: torch.Tensor,
     beta: float = 1.0,
     threshold: float = 20.0,
 ) -> torch.Tensor:
-    """3-Level Dispatched Fused Softplus."""
+    """3-Level Dispatched Fused Softplus with Full Autograd Support."""
+    needs_grad = torch.is_grad_enabled() and isinstance(x, torch.Tensor) and x.requires_grad
+
+    if x.is_cuda and needs_grad:
+        return _FusedSoftplusFunction.apply(x, float(beta), float(threshold))
+
     def cuda_fn(x, beta=1.0, threshold=20.0, **kwargs):
+        if needs_grad:
+            return _FusedSoftplusFunction.apply(x, float(beta), float(threshold))
         mod = _get_module()
         return mod.softplus_fwd(x.contiguous(), float(beta), float(threshold))
 
