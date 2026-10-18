@@ -86,7 +86,7 @@ def _fwd_dispatch(x, w_packed, scales, zeros, group_size=32, bias=None, apply_ha
         group_size=group_size,
         bias=bias,
         apply_hadamard=apply_hadamard,
-        kernel_name=hadamard_w4a16_gemm,
+        kernel_name="hadamard_w4a16_gemm",
     )
 
 
@@ -138,7 +138,7 @@ class _HadamardW4A16GemmFunction(torch.autograd.Function):
         w_unpacked[:, 0::2] = low
         w_unpacked[:, 1::2] = high
 
-        num_groups = K // group_size
+        _num_groups = K // group_size
         scales_expanded = scales.repeat_interleave(group_size, dim=1)[:, :K].to(ctx.x_dtype)
         zeros_expanded = zeros.repeat_interleave(group_size, dim=1)[:, :K].to(ctx.x_dtype)
         w_dequant = (w_unpacked.to(ctx.x_dtype) - zeros_expanded) * scales_expanded

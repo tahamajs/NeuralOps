@@ -1,12 +1,12 @@
-import os
-import gc
-import sys
-import time
-import math
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# Author: Taha Majlesi
 import json
+import time
+
 import torch
-import torch.nn as nn
-from transformers import AutoModelForCausalLM, AutoTokenizer, GPT2LMHeadModel, GPT2Config
+from transformers import AutoTokenizer, GPT2Config, GPT2LMHeadModel
+
 from neuralops.inference.speculative_decoding import SelfSpeculativeDecoder
 from neuralops.utils.replace_attention import replace_attention
 
@@ -92,12 +92,12 @@ for p_idx, prompt in enumerate(prompts):
     std_tokens, std_time, std_tok_s = benchmark_standard_autoregressive(target_model, input_ids, max_new_tokens=40)
     print_log(f"Baseline Autoregressive Target: {std_tok_s:.2f} tok/s ({std_time:.4f}s)")
     
-    for k in k_values:
+    for k_val in k_values:
         # 2. Speculative Decoding with Compact 4-layer SVD Linear Draft
         decoder_compact = SelfSpeculativeDecoder(
             target_model=target_model,
             draft_model=draft_compact_svd,
-            max_draft_k=k,
+            max_draft_k=k_val,
             adaptive_k=False
         )
         torch.cuda.synchronize()
@@ -111,7 +111,7 @@ for p_idx, prompt in enumerate(prompts):
         decoder_full = SelfSpeculativeDecoder(
             target_model=target_model,
             draft_model=draft_full_svd,
-            max_draft_k=k,
+            max_draft_k=k_val,
             adaptive_k=False
         )
         torch.cuda.synchronize()
@@ -123,17 +123,17 @@ for p_idx, prompt in enumerate(prompts):
         speedup_real_f = stats_f.tokens_per_sec / std_tok_s
         
         print_log(
-            f"K={k} | Compact SVD Draft: Acc={stats_c.acceptance_rate*100:.1f}%, TargetPasses={stats_c.total_target_forward_passes}, "
+            f"K={k_val} | Compact SVD Draft: Acc={stats_c.acceptance_rate*100:.1f}%, TargetPasses={stats_c.total_target_forward_passes}, "
             f"TokensPerPass={stats_c.speedup_over_standard}x, Tok/s={stats_c.tokens_per_sec}, ExactMatch={exact_match_c}"
         )
         print_log(
-            f"K={k} | Full 12L SVD Draft: Acc={stats_f.acceptance_rate*100:.1f}%, TargetPasses={stats_f.total_target_forward_passes}, "
+            f"K={k_val} | Full 12L SVD Draft: Acc={stats_f.acceptance_rate*100:.1f}%, TargetPasses={stats_f.total_target_forward_passes}, "
             f"TokensPerPass={stats_f.speedup_over_standard}x, Tok/s={stats_f.tokens_per_sec}, ExactMatch={exact_match_f}"
         )
         
         results_list.append({
             'prompt_idx': p_idx,
-            'k': k,
+            'k': k_val,
             'baseline_tok_s': round(std_tok_s, 2),
             'baseline_time_s': round(std_time, 4),
             'compact_svd': {
