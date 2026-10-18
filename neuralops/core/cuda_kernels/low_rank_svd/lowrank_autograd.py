@@ -94,6 +94,8 @@ class _FusedLowRankGatedGemmFunction(torch.autograd.Function):
         sig = None
         if ctx.has_alpha:
             sig = torch.sigmoid(a_arg)
+            if sig.dim() < dz.dim():
+                sig = sig.unsqueeze(1)
             dz_gated = dz * sig
         else:
             dz_gated = dz
@@ -109,17 +111,27 @@ class _FusedLowRankGatedGemmFunction(torch.autograd.Function):
             z = torch.matmul(x, V.t())
             z_gated = z * sig if ctx.has_alpha else z
 
+            dout_2d = dout.reshape(-1, dout.size(-1))
+            z_gated_2d = z_gated.reshape(-1, z_gated.size(-1))
+            dz_gated_2d = dz_gated.reshape(-1, dz_gated.size(-1))
+            x_2d = x.reshape(-1, x.size(-1))
+
             if ctx.needs_input_grad[2]:
-                dU = torch.matmul(dout.t(), z_gated)
+                dU = torch.matmul(dout_2d.t(), z_gated_2d)
 
             if ctx.has_alpha and ctx.needs_input_grad[3]:
-                dalpha = (dz * z * sig * (1.0 - sig)).sum(dim=0)
+                dalpha_full = dz * z * sig * (1.0 - sig)
+                if a_arg.dim() == 2 and dalpha_full.dim() == 3:
+                    dalpha = dalpha_full.sum(dim=1)
+                else:
+                    dalpha = dalpha_full.sum(dim=0)
 
             if ctx.needs_input_grad[1]:
-                dV = torch.matmul(dz_gated.t(), x)
+                dV = torch.matmul(dz_gated_2d.t(), x_2d)
 
         if ctx.has_bias and ctx.needs_input_grad[4]:
-            dbias = dout.sum(dim=0)
+            dims = list(range(dout.dim() - 1))
+            dbias = dout.sum(dim=dims)
 
         return dX, dV, dU, dalpha, dbias
 

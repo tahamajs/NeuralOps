@@ -158,8 +158,14 @@ def _local_window_attention(
 ) -> tuple[torch.Tensor, torch.Tensor]:
     B, h, N, d = Q.shape
     N_k = K.shape[2]
-    radius = window // 2
     scale = 1.0 / math.sqrt(int(d))
+
+    if Q.is_cuda and (token_valid is None or bool(token_valid.all())) and past_len == 0 and N == N_k and d <= 256 and (not training or dropout_p == 0.0):
+        try:
+            from neuralops.core.cuda_kernels.hybrid_local_kernel import hybrid_local_attn
+            return hybrid_local_attn(Q, K, V, radius=radius, is_causal=is_decoder), None
+        except Exception:
+            pass
 
     abs_q = (past_len + torch.arange(N, device=Q.device)).unsqueeze(1)
     abs_k = torch.arange(N_k, device=Q.device).unsqueeze(0)
@@ -327,6 +333,7 @@ def _state_recurrence_jit(u: torch.Tensor, gamma: torch.Tensor, reverse: bool = 
 
 
 @ATTENTION_REGISTRY.register("spectron_fp8", supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("aegis_spectron_fp8", supports_causal=True, supports_gqa=True)
 class SpectronFP8Attention(BaseAttention):
     """SpectronFP8Attention neural operator.
 
