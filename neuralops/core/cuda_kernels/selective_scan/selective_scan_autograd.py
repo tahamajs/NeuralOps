@@ -107,7 +107,9 @@ class _SelectiveScanFunction(torch.autograd.Function):
         return out.detach(), last_state.detach()
 
     @staticmethod
-    def backward(ctx, dout, dlast_state=None):
+    def backward(ctx: Any, *grad_outputs: Any) -> Any:
+        dout = grad_outputs[0] if len(grad_outputs) > 0 else None
+        dlast_state = grad_outputs[1] if len(grad_outputs) > 1 else None
         if getattr(ctx, "is_py", False):
             u_p, delta_p, A_p, B_p, C_p, D_p, out, last_state = ctx.py_tensors
             inputs = [u_p, delta_p, A_p, B_p, C_p]
