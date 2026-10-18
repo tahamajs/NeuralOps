@@ -15,12 +15,14 @@ recursive-include neuralops *.json
 recursive-exclude neuralops/data/glue_data *
 recursive-exclude neuralops/tests *
 recursive-exclude neuralops/benchmarks *
+recursive-exclude neuralops/evaluation *
 recursive-exclude neuralops/_archive *
 recursive-exclude neuralops/core/_archive *
 recursive-exclude neuralops/attentions/_legacy *
 recursive-exclude neuralops/compression_engine/_legacy *
 recursive-exclude tests *
 recursive-exclude benchmarks *
+recursive-exclude evaluation *
 recursive-exclude scripts *
 recursive-exclude results *
 recursive-exclude paper *
