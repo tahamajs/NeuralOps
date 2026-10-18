@@ -108,9 +108,9 @@ eval = [
 
 # Benchmarking
 benchmark = [
-    "matplotlib>=3.7.0",
-    "seaborn>=0.12.0",
-    "pandas>=2.0.0",
+    "matplotlib",
+    "pandas",
+    "seaborn",
 ]
 
 # MLOps & Experiment Tracking
@@ -130,8 +130,8 @@ export = [
 
 # Test
 test = [
-    "pytest>=7.4.0",
-    "pytest-cov>=4.1.0",
+    "pytest",
+    "pytest-cov",
 ]
 
 # Development
@@ -185,22 +185,24 @@ where = ["."]
 include = ["neuralops*"]
 exclude = [
     "tests*",
+    "benchmarks*",
+    "results*",
+    "paper*",
+    "thesis_final*",
+    "docs*",
+    "academic*",
     "neuralops.tests*",
-    "neuralops.benchmarks._legacy*",
+    "neuralops.benchmarks*",
     "neuralops._archive*",
     "neuralops.core._archive*",
     "neuralops.attentions._legacy*",
     "neuralops.compression_engine._legacy*",
     "scripts*",
-    "docs*",
-    "results*",
-    "benchmarks*",
 ]
 
 [tool.setuptools.package-data]
 neuralops = [
     "core/*.json",
-    "benchmarks/*.json",
     "**/py.typed",
     "**/*.cu",
     "**/*.cuh",
