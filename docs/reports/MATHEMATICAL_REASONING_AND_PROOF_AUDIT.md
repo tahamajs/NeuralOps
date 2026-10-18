@@ -128,6 +128,58 @@ Therefore, an explicit global clipping threshold of:
 $$G_{\text{clip}} \in [1.0, \; 5.0]$$
 strictly enforces condition number stability and prevents numerical overflow in FP16 / BF16 regimes without clipping informative signal gradients under normal stationary optimization trajectories.
 
+---
+
+### 1.7 Contractivity Theorem for Non-Linear State Activations (SiLU / Swish Gating)
+
+In gated linear attention and hybrid recurrent variants, non-linear activation functions such as $\sigma(x) = \operatorname{SiLU}(x) = x \cdot \operatorname{sigmoid}(x)$ are commonly applied to gating signals, projection states, or memory readout channels.
+
+**Lemma (Lipschitz Constant of the SiLU Activation):**
+The scalar derivative of $\sigma(x) = x \sigma_g(x)$ (where $\sigma_g(x) = \frac{1}{1 + e^{-x}}$) is given by:
+$$\sigma'(x) = \sigma_g(x) + x \sigma_g(x)(1 - \sigma_g(x)) = \sigma_g(x)[1 + x(1 - \sigma_g(x))]$$
+The global maximum of $|\sigma'(x)|$ occurs at $x^* \approx 2.399357$, yielding:
+$$L_\sigma = \max_{x \in \mathbb{R}} |\sigma'(x)| = \sigma'(x^*) \approx 1.099806 \le 1.0998$$
+By the mean-value theorem, for any scalar inputs $u, v \in \mathbb{R}$:
+$$|\sigma(u) - \sigma(v)| \le L_\sigma |u - v|$$
+
+**Theorem (Frobenius Norm Matrix Contractivity):**
+Let $\sigma(\mathbf{M})$ denote elementwise application of $\operatorname{SiLU}$ to matrix $\mathbf{M} \in \mathbb{R}^{d_1 \times d_2}$. For any matrices $S_t, \hat{S}_t \in \mathbb{R}^{d_1 \times d_2}$:
+$$\|\sigma(S_t) - \sigma(\hat{S}_t)\|_F \le L_\sigma \|S_t - \hat{S}_t\|_F \quad \text{with } L_\sigma \le 1.0998$$
+
+*Proof:*
+By definition of the Frobenius norm:
+$$\|\sigma(S_t) - \sigma(\hat{S}_t)\|_F^2 = \sum_{i=1}^{d_1} \sum_{j=1}^{d_2} |\sigma((S_t)_{ij}) - \sigma((\hat{S}_t)_{ij})|^2$$
+Applying the scalar Lipschitz bound to each element:
+$$\|\sigma(S_t) - \sigma(\hat{S}_t)\|_F^2 \le \sum_{i=1}^{d_1} \sum_{j=1}^{d_2} L_\sigma^2 |(S_t)_{ij} - (\hat{S}_t)_{ij}|^2 = L_\sigma^2 \|S_t - \hat{S}_t\|_F^2$$
+Taking square roots yields the claimed bound $\|\sigma(S_t) - \sigma(\hat{S}_t)\|_F \le L_\sigma \|S_t - \hat{S}_t\|_F$. $\blacksquare$
+
+---
+
+### 1.8 Discrete-Time Lyapunov Basin of Attraction Invariance under Non-Linear Activations
+
+We now investigate whether non-linear activation $\sigma(\cdot)$ destabilizes the discrete-time Lyapunov basin of attraction.
+
+**1. Architectural Placement in Recurrent Attention:**
+In standard architectures (Chunk GLA, Gated Delta Net, HGRN2, RetNet), the recurrence state update is linear in state:
+$$S_t = \mathbf{T}_t S_{t-1} + U_t, \quad \|\mathbf{T}_t\|_2 \le \gamma < 1.0$$
+The non-linearity is applied at the readout stage:
+$$y_t = \sigma(S_t q_t) \quad \text{or} \quad y_t = \sigma(q_t) \odot (S_t k_t)$$
+Since the state equation is autonomous of $y_t$, the underlying state dynamics remain purely linear and governed by the contractive Lyapunov certificate $\Delta V(S_{t-1}) \le (\gamma^2 - 1) V(S_{t-1}) < 0$. Readout non-linearities preserve state basin invariance unconditionally.
+
+**2. State-Feedback Recurrent Coupling:**
+In models where non-linear gating is coupled directly into the recurrent loop $S_t = \sigma(\mathbf{T}_t S_{t-1} + U_t)$:
+$$\|S_t\|_F \le L_\sigma \|\mathbf{T}_t S_{t-1} + U_t\|_F \le L_\sigma \gamma \|S_{t-1}\|_F + L_\sigma B_0$$
+The effective recurrence decay is $\gamma_{\text{eff}} = L_\sigma \gamma$.
+Contractivity requires:
+$$\gamma_{\text{eff}} = L_\sigma \gamma < 1.0 \implies \gamma < \frac{1}{L_\sigma} \approx \frac{1}{1.0998} \approx 0.9092$$
+
+**Lyapunov Stability Certificate:**
+For any decay rate $\gamma < 0.9092$ (or under Pre-RMSNorm state normalization where $\gamma_{\text{eff}} = \gamma < 1.0$):
+$$\Delta V(S_{t-1}) = \|S_t\|_F^2 - \|S_{t-1}\|_F^2 \le (\gamma_{\text{eff}}^2 - 1) \|S_{t-1}\|_F^2 < 0$$
+Furthermore, the Input-to-State Stability (ISS) attraction basin:
+$$\mathcal{B}_{\text{ISS}}^{\sigma} = \left\{ S \in \mathbb{R}^{d_k \times d_v} : \|S\|_F \le \frac{L_\sigma B_0}{1 - L_\sigma \gamma} \right\}$$
+remains strictly bounded and compact. Non-linear SiLU activation does **not** destabilize the discrete-time Lyapunov basin of attraction.
+
 ## 2. Multi-Precision Extreme Sequence Length Stress Tests ($L \in \{1024, 2048, 4096, 8192\}$)
 
 Across FP32 and FP16 regimes on the physical RTX 4070 Laptop GPU:
