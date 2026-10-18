@@ -501,6 +501,15 @@ class HLAAttention(BaseAttention):
             y = y_num / y_den
             return y.to(q.dtype), (S_curr, Z_curr)
 
+        # ---- Accelerated 3-Tier Hardware Dispatch (CUDA C++ -> Triton JIT -> PyTorch Ref) ----
+        if initial_state is None and q.is_cuda and not reverse:
+            try:
+                from neuralops.core.cuda_kernels.hla_attention import hla_attention
+                y_accel = hla_attention(q, k, v, decay, eps=1e-5)
+                return y_accel.to(q.dtype), (None, None)
+            except Exception:
+                pass
+
         C = self.chunk_size
         pad_len = (C - (L % C)) % C
         if pad_len > 0:
