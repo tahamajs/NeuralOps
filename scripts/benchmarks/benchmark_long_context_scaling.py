@@ -49,6 +49,16 @@ REPRESENTATIVE_ATTENTIONS = [
 ]
 
 
+FALLBACK_MAP = {
+    "flash_attention3": ["flash_attention_v2", "flash_attention_2", "flash_attention", "scaled_dot_product_attention"],
+    "gated_delta_net": ["delta_net", "gated_linear_attention"],
+    "gated_linear_attention": ["gla", "linear_attention"],
+    "cosformer": ["linear_attention"],
+    "svd_linear_attention": ["svd_attention", "linear_attention"],
+    "selective_ssm": ["mamba", "mamba2", "s4"],
+}
+
+
 def resolve_attention_key(key: str) -> str:
     """Find the best available matching key in ATTENTION_REGISTRY."""
     if key in ATTENTION_REGISTRY:

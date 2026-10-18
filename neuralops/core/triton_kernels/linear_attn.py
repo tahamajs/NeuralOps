@@ -936,7 +936,7 @@ def triton_fused_latent_kv_cache_attention_pytorch_ref(
     import torch.nn.functional as F
     B, H, L_Q, D_K = q.shape
     B_c, L_KV, R = c_kv.shape
-    D_V = u_v.shape[1]
+    _D_V = u_v.shape[1]
 
     if sm_scale is None:
         sm_scale = 1.0 / math.sqrt(R)

@@ -180,7 +180,7 @@ class FactorisedLinear(nn.Module):
         if x.is_cuda and x.dtype in (torch.float16, torch.bfloat16):
             try:
                 from neuralops.core.cuda_kernels.low_rank_svd import fused_lowrank_gated_gemm
-                base = fused_lowrank_gated_gemm(x, self.down.weight, self.up.weight.t().contiguous(), bias=self.up.bias)
+                base = fused_lowrank_gated_gemm(x, self.down.weight, self.up.weight, bias=self.up.bias)
                 if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
                     base = base + F.linear(F.linear(x, self.lora_A.to(dtype=x.dtype)), self.lora_B.to(dtype=x.dtype)) * self.lora_scaling
                 return base
