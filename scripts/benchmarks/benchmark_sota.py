@@ -221,7 +221,7 @@ def benchmark_gap_5_reap_moe_and_niah(device: torch.device) -> Dict[str, Any]:
     # 1. Test REAP Distributed MoE Pruning
     moe = REAPMoE(d_model=d_model, n_experts=n_experts, top_k=top_k).to(device)
     dummy_data = [torch.randn(4, 16, d_model, device=device) for _ in range(5)]
-    prune_res = distributed_reap_prune(
+    _ = distributed_reap_prune(
         model=moe,
         dataset=dummy_data,
         world_size=1,

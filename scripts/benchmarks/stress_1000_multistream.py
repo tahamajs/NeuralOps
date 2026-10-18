@@ -83,7 +83,7 @@ def main():
     NUM_ITERS = 1000
     print(f"\nLaunching 1,000-iteration multi-stream stress test under heavy memory pressure...")
 
-    checkpoints = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]
+    _checkpoints = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]
     checkpoint_stats = {}
 
     total_nans = 0
