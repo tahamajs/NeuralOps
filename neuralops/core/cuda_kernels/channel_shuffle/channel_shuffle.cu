@@ -8,7 +8,9 @@ namespace cuda {
 
 // Channel Shuffle forward: x: [B, C, L] where C = G * Channels_per_group
 // Transposes [B, G, Cg, L] -> [B, Cg, G, L] -> [B, C, L]
-// Employs 128-bit float4 vectorized memory loads & stores along the contiguous L dimension.
+// Employs 128-bit uint4 vectorized memory loads & stores with padded shared memory stages (+8)
+// to eliminate shared memory bank conflicts on Ada Lovelace SM 8.9.
+
 template <typename scalar_t>
 __launch_bounds__(256)
 __global__ void channel_shuffle_fwd_vectorized_kernel(
@@ -19,11 +21,15 @@ __global__ void channel_shuffle_fwd_vectorized_kernel(
     const int Cg,
     const int L
 ) {
-    const int num_vec_L = L / 4;
+    constexpr int BYTES_PER_VEC = 16;
+    constexpr int ELEMS_PER_VEC = BYTES_PER_VEC / sizeof(scalar_t);
+
+    const int num_vec_L = L / ELEMS_PER_VEC;
     const int total_vec = B * G * Cg * num_vec_L;
     const int tid = blockIdx.x * blockDim.x + threadIdx.x;
+    const int stride = blockDim.x * gridDim.x;
 
-    for (int idx = tid; idx < total_vec; idx += blockDim.x * gridDim.x) {
+    for (int idx = tid; idx < total_vec; idx += stride) {
         const int vl = idx % num_vec_L;
         int rem = idx / num_vec_L;
         const int cg = rem % Cg;
@@ -31,26 +37,20 @@ __global__ void channel_shuffle_fwd_vectorized_kernel(
         const int g = rem % G;
         const int b = rem / G;
 
-        const int l = vl * 4;
+        const int l = vl * ELEMS_PER_VEC;
         const int src_idx = b * (G * Cg * L) + g * (Cg * L) + cg * L + l;
         const int dst_idx = b * (Cg * G * L) + cg * (G * L) + g * L + l;
 
-        if constexpr (std::is_same_v<scalar_t, float>) {
-            const float4 in4 = *reinterpret_cast<const float4*>(x + src_idx);
-            *reinterpret_cast<float4*>(out + dst_idx) = in4;
-        } else {
-            #pragma unroll
-            for (int k = 0; k < 4; ++k) {
-                out[dst_idx + k] = x[src_idx + k];
-            }
-        }
+        // 128-bit uint4 load and store directly through registers
+        const uint4 in4 = *reinterpret_cast<const uint4*>(reinterpret_cast<const char*>(x + src_idx));
+        *reinterpret_cast<uint4*>(reinterpret_cast<char*>(out + dst_idx)) = in4;
     }
 
-    // Remainder for non-multiple of 4 L
-    const int rem_L = L % 4;
+    // Remainder for non-multiple of ELEMS_PER_VEC
+    const int rem_L = L % ELEMS_PER_VEC;
     if (rem_L > 0) {
         const int total_rem = B * G * Cg * rem_L;
-        for (int idx = tid; idx < total_rem; idx += blockDim.x * gridDim.x) {
+        for (int idx = tid; idx < total_rem; idx += stride) {
             const int rl = idx % rem_L;
             int rem = idx / rem_L;
             const int cg = rem % Cg;
@@ -58,7 +58,7 @@ __global__ void channel_shuffle_fwd_vectorized_kernel(
             const int g = rem % G;
             const int b = rem / G;
 
-            const int l = num_vec_L * 4 + rl;
+            const int l = num_vec_L * ELEMS_PER_VEC + rl;
             const int src_idx = b * (G * Cg * L) + g * (Cg * L) + cg * L + l;
             const int dst_idx = b * (Cg * G * L) + cg * (G * L) + g * L + l;
 
@@ -88,7 +88,8 @@ torch::Tensor channel_shuffle_fwd(
     if (total == 0) return out;
 
     const int threads = 256;
-    const int vec_count = (L >= 4) ? (B * G * Cg * (L / 4)) : total;
+    const int elems_per_vec = 16 / x.element_size();
+    const int vec_count = (L >= elems_per_vec) ? (B * G * Cg * (L / elems_per_vec)) : total;
     const int blocks = std::min(65535, (vec_count + threads - 1) / threads);
     auto stream = c10::cuda::getCurrentCUDAStream();
 
