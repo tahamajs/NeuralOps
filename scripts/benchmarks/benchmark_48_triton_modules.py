@@ -90,7 +90,7 @@ def evaluate_module(key, B=2, T=512, D=256, H=4):
         torch.manual_seed(42)
         try:
             m_triton = cls(dim=D, num_heads=H).to(device=device, dtype=torch.float16)
-        except Exception:
+        except (TypeError, ValueError):
             m_triton = cls(hidden_size=D, num_attention_heads=H).to(device=device, dtype=torch.float16)
         m_triton.train()
 
@@ -108,7 +108,7 @@ def evaluate_module(key, B=2, T=512, D=256, H=4):
         # Run forced PyTorch fallback benchmark
         try:
             m_ref = cls(dim=D, num_heads=H).to(device=device, dtype=torch.float16)
-        except Exception:
+        except (TypeError, ValueError):
             m_ref = cls(hidden_size=D, num_attention_heads=H).to(device=device, dtype=torch.float16)
         m_ref.load_state_dict(m_triton.state_dict())
         m_ref.train()
@@ -216,8 +216,15 @@ def main():
         for m, data in by_mod.items():
             d512 = data.get(512, {})
             d2048 = data.get(2048, {})
-            cos_sim_str = f"{d2048.get('fwd_cos_sim', d512.get('fwd_cos_sim', 1.0)):.4f}"
-            f.write(f"| `{m}` | {d512.get('triton_lat_ms','-')} | {d512.get('ref_lat_ms','-')} | **{d512.get('speedup_x','-')}x** | {d2048.get('triton_lat_ms','-')} | {d2048.get('ref_lat_ms','-')} | **{d2048.get('speedup_x','-')}x** | {cos_sim_str} | PASS |\n")
+            cos_sim_str = fmt_opt(d2048.get('fwd_cos_sim', d512.get('fwd_cos_sim', 1.0)), fmt=".4f", default="1.0000")
+            t512_tri = fmt_opt(d512.get('triton_lat_ms'), fmt=".2f", default="-")
+            t512_ref = fmt_opt(d512.get('ref_lat_ms'), fmt=".2f", default="-")
+            sp512 = f"**{fmt_opt(d512.get('speedup_x'), fmt='.2f', default='-')}x**"
+            t2048_tri = fmt_opt(d2048.get('triton_lat_ms'), fmt=".2f", default="-")
+            t2048_ref = fmt_opt(d2048.get('ref_lat_ms'), fmt=".2f", default="-")
+            sp2048 = f"**{fmt_opt(d2048.get('speedup_x'), fmt='.2f', default='-')}x**"
+            status = "PASS" if d512.get("status") == "PASS" or d2048.get("status") == "PASS" else "FAIL"
+            f.write(f"| `{m}` | {t512_tri} | {t512_ref} | {sp512} | {t2048_tri} | {t2048_ref} | {sp2048} | {cos_sim_str} | {status} |\n")
 
     print(f"\nBenchmark successfully saved to {json_path}, {csv_path}, and {md_path}")
 

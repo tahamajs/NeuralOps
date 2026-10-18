@@ -212,8 +212,14 @@ class UnifiedMoE(nn.Module):
 
         from neuralops.core.triton_kernels.sparse_attn import fused_bam_unified_qkv_moe_triton
 
-        exp_outs = [exp(x) for exp in self.experts]
-        out, _ = fused_bam_unified_qkv_moe_triton(exp_outs, logits, self.top_k)
+        if x.is_cuda and len(self.experts) == 2 and self.top_k == 2:
+            try:
+                from neuralops.core.cuda_kernels.samba_moe import samba_moe
+                out = samba_moe(exp_outs[0], exp_outs[1], scores)
+            except Exception:
+                out, _ = fused_bam_unified_qkv_moe_triton(exp_outs, logits, self.top_k)
+        else:
+            out, _ = fused_bam_unified_qkv_moe_triton(exp_outs, logits, self.top_k)
         out = torch.clamp(torch.nan_to_num(out, nan=0.0), -65000.0, 65000.0)
         gate = torch.sigmoid(self.gate_bias).to(x.dtype)
         return (out * gate).to(x.dtype)
