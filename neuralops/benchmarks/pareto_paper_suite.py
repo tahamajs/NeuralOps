@@ -55,11 +55,12 @@ class PaperParetoBenchmarkSuite:
     def measure_prefill_latency(
         self,
         module: nn.Module,
-        seq_lengths: List[int] = [512, 1024, 2048, 4096],
+        seq_lengths: List[int] | None = None,
         warmup: int = 3,
         repetitions: int = 10,
     ) -> Dict[int, float]:
         """Measures prefill execution time in milliseconds across sequence lengths."""
+        seq_lengths = [512, 1024, 2048, 4096] if seq_lengths is None else seq_lengths
         module.eval().to(self.device, dtype=self.dtype)
         latencies = {}
 
