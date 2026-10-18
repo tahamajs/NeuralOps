@@ -1,7 +1,0 @@
-[main 7ce64fe56] feat(benchmark): record successful galerkin_attention on distilbert-sst2 (Acc: 75.11%, F1: 0.7554)
- 5 files changed, 463 insertions(+), 401 deletions(-)
- create mode 100644 results/all_modules/galerkin_attention/distilbert_sst2_galerkin_attention_full_metrics.json
- create mode 100644 results/all_modules/galerkin_attention/finetune_metadata.json
- create mode 100644 results/all_modules/galerkin_attention/summary.csv
- create mode 100644 results/all_modules/gated_linear_attn/finetune_metadata.json
-branch 'main' set up to track 'origin/main'.

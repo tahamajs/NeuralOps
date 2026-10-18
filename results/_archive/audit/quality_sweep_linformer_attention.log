@@ -1,3 +1,0 @@
-2026-10-04 19:00:55,688 [INFO] QwenQualitySweep: Configured execution sizing: parallel=1, batch_size=8 (explicit_parallel=False, explicit_batch=False)
-2026-10-04 19:00:55,718 [INFO] neuralops.attentions.gated_delta_net: GDN: Triton scan available
-2026-10-04 19:00:55,815 [INFO] neuralops.attentions.hgrn2_layer: HGRN2: Triton scan available

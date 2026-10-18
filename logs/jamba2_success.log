@@ -1,9 +1,0 @@
-[main 122dd23e0] feat(benchmark): record successful jamba2 on distilbert-sst2 (Acc: 88.65%, F1: 0.8913)
- 6 files changed, 110 insertions(+)
- create mode 100644 results/all_modules/jamba2/distilbert_sst2_jamba2_full_metrics.json
- create mode 100644 results/all_modules/jamba2/finetune_metadata.json
- create mode 100644 results/all_modules/jamba2/summary.csv
- create mode 100644 results/all_modules/kda/distilbert_sst2_kda_full_metrics.json
- create mode 100644 results/all_modules/kda/finetune_metadata.json
- create mode 100644 results/all_modules/kda/summary.csv
-branch 'main' set up to track 'origin/main'.

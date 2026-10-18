@@ -1,3 +1,0 @@
-Starting 15-minute background monitor (interval=900s)...
-[2026-09-20T07:39:27.799006] MONITOR HEARTBEAT: GPU: 3.0% | VRAM: 335.0/8188.0 MB | Temp: 50.0C
-  [OK] Benchmark integrity clean: 0 broken PASS records found.

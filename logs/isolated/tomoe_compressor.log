@@ -1,26 +1,0 @@
-C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
-  warnings.warn(
-2026-09-22 13:50:47,250 [INFO] QwenQualitySweep: Parsed 4 module-specific extended arguments: ['--module', 'tomoe_compressor', '--output_json', 'logs\\isolated_results\\tomoe_compressor_1790072348.json']
-2026-09-22 13:50:47,564 [INFO] QwenQualitySweep: GPU VRAM: 2.00 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
-2026-09-22 13:50:47,564 [INFO] QwenQualitySweep: Configured execution sizing: parallel=2, batch_size=8 (explicit_parallel=False, explicit_batch=True)
-D:\SVD_Project\Codes\framework\run_one_module_isolated.py:39: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
-  "started_at": datetime.utcnow().isoformat(),
-2026-09-22 13:50:47,564 [WARNING] QwenQualitySweep: LOW GPU MEMORY: Only 2.00 GB VRAM available (< 4.0 GB). High risk of CUDA OOM.
-2026-09-22 13:50:48,352 [INFO] QwenQualitySweep: Configured dataset 'mnli' with num_labels=3
-Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]Loading weights: 100%|##########| 104/104 [00:00<00:00, 1611.90it/s]
-2026-09-22 13:50:49,736 [INFO] QwenQualitySweep: model=models/distilbert_mnli_full qwen_compat=False hidden=768 heads=12 head_dim=? layers=6
-2026-09-22 13:50:49,736 [INFO] QwenQualitySweep: detected model family=bert adapter={'family': 'bert', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
-2026-09-22 13:50:49,736 [INFO] QwenQualitySweep: ================================================================================
-2026-09-22 13:50:49,736 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
-2026-09-22 13:50:49,736 [INFO] QwenQualitySweep:   model:             models/distilbert_mnli_full
-2026-09-22 13:50:49,737 [INFO] QwenQualitySweep:   family:            bert
-2026-09-22 13:50:49,737 [INFO] QwenQualitySweep:   dataset:           mnli
-2026-09-22 13:50:49,737 [INFO] QwenQualitySweep:   batch_size:        8
-2026-09-22 13:50:49,745 [INFO] QwenQualitySweep:   recovery_steps:    50
-2026-09-22 13:50:49,745 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
-2026-09-22 13:50:49,745 [INFO] QwenQualitySweep:   precision:         fp16
-2026-09-22 13:50:49,745 [INFO] QwenQualitySweep: ================================================================================
-2026-09-22 13:50:49,776 [INFO] QwenQualitySweep: Loading cached fine-tuned checkpoint: results\distilbert_mnli_full_mnli_sweep\finetuned_model.pt
-2026-09-22 13:50:49,814 [WARNING] QwenQualitySweep: Missing keys during load: ['distilbert.embeddings.word_embeddings.weight', 'distilbert.embeddings.position_embeddings.weight', 'distilbert.embeddings.LayerNorm.weight', 'distilbert.embeddings.LayerNorm.bias', 'distilbert.transformer.layer.0.attention.q_lin.weight', 'distilbert.transformer.layer.0.attention.q_lin.bias', 'distilbert.transformer.layer.0.attention.k_lin.weight', 'distilbert.transformer.layer.0.attention.k_lin.bias', 'distilbert.transformer.layer.0.attention.v_lin.weight', 'distilbert.transformer.layer.0.attention.v_lin.bias']
-2026-09-22 13:50:50,561 [INFO] QwenQualitySweep: Loading pre-cached batches from results\distilbert_mnli_full_mnli_sweep\batch_cache_mnli (skipping tokenization)
-2026-09-22 13:50:50,907 [INFO] QwenQualitySweep: Prepared 16 eval batches and 50 train batches directly on GPU.

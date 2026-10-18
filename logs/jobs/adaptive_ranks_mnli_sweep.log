@@ -1,6 +1,0 @@
-C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
-  warnings.warn(
-Traceback (most recent call last):
-  File "D:\SVD_Project\Codes\framework\run_quality_sweep.py", line 56, in <module>
-    from framework.core.registry import (
-ModuleNotFoundError: No module named 'framework.core.snapshot_restore'

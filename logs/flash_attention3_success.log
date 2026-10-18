@@ -1,9 +1,0 @@
-[main a8fe7a476] feat(benchmark): record successful flash_attention3 on distilbert-sst2 (Acc: 90.60%, F1: 0.9091)
- 7 files changed, 478 insertions(+), 369 deletions(-)
- create mode 100644 results/all_modules/flash_attention3/distilbert_sst2_flash_attention3_full_metrics.json
- create mode 100644 results/all_modules/flash_attention3/finetune_metadata.json
- create mode 100644 results/all_modules/flash_attention3/summary.csv
- create mode 100644 results/all_modules/full_attention/distilbert_sst2_full_attention_full_metrics.json
- create mode 100644 results/all_modules/full_attention/finetune_metadata.json
- create mode 100644 results/all_modules/full_attention/summary.csv
-branch 'main' set up to track 'origin/main'.

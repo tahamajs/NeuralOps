@@ -1,9 +1,0 @@
-[main b434f2648] feat(benchmark): record successful hymba_transx on distilbert-sst2 (Acc: 83.26%, F1: 0.841)
- 7 files changed, 533 insertions(+), 418 deletions(-)
- create mode 100644 results/all_modules/hymba_transx/distilbert_sst2_hymba_transx_full_metrics.json
- create mode 100644 results/all_modules/hymba_transx/finetune_metadata.json
- create mode 100644 results/all_modules/hymba_transx/summary.csv
- create mode 100644 results/all_modules/infini_attention/distilbert_sst2_infini_attention_full_metrics.json
- create mode 100644 results/all_modules/infini_attention/finetune_metadata.json
- create mode 100644 results/all_modules/infini_attention/summary.csv
-branch 'main' set up to track 'origin/main'.
