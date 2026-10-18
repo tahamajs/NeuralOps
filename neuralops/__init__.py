@@ -141,11 +141,12 @@ class _ModuleAliasFinder(MetaPathFinder):
         "neuralops.run_all_modules_scheduler": "neuralops.benchmarks.run_all_modules_scheduler",
         "neuralops.kd_quick_test": "neuralops.benchmarks.kd_quick_test",
         # Reorganized Evaluation & Verification
-        "neuralops.eval_all_models_datasets": "neuralops.evaluation.eval_all_models_datasets",
-        "neuralops.eval_perplexity": "neuralops.evaluation.eval_perplexity",
-        "neuralops.full_mnli_validation": "neuralops.evaluation.full_mnli_validation",
-        "neuralops.run_lm_eval_harness": "neuralops.evaluation.run_lm_eval_harness",
-        "neuralops.run_baseline_comparison": "neuralops.evaluation.run_baseline_comparison",
+        "neuralops.evaluation": "evaluation",
+        "neuralops.eval_all_models_datasets": "evaluation.eval_all_models_datasets",
+        "neuralops.eval_perplexity": "evaluation.eval_perplexity",
+        "neuralops.full_mnli_validation": "evaluation.full_mnli_validation",
+        "neuralops.run_lm_eval_harness": "evaluation.run_lm_eval_harness",
+        "neuralops.run_baseline_comparison": "evaluation.run_baseline_comparison",
         # Reorganized Trainer & Analysis
         "neuralops.train_lra": "neuralops.trainer.train_lra",
         "neuralops.generate_all_modules_analysis": "neuralops.analysis.generate_all_modules_analysis",
@@ -199,6 +200,14 @@ class _ModuleAliasFinder(MetaPathFinder):
         self, fullname: str, path: Any, target: Any = None
     ) -> Any | None:
         """Execute find_spec operation."""
+        if fullname.startswith("neuralops.evaluation."):
+            canonical = "evaluation." + fullname[len("neuralops.evaluation.") :]
+            try:
+                mod = importlib.import_module(canonical)
+                sys.modules[fullname] = mod
+                return getattr(mod, "__spec__", None)
+            except Exception:
+                pass
         if fullname in self._ALIASES:
             canonical = self._ALIASES[fullname]
             try:
@@ -247,8 +256,8 @@ _patch_pascal_svd_if_needed()
 
 # Symbol to (module_path, attr_name) mapping for fast, lazy resolution
 _LAZY_EXPORTS = {
-    "ABTestResult": ("neuralops.evaluation.ab_testing", "ABTestResult"),
-    "ABTester": ("neuralops.evaluation.ab_testing", "ABTester"),
+    "ABTestResult": ("evaluation.ab_testing", "ABTestResult"),
+    "ABTester": ("evaluation.ab_testing", "ABTester"),
     "ATTENTION_REGISTRY": ("neuralops.core.registry", "ATTENTION_REGISTRY"),
     "BaseAttention": ("neuralops.core.base", "BaseAttention"),
     "BaseCompressor": ("neuralops.core.base", "BaseCompressor"),
@@ -287,17 +296,17 @@ _LAZY_EXPORTS = {
     "COMPRESSOR_REGISTRY": ("neuralops.core.registry", "COMPRESSOR_REGISTRY"),
     "CompressionPipeline": ("neuralops.core.compression_pipeline", "CompressionPipeline"),
     "CustomLoopTrainer": ("neuralops.trainer.custom_loop_trainer", "CustomLoopTrainer"),
-    "FairnessEvaluator": ("neuralops.evaluation.fairness", "FairnessEvaluator"),
-    "FairnessReport": ("neuralops.evaluation.fairness", "FairnessReport"),
+    "FairnessEvaluator": ("evaluation.fairness", "FairnessEvaluator"),
+    "FairnessReport": ("evaluation.fairness", "FairnessReport"),
     "HuggingFaceTrainer": ("neuralops.trainer.hf_trainer", "HuggingFaceTrainer"),
-    "LabelQualityDetector": ("neuralops.evaluation.label_quality", "LabelQualityDetector"),
-    "LabelQualityReport": ("neuralops.evaluation.label_quality", "LabelQualityReport"),
+    "LabelQualityDetector": ("evaluation.label_quality", "LabelQualityDetector"),
+    "LabelQualityReport": ("evaluation.label_quality", "LabelQualityReport"),
     "MultiModeBenchmarkRunner": ("neuralops.benchmarks.multi_mode_benchmark", "MultiModeBenchmarkRunner"),
     "ResultWriter": ("neuralops.results_saver.pipeline.result_writer", "ResultWriter"),
     "ResultsSaver": ("neuralops.results_saver", "ResultsSaver"),
-    "RetrainDecision": ("neuralops.evaluation.retraining", "RetrainDecision"),
-    "RetrainPolicy": ("neuralops.evaluation.retraining", "RetrainPolicy"),
-    "RetrainingOrchestrator": ("neuralops.evaluation.retraining", "RetrainingOrchestrator"),
+    "RetrainDecision": ("evaluation.retraining", "RetrainDecision"),
+    "RetrainPolicy": ("evaluation.retraining", "RetrainPolicy"),
+    "RetrainingOrchestrator": ("evaluation.retraining", "RetrainingOrchestrator"),
     "Trainer": ("neuralops.trainer", "Trainer"),
     "TrainerRegistry": ("neuralops.trainer.registry", "TrainerRegistry"),
     "UnifiedTransformerConfig": ("neuralops.core.model_wrapper", "UnifiedTransformerConfig"),
@@ -364,7 +373,7 @@ _API_EXPORTS = {
     "StiefelOptimizer": "neuralops.trainer.optimizers",
     "RiemannianAdam": "neuralops.trainer.optimizers",
     "HybridAttentionSpec": "neuralops.models.hybrid_spec",
-    "probe_optimal_batch_size": "neuralops.evaluation.eval_pipeline",
+    "probe_optimal_batch_size": "evaluation.eval_pipeline",
     "NeuralOpsError": "neuralops.core.exceptions",
     "ConfigError": "neuralops.core.exceptions",
     "WeightCopyError": "neuralops.core.exceptions",
@@ -385,16 +394,16 @@ _API_EXPORTS = {
     "PagedStateTable": "neuralops.models.paged_state",
     "ATTENTION_REGISTRY": "neuralops.core.registry",
     "COMPRESSOR_REGISTRY": "neuralops.core.registry",
-    "NeedleInAHaystackEvaluator": "neuralops.evaluation.niah_passkey",
-    "plot_niah_heatmap": "neuralops.evaluation.niah_passkey",
-    "NeuralOpsLMEvalAdapter": "neuralops.evaluation.lm_eval_adapter",
-    "evaluate_zero_shot_tasks": "neuralops.evaluation.lm_eval_adapter",
+    "NeedleInAHaystackEvaluator": "evaluation.niah_passkey",
+    "plot_niah_heatmap": "evaluation.niah_passkey",
+    "NeuralOpsLMEvalAdapter": "evaluation.lm_eval_adapter",
+    "evaluate_zero_shot_tasks": "evaluation.lm_eval_adapter",
 }
 
 # Subpackages made available lazily
 _SUBPACKAGES = {
     "analysis", "attentions", "benchmarks", "cli", "compression_engine",
-    "config", "core", "distributed", "evaluation", "experiment_logging",
+    "config", "core", "distributed", "experiment_logging",
     "inference", "integrations", "kernels", "models",
     "results_saver", "runners", "tests", "tracking", "trainer",
     "training", "utils", "main", "surgery", "export",
@@ -626,6 +635,14 @@ def __getattr__(name: str) -> Any:
         val = getattr(module, attr_name)
         globals()[name] = val
         return val
+
+    if name == "evaluation":
+        try:
+            import evaluation
+            globals()[name] = evaluation
+            return evaluation
+        except ImportError:
+            pass
 
     if name in _SUBPACKAGES:
         submod = importlib.import_module(f"neuralops.{name}")

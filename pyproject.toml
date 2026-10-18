@@ -186,6 +186,8 @@ include = ["neuralops*"]
 exclude = [
     "tests*",
     "benchmarks*",
+    "evaluation*",
+    "eval*",
     "results*",
     "paper*",
     "thesis_final*",
@@ -193,6 +195,8 @@ exclude = [
     "academic*",
     "neuralops.tests*",
     "neuralops.benchmarks*",
+    "neuralops.evaluation*",
+    "neuralops.eval*",
     "neuralops._archive*",
     "neuralops.core._archive*",
     "neuralops.attentions._legacy*",
@@ -214,6 +218,8 @@ neuralops = [
 "*" = [
     "tests*",
     "benchmarks*",
+    "evaluation*",
+    "eval*",
     "results*",
     "paper*",
     "thesis_final*",
@@ -225,6 +231,8 @@ neuralops = [
     "benchmarks/**",
     "tests/*",
     "tests/**",
+    "evaluation/*",
+    "evaluation/**",
 ]
 
 [tool.pytest.ini_options]
