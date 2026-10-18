@@ -527,23 +527,6 @@ from neuralops.core.triton_kernels import fused_norm_linear as fused_norm_linear
 from neuralops.core.triton_linear_attn import fast_linear_attention, LinearAttentionTriton
 from neuralops.core.triton_sparse_attn import triton_block_sparse_attention
 
-# 13 Standalone Flagship Modules
-from neuralops.kernels.triton import (
-    block_sparse_streaming_attn,
-    chunked_delta_gate_scan,
-    cosformer_linear_attention,
-    fused_act_scale_quant_gemm,
-    fused_hadamard_w4a16_gemm,
-    fused_kronecker_matmul,
-    fused_latent_kv_cache_attention,
-    fused_lowrank_gemm,
-    hgrn2_fused_bwd_scan,
-    lut_codebook_dequant_gemm,
-    rpca_sparse_gemm,
-    spectral_entropy_svd_gate,
-    strided_tt,
-)
-
 
 def __getattr__(name: str) -> Any:
     """Dynamically resolve flagship standalone modules from neuralops.kernels.triton."""

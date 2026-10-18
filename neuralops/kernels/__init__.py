@@ -115,10 +115,9 @@ from neuralops.core.triton_kernels import (
     retnet_retention,
     sliding_window,
     varlen_attention,
-    fast_linear_attention,
-    LinearAttentionTriton,
-    triton_block_sparse_attention,
 )
+from neuralops.core.triton_linear_attn import fast_linear_attention, LinearAttentionTriton
+from neuralops.core.triton_sparse_attn import triton_block_sparse_attention
 
 # Extended Fused Kernels
 from neuralops.kernels.extended_kernels import (

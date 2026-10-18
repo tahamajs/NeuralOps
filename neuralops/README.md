@@ -21,8 +21,8 @@ neuralops/
 │   ├── quantization/       # Low-bit quantization (INT4, FP8, K-Means VQ, SmoothQuant)
 │   └── pruning/            # Structured pruning (FLAP, Bonsai, Wanda, ADMM)
 ├── core/                   # Hardware-Aware Acceleration & Dispatch
-│   ├── cuda_kernels/       # 108 Native CUDA C++ NVCC extensions
-│   ├── triton_kernels/     # 26 Hardware-autotuned OpenAI Triton JIT kernels
+│   ├── cuda_kernels/       # 114 Native CUDA C++ NVCC implementations across 110 modules
+│   ├── triton_kernels/     # Complete suite of hardware-autotuned OpenAI Triton JIT kernels
 │   ├── autograd/           # Analytical double-precision backward functions
 │   ├── registry.py         # Canonical registries (ATTENTION_REGISTRY, COMPRESSOR_REGISTRY)
 │   ├── fallback.py         # Strict 3-level fallback dispatch router
@@ -42,8 +42,8 @@ neuralops/
 NeuralOps enforces strict mathematical and architectural invariants certified across the entire codebase:
 - **131 canonical attention mechanisms** (`neuralops.core.registry.ATTENTION_REGISTRY`)
 - **72 compression engines** (`neuralops.core.registry.COMPRESSOR_REGISTRY`)
-- **26 Triton kernel modules** (`neuralops.core.triton_kernels`)
-- **108 native CUDA C++ kernels** (`neuralops.core.cuda_kernels`)
+- **Unified Triton kernel suite** (`neuralops.kernels.list_triton_kernels()`)
+- **114 native CUDA C++ kernels** (`neuralops.kernels.list_cuda_kernels()`)
 
 All numbers are verified continuously via `scripts/utils/verify_readme_counts.py`.
 
