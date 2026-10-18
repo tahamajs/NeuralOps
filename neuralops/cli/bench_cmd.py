@@ -83,7 +83,10 @@ def cmd_bench(args):
                     err = None if code == 0 else f"Process exited with code {code}"
                     entry = {"module": mod_name, "type": mod_type, "status": status, "error": err, "elapsed_s": round(time.time() - start_t, 2)}
                 else:
-                    from neuralops.evaluation.eval_pipeline import evaluate_single_combination_opt
+                    try:
+                        from evaluation.eval_pipeline import evaluate_single_combination_opt
+                    except ImportError:
+                        from neuralops.evaluation.eval_pipeline import evaluate_single_combination_opt
                     dev = torch.device(device)
                     res = evaluate_single_combination_opt(
                         track="cli_bench",
