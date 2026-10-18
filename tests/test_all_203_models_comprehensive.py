@@ -2,6 +2,8 @@
 """
 Comprehensive Master Test Suite for All Attention Mechanisms and Compression Engines.
 Tests instantiation, mock forward pass, cross-entropy / loss computation, and gradient backpropagation.
+
+Author: Taha Majlesi
 """
 
 import os
@@ -127,7 +129,8 @@ def test_all_attentions():
     print("  TESTING ALL REGISTERED ATTENTION MECHANISMS (FORWARD + BACKWARD)")
     print("=" * 65)
 
-    all_attns = sorted(ATTENTION_REGISTRY.keys())
+    ATTENTION_REGISTRY._load_all()
+    all_attns = sorted(list(ATTENTION_REGISTRY._dict.keys()))
     passed = []
     failed = []
 
@@ -200,7 +203,8 @@ def test_all_compressors():
     print("  TESTING ALL REGISTERED COMPRESSION ENGINES (APPLY + FORWARD)")
     print("=" * 65)
 
-    all_comps = sorted(COMPRESSOR_REGISTRY.keys())
+    COMPRESSOR_REGISTRY._load_all()
+    all_comps = sorted(list(COMPRESSOR_REGISTRY._dict.keys()))
     passed = []
     failed = []
 

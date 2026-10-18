@@ -540,7 +540,11 @@ def erc_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     return compressed_model
 
 
+ERCSVDCompressor = ERCCompressor
+
 __all__ = [
     "ERCCompressor",
+    "ERCSVDCompressor",
     "erc_factory",
 ]
+
