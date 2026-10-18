@@ -19,6 +19,16 @@ logger = logging.getLogger(__name__)
 # Active forced backend: "auto", "cuda", "triton", "pytorch"
 _FORCED_BACKEND: str = "auto"
 
+# Last dispatch tracking
+_LAST_DISPATCH_BACKEND: dict[str, str] = {}
+_LAST_DISPATCH_ERROR: dict[str, str] = {}
+
+def get_last_dispatch_backend(kernel_name: str) -> str:
+    return _LAST_DISPATCH_BACKEND.get(kernel_name, 'unknown')
+
+def get_last_dispatch_error(kernel_name: str) -> str:
+    return _LAST_DISPATCH_ERROR.get(kernel_name, '')
+
 # Dispatch telemetry stats
 _DISPATCH_STATS: dict[str, int] = {
     "cuda": 0,
@@ -148,6 +158,7 @@ def dispatch(
     # CPU fast-path: Pure PyTorch Reference immediately for real kernels when CPU tensor is given
     if kernel_name != "unknown" and _is_first_tensor_cpu(*args, **kwargs):
         _DISPATCH_STATS["pytorch"] += 1
+        _LAST_DISPATCH_BACKEND[kernel_name] = "pytorch"
         return pytorch_fn(*args, **kwargs)
 
     forced = _FORCED_BACKEND
@@ -155,6 +166,7 @@ def dispatch(
     # Forced Level 3
     if forced == "pytorch":
         _DISPATCH_STATS["pytorch"] += 1
+        _LAST_DISPATCH_BACKEND[kernel_name] = "pytorch"
         return pytorch_fn(*args, **kwargs)
 
     has_grad = any(isinstance(arg, torch.Tensor) and arg.requires_grad for arg in args) or any(
@@ -172,6 +184,7 @@ def dispatch(
                 res = _AutogradBridge.apply(cuda_fn, pytorch_fn, reconstruct, *tensor_list)
                 if res is not None or allow_none:
                     _DISPATCH_STATS["cuda"] += 1
+                    _LAST_DISPATCH_BACKEND[kernel_name] = "cuda"
                     return res
             except Exception as e:
                 _DISPATCH_STATS["cuda_failures"] += 1
@@ -185,6 +198,7 @@ def dispatch(
                 res = _AutogradBridge.apply(triton_fn, pytorch_fn, reconstruct, *tensor_list)
                 if res is not None or allow_none:
                     _DISPATCH_STATS["triton"] += 1
+                    _LAST_DISPATCH_BACKEND[kernel_name] = "triton"
                     return res
             except Exception as e:
                 _DISPATCH_STATS["triton_failures"] += 1
@@ -196,6 +210,7 @@ def dispatch(
                 res = _AutogradBridge.apply(cuda_fn, pytorch_fn, reconstruct, *tensor_list)
                 if res is not None or allow_none:
                     _DISPATCH_STATS["cuda"] += 1
+                    _LAST_DISPATCH_BACKEND[kernel_name] = "cuda"
                     return res
             except Exception as e:
                 _DISPATCH_STATS["cuda_failures"] += 1
@@ -206,12 +221,14 @@ def dispatch(
                 res = _AutogradBridge.apply(triton_fn, pytorch_fn, reconstruct, *tensor_list)
                 if res is not None or allow_none:
                     _DISPATCH_STATS["triton"] += 1
+                    _LAST_DISPATCH_BACKEND[kernel_name] = "triton"
                     return res
             except Exception as e:
                 _DISPATCH_STATS["triton_failures"] += 1
                 logger.debug(f"[{kernel_name}] Triton autograd path failed: {e}. Falling back.")
 
         _DISPATCH_STATS["pytorch"] += 1
+        _LAST_DISPATCH_BACKEND[kernel_name] = "pytorch"
         return pytorch_fn(*args, **kwargs)
 
     # Forced Level 1
@@ -223,6 +240,7 @@ def dispatch(
             res = cuda_fn(*args, **kwargs)
             if res is not None or allow_none:
                 _DISPATCH_STATS["cuda"] += 1
+                _LAST_DISPATCH_BACKEND[kernel_name] = "cuda"
                 return res
         except Exception as e:
             _DISPATCH_STATS["cuda_failures"] += 1
@@ -237,6 +255,7 @@ def dispatch(
             res = triton_fn(*args, **kwargs)
             if res is not None or allow_none:
                 _DISPATCH_STATS["triton"] += 1
+                _LAST_DISPATCH_BACKEND[kernel_name] = "triton"
                 return res
         except Exception as e:
             _DISPATCH_STATS["triton_failures"] += 1
@@ -253,6 +272,7 @@ def dispatch(
             res = cuda_fn(*args, **kwargs)
             if res is not None or allow_none:
                 _DISPATCH_STATS["cuda"] += 1
+                _LAST_DISPATCH_BACKEND[kernel_name] = "cuda"
                 if debug_dispatch:
                     print(f"[dispatch] {kernel_name}: executed branch = CUDA", file=sys.stderr)
                 return res
@@ -261,12 +281,16 @@ def dispatch(
             if debug_dispatch:
                 print(f"[dispatch] {kernel_name}: CUDA failed with {type(e).__name__}: {e}", file=sys.stderr)
             logger.debug(f"[{kernel_name}] CUDA C++ path failed: {e}. Falling back to Triton / PyTorch.")
+            _LAST_DISPATCH_ERROR[kernel_name] = str(e)
+            if os.environ.get("NEURALOPS_STRICT_CUDA") == "1":
+                raise
 
     if triton_fn is not None:
         try:
             res = triton_fn(*args, **kwargs)
             if res is not None or allow_none:
                 _DISPATCH_STATS["triton"] += 1
+                _LAST_DISPATCH_BACKEND[kernel_name] = "triton"
                 if debug_dispatch:
                     print(f"[dispatch] {kernel_name}: executed branch = TRITON", file=sys.stderr)
                 return res
@@ -277,6 +301,7 @@ def dispatch(
             logger.debug(f"[{kernel_name}] Triton path failed: {e}. Falling back to PyTorch.")
 
     _DISPATCH_STATS["pytorch"] += 1
+    _LAST_DISPATCH_BACKEND[kernel_name] = "pytorch"
     if debug_dispatch:
         print(f"[dispatch] {kernel_name}: executed branch = PYTORCH_FALLBACK", file=sys.stderr)
     return pytorch_fn(*args, **kwargs)
