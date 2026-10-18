@@ -1,2 +1,0 @@
-rank,module_name,status,accuracy_pct,f1_score,val_loss,peak_vram_mb,compression_rate,compression_ratio_pct,num_compressed_layers,num_fallback_layers,elapsed_s,total_params_before,total_params_after
-384,svd_llm_compressor,PASS_LOW_PPL,0.0,0.0,4.100021091358906,4764.58984375,1.0472,4.5,12,12,151.2,124439808,118836480

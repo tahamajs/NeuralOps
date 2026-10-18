@@ -1,7 +1,0 @@
-rank,module_name,status,accuracy_pct,f1_score,val_loss,peak_vram_mb,compression_rate,compression_ratio_pct,num_compressed_layers,num_fallback_layers,elapsed_s,total_params_before,total_params_after
-16,lsc_compressor,FAIL_BELOW_CHANCE,50.92,0.6748,0.6972,351.72,1.0,0.0,48,0,84.1,124647170,124647170
-32,lsc_compressor,FAIL_BELOW_CHANCE,50.92,0.6748,0.6972,351.72,1.0,0.0,48,0,84.1,124647170,124647170
-64,,PASS,94.27,0.9442,0.1925,0.0,1.0,,0,0,12.53,0,0
-128,,PASS,94.27,0.9442,0.1925,0.0,1.0,,0,0,12.25,0,0
-256,,PASS,94.27,0.9442,0.1925,0.0,1.0,,0,0,12.32,0,0
-384,,PASS,94.27,0.9442,0.1925,0.0,1.0,,0,0,13.71,0,0

@@ -1,5 +1,0 @@
-model,accuracy_pct,f1_score,peak_vram_mb,throughput_tokens_sec,status
-BERT,50.92,0.3374,283.2,313293.6,PASS
-RoBERTa,50.92,0.6748,671.9,9612.29,PASS_LOW
-DistilBERT,50.92,0.6748,340.61,19602.4,PASS_LOW
-GPT-2,51.26,0.6763,568.72,12410.02,PASS_LOW

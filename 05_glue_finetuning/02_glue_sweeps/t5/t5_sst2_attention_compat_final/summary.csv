@@ -1,4 +1,0 @@
-module_name,status,accuracy_pct,elapsed_s,error,path,timestamp
-cosformer,SKIP_T5_INCOMPATIBLE,49.08,50.68,t5_relative_bias_and_cross_attention_incompatible,adapted_t5,2026-09-02T10:18:32.871980
-eat,SKIP_T5_INCOMPATIBLE,48.97,34.14,t5_relative_bias_and_cross_attention_incompatible,adapted_t5,2026-09-02T10:19:07.328133
-gated_linear_attn,SKIP_T5_INCOMPATIBLE,49.08,43.32,t5_relative_bias_and_cross_attention_incompatible,adapted_t5,2026-09-02T10:19:51.079851
