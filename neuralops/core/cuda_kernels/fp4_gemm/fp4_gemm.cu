@@ -124,8 +124,86 @@ __global__ void __launch_bounds__(256) fp4_gemm_fwd_kernel(
     }
 }
 
+
+template <typename scalar_t>
+__global__ void __launch_bounds__(256) fp4_gemm_bwd_kernel(
+    scalar_t* __restrict__ grad_x,
+    float* __restrict__ grad_scales,
+    scalar_t* __restrict__ grad_bias,
+    const scalar_t* __restrict__ grad_out,
+    const scalar_t* __restrict__ X,
+    const uint8_t* __restrict__ W_packed,
+    const float* __restrict__ scales,
+    const int M,
+    const int K,
+    const int N,
+    const bool has_bias
+) {
+    const int idx_x = blockIdx.x * blockDim.x + threadIdx.x;
+    const int total_x = M * K;
+    if (idx_x < total_x) {
+        const int m = idx_x / K;
+        const int k = idx_x % K;
+        const int K_packed = K / 2;
+        const int kp = k / 2;
+        const bool is_odd = (k % 2 != 0);
+
+        float acc = 0.0f;
+        for (int n = 0; n < N; ++n) {
+            const uint8_t byte_val = W_packed[n * K_packed + kp];
+            const uint8_t nibble = is_odd ? ((byte_val >> 4) & 0x0F) : (byte_val & 0x0F);
+            const float w_deq = decode_fp4_fast(nibble) * scales[n];
+            const float go = to_float(grad_out[m * N + n]);
+            acc += go * w_deq;
+        }
+        grad_x[idx_x] = from_float<scalar_t>(acc);
+    }
+}
+
+template <typename scalar_t>
+__global__ void __launch_bounds__(256) fp4_gemm_bwd_scales_bias_kernel(
+    float* __restrict__ grad_scales,
+    scalar_t* __restrict__ grad_bias,
+    const scalar_t* __restrict__ grad_out,
+    const scalar_t* __restrict__ X,
+    const uint8_t* __restrict__ W_packed,
+    const int M,
+    const int K,
+    const int N,
+    const bool has_bias
+) {
+    const int n = blockIdx.x * blockDim.x + threadIdx.x;
+    if (n >= N) return;
+
+    const int K_packed = K / 2;
+    float sum_bias = 0.0f;
+    float sum_scale = 0.0f;
+
+    for (int m = 0; m < M; ++m) {
+        const float go = to_float(grad_out[m * N + n]);
+        sum_bias += go;
+
+        float xw = 0.0f;
+        for (int kp = 0; kp < K_packed; ++kp) {
+            const uint8_t byte_val = W_packed[n * K_packed + kp];
+            const float w0 = decode_fp4_fast(byte_val & 0x0F);
+            const float w1 = decode_fp4_fast((byte_val >> 4) & 0x0F);
+            const float x0 = to_float(X[m * K + kp * 2]);
+            const float x1 = to_float(X[m * K + kp * 2 + 1]);
+            xw += x0 * w0 + x1 * w1;
+        }
+        sum_scale += go * xw;
+    }
+
+    grad_scales[n] = sum_scale;
+    if (has_bias && grad_bias != nullptr) {
+        grad_bias[n] = from_float<scalar_t>(sum_bias);
+    }
+}
+
 } // namespace cuda
 } // namespace neuralops
+
 
 torch::Tensor fp4_gemm_fwd(
     const torch::Tensor& x,
@@ -193,4 +271,71 @@ torch::Tensor fp4_gemm_fwd(
     std::vector<int64_t> out_final_shape(orig_shape.begin(), orig_shape.end() - 1);
     out_final_shape.push_back(N);
     return out.reshape(out_final_shape);
+}
+
+
+std::vector<torch::Tensor> fp4_gemm_bwd(
+    const torch::Tensor& grad_out,
+    const torch::Tensor& x,
+    const torch::Tensor& w_packed,
+    const torch::Tensor& scales,
+    const c10::optional<torch::Tensor>& bias
+) {
+    CHECK_INPUT(grad_out);
+    CHECK_INPUT(x);
+    CHECK_INPUT(w_packed);
+    CHECK_INPUT(scales);
+
+    auto orig_shape = x.sizes();
+    auto x_2d = x.reshape({-1, orig_shape.back()}).contiguous();
+    const int M = x_2d.size(0);
+    const int K = x_2d.size(1);
+    const int N = w_packed.size(0);
+
+    auto grad_out_2d = grad_out.reshape({M, N}).contiguous();
+
+    auto grad_x = torch::empty_like(x_2d);
+    auto grad_scales = torch::empty_like(scales);
+    
+    const bool has_bias = bias.has_value() && bias.value().defined();
+    torch::Tensor grad_bias;
+    if (has_bias) {
+        grad_bias = torch::empty_like(bias.value());
+    }
+
+    auto stream = c10::cuda::getCurrentCUDAStream();
+    auto w_c = w_packed.contiguous();
+    auto s_c = scales.contiguous().to(torch::kFloat32);
+
+    const int threads = 256;
+    const int blocks_x = (M * K + threads - 1) / threads;
+    const int blocks_n = (N + threads - 1) / threads;
+
+    AT_DISPATCH_FLOATING_TYPES_AND2(
+        at::ScalarType::Half, at::ScalarType::BFloat16,
+        x.scalar_type(), "fp4_gemm_bwd", ([&] {
+            neuralops::cuda::fp4_gemm_bwd_kernel<scalar_t><<<blocks_x, threads, 0, stream>>>(
+                grad_x.data_ptr<scalar_t>(),
+                grad_scales.data_ptr<float>(),
+                has_bias ? grad_bias.data_ptr<scalar_t>() : nullptr,
+                grad_out_2d.data_ptr<scalar_t>(),
+                x_2d.data_ptr<scalar_t>(),
+                reinterpret_cast<const uint8_t*>(w_c.data_ptr()),
+                s_c.data_ptr<float>(),
+                M, K, N, has_bias
+            );
+            neuralops::cuda::fp4_gemm_bwd_scales_bias_kernel<scalar_t><<<blocks_n, threads, 0, stream>>>(
+                grad_scales.data_ptr<float>(),
+                has_bias ? grad_bias.data_ptr<scalar_t>() : nullptr,
+                grad_out_2d.data_ptr<scalar_t>(),
+                x_2d.data_ptr<scalar_t>(),
+                reinterpret_cast<const uint8_t*>(w_c.data_ptr()),
+                M, K, N, has_bias
+            );
+        })
+    );
+
+    CUDA_KERNEL_LAUNCH_CHECK();
+
+    return {grad_x.reshape(orig_shape), grad_scales, has_bias ? grad_bias : torch::Tensor()};
 }
