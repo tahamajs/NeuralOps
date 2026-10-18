@@ -2,6 +2,7 @@ import os
 import sys
 import time
 import csv
+import json
 import math
 import torch
 import torch.nn.functional as F
@@ -104,6 +105,13 @@ def run_dynamic_range_benchmark():
         for r in results:
             writer.writerow(r)
     print(f"\nSaved CSV to: {csv_path}")
+
+    # 1b. Export JSON
+    json_path = os.path.join(base_dir, "results/benchmark_dynamic_range_stress.json")
+    os.makedirs(os.path.dirname(json_path), exist_ok=True)
+    with open(json_path, mode="w", encoding="utf-8") as f:
+        json.dump(results, f, indent=2)
+    print(f"Saved JSON to: {json_path}")
 
     # 2. Export LaTeX Table
     tex = []

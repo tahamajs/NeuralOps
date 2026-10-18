@@ -9,29 +9,29 @@
 \toprule
 \textbf{Kernel} & \textbf{Dynamic Scale ($\|X\|_\infty$)} & \textbf{Latency (ms)} & \textbf{Output Range $[\min, \max]$} & \textbf{Frobenius Norm $\|Y\|_F$} & \textbf{Zero-NaN/Inf Status} \\
 \midrule
-\textbf{gla\_scan} & $10^{-4}$ & 0.608 & $[-1.5e-09, 1.5e-09]$ & 8.84e-08 & \checkmark \text{ PASS} \\
- & $10^{-2}$ & 0.606 & $[-1.3e-03, 1.2e-03]$ & 8.49e-02 & \checkmark \text{ PASS} \\
- & $10^{0}$ & 0.608 & $[-1.3e+03, 1.2e+03]$ & 5.93e+04 & \checkmark \text{ PASS} \\
- & $10^{2}$ & 0.608 & $[-1.3e+09, 1.3e+09]$ & 6.14e+10 & \checkmark \text{ PASS} \\
- & $10^{4}$ & 0.612 & $[-1.3e+15, 1.3e+15]$ & 6.15e+16 & \checkmark \text{ PASS} \\
+\textbf{gla\_scan} & $10^{-4}$ & 0.196 & $[-1.5e-09, 1.5e-09]$ & 8.84e-08 & \checkmark \text{ PASS} \\
+ & $10^{-2}$ & 0.193 & $[-1.3e-03, 1.2e-03]$ & 8.49e-02 & \checkmark \text{ PASS} \\
+ & $10^{0}$ & 0.193 & $[-1.3e+03, 1.2e+03]$ & 5.93e+04 & \checkmark \text{ PASS} \\
+ & $10^{2}$ & 0.193 & $[-1.3e+09, 1.3e+09]$ & 6.14e+10 & \checkmark \text{ PASS} \\
+ & $10^{4}$ & 0.193 & $[-1.3e+15, 1.3e+15]$ & 6.15e+16 & \checkmark \text{ PASS} \\
 \midrule
-\textbf{sparse\_attention} & $10^{-4}$ & 0.161 & $[-5.9e-05, 5.6e-05]$ & 5.25e-03 & \checkmark \text{ PASS} \\
- & $10^{-2}$ & 0.161 & $[-5.4e-03, 5.3e-03]$ & 5.24e-01 & \checkmark \text{ PASS} \\
- & $10^{0}$ & 0.161 & $[-5.7e-01, 5.2e-01]$ & 5.23e+01 & \checkmark \text{ PASS} \\
- & $10^{2}$ & 0.161 & $[-1.0e+02, 1.0e+02]$ & 2.05e+04 & \checkmark \text{ PASS} \\
- & $10^{4}$ & 0.161 & $[-1.0e+04, 1.0e+04]$ & 2.09e+06 & \checkmark \text{ PASS} \\
+\textbf{sparse\_attention} & $10^{-4}$ & 0.016 & $[-5.9e-05, 5.6e-05]$ & 5.25e-03 & \checkmark \text{ PASS} \\
+ & $10^{-2}$ & 0.016 & $[-5.4e-03, 5.3e-03]$ & 5.24e-01 & \checkmark \text{ PASS} \\
+ & $10^{0}$ & 0.015 & $[-5.7e-01, 5.2e-01]$ & 5.23e+01 & \checkmark \text{ PASS} \\
+ & $10^{2}$ & 0.015 & $[-1.0e+02, 1.0e+02]$ & 2.05e+04 & \checkmark \text{ PASS} \\
+ & $10^{4}$ & 0.015 & $[-1.0e+04, 1.0e+04]$ & 2.09e+06 & \checkmark \text{ PASS} \\
 \midrule
-\textbf{rotational\_svd} & $10^{-4}$ & 0.168 & $[-5.4e-04, 5.6e-04]$ & 2.06e-02 & \checkmark \text{ PASS} \\
- & $10^{-2}$ & 0.168 & $[-7.2e-02, 6.2e-02]$ & 2.07e+00 & \checkmark \text{ PASS} \\
- & $10^{0}$ & 0.168 & $[-6.2e+00, 6.0e+00]$ & 2.24e+02 & \checkmark \text{ PASS} \\
- & $10^{2}$ & 0.168 & $[-5.8e+02, 5.7e+02]$ & 2.16e+04 & \checkmark \text{ PASS} \\
- & $10^{4}$ & 0.168 & $[-5.1e+04, 6.3e+04]$ & 2.06e+06 & \checkmark \text{ PASS} \\
+\textbf{rotational\_svd} & $10^{-4}$ & 0.033 & $[-5.4e-04, 5.6e-04]$ & 2.06e-02 & \checkmark \text{ PASS} \\
+ & $10^{-2}$ & 0.032 & $[-7.2e-02, 6.2e-02]$ & 2.07e+00 & \checkmark \text{ PASS} \\
+ & $10^{0}$ & 0.032 & $[-6.2e+00, 6.0e+00]$ & 2.24e+02 & \checkmark \text{ PASS} \\
+ & $10^{2}$ & 0.032 & $[-5.8e+02, 5.7e+02]$ & 2.16e+04 & \checkmark \text{ PASS} \\
+ & $10^{4}$ & 0.032 & $[-5.1e+04, 6.3e+04]$ & 2.06e+06 & \checkmark \text{ PASS} \\
 \midrule
-\textbf{samba\_moe} & $10^{-4}$ & 0.150 & $[-1.0e-04, 9.9e-05]$ & 8.29e-03 & \checkmark \text{ PASS} \\
- & $10^{-2}$ & 0.150 & $[-1.0e-02, 1.0e-02]$ & 8.31e-01 & \checkmark \text{ PASS} \\
- & $10^{0}$ & 0.150 & $[-9.9e-01, 1.0e+00]$ & 8.40e+01 & \checkmark \text{ PASS} \\
- & $10^{2}$ & 0.150 & $[-1.0e+02, 9.9e+01]$ & 8.46e+03 & \checkmark \text{ PASS} \\
- & $10^{4}$ & 0.150 & $[-9.9e+03, 9.9e+03]$ & 8.37e+05 & \checkmark \text{ PASS} \\
+\textbf{samba\_moe} & $10^{-4}$ & 0.006 & $[-1.0e-04, 9.9e-05]$ & 8.29e-03 & \checkmark \text{ PASS} \\
+ & $10^{-2}$ & 0.006 & $[-1.0e-02, 1.0e-02]$ & 8.31e-01 & \checkmark \text{ PASS} \\
+ & $10^{0}$ & 0.005 & $[-9.9e-01, 1.0e+00]$ & 8.40e+01 & \checkmark \text{ PASS} \\
+ & $10^{2}$ & 0.005 & $[-1.0e+02, 9.9e+01]$ & 8.46e+03 & \checkmark \text{ PASS} \\
+ & $10^{4}$ & 0.005 & $[-9.9e+03, 9.9e+03]$ & 8.37e+05 & \checkmark \text{ PASS} \\
 \bottomrule
 \end{tabular}
 \end{table*}

@@ -13,7 +13,7 @@ from neuralops.core.triton_kernels.gla_scan import gla_scan
 from neuralops.core.triton_kernels.gdn_scan import gdn_scan
 from neuralops.attentions.svd.svd_linear_attention import SVDLinearAttention
 
-SEQ_LENS = [4096, 8192, 16384, 32768]
+SEQ_LENS = [512, 1024, 2048, 4096, 8192, 16384, 32768]
 
 def run_extrapolation_benchmark():
     device = "cuda" if torch.cuda.is_available() else "cpu"
