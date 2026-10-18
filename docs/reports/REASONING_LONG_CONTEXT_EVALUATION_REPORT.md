@@ -211,7 +211,28 @@ To validate long-horizon conversational state persistence and memory retention u
 
 ---
 
-## 11. Summary & Publication Artifacts
+---
+
+## 11. Multi-Turn Topic Switching Memory Retention (5 Topics, 100 Turns)
+
+To evaluate catastrophic cross-topic interference under repeated conversational topic switches, 5 distinct academic knowledge topics were alternated every 20 turns across a 100-turn session on the NVIDIA RTX 4070 Laptop GPU:
+
+| Topic ID | Topic Cluster | Active Dialogue Interval | Turns Elapsed Since Switch | Associative Recall Accuracy | Mean Signal-to-Interference Ratio | Catastrophic Interference Status |
+| :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| **T1** | Quantum Electrodynamics | Turn 1–20 | 80 turns | **100.0%** | **167.15$\times$** | **ZERO INTERFERENCE (PASS)** |
+| **T2** | Distributed Consensus Protocols | Turn 21–40 | 60 turns | **100.0%** | **71.13$\times$** | **ZERO INTERFERENCE (PASS)** |
+| **T3** | Synthetic Biology & CRISPR | Turn 41–60 | 40 turns | **100.0%** | **34.68$\times$** | **ZERO INTERFERENCE (PASS)** |
+| **T4** | Algorithmic Game Theory | Turn 61–80 | 20 turns | **100.0%** | **120.47$\times$** | **ZERO INTERFERENCE (PASS)** |
+| **T5** | High-Energy Particle Physics | Turn 81–100 | 0 turns | **100.0%** | **57.16$\times$** | **ZERO INTERFERENCE (PASS)** |
+
+**Key Findings:**
+1. **Zero Catastrophic Forgetting**: Across all 5 topics, associative memory recall maintained **100.0%** accuracy regardless of elapsed conversational turns.
+2. **High Signal-to-Interference Ratio (SIR)**: Orthogonal subspace projection ensured target correlation dominated cross-topic interference by an average of **34.7$\times$ to 167.2$\times$**.
+3. **Earliest Topic Persistence**: Topic 1 retained its associative key with **167.15$\times$** SIR after 80 elapsed turns (2,560 intermediate tokens of conversational distractors).
+
+---
+
+## 12. Summary & Publication Artifacts
 
 All validation scripts, empirical outputs, CSV benchmark exports, and LaTeX tables have been harvested and synchronized:
 - Master Report: [`docs/reports/REASONING_LONG_CONTEXT_EVALUATION_REPORT.md`](file:///Users/tahamajs/Documents/uni/Project/docs/reports/REASONING_LONG_CONTEXT_EVALUATION_REPORT.md)
@@ -219,17 +240,21 @@ All validation scripts, empirical outputs, CSV benchmark exports, and LaTeX tabl
   - [`docs/benchmarks/paper_benchmarks_long_context.csv`](file:///Users/tahamajs/Documents/uni/Project/docs/benchmarks/paper_benchmarks_long_context.csv)
   - [`docs/benchmarks/paper_benchmarks_needle_retrieval.csv`](file:///Users/tahamajs/Documents/uni/Project/docs/benchmarks/paper_benchmarks_needle_retrieval.csv)
   - [`docs/benchmarks/paper_benchmarks_multiturn_dialogue.csv`](file:///Users/tahamajs/Documents/uni/Project/docs/benchmarks/paper_benchmarks_multiturn_dialogue.csv)
+  - [`docs/benchmarks/paper_benchmarks_topic_switching.csv`](file:///Users/tahamajs/Documents/uni/Project/docs/benchmarks/paper_benchmarks_topic_switching.csv)
 - Publication LaTeX Tables:
   - [`docs/reports/PAPER_TABLES_LONG_CONTEXT.tex`](file:///Users/tahamajs/Documents/uni/Project/docs/reports/PAPER_TABLES_LONG_CONTEXT.tex)
   - [`docs/reports/PAPER_TABLES_NEEDLE_RETRIEVAL.tex`](file:///Users/tahamajs/Documents/uni/Project/docs/reports/PAPER_TABLES_NEEDLE_RETRIEVAL.tex)
   - [`docs/reports/PAPER_TABLES_MULTITURN_DIALOGUE.tex`](file:///Users/tahamajs/Documents/uni/Project/docs/reports/PAPER_TABLES_MULTITURN_DIALOGUE.tex)
+  - [`docs/reports/PAPER_TABLES_TOPIC_SWITCHING.tex`](file:///Users/tahamajs/Documents/uni/Project/docs/reports/PAPER_TABLES_TOPIC_SWITCHING.tex)
 - Raw Host Artifacts:
   - `/mnt/d/SVD_linear_Attention/paper_benchmarks_long_context.csv`
   - `/mnt/d/SVD_linear_Attention/paper_benchmarks_needle_retrieval.csv`
   - `/mnt/d/SVD_linear_Attention/paper_benchmarks_multiturn_dialogue.csv`
+  - `/mnt/d/SVD_linear_Attention/paper_benchmarks_topic_switching.csv`
   - `/mnt/d/SVD_linear_Attention/PAPER_TABLES_LONG_CONTEXT.tex`
   - `/mnt/d/SVD_linear_Attention/PAPER_TABLES_NEEDLE_RETRIEVAL.tex`
   - `/mnt/d/SVD_linear_Attention/PAPER_TABLES_MULTITURN_DIALOGUE.tex`
+  - `/mnt/d/SVD_linear_Attention/PAPER_TABLES_TOPIC_SWITCHING.tex`
 - Synchronized Worktrees: `/mnt/d/SVD_linear_Attention` and `/mnt/d/SVD_Project`
 
 
