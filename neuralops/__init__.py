@@ -208,6 +208,15 @@ class _ModuleAliasFinder(MetaPathFinder):
                 return getattr(mod, "__spec__", None)
             except Exception:
                 pass
+        if fullname.startswith("neuralops.kernels.cuda."):
+            sub = fullname[len("neuralops.kernels.cuda.") :]
+            canonical = f"neuralops.core.cuda_kernels.{sub}"
+            try:
+                mod = importlib.import_module(canonical)
+                sys.modules[fullname] = mod
+                return getattr(mod, "__spec__", None)
+            except Exception:
+                pass
         if fullname in self._ALIASES:
             canonical = self._ALIASES[fullname]
             try:
@@ -342,6 +351,8 @@ _API_EXPORTS = {
     "finalize_surgery": "neuralops.api",
     "list_attentions": "neuralops.api",
     "list_compressors": "neuralops.api",
+    "list_triton_kernels": "neuralops.kernels",
+    "list_cuda_kernels": "neuralops.kernels",
     "get_attention_class": "neuralops.api",
     "get_compressor_class": "neuralops.api",
     "list_families": "neuralops.api",
