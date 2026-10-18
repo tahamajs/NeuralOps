@@ -35,6 +35,7 @@ def train_model(
     model.train()
     optimizer = torch.optim.AdamW(model.parameters(), lr=config.learning_rate)
     steps_per_epoch = len(train_loader)
+    epoch_loss = 0.0
     for epoch in range(config.epochs):
         epoch_loss = 0.0
         pbar = tqdm(train_loader, desc=f"Epoch {epoch + 1}/{config.epochs}", leave=False)
@@ -67,7 +68,7 @@ def train_model(
     val_accuracy = evaluate_model(
         model, val_loader, device, num_labels, is_multichoice=is_multichoice
     )
-    return {"final_accuracy": val_accuracy, "avg_loss": epoch_loss / steps_per_epoch}
+    return {"final_accuracy": val_accuracy, "avg_loss": epoch_loss / steps_per_epoch if steps_per_epoch > 0 else 0.0}
 
 
 def evaluate_model(model, data_loader, device, num_labels, is_multichoice=False) -> Any:

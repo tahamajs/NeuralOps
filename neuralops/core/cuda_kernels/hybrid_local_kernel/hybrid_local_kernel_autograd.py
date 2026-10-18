@@ -8,6 +8,7 @@ Author: Taha Majlesi
 
 from __future__ import annotations
 
+import logging
 import math
 from pathlib import Path
 from typing import Any, Optional
@@ -17,6 +18,8 @@ import torch.nn.functional as F
 
 from neuralops.core.cuda_kernels._bindings import load_cuda_module
 from neuralops.core.cuda_kernels._fallback import dispatch
+
+logger = logging.getLogger(__name__)
 
 _MODULE = None
 
@@ -92,7 +95,8 @@ def hybrid_local_attn(
         try:
             from neuralops.kernels.triton.hybrid_local_kernel_triton import hybrid_local_attn_triton
             return hybrid_local_attn_triton(q, k, v, radius=radius, is_causal=is_causal)
-        except Exception:
+        except (RuntimeError, MemoryError, AssertionError, ValueError, ImportError, AttributeError) as exc:
+            logger.warning("Failed in Triton hybrid_local_attn: %s", exc, exc_info=True)
             return None
 
     if q.shape[-1] > 256:
@@ -131,7 +135,8 @@ def hybrid_two_branch_blend(
         try:
             from neuralops.kernels.triton.hybrid_local_kernel_triton import hybrid_two_branch_blend_triton
             return hybrid_two_branch_blend_triton(b0, b1, alpha)
-        except Exception:
+        except (RuntimeError, MemoryError, AssertionError, ValueError, ImportError, AttributeError) as exc:
+            logger.warning("Failed in Triton hybrid_two_branch_blend: %s", exc, exc_info=True)
             return None
 
     return dispatch(
@@ -180,7 +185,8 @@ def hybrid_three_branch_blend(
         try:
             from neuralops.kernels.triton.hybrid_local_kernel_triton import hybrid_three_branch_blend_triton
             return hybrid_three_branch_blend_triton(b0, b1, b2, alpha)
-        except Exception:
+        except (RuntimeError, MemoryError, AssertionError, ValueError, ImportError, AttributeError) as exc:
+            logger.warning("Failed in Triton hybrid_three_branch_blend: %s", exc, exc_info=True)
             return None
 
     return dispatch(

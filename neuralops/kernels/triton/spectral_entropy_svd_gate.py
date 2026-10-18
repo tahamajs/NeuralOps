@@ -8,8 +8,7 @@ Author: Taha Majlesi
 
 from __future__ import annotations
 
-import math
-from typing import Any, Optional, Tuple
+from typing import Optional
 
 import torch
 import triton
@@ -84,7 +83,7 @@ def _spectral_entropy_svd_kernel(
         w_tile = tl.load(s_weights_ptr + offs_r, mask=mask_r, other=0.0).to(tl.float32)
         z_acc = z_acc * w_tile[None, :]
 
-    z_tile = z_acc.to(x_tile.dtype)
+    z_tile = z_acc.to(x_ptr.dtype.element_ty)
 
     # 3. Up-projection: Y_tile = Z_tile @ U_r^T [offs_r, offs_n]
     u_ptrs = u_ptr + offs_r[:, None] * stride_ur + offs_n[None, :] * stride_un
@@ -198,3 +197,12 @@ def triton_spectral_entropy_svd_gate(
     )
 
     return y.view(*orig_shape[:-1], N)
+
+
+# Aliases
+spectral_entropy_svd_gate = triton_spectral_entropy_svd_gate
+
+__all__ = [
+    "triton_spectral_entropy_svd_gate",
+    "spectral_entropy_svd_gate",
+]

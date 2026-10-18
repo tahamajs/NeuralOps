@@ -259,6 +259,7 @@ __all__ = [
     "gla_recurrent_step_triton",
     "select_optimal_triton_config",
     # 13 Flagship Triton Kernels
+    "fused_lowrank_gemm",
     "triton_fused_lowrank_gated_gemm",
     "triton_fused_lowrank_gated_gemm_pytorch_ref",
     "triton_fused_lowrank_sparse_gemm",
@@ -376,6 +377,7 @@ __all__ = [
 
 # Import 13 Flagship Triton Kernels
 from neuralops.core.triton_kernels.low_rank import (
+    fused_lowrank_gemm,
     triton_fused_lowrank_gated_gemm,
     triton_fused_lowrank_gated_gemm_pytorch_ref,
     triton_fused_lowrank_sparse_gemm,

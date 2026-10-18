@@ -66,8 +66,8 @@ def paged_attention_pytorch_reference(
         k_blocks = []
         v_blocks = []
 
-        for b in range(num_blocks):
-            physical_idx = int(block_tables[seq_idx, b].item())
+        for block_idx in range(num_blocks):
+            physical_idx = int(block_tables[seq_idx, block_idx].item())
             if physical_idx < 0 or physical_idx >= k_cache.shape[0]:
                 continue
             k_block = k_cache[physical_idx].permute(0, 2, 1)  # [num_kv_heads, block_size, head_dim]
@@ -174,8 +174,8 @@ class _PagedAttentionAutograd(torch.autograd.Function):
             v_blocks = []
             valid_phys_blocks = []
 
-            for b in range(num_blocks):
-                p_idx = int(block_tables[seq_idx, b].item())
+            for block_idx in range(num_blocks):
+                p_idx = int(block_tables[seq_idx, block_idx].item())
                 if p_idx < 0 or p_idx >= k_cache.shape[0]:
                     continue
                 valid_phys_blocks.append(p_idx)

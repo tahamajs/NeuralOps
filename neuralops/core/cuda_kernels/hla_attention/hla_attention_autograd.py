@@ -8,12 +8,15 @@ Author: Taha Majlesi
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from typing import Any
 import torch
 
 from neuralops.core.cuda_kernels._bindings import load_cuda_module
 from neuralops.core.cuda_kernels._fallback import dispatch
+
+logger = logging.getLogger(__name__)
 
 _MODULE = None
 
@@ -56,20 +59,20 @@ def hla_attention_ref(
     decay_f = decay_f.expand(B, H, L)
 
     out = torch.empty_like(q_f)
-    for b in range(B):
-        for h in range(H):
+    for b_idx in range(B):
+        for h_idx in range(H):
             S = torch.zeros(D, D, device=q.device, dtype=torch.float32)
             z = torch.zeros(D, device=q.device, dtype=torch.float32)
             for t in range(L):
-                gamma = decay_f[b, h, t].item()
-                q_t = q_f[b, h, t]
-                k_t = k_f[b, h, t]
-                v_t = v_f[b, h, t]
+                gamma = decay_f[b_idx, h_idx, t].item()
+                q_t = q_f[b_idx, h_idx, t]
+                k_t = k_f[b_idx, h_idx, t]
+                v_t = v_f[b_idx, h_idx, t]
                 z = gamma * z + k_t
                 S = gamma * S + torch.outer(k_t, v_t)
                 denom = torch.clamp((q_t * z).sum(), min=eps)
                 num = torch.matmul(q_t, S)
-                out[b, h, t] = num / denom
+                out[b_idx, h_idx, t] = num / denom
     return out.to(q.dtype)
 
 
@@ -88,7 +91,8 @@ def _get_triton_impl():
             return fused_svd_linear_chunk_scan_triton(q, k, v, decay=dec_expanded, chunk_size=64, eps=eps)
 
         return triton_fn
-    except Exception:
+    except (RuntimeError, MemoryError, AssertionError, ValueError, ImportError, AttributeError) as exc:
+        logger.warning("Failed to initialize Triton implementation for HLA attention: %s", exc, exc_info=True)
         return None
 
 

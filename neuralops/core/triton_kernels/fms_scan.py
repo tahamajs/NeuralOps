@@ -515,8 +515,6 @@ class _FMSScanFn(torch.autograd.Function):
         return dq, dk, dv, ddecay_acc.to(decay.dtype)
 
 
-import math
-
 
 def fms_scan_triton(
     q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, decay: torch.Tensor

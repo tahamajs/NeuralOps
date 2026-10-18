@@ -8,6 +8,7 @@ Author: Taha Majlesi
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from typing import Any, Optional
 
@@ -15,6 +16,8 @@ import torch
 
 from neuralops.core.cuda_kernels._bindings import load_cuda_module
 from neuralops.core.cuda_kernels._fallback import dispatch
+
+logger = logging.getLogger(__name__)
 
 _MODULE = None
 
@@ -53,7 +56,8 @@ def _get_triton_impl():
     try:
         from neuralops.core.triton_kernels.low_rank import triton_fused_lowrank_sparse_gemm
         return triton_fused_lowrank_sparse_gemm
-    except ImportError:
+    except (RuntimeError, MemoryError, AssertionError, ValueError, ImportError, AttributeError) as exc:
+        logger.warning("Failed to initialize Triton implementation for rpca_sparse_svd: %s", exc, exc_info=True)
         return None
 
 
@@ -73,8 +77,8 @@ def _fwd_dispatch(x, v_r, u_r, s, bias):
     if R <= 128 and x.is_cuda:
         try:
             return cuda_fn(x, v_r, u_r, s=s, bias=bias)
-        except Exception:
-            pass
+        except (RuntimeError, MemoryError, AssertionError, ValueError, ImportError, AttributeError) as exc:
+            logger.warning("CUDA rpca_sparse_svd_fwd failed: %s; falling back", exc, exc_info=True)
 
     triton_fn = _get_triton_impl()
     if R > 128:
@@ -89,7 +93,7 @@ def _fwd_dispatch(x, v_r, u_r, s, bias):
         u_r,
         s=s,
         bias=bias,
-        kernel_name=rpca_sparse_svd_gemm,
+        kernel_name="rpca_sparse_svd_gemm",
     )
 
 

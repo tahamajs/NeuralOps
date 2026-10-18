@@ -2364,6 +2364,32 @@ def triton_fused_lowrank_gated_gemm(
     return y.view(*orig_shape[:-1], N)
 
 
+def fused_lowrank_gemm(
+    x: torch.Tensor,
+    w: torch.Tensor,
+    u_r: Optional[torch.Tensor] = None,
+    alpha: Optional[torch.Tensor] = None,
+    b_drift: Optional[torch.Tensor] = None,
+) -> torch.Tensor:
+    """Fused low-rank GEMM supporting both 2-argument packed weight (w = [V; U]) and explicit (x, v_r, u_r)."""
+    if u_r is None:
+        K = x.shape[-1]
+        if w.shape[0] == 2 * K:
+            v_mat = w[:K, :]
+            u_mat = w[K:, :]
+            return triton_fused_lowrank_gated_gemm(x, v_mat, u_mat, alpha=alpha, b_drift=b_drift)
+        elif w.shape[0] == K:
+            return torch.matmul(x, w)
+        elif w.shape[1] == K:
+            return torch.matmul(x, w.t())
+        else:
+            half = w.shape[0] // 2
+            v_mat = w[:half, :]
+            u_mat = w[half:, :]
+            return triton_fused_lowrank_gated_gemm(x, v_mat, u_mat, alpha=alpha, b_drift=b_drift)
+    return triton_fused_lowrank_gated_gemm(x, w, u_r, alpha=alpha, b_drift=b_drift)
+
+
 # ------------------------------------------------------------------------------
 # Kernel 2: triton_fused_lowrank_sparse_gemm (RPCA)
 # ------------------------------------------------------------------------------

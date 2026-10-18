@@ -8,6 +8,7 @@ Author: Taha Majlesi
 
 from __future__ import annotations
 
+import logging
 import math
 from pathlib import Path
 
@@ -16,6 +17,8 @@ import torch.nn.functional as F
 
 from neuralops.core.cuda_kernels._bindings import load_cuda_module
 from neuralops.core.cuda_kernels._fallback import dispatch
+
+logger = logging.getLogger(__name__)
 
 _MODULE = None
 
@@ -53,11 +56,11 @@ def varlen_attention_pytorch_ref(
     num_seqs = len(cu_seqlens_q) - 1
     scale = 1.0 / math.sqrt(q.shape[-1])
 
-    for b in range(num_seqs):
-        qs = cu_seqlens_q[b].item()
-        qe = cu_seqlens_q[b + 1].item()
-        ks = cu_seqlens_k[b].item()
-        ke = cu_seqlens_k[b + 1].item()
+    for b_idx in range(num_seqs):
+        qs = cu_seqlens_q[b_idx].item()
+        qe = cu_seqlens_q[b_idx + 1].item()
+        ks = cu_seqlens_k[b_idx].item()
+        ke = cu_seqlens_k[b_idx + 1].item()
 
         qb = q[qs:qe].transpose(0, 1).unsqueeze(0)  # [1, H, Lq, D]
         kb = k[ks:ke].transpose(0, 1).unsqueeze(0)  # [1, H, Lk, D]
@@ -73,7 +76,8 @@ def _get_triton_impl():
     try:
         from neuralops.core.triton_kernels.varlen_attention import varlen_attention_triton
         return varlen_attention_triton
-    except (ImportError, AttributeError):
+    except (RuntimeError, MemoryError, AssertionError, ValueError, ImportError, AttributeError) as exc:
+        logger.warning("Failed to initialize Triton implementation for varlen attention: %s", exc, exc_info=True)
         return None
 
 

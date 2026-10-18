@@ -8,6 +8,7 @@ Author: Taha Majlesi
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from typing import Any
 
@@ -16,6 +17,8 @@ import torch.nn.functional as F
 
 from neuralops.core.cuda_kernels._bindings import load_cuda_module
 from neuralops.core.cuda_kernels._fallback import dispatch
+
+logger = logging.getLogger(__name__)
 
 _MODULE = None
 
@@ -257,8 +260,8 @@ def moe_dispatch_gather(
                 if is_3d:
                     out = out.view(B, T, hidden_dim)
                 return out
-            except Exception:
-                pass
+            except (RuntimeError, MemoryError, AssertionError, ValueError, ImportError, AttributeError) as exc:
+                logger.warning("Fused MoE dispatch failed: %s; falling back", exc, exc_info=True)
 
         topk_vals, topk_indices = torch.topk(gate_logits, k=top_k, dim=-1)
         routing_weights = F.softmax(topk_vals.float(), dim=-1).to(tokens.dtype)
