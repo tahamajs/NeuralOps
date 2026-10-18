@@ -27,16 +27,16 @@ from scipy.stats import pearsonr, spearmanr
 from sklearn.metrics import accuracy_score, f1_score, matthews_corrcoef
 from torch.profiler import ProfilerActivity, profile
 
-from neuralops.evaluation.eval_data import (
+from evaluation.eval_data import (
     _PREPARED_DATASET_CACHE,
     build_calibration_loader,
     get_dataset_batch,
 )
-from neuralops.evaluation.eval_patcher import (
+from evaluation.eval_patcher import (
     apply_module_to_model,
     get_base_model_cached,
 )
-from neuralops.evaluation.eval_types import (
+from evaluation.eval_types import (
     ACTIVATION_AWARE_MODULES,
     BenchmarkResult,
     COMPUTE_OPTIMIZERS,
@@ -45,7 +45,7 @@ from neuralops.evaluation.eval_types import (
     LM_DATASETS,
     MODEL_TOKENIZER_MAPPING,
 )
-from neuralops.evaluation.eval_utils import _extract_logits_and_loss, _filter_batch
+from evaluation.eval_utils import _extract_logits_and_loss, _filter_batch
 
 logger = logging.getLogger("EvalEngine")
 

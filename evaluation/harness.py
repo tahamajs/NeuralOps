@@ -31,9 +31,9 @@ for p in [str(CODES), str(ROOT)]:
         sys.path.insert(0, p)
 
 from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
-from neuralops.evaluation.eval_patcher import apply_module_to_model
+from evaluation.eval_patcher import apply_module_to_model
 
-logger = logging.getLogger("neuralops.evaluation.harness")
+logger = logging.getLogger("evaluation.harness")
 
 # Graceful detection of lm-eval
 try:

@@ -30,7 +30,7 @@ from transformers import (
 from neuralops.core.attention_utils import inject_attention
 from neuralops.core.base import BaseAttention
 from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
-from neuralops.evaluation.eval_types import DEPRECATED_MODULES
+from evaluation.eval_types import DEPRECATED_MODULES
 from neuralops.utils.replace_attention import UniversalAttentionWrapper
 
 logger = logging.getLogger("EvalEngine")
