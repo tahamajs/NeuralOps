@@ -1,8 +1,0 @@
-{
-  "module": "sparsegpt",
-  "model_path": "models/gpt2",
-  "dataset": "wikitext2",
-  "perplexity": 722.1841430664062,
-  "seq_len": 1024,
-  "stride": 512
-}

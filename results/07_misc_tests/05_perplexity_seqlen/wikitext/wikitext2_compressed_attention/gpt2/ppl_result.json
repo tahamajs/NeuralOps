@@ -1,8 +1,0 @@
-{
-  "module": "compressed_attention",
-  "model_path": "models/gpt2",
-  "dataset": "wikitext2",
-  "perplexity": 851.4888305664062,
-  "seq_len": 1024,
-  "stride": 512
-}

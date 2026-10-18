@@ -1,2 +1,0 @@
-module_name,seed,accuracy_pct,f1_score,peak_vram_mb
-a3,123,77.5,0.7732,394.28

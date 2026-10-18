@@ -1,8 +1,0 @@
-{
-  "module": "sdrm_compressor",
-  "model_path": "models/gpt2",
-  "dataset": "wikitext2",
-  "perplexity": 1704.5943603515625,
-  "seq_len": 1024,
-  "stride": 512
-}

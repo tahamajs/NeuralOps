@@ -1,7 +1,0 @@
-rank,module_name,status,accuracy_pct,f1_score,val_loss,peak_vram_mb,compression_rate,compression_ratio_pct,num_compressed_layers,num_fallback_layers,elapsed_s,total_params_before,total_params_after
-16,flat_llm,PASS,87.5,0.8798,0.5862,406.86,1.0677,6.34,24,0,126.1,66955010,62710130
-32,flat_llm,PASS,87.5,0.8798,0.5862,406.86,1.0677,6.34,24,0,126.5,66955010,62710130
-64,flat_llm,PASS,87.5,0.8798,0.5862,406.86,1.0677,6.34,24,0,134.2,66955010,62710130
-128,flat_llm,PASS,87.5,0.8798,0.5862,406.86,1.0677,6.34,24,0,133.5,66955010,62710130
-256,flat_llm,PASS,87.5,0.8798,0.5862,406.86,1.0677,6.34,24,0,177.3,66955010,62710130
-384,flat_llm,PASS,87.5,0.8798,0.5862,406.86,1.0677,6.34,24,0,175.8,66955010,62710130

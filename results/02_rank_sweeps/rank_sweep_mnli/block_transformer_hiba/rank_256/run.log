@@ -1,22 +1,0 @@
-C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
-  warnings.warn(
-2026-09-26 06:07:22,313 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 70.0% (leaving 2.40 GB headroom)
-2026-09-26 06:07:22,313 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
-2026-09-26 06:07:22,313 [INFO] QwenQualitySweep: Configured execution sizing: parallel=1, batch_size=16 (explicit_parallel=True, explicit_batch=True)
-2026-09-26 06:07:22,337 [INFO] QwenQualitySweep: Running 1 attention modules in-memory sequentially
-2026-09-26 06:07:22,337 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 70.0%
-2026-09-26 06:07:22,571 [INFO] QwenQualitySweep: Configured dataset 'mnli' with num_labels=3
-Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]Loading weights: 100%|##########| 104/104 [00:00<00:00, 6719.36it/s]
-2026-09-26 06:07:23,604 [INFO] QwenQualitySweep: model=models/base_checkpoints/distilbert_mnli qwen_compat=False hidden=768 heads=12 head_dim=? layers=6
-2026-09-26 06:07:23,605 [INFO] QwenQualitySweep: detected model family=bert adapter={'family': 'bert', 'raw_family': 'bert', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
-2026-09-26 06:07:23,605 [INFO] QwenQualitySweep: ================================================================================
-2026-09-26 06:07:23,609 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
-2026-09-26 06:07:23,610 [INFO] QwenQualitySweep:   model:             models/base_checkpoints/distilbert_mnli
-2026-09-26 06:07:23,610 [INFO] QwenQualitySweep:   family:            bert
-2026-09-26 06:07:23,610 [INFO] QwenQualitySweep:   dataset:           mnli
-2026-09-26 06:07:23,610 [INFO] QwenQualitySweep:   batch_size:        16
-2026-09-26 06:07:23,610 [INFO] QwenQualitySweep:   recovery_steps:    50
-2026-09-26 06:07:23,611 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
-2026-09-26 06:07:23,611 [INFO] QwenQualitySweep:   precision:         fp16
-2026-09-26 06:07:23,611 [INFO] QwenQualitySweep: ================================================================================
-2026-09-26 06:07:24,136 [INFO] QwenQualitySweep: Loading shared baseline checkpoint from parent directory: models\base_checkpoints\distilbert_mnli\finetuned_model.pt

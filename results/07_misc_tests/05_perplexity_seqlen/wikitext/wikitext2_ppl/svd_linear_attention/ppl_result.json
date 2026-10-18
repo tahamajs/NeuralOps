@@ -1,8 +1,0 @@
-{
-  "module": "svd_linear_attention",
-  "model_path": "D:\\SVD_Project\\models\\gpt2",
-  "dataset": "wikitext2",
-  "perplexity": 27.323904037475586,
-  "seq_len": 1024,
-  "stride": 512
-}

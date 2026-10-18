@@ -1,19 +1,0 @@
-C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
-  warnings.warn(
-[START] RAM: 0.70/16.79 GB, VRAM: 0.00/8.59 GB
-Loading models/gpt2 on cuda...
-Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|##########| 148/148 [00:00<00:00, 4995.35it/s]
-2026-09-26 05:48:07,091 [WARNING] framework.compression_engine.drone_compressor: DRONE reconstruction error 0.5110 on transformer.h.2.attn.c_attn exceeded threshold 0.5000. Skipping compression (fallback).
-2026-09-26 05:48:33,976 [WARNING] framework.compression_engine.drone_compressor: DRONE reconstruction error 0.5470 on transformer.h.3.attn.c_attn exceeded threshold 0.5000. Skipping compression (fallback).
-2026-09-26 05:48:57,860 [WARNING] framework.compression_engine.drone_compressor: DRONE reconstruction error 0.5273 on transformer.h.4.attn.c_attn exceeded threshold 0.5000. Skipping compression (fallback).
-2026-09-26 05:49:27,277 [WARNING] framework.compression_engine.drone_compressor: DRONE reconstruction error 0.5033 on transformer.h.5.attn.c_attn exceeded threshold 0.5000. Skipping compression (fallback).
-2026-09-26 05:49:56,768 [WARNING] framework.compression_engine.drone_compressor: DRONE reconstruction error 0.5348 on transformer.h.6.attn.c_attn exceeded threshold 0.5000. Skipping compression (fallback).
-2026-09-26 05:50:28,615 [WARNING] framework.compression_engine.drone_compressor: DRONE reconstruction error 0.5386 on transformer.h.7.attn.c_attn exceeded threshold 0.5000. Skipping compression (fallback).
-2026-09-26 05:51:06,550 [WARNING] framework.compression_engine.drone_compressor: DRONE reconstruction error 0.5785 on transformer.h.8.attn.c_attn exceeded threshold 0.5000. Skipping compression (fallback).
-2026-09-26 05:51:42,120 [WARNING] framework.compression_engine.drone_compressor: DRONE reconstruction error 0.6013 on transformer.h.9.attn.c_attn exceeded threshold 0.5000. Skipping compression (fallback).
-2026-09-26 05:52:12,946 [WARNING] framework.compression_engine.drone_compressor: DRONE reconstruction error 0.5712 on transformer.h.10.attn.c_attn exceeded threshold 0.5000. Skipping compression (fallback).
-2026-09-26 05:52:27,455 [WARNING] framework.compression_engine.drone_compressor: DRONE reconstruction error 0.5040 on transformer.h.10.attn.c_proj exceeded threshold 0.5000. Skipping compression (fallback).
-2026-09-26 05:52:42,596 [WARNING] framework.compression_engine.drone_compressor: DRONE reconstruction error 0.5548 on transformer.h.11.attn.c_attn exceeded threshold 0.5000. Skipping compression (fallback).
-2026-09-26 05:53:01,489 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/parquet/parquet.py "HTTP/1.1 404 Not Found"
-2026-09-26 05:53:02,029 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/ybisk/piqa/revision/refs%2Fconvert%2Fparquet "HTTP/1.1 200 OK"
-2026-09-26 05:53:02,292 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/ybisk/piqa/tree/refs%2Fconvert%2Fparquet/plain_text%2Fvalidation?recursive=false&expand=false "HTTP/1.1 200 OK"

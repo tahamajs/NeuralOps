@@ -1,5 +1,0 @@
-seq_len,forward_time_ms,forward_time_mean_ms,forward_time_std_ms,throughput_tok_sec,throughput_std,latency_ms_per_token,peak_vram_mb,status
-128,87.2,86.08,2.3,23487.4,646.6,0.0426,502.31,PASS
-256,103.76,103.51,0.44,39475.0,167.7,0.0253,701.64,PASS
-512,398.76,371.72,44.79,20543.7,2943.4,0.0487,1101.04,PASS
-1024,534.32,513.99,134.73,30663.4,10040.8,0.0326,1897.64,PASS

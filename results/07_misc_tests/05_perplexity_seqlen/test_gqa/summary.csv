@@ -1,3 +1,0 @@
-module_name,status,perplexity,baseline_ppl,delta_ppl,compression_rate,compression_ratio_pct,peak_vram_mb,latency_ms_per_token,throughput_tok_per_sec,elapsed_s,total_params_before,total_params_after,error,timestamp
-full,PASS,21.71,21.71,0.0,1.0,0.0,916.17,0.074,13506.8,7.4,124439808,124439808,,2026-09-27T10:50:19
-gqa,PASS_DEGRADED,1369.1,21.71,1347.39,1.0843,7.77,822.01,0.138,7264.3,13.77,124439808,114767616,,2026-09-27T10:50:36

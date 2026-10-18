@@ -1,2 +1,0 @@
-PyTorch Version: 2.13.0
-CUDA Available: False

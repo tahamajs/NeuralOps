@@ -1,8 +1,0 @@
-{
-  "module": "aegis_hybrid",
-  "model_path": "models/gpt2",
-  "dataset": "wikitext2",
-  "perplexity": 2366.366943359375,
-  "seq_len": 1024,
-  "stride": 512
-}

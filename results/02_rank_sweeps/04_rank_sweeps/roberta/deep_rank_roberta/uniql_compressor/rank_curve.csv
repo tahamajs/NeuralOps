@@ -1,7 +1,0 @@
-rank,module_name,status,accuracy_pct,f1_score,val_loss,peak_vram_mb,compression_rate,compression_ratio_pct,num_compressed_layers,num_fallback_layers,elapsed_s,total_params_before,total_params_after
-16,uniql_compressor,PASS_NO_COMPRESSION,93.23,0.9352,0.2973,292.72,1.0,0.0,0,0,90.1,124647170,124647170
-32,uniql_compressor,PASS_NO_COMPRESSION,93.23,0.9352,0.2973,292.72,1.0,0.0,0,0,90.0,124647170,124647170
-64,,PASS,93.92,0.9413,0.204,0.0,1.0,,0,0,23.62,0,0
-128,,PASS,93.92,0.9413,0.204,0.0,1.0,,0,0,24.35,0,0
-256,,PASS,91.63,0.9186,0.2742,0.0,1.0,,0,0,25.74,0,0
-384,,PASS,92.2,0.9248,0.2602,0.0,1.0,,0,0,16.62,0,0

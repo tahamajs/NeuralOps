@@ -1,8 +1,0 @@
-{
-  "task": "listops",
-  "module": "squeezing_heads",
-  "best_accuracy": 12.2,
-  "epochs": 20,
-  "seq_len": 2048,
-  "batch_size": 1
-}

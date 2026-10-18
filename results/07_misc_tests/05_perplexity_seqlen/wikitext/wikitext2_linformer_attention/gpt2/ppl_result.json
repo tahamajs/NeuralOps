@@ -1,8 +1,0 @@
-{
-  "module": "linformer_attention",
-  "model_path": "models/gpt2",
-  "dataset": "wikitext2",
-  "perplexity": 2392.95068359375,
-  "seq_len": 1024,
-  "stride": 512
-}

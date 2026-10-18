@@ -1,8 +1,0 @@
-{
-  "module": "optimal_subspace_projection",
-  "model_path": "models/gpt2",
-  "dataset": "wikitext2",
-  "perplexity": 32.822471618652344,
-  "seq_len": 1024,
-  "stride": 512
-}

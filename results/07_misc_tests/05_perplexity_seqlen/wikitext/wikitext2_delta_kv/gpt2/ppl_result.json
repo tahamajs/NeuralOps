@@ -1,8 +1,0 @@
-{
-  "module": "delta_kv",
-  "model_path": "models/gpt2",
-  "dataset": "wikitext2",
-  "perplexity": 48.626766204833984,
-  "seq_len": 1024,
-  "stride": 512
-}

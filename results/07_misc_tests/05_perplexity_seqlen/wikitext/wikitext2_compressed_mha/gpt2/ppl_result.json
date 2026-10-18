@@ -1,8 +1,0 @@
-{
-  "module": "compressed_mha",
-  "model_path": "models/gpt2",
-  "dataset": "wikitext2",
-  "perplexity": 27.32001495361328,
-  "seq_len": 1024,
-  "stride": 512
-}

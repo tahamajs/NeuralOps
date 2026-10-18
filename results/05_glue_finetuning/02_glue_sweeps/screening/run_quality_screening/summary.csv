@@ -1,3 +1,0 @@
-run_id,module_name,model_family,dataset,status,mean_accuracy,std_accuracy,ci_lower,ci_upper,p_value,f1_score,fidelity_score,fwd_ms,bwd_ms,peak_vram_mb,throughput_tokens_sec,flops_macs,timestamp
-run_quality_20260826_235948,full,DISTILBERT,SST2,PASS,90.6,0.0,90.6,90.6,1.0,0.9093,1.0,66.75,185.31,1846.8,65001.0,1450000000.0,2026-08-27T00:06:50.658121
-run_quality_20260826_235948,svd_linear_attention,DISTILBERT,SST2,PASS,82.91,0.0,82.91,82.91,1.0,0.8293,0.7979,100.85,259.33,1847.2,45488.0,1450000000.0,2026-08-27T00:15:07.999702
