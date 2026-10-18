@@ -120,7 +120,7 @@ class _FusedRMSNormGateFunction(torch.autograd.Function):
         d_x_norm = grad_output * gate_act
         
         # d(loss)/d(gate) = grad_output * x_norm * d_gate_act
-        var = (x.float() ** 2).mean(dim=-1, keepdim=True)
+        _var = (x.float() ** 2).mean(dim=-1, keepdim=True)
         x_norm_raw = (x.float() * rstd)
         x_norm = (x_norm_raw * norm_weight).to(x.dtype)
         d_gate = (grad_output * x_norm * d_gate_act).to(gate.dtype)

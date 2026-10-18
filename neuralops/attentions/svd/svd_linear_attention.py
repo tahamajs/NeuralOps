@@ -181,6 +181,22 @@ class SVDLinear(nn.Module):
         return F.linear(Vx, self.U, self.bias)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        if x.is_cuda and x.dtype in (torch.float16, torch.bfloat16) and not self.use_rms_norm:
+            try:
+                from neuralops.core.cuda_kernels.low_rank_svd import fused_lowrank_gated_gemm
+                base = fused_lowrank_gated_gemm(x, self.V, self.U, bias=self.bias)
+                if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
+                    lora_out = (
+                        F.linear(
+                            F.linear(x, self.lora_A.to(dtype=x.dtype)),
+                            self.lora_B.to(dtype=x.dtype),
+                        )
+                        * self.lora_scaling
+                    )
+                    base = base + lora_out
+                return base
+            except Exception:
+                pass
         if self.use_fused_kernel and HAS_FUSED_KERNEL:
             try:
                 out = fused_svd_linear(
@@ -198,6 +214,20 @@ class SVDLinear(nn.Module):
                 Vx = F.linear(x, self.V)
                 out = F.linear(Vx, self.U, self.bias)
         elif not self.use_rms_norm:
+            if x.is_cuda:
+                try:
+                    from neuralops.core.triton_kernels.low_rank import fused_svd_lora_sparse_attn_triton
+                    return fused_svd_lora_sparse_attn_triton(
+                        x,
+                        w_down=self.V,
+                        w_up=self.U,
+                        lora_A=self.lora_A if self.lora_rank > 0 else None,
+                        lora_B=self.lora_B if self.lora_rank > 0 else None,
+                        lora_scale=self.lora_scaling,
+                        bias=self.bias,
+                    )
+                except Exception:
+                    pass
             Vx = F.linear(x, self.V)
             out = F.linear(Vx, self.U, self.bias)
         else:

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# Author: Taha Majlesi
 """Long-Context Scaling Benchmark (L in {512, 1024, 2048, 4096, 8192, 16384}).
 
 Compares Quadratic FlashAttention vs Linear Attention (GDN, GLA, Cosformer, SVD-Linear)

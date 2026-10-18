@@ -112,7 +112,7 @@ def triton_cur_linear_pytorch_ref(
 ) -> torch.Tensor:
     """Pure PyTorch reference implementation for CUR matrix decomposition linear."""
     orig_shape = x.shape
-    M = x.reshape(-1, orig_shape[-1]).shape[0]
+    _M = x.reshape(-1, orig_shape[-1]).shape[0]
     K = orig_shape[-1]
     x_2d = x.reshape(-1, K)
 
