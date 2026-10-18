@@ -778,6 +778,34 @@ class BAMUMoEBlock(BaseAttention):
             v = (v + 0.1 * moe_delta_v.to(v.dtype)).to(v.dtype)
 
         scale = 1.0 / math.sqrt(self.head_dim)
+        eff_mask = encoder_attention_mask if is_cross else attention_mask
+
+        # Fast path: SDPA hardware acceleration
+        if not output_attentions and head_mask is None and (eff_mask is None or eff_mask.dim() == 2):
+            is_causal = self.is_decoder and not is_cross
+            attn_mask = None
+            if eff_mask is not None:
+                attn_mask = (eff_mask == 1).unsqueeze(1).unsqueeze(2)
+            try:
+                context = F.scaled_dot_product_attention(
+                    q, k, v,
+                    attn_mask=attn_mask,
+                    dropout_p=self.dropout.p if self.training else 0.0,
+                    is_causal=is_causal if attn_mask is None else False,
+                    scale=scale,
+                )
+                context = context.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
+                context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
+                if self.is_nested_encoder:
+                    out = context
+                else:
+                    out = self.out_lin(context)
+                if out.shape[-1] != D:
+                    raise RuntimeError(f"BAMUMoE: output dim {out.shape[-1]} != hidden_size {D}")
+                return out, None
+            except Exception:
+                pass
+
         scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
 
         if self.is_decoder and not is_cross:
@@ -787,7 +815,6 @@ class BAMUMoEBlock(BaseAttention):
             )
             scores = scores + causal.unsqueeze(0).unsqueeze(1)
 
-        eff_mask = encoder_attention_mask if is_cross else attention_mask
         if eff_mask is not None:
             if eff_mask.dim() == 2:
                 scores = scores.masked_fill((eff_mask == 0).unsqueeze(1).unsqueeze(2), -1e4)

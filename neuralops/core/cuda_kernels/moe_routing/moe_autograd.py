@@ -47,7 +47,7 @@ def _moe_dispatch_pytorch_ref(
     total_slots: int,
 ) -> torch.Tensor:
     num_tokens, hidden_dim = tokens.shape
-    top_k = topk_indices.shape[1]
+    _top_k = topk_indices.shape[1]
     dispatched = torch.zeros((total_slots, hidden_dim), dtype=tokens.dtype, device=tokens.device)
 
     # Vectorized slot assignment
@@ -67,7 +67,7 @@ def _moe_gather_pytorch_ref(
     expert_offsets: torch.Tensor,
 ) -> torch.Tensor:
     num_tokens, top_k = routing_weights.shape
-    hidden_dim = expert_outputs.shape[1]
+    _hidden_dim = expert_outputs.shape[1]
     total_assignments = expert_outputs.shape[0]
 
     valid_mask = (expert_offsets >= 0) & (expert_offsets < total_assignments)

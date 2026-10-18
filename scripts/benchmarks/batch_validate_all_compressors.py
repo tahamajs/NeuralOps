@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# Author: Taha Majlesi
 """
 Batch validation of all major compressors across seeds, ranks, and models.
 
@@ -121,8 +123,8 @@ def load_roberta(device: str) -> nn.Module:
     m.hidden_size = 768
     try:
         m.tokenizer = AutoTokenizer.from_pretrained("textattack/roberta-base-SST-2", local_files_only=True)
-    except Exception:
-        pass
+    except Exception as exc:
+        logging.getLogger(__name__).warning("Could not load tokenizer for roberta: %s", exc, exc_info=True)
     return m
 
 def load_gpt2(device: str) -> nn.Module:
@@ -135,8 +137,8 @@ def load_gpt2(device: str) -> nn.Module:
         if tok.pad_token is None:
             tok.pad_token = tok.eos_token
         m.tokenizer = tok
-    except Exception:
-        pass
+    except Exception as exc:
+        logging.getLogger(__name__).warning("Could not load tokenizer for gpt2: %s", exc, exc_info=True)
     return m
 
 MODELS = {
