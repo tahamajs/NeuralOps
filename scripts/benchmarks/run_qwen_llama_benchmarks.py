@@ -131,13 +131,13 @@ for arch_name in df["Architecture"].unique():
     sub_df = df[df["Architecture"] == arch_name]
     for mech in ["baseline", "svd_linear_attention", "gla_attention"]:
         name_short = arch_name.split()[0]
-        mech_name = mech.replace(_,  ).title()
+        mech_name = mech.replace("_", " ").title()
         row_str = f"{name_short} & {mech_name}"
         for l in [1024, 2048, 4096]:
             m_row = sub_df[(sub_df["Attention_Mechanism"] == mech) & (sub_df["Sequence_Length"] == l)]
             if len(m_row) > 0 and m_row.iloc[0]["Status"] == "OK":
-                lat = f"{m_row.iloc[0][Latency_ms]:.1f}"
-                vram = f"{m_row.iloc[0][Peak_VRAM_MB]:.0f}"
+                lat = f"{m_row.iloc[0]['Latency_ms']:.1f}"
+                vram = f"{m_row.iloc[0]['Peak_VRAM_MB']:.0f}"
                 row_str += f" & {lat} & {vram}"
             else:
                 row_str += " & OOM & OOM"
@@ -150,7 +150,11 @@ latex_content = latex_content.rstrip("\\midrule\n") + "\n" + r"""\bottomrule
 \end{table*}
 """
 
-tex_path = "/mnt/d/SVD_linear_Attention/docs/reports/PAPER_TABLES_QWEN_SURGERY.tex"
-with open(tex_path, "w") as f:
+from pathlib import Path
+
+out_dir = Path(__file__).resolve().parent.parent.parent / "docs" / "reports"
+out_dir.mkdir(parents=True, exist_ok=True)
+tex_path = out_dir / "PAPER_TABLES_QWEN_SURGERY.tex"
+with open(tex_path, "w", encoding="utf-8") as f:
     f.write(latex_content)
 print(f"Exported {tex_path} successfully.")

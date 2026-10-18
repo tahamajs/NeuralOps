@@ -223,6 +223,11 @@ $N=4096$ & 30.93 GFLOPs & 4.83 GFLOPs & \textbf{84.4\%} & -100\% (Constant State
 \end{table}
 """
 
-with open("/mnt/d/SVD_linear_Attention/docs/reports/PAPER_TABLES_MODEL_SURGERY.tex", "w") as f:
+from pathlib import Path
+
+out_dir = Path(__file__).resolve().parent.parent.parent / "docs" / "reports"
+out_dir.mkdir(parents=True, exist_ok=True)
+out_file = out_dir / "PAPER_TABLES_MODEL_SURGERY.tex"
+with open(out_file, "w", encoding="utf-8") as f:
     f.write(latex_content)
-print("Exported /mnt/d/SVD_linear_Attention/docs/reports/PAPER_TABLES_MODEL_SURGERY.tex successfully.")
+print(f"Exported {out_file} successfully.")

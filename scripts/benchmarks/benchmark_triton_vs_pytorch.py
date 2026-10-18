@@ -14,7 +14,7 @@ from neuralops.core.triton_kernels.elementwise import (
     fused_dynamic_conv1d_triton,
 )
 import neuralops.core.triton_kernels.selective_scan as tss
-from neuralops.core.triton_kernels._types import sparse_attn_pytorch_fallback
+from neuralops.core.triton_kernels import sparse_attn_pytorch_fallback
 import neuralops.core.triton_kernels.sparse_attn as sparse_attn_mod
 from neuralops.core.selective_scan import selective_scan_chunked
 

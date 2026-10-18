@@ -180,7 +180,7 @@ def main():
     gc.collect()
     torch.cuda.empty_cache()
     torch.cuda.reset_peak_memory_stats()
-    m_init = get_cuda_mem()
+    _m_init = get_cuda_mem()
 
     checkpoints = {}
     t0_stress = time.time()

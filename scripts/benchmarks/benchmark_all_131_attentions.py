@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# Author: Taha Majlesi
 """Standardized, Clean Benchmark Runner for All 131 Registered Attention Mechanisms.
 
 Features:
@@ -67,23 +68,26 @@ def main():
             mod = create_attention(name, embed_dim=D, num_heads=H).to(device=dev, dtype=torch.float16)
             mod.train()
 
-            def fwd_bwd_step():
-                out = mod(x)
-                if isinstance(out, tuple):
-                    out = out[0]
-                loss = out.sum()
-                loss.backward()
-                x.grad = None
-                for p in mod.parameters():
-                    p.grad = None
+            def _make_step(target_mod, target_x):
+                def fwd_bwd_step():
+                    out = target_mod(target_x)
+                    if isinstance(out, tuple):
+                        out = out[0]
+                    loss = out.sum()
+                    loss.backward()
+                    target_x.grad = None
+                    for p in target_mod.parameters():
+                        p.grad = None
+                return fwd_bwd_step
 
             metric = runner.measure_callable(
-                fwd_bwd_step,
+                _make_step(mod, x),
                 batch_size=B,
                 seq_len=T,
             )
 
-            del mod, x
+            mod = None
+            x = None
             runner.reset_vram()
 
             rec = {
