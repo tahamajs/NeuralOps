@@ -551,8 +551,8 @@
 \label{fig:taxonomy_attention}
 \end{figure}
 
-\subsection{۱. مکانیزم‌های توجه خطی و تقریب کِرنل \lr{(Linear \& Kernel Attention)}}
-ایده محوری این خانواده که نخستین بار توسط کاتاروپولوس و همکاران در سال ۲۰۲۰ مطرح گردید، بهره‌گیری از خاصیت شرکت‌پذیری ضرب ماتریسی است. در توجه استاندارد، ضرب ابتدا میان $\mathbf{Q}$ و $\mathbf{K}^T$ با پیچیدگی $\mathcal{O}(N^2)$ صورت می‌پذیرد زیرا عملگر غیرخطی \lr{Softmax} مانع از جابجایی ترتیبی ضرب‌ها است. اگر بتوان تشابه میان دو بردار پرسمان و کلید را از طریق ضرب داخلی نگاشت‌های ویژگی غیرخطی $\phi(\cdot)$ تقریب زد:
+\\subsection{۱. مکانیزم‌های توجه خطی و تقریب کِرنل \lr{(Linear \& Kernel Attention)}}
+ایده محوری این خانواده که نخستین بار توسط کاتاروپولوس و همکاران در سال ۲۰۲۰ \cite{katharopoulos2020transformers} مطرح گردید، بهره‌گیری از خاصیت شرکت‌پذیری ضرب ماتریسی است. در توجه استاندارد، ضرب ابتدا میان $\mathbf{Q}$ و $\mathbf{K}^T$ با پیچیدگی $\mathcal{O}(N^2)$ صورت می‌پذیرد زیرا عملگر غیرخطی \lr{Softmax} مانع از جابجایی ترتیبی ضرب‌ها است. اگر بتوان تشابه میان دو بردار پرسمان و کلید را از طریق ضرب داخلی نگاشت‌های ویژگی غیرخطی $\phi(\cdot)$ تقریب زد:
 \begin{equation}
 \text{\lr{Sim}}(\mathbf{q}_i, \mathbf{k}_j) \approx \phi(\mathbf{q}_i)^T \phi(\mathbf{k}_j)
 \end{equation}
@@ -566,24 +566,24 @@
 \begin{equation}
 \mathbf{S}_t = \mathbf{S}_{t-1} + \phi(\mathbf{k}_t) \mathbf{v}_t^T, \quad \mathbf{z}_t = \mathbf{z}_{t-1} + \phi(\mathbf{k}_t), \quad \mathbf{o}_t = \frac{\phi(\mathbf{q}_t)^T \mathbf{S}_t}{\phi(\mathbf{q}_t)^T \mathbf{z}_t}
 \end{equation}
-از ماژول‌های برجسته این خانواده می‌توان به \lr{Cosformer} (که با افزودن تابع وزنی کسینوسی نامنفی $\phi(x) = \text{ReLU}(x) \cos(\pi i / 2N)$ محلی‌بودن توجه را تقویت می‌کند)، \lr{Performer} (که با بهره‌گیری از ویژگی‌های تصادفی مثبت متعامد \lr{Orthogonal Random Features - ORF} هسته نمایی را بدون تورش تخمین می‌زند)، و \lr{Galerkin Attention} (که از تئوری عملگرهای دیفرانسیلی سوبولف در اجزای مرزی الهام گرفته است) اشاره کرد.
+از ماژول‌های برجسته این خانواده می‌توان به \lr{Cosformer} \cite{qin2022cosformer} (که با افزودن تابع وزنی کسینوسی نامنفی $\phi(x) = \text{ReLU}(x) \cos(\pi i / 2N)$ محلی‌بودن توجه را تقویت می‌کند)، \lr{Performer} \cite{choromanski2020rethinking} (که با بهره‌گیری از ویژگی‌های تصادفی مثبت متعامد \lr{Orthogonal Random Features - ORF} هسته نمایی را بدون تورش تخمین می‌زند)، \lr{Nystr{\"o}mformer} \cite{xiong2021nystromformer}، مکانیزم توجه خطی گیت‌دار \lr{GLA} \cite{yang2024gla} و \lr{RetNet} \cite{sun2023retnet} اشاره کرد.
 
 \subsection{۲. مکانیزم‌های فاکتورسازی تانسوری و تجزیه کم‌مرتبه \lr{(Low-Rank \& SVD Attention)}}
 این خانواده بر این پایه تجربی و طیفی استوار است که ماتریس نمرات توجه و همچنین ماتریس‌های پروجکشن لایه‌ها دارای رتبه موثر بسیار پایینی بوده و مقادیر منفرد آن‌ها زوال نمایی \lr{(Exponential Spectral Decay)} سریعی از خود نشان می‌دهند. ماژول‌های این دسته به دو رویکرد تقسیم می‌گردند:
 \begin{itemize}
-    \item \textbf{پروجکشن کم‌مرتبه در بعد توالی:} ماژول \lr{Linformer} طول توالی کلید و مقدار را از طریق دو ماتریس نگاشت تصادفی $\mathbf{E}, \mathbf{F} \in \mathbb{R}^{k \times N}$ به بعد کوچک $k$ فشرده می‌سازد: $\overline{\mathbf{K}} = \mathbf{E}\mathbf{K}$ و $\overline{\mathbf{V}} = \mathbf{F}\mathbf{V}$. در نتیجه ضرب $\mathbf{Q}\overline{\mathbf{K}}^T$ ماتریسی با ابعاد $N \times k$ تولید می‌کند که پیچیدگی آن خطی $\mathcal{O}(N k d)$ است.
-    \item \textbf{فاکتورسازی کم‌مرتبه ماتریس‌های پروجکشن و توجه نهان چندسره \lr{(MLA)}:} ماژول‌های \lr{ASVD}، \lr{SVD-LLM v2} و معماری \lr{MLA (Multi-head Latent Attention)} معرفی‌شده در مدل \lr{DeepSeek}، با فاکتورسازی ماتریس‌های وزن پروجکشن به دو مؤلفه باریک، کلیدها و مقدارها را درون یک بردار فشرده نهان مشترک $\mathbf{c}_t^{KV} \in \mathbb{R}^{d_c}$ ($d_c \ll H d_h$) نگاشت می‌دهند. بدین ترتیب ردپای بافر حافظه \lr{KV-Cache} تا بیش از ۸۵٪ کاهش می‌یابد بدون آنکه ظرفیت بازنمایی سرهای توجه محدود شود.
+    \item \textbf{پروجکشن کم‌مرتبه در بعد توالی:} ماژول \lr{Linformer} \cite{wang2020linformer} طول توالی کلید و مقدار را از طریق دو ماتریس نگاشت تصادفی $\mathbf{E}, \mathbf{F} \in \mathbb{R}^{k \times N}$ به بعد کوچک $k$ فشرده می‌سازد: $\overline{\mathbf{K}} = \mathbf{E}\mathbf{K}$ و $\overline{\mathbf{V}} = \mathbf{F}\mathbf{V}$. در نتیجه ضرب $\mathbf{Q}\overline{\mathbf{K}}^T$ ماتریسی با ابعاد $N \times k$ تولید می‌کند که پیچیدگی آن خطی $\mathcal{O}(N k d)$ است. همچنین ماژول \lr{Reformer} \cite{kitaev2020reformer} با استفاده از هشینگ حساس به مکان \lr{(LSH)} جفت‌های کلید-پرسمان را خوشه‌بندی می‌کند.
+    \item \textbf{فاکتورسازی کم‌مرتبه ماتریس‌های پروجکشن و توجه نهان چندسره \lr{(MLA)}:} ماژول‌های \lr{ASVD} \cite{yuan2023asvd}، \lr{SVD-LLM} \cite{wang2024svdllm} و معماری \lr{MLA (Multi-head Latent Attention)} معرفی‌شده در مدل \lr{DeepSeek-V2} \cite{deepseek2024mla, deepseek2024v2}، با فاکتورسازی ماتریس‌های وزن پروجکشن به دو مؤلفه باریک، کلیدها و مقدارها را درون یک بردار فشرده نهان مشترک $\mathbf{c}_t^{KV} \in \mathbb{R}^{d_c}$ ($d_c \ll H d_h$) نگاشت می‌دهند. همچنین تکنیک‌های انطباق کم‌مرتبه نظیر \lr{AdaLoRA} \cite{zhang2023adalora}، \lr{DoRA} \cite{liu2024dora}، \lr{VeRA} \cite{kopiczko2024vera} و \lr{PiSSA} \cite{meng2024pissa} تنظیم دقیق پارامتری را بدون فروپاشی زیرفضا میسر می‌سازند. بدین ترتیب ردپای بافر حافظه \lr{KV-Cache} تا بیش از ۸۵٪ کاهش می‌یابد بدون آنکه ظرفیت بازنمایی سرهای توجه محدود شود.
 \end{itemize}
 
 \subsection{۳. مکانیزم‌های توجه خلوت، پنجره‌ای و مسیریابی بلوکی \lr{(Sparse \& Block-Sparse Attention)}}
 این مکانیزم‌ها فرض واقع‌بینانه‌ای دارند مبنی بر اینکه در متون طبیعی، هر نشانه تنها به بخش محدودی از توکن‌های زمینه وابسته است. این خانواده شامل دو دسته الگوی تنک است:
 \begin{itemize}
-    \item \textbf{الگوهای ایستای ساختاریافته:} ترکیبی از پنجره‌های لغزان محلی \lr{(Local Sliding Window)} به پهنای $w \ll N$، اتصالات متسع \lr{(Dilated Strides)}، و توکن‌های تجمیعی جهانی \lr{(Global Tokens)} که در مدل‌هایی نظیر \lr{Longformer} و \lr{BigBird} به کار گرفته شده و پیچیدگی را به $\mathcal{O}(N \cdot w)$ محدود می‌سازند.
+    \item \textbf{الگوهای ایستای ساختاریافته:} ترکیبی از پنجره‌های لغزان محلی \lr{(Local Sliding Window)} به پهنای $w \ll N$، اتصالات متسع \lr{(Dilated Strides)}، و توکن‌های تجمیعی جهانی \lr{(Global Tokens)} که در مدل‌هایی نظیر \lr{Longformer} \cite{beltagy2020longformer} و \lr{BigBird} \cite{zaheer2020big} به کار گرفته شده و پیچیدگی را به $\mathcal{O}(N \cdot w)$ محدود می‌سازند.
     \item \textbf{مسیریابی بلوکی پویا و یادگیرنده \lr{(DSA / NSA)}:} در معماری‌های نوین نظیر \lr{Native Sparse Attention (NSA)} و \lr{Dynamic Sparse Attention (DSA)}، دنباله به بلوک‌های مجاور با طول ثابت $B$ تقسیم شده و یک شبکه روتر کم‌حجم یادگیرنده به ازای هر پرسمان، $k$ بلوک بهینه از کلیدها و مقادیر را به صورت پویا انتخاب می‌کند. پیچیدگی این فرآیند $\mathcal{O}(T \cdot k \cdot B \cdot d)$ بوده و همگرایی گرادیانی بیش از ۹۵٪ را نسبت به توجه متراکم کامل تضمین می‌نماید.
 \end{itemize}
 
 \subsection{۴. مدل‌های حالت‌فضا و معماری‌های نوین مامبا \lr{(State-Space Models \& Mamba)}}
-مدل‌های حالت‌فضا \lr{(SSMs)} نظیر \lr{S4}، \lr{Mamba} و \lr{HGRN2}، با بهره‌گیری از نظریه سیستم‌های کنترل خطی پیوسته، ورودی یک‌بعدی را از طریق معادلات متغیرهای حالت بازنمایی می‌کنند:
+مدل‌های حالت‌فضا \lr{(SSMs)} نظیر \lr{Mamba} \cite{gu2023mamba}، \lr{Mamba-2} \cite{dao2024mamba2} و \lr{HGRN2} \cite{dong2024hgrn2}، با بهره‌گیری از نظریه سیستم‌های کنترل خطی پیوسته، ورودی یک‌بعدی را از طریق معادلات متغیرهای حالت بازنمایی می‌کنند:
 \begin{equation}
 h'(t) = \mathbf{A} h(t) + \mathbf{B} x(t), \quad y(t) = \mathbf{C} h(t)
 \end{equation}
@@ -591,26 +591,27 @@ h'(t) = \mathbf{A} h(t) + \mathbf{B} x(t), \quad y(t) = \mathbf{C} h(t)
 \begin{equation}
 \overline{\mathbf{A}} = \exp(\Delta \mathbf{A}), \quad \overline{\mathbf{B}} = (\Delta \mathbf{A})^{-1} (\overline{\mathbf{A}} - \mathbf{I}) \Delta \mathbf{B}
 \end{equation}
-این ساختار دارای خاصیت دوگانه بی‌نظیری است: در زمان آموزش به عنوان کانولوشن زمانی سراسری به صورت فوق‌سریع و کاملاً موازی روی کارت گرافیک اجرا می‌شود، و در زمان استنتاج به رابطه بازگشتی بازگشته و توکن جاری را با حافظه ثابت $\mathcal{O}(1)$ و بدون نیاز به \lr{KV-Cache} پردازش می‌نماید. مدل نوین \lr{Mamba} با حساس به داده کردن پارامترهای $\mathbf{B}, \mathbf{C}, \Delta$ به صورت نگاشت خطی از ورودی $x(t)$، پویایی گزینشی \lr{(Selective State Space)} را تعبیه کرده و توان رقابت با ترنسفورمرهای عظیم را فراهم ساخته است.
+این ساختار دارای خاصیت دوگانه بی‌نظیری است: در زمان آموزش به عنوان کانولوشن زمانی سراسری به صورت فوق‌سریع و کاملاً موازی روی کارت گرافیک اجرا می‌شود، و در زمان استنتاج به رابطه بازگشتی بازگشته و توکن جاری را با حافظه ثابت $\mathcal{O}(1)$ و بدون نیاز به \lr{KV-Cache} پردازش می‌نماید. مدل‌های پیشرفته \lr{Mamba} و \lr{Mamba-2} با حساس به داده کردن پارامترهای $\mathbf{B}, \mathbf{C}, \Delta$ به صورت نگاشت خطی از ورودی $x(t)$، پویایی گزینشی \lr{(Selective State Space)} و دوگانگی حالت فضا با توجه خطی را تعبیه کرده و توان رقابت با ترنسفورمرهای عظیم را فراهم ساخته‌اند.
 
 \subsection{۵. معماری‌های ترکیبی و هم‌افزا \lr{(Hybrid Architectures)}}
 با توجه به اینکه مدل‌های خطی و حالت‌فضا در ثبت روابط دوربرد و یادگیری درون‌بافتی \lr{(In-Context Learning)} در برخی وظایف دارای ضعف‌های ظریفی هستند، پژوهش‌های متأخر به سمت معماری‌های ترکیبی سوق یافته‌اند:
 \begin{itemize}
-    \item \textbf{مدل‌های تجمعی ترنسفورمر-مامبا:} ترکیب لایه‌های توجه و لایه‌های حالت‌فضا به صورت یک‌درمیان در مدل‌هایی نظیر \lr{Jamba}، \lr{Samba} و \lr{SVD-Mamba} که بالاترین بازدهی حافظه را با حفظ توانمندی استدلالی تلفیق می‌نمایند.
-    \item \textbf{شبکه‌های \lr{Gated DeltaNet}:} بهره‌گیری از قاعده دلتای حافظه تجمعی و تبدیل‌های بازتابی هاوس‌هولدر \lr{(Householder Reflections)} که انقباض طیفی و پایداری عددی تریتون را در توالی‌های فوق‌بلند اثبات می‌سازد.
-    \item \textbf{تقطیر هموتوپی پیوسته \lr{(MOHAWK)}:} اتصال پیوسته و تدریجی وزن‌های ترنسفورمر اولیه به مدل خطی مقصد در طول آموزش با تابع پیوسته کوسینوسی جهت حذف شوک ساختاری.
+    \item \textbf{مدل‌های تجمعی ترنسفورمر-مامبا:} ترکیب لایه‌های توجه و لایه‌های حالت‌فضا به صورت یک‌درمیان در مدل‌هایی نظیر \lr{Jamba} \cite{lieber2024jamba}، \lr{Samba} \cite{ren2024samba}، \lr{Griffin} \cite{de2024griffin} و \lr{Hymba} \cite{dong2024hymba} که بالاترین بازدهی حافظه را با حفظ توانمندی استدلالی تلفیق می‌نمایند.
+    \item \textbf{شبکه‌های \lr{Gated DeltaNet}:} بهره‌گیری از قاعده دلتای حافظه تجمعی و تبدیل‌های بازتابی هاوس‌هولدر \lr{(Householder Reflections)} که به عنوان برنامه‌نویسان وزن سریع \cite{schlag2021linear} انقباض طیفی و پایداری عددی تریتون را در توالی‌های فوق‌بلند اثبات می‌سازد.
+    \item \textbf{تقطیر هموتوپی پیوسته \lr{(MOHAWK)} و استمرار در فضای پوچ هسین \lr{(HNC)}:} اتصال پیوسته و تدریجی وزن‌های ترنسفورمر اولیه به مدل خطی مقصد در طول آموزش و پیمایش فضای جواب بدون افزایش تابع زیان \cite{huang2026hnc}.
 \end{itemize}
 
 \subsection{۶. کرنل‌های سخت‌افزارآگاه و ادغام محاسباتی تریتون \lr{(Fused Hardware Kernels)}}
-در نهایت، پیشرفته‌ترین خانواده که متمرکز بر شکستن دیوار حافظه سخت‌افزاری است، بهینه‌سازی سطح پایین در محیط‌های کامپایلری مانند \lr{OpenAI Triton} و ساختارهای \lr{FlashAttention} را دنبال می‌کند. این کرنل‌ها با قطعه‌بندی تانسورها در ابعاد کاشی‌های متناسب با حافظه فوق‌سریع \lr{SRAM} (نظیر قطعات $64 \times 64$ یا $128 \times 64$)، الگوریتم برخط سافت‌مکس \lr{(Online Softmax)} را پیاده‌سازی کرده و نیاز به مادی‌سازی و نوشتن ماتریس عظیم $N \times N$ بر روی حافظه کند سراسری \lr{DRAM/VRAM} را به کلی ملغی می‌سازند. بدین ترتیب، شدت محاسباتی به سقف تئوریک سخت‌افزار ارتقا می‌یابد.
+در نهایت، پیشرفته‌ترین خانواده که متمرکز بر شکستن دیوار حافظه سخت‌افزاری است، بهینه‌سازی سطح پایین در محیط‌های کامپایلری مانند \lr{OpenAI Triton} و ساختارهای \lr{FlashAttention} \cite{dao2022flashattention} و \lr{FlashAttention-2} \cite{dao2023flashattention2} را دنبال می‌کند. این کرنل‌ها با قطعه‌بندی تانسورها در ابعاد کاشی‌های متناسب با حافظه فوق‌سریع \lr{SRAM} (نظیر قطعات $64 \times 64$ یا $128 \times 64$)، الگوریتم برخط سافت‌مکس \lr{(Online Softmax)} را پیاده‌سازی کرده و نیاز به مادی‌سازی و نوشتن ماتریس عظیم $N \times N$ بر روی حافظه کند سراسری \lr{DRAM/VRAM} را به کلی ملغی می‌سازند. بدین ترتیب، شدت محاسباتی به سقف تئوریک سخت‌افزار ارتقا می‌یابد.
 
 \subsection{تاکسونومی موتورهای فشرده‌سازی مدل‌های زبانی}
 \label{sec:compression_taxonomy}
 موتورهای فشرده‌سازی در این رساله در چهار خانواده پیشرفته جبر خطی و تانسوری فرمول‌بندی شده‌اند:
 \begin{enumerate}
-    \item \textbf{فاکتورسازی مقادیر منفرد آگاه از فعال‌سازی (\lr{Activation-Aware SVD}):} روش‌های \lr{AASVD}، \lr{SVD-LLM v2} و \lr{FRanDI} با محاسبه کوواریانس ورودی و اعمال سفیدسازی چولسکی، ابعاد وزن‌ها را در امتداد جهات با بیشینه اطلاعات هماهنگ نموده و خطای بازسازی خروجی را به حداقل می‌رسانند.
-    \item \textbf{تجزیه‌های تانسوری مرتبه بالا (\lr{Higher-Order Tensor Decompositions}):}
+    \item \textbf{فاکتورسازی مقادیر منفرد آگاه از فعال‌سازی (\lr{Activation-Aware SVD}):} روش‌های \lr{ASVD} \cite{yuan2023asvd}، \lr{SVD-LLM} \cite{wang2024svdllm} و الگوریتم‌های مبتنی بر برش بهینه مقادیر منفرد با محاسبه کوواریانس ورودی و اعمال سفیدسازی چولسکی، ابعاد وزن‌ها را در امتداد جهات با بیشینه اطلاعات هماهنگ نموده و خطای بازسازی خروجی را به حداقل می‌رسانند.
+    \item \textbf{تجزیه‌های تانسوری مرتبه بالا و هرس توکن (\lr{Tensor Decompositions \& Token Pruning}):}
     \begin{itemize}
+        \item \textbf{هرس توکن‌های کم‌اهمیت \lr{(Learned Token Pruning)}:} روش‌های هرس پویا نظیر کار کیم و همکاران \cite{kim2022learned} که طول مؤثر توالی را در طول لایه‌ها کاهش می‌دهند.
         \item \textbf{تجزیه تاکر \lr{(Tucker Decomposition)}:} تقریب تانسور چهاربعدی وزن‌های لایه‌های شبکه به یک هسته مرکزی متراکم $\mathcal{G} \in \mathbb{R}^{r_1 \times r_2 \times r_3 \times r_4}$ همراه با ماتریس‌های فاکتور متعامد در هر بُعد:
         \begin{equation}
         \mathcal{W} \approx \mathcal{G} \times_1 \mathbf{U}^{(1)} \times_2 \mathbf{U}^{(2)} \times_3 \mathbf{U}^{(3)} \times_4 \mathbf{U}^{(4)}
@@ -622,8 +623,8 @@ h'(t) = \mathbf{A} h(t) + \mathbf{B} x(t), \quad y(t) = \mathbf{C} h(t)
         این رویکرد پدیده نفرین بعدیت \lr{(Curse of Dimensionality)} را به طور بنیادین مهار می‌سازد.
         \item \textbf{فاکتورسازی ضرب کرونکر \lr{(Kronecker Factorization)}:} تجزیه ماتریس وزن به حاصل‌ضرب تانسوری دو ماتریس کوچک‌تر $\mathbf{W} \approx \mathbf{A} \otimes \mathbf{B}$ که در مدل‌های تنک ساختاریافته به کار می‌رود.
     \end{itemize}
-    \item \textbf{هرس ساختاریافته و گزینش خبرگان (\lr{Structured Pruning \& Expert Selection}):} شامل روش‌های هرس حساس به فعال‌سازی \lr{Wanda} و روش نوین \lr{REAP-MoE} که آمار فعالیت خبرگان را در سراسر پردازنده‌های توزیع‌شده با الگوریتم جمع سراسری \lr{All-Reduce} همگام نموده و خبرگان دارای کمترین اهمیت سراسری را بدون ایجاد رانش بازنمایی هرس می‌نماید.
-    \item \textbf{کوانتایزاسیون ممیز شناور نسل جدید \lr{FP8} و حذف کانال‌های پرت:} استفاده از فرمت‌های ممیز شناور ۸ بیتی \lr{FP8 e4m3fn} با توزیع غیرخطی لگاریتمی بیت‌های نما، همراه با تبدیل‌های متعامد تصادفی چرخش هادامار (\lr{QuaRot}) برای حذف کانال‌های پرت پیش از کوانتایزاسیون.
+    \item \textbf{هرس ساختاریافته و گزینش خبرگان (\lr{Structured Pruning \& Expert Selection}):} شامل روش‌های هرس حساس به فعال‌سازی \lr{Wanda} \cite{sun2024wanda}، هرس بدون آموزش \lr{SparseGPT} \cite{frantar2023sparsegpt}، حذف سطر و ستون \lr{SliceGPT} \cite{ashkboos2024slicegpt}، شبکه‌های خبرگان \lr{Switch Transformers} \cite{fedus2022switch}، \lr{Expert Choice MoE} \cite{zhou2022expert} و \lr{Mixtral} \cite{jiang2024mixtral} و روش نوین \lr{REAP-MoE} که آمار فعالیت خبرگان را در سراسر پردازنده‌های توزیع‌شده با الگوریتم جمع سراسری \lr{All-Reduce} همگام نموده و خبرگان دارای کمترین اهمیت سراسری را بدون ایجاد رانش بازنمایی هرس می‌نماید.
+    \item \textbf{کوانتایزاسیون برداری و ممیز شناور نسل جدید (\lr{Quantization \& Outlier Suppression}):} استفاده از روش‌های کوانتایزاسیون برداری \cite{stock2020bit}، فرمت‌های کوانتایزاسیون پس از آموزش \lr{AWQ} \cite{lin2024awq}، \lr{GPTQ} \cite{frantar2023gptq}، \lr{SmoothQuant} \cite{xiao2023smoothquant}، \lr{LLM.int8()} \cite{dettmers2022llmint8}، \lr{HQQ} \cite{badri2023hqq}، همراه با تبدیل‌های متعامد تصادفی چرخش هادامار (\lr{QuaRot}) \cite{ashkboos2024quarot} برای حذف کانال‌های پرت پیش از کوانتایزاسیون.
 \end{enumerate}
 
 \section{جدول مقایسه‌ای ویژگی‌ها و پیچیدگی خانواده‌های توجه و فشرده‌سازی}
