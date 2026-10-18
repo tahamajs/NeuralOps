@@ -575,10 +575,10 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
 
         def pt_paged_step(q_t, k_t, v_t, p_pool, b_tbl):
             out = []
-            for b in range(B):
-                st = p_pool[b_tbl[b, 0]]
-                st = st + torch.matmul(k_t[b].unsqueeze(-1).float(), v_t[b].unsqueeze(-2).float())
-                o = torch.matmul(q_t[b].unsqueeze(-2).float(), st).squeeze(-2).to(torch.float16)
+            for b_idx in range(q_t.shape[0]):
+                st = p_pool[b_tbl[b_idx, 0]]
+                st = st + torch.matmul(k_t[b_idx].unsqueeze(-1).float(), v_t[b_idx].unsqueeze(-2).float())
+                o = torch.matmul(q_t[b_idx].unsqueeze(-2).float(), st).squeeze(-2).to(torch.float16)
                 out.append(o)
             return torch.stack(out, dim=0)
 

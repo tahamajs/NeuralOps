@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# Author: Taha Majlesi
 """Exhaustive Phase 2 sweep across all 108 native CUDA C++ kernel modules.
 
 Validates JIT compilation, direct C++ function invocation without fallback,
