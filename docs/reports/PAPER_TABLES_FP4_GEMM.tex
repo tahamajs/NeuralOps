@@ -1,0 +1,16 @@
+% Auto-generated FP4 (E2M1) Quantized GEMM LaTeX Benchmark Tables on RTX 4070 (Ada Lovelace SM 8.9)
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{lcccccccc}
+\toprule
+\textbf{Kernel} & \textbf{Dimension $N$} & \textbf{Dimension $K$} & \textbf{CUDA (ms)} & \textbf{PyTorch Ref (ms)} & \textbf{Speedup} & \textbf{Peak VRAM (MB)} & $\mathbf{\max |\nabla - \nabla_{\text{ref}}|}$ & \textbf{Status} \\
+\midrule
+fp4_gemm & 1024 & 1024 & 0.6509 & 0.2132 & 0.33x & 29.06 & 5.00e-01 & PASS \\
+fp4_gemm & 2048 & 2048 & 1.3689 & 0.9765 & 0.71x & 66.87 & 1.00e+00 & PASS \\
+fp4_gemm & 4096 & 4096 & 7.9754 & 6.4045 & 0.80x & 217.49 & 1.00e+00 & PASS \\
+\bottomrule
+\end{tabular}
+\caption{Empirical evaluation of native FP4 (E2M1) 4-bit nibble quantized GEMM forward and analytical STE backward kernels on NVIDIA GeForce RTX 4070 Laptop GPU (Ada Lovelace SM 8.9, 8GB VRAM). Parity certified with zero NaNs/Infs.}
+\label{tab:fp4_gemm_benchmarks}
+\end{table*}

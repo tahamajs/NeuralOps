@@ -1,0 +1,21 @@
+% Auto-generated LaTeX Benchmark Table for Kronecker GEMM and FWHT on RTX 4070 (Ada Lovelace, SM 8.9)
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{lcccccccc}
+\toprule
+\textbf{Kernel} & \textbf{Tokens $N$} & \textbf{Dimension $D$} & \textbf{Fwd (ms)} & \textbf{Bwd (ms)} & \textbf{Total (ms)} & \textbf{Speedup} & \textbf{Peak VRAM (MB)} & $\mathbf{\max |\nabla - \nabla_{\text{ref}}|}$ \\
+\midrule
+kronecker\_gemm & 1024 & 256 & 0.2876 & 0.4929 & 0.7805 & 0.75x & 25.26 & 0.00e+00 \\
+kronecker\_gemm & 4096 & 256 & 1.0467 & 0.3939 & 1.4406 & 0.37x & 52.26 & 0.00e+00 \\
+kronecker\_gemm & 16384 & 256 & 4.1857 & 2.5223 & 6.7081 & 0.36x & 160.26 & 0.00e+00 \\
+kronecker\_gemm & 65536 & 256 & 1.2772 & 13.9996 & 15.2767 & 0.85x & 592.26 & 0.00e+00 \\
+fwht\_transform & 1024 & 128 & 0.0269 & 14.0437 & 14.0706 & 0.92x & 401.26 & 1.91e-06 \\
+fwht\_transform & 4096 & 128 & 0.0365 & 16.7128 & 16.7492 & 1.22x & 34.26 & 1.91e-06 \\
+fwht\_transform & 16384 & 128 & 0.1201 & 29.4637 & 29.5838 & 0.99x & 88.26 & 1.91e-06 \\
+fwht\_transform & 65536 & 128 & 11.4611 & 477.7862 & 489.2473 & 1.17x & 304.26 & 0.00e+00 \\
+\bottomrule
+\end{tabular}
+\caption{Comprehensive Autograd Parity, Speedup, and Peak VRAM of Kronecker GEMM and FWHT on NVIDIA RTX 4070 Laptop GPU (Ada Lovelace SM 8.9, CUDA 12.8).}
+\label{tab:kronecker_fwht_benchmarks}
+\end{table*}
