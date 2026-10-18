@@ -439,6 +439,8 @@ def fused_weighted_gqa_online_softmax_triton(
         return fused_weighted_gqa_online_softmax_pytorch(q, k, v, head_weights, is_causal, scale)
 
 
+cross_attention_triton = fused_asymmetric_cross_attention_triton
+
 __all__ = [
     'is_supported',
     'fwd',
@@ -447,6 +449,7 @@ __all__ = [
     'fused_mqa_bias_scale_pytorch',
     'fused_asymmetric_cross_attention_triton',
     'fused_asymmetric_cross_attention_pytorch',
+    'cross_attention_triton',
     'fused_weighted_gqa_online_softmax_triton',
     'fused_weighted_gqa_online_softmax_pytorch',
 ]

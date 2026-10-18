@@ -158,6 +158,7 @@ def _local_window_attention(
 ) -> tuple[torch.Tensor, torch.Tensor]:
     B, h, N, d = Q.shape
     N_k = K.shape[2]
+    radius = window // 2
     scale = 1.0 / math.sqrt(int(d))
 
     if Q.is_cuda and (token_valid is None or bool(token_valid.all())) and past_len == 0 and N == N_k and d <= 256 and (not training or dropout_p == 0.0):
@@ -986,11 +987,27 @@ class SpectronFP8Attention(BaseAttention):
         out_glob = self._global_branch(Q, K_full, V_full, token_valid)
         out_lin = self._linear_branch(hidden_states, token_valid_new)
         target_dt = hidden_states.dtype
-        fused = (
-            alpha_loc.to(target_dt) * out_loc.to(target_dt)
-            + alpha_glob.to(target_dt) * out_glob.to(target_dt)
-            + alpha_lin.to(target_dt) * out_lin.to(target_dt)
-        )
+        if out_loc.is_cuda:
+            try:
+                from neuralops.core.cuda_kernels.hybrid_local_kernel import hybrid_three_branch_blend
+                fused = hybrid_three_branch_blend(
+                    out_loc.to(target_dt),
+                    out_glob.to(target_dt),
+                    out_lin.to(target_dt),
+                    alpha.to(target_dt),
+                )
+            except Exception:
+                fused = (
+                    alpha_loc.to(target_dt) * out_loc.to(target_dt)
+                    + alpha_glob.to(target_dt) * out_glob.to(target_dt)
+                    + alpha_lin.to(target_dt) * out_lin.to(target_dt)
+                )
+        else:
+            fused = (
+                alpha_loc.to(target_dt) * out_loc.to(target_dt)
+                + alpha_glob.to(target_dt) * out_glob.to(target_dt)
+                + alpha_lin.to(target_dt) * out_lin.to(target_dt)
+            )
 
         if head_mask is not None:
             if head_mask.dim() == 1:
