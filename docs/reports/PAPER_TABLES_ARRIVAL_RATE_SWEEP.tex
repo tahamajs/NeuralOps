@@ -1,0 +1,18 @@
+% Auto-generated: Bursty Poisson Arrival Rate Sweep Benchmarks
+\begin{table*}[t]
+\centering
+\small
+\caption{\textbf{Multi-Tenant SLA Degradation across Bursty Poisson Arrival Rates ($\lambda \in \{5, 10, 15, 20, 25\}\,\text{ms}$) on Physical NVIDIA RTX 4070 Laptop GPU.} Continuous dynamic batching ($C=4{,}096$) evaluated across 100 stochastic arrivals ($L \in [256, 4{,}096]$). For offered loads up to $100\,\text{req/s}$ ($\lambda \ge 10\,\text{ms}$), $P_{99}$ latency stays strictly under $5.26\,\text{ms}$ ($100.0\%$ compliance against the $15\,\text{ms}$ SLA). Saturation occurs at $\lambda=5\,\text{ms}$ ($200\,\text{req/s}$ burst load), serving $164.8\,\text{req/s}$ ($374{,}673\,\text{tok/s}$) with bounded $P_{50}$ latency of $4.11\,\text{ms}$ and lean memory usage ($\le 184.4\,\text{MB}$).}
+\label{tab:arrival_rate_sweep}
+\begin{tabular}{cccccccccc}
+\toprule
+\textbf{Mean Arrival ($\lambda$)} & \textbf{Offered Load (req/s)} & \textbf{P50 (ms)} & \textbf{P90 (ms)} & \textbf{P99 (ms)} & \textbf{SLA Comp. (\%)} & \textbf{Served QPS} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM (MB)} & \textbf{SLA Status ($<15\text{ms}$)} \\
+\midrule
+5 ms              & 200.0                & 4.11 & 43.77 & 82.23 & 80.0\% & 164.8 & 374,672 & 184.4 & DEGRADED \\
+10 ms             & 100.0                & 2.52 & 3.57 & 5.26 & 100.0\% & 115.9 & 266,990 & 176.9 & CERTIFIED (<15ms) \\
+15 ms             & 66.7                 & 2.61 & 3.51 & 3.85 & 100.0\% & 67.1 & 167,257 & 180.2 & CERTIFIED (<15ms) \\
+20 ms             & 50.0                 & 2.03 & 3.66 & 4.84 & 100.0\% & 54.6 & 128,224 & 183.3 & CERTIFIED (<15ms) \\
+25 ms             & 40.0                 & 1.86 & 3.57 & 4.67 & 100.0\% & 42.7 & 91,188 & 180.3 & CERTIFIED (<15ms) \\
+\bottomrule
+\end{tabular}
+\end{table*}
