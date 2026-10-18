@@ -357,3 +357,22 @@ from neuralops.core.triton_kernels import retnet_retention
 from neuralops.core.triton_kernels import dynamic_sparse_attention
 from neuralops.core.triton_kernels import cur_linear
 from neuralops.core.triton_kernels import varlen_attention
+
+
+def __getattr__(name: str) -> Any:
+    """Dynamically resolve flagship standalone modules from neuralops.kernels.triton."""
+    try:
+        import neuralops.kernels.triton as nkt
+
+        if hasattr(nkt, name):
+            val = getattr(nkt, name)
+            globals()[name] = val
+            return val
+    except Exception:
+        pass
+    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
+
+
+def __dir__() -> list[str]:
+    """Execute __dir__ operation."""
+    return sorted(list(globals().keys()) + __all__)

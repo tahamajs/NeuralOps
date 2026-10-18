@@ -57,7 +57,10 @@ from neuralops.kernels.extended_kernels import (
     fused_lowrank_residual_add,
 )
 
+from neuralops.kernels import triton
+
 __all__ = [
+    "triton",
     "HAS_TRITON",
     "triton_dispatch",
     "block_sparse",
