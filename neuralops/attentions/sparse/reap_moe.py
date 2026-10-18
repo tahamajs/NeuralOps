@@ -182,6 +182,24 @@ class REAPMoE(nn.Module):
         self._aux_loss = aux_loss.detach()
 
         experts_stack = torch.stack([exp(x).to(target_dtype) for exp in self.experts], dim=2)
+
+        if x.is_cuda and self.n_experts == 2 and self.top_k == 2:
+            try:
+                from neuralops.core.cuda_kernels.samba_moe import samba_moe
+                # Softmax weights over the 2 experts for samba_moe
+                w = F.softmax(scores.float(), dim=-1).to(target_dtype)
+                out = samba_moe(experts_stack[:, :, 0], experts_stack[:, :, 1], w)
+                return out.to(target_dtype), aux_loss
+            except Exception:
+                pass
+        elif x.is_cuda:
+            try:
+                from neuralops.core.triton_kernels.sparse_attn import fused_topk_sparse_route_and_combine_triton
+                out = fused_topk_sparse_route_and_combine_triton(experts_stack, scores, top_k=self.top_k)
+                return out.to(target_dtype), aux_loss
+            except Exception:
+                pass
+
         topk_expanded = topk_indices.unsqueeze(-1).expand(-1, -1, -1, D)
         gathered = torch.gather(experts_stack, 2, topk_expanded)
         out = torch.sum(gathered * topk_weights.unsqueeze(-1), dim=2).to(target_dtype)

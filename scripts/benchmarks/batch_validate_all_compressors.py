@@ -529,7 +529,7 @@ def setup_trainable_parameters_for_kd(student: nn.Module) -> List[nn.Parameter]:
     # 1. Structural low-rank modules and normalization layers (excluding trained heads)
     for name, module in student.named_modules():
         name_l = name.lower()
-        if any(h in name_l for h in ["classifier", "lm_head", "score"]):
+        if any(head_kw in name_l for head_kw in ["classifier", "lm_head", "score"]):
             continue
         mod_type = module.__class__.__name__
         if mod_type in ("SVDLinear", "DobiSVDLinearLayer", "KroneckerLinear", "LoRALinear"):
@@ -544,7 +544,7 @@ def setup_trainable_parameters_for_kd(student: nn.Module) -> List[nn.Parameter]:
     # 2. Match any remaining biases and low-rank factor parameters by name (strictly excluding trained heads)
     for name, p in student.named_parameters():
         name_l = name.lower()
-        if any(h in name_l for h in ["classifier", "lm_head", "score"]):
+        if any(head_kw in name_l for head_kw in ["classifier", "lm_head", "score"]):
             p.requires_grad = False
             continue
         if "bias" in name_l:
@@ -560,7 +560,7 @@ def setup_trainable_parameters_for_kd(student: nn.Module) -> List[nn.Parameter]:
     if not trainable_params:
         for name, p in student.named_parameters():
             name_l = name.lower()
-            if any(h in name_l for h in ["classifier", "lm_head", "score"]):
+            if any(head_kw in name_l for head_kw in ["classifier", "lm_head", "score"]):
                 continue
             if p.dim() == 2 and min(p.shape) <= 256:
                 p.requires_grad = True

@@ -15,7 +15,11 @@ import argparse
 import platform
 import sys
 import time
+
+import torch
 from neuralops import __version__
+from neuralops.benchmarks.discovery import discover_all_modules
+from neuralops.benchmarks.api import Runner
 
 # Rich terminal output support
 try:
@@ -818,6 +822,7 @@ def handle_niah(args: argparse.Namespace) -> int:
         from neuralops.evaluation.niah_passkey import NeedleInAHaystackEvaluator, plot_niah_heatmap
 
     print(f"Loading model '{args.model}' for Needle-In-A-Haystack Passkey evaluation...")
+    from transformers import AutoTokenizer, AutoModelForCausalLM
     tokenizer = AutoTokenizer.from_pretrained(args.model)
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model = AutoModelForCausalLM.from_pretrained(args.model).to(device)
