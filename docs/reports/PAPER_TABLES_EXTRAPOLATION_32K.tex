@@ -1,0 +1,33 @@
+% Auto-generated Long-Horizon Sequence Extrapolation Benchmark
+% Target: NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9 Ada Lovelace)
+\begin{table*}[t]
+\centering
+\small
+\caption{Long-Horizon Sequence Extrapolation and KV-State Scaling across $L \in \{4096, 8192, 16384, 32768\}$ on NVIDIA RTX 4070 Laptop GPU. Comparing standard causal softmax attention with recurrent linear associative scan mechanisms.}
+\label{tab:extrapolation_32k}
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Sequence Length ($L$)} & \textbf{Mechanism} & \textbf{Latency (ms)} & \textbf{Peak VRAM (MB)} & \textbf{KV-State Size} & \textbf{State Drift ($\|\Delta\|/\|Y\|_F$)} & \textbf{Zero-NaN/Inf} \\
+\midrule
+\textbf{4,096} & Standard Quadratic Attention & 0.42 & 12.3 & 4096 KB ($\mathcal{O}(L)$) & Baseline & \checkmark \\
+ & Chunk GLA & 3.28 & 36.3 & 32 KB ($\mathcal{O}(1)$) & 2.07e-04 & \checkmark \\
+ & Gated Delta Net & 3.83 & 40.4 & 32 KB ($\mathcal{O}(1)$) & 2.08e-04 & \checkmark \\
+ & SVD Linear Attention & 0.83 & 70.0 & 8 KB ($\mathcal{O}(1)$) & 4.36e-01 & \checkmark \\
+\midrule
+\textbf{8,192} & Standard Quadratic Attention & 1.27 & 65.2 & 8192 KB ($\mathcal{O}(L)$) & Baseline & \checkmark \\
+ & Chunk GLA & 6.56 & 82.0 & 32 KB ($\mathcal{O}(1)$) & 2.07e-04 & \checkmark \\
+ & Gated Delta Net & 7.01 & 90.2 & 32 KB ($\mathcal{O}(1)$) & 2.08e-04 & \checkmark \\
+ & SVD Linear Attention & 2.30 & 130.6 & 8 KB ($\mathcal{O}(1)$) & 4.27e-01 & \checkmark \\
+\midrule
+\textbf{16,384} & Standard Quadratic Attention & 3.71 & 120.8 & 16384 KB ($\mathcal{O}(L)$) & Baseline & \checkmark \\
+ & Chunk GLA & 13.30 & 154.4 & 32 KB ($\mathcal{O}(1)$) & 2.07e-04 & \checkmark \\
+ & Gated Delta Net & 15.46 & 170.9 & 32 KB ($\mathcal{O}(1)$) & 2.07e-04 & \checkmark \\
+ & SVD Linear Attention & 8.37 & 251.6 & 8 KB ($\mathcal{O}(1)$) & 3.20e-01 & \checkmark \\
+\midrule
+\textbf{32,768} & Standard Quadratic Attention & 13.90 & 231.9 & 32768 KB ($\mathcal{O}(L)$) & Baseline & \checkmark \\
+ & Chunk GLA & 27.46 & 299.3 & 32 KB ($\mathcal{O}(1)$) & 2.07e-04 & \checkmark \\
+ & Gated Delta Net & 33.56 & 332.3 & 32 KB ($\mathcal{O}(1)$) & 2.07e-04 & \checkmark \\
+ & SVD Linear Attention & 31.31 & 493.8 & 8 KB ($\mathcal{O}(1)$) & 3.05e-01 & \checkmark \\
+\bottomrule
+\end{tabular}
+\end{table*}
