@@ -1,0 +1,55 @@
+{
+  "moe_routing": {
+    "pytorch_ms": 0.15177727699279786,
+    "cuda_ms": 0.03408960103988647,
+    "triton_ms": null,
+    "speedup_cuda_vs_py": 4.452304291130047,
+    "pytorch_vram_mb": 16.041015625,
+    "cuda_vram_mb": 8.0234375
+  },
+  "hgrn2_scan": {
+    "pytorch_ms": 24.84686767578125,
+    "triton_ms": 0.12609312057495117,
+    "cuda_ms": 0.08978431701660156,
+    "speedup_cuda_vs_py": 276.7395075376799,
+    "speedup_triton_vs_py": 197.0517309944121,
+    "pytorch_vram_mb": 20.03125,
+    "cuda_vram_mb": 8.0234375
+  },
+  "chunked_delta_gate_scan": {
+    "pytorch_ms": 382.1018359375,
+    "triton_ms": 1.2216627502441406,
+    "cuda_ms": 4.698367919921875,
+    "speedup_cuda_vs_py": 81.3265036816984,
+    "speedup_triton_vs_py": 312.77194615382984,
+    "pytorch_vram_mb": 22.2587890625,
+    "cuda_vram_mb": 22.2109375
+  },
+  "linear_attention": {
+    "pytorch_ms": 356.0607421875,
+    "triton_ms": 0.8919046020507813,
+    "cuda_ms": 1.6365055847167969,
+    "speedup_cuda_vs_py": 217.57380207725816,
+    "speedup_triton_vs_py": 399.21393091682626,
+    "pytorch_vram_mb": 28.25927734375,
+    "cuda_vram_mb": 28.2109375
+  },
+  "selective_scan": {
+    "pytorch_ms": 28.583291015625,
+    "triton_ms": 14.9730712890625,
+    "cuda_ms": 0.2773708724975586,
+    "speedup_cuda_vs_py": 103.05080255273232,
+    "speedup_triton_vs_py": 1.9089798254353112,
+    "pytorch_vram_mb": 27.36376953125,
+    "cuda_vram_mb": 27.09814453125
+  },
+  "sliding_window": {
+    "pytorch_ms": 0.45058048248291016,
+    "triton_ms": 0.14763968467712402,
+    "cuda_ms": 0.1477113628387451,
+    "speedup_cuda_vs_py": 3.050411788393043,
+    "speedup_triton_vs_py": 3.051892744611945,
+    "pytorch_vram_mb": 67.5986328125,
+    "cuda_vram_mb": 34.84033203125
+  }
+}
