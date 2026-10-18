@@ -35,6 +35,7 @@ TARGET_MODULES = [
 
 class MockConfig:
     """Mockconfig definition."""
+
     def __init__(self, hidden_size=256, num_heads=4, head_dim=64):
         """Execute init routine."""
         self.hidden_size = hidden_size

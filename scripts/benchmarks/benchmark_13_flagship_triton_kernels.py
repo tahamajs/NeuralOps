@@ -62,6 +62,7 @@ def benchmark_fn(
     iters: int = 100,
 ) -> Tuple[float, float]:
     """Measures CUDA kernel execution time (ms) and peak allocated VRAM (MB)."""
+    assert callable(fn), "fn must be callable"
     torch.cuda.synchronize()
     gc.collect()
     torch.cuda.empty_cache()

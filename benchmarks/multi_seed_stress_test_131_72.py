@@ -6,7 +6,6 @@ Delegates directly to canonical neuralops.benchmarks.multi_seed_stress_test_131_
 """
 
 import sys
-from neuralops.benchmarks.multi_seed_stress_test_131_72 import *
 from neuralops.benchmarks.multi_seed_stress_test_131_72 import main
 
 if __name__ == "__main__":

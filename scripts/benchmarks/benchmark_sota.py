@@ -72,8 +72,13 @@ def benchmark_gap_1_svd_llm_v2(device: torch.device) -> Dict[str, Any]:
     improvement_pct = max(0.0, (err_naive - err_svd2) / max(err_naive, 1e-6) * 100.0)
     passed = err_svd2 <= err_naive * 1.05  # within numerical tolerance or beating naive
 
-    logger.info("Gap 1: Naive Err=%.4f | SVD-LLM v2 Err=%.4f | Rel Improvement=%.2f%% | Passed=%s",
-                err_naive, err_svd2, improvement_pct, passed)
+    logger.info(
+        "Gap 1: Naive Err=%.4f | SVD-LLM v2 Err=%.4f | Rel Improvement=%.2f%% | Passed=%s",
+        err_naive,
+        err_svd2,
+        improvement_pct,
+        passed,
+    )
     return {
         "status": "PASSED" if passed else "FAILED",
         "err_naive": err_naive,
@@ -113,7 +118,7 @@ def benchmark_gap_2_asvd_kv_cache(device: torch.device) -> Dict[str, Any]:
     streaming_outs = []
     with torch.no_grad():
         for t in range(T):
-            xt = hidden_states[:, t:t+1, :]
+            xt = hidden_states[:, t : t + 1, :]
             ot = attn.streaming_forward(xt, kv_cache=cache)
             streaming_outs.append(ot)
 
@@ -187,7 +192,7 @@ def benchmark_gap_4_dsa_block_sparse(device: torch.device) -> Dict[str, Any]:
             out = out[0]
 
     # Verify output shape and finite values
-    valid_shape = (out.shape == (B, T, D))
+    valid_shape = out.shape == (B, T, D)
     is_finite = bool(torch.isfinite(out).all().item())
     passed = valid_shape and is_finite
 
@@ -206,6 +211,7 @@ def benchmark_gap_5_reap_moe_and_niah(device: torch.device) -> Dict[str, Any]:
     logger.info("=== Running Gap 5: REAP Distributed MoE Pruning & NIAH Long-Context ===")
     from neuralops.attentions.sparse.reap_moe import REAPMoE
     from neuralops.attentions.sparse.reap_moe_router import distributed_reap_prune
+
     try:
         from evaluation.niah import NeedleInAHaystackEvaluator
         from evaluation.lm_eval_adapter import NeuralOpsLMEvalAdapter
@@ -233,11 +239,13 @@ def benchmark_gap_5_reap_moe_and_niah(device: torch.device) -> Dict[str, Any]:
     # 2. Test NIAH retrieval harness
     class SimpleLM(nn.Module):
         """Simplelm definition."""
+
         def __init__(self, vocab_size=50257, d=64):
             """Execute init routine."""
             super().__init__()
             self.emb = nn.Embedding(vocab_size, d)
             self.head = nn.Linear(d, vocab_size)
+
         def forward(self, input_ids):
             """Execute forward routine."""
             h = self.emb(input_ids)
@@ -245,9 +253,11 @@ def benchmark_gap_5_reap_moe_and_niah(device: torch.device) -> Dict[str, Any]:
 
     class DummyTokenizer:
         """Dummytokenizer definition."""
+
         def encode(self, text, add_special_tokens=False):
             """Execute encode routine."""
             return [abs(hash(w)) % 50000 for w in text.split()]
+
         def decode(self, tokens):
             """Execute decode routine."""
             return " ".join(str(t) for t in tokens)
@@ -266,10 +276,7 @@ def benchmark_gap_5_reap_moe_and_niah(device: torch.device) -> Dict[str, Any]:
     # Exercise harness
     logger.info("Exercising NIAH grid...")
     grid_res = evaluator.evaluate_grid(num_trials_per_cell=1)
-    niah_harness_pass = (
-        len(grid_res["accuracy_grid"]) == 4 and
-        len(grid_res["needle_depths"]) == 5
-    )
+    niah_harness_pass = len(grid_res["accuracy_grid"]) == 4 and len(grid_res["needle_depths"]) == 5
 
     # 3. Test LM Eval Adapter subclassing
     adapter = NeuralOpsLMEvalAdapter(test_model, tokenizer, device=device)
@@ -278,8 +285,13 @@ def benchmark_gap_5_reap_moe_and_niah(device: torch.device) -> Dict[str, Any]:
     adapter_pass = len(res_ll) == 1
 
     passed = moe_pruned_pass and niah_harness_pass and adapter_pass
-    logger.info("Gap 5: MoE Pruned (4->%d) | NIAH Grid=%s | Adapter=%s | Passed=%s",
-                moe.n_experts, niah_harness_pass, adapter_pass, passed)
+    logger.info(
+        "Gap 5: MoE Pruned (4->%d) | NIAH Grid=%s | Adapter=%s | Passed=%s",
+        moe.n_experts,
+        niah_harness_pass,
+        adapter_pass,
+        passed,
+    )
     return {
         "status": "PASSED" if passed else "FAILED",
         "moe_initial_experts": n_experts,
@@ -297,8 +309,8 @@ def write_markdown_report(results: Dict[str, Dict[str, Any]]):
 
     content = f"""# SOTA Gap Closure Comprehensive Benchmark Report
 
-Generated: {time.strftime('%Y-%m-%d %H:%M:%S UTC', time.gmtime())}
-Overall Status: **{'100% PASSED' if all_passed else 'FAILED'}** (5/5 Modules Exercised)
+Generated: {time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime())}
+Overall Status: **{"100% PASSED" if all_passed else "FAILED"}** (5/5 Modules Exercised)
 
 ---
 
@@ -306,11 +318,11 @@ Overall Status: **{'100% PASSED' if all_passed else 'FAILED'}** (5/5 Modules Exe
 
 | Gap ID | Module / Component | Focus Area | Status | Key Metric / Verification |
 |:---|:---|:---|:---:|:---|
-| **Gap 1** | `SVDLLMv2Compressor` & `HessianNullSpaceSVDContinuation` | Activation-aware Truncation | **{results['gap_1']['status']}** | Naive Err: {results['gap_1']['err_naive']:.4f} → SVD-LLM v2: {results['gap_1']['err_svd2']:.4f} (+{results['gap_1']['improvement_pct']:.2f}% gain) |
-| **Gap 2** | `SVDLinearAttention` | ASVD KV-Cache & Streaming Forward | **{results['gap_2']['status']}** | Full vs Streaming Max Diff: {results['gap_2']['max_diff']:.6f} (< 0.05 bound) |
-| **Gap 3** | `CompressedTensors` & `FP8 Quantizer` | FP8 e4m3fn Bounding | **{results['gap_3']['status']}** | Rel Quantization Error: {results['gap_3']['rel_quant_error']:.6f} (< 5%) |
-| **Gap 4** | `NativeSparseAttention` | DSA Learned Block-Sparse Routing | **{results['gap_4']['status']}** | Shape Parity: {results['gap_4']['shape']}, IsFinite: {results['gap_4']['is_finite']} |
-| **Gap 5** | `REAPMoE` & `NeedleInAHaystackEvaluator` | Distributed MoE Pruning & NIAH | **{results['gap_5']['status']}** | Experts: {results['gap_5']['moe_initial_experts']} → {results['gap_5']['moe_final_experts']}, NIAH Depths: {results['gap_5']['niah_depths']} |
+| **Gap 1** | `SVDLLMv2Compressor` & `HessianNullSpaceSVDContinuation` | Activation-aware Truncation | **{results["gap_1"]["status"]}** | Naive Err: {results["gap_1"]["err_naive"]:.4f} → SVD-LLM v2: {results["gap_1"]["err_svd2"]:.4f} (+{results["gap_1"]["improvement_pct"]:.2f}% gain) |
+| **Gap 2** | `SVDLinearAttention` | ASVD KV-Cache & Streaming Forward | **{results["gap_2"]["status"]}** | Full vs Streaming Max Diff: {results["gap_2"]["max_diff"]:.6f} (< 0.05 bound) |
+| **Gap 3** | `CompressedTensors` & `FP8 Quantizer` | FP8 e4m3fn Bounding | **{results["gap_3"]["status"]}** | Rel Quantization Error: {results["gap_3"]["rel_quant_error"]:.6f} (< 5%) |
+| **Gap 4** | `NativeSparseAttention` | DSA Learned Block-Sparse Routing | **{results["gap_4"]["status"]}** | Shape Parity: {results["gap_4"]["shape"]}, IsFinite: {results["gap_4"]["is_finite"]} |
+| **Gap 5** | `REAPMoE` & `NeedleInAHaystackEvaluator` | Distributed MoE Pruning & NIAH | **{results["gap_5"]["status"]}** | Experts: {results["gap_5"]["moe_initial_experts"]} → {results["gap_5"]["moe_final_experts"]}, NIAH Depths: {results["gap_5"]["niah_depths"]} |
 
 ---
 

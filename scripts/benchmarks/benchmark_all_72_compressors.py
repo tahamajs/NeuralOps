@@ -26,14 +26,6 @@ if str(repo_root) not in sys.path:
 from neuralops.benchmarks.harness import BenchmarkRunner, save_benchmark_json
 from neuralops.compression import COMPRESSOR_REGISTRY
 
-try:
-    from rich.console import Console
-    from rich.table import Table
-
-    RICH_AVAILABLE = True
-except ImportError:
-    RICH_AVAILABLE = False
-
 
 class TestModel(nn.Module):
     """Transformer block module with attention and FFN for universal compression benchmarking."""

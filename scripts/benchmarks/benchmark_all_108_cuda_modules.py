@@ -188,6 +188,7 @@ def main():
             print(f"{idx:<4} | {mod_name:<28} | {'-':<10} | {'-':<10} | {'-':<9} | {'-':<10} | NO CALLABLE")
             failed += 1
             continue
+        assert callable(fn), f"Dynamically loaded kernel '{entry_name}' in {mod_name} must be callable"
 
         # Look for ref function
         ref_fn = getattr(py_mod, f"{entry_name}_ref", None) or getattr(py_mod, f"{mod_name}_ref", None)

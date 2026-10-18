@@ -19,6 +19,7 @@ assert torch.cuda.is_available(), "CUDA required for GPU benchmark"
 
 def benchmark(fn, warmup=10, iters=50):
     """Execute benchmark routine."""
+    assert callable(fn), "fn must be callable"
     for _ in range(warmup):
         fn()
     torch.cuda.synchronize()

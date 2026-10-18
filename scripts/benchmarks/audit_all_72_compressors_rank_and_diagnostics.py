@@ -11,6 +11,7 @@ from neuralops.core.registry import COMPRESSOR_REGISTRY
 
 class TinyTransformer(nn.Module):
     """Tinytransformer definition."""
+
     def __init__(self, d=64):
         """Execute init routine."""
         super().__init__()

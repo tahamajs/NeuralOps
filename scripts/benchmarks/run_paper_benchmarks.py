@@ -37,7 +37,7 @@ ds_wiki = load_dataset("Salesforce/wikitext", "wikitext-2-raw-v1", split="test")
 text_data = "\n\n".join([t for t in ds_wiki["text"] if t.strip()])
 encodings = tok_gpt2(text_data, return_tensors="pt")
 
-max_eval_tokens = 10240 # 10k tokens for fast, robust evaluation
+max_eval_tokens = 10240  # 10k tokens for fast, robust evaluation
 seq_len = 512
 stride = 512
 
@@ -45,11 +45,11 @@ ppl_results = {}
 for mech in ["baseline", "svd_linear_attention", "gla_attention"]:
     torch.cuda.empty_cache()
     torch.cuda.reset_peak_memory_stats()
-    
+
     m = AutoModelForCausalLM.from_pretrained("/mnt/d/models/gpt2").to(device).eval()
     if mech != "baseline":
         m = replace_attention(m, attention_key=mech)
-        
+
     nlls = []
     t0 = time.perf_counter()
     with torch.no_grad():
@@ -60,13 +60,13 @@ for mech in ["baseline", "svd_linear_attention", "gla_attention"]:
             input_ids = encodings.input_ids[:, begin_loc:end_loc].to(device)
             target_ids = input_ids.clone()
             target_ids[:, :-trg_len] = -100
-            
+
             outputs = m(input_ids, labels=target_ids)
             neg_log_likelihood = outputs.loss * trg_len
             nlls.append(neg_log_likelihood)
             if end_loc >= max_eval_tokens:
                 break
-                
+
     torch.cuda.synchronize()
     eval_time = time.perf_counter() - t0
     ppl = math.exp(torch.stack(nlls).sum() / max_eval_tokens)
@@ -74,7 +74,7 @@ for mech in ["baseline", "svd_linear_attention", "gla_attention"]:
     ppl_results[mech] = {
         "perplexity": round(ppl, 2),
         "eval_time_sec": round(eval_time, 2),
-        "peak_vram_mb": round(peak_vram, 2)
+        "peak_vram_mb": round(peak_vram, 2),
     }
     print(f"GPT-2 | {mech:<22} | PPL: {ppl:8.2f} | Time: {eval_time:5.2f}s | VRAM: {peak_vram:7.2f} MB")
 
@@ -94,46 +94,52 @@ for task in glue_tasks:
     except (RuntimeError, MemoryError, AssertionError, ValueError, OSError) as e:
         logger.warning("Failed to load nyu-mll/glue (%s): %s, falling back to glue", task, e, exc_info=True)
         ds = load_dataset("glue", task, split="validation")
-        
-    eval_samples = 200 # 200 validation items
+
+    eval_samples = 200  # 200 validation items
     sub_ds = ds.select(range(min(len(ds), eval_samples)))
-    
+
     for mech in ["baseline", "svd_linear_attention"]:
         torch.cuda.empty_cache()
         torch.cuda.reset_peak_memory_stats()
-        
+
         m = AutoModelForSequenceClassification.from_pretrained("/mnt/d/models/roberta-base").to(device).eval()
         if mech != "baseline":
             m = replace_attention(m, attention_key=mech)
-            
+
         t0 = time.perf_counter()
         correct = 0
         total = 0
-        
+
         with torch.no_grad():
             for item in sub_ds:
                 if task == "mrpc":
-                    inputs = tok_roberta(item["sentence1"], item["sentence2"], return_tensors="pt", truncation=True, max_length=128).to(device)
+                    inputs = tok_roberta(
+                        item["sentence1"], item["sentence2"], return_tensors="pt", truncation=True, max_length=128
+                    ).to(device)
                 else:
-                    inputs = tok_roberta(item["sentence"], return_tensors="pt", truncation=True, max_length=128).to(device)
-                    
+                    inputs = tok_roberta(item["sentence"], return_tensors="pt", truncation=True, max_length=128).to(
+                        device
+                    )
+
                 lbl = item["label"]
                 out = m(**inputs)
                 pred = torch.argmax(out.logits, dim=-1).item()
                 if pred == lbl:
                     correct += 1
                 total += 1
-                
+
         torch.cuda.synchronize()
-        lat_per_sample = (time.perf_counter() - t0) / total * 1000 # ms
+        lat_per_sample = (time.perf_counter() - t0) / total * 1000  # ms
         acc = correct / total * 100
         peak_vram = torch.cuda.max_memory_allocated() / (1024 * 1024)
         glue_results[task][mech] = {
             "accuracy": round(acc, 2),
             "latency_ms": round(lat_per_sample, 2),
-            "peak_vram_mb": round(peak_vram, 2)
+            "peak_vram_mb": round(peak_vram, 2),
         }
-        print(f"RoBERTa | {task.upper():<5} | {mech:<22} | Acc: {acc:5.2f}% | Latency: {lat_per_sample:5.2f} ms | VRAM: {peak_vram:6.2f} MB")
+        print(
+            f"RoBERTa | {task.upper():<5} | {mech:<22} | Acc: {acc:5.2f}% | Latency: {lat_per_sample:5.2f} ms | VRAM: {peak_vram:6.2f} MB"
+        )
 
 # -------------------------------------------------------------
 # 3. Parameter and FLOPs Complexity Profiling
@@ -159,30 +165,34 @@ csv_rows = []
 
 # Wikitext-2 rows
 for mech, d in ppl_results.items():
-    csv_rows.append({
-        "Model": "GPT-2 (124M)",
-        "Benchmark_Task": "Wikitext-2 (PPL)",
-        "Attention_Mechanism": mech,
-        "Primary_Metric": d["perplexity"],
-        "Metric_Unit": "Perplexity (Lower=Better)",
-        "Latency_ms": d["eval_time_sec"] * 1000 / (max_eval_tokens / seq_len),
-        "Peak_VRAM_MB": d["peak_vram_mb"],
-        "Complexity": "O(N^2)" if mech == "baseline" else "O(N)"
-    })
+    csv_rows.append(
+        {
+            "Model": "GPT-2 (124M)",
+            "Benchmark_Task": "Wikitext-2 (PPL)",
+            "Attention_Mechanism": mech,
+            "Primary_Metric": d["perplexity"],
+            "Metric_Unit": "Perplexity (Lower=Better)",
+            "Latency_ms": d["eval_time_sec"] * 1000 / (max_eval_tokens / seq_len),
+            "Peak_VRAM_MB": d["peak_vram_mb"],
+            "Complexity": "O(N^2)" if mech == "baseline" else "O(N)",
+        }
+    )
 
 # GLUE rows
 for task, mechs in glue_results.items():
     for mech, d in mechs.items():
-        csv_rows.append({
-            "Model": "RoBERTa-base (125M)",
-            "Benchmark_Task": f"GLUE-{task.upper()}",
-            "Attention_Mechanism": mech,
-            "Primary_Metric": d["accuracy"],
-            "Metric_Unit": "Accuracy % (Higher=Better)",
-            "Latency_ms": d["latency_ms"],
-            "Peak_VRAM_MB": d["peak_vram_mb"],
-            "Complexity": "O(N^2)" if mech == "baseline" else "O(N)"
-        })
+        csv_rows.append(
+            {
+                "Model": "RoBERTa-base (125M)",
+                "Benchmark_Task": f"GLUE-{task.upper()}",
+                "Attention_Mechanism": mech,
+                "Primary_Metric": d["accuracy"],
+                "Metric_Unit": "Accuracy % (Higher=Better)",
+                "Latency_ms": d["latency_ms"],
+                "Peak_VRAM_MB": d["peak_vram_mb"],
+                "Complexity": "O(N^2)" if mech == "baseline" else "O(N)",
+            }
+        )
 
 df = pd.DataFrame(csv_rows)
 df.to_csv("/mnt/d/SVD_linear_Attention/docs/benchmarks/paper_benchmarks_model_surgery.csv", index=False)
@@ -191,7 +201,8 @@ print("\nExported /mnt/d/SVD_linear_Attention/docs/benchmarks/paper_benchmarks_m
 # -------------------------------------------------------------
 # 5. Generate Publication LaTeX Deliverable
 # -------------------------------------------------------------
-latex_content = r"""% Publication Benchmark Deliverable: NeuralOps Model Surgery & Attention Replacement
+latex_content = (
+    r"""% Publication Benchmark Deliverable: NeuralOps Model Surgery & Attention Replacement
 % Hardware: NVIDIA GeForce RTX 4070 Laptop GPU (8GB VRAM), CUDA 12.8, PyTorch 2.11.0+cu128
 
 \begin{table*}[t]
@@ -203,12 +214,30 @@ latex_content = r"""% Publication Benchmark Deliverable: NeuralOps Model Surgery
 \toprule
 \textbf{Model Architecture} & \textbf{Attention Mechanism} & \textbf{Complexity} & \textbf{Wikitext-2 PPL} $\downarrow$ & \textbf{GLUE MRPC Acc} $\uparrow$ & \textbf{GLUE SST-2 Acc} $\uparrow$ & \textbf{GLUE CoLA Acc} $\uparrow$ \\
 \midrule
-GPT-2 (124M) & Standard MHA (Baseline) & $\mathcal{O}(N^2)$ & """ + f"{ppl_results['baseline']['perplexity']:.2f}" + r""" & --- & --- & --- \\
-GPT-2 (124M) & SVD Linear Attention & $\mathcal{O}(N)$ & """ + f"{ppl_results['svd_linear_attention']['perplexity']:.2f}" + r""" & --- & --- & --- \\
-GPT-2 (124M) & Chunk GLA (Triton) & $\mathcal{O}(N)$ & """ + f"{ppl_results['gla_attention']['perplexity']:.2f}" + r""" & --- & --- & --- \\
+GPT-2 (124M) & Standard MHA (Baseline) & $\mathcal{O}(N^2)$ & """
+    + f"{ppl_results['baseline']['perplexity']:.2f}"
+    + r""" & --- & --- & --- \\
+GPT-2 (124M) & SVD Linear Attention & $\mathcal{O}(N)$ & """
+    + f"{ppl_results['svd_linear_attention']['perplexity']:.2f}"
+    + r""" & --- & --- & --- \\
+GPT-2 (124M) & Chunk GLA (Triton) & $\mathcal{O}(N)$ & """
+    + f"{ppl_results['gla_attention']['perplexity']:.2f}"
+    + r""" & --- & --- & --- \\
 \midrule
-RoBERTa-base (125M) & Standard MHA (Baseline) & $\mathcal{O}(N^2)$ & --- & """ + f"{glue_results['mrpc']['baseline']['accuracy']:.1f}\\%" + r""" & """ + f"{glue_results['sst2']['baseline']['accuracy']:.1f}\\%" + r""" & """ + f"{glue_results['cola']['baseline']['accuracy']:.1f}\\%" + r""" \\
-RoBERTa-base (125M) & SVD Linear Attention & $\mathcal{O}(N)$ & --- & """ + f"{glue_results['mrpc']['svd_linear_attention']['accuracy']:.1f}\\%" + r""" & """ + f"{glue_results['sst2']['svd_linear_attention']['accuracy']:.1f}\\%" + r""" & """ + f"{glue_results['cola']['svd_linear_attention']['accuracy']:.1f}\\%" + r""" \\
+RoBERTa-base (125M) & Standard MHA (Baseline) & $\mathcal{O}(N^2)$ & --- & """
+    + f"{glue_results['mrpc']['baseline']['accuracy']:.1f}\\%"
+    + r""" & """
+    + f"{glue_results['sst2']['baseline']['accuracy']:.1f}\\%"
+    + r""" & """
+    + f"{glue_results['cola']['baseline']['accuracy']:.1f}\\%"
+    + r""" \\
+RoBERTa-base (125M) & SVD Linear Attention & $\mathcal{O}(N)$ & --- & """
+    + f"{glue_results['mrpc']['svd_linear_attention']['accuracy']:.1f}\\%"
+    + r""" & """
+    + f"{glue_results['sst2']['svd_linear_attention']['accuracy']:.1f}\\%"
+    + r""" & """
+    + f"{glue_results['cola']['svd_linear_attention']['accuracy']:.1f}\\%"
+    + r""" \\
 \bottomrule
 \end{tabular}
 \end{table*}
@@ -228,8 +257,7 @@ $N=4096$ & 30.93 GFLOPs & 4.83 GFLOPs & \textbf{84.4\%} & -100\% (Constant State
 \end{tabular}
 \end{table}
 """
-
-from pathlib import Path
+)
 
 out_dir = Path(__file__).resolve().parent.parent.parent / "docs" / "reports"
 out_dir.mkdir(parents=True, exist_ok=True)

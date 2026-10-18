@@ -54,6 +54,7 @@ def benchmark_fn(
     iters: int = 100,
 ) -> Tuple[float, float]:
     """Measures CUDA kernel execution time (ms) and peak allocated VRAM (MB)."""
+    assert callable(fn), "fn must be callable"
     torch.cuda.synchronize()
     gc.collect()
     torch.cuda.empty_cache()
@@ -135,18 +136,22 @@ def main():
 
     sp_cuda = (lat_py / lat_cuda) if lat_cuda else 1.0
     sp_tri = (lat_py / lat_tri) if lat_tri else 1.0
-    print(f"  PyTorch: {lat_py:.3f} ms | Triton: {lat_tri or 0:.3f} ms ({sp_tri:.2f}x) | CUDA: {lat_cuda or 0:.3f} ms ({sp_cuda:.2f}x)")
+    print(
+        f"  PyTorch: {lat_py:.3f} ms | Triton: {lat_tri or 0:.3f} ms ({sp_tri:.2f}x) | CUDA: {lat_cuda or 0:.3f} ms ({sp_cuda:.2f}x)"
+    )
 
-    results.append({
-        "kernel": "selective_scan",
-        "pytorch_ms": lat_py,
-        "triton_ms": lat_tri,
-        "cuda_ms": lat_cuda,
-        "speedup_cuda_vs_py": sp_cuda,
-        "speedup_cuda_vs_tri": (lat_tri / lat_cuda) if (lat_cuda and lat_tri) else 1.0,
-        "pytorch_vram_mb": vram_py,
-        "cuda_vram_mb": vram_cuda,
-    })
+    results.append(
+        {
+            "kernel": "selective_scan",
+            "pytorch_ms": lat_py,
+            "triton_ms": lat_tri,
+            "cuda_ms": lat_cuda,
+            "speedup_cuda_vs_py": sp_cuda,
+            "speedup_cuda_vs_tri": (lat_tri / lat_cuda) if (lat_cuda and lat_tri) else 1.0,
+            "pytorch_vram_mb": vram_py,
+            "cuda_vram_mb": vram_cuda,
+        }
+    )
 
     # -------------------------------------------------------------------------
     # 2. Sliding Window Attention
@@ -177,18 +182,22 @@ def main():
 
     sp_cuda = (lat_py / lat_cuda) if lat_cuda else 1.0
     sp_tri = (lat_py / lat_tri) if lat_tri else 1.0
-    print(f"  PyTorch: {lat_py:.3f} ms | Triton: {lat_tri or 0:.3f} ms ({sp_tri:.2f}x) | CUDA: {lat_cuda or 0:.3f} ms ({sp_cuda:.2f}x)")
+    print(
+        f"  PyTorch: {lat_py:.3f} ms | Triton: {lat_tri or 0:.3f} ms ({sp_tri:.2f}x) | CUDA: {lat_cuda or 0:.3f} ms ({sp_cuda:.2f}x)"
+    )
 
-    results.append({
-        "kernel": "sliding_window_attn",
-        "pytorch_ms": lat_py,
-        "triton_ms": lat_tri,
-        "cuda_ms": lat_cuda,
-        "speedup_cuda_vs_py": sp_cuda,
-        "speedup_cuda_vs_tri": (lat_tri / lat_cuda) if (lat_cuda and lat_tri) else 1.0,
-        "pytorch_vram_mb": vram_py,
-        "cuda_vram_mb": vram_cuda,
-    })
+    results.append(
+        {
+            "kernel": "sliding_window_attn",
+            "pytorch_ms": lat_py,
+            "triton_ms": lat_tri,
+            "cuda_ms": lat_cuda,
+            "speedup_cuda_vs_py": sp_cuda,
+            "speedup_cuda_vs_tri": (lat_tri / lat_cuda) if (lat_cuda and lat_tri) else 1.0,
+            "pytorch_vram_mb": vram_py,
+            "cuda_vram_mb": vram_cuda,
+        }
+    )
 
     # -------------------------------------------------------------------------
     # 3. Block Sparse Attention
@@ -199,7 +208,7 @@ def main():
     num_blocks = N // block_size
     mask = torch.eye(num_blocks, device=device, dtype=torch.bool)
     for i in range(num_blocks):
-        mask[i, max(0, i - 1):min(num_blocks, i + 2)] = True
+        mask[i, max(0, i - 1) : min(num_blocks, i + 2)] = True
 
     fn_bs = lambda: block_sparse_attn(q, k, v, block_mask=mask, block_size=block_size)
     with force_kernel_backend("pytorch"):
@@ -221,18 +230,22 @@ def main():
 
     sp_cuda = (lat_py / lat_cuda) if lat_cuda else 1.0
     sp_tri = (lat_py / lat_tri) if lat_tri else 1.0
-    print(f"  PyTorch: {lat_py:.3f} ms | Triton: {lat_tri or 0:.3f} ms ({sp_tri:.2f}x) | CUDA: {lat_cuda or 0:.3f} ms ({sp_cuda:.2f}x)")
+    print(
+        f"  PyTorch: {lat_py:.3f} ms | Triton: {lat_tri or 0:.3f} ms ({sp_tri:.2f}x) | CUDA: {lat_cuda or 0:.3f} ms ({sp_cuda:.2f}x)"
+    )
 
-    results.append({
-        "kernel": "block_sparse_attn",
-        "pytorch_ms": lat_py,
-        "triton_ms": lat_tri,
-        "cuda_ms": lat_cuda,
-        "speedup_cuda_vs_py": sp_cuda,
-        "speedup_cuda_vs_tri": (lat_tri / lat_cuda) if (lat_cuda and lat_tri) else 1.0,
-        "pytorch_vram_mb": vram_py,
-        "cuda_vram_mb": vram_cuda,
-    })
+    results.append(
+        {
+            "kernel": "block_sparse_attn",
+            "pytorch_ms": lat_py,
+            "triton_ms": lat_tri,
+            "cuda_ms": lat_cuda,
+            "speedup_cuda_vs_py": sp_cuda,
+            "speedup_cuda_vs_tri": (lat_tri / lat_cuda) if (lat_cuda and lat_tri) else 1.0,
+            "pytorch_vram_mb": vram_py,
+            "cuda_vram_mb": vram_cuda,
+        }
+    )
 
     # -------------------------------------------------------------------------
     # 4. W4A16 Quantized GEMM
@@ -259,16 +272,18 @@ def main():
     sp_cuda = (lat_py / lat_cuda) if lat_cuda else 1.0
     print(f"  PyTorch: {lat_py:.3f} ms | CUDA: {lat_cuda or 0:.3f} ms ({sp_cuda:.2f}x)")
 
-    results.append({
-        "kernel": "w4a16_gemm",
-        "pytorch_ms": lat_py,
-        "triton_ms": None,
-        "cuda_ms": lat_cuda,
-        "speedup_cuda_vs_py": sp_cuda,
-        "speedup_cuda_vs_tri": 1.0,
-        "pytorch_vram_mb": vram_py,
-        "cuda_vram_mb": vram_cuda,
-    })
+    results.append(
+        {
+            "kernel": "w4a16_gemm",
+            "pytorch_ms": lat_py,
+            "triton_ms": None,
+            "cuda_ms": lat_cuda,
+            "speedup_cuda_vs_py": sp_cuda,
+            "speedup_cuda_vs_tri": 1.0,
+            "pytorch_vram_mb": vram_py,
+            "cuda_vram_mb": vram_cuda,
+        }
+    )
 
     # -------------------------------------------------------------------------
     # 5. FP8 Scaled GEMM
@@ -300,18 +315,22 @@ def main():
 
     sp_cuda = (lat_py / lat_cuda) if lat_cuda else 1.0
     sp_tri = (lat_py / lat_tri) if lat_tri else 1.0
-    print(f"  PyTorch: {lat_py:.3f} ms | Triton: {lat_tri or 0:.3f} ms ({sp_tri:.2f}x) | CUDA: {lat_cuda or 0:.3f} ms ({sp_cuda:.2f}x)")
+    print(
+        f"  PyTorch: {lat_py:.3f} ms | Triton: {lat_tri or 0:.3f} ms ({sp_tri:.2f}x) | CUDA: {lat_cuda or 0:.3f} ms ({sp_cuda:.2f}x)"
+    )
 
-    results.append({
-        "kernel": "fp8_gemm",
-        "pytorch_ms": lat_py,
-        "triton_ms": lat_tri,
-        "cuda_ms": lat_cuda,
-        "speedup_cuda_vs_py": sp_cuda,
-        "speedup_cuda_vs_tri": (lat_tri / lat_cuda) if (lat_cuda and lat_tri) else 1.0,
-        "pytorch_vram_mb": vram_py,
-        "cuda_vram_mb": vram_cuda,
-    })
+    results.append(
+        {
+            "kernel": "fp8_gemm",
+            "pytorch_ms": lat_py,
+            "triton_ms": lat_tri,
+            "cuda_ms": lat_cuda,
+            "speedup_cuda_vs_py": sp_cuda,
+            "speedup_cuda_vs_tri": (lat_tri / lat_cuda) if (lat_cuda and lat_tri) else 1.0,
+            "pytorch_vram_mb": vram_py,
+            "cuda_vram_mb": vram_cuda,
+        }
+    )
 
     # -------------------------------------------------------------------------
     # 6. Flash GQA
@@ -343,18 +362,22 @@ def main():
 
     sp_cuda = (lat_py / lat_cuda) if lat_cuda else 1.0
     sp_tri = (lat_py / lat_tri) if lat_tri else 1.0
-    print(f"  PyTorch: {lat_py:.3f} ms | Triton: {lat_tri or 0:.3f} ms ({sp_tri:.2f}x) | CUDA: {lat_cuda or 0:.3f} ms ({sp_cuda:.2f}x)")
+    print(
+        f"  PyTorch: {lat_py:.3f} ms | Triton: {lat_tri or 0:.3f} ms ({sp_tri:.2f}x) | CUDA: {lat_cuda or 0:.3f} ms ({sp_cuda:.2f}x)"
+    )
 
-    results.append({
-        "kernel": "flash_gqa",
-        "pytorch_ms": lat_py,
-        "triton_ms": lat_tri,
-        "cuda_ms": lat_cuda,
-        "speedup_cuda_vs_py": sp_cuda,
-        "speedup_cuda_vs_tri": (lat_tri / lat_cuda) if (lat_cuda and lat_tri) else 1.0,
-        "pytorch_vram_mb": vram_py,
-        "cuda_vram_mb": vram_cuda,
-    })
+    results.append(
+        {
+            "kernel": "flash_gqa",
+            "pytorch_ms": lat_py,
+            "triton_ms": lat_tri,
+            "cuda_ms": lat_cuda,
+            "speedup_cuda_vs_py": sp_cuda,
+            "speedup_cuda_vs_tri": (lat_tri / lat_cuda) if (lat_cuda and lat_tri) else 1.0,
+            "pytorch_vram_mb": vram_py,
+            "cuda_vram_mb": vram_cuda,
+        }
+    )
 
     # -------------------------------------------------------------------------
     # 7. Paged Attention
@@ -386,16 +409,18 @@ def main():
     sp_cuda = (lat_py / lat_cuda) if lat_cuda else 1.0
     print(f"  PyTorch: {lat_py:.3f} ms | CUDA: {lat_cuda or 0:.3f} ms ({sp_cuda:.2f}x)")
 
-    results.append({
-        "kernel": "paged_attention",
-        "pytorch_ms": lat_py,
-        "triton_ms": None,
-        "cuda_ms": lat_cuda,
-        "speedup_cuda_vs_py": sp_cuda,
-        "speedup_cuda_vs_tri": 1.0,
-        "pytorch_vram_mb": vram_py,
-        "cuda_vram_mb": vram_cuda,
-    })
+    results.append(
+        {
+            "kernel": "paged_attention",
+            "pytorch_ms": lat_py,
+            "triton_ms": None,
+            "cuda_ms": lat_cuda,
+            "speedup_cuda_vs_py": sp_cuda,
+            "speedup_cuda_vs_tri": 1.0,
+            "pytorch_vram_mb": vram_py,
+            "cuda_vram_mb": vram_cuda,
+        }
+    )
 
     # -------------------------------------------------------------------------
     # 8. MoE Routing
@@ -426,16 +451,18 @@ def main():
     sp_cuda = (lat_py / lat_cuda) if lat_cuda else 1.0
     print(f"  PyTorch: {lat_py:.3f} ms | CUDA: {lat_cuda or 0:.3f} ms ({sp_cuda:.2f}x)")
 
-    results.append({
-        "kernel": "moe_routing",
-        "pytorch_ms": lat_py,
-        "triton_ms": None,
-        "cuda_ms": lat_cuda,
-        "speedup_cuda_vs_py": sp_cuda,
-        "speedup_cuda_vs_tri": 1.0,
-        "pytorch_vram_mb": vram_py,
-        "cuda_vram_mb": vram_cuda,
-    })
+    results.append(
+        {
+            "kernel": "moe_routing",
+            "pytorch_ms": lat_py,
+            "triton_ms": None,
+            "cuda_ms": lat_cuda,
+            "speedup_cuda_vs_py": sp_cuda,
+            "speedup_cuda_vs_tri": 1.0,
+            "pytorch_vram_mb": vram_py,
+            "cuda_vram_mb": vram_cuda,
+        }
+    )
 
     # -------------------------------------------------------------------------
     # 9. Fused Low-Rank Gated GEMM
@@ -466,17 +493,21 @@ def main():
 
     sp_cuda = (lat_py / lat_cuda) if lat_cuda else 1.0
     sp_tri = (lat_py / lat_tri) if lat_tri else 1.0
-    print(f"  PyTorch: {lat_py:.3f} ms | Triton: {lat_tri or 0:.3f} ms ({sp_tri:.2f}x) | CUDA: {lat_cuda or 0:.3f} ms ({sp_cuda:.2f}x)")
-    results.append({
-        "kernel": "fused_lowrank_gated_gemm",
-        "pytorch_ms": lat_py,
-        "triton_ms": lat_tri,
-        "cuda_ms": lat_cuda,
-        "speedup_cuda_vs_py": sp_cuda,
-        "speedup_cuda_vs_tri": (lat_tri / lat_cuda) if (lat_cuda and lat_tri) else 1.0,
-        "pytorch_vram_mb": vram_py,
-        "cuda_vram_mb": vram_cuda,
-    })
+    print(
+        f"  PyTorch: {lat_py:.3f} ms | Triton: {lat_tri or 0:.3f} ms ({sp_tri:.2f}x) | CUDA: {lat_cuda or 0:.3f} ms ({sp_cuda:.2f}x)"
+    )
+    results.append(
+        {
+            "kernel": "fused_lowrank_gated_gemm",
+            "pytorch_ms": lat_py,
+            "triton_ms": lat_tri,
+            "cuda_ms": lat_cuda,
+            "speedup_cuda_vs_py": sp_cuda,
+            "speedup_cuda_vs_tri": (lat_tri / lat_cuda) if (lat_cuda and lat_tri) else 1.0,
+            "pytorch_vram_mb": vram_py,
+            "cuda_vram_mb": vram_cuda,
+        }
+    )
 
     # -------------------------------------------------------------------------
     # 10. Chunked Delta-Gate Recurrent Scan
@@ -507,17 +538,21 @@ def main():
 
     sp_cuda = (lat_py / lat_cuda) if lat_cuda else 1.0
     sp_tri = (lat_py / lat_tri) if lat_tri else 1.0
-    print(f"  PyTorch: {lat_py:.3f} ms | Triton: {lat_tri or 0:.3f} ms ({sp_tri:.2f}x) | CUDA: {lat_cuda or 0:.3f} ms ({sp_cuda:.2f}x)")
-    results.append({
-        "kernel": "chunked_delta_gate_scan",
-        "pytorch_ms": lat_py,
-        "triton_ms": lat_tri,
-        "cuda_ms": lat_cuda,
-        "speedup_cuda_vs_py": sp_cuda,
-        "speedup_cuda_vs_tri": (lat_tri / lat_cuda) if (lat_cuda and lat_tri) else 1.0,
-        "pytorch_vram_mb": vram_py,
-        "cuda_vram_mb": vram_cuda,
-    })
+    print(
+        f"  PyTorch: {lat_py:.3f} ms | Triton: {lat_tri or 0:.3f} ms ({sp_tri:.2f}x) | CUDA: {lat_cuda or 0:.3f} ms ({sp_cuda:.2f}x)"
+    )
+    results.append(
+        {
+            "kernel": "chunked_delta_gate_scan",
+            "pytorch_ms": lat_py,
+            "triton_ms": lat_tri,
+            "cuda_ms": lat_cuda,
+            "speedup_cuda_vs_py": sp_cuda,
+            "speedup_cuda_vs_tri": (lat_tri / lat_cuda) if (lat_cuda and lat_tri) else 1.0,
+            "pytorch_vram_mb": vram_py,
+            "cuda_vram_mb": vram_cuda,
+        }
+    )
 
     # -------------------------------------------------------------------------
     # 11. HGRN2 Bidirectional Recurrent Scan
@@ -545,17 +580,21 @@ def main():
 
     sp_cuda = (lat_py / lat_cuda) if lat_cuda else 1.0
     sp_tri = (lat_py / lat_tri) if lat_tri else 1.0
-    print(f"  PyTorch: {lat_py:.3f} ms | Triton: {lat_tri or 0:.3f} ms ({sp_tri:.2f}x) | CUDA: {lat_cuda or 0:.3f} ms ({sp_cuda:.2f}x)")
-    results.append({
-        "kernel": "hgrn2_fused_bwd_scan",
-        "pytorch_ms": lat_py,
-        "triton_ms": lat_tri,
-        "cuda_ms": lat_cuda,
-        "speedup_cuda_vs_py": sp_cuda,
-        "speedup_cuda_vs_tri": (lat_tri / lat_cuda) if (lat_cuda and lat_tri) else 1.0,
-        "pytorch_vram_mb": vram_py,
-        "cuda_vram_mb": vram_cuda,
-    })
+    print(
+        f"  PyTorch: {lat_py:.3f} ms | Triton: {lat_tri or 0:.3f} ms ({sp_tri:.2f}x) | CUDA: {lat_cuda or 0:.3f} ms ({sp_cuda:.2f}x)"
+    )
+    results.append(
+        {
+            "kernel": "hgrn2_fused_bwd_scan",
+            "pytorch_ms": lat_py,
+            "triton_ms": lat_tri,
+            "cuda_ms": lat_cuda,
+            "speedup_cuda_vs_py": sp_cuda,
+            "speedup_cuda_vs_tri": (lat_tri / lat_cuda) if (lat_cuda and lat_tri) else 1.0,
+            "pytorch_vram_mb": vram_py,
+            "cuda_vram_mb": vram_cuda,
+        }
+    )
 
     # -------------------------------------------------------------------------
     # 12. Cosformer Linear Attention
@@ -584,17 +623,21 @@ def main():
 
     sp_cuda = (lat_py / lat_cuda) if lat_cuda else 1.0
     sp_tri = (lat_py / lat_tri) if lat_tri else 1.0
-    print(f"  PyTorch: {lat_py:.3f} ms | Triton: {lat_tri or 0:.3f} ms ({sp_tri:.2f}x) | CUDA: {lat_cuda or 0:.3f} ms ({sp_cuda:.2f}x)")
-    results.append({
-        "kernel": "cosformer_linear_attention",
-        "pytorch_ms": lat_py,
-        "triton_ms": lat_tri,
-        "cuda_ms": lat_cuda,
-        "speedup_cuda_vs_py": sp_cuda,
-        "speedup_cuda_vs_tri": (lat_tri / lat_cuda) if (lat_cuda and lat_tri) else 1.0,
-        "pytorch_vram_mb": vram_py,
-        "cuda_vram_mb": vram_cuda,
-    })
+    print(
+        f"  PyTorch: {lat_py:.3f} ms | Triton: {lat_tri or 0:.3f} ms ({sp_tri:.2f}x) | CUDA: {lat_cuda or 0:.3f} ms ({sp_cuda:.2f}x)"
+    )
+    results.append(
+        {
+            "kernel": "cosformer_linear_attention",
+            "pytorch_ms": lat_py,
+            "triton_ms": lat_tri,
+            "cuda_ms": lat_cuda,
+            "speedup_cuda_vs_py": sp_cuda,
+            "speedup_cuda_vs_tri": (lat_tri / lat_cuda) if (lat_cuda and lat_tri) else 1.0,
+            "pytorch_vram_mb": vram_py,
+            "cuda_vram_mb": vram_cuda,
+        }
+    )
 
     # -------------------------------------------------------------------------
     # 13. Fused Norm Linear
@@ -623,17 +666,21 @@ def main():
 
     sp_cuda = (lat_py / lat_cuda) if lat_cuda else 1.0
     sp_tri = (lat_py / lat_tri) if lat_tri else 1.0
-    print(f"  PyTorch: {lat_py:.3f} ms | Triton: {lat_tri or 0:.3f} ms ({sp_tri:.2f}x) | CUDA: {lat_cuda or 0:.3f} ms ({sp_cuda:.2f}x)")
-    results.append({
-        "kernel": "fused_norm_linear",
-        "pytorch_ms": lat_py,
-        "triton_ms": lat_tri,
-        "cuda_ms": lat_cuda,
-        "speedup_cuda_vs_py": sp_cuda,
-        "speedup_cuda_vs_tri": (lat_tri / lat_cuda) if (lat_cuda and lat_tri) else 1.0,
-        "pytorch_vram_mb": vram_py,
-        "cuda_vram_mb": vram_cuda,
-    })
+    print(
+        f"  PyTorch: {lat_py:.3f} ms | Triton: {lat_tri or 0:.3f} ms ({sp_tri:.2f}x) | CUDA: {lat_cuda or 0:.3f} ms ({sp_cuda:.2f}x)"
+    )
+    results.append(
+        {
+            "kernel": "fused_norm_linear",
+            "pytorch_ms": lat_py,
+            "triton_ms": lat_tri,
+            "cuda_ms": lat_cuda,
+            "speedup_cuda_vs_py": sp_cuda,
+            "speedup_cuda_vs_tri": (lat_tri / lat_cuda) if (lat_cuda and lat_tri) else 1.0,
+            "pytorch_vram_mb": vram_py,
+            "cuda_vram_mb": vram_cuda,
+        }
+    )
 
     # -------------------------------------------------------------------------
     # 14. Fused RoPE
@@ -663,17 +710,21 @@ def main():
 
     sp_cuda = (lat_py / lat_cuda) if lat_cuda else 1.0
     sp_tri = (lat_py / lat_tri) if lat_tri else 1.0
-    print(f"  PyTorch: {lat_py:.3f} ms | Triton: {lat_tri or 0:.3f} ms ({sp_tri:.2f}x) | CUDA: {lat_cuda or 0:.3f} ms ({sp_cuda:.2f}x)")
-    results.append({
-        "kernel": "fused_rotary_emb",
-        "pytorch_ms": lat_py,
-        "triton_ms": lat_tri,
-        "cuda_ms": lat_cuda,
-        "speedup_cuda_vs_py": sp_cuda,
-        "speedup_cuda_vs_tri": (lat_tri / lat_cuda) if (lat_cuda and lat_tri) else 1.0,
-        "pytorch_vram_mb": vram_py,
-        "cuda_vram_mb": vram_cuda,
-    })
+    print(
+        f"  PyTorch: {lat_py:.3f} ms | Triton: {lat_tri or 0:.3f} ms ({sp_tri:.2f}x) | CUDA: {lat_cuda or 0:.3f} ms ({sp_cuda:.2f}x)"
+    )
+    results.append(
+        {
+            "kernel": "fused_rotary_emb",
+            "pytorch_ms": lat_py,
+            "triton_ms": lat_tri,
+            "cuda_ms": lat_cuda,
+            "speedup_cuda_vs_py": sp_cuda,
+            "speedup_cuda_vs_tri": (lat_tri / lat_cuda) if (lat_cuda and lat_tri) else 1.0,
+            "pytorch_vram_mb": vram_py,
+            "cuda_vram_mb": vram_cuda,
+        }
+    )
 
     # -------------------------------------------------------------------------
     # 15. Kronecker Matmul
@@ -703,17 +754,21 @@ def main():
 
     sp_cuda = (lat_py / lat_cuda) if lat_cuda else 1.0
     sp_tri = (lat_py / lat_tri) if lat_tri else 1.0
-    print(f"  PyTorch: {lat_py:.3f} ms | Triton: {lat_tri or 0:.3f} ms ({sp_tri:.2f}x) | CUDA: {lat_cuda or 0:.3f} ms ({sp_cuda:.2f}x)")
-    results.append({
-        "kernel": "kronecker_matmul",
-        "pytorch_ms": lat_py,
-        "triton_ms": lat_tri,
-        "cuda_ms": lat_cuda,
-        "speedup_cuda_vs_py": sp_cuda,
-        "speedup_cuda_vs_tri": (lat_tri / lat_cuda) if (lat_cuda and lat_tri) else 1.0,
-        "pytorch_vram_mb": vram_py,
-        "cuda_vram_mb": vram_cuda,
-    })
+    print(
+        f"  PyTorch: {lat_py:.3f} ms | Triton: {lat_tri or 0:.3f} ms ({sp_tri:.2f}x) | CUDA: {lat_cuda or 0:.3f} ms ({sp_cuda:.2f}x)"
+    )
+    results.append(
+        {
+            "kernel": "kronecker_matmul",
+            "pytorch_ms": lat_py,
+            "triton_ms": lat_tri,
+            "cuda_ms": lat_cuda,
+            "speedup_cuda_vs_py": sp_cuda,
+            "speedup_cuda_vs_tri": (lat_tri / lat_cuda) if (lat_cuda and lat_tri) else 1.0,
+            "pytorch_vram_mb": vram_py,
+            "cuda_vram_mb": vram_cuda,
+        }
+    )
 
     # -------------------------------------------------------------------------
     # 16. In-Register LUT Codebook Dequantization GEMM
@@ -745,17 +800,21 @@ def main():
 
     sp_cuda = (lat_py / lat_cuda) if lat_cuda else 1.0
     sp_tri = (lat_py / lat_tri) if lat_tri else 1.0
-    print(f"  PyTorch: {lat_py:.3f} ms | Triton: {lat_tri or 0:.3f} ms ({sp_tri:.2f}x) | CUDA: {lat_cuda or 0:.3f} ms ({sp_cuda:.2f}x)")
-    results.append({
-        "kernel": "lut_codebook_dequant_gemm",
-        "pytorch_ms": lat_py,
-        "triton_ms": lat_tri,
-        "cuda_ms": lat_cuda,
-        "speedup_cuda_vs_py": sp_cuda,
-        "speedup_cuda_vs_tri": (lat_tri / lat_cuda) if (lat_cuda and lat_tri) else 1.0,
-        "pytorch_vram_mb": vram_py,
-        "cuda_vram_mb": vram_cuda,
-    })
+    print(
+        f"  PyTorch: {lat_py:.3f} ms | Triton: {lat_tri or 0:.3f} ms ({sp_tri:.2f}x) | CUDA: {lat_cuda or 0:.3f} ms ({sp_cuda:.2f}x)"
+    )
+    results.append(
+        {
+            "kernel": "lut_codebook_dequant_gemm",
+            "pytorch_ms": lat_py,
+            "triton_ms": lat_tri,
+            "cuda_ms": lat_cuda,
+            "speedup_cuda_vs_py": sp_cuda,
+            "speedup_cuda_vs_tri": (lat_tri / lat_cuda) if (lat_cuda and lat_tri) else 1.0,
+            "pytorch_vram_mb": vram_py,
+            "cuda_vram_mb": vram_cuda,
+        }
+    )
 
     # -------------------------------------------------------------------------
     # 17. Causal Linear Attention
@@ -784,17 +843,21 @@ def main():
 
     sp_cuda = (lat_py / lat_cuda) if lat_cuda else 1.0
     sp_tri = (lat_py / lat_tri) if lat_tri else 1.0
-    print(f"  PyTorch: {lat_py:.3f} ms | Triton: {lat_tri or 0:.3f} ms ({sp_tri:.2f}x) | CUDA: {lat_cuda or 0:.3f} ms ({sp_cuda:.2f}x)")
-    results.append({
-        "kernel": "linear_attention",
-        "pytorch_ms": lat_py,
-        "triton_ms": lat_tri,
-        "cuda_ms": lat_cuda,
-        "speedup_cuda_vs_py": sp_cuda,
-        "speedup_cuda_vs_tri": (lat_tri / lat_cuda) if (lat_cuda and lat_tri) else 1.0,
-        "pytorch_vram_mb": vram_py,
-        "cuda_vram_mb": vram_cuda,
-    })
+    print(
+        f"  PyTorch: {lat_py:.3f} ms | Triton: {lat_tri or 0:.3f} ms ({sp_tri:.2f}x) | CUDA: {lat_cuda or 0:.3f} ms ({sp_cuda:.2f}x)"
+    )
+    results.append(
+        {
+            "kernel": "linear_attention",
+            "pytorch_ms": lat_py,
+            "triton_ms": lat_tri,
+            "cuda_ms": lat_cuda,
+            "speedup_cuda_vs_py": sp_cuda,
+            "speedup_cuda_vs_tri": (lat_tri / lat_cuda) if (lat_cuda and lat_tri) else 1.0,
+            "pytorch_vram_mb": vram_py,
+            "cuda_vram_mb": vram_cuda,
+        }
+    )
 
     # -------------------------------------------------------------------------
     # 18. Fused Cross-Entropy Loss
@@ -822,18 +885,22 @@ def main():
 
     sp_cuda = (lat_py / lat_cuda) if lat_cuda else 1.0
     sp_tri = (lat_py / lat_tri) if lat_tri else 1.0
-    print(f"  PyTorch: {lat_py:.3f} ms | Triton: {lat_tri or 0:.3f} ms ({sp_tri:.2f}x) | CUDA: {lat_cuda or 0:.3f} ms ({sp_cuda:.2f}x)")
-    results.append({
-        "kernel": "fused_cross_entropy",
-        "pytorch_ms": lat_py,
-        "triton_ms": lat_tri,
-        "cuda_ms": lat_cuda,
-        "speedup_cuda_vs_py": sp_cuda,
-        "speedup_cuda_vs_tri": (lat_tri / lat_cuda) if (lat_cuda and lat_tri) else 1.0,
-        "pytorch_vram_mb": vram_py,
-        "triton_vram_mb": vram_tri,
-        "cuda_vram_mb": vram_cuda,
-    })
+    print(
+        f"  PyTorch: {lat_py:.3f} ms | Triton: {lat_tri or 0:.3f} ms ({sp_tri:.2f}x) | CUDA: {lat_cuda or 0:.3f} ms ({sp_cuda:.2f}x)"
+    )
+    results.append(
+        {
+            "kernel": "fused_cross_entropy",
+            "pytorch_ms": lat_py,
+            "triton_ms": lat_tri,
+            "cuda_ms": lat_cuda,
+            "speedup_cuda_vs_py": sp_cuda,
+            "speedup_cuda_vs_tri": (lat_tri / lat_cuda) if (lat_cuda and lat_tri) else 1.0,
+            "pytorch_vram_mb": vram_py,
+            "triton_vram_mb": vram_tri,
+            "cuda_vram_mb": vram_cuda,
+        }
+    )
 
     # Save to JSON, CSV, MD
     os.makedirs("results", exist_ok=True)
@@ -852,12 +919,16 @@ def main():
     with open(md_path, "w", encoding="utf-8") as f:
         f.write("# 🚀 3-Level Execution Hierarchy Benchmark: Native CUDA C++ vs. Triton JIT vs. PyTorch\n\n")
         f.write(f"**Device:** {gpu_name} (SM {torch.cuda.get_device_capability(0)})\n\n")
-        f.write("| Kernel Operator | PyTorch Ref (ms) | Triton JIT (ms) | CUDA C++ (ms) | Speedup (CUDA vs. Py) | Speedup (CUDA vs. Triton) |\n")
+        f.write(
+            "| Kernel Operator | PyTorch Ref (ms) | Triton JIT (ms) | CUDA C++ (ms) | Speedup (CUDA vs. Py) | Speedup (CUDA vs. Triton) |\n"
+        )
         f.write("|:---|:---:|:---:|:---:|:---:|:---:|\n")
         for r in results:
-            tri_str = f"{r['triton_ms']:.3f}" if r['triton_ms'] else "N/A"
-            cuda_str = f"{r['cuda_ms']:.3f}" if r['cuda_ms'] else "N/A"
-            f.write(f"| `{r['kernel']}` | {r['pytorch_ms']:.3f} | {tri_str} | {cuda_str} | **{r['speedup_cuda_vs_py']:.2f}x** | {r['speedup_cuda_vs_tri']:.2f}x |\n")
+            tri_str = f"{r['triton_ms']:.3f}" if r["triton_ms"] else "N/A"
+            cuda_str = f"{r['cuda_ms']:.3f}" if r["cuda_ms"] else "N/A"
+            f.write(
+                f"| `{r['kernel']}` | {r['pytorch_ms']:.3f} | {tri_str} | {cuda_str} | **{r['speedup_cuda_vs_py']:.2f}x** | {r['speedup_cuda_vs_tri']:.2f}x |\n"
+            )
 
     print("\n" + "=" * 80)
     print(f"BENCHMARK SAVED TO {json_path}, {csv_path}, AND {md_path}")

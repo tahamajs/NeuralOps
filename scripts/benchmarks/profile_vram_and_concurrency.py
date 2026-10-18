@@ -21,6 +21,7 @@ from neuralops.attentions import (
 
 class DummyConfig:
     """Dummyconfig definition."""
+
     hidden_size = 768
     num_attention_heads = 12
     num_heads = 12

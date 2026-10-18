@@ -712,16 +712,19 @@ We benchmark wall-clock execution time on the physical GPU across uncompressed a
 
     cells.append(
         code_cell(r"""# Cell 7: Wall-Clock GPU Latency Benchmark across SVD Ranks
-torch.cuda.synchronize() if torch.cuda.is_available() else None
+if torch.cuda.is_available():
+    torch.cuda.synchronize()
 bench_x = torch.randn(16, 128, 768, device=device, dtype=torch.float16)
 W_fp16 = W_trained.half()
 
 # Uncompressed
 for _ in range(10): _ = F.linear(bench_x, W_fp16)
-torch.cuda.synchronize() if torch.cuda.is_available() else None
+if torch.cuda.is_available():
+    torch.cuda.synchronize()
 t0 = time.perf_counter()
 for _ in range(50): _ = F.linear(bench_x, W_fp16)
-torch.cuda.synchronize() if torch.cuda.is_available() else None
+if torch.cuda.is_available():
+    torch.cuda.synchronize()
 t_orig_ms = (time.perf_counter() - t0) / 50 * 1000.0
 
 svd_latencies = []
@@ -731,10 +734,12 @@ for r_eval in [32, 64, 128]:
     Vh_sub = Vh[:r_eval, :].half()
     W_sub = U_sub @ S_sub @ Vh_sub
     for _ in range(10): _ = F.linear(bench_x, W_sub)
-    torch.cuda.synchronize() if torch.cuda.is_available() else None
+    if torch.cuda.is_available():
+        torch.cuda.synchronize()
     t0 = time.perf_counter()
     for _ in range(50): _ = F.linear(bench_x, W_sub)
-    torch.cuda.synchronize() if torch.cuda.is_available() else None
+    if torch.cuda.is_available():
+        torch.cuda.synchronize()
     t_ms = (time.perf_counter() - t0) / 50 * 1000.0
     svd_latencies.append({
         "Rank": r_eval,

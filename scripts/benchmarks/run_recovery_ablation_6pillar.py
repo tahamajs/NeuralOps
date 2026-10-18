@@ -43,7 +43,9 @@ from neuralops.trainer.distillation.multi_level_kd import (
 from neuralops.trainer.peft_recovery.svd_adapters import inject_pissa_adapters
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print(f"[6-Pillar Ablation] Running on device: {device} ({torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU'})")
+print(
+    f"[6-Pillar Ablation] Running on device: {device} ({torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU'})"
+)
 
 torch.manual_seed(42)
 cfg = GPT2Config(n_layer=4, n_embd=256, n_head=4, vocab_size=50257)
@@ -79,11 +81,12 @@ regimes = [
     ("regime_5", "Regime 5: 6-Pillar Suite (50 steps)"),
 ]
 
+
 def build_student(arch_key: str):
     """Execute build student routine."""
     s = GPT2LMHeadModel(cfg).to(device)
     s.load_state_dict(teacher.state_dict())
-    
+
     if arch_key == "cosformer_aasvd":
         replace_attention(s, attention="cosformer", copy_weights=True, window_size=0)
         for m in s.modules():
@@ -98,8 +101,9 @@ def build_student(arch_key: str):
             if hasattr(m, "fusion_scale"):
                 m.fusion_scale.data.fill_(1.0)
         set_surgery_alpha(s, 1.0)
-    
+
     return s
+
 
 def evaluate_metrics(model):
     """Execute evaluate metrics routine."""
@@ -108,12 +112,16 @@ def evaluate_metrics(model):
     with torch.no_grad():
         s_logits = model(inputs).logits
         cos = F.cosine_similarity(s_logits.view(-1, 50257), t_logits.view(-1, 50257), dim=-1).mean().item()
-        kl = F.kl_div(
-            F.log_softmax(s_logits / 2.0, dim=-1),
-            F.softmax(t_logits / 2.0, dim=-1),
-            reduction="batchmean",
-        ).item() * 4.0
+        kl = (
+            F.kl_div(
+                F.log_softmax(s_logits / 2.0, dim=-1),
+                F.softmax(t_logits / 2.0, dim=-1),
+                reduction="batchmean",
+            ).item()
+            * 4.0
+        )
     return cos, kl
+
 
 results = []
 
@@ -124,29 +132,31 @@ for arch_key, arch_label in architectures:
 
     for regime_key, regime_label in regimes:
         student = build_student(arch_key)
-        
+
         # Zero-shot evaluation
         if regime_key == "regime_0":
             cos, kl = evaluate_metrics(student)
             vram = torch.cuda.max_memory_allocated(device) / (1024 * 1024) if torch.cuda.is_available() else 0.0
             t_wall = 0.0
             print(f"  [{regime_label}] Cos={cos:.4f}, KL={kl:.4f}, VRAM={vram:.1f}MB, Time={t_wall:.2f}s")
-            results.append({
-                "architecture": arch_key,
-                "arch_label": arch_label,
-                "regime": regime_key,
-                "regime_label": regime_label,
-                "cosine_sim": round(cos, 4),
-                "kl_div": round(kl, 4),
-                "peak_vram_mb": round(vram, 1),
-                "time_sec": round(t_wall, 2),
-            })
+            results.append(
+                {
+                    "architecture": arch_key,
+                    "arch_label": arch_label,
+                    "regime": regime_key,
+                    "regime_label": regime_label,
+                    "cosine_sim": round(cos, 4),
+                    "kl_div": round(kl, 4),
+                    "peak_vram_mb": round(vram, 1),
+                    "time_sec": round(t_wall, 2),
+                }
+            )
             continue
 
         # Set up training
         student.train()
         set_surgery_alpha(student, 1.0)
-        
+
         if regime_key == "regime_5":
             inject_pissa_adapters(student, rank=16)
             dkd_loss_fn = LogitDistillationLoss(mode="decoupled_kd", temperature=2.0)
@@ -197,17 +207,19 @@ for arch_key, arch_label in architectures:
 
         cos, kl = evaluate_metrics(student)
         print(f"  [{regime_label}] Cos={cos:.4f}, KL={kl:.4f}, VRAM={vram:.1f}MB, Time={t_wall:.2f}s")
-        
-        results.append({
-            "architecture": arch_key,
-            "arch_label": arch_label,
-            "regime": regime_key,
-            "regime_label": regime_label,
-            "cosine_sim": round(cos, 4),
-            "kl_div": round(kl, 4),
-            "peak_vram_mb": round(vram, 1),
-            "time_sec": round(t_wall, 2),
-        })
+
+        results.append(
+            {
+                "architecture": arch_key,
+                "arch_label": arch_label,
+                "regime": regime_key,
+                "regime_label": regime_label,
+                "cosine_sim": round(cos, 4),
+                "kl_div": round(kl, 4),
+                "peak_vram_mb": round(vram, 1),
+                "time_sec": round(t_wall, 2),
+            }
+        )
 
 out_dir = Path("results/v13_deep_empirical_suite/ablation_6pillar")
 out_dir.mkdir(parents=True, exist_ok=True)

@@ -33,6 +33,7 @@ logger = logging.getLogger(__name__)
 
 class FastMockTokenizer:
     """Fastmocktokenizer definition."""
+
     def __init__(self):
         """Execute init routine."""
         self.pad_token_id = 0

@@ -30,6 +30,7 @@ from neuralops.core.cuda_kernels.paged_kv_cache import copy_blocks_cow, copy_blo
 
 def _benchmark_fn(fn, args, iters=50, warmup=10):
     """Execute benchmark fn routine."""
+    assert callable(fn), "fn must be callable"
     for _ in range(warmup):
         fn(*args)
     torch.cuda.synchronize()

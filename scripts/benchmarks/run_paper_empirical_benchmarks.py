@@ -32,6 +32,7 @@ from transformers import GPT2Config, GPT2LMHeadModel
 
 def measure_peak_memory_and_latency(fn, warmup: int = 5, iters: int = 20) -> Tuple[float, float]:
     """Measures mean execution time (ms) and peak allocated VRAM (MB)."""
+    assert callable(fn), "fn must be callable"
     torch.cuda.synchronize()
     gc.collect()
     torch.cuda.empty_cache()
@@ -81,9 +82,7 @@ def run_scaling_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
         )
 
         # Chunk GLA
-        ms_gla, vram_gla = measure_peak_memory_and_latency(
-            lambda _q=q, _k=k, _v=v, _g=g: gla_scan(_q, _k, _v, _g)
-        )
+        ms_gla, vram_gla = measure_peak_memory_and_latency(lambda _q=q, _k=k, _v=v, _g=g: gla_scan(_q, _k, _v, _g))
 
         # Chunk GDN
         beta = torch.sigmoid(torch.randn(B_fixed, H, N, device=device, dtype=torch.float16))
@@ -112,7 +111,9 @@ def run_scaling_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
             "vram_reduction_pct": round((1.0 - vram_gla / max(vram_sdpa, 1e-5)) * 100.0, 1),
         }
         scaling_records.append(record)
-        print(f"  N={N:4d} | SDPA: {ms_sdpa:6.2f}ms ({vram_sdpa:5.1f}MB) | GLA: {ms_gla:6.2f}ms ({vram_gla:5.1f}MB, {record['gla_speedup_vs_sdpa']}x)")
+        print(
+            f"  N={N:4d} | SDPA: {ms_sdpa:6.2f}ms ({vram_sdpa:5.1f}MB) | GLA: {ms_gla:6.2f}ms ({vram_gla:5.1f}MB, {record['gla_speedup_vs_sdpa']}x)"
+        )
 
     # Batch Size Scaling at N=1024
     N_fixed = 1024
@@ -125,9 +126,7 @@ def run_scaling_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
         ms_sdpa, vram_sdpa = measure_peak_memory_and_latency(
             lambda _q=q, _k=k, _v=v: F.scaled_dot_product_attention(_q, _k, _v)
         )
-        ms_gla, vram_gla = measure_peak_memory_and_latency(
-            lambda _q=q, _k=k, _v=v, _g=g: gla_scan(_q, _k, _v, _g)
-        )
+        ms_gla, vram_gla = measure_peak_memory_and_latency(lambda _q=q, _k=k, _v=v, _g=g: gla_scan(_q, _k, _v, _g))
 
         record = {
             "type": "batch_scaling",
@@ -161,10 +160,11 @@ def run_precision_parity_benchmarks(device: str = "cuda") -> List[Dict[str, Any]
         g = torch.sigmoid(torch.randn(B, H, N, device=device, dtype=dtype)).clamp(1e-4, 1.0 - 1e-4)
 
         out_triton = gla_scan(q, k, v, g)
-        
+
         # PyTorch reference computed in FP32
         q_32, k_32, v_32, g_32 = q.float(), k.float(), v.float(), g.float()
         from neuralops.core.triton_kernels.gla_scan import gla_scan_pytorch
+
         out_ref = gla_scan_pytorch(q_32, k_32, v_32, g_32).to(dtype=dtype)
 
         diff = (out_triton.float() - out_ref.float()).abs()
@@ -181,7 +181,9 @@ def run_precision_parity_benchmarks(device: str = "cuda") -> List[Dict[str, Any]
             "parity_pass": bool(max_abs_diff < 0.01 and nan_count == 0),
         }
         precision_records.append(record)
-        print(f"  {dtype_name:4s} | Max Diff: {max_abs_diff:.6e} | Cos Sim: {cos_sim:.6f} | NaNs: {nan_count} | Status: {'PASS' if record['parity_pass'] else 'FAIL'}")
+        print(
+            f"  {dtype_name:4s} | Max Diff: {max_abs_diff:.6e} | Cos Sim: {cos_sim:.6f} | NaNs: {nan_count} | Status: {'PASS' if record['parity_pass'] else 'FAIL'}"
+        )
 
     return precision_records
 
@@ -233,7 +235,9 @@ def run_e2e_model_surgery_benchmarks(device: str = "cuda") -> List[Dict[str, Any
             "speedup": round(speedup, 2),
         }
         e2e_records.append(rec)
-        print(f"  B={B:2d}, N={N:4d} | MHA: {ms_mha:6.2f}ms ({tok_mha:7.0f} tok/s) | Linear: {ms_lin:6.2f}ms ({tok_lin:7.0f} tok/s) | Speedup: {speedup:4.2f}x")
+        print(
+            f"  B={B:2d}, N={N:4d} | MHA: {ms_mha:6.2f}ms ({tok_mha:7.0f} tok/s) | Linear: {ms_lin:6.2f}ms ({tok_lin:7.0f} tok/s) | Speedup: {speedup:4.2f}x"
+        )
 
     return e2e_records
 

@@ -60,11 +60,9 @@ from neuralops.utils.replace_attention import replace_attention
 
 try:
     from evaluation.metrics import (
-        compute_linear_cka,
         compute_numerical_deviation,
         compute_perplexity_from_loss,
         compute_representation_similarity,
-        compute_token_perplexity,
         compute_top_k_accuracy,
         measure_latency_and_throughput,
         measure_peak_vram_mb,

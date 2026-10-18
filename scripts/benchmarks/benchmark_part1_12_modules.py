@@ -46,19 +46,31 @@ from neuralops.core.cuda_kernels.local_attention.local_attention_autograd import
 
 
 def time_fn(fn, warmup=5, iters=20):
-    """Execute time fn routine."""
+    """Measures execution latency using high-resolution CUDA Events."""
+    assert callable(fn), "fn must be callable"
     for _ in range(warmup):
         fn()
-    torch.cuda.synchronize()
-    start = time.perf_counter()
-    for _ in range(iters):
-        fn()
-    torch.cuda.synchronize()
-    return (time.perf_counter() - start) / iters * 1000.0
+    if torch.cuda.is_available():
+        torch.cuda.synchronize()
+        start = torch.cuda.Event(enable_timing=True)
+        end = torch.cuda.Event(enable_timing=True)
+        start.record()
+        for _ in range(iters):
+            fn()
+        end.record()
+        torch.cuda.synchronize()
+        return start.elapsed_time(end) / iters
+    else:
+        t0 = time.perf_counter()
+        for _ in range(iters):
+            fn()
+        return (time.perf_counter() - t0) / iters * 1000.0
 
 
 def benchmark_module(name, cuda_fn, ref_fn):
     """Execute benchmark module routine."""
+    assert callable(cuda_fn), f"cuda_fn for {name} must be callable"
+    assert callable(ref_fn), f"ref_fn for {name} must be callable"
     out_cuda = cuda_fn()
     out_ref = ref_fn()
     diff = (out_cuda - out_ref).abs().max().item()
@@ -80,7 +92,7 @@ def benchmark_module(name, cuda_fn, ref_fn):
 
 def main():
     """Execute main routine."""
-    device = torch.device("cuda:0")
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     dtype = torch.float16
     results = []
 

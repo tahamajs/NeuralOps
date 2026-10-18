@@ -314,6 +314,7 @@ def get_compressor(name: str, model: nn.Module, rank: int, probe_inputs: Any):
 
         class WandaWrapper:
             """Wandawrapper definition."""
+
             def __init__(self, m, p, r):
                 """Execute init routine."""
                 self.m = m
@@ -337,6 +338,7 @@ def get_compressor(name: str, model: nn.Module, rank: int, probe_inputs: Any):
             # Apply layer-by-layer across linear projections (protecting task heads)
             class FullModelGPTQWrapper:
                 """Fullmodelgptqwrapper definition."""
+
                 def __init__(self, m, r):
                     """Execute init routine."""
                     self.m = m
@@ -363,6 +365,7 @@ def get_compressor(name: str, model: nn.Module, rank: int, probe_inputs: Any):
 
             class SmoothQuantWrapper:
                 """Smoothquantwrapper definition."""
+
                 def __init__(self, m, p):
                     """Execute init routine."""
                     self.m = m

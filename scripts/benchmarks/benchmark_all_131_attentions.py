@@ -24,14 +24,6 @@ if str(repo_root) not in sys.path:
 from neuralops.benchmarks.harness import BenchmarkRunner, save_benchmark_json
 from neuralops.core.registry import ATTENTION_REGISTRY, create_attention
 
-try:
-    from rich.console import Console
-    from rich.table import Table
-
-    RICH_AVAILABLE = True
-except ImportError:
-    RICH_AVAILABLE = False
-
 
 def main():
     """Execute main routine."""
@@ -68,6 +60,7 @@ def main():
 
             def _make_step(target_mod, target_x):
                 """Execute make step routine."""
+
                 def fwd_bwd_step():
                     """Execute fwd bwd step routine."""
                     out = target_mod(target_x)

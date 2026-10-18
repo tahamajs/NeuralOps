@@ -184,6 +184,7 @@ def run_compression_pareto_benchmark(
                 # Decompression / inference forward latency
                 def _make_forward(target_layer, target_x):
                     """Execute make forward routine."""
+
                     def comp_forward():
                         """Execute comp forward routine."""
                         with torch.no_grad():

@@ -18,7 +18,9 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 logger = logging.getLogger("verify_131_dimensions")
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
-print(f"[Dimension Verification] Running on device: {device} ({torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU'})")
+print(
+    f"[Dimension Verification] Running on device: {device} ({torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU'})"
+)
 
 dims_to_test = [
     (128, 4),
@@ -35,15 +37,16 @@ for D, H in dims_to_test:
     print("\n=======================================================")
     print(f"TESTING DIMENSION: D = {D}, H = {H}")
     print("=======================================================")
-    
+
     cfg = GPT2Config(n_embd=D, n_head=H, hidden_size=D, num_attention_heads=H)
     B, T = 2, 32
-    
+
     for name in attentions:
         cls = ATTENTION_REGISTRY[name]
+        assert callable(cls), f"Attention module '{name}' from registry must be callable"
         torch.cuda.empty_cache()
         x = torch.randn(B, T, D, device=device, dtype=torch.float32, requires_grad=True)
-        
+
         try:
             # Flexible instantiation
             try:
@@ -59,28 +62,31 @@ for D, H in dims_to_test:
                             mod = cls(dim=D, num_heads=H)
                         except TypeError:
                             mod = cls(D, H)
-                            
+
             mod = mod.to(device).train()
-            
+
             # Forward pass
             try:
                 out = mod(x)
             except (TypeError, ValueError, RuntimeError):
-                out = mod(x, x, x)
-                
+                try:
+                    out = mod(x, x, x)
+                except (TypeError, ValueError, RuntimeError):
+                    out = mod(hidden_states=x)
+
             if isinstance(out, (tuple, list)):
                 out = out[0]
-                
+
             if out.shape[:2] != (B, T) or out.shape[-1] != D:
                 raise ValueError(f"Shape mismatch: expected ({B}, {T}, {D}), got {out.shape}")
-                
+
             # Backward pass
             loss = out.sum()
             loss.backward()
-            
+
             if x.grad is None or not torch.isfinite(x.grad).all():
                 raise RuntimeError("Gradient is None or contains NaNs/Infs")
-                
+
         except (RuntimeError, MemoryError, AssertionError, ValueError, TypeError) as e:
             logger.warning("Verification failed for %s (D=%d, H=%d): %s", name, D, H, e, exc_info=True)
             err_str = f"{type(e).__name__}: {str(e)[:140]}"

@@ -7,6 +7,7 @@ Author: Taha Majlesi
 # Author: Taha Majlesi
 import os
 import time
+from pathlib import Path
 import torch
 import pandas as pd
 from transformers import AutoConfig, AutoModelForCausalLM
@@ -17,10 +18,24 @@ print(f"Running on device: {device} ({torch.cuda.get_device_name(0)})")
 
 # 1. Prepare Architectures
 print("\n=== Initializing Qwen-2.5 and LLaMA-3 Architectures ===")
-# Use local cached config for Qwen
-cfg_path = os.path.expanduser("~/.cache/huggingface/hub/models--Qwen--Qwen2.5-0.5B/snapshots")
-snap = os.listdir(cfg_path)[0]
-cfg_qwen = AutoConfig.from_pretrained(os.path.join(cfg_path, snap))
+try:
+    cfg_path = os.path.expanduser("~/.cache/huggingface/hub/models--Qwen--Qwen2.5-0.5B/snapshots")
+    snap = os.listdir(cfg_path)[0]
+    cfg_qwen = AutoConfig.from_pretrained(os.path.join(cfg_path, snap))
+except Exception:
+    try:
+        cfg_qwen = AutoConfig.from_pretrained("Qwen/Qwen2.5-0.5B")
+    except Exception:
+        cfg_qwen = AutoConfig.for_model(
+            "qwen2",
+            vocab_size=151936,
+            hidden_size=896,
+            intermediate_size=4864,
+            num_hidden_layers=24,
+            num_attention_heads=14,
+            num_key_value_heads=2,
+            max_position_embeddings=32768,
+        )
 
 # LLaMA-3 architecture configuration (16 layers, 2048 hidden, 16 heads)
 cfg_llama = AutoConfig.for_model(
@@ -62,13 +77,23 @@ for arch_name, cfg in architectures:
 
                 torch.cuda.synchronize()
                 iters = 5
-                t0 = time.perf_counter()
-                with torch.no_grad():
-                    for _ in range(iters):
-                        out = m(inputs)
-                torch.cuda.synchronize()
-                latency_ms = (time.perf_counter() - t0) / iters * 1000
-                peak_vram = torch.cuda.max_memory_allocated() / (1024 * 1024)
+                if device == "cuda":
+                    start_evt = torch.cuda.Event(enable_timing=True)
+                    end_evt = torch.cuda.Event(enable_timing=True)
+                    with torch.no_grad():
+                        start_evt.record()
+                        for _ in range(iters):
+                            out = m(inputs)
+                        end_evt.record()
+                    torch.cuda.synchronize()
+                    latency_ms = start_evt.elapsed_time(end_evt) / iters
+                else:
+                    t0 = time.perf_counter()
+                    with torch.no_grad():
+                        for _ in range(iters):
+                            out = m(inputs)
+                    latency_ms = (time.perf_counter() - t0) / iters * 1000.0
+                peak_vram = torch.cuda.max_memory_allocated() / (1024 * 1024) if device == "cuda" else 0.0
                 finite = torch.isfinite(out.logits).all().item()
 
                 print(
@@ -115,8 +140,10 @@ for arch_name, cfg in architectures:
 
 # Export CSV
 df = pd.DataFrame(results)
-os.makedirs("/mnt/d/SVD_linear_Attention/docs/benchmarks", exist_ok=True)
-csv_path = "/mnt/d/SVD_linear_Attention/docs/benchmarks/paper_benchmarks_qwen_surgery.csv"
+repo_root = Path(__file__).resolve().parent.parent.parent
+bench_dir = repo_root / "docs" / "benchmarks"
+bench_dir.mkdir(parents=True, exist_ok=True)
+csv_path = bench_dir / "paper_benchmarks_qwen_surgery.csv"
 df.to_csv(csv_path, index=False)
 print(f"\nExported {csv_path} successfully.")
 

@@ -142,6 +142,7 @@ comp_failed = []
 
 class DummyContainer(nn.Module):
     """Dummycontainer definition."""
+
     def __init__(self):
         """Execute init routine."""
         super().__init__()
