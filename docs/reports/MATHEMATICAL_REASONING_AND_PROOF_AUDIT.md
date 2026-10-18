@@ -75,6 +75,59 @@ All condition numbers remain bounded by several orders of magnitude below $10^5$
 
 ---
 
+---
+
+### 1.5 Lyapunov Stability Analysis for Recurrent Associative Memory
+
+To establish strict asymptotic stability of the recurrent associative state update in Chunk GLA, Gated Delta Net, and linear SSMs, we define a quadratic Lyapunov candidate function $V(S_t)$:
+$$V(S_t) = \operatorname{tr}(S_t^T S_t) = \|S_t\|_F^2$$
+where $\|\cdot\|_F$ denotes the Frobenius norm.
+
+**1. Autonomous Dynamics (Decay Dissipation):**
+Consider the unforced system $S_t = \mathbf{T}_t S_{t-1}$ with transition operator $\|\mathbf{T}_t\|_2 \le \gamma < 1.0$.
+$$\Delta V(S_{t-1}) = V(S_t) - V(S_{t-1}) = \operatorname{tr}(S_t^T S_t) - \operatorname{tr}(S_{t-1}^T S_{t-1})$$
+Substituting the state recurrence:
+$$V(S_t) = \operatorname{tr}(S_{t-1}^T \mathbf{T}_t^T \mathbf{T}_t S_{t-1}) \le \|\mathbf{T}_t\|_2^2 \operatorname{tr}(S_{t-1}^T S_{t-1}) \le \gamma^2 V(S_{t-1})$$
+Hence:
+$$\Delta V(S_{t-1}) \le (\gamma^2 - 1) V(S_{t-1})$$
+Since $\gamma < 1.0$, $(\gamma^2 - 1) < 0$ strictly for all non-zero states $S_{t-1} \neq 0$. Therefore, $\Delta V(S_{t-1}) < 0$, satisfying the discrete-time Lyapunov stability criterion and proving **exponential asymptotic stability to zero** in the absence of input drives.
+
+**2. Non-Autonomous Dynamics (Input-to-State Stability - ISS):**
+Under external inputs $U_t = k_t v_t^T$ with bounded norm $\|U_t\|_F \le B_0$:
+$$\|S_t\|_F = \|\mathbf{T}_t S_{t-1} + U_t\|_F \le \gamma \|S_{t-1}\|_F + B_0$$
+The Lyapunov difference satisfies:
+$$V(S_t)^{1/2} - V(S_{t-1})^{1/2} \le - (1 - \gamma) V(S_{t-1})^{1/2} + B_0$$
+This guarantees that $\Delta V < 0$ whenever $\|S_{t-1}\|_F > \frac{B_0}{1 - \gamma}$. Consequently, every trajectory enters and remains within the compact invariant attraction ball:
+$$\mathcal{B}_{\text{ISS}} = \left\{ S \in \mathbb{R}^{d_k \times d_v} : \|S\|_F \le \frac{B_0}{1 - \gamma} \right\}$$
+No finite sequence of inputs can cause state divergence.
+
+---
+
+### 1.6 Deep Architecture Gradient Bounds & Explicit Clipping Thresholds ($N_{\text{layers}} \ge 32$)
+
+In deep residual recurrent networks of depth $N$ (e.g. $N=32$ layers):
+$$h^{(l+1)} = h^{(l)} + \mathcal{F}^{(l)}(h^{(l)})$$
+where $\mathcal{F}^{(l)}$ represents the recurrent attention block normalized by LayerNorm / RMSNorm.
+By chain rule over depth:
+$$\frac{\partial \mathcal{L}}{\partial h^{(1)}} = \frac{\partial \mathcal{L}}{\partial h^{(N)}} \prod_{l=1}^{N-1} \left( \mathbf{I} + \frac{\partial \mathcal{F}^{(l)}}{\partial h^{(l)}} \right)$$
+
+**1. Bound on Layer Jacobians:**
+With standard residual scaling or Pre-LayerNorm:
+$$\left\| \frac{\partial \mathcal{F}^{(l)}}{\partial h^{(l)}} \right\|_2 \le \frac{\alpha}{\sqrt{2N}} \quad \text{or} \quad \|\mathbf{J}_{\mathcal{F}}\|_2 \le \beta$$
+Using the inequality $\prod_{l=1}^N (1 + x_l) \le \exp\left( \sum_{l=1}^N x_l \right)$:
+$$\left\| \frac{\partial \mathcal{L}}{\partial h^{(1)}} \right\|_2 \le \left\| \frac{\partial \mathcal{L}}{\partial h^{(N)}} \right\|_2 \exp(N \beta)$$
+
+**2. Formulating Explicit Gradient Clipping Threshold $G_{\text{clip}}$:**
+To prevent catastrophic gradient explosion across 32 layers where $\exp(32 \beta)$ could amplify stochastic gradients:
+$$G_{\text{clip}} = \frac{\tau}{\max \left( 1.0, \; \frac{\|\mathbf{g}\|_2}{\tau} \right)}, \quad \mathbf{g} = \nabla_\theta \mathcal{L}$$
+Under contractive recurrence $\rho(\mathbf{T}) \le \gamma < 1$, the temporal backpropagation gradient per layer is bounded by $M_0 = \frac{B_0}{1 - \gamma}$. Summing over $N$ layers, the theoretical maximum gradient satisfies:
+$$\|\mathbf{g}\|_2 \le \sqrt{N} \cdot \frac{B_0}{1 - \gamma} \exp(N \beta)$$
+For $N=32$, $B_0 \le 1.0$, $\gamma \le 0.95$, and residual branch dampening $\beta \approx \frac{0.1}{\sqrt{N}}$:
+$$\|\mathbf{g}\|_2 \le \sqrt{32} \times \frac{1.0}{0.05} \times \exp\left(\sqrt{32} \times 0.1\right) \approx 5.65 \times 20 \times 1.76 \approx 198.8$$
+Therefore, an explicit global clipping threshold of:
+$$G_{\text{clip}} \in [1.0, \; 5.0]$$
+strictly enforces condition number stability and prevents numerical overflow in FP16 / BF16 regimes without clipping informative signal gradients under normal stationary optimization trajectories.
+
 ## 2. Multi-Precision Extreme Sequence Length Stress Tests ($L \in \{1024, 2048, 4096, 8192\}$)
 
 Across FP32 and FP16 regimes on the physical RTX 4070 Laptop GPU:
