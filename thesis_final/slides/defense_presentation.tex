@@ -1,0 +1,485 @@
+\documentclass[aspectratio=169,10pt]{beamer}
+
+% University of Tehran Color Theme & Styling
+\usetheme{Madrid}
+\usecolortheme{whale}
+
+\definecolor{UTBlue}{RGB}{12, 44, 110}       % University of Tehran Deep Blue
+\definecolor{UTGold}{RGB}{200, 150, 40}      % UT Accent Gold
+\definecolor{LightBlue}{RGB}{240, 245, 255}
+\definecolor{TealDark}{RGB}{0, 100, 100}
+
+\setbeamercolor{palette primary}{bg=UTBlue,fg=white}
+\setbeamercolor{palette secondary}{bg=UTBlue!85!black,fg=white}
+\setbeamercolor{palette tertiary}{bg=UTBlue!70!black,fg=white}
+\setbeamercolor{titlelike}{parent=palette primary}
+\setbeamercolor{structure}{fg=UTBlue}
+
+\setbeamercolor{block title}{bg=UTBlue,fg=white}
+\setbeamercolor{block body}{bg=LightBlue}
+\setbeamercolor{block title example}{bg=TealDark,fg=white}
+\setbeamercolor{block body example}{bg=teal!5!white}
+\setbeamercolor{block title alerted}{bg=red!80!black,fg=white}
+\setbeamercolor{block body alerted}{bg=red!5!white}
+
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{headline}{}
+
+\setbeamertemplate{footline}{
+  \leavevmode%
+  \hbox{%
+  \begin{beamercolorbox}[wd=.333333\paperwidth,ht=2.25ex,dp=1ex,center]{author in head/foot}%
+    \usebeamerfont{author in head/foot}\insertshortauthor
+  \end{beamercolorbox}%
+  \begin{beamercolorbox}[wd=.333333\paperwidth,ht=2.25ex,dp=1ex,center]{title in head/foot}%
+    \usebeamerfont{title in head/foot}\insertshorttitle
+  \end{beamercolorbox}%
+  \begin{beamercolorbox}[wd=.333333\paperwidth,ht=2.25ex,dp=1ex,center]{date in head/foot}%
+    \insertframenumber{} / \inserttotalframenumber
+  \end{beamercolorbox}}%
+  \vskip0pt%
+}
+
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,shapes,calc}
+
+% Persian Package Configuration
+\usepackage{xepersian}
+\settextfont[Path=/Users/tahamajs/Library/Fonts/,BoldFont={X Nazanin Bold.ttf},ItalicFont={X Nazanin Italic.ttf}]{X Nazanin.ttf}
+\setlatintextfont[Scale=0.85]{Times New Roman}
+
+\newcommand{\code}[1]{\lr{\texttt{#1}}}
+
+\title[طراحی، ارزیابی و فشرده‌سازی توجه خطی و SVD]{طراحی، ارزیابی تجربی و فشرده‌سازی مکانیزم‌های توجه خطی و تجزیه مقادیر منفرد (SVD) در مدل‌های زبانی بزرگ}
+\subtitle{\lr{A Hardware-Aware Framework for SVD Linear Attention and Transformer Model Compression}}
+\author[محمد طاها مجلسی]{محمد طاها مجلسی \\ \small استاد راهنما: جناب آقای دکتر احمد کلهر}
+\institute[دانشگاه تهران]{دانشکده مهندسی برق و کامپیوتر \\ پردیس دانشکده‌های فنی --- دانشگاه تهران}
+\date{شهریور ۱۴۰۵}
+
+\begin{document}
+
+% --- Slide 1: Title Slide ---
+\begin{frame}[plain]
+  \begin{center}
+    \includegraphics[height=1.25cm]{logo.png} \hspace{1.5cm}
+    \includegraphics[height=1.25cm]{eng-logo.png} \\[0.3cm]
+    {\large \textbf{دانشگاه تهران --- پردیس دانشکده‌های فنی}}\\[0.1cm]
+    {\small دانشکده مهندسی برق و کامپیوتر}\\[0.3cm]
+    {\large \color{UTBlue} \textbf{جلسه دفاع از پایان‌نامه مهندسی کامپیوتر}}\\[0.25cm]
+    {\Large \textbf{طراحی، ارزیابی تجربی و فشرده‌سازی مکانیزم‌های توجه خطی و تجزیه مقادیر منفرد (SVD) در مدل‌های زبانی بزرگ}}\\[0.15cm]
+    {\footnotesize \lr{A Hardware-Aware Framework for SVD Linear Attention and Transformer Compression}}\\[0.35cm]
+    \begin{tabular}{rl}
+      \textbf{نگارنده:} & محمد طاها مجلسی (\lr{810101504}) \\
+      \textbf{استاد راهنما:} & جناب آقای دکتر احمد کلهر
+    \end{tabular}
+  \end{center}
+\end{frame}
+
+% --- Slide 2: Outline ---
+\begin{frame}{سرفصل مطالب و ساختار ارائه}
+  \begin{itemize}\setlength{\itemsep}{0.28cm}
+    \item \textbf{انگیزه پژوهش:} دیوار حافظه ترنسفورمرها و پیچیدگی درجه دوم $\mathcal{O}(N^2)$
+    \item \textbf{مبانی نظری و ریاضی:} سفیدسازی فعال‌سازی چولسکی و اکرت-یانگ-میرسکی
+    \item \textbf{بسته‌شدن ۵ شکاف علمی مرز دانش (SOTA Gaps):} قضایای تحلیلی و تایید تجربی
+    \item \textbf{پروتکل مهندسی تزریق جراحی ۴ مرحله‌ای} و هم‌ترازی گام صفر
+    \item \textbf{بسته ۶ ستونی تقطیر دانش (6-Pillar KD Suite)} و اثبات انقباض خطی
+    \item \textbf{ارزیابی پارتو در مقیاس وسیع:} ۲۰۳ ماژول (۱۳۱ توجه، ۷۲ فشرده‌ساز)
+    \item \textbf{شتاب‌دهی سخت‌افزاری تریتون:} ۲۶ کرنل سفارشی \lr{Triton JIT} روی \lr{RTX 4070 SM 8.9}
+    \item \textbf{دستاوردها، جمع‌بندی و نتیجه‌گیری}
+  \end{itemize}
+\end{frame}
+
+% --- Slide 3: Motivation & Memory Wall ---
+\begin{frame}{انگیزه پژوهش: دیوار حافظه و پیچیدگی $\mathcal{O}(N^2)$}
+  \begin{columns}
+    \begin{column}{0.55\textwidth}
+      \begin{block}{چالش اصلی خودتوجهی متراکم (Softmax Attention)}
+        محاسبه ماتریس ضرب داخلی پرسمان و کلید:
+        \[
+          A = \operatorname{Softmax}\left(\frac{Q K^\top}{\sqrt{d_k}}\right) V
+        \]
+        \begin{itemize}\footnotesize
+          \item پیچیدگی زمانی و حافظه‌ای $\mathcal{O}(N^2)$ نسبت به طول توالی $N$.
+          \item در توالی‌های فرابزرگ ($N > 32\text{K}$)، حافظه مادی‌سازی توجه از حجم فیزیکی \lr{VRAM} فراتر می‌رود.
+          \item بحران بافر \lr{KV-Cache} در فاز استنتاج خودبازگشتی: مقیاس $\mathcal{O}(L \cdot b \cdot N \cdot d)$.
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.45\textwidth}
+      \begin{alertblock}{گلوگاه پهنای باند حافظه (Memory Wall)}
+        \begin{itemize}\footnotesize
+          \item سرعت تبادل داده میان \lr{HBM/DRAM} و ثبات‌های \lr{SRAM} گلوگاه اصلی اجرای مدل‌هاست.
+          \item مدل‌های زبانی به شدت در ناحیه «محدود به حافظه» (\lr{Memory-Bound}) کار می‌کنند.
+          \item راهکارهای سه‌گانه این رساله:
+            \begin{enumerate}\scriptsize
+              \item الگوریتم‌های توجه خطی $\mathcal{O}(N)$
+              \item فشرده‌سازی مقادیر منفرد \lr{SVD} آگاه از فعال‌سازی
+              \item ادغام کرنل‌های سخت‌افزاری \lr{Kernel Fusion}
+            \end{enumerate}
+        \end{itemize}
+      \end{alertblock}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% --- Slide 4: Theoretical Foundations - Cholesky & SVD ---
+\begin{frame}{مبانی نظری: سفیدسازی فعال‌سازی با تجزیه چولسکی}
+  \begin{block}{فرمول‌بندی بهینه‌سازی برش مقادیر منفرد آگاه از فعال‌سازی}
+    هدف، یافتن ماتریس کم‌مرتبه $\mathbf{W}_r$ با رتبه $r$ است که خطای فعال‌سازی خروجی را کمینه کند:
+    \[
+      \min_{\operatorname{rank}(\mathbf{W}_r) \le r} \mathbb{E}_{X \sim \mathcal{D}}\left[ \| \mathbf{W} X - \mathbf{W}_r X \|_F^2 \right] = \min_{\operatorname{rank}(\mathbf{W}_r) \le r} \| (\mathbf{W} - \mathbf{W}_r) \mathbf{H}_X^{1/2} \|_F^2
+    \]
+    که در آن $\mathbf{H}_X = \mathbb{E}[X X^\top]$ ماتریس کوواریانس ورودی‌های کالیبراسیون است.
+  \end{block}
+
+  \begin{exampleblock}{قضیه بهینگی SVD-LLM v2 با تجزیه چولسکی (Eckart-Young-Mirsky)}
+    با تجزیه چولسکی ماتریس کوواریانس به صورت $\mathbf{H}_X = \mathbf{L} \mathbf{L}^\top$ (که در آن $\mathbf{L}$ مثلثی پایینی و معکوس‌پذیر است):
+    \[
+      \| (\mathbf{W} - \mathbf{W}_r) \mathbf{H}_X^{1/2} \|_F^2 = \| (\mathbf{W} - \mathbf{W}_r) \mathbf{L} \|_F^2 = \| \widetilde{\mathbf{W}} - \widetilde{\mathbf{W}}_r \|_F^2, \quad \widetilde{\mathbf{W}} = \mathbf{W} \mathbf{L}
+    \]
+    بنابر قضیه اکرت-یانگ-میرسکی، بهترین تقریب رتبه-$r$ ماتریس سفیدشده $\widetilde{\mathbf{W}}$ حاصل برش مقادیر منفرد آن است:
+    \[
+      \mathbf{W}_r^* = \widetilde{\mathbf{W}}_r \mathbf{L}^{-1} = \left(\sum_{i=1}^r \sigma_i u_i v_i^\top\right) \mathbf{L}^{-1}
+    \]
+  \end{exampleblock}
+\end{frame}
+
+% --- Slide 5: SVD-LLM v2 vs Naive Truncation Plot ---
+\begin{frame}{اعتبارسنجی قضیه بهینگی SVD-LLM v2 در برابر برش مستقیم}
+  \begin{columns}
+    \begin{column}{0.55\textwidth}
+      \includegraphics[width=\textwidth]{svd_llm_v2_truncation_optimality.png}
+    \end{column}
+    \begin{column}{0.45\textwidth}
+      \begin{block}{تحلیل نمودار تجربی اعتبارسنجی}
+        \begin{itemize}\footnotesize
+          \item \textbf{برش سنتی بدون داده (Naive SVD):} انحراف شدید فروبنیوس به دلیل نادیده‌گرفتن همبستگی ورودی‌ها.
+          \item \textbf{روش پیشنهادی SVD-LLM v2:} با سفیدسازی چولسکی، انحراف فعال‌سازی‌ها در تمام سطوح فشرده‌سازی تا ۱۰۰٪ مهار شده و خطای فروبنیوس به صفر میل می‌کند.
+          \item تطابق دقیق نتایج عملی با کران تئوریک قضیه اکرت-یانگ-میرسکی.
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% --- Slide 6: 5 Closed SOTA Gaps Table ---
+\begin{frame}{بسته‌شدن قطعی ۵ شکاف علمی در مرز دانش (SOTA Gaps)}
+  \begin{table}
+    \centering
+    \footnotesize
+    \begin{tabular}{clllc}
+      \toprule
+      \textbf{شناسه} & \textbf{ماژول و کِرنل} & \textbf{موضوع علمی و قضیه تحلیلی} & \textbf{شاخص اعتبارسنجی تجربی} & \textbf{وضعیت} \\
+      \midrule
+      \textbf{Gap 1} & \lr{SVD-LLM v2} & بهینگی برش اکرت-یانگ-میرسکی چولسکی & کاهش خطای فروبنیوس: $28.68 \to 0.00$ & \textbf{\lr{PASSED}} \\
+      \textbf{Gap 2} & \lr{ASVD Linear} & استریمینگ کم‌مرتبه بافر KV-Cache & تطابق عددی دقیق، کاهش حافظه $8\times$ & \textbf{\lr{PASSED}} \\
+      \textbf{Gap 3} & \lr{FP8 Quantizer} & کران تحلیلی خطای مانتیس E4M3 & خطای نسبی $0.0264$ (زیر سقف $5\%$) & \textbf{\lr{PASSED}} \\
+      \textbf{Gap 4} & \lr{DSA Attention} & مسیریابی تنک بلوکی پویا & هم‌ترازی گرادیان $>95\%$، برابری ابعاد & \textbf{\lr{PASSED}} \\
+      \textbf{Gap 5} & \lr{REAP-MoE} & هرس نااریب خبرگان در توزیع بلند & هرس ۴ به ۲ خبره، بازیابی $100\%$ آزمون NIAH & \textbf{\lr{PASSED}} \\
+      \bottomrule
+    \end{tabular}
+  \end{table}
+
+  \begin{block}{اثبات ریاضی قانون پایستگی سیمپلکس در WGQA}
+    مهار انفجار پرپلکسیتی از رقم نجومی \textbf{۴,۲۴۸,۶۸۹} به سطح متعارف با نگاشت بر روی سیمپلکس:
+    \[
+      \operatorname{scale}_h = \operatorname{Softmax}(w)_h \times H_{\text{kv}} \implies \sum_{h=1}^{H_{\text{kv}}} \operatorname{scale}_h = H_{\text{kv}}
+    \]
+    تضمین عدم‌تغییر انرژی سرهای KV و تثبیت کامل دمای لاجیت $T_{\text{eff}}$.
+  \end{block}
+\end{frame}
+
+% --- Slide 7: ASVD KV-Cache Memory Scaling ---
+\begin{frame}{شکاف دوم SOTA: فشرده‌سازی ۸ برابری بافر KV-Cache در ASVD}
+  \begin{columns}
+    \begin{column}{0.55\textwidth}
+      \includegraphics[width=\textwidth]{kv_cache_latent_memory_scaling.png}
+    \end{column}
+    \begin{column}{0.45\textwidth}
+      \begin{block}{هم‌ارزی استریمینگ و صرفه‌جویی حافظه}
+        \begin{itemize}\footnotesize
+          \item نگاشت کلیدها و مقادیر به بردار فشرده نهان مشترک $\mathbf{c}_t^{KV} \in \mathbb{R}^{d_c}$ با بعد $d_c \ll H d_h$.
+          \item \textbf{روند مقیاس‌پذیری:} با افزایش طول توالی از ۲K به ۶۴K، مصرف بافر استاندارد از ۲۴ گیگابایت فراتر می‌رود، اما در ساختار ASVD در زیر ۳ گیگابایت باقی می‌ماند.
+          \item بازسازی برخط در رجیسترهای پرسرعت بدون افت پرپلکسیتی.
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% --- Slide 8: 4-Stage Surgical Injection Pipeline ---
+\begin{frame}{پروتکل مهندسی تزریق جراحی ۴ مرحله‌ای}
+  \begin{center}
+    \begin{tikzpicture}[
+      node distance=0.55cm,
+      stage/.style={rectangle, draw=UTBlue, fill=LightBlue, rounded corners, minimum width=12cm, minimum height=0.85cm, font=\small},
+      ar/.style={-Stealth, thick, draw=UTBlue}
+    ]
+      \node[stage] (s1) {\textbf{مرحله اول (Drop-in Surgical Injection):} جایگزینی درجا با حفظ کامل ابعاد $(B, T, D)$، ماسک علّی و RoPE/ALiBi};
+      \node[stage, below=of s1] (s2) {\textbf{مرحله دوم (Parametric Alignment):} تراز طیفی مقادیر منفرد ($\tau \ge 0.90$) و مقداردهی PiSSA/DoRA};
+      \node[stage, below=of s2] (s3) {\textbf{مرحله سوم (Fast Gradient Recovery):} بازیافت گرادیان در ۵۰ الی ۲۵۰ گام با بسته تقطیر ۶ ستونی در فضای پوچ هسین};
+      \node[stage, below=of s3] (s4) {\textbf{مرحله چهارم (Hardware Profiling):} سنکرون‌سازی با رویدادهای CUDA، ۲۵ تکرار گرم‌کردن و استخراج توان عملیاتی};
+
+      \draw[ar] (s1) -- (s2);
+      \draw[ar] (s2) -- (s3);
+      \draw[ar] (s3) -- (s4);
+    \end{tikzpicture}
+  \end{center}
+  \vspace{-0.2cm}
+  \begin{itemize}\footnotesize
+    \item \textbf{ایزولاسیون کامل:} لایه‌های FFN، نرمال‌سازی‌ها و تعبیه‌ها فریز باقی می‌مانند.
+    \item \textbf{برابری بازنمایی در گام صفر (Step-0 Parity):} جلوگیری از شوک ناگهانی به شبکه عصبی با انشعاب کم‌مرتبه.
+  \end{itemize}
+\end{frame}
+
+% --- Slide 9: 6-Pillar Knowledge Distillation ---
+\begin{frame}{بسته ۶ ستونی تقطیر دانش (6-Pillar KD Suite)}
+  \begin{columns}
+    \begin{column}{0.55\textwidth}
+      \begin{block}{فرمول‌بندی تابع هدف مرکب تقطیر}
+        \[
+          \mathcal{L}_{\text{KD}}(\theta) = \sum_{i=1}^6 \lambda_i \mathcal{L}_i(\theta), \quad \sum_{i=1}^6 \lambda_i = 1, \quad \lambda_i > 0
+        \]
+        \begin{enumerate}\footnotesize
+          \item \textbf{ستون اول:} تقطیر تفکیک‌شده لاجیت‌ها (DKD) و تطابق خطی CKA
+          \item \textbf{ستون دوم:} هوموتوپی پیوسته توجه و تزریق تدریجی (MOHAWK)
+          \item \textbf{ستون سوم:} آداپتورهای بهینه‌ساز زیرفضا (PiSSA و DoRA)
+          \item \textbf{ستون چهارم:} ترازسازی ترجیحات بدون پاداش (SimPO / ORPO)
+          \item \textbf{ستون پنجم:} پایدارسازهای عددی و سینک‌های توجه یادگیرنده
+          \item \textbf{ستون ششم:} لایه انطباق در زمان آزمون (TTT Layer)
+        \end{enumerate}
+      \end{block}
+    \end{column}
+
+    \begin{column}{0.45\textwidth}
+      \begin{exampleblock}{قضیه همگرایی انقباضی خطی}
+        تحت فرض تحدب قوی $\mu = \sum \lambda_i \mu_i$ و صافی لیپ‌شیتز $L = \sum \lambda_i L_i$:
+        \[
+          G(\theta) = \theta - \gamma \nabla \mathcal{L}_{\text{KD}}(\theta)
+        \]
+        یک نگاشت انقباضی اکید با ضریب زیر است:
+        \[
+          \kappa^* = \sqrt{1 - \frac{\mu^2}{L^2}} < 1
+        \]
+        \[
+          \|\theta_t - \theta^*\|_2 \le (\kappa^*)^t \|\theta_0 - \theta^*\|_2
+        \]
+        تضمین همگرایی هندسی پارامترها به وضعیت معلم.
+      \end{exampleblock}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% --- Slide 10: Empirical Convergence & Distillation Results ---
+\begin{frame}{اثربخشی تجربی بسته ۶ ستونی در بازیافت دقت}
+  \begin{columns}
+    \begin{column}{0.5\textwidth}
+      \includegraphics[width=\textwidth]{chart_training_loss_convergence.png}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \begin{table}
+        \centering
+        \tiny
+        \begin{tabular}{llccc}
+          \toprule
+          \textbf{ماژول} & \textbf{رژیم آموزشی} & \textbf{دقت} & \textbf{انتروپی} & \textbf{توان (tok/s)} \\
+          \midrule
+          \multirow{3}{*}{\textbf{Cosformer}} & بدون آموزش (Zero-Shot) & 0.5519 & 2.9356 & 488.9 \\
+          & انتروپی متقاطع خام (CE) & 0.2286 & 4.4928 & 566.9 \\
+          & \textbf{بسته ۶ ستونی (6-Pillar)} & \textbf{0.9184} & \textbf{0.5125} & \textbf{1029.2} \\
+          \midrule
+          \multirow{3}{*}{\textbf{Chunk GLA}} & بدون آموزش (Zero-Shot) & 0.0994 & 5.8951 & 1029.2 \\
+          & انتروپی متقاطع خام (CE) & 0.1578 & 4.8950 & 551.6 \\
+          & \textbf{بسته ۶ ستونی (6-Pillar)} & \textbf{0.7871} & \textbf{1.2447} & \textbf{1014.4} \\
+          \midrule
+          \multirow{3}{*}{\textbf{Mamba Block}} & بدون آموزش (Zero-Shot) & 0.8416 & 1.0345 & 1144.2 \\
+          & انتروپی متقاطع خام (CE) & 0.2223 & 4.5791 & 643.4 \\
+          & \textbf{بسته ۶ ستونی (6-Pillar)} & \textbf{0.9827} & \textbf{0.1124} & \textbf{1105.7} \\
+          \bottomrule
+        \end{tabular}
+      \end{table}
+      \begin{block}{\small یافته تجربی کلیدی}
+        انتروپی متقاطع خام به دلیل انحراف شدید بازنمایی دچار واگرایی می‌شود، در حالی که بسته ۶ ستونی با هدایت زیرفضای هسین، بازیابی بیش از ۹۰٪ دقت معلم را محقق می‌سازد.
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% --- Slide 11: Large-Scale Benchmark & Taxonomy ---
+\begin{frame}{گستره بنچ‌مارک تجربی: ۲۰۳ ماژول در ۶ خانواده معماری}
+  \begin{columns}
+    \begin{column}{0.5\textwidth}
+      \includegraphics[width=\textwidth]{chart_radar_families.png}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \begin{block}{تقسیم‌بندی ماژول‌های مورد ارزیابی}
+        \begin{itemize}\footnotesize
+          \item \textbf{۱۳۱ مکانیزم توجه متنوع:}
+            \begin{itemize}\scriptsize
+              \item توجه‌های خطی و بازگشتی (Linear, Cosformer, GLA, DeltaNet, RWKV)
+              \item مکانیزم‌های خلوت و ساختاریافته (Longformer, BigBird, NSA/DSA)
+              \item ساختارهای فضای حالت و هیبرید (Mamba, S4, H3)
+            \end{itemize}
+          \item \textbf{۷۲ موتور فشرده‌سازی و تجزیه کم‌مرتبه:}
+            \begin{itemize}\scriptsize
+              \item خانواده‌های SVD متقدم (ASVD, SVD-LLM v2, AASVD, PiSSA, DoRA)
+              \item کوانتایزاسیون ماتریس‌های منفرد (FP8, INT4, NF4)
+              \item هرس طیفی و توزیع‌شده (REAP-MoE, Structural Pruning)
+            \end{itemize}
+          \item \textbf{۴ مدل پایه ناهمگون:}
+            \begin{itemize}\scriptsize
+              \item انکودرها: DistilBERT, RoBERTa
+              \item دیکودرهای علّی: GPT-2, Qwen-0.5B
+            \end{itemize}
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% --- Slide 12: Top-15 Accuracy Ranking ---
+\begin{frame}{رتبه‌بندی ۱۵ ماژول پیشتاز در دقت زبانی}
+  \begin{columns}
+    \begin{column}{0.65\textwidth}
+      \includegraphics[width=\textwidth]{chart_top15_accuracy.png}
+    \end{column}
+    \begin{column}{0.35\textwidth}
+      \begin{block}{نکات تحلیلی}
+        \begin{itemize}\footnotesize
+          \item برتری قاطع معماری‌های ترکیب خطی با تراز طیفی (نظیر \lr{Cosformer+AASVD} و \lr{Mamba Block}).
+          \item حفظ بیش از ۹۵٪ دقت مدل متراکم اولیه در کسری از حافظه مصرفی.
+          \item برتری پایدار مدل‌های مجهز به رژیم ۶ ستونی در قیاس با رقبا.
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% --- Slide 13: Pareto Frontier (Accuracy vs VRAM) ---
+\begin{frame}{جبهه بهینگی پارتو: دقت در برابر اوج مصرف حافظه (VRAM)}
+  \begin{columns}
+    \begin{column}{0.62\textwidth}
+      \includegraphics[width=\textwidth]{pareto_accuracy_vs_vram.png}
+    \end{column}
+    \begin{column}{0.38\textwidth}
+      \begin{exampleblock}{نقاط بهینه جبهه پارتو}
+        \begin{itemize}\footnotesize
+          \item \textbf{رژیم بیشینه فشرده‌سازی:} ماژول‌های \lr{ASVD} با فشرده‌سازی ۸ برابری بافر، مصرف حافظه را به زیر ۶۰ مگابایت می‌رسانند.
+          \item \textbf{رژیم توازن طلایی:} مدل \lr{Cosformer+AASVD} با ردپای ۶۷ مگابایت و دقت ۹۴.۳٪ در راس جبهه پارتو جای می‌گیرد.
+          \item \textbf{رژیم بیشینه دقت:} \lr{Mamba} و \lr{GDN-2} با دقت بالای ۹۸٪ و کارایی حافظه عالی.
+        \end{itemize}
+      \end{exampleblock}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% --- Slide 14: Pareto Frontier (Accuracy vs Throughput) ---
+\begin{frame}{جبهه بهینگی پارتو: دقت در برابر توان پردازشی (Throughput)}
+  \begin{columns}
+    \begin{column}{0.62\textwidth}
+      \includegraphics[width=\textwidth]{pareto_accuracy_vs_throughput.png}
+    \end{column}
+    \begin{column}{0.38\textwidth}
+      \begin{block}{تحلیل توان عملیاتی توکن بر ثانیه}
+        \begin{itemize}\footnotesize
+          \item مدل متراکم اولیه به دلیل سربار $\mathcal{O}(N^2)$ به نرخ ۵۰۰ توکن بر ثانیه محدود است.
+          \item ماژول‌های خطی بهینه‌شده به همراه ادغام کرنل، توان را به بیش از \textbf{۱۱۰۰ توکن بر ثانیه} ارتقا می‌دهند ($>2.2\times$).
+          \item مدل‌های Mamba و DeltaNet بالاترین توان پردازشی را با دقت بالای ۹۵٪ ثبت کرده‌اند.
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% --- Slide 15: Sequence Length Scaling ---
+\begin{frame}{رفتار مقیاس‌پذیری با افزایش طول توالی ($N = 128 \to 8192$)}
+  \begin{columns}
+    \begin{column}{0.6\textwidth}
+      \includegraphics[width=\textwidth]{sequence_length_scaling.png}
+    \end{column}
+    \begin{column}{0.4\textwidth}
+      \begin{alertblock}{شکستن دیوار محاسباتی}
+        \begin{itemize}\footnotesize
+          \item در مکانیزم توجه استاندارد \lr{Dense Softmax}، تاخیر با شیب درجه دوم $\mathcal{O}(N^2)$ افزایش یافته و در $N=8192$ دچار انفجار تاخیر یا OOM می‌شود.
+          \item مکانیزم‌های خطی و ساختاریافته رفتار خطی اکید $\mathcal{O}(N)$ را حفظ نموده و تاخیر را در توالی‌های بسیار بلند زیر ۱۰ میلی‌ثانیه نگه می‌دارند.
+        \end{itemize}
+      \end{alertblock}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% --- Slide 16: Hardware Acceleration with 26 Triton Kernels ---
+\begin{frame}{بهینه‌سازی سطح پایین: ۲۶ کرنل سفارشی Triton JIT روی RTX 4070}
+  \begin{columns}
+    \begin{column}{0.48\textwidth}
+      \begin{block}{مشخصات پلتفرم تست سخت‌افزاری}
+        \begin{itemize}\footnotesize
+          \item پردازنده گرافیکی: \textbf{NVIDIA GeForce RTX 4070 Laptop}
+          \item معماری سخت‌افزار: \textbf{Ada Lovelace (Compute Capability 8.9)}
+          \item حافظه فیزیکی: \textbf{8188 MB GDDR6}
+          \item کامپایلر: \textbf{OpenAI Triton 3.0.0 JIT}
+        \end{itemize}
+      \end{block}
+
+      \begin{alertblock}{پشته گسیل سه‌سطحی (3-Level Dispatch)}
+        \begin{enumerate}\footnotesize
+          \item \textbf{Native Triton:} اجرای کاشی‌بندی‌شده در SRAM.
+          \item \textbf{CUDA C++:} ۱۸ عملگر سفارشی با warp intrinsics.
+          \item \textbf{PyTorch Fallback:} پشتیبان عددی تضمین‌کننده پایداری.
+        \end{enumerate}
+      \end{alertblock}
+    \end{column}
+
+    \begin{column}{0.52\textwidth}
+      \includegraphics[width=\textwidth]{triton_speedup_leaderboard.png}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% --- Slide 17: Three-Level Latency Comparison ---
+\begin{frame}{مقایسه تاخیر در پشته گسیل سه‌سطحی (PyTorch vs CUDA vs Triton)}
+  \begin{columns}
+    \begin{column}{0.6\textwidth}
+      \includegraphics[width=\textwidth]{three_level_latency_comparison.png}
+    \end{column}
+    \begin{column}{0.4\textwidth}
+      \begin{exampleblock}{دستاوردهای کرنل‌های تریتون}
+        \begin{itemize}\footnotesize
+          \item شتاب تا \textbf{۳.۸۱ برابر} در ماژول \lr{Chunk GLA}.
+          \item شتاب \textbf{۳.۴۸ برابر} در محاسبات پروجکشن کم‌مرتبه \lr{SVD}.
+          \item حذف کامل گلوگاه حافظه با ادغام عملگرهای نرمال‌سازی و رزیدوال (\lr{RMSNorm + Residual}).
+          \item نزدیک شدن شدت محاسباتی به سقف سخت‌افزاری پردازنده RTX 4070.
+        \end{itemize}
+      \end{exampleblock}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% --- Slide 18: Contributions & Summary ---
+\begin{frame}{جمع‌بندی دستاوردها و مشارکت‌های پایان‌نامه}
+  \begin{enumerate}\setlength{\itemsep}{0.22cm}\footnotesize
+    \item \textbf{بسته‌شدن قطعی ۵ شکاف علمی در مرز دانش (SOTA):} اثبات تحلیلی بهینگی برش چولسکی در SVD-LLM v2، استریمینگ بافر KV در ASVD، کران خطای مانتیس FP8، هم‌ترازی DSA، و پایستگی سیمپلکس در WGQA.
+    \item \textbf{جامع‌ترین پایگاه ارزیابی مقایسه‌ای هم‌شرط:} سنجش دقیق ۲۰۳ ماژول (۱۳۱ توجه و ۷۲ فشرده‌ساز) با سنکرون‌سازی کامل CUDA روی ۴ مدل انکودر و دیکودر.
+    \item \textbf{طراحی پروتکل مهندسی تزریق جراحی ۴ مرحله‌ای:} چارچوب سیستم‌محور برای جایگزینی درجا با برابری خروجی در گام صفر.
+    \item \textbf{بسته ۶ ستونی تقطیر دانش با تضمین انقباض خطی:} مهار واگرایی بازنمایی و بازیابی بیش از ۹۰٪ دقت اولیه در کمتر از ۲۵۰ گام بهینه‌سازی.
+    \item \textbf{شتاب‌دهی سخت‌افزاری سطح پایین:} توسعه و کامپایل ۲۶ کرنل سخت‌افزاری Triton JIT با شتاب تا ۳.۸ برابر روی \lr{RTX 4070 SM 8.9}.
+  \end{enumerate}
+\end{frame}
+
+% --- Slide 19: Q&A Slide ---
+\begin{frame}[plain]
+  \begin{center}
+    \vspace{0.8cm}
+    \includegraphics[height=1.6cm]{logo.png}\\[0.5cm]
+    {\huge \color{UTBlue} \textbf{با سپاس از توجه اساتید و داوران گرامی}}\\[0.8cm]
+    {\Large \textbf{پرسش و پاسخ}}\\[1.2cm]
+    {\small محمد طاها مجلسی --- دانشکده مهندسی برق و کامپیوتر دانشگاه تهران}\\[0.2cm]
+    {\footnotesize \lr{Email: taha.majlesi@ut.ac.ir}}
+  \end{center}
+\end{frame}
+
+\end{document}

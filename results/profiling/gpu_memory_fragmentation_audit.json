@@ -1,0 +1,336 @@
+{
+  "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+  "total_vram_mib": 7805.06,
+  "context_scaling_vram_and_latency": {
+    "SVDLinearAttention_FP32": {
+      "512": {
+        "success": true,
+        "latency_ms": 0.697,
+        "allocated_mib": 16.3,
+        "peak_allocated_mib": 37.42,
+        "reserved_mib": 44.0,
+        "peak_reserved_mib": 44.0,
+        "frag_ratio": 0.6296,
+        "within_8188_budget": true
+      },
+      "1024": {
+        "success": true,
+        "latency_ms": 2.085,
+        "allocated_mib": 22.3,
+        "peak_allocated_mib": 64.55,
+        "reserved_mib": 84.0,
+        "peak_reserved_mib": 84.0,
+        "frag_ratio": 0.7346,
+        "within_8188_budget": true
+      },
+      "2048": {
+        "success": true,
+        "latency_ms": 7.22,
+        "allocated_mib": 34.3,
+        "peak_allocated_mib": 118.8,
+        "reserved_mib": 132.0,
+        "peak_reserved_mib": 132.0,
+        "frag_ratio": 0.7402,
+        "within_8188_budget": true
+      },
+      "4096": {
+        "success": true,
+        "latency_ms": 22.377,
+        "allocated_mib": 58.3,
+        "peak_allocated_mib": 227.3,
+        "reserved_mib": 240.0,
+        "peak_reserved_mib": 240.0,
+        "frag_ratio": 0.7571,
+        "within_8188_budget": true
+      },
+      "8192": {
+        "success": true,
+        "latency_ms": 79.331,
+        "allocated_mib": 106.3,
+        "peak_allocated_mib": 445.3,
+        "reserved_mib": 456.0,
+        "peak_reserved_mib": 456.0,
+        "frag_ratio": 0.7669,
+        "within_8188_budget": true
+      }
+    },
+    "SVDLinearAttention_FP16": {
+      "512": {
+        "success": true,
+        "latency_ms": 0.199,
+        "allocated_mib": 12.71,
+        "peak_allocated_mib": 23.27,
+        "reserved_mib": 42.0,
+        "peak_reserved_mib": 42.0,
+        "frag_ratio": 0.6973,
+        "within_8188_budget": true
+      },
+      "1024": {
+        "success": true,
+        "latency_ms": 0.405,
+        "allocated_mib": 15.71,
+        "peak_allocated_mib": 36.84,
+        "reserved_mib": 42.0,
+        "peak_reserved_mib": 42.0,
+        "frag_ratio": 0.6259,
+        "within_8188_budget": true
+      },
+      "2048": {
+        "success": true,
+        "latency_ms": 1.183,
+        "allocated_mib": 21.71,
+        "peak_allocated_mib": 63.96,
+        "reserved_mib": 82.0,
+        "peak_reserved_mib": 82.0,
+        "frag_ratio": 0.7352,
+        "within_8188_budget": true
+      },
+      "4096": {
+        "success": true,
+        "latency_ms": 3.993,
+        "allocated_mib": 33.71,
+        "peak_allocated_mib": 118.21,
+        "reserved_mib": 132.0,
+        "peak_reserved_mib": 132.0,
+        "frag_ratio": 0.7446,
+        "within_8188_budget": true
+      },
+      "8192": {
+        "success": true,
+        "latency_ms": 14.624,
+        "allocated_mib": 57.71,
+        "peak_allocated_mib": 226.71,
+        "reserved_mib": 240.0,
+        "peak_reserved_mib": 240.0,
+        "frag_ratio": 0.7595,
+        "within_8188_budget": true
+      }
+    },
+    "TritonSVDLinearAttention_FP16": {
+      "512": {
+        "success": true,
+        "latency_ms": 0.275,
+        "allocated_mib": 13.91,
+        "peak_allocated_mib": 25.91,
+        "reserved_mib": 42.0,
+        "peak_reserved_mib": 42.0,
+        "frag_ratio": 0.6688,
+        "within_8188_budget": true
+      },
+      "1024": {
+        "success": true,
+        "latency_ms": 0.363,
+        "allocated_mib": 16.54,
+        "peak_allocated_mib": 40.54,
+        "reserved_mib": 62.0,
+        "peak_reserved_mib": 62.0,
+        "frag_ratio": 0.7333,
+        "within_8188_budget": true
+      },
+      "2048": {
+        "success": true,
+        "latency_ms": 0.703,
+        "allocated_mib": 22.54,
+        "peak_allocated_mib": 70.54,
+        "reserved_mib": 86.0,
+        "peak_reserved_mib": 86.0,
+        "frag_ratio": 0.7379,
+        "within_8188_budget": true
+      },
+      "4096": {
+        "success": true,
+        "latency_ms": 1.926,
+        "allocated_mib": 34.54,
+        "peak_allocated_mib": 130.54,
+        "reserved_mib": 166.0,
+        "peak_reserved_mib": 166.0,
+        "frag_ratio": 0.7919,
+        "within_8188_budget": true
+      },
+      "8192": {
+        "success": true,
+        "latency_ms": 4.931,
+        "allocated_mib": 58.54,
+        "peak_allocated_mib": 250.54,
+        "reserved_mib": 310.0,
+        "peak_reserved_mib": 310.0,
+        "frag_ratio": 0.8112,
+        "within_8188_budget": true
+      }
+    },
+    "TritonSVDLinearAttention_FP32": {
+      "512": {
+        "success": true,
+        "latency_ms": 0.34,
+        "allocated_mib": 18.7,
+        "peak_allocated_mib": 40.17,
+        "reserved_mib": 64.0,
+        "peak_reserved_mib": 64.0,
+        "frag_ratio": 0.7078,
+        "within_8188_budget": true
+      },
+      "1024": {
+        "success": true,
+        "latency_ms": 0.74,
+        "allocated_mib": 24.7,
+        "peak_allocated_mib": 73.08,
+        "reserved_mib": 88.0,
+        "peak_reserved_mib": 88.0,
+        "frag_ratio": 0.7193,
+        "within_8188_budget": true
+      },
+      "2048": {
+        "success": true,
+        "latency_ms": 1.755,
+        "allocated_mib": 36.7,
+        "peak_allocated_mib": 133.08,
+        "reserved_mib": 156.0,
+        "peak_reserved_mib": 156.0,
+        "frag_ratio": 0.7647,
+        "within_8188_budget": true
+      },
+      "4096": {
+        "success": true,
+        "latency_ms": 4.925,
+        "allocated_mib": 60.7,
+        "peak_allocated_mib": 233.08,
+        "reserved_mib": 248.0,
+        "peak_reserved_mib": 248.0,
+        "frag_ratio": 0.7552,
+        "within_8188_budget": true
+      },
+      "8192": {
+        "success": true,
+        "latency_ms": 10.931,
+        "allocated_mib": 108.7,
+        "peak_allocated_mib": 446.58,
+        "reserved_mib": 484.0,
+        "peak_reserved_mib": 484.0,
+        "frag_ratio": 0.7754,
+        "within_8188_budget": true
+      }
+    },
+    "TritonCosformerAttention_FP16": {
+      "512": {
+        "success": true,
+        "latency_ms": 0.229,
+        "allocated_mib": 17.38,
+        "peak_allocated_mib": 25.51,
+        "reserved_mib": 42.0,
+        "peak_reserved_mib": 42.0,
+        "frag_ratio": 0.5862,
+        "within_8188_budget": true
+      },
+      "1024": {
+        "success": true,
+        "latency_ms": 0.428,
+        "allocated_mib": 20.38,
+        "peak_allocated_mib": 36.01,
+        "reserved_mib": 42.0,
+        "peak_reserved_mib": 42.0,
+        "frag_ratio": 0.5147,
+        "within_8188_budget": true
+      },
+      "2048": {
+        "success": true,
+        "latency_ms": 0.889,
+        "allocated_mib": 27.01,
+        "peak_allocated_mib": 57.01,
+        "reserved_mib": 62.0,
+        "peak_reserved_mib": 62.0,
+        "frag_ratio": 0.5644,
+        "within_8188_budget": true
+      },
+      "4096": {
+        "success": true,
+        "latency_ms": 1.776,
+        "allocated_mib": 38.38,
+        "peak_allocated_mib": 98.38,
+        "reserved_mib": 106.0,
+        "peak_reserved_mib": 106.0,
+        "frag_ratio": 0.6379,
+        "within_8188_budget": true
+      },
+      "8192": {
+        "success": true,
+        "latency_ms": 3.667,
+        "allocated_mib": 62.38,
+        "peak_allocated_mib": 182.38,
+        "reserved_mib": 190.0,
+        "peak_reserved_mib": 190.0,
+        "frag_ratio": 0.6717,
+        "within_8188_budget": true
+      }
+    },
+    "GLAttention_FP16": {
+      "512": {
+        "success": true,
+        "latency_ms": 2.194,
+        "allocated_mib": 17.41,
+        "peak_allocated_mib": 50.5,
+        "reserved_mib": 72.0,
+        "peak_reserved_mib": 72.0,
+        "frag_ratio": 0.7583,
+        "within_8188_budget": true
+      },
+      "1024": {
+        "success": true,
+        "latency_ms": 3.668,
+        "allocated_mib": 20.41,
+        "peak_allocated_mib": 84.19,
+        "reserved_mib": 114.0,
+        "peak_reserved_mib": 114.0,
+        "frag_ratio": 0.821,
+        "within_8188_budget": true
+      },
+      "2048": {
+        "success": true,
+        "latency_ms": 6.61,
+        "allocated_mib": 27.03,
+        "peak_allocated_mib": 153.34,
+        "reserved_mib": 202.0,
+        "peak_reserved_mib": 202.0,
+        "frag_ratio": 0.8662,
+        "within_8188_budget": true
+      },
+      "4096": {
+        "success": true,
+        "latency_ms": 13.113,
+        "allocated_mib": 38.41,
+        "peak_allocated_mib": 291.03,
+        "reserved_mib": 342.0,
+        "peak_reserved_mib": 342.0,
+        "frag_ratio": 0.8877,
+        "within_8188_budget": true
+      },
+      "8192": {
+        "success": true,
+        "latency_ms": 29.89,
+        "allocated_mib": 62.41,
+        "peak_allocated_mib": 567.66,
+        "reserved_mib": 656.0,
+        "peak_reserved_mib": 656.0,
+        "frag_ratio": 0.9049,
+        "within_8188_budget": true
+      }
+    }
+  },
+  "cuda_graph_capture_audit": {
+    "SVDLinearAttention_FP16": {
+      "cuda_graph_capture_success": true,
+      "max_diff_vs_eager": 0.0,
+      "numeric_parity": true,
+      "eager_latency_ms": 0.4216,
+      "cuda_graph_latency_ms": 0.4032,
+      "speedup": 1.046
+    },
+    "TritonSVDLinearAttention_FP16": {
+      "cuda_graph_capture_success": true,
+      "max_diff_vs_eager": 0.0,
+      "numeric_parity": true,
+      "eager_latency_ms": 0.3861,
+      "cuda_graph_latency_ms": 0.3832,
+      "speedup": 1.008
+    }
+  }
+}
