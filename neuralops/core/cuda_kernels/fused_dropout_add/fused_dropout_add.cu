@@ -6,16 +6,52 @@
 namespace neuralops {
 namespace cuda {
 
-// Simple high-throughput LCG hash for uniform [0, 1) float
-__device__ inline float lcg_rand(uint64_t seed, unsigned int idx) {
-    unsigned int x = static_cast<unsigned int>(seed) + idx * 1664525u + 1013904223u;
-    x ^= x >> 16;
-    x *= 0x45d9f3b;
-    x ^= x >> 16;
-    return static_cast<float>(x & 0x00FFFFFF) / static_cast<float>(0x01000000);
+// Philox-4x32-10 PRNG directly evaluated in device registers
+__device__ __forceinline__ void philox4x32_10(
+    uint32_t counter[4],
+    uint32_t key[2],
+    float out[4]
+) {
+    uint32_t c0 = counter[0];
+    uint32_t c1 = counter[1];
+    uint32_t c2 = counter[2];
+    uint32_t c3 = counter[3];
+
+    uint32_t k0 = key[0];
+    uint32_t k1 = key[1];
+
+    constexpr uint32_t M0 = 0xD2511F53u;
+    constexpr uint32_t M1 = 0xCD9E8D57u;
+    constexpr uint32_t W0 = 0x9E3779B9u;
+    constexpr uint32_t W1 = 0xBB67AE85u;
+
+    #pragma unroll
+    for (int round = 0; round < 10; ++round) {
+        uint64_t prod0 = static_cast<uint64_t>(M0) * static_cast<uint64_t>(c0);
+        uint64_t prod1 = static_cast<uint64_t>(M1) * static_cast<uint64_t>(c2);
+
+        uint32_t hi0 = static_cast<uint32_t>(prod0 >> 32);
+        uint32_t lo0 = static_cast<uint32_t>(prod0);
+        uint32_t hi1 = static_cast<uint32_t>(prod1 >> 32);
+        uint32_t lo1 = static_cast<uint32_t>(prod1);
+
+        c0 = hi1 ^ c1 ^ k0;
+        c1 = lo1;
+        c2 = hi0 ^ c3 ^ k1;
+        c3 = lo0;
+
+        k0 += W0;
+        k1 += W1;
+    }
+
+    constexpr float factor = 2.3283064365386963e-10f; // 1.0 / 2^32
+    out[0] = static_cast<float>(c0) * factor;
+    out[1] = static_cast<float>(c1) * factor;
+    out[2] = static_cast<float>(c2) * factor;
+    out[3] = static_cast<float>(c3) * factor;
 }
 
-// 128-bit float4 vectorized fused dropout + residual add kernel
+// 128-bit float4 vectorized fused dropout + residual add kernel using on-chip Philox PRNG
 template <typename scalar_t>
 __launch_bounds__(256)
 __global__ void fused_dropout_add_vectorized_kernel(
@@ -32,24 +68,38 @@ __global__ void fused_dropout_add_vectorized_kernel(
     const int tid = blockIdx.x * blockDim.x + threadIdx.x;
     const int stride = blockDim.x * gridDim.x;
 
+    uint32_t key[2];
+    key[0] = static_cast<uint32_t>(seed);
+    key[1] = static_cast<uint32_t>(seed >> 32);
+
     for (int idx = tid; idx < num_vec; idx += stride) {
+        float r_rand[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+        if (training && p > 0.0f) {
+            uint32_t counter[4];
+            const uint64_t offset = static_cast<uint64_t>(idx);
+            counter[0] = static_cast<uint32_t>(offset);
+            counter[1] = static_cast<uint32_t>(offset >> 32);
+            counter[2] = 0;
+            counter[3] = 0;
+            philox4x32_10(counter, key, r_rand);
+        }
+
         if constexpr (std::is_same_v<scalar_t, float>) {
             const float4 x4 = *reinterpret_cast<const float4*>(x + idx * 4);
             const float4 r4 = *reinterpret_cast<const float4*>(residual + idx * 4);
             float4 out4;
 
-            #define EVAL_DROPOUT_ADD(x_val, r_val, base_offset, out_val) { \
+            #define EVAL_DROPOUT_ADD(x_val, r_val, rand_val, out_val) { \
                 float drop = x_val; \
                 if (training && p > 0.0f) { \
-                    const float r_rand = lcg_rand(seed, base_offset); \
-                    drop = (r_rand >= p) ? (x_val * scale) : 0.0f; \
+                    drop = (rand_val >= p) ? (x_val * scale) : 0.0f; \
                 } \
                 out_val = drop + r_val; \
             }
-            EVAL_DROPOUT_ADD(x4.x, r4.x, idx * 4 + 0, out4.x);
-            EVAL_DROPOUT_ADD(x4.y, r4.y, idx * 4 + 1, out4.y);
-            EVAL_DROPOUT_ADD(x4.z, r4.z, idx * 4 + 2, out4.z);
-            EVAL_DROPOUT_ADD(x4.w, r4.w, idx * 4 + 3, out4.w);
+            EVAL_DROPOUT_ADD(x4.x, r4.x, r_rand[0], out4.x);
+            EVAL_DROPOUT_ADD(x4.y, r4.y, r_rand[1], out4.y);
+            EVAL_DROPOUT_ADD(x4.z, r4.z, r_rand[2], out4.z);
+            EVAL_DROPOUT_ADD(x4.w, r4.w, r_rand[3], out4.w);
             #undef EVAL_DROPOUT_ADD
 
             *reinterpret_cast<float4*>(out + idx * 4) = out4;
@@ -61,8 +111,7 @@ __global__ void fused_dropout_add_vectorized_kernel(
                 const float r_val = to_float(residual[elem_idx]);
                 float drop = x_val;
                 if (training && p > 0.0f) {
-                    const float r_rand = lcg_rand(seed, elem_idx);
-                    drop = (r_rand >= p) ? (x_val * scale) : 0.0f;
+                    drop = (r_rand[k] >= p) ? (x_val * scale) : 0.0f;
                 }
                 out[elem_idx] = from_float<scalar_t>(drop + r_val);
             }
@@ -76,8 +125,15 @@ __global__ void fused_dropout_add_vectorized_kernel(
         const float r_val = to_float(residual[idx]);
         float drop_x = x_val;
         if (training && p > 0.0f) {
-            const float r = lcg_rand(seed, idx);
-            drop_x = (r >= p) ? (x_val * scale) : 0.0f;
+            uint32_t counter[4];
+            const uint64_t offset = static_cast<uint64_t>(idx);
+            counter[0] = static_cast<uint32_t>(offset);
+            counter[1] = static_cast<uint32_t>(offset >> 32);
+            counter[2] = 0;
+            counter[3] = 0;
+            float r_rand[4];
+            philox4x32_10(counter, key, r_rand);
+            drop_x = (r_rand[0] >= p) ? (x_val * scale) : 0.0f;
         }
         out[idx] = from_float<scalar_t>(drop_x + r_val);
     }
