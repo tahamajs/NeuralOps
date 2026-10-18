@@ -210,6 +210,23 @@ neuralops = [
     "**/*.h",
 ]
 
+[tool.setuptools.exclude-package-data]
+"*" = [
+    "tests*",
+    "benchmarks*",
+    "results*",
+    "paper*",
+    "thesis_final*",
+    "docs*",
+    "academic*",
+]
+neuralops = [
+    "benchmarks/*",
+    "benchmarks/**",
+    "tests/*",
+    "tests/**",
+]
+
 [tool.pytest.ini_options]
 minversion = "7.0"
 testpaths = ["tests"]
