@@ -71,12 +71,13 @@ def benchmark_attention_accuracy(
 
 
 def benchmark_scaling_sweep(
-    seq_lens: list[int] = [128, 256, 512, 1024],
+    seq_lens: list[int] | None = None,
     batch_size: int = 2,
     num_heads: int = 4,
     head_dim: int = 32,
 ) -> list[dict[str, Any]]:
     """Runs sequence length scaling sweep on standard SDPA attention."""
+    seq_lens = [128, 256, 512, 1024] if seq_lens is None else seq_lens
     results = []
     scale = 1.0 / (head_dim ** 0.5)
 
