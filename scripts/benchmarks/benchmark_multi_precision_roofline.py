@@ -119,22 +119,25 @@ def main():
                 mod = create_attention(actual_key, embed_dim=D, num_heads=H).to(device=dev, dtype=dtype).eval()
                 x = torch.randn(B, T, D, device=dev, dtype=dtype)
 
-                def run_forward():
-                    with torch.no_grad():
-                        out = mod(x)
-                        if isinstance(out, tuple):
-                            out = out[0]
-                        return out
+                def _make_forward(target_mod, target_x):
+                    def run_forward():
+                        with torch.no_grad():
+                            out = target_mod(target_x)
+                            if isinstance(out, tuple):
+                                out = out[0]
+                            return out
+                    return run_forward
 
                 metric = runner.measure_callable(
-                    run_forward,
+                    _make_forward(mod, x),
                     total_flops=flops,
                     total_bytes=bytes_moved,
                     batch_size=B,
                     seq_len=T,
                 )
 
-                del x, mod
+                mod = None
+                x = None
                 runner.reset_vram()
 
                 entry["precisions"][prec_name] = {
@@ -179,11 +182,11 @@ def main():
 
         for r in results:
             p = r["precisions"]
-            fp32_ms = f"{p.get('FP32', {}).get('latency_ms', 0):.2f}"
-            fp16_ms = f"{p.get('FP16', {}).get('latency_ms', 0):.2f}"
-            bf16_ms = f"{p.get('BF16', {}).get('latency_ms', 0):.2f}"
-            fp16_tf = f"{p.get('FP16', {}).get('tflops_per_sec', 0):.2f}"
-            fp16_bw = f"{p.get('FP16', {}).get('bandwidth_util_pct', 0):.1f}%"
+            fp32_ms = fmt_opt(p.get('FP32', {}).get('latency_ms'), fmt=".2f", default="-")
+            fp16_ms = fmt_opt(p.get('FP16', {}).get('latency_ms'), fmt=".2f", default="-")
+            bf16_ms = fmt_opt(p.get('BF16', {}).get('latency_ms'), fmt=".2f", default="-")
+            fp16_tf = fmt_opt(p.get('FP16', {}).get('tflops_per_sec'), fmt=".2f", default="-")
+            fp16_bw = fmt_opt(p.get('FP16', {}).get('bandwidth_util_pct'), fmt=".1f", suffix="%", default="-")
             table.add_row(r["display_name"], fp32_ms, fp16_ms, bf16_ms, fp16_tf, fp16_bw)
 
         console.print(table)

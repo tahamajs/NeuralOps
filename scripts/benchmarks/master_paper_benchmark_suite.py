@@ -126,7 +126,8 @@ def prepare_lm_batches(tokenizer, max_tokens: int = 8192, seq_len: int = 128):
     try:
         ds = load_dataset("wikitext", "wikitext-2-raw-v1", split="test")
         full_text = "\n\n".join([x["text"] for x in ds if x["text"].strip()])
-    except Exception:
+    except (RuntimeError, MemoryError, AssertionError, ValueError, OSError) as e:
+        logger.warning("Failed to load wikitext dataset: %s, falling back to dummy text", e, exc_info=True)
         full_text = "The quick brown fox jumps over the lazy dog. " * 500
 
     enc = tokenizer(full_text, truncation=True, max_length=max_tokens, return_tensors="pt")

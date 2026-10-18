@@ -299,7 +299,7 @@ class FusedLinearCrossEntropyFunction(torch.autograd.Function):
 
         orig_shape = hidden_states.shape
         D = orig_shape[-1]
-        V = weight.shape[0]
+        _V = weight.shape[0]
 
         h_flat = hidden_states.reshape(-1, D).contiguous()
         t_flat = targets.reshape(-1).contiguous()
