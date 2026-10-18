@@ -65,7 +65,8 @@ class LatentKVCacheAttentionFunction(torch.autograd.Function):
         )
 
     @staticmethod
-    def backward(ctx, grad_out):
+    def backward(ctx, *grad_outputs):
+        grad_out = grad_outputs[0]
         q, c_kv, u_k, u_v = ctx.saved_tensors
         sm_scale = ctx.sm_scale
         mod = _get_module()

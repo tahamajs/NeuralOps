@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Author: Taha Majlesi
 import os
 import gc
 import sys
@@ -82,7 +84,8 @@ def eval_perplexity(model):
         ppl = math.exp(loss) if loss < 20 else float('inf')
     return float(round(loss, 4)), float(round(ppl, 2))
 
-def eval_long_context_scaling(attention_key=None, seq_lens=[512, 1024, 2048, 4096]):
+def eval_long_context_scaling(attention_key=None, seq_lens=None):
+    seq_lens = [512, 1024, 2048, 4096] if seq_lens is None else seq_lens
     scaling_stats = {}
     for L in seq_lens:
         torch.cuda.empty_cache()

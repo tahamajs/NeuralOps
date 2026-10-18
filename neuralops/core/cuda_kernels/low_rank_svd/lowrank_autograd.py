@@ -84,12 +84,14 @@ class _FusedLowRankGatedGemmFunction(torch.autograd.Function):
         return out
 
     @staticmethod
-    def backward(ctx: Any, dout: torch.Tensor) -> tuple[torch.Tensor | None, ...]:
+    def backward(ctx: Any, *grad_outputs: Any) -> tuple[torch.Tensor | None, ...]:
+        dout = grad_outputs[0]
         x, V, U, a_arg = ctx.saved_tensors
         dout = dout.contiguous()
 
         # Fast analytical adjoint gradients using WMMA Tensor Cores
         dz = torch.matmul(dout, U)
+        sig = None
         if ctx.has_alpha:
             sig = torch.sigmoid(a_arg)
             dz_gated = dz * sig

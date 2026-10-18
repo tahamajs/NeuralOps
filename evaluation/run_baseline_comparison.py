@@ -41,6 +41,7 @@ sys.path[:0] = [str(CODES), str(ROOT)]
 from datasets import load_dataset, load_from_disk
 
 try:
+    # noinspection deprecation
     from neuralops.benchmarks.run_quality_sweep import evaluate_comprehensive, prepare_eval_batches
 except ImportError:
     evaluate_comprehensive = None

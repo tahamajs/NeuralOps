@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Author: Taha Majlesi
 import os
 import sys
 import gc
@@ -28,8 +30,9 @@ class BatchedMultiLoRAOperator(nn.Module):
     Y_adapter = (X_i @ B_i) @ A_i * (scaling_i)
     for distinct adapter ranks R in {16, 32}.
     """
-    def __init__(self, in_features=1024, out_features=1024, num_adapters=4, ranks=[16, 32, 16, 32], device="cuda:0"):
+    def __init__(self, in_features=1024, out_features=1024, num_adapters=4, ranks=None, device="cuda:0"):
         super().__init__()
+        ranks = [16, 32, 16, 32] if ranks is None else ranks
         self.in_features = in_features
         self.out_features = out_features
         self.num_adapters = num_adapters

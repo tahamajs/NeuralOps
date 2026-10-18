@@ -104,7 +104,8 @@ class _ActScaleQuantGemmFunction(torch.autograd.Function):
         return out_2d.reshape(*orig_shape[:-1], N)
 
     @staticmethod
-    def backward(ctx: Any, dout: torch.Tensor) -> tuple[torch.Tensor | None, ...]:
+    def backward(ctx: Any, *grad_outputs: Any) -> tuple[torch.Tensor | None, ...]:
+        dout = grad_outputs[0]
         x_2d, s_inv, w = ctx.saved_tensors
         dout_2d = dout.reshape(-1, ctx.out_features)
 

@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# Author: Taha Majlesi
 """
 Benchmark Suite: Exact O(1) Recurrent .step() Throughput & 4 New Triton Capabilities.
 
@@ -23,7 +25,8 @@ from neuralops.core.triton_kernels.low_rank import (
 )
 
 
-def benchmark_step_throughput(device, models=["cosformer", "gla_attention", "gated_delta_net", "kda_attention", "hla_attention"]):
+def benchmark_step_throughput(device, models=None):
+    models = ["cosformer", "gla_attention", "gated_delta_net", "kda_attention", "hla_attention"] if models is None else models
     results = {}
     dim = 256
     heads = 4

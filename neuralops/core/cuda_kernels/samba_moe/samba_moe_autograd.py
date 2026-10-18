@@ -67,7 +67,8 @@ class _SambaMoEFunction(torch.autograd.Function):
         return out
 
     @staticmethod
-    def backward(ctx: Any, dout: torch.Tensor) -> tuple[torch.Tensor | None, ...]:
+    def backward(ctx: Any, *grad_outputs: Any) -> tuple[torch.Tensor | None, ...]:
+        dout = grad_outputs[0]
         expert_out1, expert_out2, routing_weights = ctx.saved_tensors
 
         w1 = routing_weights[..., 0:1].to(dout.dtype)

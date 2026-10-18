@@ -68,7 +68,7 @@ class _BitonicTopKFunction(torch.autograd.Function):
         return _fwd_dispatch(x, K)
 
     @staticmethod
-    def backward(ctx: Any, dout: torch.Tensor) -> tuple[torch.Tensor | None, ...]:
+    def backward(ctx: Any, *grad_outputs: Any) -> tuple[torch.Tensor | None, ...]:
         # Indices are integer/discrete tensors with zero continuous gradient
         return None, None
 
