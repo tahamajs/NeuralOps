@@ -1,0 +1,65 @@
+{
+    "model": "gpt2_svd_llm_v2",
+    "performance": {
+        "accuracy_pct": 0.0,
+        "f1_score": 0.0,
+        "f1_macro": null,
+        "precision": null,
+        "recall": null,
+        "val_loss": 3.819946953383647,
+        "perplexity": 45.601789,
+        "status": "PASS",
+        "elapsed_s": 209.73
+    },
+    "efficiency": {
+        "total_params_before": 124439808,
+        "total_params_after": 125637888,
+        "trainable_recovery_params": 1179648,
+        "compression_rate": 1.0,
+        "compression_ratio_pct": 0.0,
+        "flops_reduction_pct": 0.0,
+        "num_compressed_layers": 0,
+        "num_fallback_layers": 0,
+        "num_injected_attention_layers": 12,
+        "lora_params": 1179648,
+        "avg_reconstruction_error": null,
+        "weighted_reconstruction_error": null,
+        "per_layer_reconstruction_errors": {},
+        "per_layer_ranks": {
+            "transformer.h.0.attn": 384,
+            "transformer.h.1.attn": 384,
+            "transformer.h.2.attn": 384,
+            "transformer.h.3.attn": 384,
+            "transformer.h.4.attn": 384,
+            "transformer.h.5.attn": 384,
+            "transformer.h.6.attn": 384,
+            "transformer.h.7.attn": 384,
+            "transformer.h.8.attn": 384,
+            "transformer.h.9.attn": 384,
+            "transformer.h.10.attn": 384,
+            "transformer.h.11.attn": 384
+        }
+    },
+    "hardware": {
+        "peak_vram_mb": 2499.7724609375,
+        "tokens_per_sec": 5009.648265580984
+    },
+    "architecture": {
+        "span_distribution": {},
+        "mean_span": 128.0,
+        "sparsity_ratio_percent": 0.0
+    },
+    "scalability": {
+        "L_128_vram_mb": 719.13,
+        "L_256_vram_mb": 744.24,
+        "L_512_vram_mb": 783.1,
+        "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 1024)"
+    },
+    "seed": 42,
+    "git_sha": "89cf61b92",
+    "git_dirty": true,
+    "torch_version": "2.6.0+cu124",
+    "transformers_version": "5.5.0",
+    "cuda_version": "12.4",
+    "timestamp": "2026-09-25T22:08:14.346238+00:00"
+}

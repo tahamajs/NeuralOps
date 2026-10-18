@@ -1,0 +1,145 @@
+{
+  "run_metadata": {
+    "run_id": "kd_kda_attention_C_20261012_031942",
+    "run_name": "kd_kda_attention_gpt2_C",
+    "timestamp_start": "2026-10-12T03:21:59.419697+00:00",
+    "timestamp_end": "2026-10-12T03:21:59.419890+00:00",
+    "wall_clock_duration_s": 0.0,
+    "total_duration_s": 0.0,
+    "training_duration_s": 0.0,
+    "evaluation_duration_s": 0.0,
+    "git_commit": "e5511f9a04df475dcf46a39ba86292d43ab1d4ca",
+    "git_commit_short": "e5511f9a04",
+    "git_branch": "main",
+    "git_dirty": true,
+    "git_diff": "_modules_tmp.json                                  |    2 +-\n neuralops/attentions/ssm/mamba_svd_flash.py        |    3 +-\n .../experimental/lillama_compressor.py             |    3 +-\n .../tensor_decomp/tt_compressor.py                 |    3 +-\n .../attention_adaptive_span_attention.json         |   14 +-\n .../attention_adaptive_sparse_attention.json       |   14 +-\n .../attention_adaptive_svd_attention.json          |   15 +-\n .../delta_sweep/attention_adasplash_attention.json |   11 +-\n results/delta_sweep/attention_aegis_v6.json        |   13 +-\n results/delta_sweep/attention_alibi.json           |   15 +-\n results/delta_sweep/attention_asvd_attention.json  |   13 +-\n results/delta_sweep/attention_bam_umoe.json        |   15 +-\n .../attention_block_transformer_hiba.json          |   15 +-\n results/delta_sweep/attention_chela_slay.json      |   15 +-\n .../attention_chela_slay_attention.json            |   15 +-\n .../delta_sweep/attention_cluster_attention.json   |   15 +-\n .../attention_compressed_attention.json            |   15 +-\n .../attention_compressed_mha_attention.json        |   15 +-\n results/delta_sweep/attention_cosformer.json       |   13 +-\n .../delta_sweep/attention_cosformer_attention.json |   13 +-\n results/delta_sweep/attention_cross_attention.json |   15 +-\n .../attention_decay_linear_attention.json          |   15 +-\n .../delta_sweep/attention_decay_linear_attn.json   |   15 +-\n .../attention_dynamic_conv_attention.json          |   13 +-\n results/delta_sweep/attention_eat.json             |   15 +-\n results/delta_sweep/attention_eat_attention.json   |   15 +-\n .../delta_sweep/attention_expert_choice_moe.json   |   15 +-\n .../attention_factorised_matrix_state.json         |   11 +-\n .../delta_sweep/attention_flash_attention3.json    |   15 +-\n .../attention_flash_attention3_fp8.json            |   15 +-\n results/delta_sweep/attention_full.json            |   11 +-\n results/delta_sweep/attention_full_attention.json  |   15 +-\n .../delta_sweep/attention_fused_svd_kernel.json    |   15 +-\n results/delta_sweep/attention_fusion_attn.json     |   15 +-\n .../delta_sweep/attention_galerkin_attention.json  |   15 +-\n results/delta_sweep/attention_gated_delta_net.json |   15 +-\n .../attention_gated_deltanet_block.json            |   15 +-\n results/delta_sweep/attention_goldfinch_ahn.json   |   15 +-\n results/delta_sweep/attention_gqa_attention.json   |   15 +-\n results/delta_sweep/attention_granite_hybrid.json  |   13 +-\n results/delta_sweep/attention_griffin_ssd.json     |   15 +-\n results/delta_sweep/attention_halo_regla.json      |   15 +-\n .../delta_sweep/attention_hamming_attention.json   |   13 +-\n .../attention_hgrn2_gated_deltanet.json            |   13 +-\n .../delta_sweep/attention_hgrn2_gated_layer.json   |   15 +-\n .../delta_sweep/attention_hgrn2_gated_outer.json   |   15 +-\n results/delta_sweep/attention_hla_attention.json   |   15 +-\n .../delta_sweep/attention_hybrid_attention.json    |   11 +-\n .../delta_sweep/attention_hybrid_local_kernel.json |   15 +-\n results/delta_sweep/attention_hymba_transx.json    |   13 +-\n results/delta_sweep/attention_inject_leka_v1.json  |   11 +-\n results/delta_sweep/attention_inject_leka_v2.json  |   15 +-\n results/delta_sweep/attention_inject_leka_v3.json  |   15 +-\n .../attention_inject_native_hybrid_attention.json  |   15 +-\n results/delta_sweep/attention_jamba.log            |   36 +\n results/delta_sweep/compressor_a3_compressor.json  |   22 +-\n .../delta_sweep/compressor_aa_svd_compressor.json  |   22 +-\n .../compressor_aatc_xkv_compressor.json            |   11 +-\n results/delta_sweep/compressor_adaptive_ranks.json |   22 +-\n .../delta_sweep/compressor_adasvd_compressor.json  |   22 +-\n .../delta_sweep/compressor_admm_compressor.json    |   22 +-\n results/delta_sweep/compressor_admm_pruner.json    |   22 +-\n results/delta_sweep/compressor_armor_pruner.json   |   22 +-\n results/delta_sweep/compressor_ast_pruner.json     |   22 +-\n .../delta_sweep/compressor_astro_quantizer.json    |   22 +-\n results/delta_sweep/compressor_bonsai_pruner.json  |   22 +-\n .../compressor_cachenotes_compressor.json          |   22 +-\n .../delta_sweep/compressor_come_compressor.json    |   22 +-\n .../delta_sweep/compressor_compot_compressor.json  |   22 +-\n .../delta_sweep/compressor_coopq_quantizer.json    |   22 +-\n results/delta_sweep/compressor_cr_compressor.json  |   22 +-\n results/delta_sweep/compressor_cur_compressor.json |   22 +-\n .../delta_sweep/compressor_cur_moe_compressor.json |   22 +-\n results/delta_sweep/compressor_delta_kv.json       |   22 +-\n results/delta_sweep/compressor_direct_svd.json     |   22 +-\n results/delta_sweep/compressor_dobi_svd.json       |   22 +-\n .../delta_sweep/compressor_drone_compressor.json   |   22 +-\n results/delta_sweep/compressor_dynamic_rank.json   |   22 +-\n .../compressor_enlighten_compressor.json           |   22 +-\n .../compressor_entropy_budget_allocation.json      |   22 +-\n results/delta_sweep/compressor_erc_svd.json        |   22 +-\n results/delta_sweep/compressor_faq_quantizer.json  |   22 +-\n results/delta_sweep/compressor_faq_quantizer.log   |  130 +-\n results/delta_sweep/compressor_flap.json           |   22 +-\n results/delta_sweep/compressor_flat_llm.json       |   22 +-\n .../delta_sweep/compressor_frandi_compressor.json  |   22 +-\n .../delta_sweep/compressor_fwsvd_compressor.json   |   22 +-\n .../delta_sweep/compressor_fwsvd_compressor.log    |  182 +-\n results/delta_sweep/compressor_gfws.json           |   22 +-\n .../compressor_grecodec_compressor.json            |   22 +-\n .../compressor_hashed_net_compressor.json          |   22 +-\n .../compressor_hashed_net_compressor.log           |  208 +-\n results/delta_sweep/compressor_huffman_coder.json  |   18 +-\n results/delta_sweep/compressor_huffman_coder.log   |  174 +-\n .../delta_sweep/compressor_hybrid_svd_layer.json   |   22 +-\n .../compressor_hybridkv_compressor.json            |   11 +-\n .../delta_sweep/compressor_kmeans_quantize.json    |   22 +-\n .../compressor_kronecker_compressor.json           |   22 +-\n .../delta_sweep/compressor_kronecker_tt_lora.json  |   18 +-\n .../delta_sweep/compressor_kronecker_tt_lora.log   |  120 +-\n .../delta_sweep/compressor_kvtc_compressor.json    |   22 +-\n results/delta_sweep/compressor_liftr.json          |   22 +-\n results/delta_sweep/compressor_liftr.log           |  136 +-\n .../delta_sweep/compressor_lillama_compressor.json |    8 +-\n results/delta_sweep/compressor_lsc_compressor.json |   22 +-\n results/delta_sweep/compressor_lsc_compressor.log  |  212 +-\n results/delta_sweep/compressor_mamba_shedder.json  |   22 +-\n results/delta_sweep/compressor_mamba_shedder.log   |   29 +-\n results/delta_sweep/compressor_mgie_budget.json    |   22 +-\n results/delta_sweep/compressor_mgie_budget.log     |  206 +-\n .../delta_sweep/compressor_mlorq_compressor.json   |   22 +-\n .../delta_sweep/compressor_modegpt_compressor.json |   22 +-\n results/delta_sweep/compressor_nmf_compressor.json |   22 +-\n .../delta_sweep/compressor_oats_compressor.json    |   22 +-\n .../compressor_optimal_subspace_projection.json    |   22 +-\n results/delta_sweep/compressor_proxsparse.json     |   22 +-\n .../compressor_residual_svd_compressor.json        |   22 +-\n .../compressor_residual_svd_compressor.log         |  159 +-\n .../compressor_roast_hashed_linear.json            |   22 +-\n .../delta_sweep/compressor_roast_hashed_linear.log |  194 +-\n .../compressor_rotational_slicegpt_int4.json       |   18 +-\n .../compressor_rotational_slicegpt_int4.log        |  174 +-\n .../delta_sweep/compressor_rpca_compressor.json    |   22 +-\n results/delta_sweep/compressor_rpca_compressor.log |  206 +-\n results/delta_sweep/compressor_saes_svd_v2.json    |   22 +-\n results/delta_sweep/compressor_saes_svd_v2.log     |  206 +-\n results/delta_sweep/compressor_salr.json           |   18 +-\n results/delta_sweep/compressor_salr.log            |  206 +-\n .../delta_sweep/compressor_sdrm_compressor.json    |   22 +-\n results/delta_sweep/compressor_slicegpt.json       |   22 +-\n results/delta_sweep/compressor_slicegpt.log        |  220 +-\n results/delta_sweep/compressor_slicegpt_pca.json   |   22 +-\n results/delta_sweep/compressor_slicegpt_pca.log    |  199 +-\n .../delta_sweep/compressor_slim_compressor.json    |   22 +-\n .../delta_sweep/compressor_soka_compressor.json    |   18 +-\n results/delta_sweep/compressor_soka_compressor.log |  206 +-\n results/delta_sweep/compressor_sparsegpt.json      |   22 +-\n .../compressor_subspace_projection.json            |   18 +-\n .../delta_sweep/compressor_subspace_projection.log |  206 +-\n results/delta_sweep/compressor_svd_linear.json     |   22 +-\n results/delta_sweep/compressor_svd_linear.log      |  207 +-\n .../delta_sweep/compressor_svd_llm_compressor.json |   10 +-\n .../delta_sweep/compressor_svd_llm_compressor.log  |  106 +-\n results/delta_sweep/compressor_swift_svd.json      |   22 +-\n results/delta_sweep/compressor_swift_svd_act.json  |   18 +-\n results/delta_sweep/compressor_swift_svd_act.log   |  208 +-\n .../delta_sweep/compressor_tomoe_compressor.json   |   18 +-\n .../delta_sweep/compressor_tomoe_compressor.log    |  304 +-\n results/delta_sweep/compressor_tt_compressor.json  |   22 +-\n results/delta_sweep/compressor_tt_compressor.log   |  158 +-\n .../delta_sweep/compressor_uniql_compressor.json   |   22 +-\n .../delta_sweep/compressor_uniql_compressor.log    |  157 +-\n .../compressor_zerokv_neo_compressor.json          |   22 +-\n results/delta_sweep/failed_imports.json            |    6 -\n results/delta_sweep/summary.csv                    |  251 +-\n results/kd_runs/registry.json                      | 6234 ++++++++++++++++++++\n results/results.csv                                |    2 +\n results/results.parquet                            |  Bin 18768 -> 18863 bytes\n 158 files changed, 9401 insertions(+), 3888 deletions(-)",
+    "session_id": "59f6220d-4503-40ed-82e9-3b1318a970ca",
+    "parent_run_id": null
+  },
+  "module": {
+    "name": "kda_attention",
+    "type": "attention",
+    "rank": 32
+  },
+  "model": {
+    "name": "gpt2"
+  },
+  "dataset": {
+    "name": "wikitext2",
+    "task_type": "language_modeling"
+  },
+  "config": {
+    "method": "C",
+    "rank": 32,
+    "training_type": "kd",
+    "recovery_steps": 300,
+    "learning_rate": 0.0003,
+    "batch_size": 8,
+    "seq_len": 256
+  },
+  "environment": {
+    "python_version": "3.14.7",
+    "python_executable": "/mnt/d/venv/bin/python3",
+    "platform": "Linux",
+    "platform_version": "Linux-7.0.0-38-generic-x86_64-with-glibc2.43",
+    "cpu_model": "",
+    "cpu_count": 16,
+    "ram_gb": 0.0,
+    "gpu_model": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "gpu_count": 1,
+    "gpu_vram_gb": 7.62,
+    "cuda_version": "12.8",
+    "cudnn_version": "91900",
+    "torch_version": "2.11.0+cu128",
+    "torchvision_version": "0.26.0+cu128",
+    "transformers_version": "5.19.0",
+    "datasets_version": "5.1.0",
+    "triton_version": "3.6.0",
+    "numpy_version": "2.5.2",
+    "pandas_version": "3.0.6",
+    "scipy_version": "1.18.1",
+    "neuralops_version": "0.1.0",
+    "all_installed_packages": {},
+    "env_vars_used": {}
+  },
+  "hardware_usage": {
+    "peak_vram_mb": 0.0,
+    "avg_vram_mb": 0.0,
+    "peak_ram_mb": 0.0,
+    "gpu_utilization_avg": null,
+    "gpu_temperature_max": null,
+    "gpu_power_avg": null
+  },
+  "training_history": {},
+  "metrics": {
+    "pre_ppl": null,
+    "post_ppl": null,
+    "post_ppl_stage1": null,
+    "post_ppl_stage2": null,
+    "kd_gain": 0.0,
+    "recovery_pct": 100.0
+  },
+  "baseline_comparison": {
+    "baseline_accuracy": null,
+    "baseline_f1": null,
+    "baseline_loss": null,
+    "accuracy_drop": null,
+    "f1_drop": null,
+    "loss_increase": null,
+    "compression_ratio": 1.0,
+    "speedup_ratio": 1.0,
+    "params_reduction_pct": 0.0
+  },
+  "resources": {
+    "peak_vram_mb": 2873.57,
+    "train_duration_s": 124.03
+  },
+  "status": "failed",
+  "error": null,
+  "traceback": null,
+  "warnings": [],
+  "timed_out": false,
+  "timeout_s": 1800,
+  "retry_count": 0,
+  "max_retries": 2,
+  "reproducibility": {
+    "random_seed": 42,
+    "cublas_workspace_config": ":4096:8",
+    "torch_deterministic": false,
+    "torch_benchmark": false,
+    "env_vars_hash": "",
+    "reproduction_command": "",
+    "reproduction_script": "",
+    "expected_duration_s": 0.0,
+    "expected_peak_vram_mb": 0.0
+  },
+  "artifacts": {
+    "log_file": "",
+    "jsonl_file": "",
+    "json_file": "",
+    "plot_files": [],
+    "checkpoint_files": [],
+    "git_push_url": ""
+  },
+  "push_info": {
+    "pushed_to_git": false,
+    "pushed_to_hf": false,
+    "git_remote_url": "",
+    "hf_repo_id": "",
+    "hf_commit_hash": "",
+    "push_timestamp": ""
+  },
+  "training_type": "finetune",
+  "kd_config": {},
+  "recovery_config": {},
+  "baseline_metrics": {},
+  "delta_metrics": {},
+  "checksum": "30434ab1b416dec4",
+  "run_id": "kd_kda_attention_C_20261012_031942",
+  "run_name": "kd_kda_attention_gpt2_C",
+  "timestamp_start": "2026-10-12T03:21:59.419697+00:00",
+  "timestamp_end": "2026-10-12T03:21:59.419890+00:00",
+  "git_commit": "e5511f9a04df475dcf46a39ba86292d43ab1d4ca",
+  "git_dirty": true,
+  "run_key": "kda_attention__gpt2__wikitext2__rank32__7cdc20fee34c"
+}

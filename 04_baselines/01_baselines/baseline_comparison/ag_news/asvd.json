@@ -1,0 +1,16 @@
+{
+  "dataset": "ag_news",
+  "method": "asvd",
+  "status": "PASS",
+  "accuracy_pct": 94.4,
+  "f1_score": 0.9411,
+  "compression_rate": 0.9631,
+  "compression_ratio_pct": -3.83,
+  "peak_vram_mb": 202.7,
+  "latency_ms_per_token": 2.53,
+  "throughput_tok_per_sec": 50543.85,
+  "elapsed_s": 15.26,
+  "total_params_before": 66956548,
+  "total_params_after": 69522564,
+  "timestamp": "2026-09-20T07:25:00"
+}

@@ -1,0 +1,7 @@
+rank,module_name,status,accuracy_pct,f1_score,val_loss,peak_vram_mb,compression_rate,compression_ratio_pct,num_compressed_layers,num_fallback_layers,elapsed_s,total_params_before,total_params_after
+16,drone,PASS,77.98,0.7983,0.5552,308.35,1.2281,18.57,22,2,83.1,66955010,54519554
+32,drone,PASS,80.39,0.8239,0.4861,314.46,1.2404,19.38,24,0,83.4,66955010,53978882
+64,drone,PASS,83.94,0.8394,0.4802,325.71,1.2139,17.62,24,0,92.2,66955010,55158530
+128,drone,PASS,87.04,0.8757,0.3891,348.21,1.1641,14.09,24,0,99.1,66955010,57517826
+256,drone,PASS,85.55,0.8475,0.461,392.08,1.0758,7.05,24,0,88.0,66955010,62236418
+384,drone,PASS,86.01,0.8548,0.9565,396.87,1.0558,5.29,24,0,80.9,66955010,63416066

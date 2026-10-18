@@ -1,0 +1,16 @@
+{
+  "dataset": "mnli",
+  "method": "gfws_d",
+  "status": "PASS",
+  "accuracy_pct": 81.8,
+  "f1_score": 0.8174,
+  "compression_rate": 1.0,
+  "compression_ratio_pct": 0.0,
+  "peak_vram_mb": 184.46,
+  "latency_ms_per_token": 1.04,
+  "throughput_tok_per_sec": 123297.51,
+  "elapsed_s": 7.58,
+  "total_params_before": 66955779,
+  "total_params_after": 66955779,
+  "timestamp": "2026-09-20T07:23:56"
+}

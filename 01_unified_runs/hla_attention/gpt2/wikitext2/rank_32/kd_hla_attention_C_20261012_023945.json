@@ -1,0 +1,145 @@
+{
+  "run_metadata": {
+    "run_id": "kd_hla_attention_C_20261012_023945",
+    "run_name": "kd_hla_attention_gpt2_C",
+    "timestamp_start": "2026-10-12T02:41:38.823819+00:00",
+    "timestamp_end": "2026-10-12T02:41:38.823884+00:00",
+    "wall_clock_duration_s": 0.0,
+    "total_duration_s": 0.0,
+    "training_duration_s": 0.0,
+    "evaluation_duration_s": 0.0,
+    "git_commit": "2509d6bba02eceb2e3c0a59159296ddfba68c421",
+    "git_commit_short": "2509d6bba0",
+    "git_branch": "main",
+    "git_dirty": true,
+    "git_diff": ".../attention_hgrn2_gated_deltanet.json            |    8 +-\n .../delta_sweep/attention_hgrn2_gated_layer.err    |    4 +-\n .../delta_sweep/attention_hgrn2_gated_layer.json   |   10 +-\n .../delta_sweep/attention_hgrn2_gated_layer.log    |  160 +-\n .../delta_sweep/attention_hgrn2_gated_outer.err    |  106 +-\n .../delta_sweep/attention_hgrn2_gated_outer.json   |   10 +-\n .../delta_sweep/attention_hgrn2_gated_outer.log    |  160 +-\n results/delta_sweep/attention_hla_attention.err    |    4 +-\n results/delta_sweep/attention_hla_attention.log    |  149 +-\n results/delta_sweep/summary.csv                    |    6 +-\n results/kd_runs/registry.json                      | 6234 ++++++++++++++++++++\n results/results.csv                                |    2 +\n results/results.parquet                            |  Bin 18244 -> 18369 bytes\n 13 files changed, 6645 insertions(+), 208 deletions(-)",
+    "session_id": "db937f81-e8de-41d7-97f9-4e48ae175f1a",
+    "parent_run_id": null
+  },
+  "module": {
+    "name": "hla_attention",
+    "type": "attention",
+    "rank": 32
+  },
+  "model": {
+    "name": "gpt2"
+  },
+  "dataset": {
+    "name": "wikitext2",
+    "task_type": "language_modeling"
+  },
+  "config": {
+    "method": "C",
+    "rank": 32,
+    "training_type": "kd",
+    "recovery_steps": 300,
+    "learning_rate": 0.0003,
+    "batch_size": 8,
+    "seq_len": 256
+  },
+  "environment": {
+    "python_version": "3.14.7",
+    "python_executable": "/mnt/d/venv/bin/python3",
+    "platform": "Linux",
+    "platform_version": "Linux-7.0.0-38-generic-x86_64-with-glibc2.43",
+    "cpu_model": "",
+    "cpu_count": 16,
+    "ram_gb": 0.0,
+    "gpu_model": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "gpu_count": 1,
+    "gpu_vram_gb": 7.62,
+    "cuda_version": "12.8",
+    "cudnn_version": "91900",
+    "torch_version": "2.11.0+cu128",
+    "torchvision_version": "0.26.0+cu128",
+    "transformers_version": "5.19.0",
+    "datasets_version": "5.1.0",
+    "triton_version": "3.6.0",
+    "numpy_version": "2.5.2",
+    "pandas_version": "3.0.6",
+    "scipy_version": "1.18.1",
+    "neuralops_version": "0.1.0",
+    "all_installed_packages": {},
+    "env_vars_used": {}
+  },
+  "hardware_usage": {
+    "peak_vram_mb": 0.0,
+    "avg_vram_mb": 0.0,
+    "peak_ram_mb": 0.0,
+    "gpu_utilization_avg": null,
+    "gpu_temperature_max": null,
+    "gpu_power_avg": null
+  },
+  "training_history": {},
+  "metrics": {
+    "pre_ppl": 3746.5,
+    "post_ppl": 5102.36,
+    "post_ppl_stage1": 5102.36,
+    "post_ppl_stage2": 5102.36,
+    "kd_gain": -1355.86,
+    "recovery_pct": -36.54
+  },
+  "baseline_comparison": {
+    "baseline_accuracy": null,
+    "baseline_f1": null,
+    "baseline_loss": null,
+    "accuracy_drop": null,
+    "f1_drop": null,
+    "loss_increase": null,
+    "compression_ratio": 1.0,
+    "speedup_ratio": 1.0,
+    "params_reduction_pct": 0.0
+  },
+  "resources": {
+    "peak_vram_mb": 2870.27,
+    "train_duration_s": 99.01
+  },
+  "status": "success",
+  "error": null,
+  "traceback": null,
+  "warnings": [],
+  "timed_out": false,
+  "timeout_s": 1800,
+  "retry_count": 0,
+  "max_retries": 2,
+  "reproducibility": {
+    "random_seed": 42,
+    "cublas_workspace_config": ":4096:8",
+    "torch_deterministic": false,
+    "torch_benchmark": false,
+    "env_vars_hash": "",
+    "reproduction_command": "",
+    "reproduction_script": "",
+    "expected_duration_s": 0.0,
+    "expected_peak_vram_mb": 0.0
+  },
+  "artifacts": {
+    "log_file": "",
+    "jsonl_file": "",
+    "json_file": "",
+    "plot_files": [],
+    "checkpoint_files": [],
+    "git_push_url": ""
+  },
+  "push_info": {
+    "pushed_to_git": false,
+    "pushed_to_hf": false,
+    "git_remote_url": "",
+    "hf_repo_id": "",
+    "hf_commit_hash": "",
+    "push_timestamp": ""
+  },
+  "training_type": "finetune",
+  "kd_config": {},
+  "recovery_config": {},
+  "baseline_metrics": {},
+  "delta_metrics": {},
+  "checksum": "13ff038010b6ff06",
+  "run_id": "kd_hla_attention_C_20261012_023945",
+  "run_name": "kd_hla_attention_gpt2_C",
+  "timestamp_start": "2026-10-12T02:41:38.823819+00:00",
+  "timestamp_end": "2026-10-12T02:41:38.823884+00:00",
+  "git_commit": "2509d6bba02eceb2e3c0a59159296ddfba68c421",
+  "git_dirty": true,
+  "run_key": "hla_attention__gpt2__wikitext2__rank32__7cdc20fee34c"
+}

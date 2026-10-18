@@ -1,0 +1,52 @@
+{
+    "model": "roberta_sst2_kronecker_tt_lora",
+    "performance": {
+        "accuracy_pct": 93.92,
+        "f1_score": 0.9408,
+        "f1_macro": 0.9392,
+        "precision": 0.9394,
+        "recall": 0.9391,
+        "val_loss": 0.192,
+        "perplexity": null,
+        "status": "MODERATE_EXPANSION",
+        "elapsed_s": 185.19
+    },
+    "efficiency": {
+        "total_params_before": 124647170,
+        "total_params_after": 128287490,
+        "trainable_recovery_params": 294912,
+        "compression_rate": 0.9716,
+        "compression_ratio_pct": -2.92,
+        "flops_reduction_pct": 0.0,
+        "num_compressed_layers": 48,
+        "num_fallback_layers": 0,
+        "num_injected_attention_layers": 0,
+        "lora_params": 294912,
+        "avg_reconstruction_error": null,
+        "weighted_reconstruction_error": null,
+        "per_layer_reconstruction_errors": {},
+        "per_layer_ranks": {}
+    },
+    "hardware": {
+        "peak_vram_mb": 466.29,
+        "tokens_per_sec": 32486.35
+    },
+    "architecture": {
+        "span_distribution": {},
+        "mean_span": 128.0,
+        "sparsity_ratio_percent": 0.0
+    },
+    "scalability": {
+        "L_128_vram_mb": 291.01,
+        "L_256_vram_mb": 292.32,
+        "L_512_vram_mb": 296.49,
+        "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 514)"
+    },
+    "seed": 42,
+    "git_sha": "4325e5987",
+    "git_dirty": true,
+    "torch_version": "2.6.0+cu124",
+    "transformers_version": "5.5.0",
+    "cuda_version": "12.4",
+    "timestamp": "2026-09-25T12:32:51.589501+00:00"
+}

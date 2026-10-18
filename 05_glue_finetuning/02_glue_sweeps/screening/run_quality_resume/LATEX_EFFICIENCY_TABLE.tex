@@ -1,0 +1,32 @@
+\begin{table*}[t]
+\centering
+\small
+\caption{\textbf{Full Computational Efficiency and VRAM Footprint Matrix.} Evaluated on NVIDIA GeForce RTX 4070 (Ada Lovelace, 8GB VRAM) with PyTorch 2.6.0+cu124 with TF32 and AMP acceleration.}
+\label{tab:efficiency_benchmark_results}
+\begin{tabular}{l l r r r r}
+\toprule
+\textbf{Module Architecture} & \textbf{Track} & \textbf{Fwd Latency (ms)} & \textbf{Bwd Latency (ms)} & \textbf{Peak VRAM (MB)} & \textbf{Throughput (tok/s)} \\
+\midrule
+\texttt{salr} & \textsc{track1\_svd} & 46.99 & 120.99 & 1295.2 & 97535 \\
+\texttt{subspace\_projection} & \textsc{track1\_svd} & 47.16 & 131.02 & 1343.2 & 91955 \\
+\texttt{mlorq} & \textsc{track1\_svd} & 69.55 & 187.04 & 1846.8 & 63853 \\
+\texttt{slim} & \textsc{track1\_svd} & 69.59 & 185.97 & 1846.8 & 64111 \\
+\texttt{slicegpt\_pca} & \textsc{track1\_svd} & 69.67 & 185.64 & 1846.8 & 64172 \\
+\texttt{proxsparse} & \textsc{track1\_svd} & 69.82 & 185.59 & 1846.8 & 64149 \\
+\texttt{zerokv\_neo} & \textsc{track1\_svd} & 69.97 & 186.09 & 1846.8 & 63985 \\
+\texttt{modegpt} & \textsc{track1\_svd} & 70.00 & 185.33 & 1846.8 & 64168 \\
+\texttt{sdrm} & \textsc{track1\_svd} & 70.19 & 186.52 & 1846.8 & 63824 \\
+\texttt{nli\_softmax} & \textsc{track1\_svd} & 70.31 & 185.68 & 1846.8 & 64003 \\
+\texttt{slicegpt} & \textsc{track1\_svd} & 70.36 & 185.83 & 1846.8 & 63950 \\
+\texttt{optimal\_subspace\_projection} & \textsc{track1\_svd} & 70.54 & 185.36 & 1846.8 & 64026 \\
+\texttt{sparsegpt} & \textsc{track1\_svd} & 70.67 & 185.38 & 1846.8 & 63986 \\
+\texttt{svd\_linear} & \textsc{track1\_svd} & 84.37 & 204.03 & 1585.3 & 56810 \\
+\texttt{saes} & \textsc{track1\_svd} & 84.62 & 204.77 & 1582.7 & 56616 \\
+\texttt{mgie\_budget} & \textsc{track1\_svd} & 84.65 & 204.91 & 1582.7 & 56582 \\
+\texttt{zeros} & \textsc{track1\_svd} & 85.49 & 221.94 & 1953.6 & 53294 \\
+\texttt{mgie} & \textsc{track1\_svd} & 85.54 & 204.84 & 1582.7 & 56423 \\
+\texttt{swift\_svd} & \textsc{track1\_svd} & 85.81 & 204.73 & 1582.7 & 56392 \\
+\texttt{soka} & \textsc{track1\_svd} & 86.20 & 204.60 & 1573.4 & 56340 \\
+\bottomrule
+\end{tabular}
+\end{table*}

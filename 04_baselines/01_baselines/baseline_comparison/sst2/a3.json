@@ -1,0 +1,16 @@
+{
+  "dataset": "sst2",
+  "method": "a3",
+  "status": "PASS",
+  "accuracy_pct": 89.91,
+  "f1_score": 0.9043,
+  "compression_rate": 1.0984,
+  "compression_ratio_pct": 8.96,
+  "peak_vram_mb": 169.23,
+  "latency_ms_per_token": 1.37,
+  "throughput_tok_per_sec": 93101.45,
+  "elapsed_s": 16.4,
+  "total_params_before": 66955010,
+  "total_params_after": 60955394,
+  "timestamp": "2026-09-20T07:23:16"
+}

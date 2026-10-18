@@ -1,0 +1,12 @@
+[
+  {
+    "module": "xattention",
+    "model": "distilbert-base-uncased",
+    "dataset": "sst2",
+    "status": "FAIL_BELOW_CHANCE",
+    "perplexity": "",
+    "accuracy_pct": 52.75,
+    "error": "FAIL: accuracy (52.75%) below chance threshold (56.00%)",
+    "timestamp": "2026-10-04T16:35:46.830907"
+  }
+]

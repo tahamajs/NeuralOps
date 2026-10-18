@@ -1,0 +1,7 @@
+rank,module_name,status,accuracy_pct,f1_score,val_loss,peak_vram_mb,compression_rate,compression_ratio_pct,num_compressed_layers,num_fallback_layers,elapsed_s,total_params_before,total_params_after
+16,kronecker_compressor,PASS,94.38,0.9445,0.1896,292.72,1.0,0.0,0,48,87.8,124647170,124647170
+32,kronecker_compressor,PASS,94.38,0.9445,0.1896,292.72,1.0,0.0,0,48,87.5,124647170,124647170
+64,,PASS,91.63,0.9186,0.237,0.0,1.0,,0,0,36.07,0,0
+128,,PASS,91.63,0.9186,0.237,0.0,1.0,,0,0,36.24,0,0
+256,,PASS,91.63,0.9186,0.237,0.0,1.0,,0,0,37.35,0,0
+384,,PASS,91.86,0.9196,0.2354,0.0,1.0,,0,0,41.98,0,0

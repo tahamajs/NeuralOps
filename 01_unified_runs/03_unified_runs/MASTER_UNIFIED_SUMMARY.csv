@@ -1,0 +1,736 @@
+module_name,status,accuracy_pct,perplexity,ppl_status,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp,module_key,model_name,model_slug
+a3,PASS,90.6,0.0,,0.9097,0.9058,0.9071,0.9055,0.3037,0.0,199.51,33807.7,66955010,64743170,540672,1.0342,3.3,0.0,22,2,0.3493,,0,540672,,legacy_bert,2026-09-24T12:17:52.301202,a3,distilbert,distilbert
+a3,PASS,92.66,0.0,,0.9289,0.9265,0.9271,0.9263,0.2603,0.0,585.18,16856.99,124647170,121796354,786432,1.0234,2.29,0.0,32,4,0.3449,,0,786432,,adapted_roberta,2026-09-24T12:18:57.019690,a3,roberta,roberta
+a3,PASS,87.16,0.0,,0.8724,0.8716,0.8716,0.8717,0.3177,0.0,389.78,24338.28,124441344,123630336,172032,1.0066,0.65,0.0,7,17,0.3493,,0,172032,,adapted_gpt,2026-09-24T12:20:18.609342,a3,gpt2,gpt2
+aasvd,PASS,84.06,0.0,,0.8526,0.8395,0.8465,0.8394,0.5732,0.0,202.06,41391.05,66955010,55600898,2821634,1.2042,16.96,80.21,24,0,0.8162,,0,0,,legacy_bert,2026-09-24T12:21:30.705308,aasvd,distilbert,distilbert
+aasvd,PASS,80.85,0.0,,0.828,0.806,0.8205,0.8067,0.679,0.0,586.6,20665.09,124647170,103020290,7313666,1.2099,17.35,76.39,48,0,0.821,,0,0,,adapted_roberta,2026-09-24T12:22:54.134684,aasvd,roberta,roberta
+aasvd,PASS,75.11,0.0,,0.7849,0.7448,0.7723,0.7485,0.5119,0.0,430.45,23744.55,124441344,102077184,38400,1.2191,17.97,78.99,24,0,0.8184,,0,0,,adapted_gpt,2026-09-24T12:24:30.160075,aasvd,gpt2,gpt2
+adaptive_compressor,PASS,88.07,0.0,,0.8891,0.88,0.8864,0.8796,0.7843,0.0,255.84,38898.9,66955010,64153346,8421122,1.0437,4.18,25.0,0,0,,,0,0,,legacy_bert,2026-09-24T12:28:10.674070,adaptive_compressor,distilbert,distilbert
+adaptive_compressor,PASS,86.35,0.0,,0.8649,0.8635,0.8635,0.8636,0.3554,0.0,580.02,17948.91,124647170,111191810,628994,1.121,10.79,47.53,0,0,,,0,0,,adapted_roberta,2026-09-24T12:29:50.195221,adaptive_compressor,roberta,roberta
+adaptive_compressor,PASS,81.88,0.0,,0.8316,0.8178,0.8233,0.8177,0.4139,0.0,444.13,24364.3,124441344,108056832,38400,1.1516,13.17,57.87,0,0,,,0,0,,adapted_gpt,2026-09-24T12:31:31.073196,adaptive_compressor,gpt2,gpt2
+adaptive_ranks,PASS,82.11,0.0,,0.8408,0.8183,0.8367,0.8191,0.4438,0.0,215.81,38106.43,66955010,57038594,4259330,1.1739,14.81,70.05,24,0,0.7744,,0,0,,legacy_bert,2026-09-24T12:28:08.800600,adaptive_ranks,distilbert,distilbert
+adaptive_ranks,PASS,79.47,0.0,,0.8172,0.7916,0.8085,0.7927,0.9163,0.0,606.24,20291.88,124647170,105080066,9373442,1.1862,15.7,69.11,48,0,0.7944,,0,0,,adapted_roberta,2026-09-24T12:29:33.979962,adaptive_ranks,roberta,roberta
+adaptive_ranks,PASS,79.82,0.0,,0.8182,0.7957,0.8089,0.7964,0.4495,0.0,441.6,24047.11,124441344,106728192,38400,1.166,14.23,62.57,24,0,0.7116,,0,0,,adapted_gpt,2026-09-24T12:31:09.229250,adaptive_ranks,gpt2,gpt2
+full,PASS,90.71,,,0.9099,0.907,0.9075,0.9068,0.3027,0.0,380.26,38599.51,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T15:57:29.705107,adaptive_span,distilbert,distilbert
+full,PASS,94.5,,,0.9458,0.9449,0.9449,0.945,0.2311,0.0,703.34,22234.52,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T15:58:27.146585,adaptive_span,roberta,roberta
+full,PASS,85.67,,,0.8683,0.8555,0.8643,0.8553,0.7173,0.0,383.11,25558.53,126800640,126800640,0,1.0,0.0,0.0,0,0,,,0,2359296,,,2026-09-24T15:59:36.480857,adaptive_span,gpt2,gpt2
+full,PASS,94.38,,,0.9445,0.9438,0.9438,0.9439,0.1896,0.0,292.72,26294.38,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T19:08:21.027628,adaptive_sparse,roberta,roberta
+full,PASS,90.71,,,0.9099,0.907,0.9075,0.9068,0.3027,0.0,380.26,51381.77,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T16:04:07.033516,adaptive_sparse_attention,distilbert,distilbert
+full,PASS,94.5,,,0.9458,0.9449,0.9449,0.945,0.2311,0.0,703.34,27604.13,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T16:04:51.751550,adaptive_sparse_attention,roberta,roberta
+full,PASS,85.67,,,0.8683,0.8555,0.8643,0.8553,0.7173,0.0,383.11,27290.74,126800640,126800640,0,1.0,0.0,0.0,0,0,,,0,2359296,,,2026-09-24T16:05:52.726057,adaptive_sparse_attention,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,51802.54,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-14T22:50:04.471142,adaptive_sparse_attention_attention,distilbert,distilbert
+full,PASS,90.6,,,0.9093,0.9058,0.9067,0.9056,0.3007,0.0,299.92,30065.77,127325954,127325954,0,1.0,0.0,0.0,73,0,,,0,2678784,,adapted_roberta,2026-09-14T22:50:52.801597,adaptive_sparse_attention_attention,roberta,roberta
+full,PASS,87.84,,,0.8776,0.8784,0.8791,0.8789,0.3093,0.0,391.24,27134.18,126800640,126800640,0,1.0,0.0,0.0,48,0,,,0,2359296,,adapted_gpt,2026-09-14T22:52:02.331216,adaptive_sparse_attention_attention,gpt2,gpt2
+full,PASS,90.71,,,0.9099,0.907,0.9075,0.9068,0.3027,0.0,380.26,52740.4,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T16:11:09.798160,adaptive_svd_attention,distilbert,distilbert
+full,PASS,94.5,,,0.9458,0.9449,0.9449,0.945,0.2311,0.0,703.34,27414.14,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T16:11:52.729582,adaptive_svd_attention,roberta,roberta
+full,PASS,85.67,,,0.8683,0.8555,0.8643,0.8553,0.7173,0.0,383.11,23901.47,126800640,126800640,0,1.0,0.0,0.0,0,0,,,0,2359296,,,2026-09-24T16:12:48.104922,adaptive_svd_attention,gpt2,gpt2
+full,PASS,90.71,,,0.9099,0.907,0.9075,0.9068,0.3027,0.0,380.26,54729.87,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T16:13:09.149079,adaptive_svd_attn,distilbert,distilbert
+full,PASS,94.5,,,0.9458,0.9449,0.9449,0.945,0.2311,0.0,703.34,27197.26,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T16:13:54.921050,adaptive_svd_attn,roberta,roberta
+full,PASS,85.67,,,0.8683,0.8555,0.8643,0.8553,0.7173,0.0,383.11,27233.82,126800640,126800640,0,1.0,0.0,0.0,0,0,,,0,2359296,,,2026-09-24T16:14:53.966511,adaptive_svd_attn,gpt2,gpt2
+full,PASS,90.71,,,0.9099,0.907,0.9075,0.9068,0.3027,0.0,380.26,52263.78,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T16:18:08.406651,adasplash,distilbert,distilbert
+full,PASS,94.5,,,0.9458,0.9449,0.9449,0.945,0.2311,0.0,703.34,27753.58,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T16:19:16.423227,adasplash,roberta,roberta
+full,PASS,85.67,,,0.8683,0.8555,0.8643,0.8553,0.7173,0.0,383.11,27002.18,126800640,126800640,0,1.0,0.0,0.0,0,0,,,0,2359296,,,2026-09-24T16:21:03.229680,adasplash,gpt2,gpt2
+adasvd,PASS,90.37,0.0,,0.9079,0.9035,0.9052,0.9031,0.3995,0.0,196.7,32341.83,66955010,63357698,19970,1.0568,5.37,25.41,24,0,0.0672,,0,0,,legacy_bert,2026-09-24T13:08:18.311687,adasvd,distilbert,distilbert
+adasvd,PASS,92.32,0.0,,0.9255,0.9231,0.9236,0.9229,0.2579,0.0,333.33,15100.23,124647170,117569282,628994,1.0602,5.68,25.0,48,0,0.0319,,0,0,,adapted_roberta,2026-09-24T13:10:31.704937,adasvd,roberta,roberta
+adasvd,PASS,83.83,0.0,,0.8492,0.8375,0.8426,0.8373,0.3668,0.0,464.46,16836.23,124441344,116871936,38400,1.0648,6.08,26.74,24,0,0.0181,,0,0,,adapted_gpt,2026-09-24T13:12:49.337310,adasvd,gpt2,gpt2
+admm,PASS,90.14,0.0,,0.9044,0.9013,0.9018,0.9011,0.3806,0.0,174.83,37313.95,66955010,66955010,1538,1.0,0.0,0.0,24,0,0.1564,,0,0,,legacy_bert,2026-09-24T13:08:11.124849,admm,distilbert,distilbert
+admm,PASS,93.35,0.0,,0.9335,0.9335,0.9338,0.9338,0.2552,0.0,292.72,23148.11,124647170,124647170,592130,1.0,0.0,0.0,48,0,0.1663,,0,0,,adapted_roberta,2026-09-24T13:10:07.921966,admm,roberta,roberta
+admm,PASS,87.73,0.0,,0.8828,0.877,0.8788,0.8767,0.3258,0.0,384.13,20155.65,124441344,124441344,1536,1.0,0.0,0.0,24,0,0.1625,,0,0,,adapted_gpt,2026-09-24T13:12:14.466895,admm,gpt2,gpt2
+admm_pruner,PASS,89.79,0.0,,0.8983,0.8979,0.8981,0.8982,0.3108,0.0,233.49,24863.79,66955010,66955010,1538,1.0,0.0,0.0,24,0,0.359,,0,0,,legacy_bert,2026-09-24T14:11:34.387886,admm_pruner,distilbert,distilbert
+admm_pruner,PASS,90.25,0.0,,0.9024,0.9025,0.9029,0.9028,0.2544,0.0,410.67,14232.11,124647170,124647170,592130,1.0,0.0,0.0,48,0,0.3531,,0,0,,adapted_roberta,2026-09-24T14:14:18.088040,admm_pruner,roberta,roberta
+admm_pruner,TIMEOUT,0.0,,,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,0,0,1.0,0.0,0.0,0,0,,,0,0,Child produced no result file after 180.3s,,1790259516.6725407,admm_pruner,gpt2,gpt2
+full,PASS,90.71,,,0.9099,0.907,0.9075,0.9068,0.3028,0.0,174.83,39746.8,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T16:41:25.096095,aegis_hybrid,distilbert,distilbert
+full,PASS,94.38,,,0.9445,0.9438,0.9438,0.9439,0.1896,0.0,292.72,22172.43,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T16:42:59.147587,aegis_hybrid,roberta,roberta
+full,PASS,89.33,,,0.8942,0.8933,0.8934,0.8935,0.2996,0.0,382.13,19455.03,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T16:44:56.647161,aegis_hybrid,gpt2,gpt2
+full,PASS,90.71,,,0.9099,0.907,0.9075,0.9068,0.3028,0.0,174.83,43520.78,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T16:43:33.896197,aegis_spectron_fp8,distilbert,distilbert
+full,PASS,94.38,,,0.9445,0.9438,0.9438,0.9439,0.1896,0.0,292.72,21334.14,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T16:46:18.779663,aegis_spectron_fp8,roberta,roberta
+full,PASS,89.33,,,0.8942,0.8933,0.8934,0.8935,0.2996,0.0,382.13,20751.23,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T16:50:32.612265,aegis_spectron_fp8,gpt2,gpt2
+full,PASS,90.71,,,0.9099,0.907,0.9075,0.9068,0.3028,0.0,174.83,39958.31,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T16:44:08.096827,aegis_v1,distilbert,distilbert
+full,PASS,94.38,,,0.9445,0.9438,0.9438,0.9439,0.1896,0.0,292.72,21812.57,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T16:45:14.275361,aegis_v1,roberta,roberta
+full,PASS,89.33,,,0.8942,0.8933,0.8934,0.8935,0.2996,0.0,382.13,19599.19,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T16:46:19.533898,aegis_v1,gpt2,gpt2
+full,PASS,90.71,,,0.9099,0.907,0.9075,0.9068,0.3028,0.0,174.83,39812.07,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T16:47:17.418079,aegis_v1_module,distilbert,distilbert
+full,PASS,94.38,,,0.9445,0.9438,0.9438,0.9439,0.1896,0.0,292.72,22159.52,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T16:48:21.188582,aegis_v1_module,roberta,roberta
+full,PASS,89.33,,,0.8942,0.8933,0.8934,0.8935,0.2996,0.0,382.13,21362.98,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T16:49:28.815731,aegis_v1_module,gpt2,gpt2
+full,PASS,90.71,,,0.9099,0.907,0.9075,0.9068,0.3028,0.0,174.83,47543.02,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T19:08:11.293651,aegis_v2,distilbert,distilbert
+full,PASS,94.38,,,0.9445,0.9438,0.9438,0.9439,0.1896,0.0,292.72,26207.69,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T19:09:29.610413,aegis_v2,roberta,roberta
+full,PASS,89.33,,,0.8942,0.8933,0.8934,0.8935,0.2996,0.0,382.13,19102.51,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T19:11:16.009684,aegis_v2,gpt2,gpt2
+full,PASS,90.71,,,0.9099,0.907,0.9075,0.9068,0.3028,0.0,174.83,39715.51,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T16:50:26.617595,aegis_v3,distilbert,distilbert
+full,PASS,94.38,,,0.9445,0.9438,0.9438,0.9439,0.1896,0.0,292.72,7808.38,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T16:52:27.518983,aegis_v3,roberta,roberta
+full,PASS,89.33,,,0.8942,0.8933,0.8934,0.8935,0.2996,0.0,382.13,6775.77,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T16:54:46.510948,aegis_v3,gpt2,gpt2
+full,PASS,90.71,,,0.9099,0.907,0.9075,0.9068,0.3028,0.0,174.83,16363.89,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T17:15:00.992697,aegis_v3_module,distilbert,distilbert
+full,PASS,94.38,,,0.9445,0.9438,0.9438,0.9439,0.1896,0.0,292.72,24746.6,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T17:16:25.956412,aegis_v3_module,roberta,roberta
+full,PASS,89.33,,,0.8942,0.8933,0.8934,0.8935,0.2996,0.0,382.13,25256.09,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T17:17:18.974999,aegis_v3_module,gpt2,gpt2
+full,PASS,90.71,,,0.9099,0.907,0.9075,0.9068,0.3028,0.0,174.83,8943.91,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T17:15:09.140458,aegis_v4,distilbert,distilbert
+full,PASS,94.38,,,0.9445,0.9438,0.9438,0.9439,0.1896,0.0,292.72,24468.7,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T17:16:25.628935,aegis_v4,roberta,roberta
+full,PASS,89.33,,,0.8942,0.8933,0.8934,0.8935,0.2996,0.0,382.13,24955.24,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T17:17:18.707989,aegis_v4,gpt2,gpt2
+full,PASS,90.71,,,0.9099,0.907,0.9075,0.9068,0.3028,0.0,174.83,47498.52,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T17:17:07.781030,aegis_v4_module,distilbert,distilbert
+full,PASS,94.38,,,0.9445,0.9438,0.9438,0.9439,0.1896,0.0,292.72,25550.09,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T17:18:00.751927,aegis_v4_module,roberta,roberta
+full,PASS,89.33,,,0.8942,0.8933,0.8934,0.8935,0.2996,0.0,382.13,20929.46,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T17:18:55.826663,aegis_v4_module,gpt2,gpt2
+full,PASS,90.71,,,0.9099,0.907,0.9075,0.9068,0.3028,0.0,174.83,47630.21,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T19:08:11.293262,aegis_v5,distilbert,distilbert
+full,PASS,94.38,,,0.9445,0.9438,0.9438,0.9439,0.1896,0.0,292.72,26586.37,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T19:09:29.937680,aegis_v5,roberta,roberta
+full,PASS,89.33,,,0.8942,0.8933,0.8934,0.8935,0.2996,0.0,382.13,20939.58,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T19:11:17.690986,aegis_v5,gpt2,gpt2
+full,PASS,90.71,,,0.9099,0.907,0.9075,0.9068,0.3028,0.0,174.83,47582.32,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T19:08:11.570031,aegis_v5_module,distilbert,distilbert
+full,PASS,94.38,,,0.9445,0.9438,0.9438,0.9439,0.1896,0.0,292.72,25879.53,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T19:09:31.965970,aegis_v5_module,roberta,roberta
+full,PASS,89.33,,,0.8942,0.8933,0.8934,0.8935,0.2996,0.0,382.13,22414.66,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T19:11:25.771068,aegis_v5_module,gpt2,gpt2
+full,PASS,90.71,,,0.9099,0.907,0.9075,0.9068,0.3028,0.0,174.83,31371.86,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T17:42:58.131644,aegis_v6,distilbert,distilbert
+full,PASS,94.38,,,0.9445,0.9438,0.9438,0.9439,0.1896,0.0,292.72,16835.66,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T17:45:02.653350,aegis_v6,roberta,roberta
+full,PASS,89.33,,,0.8942,0.8933,0.8934,0.8935,0.2996,0.0,382.13,17668.51,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T17:50:12.190734,aegis_v6,gpt2,gpt2
+armor_pruner,PASS,89.91,0.0,,0.8998,0.8991,0.8991,0.8993,0.2847,0.0,254.86,26611.53,66955010,69216002,2260992,0.9673,-3.38,0.0,23,1,0.3749,,0,2260992,,legacy_bert,2026-09-24T13:54:03.562273,armor,distilbert,distilbert
+armor_pruner,PASS,92.66,0.0,,0.9284,0.9266,0.9268,0.9265,0.2035,0.0,425.41,14327.36,124647170,128579330,3932160,0.9694,-3.15,0.0,40,8,0.3851,,0,3932160,,adapted_roberta,2026-09-24T13:55:55.046533,armor,roberta,roberta
+armor_pruner,PASS,87.61,0.0,,0.8759,0.8761,0.8766,0.8765,0.3142,0.0,460.63,17404.05,124441344,126997248,2555904,0.9799,-2.05,0.0,14,10,0.3919,,0,2555904,,adapted_gpt,2026-09-24T13:57:46.776105,armor,gpt2,gpt2
+astro,PASS,90.94,0.0,,0.9125,0.9093,0.9101,0.9091,0.3641,0.0,174.83,46270.19,66955010,66955010,1538,1.0,0.0,0.0,24,0,0.0227,,0,0,,legacy_bert,2026-09-24T13:54:06.428964,astro,distilbert,distilbert
+astro,PASS,92.89,0.0,,0.932,0.9287,0.9305,0.9284,0.2988,0.0,292.72,25290.61,124647170,124647170,592130,1.0,0.0,0.0,48,0,0.0235,,0,0,,adapted_roberta,2026-09-24T13:55:40.091506,astro,roberta,roberta
+astro,PASS,88.65,0.0,,0.8901,0.8863,0.8869,0.8862,0.342,0.0,382.13,23189.87,124441344,124441344,1536,1.0,0.0,0.0,24,0,0.0461,,0,0,,adapted_gpt,2026-09-24T13:57:23.487913,astro,gpt2,gpt2
+full,PASS,90.71,,,0.9099,0.907,0.9075,0.9068,0.3028,0.0,174.83,44120.3,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T17:25:15.198551,asvd,distilbert,distilbert
+full,PASS,94.38,,,0.9445,0.9438,0.9438,0.9439,0.1896,0.0,292.72,24673.09,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T17:26:30.620285,asvd,roberta,roberta
+full,PASS,89.33,,,0.8942,0.8933,0.8934,0.8935,0.2996,0.0,382.13,23289.82,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T17:28:01.058187,asvd,gpt2,gpt2
+full,PASS,90.71,,,0.9099,0.907,0.9075,0.9068,0.3027,0.0,380.26,50402.8,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T17:28:19.298529,bam_umoe,distilbert,distilbert
+full,PASS,94.38,,,0.9445,0.9438,0.9438,0.9439,0.1896,0.0,292.72,28643.44,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T17:29:26.781460,bam_umoe,roberta,roberta
+full,PASS,89.33,,,0.8942,0.8933,0.8934,0.8935,0.2996,0.0,382.13,24003.11,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T17:30:54.839597,bam_umoe,gpt2,gpt2
+full,PASS,90.71,,,0.9099,0.907,0.9075,0.9068,0.3028,0.0,174.83,55461.91,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T17:29:22.105896,block_transformer_hiba,distilbert,distilbert
+full,PASS,94.38,,,0.9445,0.9438,0.9438,0.9439,0.1896,0.0,292.72,22502.97,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T17:30:27.299859,block_transformer_hiba,roberta,roberta
+full,PASS,89.33,,,0.8942,0.8933,0.8934,0.8935,0.2996,0.0,382.13,22709.08,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T17:31:41.553411,block_transformer_hiba,gpt2,gpt2
+cachenotes,PASS,90.71,0.0,,0.9109,0.9069,0.9083,0.9066,0.3865,0.0,174.83,48223.48,66955010,66955010,1538,1.0,0.0,0.0,24,0,0.2403,,0,0,,legacy_bert,2026-09-24T14:01:03.353089,cachenotes,distilbert,distilbert
+cachenotes,PASS,92.66,0.0,,0.9287,0.9265,0.927,0.9264,0.2678,0.0,292.72,21793.58,124647170,124647170,592130,1.0,0.0,0.0,46,2,0.2424,,0,0,,adapted_roberta,2026-09-24T14:02:51.521393,cachenotes,roberta,roberta
+cachenotes,PASS,87.84,0.0,,0.8835,0.8782,0.8796,0.8779,0.3334,0.0,384.13,23575.07,124441344,124441344,1536,1.0,0.0,0.0,14,10,0.3052,,0,0,,adapted_gpt,2026-09-24T14:04:43.989810,cachenotes,gpt2,gpt2
+full,PASS,90.71,,,0.9099,0.907,0.9075,0.9068,0.3028,0.0,174.83,40973.06,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T17:32:19.579015,chela_slay,distilbert,distilbert
+full,PASS,94.38,,,0.9445,0.9438,0.9438,0.9439,0.1896,0.0,292.72,23255.09,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T17:33:41.619529,chela_slay,roberta,roberta
+full,PASS,89.33,,,0.8942,0.8933,0.8934,0.8935,0.2996,0.0,382.13,23646.04,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T17:35:14.189173,chela_slay,gpt2,gpt2
+full,PASS,90.71,,,0.9099,0.907,0.9075,0.9068,0.3028,0.0,174.83,36532.08,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T17:32:59.354907,cluster,distilbert,distilbert
+full,PASS,94.38,,,0.9445,0.9438,0.9438,0.9439,0.1896,0.0,292.72,24784.62,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T17:34:23.073794,cluster,roberta,roberta
+full,PASS,89.33,,,0.8942,0.8933,0.8934,0.8935,0.2996,0.0,382.13,21434.3,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T17:38:42.598884,cluster,gpt2,gpt2
+come,PASS,86.35,0.0,,0.8667,0.8635,0.8636,0.8634,0.3215,0.0,325.49,20618.57,66955010,54843652,884738,1.2208,18.09,0.0,1,0,,,0,884736,,legacy_bert,2026-09-24T14:20:41.863837,come,distilbert,distilbert
+come,PASS,72.48,0.0,,0.7586,0.7193,0.7387,0.7224,0.6282,0.0,344.85,14072.49,124647170,79676936,1105926,1.5644,36.08,0.0,0,0,,,0,1105920,,adapted_roberta,2026-09-24T14:23:19.942527,come,roberta,roberta
+come,CRASH,0.0,,,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,0,0,1.0,0.0,0.0,0,0,,,0,0,"RuntimeError: Error(s) in loading state_dict for GPT2ForSequenceClassification:
+	size mismatch for transformer.h.0.attn.c_attn.weight: copying a param with shape torch.Size([768, 2304]) from checkpoint, the shape in current model is torch.Size([2304, 768]).
+	size mismatch for transformer.h.2.attn.c_attn.weight: copying a param with shape torch.Size([768, 2304]) from checkpoint, the shape in current model is torch.Size([2304, 768]).
+	size mismatch for transformer.h.3.attn.c_attn.weight: copying a param with shape torch.Size([768, 2304]) from checkpoint, the shape in current model is torch.Size([2304, 768]).
+	size mismatch for transformer.h.4.mlp.c_fc.weight: copying a param with shape torch.Size([768, 3072]) from checkpoint, the shape in current model is torch.Size([3072, 768]).
+	size mismatch for transformer.h.4.mlp.c_proj.weight: copying a param with shape torch.Size([3072, 768]) from checkpoint, the shape in current model is torch.Size([768, 3072]).",,2026-09-24T14:25:53.948461,come,gpt2,gpt2
+full,PASS,90.71,,,0.9099,0.907,0.9075,0.9068,0.3028,0.0,174.83,51625.87,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T19:09:43.059848,compressed_attention,distilbert,distilbert
+full,PASS,94.38,,,0.9445,0.9438,0.9438,0.9439,0.1896,0.0,292.72,22941.05,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T19:10:49.452616,compressed_attention,roberta,roberta
+full,PASS,89.33,,,0.8942,0.8933,0.8934,0.8935,0.2996,0.0,382.13,6114.53,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T19:13:24.547410,compressed_attention,gpt2,gpt2
+full,PASS,90.71,,,0.9099,0.907,0.9075,0.9068,0.3028,0.0,174.83,46196.23,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T19:15:34.528643,compressed_attention_layer,distilbert,distilbert
+full,PASS,94.38,,,0.9445,0.9438,0.9438,0.9439,0.1896,0.0,292.72,25281.42,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T19:16:41.488852,compressed_attention_layer,roberta,roberta
+full,PASS,89.33,,,0.8942,0.8933,0.8934,0.8935,0.2996,0.0,382.13,18448.06,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T19:18:02.306198,compressed_attention_layer,gpt2,gpt2
+full,PASS,90.71,,,0.9099,0.907,0.9075,0.9068,0.3028,0.0,174.83,46550.5,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T19:15:34.309308,compressed_mha,distilbert,distilbert
+full,PASS,94.38,,,0.9445,0.9438,0.9438,0.9439,0.1896,0.0,292.72,25357.66,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T19:16:41.536637,compressed_mha,roberta,roberta
+full,PASS,89.33,,,0.8942,0.8933,0.8934,0.8935,0.2996,0.0,382.13,17149.1,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T19:17:58.901009,compressed_mha,gpt2,gpt2
+full,PASS,90.71,,,0.9099,0.907,0.9075,0.9068,0.3028,0.0,174.83,33520.7,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T17:53:23.665583,cosformer,distilbert,distilbert
+full,PASS,94.38,,,0.9445,0.9438,0.9438,0.9439,0.1896,0.0,292.72,16565.25,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T17:55:04.512483,cosformer,roberta,roberta
+full,PASS,89.33,,,0.8942,0.8933,0.8934,0.8935,0.2996,0.0,382.13,17821.93,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T17:57:01.281153,cosformer,gpt2,gpt2
+cur,PASS_NO_COMPRESSION,90.71,0.0,,0.9099,0.907,0.9075,0.9068,0.3028,0.0,174.83,37135.07,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,"note: zero compressed layers, zero injected layers, model unchanged",legacy_bert,2026-09-24T14:26:02.220955,cur,distilbert,distilbert
+cur,PASS_NO_COMPRESSION,94.38,0.0,,0.9445,0.9438,0.9438,0.9439,0.1896,0.0,292.72,18035.73,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,"note: zero compressed layers, zero injected layers, model unchanged",adapted_roberta,2026-09-24T14:28:23.440927,cur,roberta,roberta
+cur,PASS_NO_COMPRESSION,89.33,0.0,,0.8942,0.8933,0.8934,0.8935,0.2996,0.0,382.63,15672.4,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,"note: zero compressed layers, zero injected layers, model unchanged",adapted_gpt,2026-09-24T14:31:05.926997,cur,gpt2,gpt2
+cur_linear,PASS_NO_COMPRESSION,90.71,0.0,,0.9099,0.907,0.9075,0.9068,0.3028,0.0,174.83,28617.51,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,"note: zero compressed layers, zero injected layers, model unchanged",legacy_bert,2026-09-24T14:26:22.444741,cur_linear,distilbert,distilbert
+cur_linear,PASS_NO_COMPRESSION,94.38,0.0,,0.9445,0.9438,0.9438,0.9439,0.1896,0.0,292.72,18877.2,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,"note: zero compressed layers, zero injected layers, model unchanged",adapted_roberta,2026-09-24T14:29:02.666649,cur_linear,roberta,roberta
+cur_linear,PASS_NO_COMPRESSION,89.33,0.0,,0.8942,0.8933,0.8934,0.8935,0.2996,0.0,382.63,19237.59,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,"note: zero compressed layers, zero injected layers, model unchanged",adapted_gpt,2026-09-24T14:31:38.344577,cur_linear,gpt2,gpt2
+cur_moe,PASS_NO_COMPRESSION,90.94,0.0,,0.9125,0.9093,0.9101,0.9091,0.3403,0.0,174.33,37626.15,66955010,66955010,1538,1.0,0.0,0.0,0,0,,,0,0,"note: zero compressed layers, zero injected layers, model unchanged",legacy_bert,2026-09-24T14:26:58.359356,cur_moe,distilbert,distilbert
+cur_moe,PASS_NO_COMPRESSION,93.46,0.0,,0.9372,0.9345,0.9357,0.9342,0.2583,0.0,292.22,19461.11,124647170,124647170,592130,1.0,0.0,0.0,0,0,,,0,0,"note: zero compressed layers, zero injected layers, model unchanged",adapted_roberta,2026-09-24T14:29:52.173577,cur_moe,roberta,roberta
+cur_moe,PASS_NO_COMPRESSION,89.11,0.0,,0.8964,0.8908,0.8931,0.8904,0.3195,0.0,382.13,16408.57,124441344,124441344,1536,1.0,0.0,0.0,0,0,,,0,0,"note: zero compressed layers, zero injected layers, model unchanged",adapted_gpt,2026-09-24T14:32:44.044999,cur_moe,gpt2,gpt2
+cure,PASS_NO_COMPRESSION,90.71,0.0,,0.9099,0.907,0.9075,0.9068,0.3028,0.0,174.83,35264.47,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,"note: zero compressed layers, zero injected layers, model unchanged",legacy_bert,2026-09-24T14:28:55.233559,cure,distilbert,distilbert
+cure,PASS_NO_COMPRESSION,94.38,0.0,,0.9445,0.9438,0.9438,0.9439,0.1896,0.0,292.72,17595.05,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,"note: zero compressed layers, zero injected layers, model unchanged",adapted_roberta,2026-09-24T14:31:28.575534,cure,roberta,roberta
+cure,PASS_NO_COMPRESSION,89.33,0.0,,0.8942,0.8933,0.8934,0.8935,0.2996,0.0,382.63,16625.46,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,"note: zero compressed layers, zero injected layers, model unchanged",adapted_gpt,2026-09-24T14:34:04.826822,cure,gpt2,gpt2
+full,PASS,90.71,,,0.9099,0.907,0.9075,0.9068,0.3028,0.0,174.83,33236.71,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T18:00:52.466432,decay_linear_attention,distilbert,distilbert
+full,PASS,94.38,,,0.9445,0.9438,0.9438,0.9439,0.1896,0.0,292.72,17334.61,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T18:03:25.660685,decay_linear_attention,roberta,roberta
+full,PASS,89.33,,,0.8942,0.8933,0.8934,0.8935,0.2996,0.0,382.13,15908.91,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T18:07:25.626566,decay_linear_attention,gpt2,gpt2
+delta_kv,PASS_NO_COMPRESSION,90.71,0.0,,0.9099,0.907,0.9075,0.9068,0.3028,0.0,174.83,36555.77,66955010,66955010,0,1.0,0.0,0.0,0,24,,,0,0,"note: zero compressed layers, zero injected layers, model unchanged",legacy_bert,2026-09-24T14:33:36.644626,delta_kv,distilbert,distilbert
+delta_kv,PASS_NO_COMPRESSION,94.38,0.0,,0.9445,0.9438,0.9438,0.9439,0.1896,0.0,292.72,17157.1,124647170,124647170,0,1.0,0.0,0.0,0,48,,,0,0,"note: zero compressed layers, zero injected layers, model unchanged",adapted_roberta,2026-09-24T14:36:02.065494,delta_kv,roberta,roberta
+delta_kv,PASS,87.39,0.0,,0.8706,0.8738,0.8763,0.8746,0.354,0.0,384.13,14405.64,124441344,124441344,0,1.0,0.0,0.0,5,31,,,0,0,,adapted_gpt,2026-09-24T14:38:40.789763,delta_kv,gpt2,gpt2
+direct_svd,PASS,88.99,0.0,,0.8979,0.8892,0.8961,0.8888,0.4472,0.0,220.8,30898.12,66955010,65332994,4874496,1.0248,2.42,25.0,11,13,0.3576,,0,0,,legacy_bert,2026-09-24T14:34:11.646172,direct_svd,distilbert,distilbert
+direct_svd,PASS,92.43,0.0,,0.9257,0.9243,0.9243,0.9243,0.2174,0.0,558.5,14122.9,124647170,121255682,17664,1.028,2.72,25.0,23,25,0.3645,,0,0,,adapted_roberta,2026-09-24T14:36:29.452376,direct_svd,roberta,roberta
+direct_svd,PASS,87.84,0.0,,0.879,0.8784,0.8786,0.8787,0.3257,0.0,389.94,17962.0,124441344,123409152,4608,1.0084,0.83,29.17,6,30,0.4672,,0,0,,adapted_gpt,2026-09-24T14:39:21.081248,direct_svd,gpt2,gpt2
+dobi_svd,PASS_NO_COMPRESSION,90.71,0.0,,0.9099,0.907,0.9075,0.9068,0.3028,0.0,174.83,34625.59,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,"note: zero compressed layers, zero injected layers, model unchanged",legacy_bert,2026-09-24T14:35:07.563353,dobi,distilbert,distilbert
+dobi_svd,PASS_NO_COMPRESSION,94.38,0.0,,0.9445,0.9438,0.9438,0.9439,0.1896,0.0,511.43,18071.54,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,"note: zero compressed layers, zero injected layers, model unchanged",adapted_roberta,2026-09-24T14:37:14.427300,dobi,roberta,roberta
+dobi_svd,PASS_NO_COMPRESSION,89.33,0.0,,0.8942,0.8933,0.8934,0.8935,0.2996,0.0,382.13,16795.77,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,"note: zero compressed layers, zero injected layers, model unchanged",adapted_gpt,2026-09-24T14:39:57.222109,dobi,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,33304.47,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T11:11:52.761883,dobi_svd,distilbert,distilbert
+full,PASS,90.6,,,0.9093,0.9058,0.9067,0.9056,0.3007,0.0,299.92,30021.31,127325954,127325954,0,1.0,0.0,0.0,73,0,,,0,2678784,,adapted_roberta,2026-09-15T00:45:32.460713,dobi_svd,roberta,roberta
+full,PASS_LOW,49.54,,,0.2903,0.4494,0.5014,0.5009,0.7992,0.0,390.24,27173.61,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,note: evaluated accuracy (49.54%) below chance threshold (56.00%),adapted_gpt,2026-09-15T00:46:38.871643,dobi_svd,gpt2,gpt2
+dynamic_entropy_svd,PASS_NO_COMPRESSION,90.71,0.0,,0.9099,0.907,0.9075,0.9068,0.3028,0.0,174.83,34281.99,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,"note: zero compressed layers, zero injected layers, model unchanged",legacy_bert,2026-09-24T14:36:27.154032,dynamic_entropy,distilbert,distilbert
+dynamic_entropy_svd,PASS_NO_COMPRESSION,94.38,0.0,,0.9445,0.9438,0.9438,0.9439,0.1896,0.0,511.43,14455.37,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,"note: zero compressed layers, zero injected layers, model unchanged",adapted_roberta,2026-09-24T14:38:44.325995,dynamic_entropy,roberta,roberta
+dynamic_entropy_svd,PASS_NO_COMPRESSION,89.33,0.0,,0.8942,0.8933,0.8934,0.8935,0.2996,0.0,382.13,16895.34,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,"note: zero compressed layers, zero injected layers, model unchanged",adapted_gpt,2026-09-24T14:41:08.296168,dynamic_entropy,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3587,0.0,182.94,58134.71,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-15T00:48:56.318057,dynamic_entropy_svd,distilbert,distilbert
+full,PASS,90.6,,,0.9093,0.9058,0.9067,0.9056,0.3007,0.0,299.92,29535.73,127325954,127325954,0,1.0,0.0,0.0,73,0,,,0,2678784,,adapted_roberta,2026-09-15T00:49:36.965919,dynamic_entropy_svd,roberta,roberta
+full,PASS_LOW,49.54,,,0.2903,0.4494,0.5014,0.5009,0.7992,0.0,390.24,27671.71,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,note: evaluated accuracy (49.54%) below chance threshold (56.00%),adapted_gpt,2026-09-15T00:50:44.631627,dynamic_entropy_svd,gpt2,gpt2
+full,PASS,90.71,,,0.9099,0.907,0.9075,0.9068,0.3028,0.0,174.83,43530.73,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T18:10:14.172389,eat,distilbert,distilbert
+full,PASS,94.38,,,0.9445,0.9438,0.9438,0.9439,0.1896,0.0,292.72,16824.47,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T18:11:51.157449,eat,roberta,roberta
+full,PASS,89.33,,,0.8942,0.8933,0.8934,0.8935,0.2996,0.0,382.13,16581.32,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T18:14:15.016947,eat,gpt2,gpt2
+enlighten,PASS,90.14,0.0,,0.9036,0.9013,0.9014,0.9013,0.3678,0.0,174.83,37977.66,66955010,66955010,1538,1.0,0.0,0.0,24,0,0.2245,,0,0,,legacy_bert,2026-09-24T14:40:59.241090,enlighten,distilbert,distilbert
+enlighten,PASS,92.66,0.0,,0.9297,0.9265,0.928,0.9261,0.2995,0.0,292.72,17114.12,124647170,124647170,592130,1.0,0.0,0.0,48,0,0.2263,,0,0,,adapted_roberta,2026-09-24T14:43:28.989227,enlighten,roberta,roberta
+enlighten,PASS,85.78,0.0,,0.8661,0.8573,0.8608,0.857,0.3571,0.0,382.63,17453.55,124441344,124441344,1536,1.0,0.0,0.0,36,0,0.2478,,0,0,,adapted_gpt,2026-09-24T14:46:17.053098,enlighten,gpt2,gpt2
+entropy_budget,PASS_NO_COMPRESSION,90.71,0.0,,0.9099,0.907,0.9075,0.9068,0.3028,0.0,174.83,31428.81,66955010,66955010,0,1.0,0.0,0.0,0,24,0.7611,,0,0,"note: zero compressed layers, zero injected layers, model unchanged",legacy_bert,2026-09-24T14:42:15.042437,entropy_budget,distilbert,distilbert
+entropy_budget,PASS_NO_COMPRESSION,94.38,0.0,,0.9445,0.9438,0.9438,0.9439,0.1896,0.0,292.72,16879.03,124647170,124647170,0,1.0,0.0,0.0,0,48,0.7764,,0,0,"note: zero compressed layers, zero injected layers, model unchanged",adapted_roberta,2026-09-24T14:44:41.011602,entropy_budget,roberta,roberta
+entropy_budget,PASS_NO_COMPRESSION,89.33,0.0,,0.8942,0.8933,0.8934,0.8935,0.2996,0.0,382.13,20561.92,124441344,124441344,0,1.0,0.0,0.0,0,36,0.8065,,0,0,"note: zero compressed layers, zero injected layers, model unchanged",adapted_gpt,2026-09-24T14:47:18.949302,entropy_budget,gpt2,gpt2
+erc,PASS_NO_COMPRESSION,90.71,0.0,,0.9099,0.907,0.9075,0.9068,0.3028,0.0,174.83,35605.69,66955010,66955010,0,1.0,0.0,0.0,0,24,0.5882,,0,0,"note: zero compressed layers, zero injected layers, model unchanged",legacy_bert,2026-09-24T14:42:20.668103,erc,distilbert,distilbert
+erc,PASS_NO_COMPRESSION,94.38,0.0,,0.9445,0.9438,0.9438,0.9439,0.1896,0.0,292.22,21618.84,124647170,124647170,0,1.0,0.0,0.0,0,72,0.6387,,0,0,"note: zero compressed layers, zero injected layers, model unchanged",adapted_roberta,2026-09-24T14:45:16.578230,erc,roberta,roberta
+erc,PASS_NO_COMPRESSION,89.33,0.0,,0.8942,0.8933,0.8934,0.8935,0.2996,0.0,382.13,16777.08,124441344,124441344,0,1.0,0.0,0.0,0,36,0.6641,,0,0,"note: zero compressed layers, zero injected layers, model unchanged",adapted_gpt,2026-09-24T14:47:53.006260,erc,gpt2,gpt2
+full,PASS,90.71,,,0.9099,0.907,0.9075,0.9068,0.3028,0.0,174.83,43554.07,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T18:12:46.769243,expert_choice_moe,distilbert,distilbert
+full,PASS,94.38,,,0.9445,0.9438,0.9438,0.9439,0.1896,0.0,292.72,17718.67,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T18:14:30.604993,expert_choice_moe,roberta,roberta
+full,PASS,89.33,,,0.8942,0.8933,0.8934,0.8935,0.2996,0.0,382.13,16295.62,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T18:16:34.754094,expert_choice_moe,gpt2,gpt2
+full,PASS,90.71,,,0.9099,0.907,0.9075,0.9068,0.3028,0.0,174.83,37728.42,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T18:16:12.416620,factorised_matrix_state,distilbert,distilbert
+full,PASS,94.38,,,0.9445,0.9438,0.9438,0.9439,0.1896,0.0,292.72,16667.12,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T18:18:22.824494,factorised_matrix_state,roberta,roberta
+full,PASS,89.33,,,0.8942,0.8933,0.8934,0.8935,0.2996,0.0,382.13,16569.91,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T18:21:33.477631,factorised_matrix_state,gpt2,gpt2
+faq,PASS,90.83,0.0,,0.9111,0.9082,0.9087,0.908,0.3038,0.0,212.73,7471.54,66955010,67544834,589824,0.9913,-0.88,0.0,24,0,0.0085,,0,589824,,legacy_bert,2026-09-24T14:49:33.832902,faq,distilbert,distilbert
+faq,TIMEOUT,0.0,,,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,0,0,1.0,0.0,0.0,0,0,,,0,0,Child produced no result file after 180.2s,,1790261611.1637833,faq,roberta,roberta
+faq,CRASH,0.0,,,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,0,0,1.0,0.0,0.0,0,0,,,0,0,"RuntimeError: Error(s) in loading state_dict for GPT2ForSequenceClassification:
+	size mismatch for transformer.h.0.attn.c_attn.weight: copying a param with shape torch.Size([768, 2304]) from checkpoint, the shape in current model is torch.Size([2304, 768]).
+	size mismatch for transformer.h.0.mlp.c_proj.weight: copying a param with shape torch.Size([3072, 768]) from checkpoint, the shape in current model is torch.Size([768, 3072]).
+	size mismatch for transformer.h.1.attn.c_attn.weight: copying a param with shape torch.Size([768, 2304]) from checkpoint, the shape in current model is torch.Size([2304, 768]).
+	size mismatch for transformer.h.1.mlp.c_proj.weight: copying a param with shape torch.Size([3072, 768]) from checkpoint, the shape in current model is torch.Size([768, 3072]).
+	size mismatch for transformer.h.2.attn.c_attn.weight: copying a param with shape torch.Size([768, 2304]) from checkpoint, the shape in current model is torch.Size([2304, 768]).
+	size mismatch for transformer.h.2.mlp.c_proj.weight: copying a param with shape torch.Size([3072, 768]) from checkpoint, the shape in current model is torch.Size([768, 3072]).
+	size mismatch for transformer.h.3.attn.c_attn.weight: copying a param with shape torch.Size([768, 2304]) from checkpoint, the shape in current model is torch.Size([2304, 768]).
+	size mismatch for transformer.h.3.mlp.c_proj.weight: copying a param with shape torch.Size([3072, 768]) from checkpoint, the shape in current model is torch.Size([768, 3072]).
+	size mismatch for transformer.h.4.attn.c_attn.weight: copying a param with shape torch.Size([768, 2304]) from checkpoint, the shape in current model is torch.Size([2304, 768]).
+	size mismatch for transformer.h.4.mlp.c_proj.weight: copying a param with shape torch.Size([3072, 768]) from checkpoint, the shape in current model is torch.Size([768, 3072]).
+	size mismatch for transformer.h.5.attn.c_attn.weight: copying a param with shape torch.Size([768, 2304]) from checkpoint, the shape in current model is torch.Size([2304, 768]).
+	size mismatch for transformer.h.5.mlp.c_proj.weight: copying a param with shape torch.Size([3072, 768]) from checkpoint, the shape in current model is torch.Size([768, 3072]).
+	size mismatch for transformer.h.6.attn.c_attn.weight: copying a param with shape torch.Size([768, 2304]) from checkpoint, the shape in current model is torch.Size([2304, 768]).
+	size mismatch for transformer.h.6.mlp.c_proj.weight: copying a param with shape torch.Size([3072, 768]) from checkpoint, the shape in current model is torch.Size([768, 3072]).
+	size mismatch for transformer.h.7.attn.c_attn.weight: copying a param with shape torch.Size([768, 2304]) from checkpoint, the shape in current model is torch.Size([2304, 768]).
+	size mismatch for transformer.h.7.mlp.c_proj.weight: copying a param with shape torch.Size([3072, 768]) from checkpoint, the shape in current model is torch.Size([768, 3072]).
+	size mismatch for transformer.h.8.attn.c_attn.weight: copying a param with shape torch.Size([768, 2304]) from checkpoint, the shape in current model is torch.Size([2304, 768]).
+	size mismatch for transformer.h.8.mlp.c_proj.weight: copying a param with shape torch.Size([3072, 768]) from checkpoint, the shape in current model is torch.Size([768, 3072]).
+	size mismatch for transformer.h.9.attn.c_attn.weight: copying a param with shape torch.Size([768, 2304]) from checkpoint, the shape in current model is torch.Size([2304, 768]).
+	size mismatch for transformer.h.9.mlp.c_proj.weight: copying a param with shape torch.Size([3072, 768]) from checkpoint, the shape in current model is torch.Size([768, 3072]).
+	size mismatch for transformer.h.10.attn.c_attn.weight: copying a param with shape torch.Size([768, 2304]) from checkpoint, the shape in current model is torch.Size([2304, 768]).
+	size mismatch for transformer.h.10.mlp.c_proj.weight: copying a param with shape torch.Size([3072, 768]) from checkpoint, the shape in current model is torch.Size([768, 3072]).
+	size mismatch for transformer.h.11.attn.c_attn.weight: copying a param with shape torch.Size([768, 2304]) from checkpoint, the shape in current model is torch.Size([2304, 768]).
+	size mismatch for transformer.h.11.mlp.c_proj.weight: copying a param with shape torch.Size([3072, 768]) from checkpoint, the shape in current model is torch.Size([768, 3072]).",,2026-09-24T14:56:25.985980,faq,gpt2,gpt2
+full,PASS,90.71,,,0.9099,0.907,0.9075,0.9068,0.3028,0.0,174.83,35589.76,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T18:18:38.353153,fasa,distilbert,distilbert
+full,PASS,94.38,,,0.9445,0.9438,0.9438,0.9439,0.1896,0.0,292.72,18604.35,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T18:20:22.797197,fasa,roberta,roberta
+full,PASS,89.33,,,0.8942,0.8933,0.8934,0.8935,0.2996,0.0,382.13,15774.31,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T18:22:28.848386,fasa,gpt2,gpt2
+flap,PASS_NO_COMPRESSION,90.71,0.0,,0.9099,0.907,0.9075,0.9068,0.3028,0.0,174.83,33991.68,66955010,66955010,0,1.0,0.0,0.0,0,24,0.4533,,0,0,"note: zero compressed layers, zero injected layers, model unchanged",legacy_bert,2026-09-24T14:49:42.370618,flap,distilbert,distilbert
+flap,PASS_NO_COMPRESSION,94.38,0.0,,0.9445,0.9438,0.9438,0.9439,0.1896,0.0,292.72,15228.81,124647170,124647170,0,1.0,0.0,0.0,0,72,0.4641,,0,0,"note: zero compressed layers, zero injected layers, model unchanged",adapted_roberta,2026-09-24T14:52:11.118456,flap,roberta,roberta
+flap,PASS,88.76,0.0,,0.8879,0.8876,0.8878,0.8879,0.3025,0.0,382.63,16622.08,124441344,124441344,0,1.0,0.0,0.0,1,35,0.4502,,0,0,,adapted_gpt,2026-09-24T14:55:13.652003,flap,gpt2,gpt2
+full,PASS,90.71,,,0.9099,0.907,0.9075,0.9068,0.3028,0.0,174.83,33142.59,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T18:19:33.196077,flash3,distilbert,distilbert
+full,PASS,94.38,,,0.9445,0.9438,0.9438,0.9439,0.1896,0.0,292.72,19263.47,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T18:21:05.151859,flash3,roberta,roberta
+full,PASS,89.33,,,0.8942,0.8933,0.8934,0.8935,0.2996,0.0,382.13,15794.78,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T18:23:41.149820,flash3,gpt2,gpt2
+full,PASS,90.71,,,0.9099,0.907,0.9075,0.9068,0.3028,0.0,174.83,31329.64,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T18:24:39.493183,flash3_fp8,distilbert,distilbert
+full,PASS,94.38,,,0.9445,0.9438,0.9438,0.9439,0.1896,0.0,292.72,20069.92,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T18:26:20.281198,flash3_fp8,roberta,roberta
+full,PASS,89.33,,,0.8942,0.8933,0.8934,0.8935,0.2996,0.0,382.13,21071.74,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T18:27:58.081446,flash3_fp8,gpt2,gpt2
+flat_llm,PASS_NO_COMPRESSION,90.71,0.0,,0.9099,0.907,0.9075,0.9068,0.3028,0.0,174.83,30912.34,66955010,66955010,0,1.0,0.0,0.0,0,24,0.4977,,0,0,"note: zero compressed layers, zero injected layers, model unchanged",legacy_bert,2026-09-24T14:55:34.122100,flat_llm,distilbert,distilbert
+flat_llm,PASS,93.69,0.0,,0.9371,0.9369,0.9371,0.9372,0.1852,0.0,292.72,22475.76,124647170,124647170,0,1.0,0.0,0.0,5,67,0.4626,,0,0,,adapted_roberta,2026-09-24T14:57:48.409538,flat_llm,roberta,roberta
+flat_llm,PASS,87.5,0.0,,0.871,0.8749,0.8782,0.8759,0.3277,0.0,382.13,16525.15,124441344,124441344,0,1.0,0.0,0.0,4,32,0.4615,,0,0,,adapted_gpt,2026-09-24T14:59:58.976638,flat_llm,gpt2,gpt2
+full,PASS,90.71,,,0.9099,0.907,0.9075,0.9068,0.3028,0.0,174.83,36783.62,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T18:25:21.423804,fms,distilbert,distilbert
+full,PASS,94.38,,,0.9445,0.9438,0.9438,0.9439,0.1896,0.0,292.72,20306.8,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T18:27:31.838786,fms,roberta,roberta
+full,PASS,89.33,,,0.8942,0.8933,0.8934,0.8935,0.2996,0.0,382.13,20299.35,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T18:30:41.101269,fms,gpt2,gpt2
+frandi,PASS_NO_COMPRESSION,90.94,0.0,,0.9125,0.9093,0.9101,0.9091,0.3366,0.0,174.33,35705.5,66955010,66955010,1538,1.0,0.0,0.0,0,0,,,0,0,"note: zero compressed layers, zero injected layers, model unchanged",legacy_bert,2026-09-24T14:57:40.680076,frandi,distilbert,distilbert
+frandi,PASS_NO_COMPRESSION,93.46,0.0,,0.9372,0.9345,0.9357,0.9342,0.2734,0.0,292.22,19700.23,124647170,124647170,592130,1.0,0.0,0.0,0,0,,,0,0,"note: zero compressed layers, zero injected layers, model unchanged",adapted_roberta,2026-09-24T15:00:06.848545,frandi,roberta,roberta
+frandi,PASS_NO_COMPRESSION,87.84,0.0,,0.8838,0.8782,0.8798,0.8779,0.3159,0.0,384.0,16037.03,124441344,124048128,198144,1.0032,0.32,0.0,0,0,,,0,0,"note: zero compressed layers, zero injected layers, model unchanged",adapted_gpt,2026-09-24T15:02:42.437239,frandi,gpt2,gpt2
+full,PASS,90.71,,,0.9099,0.907,0.9075,0.9068,0.3028,0.0,174.82,35003.66,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T18:29:10.791729,full,distilbert,distilbert
+full,PASS,94.38,,,0.9445,0.9438,0.9438,0.9439,0.1896,0.0,289.97,21061.21,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T18:30:42.620022,full,roberta,roberta
+full,PASS,89.33,,,0.8942,0.8933,0.8934,0.8935,0.2996,0.0,382.12,16701.22,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T18:32:03.137499,full,gpt2,gpt2
+full,PASS,90.71,,,0.9099,0.907,0.9075,0.9068,0.3028,0.0,174.83,46635.06,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T19:15:37.436080,fused_svd_kernel,distilbert,distilbert
+full,PASS,94.38,,,0.9445,0.9438,0.9438,0.9439,0.1896,0.0,292.72,26611.02,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T19:16:50.746712,fused_svd_kernel,roberta,roberta
+full,PASS,89.33,,,0.8942,0.8933,0.8934,0.8935,0.2996,0.0,382.13,18063.08,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T19:18:22.633189,fused_svd_kernel,gpt2,gpt2
+full,PASS,90.71,,,0.9099,0.907,0.9075,0.9068,0.3028,0.0,174.83,33300.58,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T18:32:30.060715,fusion_attn,distilbert,distilbert
+full,PASS,94.38,,,0.9445,0.9438,0.9438,0.9439,0.1896,0.0,292.72,18331.86,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T18:34:10.828524,fusion_attn,roberta,roberta
+full,PASS,89.33,,,0.8942,0.8933,0.8934,0.8935,0.2996,0.0,382.13,16348.16,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T18:36:07.958421,fusion_attn,gpt2,gpt2
+full,PASS,90.71,,,0.9099,0.907,0.9075,0.9068,0.3028,0.0,174.83,33573.8,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T18:32:56.141451,galerkin,distilbert,distilbert
+full,PASS,94.38,,,0.9445,0.9438,0.9438,0.9439,0.1896,0.0,292.72,17848.28,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T18:34:39.633877,galerkin,roberta,roberta
+full,PASS,89.33,,,0.8942,0.8933,0.8934,0.8935,0.2996,0.0,382.13,16096.19,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T18:36:46.668096,galerkin,gpt2,gpt2
+full,PASS,90.71,,,0.9099,0.907,0.9075,0.9068,0.3028,0.0,174.83,36197.66,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T18:33:24.439951,galerkin_attention,distilbert,distilbert
+full,PASS,94.38,,,0.9445,0.9438,0.9438,0.9439,0.1896,0.0,292.72,18976.63,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T18:35:14.117553,galerkin_attention,roberta,roberta
+full,PASS,89.33,,,0.8942,0.8933,0.8934,0.8935,0.2996,0.0,382.13,17865.52,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T18:37:15.755456,galerkin_attention,gpt2,gpt2
+full,PASS,90.48,,,0.9091,0.9046,0.9065,0.9043,0.3169,0.0,163.73,17024.29,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T18:34:31.660269,gated_delta_net,distilbert,distilbert
+full,PASS,94.15,,,0.9425,0.9415,0.9415,0.9415,0.2765,0.0,281.07,9010.16,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T18:36:12.283011,gated_delta_net,roberta,roberta
+full,PASS,87.84,,,0.8868,0.8778,0.8836,0.8774,0.3277,0.0,321.23,8004.11,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T18:37:48.000336,gated_delta_net,gpt2,gpt2
+full,PASS,90.71,,,0.9099,0.907,0.9075,0.9068,0.3028,0.0,174.83,35095.19,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T18:37:33.888786,gated_deltanet_block,distilbert,distilbert
+full,PASS,94.38,,,0.9445,0.9438,0.9438,0.9439,0.1896,0.0,292.72,18887.92,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T18:38:52.652352,gated_deltanet_block,roberta,roberta
+full,PASS,89.33,,,0.8942,0.8933,0.8934,0.8935,0.2996,0.0,382.13,15536.26,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T18:40:11.133434,gated_deltanet_block,gpt2,gpt2
+full,PASS,90.71,,,0.9099,0.907,0.9075,0.9068,0.3028,0.0,174.83,34054.29,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T18:37:53.414837,gated_linear_attention,distilbert,distilbert
+full,PASS,94.38,,,0.9445,0.9438,0.9438,0.9439,0.1896,0.0,292.72,18713.08,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T18:39:45.483258,gated_linear_attention,roberta,roberta
+full,PASS,89.33,,,0.8942,0.8933,0.8934,0.8935,0.2996,0.0,382.13,13385.1,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T18:41:58.770632,gated_linear_attention,gpt2,gpt2
+full,PASS,90.71,,,0.9099,0.907,0.9075,0.9068,0.3028,0.0,174.83,39777.03,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T18:38:30.664205,goldfinch_ahn,distilbert,distilbert
+full,PASS,94.38,,,0.9445,0.9438,0.9438,0.9439,0.1896,0.0,292.72,18667.25,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T18:40:08.618042,goldfinch_ahn,roberta,roberta
+full,PASS,89.33,,,0.8942,0.8933,0.8934,0.8935,0.2996,0.0,382.13,13340.68,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T18:41:58.770064,goldfinch_ahn,gpt2,gpt2
+full,PASS,90.71,,,0.9099,0.907,0.9075,0.9068,0.3028,0.0,174.83,45101.29,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T19:15:37.222734,gqa,distilbert,distilbert
+full,PASS,94.38,,,0.9445,0.9438,0.9438,0.9439,0.1896,0.0,292.72,25311.04,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T19:16:41.645101,gqa,roberta,roberta
+full,PASS,89.33,,,0.8942,0.8933,0.8934,0.8935,0.2996,0.0,382.13,17402.43,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T19:17:58.675662,gqa,gpt2,gpt2
+full,PASS,90.71,,,0.9099,0.907,0.9075,0.9068,0.3028,0.0,174.83,45762.63,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T19:19:12.256903,granite_hybrid,distilbert,distilbert
+full,PASS,94.38,,,0.9445,0.9438,0.9438,0.9439,0.1896,0.0,292.72,22959.85,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T18:47:54.127737,granite_hybrid,roberta,roberta
+full,PASS,89.33,,,0.8942,0.8933,0.8934,0.8935,0.2996,0.0,382.13,7974.86,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T19:32:56.779306,granite_hybrid,gpt2,gpt2
+grecodec,PASS_NO_COMPRESSION,90.71,0.0,,0.9099,0.907,0.9075,0.9068,0.3028,0.0,174.83,424.16,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,"note: zero compressed layers, zero injected layers, model unchanged",legacy_bert,2026-09-24T15:16:39.511302,grecodec,distilbert,distilbert
+grecodec,PASS_NO_COMPRESSION,94.38,0.0,,0.9445,0.9438,0.9438,0.9439,0.1896,0.0,292.72,6223.06,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,"note: zero compressed layers, zero injected layers, model unchanged",adapted_roberta,2026-09-24T15:19:01.657103,grecodec,roberta,roberta
+grecodec,PASS_NO_COMPRESSION,89.33,0.0,,0.8942,0.8933,0.8934,0.8935,0.2996,0.0,382.13,4724.42,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,"note: zero compressed layers, zero injected layers, model unchanged",adapted_gpt,2026-09-24T15:25:31.849786,grecodec,gpt2,gpt2
+full,PASS,90.71,,,0.9099,0.907,0.9075,0.9068,0.3028,0.0,174.83,42415.13,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T18:47:13.466742,griffin_ssd,distilbert,distilbert
+full,PASS,94.38,,,0.9445,0.9438,0.9438,0.9439,0.1896,0.0,292.72,22397.2,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T18:48:34.527064,griffin_ssd,roberta,roberta
+full,PASS,89.33,,,0.8942,0.8933,0.8934,0.8935,0.2996,0.0,382.13,6109.02,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T18:54:06.150302,griffin_ssd,gpt2,gpt2
+full,PASS,90.71,,,0.9099,0.907,0.9075,0.9068,0.3028,0.0,174.83,39901.32,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T18:47:30.277861,halo_regla,distilbert,distilbert
+full,PASS,94.38,,,0.9445,0.9438,0.9438,0.9439,0.1896,0.0,292.72,2938.26,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T18:50:03.849086,halo_regla,roberta,roberta
+full,PASS,89.33,,,0.8942,0.8933,0.8934,0.8935,0.2996,0.0,382.13,20517.4,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T18:55:39.743660,halo_regla,gpt2,gpt2
+full,PASS,90.71,,,0.9099,0.907,0.9075,0.9068,0.3028,0.0,174.83,40566.22,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T18:47:45.255659,hamming,distilbert,distilbert
+full,PASS,94.38,,,0.9445,0.9438,0.9438,0.9439,0.1896,0.0,292.72,4426.37,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T18:51:20.127790,hamming,roberta,roberta
+full,PASS,89.33,,,0.8942,0.8933,0.8934,0.8935,0.2996,0.0,382.13,11242.6,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T18:55:49.561616,hamming,gpt2,gpt2
+hashed_linear,CRASH_NO_OUTPUT,0.0,,,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,0,0,1.0,0.0,0.0,0,0,,,0,0,Child produced no result file after 63.3s,,1790263740.1757722,hashed_linear,distilbert,distilbert
+hashed_linear,PASS_NO_COMPRESSION,94.38,0.0,,0.9445,0.9438,0.9438,0.9439,0.1896,0.0,292.72,23820.75,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,"note: zero compressed layers, zero injected layers, model unchanged",adapted_roberta,2026-09-24T15:31:08.497173,hashed_linear,roberta,roberta
+hashed_linear,CRASH,0.0,,,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,0,0,1.0,0.0,0.0,0,0,,,0,0,"RuntimeError: CUDA error: an illegal memory access was encountered
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+",,2026-09-24T15:35:00.159155,hashed_linear,gpt2,gpt2
+hashednets,PASS_NO_COMPRESSION,90.71,0.0,,0.9099,0.907,0.9075,0.9068,0.3027,0.0,291.93,41879.64,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,"note: zero compressed layers, zero injected layers, model unchanged",legacy_bert,2026-09-24T15:49:36.623872,hashednets,distilbert,distilbert
+hashednets,PASS_NO_COMPRESSION,94.38,0.0,,0.9445,0.9438,0.9438,0.9439,0.1896,0.0,511.43,22034.87,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,"note: zero compressed layers, zero injected layers, model unchanged",adapted_roberta,2026-09-24T15:51:14.403102,hashednets,roberta,roberta
+hashednets,PASS_NO_COMPRESSION,89.33,0.0,,0.8942,0.8933,0.8934,0.8935,0.2996,0.0,383.63,11446.08,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,"note: zero compressed layers, zero injected layers, model unchanged",adapted_gpt,2026-09-24T15:54:49.290008,hashednets,gpt2,gpt2
+full,PASS,90.48,,,0.9091,0.9046,0.9065,0.9043,0.3169,0.0,163.73,25195.35,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T19:19:22.192551,hgrn2_gated_deltanet,distilbert,distilbert
+full,PASS,94.15,,,0.9425,0.9415,0.9415,0.9415,0.2765,0.0,281.07,14060.44,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T19:20:24.018018,hgrn2_gated_deltanet,roberta,roberta
+full,PASS,87.84,,,0.8868,0.8778,0.8836,0.8774,0.3277,0.0,321.23,4300.86,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T19:21:45.570356,hgrn2_gated_deltanet,gpt2,gpt2
+full,PASS,90.71,,,0.9099,0.907,0.9075,0.9068,0.3027,0.0,380.26,43497.59,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T19:21:16.707571,hgrn2_layer,distilbert,distilbert
+full,PASS,94.38,,,0.9445,0.9438,0.9438,0.9439,0.1896,0.0,703.34,9709.36,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T19:24:22.697648,hgrn2_layer,roberta,roberta
+full,PASS,89.33,,,0.8942,0.8933,0.8934,0.8935,0.2996,0.0,382.13,21203.45,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T19:33:10.517472,hgrn2_layer,gpt2,gpt2
+full,PASS,90.71,,,0.9099,0.907,0.9075,0.9068,0.3027,0.0,380.26,40757.93,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T19:22:32.983227,hgrn2_outer,distilbert,distilbert
+full,PASS,94.38,,,0.9445,0.9438,0.9438,0.9439,0.1896,0.0,292.72,22169.54,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T19:29:58.266716,hgrn2_outer,roberta,roberta
+full,PASS,89.33,,,0.8942,0.8933,0.8934,0.8935,0.2996,0.0,382.13,21341.02,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T19:34:41.361952,hgrn2_outer,gpt2,gpt2
+full,PASS,90.71,,,0.9099,0.907,0.9075,0.9068,0.3027,0.0,380.26,13392.75,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T19:27:41.564898,hla,distilbert,distilbert
+full,PASS,94.38,,,0.9445,0.9438,0.9438,0.9439,0.1896,0.0,292.72,23843.78,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-24T19:33:01.060925,hla,roberta,roberta
+full,PASS,57.91,,,0.301,0.4999,0.7569,0.5866,0.6661,0.0,793.19,72743.1,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T19:04:07.058391,hla,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,175722.48,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T19:04:29.136104,hla_attention,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,91292.28,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T19:04:47.487746,hla_attention,roberta,roberta
+full,PASS,57.91,,,0.301,0.4999,0.7569,0.5866,0.6661,0.0,793.19,71085.22,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T19:05:10.056460,hla_attention,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,160701.62,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-10T21:16:46.158969,huffman,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,115383.87,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-10T21:17:52.198843,huffman,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,71358.45,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-10T21:19:54.135912,huffman,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,170114.86,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T19:05:31.240074,huffman_coder,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,92231.55,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T19:06:33.122971,huffman_coder,roberta,roberta
+full,PASS,57.91,,,0.301,0.4999,0.7569,0.5866,0.6661,0.0,793.19,71165.98,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T19:08:32.183076,huffman_coder,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,159017.76,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-10T21:21:00.600982,hybrid_svd,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,114243.39,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-10T21:21:20.059666,hybrid_svd,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,72238.89,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-10T21:21:40.636159,hybrid_svd,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,181098.85,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T19:08:56.868829,hybrid_svd_layer,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,94421.41,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T19:09:15.114333,hybrid_svd_layer,roberta,roberta
+full,PASS,57.91,,,0.301,0.4999,0.7569,0.5866,0.6661,0.0,793.19,71741.09,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T19:09:38.340123,hybrid_svd_layer,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,170826.03,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-10T21:27:20.038684,hybridkv,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,118255.8,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-10T21:27:38.126002,hybridkv,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,71856.61,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-10T21:27:56.356667,hybridkv,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,50597.94,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-14T06:11:00.129530,hymba_transx,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,27024.63,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-14T06:12:24.292230,hymba_transx,roberta,roberta
+full,PASS,87.84,,,0.8776,0.8784,0.8791,0.8789,0.3093,0.0,391.24,23278.9,126800640,126800640,0,1.0,0.0,0.0,48,0,,,0,2359296,,adapted_gpt,2026-09-14T06:14:50.499056,hymba_transx,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,48177.83,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-14T19:03:10.765870,infini,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,713.14,24273.64,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-14T19:30:03.075026,infini,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,62903.53,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T05:19:08.699685,infini,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,161669.14,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T05:20:16.500670,infini_attention,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,109792.9,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T05:20:38.041719,infini_attention,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,71273.26,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T05:21:00.739034,infini_attention,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,167898.9,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T19:10:21.140592,jamba,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,89113.64,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T19:10:48.031252,jamba,roberta,roberta
+full,PASS,57.91,,,0.301,0.4999,0.7569,0.5866,0.6661,0.0,793.19,70977.91,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T19:11:18.988500,jamba,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,51261.64,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-14T06:05:38.243301,jamba_info,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,27186.41,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-14T06:06:42.718995,jamba_info,roberta,roberta
+full,PASS,87.84,,,0.8776,0.8784,0.8791,0.8789,0.3093,0.0,391.24,26540.2,126800640,126800640,0,1.0,0.0,0.0,48,0,,,0,2359296,,adapted_gpt,2026-09-14T06:08:21.011580,jamba_info,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,164561.66,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T19:11:59.880057,kda,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,96398.21,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T19:12:18.867603,kda,roberta,roberta
+full,PASS,57.91,,,0.301,0.4999,0.7569,0.5866,0.6661,0.0,793.19,71174.02,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T19:12:41.359994,kda,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,157393.24,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-10T21:36:11.062627,kmeans,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,111857.1,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-10T21:36:31.562802,kmeans,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,71573.59,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-10T21:36:54.349050,kmeans,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,160032.71,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-10T21:40:52.707681,kronecker,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,115870.9,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-10T21:41:14.249851,kronecker,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,71960.77,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-10T21:41:38.421199,kronecker,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,175454.59,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T19:13:10.274513,kronecker_linear,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,89469.19,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T19:13:29.905941,kronecker_linear,roberta,roberta
+full,PASS,57.91,,,0.301,0.4999,0.7569,0.5866,0.6661,0.0,793.19,70404.89,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T19:13:55.480173,kronecker_linear,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,161580.53,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T05:28:09.130644,kronecker_tt_lora,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,112317.41,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T05:28:31.158562,kronecker_tt_lora,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,70947.22,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T05:28:55.781840,kronecker_tt_lora,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,179512.29,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T05:31:31.919692,kvtc,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,111145.58,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T05:31:53.267793,kvtc,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,70185.04,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T05:32:17.027893,kvtc,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,51330.95,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-14T05:56:55.117255,leka_v1,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,26708.43,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-14T05:57:31.830350,leka_v1,roberta,roberta
+full,PASS,87.84,,,0.8776,0.8784,0.8791,0.8789,0.3093,0.0,391.24,27248.34,126800640,126800640,0,1.0,0.0,0.0,48,0,,,0,2359296,,adapted_gpt,2026-09-14T05:58:16.323866,leka_v1,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,52514.74,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-14T05:53:23.338686,leka_v2,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,26121.81,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-14T05:54:14.611854,leka_v2,roberta,roberta
+full,PASS,87.84,,,0.8776,0.8784,0.8791,0.8789,0.3093,0.0,391.24,27705.36,126800640,126800640,0,1.0,0.0,0.0,48,0,,,0,2359296,,adapted_gpt,2026-09-14T05:55:32.072679,leka_v2,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,50554.67,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-14T05:48:22.784656,leka_v3,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,27135.87,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-14T05:49:11.226471,leka_v3,roberta,roberta
+full,PASS,87.84,,,0.8776,0.8784,0.8791,0.8789,0.3093,0.0,391.24,26930.42,126800640,126800640,0,1.0,0.0,0.0,48,0,,,0,2359296,,adapted_gpt,2026-09-14T05:50:22.727814,leka_v3,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,182587.66,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T02:33:58.931211,liftr,distilbert,distilbert
+full,PASS,75.0,,,0.7578,0.7497,0.7501,0.7497,0.5699,0.0,712.34,83293.19,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T02:34:18.273828,liftr,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,65239.58,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T02:34:37.825969,liftr,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,178757.92,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T02:35:56.823447,lillama,distilbert,distilbert
+full,PASS,75.0,,,0.7578,0.7497,0.7501,0.7497,0.5699,0.0,712.34,97968.75,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T02:36:26.633001,lillama,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,70978.21,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T02:36:51.635444,lillama,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,50385.53,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-14T05:41:30.066753,linformer,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,22216.02,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-14T05:42:13.190606,linformer,roberta,roberta
+full,PASS,57.91,,,0.301,0.4999,0.7569,0.5866,0.6661,0.0,793.19,73013.43,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T19:35:19.371392,linformer,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,170615.12,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T05:57:09.055474,lola_attention,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,105793.55,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T05:57:33.604108,lola_attention,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,71051.75,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T05:58:03.168675,lola_attention,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,164900.86,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T06:00:58.009634,lola_attn,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,105495.75,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T06:01:22.308548,lola_attn,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,70360.98,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T06:01:51.725083,lola_attn,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,166324.55,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T06:03:52.973035,lora_attention,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,110853.59,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T06:04:12.822417,lora_attention,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,70487.08,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T06:04:34.382077,lora_attention,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,160128.47,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T06:19:52.134700,lora_attn,distilbert,distilbert
+full,PASS,75.0,,,0.7578,0.7497,0.7501,0.7497,0.5699,0.0,712.34,94660.55,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T06:20:10.289297,lora_attn,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,70744.32,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T06:20:32.132317,lora_attn,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,170128.55,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T02:37:48.414221,lsc,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,104692.96,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T02:38:08.495560,lsc,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,69085.06,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T02:38:26.737208,lsc,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,179928.94,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T06:21:10.665995,lsh,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,102722.32,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T06:21:33.402464,lsh,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,70575.86,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T06:21:59.990051,lsh,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,164202.56,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T06:22:25.799037,lsh_attention,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,104916.61,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T06:22:49.105749,lsh_attention,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,69255.51,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T06:23:16.618030,lsh_attention,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,52986.36,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-14T02:53:07.797221,mamba,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,28518.97,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-14T02:54:05.071107,mamba,roberta,roberta
+full,PASS,57.91,,,0.301,0.4999,0.7569,0.5866,0.6661,0.0,793.19,64059.12,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T19:36:47.272624,mamba,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,146889.0,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T19:37:16.702250,mamba_inject,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,75988.96,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T19:37:32.412490,mamba_inject,roberta,roberta
+full,PASS,57.91,,,0.301,0.4999,0.7569,0.5866,0.6661,0.0,793.19,66502.29,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T19:37:50.590992,mamba_inject,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,171781.88,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T02:45:34.932051,mamba_shedder,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,106083.85,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T02:45:53.951381,mamba_shedder,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,66076.08,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T02:46:12.546035,mamba_shedder,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,138459.66,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T19:38:07.173423,mamba_svd_flash,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,72371.27,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T19:46:47.299397,mamba_svd_flash,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,64043.03,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T06:26:24.226532,mamba_svd_flash,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.309,0.0,181.06,109734.03,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-08T20:32:59.993894,mgie_budget,distilbert,distilbert
+full,PASS,88.76,,,0.8942,0.8872,0.891,0.8868,0.295,0.0,299.92,64070.27,127325954,127325954,0,1.0,0.0,0.0,0,0,,,0,2678784,,adapted_roberta,2026-09-08T20:33:26.776387,mgie_budget,roberta,roberta
+full,PASS,81.31,,,0.8372,0.8089,0.8364,0.8106,0.5075,0.0,391.24,41616.05,126800640,126800640,0,1.0,0.0,0.0,0,0,,,0,2359296,,adapted_gpt,2026-09-08T20:34:03.164993,mgie_budget,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,164069.35,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T02:47:53.591830,mgie_svd,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,104401.95,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T02:48:13.970135,mgie_svd,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,69670.9,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T02:48:35.784909,mgie_svd,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,49446.2,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-14T07:43:12.809661,minimal_aurora,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,27153.16,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-14T07:43:57.660505,minimal_aurora,roberta,roberta
+full,PASS,87.84,,,0.8776,0.8784,0.8791,0.8789,0.3093,0.0,391.24,23118.52,126800640,126800640,0,1.0,0.0,0.0,48,0,,,0,2359296,,adapted_gpt,2026-09-14T07:45:12.365099,minimal_aurora,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,48872.71,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-14T18:39:36.566029,minimal_nova,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,28074.55,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-14T18:40:31.193591,minimal_nova,roberta,roberta
+full,PASS,87.84,,,0.8776,0.8784,0.8791,0.8789,0.3093,0.0,391.24,24468.34,126800640,126800640,0,1.0,0.0,0.0,48,0,,,0,2359296,,adapted_gpt,2026-09-14T18:41:46.355625,minimal_nova,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,51853.24,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-14T18:32:09.856769,minimal_prism,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,27321.64,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-14T18:32:53.878423,minimal_prism,roberta,roberta
+full,PASS,87.84,,,0.8776,0.8784,0.8791,0.8789,0.3093,0.0,391.24,26848.6,126800640,126800640,0,1.0,0.0,0.0,48,0,,,0,2359296,,adapted_gpt,2026-09-14T18:33:52.693531,minimal_prism,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,390.7,50772.29,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-14T08:00:48.134154,minimal_svd,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,713.14,26317.81,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-14T08:01:49.435202,minimal_svd,roberta,roberta
+full,PASS,87.84,,,0.8776,0.8784,0.8791,0.8789,0.3093,0.0,392.04,27579.75,126800640,126800640,0,1.0,0.0,0.0,48,0,,,0,2359296,,adapted_gpt,2026-09-14T08:03:18.296621,minimal_svd,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,132162.11,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T06:33:34.480958,minimal_svd_v2,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,101871.29,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T06:34:02.687683,minimal_svd_v2,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,66593.63,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T06:34:35.538630,minimal_svd_v2,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,51589.78,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-14T05:24:24.938376,mixattention_moska,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,37222.58,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-14T05:25:05.437162,mixattention_moska,roberta,roberta
+full,PASS,87.84,,,0.8776,0.8784,0.8791,0.8789,0.3093,0.0,391.24,27077.57,126800640,126800640,0,1.0,0.0,0.0,48,0,,,0,2359296,,adapted_gpt,2026-09-14T05:26:03.085501,mixattention_moska,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,130536.1,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T19:58:17.086021,mla,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,78501.98,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T19:58:48.280857,mla,roberta,roberta
+full,PASS,57.91,,,0.301,0.4999,0.7569,0.5866,0.6661,0.0,793.19,62086.07,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T19:59:16.554779,mla,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,166772.58,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T03:03:37.722991,mlorq,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,112179.18,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T03:03:58.505011,mlorq,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,71722.69,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T03:04:19.800862,mlorq,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,138040.16,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T06:37:49.269237,moba,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,91153.77,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T06:38:14.631231,moba,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,64482.86,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T06:38:43.379532,moba,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,135712.47,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T06:39:21.261329,modegpt,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,100571.41,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T06:39:44.441804,modegpt,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,64771.36,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T06:40:08.105159,modegpt,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,49767.82,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-14T05:18:30.662730,moe_deltakv_paged,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,26742.32,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-14T05:19:11.307172,moe_deltakv_paged,roberta,roberta
+full,PASS,87.84,,,0.8776,0.8784,0.8791,0.8789,0.3093,0.0,391.24,26679.38,126800640,126800640,0,1.0,0.0,0.0,48,0,,,0,2359296,,adapted_gpt,2026-09-14T05:20:04.892518,moe_deltakv_paged,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,47053.57,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-14T05:03:12.950078,nasc,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,26662.76,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-14T05:04:28.875526,nasc,roberta,roberta
+full,PASS,87.84,,,0.8776,0.8784,0.8791,0.8789,0.3093,0.0,391.24,27072.18,126800640,126800640,0,1.0,0.0,0.0,48,0,,,0,2359296,,adapted_gpt,2026-09-14T05:06:16.343574,nasc,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,144942.05,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T06:44:49.702980,nasc_attention,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,98541.36,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T06:45:21.584402,nasc_attention,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,63437.79,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T06:46:03.795527,nasc_attention,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,51197.38,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-14T04:40:48.024486,nexus,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,27994.08,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-14T04:41:34.975313,nexus,roberta,roberta
+full,PASS,87.84,,,0.8776,0.8784,0.8791,0.8789,0.3093,0.0,391.24,26881.71,126800640,126800640,0,1.0,0.0,0.0,48,0,,,0,2359296,,adapted_gpt,2026-09-14T04:42:43.813762,nexus,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,52535.12,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-14T19:15:24.351260,nha,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,27652.23,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-14T19:15:54.801045,nha,roberta,roberta
+full,PASS,57.91,,,0.301,0.4999,0.7569,0.5866,0.6661,0.0,793.19,64155.01,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T20:01:45.095545,nha,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,146928.95,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T20:02:03.577613,nha_compressor,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,81495.78,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T20:02:22.039322,nha_compressor,roberta,roberta
+full,PASS,57.91,,,0.301,0.4999,0.7569,0.5866,0.6661,0.0,793.19,66086.34,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T20:02:42.376210,nha_compressor,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,143716.23,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T06:52:23.722116,nli_softmax,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,86398.59,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T06:52:45.861933,nli_softmax,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,63158.11,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T06:53:04.331182,nli_softmax,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,139559.13,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T06:53:38.521839,nmf,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,89842.73,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T06:55:08.690743,nmf,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,63881.43,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T06:58:38.769662,nmf,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,70429.43,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-14T19:16:27.623232,nsa,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,26877.72,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-14T19:17:10.091560,nsa,roberta,roberta
+full,PASS,87.84,,,0.8776,0.8784,0.8791,0.8789,0.3093,0.0,391.24,22955.99,126800640,126800640,0,1.0,0.0,0.0,48,0,,,0,2359296,,adapted_gpt,2026-09-14T19:18:22.405549,nsa,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,148899.77,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T20:23:01.592623,nsa_attention,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,77301.15,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T20:23:24.448945,nsa_attention,roberta,roberta
+full,PASS,57.91,,,0.301,0.4999,0.7569,0.5866,0.6661,0.0,793.19,64102.51,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T20:23:52.320933,nsa_attention,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,152826.09,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T20:24:25.366319,nystrom,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,81409.85,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T20:24:50.303263,nystrom,roberta,roberta
+full,PASS,57.91,,,0.301,0.4999,0.7569,0.5866,0.6661,0.0,793.19,63352.5,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T20:25:21.823111,nystrom,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,149416.13,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T07:04:00.343528,oats,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,93193.36,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T07:04:32.922579,oats,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,63327.3,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T07:05:15.134437,oats,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,47128.24,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-14T19:00:01.569779,oha,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,24038.83,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-14T19:00:52.242643,oha,roberta,roberta
+full,PASS,87.84,,,0.8776,0.8784,0.8791,0.8789,0.3093,0.0,391.24,26802.39,126800640,126800640,0,1.0,0.0,0.0,48,0,,,0,2359296,,adapted_gpt,2026-09-14T19:02:14.256714,oha,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,137243.0,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T07:07:24.299596,optimal_subspace_projection,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,84974.62,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T07:07:47.426677,optimal_subspace_projection,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,63691.53,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T07:08:10.013162,optimal_subspace_projection,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,139643.62,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T20:27:24.975242,optimized_hybrid_attention,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,79157.35,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T20:27:57.326492,optimized_hybrid_attention,roberta,roberta
+full,PASS,57.91,,,0.301,0.4999,0.7569,0.5866,0.6661,0.0,793.19,65041.82,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T20:28:27.927623,optimized_hybrid_attention,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,147202.89,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T20:29:09.199825,orion,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,78567.08,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T20:29:37.371389,orion,roberta,roberta
+full,PASS,57.91,,,0.301,0.4999,0.7569,0.5866,0.6661,0.0,793.19,64583.07,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T20:30:15.744202,orion,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,142549.88,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T20:30:56.657921,orion_module,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,79648.31,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T20:31:25.141823,orion_module,roberta,roberta
+full,PASS,57.91,,,0.301,0.4999,0.7569,0.5866,0.6661,0.0,793.19,62047.21,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T20:32:04.260752,orion_module,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,134529.23,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T07:15:14.705454,padre,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,87284.58,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T07:15:39.263724,padre,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,63215.28,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T07:16:06.137558,padre,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,145457.71,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T20:32:45.321161,performer,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,83776.42,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T20:33:08.292728,performer,roberta,roberta
+full,PASS,57.91,,,0.301,0.4999,0.7569,0.5866,0.6661,0.0,793.19,63164.37,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T20:33:37.553524,performer,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,145722.32,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T07:18:19.001786,phantom,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,91306.91,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T07:18:54.280652,phantom,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,64655.8,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T07:19:40.280388,phantom,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,148866.77,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T07:20:31.915222,primal,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,88999.05,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T07:20:55.651023,primal,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,65333.01,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T07:21:20.731465,primal,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,51839.24,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-14T19:09:23.104297,progressive_token_pruning,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,25637.33,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-14T19:10:06.106044,progressive_token_pruning,roberta,roberta
+full,PASS,87.84,,,0.8776,0.8784,0.8791,0.8789,0.3093,0.0,391.24,26426.78,126800640,126800640,0,1.0,0.0,0.0,48,0,,,0,2359296,,adapted_gpt,2026-09-14T19:11:15.234216,progressive_token_pruning,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,47878.58,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-14T19:27:11.188834,projection_factorized_attn,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,27108.58,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-14T19:28:12.518405,projection_factorized_attn,roberta,roberta
+full,PASS,87.84,,,0.8776,0.8784,0.8791,0.8789,0.3093,0.0,391.24,26782.8,126800640,126800640,0,1.0,0.0,0.0,48,0,,,0,2359296,,adapted_gpt,2026-09-14T19:29:12.878431,projection_factorized_attn,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,147172.28,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T07:25:42.485484,proxsparse,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,96397.05,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T07:26:04.785113,proxsparse,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,62312.29,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T07:26:26.276345,proxsparse,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,140605.0,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T07:27:51.945330,proxsparse_pruner,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,90155.06,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T07:28:14.119353,proxsparse_pruner,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,62805.44,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T07:28:35.658883,proxsparse_pruner,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,146754.83,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T07:29:09.117148,qcqa,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,96386.47,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T07:29:33.451542,qcqa,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,62665.12,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T07:30:00.024923,qcqa,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,47129.64,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-14T21:48:48.517152,rala,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,25553.5,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-14T21:49:46.266469,rala,roberta,roberta
+full,PASS,87.84,,,0.8776,0.8784,0.8791,0.8789,0.3093,0.0,391.24,28562.12,126800640,126800640,0,1.0,0.0,0.0,48,0,,,0,2359296,,adapted_gpt,2026-09-14T21:50:45.465366,rala,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,156358.19,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T20:39:07.968514,rala_compressor,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,82797.17,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T20:39:30.921336,rala_compressor,roberta,roberta
+full,PASS,57.91,,,0.301,0.4999,0.7569,0.5866,0.6661,0.0,793.19,61736.11,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T20:39:59.968747,rala_compressor,gpt2,gpt2
+rala,PASS_LOW,51.03,,,0.6753,0.34,0.7549,0.5012,0.6935,0.0,367.4,10953.02,124647170,133061390,1179660,0.9368,-6.75,0.0,48,0,,,0,1179648,note: evaluated accuracy (51.03%) below chance threshold (56.00%),adapted_roberta,2026-09-15T01:09:20.066086,rala_rerun,roberta,roberta
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,139876.19,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T20:43:26.657539,reap_moe,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,80799.8,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T20:43:54.981141,reap_moe,roberta,roberta
+full,PASS,57.91,,,0.301,0.4999,0.7569,0.5866,0.6661,0.0,793.19,65658.46,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T20:44:36.432394,reap_moe,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,54280.21,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-14T19:31:13.905575,regla,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,26664.3,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-14T19:32:09.691472,regla,roberta,roberta
+full,PASS,87.84,,,0.8776,0.8784,0.8791,0.8789,0.3093,0.0,391.24,28074.45,126800640,126800640,0,1.0,0.0,0.0,48,0,,,0,2359296,,adapted_gpt,2026-09-14T19:33:17.751981,regla,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,144873.64,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T07:35:55.364367,replace,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,86937.12,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T07:36:15.145548,replace,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,63288.7,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T07:36:33.431192,replace,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,136577.72,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T07:36:49.647534,replaceme,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,101984.15,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T07:37:11.133696,replaceme,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,65579.86,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T07:37:31.790589,replaceme,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,51989.92,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-14T18:51:46.876457,res_svd,distilbert,distilbert
+full,PASS,60.09,,,0.3718,0.5397,0.7444,0.6078,0.68,0.0,713.14,27598.05,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-14T19:01:11.230766,res_svd,roberta,roberta
+full,PASS,87.84,,,0.8776,0.8784,0.8791,0.8789,0.3093,0.0,391.24,24579.06,126800640,126800640,0,1.0,0.0,0.0,48,0,,,0,2359296,,adapted_gpt,2026-09-14T19:03:47.532430,res_svd,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,146929.18,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T07:43:52.990202,roast,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,101173.57,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T07:44:17.627394,roast,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,63154.56,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T07:44:45.018083,roast,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,138475.48,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T20:47:20.881539,roast_hashed_linear,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,81101.95,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T20:47:44.371158,roast_hashed_linear,roberta,roberta
+full,PASS,57.91,,,0.301,0.4999,0.7569,0.5866,0.6661,0.0,793.19,65153.01,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T20:48:13.034228,roast_hashed_linear,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,161887.35,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T10:16:36.967576,rope,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,104449.52,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T10:16:57.373549,rope,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,70727.02,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T10:17:19.068939,rope,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,145427.48,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T07:48:28.804233,rotational_slicegpt_int4,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,91341.58,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T07:49:12.114153,rotational_slicegpt_int4,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,65816.29,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T07:50:15.268461,rotational_slicegpt_int4,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,50660.29,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-14T19:34:07.651192,routing,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,24927.79,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-14T19:35:41.563785,routing,roberta,roberta
+full,PASS,87.84,,,0.8776,0.8784,0.8791,0.8789,0.3093,0.0,391.24,23806.21,126800640,126800640,0,1.0,0.0,0.0,48,0,,,0,2359296,,adapted_gpt,2026-09-14T19:39:23.853835,routing,gpt2,gpt2
+routing,PASS_LOW,50.92,,,0.6748,0.3374,0.2546,0.5,0.704,0.0,385.72,2058.46,124647170,132913922,1179648,0.9378,-6.63,0.0,48,0,,,12,1179648,note: evaluated accuracy (50.92%) below chance threshold (56.00%),adapted_roberta,2026-09-15T01:06:45.617643,routing_rerun,roberta,roberta
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,45067.64,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-14T19:06:34.326233,rpc,distilbert,distilbert
+full,PASS,60.09,,,0.3718,0.5397,0.7444,0.6078,0.68,0.0,713.14,28113.96,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-14T19:07:28.029918,rpc,roberta,roberta
+full,PASS,87.84,,,0.8776,0.8784,0.8791,0.8789,0.3093,0.0,391.24,27230.46,126800640,126800640,0,1.0,0.0,0.0,48,0,,,0,2359296,,adapted_gpt,2026-09-14T19:08:35.449142,rpc,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,128841.24,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T08:04:03.278291,rpca,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,94654.06,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T08:04:36.245151,rpca,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,63915.32,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T08:05:20.760696,rpca,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,144963.64,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T20:51:17.869249,saes_svd_compressor,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,80994.0,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T20:51:40.391403,saes_svd_compressor,roberta,roberta
+full,PASS,57.91,,,0.301,0.4999,0.7569,0.5866,0.6661,0.0,793.19,66198.68,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T20:52:07.634377,saes_svd_compressor,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,142488.01,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T08:07:01.757148,saes_svd_v2,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,96460.3,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T08:07:26.011597,saes_svd_v2,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,63830.86,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T08:07:51.908476,saes_svd_v2,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,127223.28,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T08:08:20.712645,salr,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,93593.68,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T08:08:44.278524,salr,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,64140.72,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T08:09:10.298772,salr,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,145289.88,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T08:09:38.305159,salt,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,94967.21,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T08:10:06.701148,salt,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,62452.96,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T08:10:40.207481,salt,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,148196.65,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T08:11:18.201455,salt_attention,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,92627.42,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T08:11:46.865593,salt_attention,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,64616.05,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T08:12:20.231725,salt_attention,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,149492.01,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T20:57:04.065363,sambam3,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,80854.37,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T20:57:31.870215,sambam3,roberta,roberta
+full,PASS,57.91,,,0.301,0.4999,0.7569,0.5866,0.6661,0.0,793.19,64254.94,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T20:58:10.621665,sambam3,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,152220.46,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T20:59:13.010094,sambamoe,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,79435.6,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T20:59:47.501926,sambamoe,roberta,roberta
+full,PASS,57.91,,,0.301,0.4999,0.7569,0.5866,0.6661,0.0,793.19,64707.54,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T21:00:40.077697,sambamoe,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,46799.28,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-14T23:40:57.562526,sdrm,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,23765.16,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-14T23:41:53.427613,sdrm,roberta,roberta
+full,PASS,87.84,,,0.8776,0.8784,0.8791,0.8789,0.3093,0.0,391.24,26331.17,126800640,126800640,0,1.0,0.0,0.0,48,0,,,0,2359296,,adapted_gpt,2026-09-14T23:42:50.499443,sdrm,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,53723.49,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-14T19:34:41.148878,simple_ssm,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,26332.19,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-14T19:35:38.344272,simple_ssm,roberta,roberta
+full,PASS,87.84,,,0.8776,0.8784,0.8791,0.8789,0.3093,0.0,391.24,23241.34,126800640,126800640,0,1.0,0.0,0.0,48,0,,,0,2359296,,adapted_gpt,2026-09-14T19:37:04.745564,simple_ssm,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,141027.67,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T08:22:35.336889,slicegpt,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,93726.44,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T08:22:58.580895,slicegpt,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,63519.12,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T08:23:22.530369,slicegpt,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,137657.71,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T08:23:50.377131,slicegpt_pca,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,88423.74,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T08:24:20.049827,slicegpt_pca,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,63666.99,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T08:24:48.942803,slicegpt_pca,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,135680.86,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T08:25:29.134173,slim,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,91493.48,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T08:25:53.204026,slim,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,65710.32,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T08:26:18.565499,slim,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,148495.02,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T08:26:46.529071,smart_weighted_ensemble,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,90470.13,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T08:27:08.640827,smart_weighted_ensemble,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,62844.73,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T08:27:26.834266,smart_weighted_ensemble,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,41917.05,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-14T19:46:07.487864,soa_attn,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,26620.13,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-14T06:59:25.959929,soa_attn,roberta,roberta
+full,PASS,87.84,,,0.8776,0.8784,0.8791,0.8789,0.3093,0.0,391.24,9411.5,126800640,126800640,0,1.0,0.0,0.0,48,0,,,0,2359296,,adapted_gpt,2026-09-14T07:00:12.583280,soa_attn,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,42523.5,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-14T07:44:41.988821,soa_fused_module,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,28155.5,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-14T07:45:36.765131,soa_fused_module,roberta,roberta
+full,PASS,87.84,,,0.8776,0.8784,0.8791,0.8789,0.3093,0.0,391.24,27338.75,126800640,126800640,0,1.0,0.0,0.0,48,0,,,0,2359296,,adapted_gpt,2026-09-14T07:46:46.807142,soa_fused_module,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,140849.5,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T08:30:28.708183,soa_module,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,94161.35,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T08:30:53.552538,soa_module,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,61737.38,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T08:31:18.251598,soa_module,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,151796.65,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T08:31:47.429897,soafusedattention,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,90541.01,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T08:32:12.158345,soafusedattention,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,63376.23,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T08:32:37.813247,soafusedattention,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,129792.67,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T08:33:06.757104,soka,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,93934.25,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T08:33:30.891113,soka,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,65001.96,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T08:33:55.993742,soka,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,48019.28,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-14T19:36:24.386854,span_expanded,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,92526.43,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T08:34:53.387988,span_expanded,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,64578.02,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T08:35:19.389970,span_expanded,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,153565.86,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T08:35:47.260457,sparsegpt,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,92299.6,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T08:36:19.300175,sparsegpt,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,62506.97,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T08:37:01.274031,sparsegpt,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,50339.59,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-14T19:44:35.016845,spectra_v2,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,23630.98,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-14T19:45:25.914345,spectra_v2,roberta,roberta
+full,PASS,87.84,,,0.8776,0.8784,0.8791,0.8789,0.3093,0.0,391.24,23276.87,126800640,126800640,0,1.0,0.0,0.0,48,0,,,0,2359296,,adapted_gpt,2026-09-14T19:46:36.946096,spectra_v2,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,137103.3,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T08:39:14.044281,spectraformer,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,87560.91,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T08:39:39.959320,spectraformer,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,64365.4,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T08:40:09.471292,spectraformer,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,140521.46,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T08:40:44.724378,spectraformer_attention,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,88254.34,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T08:41:09.394007,spectraformer_attention,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,64363.56,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T08:41:36.139553,spectraformer_attention,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,143380.76,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T21:02:57.021273,spectral_mamba,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,81138.79,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T21:03:19.432826,spectral_mamba,roberta,roberta
+full,PASS,57.91,,,0.301,0.4999,0.7569,0.5866,0.6661,0.0,793.19,65013.44,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T21:03:48.174786,spectral_mamba,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,150593.76,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T21:04:37.156734,spectron,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,80947.79,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T21:05:01.230520,spectron,roberta,roberta
+full,PASS,57.91,,,0.301,0.4999,0.7569,0.5866,0.6661,0.0,793.19,66019.99,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T21:05:31.501435,spectron,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3587,0.0,182.94,50688.75,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-15T00:07:15.678691,squeezing_heads,distilbert,distilbert
+full,PASS_LOW,50.92,,,0.6748,0.3374,0.2546,0.5,0.698,0.0,298.71,27118.79,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,note: evaluated accuracy (50.92%) below chance threshold (56.00%),adapted_roberta,2026-09-15T00:08:15.053753,squeezing_heads,roberta,roberta
+full,PASS_LOW,49.54,,,0.2903,0.4494,0.5014,0.5009,0.7992,0.0,390.24,27466.16,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,note: evaluated accuracy (49.54%) below chance threshold (56.00%),adapted_gpt,2026-09-15T00:09:27.198488,squeezing_heads,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,145913.26,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T08:45:21.519843,squeezing_heads_distill,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,91092.48,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T08:45:45.518291,squeezing_heads_distill,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,63601.47,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T08:46:10.321925,squeezing_heads_distill,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,147927.18,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T08:46:35.321219,squeezing_heads_distiller,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,87460.63,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T08:46:59.491252,squeezing_heads_distiller,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,65188.16,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T08:47:23.726589,squeezing_heads_distiller,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,144469.77,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T08:47:49.114170,subspace_projection,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,99998.19,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T08:48:13.293808,subspace_projection,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,63965.92,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T08:48:38.328877,subspace_projection,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,146655.68,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T21:06:14.122622,svd-mamba,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,80209.19,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T21:11:14.810548,svd-mamba,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,61888.41,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T08:56:31.546521,svd-mamba,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,51034.62,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-14T04:25:05.840642,svd_compressed,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,27558.2,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-14T04:25:36.321490,svd_compressed,roberta,roberta
+full,PASS,87.84,,,0.8776,0.8784,0.8791,0.8789,0.3093,0.0,391.24,27219.81,126800640,126800640,0,1.0,0.0,0.0,0,0,,,0,2359296,,adapted_gpt,2026-09-14T03:55:44.055903,svd_compressed,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,52514.77,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-14T18:48:14.155251,svd_linear,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,26396.42,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-14T18:48:57.930186,svd_linear,roberta,roberta
+full,PASS,87.84,,,0.8776,0.8784,0.8791,0.8789,0.3093,0.0,391.24,27175.56,126800640,126800640,0,1.0,0.0,0.0,48,0,,,0,2359296,,adapted_gpt,2026-09-14T18:49:56.209182,svd_linear,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,151835.22,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T09:10:25.775742,svd_linear_attn,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,90036.01,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T09:10:53.633769,svd_linear_attn,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,66966.42,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T09:11:25.109094,svd_linear_attn,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,154309.51,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T21:27:40.636144,svd_linear_decay,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,82619.82,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T21:27:58.425942,svd_linear_decay,roberta,roberta
+full,PASS,57.91,,,0.301,0.4999,0.7569,0.5866,0.6661,0.0,793.19,66745.94,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T21:28:18.024195,svd_linear_decay,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,135308.24,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T09:12:52.922246,svd_llm_v2,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,86244.45,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T09:13:18.686614,svd_llm_v2,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,64480.53,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T09:13:46.188448,svd_llm_v2,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,53135.65,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-14T03:57:09.070518,svd_mamba,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,27794.58,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-14T03:58:16.424563,svd_mamba,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,62714.3,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T09:21:32.585992,svd_mamba,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,150087.96,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T09:31:07.217785,svd_proj,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,83755.71,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T09:31:36.417349,svd_proj,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,64411.21,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T09:32:07.775988,svd_proj,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,141839.0,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T09:32:40.290221,svd_proj_attn,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,96632.08,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T09:33:07.385237,svd_proj_attn,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,62971.65,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T09:33:37.773701,svd_proj_attn,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,139700.69,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T09:34:09.922382,svd_projection,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,84407.34,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T09:34:37.523519,svd_projection,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,62284.77,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T09:35:07.115855,svd_projection,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,149945.87,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T21:48:40.353090,svd_sequence,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,81335.45,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T21:49:04.089848,svd_sequence,roberta,roberta
+full,PASS,57.91,,,0.301,0.4999,0.7569,0.5866,0.6661,0.0,793.19,64344.52,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T21:49:34.604315,svd_sequence,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,144662.78,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T21:50:02.548451,svd_sequence_attention,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,81675.38,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T21:50:26.059036,svd_sequence_attention,roberta,roberta
+full,PASS,57.91,,,0.301,0.4999,0.7569,0.5866,0.6661,0.0,793.19,63999.6,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T21:50:55.745650,svd_sequence_attention,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,135042.32,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T09:37:32.160355,swift_svd,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,87965.94,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T09:37:55.984724,swift_svd,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,64199.7,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T09:38:23.039765,swift_svd,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,135590.4,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T09:38:51.988347,swift_svd_act,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,88009.53,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T09:39:20.266523,swift_svd_act,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,67936.84,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T09:39:49.981807,swift_svd_act,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,138662.34,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T09:40:22.938376,template_attention,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,102308.54,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T09:40:46.606754,template_attention,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,60153.38,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T09:41:11.811505,template_attention,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,139742.52,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T21:51:22.520652,tlinformer,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,79049.94,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T21:51:44.485098,tlinformer,roberta,roberta
+full,PASS,57.91,,,0.301,0.4999,0.7569,0.5866,0.6661,0.0,793.19,61495.11,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T21:52:11.970020,tlinformer,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,137757.17,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T21:52:40.131974,tlinformer_attention,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,82711.85,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T21:53:01.757386,tlinformer_attention,roberta,roberta
+full,PASS,57.91,,,0.301,0.4999,0.7569,0.5866,0.6661,0.0,793.19,63407.14,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T21:53:28.896109,tlinformer_attention,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,133435.99,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T21:53:55.639540,token_compressed,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,79135.76,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T21:54:17.692097,token_compressed,roberta,roberta
+full,PASS,57.91,,,0.301,0.4999,0.7569,0.5866,0.6661,0.0,793.19,66224.91,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T21:54:44.866638,token_compressed,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,147673.36,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T09:45:31.215245,tomoe,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,90454.69,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T09:46:27.148018,tomoe,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,63973.09,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T09:47:51.028584,tomoe,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,139335.03,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T09:49:02.476747,tomoe_compressor,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,90202.95,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T09:49:57.971437,tomoe_compressor,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,64728.89,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T09:51:23.222845,tomoe_compressor,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,51837.15,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-14T05:43:21.718607,tpa,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,698.89,45523.74,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T21:56:07.939971,tpa,roberta,roberta
+full,PASS,57.8,,,0.2977,0.498,0.7564,0.5855,0.6661,0.0,727.75,43808.84,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T21:58:13.847080,tpa,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,36196.19,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-14T07:16:17.148565,tt,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,18845.98,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-14T07:17:07.394711,tt,roberta,roberta
+full,PASS,87.84,,,0.8776,0.8784,0.8791,0.8789,0.3093,0.0,391.24,12105.44,126800640,126800640,0,1.0,0.0,0.0,48,0,,,0,2359296,,adapted_gpt,2026-09-14T07:18:28.137762,tt,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,130338.64,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T21:58:33.305869,tt_linear,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,82097.06,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T21:58:59.749445,tt_linear,roberta,roberta
+full,PASS,57.91,,,0.301,0.4999,0.7569,0.5866,0.6661,0.0,793.19,65205.0,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T21:59:36.561459,tt_linear,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,157493.47,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T10:18:11.870197,uniql,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,99725.16,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T10:18:32.714643,uniql,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,68723.9,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T10:18:55.169512,uniql,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,151694.76,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T22:00:13.024872,upi_mamba,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,83304.19,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T22:00:58.746033,upi_mamba,roberta,roberta
+full,PASS,57.91,,,0.301,0.4999,0.7569,0.5866,0.6661,0.0,793.19,62055.5,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T22:10:05.478000,upi_mamba,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,148917.99,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T22:10:55.454192,upi_stuffed_mamba,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,83058.03,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T22:11:41.610607,upi_stuffed_mamba,roberta,roberta
+full,PASS,57.91,,,0.301,0.4999,0.7569,0.5866,0.6661,0.0,793.19,61468.34,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T22:20:34.854846,upi_stuffed_mamba,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,141848.23,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T22:21:25.823914,vig,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,74815.97,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T22:21:49.169607,vig,roberta,roberta
+full,PASS,57.91,,,0.301,0.4999,0.7569,0.5866,0.6661,0.0,793.19,65606.22,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T22:22:18.928418,vig,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,51623.01,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-14T06:00:31.487259,vspec,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,26618.4,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-14T06:01:25.584969,vspec,roberta,roberta
+full,PASS,87.84,,,0.8776,0.8784,0.8791,0.8789,0.3093,0.0,391.24,26407.2,126800640,126800640,0,1.0,0.0,0.0,48,0,,,0,2359296,,adapted_gpt,2026-09-14T06:02:47.990024,vspec,gpt2,gpt2
+full,PASS,90.48,,,0.9077,0.9047,0.9052,0.9046,0.3091,0.0,389.51,160701.9,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T10:41:24.280046,weighted_ensemble,distilbert,distilbert
+full,PASS,75.11,,,0.7586,0.7509,0.7512,0.7508,0.5699,0.0,298.71,114346.36,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T10:41:42.884290,weighted_ensemble,roberta,roberta
+full,PASS,60.78,,,0.6354,0.6055,0.6085,0.6066,0.6585,0.0,793.19,71291.22,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T10:41:58.672274,weighted_ensemble,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,52577.79,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-14T23:35:50.502388,wgqa,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,26639.02,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-14T23:36:31.900530,wgqa,roberta,roberta
+full,PASS,87.84,,,0.8776,0.8784,0.8791,0.8789,0.3093,0.0,391.24,26531.63,126800640,126800640,0,1.0,0.0,0.0,48,0,,,0,2359296,,adapted_gpt,2026-09-14T23:37:27.288605,wgqa,gpt2,gpt2
+wgqa,PASS,90.37,,,0.9067,0.9036,0.9041,0.9034,0.313,0.0,194.16,18779.4,66955010,67544978,589968,0.9913,-0.88,0.0,24,0,,,6,589824,,legacy_bert,2026-09-15T01:08:50.847657,wgqa_rerun,distilbert,distilbert
+wgqa,PASS_LOW,50.92,,,0.6748,0.3374,0.2546,0.5,0.6978,0.0,368.98,8321.14,124647170,132914210,1179936,0.9378,-6.63,0.0,48,0,,,12,1179648,note: evaluated accuracy (50.92%) below chance threshold (56.00%),adapted_roberta,2026-09-15T01:08:12.131798,wgqa_rerun,roberta,roberta
+wgqa,PASS_LOW,49.31,,,0.2633,0.4385,0.4983,0.499,0.8036,0.0,326.46,9863.76,124441344,125621280,1179936,0.9906,-0.95,0.0,48,0,,,12,1179648,note: evaluated accuracy (49.31%) below chance threshold (56.00%),adapted_gpt,2026-09-15T01:09:02.630123,wgqa_rerun,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,52812.7,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-14T03:26:38.923009,xattention,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,27944.4,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-14T03:27:21.227281,xattention,roberta,roberta
+full,PASS,87.84,,,0.8776,0.8784,0.8791,0.8789,0.3093,0.0,391.24,25052.91,126800640,126800640,0,1.0,0.0,0.0,0,0,,,0,2359296,,adapted_gpt,2026-09-14T03:28:21.068164,xattention,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,51116.73,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-14T23:39:54.372554,zerokv_neo,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,23372.01,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-14T23:40:33.310058,zerokv_neo,roberta,roberta
+full,PASS,87.84,,,0.8776,0.8784,0.8791,0.8789,0.3093,0.0,391.24,25032.32,126800640,126800640,0,1.0,0.0,0.0,48,0,,,0,2359296,,adapted_gpt,2026-09-14T23:41:26.544279,zerokv_neo,gpt2,gpt2
+full,PASS,90.94,,,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,146466.62,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T22:27:07.484937,zeros,distilbert,distilbert
+full,PASS,75.46,,,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,80292.04,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T22:27:29.029828,zeros,roberta,roberta
+full,PASS,57.91,,,0.301,0.4999,0.7569,0.5866,0.6661,0.0,793.19,64301.89,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T22:27:56.571497,zeros,gpt2,gpt2

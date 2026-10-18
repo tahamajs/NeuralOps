@@ -1,0 +1,26 @@
+[
+  {
+    "name": "distilbert",
+    "slug": "distilbert",
+    "status": "PASS",
+    "accuracy_pct": 90.71,
+    "elapsed_s": 0.0,
+    "out_dir": "results/03_unified_runs/unified_aegis_v6/distilbert"
+  },
+  {
+    "name": "roberta",
+    "slug": "roberta",
+    "status": "PASS",
+    "accuracy_pct": 94.38,
+    "elapsed_s": 0.0,
+    "out_dir": "results/03_unified_runs/unified_aegis_v6/roberta"
+  },
+  {
+    "name": "gpt2",
+    "slug": "gpt2",
+    "status": "PASS",
+    "accuracy_pct": 89.33,
+    "elapsed_s": 0.0,
+    "out_dir": "results/03_unified_runs/unified_aegis_v6/gpt2"
+  }
+]

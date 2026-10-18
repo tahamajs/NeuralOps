@@ -1,0 +1,12 @@
+[
+  {
+    "module": "salr",
+    "model": "distilbert-base-uncased-finetuned-sst-2-english",
+    "dataset": "sst2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": "",
+    "accuracy_pct": 90.94,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-27T07:48:59.250716"
+  }
+]

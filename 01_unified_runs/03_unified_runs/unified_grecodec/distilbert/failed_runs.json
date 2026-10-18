@@ -1,0 +1,12 @@
+[
+  {
+    "module": "grecodec",
+    "model": "models\\distilbert_sst2",
+    "dataset": "sst2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": "",
+    "accuracy_pct": 90.71,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-24T18:46:39.136640"
+  }
+]

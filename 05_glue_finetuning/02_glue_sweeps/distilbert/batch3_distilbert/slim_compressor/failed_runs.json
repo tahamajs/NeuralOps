@@ -1,0 +1,12 @@
+[
+  {
+    "module": "slim_compressor",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": "",
+    "accuracy_pct": 91.28,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-25T11:15:52.755044"
+  }
+]

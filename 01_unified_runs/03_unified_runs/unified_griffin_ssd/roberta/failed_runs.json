@@ -1,0 +1,12 @@
+[
+  {
+    "module": "griffin_ssd",
+    "model": "models\\roberta_sst2",
+    "dataset": "sst2",
+    "status": "MODERATE_EXPANSION",
+    "perplexity": "",
+    "accuracy_pct": 91.63,
+    "error": "base_before=124647170 base_after=138784658 delta=+11.34%",
+    "timestamp": "2026-09-24T18:51:23.683019"
+  }
+]

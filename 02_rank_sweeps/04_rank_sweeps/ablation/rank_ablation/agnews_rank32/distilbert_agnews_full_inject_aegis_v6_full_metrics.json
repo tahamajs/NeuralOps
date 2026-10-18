@@ -1,0 +1,45 @@
+{
+    "model": "distilbert_agnews_full_inject_aegis_v6",
+    "performance": {
+        "accuracy_pct": 93.3,
+        "f1_score": 0.929,
+        "f1_macro": 0.929,
+        "precision": 0.9307,
+        "recall": 0.9279,
+        "val_loss": 0.2456,
+        "status": "PASS",
+        "elapsed_s": 30.38
+    },
+    "efficiency": {
+        "total_params_before": 66956548,
+        "total_params_after": 53456722,
+        "trainable_recovery_params": 1253068,
+        "compression_rate": 1.2525,
+        "compression_ratio_pct": 20.16,
+        "flops_reduction_pct": 0.0,
+        "num_compressed_layers": 0,
+        "num_fallback_layers": 0,
+        "num_injected_attention_layers": 30,
+        "lora_params": 0,
+        "avg_reconstruction_error": null,
+        "weighted_reconstruction_error": null,
+        "per_layer_reconstruction_errors": {},
+        "per_layer_ranks": {}
+    },
+    "hardware": {
+        "peak_vram_mb": 390.04,
+        "tokens_per_sec": 21366.62
+    },
+    "architecture": {
+        "span_distribution": {},
+        "mean_span": 128.0,
+        "sparsity_ratio_percent": 0.0
+    },
+    "scalability": {
+        "L_128_vram_mb": 304.17,
+        "L_256_vram_mb": 309.18,
+        "L_512_vram_mb": "unsupported (exceeds model max_position_embeddings 512)",
+        "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 512)"
+    },
+    "timestamp": "2026-09-20T03:17:31.323613"
+}

@@ -1,0 +1,90 @@
+{
+    "model": "distilbert_sst2_sdrm_class",
+    "performance": {
+        "accuracy_pct": 86.58,
+        "f1_score": 0.8785,
+        "f1_macro": 0.8643,
+        "precision": 0.8778,
+        "recall": 0.8642,
+        "val_loss": 0.5819,
+        "perplexity": null,
+        "status": "PASS",
+        "elapsed_s": 43.65
+    },
+    "efficiency": {
+        "total_params_before": 66955010,
+        "total_params_after": 63747842,
+        "trainable_recovery_params": 8015618,
+        "compression_rate": 1.0503,
+        "compression_ratio_pct": 4.79,
+        "flops_reduction_pct": 30.21,
+        "num_compressed_layers": 18,
+        "num_fallback_layers": 0,
+        "num_injected_attention_layers": 0,
+        "lora_params": 0,
+        "avg_reconstruction_error": 0.3751,
+        "weighted_reconstruction_error": 0.3751,
+        "per_layer_reconstruction_errors": {
+            "distilbert.transformer.layer.0.attention.q_lin": 0.35918450355529785,
+            "distilbert.transformer.layer.0.attention.k_lin": 0.3522917628288269,
+            "distilbert.transformer.layer.0.attention.v_lin": 0.38354426622390747,
+            "distilbert.transformer.layer.1.attention.q_lin": 0.3364132344722748,
+            "distilbert.transformer.layer.1.attention.k_lin": 0.31268200278282166,
+            "distilbert.transformer.layer.1.attention.v_lin": 0.3755616545677185,
+            "distilbert.transformer.layer.2.attention.q_lin": 0.3760947287082672,
+            "distilbert.transformer.layer.2.attention.k_lin": 0.3813866972923279,
+            "distilbert.transformer.layer.2.attention.v_lin": 0.3786937892436981,
+            "distilbert.transformer.layer.3.attention.q_lin": 0.33414319157600403,
+            "distilbert.transformer.layer.3.attention.k_lin": 0.33590105175971985,
+            "distilbert.transformer.layer.3.attention.v_lin": 0.4347159266471863,
+            "distilbert.transformer.layer.4.attention.q_lin": 0.3777869641780853,
+            "distilbert.transformer.layer.4.attention.k_lin": 0.3759688436985016,
+            "distilbert.transformer.layer.4.attention.v_lin": 0.44166573882102966,
+            "distilbert.transformer.layer.5.attention.q_lin": 0.38356438279151917,
+            "distilbert.transformer.layer.5.attention.k_lin": 0.39504921436309814,
+            "distilbert.transformer.layer.5.attention.v_lin": 0.41696563363075256
+        },
+        "per_layer_ranks": {
+            "distilbert.transformer.layer.0.attention.q_lin": 268,
+            "distilbert.transformer.layer.0.attention.k_lin": 268,
+            "distilbert.transformer.layer.0.attention.v_lin": 268,
+            "distilbert.transformer.layer.1.attention.q_lin": 268,
+            "distilbert.transformer.layer.1.attention.k_lin": 268,
+            "distilbert.transformer.layer.1.attention.v_lin": 268,
+            "distilbert.transformer.layer.2.attention.q_lin": 268,
+            "distilbert.transformer.layer.2.attention.k_lin": 268,
+            "distilbert.transformer.layer.2.attention.v_lin": 268,
+            "distilbert.transformer.layer.3.attention.q_lin": 268,
+            "distilbert.transformer.layer.3.attention.k_lin": 268,
+            "distilbert.transformer.layer.3.attention.v_lin": 268,
+            "distilbert.transformer.layer.4.attention.q_lin": 268,
+            "distilbert.transformer.layer.4.attention.k_lin": 268,
+            "distilbert.transformer.layer.4.attention.v_lin": 268,
+            "distilbert.transformer.layer.5.attention.q_lin": 268,
+            "distilbert.transformer.layer.5.attention.k_lin": 268,
+            "distilbert.transformer.layer.5.attention.v_lin": 268
+        }
+    },
+    "hardware": {
+        "peak_vram_mb": 394.6,
+        "tokens_per_sec": 18098.69
+    },
+    "architecture": {
+        "span_distribution": {},
+        "mean_span": 128.0,
+        "sparsity_ratio_percent": 0.0
+    },
+    "scalability": {
+        "L_128_vram_mb": 359.92,
+        "L_256_vram_mb": 362.48,
+        "L_512_vram_mb": "unsupported (exceeds model max_position_embeddings 512)",
+        "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 512)"
+    },
+    "seed": 42,
+    "git_sha": "bf3fb3914",
+    "git_dirty": true,
+    "torch_version": "2.6.0+cu124",
+    "transformers_version": "5.5.0",
+    "cuda_version": "12.4",
+    "timestamp": "2026-09-27T02:38:39.298701+00:00"
+}

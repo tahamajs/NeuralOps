@@ -1,0 +1,7 @@
+rank,module_name,status,accuracy_pct,f1_score,val_loss,peak_vram_mb,compression_rate,compression_ratio_pct,num_compressed_layers,num_fallback_layers,elapsed_s,total_params_before,total_params_after
+16,svd_compressed_module,PASS,78.21,0.8077,0.624,383.3,1.1658,14.22,12,0,266.3,124441344,106746624
+32,svd_compressed_module,PASS,78.21,0.8077,0.624,383.3,1.1658,14.22,12,0,268.2,124441344,106746624
+64,svd_compressed_module,PASS,78.21,0.8077,0.624,383.3,1.1658,14.22,12,0,269.8,124441344,106746624
+128,svd_compressed_module,PASS,78.21,0.8077,0.624,383.3,1.1658,14.22,12,0,266.8,124441344,106746624
+256,svd_compressed_module,PASS,78.21,0.8077,0.624,383.3,1.1658,14.22,12,0,264.2,124441344,106746624
+384,svd_compressed_module,ERROR_CODE_15,0.0,0.0,99.0,0.0,1.0,,0,0,148.8,,

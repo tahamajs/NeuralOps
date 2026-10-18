@@ -1,0 +1,30 @@
+{
+  "module": "factorised_matrix_state",
+  "pre_ppl": 3867.96,
+  "baseline_ppl": 31.54,
+  "results": {
+    "C": {
+      "method": "C",
+      "pre_ppl": 3867.96,
+      "post_ppl": 114.52,
+      "ppl_ratio": 3.6309,
+      "recovery_pct": 97.84,
+      "peak_vram_mb": 1754.48,
+      "train_time_s": 419.1,
+      "s_per_step": 0.4191,
+      "loss_final": 139.3655,
+      "cached": true,
+      "ppl_at_step_250": "",
+      "ppl_at_step_500": 144.42,
+      "ppl_at_step_750": "",
+      "ppl_at_step_1000": 114.52,
+      "ppl_at_step_1250": "",
+      "ppl_at_step_1500": ""
+    }
+  },
+  "best_method": "C",
+  "best_post_ppl": 114.52,
+  "is_ssm_recoverable": true,
+  "recommendation": "MAYBE: Partial recovery achieved. Additional recovery steps or specialized scan kernels needed.",
+  "run_dir": "results/kd_runs/factorised_matrix_state/20260930_165617_bs1_seq128_lr5e-06_noclr_C"
+}

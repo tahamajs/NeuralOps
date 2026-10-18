@@ -1,0 +1,4 @@
+track,module_name,module_type,model_family,dataset,status,error_message,forward_latency_ms,backward_latency_ms,total_step_latency_ms,throughput_samples_per_sec,speedup_vs_baseline,param_count,trainable_param_count,compression_ratio,peak_memory_mb,memory_savings_pct,loss,accuracy_pct,f1_score,perplexity,grad_norm,trajectories,timestamp
+track2_ssm,mamba,attention,bert,sst2,PASS,,13.78,22.53,36.31,18576.6,2.07,5767554,5767554,1.0115,1207.3,0.0,0.6919,,,,0.0,5,2026-08-26T17:31:18.653408
+track2_ssm,mamba,attention,bert,mrpc,PASS,,12.48,22.24,34.72,20512.2,2.32,5767554,5767554,1.0115,1208.0,0.0,0.7044,,,,0.0,5,2026-08-26T17:32:36.158231
+track2_ssm,mamba,attention,roberta,sst2,PASS,,12.77,25.34,38.11,20047.3,2.26,8294658,8294658,1.008,1228.8,0.0,0.6921,,,,0.0,5,2026-08-26T17:33:48.983411

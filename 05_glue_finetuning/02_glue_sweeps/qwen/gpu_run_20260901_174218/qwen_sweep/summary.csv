@@ -1,0 +1,10 @@
+run_id,module_name,model_family,dataset,status,accuracy_pct,examples,elapsed_s,peak_vram_mb,error,timestamp
+qwen_rte_zero_shot_20260901_175159,full,QWEN,RTE,PASS,54.51,277,7.27,1255.92,,2026-09-01T17:52:07.130111
+qwen_rte_zero_shot_20260901_175159,a3,QWEN,RTE,PASS,51.99,277,19.42,1260.31,,2026-09-01T17:52:26.550732
+qwen_rte_zero_shot_20260901_175159,aasvd,QWEN,RTE,PASS,46.57,277,35.05,1260.31,,2026-09-01T17:53:01.600638
+qwen_rte_zero_shot_20260901_175159,adaptive_span,QWEN,RTE,FAIL,0.0,277,2.59,0.0,"QwenIncompatibleError: adaptive_span: k_projection_out=896, requires=128 (GQA)",2026-09-01T17:53:04.194287
+qwen_rte_zero_shot_20260901_175159,adaptive_sparse,QWEN,RTE,FAIL,0.0,277,2.68,0.0,QwenIncompatibleError: rotary_position_embedding_required,2026-09-01T17:53:06.878477
+qwen_rte_zero_shot_20260901_175159,adaptive_svd,QWEN,RTE,FAIL,0.0,277,4.39,0.0,"QwenIncompatibleError: adaptive_svd: k_projection_out=896, requires=128 (GQA)",2026-09-01T17:53:11.266478
+qwen_rte_zero_shot_20260901_175159,adasplash,QWEN,RTE,FAIL,0.0,277,2.57,0.0,"QwenIncompatibleError: adasplash: k_projection_out=896, requires=128 (GQA)",2026-09-01T17:53:13.833877
+qwen_rte_zero_shot_20260901_175159,adasvd,QWEN,RTE,PASS,50.9,277,33.05,1261.09,,2026-09-01T17:53:46.889172
+qwen_rte_zero_shot_20260901_175159,admm,QWEN,RTE,PASS,52.35,277,8.31,1255.8,,2026-09-01T17:53:55.204154

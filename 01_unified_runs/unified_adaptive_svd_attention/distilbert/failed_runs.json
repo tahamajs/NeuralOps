@@ -1,0 +1,12 @@
+[
+  {
+    "module": "adaptive_svd_attention",
+    "model": "distilbert-base-uncased",
+    "dataset": "sst2",
+    "status": "FAIL",
+    "perplexity": "",
+    "accuracy_pct": 73.74,
+    "error": "FAIL: accuracy (73.74%) below pass threshold (77.00%, baseline=82.00%)",
+    "timestamp": "2026-10-05T02:52:22.412782"
+  }
+]

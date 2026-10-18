@@ -1,0 +1,12 @@
+[
+  {
+    "module": "svd_linear",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "MODERATE_EXPANSION",
+    "perplexity": "",
+    "accuracy_pct": 90.6,
+    "error": "base_before=66955010 base_after=67010378 delta=+0.08%",
+    "timestamp": "2026-09-25T17:22:14.864961"
+  }
+]
