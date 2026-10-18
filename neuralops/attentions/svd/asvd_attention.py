@@ -229,6 +229,13 @@ class ASVDLinear(nn.Module):
 
 
 @ATTENTION_REGISTRY.register(
+    "asvd",
+    is_alias=True,
+    supports_causal=True,
+    supports_bidirectional=True,
+    supports_gqa=True,
+)
+@ATTENTION_REGISTRY.register(
     "asvd_attention",
     supports_causal=True,
     supports_bidirectional=True,

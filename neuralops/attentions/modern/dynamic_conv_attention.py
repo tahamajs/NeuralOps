@@ -29,8 +29,17 @@ logger = logging.getLogger(__name__)
 
 
 @ATTENTION_REGISTRY.register(
+    "dynamic_conv",
+    is_alias=True,
+    supports_causal=True,
+    supports_bidirectional=False,
+    supports_gqa=False,
+    supports_rope=False,
+)
+@ATTENTION_REGISTRY.register(
     "dynamic_conv_attention",
     supports_causal=True,
+    supports_bidirectional=False,
     supports_gqa=False,
     supports_rope=False,
 )
