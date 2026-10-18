@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
-import sys, time
+"""Verify my 5 modules module.
+
+Author: Taha Majlesi
+"""
+
+import sys
+import time
 from pathlib import Path
 import torch
 
@@ -12,7 +18,9 @@ from neuralops.core.cuda_kernels._fallback import force_kernel_backend
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print(f"Executing benchmarks on: {device} ({torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU'})")
 
+
 def time_op(fn, warmup=5, iters=20):
+    """Execute time op routine."""
     for _ in range(warmup):
         fn()
     torch.cuda.synchronize()
@@ -21,6 +29,7 @@ def time_op(fn, warmup=5, iters=20):
         fn()
     torch.cuda.synchronize()
     return (time.perf_counter() - start) / iters * 1000.0
+
 
 results = {}
 
@@ -73,7 +82,9 @@ results["gdn_scan"] = {
     "speedup": speedup,
     "max_diff": diff_gdn,
 }
-print(f"gdn_scan: CUDA={cuda_ms:.3f} ms, Ref={ref_ms:.3f} ms, Speedup={speedup:.2f}x, MaxDiff={diff_gdn:.2e}, Fallback=OK")
+print(
+    f"gdn_scan: CUDA={cuda_ms:.3f} ms, Ref={ref_ms:.3f} ms, Speedup={speedup:.2f}x, MaxDiff={diff_gdn:.2e}, Fallback=OK"
+)
 
 # ==============================================================================
 # 2. MODULE linear_attention
@@ -128,7 +139,9 @@ results["linear_attention"] = {
     "speedup": speedup,
     "max_diff": diff_lin,
 }
-print(f"linear_attention: CUDA={cuda_ms:.3f} ms, Ref={ref_ms:.3f} ms, Speedup={speedup:.2f}x, MaxDiff={diff_lin:.2e}, Fallback=OK, TORCH_CHECK=OK")
+print(
+    f"linear_attention: CUDA={cuda_ms:.3f} ms, Ref={ref_ms:.3f} ms, Speedup={speedup:.2f}x, MaxDiff={diff_lin:.2e}, Fallback=OK, TORCH_CHECK=OK"
+)
 
 # ==============================================================================
 # 3. MODULE gdn_delta_rule
@@ -191,7 +204,9 @@ results["gdn_delta_rule"] = {
     "speedup": speedup,
     "max_diff": diff_delta,
 }
-print(f"gdn_delta_rule: CUDA={cuda_ms:.3f} ms, Ref={ref_ms:.3f} ms, Speedup={speedup:.2f}x, MaxDiff={diff_delta:.2e}, Shmem_128=OK, TORCH_CHECK=OK")
+print(
+    f"gdn_delta_rule: CUDA={cuda_ms:.3f} ms, Ref={ref_ms:.3f} ms, Speedup={speedup:.2f}x, MaxDiff={diff_delta:.2e}, Shmem_128=OK, TORCH_CHECK=OK"
+)
 
 # ==============================================================================
 # 4. MODULE svd_prefix_scan
@@ -251,7 +266,9 @@ results["svd_prefix_scan"] = {
     "speedup": speedup,
     "max_diff": diff_svd,
 }
-print(f"svd_prefix_scan: CUDA={cuda_ms:.3f} ms, Ref={ref_ms:.3f} ms, Speedup={speedup:.2f}x, MaxDiff={diff_svd:.2e}, Shmem_128=OK, TORCH_CHECK=OK")
+print(
+    f"svd_prefix_scan: CUDA={cuda_ms:.3f} ms, Ref={ref_ms:.3f} ms, Speedup={speedup:.2f}x, MaxDiff={diff_svd:.2e}, Shmem_128=OK, TORCH_CHECK=OK"
+)
 
 # ==============================================================================
 # 5. MODULE mamba_block
@@ -300,12 +317,16 @@ results["mamba_block"] = {
     "speedup": speedup,
     "max_diff": max(diff_out, diff_state),
 }
-print(f"mamba_block: CUDA={cuda_ms:.3f} ms, Ref={ref_ms:.3f} ms, Speedup={speedup:.2f}x, MaxDiff={max(diff_out, diff_state):.2e}, NextStateUpdated=OK")
+print(
+    f"mamba_block: CUDA={cuda_ms:.3f} ms, Ref={ref_ms:.3f} ms, Speedup={speedup:.2f}x, MaxDiff={max(diff_out, diff_state):.2e}, NextStateUpdated=OK"
+)
 
 print("\n" + "=" * 70)
 print("SUMMARY OF BENCHMARKS & VERIFICATION ON NVIDIA RTX 4070:")
 print(f"{'Module':<20} | {'Status':<6} | {'CUDA (ms)':<10} | {'Ref (ms)':<10} | {'Speedup':<8} | {'Max Diff':<10}")
 print("-" * 70)
 for mod, info in results.items():
-    print(f"{mod:<20} | {info['status']:<6} | {info['cuda_ms']:<10.4f} | {info['ref_ms']:<10.4f} | {info['speedup']:<7.2f}x | {info['max_diff']:<10.2e}")
+    print(
+        f"{mod:<20} | {info['status']:<6} | {info['cuda_ms']:<10.4f} | {info['ref_ms']:<10.4f} | {info['speedup']:<7.2f}x | {info['max_diff']:<10.2e}"
+    )
 print("=" * 70)

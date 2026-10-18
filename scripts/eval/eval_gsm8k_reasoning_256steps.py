@@ -1,21 +1,25 @@
-import os
+"""Eval gsm8k reasoning 256steps module.
+
+Author: Taha Majlesi
+"""
+
 import gc
-import sys
 import time
-import math
 import json
 import torch
-import torch.nn as nn
 from transformers import GPT2LMHeadModel, AutoTokenizer
 from neuralops.utils.replace_attention import replace_attention
 
+
 def print_log(msg):
+    """Execute print log routine."""
     print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {msg}", flush=True)
 
-device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print_log(f"GSM8K-style Multi-Step Arithmetic & 256-token Numerical Stability on: {torch.cuda.get_device_name(0)}")
 
-model_path = '/mnt/d/models/gpt2'
+model_path = "/mnt/d/models/gpt2"
 tokenizer = AutoTokenizer.from_pretrained(model_path)
 tokenizer.pad_token = tokenizer.eos_token
 
@@ -34,7 +38,7 @@ gsm8k_prompts = [
             "Step 4: Subtract the sold crates: 525 - 210 = 315. "
             "Therefore, the final answer is"
         ),
-        "target_number": "315"
+        "target_number": "315",
     },
     {
         "id": "gsm8k_02",
@@ -49,7 +53,7 @@ gsm8k_prompts = [
             "Step 6: Period 5: 256 * 2 = 512. "
             "Therefore, the final number of cells is"
         ),
-        "target_number": "512"
+        "target_number": "512",
     },
     {
         "id": "gsm8k_03",
@@ -62,7 +66,7 @@ gsm8k_prompts = [
             "Step 4: u_4 = 2 * 19 - 3 = 35. "
             "Therefore, u_5 is computed as 2 * 35 - 3 ="
         ),
-        "target_number": "67"
+        "target_number": "67",
     },
     {
         "id": "gsm8k_04",
@@ -77,14 +81,14 @@ gsm8k_prompts = [
             "Step 4: Total parts produced: 400 + 120 = 520. "
             "Therefore, the total output is"
         ),
-        "target_number": "520"
-    }
+        "target_number": "520",
+    },
 ]
 
 architectures = [
     ("GPT-2 Baseline (MHA)", None),
     ("GPT-2 + SVD Linear Attention", "svd_linear_attention"),
-    ("GPT-2 + Gated Delta Net", "gated_delta_net")
+    ("GPT-2 + Gated Delta Net", "gated_delta_net"),
 ]
 
 MAX_GEN_STEPS = 256
@@ -98,67 +102,67 @@ for p_data in gsm8k_prompts:
     p_topic = p_data["topic"]
     p_text = p_data["prompt"]
     p_target = p_data["target_number"]
-    
-    input_ids = tokenizer(p_text, return_tensors='pt').input_ids.to(device)
+
+    input_ids = tokenizer(p_text, return_tensors="pt").input_ids.to(device)
     print_log(f"\n--- Testing Problem: [{p_id}] ({p_topic}) | Prompt Tokens: {input_ids.shape[1]} ---")
-    
+
     for name, key in architectures:
         torch.cuda.empty_cache()
         torch.cuda.reset_peak_memory_stats()
-        
+
         m = GPT2LMHeadModel.from_pretrained(model_path)
         if key:
             replace_attention(m, attention_key=key)
         m = m.to(device).eval()
-        
+
         curr_ids = input_ids.clone()
         mem_checkpoints = []
-        
+
         torch.cuda.synchronize()
         t0 = time.perf_counter()
-        
+
         nan_detected = False
         inf_detected = False
-        
+
         with torch.no_grad():
             for step in range(MAX_GEN_STEPS):
                 out = m(curr_ids)
                 logits = out.logits[:, -1, :]
-                
+
                 if torch.isnan(logits).any().item():
                     nan_detected = True
                 if torch.isinf(logits).any().item():
                     inf_detected = True
-                    
+
                 next_t = torch.argmax(logits, dim=-1, keepdim=True)
                 curr_ids = torch.cat([curr_ids, next_t], dim=-1)
-                
+
                 if (step + 1) in [64, 128, 192, 256]:
                     torch.cuda.synchronize()
                     mem_checkpoints.append(round(torch.cuda.memory_allocated() / (1024**2), 2))
-                    
+
         torch.cuda.synchronize()
         elapsed_s = time.perf_counter() - t0
         tok_s = MAX_GEN_STEPS / elapsed_s
         peak_vram_mb = torch.cuda.max_memory_allocated() / (1024**2)
-        
-        gen_tokens = curr_ids[0][input_ids.shape[1]:]
+
+        gen_tokens = curr_ids[0][input_ids.shape[1] :]
         gen_text = tokenizer.decode(gen_tokens, skip_special_tokens=True).strip()
         first_emitted_token = tokenizer.decode(gen_tokens[:2], skip_special_tokens=True).strip()
-        
+
         # Check numerical accuracy (first tokens match expected target number)
         is_exact_number = p_target in first_emitted_token or p_target in gen_text[:20]
-        
+
         # Intermediate numerical token drift check (is there any exploding loss / NaN)
         zero_drift = (not nan_detected) and (not inf_detected)
-        
+
         print_log(
             f"[{name}] -> Speed: {tok_s:5.1f} tok/s | Elapsed: {elapsed_s:5.2f}s | "
             f"Zero Drift: {zero_drift} (NaNs={nan_detected}, Infs={inf_detected}) | "
             f"First Output: '{first_emitted_token}' | Matches Target ({p_target}): {is_exact_number}"
         )
         print_log(f"VRAM Checkpoints (64, 128, 192, 256 tokens): {mem_checkpoints}")
-        
+
         record = {
             "problem_id": p_id,
             "topic": p_topic,
@@ -175,16 +179,16 @@ for p_data in gsm8k_prompts:
             "first_emitted_token": first_emitted_token,
             "target_number": p_target,
             "target_match": is_exact_number,
-            "output_preview": gen_text[:120]
+            "output_preview": gen_text[:120],
         }
         evaluation_matrix.append(record)
-        
+
         del m, curr_ids
         torch.cuda.empty_cache()
         gc.collect()
 
-out_file = '/mnt/d/SVD_linear_Attention/gsm8k_256step_reasoning_results.json'
-with open(out_file, 'w') as f:
+out_file = "/mnt/d/SVD_linear_Attention/gsm8k_256step_reasoning_results.json"
+with open(out_file, "w") as f:
     json.dump(evaluation_matrix, f, indent=2)
 
 print_log(f"All GSM8K 256-step evaluations completed! Written to {out_file}")

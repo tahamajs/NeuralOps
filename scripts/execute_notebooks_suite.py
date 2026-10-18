@@ -2,7 +2,7 @@
 
 Author: Taha Majlesi
 """
-import glob
+
 import json
 import os
 import subprocess
@@ -39,6 +39,7 @@ PYTHON_BIN = "/mnt/d/venv/bin/python3"
 
 
 def audit_notebook(path):
+    """Execute audit notebook routine."""
     with open(path, "r", encoding="utf-8") as f:
         nb = json.load(f)
     cells = nb.get("cells", [])
@@ -57,8 +58,9 @@ def audit_notebook(path):
 
 
 def execute_notebook(nb_name):
+    """Execute execute notebook routine."""
     path = os.path.join(NB_DIR, nb_name)
-    print(f"\n{'='*75}\nExecuting: {nb_name} on GPU (Ada Lovelace RTX 4070)\n{'='*75}")
+    print(f"\n{'=' * 75}\nExecuting: {nb_name} on GPU (Ada Lovelace RTX 4070)\n{'=' * 75}")
     t0 = time.time()
     cmd = [
         JUPYTER_BIN,
@@ -91,6 +93,7 @@ def execute_notebook(nb_name):
 
 
 def main():
+    """Execute main routine."""
     target = sys.argv[1] if len(sys.argv) > 1 else None
     to_run = [target] if target else NOTEBOOKS
     results = {}
@@ -105,7 +108,7 @@ def main():
             print(f"Aborting batch on failure of {nb} for closed-loop debugging.")
             break
 
-    print(f"\n{'='*75}\nEXECUTION SUMMARY:\n{'='*75}")
+    print(f"\n{'=' * 75}\nEXECUTION SUMMARY:\n{'=' * 75}")
     for nb, (ok, dt) in results.items():
         status = "PASS [100% OK]" if ok else "FAIL [ERROR]"
         print(f"{nb:60s} | {status} | {dt:5.1f}s")

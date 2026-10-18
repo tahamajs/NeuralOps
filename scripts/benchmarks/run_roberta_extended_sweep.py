@@ -5,9 +5,7 @@ Trains each module for 3 epochs with 400 samples on SST-2 to ensure proper gradi
 """
 
 import argparse
-import json
 import logging
-import os
 import subprocess
 import sys
 from pathlib import Path
@@ -34,7 +32,9 @@ LOW_ACC_ROBERTA_MODULES = [
     "ttt_linear_attention",
 ]
 
+
 def main():
+    """Execute main routine."""
     parser = argparse.ArgumentParser(description="Run extended fine-tuning for RoBERTa modules.")
     parser.add_argument("--modules", nargs="*", default=LOW_ACC_ROBERTA_MODULES)
     parser.add_argument("--epochs", type=int, default=3)
@@ -54,21 +54,41 @@ def main():
 
     for idx, mod in enumerate(args.modules, 1):
         logger.info("=" * 60)
-        logger.info("[%d/%d] Extended Training: %s (epochs=%d, samples=%d)", idx, len(args.modules), mod, args.epochs, args.max_samples)
+        logger.info(
+            "[%d/%d] Extended Training: %s (epochs=%d, samples=%d)",
+            idx,
+            len(args.modules),
+            mod,
+            args.epochs,
+            args.max_samples,
+        )
         logger.info("=" * 60)
 
         cmd = [
-            python_bin, "-m", "neuralops.benchmarks", "run",
-            "--module", mod,
-            "--model", "roberta-base",
-            "--dataset", "sst2",
-            "--max-samples", str(args.max_samples),
-            "--max-eval-samples", str(args.max_eval_samples),
-            "--epochs", str(args.epochs),
-            "--batch-size", str(args.batch_size),
-            "--seq-len", "64",
-            "--device", args.device,
-            "--output-dir", str(out_dir),
+            python_bin,
+            "-m",
+            "neuralops.benchmarks",
+            "run",
+            "--module",
+            mod,
+            "--model",
+            "roberta-base",
+            "--dataset",
+            "sst2",
+            "--max-samples",
+            str(args.max_samples),
+            "--max-eval-samples",
+            str(args.max_eval_samples),
+            "--epochs",
+            str(args.epochs),
+            "--batch-size",
+            str(args.batch_size),
+            "--seq-len",
+            "64",
+            "--device",
+            args.device,
+            "--output-dir",
+            str(out_dir),
             "--no-deduplicate",
             "--force-rerun",
         ]
@@ -78,10 +98,17 @@ def main():
             logger.info("Module %s training completed successfully.", mod)
             results.append({"module": mod, "status": "success"})
         except subprocess.CalledProcessError as e:
-            logger.error("Module %s failed with exit code %d:\n%s", mod, e.returncode, e.stdout[-500:] if e.stdout else "")
+            logger.error(
+                "Module %s failed with exit code %d:\n%s", mod, e.returncode, e.stdout[-500:] if e.stdout else ""
+            )
             results.append({"module": mod, "status": "failed", "error": str(e)})
 
-    logger.info("Finished RoBERTa extended training: %d/%d succeeded.", sum(1 for r in results if r["status"] == "success"), len(results))
+    logger.info(
+        "Finished RoBERTa extended training: %d/%d succeeded.",
+        sum(1 for r in results if r["status"] == "success"),
+        len(results),
+    )
+
 
 if __name__ == "__main__":
     main()

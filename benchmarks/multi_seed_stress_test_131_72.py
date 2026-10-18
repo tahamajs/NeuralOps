@@ -4,6 +4,7 @@
 
 Delegates directly to canonical neuralops.benchmarks.multi_seed_stress_test_131_72.
 """
+
 import sys
 from neuralops.benchmarks.multi_seed_stress_test_131_72 import *
 from neuralops.benchmarks.multi_seed_stress_test_131_72 import main

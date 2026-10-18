@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""Eval speculative decoding module.
+
+Author: Taha Majlesi
+"""
+
 # Author: Taha Majlesi
 import json
 import time
@@ -11,6 +16,7 @@ from neuralops.inference.speculative_decoding import SelfSpeculativeDecoder
 from neuralops.utils.replace_attention import replace_attention
 
 def print_log(msg):
+    """Execute print log routine."""
     print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {msg}", flush=True)
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')

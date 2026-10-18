@@ -2,8 +2,7 @@
 
 Run: python scripts/utils/verify_readme_counts.py
 """
-import glob
-import os
+
 import re
 import sys
 import neuralops
@@ -13,7 +12,11 @@ with open("README.md") as f:
     readme = f.read()
 
 # 1. Version check
-actual_version = neuralops.get_version() if callable(getattr(neuralops, "get_version", None)) else getattr(neuralops, "__version__", "1.3.2")
+actual_version = (
+    neuralops.get_version()
+    if callable(getattr(neuralops, "get_version", None))
+    else getattr(neuralops, "__version__", "1.3.2")
+)
 info_obj = neuralops.info() if callable(getattr(neuralops, "info", None)) else {}
 if isinstance(info_obj, dict):
     info_version = info_obj.get("version", actual_version)
@@ -41,16 +44,21 @@ if comp_match and int(comp_match.group(1)) != actual_comp:
 
 try:
     import neuralops.kernels as nk
+
     total_triton = len(nk.list_triton_kernels())
 except Exception:
     total_triton = 26
 
 if kernel_match and int(kernel_match.group(1)) not in (actual_kernels, total_triton):
-    errors.append(f"Kernel mismatch: README has {kernel_match.group(1)}, actual is {actual_kernels} (or {total_triton})")
+    errors.append(
+        f"Kernel mismatch: README has {kernel_match.group(1)}, actual is {actual_kernels} (or {total_triton})"
+    )
 
 if errors:
     for e in errors:
         print(f"MISMATCH: {e}")
     sys.exit(1)
 
-print(f"README counts verified successfully (v{actual_version}): {actual_attn} attention mechanisms, {actual_comp} compression engines, {actual_kernels} Triton kernels.")
+print(
+    f"README counts verified successfully (v{actual_version}): {actual_attn} attention mechanisms, {actual_comp} compression engines, {actual_kernels} Triton kernels."
+)

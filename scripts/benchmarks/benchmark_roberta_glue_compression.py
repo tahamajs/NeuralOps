@@ -11,15 +11,12 @@ classification benchmark. Compares:
 Runs physically on NVIDIA RTX 4070 (SM 8.9).
 """
 
-import os
-import sys
 import time
 import json
 import logging
 from pathlib import Path
 
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 from datasets import load_dataset
@@ -29,7 +26,9 @@ from neuralops.compression_engine.svd.direct_svd import DirectSVDCompressor
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("RobertaGlueBenchmark")
 
+
 def run_benchmark():
+    """Execute run benchmark routine."""
     device = "cuda" if torch.cuda.is_available() else "cpu"
     logger.info("Initializing RoBERTa GLUE SST-2 Benchmark on device: %s", device)
 
@@ -37,7 +36,10 @@ def run_benchmark():
     tokenizer = AutoTokenizer.from_pretrained(model_name)
 
     # Load SST-2 validation dataset directly from local cache or hub
-    parquet_path = Path.home() / ".cache/huggingface/hub/datasets--nyu-mll--glue/snapshots/bcdcba79d07bc864c1c254ccfcedcce55bcc9a8c/sst2/validation-00000-of-00001.parquet"
+    parquet_path = (
+        Path.home()
+        / ".cache/huggingface/hub/datasets--nyu-mll--glue/snapshots/bcdcba79d07bc864c1c254ccfcedcce55bcc9a8c/sst2/validation-00000-of-00001.parquet"
+    )
     if parquet_path.exists():
         ds = load_dataset("parquet", data_files={"validation": str(parquet_path)}, split="validation")
     else:
@@ -50,12 +52,16 @@ def run_benchmark():
     batch_size = 32
     for i in range(0, len(ds), batch_size):
         chunk = ds[i : i + batch_size]
-        inputs = tokenizer(chunk["sentence"], padding=True, truncation=True, max_length=128, return_tensors="pt").to(device)
+        inputs = tokenizer(chunk["sentence"], padding=True, truncation=True, max_length=128, return_tensors="pt").to(
+            device
+        )
         labels = torch.tensor(chunk["label"], device=device)
         eval_batches.append((inputs, labels))
 
     # Calibration batch (32 samples from validation split for activation statistics)
-    calib_inputs = tokenizer(ds[:32]["sentence"], padding=True, truncation=True, max_length=128, return_tensors="pt").to(device)
+    calib_inputs = tokenizer(
+        ds[:32]["sentence"], padding=True, truncation=True, max_length=128, return_tensors="pt"
+    ).to(device)
 
     # 1. Uncompressed Baseline Evaluation
     logger.info("Evaluating Uncompressed Baseline RoBERTa-base...")
@@ -80,7 +86,9 @@ def run_benchmark():
     base_acc = (correct_base / total_eval) * 100.0
     base_vram = torch.cuda.max_memory_allocated() / (1024 * 1024) if device == "cuda" else 0.0
 
-    logger.info("Baseline RoBERTa: Accuracy=%.2f%% | Latency=%.2f ms/batch | VRAM=%.1f MB", base_acc, base_lat_ms, base_vram)
+    logger.info(
+        "Baseline RoBERTa: Accuracy=%.2f%% | Latency=%.2f ms/batch | VRAM=%.1f MB", base_acc, base_lat_ms, base_vram
+    )
 
     results = {
         "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU 8GB (Ada Lovelace, SM 8.9)",
@@ -108,7 +116,7 @@ def run_benchmark():
     for depth_name, target_layers in depth_configs:
         for r in rank_configs:
             for method in ["naive", "hnc"]:
-                use_hnc = (method == "hnc")
+                use_hnc = method == "hnc"
                 method_name = "HNC-SVD (Ours)" if use_hnc else "Naive DirectSVD"
                 logger.info("Running %s | %s | Rank=%d ...", method_name, depth_name, r)
 
@@ -172,8 +180,14 @@ def run_benchmark():
                     "compression_time_s": round(comp_dur, 2),
                 }
                 results["experiments"].append(record)
-                logger.info("  -> Acc: %.2f%% (Anchor=%.2f%%) | Cos: %.4f | Lat: %.2f ms | CompTime: %.2fs",
-                            acc, base_acc, mean_cos, eval_dur_ms, comp_dur)
+                logger.info(
+                    "  -> Acc: %.2f%% (Anchor=%.2f%%) | Cos: %.4f | Lat: %.2f ms | CompTime: %.2fs",
+                    acc,
+                    base_acc,
+                    mean_cos,
+                    eval_dur_ms,
+                    comp_dur,
+                )
 
                 del model, comp_model
                 torch.cuda.empty_cache()
@@ -187,7 +201,7 @@ def run_benchmark():
     # Format Markdown Report
     md_content = f"""# 🧪 RoBERTa-Base Downstream GLUE SST-2 Compression Benchmark
 
-**Hardware**: {results['hardware']}  
+**Hardware**: {results["hardware"]}  
 **Model**: `{model_name}` (125M parameters)  
 **Task**: GLUE SST-2 Sentiment Classification (Full Validation Set, $N = 872$)  
 **Baseline RoBERTa Accuracy**: **{base_acc:.2f}%** | Baseline Latency: **{base_lat_ms:.2f} ms/batch**  
@@ -220,6 +234,7 @@ def run_benchmark():
         f.write(md_content)
 
     logger.info("RoBERTa GLUE benchmark complete! Results written to %s and %s", json_path, md_path)
+
 
 if __name__ == "__main__":
     run_benchmark()

@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+"""Update calibrated pareto module.
+
+Author: Taha Majlesi
+"""
+
 import json
 import csv
 from pathlib import Path
@@ -44,26 +49,35 @@ for r in records:
 
 names = {r["compressor"] for r in records}
 if "hadamard_incoherent_svd" not in names:
-    records.append({
-        "compressor": "hadamard_incoherent_svd",
-        "status": "success",
-        "perplexity": 21.28,
-        "param_reduction_pct": 31.6,
-        "compression_ratio": 1.462,
-        "total_params": 85120000,
-        "peak_vram_mb": 765.2,
-        "latency_ms_per_token": 0.024,
-        "throughput_tok_sec": 41666.7,
-        "error": None
-    })
+    records.append(
+        {
+            "compressor": "hadamard_incoherent_svd",
+            "status": "success",
+            "perplexity": 21.28,
+            "param_reduction_pct": 31.6,
+            "compression_ratio": 1.462,
+            "total_params": 85120000,
+            "peak_vram_mb": 765.2,
+            "latency_ms_per_token": 0.024,
+            "throughput_tok_sec": 41666.7,
+            "error": None,
+        }
+    )
 
 with open(out_dir / "wikitext2_pareto_results.json", "w", encoding="utf-8") as f:
     json.dump(records, f, indent=2)
 
 csv_cols = [
-    "compressor", "status", "perplexity", "param_reduction_pct",
-    "compression_ratio", "total_params", "peak_vram_mb",
-    "latency_ms_per_token", "throughput_tok_sec", "error"
+    "compressor",
+    "status",
+    "perplexity",
+    "param_reduction_pct",
+    "compression_ratio",
+    "total_params",
+    "peak_vram_mb",
+    "latency_ms_per_token",
+    "throughput_tok_sec",
+    "error",
 ]
 with open(out_dir / "wikitext2_pareto_results.csv", "w", newline="", encoding="utf-8") as f:
     writer = csv.DictWriter(f, fieldnames=csv_cols)

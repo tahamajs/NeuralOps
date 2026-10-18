@@ -8,10 +8,11 @@ Generator for the 4 Master Production Notebooks for NeuralOps v1.4:
 """
 
 import json
-import os
 from pathlib import Path
 
+
 def create_code_cell(source_lines, outputs=None, execution_count=None):
+    """Execute create code cell routine."""
     if isinstance(source_lines, str):
         source_lines = [l + "\n" for l in source_lines.strip().split("\n")]
     elif isinstance(source_lines, list):
@@ -21,29 +22,25 @@ def create_code_cell(source_lines, outputs=None, execution_count=None):
         "execution_count": execution_count,
         "metadata": {},
         "outputs": outputs or [],
-        "source": source_lines
+        "source": source_lines,
     }
 
+
 def create_markdown_cell(source_lines):
+    """Execute create markdown cell routine."""
     if isinstance(source_lines, str):
         source_lines = [l + "\n" for l in source_lines.strip().split("\n")]
     elif isinstance(source_lines, list):
         source_lines = [l if l.endswith("\n") else l + "\n" for l in source_lines]
-    return {
-        "cell_type": "markdown",
-        "metadata": {},
-        "source": source_lines
-    }
+    return {"cell_type": "markdown", "metadata": {}, "source": source_lines}
+
 
 def build_notebook(cells):
+    """Execute build notebook routine."""
     return {
         "cells": cells,
         "metadata": {
-            "kernelspec": {
-                "display_name": "Python 3 (ipykernel)",
-                "language": "python",
-                "name": "python3"
-            },
+            "kernelspec": {"display_name": "Python 3 (ipykernel)", "language": "python", "name": "python3"},
             "language_info": {
                 "codemirror_mode": {"name": "ipython", "version": 3},
                 "file_extension": ".py",
@@ -51,12 +48,13 @@ def build_notebook(cells):
                 "name": "python",
                 "nbconvert_exporter": "python",
                 "pygments_lexer": "ipython3",
-                "version": "3.10.0"
-            }
+                "version": "3.10.0",
+            },
         },
         "nbformat": 4,
-        "nbformat_minor": 5
+        "nbformat_minor": 5,
     }
+
 
 def generate_notebook_06():
     """06_master_all_131_attention_mechanisms_interactive.ipynb"""
@@ -230,9 +228,10 @@ All 131 attention mechanisms remain registered and functional in NeuralOps v1.4.
 total_reg = len(ATTENTION_REGISTRY)
 print(f"🎉 131/131 Attention Mechanisms Validated!")
 print(f"Total Registrations in Ledger: {total_reg}")
-""")
+"""),
     ]
     return build_notebook(cells)
+
 
 def generate_notebook_07():
     """07_master_all_72_compression_engines_quant_and_svd.ipynb"""
@@ -364,9 +363,10 @@ All 72 compression engines verified functional for NeuralOps v1.4.
 """),
         create_code_cell("""# Cell 5: Verification Conclusion
 print(f"🎉 72/72 Compression Engines Validated in Registry!")
-""")
+"""),
     ]
     return build_notebook(cells)
+
 
 def generate_notebook_08():
     """08_six_pillar_distillation_and_surgical_recovery.ipynb"""
@@ -489,9 +489,10 @@ print(f"Post-Healing Mean Squared Error: {post_div:.6f}")
 recovery = 100 * (1 - post_div / (pre_div + 1e-8))
 print(f"Representation Recovery Rate: {recovery:.2f}%")
 print("✅ Surgical Healing Cycle Complete!")
-""")
+"""),
     ]
     return build_notebook(cells)
+
 
 def generate_notebook_09():
     """09_production_serving_paged_cache_and_speculative_decoding.ipynb"""
@@ -602,28 +603,31 @@ Production serving components verified for zero-fragmentation and subquadratic s
 """),
         create_code_cell("""# Cell 5: Production Invariant Summary
 print("🎉 Serving Suite (PagedAttention + KV Eviction + Speculative Engine) Verified 100%!")
-""")
+"""),
     ]
     return build_notebook(cells)
 
+
 def main():
+    """Execute main routine."""
     root = Path(__file__).resolve().parent.parent.parent
     notebooks_dir = root / "notebooks"
     notebooks_dir.mkdir(exist_ok=True, parents=True)
-    
+
     nb_configs = [
         ("06_master_all_131_attention_mechanisms_interactive.ipynb", generate_notebook_06),
         ("07_master_all_72_compression_engines_quant_and_svd.ipynb", generate_notebook_07),
         ("08_six_pillar_distillation_and_surgical_recovery.ipynb", generate_notebook_08),
         ("09_production_serving_paged_cache_and_speculative_decoding.ipynb", generate_notebook_09),
     ]
-    
+
     for filename, gen_fn in nb_configs:
         path = notebooks_dir / filename
         nb_json = gen_fn()
         with open(path, "w", encoding="utf-8") as f:
             json.dump(nb_json, f, indent=1)
         print(f"✅ Generated {filename} ({len(nb_json['cells'])} cells)")
+
 
 if __name__ == "__main__":
     main()

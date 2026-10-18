@@ -1,3 +1,8 @@
+"""Multi stream benchmark module.
+
+Author: Taha Majlesi
+"""
+
 import os
 import sys
 import gc
@@ -11,24 +16,28 @@ from neuralops.core.cuda_kernels.flash_gqa.flash_gqa_autograd import flash_gqa
 from neuralops.core.cuda_kernels.selective_scan import selective_scan
 from neuralops.core.cuda_kernels.low_rank_svd import fused_lowrank_gated_gemm
 
+
 def get_cuda_mem():
+    """Execute get cuda mem routine."""
     return {
-        "allocated_mb": round(torch.cuda.memory_allocated() / (1024 ** 2), 4),
-        "max_allocated_mb": round(torch.cuda.max_memory_allocated() / (1024 ** 2), 4),
-        "reserved_mb": round(torch.cuda.memory_reserved() / (1024 ** 2), 4),
-        "max_reserved_mb": round(torch.cuda.max_memory_reserved() / (1024 ** 2), 4),
+        "allocated_mb": round(torch.cuda.memory_allocated() / (1024**2), 4),
+        "max_allocated_mb": round(torch.cuda.max_memory_allocated() / (1024**2), 4),
+        "reserved_mb": round(torch.cuda.memory_reserved() / (1024**2), 4),
+        "max_reserved_mb": round(torch.cuda.max_memory_reserved() / (1024**2), 4),
     }
 
+
 def main():
+    """Execute main routine."""
     print("=== MULTI-STREAM GPU CONCURRENCY & OVERLAP PROFILING ===")
     device = torch.device("cuda:0")
     device_name = torch.cuda.get_device_name(0)
     print(f"Device: {device_name}")
 
     # CUDA Streams
-    stream1 = torch.cuda.Stream(device=device) # FlashAttention
-    stream2 = torch.cuda.Stream(device=device) # Selective SSM Scan
-    stream3 = torch.cuda.Stream(device=device) # WMMA Low-Rank SVD GEMM
+    stream1 = torch.cuda.Stream(device=device)  # FlashAttention
+    stream2 = torch.cuda.Stream(device=device)  # Selective SSM Scan
+    stream3 = torch.cuda.Stream(device=device)  # WMMA Low-Rank SVD GEMM
 
     # Workload parameters
     # Stream 1: Single-Pass FlashAttention / Flash GQA
@@ -69,7 +78,7 @@ def main():
     torch.cuda.reset_peak_memory_stats()
 
     NUM_ITERS = 100
-    print(f"\nRunning 100-iteration standalone measurements...")
+    print("\nRunning 100-iteration standalone measurements...")
 
     # Individual Kernel Profiles (Standalone execution using CUDA Events)
     # Stream 1 Standalone
@@ -111,7 +120,7 @@ def main():
     sum_individual_ms = t_stream1_ms + t_stream2_ms + t_stream3_ms
     max_individual_ms = max(t_stream1_ms, t_stream2_ms, t_stream3_ms)
 
-    print(f"Standalone Latencies (avg per iteration):")
+    print("Standalone Latencies (avg per iteration):")
     print(f"  Stream 1 (FlashAttention): {t_stream1_ms:.4f} ms")
     print(f"  Stream 2 (Selective Scan): {t_stream2_ms:.4f} ms")
     print(f"  Stream 3 (WMMA Low-Rank):  {t_stream3_ms:.4f} ms")
@@ -157,7 +166,7 @@ def main():
             par2, _ = selective_scan(u, delta, A, B_param, C_param)
         with torch.cuda.stream(stream3):
             par3 = fused_lowrank_gated_gemm(X, V_r, U_r, alpha)
-        
+
         torch.cuda.synchronize()
         if i in [1, 25, 50, 75, 100]:
             checkpoint_mems[i] = get_cuda_mem()
@@ -195,7 +204,7 @@ def main():
     del ref1, ref2, ref3, par1, par2, par3
     torch.cuda.synchronize()
     mem_final = get_cuda_mem()
-    
+
     mem_drift_1_to_100 = round(checkpoint_mems[100]["allocated_mb"] - checkpoint_mems[1]["allocated_mb"], 4)
 
     speedup_cuda = t_seq_cuda_ms / max(t_par_cuda_ms, 1e-6)
@@ -211,14 +220,14 @@ def main():
         "workload": {
             "stream1_flash_attn": {"batch": B1, "heads": H1, "seq_len": S1, "head_dim": D1, "dtype": "fp16"},
             "stream2_selective_scan": {"batch": B2, "dim": D2, "seq_len": L2, "d_state": N2, "dtype": "fp32"},
-            "stream3_lowrank_svd": {"M": M3, "K": K3, "R": R3, "dtype": "fp16"}
+            "stream3_lowrank_svd": {"M": M3, "K": K3, "R": R3, "dtype": "fp16"},
         },
         "standalone_latencies_ms": {
             "stream1_flash_attn": round(t_stream1_ms, 4),
             "stream2_selective_scan": round(t_stream2_ms, 4),
             "stream3_lowrank_svd": round(t_stream3_ms, 4),
             "sum_individual_ms": round(sum_individual_ms, 4),
-            "critical_path_ms": round(max_individual_ms, 4)
+            "critical_path_ms": round(max_individual_ms, 4),
         },
         "benchmark_timings": {
             "sequential_cuda_ms_per_iter": round(t_seq_cuda_ms, 4),
@@ -227,15 +236,23 @@ def main():
             "sequential_wall_total_sec": round(t_seq_total_wall_sec, 4),
             "concurrent_wall_total_sec": round(t_par_total_wall_sec, 4),
             "speedup_wall_clock": round(speedup_wall, 3),
-            "stream_overlap_efficiency_pct": round(overlap_pct, 2)
+            "stream_overlap_efficiency_pct": round(overlap_pct, 2),
         },
         "numerical_integrity": {
             "stream1": {"nans": nan1, "infs": inf1, "max_diff_vs_seq": diff1},
             "stream2": {"nans": nan2, "infs": inf2, "max_diff_vs_seq": diff2},
             "stream3": {"nans": nan3, "infs": inf3, "max_diff_vs_seq": diff3},
-            "clean_numerical_integrity": (nan1 == 0 and inf1 == 0 and diff1 == 0.0 and
-                                          nan2 == 0 and inf2 == 0 and diff2 == 0.0 and
-                                          nan3 == 0 and inf3 == 0 and diff3 == 0.0)
+            "clean_numerical_integrity": (
+                nan1 == 0
+                and inf1 == 0
+                and diff1 == 0.0
+                and nan2 == 0
+                and inf2 == 0
+                and diff2 == 0.0
+                and nan3 == 0
+                and inf3 == 0
+                and diff3 == 0.0
+            ),
         },
         "vram_memory": {
             "initial_mb": mem_initial["allocated_mb"],
@@ -244,8 +261,8 @@ def main():
             "peak_reserved_mb": mem_final["max_reserved_mb"],
             "drift_iter1_to_100_mb": mem_drift_1_to_100,
             "checkpoints": checkpoint_mems,
-            "zero_leak_verified": (mem_drift_1_to_100 == 0.0)
-        }
+            "zero_leak_verified": (mem_drift_1_to_100 == 0.0),
+        },
     }
 
     print("\n--- RESULTS SUMMARY ---")
@@ -263,6 +280,7 @@ def main():
     with open(out_json, "w") as f:
         json.dump(results, f, indent=2)
     print(f"Saved results to {out_json}")
+
 
 if __name__ == "__main__":
     main()

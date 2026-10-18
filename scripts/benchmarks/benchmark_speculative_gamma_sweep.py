@@ -13,27 +13,24 @@ Outputs structured JSON to results/benchmarks_speculative_gamma_sweep.json.
 from __future__ import annotations
 
 import argparse
-import gc
-import json
-import os
 from pathlib import Path
 import sys
 import time
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 repo_root = Path(__file__).resolve().parent.parent.parent
 if str(repo_root) not in sys.path:
     sys.path.insert(0, str(repo_root))
 
-from neuralops.benchmarks.harness import BenchmarkRunner, save_benchmark_json
+from neuralops.benchmarks.harness import save_benchmark_json
 from neuralops.inference.speculative_decoding import SelfSpeculativeDecoder
 
 try:
     from rich.console import Console
     from rich.table import Table
+
     RICH_AVAILABLE = True
 except ImportError:
     RICH_AVAILABLE = False
@@ -43,19 +40,25 @@ class SyntheticLanguageModel(nn.Module):
     """Small transformer language model with target and student draft modes."""
 
     def __init__(self, vocab_size: int = 2048, hidden_dim: int = 256, num_layers: int = 4, is_draft: bool = False):
+        """Execute init routine."""
         super().__init__()
         self.vocab_size = vocab_size
         self.hidden_dim = hidden_dim
         self.embedding = nn.Embedding(vocab_size, hidden_dim)
         # Draft model has fewer layers or reduced dimension for speedup
         n_layers = 1 if is_draft else num_layers
-        self.layers = nn.ModuleList([
-            nn.TransformerEncoderLayer(d_model=hidden_dim, nhead=4, dim_feedforward=hidden_dim * 2, batch_first=True)
-            for _ in range(n_layers)
-        ])
+        self.layers = nn.ModuleList(
+            [
+                nn.TransformerEncoderLayer(
+                    d_model=hidden_dim, nhead=4, dim_feedforward=hidden_dim * 2, batch_first=True
+                )
+                for _ in range(n_layers)
+            ]
+        )
         self.head = nn.Linear(hidden_dim, vocab_size, bias=False)
 
     def forward(self, input_ids: torch.Tensor) -> torch.Tensor:
+        """Execute forward routine."""
         x = self.embedding(input_ids)
         for layer in self.layers:
             x = layer(x)
@@ -68,9 +71,10 @@ def run_speculative_gamma_benchmark(
     tokens_to_generate: int = 32,
     out_file: str = "results/benchmarks_speculative_gamma_sweep.json",
 ):
+    """Execute run speculative gamma benchmark routine."""
     gammas = [1, 2, 3, 4, 6, 8] if gammas is None else gammas
     dev = torch.device(device if torch.cuda.is_available() else "cpu")
-    print(f"=== Self-Speculative Decoding Gamma Sweep Benchmark ===")
+    print("=== Self-Speculative Decoding Gamma Sweep Benchmark ===")
     print(f"Device: {dev} | Gamma Steps: {gammas} | Tokens to Generate: {tokens_to_generate}\n")
 
     target_model = SyntheticLanguageModel(hidden_dim=256, num_layers=4, is_draft=False).to(device=dev).eval()
@@ -96,7 +100,7 @@ def run_speculative_gamma_benchmark(
     baseline_time_s = time.perf_counter() - t0
     baseline_tok_s = tokens_to_generate / baseline_time_s
 
-    print(f"Standard Autoregressive Baseline: {baseline_time_s*1000.0:.2f} ms ({baseline_tok_s:.1f} tok/s)\n")
+    print(f"Standard Autoregressive Baseline: {baseline_time_s * 1000.0:.2f} ms ({baseline_tok_s:.1f} tok/s)\n")
 
     results = []
 
@@ -136,7 +140,9 @@ def run_speculative_gamma_benchmark(
             "status": "OK",
         }
         results.append(rec)
-        print(f"  Gamma={gamma:2d}: Latency={elapsed_s*1000.0:6.1f} ms | AccRate={stats.acceptance_rate*100.0:5.1f}% | Acc/Step={stats.mean_accepted_tokens_per_step:.2f} | Speedup={speedup:4.2f}x | {tok_s:6.1f} tok/s")
+        print(
+            f"  Gamma={gamma:2d}: Latency={elapsed_s * 1000.0:6.1f} ms | AccRate={stats.acceptance_rate * 100.0:5.1f}% | Acc/Step={stats.mean_accepted_tokens_per_step:.2f} | Speedup={speedup:4.2f}x | {tok_s:6.1f} tok/s"
+        )
 
     out_p = save_benchmark_json({"baseline_tok_s": round(baseline_tok_s, 1), "gamma_sweep": results}, out_file)
     print(f"\nSaved Speculative Gamma results to {out_p.resolve()}")
@@ -154,7 +160,7 @@ def run_speculative_gamma_benchmark(
         for r in results:
             table.add_row(
                 str(r["gamma"]),
-                f"{r['acceptance_rate']*100:.1f}%",
+                f"{r['acceptance_rate'] * 100:.1f}%",
                 f"{r['mean_accepted_per_step']:.2f}",
                 f"{r['latency_ms']:.1f}",
                 f"{r['tokens_per_sec']:,.1f}",
@@ -166,6 +172,7 @@ def run_speculative_gamma_benchmark(
 
 
 def main():
+    """Execute main routine."""
     parser = argparse.ArgumentParser(description="NeuralOps Self-Speculative Decoding Benchmark")
     parser.add_argument("--device", type=str, default="cuda:0" if torch.cuda.is_available() else "cpu")
     parser.add_argument("--out-file", type=str, default="results/benchmarks_speculative_gamma_sweep.json")

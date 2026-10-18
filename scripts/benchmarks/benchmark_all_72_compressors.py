@@ -12,10 +12,6 @@ Features:
 from __future__ import annotations
 
 import argparse
-import copy
-import gc
-import json
-import os
 from pathlib import Path
 import sys
 import time
@@ -33,6 +29,7 @@ from neuralops.compression import COMPRESSOR_REGISTRY
 try:
     from rich.console import Console
     from rich.table import Table
+
     RICH_AVAILABLE = True
 except ImportError:
     RICH_AVAILABLE = False
@@ -42,6 +39,7 @@ class TestModel(nn.Module):
     """Transformer block module with attention and FFN for universal compression benchmarking."""
 
     def __init__(self, in_features: int = 256, hidden_dim: int = 512):
+        """Execute init routine."""
         super().__init__()
         self.q_proj = nn.Linear(in_features, in_features, bias=False)
         self.k_proj = nn.Linear(in_features, in_features, bias=False)
@@ -51,6 +49,7 @@ class TestModel(nn.Module):
         self.fc2 = nn.Linear(hidden_dim, in_features, bias=False)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Execute forward routine."""
         if x.dim() == 2:
             x_seq = x.unsqueeze(0)
         else:
@@ -64,6 +63,7 @@ class TestModel(nn.Module):
 
 
 def _extract_model_and_stats(res):
+    """Execute extract model and stats routine."""
     stats = {}
     if isinstance(res, tuple):
         model = res[0]
@@ -83,6 +83,7 @@ def _extract_model_and_stats(res):
 
 
 def _build_compressed_model(target, base_model: nn.Module, **override_kwargs):
+    """Execute build compressed model routine."""
     kwargs = {
         "rank": 32,
         "target_rank": 32,
@@ -105,6 +106,7 @@ def _build_compressed_model(target, base_model: nn.Module, **override_kwargs):
 
 
 def main():
+    """Execute main routine."""
     parser = argparse.ArgumentParser(description="Standardized Benchmark for All 72 Compression Engines")
     parser.add_argument("--device", type=str, default="cuda:0" if torch.cuda.is_available() else "cpu")
     parser.add_argument("--out-file", type=str, default="results/triton_all_72_compressors_benchmark.json")
@@ -158,21 +160,25 @@ def main():
                 "error": None,
             }
             results.append(rec)
-            print(f"[{idx:2d}/{len(names)}] {name:35s}: {compress_ms:8.2f} ms | err={rel_err:.4f} | VRAM: {peak_vram:5.1f} MB [OK]")
+            print(
+                f"[{idx:2d}/{len(names)}] {name:35s}: {compress_ms:8.2f} ms | err={rel_err:.4f} | VRAM: {peak_vram:5.1f} MB [OK]"
+            )
 
             del base_model, comp_model, probe_x, y0, y1
             runner.reset_vram()
 
         except Exception as e:
             err_str = str(e)
-            results.append({
-                "name": name,
-                "compress_ms": 0.0,
-                "rel_err": 0.0,
-                "peak_vram_mb": 0.0,
-                "status": "FAILED",
-                "error": err_str[:128],
-            })
+            results.append(
+                {
+                    "name": name,
+                    "compress_ms": 0.0,
+                    "rel_err": 0.0,
+                    "peak_vram_mb": 0.0,
+                    "status": "FAILED",
+                    "error": err_str[:128],
+                }
+            )
             print(f"[{idx:2d}/{len(names)}] {name:35s}: FAILED ({err_str[:60]})")
 
     out_p = save_benchmark_json(results, args.out_file)

@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+"""Run targeted recovery tahoora module.
+
+Author: Taha Majlesi
+"""
+
 import sys
 import subprocess
 import logging
@@ -41,29 +46,44 @@ TARGET_MODULES = [
     "huffman_coder",
 ]
 
+
 def main():
+    """Execute main routine."""
     python_bin = sys.executable
     out_dir = Path("results/full_training_underperforming")
     out_dir.mkdir(parents=True, exist_ok=True)
 
     logger.info("Starting targeted full fine-tuning queue (%d modules)...", len(TARGET_MODULES))
-    
+
     for idx, mod in enumerate(TARGET_MODULES, 1):
         logger.info("=" * 60)
         logger.info("===> [%d/%d] Launching full training for: %s", idx, len(TARGET_MODULES), mod)
         logger.info("=" * 60)
         cmd = [
-            python_bin, "-m", "neuralops.benchmarks", "run",
-            "--module", mod,
-            "--model", "gpt2",
-            "--dataset", "sst2",
-            "--max-samples", "500",
-            "--max-eval-samples", "100",
-            "--epochs", "3",
-            "--batch-size", "4",
-            "--seq-len", "64",
-            "--device", "cuda",
-            "--output-dir", str(out_dir),
+            python_bin,
+            "-m",
+            "neuralops.benchmarks",
+            "run",
+            "--module",
+            mod,
+            "--model",
+            "gpt2",
+            "--dataset",
+            "sst2",
+            "--max-samples",
+            "500",
+            "--max-eval-samples",
+            "100",
+            "--epochs",
+            "3",
+            "--batch-size",
+            "4",
+            "--seq-len",
+            "64",
+            "--device",
+            "cuda",
+            "--output-dir",
+            str(out_dir),
             "--no-deduplicate",
             "--force-rerun",
         ]
@@ -76,6 +96,7 @@ def main():
             logger.error("  FAILED: %s (exit %d)", mod, e.returncode)
             tail = "\n".join(e.stdout.splitlines()[-10:])
             logger.error("  Error log:\n%s", tail)
+
 
 if __name__ == "__main__":
     main()

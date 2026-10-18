@@ -13,7 +13,6 @@ Purge comments from Python source files safely using tokenize.
 from __future__ import annotations
 
 import ast
-import glob
 import io
 import os
 import py_compile
@@ -121,8 +120,7 @@ def purge_comments_from_source(source: str, file_path: str = "<string>") -> Tupl
     # Preserve shebang or encoding at the very start
     shebang_or_encoding: List[str] = []
     while final_lines and (
-        final_lines[0].startswith("#!")
-        or ("coding" in final_lines[0] and final_lines[0].startswith("#"))
+        final_lines[0].startswith("#!") or ("coding" in final_lines[0] and final_lines[0].startswith("#"))
     ):
         shebang_or_encoding.append(final_lines.pop(0))
 
@@ -167,6 +165,7 @@ def purge_comments_from_source(source: str, file_path: str = "<string>") -> Tupl
 
 
 def process_file(file_path: str, dry_run: bool = False) -> Dict[str, int]:
+    """Execute process file routine."""
     with open(file_path, "rb") as f:
         encoding, _ = tokenize.detect_encoding(f.readline)
 
@@ -191,7 +190,9 @@ def process_file(file_path: str, dry_run: bool = False) -> Dict[str, int]:
 
 
 def main():
+    """Execute main routine."""
     import argparse
+
     parser = argparse.ArgumentParser(description="Purge comments from Python files safely.")
     parser.add_argument("--dry-run", action="store_true", help="Perform checks without writing files")
     parser.add_argument("paths", nargs="*", help="Files or directories to process")

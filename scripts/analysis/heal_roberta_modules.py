@@ -1,20 +1,33 @@
+"""Heal roberta modules module.
+
+Author: Taha Majlesi
+"""
+
 import torch
 import gc
-import json
-import os
-import sys
 from transformers import RobertaForSequenceClassification, AutoTokenizer
 from neuralops.core.attention_utils import inject_attention
 from neuralops.benchmarks.core.data_loader import load_dataset_by_name, make_dataloader
 from neuralops.benchmarks.core.training import finetune_classification
 from neuralops.benchmarks.core.evaluation import evaluate_classification
 
+
 def main():
+    """Execute main routine."""
     failed_mods = [
-        "gated_delta_net", "gated_deltanet_block", "granite_hybrid",
-        "hgrn2_gated_deltanet", "hgrn2_gated_outer", "hgrn2_outer",
-        "mamba_block", "mamba_svd_flash", "selective_ssm", "simple_ssm",
-        "svd_mamba", "ttt_linear_attention", "upi_stuffed_mamba"
+        "gated_delta_net",
+        "gated_deltanet_block",
+        "granite_hybrid",
+        "hgrn2_gated_deltanet",
+        "hgrn2_gated_outer",
+        "hgrn2_outer",
+        "mamba_block",
+        "mamba_svd_flash",
+        "selective_ssm",
+        "simple_ssm",
+        "svd_mamba",
+        "ttt_linear_attention",
+        "upi_stuffed_mamba",
     ]
 
     print(f"Loading tokenizer & dataset for {len(failed_mods)} modules...")
@@ -58,6 +71,7 @@ def main():
     print("\nSUMMARY:")
     for k, v in results.items():
         print(f"  {k}: {v['status']}")
+
 
 if __name__ == "__main__":
     main()

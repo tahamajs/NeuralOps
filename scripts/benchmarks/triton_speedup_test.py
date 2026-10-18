@@ -14,7 +14,6 @@ from __future__ import annotations
 
 import gc
 import json
-import os
 import sys
 from pathlib import Path
 from typing import Any, Callable, Dict, Tuple
@@ -28,7 +27,6 @@ from neuralops.core.triton_kernels.low_rank import (
     triton_strided_tt_contraction,
     triton_strided_tt_linear,
 )
-
 
 
 def measure_latency_and_memory(
@@ -73,8 +71,11 @@ def benchmark_kernel1_lowrank_gated_gemm(
     rank: int = 32,
     dtype: torch.dtype = torch.float16,
 ) -> Dict[str, Any]:
-    print(f"\n{'='*70}\n[Benchmark 1] triton_fused_lowrank_gated_gemm (Target: Low-Rank SVD)\n{'='*70}")
-    print(f"Config: B={B}, seq_len={seq_len}, in_features={in_features}, out_features={out_features}, rank={rank}, dtype={dtype}")
+    """Execute benchmark kernel1 lowrank gated gemm routine."""
+    print(f"\n{'=' * 70}\n[Benchmark 1] triton_fused_lowrank_gated_gemm (Target: Low-Rank SVD)\n{'=' * 70}")
+    print(
+        f"Config: B={B}, seq_len={seq_len}, in_features={in_features}, out_features={out_features}, rank={rank}, dtype={dtype}"
+    )
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     torch.manual_seed(42)
@@ -88,6 +89,7 @@ def benchmark_kernel1_lowrank_gated_gemm(
     # 1. Vanilla PyTorch reference
     def pytorch_ref():
         # Intermediate Z materialized in HBM
+        """Execute pytorch ref routine."""
         Z = torch.matmul(X, V_r.t())
         Z_gated = Z * torch.sigmoid(alpha).unsqueeze(0).unsqueeze(0)
         Y = torch.matmul(Z_gated, U_r.t()) + b_drift
@@ -95,6 +97,7 @@ def benchmark_kernel1_lowrank_gated_gemm(
 
     # 2. Triton fused implementation
     def triton_fn():
+        """Execute triton fn routine."""
         return triton_fused_lowrank_gated_gemm(X, V_r, U_r, alpha=alpha, b_drift=b_drift)
 
     out_ref = pytorch_ref()
@@ -136,8 +139,11 @@ def benchmark_kernel2_rpca_sparse_gemm(
     sparsity: float = 0.05,
     dtype: torch.dtype = torch.float16,
 ) -> Dict[str, Any]:
-    print(f"\n{'='*70}\n[Benchmark 2] triton_fused_lowrank_sparse_gemm (Target: RPCA)\n{'='*70}")
-    print(f"Config: B={B}, seq_len={seq_len}, in_features={in_features}, out_features={out_features}, rank={rank}, sparsity={sparsity*100:.1f}%, dtype={dtype}")
+    """Execute benchmark kernel2 rpca sparse gemm routine."""
+    print(f"\n{'=' * 70}\n[Benchmark 2] triton_fused_lowrank_sparse_gemm (Target: RPCA)\n{'=' * 70}")
+    print(
+        f"Config: B={B}, seq_len={seq_len}, in_features={in_features}, out_features={out_features}, rank={rank}, sparsity={sparsity * 100:.1f}%, dtype={dtype}"
+    )
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     torch.manual_seed(42)
@@ -154,11 +160,13 @@ def benchmark_kernel2_rpca_sparse_gemm(
     S_csr = S_sparse.to_sparse_csr()
 
     def pytorch_ref():
+        """Execute pytorch ref routine."""
         Y_lr = torch.matmul(torch.matmul(X, V_r.t()), U_r.t())
         Y_sp = torch.matmul(X, S_sparse.t())
         return Y_lr + Y_sp + bias
 
     def triton_fn():
+        """Execute triton fn routine."""
         return triton_fused_lowrank_sparse_gemm(X, V_r, U_r, s=S_csr, bias=bias)
 
     out_ref = pytorch_ref()
@@ -198,8 +206,11 @@ def benchmark_kernel3_strided_tt(
     tt_rank: int = 16,
     dtype: torch.dtype = torch.float16,
 ) -> Dict[str, Any]:
-    print(f"\n{'='*70}\n[Benchmark 3] triton_strided_tt_contraction (Target: Tensor-Train)\n{'='*70}")
-    print(f"Config: B={B}, seq_len={seq_len}, in_features={in_features}, out_features={out_features}, tt_rank={tt_rank}, dtype={dtype}")
+    """Execute benchmark kernel3 strided tt routine."""
+    print(f"\n{'=' * 70}\n[Benchmark 3] triton_strided_tt_contraction (Target: Tensor-Train)\n{'=' * 70}")
+    print(
+        f"Config: B={B}, seq_len={seq_len}, in_features={in_features}, out_features={out_features}, tt_rank={tt_rank}, dtype={dtype}"
+    )
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     torch.manual_seed(42)
@@ -215,20 +226,24 @@ def benchmark_kernel3_strided_tt(
 
     # 1. Vanilla PyTorch contraction (forcing .permute().contiguous().view())
     def pytorch_reconstruct():
+        """Execute pytorch reconstruct routine."""
         res = torch.tensordot(core0, core1, dims=([-1], [0]))  # (p0, q0, p1, q1)
-        res = res.permute(1, 3, 0, 2).contiguous()              # forces VRAM alloc and copy
+        res = res.permute(1, 3, 0, 2).contiguous()  # forces VRAM alloc and copy
         W = res.view(out_features, in_features)
         return W
 
     def pytorch_linear():
+        """Execute pytorch linear routine."""
         W = pytorch_reconstruct()
         return F.linear(X, W, bias)
 
     # 2. Triton zero-copy contraction
     def triton_reconstruct():
+        """Execute triton reconstruct routine."""
         return triton_strided_tt_contraction(core0, core1, p_dims, q_dims)
 
     def triton_linear():
+        """Execute triton linear routine."""
         return triton_strided_tt_linear(X, core0, core1, p_dims, q_dims, bias=bias)
 
     # Parity check on reconstructed weight matrix
@@ -260,7 +275,9 @@ def benchmark_kernel3_strided_tt(
     t_triton_lin, mem_triton_lin = measure_latency_and_memory(triton_linear)
     speedup_lin = t_pytorch_lin / max(1e-5, t_triton_lin)
 
-    print(f"End-to-End Linear Layer: PyTorch = {t_pytorch_lin:.4f} ms vs Triton = {t_triton_lin:.4f} ms (Speedup: {speedup_lin:.2f}x)")
+    print(
+        f"End-to-End Linear Layer: PyTorch = {t_pytorch_lin:.4f} ms vs Triton = {t_triton_lin:.4f} ms (Speedup: {speedup_lin:.2f}x)"
+    )
 
     return {
         "kernel": "triton_strided_tt_contraction",
@@ -276,6 +293,7 @@ def benchmark_kernel3_strided_tt(
 
 
 def main():
+    """Execute main routine."""
     if not torch.cuda.is_available():
         print("ERROR: CUDA device is required to run Triton benchmarks.")
         sys.exit(1)
@@ -299,11 +317,13 @@ def main():
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(results, f, indent=2)
 
-    print(f"\n{'='*70}\nSUMMARY BENCHMARK REPORT\n{'='*70}")
+    print(f"\n{'=' * 70}\nSUMMARY BENCHMARK REPORT\n{'=' * 70}")
     print(f"{'Kernel':<35} | {'PyTorch (ms)':<12} | {'Triton (ms)':<11} | {'Speedup':<8} | {'VRAM Saved'}")
     print("-" * 80)
     for r in results:
-        print(f"{r['kernel']:<35} | {r['pytorch_ms']:<12.4f} | {r['triton_ms']:<11.4f} | {r['speedup']:<7.2f}x | {r['vram_saving_pct']:.1f}%")
+        print(
+            f"{r['kernel']:<35} | {r['pytorch_ms']:<12.4f} | {r['triton_ms']:<11.4f} | {r['speedup']:<7.2f}x | {r['vram_saving_pct']:.1f}%"
+        )
     print("=" * 80)
     print(f"Results saved to {output_path}")
 

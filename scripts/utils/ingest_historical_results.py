@@ -21,7 +21,6 @@ Extracts benchmark metrics across:
 
 import csv
 import json
-import os
 import sys
 import glob
 from pathlib import Path
@@ -31,6 +30,7 @@ repo_root = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(repo_root))
 
 import importlib.util
+
 spec = importlib.util.spec_from_file_location("results_ledger", repo_root / "neuralops" / "core" / "results_ledger.py")
 results_ledger = importlib.util.module_from_spec(spec)
 sys.modules["results_ledger"] = results_ledger
@@ -42,7 +42,9 @@ get_file_git_provenance = results_ledger.get_file_git_provenance
 
 BOGUS_NAMES = {"_common / _types.py", "_common____types", "_types", "_common"}
 
+
 def clean_metrics(m: dict) -> dict:
+    """Execute clean metrics routine."""
     cleaned = {}
     for k, v in m.items():
         if v is None:
@@ -57,7 +59,9 @@ def clean_metrics(m: dict) -> dict:
         return {}
     return cleaned
 
+
 def run_ingestion():
+    """Execute run ingestion routine."""
     ledger = ResultsLedger(root_dir=repo_root / "results")
     print(f"[+] Initialized ledger at: {ledger.root_dir}")
     total_ingested = 0
@@ -151,14 +155,16 @@ def run_ingestion():
             name = item.get("kernel")
             if not name or name in BOGUS_NAMES:
                 continue
-            m = clean_metrics({
-                "latency_triton_ms": item.get("triton_ms", 0.0),
-                "latency_pytorch_ms": item.get("pytorch_ms", 0.0),
-                "speedup_x": item.get("speedup", 1.0),
-                "cosine_sim": item.get("cosine_sim", 1.0),
-                "peak_vram_mb": item.get("triton_vram_mb", 0.0),
-                "relative_error": item.get("rel_error", 0.0),
-            })
+            m = clean_metrics(
+                {
+                    "latency_triton_ms": item.get("triton_ms", 0.0),
+                    "latency_pytorch_ms": item.get("pytorch_ms", 0.0),
+                    "speedup_x": item.get("speedup", 1.0),
+                    "cosine_sim": item.get("cosine_sim", 1.0),
+                    "peak_vram_mb": item.get("triton_vram_mb", 0.0),
+                    "relative_error": item.get("rel_error", 0.0),
+                }
+            )
             if not m:
                 continue
             rec = ResultRecord(
@@ -195,12 +201,14 @@ def run_ingestion():
             name = item.get("kernel") or item.get("operator") or "cuda_kernel"
             if not name or name in BOGUS_NAMES:
                 continue
-            m = clean_metrics({
-                "latency_cuda_ms": item.get("cuda_ms", 0.0),
-                "latency_triton_ms": item.get("triton_ms", 0.0) if item.get("triton_ms") is not None else 0.0,
-                "latency_pytorch_ms": item.get("pytorch_ms", 0.0),
-                "speedup_x": item.get("speedup_cuda_vs_py", 1.0),
-            })
+            m = clean_metrics(
+                {
+                    "latency_cuda_ms": item.get("cuda_ms", 0.0),
+                    "latency_triton_ms": item.get("triton_ms", 0.0) if item.get("triton_ms") is not None else 0.0,
+                    "latency_pytorch_ms": item.get("pytorch_ms", 0.0),
+                    "speedup_x": item.get("speedup_cuda_vs_py", 1.0),
+                }
+            )
             if not m:
                 continue
             rec = ResultRecord(
@@ -237,14 +245,19 @@ def run_ingestion():
                 for r in rows:
                     method = r.get("method") or r.get("alignment_method") or "HNC-SVD"
                     rank = r.get("rank")
-                    m = clean_metrics({
-                        "cosine_sim": r.get("cosine_sim") or r.get("cos_sim") or r.get("cosine_sim_to_full_rank"),
-                        "relative_error": r.get("rel_error"),
-                        "accuracy": r.get("top1_match_pct"),
-                        "speedup_x": r.get("speedup_x") or r.get("speedup"),
-                        "compression_pct": r.get("compression_pct") or r.get("comp_pct") or r.get("param_reduction_pct"),
-                        "latency_ms": r.get("fwd_latency_ms") or (r.get("triton_us", 0.0) / 1000.0 if r.get("triton_us") else None),
-                    })
+                    m = clean_metrics(
+                        {
+                            "cosine_sim": r.get("cosine_sim") or r.get("cos_sim") or r.get("cosine_sim_to_full_rank"),
+                            "relative_error": r.get("rel_error"),
+                            "accuracy": r.get("top1_match_pct"),
+                            "speedup_x": r.get("speedup_x") or r.get("speedup"),
+                            "compression_pct": r.get("compression_pct")
+                            or r.get("comp_pct")
+                            or r.get("param_reduction_pct"),
+                            "latency_ms": r.get("fwd_latency_ms")
+                            or (r.get("triton_us", 0.0) / 1000.0 if r.get("triton_us") else None),
+                        }
+                    )
                     if not m:
                         continue
                     rec = ResultRecord(
@@ -280,14 +293,16 @@ def run_ingestion():
             data = json.load(f)
         runs_list = data.get("runs", []) or data.get("experiments", [])
         for item in runs_list:
-            m = clean_metrics({
-                "accuracy": item.get("accuracy_pct") or item.get("eval_accuracy") or item.get("accuracy"),
-                "retention_pct": item.get("retention_pct"),
-                "cosine_sim": item.get("cosine_sim_to_anchor") or item.get("cosine_sim"),
-                "latency_ms": item.get("latency_ms"),
-                "peak_vram_mb": item.get("peak_vram_mb"),
-                "param_reduction_pct": item.get("param_reduction_pct"),
-            })
+            m = clean_metrics(
+                {
+                    "accuracy": item.get("accuracy_pct") or item.get("eval_accuracy") or item.get("accuracy"),
+                    "retention_pct": item.get("retention_pct"),
+                    "cosine_sim": item.get("cosine_sim_to_anchor") or item.get("cosine_sim"),
+                    "latency_ms": item.get("latency_ms"),
+                    "peak_vram_mb": item.get("peak_vram_mb"),
+                    "param_reduction_pct": item.get("param_reduction_pct"),
+                }
+            )
             if not m:
                 continue
             rec = ResultRecord(
@@ -327,12 +342,14 @@ def run_ingestion():
             if not name or name in BOGUS_NAMES:
                 continue
             seq = item.get("seq_len")
-            m = clean_metrics({
-                "latency_triton_ms": item.get("latency_ms"),
-                "throughput_tok_s": item.get("throughput_tok_s"),
-                "peak_vram_mb": item.get("peak_vram_mb"),
-                "speedup_x": item.get("speedup"),
-            })
+            m = clean_metrics(
+                {
+                    "latency_triton_ms": item.get("latency_ms"),
+                    "throughput_tok_s": item.get("throughput_tok_s"),
+                    "peak_vram_mb": item.get("peak_vram_mb"),
+                    "speedup_x": item.get("speedup"),
+                }
+            )
             if not m:
                 continue
             rec = ResultRecord(
@@ -373,11 +390,13 @@ def run_ingestion():
                 continue
             acc = item.get("accuracy_pct") or item.get("sst2_accuracy") or item.get("accuracy")
             ppl = item.get("perplexity") or item.get("wikitext_ppl") or item.get("ppl")
-            m = clean_metrics({
-                "accuracy": acc,
-                "ppl": ppl,
-                "latency_ms": (item.get("duration_s") * 1000.0) if item.get("duration_s") else None,
-            })
+            m = clean_metrics(
+                {
+                    "accuracy": acc,
+                    "ppl": ppl,
+                    "latency_ms": (item.get("duration_s") * 1000.0) if item.get("duration_s") else None,
+                }
+            )
             if not m:
                 continue
             rec = ResultRecord(
@@ -416,15 +435,19 @@ def run_ingestion():
             ("tier3_compression_engines", "compressor"),
         ]:
             for row in dlead.get(tier_key, []):
-                mod_name = row.get("kernel_module", "").replace(".py", "").strip() or row.get("primary_primitive", "kernel")
+                mod_name = row.get("kernel_module", "").replace(".py", "").strip() or row.get(
+                    "primary_primitive", "kernel"
+                )
                 if not mod_name or mod_name in BOGUS_NAMES:
                     continue
-                m = clean_metrics({
-                    "latency_triton_ms": row.get("latency_triton_ms"),
-                    "latency_pytorch_ms": row.get("latency_pytorch_ms"),
-                    "speedup_x": row.get("speedup_x"),
-                    "sram_bytes_saved_mb": row.get("sram_bytes_saved_mb"),
-                })
+                m = clean_metrics(
+                    {
+                        "latency_triton_ms": row.get("latency_triton_ms"),
+                        "latency_pytorch_ms": row.get("latency_pytorch_ms"),
+                        "speedup_x": row.get("speedup_x"),
+                        "sram_bytes_saved_mb": row.get("sram_bytes_saved_mb"),
+                    }
+                )
                 if not m:
                     continue
                 rec = ResultRecord(
@@ -468,16 +491,20 @@ def run_ingestion():
                     backbone = model_row.get("slug") or model_row.get("name", "distilbert")
                     acc = model_row.get("accuracy_pct")
                     elapsed = model_row.get("elapsed_s")
-                    m = clean_metrics({
-                        "accuracy": acc,
-                        "latency_ms": elapsed,
-                    })
+                    m = clean_metrics(
+                        {
+                            "accuracy": acc,
+                            "latency_ms": elapsed,
+                        }
+                    )
                     if not m:
                         continue
                     rec = ResultRecord(
                         record_id="",
                         module_name=mod_name,
-                        category="attention" if any(k in mod_name for k in ("attn", "attention", "gqa", "mha", "scan")) else "compressor",
+                        category="attention"
+                        if any(k in mod_name for k in ("attn", "attention", "gqa", "mha", "scan"))
+                        else "compressor",
                         family="unified-4models",
                         version_tag="v1.3.7",
                         revision=1,
@@ -511,10 +538,26 @@ def run_ingestion():
                 if not mod or mod in BOGUS_NAMES:
                     continue
                 metrics = {}
-                for k in ("accuracy", "acc", "distilbert_acc", "roberta_acc", "gpt2_acc", "ppl", "speedup", "latency_ms", "vram_mb", "peak_vram_mb", "elapsed_s"):
+                for k in (
+                    "accuracy",
+                    "acc",
+                    "distilbert_acc",
+                    "roberta_acc",
+                    "gpt2_acc",
+                    "ppl",
+                    "speedup",
+                    "latency_ms",
+                    "vram_mb",
+                    "peak_vram_mb",
+                    "elapsed_s",
+                ):
                     if k in row and row[k]:
                         try:
-                            clean_k = "accuracy" if k in ("acc", "distilbert_acc") else ("speedup_x" if k == "speedup" else ("latency_ms" if k == "elapsed_s" else k))
+                            clean_k = (
+                                "accuracy"
+                                if k in ("acc", "distilbert_acc")
+                                else ("speedup_x" if k == "speedup" else ("latency_ms" if k == "elapsed_s" else k))
+                            )
                             metrics[clean_k] = float(row[k])
                         except ValueError:
                             pass
@@ -531,8 +574,14 @@ def run_ingestion():
                     status="active",
                     timestamp_utc=ts,
                     git_commit_sha=sha,
-                    generation_method={"algorithm": "Master Aggregated Evaluation Suite", "source_artifact": str(fcsv.relative_to(repo_root))},
-                    experimental_setup={"dataset": row.get("dataset", "SST-2"), "backbone": row.get("model", "DistilBERT")},
+                    generation_method={
+                        "algorithm": "Master Aggregated Evaluation Suite",
+                        "source_artifact": str(fcsv.relative_to(repo_root)),
+                    },
+                    experimental_setup={
+                        "dataset": row.get("dataset", "SST-2"),
+                        "backbone": row.get("model", "DistilBERT"),
+                    },
                     metrics=m,
                     notes="Master Aggregated Results",
                 )
@@ -552,13 +601,15 @@ def run_ingestion():
                     mod = item.get("module")
                     if not mod or mod in BOGUS_NAMES:
                         continue
-                    m = clean_metrics({
-                        "accuracy": item.get("accuracy"),
-                        "ppl": item.get("perplexity"),
-                        "kd_gain": item.get("kd_gain"),
-                        "recovery_pct": item.get("recovery_pct"),
-                        "peak_vram_mb": item.get("peak_vram_mb"),
-                    })
+                    m = clean_metrics(
+                        {
+                            "accuracy": item.get("accuracy"),
+                            "ppl": item.get("perplexity"),
+                            "kd_gain": item.get("kd_gain"),
+                            "recovery_pct": item.get("recovery_pct"),
+                            "peak_vram_mb": item.get("peak_vram_mb"),
+                        }
+                    )
                     if not m:
                         continue
                     rec = ResultRecord(
@@ -599,16 +650,18 @@ def run_ingestion():
             mod_name = sr_data.get("module_name")
             if not mod_name or mod_name in BOGUS_NAMES:
                 continue
-            m = clean_metrics({
-                "accuracy": sr_data.get("accuracy_pct"),
-                "f1": sr_data.get("f1_score"),
-                "val_loss": sr_data.get("val_loss"),
-                "peak_vram_mb": sr_data.get("peak_vram_mb"),
-                "throughput_tok_s": sr_data.get("tokens_per_sec"),
-                "latency_ms": (sr_data.get("elapsed_s") * 1000.0) if sr_data.get("elapsed_s") else None,
-                "compression_ratio": sr_data.get("compression_rate"),
-                "param_reduction_pct": sr_data.get("compression_ratio_pct"),
-            })
+            m = clean_metrics(
+                {
+                    "accuracy": sr_data.get("accuracy_pct"),
+                    "f1": sr_data.get("f1_score"),
+                    "val_loss": sr_data.get("val_loss"),
+                    "peak_vram_mb": sr_data.get("peak_vram_mb"),
+                    "throughput_tok_s": sr_data.get("tokens_per_sec"),
+                    "latency_ms": (sr_data.get("elapsed_s") * 1000.0) if sr_data.get("elapsed_s") else None,
+                    "compression_ratio": sr_data.get("compression_rate"),
+                    "param_reduction_pct": sr_data.get("compression_ratio_pct"),
+                }
+            )
             if not m:
                 continue
             rec = ResultRecord(
@@ -648,11 +701,13 @@ def run_ingestion():
                 if not mod or mod in BOGUS_NAMES:
                     continue
                 seq = row.get("seq_len")
-                m = clean_metrics({
-                    "latency_ms": row.get("forward_time_mean_ms") or row.get("forward_time_ms"),
-                    "peak_vram_mb": row.get("peak_vram_mb"),
-                    "latency_per_tok_ms": row.get("latency_ms_per_token"),
-                })
+                m = clean_metrics(
+                    {
+                        "latency_ms": row.get("forward_time_mean_ms") or row.get("forward_time_ms"),
+                        "peak_vram_mb": row.get("peak_vram_mb"),
+                        "latency_per_tok_ms": row.get("latency_ms_per_token"),
+                    }
+                )
                 if not m:
                     continue
                 rec = ResultRecord(
@@ -689,14 +744,16 @@ def run_ingestion():
                 mod = row.get("architecture")
                 if not mod or mod in BOGUS_NAMES:
                     continue
-                m = clean_metrics({
-                    "ppl": row.get("perplexity"),
-                    "val_loss": row.get("loss"),
-                    "throughput_tok_s": row.get("throughput_tok_sec"),
-                    "peak_vram_mb": row.get("peak_vram_mb"),
-                    "speedup_x": row.get("speedup_vs_dense"),
-                    "latency_ms": row.get("lat_512"),
-                })
+                m = clean_metrics(
+                    {
+                        "ppl": row.get("perplexity"),
+                        "val_loss": row.get("loss"),
+                        "throughput_tok_s": row.get("throughput_tok_sec"),
+                        "peak_vram_mb": row.get("peak_vram_mb"),
+                        "speedup_x": row.get("speedup_vs_dense"),
+                        "latency_ms": row.get("lat_512"),
+                    }
+                )
                 if not m:
                     continue
                 rec = ResultRecord(
@@ -733,15 +790,17 @@ def run_ingestion():
             cname = item.get("compressor")
             if not cname or cname == "baseline_roberta":
                 continue
-            m = clean_metrics({
-                "accuracy": (item.get("accuracy", 0.0) * 100.0) if item.get("accuracy") is not None else None,
-                "f1": item.get("f1"),
-                "val_loss": item.get("loss"),
-                "param_reduction_pct": item.get("param_reduction_pct"),
-                "compression_ratio": item.get("compression_ratio"),
-                "peak_vram_mb": item.get("peak_vram_mb"),
-                "latency_ms": (item.get("duration_s", 0.0) * 1000.0) if item.get("duration_s") else None,
-            })
+            m = clean_metrics(
+                {
+                    "accuracy": (item.get("accuracy", 0.0) * 100.0) if item.get("accuracy") is not None else None,
+                    "f1": item.get("f1"),
+                    "val_loss": item.get("loss"),
+                    "param_reduction_pct": item.get("param_reduction_pct"),
+                    "compression_ratio": item.get("compression_ratio"),
+                    "peak_vram_mb": item.get("peak_vram_mb"),
+                    "latency_ms": (item.get("duration_s", 0.0) * 1000.0) if item.get("duration_s") else None,
+                }
+            )
             if not m:
                 continue
             rec = ResultRecord(
@@ -780,12 +839,14 @@ def run_ingestion():
             reg = item.get("regime")
             if not arch or not reg:
                 continue
-            m = clean_metrics({
-                "cosine_sim": item.get("cosine_sim"),
-                "kl_div": item.get("kl_div"),
-                "peak_vram_mb": item.get("peak_vram_mb"),
-                "step_time_s": item.get("time_sec"),
-            })
+            m = clean_metrics(
+                {
+                    "cosine_sim": item.get("cosine_sim"),
+                    "kl_div": item.get("kl_div"),
+                    "peak_vram_mb": item.get("peak_vram_mb"),
+                    "step_time_s": item.get("time_sec"),
+                }
+            )
             if not m:
                 continue
             rec = ResultRecord(
@@ -856,6 +917,7 @@ def run_ingestion():
     stats = ledger.get_summary_stats()
     print(f"[✓] Ingestion finished! Summary stats: {stats}")
     return stats
+
 
 if __name__ == "__main__":
     run_ingestion()

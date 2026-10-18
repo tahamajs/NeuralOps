@@ -17,7 +17,6 @@ import gc
 import importlib.util
 import inspect
 import json
-import os
 import sys
 import time
 from pathlib import Path
@@ -57,6 +56,7 @@ ALIASES = {
 
 
 def time_callable(fn, warmup=5, iters=20):
+    """Execute time callable routine."""
     for _ in range(warmup):
         fn()
     torch.cuda.synchronize()
@@ -68,6 +68,7 @@ def time_callable(fn, warmup=5, iters=20):
 
 
 def generate_args_for_sig(sig, param_annotations, device, dtype, B=4, H=8, N=512, D=64):
+    """Execute generate args for sig routine."""
     args = []
     kwargs = {}
     for param_name, param in sig.parameters.items():
@@ -144,6 +145,7 @@ def generate_args_for_sig(sig, param_annotations, device, dtype, B=4, H=8, N=512
 
 
 def main():
+    """Execute main routine."""
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     dtype = torch.float16
     print("=" * 100)
@@ -157,7 +159,9 @@ def main():
     passed = 0
     failed = 0
 
-    print(f"{'Idx':<4} | {'Module Name':<28} | {'CUDA (ms)':<10} | {'Ref (ms)':<10} | {'Speedup':<9} | {'Diff':<10} | {'Status'}")
+    print(
+        f"{'Idx':<4} | {'Module Name':<28} | {'CUDA (ms)':<10} | {'Ref (ms)':<10} | {'Speedup':<9} | {'Diff':<10} | {'Status'}"
+    )
     print("-" * 100)
 
     for idx, d in enumerate(subdirs, 1):
@@ -173,7 +177,9 @@ def main():
         try:
             spec.loader.exec_module(py_mod)
         except Exception as e:
-            print(f"{idx:<4} | {mod_name:<28} | {'-':<10} | {'-':<10} | {'-':<9} | {'-':<10} | IMPORT ERROR: {str(e)[:30]}")
+            print(
+                f"{idx:<4} | {mod_name:<28} | {'-':<10} | {'-':<10} | {'-':<9} | {'-':<10} | IMPORT ERROR: {str(e)[:30]}"
+            )
             failed += 1
             continue
 
@@ -195,11 +201,13 @@ def main():
             if hasattr(py_mod, "get_module"):
                 _c_mod = py_mod.get_module()
             elif hasattr(py_mod, "_get_module"):
-                _c_mod = getattr(py_mod, "_get_module")()
+                _c_mod = py_mod._get_module()
             else:
                 _c_mod = None
         except Exception as e:
-            print(f"{idx:<4} | {mod_name:<28} | {'-':<10} | {'-':<10} | {'-':<9} | {'-':<10} | COMPILE ERROR: {str(e)[:30]}")
+            print(
+                f"{idx:<4} | {mod_name:<28} | {'-':<10} | {'-':<10} | {'-':<9} | {'-':<10} | COMPILE ERROR: {str(e)[:30]}"
+            )
             failed += 1
             continue
 
@@ -233,28 +241,34 @@ def main():
             sp_str = f"{speedup:.2f}x" if ref_fn else "1.00x"
             print(f"{idx:<4} | {mod_name:<28} | {cuda_ms:<10.4f} | {ref_str:<10} | {sp_str:<9} | {diff_str:<10} | PASS")
 
-            results.append({
-                "module": mod_name,
-                "cuda_ms": round(cuda_ms, 4),
-                "ref_ms": round(ref_ms, 4),
-                "speedup": round(speedup, 2),
-                "max_diff": max_diff,
-                "status": "PASS",
-            })
+            results.append(
+                {
+                    "module": mod_name,
+                    "cuda_ms": round(cuda_ms, 4),
+                    "ref_ms": round(ref_ms, 4),
+                    "speedup": round(speedup, 2),
+                    "max_diff": max_diff,
+                    "status": "PASS",
+                }
+            )
         except Exception as e:
-            print(f"{idx:<4} | {mod_name:<28} | {'-':<10} | {'-':<10} | {'-':<9} | {'-':<10} | RUN ERROR: {str(e)[:35]}")
+            print(
+                f"{idx:<4} | {mod_name:<28} | {'-':<10} | {'-':<10} | {'-':<9} | {'-':<10} | RUN ERROR: {str(e)[:35]}"
+            )
             failed += 1
-            results.append({
-                "module": mod_name,
-                "error": str(e),
-                "status": "FAIL",
-            })
+            results.append(
+                {
+                    "module": mod_name,
+                    "error": str(e),
+                    "status": "FAIL",
+                }
+            )
 
         gc.collect()
         torch.cuda.empty_cache()
 
     print("=" * 100)
-    print(f"BENCHMARK COMPLETED: {passed}/{len(subdirs)} passed ({passed/len(subdirs)*100:.1f}%), {failed} failed.")
+    print(f"BENCHMARK COMPLETED: {passed}/{len(subdirs)} passed ({passed / len(subdirs) * 100:.1f}%), {failed} failed.")
     print("=" * 100)
 
     out_file = repo_root / "results" / "full_108_cuda_modules_benchmark.json"

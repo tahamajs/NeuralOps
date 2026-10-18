@@ -12,12 +12,8 @@ Features:
 from __future__ import annotations
 
 import argparse
-import gc
-import json
-import os
 from pathlib import Path
 import sys
-import time
 
 import torch
 
@@ -31,12 +27,14 @@ from neuralops.core.registry import ATTENTION_REGISTRY, create_attention
 try:
     from rich.console import Console
     from rich.table import Table
+
     RICH_AVAILABLE = True
 except ImportError:
     RICH_AVAILABLE = False
 
 
 def main():
+    """Execute main routine."""
     parser = argparse.ArgumentParser(description="Clean Benchmark for All 131 Attention Mechanisms")
     parser.add_argument("--device", type=str, default="cuda:0" if torch.cuda.is_available() else "cpu")
     parser.add_argument("--batch-size", type=int, default=2)
@@ -69,7 +67,9 @@ def main():
             mod.train()
 
             def _make_step(target_mod, target_x):
+                """Execute make step routine."""
                 def fwd_bwd_step():
+                    """Execute fwd bwd step routine."""
                     out = target_mod(target_x)
                     if isinstance(out, tuple):
                         out = out[0]
@@ -78,6 +78,7 @@ def main():
                     target_x.grad = None
                     for p in target_mod.parameters():
                         p.grad = None
+
                 return fwd_bwd_step
 
             metric = runner.measure_callable(
@@ -101,20 +102,24 @@ def main():
                 "error": metric.error,
             }
             results.append(rec)
-            print(f"[{idx:3d}/{len(names)}] {name:38s}: {metric.latency_ms_trimmed_mean:7.2f} ms | {metric.throughput_tokens_sec:8.1f} tok/s | VRAM: {metric.peak_vram_mb:5.1f} MB [OK]")
+            print(
+                f"[{idx:3d}/{len(names)}] {name:38s}: {metric.latency_ms_trimmed_mean:7.2f} ms | {metric.throughput_tokens_sec:8.1f} tok/s | VRAM: {metric.peak_vram_mb:5.1f} MB [OK]"
+            )
 
         except Exception as e:
             err = str(e)
-            results.append({
-                "name": name,
-                "latency_ms": 0.0,
-                "latency_median_ms": 0.0,
-                "latency_std_ms": 0.0,
-                "tokens_per_sec": 0.0,
-                "peak_vram_mb": 0.0,
-                "status": "FAILED",
-                "error": err[:128],
-            })
+            results.append(
+                {
+                    "name": name,
+                    "latency_ms": 0.0,
+                    "latency_median_ms": 0.0,
+                    "latency_std_ms": 0.0,
+                    "tokens_per_sec": 0.0,
+                    "peak_vram_mb": 0.0,
+                    "status": "FAILED",
+                    "error": err[:128],
+                }
+            )
             print(f"[{idx:3d}/{len(names)}] {name:38s}: FAILED ({err[:60]})")
 
     results.sort(key=lambda r: r["latency_ms"], reverse=True)

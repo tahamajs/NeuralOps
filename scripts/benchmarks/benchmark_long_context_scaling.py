@@ -14,15 +14,10 @@ Outputs structured JSON to results/benchmarks_long_context_scaling.json.
 from __future__ import annotations
 
 import argparse
-import gc
-import json
-import os
 from pathlib import Path
 import sys
-import time
 
 import torch
-import torch.nn as nn
 
 repo_root = Path(__file__).resolve().parent.parent.parent
 if str(repo_root) not in sys.path:
@@ -34,6 +29,7 @@ from neuralops.core.registry import ATTENTION_REGISTRY, create_attention
 try:
     from rich.console import Console
     from rich.table import Table
+
     RICH_AVAILABLE = True
 except ImportError:
     RICH_AVAILABLE = False
@@ -74,13 +70,14 @@ def compute_attention_flops(B: int, T: int, D: int, is_linear: bool = False) -> 
     """Theoretical forward FLOPs for attention block."""
     if is_linear:
         # Q(K^T V): Q(B, H, T, d) * [K(B, H, T, d)^T * V(B, H, T, d)]: ~ 4 * B * T * D^2
-        return 4.0 * B * T * (D ** 2)
+        return 4.0 * B * T * (D**2)
     else:
         # Standard QK^T: 2 * B * H * T^2 * d = 2 * B * T^2 * D; Softmax(A)*V: 2 * B * T^2 * D; Projections: 4 * B * T * D^2
-        return 4.0 * B * (T ** 2) * D + 4.0 * B * T * (D ** 2)
+        return 4.0 * B * (T**2) * D + 4.0 * B * T * (D**2)
 
 
 def main():
+    """Execute main routine."""
     parser = argparse.ArgumentParser(description="NeuralOps Long-Context Scaling Benchmark")
     parser.add_argument("--device", type=str, default="cuda:0" if torch.cuda.is_available() else "cpu")
     parser.add_argument("--batch-size", type=int, default=1)
@@ -100,7 +97,7 @@ def main():
     D = args.embed_dim
     H = args.num_heads
 
-    print(f"=== NeuralOps Long-Context Scaling Benchmark ===")
+    print("=== NeuralOps Long-Context Scaling Benchmark ===")
     print(f"Hardware: {device} ({torch.cuda.get_device_name(device) if device.type == 'cuda' else 'CPU'})")
     print(f"Sequence Lengths: {seq_lens}")
     print(f"Batch Size: {B}, Dim: {D}, Heads: {H}\n")
@@ -144,12 +141,15 @@ def main():
                 x = torch.randn(B, L, D, device=device, dtype=torch.float16)
 
                 def _make_step(target_model, target_x):
+                    """Execute make step routine."""
                     def run_step():
+                        """Execute run step routine."""
                         with torch.no_grad():
                             out = target_model(target_x)
                             if isinstance(out, tuple):
                                 out = out[0]
                             return out
+
                     return run_step
 
                 metric = runner.measure_callable(
@@ -177,21 +177,27 @@ def main():
                 module_records["data"].append(point_record)
 
                 if metric.status == "OK":
-                    print(f"    L={L:5d}: {metric.latency_ms_trimmed_mean:7.2f} ms | {metric.throughput_tokens_sec:9.1f} tok/s | VRAM: {metric.peak_vram_mb:6.1f} MB | {metric.tflops_per_sec:5.2f} TFLOPS")
+                    print(
+                        f"    L={L:5d}: {metric.latency_ms_trimmed_mean:7.2f} ms | {metric.throughput_tokens_sec:9.1f} tok/s | VRAM: {metric.peak_vram_mb:6.1f} MB | {metric.tflops_per_sec:5.2f} TFLOPS"
+                    )
                 else:
                     print(f"    L={L:5d}: FAILED ({metric.error})")
 
             except Exception as e:
                 err_msg = str(e)
-                module_records["data"].append({
-                    "seq_len": L,
-                    "latency_ms": 0.0,
-                    "tokens_per_sec": 0.0,
-                    "peak_vram_mb": 0.0,
-                    "tflops_per_sec": 0.0,
-                    "status": "OOM" if "out of memory" in err_msg.lower() or "oom guard" in err_msg.lower() else "ERROR",
-                    "error": err_msg[:128],
-                })
+                module_records["data"].append(
+                    {
+                        "seq_len": L,
+                        "latency_ms": 0.0,
+                        "tokens_per_sec": 0.0,
+                        "peak_vram_mb": 0.0,
+                        "tflops_per_sec": 0.0,
+                        "status": "OOM"
+                        if "out of memory" in err_msg.lower() or "oom guard" in err_msg.lower()
+                        else "ERROR",
+                        "error": err_msg[:128],
+                    }
+                )
                 print(f"    L={L:5d}: OOM / Skipped ({err_msg[:60]})")
 
         all_results.append(module_records)
@@ -218,7 +224,9 @@ def main():
             c512 = f"{l_map[512]['latency_ms']:.2f}" if 512 in l_map and l_map[512]["status"] == "OK" else "OOM/ERR"
             c2048 = f"{l_map[2048]['latency_ms']:.2f}" if 2048 in l_map and l_map[2048]["status"] == "OK" else "OOM/ERR"
             c8192 = f"{l_map[8192]['latency_ms']:.2f}" if 8192 in l_map and l_map[8192]["status"] == "OK" else "OOM/ERR"
-            c16384 = f"{l_map[16384]['latency_ms']:.2f}" if 16384 in l_map and l_map[16384]["status"] == "OK" else "OOM/ERR"
+            c16384 = (
+                f"{l_map[16384]['latency_ms']:.2f}" if 16384 in l_map and l_map[16384]["status"] == "OK" else "OOM/ERR"
+            )
             max_tok = max([d["tokens_per_sec"] for d in res["data"] if d["status"] == "OK"], default=0.0)
             max_vram = max([d["peak_vram_mb"] for d in res["data"] if d["status"] == "OK"], default=0.0)
             table.add_row(res["key"], c512, c2048, c8192, c16384, f"{max_tok:,.0f}", f"{max_vram:.1f} MB")

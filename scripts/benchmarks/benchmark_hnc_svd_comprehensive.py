@@ -20,11 +20,10 @@ from __future__ import annotations
 
 import json
 import math
-import os
 import sys
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List
 
 import torch
 import torch.nn as nn
@@ -38,8 +37,6 @@ if str(REPO_ROOT) not in sys.path:
 from neuralops.attentions.svd.svd_linear_attention import SVDLinearAttention
 from neuralops.compression_engine.svd.direct_svd import DirectSVDCompressor
 from neuralops.compression_engine.svd.hnc_svd_continuation import (
-    HessianNullSpaceSVDContinuation,
-    compute_function_matching_loss,
     compute_spectral_tail_potential_and_gradient,
     solve_layerwise_kronecker_nullspace_step,
 )
@@ -51,7 +48,9 @@ from neuralops.core.triton_kernels.low_rank import (
 
 class BenchmarkTransformerBlock(nn.Module):
     """Clean reference transformer encoder block for compression benchmarking."""
+
     def __init__(self, d_model: int = 256, nhead: int = 8, dim_feedforward: int = 512):
+        """Execute init routine."""
         super().__init__()
         self.attn = nn.MultiheadAttention(d_model, nhead, batch_first=True)
         self.linear1 = nn.Linear(d_model, dim_feedforward)
@@ -60,6 +59,7 @@ class BenchmarkTransformerBlock(nn.Module):
         self.norm2 = nn.LayerNorm(d_model)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Execute forward routine."""
         attn_out, _ = self.attn(x, x, x)
         x = self.norm1(x + attn_out)
         ff_out = self.linear2(F.gelu(self.linear1(x)))
@@ -69,17 +69,21 @@ class BenchmarkTransformerBlock(nn.Module):
 
 class BenchmarkTransformerLM(nn.Module):
     """3-layer Transformer Language Model for End-to-End Compression Benchmarking."""
-    def __init__(self, vocab_size: int = 1000, d_model: int = 256, nhead: int = 8, num_layers: int = 3, d_ff: int = 512):
+
+    def __init__(
+        self, vocab_size: int = 1000, d_model: int = 256, nhead: int = 8, num_layers: int = 3, d_ff: int = 512
+    ):
+        """Execute init routine."""
         super().__init__()
         self.d_model = d_model
         self.embed = nn.Embedding(vocab_size, d_model)
-        self.layers = nn.ModuleList([
-            BenchmarkTransformerBlock(d_model=d_model, nhead=nhead, dim_feedforward=d_ff)
-            for _ in range(num_layers)
-        ])
+        self.layers = nn.ModuleList(
+            [BenchmarkTransformerBlock(d_model=d_model, nhead=nhead, dim_feedforward=d_ff) for _ in range(num_layers)]
+        )
         self.lm_head = nn.Linear(d_model, vocab_size, bias=False)
 
     def forward(self, input_ids: torch.Tensor) -> torch.Tensor:
+        """Execute forward routine."""
         h = self.embed(input_ids) * math.sqrt(self.d_model)
         for layer in self.layers:
             h = layer(h)
@@ -94,7 +98,7 @@ def compute_spectral_tail_energy(weights: List[torch.Tensor], rank: int) -> floa
     for w in weights:
         with torch.no_grad():
             S = torch.linalg.svdvals(w.float())
-            full_energy = (S ** 2).sum().item()
+            full_energy = (S**2).sum().item()
             tail_energy = (S[rank:] ** 2).sum().item() if rank < len(S) else 0.0
             total_tail_energy += tail_energy
             total_full_energy += max(full_energy, 1e-12)
@@ -105,6 +109,7 @@ def compute_spectral_tail_energy(weights: List[torch.Tensor], rank: int) -> floa
 # Benchmark 1: HNC-SVD vs Naive DirectSVD on Transformer Block
 # ============================================================================
 def run_benchmark_table_1(device: str) -> List[Dict[str, Any]]:
+    """Execute run benchmark table 1 routine."""
     print("\n" + "=" * 80)
     print(" Running Benchmark Table 1: HNC-SVD vs Naive DirectSVD (Ranks 8, 16, 32, 64)")
     print("=" * 80)
@@ -171,7 +176,7 @@ def run_benchmark_table_1(device: str) -> List[Dict[str, Any]]:
 
             diff = y_comp_heldout - y_orig_heldout
             rel_error = (torch.linalg.norm(diff) / max(torch.linalg.norm(y_orig_heldout), torch.tensor(1e-12))).item()
-            l_func = 0.5 * (diff ** 2).mean().item()
+            l_func = 0.5 * (diff**2).mean().item()
 
             orig_argmax = torch.argmax(y_orig_heldout, dim=-1)
             comp_argmax = torch.argmax(y_comp_heldout, dim=-1)
@@ -216,6 +221,7 @@ def run_benchmark_table_1(device: str) -> List[Dict[str, Any]]:
 # Benchmark 2: SVDLinearAttention Full-Rank -> Low-Rank Surgical Alignment
 # ============================================================================
 def run_benchmark_table_2(device: str) -> List[Dict[str, Any]]:
+    """Execute run benchmark table 2 routine."""
     print("\n" + "=" * 80)
     print(" Running Benchmark Table 2: Full-Rank (D=256) -> Low-Rank SVDLinearAttention Surgical Alignment")
     print("=" * 80)
@@ -264,9 +270,11 @@ def run_benchmark_table_2(device: str) -> List[Dict[str, Any]]:
                 out_test_tensor = out_test[0] if isinstance(out_test, tuple) else out_test
 
             diff = out_test_tensor - out_anchor_tensor
-            mse_drift = (diff ** 2).mean().item()
+            mse_drift = (diff**2).mean().item()
             cos_sim = F.cosine_similarity(out_test_tensor.flatten(), out_anchor_tensor.flatten(), dim=0).item()
-            rel_error = (torch.linalg.norm(diff) / max(torch.linalg.norm(out_anchor_tensor), torch.tensor(1e-12))).item()
+            rel_error = (
+                torch.linalg.norm(diff) / max(torch.linalg.norm(out_anchor_tensor), torch.tensor(1e-12))
+            ).item()
 
             # Measure Training Throughput (fwd + bwd tok/s)
             attn.train()
@@ -317,6 +325,7 @@ def run_benchmark_table_2(device: str) -> List[Dict[str, Any]]:
 # Benchmark 3: Scientific Ablations on Damping Factor mu_rel and Restoring Steps m
 # ============================================================================
 def run_benchmark_table_3(device: str) -> List[Dict[str, Any]]:
+    """Execute run benchmark table 3 routine."""
     print("\n" + "=" * 80)
     print(" Running Benchmark Table 3: Damping Factor mu_rel & Function Restoring Steps m Ablation")
     print("=" * 80)
@@ -337,7 +346,7 @@ def run_benchmark_table_3(device: str) -> List[Dict[str, Any]]:
             with torch.no_grad():
                 y_0 = linear_layer(probe_x)
                 s_orig = torch.linalg.svdvals(linear_layer.weight.float())
-                orig_tail_energy = (s_orig[target_rank:] ** 2).sum().item() / (s_orig ** 2).sum().item()
+                orig_tail_energy = (s_orig[target_rank:] ** 2).sum().item() / (s_orig**2).sum().item()
 
             rejections = 0
             w = linear_layer.weight.clone().detach().requires_grad_(True)
@@ -390,7 +399,7 @@ def run_benchmark_table_3(device: str) -> List[Dict[str, Any]]:
                 y_final = F.linear(probe_x, w)
                 final_l_func = 0.5 * ((y_final - y_0) ** 2).mean().item()
                 s_final = torch.linalg.svdvals(w.float())
-                final_tail_energy = (s_final[target_rank:] ** 2).sum().item() / (s_final ** 2).sum().item()
+                final_tail_energy = (s_final[target_rank:] ** 2).sum().item() / (s_final**2).sum().item()
                 jacobian_drift = (torch.linalg.norm(w - w_0) / torch.linalg.norm(w_0)).item()
 
             mu_str = f"{mu_rel:.1e}" if mu_rel < 1e9 else "inf"
@@ -417,6 +426,7 @@ def run_benchmark_table_3(device: str) -> List[Dict[str, Any]]:
 # Benchmark 4: Fused Triton Kernel Latency & Speedup on Dense Resolvents
 # ============================================================================
 def run_benchmark_table_4(device: str) -> List[Dict[str, Any]]:
+    """Execute run benchmark table 4 routine."""
     print("\n" + "=" * 80)
     print(" Running Benchmark Table 4: Fused Triton Kernel Latency & Speedup on Dense Resolvents")
     print("=" * 80)
@@ -427,7 +437,7 @@ def run_benchmark_table_4(device: str) -> List[Dict[str, Any]]:
 
     for dtype in dtypes:
         dtype_str = "FP16" if dtype == torch.float16 else "FP32"
-        for (M, N) in shapes:
+        for M, N in shapes:
             torch.manual_seed(400)
             w = torch.randn(M, N, device=device, dtype=dtype)
             grad_phi = torch.randn(M, N, device=device, dtype=dtype)
@@ -448,8 +458,12 @@ def run_benchmark_table_4(device: str) -> List[Dict[str, Any]]:
 
             # Warmup
             for _ in range(15):
-                _ = fused_hnc_nullspace_step_pytorch(w, grad_phi, inv_null_proj, eta, restore_grad=restore_grad, alpha=alpha)
-                _ = fused_hnc_nullspace_step_triton(w, grad_phi, inv_null_proj, eta, restore_grad=restore_grad, alpha=alpha)
+                _ = fused_hnc_nullspace_step_pytorch(
+                    w, grad_phi, inv_null_proj, eta, restore_grad=restore_grad, alpha=alpha
+                )
+                _ = fused_hnc_nullspace_step_triton(
+                    w, grad_phi, inv_null_proj, eta, restore_grad=restore_grad, alpha=alpha
+                )
 
             # PyTorch Timing
             if device == "cuda":
@@ -461,14 +475,18 @@ def run_benchmark_table_4(device: str) -> List[Dict[str, Any]]:
             if device == "cuda":
                 start_event_pt.record()
                 for _ in range(trials):
-                    out_pt = fused_hnc_nullspace_step_pytorch(w, grad_phi, inv_null_proj, eta, restore_grad=restore_grad, alpha=alpha)
+                    out_pt = fused_hnc_nullspace_step_pytorch(
+                        w, grad_phi, inv_null_proj, eta, restore_grad=restore_grad, alpha=alpha
+                    )
                 end_event_pt.record()
                 torch.cuda.synchronize()
                 pt_us = (start_event_pt.elapsed_time(end_event_pt) / trials) * 1000.0
             else:
                 t0 = time.perf_counter()
                 for _ in range(trials):
-                    out_pt = fused_hnc_nullspace_step_pytorch(w, grad_phi, inv_null_proj, eta, restore_grad=restore_grad, alpha=alpha)
+                    out_pt = fused_hnc_nullspace_step_pytorch(
+                        w, grad_phi, inv_null_proj, eta, restore_grad=restore_grad, alpha=alpha
+                    )
                 pt_us = ((time.perf_counter() - t0) / trials) * 1e6
 
             # Triton Timing
@@ -479,14 +497,18 @@ def run_benchmark_table_4(device: str) -> List[Dict[str, Any]]:
             if device == "cuda":
                 start_event_tr.record()
                 for _ in range(trials):
-                    out_tr = fused_hnc_nullspace_step_triton(w, grad_phi, inv_null_proj, eta, restore_grad=restore_grad, alpha=alpha)
+                    out_tr = fused_hnc_nullspace_step_triton(
+                        w, grad_phi, inv_null_proj, eta, restore_grad=restore_grad, alpha=alpha
+                    )
                 end_event_tr.record()
                 torch.cuda.synchronize()
                 tr_us = (start_event_tr.elapsed_time(end_event_tr) / trials) * 1000.0
             else:
                 t0 = time.perf_counter()
                 for _ in range(trials):
-                    out_tr = fused_hnc_nullspace_step_triton(w, grad_phi, inv_null_proj, eta, restore_grad=restore_grad, alpha=alpha)
+                    out_tr = fused_hnc_nullspace_step_triton(
+                        w, grad_phi, inv_null_proj, eta, restore_grad=restore_grad, alpha=alpha
+                    )
                 tr_us = ((time.perf_counter() - t0) / trials) * 1e6
 
             speedup = pt_us / max(tr_us, 1e-12)
@@ -501,7 +523,9 @@ def run_benchmark_table_4(device: str) -> List[Dict[str, Any]]:
                 "max_abs_diff": max_abs_diff,
             }
             results.append(res)
-            print(f"| {dtype_str} | {M:4d}x{N:<4d} | PyTorch: {pt_us:8.2f} us | Triton: {tr_us:8.2f} us | Speedup: {speedup:5.2f}x | MaxDiff: {max_abs_diff:.2e} |")
+            print(
+                f"| {dtype_str} | {M:4d}x{N:<4d} | PyTorch: {pt_us:8.2f} us | Triton: {tr_us:8.2f} us | Speedup: {speedup:5.2f}x | MaxDiff: {max_abs_diff:.2e} |"
+            )
 
     return results
 
@@ -510,6 +534,7 @@ def run_benchmark_table_4(device: str) -> List[Dict[str, Any]]:
 # Benchmark 5: Synthetic Tiny Transformer LM (Vocab=1000) End-to-End Compression
 # ============================================================================
 def run_benchmark_table_5(device: str) -> List[Dict[str, Any]]:
+    """Execute run benchmark table 5 routine."""
     print("\n" + "=" * 80)
     print(" Running Benchmark Table 5: Synthetic Tiny Transformer LM (Vocab=1000) Compression & Perplexity")
     print("=" * 80)
@@ -533,10 +558,22 @@ def run_benchmark_table_5(device: str) -> List[Dict[str, Any]]:
 
         # Baseline uncompressed
         torch.manual_seed(500 + rank)
-        lm_orig = BenchmarkTransformerLM(vocab_size=vocab_size, d_model=256, nhead=8, num_layers=3, d_ff=512).to(device).eval()
-        lm_naive = BenchmarkTransformerLM(vocab_size=vocab_size, d_model=256, nhead=8, num_layers=3, d_ff=512).to(device).eval()
+        lm_orig = (
+            BenchmarkTransformerLM(vocab_size=vocab_size, d_model=256, nhead=8, num_layers=3, d_ff=512)
+            .to(device)
+            .eval()
+        )
+        lm_naive = (
+            BenchmarkTransformerLM(vocab_size=vocab_size, d_model=256, nhead=8, num_layers=3, d_ff=512)
+            .to(device)
+            .eval()
+        )
         lm_naive.load_state_dict(lm_orig.state_dict())
-        lm_hnc = BenchmarkTransformerLM(vocab_size=vocab_size, d_model=256, nhead=8, num_layers=3, d_ff=512).to(device).eval()
+        lm_hnc = (
+            BenchmarkTransformerLM(vocab_size=vocab_size, d_model=256, nhead=8, num_layers=3, d_ff=512)
+            .to(device)
+            .eval()
+        )
         lm_hnc.load_state_dict(lm_orig.state_dict())
 
         with torch.no_grad():
@@ -555,12 +592,16 @@ def run_benchmark_table_5(device: str) -> List[Dict[str, Any]]:
             entropy_naive = -(probs_orig * torch.log(probs_naive + 1e-12)).sum(dim=-1).mean().item()
             ppl_naive = math.exp(min(entropy_naive, 20.0))
             err_naive = (torch.norm(logits_naive - logits_orig) / torch.norm(logits_orig)).item()
-            top1_naive = (torch.argmax(logits_naive, dim=-1) == torch.argmax(logits_orig, dim=-1)).float().mean().item() * 100.0
+            top1_naive = (
+                torch.argmax(logits_naive, dim=-1) == torch.argmax(logits_orig, dim=-1)
+            ).float().mean().item() * 100.0
             cos_sim_naive = F.cosine_similarity(logits_naive.flatten(), logits_orig.flatten(), dim=0).item()
 
         # 2. HNC-SVD Compression
         _probe_embeds = lm_orig.embed(probe_tokens)
-        comp_hnc = DirectSVDCompressor(lm_hnc, rank=rank, min_rank=1, use_hnc_continuation=True, probe_inputs=probe_tokens)
+        comp_hnc = DirectSVDCompressor(
+            lm_hnc, rank=rank, min_rank=1, use_hnc_continuation=True, probe_inputs=probe_tokens
+        )
         comp_hnc.compress()
 
         with torch.no_grad():
@@ -569,7 +610,9 @@ def run_benchmark_table_5(device: str) -> List[Dict[str, Any]]:
             entropy_hnc = -(probs_orig * torch.log(probs_hnc + 1e-12)).sum(dim=-1).mean().item()
             ppl_hnc = math.exp(min(entropy_hnc, 20.0))
             err_hnc = (torch.norm(logits_hnc - logits_orig) / torch.norm(logits_orig)).item()
-            top1_hnc = (torch.argmax(logits_hnc, dim=-1) == torch.argmax(logits_orig, dim=-1)).float().mean().item() * 100.0
+            top1_hnc = (
+                torch.argmax(logits_hnc, dim=-1) == torch.argmax(logits_orig, dim=-1)
+            ).float().mean().item() * 100.0
             cos_sim_hnc = F.cosine_similarity(logits_hnc.flatten(), logits_orig.flatten(), dim=0).item()
 
         res_entry = {
@@ -606,6 +649,7 @@ def run_benchmark_table_5(device: str) -> List[Dict[str, Any]]:
 # Main Execution and Markdown Report Generation
 # ============================================================================
 def main() -> None:
+    """Execute main routine."""
     device = "cuda" if torch.cuda.is_available() else "cpu"
     gpu_name = torch.cuda.get_device_name(0) if device == "cuda" else "CPU"
     print(f"Starting HNC-SVD Comprehensive Benchmark on {gpu_name} (device={device})")
@@ -653,7 +697,9 @@ def main() -> None:
 
         # Table 1
         f.write("## Table 1: HNC-SVD vs Naive DirectSVD Across Truncation Ranks\n\n")
-        f.write("| Method | Rank | Comp (%) | Initial Tail Ratio | Post-Walk Tail Ratio | Rel Error | Top-1 Match (%) | Cosine Sim | L_func Drift | Fwd Latency (ms) |\n")
+        f.write(
+            "| Method | Rank | Comp (%) | Initial Tail Ratio | Post-Walk Tail Ratio | Rel Error | Top-1 Match (%) | Cosine Sim | L_func Drift | Fwd Latency (ms) |\n"
+        )
         f.write("|:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|\n")
         for row in table_1_data:
             f.write(
@@ -666,7 +712,9 @@ def main() -> None:
 
         # Table 2
         f.write("## Table 2: Full-Rank (D=256) -> Low-Rank SVDLinearAttention Surgical Alignment\n\n")
-        f.write("| Alignment Method | Rank | Comp (%) | Cosine Sim to Full-Rank | MSE Output Drift | Relative Error | Training Tok/s |\n")
+        f.write(
+            "| Alignment Method | Rank | Comp (%) | Cosine Sim to Full-Rank | MSE Output Drift | Relative Error | Training Tok/s |\n"
+        )
         f.write("|:---|:---:|:---:|:---:|:---:|:---:|:---:|\n")
         for row in table_2_data:
             f.write(
@@ -678,7 +726,9 @@ def main() -> None:
 
         # Table 3
         f.write("## Table 3: Damping Factor (mu_rel) and Restoring Steps (m) Ablations\n\n")
-        f.write("| Damping (mu_rel) | Restore Steps (m) | Initial Tail Ratio | Final Tail Ratio | Final L_func | Jacobian Drift ||W-W0||/||W0|| | Rejections |\n")
+        f.write(
+            "| Damping (mu_rel) | Restore Steps (m) | Initial Tail Ratio | Final Tail Ratio | Final L_func | Jacobian Drift ||W-W0||/||W0|| | Rejections |\n"
+        )
         f.write("|:---:|:---:|:---:|:---:|:---:|:---:|:---:|\n")
         for row in table_3_data:
             f.write(
@@ -700,7 +750,9 @@ def main() -> None:
 
         # Table 5
         f.write("## Table 5: Synthetic Tiny Transformer LM (Vocab=1000) End-to-End Compression & Perplexity\n\n")
-        f.write("| Rank | Param Reduction (%) | Factor | Naive RelErr | HNC RelErr | Naive Top-1 (%) | HNC Top-1 (%) | Orig PPL | Naive PPL | HNC PPL |\n")
+        f.write(
+            "| Rank | Param Reduction (%) | Factor | Naive RelErr | HNC RelErr | Naive Top-1 (%) | HNC Top-1 (%) | Orig PPL | Naive PPL | HNC PPL |\n"
+        )
         f.write("|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|\n")
         for row in table_5_data:
             f.write(

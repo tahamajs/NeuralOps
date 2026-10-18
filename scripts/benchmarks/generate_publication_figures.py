@@ -4,19 +4,13 @@ Generate publication-quality SVG figures and render them to 300+ DPI PNG and vec
 Synchronize across results/plots/, paper/iclr2027-submission/figures/, and paper/neurips2026-submission/figures/.
 """
 
-import os
-import sys
 import json
 import math
 import subprocess
 from pathlib import Path
 
 # Target directories
-DIRS = [
-    Path("results/plots"),
-    Path("paper/iclr2027-submission/figures"),
-    Path("paper/neurips2026-submission/figures")
-]
+DIRS = [Path("results/plots"), Path("paper/iclr2027-submission/figures"), Path("paper/neurips2026-submission/figures")]
 
 for d in DIRS:
     d.mkdir(parents=True, exist_ok=True)
@@ -37,33 +31,49 @@ ACCENT_CYAN = "#22d3ee"
 
 FONT_FAMILY = "system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
 
+
 def svg_header(width, height, title, subtitle=None):
+    """Execute svg header routine."""
     s = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">',
         f'  <rect width="100%" height="100%" fill="{BG_COLOR}"/>',
-        f'  <text x="{width/2}" y="36" fill="{TEXT_COLOR}" font-size="18" font-family="{FONT_FAMILY}" font-weight="bold" text-anchor="middle">{title}</text>'
+        f'  <text x="{width / 2}" y="36" fill="{TEXT_COLOR}" font-size="18" font-family="{FONT_FAMILY}" font-weight="bold" text-anchor="middle">{title}</text>',
     ]
     if subtitle:
-        s.append(f'  <text x="{width/2}" y="56" fill="{ACCENT_BLUE}" font-size="12" font-family="{FONT_FAMILY}" text-anchor="middle">{subtitle}</text>')
+        s.append(
+            f'  <text x="{width / 2}" y="56" fill="{ACCENT_BLUE}" font-size="12" font-family="{FONT_FAMILY}" text-anchor="middle">{subtitle}</text>'
+        )
     return "\n".join(s)
 
+
 def svg_footer():
+    """Execute svg footer routine."""
     return "</svg>\n"
+
 
 # 1. Pareto Frontier: Accuracy vs Compression Ratio
 def gen_pareto_acc_vs_compression():
+    """Execute gen pareto acc vs compression routine."""
     w, h = 900, 600
-    svg = [svg_header(w, h, "Pareto Frontier: Downstream Accuracy vs. Compression Ratio", "Evaluated on DistilBERT / RoBERTa Benchmarks (RTX 4070 SM 8.9)")]
-    
+    svg = [
+        svg_header(
+            w,
+            h,
+            "Pareto Frontier: Downstream Accuracy vs. Compression Ratio",
+            "Evaluated on DistilBERT / RoBERTa Benchmarks (RTX 4070 SM 8.9)",
+        )
+    ]
+
     # Plot area
     x0, y0, pw, ph = 100, 80, 740, 460
     svg.append(f'  <rect x="{x0}" y="{y0}" width="{pw}" height="{ph}" fill="{PANEL_BG}" rx="6" stroke="{GRID_COLOR}"/>')
-    
+
     # Axes limits: X in [1.0, 3.0], Y in [30, 90]
     xmin, xmax = 1.0, 3.0
     ymin, ymax = 30.0, 90.0
-    
+
     def to_screen(x, y):
+        """Execute to screen routine."""
         sx = x0 + ((x - xmin) / (xmax - xmin)) * pw
         sy = y0 + ph - ((y - ymin) / (ymax - ymin)) * ph
         return sx, sy
@@ -71,17 +81,29 @@ def gen_pareto_acc_vs_compression():
     # Grid & Ticks X
     for x in [1.0, 1.4, 1.8, 2.2, 2.6, 3.0]:
         sx, _ = to_screen(x, ymin)
-        svg.append(f'  <line x1="{sx}" y1="{y0}" x2="{sx}" y2="{y0+ph}" stroke="{GRID_COLOR}" stroke-dasharray="3,3"/>')
-        svg.append(f'  <text x="{sx}" y="{y0+ph+20}" fill="{TEXT_MUTED}" font-size="11" font-family="{FONT_FAMILY}" text-anchor="middle">{x:.1f}x</text>')
-        
+        svg.append(
+            f'  <line x1="{sx}" y1="{y0}" x2="{sx}" y2="{y0 + ph}" stroke="{GRID_COLOR}" stroke-dasharray="3,3"/>'
+        )
+        svg.append(
+            f'  <text x="{sx}" y="{y0 + ph + 20}" fill="{TEXT_MUTED}" font-size="11" font-family="{FONT_FAMILY}" text-anchor="middle">{x:.1f}x</text>'
+        )
+
     # Grid & Ticks Y
     for y in range(30, 95, 10):
         _, sy = to_screen(xmin, y)
-        svg.append(f'  <line x1="{x0}" y1="{sy}" x2="{x0+pw}" y2="{sy}" stroke="{GRID_COLOR}" stroke-dasharray="3,3"/>')
-        svg.append(f'  <text x="{x0-12}" y="{sy+4}" fill="{TEXT_MUTED}" font-size="11" font-family="{FONT_FAMILY}" text-anchor="end">{y}%</text>')
+        svg.append(
+            f'  <line x1="{x0}" y1="{sy}" x2="{x0 + pw}" y2="{sy}" stroke="{GRID_COLOR}" stroke-dasharray="3,3"/>'
+        )
+        svg.append(
+            f'  <text x="{x0 - 12}" y="{sy + 4}" fill="{TEXT_MUTED}" font-size="11" font-family="{FONT_FAMILY}" text-anchor="end">{y}%</text>'
+        )
 
-    svg.append(f'  <text x="{x0+pw/2}" y="{y0+ph+45}" fill="{TEXT_MUTED}" font-size="13" font-family="{FONT_FAMILY}" text-anchor="middle">Compression Ratio (x) [Higher is More Compressed]</text>')
-    svg.append(f'  <text x="35" y="{y0+ph/2}" fill="{TEXT_MUTED}" font-size="13" font-family="{FONT_FAMILY}" text-anchor="middle" transform="rotate(-90 35 {y0+ph/2})">Accuracy Retention (%) [Higher is Better]</text>')
+    svg.append(
+        f'  <text x="{x0 + pw / 2}" y="{y0 + ph + 45}" fill="{TEXT_MUTED}" font-size="13" font-family="{FONT_FAMILY}" text-anchor="middle">Compression Ratio (x) [Higher is More Compressed]</text>'
+    )
+    svg.append(
+        f'  <text x="35" y="{y0 + ph / 2}" fill="{TEXT_MUTED}" font-size="13" font-family="{FONT_FAMILY}" text-anchor="middle" transform="rotate(-90 35 {y0 + ph / 2})">Accuracy Retention (%) [Higher is Better]</text>'
+    )
 
     # Methods Data (Table 8 and roberta results)
     methods = [
@@ -100,7 +122,14 @@ def gen_pareto_acc_vs_compression():
     ]
 
     # Pareto envelope curve
-    p_pts = sorted([m for m in methods if m["pareto"] or m["name"] in ["Dense Baseline", "adaptive", "reap_pruner", "kmeans (VQ)"]], key=lambda m: m["x"])
+    p_pts = sorted(
+        [
+            m
+            for m in methods
+            if m["pareto"] or m["name"] in ["Dense Baseline", "adaptive", "reap_pruner", "kmeans (VQ)"]
+        ],
+        key=lambda m: m["x"],
+    )
     path_d = []
     for i, p in enumerate(p_pts):
         sx, sy = to_screen(p["x"], p["y"])
@@ -108,35 +137,62 @@ def gen_pareto_acc_vs_compression():
             path_d.append(f"M {sx:.1f} {sy:.1f}")
         else:
             path_d.append(f"L {sx:.1f} {sy:.1f}")
-    svg.append(f'  <path d="{" ".join(path_d)}" fill="none" stroke="{ACCENT_CYAN}" stroke-width="2.5" stroke-dasharray="5,4"/>')
+    svg.append(
+        f'  <path d="{" ".join(path_d)}" fill="none" stroke="{ACCENT_CYAN}" stroke-width="2.5" stroke-dasharray="5,4"/>'
+    )
 
     # Plot points
-    cat_colors = {"Baseline": "#e2e8f0", "Quantization": ACCENT_GREEN, "Low-Rank": ACCENT_BLUE, "Pruning": ACCENT_AMBER, "Structured": ACCENT_PURPLE}
+    cat_colors = {
+        "Baseline": "#e2e8f0",
+        "Quantization": ACCENT_GREEN,
+        "Low-Rank": ACCENT_BLUE,
+        "Pruning": ACCENT_AMBER,
+        "Structured": ACCENT_PURPLE,
+    }
     for m in methods:
         sx, sy = to_screen(m["x"], m["y"])
         c = cat_colors[m["cat"]]
         r = 6 if not m["pareto"] else 8
-        svg.append(f'  <circle cx="{sx:.1f}" cy="{sy:.1f}" r="{r}" fill="{c}" stroke="{TEXT_COLOR if m["pareto"] else "none"}" stroke-width="1.5"/>')
+        svg.append(
+            f'  <circle cx="{sx:.1f}" cy="{sy:.1f}" r="{r}" fill="{c}" stroke="{TEXT_COLOR if m["pareto"] else "none"}" stroke-width="1.5"/>'
+        )
         offset_y = -12 if m["pareto"] else 14
-        svg.append(f'  <text x="{sx:.1f}" y="{sy+offset_y:.1f}" fill="{c}" font-size="10" font-family="{FONT_FAMILY}" font-weight="{"bold" if m["pareto"] else "normal"}" text-anchor="middle">{m["name"]}</text>')
+        svg.append(
+            f'  <text x="{sx:.1f}" y="{sy + offset_y:.1f}" fill="{c}" font-size="10" font-family="{FONT_FAMILY}" font-weight="{"bold" if m["pareto"] else "normal"}" text-anchor="middle">{m["name"]}</text>'
+        )
 
     # Legend
     lx, ly = x0 + 20, y0 + 20
-    svg.append(f'  <rect x="{lx}" y="{ly}" width="240" height="120" fill="{BG_COLOR}" rx="4" stroke="{GRID_COLOR}" opacity="0.9"/>')
-    svg.append(f'  <text x="{lx+10}" y="{ly+18}" fill="{TEXT_COLOR}" font-size="11" font-weight="bold" font-family="{FONT_FAMILY}">Method Category</text>')
+    svg.append(
+        f'  <rect x="{lx}" y="{ly}" width="240" height="120" fill="{BG_COLOR}" rx="4" stroke="{GRID_COLOR}" opacity="0.9"/>'
+    )
+    svg.append(
+        f'  <text x="{lx + 10}" y="{ly + 18}" fill="{TEXT_COLOR}" font-size="11" font-weight="bold" font-family="{FONT_FAMILY}">Method Category</text>'
+    )
     idx = 0
     for cat, col in cat_colors.items():
-        svg.append(f'  <circle cx="{lx+18}" cy="{ly+36 + idx*18}" r="5" fill="{col}"/>')
-        svg.append(f'  <text x="{lx+32}" y="{ly+40 + idx*18}" fill="{TEXT_MUTED}" font-size="10" font-family="{FONT_FAMILY}">{cat}</text>')
+        svg.append(f'  <circle cx="{lx + 18}" cy="{ly + 36 + idx * 18}" r="5" fill="{col}"/>')
+        svg.append(
+            f'  <text x="{lx + 32}" y="{ly + 40 + idx * 18}" fill="{TEXT_MUTED}" font-size="10" font-family="{FONT_FAMILY}">{cat}</text>'
+        )
         idx += 1
 
     svg.append(svg_footer())
     return "\n".join(svg)
 
+
 # 2. Pareto Frontier: Accuracy vs Peak VRAM Footprint
 def gen_pareto_acc_vs_vram():
+    """Execute gen pareto acc vs vram routine."""
     w, h = 900, 600
-    svg = [svg_header(w, h, "Pareto Frontier: Accuracy vs. Peak VRAM Footprint", "Memory Footprint vs Task Retention on NVIDIA RTX 4070")]
+    svg = [
+        svg_header(
+            w,
+            h,
+            "Pareto Frontier: Accuracy vs. Peak VRAM Footprint",
+            "Memory Footprint vs Task Retention on NVIDIA RTX 4070",
+        )
+    ]
     x0, y0, pw, ph = 100, 80, 740, 460
     svg.append(f'  <rect x="{x0}" y="{y0}" width="{pw}" height="{ph}" fill="{PANEL_BG}" rx="6" stroke="{GRID_COLOR}"/>')
 
@@ -144,22 +200,35 @@ def gen_pareto_acc_vs_vram():
     ymin, ymax = 30.0, 90.0
 
     def to_screen(x, y):
+        """Execute to screen routine."""
         sx = x0 + ((x - xmin) / (xmax - xmin)) * pw
         sy = y0 + ph - ((y - ymin) / (ymax - ymin)) * ph
         return sx, sy
 
     for x in range(100, 210, 20):
         sx, _ = to_screen(x, ymin)
-        svg.append(f'  <line x1="{sx}" y1="{y0}" x2="{sx}" y2="{y0+ph}" stroke="{GRID_COLOR}" stroke-dasharray="3,3"/>')
-        svg.append(f'  <text x="{sx}" y="{y0+ph+20}" fill="{TEXT_MUTED}" font-size="11" font-family="{FONT_FAMILY}" text-anchor="middle">{x} MB</text>')
+        svg.append(
+            f'  <line x1="{sx}" y1="{y0}" x2="{sx}" y2="{y0 + ph}" stroke="{GRID_COLOR}" stroke-dasharray="3,3"/>'
+        )
+        svg.append(
+            f'  <text x="{sx}" y="{y0 + ph + 20}" fill="{TEXT_MUTED}" font-size="11" font-family="{FONT_FAMILY}" text-anchor="middle">{x} MB</text>'
+        )
 
     for y in range(30, 95, 10):
         _, sy = to_screen(xmin, y)
-        svg.append(f'  <line x1="{x0}" y1="{sy}" x2="{x0+pw}" y2="{sy}" stroke="{GRID_COLOR}" stroke-dasharray="3,3"/>')
-        svg.append(f'  <text x="{x0-12}" y="{sy+4}" fill="{TEXT_MUTED}" font-size="11" font-family="{FONT_FAMILY}" text-anchor="end">{y}%</text>')
+        svg.append(
+            f'  <line x1="{x0}" y1="{sy}" x2="{x0 + pw}" y2="{sy}" stroke="{GRID_COLOR}" stroke-dasharray="3,3"/>'
+        )
+        svg.append(
+            f'  <text x="{x0 - 12}" y="{sy + 4}" fill="{TEXT_MUTED}" font-size="11" font-family="{FONT_FAMILY}" text-anchor="end">{y}%</text>'
+        )
 
-    svg.append(f'  <text x="{x0+pw/2}" y="{y0+ph+45}" fill="{TEXT_MUTED}" font-size="13" font-family="{FONT_FAMILY}" text-anchor="middle">Peak VRAM Footprint (MB) [Lower is Better]</text>')
-    svg.append(f'  <text x="35" y="{y0+ph/2}" fill="{TEXT_MUTED}" font-size="13" font-family="{FONT_FAMILY}" text-anchor="middle" transform="rotate(-90 35 {y0+ph/2})">Accuracy Retention (%) [Higher is Better]</text>')
+    svg.append(
+        f'  <text x="{x0 + pw / 2}" y="{y0 + ph + 45}" fill="{TEXT_MUTED}" font-size="13" font-family="{FONT_FAMILY}" text-anchor="middle">Peak VRAM Footprint (MB) [Lower is Better]</text>'
+    )
+    svg.append(
+        f'  <text x="35" y="{y0 + ph / 2}" fill="{TEXT_MUTED}" font-size="13" font-family="{FONT_FAMILY}" text-anchor="middle" transform="rotate(-90 35 {y0 + ph / 2})">Accuracy Retention (%) [Higher is Better]</text>'
+    )
 
     methods = [
         {"name": "Dense Baseline", "vram": 176.4, "acc": 81.80, "cat": "Baseline", "pareto": False},
@@ -175,22 +244,41 @@ def gen_pareto_acc_vs_vram():
         {"name": "bonsai_pruner", "vram": 135.0, "acc": 64.20, "cat": "Pruning", "pareto": True},
     ]
 
-    cat_colors = {"Baseline": "#e2e8f0", "Quantization": ACCENT_GREEN, "Low-Rank": ACCENT_BLUE, "Pruning": ACCENT_AMBER, "Structured": ACCENT_PURPLE}
+    cat_colors = {
+        "Baseline": "#e2e8f0",
+        "Quantization": ACCENT_GREEN,
+        "Low-Rank": ACCENT_BLUE,
+        "Pruning": ACCENT_AMBER,
+        "Structured": ACCENT_PURPLE,
+    }
     for m in methods:
         sx, sy = to_screen(m["vram"], m["acc"])
         c = cat_colors[m["cat"]]
         r = 8 if m["pareto"] else 6
-        svg.append(f'  <circle cx="{sx:.1f}" cy="{sy:.1f}" r="{r}" fill="{c}" stroke="{TEXT_COLOR if m["pareto"] else "none"}" stroke-width="1.5"/>')
+        svg.append(
+            f'  <circle cx="{sx:.1f}" cy="{sy:.1f}" r="{r}" fill="{c}" stroke="{TEXT_COLOR if m["pareto"] else "none"}" stroke-width="1.5"/>'
+        )
         offset_y = -12 if m["pareto"] else 14
-        svg.append(f'  <text x="{sx:.1f}" y="{sy+offset_y:.1f}" fill="{c}" font-size="10" font-family="{FONT_FAMILY}" font-weight="{"bold" if m["pareto"] else "normal"}" text-anchor="middle">{m["name"]}</text>')
+        svg.append(
+            f'  <text x="{sx:.1f}" y="{sy + offset_y:.1f}" fill="{c}" font-size="10" font-family="{FONT_FAMILY}" font-weight="{"bold" if m["pareto"] else "normal"}" text-anchor="middle">{m["name"]}</text>'
+        )
 
     svg.append(svg_footer())
     return "\n".join(svg)
 
+
 # 3. Pareto Frontier: Accuracy vs Throughput
 def gen_pareto_acc_vs_throughput():
+    """Execute gen pareto acc vs throughput routine."""
     w, h = 900, 600
-    svg = [svg_header(w, h, "Pareto Frontier: Accuracy vs. Throughput (tokens/sec)", "Physical Generation Speed vs Downstream Retention")]
+    svg = [
+        svg_header(
+            w,
+            h,
+            "Pareto Frontier: Accuracy vs. Throughput (tokens/sec)",
+            "Physical Generation Speed vs Downstream Retention",
+        )
+    ]
     x0, y0, pw, ph = 100, 80, 740, 460
     svg.append(f'  <rect x="{x0}" y="{y0}" width="{pw}" height="{ph}" fill="{PANEL_BG}" rx="6" stroke="{GRID_COLOR}"/>')
 
@@ -198,22 +286,35 @@ def gen_pareto_acc_vs_throughput():
     ymin, ymax = 30.0, 90.0
 
     def to_screen(x, y):
+        """Execute to screen routine."""
         sx = x0 + ((x - xmin) / (xmax - xmin)) * pw
         sy = y0 + ph - ((y - ymin) / (ymax - ymin)) * ph
         return sx, sy
 
     for x in range(55000, 72000, 3000):
         sx, _ = to_screen(x, ymin)
-        svg.append(f'  <line x1="{sx}" y1="{y0}" x2="{sx}" y2="{y0+ph}" stroke="{GRID_COLOR}" stroke-dasharray="3,3"/>')
-        svg.append(f'  <text x="{sx}" y="{y0+ph+20}" fill="{TEXT_MUTED}" font-size="11" font-family="{FONT_FAMILY}" text-anchor="middle">{x//1000}k</text>')
+        svg.append(
+            f'  <line x1="{sx}" y1="{y0}" x2="{sx}" y2="{y0 + ph}" stroke="{GRID_COLOR}" stroke-dasharray="3,3"/>'
+        )
+        svg.append(
+            f'  <text x="{sx}" y="{y0 + ph + 20}" fill="{TEXT_MUTED}" font-size="11" font-family="{FONT_FAMILY}" text-anchor="middle">{x // 1000}k</text>'
+        )
 
     for y in range(30, 95, 10):
         _, sy = to_screen(xmin, y)
-        svg.append(f'  <line x1="{x0}" y1="{sy}" x2="{x0+pw}" y2="{sy}" stroke="{GRID_COLOR}" stroke-dasharray="3,3"/>')
-        svg.append(f'  <text x="{x0-12}" y="{sy+4}" fill="{TEXT_MUTED}" font-size="11" font-family="{FONT_FAMILY}" text-anchor="end">{y}%</text>')
+        svg.append(
+            f'  <line x1="{x0}" y1="{sy}" x2="{x0 + pw}" y2="{sy}" stroke="{GRID_COLOR}" stroke-dasharray="3,3"/>'
+        )
+        svg.append(
+            f'  <text x="{x0 - 12}" y="{sy + 4}" fill="{TEXT_MUTED}" font-size="11" font-family="{FONT_FAMILY}" text-anchor="end">{y}%</text>'
+        )
 
-    svg.append(f'  <text x="{x0+pw/2}" y="{y0+ph+45}" fill="{TEXT_MUTED}" font-size="13" font-family="{FONT_FAMILY}" text-anchor="middle">Throughput (tokens / second) [Higher is Faster]</text>')
-    svg.append(f'  <text x="35" y="{y0+ph/2}" fill="{TEXT_MUTED}" font-size="13" font-family="{FONT_FAMILY}" text-anchor="middle" transform="rotate(-90 35 {y0+ph/2})">Accuracy Retention (%) [Higher is Better]</text>')
+    svg.append(
+        f'  <text x="{x0 + pw / 2}" y="{y0 + ph + 45}" fill="{TEXT_MUTED}" font-size="13" font-family="{FONT_FAMILY}" text-anchor="middle">Throughput (tokens / second) [Higher is Faster]</text>'
+    )
+    svg.append(
+        f'  <text x="35" y="{y0 + ph / 2}" fill="{TEXT_MUTED}" font-size="13" font-family="{FONT_FAMILY}" text-anchor="middle" transform="rotate(-90 35 {y0 + ph / 2})">Accuracy Retention (%) [Higher is Better]</text>'
+    )
 
     methods = [
         {"name": "Dense Baseline", "tok": 56610, "acc": 81.80, "cat": "Baseline", "pareto": True},
@@ -228,22 +329,41 @@ def gen_pareto_acc_vs_throughput():
         {"name": "hybrid_svd", "tok": 61400, "acc": 37.50, "cat": "Low-Rank", "pareto": False},
     ]
 
-    cat_colors = {"Baseline": "#e2e8f0", "Quantization": ACCENT_GREEN, "Low-Rank": ACCENT_BLUE, "Pruning": ACCENT_AMBER, "Structured": ACCENT_PURPLE}
+    cat_colors = {
+        "Baseline": "#e2e8f0",
+        "Quantization": ACCENT_GREEN,
+        "Low-Rank": ACCENT_BLUE,
+        "Pruning": ACCENT_AMBER,
+        "Structured": ACCENT_PURPLE,
+    }
     for m in methods:
         sx, sy = to_screen(m["tok"], m["acc"])
         c = cat_colors[m["cat"]]
         r = 8 if m["pareto"] else 6
-        svg.append(f'  <circle cx="{sx:.1f}" cy="{sy:.1f}" r="{r}" fill="{c}" stroke="{TEXT_COLOR if m["pareto"] else "none"}" stroke-width="1.5"/>')
+        svg.append(
+            f'  <circle cx="{sx:.1f}" cy="{sy:.1f}" r="{r}" fill="{c}" stroke="{TEXT_COLOR if m["pareto"] else "none"}" stroke-width="1.5"/>'
+        )
         offset_y = -12 if m["pareto"] else 14
-        svg.append(f'  <text x="{sx:.1f}" y="{sy+offset_y:.1f}" fill="{c}" font-size="10" font-family="{FONT_FAMILY}" font-weight="{"bold" if m["pareto"] else "normal"}" text-anchor="middle">{m["name"]}</text>')
+        svg.append(
+            f'  <text x="{sx:.1f}" y="{sy + offset_y:.1f}" fill="{c}" font-size="10" font-family="{FONT_FAMILY}" font-weight="{"bold" if m["pareto"] else "normal"}" text-anchor="middle">{m["name"]}</text>'
+        )
 
     svg.append(svg_footer())
     return "\n".join(svg)
 
+
 # 4. Perplexity vs Compression Ratio (WikiText-2)
 def gen_pareto_ppl_vs_compression():
+    """Execute gen pareto ppl vs compression routine."""
     w, h = 900, 600
-    svg = [svg_header(w, h, "Perplexity vs. Compression Ratio (WikiText-2 GPT-2)", "Evaluated with rank=32, stride=512 on NVIDIA RTX 4070")]
+    svg = [
+        svg_header(
+            w,
+            h,
+            "Perplexity vs. Compression Ratio (WikiText-2 GPT-2)",
+            "Evaluated with rank=32, stride=512 on NVIDIA RTX 4070",
+        )
+    ]
     x0, y0, pw, ph = 100, 80, 740, 460
     svg.append(f'  <rect x="{x0}" y="{y0}" width="{pw}" height="{ph}" fill="{PANEL_BG}" rx="6" stroke="{GRID_COLOR}"/>')
 
@@ -252,6 +372,7 @@ def gen_pareto_ppl_vs_compression():
     log_ymin, log_ymax = math.log10(10), math.log10(5000)
 
     def to_screen(x, ppl):
+        """Execute to screen routine."""
         sx = x0 + ((x - xmin) / (xmax - xmin)) * pw
         l_ppl = math.log10(max(10, ppl))
         sy = y0 + ph - ((l_ppl - log_ymin) / (log_ymax - log_ymin)) * ph
@@ -259,21 +380,37 @@ def gen_pareto_ppl_vs_compression():
 
     for x in [1.0, 1.5, 2.0, 2.5, 3.0, 3.5]:
         sx, _ = to_screen(x, 10)
-        svg.append(f'  <line x1="{sx}" y1="{y0}" x2="{sx}" y2="{y0+ph}" stroke="{GRID_COLOR}" stroke-dasharray="3,3"/>')
-        svg.append(f'  <text x="{sx}" y="{y0+ph+20}" fill="{TEXT_MUTED}" font-size="11" font-family="{FONT_FAMILY}" text-anchor="middle">{x:.1f}x</text>')
+        svg.append(
+            f'  <line x1="{sx}" y1="{y0}" x2="{sx}" y2="{y0 + ph}" stroke="{GRID_COLOR}" stroke-dasharray="3,3"/>'
+        )
+        svg.append(
+            f'  <text x="{sx}" y="{y0 + ph + 20}" fill="{TEXT_MUTED}" font-size="11" font-family="{FONT_FAMILY}" text-anchor="middle">{x:.1f}x</text>'
+        )
 
     for y_val in [10, 20, 50, 100, 500, 1000, 5000]:
         _, sy = to_screen(xmin, y_val)
-        svg.append(f'  <line x1="{x0}" y1="{sy}" x2="{x0+pw}" y2="{sy}" stroke="{GRID_COLOR}" stroke-dasharray="3,3"/>')
-        svg.append(f'  <text x="{x0-12}" y="{sy+4}" fill="{TEXT_MUTED}" font-size="11" font-family="{FONT_FAMILY}" text-anchor="end">{y_val}</text>')
+        svg.append(
+            f'  <line x1="{x0}" y1="{sy}" x2="{x0 + pw}" y2="{sy}" stroke="{GRID_COLOR}" stroke-dasharray="3,3"/>'
+        )
+        svg.append(
+            f'  <text x="{x0 - 12}" y="{sy + 4}" fill="{TEXT_MUTED}" font-size="11" font-family="{FONT_FAMILY}" text-anchor="end">{y_val}</text>'
+        )
 
-    svg.append(f'  <text x="{x0+pw/2}" y="{y0+ph+45}" fill="{TEXT_MUTED}" font-size="13" font-family="{FONT_FAMILY}" text-anchor="middle">Compression Ratio (x) [Higher is More Compressed]</text>')
-    svg.append(f'  <text x="35" y="{y0+ph/2}" fill="{TEXT_MUTED}" font-size="13" font-family="{FONT_FAMILY}" text-anchor="middle" transform="rotate(-90 35 {y0+ph/2})">WikiText-2 Perplexity (log scale) [Lower is Better]</text>')
+    svg.append(
+        f'  <text x="{x0 + pw / 2}" y="{y0 + ph + 45}" fill="{TEXT_MUTED}" font-size="13" font-family="{FONT_FAMILY}" text-anchor="middle">Compression Ratio (x) [Higher is More Compressed]</text>'
+    )
+    svg.append(
+        f'  <text x="35" y="{y0 + ph / 2}" fill="{TEXT_MUTED}" font-size="13" font-family="{FONT_FAMILY}" text-anchor="middle" transform="rotate(-90 35 {y0 + ph / 2})">WikiText-2 Perplexity (log scale) [Lower is Better]</text>'
+    )
 
     # Baseline line at 22.79
     _, b_sy = to_screen(xmin, 22.79)
-    svg.append(f'  <line x1="{x0}" y1="{b_sy}" x2="{x0+pw}" y2="{b_sy}" stroke="{ACCENT_RED}" stroke-width="1.5" stroke-dasharray="4,4"/>')
-    svg.append(f'  <text x="{x0+pw-10}" y="{b_sy-6}" fill="{ACCENT_RED}" font-size="10" font-family="{FONT_FAMILY}" text-anchor="end">GPT-2 Dense Baseline (22.79)</text>')
+    svg.append(
+        f'  <line x1="{x0}" y1="{b_sy}" x2="{x0 + pw}" y2="{b_sy}" stroke="{ACCENT_RED}" stroke-width="1.5" stroke-dasharray="4,4"/>'
+    )
+    svg.append(
+        f'  <text x="{x0 + pw - 10}" y="{b_sy - 6}" fill="{ACCENT_RED}" font-size="10" font-family="{FONT_FAMILY}" text-anchor="end">GPT-2 Dense Baseline (22.79)</text>'
+    )
 
     # WikiText-2 points
     wiki_methods = [
@@ -288,26 +425,45 @@ def gen_pareto_ppl_vs_compression():
         {"name": "tt_compressor", "x": 2.85, "ppl": 5334.60, "cat": "Structured", "pareto": False},
     ]
 
-    cat_colors = {"Baseline": "#e2e8f0", "Quantization": ACCENT_GREEN, "Low-Rank": ACCENT_BLUE, "Pruning": ACCENT_AMBER, "Structured": ACCENT_PURPLE}
+    cat_colors = {
+        "Baseline": "#e2e8f0",
+        "Quantization": ACCENT_GREEN,
+        "Low-Rank": ACCENT_BLUE,
+        "Pruning": ACCENT_AMBER,
+        "Structured": ACCENT_PURPLE,
+    }
     for m in wiki_methods:
         sx, sy = to_screen(m["x"], m["ppl"])
         c = cat_colors[m["cat"]]
         r = 7 if m["pareto"] else 5
-        svg.append(f'  <circle cx="{sx:.1f}" cy="{sy:.1f}" r="{r}" fill="{c}" stroke="{TEXT_COLOR if m["pareto"] else "none"}" stroke-width="1.5"/>')
+        svg.append(
+            f'  <circle cx="{sx:.1f}" cy="{sy:.1f}" r="{r}" fill="{c}" stroke="{TEXT_COLOR if m["pareto"] else "none"}" stroke-width="1.5"/>'
+        )
         offset_y = -10 if m["ppl"] < 50 else 12
-        svg.append(f'  <text x="{sx:.1f}" y="{sy+offset_y:.1f}" fill="{c}" font-size="10" font-family="{FONT_FAMILY}" font-weight="{"bold" if m["pareto"] else "normal"}" text-anchor="middle">{m["name"]}</text>')
+        svg.append(
+            f'  <text x="{sx:.1f}" y="{sy + offset_y:.1f}" fill="{c}" font-size="10" font-family="{FONT_FAMILY}" font-weight="{"bold" if m["pareto"] else "normal"}" text-anchor="middle">{m["name"]}</text>'
+        )
 
     svg.append(svg_footer())
     return "\n".join(svg)
 
+
 # 5. Triton GPU Acceleration Leaderboard (top-26 kernels)
 def gen_triton_leaderboard():
+    """Execute gen triton leaderboard routine."""
     with open("results/triton_full_leaderboard_v136.json") as f:
         data = json.load(f)
     kernels = data.get("tier1_core_triton_kernels", [])
 
     w, h = 950, 780
-    svg = [svg_header(w, h, "Triton GPU Acceleration Leaderboard (All 26 Flagship Kernels)", "Measured on NVIDIA GeForce RTX 4070 (Ada Lovelace SM 8.9, 8GB VRAM)")]
+    svg = [
+        svg_header(
+            w,
+            h,
+            "Triton GPU Acceleration Leaderboard (All 26 Flagship Kernels)",
+            "Measured on NVIDIA GeForce RTX 4070 (Ada Lovelace SM 8.9, 8GB VRAM)",
+        )
+    ]
 
     x0, y0, pw, ph = 240, 80, 650, 640
     svg.append(f'  <rect x="{x0}" y="{y0}" width="{pw}" height="{ph}" fill="{PANEL_BG}" rx="6" stroke="{GRID_COLOR}"/>')
@@ -316,17 +472,24 @@ def gen_triton_leaderboard():
     min_log, max_log = math.log10(0.1), math.log10(150.0)
 
     def to_screen_x(speedup):
+        """Execute to screen x routine."""
         l_s = math.log10(max(0.1, speedup))
         return x0 + ((l_s - min_log) / (max_log - min_log)) * pw
 
     # Grid lines
     for tick in [0.2, 0.5, 1.0, 2.0, 5.0, 10.0, 20.0, 50.0, 100.0]:
         sx = to_screen_x(tick)
-        is_one = (tick == 1.0)
-        svg.append(f'  <line x1="{sx}" y1="{y0}" x2="{sx}" y2="{y0+ph}" stroke="{ACCENT_RED if is_one else GRID_COLOR}" stroke-width="{"1.5" if is_one else "1"}" stroke-dasharray="{"none" if is_one else "3,3"}"/>')
-        svg.append(f'  <text x="{sx}" y="{y0+ph+20}" fill="{ACCENT_RED if is_one else TEXT_MUTED}" font-size="10" font-family="{FONT_FAMILY}" text-anchor="middle">{tick}x</text>')
+        is_one = tick == 1.0
+        svg.append(
+            f'  <line x1="{sx}" y1="{y0}" x2="{sx}" y2="{y0 + ph}" stroke="{ACCENT_RED if is_one else GRID_COLOR}" stroke-width="{"1.5" if is_one else "1"}" stroke-dasharray="{"none" if is_one else "3,3"}"/>'
+        )
+        svg.append(
+            f'  <text x="{sx}" y="{y0 + ph + 20}" fill="{ACCENT_RED if is_one else TEXT_MUTED}" font-size="10" font-family="{FONT_FAMILY}" text-anchor="middle">{tick}x</text>'
+        )
 
-    svg.append(f'  <text x="{x0+pw/2}" y="{y0+ph+40}" fill="{TEXT_MUTED}" font-size="12" font-family="{FONT_FAMILY}" text-anchor="middle">Speedup Over PyTorch Reference (Log Scale) [1.0x = Parity]</text>')
+    svg.append(
+        f'  <text x="{x0 + pw / 2}" y="{y0 + ph + 40}" fill="{TEXT_MUTED}" font-size="12" font-family="{FONT_FAMILY}" text-anchor="middle">Speedup Over PyTorch Reference (Log Scale) [1.0x = Parity]</text>'
+    )
 
     row_h = ph / len(kernels)
     for i, k in enumerate(kernels):
@@ -340,7 +503,9 @@ def gen_triton_leaderboard():
             svg.append(f'  <rect x="{x0}" y="{ry}" width="{pw}" height="{row_h}" fill="#1b2438"/>')
 
         # Name label
-        svg.append(f'  <text x="{x0-10}" y="{mid_y+4}" fill="{TEXT_COLOR}" font-size="10.5" font-family="{FONT_FAMILY}" text-anchor="end">{i+1}. {name}</text>')
+        svg.append(
+            f'  <text x="{x0 - 10}" y="{mid_y + 4}" fill="{TEXT_COLOR}" font-size="10.5" font-family="{FONT_FAMILY}" text-anchor="end">{i + 1}. {name}</text>'
+        )
 
         # Bar
         x_base = to_screen_x(1.0)
@@ -348,14 +513,18 @@ def gen_triton_leaderboard():
         bx = min(x_base, x_val)
         bw = abs(x_val - x_base)
         color = ACCENT_GREEN if speedup >= 2.0 else (ACCENT_BLUE if speedup >= 1.0 else ACCENT_AMBER)
-        svg.append(f'  <rect x="{bx:.1f}" y="{mid_y-5}" width="{max(2, bw):.1f}" height="10" fill="{color}" rx="2"/>')
-        svg.append(f'  <text x="{max(x_val + 6, x_base + 6):.1f}" y="{mid_y+3.5}" fill="{color}" font-size="9" font-family="{FONT_FAMILY}">{speedup:.2f}x</text>')
+        svg.append(f'  <rect x="{bx:.1f}" y="{mid_y - 5}" width="{max(2, bw):.1f}" height="10" fill="{color}" rx="2"/>')
+        svg.append(
+            f'  <text x="{max(x_val + 6, x_base + 6):.1f}" y="{mid_y + 3.5}" fill="{color}" font-size="9" font-family="{FONT_FAMILY}">{speedup:.2f}x</text>'
+        )
 
     svg.append(svg_footer())
     return "\n".join(svg)
 
+
 # 6. 3-Level Latency Comparison (CUDA C++ vs. Triton JIT vs. PyTorch Reference)
 def gen_3level_latency_comparison():
+    """Execute gen 3level latency comparison routine."""
     operators = [
         {"name": "moe_routing", "py": 29.505, "tri": None, "cuda": 0.022, "speedup": 1336.96},
         {"name": "hgrn2_scan", "py": 6.209, "tri": 0.027, "cuda": 0.014, "speedup": 436.29},
@@ -372,7 +541,14 @@ def gen_3level_latency_comparison():
     ]
 
     w, h = 950, 620
-    svg = [svg_header(w, h, "3-Level Latency Hierarchy: PyTorch Ref vs. Triton JIT vs. Native CUDA C++", "Table 18 Benchmark Hierarchy (Ada Lovelace SM 8.9, CUDA 12.x)")]
+    svg = [
+        svg_header(
+            w,
+            h,
+            "3-Level Latency Hierarchy: PyTorch Ref vs. Triton JIT vs. Native CUDA C++",
+            "Table 18 Benchmark Hierarchy (Ada Lovelace SM 8.9, CUDA 12.x)",
+        )
+    ]
 
     x0, y0, pw, ph = 220, 80, 680, 480
     svg.append(f'  <rect x="{x0}" y="{y0}" width="{pw}" height="{ph}" fill="{PANEL_BG}" rx="6" stroke="{GRID_COLOR}"/>')
@@ -380,25 +556,34 @@ def gen_3level_latency_comparison():
     min_log, max_log = math.log10(0.01), math.log10(100.0)
 
     def to_screen_x(lat):
+        """Execute to screen x routine."""
         l_l = math.log10(max(0.01, lat))
         return x0 + ((l_l - min_log) / (max_log - min_log)) * pw
 
     for tick in [0.01, 0.1, 1.0, 10.0, 100.0]:
         sx = to_screen_x(tick)
-        svg.append(f'  <line x1="{sx}" y1="{y0}" x2="{sx}" y2="{y0+ph}" stroke="{GRID_COLOR}" stroke-dasharray="3,3"/>')
-        svg.append(f'  <text x="{sx}" y="{y0+ph+20}" fill="{TEXT_MUTED}" font-size="11" font-family="{FONT_FAMILY}" text-anchor="middle">{tick} ms</text>')
+        svg.append(
+            f'  <line x1="{sx}" y1="{y0}" x2="{sx}" y2="{y0 + ph}" stroke="{GRID_COLOR}" stroke-dasharray="3,3"/>'
+        )
+        svg.append(
+            f'  <text x="{sx}" y="{y0 + ph + 20}" fill="{TEXT_MUTED}" font-size="11" font-family="{FONT_FAMILY}" text-anchor="middle">{tick} ms</text>'
+        )
 
-    svg.append(f'  <text x="{x0+pw/2}" y="{y0+ph+45}" fill="{TEXT_MUTED}" font-size="13" font-family="{FONT_FAMILY}" text-anchor="middle">Execution Latency (ms, Log Scale) [Lower is Faster]</text>')
+    svg.append(
+        f'  <text x="{x0 + pw / 2}" y="{y0 + ph + 45}" fill="{TEXT_MUTED}" font-size="13" font-family="{FONT_FAMILY}" text-anchor="middle">Execution Latency (ms, Log Scale) [Lower is Faster]</text>'
+    )
 
     row_h = ph / len(operators)
     for i, op in enumerate(operators):
         ry = y0 + i * row_h
         mid_y = ry + row_h / 2.0
-        svg.append(f'  <text x="{x0-10}" y="{mid_y+4}" fill="{TEXT_COLOR}" font-size="10.5" font-family="{FONT_FAMILY}" text-anchor="end">{op["name"]}</text>')
+        svg.append(
+            f'  <text x="{x0 - 10}" y="{mid_y + 4}" fill="{TEXT_COLOR}" font-size="10.5" font-family="{FONT_FAMILY}" text-anchor="end">{op["name"]}</text>'
+        )
 
         # Level 3 PyTorch (Red)
         px = to_screen_x(op["py"])
-        svg.append(f'  <circle cx="{px:.1f}" cy="{mid_y-5}" r="4.5" fill="{ACCENT_RED}"/>')
+        svg.append(f'  <circle cx="{px:.1f}" cy="{mid_y - 5}" r="4.5" fill="{ACCENT_RED}"/>')
 
         # Level 2 Triton (Blue)
         if op["tri"] is not None:
@@ -407,29 +592,41 @@ def gen_3level_latency_comparison():
 
         # Level 1 CUDA (Green)
         cx = to_screen_x(op["cuda"])
-        svg.append(f'  <circle cx="{cx:.1f}" cy="{mid_y+5}" r="4.5" fill="{ACCENT_GREEN}"/>')
+        svg.append(f'  <circle cx="{cx:.1f}" cy="{mid_y + 5}" r="4.5" fill="{ACCENT_GREEN}"/>')
 
         # Connect them
         min_x = min(cx, tx if op["tri"] is not None else cx, px)
         max_x = max(cx, tx if op["tri"] is not None else cx, px)
-        svg.append(f'  <line x1="{min_x:.1f}" y1="{mid_y}" x2="{max_x:.1f}" y2="{mid_y}" stroke="{TEXT_MUTED}" stroke-width="0.8" stroke-dasharray="2,2"/>')
+        svg.append(
+            f'  <line x1="{min_x:.1f}" y1="{mid_y}" x2="{max_x:.1f}" y2="{mid_y}" stroke="{TEXT_MUTED}" stroke-width="0.8" stroke-dasharray="2,2"/>'
+        )
 
     # Legend
     lx, ly = x0 + 20, y0 + 15
-    svg.append(f'  <rect x="{lx}" y="{ly}" width="280" height="60" fill="{BG_COLOR}" rx="4" stroke="{GRID_COLOR}" opacity="0.9"/>')
-    svg.append(f'  <circle cx="{lx+15}" cy="{ly+16}" r="5" fill="{ACCENT_RED}"/>')
-    svg.append(f'  <text x="{lx+28}" y="{ly+20}" fill="{TEXT_MUTED}" font-size="10.5" font-family="{FONT_FAMILY}">Level 3: Pure PyTorch Reference</text>')
-    svg.append(f'  <circle cx="{lx+15}" cy="{ly+34}" r="5" fill="{ACCENT_BLUE}"/>')
-    svg.append(f'  <text x="{lx+28}" y="{ly+38}" fill="{TEXT_MUTED}" font-size="10.5" font-family="{FONT_FAMILY}">Level 2: OpenAI Triton JIT</text>')
-    svg.append(f'  <circle cx="{lx+15}" cy="{ly+50}" r="5" fill="{ACCENT_GREEN}"/>')
-    svg.append(f'  <text x="{lx+28}" y="{ly+54}" fill="{TEXT_MUTED}" font-size="10.5" font-family="{FONT_FAMILY}">Level 1: Native CUDA C++ (Fastest)</text>')
+    svg.append(
+        f'  <rect x="{lx}" y="{ly}" width="280" height="60" fill="{BG_COLOR}" rx="4" stroke="{GRID_COLOR}" opacity="0.9"/>'
+    )
+    svg.append(f'  <circle cx="{lx + 15}" cy="{ly + 16}" r="5" fill="{ACCENT_RED}"/>')
+    svg.append(
+        f'  <text x="{lx + 28}" y="{ly + 20}" fill="{TEXT_MUTED}" font-size="10.5" font-family="{FONT_FAMILY}">Level 3: Pure PyTorch Reference</text>'
+    )
+    svg.append(f'  <circle cx="{lx + 15}" cy="{ly + 34}" r="5" fill="{ACCENT_BLUE}"/>')
+    svg.append(
+        f'  <text x="{lx + 28}" y="{ly + 38}" fill="{TEXT_MUTED}" font-size="10.5" font-family="{FONT_FAMILY}">Level 2: OpenAI Triton JIT</text>'
+    )
+    svg.append(f'  <circle cx="{lx + 15}" cy="{ly + 50}" r="5" fill="{ACCENT_GREEN}"/>')
+    svg.append(
+        f'  <text x="{lx + 28}" y="{ly + 54}" fill="{TEXT_MUTED}" font-size="10.5" font-family="{FONT_FAMILY}">Level 1: Native CUDA C++ (Fastest)</text>'
+    )
 
     svg.append(svg_footer())
     return "\n".join(svg)
 
+
 # 7. Sequence Length Scaling (T in [128, 8192])
 def gen_sequence_length_scaling():
     # Table 7 data
+    """Execute gen sequence length scaling routine."""
     T_vals = [512, 1024, 2048, 4096, 8192]
     models = {
         "PyTorch SDPA (Dense O(T^2))": {"lat": [0.06, 0.18, 0.65, 2.59, 10.11], "color": ACCENT_RED, "dash": "none"},
@@ -439,7 +636,14 @@ def gen_sequence_length_scaling():
     }
 
     w, h = 900, 600
-    svg = [svg_header(w, h, "Sequence Length Scaling: Latency (ms) vs. Context Length T", "Empirical Scaling on RTX 4070 (B=2, H=12, D=64) from T=512 to T=8,192")]
+    svg = [
+        svg_header(
+            w,
+            h,
+            "Sequence Length Scaling: Latency (ms) vs. Context Length T",
+            "Empirical Scaling on RTX 4070 (B=2, H=12, D=64) from T=512 to T=8,192",
+        )
+    ]
 
     x0, y0, pw, ph = 100, 80, 740, 460
     svg.append(f'  <rect x="{x0}" y="{y0}" width="{pw}" height="{ph}" fill="{PANEL_BG}" rx="6" stroke="{GRID_COLOR}"/>')
@@ -448,57 +652,84 @@ def gen_sequence_length_scaling():
     min_log_y, max_log_y = math.log10(0.03), math.log10(100.0)
 
     def to_screen(t, y):
+        """Execute to screen routine."""
         sx = x0 + ((math.log2(t) - min_log_t) / (max_log_t - min_log_t)) * pw
         sy = y0 + ph - ((math.log10(y) - min_log_y) / (max_log_y - min_log_y)) * ph
         return sx, sy
 
     for t in [256, 512, 1024, 2048, 4096, 8192, 16384]:
         sx, _ = to_screen(t, 1.0)
-        svg.append(f'  <line x1="{sx}" y1="{y0}" x2="{sx}" y2="{y0+ph}" stroke="{GRID_COLOR}" stroke-dasharray="3,3"/>')
-        label = f"{t//1024}K" if t >= 1024 else str(t)
-        svg.append(f'  <text x="{sx}" y="{y0+ph+20}" fill="{TEXT_MUTED}" font-size="11" font-family="{FONT_FAMILY}" text-anchor="middle">{label}</text>')
+        svg.append(
+            f'  <line x1="{sx}" y1="{y0}" x2="{sx}" y2="{y0 + ph}" stroke="{GRID_COLOR}" stroke-dasharray="3,3"/>'
+        )
+        label = f"{t // 1024}K" if t >= 1024 else str(t)
+        svg.append(
+            f'  <text x="{sx}" y="{y0 + ph + 20}" fill="{TEXT_MUTED}" font-size="11" font-family="{FONT_FAMILY}" text-anchor="middle">{label}</text>'
+        )
 
     for y_val in [0.05, 0.1, 0.5, 1.0, 5.0, 10.0, 50.0]:
         _, sy = to_screen(256, y_val)
-        svg.append(f'  <line x1="{x0}" y1="{sy}" x2="{x0+pw}" y2="{sy}" stroke="{GRID_COLOR}" stroke-dasharray="3,3"/>')
-        svg.append(f'  <text x="{x0-12}" y="{sy+4}" fill="{TEXT_MUTED}" font-size="11" font-family="{FONT_FAMILY}" text-anchor="end">{y_val} ms</text>')
+        svg.append(
+            f'  <line x1="{x0}" y1="{sy}" x2="{x0 + pw}" y2="{sy}" stroke="{GRID_COLOR}" stroke-dasharray="3,3"/>'
+        )
+        svg.append(
+            f'  <text x="{x0 - 12}" y="{sy + 4}" fill="{TEXT_MUTED}" font-size="11" font-family="{FONT_FAMILY}" text-anchor="end">{y_val} ms</text>'
+        )
 
-    svg.append(f'  <text x="{x0+pw/2}" y="{y0+ph+45}" fill="{TEXT_MUTED}" font-size="13" font-family="{FONT_FAMILY}" text-anchor="middle">Sequence Context Length T (Tokens, Log2 Scale)</text>')
-    svg.append(f'  <text x="35" y="{y0+ph/2}" fill="{TEXT_MUTED}" font-size="13" font-family="{FONT_FAMILY}" text-anchor="middle" transform="rotate(-90 35 {y0+ph/2})">Kernel Latency (ms, Log10 Scale) [Lower is Faster]</text>')
+    svg.append(
+        f'  <text x="{x0 + pw / 2}" y="{y0 + ph + 45}" fill="{TEXT_MUTED}" font-size="13" font-family="{FONT_FAMILY}" text-anchor="middle">Sequence Context Length T (Tokens, Log2 Scale)</text>'
+    )
+    svg.append(
+        f'  <text x="35" y="{y0 + ph / 2}" fill="{TEXT_MUTED}" font-size="13" font-family="{FONT_FAMILY}" text-anchor="middle" transform="rotate(-90 35 {y0 + ph / 2})">Kernel Latency (ms, Log10 Scale) [Lower is Faster]</text>'
+    )
 
     # Curves
     for name, d in models.items():
         pts = [to_screen(t, lat) for t, lat in zip(T_vals, d["lat"])]
-        d_str = " ".join([f"{'M' if i==0 else 'L'} {px:.1f} {py:.1f}" for i, (px, py) in enumerate(pts)])
-        svg.append(f'  <path d="{d_str}" fill="none" stroke="{d["color"]}" stroke-width="2.5" stroke-dasharray="{d["dash"]}"/>')
+        d_str = " ".join([f"{'M' if i == 0 else 'L'} {px:.1f} {py:.1f}" for i, (px, py) in enumerate(pts)])
+        svg.append(
+            f'  <path d="{d_str}" fill="none" stroke="{d["color"]}" stroke-width="2.5" stroke-dasharray="{d["dash"]}"/>'
+        )
         for px, py in pts:
             svg.append(f'  <circle cx="{px:.1f}" cy="{py:.1f}" r="5" fill="{d["color"]}"/>')
 
     # Legend
     lx, ly = x0 + 20, y0 + 15
-    svg.append(f'  <rect x="{lx}" y="{ly}" width="300" height="90" fill="{BG_COLOR}" rx="4" stroke="{GRID_COLOR}" opacity="0.9"/>')
+    svg.append(
+        f'  <rect x="{lx}" y="{ly}" width="300" height="90" fill="{BG_COLOR}" rx="4" stroke="{GRID_COLOR}" opacity="0.9"/>'
+    )
     idx = 0
     for name, d in models.items():
-        svg.append(f'  <line x1="{lx+12}" y1="{ly+18 + idx*18}" x2="{lx+36}" y2="{ly+18 + idx*18}" stroke="{d["color"]}" stroke-width="2.5" stroke-dasharray="{d["dash"]}"/>')
-        svg.append(f'  <circle cx="{lx+24}" cy="{ly+18 + idx*18}" r="4" fill="{d["color"]}"/>')
-        svg.append(f'  <text x="{lx+44}" y="{ly+22 + idx*18}" fill="{TEXT_MUTED}" font-size="10.5" font-family="{FONT_FAMILY}">{name}</text>')
+        svg.append(
+            f'  <line x1="{lx + 12}" y1="{ly + 18 + idx * 18}" x2="{lx + 36}" y2="{ly + 18 + idx * 18}" stroke="{d["color"]}" stroke-width="2.5" stroke-dasharray="{d["dash"]}"/>'
+        )
+        svg.append(f'  <circle cx="{lx + 24}" cy="{ly + 18 + idx * 18}" r="4" fill="{d["color"]}"/>')
+        svg.append(
+            f'  <text x="{lx + 44}" y="{ly + 22 + idx * 18}" fill="{TEXT_MUTED}" font-size="10.5" font-family="{FONT_FAMILY}">{name}</text>'
+        )
         idx += 1
 
     svg.append(svg_footer())
     return "\n".join(svg)
 
+
 # 8. SVD-LLM v2 Truncation Optimality Curve
 def gen_svd_llm_v2_truncation():
     # Load and reuse the exact SVG style from results/plots/svd_llm_v2_vs_naive_svd.svg
+    """Execute gen svd llm v2 truncation routine."""
     with open("results/plots/svd_llm_v2_vs_naive_svd.svg", "r") as f:
         return f.read()
 
+
 # 9. KV-Cache Latent Memory Scaling (O(L * r) vs O(L * d))
 def gen_kv_cache_scaling():
+    """Execute gen kv cache scaling routine."""
     with open("results/plots/asvd_kv_cache_memory_scaling.svg", "r") as f:
         return f.read()
 
+
 def main():
+    """Execute main routine."""
     generators = {
         "pareto_accuracy_vs_compression": gen_pareto_acc_vs_compression,
         "pareto_accuracy_vs_vram": gen_pareto_acc_vs_vram,
@@ -517,33 +748,21 @@ def main():
 
     for key, gen_func in generators.items():
         svg_content = gen_func()
-        
+
         # Save SVG to all target directories
         for target_dir in DIRS:
             svg_file = target_dir / f"{key}.svg"
             with open(svg_file, "w", encoding="utf-8") as f:
                 f.write(svg_content)
-            
+
             # Convert to PNG (300 DPI)
             png_file = target_dir / f"{key}.png"
-            cmd_png = [
-                "/opt/homebrew/bin/magick",
-                "-font", font_path,
-                "-density", "300",
-                str(svg_file),
-                str(png_file)
-            ]
+            cmd_png = ["/opt/homebrew/bin/magick", "-font", font_path, "-density", "300", str(svg_file), str(png_file)]
             subprocess.run(cmd_png, check=True)
 
             # Convert to PDF
             pdf_file = target_dir / f"{key}.pdf"
-            cmd_pdf = [
-                "/opt/homebrew/bin/magick",
-                "-font", font_path,
-                "-density", "300",
-                str(svg_file),
-                str(pdf_file)
-            ]
+            cmd_pdf = ["/opt/homebrew/bin/magick", "-font", font_path, "-density", "300", str(svg_file), str(pdf_file)]
             subprocess.run(cmd_pdf, check=True)
 
         print(f"Generated {key} [SVG, PNG 300 DPI, PDF] across all directories.")
@@ -556,12 +775,29 @@ def main():
         svg_file = target_dir / "pareto_frontier.svg"
         with open(svg_file, "w", encoding="utf-8") as f:
             f.write(pf_svg)
-        cmd_png = ["/opt/homebrew/bin/magick", "-font", font_path, "-density", "300", str(svg_file), str(target_dir / "pareto_frontier.png")]
+        cmd_png = [
+            "/opt/homebrew/bin/magick",
+            "-font",
+            font_path,
+            "-density",
+            "300",
+            str(svg_file),
+            str(target_dir / "pareto_frontier.png"),
+        ]
         subprocess.run(cmd_png, check=True)
-        cmd_pdf = ["/opt/homebrew/bin/magick", "-font", font_path, "-density", "300", str(svg_file), str(target_dir / "pareto_frontier.pdf")]
+        cmd_pdf = [
+            "/opt/homebrew/bin/magick",
+            "-font",
+            font_path,
+            "-density",
+            "300",
+            str(svg_file),
+            str(target_dir / "pareto_frontier.pdf"),
+        ]
         subprocess.run(cmd_pdf, check=True)
 
     print("All 9 publication figures + pareto_frontier synchronized successfully in SVG, PNG, and PDF!")
+
 
 if __name__ == "__main__":
     main()

@@ -8,7 +8,6 @@ Leverages CUDA streams for accelerated verification and outputs results to resul
 import os
 import json
 import time
-import math
 import torch
 import torch.nn as nn
 from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
@@ -67,6 +66,7 @@ TARGET_COMPRESSORS = [
 
 
 def test_attention_gradcheck(attn_name, stream=None):
+    """Execute test attention gradcheck routine."""
     cls = ATTENTION_REGISTRY.get(attn_name)
     if cls is None:
         return {"status": "not_found", "module": attn_name}
@@ -99,6 +99,7 @@ def test_attention_gradcheck(attn_name, stream=None):
             x = torch.randn(B, L, D, device=DEVICE, dtype=torch.float64, requires_grad=True)
 
             def forward_wrapper(inp):
+                """Execute forward wrapper routine."""
                 out = mod(inp)
                 if isinstance(out, tuple):
                     out = out[0]
@@ -116,24 +117,29 @@ def test_attention_gradcheck(attn_name, stream=None):
             )
             elapsed = (time.perf_counter() - start_t) * 1000.0
 
-            result.update({
-                "status": "PASSED" if passed else "FAILED",
-                "gradcheck_passed": bool(passed),
-                "elapsed_ms": round(elapsed, 2),
-                "jacobian_error_norm": 0.0,
-            })
+            result.update(
+                {
+                    "status": "PASSED" if passed else "FAILED",
+                    "gradcheck_passed": bool(passed),
+                    "elapsed_ms": round(elapsed, 2),
+                    "jacobian_error_norm": 0.0,
+                }
+            )
     except Exception as e:
         err_msg = str(e)
-        result.update({
-            "status": "FAILED",
-            "gradcheck_passed": False,
-            "error": err_msg[:120],
-        })
+        result.update(
+            {
+                "status": "FAILED",
+                "gradcheck_passed": False,
+                "error": err_msg[:120],
+            }
+        )
 
     return result
 
 
 def test_compressor_gradcheck(comp_name, stream=None):
+    """Execute test compressor gradcheck routine."""
     cls = COMPRESSOR_REGISTRY.get(comp_name)
     if cls is None:
         return {"status": "not_found", "module": comp_name}
@@ -149,7 +155,15 @@ def test_compressor_gradcheck(comp_name, stream=None):
         with torch.cuda.stream(stream) if stream else torch.nullcontext():
             if comp_name == "tt_compressor":
                 from neuralops.compression_engine.tensor_decomp.tt_compressor import TTLinear
-                comp_layer = TTLinear(in_features=in_f, out_features=out_f, tt_rank=4, dtype=torch.float64, device=DEVICE, use_triton=False)
+
+                comp_layer = TTLinear(
+                    in_features=in_f,
+                    out_features=out_f,
+                    tt_rank=4,
+                    dtype=torch.float64,
+                    device=DEVICE,
+                    use_triton=False,
+                )
             else:
                 lin = nn.Linear(in_f, out_f, bias=True).to(device=DEVICE, dtype=torch.float64)
 
@@ -177,7 +191,7 @@ def test_compressor_gradcheck(comp_name, stream=None):
                 comp_layer = comp_layer[0]
 
             if comp_layer is not None and isinstance(comp_layer, nn.Module):
-                comp_layer.train() # use native PyTorch autograd graph
+                comp_layer.train()  # use native PyTorch autograd graph
                 if hasattr(comp_layer, "use_triton"):
                     comp_layer.use_triton = False
                 if hasattr(comp_layer, "use_fused_kernel"):
@@ -186,6 +200,7 @@ def test_compressor_gradcheck(comp_name, stream=None):
                 x = torch.randn(2, 4, in_f, device=DEVICE, dtype=torch.float64, requires_grad=True)
 
                 def comp_forward(inp):
+                    """Execute comp forward routine."""
                     return comp_layer(inp)
 
                 start_t = time.perf_counter()
@@ -200,47 +215,57 @@ def test_compressor_gradcheck(comp_name, stream=None):
                 )
                 elapsed = (time.perf_counter() - start_t) * 1000.0
 
-                result.update({
-                    "status": "PASSED" if passed else "FAILED",
-                    "gradcheck_passed": bool(passed),
-                    "elapsed_ms": round(elapsed, 2),
-                })
+                result.update(
+                    {
+                        "status": "PASSED" if passed else "FAILED",
+                        "gradcheck_passed": bool(passed),
+                        "elapsed_ms": round(elapsed, 2),
+                    }
+                )
             else:
                 # Direct factorized layer verification
                 from neuralops.compression_engine.aa_svd_compressor import SVDLinear
-                svd_l = SVDLinear(in_f, out_f, rank=rank, dtype=torch.float64, device=DEVICE, use_triton=False, use_fused_kernel=False)
+
+                svd_l = SVDLinear(
+                    in_f, out_f, rank=rank, dtype=torch.float64, device=DEVICE, use_triton=False, use_fused_kernel=False
+                )
                 svd_l.train()
                 x = torch.randn(2, 4, in_f, device=DEVICE, dtype=torch.float64, requires_grad=True)
                 start_t = time.perf_counter()
                 passed = torch.autograd.gradcheck(svd_l, (x,), eps=1e-5, atol=1e-3, rtol=1e-2, fast_mode=True)
                 elapsed = (time.perf_counter() - start_t) * 1000.0
-                result.update({
-                    "status": "PASSED" if passed else "FAILED",
-                    "gradcheck_passed": bool(passed),
-                    "elapsed_ms": round(elapsed, 2),
-                })
+                result.update(
+                    {
+                        "status": "PASSED" if passed else "FAILED",
+                        "gradcheck_passed": bool(passed),
+                        "elapsed_ms": round(elapsed, 2),
+                    }
+                )
     except Exception as e:
-        result.update({
-            "status": "FAILED",
-            "gradcheck_passed": False,
-            "error": str(e)[:120],
-        })
+        result.update(
+            {
+                "status": "FAILED",
+                "gradcheck_passed": False,
+                "error": str(e)[:120],
+            }
+        )
 
     return result
 
 
 def main():
-    print(f"==================================================================")
-    print(f"NEURALOPS AUTOMATED GRADCHECK AUDIT (ANALYTICAL VS FINITE DIFFERENCE)")
+    """Execute main routine."""
+    print("==================================================================")
+    print("NEURALOPS AUTOMATED GRADCHECK AUDIT (ANALYTICAL VS FINITE DIFFERENCE)")
     print(f"GPU: {torch.cuda.get_device_name(0)} | Precision: float64 | fast_mode=True")
-    print(f"==================================================================")
+    print("==================================================================")
 
     # Multi-stream execution setup
     num_streams = 4
     streams = [torch.cuda.Stream() for _ in range(num_streams)]
 
     audit_records = []
-    print(f"\n--- Auditing 25 Representative Attention Mechanisms ---")
+    print("\n--- Auditing 25 Representative Attention Mechanisms ---")
     for i, name in enumerate(TARGET_ATTENTIONS, 1):
         st = streams[i % num_streams]
         rec = test_attention_gradcheck(name, stream=st)
@@ -251,7 +276,7 @@ def main():
 
     torch.cuda.synchronize()
 
-    print(f"\n--- Auditing 15 Representative Compression Engines ---")
+    print("\n--- Auditing 15 Representative Compression Engines ---")
     for i, name in enumerate(TARGET_COMPRESSORS, 1):
         st = streams[i % num_streams]
         rec = test_compressor_gradcheck(name, stream=st)
@@ -288,10 +313,12 @@ def main():
     with open(out_file, "w") as fp:
         json.dump(report, fp, indent=2)
 
-    print(f"\n==================================================================")
-    print(f"AUDIT COMPLETE: {passed_count}/{total_count} ({report['metadata']['pass_rate_pct']}%) modules passed strict gradcheck.")
+    print("\n==================================================================")
+    print(
+        f"AUDIT COMPLETE: {passed_count}/{total_count} ({report['metadata']['pass_rate_pct']}%) modules passed strict gradcheck."
+    )
     print(f"Certification matrix written to: {out_file}")
-    print(f"==================================================================")
+    print("==================================================================")
 
 
 if __name__ == "__main__":

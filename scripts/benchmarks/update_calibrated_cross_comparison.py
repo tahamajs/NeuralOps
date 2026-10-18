@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 """Update accuracy_and_ppl_gpu_cross_comparison with calibrated ridge surgery & distillation parity."""
 
-import json
-import csv
 from pathlib import Path
 
 csv_path = Path("results/accuracy_and_ppl_benchmark.csv")

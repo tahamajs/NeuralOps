@@ -1,3 +1,8 @@
+"""Calibrate pareto results module.
+
+Author: Taha Majlesi
+"""
+
 import json
 import csv
 import numpy as np
@@ -26,9 +31,28 @@ for r in rows:
 
     # 1. Fix compression ratio if 0.0% / 1.0x
     is_pruner = any(k in comp for k in ["prun", "sparse", "shedder", "flap", "admm"])
-    is_quantizer = any(k in comp for k in ["quant", "int4", "int8", "huffman", "kmeans", "coopq", "astro", "faq", "bitnet", "fp8"])
+    is_quantizer = any(
+        k in comp for k in ["quant", "int4", "int8", "huffman", "kmeans", "coopq", "astro", "faq", "bitnet", "fp8"]
+    )
     is_kv = any(k in comp for k in ["kv", "aatc", "salr", "cachenotes", "zerokv"])
-    is_svd = any(k in comp for k in ["svd", "rank", "low_rank", "cur", "compot", "subspace", "slim", "lsc", "oats", "enlighten", "gfws", "liftr", "tt_"])
+    is_svd = any(
+        k in comp
+        for k in [
+            "svd",
+            "rank",
+            "low_rank",
+            "cur",
+            "compot",
+            "subspace",
+            "slim",
+            "lsc",
+            "oats",
+            "enlighten",
+            "gfws",
+            "liftr",
+            "tt_",
+        ]
+    )
 
     if ratio <= 1.0 or reduc <= 0.0:
         if is_quantizer:

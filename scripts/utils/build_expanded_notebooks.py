@@ -1,43 +1,45 @@
+"""Build expanded notebooks module.
+
+Author: Taha Majlesi
+"""
+
 import json
-import os
+
 
 def make_notebook(cells):
+    """Execute make notebook routine."""
     return {
         "cells": cells,
         "metadata": {
-            "kernelspec": {
-                "display_name": "Python 3 (ipykernel)",
-                "language": "python",
-                "name": "python3"
-            },
-            "language_info": {
-                "name": "python",
-                "version": "3.14.7"
-            }
+            "kernelspec": {"display_name": "Python 3 (ipykernel)", "language": "python", "name": "python3"},
+            "language_info": {"name": "python", "version": "3.14.7"},
         },
         "nbformat": 4,
-        "nbformat_minor": 5
+        "nbformat_minor": 5,
     }
+
 
 def md_cell(text):
-    return {
-        "cell_type": "markdown",
-        "metadata": {},
-        "source": [line + "\n" for line in text.strip().split("\n")]
-    }
+    """Execute md cell routine."""
+    return {"cell_type": "markdown", "metadata": {}, "source": [line + "\n" for line in text.strip().split("\n")]}
+
 
 def code_cell(code):
+    """Execute code cell routine."""
     return {
         "cell_type": "code",
         "execution_count": None,
         "metadata": {},
         "outputs": [],
-        "source": [line + "\n" for line in code.strip().split("\n")]
+        "source": [line + "\n" for line in code.strip().split("\n")],
     }
 
+
 def generate_nb06():
+    """Execute generate nb06 routine."""
     cells = []
-    cells.append(md_cell(r"""# 🔬 Master NeuralOps Attention Zoo: Interactive Exploration of All 131 Canonical Mechanisms
+    cells.append(
+        md_cell(r"""# 🔬 Master NeuralOps Attention Zoo: Interactive Exploration of All 131 Canonical Mechanisms
 
 Welcome to the definitive **NeuralOps v1.4** interactive attention explorer. Modern deep learning architectures require diverse algorithmic designs:
 - **Exact Softmax Acceleration**: FlashAttention-3, FlashAttention-FP8, SOA
@@ -47,9 +49,11 @@ Welcome to the definitive **NeuralOps v1.4** interactive attention explorer. Mod
 - **Decoupled Low-Rank Latents**: DeepSeek-style Multi-Head Latent Attention (MLA)
 - **Hybrid & Composable Topologies**: Tri-Branch Hybrid, Aegis, RegLA, Spectron
 
-This notebook benchmarks, inspects, and validates the full catalog of **131 canonical attention mechanisms** on physical hardware."""))
+This notebook benchmarks, inspects, and validates the full catalog of **131 canonical attention mechanisms** on physical hardware.""")
+    )
 
-    cells.append(code_cell(r"""# Cell 1: Environment Diagnostics & Canonical Registry Invariant
+    cells.append(
+        code_cell(r"""# Cell 1: Environment Diagnostics & Canonical Registry Invariant
 import os
 os.environ['MPLCONFIGDIR'] = '/tmp/mpl'
 import sys
@@ -85,13 +89,17 @@ all_attns = list_attentions()
 print(f"Registered Attentions: {len(all_attns)} / 131 Canonical Modules")
 assert len(all_attns) == 131, f"Expected 131 canonical attentions, found {len(all_attns)}"
 print("✅ Invariant Verified: All 131 Canonical Attention Mechanisms Loaded!")
-print("=" * 75)"""))
+print("=" * 75)""")
+    )
 
-    cells.append(md_cell(r"""## 1. Architectural Taxonomy Breakdown across 19 Distinct Families
+    cells.append(
+        md_cell(r"""## 1. Architectural Taxonomy Breakdown across 19 Distinct Families
 
-NeuralOps categorizes all 131 mechanisms into structured mathematical and algorithmic families, ranging from recurrent state-tracking to hardware-fused exact softmax and sparse routing."""))
+NeuralOps categorizes all 131 mechanisms into structured mathematical and algorithmic families, ranging from recurrent state-tracking to hardware-fused exact softmax and sparse routing.""")
+    )
 
-    cells.append(code_cell(r"""# Cell 2: Family Taxonomy Clustering & Distribution Analysis
+    cells.append(
+        code_cell(r"""# Cell 2: Family Taxonomy Clustering & Distribution Analysis
 family_map = {}
 for name in all_attns:
     spec = inspect_architecture(name)
@@ -108,13 +116,17 @@ df_families = pd.DataFrame([
 print(f"Identified {len(df_families)} Architectural Families in Registry:")
 print("=" * 85)
 print(df_families.to_string(index=False))
-print("=" * 85)"""))
+print("=" * 85)""")
+    )
 
-    cells.append(md_cell(r"""## 2. Deep Blueprint & Algebraic Decomposition Inspection
+    cells.append(
+        md_cell(r"""## 2. Deep Blueprint & Algebraic Decomposition Inspection
 
-Every canonical module in NeuralOps exposes an `ArchitectureSpec` detailing its theoretical arithmetic complexity $\mathcal{O}(T)$, memory footprint, algebraic 4-stage decomposition, and hardware target affinity."""))
+Every canonical module in NeuralOps exposes an `ArchitectureSpec` detailing its theoretical arithmetic complexity $\mathcal{O}(T)$, memory footprint, algebraic 4-stage decomposition, and hardware target affinity.""")
+    )
 
-    cells.append(code_cell(r"""# Cell 3: Blueprint Inspection for Flagship Mechanisms
+    cells.append(
+        code_cell(r"""# Cell 3: Blueprint Inspection for Flagship Mechanisms
 flagship_modules = ["gated_delta_net", "gla_attention", "cosformer", "flash_attention3", "mla_attention"]
 
 print("=" * 85)
@@ -130,16 +142,20 @@ for mod_name in flagship_modules:
         print(f"  Time / Space:  {getattr(spec, 'time_complexity', 'O(N)')} / {getattr(spec, 'memory_complexity', 'O(D^2)')}")
         print(f"  Fusion Strategy: {getattr(spec, 'sram_fusion_strategy', 'N/A')[:65]}...")
         print(f"  Math Invariant:  {getattr(spec, 'math_equation', 'N/A')[:65]}...")
-        print("-" * 85)"""))
+        print("-" * 85)""")
+    )
 
-    cells.append(md_cell(r"""## 3. Multi-Module Autograd Forward & Backward Contract Matrix
+    cells.append(
+        md_cell(r"""## 3. Multi-Module Autograd Forward & Backward Contract Matrix
 
 We rigorously validate 10 representative mechanisms across distinct families. Each mechanism must satisfy the **NeuralOps Module Contract**:
 1. Clean tensor initialization with arbitrary embed dimensions ($D=256$) and head counts ($H=4$).
 2. Valid forward tensor evaluation producing shape $[B, L, D]$.
-3. Gradient propagation without `NaN` or `Inf` through input tensors."""))
+3. Gradient propagation without `NaN` or `Inf` through input tensors.""")
+    )
 
-    cells.append(code_cell(r"""# Cell 4: 10 Representative Mechanisms Autograd Verification
+    cells.append(
+        code_cell(r"""# Cell 4: 10 Representative Mechanisms Autograd Verification
 test_mechanisms = [
     ("flash_attention3", "Exact Fused Softmax"),
     ("gated_delta_net", "Recurrent Delta Rule"),
@@ -181,13 +197,17 @@ for mod_name, desc in test_mechanisms:
 print("=" * 95)
 all_pass = all(r[2] and r[3] for r in contract_results)
 print(f"Overall 10-Module Contract Verdict: {'🎉 100% ALL PASS' if all_pass else '❌ FAILURES DETECTED'}")
-"""))
+""")
+    )
 
-    cells.append(md_cell(r"""## 4. Sequence Length Scaling Benchmark: Linear $\mathcal{O}(L)$ vs. Quadratic $\mathcal{O}(L^2)$
+    cells.append(
+        md_cell(r"""## 4. Sequence Length Scaling Benchmark: Linear $\mathcal{O}(L)$ vs. Quadratic $\mathcal{O}(L^2)$
 
-Softmax self-attention requires quadratic time $\mathcal{O}(L^2 D)$ and quadratic memory $\mathcal{O}(B H L^2)$ for storing the full attention score matrix. Sub-quadratic linear attention mechanisms compute associative state projections $\mathcal{O}(L D^2)$, unlocking infinite context length scaling."""))
+Softmax self-attention requires quadratic time $\mathcal{O}(L^2 D)$ and quadratic memory $\mathcal{O}(B H L^2)$ for storing the full attention score matrix. Sub-quadratic linear attention mechanisms compute associative state projections $\mathcal{O}(L D^2)$, unlocking infinite context length scaling.""")
+    )
 
-    cells.append(code_cell(r"""# Cell 5: Sequence Length Scaling Experiment (L = 128 to 4096)
+    cells.append(
+        code_cell(r"""# Cell 5: Sequence Length Scaling Experiment (L = 128 to 4096)
 seq_lengths = [128, 256, 512, 1024, 2048, 4096]
 warmup, iters = 5, 15
 
@@ -256,16 +276,20 @@ print(f"{'Seq Len':<10} | {'Linear (ms)':<12} | {'Quadratic (ms)':<14} | {'Speed
 print("-" * 95)
 for r in scaling_data:
     print(f"{r['Sequence Length']:<10} | {r['Linear Time (ms)']:>10.3f} ms | {r['Quadratic Time (ms)']:>12.3f} ms | {r['Speedup']:>7.2f}x | {r['Linear Mem (MB)']:>10.2f} MB | {r['Quadratic Mem (MB)']:>12.2f} MB")
-print("=" * 95)"""))
+print("=" * 95)""")
+    )
 
-    cells.append(md_cell(r"""## 5. Publication-Grade Visualizations: Latency Scaling & VRAM Allocation
+    cells.append(
+        md_cell(r"""## 5. Publication-Grade Visualizations: Latency Scaling & VRAM Allocation
 
 Visualizing asymptotic behavior on log-log coordinates:
 - Quadratic attention curves bend upwards with slope $m = 2$.
 - Linear attention maintains a strictly constant linear slope $m = 1$.
-- VRAM allocation for linear attention remains flat ($\mathcal{O}(D^2)$ KV-free state), avoiding Out-Of-Memory (OOM) on ultra-long sequences."""))
+- VRAM allocation for linear attention remains flat ($\mathcal{O}(D^2)$ KV-free state), avoiding Out-Of-Memory (OOM) on ultra-long sequences.""")
+    )
 
-    cells.append(code_cell(r"""# Cell 6: High-DPI Dual-Panel Scaling Curves
+    cells.append(
+        code_cell(r"""# Cell 6: High-DPI Dual-Panel Scaling Curves
 %matplotlib inline
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5.5), dpi=120)
 
@@ -299,13 +323,17 @@ ax2.legend(frameon=True, fontsize=10)
 
 plt.tight_layout()
 print("Rendered Dual-Panel Asymptotic Scaling Charts.")
-plt.show()"""))
+plt.show()""")
+    )
 
-    cells.append(md_cell(r"""## 6. Arithmetic Intensity & Hardware Roofline Characteristics
+    cells.append(
+        md_cell(r"""## 6. Arithmetic Intensity & Hardware Roofline Characteristics
 
-We calculate the theoretical Arithmetic Intensity ($AI = \text{FLOPs} / \text{Byte}$) for canonical modules, illustrating why fused linear attention overcomes the GPU memory wall."""))
+We calculate the theoretical Arithmetic Intensity ($AI = \text{FLOPs} / \text{Byte}$) for canonical modules, illustrating why fused linear attention overcomes the GPU memory wall.""")
+    )
 
-    cells.append(code_cell(r"""# Cell 7: Arithmetic Intensity Analysis across Sequence Lengths
+    cells.append(
+        code_cell(r"""# Cell 7: Arithmetic Intensity Analysis across Sequence Lengths
 ai_records = []
 for L_curr in [512, 1024, 2048, 4096]:
     # Quadratic Softmax: FLOPs = 4 * B * H * L^2 * D, Memory = 2 * B * H * L^2 * 2 (fp16) + 3 * B * H * L * D * 2
@@ -326,13 +354,17 @@ for L_curr in [512, 1024, 2048, 4096]:
         "Linear AI (FLOP/B)": f"{lin_ai:.2f}"
     })
 
-print(pd.DataFrame(ai_records).to_string(index=False))"""))
+print(pd.DataFrame(ai_records).to_string(index=False))""")
+    )
 
-    cells.append(md_cell(r"""## 7. Interactive Module Sandboxing & Custom Tensor Shapes
+    cells.append(
+        md_cell(r"""## 7. Interactive Module Sandboxing & Custom Tensor Shapes
 
-Test any arbitrary canonical mechanism interactively with custom batch sizes, sequence lengths, head counts, and embedding dimensions."""))
+Test any arbitrary canonical mechanism interactively with custom batch sizes, sequence lengths, head counts, and embedding dimensions.""")
+    )
 
-    cells.append(code_cell(r"""# Cell 8: Interactive Module Sandboxing Function
+    cells.append(
+        code_cell(r"""# Cell 8: Interactive Module Sandboxing Function
 def probe_attention(mechanism_name: str, batch_size: int = 2, seq_len: int = 128, embed_dim: int = 256, num_heads: int = 4):
     print(f"🔍 Probing Mechanism: '{mechanism_name}' (B={batch_size}, L={seq_len}, D={embed_dim}, H={num_heads})...")
     layer = create_attention(mechanism_name, embed_dim=embed_dim, num_heads=num_heads).to(device)
@@ -353,26 +385,33 @@ def probe_attention(mechanism_name: str, batch_size: int = 2, seq_len: int = 128
 # Interactive Probes
 probe_attention("gated_delta_net", batch_size=4, seq_len=256, embed_dim=256, num_heads=4)
 probe_attention("gla_attention", batch_size=4, seq_len=256, embed_dim=256, num_heads=4)
-probe_attention("mla_attention", batch_size=4, seq_len=256, embed_dim=256, num_heads=4)"""))
+probe_attention("mla_attention", batch_size=4, seq_len=256, embed_dim=256, num_heads=4)""")
+    )
 
-    cells.append(md_cell(r"""## 8. Master Zoo Verification Conclusion & System Invariants
+    cells.append(
+        md_cell(r"""## 8. Master Zoo Verification Conclusion & System Invariants
 
-This benchmark confirms that all 131 canonical attention mechanisms are fully registered, functional, and ready for end-to-end model surgery and hardware acceleration."""))
+This benchmark confirms that all 131 canonical attention mechanisms are fully registered, functional, and ready for end-to-end model surgery and hardware acceleration.""")
+    )
 
-    cells.append(code_cell(r"""# Cell 9: Final Invariant Verification Summary
+    cells.append(
+        code_cell(r"""# Cell 9: Final Invariant Verification Summary
 print("=" * 75)
 print("🎉 MASTER ATTENTION ZOO VERIFICATION COMPLETE: 131/131 MODULES READY")
 print(f"  • Total Registered Mechanisms: {len(ATTENTION_REGISTRY)}")
 print(f"  • Representative Contracts:    10/10 PASS (100% Autograd Parity)")
 print(f"  • Asymptotic Scaling Validated: O(L) Linear Speedup verified to L=4096")
-print("=" * 75)"""))
+print("=" * 75)""")
+    )
 
     return make_notebook(cells)
 
 
 def generate_nb07():
+    """Execute generate nb07 routine."""
     cells = []
-    cells.append(md_cell(r"""# 🗜️ Master NeuralOps Compression Suite: SVD, Low-Rank, Quantization & Pruning
+    cells.append(
+        md_cell(r"""# 🗜️ Master NeuralOps Compression Suite: SVD, Low-Rank, Quantization & Pruning
 
 Welcome to the **NeuralOps v1.4** unified model compression laboratory. NeuralOps houses **72 canonical compression engines** covering every major modality of model compression:
 1. **Singular Value Decomposition (SVD)**: `direct_svd`, `adasvd_compressor`, `saes_svd_v2`, `svd_llm_compressor`
@@ -380,9 +419,11 @@ Welcome to the **NeuralOps v1.4** unified model compression laboratory. NeuralOp
 3. **Hardware Quantization**: W4A16, FP8, `coopq_quantizer`, `kmeans_quantize`
 4. **Structured & Semi-Structured Pruning**: `sparsegpt`, `flap`, `slicegpt`, `bonsai_pruner`
 
-This notebook performs empirical comparative evaluation, singular value spectral analysis, Pareto frontier exploration, and live multi-layer Transformer compression."""))
+This notebook performs empirical comparative evaluation, singular value spectral analysis, Pareto frontier exploration, and live multi-layer Transformer compression.""")
+    )
 
-    cells.append(code_cell(r"""# Cell 1: Environment Diagnostics & Canonical Registry Invariant
+    cells.append(
+        code_cell(r"""# Cell 1: Environment Diagnostics & Canonical Registry Invariant
 import os
 os.environ['MPLCONFIGDIR'] = '/tmp/mpl'
 import sys
@@ -413,9 +454,11 @@ comp_engines = list_compressors()
 print(f"Registered Compression Engines: {len(comp_engines)} / 72 Canonical Modules")
 assert len(comp_engines) >= 72, f"Expected 72 canonical compressors, found {len(comp_engines)}"
 print("✅ Invariant Verified: All 72 Compression Engines Loaded!")
-print("=" * 75)"""))
+print("=" * 75)""")
+    )
 
-    cells.append(md_cell(r"""## 1. Taxonomy Breakdown Across Compression Paradigms
+    cells.append(
+        md_cell(r"""## 1. Taxonomy Breakdown Across Compression Paradigms
 
 NeuralOps partitions its 72 engines into 6 distinct algorithmic categories:
 - SVD & Matrix Factorization
@@ -423,9 +466,11 @@ NeuralOps partitions its 72 engines into 6 distinct algorithmic categories:
 - Quantization (Uniform, Vector, Weight-Only)
 - Pruning & Sparsity
 - KV-Cache Compression
-- Adaptive Rank Allocators"""))
+- Adaptive Rank Allocators""")
+    )
 
-    cells.append(code_cell(r"""# Cell 2: Categorization of 72 Canonical Engines
+    cells.append(
+        code_cell(r"""# Cell 2: Categorization of 72 Canonical Engines
 categories = {
     "SVD & Low-Rank": ["direct_svd", "adasvd_compressor", "saes_svd_v2", "svd_llm_compressor", "rpca_compressor", "cur_compressor"],
     "Tensor-Train & Structured": ["tt_compressor", "kronecker_compressor", "kronecker_tt_lora", "nmf_compressor"],
@@ -444,13 +489,17 @@ for cat_name, samples in categories.items():
     })
 
 df_cats = pd.DataFrame(cat_rows)
-print(df_cats[["Category", "Sample Engines"]].to_string(index=False))"""))
+print(df_cats[["Category", "Sample Engines"]].to_string(index=False))""")
+    )
 
-    cells.append(md_cell(r"""## 2. Singular Value Spectral Decay Spectrum Analysis
+    cells.append(
+        md_cell(r"""## 2. Singular Value Spectral Decay Spectrum Analysis
 
-Real-world neural network weight matrices exhibit steep singular value decay (power-law spectrum $\sigma_i \propto i^{-\alpha}$). Truncating near the spectral knee preserves $\ge 95\%$ of spectral energy while reducing parameter count by up to $80\%."""))
+Real-world neural network weight matrices exhibit steep singular value decay (power-law spectrum $\sigma_i \propto i^{-\alpha}$). Truncating near the spectral knee preserves $\ge 95\%$ of spectral energy while reducing parameter count by up to $80\%.""")
+    )
 
-    cells.append(code_cell(r"""# Cell 3: Weight Matrix SVD Spectral Decay
+    cells.append(
+        code_cell(r"""# Cell 3: Weight Matrix SVD Spectral Decay
 torch.manual_seed(42)
 D_in, D_out = 768, 768
 
@@ -489,17 +538,21 @@ print(f"{'Rank':<8} | {'Retained Energy':<18} | {'Relative Error':<16} | {'Comp 
 print("-" * 85)
 for r in spectral_data:
     print(f"{r['Rank']:<8} | {r['Retained Energy (%)']:>16.2f} % | {r['Relative Error']:>14.4f} | {r['Compression Ratio']:>10.2f}x | {r['Memory Saved (%)']:>10.1f} %")
-print("=" * 85)"""))
+print("=" * 85)""")
+    )
 
-    cells.append(md_cell(r"""## 3. Comparative Evaluation: SVD, Tensor-Train, Quantization, and Pruning
+    cells.append(
+        md_cell(r"""## 3. Comparative Evaluation: SVD, Tensor-Train, Quantization, and Pruning
 
 We compare four leading compression modalities on a representative linear projection ($D=768 \rightarrow 768$):
 1. **Direct SVD** (Rank 64)
 2. **Tensor-Train Decomposition** (Block-factorized core projection)
 3. **W4A16 Quantization** (Uniform symmetric 4-bit)
-4. **Magnitude Unstructured Pruning** (50% sparsity)"""))
+4. **Magnitude Unstructured Pruning** (50% sparsity)""")
+    )
 
-    cells.append(code_cell(r"""# Cell 4: Multi-Modality Comparative Benchmark
+    cells.append(
+        code_cell(r"""# Cell 4: Multi-Modality Comparative Benchmark
 X_in = torch.randn(4, 128, D_in, device=device, dtype=torch.float32)
 Y_gold = F.linear(X_in, W_trained)
 orig_bytes = W_trained.nelement() * W_trained.element_size()
@@ -547,13 +600,17 @@ print(f"{'Modality':<25} | {'Compression':<12} | {'Relative Error':<16} | {'VRAM
 print("-" * 85)
 for mod_name, comp_x, err, kb in modality_results:
     print(f"{mod_name:<25} | {comp_x:>10.2f}x | {err:>14.4f} | {kb:>12.1f} KB")
-print("=" * 85)"""))
+print("=" * 85)""")
+    )
 
-    cells.append(md_cell(r"""## 4. Multi-Layer Transformer Model Compression Pass
+    cells.append(
+        md_cell(r"""## 4. Multi-Layer Transformer Model Compression Pass
 
-We instantiate a 3-layer Transformer MLP Block and execute simultaneous DirectSVD surgery across all feed-forward projections, validating end-to-end forward stability and gradient propagation."""))
+We instantiate a 3-layer Transformer MLP Block and execute simultaneous DirectSVD surgery across all feed-forward projections, validating end-to-end forward stability and gradient propagation.""")
+    )
 
-    cells.append(code_cell(r"""# Cell 5: Full Multi-Layer Transformer MLP Compression
+    cells.append(
+        code_cell(r"""# Cell 5: Full Multi-Layer Transformer MLP Compression
 class MultiLayerMLP(nn.Module):
     def __init__(self, dim=512, hidden_dim=2048, n_layers=3):
         super().__init__()
@@ -596,15 +653,19 @@ print(f"  • Factorized Low-Rank Param Budget: {effective_rank_params:,}")
 print(f"  • Output Activation Shape:     {list(out.shape)}")
 print(f"  • Forward Pass Numerical Stability: {'PASS (No NaNs)' if not torch.isnan(out).any() else 'FAIL'}")
 assert not torch.isnan(out).any(), "Model forward pass produced NaN!"
-"""))
+""")
+    )
 
-    cells.append(md_cell(r"""## 5. Publication-Grade Pareto Frontier & Spectral Decay Visualizations
+    cells.append(
+        md_cell(r"""## 5. Publication-Grade Pareto Frontier & Spectral Decay Visualizations
 
 Visualizing:
 1. **Spectral Decay Curve**: Singular values $\sigma_i$ and Cumulative Energy $E(k) = \frac{\sum_{i=1}^k \sigma_i^2}{\sum_{i=1}^D \sigma_i^2}$.
-2. **Pareto Tradeoff Frontier**: Compression Ratio vs. Output Relative Error across all ranks and modalities."""))
+2. **Pareto Tradeoff Frontier**: Compression Ratio vs. Output Relative Error across all ranks and modalities.""")
+    )
 
-    cells.append(code_cell(r"""# Cell 6: High-DPI Dual-Panel Pareto Frontier & Spectral Decay
+    cells.append(
+        code_cell(r"""# Cell 6: High-DPI Dual-Panel Pareto Frontier & Spectral Decay
 %matplotlib inline
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5.5), dpi=120)
 
@@ -640,13 +701,17 @@ ax2.legend(frameon=True, fontsize=9.5, loc='upper left')
 
 plt.tight_layout()
 print("Rendered Dual-Panel Spectral Decay & Pareto Frontier Charts.")
-plt.show()"""))
+plt.show()""")
+    )
 
-    cells.append(md_cell(r"""## 6. Hardware Inference Latency vs Compression Ratio Benchmark
+    cells.append(
+        md_cell(r"""## 6. Hardware Inference Latency vs Compression Ratio Benchmark
 
-We benchmark wall-clock execution time on the physical GPU across uncompressed and factorized SVD ranks ($R \in [32, 64, 128]$) using high-resolution CUDA Events."""))
+We benchmark wall-clock execution time on the physical GPU across uncompressed and factorized SVD ranks ($R \in [32, 64, 128]$) using high-resolution CUDA Events.""")
+    )
 
-    cells.append(code_cell(r"""# Cell 7: Wall-Clock GPU Latency Benchmark across SVD Ranks
+    cells.append(
+        code_cell(r"""# Cell 7: Wall-Clock GPU Latency Benchmark across SVD Ranks
 torch.cuda.synchronize() if torch.cuda.is_available() else None
 bench_x = torch.randn(16, 128, 768, device=device, dtype=torch.float16)
 W_fp16 = W_trained.half()
@@ -679,24 +744,29 @@ for r_eval in [32, 64, 128]:
     })
 
 print(f"Uncompressed Baseline Latency: {t_orig_ms:.4f} ms")
-print(pd.DataFrame(svd_latencies).to_string(index=False))"""))
+print(pd.DataFrame(svd_latencies).to_string(index=False))""")
+    )
 
     cells.append(md_cell(r"""## 7. Compression Engine Verification Summary & Release Invariants"""))
 
-    cells.append(code_cell(r"""# Cell 8: Final Compression Invariant Verification
+    cells.append(
+        code_cell(r"""# Cell 8: Final Compression Invariant Verification
 print("=" * 75)
 print("🎉 MASTER COMPRESSION SUITE VERIFICATION COMPLETE: 72/72 ENGINES READY")
 print(f"  • Total Canonical Compression Engines: {len(COMPRESSOR_REGISTRY)}")
 print(f"  • Multi-Modality Pareto Tradeoff Validated (SVD, TT, W4A16, Prune)")
 print(f"  • Multi-Layer Transformer DirectSVD Surgery Passed bit-exact stability")
-print("=" * 75)"""))
+print("=" * 75)""")
+    )
 
     return make_notebook(cells)
 
 
 def generate_nb08():
+    """Execute generate nb08 routine."""
     cells = []
-    cells.append(md_cell(r"""# 🩺 Master Six-Pillar Distillation & Surgical Healing Suite
+    cells.append(
+        md_cell(r"""# 🩺 Master Six-Pillar Distillation & Surgical Healing Suite
 
 When performing surgical architecture transplants (e.g., swapping $\mathcal{O}(L^2)$ softmax attention with $\mathcal{O}(L)$ linear attention or SSM recurrence), naive parameter substitution destroys internal representations.
 
@@ -708,9 +778,11 @@ NeuralOps implements a unified **Six-Pillar Distillation & Surgical Healing Engi
 5. **Pillar 5: Gradient Regularization ($\mathcal{L}_{\text{grad}}$)**: Soft Fisher information penalty stabilizing delicate linear recurrent weights.
 6. **Pillar 6: Task Loss Preservation ($\mathcal{L}_{\text{task}}$)**: Hard cross-entropy loss against ground truth calibration targets.
 
-This notebook executes a live 50-step surgical transplant and healing cycle on a host Transformer model."""))
+This notebook executes a live 50-step surgical transplant and healing cycle on a host Transformer model.""")
+    )
 
-    cells.append(code_cell(r"""# Cell 1: Environment Diagnostics & Distillation Module Setup
+    cells.append(
+        code_cell(r"""# Cell 1: Environment Diagnostics & Distillation Module Setup
 import os
 os.environ['MPLCONFIGDIR'] = '/tmp/mpl'
 import sys
@@ -743,14 +815,18 @@ print("=" * 75)
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
 print(f"Active Device: {torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU'}")
 print("Distillation Engine Modules Initialized Successfully.")
-print("=" * 75)"""))
+print("=" * 75)""")
+    )
 
-    cells.append(md_cell(r"""## 1. Mathematical Formulation & Component Verification of All 6 Pillars
+    cells.append(
+        md_cell(r"""## 1. Mathematical Formulation & Component Verification of All 6 Pillars
 
 The composite multi-objective healing loss is formulated as:
-$$\mathcal{L}_{\text{heal}} = \lambda_{\text{task}} \mathcal{L}_{\text{CE}} + \lambda_{\text{logit}} \mathcal{L}_{\text{KL}} + \lambda_{\text{CKA}} \mathcal{L}_{\text{CKA}} + \lambda_{\text{attn}} \mathcal{L}_{\text{attn}} + \lambda_{\text{embed}} \mathcal{L}_{\text{embed}} + \lambda_{\text{grad}} \mathcal{L}_{\text{grad}}$$"""))
+$$\mathcal{L}_{\text{heal}} = \lambda_{\text{task}} \mathcal{L}_{\text{CE}} + \lambda_{\text{logit}} \mathcal{L}_{\text{KL}} + \lambda_{\text{CKA}} \mathcal{L}_{\text{CKA}} + \lambda_{\text{attn}} \mathcal{L}_{\text{attn}} + \lambda_{\text{embed}} \mathcal{L}_{\text{embed}} + \lambda_{\text{grad}} \mathcal{L}_{\text{grad}}$$""")
+    )
 
-    cells.append(code_cell(r"""# Cell 2: Unit Verification of Distillation Loss Pillars
+    cells.append(
+        code_cell(r"""# Cell 2: Unit Verification of Distillation Loss Pillars
 B, L, V, D = 2, 64, 1000, 256
 
 # Synthetic Student & Teacher Tensors
@@ -791,17 +867,21 @@ print(f"  • Pillar 4 (Embedding Metric):     {loss_p4.item():.4f}")
 print(f"  • Pillar 5 (Gradient Penalty):     {loss_p5.item():.4f}")
 print(f"  • Pillar 6 (Task Cross-Entropy):   {loss_p6.item():.4f}")
 assert all(not torch.isnan(l) for l in [loss_p1, loss_p2, loss_p3, loss_p4, loss_p5, loss_p6]), "NaN in loss!"
-print("✅ All 6 Distillation Pillars Verified Numerically!")"""))
+print("✅ All 6 Distillation Pillars Verified Numerically!")""")
+    )
 
-    cells.append(md_cell(r"""## 2. Full 50-Step Surgical Attention Replacement & Micro-Healing Loop
+    cells.append(
+        md_cell(r"""## 2. Full 50-Step Surgical Attention Replacement & Micro-Healing Loop
 
 We perform an in-place surgical replacement:
 1. Teacher model: Standard softmax Multi-Head Attention layer.
 2. Student model: Replaced with `svd_linear_attention` layer $\mathcal{O}(L)$.
 3. Execute 50 iterations of gradient descent using the composite six-pillar distillation objective.
-4. Track per-iteration loss trajectories and representation recovery rates."""))
+4. Track per-iteration loss trajectories and representation recovery rates.""")
+    )
 
-    cells.append(code_cell(r"""# Cell 3: Live 50-Step Surgical Healing Execution
+    cells.append(
+        code_cell(r"""# Cell 3: Live 50-Step Surgical Healing Execution
 class HostAttention(nn.Module):
     def __init__(self, d_model=128, n_heads=4):
         super().__init__()
@@ -869,15 +949,19 @@ print("=" * 75)
 print(f"🏆 Surgical Healing Complete: Representation Recovery = {recovery_pct:.2f}%")
 print(f"  • Pre-Healing MSE:  {pre_mse:.6f}")
 print(f"  • Post-Healing MSE: {post_mse:.6f}")
-print("=" * 75)"""))
+print("=" * 75)""")
+    )
 
-    cells.append(md_cell(r"""## 3. Publication-Grade Multi-Curve Distillation Convergence Visualizations
+    cells.append(
+        md_cell(r"""## 3. Publication-Grade Multi-Curve Distillation Convergence Visualizations
 
 Tracking the convergence trajectory across all 50 iterations:
 - Rapid exponential decay of feature representation error.
-- Cosine alignment steering toward $\ge 98\%$ angular preservation."""))
+- Cosine alignment steering toward $\ge 98\%$ angular preservation.""")
+    )
 
-    cells.append(code_cell(r"""# Cell 4: High-DPI Dual-Panel Convergence Plot
+    cells.append(
+        code_cell(r"""# Cell 4: High-DPI Dual-Panel Convergence Plot
 %matplotlib inline
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5.2), dpi=120)
 
@@ -904,13 +988,17 @@ ax2.legend(frameon=True, fontsize=10)
 
 plt.tight_layout()
 print("Rendered Dual-Panel Distillation Trajectory Charts.")
-plt.show()"""))
+plt.show()""")
+    )
 
-    cells.append(md_cell(r"""## 4. Multi-Layer Host Model Perplexity & Layerwise Alignment
+    cells.append(
+        md_cell(r"""## 4. Multi-Layer Host Model Perplexity & Layerwise Alignment
 
-We assess representation recovery across multiple transformer layers, confirming that intermediate latent manifolds are restored uniformly."""))
+We assess representation recovery across multiple transformer layers, confirming that intermediate latent manifolds are restored uniformly.""")
+    )
 
-    cells.append(code_cell(r"""# Cell 5: Layerwise Latent Alignment Assessment
+    cells.append(
+        code_cell(r"""# Cell 5: Layerwise Latent Alignment Assessment
 layer_alignments = []
 for l_idx in range(6):
     # Simulated layer alignment across depth
@@ -922,13 +1010,17 @@ for l_idx in range(6):
         "Subspace Alignment": f"{simulated_recovery:.2f} %"
     })
 
-print(pd.DataFrame(layer_alignments).to_string(index=False))"""))
+print(pd.DataFrame(layer_alignments).to_string(index=False))""")
+    )
 
-    cells.append(md_cell(r"""## 5. Ablation Study: Individual vs Composite Distillation Pillars
+    cells.append(
+        md_cell(r"""## 5. Ablation Study: Individual vs Composite Distillation Pillars
 
-We analyze the relative contribution of each pillar to the overall representation recovery rate by evaluating alignment with specific pillars ablated."""))
+We analyze the relative contribution of each pillar to the overall representation recovery rate by evaluating alignment with specific pillars ablated.""")
+    )
 
-    cells.append(code_cell(r"""# Cell 6: Distillation Pillar Ablation Matrix
+    cells.append(
+        code_cell(r"""# Cell 6: Distillation Pillar Ablation Matrix
 ablations = [
     {"Configuration": "All 6 Pillars Active (Full)", "Representation Loss": "Active", "CKA / Manifold": "Active", "Task CE": "Active", "Alignment": f"{recovery_pct:.2f} %", "Status": "Optimal"},
     {"Configuration": "w/o CKA Subspace Loss", "Representation Loss": "Active", "CKA / Manifold": "Disabled", "Task CE": "Active", "Alignment": f"{recovery_pct - 14.5:.2f} %", "Status": "Sub-optimal"},
@@ -941,16 +1033,20 @@ print("=" * 95)
 print("DISTILLATION PILLAR ABLATION STUDY")
 print("=" * 95)
 print(pd.DataFrame(ablations).to_string(index=False))
-print("=" * 95)"""))
+print("=" * 95)""")
+    )
 
-    cells.append(md_cell(r"""## 6. Language Model Perplexity Recovery on Calibration Corpus
+    cells.append(
+        md_cell(r"""## 6. Language Model Perplexity Recovery on Calibration Corpus
 
 We evaluate token prediction loss and perplexity ($\text{PPL} = \exp(\text{Loss})$) on a held-out calibration corpus across:
 1. Teacher model (Softmax attention)
 2. Raw surgical student model (Pre-healing)
-3. Six-pillar healed student model (Post-healing)"""))
+3. Six-pillar healed student model (Post-healing)""")
+    )
 
-    cells.append(code_cell(r"""# Cell 7: Perplexity Recovery Evaluation
+    cells.append(
+        code_cell(r"""# Cell 7: Perplexity Recovery Evaluation
 # Simulated causal language model evaluation
 loss_teacher = 2.45
 ppl_teacher = math.exp(loss_teacher)
@@ -972,24 +1068,29 @@ ppl_summary = [
 
 print("=" * 90)
 print(pd.DataFrame(ppl_summary).to_string(index=False))
-print("=" * 90)"""))
+print("=" * 90)""")
+    )
 
     cells.append(md_cell(r"""## 7. Distillation Verification Conclusion & Release Invariants"""))
 
-    cells.append(code_cell(r"""# Cell 8: Final Distillation Invariant Summary
+    cells.append(
+        code_cell(r"""# Cell 8: Final Distillation Invariant Summary
 print("=" * 75)
 print("🎉 SIX-PILLAR DISTILLATION & SURGICAL HEALING SUITE VERIFIED")
 print(f"  • All 6 Distillation Pillars Verified Numerically")
 print(f"  • 50-Step Micro-Healing pass completed with {recovery_pct:.2f}% representation alignment")
 print(f"  • Zero NaN or gradient explosion events observed")
-print("=" * 75)"""))
+print("=" * 75)""")
+    )
 
     return make_notebook(cells)
 
 
 def generate_nb09():
+    """Execute generate nb09 routine."""
     cells = []
-    cells.append(md_cell(r"""# ⚡ Master Production Serving: PagedAttention KV Cache & Speculative Decoding
+    cells.append(
+        md_cell(r"""# ⚡ Master Production Serving: PagedAttention KV Cache & Speculative Decoding
 
 In modern LLM inference serving, system throughput is fundamentally bottlenecked by:
 1. **KV-Cache Memory Fragmentation**: Contiguous pre-allocation wastes up to 60-80% of GPU high-bandwidth memory (HBM). **PagedAttention** virtualizes KV storage into non-contiguous physical pages (blocks).
@@ -999,9 +1100,11 @@ This notebook evaluates:
 - PagedAttention KV Cache pool allocation and virtual-to-physical block tables.
 - Visual memory fragmentation heatmap across concurrent request streams.
 - KV Cache eviction strategies (FIFO vs Heavy-Hitter vs Attention-Ranked).
-- Live Lossless Speculative Decoding benchmark measuring tokens/sec and empirical speedup."""))
+- Live Lossless Speculative Decoding benchmark measuring tokens/sec and empirical speedup.""")
+    )
 
-    cells.append(code_cell(r"""# Cell 1: Environment Diagnostics & Serving Engine Setup
+    cells.append(
+        code_cell(r"""# Cell 1: Environment Diagnostics & Serving Engine Setup
 import os
 os.environ['MPLCONFIGDIR'] = '/tmp/mpl'
 import sys
@@ -1025,13 +1128,17 @@ print("=" * 75)
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
 print(f"Active Device: {torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU'}")
 print("Serving Primitives Loaded: PagedKVCache, SelfSpeculativeDecoder.")
-print("=" * 75)"""))
+print("=" * 75)""")
+    )
 
-    cells.append(md_cell(r"""## 1. PagedAttention KV-Cache Simulation & Virtual-to-Physical Block Mapping
+    cells.append(
+        md_cell(r"""## 1. PagedAttention KV-Cache Simulation & Virtual-to-Physical Block Mapping
 
-PagedAttention partitions token sequences into fixed-size physical memory pages (blocks of size $B=16$), eliminating internal and external memory fragmentation."""))
+PagedAttention partitions token sequences into fixed-size physical memory pages (blocks of size $B=16$), eliminating internal and external memory fragmentation.""")
+    )
 
-    cells.append(code_cell(r"""# Cell 2: PagedAttention Cache Pool Allocation
+    cells.append(
+        code_cell(r"""# Cell 2: PagedAttention Cache Pool Allocation
 num_blocks = 64
 block_size = 16
 num_heads = 8
@@ -1066,13 +1173,17 @@ print(f"  • Total Free Blocks:         {len(cache.free_blocks)} / {num_blocks}
 print(f"  • Physical Memory Footprint: {(num_blocks * num_heads * head_dim * block_size * 2 * 2) / (1024**2):.2f} MB")
 for sid in seq_ids:
     print(f"  • Request {sid}: Length={cache.seq_lengths[sid]} tokens | Mapped Blocks={cache.block_tables[sid]}")
-print("=" * 85)"""))
+print("=" * 85)""")
+    )
 
-    cells.append(md_cell(r"""## 2. Memory Fragmentation Visualization: Paged vs Contiguous KV Cache
+    cells.append(
+        md_cell(r"""## 2. Memory Fragmentation Visualization: Paged vs Contiguous KV Cache
 
-Contiguous memory allocators must reserve the maximum possible context window for each sequence (e.g. 512 tokens), leaving massive blocks of unused memory. PagedAttention dynamically allocates blocks on-demand, achieving near-zero internal fragmentation."""))
+Contiguous memory allocators must reserve the maximum possible context window for each sequence (e.g. 512 tokens), leaving massive blocks of unused memory. PagedAttention dynamically allocates blocks on-demand, achieving near-zero internal fragmentation.""")
+    )
 
-    cells.append(code_cell(r"""# Cell 3: Memory Allocation Heatmap Visualization
+    cells.append(
+        code_cell(r"""# Cell 3: Memory Allocation Heatmap Visualization
 %matplotlib inline
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5.5), dpi=120)
 
@@ -1103,16 +1214,20 @@ ax2.set_ylabel('Client Request Stream', fontsize=10, fontweight='bold')
 
 plt.tight_layout()
 print("Rendered PagedAttention vs Contiguous Allocation Heatmap.")
-plt.show()"""))
+plt.show()""")
+    )
 
-    cells.append(md_cell(r"""## 3. KV-Cache Eviction Strategies: FIFO vs Heavy-Hitter vs Attention-Ranked
+    cells.append(
+        md_cell(r"""## 3. KV-Cache Eviction Strategies: FIFO vs Heavy-Hitter vs Attention-Ranked
 
 When serving long contexts under memory pressure, old or uninformative tokens must be evicted. We evaluate three policies:
 1. **FIFO**: Evict oldest tokens (sliding window).
 2. **Heavy-Hitter (H2O)**: Retain high-attention query-key interaction keys.
-3. **Attention-Ranked Pruning**: Retain accumulated token attention norms."""))
+3. **Attention-Ranked Pruning**: Retain accumulated token attention norms.""")
+    )
 
-    cells.append(code_cell(r"""# Cell 4: Comparative KV Eviction Simulation
+    cells.append(
+        code_cell(r"""# Cell 4: Comparative KV Eviction Simulation
 N_ctx = 256
 keep_k = 64
 
@@ -1133,15 +1248,19 @@ print("=" * 80)
 print(f"  • FIFO Retained Attention Mass:         {fifo_retained_energy * 100:.2f}%")
 print(f"  • Heavy-Hitter Retained Attention Mass: {h2o_retained_energy * 100:.2f}%")
 print(f"  • Memory Compression Achieved:         {N_ctx / keep_k:.2f}x (75.0% memory saved)")
-print("=" * 80)"""))
+print("=" * 80)""")
+    )
 
-    cells.append(md_cell(r"""## 4. Lossless Speculative Decoding Benchmark: Target vs. Draft
+    cells.append(
+        md_cell(r"""## 4. Lossless Speculative Decoding Benchmark: Target vs. Draft
 
 Speculative decoding leverages a fast draft model to propose $\gamma$ tokens, which are verified in parallel by the target model in a single forward pass:
 $$\text{Expected Tokens per Step} = 1 + \gamma \cdot \alpha$$
-where $\alpha$ is the empirical acceptance rate."""))
+where $\alpha$ is the empirical acceptance rate.""")
+    )
 
-    cells.append(code_cell(r"""# Cell 5: Speculative Decoding Sweep across Draft Lengths gamma
+    cells.append(
+        code_cell(r"""# Cell 5: Speculative Decoding Sweep across Draft Lengths gamma
 draft_gammas = [1, 2, 4, 6, 8]
 alpha_rates = [0.85, 0.78, 0.70, 0.62, 0.55] # Empirical acceptance decay
 
@@ -1177,11 +1296,13 @@ print(f"{'Draft (gamma)':<14} | {'Acceptance':<12} | {'Tokens/Step':<14} | {'Thr
 print("-" * 90)
 for r in spec_results:
     print(f"{r['gamma']:<14} | {r['Acceptance Rate']*100:>10.1f} % | {r['Tokens / Step']:>12.2f}  | {r['Throughput (tok/s)']:>11.1f} tok/s | {r['Speedup']:>6.2f}x")
-print("=" * 90)"""))
+print("=" * 90)""")
+    )
 
     cells.append(md_cell(r"""## 5. Publication-Grade Serving Visualizations: Speedup & Acceptance Curves"""))
 
-    cells.append(code_cell(r"""# Cell 6: High-DPI Dual-Panel Serving Figures
+    cells.append(
+        code_cell(r"""# Cell 6: High-DPI Dual-Panel Serving Figures
 %matplotlib inline
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5.2), dpi=120)
 
@@ -1207,54 +1328,63 @@ ax2.grid(True, axis='y', ls="--", alpha=0.5)
 
 plt.tight_layout()
 print("Rendered Dual-Panel Serving Charts.")
-plt.show()"""))
+plt.show()""")
+    )
 
     cells.append(md_cell(r"""## 6. End-to-End Serving Efficiency Tradeoff Space"""))
 
-    cells.append(code_cell(r"""# Cell 7: Serving Efficiency Matrix
+    cells.append(
+        code_cell(r"""# Cell 7: Serving Efficiency Matrix
 matrix_data = [
     {"Configuration": "Standard Dense Autoregressive", "Paged KV": "No", "Speculative": "No", "Latency / tok": "18.0 ms", "Throughput": "55.6 tok/s", "VRAM Overhead": "High (Fragmented)"},
     {"Configuration": "PagedAttention Alone", "Paged KV": "Yes", "Speculative": "No", "Latency / tok": "17.4 ms", "Throughput": "57.5 tok/s", "VRAM Overhead": "Zero Fragmentation"},
     {"Configuration": "Speculative Decoding (gamma=4)", "Paged KV": "No", "Speculative": "Yes", "Latency / tok": "7.8 ms", "Throughput": "128.2 tok/s", "VRAM Overhead": "Moderate"},
     {"Configuration": "NeuralOps Production Suite (Both)", "Paged KV": "Yes", "Speculative": "Yes", "Latency / tok": "7.5 ms", "Throughput": "133.3 tok/s", "VRAM Overhead": "Optimal (Minimal)"}
 ]
-print(pd.DataFrame(matrix_data).to_string(index=False))"""))
+print(pd.DataFrame(matrix_data).to_string(index=False))""")
+    )
 
     cells.append(md_cell(r"""## 7. Production Serving Verification Conclusion & System Invariants"""))
 
-    cells.append(code_cell(r"""# Cell 8: Final Serving Invariant Summary
+    cells.append(
+        code_cell(r"""# Cell 8: Final Serving Invariant Summary
 print("=" * 75)
 print("🎉 PRODUCTION SERVING SUITE VERIFIED: ZERO FRAGMENTATION + SPECULATIVE ENGINE")
 print(f"  • PagedAttention Virtualized KV Cache: {num_blocks} blocks allocated with zero fragmentation")
 print(f"  • KV Cache Eviction: 75% memory compression achieved via attention-guided retention")
 print(f"  • Speculative Decoding: Up to 2.40x end-to-end throughput speedup verified")
-print("=" * 75)"""))
+print("=" * 75)""")
+    )
 
     return make_notebook(cells)
 
 
 def main():
+    """Execute main routine."""
     base_dir = "/Users/tahamajs/Documents/uni/Project/notebooks"
-    
+
     nb06 = generate_nb06()
     with open(f"{base_dir}/06_master_all_131_attention_mechanisms_interactive.ipynb", "w", encoding="utf-8") as f:
         json.dump(nb06, f, indent=1)
     print(f"Generated 06 ({len(nb06['cells'])} cells)")
-    
+
     nb07 = generate_nb07()
     with open(f"{base_dir}/07_master_all_72_compression_engines_quant_and_svd.ipynb", "w", encoding="utf-8") as f:
         json.dump(nb07, f, indent=1)
     print(f"Generated 07 ({len(nb07['cells'])} cells)")
-    
+
     nb08 = generate_nb08()
     with open(f"{base_dir}/08_six_pillar_distillation_and_surgical_recovery.ipynb", "w", encoding="utf-8") as f:
         json.dump(nb08, f, indent=1)
     print(f"Generated 08 ({len(nb08['cells'])} cells)")
-    
+
     nb09 = generate_nb09()
-    with open(f"{base_dir}/09_production_serving_paged_cache_and_speculative_decoding.ipynb", "w", encoding="utf-8") as f:
+    with open(
+        f"{base_dir}/09_production_serving_paged_cache_and_speculative_decoding.ipynb", "w", encoding="utf-8"
+    ) as f:
         json.dump(nb09, f, indent=1)
     print(f"Generated 09 ({len(nb09['cells'])} cells)")
+
 
 if __name__ == "__main__":
     main()

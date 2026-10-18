@@ -79,6 +79,7 @@ def benchmark_fn(
 
 
 def compute_metrics(ref: torch.Tensor, test: torch.Tensor) -> Tuple[float, float]:
+    """Execute compute metrics routine."""
     ref_f = ref.detach().flatten().float()
     test_f = test.detach().flatten().float()
     cos_sim = F.cosine_similarity(ref_f, test_f, dim=0).item()
@@ -88,6 +89,7 @@ def compute_metrics(ref: torch.Tensor, test: torch.Tensor) -> Tuple[float, float
 
 
 def main():
+    """Execute main routine."""
     if not torch.cuda.is_available():
         print("CUDA unavailable. Exiting benchmark.")
         sys.exit(1)
@@ -407,6 +409,7 @@ def main():
     weights = torch.softmax(torch.randn(num_tokens, top_k, device=device, dtype=torch.float32), dim=-1)
 
     def fn_moe():
+        """Execute fn moe routine."""
         disp = moe_dispatch(tokens, topk_indices, offsets, total_slots)
         return moe_gather(disp, weights, topk_indices, offsets)
 

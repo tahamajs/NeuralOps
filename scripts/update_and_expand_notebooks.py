@@ -5,6 +5,7 @@
 
 Author: Taha Majlesi
 """
+
 import glob
 import json
 import os
@@ -13,6 +14,7 @@ NB_DIR = "notebooks"
 
 
 def ensure_author_in_cell0(nb_path):
+    """Execute ensure author in cell0 routine."""
     with open(nb_path, "r", encoding="utf-8") as f:
         nb = json.load(f)
     c0 = nb["cells"][0]
@@ -35,6 +37,7 @@ def ensure_author_in_cell0(nb_path):
 
 
 def expand_nb02():
+    """Execute expand nb02 routine."""
     path = os.path.join(NB_DIR, "02_roofline_and_triton_kernels.ipynb")
     with open(path, "r", encoding="utf-8") as f:
         nb = json.load(f)
@@ -92,7 +95,7 @@ def expand_nb02():
                 "print(f'Total Kernels Profiled: {len(df_3level)}')\n",
                 "speedup_tri = df_3level['pytorch_ms'] / df_3level['triton_ms'].replace(0, float('nan'))\n",
                 "assert speedup_tri.mean() > 10.0, 'Mean Triton speedup regression detected!'\n",
-                "print(f\"Mean Triton Speedup vs PyTorch: {speedup_tri.mean():.2f}x\")\n",
+                'print(f"Mean Triton Speedup vs PyTorch: {speedup_tri.mean():.2f}x")\n',
                 "print('All 3-tier execution hierarchy invariants successfully verified [100% PASS].')\n",
             ],
         }
@@ -103,6 +106,7 @@ def expand_nb02():
 
 
 def expand_nb03():
+    """Execute expand nb03 routine."""
     path = os.path.join(NB_DIR, "03_custom_plugins_and_extensibility.ipynb")
     with open(path, "r", encoding="utf-8") as f:
         nb = json.load(f)
@@ -232,6 +236,7 @@ def expand_nb03():
 
 
 def expand_nb04():
+    """Execute expand nb04 routine."""
     path = os.path.join(NB_DIR, "04_end_to_end_3level_benchmarking.ipynb")
     with open(path, "r", encoding="utf-8") as f:
         nb = json.load(f)
@@ -289,7 +294,7 @@ def expand_nb04():
                     "print('Hardware Platform: NVIDIA GeForce RTX 4070 Laptop GPU')\n",
                     "print(f\"Max Speedup: {df_bench['speedup_cuda_vs_py'].max():.1f}x vs PyTorch Reference\")\n",
                     "speedup_tri = df_bench['pytorch_ms'] / df_bench['triton_ms'].replace(0, float('nan'))\n",
-                    "print(f\"Mean Triton Speedup: {speedup_tri.mean():.2f}x\")\n",
+                    'print(f"Mean Triton Speedup: {speedup_tri.mean():.2f}x")\n',
                     "print('✓ All 3-level benchmark records certified and ingested.')\n",
                 ],
             },
@@ -301,6 +306,7 @@ def expand_nb04():
 
 
 def expand_nb05_master():
+    """Execute expand nb05 master routine."""
     path = os.path.join(NB_DIR, "05_master_108_cuda_and_26_triton_kernels_benchmark.ipynb")
     with open(path, "r", encoding="utf-8") as f:
         nb = json.load(f)
@@ -452,6 +458,7 @@ def expand_nb05_master():
 
 
 def expand_nb05_paper():
+    """Execute expand nb05 paper routine."""
     path = os.path.join(NB_DIR, "05_paper_empirical_results_master.ipynb")
     with open(path, "r", encoding="utf-8") as f:
         nb = json.load(f)

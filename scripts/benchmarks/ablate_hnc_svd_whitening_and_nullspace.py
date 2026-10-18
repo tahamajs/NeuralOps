@@ -1,8 +1,11 @@
+"""Ablate hnc svd whitening and nullspace module.
+
+Author: Taha Majlesi
+"""
+
 import os
 import copy
-import json
 import torch
-import torch.nn as nn
 from pathlib import Path
 from neuralops.compression_engine.svd.direct_svd import DirectSVDCompressor
 from scripts.benchmarks.batch_validate_all_compressors import load_roberta, get_probe_data, evaluate
@@ -10,17 +13,17 @@ from scripts.benchmarks.batch_validate_all_compressors import load_roberta, get_
 os.environ["HF_HUB_OFFLINE"] = "1"
 os.environ["TRANSFORMERS_OFFLINE"] = "1"
 
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
+device = "cuda" if torch.cuda.is_available() else "cpu"
 seed = 42
 torch.manual_seed(seed)
 
-print('=== Fair 4-Way Ablation: Isolating Cholesky Whitening vs Nullspace Projection ===')
-print('Verifying identical initialization, seed, calibration data across all conditions.')
+print("=== Fair 4-Way Ablation: Isolating Cholesky Whitening vs Nullspace Projection ===")
+print("Verifying identical initialization, seed, calibration data across all conditions.")
 
 # Load base model & data
 anchor = load_roberta(device)
-probe, heldout, heldout_labels, _ = get_probe_data('roberta', device)
-probe_formatted = [{'input_ids': probe[0][:32], 'attention_mask': probe[1][:32]}]
+probe, heldout, heldout_labels, _ = get_probe_data("roberta", device)
+probe_formatted = [{"input_ids": probe[0][:32], "attention_mask": probe[1][:32]}]
 
 with torch.no_grad():
     y_anchor = anchor(heldout[0], attention_mask=heldout[1]).logits
@@ -29,8 +32,8 @@ ranks = [8, 16, 32, 64]
 ablation_results = {}
 
 for r in ranks:
-    print(f'\n--- Evaluating Rank = {r} ---')
-    
+    print(f"\n--- Evaluating Rank = {r} ---")
+
     # 1. Standard Direct SVD (Baseline: No Whitening, No Nullspace)
     m_direct = copy.deepcopy(anchor)
     c_direct = DirectSVDCompressor(
@@ -43,8 +46,8 @@ for r in ranks:
         max_retries=0,
     )
     c_direct.compress()
-    res_direct = evaluate(m_direct, heldout, y_anchor, 'roberta', device)
-    
+    res_direct = evaluate(m_direct, heldout, y_anchor, "roberta", device)
+
     # 2. Whitened SVD (Cholesky Whitening, NO Nullspace Stage D)
     m_white = copy.deepcopy(anchor)
     c_white = DirectSVDCompressor(
@@ -61,7 +64,7 @@ for r in ranks:
         max_retries=0,
     )
     c_white.compress()
-    res_white = evaluate(m_white, heldout, y_anchor, 'roberta', device)
+    res_white = evaluate(m_white, heldout, y_anchor, "roberta", device)
 
     # 3. HNC Nullspace-Only (NO Cholesky Whitening, Stage D Nullspace Factor Restoration)
     m_nullspace = copy.deepcopy(anchor)
@@ -79,8 +82,8 @@ for r in ranks:
         max_retries=0,
     )
     c_nullspace.compress()
-    res_nullspace = evaluate(m_nullspace, heldout, y_anchor, 'roberta', device)
-    
+    res_nullspace = evaluate(m_nullspace, heldout, y_anchor, "roberta", device)
+
     # 4. Full HNC-SVD (Cholesky Whitening + Stage D Nullspace Recovery)
     m_hnc = copy.deepcopy(anchor)
     c_hnc = DirectSVDCompressor(
@@ -97,23 +100,27 @@ for r in ranks:
         max_retries=0,
     )
     c_hnc.compress()
-    res_hnc = evaluate(m_hnc, heldout, y_anchor, 'roberta', device)
-    
-    ablation_results[r] = {
-        'direct_svd': res_direct['rel_err'],
-        'whitened_svd': res_white['rel_err'],
-        'nullspace_only': res_nullspace['rel_err'],
-        'full_hnc_svd': res_hnc['rel_err'],
-    }
-    print(f'Rank {r:2d} | Direct: {res_direct["rel_err"]:.4f} | Whitened: {res_white["rel_err"]:.4f} | Nullspace-Only: {res_nullspace["rel_err"]:.4f} | Full HNC: {res_hnc["rel_err"]:.4f}')
+    res_hnc = evaluate(m_hnc, heldout, y_anchor, "roberta", device)
 
-print('\n=== Final 4-Way Ablation Summary Table ===')
-header = f'{"Rank":<6} | {"DirectSVD (Baseline)":<20} | {"WhitenedSVD (No Nullspace)":<26} | {"HNC Nullspace-Only (No White)":<30} | {"Full HNC-SVD (Both)":<22}'
+    ablation_results[r] = {
+        "direct_svd": res_direct["rel_err"],
+        "whitened_svd": res_white["rel_err"],
+        "nullspace_only": res_nullspace["rel_err"],
+        "full_hnc_svd": res_hnc["rel_err"],
+    }
+    print(
+        f"Rank {r:2d} | Direct: {res_direct['rel_err']:.4f} | Whitened: {res_white['rel_err']:.4f} | Nullspace-Only: {res_nullspace['rel_err']:.4f} | Full HNC: {res_hnc['rel_err']:.4f}"
+    )
+
+print("\n=== Final 4-Way Ablation Summary Table ===")
+header = f"{'Rank':<6} | {'DirectSVD (Baseline)':<20} | {'WhitenedSVD (No Nullspace)':<26} | {'HNC Nullspace-Only (No White)':<30} | {'Full HNC-SVD (Both)':<22}"
 print(header)
-print('-' * len(header))
+print("-" * len(header))
 for r in ranks:
     d = ablation_results[r]
-    print(f'{r:<6} | {d["direct_svd"]:^20.4f} | {d["whitened_svd"]:^26.4f} | {d["nullspace_only"]:^30.4f} | {d["full_hnc_svd"]:^22.4f}')
+    print(
+        f"{r:<6} | {d['direct_svd']:^20.4f} | {d['whitened_svd']:^26.4f} | {d['nullspace_only']:^30.4f} | {d['full_hnc_svd']:^22.4f}"
+    )
 
 # Output markdown report
 out_path = Path("results/batch_validation/HNC_ABLATION_4WAY_REPORT.md")
@@ -123,16 +130,28 @@ with open(out_path, "w") as f:
     f.write("**Rigorous isolation of Cholesky Whitening vs. Nullspace Factor Restoration**\n\n")
     f.write("- **Model**: RoBERTa-large (`textattack/roberta-base-SST-2`)\n")
     f.write("- **Device**: NVIDIA RTX 4070 (Ada Lovelace, SM 8.9)\n")
-    f.write("- **Experimental Controls**: Identical initial seed (`42`), identical probe calibration samples, identical rank schedule.\n\n")
+    f.write(
+        "- **Experimental Controls**: Identical initial seed (`42`), identical probe calibration samples, identical rank schedule.\n\n"
+    )
     f.write("## Empirical Relative Reconstruction Error Matrix\n\n")
-    f.write("| Rank | DirectSVD (Baseline) | WhitenedSVD (No Nullspace) | HNC Nullspace-Only (No Whitening) | Full HNC-SVD (Whitening + Nullspace) |\n")
+    f.write(
+        "| Rank | DirectSVD (Baseline) | WhitenedSVD (No Nullspace) | HNC Nullspace-Only (No Whitening) | Full HNC-SVD (Whitening + Nullspace) |\n"
+    )
     f.write("|---|---|---|---|---|\n")
     for r in ranks:
         d = ablation_results[r]
-        f.write(f"| **r = {r}** | {d['direct_svd']:.4f} | {d['whitened_svd']:.4f} | {d['nullspace_only']:.4f} | **{d['full_hnc_svd']:.4f}** |\n")
+        f.write(
+            f"| **r = {r}** | {d['direct_svd']:.4f} | {d['whitened_svd']:.4f} | {d['nullspace_only']:.4f} | **{d['full_hnc_svd']:.4f}** |\n"
+        )
     f.write("\n## Scientific Conclusions\n\n")
-    f.write("1. **Cholesky Preconditioning**: Reduces curvature distortion by aligning principal axes with activation covariance eigenspaces.\n")
-    f.write("2. **Nullspace Factor Restoration (Stage D)**: Directly optimizes $A_r, B_r$ to reconstruct the original anchor representation within the Hessian nullspace.\n")
-    f.write("3. **Synergy**: The combination of Cholesky Whitening + Nullspace Factor Restoration (Full HNC-SVD) strictly outperforms both individual components across all ranks.\n")
+    f.write(
+        "1. **Cholesky Preconditioning**: Reduces curvature distortion by aligning principal axes with activation covariance eigenspaces.\n"
+    )
+    f.write(
+        "2. **Nullspace Factor Restoration (Stage D)**: Directly optimizes $A_r, B_r$ to reconstruct the original anchor representation within the Hessian nullspace.\n"
+    )
+    f.write(
+        "3. **Synergy**: The combination of Cholesky Whitening + Nullspace Factor Restoration (Full HNC-SVD) strictly outperforms both individual components across all ranks.\n"
+    )
 
-print(f'\nWrote report to {out_path}')
+print(f"\nWrote report to {out_path}")

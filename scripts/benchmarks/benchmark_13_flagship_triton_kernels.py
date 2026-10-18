@@ -19,7 +19,6 @@ from __future__ import annotations
 import csv
 import gc
 import json
-import math
 import os
 import sys
 from typing import Any, Callable, Dict, List, Tuple
@@ -32,7 +31,6 @@ from neuralops.core.triton_kernels import (
     triton_fused_lowrank_gated_gemm_pytorch_ref,
     triton_fused_lowrank_sparse_gemm,
     triton_fused_lowrank_sparse_gemm_pytorch_ref,
-    triton_strided_tt_contraction,
     triton_strided_tt_linear,
     triton_strided_tt_contraction_pytorch_ref,
     triton_fused_hadamard_w4a16_gemm,
@@ -90,6 +88,7 @@ def benchmark_fn(
 
 
 def compute_metrics(out_ref: torch.Tensor, out_tri: torch.Tensor) -> Tuple[float, float]:
+    """Execute compute metrics routine."""
     ref_f = out_ref.float().view(-1)
     tri_f = out_tri.float().view(-1)
 
@@ -100,6 +99,7 @@ def compute_metrics(out_ref: torch.Tensor, out_tri: torch.Tensor) -> Tuple[float
 
 
 def main():
+    """Execute main routine."""
     if not torch.cuda.is_available():
         print("CUDA is required for Triton GPU benchmarks. Exiting.")
         sys.exit(1)
@@ -130,20 +130,24 @@ def main():
     lat_tri, vram_tri = benchmark_fn(fn_tri1)
     cos_sim, rel_err = compute_metrics(fn_ref1(), fn_tri1())
     speedup = lat_ref / max(lat_tri, 1e-6)
-    print(f"  PyTorch: {lat_ref:.3f} ms, {vram_ref:.2f} MB | Triton: {lat_tri:.3f} ms, {vram_tri:.2f} MB | Speedup: {speedup:.2f}x")
+    print(
+        f"  PyTorch: {lat_ref:.3f} ms, {vram_ref:.2f} MB | Triton: {lat_tri:.3f} ms, {vram_tri:.2f} MB | Speedup: {speedup:.2f}x"
+    )
 
-    results.append({
-        "id": 1,
-        "kernel": "triton_fused_lowrank_gated_gemm",
-        "target_module": "hnc_svd, dobi_svd, direct_svd",
-        "pytorch_ms": lat_ref,
-        "triton_ms": lat_tri,
-        "speedup": speedup,
-        "pytorch_vram_mb": vram_ref,
-        "triton_vram_mb": vram_tri,
-        "cosine_sim": cos_sim,
-        "rel_error": rel_err,
-    })
+    results.append(
+        {
+            "id": 1,
+            "kernel": "triton_fused_lowrank_gated_gemm",
+            "target_module": "hnc_svd, dobi_svd, direct_svd",
+            "pytorch_ms": lat_ref,
+            "triton_ms": lat_tri,
+            "speedup": speedup,
+            "pytorch_vram_mb": vram_ref,
+            "triton_vram_mb": vram_tri,
+            "cosine_sim": cos_sim,
+            "rel_error": rel_err,
+        }
+    )
 
     # -----------------------------------------------------------------------
     # Kernel 2: Fused Low-Rank + Sparse GEMM (RPCA)
@@ -153,7 +157,9 @@ def main():
     x2 = torch.randn(M, K, device=device, dtype=torch.float16)
     V2 = torch.randn(r, K, device=device, dtype=torch.float16)
     U2 = torch.randn(N, r, device=device, dtype=torch.float16)
-    s2 = torch.randn(N, K, device=device, dtype=torch.float16) * (torch.rand(N, K, device=device) < 0.05).to(torch.float16)
+    s2 = torch.randn(N, K, device=device, dtype=torch.float16) * (torch.rand(N, K, device=device) < 0.05).to(
+        torch.float16
+    )
     s2_csr = s2.to_sparse_csr()
     b2 = torch.randn(N, device=device, dtype=torch.float16)
 
@@ -164,20 +170,24 @@ def main():
     lat_tri, vram_tri = benchmark_fn(fn_tri2)
     cos_sim, rel_err = compute_metrics(fn_ref2(), fn_tri2())
     speedup = lat_ref / max(lat_tri, 1e-6)
-    print(f"  PyTorch: {lat_ref:.3f} ms, {vram_ref:.2f} MB | Triton: {lat_tri:.3f} ms, {vram_tri:.2f} MB | Speedup: {speedup:.2f}x")
+    print(
+        f"  PyTorch: {lat_ref:.3f} ms, {vram_ref:.2f} MB | Triton: {lat_tri:.3f} ms, {vram_tri:.2f} MB | Speedup: {speedup:.2f}x"
+    )
 
-    results.append({
-        "id": 2,
-        "kernel": "triton_fused_lowrank_sparse_gemm",
-        "target_module": "rpca_compressor",
-        "pytorch_ms": lat_ref,
-        "triton_ms": lat_tri,
-        "speedup": speedup,
-        "pytorch_vram_mb": vram_ref,
-        "triton_vram_mb": vram_tri,
-        "cosine_sim": cos_sim,
-        "rel_error": rel_err,
-    })
+    results.append(
+        {
+            "id": 2,
+            "kernel": "triton_fused_lowrank_sparse_gemm",
+            "target_module": "rpca_compressor",
+            "pytorch_ms": lat_ref,
+            "triton_ms": lat_tri,
+            "speedup": speedup,
+            "pytorch_vram_mb": vram_ref,
+            "triton_vram_mb": vram_tri,
+            "cosine_sim": cos_sim,
+            "rel_error": rel_err,
+        }
+    )
 
     # -----------------------------------------------------------------------
     # Kernel 3: Strided TT Linear Projection
@@ -199,20 +209,24 @@ def main():
     lat_tri, vram_tri = benchmark_fn(fn_tri3)
     cos_sim, rel_err = compute_metrics(fn_ref3(), fn_tri3())
     speedup = lat_ref / max(lat_tri, 1e-6)
-    print(f"  PyTorch: {lat_ref:.3f} ms, {vram_ref:.2f} MB | Triton: {lat_tri:.3f} ms, {vram_tri:.2f} MB | Speedup: {speedup:.2f}x")
+    print(
+        f"  PyTorch: {lat_ref:.3f} ms, {vram_ref:.2f} MB | Triton: {lat_tri:.3f} ms, {vram_tri:.2f} MB | Speedup: {speedup:.2f}x"
+    )
 
-    results.append({
-        "id": 3,
-        "kernel": "triton_strided_tt_linear",
-        "target_module": "tt_compressor",
-        "pytorch_ms": lat_ref,
-        "triton_ms": lat_tri,
-        "speedup": speedup,
-        "pytorch_vram_mb": vram_ref,
-        "triton_vram_mb": vram_tri,
-        "cosine_sim": cos_sim,
-        "rel_error": rel_err,
-    })
+    results.append(
+        {
+            "id": 3,
+            "kernel": "triton_strided_tt_linear",
+            "target_module": "tt_compressor",
+            "pytorch_ms": lat_ref,
+            "triton_ms": lat_tri,
+            "speedup": speedup,
+            "pytorch_vram_mb": vram_ref,
+            "triton_vram_mb": vram_tri,
+            "cosine_sim": cos_sim,
+            "rel_error": rel_err,
+        }
+    )
 
     # -----------------------------------------------------------------------
     # Kernel 4: Fused Hadamard W4A16 GEMM
@@ -233,20 +247,24 @@ def main():
     lat_tri, vram_tri = benchmark_fn(fn_tri4)
     cos_sim, rel_err = compute_metrics(fn_ref4(), fn_tri4())
     speedup = lat_ref / max(lat_tri, 1e-6)
-    print(f"  PyTorch: {lat_ref:.3f} ms, {vram_ref:.2f} MB | Triton: {lat_tri:.3f} ms, {vram_tri:.2f} MB | Speedup: {speedup:.2f}x")
+    print(
+        f"  PyTorch: {lat_ref:.3f} ms, {vram_ref:.2f} MB | Triton: {lat_tri:.3f} ms, {vram_tri:.2f} MB | Speedup: {speedup:.2f}x"
+    )
 
-    results.append({
-        "id": 4,
-        "kernel": "triton_fused_hadamard_w4a16_gemm",
-        "target_module": "rotational_slicegpt_int4, quarot",
-        "pytorch_ms": lat_ref,
-        "triton_ms": lat_tri,
-        "speedup": speedup,
-        "pytorch_vram_mb": vram_ref,
-        "triton_vram_mb": vram_tri,
-        "cosine_sim": cos_sim,
-        "rel_error": rel_err,
-    })
+    results.append(
+        {
+            "id": 4,
+            "kernel": "triton_fused_hadamard_w4a16_gemm",
+            "target_module": "rotational_slicegpt_int4, quarot",
+            "pytorch_ms": lat_ref,
+            "triton_ms": lat_tri,
+            "speedup": speedup,
+            "pytorch_vram_mb": vram_ref,
+            "triton_vram_mb": vram_tri,
+            "cosine_sim": cos_sim,
+            "rel_error": rel_err,
+        }
+    )
 
     # -----------------------------------------------------------------------
     # Kernel 5: In-Register LUT Codebook Dequantization GEMM
@@ -266,20 +284,24 @@ def main():
     lat_tri, vram_tri = benchmark_fn(fn_tri5)
     cos_sim, rel_err = compute_metrics(fn_ref5(), fn_tri5())
     speedup = lat_ref / max(lat_tri, 1e-6)
-    print(f"  PyTorch: {lat_ref:.3f} ms, {vram_ref:.2f} MB | Triton: {lat_tri:.3f} ms, {vram_tri:.2f} MB | Speedup: {speedup:.2f}x")
+    print(
+        f"  PyTorch: {lat_ref:.3f} ms, {vram_ref:.2f} MB | Triton: {lat_tri:.3f} ms, {vram_tri:.2f} MB | Speedup: {speedup:.2f}x"
+    )
 
-    results.append({
-        "id": 5,
-        "kernel": "triton_lut_codebook_dequant_gemm",
-        "target_module": "coopq_quantizer, kmeans_quantize",
-        "pytorch_ms": lat_ref,
-        "triton_ms": lat_tri,
-        "speedup": speedup,
-        "pytorch_vram_mb": vram_ref,
-        "triton_vram_mb": vram_tri,
-        "cosine_sim": cos_sim,
-        "rel_error": rel_err,
-    })
+    results.append(
+        {
+            "id": 5,
+            "kernel": "triton_lut_codebook_dequant_gemm",
+            "target_module": "coopq_quantizer, kmeans_quantize",
+            "pytorch_ms": lat_ref,
+            "triton_ms": lat_tri,
+            "speedup": speedup,
+            "pytorch_vram_mb": vram_ref,
+            "triton_vram_mb": vram_tri,
+            "cosine_sim": cos_sim,
+            "rel_error": rel_err,
+        }
+    )
 
     # -----------------------------------------------------------------------
     # Kernel 6: Fused Kronecker Matmul
@@ -300,20 +322,24 @@ def main():
     lat_tri, vram_tri = benchmark_fn(fn_tri6)
     cos_sim, rel_err = compute_metrics(fn_ref6(), fn_tri6())
     speedup = lat_ref / max(lat_tri, 1e-6)
-    print(f"  PyTorch: {lat_ref:.3f} ms, {vram_ref:.2f} MB | Triton: {lat_tri:.3f} ms, {vram_tri:.2f} MB | Speedup: {speedup:.2f}x")
+    print(
+        f"  PyTorch: {lat_ref:.3f} ms, {vram_ref:.2f} MB | Triton: {lat_tri:.3f} ms, {vram_tri:.2f} MB | Speedup: {speedup:.2f}x"
+    )
 
-    results.append({
-        "id": 6,
-        "kernel": "triton_fused_kronecker_matmul",
-        "target_module": "kronecker_compressor",
-        "pytorch_ms": lat_ref,
-        "triton_ms": lat_tri,
-        "speedup": speedup,
-        "pytorch_vram_mb": vram_ref,
-        "triton_vram_mb": vram_tri,
-        "cosine_sim": cos_sim,
-        "rel_error": rel_err,
-    })
+    results.append(
+        {
+            "id": 6,
+            "kernel": "triton_fused_kronecker_matmul",
+            "target_module": "kronecker_compressor",
+            "pytorch_ms": lat_ref,
+            "triton_ms": lat_tri,
+            "speedup": speedup,
+            "pytorch_vram_mb": vram_ref,
+            "triton_vram_mb": vram_tri,
+            "cosine_sim": cos_sim,
+            "rel_error": rel_err,
+        }
+    )
 
     # -----------------------------------------------------------------------
     # Kernel 7: Chunked Delta-Gate Recurrent Scan
@@ -333,20 +359,24 @@ def main():
     lat_tri, vram_tri = benchmark_fn(fn_tri7, warmup=10, iters=50)
     cos_sim, rel_err = compute_metrics(fn_ref7(), fn_tri7())
     speedup = lat_ref / max(lat_tri, 1e-6)
-    print(f"  PyTorch: {lat_ref:.3f} ms, {vram_ref:.2f} MB | Triton: {lat_tri:.3f} ms, {vram_tri:.2f} MB | Speedup: {speedup:.2f}x")
+    print(
+        f"  PyTorch: {lat_ref:.3f} ms, {vram_ref:.2f} MB | Triton: {lat_tri:.3f} ms, {vram_tri:.2f} MB | Speedup: {speedup:.2f}x"
+    )
 
-    results.append({
-        "id": 7,
-        "kernel": "triton_chunked_delta_gate_scan",
-        "target_module": "gated_delta_net, gla_attention",
-        "pytorch_ms": lat_ref,
-        "triton_ms": lat_tri,
-        "speedup": speedup,
-        "pytorch_vram_mb": vram_ref,
-        "triton_vram_mb": vram_tri,
-        "cosine_sim": cos_sim,
-        "rel_error": rel_err,
-    })
+    results.append(
+        {
+            "id": 7,
+            "kernel": "triton_chunked_delta_gate_scan",
+            "target_module": "gated_delta_net, gla_attention",
+            "pytorch_ms": lat_ref,
+            "triton_ms": lat_tri,
+            "speedup": speedup,
+            "pytorch_vram_mb": vram_ref,
+            "triton_vram_mb": vram_tri,
+            "cosine_sim": cos_sim,
+            "rel_error": rel_err,
+        }
+    )
 
     # -----------------------------------------------------------------------
     # Kernel 8: Cosformer Linear Attention
@@ -364,20 +394,24 @@ def main():
     lat_tri, vram_tri = benchmark_fn(fn_tri8)
     cos_sim, rel_err = compute_metrics(fn_ref8(), fn_tri8())
     speedup = lat_ref / max(lat_tri, 1e-6)
-    print(f"  PyTorch: {lat_ref:.3f} ms, {vram_ref:.2f} MB | Triton: {lat_tri:.3f} ms, {vram_tri:.2f} MB | Speedup: {speedup:.2f}x")
+    print(
+        f"  PyTorch: {lat_ref:.3f} ms, {vram_ref:.2f} MB | Triton: {lat_tri:.3f} ms, {vram_tri:.2f} MB | Speedup: {speedup:.2f}x"
+    )
 
-    results.append({
-        "id": 8,
-        "kernel": "triton_cosformer_linear_attention",
-        "target_module": "cosformer, performer",
-        "pytorch_ms": lat_ref,
-        "triton_ms": lat_tri,
-        "speedup": speedup,
-        "pytorch_vram_mb": vram_ref,
-        "triton_vram_mb": vram_tri,
-        "cosine_sim": cos_sim,
-        "rel_error": rel_err,
-    })
+    results.append(
+        {
+            "id": 8,
+            "kernel": "triton_cosformer_linear_attention",
+            "target_module": "cosformer, performer",
+            "pytorch_ms": lat_ref,
+            "triton_ms": lat_tri,
+            "speedup": speedup,
+            "pytorch_vram_mb": vram_ref,
+            "triton_vram_mb": vram_tri,
+            "cosine_sim": cos_sim,
+            "rel_error": rel_err,
+        }
+    )
 
     # -----------------------------------------------------------------------
     # Kernel 9: Block-Sparse Streaming Attention
@@ -399,20 +433,24 @@ def main():
     lat_tri, vram_tri = benchmark_fn(fn_tri9)
     cos_sim, rel_err = compute_metrics(fn_ref9(), fn_tri9())
     speedup = lat_ref / max(lat_tri, 1e-6)
-    print(f"  PyTorch: {lat_ref:.3f} ms, {vram_ref:.2f} MB | Triton: {lat_tri:.3f} ms, {vram_tri:.2f} MB | Speedup: {speedup:.2f}x")
+    print(
+        f"  PyTorch: {lat_ref:.3f} ms, {vram_ref:.2f} MB | Triton: {lat_tri:.3f} ms, {vram_tri:.2f} MB | Speedup: {speedup:.2f}x"
+    )
 
-    results.append({
-        "id": 9,
-        "kernel": "triton_block_sparse_streaming_attn",
-        "target_module": "nsa_attention, moba_attention",
-        "pytorch_ms": lat_ref,
-        "triton_ms": lat_tri,
-        "speedup": speedup,
-        "pytorch_vram_mb": vram_ref,
-        "triton_vram_mb": vram_tri,
-        "cosine_sim": cos_sim,
-        "rel_error": rel_err,
-    })
+    results.append(
+        {
+            "id": 9,
+            "kernel": "triton_block_sparse_streaming_attn",
+            "target_module": "nsa_attention, moba_attention",
+            "pytorch_ms": lat_ref,
+            "triton_ms": lat_tri,
+            "speedup": speedup,
+            "pytorch_vram_mb": vram_ref,
+            "triton_vram_mb": vram_tri,
+            "cosine_sim": cos_sim,
+            "rel_error": rel_err,
+        }
+    )
 
     # -----------------------------------------------------------------------
     # Kernel 10: Fused Bidirectional HGRN2 Scan
@@ -429,20 +467,24 @@ def main():
     lat_tri, vram_tri = benchmark_fn(fn_tri10)
     cos_sim, rel_err = compute_metrics(fn_ref10(), fn_tri10())
     speedup = lat_ref / max(lat_tri, 1e-6)
-    print(f"  PyTorch: {lat_ref:.3f} ms, {vram_ref:.2f} MB | Triton: {lat_tri:.3f} ms, {vram_tri:.2f} MB | Speedup: {speedup:.2f}x")
+    print(
+        f"  PyTorch: {lat_ref:.3f} ms, {vram_ref:.2f} MB | Triton: {lat_tri:.3f} ms, {vram_tri:.2f} MB | Speedup: {speedup:.2f}x"
+    )
 
-    results.append({
-        "id": 10,
-        "kernel": "triton_hgrn2_fused_bwd_scan",
-        "target_module": "hgrn2_attention, mamba_block",
-        "pytorch_ms": lat_ref,
-        "triton_ms": lat_tri,
-        "speedup": speedup,
-        "pytorch_vram_mb": vram_ref,
-        "triton_vram_mb": vram_tri,
-        "cosine_sim": cos_sim,
-        "rel_error": rel_err,
-    })
+    results.append(
+        {
+            "id": 10,
+            "kernel": "triton_hgrn2_fused_bwd_scan",
+            "target_module": "hgrn2_attention, mamba_block",
+            "pytorch_ms": lat_ref,
+            "triton_ms": lat_tri,
+            "speedup": speedup,
+            "pytorch_vram_mb": vram_ref,
+            "triton_vram_mb": vram_tri,
+            "cosine_sim": cos_sim,
+            "rel_error": rel_err,
+        }
+    )
 
     # -----------------------------------------------------------------------
     # Kernel 11: Spectral Entropy SVD Gate
@@ -456,28 +498,33 @@ def main():
     w11 = torch.rand(R_MAX, device=device, dtype=torch.float16)
     b11 = torch.randn(N, device=device, dtype=torch.float16)
 
-    fn_ref11 = lambda: triton_spectral_entropy_svd_gate_pytorch_ref(x11, V11, U11, effective_rank=eff_r, s_weights=w11, bias=b11)
+    fn_ref11 = lambda: triton_spectral_entropy_svd_gate_pytorch_ref(
+        x11, V11, U11, effective_rank=eff_r, s_weights=w11, bias=b11
+    )
     fn_tri11 = lambda: triton_spectral_entropy_svd_gate(x11, V11, U11, effective_rank=eff_r, s_weights=w11, bias=b11)
 
     lat_ref, vram_ref = benchmark_fn(fn_ref11)
     lat_tri, vram_tri = benchmark_fn(fn_tri11)
     cos_sim, rel_err = compute_metrics(fn_ref11(), fn_tri11())
     speedup = lat_ref / max(lat_tri, 1e-6)
-    print(f"  PyTorch: {lat_ref:.3f} ms, {vram_ref:.2f} MB | Triton: {lat_tri:.3f} ms, {vram_tri:.2f} MB | Speedup: {speedup:.2f}x")
+    print(
+        f"  PyTorch: {lat_ref:.3f} ms, {vram_ref:.2f} MB | Triton: {lat_tri:.3f} ms, {vram_tri:.2f} MB | Speedup: {speedup:.2f}x"
+    )
 
-    results.append({
-        "id": 11,
-        "kernel": "triton_spectral_entropy_svd_gate",
-        "target_module": "entropy_budget_allocation",
-        "pytorch_ms": lat_ref,
-        "triton_ms": lat_tri,
-        "speedup": speedup,
-        "pytorch_vram_mb": vram_ref,
-        "triton_vram_mb": vram_tri,
-        "cosine_sim": cos_sim,
-        "rel_error": rel_err,
-    })
-
+    results.append(
+        {
+            "id": 11,
+            "kernel": "triton_spectral_entropy_svd_gate",
+            "target_module": "entropy_budget_allocation",
+            "pytorch_ms": lat_ref,
+            "triton_ms": lat_tri,
+            "speedup": speedup,
+            "pytorch_vram_mb": vram_ref,
+            "triton_vram_mb": vram_tri,
+            "cosine_sim": cos_sim,
+            "rel_error": rel_err,
+        }
+    )
 
     # -----------------------------------------------------------------------
     # Kernel 12: Fused Activation-Scaling Quantized GEMM
@@ -496,20 +543,24 @@ def main():
     lat_tri, vram_tri = benchmark_fn(fn_tri12)
     cos_sim, rel_err = compute_metrics(fn_ref12(), fn_tri12())
     speedup = lat_ref / max(lat_tri, 1e-6)
-    print(f"  PyTorch: {lat_ref:.3f} ms, {vram_ref:.2f} MB | Triton: {lat_tri:.3f} ms, {vram_tri:.2f} MB | Speedup: {speedup:.2f}x")
+    print(
+        f"  PyTorch: {lat_ref:.3f} ms, {vram_ref:.2f} MB | Triton: {lat_tri:.3f} ms, {vram_tri:.2f} MB | Speedup: {speedup:.2f}x"
+    )
 
-    results.append({
-        "id": 12,
-        "kernel": "triton_fused_act_scale_quant_gemm",
-        "target_module": "smoothquant, faq_quantizer",
-        "pytorch_ms": lat_ref,
-        "triton_ms": lat_tri,
-        "speedup": speedup,
-        "pytorch_vram_mb": vram_ref,
-        "triton_vram_mb": vram_tri,
-        "cosine_sim": cos_sim,
-        "rel_error": rel_err,
-    })
+    results.append(
+        {
+            "id": 12,
+            "kernel": "triton_fused_act_scale_quant_gemm",
+            "target_module": "smoothquant, faq_quantizer",
+            "pytorch_ms": lat_ref,
+            "triton_ms": lat_tri,
+            "speedup": speedup,
+            "pytorch_vram_mb": vram_ref,
+            "triton_vram_mb": vram_tri,
+            "cosine_sim": cos_sim,
+            "rel_error": rel_err,
+        }
+    )
 
     # -----------------------------------------------------------------------
     # Kernel 13: Fused Latent KV-Cache Attention
@@ -528,20 +579,24 @@ def main():
     lat_tri, vram_tri = benchmark_fn(fn_tri13)
     cos_sim, rel_err = compute_metrics(fn_ref13(), fn_tri13())
     speedup = lat_ref / max(lat_tri, 1e-6)
-    print(f"  PyTorch: {lat_ref:.3f} ms, {vram_ref:.2f} MB | Triton: {lat_tri:.3f} ms, {vram_tri:.2f} MB | Speedup: {speedup:.2f}x")
+    print(
+        f"  PyTorch: {lat_ref:.3f} ms, {vram_ref:.2f} MB | Triton: {lat_tri:.3f} ms, {vram_tri:.2f} MB | Speedup: {speedup:.2f}x"
+    )
 
-    results.append({
-        "id": 13,
-        "kernel": "triton_fused_latent_kv_cache_attention",
-        "target_module": "svd_linear_attention, mla_attention",
-        "pytorch_ms": lat_ref,
-        "triton_ms": lat_tri,
-        "speedup": speedup,
-        "pytorch_vram_mb": vram_ref,
-        "triton_vram_mb": vram_tri,
-        "cosine_sim": cos_sim,
-        "rel_error": rel_err,
-    })
+    results.append(
+        {
+            "id": 13,
+            "kernel": "triton_fused_latent_kv_cache_attention",
+            "target_module": "svd_linear_attention, mla_attention",
+            "pytorch_ms": lat_ref,
+            "triton_ms": lat_tri,
+            "speedup": speedup,
+            "pytorch_vram_mb": vram_ref,
+            "triton_vram_mb": vram_tri,
+            "cosine_sim": cos_sim,
+            "rel_error": rel_err,
+        }
+    )
 
     # -----------------------------------------------------------------------
     # Save Results

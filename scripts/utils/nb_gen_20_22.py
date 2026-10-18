@@ -22,7 +22,7 @@ from scripts.utils.nb_gen_common import (
     build_notebook,
     save_notebook,
     make_header_cell,
-    HARDWARE_CONTEXT_CELL
+    HARDWARE_CONTEXT_CELL,
 )
 
 
@@ -35,10 +35,8 @@ def generate_notebook_20():
     cells = [
         # Cell 1: Header
         make_header_cell(title),
-
         # Cell 2: Hardware Context
         HARDWARE_CONTEXT_CELL,
-
         # Cell 3: Mathematical & Theoretical Foundations
         create_markdown_cell(r"""## 1. Theoretical Foundations of High-Throughput LLM Serving
 
@@ -66,7 +64,6 @@ Standard inference systems recompute prompt KV-cache states redundantly across s
 ### 1.4 PagedAttention Virtual Memory Allocation
 Standard contiguous KV-caching suffers from internal fragmentation ($60-80\%$ unused VRAM reservation). **PagedAttention** partitions the KV-cache into discrete non-contiguous physical blocks (e.g., block size $B_s = 16$ tokens) indexed by a logical-to-physical block table, suppressing memory fragmentation to under $4\%$.
 """),
-
         # Cell 4: Imports and Setup
         create_code_cell(r"""# Cell 3: Imports & Serving Integration Verification
 import os
@@ -101,13 +98,11 @@ print(f"  vLLM Adapter Available:      {VLLMAttentionAdapter.is_available()}")
 print(f"  TGI Adapter Available:       {TGIAttentionAdapter.is_available()}")
 print(f"  TensorRT-LLM Available:      {TensorRTLLMPluginBuilder.is_available()}")
 """),
-
         # Cell 5: HuggingFace AutoModel Integration Architecture
         create_markdown_cell(r"""## 2. HuggingFace AutoModel Dynamic Patching (`hf_automodel`)
 
 `neuralops.integrations.hf_automodel` provides zero-overhead surgical patching for HuggingFace Transformers architectures (Llama, Mistral, Qwen, GPT-2). It dynamically traverses the module hierarchy, identifies attention submodules (`self_attn`, `attention`), and swaps quadratic softmax kernels with NeuralOps linear attention or SVD low-rank operators.
 """),
-
         # Cell 6: HuggingFace AutoModel Patching Execution
         create_code_cell(r"""# Cell 4: HuggingFace AutoModel Transformer Surgery & Equivalence Check
 class MiniCausalLM(nn.Module):
@@ -152,7 +147,6 @@ patched_model = patch_model_attention(model, attention_type="svd_linear_attentio
 print("✅ Successfully patched all 4 attention layers via patch_model_attention.")
 print(f"Layer 0 attention module class: {type(patched_model.layers[0]['self_attn'])}")
 """),
-
         # Cell 7: SGLang RadixAttention Architecture
         create_markdown_cell(r"""## 3. SGLang RadixAttention Prefix Caching Engine (`sglang.py`)
 
@@ -160,7 +154,6 @@ The `SGLangRadixAdapter` maintains a Radix Trie of token IDs. When multi-turn ch
 
 $$\text{Tokens}_{\text{computed}} = \text{Length}(\text{Prompt}) - \text{Length}(\text{Prefix Match})$$
 """),
-
         # Cell 8: SGLang RadixAttention Simulation & Benchmark
         create_code_cell(r"""# Cell 5: SGLang RadixAttention Prefix Tree Simulation & Benchmarking
 radix_adapter = SGLangRadixAdapter(max_cached_tokens=16384, max_cached_prefixes=256, device="cuda")
@@ -220,13 +213,11 @@ df_radix = pd.DataFrame(radix_results)
 print("--- SGLang RadixAttention Prefix Caching Benchmark ---")
 display(df_radix)
 """),
-
         # Cell 9: vLLM PagedAttention Integration Architecture
         create_markdown_cell(r"""## 4. vLLM PagedAttention Adapter & Kernel Execution (`vllm.py` & `serving.py`)
 
 `VLLMAttentionAdapter` bridges NeuralOps attention operators with vLLM's memory engine. It manages block tables where virtual sequence space is mapped to physical GPU memory pages, executing paged attention kernels across scattered non-contiguous memory blocks.
 """),
-
         # Cell 10: vLLM PagedAttention Kernel Execution
         create_code_cell(r"""# Cell 6: PagedAttention Block Table Simulation & Forward Execution
 adapter = VLLMAttentionAdapter(attention_type="paged_attention", head_dim=64, num_heads=4)
@@ -264,13 +255,11 @@ print(f"  Batch Size:                  {num_seqs} sequences")
 print(f"  Output Tensor Shape:         {out.shape}")
 print(f"  Average Kernel Latency:      {paged_lat_ms:.3f} ms")
 """),
-
         # Cell 11: TensorRT-LLM Plugin Builder & C++ Source Generation
         create_markdown_cell(r"""## 5. TensorRT-LLM Plugin Builder & Fused Low-Rank GEMM (`tensorrt_llm.py`)
 
 `TensorRTLLMPluginBuilder` generates native C++/CUDA TensorRT plugins implementing `IPluginV2DynamicExt`. For SVD low-rank attention, it synthesizes fused GEMM kernels computing $Y = (X \cdot V) \cdot U^T$ in on-chip SRAM registers without intermediate DRAM roundtrips.
 """),
-
         # Cell 12: TensorRT-LLM Plugin Generation and GEMM Benchmark
         create_code_cell(r"""# Cell 7: TensorRT Plugin C++ Synthesis & Low-Rank GEMM Latency Comparison
 trt_builder = TensorRTLLMPluginBuilder(precision="float16")
@@ -324,13 +313,11 @@ df_gemm = pd.DataFrame(gemm_benchmarks)
 print("\n--- Full-Rank GEMM vs SVD Factored GEMM Benchmark ---")
 display(df_gemm)
 """),
-
         # Cell 13: TGI Continuous Batching & Throughput Stress Test
         create_markdown_cell(r"""## 6. Text Generation Inference (TGI) Serving & Concurrency Sweep
 
 `TGIAttentionAdapter` implements dynamic batching boundaries and request queueing for continuous batching. We simulate concurrent serving across concurrency levels $C \in [1, 2, 4, 8, 16, 32, 64]$ to quantify throughput scaling and saturation limits.
 """),
-
         # Cell 14: Concurrency and Throughput Sweep
         create_code_cell(r"""# Cell 8: Serving Concurrency & Throughput Scaling Sweep
 concurrencies = [1, 2, 4, 8, 16, 32, 64]
@@ -377,7 +364,6 @@ df_serving = pd.DataFrame(serving_throughput_results)
 print("--- Serving Throughput & Inter-Token Latency Scaling ---")
 display(df_serving)
 """),
-
         # Cell 15: Prefill vs Decode Latency Breakdown
         create_markdown_cell(r"""## 7. Serving Latency Breakdown: Prefill Phase vs Decode Phase
 
@@ -386,7 +372,6 @@ We measure:
 2. **Decode Latency (ITL)**: Time per single autoregressive token generation step across sequence lengths.
 3. **TTFT with vs without Radix Prefix Caching**.
 """),
-
         # Cell 16: Prefill vs Decode Benchmark Code
         create_code_cell(r"""# Cell 9: Comprehensive Prefill vs Decode Benchmark
 prompt_lengths = [128, 256, 512, 1024, 2048, 4096]
@@ -435,7 +420,6 @@ df_lat = pd.DataFrame(latency_breakdown)
 print("--- Serving Latency Breakdown (Prefill vs Decode) ---")
 display(df_lat)
 """),
-
         # Cell 17: Rich High-DPI Visualizations
         create_markdown_cell(r"""## 8. High-Resolution Publication Visualizations (300 DPI)
 
@@ -445,7 +429,6 @@ We generate a 4-panel serving benchmark dashboard:
 - **Panel C**: Inter-Token Latency (ITL) percentiles (P50, P90, P99) under load.
 - **Panel D**: Serving Throughput (tokens/s) vs Concurrent Serving Requests.
 """),
-
         # Cell 18: Visualization Plotting Code
         create_code_cell(r"""# Cell 10: 4-Panel High-DPI Publication Serving Dashboard
 fig, axes = plt.subplots(2, 2, figsize=(15, 12), dpi=300)
@@ -515,13 +498,11 @@ plt.show()
 
 print(f"✅ High-resolution figures saved to:\n  - {plot_path}\n  - {paper_fig_dir / 'fig20_serving_integrations.png'}")
 """),
-
         # Cell 19: Formatted Summary Table
         create_markdown_cell(r"""## 9. Comprehensive Benchmark Synthesis & Empirical Metrics
 
 The table below compiles key empirical performance figures across all four serving engines on NVIDIA RTX 4070 Laptop GPU:
 """),
-
         # Cell 20: Summary Table Code
         create_code_cell(r"""# Cell 11: Final Compilation of Production Serving Performance Metrics
 summary_records = [
@@ -565,7 +546,6 @@ print("🚀 NEURALOPS PRODUCTION SERVING INTEGRATIONS BENCHMARK SUMMARY")
 print("=" * 110)
 display(df_master_summary)
 """),
-
         # Cell 21: Conclusion Markdown
         create_markdown_cell(r"""## 10. Architectural Conclusions & Deployment Recommendations
 
@@ -573,7 +553,7 @@ display(df_master_summary)
 2. **Memory Efficiency with vLLM**: PagedAttention eliminates internal VRAM fragmentation, allowing up to **$4\times$ higher concurrent batch sizes** within standard 8GB GDDR6 bounds.
 3. **Hardware Acceleration with TensorRT-LLM**: Factored low-rank GEMM plugins bypass intermediate DRAM round-trips, delivering an empirical **$2.2\times - 3.4\times$ speedup** over uncompressed full-rank projections.
 4. **HuggingFace Drop-In Compatibility**: `AutoNeuralOpsModel` and `patch_model_attention` provide zero-friction adoption paths for production deployments without modifying upstream serving orchestration.
-""")
+"""),
     ]
     return build_notebook(cells)
 
@@ -587,10 +567,8 @@ def generate_notebook_21():
     cells = [
         # Cell 1: Header
         make_header_cell(title),
-
         # Cell 2: Hardware Context
         HARDWARE_CONTEXT_CELL,
-
         # Cell 3: Mathematical Foundations
         create_markdown_cell(r"""## 1. Mathematical Foundations of Compression & Model Serialization
 
@@ -621,7 +599,6 @@ SafeTensors formats avoid Python `pickle` deserialization vulnerabilities and al
 - Loading time scales with disk I/O throughput rather than CPU parsing deserialization.
 - Tensors are stored contiguously in memory with 8-byte aligned headers.
 """),
-
         # Cell 4: Imports and Setup
         create_code_cell(r"""# Cell 3: Imports & Model Export Harness
 import os
@@ -661,13 +638,11 @@ print(f"  PyTorch Version:     {torch.__version__}")
 print(f"  SafeTensors Version: {safetensors.__version__}")
 print(f"  ONNX Version:        {onnx.__version__}")
 """),
-
         # Cell 5: Model Construction & Surgery Application
         create_markdown_cell(r"""## 2. Transformer Architecture Construction & Surgical Transformation
 
 We construct a multi-layer Transformer model, apply low-rank SVD factorization to linear projections, and record exact surgical metadata in `_neuralops_metadata`.
 """),
-
         # Cell 6: Model Construction Code
         create_code_cell(r"""# Cell 4: Architecture Definition with SVD Low-Rank Layers
 class SVDLinearLayer(nn.Module):
@@ -731,7 +706,6 @@ with torch.no_grad():
 print(f"Original Model initialized. Parameter count: {sum(p.numel() for p in orig_model.parameters()):,}")
 print(f"Output shape: {orig_output.shape}")
 """),
-
         # Cell 7: SafeTensors Export & Manifest Generation
         create_markdown_cell(r"""## 3. SafeTensors Export & Surgical State Manifest (`surgery_manifest.py`)
 
@@ -740,7 +714,6 @@ We export the model to `safetensors` format using `export_model()`. The exporter
 2. `neuralops_surgery_config.json`: Comprehensive `SurgeryManifest` detailing module substitutions, rank configurations, and tensor hash provenance.
 3. `neuralops_config.json`: Standard runtime configuration.
 """),
-
         # Cell 8: SafeTensors Export Execution
         create_code_cell(r"""# Cell 5: SafeTensors Export & Manifest Serialization
 st_export_dir = export_test_dir / "safetensors_model"
@@ -774,7 +747,6 @@ print(f"  Framework:         {manifest_dict.get('framework', 'neuralops')}")
 print(f"  Base Model:        {manifest_dict.get('base_model', 'unknown')}")
 print(f"  Surgery History:   {manifest_dict.get('surgery_history', [])}")
 """),
-
         # Cell 9: Bit-For-Bit Deserialization & Numerical Verification
         create_markdown_cell(r"""## 4. Roundtrip Deserialization & Numerical Parity Verification
 
@@ -783,7 +755,6 @@ To verify production deployment safety, we reload the exported SafeTensors artif
 - **Relative Frobenius Error**: $\frac{\|y_{\text{orig}} - y_{\text{reloaded}}\|_F}{\|y_{\text{orig}}\|_F} \le 10^{-6}$
 - **Cosine Similarity**: $\ge 0.999999$
 """),
-
         # Cell 10: Numerical Parity Verification Code
         create_code_cell(r"""# Cell 6: Roundtrip Loading & Bit-For-Bit Numerical Parity Verification
 reloaded_model = MultiLayerTransformer(d_model=512, rank=64, num_layers=4).cuda().eval()
@@ -818,13 +789,11 @@ print("=" * 80)
 assert max_abs_err < 1e-6, f"Parity failure: max error {max_abs_err} exceeds 1e-6 threshold"
 print("✅ PASSED: Exported SafeTensors model achieves bit-for-bit numerical fidelity.")
 """),
-
         # Cell 11: TorchScript Graph Tracing & Compilation
         create_markdown_cell(r"""## 5. TorchScript Graph Tracing & Static Graph Optimization
 
 TorchScript serializes the computational graph into intermediate representation (TorchScript IR), decoupling deployment from the Python runtime interpreter and enabling C++ libtorch inference.
 """),
-
         # Cell 12: TorchScript Export Code
         create_code_cell(r"""# Cell 7: TorchScript Graph Compilation & Inference Verification
 ts_export_dir = export_test_dir / "torchscript_model"
@@ -855,13 +824,11 @@ print(f"  Trace Latency:           {ts_export_time_ms:.2f} ms")
 print(f"  Load Latency:            {ts_load_time_ms:.2f} ms")
 print(f"  Max Absolute Deviation:  {ts_max_err:.2e}")
 """),
-
         # Cell 13: ONNX Graph Compilation & Topology Inspection
         create_markdown_cell(r"""## 6. ONNX Graph Export & Computational Topology Inspection
 
 ONNX enables portable cross-platform deployment across TensorRT, ONNX Runtime, OpenVINO, and mobile runtimes. We export the model graph with dynamic axes and inspect node operations.
 """),
-
         # Cell 14: ONNX Export Code
         create_code_cell(r"""# Cell 8: ONNX Export & Graph Operator Analysis
 onnx_export_dir = export_test_dir / "onnx_model"
@@ -899,7 +866,6 @@ try:
 except Exception as e:
     print(f"Note on ONNX inspection: {e}")
 """),
-
         # Cell 15: Multi-Format Storage & Size Footprint Comparison
         create_markdown_cell(r"""## 7. Multi-Format Storage Footprint & Latency Benchmarking
 
@@ -911,7 +877,6 @@ We benchmark physical disk footprint across:
 5. **TorchScript Graph Artifact**
 6. **ONNX Graph Artifact**
 """),
-
         # Cell 16: Multi-Format Footprint Benchmark Code
         create_code_cell(r"""# Cell 9: Artifact Size & Serialization Latency Benchmarking
 export_formats_data = []
@@ -953,7 +918,6 @@ df_export_bench = pd.DataFrame(benchmark_entries)
 print("--- Model Artifact Size & Deserialization Benchmark ---")
 display(df_export_bench)
 """),
-
         # Cell 17: Rich High-DPI Visualizations
         create_markdown_cell(r"""## 8. High-Resolution Publication Visualizations (300 DPI)
 
@@ -963,7 +927,6 @@ We generate a 4-panel export pipeline dashboard:
 - **Panel C**: Numerical Parity Error Distribution ($\log_{10}$ Error).
 - **Panel D**: Relative Size Reduction vs Baseline Dense Architecture.
 """),
-
         # Cell 18: Visualization Plotting Code
         create_code_cell(r"""# Cell 10: 4-Panel High-DPI Publication Export Dashboard
 fig, axes = plt.subplots(2, 2, figsize=(15, 12), dpi=300)
@@ -1030,13 +993,11 @@ plt.show()
 
 print(f"✅ High-resolution figures saved to:\n  - {plot_path}\n  - {paper_fig_dir / 'fig21_model_export.png'}")
 """),
-
         # Cell 19: Formatted Summary Table
         create_markdown_cell(r"""## 9. Model Export Pipeline Summary Table
 
 The table below compiles physical storage footprints, numerical fidelity metrics, and deployment suitability across export targets:
 """),
-
         # Cell 20: Summary Table Code
         create_code_cell(r"""# Cell 11: Final Compilation of Export Pipeline Metrics
 summary_records = [
@@ -1080,14 +1041,13 @@ print("🚀 NEURALOPS MODEL EXPORT & SURGERY MANIFEST BENCHMARK SUMMARY")
 print("=" * 110)
 display(df_export_summary)
 """),
-
         # Cell 21: Conclusion Markdown
         create_markdown_cell(r"""## 10. Architectural Conclusions & Production Export Best Practices
 
 1. **Zero-Copy Serialization with SafeTensors**: SafeTensors eliminates Python pickle risks, guarantees continuous tensor memory layout, and reduces cold model load latency by up to **$65\%$** via memory mapping (`mmap`).
 2. **Surgical State Provenance (`SurgeryManifest`)**: Every exported artifact encapsulates complete cryptographic parameter signatures and surgery history (`neuralops_surgery_config.json`), ensuring exact architectural reconstruction without ambiguous hyperparameter guessing.
 3. **Cross-Platform Readiness**: Models exported via NeuralOps execute with identical numerical fidelity across Python (SafeTensors), C++ (TorchScript), and cross-vendor engines (ONNX).
-""")
+"""),
     ]
     return build_notebook(cells)
 
@@ -1101,10 +1061,8 @@ def generate_notebook_22():
     cells = [
         # Cell 1: Header
         make_header_cell(title),
-
         # Cell 2: Hardware Context
         HARDWARE_CONTEXT_CELL,
-
         # Cell 3: Mathematical Foundations
         create_markdown_cell(r"""## 1. Mathematical Foundations of Distributed Scaling
 
@@ -1128,7 +1086,6 @@ $$S_p = S_{p-1} \odot \gamma_p + \Delta S_p, \quad \Delta S_p = \sum_{\tau \in \
 
 The communication volume is strictly $\mathcal{O}(W \cdot d_k d_v)$ (constant with respect to sequence length!), avoiding quadratic Ring Attention communication overheads.
 """),
-
         # Cell 4: Imports and Setup
         create_code_cell(r"""# Cell 3: Imports & Distributed Harness Setup
 import os
@@ -1167,13 +1124,11 @@ paper_fig_dir.mkdir(parents=True, exist_ok=True)
 
 print("✅ Distributed Tensor & Context Parallelism module initialized.")
 """),
-
         # Cell 5: Tensor Parallel SVD Linear Layers
         create_markdown_cell(r"""## 2. Tensor-Parallel SVD Factored Linear Layers (`tensor_parallel.py`)
 
 We examine `RankParallelSVDLinear` and `RowParallelSVDLinear`. In `RankParallelSVDLinear`, inner rank $r$ is split across $W$ workers ($r_{\text{local}} = r / W$), eliminating intermediate synchronization during projection and requiring only a single final reduction.
 """),
-
         # Cell 6: Tensor Parallel Execution & Mathematical Equivalence
         create_code_cell(r"""# Cell 4: Multi-Rank Tensor Parallel Simulation & Mathematical Parity Check
 d_in, d_out, rank = 1024, 1024, 128
@@ -1225,13 +1180,11 @@ print("=" * 80)
 assert frob_err < 1e-5 or max_err < 1e-3, f"Tensor parallel parity error frob={frob_err}, max={max_err}"
 print("✅ PASSED: Distributed rank sharding matches monolithic execution exactly.")
 """),
-
         # Cell 7: Context Parallelism & Ring Linear Attention Scan
         create_markdown_cell(r"""## 3. Context Parallelism & Ring Linear Attention Scan (`context_parallel.py`)
 
 `context_parallel_recurrent_scan` partitions sequence $T$ into $W$ chunks. Each worker executes local linear attention over chunk $T_c$, updates hidden state $\Delta S_p$, and passes recurrent state $S_{p-1}$ along the Ring network.
 """),
-
         # Cell 8: Context Parallel Recurrent Scan Execution
         create_code_cell(r"""# Cell 5: 3-Stage Context Parallel Scan Execution across Sequence Chunks
 B, H, T_total, D = 1, 4, 2048, 64
@@ -1272,13 +1225,11 @@ print("=" * 80)
 assert cp_frob_err < 1e-4 or cp_max_err < 1e-3, f"Context parallel parity error {cp_max_err}"
 print("✅ PASSED: Context Parallel scan yields bit-exact equivalence with monolithic scan.")
 """),
-
         # Cell 9: Gradient Flow & Backward Parity Check
         create_markdown_cell(r"""## 4. Differentiable Autograd Parity Verification
 
 We verify that backward autograd gradient propagation through `_ContextParallelScanFunction` produces analytical gradients matching monolithic backpropagation.
 """),
-
         # Cell 10: Backward Gradient Verification Code
         create_code_cell(r"""# Cell 6: Backward Autograd Gradient Parity Check
 q_ref = q.clone().detach().requires_grad_(True)
@@ -1315,7 +1266,6 @@ print(f"  dV Max Deviation: {grad_v_err:.2e}")
 assert max(grad_q_err, grad_k_err, grad_v_err) < 1e-3, "Gradient mismatch in context parallel scan"
 print("✅ PASSED: Exact analytical autograd gradient flow verified.")
 """),
-
         # Cell 11: Context Parallel VRAM Scaling Formulation
         create_markdown_cell(r"""## 5. Memory Footprint Modeling: Context Parallelism vs Softmax Attention
 
@@ -1325,7 +1275,6 @@ In contrast, Context-Parallel Linear Attention decomposes the sequence into $W$ 
 $$M_{\text{CP}}(T, W) = \mathcal{O}\left(B \cdot H \cdot \frac{T}{W} \cdot d\right) + \mathcal{O}(B \cdot H \cdot d_k \cdot d_v)$$
 which scales linearly in chunk length and maintains constant recurrent memory overhead.
 """),
-
         # Cell 12: Context Parallel VRAM Scaling Code
         create_code_cell(r"""# Cell 7: VRAM Memory Scaling Comparison Across Sequence Lengths
 seq_lengths = [1024, 2048, 4096, 8192, 16384, 32768]
@@ -1356,7 +1305,6 @@ df_vram = pd.DataFrame(vram_comparison)
 print("--- VRAM Memory Scaling: Standard Attention vs Context Parallelism ---")
 display(df_vram)
 """),
-
         # Cell 13: Collective Communication Overhead Modeling
         create_markdown_cell(r"""## 6. Collective Communication Overhead Modeling
 
@@ -1368,7 +1316,6 @@ We model Ring All-Reduce latency under standard vs SVD-factored tensor paralleli
 Ring All-Reduce transmission model:
 $$T_{\text{AllReduce}}(M, W) = 2 \left(\frac{W-1}{W}\right) \alpha + 2 \left(\frac{W-1}{W}\right) \frac{M}{\beta}$$
 """),
-
         # Cell 12: Communication Modeling Code
         create_code_cell(r"""# Cell 7: Interconnect Latency & Communication Modeling
 interconnects = {
@@ -1400,7 +1347,6 @@ df_comm = pd.DataFrame(comm_models)
 print("--- Collective Communication Latency across Interconnects ---")
 display(df_comm)
 """),
-
         # Cell 13: Multi-GPU Distributed Scaling Simulation
         create_markdown_cell(r"""## 6. Multi-GPU Weak vs Strong Scaling Simulation
 
@@ -1409,7 +1355,6 @@ We simulate distributed scaling behavior across cluster sizes $W \in [1, 2, 4, 8
 - **Strong Scaling**: Total problem size is fixed ($T_{\text{total}} = 16384$, $T_c = 16384 / W$).
 - **Scaling Efficiency**: $\eta = \frac{T_1}{W \times T_W} \times 100\%$
 """),
-
         # Cell 14: Distributed Scaling Simulation Code
         create_code_cell(r"""# Cell 8: Distributed Scaling Simulation (Weak vs Strong)
 workers = [1, 2, 4, 8, 16]
@@ -1464,7 +1409,6 @@ display(df_weak)
 print("\n--- Strong Scaling Benchmark ---")
 display(df_strong)
 """),
-
         # Cell 15: Rich High-DPI Visualizations
         create_markdown_cell(r"""## 7. High-Resolution Publication Visualizations (300 DPI)
 
@@ -1474,7 +1418,6 @@ We generate a 4-panel distributed scaling dashboard:
 - **Panel C**: Ring Context Parallelism Latency Waterfall across Sequence Chunks.
 - **Panel D**: Communication-to-Computation Ratio ($\frac{T_{\text{comm}}}{T_{\text{comp}}}$) across Interconnects.
 """),
-
         # Cell 16: Visualization Plotting Code
         create_code_cell(r"""# Cell 9: 4-Panel High-DPI Publication Distributed Scaling Dashboard
 fig, axes = plt.subplots(2, 2, figsize=(15, 12), dpi=300)
@@ -1540,13 +1483,11 @@ plt.show()
 
 print(f"✅ High-resolution figures saved to:\n  - {plot_path}\n  - {paper_fig_dir / 'fig22_distributed_scaling.png'}")
 """),
-
         # Cell 17: Formatted Summary Table
         create_markdown_cell(r"""## 8. Distributed Scaling Architecture Summary Table
 
 The table below compiles scaling metrics, bandwidth requirements, and communication complexity across distributed parallelism paradigms:
 """),
-
         # Cell 18: Summary Table Code
         create_code_cell(r"""# Cell 10: Final Compilation of Distributed Scaling Metrics
 summary_records = [
@@ -1590,14 +1531,13 @@ print("🚀 NEURALOPS DISTRIBUTED PARALLELISM ARCHITECTURE BENCHMARK SUMMARY")
 print("=" * 115)
 display(df_dist_summary)
 """),
-
         # Cell 19: Conclusion Markdown
         create_markdown_cell(r"""## 9. Architectural Conclusions & Multi-GPU Deployment Best Practices
 
 1. **Bandwidth Savings via SVD Parallelism**: Sharding in the inner rank subspace $r$ reduces All-Reduce collective communication volume by **$\frac{d_{\text{out}}}{r} = 16\times$**, enabling near-linear tensor parallel scaling even over commodity PCIe interconnects.
 2. **Constant-Volume Context Parallelism**: In linear attention mechanisms, recurrent prefix state transfer eliminates quadratic KV transmission, delivering **$94.8\%$ scaling efficiency** across sequences exceeding $32\text{k}$ tokens.
 3. **Exact Analytical Differentiability**: `_ContextParallelScanFunction` preserves exact forward and backward gradient parity with single-GPU execution, unlocking distributed training and recovery fine-tuning without mathematical drift.
-""")
+"""),
     ]
     return build_notebook(cells)
 
@@ -1606,6 +1546,7 @@ display(df_dist_summary)
 # MAIN EXECUTION ENTRYPOINT
 # ==============================================================================
 def main():
+    """Execute main routine."""
     notebooks_dir = REPO_ROOT / "notebooks"
     notebooks_dir.mkdir(parents=True, exist_ok=True)
     targets = [int(a) for a in sys.argv[1:] if a.isdigit()]
@@ -1626,6 +1567,7 @@ def main():
         save_notebook(nb22, notebooks_dir / "22_distributed_tensor_and_context_parallelism.ipynb")
 
     print("\n🎉 Generation finished!")
+
 
 if __name__ == "__main__":
     main()

@@ -13,7 +13,6 @@ import sys
 import torch
 from transformers import GPT2Config
 
-import neuralops
 from neuralops.core.registry import ATTENTION_REGISTRY
 
 logger = logging.getLogger("verify_131_dimensions")

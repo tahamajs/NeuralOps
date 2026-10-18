@@ -6,12 +6,12 @@ Separates:
   2. NO_OP / Heuristic Rank-Overriding / Fallback Compressors (Forensic Audit Table)
   3. FAILED / Incompatible Compressors
 """
+
 from __future__ import annotations
 
 import json
-import os
 from pathlib import Path
-from typing import Any, Dict, List, Set
+from typing import Any, Dict
 
 RESULTS_DIR = Path("results/batch_validation")
 MODELS = ["synth_block", "roberta", "gpt2"]
@@ -52,8 +52,10 @@ INCOMPATIBLE_DETAILS = {
     "tucker_compressor": "Constructor returned None / CompOT Tucker decomposition requiring specific 4D tensor configurations",
 }
 
+
 def main():
     # Load all aggregates
+    """Execute main routine."""
     all_data: Dict[str, Dict[str, Any]] = {}
     for model in MODELS:
         path = RESULTS_DIR / model / f"{model}_batch_results.json"
@@ -65,21 +67,33 @@ def main():
     md_path = RESULTS_DIR / "LEADERBOARD.md"
     with open(md_path, "w", encoding="utf-8") as f:
         f.write("# 🏆 NeuralOps Categorized Cross-Method Batch Validation Leaderboard\n\n")
-        f.write("All experiments executed on physical **NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)** across **10 random seeds** per configuration.\n\n")
+        f.write(
+            "All experiments executed on physical **NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)** across **10 random seeds** per configuration.\n\n"
+        )
         f.write("> [!IMPORTANT]\n")
-        f.write("> **Scientific Rigor & Rank-Sensitivity Integrity**: Following forensic diagnostic testing (`diff_8_64` on weights and outputs), ")
+        f.write(
+            "> **Scientific Rigor & Rank-Sensitivity Integrity**: Following forensic diagnostic testing (`diff_8_64` on weights and outputs), "
+        )
         f.write("compressors are strictly segregated into **Verified Rank-Sensitive Low-Rank Methods** (Table 1) and ")
-        f.write("**Excluded Methods** (Table 2: pruning, quantization, or heuristic rank overrides that ignore the rank parameter).\n\n")
+        f.write(
+            "**Excluded Methods** (Table 2: pruning, quantization, or heuristic rank overrides that ignore the rank parameter).\n\n"
+        )
 
         # -------------------------------------------------------------
         # TABLE 1: VALID COMPRESSORS
         # -------------------------------------------------------------
         f.write("## 1. Verified Rank-Sensitive Low-Rank Compressors (Main Leaderboard)\n\n")
-        f.write("Methods that legitimately scale matrix factorization rank with parameter count and output behavior:\n\n")
+        f.write(
+            "Methods that legitimately scale matrix factorization rank with parameter count and output behavior:\n\n"
+        )
 
         for rank in RANKS:
             f.write(f"### Target Rank $r = {rank}$\n\n")
-            f.write("| Compressor | Type / Family | " + " | ".join([f"{m} (RelErr ± std)" for m in MODELS]) + " | Ratio vs `direct_svd` | Verdict |\n")
+            f.write(
+                "| Compressor | Type / Family | "
+                + " | ".join([f"{m} (RelErr ± std)" for m in MODELS])
+                + " | Ratio vs `direct_svd` | Verdict |\n"
+            )
             f.write("|:---|:---|" + "|".join([":---:"] * len(MODELS)) + "|:---:|:---:|\n")
 
             _base_key = f"direct_svd_rank{rank}"
@@ -111,8 +125,8 @@ def main():
                     if model in all_data and key in all_data[model]:
                         a = all_data[model][key]
                         if a.get("status") == "SUCCESS" and "rel_err_mean" in a:
-                            m_err = a['rel_err_mean']
-                            s_err = a['rel_err_std']
+                            m_err = a["rel_err_mean"]
+                            s_err = a["rel_err_std"]
                             row += f" {m_err:.4f} ± {s_err:.4f} |"
                             if model in all_data and b_key in all_data[model]:
                                 b_err = all_data[model][b_key].get("rel_err_mean", 1.0)
@@ -126,7 +140,11 @@ def main():
                     row += " 1.0000x | **Baseline** |"
                 elif ratios:
                     mean_ratio = sum(ratios) / len(ratios)
-                    verdict = "**VALIDATED (<0.75)**" if mean_ratio < 0.75 else ("SIGNIFICANT (<1.0)" if mean_ratio < 1.0 else "INFERIOR")
+                    verdict = (
+                        "**VALIDATED (<0.75)**"
+                        if mean_ratio < 0.75
+                        else ("SIGNIFICANT (<1.0)" if mean_ratio < 1.0 else "INFERIOR")
+                    )
                     row += f" **{mean_ratio:.4f}x** | {verdict} |"
                 else:
                     row += " — | — |"
@@ -138,7 +156,9 @@ def main():
         # TABLE 2: EXCLUDED NO-OP COMPRESSORS
         # -------------------------------------------------------------
         f.write("## 2. Forensic Audit of Excluded Compressors (Rank-Insensitive / NO-OP)\n\n")
-        f.write("The following methods were evaluated but **excluded from the primary rank leaderboard** because diagnostic testing proved they ignore the `--rank` parameter, apply fixed-sparsity pruning, or fall back to original weights:\n\n")
+        f.write(
+            "The following methods were evaluated but **excluded from the primary rank leaderboard** because diagnostic testing proved they ignore the `--rank` parameter, apply fixed-sparsity pruning, or fall back to original weights:\n\n"
+        )
         f.write("| Excluded Method | Primary Family | Constant RelErr Observed | Forensic Diagnostic Finding |\n")
         f.write("|:---|:---|:---:|:---|\n")
         for m, reason in sorted(EXCLUDED_NO_OP_DETAILS.items()):
@@ -150,7 +170,13 @@ def main():
                     if k8 in all_data[model] and "rel_err_mean" in all_data[model][k8]:
                         sample_err = f"{all_data[model][k8]['rel_err_mean']:.4f}"
                         break
-            fam = "Pruning" if "pruner" in m or "sparse" in m or "flap" in m or "wanda" in m or "slice" in m else ("Quantization" if "quant" in m or "quarot" in m or "gptq" in m or "w4a16" in m else "Adaptive / SVD")
+            fam = (
+                "Pruning"
+                if "pruner" in m or "sparse" in m or "flap" in m or "wanda" in m or "slice" in m
+                else (
+                    "Quantization" if "quant" in m or "quarot" in m or "gptq" in m or "w4a16" in m else "Adaptive / SVD"
+                )
+            )
             f.write(f"| **`{m}`** | {fam} | `{sample_err}` | {reason} |\n")
         f.write("\n")
 
@@ -165,6 +191,7 @@ def main():
         f.write("\n")
 
     print(f"\nCategorized leaderboard successfully generated at {md_path}")
+
 
 if __name__ == "__main__":
     main()

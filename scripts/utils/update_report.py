@@ -1,4 +1,7 @@
-import os
+"""Update report module.
+
+Author: Taha Majlesi
+"""
 
 report_path = "/mnt/d/SVD_crossval/docs/reports/CROSS_VALIDATION_REGRESSION_REPORT.md"
 with open(report_path, "r", encoding="utf-8") as f:
@@ -6,7 +9,10 @@ with open(report_path, "r", encoding="utf-8") as f:
 
 # Update table in Section 1.2
 old_row = "| **Consolidated Regression Suites** | Zero regressions on recent commits | **879 / 879 unit & integration tests passed** | **CERTIFIED PASS** |"
-new_rows = old_row + "\n| **Randomized Multi-Seed Stress Test** | Seeds {42, 1337, 2026} across all 203 modules | **203 / 203 PASS (100%)** (Zero NaNs, Zero Infs, Speedup >= 1.0x) | **CERTIFIED PASS** |"
+new_rows = (
+    old_row
+    + "\n| **Randomized Multi-Seed Stress Test** | Seeds {42, 1337, 2026} across all 203 modules | **203 / 203 PASS (100%)** (Zero NaNs, Zero Infs, Speedup >= 1.0x) | **CERTIFIED PASS** |"
+)
 
 if old_row in content and "Randomized Multi-Seed Stress Test" not in content:
     content = content.replace(old_row, new_rows)

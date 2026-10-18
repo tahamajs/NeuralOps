@@ -1,4 +1,9 @@
 # -*- coding: utf-8 -*-
+"""Run qwen llama benchmarks module.
+
+Author: Taha Majlesi
+"""
+
 # Author: Taha Majlesi
 import os
 import time
@@ -26,13 +31,10 @@ cfg_llama = AutoConfig.for_model(
     num_hidden_layers=12,
     num_attention_heads=16,
     num_key_value_heads=4,
-    max_position_embeddings=8192
+    max_position_embeddings=8192,
 )
 
-architectures = [
-    ("Qwen-2.5-0.5B (24L, 896D)", cfg_qwen),
-    ("LLaMA-3-Arch (12L, 1024D)", cfg_llama)
-]
+architectures = [("Qwen-2.5-0.5B (24L, 896D)", cfg_qwen), ("LLaMA-3-Arch (12L, 1024D)", cfg_llama)]
 
 seq_lens = [1024, 2048, 4096]
 mechanisms = ["baseline", "svd_linear_attention", "gla_attention"]
@@ -44,20 +46,20 @@ for arch_name, cfg in architectures:
     for seq_len in seq_lens:
         print(f"\n--- Sequence Length L = {seq_len} ---")
         inputs = torch.randint(0, 1000, (1, seq_len), device=device)
-        
+
         for mech in mechanisms:
             torch.cuda.empty_cache()
             torch.cuda.reset_peak_memory_stats()
-            
+
             try:
                 m = AutoModelForCausalLM.from_config(cfg).to(device).eval()
                 if mech != "baseline":
                     m = replace_attention(m, attention_key=mech)
-                    
+
                 # Warmup
                 with torch.no_grad():
                     _ = m(inputs)
-                    
+
                 torch.cuda.synchronize()
                 iters = 5
                 t0 = time.perf_counter()
@@ -68,40 +70,48 @@ for arch_name, cfg in architectures:
                 latency_ms = (time.perf_counter() - t0) / iters * 1000
                 peak_vram = torch.cuda.max_memory_allocated() / (1024 * 1024)
                 finite = torch.isfinite(out.logits).all().item()
-                
-                print(f"{arch_name[:12]} | L={seq_len:4d} | Mech: {mech:<22} | Latency: {latency_ms:6.2f} ms | VRAM: {peak_vram:7.2f} MB | Finite: {finite}")
-                
-                results.append({
-                    "Architecture": arch_name,
-                    "Sequence_Length": seq_len,
-                    "Attention_Mechanism": mech,
-                    "Latency_ms": round(latency_ms, 2),
-                    "Peak_VRAM_MB": round(peak_vram, 2),
-                    "Finite_Logits": finite,
-                    "Status": "OK"
-                })
+
+                print(
+                    f"{arch_name[:12]} | L={seq_len:4d} | Mech: {mech:<22} | Latency: {latency_ms:6.2f} ms | VRAM: {peak_vram:7.2f} MB | Finite: {finite}"
+                )
+
+                results.append(
+                    {
+                        "Architecture": arch_name,
+                        "Sequence_Length": seq_len,
+                        "Attention_Mechanism": mech,
+                        "Latency_ms": round(latency_ms, 2),
+                        "Peak_VRAM_MB": round(peak_vram, 2),
+                        "Finite_Logits": finite,
+                        "Status": "OK",
+                    }
+                )
             except torch.cuda.OutOfMemoryError:
                 print(f"{arch_name[:12]} | L={seq_len:4d} | Mech: {mech:<22} | OOM")
-                results.append({
-                    "Architecture": arch_name,
-                    "Sequence_Length": seq_len,
-                    "Attention_Mechanism": mech,
-                    "Latency_ms": None,
-                    "Peak_VRAM_MB": None,
-                    "Finite_Logits": False,
-                    "Status": "OOM"
-                })
+                results.append(
+                    {
+                        "Architecture": arch_name,
+                        "Sequence_Length": seq_len,
+                        "Attention_Mechanism": mech,
+                        "Latency_ms": None,
+                        "Peak_VRAM_MB": None,
+                        "Finite_Logits": False,
+                        "Status": "OOM",
+                    }
+                )
             except Exception as e:
                 print(f"{arch_name[:12]} | L={seq_len:4d} | Mech: {mech:<22} | Error: {e}")
-                results.append({
-                    "Architecture": arch_name,
-                    "Sequence_Length": seq_len,
-                    "Attention_Mechanism": mech,
-                    "Latency_ms": None,
-                    "Peak_VRAM_MB": None,
-                    "Finite_Logits": False,
-                    "Status": f"ERROR: {e}"
-                })
+                results.append(
+                    {
+                        "Architecture": arch_name,
+                        "Sequence_Length": seq_len,
+                        "Attention_Mechanism": mech,
+                        "Latency_ms": None,
+                        "Peak_VRAM_MB": None,
+                        "Finite_Logits": False,
+                        "Status": f"ERROR: {e}",
+                    }
+                )
 
 # Export CSV
 df = pd.DataFrame(results)
@@ -145,10 +155,14 @@ for arch_name in df["Architecture"].unique():
         latex_content += row_str
     latex_content += "\\midrule\n"
 
-latex_content = latex_content.rstrip("\\midrule\n") + "\n" + r"""\bottomrule
+latex_content = (
+    latex_content.rstrip("\\midrule\n")
+    + "\n"
+    + r"""\bottomrule
 \end{tabular}
 \end{table*}
 """
+)
 
 from pathlib import Path
 

@@ -38,29 +38,26 @@ Outputs:
 from __future__ import annotations
 
 import argparse
-import gc
 import json
 import logging
 import math
-import os
 import sys
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict
 
-import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from transformers import AutoModelForCausalLM, AutoTokenizer, GPT2Config, GPT2LMHeadModel
+from transformers import AutoTokenizer, GPT2LMHeadModel
 
 # Ensure repo root is on sys.path
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
 from neuralops.utils.replace_attention import replace_attention
+
 try:
     from evaluation.metrics import (
         compute_linear_cka,
@@ -74,11 +71,9 @@ try:
     )
 except ImportError:
     from neuralops.evaluation.metrics import (
-        compute_linear_cka,
         compute_numerical_deviation,
         compute_perplexity_from_loss,
         compute_representation_similarity,
-        compute_token_perplexity,
         compute_top_k_accuracy,
         measure_latency_and_throughput,
         measure_peak_vram_mb,
@@ -114,12 +109,16 @@ def build_extended_gpt2(model_path: str, max_positions: int = 4096, device: str 
     model.transformer.ln_f.load_state_dict(base.transformer.ln_f.state_dict())
 
     orig_wpe = base.transformer.wpe.weight.data
-    new_wpe = F.interpolate(
-        orig_wpe.unsqueeze(0).transpose(1, 2),
-        size=max_positions,
-        mode="linear",
-        align_corners=True,
-    ).squeeze(0).transpose(0, 1)
+    new_wpe = (
+        F.interpolate(
+            orig_wpe.unsqueeze(0).transpose(1, 2),
+            size=max_positions,
+            mode="linear",
+            align_corners=True,
+        )
+        .squeeze(0)
+        .transpose(0, 1)
+    )
     model.transformer.wpe.weight.data.copy_(new_wpe)
 
     for i in range(len(base.transformer.h)):
@@ -166,6 +165,7 @@ def evaluate_model_pipeline(
 
     # 1. Peak VRAM & Forward Pass
     def run_forward():
+        """Execute run forward routine."""
         with torch.no_grad():
             return model(input_ids, output_hidden_states=True)
 
@@ -259,6 +259,7 @@ def evaluate_model_pipeline(
 
 
 def main():
+    """Execute main routine."""
     parser = argparse.ArgumentParser(description="Master Comprehensive Evaluation Suite")
     parser.add_argument("--model-path", type=str, default="/mnt/d/models/gpt2")
     parser.add_argument("--output-json", type=str, default="results/master_comprehensive_evaluation_matrix.json")
@@ -268,7 +269,9 @@ def main():
     args = parser.parse_args()
 
     device = torch.device(args.device)
-    logger.info(f"Initialized Master Evaluation Harness on {device} ({torch.cuda.get_device_name(device) if device.type == 'cuda' else 'CPU'})")
+    logger.info(
+        f"Initialized Master Evaluation Harness on {device} ({torch.cuda.get_device_name(device) if device.type == 'cuda' else 'CPU'})"
+    )
 
     tokenizer = AutoTokenizer.from_pretrained(args.model_path)
     tokenizer.pad_token = tokenizer.eos_token
@@ -276,7 +279,11 @@ def main():
     # Target Matrix Definitions
     attention_families = [
         {"family": "Dense", "key": "none", "display_name": "Standard Dense Softmax"},
-        {"family": "Linear", "key": "positive_kernel_linear_attention", "display_name": "Positive Kernel Linear Attention"},
+        {
+            "family": "Linear",
+            "key": "positive_kernel_linear_attention",
+            "display_name": "Positive Kernel Linear Attention",
+        },
         {"family": "Gated DeltaNet", "key": "gated_delta_net", "display_name": "Gated DeltaNet"},
         {"family": "Mamba/SSM", "key": "mamba_block", "display_name": "Mamba SSM"},
         {"family": "SVD-Linear", "key": "svd_linear_attention", "display_name": "SVD-Linear Attention"},
@@ -287,10 +294,30 @@ def main():
     compression_engines = [
         {"engine": "AA-SVD", "cls": AASVDCompressor, "kwargs": {}, "display_name": "Activation-Aware SVD (AA-SVD)"},
         {"engine": "AdaSVD", "cls": AdaSVDCompressor, "kwargs": {}, "display_name": "Adaptive SVD (AdaSVD)"},
-        {"engine": "SVD-LLM", "cls": SVDLLMCompressor, "kwargs": {"calibration_texts": DEFAULT_CALIBRATION_CORPUS}, "display_name": "SVD-LLM Truncation-Aware"},
-        {"engine": "Quant W4A16", "cls": AWQCompressor, "kwargs": {"bits": 4}, "display_name": "AWQ W4A16 Quantization"},
-        {"engine": "Quant FP8", "cls": FP8Compressor, "kwargs": {"scale_type": "per_channel", "fp8_format": "e4m3"}, "display_name": "FP8 E4M3 Native Quantization"},
-        {"engine": "Pruning", "cls": ARMORPruner, "kwargs": {"sparsity": 0.20}, "display_name": "ARMOR Structured Pruner"},
+        {
+            "engine": "SVD-LLM",
+            "cls": SVDLLMCompressor,
+            "kwargs": {"calibration_texts": DEFAULT_CALIBRATION_CORPUS},
+            "display_name": "SVD-LLM Truncation-Aware",
+        },
+        {
+            "engine": "Quant W4A16",
+            "cls": AWQCompressor,
+            "kwargs": {"bits": 4},
+            "display_name": "AWQ W4A16 Quantization",
+        },
+        {
+            "engine": "Quant FP8",
+            "cls": FP8Compressor,
+            "kwargs": {"scale_type": "per_channel", "fp8_format": "e4m3"},
+            "display_name": "FP8 E4M3 Native Quantization",
+        },
+        {
+            "engine": "Pruning",
+            "cls": ARMORPruner,
+            "kwargs": {"sparsity": 0.20},
+            "display_name": "ARMOR Structured Pruner",
+        },
     ]
 
     # Pre-generate long test sequence
@@ -304,7 +331,7 @@ def main():
     # Phase 1: Attention Families across Context Lengths L in {512, 1024, 2048, 4096}
     # -------------------------------------------------------------
     logger.info("=== Phase 1: Evaluating Attention Families across Sequence Context Lengths ===")
-    
+
     # Load Teacher Baseline (Dense Attention)
     teacher = build_extended_gpt2(args.model_path, max_positions=max_len, device=str(device))
 
@@ -354,15 +381,17 @@ def main():
         except Exception as e:
             logger.error(f"Error evaluating attention {display_name}: {e}", exc_info=True)
             for L in args.context_lengths:
-                results_matrix.append({
-                    "category": "Attention Family",
-                    "module": display_name,
-                    "module_key": key,
-                    "family": family_name,
-                    "context_length": L,
-                    "status": "ERROR",
-                    "error_message": str(e),
-                })
+                results_matrix.append(
+                    {
+                        "category": "Attention Family",
+                        "module": display_name,
+                        "module_key": key,
+                        "family": family_name,
+                        "context_length": L,
+                        "status": "ERROR",
+                        "error_message": str(e),
+                    }
+                )
 
     # -------------------------------------------------------------
     # Phase 2: Compression Engines across Context Lengths L in {512, 1024, 2048, 4096}
@@ -413,15 +442,17 @@ def main():
         except Exception as e:
             logger.error(f"Error evaluating compression engine {display_name}: {e}", exc_info=True)
             for L in args.context_lengths:
-                results_matrix.append({
-                    "category": "Compression Engine",
-                    "module": display_name,
-                    "module_key": engine_name,
-                    "family": engine_name,
-                    "context_length": L,
-                    "status": "ERROR",
-                    "error_message": str(e),
-                })
+                results_matrix.append(
+                    {
+                        "category": "Compression Engine",
+                        "module": display_name,
+                        "module_key": engine_name,
+                        "family": engine_name,
+                        "context_length": L,
+                        "status": "ERROR",
+                        "error_message": str(e),
+                    }
+                )
 
     del teacher
     if torch.cuda.is_available():
@@ -482,13 +513,15 @@ def generate_markdown_report(payload: Dict[str, Any]) -> str:
                 f"{r['peak_vram_allocated_mb']:.1f} | {r['latency_p50_ms']:.2f} | {r['throughput_tokens_per_sec']:.1f} |"
             )
 
-    lines.extend([
-        "",
-        "## 2. Production Compression Engines Across Context Horizons",
-        "",
-        "| Compression Engine | Context (L) | Perplexity (PPL) | Linear CKA | Output CosSim | Rel Frob Error | Peak VRAM (MB) | Latency P50 (ms) | Throughput (tok/s) |",
-        "| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |",
-    ])
+    lines.extend(
+        [
+            "",
+            "## 2. Production Compression Engines Across Context Horizons",
+            "",
+            "| Compression Engine | Context (L) | Perplexity (PPL) | Linear CKA | Output CosSim | Rel Frob Error | Peak VRAM (MB) | Latency P50 (ms) | Throughput (tok/s) |",
+            "| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |",
+        ]
+    )
 
     for r in results:
         if r["category"] == "Compression Engine" and r.get("status") == "SUCCESS":
@@ -498,15 +531,17 @@ def generate_markdown_report(payload: Dict[str, Any]) -> str:
                 f"{r['peak_vram_allocated_mb']:.1f} | {r['latency_p50_ms']:.2f} | {r['throughput_tokens_per_sec']:.1f} |"
             )
 
-    lines.extend([
-        "",
-        "## 3. High-Fidelity Representation Analysis & Observations",
-        "- **Linear Attention & Gated DeltaNet**: Exhibit sub-quadratic memory footprint at $L=4096$, sustaining stable hidden feature representation alignment ($CKA > 0.95$).",
-        "- **Mamba / State-Space Models**: Retain near-constant per-token latency scaling into deep context regimes.",
-        "- **SVD-LLM & AA-SVD**: Show minimal spectral distortion on activation-whitened subspaces with near-lossless Perplexity preservation.",
-        "- **W4A16 & FP8 Quantization**: Achieve peak execution throughput and substantial memory headroom on Ada Lovelace architecture with minimal absolute deviation.",
-        "",
-    ])
+    lines.extend(
+        [
+            "",
+            "## 3. High-Fidelity Representation Analysis & Observations",
+            "- **Linear Attention & Gated DeltaNet**: Exhibit sub-quadratic memory footprint at $L=4096$, sustaining stable hidden feature representation alignment ($CKA > 0.95$).",
+            "- **Mamba / State-Space Models**: Retain near-constant per-token latency scaling into deep context regimes.",
+            "- **SVD-LLM & AA-SVD**: Show minimal spectral distortion on activation-whitened subspaces with near-lossless Perplexity preservation.",
+            "- **W4A16 & FP8 Quantization**: Achieve peak execution throughput and substantial memory headroom on Ada Lovelace architecture with minimal absolute deviation.",
+            "",
+        ]
+    )
 
     return "\n".join(lines)
 

@@ -16,7 +16,6 @@ import os
 import time
 import json
 import torch
-import torch.nn.functional as F
 
 from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.core.triton_kernels.low_rank import (
@@ -26,7 +25,12 @@ from neuralops.core.triton_kernels.low_rank import (
 
 
 def benchmark_step_throughput(device, models=None):
-    models = ["cosformer", "gla_attention", "gated_delta_net", "kda_attention", "hla_attention"] if models is None else models
+    """Execute benchmark step throughput routine."""
+    models = (
+        ["cosformer", "gla_attention", "gated_delta_net", "kda_attention", "hla_attention"]
+        if models is None
+        else models
+    )
     results = {}
     dim = 256
     heads = 4
@@ -75,12 +79,15 @@ def benchmark_step_throughput(device, models=None):
             "tokens_per_sec": tokens_per_sec,
             "ms_per_token": (step_elapsed / decode_steps) * 1000.0,
         }
-        print(f"[{name:20s}] Throughput: {tokens_per_sec:8.1f} tokens/s | Latency: {(step_elapsed / decode_steps) * 1000.0:6.3f} ms/token")
+        print(
+            f"[{name:20s}] Throughput: {tokens_per_sec:8.1f} tokens/s | Latency: {(step_elapsed / decode_steps) * 1000.0:6.3f} ms/token"
+        )
 
     return results
 
 
 def benchmark_sequence_scaling(device, seq_lens=None):
+    """Execute benchmark sequence scaling routine."""
     seq_lens = [512, 1024, 2048, 4096] if seq_lens is None else seq_lens
     results = {}
     dim = 256
@@ -127,6 +134,7 @@ def benchmark_sequence_scaling(device, seq_lens=None):
 
 
 def benchmark_fp8_speedup(device):
+    """Execute benchmark fp8 speedup routine."""
     print("\n--- FP8 Tensor Core MMA Benchmark ---")
     if device.type != "cuda":
         return {"status": "cpu_fallback"}
@@ -161,7 +169,9 @@ def benchmark_fp8_speedup(device):
     fp8_time = (time.perf_counter() - t0) / 50.0
 
     speedup = fp16_time / max(fp8_time, 1e-9)
-    print(f"Matrix ({M}x{K} @ {K}x{N}) FP16: {fp16_time * 1000.0:.2f} ms | FP8: {fp8_time * 1000.0:.2f} ms | Speedup: {speedup:.2f}x")
+    print(
+        f"Matrix ({M}x{K} @ {K}x{N}) FP16: {fp16_time * 1000.0:.2f} ms | FP8: {fp8_time * 1000.0:.2f} ms | Speedup: {speedup:.2f}x"
+    )
     return {
         "matrix_shape": [M, K, N],
         "fp16_ms": fp16_time * 1000.0,
@@ -171,6 +181,7 @@ def benchmark_fp8_speedup(device):
 
 
 def main():
+    """Execute main routine."""
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Running on Device: {device} ({torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU'})")
 

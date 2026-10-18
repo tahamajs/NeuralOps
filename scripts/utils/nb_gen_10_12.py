@@ -13,8 +13,9 @@ from nb_gen_common import (
     create_markdown_cell,
     build_notebook,
     make_header_cell,
-    HARDWARE_CONTEXT_CELL
+    HARDWARE_CONTEXT_CELL,
 )
+
 
 def generate_notebook_10():
     """10_long_context_extrapolation_32k.ipynb"""
@@ -22,10 +23,8 @@ def generate_notebook_10():
     cells = [
         # Cell 1: Header & Abstract
         make_header_cell(title),
-
         # Cell 2: Hardware Context
         HARDWARE_CONTEXT_CELL,
-
         # Cell 3: Math formulation of complexity
         create_markdown_cell(r"""## 1. Theoretical Complexity & Mathematical Memory Modeling
 
@@ -48,7 +47,6 @@ $$O_t = \frac{\sum_{\tau=1}^t \phi(Q_t) (\phi(K_\tau)^T V_\tau)}{\sum_{\tau=1}^t
 where the hidden recurrent state $S_t \in \mathbb{R}^{d_k \times d_v}$ maintains constant spatial complexity independent of sequence length:
 $$M_{\text{linear}}(T) = \mathcal{O}(B \cdot H \cdot d_k \cdot d_v) = \text{constant with respect to } T$$
 """),
-
         # Cell 4: Code imports & setup
         create_code_cell(r"""# Cell 3: Environment Setup & Benchmark Harness
 import time
@@ -71,7 +69,6 @@ paper_fig_dir.mkdir(parents=True, exist_ok=True)
 
 print("Harness initialized. Benchmarking sequence lengths: T in [512, 1024, 2048, 4096, 8192, 16384, 32768]")
 """),
-
         # Cell 5: Markdown module architecture
         create_markdown_cell(r"""## 2. Module Architectures: Standard Softmax vs Gated Linear Attention vs SVD-Linear Attention
 
@@ -80,7 +77,6 @@ We define three canonical attention mechanisms for head-to-head empirical compar
 2. **Gated Linear Attention (GLA)** ($\mathcal{O}(T)$ time, $\mathcal{O}(1)$ state memory per token).
 3. **SVD Low-Rank Linear Attention** ($\mathcal{O}(T \cdot r)$ time, factored rank $r \ll d$).
 """),
-
         # Cell 6: Code defining the benchmark modules
         create_code_cell(r"""# Cell 4: Attention Module Definitions
 class StandardSoftmaxAttention(nn.Module):
@@ -155,7 +151,6 @@ class SVDLinearAttention(nn.Module):
         out = self.v_proj(z)
         return out
 """),
-
         # Cell 7: Benchmark runner with CUDA event timing
         create_markdown_cell(r"""## 3. High-Precision GPU Benchmark Runner
 
@@ -165,7 +160,6 @@ We execute the benchmark using `torch.cuda.Event` for sub-microsecond wall-clock
 - **Token Processing Throughput ($R$)** in tokens/second ($R = \frac{T \times B}{\tau / 1000}$).
 - Graceful capture and logging of out-of-memory (`torch.cuda.OutOfMemoryError`) events.
 """),
-
         # Cell 8: Code for running the benchmark
         create_code_cell(r"""# Cell 5: GPU Benchmarking Loop (T=512 to 32,768)
 seq_lengths = [512, 1024, 2048, 4096, 8192, 16384, 32768]
@@ -239,13 +233,11 @@ for T in seq_lengths:
                 "Status": "OOM (>8GB Hardware Ceiling)"
             })
 """),
-
         # Cell 9: DataFrame & Summary Table
         create_markdown_cell(r"""## 4. Empirical Scaling Results Table
 
 The table below summarizes empirical measurements across all sequence lengths, recording forward latency (ms), peak memory (MB), and effective token throughput.
 """),
-
         # Cell 10: Code displaying formatted table
         create_code_cell(r"""# Cell 6: Results DataFrame Construction & Formatting
 df_results = pd.DataFrame(results_records)
@@ -259,13 +251,11 @@ display_df = df_results.copy()
 display_df.columns = [f"**{col}**" for col in display_df.columns]
 print(df_results.to_markdown(index=False))
 """),
-
         # Cell 11: Ingest master historical seqlen scaling
         create_markdown_cell(r"""## 5. Ingestion & Validation with Master Repository Scaling Dataset
 
 We cross-verify live measurements against the repository master scaling dataset in `results/SEQLEN_SCALING_MASTER.csv`.
 """),
-
         # Cell 12: Code for dataset ingestion
         create_code_cell(r"""# Cell 7: Ingest SEQLEN_SCALING_MASTER.csv
 master_csv_path = Path("results/SEQLEN_SCALING_MASTER.csv")
@@ -276,7 +266,6 @@ if master_csv_path.exists():
 else:
     print("Historical SEQLEN_SCALING_MASTER.csv not found; proceeding with live benchmark telemetry.")
 """),
-
         # Cell 13: Figure 1 - Latency vs Sequence Length (Log-Log)
         create_markdown_cell(r"""## 6. Figure 1: Forward Latency Scaling ($\log$-$\log$ Scale)
 
@@ -284,7 +273,6 @@ The plot below demonstrates the empirical bifurcation in asymptotic scaling:
 - **Softmax Attention**: Exhibits quadratic slope $\propto T^2$.
 - **Linear Attention**: Exhibits linear slope $\propto T^1$.
 """),
-
         # Cell 14: Code for Figure 1
         create_code_cell(r"""# Cell 8: Publication Figure 1 - Latency vs Sequence Length
 fig, ax = plt.subplots(figsize=(9, 5.5), dpi=300)
@@ -334,13 +322,11 @@ fig.savefig(fig_path_pdf, bbox_inches="tight")
 plt.show()
 print(f"Saved Figure 1 to: {fig_path_png} and {fig_path_pdf}")
 """),
-
         # Cell 15: Figure 2 - Peak VRAM vs Sequence Length
         create_markdown_cell(r"""## 7. Figure 2: Peak VRAM Consumption & Hardware Memory Ceiling
 
 The figure below plots peak allocated VRAM against sequence length, marking the physical 8.0 GB GDDR6 capacity limit of the RTX 4070 Laptop GPU.
 """),
-
         # Cell 16: Code for Figure 2
         create_code_cell(r"""# Cell 9: Publication Figure 2 - Peak VRAM vs Sequence Length
 fig, ax = plt.subplots(figsize=(9, 5.5), dpi=300)
@@ -374,13 +360,11 @@ fig.savefig(fig_path_vram_pdf, bbox_inches="tight")
 plt.show()
 print(f"Saved Figure 2 to: {fig_path_vram_png} and {fig_path_vram_pdf}")
 """),
-
         # Cell 17: Figure 3 - Dual-Axis Latency + VRAM
         create_markdown_cell(r"""## 8. Figure 3: Dual-Axis Unified Scaling Metric
 
 A comprehensive dual-axis scaling visualization illustrating simultaneously how latency and memory diverge as context expands towards 32,768 tokens.
 """),
-
         # Cell 18: Code for Figure 3
         create_code_cell(r"""# Cell 10: Publication Figure 3 - Dual-Axis Latency & VRAM Scaling
 fig, ax1 = plt.subplots(figsize=(9.5, 5.5), dpi=300)
@@ -411,13 +395,11 @@ fig.savefig(fig_dual_png, bbox_inches="tight")
 plt.show()
 print(f"Saved Figure 3 to: {fig_dual_png}")
 """),
-
         # Cell 19: Figure 4 - Token Throughput
         create_markdown_cell(r"""## 9. Figure 4: Token Throughput Dynamics ($R = \frac{T}{\tau}$)
 
 Token generation and prefill throughput measured in tokens/second.
 """),
-
         # Cell 20: Code for Figure 4
         create_code_cell(r"""# Cell 11: Publication Figure 4 - Token Throughput Scaling
 fig, ax = plt.subplots(figsize=(9, 5.5), dpi=300)
@@ -446,13 +428,11 @@ fig.savefig(fig_tp_png, bbox_inches="tight")
 plt.show()
 print(f"Saved Figure 4 to: {fig_tp_png}")
 """),
-
         # Cell 21: CUDA Memory Allocator Summary
         create_markdown_cell(r"""## 10. Memory Fragmentation & Allocator Telemetry
 
 Detailed audit of the PyTorch CUDA caching allocator (`torch.cuda.memory_summary`) to verify zero heap fragmentation and true hardware reclamation.
 """),
-
         # Cell 22: Code for memory summary
         create_code_cell(r"""# Cell 12: Allocator Telemetry Audit
 alloc_summary = torch.cuda.memory_summary(device=device, abbreviated=True)
@@ -460,13 +440,11 @@ print("CUDA MEMORY ALLOCATOR TELEMETRY SUMMARY:")
 print("-" * 75)
 print(alloc_summary[:1200])
 """),
-
         # Cell 23: Extrapolation to 64k and 128k
         create_markdown_cell(r"""## 11. Mathematical Extrapolation to Ultra-Long Contexts ($T=65,536$ and $T=131,072$)
 
 We compute the theoretical VRAM footprint and speedup factor for scaling beyond current hardware limits.
 """),
-
         # Cell 24: Code for extrapolation calculation
         create_code_cell(r"""# Cell 13: Ultra-Long Context Extrapolation Table
 extrapolated_lengths = [32768, 65536, 131072, 262144]
@@ -490,14 +468,13 @@ for T_ext in extrapolated_lengths:
 df_extrap = pd.DataFrame(extrap_data)
 print(df_extrap.to_markdown(index=False))
 """),
-
         # Cell 25: Architectural Conclusions & Summary
         create_markdown_cell(r"""## 12. Architectural Conclusions & Key Takeaways
 
 1. **Quadratic Memory Barrier**: Standard Softmax Attention exceeds the 8.0 GB GDDR6 capacity of consumer and mobile GPUs at $T \approx 16,384$, precipitating an unavoidable out-of-memory crash.
 2. **Linear Recurrent Viability**: Both Gated Linear Attention (GLA) and SVD-Linear Attention scale seamlessly to $T=32,768$ within $< 1.8$ GB peak VRAM.
 3. **Throughput Invariance**: Token processing throughput for linear architectures remains stable across extended sequence lengths, enabling unbounded context windows for deployment on modern Ada Lovelace GPUs.
-""")
+"""),
     ]
     return build_notebook(cells)
 
@@ -508,10 +485,8 @@ def generate_notebook_11():
     cells = [
         # Cell 1: Header & Abstract
         make_header_cell(title),
-
         # Cell 2: Hardware Context
         HARDWARE_CONTEXT_CELL,
-
         # Cell 3: Math formulation of 3-level hierarchy
         create_markdown_cell(r"""## 1. The Three-Level Execution Hierarchy in NeuralOps
 
@@ -530,7 +505,6 @@ where $B_{\text{DRAM}}$ is the physical memory bandwidth (264.0 GB/s on RTX 4070
 
 $$\Delta V_{\text{saved}} = \sum_{l \in \text{fused}} 2 \cdot B \cdot T \cdot D \quad [\text{Bytes}]$$
 """),
-
         # Cell 4: Imports & canonical module checks
         create_code_cell(r"""# Cell 3: Canonical Kernel Import & Registry Verification
 import time
@@ -557,7 +531,6 @@ cuda_kernels = neuralops.list_cuda_kernels()
 print(f"Total Unified Triton JIT Kernels Available: {len(triton_kernels)}")
 print(f"Total Native CUDA C++ Kernels Available:    {len(cuda_kernels)}")
 """),
-
         # Cell 5: Kernel list & descriptions
         create_markdown_cell(r"""## 2. Specification of 18 Core Canonical Kernels
 
@@ -568,7 +541,6 @@ We evaluate 18 representative kernels spanning five architectural domains:
 4. **Attention & Sparsity**: `cosformer_linear_attention`, `sliding_window_attn`, `block_sparse_attn`, `flash_gqa`
 5. **Quantization & Routing**: `fp8_gemm`, `w4a16_gemm`, `moe_dispatch`
 """),
-
         # Cell 6: Benchmark execution harness for 18 kernels
         create_code_cell(r"""# Cell 4: 18 Kernel Benchmark Harness & Synthetic Workloads
 kernel_catalog = [
@@ -594,7 +566,6 @@ kernel_catalog = [
 
 print(f"Initialized catalog with {len(kernel_catalog)} core canonical kernels.")
 """),
-
         # Cell 7: Ingestion of master benchmark data
         create_markdown_cell(r"""## 3. Ingestion of Master Level 1 & Level 2 Benchmarks
 
@@ -603,7 +574,6 @@ We ingest empirical timing records from:
 - `results/master_108_cuda_modules_benchmark.csv`
 - `results/benchmark_4_kernels_final.csv`
 """),
-
         # Cell 8: Code for ingesting benchmark files
         create_code_cell(r"""# Cell 5: Ingest Historical Master Benchmark Records
 triton_json_path = Path("results/triton_26_kernels_comprehensive_benchmark.json")
@@ -624,13 +594,11 @@ if cuda_csv_path.exists():
         cuda_data[str(row['Module'])] = row
     print(f"Loaded {len(cuda_data)} CUDA C++ kernel records from {cuda_csv_path}")
 """),
-
         # Cell 9: Live GPU benchmark loop across 3 levels
         create_markdown_cell(r"""## 4. Live 3-Level Latency Execution on RTX 4070 GPU
 
 We perform live GPU measurement across Level 3 (Pure PyTorch), Level 2 (Triton JIT), and Level 1 (CUDA C++).
 """),
-
         # Cell 10: Code executing the 3-level benchmark
         create_code_cell(r"""# Cell 6: Live 3-Level Execution Sweep
 matrix_records = []
@@ -722,13 +690,11 @@ for k in kernel_catalog:
 df_matrix = pd.DataFrame(matrix_records)
 print(f"Successfully evaluated 3-level latency matrix across all {len(df_matrix)} kernels.")
 """),
-
         # Cell 11: Summary table
         create_markdown_cell(r"""## 5. Master Three-Level Latency Matrix Table
 
 Summary table comparing execution timings (ms), speedups over pure PyTorch, and numerical parity status across all 18 core kernels.
 """),
-
         # Cell 12: Code displaying table
         create_code_cell(r"""# Cell 7: Render Master 3-Level Latency Matrix Table
 print("=" * 115)
@@ -736,7 +702,6 @@ print("THREE-LEVEL EXECUTION HIERARCHY LATENCY MATRIX (NVIDIA GEFORCE RTX 4070 L
 print("=" * 115)
 print(df_matrix.to_markdown(index=False))
 """),
-
         # Cell 13: Figure 1 - Speedup Histograms
         create_markdown_cell(r"""## 6. Figure 1: Speedup Distribution Histograms & KDE
 
@@ -744,7 +709,6 @@ Dual-panel distribution histograms showing empirical speedup distributions:
 - **Triton JIT vs PyTorch Reference**
 - **CUDA C++ vs PyTorch Reference**
 """),
-
         # Cell 14: Code for Figure 1
         create_code_cell(r"""# Cell 8: Publication Figure 1 - Speedup Histograms
 fig, axes = plt.subplots(1, 2, figsize=(12, 5), dpi=300)
@@ -773,13 +737,11 @@ fig.savefig(fig_hist_pdf, bbox_inches="tight")
 plt.show()
 print(f"Saved Figure 1 to: {fig_hist_png} and {fig_hist_pdf}")
 """),
-
         # Cell 15: Figure 2 - Grouped Bar Chart of Latency across 18 Kernels
         create_markdown_cell(r"""## 7. Figure 2: Grouped Bar Chart of Wall-Clock Latency ($\log_{10}$ Scale)
 
 Direct side-by-side latency comparison for all 18 kernels across Level 3 (PyTorch), Level 2 (Triton), and Level 1 (CUDA C++).
 """),
-
         # Cell 16: Code for Figure 2
         create_code_cell(r"""# Cell 9: Publication Figure 2 - 18-Kernel 3-Level Latency Comparison
 fig, ax = plt.subplots(figsize=(13, 6.5), dpi=300)
@@ -805,13 +767,11 @@ fig.savefig(fig_bar_png, bbox_inches="tight")
 plt.show()
 print(f"Saved Figure 2 to: {fig_bar_png}")
 """),
-
         # Cell 17: Figure 3 - Category Speedup Breakdown
         create_markdown_cell(r"""## 8. Figure 3: Domain-Specific Speedup Breakdown
 
 Analysis of speedups aggregated across the five core architectural domains.
 """),
-
         # Cell 18: Code for Figure 3
         create_code_cell(r"""# Cell 10: Publication Figure 3 - Domain-Specific Speedup Breakdown
 cat_summary = df_matrix.groupby('Category')[['Triton Speedup (x)', 'CUDA Speedup (x)']].mean().reset_index()
@@ -836,13 +796,11 @@ fig.savefig(fig_cat_png, bbox_inches="tight")
 plt.show()
 print(f"Saved Figure 3 to: {fig_cat_png}")
 """),
-
         # Cell 19: Figure 4 - Speedup Heatmap
         create_markdown_cell(r"""## 9. Figure 4: Kernel Speedup & Parity Heatmap
 
 Heatmap representation indexing execution speedup and numerical precision across all 18 kernels.
 """),
-
         # Cell 20: Code for Figure 4
         create_code_cell(r"""# Cell 11: Publication Figure 4 - Speedup & Precision Heatmap
 heatmap_df = df_matrix[['Kernel Name', 'Triton Speedup (x)', 'CUDA Speedup (x)']].set_index('Kernel Name')
@@ -858,7 +816,6 @@ fig.savefig(fig_heat_png, bbox_inches="tight")
 plt.show()
 print(f"Saved Figure 4 to: {fig_heat_png}")
 """),
-
         # Cell 21: Effective Memory Bandwidth Utilization
         create_markdown_cell(r"""## 10. Effective Memory Bandwidth Utilization Analysis
 
@@ -866,7 +823,6 @@ We calculate the achieved effective memory bandwidth ($B_{\text{eff}}$) for memo
 
 $$B_{\text{eff}} = \frac{V_{\text{read}} + V_{\text{written}}}{\tau} \quad [\text{GB/s}]$$
 """),
-
         # Cell 22: Code calculating effective bandwidth
         create_code_cell(r"""# Cell 12: Memory Bandwidth Utilization Table
 bw_records = []
@@ -890,13 +846,11 @@ for _, row in df_matrix[df_matrix['Category'] == 'Normalization'].iterrows():
 df_bw = pd.DataFrame(bw_records)
 print(df_bw.to_markdown(index=False))
 """),
-
         # Cell 23: Numerical Parity Audit
         create_markdown_cell(r"""## 11. Numerical Parity Audit ($\Delta < 10^{-2}$)
 
 Verification that all Level 1 and Level 2 compiled implementations produce identical outputs to Level 3 within standard FP16 floating-point rounding tolerance.
 """),
-
         # Cell 24: Code for parity verification
         create_code_cell(r"""# Cell 13: Numerical Parity Verification Summary
 parity_pass = (df_matrix['Max Abs Diff (Δ)'] < 0.01).all()
@@ -904,14 +858,13 @@ print(f"ALL 18 KERNELS PASSED STRICT NUMERICAL PARITY AUDIT: {parity_pass}")
 print(f"Maximum Observed Numerical Discrepancy: Δ = {df_matrix['Max Abs Diff (Δ)'].max():.6f}")
 print("Hardware compilation targets fully validated against IEEE 754 reference semantics.")
 """),
-
         # Cell 25: Conclusions
         create_markdown_cell(r"""## 12. Key Takeaways & Deployment Recommendations
 
 1. **Hierarchy Parity**: Native CUDA C++ (Level 1) delivers up to **5.8x** speedup, while Triton JIT (Level 2) captures **85% - 95%** of CUDA performance while remaining purely in Python.
 2. **Memory Fusion ROI**: Elementwise normalization and scan kernels exhibit the highest speedups (**3.5x - 5.8x**) due to eliminating round-trips to DRAM.
 3. **Zero-Overhead Fallback**: When CUDA extensions are uncompiled on deployment targets, Level 2 Triton JIT and Level 3 PyTorch guarantee 100% functional reliability with zero architectural modifications.
-""")
+"""),
     ]
     return build_notebook(cells)
 
@@ -922,10 +875,8 @@ def generate_notebook_12():
     cells = [
         # Cell 1: Header & Abstract
         make_header_cell(title),
-
         # Cell 2: Hardware Context
         HARDWARE_CONTEXT_CELL,
-
         # Cell 3: Math formulation of SVD whitening & nullspace projection
         create_markdown_cell(r"""## 1. Mathematical Foundations: Whitening, Energy Concentration & Nullspace Projection
 
@@ -957,7 +908,6 @@ $$\hat{W}_{\text{HNC}} = \hat{W}_{\text{whiten}} + \Delta_{\text{null}}$$
 
 Because $\mathcal{P}_{\mathcal{N}(X)} X^T = 0$, the projected nullspace compensation introduces **zero perturbation** on calibration activations while preserving maximum spectral energy.
 """),
-
         # Cell 4: Imports & setup
         create_code_cell(r"""# Cell 3: Environment Setup & Tool Verification
 import time
@@ -979,13 +929,11 @@ plots_dir.mkdir(parents=True, exist_ok=True)
 
 print("SVD Whitening and Spectral Allocation Benchmarking Harness Ready.")
 """),
-
         # Cell 5: Calibration data generation & synthetic heavy-tailed activations
         create_markdown_cell(r"""## 2. Realistic Heavy-Tailed Activation Distribution Setup
 
 Pre-trained LLMs exhibit pronounced activation outliers. We generate realistic calibration activations $X \in \mathbb{R}^{N \times d_{\text{in}}}$ featuring heavy-tailed channel kurtosis alongside weight matrix $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$.
 """),
-
         # Cell 6: Code generating tensors
         create_code_cell(r"""# Cell 4: Calibration Activation & Weight Matrix Setup
 torch.manual_seed(42)
@@ -1007,13 +955,11 @@ X[:, outlier_channels] *= 25.0
 print(f"Weight Matrix:     Shape = {W.shape}, Norm ||W||_F = {torch.norm(W).item():.2f}")
 print(f"Activation Matrix: Shape = {X.shape}, Kurtosis Outliers injected in {len(outlier_channels)} channels.")
 """),
-
         # Cell 7: Implementation of all 5 SVD methods
         create_markdown_cell(r"""## 3. Side-by-Side SVD Decompositions: Direct, ASVD, AdaSVD, FWSVD, and HNC-SVD
 
 We implement and evaluate all five decomposition algorithms under identical calibration data across ranks $r \in [64, 128, 192, 256, 384, 512]$.
 """),
-
         # Cell 8: Code implementing and running the 5 SVD methods
         create_code_cell(r"""# Cell 5: SVD Decomposition Engine Implementations
 def compress_direct_svd(W, rank):
@@ -1092,13 +1038,11 @@ for r in ranks_to_eval:
 df_svd = pd.DataFrame(svd_benchmark_records)
 print(f"Completed evaluation across {len(df_svd)} experimental conditions.")
 """),
-
         # Cell 9: Master Ledger Ingestion
         create_markdown_cell(r"""## 4. Ingestion of Repository Master SVD Benchmarks
 
 We ingest empirical validation runs from `results/hnc_svd_comprehensive_benchmark.json` and the SQLite master ledger `results/registry/master_ledger.sqlite`.
 """),
-
         # Cell 10: Code ingesting master records
         create_code_cell(r"""# Cell 6: Ingest SQLite Master Ledger & JSON
 hnc_json_path = Path("results/hnc_svd_comprehensive_benchmark.json")
@@ -1114,13 +1058,11 @@ if sqlite_path.exists():
     print("Master SQLite Ledger SVD Records Sample:")
     print(df_ledger_svd.to_markdown(index=False))
 """),
-
         # Cell 11: Summary Table
         create_markdown_cell(r"""## 5. Comparative Frobenius & Activation Error Table
 
 Summary table comparing reconstruction precision across all five algorithms at Rank $r=128$ and $r=256$.
 """),
-
         # Cell 12: Code displaying table
         create_code_cell(r"""# Cell 7: Render Summary Error Table
 print("=" * 95)
@@ -1135,13 +1077,11 @@ print("=" * 95)
 sub_r256 = df_svd[df_svd['Rank (r)'] == 256]
 print(sub_r256.to_markdown(index=False))
 """),
-
         # Cell 13: Figure 1 - Frobenius Error vs Compression Ratio
         create_markdown_cell(r"""## 6. Figure 1: Relative Frobenius Reconstruction Error vs Compression Ratio
 
 Plot illustrating reconstruction precision across compression ratios from $0.125$ to $0.50$.
 """),
-
         # Cell 14: Code for Figure 1
         create_code_cell(r"""# Cell 8: Publication Figure 1 - Frobenius Error vs Compression Ratio
 fig, ax = plt.subplots(figsize=(9, 5.5), dpi=300)
@@ -1179,13 +1119,11 @@ fig.savefig(fig_frob_pdf, bbox_inches="tight")
 plt.show()
 print(f"Saved Figure 1 to: {fig_frob_png} and {fig_frob_pdf}")
 """),
-
         # Cell 15: Figure 2 - Activation Weighted Output Error
         create_markdown_cell(r"""## 7. Figure 2: Activation-Weighted Output Error vs Compression Ratio
 
 Crucial downstream evaluation metric: measuring the perturbation induced on output activations $\frac{\|(W - \hat{W}) X^T\|_F}{\|W X^T\|_F}$.
 """),
-
         # Cell 16: Code for Figure 2
         create_code_cell(r"""# Cell 9: Publication Figure 2 - Activation Weighted Output Error
 fig, ax = plt.subplots(figsize=(9, 5.5), dpi=300)
@@ -1214,13 +1152,11 @@ fig.savefig(fig_act_pdf, bbox_inches="tight")
 plt.show()
 print(f"Saved Figure 2 to: {fig_act_png} and {fig_act_pdf}")
 """),
-
         # Cell 17: Figure 3 - Singular Value Spectrum
         create_markdown_cell(r"""## 8. Figure 3: Singular Value Decay & Cumulative Spectral Energy
 
 Singular value decay spectra ($\sigma_i$) and cumulative energy retention ratio $\mathcal{E}(k) = \frac{\sum_{i=1}^k \sigma_i^2}{\sum_{i=1}^d \sigma_i^2}$.
 """),
-
         # Cell 18: Code for Figure 3
         create_code_cell(r"""# Cell 10: Publication Figure 3 - Spectral Energy Decay
 U_w, S_w, Vt_w = torch.linalg.svd(W, full_matrices=False)
@@ -1253,13 +1189,11 @@ fig.savefig(fig_spec_png, bbox_inches="tight")
 plt.show()
 print(f"Saved Figure 3 to: {fig_spec_png}")
 """),
-
         # Cell 19: Figure 4 - Non-Uniform Rank Allocation
         create_markdown_cell(r"""## 9. Figure 4: Layer-Wise Spectral Rank Allocation (AdaSVD vs Uniform)
 
 Comparing uniform rank truncation against AdaSVD dynamic allocation across a 12-layer Transformer backbone.
 """),
-
         # Cell 20: Code for Figure 4
         create_code_cell(r"""# Cell 11: Publication Figure 4 - Layer-Wise Spectral Allocation
 layers = [f"L{i}" for i in range(1, 13)]
@@ -1290,13 +1224,11 @@ fig.savefig(fig_alloc_png, bbox_inches="tight")
 plt.show()
 print(f"Saved Figure 4 to: {fig_alloc_png}")
 """),
-
         # Cell 21: GPU Decomposition Latency
         create_markdown_cell(r"""## 10. GPU Decomposition Wall-Clock Runtime
 
 Benchmarking decomposition wall-clock time on RTX 4070 Laptop GPU.
 """),
-
         # Cell 22: Code timing the decompositions
         create_code_cell(r"""# Cell 12: Wall-Clock Decomposition Benchmark
 timing_records = []
@@ -1330,13 +1262,11 @@ for m_name, fn in [
 df_timing = pd.DataFrame(timing_records)
 print(df_timing.to_markdown(index=False))
 """),
-
         # Cell 23: Nullspace Projection Verification
         create_markdown_cell(r"""## 11. Empirical Verification of Zero Nullspace Perturbation
 
 Demonstrating numerically that HNC-SVD nullspace projection satisfies $\mathcal{P}_{\mathcal{N}(X)} X^T \approx 0$.
 """),
-
         # Cell 24: Code for nullspace verification
         create_code_cell(r"""# Cell 13: Nullspace Invariance Verification
 U_x, S_x, Vt_x = torch.linalg.svd(X, full_matrices=False)
@@ -1345,13 +1275,12 @@ leakage = torch.norm(torch.matmul(P_null, X.t())).item()
 print(f"Empirical Activation Nullspace Leakage: || P_null X^T ||_F = {leakage:.8f}")
 print("Verified mathematical invariance: Nullspace compensation does not distort calibration activations.")
 """),
-
         # Cell 25: Conclusions
         create_markdown_cell(r"""## 12. Key Conclusions & SVD Guidelines
 
 1. **Activation Outlier Sensitivity**: Unweighted Direct SVD fails on heavy-tailed activation distributions, producing high activation errors ($> 0.35$).
 2. **Whitening Superiority**: Cholesky whitening (FWSVD) and HNC-SVD reduce activation error by over **$2.5\times$** compared to Direct SVD at identical rank.
 3. **Nullspace Guarantee**: HNC-SVD achieves the lowest overall activation error by safely confining residual compensation to the calibration nullspace.
-""")
+"""),
     ]
     return build_notebook(cells)

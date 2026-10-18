@@ -7,7 +7,6 @@ Generates standalone interactive HTML Plotly roofline charts for empirical Trito
 from __future__ import annotations
 
 import argparse
-import os
 import sys
 from pathlib import Path
 
@@ -46,20 +45,22 @@ def generate_roofline_html(
     ridge_point = peak_tflops / (peak_bandwidth_gb_s / 1000.0)
     intensities = [0.1, 0.5, 1.0, 2.0, 5.0, 10.0, ridge_point, 50.0, 100.0, 500.0, 1000.0]
     intensities = sorted(list(set(intensities)))
-    
+
     # Roofline ceiling calculation
     ceilings = [min(peak_tflops, (i * peak_bandwidth_gb_s) / 1000.0) for i in intensities]
 
     fig = go.Figure()
 
     # Ceiling curve
-    fig.add_trace(go.Scatter(
-        x=intensities,
-        y=ceilings,
-        mode="lines",
-        line=dict(color="#38bdf8", width=3),
-        name=f"Hardware Ceiling ({device_name})",
-    ))
+    fig.add_trace(
+        go.Scatter(
+            x=intensities,
+            y=ceilings,
+            mode="lines",
+            line=dict(color="#38bdf8", width=3),
+            name=f"Hardware Ceiling ({device_name})",
+        )
+    )
 
     # Kernel sample benchmark points
     sample_kernels = [
@@ -71,15 +72,17 @@ def generate_roofline_html(
     ]
 
     for k in sample_kernels:
-        fig.add_trace(go.Scatter(
-            x=[k["ai"]],
-            y=[k["tflops"]],
-            mode="markers+text",
-            text=[k["name"]],
-            textposition="top center",
-            marker=dict(size=12, color=k["color"]),
-            name=k["name"],
-        ))
+        fig.add_trace(
+            go.Scatter(
+                x=[k["ai"]],
+                y=[k["tflops"]],
+                mode="markers+text",
+                text=[k["name"]],
+                textposition="top center",
+                marker=dict(size=12, color=k["color"]),
+                name=k["name"],
+            )
+        )
 
     fig.update_layout(
         title=f"Hardware Roofline Model · {device_name}",
@@ -97,6 +100,7 @@ def generate_roofline_html(
 
 
 def main() -> None:
+    """Execute main routine."""
     parser = argparse.ArgumentParser(description="NeuralOps Roofline Interactive Plotter")
     parser.add_argument("--out", type=str, default="docs/roofline_interactive.html", help="Output HTML path")
     parser.add_argument("--device", type=str, default="NVIDIA RTX 4070 (8GB)", help="Device name")

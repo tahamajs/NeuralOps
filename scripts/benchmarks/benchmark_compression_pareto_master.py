@@ -16,16 +16,14 @@ Outputs structured JSON to results/benchmarks_compression_pareto_master.json.
 from __future__ import annotations
 
 import argparse
-import copy
-import gc
-import json
 import math
-import os
 from pathlib import Path
 import sys
 import time
 
+
 def fmt_opt(val, fmt=".2f", suffix="", default="-"):
+    """Execute fmt opt routine."""
     if val is None:
         return default
     try:
@@ -35,6 +33,7 @@ def fmt_opt(val, fmt=".2f", suffix="", default="-"):
         return f"{f:{fmt}}{suffix}"
     except (ValueError, TypeError):
         return default
+
 
 import torch
 import torch.nn as nn
@@ -49,6 +48,7 @@ from neuralops.compression import COMPRESSOR_REGISTRY
 try:
     from rich.console import Console
     from rich.table import Table
+
     RICH_AVAILABLE = True
 except ImportError:
     RICH_AVAILABLE = False
@@ -58,14 +58,17 @@ class TransformerLayerBlock(nn.Module):
     """Synthetic Transformer layer matching LLaMA / Mistral dimensions."""
 
     def __init__(self, in_features: int = 4096, out_features: int = 4096, bias: bool = False):
+        """Execute init routine."""
         super().__init__()
         self.linear = nn.Linear(in_features, out_features, bias=bias)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Execute forward routine."""
         return self.linear(x)
 
 
 def _extract_model_and_stats(res):
+    """Execute extract model and stats routine."""
     stats = {}
     if isinstance(res, tuple):
         model = res[0]
@@ -85,6 +88,7 @@ def _extract_model_and_stats(res):
 
 
 def _build_compressed_model(target, base_model: nn.Module, target_rank: int = 64, **override_kwargs):
+    """Execute build compressed model routine."""
     kwargs = {
         "rank": target_rank,
         "target_rank": target_rank,
@@ -111,6 +115,7 @@ def run_compression_pareto_benchmark(
     out_file: str = "results/benchmarks_compression_pareto_master.json",
     sample_compressors: list[str] = None,
 ):
+    """Execute run compression pareto benchmark routine."""
     dev = torch.device(device if torch.cuda.is_available() else "cpu")
     runner = BenchmarkRunner(device=dev, warmup_iters=2, benchmark_iters=5)
 
@@ -125,7 +130,7 @@ def run_compression_pareto_benchmark(
         ("mlp_gate_up_11008", 4096, 11008),
     ]
 
-    print(f"=== Comprehensive Compression Pareto & Recovery Master Sweep ===")
+    print("=== Comprehensive Compression Pareto & Recovery Master Sweep ===")
     print(f"Device: {dev} | Total Engines: {len(names_to_run)}")
     print(f"Layer Dimensions: {[f'{s[1]}x{s[2]}' for s in test_shapes]}\n")
 
@@ -174,13 +179,16 @@ def run_compression_pareto_benchmark(
                 # Parameter count & compression ratio
                 orig_params = sum(p.numel() for p in base_layer.parameters())
                 comp_params = sum(p.numel() for p in comp_layer.parameters())
-                comp_ratio = (orig_params / max(comp_params, 1))
+                comp_ratio = orig_params / max(comp_params, 1)
 
                 # Decompression / inference forward latency
                 def _make_forward(target_layer, target_x):
+                    """Execute make forward routine."""
                     def comp_forward():
+                        """Execute comp forward routine."""
                         with torch.no_grad():
                             return target_layer(target_x)
+
                     return comp_forward
 
                 forward_metric = runner.measure_callable(_make_forward(comp_layer, probe_x), batch_size=16, seq_len=1)
@@ -197,7 +205,9 @@ def run_compression_pareto_benchmark(
                     "status": "OK",
                 }
                 engine_record["shapes"][shape_name] = shape_rec
-                print(f"      {shape_name:20s}: Ratio={comp_ratio:4.1f}x | FrobErr={frobenius_err:7.4f} | CompTime={compress_ms:6.1f}ms | Latency={forward_metric.latency_ms_trimmed_mean:5.2f}ms")
+                print(
+                    f"      {shape_name:20s}: Ratio={comp_ratio:4.1f}x | FrobErr={frobenius_err:7.4f} | CompTime={compress_ms:6.1f}ms | Latency={forward_metric.latency_ms_trimmed_mean:5.2f}ms"
+                )
 
                 base_layer = None
                 comp_layer = None
@@ -249,6 +259,7 @@ def run_compression_pareto_benchmark(
 
 
 def main():
+    """Execute main routine."""
     parser = argparse.ArgumentParser(description="NeuralOps Compression Pareto Benchmark")
     parser.add_argument("--device", type=str, default="cuda:0" if torch.cuda.is_available() else "cpu")
     parser.add_argument("--out-file", type=str, default="results/benchmarks_compression_pareto_master.json")
@@ -258,9 +269,18 @@ def main():
     sample = None
     if args.quick:
         sample = [
-            "svd", "svd_llm", "asvd", "hnc_svd", "aa_svd",
-            "lora_svd", "hybrid_svd", "svd_round", "svd_quant",
-            "structured_pruning", "block_sparse", "kfac_svd"
+            "svd",
+            "svd_llm",
+            "asvd",
+            "hnc_svd",
+            "aa_svd",
+            "lora_svd",
+            "hybrid_svd",
+            "svd_round",
+            "svd_quant",
+            "structured_pruning",
+            "block_sparse",
+            "kfac_svd",
         ]
 
     run_compression_pareto_benchmark(device=args.device, out_file=args.out_file, sample_compressors=sample)

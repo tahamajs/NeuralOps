@@ -1,4 +1,12 @@
-import sys, os, time, math, importlib.util, glob
+"""Deep pass attention kernels module.
+
+Author: Taha Majlesi
+"""
+
+import sys
+import time
+import math
+import importlib.util
 from pathlib import Path
 import torch
 
@@ -6,16 +14,39 @@ repo_root = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(repo_root))
 
 targets = [
-    "flash_gqa", "latent_kv_attn", "sparse_attention", "differential_attention",
-    "local_attention", "routing_attention", "flash_decode_stage2", "flash_decoding",
-    "varlen_attention", "cosformer", "alibi_attention", "bigbird",
-    "cross_attention", "galerkin_attention", "hydra_attention", "hymba_transx",
-    "longformer", "reformer", "tpa_attention", "upi_stuffed_mamba",
-    "hstu_attention", "linformer_attention", "favor_plus", "nystrom_attention",
-    "cluster_attention", "multi_scale_retention", "fms_scan", "adaptive_span"
+    "flash_gqa",
+    "latent_kv_attn",
+    "sparse_attention",
+    "differential_attention",
+    "local_attention",
+    "routing_attention",
+    "flash_decode_stage2",
+    "flash_decoding",
+    "varlen_attention",
+    "cosformer",
+    "alibi_attention",
+    "bigbird",
+    "cross_attention",
+    "galerkin_attention",
+    "hydra_attention",
+    "hymba_transx",
+    "longformer",
+    "reformer",
+    "tpa_attention",
+    "upi_stuffed_mamba",
+    "hstu_attention",
+    "linformer_attention",
+    "favor_plus",
+    "nystrom_attention",
+    "cluster_attention",
+    "multi_scale_retention",
+    "fms_scan",
+    "adaptive_span",
 ]
 
+
 def benchmark_fn(fn, warmup=5, iters=30):
+    """Execute benchmark fn routine."""
     for _ in range(warmup):
         fn()
     torch.cuda.synchronize()
@@ -25,12 +56,14 @@ def benchmark_fn(fn, warmup=5, iters=30):
     torch.cuda.synchronize()
     return (time.perf_counter() - t0) / iters * 1000.0
 
+
 def run_deep_pass():
+    """Execute run deep pass routine."""
     device = torch.device("cuda:0")
     print("=" * 110)
     print("DEEP VERIFICATION PASS: ATTENTION CUDA MODULES (SM 8.9 RTX 4070)")
     print("=" * 110)
-    print(f"idx | module                    | cuda_ms    | ref_ms     | speedup   | max_diff     | nan_check | status")
+    print("idx | module                    | cuda_ms    | ref_ms     | speedup   | max_diff     | nan_check | status")
     print("-" * 110)
 
     all_pass = True
@@ -219,7 +252,7 @@ def run_deep_pass():
 
             elif name == "favor_plus":
                 proj = torch.randn(B * N, 64, device=device, dtype=torch.float16) * 0.1
-                diag_sq = torch.sum(proj ** 2, dim=-1) * 0.5
+                diag_sq = torch.sum(proj**2, dim=-1) * 0.5
                 cuda_fn = lambda: mod.favor_plus(proj, diag_sq, 1.0)
                 ref_fn = lambda: mod.favor_plus_pytorch_ref(proj, diag_sq, 1.0)
 
@@ -285,16 +318,21 @@ def run_deep_pass():
             status_str = "PASS" if is_pass else "FAIL"
             nan_str = "CLEAN" if not has_nan else "NAN/INF"
 
-            print(f"{idx:<3} | {name:<25} | {t_cuda:<10.4f} | {t_ref:<10.4f} | {speedup:<9.2f}x | {diff:<12.2e} | {nan_str:<9} | {status_str}", flush=True)
-            results.append({
-                "module": name,
-                "cuda_ms": t_cuda,
-                "ref_ms": t_ref,
-                "speedup": speedup,
-                "diff": diff,
-                "has_nan": has_nan,
-                "pass": is_pass
-            })
+            print(
+                f"{idx:<3} | {name:<25} | {t_cuda:<10.4f} | {t_ref:<10.4f} | {speedup:<9.2f}x | {diff:<12.2e} | {nan_str:<9} | {status_str}",
+                flush=True,
+            )
+            results.append(
+                {
+                    "module": name,
+                    "cuda_ms": t_cuda,
+                    "ref_ms": t_ref,
+                    "speedup": speedup,
+                    "diff": diff,
+                    "has_nan": has_nan,
+                    "pass": is_pass,
+                }
+            )
         except Exception as e:
             all_pass = False
             print(f"{idx:<3} | {name:<25} | EXCEPTION: {str(e)[:40]}", flush=True)
@@ -302,5 +340,7 @@ def run_deep_pass():
     print("=" * 110)
     print(f"DEEP PASS OVERALL STATUS: {'ALL PASSED' if all_pass else 'SOME FAILED'}")
     print("=" * 110)
+
+
 if __name__ == "__main__":
     run_deep_pass()

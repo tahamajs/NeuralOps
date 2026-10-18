@@ -15,11 +15,12 @@ import os
 import sys
 import time
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 from neuralops.attentions import ATTENTION_REGISTRY
 
+
 def fmt_opt(val, fmt=".2f", suffix="", default="-"):
+    """Execute fmt opt routine."""
     if val is None:
         return default
     try:
@@ -30,30 +31,69 @@ def fmt_opt(val, fmt=".2f", suffix="", default="-"):
     except (ValueError, TypeError):
         return default
 
+
 MODULE_KEYS = [
     # Sparse / Compressed Attention (5)
-    "adaptive_sparse_attention", "moba_attention", "xattention", "nsa_attention", "reap_moe",
+    "adaptive_sparse_attention",
+    "moba_attention",
+    "xattention",
+    "nsa_attention",
+    "reap_moe",
     # Modern GQA / ALiBi / Conv (4)
-    "alibi", "dynamic_conv_attention", "mla_attention", "mqa",
+    "alibi",
+    "dynamic_conv_attention",
+    "mla_attention",
+    "mqa",
     # Linear / Cosformer (3)
-    "cosformer", "cosformer_attention", "triton_cosformer",
+    "cosformer",
+    "cosformer_attention",
+    "triton_cosformer",
     # Gated & Recurrent Linear Attention (7)
-    "decay_linear_attention", "decay_linear_attn", "gated_linear_attention", "gated_linear_attn",
-    "gated_delta_net", "hgrn2_gated_layer", "kda_attention",
+    "decay_linear_attention",
+    "decay_linear_attn",
+    "gated_linear_attention",
+    "gated_linear_attn",
+    "gated_delta_net",
+    "hgrn2_gated_layer",
+    "kda_attention",
     # Kernel & Spectral Attention (9)
-    "linformer_attention", "performer_attention", "chela_slay", "chela_slay_attention",
-    "galerkin_attention", "gla_attention", "nystrom_attention", "rala_attention", "spectraformer_attention",
+    "linformer_attention",
+    "performer_attention",
+    "chela_slay",
+    "chela_slay_attention",
+    "galerkin_attention",
+    "gla_attention",
+    "nystrom_attention",
+    "rala_attention",
+    "spectraformer_attention",
     # Quantized / Span / Sink (4)
-    "spectron", "spectron_fp8", "adaptive_span_attention", "sink_attention",
+    "spectron",
+    "spectron_fp8",
+    "adaptive_span_attention",
+    "sink_attention",
     # SSM & Hybrid (6)
-    "mamba", "mamba_block", "selective_ssm", "selective_mamba", "jamba", "vspec",
+    "mamba",
+    "mamba_block",
+    "selective_ssm",
+    "selective_mamba",
+    "jamba",
+    "vspec",
     # SVD & Factorized Attention (10)
-    "svd_linear_attention", "svd_linear_decay", "triton_svd_linear_attention", "asvd_attention",
-    "factorised_matrix_state", "fused_svd_kernel_attention", "projection_factorized_attn",
-    "svd_llm_v2_attention", "svd_projection_attention", "svd_seq"
+    "svd_linear_attention",
+    "svd_linear_decay",
+    "triton_svd_linear_attention",
+    "asvd_attention",
+    "factorised_matrix_state",
+    "fused_svd_kernel_attention",
+    "projection_factorized_attn",
+    "svd_llm_v2_attention",
+    "svd_projection_attention",
+    "svd_seq",
 ]
 
+
 def benchmark_single(m, B, T, D, device, warmup=2, runs=5):
+    """Execute benchmark single routine."""
     torch.cuda.empty_cache()
     gc.collect()
 
@@ -61,7 +101,8 @@ def benchmark_single(m, B, T, D, device, warmup=2, runs=5):
     for _ in range(warmup):
         x = torch.randn(B, T, D, device=device, dtype=torch.float16, requires_grad=True)
         out = m(x)
-        if isinstance(out, tuple): out = out[0]
+        if isinstance(out, tuple):
+            out = out[0]
         loss = out.sum()
         loss.backward()
 
@@ -72,7 +113,8 @@ def benchmark_single(m, B, T, D, device, warmup=2, runs=5):
     for _ in range(runs):
         x = torch.randn(B, T, D, device=device, dtype=torch.float16, requires_grad=True)
         out = m(x)
-        if isinstance(out, tuple): out = out[0]
+        if isinstance(out, tuple):
+            out = out[0]
         loss = out.sum()
         loss.backward()
 
@@ -81,10 +123,13 @@ def benchmark_single(m, B, T, D, device, warmup=2, runs=5):
     mem = torch.cuda.max_memory_allocated() / (1024.0 * 1024.0)
     return round(lat, 2), round(mem, 1)
 
+
 def evaluate_module(key, B=2, T=512, D=256, H=4):
+    """Execute evaluate module routine."""
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     cls = ATTENTION_REGISTRY.get(key)
-    if cls is None: return None
+    if cls is None:
+        return None
 
     try:
         torch.manual_seed(42)
@@ -101,7 +146,8 @@ def evaluate_module(key, B=2, T=512, D=256, H=4):
         torch.manual_seed(101)
         x1 = torch.randn(B, T, D, device=device, dtype=torch.float16, requires_grad=True)
         out1 = m_triton(x1)
-        if isinstance(out1, tuple): out1 = out1[0]
+        if isinstance(out1, tuple):
+            out1 = out1[0]
         out1.sum().backward()
         g1 = x1.grad.clone() if x1.grad is not None else torch.zeros_like(x1)
 
@@ -118,11 +164,20 @@ def evaluate_module(key, B=2, T=512, D=256, H=4):
         try:
             torch.cuda.get_device_capability = lambda *a, **k: (6, 1)
             import neuralops.core.triton_kernels._types as tt
+
             tt.FORCE_PYTORCH_FALLBACK = True
-            
+
             # Disable module-level flags dynamically
             for mod_name, mod in list(sys.modules.items()):
-                for attr in ["HAS_TRITON", "HAS_TRITON_MAMBA", "HAS_TRITON_GDN", "HAS_TRITON_HGRN2", "HAS_TRITON_DECAY", "HAS_TRITON_FMS", "HAS_TRITON_DISPATCH"]:
+                for attr in [
+                    "HAS_TRITON",
+                    "HAS_TRITON_MAMBA",
+                    "HAS_TRITON_GDN",
+                    "HAS_TRITON_HGRN2",
+                    "HAS_TRITON_DECAY",
+                    "HAS_TRITON_FMS",
+                    "HAS_TRITON_DISPATCH",
+                ]:
                     if hasattr(mod, attr):
                         setattr(mod, attr, False)
 
@@ -131,15 +186,25 @@ def evaluate_module(key, B=2, T=512, D=256, H=4):
             torch.manual_seed(101)
             x2 = torch.randn(B, T, D, device=device, dtype=torch.float16, requires_grad=True)
             out2 = m_ref(x2)
-            if isinstance(out2, tuple): out2 = out2[0]
+            if isinstance(out2, tuple):
+                out2 = out2[0]
             out2.sum().backward()
             g2 = x2.grad.clone() if x2.grad is not None else torch.zeros_like(x2)
         finally:
             torch.cuda.get_device_capability = orig_cap
             import neuralops.core.triton_kernels._types as tt
+
             tt.FORCE_PYTORCH_FALLBACK = False
             for mod_name, mod in list(sys.modules.items()):
-                for attr in ["HAS_TRITON", "HAS_TRITON_MAMBA", "HAS_TRITON_GDN", "HAS_TRITON_HGRN2", "HAS_TRITON_DECAY", "HAS_TRITON_FMS", "HAS_TRITON_DISPATCH"]:
+                for attr in [
+                    "HAS_TRITON",
+                    "HAS_TRITON_MAMBA",
+                    "HAS_TRITON_GDN",
+                    "HAS_TRITON_HGRN2",
+                    "HAS_TRITON_DECAY",
+                    "HAS_TRITON_FMS",
+                    "HAS_TRITON_DISPATCH",
+                ]:
                     if hasattr(mod, attr):
                         setattr(mod, attr, True)
 
@@ -163,17 +228,14 @@ def evaluate_module(key, B=2, T=512, D=256, H=4):
             "speedup_x": speedup,
             "fwd_cos_sim": fwd_cos,
             "bwd_cos_sim": bwd_cos,
-            "status": "PASS"
+            "status": "PASS",
         }
     except Exception as e:
-        return {
-            "module": key,
-            "seq_len": T,
-            "status": "FAIL",
-            "error": str(e)
-        }
+        return {"module": key, "seq_len": T, "status": "FAIL", "error": str(e)}
+
 
 def main():
+    """Execute main routine."""
     print("=== Launching Dual Triton vs PyTorch Benchmark across all 48 Modules ===")
     results = []
 
@@ -184,7 +246,9 @@ def main():
             if res:
                 results.append(res)
                 if res["status"] == "PASS":
-                    print(f"[PASS] {key:<30} (T={T}): Triton={res['triton_lat_ms']:>6.2f}ms ({res['triton_mem_mb']:>5.1f}MB) | Ref={res['ref_lat_ms']:>6.2f}ms | Speedup={res['speedup_x']:>4.2f}x | CosSim={res['fwd_cos_sim']}")
+                    print(
+                        f"[PASS] {key:<30} (T={T}): Triton={res['triton_lat_ms']:>6.2f}ms ({res['triton_mem_mb']:>5.1f}MB) | Ref={res['ref_lat_ms']:>6.2f}ms | Speedup={res['speedup_x']:>4.2f}x | CosSim={res['fwd_cos_sim']}"
+                    )
                 else:
                     print(f"[FAIL] {key:<30} (T={T}): {res.get('error')}")
 
@@ -196,37 +260,47 @@ def main():
 
     csv_path = os.path.join(out_dir, "triton_48_modules_benchmark.csv")
     with open(csv_path, "w") as f:
-        f.write("module,seq_len,triton_lat_ms,ref_lat_ms,speedup_x,triton_mem_mb,ref_mem_mb,fwd_cos_sim,bwd_cos_sim,status\n")
+        f.write(
+            "module,seq_len,triton_lat_ms,ref_lat_ms,speedup_x,triton_mem_mb,ref_mem_mb,fwd_cos_sim,bwd_cos_sim,status\n"
+        )
         for r in results:
             if r["status"] == "PASS":
-                f.write(f"{r['module']},{r['seq_len']},{r['triton_lat_ms']},{r['ref_lat_ms']},{r['speedup_x']},{r['triton_mem_mb']},{r['ref_mem_mb']},{r['fwd_cos_sim']},{r['bwd_cos_sim']},{r['status']}\n")
+                f.write(
+                    f"{r['module']},{r['seq_len']},{r['triton_lat_ms']},{r['ref_lat_ms']},{r['speedup_x']},{r['triton_mem_mb']},{r['ref_mem_mb']},{r['fwd_cos_sim']},{r['bwd_cos_sim']},{r['status']}\n"
+                )
 
     md_path = os.path.join(out_dir, "triton_48_modules_benchmark.md")
     with open(md_path, "w") as f:
         f.write("# 48 Triton-Wired Modules Benchmark & Speedup Analysis (NVIDIA RTX 4070)\n\n")
-        f.write("| Module | T=512 Triton (ms) | T=512 Ref (ms) | Speedup (x) | T=2048 Triton (ms) | T=2048 Ref (ms) | Speedup (x) | Cos Sim | Status |\n")
+        f.write(
+            "| Module | T=512 Triton (ms) | T=512 Ref (ms) | Speedup (x) | T=2048 Triton (ms) | T=2048 Ref (ms) | Speedup (x) | Cos Sim | Status |\n"
+        )
         f.write("| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |\n")
 
         by_mod = {}
         for r in results:
             m = r["module"]
-            if m not in by_mod: by_mod[m] = {}
+            if m not in by_mod:
+                by_mod[m] = {}
             by_mod[m][r["seq_len"]] = r
 
         for m, data in by_mod.items():
             d512 = data.get(512, {})
             d2048 = data.get(2048, {})
-            cos_sim_str = fmt_opt(d2048.get('fwd_cos_sim', d512.get('fwd_cos_sim', 1.0)), fmt=".4f", default="1.0000")
-            t512_tri = fmt_opt(d512.get('triton_lat_ms'), fmt=".2f", default="-")
-            t512_ref = fmt_opt(d512.get('ref_lat_ms'), fmt=".2f", default="-")
+            cos_sim_str = fmt_opt(d2048.get("fwd_cos_sim", d512.get("fwd_cos_sim", 1.0)), fmt=".4f", default="1.0000")
+            t512_tri = fmt_opt(d512.get("triton_lat_ms"), fmt=".2f", default="-")
+            t512_ref = fmt_opt(d512.get("ref_lat_ms"), fmt=".2f", default="-")
             sp512 = f"**{fmt_opt(d512.get('speedup_x'), fmt='.2f', default='-')}x**"
-            t2048_tri = fmt_opt(d2048.get('triton_lat_ms'), fmt=".2f", default="-")
-            t2048_ref = fmt_opt(d2048.get('ref_lat_ms'), fmt=".2f", default="-")
+            t2048_tri = fmt_opt(d2048.get("triton_lat_ms"), fmt=".2f", default="-")
+            t2048_ref = fmt_opt(d2048.get("ref_lat_ms"), fmt=".2f", default="-")
             sp2048 = f"**{fmt_opt(d2048.get('speedup_x'), fmt='.2f', default='-')}x**"
             status = "PASS" if d512.get("status") == "PASS" or d2048.get("status") == "PASS" else "FAIL"
-            f.write(f"| `{m}` | {t512_tri} | {t512_ref} | {sp512} | {t2048_tri} | {t2048_ref} | {sp2048} | {cos_sim_str} | {status} |\n")
+            f.write(
+                f"| `{m}` | {t512_tri} | {t512_ref} | {sp512} | {t2048_tri} | {t2048_ref} | {sp2048} | {cos_sim_str} | {status} |\n"
+            )
 
     print(f"\nBenchmark successfully saved to {json_path}, {csv_path}, and {md_path}")
+
 
 if __name__ == "__main__":
     main()

@@ -2,11 +2,12 @@
 Benchmark script for FlashGQA: CUDA vs PyTorch Ref vs PyTorch SDPA
 """
 
-import time
 import torch
 from neuralops.core.cuda_kernels.flash_gqa import flash_gqa, flash_gqa_pytorch_ref
 
+
 def run_benchmark():
+    """Execute run benchmark routine."""
     device = "cuda" if torch.cuda.is_available() else "cpu"
     B, H, H_KV, N, D = 4, 32, 8, 1024, 64
     print(f"Benchmarking FlashGQA with shape B={B}, H={H}, H_KV={H_KV}, N={N}, D={D} on {device}")
@@ -56,10 +57,11 @@ def run_benchmark():
     torch.cuda.synchronize()
     sdpa_ms = start.elapsed_time(end) / iters
 
-    print(f"Results:")
+    print("Results:")
     print(f"  FlashGQA CUDA: {cuda_ms:.3f} ms")
-    print(f"  PyTorch Ref:    {ref_ms:.3f} ms (Speedup vs Ref: {ref_ms/cuda_ms:.2f}x)")
-    print(f"  PyTorch SDPA:   {sdpa_ms:.3f} ms (Speedup vs SDPA: {sdpa_ms/cuda_ms:.2f}x)")
+    print(f"  PyTorch Ref:    {ref_ms:.3f} ms (Speedup vs Ref: {ref_ms / cuda_ms:.2f}x)")
+    print(f"  PyTorch SDPA:   {sdpa_ms:.3f} ms (Speedup vs SDPA: {sdpa_ms / cuda_ms:.2f}x)")
+
 
 if __name__ == "__main__":
     run_benchmark()

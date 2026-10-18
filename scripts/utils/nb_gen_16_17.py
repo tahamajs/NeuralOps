@@ -12,8 +12,9 @@ from nb_gen_common import (
     create_markdown_cell,
     build_notebook,
     make_header_cell,
-    HARDWARE_CONTEXT_CELL
+    HARDWARE_CONTEXT_CELL,
 )
+
 
 def generate_notebook_16():
     """16_roofline_ada_rtx4070_saturation.ipynb"""
@@ -21,10 +22,8 @@ def generate_notebook_16():
     cells = [
         # Cell 1: Header
         make_header_cell(title),
-
         # Cell 2: Hardware Context
         HARDWARE_CONTEXT_CELL,
-
         # Cell 3: Math Formulation of Roofline & DRAM Saturation
         create_markdown_cell(r"""## 1. Mathematical Formulation: Williams Hardware Roofline & DRAM Saturation
 
@@ -52,7 +51,6 @@ where:
 ### DRAM Saturation Percentage
 $$\text{Saturation}_{\text{DRAM}} = \frac{B_{\text{achieved}}}{B_{\text{peak}}} \times 100\% = \frac{V_{\text{bytes}} / \tau_{\text{kernel}}}{B_{\text{peak}}} \times 100\%$$
 """),
-
         # Cell 4: Code imports & setup
         create_code_cell(r"""# Cell 3: Environment Setup & Roofline Telemetry Harness
 import time
@@ -76,13 +74,11 @@ plots_dir = Path("results/plots")
 plots_dir.mkdir(parents=True, exist_ok=True)
 print("Hardware Roofline Model Harness Loaded on RTX 4070 (SM 8.9).")
 """),
-
         # Cell 5: Ingest empirical kernel saturation data
         create_markdown_cell(r"""## 2. Ingestion of Master Hardware Saturation Benchmarks
 
 Ingesting empirical kernel saturation records from `results/benchmark_4_kernels_final.csv` and `results/registry/master_ledger.sqlite`.
 """),
-
         # Cell 6: Code for dataset ingestion
         create_code_cell(r"""# Cell 4: Ingest benchmark_4_kernels_final.csv
 sat_csv_path = Path("results/benchmark_4_kernels_final.csv")
@@ -91,7 +87,6 @@ if sat_csv_path.exists():
     print(f"Loaded {len(df_sat_raw)} empirical saturation records from {sat_csv_path}")
     print(df_sat_raw.head())
 """),
-
         # Cell 7: Live Execution & Arithmetic Intensity Measurement
         create_markdown_cell(r"""## 3. Live Kernel Execution & Arithmetic Intensity Measurement on RTX 4070
 
@@ -103,7 +98,6 @@ We benchmark six core kernels across varying memory working set sizes:
 5. `gla_scan` (Recurrent chunk scan)
 6. `act_scale_gemm` (Compute-bound GEMM, high $I$)
 """),
-
         # Cell 8: Code running live kernels
         create_code_cell(r"""# Cell 5: Live GPU Kernel Benchmarking Loop
 kernel_workloads = [
@@ -171,13 +165,11 @@ for kw in kernel_workloads:
 df_roof = pd.DataFrame(roofline_records)
 print(f"Benchmarked {len(df_roof)} kernels on RTX 4070 Laptop GPU.")
 """),
-
         # Cell 9: Master Table
         create_markdown_cell(r"""## 4. Empirical Roofline Data Matrix Table
 
 Summary table recording arithmetic intensity (FLOPs/Byte), achieved execution throughput (TFLOPS), memory bandwidth (GB/s), and DRAM saturation percentage.
 """),
-
         # Cell 10: Code displaying table
         create_code_cell(r"""# Cell 6: Render Empirical Roofline Table
 print("=" * 115)
@@ -185,7 +177,6 @@ print("EMPIRICAL ROOFLINE & DRAM SATURATION MATRIX (RTX 4070 LAPTOP GPU, 36 SMs,
 print("=" * 115)
 print(df_roof.to_markdown(index=False))
 """),
-
         # Cell 11: Figure 1 - The Master Roofline Plot
         create_markdown_cell(r"""## 5. Figure 1: The Master Empirical Roofline Plot on Ada RTX 4070 (36 SMs)
 
@@ -196,7 +187,6 @@ High-DPI Roofline diagram featuring:
 - **Hardware Ridge Point** ($I^* = 301.5 \text{ FLOPs/Byte}$)
 - Operational points for all benchmarked kernels with 36 SM indicators
 """),
-
         # Cell 12: Code for Figure 1
         create_code_cell(r"""# Cell 7: Publication Figure 1 - Master Empirical Roofline
 fig, ax = plt.subplots(figsize=(10, 6), dpi=300)
@@ -264,13 +254,11 @@ fig.savefig(fig_roof_pdf, bbox_inches="tight")
 plt.show()
 print(f"Saved Figure 1 to: {fig_roof_png} and {fig_roof_pdf}")
 """),
-
         # Cell 13: Figure 2 - DRAM Saturation vs Working Set Size
         create_markdown_cell(r"""## 6. Figure 2: DRAM Saturation vs Working Set Size (32MB L2 Cache Boundary)
 
 Plotting achieved memory bandwidth and saturation percentage across tensor working set sizes from $512 \text{ KB}$ to $256 \text{ MB}$, highlighting the sharp transition across the 32MB on-chip L2 cache boundary.
 """),
-
         # Cell 14: Code for Figure 2
         create_code_cell(r"""# Cell 8: Publication Figure 2 - Working Set Size vs Saturation
 working_sets_mb = [0.5, 1.0, 2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0, 256.0]
@@ -304,13 +292,11 @@ fig.savefig(fig_cache_png, bbox_inches="tight")
 plt.show()
 print(f"Saved Figure 2 to: {fig_cache_png}")
 """),
-
         # Cell 15: Figure 3 - Multi-Precision Ceilings
         create_markdown_cell(r"""## 7. Figure 3: Multi-Precision Compute Ceilings on RTX 4070 (FP32 vs FP16 vs INT8 vs FP8)
 
 Comparison of hardware ceilings across precision levels on the 36 SMs of the Ada Lovelace architecture.
 """),
-
         # Cell 16: Code for Figure 3
         create_code_cell(r"""# Cell 9: Publication Figure 3 - Multi-Precision Ceilings
 precisions = ['FP32 Vector', 'FP16 Tensor', 'BF16 Tensor', 'INT8 Tensor', 'FP8 E4M3']
@@ -343,13 +329,11 @@ fig.savefig(fig_prec_png, bbox_inches="tight")
 plt.show()
 print(f"Saved Figure 3 to: {fig_prec_png}")
 """),
-
         # Cell 17: Figure 4 - SM Warp Occupancy & Allocation
         create_markdown_cell(r"""## 8. Figure 4: Warp Scheduler Occupancy across 36 Streaming Multiprocessors
 
 Theoretical vs achieved warp occupancy across the 36 SMs of the RTX 4070 Laptop GPU.
 """),
-
         # Cell 18: Code for Figure 4
         create_code_cell(r"""# Cell 10: Publication Figure 4 - SM Warp Occupancy
 sm_ids = np.arange(1, 37)
@@ -376,13 +360,11 @@ fig.savefig(fig_occ_png, bbox_inches="tight")
 plt.show()
 print(f"Saved Figure 4 to: {fig_occ_png}")
 """),
-
         # Cell 19: ASCII Terminal Roofline
         create_markdown_cell(r"""## 9. ASCII Terminal Roofline Telemetry
 
 Rendering text-based ASCII roofline diagram via `neuralops.render_roofline_terminal`.
 """),
-
         # Cell 20: Code for ASCII roofline
         create_code_cell(r"""# Cell 11: Render Terminal ASCII Roofline
 try:
@@ -391,25 +373,21 @@ try:
 except Exception as e:
     print(f"Terminal roofline rendered: Peak Compute = {peak_fp16_tflops} TFLOPS, Peak BW = {peak_dram_bw} GB/s, I* = {ridge_ai:.1f} FLOPs/B")
 """),
-
         # Cell 21: DRAM Saturation Ledger Audit
         create_markdown_cell(r"""## 10. DRAM Saturation Ledger Audit
 
 Verifying logged saturation records from `results/benchmark_4_kernels_final.csv`.
 """),
-
         # Cell 22: Code verifying records
         create_code_cell(r"""# Cell 12: Ledger Saturation Audit
 print(df_roof[['Kernel Name', 'Arithmetic Intensity (FLOPs/B)', 'Achieved BW (GB/s)', 'DRAM Saturation (%)', 'Regime']].to_markdown(index=False))
 """),
-
         # Cell 23: Cache Resident Speedup
         create_markdown_cell(r"""## 11. Cache-Resident vs DRAM-Bound Speedup Multiplier
 
 Speedup factor gained when tensors fit within the 32MB L2 cache:
 $$\text{Speedup}_{\text{L2}} = \frac{B_{\text{L2}}}{B_{\text{DRAM}}} \approx \frac{1,200 \text{ GB/s}}{264 \text{ GB/s}} \approx 4.55\times$$
 """),
-
         # Cell 24: Code for L2 speedup
         create_code_cell(r"""# Cell 13: L2 Speedup Verification
 l2_bw = 1200.0
@@ -417,14 +395,13 @@ speedup_multiplier = l2_bw / peak_dram_bw
 print(f"Theoretical L2 Cache Speedup Multiplier over DRAM: {speedup_multiplier:.2f}x")
 print("Kernel tiling that stays within 32MB L2 cache operates at >850 GB/s effective throughput.")
 """),
-
         # Cell 25: Conclusions
         create_markdown_cell(r"""## 12. Hardware Roofline Conclusions
 
 1. **High DRAM Saturation**: Memory-bound normalization kernels (`fused_dropout_add`, `rms_variance_match`) achieve up to **93.4%** of the 264.0 GB/s physical GDDR6 bus bandwidth.
 2. **Ridge Point Barrier**: Any kernel with arithmetic intensity $I < 301.5 \text{ FLOPs/Byte}$ is strictly memory-bound on the RTX 4070; increasing Tensor Core clocks yields zero performance gain.
 3. **L2 Fusion Leverage**: Structuring kernels to execute within the 32.0 MB L2 cache delivers an effective **$3.8\times - 4.5\times$** throughput leap over external DRAM transactions.
-""")
+"""),
     ]
     return build_notebook(cells)
 
@@ -435,10 +412,8 @@ def generate_notebook_17():
     cells = [
         # Cell 1: Header
         make_header_cell(title),
-
         # Cell 2: Hardware Context
         HARDWARE_CONTEXT_CELL,
-
         # Cell 3: Math Formulation of PagedKV & Speculative Decoding
         create_markdown_cell(r"""## 1. Mathematical Modeling: Paged Attention Virtualization & Speculative Drafting
 
@@ -467,7 +442,6 @@ $$\mathbb{E}[S] = \frac{1 - \alpha^{K+1}}{(1 - \alpha) \cdot (1 + c \cdot K)}$$
 For $\alpha = 0.85, c = 0.15, K = 4$:
 $$\mathbb{E}[S] = \frac{1 - 0.85^5}{(0.15) \cdot (1 + 0.15 \times 4)} = \frac{0.5563}{0.15 \times 1.60} \approx 2.32\times \text{ acceleration}$$
 """),
-
         # Cell 4: Imports
         create_code_cell(r"""# Cell 3: Environment Setup & PagedKVCache Imports
 import time
@@ -490,13 +464,11 @@ plots_dir = Path("results/plots")
 plots_dir.mkdir(parents=True, exist_ok=True)
 print("PagedKVCache & Speculative Decoding Benchmarking Engine Ready.")
 """),
-
         # Cell 5: PagedKVCache Implementation & Allocation
         create_markdown_cell(r"""## 2. PagedKVCache Allocation Benchmark across Batch Sizes
 
 We benchmark memory footprint and external fragmentation between standard Contiguous Pre-allocation and PagedKVCache across batch sizes $B \in [1, 2, 4, 8, 16, 32, 64]$.
 """),
-
         # Cell 6: Code benchmarking PagedKV memory
         create_code_cell(r"""# Cell 4: PagedKVCache vs Contiguous Memory Allocation Benchmark
 num_heads = 8
@@ -542,13 +514,11 @@ print("PAGED KV CACHE VS CONTIGUOUS PRE-ALLOCATION MEMORY EFFICIENCY")
 print("=" * 110)
 print(df_paged.to_markdown(index=False))
 """),
-
         # Cell 7: Figure 1 - VRAM Savings vs Batch Size
         create_markdown_cell(r"""## 3. Figure 1: VRAM Memory Savings vs Serving Batch Size
 
 Plotting physical memory footprint and savings percentage across concurrent request concurrency.
 """),
-
         # Cell 8: Code for Figure 1
         create_code_cell(r"""# Cell 5: Publication Figure 1 - PagedKVCache Memory Savings
 fig, ax1 = plt.subplots(figsize=(9, 5.5), dpi=300)
@@ -583,13 +553,11 @@ fig.savefig(fig_paged_pdf, bbox_inches="tight")
 plt.show()
 print(f"Saved Figure 1 to: {fig_paged_png} and {fig_paged_pdf}")
 """),
-
         # Cell 9: Speculative Decoding Simulation Setup
         create_markdown_cell(r"""## 4. Speculative Decoding Simulation on RTX 4070
 
 We benchmark the wall-clock execution time of target and draft modules and evaluate empirical tokens/sec throughput across lookahead lengths $K \in [1, 2, 3, 4, 5, 6, 7, 8]$.
 """),
-
         # Cell 10: Code running speculative benchmark
         create_code_cell(r"""# Cell 6: Speculative Decoding Latency & Throughput Benchmark
 # Measure live GPU forward time for draft vs target models
@@ -628,13 +596,11 @@ print(f"Target Model Step Time: {tau_target:.3f} ms")
 print(f"Draft Model Step Time:  {tau_draft:.3f} ms")
 print(f"Draft-to-Target Cost Ratio c = {c_ratio:.3f}")
 """),
-
         # Cell 11: Speculative Speedup Evaluation Loop
         create_markdown_cell(r"""## 5. Speculative Decoding Throughput vs Lookahead Window $K$
 
 Evaluating speedups across lookahead window lengths $K=1..8$ for varying acceptance rates $\alpha \in [0.60, 0.70, 0.80, 0.85, 0.90, 0.95]$.
 """),
-
         # Cell 12: Code computing speculative speedups
         create_code_cell(r"""# Cell 7: Multi-Gamma Speculative Sweep
 K_values = np.arange(1, 9)
@@ -656,13 +622,11 @@ for alpha in alphas:
 df_spec = pd.DataFrame(spec_records)
 print(df_spec.head(12).to_markdown(index=False))
 """),
-
         # Cell 13: Figure 2 - Speculative Speedup Curves
         create_markdown_cell(r"""## 6. Figure 2: Speculative Decoding Throughput Speedup vs Lookahead Window ($K=1..8$)
 
 Publication plot illustrating the optimal lookahead $K^*(\alpha)$ maximizing token generation speedup.
 """),
-
         # Cell 14: Code for Figure 2
         create_code_cell(r"""# Cell 8: Publication Figure 2 - Speculative Speedup Curves
 fig, ax = plt.subplots(figsize=(9, 5.5), dpi=300)
@@ -702,13 +666,11 @@ fig.savefig(fig_spec_pdf, bbox_inches="tight")
 plt.show()
 print(f"Saved Figure 2 to: {fig_spec_png} and {fig_spec_pdf}")
 """),
-
         # Cell 15: Figure 3 - Memory Fragmentation Heatmap
         create_markdown_cell(r"""## 7. Figure 3: Memory Fragmentation Heatmap across Sequence Lengths and Batch Concurrency
 
 Comparing fragmentation ratios across request streams.
 """),
-
         # Cell 16: Code for Figure 3
         create_code_cell(r"""# Cell 9: Publication Figure 3 - Memory Fragmentation Heatmap
 seq_range = [256, 512, 1024, 2048]
@@ -737,13 +699,11 @@ fig.savefig(fig_frag_png, bbox_inches="tight")
 plt.show()
 print(f"Saved Figure 3 to: {fig_frag_png}")
 """),
-
         # Cell 17: Figure 4 - TTFT and ITL Scaling
         create_markdown_cell(r"""## 8. Figure 4: Time-to-First-Token (TTFT) and Inter-Token Latency (ITL)
 
 Evaluating serving latency metrics under continuous token generation on the RTX 4070.
 """),
-
         # Cell 18: Code for Figure 4
         create_code_cell(r"""# Cell 10: Publication Figure 4 - TTFT and ITL Scaling
 concurrency_levels = [1, 4, 8, 16, 32]
@@ -774,13 +734,11 @@ fig.savefig(fig_lat_png, bbox_inches="tight")
 plt.show()
 print(f"Saved Figure 4 to: {fig_lat_png}")
 """),
-
         # Cell 19: Copy-on-Write Deduplication
         create_markdown_cell(r"""## 9. Block-Level Copy-on-Write (CoW) Forking Efficiency
 
 Evaluating prompt sharing and multi-turn KV cache block deduplication using `copy_blocks_cow`.
 """),
-
         # Cell 20: Code for CoW deduplication
         create_code_cell(r"""# Cell 11: Copy-on-Write Deduplication Audit
 shared_prompt_tokens = 512
@@ -795,13 +753,11 @@ print(f"Naive Memory Footprint:       {naive_total_tokens * 2 * num_heads * head
 print(f"Copy-on-Write Footprint:      {cow_total_tokens * 2 * num_heads * head_dim * 2 / 1024:.1f} KB")
 print(f"CoW Prompt Sharing Reduction: {cow_savings_pct:.1f}% physical cache memory saved.")
 """),
-
         # Cell 21: Live Ingestion of Serving Master Logs
         create_markdown_cell(r"""## 10. Ingestion of Repository Master Serving Benchmarks
 
 Cross-verifying against `results/master_queue_benchmark_summary.json` and SQLite serving logs.
 """),
-
         # Cell 22: Code ingesting serving logs
         create_code_cell(r"""# Cell 12: Ingest Serving Logs
 serving_json_path = Path("results/master_queue_benchmark_summary.json")
@@ -810,13 +766,11 @@ if serving_json_path.exists():
         serving_data = json.load(f)
     print(f"Ingested master serving queue records from {serving_json_path}")
 """),
-
         # Cell 23: Max Request Concurrency Boundary
         create_markdown_cell(r"""## 11. Maximum Concurrent Serving Capacity Limit on 8GB VRAM
 
 Evaluating maximum simultaneous request capacity before hitting the 8.0GB hardware VRAM limit.
 """),
-
         # Cell 24: Code for max concurrency
         create_code_cell(r"""# Cell 13: Max Concurrent Request Capacity Limit
 model_weights_mb = 125.0 * 2  # 250 MB for 125M FP16 model
@@ -832,13 +786,12 @@ print(f"Maximum Contiguous Streams:        {max_contiguous_reqs} concurrent requ
 print(f"Maximum PagedKVCache Streams:      {max_paged_reqs} concurrent requests")
 print(f"Concurrency Capacity Multiplier:   {max_paged_reqs / max_contiguous_reqs:.2f}x expansion on 8GB RTX 4070")
 """),
-
         # Cell 25: Conclusions
         create_markdown_cell(r"""## 12. Serving Optimization Key Takeaways
 
 1. **75% Memory Reclamation**: PagedKVCache reclaims **$75.0\%$** of wasted memory buffer allocation by eliminating external fragmentation.
 2. **$4\times$ Concurrency Expansion**: On the 8GB RTX 4070 Laptop GPU, PagedKVCache expands maximum concurrent serving capacity from **232 to 929 simultaneous streams**.
 3. **Speculative Decoding Speedup**: Speculative decoding with $K=4-5$ and $\alpha \ge 0.85$ delivers a **$2.2\times - 2.4\times$** wall-clock acceleration for generation throughput.
-""")
+"""),
     ]
     return build_notebook(cells)

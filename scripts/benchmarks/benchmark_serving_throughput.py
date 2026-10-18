@@ -38,12 +38,14 @@ class ContiguousKVCache:
     """Standard preallocated contiguous tensor KV cache (baseline comparison)."""
 
     def __init__(self, max_batch_size: int, max_seq_len: int, num_heads: int, head_dim: int, dtype=torch.float16, device="cuda"):
+        """Execute init routine."""
         self.device = torch.device(device)
         self.k_cache = torch.zeros((max_batch_size, max_seq_len, num_heads, head_dim), dtype=dtype, device=self.device)
         self.v_cache = torch.zeros((max_batch_size, max_seq_len, num_heads, head_dim), dtype=dtype, device=self.device)
         self.current_lens = [0] * max_batch_size
 
     def append_token(self, batch_idx: int, k_vec: torch.Tensor, v_vec: torch.Tensor):
+        """Execute append token routine."""
         pos = self.current_lens[batch_idx]
         self.k_cache[batch_idx, pos] = k_vec
         self.v_cache[batch_idx, pos] = v_vec
@@ -54,6 +56,7 @@ class MockDecoderLayer(nn.Module):
     """Transformer decoder layer for testing TTFT and ITL under serving load."""
 
     def __init__(self, hidden_dim: int = 512, num_heads: int = 8):
+        """Execute init routine."""
         super().__init__()
         self.hidden_dim = hidden_dim
         self.num_heads = num_heads
@@ -67,6 +70,7 @@ class MockDecoderLayer(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # Self-attention + FFN
+        """Execute forward routine."""
         q, k, v = self.q_proj(x), self.k_proj(x), self.v_proj(x)
         # Scaled dot-product
         attn = torch.matmul(q, k.transpose(-1, -2)) * (self.head_dim ** -0.5)
@@ -84,6 +88,7 @@ def benchmark_serving(
     num_heads: int = 8,
     device: str = "cuda:0",
 ) -> dict:
+    """Execute benchmark serving routine."""
     concurrencies = [1, 4, 8, 16, 32] if concurrencies is None else concurrencies
     dev = torch.device(device if torch.cuda.is_available() else "cpu")
     runner = BenchmarkRunner(device=dev, warmup_iters=2, benchmark_iters=5)
@@ -98,6 +103,7 @@ def benchmark_serving(
         x_prefill = torch.randn(N_req, prefill_len, hidden_dim, device=dev, dtype=torch.float16)
 
         def prefill_step():
+            """Execute prefill step routine."""
             with torch.no_grad():
                 return model(x_prefill)
 
@@ -114,6 +120,7 @@ def benchmark_serving(
         x_decode = torch.randn(N_req, 1, hidden_dim, device=dev, dtype=torch.float16)
 
         def decode_step():
+            """Execute decode step routine."""
             with torch.no_grad():
                 return model(x_decode)
 
@@ -177,7 +184,7 @@ def benchmark_serving(
 
         # Contiguous baseline
         runner.reset_vram()
-        _contig_cache = ContiguousKVCache(
+        _ = ContiguousKVCache(
             max_batch_size=active_seqs,
             max_seq_len=total_tokens_per_seq,
             num_heads=num_heads,
@@ -205,6 +212,7 @@ def benchmark_serving(
 
 
 def main():
+    """Execute main routine."""
     parser = argparse.ArgumentParser(description="NeuralOps Serving Benchmark")
     parser.add_argument("--device", type=str, default="cuda:0" if torch.cuda.is_available() else "cpu")
     parser.add_argument("--output", "--out-file", dest="out_file", type=str, default="results/benchmarks_serving_ttft_itl.json", help="Path to save JSON output")

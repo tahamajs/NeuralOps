@@ -3,7 +3,6 @@
 
 import json
 import os
-import sys
 import time
 from pathlib import Path
 
@@ -16,6 +15,7 @@ import neuralops.core.triton_kernels as tk_types
 
 
 def run_benchmark():
+    """Execute run benchmark routine."""
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(f"Running End-to-End GPT-2 Benchmark on: {device} ({torch.cuda.get_device_name(0)})")
 
@@ -27,7 +27,7 @@ def run_benchmark():
         vocab_size=50257,
     )
     base_model = GPT2LMHeadModel(config).to(device=device, dtype=torch.float16).eval()
-    
+
     # Transplant causal attention to fused linear attention with Triton JIT acceleration
     print("Transplanting GPT-2 causal attention with Triton PositiveKernelLinearAttention...")
     model = neuralops.replace_attention(base_model, attention="positive_kernel_linear_attention")
@@ -126,8 +126,12 @@ def run_benchmark():
             }
             benchmark_records.append(record)
 
-            print(f"  Triton       : Latency={t_tri_ms:6.2f} ms | VRAM={peak_vram_tri_mb:6.1f} MB | Throughput={tokens_per_sec_tri:8.1f} tok/s")
-            print(f"  PyTorch      : Latency={t_pt_ms:6.2f} ms | VRAM={peak_vram_pt_mb:6.1f} MB | Throughput={tokens_per_sec_pt:8.1f} tok/s")
+            print(
+                f"  Triton       : Latency={t_tri_ms:6.2f} ms | VRAM={peak_vram_tri_mb:6.1f} MB | Throughput={tokens_per_sec_tri:8.1f} tok/s"
+            )
+            print(
+                f"  PyTorch      : Latency={t_pt_ms:6.2f} ms | VRAM={peak_vram_pt_mb:6.1f} MB | Throughput={tokens_per_sec_pt:8.1f} tok/s"
+            )
             print(f"  Speedup      : {speedup:5.2f}x (Target: >=1.30x)")
             print(f"  Cosine Parity: {cos_sim:7.5f} (Target: >=0.99900)")
 

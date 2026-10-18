@@ -232,18 +232,24 @@ def benchmark_gap_5_reap_moe_and_niah(device: torch.device) -> Dict[str, Any]:
 
     # 2. Test NIAH retrieval harness
     class SimpleLM(nn.Module):
+        """Simplelm definition."""
         def __init__(self, vocab_size=50257, d=64):
+            """Execute init routine."""
             super().__init__()
             self.emb = nn.Embedding(vocab_size, d)
             self.head = nn.Linear(d, vocab_size)
         def forward(self, input_ids):
+            """Execute forward routine."""
             h = self.emb(input_ids)
             return self.head(h)
 
     class DummyTokenizer:
+        """Dummytokenizer definition."""
         def encode(self, text, add_special_tokens=False):
+            """Execute encode routine."""
             return [abs(hash(w)) % 50000 for w in text.split()]
         def decode(self, tokens):
+            """Execute decode routine."""
             return " ".join(str(t) for t in tokens)
 
     test_model = SimpleLM().to(device)
@@ -343,6 +349,7 @@ Overall Status: **{'100% PASSED' if all_passed else 'FAILED'}** (5/5 Modules Exe
 
 
 def main():
+    """Execute main routine."""
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     logger.info("Running benchmarks on device: %s", device)
 
