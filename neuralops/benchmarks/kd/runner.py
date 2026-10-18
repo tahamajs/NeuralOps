@@ -34,7 +34,10 @@ from neuralops.benchmarks.kd.config import BenchmarkConfig
 from neuralops.benchmarks.kd.reporter import KDReporter
 from neuralops.core.architecture import get_attention_modules
 from neuralops.core.registry import ATTENTION_REGISTRY
-from neuralops.evaluation.eval_patcher import apply_module_to_model
+try:
+    from evaluation.eval_patcher import apply_module_to_model
+except ImportError:
+    from neuralops.evaluation.eval_patcher import apply_module_to_model
 
 logger = logging.getLogger(__name__)
 

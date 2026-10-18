@@ -802,8 +802,10 @@ def handle_generate(args: argparse.Namespace) -> int:
 
 def handle_niah(args: argparse.Namespace) -> int:
     """Runs Needle-In-A-Haystack retrieval evaluation and produces a 2D passkey heatmap."""
-    from transformers import AutoModelForCausalLM, AutoTokenizer
-    from neuralops.evaluation.niah_passkey import NeedleInAHaystackEvaluator, plot_niah_heatmap
+    try:
+        from evaluation.niah_passkey import NeedleInAHaystackEvaluator, plot_niah_heatmap
+    except ImportError:
+        from neuralops.evaluation.niah_passkey import NeedleInAHaystackEvaluator, plot_niah_heatmap
 
     print(f"Loading model '{args.model}' for Needle-In-A-Haystack Passkey evaluation...")
     tokenizer = AutoTokenizer.from_pretrained(args.model)

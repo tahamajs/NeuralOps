@@ -750,3 +750,6 @@ def replace_attention(model, attention_key=None, layer_indices=None, new_attenti
     model._neuralops_metadata.append(meta_entry)
 
     return model
+
+
+replace_attention_in_model = replace_attention

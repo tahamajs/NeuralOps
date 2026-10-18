@@ -784,7 +784,10 @@ def evaluate(
     Returns:
         Dictionary containing evaluation metrics (accuracy, latency, memory, etc.).
     """
-    from neuralops.evaluation.eval_all_models_datasets import evaluate_single_combination_opt
+    try:
+        from evaluation.eval_all_models_datasets import evaluate_single_combination_opt
+    except ImportError:
+        from neuralops.evaluation.eval_all_models_datasets import evaluate_single_combination_opt
     dev = device or ("cuda" if torch.cuda.is_available() else "cpu")
     result = evaluate_single_combination_opt(
         track=kwargs.pop("track", "track1_svd"),
