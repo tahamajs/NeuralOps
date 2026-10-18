@@ -2069,6 +2069,45 @@ def fused_hnc_nullspace_step_triton(
     return _FusedHNCNullSpaceStepFn.apply(w, grad_phi, inv_null_proj, eta, restore_grad, alpha)
 
 
+def block_diag_matmul_triton(
+    x: torch.Tensor,
+    weights: torch.Tensor,
+    bias: torch.Tensor | None = None,
+) -> torch.Tensor:
+    """Block diagonal matrix multiplication."""
+    orig_shape = x.shape
+    G, Ng, Kg = weights.shape
+    M = x.numel() // (G * Kg)
+    x_3d = x.reshape(M, G, Kg)
+    y = torch.einsum("mgk,gnk->mgn", x_3d, weights)
+    if bias is not None:
+        y = y + bias.unsqueeze(0)
+    return y.reshape(*orig_shape[:-1], G * Ng)
+
+
+def rotational_svd_triton(
+    x: torch.Tensor,
+    r_in: torch.Tensor,
+    v_r: torch.Tensor,
+    u_r: torch.Tensor,
+    bias: torch.Tensor | None = None,
+) -> torch.Tensor:
+    """Rotational SVD matrix multiplication."""
+    orig_shape = x.shape
+    K = orig_shape[-1]
+    x_2d = x.reshape(-1, K)
+    V = v_r if v_r.shape[0] != K else v_r.t()
+    R = V.shape[0]
+    U = u_r if u_r.shape[1] == R else u_r.t()
+    N = U.shape[0]
+    x_rot = torch.matmul(x_2d, r_in)
+    z = torch.matmul(x_rot, V.t())
+    out_2d = torch.matmul(z, U.t())
+    if bias is not None:
+        out_2d = out_2d + bias
+    return out_2d.reshape(*orig_shape[:-1], N)
+
+
 __all__ = [
     'is_supported',
     'fwd',
@@ -2113,6 +2152,8 @@ __all__ = [
     'fused_svd_lora_sparse_attn_triton',
     'fused_hnc_nullspace_step_triton',
     'fused_hnc_nullspace_step_pytorch',
+    'block_diag_matmul_triton',
+    'rotational_svd_triton',
     'triton_fused_lowrank_gated_gemm',
     'triton_fused_lowrank_gated_gemm_pytorch_ref',
     'triton_fused_lowrank_sparse_gemm',
