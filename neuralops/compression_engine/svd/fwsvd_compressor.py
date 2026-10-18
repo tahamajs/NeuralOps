@@ -1,10 +1,9 @@
 """
-Fisher-Weighted Singular Value Decomposition (FWSVD) Compressor.
+FWSVD: Fisher-Weighted Singular Value Decomposition
 
-Computes diagonal Fisher information matrix F_i = E[x_i^2] from calibration activations,
-weights the weight matrix W by diag(sqrt(F_i)), computes truncated SVD,
-and unweights factors by diag(1 / sqrt(F_i)).
-Uses the same structural SVDLinear replacement and fallback error logic as AASVD.
+Weights weight parameters with diagonal empirical Fisher information before computing low-rank singular factorizations.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

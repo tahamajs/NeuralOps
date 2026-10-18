@@ -1,4 +1,10 @@
-"""Module providing data_config implementations for NeuralOps."""
+"""
+Data Configuration
+
+Configuration definitions for dataset loading, tokenization schemas, and sequence lengths.
+
+Author: Taha Majlesi
+"""
 
 from dataclasses import dataclass, field
 

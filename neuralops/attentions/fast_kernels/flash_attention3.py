@@ -1,9 +1,9 @@
 """
-FlashAttention-3: Fast and Memory-Efficient Exact Attention with Asynchronous Hardware Overlap.
+FlashAttention-3 Kernel Module
 
-Integrates FlashAttention-3 kernels (with Hopper TMA asynchronous memory copy and FP8 precision support)
-alongside graceful fallback to PyTorch's hardware-accelerated Scaled Dot-Product Attention (SDPA) and exact pretrained weight copying.
+Optimized GPU attention kernel exploiting asynchronous tensor core copy and ping-pong scheduling.
 
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

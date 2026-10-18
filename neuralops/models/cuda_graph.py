@@ -1,8 +1,9 @@
 """
-CUDA Graph Decode Runner for ultra-low latency autoregressive inference.
+CUDA Graph Decode Runner
 
-Captures static token-by-token forward passes with constant-size recurrent / hybrid states,
-completely bypassing Python dispatch overhead and PyTorch launch latency.
+CUDA Graph capture and replay engine for ultra-low latency autoregressive sequence decoding.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

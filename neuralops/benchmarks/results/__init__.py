@@ -1,4 +1,9 @@
-"""Intelligent results management system package for NeuralOps."""
+"""
+NeuralOps Benchmarks Results Subpackage.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 
 import importlib

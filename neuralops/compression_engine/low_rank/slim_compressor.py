@@ -1,19 +1,9 @@
 """
-SLiM: Structured Low-Rank Integrated Matrix Compression (Quantization + 2:4 Sparsity + SVD Residual Correction).
-Registered in COMPRESSOR_REGISTRY as 'slim' and 'slim_compressor'.
+SLiM: Structured Low-Rank Integrated Matrix Compressor
 
-Mathematical Formulation:
-1. Uniform/Non-Uniform b-bit Quantization:
-   $$W_q = \\operatorname{Quant}_b(W_0)$$
-2. 2:4 Semi-Structured Sparsity:
-   $$W_{sp} = \\Pi_{2:4}(W_q, |W_q|)$$
-3. Pruning & Quantization Residual:
-   $$R = W_0 - W_{sp}$$
-4. Low-Rank Singular Value Decomposition Correction:
-   $$R \\approx U_r \\Sigma_r V_r^\\top = L_r$$
-5. Final Reconstructed Weight:
-   $$W_{slim} = W_{sp} + L_r$$
+Fuses uniform integer quantization, 2:4 structured sparsity, and SVD residual error correction into a single composite compression pipeline.
 
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

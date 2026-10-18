@@ -1,15 +1,9 @@
 """
-Triton Fused Low-Rank Sparse GEMM Kernel (Phase 1 / Kernel 2).
+RPCA Low-Rank and Sparse GEMM
 
-Target Module: rpca_compressor
-Fuses:
-    Y_lowrank = (X @ V_r^T) @ U_r^T
-    Y_sparse  = X @ S^T
-    Y         = Y_lowrank + Y_sparse + bias
+Fuses low-rank factor projection with structured sparse outlier matrix multiplication into a single unified pass.
 
-Both the low-rank and sparse matrix multiplications are accumulated directly
-inside high-speed SRAM registers before performing a single coalesced write to HBM.
-Eliminates intermediate tensor allocations for both low-rank latent states and sparse products.
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

@@ -1,22 +1,9 @@
 """
-Expert Choice Mixture of Experts (MoE) Attention Block.
+Expert Choice Mixture of Experts (MoE) Attention Block
 
-In Expert Choice routing (Zhou et al., 2022), experts select their top-k tokens
-rather than tokens selecting top-k experts. This provides guaranteed perfect load balancing
-across all experts, dynamic per-token expert allocation, and superior zero-shot transfer.
+Expert-choice mixture of experts routing tokens to specialized attention experts with balanced load.
 
-Hardened for production across DistilBERT, RoBERTa/BERT, GPT-2, and Qwen/LLaMA architectures:
-- Robust pretrained weight extraction (GPT-2 fused c_attn, RoBERTa nested, Qwen GQA, DistilBERT)
-- Strict Frobenius norm verification (>= 1e-4) for all projections
-- Grouped Query Attention (GQA) with kv_head_size projections and repeat_kv
-- Rotary Position Embedding (RoPE) support with partial-coordinate slicing
-- Strict causal masking for decoder models
-- Nested encoder detection to bypass out_lin in inner self-attention
-- Parameter-efficient fine-tuning via LoRALinear adapters and frozen base weights
-- Step-0 representation preservation (zero-initialized expert outputs & biased gating)
-- Numerically stable FP32 scores with nan_to_num protection
-- Safe injection factory returning None on extraction failures
-- Full cross-attention support
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

@@ -1,9 +1,9 @@
-r"""
-ClusterFormer: Token Clustering Attention Module.
+"""
+ClusterFormer: Token Clustering Sparse Attention
 
-Groups queries into $K$ semantic cluster centroids via fast differentiable $K$-means
-and evaluates centroid-to-key cross-attention alongside local context, achieving $\mathcal{O}(K \cdot L \cdot d)$ linear complexity
-while eliminating token isolation. For causal decoders, strict causal masking is enforced.
+Clusters query tokens into semantic centroids to approximate full pairwise self-attention in linear time.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

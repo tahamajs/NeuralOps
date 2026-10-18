@@ -1,8 +1,9 @@
 """
-FLAT-LLM: Activation-Aware Structured Dimension & Neuron Pruning.
+FLAT-LLM: Activation-Aware Structured Dimension & Neuron Pruning
 
-Registered as 'flat_llm', 'flat_llm_compressor'.
+Evaluates layer-wise activation magnitudes to identify and prune redundant hidden dimensions and neurons with minimal perplexity degradation.
 
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

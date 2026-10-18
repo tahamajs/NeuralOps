@@ -1,6 +1,9 @@
 """
-LEKAv3: Linear-time Efficient Kernel Attention with Value-Scored Landmarks.
+Refined Landmark Efficient Kernel Attention
 
+Linear-time kernel attention using value-scored landmark tokens for high-fidelity sequence distillation.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

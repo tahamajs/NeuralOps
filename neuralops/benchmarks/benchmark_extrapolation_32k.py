@@ -1,8 +1,9 @@
-# -*- coding: utf-8 -*-
-"""Long-Horizon Sequence Extrapolation and KV-State Scaling Benchmark (up to 32,768 tokens).
+"""
+Long-Horizon Sequence Extrapolation and KV-State Scaling Benchmark (up to 32,768 tokens)
 
-Evaluates latency, peak memory, KV-state complexity, and numerical drift across
-Standard Softmax Attention, Chunk GLA, Gated DeltaNet, and SVD Linear Attention.
+Evaluates latency, peak memory, KV-state complexity, and numerical drift across Standard Softmax Attention, Chunk GLA, Gated DeltaNet, and SVD Linear Attention.
+
+Author: Taha Majlesi
 """
 
 import argparse

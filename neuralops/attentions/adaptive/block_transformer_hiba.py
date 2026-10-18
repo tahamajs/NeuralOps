@@ -1,28 +1,9 @@
 """
-Block Transformer with Hierarchical Intra-Block and Inter-Block Attention (HIBA).
+Block Transformer Hierarchical Attention (HIBA)
 
-Production-hardened implementation supporting:
-    1. Robust pretrained weight extraction across DistilBERT, RoBERTa/BERT, GPT-2, Qwen/LLaMA.
-    2. Nested encoder detection (BERT/RoBERTa).
-    3. Grouped-Query Attention (GQA) with kv_repeat.
-    4. Rotary Position Embedding (RoPE) with partial rotary slicing.
-    5. Strict causal masking in all attention paths.
-    6. Parameter-efficient recovery fine-tuning with LoRA.
-    7. Cross-attention support.
-    8. Numerical stability via safe softmax + FP32 logits.
-    9. Static, stable layer indexing across forward passes.
+Hierarchical intra-block and inter-block attention for efficient processing of long sequence contexts.
 
-Fixes applied:
-    [HIBA-FIX-01]  Single softmax over combined intra + inter scores
-    [HIBA-FIX-02]  Vectorized intra-block computation (no Python loop)
-    [HIBA-FIX-03]  matmul in native dtype; FP32 only for softmax
-    [HIBA-FIX-04]  LoRALinear dtype handling without weight casting
-    [HIBA-FIX-05]  Safe softmax via max-subtraction (no nan_to_num abuse)
-    [HIBA-FIX-06]  Top-k mask built once per block (fewer allocations)
-    [HIBA-FIX-07]  Robust mask normalization (2D/3D/4D)
-    [HIBA-FIX-08]  head_mask broadcast correctness
-    [HIBA-FIX-09]  Nested encoder Identity bypass for out_proj
-    [HIBA-FIX-10]  Idempotency + recursion guards in injector
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

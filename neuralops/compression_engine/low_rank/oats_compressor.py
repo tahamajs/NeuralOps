@@ -1,19 +1,9 @@
 """
-OATS: Outlier-Aware Training & Saliency-Based Sparsification with Low-Rank Matrix Decomposition.
-Registered in COMPRESSOR_REGISTRY as 'oats' and 'oats_compressor'.
+OATS: Outlier-Aware Low-Rank and Saliency Pruning Compressor
 
-Mathematical Formulation:
-1. Activation Second Moment:
-   $$M = \\frac{1}{N} X^\\top X + \\epsilon I \\in \\mathbb{R}^{d_{in} \\times d_{in}}$$
-2. Cholesky Factorization:
-   $$M = L_M L_M^\\top$$
-3. Preconditioned Weight Matrix:
-   $$\\widetilde{W} = W L_M$$
-4. Alternating Low-Rank + Sparse Decomposition:
-   - Low-Rank Outlier Component: $L = \\operatorname{SVD}_r(\\widetilde{W} - S)$
-   - Sparse Residual Component: $S = \\Pi_{2:4}(\\widetilde{W} - L)$ or $\\operatorname{Top-}(1-s)(\\widetilde{W} - L)$
-5. De-conditioned Weight Matrix:
-   $$W_{oats} = (L + S) L_M^{-1}$$
+Separates salient outlier channels from normal weights, applying low-rank SVD to bulk weights while preserving high-magnitude paths.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

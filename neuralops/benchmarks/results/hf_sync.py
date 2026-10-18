@@ -1,4 +1,10 @@
-"""Optional Hugging Face Hub synchronization with token security and rate limiting."""
+"""
+Optional Hugging Face Hub synchronization with token security and rate limiting
+
+Implements hf sync functionality for NeuralOps.
+
+Author: Taha Majlesi
+"""
 
 from __future__ import annotations
 

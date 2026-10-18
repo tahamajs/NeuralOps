@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
-"""Production-grade NeuralOps Telemetry, Benchmark Database & Documentation Studio Server.
+"""
+Monitor Server Runner
 
-Direct entry point for running the NeuralOps Web Monitor and Dashboard server.
+Launches the telemetry dashboard and live benchmark monitoring web server.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

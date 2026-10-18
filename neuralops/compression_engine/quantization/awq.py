@@ -1,4 +1,11 @@
-"""Production-grade Activation-aware Weight Quantization (AWQ)."""
+"""
+AWQ: Activation-Aware Weight Quantization
+
+Identifies salient weight channels via activation magnitudes and protects them using per-channel scaling transformations before low-bit quantization.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 from typing import Any, Dict, Optional
 import torch

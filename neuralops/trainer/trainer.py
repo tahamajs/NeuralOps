@@ -1,5 +1,9 @@
 """
-SVDAwareTrainer – custom HuggingFace Trainer with SVD compression callbacks.
+SVD-Aware HuggingFace Trainer
+
+Custom HuggingFace Trainer supporting SVD compression callbacks and attention map logging.
+
+Author: Taha Majlesi
 """
 
 import gc

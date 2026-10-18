@@ -1,33 +1,9 @@
-r"""
-Triton-Accelerated SVD Linear Attention & Chunked Causal Linear Attention.
+"""
+Triton-Accelerated SVD Linear Attention
 
-High-performance GPU implementation using OpenAI Triton language (tl) with:
-  1. Chunked Causal Linear Attention Kernel (_triton_chunked_causal_linear_attn_fwd):
-     - Keeps the recurrent key-value state S \in R^{D_k x D_v} strictly in GPU SRAM/registers.
-     - Tiled in blocks of BLOCK_CHUNK = 64 to eliminate O(N^2) memory footprint.
-     - Evaluates intra-chunk causal attention and inter-chunk prefix sums in a single fused pass.
-     - Strictly O(N * d^2) FLOPs and O(N * d) memory.
+Triton GPU-accelerated implementation of SVD-factorized chunked causal linear attention.
 
-  2. Bidirectional Linear Attention Kernel (_triton_bidirectional_linear_attn_fwd):
-     - Fused parallel reduction of K^T V and K^T 1 for encoder architectures (DistilBERT, RoBERTa).
-     - Fused query projection with numerical stability epsilon clamping in registers.
-
-  3. Non-Zero Identity SVD Initialization (BUG 5 FIX):
-     - SVDLinearProjection initializes U with identity-like structure (eye for rank dimensions)
-       and V with Kaiming uniform so initial output is non-zero before fine-tuning.
-
-  4. Backward Kernel & Clean Autograd (BUG 1 FIX):
-     - Uses explicit torch.autograd.grad(out, [q_req, k_req, v_req], grad_out) preventing double-backward warnings.
-     - Bridges _triton_linear_attn_bwd_kernel on CUDA GPUs for bidirectional attention.
-     - Provides streaming chunked backward propagation for causal decoder attention.
-
-  5. Attention Masking & Padding Invariant (BUG 2 FIX):
-     - Ensures padding tokens on K and V are strictly zeroed out before attention accumulation,
-       preventing contaminated normalization denominator Z.
-
-  6. RoPE and GQA Support (BUG 3 & BUG 4 FIX):
-     - Seamless Rotary Position Embeddings (RoPE) via apply_rotary_pos_emb.
-     - Full Grouped Query Attention (GQA) support with separate num_kv_heads and repeat_kv.
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

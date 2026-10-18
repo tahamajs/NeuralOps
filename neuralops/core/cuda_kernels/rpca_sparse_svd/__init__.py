@@ -1,3 +1,9 @@
+"""
+RPCA Sparse and Low-Rank SVD Hardware Operators.
+
+Author: Taha Majlesi
+"""
+
 from neuralops.core.cuda_kernels.rpca_sparse_svd.rpca_sparse_svd_autograd import (
     rpca_sparse_svd_gemm,
     rpca_sparse_svd_gemm_pytorch_ref,

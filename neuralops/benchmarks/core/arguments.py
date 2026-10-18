@@ -1,4 +1,11 @@
-"""Shared argument parser for all neuralops benchmarks."""
+"""
+Shared argument parser for all neuralops benchmarks
+
+Implements arguments functionality for NeuralOps.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 
 import argparse

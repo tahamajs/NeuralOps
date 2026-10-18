@@ -1,13 +1,9 @@
 """
-DeltaKV: Residual-Based KV Cache Compression via Long-Range Similarity.
-Registered as 'delta_kv', 'delta_kv_class', 'delta_kv_compressor', 'delta_kv_factory'.
+DeltaKV: Residual-Based Key-Value Cache Compression
 
-Mathematical formulation:
-  W ≈ L + R
-  L = U_r Σ_r V_r^T                     (low-rank, rank = r)
-  R = sparse(|W - L|; 1 - sparsity)     (top-k residual magnitudes)
-  W_compressed = L + R
+Exploits temporal and cross-token similarity by quantizing token-to-token residual differences in key-value caches.
 
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

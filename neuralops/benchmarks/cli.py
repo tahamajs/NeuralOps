@@ -1,4 +1,11 @@
-"""Unified CLI for neuralops benchmarking suite."""
+"""
+Unified CLI for neuralops benchmarking suite
+
+Implements cli functionality for NeuralOps.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 
 import os

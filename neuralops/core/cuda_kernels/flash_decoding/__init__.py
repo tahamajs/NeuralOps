@@ -1,3 +1,9 @@
+"""
+Flash-Decoding Attention Hardware Operators.
+
+Author: Taha Majlesi
+"""
+
 from neuralops.core.cuda_kernels.flash_decoding.flash_dec_autograd import (
     flash_decoding_attention,
     flash_decoding_attention_pytorch_ref,

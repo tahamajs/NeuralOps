@@ -1,11 +1,11 @@
 """
-Dynamic Causal Depthwise Convolution — Attention Replacement (Hyena / DynamicConv style).
+Dynamic Causal Depthwise Convolution Attention Replacement
 
-Each token generates its own causal depthwise-conv filter weights dynamically
-from its hidden representation. Complexity: O(B · N · H · K · d) with O(N·K)
-memory — sub-quadratic in sequence length.
+Attention replacement synthesizing causal depthwise convolution kernels dynamically per token.
 
+Author: Taha Majlesi
 """
+
 from __future__ import annotations
 
 from neuralops.core.common import _cfg_get

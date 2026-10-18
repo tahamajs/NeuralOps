@@ -1,6 +1,9 @@
 """
-Backend module exports.
+NeuralOps Backend Core Modules.
+
+Author: Taha Majlesi
 """
+
 from neuralops.core.backend.dispatch import (
     BackendDevice,
     get_available_backend,

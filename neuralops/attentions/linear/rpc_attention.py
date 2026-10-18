@@ -1,9 +1,9 @@
 """
-Random Projection Compressed (RPC) Attention.
+Random Projection Compressed (RPC) Attention
 
-Randomized linear subspace sketching via fixed head-wise Gaussian random
-projection buffers to compress query-key similarity evaluations.
+Compresses key and value projections using fixed randomized Gaussian subspace sketching.
 
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

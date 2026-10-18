@@ -1,7 +1,11 @@
 """
-Legacy and deprecated alias mappings for NeuralOps.
-Isolated from neuralops.core.registry to maintain clean core architecture.
+Legacy Module Import Aliases
+
+Backward-compatibility alias registry mapping deprecated module paths to modern namespaces.
+
+Author: Taha Majlesi
 """
+
 from __future__ import annotations
 
 import json

@@ -1,7 +1,9 @@
 """
-Galerkin Attention: Petrov-Galerkin Projection Attention.
+Galerkin Attention: Petrov-Galerkin Projection Attention
 
+Petrov-Galerkin projection operator providing continuous-depth kernel attention for sequence modeling.
 
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

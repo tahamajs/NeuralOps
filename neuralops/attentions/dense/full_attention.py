@@ -1,9 +1,9 @@
 """
-Standard Multi-Head Scaled Dot-Product Attention (Vaswani et al., 2017).
+Full Scaled Dot-Product Attention
 
-Computes pairwise token interactions across multiple representation subspaces with frozen base weights,
-trainable LoRA residual adapters, multi-architecture weight transfer, GQA, RoPE, and causal decoding.
+Standard multi-head scaled dot-product attention providing exact full-context sequence interactions.
 
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

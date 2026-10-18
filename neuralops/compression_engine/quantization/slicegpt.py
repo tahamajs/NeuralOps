@@ -1,28 +1,9 @@
 """
-PCA-ASVD: Per-Layer Activation-Aware Low-Rank Compression.
+PCA-ASVD: Activation-Aware Low-Rank Matrix Compression
 
-NOTE ON NAMING: This implementation is NOT SliceGPT (Microsoft, 2023).
-- SliceGPT uses a GLOBAL rotation + reduces the model's hidden dimension.
-- This implementation uses PER-LAYER PCA of activations + reduces each layer's rank.
+Compresses linear projection layers using per-layer activation covariance estimation and principal component projection.
 
-The two methods share the idea of orthogonal rotation but differ fundamentally
-in scope and mechanism.
-
-=== PRODUCTION HARDENING (2026-10-04) ===
-This version addresses three critical production issues:
-  1. RAM Bomb: Online covariance accumulation replaces storing all activations.
-     Memory: O(d_in²) per layer instead of O(N × seq_len × d_in).
-  2. Hook Memory Leak: try/finally guarantees hook removal even on crash.
-  3. Retained Graph: .detach().float() prevents VRAM leak from autograd graph.
-
-Mathematical Formulation:
-  1. Orthogonal Coordinate Invariance:
-     W_l X_l = (W_l Q_l) (Q_l^T X_l)
-  2. Eigen-decomposition of Activation Covariance:
-     C = X^T X = Q Λ Q^T
-  3. Coordinate Slicing + Low-Rank Factorization:
-     W ≈ (W Q[:, :keep]) Q[:, :keep]^T
-     Stored as U_factor @ Vt_factor with (d_out + d_in) × keep parameters.
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

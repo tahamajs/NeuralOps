@@ -1,4 +1,11 @@
-"""Validate datasets before training."""
+"""
+Dataset Validator
+
+Validates dataset schemas, tokenization integrity, and sequence lengths prior to training.
+
+Author: Taha Majlesi
+"""
+
 from collections import Counter
 import logging
 LOG = logging.getLogger(__name__)

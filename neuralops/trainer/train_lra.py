@@ -1,6 +1,9 @@
 """
-Train small Transformer from scratch on LRA tasks, with optional module injection.
-LRA requires training from scratch, NOT fine-tuning.
+Long Range Arena Training Harness
+
+Trains and evaluates neural network architectures on Long Range Arena (LRA) benchmark tasks.
+
+Author: Taha Majlesi
 """
 
 import argparse

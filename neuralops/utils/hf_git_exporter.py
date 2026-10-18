@@ -1,10 +1,9 @@
-"""Automated exporter for successful benchmark runs to private Hugging Face repositories and GitHub documentation.
+"""
+HuggingFace and Git Exporter
 
-Performs:
-1. Model packaging & upload to private Hugging Face repo (tahamajs/svd-linear-attention-*)
-2. Documentation update in Docs/content/
-3. Clean Git commit and push to origin/main
-Strictly gated on success criteria (status == 'PASS', acc >= pass_threshold_pct).
+Automated exporter synchronizing benchmark runs and models to Hugging Face and Git.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

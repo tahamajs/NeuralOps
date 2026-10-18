@@ -1,25 +1,10 @@
 #!/usr/bin/env python3
-"""Cached Qwen sequence-classification quality sweep.
+"""
+Cached Qwen sequence-classification quality sweep
 
-Fine-tunes the Qwen classification head first, then evaluates each canonical
-attention/compression module from the same fine-tuned checkpoint.
+Fine-tunes the Qwen classification head first, then evaluates each canonical attention/compression module from the same fine-tuned checkpoint.
 
-Debugged v2 — 15 fixes applied:
-1. override_to now merged into effective_timeout
-2. Skip logic enabled for PASS statuses
-3. dataset_dir sentinel removed (only appended when set)
-4. datetime.utcnow() → datetime.now(timezone.utc)
-5. Unified FIELDS schema (no duplicate)
-6. perf_metrics/comp_metrics initialized to None before try
-7. NaN loss aborts the batch (continue)
-8. p.data.half() wrapped in no_grad + dtype check
-9. torch.set_num_threads respects OMP_NUM_THREADS
-10. Duplicate lora import removed
-11. Dead multiprocessing code removed
-12. SLOW_MODULE_TIMEOUT_OVERRIDES unified at module level
-13. existing set actually used for skip
-14. Dead config code removed
-15. Step loss accumulation clarified
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

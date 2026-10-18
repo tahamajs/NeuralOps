@@ -1,13 +1,9 @@
-r"""
-Shared Orthogonal Attention (SOA) with Per-Projection Latent Bottlenecks.
+"""
+SoA (Structure-of-Arrays) Fast Attention Kernel
 
-Architecture:
-    * Factorized SVD projections for Q, K, V (down + up with LoRA adapters)
-    * Full KV-cache support for autoregressive generation
-    * RoPE with past_len slicing
-    * GQA support with repeat_kv
-    * Multi-architecture weight transfer (DistilBERT, RoBERTa, BERT, GPT-2, Qwen, LLaMA)
+Structure-of-Arrays memory layout fast attention kernel optimizing GPU cache utilization and vector load widths.
 
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

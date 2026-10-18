@@ -1,5 +1,9 @@
 """
-High-performance custom training loop trainer with DDP gradient accumulation synchronization safety.
+Custom Loop Trainer
+
+High-performance custom training loop with DDP gradient accumulation and synchronization safety.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

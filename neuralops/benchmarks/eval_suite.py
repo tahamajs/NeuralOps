@@ -1,4 +1,11 @@
-"""Evaluation framework extensions: LM-Eval adapter, RULER NIAH benchmark, and CustomEvaluationSuite."""
+"""
+Evaluation framework extensions
+
+LM-Eval adapter, RULER NIAH benchmark, and CustomEvaluationSuite.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 from typing import Callable
 import torch

@@ -1,5 +1,9 @@
 """
-Configuration loader: YAML + CLI overrides → Config dataclass.
+Configuration Loader
+
+Hierarchical configuration parser supporting YAML specifications, CLI overrides, and validation.
+
+Author: Taha Majlesi
 """
 
 import argparse

@@ -1,6 +1,9 @@
 """
-Quality and Capacity-Aware Grouped Query Attention (QCQA).
+Quality and Capacity-Aware Grouped Query Attention (QCQA)
 
+Quality and capacity-aware grouped query attention balancing generation fidelity with cache memory limits.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

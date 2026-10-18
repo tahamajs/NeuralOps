@@ -1,17 +1,10 @@
 #!/usr/bin/env python3
 """
-Publication-Grade Sweep Analysis, Reporting, and Visualization Engine.
+Sweep Publication Artifacts Generator
 
-Generates:
-1. High-resolution publication figures (both 300-DPI PNG and vector PDF for LaTeX):
-   - fig1_top_modules_ranked.png / .pdf
-   - fig2_accuracy_vs_runtime.png / .pdf (with Pareto frontier)
-   - fig3_status_breakdown.png / .pdf
-   - fig4_category_performance.png / .pdf
-2. Publication-ready LaTeX tables (paper_tables.tex) with booktabs formatting.
-3. Detailed Markdown report (comprehensive_report.md).
-4. Structured full-results JSON export (comprehensive_results.json).
-5. Optional continuous --watch mode for live updating while sweeps run.
+Pipeline compiling sweep results into publication-ready tables, figures, and statistical summaries.
+
+Author: Taha Majlesi
 """
 
 import argparse

@@ -1,3 +1,9 @@
+"""
+Paged Recurrent Step Hardware Operators.
+
+Author: Taha Majlesi
+"""
+
 from neuralops.core.cuda_kernels.paged_recurrent_step.paged_recurrent_step_autograd import (
     paged_recurrent_step,
     paged_recurrent_step_pytorch_ref,

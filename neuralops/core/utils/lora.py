@@ -1,4 +1,11 @@
-"""LoRA and Factorized Linear shared layers."""
+"""
+Low-Rank Adaptation Layers
+
+LoRA linear projections and factorized low-rank matrix layers with scaling coefficients.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 
 import math

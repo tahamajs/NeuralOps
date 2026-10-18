@@ -1,15 +1,9 @@
 """
-SoKA: Second-Order Knowledge-Aware Low-Rank Linear Compressor.
-Registered in COMPRESSOR_REGISTRY as 'soka'.
+SoKA: Second-Order Knowledge-Aware Low-Rank Compressor
 
-Mathematical Formulation:
-1. Weight Matrix Factorization via SVD:
-   $$W = U \\Sigma V^\\top \\approx U_r \\Sigma_r V_r^\\top = A B^\\top$$
-   where $A = U_r \\Sigma_r^{1/2} \\in \\mathbb{R}^{d_{out} \\times r}$ and $B = V_r \\Sigma_r^{1/2} \\in \\mathbb{R}^{d_{in} \\times r}$.
-2. Forward Execution:
-   $$y = (x B) A^\\top + b$$
-3. Singular Energy Threshold Rank Selection:
-   $$r = \\min \\left\\{ k \\;\\middle|\\; \\frac{\\sum_{i=1}^k \\sigma_i^2}{\\sum_{i=1}^{\\min(d_{in}, d_{out})} \\sigma_i^2} \\ge \\alpha \\right\\}$$
+Incorporates empirical Fisher information and second-order Hessian traces to guide low-rank subspace truncation without quality degradation.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

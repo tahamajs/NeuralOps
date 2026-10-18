@@ -1,14 +1,9 @@
 """
-Triton HGRN2 Fused Bidirectional Scan Kernel (Phase 3 / Kernel 10).
+HGRN2 Fused Bidirectional Scan
 
-Target Modules: hgrn2_attention, mamba_block, bidirectional encoder wrappers (SSM)
-Solves:
-    Bidirectional SSMs on encoders (RoBERTa, DistilBERT) require a forward scan (t = 0 -> L-1)
-    and a backward scan (t = L-1 -> 0). Calling torch.flip(x, dims=[1]) before and after the
-    reverse scan triggers two full-tensor HBM memory copies.
+Fuses forward and reverse recurrence passes using directional pointer arithmetic without intermediate tensor reversals.
 
-This kernel steps forward with (+stride_seq) and backward with (-stride_seq) directly in
-pointer arithmetic, fusing both directions without any torch.flip memory overhead.
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

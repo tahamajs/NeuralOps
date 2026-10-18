@@ -1,4 +1,11 @@
-"""Triton & PyTorch attention kernel benchmark harness."""
+"""
+Triton & PyTorch attention kernel benchmark harness
+
+Implements kernel benchmark functionality for NeuralOps.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 from typing import Callable, Any
 import time

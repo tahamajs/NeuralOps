@@ -1,13 +1,9 @@
 """
-LiLLaMA: Local Distillation via Activation Cross-Covariance SVD.
-Registered as 'lillama_class', 'lillama_compressor_class', 'lillama_factory'
-and 'lillama' / 'lillama_compressor' as factory aliases.
+LiLLaMA: Local Distillation Activation Cross-Covariance SVD
 
-Formulation:
-  C_YX = (1/N) Y^T X                 (cross-covariance)
-  C_YX ≈ U_r Σ_r V_r^T               (truncated SVD)
-  W_distill = U_r Σ_r V_r^T          (distilled weight)
+Compresses transformer projections via cross-covariance SVD weighted by activation energy, combined with layer-wise feature distillation.
 
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

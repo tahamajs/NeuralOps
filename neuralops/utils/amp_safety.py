@@ -1,9 +1,9 @@
 """
-Automatic Mixed Precision (AMP) and FP16 Numerical Safety Utilities.
+AMP and Numerical Safety Utilities
 
-Provides context managers and numerical guards to prevent underflows, overflows,
-and NaNs in FP16/BF16 linear attention, cumulative summation, normalization,
-and linear algebra operations (SVD, Cholesky, QR).
+Context managers and numerical guards preventing underflow and overflow in mixed precision.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

@@ -1,6 +1,7 @@
 """
-Results persistence, export, cloud upload, and experiment tracking.
-Orchestrated by ResultsSaver with a SaveConfig.
+NeuralOps Results Saver Subpackage.
+
+Author: Taha Majlesi
 """
 
 from .config import SaveConfig

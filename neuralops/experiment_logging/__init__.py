@@ -1,4 +1,8 @@
-"""Experiment logging – structured logging, metrics tracking, and Trainer callbacks."""
+"""
+NeuralOps Experiment Logging Subpackage.
+
+Author: Taha Majlesi
+"""
 
 from neuralops.trainer.results_manager import ResultsManager
 

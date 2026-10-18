@@ -1,14 +1,9 @@
 """
-Triton Fused Latent KV-Cache Attention Kernel (Phase 3 / Kernel 13).
+Fused Latent KV-Cache Attention
 
-Target Modules: svd_linear_attention, mla_attention, hnc_svd KV-Cache inference
-Solves:
-    When KV projections are factorized into low-rank representations C_kv = X @ V_kv^T in R^{B x L x r},
-    standard attention dequantizes/reconstructs full K and V in R^{B x H x L x d} in HBM.
-    This kernel keeps ONLY the rank-r latent cache C_kv in HBM, computes attention in rank-r space,
-    accumulates context in rank-r space, and projects by U_v once at the very end in registers.
+Decompresses compressed latent KV cache representations on-the-fly during attention computation to minimize memory bandwidth.
 
-Achieves up to 12x reduction in KV-cache VRAM and memory bandwidth!
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

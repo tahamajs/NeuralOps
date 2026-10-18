@@ -1,5 +1,9 @@
 """
-Cosformer — Production-Hardened (Hybrid Local Attention + Fixed Math).
+Cosformer: Linear Attention with Cosine Reweighting
+
+Linear-time attention incorporating cosine reweighting to enforce locality and stabilize non-causal representations.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

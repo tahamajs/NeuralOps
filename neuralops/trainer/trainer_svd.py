@@ -1,3 +1,11 @@
+"""
+SVD-Aware Trainer Engine
+
+Specialized training harness with singular value decomposition monitoring and rank adaptation.
+
+Author: Taha Majlesi
+"""
+
 import time
 from typing import Any
 

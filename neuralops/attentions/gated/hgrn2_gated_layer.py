@@ -1,11 +1,9 @@
 """
-HGRN-2 Layer v6 — Production-Hardened with full recurrent state caching.
+HGRN-2 Gated Recurrent Linear Attention Layer
 
-Architecture:
-    * HGRN-2 recurrent branch (hierarchical gated recurrence, O(L))
-    * Local sliding-window attention branch (O(L·W))
-    * Learned fusion gate blending both branches
+Hierarchically gated recurrent neural network attention layer enabling linear computational complexity.
 
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

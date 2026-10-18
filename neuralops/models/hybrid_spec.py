@@ -1,7 +1,9 @@
-"""Hybrid attention and compression layer specification normalizer.
+"""
+Hybrid Model Layer Specification
 
-Allows configuring per-layer attention mechanisms or compression engines via
-compact dictionaries or lists of dictionaries.
+Specification normalizer and parser for heterogeneous multi-layer attention and compression architectures.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

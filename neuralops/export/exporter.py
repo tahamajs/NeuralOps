@@ -1,10 +1,9 @@
 """
-Production model exporter for NeuralOps.
+Model Exporter
 
-Supports:
-  1. "safetensors" (Hugging Face Hub compatible) with embedded `neuralops_config.json`
-  2. "onnx" with automatic deterministic PyTorch fallback for Triton modules
-  3. "torchscript" via tracing or scripting
+Exports trained and compressed NeuralOps models into production-ready formats.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

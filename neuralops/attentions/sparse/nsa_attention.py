@@ -1,18 +1,9 @@
 """
-Native Sparse Attention (NSA) Module (Production-Hardened).
+Native Sparse Attention (NSA)
 
-Combines sliding-window local context capture with dynamic, input-dependent top-$k$
-global routing across key-value representations in a fully vectorized manner.
+Native sparse attention combining sliding-window local context with fine-grained dynamic token selection.
 
-Supports:
-- Multi-architecture copy_weights (GPT-2, RoBERTa/BERT nested, Qwen/LLaMA, DistilBERT)
-- Trainable LoRA adapters with frozen base weights
-- GQA with repeat_kv
-- RoPE position embeddings
-- Causal masking for decoders
-- Nested encoder bypass
-- Frobenius norm verification (>= 1e-4)
-- Safe injection returning None on failure
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

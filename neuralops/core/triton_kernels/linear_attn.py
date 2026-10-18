@@ -1,13 +1,9 @@
-#!/usr/bin/env python3
 """
-Triton Fused Linear Attention Kernel (Forward & Backward).
+Fused Causal Linear Attention
 
-Supports:
-  - Non-negative feature map phi: "elu+1", "relu", "identity", "softmax_free"
-  - Chunked causal streaming linear attention (O(N) memory, tiled in SRAM)
-  - Bidirectional parallel reduction for encoder backbones
-  - Cosformer-style in-register / pre-applied cosine-sine positional modulation
-  - Full autograd integration for training and recovery fine-tuning.
+Chunked causal linear attention computation with associative prefix scans and bidirectional state reduction.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

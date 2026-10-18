@@ -1,26 +1,9 @@
 """
-Complete statistical tests for model comparison – publication‑grade.
+Statistical Hypothesis Testing
 
-References:
-  - Demšar (2006): Statistical Comparisons of Classifiers over Multiple Data Sets (JMLR)
-  - Benavoli et al. (2017): Time for a Change – Bayesian Comparison of Classifiers (JMLR)
-  - García & Herrera (2008): An Extension on Statistical Comparisons of Classifiers
-  - García et al. (2010): Advanced nonparametric tests for multiple comparisons
-  - Derrac et al. (2011): A practical tutorial on the use of nonparametric tests
-  - Iman & Davenport (1980): Approximations of the critical region for Friedman
-  - Quade (1979): Using weighted rankings in analysis of complete blocks
-  - Cliff (1993): Dominance statistics – ordinal analyses to answer ordinal questions
-  - Vargha & Delaney (2000): Critique and improvement of CL common language effect size
-  - Cohen (1988): Statistical Power Analysis for the Behavioral Sciences
-  - Hedges & Olkin (1985): Statistical Methods for Meta-Analysis
-  - Nemenyi (1963): Distribution-free Multiple Comparisons
-  - Dunn (1961): Multiple Comparisons among Means
-  - Holm (1979): A simple sequentially rejective multiple test procedure
-  - Hochberg (1988): A sharper Bonferroni procedure
-  - Hommel (1988): A stagewise rejective multiple test procedure
-  - Holland & Copenhaver (1987): An improved sequentially rejective Bonferroni test
-  - Finner (1993): On a monotonicity problem in step-down multiple test procedures
-  - Bergmann & Hommel (1988): Improvements of general multiple test procedures
+Non-parametric and paired statistical significance tests for benchmark model comparisons and ablations.
+
+Author: Taha Majlesi
 """
 
 import logging

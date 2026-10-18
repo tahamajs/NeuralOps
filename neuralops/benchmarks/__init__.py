@@ -1,4 +1,9 @@
-"""neuralops benchmarking suite."""
+"""
+NeuralOps Benchmarks Subpackage.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 
 import importlib

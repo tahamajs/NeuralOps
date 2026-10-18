@@ -1,6 +1,9 @@
 """
-Aegis-Hybrid Attention — Production-Hardened (v3).
+Tri-Branch Aegis Hybrid Attention
 
+Integrates sliding-window, low-rank projection, and linear recurrent branches with dynamic branch routing.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

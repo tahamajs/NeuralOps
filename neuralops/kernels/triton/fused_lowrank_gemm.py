@@ -1,14 +1,9 @@
 """
-Triton Fused Low-Rank Gated GEMM Kernel (Phase 1 / Kernel 1).
+Fused Low-Rank Gated GEMM
 
-Optimized for NVIDIA Ada Lovelace (SM 8.9 / RTX 4070).
-Fuses:
-    Z = (X @ V_r^T)
-    Z = Z * sigmoid(alpha)   [in-place in SRAM / Registers]
-    Y = Z @ U_r^T + b_drift  [epilogue before single HBM store]
+Fuses low-rank bottleneck projections and non-linear gating mechanisms into a single memory-bandwidth efficient kernel pass.
 
-Completely eliminates HBM materialization of intermediate latent tensor Z,
-reducing VRAM traffic by up to 60% and delivering significant speedup over unfused PyTorch.
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

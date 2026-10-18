@@ -1,3 +1,11 @@
+"""
+Training and Evaluation Metrics
+
+Computes statistical evaluation metrics, correlation coefficients, accuracy, and classification scores.
+
+Author: Taha Majlesi
+"""
+
 from typing import Any
 
 import numpy as np

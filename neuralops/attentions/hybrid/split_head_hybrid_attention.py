@@ -1,15 +1,11 @@
 """
-AEGIS-Attention V5 : Adaptive Enhanced Global-Local Integrated Sparse Attention.
+Adaptive Enhanced Global-Local Integrated Sparse Attention
 
-Architecture:
-  * FactorisedLinear: SVD-factorized linear layers with energy-based rank selection + LoRA.
-  * Split-head attention: some heads perform local sliding-window attention,
-    other heads perform global kernel linear attention (RFF / FAVOR+).
-  * Adaptive gate: blends local-head outputs with the mean of global-head outputs.
-  * SDPA fast path: used for very short sequences (N_kv <= local_window) where the
-    split-head mechanism provides no benefit.
+Partitions attention heads across local dense, global sparse, and linear low-rank operations.
 
+Author: Taha Majlesi
 """
+
 from neuralops.core.common import temperature_softmax
 from neuralops.core.common import _detect_decoder
 

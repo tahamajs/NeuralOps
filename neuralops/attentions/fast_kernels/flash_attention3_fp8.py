@@ -1,11 +1,9 @@
 """
-FlashAttention-3 FP8: Low-Precision 8-bit Float Transformer Attention.
+FlashAttention-3 FP8 Kernel Module
 
-Implements FlashAttention-3 utilizing FP8 (e4m3fn) precision format for NVIDIA Hopper (SM 9.0+)
-Tensor Cores with per-tensor dynamic scaling and de-scaling, with automatic fallback to
-hardware-accelerated SDPA on pre-Hopper architectures (such as Ada Lovelace SM 8.9 or Ampere SM 8.0)
-and CPU.
+Low-precision FP8 FlashAttention-3 implementation maximizing tensor core throughput and memory efficiency.
 
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

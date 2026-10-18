@@ -1,4 +1,10 @@
-"""Configuration class for NeuralOps Transformers-compatible models."""
+"""
+NeuralOps Model Configuration
+
+Transformers-compatible configuration class governing hybrid attention topologies and architectural hyperparameters.
+
+Author: Taha Majlesi
+"""
 
 from __future__ import annotations
 

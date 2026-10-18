@@ -1,9 +1,9 @@
 """
-HALO-ReGLA: Hardware-Aware Linear Optics & Rectified Gated Linear Attention.
-Production-Hardened v4 — True O(1) Linear State + Full KV-Cache.
+HALO-ReGLA: Hardware-Aware Linear Optics & Rectified Gated Linear Attention
 
-Architecture: Hybrid Dense Softmax + Linear Attention with adaptive per-head gate.
+Hardware-aligned linear attention combining rectified gating with O(1) state space recurrence.
 
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

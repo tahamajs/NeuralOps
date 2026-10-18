@@ -1,8 +1,9 @@
 """
-Master pipeline orchestrator.
-Runs 2 workers total across all task types.
-Priority order: zeroshot > rank_sweep > c4_ppl > latency > multiseed.
-Idempotent: skips completed tasks.
+Master Pipeline Orchestrator
+
+Runs multi-worker benchmark suites, sweeps, and evaluations with idempotent task skipping.
+
+Author: Taha Majlesi
 """
 
 import argparse

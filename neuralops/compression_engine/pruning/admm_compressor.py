@@ -1,7 +1,9 @@
 """
-ADMM Compressor: Alternating Direction Method of Multipliers for Joint Pruning and Quantization.
-Registered in COMPRESSOR_REGISTRY as 'admm' and 'admm_compressor'.
+ADMM Compressor: Alternating Direction Method of Multipliers
 
+Solves constrained optimization for joint structured pruning and low-bit quantization using alternating direction methods.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

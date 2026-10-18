@@ -1,5 +1,9 @@
 """
-Sparse Attention Python Interface & Autograd Backward (Compatibility Wrapper).
+Block-Sparse Attention Autograd Interface
+
+Hardware-accelerated CUDA C++ autograd implementation with analytical gradients and three-level fallback dispatch.
+
+Author: Taha Majlesi
 """
 
 from neuralops.core.cuda_kernels.sparse_attention.sparse_attention_autograd import (

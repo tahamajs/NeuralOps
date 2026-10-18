@@ -1,4 +1,8 @@
-"""Model loading and architecture adaptation subsystem package."""
+"""
+NeuralOps Benchmarks Models Subpackage.
+
+Author: Taha Majlesi
+"""
 
 from neuralops.benchmarks.models.loader import (
     MODEL_ADAPTER_REGISTRY,

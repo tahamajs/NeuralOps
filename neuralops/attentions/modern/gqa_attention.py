@@ -1,9 +1,9 @@
 """
-Grouped-Query Attention (GQA) — rank-aware, KV-cache aware, SDPA-accelerated.
+Grouped-Query Attention (GQA)
 
-Interpolates between Multi-Head Attention (MHA) and Multi-Query Attention (MQA)
-by dividing H_Q query heads into G groups, where each group shares a single
-Key-Value head pair (H_KV = G <= H_Q).
+Grouped-query attention interpolating between multi-head and multi-query setups for accelerated inference.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

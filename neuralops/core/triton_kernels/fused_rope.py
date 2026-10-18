@@ -1,4 +1,11 @@
-"""Fused RoPE Triton kernel with GPU JIT, autograd backward, and fast PyTorch fallback."""
+"""
+Fused Rotary Position Embedding
+
+Applies rotary positional embeddings directly to query and key states with in-place pointer arithmetic.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 import torch
 

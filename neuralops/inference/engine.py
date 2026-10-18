@@ -1,4 +1,11 @@
-"""Production-grade LLM inference engine supporting sampling, speculative decoding, beam search, and continuous batching."""
+"""
+LLM Inference Engine
+
+High-throughput inference engine supporting sampling, beam search, and continuous batching.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 from typing import Generator, Any
 from dataclasses import dataclass, field

@@ -1,14 +1,9 @@
 """
-Universal Streaming Activation Calibrator for All 72 Compression Engines.
+Universal Activation Calibrator
 
-Provides:
-  - UniversalActivationCalibrator: attaches streaming in-place GPU forward hooks
-    to collect empirical statistics without keeping raw activation tensors in RAM/VRAM:
-      * Streaming Gram / Hessian Covariance: H_l = sum(X_l^T X_l) + lambda * I (for WhitenedSVD, ASVD, GPTQ, SparseGPT).
-      * Streaming Channel Norms: s_l = running_rms_or_max(X_l) (for Wanda, AWQ, SmoothQuant).
-  - Works with any model architecture (LLMs, Vision Transformers, Audio, Custom nn.Module).
-  - transplant_and_compress(): coordinated pipeline applying attention transplantation
-    and post-surgery projection compression in a single unified step.
+Streaming activation calibrator computing Gram and Hessian statistics across compression engines.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

@@ -1,6 +1,11 @@
 """
 Refined Gated Linear Attention (ReGLA)
+
+Refined gated linear attention stabilizing recurrent states via bounded activation normalization.
+
+Author: Taha Majlesi
 """
+
 from neuralops.core.common import _cfg_get
 
 from neuralops.core.attention_utils import (

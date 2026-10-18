@@ -1,3 +1,9 @@
+"""
+Flash Grouped Query Attention Hardware Operators.
+
+Author: Taha Majlesi
+"""
+
 from neuralops.core.cuda_kernels.flash_gqa.flash_gqa_autograd import (
     flash_gqa,
     flash_gqa_pytorch_ref,

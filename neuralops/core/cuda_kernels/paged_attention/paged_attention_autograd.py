@@ -1,5 +1,9 @@
 """
-PagedAttention Autograd & 3-Level Fallback (Module 1).
+Paged Attention Autograd Interface
+
+Hardware-accelerated CUDA C++ autograd implementation with analytical gradients and three-level fallback dispatch.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

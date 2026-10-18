@@ -1,17 +1,9 @@
 """
-A3 Compressor: Activation-Aware Factorized SVD with Activation Energy
-Weighting and LayerNorm Recalibration.
+A3 Compressor: Activation-Aware Factorized SVD
 
-Registered as 'a3' and 'a3_compressor'.
+Performs activation energy-weighted singular value decomposition with post-compression LayerNorm recalibration to minimize reconstruction drift.
 
-Algorithm:
-  1. Activation energy weighting (second moment E[x²]) — NOT Fisher.
-     s_j = sqrt(E[x_j²] + eps), optionally normalized by RMS.
-  2. Optional full Cholesky whitening of input covariance.
-  3. STRS rank search: minimal rank satisfying the error bound.
-  4. LayerNorm recalibration.
-  5. Fallback to dense if error exceeds threshold.
-
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

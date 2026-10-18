@@ -1,4 +1,11 @@
-"""Architectural utilities and family-aware adapters for model compatibility."""
+"""
+Architecture Compatibility Adapters
+
+Architectural utilities and family-aware adapters for model compatibility.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 from neuralops.core.common import repeat_kv
 

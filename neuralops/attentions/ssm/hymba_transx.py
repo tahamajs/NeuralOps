@@ -1,14 +1,9 @@
 """
-HymbaTransX: Hybrid Differential Transformer & State Space Model Block.
+HymbaTransX: Hybrid Differential Transformer and SSM Block
 
-Differential attention with rotary embeddings coupled with a State Space Model branch.
+Fuses differential attention mechanisms with state space sequence models and rotary position embeddings.
 
-FIXES in v2:
-  - HX-FIX-02: _uses_rope() no longer returns True for GPT-2 (uses learned pos emb, not RoPE)
-  - HX-FIX-07: diff_lambda init = -2.0 (sigmoid ≈ 0.12, not 0.55)
-  - HX-FIX-01: alpha init = 4.0 (sigmoid ≈ 0.98, attention-dominant)
-  - HX-FIX-06: W_q2/W_k2 = exact copy of W_q1/W_k1 (no noise)
-  - HX-FIX-13: SSM branch disabled by default for GPT-2 decoder
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

@@ -1,5 +1,9 @@
 """
-Identity / low-rank SVD replacement attention module for NeuralOps.
+Attention Layer Wrapper
+
+Polymorphic container wrapping custom attention kernels with standardized PyTorch module interfaces.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

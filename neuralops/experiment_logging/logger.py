@@ -1,7 +1,9 @@
 """
-Structured and thread-safe logger setup with JSON and human-readable formats.
-Implements QueueHandler / QueueListener for non-blocking logging across threads and
-ensures each DDP worker rank writes to an isolated log file (rank_{LOCAL_RANK}.log).
+Experiment Logger
+
+Structured multi-stream logger for recording experiment telemetry and training statistics.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

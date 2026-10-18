@@ -1,9 +1,9 @@
 """
-Streaming Layer-wise Analysis Engine for Foundation Models & Transformers.
+Layer-Wise Model Analyzer
 
-Computes representation drift, cosine similarities, kurtosis-based outlier metrics,
-effective spectral rank, and intrinsic dimensionality on-the-fly without accumulating
-all 32+ layer activations simultaneously in VRAM, eliminating streaming OOM crashes.
+Per-layer singular value energy decomposition and attention entropy profiler for deep networks.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

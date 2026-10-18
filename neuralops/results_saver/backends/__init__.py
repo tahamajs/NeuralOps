@@ -1,11 +1,7 @@
 """
-neuralops.results_saver.backends
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Storage-backend package for ResultsSaver.
+NeuralOps Results Saver Backends Subpackage.
 
-Available backends
-------------------
-- huggingface  : Upload run artifacts to Hugging Face Hub (optional dependency)
+Author: Taha Majlesi
 """
 
 # Auto-wired package members

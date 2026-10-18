@@ -1,12 +1,9 @@
 """
-Activation-Aware SVD (AASVD) Compressor — Production-Hardened (v2).
+AASVD: Activation-Aware Singular Value Decomposition Compressor
 
-Streaming EMA activation covariance accumulation:
-    C_X^(t) = β·C_X^(t-1) + (1-β)·(X^T X) / B
-Projects weights onto principal activation subspaces and replaces dense
-nn.Linear/Conv1D layers with structural low-rank SVDLinear modules:
-    y = (x · V^T) · U^T + LoRA(x) + b
+Accumulates streaming activation covariance matrices to perform whitening-based singular value decomposition on linear projections.
 
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

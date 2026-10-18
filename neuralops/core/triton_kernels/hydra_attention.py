@@ -1,14 +1,9 @@
 """
-Triton JIT Hardware Kernel for Hydra Attention (v1.4.0 Flagship).
-Target Architecture: SM 8.9 (NVIDIA Ada Lovelace RTX 4070 Laptop GPU, 8GB VRAM).
-Mathematical formulation:
-  S = (1 / L) * sum_{t=1}^L (K_t * V_t)       [Global channel-wise state aggregation]
-  Y_t = Q_t * S                               [Linear token modulation]
-Exact analytical autograd backward:
-  dQ_t = dY_t * S
-  T = sum_{t=1}^L (dY_t * Q_t)
-  dK_t = (1 / L) * T * V_t
-  dV_t = (1 / L) * T * K_t
+Hydra Multi-Head Linear Attention
+
+Multi-head linear attention mechanism combining linear RNN state mixing with sub-quadratic complexity.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

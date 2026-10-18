@@ -1,4 +1,7 @@
+"""
+NeuralOps Results Saver Storage Subpackage.
 
+Author: Taha Majlesi
+"""
 
-# Auto-wired package members
 from neuralops.results_saver.storage import sqlite_ops

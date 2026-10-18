@@ -1,6 +1,11 @@
-"""ASVD Compressor: Activation-Aware SVD with KV-Cache hooks and compressed_tensors I/O format.
-Aliased to aa_svd_compressor and registered for ASVD compression workflows.
 """
+ASVD: Activation-Aware SVD with KV-Cache Integration
+
+Scales weight matrices by activation norms before truncated SVD factorization, supporting unified compressed-tensor serialization.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 
 import json

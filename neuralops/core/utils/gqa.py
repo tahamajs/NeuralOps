@@ -1,4 +1,11 @@
-"""Grouped Query Attention (GQA) shared helpers."""
+"""
+Grouped Query Attention Utilities
+
+Head expansion, key-value replication, and grouped query attention tensor transformation helpers.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 
 import torch

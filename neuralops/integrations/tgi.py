@@ -1,21 +1,9 @@
 """
-Production-grade Text Generation Inference (TGI) serving adapter for NeuralOps.
+Text Generation Inference Integration
 
-Provides continuous batching, variable-length sequence scheduling, per-request
-isolated KV cache management, and streaming token generation compatible with
-HuggingFace TGI HTTP serving protocols.
+Provides serving hooks and model architecture adapters for Text Generation Inference (TGI).
 
-Status: 🟡 Experimental (In-Tree Adapter).
-Supports standard PyTorch and HuggingFace CausalLM models patched with NeuralOps
-attention architectures and low-rank factorized linear layers.
-
-Example usage:
-    >>> from transformers import AutoModelForCausalLM, AutoTokenizer
-    >>> from neuralops.integrations.tgi import TGIServingAdapter
-    >>> model = AutoModelForCausalLM.from_pretrained("gpt2")
-    >>> tokenizer = AutoTokenizer.from_pretrained("gpt2")
-    >>> adapter = TGIServingAdapter(model, tokenizer, max_batch_size=16)
-    >>> completions = adapter.continuous_batching_generate(["Hello world!"], max_new_tokens=10)
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

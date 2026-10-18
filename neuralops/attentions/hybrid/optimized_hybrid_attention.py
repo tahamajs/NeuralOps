@@ -1,10 +1,9 @@
 """
-Optimized Hybrid Attention (OHA).
+Optimized Hybrid Attention (OHA)
 
-Fuses localized sliding-window self-attention with sequence-compressed
-low-rank global attention via dynamic head-wise gated modulation and exact
-pretrained weight transfer.
+Fuses localized sliding-window attention with sequence-compressed low-rank global attention.
 
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

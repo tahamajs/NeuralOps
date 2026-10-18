@@ -1,6 +1,11 @@
 """
-Fused Linear Cross Entropy.
+Fused Cross-Entropy Loss
+
+Memory-efficient fused linear projection and cross-entropy loss kernel minimizing activation footprint.
+
+Author: Taha Majlesi
 """
+
 from __future__ import annotations
 import torch
 import torch.nn.functional as F

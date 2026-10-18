@@ -1,16 +1,11 @@
 """
-Selective State Space Model (SelectiveSSM).
+Selective State Space Model (SelectiveSSM)
 
-Faithful implementation of Mamba-style selective state space recurrence block.
-Features:
-- State dimension (B, D, L, N)
-- Selective (input-dependent) Delta, B, C parameters
-- Structured A matrix initialization (Mamba paper Eq. 11)
-- Depthwise 1D convolution with SiLU gating
-- Bidirectional support with independent forward and backward parameters
-- No internal LayerNorm duplication
-- Memory-safe contiguous memory layouts and padding mask protections
+Faithful implementation of selective state space recurrence enabling linear-time causal sequence generation.
+
+Author: Taha Majlesi
 """
+
 from neuralops.core.common import _cfg_get
 
 import logging

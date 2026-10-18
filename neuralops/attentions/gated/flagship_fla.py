@@ -1,8 +1,9 @@
 """
-2025–2026 Flagship Linear & Orthogonal Attention Mechanisms inspired by Flash-Linear-Attention (fla):
-1. GDN2Attention: Gated DeltaNet 2 with Decoupled Erase & Write Linear Recurrence
-2. DeltaProductAttention / PaTHAttention: Householder Orthogonal Reflection Attention
-3. PreconditionedGDNAttention / PGDNAttention: Curvature-Aware Preconditioned Gated DeltaNet
+Flagship Fast Linear Attention (FLA)
+
+Fast linear attention combining causal cumulative summation with hardware-efficient hardware kernel backends.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

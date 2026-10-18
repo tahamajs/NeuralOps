@@ -1,4 +1,11 @@
-"""CUDA Graphs execution runner for latency-critical static shape decoding."""
+"""
+CUDA Graph Execution Engine
+
+CUDA Graph runner capturing and replaying static-shape execution graphs for latency-critical inference.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 from typing import Callable
 import torch

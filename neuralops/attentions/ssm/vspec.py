@@ -1,10 +1,9 @@
 """
-VSpec++ Attention: Variational Spectral Token-Adaptive Attention.
-Hardened for production use across diverse transformer architectures:
-- DistilBERT (Flat MHA)
-- RoBERTa / BERT (Nested Encoder Self-Attention)
-- GPT-2 (Causal Decoder with Conv1D)
-- Qwen / LLaMA (GQA with Rotary Position Embeddings)
+VSpec++: Variational Spectral Token-Adaptive Attention
+
+Variational spectral attention adapting frequency-domain token projections dynamically per input sequence.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

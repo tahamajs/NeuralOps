@@ -1,4 +1,10 @@
-"""Multi-format saver (JSON, JSONL, CSV, Markdown, Parquet) for benchmark results."""
+"""
+Multi-format saver (JSON, JSONL, CSV, Markdown, Parquet) for benchmark results
+
+Implements saver functionality for NeuralOps.
+
+Author: Taha Majlesi
+"""
 
 from __future__ import annotations
 

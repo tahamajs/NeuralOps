@@ -1,14 +1,9 @@
 """
-Triton Cosformer Linear Attention Kernel (Phase 3 / Kernel 8).
+Cosformer Linear Attention
 
-Target Modules: cosformer, chela_slay, performer, decay_linear_attention
-Solves:
-    Applies non-negative feature map phi(x) = ELU(x) + 1 and cos/sin positional modulation:
-        q_cos = phi(q) * cos(pi * i / (2 * L)), q_sin = phi(q) * sin(pi * i / (2 * L))
-        k_cos = phi(k) * cos(pi * j / (2 * L)), k_sin = phi(k) * sin(pi * j / (2 * L))
-    without materializing the 2x expanded channel dimensions in HBM.
+Fuses non-negative kernel feature mapping and trigonometric positional encoding into register-level linear attention accumulation.
 
-Fuses feature map, positional encoding, and linear attention accumulation in registers.
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

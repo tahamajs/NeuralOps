@@ -1,7 +1,9 @@
 """
-RLTrainer – Reinforcement Learning and Preference Optimization Trainer.
-Supports TRL (Transformer Reinforcement Learning: PPO, DPO, SFT) when available,
-with a native PyTorch Policy-Gradient / Reward-Weighted Optimization fallback.
+Reinforcement Learning Trainer
+
+Reinforcement learning and preference optimization trainer supporting TRL and policy-gradient algorithms.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

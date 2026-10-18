@@ -1,3 +1,9 @@
+"""
+Log-CumSum-Exp Prefix Scan Hardware Operators.
+
+Author: Taha Majlesi
+"""
+
 from neuralops.core.cuda_kernels.logcumsumexp.logcumsumexp_autograd import (
     logcumsumexp,
     logcumsumexp_pytorch_ref,

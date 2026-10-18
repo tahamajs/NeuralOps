@@ -1,6 +1,9 @@
 """
-Universal GPU/MPS/CPU Memory Management & Optimization Utilities.
-Ensures 100% clean memory deallocation between training steps, epochs, and experiment runs.
+VRAM and Memory Allocation Profiler
+
+GPU memory tracking, peak allocation measurement, and activation footprint analysis utilities.
+
+Author: Taha Majlesi
 """
 
 import gc

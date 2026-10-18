@@ -1,7 +1,9 @@
 """
-Hadamard Incoherent SVD & Rotation Preprocessing Compressor (QuaRot / SpinQuant).
-Applies orthogonal Walsh-Hadamard rotations W_rot = W (D_s H) to eliminate channel outliers
-prior to low-rank SVD factorization and INT4/FP8 weight quantization.
+Hadamard Incoherent SVD Compressor
+
+Preconditions weight matrices with randomized Walsh-Hadamard transforms to distribute outlier energy uniformly prior to truncated SVD.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

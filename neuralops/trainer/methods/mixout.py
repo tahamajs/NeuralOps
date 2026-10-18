@@ -1,5 +1,9 @@
 """
-Mixout: Regularisation by mixing weights with a frozen copy.
+Mixout Regularization
+
+Applies mixout regularization to prevent catastrophic forgetting during model adaptation.
+
+Author: Taha Majlesi
 """
 
 import logging

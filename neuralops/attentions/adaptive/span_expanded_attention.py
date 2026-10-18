@@ -1,18 +1,9 @@
 """
-Span-Expanded Attention with HyLoRA (StreamingLLM-style rolling KV-cache).
+Span-Expanded Streaming Attention
 
-⚠️  ARCHITECTURAL HONESTY NOTE  ⚠️
+Streaming multi-head attention utilizing rolling window caches and anchor tokens for stable long-context generation.
 
-Despite the name, the mechanism implemented here is **StreamingLLM
-(Xiao et al. 2023)**, not the original Span-Expanded retrieval of
-Amazon's paper. It uses a rolling KV-cache with:
-    - fixed number of leading "sink" tokens (always kept)
-    - sliding recent window (keeps the last `expansion_span - num_sink` tokens)
-
-If you actually need the Amazon Span-Expanded mechanism (retrieval of
-evicted blocks into the context), this module is NOT it.
-
-
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

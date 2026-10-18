@@ -1,5 +1,9 @@
 """
-GeLoRA: Intrinsic dimension estimation for adaptive rank selection.
+GeLoRA Parameter Adaptation
+
+Implements generalized low-rank adaptation with orthogonal subspace constraints.
+
+Author: Taha Majlesi
 """
 
 import logging

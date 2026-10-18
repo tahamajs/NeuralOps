@@ -1,6 +1,9 @@
 """
-ARMOR: Adaptive Resilient Matrix Orthogonal Rank Pruning (2:4 Sparse Core + Low-Rank Correction).
-Registered in COMPRESSOR_REGISTRY as 'armor_pruner', 'armor', and 'armor_compressor'.
+ARMOR: Adaptive Resilient Matrix Orthogonal Rank Pruner
+
+Pairs 2:4 semi-structured sparse weight kernels with low-rank orthogonal correction adapters to preserve downstream model fidelity.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

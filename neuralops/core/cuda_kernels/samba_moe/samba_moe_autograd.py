@@ -1,8 +1,9 @@
 """
-Samba MoE Combine Interface, Autograd Function, and 3-Level Fallback.
-Target: SM 8.9 (NVIDIA Ada Lovelace RTX 4070 Laptop GPU, 8GB VRAM).
-Forward: Y = w1 * expert_out1 + w2 * expert_out2
-Backward computes exact analytical adjoint gradients for expert_out1, expert_out2, routing_weights.
+Samba MoE Combine Autograd Interface
+
+Hardware-accelerated CUDA C++ autograd implementation with analytical gradients and three-level fallback dispatch.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

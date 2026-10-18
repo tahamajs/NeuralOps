@@ -1,4 +1,11 @@
-"""Evaluation metrics computation and hardware profiling for benchmarks."""
+"""
+Evaluation metrics computation and hardware profiling for benchmarks
+
+Implements evaluation functionality for NeuralOps.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 
 import logging

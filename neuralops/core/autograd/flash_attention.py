@@ -1,4 +1,11 @@
-"""FlashAttention autograd Function with forward/backward tiling reference."""
+"""
+FlashAttention Autograd Function
+
+Exact PyTorch autograd function implementing tiled forward and backward passes for FlashAttention.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 import math
 from typing import Any

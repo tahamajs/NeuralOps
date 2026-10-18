@@ -1,7 +1,9 @@
 """
-Quantized GEMM Autograd Functions & 3-Level Fallback (Module 3).
-Supports W4A16 & FP8 GEMMs with analytical backward passes,
-multi-dtype (FP32/FP16/BF16), and Level 2 Triton fallback.
+Quantized GEMM Autograd Interface
+
+Hardware-accelerated CUDA C++ autograd implementation with analytical gradients and three-level fallback dispatch.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

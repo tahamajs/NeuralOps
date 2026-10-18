@@ -1,9 +1,9 @@
 """
-Native Hybrid Attention (NHA) — Optimized & Production-Hardened.
+Native Hybrid Attention (NHA)
 
-Fuses localized sliding-window attention (via SDPA fast-path) with global
-linear Random Fourier Features (RFF via vectorized causal scan) through
-a per-head learned gate.
+Native hybrid attention fusing sliding-window local context with low-rank global sequence summaries.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

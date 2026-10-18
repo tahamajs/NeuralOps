@@ -1,17 +1,9 @@
 """
-FUSIONATTN: Multi-Paradigm Hybrid Sparse Attention Module.
+FusionAttn: Multi-Paradigm Hybrid Sparse Attention
 
-Hybrid sparse attention with:
-  - Short-sequence fast path (full attention via SDPA / manual)
-  - Long-sequence block-gated sparse attention (MoBA-style)
-  - Per-head dynamic gating for block selection
-  - RoPE support with partial-dim slicing
-  - GQA with repeat_kv
-  - Nested encoder bypass
-  - LoRA adapters on frozen base projections
-  - Strict causal masking across both paths
-  - Padding masking across both paths
-  - KV-cache support
+Multi-paradigm attention fusing local sliding-window attention with global low-rank sparse pathways.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

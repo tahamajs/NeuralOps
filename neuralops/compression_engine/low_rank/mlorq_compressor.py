@@ -1,12 +1,9 @@
 """
-MLoRQ: Multi-Layer Optimal Rank & Quantisation under a Total Memory Budget.
+MLoRQ: Multi-Layer Optimal Rank and Quantization Compressor
 
-Registered as 'mlorq', 'mlorq_compressor', 'mlorq_factory'.
+Jointly optimizes per-layer rank allocations and integer bit-widths under a global model parameter and memory budget.
 
-This version stores U, S, Vt as PACKED INT tensors (bits ∈ {2,4,8}), so the
-memory budget formula `(out*r + r*in + r) * bits` is exact. The forward pass
-dequantizes on the fly and never materializes the dense weight.
-
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

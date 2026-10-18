@@ -1,4 +1,10 @@
-"""HuggingFace PreTrainedModel implementation for NeuralOps."""
+"""
+NeuralOps PreTrainedModel Architecture
+
+Core HuggingFace PreTrainedModel implementation supporting plug-and-play attention mechanisms and heads.
+
+Author: Taha Majlesi
+"""
 
 from __future__ import annotations
 

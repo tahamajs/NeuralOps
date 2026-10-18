@@ -1,5 +1,9 @@
 """
-LLRD: Layer‑wise Learning Rate Decay.
+Layer-Wise Learning Rate Decay
+
+Implements layer-wise learning rate decay schedules for fine-tuning transformer backbones.
+
+Author: Taha Majlesi
 """
 
 import logging

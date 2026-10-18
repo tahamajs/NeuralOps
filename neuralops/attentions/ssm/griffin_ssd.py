@@ -1,12 +1,9 @@
 """
-Griffin SSD: Hybrid Local Sliding-Window Attention and Global State Space Duality.
-Production-Hardened v3 (SIMPLIFIED):
-  - Only Python loop for SSD (no chunked scan, no shape bugs)
-  - decay_param init = 2.0 (was 0 → 0.5)
-  - ssd_proj = 0.5 * W_q (was = W_q)
-  - Learnable fusion gate (was direct addition)
-  - Symmetric q/k normalization
-  - Env var toggles for ablation
+Griffin SSD: Hybrid Sliding-Window Attention and State Space Duality
+
+Combines local sliding-window self-attention with state space duality linear recurrence for efficient sequence modeling.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

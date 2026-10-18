@@ -1,4 +1,10 @@
-"""Classification task adapter for neuralops benchmark suite."""
+"""
+Classification task adapter for neuralops benchmark suite
+
+Implements classification functionality for NeuralOps.
+
+Author: Taha Majlesi
+"""
 
 from __future__ import annotations
 

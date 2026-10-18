@@ -1,4 +1,11 @@
-"""Benchmark training throughput."""
+"""
+Speed and Throughput Validator
+
+Benchmarks training throughput, iteration speed, and execution latency across hardware.
+
+Author: Taha Majlesi
+"""
+
 import torch
 import time
 

@@ -1,6 +1,9 @@
 """
-ViG Attention: Vision GNN-inspired 2D Grid Linear Attention with Gated Fusion.
+ViG Attention: Vision GNN 2D Grid Linear Attention
 
+Vision GNN-inspired 2D grid linear attention capturing spatial neighbourhood graph representations.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

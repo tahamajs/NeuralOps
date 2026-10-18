@@ -1,7 +1,9 @@
 """
-UnslothTrainer – Accelerated Fast-LoRA and Memory-Efficient Training Engine.
-Integrates Unsloth 2x faster cross-entropy and fast Triton kernels when available,
-with a transparent, production-ready fallback to HuggingFaceTrainer on standard systems.
+Unsloth Accelerated Trainer
+
+Accelerated fast-LoRA and memory-efficient training engine using Unsloth and Triton kernels.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

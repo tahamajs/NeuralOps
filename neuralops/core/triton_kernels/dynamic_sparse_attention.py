@@ -1,10 +1,9 @@
 """
-Triton JIT Hardware Kernel for Dynamic Sparse Attention (DSA, v1.4.0 Flagship).
-Target Architecture: SM 8.9 (NVIDIA Ada Lovelace RTX 4070 Laptop GPU, 8GB VRAM).
-Mathematical formulation:
-  For each query block m, attend only to active key-value blocks in active_block_indices[b, h, m, :]:
-  Out[m] = sum_{k in Active(m)} softmax(Q[m] @ K[k].T / sqrt(D)) @ V[k]
-Exact analytical autograd backward over sparse active block topologies.
+Dynamic Sparse Attention
+
+Selects dynamic high-scoring key-value attention blocks on-the-fly to accelerate long-sequence processing.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

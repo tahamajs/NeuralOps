@@ -1,12 +1,9 @@
 """
-XAttention: Block Sparse Attention with Coarse-to-Fine Routing.
+xAttention Fast Kernel Module
 
-Partitions sequence tokens into non-overlapping blocks, evaluates coarse
-block-level routing, and computes unified normalized fine-grained attention
-across top-k candidate blocks, with multi-architecture weight transfer,
-trainable LoRA residual adapters, GQA, RoPE, and causal decoding.
+High-throughput accelerated attention kernel utilizing block-sparse tiling and hardware-level fused operations.
 
-
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

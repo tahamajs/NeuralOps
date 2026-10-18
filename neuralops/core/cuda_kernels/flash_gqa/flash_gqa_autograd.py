@@ -1,6 +1,9 @@
 """
-Flash GQA Python Interface, Autograd Functions, and 3-Level Fallback (Module 4).
-Supports arbitrary N_q <= N_kv, FP16/BF16/FP32, and exact analytical backward pass.
+Flash Grouped Query Attention Autograd Interface
+
+Hardware-accelerated CUDA C++ autograd implementation with analytical gradients and three-level fallback dispatch.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

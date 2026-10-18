@@ -1,9 +1,11 @@
 """
-Layer-wise Distillation Loss for Attention Mechanism Transfer.
+Layer-Wise Distillation Trainer
 
-Computes auxiliary loss between teacher attention outputs and student attention outputs
-to guide representation alignment during knowledge distillation.
+Performs progressive layer-by-layer attention and hidden-state knowledge distillation.
+
+Author: Taha Majlesi
 """
+
 from __future__ import annotations
 
 import torch

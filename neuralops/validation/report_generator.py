@@ -1,4 +1,11 @@
-"""Generate markdown and JSON validation reports."""
+"""
+Validation Report Generator
+
+Generates structured markdown and JSON summary reports from validation suites.
+
+Author: Taha Majlesi
+"""
+
 import json, os
 from datetime import datetime
 

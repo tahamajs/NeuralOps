@@ -1,8 +1,9 @@
-"""Hardware Roofline & Arithmetic Intensity Analyzer for NeuralOps.
+"""
+Hardware Roofline Model Analyzer
 
-Empirically benchmarks compiled @triton.jit kernels vs PyTorch references,
-computes analytical FLOPs, models HBM DRAM vs in-SRAM memory traffic,
-and locates operating points against hardware Ridge points.
+Empirical arithmetic intensity and memory bandwidth analyzer benchmarking theoretical vs attained FLOP/s.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

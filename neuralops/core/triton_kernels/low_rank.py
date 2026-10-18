@@ -1,14 +1,9 @@
-#!/usr/bin/env python3
 """
-Triton Low-Rank Projection Kernel (Forward & Backward).
+Low-Rank Bottleneck Projection
 
-Computes low-rank bottleneck projections:
-  y = (x @ V.T) @ U.T + bias
+Computes low-rank matrix bottleneck projections with fused bias addition and gradient backpropagation.
 
-Used by:
-  - Multi-Head Latent Attention (MLA)
-  - SVD-LLM, ASVD, Direct SVD, DOBI SVD, Frandi
-  - Triton SVD Linear Attention low-rank projections
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

@@ -1,5 +1,9 @@
 """
-CUDA error checking, stream management, and device capability queries.
+CUDA Kernel Utilities
+
+Helper functions for CUDA error checking, stream synchronization, and GPU device capability queries.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

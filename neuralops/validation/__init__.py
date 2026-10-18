@@ -1,4 +1,9 @@
-"""Comprehensive validation framework for neuralops."""
+"""
+NeuralOps Validation Subpackage.
+
+Author: Taha Majlesi
+"""
+
 from .data_validator import DataValidator
 from .model_validator import ModelValidator
 from .numerical_validator import NumericalValidator

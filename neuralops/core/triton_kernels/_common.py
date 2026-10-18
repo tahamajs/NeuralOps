@@ -1,14 +1,9 @@
-#!/usr/bin/env python3
 """
-Common utilities, validation, and PyTorch fallback implementations for shared Triton kernels.
+Common Triton Kernel Utilities
 
-Provides the unified `triton_dispatch` router with automatic capability checking:
-  1. Triton package presence (HAS_TRITON)
-  2. CUDA device availability and tensor placement
-  3. Floating-point precision (fp16 / bf16 for Triton, fp32 -> PyTorch fallback)
-  4. Supported head dimensions ({32, 64, 128, 256})
-  5. Maximum sequence length threshold (<= 4096 tokens)
-  6. Graceful, single-log fallback to mathematically equivalent PyTorch operations.
+Shared helper routines, input validation, and PyTorch reference fallbacks for Triton kernel implementations.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

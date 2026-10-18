@@ -1,29 +1,9 @@
 """
-Tensor Train Compressor (best-effort, production-guarded).
+Tensor Train (TT) Matrix Compressor
 
-Registered as 'tt', 'tt_linear', 'tt_compressor', 'tt_linear_compressor',
-              'tt_factory', 'tt_compressor_factory', 'tt_linear_factory'.
+Decomposes high-dimensional weight operators into low-rank Tensor Train cores to achieve super-linear parameter reduction.
 
-⚠️  FUNDAMENTAL LIMITATION ⚠️
-
-TT decomposition assumes a matrix W reshaped as a multi-dimensional tensor
-(q_0, q_1, ..., p_0, p_1, ...) admits a low-rank TT factorization. Pretrained
-transformer weights — especially fused Q/K/V projections in GPT-2 — do NOT
-exhibit this structure. Naive TT therefore destroys the model.
-
-Empirical failures with the previous implementation:
-  - RoBERTa-base SST-2 : 50.92%  (chance baseline 50.9%, original 94.5%)
-  - GPT-2 WikiText-2   : PPL 2156 (baseline 41.35)
-  - DistilBERT SST-2   : ~58%    (baseline 90.71%)
-
-This hardened version mitigates the failure by:
-  1. Using adaptive TT-SVD (rank chosen per core, based on energy, not fixed).
-  2. Adding a per-layer **SVD fallback** when TT error exceeds max_error.
-     Only layers where TT succeeds are replaced with TTLinearLayer; the rest
-     fall back to a low-rank SVD layer or to the original (per policy).
-  3. Conservative dimension factorization that avoids pathological splits.
-  4. Full FP32 computation, deterministic caching, and honest stats.
-
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

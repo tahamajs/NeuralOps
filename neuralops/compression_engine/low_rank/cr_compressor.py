@@ -1,7 +1,9 @@
 """
-CR (Column-Row / Interpolative Decomposition) Compressor.
-Decomposes W ≈ C @ P, where C are actual columns of W.
-Registered in COMPRESSOR_REGISTRY as 'cr' and 'cr_compressor'.
+CR Compressor: Column-Row Interpolative Decomposition
+
+Decomposes target weight matrices into subsets of actual column and row vectors, retaining structural sparsity and feature interpretability.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

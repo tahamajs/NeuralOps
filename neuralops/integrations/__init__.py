@@ -1,4 +1,9 @@
-"""Ecosystem and framework integrations for NeuralOps."""
+"""
+NeuralOps Integrations Subpackage.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 
 from neuralops.integrations.hf_automodel import register_hf_automodel, AutoNeuralOpsModel

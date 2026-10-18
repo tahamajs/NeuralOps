@@ -1,5 +1,9 @@
 """
-Jamba-2 Hybrid Transformer: SVD-Mamba + MHA + MoE Attention Block.
+Jamba-2 Hybrid Transformer Attention Block
+
+Hybrid architecture integrating state space modeling, multi-head attention, and sparse mixture of experts.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

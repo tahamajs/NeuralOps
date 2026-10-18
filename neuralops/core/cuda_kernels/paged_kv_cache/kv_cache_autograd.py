@@ -1,5 +1,9 @@
 """
-Paged KV Cache Manager & 3-Level Fallback (Module 8).
+Paged KV Cache Management Autograd Interface
+
+Hardware-accelerated CUDA C++ autograd implementation with analytical gradients and three-level fallback dispatch.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

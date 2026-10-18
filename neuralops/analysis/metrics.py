@@ -1,4 +1,10 @@
-"""Metrics computation, aggregation, and tracking."""
+"""
+Analysis Metrics Engine
+
+Core quantitative metrics computing effective rank, spectral decay, compression ratio, and speedups.
+
+Author: Taha Majlesi
+"""
 
 import json
 import os

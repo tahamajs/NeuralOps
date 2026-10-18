@@ -1,10 +1,11 @@
-"""Backward-compatibility shim.
-
-This module has moved to neuralops.core.compression_pipeline.
-Update your imports:
-
-    from neuralops.core.compression_pipeline import CompressionPipeline
 """
+Compression Pipeline Compatibility Shim
+
+Backward-compatibility redirection interface routing legacy imports to the unified compression pipeline.
+
+Author: Taha Majlesi
+"""
+
 import warnings
 
 warnings.warn(

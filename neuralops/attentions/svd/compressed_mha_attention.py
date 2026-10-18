@@ -1,9 +1,9 @@
 """
-Compressed Multi-Head Attention for DistilBERT and Multi-Architecture via Joint Truncated SVD.
+Compressed Multi-Head Attention via Joint Truncated SVD
 
-Performs joint singular value decomposition on stacked query, key, and value projection matrices
-as well as the final output projection matrix with frozen base parameters, trainable LoRA residual adapters,
-GQA, RoPE, causal decoding, and full pretrained weight transfer.
+Joint truncated singular value decomposition compressing query, key, value, and output projections.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

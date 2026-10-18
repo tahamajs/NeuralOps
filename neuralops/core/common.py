@@ -1,6 +1,9 @@
 """
-Unified shared primitives and utility layers for attention and compression modules.
-Centralizes repeatedly copied helpers (_cfg_get, repeat_kv, _detect_decoder, LoRALinear, FactorizedLinear).
+Shared Core Constants and Utilities
+
+Common typing aliases, numerical epsilon constants, and shared tensor validation primitives.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

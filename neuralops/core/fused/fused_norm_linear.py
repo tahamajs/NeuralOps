@@ -1,6 +1,11 @@
 """
-Fused normalization + linear layers.
+Fused Normalization and Linear Layer
+
+Fused LayerNorm / RMSNorm and linear projection module eliminating intermediate memory bandwidth bottlenecks.
+
+Author: Taha Majlesi
 """
+
 from __future__ import annotations
 import torch
 import torch.nn as nn

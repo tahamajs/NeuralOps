@@ -1,8 +1,9 @@
 """
-Jamba Hybrid Transformer: SVD-Mamba + MHA + MoE Attention Block (Production-Hardened).
+Jamba Hybrid Transformer: SVD-Mamba + MHA + MoE Attention Block
 
-Combines state space models (SSM), multi-head attention (MHA), and Mixture-of-Experts (MoE)
-for hybrid autoregressive decoding and bidirectional encoding.
+Hybrid architecture combining selective state space models, multi-head attention, and sparse mixture of experts.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

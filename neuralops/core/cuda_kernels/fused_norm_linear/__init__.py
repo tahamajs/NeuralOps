@@ -1,3 +1,9 @@
+"""
+Fused Normalization Linear Projection Hardware Operators.
+
+Author: Taha Majlesi
+"""
+
 from neuralops.core.cuda_kernels.fused_norm_linear.norm_linear_autograd import (
     fused_norm_linear,
     fused_norm_linear_pytorch_ref,

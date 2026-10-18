@@ -1,3 +1,9 @@
+"""
+NeuralOps Surgery Subpackage.
+
+Author: Taha Majlesi
+"""
+
 from neuralops.surgery.scanner import (
     AttentionTargetSpec,
     Conv1DLinearAdapter,

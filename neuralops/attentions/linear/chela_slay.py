@@ -1,6 +1,9 @@
-r"""
-CHELA-SLAY: Spherical Linearized Attention with Yat-Kernel — PRODUCTION-HARDENED & TRITON-ACCELERATED.
+"""
+CHELA-SLAY: Spherical Linearized Attention with Yat-Kernel
 
+Spherical linearized attention mapping queries and keys onto hyperspheres with Triton kernel acceleration.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

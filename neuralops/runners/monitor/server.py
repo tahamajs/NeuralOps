@@ -1,4 +1,10 @@
-"""HTTP Server and request handler implementation for NeuralOps monitor."""
+"""
+Monitor HTTP Server
+
+Lightweight HTTP server backend serving telemetry endpoints and static UI assets.
+
+Author: Taha Majlesi
+"""
 
 from __future__ import annotations
 

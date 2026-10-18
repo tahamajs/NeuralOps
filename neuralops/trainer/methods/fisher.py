@@ -1,5 +1,9 @@
 """
-Fisher information based importance scoring for adaptive rank allocation.
+Fisher Information Allocation
+
+Computes Fisher information based importance scores for adaptive low-rank parameter allocation.
+
+Author: Taha Majlesi
 """
 
 import logging

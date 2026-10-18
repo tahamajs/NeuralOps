@@ -1,18 +1,9 @@
 """
-Model wrapper for custom attention configurations.
+Transformer Model Wrapper
 
-NOTE: This module has limited usage. If you are not loading models
-with custom attention, you likely do not need this.
+Unified wrapper standardizing custom attention configurations and model serialization across backends.
 
-UnifiedTransformerModel – wraps any HuggingFace model with Hub support,
-attention replacement, and config serialization.
-
-Usage:
-    model = UnifiedTransformerModel.from_pretrained("distilbert-base-uncased")
-    model.replace_attention("galerkin", rank=32)
-    model.save_pretrained("./compressed_model")
-    # Later:
-    loaded = UnifiedTransformerModel.from_pretrained("./compressed_model")
+Author: Taha Majlesi
 """
 
 from typing import Any

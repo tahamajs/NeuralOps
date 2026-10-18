@@ -1,6 +1,9 @@
 """
-SVD-based low-rank linear layer replacement with optional Fused SVD kernel acceleration.
-Registered as 'svd_linear' and 'svd_linear_compressor'.
+SVD Linear Layer Replacement Engine
+
+Replaces dense linear layers with factorized low-rank matrix pairs with support for fused custom CUDA and Triton kernel acceleration.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

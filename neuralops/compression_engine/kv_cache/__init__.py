@@ -1,4 +1,8 @@
-"""Subpackage exports."""
+"""
+Key-Value (KV) Cache Compression Engines.
+
+Author: Taha Majlesi
+"""
 
 import importlib
 

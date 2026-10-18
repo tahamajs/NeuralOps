@@ -1,13 +1,9 @@
 """
-Topological & Subgraph Attention Scanner for Universal Model Surgery.
+Universal Architecture Attention Scanner
 
-Inspects any PyTorch or HuggingFace neural network architecture and discovers
-all attention blocks and linear projections across 5 universal patterns:
-  - Pattern A: Split 4-Projection Topology (q_proj, k_proj, v_proj, o_proj)
-  - Pattern B: Fused QKV Linear Topology (qkv, c_attn, query_key_value)
-  - Pattern C: Transposed HuggingFace Conv1D Topology (GPT-2)
-  - Pattern D: Native torch.nn.MultiheadAttention Parameter Topology
-  - Pattern E: Custom/Nested Self-Attention Cores (BERT/RoBERTa self vs output)
+Discovers attention blocks and projection topologies across neural network architectures.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

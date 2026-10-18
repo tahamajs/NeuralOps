@@ -1,4 +1,11 @@
-"""`compress` command."""
+"""
+CLI Compress Command
+
+Implements the command-line interface for model compression, calibration, and pruning.
+
+Author: Taha Majlesi
+"""
+
 def cmd_compress(args):
     from neuralops.core.compression_pipeline import compress_model
     print(f"Compressing model {args.model} via {args.method} (rank={args.rank})...")

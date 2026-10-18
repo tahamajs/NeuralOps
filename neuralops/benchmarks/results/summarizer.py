@@ -1,4 +1,10 @@
-"""Automated rolling summaries generator (by_module, by_model, by_dataset, leaderboards, failures, coverage, timeline)."""
+"""
+Automated rolling summaries generator (by_module, by_model, by_dataset, leaderboards, failures, coverage, timeline)
+
+Implements summarizer functionality for NeuralOps.
+
+Author: Taha Majlesi
+"""
 
 from __future__ import annotations
 

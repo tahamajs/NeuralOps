@@ -1,18 +1,9 @@
 """
-AEGIS-Attention V6 / GatedHybridKernelAttention — Production Final.
+Gated Hybrid Kernel Attention
 
-Architecture:
-  * FactorisedLinear: SVD-factorized projections + LoRA adapters
-  * StableKernelFeatureMap: FAVOR+ orthogonal random features
-  * GatingModule: query + input gates
-  * ContextFusionGate: local/global context fusion
-  * Chunked causal linear attention: 7× faster than naive cumsum
+Fuses factorized low-rank projections with localized kernel attention via learned gating parameters.
 
-Optimizations:
-  [PERF-1]  Chunked cumsum for causal linear attention (memory-bounded)
-  [PERF-2]  Fast SDPA path for local sliding window
-  [PERF-3]  Fused local+global in single pass
-  [PERF-4]  SVD projections in fp32 only where needed
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

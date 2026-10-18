@@ -1,4 +1,10 @@
-"""Backward-compatible import forwarding for neuralops.benchmarks.result."""
+"""
+Backward-compatible import forwarding for neuralops.benchmarks.result
+
+Implements result functionality for NeuralOps.
+
+Author: Taha Majlesi
+"""
 
 from neuralops.benchmarks.results.schema import (
     ArtifactPaths,

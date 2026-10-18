@@ -1,7 +1,11 @@
 """
-Fused Knowledge Distillation (KL Divergence) Loss Kernel and Module.
-Computes temperature-scaled KL divergence between student and teacher logits with full Autograd backward support.
+Fused Knowledge Distillation Loss
+
+Computes temperature-scaled Kullback-Leibler divergence between student and teacher logits with autograd support.
+
+Author: Taha Majlesi
 """
+
 from __future__ import annotations
 
 import torch

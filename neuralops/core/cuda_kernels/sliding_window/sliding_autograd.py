@@ -1,6 +1,9 @@
 """
-Sliding Window Attention Python Interface, Autograd Functions, and 3-Level Fallback (Module 7).
-Supports arbitrary window sizes, attention sinks, FP16/BF16/FP32, and exact analytical backward pass.
+Sliding Window Attention Autograd Interface
+
+Hardware-accelerated CUDA C++ autograd implementation with analytical gradients and three-level fallback dispatch.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

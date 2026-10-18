@@ -1,16 +1,9 @@
 """
-CacheNotes: Task-Aware Key-Value Cache Compression and Static Weight Compression
-with Learnable Continuous CPT (Compression-Planning-Token) Generator.
+CacheNotes: Task-Aware Key-Value Cache and Static Weight Compression
 
-Given a task description, CacheNotes generates Compression-Planning-Tokens (CPTs)
-that guide the compression of the corpus and KV cache into compact, reusable states.
+Compresses transformer key-value states through task-directed low-rank projections and entropy-coded adaptive quantization.
 
-Scientific Enhancement:
-- Replaces static keyword heuristics with a continuous, differentiable CPTGenerator network.
-- Learnable task representation using tokenized embedding bag and multi-frequency coordinate positional projection.
-- Capable of evaluating task importance at ANY continuous output feature dimension d (64, 128, 768, 1024, 2048, 4096, etc.).
-- Backprop-trainable end-to-end minimizing Frobenius reconstruction loss under CPT-guided low-rank SVD.
-- Full fallback compatibility with static CPT heuristic if generator is untrained or disabled.
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

@@ -1,11 +1,11 @@
 """
-GPU-aware AMP utilities.
+Automatic Mixed Precision Utilities
 
-Auto-detects GPU capability and picks the optimal precision:
-  - Hopper/Ada/Ampere (cap >= 8.0): bfloat16 (stable, no scaler)
-  - Turing/Volta      (cap 7.0-7.9): float16 + GradScaler
-  - Pascal/Maxwell    (cap < 7.0):   float32 (FP16 is slow & unstable here)
+Hardware-aware mixed precision helpers detecting GPU capability and managing optimal precision contexts.
+
+Author: Taha Majlesi
 """
+
 from contextlib import nullcontext
 import logging
 import torch

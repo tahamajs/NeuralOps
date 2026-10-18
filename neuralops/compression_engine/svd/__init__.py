@@ -1,4 +1,8 @@
-"""Subpackage exports."""
+"""
+Singular Value Decomposition (SVD) Compression Engines.
+
+Author: Taha Majlesi
+"""
 
 import importlib
 

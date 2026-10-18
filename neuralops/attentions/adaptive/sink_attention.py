@@ -1,29 +1,9 @@
 """
-SinkAttention — StreamingLLM-style attention with sink tokens and rolling KV-cache.
+SinkAttention: Streaming Attention with Attention Sinks
 
-Implements the "Attention Sinks" mechanism from:
-    Xiao et al., "Efficient Streaming Language Models with Attention Sinks"
-    (https://arxiv.org/abs/2309.17453)
+Streaming attention retaining key initial sink tokens alongside a rolling key-value cache for unbounded contexts.
 
-═══════════════════════════════════════════════════════════════════════════
-WHAT THIS MODULE DOES
-═══════════════════════════════════════════════════════════════════════════
-
-StreamingLLM allows a decoder to process sequences of UNBOUNDED length with
-a BOUNDED KV-cache, by exploiting the empirical observation that a small
-number of initial tokens ("attention sinks") absorb most of the attention
-mass, and the rest is concentrated on a recent window.
-
-Cache policy (per forward step):
-    cache = [first `num_sink_tokens` tokens]  ++  [last (window_size - num_sink) tokens]
-
-This gives O(window_size) memory per layer, regardless of total sequence
-length. It works because:
-  1. Sink tokens provide a stable "attention dump" for the softmax.
-  2. Recent tokens provide local context.
-  3. Middle tokens are typically low-information and can be evicted.
-
-
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

@@ -1,3 +1,11 @@
+"""
+Training Configuration
+
+Hyperparameter dataclasses for optimization, learning rates, batch schedules, and gradient clipping.
+
+Author: Taha Majlesi
+"""
+
 from dataclasses import dataclass
 
 

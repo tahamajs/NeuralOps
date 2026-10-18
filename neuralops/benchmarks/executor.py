@@ -1,4 +1,10 @@
-"""Single run executor for the neuralops benchmark suite."""
+"""
+Single run executor for the neuralops benchmark suite
+
+Implements executor functionality for NeuralOps.
+
+Author: Taha Majlesi
+"""
 
 from __future__ import annotations
 

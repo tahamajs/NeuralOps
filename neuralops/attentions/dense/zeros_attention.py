@@ -1,11 +1,9 @@
 """
-Zero-Mean Linear Attention (ZeroS Attention).
+Zero Attention Baseline
 
-Removes the mean from key representations and applies normalized linear attention with ReLU-based non-negative
-feature maps, with multi-architecture weight transfer, trainable LoRA residual adapters, GQA, RoPE, and causal decoding.
+Identity baseline module producing zeroed attention output for ablation and structural testing.
 
-Hardened for production across DistilBERT, RoBERTa, GPT-2, and Qwen3.5 architectures.
-target_attention_only: Replaces self-attention modules only, preserving all FFN/MLP blocks.
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

@@ -1,23 +1,11 @@
 """
-SVD Projection Attention — Fully Corrected & Production-Hardened.
+SVD Projection Attention
 
-Each projection (Q, K, V, Out) is factored into low-rank SVD components U and V,
-with trainable LoRA adapters for recovery fine-tuning.
+Factorizes query, key, value, and output projections into low-rank matrices for compact memory footprints.
 
-Hardened for production across:
-- DistilBERT (Flat MHA)
-- RoBERTa / BERT (Nested Encoder Self-Attention)
-- GPT-2 (Causal Decoder with Conv1D)
-- Qwen / LLaMA (GQA with Rotary Position Embeddings)
-
-Fixes applied:
-  1. Triton fallback to pure PyTorch (CPU/MPS safe).
-  2. Removed `dir()` misuse for `is_cross` scope.
-  3. Removed silent output padding (now raises RuntimeError on mismatch).
-  4. Removed forced FP16 casting in SDPA (Autocast handles it).
-  5. GQA handled natively by SDPA (no manual repeat before SDPA).
-  6. Cleaner forward pass with proper error handling.
+Author: Taha Majlesi
 """
+
 from neuralops.core.common import _unpack_weight_bias
 
 from neuralops.core.attention_utils import (

@@ -1,4 +1,10 @@
-"""Transformer block module for NeuralOps models."""
+"""
+Transformer Block Architecture
+
+Modular transformer decoder block unifying pre-norm attention, feed-forward projections, and residual connections.
+
+Author: Taha Majlesi
+"""
 
 from __future__ import annotations
 

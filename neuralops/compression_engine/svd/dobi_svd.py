@@ -1,8 +1,9 @@
 """
-Dobi-SVD: Differentiable SVD layer with learnable spectral gating.
-Registered as 'dobi' and 'dobi_svd'. Production hardened for multi-architecture
-compatibility (DistilBERT, RoBERTa, GPT-2, Qwen3.5) with error validation, Conv1D support,
-and safe fallback.
+Dobi-SVD: Differentiable SVD with Learnable Spectral Gating
+
+Employs differentiable singular value gating functions to dynamically prune low-energy spectral modes during training.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

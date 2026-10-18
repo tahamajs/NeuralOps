@@ -1,4 +1,11 @@
-"""Fused attention backward pass reference implementation."""
+"""
+Fused Backward Attention Engine
+
+Fused PyTorch autograd backward pass reference implementation for linear and kernelized attention.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 import math
 import torch

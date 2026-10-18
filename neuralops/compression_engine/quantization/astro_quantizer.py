@@ -1,13 +1,9 @@
 """
-AstroQuantizer: Dynamic Uniform Range Quantization Engine with Straight-Through Estimator (STE)
-and Fisher-Adaptive Mixed-Precision Bit Allocation. Registered as 'astro' and 'astro_quantizer'.
+AstroQuantizer: Dynamic Uniform Range Quantization Engine
 
-Scientific Novelty:
-- Mixed-precision dynamic bit allocation driven by Empirical Fisher Information / Output Activation Energy.
-- Optimal integer budget allocation: Channels with higher Fisher sensitivity receive higher bit-widths (up to max_bits),
-  while less sensitive channels are quantized with lower bit-widths (down to min_bits), satisfying an exact average bit budget.
-- Straight-Through Estimator (STE) gradients flow seamlessly across channels with heterogeneous bit allocations.
-- Full robustness across LoRALinear wrappers, Conv1D layers (GPT-2), and multi-architecture models (DistilBERT, RoBERTa, GPT-2, Qwen3.5).
+Employs straight-through estimator (STE) training and asymmetric dynamic scaling for uniform INT4, INT8, and FP8 quantization.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

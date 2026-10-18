@@ -1,14 +1,11 @@
 """
-GLA Attention — Gated Linear Attention with FLA Triton backend.
+GLA: Gated Linear Attention with Data-Dependent Decay
 
-Reference: Yang et al., "Gated Linear Attention Transformers with
-Hardware-Efficient Training", ICML 2024.
+Gated linear attention introducing data-dependent decay gates to associative state updates.
 
-Optimized for Model Surgery:
-- Compatible with pretrained weight shapes and projection scales.
-- Uses FLA's chunk_gla Triton kernel when available.
-- Features a mathematically aligned, stable PyTorch fallback.
+Author: Taha Majlesi
 """
+
 from __future__ import annotations
 
 import math

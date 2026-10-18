@@ -1,5 +1,9 @@
-"""Adaptive Span Attention
+"""
+Adaptive Span Attention
 
+Dynamically adjusts per-head attention context spans to optimize memory and long-range dependencies.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

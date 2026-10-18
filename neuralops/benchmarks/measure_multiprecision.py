@@ -1,8 +1,9 @@
-# -*- coding: utf-8 -*-
-"""Multi-Precision Numerical Cross-Validation and Throughput Benchmark.
+"""
+Multi-Precision Numerical Cross-Validation and Throughput Benchmark
 
-Evaluates FP32, FP16, BF16, FP8 (E4M3, E5M2) trade-offs across flagship kernels:
-GLA Scan, Differential Attention, Block-Sparse Attention, Rotational SVD, and FP8 GEMM.
+Evaluates FP32, FP16, BF16, FP8 (E4M3, E5M2) trade-offs across flagship kernels: GLA Scan, Differential Attention, Block-Sparse Attention, Rotational SVD, and FP8 GEMM.
+
+Author: Taha Majlesi
 """
 
 import argparse

@@ -1,7 +1,9 @@
-"""Architecture Introspection & Specification Engine for NeuralOps.
+"""
+Architecture Introspection Engine
 
-Provides live technical AST/signature introspection and rich metadata
-for all 131 Attention Mechanisms and 72 Compression Engines.
+Dynamic neural network graph inspector and layer specification analyzer for model surgery.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

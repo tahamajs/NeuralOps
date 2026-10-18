@@ -1,3 +1,11 @@
+"""
+Benchmark Data Harvester
+
+Collects and aggregates benchmark telemetry and throughput logs across execution runs.
+
+Author: Taha Majlesi
+"""
+
 import glob
 import json
 import os

@@ -1,4 +1,8 @@
-"""Subpackage exports."""
+"""
+Fast Kernels Attention Mechanisms.
+
+Author: Taha Majlesi
+"""
 
 import importlib
 

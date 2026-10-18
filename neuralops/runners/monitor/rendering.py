@@ -1,4 +1,10 @@
-"""HTML rendering and response serialization utilities for monitor server."""
+"""
+Monitor HTML Rendering
+
+Renders responsive HTML UI templates and visual dashboards for experiment tracking.
+
+Author: Taha Majlesi
+"""
 
 from __future__ import annotations
 

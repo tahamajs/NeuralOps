@@ -1,5 +1,9 @@
 """
-Base classes for attention modules and compressors.
+NeuralOps Base Module Contracts
+
+Abstract base classes and interface specifications for attention modules and model compressors.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

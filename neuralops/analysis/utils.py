@@ -1,4 +1,10 @@
-"""Utility functions for analysis."""
+"""
+Analysis Utility Functions
+
+Helper routines for tensor formatting, numerical stabilization, and data manipulation in analysis workflows.
+
+Author: Taha Majlesi
+"""
 
 from typing import Any
 

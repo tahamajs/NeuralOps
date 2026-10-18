@@ -1,4 +1,11 @@
-"""`info` command."""
+"""
+CLI Info Command
+
+Displays system hardware status, registered attention modules, and compression engines.
+
+Author: Taha Majlesi
+"""
+
 import sys
 import platform
 

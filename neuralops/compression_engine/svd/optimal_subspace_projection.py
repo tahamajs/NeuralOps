@@ -1,15 +1,9 @@
 """
-Optimal Subspace Projection: Activation-Aware Subspace Projection via Randomized SVD.
+Optimal Subspace Projection SVD Compressor
 
-Registered in COMPRESSOR_REGISTRY as 'optimal_subspace_projection'.
+Projects weight matrices onto optimal activation-aligned subspaces using randomized SVD with optional residual LoRA adaptation.
 
-Mathematical Formulation:
-  1. Activation Covariance:      C = (1/N) X^T X + eps * I
-  2. Cholesky Preconditioning:   C = L L^T,   M = W L
-  3. Randomized Subspace Iter.:  Y = M Omega,  Y <- M (M^T Y),  Q = qr(Y)
-  4. Low-Rank Projection:        B = Q^T M = U S V^T
-     W_osp = (Q U_r S_r V_r^T) L^{-1}
-
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

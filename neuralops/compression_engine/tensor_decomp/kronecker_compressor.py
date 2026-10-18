@@ -1,8 +1,9 @@
 """
-Kronecker Product Compressor: replaces nn.Linear and Conv1D layers with KroneckerLinear.
-Registered as 'kronecker_class', 'kronecker_compressor_class', and (factory)
-'kronecker', 'kronecker_compressor', 'kronecker_factory'.
+Kronecker Product Compressor
 
+Factorizes linear and convolutional weight matrices into compact Kronecker product tensor factors to drastically reduce parameter count.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

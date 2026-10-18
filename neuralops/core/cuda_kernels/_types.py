@@ -1,4 +1,10 @@
-"""Shared type definitions and launch configurations for CUDA C++ hotpaths."""
+"""
+ Types.Py
+
+Hardware-accelerated CUDA C++ autograd implementation with analytical gradients and three-level fallback dispatch.
+
+Author: Taha Majlesi
+"""
 
 from __future__ import annotations
 

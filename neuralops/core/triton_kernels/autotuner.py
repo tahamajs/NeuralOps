@@ -1,7 +1,9 @@
-"""Kernel autotuner and SRAM-budget adaptive configuration manager for Triton kernels.
+"""
+Triton Kernel Autotuner
 
-Eliminates `triton.runtime.OutOfResources: out of resource: shared memory`
-across all GPU architectures (Turing 64KB, RTX 4070 99KB, A100 163KB, H100 227KB).
+Adaptive configuration manager and SRAM-budget autotuner optimizing tile sizes across GPU architectures.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

@@ -1,11 +1,9 @@
 """
-MoE-DeltaKV-Paged Hybrid Attention — Production-Hardened v2.
+MoE-DeltaKV-Paged Hybrid Attention
 
-Combines:
-  1. Mixture-of-Block-Attention (MoBA) with learnable page routing.
-  2. Paged Delta-KV temporal compression with adaptive quantization.
-  3. Optional low-rank factorization of temporal deltas.
+Hybrid attention combining mixture-of-block attention with paged delta KV-cache management.
 
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

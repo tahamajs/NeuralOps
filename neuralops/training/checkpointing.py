@@ -1,4 +1,11 @@
-"""Checkpointing compatibility module."""
+"""
+Training Checkpointing Module
+
+Provides crash-safe model checkpoint saving, state resumption, and artifact management.
+
+Author: Taha Majlesi
+"""
+
 import torch
 import torch.nn as nn
 from torch.utils.checkpoint import checkpoint

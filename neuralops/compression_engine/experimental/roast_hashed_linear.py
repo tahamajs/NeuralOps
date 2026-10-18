@@ -1,7 +1,9 @@
 """
-ROAST: Hardware-Aware Weight Sharing with Tiling.
-Reference: 'ROAST: A Hardware-Aware Weight Sharing Scheme for Efficient Neural Networks'
-Registered in COMPRESSOR_REGISTRY as 'roast', 'roast_compressor', and 'roast_factory'.
+ROAST: Hardware-Aware Weight Sharing with Tiling
+
+Compresses linear layers through block-strided hash indexing and tiled parameter arrays for memory-efficient forward passes.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

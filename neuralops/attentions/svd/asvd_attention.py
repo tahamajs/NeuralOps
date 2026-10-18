@@ -1,12 +1,9 @@
-r"""
-ASVD (Activation-Aware Singular Value Decomposition) Attention.
-Paper: https://arxiv.org/abs/2307.07382
+"""
+ASVD: Activation-Aware Singular Value Decomposition Attention
 
-Hardened for production use across diverse transformer architectures:
-- DistilBERT (Flat MHA)
-- RoBERTa / BERT (Nested Encoder Self-Attention)
-- GPT-2 (Causal Decoder with Conv1D)
-- Qwen / LLaMA (GQA with Rotary Position Embeddings)
+Activation-aware singular value decomposition attention preserving sensitive projection outlier channels.
+
+Author: Taha Majlesi
 """
 
 from neuralops.core.attention_utils import (

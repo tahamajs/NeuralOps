@@ -1,9 +1,9 @@
 """
-Lossless Self-Speculative Decoding Engine for NeuralOps Models.
-Supports:
-1. Mode A: Single-Model Bridge Self-Speculation via alpha switching (UniversalAttentionBridge/SwitchableSVDLinear).
-2. Mode B: Standalone Draft Model + Target Model speculation.
-Guarantees 100% exact mathematical distribution parity with target model decoding.
+Speculative Decoding Engine
+
+Lossless self-speculative decoding algorithms to accelerate autoregressive token generation.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

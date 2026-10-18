@@ -1,5 +1,9 @@
 """
-Linformer Attention – Production-hardened with full multi-architecture support.
+Linformer: Low-Rank Sequence Linear Attention
+
+Projects sequence dimension into low-rank sub-spaces to achieve linear time and memory complexity.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

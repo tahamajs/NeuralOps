@@ -1,3 +1,11 @@
+"""
+Learning Rate Schedulers
+
+Provides custom learning rate scheduling policies and warmup decay routines.
+
+Author: Taha Majlesi
+"""
+
 import math
 from typing import Any
 

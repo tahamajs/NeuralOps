@@ -1,11 +1,9 @@
-"""Universal Hugging Face Model Loader and Architecture Adapters.
+"""
+Universal Hugging Face Model Loader and Architecture Adapters
 
-Supports loading ANY model from Hugging Face Hub or local path with:
-- Transparent AutoModel class detection (SequenceClassification, CausalLM, Seq2SeqLM, etc.)
-- Comprehensive family-specific attention surgery adapters (BERT, GPT, LLaMA, T5, Vision, SSM)
-- Device placement & transparent device map / CPU offloading
-- Precise precision & dtype resolution
-- Tokenizer alignment & padding token synthesis
+Supports loading ANY model from Hugging Face Hub or local path with.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

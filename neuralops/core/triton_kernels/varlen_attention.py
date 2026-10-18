@@ -1,4 +1,11 @@
-"""Variable-length attention for batched sequences with autograd backward support."""
+"""
+Variable-Length Attention
+
+Processes batched sequences of variable lengths using cumulative token offsets without padding overhead.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 import torch
 import torch.nn.functional as F

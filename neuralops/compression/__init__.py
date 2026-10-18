@@ -1,6 +1,7 @@
 """
-Canonical `neuralops.compression` subpackage.
-Re-exports the Compressor registry, BaseCompressor, and compression categories.
+NeuralOps Unified Compression Engines.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

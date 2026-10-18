@@ -1,3 +1,11 @@
+"""
+Hybrid Local Kernel Attention
+
+Combines local sliding-window attention with global kernelized projections for efficient sequence processing.
+
+Author: Taha Majlesi
+"""
+
 from neuralops.core.common import _detect_decoder
 
 from neuralops.core.attention_utils import (

@@ -1,5 +1,9 @@
 """
-Surgery Summary & Live Model Comparator.
+Architecture Introspection and Profiling
+
+Module introspection tools analyzing parameter allocations, FLOPs, and activation memory profiles.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

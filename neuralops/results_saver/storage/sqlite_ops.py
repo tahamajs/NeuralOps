@@ -1,4 +1,10 @@
-"""Sanitization, formatting, and file locking utilities for result storage."""
+"""
+SQLite Storage Operations
+
+Manages SQLite database transactions, locking, schema migrations, and metric queries.
+
+Author: Taha Majlesi
+"""
 
 from __future__ import annotations
 

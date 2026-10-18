@@ -1,5 +1,9 @@
 """
-R‑Drop and R3F (regularised dropout / robust representation learning).
+R-Drop and R3F Regularization
+
+Regularized dropout and robust representation learning using symmetric KL divergence objectives.
+
+Author: Taha Majlesi
 """
 
 import logging

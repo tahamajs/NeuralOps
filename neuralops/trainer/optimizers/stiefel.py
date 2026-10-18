@@ -1,4 +1,10 @@
-"""Stiefel manifold geometry primitives and projection functions."""
+"""
+Stiefel Manifold Geometry
+
+Geometric projections, tangent space operations, and retractions on the Stiefel manifold.
+
+Author: Taha Majlesi
+"""
 
 from __future__ import annotations
 

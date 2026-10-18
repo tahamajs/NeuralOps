@@ -1,11 +1,9 @@
 """
-Triton JIT Hardware Kernel for Differential Attention (v1.4.0 Flagship).
-Target Architecture: SM 8.9 (NVIDIA Ada Lovelace RTX 4070 Laptop GPU, 8GB VRAM).
-Mathematical formulation:
-  A1 = softmax(Q1 @ K1.T / sqrt(D), is_causal=True)
-  A2 = softmax(Q2 @ K2.T / sqrt(D), is_causal=True)
-  Out = A1 @ V - lambda_val * (A2 @ V)
-Computes forward attention in fused Triton SRAM streaming and analytical autograd backward.
+Differential Attention
+
+Computes differential attention maps subtracting noise-cancelling attention patterns with fused streaming softmax.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

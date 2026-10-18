@@ -1,5 +1,10 @@
-# -*- coding: utf-8 -*-
-"""Multi-Seed Cross-Validation & Statistical Variance Stress Test (131 Attentions x 72 Compressors)."""
+"""
+Multi-Seed Cross-Validation & Statistical Variance Stress Test (131 Attentions x 72 Compressors)
+
+Implements multi seed stress test 131 72 functionality for NeuralOps.
+
+Author: Taha Majlesi
+"""
 
 import argparse
 import csv

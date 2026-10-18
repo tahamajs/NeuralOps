@@ -1,3 +1,11 @@
+"""
+Training Results Manager
+
+Tracks, persists, and formats training run metrics, summaries, and experiment outcomes.
+
+Author: Taha Majlesi
+"""
+
 import json
 import logging
 import math

@@ -1,9 +1,9 @@
 """
-Hybrid softmax + linear attention with per-head gated fusion.
+Hybrid Softmax and Linear Gated Attention
 
-Valid attention REPLACEMENT (not a compressor).
-Adds a small number of parameters (the gate) but reduces attention
-computation at long sequence lengths by routing some heads to linear attention.
+Interpolates between full softmax attention and linear attention using learned per-head gating coefficients.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

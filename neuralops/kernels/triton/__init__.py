@@ -1,23 +1,7 @@
-"""NeuralOps Triton JIT GPU Acceleration Suite.
+"""
+NeuralOps Triton Hardware Operators.
 
-Canonical exports and seamless interoperability layer between:
-  1. The 13 Standalone Flagship Triton JIT Kernels (SM 8.0 - SM 9.0+ Ada/Hopper):
-     - triton_fused_lowrank_gated_gemm (fused_lowrank_gemm.py)
-     - triton_fused_lowrank_sparse_gemm (rpca_sparse_gemm.py)
-     - triton_strided_tt_contraction & triton_strided_tt_linear (strided_tt.py)
-     - triton_fused_hadamard_w4a16_gemm (fused_hadamard_w4a16_gemm.py)
-     - triton_lut_codebook_dequant_gemm (lut_codebook_dequant_gemm.py)
-     - triton_fused_kronecker_matmul (fused_kronecker_matmul.py)
-     - triton_chunked_delta_gate_scan (chunked_delta_gate_scan.py)
-     - triton_cosformer_linear_attention (cosformer_linear_attention.py)
-     - triton_block_sparse_streaming_attn (block_sparse_streaming_attn.py)
-     - triton_hgrn2_fused_bwd_scan (hgrn2_fused_bwd_scan.py)
-     - triton_spectral_entropy_svd_gate (spectral_entropy_svd_gate.py)
-     - triton_fused_act_scale_quant_gemm (fused_act_scale_quant_gemm.py)
-     - triton_fused_latent_kv_cache_attention (fused_latent_kv_cache_attention.py)
-  2. The Production Triton Kernel Modules & Autotuning Infrastructure
-     hosted in `neuralops.core.triton_kernels` (27 Categorized Modules + 2 Root Modules + 20 Extended Kernels).
-  3. PyTorch CPU / MPS / CUDA reference fallbacks for all kernels.
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

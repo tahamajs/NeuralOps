@@ -1,6 +1,9 @@
 """
-Universal Cross-Hardware Backend Dispatch Registry & Fallback Router.
-Provides seamless execution across NVIDIA CUDA, AMD ROCm, Apple Silicon MPS, Intel XPU, and CPU.
+Backend Dispatch Engine
+
+Multi-tier execution dispatcher routing kernel requests across Native CUDA, Triton JIT, and PyTorch fallbacks.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

@@ -1,4 +1,8 @@
-"""Subpackage exports."""
+"""
+Quantization and Precision Compression Engines.
+
+Author: Taha Majlesi
+"""
 
 import importlib
 

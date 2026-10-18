@@ -1,8 +1,9 @@
 """
-Rank-Augmented Linear Attention (RALA).
+Rank-Augmented Linear Attention (RALA)
 
 Augments linear attention kernel maps with low-rank static head interaction matrices.
 
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

@@ -1,7 +1,9 @@
 """
-Multi-Level Attention & Logit Distillation Loss Library.
-Supports 5 divergence modes (forward_kl, reverse_kl, beta_jsd, decoupled_kd, topk_sparse_kd)
-and feature/relation alignment objectives (Hedgehog, MiniLM Gram, LoLCATs blockwise, Linear CKA).
+Multi-Level Distillation Library
+
+Multi-level attention and logit distillation loss library supporting multiple divergence modes.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

@@ -1,8 +1,9 @@
 """
-Nyströmformer Attention with Chunked Causal Nyström for decoders.
+Nystromformer: Nyström-Based Linear Attention
 
-Nyström-based low-rank kernel approximation with iterative pseudoinverse.
+Approximates full attention matrices using the Nyström low-rank matrix decomposition algorithm.
 
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

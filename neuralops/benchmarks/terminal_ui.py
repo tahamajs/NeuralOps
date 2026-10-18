@@ -1,7 +1,9 @@
 """
-NeuralOps Rich Terminal Interface & Interactive Control Center (huggingface-cli / gh style).
-Provides colorized banner, interactive module explorer, grouped help menus,
-progress meters, interactive module inspector, guided wizard, search, and formatted tables for NeuralOps.
+NeuralOps Rich Terminal Interface & Interactive Control Center (huggingface-cli / gh style)
+
+Provides colorized banner, interactive module explorer, grouped help menus, progress meters, interactive module inspector, guided wizard, search, and formatted tables for NeuralOps.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

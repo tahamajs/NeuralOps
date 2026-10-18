@@ -1,4 +1,9 @@
-"""neuralops.core.utils - Centralized shared utilities for neuralops models and layers."""
+"""
+NeuralOps Core Utilities Core Modules.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 
 from neuralops.core.utils.rope import (

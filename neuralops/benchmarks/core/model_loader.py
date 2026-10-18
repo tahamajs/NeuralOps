@@ -1,4 +1,11 @@
-"""Model loading, metadata inspection, and attention/compression surgery for benchmarks."""
+"""
+Model loading, metadata inspection, and attention/compression surgery for benchmarks
+
+Implements model loader functionality for NeuralOps.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 
 import gc

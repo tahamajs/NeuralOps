@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 """
-Benchmark Results Visualizer and Performance Report Chart Plotter.
-Modeled after FLA benchmark reporting toolchain:
-- Generates publication-grade latency, throughput, and memory scaling plots.
-- Parses benchmark results (JSON / CSV) produced by ops_runner, generation,
-  and training_throughput benchmarks.
-- Exports publication figures in PNG and PDF formats using Matplotlib and Pandas.
+Benchmark Results Visualizer and Performance Report Chart Plotter
+
+Modeled after FLA benchmark reporting toolchain.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

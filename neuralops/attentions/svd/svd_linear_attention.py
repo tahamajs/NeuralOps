@@ -1,35 +1,9 @@
 """
-SVD Factorized Linear Attention & Kernelized Linear Attention
-with Exponential Decay Gating — Production-Hardened (v2).
+SVD Factorized Linear Attention with Exponential Decay Gating
 
-Hardened for production use across:
-  - DistilBERT (Flat MHA)
-  - RoBERTa / BERT (Nested Encoder Self-Attention)
-  - GPT-2 (Causal Decoder with Conv1D)
-  - Qwen / LLaMA (GQA with Rotary Position Embeddings)
+Low-rank SVD-factorized linear attention featuring exponential decay gating for efficient sequence modeling.
 
-Fixes (v2):
-  SVDLA-FIX-01  `copy_weights` no longer raises on missing projections.
-                It logs a warning and falls back to random init so the
-                injection never crashes the whole pipeline.
-  SVDLA-FIX-02  Near-zero Frobenius norm triggers a warning, not a raise.
-  SVDLA-FIX-03  `triton_dispatch` is wrapped in try/except with fallback
-                to plain F.linear. This eliminates the STATUS_ACCESS_VIOLATION
-                (0xC0000005) crash at high ranks.
-  SVDLA-FIX-04  Idempotency guard in injector: refuses to re-wrap.
-  SVDLA-FIX-05  Honest storage accounting.
-  SVDLA-FIX-06  Output padding/truncation hack replaced with an explicit
-                RuntimeError when shapes mismatch (should never happen).
-  SVDLA-FIX-07  `chunk_size` configurable, default 64.
-  SVDLA-FIX-08  Decay gate bias clipped to a finite range.
-  SVDLA-FIX-09  `mode` is normalized once; kernel selection is unambiguous.
-  SVDLA-FIX-10  Single mask-normalization helper.
-  SVDLA-FIX-11  `log_lam_c` clamp floor raised to avoid NaN.
-  SVDLA-FIX-12  `is_custom_attention = False` on `SVDLinear` (it is not
-                an attention module, just a factorized linear).
-  SVDLA-FIX-13  Registry declares `supports_bidirectional`.
-  SVDLA-FIX-14  `step_recurrent` respects `use_decay_gating` cleanly.
-  SVDLA-FIX-15  `set_low_rank_factors` respects out/in dimension clamps.
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

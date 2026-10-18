@@ -1,4 +1,11 @@
-"""Quantized attention routines: FP8 and INT8 attention with scaling factors."""
+"""
+Quantized Attention Kernels
+
+FP8 and INT8 quantized attention routines featuring dynamic scaling factors and numerical clamping.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 import math
 import torch

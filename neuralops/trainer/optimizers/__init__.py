@@ -1,4 +1,8 @@
-"""Optimizers package for NeuralOps."""
+"""
+NeuralOps Trainer Optimizers Subpackage.
+
+Author: Taha Majlesi
+"""
 
 from __future__ import annotations
 

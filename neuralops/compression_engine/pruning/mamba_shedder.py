@@ -1,23 +1,9 @@
 """
-Mamba-Shedder: Sensitivity-Based Structured Pruning and Layer Shedding Compressor.
+Mamba-Shedder: Sensitivity-Based Structured Pruning and Layer Shedder
 
-Registered as 'mamba_shedder', 'mamba_shedder_compressor', 'mamba_shedder_factory'.
+Identifies and sheds redundant state-space blocks and attention projections through layer-wise Fisher sensitivity profiling.
 
-Mathematical Formulation:
-  1. Empirical Fisher:  I(X_j) = sqrt(mean_n X_{n,j}^2)
-  2. Layer Residual:    Δ_l = ||X_{l+1} - X_l||_F / (||X_l||_F + ε)
-  3. Channel Masking:   W_pruned = W ⊙ M_channel^T
-
-⚠️  IMPORTANT  ⚠️
-
-Channel masking alone does NOT reduce dense storage. To actually shrink
-memory, this version replaces targeted Linear/Conv1D layers with a
-`MambaShedderPrunedLinear` module that stores ONLY the retained channels
-(via per-output-channel keep indices) plus LoRA adapters. The framework's
-dense parameter counter will still read 1.0 for `compression_rate` because
-the module signature is preserved; the true storage savings are reported in
-`storage_compression_ratio` and `storage_reduction_pct`.
-
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

@@ -1,11 +1,9 @@
 """
-FLAP: Fluctuation-Based Adaptive Structured Pruning (Corrected).
+FLAP: Fluctuation-Based Adaptive Structured Pruner
 
-Registered in COMPRESSOR_REGISTRY as 'flap' and 'flap_compressor'.
-Production hardened for multi-architecture compatibility
-(DistilBERT, RoBERTa, GPT-2, Qwen3.5) with reconstruction validation,
-Conv1D support, and safe fallback.
+Evaluates feature map fluctuation metrics across calibration sequences to remove redundant attention heads and intermediate MLP neurons.
 
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

@@ -1,13 +1,9 @@
 """
-Triton Chunked Delta-Gate Recurrent Scan Kernel (Phase 3 / Kernel 7).
+Chunked Delta-Gate Recurrent Scan
 
-Target Modules: gated_delta_net, gla_attention, hla_attention, kda_attention
-Solves:
-    Gated Delta-Rule fast-weight matrix recurrence:
-        S_t = alpha_t * S_{t-1} * (I - beta_t * k_t @ k_t^T) + beta_t * v_t @ k_t^T
-        o_t = S_t @ q_t
+Computes gated delta-rule fast-weight matrix recurrence using chunked parallel scans in on-chip SRAM registers.
 
-Replaces Python loops with chunked parallel scan in registers, achieving up to 30x speedup.
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

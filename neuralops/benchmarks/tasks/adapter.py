@@ -1,4 +1,10 @@
-"""Universal Task Adapters supporting all 14 Hugging Face task types."""
+"""
+Universal Task Adapters supporting all 14 Hugging Face task types
+
+Implements adapter functionality for NeuralOps.
+
+Author: Taha Majlesi
+"""
 
 from __future__ import annotations
 

@@ -1,3 +1,9 @@
+"""
+Speculative Verification Hardware Operators.
+
+Author: Taha Majlesi
+"""
+
 from neuralops.core.cuda_kernels.speculative_verify.spec_autograd import (
     speculative_verify,
     speculative_verify_pytorch_ref,

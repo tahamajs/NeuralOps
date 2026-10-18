@@ -1,4 +1,11 @@
-"""Abstract BaseRunner architecture for all neuralops benchmark suites."""
+"""
+Abstract BaseRunner architecture for all neuralops benchmark suites
+
+Implements runner functionality for NeuralOps.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod

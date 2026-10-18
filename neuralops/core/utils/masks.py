@@ -1,4 +1,11 @@
-"""Attention mask utilities."""
+"""
+Attention Mask Utilities
+
+High-performance tensor masking helpers for causal, block-diagonal, and padded sequence shapes.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 
 import torch

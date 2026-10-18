@@ -1,4 +1,10 @@
-"""Parsers and resolvers for module analysis benchmark records."""
+"""
+Benchmark Record Parsers
+
+Parsers and schema normalizers converting raw benchmark outputs into unified analysis records.
+
+Author: Taha Majlesi
+"""
 
 from __future__ import annotations
 

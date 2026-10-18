@@ -1,4 +1,8 @@
-"""Subpackage exports."""
+"""
+State Space Model (SSM) Attention Mechanisms.
+
+Author: Taha Majlesi
+"""
 
 import importlib
 

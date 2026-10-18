@@ -1,6 +1,9 @@
 """
-Backend implementations for experiment tracking.
-Each backend handles the specifics of initialisation, metric/param/artifact logging, and finalisation.
+Experiment Tracking Backends
+
+Provides adapters for logging metrics to Weights & Biases, MLflow, and local files.
+
+Author: Taha Majlesi
 """
 
 import json

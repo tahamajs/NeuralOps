@@ -1,28 +1,10 @@
 #!/usr/bin/env python3
 """
-Efficient Attention Research Framework — Full Pipeline Runner
-=============================================================
-Single entry-point for:
-  - Training    (fine-tune any HF model on GLUE / custom data)
-  - Evaluation  (standalone eval of a saved checkpoint)
-  - Compression (SVD / compressor-registry methods)
-  - Sweep       (multi-seed, multi-attn-type grid run)
-  - List        (print all registered attention / compressor keys)
+NeuralOps Pipeline Runner
 
-Usage examples
---------------
-# Basic training
-python main.py train --attn_type full --task sst2 --epochs 3
+Unified CLI orchestration entry-point for training, evaluation, compression, and parameter sweeps.
 
-# Compression then evaluate
-python main.py compress --attn_type full --task sst2 --compressor svd
-python main.py eval    --attn_type full --task sst2 --model_path results/...
-
-# Grid sweep (all attention types x seeds)
-python main.py sweep --attn_types full nha lsh --seeds 42 123 --task sst2
-
-# List registry
-python main.py list
+Author: Taha Majlesi
 """
 
 import argparse

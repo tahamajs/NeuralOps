@@ -1,4 +1,10 @@
-"""Universal Dataset Loader supporting ANY Hugging Face dataset, local files, and streaming."""
+"""
+Universal Dataset Loader supporting ANY Hugging Face dataset, local files, and streaming
+
+Implements loader functionality for NeuralOps.
+
+Author: Taha Majlesi
+"""
 
 from __future__ import annotations
 

@@ -1,22 +1,11 @@
 """
-Factorised Matrix State Attention Module.
+Factorised Matrix State Attention Module
 
-Implements multi-head bidirectional/causal associative matrix memory updates combined with
-learnable decay gating, denominator normalization, low-rank factorized output projection,
-and pretrained weight transfer.
+Maintains an associative matrix memory state updated via low-rank factorized bidirectional updates.
 
-Hardened for production across DistilBERT, RoBERTa/BERT, GPT-2, and Qwen/LLaMA architectures:
-- Robust pretrained weight extraction (GPT-2 fused c_attn, RoBERTa nested, Qwen GQA, DistilBERT)
-- Strict Frobenius norm verification (>= 1e-4) for all projections
-- Grouped Query Attention (GQA) with kv_head_size projections and repeat_kv
-- Rotary Position Embedding (RoPE) support with partial-coordinate slicing
-- Strict causal masking for decoder models (forward-only recurrence)
-- Nested encoder detection to bypass output projection in inner self-attention
-- Parameter-efficient fine-tuning via LoRALinear adapters and frozen base weights
-- True O(L) linear complexity recurrence without O(L^2) memory footprint
-- Numerically stable FP32 state accumulation with nan_to_num protection
-- Safe injection factory returning None on extraction failures
+Author: Taha Majlesi
 """
+
 from neuralops.core.common import repeat_kv
 
 from neuralops.core.attention_utils import (

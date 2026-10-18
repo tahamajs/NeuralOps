@@ -1,9 +1,9 @@
 """
-Compressed Multi-Head Attention via Truncated Singular Value Decomposition (SVD).
+Compressed Multi-Head Attention via Truncated SVD
 
-Provides rank-constrained and singular-energy-thresholded low-rank approximations of standard
-PyTorch attention input (QKV) and output projection matrices with full pretrained weight transfer,
-trainable LoRA residual adapters, GQA, RoPE, and causal decoding support.
+Truncated singular value decomposition attention reducing projection parameters while maintaining fidelity.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

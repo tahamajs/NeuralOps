@@ -1,7 +1,9 @@
 """
-MixAttention-MoSKA: Frequency/Variance-Aware Sparse Attention (FASA).
+MixAttention-MoSKA: Frequency/Variance-Aware Sparse Attention
 
+Adaptive sparse attention guided by spectral variance and token importance metrics.
 
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

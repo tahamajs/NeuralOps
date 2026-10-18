@@ -1,4 +1,10 @@
-"""Pydantic schemas and data transfer objects for NeuralOps Web Dashboard & Monitor API."""
+"""
+Monitor Schemas and DTOs
+
+Pydantic schemas and data transfer objects for benchmark telemetry and dashboard APIs.
+
+Author: Taha Majlesi
+"""
 
 from __future__ import annotations
 

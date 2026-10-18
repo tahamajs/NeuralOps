@@ -1,8 +1,9 @@
 """
-Adaptive Sparse Attention Module (Production-Hardened).
-Implements dynamic top-k and threshold-based adaptive sparse attention with LoRA adapters,
-multi-architecture weight extraction, RoPE rotary embeddings, causal/bidirectional masking,
-and safe injection.
+Adaptive Sparse Attention
+
+Dynamically selects top-k token connections and applies adaptive thresholds to sparsify attention matrices.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

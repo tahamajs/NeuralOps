@@ -1,17 +1,9 @@
-"""Hessian Null Space Continuation (HNC) for Low-Rank SVD Compression.
+"""
+HNC-SVD: Hessian Null Space Continuation SVD
 
-Implements the complete mathematical machinery of Hessian Null Space Continuation:
-1. Full-logit / full-output function-matching loss (L_func).
-2. Matrix-free Pearlmutter Gauss-Newton Hessian-vector products (hvp_gauss_newton).
-3. Matrix-free power iteration for sharpest eigenvalue estimation (estimate_top_eigenvalue).
-4. Matrix-free LOBPCG flat subspace finder (find_flat_subspace_lobpcg).
-5. Analytical SVD spectral tail-suppression & annealed Gaussian bump potential (phi_SVD)
-   with closed-form gradient without numerical instability of differentiating singular values.
-6. Dual-engine soft null-space projection:
-   - Global matrix-free Conjugate Gradient (mode="global_cg").
-   - Fast layerwise Kronecker / input-covariance null-space projection (mode="kronecker").
-7. Predict-correct continuation loop with restore steps, loss ceiling rejection,
-   adaptive step sizing, first-moment bias correction, and Frobenius norm restoration.
+Solves low-rank matrix approximation along the null space of the layer Hessian to preserve functional network performance.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

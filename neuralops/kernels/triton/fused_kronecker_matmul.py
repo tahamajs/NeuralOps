@@ -1,15 +1,9 @@
 """
-Triton Fused Kronecker Matrix Multiplication Kernel (Phase 2 / Kernel 6).
+Fused Kronecker Matrix Multiplication
 
-Target Modules: kronecker_compressor, kronecker_tt_lora
-Solves:
-    Computes Y = X @ (A (x) B)^T using the algebraic identity:
-        Y_m = B @ X_m @ A^T
-    where X_m in R^{n2 x n1} is the reshaped activation slice for token m,
-    B in R^{m2 x n2}, A in R^{m1 x n1}, and Y_m in R^{m2 x m1}.
+Fuses dual batched matrix multiplications and axis transpositions for Kronecker factorized linear layers directly in SRAM.
 
-Fuses the two sequential batched GEMMs and axes transpositions directly into on-chip SRAM,
-eliminating intermediate 3D tensor materializations.
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

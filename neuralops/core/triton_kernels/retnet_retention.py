@@ -1,16 +1,9 @@
 """
-Triton JIT Hardware Kernel for RetNet Multi-Scale Retention (v1.4.0 Flagship).
-Target Architecture: SM 8.9 (NVIDIA Ada Lovelace RTX 4070 Laptop GPU, 8GB VRAM).
-Mathematical formulation:
-  Causal Retention Matrix: M_{i, j} = gamma_h^{i - j} (for i >= j), 0 (for i < j)
-  Y = ((Q @ K.T) * M) @ V
-Exact analytical autograd backward:
-  A = (Q @ K.T) * M
-  dV = A.T @ dY
-  dA = dY @ V.T
-  dS = dA * M
-  dQ = dS @ K
-  dK = dS.T @ Q
+RetNet Multi-Scale Retention
+
+Computes multi-scale retention mechanism with exponential decay matrices and dual chunked/recurrent formulations.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

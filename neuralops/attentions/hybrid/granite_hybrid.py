@@ -1,10 +1,9 @@
 """
-Granite Hybrid Attention-SSM Layer with MoE Feed-Forward.
+Granite Hybrid Attention-SSM Layer
 
-Combines Mamba-2 SSM recurrent layers with dense Multihead Attention (MHA) and
-Top-k Mixture-of-Experts (MoE) feed-forward, with LoRA adapters and pretrained
-weight transfer. Hardened across DistilBERT, RoBERTa, GPT-2, Qwen3.5.
+Hybrid attention architecture interleaving selective state space models with full multi-head self-attention.
 
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

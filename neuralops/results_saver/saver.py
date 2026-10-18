@@ -1,4 +1,10 @@
-"""Core ResultsSaver orchestrator class."""
+"""
+Results Saver Orchestrator
+
+Orchestrates multi-backend result saving, indexing, and telemetry persistence.
+
+Author: Taha Majlesi
+"""
 
 from __future__ import annotations
 

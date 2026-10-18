@@ -1,4 +1,10 @@
-"""Normalization layers for NeuralOps models."""
+"""
+Normalization Layer Implementations
+
+Layer normalization and RMSNorm layers with optional fused Triton acceleration and scale calibration.
+
+Author: Taha Majlesi
+"""
 
 from __future__ import annotations
 

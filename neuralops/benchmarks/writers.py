@@ -1,4 +1,11 @@
-"""Comprehensive writers and persistence utilities for benchmark results."""
+"""
+Comprehensive writers and persistence utilities for benchmark results
+
+Implements writers functionality for NeuralOps.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 
 import csv

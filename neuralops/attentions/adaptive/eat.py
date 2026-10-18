@@ -1,5 +1,9 @@
 """
-EAT: Efficient Attention Transformer with Progressive Token Pruning.
+EAT: Efficient Attention Transformer with Progressive Token Pruning
+
+Combines progressive token pruning with efficient self-attention to reduce quadratic sequence overhead.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

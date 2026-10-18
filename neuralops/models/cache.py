@@ -1,11 +1,9 @@
 """
-Unified Hybrid Cache implementation for NeuralOps heterogeneous models.
+Unified Hybrid Attention Cache
 
-Supports seamless multi-family decoding across:
-1. Standard / GQA Full Attention layers -> maintains standard (K, V) cache [B, H, T_past, D].
-2. Sliding Window Attention layers -> truncates and maintains at most `window_size` past tokens.
-3. Linear / Recurrent / SSM Attention layers (GLA, GDN, GDN2, PGDN, DeltaProduct, HGRN2, RetNet, Cosformer)
-   -> maintains constant-size O(1) state tuple (e.g. S_state of shape [B, H, D_k, D_v] or SSM tuple).
+Multi-family KV and recurrent state cache managing standard attention, sliding window, and recurrent layers.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

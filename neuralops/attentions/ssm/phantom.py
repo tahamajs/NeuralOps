@@ -1,18 +1,9 @@
 """
-Phantom: Parameter-Hashed AttentioN with Token-wise Orthogonal Mapping.
+Phantom: Parameter-Hashed Attention with Token-Wise Orthogonal Mapping
 
-Combines CUR-matrix factorized linear projections based on empirical statistical leverage scores
-with multi-round angular Locality-Sensitive Hashing (LSH) sparse attention and rectified Softpick activation.
+Combines CUR-matrix factorized linear projections with token-wise orthogonal mappings for low-rank attention.
 
-Supports:
-- Multi-architecture copy_weights (GPT-2, RoBERTa/BERT nested, Qwen/LLaMA, DistilBERT)
-- Trainable LoRA adapters with frozen CUR base weights
-- GQA with repeat_kv
-- RoPE position embeddings
-- Causal masking for decoders
-- Nested encoder bypass
-- Frobenius norm verification (>= 1e-4)
-- Safe injection returning None on failure
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

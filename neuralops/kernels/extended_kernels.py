@@ -1,15 +1,9 @@
 """
-Extended 20 Accelerated Kernels for NeuralOps (v1.3.7).
+Extended Accelerated Kernels
 
-Provides 20 high-performance production kernels with 3-level fallback:
-  Level 1: CUDA C++ / Fused GPU Kernel
-  Level 2: Triton JIT Kernel (if available)
-  Level 3: Pure PyTorch Reference Implementation
+Production hardware-accelerated kernels with unified three-level fallback across CUDA C++, Triton JIT, and PyTorch reference backends.
 
-Each kernel supports:
-- Numerically verified forward & backward Autograd functions
-- Seamless fallback under force_kernel_backend ("cuda", "triton", "pytorch")
-- CPU and CUDA tensor compatibility
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

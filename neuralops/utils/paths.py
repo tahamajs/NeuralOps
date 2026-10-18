@@ -1,3 +1,11 @@
+"""
+Project Path Utilities
+
+Resolves standard filesystem paths, workspace locations, and checkpoint directories.
+
+Author: Taha Majlesi
+"""
+
 from pathlib import Path
 
 

@@ -1,4 +1,11 @@
-"""Production Flash-Decoding kernel with split-KV chunking and multi-block reduction."""
+"""
+Flash-Decoding Attention
+
+Accelerates autoregressive decoding via split-KV sequence chunking and multi-block parallel reduction.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 import math
 import torch

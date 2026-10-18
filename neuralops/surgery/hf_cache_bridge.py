@@ -1,14 +1,9 @@
 """
-HuggingFace DynamicCache & Generation Bridge.
+HuggingFace DynamicCache Generation Bridge
 
-Provides:
-  - NeuralOpsHybridHFCache: subclass of Cache / DynamicCache (when transformers is available)
-    or standalone duck-typed cache maintaining seen tokens and per-layer state slots.
-  - Supports:
-      * Recurrent / Linear state slots (S_state, Z_state, conv_state) for constant O(1) memory decoding.
-      * Sliding-window ring buffers for windowed attentions.
-      * Standard KV cache for full attention layers in hybrid models.
-  - wrap_model_for_generation(): equips any surgically modified CausalLM with generation pre-hooks.
+Bridges NeuralOps recurrent and hybrid state caches with HuggingFace DynamicCache.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

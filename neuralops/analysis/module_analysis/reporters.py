@@ -1,4 +1,10 @@
-"""Report generators for module analysis outputs (CSV and Markdown)."""
+"""
+Module Analysis Reporters
+
+Markdown and CSV report generators formatting aggregated performance and efficiency results.
+
+Author: Taha Majlesi
+"""
 
 from __future__ import annotations
 

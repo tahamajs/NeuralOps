@@ -1,7 +1,9 @@
 """
-Central registry system for the Efficient Transformer Toolkit.
-All framework components (attentions, compressors, trainers, visualizers, etc.)
-are stored in registries, enabling dynamic discovery and plug‑and‑play integration.
+Central Component Registry
+
+Decorators and registry catalogs managing discovery and instantiation of attention and compression modules.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

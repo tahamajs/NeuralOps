@@ -1,11 +1,9 @@
 """
-LIFTR – Linearized Function Trick Compressor.
-Registered as 'liftr', 'liftr_compressor', 'liftr_class'.
+LIFTR: Linearized Function Trick Compressor
 
-Mathematical Formulation:
-  Activation:    ReLU(x) → Identity(x), GELU(x) / SiLU(x) ≈ α·x
-  Attention:     Softmax(QK^T/√d)V → (1/N) Σ V_i
+Replaces non-linear activations with optimal affine transformations, enabling cross-layer weight collapse and structural model compaction.
 
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

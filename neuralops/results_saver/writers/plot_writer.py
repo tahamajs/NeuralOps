@@ -1,4 +1,10 @@
-"""Plotting delegator for experiment history and metrics."""
+"""
+Plot Result Writer
+
+Generates publication-quality performance plots, Pareto frontiers, and throughput curves.
+
+Author: Taha Majlesi
+"""
 
 from __future__ import annotations
 

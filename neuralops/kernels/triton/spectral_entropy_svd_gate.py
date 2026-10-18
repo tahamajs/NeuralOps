@@ -1,11 +1,9 @@
 """
-Triton Spectral Entropy SVD Dynamic-Rank Gated Kernel (Phase 3 / Kernel 11).
+Spectral Entropy SVD Dynamic Gating
 
-Target Modules: entropy_budget_allocation, adaptive_ranks, dynamic_rank
-Solves:
-    Dynamically prunes singular values beyond effective_rank = r_eff <= R_max
-    and applies spectral entropy singular importance weighting directly in registers,
-    saving compute cycles proportional to the pruned spectral tail.
+Applies dynamic singular value truncation and entropy-based rank gating for adaptive low-rank projections.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

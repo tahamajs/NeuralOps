@@ -1,9 +1,9 @@
 """
-REAP-MoE: Robust Expert Allocation and Pruning Mixture of Experts Attention Module.
+REAP-MoE: Robust Expert Allocation and Pruning MoE Attention
 
-Vectorized Mixture-of-Experts block with load-balancing regularization, SVD low-rank
-expert factorization, and multi-head attention weight transfer.
+Robust expert allocation and pruning module for parameter-efficient mixture-of-experts attention.
 
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

@@ -1,6 +1,9 @@
 """
-SAMBA-M3: Hybrid Sliding-Window Attention and Spectral Mamba Block (Hardened).
+SAMBA-M3: Hybrid Sliding-Window Attention and Spectral Mamba Block
 
+Integrates sliding-window local attention with spectral Mamba state space blocks for long-range reasoning.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

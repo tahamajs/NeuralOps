@@ -1,5 +1,7 @@
 """
-NeuralOps Export and Serving Integration Package.
+NeuralOps Export Subpackage.
+
+Author: Taha Majlesi
 """
 
 from neuralops.export.exporter import (

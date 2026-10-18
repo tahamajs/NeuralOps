@@ -1,7 +1,9 @@
 """
-Low-Rank SVD Gated GEMM Python Interface, Autograd Functions, and 3-Level Fallback.
-Target: SM 8.9 (NVIDIA Ada Lovelace RTX 4070 Laptop GPU, 8GB VRAM).
-Computes Y = (X @ V_r.T * sigmoid(alpha)) @ U_r.T + bias in a single register/shared-memory pass.
+Low-Rank SVD Gated GEMM Autograd Interface
+
+Hardware-accelerated CUDA C++ autograd implementation with analytical gradients and three-level fallback dispatch.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

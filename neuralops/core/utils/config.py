@@ -1,4 +1,11 @@
-"""Configuration extraction helpers."""
+"""
+Configuration Extraction Utilities
+
+Helper functions extracting architecture parameters, head dimensions, and layer counts from configurations.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 
 from typing import Any

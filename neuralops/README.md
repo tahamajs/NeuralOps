@@ -42,8 +42,8 @@ neuralops/
 NeuralOps enforces strict mathematical and architectural invariants certified across the entire codebase:
 - **131 canonical attention mechanisms** (`neuralops.core.registry.ATTENTION_REGISTRY`)
 - **72 compression engines** (`neuralops.core.registry.COMPRESSOR_REGISTRY`)
-- **Unified Triton kernel suite** (`neuralops.kernels.list_triton_kernels()`)
-- **114 native CUDA C++ kernels** (`neuralops.kernels.list_cuda_kernels()`)
+- **62 Triton hardware kernels** (`neuralops.list_triton_kernels()`)
+- **114 native CUDA C++ kernels** (`neuralops.list_cuda_kernels()`)
 
 All numbers are verified continuously via `scripts/utils/verify_readme_counts.py`.
 

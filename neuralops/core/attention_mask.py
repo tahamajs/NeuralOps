@@ -1,11 +1,9 @@
 """
-Universal attention mask handler for standard and efficient attention modules.
+Attention Mask Handlers
 
-Supports:
-- 2D binary masks [Batch, SeqLen] (1 for valid tokens, 0 for padding)
-- 3D masks [Batch, 1, SeqLen] or [Batch, SeqLen, SeqLen]
-- 4D extended additive masks [Batch, 1, 1, SeqLen] or [Batch, 1, SeqLen, SeqLen] (where 0.0 is unmasked, -10000.0 is masked)
-- Boolean masks [Batch, SeqLen]
+Universal masking utilities handling causal, 2D binary, 3D broadcast, and 4D extended additive masks.
+
+Author: Taha Majlesi
 """
 
 import torch

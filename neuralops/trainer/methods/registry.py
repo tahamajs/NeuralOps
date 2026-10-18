@@ -1,3 +1,11 @@
+"""
+Training Methods Registry
+
+Registers and wraps parameter-efficient fine-tuning and adaptation methods for models.
+
+Author: Taha Majlesi
+"""
+
 from typing import Any
 
 

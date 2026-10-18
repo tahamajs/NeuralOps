@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """
-Training Throughput and VRAM Peak Profiler for NeuralOps & FLA Models.
-Profiles forward+backward training step execution time, tokens-per-second,
-TFLOPS estimation, and peak allocated VRAM.
+Training Throughput and VRAM Peak Profiler for NeuralOps & FLA Models
+
+Profiles forward+backward training step execution time, tokens-per-second, TFLOPS estimation, and peak allocated VRAM.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

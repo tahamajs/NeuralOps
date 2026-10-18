@@ -1,4 +1,8 @@
-"""Subpackage exports."""
+"""
+Gated Attention Mechanisms.
+
+Author: Taha Majlesi
+"""
 
 import importlib
 

@@ -1,4 +1,11 @@
-"""`list` command."""
+"""
+CLI List Command
+
+Lists available attention kernels, compression methods, models, and benchmark tasks.
+
+Author: Taha Majlesi
+"""
+
 import json
 
 

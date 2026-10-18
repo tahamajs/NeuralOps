@@ -1,4 +1,10 @@
-"""Comprehensive metric evaluation functions across classification, QA, summarization, LM, etc."""
+"""
+Comprehensive metric evaluation functions across classification, QA, summarization, LM, etc
+
+Implements evaluator functionality for NeuralOps.
+
+Author: Taha Majlesi
+"""
 
 from __future__ import annotations
 

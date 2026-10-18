@@ -1,8 +1,9 @@
-"""Extensibility, Custom Module Protocol & Contract Validation for NeuralOps.
+"""
+Module Extensibility Protocol
 
-Provides first-class interfaces for researchers and contributors to register
-custom attention mechanisms, custom compressors, and 4-stage algebraic primitives,
-with automatic contract diagnostics, inspection, profiling, and surgical compatibility.
+Custom module verification protocols and dynamic contract validators ensuring interface compliance.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

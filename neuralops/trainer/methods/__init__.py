@@ -1,6 +1,7 @@
 """
-Training method plugins: LoRA, DoRA, DisLoRA, Fisher, GeLoRA, LLRD, Mixout, R‑Drop, R3F.
-All methods are registered via the METHOD_REGISTRY and can be applied by name.
+NeuralOps Trainer Methods Subpackage.
+
+Author: Taha Majlesi
 """
 
 from .fisher import apply_fisher_lora, compute_fisher_importance

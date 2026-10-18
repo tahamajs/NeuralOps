@@ -1,4 +1,11 @@
-"""Production Wanda (Pruning by Weights and Activations)."""
+"""
+Wanda: Pruning by Weights and Activations
+
+Prunes weights according to the product of weight magnitudes and input activation norms per output channel.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 import torch
 import torch.nn as nn

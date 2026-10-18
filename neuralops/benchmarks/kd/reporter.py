@@ -1,8 +1,9 @@
-"""Result reporting, streaming CSV persistence, and Markdown generation.
+"""
+Result reporting, streaming CSV persistence, and Markdown generation
 
-This module provides the :class:`KDReporter` class to stream benchmark results
-safely to disk using atomic file writing techniques, preventing corruption in case
-of sudden termination.
+This module provides the :class:`KDReporter` class to stream benchmark results safely to disk using atomic file writing techniques, preventing corruption in case.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

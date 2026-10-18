@@ -1,22 +1,9 @@
 """
-Selective scan kernel for Mamba-style state space models.
+Selective Scan Kernel Interface
 
-Provides two implementations:
-  1. CUDA path via mamba_ssm package (if installed)
-  2. Numerically stable chunked PyTorch fallback (always available)
+State space selective scan operator providing CUDA mamba_ssm bindings and numerically stable PyTorch fallbacks.
 
-The chunked fallback computes exact cumulative decay per block without division,
-matching sequential scan to < 1e-5 while remaining completely immune to NaN/overflow
-even under extreme inputs.
-
-Bug-fix map:
-  SC-FIX-01  auto chunk_size to bound 5D intermediate memory.
-  SC-FIX-02  selective dtype casting (no redundant fp32 copies).
-  SC-FIX-03  removed arbitrary delta clamp max.
-  SC-FIX-04  removed redundant nan_to_num after exp(-inf).
-  SC-FIX-05  einsum via chunked bmm for speed.
-  SC-FIX-06  CUDA failure logged, not silently swallowed.
-  SC-FIX-07  early-return for empty sequences.
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

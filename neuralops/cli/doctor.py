@@ -1,4 +1,11 @@
-"""`doctor` command — diagnose installation."""
+"""
+CLI Doctor Command
+
+Inspects local hardware, CUDA toolchains, drivers, and dependencies for environment readiness.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 
 import importlib

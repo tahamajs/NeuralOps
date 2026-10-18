@@ -1,19 +1,9 @@
 """
-Triton JIT Hardware Kernel for CUR Matrix Decomposition Compression (v1.4.0 Flagship).
-Target Architecture: SM 8.9 (NVIDIA Ada Lovelace RTX 4070 Laptop GPU, 8GB VRAM).
-Mathematical formulation:
-  W = C @ U @ R
-  Z = (X @ R.T) @ U.T     [M, r]
-  Y = Z @ C.T + bias      [M, N]
-Exact analytical autograd backward:
-  dY = G                  [M, N]
-  dbias = sum_{m} G_m     [N]
-  dC = G.T @ Z            [N, r]
-  dZ = G @ C              [M, r]
-  dU = dZ.T @ (X @ R.T)   [r, r]
-  dz1 = dZ @ U            [M, r]
-  dR = dz1.T @ X          [r, K]
-  dX = dz1 @ R            [M, K]
+CUR Matrix Decomposition Linear Projection
+
+Computes low-rank CUR matrix factorized projections with fused cross-factor contractions and analytical gradients.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

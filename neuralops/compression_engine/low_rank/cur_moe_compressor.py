@@ -1,6 +1,9 @@
 """
-CUR-MoE Compressor: apply CUR cross-approximation to Mixture of Experts (MoE) modules and expert layers.
-Registered in COMPRESSOR_REGISTRY as 'cur_moe' and 'cur_moe_compressor'.
+CUR-MoE: CUR Cross-Approximation for Mixture-of-Experts
+
+Applies leverage score CUR factorizations across expert feedforward blocks to compress redundant expert parameters in MoE architectures.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

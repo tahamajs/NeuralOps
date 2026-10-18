@@ -1,3 +1,9 @@
+"""
+Activation-Scaled Quantized GEMM Hardware Operators.
+
+Author: Taha Majlesi
+"""
+
 from neuralops.core.cuda_kernels.act_scale_gemm.act_scale_autograd import (
     act_scale_quant_gemm,
     act_scale_quant_gemm_pytorch_ref,

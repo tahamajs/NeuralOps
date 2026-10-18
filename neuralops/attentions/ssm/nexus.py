@@ -1,16 +1,11 @@
 """
-NEXUS: Neural Efficient X-scoring Unified Sparse Attention.
+NEXUS: Neural Efficient X-Scoring Unified Sparse Attention
 
-=============================================================
-Hybrid sparse attention architecture combining multi-scale sparsity mechanisms:
- 1. XAttention antidiagonal block scoring (ICML 2025) - training-free block routing
- 2. SeerAttention learnable gating (NeurIPS 2025) - per-head block sparsity
- 3. DuSA dual-stage sparse (NeurIPS 2025) - intra-block dense + inter-block sparse
- 4. AnchorAttention stripe granularity (2025) - fine-grained intra-block band sparsity
- 5. Spectraformer random Fourier feature rectification (2025) - global linear fallback
- 6. Softpick rectified softmax (2025) - natural ~47% activation sparsity
+Unified sparse attention framework combining dynamic token scoring with structured block-level sparsity.
 
+Author: Taha Majlesi
 """
+
 from neuralops.core.common import softpick
 
 from neuralops.core.attention_utils import (

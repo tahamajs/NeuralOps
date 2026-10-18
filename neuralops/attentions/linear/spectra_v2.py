@@ -1,8 +1,9 @@
 """
-MHA-SDPA: A thin Multi-Head Attention wrapper around PyTorch's
-scaled_dot_product_attention.
+MHA-SDPA Fast Scaled Dot-Product Attention
 
+High-efficiency multi-head attention wrapper utilizing PyTorch scaled dot-product attention kernels.
 
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

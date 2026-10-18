@@ -1,15 +1,11 @@
 """
-Infinite-Context Stateful Truncated-BPTT & Curriculum Hybrid Foundation Pretrainer.
+Foundation Pretrainer
 
-Implements:
-1. InfiniteContextFoundationPretrainer:
-   - Chunk-Boundary Recurrent State Persistence: Persists recurrent state across consecutive
-     sequence chunks S_init^(c) <- S_final^(c-1).detach(), resetting cleanly at EOS document boundaries.
-   - Enables training across 100K - 1M+ token contexts with strictly bounded O(T_chunk) VRAM!
-2. Curriculum Hybrid Architecture Scheduler:
-   - Smoothly anneals UniversalAttentionBridge alpha from 0.0 (dense teacher attention) to 1.0
-     (subquadratic linear/delta attention) over pretraining warmup steps.
+Infinite-context stateful truncated-BPTT and curriculum hybrid pretraining engine.
+
+Author: Taha Majlesi
 """
+
 from __future__ import annotations
 
 import logging

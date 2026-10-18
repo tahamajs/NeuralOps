@@ -1,9 +1,9 @@
-# framework/utils/layer_norm_fix.py
 """
-Numerically Stable Layer Normalization and RMS Normalization Modules.
+Layer Normalization Fix Utilities
 
-Eliminates FP16 variance underflow and sum-of-squares overflow by forcing all
-mean, variance, and reduction accumulators into torch.float32 prior to reciprocal square root.
+Ensures numerical stability and parameter alignment in layer normalization modules.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

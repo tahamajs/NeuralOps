@@ -1,4 +1,11 @@
-"""End-to-end training validation on tiny data."""
+"""
+End-to-End Training Validator
+
+Executes end-to-end verification runs on synthetic datasets to ensure pipeline correctness.
+
+Author: Taha Majlesi
+"""
+
 import torch
 
 class TrainingValidator:

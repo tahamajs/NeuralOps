@@ -1,7 +1,9 @@
 """
-Direct SVD Compressor: Truncated SVD low-rank factorized layer replacement.
-Registered as 'direct_svd'. Production hardened for multi-architecture compatibility
-(DistilBERT, RoBERTa, GPT-2, Qwen3.5) with error validation, Conv1D support, rank bounds, and safe fallback.
+Direct SVD Compressor: Truncated Singular Value Decomposition
+
+Decomposes target linear and Conv1D projections into low-rank factor pairs with strict rank bounds and safe fallback handling.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

@@ -1,4 +1,11 @@
-"""Robust benchmark command for attention and compressor modules."""
+"""
+CLI Benchmark Command
+
+Implements the command-line interface for running attention and kernel benchmarks.
+
+Author: Taha Majlesi
+"""
+
 import argparse
 import sys
 import subprocess

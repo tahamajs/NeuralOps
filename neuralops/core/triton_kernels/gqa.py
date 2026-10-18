@@ -1,9 +1,9 @@
-#!/usr/bin/env python3
 """
-Triton Grouped Query Attention (GQA) Head Expansion Kernel with Autograd Backward.
+Grouped Query Attention Head Expansion
 
-Efficiently repeats KV heads along the head dimension for multi-query and grouped-query attention:
-  (k, v) with num_kv_heads -> (k_expanded, v_expanded) with num_heads
+Expands key and value heads for grouped query attention directly in registers during attention loading.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

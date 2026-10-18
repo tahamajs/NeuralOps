@@ -1,18 +1,9 @@
 """
-PADRe: Polynomial Attention with Dropout Regularization.
-Replaces softmax with a stable polynomial approximation, enabling faster
-inference and kernelized attention across diverse transformer architectures.
+PADRe: Polynomial Attention with Dropout Regularization
 
-Production-Hardened with:
-- Multi-architecture copy_weights (GPT-2, RoBERTa/BERT nested, Qwen/LLaMA, DistilBERT)
-- Frobenius norm validation (>= 1e-4)
-- Grouped-Query Attention (GQA) with repeat_kv
-- Rotary Position Embedding (RoPE) support
-- Numerical stability centering and causal lower-triangular masking for decoders
-- Nested encoder detection and output bypass
-- Trainable LoRA adapters with frozen base weights
-- Safe 4D head mask handling
-- Framework registration and single-layer injection helper
+Polynomial attention replacing softmax with bounded polynomial feature expansions for regularization.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

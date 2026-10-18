@@ -1,7 +1,9 @@
 """
-ENLighten: Low-Rank SVD + 2:4 Structured Sparsity (Photonic-Aligned).
-Registered as 'enlighten' and 'enlighten_compressor'. Production hardened for multi-architecture compatibility
-(DistilBERT, RoBERTa, GPT-2, Qwen3.5) with vectorization, error validation, and safe fallback.
+ENLighten: Low-Rank SVD with 2:4 Structured Sparsity
+
+Couples truncated SVD factorization with hardware-aligned 2:4 sparse projections to accelerate edge inference on modern accelerators.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

@@ -1,12 +1,11 @@
 """
-Megatron-style Tensor Parallelism (TP) for Low-Rank SVD Layers and Recurrent Attentions.
+Tensor Parallelism Module
 
-Supports both real PyTorch distributed process groups and deterministic in-process multi-rank simulation.
-Key Mathematical Optimization:
-  Performing All-Reduce in the compressed rank-r bottleneck space R^{B x T x r} instead of the full
-  hidden space R^{B x T x d_out} cuts inter-GPU communication traffic by d_out / r (2x - 8x)
-  while maintaining 100% mathematical and autograd gradient equivalence.
+Implements tensor-parallel linear projections, column/row splitting, and all-reduce primitives.
+
+Author: Taha Majlesi
 """
+
 from __future__ import annotations
 
 import logging

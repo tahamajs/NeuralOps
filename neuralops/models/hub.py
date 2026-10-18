@@ -1,4 +1,10 @@
-"""HuggingFace Hub utilities for NeuralOps models."""
+"""
+HuggingFace Hub Integration
+
+Model publishing, versioning, and weight serialization utilities for the HuggingFace Hub.
+
+Author: Taha Majlesi
+"""
 
 from __future__ import annotations
 

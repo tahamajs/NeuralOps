@@ -1,6 +1,11 @@
 """
-Fused Linear KL Divergence.
+Fused Knowledge Distillation Loss
+
+Fused forward and backward knowledge distillation loss kernel combining CE and KL-divergence objectives.
+
+Author: Taha Majlesi
 """
+
 from __future__ import annotations
 import torch
 import torch.nn.functional as F

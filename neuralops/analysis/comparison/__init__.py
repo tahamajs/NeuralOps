@@ -1,4 +1,9 @@
-"""Statistical comparison utilities for benchmark analysis."""
+"""
+NeuralOps Analysis Comparison Core Modules.
+
+Author: Taha Majlesi
+"""
+
 import sys
 from neuralops.analysis.comparison.statistical_testing import (
     bayesian_correlated_ttest,

@@ -1,13 +1,9 @@
-"""Central logging configuration and warning suppression utilities for neuralops.
+"""
+Logging Configuration Utilities
 
-Ensures that repeated warnings, deprecated notices, or recurrent exceptions
-from hot forward() loops do not flood standard output or log streams.
+Centralized logging configuration and warning suppression for NeuralOps modules.
 
-Examples
---------
->>> from neuralops.utils.logging_config import configure_logging, warn_once
->>> configure_logging(level="INFO", dedup=True)
->>> warn_once("module_fallback", "Using fallback attention implementation")
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

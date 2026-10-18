@@ -1,6 +1,9 @@
 """
-MoE Routing Interface, Autograd Functions, and 3-Level Fallback (Module 5).
-Includes Bitonic Sorting Warp-Shuffle Top-K Dispatch & Gather.
+Mixture of Experts Routing Autograd Interface
+
+Hardware-accelerated CUDA C++ autograd implementation with analytical gradients and three-level fallback dispatch.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

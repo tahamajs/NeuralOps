@@ -1,16 +1,9 @@
 """
-Gated DeltaNet Attention Module — Production-Hardened.
+Gated DeltaNet Attention
 
-Architecture:
-    * Delta rule recurrence with data-dependent beta (decay) and alpha (step size)
-    * L2-normalized Q/K for numerical stability of the learning-rate denominator
-    * Optional Triton fused scan for CUDA + head_dim ≤ 64
-    * Full KV-cache / recurrent-state support for autoregressive generation
-    * KD-compatible gate naming (lora_ prefix on all trainable gates)
-    * Bidirectional scan for encoder models (BERT, RoBERTa)
-    * GQA support with repeat_kv
-    * RoPE with partial-dim slicing
+Associative memory network utilizing delta update rules and gating mechanisms for constant-memory sequence modeling.
 
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

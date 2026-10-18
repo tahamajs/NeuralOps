@@ -1,5 +1,9 @@
 """
-Unified attention surgery module: weight slicing, regex extraction, and low-rank copying.
+Attention Graph Surgery
+
+AST and module-tree manipulation routines performing in-place surgery on neural network layers.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

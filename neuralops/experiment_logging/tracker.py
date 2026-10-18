@@ -1,4 +1,10 @@
-"""Simple in‑memory metrics tracker with JSON serialisation."""
+"""
+Experiment Metrics Tracker
+
+Tracks metrics in memory and serializes run histories to JSON format.
+
+Author: Taha Majlesi
+"""
 
 import json
 import os

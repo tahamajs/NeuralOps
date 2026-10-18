@@ -1,4 +1,10 @@
-"""Multi-Layer Perceptron (MLP) architectures for NeuralOps models."""
+"""
+Multi-Layer Perceptron Architectures
+
+Feed-forward neural network blocks supporting SwiGLU, GeLU, and standard gated MLP projections.
+
+Author: Taha Majlesi
+"""
 
 from __future__ import annotations
 

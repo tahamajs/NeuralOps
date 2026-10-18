@@ -1,8 +1,9 @@
 """
-SDRM: Scaled Dimension Rank Modulation.
-Assigns layer rank proportional to parameter budget for edge inference and factorizes
-into low-rank SVDLinear layers to achieve physical parameter reduction.
-Registered as 'sdrm', 'sdrm_factory', and 'sdrm_compressor_factory'.
+SDRM: Scaled Dimension Rank Modulation Compressor
+
+Dynamically modulates low-rank factor dimensions across network depth according to layer sensitivity and available memory budgets.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

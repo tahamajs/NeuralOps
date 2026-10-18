@@ -1,7 +1,11 @@
 """
-Fused Cross Entropy Loss Kernel with Online Softmax and Full Autograd Backward.
-Computes cross-entropy loss directly from logits and targets in a numerically stable manner.
+Fused Cross-Entropy Loss
+
+Numerically stable online softmax cross-entropy loss computation with analytical backward gradients.
+
+Author: Taha Majlesi
 """
+
 from __future__ import annotations
 
 import torch

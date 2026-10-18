@@ -1,7 +1,9 @@
 """
-Entmax-1.5 Bisection Interface, Autograd Function, and 3-Level Fallback.
-Target: SM 8.9 (NVIDIA Ada Lovelace RTX 4070 Laptop GPU, 8GB VRAM).
-Backward computes exact adjoint gradient for entmax 1.5 probabilities via native CUDA kernel.
+Entmax Bisection Autograd Interface
+
+Hardware-accelerated CUDA C++ autograd implementation with analytical gradients and three-level fallback dispatch.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

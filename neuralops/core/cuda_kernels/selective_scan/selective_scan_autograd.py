@@ -1,7 +1,9 @@
 """
-Selective Scan Autograd Function & 3-Level Fallback (Module 2).
-Supports arbitrary D_STATE, exact analytical backward gradients,
-multi-dtype (FP32/FP16/BF16), and Triton Level 2 fallback.
+Selective Scan (Mamba-1 S6) Autograd Interface
+
+Hardware-accelerated CUDA C++ autograd implementation with analytical gradients and three-level fallback dispatch.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

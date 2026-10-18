@@ -1,4 +1,8 @@
-"""Subpackage exports."""
+"""
+Modern Attention Mechanisms.
+
+Author: Taha Majlesi
+"""
 
 import importlib
 

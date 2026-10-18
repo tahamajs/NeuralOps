@@ -1,3 +1,9 @@
+"""
+Fused Dropout Residual Addition Hardware Operators.
+
+Author: Taha Majlesi
+"""
+
 from neuralops.core.cuda_kernels.fused_dropout_add.dropout_add_autograd import (
     fused_dropout_add,
     fused_dropout_add_pytorch_ref,

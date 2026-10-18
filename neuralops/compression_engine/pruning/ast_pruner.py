@@ -1,25 +1,9 @@
-r"""
-AST: Adaptive Semi-Structured 2:4 and N:M Pruning with Empirical Fisher
-Calibration, PCA Coordinate Rotation, and Soft Straight-Through Estimator (STE).
+"""
+AST Pruner: Adaptive Semi-Structured Pruning with Fisher Calibration
 
-Registered in COMPRESSOR_REGISTRY as 'ast_pruner' and 'ast'.
+Computes empirical Fisher information to guide semi-structured 2:4 and N:M pruning with straight-through estimator gradient compensation.
 
-Mathematical Formulation:
-  1. Activation Covariance & PCA:
-       Σ_X = (1/(N-1)) (X-μ)^T (X-μ) = Q Λ Q^T,  Q^T Q = I
-  2. Empirical Jacobian-weighted saliency:
-       g = ∂L/∂W,  L = 0.5·||logits||²,  F = E[g ⊙ g]
-  3. PCA-rotated Fisher projected to original basis:
-       F̃ = F · (Q ⊙ Q)             [in rotated basis]
-       F_proj = F̃ · Q^T            [projected back to original basis]
-  4. Saliency in ORIGINAL basis:
-       S_ij = |W_ij| · sqrt(F_proj_ij + ε)
-  5. 2:4 structured mask on ORIGINAL weights:
-       W_pruned = Π_{2:4}(W, S)
-  6. Soft Straight-Through Estimator (STE):
-       W_forward = W_pruned + W - W.detach()
-       Allows 2:4 sparsity during forward pass while routing dense gradients to all
-       weights during backward pass so the model recovers and updates importance dynamically.
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

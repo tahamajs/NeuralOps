@@ -1,4 +1,10 @@
-"""Literature and alias constants for module analysis."""
+"""
+Module Analysis Constants
+
+Reference benchmarks, literature citations, and classification aliases for attention mechanism analysis.
+
+Author: Taha Majlesi
+"""
 
 from pathlib import Path
 

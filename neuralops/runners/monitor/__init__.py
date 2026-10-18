@@ -1,4 +1,8 @@
-"""NeuralOps Telemetry and Documentation Studio Server package."""
+"""
+NeuralOps Runners Monitor Subpackage.
+
+Author: Taha Majlesi
+"""
 
 from __future__ import annotations
 

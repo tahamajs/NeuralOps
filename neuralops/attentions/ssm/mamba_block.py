@@ -1,8 +1,9 @@
 """
-Faithful Mamba Block with SVD-based Attention Weight Distillation.
+Mamba Block with SVD-Based Attention Weight Distillation
 
-Based on Gu & Dao, "Mamba: Linear-Time Sequence Modeling" (arXiv:2312.00752).
+Selective state space sequence model enhanced with SVD-based weight distillation for compact deployment.
 
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

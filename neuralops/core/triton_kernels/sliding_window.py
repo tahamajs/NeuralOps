@@ -1,4 +1,11 @@
-"""Real Triton kernel for Sliding Window Attention with CPU/CUDA fallback and autograd backward."""
+"""
+Sliding Window Attention
+
+Local windowed self-attention restricting receptive field to local bands for linear complexity.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 import math
 import torch

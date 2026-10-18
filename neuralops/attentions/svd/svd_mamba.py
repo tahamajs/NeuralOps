@@ -1,11 +1,11 @@
 """
-SVD-Mamba: SVD-factorized Selective State Space Model.
-Hardened for production use across diverse transformer architectures:
-- DistilBERT (Flat MHA)
-- RoBERTa / BERT (Nested Encoder Self-Attention)
-- GPT-2 (Causal Decoder with Conv1D)
-- Qwen / LLaMA (GQA with Rotary Position Embeddings)
+SVD-Mamba: SVD-Factorized Selective State Space Model
+
+SVD-factorized selective state space model compressing state transitions for resource-constrained inference.
+
+Author: Taha Majlesi
 """
+
 from neuralops.core.common import _cfg_get
 from neuralops.core.common import _unpack_weight_bias, repeat_kv
 

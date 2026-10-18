@@ -1,21 +1,9 @@
 """
-Swift-SVD Activation-Aware Compressor — Production-Hardened (v2).
+Swift-SVD-Act: Activation-Aware Swift SVD Compressor
 
-Registered as 'swift_svd_act', 'swift_svd', 'swift_svd_compressor'.
+Integrates empirical activation covariance weighting into the closed-form Swift-SVD factorization pipeline.
 
-Algorithm:
-  1. Collect empirical cross-covariance C = E[Y^T X] per layer across
-     calibration data (online accumulation, bounded memory).
-  2. Extract principal activation subspaces:
-       U_act = top-r left  singular vectors of C
-       V_act = top-r right singular vectors of C
-  3. Project W onto (U_act, V_act):
-       M = U_act^T @ W @ V_act
-  4. SVD the projected matrix and reconstruct:
-       A = U_act @ U_m · sqrt(S_m)
-       B = sqrt(S_m) · Vt_m @ V_act^T
-  5. Replace the dense layer with SVDLinear (or fall back to plain SVD).
-
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

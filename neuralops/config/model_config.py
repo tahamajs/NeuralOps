@@ -1,3 +1,11 @@
+"""
+Model Architecture Configuration
+
+Specification of backbone transformer model types, layer counts, dimensions, and hidden states.
+
+Author: Taha Majlesi
+"""
+
 from dataclasses import dataclass, field
 
 

@@ -1,4 +1,10 @@
-"""CSV export utilities and schema definitions for benchmark results."""
+"""
+CSV Result Writer
+
+Exports tabular benchmark results and summary metrics into standard CSV format.
+
+Author: Taha Majlesi
+"""
 
 from __future__ import annotations
 

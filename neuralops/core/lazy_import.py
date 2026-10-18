@@ -1,6 +1,9 @@
 """
-PEP 562 Lazy Module Loader and dynamic proxy for high-speed framework startup.
-Prevents heavy CUDA / OpenMP / TorchInductor eager initialization until symbols are accessed.
+Lazy Module Import Engine
+
+Deferred import proxy and runtime symbol resolver optimizing package startup latency.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

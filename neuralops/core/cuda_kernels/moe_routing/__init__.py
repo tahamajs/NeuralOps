@@ -1,3 +1,9 @@
+"""
+Mixture of Experts Routing Hardware Operators.
+
+Author: Taha Majlesi
+"""
+
 from neuralops.core.cuda_kernels.moe_routing.moe_autograd import (
     moe_dispatch_gather,
     moe_dispatch,

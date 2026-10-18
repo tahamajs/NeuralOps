@@ -1,13 +1,9 @@
 """
-HGRN-2 Outer-Product Recurrent Linear Attention — Production-Hardened v5.
+HGRN-2 Outer-Product Recurrent Linear Attention
 
-Architecture:
-    * Pure outer-product linear recurrence: S_t = f_t · S_{t-1} + k_tᵀ v_t
-    * Forget gate f_t in (0, 1) via softplus(W_f · x)
-    * NO RoPE (invalid for outer-product linear attention)
-    * NO denominator Z (f-gate handles scaling automatically)
-    * NO ELU+1 (preserves signed geometry of pretrained weights)
+Outer-product recurrent linear attention utilizing channel-wise gating and low-rank state updates.
 
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

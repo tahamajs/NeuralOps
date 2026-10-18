@@ -1,7 +1,9 @@
-"""Native, zero-dependency LoRA (Low-Rank Adaptation) module for PyTorch models.
+"""
+LoRA Layer Utilities
 
-Provides standalone low-rank adapters for linear layers without requiring external
-PEFT packages. Supports Qwen, BERT, DistilBERT, RoBERTa, GPT-2, and T5 architectures.
+Helper utilities for low-rank adaptation matrix creation, merging, and decomposition.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

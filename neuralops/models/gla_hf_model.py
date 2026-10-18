@@ -1,6 +1,11 @@
 """
-HuggingFace Pretrained Configuration and CausalLM Model for GLA.
+Gated Linear Attention HuggingFace Model
+
+Native HuggingFace-compatible CausalLM and sequence modeling architecture powered by Gated Linear Attention.
+
+Author: Taha Majlesi
 """
+
 from __future__ import annotations
 
 import torch

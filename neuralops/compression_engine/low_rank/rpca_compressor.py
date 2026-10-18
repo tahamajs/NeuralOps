@@ -1,6 +1,9 @@
 """
-Robust PCA: decompose W = L + S, factorizing low-rank component L with structural SVDLinear.
-Registered in COMPRESSOR_REGISTRY as 'rpca', 'rpca_factory', and 'rpca_compressor_factory'.
+Robust PCA (RPCA) Low-Rank Compressor
+
+Decomposes weight matrices into low-rank representations and sparse outlier matrices via Augmented Lagrange Multipliers (ALM).
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

@@ -1,20 +1,9 @@
 """
-Triton Strided Tensor-Train (TT) Contraction Kernel (Phase 1 / Kernel 3).
+Strided Tensor-Train Contraction
 
-Target Module: tt_compressor (TTLinearLayer)
-The Problem:
-    In PyTorch, TT contraction performs:
-        res = torch.tensordot(core0[0], core1[..., 0], dims=([-1], [0]))
-        res = res.permute(1, 3, 0, 2).contiguous()
-        W = res.view(out_features, in_features)
-    This creates multiple temporary 4D tensors and forces expensive VRAM allocation
-    and memory copies during .permute().contiguous().
+Evaluates high-dimensional Tensor-Train matrix contractions via strided multi-index tensor products in SRAM.
 
-The Solution:
-    In Triton, permutations have ZERO cost.
-    By rearranging strides (stride_p0, stride_q0, stride_p1, stride_q1) inside pointer
-    arithmetic, the TT cores are contracted directly into the target 2D weight matrix W
-    or multiplied on-the-fly with zero intermediate allocations.
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

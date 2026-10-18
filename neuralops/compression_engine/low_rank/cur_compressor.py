@@ -1,7 +1,9 @@
 """
-CUR Compressor: replaces Linear and Conv1D layers with CUR decomposition.
-Uses leverage score sampling or energy sampling for column/row selection.
-Registered in COMPRESSOR_REGISTRY as 'cur' and 'cur_compressor'.
+CUR Compressor: CUR Matrix Decomposition
+
+Decomposes weight matrices into select columns and rows via statistical leverage scores, coupled with an optimal intersection kernel.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

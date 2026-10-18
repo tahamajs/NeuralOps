@@ -1,13 +1,9 @@
 """
-GoldFinch-AHN: Adaptive Hybrid Network — Sliding Window + Gated Recurrent Memory.
-Production-hardened v2 with:
-  - Chunked parallel scan for GatedRecurrentMemory (no Python loop)
-  - SDPA fast-path for sliding-window attention
-  - Configurable window_radius (full context supported)
-  - Configurable gate_init_bias
-  - Proper freeze semantics for delta_mem
-  - Correct head_mask placement (pre-softmax)
-  - Robust attention_mask normalization
+GoldFinch-AHN: Adaptive Hybrid Network
+
+Hybrid adaptive architecture integrating sliding-window attention with gated recurrent associative memory.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

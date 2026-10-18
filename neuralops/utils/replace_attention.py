@@ -1,3 +1,11 @@
+"""
+Attention Layer Replacement Utility
+
+Replaces native model attention mechanisms with linear and factorized attention modules.
+
+Author: Taha Majlesi
+"""
+
 import logging
 from typing import Any
 

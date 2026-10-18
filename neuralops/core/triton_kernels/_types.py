@@ -1,4 +1,10 @@
-"""Shared base types, constants, detection, and PyTorch fallbacks for Triton kernels."""
+"""
+Triton Kernel Base Types and Fallbacks
+
+Type definitions, hardware support detection, and shared interfaces for Triton JIT operators.
+
+Author: Taha Majlesi
+"""
 
 from __future__ import annotations
 

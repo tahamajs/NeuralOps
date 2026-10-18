@@ -1,12 +1,9 @@
-# -*- coding: utf-8 -*-
-"""Unified High-Precision Benchmark Base Harness for NeuralOps.
+"""
+Unified High-Precision Benchmark Base Harness for NeuralOps
 
-Provides:
-- BenchmarkResult: Rich benchmark result dataclass capturing latency, throughput,
-  VRAM, TFLOPs/s, memory bandwidth, arithmetic intensity, and statistical confidence.
-- BenchmarkRunner: Production-grade timing harness with CUDA events, warmup,
-  synchronization, trimmed mean, median, std dev, and VRAM peak tracking.
-- System hardware profiling (RTX 4070 264 GB/s peak, theoretical FP16/BF16/FP32 TFLOPs).
+Implements harness functionality for NeuralOps.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

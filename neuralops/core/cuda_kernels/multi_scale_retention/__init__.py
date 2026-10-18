@@ -1,3 +1,9 @@
+"""
+Multi-Scale Retention Hardware Operators.
+
+Author: Taha Majlesi
+"""
+
 from .multi_scale_retention_autograd import (
     multi_scale_retention,
     multi_scale_retention_pytorch_ref,

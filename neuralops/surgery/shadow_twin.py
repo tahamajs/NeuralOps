@@ -1,17 +1,9 @@
 """
-Shadow-Twin In-Place Distillation, Homotopy & Finalization Engine.
+Shadow-Twin Distillation Engine
 
-Provides:
-  - Shadow-Twin dual execution: embeds frozen teacher alongside student branch in UniversalAttentionBridge.
-  - Multi-stage alignment losses:
-      * Stage 1 ('orientation'): HedgehogFeatureMapKDLoss / MiniLM QKV relation matching.
-      * Stage 2 ('block_cloning'): Operator cloning (MSE + Cosine) + Linear CKA loss.
-      * Stage 3 ('end_to_end'): Task-level distillation + Homotopy alpha-blending.
-  - Helper functions:
-      * set_surgery_alpha(model, alpha): smoothly anneals teacher-to-student output blend.
-      * set_surgery_stage(model, stage): switches parameter freezing and loss calculation mode.
-      * collect_surgery_distillation_loss(model): aggregates intermediate layer distillation losses.
-      * finalize_surgery(model): purges teacher modules, unhooks bridges, and cleans VRAM.
+Performs in-place shadow-twin distillation, homotopy scheduling, and surgery finalization.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

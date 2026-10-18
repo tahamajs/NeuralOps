@@ -1,7 +1,9 @@
 """
-Test-Time Training (TTT) Linear Attention & Meta-Learner.
-Formulates the recurrent state as an online inner-loop model updated via
-preconditioned gradient descent on reconstruction loss.
+Test-Time Training Engine
+
+Implements test-time training (TTT) and dynamic sequence-level model adaptation.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

@@ -1,16 +1,9 @@
 """
-ERC-SVD: Error-Controlled SVD with Bounded Frobenius Truncation Error.
-Registered as 'erc' and 'erc_svd'.
+ERC-SVD: Error-Controlled Singular Value Decomposition
 
-Bug-fix map:
-  ER-FIX-01  fallback path handles svd_layer=None safely.
-  ER-FIX-02  LoRA rank detected via lora_A.weight.shape[0] (PEFT-compatible).
-  ER-FIX-03  forward sanity check error message corrected.
-  ER-FIX-04  attention_mask included in forward check.
-  ER-FIX-05  r_init clamped to max_r before storing.
-  ER-FIX-06  erc_factory guarded, returns stats optionally.
-  ER-FIX-07  no wasted SVDLayer when best_err > max_error and fallback enabled.
-  ER-FIX-08  no silent mutation of non-target layers (only freeze when needed).
+Dynamically bounds Frobenius norm truncation errors per layer to guarantee rigorous theoretical reconstruction guarantees.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

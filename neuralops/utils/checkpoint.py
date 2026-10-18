@@ -1,4 +1,10 @@
-"""Module providing checkpoint implementations for NeuralOps."""
+"""
+Checkpoint Utilities
+
+Handles saving, loading, and state dictionary validation for model checkpoints.
+
+Author: Taha Majlesi
+"""
 
 # framework/utils/checkpoint.py
 import json

@@ -1,4 +1,11 @@
-"""Structured dual-format logging for neuralops benchmarks."""
+"""
+Structured dual-format logging for neuralops benchmarks
+
+Implements logging functionality for NeuralOps.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 
 import json

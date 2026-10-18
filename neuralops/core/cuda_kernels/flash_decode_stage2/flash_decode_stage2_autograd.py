@@ -1,3 +1,11 @@
+"""
+Flash-Decoding Stage 2 Autograd Interface
+
+Hardware-accelerated CUDA C++ autograd implementation with analytical gradients and three-level fallback dispatch.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 from pathlib import Path
 from typing import Optional

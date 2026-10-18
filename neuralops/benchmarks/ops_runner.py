@@ -1,13 +1,10 @@
 #!/usr/bin/env python3
 """
-Unified Operator Benchmark Runner for NeuralOps and FLA Kernels.
-Modeled after benchmarks/ops/run.py paradigm:
-- Subprocess-isolated execution so GPU memory is cleanly freed between configurations.
-- Direct benchmarking of forward ('fwd') and backward ('fwdbwd') passes across
-  registered CUDA and Triton operators (chunk_gla, gdn_scan, svd_linear_attention,
-  fused_ce, fused_rmsnorm, selective_scan, etc.).
-- Automated timing using triton.testing.do_bench with warmup and quantiles.
-- Rich Markdown and ASCII table reporting, optional comparison against git baseline.
+Unified Operator Benchmark Runner for NeuralOps and FLA Kernels
+
+Modeled after benchmarks/ops/run.py paradigm.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

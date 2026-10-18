@@ -1,3 +1,11 @@
+"""
+Hyperparameter Optimization
+
+Implements hyperparameter search, grid exploration, and trial evaluation for model training.
+
+Author: Taha Majlesi
+"""
+
 import json
 from collections.abc import Callable
 from typing import Any
