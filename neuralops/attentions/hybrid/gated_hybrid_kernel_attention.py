@@ -697,7 +697,7 @@ class GatedHybridKernelAttention(BaseAttention):
         # [PERF-2] Fast SDPA path when no padding mask is needed
         use_sdpa = (
             not return_attn
-            and (valid_b.all().item() or (valid_b.sum() == valid_b.numel()))
+            and bool(valid_b.all())
         )
 
         if use_sdpa:
