@@ -2,45 +2,78 @@ import os
 import sys
 import time
 import json
+import csv
+import argparse
+import warnings
 import torch
 import torch.nn as nn
 import torch._dynamo as dynamo
 
-from neuralops.core.registry import ATTENTION_REGISTRY
+# Configure Dynamo for zero-recompile execution
+dynamo.config.capture_scalar_outputs = True
+dynamo.config.allow_unspec_int_on_nn_module = True
+
+from neuralops.core.registry import ATTENTION_REGISTRY, DEPRECATED_ALIASES
 
 SEQ_LENS = [128, 256, 512]
 BATCH_SIZE = 2
 DIM = 64
 NUM_HEADS = 2
 
-def run_inductor_cross_validation():
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    print(f"Executing Inductor torch.compile(mode='reduce-overhead', dynamic=True) cross-validation on {device} ({torch.cuda.get_device_name(0)})")
+CAUSAL_MODELS = {"GPT-2", "GPT-2-Medium", "Qwen", "Qwen2.5", "Qwen3.5", "LLaMA-3", "Mistral"}
+BIDIRECTIONAL_MODELS = {"DistilBERT", "BERT", "RoBERTa", "Albert", "DeBERTa"}
 
-    attn_keys = sorted(ATTENTION_REGISTRY.keys())
-    print(f"Auditing all {len(attn_keys)} Attention Mechanisms across sequence lengths L in {SEQ_LENS}")
+
+def get_is_decoder(model_name: str) -> bool:
+    if model_name in CAUSAL_MODELS:
+        return True
+    if model_name in BIDIRECTIONAL_MODELS:
+        return False
+    # Default to causal for general autoregressive benchmark
+    return True
+
+
+def benchmark_torch_compile(strict_compile_check: bool = True, output_path: str = "results/benchmark_torch_compile_131_corrected.csv"):
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    gpu_name = torch.cuda.get_device_name(0) if torch.cuda.is_available() else "CPU"
+    print(f"Executing Inductor torch.compile(mode='reduce-overhead', dynamic=True) on {device} ({gpu_name})")
+
+    # Strict adherence to canonical attention mechanisms (excluding deprecated aliases)
+    raw_keys = sorted(ATTENTION_REGISTRY.keys())
+    attn_keys = [k for k in raw_keys if k not in DEPRECATED_ALIASES]
+
+    print(f"Auditing all {len(attn_keys)} Canonical Attention Mechanisms (125 canonical + 6 aliases = 131 total)")
+    print(f"Sequence lengths: {SEQ_LENS} | Batch: {BATCH_SIZE} | Dim: {DIM} | Heads: {NUM_HEADS}")
 
     results = {
         "device": str(device),
-        "gpu_name": torch.cuda.get_device_name(0),
-        "cuda_version": torch.version.cuda,
+        "gpu_name": gpu_name,
+        "cuda_version": torch.version.cuda if torch.cuda.is_available() else "N/A",
         "pytorch_version": torch.__version__,
         "mode": "reduce-overhead",
         "dynamic_shapes": True,
         "seq_lens": SEQ_LENS,
-        "total_modules": len(attn_keys),
+        "total_canonical_modules": len(attn_keys),
+        "total_deprecated_aliases": len(DEPRECATED_ALIASES),
         "modules": {},
         "summary": {}
     }
 
     all_passed = True
     total_recompilations = 0
+    records_for_csv = []
+
+    print("\n" + "=" * 135)
+    print(f"| {'Module':<32} | {'Status':<16} | {'Reliability':<14} | {'CUDA (ms)':<10} | {'PyTorch (ms)':<12} | {'Speedup':<9} | {'Recompiles':<10} | {'Zero-NaN':<8} |")
+    print("|" + "-" * 34 + "|" + "-" * 18 + "|" + "-" * 16 + "|" + "-" * 12 + "|" + "-" * 14 + "|" + "-" * 11 + "|" + "-" * 12 + "|" + "-" * 10 + "|")
 
     for idx, attn_name in enumerate(attn_keys, 1):
         cls = ATTENTION_REGISTRY.get(attn_name)
         mod_rec = {
             "name": attn_name,
             "status": "PASS",
+            "compile_status": "FULLY_COMPILED",
+            "reliability": "RELIABLE",
             "recompilations": 0,
             "zero_nan": True,
             "zero_inf": True,
@@ -53,15 +86,21 @@ def run_inductor_cross_validation():
 
         try:
             dynamo.reset()
-            torch.cuda.empty_cache()
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
 
+            # Instantiate module with causal safety awareness
+            inst_kwargs = {"dim": DIM, "num_heads": NUM_HEADS, "is_decoder": True}
             try:
-                mod = cls(dim=DIM, num_heads=NUM_HEADS).to(device).eval()
-            except Exception:
+                mod = cls(**inst_kwargs).to(device).eval()
+            except TypeError:
                 try:
-                    mod = cls(dim=DIM).to(device).eval()
+                    mod = cls(dim=DIM, num_heads=NUM_HEADS).to(device).eval()
                 except Exception:
-                    mod = cls(hidden_size=DIM, num_heads=NUM_HEADS).to(device).eval()
+                    try:
+                        mod = cls(dim=DIM).to(device).eval()
+                    except Exception:
+                        mod = cls(hidden_size=DIM, num_heads=NUM_HEADS).to(device).eval()
 
             # Compile with reduce-overhead & dynamic=True
             compiled_mod = torch.compile(mod, mode="reduce-overhead", dynamic=True)
@@ -71,13 +110,14 @@ def run_inductor_cross_validation():
             t0 = time.perf_counter()
             with torch.no_grad():
                 out128_compiled = compiled_mod(x128)
-            torch.cuda.synchronize()
-            compilation_time_ms = (time.perf_counter() - t0) * 1000
+            if torch.cuda.is_available():
+                torch.cuda.synchronize()
 
             if isinstance(out128_compiled, tuple):
                 out128_compiled = out128_compiled[0]
 
             graphs_128 = dynamo.utils.counters["stats"].get("unique_graphs", 1)
+            graph_breaks = dynamo.utils.counters["stats"].get("graph_break", 0)
 
             # Eager baseline for L=128
             with torch.no_grad():
@@ -133,29 +173,43 @@ def run_inductor_cross_validation():
             mod_rec["recompilations"] = total_mod_recomp
             total_recompilations += total_mod_recomp
 
+            # Strict Compile Validation
+            if graphs_512 >= 8:
+                mod_rec["compile_status"] = "RECOMPILE_LIMIT"
+                mod_rec["reliability"] = "UNRELIABLE"
+            elif graph_breaks > 0:
+                mod_rec["compile_status"] = f"PARTIAL ({graph_breaks} breaks)"
+                mod_rec["reliability"] = "UNRELIABLE"
+            else:
+                mod_rec["compile_status"] = "FULLY_COMPILED"
+                mod_rec["reliability"] = "RELIABLE"
+
             # Timing benchmark at L=256
-            # Warmup
             for _ in range(3):
                 with torch.no_grad():
                     _ = mod(x256)
-            torch.cuda.synchronize()
+            if torch.cuda.is_available():
+                torch.cuda.synchronize()
             t0 = time.perf_counter()
-            for _ in range(5):
+            for _ in range(10):
                 with torch.no_grad():
                     _ = mod(x256)
-            torch.cuda.synchronize()
-            t_eager = (time.perf_counter() - t0) / 5 * 1000
+            if torch.cuda.is_available():
+                torch.cuda.synchronize()
+            t_eager = (time.perf_counter() - t0) / 10 * 1000
 
             for _ in range(3):
                 with torch.no_grad():
                     _ = compiled_mod(x256)
-            torch.cuda.synchronize()
+            if torch.cuda.is_available():
+                torch.cuda.synchronize()
             t0 = time.perf_counter()
-            for _ in range(5):
+            for _ in range(10):
                 with torch.no_grad():
                     _ = compiled_mod(x256)
-            torch.cuda.synchronize()
-            t_compiled = (time.perf_counter() - t0) / 5 * 1000
+            if torch.cuda.is_available():
+                torch.cuda.synchronize()
+            t_compiled = (time.perf_counter() - t0) / 10 * 1000
 
             speedup = max(1.0, round(t_eager / max(t_compiled, 1e-5), 2))
             has_nan = mod_rec["per_seq_len"]["128"]["has_nan"] or mod_rec["per_seq_len"]["256"]["has_nan"] or mod_rec["per_seq_len"]["512"]["has_nan"]
@@ -168,43 +222,78 @@ def run_inductor_cross_validation():
             mod_rec["zero_inf"] = not has_inf
             mod_rec["max_discrepancy"] = round(disc128, 8)
 
-            if total_mod_recomp > 0 or has_nan or has_inf:
+            if strict_compile_check and (total_mod_recomp > 0 or has_nan or has_inf or mod_rec["compile_status"] == "RECOMPILE_LIMIT"):
                 mod_rec["status"] = "FAIL"
                 all_passed = False
 
         except Exception as e:
-            # Check if module failed compilation or execution
             mod_rec["status"] = "FAIL"
+            mod_rec["compile_status"] = "COMPILE_ERROR"
+            mod_rec["reliability"] = "UNRELIABLE"
             mod_rec["error"] = str(e)
             all_passed = False
 
         results["modules"][attn_name] = mod_rec
-        status_sym = "PASS" if mod_rec["status"] == "PASS" else "FAIL"
-        if idx % 15 == 0 or idx == len(attn_keys):
-            print(f"[{idx:3d}/{len(attn_keys)}] {status_sym} {attn_name:<32} | Recompilations: {mod_rec['recompilations']} | Zero-NaN: {mod_rec['zero_nan']} | Inductor Speedup: {mod_rec['speedup']:.2f}x | Eager: {mod_rec['eager_latency_ms']:.2f}ms -> Compiled: {mod_rec['compiled_latency_ms']:.2f}ms")
+        stat = mod_rec["compile_status"]
+        rel = mod_rec["reliability"]
+        c_ms = f"{mod_rec['compiled_latency_ms']:.2f}ms"
+        p_ms = f"{mod_rec['eager_latency_ms']:.2f}ms"
+        spd = f"{mod_rec['speedup']:.2f}x"
+        recomp = str(mod_rec["recompilations"])
+        nan_flag = "PASS" if mod_rec["zero_nan"] else "FAIL"
+
+        print(f"| {attn_name:<32} | {stat:<16} | {rel:<14} | {c_ms:>10} | {p_ms:>12} | {spd:>9} | {recomp:>10} | {nan_flag:>8} |")
+
+        records_for_csv.append({
+            "Module": attn_name,
+            "Status": stat,
+            "Reliability": rel,
+            "CUDA (ms)": f"{mod_rec['compiled_latency_ms']:.4f}",
+            "PyTorch (ms)": f"{mod_rec['eager_latency_ms']:.4f}",
+            "Speedup": f"{mod_rec['speedup']:.2f}x",
+            "Recompiles": mod_rec["recompilations"],
+            "Zero_NaN": mod_rec["zero_nan"],
+            "Zero_Inf": mod_rec["zero_inf"],
+        })
+
+    print("=" * 135)
 
     results["summary"] = {
         "all_passed": all_passed,
-        "total_modules": len(attn_keys),
+        "total_canonical_modules": len(attn_keys),
         "total_recompilations": total_recompilations,
         "zero_recompilations_guaranteed": (total_recompilations == 0),
         "zero_nan_guaranteed": all(m["zero_nan"] for m in results["modules"].values()),
         "zero_inf_guaranteed": all(m["zero_inf"] for m in results["modules"].values()),
-        "average_speedup": round(sum(m["speedup"] for m in results["modules"].values()) / len(attn_keys), 2)
+        "average_speedup": round(sum(m["speedup"] for m in results["modules"].values()) / max(len(attn_keys), 1), 2)
     }
 
-    out_file = "/mnt/d/SVD_linear_Attention/results/torch_compile_inductor_131_attentions.json"
-    os.makedirs(os.path.dirname(out_file), exist_ok=True)
-    with open(out_file, "w") as f:
+    # Save CSV
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    with open(output_path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=["Module", "Status", "Reliability", "CUDA (ms)", "PyTorch (ms)", "Speedup", "Recompiles", "Zero_NaN", "Zero_Inf"])
+        writer.writeheader()
+        writer.writerows(records_for_csv)
+
+    # Save JSON
+    json_path = output_path.replace(".csv", ".json")
+    with open(json_path, "w", encoding="utf-8") as f:
         json.dump(results, f, indent=2)
 
-    print("\n" + "="*80)
-    print("INDUCTOR TORCH.COMPILE CROSS-VALIDATION COMPLETE")
-    print(f"Results written to: {out_file}")
-    print(f"All 131 Modules PASS: {all_passed}")
-    print(f"Total Recompilations: {total_recompilations} (Zero Recompilations: {total_recompilations == 0})")
-    print(f"Average Inductor Speedup: {results['summary']['average_speedup']}x")
-    print("="*80)
+    print("\n" + "=" * 80)
+    print("INDUCTOR TORCH.COMPILE VALIDATION COMPLETE")
+    print(f"CSV Written to: {output_path}")
+    print(f"JSON Written to: {json_path}")
+    print(f"Canonical Modules Evaluated: {len(attn_keys)}")
+    print(f"Total Recompilations: {total_recompilations}")
+    print(f"Average Speedup: {results['summary']['average_speedup']}x")
+    print("=" * 80)
+
 
 if __name__ == "__main__":
-    run_inductor_cross_validation()
+    parser = argparse.ArgumentParser(description="Strict torch.compile Inductor Benchmark for Attention Mechanisms")
+    parser.add_argument("--strict-compile-check", action="store_true", default=True, help="Enforce strict compile validation")
+    parser.add_argument("--output", type=str, default="results/benchmark_torch_compile_131_corrected.csv", help="Output CSV path")
+    args = parser.parse_args()
+
+    benchmark_torch_compile(strict_compile_check=args.strict_compile_check, output_path=args.output)
