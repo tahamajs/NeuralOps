@@ -89,17 +89,13 @@ COMPRESSOR_FILE_MAP: dict[str, str] = {
 def handle_deprecated_alias(name: str) -> str:
     """Resolve deprecated alias recursively with standard deprecation warning."""
     k = name.lower()
-    visited = set()
-    while k in DEPRECATED_ALIASES and k not in visited:
-        visited.add(k)
-        new_name = DEPRECATED_ALIASES[k]
-        if new_name is None:
-            raise ValueError(f"Module '{name}' has been deprecated and disabled.")
+    from neuralops.core.registry import DEPRECATED_ALIASES as REG_DEPRECATED
+    if k in REG_DEPRECATED:
+        new_name = REG_DEPRECATED[k]
         warnings.warn(
             f"'{name}' is deprecated. Use '{new_name}' instead.",
             DeprecationWarning,
             stacklevel=3,
         )
-        name = new_name
-        k = name.lower()
+        return new_name
     return name
