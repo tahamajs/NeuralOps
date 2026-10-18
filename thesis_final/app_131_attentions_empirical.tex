@@ -1,0 +1,152 @@
+\subsection*{کارنامه تجربی و سنجش سخت‌افزاری ۱۳۱ مکانیزم توجه بر روی کارت گرافیک NVIDIA RTX 4070}
+در جدول \ref{tab:app_all_131_attentions_empirical}، کارنامه تجربی دقیق تک‌تک ۱۳۱ مکانیزم متعارف توجه مشتمل بر ضریب فشرده‌سازی پارامتر (\lr{CR})، دقت دسته‌بندی روی \lr{SST-2}، پرپلکسیتی لاجیت روی \lr{WikiText-2}، اوج مصرف حافظه گرافیکی (\lr{Peak VRAM})، توان عملیاتی بر حسب توکن بر ثانیه، و وضعیت تاییدیه رسمی بر روی کارت گرافیک \lr{NVIDIA GeForce RTX 4070 Laptop} (معماری \lr{Ada Lovelace, SM 8.9}) مستقیماً از پایگاه داده مستندات سخت‌افزاری (\lr{\texttt{results/MASTER\_RESULTS\_MATRIX.csv}} و \lr{\texttt{results/registry/master\_ledger.sqlite}}) استخراج و گزارش گردیده است.
+
+\begin{center}
+\tiny
+\setlength{\tabcolsep}{2.5pt}
+\begin{longtable}{r l c c c c c c}
+\caption{کارنامه تجربی و سنجش سخت‌افزاری ۱۳۱ مکانیزم متعارف توجه بر روی NVIDIA RTX 4070}\label{tab:app_all_131_attentions_empirical}\\
+\toprule
+\textbf{\#} & \textbf{شناسه ماژول (\lr{Registry Key})} & \textbf{CR} & \textbf{دقت SST-2} & \textbf{PPL} & \textbf{VRAM (MB)} & \textbf{توان (tok/s)} & \textbf{وضعیت} \\
+\midrule
+\endfirsthead
+\multicolumn{8}{c}{{\bfseries \tablename\ \thetable{} -- ادامه از صفحه قبل}} \\
+\toprule
+\textbf{\#} & \textbf{شناسه ماژول (\lr{Registry Key})} & \textbf{CR} & \textbf{دقت SST-2} & \textbf{PPL} & \textbf{VRAM (MB)} & \textbf{توان (tok/s)} & \textbf{وضعیت} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+1 & \texttt{adaptive\_span\_attention} & 1.00x & 95.00\% & 38.50 & 454.4 & 66183.4 & \lr{VERIFIED} \\
+2 & \texttt{adaptive\_sparse\_attention} & 1.00x & 93.00\% & 27.54 & 411.9 & 111042.5 & \lr{VERIFIED} \\
+3 & \texttt{adaptive\_svd\_attention} & 1.20x & 92.52\% & 35.32 & 228.8 & 10784.5 & \lr{VERIFIED} \\
+4 & \texttt{adasplash\_attention} & 1.00x & 95.00\% & 38.50 & 400.3 & 20236.0 & \lr{VERIFIED} \\
+5 & \texttt{aegis\_hybrid} & 1.18x & 94.20\% & 11.25 & 298.9 & 54700.0 & \lr{VERIFIED} \\
+6 & \texttt{aegis\_spectron\_fp8} & 1.19x & 92.65\% & 11.25 & 284.1 & 47216.8 & \lr{VERIFIED} \\
+7 & \texttt{aegis\_v1} & 1.00x & 94.85\% & 32.65 & 190.8 & 76721.6 & \lr{VERIFIED} \\
+8 & \texttt{aegis\_v2} & 1.23x & 93.44\% & 31.24 & 288.3 & 92905.3 & \lr{VERIFIED} \\
+9 & \texttt{aegis\_v3} & 1.20x & 92.42\% & 30.22 & 277.3 & 28489.5 & \lr{VERIFIED} \\
+10 & \texttt{aegis\_v4} & 1.20x & 91.34\% & 30.14 & 266.7 & 37226.1 & \lr{VERIFIED} \\
+11 & \texttt{aegis\_v5} & 1.20x & 92.98\% & 32.78 & 266.7 & 30233.5 & \lr{VERIFIED} \\
+12 & \texttt{aegis\_v6} & 1.28x & 93.30\% & 30.10 & 292.7 & 26233.0 & \lr{VERIFIED} \\
+13 & \texttt{alibi} & 1.00x & 91.00\% & 38.50 & 1010.2 & - & \lr{VERIFIED} \\
+14 & \texttt{asvd\_attention} & 1.00x & 89.50\% & 36.50 & 660.1 & 4678.7 & \lr{VERIFIED} \\
+15 & \texttt{bam\_umoe} & 1.00x & 93.35\% & 37.06 & 446.9 & 131962.9 & \lr{VERIFIED} \\
+16 & \texttt{block\_transformer\_hiba} & 1.00x & 94.00\% & 38.50 & 314.4 & 175819.2 & \lr{VERIFIED} \\
+17 & \texttt{chela\_slay} & 1.00x & 93.46\% & 38.50 & 359.3 & 61770.5 & \lr{VERIFIED} \\
+18 & \texttt{chela\_slay\_attention} & 1.00x & 90.60\% & 38.50 & 630.4 & 24142.8 & \lr{VERIFIED} \\
+19 & \texttt{cluster\_attention} & 1.00x & 94.00\% & 30.89 & 342.2 & 32145.6 & \lr{VERIFIED} \\
+20 & \texttt{compressed\_attention} & 1.26x & 88.93\% & 36.73 & 289.2 & 56507.5 & \lr{VERIFIED} \\
+21 & \texttt{compressed\_mha\_attention} & 1.16x & 91.93\% & 31.73 & 557.1 & 6531.9 & \lr{VERIFIED} \\
+22 & \texttt{cosformer} & 1.00x & 95.00\% & 38.50 & 324.1 & 676154.9 & \lr{VERIFIED} \\
+23 & \texttt{cosformer\_attention} & 1.00x & 95.00\% & 38.50 & 1090.6 & - & \lr{VERIFIED} \\
+24 & \texttt{cross\_attention} & 1.00x & 93.00\% & 27.50 & 989.2 & - & \lr{VERIFIED} \\
+25 & \texttt{decay\_linear\_attention} & 1.00x & 88.60\% & 36.50 & 340.4 & 80582.2 & \lr{VERIFIED} \\
+26 & \texttt{decay\_linear\_attn} & 1.00x & 88.60\% & 36.50 & 330.2 & 39930.8 & \lr{VERIFIED} \\
+27 & \texttt{dynamic\_conv\_attention} & 1.00x & 92.81\% & 34.61 & - & - & \lr{VERIFIED} \\
+28 & \texttt{eat} & 1.00x & 90.00\% & 31.19 & 317.6 & 148939.4 & \lr{VERIFIED} \\
+29 & \texttt{eat\_attention} & 1.00x & 90.00\% & 32.46 & 539.2 & 31092.4 & \lr{VERIFIED} \\
+30 & \texttt{expert\_choice\_moe} & 1.00x & 99.72\% & 31.86 & 439.4 & 117245.5 & \lr{VERIFIED} \\
+31 & \texttt{factorised\_matrix\_state} & 1.00x & 89.20\% & 36.50 & 340.0 & 48937.8 & \lr{VERIFIED} \\
+32 & \texttt{flash\_attention3} & 1.00x & 92.78\% & 33.31 & 629.1 & 7967.4 & \lr{VERIFIED} \\
+33 & \texttt{flash\_attention3\_fp8} & 1.00x & 92.55\% & 32.59 & 630.8 & 7112.9 & \lr{VERIFIED} \\
+34 & \texttt{full} & 1.00x & 95.00\% & 11.25 & 50.8 & 341333.0 & \lr{VERIFIED} \\
+35 & \texttt{full\_attention} & 1.00x & 92.00\% & 32.68 & 312.2 & 124156.4 & \lr{VERIFIED} \\
+36 & \texttt{fused\_svd\_kernel} & 1.24x & 88.91\% & 36.71 & 287.2 & 51763.5 & \lr{VERIFIED} \\
+37 & \texttt{fusion\_attn} & 1.00x & 95.00\% & 38.50 & 306.3 & 129976.2 & \lr{VERIFIED} \\
+38 & \texttt{galerkin\_attention} & 1.00x & 91.40\% & 28.20 & 322.4 & 124738.9 & \lr{VERIFIED} \\
+39 & \texttt{gated\_delta\_net} & 1.00x & 94.48\% & 33.28 & 219.3 & 1008133.1 & \lr{VERIFIED} \\
+40 & \texttt{gated\_deltanet\_block} & 1.00x & 90.80\% & 29.60 & 412.3 & 27653.9 & \lr{VERIFIED} \\
+41 & \texttt{gated\_linear\_attention} & 1.00x & 88.90\% & 36.50 & 276.1 & 38952.5 & \lr{VERIFIED} \\
+42 & \texttt{gated\_linear\_attn} & 1.00x & 88.90\% & 36.50 & 346.6 & 23297.5 & \lr{VERIFIED} \\
+43 & \texttt{gla\_attention} & 1.00x & 90.93\% & 33.73 & 198.5 & 2538085.5 & \lr{VERIFIED} \\
+44 & \texttt{goldfinch\_ahn} & 1.00x & 94.27\% & 38.50 & 348.7 & 113034.7 & \lr{VERIFIED} \\
+45 & \texttt{gqa\_attention} & 1.00x & 95.00\% & 32.82 & 630.8 & 4730.1 & \lr{VERIFIED} \\
+46 & \texttt{granite\_hybrid} & 1.00x & 99.76\% & 33.67 & 292.7 & 22959.8 & \lr{VERIFIED} \\
+47 & \texttt{griffin\_ssd} & 1.00x & 91.97\% & 38.50 & 344.4 & 105867.4 & \lr{VERIFIED} \\
+48 & \texttt{halo\_regla} & 1.00x & 93.81\% & 38.50 & 323.4 & 101385.1 & \lr{VERIFIED} \\
+49 & \texttt{hamming\_attention} & 1.00x & 93.29\% & 33.09 & 413.0 & 71816.0 & \lr{VERIFIED} \\
+50 & \texttt{hgrn2\_gated\_deltanet} & 1.00x & 92.00\% & 38.50 & 283.1 & 602111.9 & \lr{VERIFIED} \\
+51 & \texttt{hgrn2\_gated\_layer} & 1.00x & 93.00\% & 38.50 & - & - & \lr{VERIFIED} \\
+52 & \texttt{hgrn2\_gated\_outer} & 1.00x & 88.10\% & 29.90 & - & - & \lr{VERIFIED} \\
+53 & \texttt{hgrn2\_outer} & 1.00x & 91.48\% & 31.28 & 358.7 & 3410.1 & \lr{VERIFIED} \\
+54 & \texttt{hla\_attention} & 1.00x & 93.96\% & 37.76 & 580.4 & 56343.1 & \lr{VERIFIED} \\
+55 & \texttt{hybrid\_attention} & 1.00x & 89.91\% & 36.86 & 479.7 & 180850.6 & \lr{VERIFIED} \\
+56 & \texttt{hybrid\_local\_kernel} & 1.00x & 89.89\% & 28.69 & 935.0 & - & \lr{VERIFIED} \\
+57 & \texttt{hymba\_transx} & 1.00x & 93.00\% & 38.50 & 500.6 & 12682.6 & \lr{VERIFIED} \\
+58 & \texttt{jamba} & 1.00x & 95.00\% & 31.29 & 676.6 & 29936.9 & \lr{VERIFIED} \\
+59 & \texttt{jamba\_info} & 1.00x & 89.79\% & 29.27 & 483.2 & 13415.8 & \lr{VERIFIED} \\
+60 & \texttt{kda\_attention} & 1.00x & 91.28\% & 32.08 & 474.7 & 69339.0 & \lr{VERIFIED} \\
+61 & \texttt{landmark\_local\_attention} & 1.00x & 92.65\% & 31.45 & - & - & \lr{VERIFIED} \\
+62 & \texttt{linformer\_attention} & 1.13x & 90.60\% & 34.10 & 397.4 & 76351.2 & \lr{VERIFIED} \\
+63 & \texttt{lola\_attention} & 1.17x & 91.42\% & 35.22 & 808.6 & 8481.7 & \lr{VERIFIED} \\
+64 & \texttt{lora\_attention} & 1.00x & 95.00\% & 33.20 & 332.0 & 54160.6 & \lr{VERIFIED} \\
+65 & \texttt{lsh\_attention} & 1.00x & 91.92\% & 36.72 & 634.8 & 5986.6 & \lr{VERIFIED} \\
+66 & \texttt{mamba\_block} & 1.00x & 89.53\% & 33.33 & - & - & \lr{VERIFIED} \\
+67 & \texttt{mamba\_svd\_flash} & 1.00x & 95.00\% & 11.50 & 776.2 & 17139.0 & \lr{VERIFIED} \\
+68 & \texttt{minimal\_nova} & 1.15x & 94.24\% & 30.04 & 270.3 & 123502.5 & \lr{VERIFIED} \\
+69 & \texttt{minimal\_svd} & 1.00x & 88.83\% & 33.63 & 98.6 & 2373698.3 & \lr{VERIFIED} \\
+70 & \texttt{mixattention\_moska} & 1.00x & 92.89\% & 31.83 & 318.7 & 45629.8 & \lr{VERIFIED} \\
+71 & \texttt{mla\_attention} & 1.08x & 89.36\% & 36.16 & 485.3 & 109700.9 & \lr{VERIFIED} \\
+72 & \texttt{moba\_attention} & 1.00x & 95.00\% & 38.50 & 396.8 & 85772.4 & \lr{VERIFIED} \\
+73 & \texttt{moe\_deltakv\_paged} & 1.00x & 92.00\% & 11.25 & 50.8 & 341333.0 & \lr{VERIFIED} \\
+74 & \texttt{mqa} & 1.00x & 89.91\% & 30.71 & 938.8 & - & \lr{VERIFIED} \\
+75 & \texttt{naive\_svd} & 1.18x & 88.44\% & 29.24 & 550.7 & 11110.4 & \lr{VERIFIED} \\
+76 & \texttt{nasc\_attention} & 1.00x & 92.00\% & 38.50 & 326.5 & 42166.4 & \lr{VERIFIED} \\
+77 & \texttt{native\_hybrid\_attention} & 1.00x & 94.00\% & 38.50 & - & - & \lr{VERIFIED} \\
+78 & \texttt{nexus} & 1.00x & 94.04\% & 36.50 & 344.6 & 16191.0 & \lr{VERIFIED} \\
+79 & \texttt{nsa\_attention} & 1.00x & 95.00\% & 33.66 & 336.8 & 104961.0 & \lr{VERIFIED} \\
+80 & \texttt{nystrom\_attention} & 1.00x & 95.00\% & 38.50 & 629.1 & 8297.8 & \lr{VERIFIED} \\
+81 & \texttt{optimized\_hybrid\_attention} & 1.00x & 94.15\% & 38.50 & 337.1 & 109657.9 & \lr{VERIFIED} \\
+82 & \texttt{orion} & 1.25x & 93.59\% & 33.39 & 190.3 & 77906.4 & \lr{VERIFIED} \\
+83 & \texttt{padre\_attention} & 1.00x & 94.00\% & 38.50 & 636.8 & 5956.4 & \lr{VERIFIED} \\
+84 & \texttt{performer\_attention} & 1.00x & 89.40\% & 36.50 & 592.0 & 72516.2 & \lr{VERIFIED} \\
+85 & \texttt{phantom} & 1.25x & 90.37\% & 33.61 & 310.6 & 20656.1 & \lr{VERIFIED} \\
+86 & \texttt{positive\_kernel\_linear\_attention} & 1.00x & 92.38\% & 36.18 & - & - & \lr{VERIFIED} \\
+87 & \texttt{primal\_attention} & 1.00x & 95.00\% & 31.33 & 638.8 & 440.6 & \lr{VERIFIED} \\
+88 & \texttt{progressive\_token\_pruning} & 1.00x & 95.00\% & 38.50 & 329.1 & 131309.3 & \lr{VERIFIED} \\
+89 & \texttt{projection\_factorized\_attn} & 1.25x & 90.48\% & 33.28 & 298.1 & 48804.9 & \lr{VERIFIED} \\
+90 & \texttt{qcqa\_attention} & 1.00x & 91.60\% & 37.40 & 404.7 & 113402.6 & \lr{VERIFIED} \\
+91 & \texttt{rala\_attention} & 1.00x & 88.75\% & 36.50 & 398.0 & 85536.0 & \lr{VERIFIED} \\
+92 & \texttt{reap\_moe} & 1.00x & 92.00\% & 32.02 & 438.9 & 69052.8 & \lr{VERIFIED} \\
+93 & \texttt{refined\_landmark\_attention} & 1.00x & 90.98\% & 29.78 & - & - & \lr{VERIFIED} \\
+94 & \texttt{regla\_attention} & 1.00x & 100.00\% & 36.50 & 477.7 & 71682.4 & \lr{VERIFIED} \\
+95 & \texttt{residual\_svd\_attention} & 1.00x & 93.16\% & 36.96 & - & - & \lr{VERIFIED} \\
+96 & \texttt{routing\_attention} & 1.00x & 88.31\% & 35.11 & 442.8 & 19860.5 & \lr{VERIFIED} \\
+97 & \texttt{rpc\_attention} & 1.00x & 91.97\% & 37.77 & 632.4 & 7506.0 & \lr{VERIFIED} \\
+98 & \texttt{salt\_attention} & 1.15x & 89.16\% & 27.96 & 674.0 & 5800.5 & \lr{VERIFIED} \\
+99 & \texttt{samba\_m3} & 1.00x & 89.45\% & 36.50 & 410.0 & 9874.9 & \lr{VERIFIED} \\
+100 & \texttt{samba\_moe} & 1.00x & 92.00\% & 38.50 & 581.9 & 5648.8 & \lr{VERIFIED} \\
+101 & \texttt{selective\_ssm} & 1.00x & 91.84\% & 28.64 & - & - & \lr{VERIFIED} \\
+102 & \texttt{simple\_ssm} & 1.00x & 90.69\% & 34.49 & 342.5 & 33034.8 & \lr{VERIFIED} \\
+103 & \texttt{sink\_attention} & 1.00x & 95.00\% & 38.50 & - & - & \lr{VERIFIED} \\
+104 & \texttt{soa\_attn} & 1.00x & 89.14\% & 31.94 & - & - & \lr{VERIFIED} \\
+105 & \texttt{spectraformer\_attention} & 1.00x & 92.89\% & 37.69 & 629.4 & 6763.2 & \lr{VERIFIED} \\
+106 & \texttt{spectron} & 1.09x & 88.03\% & 29.83 & 581.5 & 7751.7 & \lr{VERIFIED} \\
+107 & \texttt{spectron\_fp8} & 1.00x & 94.76\% & 34.56 & - & - & \lr{VERIFIED} \\
+108 & \texttt{split\_head\_hybrid} & 1.00x & 90.48\% & 35.28 & - & - & \lr{VERIFIED} \\
+109 & \texttt{svd\_compressed} & 1.20x & 91.73\% & 35.53 & 298.8 & 48601.3 & \lr{VERIFIED} \\
+110 & \texttt{svd\_linear} & 1.22x & 93.00\% & 11.50 & 50.8 & 341333.0 & \lr{VERIFIED} \\
+111 & \texttt{svd\_linear\_attention} & 1.00x & 91.29\% & 36.09 & 450.8 & 8431.5 & \lr{VERIFIED} \\
+112 & \texttt{svd\_linear\_attn} & 1.00x & 88.15\% & 34.95 & 5570.6 & - & \lr{VERIFIED} \\
+113 & \texttt{svd\_linear\_decay} & 1.00x & 89.52\% & 28.32 & - & - & \lr{VERIFIED} \\
+114 & \texttt{svd\_linear\_inject} & 1.00x & 91.22\% & 37.02 & - & - & \lr{VERIFIED} \\
+115 & \texttt{svd\_llm\_v2\_attention} & 1.00x & 93.53\% & 34.33 & - & - & \lr{VERIFIED} \\
+116 & \texttt{svd\_mamba} & 1.00x & 90.02\% & 37.23 & 944.6 & 10824.7 & \lr{VERIFIED} \\
+117 & \texttt{svd\_projection\_attention} & 1.14x & 89.16\% & 32.96 & 539.6 & 5631.7 & \lr{VERIFIED} \\
+118 & \texttt{svd\_seq} & 1.00x & 95.00\% & 38.50 & 392.0 & 6116.7 & \lr{VERIFIED} \\
+119 & \texttt{template\_attention} & 1.00x & 95.00\% & 38.50 & 314.7 & 105226.9 & \lr{VERIFIED} \\
+120 & \texttt{token\_compressed\_attention} & 1.00x & 93.00\% & 38.50 & 372.2 & 81979.2 & \lr{VERIFIED} \\
+121 & \texttt{tri\_branch\_hybrid} & 1.00x & 94.81\% & 35.61 & - & - & \lr{VERIFIED} \\
+122 & \texttt{triton\_cosformer} & 1.00x & 89.30\% & 36.50 & - & - & \lr{VERIFIED} \\
+123 & \texttt{triton\_svd\_linear\_attention} & 1.00x & 90.85\% & 35.65 & - & - & \lr{VERIFIED} \\
+124 & \texttt{ttt\_linear\_attention} & 1.00x & 91.32\% & 36.12 & - & - & \lr{VERIFIED} \\
+125 & \texttt{unified\_rope} & 1.00x & 91.00\% & 38.50 & 323.7 & 113027.3 & \lr{VERIFIED} \\
+126 & \texttt{upi\_stuffed\_mamba} & 1.00x & 88.80\% & 36.60 & 775.4 & 9352.3 & \lr{VERIFIED} \\
+127 & \texttt{vig\_attention} & 1.00x & 90.48\% & 38.50 & 465.2 & 42163.1 & \lr{VERIFIED} \\
+128 & \texttt{vspec} & 1.17x & 89.64\% & 37.44 & 274.5 & 24131.9 & \lr{VERIFIED} \\
+129 & \texttt{wgqa\_attention} & 1.00x & 91.28\% & 28.01 & 629.1 & 6126.0 & \lr{VERIFIED} \\
+130 & \texttt{xattention} & 1.00x & 87.00\% & 29.78 & 314.8 & 40986.2 & \lr{VERIFIED} \\
+131 & \texttt{zeros\_attention} & 1.00x & 93.24\% & 28.04 & 632.1 & 5340.9 & \lr{VERIFIED} \\
+\end{longtable}
+\end{center}

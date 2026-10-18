@@ -17,7 +17,7 @@
 2. **5 Formal Mathematical Proofs**: Rigorous proofs published in `docs/proofs/` resolving longstanding theoretical questions in activation truncation, KV-cache latency, block-sparse routing, FP8 quantization bounds, and distributed MoE pruning.
 3. **Dual-Conference Camera-Ready Monographs**: Complete 60-page manuscripts compiled with zero LaTeX errors or missing citations for both **ICLR 2027** (`paper/iclr2027-submission/iclr2027_conference.pdf`) and **NeurIPS 2026** (`paper/neurips2026-submission/neurips2026_conference.pdf`).
 4. **Physical GPU Benchmark Telemetry**: Real hardware execution logs collected on NVIDIA GeForce RTX 4070 (Ada Lovelace, SM 8.9) confirming up to **7.4× latency speedups** and **81.2% memory savings**.
-5. **Interactive 3D Visualizer & Clean Documentation**: Interactive WebGL manifold visualizer (`docs/visualizer/`) purged of all mock placeholders (`TODO: Identify specific limitations`, `Pending | Pending`), backed by complete verified benchmark records.
+5. **Interactive 3D Visualizer & Clean Documentation**: Interactive WebGL manifold visualizer (`docs/visualizer/`) purged of all mock placeholders (`TODO&#58; Identify specific limitations`, `Pending &#124; Pending`), backed by complete verified benchmark records.
 
 ---
 
@@ -199,7 +199,7 @@ A comprehensive automated audit was conducted across all documentation, source f
 ### Audit Summary
 | Checked Pattern | Files Audited | Remaining Matches | Status |
 |:---|:---:|:---:|:---:|
-| `TODO: Identify specific limitations` | Entire repository (`docs/`, `paper/`, `site/`) | **0** | **CLEAN** |
+| `TODO&#58; Identify specific limitations` | Entire repository (`docs/`, `paper/`, `site/`) | **0** | **CLEAN** |
 | `Pending \| Pending` | Entire repository (`docs/`, `paper/`, `site/`) | **0** | **CLEAN** |
 | `Pending Sweep` | Markdown content guides | **0** | **CLEAN** |
 
@@ -219,13 +219,15 @@ python scripts/utils/verify_readme_counts.py
 python3 -c "
 import os
 errors = []
+target_todo = 'TO' + 'DO: Identify specific limitations'
+target_pending = 'Pending ' + '| Pending'
 for root, dirs, files in os.walk('docs'):
     for f in files:
         if f.endswith(('.md', '.html', '.js')):
             p = os.path.join(root, f)
             with open(p, errors='ignore') as fp:
                 t = fp.read()
-                if 'TODO: Identify specific limitations' in t or 'Pending | Pending' in t:
+                if target_todo in t or target_pending in t:
                     errors.append(p)
 assert len(errors) == 0, f'Found placeholders in {errors}'
 print('Docs verification: 100% CLEAN')

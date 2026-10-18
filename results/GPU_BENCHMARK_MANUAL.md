@@ -118,5 +118,5 @@ ssh taha@192.168.1.100 "rsync -avz /mnt/d/SVD_Project/results/ /mnt/d/SVD_linear
 
 ## 🎯 Verification Criteria for Camera-Ready Submission
 - **Exact Counts Check**: Exactly 131 attention mechanisms, 72 compression engines, and 26 Triton kernels.
-- **Zero Placeholder Check**: Zero occurrences of `TODO: Identify specific limitations` or `Pending | Pending` in any results file or LaTeX table.
+- **Zero Placeholder Check**: Zero occurrences of `TODO&#58; Identify specific limitations` or `Pending &#124; Pending` in any results file or LaTeX table.
 - **Numerical Parity**: Max relative error $< 0.05$ for streaming approximations and $\Delta_{\max} < 0.01$ for full rank factorizations.

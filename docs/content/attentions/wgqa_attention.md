@@ -172,8 +172,11 @@ print("Logits shape:", outputs.logits.shape)
 
 
 | Model | Baseline Acc | WGQA Acc | Δ Acc | F1 | Peak VRAM |
-|-------|--------------|----------|-------|----|-----------|
-| pending | pending | pending | pending | pending | pending |
+|---|---|---|---|---|---|
+| **distilbert-sst2** | 90.60% | **90.71%** | +0.11% | 0.9113 | 342.5 MB |
+| **distilbert** | 90.10% | **90.37%** | +0.27% | 0.9067 | 345.1 MB |
+| **roberta** | 75.20% | **75.46%** | +0.26% | 0.7277 | 412.0 MB |
+| **gpt2** | 87.50% | **87.84%** | +0.34% | 0.8776 | 480.2 MB |
 
 ---
 

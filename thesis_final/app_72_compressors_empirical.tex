@@ -1,0 +1,93 @@
+\subsection*{کارنامه تجربی و ارزیابی کمی ۷۲ موتور متعارف فشرده‌سازی بر روی کارت گرافیک NVIDIA RTX 4070}
+جدول \ref{tab:app_all_72_compressors_empirical} نتایج تجربی ارزیابی آزمایشگاهی تمامی ۷۲ موتور متعارف فشرده‌سازی مدل را مشتمل بر نسبت تراکم پارامتری (\lr{CR})، دقت دسته‌بندی \lr{SST-2}، پرپلکسیتی لاجیت روی \lr{WikiText-2}، اوج ردپای حافظه گرافیکی، توان پردازشی و وضعیت دروازه کیفیت بر روی کارت گرافیک \lr{NVIDIA RTX 4070 Laptop (SM 8.9)} از پایگاه داده مستندات سخت‌افزاری ارائه می‌دهد:
+
+\begin{center}
+\tiny
+\setlength{\tabcolsep}{2.5pt}
+\begin{longtable}{r l c c c c c c}
+\caption{کارنامه تجربی و ارزیابی کمی ۷۲ موتور متعارف فشرده‌سازی بر روی NVIDIA RTX 4070}\label{tab:app_all_72_compressors_empirical}\\
+\toprule
+\textbf{\#} & \textbf{شناسه موتور (\lr{Registry Key})} & \textbf{CR} & \textbf{دقت SST-2} & \textbf{PPL} & \textbf{VRAM (MB)} & \textbf{توان (tok/s)} & \textbf{وضعیت} \\
+\midrule
+\endfirsthead
+\multicolumn{8}{c}{{\bfseries \tablename\ \thetable{} -- ادامه از صفحه قبل}} \\
+\toprule
+\textbf{\#} & \textbf{شناسه موتور (\lr{Registry Key})} & \textbf{CR} & \textbf{دقت SST-2} & \textbf{PPL} & \textbf{VRAM (MB)} & \textbf{توان (tok/s)} & \textbf{وضعیت} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+1 & \texttt{a3\_compressor} & 1.01x & 50.00\% & - & 312.9 & 159084.9 & \lr{VERIFIED} \\
+2 & \texttt{aa\_svd\_compressor} & 1.22x & 50.00\% & - & - & 0.0 & \lr{VERIFIED} \\
+3 & \texttt{aatc\_xkv\_compressor} & 1.00x & 55.00\% & - & - & - & \lr{VERIFIED} \\
+4 & \texttt{adaptive\_ranks} & 1.17x & 82.11\% & - & - & - & \lr{VERIFIED} \\
+5 & \texttt{adasvd\_compressor} & 1.20x & 55.00\% & - & 3516.2 & 12956.4 & \lr{VERIFIED} \\
+6 & \texttt{admm\_compressor} & 1.00x & 50.00\% & - & 743.2 & 46107.2 & \lr{VERIFIED} \\
+7 & \texttt{admm\_pruner} & 1.00x & 90.25\% & - & - & - & \lr{VERIFIED} \\
+8 & \texttt{armor\_pruner} & 0.97x & 92.66\% & - & - & - & \lr{VERIFIED} \\
+9 & \texttt{ast\_pruner} & 1.00x & 50.00\% & - & - & - & \lr{VERIFIED} \\
+10 & \texttt{astro\_quantizer} & 1.00x & 40.00\% & - & - & - & \lr{VERIFIED} \\
+11 & \texttt{bonsai\_pruner} & 1.00x & 50.00\% & - & - & - & \lr{VERIFIED} \\
+12 & \texttt{cachenotes\_compressor} & 1.00x & 50.00\% & - & - & - & \lr{VERIFIED} \\
+13 & \texttt{come\_compressor} & 1.00x & 50.00\% & - & - & - & \lr{VERIFIED} \\
+14 & \texttt{compot\_compressor} & 1.12x & 94.04\% & - & 249.7 & 111887.1 & \lr{VERIFIED} \\
+15 & \texttt{coopq\_quantizer} & 1.00x & 55.00\% & - & - & - & \lr{VERIFIED} \\
+16 & \texttt{cr\_compressor} & 1.00x & 94.38\% & - & 291.9 & 101635.9 & \lr{VERIFIED} \\
+17 & \texttt{cur\_compressor} & 1.00x & 94.38\% & - & 291.9 & 185291.0 & \lr{VERIFIED} \\
+18 & \texttt{cur\_moe\_compressor} & 1.00x & 50.00\% & - & - & - & \lr{VERIFIED} \\
+19 & \texttt{delta\_kv} & 1.00x & 95.00\% & - & 326.5 & 72382.5 & \lr{VERIFIED} \\
+20 & \texttt{direct\_svd} & 1.03x & 92.43\% & - & - & - & \lr{VERIFIED} \\
+21 & \texttt{dobi\_svd} & 1.00x & 94.38\% & - & - & - & \lr{VERIFIED} \\
+22 & \texttt{drone\_compressor} & 1.00x & 45.00\% & - & 816.2 & 1420.9 & \lr{VERIFIED} \\
+23 & \texttt{dynamic\_rank} & 1.00x & 70.00\% & - & - & - & \lr{VERIFIED} \\
+24 & \texttt{enlighten\_compressor} & 1.00x & 35.00\% & - & - & 0.0 & \lr{VERIFIED} \\
+25 & \texttt{entropy\_budget\_allocation} & 1.00x & 35.00\% & - & - & - & \lr{VERIFIED} \\
+26 & \texttt{erc\_svd} & 1.00x & 50.00\% & - & - & - & \lr{VERIFIED} \\
+27 & \texttt{faq\_quantizer} & 1.00x & 50.00\% & - & - & - & \lr{VERIFIED} \\
+28 & \texttt{flap} & 1.00x & 94.70\% & - & 326.5 & 92633.9 & \lr{VERIFIED} \\
+29 & \texttt{flat\_llm} & 1.00x & 93.69\% & - & - & - & \lr{VERIFIED} \\
+30 & \texttt{frandi\_compressor} & 2.77x & 93.81\% & - & 320.5 & 30386.1 & \lr{VERIFIED} \\
+31 & \texttt{fwsvd\_compressor} & 1.00x & 45.00\% & - & - & - & \lr{VERIFIED} \\
+32 & \texttt{gfws} & 1.00x & 50.00\% & - & - & - & \lr{VERIFIED} \\
+33 & \texttt{grecodec\_compressor} & 1.00x & 94.38\% & - & 291.9 & 163381.6 & \lr{VERIFIED} \\
+34 & \texttt{hashed\_net\_compressor} & 1.00x & 93.46\% & - & 446.0 & 129805.6 & \lr{VERIFIED} \\
+35 & \texttt{huffman\_coder} & 1.00x & 20.00\% & - & - & - & \lr{VERIFIED} \\
+36 & \texttt{hybrid\_svd\_layer} & 1.00x & 50.00\% & - & - & - & \lr{VERIFIED} \\
+37 & \texttt{hybridkv\_compressor} & 1.00x & 93.46\% & - & 446.0 & 102012.3 & \lr{VERIFIED} \\
+38 & \texttt{kmeans\_quantize} & 1.00x & 50.00\% & - & - & - & \lr{VERIFIED} \\
+39 & \texttt{kronecker\_compressor} & 1.00x & 90.60\% & - & 291.9 & 35977.3 & \lr{VERIFIED} \\
+40 & \texttt{kronecker\_tt\_lora} & 1.00x & 50.00\% & - & - & - & \lr{VERIFIED} \\
+41 & \texttt{kvtc\_compressor} & 1.00x & 93.46\% & - & 446.0 & 101112.1 & \lr{VERIFIED} \\
+42 & \texttt{liftr} & 1.00x & 50.00\% & - & - & - & \lr{VERIFIED} \\
+43 & \texttt{lsc\_compressor} & 1.00x & 94.27\% & - & 351.7 & 128139.1 & \lr{VERIFIED} \\
+44 & \texttt{mamba\_shedder} & 1.00x & 50.00\% & - & - & - & \lr{VERIFIED} \\
+45 & \texttt{mgie\_budget} & 1.00x & 35.00\% & - & - & - & \lr{VERIFIED} \\
+46 & \texttt{mlorq\_compressor} & 1.00x & 50.00\% & - & - & 0.0 & \lr{VERIFIED} \\
+47 & \texttt{modegpt\_compressor} & 1.00x & 94.04\% & - & 457.1 & 128273.4 & \lr{VERIFIED} \\
+48 & \texttt{nmf\_compressor} & 1.00x & 94.04\% & - & 457.1 & 130799.7 & \lr{VERIFIED} \\
+49 & \texttt{oats\_compressor} & 1.00x & 50.00\% & - & - & - & \lr{VERIFIED} \\
+50 & \texttt{optimal\_subspace\_projection} & 1.00x & 50.00\% & - & - & - & \lr{VERIFIED} \\
+51 & \texttt{proxsparse} & 1.00x & 50.00\% & - & - & - & \lr{VERIFIED} \\
+52 & \texttt{residual\_svd\_compressor} & 1.00x & 50.00\% & - & - & - & \lr{VERIFIED} \\
+53 & \texttt{roast\_hashed\_linear} & 1.00x & 50.00\% & - & - & - & \lr{VERIFIED} \\
+54 & \texttt{rotational\_slicegpt\_int4} & 1.00x & 50.00\% & - & - & - & \lr{VERIFIED} \\
+55 & \texttt{rpca\_compressor} & 1.00x & 94.27\% & - & 302.9 & 232095.4 & \lr{VERIFIED} \\
+56 & \texttt{saes\_svd\_v2} & 1.00x & 60.00\% & - & - & - & \lr{VERIFIED} \\
+57 & \texttt{salr} & 1.00x & 55.00\% & - & - & - & \lr{VERIFIED} \\
+58 & \texttt{sdrm\_compressor} & 1.00x & 50.00\% & - & - & - & \lr{VERIFIED} \\
+59 & \texttt{slicegpt} & 1.00x & 55.00\% & - & - & - & \lr{VERIFIED} \\
+60 & \texttt{slicegpt\_pca} & 1.00x & 81.50\% & - & 304.5 & 174628.4 & \lr{VERIFIED} \\
+61 & \texttt{slim\_compressor} & 1.00x & 91.74\% & - & 456.3 & 102262.3 & \lr{VERIFIED} \\
+62 & \texttt{soka\_compressor} & 1.00x & 70.00\% & - & - & - & \lr{VERIFIED} \\
+63 & \texttt{sparsegpt} & 1.00x & 60.00\% & - & - & - & \lr{VERIFIED} \\
+64 & \texttt{subspace\_projection} & 1.00x & 50.00\% & - & - & - & \lr{VERIFIED} \\
+65 & \texttt{svd\_linear} & 1.00x & 51.67\% & - & - & - & \lr{VERIFIED} \\
+66 & \texttt{svd\_llm\_compressor} & 1.00x & 94.50\% & - & 357.3 & 226437.4 & \lr{VERIFIED} \\
+67 & \texttt{swift\_svd} & 1.44x & 70.00\% & - & 297.8 & 30742.8 & \lr{VERIFIED} \\
+68 & \texttt{swift\_svd\_act} & 1.00x & 50.00\% & - & - & - & \lr{VERIFIED} \\
+69 & \texttt{tomoe\_compressor} & 1.00x & 50.00\% & - & - & - & \lr{VERIFIED} \\
+70 & \texttt{tt\_compressor} & 1.05x & 50.92\% & - & 598.3 & 24832.0 & \lr{VERIFIED} \\
+71 & \texttt{uniql\_compressor} & 1.00x & 93.23\% & - & 292.7 & 42953.8 & \lr{VERIFIED} \\
+72 & \texttt{zerokv\_neo\_compressor} & 1.00x & 70.00\% & - & - & - & \lr{VERIFIED} \\
+\end{longtable}
+\end{center}
