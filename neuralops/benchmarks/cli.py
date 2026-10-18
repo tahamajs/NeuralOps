@@ -500,8 +500,9 @@ def handle_verify(args: argparse.Namespace) -> None:
     from neuralops.core.triton_kernels import HAS_TRITON
     import os
 
-    triton_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "core", "triton_kernels")
-    kernel_count = len([f for f in os.listdir(triton_dir) if f.endswith(".py") and not f.startswith("__")]) - 1
+    import neuralops.kernels as nk
+    triton_count = len(nk.list_triton_kernels())
+    cuda_count = len(nk.list_cuda_kernels())
 
     cuda_avail = torch.cuda.is_available()
     device_name = torch.cuda.get_device_name(0) if cuda_avail else "N/A"
@@ -520,7 +521,8 @@ def handle_verify(args: argparse.Namespace) -> None:
         table.add_row("Triton JIT", f"[bold {'green' if HAS_TRITON else 'yellow'}]{HAS_TRITON}[/]")
         table.add_row("Attention Registry", f"{len(ATTENTION_REGISTRY)} modules (Canonical: 131)")
         table.add_row("Compressor Registry", f"{len(COMPRESSOR_REGISTRY)} engines (Canonical: 72)")
-        table.add_row("Triton Kernels", f"{kernel_count} modules (Canonical: 26)")
+        table.add_row("Triton Kernels", f"{triton_count} unified kernels")
+        table.add_row("CUDA Kernels", f"{cuda_count} unified native kernels")
         console.print(table)
     else:
         print("System Environment Verification:")
@@ -535,7 +537,8 @@ def handle_verify(args: argparse.Namespace) -> None:
         print(f"  Triton Available: {HAS_TRITON}")
         print(f"  Attention Reg:    {len(ATTENTION_REGISTRY)} modules (Canonical: 131)")
         print(f"  Compressor Reg:   {len(COMPRESSOR_REGISTRY)} modules (Canonical: 72)")
-        print(f"  Triton Kernels:   {kernel_count} modules (Canonical: 26)")
+        print(f"  Triton Kernels:   {triton_count} unified kernels")
+        print(f"  CUDA Kernels:     {cuda_count} unified native kernels")
 
 
 

@@ -110,7 +110,7 @@ Categorized by mathematical formulation:
 - **Hybrid & Local**: Multi-scale sliding window + low-rank residual routing.
 - **Decay & Recurrence**: Hardware-aligned fused `@triton.jit` recurrent state updates.
 """,
-    "triton": """# Triton Kernels (26 Fused Kernels)
+    "triton": """# Triton Kernels (Comprehensive Fused Hardware Kernels)
 - **low_rank.py**: Bit-packed W4A16 GEMM and low-rank factorized linear forward.
 - **state_update.py**: $O(1)$ single-token autoregressive recurrent state update in-SRAM.
 - **selective_scan.py**: Mamba selective continuous-time discretization scan.
@@ -331,7 +331,7 @@ def run_interactive_ui(inspect_target: Optional[str] = None, snapshot: bool = Fa
 
         print("=" * w)
         print(f"  🏛️ NEURALOPS MINIMALIST TWO-PANE ARCHITECTURE EXPLORER")
-        print(f"  Hardware Node: {dev_name}  │  131 Attentions · 72 Compressors · 26 Triton Kernels")
+        print(f"  Hardware Node: {dev_name}  │  131 Attentions · 72 Compressors · Unified Triton & CUDA Kernels")
         print("=" * w)
         print(f"  {'REGISTRY EXPLORER':<{left_pane_width}} │ {'14-FIELD ARCHITECTURE SPECIFICATION SHEET':<{right_pane_width}}")
         print("─" * (left_pane_width + 2) + "┼─" + "─" * right_pane_width)
