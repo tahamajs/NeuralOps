@@ -19,6 +19,7 @@ import math
 import pytest
 import torch
 import torch.nn as nn
+from transformers import AutoConfig, AutoModelForCausalLM
 from evaluation.harness import NeuralOpsLMWrapper, HAS_LM_EVAL, run_evaluation
 from evaluation.ppl import PerplexityEvaluator
 from neuralops.benchmarks.generation import GenerationBenchmark
