@@ -559,7 +559,7 @@ def run_benchmark_table_5(device: str) -> List[Dict[str, Any]]:
             cos_sim_naive = F.cosine_similarity(logits_naive.flatten(), logits_orig.flatten(), dim=0).item()
 
         # 2. HNC-SVD Compression
-        probe_embeds = lm_orig.embed(probe_tokens)
+        _probe_embeds = lm_orig.embed(probe_tokens)
         comp_hnc = DirectSVDCompressor(lm_hnc, rank=rank, min_rank=1, use_hnc_continuation=True, probe_inputs=probe_tokens)
         comp_hnc.compress()
 
