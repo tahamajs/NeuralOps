@@ -27,14 +27,17 @@ except ImportError:
     ListOpsDataset = None
 
 try:
-    from neuralops.evaluation.eval_all_models_datasets import apply_module_to_model
+    from evaluation.eval_all_models_datasets import apply_module_to_model
 except ImportError:
     try:
-        from neuralops.eval_all_models_datasets import apply_module_to_model
+        from neuralops.evaluation.eval_all_models_datasets import apply_module_to_model
     except ImportError:
-        from neuralops.utils.replace_attention import (
-            replace_attention_in_model as apply_module_to_model,
-        )
+        try:
+            from neuralops.core.replace_attention import (
+                replace_attention_in_model as apply_module_to_model,
+            )
+        except ImportError:
+            apply_module_to_model = None
 
 TASK_CONFIG = {
     "listops": {
