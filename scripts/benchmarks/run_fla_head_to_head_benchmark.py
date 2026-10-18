@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Author: Taha Majlesi
 """
 Head-to-head FLA-style benchmark on NVIDIA RTX 4070.
 Evaluates Forward (ms), Forward+Backward (ms), and Peak VRAM (MB)

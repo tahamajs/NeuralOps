@@ -158,7 +158,8 @@ class _VarlenAttentionAutograd(torch.autograd.Function):
         return _varlen_attention_fwd(q, k, v, cu_seqlens_q, cu_seqlens_k, causal=causal)
 
     @staticmethod
-    def backward(ctx, grad_output: torch.Tensor):
+    def backward(ctx, *grad_outputs):
+        grad_output = grad_outputs[0]
         q, k, v, cu_seqlens_q, cu_seqlens_k = ctx.saved_tensors
         q_r = q.detach().requires_grad_(True)
         k_r = k.detach().requires_grad_(True)
@@ -186,4 +187,10 @@ def varlen_attention_pytorch(
     return _varlen_attention_fwd(q, k, v, cu_seqlens_q, cu_seqlens_k, causal=causal)
 
 
-__all__ = ["varlen_attention_pytorch"]
+varlen_attention_triton = _varlen_attention_fwd
+
+__all__ = [
+    "varlen_attention_pytorch",
+    "varlen_attention_triton",
+    "_varlen_attention_fwd",
+]
