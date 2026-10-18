@@ -551,7 +551,7 @@
 \label{fig:taxonomy_attention}
 \end{figure}
 
-\\subsection{۱. مکانیزم‌های توجه خطی و تقریب کِرنل \lr{(Linear \& Kernel Attention)}}
+\subsection{۱. مکانیزم‌های توجه خطی و تقریب کِرنل \lr{(Linear \& Kernel Attention)}}
 ایده محوری این خانواده که نخستین بار توسط کاتاروپولوس و همکاران در سال ۲۰۲۰ \cite{katharopoulos2020transformers} مطرح گردید، بهره‌گیری از خاصیت شرکت‌پذیری ضرب ماتریسی است. در توجه استاندارد، ضرب ابتدا میان $\mathbf{Q}$ و $\mathbf{K}^T$ با پیچیدگی $\mathcal{O}(N^2)$ صورت می‌پذیرد زیرا عملگر غیرخطی \lr{Softmax} مانع از جابجایی ترتیبی ضرب‌ها است. اگر بتوان تشابه میان دو بردار پرسمان و کلید را از طریق ضرب داخلی نگاشت‌های ویژگی غیرخطی $\phi(\cdot)$ تقریب زد:
 \begin{equation}
 \text{\lr{Sim}}(\mathbf{q}_i, \mathbf{k}_j) \approx \phi(\mathbf{q}_i)^T \phi(\mathbf{k}_j)

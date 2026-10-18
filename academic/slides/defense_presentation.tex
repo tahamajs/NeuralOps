@@ -129,19 +129,26 @@
 % --- Slide 4: Theoretical Foundations - Cholesky & SVD ---
 \begin{frame}{مبانی نظری: سفیدسازی فعال‌سازی با تجزیه چولسکی}
   \begin{block}{فرمول‌بندی بهینه‌سازی برش مقادیر منفرد آگاه از فعال‌سازی}
+    \small
     هدف، یافتن ماتریس کم‌مرتبه $\mathbf{W}_r$ با رتبه $r$ است که خطای فعال‌سازی خروجی را کمینه کند:
+    \vspace{-0.15cm}
     \[
       \min_{\operatorname{rank}(\mathbf{W}_r) \le r} \mathbb{E}_{X \sim \mathcal{D}}\left[ \| \mathbf{W} X - \mathbf{W}_r X \|_F^2 \right] = \min_{\operatorname{rank}(\mathbf{W}_r) \le r} \| (\mathbf{W} - \mathbf{W}_r) \mathbf{H}_X^{1/2} \|_F^2
     \]
+    \vspace{-0.15cm}
     که در آن $\mathbf{H}_X = \mathbb{E}[X X^\top]$ ماتریس کوواریانس ورودی‌های کالیبراسیون است.
   \end{block}
 
   \begin{exampleblock}{قضیه بهینگی SVD-LLM v2 با تجزیه چولسکی (Eckart-Young-Mirsky)}
-    با تجزیه چولسکی ماتریس کوواریانس به صورت $\mathbf{H}_X = \mathbf{L} \mathbf{L}^\top$ (که در آن $\mathbf{L}$ مثلثی پایینی و معکوس‌پذیر است):
+    \small
+    با تجزیه چولسکی کوواریانس $\mathbf{H}_X = \mathbf{L} \mathbf{L}^\top$ ($\mathbf{L}$ مثلثی پایینی و معکوس‌پذیر):
+    \vspace{-0.15cm}
     \[
       \| (\mathbf{W} - \mathbf{W}_r) \mathbf{H}_X^{1/2} \|_F^2 = \| (\mathbf{W} - \mathbf{W}_r) \mathbf{L} \|_F^2 = \| \widetilde{\mathbf{W}} - \widetilde{\mathbf{W}}_r \|_F^2, \quad \widetilde{\mathbf{W}} = \mathbf{W} \mathbf{L}
     \]
+    \vspace{-0.15cm}
     بنابر قضیه اکرت-یانگ-میرسکی، بهترین تقریب رتبه-$r$ ماتریس سفیدشده $\widetilde{\mathbf{W}}$ حاصل برش مقادیر منفرد آن است:
+    \vspace{-0.15cm}
     \[
       \mathbf{W}_r^* = \widetilde{\mathbf{W}}_r \mathbf{L}^{-1} = \left(\sum_{i=1}^r \sigma_i u_i v_i^\top\right) \mathbf{L}^{-1}
     \]
@@ -344,17 +351,18 @@
     \begin{column}{0.5\textwidth}
       \begin{block}{تقسیم‌بندی ماژول‌های مورد ارزیابی}
         \begin{itemize}\footnotesize
+          \setlength{\itemsep}{1pt}
           \item \textbf{۱۳۱ مکانیزم توجه متنوع:}
             \begin{itemize}\scriptsize
-              \item توجه‌های خطی و بازگشتی (Linear, Cosformer, GLA, DeltaNet, RWKV)
-              \item مکانیزم‌های خلوت و ساختاریافته (Longformer, BigBird, NSA/DSA)
-              \item ساختارهای فضای حالت و هیبرید (Mamba, S4, H3)
+              \item توجه خطی و بازگشتی (Linear, Cosformer, GLA, DeltaNet, RWKV)
+              \item ساختار خلوت و پنجره‌ای (Longformer, BigBird, NSA/DSA)
+              \item مدل‌های فضای حالت (Mamba, S4, H3)
             \end{itemize}
           \item \textbf{۷۲ موتور فشرده‌سازی و تجزیه کم‌مرتبه:}
             \begin{itemize}\scriptsize
-              \item خانواده‌های SVD متقدم (ASVD, SVD-LLM v2, AASVD, PiSSA, DoRA)
+              \item روش‌های SVD پیشرفته (ASVD, SVD-LLM v2, AASVD, PiSSA, DoRA)
               \item کوانتایزاسیون ماتریس‌های منفرد (FP8, INT4, NF4)
-              \item هرس طیفی و توزیع‌شده (REAP-MoE, Structural Pruning)
+              \item هرس طیفی و خبرگان (REAP-MoE, Structural Pruning)
             \end{itemize}
           \item \textbf{۴ مدل پایه ناهمگون:}
             \begin{itemize}\scriptsize
