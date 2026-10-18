@@ -15,6 +15,7 @@ from neuralops.core.triton_kernels._common import HAS_TRITON, triton, tl
 __all__ = [
     "hybrid_local_attn_triton",
     "hybrid_two_branch_blend_triton",
+    "hybrid_three_branch_blend_triton",
 ]
 
 if HAS_TRITON and tl is not None:
@@ -156,3 +157,51 @@ def hybrid_two_branch_blend_triton(
         num_warps=4,
     )
     return out
+
+
+if HAS_TRITON and tl is not None:
+    @triton.jit
+    def _hybrid_three_branch_blend_kernel(
+        B0, B1, B2, Alpha, Out,
+        TOTAL, D: tl.constexpr,
+        BLOCK_SIZE: tl.constexpr,
+    ):
+        pid = tl.program_id(0)
+        offs = pid * BLOCK_SIZE + tl.arange(0, BLOCK_SIZE)
+        mask = offs < TOTAL
+
+        token_h = offs // D
+        a0 = tl.load(Alpha + token_h * 3 + 0, mask=mask, other=0.0)
+        a1 = tl.load(Alpha + token_h * 3 + 1, mask=mask, other=0.0)
+        a2 = tl.load(Alpha + token_h * 3 + 2, mask=mask, other=0.0)
+        v0 = tl.load(B0 + offs, mask=mask, other=0.0)
+        v1 = tl.load(B1 + offs, mask=mask, other=0.0)
+        v2 = tl.load(B2 + offs, mask=mask, other=0.0)
+
+        out = a0 * v0 + a1 * v1 + a2 * v2
+        tl.store(Out + offs, out, mask=mask)
+
+
+def hybrid_three_branch_blend_triton(
+    b0: torch.Tensor,
+    b1: torch.Tensor,
+    b2: torch.Tensor,
+    alpha: torch.Tensor,
+) -> torch.Tensor:
+    if not HAS_TRITON or not b0.is_cuda:
+        raise RuntimeError("Triton is not available or tensor not on CUDA")
+
+    total = b0.numel()
+    D = b0.size(-1)
+    out = torch.empty_like(b0)
+
+    BLOCK_SIZE = 1024
+    grid = (triton.cdiv(total, BLOCK_SIZE),)
+
+    _hybrid_three_branch_blend_kernel[grid](
+        b0.contiguous(), b1.contiguous(), b2.contiguous(), alpha.contiguous(), out,
+        TOTAL=total, D=D, BLOCK_SIZE=BLOCK_SIZE,
+        num_warps=4,
+    )
+    return out
+
