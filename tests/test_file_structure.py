@@ -13,30 +13,34 @@ class TestFileStructureAndCompilation:
 
     @pytest.fixture
     def framework_root(self):
-        # tests/ -> framework/
         return Path(__file__).resolve().parent.parent
 
-    def test_required_directories_exist(self, framework_root):
+    @pytest.fixture
+    def neuralops_root(self, framework_root):
+        n_dir = framework_root / "neuralops"
+        return n_dir if n_dir.exists() else framework_root
+
+    def test_required_directories_exist(self, framework_root, neuralops_root):
         expected_dirs = [
             "core",
             "attentions",
             "compression_engine",
             "utils",
-            "tests",
             "trainer",
         ]
         for d in expected_dirs:
-            p = framework_root / d
-            assert p.exists() and p.is_dir(), f"Expected directory {d} missing in {framework_root}"
+            p = neuralops_root / d
+            assert p.exists() and p.is_dir(), f"Expected directory {d} missing in {neuralops_root}"
+        assert (framework_root / "tests").exists(), f"tests directory missing in {framework_root}"
 
-    def test_no_appledouble_dot_underscore_files(self, framework_root):
+    def test_no_appledouble_dot_underscore_files(self, neuralops_root):
         """macOS creates hidden '._*' files during copying; assert none exist in framework."""
-        bad_files = [str(p) for p in framework_root.rglob("*") if p.name.startswith("._")]
-        assert len(bad_files) == 0, f"Found unexpected AppleDouble files: {bad_files}"
+        bad_files = [str(p) for p in neuralops_root.rglob("*") if p.name.startswith("._")]
+        assert len(bad_files) == 0, f"Found unexpected AppleDouble files in neuralops: {bad_files}"
 
-    def test_all_framework_python_files_compile(self, framework_root):
+    def test_all_framework_python_files_compile(self, neuralops_root):
         """Verify all python files in the framework compile to bytecode without syntax errors."""
-        py_files = list(framework_root.rglob("*.py"))
+        py_files = list(neuralops_root.rglob("*.py"))
         assert len(py_files) > 50
 
         compile_errors = []
@@ -53,15 +57,15 @@ class TestFileStructureAndCompilation:
         assert len(ATTENTION_REGISTRY.keys()) >= 15
         assert len(COMPRESSOR_REGISTRY.keys()) >= 8
 
-    def test_duplicate_files_are_canonical_reexports(self, framework_root):
+    def test_duplicate_files_are_canonical_reexports(self, neuralops_root):
         """Files present in both attentions and compression_engine must be clean re-exports."""
-        att_files = set(f.name for f in (framework_root / "attentions").glob("*.py"))
-        ce_files = set(f.name for f in (framework_root / "compression_engine").glob("*.py"))
+        att_files = set(f.name for f in (neuralops_root / "attentions").glob("*.py"))
+        ce_files = set(f.name for f in (neuralops_root / "compression_engine").glob("*.py"))
         overlap = (att_files & ce_files) - {"__init__.py"}
 
         for filename in overlap:
-            p1 = (framework_root / "attentions" / filename).read_text()
-            p2 = (framework_root / "compression_engine" / filename).read_text()
+            p1 = (neuralops_root / "attentions" / filename).read_text(encoding="utf-8")
+            p2 = (neuralops_root / "compression_engine" / filename).read_text(encoding="utf-8")
             # One must re-export the other, or they must be complementary
             is_reexport = ("Canonical home:" in p1 or "Canonical home:" in p2 or
                            "Re-exports" in p1 or "Re-exports" in p2 or
