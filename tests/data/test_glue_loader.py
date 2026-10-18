@@ -1,6 +1,7 @@
 """Tests for neuralops.data.glue_loader module."""
 
 import pytest
+pytest.importorskip("neuralops.data.glue_loader")
 from unittest.mock import MagicMock, patch
 
 from neuralops.data.glue_loader import (

@@ -1,6 +1,7 @@
 """Tests for neuralops.data.dataset_loader module."""
 
 import pytest
+pytest.importorskip("neuralops.data.dataset_loader")
 import pandas as pd
 from unittest.mock import MagicMock, patch
 

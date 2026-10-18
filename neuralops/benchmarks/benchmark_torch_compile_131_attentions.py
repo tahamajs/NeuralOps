@@ -54,17 +54,34 @@ def get_is_decoder(model_name: str) -> bool:
     return True
 
 
-def benchmark_torch_compile(strict_compile_check: bool = True, output_path: str = "results/benchmark_torch_compile_131_corrected.csv"):
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    gpu_name = torch.cuda.get_device_name(0) if torch.cuda.is_available() else "CPU"
-    print(f"Executing Inductor torch.compile(mode='reduce-overhead', dynamic=True) on {device} ({gpu_name})")
+def benchmark_torch_compile(
+    strict_compile_check: bool = True,
+    output_path: str = "results/benchmark_torch_compile_131_corrected.csv",
+    output_json_path: str = None,
+    device: str = None,
+    seq_lens: list = None,
+    repeat: int = 10,
+    limit: int = None,
+    filter_modules: list = None,
+):
+    if device is None:
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+    if seq_lens is None:
+        seq_lens = SEQ_LENS
+
+    gpu_name = torch.cuda.get_device_name(0) if torch.cuda.is_available() and device.startswith("cuda") else "CPU"
+    print(f"Executing Inductor torch.compile(mode='reduce-overhead', dynamic=True) on {device} ({gpu_name})", flush=True)
 
     # Strict adherence to canonical attention mechanisms (excluding deprecated aliases)
     raw_keys = sorted(ATTENTION_REGISTRY.keys())
     attn_keys = [k for k in raw_keys if k not in DEPRECATED_ALIASES]
+    if filter_modules:
+        attn_keys = [k for k in attn_keys if k in filter_modules]
+    if limit is not None:
+        attn_keys = attn_keys[:limit]
 
-    print(f"Auditing all {len(attn_keys)} Canonical Attention Mechanisms (125 canonical + 6 aliases = 131 total)")
-    print(f"Sequence lengths: {SEQ_LENS} | Batch: {BATCH_SIZE} | Dim: {DIM} | Heads: {NUM_HEADS}")
+    print(f"Auditing {len(attn_keys)} Canonical Attention Mechanisms", flush=True)
+    print(f"Sequence lengths: {seq_lens} | Batch: {BATCH_SIZE} | Dim: {DIM} | Heads: {NUM_HEADS} | Repeat: {repeat}", flush=True)
 
     results = {
         "device": str(device),
@@ -73,7 +90,7 @@ def benchmark_torch_compile(strict_compile_check: bool = True, output_path: str 
         "pytorch_version": torch.__version__,
         "mode": "reduce-overhead",
         "dynamic_shapes": True,
-        "seq_lens": SEQ_LENS,
+        "seq_lens": seq_lens,
         "total_canonical_modules": len(attn_keys),
         "total_deprecated_aliases": len(DEPRECATED_ALIASES),
         "modules": {},
@@ -338,9 +355,30 @@ def main():
     parser = argparse.ArgumentParser(description="Strict torch.compile Inductor Benchmark for Attention Mechanisms")
     parser.add_argument("--strict-compile-check", action="store_true", default=True, help="Enforce strict compile validation")
     parser.add_argument("--output", type=str, default="results/benchmark_torch_compile_131_corrected.csv", help="Output CSV path")
+    parser.add_argument("--output-json", type=str, default=None, help="Output JSON path")
+    parser.add_argument("--device", type=str, default=None, help="Device to execute benchmark")
+    parser.add_argument("--seq-lens", type=str, default="128,256,512", help="Comma-separated sequence lengths")
+    parser.add_argument("--repeat", type=int, default=10, help="Repeat iterations")
+    parser.add_argument("--limit", type=int, default=None, help="Limit number of attention modules to test")
+    parser.add_argument("--modules", type=str, default=None, help="Comma-separated module names to test")
+    parser.add_argument("--quick", action="store_true", help="Quick run mode (seq_lens=128, limit=5, repeat=2)")
     args = parser.parse_args()
 
-    benchmark_torch_compile(strict_compile_check=args.strict_compile_check, output_path=args.output)
+    seq_lens = [128] if args.quick else [int(s.strip()) for s in args.seq_lens.split(",")]
+    limit = 5 if args.quick else args.limit
+    repeat = 2 if args.quick else args.repeat
+    filter_modules = [m.strip() for m in args.modules.split(",")] if args.modules else None
+
+    benchmark_torch_compile(
+        strict_compile_check=args.strict_compile_check,
+        output_path=args.output,
+        output_json_path=args.output_json,
+        device=args.device,
+        seq_lens=seq_lens,
+        repeat=repeat,
+        limit=limit,
+        filter_modules=filter_modules,
+    )
     return 0
 
 

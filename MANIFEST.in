@@ -3,7 +3,6 @@ include README.md
 include CHANGELOG.md
 include pyproject.toml
 include neuralops/core/deprecated_aliases.json
-include neuralops/benchmarks/discovery_overrides.json
 include neuralops/py.typed
 
 recursive-include neuralops *.pyi
@@ -15,14 +14,19 @@ recursive-include neuralops *.json
 
 recursive-exclude neuralops/data/glue_data *
 recursive-exclude neuralops/tests *
-recursive-exclude neuralops/benchmarks/_legacy *
+recursive-exclude neuralops/benchmarks *
 recursive-exclude neuralops/_archive *
 recursive-exclude neuralops/core/_archive *
 recursive-exclude neuralops/attentions/_legacy *
 recursive-exclude neuralops/compression_engine/_legacy *
 recursive-exclude tests *
+recursive-exclude benchmarks *
 recursive-exclude scripts *
 recursive-exclude results *
+recursive-exclude paper *
+recursive-exclude thesis_final *
+recursive-exclude docs *
+recursive-exclude academic *
 
 global-exclude *.arrow
 global-exclude *.parquet

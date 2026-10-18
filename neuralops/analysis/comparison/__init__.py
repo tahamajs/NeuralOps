@@ -1,5 +1,6 @@
 """Statistical comparison utilities for benchmark analysis."""
-from neuralops.analysis.comparison.statistical_tests import (
+import sys
+from neuralops.analysis.comparison.statistical_testing import (
     bayesian_correlated_ttest,
     bayesian_signed_rank_test,
     finner_correction,
@@ -12,6 +13,9 @@ from neuralops.analysis.comparison.statistical_tests import (
     sign_test,
     wilcoxon_signed_rank_test,
 )
+from neuralops.analysis.comparison import statistical_testing
+statistical_tests = statistical_testing
+sys.modules["neuralops.analysis.comparison.statistical_tests"] = statistical_testing
 
 __all__ = [
     "holm_correction",
@@ -25,7 +29,6 @@ __all__ = [
     "bayesian_correlated_ttest",
     "bayesian_signed_rank_test",
     "run_full_statistical_analysis",
+    "statistical_testing",
+    "statistical_tests",
 ]
-
-# Auto-wired package members
-from neuralops.analysis.comparison import statistical_tests

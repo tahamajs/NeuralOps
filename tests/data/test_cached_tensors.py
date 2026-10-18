@@ -1,6 +1,7 @@
 """Tests for neuralops.data.cached_tensors module."""
 
 import pytest
+pytest.importorskip("neuralops.data.cached_tensors")
 import torch
 from pathlib import Path
 from torch.utils.data import TensorDataset
