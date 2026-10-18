@@ -5,17 +5,19 @@
 
 namespace neuralops { namespace cuda {
 
-// Single-Pass Warp-Per-Query Flash Cluster Attention Forward Kernel:
+// Single-Pass Warp-Per-Query Flash Cluster Attention Forward Kernel with Cooperative SMEM Tiling:
 // Form: S_{i, c} = \frac{1}{\sqrt{D}} \sum_{d=0}^{D-1} Q_{i, d} \cdot \text{Centroid}_{c, d}
 //       w_{i, c} = \text{Softmax}_c(S_{i, c})
 //       out_{i, d} = \sum_{c=0}^{K-1} w_{i, c} \cdot V_{c, d}
 //
 // Hardware-level optimization:
-// 1. Warp-Per-Query (32 threads/query token): 100% coalesced vector loads across lane and zero register spilling.
-// 2. Single-pass fused online softmax rescaling and value accumulation in registers.
-// 3. Strict FP32 intermediate accumulation to prevent numerical overflow and underflow.
+// 1. Cooperative SMEM Tiling: Centroids and Values loaded into shared memory in TILE_K blocks.
+// 2. SMEM Bank Conflict Elimination: __shared__ float s_c[TILE_K][D_PAD], s_v[TILE_K][D_PAD] with +8 element padding.
+// 3. 128-bit Vectorized DRAM Loads: uint4 aligned memory transactions for half/bfloat16, float4 for float32.
+// 4. Warp-Per-Query (4 warps = 128 threads/block): launch bounds (128, 2) with zero register spilling.
+// 5. Dynamic online softmax rescaling with strict FP32 precision.
 template <typename scalar_t>
-__global__ void __launch_bounds__(128) cluster_attn_fwd_kernel(
+__global__ void __launch_bounds__(128, 2) cluster_attn_fwd_kernel(
     scalar_t* __restrict__ out,
     const scalar_t* __restrict__ q,
     const scalar_t* __restrict__ centroids,
@@ -32,75 +34,167 @@ __global__ void __launch_bounds__(128) cluster_attn_fwd_kernel(
 
     const int warp_id = threadIdx.x / 32;
     const int lane = threadIdx.x % 32;
-    const int i = blockIdx.x * (blockDim.x / 32) + warp_id;
-    if (i >= N) return;
+    const int i = blockIdx.x * 4 + warp_id;
 
     const int q_offset = bh * (N * D) + i * D;
     const int c_base_offset = bh * (K * D);
     const float scale = rsqrtf(static_cast<float>(D));
 
-    // Register cache for query vectors (up to D=128, e.g. 2 elements per lane for D=64, 4 for D=128)
+    // Register cache for query vectors (up to D=128)
     constexpr int MAX_E = 4;
     float q_reg[MAX_E];
 
     #pragma unroll
     for (int e = 0; e < MAX_E; ++e) {
         const int d = lane + e * 32;
-        if (d < D) {
+        if (i < N && d < D) {
             q_reg[e] = to_float(q[q_offset + d]) * scale;
         } else {
             q_reg[e] = 0.0f;
         }
     }
 
+    constexpr int TILE_K = 16;
+    constexpr int D_PAD = 128 + 8; // +8 elements eliminates bank conflicts & ensures 16-byte alignment
+    __shared__ float s_c[TILE_K][D_PAD];
+    __shared__ float s_v[TILE_K][D_PAD];
+
     // Single-pass FlashAttention across K centroids
     float m_prev = -1e30f;
     float d_prev = 0.0f;
     float acc[MAX_E] = {0.0f};
 
-    for (int c = 0; c < K; ++c) {
-        float dot_local = 0.0f;
-        const int c_offset = c_base_offset + c * D;
+    const int tid = threadIdx.x; // 0..127
 
-        #pragma unroll
-        for (int e = 0; e < MAX_E; ++e) {
-            const int d = lane + e * 32;
-            if (d < D) {
-                dot_local = fmaf(q_reg[e], to_float(centroids[c_offset + d]), dot_local);
+    for (int tile_start = 0; tile_start < K; tile_start += TILE_K) {
+        __syncthreads();
+
+        // 128-bit aligned vector DRAM loads
+        if (sizeof(scalar_t) == 2 && (D % 8 == 0)) {
+            const int uint4_per_tok = D / 8;
+            const int total_uint4 = TILE_K * uint4_per_tok;
+            for (int idx = tid; idx < total_uint4; idx += 128) {
+                const int t = idx / uint4_per_tok;
+                const int chunk = idx % uint4_per_tok;
+                const int d_base = chunk * 8;
+                const int global_c = tile_start + t;
+
+                if (global_c < K) {
+                    const int g_off = c_base_offset + global_c * D + d_base;
+                    const uint4 raw_c = reinterpret_cast<const uint4*>(centroids + g_off)[0];
+                    const uint4 raw_v = reinterpret_cast<const uint4*>(v + g_off)[0];
+
+                    const scalar_t* p_c = reinterpret_cast<const scalar_t*>(&raw_c);
+                    const scalar_t* p_v = reinterpret_cast<const scalar_t*>(&raw_v);
+
+                    #pragma unroll
+                    for (int elem = 0; elem < 8; ++elem) {
+                        s_c[t][d_base + elem] = to_float(p_c[elem]);
+                        s_v[t][d_base + elem] = to_float(p_v[elem]);
+                    }
+                } else {
+                    #pragma unroll
+                    for (int elem = 0; elem < 8; ++elem) {
+                        s_c[t][d_base + elem] = 0.0f;
+                        s_v[t][d_base + elem] = 0.0f;
+                    }
+                }
+            }
+        } else if (sizeof(scalar_t) == 4 && (D % 4 == 0)) {
+            const int float4_per_tok = D / 4;
+            const int total_float4 = TILE_K * float4_per_tok;
+            for (int idx = tid; idx < total_float4; idx += 128) {
+                const int t = idx / float4_per_tok;
+                const int chunk = idx % float4_per_tok;
+                const int d_base = chunk * 4;
+                const int global_c = tile_start + t;
+
+                if (global_c < K) {
+                    const int g_off = c_base_offset + global_c * D + d_base;
+                    const float4 raw_c = reinterpret_cast<const float4*>(centroids + g_off)[0];
+                    const float4 raw_v = reinterpret_cast<const float4*>(v + g_off)[0];
+
+                    s_c[t][d_base + 0] = raw_c.x;
+                    s_c[t][d_base + 1] = raw_c.y;
+                    s_c[t][d_base + 2] = raw_c.z;
+                    s_c[t][d_base + 3] = raw_c.w;
+
+                    s_v[t][d_base + 0] = raw_v.x;
+                    s_v[t][d_base + 1] = raw_v.y;
+                    s_v[t][d_base + 2] = raw_v.z;
+                    s_v[t][d_base + 3] = raw_v.w;
+                } else {
+                    #pragma unroll
+                    for (int elem = 0; elem < 4; ++elem) {
+                        s_c[t][d_base + elem] = 0.0f;
+                        s_v[t][d_base + elem] = 0.0f;
+                    }
+                }
+            }
+        } else {
+            const int tile_elements = TILE_K * D;
+            for (int idx = tid; idx < tile_elements; idx += 128) {
+                const int t = idx / D;
+                const int d = idx % D;
+                const int global_c = tile_start + t;
+                if (global_c < K) {
+                    const int g_off = c_base_offset + global_c * D + d;
+                    s_c[t][d] = to_float(centroids[g_off]);
+                    s_v[t][d] = to_float(v[g_off]);
+                } else {
+                    s_c[t][d] = 0.0f;
+                    s_v[t][d] = 0.0f;
+                }
             }
         }
+        __syncthreads();
 
-        // Warp reduction across 32 lanes
-        #pragma unroll
-        for (int offset = 16; offset > 0; offset /= 2) {
-            dot_local += __shfl_xor_sync(0xffffffff, dot_local, offset);
-        }
+        if (i < N) {
+            const int max_t = min(TILE_K, K - tile_start);
+            for (int t = 0; t < max_t; ++t) {
+                float dot_local = 0.0f;
+                #pragma unroll
+                for (int e = 0; e < MAX_E; ++e) {
+                    const int d = lane + e * 32;
+                    if (d < D) {
+                        dot_local = fmaf(q_reg[e], s_c[t][d], dot_local);
+                    }
+                }
 
-        // Online softmax update
-        const float m_curr = fmaxf(m_prev, dot_local);
-        const float alpha = expf(m_prev - m_curr);
-        const float p = expf(dot_local - m_curr);
-        d_prev = d_prev * alpha + p;
-        m_prev = m_curr;
+                // Warp reduction across 32 lanes
+                #pragma unroll
+                for (int offset = 16; offset > 0; offset /= 2) {
+                    dot_local += __shfl_xor_sync(0xffffffff, dot_local, offset);
+                }
 
-        // Rescale prior accumulation and add current p * v
-        #pragma unroll
-        for (int e = 0; e < MAX_E; ++e) {
-            const int d = lane + e * 32;
-            if (d < D) {
-                const float v_val = to_float(v[c_offset + d]);
-                acc[e] = acc[e] * alpha + p * v_val;
+                // Online softmax update
+                const float m_curr = fmaxf(m_prev, dot_local);
+                const float alpha = expf(m_prev - m_curr);
+                const float p = expf(dot_local - m_curr);
+                d_prev = d_prev * alpha + p;
+                m_prev = m_curr;
+
+                // Rescale prior accumulation and add current p * v
+                #pragma unroll
+                for (int e = 0; e < MAX_E; ++e) {
+                    const int d = lane + e * 32;
+                    if (d < D) {
+                        const float v_val = s_v[t][d];
+                        acc[e] = acc[e] * alpha + p * v_val;
+                    }
+                }
             }
         }
     }
 
-    const float inv_d = (d_prev > 1e-6f) ? (1.0f / d_prev) : 0.0f;
-
-    #pragma unroll
-    for (int e = 0; e < MAX_E; ++e) {
-        const int d = lane + e * 32;
-        if (d < D) {
-            out[q_offset + d] = from_float<scalar_t>(acc[e] * inv_d);
+    if (i < N) {
+        const float inv_d = (d_prev > 1e-6f) ? (1.0f / d_prev) : 0.0f;
+        #pragma unroll
+        for (int e = 0; e < MAX_E; ++e) {
+            const int d = lane + e * 32;
+            if (d < D) {
+                out[q_offset + d] = from_float<scalar_t>(acc[e] * inv_d);
+            }
         }
     }
 }
