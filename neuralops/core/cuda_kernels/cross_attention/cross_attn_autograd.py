@@ -1,5 +1,5 @@
 """
-Fused Cross-Attention Interface and 3-Level Fallback.
+Fused Cross-Attention Interface, Analytical Autograd Backward, and 3-Level Fallback.
 Target: SM 8.9 (NVIDIA Ada Lovelace RTX 4070 Laptop GPU, 8GB VRAM).
 """
 
@@ -30,7 +30,7 @@ def _get_module():
             name="cuda_cross_attention",
             cpp_sources=cpp_src,
             cuda_sources=cuda_src,
-            functions=["cross_attention_fwd"],
+            functions=["cross_attention_fwd", "cross_attention_bwd"],
         )
     return _MODULE
 
@@ -52,12 +52,48 @@ def _get_triton_impl():
         return None
 
 
+class _CrossAttentionFunction(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, q, k, v):
+        mod = _get_module()
+        if mod is not None and hasattr(mod, "cross_attention_fwd") and q.is_cuda and q.shape[-1] <= 128:
+            out = mod.cross_attention_fwd(q.contiguous(), k.contiguous(), v.contiguous())
+        else:
+            out = cross_attention_pytorch_ref(q, k, v)
+
+        ctx.save_for_backward(q, k, v)
+        return out
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        q, k, v = ctx.saved_tensors
+        mod = _get_module()
+        if mod is not None and hasattr(mod, "cross_attention_bwd") and q.is_cuda and q.shape[-1] <= 128:
+            grad_q, grad_k, grad_v = mod.cross_attention_bwd(
+                grad_output.contiguous(),
+                q.contiguous(),
+                k.contiguous(),
+                v.contiguous(),
+            )
+            return grad_q, grad_k, grad_v
+
+        q_ref = q.detach().requires_grad_(True)
+        k_ref = k.detach().requires_grad_(True)
+        v_ref = v.detach().requires_grad_(True)
+        with torch.enable_grad():
+            out = cross_attention_pytorch_ref(q_ref, k_ref, v_ref)
+        return torch.autograd.grad(out, (q_ref, k_ref, v_ref), grad_output)
+
+
 def cross_attention(
     q: torch.Tensor,
     k: torch.Tensor,
     v: torch.Tensor,
 ) -> torch.Tensor:
-    """3-Level Dispatched Cross-Attention."""
+    """3-Level Dispatched Cross-Attention with Analytical Autograd Support."""
+    if any(t.requires_grad for t in (q, k, v) if isinstance(t, torch.Tensor)):
+        return _CrossAttentionFunction.apply(q, k, v)
+
     def cuda_fn(q, k, v, **kwargs):
         mod = _get_module()
         return mod.cross_attention_fwd(q.contiguous(), k.contiguous(), v.contiguous())
@@ -75,3 +111,27 @@ def cross_attention(
         v,
         kernel_name="cross_attention",
     )
+
+
+def cross_attention_bwd(
+    grad_output: torch.Tensor,
+    q: torch.Tensor,
+    k: torch.Tensor,
+    v: torch.Tensor,
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    mod = _get_module()
+    if mod is not None and hasattr(mod, "cross_attention_bwd") and q.is_cuda and q.shape[-1] <= 128:
+        return tuple(
+            mod.cross_attention_bwd(
+                grad_output.contiguous(),
+                q.contiguous(),
+                k.contiguous(),
+                v.contiguous(),
+            )
+        )
+    q_ref = q.detach().requires_grad_(True)
+    k_ref = k.detach().requires_grad_(True)
+    v_ref = v.detach().requires_grad_(True)
+    with torch.enable_grad():
+        out = cross_attention_pytorch_ref(q_ref, k_ref, v_ref)
+    return torch.autograd.grad(out, (q_ref, k_ref, v_ref), grad_output)
