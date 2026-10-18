@@ -7,10 +7,13 @@ Author: Taha Majlesi
 """
 
 from __future__ import annotations
+import logging
 from pathlib import Path
 import torch
 from neuralops.core.cuda_kernels._bindings import load_cuda_module
 from neuralops.core.cuda_kernels._fallback import dispatch
+
+logger = logging.getLogger(__name__)
 
 _MODULE = None
 def _get_module():
@@ -33,6 +36,7 @@ def hydra_attention(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor) -> torch.
     try:
         from neuralops.core.triton_kernels.hydra_attention import triton_hydra_attention
         triton_fn = triton_hydra_attention
-    except Exception:
+    except (RuntimeError, MemoryError, AssertionError, ValueError, ImportError, AttributeError) as exc:
+        logger.warning("Failed to initialize Triton implementation for hydra attention: %s", exc, exc_info=True)
         triton_fn = hydra_attention_ref
     return dispatch(cuda_fn, triton_fn, hydra_attention_ref, q, k, v, kernel_name="hydra_attention")

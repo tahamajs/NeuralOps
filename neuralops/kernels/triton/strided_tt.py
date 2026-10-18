@@ -8,8 +8,7 @@ Author: Taha Majlesi
 
 from __future__ import annotations
 
-import math
-from typing import Any, Optional, Tuple
+from typing import Optional, Tuple
 
 import torch
 import triton
@@ -102,7 +101,7 @@ def _strided_tt_reconstruct_kernel(
         acc += tl.sum(c0_vals * c1_vals, axis=2)
 
     w_ptrs = w_ptr + offs_n[:, None] * stride_wn + offs_k[None, :] * stride_wk
-    tl.store(w_ptrs, acc.to(c0_vals.dtype), mask=mask_n[:, None] & mask_k[None, :])
+    tl.store(w_ptrs, acc.to(w_ptr.dtype.element_ty), mask=mask_n[:, None] & mask_k[None, :])
 
 
 def triton_strided_tt_contraction(
@@ -208,3 +207,17 @@ def triton_strided_tt_linear(
 
     out_features = q_dims[0] * q_dims[1]
     return out.view(*orig_shape[:-1], out_features)
+
+
+# Aliases
+strided_tt = triton_strided_tt_contraction
+strided_tt_contraction = triton_strided_tt_contraction
+strided_tt_linear = triton_strided_tt_linear
+
+__all__ = [
+    "triton_strided_tt_contraction",
+    "triton_strided_tt_linear",
+    "strided_tt",
+    "strided_tt_contraction",
+    "strided_tt_linear",
+]

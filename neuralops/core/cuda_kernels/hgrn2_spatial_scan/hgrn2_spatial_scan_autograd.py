@@ -103,7 +103,6 @@ class _Hgrn2_spatial_scanFunction(torch.autograd.Function):
 
     @staticmethod
     def backward(ctx: Any, *douts):
-        dout = douts[0] if len(douts) == 1 else douts
         saved = list(ctx.saved_tensors)
         inputs = []
         for is_t, nt in zip(ctx.tensors_mask, ctx.non_tensors):
@@ -117,11 +116,11 @@ class _Hgrn2_spatial_scanFunction(torch.autograd.Function):
         tensor_inputs = [inp for inp, is_t in zip(inputs, ctx.tensors_mask) if is_t]
         dout_val = douts[0] if len(douts) == 1 else douts
         grads = torch.autograd.grad(out_p, tensor_inputs, dout_val, allow_unused=True)
-        grads = list(grads)
+        grad_list: list[Any] = list(grads)
         res = []
         for is_t in ctx.tensors_mask:
             if is_t:
-                res.append(grads.pop(0))
+                res.append(grad_list.pop(0))
             else:
                 res.append(None)
         return tuple(res)

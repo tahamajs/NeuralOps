@@ -8,8 +8,7 @@ Author: Taha Majlesi
 
 from __future__ import annotations
 
-import math
-from typing import Any, Optional, Tuple, Union
+from typing import Optional, Tuple, Union
 import warnings
 
 import torch
@@ -86,7 +85,7 @@ def _fused_rpca_gemm_kernel(
 
         z_acc += tl.dot(x_tile, v_tile, allow_tf32=True)
 
-    z_tile = z_acc.to(x_tile.dtype)
+    z_tile = z_acc.to(x_ptr.dtype.element_ty)
 
     # -------------------------------------------------------------
     # 2. Low-Rank Projection: Y_tile = Z_tile @ U_r^T [offs_r, offs_n]
@@ -105,7 +104,6 @@ def _fused_rpca_gemm_kernel(
             if curr_n < N:
                 row_start = tl.load(crow_ptr + curr_n)
                 row_end = tl.load(crow_ptr + curr_n + 1)
-                num_entries = row_end - row_start
 
                 # Unroll entries for the active sparse row
                 for idx in range(row_start, row_end):
@@ -129,7 +127,7 @@ def _fused_rpca_gemm_kernel(
         y_acc += b_tile[None, :].to(tl.float32)
 
     y_ptrs = y_ptr + offs_m[:, None] * stride_ym + offs_n[None, :] * stride_yn
-    tl.store(y_ptrs, y_acc.to(x_tile.dtype), mask=mask_m[:, None] & mask_n[None, :])
+    tl.store(y_ptrs, y_acc.to(y_ptr.dtype.element_ty), mask=mask_m[:, None] & mask_n[None, :])
 
 
 def triton_fused_lowrank_sparse_gemm(
@@ -278,3 +276,14 @@ def triton_fused_lowrank_sparse_gemm(
     )
 
     return y.view(*orig_shape[:-1], N)
+
+
+# Aliases
+rpca_sparse_gemm = triton_fused_lowrank_sparse_gemm
+fused_lowrank_sparse_gemm = triton_fused_lowrank_sparse_gemm
+
+__all__ = [
+    "triton_fused_lowrank_sparse_gemm",
+    "rpca_sparse_gemm",
+    "fused_lowrank_sparse_gemm",
+]

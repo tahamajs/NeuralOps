@@ -354,8 +354,8 @@ if HAS_TRITON and tl is not None:
                 other=0.0,
             )
 
-            acc += tl.dot(x_even, tl.trans(w_dequant_0.to(x_tile.dtype)), allow_tf32=True)
-            acc += tl.dot(x_odd, tl.trans(w_dequant_1.to(x_tile.dtype)), allow_tf32=True)
+            acc += tl.dot(x_even, tl.trans(w_dequant_0.to(x_ptr.dtype.element_ty)), allow_tf32=True)
+            acc += tl.dot(x_odd, tl.trans(w_dequant_1.to(x_ptr.dtype.element_ty)), allow_tf32=True)
 
         if HAS_BIAS:
             b_ptrs = b_ptr + offs_n

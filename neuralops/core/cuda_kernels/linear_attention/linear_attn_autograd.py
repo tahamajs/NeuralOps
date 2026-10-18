@@ -8,6 +8,7 @@ Author: Taha Majlesi
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from typing import Any
 
@@ -15,6 +16,8 @@ import torch
 
 from neuralops.core.cuda_kernels._bindings import load_cuda_module
 from neuralops.core.cuda_kernels._fallback import dispatch
+
+logger = logging.getLogger(__name__)
 
 _MODULE = None
 
@@ -46,20 +49,20 @@ def linear_attention_pytorch_ref(
     B, H, L, D_K = q.shape
     D_V = v.shape[-1]
     out = torch.empty_like(v)
-    for b in range(B):
-        for h in range(H):
+    for b_idx in range(B):
+        for h_idx in range(H):
             S = torch.zeros((D_K, D_V), dtype=torch.float32, device=q.device)
             z = torch.zeros((D_K,), dtype=torch.float32, device=q.device)
             for t in range(L):
-                q_t = q[b, h, t].float()
-                k_t = k[b, h, t].float()
-                v_t = v[b, h, t].float()
+                q_t = q[b_idx, h_idx, t].float()
+                k_t = k[b_idx, h_idx, t].float()
+                v_t = v[b_idx, h_idx, t].float()
 
                 z = z + k_t
                 S = S + torch.outer(k_t, v_t)
                 denom = torch.dot(q_t, z).clamp_min(1e-5)
                 num = torch.matmul(q_t, S)
-                out[b, h, t] = (num / denom).to(v.dtype)
+                out[b_idx, h_idx, t] = (num / denom).to(v.dtype)
     return out
 
 
@@ -70,7 +73,8 @@ def _get_triton_impl():
             res, _ = fwd(q, k, v, is_causal=True)
             return res
         return triton_linear_attn_adapter
-    except Exception:
+    except (RuntimeError, MemoryError, AssertionError, ValueError, ImportError, AttributeError) as exc:
+        logger.warning("Failed to initialize Triton implementation for linear attention: %s", exc, exc_info=True)
         return None
 
 

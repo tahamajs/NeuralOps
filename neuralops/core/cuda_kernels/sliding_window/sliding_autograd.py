@@ -8,6 +8,7 @@ Author: Taha Majlesi
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from typing import Any
 
@@ -16,6 +17,8 @@ import torch.nn.functional as F
 
 from neuralops.core.cuda_kernels._bindings import load_cuda_module
 from neuralops.core.cuda_kernels._fallback import dispatch
+
+logger = logging.getLogger(__name__)
 
 _MODULE = None
 
@@ -80,7 +83,8 @@ def _sliding_window_triton_fallback(
     try:
         from neuralops.core.triton_kernels.sliding_window import sliding_window_triton
         return sliding_window_triton(q, k, v, window_size=window_size)
-    except Exception:
+    except (RuntimeError, MemoryError, AssertionError, ValueError, ImportError, AttributeError) as exc:
+        logger.warning("Failed in Triton fallback for sliding_window: %s", exc, exc_info=True)
         return None
 
 
@@ -175,3 +179,8 @@ def sliding_window_attn(
         return _SlidingWindowAttnFunction.apply(q, k, v, window_size, num_sinks, scale)
 
     return _sliding_window_forward_dispatch(q, k, v, window_size, num_sinks, scale)
+
+
+sliding_window = sliding_window_attn
+
+__all__ = ["sliding_window_attn", "sliding_window", "sliding_window_pytorch_ref"]

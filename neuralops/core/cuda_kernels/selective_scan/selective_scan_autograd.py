@@ -8,6 +8,7 @@ Author: Taha Majlesi
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from typing import Any
 
@@ -15,6 +16,8 @@ import torch
 
 from neuralops.core.cuda_kernels._bindings import load_cuda_module
 from neuralops.core.cuda_kernels._fallback import dispatch
+
+logger = logging.getLogger(__name__)
 
 _MODULE = None
 
@@ -156,7 +159,8 @@ def _selective_scan_forward_dispatch(
             return out, last_state
 
         triton_fn = _triton_wrapper
-    except Exception:
+    except (RuntimeError, MemoryError, AssertionError, ValueError, ImportError, AttributeError) as exc:
+        logger.warning("Failed to initialize Triton implementation for selective_scan: %s", exc, exc_info=True)
         pass
 
     return dispatch(

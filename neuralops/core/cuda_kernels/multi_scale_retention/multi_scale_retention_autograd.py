@@ -7,6 +7,7 @@ Author: Taha Majlesi
 """
 
 from __future__ import annotations
+import logging
 from typing import Any
 """
 Multi-Scale Retention Interface and 3-Level Fallback.
@@ -18,6 +19,8 @@ import torch
 
 from neuralops.core.cuda_kernels._bindings import load_cuda_module
 from neuralops.core.cuda_kernels._fallback import dispatch
+
+logger = logging.getLogger(__name__)
 
 _MODULE = None
 
@@ -86,7 +89,8 @@ def _multi_scale_retention_dispatch(
     try:
         from neuralops.core.triton_kernels.retnet_retention import triton_multi_scale_retention
         triton_fn = triton_multi_scale_retention
-    except Exception:
+    except (RuntimeError, MemoryError, AssertionError, ValueError, ImportError, AttributeError) as exc:
+        logger.warning("Failed to initialize Triton implementation for multi_scale_retention: %s", exc, exc_info=True)
         triton_fn = None
 
     return dispatch(

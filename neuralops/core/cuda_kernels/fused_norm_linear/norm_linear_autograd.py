@@ -8,6 +8,7 @@ Author: Taha Majlesi
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from typing import Any
 
@@ -16,6 +17,8 @@ import torch.nn.functional as F
 
 from neuralops.core.cuda_kernels._bindings import load_cuda_module
 from neuralops.core.cuda_kernels._fallback import dispatch
+
+logger = logging.getLogger(__name__)
 
 _MODULE = None
 
@@ -122,6 +125,6 @@ def fused_norm_linear(
     if triton_fn is not None:
         try:
             return triton_fn(x, weight, bias=bias, eps=eps)
-        except Exception:
-            pass
+        except (RuntimeError, MemoryError, AssertionError, ValueError) as exc:
+            logger.warning("Triton execution failed for fused_norm_linear, falling back to PyTorch", exc_info=True)
     return fused_norm_linear_pytorch_ref(x, weight, bias=bias, eps=eps)

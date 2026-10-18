@@ -8,6 +8,7 @@ Author: Taha Majlesi
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from typing import Any
 
@@ -16,6 +17,8 @@ import torch.nn.functional as F
 
 from neuralops.core.cuda_kernels._bindings import load_cuda_module
 from neuralops.core.cuda_kernels._fallback import dispatch
+
+logger = logging.getLogger(__name__)
 
 _MODULE = None
 
@@ -72,7 +75,8 @@ def _block_sparse_triton_wrapper(
         N = q.shape[2]
         dense_mask = block_mask.repeat_interleave(block_size, dim=0).repeat_interleave(block_size, dim=1)[:N, :N]
         return block_sparse_attention(q, k, v, dense_mask)
-    except Exception:
+    except (RuntimeError, MemoryError, AssertionError, ValueError, ImportError, AttributeError) as exc:
+        logger.warning("Failed in Triton wrapper for block_sparse: %s", exc, exc_info=True)
         return None
 
 

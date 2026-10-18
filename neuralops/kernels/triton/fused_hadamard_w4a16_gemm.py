@@ -8,8 +8,7 @@ Author: Taha Majlesi
 
 from __future__ import annotations
 
-import math
-from typing import Any, Optional, Tuple
+from typing import Optional
 
 import torch
 import triton
@@ -81,14 +80,7 @@ def _fused_hadamard_w4a16_gemm_kernel(
 
     num_k_blocks = tl.cdiv(K, BLOCK_K)
     for k_idx in range(0, num_k_blocks):
-        offs_k = k_idx * BLOCK_K + tl.arange(0, BLOCK_K)
-        mask_k = offs_k < K
-
-        # 1. Load activation tile X[offs_m, offs_k]
-        x_ptrs = x_ptr + offs_m[:, None] * stride_xm + offs_k[None, :] * stride_xk
-        x_tile = tl.load(x_ptrs, mask=mask_m[:, None] & mask_k[None, :], other=0.0)
-
-        # 2. Load Packed INT4 weights: 2 nibbles per byte -> shape (BLOCK_N, BLOCK_K // 2)
+        # 1. Load Packed INT4 weights: 2 nibbles per byte -> shape (BLOCK_N, BLOCK_K // 2)
         # offs_k_packed in [0, K // 2)
         offs_k_packed = (k_idx * (BLOCK_K // 2)) + tl.arange(0, BLOCK_K // 2)
         mask_k_packed = offs_k_packed < (K // 2)
@@ -128,8 +120,8 @@ def _fused_hadamard_w4a16_gemm_kernel(
         x_odd = tl.load(x_ptr + offs_m[:, None] * stride_xm + (2 * offs_k_packed + 1)[None, :] * stride_xk,
                         mask=mask_m[:, None] & (2 * offs_k_packed + 1 < K)[None, :], other=0.0)
 
-        acc += tl.dot(x_even, tl.trans(w_dequant_0.to(x_tile.dtype)), allow_tf32=True)
-        acc += tl.dot(x_odd, tl.trans(w_dequant_1.to(x_tile.dtype)), allow_tf32=True)
+        acc += tl.dot(x_even, tl.trans(w_dequant_0.to(x_ptr.dtype.element_ty)), allow_tf32=True)
+        acc += tl.dot(x_odd, tl.trans(w_dequant_1.to(x_ptr.dtype.element_ty)), allow_tf32=True)
 
     if HAS_BIAS:
         b_ptrs = b_ptr + offs_n
@@ -178,7 +170,6 @@ def triton_fused_hadamard_w4a16_gemm(
         w_unpacked[:, 0::2] = low
         w_unpacked[:, 1::2] = high
 
-        num_groups = K // group_size
         scales_expanded = scales.repeat_interleave(group_size, dim=1)[:, :K]
         zeros_expanded = zeros.repeat_interleave(group_size, dim=1)[:, :K]
         w_dequant = ((w_unpacked - zeros_expanded) * scales_expanded).to(x.dtype)

@@ -36,18 +36,18 @@ def _get_module():
 def gdn_delta_rule_pytorch_ref(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, beta: torch.Tensor) -> torch.Tensor:
     B, H, L, D = q.shape
     out = torch.empty_like(q)
-    for b in range(B):
-        for h in range(H):
+    for b_idx in range(B):
+        for h_idx in range(H):
             S = torch.zeros((D, D), dtype=torch.float32, device=q.device)
             for t in range(L):
-                q_t = q[b, h, t].float()
-                k_t = k[b, h, t].float()
-                v_t = v[b, h, t].float()
-                b_t = beta[b, h, t].float()
+                q_t = q[b_idx, h_idx, t].float()
+                k_t = k[b_idx, h_idx, t].float()
+                v_t = v[b_idx, h_idx, t].float()
+                b_t = beta[b_idx, h_idx, t].float()
                 s_old = torch.matmul(k_t, S)
                 delta_v = v_t - s_old
                 S = S + b_t * torch.outer(k_t, delta_v)
-                out[b, h, t] = torch.matmul(q_t, S).to(q.dtype)
+                out[b_idx, h_idx, t] = torch.matmul(q_t, S).to(q.dtype)
     return out
 
 def gdn_delta_rule_triton_ref(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, beta: torch.Tensor) -> torch.Tensor:

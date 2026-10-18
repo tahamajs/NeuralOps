@@ -7,6 +7,7 @@ Author: Taha Majlesi
 """
 
 from __future__ import annotations
+import logging
 from typing import Any, Tuple, Optional
 """
 Recurrent GLA Step Interface with Native CUDA Analytical Backward Pass and 3-Level Fallback.
@@ -19,6 +20,8 @@ import torch
 
 from neuralops.core.cuda_kernels._bindings import load_cuda_module
 from neuralops.core.cuda_kernels._fallback import dispatch
+
+logger = logging.getLogger(__name__)
 
 _MODULE = None
 
@@ -127,7 +130,8 @@ class _Recurrent_gla_stepFunction(torch.autograd.Function):
                 dstate if state.requires_grad else None,
                 dalpha if alpha.requires_grad else None,
             )
-        except Exception:
+        except (RuntimeError, MemoryError, AssertionError, ValueError, ImportError, AttributeError) as exc:
+            logger.warning("CUDA recurrent_gla_step_bwd failed: %s; falling back to PyTorch autograd", exc, exc_info=True)
             q_p = q.detach().requires_grad_(q.requires_grad)
             k_p = k.detach().requires_grad_(k.requires_grad)
             v_p = v.detach().requires_grad_(v.requires_grad)

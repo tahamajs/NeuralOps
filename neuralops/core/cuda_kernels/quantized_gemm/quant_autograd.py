@@ -8,6 +8,7 @@ Author: Taha Majlesi
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from typing import Any
 
@@ -15,6 +16,8 @@ import torch
 
 from neuralops.core.cuda_kernels._bindings import load_cuda_module
 from neuralops.core.cuda_kernels._fallback import dispatch
+
+logger = logging.getLogger(__name__)
 
 _MODULE = None
 
@@ -78,7 +81,8 @@ def _w4a16_gemm_triton_fallback(
         # Here W_q is [K, N/2] so W is [K, N]. To match A @ W, we pass W_q transposed if needed,
         # or fallback cleanly
         return None
-    except Exception:
+    except (RuntimeError, MemoryError, AssertionError, ValueError, ImportError, AttributeError) as exc:
+        logger.warning("Failed in Triton fallback for w4a16: %s", exc, exc_info=True)
         return None
 
 
@@ -124,8 +128,8 @@ class _W4A16GemmFunction(torch.autograd.Function):
             try:
                 dA = mod.w4a16_gemm_bwd(dout, W_q, scales, zeros, ctx.K, ctx.group_size)
                 return dA, None, None, None, None
-            except Exception:
-                pass
+            except (RuntimeError, MemoryError, AssertionError, ValueError, ImportError, AttributeError) as exc:
+                logger.warning("CUDA w4a16_gemm_bwd failed: %s; falling back to PyTorch", exc, exc_info=True)
 
         # Analytical PyTorch backward for dA = dout @ W_dequant.T
         K = ctx.K
@@ -178,7 +182,8 @@ def _fp8_gemm_triton_fallback(
     try:
         from neuralops.core.triton_kernels.low_rank import fp8_tensorcore_matmul_triton
         return fp8_tensorcore_matmul_triton(A, B, scale_a, scale_b)
-    except Exception:
+    except (RuntimeError, MemoryError, AssertionError, ValueError, ImportError, AttributeError) as exc:
+        logger.warning("Failed in Triton fallback for fp8: %s", exc, exc_info=True)
         return None
 
 
@@ -219,8 +224,8 @@ class _FP8GemmFunction(torch.autograd.Function):
             try:
                 dA, dB = mod.fp8_gemm_bwd(dout, A, B, scale_a, scale_b)
                 return dA, dB, None, None
-            except Exception:
-                pass
+            except (RuntimeError, MemoryError, AssertionError, ValueError, ImportError, AttributeError) as exc:
+                logger.warning("CUDA fp8_gemm_bwd failed: %s; falling back to PyTorch", exc, exc_info=True)
 
         sa = scale_a.item() if scale_a is not None and scale_a.numel() > 0 else 1.0
         sb = scale_b.item() if scale_b is not None and scale_b.numel() > 0 else 1.0

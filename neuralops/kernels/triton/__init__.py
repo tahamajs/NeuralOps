@@ -6,9 +6,7 @@ Author: Taha Majlesi
 
 from __future__ import annotations
 
-import importlib
-import sys
-from typing import Any, List, Optional
+from typing import Any
 
 # 1. Standalone Flagship Triton Kernel Modules
 from neuralops.kernels.triton import (
@@ -19,7 +17,6 @@ from neuralops.kernels.triton import (
     fused_hadamard_w4a16_gemm,
     fused_kronecker_matmul,
     fused_latent_kv_cache_attention,
-    fused_lowrank_gemm,
     hgrn2_fused_bwd_scan,
     lut_codebook_dequant_gemm,
     rpca_sparse_gemm,
@@ -28,7 +25,10 @@ from neuralops.kernels.triton import (
 )
 
 # 2. Flagship Kernel Functions
-from neuralops.kernels.triton.fused_lowrank_gemm import triton_fused_lowrank_gated_gemm
+from neuralops.kernels.triton.fused_lowrank_gemm import (
+    triton_fused_lowrank_gated_gemm,
+    fused_lowrank_gemm,
+)
 from neuralops.kernels.triton.rpca_sparse_gemm import triton_fused_lowrank_sparse_gemm
 from neuralops.kernels.triton.strided_tt import (
     triton_strided_tt_contraction,
@@ -158,6 +158,7 @@ __all__ = [
     "spectral_entropy_svd_gate",
     "strided_tt",
     # Flagship 13 Kernel Callables
+    "fused_lowrank_gemm",
     "triton_fused_lowrank_gated_gemm",
     "triton_fused_lowrank_sparse_gemm",
     "triton_strided_tt_contraction",

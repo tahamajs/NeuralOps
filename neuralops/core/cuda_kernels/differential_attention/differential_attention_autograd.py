@@ -6,12 +6,14 @@ Hardware-accelerated CUDA C++ autograd implementation with analytical gradients 
 Author: Taha Majlesi
 """
 
-from __future__ import annotations
+import logging
 from pathlib import Path
 import torch
 import torch.nn.functional as F
 from neuralops.core.cuda_kernels._bindings import load_cuda_module
 from neuralops.core.cuda_kernels._fallback import dispatch
+
+logger = logging.getLogger(__name__)
 
 _MODULE = None
 def _get_module():
@@ -72,6 +74,7 @@ def differential_attention(q1: torch.Tensor, k1: torch.Tensor, q2: torch.Tensor,
     try:
         from neuralops.core.triton_kernels.differential_attention import triton_differential_attention
         triton_fn = triton_differential_attention
-    except Exception:
+    except (RuntimeError, MemoryError, AssertionError, ValueError, ImportError, AttributeError) as exc:
+        logger.warning("Failed to initialize Triton differential_attention, falling back", exc_info=True)
         triton_fn = differential_attention_ref
     return dispatch(cuda_fn, triton_fn, differential_attention_ref, q1, k1=k1, q2=q2, k2=k2, v=v, lambda_val=lambda_val, kernel_name="differential_attention")

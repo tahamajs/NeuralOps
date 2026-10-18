@@ -8,12 +8,13 @@ Author: Taha Majlesi
 
 from __future__ import annotations
 
-import math
-from typing import Any, Optional
+from typing import Optional
 
 import torch
 import triton
 import triton.language as tl
+
+__all__ = ["triton_fused_lowrank_gated_gemm", "fused_lowrank_gemm"]
 
 
 @triton.autotune(
@@ -93,7 +94,7 @@ def _fused_lowrank_gated_gemm_1d_kernel(
         z_acc = z_acc * gate[None, :]
 
     # Convert accumulator to FP16/BF16/FP32 for second GEMM
-    z_tile = z_acc.to(x_tile.dtype)
+    z_tile = z_acc.to(x_ptr.dtype.element_ty)
 
     # -------------------------------------------------------------
     # 3. Stream over N dimension: Y = Z @ U_r^T + b_drift -> HBM
@@ -188,7 +189,7 @@ def _fused_lowrank_gated_gemm_2d_kernel(
         gate = tl.sigmoid(alpha_tile.to(tl.float32))
         z_acc = z_acc * gate[None, :]
 
-    z_tile = z_acc.to(x_tile.dtype)
+    z_tile = z_acc.to(x_ptr.dtype.element_ty)
 
     # Compute Y_tile = Z_tile @ U_r^T [offs_r, offs_n] + b_drift
     u_ptrs = u_ptr + offs_r[:, None] * stride_ur + offs_n[None, :] * stride_un
@@ -329,3 +330,40 @@ def triton_fused_lowrank_gated_gemm(
         )
 
     return y.view(*orig_shape[:-1], N)
+
+
+def fused_lowrank_gemm(
+    x: torch.Tensor,
+    w: torch.Tensor,
+    u_r: Optional[torch.Tensor] = None,
+    alpha: Optional[torch.Tensor] = None,
+    b_drift: Optional[torch.Tensor] = None,
+) -> torch.Tensor:
+    """Fused low-rank GEMM supporting both 2-argument packed weight (w = [V; U]) and explicit (x, v_r, u_r).
+
+    Args:
+        x: Input activations of shape (*, K).
+        w: Either packed weight matrix [V; U] of shape (2*K, R) or down-projection V_r of shape (K, R).
+        u_r: Optional up-projection matrix U_r. If None and w is packed, unpacked from w.
+        alpha: Optional spectral gating tensor.
+        b_drift: Optional bias drift tensor.
+
+    Returns:
+        Projected output tensor.
+    """
+    if u_r is None:
+        K = x.shape[-1]
+        if w.shape[0] == 2 * K:
+            v_mat = w[:K, :]
+            u_mat = w[K:, :]
+            return triton_fused_lowrank_gated_gemm(x, v_mat, u_mat, alpha=alpha, b_drift=b_drift)
+        elif w.shape[0] == K:
+            return torch.matmul(x, w)
+        elif w.shape[1] == K:
+            return torch.matmul(x, w.t())
+        else:
+            half = w.shape[0] // 2
+            v_mat = w[:half, :]
+            u_mat = w[half:, :]
+            return triton_fused_lowrank_gated_gemm(x, v_mat, u_mat, alpha=alpha, b_drift=b_drift)
+    return triton_fused_lowrank_gated_gemm(x, w, u_r, alpha=alpha, b_drift=b_drift)
