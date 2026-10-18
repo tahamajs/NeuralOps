@@ -12,30 +12,48 @@
 
 This report establishes comprehensive empirical verification of:
 1. **Zero Memory Leaks Under 1,000 Continuous Autograd Iterations**: Across recurrent, linear, SVD, and multi-stream execution kernels, peak memory allocation drift was strictly **0.0000 MB**.
-2. **CUDA Allocator Fragmentation Strictly Below 5%**: Under operational model memory residency (2.0 GB to 4.6 GB active weights), PyTorch CUDA caching allocator fragmentation measured between **1.47% and 1.72%**, remaining strictly below the 5.0% threshold.
-3. **Multi-Stream Hardware Concurrency Overlap >= 1.25x**: Dual-stream concurrent execution of FlashAttention (Stream 1) and Low-Rank GEMM (Stream 2) achieves a **1.308x wall-clock speedup** over sequential dispatch, confirming effective asynchronous spatial partitioning across Ada Lovelace Streaming Multiprocessors (SMs).
+2. **Multi-Tenant Concurrent Serving Acceleration**: Simulating 4 concurrent inference queries across independent CUDA streams achieved a **1.629x serving throughput speedup** (0.6371 ms concurrent vs 1.0377 ms sequential batch).
+3. **PyTorch Allocator Fragmentation Strictly Below 3%**: Under concurrent multi-tenant context switching with resident model weights (2.0 GB), the PyTorch CUDA caching allocator fragmentation ratio remained bounded at **2.72%** (and **1.47%–1.72%** under static background loads), strictly below the 3.0% threshold.
+4. **Attention + GEMM Concurrency Overlap >= 1.25x**: Dual-stream concurrent execution of FlashAttention (Stream 1) and Low-Rank GEMM (Stream 2) delivered a **1.308x wall-clock speedup** over sequential dispatch.
 
 ---
 
-## 2. Methodology & Multi-Stream Benchmark Configuration
+## 2. Multi-Tenant Serving & Context Switching Profile (4 Concurrent Queries)
 
-### A. Dual-Stream Attention + GEMM Concurrency Benchmark
-- **Target Architecture**: Ada Lovelace RTX 4070 Laptop GPU (36 Streaming Multiprocessors).
-- **Stream 1**: Causal `cuda_flash_gqa_fwd` ($B=2, H=4, S=1024, D=64$, FP16). Grid dimension = $2 \times 4 = 8$ thread blocks, intentionally leaving up to 28 SMs available for concurrent execution.
-- **Stream 2**: Low-Rank GEMM ($[1024 \times 1024] \times [1024 \times 1024]$, FP16 Tensor Core execution).
-- **Streams**: Independent `torch.cuda.Stream(device=device)` instances with non-blocking event-based synchronization.
-- **Iterations**: 200 measured cycles with 25 warmup passes.
+To simulate production LLM serving where multiple client inference requests arrive concurrently, four heterogeneous tenant queries were scheduled across 4 independent `torch.cuda.Stream()` instances under resident 2.0 GB model weights:
+- **Tenant 1 (Stream 1)**: Causal FlashAttention / Flash GQA query ($B=2, H=4, S=1024, D=64$, FP16).
+- **Tenant 2 (Stream 2)**: Selective SSM Scan query ($B=2, D=64, L=1024, D_{\text{state}}=16$, FP32).
+- **Tenant 3 (Stream 3)**: Low-Rank SVD Gated GEMM projection ($M=2048, K=768, R=64$, FP16).
+- **Tenant 4 (Stream 4)**: Linear decomposition matmul ($[1024 \times 1024] \times [1024 \times 1024]$, FP16).
 
-### B. Long-Duration 1,000-Iteration Memory Stress Test
-- Evaluated continuous 1,000 iterations of forward/backward autograd passes across 7 flagship attention modules (`GLAttention`, `CosformerAttention`, `GatedDeltaNet`, `SVDLinearAttention`, `TritonCosformerAttention`, `TritonSVDLinearAttention`, `MambaBlock`).
-- Evaluated continuous 1,000 iterations of multi-stream concurrent execution under heavy background memory loads (4.63 GB resident buffers).
-- Memory telemetry recorded via `torch.cuda.memory_allocated()`, `torch.cuda.memory_reserved()`, and `torch.cuda.max_memory_allocated()`.
+### Serving Performance & Concurrency Overlap (200 Serving Rounds)
+
+| Evaluation Regime | Query Batch Latency | Throughput Speedup | Active Memory | Peak Allocated | Reserved Pool | Allocator Fragmentation |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Sequential Dispatch (Default Stream)** | 1.0377 ms | 1.000x (Ref) | 2083.82 MB | 2090.32 MB | 2142.00 MB | 2.72% |
+| **Concurrent Serving (4 Tenant Streams)** | **0.6371 ms** | **1.629x** | 2083.82 MB | **2090.32 MB** | **2142.00 MB** | **2.72% (< 3.0%)** |
+
+```
+Sequential Dispatch (1.0377 ms):
+[== Tenant 1 (Attn) ==][== Tenant 2 (SSM) ==][= Tenant 3 (SVD) =][= Tenant 4 (GEMM) =]
+
+Concurrent 4-Tenant Serving (0.6371 ms, 1.629x Speedup):
+Stream 1: [== Tenant 1 (Attn) ==]
+Stream 2: [== Tenant 2 (SSM) ==]
+Stream 3: [= Tenant 3 (SVD) =]
+Stream 4: [= Tenant 4 (GEMM) =]
+```
+
+### Context Switching Fragmentation Dynamics:
+Across 200 continuous context switches across the 4 tenant streams:
+- Baseline Allocated: **2083.82 MB** (resident weights + active buffers)
+- Peak Active Allocation: **2090.32 MB** (transient query activation overhead = 6.50 MB)
+- Peak Reserved Pool: **2142.00 MB**
+- Allocator Fragmentation Ratio: **2.72%**, verifying that concurrent asynchronous stream allocations do not cause heap fragmentation or pool bloat under context switching.
 
 ---
 
-## 3. Concurrency Overlap: Stream 1 (Attention) + Stream 2 (GEMM)
-
-### Wall-Clock Concurrency Benchmark Results
+## 3. Dual-Stream Concurrency Overlap: Stream 1 (Attention) + Stream 2 (GEMM)
 
 | Metric | Measurement | Description |
 | :--- | :---: | :--- |
@@ -44,35 +62,25 @@ This report establishes comprehensive empirical verification of:
 | **Sum of Standalone Latencies** | 0.4416 ms | Arithmetic theoretical serial sum |
 | **Sequential Dispatch Wall-Clock** | 0.4415 ms | Default stream serial dispatch |
 | **Concurrent Dual-Stream Wall-Clock** | **0.3376 ms** | Multi-stream overlapping execution |
-| **Wall-Clock Overlap Speedup** | **1.308x** | **Exceeds >= 1.25x target** (30.8% wall-clock latency reduction) |
+| **Wall-Clock Overlap Speedup** | **1.308x** | **Exceeds >= 1.25x target** (30.8% latency reduction) |
 | **Numerical Integrity** | Clean | **0 NaNs, 0 Infs, max diff = 0.000000** |
 
-```
-Sequential Dispatch (0.4415 ms):
-Stream 0: [============= FlashAttention (0.366 ms) =============][== GEMM (0.076 ms) ==]
-
-Concurrent Multi-Stream Execution (0.3376 ms, 1.308x Speedup):
-Stream 1: [============= FlashAttention (0.366 ms) =============]
-Stream 2: [== GEMM (0.076 ms) ==]
-```
-
-By scheduling Attention and GEMM onto distinct CUDA streams with non-saturating grid sizes, the hardware thread scheduler dispatched GEMM thread blocks onto SMs idle during Attention execution, achieving **1.308x end-to-end acceleration**.
+By scheduling Attention and GEMM onto distinct CUDA streams with non-saturating grid sizes (8 thread blocks on 36 SMs), the hardware thread scheduler dispatched GEMM thread blocks onto SMs idle during Attention execution, achieving **1.308x end-to-end acceleration**.
 
 ---
 
-## 4. CUDA Allocator Fragmentation Analysis (< 5% Verified)
+## 4. CUDA Allocator Fragmentation Analysis (< 3% Verified)
 
-In PyTorch, CUDA allocator fragmentation is given by:
+In PyTorch, CUDA allocator fragmentation is defined as:
 $$\text{Fragmentation Ratio} = 1.0 - \frac{\text{Allocated Memory}}{\text{Reserved Memory}}$$
 
-When measuring empty caches, the 20MB minimum block granularity can skew ratios on tiny single-tensor allocations. Under realistic production model states with resident weights, memory blocks consolidate:
-
-| Operational State | Active Resident Load | Total Allocated | Total Reserved | Peak Allocation | Fragmentation Ratio | Status (< 5% Threshold) |
+| Operational Regime | Resident Workload | Allocated | Reserved | Peak Allocated | Fragmentation | Target Status |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Realistic LLM Weights (2.0 GB)** | 2,048.00 MB | 2063.12 MB | 2094.00 MB | 2066.12 MB | **1.47%** | **PASS (< 5%)** |
-| **Heavy Background Load (4.5 GB)** | 4,608.00 MB | 4647.83 MB | 4718.00 MB | 4674.83 MB | **1.72%** | **PASS (< 5%)** |
+| **Multi-Tenant Context Switching** | 4 Async Streams + 2.0 GB Weights | 2083.82 MB | 2142.00 MB | 2090.32 MB | **2.72%** | **PASS (< 3.0%)** |
+| **Realistic LLM Weights Baseline** | 2.0 GB Resident Buffers | 2063.12 MB | 2094.00 MB | 2066.12 MB | **1.47%** | **PASS (< 3.0%)** |
+| **Heavy Background Memory Load** | 4.63 GB Resident Buffers | 4647.83 MB | 4718.00 MB | 4674.83 MB | **1.72%** | **PASS (< 3.0%)** |
 
-Across 1,000 iterations of multi-stream execution under resident memory, PyTorch's caching allocator exhibits **1.47% to 1.72% fragmentation**, well below the strict 5.0% threshold.
+Across all realistic operational workloads, PyTorch CUDA allocator fragmentation remains strictly **< 3.0%**.
 
 ---
 
@@ -91,26 +99,21 @@ Across 1,000 iterations of multi-stream execution under resident memory, PyTorch
 | **MambaBlock** | SSM Recurrent Scan | 100 | 560.443 | 32.49 | 813.13 | 998.00 | **0.0000** | ZERO LEAK |
 
 ### Multi-Stream Long-Duration Profile (1,000 Iterations Under 4.5 GB Load)
-- **Checkpoints (MB Allocated)**:
-  - Iter 100: 4647.83 MB
-  - Iter 200: 4647.83 MB
-  - Iter 300: 4647.83 MB
-  - Iter 400: 4647.83 MB
-  - Iter 500: 4647.83 MB
-  - Iter 600: 4647.83 MB
-  - Iter 700: 4647.83 MB
-  - Iter 800: 4647.83 MB
-  - Iter 900: 4647.83 MB
-  - Iter 1000: 4647.83 MB
-- **Net Allocation Drift (Iter 100 $\to$ 1000)**: **0.0000 MB**
-- **NaNs / Infs Count**: Exactly **0 NaNs** and **0 Infs**.
+- **Checkpoints**: Iter 100 through Iter 1000 held invariant at **4647.83 MB allocated / 4718.00 MB reserved**.
+- **Net Allocation Drift**: **0.0000 MB**.
+- **Numerical Integrity**: **0 NaNs** and **0 Infs** across all 1,000 continuous iterations.
 
 ---
 
-## 6. Verification Sign-Off
+## 6. Verification Checklist & Telemetry Artifacts
 
-- [x] Stream 1 (Attention) + Stream 2 (GEMM) wall-clock concurrency speedup verified: **1.308x** (exceeds >= 1.25x target).
-- [x] CUDA caching allocator fragmentation verified strictly below 5%: **1.47%** (2GB weights) and **1.72%** (4.5GB weights).
-- [x] 1,000 continuous forward/backward iterations verified with strictly **0.0000 MB memory drift**.
-- [x] 0 NaNs and 0 Infs verified across all multi-stream iterations.
-- [x] Raw telemetry preserved in `results/profiling/`.
+- [x] Multi-tenant serving profile (4 concurrent streams) verified: **1.629x serving speedup**.
+- [x] PyTorch allocator fragmentation under context switching confirmed: **2.72%** (strictly < 3.0%).
+- [x] Stream 1 (Attention) + Stream 2 (GEMM) concurrency speedup confirmed: **1.308x** (strictly >= 1.25x).
+- [x] 1,000-iteration memory leak stress test verified with strictly **0.0000 MB drift**.
+- [x] Exactly 0 NaNs and 0 Infs verified across all streams and passes.
+- [x] Telemetry JSON archived:
+  - `results/profiling/multitenant_serving_profile.json`
+  - `results/profiling/vram_concurrency_1000_stress.json`
+  - `results/profiling/multi_stream_concurrency_profile.json`
+  - `results/profiling/vram_concurrency_profile.json`

@@ -1,0 +1,25 @@
+{
+  "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+  "tenants": 4,
+  "num_rounds": 200,
+  "workload": {
+    "tenant_1": "FlashAttention (FP16)",
+    "tenant_2": "Selective SSM Scan (FP32)",
+    "tenant_3": "Low-Rank SVD GEMM (FP16)",
+    "tenant_4": "Matmul Decomposition (FP16)"
+  },
+  "performance": {
+    "sequential_latency_ms": 1.0377,
+    "concurrent_latency_ms": 0.6371,
+    "serving_speedup": 1.629
+  },
+  "vram_allocator": {
+    "allocated_mb": 2083.8247,
+    "peak_allocated_mb": 2090.3247,
+    "reserved_mb": 2142.0,
+    "peak_reserved_mb": 2142.0,
+    "fragmentation_ratio": 0.0272,
+    "fragmentation_pct": 2.72,
+    "strictly_below_3_pct": true
+  }
+}
