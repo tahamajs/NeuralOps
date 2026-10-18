@@ -1,4 +1,11 @@
-"""Zero-shot multiple-choice and reasoning evaluation adapter."""
+"""
+Zero-shot multiple-choice and reasoning evaluation adapter
+
+Implements zeroshot functionality for NeuralOps.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 
 import logging

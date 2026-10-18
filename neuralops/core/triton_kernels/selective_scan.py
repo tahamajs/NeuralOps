@@ -1,14 +1,9 @@
 """
-Triton-accelerated selective scan kernel for Mamba-1 S6 architecture.
+Selective State Space Scan
 
-Computes the continuous-time discretization state recurrence:
-    dA_t = exp(softplus(delta_t) * A)
-    dB_t = (softplus(delta_t) * u_t) * B_t
-    h_t  = dA_t * h_{t-1} + dB_t
-    y_t  = sum_N(h_t * C_t) + D * u_t
+Selective scan kernel for Mamba-1 architectures evaluating continuous-time discretized state recurrence.
 
-FIXED: backward pass now computes dA, dB, dC (previously left at zero).
-Stores full h_t trajectory in forward so backward can access h_{t-1}.
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

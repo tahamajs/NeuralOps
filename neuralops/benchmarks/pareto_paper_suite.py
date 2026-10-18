@@ -1,13 +1,9 @@
 """
-Pareto Paper Benchmark Suite: Empirically measures throughput, latency, memory,
-and retrieval capability across linear attention mechanisms and compression engines.
+Pareto Paper Benchmark Suite
 
-Generates camera-ready LaTeX booktabs tables and Pareto frontier metrics:
-  1. Prefill Latency (ms) across sequence lengths [512, 1024, 2048, 4096, 8192]
-  2. Autoregressive Decode Speed (tokens / sec)
-  3. Peak VRAM Allocation (MB)
-  4. Passkey Retrieval Recall (%) at 4k context
-  5. LaTeX Booktabs export for publication
+Empirically measures throughput, latency, memory, and retrieval capability across linear attention mechanisms and compression engines.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

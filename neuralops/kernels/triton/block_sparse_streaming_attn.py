@@ -1,11 +1,9 @@
 """
-Triton Block-Sparse Streaming Attention Kernel (Phase 3 / Kernel 9).
+Block-Sparse Streaming Attention
 
-Target Modules: nsa_attention (Native Sparse Attention), adaptive_sparse_attention, moba_attention, sink_attention
-Solves:
-    Dense boolean masks waste O(L^2) memory and compute redundant masked zero tiles.
-    This kernel takes a compact Active Block Index Table (e.g. Sinks + Sliding Window + Top-K Routed blocks)
-    and iterates ONLY over the non-zero active blocks with online FlashAttention softmax.
+Iterates over active block index tables with online FlashAttention softmax to eliminate redundant masked zero tiles.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

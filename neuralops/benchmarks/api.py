@@ -1,4 +1,11 @@
-"""High-level Python API for running and orchestrating benchmarks."""
+"""
+High-level Python API for running and orchestrating benchmarks
+
+Implements api functionality for NeuralOps.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 
 from collections.abc import Generator

@@ -1,7 +1,9 @@
-"""Compatibility helpers for decoder-only Qwen attention blocks.
+"""
+Qwen Architecture Compatibility
 
-This module only exposes the names expected by legacy attention/compressor
-implementations.  It does not replace Qwen's rotary or causal attention.
+Compatibility shims and attention adapters tailored for Qwen model architectures.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

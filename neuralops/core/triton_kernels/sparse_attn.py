@@ -1,13 +1,9 @@
-#!/usr/bin/env python3
 """
-Triton Block-Sparse Attention Kernel (Forward & Backward).
+Triton Block-Sparse Attention
 
-Supports:
-  - Arbitrary 2D or 4D block sparsity masks: (n_blocks_q, n_blocks_k)
-  - Configurable block tile sizes (e.g. 32, 64, 128)
-  - Optional lower-triangular causal masking combined with block sparsity
-  - Online safe softmax reduction in GPU SRAM
-  - Full autograd integration and fallback handling.
+Evaluates arbitrary 2D block-sparse attention masks with configurable tiling and online softmax reduction.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

@@ -1,20 +1,9 @@
 """
-AdaSVD: Adaptive SVD with Activation Whitening, Two-Sided Weighted ALS,
-and Mean-Shift Bias Absorption.
+AdaSVD: Adaptive SVD with Activation Whitening and Weighted ALS
 
-Registered as 'adasvd', 'adasvd_compressor', 'adasvd_factory',
-'adasvd_compressor_factory'.
+Implements activation-whitened SVD with two-sided alternating least squares and mean-shift bias absorption for low-rank compression.
 
-Key components:
-  1. Mean-Shift Bias Absorption:
-       b_new = b + W @ mu_x
-       y = A B (x - mu_x) + b_new
-  2. Two-Sided Weighted ALS:
-       minimize || D^{1/2} (W - AB) C^{1/2} ||_F^2
-       with C = C_X and D = diag(Var(Y)).
-  3. Information-Theoretic Effective Rank:
-       erank = exp(-sum(p_i * log p_i)), p_i = s_i^2 / sum(s_j^2)
-  4. Fused Q/K/V splitting for GPT-2 c_attn (Conv1D).
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

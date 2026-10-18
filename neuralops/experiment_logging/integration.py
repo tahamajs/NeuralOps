@@ -1,6 +1,9 @@
 """
-Automatic integration between logging, ResultsSaver, and the experiment runner.
-Call `auto_setup(run_config)` once at the start of training.
+Experiment Logging Integration
+
+Connects experiment logging backends with external tracking platforms like WandB and MLflow.
+
+Author: Taha Majlesi
 """
 
 from pathlib import Path

@@ -1,4 +1,11 @@
-"""Track VRAM/RAM usage."""
+"""
+Memory Validator
+
+Tracks and profiles host RAM and GPU VRAM usage during model execution.
+
+Author: Taha Majlesi
+"""
+
 import torch
 
 class MemoryTracker:

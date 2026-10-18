@@ -1,4 +1,11 @@
-"""Knowledge Distillation (KD) loss functions, training step, and cache utilities."""
+"""
+Knowledge Distillation (KD) loss functions, training step, and cache utilities
+
+Implements kd functionality for NeuralOps.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 
 import logging

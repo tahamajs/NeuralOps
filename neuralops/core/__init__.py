@@ -1,7 +1,7 @@
 """
-Efficient Transformer Toolkit – Core module.
-Provides model‑agnostic architecture detection, attention injection,
-compression pipeline, and base classes.
+NeuralOps Core Core Modules.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

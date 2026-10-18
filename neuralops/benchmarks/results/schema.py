@@ -1,7 +1,9 @@
-"""Canonical schema and comprehensive metadata structures for NeuralOps benchmark results.
+"""
+Canonical schema and comprehensive metadata structures for NeuralOps benchmark results
 
-Supports self-contained, publication-ready run artifacts with detailed environmental,
-hardware, training trajectory, metrics, reproducibility, and artifact tracking.
+Supports self-contained, publication-ready run artifacts with detailed environmental, hardware, training trajectory, metrics, reproducibility, and artifact tracking.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

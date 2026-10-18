@@ -1,4 +1,10 @@
-"""Main analysis pipeline orchestrator for 217-module analysis."""
+"""
+Module Analysis Orchestrator
+
+Main CLI pipeline executing unified 217-module analysis and generating cross-architecture reports.
+
+Author: Taha Majlesi
+"""
 
 from __future__ import annotations
 

@@ -1,11 +1,9 @@
 """
-HybridKV: Hybrid KV Cache Compression for Multimodal & Long-Context LLMs.
-Classifies attention heads into static/dynamic types and applies distinct
-compression strategies per type under a hierarchical budget strictly to dynamic KV caches.
+HybridKV: Hybrid Key-Value Cache Compression
 
-Paper: "HybridKV: Hybrid KV Cache Compression for Efficient MLLM Inference"
-       Zeng et al., arXiv:2604.05887.
-Registered as 'hybridkv'.
+Combines dynamic channel-selective quantization with sparse token eviction to reduce memory footprint in long-context language models.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

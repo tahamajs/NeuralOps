@@ -1,10 +1,9 @@
 """
-Generic High-Performance Autograd Wrapper Factory for Attention Kernels.
-Ensures:
-1. Exact autograd backward compatibility (inputs with requires_grad propagate cleanly).
-2. Analytical backward passes with exact mathematical adjoint derivations.
-3. Speedup >= 1.0x vs PyTorch reference in both forward and backward passes.
-4. Numerical parity (diff < 0.01 in FP16 / < 1e-4 in FP32, zero NaNs, zero Infs).
+Attention Autograd Wrapper Builder
+
+Factory utilities constructing high-performance autograd wrappers and analytical backward passes for attention kernels.
+
+Author: Taha Majlesi
 """
 
 import torch

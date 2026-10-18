@@ -1,5 +1,10 @@
-# -*- coding: utf-8 -*-
-"""Multi-Seed Cross-Validation & Statistical Variance Stress Test for Seeds 100, 200, 300."""
+"""
+Multi-Seed Cross-Validation & Statistical Variance Stress Test for Seeds 100, 200, 300
+
+Implements stress test seeds 100 200 300 functionality for NeuralOps.
+
+Author: Taha Majlesi
+"""
 
 import argparse
 import sys

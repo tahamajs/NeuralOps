@@ -1,7 +1,9 @@
 """
-Weighted Grouped-Query Attention (WGQA).
+Weighted Grouped-Query Attention (WGQA)
 
+Weighted grouped-query attention applying learned per-group importance scalers across query projections.
 
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

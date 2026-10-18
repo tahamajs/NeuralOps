@@ -1,4 +1,11 @@
-"""`doctor` command — diagnose installation."""
+"""
+`doctor` command
+
+diagnose installation.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 
 import importlib

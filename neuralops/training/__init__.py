@@ -1,4 +1,9 @@
-"""Training package initialization with shims for trainer and distributed execution."""
+"""
+NeuralOps Training Subpackage.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 
 import sys

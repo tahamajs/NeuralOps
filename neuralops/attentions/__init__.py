@@ -1,5 +1,7 @@
 """
-Auto-import all attentions modules across subpackages and export their registered classes.
+NeuralOps Attentions Package.
+
+Author: Taha Majlesi
 """
 
 import importlib

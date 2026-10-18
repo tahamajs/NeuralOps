@@ -1,5 +1,7 @@
 """
-Training module – unified trainers, results management, metrics, and callbacks.
+NeuralOps Trainer Subpackage.
+
+Author: Taha Majlesi
 """
 
 from .base_trainer import BaseTrainer, Trainer

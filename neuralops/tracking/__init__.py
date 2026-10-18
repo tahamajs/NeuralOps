@@ -1,6 +1,7 @@
 """
-Experiment Tracking – pluggable backends (local, TensorBoard, WandB, MLflow)
-with a unified API and HuggingFace Trainer callback.
+NeuralOps Tracking Subpackage.
+
+Author: Taha Majlesi
 """
 
 from .backends import (

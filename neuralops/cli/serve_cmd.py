@@ -1,4 +1,11 @@
-"""`serve` command."""
+"""
+CLI Serve Command
+
+Launches high-throughput model serving engines and monitoring web services.
+
+Author: Taha Majlesi
+"""
+
 def cmd_serve(args):
     try:
         import uvicorn

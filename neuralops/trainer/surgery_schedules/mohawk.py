@@ -1,8 +1,9 @@
 """
-MOHAWK 3-Stage Surgery Protocol & Attention Homotopy Schedulers.
-Stage 1: Matrix Orientation (Kernels & Gates only)
-Stage 2: Parallel Block Hidden-State Alignment
-Stage 3: End-to-End Weight Transfer & Knowledge Distillation
+Mohawk Surgery Schedule
+
+Curriculum distillation schedule for progressive attention layer replacement and parameter grafting.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

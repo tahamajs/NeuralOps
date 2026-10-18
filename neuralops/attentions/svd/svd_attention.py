@@ -1,36 +1,9 @@
 """
-SVD-Compressed Sequence Attention.
+SVD-Compressed Sequence Attention
 
-This module reduces attention complexity from O(N²) to O(N·r)
-by projecting K and V onto a rank-r subspace along the
-sequence dimension.
+Low-rank factorized sequence attention reducing computational complexity via intermediate projection ranks.
 
-CRITICAL LIMITATION — Read This:
-
-    The projection basis is precomputed ONCE from the SVD of
-    the key weight matrix W_K in copy_weights(). This means
-    the projection does NOT depend on the input sequence —
-    it is fixed at initialization time.
-
-    A more principled approach would compute a per-input
-    projection (e.g., via Linformer-style learned projections
-    or Nyström landmark selection). The current implementation
-    is a HEURISTIC and may not preserve attention semantics
-    for all inputs.
-
-    For CAUSAL decoders (GPT-2, Qwen, LLaMA), applying a
-    sequence-axis SVD breaks causality because the projection
-    combines future tokens into the subspace. The current
-    implementation DISABLES SVD compression for causal mode
-    and falls back to full attention. This means decoders
-    get no speedup from this module.
-
-Future Work:
-    - Learnable input-dependent projection (Linformer-style)
-    - Nyström landmark selection
-    - Causal-aware projection with causal masking
-
-Registered as: "svd_seq", "svd_sequence", "svd_sequence_attention".
+Author: Taha Majlesi
 """
 
 from neuralops.core.attention_utils import (

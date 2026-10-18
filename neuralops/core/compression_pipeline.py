@@ -1,5 +1,9 @@
 """
-Compression pipeline – orchestrates multiple compressors sequentially.
+Unified Model Compression Pipeline
+
+Multi-stage compression coordinator executing SVD factorization, structural pruning, and low-rank distillation.
+
+Author: Taha Majlesi
 """
 
 import logging

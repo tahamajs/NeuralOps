@@ -1,18 +1,7 @@
-"""Knowledge Distillation (KD) benchmarking framework for attention mechanisms.
+"""
+NeuralOps Benchmarks Knowledge Distillation Subpackage.
 
-This package provides high-performance, crash-safe, and resume-capable knowledge
-distillation benchmarking across various sequence classification tasks.
-
-Exports
--------
-run_kd_benchmark : function
-    Primary functional API to execute a KD benchmark run.
-BenchmarkConfig : class
-    Dataclass for configuring benchmark settings and datasets.
-KDRunner : class
-    Low-level orchestrator class managing training loops and state.
-KDReporter : class
-    Streaming reporter for atomic CSV, JSON, and Markdown generation.
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

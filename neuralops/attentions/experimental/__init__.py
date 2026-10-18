@@ -1,4 +1,8 @@
-"""Subpackage exports."""
+"""
+Experimental Attention Mechanisms.
+
+Author: Taha Majlesi
+"""
 
 import importlib
 

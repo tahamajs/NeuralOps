@@ -1,29 +1,9 @@
 """
-Information-Bottlenecked Jamba Architecture with Dual Operational Modes.
-Differential attention with concept-bottlenecked SSM branch.
+Information-Bottlenecked Jamba Architecture
 
-=== FIXES APPLIED (2026-10-04) ===
-FIX 1: (1 - λ_init) scaling per Diff Transformer paper (Ye et al., ICLR 2025).
-FIX 2: Per-head λ_init via the paper's formula: 0.8 - 0.6 * exp(-0.3 * h).
-FIX 3: RMSNorm applied to SSM branch for scale consistency with attention.
-FIX 4: Correct mask reversal in encoder bidirectional SSM.
-FIX 5: position_ids fallback via rotary_emb when position_embeddings is None.
-FIX 6: Robust cache dtype handling (no per-step .to() calls).
-FIX 7: dtype-consistent sigmoid on alpha_raw.
+Information-bottlenecked Jamba variant integrating concept bottleneck projections into hybrid SSM-attention layers.
 
-=== FIXES APPLIED (2026-10-09) ===
-FIX 8: Per-head alpha blending shape mismatch resolved. ssm_adapter linear
-       layer projects ssm_branch (B,L,dim) → (B,L,all_head_size) when dim !=
-       all_head_size, preventing unsafe .view() calls in forward().
-FIX 9: copy_weights symmetry breaking for W_q2 / W_k2. Tiny Gaussian noise
-       (σ=1e-4) added to the second differential projection copies so that
-       Attn1 != Attn2 at step 0 and gradients flow from the start.
-FIX 10: 4D attention mask reversal for bidirectional SSM corrected. Square
-        (B,1,L,L) masks are now flipped on both sequence axes [-2,-1]; only
-        non-square 4D masks use dim=[-1] fallback.
-FIX 11: _format_output returns correct 2-tuple when attn_weights is None,
-        preventing "too many values to unpack" errors for callers that do
-        `out, _ = attn(x)` without output_attentions=True.
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

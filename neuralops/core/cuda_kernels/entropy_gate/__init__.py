@@ -1,3 +1,9 @@
+"""
+Spectral Entropy Dynamic Gate Hardware Operators.
+
+Author: Taha Majlesi
+"""
+
 from neuralops.core.cuda_kernels.entropy_gate.entropy_gate_autograd import (
     spectral_entropy_svd_gate,
     spectral_entropy_svd_gate_pytorch_ref,

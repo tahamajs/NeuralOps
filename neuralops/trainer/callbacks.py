@@ -1,3 +1,11 @@
+"""
+Trainer Callbacks
+
+Provides training event callbacks for memory tracking, checkpoint management, and progress logging.
+
+Author: Taha Majlesi
+"""
+
 import os
 import time
 

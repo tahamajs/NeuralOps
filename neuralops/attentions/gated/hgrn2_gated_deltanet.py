@@ -1,11 +1,9 @@
 """
-HGRN-2 Gated DeltaNet Hybrid — Production-Hardened v4.
+HGRN-2 Gated DeltaNet Hybrid Attention
 
-Architecture:
-    * HGRN2Layer: hierarchical gated recurrent network (v2)
-    * GatedDeltaNet: delta-rule linear attention
-    * Token-wise fusion gate blending both branches
+Hybrid recurrent attention pairing HGRN-2 gating with delta-rule associative state updates.
 
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

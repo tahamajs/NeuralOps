@@ -1,7 +1,9 @@
 """
 gpu_live_probe.py
-Executed on the GPU server to return real-time GPU telemetry, active running process,
-live training loss trajectory, and log streams in JSON format.
+
+Executed on the GPU server to return real-time GPU telemetry, active running process, live training loss trajectory, and log streams in JSON format.
+
+Author: Taha Majlesi
 """
 
 import argparse

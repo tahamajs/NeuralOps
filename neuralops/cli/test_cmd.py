@@ -1,4 +1,11 @@
-"""`test` command."""
+"""
+CLI Test Command
+
+Runs smoke tests, kernel unit tests, and validation suites from the command line.
+
+Author: Taha Majlesi
+"""
+
 import subprocess
 import sys
 

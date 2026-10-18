@@ -1,4 +1,10 @@
-"""Reproduction shell script and Dockerfile generation utilities."""
+"""
+Reproduction shell script and Dockerfile generation utilities
+
+Implements reproduce functionality for NeuralOps.
+
+Author: Taha Majlesi
+"""
 
 from __future__ import annotations
 

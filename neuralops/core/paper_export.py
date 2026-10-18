@@ -1,8 +1,9 @@
-"""Academic LaTeX & Pareto Frontier Exporter for NeuralOps.
+"""
+Academic LaTeX and Pareto Exporter
 
-Automates multi-objective Pareto frontier identification and formats publication-ready
-NeurIPS/ICML/ICLR booktabs LaTeX tables and GitHub-Flavored Markdown tables with
-bolded best, underlined second-best, and star-marked Pareto optima.
+Automated LaTeX table generation and Pareto frontier export tools for research papers.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

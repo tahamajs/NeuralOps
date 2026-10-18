@@ -1,11 +1,9 @@
-r"""
-Fused SVD-Linear Layer with SRAM-Resident RMSNorm & Dual-Projection.
+"""
+Fused SVD-Linear Kernel Layer
 
+Fused SRAM-resident dual-projection kernel layer executing low-rank factorized linear transformations.
 
-The intermediate activation matrix Z \in R^{B x L x r} is kept strictly inside
-GPU Shared Memory (SRAM) registers and never materialized to DRAM/HBM.
-Includes Triton JIT accelerated kernel with CUDA tensor-core blocking and
-PyTorch autograd function with fallback.
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

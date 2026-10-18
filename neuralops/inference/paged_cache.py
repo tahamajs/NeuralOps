@@ -1,4 +1,11 @@
-"""Paged KV Cache for high-throughput memory-efficient LLM decoding."""
+"""
+Paged Key-Value Cache
+
+Implements paged KV cache structures for high-throughput, memory-efficient LLM decoding.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 import torch
 

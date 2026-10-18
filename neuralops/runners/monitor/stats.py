@@ -1,4 +1,10 @@
-"""Aggregated statistical calculation and benchmark record loading for monitor server."""
+"""
+Monitor Statistics Aggregator
+
+Aggregates throughput, latency, memory, and accuracy metrics for the live dashboard.
+
+Author: Taha Majlesi
+"""
 
 from __future__ import annotations
 

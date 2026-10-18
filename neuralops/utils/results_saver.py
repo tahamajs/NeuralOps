@@ -1,7 +1,9 @@
 """
-Unified ResultsSaver re-exported under framework.utils.results_saver
-Integrates persistence, structured markdown/json report generation, Django API compatibility,
-and Hugging Face Hub uploads.
+Results Persistence Helper
+
+Helper functions for serializing benchmark metrics and model evaluations.
+
+Author: Taha Majlesi
 """
 
 import logging

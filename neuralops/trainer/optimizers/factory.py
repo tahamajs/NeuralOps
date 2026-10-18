@@ -1,4 +1,10 @@
-"""Optimizer factories and registry bindings."""
+"""
+Optimizer Factory
+
+Constructs and registers standard, manifold, and custom optimizers for model training.
+
+Author: Taha Majlesi
+"""
 
 from __future__ import annotations
 

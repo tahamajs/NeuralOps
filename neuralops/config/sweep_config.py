@@ -1,3 +1,11 @@
+"""
+Hyperparameter Sweep Configuration
+
+Search space configurations and scheduling parameters for multi-seed and multi-method evaluation sweeps.
+
+Author: Taha Majlesi
+"""
+
 from dataclasses import dataclass, field
 from typing import Any
 

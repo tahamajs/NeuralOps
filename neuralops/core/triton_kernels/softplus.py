@@ -1,10 +1,11 @@
 """
-Triton JIT and PyTorch Fallback implementation of Softplus activation with custom autograd backward.
+Fused Softplus Activation
 
-Computes:
-    softplus(x) = log(1 + exp(x))
-    d/dx softplus(x) = sigmoid(beta * x)
+Numerically stabilized Softplus activation kernel with customized analytical gradient backward pass.
+
+Author: Taha Majlesi
 """
+
 from __future__ import annotations
 
 import torch

@@ -1,4 +1,11 @@
-"""Training and recovery fine-tuning loops for benchmark models."""
+"""
+Training and recovery fine-tuning loops for benchmark models
+
+Implements training functionality for NeuralOps.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 
 import logging

@@ -1,4 +1,8 @@
-"""Subpackage exports."""
+"""
+Low-Rank Factorization Compression Engines.
+
+Author: Taha Majlesi
+"""
 
 import importlib
 

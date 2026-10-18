@@ -1,4 +1,11 @@
-"""Block-sparse attention with butterfly patterns and autograd backward support."""
+"""
+Block-Sparse Attention
+
+Computes block-sparse attention patterns with butterfly sparsity routing and autograd gradient propagation.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 import math
 import torch

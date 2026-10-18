@@ -1,6 +1,11 @@
 """
-Native vLLM custom model architecture, attention backend, and plugin entry-point for NeuralOps.
+Native vLLM Integration Plugin
+
+Registers custom attention backends, kernels, and model architectures within vLLM.
+
+Author: Taha Majlesi
 """
+
 from __future__ import annotations
 
 import logging

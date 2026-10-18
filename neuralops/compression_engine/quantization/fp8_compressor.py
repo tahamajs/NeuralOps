@@ -1,4 +1,11 @@
-"""Production FP8 Compressor (E4M3 / E5M2) with SM 8.9+ (Ada Lovelace RTX 4070) native support."""
+"""
+FP8 Compressor: Native Hardware Float8 Precision Compressor
+
+Quantizes model parameters to FP8 formats (E4M3 and E5M2) with dynamic scaling factors optimized for modern GPU tensor cores.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 import logging
 from typing import Any, Dict, Optional, Tuple, Union

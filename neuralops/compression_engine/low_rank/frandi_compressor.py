@@ -1,8 +1,9 @@
 """
-FRanDI: Feature-Regression Aligned SVD Compressor — Production-Hardened (v2).
+FRanDI: Feature-Regression Aligned SVD Compressor
 
-Registered as 'frandi' and 'frandi_compressor'.
+Minimizes output activation regression error during low-rank factorization by aligning singular subspaces with empirical activation profiles.
 
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

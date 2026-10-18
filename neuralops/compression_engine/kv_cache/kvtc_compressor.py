@@ -1,22 +1,9 @@
 """
-KVTC: KV Cache Transform Coding - PCA decorrelation + adaptive quantization
-      + entropy coding for compact model weight / KV cache storage.
+KVTC: Key-Value Cache Transform Coding
 
-Paper: "KV Cache Transform Coding for Compact Storage in LLM Inference"
-       Staniszewski & Lancucki, ICLR 2026.
+Applies principal component analysis (PCA) decorrelation and uniform integer quantization to transformer projection weights and KV states.
 
-NOTE ON SCOPE:
-In this codebase, KVTC operates primarily as a static weight-matrix compressor
-(PCA low-rank projection + uniform integer quantization + optional LoRA adaptation)
-applied to linear layers at initialization time, rather than dynamic runtime KV cache
-interception during autoregressive generation. For runtime KV cache transform coding,
-the `KVTCStore` class is provided as a standalone utility.
-
-Registered in COMPRESSOR_REGISTRY as:
-  - 'kvtc' (primary)
-  - 'kvtc_quantizer'
-  - 'pca_quant'
-  - 'pca_quant_compressor'
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

@@ -1,6 +1,9 @@
 """
-SVD-Native Low-Rank Recovery Adapters: PiSSA (Principal Singular values and Singular vectors Adaptation)
-and DoRA (Weight-Decomposed Low-Rank Adaptation).
+SVD Low-Rank Recovery Adapters
+
+Principal Singular values and Singular vectors Adaptation (PiSSA) and Weight-Decomposed LoRA (DoRA).
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

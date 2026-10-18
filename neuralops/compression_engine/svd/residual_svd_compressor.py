@@ -1,12 +1,9 @@
 """
-Spectral Residual Low-Rank Adaptation (Res-SVD / Spectral Residual LoRA).
+Spectral Residual SVD (Res-SVD) Compressor
 
-Decomposes dense weight matrices into:
-1. Frozen Base Low-Rank Factors: $W_{\\text{base}} = U_r \\Sigma_r V_r^\\top$ (rank $r$, frozen).
-2. Trainable Residual Adapters: Initialized directly from the top-$k$ singular directions of the
-   residual error $E = W - W_{\\text{base}} = \\sum_{j=r+1}^{r+k} \\sigma_j u_j v_j^\\top$.
-   $$A = \\sqrt{\\Sigma_{\\text{tail}}} V_{\\text{tail}}^\\top, \\quad B = U_{\\text{tail}} \\sqrt{\\Sigma_{\\text{tail}}}$$
-   ensuring $\\Delta W = B A \\approx E$ at zero-shot initialization.
+Decomposes weight matrices into primary low-rank singular modes and learnable spectral residual adapters to eliminate approximation error.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

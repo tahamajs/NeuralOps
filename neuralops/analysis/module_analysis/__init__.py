@@ -1,4 +1,8 @@
-"""Module analysis package for NeuralOps."""
+"""
+NeuralOps Analysis Module Analysis Core Modules.
+
+Author: Taha Majlesi
+"""
 
 from __future__ import annotations
 

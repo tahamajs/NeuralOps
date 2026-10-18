@@ -1,5 +1,9 @@
 """
-HuggingFace Trainer callback that logs metrics and parameters to an ExperimentTracker.
+Tracking Callbacks
+
+Training callbacks that stream metrics, parameters, and loss trajectories to experiment trackers.
+
+Author: Taha Majlesi
 """
 
 from transformers import TrainerCallback

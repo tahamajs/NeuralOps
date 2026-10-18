@@ -1,8 +1,9 @@
-# -*- coding: utf-8 -*-
-"""Multi-Seed Autograd and Backward-Pass Stress Test across Seeds 404, 777, 999.
+"""
+Multi-Seed Autograd and Backward-Pass Stress Test across Seeds 404, 777, 999
 
-Tests gradient fidelity, backward passes, and NaN/Inf robustness across
-cross_attention, tt_contraction, block_diag_gemm, and samba_moe CUDA kernels.
+Tests gradient fidelity, backward passes, and NaN/Inf robustness across cross_attention, tt_contraction, block_diag_gemm, and samba_moe CUDA kernels.
+
+Author: Taha Majlesi
 """
 
 import argparse

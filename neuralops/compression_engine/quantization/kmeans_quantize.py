@@ -1,8 +1,9 @@
-"""KMeans-based weight clustering quantizer with Straight-Through Estimator.
+"""
+KMeans Quantizer: Codebook-Based Clustering Quantization
 
-Registered as 'kmeans_class', 'kmeans_quantize_class', 'kmeans_compressor_class',
-              'kmeans', 'kmeans_quantize', 'kmeans_factory', 'kmeans_quantize_factory'.
+Groups model weights into cluster centroids using k-means optimization with straight-through estimator support for backpropagation.
 
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

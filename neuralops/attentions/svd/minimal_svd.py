@@ -1,3 +1,11 @@
+"""
+Minimal SVD Attention
+
+Streamlined low-rank singular value decomposition attention providing lightweight sequence representation.
+
+Author: Taha Majlesi
+"""
+
 from neuralops.core.attention_utils import (
     apply_rotary_pos_emb,
 )

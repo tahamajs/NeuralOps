@@ -1,5 +1,9 @@
 """
-Architecture-specific attention layer preparation, instantiation, and injection engine.
+Attention Module Injector Engine
+
+Dynamic replacement routines grafting custom attention mechanisms into pretrained transformer architectures.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

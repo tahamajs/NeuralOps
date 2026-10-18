@@ -1,17 +1,9 @@
 """
-Automatic Causal, Bidirectional & Cross-Attention Topology Router.
+Attention Topology Router
 
-Provides:
-  - extract_binary_token_mask(): converts any 2D, 3D, or 4D HuggingFace attention mask
-    into a clean boolean/float keep-mask of shape (B, 1, T, 1) or (B, 1, T).
-  - sanitize_kv_for_padding_mask(): explicitly zeros out Key and Value representations
-    for masked/padding tokens so that associative/linear state accumulations S_t = S_{t-1} + k_t v_t^T
-    are not corrupted by padding tokens.
-  - BiDirectionalScanWrapper: enables causal recurrent/scan attention modules (GLA, GDN, RetNet, etc.)
-    to execute symmetrically on bidirectional encoders (BERT, RoBERTa, DistilBERT, ViT) via
-    forward + reversed scans.
-  - AsymmetricCrossAttentionRouter: length-decoupled associative routing for cross-attention
-    where query sequence length T_q differs from key/value sequence length T_kv.
+Routes attention topologies and sanitizes masks for causal, bidirectional, and cross-attention.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

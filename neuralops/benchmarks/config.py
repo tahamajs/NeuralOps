@@ -1,4 +1,11 @@
-"""Benchmark configuration dataclasses for neuralops."""
+"""
+Benchmark configuration dataclasses for neuralops
+
+Implements config functionality for NeuralOps.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field

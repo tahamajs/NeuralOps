@@ -1,12 +1,9 @@
-"""Production Triton kernels for elementwise SwiGLU, Fast GELU, and RMSNorm.
+"""
+Fused Elementwise Kernels
 
-Falls back transparently to PyTorch when Triton or CUDA is unavailable.
-Public API:
-    fused_swiglu(x, gate)              -> SiLU(gate) * x
-    fast_gelu(x)                       -> tanh-approximated GELU
-    fused_rmsnorm(x, weight, eps=1e-6) -> x / sqrt(mean(x^2) + eps) * weight
+High-throughput elementwise kernels for SwiGLU, Fast GELU, and RMSNorm with transparent fallback dispatch.
 
-Backward-compatible aliases are kept at the bottom of this module.
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

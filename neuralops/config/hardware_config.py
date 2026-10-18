@@ -1,3 +1,11 @@
+"""
+Hardware Configuration
+
+Settings for device allocation, precision targeting, and GPU execution environments.
+
+Author: Taha Majlesi
+"""
+
 from dataclasses import dataclass
 
 

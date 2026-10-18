@@ -1,6 +1,9 @@
 """
-LEKAv2: Linear-time Efficient Kernel Attention with Landmark Distillation.
+Linear-Time Efficient Kernel Attention with Landmarks
 
+Extracts representative landmark tokens to compress long sequences into linear-time kernel operations.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

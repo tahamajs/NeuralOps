@@ -1,19 +1,9 @@
 """
-Production-Grade TensorRT-LLM Plugin Engine, Network Definition Builder, and Serving Adapter.
+TensorRT-LLM Integration Engine
 
-Provides full, real end-to-end integration with NVIDIA TensorRT and TensorRT-LLM:
-1. Native C++ / CUDA TensorRT plugin declarations:
-   - SVDLinearAttentionPlugin (fused subquadratic recurrent state accumulation)
-   - QuantizedGEMMPlugin (W4A16 & FP8 fused dequantization matmul)
-   - LowRankLinearPlugin (fused UV low-rank GEMM)
-2. TensorRT-LLM NetworkDefinition graph assembly:
-   - Maps NeuralOps modified modules, custom attention blocks, and factorized linear projections.
-   - Builds IBuilderConfig, dynamic optimization profiles (min/opt/max sequence lengths & batch sizes),
-     and FP16 / BF16 / INT4 engine builder pipelines.
-3. Safe-runtime engine serialization and standalone C++ plugin compilation hooks.
-4. Python TensorRT execution runner with dynamic IExecutionContext bindings and zero-copy pinned GPU buffers.
+Builds TensorRT network definitions and plugin adapters for accelerated GPU serving.
 
-Zero stubs. Complete mathematical and structural implementation.
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

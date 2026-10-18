@@ -1,13 +1,9 @@
 """
-Publication-Grade Paper Plot Generator for NeuralOps.
+Publication Paper Plots
 
-Generates high-resolution vector (.pdf, .svg) and raster (.png) figures
-ready for submission to top ML venues (NeurIPS, ICML, ICLR, ACL).
+Generation of publication-grade figures including singular value decay, Pareto frontiers, and speedups.
 
-Figures included:
-1. Singular Value Energy Spectrum decay across layers.
-2. Attention Entropy & Locality Heatmaps comparing Full Attention vs Subquadratic Variants.
-3. Pareto Frontier: Speedup / Parameter Compression Ratio vs Task Accuracy / Perplexity.
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

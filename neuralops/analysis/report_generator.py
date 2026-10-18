@@ -1,4 +1,10 @@
-"""HTML, LaTeX, interactive report generators."""
+"""
+Automated Report Generator
+
+HTML, LaTeX, and interactive dashboard generator compiling end-to-end experiment results.
+
+Author: Taha Majlesi
+"""
 
 import json
 import os

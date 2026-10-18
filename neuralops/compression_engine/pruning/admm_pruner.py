@@ -1,8 +1,9 @@
 """
-ADMM Pruner: Alternating Direction Method of Multipliers for Structured & Semi-Structured Pruning
-with Layer-Wise Reconstruction Distillation, STE, and Dynamic Rho.
-Registered in COMPRESSOR_REGISTRY as 'admm_pruner' and 'admm_pruner_distill'.
+ADMM Pruner: Structured and Semi-Structured Sparsity Optimizer
 
+Applies alternating direction method of multipliers with dynamic penalty parameter updates to achieve target structured and N:M sparsity patterns.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

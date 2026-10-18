@@ -1,10 +1,9 @@
 """
-Drop-In HuggingFace AutoModel Replacement Classes & Global Transformer Patching.
-Match zero-friction ergonomics of Liger-Kernel, vLLM LLM-Compressor, TorchAO, and Unsloth:
-- AutoNeuralOpsModel
-- AutoNeuralOpsForCausalLM
-- AutoNeuralOpsForSequenceClassification
-- patch_transformers
+NeuralOps Transformers Integration
+
+Drop-in HuggingFace AutoModel replacement classes and global transformer patching architecture.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

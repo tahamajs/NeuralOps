@@ -1,5 +1,7 @@
 """
-Analysis tools: plotting, metrics, layerwise analysis, model comparison, reporting.
+NeuralOps Analysis Core Modules.
+
+Author: Taha Majlesi
 """
 
 from .layerwise_analyzer import LayerwiseAnalyzer, estimate_intrinsic_dimension

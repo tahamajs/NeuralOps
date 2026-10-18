@@ -1,12 +1,11 @@
 """
-Exact 3-Stage Ring/Prefix Context Parallelism (CP) for 1M+ Token Sequences.
+Context Parallelism Module
 
-Exploits Associative State Passing in Linear and Gated Attentions (GLA, GDN):
-Instead of shipping huge (B, H, T/W, D) KV tensors in quadratic ring attention,
-each CP worker exchanges only a compact O(D^2) boundary state matrix S_boundary in R^{B x H x D_k x D_v},
-independent of sequence length T!
-Provides exact Forward + Backward autograd mathematical parity vs. single-GPU execution.
+Distributes sequence context across multiple GPUs for long-context attention execution.
+
+Author: Taha Majlesi
 """
+
 from __future__ import annotations
 
 import logging

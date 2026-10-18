@@ -1,9 +1,9 @@
 """
-Unified Attention Injection & Weight Adaptation Engine for Foundation Models.
+Attention Adaptation Utilities
 
-Public API entry points:
-  - inject_attention
-  - available_attention_types
+Centralized helpers for attention module instantiation, tensor transformation, and weight adaptation.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

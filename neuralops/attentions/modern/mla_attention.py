@@ -1,14 +1,9 @@
 """
-Multi-Head Latent Attention (MLA) — DeepSeek-V2 style.
+Multi-Head Latent Attention (MLA)
 
-Compresses K and V into a low-rank latent `c_kv` of size `rank`,
-then up-projects back to per-head K and V.
+Compresses key and value vectors into a low-rank latent representation to minimize KV-cache memory footprints.
 
-    c_kv = kv_down(x)             # (B, N, rank)
-    k    = k_up(c_kv)             # (B, N, num_kv_heads * head_dim)
-    v    = v_up(c_kv)             # (B, N, num_kv_heads * head_dim)
-
-
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

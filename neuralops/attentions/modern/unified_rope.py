@@ -1,6 +1,11 @@
 """
-Universal Rotary Position Embedding Attention (UnifiedRoPE).
+Universal Rotary Position Embedding Attention (UnifiedRoPE)
+
+Universal rotary position embedding layer standardizing rotary transformations across arbitrary attention layouts.
+
+Author: Taha Majlesi
 """
+
 from neuralops.core.common import _cfg_get
 from neuralops.core.common import _detect_decoder
 

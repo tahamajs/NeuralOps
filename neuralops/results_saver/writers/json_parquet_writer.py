@@ -1,4 +1,10 @@
-"""JSON and Parquet serialization utilities for benchmark results and trajectories."""
+"""
+JSON and Parquet Result Writer
+
+Serializes detailed execution records and benchmark trajectories into JSON and Parquet files.
+
+Author: Taha Majlesi
+"""
 
 from __future__ import annotations
 

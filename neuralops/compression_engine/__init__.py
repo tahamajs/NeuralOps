@@ -1,5 +1,7 @@
 """
-Auto-import all compression_engine modules across subpackages and export their registered classes.
+NeuralOps Compression Engines.
+
+Author: Taha Majlesi
 """
 
 import importlib

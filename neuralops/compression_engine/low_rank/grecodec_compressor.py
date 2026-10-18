@@ -1,6 +1,9 @@
 """
-GreCoDeC: Greedy Coordinate Descent Low-Rank Compressor.
-Registered in COMPRESSOR_REGISTRY as 'grecodec'.
+GreCoDeC: Greedy Coordinate Descent Low-Rank Compressor
+
+Employs greedy coordinate descent to iteratively compute rank-1 components that minimize layer-wise output reconstruction error.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

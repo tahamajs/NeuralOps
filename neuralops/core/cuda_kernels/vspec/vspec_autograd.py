@@ -1,9 +1,9 @@
 """
-VSPEC (Variable Spectral Recurrent Step) Interface, Autograd Function, and 3-Level Fallback.
-Target: SM 8.9 (NVIDIA Ada Lovelace RTX 4070 Laptop GPU, 8GB VRAM).
-Forward: s_t = decay_t * s_{t-1} + (x_t * sigmoid(spec_gate_t))
-         out_t = s_t * rsqrt(s_t^2 + eps)
-Backward computes exact analytical adjoint gradients for x, spec_gate, decay.
+VSPEC Variable Spectral Recurrent Step Autograd Interface
+
+Hardware-accelerated CUDA C++ autograd implementation with analytical gradients and three-level fallback dispatch.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

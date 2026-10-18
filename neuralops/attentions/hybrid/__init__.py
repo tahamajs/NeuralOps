@@ -1,4 +1,8 @@
-"""Subpackage exports."""
+"""
+Hybrid Attention Mechanisms.
+
+Author: Taha Majlesi
+"""
 
 import importlib
 

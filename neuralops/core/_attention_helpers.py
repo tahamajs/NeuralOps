@@ -1,5 +1,9 @@
 """
-Module tree traversal and attention substitution helpers for NeuralOps.
+Attention Module Helpers
+
+Internal utility functions supporting dynamic head reshaping, scaling, and dimension validation.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

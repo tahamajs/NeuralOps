@@ -1,19 +1,9 @@
 """
-CoMe: Compress LLMs through Layer Concatenation and Shedding with Learnable
-Inter-Layer Interpolation Adapters.
+CoMe: Layer Concatenation and Shedding Compressor
 
-Registered in COMPRESSOR_REGISTRY as 'come' and 'come_compressor'.
+Sheds redundant transformer layers and restores representational capacity via learnable low-rank inter-layer interpolation adapters.
 
-Mathematical Formulation:
-1. Layer Shedding & Uniform Strided Selection:
-   I_keep = {i_0, i_1, ..., i_{K-1}}, i_k = round(k * (L-1) / (K-1))
-
-2. Learnable Low-Rank Interpolation Bridge between Non-Consecutive Layers:
-   W_bridge = I + B @ A    (B: hidden x r, A: r x hidden)
-   h_bridged = h + alpha * (W_bridge h - h)
-             = h + alpha * (B @ A) h
-   Initialized with B = 0 so bridge is identity at init.
-
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

@@ -1,3 +1,11 @@
+"""
+Trainer Factory
+
+Factory interface for instantiating specialized trainers based on model and training configurations.
+
+Author: Taha Majlesi
+"""
+
 from typing import Any
 
 from neuralops.core.registry import Registry

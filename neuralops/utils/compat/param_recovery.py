@@ -1,4 +1,10 @@
-"""Parameter recovery selection and budget pruning for compressed models."""
+"""
+Parameter Recovery Utilities
+
+Parameter recovery selection and budget pruning for compressed models.
+
+Author: Taha Majlesi
+"""
 
 from __future__ import annotations
 

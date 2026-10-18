@@ -1,6 +1,9 @@
 """
-SALR: Structure-Aware / Sparse Low-Rank compression combining SVD with bottleneck pruning.
-Registered in COMPRESSOR_REGISTRY as 'salr', 'salr_factory', and 'salr_compressor_factory'.
+SALR: Structure-Aware Low-Rank and Pruning Compressor
+
+Integrates low-rank matrix decomposition with bottleneck channel pruning to simultaneously reduce parameter count and FLOP overhead.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

@@ -1,12 +1,9 @@
 """
-Triton Fused Hadamard W4A16 GEMM Kernel (Phase 2 / Kernel 4).
+Fused Hadamard W4A16 GEMM
 
-Target Modules: rotational_slicegpt_int4 (quarot), hadamard_incoherent_svd
-Solves:
-    1. Rotating activations via Fast Walsh-Hadamard Transform (FWHT) in SRAM.
-    2. Bit-packed INT4 weight dequantization directly in registers:
-       w = ((w_packed & 0x0F) - zero) * scale
-    3. Fused Tensor-Core matrix multiplication without materializing unpacked FP16 weights in HBM.
+Performs in-SRAM Walsh-Hadamard activation transformation and register-level INT4 dequantization for accelerated Tensor Core GEMM.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

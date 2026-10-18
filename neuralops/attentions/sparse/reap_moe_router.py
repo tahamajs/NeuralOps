@@ -1,9 +1,9 @@
 """
-Distributed REAP MoE Router and Pruning Utilities.
+Distributed REAP MoE Router Utilities
 
-Implements calibration of expert routing probabilities across all distributed ranks
-using all-reduce collective communication, bottom-expert pruning, and weight
-re-normalization to minimize representation drift.
+Distributed routing and calibration utilities for robust expert allocation and pruning attention modules.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

@@ -1,4 +1,10 @@
-"""Production SmoothQuant: outlier migration from activations to weights."""
+"""
+SmoothQuant: Accurate 8-Bit Weight and Activation Quantization
+
+Smooths activation outliers by mathematically migrating scale difficulty from activations to weights via per-channel scaling factors.
+
+Author: Taha Majlesi
+"""
 
 from __future__ import annotations
 from typing import Any, Dict, List, Optional, Tuple

@@ -1,7 +1,9 @@
 """
-Model‑agnostic architecture helpers.
-Provides unified access to layers, attention, FFN, embeddings, classifiers
-across all common HuggingFace architectures.
+Neural Architecture Introspection
+
+Structural inspection utilities analyzing transformer layer topologies, blocks, and attention dimensions.
+
+Author: Taha Majlesi
 """
 
 import logging

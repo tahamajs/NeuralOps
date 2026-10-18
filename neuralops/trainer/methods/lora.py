@@ -1,5 +1,9 @@
 """
-LoRA, DoRA, DisLoRA implementations.
+LoRA Adaptation Suite
+
+Implements Low-Rank Adaptation (LoRA), DoRA, and DisLoRA parameter-efficient fine-tuning methods.
+
+Author: Taha Majlesi
 """
 
 import logging

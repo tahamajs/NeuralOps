@@ -1,15 +1,9 @@
-"""Triton-accelerated HGRN2 selective scan.
+"""
+HGRN2 Selective Scan
 
-Element-wise recurrence:
-    h_t = f_t * h_{t-1} + iv_t
-    y_t = h_t
+Computes hierarchical gated recurrent unit state transitions with data-controlled forgetting gates.
 
-Backward:
-    dh_t = d_h_t + f_{t+1} * dh_{t+1}    (adjoint recurrence)
-    d_f_t = dh_t * h_{t-1}
-    d_iv_t = dh_t
-
-Note: f, iv, h all have shape (B, L, D). No state-dim mixing.
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

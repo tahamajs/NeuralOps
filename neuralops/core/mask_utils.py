@@ -1,8 +1,9 @@
 """
-Mask and Position Processing Utilities for Left and Right Padding Invariance.
+Mask Construction Utilities
 
-Provides unified position ID computation and key-value state zeroing for
-linear attention, state-space models, and recurrent linear transformers.
+High-performance mask generation and manipulation utilities for causal and non-causal attention patterns.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

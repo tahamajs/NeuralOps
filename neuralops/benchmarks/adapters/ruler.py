@@ -1,4 +1,11 @@
-"""RULER / Needle-in-a-Haystack long-context benchmark adapter."""
+"""
+RULER / Needle-in-a-Haystack long-context benchmark adapter
+
+Implements ruler functionality for NeuralOps.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 
 import logging

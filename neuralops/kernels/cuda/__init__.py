@@ -1,8 +1,7 @@
-"""NeuralOps CUDA C++ Kernel Acceleration Suite.
+"""
+NeuralOps CUDA Hardware Operators.
 
-High-performance native CUDA C++ kernels augmenting and accelerating hot-paths
-on modern NVIDIA architectures (Volta SM 7.0 through Blackwell SM 10.0+).
-Provides transparent 3-level fallback: CUDA C++ -> Triton JIT -> Pure PyTorch Reference.
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

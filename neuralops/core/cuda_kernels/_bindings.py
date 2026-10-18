@@ -1,5 +1,9 @@
 """
-CUDA C++ JIT build loader with persistent compilation caching on /mnt/c and negative caching.
+CUDA C++ JIT Module Loader
+
+Dynamic compilation loader with caching and device capability validation for native CUDA C++ kernels.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

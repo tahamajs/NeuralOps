@@ -1,9 +1,9 @@
 """
-Strict 3-Level Fallback Dispatcher for NeuralOps Hot-Paths with Telemetry & Backend Forcing.
+Three-Level Kernel Fallback Dispatcher
 
-Level 1: CUDA C++ (SM >= 7.0, nvcc present)
-Level 2: Triton JIT Kernel (if CUDA available and triton enabled)
-Level 3: Pure PyTorch Reference (guaranteed fallback)
+Runtime dispatcher managing three-level fallback across native CUDA, Triton JIT, and PyTorch reference implementations.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

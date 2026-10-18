@@ -1,4 +1,11 @@
-"""Module, Model, and Dataset registry indexing for benchmarks."""
+"""
+Module, Model, and Dataset registry indexing for benchmarks
+
+Implements registry functionality for NeuralOps.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 
 import logging

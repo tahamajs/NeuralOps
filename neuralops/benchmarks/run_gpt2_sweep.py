@@ -1,8 +1,11 @@
-"""Deprecated shim for neuralops.benchmarks.run_gpt2_sweep.
-
-Use the unified CLI instead:
-    python -m neuralops.benchmarks run ...
 """
+Deprecated shim for neuralops.benchmarks.run_gpt2_sweep
+
+Use the unified CLI instead: python -m neuralops.benchmarks run ...
+
+Author: Taha Majlesi
+"""
+
 import warnings
 
 warnings.warn(

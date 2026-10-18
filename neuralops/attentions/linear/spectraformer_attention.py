@@ -1,8 +1,9 @@
 """
-Spectraformer: Random Feature Linear Attention with Flexible Kernel Approximation.
-Replaces softmax attention with random orthogonal feature projections,
-enabling true linear O(N·r·d) time and memory complexity.
+Spectraformer: Random Feature Linear Attention
 
+Random feature linear attention leveraging adaptive spectral kernel approximations for fast processing.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

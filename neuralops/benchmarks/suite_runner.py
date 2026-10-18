@@ -1,4 +1,11 @@
-"""Comprehensive benchmarking suite for speed, memory, accuracy, and sequence-length scaling."""
+"""
+Comprehensive benchmarking suite for speed, memory, accuracy, and sequence-length scaling
+
+Implements suite runner functionality for NeuralOps.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 from typing import Callable, Any
 import csv

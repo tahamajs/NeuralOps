@@ -1,7 +1,9 @@
 """
-vLLM Custom Plugin & Quantization Linear Method for NeuralOps.
-Registers NeuralOps custom quantization configs (e.g. compressed-tensors, W4A16, FP8, W8A8)
-into vLLM's linear layer executor.
+vLLM Plugin Entrypoint
+
+Plugin entrypoint dynamically registering NeuralOps custom models and attention modules into vLLM.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

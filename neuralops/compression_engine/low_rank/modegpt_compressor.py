@@ -1,17 +1,9 @@
 """
-MoDeGPT: Modular Decomposition of Transformer Blocks — Production-Hardened (v2).
+MoDeGPT: Modular Decomposition of Transformer Blocks
 
-Decomposes pairs of linear projections sharing the same input dimension
-(e.g., Q & K, Q & V, Gate & Up) into shared low-rank bases:
+Decomposes paired linear projections sharing input dimensions into joint low-rank representations to maximize parameter reuse.
 
-    W1 ≈ U1 @ V_shared      U1 ∈ R^{out1 × r}, V_shared ∈ R^{r × in}
-    W2 ≈ U2 @ V_shared      U2 ∈ R^{out2 × r}
-
-The shared factor V_shared is stored ONCE per pair. This yields real parameter
-and storage reduction for the pair as a whole.
-
-For unpaired layers, both U and V are stored per-layer.
-
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

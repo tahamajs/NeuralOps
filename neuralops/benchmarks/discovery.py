@@ -1,4 +1,11 @@
-"""Auto-discovery and capability detection for all 232 modules."""
+"""
+Auto-discovery and capability detection for all 232 modules
+
+Implements discovery functionality for NeuralOps.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 
 import inspect

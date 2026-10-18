@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 """
-Comprehensive 217-Module Analysis Generator.
-Extracts and validates all 25 required columns for paper/_ALL_MODULES_ANALYSIS.csv
-and paper/_ALL_MODULES_ANALYSIS.md according to project guidelines.
+All-Modules Analysis Generator
 
-NOTE: This module is maintained as a backward-compatible façade for
-`neuralops.analysis.module_analysis`.
+Automated analysis runner computing global benchmarks and aggregations across all registered attention modules.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

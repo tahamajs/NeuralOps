@@ -1,4 +1,9 @@
-"""ALiBi (Attention with Linear Biases) — Press et al. 2021.
+"""
+ALiBi: Attention with Linear Biases
+
+Injects static linear position biases into query-key attention scores for superior long-context extrapolation.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

@@ -1,19 +1,9 @@
 """
-Rotational SliceGPT INT4 Compressor — Production-Hardened.
+Rotational SliceGPT INT4 Compressor
 
-Combines orthogonal rotation, variance-based subspace slicing, and
-second-order INT4 non-uniform quantization.
+Fuses orthogonal rotation transformations, PCA-based subspace slicing, and uniform INT4 quantization into an integrated compression pipeline.
 
-Mathematical formulation:
-  1. Rotation:       W̃ = W Q,   X̃ = Qᵀ X,   Qᵀ Q = I
-  2. Slicing:        P_r = [e_i] for top-r var(X̃) channels
-                     W_sliced = W̃ P_r,   X_sliced = P_rᵀ X̃
-  3. Hessian INT4:   H = 2 X_sliced X_slicedᵀ + λ I
-                     W[:, j+1:r] -= (w_j - q(w_j)) · [H⁻¹]_{j, j+1:r} / [H⁻¹]_{jj}
-
-Registered: 'rotational_slicegpt_int4', 'rotational_slicegpt',
-            'rotational_slicegpt_int4_factory', 'rotational_slicegpt_factory'.
-
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

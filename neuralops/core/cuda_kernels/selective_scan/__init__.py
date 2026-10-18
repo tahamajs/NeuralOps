@@ -1,3 +1,9 @@
+"""
+Selective Scan (Mamba-1 S6) Hardware Operators.
+
+Author: Taha Majlesi
+"""
+
 from neuralops.core.cuda_kernels.selective_scan.selective_scan_autograd import (
     selective_scan,
     selective_scan_pytorch_ref,

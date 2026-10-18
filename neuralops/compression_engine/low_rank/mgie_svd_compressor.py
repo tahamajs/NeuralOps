@@ -1,8 +1,9 @@
 """
-MGIE-SVD with Total Rank Budget: Global Entropy-Proportional Rank Allocation.
+MGIE-SVD: Multi-Granularity Information-Entropy SVD Compressor
 
-Registered as 'mgie_budget', 'mgie_budget_factory', 'mgie_svd_budget_factory'.
+Allocates layer-wise compression ranks proportionally to activation information entropy under a global parameter budget constraint.
 
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

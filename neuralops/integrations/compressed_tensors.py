@@ -1,9 +1,9 @@
 """
-CompressedTensorsExporter for vLLM & HuggingFace compatibility.
-Exports quantized neuralops models and compressors into standard compressed-tensors format:
-  - model.safetensors (or model.pt if safetensors unavailable)
-  - quantization_config.json
-  - config.json
+Compressed Tensors Exporter
+
+Exports compressed weights compatible with vLLM, HuggingFace, and downstream serving engines.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

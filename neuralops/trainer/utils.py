@@ -1,5 +1,9 @@
 """
-High-Performance Model Training, Factorized Gradient Clipping & Evaluation Utilities.
+Training and Optimization Utilities
+
+Provides factorized gradient clipping, memory optimization, and evaluation utilities for model training.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

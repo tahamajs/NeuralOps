@@ -1,9 +1,9 @@
 """
-DRONE Compressor: Data-aware Low-Rank SVD with Identity Weighting.
+DRONE: Data-Aware Low-Rank SVD Compressor
 
-Implements truncated SVD directly on target linear weight matrices (identity weighting)
-and replaces target layers with structural SVDLinear modules.
-Applies the identical rank allocation and Frobenius reconstruction error fallback threshold as AASVD/FWSVD.
+Approximates linear projections via truncated singular value decomposition with identity weighting and optimal rank selection.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

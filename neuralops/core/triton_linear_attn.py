@@ -1,7 +1,11 @@
 """
-Bridge module for neuralops.core.triton_linear_attn
-Re-exports Triton-accelerated linear attention kernel from canonical linear_attn.py.
+Triton Linear Attention Bridge
+
+Backward-compatibility bridge exposing Triton-accelerated causal linear attention kernels.
+
+Author: Taha Majlesi
 """
+
 from typing import Any
 import torch
 

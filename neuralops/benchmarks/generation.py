@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """
-High-Performance Token Generation Benchmark for NeuralOps & FLA Models.
-Measures Time-to-First-Token (TTFT), inter-token generation latency (ms/token),
-and total generation throughput (tokens/second) across prompt lengths and generation budgets.
+High-Performance Token Generation Benchmark for NeuralOps & FLA Models
+
+Measures Time-to-First-Token (TTFT), inter-token generation latency (ms/token), and total generation throughput (tokens/second) across prompt lengths and generation budgets.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

@@ -1,4 +1,11 @@
-"""Entrypoint for `python -m neuralops.benchmarks`."""
+"""
+NeuralOps Benchmarks CLI Entrypoint
+
+Command-line entrypoint for executing NeuralOps benchmark suites.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 
 import sys

@@ -1,4 +1,11 @@
-"""Check numerical stability."""
+"""
+Numerical Stability Validator
+
+Checks models and layers for numerical stability, NaN/Inf values, and gradient overflows.
+
+Author: Taha Majlesi
+"""
+
 import torch
 
 class NumericalValidator:

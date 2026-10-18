@@ -1,4 +1,9 @@
-"""Core utilities and shared primitives for neuralops benchmarks."""
+"""
+NeuralOps Benchmarks Core Subpackage.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 
 from neuralops.benchmarks.core.arguments import (

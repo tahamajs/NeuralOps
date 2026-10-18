@@ -1,11 +1,9 @@
-r"""
-Model Attention Replacement and Dynamic Graph Surgery Utilities.
+"""
+Dynamic Attention Replacement Engine
 
-Public API entry points:
-  - replace_attention_in_model
-  - build_attention
-  - inject_replace
-  - ReplaceAttention
+Core graph surgery functions replacing standard attention layers with efficient alternatives in-place.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

@@ -1,4 +1,10 @@
-"""Comprehensive catalog and telemetry generators for 131 Attentions, 72 Compressors, PagedKV, Speculative Decoding, and Notebooks."""
+"""
+Monitor Data Catalog
+
+Provides catalog and telemetry data generators for attention modules, compressors, and caches.
+
+Author: Taha Majlesi
+"""
 
 from __future__ import annotations
 

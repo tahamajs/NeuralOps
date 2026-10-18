@@ -1,4 +1,8 @@
-"""Subpackage exports."""
+"""
+Linear Attention Mechanisms.
+
+Author: Taha Majlesi
+"""
 
 import importlib
 

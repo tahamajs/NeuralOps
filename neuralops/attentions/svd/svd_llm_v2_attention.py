@@ -1,14 +1,11 @@
 """
-SVD-LLM V2 Attention: Truncation-Aware SVD for LLM Compression.
-Direct low-rank factorized parameterization maintaining explicit U, Sigma, and V^H factor buffers,
-with trainable LoRA adapters for recovery fine-tuning.
+SVD-LLM V2 Attention: Truncation-Aware SVD Compression
 
-Hardened for production use across diverse transformer architectures:
-- DistilBERT (Flat MHA)
-- RoBERTa / BERT (Nested Encoder Self-Attention)
-- GPT-2 (Causal Decoder with Conv1D)
-- Qwen / LLaMA (GQA with Rotary Position Embeddings)
+Truncation-aware singular value decomposition attention maintaining generation fidelity under high compression.
+
+Author: Taha Majlesi
 """
+
 from neuralops.core.common import _cfg_get
 from neuralops.core.common import _unpack_weight_bias
 

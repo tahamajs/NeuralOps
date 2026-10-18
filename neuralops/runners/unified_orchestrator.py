@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """
-Unified Orchestrator Backend for NeuralOps.
+Unified Pipeline Orchestrator
+
+Central execution orchestrator managing worker pipelines, evaluation tasks, and result reporting.
+
+Author: Taha Majlesi
 """
 
 import csv

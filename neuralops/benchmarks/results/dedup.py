@@ -1,4 +1,10 @@
-"""Intelligent run deduplication and O(1) index management."""
+"""
+Intelligent run deduplication and O(1) index management
+
+Implements dedup functionality for NeuralOps.
+
+Author: Taha Majlesi
+"""
 
 from __future__ import annotations
 

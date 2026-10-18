@@ -1,32 +1,9 @@
 """
-Squeezing Heads Attention Distillation (v3, production-hardened).
+Squeezing Heads Attention Distillation
 
-Multi-head attention wrapper that truly compresses Q/O projections by keeping
-only the top-k most important heads (selected via Frobenius norms of
-pretrained Q/K/V weights), while preserving the GQA structure of the source.
+Prunes and distills redundant attention heads based on spectral weight importance while preserving head geometry.
 
-═══════════════════════════════════════════════════════════════════════════
-KEY IDEAS
-═══════════════════════════════════════════════════════════════════════════
-
-  Original model:   num_heads = H, num_kv_heads = H_kv, head_dim = D
-  Squeezed model:   num_kept = H_s ≤ H,   num_kv_heads = H_kv (unchanged)
-
-  Q projection :  (H * D, hidden)  →  (H_s * D, hidden)
-  K / V projs  :  (H_kv * D, hidden)  (UNCHANGED — GQA structure preserved)
-  O projection :  (hidden, H * D)  →  (hidden, H_s * D)
-
-  Head selection:
-    score(h) = ||W_q[h]||²_F + ||W_k[h // g]||²_F + ||W_v[h // g]||²_F
-    where g = H // H_kv (GQA group size).
-    Keep the H_s heads with highest scores.
-
-  GQA mapping (at forward):
-    K/V are kept as H_kv heads.
-    For each kept Q head j with original index h_j, it maps to KV head
-    i_kv = h_j // g.
-    We build the effective K/V for attention by gathering via kept indices.
-
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

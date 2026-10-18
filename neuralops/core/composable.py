@@ -1,13 +1,9 @@
-"""Composable Meta-Attention architecture for NeuralOps.
+"""
+Composable Meta-Attention Framework
 
-Provides modular composition of attention mechanisms by chaining:
-  - Projections: Dense ("dense" / "standard"), LowRankSVD ("svd(rank=r)"), Conv1D ("conv1d(kernel_size=k)")
-  - Positional embeddings: None ("none"), RoPE ("rope"), ALiBi ("alibi")
-  - Feature maps / kernel mappings: Softmax ("softmax"), ELU+1 ("elu+1" / "elu"), Cosformer ("cosformer")
-  - Masking and sparsity: Causal ("causal"), SlidingWindow ("sliding_window(w)"), AttentionSink ("sink(s)")
-  - Execution engines: QuadraticSDPA ("sdpa" / "quadratic"), ChunkedRecurrentScan ("chunked_scan" / "linear"), DeltaRule ("delta_rule" / "gdn")
+Modular meta-attention architecture enabling dynamic chaining of projections, positional encodings, and kernels.
 
-Fully compatible with neuralops.replace_attention and standard PyTorch / HuggingFace architectures.
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

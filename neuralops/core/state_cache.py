@@ -1,7 +1,9 @@
-"""O(1) Recurrent State Cache & Autoregressive Decoding Infrastructure.
+"""
+Recurrent State Cache Infrastructure
 
-Provides constant-memory per-layer state caching for subquadratic recurrent, linear,
-SSM, and sliding-window attention mechanisms, eliminating O(T) KV-cache explosion.
+O(1) persistent state cache engine supporting autoregressive recurrent and linear attention decoding.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

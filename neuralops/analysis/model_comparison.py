@@ -1,4 +1,10 @@
-"""Multi‑run model comparison and plotting."""
+"""
+Model Architecture Comparison
+
+Side-by-side benchmarking and empirical comparison suite across baseline and compressed model variants.
+
+Author: Taha Majlesi
+"""
 
 import os
 from pathlib import Path

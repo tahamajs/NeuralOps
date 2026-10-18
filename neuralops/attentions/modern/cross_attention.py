@@ -1,6 +1,9 @@
-"""Cross-Attention implementation with LoRA, multi-architecture support,
-SDPA fast-path, and full injector.
+"""
+Cross-Attention with Low-Rank Projections
 
+Cross-attention mechanism enabling low-rank parameter-efficient adaptation across sequence modalities.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

@@ -1,5 +1,9 @@
 """
-SaveConfig – dataclass that controls all aspects of result persistence.
+Results Saver Configuration
+
+Configuration dataclasses and options for result serialization and artifact persistence.
+
+Author: Taha Majlesi
 """
 
 from dataclasses import dataclass, field

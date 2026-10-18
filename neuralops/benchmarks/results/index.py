@@ -1,4 +1,10 @@
-"""High-level query API for querying, filtering, and comparing benchmark results."""
+"""
+High-level query API for querying, filtering, and comparing benchmark results
+
+Implements index functionality for NeuralOps.
+
+Author: Taha Majlesi
+"""
 
 from __future__ import annotations
 

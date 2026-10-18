@@ -1,9 +1,9 @@
 """
-COMPOT: Compressed Orthogonal Dictionary Learning Compressor.
-Registered in COMPRESSOR_REGISTRY as 'compot'. Production hardened for
-multi-architecture compatibility (DistilBERT, RoBERTa, GPT-2, Qwen3.5) with
-reconstruction validation, Conv1D support, rank reduction bounds, safe fallback,
-and Layer-Sniffing Rank Allocation.
+COMPOT: Compressed Orthogonal Dictionary Learning Compressor
+
+Factorizes linear weight matrices into orthogonal dictionary bases and sparse code coefficients for efficient matrix multiplication.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

@@ -1,12 +1,11 @@
 """
-Kronecker-TT-LoRA Hybrid Compression Engine Adapter.
+Kronecker-TT-LoRA: Hybrid Tensor Decomposition Engine
 
-Decomposes weight updates as:
-  ΔW = γ * ((A1 ⊗ A2) ⊙ TT(G1, G2, G3))[:out, :in] + (α/r) * (B_lora @ A_lora)
+Combines Kronecker products, Tensor-Train factorizations, and low-rank LoRA adapters for multi-scale model compression.
 
-where (A1 ⊗ A2) is a Kronecker product and TT is a 3-core Tensor-Train.
-
+Author: Taha Majlesi
 """
+
 from neuralops.core.common import _cfg_get
 
 import logging

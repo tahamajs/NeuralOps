@@ -1,19 +1,9 @@
 """
-Locality-Sensitive Hashing (LSH) Attention – Reformer style .
+Locality-Sensitive Hashing (LSH) Reformer Attention
 
-Approximates dense attention by clustering keys and queries into discrete hash buckets
-via angular random hyperplane projections.
+Reformer-style locality-sensitive hashing attention grouping keys and queries into hash buckets.
 
-Supports:
-- Multi-architecture copy_weights (GPT-2, RoBERTa/BERT nested, Qwen/LLaMA, DistilBERT)
-- FactorizedLoRALinear (parameter-reducing) with frozen base weights
-- GQA with repeat_kv
-- RoPE with past_len offset
-- Causal masking for decoders (falls back to exact attention)
-- Nested encoder bypass
-- Frobenius norm verification (>= 1e-4)
-- Safe injection returning None on failure
-
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

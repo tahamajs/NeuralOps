@@ -1,5 +1,9 @@
 """
-Sparse Attention Python Interface & 3-Level Fallback with Analytical CUDA Backward.
+Block-Sparse Attention Autograd Interface
+
+Hardware-accelerated CUDA C++ autograd implementation with analytical gradients and three-level fallback dispatch.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

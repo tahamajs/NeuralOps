@@ -1,28 +1,9 @@
 """
-SpectronAttention: Importance-Aware Low-Rank + Sparse Attention (Activation-Aware).
+SpectronAttention: Importance-Aware Low-Rank and Sparse Attention
 
-Dynamically allocates non-uniform low-rank capacities across attention projection
-matrices under a global parameter budget via Lagrangian spectral entropy
-optimization, augmented by trainable magnitude-pruned sparse residuals.
+Allocates low-rank and sparse attention capacities dynamically according to activation importance profiles.
 
-Mathematical Mechanism:
-    For projection matrices {W_i} with singular values {σ_ik}:
-    1. Lagrangian Spectral Allocation (on ACTIVATION-WHITENED weights):
-         min_{r_i} Σ (1 - Σ_{k≤r_i} σ²_ik / Σ_k σ²_ik)
-         s.t.     Σ r_i (d_in + d_out) ≤ B_target
-       Solved via bisection on λ.
-
-    2. Activation-Aware Factorization:
-         C_X = E[x x^T]                  (EMA covariance)
-         C_X = L L^T                     (Cholesky whitening)
-         W_w = W L
-         U Σ V^T = SVD(W_w)
-         W ≈ (U_r Σ_r) (L^{-1} V_r^T)    (whitened low-rank)
-
-    3. Optional Sparse Residual:
-         y = x W_down^T W_up^T + x S^T + b
-         with ‖S‖_0 ≤ (1 - ρ) · numel(W)
-
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

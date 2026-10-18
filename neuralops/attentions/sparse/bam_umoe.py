@@ -1,12 +1,9 @@
 """
-BAM-UMoE: Unified Mixture of Experts Attention Block (Activation-Aware).
+BAM-UMoE: Unified Mixture of Experts Attention Block
 
-Combines:
-  1. Optional SVD factorization of Q/K/V/O for actual parameter reduction.
-  2. Optional Mixture-of-Experts (MoE) branch for residual refinement.
-  3. Cross-architecture weight transfer (DistilBERT, RoBERTa/BERT, GPT-2, Qwen/LLaMA).
-  4. LoRA adapters for recovery fine-tuning.
+Unified mixture-of-experts attention block combining low-rank factorization with expert routing.
 
+Author: Taha Majlesi
 """
 
 from neuralops.core.attention_utils import (

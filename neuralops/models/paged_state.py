@@ -1,16 +1,9 @@
 """
-Continuous Batching Paged Recurrent State Tables & Radix-Tree Prefix State Caching.
+Continuous Batching Paged Recurrent State
 
-Key components:
-1. PagedStateTable:
-   - Virtual-to-physical GPU state table managing recurrent states (H, D, D) or KV slots.
-   - Physical page pool allocation and free-list management.
-   - O(1) zero-copy fork_sequence via reference counting.
-   - Automatic Copy-on-Write (CoW) on mutating state steps.
-2. RadixPrefixStateCache:
-   - Associative Radix tree caching recurrent states computed across common token prompt prefixes.
-   - Exact prefix token matching with longest-prefix match.
-   - LRU eviction of unreferenced physical state pages.
+Paged virtual-to-physical memory tables and radix-tree state caching for recurrent attention decoding.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

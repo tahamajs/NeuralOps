@@ -1,10 +1,9 @@
 """
-UPI-Stuffed Mamba: Uncertainty-Penalized Interpolated Mamba SSM Block.
-Hardened for production use across diverse transformer architectures:
-- DistilBERT (Flat MHA)
-- RoBERTa / BERT (Nested Encoder Self-Attention)
-- GPT-2 (Causal Decoder with Conv1D)
-- Qwen / LLaMA (GQA with Rotary Position Embeddings)
+UPI-Stuffed Mamba: Uncertainty-Penalized Interpolated SSM Block
+
+Uncertainty-penalized interpolated Mamba block stabilizing state updates across heterogeneous inputs.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

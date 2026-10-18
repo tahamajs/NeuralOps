@@ -1,4 +1,8 @@
-"""Subpackage exports."""
+"""
+Adaptive Attention Mechanisms.
+
+Author: Taha Majlesi
+"""
 
 import importlib
 

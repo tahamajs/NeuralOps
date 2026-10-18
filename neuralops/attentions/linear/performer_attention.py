@@ -1,8 +1,9 @@
 """
-Performer Attention – Fast Attention via Positive Orthogonal Random Features (FAVOR+).
+Performer: Fast Attention via Positive Orthogonal Random Features (FAVOR+)
 
-Production-hardened with full multi-architecture support.
+Fast attention via Positive Orthogonal Random Features (FAVOR+) approximating softmax kernels unbiasedly.
 
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

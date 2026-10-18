@@ -1,3 +1,11 @@
+"""
+Method Configuration
+
+Parameter specifications for low-rank SVD, LoRA, and attention compression algorithms.
+
+Author: Taha Majlesi
+"""
+
 from dataclasses import dataclass, field
 
 

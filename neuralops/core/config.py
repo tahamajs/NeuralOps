@@ -1,4 +1,10 @@
-"""Simple YAML config loader."""
+"""
+Core Configuration Parser
+
+Lightweight YAML and dictionary configuration loader for core execution settings and kernel options.
+
+Author: Taha Majlesi
+"""
 
 from typing import Any
 

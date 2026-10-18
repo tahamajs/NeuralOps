@@ -1,8 +1,9 @@
 """
-RPCA Low-Rank + Sparse SVD GEMM Interface, Autograd Function, and 3-Level Fallback.
-Target: SM 8.9 (NVIDIA Ada Lovelace RTX 4070 Laptop GPU, 8GB VRAM).
-Forward: Y = (X @ V_r.T) @ U_r.T + (X @ S.T if S is present) + bias
-Backward computes exact analytical adjoint gradients for X, V_r, U_r, S, bias.
+RPCA Sparse and Low-Rank SVD Autograd Interface
+
+Hardware-accelerated CUDA C++ autograd implementation with analytical gradients and three-level fallback dispatch.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

@@ -1,4 +1,11 @@
-# framework/utils/seed.py
+"""
+Random Seed Utilities
+
+Sets deterministic random seeds across PyTorch, NumPy, and Python standard libraries.
+
+Author: Taha Majlesi
+"""
+
 import random
 
 import numpy as np

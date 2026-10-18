@@ -1,4 +1,9 @@
-"""neuralops CLI subcommands."""
+"""
+NeuralOps CLI Subpackage.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 
 import importlib

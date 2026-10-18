@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """
-NeuralOps CLI and Package Runner (`python -m neuralops`).
-Routes directly to the unified CLI suite.
+NeuralOps CLI Entry Point
+
+Unified command-line package execution interface routing directly to the benchmark and research CLI suite.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

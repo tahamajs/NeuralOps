@@ -1,8 +1,9 @@
-# -*- coding: utf-8 -*-
-"""Dynamic Range Stress Test across extreme numerical scales (1e-4 to 1e4).
+"""
+Dynamic Range Stress Test across extreme numerical scales (1e-4 to 1e4)
 
-Evaluates numerical stability, min/max values, frobenius norms, and NaN/Inf robustness
-under extreme dynamic ranges across flagship kernels (GLA Scan, Block Sparse, Rotational SVD, Samba MoE).
+Evaluates numerical stability, min/max values, frobenius norms, and NaN/Inf robustness under extreme dynamic ranges across flagship kernels (GLA Scan, Block Sparse, Rotational SVD, Samba MoE).
+
+Author: Taha Majlesi
 """
 
 import argparse

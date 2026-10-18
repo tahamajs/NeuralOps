@@ -1,8 +1,9 @@
-"""Routing Attention: Content-Based Clustering for Sparse Attention.
+"""
+Routing Attention: Content-Based Clustering for Sparse Attention
 
-Partitions sequence tokens into discrete clusters, confining attention computation
-to intra-cluster tokens without materializing full [B, H, L, L] tensors.
+Clusters tokens based on content similarity to enforce block-sparse sequence attention routing.
 
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

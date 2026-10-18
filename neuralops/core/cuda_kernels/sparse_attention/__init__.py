@@ -1,3 +1,9 @@
+"""
+Block-Sparse Attention Hardware Operators.
+
+Author: Taha Majlesi
+"""
+
 from neuralops.core.cuda_kernels.sparse_attention.sparse_attention_autograd import (
     block_sparse_attn,
     block_sparse_attn_pytorch_ref,

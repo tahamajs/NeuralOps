@@ -1,13 +1,9 @@
 """
-Hybrid SVD Layer: weight-based SVD compression for attention/linear layers.
+Hybrid SVD Layer Compressor
 
-Registered under:
-  - 'hybrid_svd'
-  - 'hybrid_svd_layer'
-  - 'direct_svd_encoder'
+Provides unified weight-based singular value decomposition with modular layer replacement for attention and feedforward modules.
 
-The deprecated SVDSingleHead (which performed SVD on live activations) is
-retained only for backward compatibility and emits a warning on use.
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

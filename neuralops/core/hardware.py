@@ -1,12 +1,9 @@
 """
-Universal Hardware Probe, Topology, and Architecture Detection Engine.
+Universal Hardware Probing Engine
 
-Provides deep introspection and capability detection across:
-- NVIDIA GPUs (Pascal SM 6.x through Blackwell SM 10.x / 12.x)
-- AMD GPUs / ROCm (HIP, CDNA MI200/MI300, RDNA)
-- Apple Silicon (MPS / Metal Performance Shaders)
-- Intel GPUs (XPU / SYCL / oneAPI)
-- Generic CPU (x86_64 AVX-512 / AVX2, ARM NEON, multi-threading)
+Hardware topology detection and capability introspection across NVIDIA GPUs, AMD ROCm, Apple Silicon, and CPUs.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

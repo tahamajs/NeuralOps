@@ -1,4 +1,10 @@
-"""Module providing helpers implementations for NeuralOps."""
+"""
+General Helper Utilities
+
+Utility routines for tensor transformations, formatting, and mathematical operations.
+
+Author: Taha Majlesi
+"""
 
 # framework/utils/helpers.py
 import json

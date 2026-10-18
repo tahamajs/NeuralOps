@@ -1,8 +1,11 @@
 """
-CuTe-style Variable-Length Sequence Tiling & Padding Utilities for NeuralOps.
-Target: SM 8.9 (NVIDIA Ada Lovelace RTX 4070 Laptop GPU, 8GB VRAM).
-Inspired by FlashAttention CuTe tiling paradigms.
+Variable-Length Padding Utilities
+
+Handles padding and cumulative sequence length indexing for variable-length batches.
+
+Author: Taha Majlesi
 """
+
 from __future__ import annotations
 
 from typing import Tuple

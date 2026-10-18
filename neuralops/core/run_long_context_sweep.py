@@ -1,15 +1,10 @@
 #!/usr/bin/env python3
 """
-Long-Context Sweep Runner: Evaluates compression modules on Byte-Level IMDb (4096 tokens).
+Long-Context Evaluation Sweep Runner
 
-Evaluates:
-  - Sequence length: 4096 bytes
-  - Batch size: 2 (safely fits 8 GB GPU VRAM)
-  - Metrics: Classification Accuracy (%), Peak VRAM (MB), Latency (ms/sample), Compression Rate
+Evaluation harness benchmarking compression and attention modules on long-sequence byte-level tasks.
 
-Usage:
-    python run_long_context_sweep.py --dry_run
-    python run_long_context_sweep.py --model_path models/distilbert_sst2 --rank 64
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

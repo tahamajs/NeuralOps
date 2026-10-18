@@ -1,9 +1,9 @@
-"""Command-line interface entry point for knowledge distillation benchmark.
+"""
+Knowledge Distillation Benchmark CLI Entrypoint
 
-Examples
---------
-$ python -m neuralops.benchmarks.kd --task glue:sst2 --kd_steps 200
-$ python -m neuralops.benchmarks.kd --task glue:sst2 --no-resume
+Command-line entrypoint for executing knowledge distillation attention benchmarks.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

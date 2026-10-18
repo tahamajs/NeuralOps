@@ -1,4 +1,11 @@
-"""DeepSpeed, FSDP, and torch.compile integrations."""
+"""
+Distributed Compilation Integration
+
+Integrates DeepSpeed, Fully Sharded Data Parallel (FSDP), and torch.compile for distributed execution.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 from typing import Any
 import torch

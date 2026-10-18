@@ -1,9 +1,7 @@
 """
-Unified configuration system for the Efficient Transformer Toolkit.
+NeuralOps Config Core Modules.
 
-Load a complete configuration from YAML + CLI:
-    from neuralops.config import load_config
-    cfg = load_config("config.yaml", cli_args=args)
+Author: Taha Majlesi
 """
 
 from .config import (

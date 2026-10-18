@@ -1,4 +1,11 @@
-# framework/utils/architecture.py
+"""
+Model Architecture Patterns
+
+Provides architectural pattern matching and module discovery for transformer models.
+
+Author: Taha Majlesi
+"""
+
 from typing import Any
 
 ARCH_PATTERNS: dict[str, list[str]] = {

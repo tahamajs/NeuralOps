@@ -1,4 +1,11 @@
-"""Production-grade GPTQ (Exact Second-Order Hessian-Guided Quantization)."""
+"""
+GPTQ: Accurate Post-Training Quantization for Large Language Models
+
+Minimizes layer reconstruction error using second-order Taylor expansions of the loss and Cholesky decomposition of the Hessian.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 from typing import Any, Dict, Optional
 import torch

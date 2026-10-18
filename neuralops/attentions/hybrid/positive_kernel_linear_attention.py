@@ -1,9 +1,9 @@
 """
-LEKAv1: Linear-time Efficient Kernel Attention.
+Positive Kernel Linear Attention
 
-Approximates the attention kernel via Positive Feature Mapping (ELU + 1)
-to guarantee strict positivity and stable gradients, avoiding NaN denominator collapse.
+Approximates softmax attention via positive feature mapping to achieve strict linear complexity.
 
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

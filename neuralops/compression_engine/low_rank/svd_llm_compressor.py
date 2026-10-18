@@ -1,22 +1,9 @@
 """
-SVD-LLM Compressor: Truncation-Aware Singular Value Decomposition for LLM Compression (ICLR 2025).
-Paper Reference: Wang et al., "SVD-LLM: Truncation-Aware Singular Value Decomposition for Large Language Model Compression", ICLR 2025 (arXiv:2403.07378).
+SVD-LLM: Truncation-Aware Singular Value Decomposition
 
-Features implemented faithfully according to the paper:
-1. Data-Driven Cholesky Activation Whitening:
-   - Accumulate input activation covariance C = (1/N) X^T X using calibration data
-   - Cholesky factorization S = cholesky(C + eps * I)
-   - Whiten weight: W_white = W @ S
-   - Truncated SVD: W_white ≈ U_r @ diag(Sigma_r) @ Vt_r
-   - Unwhiten right factor: Vt_unw = Vt_r @ S^{-1}
-   - Explicit factor matrices: W_u = U_r * sqrt(Sigma_r), W_v = sqrt(Sigma_r) * Vt_unw
-   - Forward mapping: y = (x @ W_v.T) @ W_u.T + bias
-2. Sequential LoRA Fine-Tuning (Section 3.2, Eq. 7):
-   - Stage 1: Update W_u via LoRA (freeze W_v)
-   - Stage 2: Update W_v via LoRA (freeze W_u)
-3. Fixed Parameter Rank Ratio:
-   - Given parameter ratio R ∈ (0, 1]: r = (R * m * n) / (m + n)
-4. Compatibility across DistilBERT, RoBERTa/BERT, GPT-2 (Conv1D), and LLaMA/Qwen.
+Computes activation-informed singular value decompositions with data whitening and truncation-aware residual compensation for large language models.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

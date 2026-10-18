@@ -1,6 +1,9 @@
 """
-On-Policy KD, Reference-Free Preference Alignment (SimPO, ORPO), GRPO & Dynamic Routing RL.
-Designed for memory-constrained training on 6GB–8GB GPUs.
+Preference Alignment and On-Policy RL
+
+Implements SimPO, ORPO, GRPO, and dynamic routing reinforcement learning for language models.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

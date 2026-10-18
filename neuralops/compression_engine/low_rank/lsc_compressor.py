@@ -1,13 +1,9 @@
-r"""
-LSC: Low-Rank Spectral & Fourier-Domain Linear Compressor.
-Registered as 'lsc', 'lsc_class', 'lsc_compressor', 'lsc_factory'.
+"""
+LSC: Low-Rank Spectral and Fourier-Domain Compressor
 
-Mathematical Formulation:
-  1. 2D DFT: \hat{W} = F_2D(W)
-  2. Magnitude: M_ij = |\hat{W}_ij|
-  3. Top-k selection: M_spectral = Top-k(M), k = min(r*r, d_out*d_in)
-  4. Inverse DFT: W_lsc = Re(F_2D^{-1}(\hat{W} ⊙ M_spectral))
+Projects weight matrices into spectral and discrete Fourier domains, truncating high-frequency components for high-ratio parameter compression.
 
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

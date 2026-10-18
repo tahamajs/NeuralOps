@@ -1,9 +1,9 @@
 """
-Model State Snapshot & Exact Bit-Identical Restorer.
+Model State Snapshot and Restorer
 
-Preserves the exact structural integrity, module graph, parameter buffers,
-and random state so attention modules can be dynamically swapped in-memory
-with 100% exact bit-identical restoration and zero weight/state drift.
+Exact bit-identical state preservation and restoration engine for in-memory attention swapping.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

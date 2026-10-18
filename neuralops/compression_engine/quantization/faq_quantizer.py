@@ -1,7 +1,9 @@
 """
-FAQ (Feature-Activation-Aware Quantization): adjusts quantization scales using
-activation statistics. Registered as 'faq'.
+FAQ: Feature-Activation-Aware Quantizer
 
+Dynamically adjusts quantization step sizes according to feature activation statistics and channel kurtosis to minimize clipping distortion.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

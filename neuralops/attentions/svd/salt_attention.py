@@ -1,10 +1,11 @@
-r"""
-SALT Attention: Singular Value Adaptation with Low-Rank Tuning.
-
-Parameter-efficient adaptation mechanism for transformer attention projections combining
-orthogonal singular vector preservation, singular value rescaling ($\gamma$), and additive low-rank adapters ($A B$).
-Hardened for multi-architecture production deployment.
 """
+SALT: Singular Value Adaptation with Low-Rank Tuning
+
+Parameter-efficient singular value adaptation and low-rank tuning for transformer attention projections.
+
+Author: Taha Majlesi
+"""
+
 from neuralops.core.common import _cfg_get
 
 from neuralops.core.attention_utils import (

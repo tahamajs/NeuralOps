@@ -1,4 +1,8 @@
-"""Subpackage exports."""
+"""
+Dense Attention Mechanisms.
+
+Author: Taha Majlesi
+"""
 
 import importlib
 

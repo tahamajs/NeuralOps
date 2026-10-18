@@ -1,8 +1,9 @@
 """
-NMF: Non-negative Matrix Factorization Linear Compressor.
+NMF: Non-Negative Matrix Factorization Compressor
 
-Registered in COMPRESSOR_REGISTRY as 'nmf', 'nmf_compressor'.
+Factorizes non-negative weight tensors into non-negative basis and coefficient matrices using multiplicative update rules.
 
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

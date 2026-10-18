@@ -1,4 +1,11 @@
-"""Orchestrator for managing single and multi-module benchmark sweeps."""
+"""
+Orchestrator for managing single and multi-module benchmark sweeps
+
+Implements orchestrator functionality for NeuralOps.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 
 from collections.abc import Generator

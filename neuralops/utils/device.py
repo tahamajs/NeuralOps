@@ -1,4 +1,11 @@
-# framework/utils/device.py
+"""
+Device Management Utilities
+
+Provides device detection, CUDA availability checks, and execution device resolution.
+
+Author: Taha Majlesi
+"""
+
 import torch
 
 

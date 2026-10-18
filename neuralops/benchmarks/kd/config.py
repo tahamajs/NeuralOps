@@ -1,8 +1,9 @@
-"""Benchmark configuration data structures and specification resolvers.
+"""
+Benchmark configuration data structures and specification resolvers
 
-This module provides the :class:`BenchmarkConfig` dataclass and parsing
-utilities to configure knowledge distillation benchmarking runs across
-arbitrary datasets, teachers, and model families.
+This module provides the :class:`BenchmarkConfig` dataclass and parsing utilities to configure knowledge distillation benchmarking runs across.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

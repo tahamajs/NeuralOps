@@ -1,12 +1,11 @@
 """
-Samba-MoE: Hybrid Selective State Space (SAMBA-M3) + REAP-MoE Block.
-Combines local sliding-window attention, spectral Mamba SSM, and MoE routing.
-Hardened for production use across diverse transformer architectures:
-- DistilBERT (Flat MHA)
-- RoBERTa / BERT (Nested Encoder Self-Attention)
-- GPT-2 (Causal Decoder with Conv1D)
-- Qwen / LLaMA (GQA with Rotary Position Embeddings)
+Samba-MoE: Hybrid Selective State Space and REAP-MoE Block
+
+Combines sliding-window self-attention, spectral state space recurrence, and mixture-of-experts routing.
+
+Author: Taha Majlesi
 """
+
 from neuralops.core.common import _cfg_get
 
 import logging

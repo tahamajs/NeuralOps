@@ -1,4 +1,10 @@
-"""Riemannian Stiefel Manifold Optimizer implementation."""
+"""
+Riemannian Manifold Optimizer
+
+Riemannian gradient descent and conjugate gradient optimizers on the Stiefel manifold.
+
+Author: Taha Majlesi
+"""
 
 from __future__ import annotations
 

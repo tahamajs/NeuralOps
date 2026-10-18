@@ -1,4 +1,10 @@
-"""Cache manipulation utilities for autoregressive generation and streaming states."""
+"""
+Recurrent and Attention Cache Utilities
+
+Cache manipulation utilities for autoregressive generation, continuous decoding, and streaming states.
+
+Author: Taha Majlesi
+"""
 
 from __future__ import annotations
 

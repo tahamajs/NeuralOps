@@ -1,4 +1,11 @@
-# framework/utils/profiler.py
+"""
+Performance Profiler
+
+Measures execution latency, operation timing, and hardware resource utilization.
+
+Author: Taha Majlesi
+"""
+
 import json
 import time
 from collections import defaultdict

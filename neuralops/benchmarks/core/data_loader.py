@@ -1,4 +1,11 @@
-"""Dataset loading, batch formatting, and DataLoader creation for benchmarks."""
+"""
+Dataset loading, batch formatting, and DataLoader creation for benchmarks
+
+Implements data loader functionality for NeuralOps.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 
 import logging

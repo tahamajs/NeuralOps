@@ -1,4 +1,10 @@
-"""HuggingFace Trainer callback for automatic metric logging."""
+"""
+Experiment Logging Callbacks
+
+HuggingFace Trainer and custom training callbacks for automatic metric logging.
+
+Author: Taha Majlesi
+"""
 
 import logging
 

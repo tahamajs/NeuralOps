@@ -1,4 +1,11 @@
-"""Rotary Position Embedding (RoPE) shared utilities."""
+"""
+Rotary Position Embedding Utilities
+
+Frequency calculation, cosine-sine caching, and tensor rotation functions for RoPE embeddings.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 
 import torch

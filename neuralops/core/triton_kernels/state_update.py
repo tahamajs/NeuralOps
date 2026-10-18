@@ -1,14 +1,9 @@
-#!/usr/bin/env python3
 """
-Triton State-Space Model (SSM) & RWKV State Update Kernel.
+State Space Model State Update
 
-Computes discrete sequential recurrence:
-  h_t = exp(delta_t * A) * h_{t-1} + (delta_t * B_t) * u_t
-  y_t = (h_t @ C_t) + D * u_t
+Computes recurrent state updates for SSM and RWKV architectures with fused hidden state propagation.
 
-Used by:
-  - Mamba, S4, S6, RWKV, HGRN2, Jamba
-  - Hybrid SSM-Attention architectures
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

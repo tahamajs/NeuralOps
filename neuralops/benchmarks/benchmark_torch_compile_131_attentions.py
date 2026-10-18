@@ -1,3 +1,11 @@
+"""
+Torch Compile Benchmark for Attention Modules
+
+Empirically benchmarks compilation speed, memory, and runtime throughput across all attention modules.
+
+Author: Taha Majlesi
+"""
+
 import os
 import sys
 import time

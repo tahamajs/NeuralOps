@@ -1,4 +1,8 @@
-"""Metrics subsystem package."""
+"""
+NeuralOps Benchmarks Metrics Subpackage.
+
+Author: Taha Majlesi
+"""
 
 from neuralops.benchmarks.metrics.evaluator import (
     ClassificationMetrics,

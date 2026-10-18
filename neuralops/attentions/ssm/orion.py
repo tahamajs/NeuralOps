@@ -1,19 +1,9 @@
 """
-ORION: Optimized Rectified Input-aware Orthogonal Network.
+ORION: Optimized Rectified Input-Aware Orthogonal Network
 
-Hybrid multi-head attention architecture integrating zero-shot SVD low-rank factorized
-projections, head-wise bifurcated linear kernel vs. temperature-softmax full attention,
-and random Fourier features.
+Optimized multi-head attention architecture integrating input-aware orthogonal projections and gated feature flow.
 
-Supports:
-- Multi-architecture copy_weights (GPT-2, RoBERTa/BERT nested, Qwen/LLaMA, DistilBERT)
-- Trainable LoRA adapters with frozen base weights
-- GQA with repeat_kv
-- RoPE position embeddings
-- Causal cumulative scan for kernel heads and causal masking for full heads
-- Nested encoder bypass
-- Frobenius norm verification (>= 1e-4)
-- Safe injection returning None on failure
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

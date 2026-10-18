@@ -1,8 +1,9 @@
 """
-Hadamard W4A16 GEMM Interface, Autograd Function, and 3-Level Fallback.
-Target: SM 8.9 (NVIDIA Ada Lovelace RTX 4070 Laptop GPU, 8GB VRAM).
-Forward: Y = X @ W_dequant.T + bias
-Backward computes exact adjoint gradient for X and bias with dequantized weight matrix.
+Hadamard W4A16 Quantized GEMM Autograd Interface
+
+Hardware-accelerated CUDA C++ autograd implementation with analytical gradients and three-level fallback dispatch.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

@@ -1,7 +1,9 @@
-"""Execution engine and distillation orchestrator for knowledge distillation benchmarking.
+"""
+Execution engine and distillation orchestrator for knowledge distillation benchmarking
 
-This module provides the :class:`KDRunner` class, which manages data loaders,
-evaluations, optimizer loops, crash-safe state persistence, and module iteration.
+This module provides the :class:`KDRunner` class, which manages data loaders, evaluations, optimizer loops, crash-safe state persistence, and module iteration.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

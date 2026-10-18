@@ -1,20 +1,9 @@
 """
-Production-grade SGLang Radix Tree Prefix Cache adapter for NeuralOps.
+SGLang Serving Integration
 
-Implements an associative Radix Trie storing KV states and recurrent hidden states
-indexed by token sequence prefixes. Enables prefix-sharing across concurrent requests
-to eliminate redundant prefill computation, with reference-counted locking and
-Least-Recently-Used (LRU) leaf node eviction.
+Integrates NeuralOps attention backends and kernels with the SGLang runtime engine.
 
-Status: 🟡 Experimental (In-Tree Adapter). Compatible with SGLang RadixAttention
-concepts (v0.2 - v0.4 protocol).
-
-Radix Tree Structure Diagram:
-        [Root: ()]
-         /       \
-     [101, 2054]  [500, 600]
-       /      \
-    [2003]   [3001]
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

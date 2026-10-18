@@ -1,4 +1,11 @@
-"""QuaRot (Quantization with Rotation) implementation for neuralops."""
+"""
+QuaRot: Outlier-Free Quantization with Randomized Rotations
+
+Applies randomized Walsh-Hadamard orthogonal rotations to weights and activations, eliminating extreme outliers prior to 4-bit quantization.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 from typing import Any, Dict, Optional
 import torch

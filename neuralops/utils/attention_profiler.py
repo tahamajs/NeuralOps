@@ -1,4 +1,11 @@
-"""Attention Memory Profiler to measure peak activation memory and time overhead."""
+"""
+Attention Memory Profiler
+
+Profiles peak activation memory and execution time overhead across attention mechanisms.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 from typing import Callable, Any
 import time

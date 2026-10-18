@@ -1,4 +1,8 @@
-"""Subpackage exports."""
+"""
+Neural Network Pruning and Sparsity Compression Engines.
+
+Author: Taha Majlesi
+"""
 
 import importlib
 

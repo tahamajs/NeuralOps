@@ -1,4 +1,11 @@
-"""Production LoRA Merging, SVD Extraction, QLoRA, and DoRA modules."""
+"""
+DoRA & QLoRA: Weight-Decomposed Low-Rank Adaptation
+
+Decomposes weight matrices into magnitude vectors and directional low-rank matrices with NF4 and FP4 base quantization support.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 import torch
 import torch.nn as nn

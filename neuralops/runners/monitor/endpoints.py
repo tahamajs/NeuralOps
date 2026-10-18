@@ -1,4 +1,10 @@
-"""HTTP endpoint handlers and flattened routing for NeuralOps monitor server."""
+"""
+Monitor HTTP Endpoints
+
+Defines HTTP request handlers and REST API endpoints for the benchmark monitoring service.
+
+Author: Taha Majlesi
+"""
 
 from __future__ import annotations
 

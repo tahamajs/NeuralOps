@@ -1,11 +1,9 @@
 """
-Unified MLOps experiment tracking and telemetry interface for NeuralOps.
+Unified MLOps experiment tracking and telemetry interface for NeuralOps
 
-Supports:
-  - Weights & Biases (`wandb`)
-  - MLflow (`mlflow`)
-  - TensorBoard (`torch.utils.tensorboard`)
-  - Local disk loggers (`jsonl`, `csv`, `parquet`)
+Supports.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

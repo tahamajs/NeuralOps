@@ -1,4 +1,10 @@
-"""FastAPI Application providing modern REST, SSE, and WebSocket endpoints for NeuralOps Dashboard."""
+"""
+Monitor FastAPI Application
+
+FastAPI service providing REST, SSE, and WebSocket endpoints for live telemetry.
+
+Author: Taha Majlesi
+"""
 
 from __future__ import annotations
 

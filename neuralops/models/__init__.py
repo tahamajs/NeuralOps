@@ -1,7 +1,7 @@
-"""NeuralOps Models Package: Native HuggingFace Transformers Integration.
+"""
+NeuralOps Models Core Modules.
 
-Exposes AutoConfig and AutoModelForCausalLM registration for all NeuralOps
-subquadratic attention architectures and compression engines.
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

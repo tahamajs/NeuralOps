@@ -1,4 +1,8 @@
-"""Subpackage exports."""
+"""
+Tensor Decomposition Compression Engines.
+
+Author: Taha Majlesi
+"""
 
 import importlib
 

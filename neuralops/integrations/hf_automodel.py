@@ -1,4 +1,11 @@
-"""HuggingFace AutoModel compatibility layer, attention patching, and custom model loader."""
+"""
+HuggingFace AutoModel Compatibility
+
+Provides compatibility wrappers, attention layer patching, and model loaders for HuggingFace.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 from typing import Any
 import torch.nn as nn

@@ -1,3 +1,11 @@
+"""
+HuggingFace Trainer Integration
+
+Wraps and registers HuggingFace Trainer extensions for seamless pipeline execution.
+
+Author: Taha Majlesi
+"""
+
 from typing import Any
 
 from .base_trainer import BaseTrainer

@@ -1,29 +1,9 @@
 """
-SliceGPT PCA Compressor: Principal Component Analysis based Dimensionality Slicing.
-Registered in COMPRESSOR_REGISTRY as 'slicegpt_pca' and 'slicegpt_pca_factory'.
+SliceGPT PCA Compressor: Principal Component Dimensionality Slicing
 
-Mathematical Formulation:
-1. Activation Sample Matrix X ∈ R^{N × d_in}
-2. Empirical Covariance: Σ = (1/(N-1)) (X - μ)^T (X - μ)
-3. Eigendecomposition: Σ = V Λ V^T
-4. Retain principal coordinates covering (1 - sparsity) cumulative variance:
-   k = min{ r | Σ_{i≤r} λ_i / Σ_i λ_i ≥ 1 - sparsity }
-5. Transform weights: W ← (W V) P_k P_k^T V^T
-   Note: W_reconstructed = W @ V @ diag(1_k) @ V^T has rank ≤ k.
-6. Optional LoRA Adapter Integration:
-   y = (W_sliced x + b) + (α/r) (B A x)
+Slices redundant computational dimensions in transformer blocks by transforming weight matrices into principal component bases.
 
-=== REAL COMPRESSION (2026-09-25 FIX) ===
-This version ACTUALLY reduces parameter count by replacing the sliced dense
-weight with an SVDLinear low-rank factorization:
-
-    W_reconstructed = W_pca[:, :keep] @ V[:, :keep].T
-                    = U_factor @ Vt_factor     where:
-                      U_factor  = W_pca[:, :keep]     shape (d_out, keep)
-                      Vt_factor = V[:, :keep].T       shape (keep, d_in)
-
-Parameter count drops from d_out * d_in to (d_out + d_in) * keep.
-
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

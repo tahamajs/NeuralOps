@@ -1,15 +1,9 @@
-"""Triton-accelerated Gated DeltaNet chunked scan.
+"""
+Gated DeltaNet Chunked Scan
 
-Recurrence:
-    inter_v_t = k_t @ S_{t-1}
-    err_t     = v_t - inter_v_t
-    norm_sq_t = sum(k_t^2)
-    step_t    = alpha_t / max(1 + norm_sq_t, 1)
-    S_t       = beta_t * S_{t-1} + step_t * k_t^T @ err_t
-    y_t       = q_t @ S_t
+Evaluates Gated DeltaNet state updates using chunked associative scans and matrix state recurrence.
 
-All ops are per-(batch, head). S is a (d_k, d_v) matrix kept in registers.
-Supports d_k = d_v <= 64.
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

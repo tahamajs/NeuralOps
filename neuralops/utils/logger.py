@@ -1,4 +1,11 @@
-# framework/utils/logger.py
+"""
+Logging Utilities
+
+Configures structured logging and formatted terminal output for framework operations.
+
+Author: Taha Majlesi
+"""
+
 import logging
 import sys
 from pathlib import Path

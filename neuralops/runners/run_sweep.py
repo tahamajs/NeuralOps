@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """
-Master runner for module sweeps.
-Replaces the 200+ duplicated run_all_4_*.py scripts.
+Benchmark Sweep Runner
+
+Orchestrates multi-module benchmark sweeps across models, datasets, and configurations.
+
+Author: Taha Majlesi
 """
 
 import argparse

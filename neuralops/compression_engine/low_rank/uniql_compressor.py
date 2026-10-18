@@ -1,6 +1,9 @@
-"""UniQL: Joint low-rank + uniform quantization compressor.
+"""
+UniQL: Unified Low-Rank and Quantization Compressor
 
-Registered as 'uniql', 'uniql_compressor', 'uniql_factory'.
+Jointly solves low-rank matrix factorization and uniform integer quantization to minimize composite layer reconstruction error.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

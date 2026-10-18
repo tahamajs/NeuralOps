@@ -1,17 +1,9 @@
 """
-TPAttention v2: Tensor Product Attention with Factorised Q-K Projections.
+TPAttention: Tensor Product Attention with Factorized Projections
 
-Improvements over v1:
-  1. Asymmetric rank support (rank_a × rank_b = head_dim) → supports head_dim=128
-  2. Better CP decomposition (50 iterations with early stopping)
-  3. Stricter max_cp_error (0.05 instead of 0.35)
-  4. Removed qk_proj hack — clean fallback to standard projection
-  5. KV cache support for efficient autoregressive inference
-  6. Cleaner code (removed TPA-FIX-XX comments)
+Tensor product attention factorizing query-key interactions into compact rank-deficient sub-matrices.
 
-Tensor-Product factorization of Q and K:
-    W_q ≈ q_proj1 ⊗ q_proj2   (per head)
-    W_q[h*hd + a*rank_b + b, k] ≈ A[h, a, k] · B[h, b, k]
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

@@ -1,16 +1,9 @@
 """
-Hadamard Linear Attention (HLA) — Production-Hardened v2.
+Hadamard Linear Attention (HLA)
 
-Architecture:
-    * ELU+1 non-negative kernel feature map
-    * Hadamard-decayed linear attention via chunked associative scan
-    * Learnable per-head exponential decay
-    * Full KV-cache / recurrent-state support (S, Z)
-    * KD-compatible gate naming (lora_ prefix)
-    * Bidirectional scan for encoders, causal for decoders
-    * GQA support with repeat_kv
-    * Partial RoPE support
+Hadamard linear attention utilizing element-wise kernel factorizations for linear-time self-attention.
 
+Author: Taha Majlesi
 """
 
 from neuralops.core.attention_utils import (

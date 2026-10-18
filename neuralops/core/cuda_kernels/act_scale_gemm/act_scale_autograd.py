@@ -1,8 +1,9 @@
 """
-Activation-Scaling Quantized GEMM Interface, Autograd Function, and 3-Level Fallback.
-Target: SM 8.9 (NVIDIA Ada Lovelace RTX 4070 Laptop GPU, 8GB VRAM).
-Forward: Y = (X * s_inv) @ W.T + bias
-Backward computes exact analytical adjoint gradients for X, s_inv, W, bias.
+Activation-Scaled Quantized GEMM Autograd Interface
+
+Hardware-accelerated CUDA C++ autograd implementation with analytical gradients and three-level fallback dispatch.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

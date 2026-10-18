@@ -1,3 +1,11 @@
+"""
+Liquid Time-Constant Attention Autograd Interface
+
+Hardware-accelerated CUDA C++ autograd implementation with analytical gradients and three-level fallback dispatch.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 from typing import Any
 from pathlib import Path

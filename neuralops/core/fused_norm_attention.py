@@ -1,14 +1,11 @@
 """
-Production Fused LayerNorm / RMSNorm + Attention Block with Linear Residual Connection.
-Inspired by FlashAttention's fused block patterns (Dao-AILab/flash-attention) and
-customized for NeuralOps SVD-Linear and recurrent attention modules.
+Fused Normalization Attention Block
 
-Implements pre-norm architecture with fused residual addition:
-    x_norm = RMSNorm(x)
-    attn_out = Attention(x_norm)
-    output = x + Dropout(attn_out)
-Optionally supports post-attention linear projection and dual-residual stream.
+Production fused normalization and attention block featuring fused residual addition and linear connections.
+
+Author: Taha Majlesi
 """
+
 from __future__ import annotations
 
 from typing import Any, Optional, Tuple, Union

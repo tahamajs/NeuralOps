@@ -1,3 +1,11 @@
+"""
+Minimal NOVA Attention
+
+Minimal non-linear value aggregation attention utilizing compact low-rank factorized projections.
+
+Author: Taha Majlesi
+"""
+
 from neuralops.core.attention_utils import (
     apply_rotary_pos_emb,
 )

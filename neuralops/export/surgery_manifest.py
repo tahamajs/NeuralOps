@@ -1,9 +1,9 @@
 """
-Surgery Manifest and Self-Reconstructing Architecture Serialization Pipeline.
+Surgery Manifest Exporter
 
-Maintains an exact structural blueprint of model modifications (transplanted attention,
-sidecars, and factorized/pruned linear layers with per-layer adaptive ranks) to enable
-100% deterministic reconstruction and state-dict loading without re-running SVD.
+Generates machine-readable manifests documenting layer surgery, replacements, and parameter counts.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

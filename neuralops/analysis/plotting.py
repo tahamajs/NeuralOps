@@ -1,4 +1,10 @@
-"""Comprehensive plotting functions for model analysis."""
+"""
+Visualization and Plotting Suite
+
+Matplotlib and Seaborn plotting routines visualizing training trajectories, loss landscapes, and trade-offs.
+
+Author: Taha Majlesi
+"""
 
 import json
 import os

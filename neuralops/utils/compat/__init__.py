@@ -1,4 +1,8 @@
-"""Family-aware, opt-in compatibility helpers for attention modules."""
+"""
+NeuralOps Utils Compat Subpackage.
+
+Author: Taha Majlesi
+"""
 
 from __future__ import annotations
 

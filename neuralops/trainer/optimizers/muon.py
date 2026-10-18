@@ -1,4 +1,10 @@
-"""Muon (Momentum Orthogonalized by Newton-Schulz) optimizer."""
+"""
+Muon Optimizer
+
+Momentum Orthogonalized by Newton-Schulz (Muon) matrix optimizer for deep neural networks.
+
+Author: Taha Majlesi
+"""
 
 from __future__ import annotations
 

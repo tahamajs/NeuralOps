@@ -1,9 +1,9 @@
 """
-Spectral Residual Low-Rank SVD Attention (Res-SVD Attention).
+Spectral Residual Low-Rank SVD Attention (Res-SVD)
 
-W = U_base V_base^T + alpha * B A
-where B A is initialized from the top-k residual singular directions of W - W_base.
+Augments frozen low-rank SVD projection bases with trainable residual adapter matrices.
 
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

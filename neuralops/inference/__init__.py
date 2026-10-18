@@ -1,4 +1,9 @@
-"""Inference subpackage for NeuralOps."""
+"""
+NeuralOps Inference Subpackage.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 
 from neuralops.inference.paged_cache import PagedKVCache

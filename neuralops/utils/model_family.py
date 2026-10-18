@@ -1,6 +1,9 @@
-"""Architecture-family detection and common transformer model metadata.
+"""
+Model Family Detection
 
-Re-exported from neuralops.core.model_family for backward compatibility.
+Identifies model architectures, transformer families, and projection naming conventions.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

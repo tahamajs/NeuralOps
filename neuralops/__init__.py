@@ -1,11 +1,9 @@
 """
-NeuralOps Core ML Framework & Efficient Transformer Toolkit.
+NeuralOps Core Modules.
 
-A unified, modular, and high-performance toolkit for custom attention mechanisms,
-model compression (SVD, quantization, pruning, distillation), distributed training,
-hyperparameter optimization, federated learning, data loading, benchmarking,
-and interactive visualization.
+Author: Taha Majlesi
 """
+
 from __future__ import annotations
 
 import importlib

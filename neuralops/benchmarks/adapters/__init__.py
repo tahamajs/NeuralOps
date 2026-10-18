@@ -1,4 +1,8 @@
-"""Task adapters for neuralops benchmarking suite."""
+"""
+NeuralOps Benchmarks Adapters Subpackage.
+
+Author: Taha Majlesi
+"""
 
 from neuralops.benchmarks.adapters.classification import ClassificationAdapter
 from neuralops.benchmarks.adapters.perplexity import PerplexityAdapter

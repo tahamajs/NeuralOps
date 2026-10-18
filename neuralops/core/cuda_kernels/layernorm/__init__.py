@@ -1,3 +1,9 @@
+"""
+Fused LayerNorm Hardware Operators.
+
+Author: Taha Majlesi
+"""
+
 from neuralops.core.cuda_kernels.layernorm.layernorm_autograd import (
     layernorm,
     layernorm_pytorch_ref,

@@ -1,3 +1,11 @@
+"""
+Base Trainer Module
+
+Defines the abstract base trainer interface and unified high-level Trainer class for model training.
+
+Author: Taha Majlesi
+"""
+
 from abc import ABC, abstractmethod
 from typing import Any
 

@@ -1,12 +1,11 @@
 """
-Aegis-Spectron-FP8 Hybrid Attention .
+Aegis-Spectron-FP8 Hybrid Attention
 
-Three-branch attention with spectral entropy routing:
-  1. Local sliding-window attention  (O(N*W))
-  2. Global low-rank ELU+1 linear attention (O(N*r*D))
-  3. Linear state recurrence (O(N*D), chunked, numerically stable)
+Three-branch hybrid attention featuring local windows, low-rank linear pathways, and FP8 quantized execution.
 
+Author: Taha Majlesi
 """
+
 from neuralops.core.common import FactorizedLinear
 from neuralops.core.common import _detect_decoder
 

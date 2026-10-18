@@ -1,10 +1,9 @@
-"""Unified configuration module (re-export hub).
+"""
+Unified Configuration Registry
 
-All configuration classes are now defined in dedicated modular files.
-This module re-exports them for backward compatibility:
+Central configuration aggregator and re-export hub for all experiment, model, and method configurations.
 
-    from neuralops.config import LoRAConfig  # still works
-    from neuralops.config.method_config import LoRAConfig  # canonical
+Author: Taha Majlesi
 """
 
 from dataclasses import dataclass, field

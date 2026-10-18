@@ -1,6 +1,9 @@
 """
-EntropyBudgetAllocation: global rank assignment via whitened activation entropy.
-Registered as 'entropy_budget' and 'entropy_budget_allocation'.
+Entropy Budget Allocation SVD Compressor
+
+Formulates global layer rank allocation as a constrained optimization problem driven by whitened activation entropy spectra.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

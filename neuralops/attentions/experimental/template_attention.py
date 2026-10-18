@@ -1,12 +1,15 @@
+"""
+Template Attention Mechanism
+
+Modular template providing the standardized interface for custom attention mechanism authoring.
+
+Author: Taha Majlesi
+"""
+
 from neuralops.core.attention_utils import (
     apply_rotary_pos_emb,
     LoRALinear,
 )
-r"""
-Template Attention Mechanism (YourCustomAttention).
-
-"""
-
 import logging
 import math
 from typing import Any

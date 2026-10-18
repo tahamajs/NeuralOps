@@ -1,4 +1,10 @@
-"""Logging configuration dataclass."""
+"""
+Experiment Logging Configuration
+
+Defines structured configuration dataclasses for logging and experiment tracking.
+
+Author: Taha Majlesi
+"""
 
 from dataclasses import dataclass, field
 from typing import Any

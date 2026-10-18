@@ -1,21 +1,9 @@
 """
-ResultWriter — Organised result persistence for every pipeline run.
+Pipeline Result Writer
 
-Directory layout created per run
----------------------------------
-<output_dir>/
-├── config.json             — full ExperimentConfig as dict
-├── metrics/
-│   ├── eval_final.json     — final eval metrics
-│   ├── compression.json    — compression stats (if applicable)
-│   └── standalone_eval.json
-├── history/
-│   └── log_history.json    — full HuggingFace trainer log history
-├── plots/
-│   ├── loss_curve.png
-│   └── metric_curve.png
-├── system_info.json        — device, elapsed time, param count, Python ver
-└── SUMMARY.md              — human-readable run summary
+Writes structured benchmark results, configuration snapshots, and summary plots to disk.
+
+Author: Taha Majlesi
 """
 
 import json

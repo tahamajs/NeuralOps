@@ -1,9 +1,9 @@
 """
-Naive SVD baseline: plain truncated SVD without calibration, Fisher weighting, or whitening.
-Used as an uncalibrated low-rank baseline in comparative evaluations.
+Naive SVD Attention Baseline
 
-Paper comparison reference:
-Standard truncated SVD approximation W ~ U[:, :r] @ diag(S[:r]) @ V^T[:r, :].
+Uncalibrated baseline singular value decomposition attention for empirical compression benchmarking.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

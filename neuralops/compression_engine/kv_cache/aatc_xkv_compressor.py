@@ -1,13 +1,9 @@
 """
-AATC-XKV: Attention-Aware Cross-Layer KV Cache Compression (Production-Ready v2).
+AATC-XKV: Attention-Aware Cross-Layer KV Cache Compression
 
-Real KV cache compression:
-  1. AATC sensitivity-weighted bit allocation (reverse waterfilling).
-  2. xKV cross-layer shared subspace via joint SVD on REAL calibration data.
-  3. DynamicCache subclass that stores int8 quantized coefficients instead of fp16 K/V.
-  4. Attention sink preservation (first token) + optional last-token preservation
-     in PREFILL only.
+Implements sensitivity-weighted bit allocation and cross-layer shared subspace projection via joint SVD on empirical calibration states.
 
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

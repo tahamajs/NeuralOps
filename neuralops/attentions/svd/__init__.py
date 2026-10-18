@@ -1,4 +1,8 @@
-"""Subpackage exports."""
+"""
+SVD Factorized Attention Mechanisms.
+
+Author: Taha Majlesi
+"""
 
 import importlib
 

@@ -1,8 +1,9 @@
-# -*- coding: utf-8 -*-
-"""Memory Bandwidth, Cache Saturation, and Latency Benchmark for Core CUDA Kernels.
+"""
+Memory Bandwidth, Cache Saturation, and Latency Benchmark for Core CUDA Kernels
 
-Evaluates memory bandwidth, L2-cache residency, and DRAM saturation across
-realistic LLM training configurations on NVIDIA GeForce RTX 4070 / Ada Lovelace.
+Evaluates memory bandwidth, L2-cache residency, and DRAM saturation across realistic LLM training configurations on NVIDIA GeForce RTX 4070 / Ada Lovelace.
+
+Author: Taha Majlesi
 """
 
 import argparse

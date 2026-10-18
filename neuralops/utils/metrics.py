@@ -1,4 +1,10 @@
-# framework/utils/metrics.py
+"""
+Evaluation Metric Utilities
+
+Computes classification, regression, and correlation evaluation metrics for predictions.
+
+Author: Taha Majlesi
+"""
 
 import numpy as np
 from scipy.stats import pearsonr, spearmanr

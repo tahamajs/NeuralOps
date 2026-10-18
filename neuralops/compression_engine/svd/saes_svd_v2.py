@@ -1,17 +1,9 @@
 """
-SAES-SVD v2: Spectrum-Aware Error-Suppressed Singular Value Decomposition.
-Registered in COMPRESSOR_REGISTRY as 'saes_svd_v2' and 'saes'.
+SAES-SVD: Spectrum-Aware Error-Suppressed Singular Value Decomposition
 
-Mathematical Formulation:
-1. Truncated SVD Baseline:
-   $$W_0 \\approx U_r \\Sigma_r V_r^\\top = A_0 B_0$$
-2. Spectral Energy Distribution:
-   $$\\rho_k = \\frac{\\sigma_k^2}{\\sum_{j=1}^r \\sigma_j^2}$$
-3. Error-Suppression Iterations:
-   $$E_t = W_0 - A_t B_t$$
-   $$A_{t+1} = A_t + E_t B_t^\\top (B_t B_t^\\top + \\epsilon I)^{-1}$$
-   $$B_{t+1} = B_t + (A_{t+1}^\\top A_{t+1} + \\epsilon I)^{-1} A_{t+1}^\\top E_t$$
+Suppresses truncation error propagation across deep networks using spectrum-aware scaling and residual error projection.
 
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

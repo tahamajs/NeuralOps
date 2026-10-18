@@ -1,12 +1,9 @@
 """
-Adaptive SVD Attention — Production-Hardened (v2).
+Adaptive SVD Attention
 
-Low-rank factorized attention with dynamic cumulative energy-thresholded SVD
-and trainable residual adapters:
+Low-rank factorized attention with dynamic cumulative energy thresholds for adaptive rank selection.
 
-    W ≈ U_r V_r + W_lora_B · W_lora_A
-    where  U_r = U_{:, :r} · √Σ_r,  V_r = √Σ_r · V^T_{:r, :}
-    and    r = argmin_{r} [ Σ_{i=1}^r σ_i² / Σ_j σ_j² ≥ τ ]
+Author: Taha Majlesi
 """
 
 import logging

@@ -1,7 +1,9 @@
 """
-Huffman Coder & Entropy Compression Engine for Weight and KV Cache Quantization.
-Registered as 'huffman'. Production-hardened with vectorized encode/decode,
-exact byte accounting, safe LoRA freezing, and robust tokenizer forward checks.
+Huffman Coder: Statistical Entropy Compression Engine
+
+Applies variable-length prefix coding to quantized weight matrices and key-value cache tokens to achieve optimal entropy limits.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

@@ -1,6 +1,9 @@
 """
-core/metrics.py — Dataset-specific metric computation for NeurIPS/ICLR publication.
-Supports: Accuracy, F1, MCC (CoLA), Pearson/Spearman (STS-B), Perplexity (LM).
+Core Efficiency Metrics Engine
+
+Performance metrics calculating throughput, arithmetic intensity, compression ratios, and FLOP reductions.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

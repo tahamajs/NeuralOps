@@ -1,4 +1,11 @@
-"""Backward-compatibility shim. Moved to neuralops.core.utils.rope."""
+"""
+RoPE Compatibility Shim
+
+Backward-compatibility redirection module routing legacy RoPE imports to neuralops.core.utils.rope.
+
+Author: Taha Majlesi
+"""
+
 import warnings
 warnings.warn(
     "neuralops.core.rope is deprecated. Use neuralops.core.utils.rope.",

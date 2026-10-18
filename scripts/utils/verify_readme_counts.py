@@ -31,7 +31,7 @@ actual_kernels = 26
 
 attn_match = re.search(r"(\d+)\s+(?:canonical\s+)?attention mechanisms", readme)
 comp_match = re.search(r"(\d+)\s+compression engines", readme)
-kernel_match = re.search(r"(\d+)\s+Triton kernel modules", readme)
+kernel_match = re.search(r"(\d+)\s+Triton\s+(?:hardware\s+)?kernel", readme)
 
 if attn_match and int(attn_match.group(1)) != actual_attn:
     errors.append(f"Attention mismatch: README has {attn_match.group(1)}, actual is {actual_attn}")

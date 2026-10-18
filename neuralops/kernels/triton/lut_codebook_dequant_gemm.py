@@ -1,13 +1,9 @@
 """
-Triton LUT Codebook Dequantization GEMM Kernel (Phase 2 / Kernel 5).
+LUT Codebook Dequantization GEMM
 
-Target Modules: coopq_quantizer (int4_lut_quantizer), kmeans_quantize, astro_quantizer
-Solves:
-    Non-uniform vector/codebook quantizers store 4-bit cluster indices I in {0..15} and a 16-entry
-    floating-point centroid codebook C. In PyTorch, executing C[I] (torch.gather) expands the entire
-    weight matrix to FP16 in HBM on every forward pass.
+Dequantizes non-linear lookup-table compressed weights directly in register files before matrix multiplication.
 
-This kernel looks up centroids on-the-fly inside SRAM/registers and computes GEMM directly.
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

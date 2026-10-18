@@ -1,20 +1,9 @@
 """
-TLinFormer — Corrected & Production-Hardened.
+TLinformer: Truncated Low-Rank Linear Attention
 
-Reference: Linformer (Wang et al., 2020) — "Linformer: Self-Attention with
-Linear Complexity".
+Truncated low-rank linear attention projecting sequence lengths via low-distortion projections.
 
-Fixes applied (all critical bugs addressed):
-  1. proj_k / proj_v are LEARNABLE nn.Parameters (not static buffers).
-  2. Fixed broadcasting bug: use q_mask (B,1,N,1) instead of key_mask (B,1,1,N).
-  3. GQA repeat moved AFTER projection (4× fewer FLOPs).
-  4. output_attentions returns None (or approximate reconstruction via P_k).
-  5. KV-cache support for efficient autoregressive inference.
-  6. Safe padding for extrapolation (no risky tiling/interpolation).
-  7. Better init: scaled normal + identity on leading diagonal.
-  8. Removed persistent=True (prevents state_dict shape crashes).
-
-Complexity: O(N · r · d) for encoders, O(N² · d) for decoders (dense fallback).
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

@@ -1,11 +1,9 @@
 """
-Universal Hardware Device Abstraction & Safe Execution Context.
+Universal Hardware Device Abstraction
 
-Features:
-- Automatic Device Detection & Allocation (CUDA, ROCm, Apple Silicon MPS, Intel XPU, CPU)
-- 3-Tier Multi-Backend Dispatch Routing (Level 1: Hardware-Native, Level 2: Triton JIT, Level 3: Pure PyTorch)
-- Safe Device Context & Automatic Dtype Harmonization (e.g., MPS FP64/BF16 downcast/upcast)
-- Zero-crash fallback across all architectures
+Device detection, multi-GPU topology allocation, and safe context management for CUDA, MPS, and CPU.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

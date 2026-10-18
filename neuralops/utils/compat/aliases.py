@@ -1,4 +1,10 @@
-"""Projection attribute alias helpers for cross-architecture attention modules."""
+"""
+Projection Alias Helpers
+
+Projection attribute alias helpers for cross-architecture attention modules.
+
+Author: Taha Majlesi
+"""
 
 from __future__ import annotations
 

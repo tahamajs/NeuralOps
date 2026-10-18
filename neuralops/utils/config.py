@@ -1,4 +1,11 @@
-# framework/utils/config.py
+"""
+Configuration Utilities
+
+Handles loading, validation, and serialization of experiment configurations.
+
+Author: Taha Majlesi
+"""
+
 import json
 from pathlib import Path
 from typing import Any

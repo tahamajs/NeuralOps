@@ -1,5 +1,9 @@
 """
-HuggingFace TrainerCallback for automating NeuralOps surgery curricula.
+HuggingFace Surgery Callback
+
+Automates model surgery schedules, curriculum transitions, and distillation callbacks.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

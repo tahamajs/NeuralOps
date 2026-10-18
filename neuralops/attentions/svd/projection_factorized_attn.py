@@ -1,10 +1,9 @@
 """
-Projection Factorized SVD Linear Attention.
+Projection Factorized SVD Linear Attention
 
-Delegates to `inject_svd_linear_attention` with a pre-discovered source
-attention and robust attribute-level replacement for all supported
-architectures (GPT-2, RoBERTa/BERT, DistilBERT, T5, generic).
+Factorizes attention projection matrices into rank-constrained factors for parameter reduction.
 
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

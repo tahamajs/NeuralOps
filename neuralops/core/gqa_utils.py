@@ -1,4 +1,11 @@
-"""Backward-compatibility shim. Moved to neuralops.core.utils.gqa."""
+"""
+Grouped Query Attention Compatibility Shim
+
+Backward-compatibility redirection module routing legacy GQA imports to neuralops.core.utils.gqa.
+
+Author: Taha Majlesi
+"""
+
 import warnings
 warnings.warn(
     "neuralops.core.gqa_utils is deprecated. Use neuralops.core.utils.gqa.",

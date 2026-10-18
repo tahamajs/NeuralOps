@@ -1,8 +1,9 @@
 """
-MoBA: Mixture of Block Attention — Production-Hardened.
+MoBA: Mixture of Block Attention
 
-Registered as 'moba', 'moba_attention', 'moba_inject'.
+Mixture-of-block attention routing query blocks dynamically to relevant key-value memory chunks.
 
+Author: Taha Majlesi
 """
 
 from neuralops.core.attention_utils import (

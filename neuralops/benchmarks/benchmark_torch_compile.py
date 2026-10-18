@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""Canonical alias for benchmark_torch_compile_131_attentions."""
+"""
+Torch Compile Benchmark Alias
+
+Canonical alias and execution runner for benchmark_torch_compile_131_attentions.
+
+Author: Taha Majlesi
+"""
+
 import sys
 from neuralops.benchmarks.benchmark_torch_compile_131_attentions import *
 from neuralops.benchmarks.benchmark_torch_compile_131_attentions import main

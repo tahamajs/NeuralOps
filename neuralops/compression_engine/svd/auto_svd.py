@@ -1,20 +1,9 @@
 """
-AutoSVD: Automated Fisher-Information & Activation-Gram Sensitivity Profiling with Multi-Objective Pareto Rank Allocation.
+AutoSVD: Automated Fisher and Activation-Gram Sensitivity SVD
 
-Key components:
-1. FisherSensitivityProfiler:
-   Computes empirical Fisher Information diagonals or second-order gradient outer products
-   F_w = E_{(x, y)} [ (g_w)^2 ] and Activation Gram matrices G_X = X^T X to evaluate layer-wise curvature.
-2. Sensitivity Metrics:
-   - Fisher Information Traces: Tr(F_W)
-   - Effective SVD Energy Retained: sum_{i=1}^r s_i^2 / sum_{i=1}^d s_i^2
-   - Distortion metric: || W - U_r S_r V_r^T ||_{F, C_X}^2
-3. Multi-Objective Pareto Knapsack Solver:
-   Given budget constraints (target_param_ratio, max_latency_ms, max_vram_mb),
-   solves:
-     min sum_{l} Distortion_l(r_l)
-     s.t. sum_{l} Params_l(r_l) <= Budget_params
-   via dynamic programming / greedy marginal gain allocation with monotonic Pareto frontiers.
+Profiles layer sensitivity via empirical Fisher information and Gram matrices to solve multi-objective Pareto-optimal rank allocation.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

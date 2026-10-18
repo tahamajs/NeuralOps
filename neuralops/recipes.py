@@ -1,6 +1,9 @@
 """
-Declarative oneshot Recipe Engine & Hardware-Aware Advisor for NeuralOps.
-Enables chaining transformations via preset string names, dicts, or YAML configurations.
+NeuralOps Transformation Recipes
+
+Declarative one-shot recipe engine and hardware-aware pipeline advisor for model transformation.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

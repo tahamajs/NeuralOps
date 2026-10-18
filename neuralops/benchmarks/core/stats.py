@@ -1,4 +1,11 @@
-"""Statistical significance testing, bootstrap intervals, and FDR correction for benchmarks."""
+"""
+Statistical significance testing, bootstrap intervals, and FDR correction for benchmarks
+
+Implements stats functionality for NeuralOps.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 
 import numpy as np

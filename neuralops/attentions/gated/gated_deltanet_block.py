@@ -1,17 +1,9 @@
 """
-Gated DeltaNet Block with Optional Multi-Head Attention Bypass.
+Gated DeltaNet Transformer Block
 
-Implements a hybrid linear-recurrent block that dynamically switches between:
-  * Standard multi-head self-attention (Softmax MHA)
-  * Bidirectional Gated DeltaNet (linear recurrent, O(L) complexity)
+Complete transformer block integrating gated DeltaNet recurrence with normalization and feed-forward networks.
 
-Mathematical Formulation:
-    Output = DeltaNet(X)  or  MHA(X, X, X)
-
-The outer transformer block is responsible for the residual + LayerNorm:
-    x_out = x + Block(x)
-so this module MUST NOT add its own residual or normalization.
-
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

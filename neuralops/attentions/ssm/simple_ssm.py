@@ -1,14 +1,9 @@
 """
-Simple SSM: Simplified State Space Attention Block.
+Simple SSM: Simplified State Space Attention Block
 
-Production-hardened across DistilBERT, RoBERTa, GPT-2, and Qwen architectures.
-Supports:
-- Multi-architecture weight copy (GPT-2, RoBERTa/BERT nested, DistilBERT, Qwen/LLaMA)
-- Trainable LoRA adapters with frozen base weights
-- GQA repeating with repeat_kv
-- Rotary position embeddings (RoPE)
-- Forward / bidirectional state-space scan
-- Complete fp16/bf16 dtype safety
+Simplified state space attention block providing fast recurrent updates for multi-architecture transformers.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

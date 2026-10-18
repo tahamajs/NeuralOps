@@ -1,4 +1,11 @@
-"""Paged Attention Triton Kernel for non-contiguous KV-cache lookups."""
+"""
+Paged Attention Kernel
+
+Executes attention lookups over non-contiguous paged memory blocks for high-throughput KV caching.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 import math
 import torch

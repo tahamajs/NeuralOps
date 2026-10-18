@@ -1,15 +1,9 @@
-# -*- coding: utf-8 -*-
-"""Comprehensive 26 Triton Hardware Kernels Benchmarking Sweep for NeuralOps.
+"""
+Comprehensive 26 Triton Hardware Kernels Benchmarking Sweep for NeuralOps
 
-Benchmarks 26 Triton hardware kernels against PyTorch references under realistic
-dimensions (B=4, H=8, N=512, D=64) on NVIDIA Ada Lovelace / CUDA GPUs.
-Measures:
-  - Kernel Execution Time (ms) via CUDA Events
-  - CUDA Launch Overhead (ms) via CPU vs CUDA Event delta
-  - Peak VRAM (MB)
-  - Speedup Factor
-  - Cosine Similarity & Max Absolute Difference
-  - Verification of 0 NaNs and 0 Infs
+Benchmarks 26 Triton hardware kernels against PyTorch references under realistic dimensions (B=4, H=8, N=512, D=64) on NVIDIA Ada Lovelace / CUDA GPUs.
+
+Author: Taha Majlesi
 """
 
 import argparse

@@ -1,14 +1,9 @@
 """
-Endoskeletal Surgery Shell, Warm-Start Weight Transfer & HF Registration.
+Endoskeletal Surgery Shell
 
-Provides:
-  - register_neuralops_with_huggingface(): registers all 131 NeuralOps attention mechanisms
-    into transformers.modeling_utils.ALL_ATTENTION_FUNCTIONS so any HuggingFace model can use
-    attn_implementation="neuralops_<name>".
-  - transfer_pretrained_qkv_weights(): warm-starts NeuralOps modules with pretrained Q, K, V, O weights.
-  - SidecarGateBranch: lightweight data-dependent gating & 1D causal convolution for recurrent/stateful attentions.
-  - UniversalAttentionBridge: universal wrapper module replacing host attention blocks while preserving
-    exact return signatures, kwargs, and surrounding residual/LayerNorm invariants.
+Executes warm-start weight transfers and registers attention mechanisms with HuggingFace.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

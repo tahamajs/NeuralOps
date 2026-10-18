@@ -1,14 +1,9 @@
 """
-ZeroKV-Neo: L2-norm based KV cache eviction with attention sink and heavy-hitter preservation.
-Registered as 'zerokv_neo'.
-Production-hardened with:
-- Bounded O(1) cache memory management with safe dimension handling
-- Relative Frobenius error validation on pruned weights
-- Adaptive keep_ratio retry loop
-- Conv1D support (GPT-2)
-- Critical layer protection (classifier, score, lm_head, pooler, embedding)
-- Detailed per-layer error stats logging
+ZeroKV-Neo: L2-Norm KV Cache Eviction Compressor
 
+Preserves attention sinks and heavy-hitter token representations while evicting redundant key-value pairs based on cumulative norm statistics.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

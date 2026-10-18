@@ -1,6 +1,9 @@
 """
-Generic helpers: calibration, weight‑copying, safe module replacement,
-activation collection.
+Transformer Model Utilities
+
+Model loading, parameter freezing, weight inspection, and buffer verification helper functions.
+
+Author: Taha Majlesi
 """
 
 from contextlib import contextmanager

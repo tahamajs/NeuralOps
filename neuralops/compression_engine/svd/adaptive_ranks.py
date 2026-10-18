@@ -1,15 +1,9 @@
-r"""
-Adaptive Ranks SVD Compressor: dynamic rank selection per layer based on singular value energy spectra.
+"""
+Adaptive Ranks SVD Compressor
 
-Dynamic cumulative singular value energy thresholding:
-    $$\frac{\sum_{i=1}^r \sigma_i^2}{\sum_{j=1}^d \sigma_j^2} \ge \tau \quad (\tau = 0.92)$$
-with minimum rank floor:
-    $$r_{\min} = \max(16, \lfloor 0.15 \cdot \min(d_{in}, d_{out}) \rfloor)$$
-activation covariance whitening:
-    $$M = W \cdot \operatorname{Cov}(X)^{1/2}$$
-and symmetrical $\sqrt{\Sigma}$ singular value distribution:
-    $$U_r = U_{:, :r} \sqrt{\Sigma_r}, \quad V_r = (\sqrt{\Sigma_r} V^\top_{:r, :}) \cdot \operatorname{Cov}(X)^{-1/2}$$
-Registered canonically as 'adaptive_ranks' and 'adaptive_svd'.
+Dynamically determines layer truncation ranks by thresholding cumulative singular value energy spectra under quality constraints.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

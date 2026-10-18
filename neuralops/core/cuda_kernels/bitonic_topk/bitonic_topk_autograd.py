@@ -1,8 +1,9 @@
 """
-Bitonic Top-K Selection Interface, Autograd Function, and 3-Level Fallback.
-Target: SM 8.9 (NVIDIA Ada Lovelace RTX 4070 Laptop GPU, 8GB VRAM).
-Returns indices of top-K values. Discrete indices are non-differentiable; backward pass
-safely returns None/zero gradient according to autograd specifications.
+Bitonic Top-K Selection Autograd Interface
+
+Hardware-accelerated CUDA C++ autograd implementation with analytical gradients and three-level fallback dispatch.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

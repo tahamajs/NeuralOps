@@ -1,7 +1,11 @@
 """
-NASC: NEXUS-AEGIS Spectral Cascade Attention.
-Hardened for multi-architecture production deployment across DistilBERT, RoBERTa, GPT-2, and Qwen3.5.
+NASC: NEXUS-AEGIS Spectral Cascade Attention
+
+Cascaded attention routing tokens across spectral decompositions and low-rank factorized projections.
+
+Author: Taha Majlesi
 """
+
 from neuralops.core.common import softpick
 
 from neuralops.core.attention_utils import (

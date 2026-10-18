@@ -1,22 +1,11 @@
 """
-NeuralOps Public Clean API.
+NeuralOps Public Clean API
 
-Enables drop-in replacement, compression, benchmarking, and export of attention layers
-in any PyTorch or HuggingFace Transformer model with a clean 19-function interface:
+Unified public interface enabling drop-in attention replacement, model compression, benchmarking, and export.
 
-    import neuralops
-
-    # Drop-in replace attention mechanism
-    model = neuralops.replace_attention(model, "cosformer")
-
-    # Compress model using SVD or low-rank adapters
-    model = neuralops.compress(model, method="svd", rank=32)
-
-    # Inspect available modules and backends
-    attentions = neuralops.list_attentions()
-    compressors = neuralops.list_compressors()
-    backends = neuralops.available_backends()
+Author: Taha Majlesi
 """
+
 from __future__ import annotations
 
 import logging

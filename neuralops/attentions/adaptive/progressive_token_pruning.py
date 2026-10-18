@@ -1,23 +1,9 @@
 """
-Progressive Token Pruning (PTP) — Production-Hardened v2.0.
+Progressive Token Pruning (PTP)
 
-Learnable Progressive Token Pruning module with guaranteed [CLS]/BOS retention,
-causal-safe decoder pruning, SDPA fast-path, and full multi-architecture support.
+Learnable progressive token pruning module with guaranteed prefix retention and causal mask safety.
 
-
-PTP is a **compute optimization**, not a parameter compressor. It prunes
-tokens at *inference time* by keeping the top-k highest-scoring tokens per
-sequence (plus the always-preserved first token). The full token sequence
-still flows through the model; only the attention operation is restricted
-to a subset of keys/values.
-
-Consequences:
-  - Parameter count is NOT reduced (it may even slightly grow due to the
-    score network).
-  - KV cache is NOT reduced (all tokens are still stored).
-  - FLOPs during attention ARE reduced (≈ keep_ratio × L²).
-  - Long-context inference is significantly faster.
-
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

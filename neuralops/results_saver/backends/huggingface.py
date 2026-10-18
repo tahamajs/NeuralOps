@@ -1,9 +1,9 @@
 """
-neuralops.results_saver.backends.huggingface
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Optional Hugging Face Hub upload backend for ResultsSaver.
+HuggingFace Results Backend
 
-Requires: huggingface_hub  (pip install huggingface_hub)
+Synchronizes benchmark outcomes, metrics, and model weights to Hugging Face Hub repositories.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

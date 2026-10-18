@@ -1,11 +1,9 @@
 """
-NeuralOps Scaled Distributed Engine Package.
+NeuralOps Distributed Subpackage.
 
-Provides:
-- Megatron-Style Tensor Parallelism (TP) for Recurrent Attentions and Low-Rank SVD layers.
-- Exact 3-Stage Ring / Prefix Context Parallelism (CP) for 1M+ token sequences.
-- Distributed compilation and FSDP integration helpers.
+Author: Taha Majlesi
 """
+
 from __future__ import annotations
 
 from neuralops.distributed.tensor_parallel import (

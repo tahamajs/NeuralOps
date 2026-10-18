@@ -1,6 +1,9 @@
 """
-Unified ExperimentTracker – select a backend via string or TrackingBackend enum.
-Provides a single, consistent API: log_metric, log_params, log_artifact, finalize.
+Experiment Tracker
+
+Manages experiment lifecycles, run parameters, and metric artifact persistence.
+
+Author: Taha Majlesi
 """
 
 from typing import Any

@@ -1,10 +1,9 @@
 """
-Unified Custom Op and Torch.compile Compatibility Registry for NeuralOps Triton Kernels.
+Triton Kernel Operator Registry
 
-Provides seamless support for `torch.compile(model, fullgraph=False)` without graph breaks:
-  1. Uses PyTorch >= 2.4 `torch.library.custom_op` and `register_fake` when available.
-  2. Provides automatic FakeTensor / Meta shape propagation across all Triton kernel modules.
-  3. Falls back gracefully on older PyTorch versions or non-CUDA environments.
+Custom operator and torch.compile compatibility registry for graph-capture friendly execution without graph breaks.
+
+Author: Taha Majlesi
 """
 
 import logging

@@ -1,5 +1,10 @@
-# -*- coding: utf-8 -*-
-"""Direct Triton vs PyTorch physical hardware benchmark for NeuralOps JIT kernel modules."""
+"""
+Direct Triton vs PyTorch physical hardware benchmark for NeuralOps JIT kernel modules
+
+Implements benchmark all 26 kernels functionality for NeuralOps.
+
+Author: Taha Majlesi
+"""
 
 import argparse
 import csv

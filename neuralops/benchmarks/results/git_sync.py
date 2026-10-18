@@ -1,4 +1,10 @@
-"""Automated Git commit integration for benchmark results."""
+"""
+Automated Git commit integration for benchmark results
+
+Implements git sync functionality for NeuralOps.
+
+Author: Taha Majlesi
+"""
 
 from __future__ import annotations
 

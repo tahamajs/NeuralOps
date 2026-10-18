@@ -1,5 +1,9 @@
 """
-Canonical low-rank SVD utilities for NeuralOps.
+Low-Rank SVD Utilities
+
+Canonical singular value decomposition, truncated low-rank approximation, and energy retention routines.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

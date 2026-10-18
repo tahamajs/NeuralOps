@@ -1,7 +1,11 @@
 """
-Fused Normalization + Linear Projection Layer with Autograd Backward.
-Combines RMSNorm (or LayerNorm) directly before Linear projection into an optimized pass.
+Fused Normalization and Linear Projection
+
+Combines normalization and linear projection into a single memory-fused pass to eliminate intermediate activations.
+
+Author: Taha Majlesi
 """
+
 from __future__ import annotations
 
 import torch

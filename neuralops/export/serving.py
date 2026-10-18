@@ -1,8 +1,9 @@
 """
-Serving adapters for vLLM and TGI (Text Generation Inference) integration.
+Serving Artifact Exporter
 
-Enables seamless serving of NeuralOps models with paged KV-cache routing and
-optimized inference container readiness.
+Prepares model artifacts, configurations, and tokenizer files for production inference servers.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

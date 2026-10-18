@@ -1,21 +1,9 @@
 """
-NeuralOps Versioned Experiment Results Ledger & Provenance Engine.
+Experiment Results Ledger
 
-Provides an ultra-lightweight, zero-external-dependency, production-grade
-results ledger backing dual storage:
-- `results/registry/master_ledger.jsonl`: Append/upsert Git-friendly JSONL database.
-- `results/registry/master_ledger.sqlite`: Indexed SQLite mirror for sub-millisecond queries.
-- `results/by_module/<module_name>.json`: Granular per-module history & version dossiers.
+Versioned results ledger supporting dual storage across Git-friendly JSONL and SQLite databases.
 
-Guarantees 100% complete provenance for every experiment result:
-- Deterministic/UUID record_id
-- Exact ISO-8601 UTC timestamp
-- Exact Git commit SHA (historical or active HEAD)
-- Package version tag & auto-incrementing revision number
-- Structured generation_method (algorithm, stages, scripts, artifacts)
-- Structured experimental_setup (backbone, dataset, rank, seq_len, batch_size, dtype, hardware)
-- Complete metrics dictionary (accuracy, retention_pct, ppl, latencies, speedups, VRAM, etc.)
-- Status lifecycle: active | superseded | deleted
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

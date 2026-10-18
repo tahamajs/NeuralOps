@@ -1,4 +1,11 @@
-"""Validate model construction and forward pass."""
+"""
+Model Architecture Validator
+
+Validates model architecture construction, layer integrity, and forward pass execution.
+
+Author: Taha Majlesi
+"""
+
 import torch
 
 class ModelValidator:

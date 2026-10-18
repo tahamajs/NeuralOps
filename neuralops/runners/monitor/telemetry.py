@@ -1,7 +1,9 @@
-"""GPU and execution telemetry collection for NeuralOps monitor server.
+"""
+Hardware Telemetry Monitor
 
-Handles real-time GPU stats polling, local NVML / torch.cuda / nvidia-smi probes,
-disk logs, and live telemetry extraction.
+Collects real-time GPU utilization, memory bandwidth, temperature, and host metrics.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

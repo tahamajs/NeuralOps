@@ -1,12 +1,9 @@
 """
-Hardware Capability Profiler for OpenAI Triton & PyTorch Acceleration Backends.
+Hardware Capability Profiler
 
-Provides cached, cross-vendor introspection for:
-  - NVIDIA GPUs (Pascal SM 6.1 through Blackwell SM 10.0 / 12.0)
-  - AMD ROCm (MI200/MI300 CDNA architectures)
-  - Apple Silicon (mps)
-  - Intel GPUs (xpu)
-  - CPU
+Introspection utilities caching GPU architecture capabilities, compute capability, and SRAM limits.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

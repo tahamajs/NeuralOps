@@ -1,5 +1,9 @@
 """
-Model‑family adapters. Extracts projection weights and biases cleanly across all Transformer architectures.
+Parameter-Efficient Adapters
+
+Low-rank adapter layers and residual bottleneck modules for efficient fine-tuning.
+
+Author: Taha Majlesi
 """
 
 from typing import Any

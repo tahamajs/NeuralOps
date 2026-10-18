@@ -1,17 +1,9 @@
 """
-Spectral-Mamba Attention Module: Hybrid Attention-State Space Module with Spectral Channel Modulation – Production-Hardened.
+Spectral-Mamba Hybrid Attention and State Space Module
 
-Combines pretrained multi-head attention with a Spectral Mamba SSM branch via learned adaptive gating.
+Hybrid attention and state space module utilizing spectral channel modulation for multi-scale feature capture.
 
-Supports:
-- Multi-architecture copy_weights (GPT-2, RoBERTa/BERT nested, Qwen/LLaMA, DistilBERT)
-- Trainable LoRA adapters with frozen base weights
-- GQA with repeat_kv
-- RoPE position embeddings
-- Causal masking for decoders
-- Nested encoder bypass
-- Frobenius norm verification (>= 1e-4)
-- Safe injection returning None on failure
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

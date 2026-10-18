@@ -1,24 +1,9 @@
 """
-Bonsai: Progressive Iterative Magnitude and Structured Pruning with
-Cubic Warmup Scheduling and [CLS] Routing Protection.
-Registered in COMPRESSOR_REGISTRY as 'bonsai' and 'bonsai_pruner'.
+Bonsai Pruner: Progressive Iterative Magnitude and Structured Pruner
 
-PRODUCTION HARDENING & PROGRESSIVE SCHEDULING (2026-10-05):
-  1. Progressive Sparsity Scheduler:
-     - Replaced blocking one-shot pruning loop at step 0 with continuous cubic warmup
-       spread over target_steps (default 200 steps).
-     - current_sp = target_sp * (current_step / target_steps) ** 3.
-     - Zero initial damage (sparsity starts at 0.0 with all-ones mask), completely
-       preserving teacher logits at initialization and preventing catastrophic PPL explosion.
-  2. Dense Trainable Base Weights:
-     - Base weights maintain requires_grad=True during the 300 KD / self-training steps,
-       allowing genuine backpropagation to heal and adapt surviving weights.
-  3. Dynamic Mask Updates:
-     - Mask is updated dynamically on-chip in forward pass under torch.no_grad(),
-       without breaking autograd computational graphs.
-  4. Removed Artificial Proxy Gradient Descent:
-     - Eliminated artificial inter-step proxy gradient descent loops; real backpropagation
-       handles representation recovery.
+Enforces structured and unstructured sparsity using cubic polynomial warmup schedules while protecting critical routing channels.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

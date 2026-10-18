@@ -1,10 +1,9 @@
 """
-Phantom Gated Sparsity Interface, Autograd Function, and 3-Level Fallback.
-Target: SM 8.9 (NVIDIA Ada Lovelace RTX 4070 Laptop GPU, 8GB VRAM).
-Forward: g = sigmoid(gate)
-         mask = where(g >= threshold, g, 0)
-         out = x * mask
-Backward computes exact analytical adjoint gradients for x and gate.
+Phantom Gated Sparsity Autograd Interface
+
+Hardware-accelerated CUDA C++ autograd implementation with analytical gradients and three-level fallback dispatch.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

@@ -1,3 +1,11 @@
+"""
+Custom Training Losses
+
+Provides loss functions including distillation loss, attention matching, and regularized objectives.
+
+Author: Taha Majlesi
+"""
+
 from typing import Any
 
 import torch

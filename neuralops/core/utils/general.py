@@ -1,4 +1,11 @@
-"""General utilities (device, seeding, formatting)."""
+"""
+General Framework Utilities
+
+Device placement, deterministic seed management, and string formatting utility functions.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 
 import random

@@ -1,4 +1,10 @@
-"""Perplexity / Language Modeling task adapter for neuralops benchmark suite."""
+"""
+Perplexity / Language Modeling task adapter for neuralops benchmark suite
+
+Implements perplexity functionality for NeuralOps.
+
+Author: Taha Majlesi
+"""
 
 from __future__ import annotations
 

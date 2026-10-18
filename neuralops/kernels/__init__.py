@@ -1,13 +1,7 @@
-"""Canonical `neuralops.kernels` unified acceleration subpackage.
+"""
+NeuralOps Kernels Hardware Operators.
 
-Provides direct access to all hardware-accelerated OpenAI Triton JIT kernels
-and native NVIDIA CUDA C++ kernels with transparent 3-level fallback:
-CUDA C++ -> Triton JIT -> Pure PyTorch Reference.
-
-Usage:
-    from neuralops.kernels import triton, cuda
-    all_triton = neuralops.kernels.list_triton_kernels()
-    all_cuda = neuralops.kernels.list_cuda_kernels()
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

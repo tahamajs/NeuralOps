@@ -1,6 +1,9 @@
 """
-FP4 (E2M1) Quantized GEMM Interface, Analytical Autograd STE Backward, and 3-Level Fallback.
-Target: SM 8.9 (NVIDIA Ada Lovelace RTX 4070 Laptop GPU, 8GB VRAM).
+FP4 Quantized GEMM Autograd Interface
+
+Hardware-accelerated CUDA C++ autograd implementation with analytical gradients and three-level fallback dispatch.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

@@ -1,8 +1,9 @@
-"""Surgical Model Persistence & HuggingFace-Compatible Checkpoint IO.
+"""
+Surgical Model IO and Checkpointing
 
-Losslessly serializes, reconstructs, and reloads models with surgically replaced
-attention layers (AttentionWrapper, ComposableAttention, 131 registered attentions)
-and compressed low-rank / quantized linear layers (72 compression engines).
+Model state serialization and weight conversion routines for seamless HuggingFace checkpoint interoperability.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

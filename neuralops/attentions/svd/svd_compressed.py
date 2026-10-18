@@ -1,3 +1,11 @@
+"""
+SVD-Compressed Attention with Importance-Aware Lagrangian Rank Allocation
+
+SVD-compressed attention with Lagrangian spectral-entropy optimization for global rank allocation.
+
+Author: Taha Majlesi
+"""
+
 try:
     from neuralops.trainer.metrics import get_task_metrics as compute_metrics
     from neuralops.data.preprocessing import preprocess_function
@@ -13,29 +21,6 @@ from neuralops.core.common import _unpack_weight_bias
 from neuralops.core.attention_utils import (
     apply_rotary_pos_emb,
 )
-r"""
-SVD-Compressed Attention with Importance-Aware Lagrangian Rank Allocation.
-
-Truncated Singular Value Decomposition (SVD) attention compression module with
-Lagrangian spectral-entropy optimal rank budgeting and optional low-rank plus sparse residual decomposition.
-
-Mathematical Mechanism:
-    For projection weight matrices $\{W_i\}_{i=1}^M$ across all transformer attention sub-layers:
-    1. **Spectral Information Loss & Parameter Cost:**
-       $$E_i(r) = \frac{\sum_{j=1}^r \sigma_{i, j}^2}{\sum_{j=1}^{\min(d_{\text{in}}, d_{\text{out}})} \sigma_{i, j}^2}, \quad \operatorname{Cost}_i(r) = 1 - E_i(r)$$
-       $$\operatorname{Params}_i(r) = r \cdot (d_{i, \text{in}} + d_{i, \text{out}})$$
-    2. **Lagrangian Global Rank Optimization:**
-       $$\min_{\{r_i\}} \sum_{i=1}^M \operatorname{Cost}_i(r_i) \quad \text{subject to} \quad \sum_{i=1}^M \operatorname{Params}_i(r_i) \le B_{\text{target}}$$
-    3. **Low-Rank Factorized Multi-Head Projections:**
-       $$W_i \approx W_{i}^{\text{up}} W_{i}^{\text{down}}, \quad W_{i}^{\text{down}} \in \mathbb{R}^{r_i \times d_{\text{in}}}, \, W_{i}^{\text{up}} \in \mathbb{R}^{d_{\text{out}} \times r_i}$$
-       $$\operatorname{Attn}(Q, K, V) = \operatorname{Softmax}\left(\frac{Q K^T}{\sqrt{d}} + M\right) V$$
-
-Computational Complexity:
-    - Low-rank projection per token: $\mathcal{O}(d_{\text{in}} r_i + r_i d_{\text{out}})$.
-    - Attention matrix evaluation: $\mathcal{O}(B \cdot H \cdot N^2 \cdot d)$.
-    - Total per-layer complexity: $\mathcal{O}(B \cdot N \cdot (d_{\text{in}} r + r d_{\text{out}}) + B \cdot H \cdot N^2 \cdot d)$.
-"""
-
 import argparse
 import logging
 import math

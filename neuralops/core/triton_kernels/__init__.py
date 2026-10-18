@@ -1,18 +1,7 @@
-#!/usr/bin/env python3
 """
-Shared Triton Kernels for Attention and Linear Architectures.
+NeuralOps Core Triton Kernels Hardware Operators.
 
-Provides high-performance fused GPU kernels with transparent PyTorch CPU/CUDA fallbacks:
-  - linear_attn: Fused chunked causal linear attention and bidirectional reduction
-  - sparse_attn: Block-sparse attention
-  - low_rank: Bottleneck low-rank projections
-  - state_update: SSM / RWKV recurrence
-  - gqa: Grouped Query Attention head expansion
-  - selective_scan: Triton-accelerated selective scan for Mamba-1
-  - fms_scan: Factorised Matrix State scan
-  - gdn_scan: Gated DeltaNet recurrent scan
-  - gla_scan: Gated Linear Attention recurrent scan
-  - hgrn2_scan: HGRN2 recurrent scan
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

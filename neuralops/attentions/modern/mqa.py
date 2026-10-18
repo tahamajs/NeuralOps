@@ -1,9 +1,9 @@
 """
-Multi-Query Attention (MQA) — production implementation.
+Multi-Query Attention (MQA)
 
-Multi-Query Attention uses H_Q query heads but only 1 shared key/value head.
-This reduces KV-cache memory by H_Q × compared to standard MHA.
+Multi-query attention sharing a single key-value head across all query heads to accelerate decoding throughput.
 
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

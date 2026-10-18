@@ -1,9 +1,9 @@
 """
-Attention Stability Regularizers:
-1. LearnableAttentionSink (absorbs no-op attention mass in transplanted models)
-2. AttentionEntropyRegularizer (penalizes entropy collapse)
-3. GateSaturationPenalty (prevents early decay gate saturation)
-4. SpectralJacobianRegularizer (bounds Lipschitz constants)
+Attention Stability Regularizers
+
+Regularizers including learnable sinks, entropy stabilization, and spectral Jacobian bounds.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

@@ -1,17 +1,9 @@
 """
-Kernelized Decay Attention (KDA) — Production-Hardened v2.
+Kernelized Decay Attention (KDA)
 
-Architecture:
-    * ELU+1 non-negative kernel feature map
-    * Exponential decay gating via learnable per-head beta
-    * Denominator (Z) normalization for output stability
-    * Full KV-cache / recurrent-state support
-    * KD-compatible gate naming (lora_ prefix)
-    * Bidirectional scan for encoders, causal for decoders
-    * GQA support with repeat_kv
-    * Partial RoPE with past_len slicing
-    * Cross-attention via standard non-decayed linear attention
+Kernelized linear attention with parameterized exponential decay gates for expressive causal sequence tracking.
 
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

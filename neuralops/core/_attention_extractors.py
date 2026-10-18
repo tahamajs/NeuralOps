@@ -1,5 +1,9 @@
 """
-Architecture introspection and projection weight extractors for NeuralOps.
+Attention Feature Extractors
+
+Extractors for retrieving Q, K, V projections and attention matrices from arbitrary transformer layers.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

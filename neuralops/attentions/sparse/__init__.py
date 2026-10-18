@@ -1,4 +1,8 @@
-"""Subpackage exports."""
+"""
+Sparse Attention Mechanisms.
+
+Author: Taha Majlesi
+"""
 
 import importlib
 

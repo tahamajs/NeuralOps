@@ -1,3 +1,11 @@
+"""
+Cosformer Linear Attention Kernel
+
+Triton implementation of cosformer linear attention with cosine reweighting and linear memory scaling.
+
+Author: Taha Majlesi
+"""
+
 import math
 import torch
 from typing import Any

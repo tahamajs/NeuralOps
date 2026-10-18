@@ -1,3 +1,9 @@
+"""
+GDN Delta Rule Recurrent Scan Hardware Operators.
+
+Author: Taha Majlesi
+"""
+
 from neuralops.core.cuda_kernels.gdn_delta_rule.gdn_delta_rule_autograd import (
     gdn_delta_rule,
     gdn_delta_rule_pytorch_ref,

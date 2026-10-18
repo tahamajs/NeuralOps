@@ -1,7 +1,9 @@
 """
-SVD Linear Decay Gated Attention Alias.
-Maps to `framework.attentions.svd_linear_attention.SVDLinearAttention`.
+SVD Linear Decay Gated Attention
 
+Causal linear attention combining singular value decomposition factorization with exponential decay gating.
+
+Author: Taha Majlesi
 """
 
 import logging

@@ -1,7 +1,11 @@
 """
-Bridge module for neuralops.core.triton_sparse_attn
-Re-exports Triton-accelerated block-sparse attention kernel from canonical sparse_attn.py.
+Triton Sparse Attention Bridge
+
+Backward-compatibility bridge exposing Triton-accelerated block-sparse attention kernels.
+
+Author: Taha Majlesi
 """
+
 from typing import Any
 import torch
 

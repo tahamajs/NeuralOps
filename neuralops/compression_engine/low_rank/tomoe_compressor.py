@@ -1,8 +1,9 @@
 """
-ToMoE: converts dense linear and Conv1D layers (e.g. FFN and attention projections)
-into a Mixture of Experts using weight clustering.
-Registered as 'tomoe' and 'tomoe_compressor'.
+ToMoE: Dense-to-Mixture-of-Experts Low-Rank Compressor
 
+Converts dense linear and feedforward projections into sparse Mixture-of-Experts layers via spectral weight clustering.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

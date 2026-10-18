@@ -1,4 +1,8 @@
-"""Subpackage exports."""
+"""
+Experimental Compression Engines.
+
+Author: Taha Majlesi
+"""
 
 import importlib
 

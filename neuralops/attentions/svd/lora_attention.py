@@ -1,15 +1,9 @@
 """
-LoRA Parameter-Efficient Fine-Tuning Attention Module.
+LoRA Parameter-Efficient Fine-Tuning Attention
 
-Replaces standard Q/K/V/O projections with frozen pretrained base weights plus
-trainable low-rank residual adapters, with multi-architecture weight transfer,
-GQA, RoPE, and causal decoding support.
+Replaces full attention projections with low-rank adaptation matrices for parameter-efficient tuning.
 
-This is intentionally an attention-swap module, NOT a compressor:
-  - Base weights are frozen.
-  - Only LoRA A/B are trainable.
-  - Parameters are NOT reduced (compression_rate stays ~1.0).
-  - Its purpose is PEFT, not compression.
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

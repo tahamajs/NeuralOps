@@ -1,7 +1,9 @@
 """
-Swift-SVD: fast closed-form truncated SVD with symmetric square-root singular value distribution.
-Registered as 'swift_svd'.
+Swift-SVD: Fast Closed-Form Truncated SVD Compressor
 
+Computes fast closed-form truncated singular value decomposition with symmetric square-root singular value distribution between factors.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

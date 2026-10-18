@@ -1,3 +1,11 @@
+"""
+Experiment Configuration
+
+Master configuration schema orchestrating complete benchmark, training, and evaluation pipelines.
+
+Author: Taha Majlesi
+"""
+
 from dataclasses import dataclass, field
 
 

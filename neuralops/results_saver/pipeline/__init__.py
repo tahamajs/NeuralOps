@@ -1,4 +1,8 @@
-"""Pipeline package — result writing, run management, and sweep orchestration."""
+"""
+NeuralOps Results Saver Pipeline Subpackage.
+
+Author: Taha Majlesi
+"""
 
 from .result_writer import ResultWriter
 

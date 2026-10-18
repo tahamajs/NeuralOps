@@ -1,3 +1,11 @@
+"""
+Trainer Registry
+
+Maintains a centralized registry for dynamically instantiating trainer implementations.
+
+Author: Taha Majlesi
+"""
+
 import logging
 from typing import Any
 

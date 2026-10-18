@@ -1,13 +1,9 @@
 """
-Triton Fused Activation-Scaling Quantized GEMM Kernel (Phase 3 / Kernel 12).
+Fused Activation-Scaling Quantized GEMM
 
-Target Modules: smoothquant_real (smoothquant.py), faq_quantizer (w4a16)
-Solves:
-    SmoothQuant balances outlier difficulty by multiplying weights by diag(s) and dividing
-    activations by diag(s): Y = (X * s_inv) @ (W * s)^T + bias.
-    Materializing (X * s_inv) in PyTorch creates an extra full-sized tensor in HBM on every layer.
+Applies outlier suppression activation scaling directly in SRAM registers prior to quantized matrix multiplication.
 
-This kernel scales activations on-the-fly in SRAM/registers immediately prior to Tensor Core GEMM.
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

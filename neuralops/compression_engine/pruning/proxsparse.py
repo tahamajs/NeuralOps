@@ -1,29 +1,9 @@
 """
-ProxSparse: Proximal Gradient Regularized Structured & Semi-Structured Sparsity.
+ProxSparse: Proximal Gradient Regularized Structured Pruner
 
-Registered in COMPRESSOR_REGISTRY as 'proxsparse', 'proxsparse_pruner',
-'proxsparse_compressor', 'proxsparse_factory', ...
+Enforces group Lasso and semi-structured sparsity constraints via proximal gradient updates during fine-tuning.
 
-Mathematical Formulation:
-    min_W  0.5 * ||W - W_0||_F^2 + lambda * ||W||_1 + I_S(W)
-
-where:
-  - W_0 is the original (pretrained) weight,
-  - ||.||_1 is the L1 regularizer,
-  - I_S(W) is the indicator of the sparse constraint set S (percentile,
-    block, or 2:4 semi-structured).
-
-Iterative Proximal Gradient (ISTA with projection):
-    for t = 1, ..., steps:
-        grad_W    = W^(t) - W_0                  # gradient of smooth part
-        W_grad    = W^(t) - eta * grad_W         # gradient descent step
-        W_prox    = S_{eta*lambda}(W_grad)       # soft-thresholding
-        W^(t+1)   = Pi_S(W_prox)                 # projection to S
-
-where:
-  - S_a(x) = sign(x) * max(|x| - a, 0)  (soft-thresholding)
-  - Pi_S is the hard projection (percentile/2:4/block top-k)
-
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

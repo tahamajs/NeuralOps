@@ -1,7 +1,9 @@
 """
-AdaSplash Attention: Adaptive Splash Attention with α-Entmax Sparse Activations.
+AdaSplash Attention
 
+Hardware-aligned sparse flash attention kernel utilizing adaptive tile skipping for accelerated throughput.
 
+Author: Taha Majlesi
 """
 
 import logging

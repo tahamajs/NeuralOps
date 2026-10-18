@@ -1,4 +1,10 @@
-"""Aggregators and categorizers for module analysis metrics."""
+"""
+Module Metric Aggregators
+
+Aggregators and categorizers summarizing benchmark metrics, speedup distributions, and memory footprints.
+
+Author: Taha Majlesi
+"""
 
 from __future__ import annotations
 

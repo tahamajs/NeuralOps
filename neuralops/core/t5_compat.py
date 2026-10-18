@@ -1,7 +1,9 @@
 """
-T5 Architecture Compatibility Module.
-Provides robust support for T5 relative position bias, encoder-decoder cross-attention,
-and numerically stable FP16 forward execution for custom attention modules.
+T5 Architecture Compatibility Engine
+
+Relative position bias and cross-attention compatibility adapters tailored for T5 encoder-decoder models.
+
+Author: Taha Majlesi
 """
 
 import math

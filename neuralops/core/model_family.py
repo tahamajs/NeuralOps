@@ -1,5 +1,9 @@
-"""Architecture-family detection and common transformer model metadata.
+"""
+Transformer Model Family Detection
 
+Model family classification and architectural metadata extraction for HuggingFace transformer backbones.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

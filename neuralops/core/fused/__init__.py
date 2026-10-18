@@ -1,6 +1,9 @@
 """
-Fused kernels for memory-efficient operations.
+NeuralOps Fused Kernels Core Modules.
+
+Author: Taha Majlesi
 """
+
 from .fused_ce import fused_linear_cross_entropy
 from .fused_kd import fused_linear_kl_divergence
 from .fused_norm_linear import (

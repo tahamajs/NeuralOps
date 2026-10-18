@@ -1,21 +1,9 @@
 """
-HashedNet (Chen et al., 2015) compresses a weight matrix W ∈ R^{out×in} by
-storing a compact parameter table w ∈ R^{n_buckets} and reconstructing
-W[i,j] = sign(i,j) · w[h(i,j)]. This is lossy: intra-bucket variance is
-discarded. For random Gaussian weight matrices, relative Frobenius error is
-approximately sqrt(1 − 1/avg_bucket_size). For avg_bucket_size = 9 the error
-is ~94%. Pretrained transformer weights are NOT an exception — they do NOT
-exhibit the structured correlation that would make this compression viable.
+HashedNet: Random Hash-Based Weight Sharing Compressor
 
-Empirically, HashedNet in a compression setting either:
-  (a) falls back to the original layer for most layers when max_error is
-      strict, or
-  (b) produces a heavily degraded model when max_error is relaxed.
+Compresses weight matrices into compact parameter tables using pseudo-random hash functions with sign flipping to preserve inner products.
 
-This implementation is correct but should be treated as a research baseline,
-not a production compressor. For real compression, use SVD (UniQL), MLA, or
-structured pruning (ARMOR, FLAT-LLM).
-
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

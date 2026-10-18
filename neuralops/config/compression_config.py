@@ -1,3 +1,11 @@
+"""
+Compression Configuration
+
+Data configuration structures for model compression, attention injection, and parameter-efficient tuning.
+
+Author: Taha Majlesi
+"""
+
 from dataclasses import dataclass
 
 

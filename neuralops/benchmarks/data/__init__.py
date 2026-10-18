@@ -1,4 +1,8 @@
-"""Dataset loading and ingestion subsystem package."""
+"""
+NeuralOps Benchmarks Data Subpackage.
+
+Author: Taha Majlesi
+"""
 
 from neuralops.benchmarks.data.loader import (
     CSVDatasetLoader,

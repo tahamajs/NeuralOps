@@ -1,4 +1,10 @@
-"""Rotary Positional Embeddings (RoPE) for NeuralOps models."""
+"""
+Rotary Position Embedding Module
+
+Rotary positional embedding implementations supporting dynamic base scaling and multi-head tensors.
+
+Author: Taha Majlesi
+"""
 
 from __future__ import annotations
 

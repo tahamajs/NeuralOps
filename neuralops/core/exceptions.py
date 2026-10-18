@@ -1,11 +1,11 @@
 """
-neuralops exception hierarchy.
+NeuralOps Exception Hierarchy
 
-Design principles:
-  - Every exception inherits from NeuralOpsError
-  - Messages always include: what, where, why, how to fix
-  - Called out on every public API entry point
+Structured exception hierarchy providing actionable diagnostic messages across all core modules.
+
+Author: Taha Majlesi
 """
+
 from __future__ import annotations
 from typing import Optional, Any
 

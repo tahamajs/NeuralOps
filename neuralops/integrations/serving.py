@@ -1,5 +1,9 @@
 """
-vLLM and TGI serving integration adapters for NeuralOps.
+Inference Serving Adapters
+
+Integrates NeuralOps models and attention layers with vLLM and Text Generation Inference (TGI).
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

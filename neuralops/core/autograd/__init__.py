@@ -1,4 +1,9 @@
-"""Custom Autograd Functions for NeuralOps."""
+"""
+NeuralOps Autograd Core Modules.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 
 from neuralops.core.autograd.flash_attention import FlashAttentionFunction

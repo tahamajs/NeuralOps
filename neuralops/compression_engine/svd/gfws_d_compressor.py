@@ -1,4 +1,11 @@
-"""GFWSVD: Fisher-weighted / Covariance-weighted SVD. Registered as 'gfws' and 'gfws_d'."""
+"""
+GFWS-D: Generalized Fisher and Covariance-Weighted SVD
+
+Decomposes linear projections using joint activation covariance weighting and optional low-rank adaptation fine-tuning.
+
+Author: Taha Majlesi
+"""
+
 from __future__ import annotations
 
 
