@@ -8,6 +8,8 @@ from __future__ import annotations
 
 from neuralops.distributed.tensor_parallel import (
     SimulatedTPGroup,
+    ColumnParallelLinear,
+    RowParallelLinear,
     RankParallelSVDLinear,
     RowParallelSVDLinear,
     ColumnParallelSVDLinear,
@@ -20,10 +22,14 @@ from neuralops.distributed.context_parallel import (
     compute_chunk_prefix_scan,
     ContextParallelRecurrentScan,
     ContextParallelLinearAttention,
+    ring_attention_chunk_exchange,
+    RingLinearAttention,
 )
 
 __all__ = [
     "SimulatedTPGroup",
+    "ColumnParallelLinear",
+    "RowParallelLinear",
     "RankParallelSVDLinear",
     "RowParallelSVDLinear",
     "ColumnParallelSVDLinear",
@@ -34,4 +40,6 @@ __all__ = [
     "compute_chunk_prefix_scan",
     "ContextParallelRecurrentScan",
     "ContextParallelLinearAttention",
+    "ring_attention_chunk_exchange",
+    "RingLinearAttention",
 ]

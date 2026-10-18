@@ -14,11 +14,15 @@ def test_smoothquant_layer_real():
     orig_out = layer(x)
     mod, s = smoothquant_layer(layer, alpha=0.5, calib_data=x)
 
-    # Verified invariant: mod(x / s) == orig_out
-    scaled_x = x / s.unsqueeze(0)
-    new_out = mod(scaled_x)
-
+    # Verified invariant: mod applies s_inv internally so mod(x) == orig_out
+    new_out = mod(x)
     assert torch.allclose(orig_out, new_out, atol=1e-4)
+
+    # And manual scaled linear: (x / s) @ (W * s)^T == x @ W^T == orig_out
+    import torch.nn.functional as F
+    scaled_x = x / s.unsqueeze(0)
+    manual_out = F.linear(scaled_x, mod.weight)
+    assert torch.allclose(orig_out, manual_out, atol=1e-4)
 
 
 def test_smoothquant_model_real():

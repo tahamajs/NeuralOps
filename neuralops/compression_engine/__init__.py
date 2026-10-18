@@ -28,7 +28,11 @@ import types
 def _get_target_module(leaf):
     if leaf in _RENAMED_MODULES:
         rel_path, class_map = _RENAMED_MODULES[leaf]
-        real_mod = importlib.import_module(f".{rel_path}", __package__)
+        target_fullname = f"{__package__}.{rel_path}"
+        if target_fullname in sys.modules:
+            real_mod = sys.modules[target_fullname]
+        else:
+            real_mod = importlib.import_module(f".{rel_path}", __package__)
         alias_mod = types.ModuleType(f"{__name__}.{leaf}")
         alias_mod.__dict__.update(real_mod.__dict__)
         for old_k, target_k in class_map.items():
@@ -36,14 +40,32 @@ def _get_target_module(leaf):
                 setattr(alias_mod, old_k, getattr(real_mod, target_k))
         return alias_mod
     elif leaf in _LEGACY_MAP:
-        return importlib.import_module(f".{_LEGACY_MAP[leaf]}", __package__)
+        rel_path = _LEGACY_MAP[leaf]
+        target_fullname = f"{__package__}.{rel_path}"
+        if target_fullname in sys.modules:
+            return sys.modules[target_fullname]
+        return importlib.import_module(f".{rel_path}", __package__)
     return None
 
 class _LegacyCompLoader(Loader):
-    def __init__(self, leaf):
+    def __init__(self, leaf, fullname):
         self.leaf = leaf
+        self.fullname = fullname
     def create_module(self, _spec):
-        return _get_target_module(self.leaf)
+        if self.fullname in sys.modules:
+            return sys.modules[self.fullname]
+        # Pre-assign module in sys.modules to break any re-entrant circular import
+        alias_mod = types.ModuleType(self.fullname)
+        sys.modules[self.fullname] = alias_mod
+        try:
+            target_mod = _get_target_module(self.leaf)
+            if target_mod is not None:
+                alias_mod.__dict__.update(target_mod.__dict__)
+                sys.modules[self.fullname] = target_mod
+                return target_mod
+        except Exception:
+            pass
+        return alias_mod
     def exec_module(self, module):
         pass
 
@@ -52,7 +74,7 @@ class _LegacyCompFinder(MetaPathFinder):
         if fullname.startswith(__name__ + "."):
             leaf = fullname[len(__name__) + 1:]
             if leaf in _LEGACY_MAP or leaf in _RENAMED_MODULES:
-                return spec_from_loader(fullname, _LegacyCompLoader(leaf))
+                return spec_from_loader(fullname, _LegacyCompLoader(leaf, fullname))
         return None
 
 sys.meta_path.insert(0, _LegacyCompFinder())

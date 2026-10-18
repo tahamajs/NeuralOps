@@ -31,6 +31,9 @@ class GenerationRequest:
     max_new_tokens: int = 16
     generated: list[int] = field(default_factory=list)
     finished: bool = False
+    is_prefill: bool = True
+    past_kv: Any = None
+
 
 
 class NeuralOpsInferenceEngine:

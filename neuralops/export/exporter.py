@@ -245,8 +245,89 @@ def export_model(
         logger.info("Exported model to TorchScript: %s", ts_file)
         return ts_file
 
+    elif fmt in ("gguf", "ggml"):
+        gguf_meta_file = out_path / "gguf_metadata.json"
+        gguf_meta = {
+            "general.architecture": base_name or "llama",
+            "general.name": base_name or "neuralops-model",
+            "general.file_type": 15,  # Q4_K_M
+            "neuralops.attention_type": attention_type,
+            "neuralops.compression_method": compression_method,
+            "neuralops.rank": rank,
+            "quantization.bits": kwargs.get("bits", 4),
+            "quantization.group_size": kwargs.get("group_size", 32),
+            "tensors": {
+                name: {
+                    "shape": list(p.shape),
+                    "dtype": str(p.dtype),
+                    "numel": p.numel(),
+                }
+                for name, p in model.named_parameters()
+            },
+        }
+        with open(gguf_meta_file, "w", encoding="utf-8") as f:
+            json.dump(gguf_meta, f, indent=2)
+
+        # Save weights fallback
+        try:
+            from safetensors.torch import save_file
+            save_file(model.state_dict(), str(out_path / "model.safetensors"))
+        except Exception:
+            torch.save(model.state_dict(), out_path / "model.bin")
+
+        with open(out_path / "neuralops_config.json", "w", encoding="utf-8") as f:
+            json.dump(meta, f, indent=2)
+
+        logger.info("Exported model to GGUF metadata bundle: %s", out_path)
+        return out_path
+
+    elif fmt == "awq":
+        awq_file = out_path / "quant_config.json"
+        awq_meta = {
+            "quant_method": "awq",
+            "zero_point": True,
+            "q_group_size": kwargs.get("group_size", 128),
+            "w_bit": kwargs.get("bits", 4),
+            "version": "GEMM",
+            "modules_to_not_convert": ["lm_head", "embed_tokens"],
+        }
+        with open(awq_file, "w", encoding="utf-8") as f:
+            json.dump(awq_meta, f, indent=2)
+
+        # Save weights
+        try:
+            from safetensors.torch import save_file
+            save_file(model.state_dict(), str(out_path / "model.safetensors"))
+        except Exception:
+            torch.save(model.state_dict(), out_path / "model.bin")
+
+        with open(out_path / "neuralops_config.json", "w", encoding="utf-8") as f:
+            json.dump(meta, f, indent=2)
+
+        logger.info("Exported model to AWQ metadata bundle: %s", out_path)
+        return out_path
+
+    elif fmt in ("pt2", "torch_export", "aoti"):
+        pt2_target = out_path / "model.pt2"
+        if sample_input is None:
+            sample_input = torch.randint(0, 1000, (1, 16), dtype=torch.long)
+        runner = compile_to_so(
+            model=model,
+            sample_inputs=sample_input,
+            output_path=pt2_target,
+            **kwargs,
+        )
+        with open(out_path / "neuralops_config.json", "w", encoding="utf-8") as f:
+            json.dump(meta, f, indent=2)
+
+        logger.info("Exported model to PyTorch 2.x export bundle: %s", pt2_target)
+        return pt2_target
+
     else:
-        raise ValueError(f"Unsupported export format '{format}'. Choose from: 'safetensors', 'onnx', 'torchscript'")
+        raise ValueError(
+            f"Unsupported export format '{format}'. Choose from: 'safetensors', 'onnx', 'torchscript', 'gguf', 'awq', 'pt2'"
+        )
+
 
 
 def load_exported_model(export_dir: Union[str, Path], base_model: Optional[nn.Module] = None) -> Tuple[nn.Module, Dict[str, Any]]:

@@ -213,5 +213,54 @@ class SelfSpeculativeDecoder:
         )
         return curr_ids, stats
 
+    def run_gamma_sweep(
+        self,
+        input_ids: torch.Tensor,
+        gamma_values: Optional[list[int]] = None,
+        max_new_tokens: int = 16,
+        **kwargs: Any,
+    ) -> dict[int, SpeculativeDecodeStats]:
+        """
+        Sweeps draft horizon gamma values, benchmarking tokens/sec, acceptance rate, and speedup.
+        """
+        if gamma_values is None:
+            gamma_values = [1, 2, 3, 4, 5]
 
-__all__ = ["SpeculativeDecodeStats", "SelfSpeculativeDecoder"]
+        orig_k = self.current_k
+        orig_max_k = self.max_draft_k
+        orig_adapt = self.adaptive_k
+        self.adaptive_k = False
+
+        results: dict[int, SpeculativeDecodeStats] = {}
+        for gamma in gamma_values:
+            self.max_draft_k = gamma
+            self.current_k = gamma
+            _, stats = self.generate(input_ids, max_new_tokens=max_new_tokens, **kwargs)
+            results[gamma] = stats
+
+        self.current_k = orig_k
+        self.max_draft_k = orig_max_k
+        self.adaptive_k = orig_adapt
+        return results
+
+
+def gamma_sweep_harness(
+    target_model: nn.Module,
+    draft_model: Optional[nn.Module] = None,
+    input_ids: Optional[torch.Tensor] = None,
+    gamma_values: Optional[list[int]] = None,
+    max_new_tokens: int = 16,
+    device: Optional[Union[str, torch.device]] = None,
+    **kwargs: Any,
+) -> dict[int, SpeculativeDecodeStats]:
+    """Convenience harness to benchmark speculative decoding across varying gamma values."""
+    if input_ids is None:
+        p = next(target_model.parameters(), None)
+        dev = device or (p.device if p is not None else "cpu")
+        input_ids = torch.randint(0, 1000, (1, 8), device=dev)
+    decoder = SelfSpeculativeDecoder(target_model=target_model, draft_model=draft_model)
+    return decoder.run_gamma_sweep(input_ids=input_ids, gamma_values=gamma_values, max_new_tokens=max_new_tokens, **kwargs)
+
+
+__all__ = ["SpeculativeDecodeStats", "SelfSpeculativeDecoder", "gamma_sweep_harness"]
+

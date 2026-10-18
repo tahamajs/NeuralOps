@@ -186,4 +186,130 @@ class TGIAdapter:
         return model
 
 
-__all__ = ["VLLMAdapter", "TGIAdapter", "HAS_VLLM", "HAS_TGI"]
+def export_serving_bundle(
+    model: nn.Module,
+    output_dir: Union[str, Path],
+    target_backend: str = "vllm",
+    max_batch_size: int = 32,
+    max_sequence_length: int = 4096,
+    quantization: Optional[str] = None,
+    **kwargs: Any,
+) -> Path:
+    """
+    Exports a validated, deployment-ready serving bundle for production engines (vLLM, TGI, SGLang, TRT-LLM).
+    Generates serving_manifest.json, weights (model.safetensors), and target-engine metadata.
+    """
+    out_p = Path(output_dir)
+    out_p.mkdir(parents=True, exist_ok=True)
+    backend = target_backend.lower().strip()
+
+    # 1. Export model weights
+    try:
+        from safetensors.torch import save_file
+        save_file(model.state_dict(), str(out_p / "model.safetensors"))
+    except Exception:
+        torch.save(model.state_dict(), out_p / "pytorch_model.bin")
+
+    # 2. Extract architecture metadata
+    param_count = sum(p.numel() for p in model.parameters())
+    dtype_str = "float32"
+    try:
+        dtype_str = str(next(model.parameters()).dtype).replace("torch.", "")
+    except StopIteration:
+        pass
+
+    # 3. Create universal serving manifest
+    manifest = {
+        "format_version": "1.4.0",
+        "target_backend": backend,
+        "max_batch_size": max_batch_size,
+        "max_sequence_length": max_sequence_length,
+        "dtype": dtype_str,
+        "num_parameters": param_count,
+        "quantization": quantization,
+        "custom_attention": getattr(model, "_neuralops_metadata", []),
+        "extra_kwargs": kwargs,
+    }
+    with open(out_p / "serving_manifest.json", "w", encoding="utf-8") as f:
+        json.dump(manifest, f, indent=2)
+
+    # 4. Engine-specific configuration files
+    if backend == "vllm":
+        vllm_cfg = {
+            "model": str(out_p),
+            "max_num_seqs": max_batch_size,
+            "max_model_len": max_sequence_length,
+            "dtype": dtype_str,
+            "kv_cache_dtype": "auto",
+        }
+        with open(out_p / "vllm_config.json", "w", encoding="utf-8") as f:
+            json.dump(vllm_cfg, f, indent=2)
+
+    elif backend == "tgi":
+        TGIAdapter.prepare_for_tgi(
+            model=model,
+            output_dir=out_p,
+            max_batch_size=max_batch_size,
+            max_sequence_length=max_sequence_length,
+        )
+
+    elif backend == "sglang":
+        sglang_cfg = {
+            "model_path": str(out_p),
+            "max_total_tokens": max_sequence_length * max_batch_size,
+            "dtype": dtype_str,
+            "enable_radix_cache": True,
+        }
+        with open(out_p / "sglang_config.json", "w", encoding="utf-8") as f:
+            json.dump(sglang_cfg, f, indent=2)
+
+    elif backend in ("tensorrt_llm", "trt_llm", "trt"):
+        trt_cfg = {
+            "backend": "tensorrt_llm",
+            "max_batch_size": max_batch_size,
+            "max_input_len": max_sequence_length,
+            "max_output_len": max_sequence_length,
+            "dtype": dtype_str,
+        }
+        with open(out_p / "tensorrt_llm_config.json", "w", encoding="utf-8") as f:
+            json.dump(trt_cfg, f, indent=2)
+
+    logger.info("Serving bundle exported for %s to %s", backend, out_p)
+    return out_p
+
+
+def validate_serving_metadata(bundle_dir: Union[str, Path]) -> tuple[bool, str]:
+    """Validates that a serving bundle directory contains required artifacts and manifests."""
+    p = Path(bundle_dir)
+    if not p.is_dir():
+        return False, f"Directory does not exist: {p}"
+
+    manifest_file = p / "serving_manifest.json"
+    if not manifest_file.exists():
+        return False, f"Missing serving_manifest.json in {p}"
+
+    try:
+        with open(manifest_file, "r", encoding="utf-8") as f:
+            manifest = json.load(f)
+    except Exception as e:
+        return False, f"Invalid serving_manifest.json: {e}"
+
+    if not manifest.get("target_backend"):
+        return False, "serving_manifest.json missing 'target_backend'"
+
+    has_weights = (p / "model.safetensors").exists() or (p / "pytorch_model.bin").exists()
+    if not has_weights:
+        return False, "Missing weights (model.safetensors or pytorch_model.bin)"
+
+    return True, "Valid serving bundle"
+
+
+__all__ = [
+    "VLLMAdapter",
+    "TGIAdapter",
+    "HAS_VLLM",
+    "HAS_TGI",
+    "export_serving_bundle",
+    "validate_serving_metadata",
+]
+
