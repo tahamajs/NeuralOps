@@ -1,6 +1,7 @@
 """Tests for neuralops.data.augmentation module."""
 
 import pytest
+pytest.importorskip("neuralops.data.augmentation")
 import random
 from unittest.mock import MagicMock
 
