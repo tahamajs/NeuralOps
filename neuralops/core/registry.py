@@ -13,6 +13,15 @@ from typing import Any
 
 logger = logging.getLogger(__name__)
 
+DEPRECATED_ALIASES: dict[str, str] = {
+    "chela_slay_attention": "chela_slay",
+    "cosformer_attention": "cosformer",
+    "decay_linear_attn": "decay_linear_attention",
+    "eat_attention": "eat",
+    "gated_linear_attn": "gated_linear_attention",
+    "hgrn2_outer": "hgrn2_gated_outer",
+}
+
 from neuralops.core.legacy_aliases import (
     DEPRECATED_ALIASES as _DEPRECATED_ALIASES,
     handle_deprecated_alias as _handle_deprecated,
@@ -282,6 +291,15 @@ class Registry:
 
     def get(self, key: str, unwrap: bool = False) -> Callable | None:
         """Safely retrieve a registered component, or None if not found."""
+        if key in DEPRECATED_ALIASES:
+            canonical = DEPRECATED_ALIASES[key]
+            import warnings
+            warnings.warn(
+                f"'{key}' is deprecated. Use '{canonical}' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            key = canonical
         try:
             k = _handle_deprecated(key)
         except ValueError:
@@ -299,6 +317,15 @@ class Registry:
 
     def resolve(self, key: str) -> Callable:
         """Retrieve a registered component and raise a descriptive error if missing."""
+        if key in DEPRECATED_ALIASES:
+            canonical = DEPRECATED_ALIASES[key]
+            import warnings
+            warnings.warn(
+                f"'{key}' is deprecated. Use '{canonical}' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            key = canonical
         try:
             k = _handle_deprecated(key)
         except ValueError as e:
@@ -342,9 +369,9 @@ class Registry:
                 logger.warning("Error loading attentions: %s", e)
 
     def keys(self) -> builtins.list[str]:
-        """Return a list of all registered keys (in original casing)."""
+        """Return a list of all registered keys (canonical only)."""
         self._load_all()
-        return list(self._dict.keys())
+        return [k for k in self._dict.keys() if k not in DEPRECATED_ALIASES]
 
     def list_available(self) -> builtins.list[str]:
         """Return a list of all registered keys."""
