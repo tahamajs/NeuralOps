@@ -25,7 +25,10 @@ from neuralops.core.triton_kernels.low_rank import (
 from neuralops.core.triton_kernels.elementwise import fast_hadamard_transform
 from neuralops.compression_engine.svd.hadamard_incoherent_svd import HadamardIncoherentSVDCompressor
 from neuralops.inference.speculative_decoding import SelfSpeculativeDecoder
-from neuralops.evaluation.niah_passkey import NeedleInAHaystackEvaluator, plot_niah_heatmap
+try:
+    from evaluation.niah_passkey import NeedleInAHaystackEvaluator, plot_niah_heatmap
+except ImportError:
+    from neuralops.evaluation.niah_passkey import NeedleInAHaystackEvaluator, plot_niah_heatmap
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)

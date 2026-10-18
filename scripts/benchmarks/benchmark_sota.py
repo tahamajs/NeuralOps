@@ -208,8 +208,12 @@ def benchmark_gap_5_reap_moe_and_niah(device: torch.device) -> Dict[str, Any]:
     logger.info("=== Running Gap 5: REAP Distributed MoE Pruning & NIAH Long-Context ===")
     from neuralops.attentions.sparse.reap_moe import REAPMoE
     from neuralops.attentions.sparse.reap_moe_router import distributed_reap_prune
-    from neuralops.evaluation.niah import NeedleInAHaystackEvaluator
-    from neuralops.evaluation.lm_eval_adapter import NeuralOpsLMEvalAdapter
+    try:
+        from evaluation.niah import NeedleInAHaystackEvaluator
+        from evaluation.lm_eval_adapter import NeuralOpsLMEvalAdapter
+    except ImportError:
+        from neuralops.evaluation.niah import NeedleInAHaystackEvaluator
+        from neuralops.evaluation.lm_eval_adapter import NeuralOpsLMEvalAdapter
 
     torch.manual_seed(42)
     d_model = 64
