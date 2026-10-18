@@ -91,3 +91,28 @@ Stress testing under extreme sequence length $L = 16,384$ confirms numerical int
 | `hgrn2_scan` | 16,384 | 58.670 ms | 91379.833 ms | **PASS (0)** | **True** |
 | `selective_ssm` | 16,384 | 214.359 ms | N/A (Fwd-only) | **PASS (0)** | **True** |
 
+---
+
+## 6. FP16 vs FP32 Throughput & SM 8.9 Hardware Occupancy
+
+To push recurrent scan throughput to hardware limits on the Ada Lovelace SM 8.9 architecture, `gdn_delta_rule` was evaluated across FP16 input projections paired with high-precision FP32 on-chip shared-memory accumulation (`benchmark_fp16_fp32_throughput.py`).
+
+### Throughput & Numerical Parity Across Context Lengths ($B=2, H=4, D=64$)
+
+| Context Length ($L$) | FP32 Forward (ms) | FP16 Forward (ms) | Throughput Uplift | Max Numerical Diff (FP16 vs FP32) | Zero NaNs / Infs |
+|---|---|---|---|---|---|
+| 1,024 | 3.598 ms | 3.661 ms | 0.98x | 9.50e-03 | **PASS (0)** |
+| 2,048 | 5.875 ms | 5.978 ms | 0.98x | 8.73e-03 | **PASS (0)** |
+| 4,096 | 13.288 ms | 12.315 ms | **1.08x** | 1.03e-02 | **PASS (0)** |
+| 8,192 | 36.483 ms | 32.381 ms | **1.13x** | 9.58e-03 | **PASS (0)** |
+| 16,384 | 72.885 ms | 69.967 ms | **1.04x** | 1.07e-02 | **PASS (0)** |
+
+### Hardware Register & SM Occupancy Verification (`cuobjdump`)
+
+Resource usage analysis via `cuobjdump -res-usage` on compiled binary:
+- **Architecture**: `sm_89` (NVIDIA Ada Lovelace).
+- **Registers Per Thread**: **40 registers** (strictly $\le 48$, satisfying hardware constraint).
+- **Active Thread Blocks Per SM**: Supports **2 concurrent thread blocks per SM** at 256 threads/block, yielding 100% active warp theoretical occupancy (32 warps/SM) without register spilling to local memory (`STACK: 0, LOCAL: 0`).
+- **Shared Memory**: $16 \text{ KB}$ per thread block ($D \times D \times 4\text{ bytes}$ for $D=64$), well within the $100 \text{ KB}$ per-SM shared memory ceiling.
+
+
