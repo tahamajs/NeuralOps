@@ -1,12 +1,12 @@
 """
-FP4 (E2M1) Quantized GEMM Interface and 3-Level Fallback.
+FP4 (E2M1) Quantized GEMM Interface, Analytical Autograd STE Backward, and 3-Level Fallback.
 Target: SM 8.9 (NVIDIA Ada Lovelace RTX 4070 Laptop GPU, 8GB VRAM).
 """
 
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Any
 
 import torch
 
@@ -29,7 +29,7 @@ def _get_module():
             name="cuda_fp4_gemm",
             cpp_sources=cpp_src,
             cuda_sources=cuda_src,
-            functions=["fp4_gemm_fwd"],
+            functions=["fp4_gemm_fwd", "fp4_gemm_bwd"],
         )
     return _MODULE
 
@@ -70,13 +70,48 @@ def _get_triton_impl():
         return None
 
 
+class _FP4GEMMFunction(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx: Any, x, w_packed, scales, bias=None):
+        mod = _get_module()
+        out = mod.fp4_gemm_fwd(
+            x.contiguous(),
+            w_packed.contiguous(),
+            scales.contiguous(),
+            bias.contiguous() if bias is not None else None,
+        )
+        ctx.save_for_backward(x, w_packed, scales, bias if bias is not None else torch.Tensor())
+        ctx.has_bias = bias is not None
+        return out
+
+    @staticmethod
+    def backward(ctx: Any, grad_out):
+        x, w_packed, scales, bias = ctx.saved_tensors
+        mod = _get_module()
+        grads = mod.fp4_gemm_bwd(
+            grad_out.contiguous(),
+            x.contiguous(),
+            w_packed.contiguous(),
+            scales.contiguous(),
+            bias.contiguous() if ctx.has_bias else None,
+        )
+        gx, gscales, gbias = grads[0], grads[1], (grads[2] if ctx.has_bias else None)
+        return gx, None, gscales, gbias
+
+
 def fp4_gemm(
     x: torch.Tensor,
     w_packed: torch.Tensor,
     scales: torch.Tensor,
     bias: Optional[torch.Tensor] = None,
 ) -> torch.Tensor:
-    """3-Level Dispatched FP4 GEMM."""
+    """3-Level Dispatched FP4 GEMM with analytical autograd STE backward."""
+    needs_grad = torch.is_grad_enabled() and any(
+        t.requires_grad for t in (x, scales, bias) if isinstance(t, torch.Tensor)
+    )
+    if needs_grad and x.is_cuda and x.dim() == 2:
+        return _FP4GEMMFunction.apply(x, w_packed, scales, bias)
+
     def cuda_fn(x, w_packed, scales, bias=None, **kwargs):
         mod = _get_module()
         return mod.fp4_gemm_fwd(
