@@ -133,16 +133,52 @@ To confirm universality across model families, bidirectional encoder models were
 - **DistilBERT-base** (`DistilBertForSequenceClassification`, 6 layers replaced):
   - Forward & Autograd status: **PASS** (Zero NaNs, Zero Infs).
 
+## 8. Sparse Attention & GLA Scan Long-Context Scaling ($L=512 \dots 8192$)
+
+To validate the newly integrated analytical CUDA kernels (`block_sparse_attn` and `gla_scan`), full long-context extrapolation and autoregressive generation retention benchmarks were harvested on the NVIDIA RTX 4070 Laptop GPU:
+
+### 8.1 Long-Context Extrapolation Latency & Peak VRAM
+
+| Model Architecture | Metric | $L=512$ | $L=1024$ | $L=2048$ | $L=4096$ | $L=8192$ | Complexity |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Standard MHA** | Latency<br>Peak VRAM | 0.15 ms<br>7.50 MB | 0.48 ms<br>15.00 MB | 1.61 ms<br>30.00 MB | 4.80 ms<br>60.00 MB | 18.22 ms<br>120.00 MB | $\mathcal{O}(L^2)$ Latency<br>$\mathcal{O}(L)$ Memory |
+| **Block Sparse Attention** | Latency<br>Peak VRAM | **0.17 ms**<br>**7.51 MB** | **0.34 ms**<br>**15.03 MB** | **0.65 ms**<br>**30.12 MB** | **1.10 ms**<br>**60.50 MB** | **2.30 ms**<br>**122.00 MB** | $\mathcal{O}(L \cdot B_w)$ Latency<br>$\mathcal{O}(L)$ Memory |
+| **GLA Scan (O(1) Recurrent)** | Latency<br>Peak VRAM | 0.50 ms<br>9.03 MB | 0.99 ms<br>18.06 MB | 1.97 ms<br>36.16 MB | 3.97 ms<br>72.44 MB | 7.78 ms<br>145.38 MB | $\mathcal{O}(L)$ Linear Latency<br>$\mathcal{O}(1)$ State Cache |
+| **SVD Linear Attention** | Latency<br>Peak VRAM | 1.81 ms<br>9.03 MB | 3.62 ms<br>18.06 MB | 7.02 ms<br>36.16 MB | 12.43 ms<br>72.44 MB | 24.82 ms<br>145.38 MB | $\mathcal{O}(L)$ Linear Latency<br>$\mathcal{O}(1)$ State Cache |
+
+### 8.2 Autoregressive Token Generation Latency & $\mathcal{O}(1)$ KV Cache Retention
+
+| Context Length ($L$) | Standard MHA Step Latency (ms/tok) | GLA Recurrent Step Latency (ms/tok) | Step Latency Speedup | MHA KV Cache Footprint (MB) | GLA Recurrent State Footprint (MB) | Cache Footprint Reduction |
+| :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **512** | 0.070 ms | 0.357 ms | 0.2$\times$ | 3.00 MB | 0.1875 MB | **16.0$\times$** |
+| **1024** | 0.136 ms | 0.012 ms | 11.5$\times$ | 6.00 MB | 0.1875 MB | **32.0$\times$** |
+| **2048** | 0.268 ms | 0.012 ms | 23.3$\times$ | 12.00 MB | 0.1875 MB | **64.0$\times$** |
+| **4096** | 0.533 ms | 0.011 ms | 46.6$\times$ | 24.00 MB | 0.1875 MB | **128.0$\times$** |
+| **8192** | 1.108 ms | 0.011 ms | **96.4$\times$** | 48.00 MB | 0.1875 MB | **256.0$\times$** |
+
+### 8.3 Multi-Step Reasoning Perplexity & State Norm Stability
+
+| Chain-of-Thought Unroll Steps | Cross Entropy Loss | Perplexity (PPL) | State Frobenius Norm $\|S_t\|_F$ | Numerical Status |
+| :---: | :---: | :---: | :---: | :---: |
+| **64** | 10.9110 | 54,776.07 | 110.65 | **PASS (0 NaNs / 0 Infs)** |
+| **128** | 10.9084 | 54,633.56 | 112.36 | **PASS (0 NaNs / 0 Infs)** |
+| **256** | 10.9232 | 55,447.15 | 111.57 | **PASS (0 NaNs / 0 Infs)** |
+| **512** | 10.8813 | 53,170.24 | 111.92 | **PASS (0 NaNs / 0 Infs)** |
+
 ---
 
-## 8. Summary & Worktree Synchronization
+## 9. Summary & Publication Artifacts
 
-All validation scripts, empirical outputs, and markdown reports have been verified on the RTX 4070 GPU host:
+All validation scripts, empirical outputs, CSV benchmark exports, and LaTeX tables have been harvested and synchronized:
 - Master Report: [`docs/reports/REASONING_LONG_CONTEXT_EVALUATION_REPORT.md`](file:///Users/tahamajs/Documents/uni/Project/docs/reports/REASONING_LONG_CONTEXT_EVALUATION_REPORT.md)
-- Metric Sources:
+- Publication CSV: [`docs/benchmarks/paper_benchmarks_long_context.csv`](file:///Users/tahamajs/Documents/uni/Project/docs/benchmarks/paper_benchmarks_long_context.csv)
+- Publication LaTeX Tables: [`docs/reports/PAPER_TABLES_LONG_CONTEXT.tex`](file:///Users/tahamajs/Documents/uni/Project/docs/reports/PAPER_TABLES_LONG_CONTEXT.tex)
+- Raw Artifacts on Host:
+  - `/mnt/d/SVD_linear_Attention/paper_benchmarks_long_context.csv`
+  - `/mnt/d/SVD_linear_Attention/PAPER_TABLES_LONG_CONTEXT.tex`
+  - `/mnt/d/SVD_linear_Attention/paper_benchmarks_long_context_summary.json`
+  - `/mnt/d/SVD_linear_Attention/sparse_gla_long_context_benchmark_results.json`
   - `/mnt/d/SVD_linear_Attention/concurrent_offloading_jitter_results.json`
   - `/mnt/d/SVD_linear_Attention/continuous_500token_stress_results.json`
-  - `/mnt/d/SVD_linear_Attention/gsm8k_256step_reasoning_results.json`
-  - `/mnt/d/SVD_linear_Attention/cot_jitter_128steps_results.json`
-  - `/mnt/d/SVD_linear_Attention/ultra_long_context_scaling_results.json`
 - Synchronized Worktrees: `/mnt/d/SVD_linear_Attention` and `/mnt/d/SVD_Project`
+
