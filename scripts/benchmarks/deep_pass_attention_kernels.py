@@ -51,6 +51,8 @@ def run_deep_pass():
             spec.loader.exec_module(mod)
 
             # Generate inputs & callables
+            cuda_fn = None
+            ref_fn = None
             if name == "flash_gqa":
                 q = torch.randn(B, H, N, D, device=device, dtype=torch.float16) * 0.1
                 k = torch.randn(B, H, N, D, device=device, dtype=torch.float16) * 0.1
