@@ -951,6 +951,8 @@ class Jamba2Block(BaseAttention):
         return self._format_output(final_delta, attn_weights, present_key_value)
 
     def _accumulate_aux_loss(self) -> None:
+        if torch.compiler.is_compiling():
+            return
         aux = getattr(self.moe, "aux_loss", 0.0)
         v = float(aux.item()) if torch.is_tensor(aux) else float(aux)
         self._aux_loss_sum += v
