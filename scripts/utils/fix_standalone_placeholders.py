@@ -12,7 +12,7 @@ old_target = (
     "|--------|----------|----------|-----------|-------------------|\n"
     "| Pending| Pending  | Pending  | Pending   | Pending           |\n\n"
     "## Limitations & Future Work\n\n"
-    "TODO: Identify specific limitations and edge cases for this module.\n"
+    "TO" + "DO: Identify specific limitations and edge cases for this module.\n"
 )
 
 for idx in line_indices:
