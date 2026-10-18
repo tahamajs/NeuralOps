@@ -1,14 +1,22 @@
+# -*- coding: utf-8 -*-
+# Author: Taha Majlesi
 import os
 import sys
 import gc
 import json
+import logging
 import time
 import math
 import csv
+from pathlib import Path
 import torch
 import torch.nn.functional as F
 
-sys.path.insert(0, "/mnt/d/SVD_linear_Attention")
+repo_root = Path(__file__).resolve().parent.parent.parent
+if str(repo_root) not in sys.path:
+    sys.path.insert(0, str(repo_root))
+
+logger = logging.getLogger("profile_peak_batch_saturation")
 from neuralops.core.cuda_kernels.sparse_attention.sparse_attention_autograd import block_sparse_attn
 from neuralops.core.cuda_kernels.flash_gqa.flash_gqa_autograd import flash_gqa
 
@@ -49,25 +57,26 @@ def find_b_max_standard_mha(L, device, H=8, D=64):
     b_max = 0
     peak_vram = 0.0
     
-    for b in batch_candidates:
+    for b_cand in batch_candidates:
         gc.collect()
         torch.cuda.empty_cache()
         torch.cuda.reset_peak_memory_stats()
         try:
-            q = torch.randn(b, H, L, D, device=device, dtype=torch.float16, requires_grad=True)
-            k = torch.randn(b, H, L, D, device=device, dtype=torch.float16, requires_grad=True)
-            v = torch.randn(b, H, L, D, device=device, dtype=torch.float16, requires_grad=True)
+            q = torch.randn(b_cand, H, L, D, device=device, dtype=torch.float16, requires_grad=True)
+            k = torch.randn(b_cand, H, L, D, device=device, dtype=torch.float16, requires_grad=True)
+            v = torch.randn(b_cand, H, L, D, device=device, dtype=torch.float16, requires_grad=True)
             out = standard_attention_ref(q, k, v)
             loss = out.sum()
             loss.backward()
             torch.cuda.synchronize()
             peak = torch.cuda.max_memory_allocated() / (1024 ** 2)
             del q, k, v, out, loss
-            b_max = b
+            b_max = b_cand
             peak_vram = peak
         except torch.cuda.OutOfMemoryError:
             break
-        except Exception:
+        except (RuntimeError, Exception) as exc:
+            logger.warning("Standard MHA stopped at B=%d: %s", b_cand, exc, exc_info=True)
             break
     return b_max, round(peak_vram, 2)
 
@@ -77,14 +86,14 @@ def find_b_max_svd_linear_attn(L, device, H=8, D=64):
     b_max = 0
     peak_vram = 0.0
     
-    for b in batch_candidates:
+    for b_cand in batch_candidates:
         gc.collect()
         torch.cuda.empty_cache()
         torch.cuda.reset_peak_memory_stats()
         try:
-            q = torch.randn(b, H, L, D, device=device, dtype=torch.float16, requires_grad=True)
-            k = torch.randn(b, H, L, D, device=device, dtype=torch.float16, requires_grad=True)
-            v = torch.randn(b, H, L, D, device=device, dtype=torch.float16, requires_grad=True)
+            q = torch.randn(b_cand, H, L, D, device=device, dtype=torch.float16, requires_grad=True)
+            k = torch.randn(b_cand, H, L, D, device=device, dtype=torch.float16, requires_grad=True)
+            v = torch.randn(b_cand, H, L, D, device=device, dtype=torch.float16, requires_grad=True)
             # SVD Linear Attention O(L)
             scale = 1.0 / math.sqrt(D)
             phi_q = F.elu(q) + 1.0
@@ -98,11 +107,12 @@ def find_b_max_svd_linear_attn(L, device, H=8, D=64):
             torch.cuda.synchronize()
             peak = torch.cuda.max_memory_allocated() / (1024 ** 2)
             del q, k, v, phi_q, phi_k, kv, kv_cumsum, out, loss
-            b_max = b
+            b_max = b_cand
             peak_vram = peak
         except torch.cuda.OutOfMemoryError:
             break
-        except Exception:
+        except (RuntimeError, Exception) as exc:
+            logger.warning("SVD Linear Attn stopped at B=%d: %s", b_cand, exc, exc_info=True)
             break
     return b_max, round(peak_vram, 2)
 
@@ -113,14 +123,14 @@ def find_b_max_block_sparse_attn(L, device, H=8, D=64, block_size=16):
     peak_vram = 0.0
     num_blocks = L // block_size
     
-    for b in batch_candidates:
+    for b_cand in batch_candidates:
         gc.collect()
         torch.cuda.empty_cache()
         torch.cuda.reset_peak_memory_stats()
         try:
-            q = torch.randn(b, H, L, D, device=device, dtype=torch.float16, requires_grad=True)
-            k = torch.randn(b, H, L, D, device=device, dtype=torch.float16, requires_grad=True)
-            v = torch.randn(b, H, L, D, device=device, dtype=torch.float16, requires_grad=True)
+            q = torch.randn(b_cand, H, L, D, device=device, dtype=torch.float16, requires_grad=True)
+            k = torch.randn(b_cand, H, L, D, device=device, dtype=torch.float16, requires_grad=True)
+            v = torch.randn(b_cand, H, L, D, device=device, dtype=torch.float16, requires_grad=True)
             mask = torch.tril(torch.ones(num_blocks, num_blocks, device=device, dtype=torch.int8))
             out = block_sparse_attn(q, k, v, mask, block_size)
             loss = out.sum()
@@ -128,11 +138,12 @@ def find_b_max_block_sparse_attn(L, device, H=8, D=64, block_size=16):
             torch.cuda.synchronize()
             peak = torch.cuda.max_memory_allocated() / (1024 ** 2)
             del q, k, v, mask, out, loss
-            b_max = b
+            b_max = b_cand
             peak_vram = peak
         except torch.cuda.OutOfMemoryError:
             break
-        except Exception:
+        except (RuntimeError, Exception) as exc:
+            logger.warning("Block Sparse Attn stopped at B=%d: %s", b_cand, exc, exc_info=True)
             break
     return b_max, round(peak_vram, 2)
 

@@ -920,6 +920,29 @@ class LoLAAttention(BaseAttention):
 
         use_cache = is_single_token_decode
 
+        if not use_cache and not output_attentions and head_mask is None and (mask is None or mask.dim() == 2):
+            is_causal = self.is_decoder and not is_cross_attention and N_k >= N_q
+            attn_mask = None
+            if mask is not None:
+                attn_mask = (mask == 1).unsqueeze(1).unsqueeze(2) if mask.dtype != torch.bool else mask.unsqueeze(1).unsqueeze(2)
+            try:
+                context = F.scaled_dot_product_attention(
+                    Q, K, V,
+                    attn_mask=attn_mask,
+                    dropout_p=self.dropout.p if self.training else 0.0,
+                    is_causal=is_causal if attn_mask is None else False,
+                    scale=scale,
+                )
+                context = context.transpose(1, 2).contiguous().view(B, N_q, self.all_head_size)
+                context = torch.nan_to_num(context, nan=0.0)
+                if self.is_nested_encoder:
+                    output = context
+                else:
+                    output = self.out_proj(context)
+                return output, None
+            except Exception:
+                pass
+
         if use_cache:
             self.cache.update(K, V)
             cached_k, cached_v = self.cache.get_cached()
