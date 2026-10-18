@@ -74,7 +74,7 @@ def main():
         ]
 
         try:
-            p = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, check=True)
+            _ = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, check=True)
             logger.info("Module %s training completed successfully.", mod)
             results.append({"module": mod, "status": "success"})
         except subprocess.CalledProcessError as e:

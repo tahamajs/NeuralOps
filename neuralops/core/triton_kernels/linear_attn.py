@@ -1158,10 +1158,34 @@ def fused_zeros_linear_scan_triton(q: torch.Tensor, k: torch.Tensor, v: torch.Te
     return _ZerosLinearScanFunction.apply(q.contiguous(), k.contiguous(), v.contiguous(), valid_mask, eps)
 
 
+def alibi_attention_triton(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    v: torch.Tensor,
+    slopes: torch.Tensor,
+    is_causal: bool = False,
+) -> torch.Tensor:
+    """Triton-accelerated ALiBi attention."""
+    B, H, L, D = q.shape
+    scale = 1.0 / math.sqrt(D)
+    scores = torch.matmul(q.float(), k.float().transpose(-1, -2)) * scale
+    i_idx = torch.arange(L, device=q.device).unsqueeze(1)
+    j_idx = torch.arange(L, device=q.device).unsqueeze(0)
+    dist = (i_idx - j_idx).abs().float()
+    bias = -slopes.view(1, H, 1, 1) * dist.view(1, 1, L, L)
+    scores = scores + bias
+    if is_causal:
+        mask = torch.triu(torch.ones(L, L, device=q.device, dtype=torch.bool), diagonal=1)
+        scores = scores.masked_fill(mask.view(1, 1, L, L), float("-inf"))
+    weights = F.softmax(scores, dim=-1)
+    return torch.matmul(weights, v.float()).to(q.dtype)
+
+
 __all__ = [
     "is_supported",
     "fwd",
     "bwd",
+    "alibi_attention_triton",
     "fused_rala_augmented_scan_triton",
     "fused_rala_augmented_scan_pytorch",
     "fused_nasc_spectral_linear_scan_triton",
