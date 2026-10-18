@@ -107,6 +107,7 @@ from neuralops.core.triton_kernels.fused_norm_linear import (
     fused_norm_linear_pytorch,
     fused_rmsnorm_linear,
     fused_rmsnorm_gate,
+)
 # Catalog of all Triton Kernels across NeuralOps
 TRITON_STANDALONE_KERNELS: list[str] = [
     "block_sparse_streaming_attn",
