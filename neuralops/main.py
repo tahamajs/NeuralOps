@@ -60,8 +60,6 @@ _HERE = Path(__file__).resolve().parent
 _CODES = _HERE.parent
 if str(_CODES) not in sys.path:
     sys.path.insert(0, str(_CODES))
-if str(_HERE) not in sys.path:
-    sys.path.insert(0, str(_HERE))
 
 # Mirror and cache defaults
 # Do not override HF_ENDPOINT or HF cache dirs if user/environment already set them
@@ -227,7 +225,11 @@ def load_data(cfg: Any, tokenizer: Any) -> tuple[Any, int, bool]:
 # ---------------------------------------------------------------------------
 
 
-from transformers import TrainerCallback
+try:
+    from transformers import TrainerCallback
+except ImportError:
+    class TrainerCallback:
+        pass
 
 
 class LiveHistoryCallback(TrainerCallback):
