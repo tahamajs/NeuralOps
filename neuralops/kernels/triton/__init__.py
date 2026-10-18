@@ -213,4 +213,4 @@ def __getattr__(name: str) -> Any:
 
 def __dir__() -> list[str]:
     """Execute __dir__ operation."""
-    return sorted(list(globals().keys()) + __all__)
+    return sorted(list(set(globals().keys()) | set(__all__)))

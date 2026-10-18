@@ -210,9 +210,14 @@ def _import_dependencies() -> bool:
 
         from neuralops.core.registry import ATTENTION_REGISTRY as _ATTENTION_REGISTRY
         from neuralops.core.registry import COMPRESSOR_REGISTRY as _COMPRESSOR_REGISTRY
-        from neuralops.eval_all_models_datasets import (
-            apply_module_to_model as _apply_module_to_model,
-        )
+        try:
+            from evaluation.eval_all_models_datasets import (
+                apply_module_to_model as _apply_module_to_model,
+            )
+        except ImportError:
+            from neuralops.eval_all_models_datasets import (
+                apply_module_to_model as _apply_module_to_model,
+            )
 
         torch = _torch
         AutoModelForCausalLM = _AutoModelForCausalLM
