@@ -3,7 +3,7 @@ Unified Custom Op and Torch.compile Compatibility Registry for NeuralOps Triton 
 
 Provides seamless support for `torch.compile(model, fullgraph=False)` without graph breaks:
   1. Uses PyTorch >= 2.4 `torch.library.custom_op` and `register_fake` when available.
-  2. Provides automatic FakeTensor / Meta shape propagation across all 26 kernel modules.
+  2. Provides automatic FakeTensor / Meta shape propagation across all Triton kernel modules.
   3. Falls back gracefully on older PyTorch versions or non-CUDA environments.
 """
 
@@ -348,7 +348,7 @@ if _HAS_TORCH_LIBRARY_CUSTOM_OP:
         def _op_paged_attn_fake(q: torch.Tensor, k_cache: torch.Tensor, v_cache: torch.Tensor, block_tables: torch.Tensor, seq_lens: torch.Tensor, block_size: int = 16) -> torch.Tensor:
             return torch.empty_like(q)
 
-        # 26. Paged Recurrent State Step Op
+        # Paged Recurrent State Step Op
         @torch.library.custom_op("neuralops::paged_recurrent_state_step", mutates_args=())
         def _op_paged_recurrent_state_step(q_t: torch.Tensor, k_t: torch.Tensor, v_t: torch.Tensor, page_pool: torch.Tensor, block_tables: torch.Tensor, page_slot: int = 0, decay: float = 1.0) -> torch.Tensor:
             from neuralops.core.triton_kernels.paged_attention import paged_recurrent_state_step_triton
