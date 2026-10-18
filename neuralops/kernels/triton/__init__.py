@@ -1,5 +1,4 @@
-"""
-NeuralOps Triton JIT GPU Acceleration Suite.
+"""NeuralOps Triton JIT GPU Acceleration Suite.
 
 Canonical exports and seamless interoperability layer between:
   1. The 13 Standalone Flagship Triton JIT Kernels (SM 8.0 - SM 9.0+ Ada/Hopper):
@@ -16,8 +15,8 @@ Canonical exports and seamless interoperability layer between:
      - triton_spectral_entropy_svd_gate (spectral_entropy_svd_gate.py)
      - triton_fused_act_scale_quant_gemm (fused_act_scale_quant_gemm.py)
      - triton_fused_latent_kv_cache_attention (fused_latent_kv_cache_attention.py)
-  2. The 26 Production Triton Kernel Modules & Autotuning Infrastructure
-     hosted in `neuralops.core.triton_kernels`.
+  2. The Production Triton Kernel Modules & Autotuning Infrastructure
+     hosted in `neuralops.core.triton_kernels` (27 Categorized Modules + 2 Root Modules + 20 Extended Kernels).
   3. PyTorch CPU / MPS / CUDA reference fallbacks for all kernels.
 """
 
@@ -25,7 +24,7 @@ from __future__ import annotations
 
 import importlib
 import sys
-from typing import Any
+from typing import Any, List, Optional
 
 # 1. Standalone Flagship Triton Kernel Modules
 from neuralops.kernels.triton import (
@@ -74,6 +73,13 @@ from neuralops.core.triton_kernels import (
     autotune_kernel,
     check_triton_suitability,
     log_fallback_reason,
+    # Catalogs and Discovery
+    TRITON_STANDALONE_KERNELS,
+    TRITON_CORE_MODULES,
+    TRITON_ROOT_MODULES,
+    TRITON_EXTENDED_KERNELS,
+    TRITON_KERNEL_CATALOG,
+    list_triton_kernels,
     # PyTorch Reference Implementations for Flagship Kernels
     triton_fused_lowrank_gated_gemm_pytorch_ref,
     triton_fused_lowrank_sparse_gemm_pytorch_ref,
@@ -88,7 +94,7 @@ from neuralops.core.triton_kernels import (
     triton_block_sparse_streaming_attn_pytorch_ref,
     triton_hgrn2_fused_bwd_scan_pytorch_ref,
     triton_fused_latent_kv_cache_attention_pytorch_ref,
-    # 26 Core Production Kernel Modules
+    # All Core Categorized Kernel Modules
     gdn_scan,
     gla_scan,
     hgrn2_scan,
@@ -111,14 +117,48 @@ from neuralops.core.triton_kernels import (
     varlen_attention,
     state_update,
     softplus,
+    cur_linear,
+    differential_attention,
+    dynamic_sparse_attention,
+    hydra_attention,
+    retnet_retention,
     autotuner,
     hardware_profile,
     op_registry,
     _common,
     _types,
+    # Extended Suite Functions
+    triton_differential_attention,
+    triton_differential_attention_pytorch_ref,
+    TritonDifferentialAttentionFunction,
+    triton_hydra_attention,
+    triton_hydra_attention_pytorch_ref,
+    TritonHydraAttentionFunction,
+    triton_multi_scale_retention,
+    triton_retnet_retention,
+    triton_multi_scale_retention_pytorch_ref,
+    triton_retnet_retention_pytorch_ref,
+    TritonRetNetRetentionFunction,
+    triton_dynamic_sparse_attention,
+    triton_dynamic_sparse_attention_pytorch_ref,
+    TritonDynamicSparseAttentionFunction,
+    triton_cur_linear,
+    triton_cur_linear_pytorch_ref,
+    TritonCURLinearFunction,
 )
 
+# Root Bridge Modules
+from neuralops.core.triton_linear_attn import fast_linear_attention, LinearAttentionTriton
+from neuralops.core.triton_sparse_attn import triton_block_sparse_attention
+
 __all__ = [
+    # Catalog and discovery
+    "TRITON_STANDALONE_KERNELS",
+    "TRITON_CORE_MODULES",
+    "TRITON_ROOT_MODULES",
+    "TRITON_EXTENDED_KERNELS",
+    "TRITON_KERNEL_CATALOG",
+    "list_triton_kernels",
     # Flagship 13 Standalone Modules
     "block_sparse_streaming_attn",
     "chunked_delta_gate_scan",
@@ -170,7 +210,7 @@ __all__ = [
     "autotune_kernel",
     "check_triton_suitability",
     "log_fallback_reason",
-    # 26 Core Modules
+    # Core Categorized Modules
     "gdn_scan",
     "gla_scan",
     "hgrn2_scan",
@@ -193,11 +233,38 @@ __all__ = [
     "varlen_attention",
     "state_update",
     "softplus",
+    "cur_linear",
+    "differential_attention",
+    "dynamic_sparse_attention",
+    "hydra_attention",
+    "retnet_retention",
     "autotuner",
     "hardware_profile",
     "op_registry",
     "_common",
     "_types",
+    # Extended Suite Functions
+    "triton_differential_attention",
+    "triton_differential_attention_pytorch_ref",
+    "TritonDifferentialAttentionFunction",
+    "triton_hydra_attention",
+    "triton_hydra_attention_pytorch_ref",
+    "TritonHydraAttentionFunction",
+    "triton_multi_scale_retention",
+    "triton_retnet_retention",
+    "triton_multi_scale_retention_pytorch_ref",
+    "triton_retnet_retention_pytorch_ref",
+    "TritonRetNetRetentionFunction",
+    "triton_dynamic_sparse_attention",
+    "triton_dynamic_sparse_attention_pytorch_ref",
+    "TritonDynamicSparseAttentionFunction",
+    "triton_cur_linear",
+    "triton_cur_linear_pytorch_ref",
+    "TritonCURLinearFunction",
+    # Root Bridge Modules
+    "fast_linear_attention",
+    "LinearAttentionTriton",
+    "triton_block_sparse_attention",
 ]
 
 
