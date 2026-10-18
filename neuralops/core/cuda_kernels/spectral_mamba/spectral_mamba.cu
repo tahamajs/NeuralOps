@@ -72,6 +72,23 @@ __global__ void __launch_bounds__(256) spectral_mamba_fwd_vectorized_fp32_kernel
     }
 }
 
+template <typename scalar_t>
+__global__ void __launch_bounds__(256) spectral_mamba_fwd_broadcast_kernel(
+    scalar_t* __restrict__ out,
+    const scalar_t* __restrict__ x,
+    const scalar_t* __restrict__ freq_coeffs,
+    const int total,
+    const float threshold
+) {
+    const int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx >= total) return;
+
+    const float x_val = to_float(x[idx]);
+    const float c_val = to_float(freq_coeffs[idx]);
+    const float g = (fabsf(c_val) > threshold) ? c_val : 0.0f;
+    out[idx] = from_float<scalar_t>(x_val * g);
+}
+
 }} // namespace neuralops::cuda
 
 torch::Tensor spectral_mamba_fwd(
@@ -83,17 +100,37 @@ torch::Tensor spectral_mamba_fwd(
     CHECK_INPUT(freq_coeffs);
 
     const int D = x.size(-1);
-    TORCH_CHECK(freq_coeffs.numel() == D, "freq_coeffs must match the trailing dimension D of x");
-
-    auto out = torch::empty_like(x);
     const int total = x.numel();
+    auto out = torch::empty_like(x);
     if (total == 0 || D == 0) return out;
 
-    const int rows = total / D;
-    constexpr int THREADS = 256;
     auto stream = c10::cuda::getCurrentCUDAStream();
     auto x_c = x.contiguous();
     auto c_c = freq_coeffs.contiguous();
+
+    if (freq_coeffs.numel() == total) {
+        constexpr int THREADS = 256;
+        const int blocks = (total + THREADS - 1) / THREADS;
+        AT_DISPATCH_FLOATING_TYPES_AND2(
+            at::ScalarType::Half, at::ScalarType::BFloat16,
+            x.scalar_type(), "spectral_mamba_fwd_broadcast", ([&] {
+                neuralops::cuda::spectral_mamba_fwd_broadcast_kernel<scalar_t><<<blocks, THREADS, 0, stream>>>(
+                    out.data_ptr<scalar_t>(),
+                    x_c.data_ptr<scalar_t>(),
+                    c_c.data_ptr<scalar_t>(),
+                    total,
+                    static_cast<float>(threshold)
+                );
+            })
+        );
+        CUDA_KERNEL_LAUNCH_CHECK();
+        return out;
+    }
+
+    TORCH_CHECK(freq_coeffs.numel() == D, "freq_coeffs must have numel == D or match x.shape");
+
+    const int rows = total / D;
+    constexpr int THREADS = 256;
 
     // Fast 128-bit vectorized path for FP32 aligned tensors
     if (x.scalar_type() == at::ScalarType::Float && (D % 4 == 0)) {
