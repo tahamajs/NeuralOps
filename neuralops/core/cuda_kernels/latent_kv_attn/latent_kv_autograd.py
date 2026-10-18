@@ -1,5 +1,5 @@
 """
-Fused Latent KV-Cache Attention Interface and 3-Level Fallback.
+Fused Latent KV-Cache Attention Interface, Autograd Function and 3-Level Fallback.
 Target: SM 8.9 (NVIDIA Ada Lovelace RTX 4070 Laptop GPU, 8GB VRAM).
 """
 
@@ -30,7 +30,7 @@ def _get_module():
             name="cuda_latent_kv_attn",
             cpp_sources=cpp_src,
             cuda_sources=cuda_src,
-            functions=["latent_kv_cache_attention_fwd"],
+            functions=["latent_kv_cache_attention_fwd", "latent_kv_cache_attention_bwd"],
         )
     return _MODULE
 
@@ -45,6 +45,36 @@ def latent_kv_cache_attention_pytorch_ref(
     """Pure PyTorch reference implementation."""
     from neuralops.core.triton_kernels.linear_attn import triton_fused_latent_kv_cache_attention_pytorch_ref
     return triton_fused_latent_kv_cache_attention_pytorch_ref(q, c_kv, u_k, u_v, sm_scale=sm_scale)
+
+
+class LatentKVCacheAttentionFunction(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, q, c_kv, u_k, u_v, sm_scale: float):
+        ctx.save_for_backward(q, c_kv, u_k, u_v)
+        ctx.sm_scale = sm_scale
+        mod = _get_module()
+        return mod.latent_kv_cache_attention_fwd(
+            q.contiguous(),
+            c_kv.contiguous(),
+            u_k.contiguous(),
+            u_v.contiguous(),
+            float(sm_scale),
+        )
+
+    @staticmethod
+    def backward(ctx, grad_out):
+        q, c_kv, u_k, u_v = ctx.saved_tensors
+        sm_scale = ctx.sm_scale
+        mod = _get_module()
+        grad_q, grad_c_kv, grad_u_k, grad_u_v = mod.latent_kv_cache_attention_bwd(
+            grad_out.contiguous(),
+            q.contiguous(),
+            c_kv.contiguous(),
+            u_k.contiguous(),
+            u_v.contiguous(),
+            float(sm_scale),
+        )
+        return grad_q, grad_c_kv, grad_u_k, grad_u_v, None
 
 
 def _get_triton_impl():
@@ -67,14 +97,7 @@ def latent_kv_cache_attention(
         sm_scale = 1.0 / math.sqrt(c_kv.shape[-1])
 
     def cuda_fn(q, c_kv, u_k, u_v, sm_scale=sm_scale, **kwargs):
-        mod = _get_module()
-        return mod.latent_kv_cache_attention_fwd(
-            q.contiguous(),
-            c_kv.contiguous(),
-            u_k.contiguous(),
-            u_v.contiguous(),
-            float(sm_scale),
-        )
+        return LatentKVCacheAttentionFunction.apply(q, c_kv, u_k, u_v, float(sm_scale))
 
     triton_fn = _get_triton_impl()
     if c_kv.shape[-1] > 128:
