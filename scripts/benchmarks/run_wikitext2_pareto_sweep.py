@@ -28,8 +28,12 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 from datasets import load_dataset
 
 from neuralops.core.registry import COMPRESSOR_REGISTRY
-from neuralops.evaluation.eval_perplexity import compute_perplexity, build_calibration_loader
-from neuralops.eval_all_models_datasets import apply_module_to_model
+try:
+    from evaluation.eval_perplexity import compute_perplexity, build_calibration_loader
+    from evaluation.eval_all_models_datasets import apply_module_to_model
+except ImportError:
+    from neuralops.evaluation.eval_perplexity import compute_perplexity, build_calibration_loader
+    from neuralops.eval_all_models_datasets import apply_module_to_model
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("WikiText2ParetoSweep")

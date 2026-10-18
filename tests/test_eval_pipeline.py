@@ -7,14 +7,14 @@ import pytest
 import torch
 import torch.nn as nn
 
-from neuralops.evaluation.eval_pipeline import (
+from evaluation.eval_pipeline import (
     probe_optimal_batch_size,
     _setup_eval_environment,
     _finalize_benchmark_result,
     evaluate_single_combination_opt,
     evaluate_single_combination,
 )
-from neuralops.evaluation.eval_types import BenchmarkResult
+from evaluation.eval_types import BenchmarkResult
 
 
 class DummyModel(nn.Module):
