@@ -12,6 +12,7 @@ from neuralops.core.common import _cfg_get
 from neuralops.core.attention_utils import (
     apply_rotary_pos_emb,
 )
+from neuralops.core.utils.rope import _rotate_half
 
 import logging
 import math
@@ -243,18 +244,25 @@ class DynamicLowRankProjector(nn.Module):
     def forward(self, x: torch.Tensor, gate: torch.Tensor) -> torch.Tensor:
         if x.is_cuda:
             try:
-                from neuralops.core.triton_kernels.low_rank import low_rank_forward
-                out = low_rank_forward(x, self.V, self.S, self.U, gate, self.bias)
+                from neuralops.core.cuda_kernels.low_rank_svd import fused_lowrank_gated_gemm
+                u_eff = self.U * self.S.unsqueeze(0)
+                out = fused_lowrank_gated_gemm(
+                    x, self.V.t().contiguous(), u_eff.t().contiguous(), alpha=gate, bias=self.bias
+                )
             except Exception:
-                v = self.V.to(x.dtype)
-                s = self.S.to(x.dtype)
-                u = self.U.to(x.dtype)
-                g = gate.to(x.dtype)
-                z = torch.matmul(x, v)
-                z = z * s.unsqueeze(0).unsqueeze(0) * g.unsqueeze(1)
-                out = torch.matmul(z, u.t().contiguous())
-                if self.bias is not None:
-                    out = out + self.bias.to(x.dtype)
+                try:
+                    from neuralops.core.triton_kernels.low_rank import low_rank_forward
+                    out = low_rank_forward(x, self.V, self.S, self.U, gate, self.bias)
+                except Exception:
+                    v = self.V.to(x.dtype)
+                    s = self.S.to(x.dtype)
+                    u = self.U.to(x.dtype)
+                    g = gate.to(x.dtype)
+                    z = torch.matmul(x, v)
+                    z = z * s.unsqueeze(0).unsqueeze(0) * g.unsqueeze(1)
+                    out = torch.matmul(z, u.t().contiguous())
+                    if self.bias is not None:
+                        out = out + self.bias.to(x.dtype)
         else:
             v = self.V.to(x.dtype)
             s = self.S.to(x.dtype)
