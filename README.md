@@ -1463,21 +1463,32 @@ Every table and figure in this repository is reproducible from scratch on physic
 
 ### Benchmark Execution Commands
 
+To reproduce the physical GPU benchmarks exactly as certified, execute on the remote GPU server (`taha@192.168.1.100` within `/mnt/d/SVD_linear_Attention`) using the production environment:
+
 ```bash
+# Environment interpreter
+REMOTE_PYTHON="/mnt/d/venv/bin/python3"
+
 # 1. Run full 26 Triton kernel microbenchmark suite
-python scripts/benchmarks/benchmark_all_26_kernels.py
+$REMOTE_PYTHON scripts/benchmarks/benchmark_all_26_kernels.py
 
 # 2. Run end-to-end 131 attention mechanisms evaluation
-python scripts/benchmarks/benchmark_all_131_attentions.py
+$REMOTE_PYTHON scripts/benchmarks/benchmark_all_131_attentions.py
 
 # 3. Run 72 compression engines evaluation
-python scripts/benchmarks/benchmark_all_72_compressors.py
+$REMOTE_PYTHON scripts/benchmarks/benchmark_all_72_compressors.py
 
-# 4. Run isolated benchmark sweep across all 108 native CUDA C++ kernels
-python scripts/benchmarks/benchmark_all_108_cuda_isolated.py --classify-strict
+# 4. Run SOTA gap closure validation suite
+$REMOTE_PYTHON scripts/benchmarks/benchmark_sota.py
 
-# 5. Verify canonical counts invariant (131/72/26)
-python scripts/utils/verify_readme_counts.py
+# 5. Run 3-level execution hierarchy benchmark (CUDA vs Triton vs PyTorch)
+$REMOTE_PYTHON scripts/benchmarks/benchmark_3level_cuda_triton_pytorch.py
+
+# 6. Run isolated benchmark sweep across all 108 native CUDA C++ kernels
+$REMOTE_PYTHON scripts/benchmarks/benchmark_all_108_cuda_isolated.py --classify-strict
+
+# 7. Verify canonical counts invariant (131/72/26)
+$REMOTE_PYTHON scripts/utils/verify_readme_counts.py
 ```
 
 ---
