@@ -12,9 +12,6 @@ Outputs structured JSON to results/benchmarks_serving_ttft_itl.json.
 from __future__ import annotations
 
 import argparse
-import gc
-import json
-import os
 from pathlib import Path
 import sys
 import time
@@ -174,7 +171,8 @@ def benchmark_serving(
             v_tok = torch.randn(num_heads, head_dim, dtype=torch.float16, device=dev)
             for _ in range(tokens_to_add):
                 paged_cache.append_token(s, k_tok, v_tok)
-        torch.cuda.synchronize() if dev.type == "cuda" else None
+        if dev.type == "cuda":
+            torch.cuda.synchronize()
         paged_alloc_time = (time.perf_counter() - t0) * 1000.0
 
         # Contiguous baseline
