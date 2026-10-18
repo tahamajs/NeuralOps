@@ -1,0 +1,53 @@
+{
+  "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+  "num_adapters": 4,
+  "ranks": [
+    16,
+    32,
+    16,
+    32
+  ],
+  "adapter_vram_kb": 384.0,
+  "forward_latency": {
+    "sequential_ms": 0.8117180799308699,
+    "concurrent_ms": 0.7324380100180861,
+    "speedup": 1.11
+  },
+  "step_latency": {
+    "sequential_ms": 1.6796520201023668,
+    "concurrent_ms": 1.6210801700071897,
+    "speedup": 1.04
+  },
+  "stress_1000": {
+    "net_drift_mb": 0.0,
+    "zero_leak_verified": true,
+    "final_fragmentation_pct": 94.16,
+    "checkpoints": {
+      "100": {
+        "allocated_mb": 132.375,
+        "reserved_mb": 1622.0,
+        "fragmentation_pct": 91.84
+      },
+      "250": {
+        "allocated_mb": 132.375,
+        "reserved_mb": 2266.0,
+        "fragmentation_pct": 94.16
+      },
+      "500": {
+        "allocated_mb": 132.375,
+        "reserved_mb": 2266.0,
+        "fragmentation_pct": 94.16
+      },
+      "750": {
+        "allocated_mb": 132.375,
+        "reserved_mb": 2266.0,
+        "fragmentation_pct": 94.16
+      },
+      "1000": {
+        "allocated_mb": 132.375,
+        "reserved_mb": 2266.0,
+        "fragmentation_pct": 94.16
+      }
+    }
+  }
+}
