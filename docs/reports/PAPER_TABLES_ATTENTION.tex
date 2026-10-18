@@ -1,0 +1,58 @@
+% Auto-generated Attention Benchmarks LaTeX Table
+\begin{table*}[t]
+\centering
+\small
+\caption{Benchmarking Memory-Optimized CUDA Attention Kernels (SMEM Tiling, 128-bit Loads) vs PyTorch SDPA Reference on NVIDIA RTX 4070 GPU.}
+\label{tab:cuda_attention_benchmarks}
+\begin{tabular}{llrrrrrr}
+\toprule
+Kernel & Shape $(B, L, D)$ & PyTorch Fwd (ms) & CUDA Fwd (ms) & Fwd Speedup & PyTorch Bwd (ms) & CUDA Bwd (ms) & Bwd Speedup \\
+\midrule
+sparse\_attention & (1, 1024, 64) & 0.197 & 0.639 & 0.31x & 0.422 & 2.082 & 0.20x \\
+routing\_attention & (1, 1024, 64) & 0.200 & 2.534 & 0.08x & 0.420 & 6.813 & 0.06x \\
+cross\_attention & (1, Q:256/KV:1024, 64) & 0.029 & 0.922 & 0.03x & 0.105 & 2.649 & 0.04x \\
+sparse\_attention & (1, 2048, 64) & 0.695 & 1.019 & 0.68x & 1.297 & 3.466 & 0.37x \\
+routing\_attention & (1, 2048, 64) & 0.677 & 9.607 & 0.07x & 1.295 & 25.367 & 0.05x \\
+cross\_attention & (1, Q:512/KV:2048, 64) & 0.068 & 3.402 & 0.02x & 0.203 & 9.780 & 0.02x \\
+sparse\_attention & (1, 4096, 64) & 3.200 & 2.031 & 1.58x & 4.776 & 6.731 & 0.71x \\
+routing\_attention & (1, 4096, 64) & 2.508 & 38.028 & 0.07x & 4.771 & 101.502 & 0.05x \\
+cross\_attention & (1, Q:1024/KV:4096, 64) & 0.247 & 13.291 & 0.02x & 0.689 & 38.210 & 0.02x \\
+sparse\_attention & (1, 8192, 64) & 12.697 & 4.024 & 3.16x & 18.543 & 13.192 & 1.41x \\
+routing\_attention & (1, 8192, 64) & 10.194 & 151.692 & 0.07x & 18.862 & 402.989 & 0.05x \\
+cross\_attention & (1, Q:2048/KV:8192, 64) & 0.960 & 53.202 & 0.02x & 2.540 & 150.507 & 0.02x \\
+sparse\_attention & (4, 1024, 64) & 0.918 & 1.956 & 0.47x & 1.454 & 6.911 & 0.21x \\
+routing\_attention & (4, 1024, 64) & 0.719 & 9.601 & 0.07x & 1.451 & 25.452 & 0.06x \\
+cross\_attention & (4, Q:256/KV:1024, 64) & 0.068 & 3.344 & 0.02x & 0.275 & 9.695 & 0.03x \\
+sparse\_attention & (4, 2048, 64) & 2.532 & 3.977 & 0.64x & 4.833 & 13.079 & 0.37x \\
+routing\_attention & (4, 2048, 64) & 2.520 & 62.033 & 0.04x & 4.828 & 181.088 & 0.03x \\
+cross\_attention & (4, Q:512/KV:2048, 64) & 0.401 & 28.456 & 0.01x & 1.809 & 81.904 & 0.02x \\
+sparse\_attention & (4, 4096, 64) & 20.542 & 14.000 & 1.47x & 31.627 & 46.619 & 0.68x \\
+routing\_attention & (4, 4096, 64) & 17.479 & 320.883 & 0.05x & 35.332 & 903.748 & 0.04x \\
+cross\_attention & (4, Q:1024/KV:4096, 64) & 2.055 & 115.368 & 0.02x & 6.000 & 323.097 & 0.02x \\
+sparse\_attention & (8, 512, 64) & 0.702 & 3.927 & 0.18x & 1.783 & 13.283 & 0.13x \\
+routing\_attention & (8, 512, 64) & 0.684 & 10.307 & 0.07x & 1.770 & 27.961 & 0.06x \\
+cross\_attention & (8, Q:128/KV:512, 64) & 0.036 & 3.547 & 0.01x & 0.336 & 10.599 & 0.03x \\
+sparse\_attention & (8, 1024, 64) & 2.945 & 8.233 & 0.36x & 5.655 & 27.055 & 0.21x \\
+routing\_attention & (8, 1024, 64) & 2.969 & 40.993 & 0.07x & 5.703 & 109.881 & 0.05x \\
+cross\_attention & (8, Q:256/KV:1024, 64) & 0.124 & 14.124 & 0.01x & 1.214 & 41.388 & 0.03x \\
+sparse\_attention & (8, 2048, 64) & 10.651 & 16.762 & 0.64x & 20.872 & 54.909 & 0.38x \\
+routing\_attention & (8, 2048, 64) & 10.629 & 162.809 & 0.07x & 20.868 & 468.458 & 0.04x \\
+cross\_attention & (8, Q:512/KV:2048, 64) & 0.957 & 56.595 & 0.02x & 3.623 & 162.241 & 0.02x \\
+sparse\_attention & (1, 1024, 128) & 0.617 & 2.183 & 0.28x & 1.587 & 11.818 & 0.13x \\
+routing\_attention & (1, 1024, 128) & 0.619 & 6.767 & 0.09x & 1.583 & 19.369 & 0.08x \\
+cross\_attention & (1, Q:256/KV:1024, 128) & 0.045 & 2.188 & 0.02x & 0.113 & 8.251 & 0.01x \\
+sparse\_attention & (1, 2048, 128) & 2.443 & 4.495 & 0.54x & 6.548 & 22.903 & 0.29x \\
+routing\_attention & (1, 2048, 128) & 2.478 & 37.659 & 0.07x & 6.587 & 111.478 & 0.06x \\
+cross\_attention & (1, Q:512/KV:2048, 128) & 0.132 & 9.853 & 0.01x & 1.009 & 30.772 & 0.03x \\
+sparse\_attention & (1, 4096, 128) & 11.309 & 9.135 & 1.24x & 22.970 & 45.285 & 0.51x \\
+routing\_attention & (1, 4096, 128) & 9.694 & 106.839 & 0.09x & 22.568 & 301.930 & 0.07x \\
+cross\_attention & (1, Q:1024/KV:4096, 128) & 0.959 & 35.592 & 0.03x & 2.972 & 145.373 & 0.02x \\
+sparse\_attention & (4, 1024, 128) & 3.700 & 13.143 & 0.28x & 10.127 & 63.653 & 0.16x \\
+routing\_attention & (4, 1024, 128) & 3.784 & 40.378 & 0.09x & 9.873 & 113.935 & 0.09x \\
+cross\_attention & (4, Q:256/KV:1024, 128) & 0.126 & 13.136 & 0.01x & 1.812 & 45.614 & 0.04x \\
+sparse\_attention & (4, 2048, 128) & 13.956 & 26.255 & 0.53x & 36.755 & 127.802 & 0.29x \\
+routing\_attention & (4, 2048, 128) & 13.280 & 191.423 & 0.07x & 33.087 & 456.604 & 0.07x \\
+cross\_attention & (4, Q:512/KV:2048, 128) & 1.430 & 50.803 & 0.03x & 5.531 & 168.590 & 0.03x \\
+\bottomrule
+\end{tabular}
+\end{table*}
