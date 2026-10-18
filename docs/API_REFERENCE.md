@@ -3,6 +3,8 @@
 This reference documents the production API, all registered Attention mechanisms (131), and Compression modules (72).
 
 ## Table of Contents
+- [3-Level Fallback Execution Hierarchy](#3-level-fallback-execution-hierarchy)
+- [Flagship Models & Compressors](#flagship-models--compressors)
 - [Core Framework API](#core-framework-api)
 - [Attention Mechanisms (131)](#attention-mechanisms)
 - [Compression Modules (72)](#compression-modules)
@@ -10,7 +12,49 @@ This reference documents the production API, all registered Attention mechanisms
 
 ---
 
+## 3-Level Fallback Execution Hierarchy
+
+NeuralOps operations adhere to a strict 3-level fallback execution hierarchy:
+1. **Level 1: Native Triton JIT** (NVIDIA SM $\ge$ 8.0 / ROCm, compiled shared memory and register-tiled kernels).
+2. **Level 2: Native CUDA C++** (SM $\ge$ 7.0 compiled hotpath extensions via `neuralops.csrc` and `torch.ops.neuralops`).
+3. **Level 3: Pure PyTorch SDPA & Vectorized Reference** (100% numerically verified baseline running unconditionally on CPU, MPS, and CUDA without crashing).
+
+### Standard Code Example: 3-Level Dispatch
+```python
+import torch
+from neuralops.core.cuda_kernels._fallback import (
+    dispatch,
+    force_kernel_backend,
+    get_last_dispatch_backend,
+)
+
+# Standard dispatch across the hierarchy
+x = torch.randn(2, 64, device="cuda" if torch.cuda.is_available() else "cpu")
+out = dispatch(
+    cuda_fn=None,
+    triton_fn=None,
+    pytorch_fn=lambda t: t * 2.0,
+    args=(x,),
+    kernel_name="demo_dispatch"
+)
+print("Resolved backend:", get_last_dispatch_backend("demo_dispatch"))
+
+# Forcing Level 3 (Pure PyTorch Reference)
+with force_kernel_backend("pytorch"):
+    out_pt = dispatch(
+        cuda_fn=None,
+        triton_fn=None,
+        pytorch_fn=lambda t: t * 2.0,
+        args=(x,),
+        kernel_name="demo_dispatch"
+    )
+    assert get_last_dispatch_backend("demo_dispatch") == "pytorch"
+```
+
+---
+
 ## Attention Mechanisms
+
 
 ### `adaptive_span_attention`
 - **Class**: `neuralops.attentions.adaptive.adaptive_span_attention.AdaptiveSpanAttention`
@@ -534,11 +578,50 @@ This reference documents the production API, all registered Attention mechanisms
 
 ### `svd_linear_attention`
 - **Class**: `neuralops.attentions.svd.svd_linear_attention.SVDLinearAttention`
-- **Summary**: SVD Factorized Linear Attention with optional exponential decay gating.
+- **Summary**: SVD Factorized Linear Attention with optional exponential decay gating, rank truncation, LoRA adapters, and 3-level fallback execution.
+- **Initialization Signature**:
+  ```python
+  SVDLinearAttention(
+      config: Any | None = None,
+      old_attn: nn.Module | None = None,
+      rank: int | None = None,
+      mode: str = "exact",
+      freeze_svd: bool = False,
+      lora_rank: int | None = 16,
+      lora_alpha: float = 32.0,
+      is_decoder: bool | None = None,
+      use_decay_gating: bool = False,
+      decay_activation: str = "softplus",
+      decay_channel_wise: bool = False,
+      use_fused_kernel: bool = False,
+      use_rms_norm: bool = False,
+      chunk_size: int = 64,
+      **kwargs: Any,
+  ) -> None
+  ```
+- **Forward Signature**:
+  ```python
+  forward(
+      hidden_states: torch.Tensor | None = None,
+      attention_mask: torch.Tensor | None = None,
+      head_mask: torch.Tensor | None = None,
+      encoder_hidden_states: torch.Tensor | None = None,
+      encoder_attention_mask: torch.Tensor | None = None,
+      past_key_value: Any | None = None,
+      output_attentions: bool | None = False,
+      output_hidden_states: bool | None = False,
+      return_dict: bool | None = True,
+      position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
+      *args: Any,
+      **kwargs: Any,
+  ) -> tuple[torch.Tensor, torch.Tensor | None] | Any
+  ```
+- **Execution**: 3-level fallback (`Level 1: Native Triton JIT` $\to$ `Level 2: Native CUDA C++` $\to$ `Level 3: Pure PyTorch SDPA`).
 
 ### `svd_linear_attn`
 - **Class**: `neuralops.attentions.svd.svd_linear_attention.SVDLinearAttention`
-- **Summary**: SVD Factorized Linear Attention with optional exponential decay gating.
+- **Summary**: Alias of `svd_linear_attention`.
+
 
 ### `svd_linear_decay`
 - **Class**: `neuralops.attentions.svd.svd_linear_decay.DecayGatedLinearAttention`
@@ -670,7 +753,68 @@ This reference documents the production API, all registered Attention mechanisms
 
 ### `adasvd_compressor`
 - **Class**: `neuralops.compression_engine.svd.adasvd_compressor.AdaSVDCompressor`
-- **Summary**: Base class for all compressors. Not a nn.Module to avoid parameter storage.
+- **Summary**: Adaptive SVD Compressor allocating per-layer ranks dynamically based on activation Hessian energy and singular value spectra.
+- **Initialization Signature**:
+  ```python
+  AdaSVDCompressor(
+      model: nn.Module,
+      rank: int | None = None,
+      target_param_ratio: float = 0.7,
+      num_iters: int = 10,
+      max_error: float = 0.5,
+      fallback_to_original: bool = True,
+      target_attention_only: bool = True,
+      min_rank: int = 16,
+      target_modules: list[str] | None = None,
+      tokenizer: Any | None = None,
+      calibration_texts: list[str] | None = None,
+      use_weighted_als: bool = False,
+      use_mean_shift: bool = True,
+      use_gating_d: bool = True,
+      device: str | torch.device | None = None,
+      comp_config: Any = None,
+      max_calib_tokens: int = 4096,
+      fused_qkv_error_threshold: float = 0.3,
+      gelu_layer_patterns: tuple[str, ...] | None = None,
+      **kwargs: Any,
+  ) -> None
+  ```
+- **Compression Call**:
+  ```python
+  compress(calibration_data: Any | None = None) -> tuple[nn.Module, dict[str, Any]]
+  ```
+
+### `hnc_svd`
+- **Class**: `neuralops.compression_engine.svd.hnc_svd_continuation.HessianNullSpaceSVDContinuation`
+- **Summary**: Predict-Correct Continuation Engine navigating inside the Hessian null space to achieve exact zero loss gradient during low-rank SVD factorization.
+- **Initialization Signature**:
+  ```python
+  HessianNullSpaceSVDContinuation(
+      model: nn.Module | None = None,
+      target_rank: int = 32,
+      mode: str = "kronecker",
+      walk_steps: int = 600,
+      step_size_eta: float = 0.03,
+      restore_steps_m: int = 12,
+      restore_lr: float = 0.05,
+      loss_ceiling_tau: float = 0.01,
+      mu_rel: float = 1e-07,
+      gamma_nuc: float = 0.001,
+      gamma_bump: float = 0.05,
+      relinearize_every: int = 1,
+      anneal_sigma: bool = True,
+      device: str | torch.device | None = None,
+      **kwargs: Any,
+  ) -> None
+  ```
+- **Steer & Compress Signature**:
+  ```python
+  steer_and_compress(
+      probe_inputs: torch.Tensor | list[Any] | tuple[Any, ...],
+      target_linear_modules: list[str] | None = None,
+  ) -> dict[str, Any]
+  ```
+
 
 ### `admm_compressor`
 - **Class**: `neuralops.compression_engine.pruning.admm_compressor.ADMMCompressor`
@@ -741,8 +885,44 @@ This reference documents the production API, all registered Attention mechanisms
 - **Summary**: DRONE Compressor.
 
 ### `dynamic_rank`
-- **Class**: `neuralops.compression_engine.svd.dynamic_rank.dynamic_entropy_svd_factory`
-- **Summary**: Dynamic Entropy SVD factory function.
+- **Class**: `neuralops.compression_engine.svd.dynamic_rank.DynamicEntropySVDCompressor` / `DynamicSVDLinear`
+- **Summary**: Dynamic Rank SVD Compressor and runtime Linear layer, allocating rank budgets dynamically via spectral entropy.
+- **DynamicEntropySVDCompressor Init Signature**:
+  ```python
+  DynamicEntropySVDCompressor(
+      model: nn.Module,
+      min_rank: int = 16,
+      max_rank: int = 128,
+      target_param_ratio: float | None = None,
+      total_rank_budget: int | None = None,
+      target_rank: int | None = None,
+      max_error: float = 0.35,
+      target_attention_only: bool = False,
+      fallback_to_original: bool = True,
+      calibration_loader: Any = None,
+      calibration_texts: list[str] | None = None,
+      target_modules: list[str] | None = None,
+      tokenizer: Any | None = None,
+      cfg: Any | None = None,
+      **kwargs: Any,
+  ) -> None
+  ```
+- **DynamicSVDLinear Init Signature**:
+  ```python
+  DynamicSVDLinear(
+      in_features: int,
+      out_features: int,
+      rank: int,
+      bias: bool = True,
+      dtype: torch.dtype = torch.float32,
+      device: torch.device | None = None,
+  ) -> None
+  ```
+- **DynamicSVDLinear Forward Signature**:
+  ```python
+  forward(x: torch.Tensor) -> torch.Tensor
+  ```
+
 
 ### `enlighten_compressor`
 - **Class**: `neuralops.compression_engine.low_rank.enlighten_compressor.ENLightenCompressor`
