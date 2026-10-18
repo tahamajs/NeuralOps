@@ -1,0 +1,12 @@
+[
+  {
+    "module": "chela_slay",
+    "model": "models\\distilbert_sst2",
+    "dataset": "sst2",
+    "status": "MODERATE_EXPANSION",
+    "perplexity": "",
+    "accuracy_pct": 90.6,
+    "error": "base_before=66955010 base_after=67004162 delta=+0.07%",
+    "timestamp": "2026-09-24T17:32:41.841543"
+  }
+]

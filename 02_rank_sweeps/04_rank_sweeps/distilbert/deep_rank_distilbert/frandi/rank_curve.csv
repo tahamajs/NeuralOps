@@ -1,0 +1,7 @@
+module_name,status,accuracy_pct,f1_score,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,compression_rate,num_compressed_layers,num_fallback_layers,error,timestamp,rank
+,PASS,90.71,0.9113,0.3201,22.96,0.0,0.0,0,0,1.0,0,0,,,128
+,PASS,72.82,0.7334,0.5657,11.63,0.0,0.0,0,0,1.0,0,0,,,16
+,PASS,90.37,0.9073,0.3897,16.08,0.0,0.0,0,0,1.0,0,0,,,256
+,PASS,68.92,0.7441,0.5709,11.93,0.0,0.0,0,0,1.0,0,0,,,32
+,PASS,84.86,0.8527,0.3554,20.32,0.0,0.0,0,0,1.0,0,0,,,384
+,PASS,90.83,0.9117,0.314,16.39,0.0,0.0,0,0,1.0,0,0,,,64

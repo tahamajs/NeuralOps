@@ -1,0 +1,145 @@
+{
+  "run_metadata": {
+    "run_id": "kd_performer_attention_C_20261012_154838",
+    "run_name": "kd_performer_attention_gpt2_C",
+    "timestamp_start": "2026-10-12T15:52:16.246572+00:00",
+    "timestamp_end": "2026-10-12T15:52:16.246906+00:00",
+    "wall_clock_duration_s": 0.0,
+    "total_duration_s": 0.0,
+    "training_duration_s": 0.0,
+    "evaluation_duration_s": 0.0,
+    "git_commit": "116a993324d71454407587631d7bf8f4908333ad",
+    "git_commit_short": "116a993324",
+    "git_branch": "HEAD",
+    "git_dirty": true,
+    "git_diff": "neuralops/attentions/hybrid/hybrid_attention.py    |     2 +-\n neuralops/attentions/linear/performer_attention.py |     6 +-\n neuralops/attentions/ssm/mamba_svd_flash.py        |     2 +-\n results/delta_sweep/summary.csv                    |   256 +-\n results/kd_runs/aa_svd_compressor/latest.txt       |     2 +-\n results/kd_runs/hybrid_attention/latest.txt        |     2 +-\n results/kd_runs/kda_attention/latest.txt           |     2 +-\n results/kd_runs/rala_attention/latest.txt          |     2 +-\n results/kd_runs/registry.json                      | 23820 +++++++++++++++++++\n results/kd_runs/tri_branch_hybrid/latest.txt       |     2 +-\n results/kd_runs/zeros_attention/latest.txt         |     2 +-\n results/results.csv                                |    23 +\n results/results.parquet                            |   Bin 25858 -> 26924 bytes\n run_all_modules_delta.py                           |     1 +\n 14 files changed, 23985 insertions(+), 137 deletions(-)",
+    "session_id": "282644ef-7a57-4040-9763-7b9ca38cb5be",
+    "parent_run_id": null
+  },
+  "module": {
+    "name": "performer_attention",
+    "type": "attention",
+    "rank": 32
+  },
+  "model": {
+    "name": "gpt2"
+  },
+  "dataset": {
+    "name": "wikitext2",
+    "task_type": "language_modeling"
+  },
+  "config": {
+    "method": "C",
+    "rank": 32,
+    "training_type": "kd",
+    "recovery_steps": 300,
+    "learning_rate": 0.0003,
+    "batch_size": 8,
+    "seq_len": 256
+  },
+  "environment": {
+    "python_version": "3.14.7",
+    "python_executable": "/mnt/d/venv/bin/python3",
+    "platform": "Linux",
+    "platform_version": "Linux-7.0.0-38-generic-x86_64-with-glibc2.43",
+    "cpu_model": "",
+    "cpu_count": 16,
+    "ram_gb": 0.0,
+    "gpu_model": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "gpu_count": 1,
+    "gpu_vram_gb": 7.62,
+    "cuda_version": "12.8",
+    "cudnn_version": "91900",
+    "torch_version": "2.11.0+cu128",
+    "torchvision_version": "0.26.0+cu128",
+    "transformers_version": "5.19.0",
+    "datasets_version": "5.1.0",
+    "triton_version": "3.6.0",
+    "numpy_version": "2.5.2",
+    "pandas_version": "3.0.6",
+    "scipy_version": "1.18.1",
+    "neuralops_version": "0.1.0",
+    "all_installed_packages": {},
+    "env_vars_used": {}
+  },
+  "hardware_usage": {
+    "peak_vram_mb": 0.0,
+    "avg_vram_mb": 0.0,
+    "peak_ram_mb": 0.0,
+    "gpu_utilization_avg": null,
+    "gpu_temperature_max": null,
+    "gpu_power_avg": null
+  },
+  "training_history": {},
+  "metrics": {
+    "pre_ppl": 27611.53,
+    "post_ppl": 174.62,
+    "post_ppl_stage1": 280.63,
+    "post_ppl_stage2": 174.62,
+    "kd_gain": 27330.9,
+    "recovery_pct": 99.5
+  },
+  "baseline_comparison": {
+    "baseline_accuracy": null,
+    "baseline_f1": null,
+    "baseline_loss": null,
+    "accuracy_drop": null,
+    "f1_drop": null,
+    "loss_increase": null,
+    "compression_ratio": 1.0,
+    "speedup_ratio": 1.0,
+    "params_reduction_pct": 0.0
+  },
+  "resources": {
+    "peak_vram_mb": 2872.65,
+    "train_duration_s": 186.9
+  },
+  "status": "success",
+  "error": null,
+  "traceback": null,
+  "warnings": [],
+  "timed_out": false,
+  "timeout_s": 1800,
+  "retry_count": 0,
+  "max_retries": 2,
+  "reproducibility": {
+    "random_seed": 42,
+    "cublas_workspace_config": ":4096:8",
+    "torch_deterministic": false,
+    "torch_benchmark": false,
+    "env_vars_hash": "",
+    "reproduction_command": "",
+    "reproduction_script": "",
+    "expected_duration_s": 0.0,
+    "expected_peak_vram_mb": 0.0
+  },
+  "artifacts": {
+    "log_file": "",
+    "jsonl_file": "",
+    "json_file": "",
+    "plot_files": [],
+    "checkpoint_files": [],
+    "git_push_url": ""
+  },
+  "push_info": {
+    "pushed_to_git": false,
+    "pushed_to_hf": false,
+    "git_remote_url": "",
+    "hf_repo_id": "",
+    "hf_commit_hash": "",
+    "push_timestamp": ""
+  },
+  "training_type": "finetune",
+  "kd_config": {},
+  "recovery_config": {},
+  "baseline_metrics": {},
+  "delta_metrics": {},
+  "checksum": "032af73c1d8c30a1",
+  "run_id": "kd_performer_attention_C_20261012_154838",
+  "run_name": "kd_performer_attention_gpt2_C",
+  "timestamp_start": "2026-10-12T15:52:16.246572+00:00",
+  "timestamp_end": "2026-10-12T15:52:16.246906+00:00",
+  "git_commit": "116a993324d71454407587631d7bf8f4908333ad",
+  "git_dirty": true,
+  "run_key": "performer_attention__gpt2__wikitext2__rank32__7cdc20fee34c"
+}

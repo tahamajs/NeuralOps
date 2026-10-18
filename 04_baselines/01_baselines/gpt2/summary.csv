@@ -1,0 +1,190 @@
+module_name,status,accuracy_pct,elapsed_s,error,path,timestamp
+full,PASS,86.58,4.32,,adapted_gpt,2026-09-04T10:57:57.797324
+a3,PASS,81.88,19.26,,adapted_gpt,2026-09-04T10:58:17.285969
+aasvd,PASS,82.57,17.34,,adapted_gpt,2026-09-04T10:58:34.856155
+adaptive_span,SKIP_GPT_ARCHITECTURAL,50.92,15.95,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T10:58:51.038970
+adaptive_sparse,SKIP_GPT_INCOMPATIBLE_GQA,0.0,1.03,rotary_position_embedding_required,adapted_gpt,2026-09-04T10:58:52.305239
+adaptive_svd,SKIP_GPT_ARCHITECTURAL,50.92,41.45,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T10:59:33.990716
+adasplash,SKIP_GPT_ARCHITECTURAL,50.8,47.43,note: low_accuracy_plateau (50.80%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:00:21.643504
+adasvd,PASS,81.65,17.95,,adapted_gpt,2026-09-04T11:00:39.825126
+admm,PASS,59.86,15.74,,adapted_gpt,2026-09-04T11:00:55.796684
+admm_pruner,PASS,59.52,17.84,,adapted_gpt,2026-09-04T11:01:13.873380
+aegis_hybrid,SKIP_GPT_ARCHITECTURAL,46.44,27.91,note: low_accuracy_plateau (46.44%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:01:42.019814
+aegis_spectron_fp8,SKIP_GPT_ARCHITECTURAL,50.46,30.73,note: low_accuracy_plateau (50.46%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:02:12.978654
+aegis_v1,SKIP_GPT_ARCHITECTURAL,50.92,50.65,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:03:03.855150
+aegis_v2,SKIP_GPT_ARCHITECTURAL,50.92,28.1,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:03:32.179820
+aegis_v3,SKIP_GPT_ARCHITECTURAL,45.18,45.94,note: low_accuracy_plateau (45.18%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:04:18.344868
+aegis_v4,SKIP_GPT_ARCHITECTURAL,50.92,41.51,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:05:00.083558
+aegis_v5,SKIP_GPT_ARCHITECTURAL,51.49,57.89,note: low_accuracy_plateau (51.49%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:05:58.196319
+aegis_v6,SKIP_GPT_ARCHITECTURAL,46.1,54.03,note: low_accuracy_plateau (46.10%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T15:31:55.156973
+armor,PASS,80.62,26.85,,adapted_gpt,2026-09-04T11:06:26.625520
+ast,SKIP_GPT_ARCHITECTURAL,53.56,19.15,note: low_accuracy_plateau (53.56%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:06:46.002985
+astro,PASS,57.57,14.89,,adapted_gpt,2026-09-04T11:07:01.127031
+asvd,SKIP_GPT_ARCHITECTURAL,50.92,37.72,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:07:39.078346
+bam_umoe,SKIP_GPT_ARCHITECTURAL,50.92,190.48,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:10:49.785822
+block_transformer_hiba,SKIP_GPT_ARCHITECTURAL,51.03,15.57,note: low_accuracy_plateau (51.03%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:11:05.718232
+bonsai,PASS,61.35,17.21,,adapted_gpt,2026-09-04T11:11:23.149878
+cachenotes,SKIP_GPT_ARCHITECTURAL,52.06,15.06,note: low_accuracy_plateau (52.06%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:11:38.442273
+chela_slay,SKIP_GPT_ARCHITECTURAL,50.92,23.79,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:12:02.462277
+cluster,SKIP_GPT_ARCHITECTURAL,50.92,26.1,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:12:28.790446
+come,PASS,62.04,10.66,,adapted_gpt,2026-09-04T11:12:39.676655
+compot,SKIP_GPT_ARCHITECTURAL,52.18,14.99,note: low_accuracy_plateau (52.18%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:12:54.900908
+compressed_attention,SKIP_GPT_ARCHITECTURAL,50.92,14.82,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:13:09.952180
+compressed_attention_layer_energy,SKIP_GPT_ARCHITECTURAL,50.92,14.78,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:13:24.944629
+compressed_mha,SKIP_GPT_ARCHITECTURAL,50.92,15.42,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:13:40.595228
+coopq,SKIP_GPT_ARCHITECTURAL,52.41,26.3,note: low_accuracy_plateau (52.41%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:14:07.127055
+cosformer,SKIP_GPT_ARCHITECTURAL,50.92,20.6,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:14:27.956053
+cr,PASS,58.37,15.04,,adapted_gpt,2026-09-04T11:14:43.227016
+cur,PASS,56.08,14.94,,adapted_gpt,2026-09-04T11:14:58.396088
+cur_moe,PASS,82.34,19.23,,adapted_gpt,2026-09-04T11:15:17.870399
+cur_moe_compressor,PASS,74.66,19.22,,adapted_gpt,2026-09-04T11:15:37.322815
+decay_linear_attn,SKIP_GPT_ARCHITECTURAL,50.92,22.05,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:15:59.600446
+delta_kv,SKIP_GPT_ARCHITECTURAL,54.82,15.28,note: low_accuracy_plateau (54.82%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:16:15.110226
+direct_svd,PASS,82.68,17.43,,adapted_gpt,2026-09-04T11:16:32.774619
+dobi,PASS,82.34,23.16,,adapted_gpt,2026-09-04T11:16:56.166149
+dynamic_rank,PASS,84.52,17.51,,adapted_gpt,2026-09-04T11:17:13.911129
+eat,SKIP_GPT_ARCHITECTURAL,50.92,15.76,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:17:29.900887
+enlighten,SKIP_GPT_ARCHITECTURAL,54.01,22.25,note: low_accuracy_plateau (54.01%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:17:52.379496
+entropy_budget,PASS,76.26,17.28,,adapted_gpt,2026-09-04T11:18:09.898666
+entropy_rank_allocator,PASS,82.0,17.44,,adapted_gpt,2026-09-04T11:18:27.574012
+erc,PASS,83.14,19.7,,adapted_gpt,2026-09-04T11:18:47.506553
+expert_choice_moe,SKIP_GPT_ARCHITECTURAL,50.46,56.56,note: low_accuracy_plateau (50.46%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:19:44.292816
+factorised_matrix_state,SKIP_GPT_ARCHITECTURAL,50.92,25.69,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:20:10.282651
+faq,SKIP_GPT_ARCHITECTURAL,53.56,15.0,note: low_accuracy_plateau (53.56%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:20:25.511911
+fasa,SKIP_GPT_ARCHITECTURAL,50.69,17.82,note: low_accuracy_plateau (50.69%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:20:43.570124
+flap,PASS,56.19,15.37,,adapted_gpt,2026-09-04T11:20:59.172041
+flash3,SKIP_GPT_INCOMPATIBLE_GQA,0.0,1.05,rotary_position_embedding_required,adapted_gpt,2026-09-04T11:21:00.452771
+flash3_fp8,SKIP_GPT_ARCHITECTURAL,50.57,13.14,note: low_accuracy_plateau (50.57%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:21:13.816491
+flat_llm,SKIP_GPT_ARCHITECTURAL,51.38,17.69,note: low_accuracy_plateau (51.38%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:21:31.730335
+frandi,SKIP_GPT_ARCHITECTURAL,55.28,14.71,note: low_accuracy_plateau (55.28%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:21:46.666115
+frandi_compressor,PASS,67.43,14.95,,adapted_gpt,2026-09-04T11:22:01.848491
+fused_svd_kernel,SKIP_GPT_ARCHITECTURAL,50.92,110.24,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:23:52.318373
+fusion_attn,SKIP_GPT_ARCHITECTURAL,50.8,14.89,note: low_accuracy_plateau (50.80%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:24:07.485820
+galerkin,SKIP_GPT_ARCHITECTURAL,50.92,17.52,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:24:25.234471
+gated_delta_net,SKIP_GPT_ARCHITECTURAL,50.92,27.27,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:24:52.741603
+gated_deltanet_block,SKIP_GPT_ARCHITECTURAL,50.92,27.72,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:25:20.695494
+gated_linear_attn,SKIP_GPT_ARCHITECTURAL,50.92,27.51,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:25:48.438597
+gfws,PASS,67.43,18.02,,adapted_gpt,2026-09-04T11:26:06.693629
+goldfinch_ahn,SKIP_GPT_ARCHITECTURAL,50.92,19.48,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:26:26.430733
+gqa,SKIP_GPT_ARCHITECTURAL,51.03,14.93,note: low_accuracy_plateau (51.03%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:26:41.593966
+granite_hybrid,SKIP_GPT_TIMEOUT,0.0,400.6,Module pipeline exceeded hard 400s timeout,adapted_gpt,2026-09-04T11:33:22.424149
+grecodec,SKIP_GPT_ARCHITECTURAL,50.8,73.82,note: low_accuracy_plateau (50.80%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:34:36.886376
+grecodec_compressor,PASS,59.52,42.52,,adapted_gpt,2026-09-04T11:35:19.652368
+griffin_ssd,SKIP_GPT_ARCHITECTURAL,50.92,26.37,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:35:46.238679
+halo_regla,SKIP_GPT_ARCHITECTURAL,48.85,22.54,note: low_accuracy_plateau (48.85%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:36:09.010202
+hamming,SKIP_GPT_ARCHITECTURAL,50.92,19.23,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:36:28.469881
+hashed_net,SKIP_GPT_ARCHITECTURAL,50.11,22.34,note: low_accuracy_plateau (50.11%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:36:51.046591
+hgrn2_gated_deltanet,SKIP_GPT_ARCHITECTURAL,50.92,45.17,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:37:36.449523
+hgrn2_layer,SKIP_GPT_ARCHITECTURAL,54.93,30.04,note: low_accuracy_plateau (54.93%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:38:06.727669
+hgrn2_outer,SKIP_GPT_ARCHITECTURAL,51.15,28.97,note: low_accuracy_plateau (51.15%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:38:35.928368
+hla,SKIP_GPT_ARCHITECTURAL,50.92,345.78,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:44:21.942006
+huffman,PASS,63.53,22.82,,adapted_gpt,2026-09-04T11:44:45.001823
+hybrid_svd,PASS,86.35,19.79,,adapted_gpt,2026-09-04T11:45:05.022566
+hybridkv,PASS,56.31,14.89,,adapted_gpt,2026-09-04T11:45:20.145764
+hymba_transx,SKIP_GPT_ARCHITECTURAL,51.83,125.18,note: low_accuracy_plateau (51.83%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:47:25.557851
+infini,SKIP_GPT_ARCHITECTURAL,50.92,17.88,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:47:43.684054
+jamba,SKIP_GPT_ARCHITECTURAL,50.8,57.54,note: low_accuracy_plateau (50.80%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:48:41.461101
+jamba_info,SKIP_GPT_ARCHITECTURAL,50.92,37.46,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:49:19.200125
+kda,SKIP_GPT_ARCHITECTURAL,50.92,25.14,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:49:44.575466
+kmeans,PASS,81.77,20.64,,adapted_gpt,2026-09-04T11:50:05.445285
+kronecker,SKIP_GPT_ARCHITECTURAL,51.49,24.13,note: low_accuracy_plateau (51.49%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:50:29.813343
+kronecker_tt_lora,PASS,82.45,50.88,,adapted_gpt,2026-09-04T11:51:20.919840
+kvtc,PASS,66.4,15.76,,adapted_gpt,2026-09-04T11:51:36.919361
+leka_v1,SKIP_GPT_ARCHITECTURAL,49.31,21.04,note: low_accuracy_plateau (49.31%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:51:58.194203
+leka_v2,SKIP_GPT_ARCHITECTURAL,50.92,27.45,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:52:25.881950
+leka_v3,SKIP_GPT_ARCHITECTURAL,47.25,24.6,note: low_accuracy_plateau (47.25%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:52:50.718163
+liftr,SKIP_GPT_ARCHITECTURAL,52.52,14.94,note: low_accuracy_plateau (52.52%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:53:05.894335
+lillama,SKIP_GPT_ARCHITECTURAL,52.29,15.47,note: low_accuracy_plateau (52.29%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:53:21.602315
+linformer,SKIP_GPT_ARCHITECTURAL,50.92,17.15,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:53:38.983008
+lola,SKIP_GPT_ARCHITECTURAL,50.34,39.91,note: low_accuracy_plateau (50.34%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:54:19.128263
+lora_attn,PASS,57.8,22.83,,adapted_gpt,2026-09-04T15:32:18.218480
+lsc,SKIP_GPT_ARCHITECTURAL,52.18,15.54,note: low_accuracy_plateau (52.18%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:54:35.751275
+lsh,SKIP_GPT_ARCHITECTURAL,50.92,31.97,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:55:07.957046
+mamba,SKIP_GPT_ARCHITECTURAL,50.92,12.1,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T11:55:20.288741
+mamba_shedder,PASS,59.75,15.2,,adapted_gpt,2026-09-04T11:55:35.721022
+mamba_svd_flash,SKIP_GPT_ARCHITECTURAL,44.38,289.6,note: low_accuracy_plateau (44.38%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T12:00:25.558607
+mgie,PASS,82.8,24.65,,adapted_gpt,2026-09-04T12:00:50.720301
+mgie_budget,PASS,83.49,19.73,,adapted_gpt,2026-09-04T12:01:10.664270
+minimal_aurora,SKIP_GPT_ARCHITECTURAL,50.92,39.42,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T12:01:50.324560
+minimal_nova,SKIP_GPT_ARCHITECTURAL,50.92,39.46,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T12:02:30.011376
+minimal_prism,SKIP_GPT_ARCHITECTURAL,50.92,37.77,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T12:03:08.021469
+minimal_svd,SKIP_GPT_ARCHITECTURAL,50.92,37.29,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T12:03:45.546075
+minimal_svd_v2,SKIP_GPT_ARCHITECTURAL,50.92,37.59,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T12:04:23.368684
+mixattention_moska,SKIP_GPT_ARCHITECTURAL,50.23,18.08,note: low_accuracy_plateau (50.23%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T12:04:41.682970
+mla,SKIP_GPT_ARCHITECTURAL,50.92,14.72,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T12:04:56.640447
+mlorq,PASS,65.6,15.07,,adapted_gpt,2026-09-04T12:05:11.937962
+moba,SKIP_GPT_ARCHITECTURAL,49.43,20.53,note: low_accuracy_plateau (49.43%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T12:05:32.698065
+modegpt,SKIP_GPT_ARCHITECTURAL,50.92,17.09,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T12:05:50.026186
+moe_deltakv_paged,SKIP_GPT_ARCHITECTURAL,49.54,42.34,note: low_accuracy_plateau (49.54%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T12:06:32.603619
+nasc,SKIP_GPT_ARCHITECTURAL,45.99,54.48,note: low_accuracy_plateau (45.99%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T15:33:12.939555
+nexus,SKIP_GPT_ARCHITECTURAL,50.92,22.66,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T12:06:56.603926
+nha,SKIP_GPT_ARCHITECTURAL,50.92,25.19,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T12:07:22.046599
+nli_softmax,PASS,67.2,16.18,,adapted_gpt,2026-09-04T12:07:38.474222
+nmf,PASS,64.79,16.38,,adapted_gpt,2026-09-04T12:07:55.093000
+nsa,SKIP_GPT_ARCHITECTURAL,50.92,16.94,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T12:08:12.278087
+nystrom,SKIP_GPT_ARCHITECTURAL,50.92,29.97,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T12:08:42.484557
+oats,SKIP_GPT_ARCHITECTURAL,55.28,17.57,note: low_accuracy_plateau (55.28%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T12:09:00.294288
+oha,SKIP_GPT_ARCHITECTURAL,50.92,24.16,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T12:09:24.702990
+optimal_subspace_projection,PASS,58.03,16.03,,adapted_gpt,2026-09-04T12:09:40.982668
+orion,SKIP_GPT_ARCHITECTURAL,50.92,51.74,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T15:34:04.944581
+performer,SKIP_GPT_ARCHITECTURAL,49.08,19.23,note: low_accuracy_plateau (49.08%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T12:10:27.000558
+phantom,SKIP_GPT_ARCHITECTURAL,50.92,60.22,note: architectural_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE): module cannot preserve pretrained knowledge or recover within 50 steps,adapted_gpt,2026-09-04T16:02:54.737612
+primal,SKIP_GPT_ARCHITECTURAL,49.54,331.29,note: low_accuracy_plateau (49.54%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T12:16:35.544419
+progressive_token_pruning,SKIP_GPT_ARCHITECTURAL,51.03,16.86,note: low_accuracy_plateau (51.03%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T12:16:52.638974
+projection_factorized_attn,SKIP_GPT_ARCHITECTURAL,50.92,62.06,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T12:17:54.943141
+proxsparse,PASS,59.52,15.18,,adapted_gpt,2026-09-04T12:18:10.349538
+qcqa,SKIP_GPT_ARCHITECTURAL,51.15,15.51,note: low_accuracy_plateau (51.15%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T12:18:26.089440
+rala,SKIP_GPT_ARCHITECTURAL,49.43,17.76,note: low_accuracy_plateau (49.43%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T12:18:44.068318
+rala_compressor,SKIP_GPT_ARCHITECTURAL,49.54,17.56,note: low_accuracy_plateau (49.54%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T12:19:01.862899
+reap_moe,SKIP_GPT_ARCHITECTURAL,50.92,54.89,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T12:19:56.982207
+regla,SKIP_GPT_ARCHITECTURAL,49.2,18.2,note: low_accuracy_plateau (49.20%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T12:20:15.421600
+replaceme,PASS,58.83,14.53,,adapted_gpt,2026-09-04T12:20:30.190438
+res_svd,SKIP_GPT_ARCHITECTURAL,50.92,36.57,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T12:21:06.995511
+rotational_slicegpt,PASS,59.98,99.76,,adapted_gpt,2026-09-04T12:22:46.988824
+routing,SKIP_GPT_ARCHITECTURAL,49.08,21.05,note: low_accuracy_plateau (49.08%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T12:23:08.271082
+rpc,SKIP_GPT_ARCHITECTURAL,50.92,16.06,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T12:23:24.565886
+rpca,PASS,80.73,20.84,,adapted_gpt,2026-09-04T12:23:45.644354
+saes,PASS,82.34,20.11,,adapted_gpt,2026-09-04T12:24:05.983354
+salr,PASS,81.31,21.95,,adapted_gpt,2026-09-04T16:03:16.916279
+salt,SKIP_GPT_ARCHITECTURAL,50.92,24.53,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T12:24:32.076466
+samba_m3,SKIP_GPT_ARCHITECTURAL,50.92,33.08,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T12:25:05.385767
+samba_moe,SKIP_GPT_ARCHITECTURAL,51.38,71.4,note: low_accuracy_plateau (51.38%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T12:26:17.017838
+sdrm,PASS,68.0,14.56,,adapted_gpt,2026-09-04T12:26:31.828797
+simple_ssm,SKIP_GPT_ARCHITECTURAL,50.69,24.83,note: low_accuracy_plateau (50.69%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T12:26:56.891573
+slicegpt,PASS,61.24,25.97,,adapted_gpt,2026-09-04T12:27:23.090758
+slicegpt_pca,PASS,64.33,76.25,,adapted_gpt,2026-09-04T16:04:33.402336
+slim,SKIP_GPT_ARCHITECTURAL,50.46,15.07,note: low_accuracy_plateau (50.46%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T12:27:39.474775
+soa_attn,SKIP_GPT_ARCHITECTURAL,54.13,17.1,note: low_accuracy_plateau (54.13%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T12:27:56.803133
+soa_fused_attn,SKIP_GPT_ARCHITECTURAL,51.26,17.09,note: low_accuracy_plateau (51.26%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T12:28:14.125007
+soka,PASS,82.91,17.18,,adapted_gpt,2026-09-04T12:28:31.535727
+span_expanded,SKIP_GPT_ARCHITECTURAL,50.92,15.79,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T12:28:47.554603
+sparsegpt,PASS,58.6,42.34,,adapted_gpt,2026-09-04T12:29:30.137732
+spectra_v2,SKIP_GPT_ARCHITECTURAL,50.8,15.29,note: low_accuracy_plateau (50.80%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T12:29:45.659590
+spectral_mamba,SKIP_GPT_ARCHITECTURAL,50.23,32.79,note: low_accuracy_plateau (50.23%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T12:30:18.685060
+spectral_residual_lora,PASS,78.44,16.85,,adapted_gpt,2026-09-04T12:30:35.772979
+spectron,SKIP_GPT_ARCHITECTURAL,50.92,43.62,note: architectural_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE): module cannot preserve pretrained knowledge or recover within 50 steps,adapted_gpt,2026-09-04T16:05:17.256121
+squeezing_heads_distiller,SKIP_GPT_ARCHITECTURAL,50.8,14.48,note: low_accuracy_plateau (50.80%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T12:31:41.980481
+subspace_projection,SKIP_GPT_ARCHITECTURAL,53.56,14.52,note: low_accuracy_plateau (53.56%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T12:31:56.738538
+svd,SKIP_GPT_ARCHITECTURAL,50.92,14.59,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T12:32:11.563358
+svd-mamba,SKIP_GPT_ARCHITECTURAL,50.92,227.86,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T12:35:59.658266
+svd_compressed,SKIP_GPT_ARCHITECTURAL,50.92,22.53,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T12:36:22.408464
+svd_linear,SKIP_GPT_ARCHITECTURAL,50.92,63.42,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T12:37:26.048252
+svd_linear_decay,SKIP_GPT_ARCHITECTURAL,50.92,61.63,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T12:38:27.900588
+svd_llm_v2,SKIP_GPT_ARCHITECTURAL,50.92,23.91,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T12:38:52.045116
+svd_proj_attn,SKIP_GPT_ARCHITECTURAL,50.92,36.4,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T12:39:28.685716
+swift_svd,PASS,84.63,19.26,,adapted_gpt,2026-09-04T12:39:48.192693
+swift_svd_act,PASS,83.83,19.5,,adapted_gpt,2026-09-04T12:40:07.948732
+token_compressed,SKIP_GPT_ARCHITECTURAL,50.92,18.57,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T12:40:26.750544
+tpa,SKIP_GPT_ARCHITECTURAL,50.8,83.45,note: low_accuracy_plateau (50.80%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T12:41:50.450582
+tt,PASS,80.28,19.36,,adapted_gpt,2026-09-04T12:42:10.035515
+unified_rope,SKIP_GPT_ARCHITECTURAL,50.92,17.77,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T12:42:28.036484
+uniql,PASS,62.73,15.14,,adapted_gpt,2026-09-04T12:42:43.406338
+upi_stuffed_mamba,SKIP_GPT_TIMEOUT,0.0,240.59,Module pipeline exceeded hard 240s timeout,adapted_gpt,2026-09-04T12:46:44.232948
+vig,SKIP_GPT_ARCHITECTURAL,50.92,39.85,note: architectural_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE): module cannot preserve pretrained knowledge or recover within 50 steps,adapted_gpt,2026-09-04T16:05:57.340492
+vspec,SKIP_GPT_ARCHITECTURAL,50.92,70.01,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T12:48:22.224057
+wgqa,SKIP_GPT_ARCHITECTURAL,50.69,16.29,note: low_accuracy_plateau (50.69%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T12:48:38.745745
+xattention,SKIP_GPT_ARCHITECTURAL,50.92,19.69,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T12:48:58.667409
+your_attention_name,SKIP_GPT_ARCHITECTURAL,50.8,16.21,note: low_accuracy_plateau (50.80%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T12:49:15.117669
+your_compressor_name,PASS,61.93,14.92,,adapted_gpt,2026-09-04T12:49:30.270226
+zerokv_neo,PASS,56.77,14.97,,adapted_gpt,2026-09-04T12:49:45.475541
+zeros,SKIP_GPT_ARCHITECTURAL,50.92,15.87,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_gpt,2026-09-04T12:50:01.587863

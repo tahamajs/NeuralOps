@@ -1,0 +1,147 @@
+{
+  "run_metadata": {
+    "run_id": "kd_rotational_slicegpt_int4_C_20261012_012444",
+    "run_name": "kd_rotational_slicegpt_int4_gpt2_C",
+    "timestamp_start": "2026-10-12T01:24:55.248862+00:00",
+    "timestamp_end": "2026-10-12T01:24:55.248869+00:00",
+    "wall_clock_duration_s": 0.0,
+    "total_duration_s": 0.0,
+    "training_duration_s": 0.0,
+    "evaluation_duration_s": 0.0,
+    "git_commit": "47f3447b659ce29c5eaccd39fdb210dc5b2d1cfd",
+    "git_commit_short": "47f3447b65",
+    "git_branch": "main",
+    "git_dirty": true,
+    "git_diff": ".../delta_sweep/attention_flash_attention3.json    |     6 +-\n results/delta_sweep/attention_flash_attention3.log |    46 +\n .../delta_sweep/attention_flash_attention3_fp8.err |    12 +-\n .../attention_flash_attention3_fp8.json            |     4 +-\n .../delta_sweep/attention_flash_attention3_fp8.log |   192 +-\n results/delta_sweep/attention_full.err             |    10 +-\n results/delta_sweep/attention_full.json            |     2 +-\n results/delta_sweep/attention_full.log             |    70 +-\n results/delta_sweep/attention_full_attention.err   |    12 +-\n results/delta_sweep/attention_full_attention.json  |     6 +-\n results/delta_sweep/attention_full_attention.log   |   196 +-\n results/delta_sweep/attention_fused_svd_kernel.err |    38 +-\n .../delta_sweep/attention_fused_svd_kernel.json    |     4 +-\n results/delta_sweep/attention_fused_svd_kernel.log |   194 +-\n results/delta_sweep/attention_fusion_attn.err      |    12 +-\n results/delta_sweep/attention_fusion_attn.log      |   160 +-\n results/delta_sweep/compressor_huffman_coder.json  |    20 +-\n .../delta_sweep/compressor_kronecker_tt_lora.json  |    20 +-\n results/delta_sweep/summary.csv                    |     5 +\n results/kd_runs/flash_attention3/latest.txt        |     2 +-\n results/kd_runs/flash_attention3_fp8/latest.txt    |     2 +-\n results/kd_runs/full_attention/latest.txt          |     2 +-\n results/kd_runs/fused_svd_kernel/latest.txt        |     2 +-\n results/kd_runs/huffman_coder/latest.txt           |     2 +-\n results/kd_runs/registry.json                      | 13412 +++++++++++++++++++\n results/results.csv                                |     6 +\n results/results.parquet                            |   Bin 16613 -> 17005 bytes\n 27 files changed, 13925 insertions(+), 512 deletions(-)",
+    "session_id": "d2db6d4e-a19b-4d54-8636-acb2bd4e3ac0",
+    "parent_run_id": null
+  },
+  "module": {
+    "name": "rotational_slicegpt_int4",
+    "type": "attention",
+    "rank": 32
+  },
+  "model": {
+    "name": "gpt2"
+  },
+  "dataset": {
+    "name": "wikitext2",
+    "task_type": "language_modeling"
+  },
+  "config": {
+    "method": "C",
+    "rank": 32,
+    "training_type": "kd",
+    "recovery_steps": 0,
+    "learning_rate": 0.0003,
+    "batch_size": 4,
+    "seq_len": 256
+  },
+  "environment": {
+    "python_version": "3.14.7",
+    "python_executable": "/mnt/d/venv/bin/python3",
+    "platform": "Linux",
+    "platform_version": "Linux-7.0.0-38-generic-x86_64-with-glibc2.43",
+    "cpu_model": "",
+    "cpu_count": 16,
+    "ram_gb": 0.0,
+    "gpu_model": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "gpu_count": 1,
+    "gpu_vram_gb": 7.62,
+    "cuda_version": "12.8",
+    "cudnn_version": "91900",
+    "torch_version": "2.11.0+cu128",
+    "torchvision_version": "0.26.0+cu128",
+    "transformers_version": "5.19.0",
+    "datasets_version": "5.1.0",
+    "triton_version": "3.6.0",
+    "numpy_version": "2.5.2",
+    "pandas_version": "3.0.6",
+    "scipy_version": "1.18.1",
+    "neuralops_version": "0.1.0",
+    "all_installed_packages": {},
+    "env_vars_used": {
+      "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True"
+    }
+  },
+  "hardware_usage": {
+    "peak_vram_mb": 0.0,
+    "avg_vram_mb": 0.0,
+    "peak_ram_mb": 0.0,
+    "gpu_utilization_avg": null,
+    "gpu_temperature_max": null,
+    "gpu_power_avg": null
+  },
+  "training_history": {},
+  "metrics": {
+    "pre_ppl": 36.21,
+    "post_ppl": 36.21,
+    "post_ppl_stage1": 36.21,
+    "post_ppl_stage2": 36.21,
+    "kd_gain": 0.0,
+    "recovery_pct": 0.0
+  },
+  "baseline_comparison": {
+    "baseline_accuracy": null,
+    "baseline_f1": null,
+    "baseline_loss": null,
+    "accuracy_drop": null,
+    "f1_drop": null,
+    "loss_increase": null,
+    "compression_ratio": 1.0,
+    "speedup_ratio": 1.0,
+    "params_reduction_pct": 0.0
+  },
+  "resources": {
+    "peak_vram_mb": 581.99,
+    "train_duration_s": 0.0
+  },
+  "status": "success",
+  "error": null,
+  "traceback": null,
+  "warnings": [],
+  "timed_out": false,
+  "timeout_s": 1800,
+  "retry_count": 0,
+  "max_retries": 2,
+  "reproducibility": {
+    "random_seed": 42,
+    "cublas_workspace_config": ":4096:8",
+    "torch_deterministic": false,
+    "torch_benchmark": false,
+    "env_vars_hash": "",
+    "reproduction_command": "",
+    "reproduction_script": "",
+    "expected_duration_s": 0.0,
+    "expected_peak_vram_mb": 0.0
+  },
+  "artifacts": {
+    "log_file": "",
+    "jsonl_file": "",
+    "json_file": "",
+    "plot_files": [],
+    "checkpoint_files": [],
+    "git_push_url": ""
+  },
+  "push_info": {
+    "pushed_to_git": false,
+    "pushed_to_hf": false,
+    "git_remote_url": "",
+    "hf_repo_id": "",
+    "hf_commit_hash": "",
+    "push_timestamp": ""
+  },
+  "training_type": "finetune",
+  "kd_config": {},
+  "recovery_config": {},
+  "baseline_metrics": {},
+  "delta_metrics": {},
+  "checksum": "9d87390d8af3573e",
+  "run_id": "kd_rotational_slicegpt_int4_C_20261012_012444",
+  "run_name": "kd_rotational_slicegpt_int4_gpt2_C",
+  "timestamp_start": "2026-10-12T01:24:55.248862+00:00",
+  "timestamp_end": "2026-10-12T01:24:55.248869+00:00",
+  "git_commit": "47f3447b659ce29c5eaccd39fdb210dc5b2d1cfd",
+  "git_dirty": true,
+  "run_key": "rotational_slicegpt_int4__gpt2__wikitext2__rank32__cf433ea6f321"
+}

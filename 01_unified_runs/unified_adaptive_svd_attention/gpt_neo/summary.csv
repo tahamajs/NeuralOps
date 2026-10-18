@@ -1,0 +1,3 @@
+module_name,status,accuracy_pct,baseline_acc,pass_threshold_pct,error
+N/A,SKIP_NO_WEIGHTS,0.0,0.0,0.0,We couldn't connect to 'https://huggingface.co' to load the files, and couldn't find them in the cached files.
+Check your internet connection or see how to run the library in offline mode at 'https://

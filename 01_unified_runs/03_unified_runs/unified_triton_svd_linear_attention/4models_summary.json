@@ -1,0 +1,42 @@
+[
+  {
+    "name": "DistilBERT",
+    "slug": "distilbert",
+    "family": "bert",
+    "out_dir": "D:\\SVD_Project\\results\\03_unified_runs\\unified_triton_svd_linear_attention\\distilbert",
+    "exit_code": 0,
+    "status": "PASS",
+    "accuracy_pct": 75.8,
+    "elapsed_s": 38.663069009780884
+  },
+  {
+    "name": "RoBERTa",
+    "slug": "roberta",
+    "family": "roberta",
+    "out_dir": "D:\\SVD_Project\\results\\03_unified_runs\\unified_triton_svd_linear_attention\\roberta",
+    "exit_code": 0,
+    "status": "FAIL_BELOW_CHANCE",
+    "accuracy_pct": 50.92,
+    "elapsed_s": 67.40141701698303
+  },
+  {
+    "name": "GPT-2",
+    "slug": "gpt2",
+    "family": "gpt",
+    "out_dir": "D:\\SVD_Project\\results\\03_unified_runs\\unified_triton_svd_linear_attention\\gpt2",
+    "exit_code": 0,
+    "status": "PASS",
+    "accuracy_pct": 63.99,
+    "elapsed_s": 70.15762257575989
+  },
+  {
+    "name": "Qwen2.5-0.5B",
+    "slug": "qwen",
+    "family": "qwen",
+    "out_dir": "D:\\SVD_Project\\results\\03_unified_runs\\unified_triton_svd_linear_attention\\qwen",
+    "exit_code": 0,
+    "status": "NOT_INSTALLED",
+    "accuracy_pct": 0.0,
+    "elapsed_s": 0.0
+  }
+]

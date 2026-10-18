@@ -1,0 +1,12 @@
+[
+  {
+    "module": "slicegpt",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": 41.346157,
+    "accuracy_pct": 0.0,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-25T07:18:23.826267"
+  }
+]

@@ -1,0 +1,5 @@
+rank,module_name,status,accuracy_pct,f1_score,val_loss,peak_vram_mb,compression_rate,compression_ratio_pct,num_compressed_layers,num_fallback_layers,elapsed_s,total_params_before,total_params_after
+64,block_transformer_hiba,ERROR_CODE_1,0.0,0.0,99.0,0.0,1.0,,0,0,163.7,,
+128,block_transformer_hiba,ERROR_CODE_1,0.0,0.0,99.0,0.0,1.0,,0,0,108.5,,
+256,block_transformer_hiba,ERROR_CODE_1,0.0,0.0,99.0,0.0,1.0,,0,0,107.9,,
+384,block_transformer_hiba,FAIL_BELOW_CHANCE,27.7,0.1914,1.6071,380.9,1.0,0.0,0,0,100.3,66956548,67546372

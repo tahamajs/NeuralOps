@@ -1,0 +1,7 @@
+rank,module_name,status,accuracy_pct,f1_score,val_loss,peak_vram_mb,compression_rate,compression_ratio_pct,num_compressed_layers,num_fallback_layers,elapsed_s,total_params_before,total_params_after
+16,nmf_compressor,FAIL,0.0,0.0,0.0,0.0,1.0,0.0,0,0,81.6,124647170,124647170
+32,nmf_compressor,FAIL,0.0,0.0,0.0,0.0,1.0,0.0,0,0,81.2,124647170,124647170
+64,,PASS,94.04,0.9418,0.188,0.0,1.0,,0,0,20.09,0,0
+128,,PASS,94.04,0.9418,0.188,0.0,1.0,,0,0,28.35,0,0
+256,,PASS,94.04,0.9418,0.188,0.0,1.0,,0,0,41.22,0,0
+384,,PASS,93.92,0.9405,0.187,0.0,1.0,,0,0,54.38,0,0

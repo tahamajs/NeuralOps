@@ -1,0 +1,22 @@
+[
+  {
+    "module": "granite_hybrid",
+    "model": "models\\distilbert_sst2",
+    "dataset": "sst2",
+    "status": "SKIP_BERT_TIMEOUT",
+    "perplexity": "",
+    "accuracy_pct": 0.0,
+    "error": "Module pipeline exceeded hard 400s timeout",
+    "timestamp": "2026-09-24T18:46:48.753301"
+  },
+  {
+    "module": "granite_hybrid",
+    "model": "models\\distilbert_sst2",
+    "dataset": "sst2",
+    "status": "EXTREME_EXPANSION",
+    "perplexity": "",
+    "accuracy_pct": 89.45,
+    "error": "base_before=66955010 base_after=215936306 delta=+222.5%",
+    "timestamp": "2026-09-24T19:26:32.161899"
+  }
+]

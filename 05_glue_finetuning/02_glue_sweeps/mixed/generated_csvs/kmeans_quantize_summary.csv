@@ -1,0 +1,2 @@
+model,accuracy_pct,f1_score,peak_vram_mb,throughput_tokens_sec,status
+DistilBERT,81.19,0.8182,2494.4,70013.9,PASS

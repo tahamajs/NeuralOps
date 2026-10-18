@@ -1,0 +1,7 @@
+rank,module_name,status,accuracy_pct,f1_score,val_loss,peak_vram_mb,compression_rate,compression_ratio_pct,num_compressed_layers,num_fallback_layers,elapsed_s,total_params_before,total_params_after
+16,hashednets,PASS,91.06,0.9139,0.5979,302.94,1.0,0.0,0,0,116.9,66955010,66955010
+32,hashednets,PASS,91.06,0.9139,0.5979,302.94,1.0,0.0,0,0,117.9,66955010,66955010
+64,hashednets,PASS,91.06,0.9139,0.5979,302.94,1.0,0.0,0,0,105.7,66955010,66955010
+128,hashednets,PASS,91.06,0.9139,0.5979,302.94,1.0,0.0,0,0,104.6,66955010,66955010
+256,hashednets,PASS,91.06,0.9139,0.5979,302.94,1.0,0.0,0,0,103.1,66955010,66955010
+384,hashednets,PASS,91.06,0.9139,0.5979,302.94,1.0,0.0,0,0,103.0,66955010,66955010

@@ -1,0 +1,12 @@
+[
+  {
+    "module": "gqa",
+    "model": "models\\distilbert_sst2",
+    "dataset": "sst2",
+    "status": "PASS_LOW",
+    "perplexity": "",
+    "accuracy_pct": 46.79,
+    "error": "note: evaluated accuracy (46.79%) below chance threshold (56.00%)",
+    "timestamp": "2026-09-24T19:15:49.924108"
+  }
+]

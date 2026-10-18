@@ -1,0 +1,76 @@
+{
+    "model": "distilbert_mnli_full_svd_proj",
+    "performance": {
+        "accuracy_pct": 43.5,
+        "f1_score": 0.3945,
+        "f1_macro": 0.3945,
+        "precision": 0.4497,
+        "recall": 0.4369,
+        "val_loss": 1.0812,
+        "status": "PASS",
+        "elapsed_s": 19.05
+    },
+    "efficiency": {
+        "total_params_before": 66955779,
+        "total_params_after": 55749123,
+        "trainable_recovery_params": 589824,
+        "compression_rate": 1.201,
+        "compression_ratio_pct": 16.74,
+        "flops_reduction_pct": 0.0,
+        "num_compressed_layers": 6,
+        "num_fallback_layers": 0,
+        "num_injected_attention_layers": 6,
+        "lora_params": 589824,
+        "avg_reconstruction_error": null,
+        "weighted_reconstruction_error": null,
+        "per_layer_reconstruction_errors": {},
+        "per_layer_ranks": {
+            "distilbert.transformer.layer.0.attention": 64,
+            "distilbert.transformer.layer.0.attention._wrapped_attention.q_proj": 64,
+            "distilbert.transformer.layer.0.attention._wrapped_attention.k_proj": 64,
+            "distilbert.transformer.layer.0.attention._wrapped_attention.v_proj": 64,
+            "distilbert.transformer.layer.0.attention._wrapped_attention.out_proj": 64,
+            "distilbert.transformer.layer.1.attention": 64,
+            "distilbert.transformer.layer.1.attention._wrapped_attention.q_proj": 64,
+            "distilbert.transformer.layer.1.attention._wrapped_attention.k_proj": 64,
+            "distilbert.transformer.layer.1.attention._wrapped_attention.v_proj": 64,
+            "distilbert.transformer.layer.1.attention._wrapped_attention.out_proj": 64,
+            "distilbert.transformer.layer.2.attention": 64,
+            "distilbert.transformer.layer.2.attention._wrapped_attention.q_proj": 64,
+            "distilbert.transformer.layer.2.attention._wrapped_attention.k_proj": 64,
+            "distilbert.transformer.layer.2.attention._wrapped_attention.v_proj": 64,
+            "distilbert.transformer.layer.2.attention._wrapped_attention.out_proj": 64,
+            "distilbert.transformer.layer.3.attention": 64,
+            "distilbert.transformer.layer.3.attention._wrapped_attention.q_proj": 64,
+            "distilbert.transformer.layer.3.attention._wrapped_attention.k_proj": 64,
+            "distilbert.transformer.layer.3.attention._wrapped_attention.v_proj": 64,
+            "distilbert.transformer.layer.3.attention._wrapped_attention.out_proj": 64,
+            "distilbert.transformer.layer.4.attention": 64,
+            "distilbert.transformer.layer.4.attention._wrapped_attention.q_proj": 64,
+            "distilbert.transformer.layer.4.attention._wrapped_attention.k_proj": 64,
+            "distilbert.transformer.layer.4.attention._wrapped_attention.v_proj": 64,
+            "distilbert.transformer.layer.4.attention._wrapped_attention.out_proj": 64,
+            "distilbert.transformer.layer.5.attention": 64,
+            "distilbert.transformer.layer.5.attention._wrapped_attention.q_proj": 64,
+            "distilbert.transformer.layer.5.attention._wrapped_attention.k_proj": 64,
+            "distilbert.transformer.layer.5.attention._wrapped_attention.v_proj": 64,
+            "distilbert.transformer.layer.5.attention._wrapped_attention.out_proj": 64
+        }
+    },
+    "hardware": {
+        "peak_vram_mb": 271.66,
+        "tokens_per_sec": 20397.74
+    },
+    "architecture": {
+        "span_distribution": {},
+        "mean_span": 128.0,
+        "sparsity_ratio_percent": 0.0
+    },
+    "scalability": {
+        "L_128_vram_mb": 245.98,
+        "L_256_vram_mb": 248.74,
+        "L_512_vram_mb": "unsupported (exceeds model max_position_embeddings 512)",
+        "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 512)"
+    },
+    "timestamp": "2026-09-20T01:19:25.638152"
+}

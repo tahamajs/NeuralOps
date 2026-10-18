@@ -1,0 +1,32 @@
+\begin{table*}[t]
+\centering
+\small
+\caption{\textbf{Full Computational Efficiency and VRAM Footprint Matrix.} Evaluated on NVIDIA GeForce RTX 4070 (Ada Lovelace, 8GB VRAM) with PyTorch 2.6.0+cu124 with TF32 and AMP acceleration.}
+\label{tab:efficiency_benchmark_results}
+\begin{tabular}{l l r r r r}
+\toprule
+\textbf{Module Architecture} & \textbf{Track} & \textbf{Fwd Latency (ms)} & \textbf{Bwd Latency (ms)} & \textbf{Peak VRAM (MB)} & \textbf{Throughput (tok/s)} \\
+\midrule
+\texttt{mamba} & \textsc{track1\_svd} & 22.59 & 45.62 & 1239.7 & 60054 \\
+\texttt{soa\_attn} & \textsc{track1\_svd} & 32.64 & 73.88 & 1143.2 & 38451 \\
+\texttt{block\_transformer\_hiba} & \textsc{track1\_svd} & 33.06 & 69.21 & 1309.8 & 40051 \\
+\texttt{spectron} & \textsc{track1\_svd} & 34.86 & 83.08 & 1077.1 & 34731 \\
+\texttt{adaptive\_span} & \textsc{track1\_svd} & 37.90 & 75.51 & 1310.9 & 36116 \\
+\texttt{linformer\_attention} & \textsc{track1\_svd} & 39.04 & 88.56 & 1321.7 & 32100 \\
+\texttt{galerkin\_attention} & \textsc{track1\_svd} & 45.37 & 88.87 & 1311.5 & 30512 \\
+\texttt{cosformer} & \textsc{track1\_svd} & 46.94 & 103.58 & 1312.4 & 27212 \\
+\texttt{performer\_attention} & \textsc{track1\_svd} & 48.80 & 107.94 & 1320.5 & 26133 \\
+\texttt{gated\_deltanet\_block} & \textsc{track1\_svd} & 48.92 & 165.43 & 1405.2 & 19109 \\
+\texttt{griffin\_ssd} & \textsc{track1\_svd} & 50.77 & 160.75 & 1381.5 & 19364 \\
+\texttt{full} & \textsc{track1\_svd} & 67.07 & 185.20 & 1846.8 & 64946 \\
+\texttt{minimal\_svd} & \textsc{track1\_svd} & 86.47 & 224.43 & 1848.5 & 52699 \\
+\texttt{svd\_linear\_attention} & \textsc{track1\_svd} & 101.38 & 259.42 & 1847.2 & 45409 \\
+\texttt{leka\_v3} & \textsc{track1\_svd} & 171.53 & 450.60 & 2469.3 & 26335 \\
+\texttt{nasc\_attention} & \textsc{track1\_svd} & 232.26 & 720.18 & 2600.1 & 17202 \\
+\texttt{aegis\_v6} & \textsc{track1\_svd} & 277.48 & 757.79 & 2990.9 & 15826 \\
+\texttt{svd\_mamba} & \textsc{track1\_svd} & 355.58 & 2319.69 & 4743.6 & 1531 \\
+\texttt{samba\_m3} & \textsc{track1\_svd} & 0.00 & 0.00 & 0.0 & 0 \\
+\texttt{jamba2} & \textsc{track1\_svd} & 0.00 & 0.00 & 0.0 & 0 \\
+\bottomrule
+\end{tabular}
+\end{table*}

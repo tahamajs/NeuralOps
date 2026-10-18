@@ -1,0 +1,1 @@
+D:\SVD_Project\results\kd_runs\aegis_v5\20260930_220841_bs1_seq128_lr5e-06_noclr_C

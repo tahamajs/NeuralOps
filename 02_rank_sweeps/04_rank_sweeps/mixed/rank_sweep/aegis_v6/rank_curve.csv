@@ -1,0 +1,7 @@
+rank,module_name,status,accuracy_pct,f1_score,val_loss,peak_vram_mb,compression_rate,compression_ratio_pct,num_compressed_layers,num_fallback_layers,elapsed_s,total_params_before,total_params_after
+16,aegis_v6,PASS,89.11,0.8977,0.3386,524.12,1.1062,9.6,0,0,72.6,66955010,60528464
+32,aegis_v6,PASS,89.11,0.8977,0.3386,524.12,1.1062,9.6,0,0,65.1,66955010,60528464
+64,aegis_v6,PASS,89.11,0.8977,0.3386,524.12,1.1062,9.6,0,0,71.8,66955010,60528464
+128,aegis_v6,PASS,89.11,0.8977,0.3386,524.12,1.1062,9.6,0,0,65.0,66955010,60528464
+256,aegis_v6,ERROR_CODE_3221225786,0.0,0.0,99.0,0.0,1.0,,0,0,12.1,,
+384,aegis_v6,ERROR_CODE_3221225786,0.0,0.0,99.0,0.0,1.0,,0,0,11.5,,

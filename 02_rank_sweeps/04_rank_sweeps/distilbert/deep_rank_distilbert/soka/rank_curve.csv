@@ -1,0 +1,7 @@
+rank,module_name,status,accuracy_pct,f1_score,val_loss,peak_vram_mb,compression_rate,compression_ratio_pct,num_compressed_layers,num_fallback_layers,elapsed_s,total_params_before,total_params_after
+16,,PASS,89.45,0.8987,0.7363,0.0,1.0,,0,0,14.01,0,0
+32,,PASS,89.45,0.8987,0.7363,0.0,1.0,,0,0,14.06,0,0
+64,soka,PASS,89.45,0.8987,0.7363,409.82,1.0226,2.21,0,0,16.96,66955010,65477378
+128,soka,PASS,89.45,0.8987,0.7363,409.82,1.0226,2.21,0,0,16.94,66955010,65477378
+256,soka,PASS,89.45,0.8987,0.7363,409.82,1.0226,2.21,0,0,20.03,66955010,65477378
+384,soka,PASS,89.45,0.8987,0.7363,409.82,1.0226,2.21,0,0,19.34,66955010,65477378

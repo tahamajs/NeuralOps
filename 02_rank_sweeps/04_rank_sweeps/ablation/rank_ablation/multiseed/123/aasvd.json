@@ -1,0 +1,7 @@
+{
+  "seed": 123,
+  "module": "aasvd",
+  "accuracy_pct": 81.8,
+  "f1_score": 0.8174,
+  "elapsed_s": 3.04
+}

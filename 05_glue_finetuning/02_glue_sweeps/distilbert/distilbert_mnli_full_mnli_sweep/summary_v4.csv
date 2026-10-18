@@ -1,0 +1,204 @@
+module,compression_status,accuracy_status,accuracy_pct,delta_effective_pct,lora_params,gate_pass,gate_reason,collapse_flag,threshold_used,threshold_source,eval_n
+uniql,NEUTRAL,PASS,82.4,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+liftr,NEUTRAL,PASS,82.3,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+kmeans,COMPRESSED,PASS,82.2,-63.41,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+asvd,NEUTRAL,PASS,82.2,-0.06,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+direct_svd,NEUTRAL,PASS,82.2,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+erc,NEUTRAL,PASS,82.2,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+frandi,NEUTRAL,PASS,82.1,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+grecodec,NEUTRAL,PASS,82.1,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+roast,NEUTRAL,PASS,82.1,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+armor,NEUTRAL,PASS,82.0,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+cachenotes,NEUTRAL,PASS,82.0,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+ptp,NEUTRAL,PASS,82.0,0.44,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+tomoe,NEUTRAL,PASS,82.0,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+compot,NEUTRAL,PASS,81.9,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+compot_compressor_class,NEUTRAL,PASS,81.9,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+dynamic_rank_class,NEUTRAL,PASS,81.9,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+entropy_rank_allocator_class,NEUTRAL,PASS,81.9,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+hashed_net_class,NEUTRAL,PASS,81.9,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+primal,NEUTRAL,PASS,81.9,0.0,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+entropy_budget,NEUTRAL,PASS,81.8,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+flap,NEUTRAL,PASS,81.8,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+faq,NEUTRAL,PASS,81.8,0.0,1327104,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+flat_llm,NEUTRAL,PASS,81.8,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+gfws,NEUTRAL,PASS,81.8,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+lsc,NEUTRAL,PASS,81.8,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+mgie,NEUTRAL,PASS,81.8,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+mgie_budget,NEUTRAL,PASS,81.8,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+modegpt,NEUTRAL,PASS,81.8,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+nystrom,NEUTRAL,PASS,81.8,0.0,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+slicegpt_pca,NEUTRAL,PASS,81.8,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+swift_svd_act,NEUTRAL,PASS,81.8,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+adaptive_span,NEUTRAL,PASS,81.7,0.0,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+nystrom_attention,NEUTRAL,PASS,81.7,0.0,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+lillama,NEUTRAL,PASS,81.7,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+mamba_shedder,NEUTRAL,PASS,81.7,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+nsa,NEUTRAL,PASS,81.7,0.0,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+saes,NEUTRAL,PASS,81.7,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+span_expanded,NEUTRAL,PASS,81.7,0.0,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+tomoe_class,NEUTRAL,PASS,81.7,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+ast,NEUTRAL,PASS,81.6,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+hashed_net,NEUTRAL,PASS,81.6,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+rotational_slicegpt,NEUTRAL,PASS,81.6,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+full,NEUTRAL,PASS,81.5,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+dobi,NEUTRAL,PASS,81.5,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+dobi_class,NEUTRAL,PASS,81.5,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+hybridkv,NEUTRAL,PASS,81.5,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+hybridkv_class,NEUTRAL,PASS,81.5,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+kronecker_tt_lora,NEUTRAL,PASS,81.5,1.75,331776,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+huffman,NEUTRAL,PASS,81.5,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+nmf,NEUTRAL,PASS,81.5,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+optimal_subspace_projection,NEUTRAL,PASS,81.5,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+astro,NEUTRAL,PASS,81.4,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+halo_regla,NEUTRAL,PASS,81.4,0.08,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+mlorq,NEUTRAL,PASS,81.4,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+tt,NEUTRAL,PASS,81.4,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+coopq,NEUTRAL,PASS,81.3,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+cr,NEUTRAL,PASS,81.3,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+cur,NEUTRAL,PASS,81.3,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+dynamic_rank,NEUTRAL,PASS,81.1,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+soka,NEUTRAL,PASS,81.1,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+subspace_projection,NEUTRAL,PASS,81.1,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+admm,NEUTRAL,PASS,81.0,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+frandi_compressor_class,NEUTRAL,PASS,81.0,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+grecodec_compressor_class,NEUTRAL,PASS,81.0,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+rpca,NEUTRAL,PASS,81.0,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+salr,NEUTRAL,PASS,81.0,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+nexus,NEUTRAL,PASS,80.9,0.02,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+fasa,NEUTRAL,PASS,80.6,0.0,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+delta_kv,NEUTRAL,PASS,80.5,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+nha,NEUTRAL,PASS,80.5,0.01,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+leka_v2,NEUTRAL,PASS,80.3,0.67,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+replace,NEUTRAL,PASS,80.2,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+oha,NEUTRAL,PASS,80.1,0.96,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+squeezing_heads,NEUTRAL,PASS,80.0,0.0,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+adasplash,NEUTRAL,PASS,79.7,0.0,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+aegis_v6,COMPRESSED,PASS,79.6,-20.16,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+kvtc,NEUTRAL,PASS,79.3,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+adasplash_attention,NEUTRAL,PASS,79.2,0.0,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+weighted_ensemble,NEUTRAL,PASS,79.2,0.08,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+goldfinch,MODERATE_EXPANSION,PASS,79.1,5.38,589824,False,FAIL_EXPANSION: acc passed but module expands base params,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+slim,NEUTRAL,PASS,79.1,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+a3,COMPRESSED,PASS,79.0,-4.96,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+adaptive,COMPRESSED,PASS,79.0,-4.18,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+goldfinch_ahn,MODERATE_EXPANSION,PASS,79.0,5.38,589824,False,FAIL_EXPANSION: acc passed but module expands base params,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+enlighten,NEUTRAL,PASS,78.9,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+compressed_attention,COMPRESSED,PASS,78.6,-10.57,442368,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+tlinformer,NEUTRAL,PASS,77.9,0.59,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+padre,NEUTRAL,PASS,77.7,0.0,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+cur_moe,COMPRESSED,PASS,77.6,-5.33,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+oats,NEUTRAL,PASS,77.2,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+sparsegpt,NEUTRAL,PASS,77.1,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+linformer_attention,NEUTRAL,PASS,76.9,0.59,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+cur_moe_class,COMPRESSED,PASS,76.9,-5.33,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+compressed_mha,COMPRESSED,PASS,76.6,-10.57,442368,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+rpc,NEUTRAL,PASS,76.2,0.0,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+linformer,NEUTRAL,PASS,75.6,0.59,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+aasvd,COMPRESSED,PASS,74.5,-11.75,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+cluster,NEUTRAL,PASS,73.2,0.0,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+soa_attn,COMPRESSED,PASS,73.0,-10.57,405504,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+aegis_v1,NEUTRAL,PASS,71.6,0.29,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+wgqa,NEUTRAL,PASS,71.5,0.0,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+adasvd,COMPRESSED,PASS,71.1,-13.95,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+samba_m3,EXTREME_EXPANSION,PASS,69.2,21.31,1105920,False,FAIL: EXTREME_EXPANSION,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+nasc,NEUTRAL,PASS,68.8,0.06,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+adaptive_svd,COMPRESSED,PASS,68.1,-14.09,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+sdrm,COMPRESSED,PASS,68.1,-17.48,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+naive_svd,COMPRESSED,PASS,67.6,-14.09,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+admm_pruner,NEUTRAL,PASS,65.9,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+sdrm_class,COMPRESSED,PASS,65.5,-17.48,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+replaceme,COMPRESSED,PASS,64.6,-19.4,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+vig,NEUTRAL,PASS,64.0,0.17,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+unified_rope,NEUTRAL,PASS,61.7,0.0,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+compressed_attention_layer_energy,COMPRESSED,PASS,61.0,-18.5,442368,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+spectron,COMPRESSED,PASS,60.6,-14.09,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+griffin_ssd,MODERATE_EXPANSION,PASS,60.1,5.26,737280,False,FAIL_EXPANSION: acc passed but module expands base params,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+fused_svd_kernel,COMPRESSED,PASS,59.4,-17.62,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+spectral_mamba,NEUTRAL,PASS,59.1,0.0,755736,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+slicegpt,NEUTRAL,PASS,58.2,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+svd_compressed,COMPRESSED,PASS,57.1,-17.62,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+come,COMPRESSED,PASS,56.7,-19.41,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+salt,COMPRESSED,PASS,54.7,-17.62,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+soa_fused_attention,COMPRESSED,PASS,54.5,-13.23,387072,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+swift_svd_class,COMPRESSED,PASS,53.7,-30.6,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+minimal_prism,COMPRESSED,PASS,53.6,-14.09,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+projection_factorized_attn,COMPRESSED,PASS,53.6,-17.54,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+svd_linear,COMPRESSED,PASS,53.6,-17.54,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+svd_linear_decay,COMPRESSED,PASS,53.6,-17.54,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+minimal_nova,COMPRESSED,PASS,53.5,-14.09,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+minimal_aurora,COMPRESSED,PASS,53.4,-14.09,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+swift_svd,COMPRESSED,PASS,53.3,-30.6,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+chela_slay,NEUTRAL,PASS,53.1,0.08,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+minimal_svd,COMPRESSED,PASS,52.7,-14.09,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+minimal_svd_v2,COMPRESSED,PASS,52.7,-14.09,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+xattention,NEUTRAL,PASS,52.5,0.0,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+res_svd,COMPRESSED,PASS,51.8,-17.62,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+custom_attn,NEUTRAL,PASS,50.7,0.44,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+template_attention,NEUTRAL,PASS,50.7,0.44,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+nli_softmax,NEUTRAL,PASS,50.6,0.0,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+lora_attn,NEUTRAL,PASS,50.5,0.0,2359296,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+flash3,NEUTRAL,PASS,50.4,0.0,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+flash3_fp8,NEUTRAL,PASS,50.3,0.0,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+bonsai,NEUTRAL,PASS,48.2,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+aegis_hybrid,COMPRESSED,PASS,48.1,-16.19,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+jamba,EXTREME_EXPANSION,PASS,48.0,63.75,1105920,False,FAIL: EXTREME_EXPANSION,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+token_compressed,NEUTRAL,PASS,47.4,0.44,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+svd_llm_v2,COMPRESSED,PASS,46.2,-17.62,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+lola,COMPRESSED,PASS,45.0,-17.62,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+ressvd,COMPRESSED,PASS,44.7,-17.62,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+lsh,NEUTRAL,PASS,44.1,0.0,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+vspec,COMPRESSED,PASS,44.1,-15.62,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+regla_attention,MODERATE_EXPANSION,PASS,43.9,5.32,737280,False,FAIL_EXPANSION: acc passed but module expands base params,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+regla,MODERATE_EXPANSION,PASS,43.7,5.32,737280,False,FAIL_EXPANSION: acc passed but module expands base params,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+svd_proj,COMPRESSED,PASS,43.6,-17.62,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+aegis_v4,COMPRESSED,PASS,42.5,-17.32,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+aegis_v5,COMPRESSED,PASS,42.5,-17.32,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+aegis_v3,COMPRESSED,PASS,41.5,-17.32,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+zerokv,NEUTRAL,PASS,40.9,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+hamming,NEUTRAL,PASS,39.4,0.0,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+hamming_attention,NEUTRAL,PASS,39.3,0.0,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+block_transformer_hiba,NEUTRAL,PASS,39.1,0.0,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+proxsparse,NEUTRAL,PASS,39.1,0.0,0,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+spectra_v2,NEUTRAL,PASS,38.7,0.0,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+eat,NEUTRAL,PASS,38.6,0.0,589824,True,PASS: acc >= 38.60% and effective params non-expanding,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+orion,COMPRESSED,PASS_LOW,38.4,-17.62,589824,False,FAIL_ACCURACY: acc 38.4% below statistical threshold 38.60%,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+fusion_attn,NEUTRAL,PASS_LOW,38.3,0.15,589824,False,FAIL_ACCURACY: acc 38.3% below statistical threshold 38.60%,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+infini,NEUTRAL,PASS_LOW,38.1,0.88,589824,False,FAIL_ACCURACY: acc 38.1% below statistical threshold 38.60%,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+leka_v1,NEUTRAL,PASS_LOW,38.0,0.0,589824,False,FAIL_ACCURACY: acc 38.0% below statistical threshold 38.60%,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+hybrid_svd,COMPRESSED,PASS_LOW,37.1,-47.57,0,False,FAIL_ACCURACY: acc 37.1% below statistical threshold 38.60%,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+leka_v3,NEUTRAL,PASS_LOW,36.7,0.59,589824,False,FAIL_ACCURACY: acc 36.7% below statistical threshold 38.60%,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+moba,NEUTRAL,PASS_LOW,36.7,0.0,589824,False,FAIL_ACCURACY: acc 36.7% below statistical threshold 38.60%,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+adaptive_sparse,NEUTRAL,PASS_LOW,36.4,0.0,589824,False,FAIL_ACCURACY: acc 36.4% below statistical threshold 38.60%,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+aegis_v2,NEUTRAL,PASS_LOW,36.3,1.43,589824,False,FAIL_ACCURACY: acc 36.3% below statistical threshold 38.60%,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+zeros,NEUTRAL,PASS_LOW,36.3,0.0,589824,False,FAIL_ACCURACY: acc 36.3% below statistical threshold 38.60%,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+spectral_residual_lora,COMPRESSED,PASS_LOW,36.1,-55.5,663552,False,FAIL_ACCURACY: acc 36.1% below statistical threshold 38.60%,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+routing,NEUTRAL,PASS_LOW,35.9,0.0,589824,False,FAIL_ACCURACY: acc 35.9% below statistical threshold 38.60%,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+performer_attention,NEUTRAL,PASS_LOW,35.7,0.0,589824,False,FAIL_ACCURACY: acc 35.7% below statistical threshold 38.60%,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+performer,NEUTRAL,PASS_LOW,35.7,0.0,589824,False,FAIL_ACCURACY: acc 35.7% below statistical threshold 38.60%,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+rala,NEUTRAL,PASS_LOW,35.7,0.11,589824,False,FAIL_ACCURACY: acc 35.7% below statistical threshold 38.60%,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+tpa,EXTREME_EXPANSION,PASS_LOW,35.5,41.1,1179648,False,FAIL_ACCURACY: acc 35.5% below statistical threshold 38.60%,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+cosformer,NEUTRAL,PASS_LOW,35.4,0.0,589824,False,FAIL_ACCURACY: acc 35.4% below statistical threshold 38.60%,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+kronecker,COMPRESSED,PASS_LOW,35.3,-50.21,1327104,False,FAIL_ACCURACY: acc 35.3% below statistical threshold 38.60%,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+gqa,COMPRESSED,PASS_LOW,35.2,-7.94,479232,False,FAIL_ACCURACY: acc 35.2% below statistical threshold 38.60%,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+full_attention,NEUTRAL,PASS_LOW,35.2,0.0,589824,False,FAIL_ACCURACY: acc 35.2% below statistical threshold 38.60%,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+hla,NEUTRAL,PASS_LOW,35.1,-0.02,589824,False,FAIL_ACCURACY: acc 35.1% below statistical threshold 38.60%,False,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+mla_attention,COMPRESSED,PASS_LOW,34.7,-9.26,294912,False,FAIL_ACCURACY: acc 34.7% below statistical threshold 38.60%,True,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+kda,NEUTRAL,PASS_LOW,34.6,0.0,589824,False,FAIL_ACCURACY: acc 34.6% below statistical threshold 38.60%,True,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+decay_linear_attn,NEUTRAL,PASS_LOW,34.5,0.08,589824,False,FAIL_ACCURACY: acc 34.5% below statistical threshold 38.60%,True,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+svd,NEUTRAL,PASS_LOW,34.5,0.0,589824,False,FAIL_ACCURACY: acc 34.5% below statistical threshold 38.60%,True,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+hgrn2_outer,NEUTRAL,PASS_LOW,34.4,0.06,589824,False,FAIL_ACCURACY: acc 34.4% below statistical threshold 38.60%,True,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+fms,NEUTRAL,PASS_LOW,34.3,0.88,589824,False,FAIL_ACCURACY: acc 34.3% below statistical threshold 38.60%,True,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+simple_ssm,NEUTRAL,PASS_LOW,34.2,0.14,516096,False,FAIL_ACCURACY: acc 34.2% below statistical threshold 38.60%,True,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+mamba,COMPRESSED,PASS_LOW,34.1,-5.29,368640,False,FAIL_ACCURACY: acc 34.1% below statistical threshold 38.60%,True,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+kda_attention,NEUTRAL,PASS_LOW,34.0,0.0,589824,False,FAIL_ACCURACY: acc 34.0% below statistical threshold 38.60%,True,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+galerkin,NEUTRAL,PASS_LOW,33.6,0.0,589824,False,FAIL_ACCURACY: acc 33.6% below statistical threshold 38.60%,True,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+hgrn2_layer,MODERATE_EXPANSION,PASS_LOW,33.5,5.3,294912,False,FAIL_ACCURACY: acc 33.5% below statistical threshold 38.60%,True,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+mla,COMPRESSED,PASS_LOW,33.5,-7.94,294912,False,FAIL_ACCURACY: acc 33.5% below statistical threshold 38.60%,True,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+galerkin_attention,NEUTRAL,PASS_LOW,33.3,0.0,589824,False,FAIL_ACCURACY: acc 33.3% below statistical threshold 38.60%,True,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+aegis_spectron_fp8,NEUTRAL,PASS_LOW,33.0,2.7,1179648,False,FAIL_ACCURACY: acc 33.0% below statistical threshold 38.60%,True,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+phantom,COMPRESSED,PASS_LOW,32.3,-17.62,589824,False,FAIL_ACCURACY: acc 32.3% below statistical threshold 38.60%,True,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+moe_deltakv_paged,NEUTRAL,PASS_LOW,31.9,0.04,589824,False,FAIL_ACCURACY: acc 31.9% below statistical threshold 38.60%,True,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+qcqa,NEUTRAL,PASS_LOW,31.9,0.01,589824,False,FAIL_ACCURACY: acc 31.9% below statistical threshold 38.60%,True,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+hgrn2_gated_deltanet,NEUTRAL,FAIL,0.0,0.0,0,False,FAIL_ACCURACY: acc 0.0% below statistical threshold 38.60%,True,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000
+gated_delta_net,NEUTRAL,FAIL,0.0,0.0,0,False,FAIL_ACCURACY: acc 0.0% below statistical threshold 38.60%,True,38.6,"dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%",1000

@@ -1,0 +1,12 @@
+[
+  {
+    "module": "adasvd_compressor",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "FAIL_PPL_DIVERGED",
+    "perplexity": 670.387603,
+    "accuracy_pct": 0.0,
+    "error": "FAIL_PPL_DIVERGED: perplexity (670.39) exceeded threshold 100.0",
+    "timestamp": "2026-09-25T23:41:32.210006"
+  }
+]

@@ -1,0 +1,8 @@
+{
+  "compressor_name": "svd_llm",
+  "original_parameters": 124439808,
+  "compressed_parameters": 124439808,
+  "saved_parameters": 0,
+  "compression_ratio": 1.0,
+  "reduction_percentage": 0.0
+}

@@ -1,0 +1,12 @@
+[
+  {
+    "module": "triton_svd_linear_attention",
+    "model": "gpt2",
+    "dataset": "sst2",
+    "status": "FAIL",
+    "perplexity": "",
+    "accuracy_pct": 71.1,
+    "error": "FAIL: accuracy (71.10%) below pass threshold (75.16%, baseline=80.16%)",
+    "timestamp": "2026-10-04T17:08:47.476499"
+  }
+]

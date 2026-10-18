@@ -1,0 +1,7 @@
+rank,module_name,status,accuracy_pct,f1_score,val_loss,peak_vram_mb,compression_rate,compression_ratio_pct,num_compressed_layers,num_fallback_layers,elapsed_s,total_params_before,total_params_after
+16,lillama,FAIL,0.0,0.0,0.0,0.0,1.0,0.0,0,0,1.09,66955010,66955010
+32,lillama,FAIL,0.0,0.0,0.0,0.0,1.0,0.0,0,0,1.1,66955010,66955010
+64,lillama,FAIL,0.0,0.0,0.0,0.0,1.0,0.0,0,0,1.06,66955010,66955010
+128,lillama,FAIL,0.0,0.0,0.0,0.0,1.0,0.0,0,0,1.01,66955010,66955010
+256,lillama,FAIL,0.0,0.0,0.0,0.0,1.0,0.0,0,0,1.07,66955010,66955010
+384,lillama,FAIL,0.0,0.0,0.0,0.0,1.0,0.0,0,0,1.08,66955010,66955010

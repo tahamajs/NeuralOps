@@ -1,0 +1,188 @@
+module_name,status,accuracy_pct,elapsed_s,error,path,timestamp
+full,PASS,69.13,14.79,,adapted,2026-09-01T01:35:17.155417
+a3,FAIL,0.0,6.03,IndexError: index -1 is out of bounds for dimension 1 with size 0,adapted,2026-09-01T01:35:23.627781
+aasvd,SKIP,0.0,95.65,AttributeError: 'Embedding' object has no attribute 'new_zeros',adapted,2026-09-01T01:36:59.607016
+adaptive_span,PASS,30.87,14.0,,legacy_bert,2026-09-01T01:37:13.873877
+adaptive_sparse,PASS,30.87,24.34,,legacy_bert,2026-09-01T01:37:38.519919
+adaptive_svd,PASS,30.87,14.83,,legacy_bert,2026-09-01T01:37:53.674776
+adasplash,PASS,30.87,56.94,,legacy_bert,2026-09-01T01:38:50.888770
+adasvd,PASS,43.62,33.03,,legacy_bert,2026-09-01T01:39:24.271752
+admm,SKIP,0.0,2.85,AttributeError: 'Embedding' object has no attribute 'new_zeros',adapted,2026-09-01T01:39:27.363029
+admm_pruner,FAIL,0.0,9.92,IndexError: index -1 is out of bounds for dimension 1 with size 0,adapted,2026-09-01T01:39:37.558461
+aegis_hybrid,PASS,30.87,56.19,,legacy_bert,2026-09-01T01:40:34.108585
+aegis_spectron_fp8,PASS,65.96,132.77,fp32 retry: expected scalar type Half but found Float,legacy_bert,2026-09-01T01:42:47.192385
+aegis_v1,PASS,30.87,91.75,,legacy_bert,2026-09-01T01:44:19.417911
+aegis_v2,PASS,30.87,117.39,,legacy_bert,2026-09-01T01:46:17.098835
+aegis_v3,PASS,30.87,53.43,,legacy_bert,2026-09-01T01:47:10.822391
+aegis_v4,PASS,30.87,123.58,,legacy_bert,2026-09-01T01:49:14.690168
+aegis_v5,PASS,30.87,141.49,,legacy_bert,2026-09-01T01:51:36.651698
+aegis_v6,PASS,69.13,65.91,,legacy_bert,2026-09-01T01:52:43.746868
+armor,FAIL,0.0,4.77,IndexError: index -1 is out of bounds for dimension 1 with size 0,adapted,2026-09-01T01:52:48.768276
+ast,FAIL,0.0,7.25,IndexError: index -1 is out of bounds for dimension 1 with size 0,adapted,2026-09-01T01:52:56.527314
+astro,SKIP,0.0,0.4,AttributeError: 'Embedding' object has no attribute 'new_zeros',adapted,2026-09-01T01:52:58.112097
+asvd,PASS,30.87,26.39,,legacy_bert,2026-09-01T01:53:25.533612
+bam_umoe,PASS,30.87,81.05,,legacy_bert,2026-09-01T01:54:46.958732
+block_transformer_hiba,PASS,30.87,25.03,,legacy_bert,2026-09-01T01:55:12.473053
+bonsai,FAIL,0.0,7.89,IndexError: index -1 is out of bounds for dimension 1 with size 0,adapted,2026-09-01T01:55:20.882397
+cachenotes,FAIL,0.0,4.62,IndexError: index -1 is out of bounds for dimension 1 with size 0,adapted,2026-09-01T01:55:25.753078
+chela_slay,PASS,41.99,38.41,,legacy_bert,2026-09-01T01:56:04.645288
+cluster,PASS,30.87,49.91,,legacy_bert,2026-09-01T01:56:54.879124
+come,FAIL,0.0,0.4,IndexError: index -1 is out of bounds for dimension 1 with size 0,adapted,2026-09-01T01:56:56.628265
+compot,SKIP,0.0,4.4,AttributeError: 'Embedding' object has no attribute 'new_zeros',adapted,2026-09-01T01:57:01.809648
+compressed_attention,PASS,69.13,21.07,,legacy_bert,2026-09-01T01:57:23.439684
+compressed_attention_layer_energy,PASS,69.13,22.38,,legacy_bert,2026-09-01T01:57:46.192957
+compressed_mha,PASS,30.87,21.71,,legacy_bert,2026-09-01T01:58:08.145057
+coopq,FAIL,0.0,2.77,IndexError: index -1 is out of bounds for dimension 1 with size 0,adapted,2026-09-01T01:58:11.439753
+cosformer,PASS,30.87,32.76,,legacy_bert,2026-09-01T01:58:44.577984
+cr,SKIP,0.0,20.64,AttributeError: 'Embedding' object has no attribute 'new_zeros',adapted,2026-09-01T01:59:05.587817
+cur,SKIP,0.0,5.93,AttributeError: 'Embedding' object has no attribute 'new_zeros',adapted,2026-09-01T01:59:11.806751
+cur_moe,SKIP,0.0,0.1,AttributeError: 'Embedding' object has no attribute 'new_zeros',adapted,2026-09-01T01:59:12.146109
+decay_linear_attn,PASS,69.13,33.19,fp32 retry: expected scalar type Half but found Float,legacy_bert,2026-09-01T01:59:46.053897
+delta_kv,SKIP,0.0,4.28,AttributeError: 'Embedding' object has no attribute 'new_zeros',adapted,2026-09-01T01:59:51.042635
+direct_svd,PASS,42.95,27.81,,legacy_bert,2026-09-01T02:00:19.217418
+dobi,PASS,42.86,18.36,,legacy_bert,2026-09-01T02:00:37.791954
+dynamic_rank,PASS,42.95,18.8,,legacy_bert,2026-09-01T02:00:56.816596
+eat,PASS,69.13,9.41,,legacy_bert,2026-09-01T02:01:06.454618
+enlighten,SKIP,0.0,10.41,AttributeError: 'Embedding' object has no attribute 'new_zeros',adapted,2026-09-01T02:01:17.083271
+entropy_budget,PASS,42.95,18.02,,legacy_bert,2026-09-01T02:01:35.333000
+entropy_rank_allocator,PASS,42.95,17.38,,legacy_bert,2026-09-01T02:01:53.017345
+erc,PASS,69.13,98.62,,legacy_bert,2026-09-01T02:03:31.866042
+expert_choice_moe,PASS,30.87,28.87,,legacy_bert,2026-09-01T02:04:00.975111
+factorised_matrix_state,PASS,69.13,14.45,fp32 retry: expected scalar type Half but found Float,legacy_bert,2026-09-01T02:04:16.047204
+faq,SKIP,0.0,0.27,AttributeError: 'Embedding' object has no attribute 'new_zeros',adapted,2026-09-01T02:04:16.724351
+fasa,PASS,30.87,12.91,,legacy_bert,2026-09-01T02:04:29.861805
+flap,SKIP,0.0,0.65,AttributeError: 'Embedding' object has no attribute 'new_zeros',adapted,2026-09-01T02:04:30.818241
+flash3,PASS,69.13,8.59,,legacy_bert,2026-09-01T02:04:39.650126
+flash3_fp8,PASS,69.13,9.82,,legacy_bert,2026-09-01T02:04:49.671761
+flat_llm,SKIP,0.0,3.65,AttributeError: 'Embedding' object has no attribute 'new_zeros',adapted,2026-09-01T02:04:53.532744
+frandi,SKIP,0.0,3.29,AttributeError: 'Embedding' object has no attribute 'new_zeros',adapted,2026-09-01T02:04:57.070717
+frandi_compressor,PASS,69.13,28.28,,legacy_bert,2026-09-01T02:05:25.577697
+fused_svd_kernel,PASS,30.87,65.58,,legacy_bert,2026-09-01T02:06:31.694169
+fusion_attn,PASS,30.87,9.6,,legacy_bert,2026-09-01T02:06:41.509127
+galerkin,PASS,30.87,14.23,,legacy_bert,2026-09-01T02:06:56.014440
+gated_delta_net,PASS,69.13,20.53,fp32 retry: expected scalar type Half but found Float,legacy_bert,2026-09-01T02:07:16.771544
+gated_deltanet_block,PASS,69.13,21.85,fp32 retry: expected scalar type Half but found Float,legacy_bert,2026-09-01T02:07:39.377983
+gated_linear_attn,PASS,62.13,21.43,fp32 retry: expected scalar type Half but found Float,legacy_bert,2026-09-01T02:08:01.386331
+gfws,SKIP,0.0,7.76,AttributeError: 'Embedding' object has no attribute 'new_zeros',adapted,2026-09-01T02:08:09.792473
+goldfinch_ahn,PASS,69.13,16.67,,legacy_bert,2026-09-01T02:08:26.782806
+gqa,PASS,30.87,13.59,,legacy_bert,2026-09-01T02:08:40.745645
+granite_hybrid,PASS,30.87,40.59,,legacy_bert,2026-09-01T02:09:21.750169
+grecodec,SKIP,0.0,57.67,AttributeError: 'Embedding' object has no attribute 'new_zeros',adapted,2026-09-01T02:10:19.768293
+grecodec_compressor,PASS,32.12,68.0,,legacy_bert,2026-09-01T02:11:28.138035
+griffin_ssd,PASS,69.13,20.59,fp32 retry: expected scalar type Half but found Float,legacy_bert,2026-09-01T02:11:49.064037
+halo_regla,PASS,30.87,22.08,,legacy_bert,2026-09-01T02:12:11.573795
+hamming,PASS,69.13,18.39,,legacy_bert,2026-09-01T02:12:30.352832
+hashed_net,SKIP,0.0,0.52,AttributeError: 'Embedding' object has no attribute 'new_zeros',adapted,2026-09-01T02:12:31.177824
+hgrn2_gated_deltanet,PASS,69.13,47.91,fp32 retry: expected scalar type Half but found Float,legacy_bert,2026-09-01T02:13:19.506270
+hgrn2_layer,PASS,69.13,16.79,fp32 retry: expected scalar type Half but found Float,legacy_bert,2026-09-01T02:13:37.479580
+hgrn2_outer,PASS,69.13,21.08,fp32 retry: expected scalar type Half but found Float,legacy_bert,2026-09-01T02:13:59.134546
+hla,PASS,30.87,143.72,,legacy_bert,2026-09-01T02:16:23.435444
+huffman,SKIP,0.0,134.33,AttributeError: 'Embedding' object has no attribute 'new_zeros',adapted,2026-09-01T02:18:38.127997
+hybrid_svd,PASS,31.35,17.78,,legacy_bert,2026-09-01T02:18:56.154454
+hybridkv,SKIP,0.0,0.26,AttributeError: 'Embedding' object has no attribute 'new_zeros',adapted,2026-09-01T02:18:56.638488
+hymba_transx,PASS,46.02,25.51,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: float != struct c10::Half",legacy_bert,2026-09-01T02:19:22.361051
+infini,PASS,30.87,10.54,,legacy_bert,2026-09-01T02:19:33.500162
+jamba,PASS,69.13,36.4,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: float != struct c10::Half",legacy_bert,2026-09-01T02:20:10.172543
+jamba_info,PASS,68.55,21.24,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: float != struct c10::Half",legacy_bert,2026-09-01T02:20:31.842295
+kda,PASS,69.13,14.9,fp32 retry: expected scalar type Half but found Float,legacy_bert,2026-09-01T02:20:47.299110
+kmeans,SKIP,0.0,5.96,AttributeError: 'Embedding' object has no attribute 'new_zeros',adapted,2026-09-01T02:20:53.569092
+kronecker,SKIP,0.0,2.19,AttributeError: 'Embedding' object has no attribute 'new_zeros',adapted,2026-09-01T02:20:56.004081
+kronecker_tt_lora,SKIP,0.0,0.66,AttributeError: 'Embedding' object has no attribute 'new_zeros',adapted,2026-09-01T02:20:56.914594
+kvtc,SKIP,0.0,4.05,AttributeError: 'Embedding' object has no attribute 'new_zeros',adapted,2026-09-01T02:21:01.202448
+leka_v1,PASS,69.13,16.73,,legacy_bert,2026-09-01T02:21:18.180537
+leka_v2,PASS,30.87,20.53,,legacy_bert,2026-09-01T02:21:38.962274
+leka_v3,PASS,30.87,18.31,,legacy_bert,2026-09-01T02:21:57.498144
+liftr,SKIP,0.0,0.14,AttributeError: 'Embedding' object has no attribute 'new_zeros',adapted,2026-09-01T02:21:57.884846
+lillama,SKIP,0.0,34.97,AttributeError: 'Embedding' object has no attribute 'new_zeros',adapted,2026-09-01T02:22:33.080069
+linformer,PASS,30.87,11.66,,legacy_bert,2026-09-01T02:22:44.976932
+lola,PASS,30.87,15.89,,legacy_bert,2026-09-01T02:23:01.107502
+lora_attn,PASS,30.87,13.15,,legacy_bert,2026-09-01T02:23:14.505278
+lsc,SKIP,0.0,1.3,AttributeError: 'Embedding' object has no attribute 'new_zeros',adapted,2026-09-01T02:23:16.041614
+lsh,PASS,69.13,30.73,,legacy_bert,2026-09-01T02:23:47.012056
+mamba,PASS,30.87,8.22,,legacy_bert,2026-09-01T02:23:55.471163
+mamba_shedder,SKIP,0.0,0.55,AttributeError: 'Embedding' object has no attribute 'new_zeros',adapted,2026-09-01T02:23:56.386550
+mamba_svd_flash,PASS,30.87,68.32,,legacy_bert,2026-09-01T02:25:04.953685
+mgie,PASS,31.35,15.32,,legacy_bert,2026-09-01T02:25:20.737824
+mgie_budget,PASS,31.35,15.31,,legacy_bert,2026-09-01T02:25:36.329376
+minimal_aurora,PASS,30.97,11.61,,legacy_bert,2026-09-01T02:25:48.369144
+minimal_nova,PASS,30.97,11.67,,legacy_bert,2026-09-01T02:26:00.374792
+minimal_prism,PASS,30.87,11.01,,legacy_bert,2026-09-01T02:26:11.661841
+minimal_svd,PASS,30.87,10.74,,legacy_bert,2026-09-01T02:26:22.689124
+minimal_svd_v2,PASS,30.87,10.92,,legacy_bert,2026-09-01T02:26:33.920215
+mixattention_moska,PASS,30.87,13.38,,legacy_bert,2026-09-01T02:26:47.605824
+mla,SKIP,0.0,0.54,RuntimeError: mat1 and mat2 shapes cannot be multiplied (128x4096 and 512x512),legacy_bert,2026-09-01T02:26:48.472460
+mlorq,SKIP,0.0,38.04,AttributeError: 'Embedding' object has no attribute 'new_zeros',adapted,2026-09-01T02:27:26.868604
+moba,PASS,30.87,14.22,,legacy_bert,2026-09-01T02:27:41.465580
+modegpt,SKIP,0.0,2.64,AttributeError: 'Embedding' object has no attribute 'new_zeros',adapted,2026-09-01T02:27:44.519267
+moe_deltakv_paged,PASS,69.13,35.29,fp32 retry: linalg.svd: The algorithm failed to converge because the input matrix is ill-conditioned or has too many repeated singular values (error code: 63).,legacy_bert,2026-09-01T02:28:20.095970
+nasc,PASS,30.87,27.44,,legacy_bert,2026-09-01T02:28:47.904753
+nexus,PASS,69.13,13.89,,legacy_bert,2026-09-01T02:29:02.132146
+nha,PASS,30.87,17.35,,legacy_bert,2026-09-01T02:29:19.816441
+nli_softmax,SKIP,0.0,0.14,AttributeError: 'Embedding' object has no attribute 'new_zeros',adapted,2026-09-01T02:29:20.375896
+nmf,SKIP,0.0,34.51,AttributeError: 'Embedding' object has no attribute 'new_zeros',adapted,2026-09-01T02:29:55.138818
+nsa,PASS,30.87,12.81,,legacy_bert,2026-09-01T02:30:08.272923
+nystrom,PASS,30.87,19.7,,legacy_bert,2026-09-01T02:30:28.385809
+oats,SKIP,0.0,13.74,AttributeError: 'Embedding' object has no attribute 'new_zeros',adapted,2026-09-01T02:30:42.445718
+oha,PASS,30.87,16.25,,legacy_bert,2026-09-01T02:30:59.011204
+optimal_subspace_projection,SKIP,0.0,2.29,AttributeError: 'Embedding' object has no attribute 'new_zeros',adapted,2026-09-01T02:31:01.564586
+orion,PASS,69.13,19.07,,legacy_bert,2026-09-01T02:31:20.914897
+performer,PASS,69.13,14.7,,legacy_bert,2026-09-01T02:31:35.859967
+phantom,PASS,30.87,64.3,,legacy_bert,2026-09-01T02:32:40.419282
+primal,PASS,30.87,31.35,,legacy_bert,2026-09-01T02:33:12.092149
+progressive_token_pruning,PASS,30.87,11.35,,legacy_bert,2026-09-01T02:33:23.740297
+projection_factorized_attn,PASS,30.87,24.69,,legacy_bert,2026-09-01T02:33:48.688882
+proxsparse,SKIP,0.0,1.25,AttributeError: 'Embedding' object has no attribute 'new_zeros',adapted,2026-09-01T02:33:50.212595
+qcqa,PASS,30.87,10.23,,legacy_bert,2026-09-01T02:34:00.677134
+rala,PASS,30.87,12.64,,legacy_bert,2026-09-01T02:34:13.706673
+rala_compressor,FAIL,0.0,0.92,RuntimeError: The size of tensor a (64) must match the size of tensor b (16) at non-singleton dimension 3,legacy_bert,2026-09-01T02:34:15.043277
+reap_moe,PASS,30.87,31.91,,legacy_bert,2026-09-01T02:34:47.247059
+regla,PASS,30.87,13.16,,legacy_bert,2026-09-01T02:35:01.027041
+res_svd,PASS,30.87,14.27,,legacy_bert,2026-09-01T02:35:15.573286
+rotational_slicegpt,SKIP,0.0,91.67,AttributeError: 'Embedding' object has no attribute 'new_zeros',adapted,2026-09-01T02:36:47.518498
+routing,PASS,30.87,18.71,,legacy_bert,2026-09-01T02:37:06.479520
+rpc,PASS,30.87,10.3,,legacy_bert,2026-09-01T02:37:17.116510
+rpca,PASS,31.54,27.04,,legacy_bert,2026-09-01T02:37:44.527379
+saes,PASS,31.45,15.8,,legacy_bert,2026-09-01T02:38:00.657595
+salr,PASS,69.13,10.86,,legacy_bert,2026-09-01T02:38:11.850895
+salt,PASS,62.13,68.55,,legacy_bert,2026-09-01T02:39:20.698671
+samba_m3,PASS,69.13,20.49,fp32 retry: expected scalar type Half but found Float,legacy_bert,2026-09-01T02:39:41.475239
+samba_moe,PASS,69.13,66.1,fp32 retry: expected scalar type Half but found Float,legacy_bert,2026-09-01T02:40:47.937061
+sdrm,SKIP,0.0,2.66,AttributeError: 'Embedding' object has no attribute 'new_zeros',adapted,2026-09-01T02:40:52.454740
+simple_ssm,PASS,62.13,13.08,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: float != struct c10::Half",legacy_bert,2026-09-01T02:41:05.828309
+slicegpt,SKIP,0.0,31.74,AttributeError: 'Embedding' object has no attribute 'new_zeros',adapted,2026-09-01T02:41:38.065482
+slicegpt_pca,SKIP,0.0,31.49,AttributeError: 'Embedding' object has no attribute 'new_zeros',adapted,2026-09-01T02:42:09.857802
+slim,SKIP,0.0,2.78,AttributeError: 'Embedding' object has no attribute 'new_zeros',adapted,2026-09-01T02:42:12.956984
+soa_attn,PASS,69.13,9.75,,legacy_bert,2026-09-01T02:42:23.028737
+soa_fused_attn,PASS,69.13,9.83,,legacy_bert,2026-09-01T02:42:33.223005
+soka,SKIP,0.0,2.63,AttributeError: 'Embedding' object has no attribute 'new_zeros',adapted,2026-09-01T02:42:36.230024
+span_expanded,PASS,62.13,11.44,,legacy_bert,2026-09-01T02:42:47.968067
+sparsegpt,SKIP,0.0,42.91,AttributeError: 'Embedding' object has no attribute 'new_zeros',adapted,2026-09-01T02:43:31.186574
+spectra_v2,PASS,69.13,9.66,,legacy_bert,2026-09-01T02:43:41.136445
+spectral_mamba,PASS,30.87,12.37,,legacy_bert,2026-09-01T02:43:53.878094
+spectral_residual_lora,PASS,32.5,19.87,,legacy_bert,2026-09-01T02:44:14.082048
+spectron,PASS,30.87,46.51,,legacy_bert,2026-09-01T02:45:00.905193
+squeezing_heads_distiller,PASS,30.87,9.51,,legacy_bert,2026-09-01T02:45:10.752615
+subspace_projection,SKIP,0.0,2.61,AttributeError: 'Embedding' object has no attribute 'new_zeros',adapted,2026-09-01T02:45:13.666413
+svd,SKIP_SLOW,0.0,600.0,stalled_more_than_10_minutes,adapted,2026-09-01T11:09:52.1865194+03:30
+svd-mamba,PASS,30.87,18.78,,legacy_bert,2026-09-01T11:12:13.802733
+svd_compressed,PASS,30.87,12.14,,legacy_bert,2026-09-01T11:12:26.341413
+svd_linear,PASS,30.87,23.91,,legacy_bert,2026-09-01T11:12:50.587866
+svd_linear_decay,PASS,30.87,23.99,,legacy_bert,2026-09-01T11:13:14.884454
+svd_llm_v2,PASS,30.87,10.93,,legacy_bert,2026-09-01T11:13:26.136595
+svd_proj_attn,PASS,30.87,9.91,,legacy_bert,2026-09-01T11:13:36.349658
+swift_svd,PASS,31.35,15.1,,legacy_bert,2026-09-01T11:13:51.761644
+swift_svd_act,PASS,31.35,14.6,,legacy_bert,2026-09-01T11:14:06.648434
+token_compressed,PASS,30.87,11.62,,legacy_bert,2026-09-01T11:14:18.536529
+tpa,PASS,30.87,10.25,,legacy_bert,2026-09-01T11:14:29.167616
+tt,SKIP,0.0,1.75,AttributeError: 'Embedding' object has no attribute 'new_zeros',adapted,2026-09-01T11:14:31.261183
+unified_rope,PASS,30.87,11.0,,legacy_bert,2026-09-01T11:14:42.558586
+uniql,SKIP,0.0,2.83,AttributeError: 'Embedding' object has no attribute 'new_zeros',adapted,2026-09-01T11:14:45.792769
+upi_stuffed_mamba,PASS,50.72,79.81,,legacy_bert,2026-09-01T11:16:05.902847
+vig,SKIP,0.0,0.91,"RuntimeError: shape '[8, 4, 4]' is invalid for input of size 2048",legacy_bert,2026-09-01T11:16:07.229491
+vspec,PASS,68.74,24.55,,legacy_bert,2026-09-01T11:16:32.123637
+wgqa,PASS,30.87,9.79,,legacy_bert,2026-09-01T11:16:42.254409
+xattention,PASS,62.13,14.21,,legacy_bert,2026-09-01T11:16:56.726564
+your_attention_name,PASS,30.87,10.62,,legacy_bert,2026-09-01T11:17:07.685692
+your_compressor_name,PASS,58.49,12.18,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",legacy_bert,2026-09-01T11:17:20.226637
+zerokv_neo,SKIP,0.0,0.37,AttributeError: 'Embedding' object has no attribute 'new_zeros',adapted,2026-09-01T11:17:21.047827
+zeros,PASS,30.87,10.54,,legacy_bert,2026-09-01T11:17:31.891408
