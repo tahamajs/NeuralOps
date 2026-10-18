@@ -213,8 +213,13 @@ class AdaSplashLinear(nn.Module):
         return out
 
 
-# DEPRECATED / PURGED: adasplash_attention permanently removed from ATTENTION_REGISTRY
-# due to unfixable quadratic O(N^2) memory leak. Retained for historical reference only.
+@ATTENTION_REGISTRY.register(
+    "adasplash_attention",
+    supports_causal=True,
+    supports_bidirectional=True,
+    supports_gqa=True,
+    supports_rope=True,
+)
 class AdaSplashAttention(BaseAttention):
     r"""
     AdaSplash Attention Layer with α-Entmax and Local Splash Radius.

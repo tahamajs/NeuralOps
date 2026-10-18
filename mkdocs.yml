@@ -1,10 +1,10 @@
 site_name: NeuralOps
 site_description: Unified Platform for Subquadratic Attention and Deep Low-Rank Model Compression
 site_author: Taha Majlesi
-site_url: https://tahamajs.github.io/SVD_linear_Attention/
+site_url: https://tahamajs.github.io/NeuralOps/
 
-repo_name: tahamajs/SVD_linear_Attention
-repo_url: https://github.com/tahamajs/SVD_linear_Attention
+repo_name: tahamajs/NeuralOps
+repo_url: https://github.com/tahamajs/NeuralOps
 
 theme:
   name: material
