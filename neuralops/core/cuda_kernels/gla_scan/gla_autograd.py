@@ -109,7 +109,7 @@ def _gla_scan_dispatch(
 
 class _Gla_scanFunction(torch.autograd.Function):
     @staticmethod
-    def forward(ctx: Any, q, k, v, alpha):
+    def forward(ctx: Any, q, k, v, alpha=None):
         out = _gla_scan_dispatch(q, k, v, alpha)
         ctx.save_for_backward(*[t for t in (q, k, v, alpha) if isinstance(t, torch.Tensor)])
         ctx.tensors_mask = [isinstance(t, torch.Tensor) for t in (q, k, v, alpha)]
@@ -141,7 +141,7 @@ class _Gla_scanFunction(torch.autograd.Function):
                 res.append(None)
         return tuple(res)
 
-def gla_scan(q, k, v, alpha):
+def gla_scan(q, k, v, alpha=None):
     if any(isinstance(t, torch.Tensor) and t.requires_grad for t in (q, k, v, alpha)):
         return _Gla_scanFunction.apply(q, k, v, alpha)
     return _gla_scan_dispatch(q, k, v, alpha)
