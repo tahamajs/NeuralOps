@@ -12,7 +12,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-from neuralops.evaluation.eval_types import BenchmarkResult, LM_DATASETS
+from evaluation.eval_types import BenchmarkResult, LM_DATASETS
 
 logger = logging.getLogger("EvalEngine")
 

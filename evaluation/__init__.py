@@ -67,19 +67,19 @@ __all__ = [
 ]
 
 # Auto-wired package members
-from neuralops.evaluation import ab_testing
-from neuralops.evaluation import eval_all_models_datasets
-from neuralops.evaluation import eval_data
-from neuralops.evaluation import eval_patcher
-from neuralops.evaluation import eval_perplexity
-from neuralops.evaluation import eval_pipeline
-from neuralops.evaluation import eval_reporter
-from neuralops.evaluation import eval_types
-from neuralops.evaluation import eval_utils
-from neuralops.evaluation import fairness
-from neuralops.evaluation import full_mnli_validation
-from neuralops.evaluation import label_quality
-from neuralops.evaluation import metrics
-from neuralops.evaluation import retraining
-from neuralops.evaluation import run_baseline_comparison
-from neuralops.evaluation import run_lm_eval_harness
+from evaluation import ab_testing
+from evaluation import eval_all_models_datasets
+from evaluation import eval_data
+from evaluation import eval_patcher
+from evaluation import eval_perplexity
+from evaluation import eval_pipeline
+from evaluation import eval_reporter
+from evaluation import eval_types
+from evaluation import eval_utils
+from evaluation import fairness
+from evaluation import full_mnli_validation
+from evaluation import label_quality
+from evaluation import metrics
+from evaluation import retraining
+from evaluation import run_baseline_comparison
+from evaluation import run_lm_eval_harness
