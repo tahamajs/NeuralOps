@@ -13,9 +13,16 @@ from . import (
     results_saver,
     seed,
     logging_config,
+    varlen_padding,
 )
 from .results_saver import ResultsSaver
 from .logging_config import configure_logging, warn_once
+from .varlen_padding import (
+    pad_input,
+    unpad_input,
+    construct_cu_seqlens_from_lengths,
+    CuTeTiledVarlenPadding,
+)
 
 __all__ = [
     "architecture",
@@ -32,6 +39,11 @@ __all__ = [
     "results_saver",
     "ResultsSaver",
     "seed",
+    "varlen_padding",
+    "pad_input",
+    "unpad_input",
+    "construct_cu_seqlens_from_lengths",
+    "CuTeTiledVarlenPadding",
 ]
 
 # Re-exported utility functions
