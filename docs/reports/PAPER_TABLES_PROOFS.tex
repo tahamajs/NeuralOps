@@ -217,4 +217,59 @@ SVD Linear Attention & $3.81 	imes 10^{-7}$ & $7.12 	imes 10^{-7}$ & 	extbf{EXAC
 \end{tabular}
 \end{table}
 
+
+% ------------------------------------------------------------------------------
+% SECTION IV: COMPUTATIONAL & MEMORY COMPLEXITY THEOREMS
+% ------------------------------------------------------------------------------
+\section{Computational and Working Memory Complexity Analysis}
+
+egin{theorem}[Sub-Quadratic Flop Complexity and Constant Working Memory Scaling]
+Let $B$ denote the batch size, $H$ the number of attention heads, $L$ the sequence length, $D$ the head feature dimension, and $r \ll D$ the truncated SVD rank.
+Let standard FlashAttention-2 compute causal scaled dot-product attention via online softmax tiling, and let SVD Linear Attention evaluate the associative low-rank state recurrence:
+egin{equation}
+S_t = \gamma S_{t-1} + (k_t V_r) (v_t U_r)^T, \quad o_t = (q_t V_r) S_t (U_r)^T.
+\end{equation}
+
+egin{enumerate}
+    \item 	extbf{Training Flop Complexity:} FlashAttention-2 requires evaluating pairwise causal interactions across all token pairs, resulting in:
+    egin{equation}
+    \mathcal{C}_{	ext{Flash2}}^{	ext{train}} = 4 B H L^2 D + \mathcal{O}(B H L D) \quad 	ext{FLOPs} = \mathcal{O}(B H L^2 D).
+    \end{equation}
+    In contrast, SVD Linear Attention leverages associativity $(Q K^T) V = Q (K^T V)$ with rank-$r$ projection, requiring:
+    egin{equation}
+    \mathcal{C}_{	ext{SVD}}^{	ext{train}} = 4 B H L D r + 2 B H L r^2 \quad 	ext{FLOPs} = \mathcal{O}(B H L D r).
+    \end{equation}
+    Since $r \ll D \ll L$ for long sequences ($L \ge 2048$), the theoretical computational speedup is:
+    egin{equation}
+    	ext{Speedup} = rac{\mathcal{C}_{	ext{Flash2}}^{	ext{train}}}{\mathcal{C}_{	ext{SVD}}^{	ext{train}}} = rac{4 B H L^2 D}{4 B H L D r + 2 B H L r^2} pprox rac{L}{r} = \mathcal{O}\left( rac{L}{r} ight).
+    \end{equation}
+    
+    \item 	extbf{Autoregressive Generation Working Memory:} During inference at step $t$, FlashAttention-2 must retain all past key-value states in a dynamic KV-cache of size:
+    egin{equation}
+    \mathcal{M}_{	ext{Flash2}}^{	ext{infer}}(t) = 2 B H t D \quad 	ext{elements} = \mathcal{O}(B H L D).
+    \end{equation}
+    In contrast, SVD Linear Attention compresses historical context into a stationary recurrent memory matrix $S_t \in \mathbb{R}^{r 	imes r}$, requiring:
+    egin{equation}
+    \mathcal{M}_{	ext{SVD}}^{	ext{infer}} = B H r^2 \quad 	ext{elements} = \mathcal{O}(B H r^2) = \mathcal{O}(1) 	ext{ w.r.t. } L.
+    \end{equation}
+    Proving that working memory during autoregressive generation is completely invariant to context horizon $L$, eliminating KV-cache memory explosion.
+\end{enumerate}
+\end{theorem}
+
+% TABLE 6: COMPLEXITY COMPARISON
+egin{table*}[t]
+\centering
+\caption{Theoretical and Empirical Complexity Comparison: SVD Linear Attention vs. FlashAttention-2.}
+\label{tab:complexity_comparison}
+egin{tabular}{lccccc}
+	oprule
+	extbf{Attention Mechanism} & 	extbf{Training FLOPs} & 	extbf{Inference FLOPs / Token} & 	extbf{Inference KV Memory} & 	extbf{Memory Horizon Scaling} & 	extbf{Length Scaling ($L 	o \infty$)} \
+\midrule
+FlashAttention-2 & $\mathcal{O}(B H L^2 D)$ & $\mathcal{O}(B H t D)$ & $\mathcal{O}(B H L D)$ & Linear Growth ($\propto L$) & Quadratic Slowdown $\mathcal{O}(L^2)$ \
+Standard Linear Attention & $\mathcal{O}(B H L D^2)$ & $\mathcal{O}(B H D^2)$ & $\mathcal{O}(B H D^2)$ & Constant $\mathcal{O}(1)$ & Linear Scaling $\mathcal{O}(L)$ \
+	extbf{SVD Linear Attention (Ours)} & $\pmb{\mathcal{O}(B H L D r)}$ & $\pmb{\mathcal{O}(B H D r + B H r^2)}$ & $\pmb{\mathcal{O}(B H r^2)}$ & 	extbf{Constant $\pmb{\mathcal{O}(1)}$} & 	extbf{Linear Scaling $\pmb{\mathcal{O}(L)}$} \
+ottomrule
+\end{tabular}
+\end{table*}
+
 \end{document}
