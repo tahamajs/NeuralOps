@@ -109,6 +109,16 @@ class SVDLinear(nn.Module):
         return (self.U * self.S.unsqueeze(0)) @ self.V.t().contiguous()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        if x.is_cuda and x.dtype in (torch.float16, torch.bfloat16):
+            try:
+                from neuralops.core.cuda_kernels.low_rank_svd import fused_lowrank_gated_gemm
+                u_eff = self.U * self.S.unsqueeze(0)
+                out = fused_lowrank_gated_gemm(x, self.V.t().contiguous(), u_eff.t().contiguous(), bias=self.bias)
+                if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
+                    out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.scaling
+                return out
+            except Exception:
+                pass
         from neuralops.core.triton_kernels.low_rank import fused_svd_mamba_proj_triton
 
         out = fused_svd_mamba_proj_triton(x, self.V, self.S, self.U, self.bias)
