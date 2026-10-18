@@ -491,6 +491,46 @@ Exported CSV:
 
 ---
 
+## 8.8 Global Floating-Point Dynamic Range Stress Test ($\|X\|_\infty \in [10^{-4}, 10^{4}]$)
+
+To establish exact empirical underflow/overflow bounds and ensure numerical stability under extreme activation scales, a multi-decade dynamic range stress test was conducted on physical SM 8.9 hardware across 4 flagship kernels: `gla_scan`, `sparse_attention`, `rotational_svd`, and `samba_moe`.
+
+### 8.8.1 Methodology & Metrics
+- **Dynamic Scale ($\|X\|_\infty$)**: Input activations uniformly scaled over 8 orders of magnitude: $10^{-4}, 10^{-2}, 10^0, 10^2, 10^4$.
+- **Numerical Stability**: Verification of strict non-existence of subnormal NaN or Inf corruptions across the entire dynamic sweep.
+- **Dynamic Range Span**: Monitored output tensor bounds $[\min, \max]$ and Frobenius norm $\|Y\|_F$.
+
+### 8.8.2 Dynamic Range Audit Results
+
+| Kernel | Dynamic Scale ($\|X\|_\infty$) | Latency (ms) | Output Range $[\min, \max]$ | Frobenius Norm $\|Y\|_F$ | Numerical Health | Status |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| **gla_scan** | $10^{-4}$ | 0.608 | $[-1.5 \times 10^{-9}, 1.5 \times 10^{-9}]$ | $8.84 \times 10^{-8}$ | Zero-NaN / Zero-Inf | **PASS** |
+| | $10^{-2}$ | 0.606 | $[-1.3 \times 10^{-3}, 1.2 \times 10^{-3}]$ | $8.49 \times 10^{-2}$ | Zero-NaN / Zero-Inf | **PASS** |
+| | $10^{0}$ | 0.608 | $[-1.3 \times 10^{3}, 1.2 \times 10^{3}]$ | $5.93 \times 10^{4}$ | Zero-NaN / Zero-Inf | **PASS** |
+| | $10^{2}$ | 0.608 | $[-1.3 \times 10^{9}, 1.3 \times 10^{9}]$ | $6.14 \times 10^{10}$ | Zero-NaN / Zero-Inf | **PASS** |
+| | $10^{4}$ | 0.612 | $[-1.3 \times 10^{15}, 1.3 \times 10^{15}]$ | $6.15 \times 10^{16}$ | Zero-NaN / Zero-Inf | **PASS** |
+| **sparse_attention** | $10^{-4}$ | 0.161 | $[-5.9 \times 10^{-5}, 5.6 \times 10^{-5}]$ | $5.25 \times 10^{-3}$ | Zero-NaN / Zero-Inf | **PASS** |
+| | $10^{-2}$ | 0.161 | $[-5.4 \times 10^{-3}, 5.3 \times 10^{-3}]$ | $5.24 \times 10^{-1}$ | Zero-NaN / Zero-Inf | **PASS** |
+| | $10^{0}$ | 0.161 | $[-5.7 \times 10^{-1}, 5.2 \times 10^{-1}]$ | $5.23 \times 10^{1}$ | Zero-NaN / Zero-Inf | **PASS** |
+| | $10^{2}$ | 0.161 | $[-1.0 \times 10^{2}, 1.0 \times 10^{2}]$ | $2.05 \times 10^{4}$ | Zero-NaN / Zero-Inf | **PASS** |
+| | $10^{4}$ | 0.161 | $[-1.0 \times 10^{4}, 1.0 \times 10^{4}]$ | $2.09 \times 10^{6}$ | Zero-NaN / Zero-Inf | **PASS** |
+| **rotational_svd** | $10^{-4}$ | 0.168 | $[-5.4 \times 10^{-4}, 5.6 \times 10^{-4}]$ | $2.06 \times 10^{-2}$ | Zero-NaN / Zero-Inf | **PASS** |
+| | $10^{-2}$ | 0.168 | $[-7.2 \times 10^{-2}, 6.2 \times 10^{-2}]$ | $2.07 \times 10^{0}$ | Zero-NaN / Zero-Inf | **PASS** |
+| | $10^{0}$ | 0.168 | $[-6.2 \times 10^{0}, 6.0 \times 10^{0}]$ | $2.24 \times 10^{2}$ | Zero-NaN / Zero-Inf | **PASS** |
+| | $10^{2}$ | 0.168 | $[-5.8 \times 10^{2}, 5.7 \times 10^{2}]$ | $2.16 \times 10^{4}$ | Zero-NaN / Zero-Inf | **PASS** |
+| | $10^{4}$ | 0.168 | $[-5.1 \times 10^{4}, 6.3 \times 10^{4}]$ | $2.06 \times 10^{6}$ | Zero-NaN / Zero-Inf | **PASS** |
+| **samba_moe** | $10^{-4}$ | 0.150 | $[-1.0 \times 10^{-4}, 9.9 \times 10^{-5}]$ | $8.29 \times 10^{-3}$ | Zero-NaN / Zero-Inf | **PASS** |
+| | $10^{-2}$ | 0.150 | $[-1.0 \times 10^{-2}, 1.0 \times 10^{-2}]$ | $8.31 \times 10^{-1}$ | Zero-NaN / Zero-Inf | **PASS** |
+| | $10^{0}$ | 0.150 | $[-9.9 \times 10^{-1}, 1.0 \times 10^{0}]$ | $8.40 \times 10^{1}$ | Zero-NaN / Zero-Inf | **PASS** |
+| | $10^{2}$ | 0.150 | $[-1.0 \times 10^{2}, 9.9 \times 10^{1}]$ | $8.46 \times 10^{3}$ | Zero-NaN / Zero-Inf | **PASS** |
+| | $10^{4}$ | 0.150 | $[-9.9 \times 10^{3}, 9.9 \times 10^{3}]$ | $8.37 \times 10^{5}$ | Zero-NaN / Zero-Inf | **PASS** |
+
+Exported deliverables:
+- `docs/benchmarks/paper_benchmarks_dynamic_range_stress.csv`
+- `docs/reports/PAPER_TABLES_DYNAMIC_RANGE.tex`
+
+---
+
 ## 9. Worktree Synchronization & Repository Integrity
 
 - **Primary Working Directory**: `/mnt/d/SVD_linear_Attention`
