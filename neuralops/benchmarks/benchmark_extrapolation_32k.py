@@ -45,7 +45,7 @@ def run_extrapolation_benchmark(
 
     device = torch.device(device_str if (torch.cuda.is_available() and "cuda" in device_str) else "cpu")
     if device.type == "cuda":
-        torch.cuda.set_device(device)
+        torch.cuda.set_device(device.index if device.index is not None else 0)
 
     dtype_map = {
         "float16": torch.float16,
@@ -267,16 +267,36 @@ def main():
     parser.add_argument("--output-json", type=str, default="results/paper_benchmarks_extrapolation_32k.json", help="Path to save JSON output")
     parser.add_argument("--tex-output", type=str, default="docs/reports/PAPER_TABLES_EXTRAPOLATION_32K.tex", help="Path to save LaTeX table")
     parser.add_argument("--device", type=str, default="cuda:0" if torch.cuda.is_available() else "cpu", help="Device to execute benchmark")
-    parser.add_argument("--dtype", type=str, default="float16", choices=["float16", "float32", "bfloat16"], help="Precision")
+    parser.add_argument("--dtype", type=str, default="float16", choices=["float16", "float32", "bfloat16", "fp16", "fp32", "bf16"], help="Precision")
     parser.add_argument("--seq-lens", type=str, default="512,1024,2048,4096,8192,16384,32768", help="Comma-separated sequence lengths")
+    parser.add_argument("--min-len", type=int, default=None, help="Minimum sequence length (powers of 2 scaling)")
+    parser.add_argument("--max-len", type=int, default=None, help="Maximum sequence length (powers of 2 scaling)")
     parser.add_argument("--warmup", type=int, default=3, help="Warmup iterations")
     parser.add_argument("--repeat", type=int, default=10, help="Repeat iterations")
     parser.add_argument("--quick", action="store_true", help="Quick mode (seq-lens 512,1024)")
     args = parser.parse_args()
 
-    seq_lens = QUICK_SEQ_LENS if args.quick else [int(s.strip()) for s in args.seq_lens.split(",")]
+    if args.quick:
+        seq_lens = QUICK_SEQ_LENS
+    elif args.min_len is not None or args.max_len is not None:
+        min_l = args.min_len if args.min_len is not None else 512
+        max_l = args.max_len if args.max_len is not None else 32768
+        seq_lens = []
+        cur = min_l
+        while cur <= max_l:
+            seq_lens.append(cur)
+            cur *= 2
+    else:
+        seq_lens = [int(s.strip()) for s in args.seq_lens.split(",")]
+
     warmup = 1 if args.quick else args.warmup
     repeat = 2 if args.quick else args.repeat
+
+    output_json = args.output_json
+    output_csv = args.output
+    if args.output and args.output.endswith(".json"):
+        output_json = args.output
+        output_csv = args.output[:-5] + ".csv"
 
     run_extrapolation_benchmark(
         device_str=args.device,
@@ -284,8 +304,8 @@ def main():
         seq_lens=seq_lens,
         warmup=warmup,
         repeat=repeat,
-        output_csv=args.output,
-        output_json=args.output_json,
+        output_csv=output_csv,
+        output_json=output_json,
         output_tex=args.tex_output,
     )
     return 0

@@ -164,7 +164,7 @@ def run_all_26_comprehensive(
 
     device = torch.device(device_str if (torch.cuda.is_available() and "cuda" in device_str) else "cpu")
     if device.type == "cuda":
-        torch.cuda.set_device(device)
+        torch.cuda.set_device(device.index if device.index is not None else 0)
 
     dtype_map = {
         "float16": torch.float16,
@@ -676,7 +676,7 @@ def main():
     parser.add_argument("--output-json", type=str, default="results/triton_26_kernels_comprehensive_benchmark.json", help="Path to save JSON output")
     parser.add_argument("--report-md", type=str, default="docs/reports/TRITON_26_KERNELS_COMPREHENSIVE_REPORT.md", help="Path to save markdown report")
     parser.add_argument("--device", type=str, default="cuda:0" if torch.cuda.is_available() else "cpu", help="Device to run benchmarks")
-    parser.add_argument("--dtype", type=str, default="float16", choices=["float16", "float32", "bfloat16"], help="Precision")
+    parser.add_argument("--dtype", type=str, default="float16", choices=["float16", "float32", "bfloat16", "fp16", "fp32", "bf16"], help="Precision")
     parser.add_argument("--warmup", type=int, default=10, help="Warmup iterations")
     parser.add_argument("--repeat", type=int, default=50, help="Measurement repetitions")
     parser.add_argument("--quick", action="store_true", help="Quick verification pass (warmup=2, repeat=5)")
@@ -687,13 +687,22 @@ def main():
     repeat = 5 if args.quick else args.repeat
     selected = set(args.kernels.split(",")) if args.kernels else None
 
+    dtype_map = {"fp16": "float16", "fp32": "float32", "bf16": "bfloat16"}
+    dtype_str = dtype_map.get(args.dtype.lower(), args.dtype.lower())
+
+    output_json = args.output_json
+    output_csv = args.output
+    if args.output and args.output.endswith(".json"):
+        output_json = args.output
+        output_csv = args.output[:-5] + ".csv"
+
     run_all_26_comprehensive(
         device_str=args.device,
-        dtype_str=args.dtype,
+        dtype_str=dtype_str,
         warmup=warmup,
         repeat=repeat,
-        output_csv=args.output,
-        output_json=args.output_json,
+        output_csv=output_csv,
+        output_json=output_json,
         report_md=args.report_md,
         selected_kernels=selected,
     )

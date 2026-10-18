@@ -111,7 +111,7 @@ def run_stress_test(
 
     device = torch.device(device_str if (torch.cuda.is_available() and "cuda" in device_str) else "cpu")
     if device.type == "cuda":
-        torch.cuda.set_device(device)
+        torch.cuda.set_device(device.index if device.index is not None else 0)
     gpu_name = torch.cuda.get_device_name(device) if device.type == "cuda" else "CPU"
     print(f"Running multi-seed cross-validation on device: {device} ({gpu_name})")
 
@@ -371,23 +371,38 @@ def main():
     parser.add_argument("--output", type=str, default="results/multi_seed_crossval_stress_test.csv", help="Path to save CSV output")
     parser.add_argument("--output-json", type=str, default="results/multi_seed_crossval_stress_test.json", help="Path to save JSON output")
     parser.add_argument("--device", type=str, default="cuda:0" if torch.cuda.is_available() else "cpu", help="Device to execute benchmark")
-    parser.add_argument("--seeds", type=str, default="42,1337,2026", help="Comma-separated random seeds")
+    parser.add_argument("--seeds", nargs="+", default=["42,1337,2026"], help="Random seeds (space- or comma-separated)")
     parser.add_argument("--limit-attentions", type=int, default=None, help="Limit number of attention modules")
     parser.add_argument("--limit-compressors", type=int, default=None, help="Limit number of compressor modules")
     parser.add_argument("--quick", action="store_true", help="Quick mode (1 seed, 5 attentions, 5 compressors)")
     args = parser.parse_args()
 
-    seeds = [42] if args.quick else [int(s.strip()) for s in args.seeds.split(",")]
+    if args.quick:
+        seeds = [42]
+    else:
+        seeds = []
+        for item in args.seeds:
+            for s in str(item).split(","):
+                s = s.strip()
+                if s:
+                    seeds.append(int(s))
+
     lim_attn = 5 if args.quick else args.limit_attentions
     lim_comp = 5 if args.quick else args.limit_compressors
+
+    output_json = args.output_json
+    output_csv = args.output
+    if args.output and args.output.endswith(".json"):
+        output_json = args.output
+        output_csv = args.output[:-5] + ".csv"
 
     run_stress_test(
         device_str=args.device,
         seeds=seeds,
         limit_attentions=lim_attn,
         limit_compressors=lim_comp,
-        output_csv=args.output,
-        output_json=args.output_json,
+        output_csv=output_csv,
+        output_json=output_json,
     )
     return 0
 
