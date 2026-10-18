@@ -308,7 +308,7 @@ def run_all_26_kernels(
     bench_pair("fused_favor_plus", "(256x64, M=128)", fused_favor_plus_feature_map_triton, fused_favor_plus_feature_map_pytorch, x_fav, omega_fav, num_features=128, kernel_type="favor_plus")
 
     # 20. fused_rope
-    from neuralops.core.triton_kernels.fused_rope import fused_rope_fwd_kernel, _apply_rope_rotation
+    from neuralops.core.triton_kernels.fused_rope import fused_rope_fwd_kernel, apply_rope_rotation
     import triton
     B_r, H_r, N_r, D_r = 4, 8, 1024, 64
     q_r = torch.randn(B_r, H_r, N_r, D_r, device=device, dtype=dtype)
@@ -334,7 +334,7 @@ def run_all_26_kernels(
         )
         return out_q
 
-    bench_pair("fused_rope", f"(T={N_r}, d={D_r})", tri_rope_bench, lambda q, k, c, s: _apply_rope_rotation(q, c, s), q_r, k_r, cos_r, sin_r)
+    bench_pair("fused_rope", f"(T={N_r}, d={D_r})", tri_rope_bench, lambda q, k, c, s: apply_rope_rotation(q, c, s), q_r, k_r, cos_r, sin_r)
 
     # 21. block_sparse: fused_moba_block_router_combine
     from neuralops.core.triton_kernels.block_sparse import (

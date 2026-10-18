@@ -260,13 +260,10 @@ def local_window_attention(
     B, H, N, D = Q.shape
     N_k = K.shape[2]
     radius = window // 2
-    if Q.is_cuda and past_len == 0 and N == N_k and token_valid is None and abs(softpick_temperature - 1.0) < 1e-3:
+    if Q.is_cuda and past_len == 0 and N == N_k and token_valid is None and abs(softpick_temperature - 1.0) < 1e-3 and D <= 256:
         try:
-            from neuralops.core.triton_kernels.sliding_window import sliding_window_triton
-            from neuralops.core.triton_kernels._types import check_triton_suitability
-            suitable, _ = check_triton_suitability(Q, "sliding_window", head_dim=D, seq_len=N)
-            if suitable:
-                return sliding_window_triton(Q, K, V, window_size=radius)
+            from neuralops.core.cuda_kernels.hybrid_local_kernel import hybrid_local_attn
+            return hybrid_local_attn(Q, K, V, radius=radius, is_causal=is_decoder)
         except Exception:
             pass
 
@@ -961,9 +958,18 @@ class SplitHeadHybridAttention(BaseAttention):
                 gate_local = torch.sigmoid(
                     clamped_logits.view(1, Hl, 1, 1) + self.gate_bias
                 )
-                ctx_local = gate_local * ctx_local + (1.0 - gate_local) * global_mean.to(
-                    ctx_local.dtype
-                )
+                if ctx_local.is_cuda:
+                    try:
+                        from neuralops.core.cuda_kernels.hybrid_local_kernel import hybrid_two_branch_blend
+                        ctx_local = hybrid_two_branch_blend(ctx_local, global_mean.expand_as(ctx_local).to(ctx_local.dtype), gate_local.expand_as(ctx_local).to(ctx_local.dtype))
+                    except Exception:
+                        ctx_local = gate_local * ctx_local + (1.0 - gate_local) * global_mean.to(
+                            ctx_local.dtype
+                        )
+                else:
+                    ctx_local = gate_local * ctx_local + (1.0 - gate_local) * global_mean.to(
+                        ctx_local.dtype
+                    )
             context = torch.cat([ctx_local, ctx_global], dim=1)
 
             out = context.transpose(1, 2).contiguous().view(B, N, H * D)
