@@ -1,0 +1,7 @@
+Turn_Number,Cumulative_Tokens,State_Frobenius_Norm,State_Drift_Delta,Step_Latency_ms,Perplexity,Recurrent_State_Memory_MB,Equivalent_MHA_KV_MB,Cache_Compression_Ratio,Numerical_Pass
+1,32,143.6749,0.0,0.903,50606.16,0.1875,0.1875,1.0,PASS (0 NaNs / 0 Infs)
+10,320,220.78,77.1051,0.027,54608.0,0.1875,1.875,10.0,PASS (0 NaNs / 0 Infs)
+25,800,219.9975,0.7825,0.027,65269.87,0.1875,4.6875,25.0,PASS (0 NaNs / 0 Infs)
+50,1600,220.8536,0.8561,0.027,65091.59,0.1875,9.375,50.0,PASS (0 NaNs / 0 Infs)
+75,2400,220.2428,0.6108,0.026,53458.43,0.1875,14.0625,75.0,PASS (0 NaNs / 0 Infs)
+100,3200,221.6434,1.4006,0.025,58412.68,0.1875,18.75,100.0,PASS (0 NaNs / 0 Infs)
