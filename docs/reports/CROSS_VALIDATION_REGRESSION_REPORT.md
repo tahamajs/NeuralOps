@@ -460,6 +460,37 @@ Full raw data and publication artifacts exported to:
 
 ---
 
+## 8.7 Randomized Multi-Seed Backward Pass Stress Test ($S \in \{404, 777, 999\}$)
+
+To verify the numerical robustness of the newly audited and committed native backward passes (`cross_attention`, `tt_contraction`, `block_diag_gemm`, and `samba_moe`), a multi-seed randomized gradient stress test was executed under $S \in \{404, 777, 999\}$ on the RTX 4070 Laptop GPU.
+
+### 8.7.1 Methodology & Metrics
+- **Forward Parity**: $\max |Y - Y_{\text{ref}}|$ measuring forward evaluation accuracy vs pure PyTorch reference.
+- **Gradient Parity**: $\max |\nabla_{\text{kernel}} - \nabla_{\text{ref}}|$ computed via autograd backward against analytical PyTorch autograd reference graph.
+- **Zero-NaN/Inf Health**: Verification of complete absence of NaNs and Infs (`Zero-NaN == True`) in forward activations and backward gradient tensors.
+
+### 8.7.2 Multi-Seed Stress Test Results
+
+| Kernel | Seed | Forward Max Diff ($\max \|\Delta\|$) | Backward Max Grad Diff ($\max \|\Delta\nabla\|$) | Zero-NaN / Zero-Inf | Status |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| **cross_attention** | 404 | $1.73 \times 10^{-6}$ | $1.91 \times 10^{-6}$ | True (0 NaNs, 0 Infs) | **PASS** |
+| | 777 | $1.55 \times 10^{-6}$ | $1.91 \times 10^{-6}$ | True (0 NaNs, 0 Infs) | **PASS** |
+| | 999 | $1.43 \times 10^{-6}$ | $2.50 \times 10^{-6}$ | True (0 NaNs, 0 Infs) | **PASS** |
+| **tt_contraction** | 404 | $1.91 \times 10^{-6}$ | $0.00$ (Exact) | True (0 NaNs, 0 Infs) | **PASS** |
+| | 777 | $1.91 \times 10^{-6}$ | $0.00$ (Exact) | True (0 NaNs, 0 Infs) | **PASS** |
+| | 999 | $1.91 \times 10^{-6}$ | $0.00$ (Exact) | True (0 NaNs, 0 Infs) | **PASS** |
+| **block_diag_gemm** | 404 | $9.54 \times 10^{-7}$ | $0.00$ (Exact) | True (0 NaNs, 0 Infs) | **PASS** |
+| | 777 | $1.19 \times 10^{-6}$ | $0.00$ (Exact) | True (0 NaNs, 0 Infs) | **PASS** |
+| | 999 | $1.43 \times 10^{-6}$ | $0.00$ (Exact) | True (0 NaNs, 0 Infs) | **PASS** |
+| **samba_moe** | 404 | $2.38 \times 10^{-7}$ | $0.00$ (Exact) | True (0 NaNs, 0 Infs) | **PASS** |
+| | 777 | $2.38 \times 10^{-7}$ | $0.00$ (Exact) | True (0 NaNs, 0 Infs) | **PASS** |
+| | 999 | $2.38 \times 10^{-7}$ | $0.00$ (Exact) | True (0 NaNs, 0 Infs) | **PASS** |
+
+Exported CSV:
+- `docs/benchmarks/paper_benchmarks_seeds_404_777_999.csv`
+
+---
+
 ## 9. Worktree Synchronization & Repository Integrity
 
 - **Primary Working Directory**: `/mnt/d/SVD_linear_Attention`

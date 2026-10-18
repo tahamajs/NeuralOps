@@ -1,0 +1,13 @@
+kernel,seed,fwd_max_diff,max_grad_diff,zero_nan,status
+cross_attention,404,1.7285346984863281e-06,1.9073486328125e-06,True,PASS
+tt_contraction,404,1.9073486328125e-06,0.0,True,PASS
+block_diag_gemm,404,9.5367431640625e-07,0.0,True,PASS
+samba_moe,404,2.384185791015625e-07,0.0,True,PASS
+cross_attention,777,1.5497207641601562e-06,1.9073486328125e-06,True,PASS
+tt_contraction,777,1.9073486328125e-06,0.0,True,PASS
+block_diag_gemm,777,1.1920928955078125e-06,0.0,True,PASS
+samba_moe,777,2.384185791015625e-07,0.0,True,PASS
+cross_attention,999,1.430511474609375e-06,2.5033950805664062e-06,True,PASS
+tt_contraction,999,1.9073486328125e-06,0.0,True,PASS
+block_diag_gemm,999,1.430511474609375e-06,0.0,True,PASS
+samba_moe,999,2.384185791015625e-07,0.0,True,PASS
