@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# Author: Taha Majlesi
 """
 Generate publication-grade figures (.pdf, .svg) and LaTeX booktabs tables
 from empirical data in results/v13_deep_empirical_suite/.

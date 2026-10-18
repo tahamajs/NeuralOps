@@ -179,7 +179,7 @@ def benchmark_serving(
 
         # Contiguous baseline
         runner.reset_vram()
-        contig_cache = ContiguousKVCache(
+        _contig_cache = ContiguousKVCache(
             max_batch_size=active_seqs,
             max_seq_len=total_tokens_per_seq,
             num_heads=num_heads,

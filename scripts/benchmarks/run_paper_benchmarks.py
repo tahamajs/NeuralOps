@@ -1,16 +1,23 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# Author: Taha Majlesi
+import logging
+import math
 import os
 import time
-import math
-import torch
+
 import pandas as pd
+import torch
 from datasets import load_dataset
 from transformers import (
     AutoModelForCausalLM,
     AutoModelForSequenceClassification,
     AutoTokenizer,
-    AutoConfig
 )
+
 from neuralops.utils.replace_attention import replace_attention
+
+logger = logging.getLogger("run_paper_benchmarks")
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print(f"Running on device: {device} ({torch.cuda.get_device_name(0)})")
@@ -78,7 +85,8 @@ for task in glue_tasks:
     print(f"\n--- GLUE Task: {task.upper()} ---")
     try:
         ds = load_dataset("nyu-mll/glue", task, split="validation")
-    except Exception:
+    except (RuntimeError, MemoryError, AssertionError, ValueError, OSError) as e:
+        logger.warning("Failed to load nyu-mll/glue (%s): %s, falling back to glue", task, e, exc_info=True)
         ds = load_dataset("glue", task, split="validation")
         
     eval_samples = 200 # 200 validation items
@@ -189,12 +197,12 @@ latex_content = r"""% Publication Benchmark Deliverable: NeuralOps Model Surgery
 \toprule
 \textbf{Model Architecture} & \textbf{Attention Mechanism} & \textbf{Complexity} & \textbf{Wikitext-2 PPL} $\downarrow$ & \textbf{GLUE MRPC Acc} $\uparrow$ & \textbf{GLUE SST-2 Acc} $\uparrow$ & \textbf{GLUE CoLA Acc} $\uparrow$ \\
 \midrule
-GPT-2 (124M) & Standard MHA (Baseline) & $\mathcal{O}(N^2)$ & """ + f"{ppl_results[baseline][perplexity]:.2f}" + r""" & --- & --- & --- \\
-GPT-2 (124M) & SVD Linear Attention & $\mathcal{O}(N)$ & """ + f"{ppl_results[svd_linear_attention][perplexity]:.2f}" + r""" & --- & --- & --- \\
-GPT-2 (124M) & Chunk GLA (Triton) & $\mathcal{O}(N)$ & """ + f"{ppl_results[gla_attention][perplexity]:.2f}" + r""" & --- & --- & --- \\
+GPT-2 (124M) & Standard MHA (Baseline) & $\mathcal{O}(N^2)$ & """ + f"{ppl_results['baseline']['perplexity']:.2f}" + r""" & --- & --- & --- \\
+GPT-2 (124M) & SVD Linear Attention & $\mathcal{O}(N)$ & """ + f"{ppl_results['svd_linear_attention']['perplexity']:.2f}" + r""" & --- & --- & --- \\
+GPT-2 (124M) & Chunk GLA (Triton) & $\mathcal{O}(N)$ & """ + f"{ppl_results['gla_attention']['perplexity']:.2f}" + r""" & --- & --- & --- \\
 \midrule
-RoBERTa-base (125M) & Standard MHA (Baseline) & $\mathcal{O}(N^2)$ & --- & """ + f"{glue_results[mrpc][baseline][accuracy]:.1f}\\%" + r""" & """ + f"{glue_results[sst2][baseline][accuracy]:.1f}\\%" + r""" & """ + f"{glue_results[cola][baseline][accuracy]:.1f}\\%" + r""" \\
-RoBERTa-base (125M) & SVD Linear Attention & $\mathcal{O}(N)$ & --- & """ + f"{glue_results[mrpc][svd_linear_attention][accuracy]:.1f}\\%" + r""" & """ + f"{glue_results[sst2][svd_linear_attention][accuracy]:.1f}\\%" + r""" & """ + f"{glue_results[cola][svd_linear_attention][accuracy]:.1f}\\%" + r""" \\
+RoBERTa-base (125M) & Standard MHA (Baseline) & $\mathcal{O}(N^2)$ & --- & """ + f"{glue_results['mrpc']['baseline']['accuracy']:.1f}\\%" + r""" & """ + f"{glue_results['sst2']['baseline']['accuracy']:.1f}\\%" + r""" & """ + f"{glue_results['cola']['baseline']['accuracy']:.1f}\\%" + r""" \\
+RoBERTa-base (125M) & SVD Linear Attention & $\mathcal{O}(N)$ & --- & """ + f"{glue_results['mrpc']['svd_linear_attention']['accuracy']:.1f}\\%" + r""" & """ + f"{glue_results['sst2']['svd_linear_attention']['accuracy']:.1f}\\%" + r""" & """ + f"{glue_results['cola']['svd_linear_attention']['accuracy']:.1f}\\%" + r""" \\
 \bottomrule
 \end{tabular}
 \end{table*}
