@@ -1,0 +1,17 @@
+% Auto-generated: Dynamic Batch Scheduling & SLA Benchmarks
+\begin{table*}[t]
+\centering
+\small
+\caption{\textbf{Dynamic Batch Scheduling vs. Static Batching under Poisson Arrival Process ($N=100$ requests, $L \in [256, 4{,}096]$) on Physical NVIDIA RTX 4070 Laptop GPU.} Continuous iteration-level dynamic batching eliminates batch queue head-of-line blocking and padding waste. Across 100 stochastic arrivals ($230{,}229$ total tokens), continuous scheduling reduces $P_{99}$ latency from $207.47\,\text{ms}$ down to $5.85\,\text{ms}$ ($35.5\times$ reduction), achieving $100.0\%$ SLA deadline compliance ($\le 100\,\text{ms}$) while slashing peak memory footprint from $1{,}212.8\,\text{MB}$ to $198.1\,\text{MB}$ ($6.1\times$ reduction).}
+\label{tab:dynamic_batching_benchmarks}
+\begin{tabular}{lcccccccc}
+\toprule
+\textbf{Scheduling Policy} & \textbf{P50 (ms)} & \textbf{P90 (ms)} & \textbf{P99 (ms)} & \textbf{Mean (ms)} & \textbf{SLA Comp. (\%)} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM (MB)} & \textbf{Status} \\
+\midrule
+Static Batching (Batch Size B=4)                     & 26.78 & 80.87 & 121.20 & 38.27 & 94.0\% & 160,782 & 626.6 & PASSED \\
+Static Batching (Batch Size B=8)                     & 61.81 & 133.69 & 207.47 & 74.47 & 74.0\% & 160,863 & 1212.8 & PASSED \\
+Continuous Dynamic Batching (Chunk Budget C=2048)    & 2.14 & 3.37 & 5.81 & 2.30 & 100.0\% & 161,975 & 300.8 & PASSED \\
+Continuous Dynamic Batching (Chunk Budget C=4096)    & 2.11 & 3.55 & 5.85 & 2.19 & 100.0\% & 161,976 & 198.1 & PASSED \\
+\bottomrule
+\end{tabular}
+\end{table*}
