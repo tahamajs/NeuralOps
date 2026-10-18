@@ -1,7 +1,7 @@
 """
 Entmax-1.5 Bisection Interface, Autograd Function, and 3-Level Fallback.
 Target: SM 8.9 (NVIDIA Ada Lovelace RTX 4070 Laptop GPU, 8GB VRAM).
-Backward computes exact adjoint gradient for entmax 1.5 probabilities.
+Backward computes exact adjoint gradient for entmax 1.5 probabilities via native CUDA kernel.
 """
 
 from __future__ import annotations
@@ -30,7 +30,7 @@ def _get_module():
             name="cuda_entmax_bisect",
             cpp_sources=cpp_src,
             cuda_sources=cuda_src,
-            functions=["entmax15_fwd"],
+            functions=["entmax15_fwd", "entmax15_bwd"],
         )
     return _MODULE
 
@@ -56,6 +56,22 @@ def _fwd_dispatch(scores, n_iter=15):
     )
 
 
+def entmax15_backward_cuda(dout: torch.Tensor, p: torch.Tensor) -> torch.Tensor:
+    mod = _get_module()
+    if mod is not None and hasattr(mod, "entmax15_bwd"):
+        return mod.entmax15_bwd(dout.contiguous(), p.contiguous())
+    # PyTorch reference fallback
+    p_f = p.float()
+    dout_f = dout.float()
+    sp = torch.sqrt(torch.clamp(p_f, min=0.0))
+    mask = (p_f > 1e-9).float()
+    sp = sp * mask
+    sum_sp = sp.sum(dim=-1, keepdim=True).clamp(min=1e-9)
+    sum_dout_sp = (dout_f * sp).sum(dim=-1, keepdim=True)
+    ds = sp * (dout_f - (sum_dout_sp / sum_sp))
+    return ds.to(dout.dtype)
+
+
 class _Entmax15Function(torch.autograd.Function):
     @staticmethod
     def forward(ctx: Any, scores: torch.Tensor, n_iter: int) -> torch.Tensor:
@@ -66,21 +82,10 @@ class _Entmax15Function(torch.autograd.Function):
     @staticmethod
     def backward(ctx: Any, dout: torch.Tensor) -> tuple[torch.Tensor | None, ...]:
         (p,) = ctx.saved_tensors
-        # Exact analytical adjoint gradient for alpha=1.5:
-        # S = {i : p_i > 0}
-        # dL/ds_i = sqrt(p_i) * (dout_i - sum_{k in S} (dout_k * sqrt(p_k)) / sum_{k in S} sqrt(p_k))
-        p_f = p.float()
-        dout_f = dout.float()
-
-        sp = torch.sqrt(torch.clamp(p_f, min=0.0))
-        mask = (p_f > 1e-9).float()
-        sp = sp * mask
-
-        sum_sp = sp.sum(dim=-1, keepdim=True).clamp(min=1e-9)
-        sum_dout_sp = (dout_f * sp).sum(dim=-1, keepdim=True)
-
-        ds = sp * (dout_f - (sum_dout_sp / sum_sp))
-        return ds.to(p.dtype), None
+        if not ctx.needs_input_grad[0]:
+            return None, None
+        ds = entmax15_backward_cuda(dout, p)
+        return ds, None
 
 
 def entmax_bisect(scores: torch.Tensor, n_iter: int = 15) -> torch.Tensor:
