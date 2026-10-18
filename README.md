@@ -136,7 +136,7 @@ Standard self-attention suffers from an intrinsic quadratic time and memory bott
 24. [PyPI Package Quality Checklist](#24-pypi-package-quality-checklist)
 25. [Full Version Compatibility Matrix](#25-full-version-compatibility-matrix)
 26. [How to Contribute & Engineering Standards](#26-how-to-contribute-engineering-standards)
-27. [Citation & License](#27-citation-license)
+27. [Citation & Academic Artifacts](#27-citation--academic-artifacts)
 28. [Acknowledgments](#28-acknowledgments)
 
 ---
@@ -1569,9 +1569,20 @@ Every PR must preserve the canonical counts verified by `scripts/utils/verify_re
 
 ---
 
-## 27. Citation & License
+## 27. Citation & Academic Artifacts
 
-If you use NeuralOps in your academic research or production systems, please cite:
+If you use NeuralOps, its subquadratic attention kernels, compression engines, or academic manuscripts in your research or production systems, please cite the primary platform and corresponding manuscripts:
+
+### 🎓 Academic Artifacts Directory
+
+| Artifact | Type & Scope | Length | Source Location & Checksum |
+| :--- | :--- | :---: | :--- |
+| **Persian Master's Thesis** | Master of Science Academic Thesis Manuscript | **828 pp** | [`thesis_final/master_thesis.pdf`](thesis_final/master_thesis.pdf) |
+| **ICLR 2027 Conference Submission** | International Conference on Learning Representations | **63 pp** | [`paper/iclr2027-submission/iclr2027_conference.pdf`](paper/iclr2027-submission/iclr2027_conference.pdf) |
+| **NeurIPS 2026 Conference Submission** | Neural Information Processing Systems Conference | **61 pp** | [`paper/neurips2026-submission/neurips2026_conference.pdf`](paper/neurips2026-submission/neurips2026_conference.pdf) |
+| **Empirical Cross-Check Audits** | 100% Bit-Exact Numerical Alignment Certificate | — | [`docs/reports/PAPER_THESIS_CONSISTENCY_REPORT.md`](docs/reports/PAPER_THESIS_CONSISTENCY_REPORT.md)<br>[`docs/reports/THESIS_PAPER_CROSSCHECK.md`](docs/reports/THESIS_PAPER_CROSSCHECK.md) |
+
+### 📚 BibTeX Entries
 
 ```bibtex
 @software{neuralops2026,
@@ -1581,6 +1592,30 @@ If you use NeuralOps in your academic research or production systems, please cit
   publisher = {GitHub},
   howpublished = {\url{https://github.com/tahamajs/SVD_linear_Attention}},
   version = {1.4.0}
+}
+
+@mastersthesis{majlesi2026thesis,
+  author = {Majlesi, Taha},
+  title = {Hardware-Aware Subquadratic Attention Mechanisms and Second-Order SVD Matrix Factorization for Deep Transformer Compression},
+  school = {Department of Electrical and Computer Engineering, University of Tehran},
+  year = {2026},
+  note = {828 pages, Persian manuscript with English companion booklet}
+}
+
+@article{majlesi2027iclr,
+  author = {Majlesi, Taha and contributors},
+  title = {NeuralOps: Scaling Subquadratic Attention and Unified Low-Rank Distillation on Physical Accelerators},
+  journal = {International Conference on Learning Representations (ICLR)},
+  year = {2027},
+  note = {63 pages, under review}
+}
+
+@article{majlesi2026neurips,
+  author = {Majlesi, Taha and contributors},
+  title = {Hardware-Autotuned Recurrence and Fused Linear Attention on Modern GPU Architectures},
+  journal = {Advances in Neural Information Processing Systems (NeurIPS)},
+  year = {2026},
+  note = {61 pages, under review}
 }
 ```
 
