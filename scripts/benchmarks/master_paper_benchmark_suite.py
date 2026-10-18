@@ -383,20 +383,20 @@ def main():
 
     table1_summary = {}
     for key, vars_data in table1.items():
-        table1_summary[key] = {v: round(float(np.mean(accs)), 2) for v, accs in vars_data.items()}
+        table1_summary[key] = {var_name: round(float(np.mean(accs)), 2) for var_name, accs in vars_data.items()}
 
     # Add GPT-2 PPL to table1
     gpt2_summary = {}
     for entry in lm_results:
         gpt2_summary.setdefault(entry["variant"], []).append(entry["perplexity"])
-    table1_summary["gpt2_wikitext2_ppl"] = {v: round(float(np.mean(ppls)), 2) for v, ppls in gpt2_summary.items()}
+    table1_summary["gpt2_wikitext2_ppl"] = {var_name: round(float(np.mean(ppls)), 2) for var_name, ppls in gpt2_summary.items()}
 
     # Build Table 2: Multi-seed Robustness (Mean +- Std)
     table2 = {}
     for key, vars_data in table1.items():
         table2[key] = {
-            v: f"{round(float(np.mean(accs)), 2)} +/- {round(float(np.std(accs)), 2)}"
-            for v, accs in vars_data.items()
+            var_name: f"{round(float(np.mean(accs)), 2)} +/- {round(float(np.std(accs)), 2)}"
+            for var_name, accs in vars_data.items()
         }
 
     # Save output artifacts
