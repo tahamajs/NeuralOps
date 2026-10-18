@@ -169,3 +169,9 @@ from neuralops.attentions import modern
 from neuralops.attentions import sparse
 from neuralops.attentions import ssm
 from neuralops.attentions import svd
+
+try:
+    import neuralops.trainer.ttt.test_time_trainer as _ttt  # noqa: F401
+except Exception:
+    pass
+

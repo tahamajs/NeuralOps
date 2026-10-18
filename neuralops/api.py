@@ -384,6 +384,10 @@ def _ensure_registries_loaded() -> None:
     except Exception as exc:
         logger.debug("Error loading neuralops.attentions: %s", exc)
     try:
+        import neuralops.trainer.ttt.test_time_trainer  # noqa: F401
+    except Exception as exc:
+        logger.debug("Error loading neuralops.trainer.ttt: %s", exc)
+    try:
         import neuralops.compression_engine  # noqa: F401
     except Exception as exc:
         logger.debug("Error loading neuralops.compression_engine: %s", exc)
