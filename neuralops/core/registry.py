@@ -271,6 +271,12 @@ class Registry:
                     raise
                 logger.warning("Error during lazy loading of compressor '%s': %s", key, e)
         elif self.name == "attentions":
+            if k == "ttt_linear_attention":
+                try:
+                    import neuralops.trainer.ttt.test_time_trainer  # noqa: F401
+                except Exception:
+                    pass
+                return
             canonical = _ATTENTION_FILE_MAP.get(k, k)
             try:
                 import neuralops.attentions as _att
@@ -360,6 +366,10 @@ class Registry:
         elif self.name == "attentions":
             try:
                 import neuralops.attentions  # noqa: F401
+                try:
+                    import neuralops.trainer.ttt.test_time_trainer  # noqa: F401
+                except Exception:
+                    pass
                 self._loaded = True
             except Exception as e:
                 import os
