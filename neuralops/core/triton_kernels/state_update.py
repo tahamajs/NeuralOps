@@ -515,7 +515,7 @@ def fused_recurrent_gdn_step(
         o_t = scale * (S_t^T @ q_t)
     """
     B, H, Dk = q_t.shape
-    Dv = v_t.shape[-1]
+    _Dv = v_t.shape[-1]
     if scale is None:
         scale = 1.0 / math.sqrt(Dk)
 
@@ -556,7 +556,7 @@ def fused_recurrent_hgrn2_step(
     o_t = S_t^T @ q_t
     """
     B, H, Dk = q_t.shape
-    Dv = v_t.shape[-1]
+    _Dv = v_t.shape[-1]
 
     f = f_t.float()
     if f.dim() == 3 and f.shape[-1] == Dk:
@@ -590,7 +590,7 @@ def causal_conv1d_step(
 
     # conv_weight: [D_inner, 1, K] or [D_inner, K]
     w = conv_weight.squeeze(1) if conv_weight.dim() == 3 else conv_weight
-    K = w.shape[-1]
+    _K = w.shape[-1]
 
     # Shift state: [B, D_inner, K-1]
     state_seq = torch.cat([conv_state, x_t.unsqueeze(-1)], dim=-1)  # [B, D_inner, K]

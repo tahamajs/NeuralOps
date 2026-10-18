@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# Author: Taha Majlesi
 """Comprehensive empirical benchmark of all 48 Triton-wired Attention Modules
 comparing CUDA Triton vs PyTorch Reference across T=512 and T=2048 in training mode (Fwd+Bwd).
 Measures:
@@ -17,6 +18,17 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from neuralops.attentions import ATTENTION_REGISTRY
+
+def fmt_opt(val, fmt=".2f", suffix="", default="-"):
+    if val is None:
+        return default
+    try:
+        f = float(val)
+        if math.isnan(f) or math.isinf(f):
+            return default
+        return f"{f:{fmt}}{suffix}"
+    except (ValueError, TypeError):
+        return default
 
 MODULE_KEYS = [
     # Sparse / Compressed Attention (5)
