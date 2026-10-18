@@ -116,3 +116,67 @@ def test_cosformer_and_svd_linear_attention_modules():
     out_svd, _ = svd_attn(x)
     assert out_svd.shape == (2, 8, 64)
     assert torch.isfinite(out_svd).all()
+
+
+def test_triton_kernels_unification_and_interoperability():
+    """Verify bidirectional accessibility between neuralops.kernels.triton and neuralops.core.triton_kernels."""
+    import neuralops
+    import neuralops.kernels.triton as nkt
+    import neuralops.core.triton_kernels as ctk
+
+    # 1. 13 Flagship Kernel Callables exported on nkt
+    flagship_callables = [
+        "triton_fused_lowrank_gated_gemm",
+        "triton_fused_lowrank_sparse_gemm",
+        "triton_strided_tt_contraction",
+        "triton_strided_tt_linear",
+        "triton_fused_hadamard_w4a16_gemm",
+        "triton_lut_codebook_dequant_gemm",
+        "triton_fused_kronecker_matmul",
+        "triton_chunked_delta_gate_scan",
+        "triton_cosformer_linear_attention",
+        "triton_block_sparse_streaming_attn",
+        "triton_hgrn2_fused_bwd_scan",
+        "triton_spectral_entropy_svd_gate",
+        "triton_fused_act_scale_quant_gemm",
+        "triton_fused_latent_kv_cache_attention",
+    ]
+    for fn_name in flagship_callables:
+        assert hasattr(nkt, fn_name), f"Missing {fn_name} in neuralops.kernels.triton"
+        assert callable(getattr(nkt, fn_name))
+        assert hasattr(ctk, fn_name), f"Missing {fn_name} in neuralops.core.triton_kernels"
+        assert callable(getattr(ctk, fn_name))
+
+    # 2. PyTorch reference functions
+    py_refs = [
+        "triton_fused_lowrank_gated_gemm_pytorch_ref",
+        "triton_fused_lowrank_sparse_gemm_pytorch_ref",
+        "triton_strided_tt_contraction_pytorch_ref",
+        "triton_fused_kronecker_matmul_pytorch_ref",
+        "triton_spectral_entropy_svd_gate_pytorch_ref",
+        "triton_fused_hadamard_w4a16_gemm_pytorch_ref",
+        "triton_lut_codebook_dequant_gemm_pytorch_ref",
+        "triton_fused_act_scale_quant_gemm_pytorch_ref",
+        "triton_chunked_delta_gate_scan_pytorch_ref",
+        "triton_cosformer_linear_attention_pytorch_ref",
+        "triton_block_sparse_streaming_attn_pytorch_ref",
+        "triton_hgrn2_fused_bwd_scan_pytorch_ref",
+        "triton_fused_latent_kv_cache_attention_pytorch_ref",
+    ]
+    for ref_name in py_refs:
+        assert hasattr(nkt, ref_name), f"Missing {ref_name} in neuralops.kernels.triton"
+        assert callable(getattr(nkt, ref_name))
+        assert hasattr(ctk, ref_name), f"Missing {ref_name} in neuralops.core.triton_kernels"
+        assert callable(getattr(ctk, ref_name))
+
+    # 3. Direct access via neuralops.kernels
+    assert hasattr(neuralops.kernels, "triton")
+    assert neuralops.kernels.triton is nkt
+
+    # 4. Cross-namespace imports via transparent aliasing
+    from neuralops.core.triton_kernels import chunked_delta_gate_scan as cdgs_alias
+    from neuralops.kernels.triton import chunked_delta_gate_scan as cdgs_direct
+    assert cdgs_alias is cdgs_direct
+
+    from neuralops.kernels.triton import gla_scan as gla_from_nkt
+    assert gla_from_nkt is ctk.gla_scan

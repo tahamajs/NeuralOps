@@ -51,7 +51,7 @@ try:
     from evaluation.eval_all_models_datasets import apply_module_to_model
 except ImportError:
     try:
-        from neuralops.evaluation.eval_all_models_datasets import apply_module_to_model
+        from neuralops.eval_all_models_datasets import apply_module_to_model
     except ImportError:
         apply_module_to_model = None
 
