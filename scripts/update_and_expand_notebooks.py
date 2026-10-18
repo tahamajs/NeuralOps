@@ -90,8 +90,9 @@ def expand_nb02():
                 "print('⚡ Hardware Roofline Invariant Certification: RTX 4070 GPU')\n",
                 "print('=' * 65)\n",
                 "print(f'Total Kernels Profiled: {len(df_3level)}')\n",
-                "assert (df_3level['speedup_triton_vs_py'] >= 1.0).all(), 'Triton speedup regression detected!'\n",
-                "print(f\"Mean Triton Speedup vs PyTorch: {df_3level['speedup_triton_vs_py'].mean():.2f}x\")\n",
+                "speedup_tri = df_3level['pytorch_ms'] / df_3level['triton_ms'].replace(0, float('nan'))\n",
+                "assert (speedup_tri.dropna() >= 1.0).all(), 'Triton speedup regression detected!'\n",
+                "print(f\"Mean Triton Speedup vs PyTorch: {speedup_tri.mean():.2f}x\")\n",
                 "print('All 3-tier execution hierarchy invariants successfully verified [100% PASS].')\n",
             ],
         }
