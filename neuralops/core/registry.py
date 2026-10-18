@@ -235,8 +235,17 @@ class Registry:
 
     def get_metadata(self, key: str) -> dict[str, Any]:
         """Retrieve capability metadata for a registered component."""
-        self._try_lazy_load(key)
-        k = key.lower()
+        if key in DEPRECATED_ALIASES:
+            key = DEPRECATED_ALIASES[key]
+        try:
+            k = _handle_deprecated(key).lower()
+        except ValueError:
+            k = key.lower()
+        if self.name == "attentions" and k in _ATTENTION_FILE_MAP:
+            k = _ATTENTION_FILE_MAP[k].lower()
+        elif self.name == "compressors" and k in _COMPRESSOR_FILE_MAP:
+            k = _COMPRESSOR_FILE_MAP[k].lower()
+        self._try_lazy_load(k)
         if k in self._metadata:
             return dict(self._metadata[k])
         obj = self.get(key)
@@ -317,6 +326,14 @@ class Registry:
         obj = self._dict.get(k_lower)
         if obj is None:
             obj = self._aliases.get(k_lower)
+        if obj is None and self.name == "attentions" and k_lower in _ATTENTION_FILE_MAP:
+            can = _ATTENTION_FILE_MAP[k_lower]
+            self._try_lazy_load(can)
+            obj = self._dict.get(can.lower()) or self._aliases.get(can.lower())
+        if obj is None and self.name == "compressors" and k_lower in _COMPRESSOR_FILE_MAP:
+            can = _COMPRESSOR_FILE_MAP[k_lower]
+            self._try_lazy_load(can)
+            obj = self._dict.get(can.lower()) or self._aliases.get(can.lower())
         if unwrap:
             return obj
         if obj is not None and self.name == "attentions" and isinstance(obj, type):
@@ -343,6 +360,14 @@ class Registry:
         obj = self._dict.get(k_lower)
         if obj is None:
             obj = self._aliases.get(k_lower)
+        if obj is None and self.name == "attentions" and k_lower in _ATTENTION_FILE_MAP:
+            can = _ATTENTION_FILE_MAP[k_lower]
+            self._try_lazy_load(can)
+            obj = self._dict.get(can.lower()) or self._aliases.get(can.lower())
+        if obj is None and self.name == "compressors" and k_lower in _COMPRESSOR_FILE_MAP:
+            can = _COMPRESSOR_FILE_MAP[k_lower]
+            self._try_lazy_load(can)
+            obj = self._dict.get(can.lower()) or self._aliases.get(can.lower())
         if obj is None:
             raise KeyError(
                 f"Unknown {self.name.rstrip('s')} '{key}'. Available: {list(self._dict.keys())}"
@@ -414,7 +439,17 @@ class Registry:
             return False
         self._try_lazy_load(k)
         k_lower = k.lower()
-        return (k_lower in self._dict) or (k_lower in self._aliases)
+        if (k_lower in self._dict) or (k_lower in self._aliases):
+            return True
+        if self.name == "attentions" and k_lower in _ATTENTION_FILE_MAP:
+            can = _ATTENTION_FILE_MAP[k_lower].lower()
+            self._try_lazy_load(can)
+            return (can in self._dict) or (can in self._aliases)
+        if self.name == "compressors" and k_lower in _COMPRESSOR_FILE_MAP:
+            can = _COMPRESSOR_FILE_MAP[k_lower].lower()
+            self._try_lazy_load(can)
+            return (can in self._dict) or (can in self._aliases)
+        return False
 
     def __len__(self) -> int:
         self._load_all()
