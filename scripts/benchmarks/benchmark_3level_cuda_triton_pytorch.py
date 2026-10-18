@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# Author: Taha Majlesi
 """
 3-Level GPU Benchmark Suite: Native CUDA C++ vs. Triton JIT vs. Pure PyTorch Reference.
 Target: NVIDIA Ada Lovelace SM 8.9 (GeForce RTX 4070 Laptop GPU, 8GB VRAM).
@@ -13,6 +16,7 @@ from __future__ import annotations
 import csv
 import gc
 import json
+import logging
 import os
 import sys
 from typing import Any, Callable, Dict, List, Tuple
@@ -39,8 +43,9 @@ from neuralops.core.cuda_kernels.sparse_attention.sparse_autograd import block_s
 from neuralops.core.cuda_kernels.quantized_gemm.quant_autograd import w4a16_gemm, fp8_gemm
 from neuralops.core.cuda_kernels.flash_gqa.flash_gqa_autograd import flash_gqa
 from neuralops.core.cuda_kernels.paged_attention.paged_attention_autograd import paged_attention
-from neuralops.core.cuda_kernels.paged_kv_cache.kv_cache_autograd import copy_blocks_cow
 from neuralops.core.cuda_kernels.moe_routing.moe_autograd import moe_dispatch, moe_gather
+
+logger = logging.getLogger("benchmark_3level")
 
 
 def benchmark_fn(
@@ -90,7 +95,7 @@ def main():
     device = "cuda"
     gpu_name = torch.cuda.get_device_name(0)
     print("=" * 80)
-    print(f"3-LEVEL BENCHMARK: CUDA C++ vs. TRITON JIT vs. PYTORCH REFERENCE")
+    print("3-LEVEL BENCHMARK: CUDA C++ vs. TRITON JIT vs. PYTORCH REFERENCE")
     print(f"Physical Device: {gpu_name} (SM {torch.cuda.get_device_capability(0)})")
     print("=" * 80)
 
@@ -111,21 +116,20 @@ def main():
     fn_py = lambda: selective_scan(u, delta, A, B_m, C_m, D_val)
     with force_kernel_backend("pytorch"):
         lat_py, vram_py = benchmark_fn(fn_py)
-        out_py, _ = fn_py()
 
     with force_kernel_backend("triton"):
         try:
             lat_tri, vram_tri = benchmark_fn(fn_py)
-            out_tri, _ = fn_py()
-        except Exception:
-            lat_tri, vram_tri, out_tri = None, None, None
+        except (RuntimeError, MemoryError, AssertionError) as e:
+            logger.warning("Triton benchmark failed: %s", e, exc_info=True)
+            lat_tri, vram_tri = None, None
 
     with force_kernel_backend("cuda"):
         try:
             lat_cuda, vram_cuda = benchmark_fn(fn_py)
-            out_cuda, _ = fn_py()
-        except Exception:
-            lat_cuda, vram_cuda, out_cuda = None, None, None
+        except (RuntimeError, MemoryError, AssertionError) as e:
+            logger.warning("CUDA benchmark failed: %s", e, exc_info=True)
+            lat_cuda, vram_cuda = None, None
 
     sp_cuda = (lat_py / lat_cuda) if lat_cuda else 1.0
     sp_tri = (lat_py / lat_tri) if lat_tri else 1.0
