@@ -1,0 +1,39 @@
+{
+  "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+  "vram_gb": 7.62,
+  "results": [
+    {
+      "seq_len": 2048,
+      "mha_b_max": 16,
+      "mha_vram_mb": 4272.25,
+      "svd_b_max": 8,
+      "svd_vram_mb": 6272.25,
+      "svd_gain": 0.5,
+      "sparse_b_max": 128,
+      "sparse_vram_mb": 5648.33,
+      "sparse_gain": 8.0
+    },
+    {
+      "seq_len": 4096,
+      "mha_b_max": 4,
+      "mha_vram_mb": 4192.25,
+      "svd_b_max": 4,
+      "svd_vram_mb": 6272.25,
+      "svd_gain": 1.0,
+      "sparse_b_max": 64,
+      "sparse_vram_mb": 5648.56,
+      "sparse_gain": 16.0
+    },
+    {
+      "seq_len": 8192,
+      "mha_b_max": 1,
+      "mha_vram_mb": 4152.25,
+      "svd_b_max": 2,
+      "svd_vram_mb": 6272.25,
+      "svd_gain": 2.0,
+      "sparse_b_max": 32,
+      "sparse_vram_mb": 5649.5,
+      "sparse_gain": 32.0
+    }
+  ]
+}

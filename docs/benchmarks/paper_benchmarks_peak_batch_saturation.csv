@@ -1,0 +1,4 @@
+Sequence_Length,Standard_MHA_B_max,Standard_MHA_Peak_VRAM_MB,SVD_Linear_Attn_B_max,SVD_Linear_Peak_VRAM_MB,SVD_Batch_Capacity_Gain,Block_Sparse_Attn_B_max,Block_Sparse_Peak_VRAM_MB,Sparse_Batch_Capacity_Gain
+2048,16,4272.25,8,6272.25,0.5x,128,5648.33,8.0x
+4096,4,4192.25,4,6272.25,1.0x,64,5648.56,16.0x
+8192,1,4152.25,2,6272.25,2.0x,32,5649.5,32.0x
