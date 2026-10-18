@@ -126,6 +126,31 @@ __global__ void __launch_bounds__(256) hybrid_two_branch_blend_kernel(
     out[idx] = from_float<scalar_t>(a * v0 + (1.0f - a) * v1);
 }
 
+// Three-branch Gate Blending Kernel:
+// out = a0 * b0 + a1 * b1 + a2 * b2
+template <typename scalar_t>
+__global__ void __launch_bounds__(256) hybrid_three_branch_blend_kernel(
+    scalar_t* __restrict__ out,
+    const scalar_t* __restrict__ b0,
+    const scalar_t* __restrict__ b1,
+    const scalar_t* __restrict__ b2,
+    const scalar_t* __restrict__ alpha,
+    const int total,
+    const int D
+) {
+    const int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx >= total) return;
+
+    const int token_h = idx / D;
+    const float a0 = to_float(alpha[token_h * 3 + 0]);
+    const float a1 = to_float(alpha[token_h * 3 + 1]);
+    const float a2 = to_float(alpha[token_h * 3 + 2]);
+    const float v0 = to_float(b0[idx]);
+    const float v1 = to_float(b1[idx]);
+    const float v2 = to_float(b2[idx]);
+    out[idx] = from_float<scalar_t>(a0 * v0 + a1 * v1 + a2 * v2);
+}
+
 }} // namespace neuralops::cuda
 
 torch::Tensor hybrid_local_attn_fwd(
@@ -204,6 +229,45 @@ torch::Tensor hybrid_two_branch_blend_fwd(
                 out.data_ptr<scalar_t>(),
                 b0.contiguous().data_ptr<scalar_t>(),
                 b1.contiguous().data_ptr<scalar_t>(),
+                alpha.contiguous().data_ptr<scalar_t>(),
+                total,
+                D
+            );
+        })
+    );
+
+    CUDA_KERNEL_LAUNCH_CHECK();
+    return out;
+}
+
+torch::Tensor hybrid_three_branch_blend_fwd(
+    const torch::Tensor& b0,
+    const torch::Tensor& b1,
+    const torch::Tensor& b2,
+    const torch::Tensor& alpha
+) {
+    CHECK_INPUT(b0);
+    CHECK_INPUT(b1);
+    CHECK_INPUT(b2);
+    CHECK_INPUT(alpha);
+
+    const int total = b0.numel();
+    const int D = b0.size(-1);
+    auto out = torch::empty_like(b0);
+    if (total == 0) return out;
+
+    constexpr int THREADS = 256;
+    const int blocks = (total + THREADS - 1) / THREADS;
+    auto stream = c10::cuda::getCurrentCUDAStream();
+
+    AT_DISPATCH_FLOATING_TYPES_AND2(
+        at::ScalarType::Half, at::ScalarType::BFloat16,
+        b0.scalar_type(), "hybrid_three_branch_blend_fwd", ([&] {
+            neuralops::cuda::hybrid_three_branch_blend_kernel<scalar_t><<<blocks, THREADS, 0, stream>>>(
+                out.data_ptr<scalar_t>(),
+                b0.contiguous().data_ptr<scalar_t>(),
+                b1.contiguous().data_ptr<scalar_t>(),
+                b2.contiguous().data_ptr<scalar_t>(),
                 alpha.contiguous().data_ptr<scalar_t>(),
                 total,
                 D

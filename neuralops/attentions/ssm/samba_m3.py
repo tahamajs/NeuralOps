@@ -454,7 +454,7 @@ class SAMBAM3Block(nn.Module):
                 if not FORCE_PYTORCH_FALLBACK:
                     from neuralops.core.triton_kernels.sliding_window import sliding_window_triton
                     is_dec = getattr(self, "_active_is_decoder", self.is_decoder)
-                    return sliding_window_triton(q, k, v, window_size=self.window, causal=bool(is_dec))
+                    return sliding_window_triton(q, k, v, window_size=self.window, is_causal=bool(is_dec))
             except Exception:
                 pass
 
