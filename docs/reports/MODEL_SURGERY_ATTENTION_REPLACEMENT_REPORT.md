@@ -334,3 +334,27 @@ To certify the post-surgery adaptation stability of **SVD Linear Attention**, co
 4. **Deliverables**:
    - Multi-seed CSV export: `docs/benchmarks/paper_benchmarks_multiseed_finetune.csv`
    - Publication LaTeX tables: `docs/reports/PAPER_TABLES_MULTISEED_FINETUNE.tex`
+
+---
+
+## 15. Qwen-2.5 & LLaMA-3 Architecture Block Surgery Scaling Benchmarks
+
+To evaluate the generalization of NeuralOps model surgery to state-of-the-art modern open-weight architectures, standard attention blocks were excised in **Qwen-2.5-0.5B** (24 layers, 896 hidden dim) and **LLaMA-3 Architecture** (12 layers, 1024 hidden dim, GQA configuration) and substituted with **SVD Linear Attention** and **Chunk GLA** (Triton Tensor Core scan) across sequence lengths $L \in \{1024, 2048, 4096\}$ on the physical **NVIDIA GeForce RTX 4070 Laptop GPU**:
+
+### 15.1 Scaling Matrix: Latency & Peak VRAM
+
+| Architecture | Attention Mechanism | $L=1024$ Latency | $L=1024$ VRAM | $L=2048$ Latency | $L=2048$ VRAM | $L=4096$ Latency | $L=4096$ VRAM |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Qwen-2.5-0.5B (24L)** | Standard Baseline MHA | 74.02 ms | 1578.6 MB | 73.35 ms | 2274.8 MB | **OOM** | **OOM** |
+| **Qwen-2.5-0.5B (24L)** | **SVD Linear Attention** | 77.29 ms | 2218.2 MB | 74.26 ms | 2527.5 MB | **156.27 ms** | **3353.1 MB** |
+| **Qwen-2.5-0.5B (24L)** | **Chunk GLA (Triton)** | **38.18 ms** | 2169.0 MB | 81.32 ms | 2466.2 MB | **168.05 ms** | **3406.4 MB** |
+| **LLaMA-3-Arch (12L)** | Standard Baseline MHA | 77.18 ms | 3160.8 MB | 511.75 ms | 2102.3 MB | 782.87 ms | 4130.4 MB |
+| **LLaMA-3-Arch (12L)** | **SVD Linear Attention** | **51.83 ms** | **2054.7 MB** | **110.65 ms** | 2201.3 MB | **273.80 ms** | **2499.4 MB** |
+| **LLaMA-3-Arch (12L)** | **Chunk GLA (Triton)** | 102.11 ms | **1973.6 MB** | **104.10 ms** | **2097.6 MB** | **211.26 ms** | **2346.6 MB** |
+
+### 15.2 Key Takeaways for Modern LLM Architectures
+1. **OOM Elimination on Qwen-2.5**: At $L=4096$, the quadratic attention in 24-layer Qwen-2.5 suffered out-of-memory (OOM) on the 8GB GPU. SVD Linear Attention and Chunk GLA completely eliminated the memory bottleneck, executing comfortably in **3.35 GB to 3.41 GB VRAM** in 156.3 ms.
+2. **Massive Speedups on LLaMA-3**: At $L=4096$, **Chunk GLA delivered a 3.70x speedup** (211.26 ms vs 782.87 ms) while **saving 43.2% peak VRAM** (2,346.6 MB vs 4,130.4 MB baseline). SVD Linear Attention achieved a **2.86x speedup** (273.80 ms vs 782.87 ms).
+3. **Artifacts Exported**:
+   - CSV Deliverable: `docs/benchmarks/paper_benchmarks_qwen_surgery.csv`
+   - LaTeX Publication Deliverable: `docs/reports/PAPER_TABLES_QWEN_SURGERY.tex`

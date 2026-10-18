@@ -1,0 +1,39 @@
+% Publication Benchmark Deliverable: Qwen-2.5 & LLaMA-3 Architecture Model Surgery
+% Hardware: NVIDIA GeForce RTX 4070 Laptop GPU (8GB VRAM), CUDA 12.8, PyTorch 2.11.0+cu128
+
+\begin{table*}[t]
+\centering
+\small
+\caption{\textbf{Model Surgery Scaling Benchmarks on Qwen-2.5 and LLaMA-3 Architecture Blocks.} Forward step latency and peak GPU memory footprint across sequence lengths $L \in \{1024, 2048, 4096\}$ on physical RTX 4070 Laptop GPU (8GB VRAM).}
+\label{tab:qwen_llama_surgery}
+\begin{tabular}{llcccccc}
+\toprule
+\textbf{Architecture} & \textbf{Attention Mechanism} & \multicolumn{2}{c}{$L=1024$} & \multicolumn{2}{c}{$L=2048$} & \multicolumn{2}{c}{$L=4096$} \\
+\cmidrule(lr){3-4} \cmidrule(lr){5-6} \cmidrule(lr){7-8}
+ & & \textbf{Latency (ms)} & \textbf{VRAM (MB)} & \textbf{Latency (ms)} & \textbf{VRAM (MB)} & \textbf{Latency (ms)} & \textbf{VRAM (MB)} \\
+\midrule
+Qwen-2.5 (24L) & Baseline MHA & 74.0 & 1579 & 73.4 & 2275 & OOM & OOM \\
+Qwen-2.5 (24L) & SVD Linear Attention & 77.3 & 2218 & 74.3 & 2527 & \textbf{156.3} & \textbf{3353} \\
+Qwen-2.5 (24L) & Chunk GLA (Triton) & \textbf{38.2} & 2169 & 81.3 & 2466 & \textbf{168.1} & \textbf{3406} \\
+\midrule
+LLaMA-3 (12L) & Baseline MHA & 77.2 & 3161 & 511.8 & 2102 & 782.9 & 4130 \\
+LLaMA-3 (12L) & SVD Linear Attention & \textbf{51.8} & \textbf{2055} & \textbf{110.7} & 2201 & \textbf{273.8} & \textbf{2499} \\
+LLaMA-3 (12L) & Chunk GLA (Triton) & 102.1 & \textbf{1974} & \textbf{104.1} & \textbf{2098} & \textbf{211.3} & \textbf{2347} \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\begin{table}[h]
+\centering
+\small
+\caption{\textbf{High-Context Speedup and Memory Reduction under Model Surgery at $L=4096$.}}
+\label{tab:qwen_llama_highlights}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Model Family} & \textbf{Baseline ($L=4096$)} & \textbf{SVD Linear ($L=4096$)} & \textbf{Chunk GLA ($L=4096$)} & \textbf{Peak Speedup / Benefit} \\
+\midrule
+Qwen-2.5-0.5B & \textit{OOM (Out of Memory)} & 156.3 ms (3353 MB) & 168.1 ms (3406 MB) & \textbf{Prevents OOM (Fits 8GB GPU)} \\
+LLaMA-3-1B-Arch & 782.9 ms (4130 MB) & 273.8 ms (2499 MB) & 211.3 ms (2347 MB) & \textbf{3.70x Speedup (43.2\% VRAM saved)} \\
+\bottomrule
+\end{tabular}
+\end{table}

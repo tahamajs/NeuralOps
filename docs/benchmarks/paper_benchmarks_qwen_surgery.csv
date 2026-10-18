@@ -1,0 +1,19 @@
+Architecture,Sequence_Length,Attention_Mechanism,Latency_ms,Peak_VRAM_MB,Finite_Logits,Status
+"Qwen-2.5-0.5B (24L, 896D)",1024,baseline,74.02,1578.55,True,OK
+"Qwen-2.5-0.5B (24L, 896D)",1024,svd_linear_attention,77.29,2218.22,True,OK
+"Qwen-2.5-0.5B (24L, 896D)",1024,gla_attention,38.18,2168.97,True,OK
+"Qwen-2.5-0.5B (24L, 896D)",2048,baseline,73.35,2274.78,True,OK
+"Qwen-2.5-0.5B (24L, 896D)",2048,svd_linear_attention,74.26,2527.47,True,OK
+"Qwen-2.5-0.5B (24L, 896D)",2048,gla_attention,81.32,2466.23,True,OK
+"Qwen-2.5-0.5B (24L, 896D)",4096,baseline,,,False,OOM
+"Qwen-2.5-0.5B (24L, 896D)",4096,svd_linear_attention,156.27,3353.08,True,OK
+"Qwen-2.5-0.5B (24L, 896D)",4096,gla_attention,168.05,3406.35,True,OK
+"LLaMA-3-Arch (12L, 1024D)",1024,baseline,77.18,3160.8,True,OK
+"LLaMA-3-Arch (12L, 1024D)",1024,svd_linear_attention,51.83,2054.71,True,OK
+"LLaMA-3-Arch (12L, 1024D)",1024,gla_attention,102.11,1973.58,True,OK
+"LLaMA-3-Arch (12L, 1024D)",2048,baseline,511.75,2102.3,True,OK
+"LLaMA-3-Arch (12L, 1024D)",2048,svd_linear_attention,110.65,2201.34,True,OK
+"LLaMA-3-Arch (12L, 1024D)",2048,gla_attention,104.1,2097.59,True,OK
+"LLaMA-3-Arch (12L, 1024D)",4096,baseline,782.87,4130.35,True,OK
+"LLaMA-3-Arch (12L, 1024D)",4096,svd_linear_attention,273.8,2499.35,True,OK
+"LLaMA-3-Arch (12L, 1024D)",4096,gla_attention,211.26,2346.6,True,OK
