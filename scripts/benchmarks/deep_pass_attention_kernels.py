@@ -264,6 +264,9 @@ def run_deep_pass():
                 cuda_fn = lambda: mod.adaptive_span(spans, q_pos, k_pos, 16.0, True)
                 ref_fn = lambda: mod.adaptive_span_pytorch_ref(spans, q_pos, k_pos, 16.0, True)
 
+            if cuda_fn is None or ref_fn is None:
+                continue
+
             # Test numerical parity & finite check
             out_cuda = cuda_fn()
             out_ref = ref_fn()

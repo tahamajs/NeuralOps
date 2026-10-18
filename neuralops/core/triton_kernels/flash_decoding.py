@@ -148,7 +148,7 @@ if HAS_TRITON and tl is not None:
         max_lse = tl.max(lse_vals, axis=0)
         p = tl.where(mask_c, tl.exp(lse_vals - max_lse), 0.0)
         global_sum = tl.sum(p, axis=0)
-        alpha = p / tl.maximum(global_sum, 1e-6)  # (BLOCK_C,)
+        _alpha = p / tl.maximum(global_sum, 1e-6)  # (BLOCK_C,)
 
         # Accumulate weighted chunk outputs
         acc = tl.zeros([BLOCK_D], dtype=tl.float32)
