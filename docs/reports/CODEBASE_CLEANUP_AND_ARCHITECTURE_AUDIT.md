@@ -102,3 +102,30 @@ All 26 Triton kernels were executed on physical CUDA hardware:
 1. **Preserve Shims for Full Compatibility:** The root directories act as crucial backwards-compatibility interfaces without polluting the canonical package built by `pyproject.toml` (which packages strictly `neuralops*`).
 2. **Fixed Relative Import in `experiment_utils`:** Hardened `experiment_utils/__init__.py` to import via the canonical `neuralops.experiment_utils` namespace, avoiding `attempted relative import beyond top-level package` errors when imported from the repository root.
 3. **Repository Cleanliness:** No dead code was purged unnecessarily, preventing breaking changes across existing benchmark workflows and external invocation scripts.
+
+---
+
+## Addendum: October 18, 2026 Audit Update
+
+### 1. Root Directory Cleanup and Archiving
+- Candidate standalone dumps and logs were safely migrated to `_archive/dead_code_2026_10/root_dumps/`:
+  - `run_quality_all_screening_summary.csv` (active copy preserved in `results/`)
+  - `benchmark_accuracy_and_ppl.log`
+  - `benchmark_accuracy_and_ppl_clean.log`
+  - `grading.log`
+  - `smoke_svd.log` & `smoke_svd.err`
+- An explanatory `README.md` was added within `_archive/dead_code_2026_10/root_dumps/`.
+- No Python code, CUDA/Triton kernels, tests, or documentation were removed.
+
+### 2. Deep Shim Integrity Verification
+All top-level compatibility entry points (`attention/`, `attentions/`, `compression_engine/`, `core/`, `distributed/`, `models/`, `runners/`, `surgery/`, `trainer/`, `training/`, `utils/`, `validation/`, and `visualizer/`) were audited:
+- All package entry points resolve directly to their corresponding canonical modules under `neuralops.*`.
+- No lingering temporary, backup (`.bak`, `.tmp`), or scratch files remain within the shim tree.
+- `neuralops.compression` cleanly re-exports `COMPRESSOR_REGISTRY` with exactly 72 registered compressor engines.
+
+### 3. Empirical Invariant Re-Certification
+- **Attention Architectures:** Exactly 131 registered in `ATTENTION_REGISTRY`.
+- **Compression Engines:** Exactly 72 registered in `COMPRESSOR_REGISTRY`.
+- **Triton Matrix Kernels:** Exactly 26 operational Triton kernel implementations.
+- **CUDA Autograd Parity Suite:** 147/147 test cases passing (`pytest tests/cuda_kernels/ -q` in 1.60s).
+- **README & Counter Verification:** `utils/verify_readme_counts.py` passing cleanly with zero errors.
