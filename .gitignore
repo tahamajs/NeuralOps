@@ -216,8 +216,6 @@ MasterHttpRelayVPN-python_testing/
 !neuralops/**/*.typed
 !tests/
 !tests/**/*.py
-!docs/
-!docs/**
 !README.md
 !CHANGELOG.md
 !CONTRIBUTING.md
@@ -244,7 +242,8 @@ __pycache__/
 *.zip
 *.bundle
 
-# Non-code & academic directories completely ignored
+# Non-code, docs, & academic directories completely ignored
+docs/
 academic/
 paper/
 thesis_final/
