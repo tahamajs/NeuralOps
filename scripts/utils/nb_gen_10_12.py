@@ -698,7 +698,7 @@ for k in kernel_catalog:
     if k_name in cuda_data:
         try:
             cuda_ms = float(cuda_data[k_name]['CUDA (ms)'])
-        except:
+        except (KeyError, ValueError, TypeError):
             cuda_ms = round(triton_ms * np.random.uniform(0.78, 0.95), 4)
     else:
         cuda_ms = round(triton_ms * np.random.uniform(0.78, 0.95), 4)
