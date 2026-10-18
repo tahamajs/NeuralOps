@@ -387,6 +387,10 @@ from neuralops.core.cuda_kernels.goldfinch_ahn import (
     goldfinch_ahn,
     goldfinch_ahn_ref,
 )
+from neuralops.core.cuda_kernels.hla_attention import (
+    hla_attention,
+    hla_attention_ref,
+)
 from neuralops.core.cuda_kernels.phantom import (
     phantom,
     phantom_ref,
@@ -538,6 +542,7 @@ CUDA_KERNEL_CATALOG: list[str] = [
     "gla_scan",
     "gla_unnormalized_scan",
     "goldfinch_ahn",
+    "hla_attention",
     "griffin_ssd",
     "hadamard_gemm",
     "hgrn2_scan",
@@ -870,6 +875,8 @@ __all__ = [
     "vspec_ref",
     "goldfinch_ahn",
     "goldfinch_ahn_ref",
+    "hla_attention",
+    "hla_attention_ref",
     "phantom",
     "phantom_ref",
     "mamba_block",
