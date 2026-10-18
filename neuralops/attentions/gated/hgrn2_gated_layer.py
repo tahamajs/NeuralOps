@@ -657,6 +657,14 @@ class HGRN2Layer(BaseAttention):
         *args: Any,
         **kwargs: Any,
     ) -> tuple[torch.Tensor, Any]:
+        is_causal = kwargs.get("is_causal", None)
+        if is_causal is not None and self.is_decoder != is_causal:
+            raise RuntimeError(
+                f"HGRN2: is_decoder={self.is_decoder} but forward(is_causal={is_causal}). "
+                f"Causal decoders MUST use is_decoder=True to prevent future-token leakage. "
+                f"See docs/COMPILE_LIMITATIONS.md."
+            )
+
         if not hidden_states.is_contiguous():
             hidden_states = hidden_states.contiguous()
 
