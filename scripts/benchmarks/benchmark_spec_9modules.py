@@ -7,7 +7,7 @@ repo_root = Path(__file__).resolve().parent.parent.parent
 if str(repo_root) not in sys.path:
     sys.path.insert(0, str(repo_root))
 
-from neuralops.core.cuda_kernels._fallback import force_kernel_backend
+from neuralops.core.cuda_kernels import force_kernel_backend
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 assert torch.cuda.is_available(), "CUDA required for GPU benchmark"
