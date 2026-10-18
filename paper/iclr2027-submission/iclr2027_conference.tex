@@ -1160,7 +1160,7 @@ Table~\ref{tab:long_context} and Figure~\ref{fig:context_scaling} track physical
 \centering
 \includegraphics[width=0.72\textwidth]{figures/sequence_length_scaling.png}
 \caption{\textbf{Empirical Context Sequence Length Scaling on NVIDIA GeForce RTX 4070 (Ada Lovelace, SM 8.9).} 
-Physical wall-clock latency (ms) and peak activation memory footprint across context lengths $T \in \{512, 1024, 2048, 4096, 8192\}$. At $T=8,192$, Chunk GLA delivers a $1.47\times$ physical speedup over FlashAttention-2 (PyTorch SDPA) with strictly linear activation memory scaling.}
+Physical wall-clock latency (ms) and peak activation memory footprint across context lengths $T \in \{512, 1024, 2048, 4096, 8192\}$. At $T=8,192$, Chunk GLA delivers a $1.47\times$ physical speedup over FlashAttention-2 \citep{dao2023flashattention2} (PyTorch SDPA) with strictly linear activation memory scaling.}
 \label{fig:context_scaling}
 \end{figure}
 
@@ -1350,7 +1350,7 @@ Low-Rank Truncated SVD ($r=512$) & 24.5 ms (7.1 GB) & \multicolumn{4}{c}{\textit
 \label{sec:when_not_to_use}
 A foundational contribution of scientific benchmarking is defining explicit failure regimes. Practitioners should \textbf{NOT} deploy NeuralOps under the following conditions:
 \begin{enumerate}
-    \item \textbf{Short Sequence Regimes with Ultra-Wide Hidden Dimensions ($L \le 512$ and $d \ge 4096$)}: As proven by our hidden dimension complexity analysis ($\mathcal{O}(L d^2)$ vs.\ $\mathcal{O}(L^2 d)$), linear recurrent mechanisms scale with the square of the hidden feature dimension $d^2$. In 70B+ models where $d=8,192$, standard fused FlashAttention is strictly faster and requires less memory for standard prompt lengths ($L \le 512$).
+    \item \textbf{Short Sequence Regimes with Ultra-Wide Hidden Dimensions ($L \le 512$ and $d \ge 4096$)}: As proven by our hidden dimension complexity analysis ($\mathcal{O}(L d^2)$ vs.\ $\mathcal{O}(L^2 d)$), linear recurrent mechanisms scale with the square of the hidden feature dimension $d^2$. In 70B+ models where $d=8,192$, standard fused FlashAttention \citep{dao2022flashattention,dao2023flashattention2} is strictly faster and requires less memory for standard prompt lengths ($L \le 512$).
     \item \textbf{Zero-Shot Post-Hoc SVD on Sensitive Relational Tasks}: Low-rank truncated SVD should never be deployed post-hoc without Cholesky activation preconditioning and the 6-pillar distillation suite whenever the task requires fine-grained token-pair discrimination (e.g., legal or logical entailment), as truncation below $r=320$ erases orthogonal cross-sentence relational nullspaces.
     \item \textbf{Causal Scan Replacement in Bidirectional Masked Encoders}: Unidirectional causal state-space mechanisms (e.g., standard Mamba or HGRN2) must not replace bidirectional encoder projections. Without bidirectional receptive fields, the $[CLS]$ token cannot attend to subsequent hypothesis tokens, resulting in chance-level degradation (34.10\% on MNLI).
     \item \textbf{Deployment Without Hardware Kernel Fusion}: Deploying sub-quadratic attention using naive un-fused PyTorch operators produces continuous HBM intermediate tensor read/write rounds that completely forfeit theoretical speedup gains.
