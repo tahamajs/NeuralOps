@@ -8,7 +8,9 @@ import json
 import uuid
 from pathlib import Path
 
+
 def create_code_cell(source_lines):
+    """Execute create code cell routine."""
     if isinstance(source_lines, str):
         source_lines = [l + "\n" for l in source_lines.strip().split("\n")]
     elif isinstance(source_lines, list):
@@ -19,30 +21,25 @@ def create_code_cell(source_lines):
         "id": str(uuid.uuid4())[:8],
         "metadata": {},
         "outputs": [],
-        "source": source_lines
+        "source": source_lines,
     }
 
+
 def create_markdown_cell(source_lines):
+    """Execute create markdown cell routine."""
     if isinstance(source_lines, str):
         source_lines = [l + "\n" for l in source_lines.strip().split("\n")]
     elif isinstance(source_lines, list):
         source_lines = [l if l.endswith("\n") else l + "\n" for l in source_lines]
-    return {
-        "cell_type": "markdown",
-        "id": str(uuid.uuid4())[:8],
-        "metadata": {},
-        "source": source_lines
-    }
+    return {"cell_type": "markdown", "id": str(uuid.uuid4())[:8], "metadata": {}, "source": source_lines}
+
 
 def build_notebook(cells):
+    """Execute build notebook routine."""
     return {
         "cells": cells,
         "metadata": {
-            "kernelspec": {
-                "display_name": "Python 3 (ipykernel)",
-                "language": "python",
-                "name": "python3"
-            },
+            "kernelspec": {"display_name": "Python 3 (ipykernel)", "language": "python", "name": "python3"},
             "language_info": {
                 "codemirror_mode": {"name": "ipython", "version": 3},
                 "file_extension": ".py",
@@ -50,21 +47,25 @@ def build_notebook(cells):
                 "name": "python",
                 "nbconvert_exporter": "python",
                 "pygments_lexer": "ipython3",
-                "version": "3.14.7"
-            }
+                "version": "3.14.7",
+            },
         },
         "nbformat": 4,
-        "nbformat_minor": 5
+        "nbformat_minor": 5,
     }
 
+
 def save_notebook(nb_dict, output_path):
+    """Execute save notebook routine."""
     p = Path(output_path)
     p.parent.mkdir(parents=True, exist_ok=True)
     with open(p, "w", encoding="utf-8") as f:
         json.dump(nb_dict, f, indent=1)
     print(f"Successfully generated: {output_path} ({len(nb_dict['cells'])} cells)")
 
+
 def make_header_cell(title):
+    """Execute make header cell routine."""
     source = f'''"""
 {title}
 
@@ -79,6 +80,7 @@ Author: Taha Majlesi
 **Target Submission**: ICLR 2027 / NeurIPS 2026 Reproducibility Benchmark Suite  
 '''
     return create_markdown_cell(source)
+
 
 HARDWARE_CONTEXT_CELL = create_code_cell('''"""
 Standardized Hardware Detection & Telemetry Verification Cell

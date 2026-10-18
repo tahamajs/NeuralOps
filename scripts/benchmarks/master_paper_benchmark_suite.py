@@ -70,6 +70,7 @@ FINE_TUNED_CHECKPOINTS = {
 
 
 def set_seed(seed: int):
+    """Execute set seed routine."""
     torch.manual_seed(seed)
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
@@ -77,6 +78,7 @@ def set_seed(seed: int):
 
 
 def prepare_classification_batches(task: str, tokenizer, backbone: str = "", max_samples: int = 200, batch_size: int = 32):
+    """Execute prepare classification batches routine."""
     if task == "sst2":
         ds = load_dataset("nyu-mll/glue", "sst2", split="validation")
         if max_samples and max_samples < len(ds):
@@ -92,7 +94,7 @@ def prepare_classification_batches(task: str, tokenizer, backbone: str = "", max
         labels = [x["label"] for x in ds]
         if backbone == "roberta":
             # textattack/roberta-base-MNLI uses {0: contradiction, 1: neutral, 2: entailment}
-            labels = [2 - l if l in (0, 2) else 1 for l in labels]
+            labels = [2 - lbl if lbl in (0, 2) else 1 for lbl in labels]
     elif task == "ag_news":
         ds = load_dataset("fancyzhx/ag_news", split="test")
         if max_samples and max_samples < len(ds):
@@ -123,6 +125,7 @@ def prepare_classification_batches(task: str, tokenizer, backbone: str = "", max
 
 
 def prepare_lm_batches(tokenizer, max_tokens: int = 8192, seq_len: int = 128):
+    """Execute prepare lm batches routine."""
     try:
         ds = load_dataset("wikitext", "wikitext-2-raw-v1", split="test")
         full_text = "\n\n".join([x["text"] for x in ds if x["text"].strip()])
@@ -143,6 +146,7 @@ def prepare_lm_batches(tokenizer, max_tokens: int = 8192, seq_len: int = 128):
 
 
 def evaluate_classification(model, batches):
+    """Execute evaluate classification routine."""
     model.eval()
     correct = 0
     total = 0
@@ -184,6 +188,7 @@ def evaluate_classification(model, batches):
 
 
 def evaluate_lm_ppl(model, batches):
+    """Execute evaluate lm ppl routine."""
     model.eval()
     total_loss = 0.0
     total_tokens = 0
@@ -224,6 +229,7 @@ def evaluate_lm_ppl(model, batches):
 
 
 def build_classification_model(backbone: str, task: str, variant: str, seed: int, lora_rank: int = 16):
+    """Execute build classification model routine."""
     set_seed(seed)
     ckpt = FINE_TUNED_CHECKPOINTS[backbone][task]
     tokenizer = AutoTokenizer.from_pretrained(ckpt)
@@ -249,6 +255,7 @@ def build_classification_model(backbone: str, task: str, variant: str, seed: int
 
 
 def build_lm_model(variant: str, seed: int, lora_rank: int = 16):
+    """Execute build lm model routine."""
     set_seed(seed)
     ckpt = FINE_TUNED_CHECKPOINTS["gpt2"]["wikitext2"]
     tokenizer = AutoTokenizer.from_pretrained(ckpt)
@@ -274,6 +281,7 @@ def build_lm_model(variant: str, seed: int, lora_rank: int = 16):
 
 
 def main():
+    """Execute main routine."""
     parser = argparse.ArgumentParser(description="Master Paper Benchmark Suite")
     parser.add_argument("--mode", choices=["smoke-test", "targeted-wgqa"], default="targeted-wgqa")
     args = parser.parse_args()

@@ -4,6 +4,7 @@
 
 Delegates directly to canonical neuralops.benchmarks.benchmark_extrapolation_32k.
 """
+
 import sys
 from neuralops.benchmarks.benchmark_extrapolation_32k import *
 from neuralops.benchmarks.benchmark_extrapolation_32k import main

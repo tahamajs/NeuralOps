@@ -22,7 +22,7 @@ from scripts.utils.nb_gen_common import (
     build_notebook,
     save_notebook,
     make_header_cell,
-    HARDWARE_CONTEXT_CELL
+    HARDWARE_CONTEXT_CELL,
 )
 
 
@@ -31,14 +31,14 @@ from scripts.utils.nb_gen_common import (
 # ==============================================================================
 def generate_notebook_23():
     """23_spectral_diagnostics_and_hessian_analysis.ipynb"""
-    title = "Deep Spectral Diagnostics: Singular Spectrum Decay, Hessian Eigenspectrum, and Activation Outlier Profiling"
+    title = (
+        "Deep Spectral Diagnostics: Singular Spectrum Decay, Hessian Eigenspectrum, and Activation Outlier Profiling"
+    )
     cells = [
         # Cell 1: Header
         make_header_cell(title),
-
         # Cell 2: Hardware Context
         HARDWARE_CONTEXT_CELL,
-
         # Cell 3: Mathematical & Theoretical Foundations
         create_markdown_cell(r"""## 1. Theoretical Foundations of Spectral & Hessian Diagnostics
 
@@ -70,7 +70,6 @@ $$\text{HVP}(v) = \nabla_W \left( \langle \nabla_W \mathcal{L}(W), v \rangle \ri
 Quantization and low-rank distillation often suffer from extreme activation outlier spikes. We quantify this using excess kurtosis and $6\sigma$-outlier fraction:
 $$\text{Kurt}(x) = \frac{\mathbb{E}[(x - \mu)^4]}{(\mathbb{E}[(x - \mu)^2])^2} - 3, \quad \text{Outlier Ratio} = \frac{|\{x_i \mid |x_i - \mu| > 6\sigma\}|}{N}$$
 """),
-
         # Cell 4: Imports and Setup
         create_code_cell(r"""# Cell 3: Imports & Diagnostics Setup
 import os
@@ -100,13 +99,11 @@ paper_fig_dir.mkdir(parents=True, exist_ok=True)
 
 print("✅ Deep Spectral Diagnostics & Hessian Analysis initialized.")
 """),
-
         # Cell 5: Transformer Block Multi-Layer Architecture
         create_markdown_cell(r"""## 2. 12-Layer Transformer Model Weight Matrix Ingestion
 
 We construct a 12-layer Transformer model, calibrate it with synthetic data, and extract weight matrices across all layers ($W_q, W_k, W_v, W_o, W_{\text{mlp1}}, W_{\text{mlp2}}$).
 """),
-
         # Cell 6: Multi-Layer Model Definition
         create_code_cell(r"""# Cell 4: 12-Layer Transformer Architecture Definition
 class TransformerBlock(nn.Module):
@@ -153,7 +150,6 @@ total_params = sum(p.numel() for p in deep_model.parameters())
 print(f"Deep Transformer initialized with 12 layers.")
 print(f"Total Parameters: {total_params:,} (~{total_params * 4 / (1024**2):.1f} MB in FP32)")
 """),
-
         # Cell 7: Singular Spectrum Decay Profiling
         create_markdown_cell(r"""## 3. Layer-Wise Singular Spectrum Decay Analysis
 
@@ -163,7 +159,6 @@ We extract projection weight matrices across all 12 transformer layers, compute 
 3. **Stable Rank** ($\text{srank}$)
 4. **Condition Number** $\kappa(W)$
 """),
-
         # Cell 8: Singular Spectrum Code
         create_code_cell(r"""# Cell 5: Singular Value Decomposition & Spectral Metrics Computation
 spectral_records = []
@@ -219,7 +214,6 @@ df_spectral = pd.DataFrame(spectral_records)
 print("--- Layer-Wise Singular Spectrum Analysis (Sample) ---")
 display(df_spectral.head(12))
 """),
-
         # Cell 9: Hessian Eigenspectrum & Top Eigenvalue via Power Iteration
         create_markdown_cell(r"""## 4. Hessian Eigenspectrum Estimation via Power Iteration
 
@@ -229,7 +223,6 @@ $$\text{HVP}(v) = \lim_{\epsilon \to 0} \frac{\nabla \mathcal{L}(W + \epsilon v)
 
 Power Iteration iterates $v_{k+1} = \frac{H v_k}{\|H v_k\|_2}$, converging to $\lambda_{\max} = v^T H v$.
 """),
-
         # Cell 10: Hessian Power Iteration Code
         create_code_cell(r"""# Cell 6: Matrix-Free Hessian-Vector Products & Power Iteration
 def compute_hvp(loss, params, v):
@@ -280,7 +273,6 @@ print(f"  Dominant Hessian Eigenvalue lambda_max: {lambda_max_dense:.4f}")
 print(f"  Max Stable Gradient Step Size (2 / lambda): {2.0 / lambda_max_dense:.4f}")
 print("=" * 80)
 """),
-
         # Cell 11: Activation Outlier Profiling & Kurtosis
         create_markdown_cell(r"""## 5. Streaming Activation Outlier Profiling & Kurtosis Spikes
 
@@ -289,7 +281,6 @@ Using `StreamingLayerAccumulator`, we pass calibration batches through all 12 tr
 2. **Excess Kurtosis**: $\text{Kurt}(x) = \frac{\mu_4}{\mu_2^2} - 3$
 3. **$6\sigma$-Outlier Fraction**: Ratio of elements exceeding 6 standard deviations from the mean
 """),
-
         # Cell 12: Activation Outlier Code
         create_code_cell(r"""# Cell 7: Streaming Activation Outlier Profiling Across 12 Layers
 outlier_accumulators = [StreamingLayerAccumulator() for _ in range(12)]
@@ -332,14 +323,12 @@ df_outliers = pd.DataFrame(outlier_results)
 print("--- Layer-Wise Activation Outlier & Kurtosis Profiling ---")
 display(df_outliers)
 """),
-
         # Cell 13: Empirical Fisher Information & Condition Numbers
         create_markdown_cell(r"""## 6. Empirical Fisher Information Matrix & Layer Condition Numbers
 
 The diagonal Empirical Fisher Information estimates the sensitivity of each layer's weights with respect to the loss distribution:
 $$F_{ii} \approx \frac{1}{B} \sum_{b=1}^B \left( \frac{\partial \log p(y_b|x_b)}{\partial w_i} \right)^2$$
 """),
-
         # Cell 14: Fisher Information Code
         create_code_cell(r"""# Cell 8: Empirical Fisher Information Diagnostics
 deep_model.train()
@@ -376,7 +365,6 @@ df_fisher = pd.DataFrame(fisher_per_layer)
 print("--- Empirical Fisher Information Diagnostics (Diagonal) ---")
 display(df_fisher)
 """),
-
         # Cell 15: Cumulative Spectral Energy Truncation
         create_markdown_cell(r"""## 7. Cumulative Spectral Energy Truncation & Optimal Rank Allocation
 
@@ -384,7 +372,6 @@ To determine optimal low-rank compression rank $r$ per layer, we evaluate the cu
 $$E(r) = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^d \sigma_i^2}$$
 We identify the minimal rank threshold $r_{95\%}$ that preserves $95\%$ of the layer's Frobenius energy.
 """),
-
         # Cell 16: Cumulative Spectral Energy Code
         create_code_cell(r"""# Cell 9: Cumulative Spectral Energy & Optimal Rank Thresholds
 energy_records = []
@@ -410,7 +397,6 @@ df_energy = pd.DataFrame(energy_records)
 print("--- Optimal SVD Rank Allocation per Layer (Cumulative Energy) ---")
 display(df_energy)
 """),
-
         # Cell 17: Rich High-DPI Visualizations
         create_markdown_cell(r"""## 8. High-Resolution Publication Visualizations (300 DPI)
 
@@ -420,7 +406,6 @@ We generate a 4-panel spectral diagnostics dashboard:
 - **Panel C**: Activation Excess Kurtosis & Outlier Ratio Spikes across model depth.
 - **Panel D**: Condition Number $\kappa(W)$ and Diagonal Fisher Information sensitivity.
 """),
-
         # Cell 16: Visualization Plotting Code
         create_code_cell(r"""# Cell 9: 4-Panel High-DPI Publication Diagnostics Dashboard
 fig, axes = plt.subplots(2, 2, figsize=(15, 12), dpi=300)
@@ -483,13 +468,11 @@ plt.show()
 
 print(f"✅ High-resolution figures saved to:\n  - {plot_path}\n  - {paper_fig_dir / 'fig23_spectral_diagnostics.png'}")
 """),
-
         # Cell 17: Formatted Summary Table
         create_markdown_cell(r"""## 8. Spectral Diagnostics Master Summary Table
 
 The table below compiles spectral properties, curvature metrics, and activation stability across all 12 transformer layers:
 """),
-
         # Cell 18: Summary Table Code
         create_code_cell(r"""# Cell 10: Final Compilation of Spectral Diagnostics Metrics
 summary_records = []
@@ -514,14 +497,13 @@ print("🚀 NEURALOPS SPECTRAL DIAGNOSTICS & HESSIAN BENCHMARK SUMMARY")
 print("=" * 115)
 display(df_diag_summary)
 """),
-
         # Cell 19: Conclusion Markdown
         create_markdown_cell(r"""## 9. Architectural Conclusions & Diagnostic Takeaways
 
 1. **Power-Law Spectral Decay**: Query and Key projections exhibit steep power-law decay ($\alpha \approx 0.85 - 1.25$), confirming that over **$75\%$ of weight energy** resides in the top $15\%$ of singular subspaces and can be factorized with negligible fidelity degradation.
 2. **Layer 0 Outlier Emergence**: The initial transformer layers exhibit significant activation kurtosis peaks ($\text{Kurt} > 8.0$), indicating that input normalization and early projections require protected rank allocations during SVD surgery.
 3. **Curvature & Conditioning**: Matrix-free Hessian evaluation demonstrates that SVD low-rank parameterization regularizes the loss surface, reducing dominant Hessian curvature $\lambda_{\max}$ and accelerating subsequent recovery convergence.
-""")
+"""),
     ]
     return build_notebook(cells)
 
@@ -535,10 +517,8 @@ def generate_notebook_24():
     cells = [
         # Cell 1: Header
         make_header_cell(title),
-
         # Cell 2: Hardware Context
         HARDWARE_CONTEXT_CELL,
-
         # Cell 3: Mathematical Foundations
         create_markdown_cell(r"""## 1. Theoretical Foundations of Non-Euclidean Optimization
 
@@ -574,7 +554,6 @@ $$\delta_{\text{ortho}}(U) = \|U^T U - I_r\|_F$$
 TTT models update the recurrent hidden state $S_t$ dynamically during inference by executing online gradient steps on self-supervised token prediction objectives:
 $$S_t = S_{t-1} - \eta_t \nabla_S \ell(S_{t-1}; x_t)$$
 """),
-
         # Cell 4: Imports and Setup
         create_code_cell(r"""# Cell 3: Imports & Advanced Optimizer Verification
 import os
@@ -605,13 +584,11 @@ paper_fig_dir.mkdir(parents=True, exist_ok=True)
 
 print("✅ Advanced Optimizers & Recovery Training Harness loaded.")
 """),
-
         # Cell 5: Newton-Schulz Orthogonalization Convergence
         create_markdown_cell(r"""## 2. Newton-Schulz Quintic Orthogonalization Verification
 
 We verify that `zeropower_via_newtonschulz5` orthogonalizes ill-conditioned matrix gradients in exactly 5 polynomial iterations without expensive explicit SVD computations.
 """),
-
         # Cell 6: Newton-Schulz Verification Code
         create_code_cell(r"""# Cell 4: Newton-Schulz Quintic Iteration Benchmark
 torch.manual_seed(42)
@@ -646,14 +623,12 @@ print("=" * 80)
 assert cond_post < cond_pre, f"Condition number not contracted: {cond_post} vs {cond_pre}"
 print("✅ PASSED: Quintic Newton-Schulz contracts condition number and normalizes momentum.")
 """),
-
         # Cell 7: Stiefel Manifold Geometry & Tangent Projections
         create_markdown_cell(r"""## 3. Stiefel Manifold Geometry & Retraction Operations (`stiefel.py`)
 
 We examine `project_stiefel_gradient` and `stiefel_qr_retraction`. By projecting updates into the horizontal tangent space and executing QR retractions, parameter matrices $U \in \mathbb{R}^{d \times r}$ remain on $\text{St}(r, d)$ with zero deviation:
 $$\|U^T U - I_r\|_F \approx 0$$
 """),
-
         # Cell 8: Stiefel Geometry Code
         create_code_cell(r"""# Cell 5: Stiefel Manifold Tangent Projection & Retraction Parity Check
 d, r = 768, 64
@@ -681,7 +656,6 @@ print(f"  Tangent Space Deviation (Skew):   {tangent_ortho_dev:.2e}")
 assert post_retract_err < 1e-5, "Stiefel QR retraction failed to preserve orthogonality"
 print("✅ PASSED: Riemannian retraction guarantees strict manifold constraint satisfaction.")
 """),
-
         # Cell 9: Head-to-Head Optimizer Convergence Benchmark
         create_markdown_cell(r"""## 4. Head-to-Head Convergence Benchmark: Muon vs Riemannian Adam vs AdamW vs SGD
 
@@ -691,7 +665,6 @@ We compare four optimization paradigms on a representative low-rank recovery dis
 3. **Muon Optimizer**: Matrix momentum orthogonalized via Newton-Schulz quintic iteration.
 4. **RiemannianStiefelOptimizer**: Riemannian gradient descent on the Stiefel manifold with QR retraction.
 """),
-
         # Cell 10: Optimizer Convergence Benchmark Code
         create_code_cell(r"""# Cell 6: 100-Step Surgical Recovery Convergence Benchmark
 class LowRankApproximator(nn.Module):
@@ -756,7 +729,6 @@ for opt_name in optimizers:
     opt_results[opt_name] = {"losses": losses, "drifts": drifts, "time_ms": dur}
     print(f"  - {opt_name:18s}: Final Loss = {losses[-1]:.4f}, Final Drift = {drifts[-1]:.2e} ({dur:.1f} ms)")
 """),
-
         # Cell 11: Test-Time Training (TTT) Dynamic Memory Adaptation
         create_markdown_cell(r"""## 5. Test-Time Training (TTT) Sequence Adaptation (`test_time_trainer.py`)
 
@@ -766,7 +738,6 @@ $$S_t = S_{t-1} - \eta_t (S_{t-1} k_t - v_t) k_t^T$$
 
 We evaluate online loss reduction across the sequence length.
 """),
-
         # Cell 12: TTT Adaptation Code
         create_code_cell(r"""# Cell 7: Test-Time Training Sequence-Level Adaptation
 ttt_layer = TTTLinearAttentionLayer(dim=256, num_heads=4, inner_lr=0.08).cuda().eval()
@@ -789,14 +760,12 @@ print(f"  Initial Online Error (Token 0):   {smooth_error[0]:.3f}")
 print(f"  Final Online Error (Token 127):   {smooth_error[-1]:.3f}")
 print(f"  Dynamic In-Context Gain:          {((smooth_error[0] - smooth_error[-1]) / smooth_error[0]) * 100:.1f}%")
 """),
-
         # Cell 13: Six-Pillar Recovery Loss Distillation Dynamics
         create_markdown_cell(r"""## 6. Six-Pillar Recovery Loss Distillation Dynamics
 
 The full NeuralOps surgical healing pipeline employs the **Six-Pillar Recovery Loss**:
 $$\mathcal{L}_{\text{total}} = \mathcal{L}_{\text{task}} + \lambda_{\text{KD}} \mathcal{L}_{\text{distill}} + \lambda_{\text{ortho}} \|U^T U - I_r\|_F^2 + \lambda_{\text{spec}} \mathcal{L}_{\text{spectral}} + \lambda_{\text{cos}} (1 - \cos(y_s, y_t)) + \lambda_{\text{reg}} \|W\|_F^2$$
 """),
-
         # Cell 14: Six-Pillar Distillation Code
         create_code_cell(r"""# Cell 8: Six-Pillar Multi-Objective Recovery Distillation Run
 recovery_records = []
@@ -819,7 +788,6 @@ df_opt_bench = pd.DataFrame(recovery_records)
 print("--- Optimization & Distillation Dynamics Benchmark ---")
 display(df_opt_bench.iloc[[0, 9, 24, 49, 99]])
 """),
-
         # Cell 15: Optimizer State Memory Overhead
         create_markdown_cell(r"""## 7. Optimizer State Memory Overhead & VRAM Footprint
 
@@ -828,7 +796,6 @@ In large model recovery training, optimizer state memory often exceeds raw model
 - **Muon**: 1 2D momentum buffer with in-place Newton-Schulz orthogonalization ($1\times$ parameters).
 - **AdamW**: 2 moment buffers (first moment $m_t$ and second uncentered variance $v_t$, consuming $2\times$ parameters).
 """),
-
         # Cell 16: Optimizer Memory Benchmark Code
         create_code_cell(r"""# Cell 9: Optimizer Memory Footprint & State Overhead Benchmarking
 param_counts = [10e6, 50e6, 100e6, 250e6, 500e6, 1e9] # Parameters (10M to 1B)
@@ -854,7 +821,6 @@ df_opt_mem = pd.DataFrame(opt_mem_records)
 print("--- Optimizer State Memory Overhead Comparison ---")
 display(df_opt_mem)
 """),
-
         # Cell 17: Rich High-DPI Visualizations
         create_markdown_cell(r"""## 8. High-Resolution Publication Visualizations (300 DPI)
 
@@ -864,7 +830,6 @@ We generate a 4-panel optimization dashboard:
 - **Panel C**: Newton-Schulz Singular Spectrum Equalization (Pre- vs Post-NS).
 - **Panel D**: TTT Online Adaptation Error Curve over Sequence Tokens.
 """),
-
         # Cell 16: Visualization Plotting Code
         create_code_cell(r"""# Cell 9: 4-Panel High-DPI Publication Optimizer Dashboard
 fig, axes = plt.subplots(2, 2, figsize=(15, 12), dpi=300)
@@ -927,13 +892,11 @@ plt.show()
 
 print(f"✅ High-resolution figures saved to:\n  - {plot_path}\n  - {paper_fig_dir / 'fig24_advanced_optimizers.png'}")
 """),
-
         # Cell 17: Formatted Summary Table
         create_markdown_cell(r"""## 8. Advanced Optimizer Performance Summary Table
 
 The table below compiles loss convergence speed, orthogonality preservation, and execution efficiency across optimizers:
 """),
-
         # Cell 18: Summary Table Code
         create_code_cell(r"""# Cell 10: Final Compilation of Optimizer Metrics
 summary_records = [
@@ -977,14 +940,13 @@ print("🚀 NEURALOPS ADVANCED OPTIMIZERS & RECOVERY TRAINING BENCHMARK SUMMARY"
 print("=" * 115)
 display(df_opt_summary)
 """),
-
         # Cell 19: Conclusion Markdown
         create_markdown_cell(r"""## 9. Architectural Conclusions & Optimization Best Practices
 
 1. **Orthogonal Invariance via Stiefel Geometry**: Standard AdamW triggers severe orthogonality drift ($\|U^T U - I\|_F > 1.4$), degrading low-rank factor conditioning. `RiemannianStiefelOptimizer` bounds drift to machine precision ($\le 10^{-7}$).
 2. **Acceleration via Muon**: Newton-Schulz quintic iteration equalizes singular update spectra, producing **$1.8\times$ faster loss descent** than AdamW while executing in pure matrix-matrix multiply primitives without explicit SVD.
 3. **In-Context Sequence Adaptation with TTT**: Test-Time Training enables recurrent memory matrices $S_t$ to adapt dynamically to incoming prompt domains, achieving measurable continuous error reduction throughout inference.
-""")
+"""),
     ]
     return build_notebook(cells)
 
@@ -994,14 +956,14 @@ display(df_opt_summary)
 # ==============================================================================
 def generate_notebook_25():
     """25_long_context_niah_cka_similarity_and_eval_harness.ipynb"""
-    title = "Decoupled Evaluation Framework: Long-Context NIAH, Centered Kernel Alignment (CKA), and LM Evaluation Harness"
+    title = (
+        "Decoupled Evaluation Framework: Long-Context NIAH, Centered Kernel Alignment (CKA), and LM Evaluation Harness"
+    )
     cells = [
         # Cell 1: Header
         make_header_cell(title),
-
         # Cell 2: Hardware Context
         HARDWARE_CONTEXT_CELL,
-
         # Cell 3: Mathematical Foundations
         create_markdown_cell(r"""## 1. Theoretical Foundations of Long-Context & Representation Evaluation
 
@@ -1033,7 +995,6 @@ $$\log p(Y \mid X) = \sum_{t=1}^{|Y|} \log p(y_t \mid X, y_{<t})$$
 The predicted option is selected greedily:
 $$\hat{c} = \arg\max_{c} \frac{\log p(Y_c \mid X)}{|Y_c|^\alpha}$$
 """),
-
         # Cell 4: Imports and Setup
         create_code_cell(r"""# Cell 3: Imports & Evaluation Framework Setup
 import os
@@ -1063,13 +1024,11 @@ paper_fig_dir.mkdir(parents=True, exist_ok=True)
 
 print("✅ Decoupled Evaluation Framework loaded.")
 """),
-
         # Cell 5: Calibrated Language Model & Tokenizer
         create_markdown_cell(r"""## 2. Calibrated Language Model & Synthetic Passkey Tokenizer
 
 We build a calibrated 12-layer Transformer model and passkey tokenizer to evaluate context retrieval across sequence lengths up to $32,768$ tokens.
 """),
-
         # Cell 6: Tokenizer and Model Code
         create_code_cell(r"""# Cell 4: Synthetic Tokenizer & Evaluator Setup
 class SimplePasskeyTokenizer:
@@ -1127,7 +1086,6 @@ class EvaluatableLM(nn.Module):
 eval_model = EvaluatableLM().cuda().eval()
 print(f"Evaluatable Model initialized. Total layers: {len(eval_model.layers)}")
 """),
-
         # Cell 7: Needle In A Haystack (NIAH) 2D Grid Evaluation
         create_markdown_cell(r"""## 3. Needle In A Haystack (NIAH) 2D Grid Evaluation (`niah.py`)
 
@@ -1135,7 +1093,6 @@ We evaluate retrieval accuracy across a $6 \times 6$ 2D grid:
 - **Context Lengths**: $[1024, 2048, 4096, 8192, 16384, 32768]$ tokens
 - **Needle Insertion Depths**: $[0\%, 20\%, 40\%, 60\%, 80\%, 100\%]$
 """),
-
         # Cell 8: NIAH Grid Execution Code
         create_code_cell(r"""# Cell 5: Needle In A Haystack 2D Grid Execution
 context_lengths = [1024, 2048, 4096, 8192, 16384, 32768]
@@ -1162,7 +1119,6 @@ df_niah = pd.DataFrame(
 print("--- Needle In A Haystack (NIAH) Retrieval Accuracy Grid (%) ---")
 display(df_niah)
 """),
-
         # Cell 9: Layer-to-Layer Centered Kernel Alignment (CKA)
         create_markdown_cell(r"""## 4. Layer-to-Layer Centered Kernel Alignment (CKA) Analysis (`metrics.py`)
 
@@ -1170,7 +1126,6 @@ Using `compute_linear_cka`, we extract hidden activation representations across 
 
 $$\text{CKA}_{i,j} = \text{compute\_linear\_cka}(H_{\text{teacher}}^{(i)}, H_{\text{student}}^{(j)})$$
 """),
-
         # Cell 10: CKA Computation Code
         create_code_cell(r"""# Cell 6: Layer-to-Layer 12x12 CKA Representation Similarity
 num_layers = 12
@@ -1202,13 +1157,11 @@ print(f"  Min Diagonal CKA (Bottleneck):    {np.min(diagonal_retention):.4f}")
 print(f"  Max Diagonal CKA (Early Layer):   {np.max(diagonal_retention):.4f}")
 print("=" * 80)
 """),
-
         # Cell 11: EleutherAI LM Evaluation Harness Integration
         create_markdown_cell(r"""## 5. EleutherAI LM Evaluation Harness Integration (`lm_eval_adapter.py`)
 
 `NeuralOpsLMEvalAdapter` wraps compressed NeuralOps models with EleutherAI standard LM evaluation interfaces. We evaluate zero-shot benchmark tasks (MMLU, HellaSwag, ARC-Challenge, PIQA, WinoGrande).
 """),
-
         # Cell 12: LM Eval Adapter Code
         create_code_cell(r"""# Cell 7: LM Evaluation Harness Benchmark Adapter Evaluation
 adapter = NeuralOpsLMEvalAdapter(eval_model, tokenizer, batch_size=4, device="cuda")
@@ -1229,20 +1182,17 @@ df_harness["linear_recovery_rate_pct"] = round((df_harness["linear_attn_acc"] / 
 print("--- EleutherAI LM Evaluation Harness Benchmark Comparison ---")
 display(df_harness)
 """),
-
         # Cell 13: Representation Fidelity vs Downstream Accuracy Correlation
         create_markdown_cell(r"""## 6. Geometric Representation Fidelity vs Task Performance
 
 We analyze the correlation between internal representation alignment (CKA) and downstream task retention. High CKA preservation directly predicts downstream accuracy preservation.
 """),
-
         # Cell 14: Fidelity Correlation Code
         create_code_cell(r"""# Cell 8: Representation Fidelity Correlation Analysis
 print(f"Mean Downstream SVD Recovery Rate:     {df_harness['svd_recovery_rate_pct'].mean():.2f}%")
 print(f"Mean Downstream Linear Recovery Rate:  {df_harness['linear_recovery_rate_pct'].mean():.2f}%")
 print(f"Internal Representation CKA Retention: {np.mean(diagonal_retention) * 100:.2f}%")
 """),
-
         # Cell 15: CKA vs Cosine Similarity Metrics
         create_markdown_cell(r"""## 7. Geometric Comparison: Linear CKA vs Cosine Similarity
 
@@ -1250,7 +1200,6 @@ While Cosine Similarity measures directional alignment in the ambient coordinate
 $$\text{CKA}(X Q_1, Y Q_2) = \text{CKA}(X, Y)$$
 making it the gold standard for measuring representation preservation after low-rank rotation.
 """),
-
         # Cell 16: CKA vs Cosine Similarity Code
         create_code_cell(r"""# Cell 9: CKA vs Cosine Representation Comparison Across 12 Layers
 geom_records = []
@@ -1272,7 +1221,6 @@ df_geom = pd.DataFrame(geom_records)
 print("--- Layer Representation Geometry: CKA vs Cosine Similarity ---")
 display(df_geom)
 """),
-
         # Cell 17: Rich High-DPI Visualizations
         create_markdown_cell(r"""## 8. High-Resolution Publication Visualizations (300 DPI)
 
@@ -1282,7 +1230,6 @@ We generate a 4-panel evaluation dashboard:
 - **Panel C**: CKA Layer Retention Curve across Model Depth (Student vs Teacher).
 - **Panel D**: Downstream LM Eval Harness Benchmark Scores across tasks.
 """),
-
         # Cell 16: Visualization Plotting Code
         create_code_cell(r"""# Cell 9: 4-Panel High-DPI Publication Evaluation Dashboard
 fig, axes = plt.subplots(2, 2, figsize=(15, 12), dpi=300)
@@ -1354,13 +1301,11 @@ plt.show()
 
 print(f"✅ High-resolution figures saved to:\n  - {plot_path}\n  - {paper_fig_dir / 'fig25_niah_cka_eval.png'}")
 """),
-
         # Cell 17: Formatted Summary Table
         create_markdown_cell(r"""## 8. Decoupled Evaluation Framework Master Summary Table
 
 The table below compiles long-context passkey retrieval, internal CKA representation alignment, and downstream standardized task scores:
 """),
-
         # Cell 18: Summary Table Code
         create_code_cell(r"""# Cell 10: Final Compilation of Decoupled Evaluation Metrics
 summary_records = [
@@ -1404,14 +1349,13 @@ print("🚀 NEURALOPS DECOUPLED EVALUATION FRAMEWORK BENCHMARK SUMMARY")
 print("=" * 115)
 display(df_eval_master)
 """),
-
         # Cell 19: Conclusion Markdown
         create_markdown_cell(r"""## 9. Architectural Conclusions & Evaluation Guidelines
 
 1. **Long-Context NIAH Resilience**: NeuralOps linear attention sustains **$>92\%$ passkey retrieval accuracy** across sequence lengths up to $8,192$ tokens and executes stably at $32,768$ tokens where standard quadratic softmax triggers catastrophic out-of-memory errors on 8GB GDDR6 VRAM.
 2. **Representation Alignment via CKA**: Layer-wise Centered Kernel Alignment confirms that compressed student models retain **$>0.95$ representation similarity** to full-rank teacher layers, guaranteeing that downstream semantic reasoning capabilities are preserved.
 3. **Decoupled Evaluation Integrity**: By evaluating retrieval, geometry, and downstream task accuracy independently through standardized adapters (`NeuralOpsLMEvalAdapter`), NeuralOps guarantees rigorous, leak-free empirical reproducibility for peer-reviewed publication.
-""")
+"""),
     ]
     return build_notebook(cells)
 
@@ -1420,6 +1364,7 @@ display(df_eval_master)
 # MAIN EXECUTION ENTRYPOINT
 # ==============================================================================
 def main():
+    """Execute main routine."""
     notebooks_dir = REPO_ROOT / "notebooks"
     notebooks_dir.mkdir(parents=True, exist_ok=True)
     targets = [int(a) for a in sys.argv[1:] if a.isdigit()]
@@ -1440,6 +1385,7 @@ def main():
         save_notebook(nb25, notebooks_dir / "25_long_context_niah_cka_similarity_and_eval_harness.ipynb")
 
     print("\n🎉 Generation finished!")
+
 
 if __name__ == "__main__":
     main()

@@ -12,8 +12,9 @@ from nb_gen_common import (
     create_markdown_cell,
     build_notebook,
     make_header_cell,
-    HARDWARE_CONTEXT_CELL
+    HARDWARE_CONTEXT_CELL,
 )
+
 
 def generate_notebook_18():
     """18_cross_seed_statistical_variance.ipynb"""
@@ -21,10 +22,8 @@ def generate_notebook_18():
     cells = [
         # Cell 1: Header
         make_header_cell(title),
-
         # Cell 2: Hardware Context
         HARDWARE_CONTEXT_CELL,
-
         # Cell 3: Math Formulation of Statistical Testing
         create_markdown_cell(r"""## 1. Statistical Rigor, Hypothesis Testing & Reproducibility Formulations
 
@@ -54,7 +53,6 @@ $$W = \sum_{i=1}^N \text{sgn}(d_i) \cdot R_i$$
 ### 4. Standardized Effect Size (Cohen's $d$)
 $$d = \frac{\bar{x}_1 - \bar{x}_2}{s_{\text{pooled}}}, \quad s_{\text{pooled}} = \sqrt{\frac{(N_1 - 1)s_1^2 + (N_2 - 1)s_2^2}{N_1 + N_2 - 2}}$$
 """),
-
         # Cell 4: Imports & setup
         create_code_cell(r"""# Cell 3: Environment Setup & Statistical Ingestion
 import time
@@ -76,7 +74,6 @@ plots_dir = Path("results/plots")
 plots_dir.mkdir(parents=True, exist_ok=True)
 print("Statistical Variance & Multi-Seed Certification Harness Initialized.")
 """),
-
         # Cell 5: Ingest verified multi-seed data
         create_markdown_cell(r"""## 2. Ingestion of Repository Master Multi-Seed Datasets
 
@@ -85,7 +82,6 @@ Ingesting empirical evaluations from:
 - `results/multi_seed_crossval_stress_test.json`
 - `results/STATISTICAL_SIGNIFICANCE_AND_VARIANCE_CERTIFICATE.md`
 """),
-
         # Cell 6: Code for dataset ingestion
         create_code_cell(r"""# Cell 4: Ingest Multi-Seed Benchmark Data
 cert_json_path = Path("results/statistical_cert_verified_data.json")
@@ -101,7 +97,6 @@ if stress_json_path.exists():
         stress_data = json.load(f)
     print("Loaded multi-seed crossval stress test data.")
 """),
-
         # Cell 7: Multi-Seed Benchmark Dataset Definition
         create_markdown_cell(r"""## 3. Seven-Seed Experimental Matrix Across 5 Architectures
 
@@ -112,7 +107,6 @@ Task accuracy (%) across seeds $\mathcal{S} = \{42, 100, 200, 300, 404, 777, 999
 4. HNC-SVD (50% compression)
 5. SVD-Linear Attention (Ours)
 """),
-
         # Cell 8: Code constructing seed matrix
         create_code_cell(r"""# Cell 5: 7-Seed Experimental Accuracy Matrix
 seeds = [42, 100, 200, 300, 404, 777, 999]
@@ -152,13 +146,11 @@ print("CROSS-SEED STATISTICAL VARIANCE SUMMARY (7 SEEDS: 42, 100, 200, 300, 404,
 print("=" * 115)
 print(df_stat_summary.to_markdown(index=False))
 """),
-
         # Cell 9: Figure 1 - Cross-Seed Error Bar Comparison
         create_markdown_cell(r"""## 4. Figure 1: Cross-Seed Mean and 95% Confidence Interval Error Bars
 
 Publication bar chart featuring 95% Student's $t$ confidence error intervals across the 7 seeds.
 """),
-
         # Cell 10: Code for Figure 1
         create_code_cell(r"""# Cell 6: Publication Figure 1 - 95% CI Error Bars
 fig, ax = plt.subplots(figsize=(9, 5.5), dpi=300)
@@ -203,13 +195,11 @@ fig.savefig(fig_err_pdf, bbox_inches="tight")
 plt.show()
 print(f"Saved Figure 1 to: {fig_err_png} and {fig_err_pdf}")
 """),
-
         # Cell 11: Figure 2 - Box-and-Whisker Distribution
         create_markdown_cell(r"""## 5. Figure 2: Box-and-Whisker Distribution with Individual Seed Markers
 
 Distribution of task accuracies across all 7 seeds overlaid with jittered individual seed observations.
 """),
-
         # Cell 12: Code for Figure 2
         create_code_cell(r"""# Cell 7: Publication Figure 2 - Box-and-Whisker with Jitter
 df_box_data = []
@@ -237,13 +227,11 @@ fig.savefig(fig_box_pdf, bbox_inches="tight")
 plt.show()
 print(f"Saved Figure 2 to: {fig_box_png} and {fig_box_pdf}")
 """),
-
         # Cell 13: Figure 3 - Multi-Seed Variance Error Bands
         create_markdown_cell(r"""## 6. Figure 3: Multi-Seed Training Trajectory with 95% Shaded Confidence Bands
 
 Simulated distillation loss convergence trajectory showing the mean and shaded 95% confidence intervals across all 7 seeds.
 """),
-
         # Cell 14: Code for Figure 3
         create_code_cell(r"""# Cell 8: Publication Figure 3 - Shaded 95% CI Trajectory
 epochs = np.arange(1, 21)
@@ -281,7 +269,6 @@ fig.savefig(fig_band_png, bbox_inches="tight")
 plt.show()
 print(f"Saved Figure 3 to: {fig_band_png}")
 """),
-
         # Cell 15: Figure 4 - Hypothesis Testing Heatmap
         create_markdown_cell(r"""## 7. Figure 4: Pairwise Hypothesis Testing Matrix ($p$-Value Heatmap)
 
@@ -290,7 +277,6 @@ Evaluating two-sided Welch's $t$-tests across all architecture pairs:
 - $** p < 0.01$ (Highly significant)
 - $*** p < 0.001$ (Extremely significant)
 """),
-
         # Cell 16: Code for Figure 4
         create_code_cell(r"""# Cell 9: Publication Figure 4 - P-Value Heatmap
 arch_keys = list(seed_matrix.keys())
@@ -318,13 +304,11 @@ fig.savefig(fig_p_pdf, bbox_inches="tight")
 plt.show()
 print(f"Saved Figure 4 to: {fig_p_png} and {fig_p_pdf}")
 """),
-
         # Cell 17: Cohen's d Effect Size Matrix
         create_markdown_cell(r"""## 8. Standardized Effect Sizes (Cohen's $d$)
 
 Measuring effect sizes to quantify practical significance beyond sample size artifacts.
 """),
-
         # Cell 18: Code computing Cohen's d
         create_code_cell(r"""# Cell 10: Cohen's d Effect Size Table
 cohen_records = []
@@ -347,13 +331,11 @@ for i in range(n_arch):
 df_cohen = pd.DataFrame(cohen_records)
 print(df_cohen.to_markdown(index=False))
 """),
-
         # Cell 19: Numerical Stability & NaN Audit
         create_markdown_cell(r"""## 9. Numerical Stability & Zero-Divergence Audit
 
 Auditing logit outputs on RTX 4070 to certify zero `NaN`, `Inf`, or catastrophic gradient explosions.
 """),
-
         # Cell 20: Code auditing numerical stability
         create_code_cell(r"""# Cell 11: GPU Zero-Divergence Audit across Seeds
 divergence_pass = True
@@ -366,25 +348,21 @@ for s in seeds:
 print(f"ZERO-DIVERGENCE AUDIT ACROSS ALL 7 SEEDS: {divergence_pass}")
 print("Verified 100% numerical stability with zero NaN or floating-point overflow.")
 """),
-
         # Cell 21: Cross-Seed Latency Jitter
         create_markdown_cell(r"""## 10. Hardware Latency Jitter Evaluation
 
 Evaluating execution latency variance across seeds to rule out hardware throttling.
 """),
-
         # Cell 22: Code measuring latency jitter
         create_code_cell(r"""# Cell 12: Latency Jitter Audit
 lat_jitter = [4.12, 4.14, 4.11, 4.13, 4.12, 4.15, 4.12]
 print(f"Latency Mean: {np.mean(lat_jitter):.3f} ms | Std: {np.std(lat_jitter, ddof=1):.4f} ms | Jitter CV: {np.std(lat_jitter, ddof=1)/np.mean(lat_jitter)*100:.2f}%")
 """),
-
         # Cell 23: Statistical Certificate Text Ingestion
         create_markdown_cell(r"""## 11. Statistical Certificate Verification
 
 Verifying against `results/STATISTICAL_SIGNIFICANCE_AND_VARIANCE_CERTIFICATE.md`.
 """),
-
         # Cell 24: Code displaying certificate
         create_code_cell(r"""# Cell 13: Read Certificate Summary
 cert_md_path = Path("results/STATISTICAL_SIGNIFICANCE_AND_VARIANCE_CERTIFICATE.md")
@@ -395,14 +373,13 @@ if cert_md_path.exists():
     print("-" * 65)
     print(cert_text[:500] + "...\n[Full certificate validated]")
 """),
-
         # Cell 25: Conclusions
         create_markdown_cell(r"""## 12. Statistical Variance Conclusions
 
 1. **Near-Zero Variance**: SVD-Linear Attention exhibits a tiny standard deviation ($\sigma = 0.089\%$) and coefficient of variation ($CV = 0.097\%$), confirming exceptional reproducibility.
 2. **Statistical Parity with Full Softmax**: Welch's $t$-test between SVD-Linear Attention and Standard Softmax baseline shows an overlapping confidence interval ($92.14\% \pm 0.08\%$ vs $92.37\% \pm 0.07\%$), capturing **$99.75\%$** of teacher capability.
 3. **Catastrophic Direct SVD Deficit**: Direct SVD suffers a massive, statistically significant deficit of $-6.25\%$ ($p < 0.0001$, Cohen's $d = 28.5$), proving that activation-aware whitening and nullspace compensation are mathematically mandatory.
-""")
+"""),
     ]
     return build_notebook(cells)
 
@@ -413,10 +390,8 @@ def generate_notebook_19():
     cells = [
         # Cell 1: Header
         make_header_cell(title),
-
         # Cell 2: Hardware Context
         HARDWARE_CONTEXT_CELL,
-
         # Cell 3: Math Formulation of LaTeX Tables & Multi-Objective Pareto
         create_markdown_cell(r"""## 1. Automated Publication Artifacts & Multi-Objective Pareto Formulation
 
@@ -434,7 +409,6 @@ The pipeline ingests `results/MASTER_RESULTS_MATRIX.csv` (629 rows, 16 empirical
 - Formatted numerical values with consistent decimal rounding.
 - Automated generation of standalone `.tex` files in `paper/tables/`.
 """),
-
         # Cell 4: Imports & setup
         create_code_cell(r"""# Cell 3: Environment Setup & Target Paths
 import os
@@ -457,13 +431,11 @@ paper_tables_dir.mkdir(parents=True, exist_ok=True)
 
 print("Publication Artifacts Generation Engine Ready.")
 """),
-
         # Cell 5: Ingest MASTER_RESULTS_MATRIX.csv
         create_markdown_cell(r"""## 2. Ingestion of `results/MASTER_RESULTS_MATRIX.csv` (629 Rows, 16 Columns)
 
 Ingesting and inspecting the master results matrix.
 """),
-
         # Cell 6: Code ingesting master results matrix
         create_code_cell(r"""# Cell 4: Ingest MASTER_RESULTS_MATRIX.csv
 matrix_path = Path("results/MASTER_RESULTS_MATRIX.csv")
@@ -475,13 +447,11 @@ print("Columns Available:")
 for i, col in enumerate(df_master.columns):
     print(f"  {i+1:2d}. {col}")
 """),
-
         # Cell 7: Ingest SQLite Master Ledger
         create_markdown_cell(r"""## 3. Ingestion of SQLite Master Ledger (`results/registry/master_ledger.sqlite`)
 
 Cross-referencing against the 2,543 records in the master SQLite ledger.
 """),
-
         # Cell 8: Code querying SQLite
         create_code_cell(r"""# Cell 5: Query Master SQLite Ledger
 sqlite_path = Path("results/registry/master_ledger.sqlite")
@@ -492,13 +462,11 @@ if sqlite_path.exists():
     total_ledger_rows = cur.fetchone()[0]
     print(f"Connected to Master SQLite Ledger: {total_ledger_rows} verified benchmark records.")
 """),
-
         # Cell 9: Generate LaTeX Table 1 - Master Attention & Compressor Leaderboard
         create_markdown_cell(r"""## 4. Automated Generation of LaTeX Table 1: Master Attention & Compressor Leaderboard
 
 Generating publication-grade LaTeX booktabs table for paper submission.
 """),
-
         # Cell 10: Code generating LaTeX Table 1
         create_code_cell(r"""# Cell 6: Synthesize LaTeX Table 1 (Master Leaderboard)
 latex_table_1_path = paper_tables_dir / "master_results_leaderboard.tex"
@@ -554,13 +522,11 @@ with open(latex_table_1_path, "w") as f:
 
 print(f"Generated standalone LaTeX Table 1 at: {latex_table_1_path}")
 """),
-
         # Cell 11: Display Rendered LaTeX Table 1 Preview
         create_markdown_cell(r"""## 5. Preview of Generated LaTeX Table 1
 
 Markdown rendering of the generated LaTeX table.
 """),
-
         # Cell 12: Code displaying preview
         create_code_cell(r"""# Cell 7: Preview Table 1
 df_t1 = pd.DataFrame(leaderboard_rows, columns=[
@@ -568,13 +534,11 @@ df_t1 = pd.DataFrame(leaderboard_rows, columns=[
 ])
 print(df_t1.to_markdown(index=False))
 """),
-
         # Cell 13: Generate LaTeX Table 2 - High-ROI Flagship Triton Kernels
         create_markdown_cell(r"""## 6. Automated Generation of LaTeX Table 2: High-ROI Flagship Triton Kernels
 
 Generating standalone table `paper/tables/triton_flagship_kernels.tex`.
 """),
-
         # Cell 14: Code generating LaTeX Table 2
         create_code_cell(r"""# Cell 8: Synthesize LaTeX Table 2 (Flagship Triton Kernels)
 latex_table_2_path = paper_tables_dir / "triton_flagship_kernels.tex"
@@ -619,13 +583,11 @@ with open(latex_table_2_path, "w") as f:
 
 print(f"Generated standalone LaTeX Table 2 at: {latex_table_2_path}")
 """),
-
         # Cell 15: Generate LaTeX Table 3 - Cross-Seed Robustness
         create_markdown_cell(r"""## 7. Automated Generation of LaTeX Table 3: Cross-Seed Statistical Significance
 
 Generating standalone table `paper/tables/statistical_significance.tex`.
 """),
-
         # Cell 16: Code generating LaTeX Table 3
         create_code_cell(r"""# Cell 9: Synthesize LaTeX Table 3 (Statistical Robustness)
 latex_table_3_path = paper_tables_dir / "statistical_significance.tex"
@@ -655,13 +617,11 @@ with open(latex_table_3_path, "w") as f:
 
 print(f"Generated standalone LaTeX Table 3 at: {latex_table_3_path}")
 """),
-
         # Cell 17: Publication Figure 1 - Master Multi-Panel Pareto Frontier
         create_markdown_cell(r"""## 8. Publication Figure 1: Master Multi-Panel Pareto Frontier (Acc vs Comp, Acc vs VRAM, Acc vs Throughput)
 
 Comprehensive 3-panel publication figure formatted for ICLR/NeurIPS submission.
 """),
-
         # Cell 18: Code for Publication Figure 1
         create_code_cell(r"""# Cell 10: Publication Figure 1 - 3-Panel Master Pareto
 fig, axes = plt.subplots(1, 3, figsize=(16, 5), dpi=300)
@@ -702,13 +662,11 @@ fig.savefig(fig_master_pdf, bbox_inches="tight")
 plt.show()
 print(f"Saved Publication Figure 1 to: {fig_master_png} and {fig_master_pdf}")
 """),
-
         # Cell 19: Publication Figure 2 - 3-Level Latency Waterfall
         create_markdown_cell(r"""## 9. Publication Figure 2: The Three-Level Latency Waterfall
 
 Waterfall chart comparing cumulative execution latency across Level 3 (PyTorch), Level 2 (Triton JIT), and Level 1 (CUDA C++).
 """),
-
         # Cell 20: Code for Publication Figure 2
         create_code_cell(r"""# Cell 11: Publication Figure 2 - 3-Level Waterfall
 fig, ax = plt.subplots(figsize=(9, 5), dpi=300)
@@ -735,13 +693,11 @@ fig.savefig(fig_water_pdf, bbox_inches="tight")
 plt.show()
 print(f"Saved Publication Figure 2 to: {fig_water_png} and {fig_water_pdf}")
 """),
-
         # Cell 21: Publication Figure 3 - Master Sequence Scaling
         create_markdown_cell(r"""## 10. Publication Figure 3: Sequence Length Scaling from $T=512$ to $32,768$
 
 Ingesting sequence length scaling records and rendering publication vector diagram.
 """),
-
         # Cell 22: Code for Publication Figure 3
         create_code_cell(r"""# Cell 12: Publication Figure 3 - Master Sequence Scaling
 t_vals = [512, 1024, 2048, 4096, 8192, 16384, 32768]
@@ -771,13 +727,11 @@ fig.savefig(fig_seq_pub_pdf, bbox_inches="tight")
 plt.show()
 print(f"Saved Publication Figure 3 to: {fig_seq_pub_png} and {fig_seq_pub_pdf}")
 """),
-
         # Cell 23: Inventory Synchronization
         create_markdown_cell(r"""## 11. Artifact Inventory & LaTeX Synchronization Audit
 
 Auditing all generated LaTeX tables in `paper/tables/` and publication figures in `results/plots/` and `paper/figures/`.
 """),
-
         # Cell 24: Code for inventory audit
         create_code_cell(r"""# Cell 13: Audit Generated Artifacts
 print("=" * 80)
@@ -792,13 +746,12 @@ print("\n[Publication Figures Generated in results/plots/]:")
 for f in sorted(plots_dir.glob("19_*")):
     print(f"  - {f.name:35s} ({f.stat().st_size:,} bytes)")
 """),
-
         # Cell 25: Conclusions
         create_markdown_cell(r"""## 12. Publication Generation Synthesis
 
 1. **Automated Reproducibility**: Generated standalone LaTeX tables (`master_results_leaderboard.tex`, `triton_flagship_kernels.tex`, `statistical_significance.tex`) ready for direct inclusion via `\input{...}` in ICLR 2027 and NeurIPS 2026 LaTeX sources.
 2. **High-DPI Vector Graphics**: Exported high-resolution `.pdf` vector graphics and 300 DPI `.png` diagrams synchronized across `results/plots/` and `paper/figures/`.
 3. **Provable Integrity**: Every metric and figure traces directly back to empirical telemetry verified on the NVIDIA GeForce RTX 4070 Laptop GPU.
-""")
+"""),
     ]
     return build_notebook(cells)

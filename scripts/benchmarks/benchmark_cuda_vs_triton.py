@@ -10,14 +10,16 @@ Usage:
 
 import argparse
 import json
-import time
 from pathlib import Path
 import torch
 
 from neuralops.core.cuda_kernels.paged_attention import paged_attention, paged_attention_pytorch_reference
 from neuralops.core.cuda_kernels.selective_scan import selective_scan, selective_scan_pytorch_ref
 from neuralops.core.cuda_kernels.quantized_gemm import (
-    w4a16_gemm, w4a16_gemm_pytorch_ref, fp8_gemm, fp8_gemm_pytorch_ref
+    w4a16_gemm,
+    w4a16_gemm_pytorch_ref,
+    fp8_gemm,
+    fp8_gemm_pytorch_ref,
 )
 from neuralops.core.cuda_kernels.flash_gqa import flash_gqa, flash_gqa_pytorch_ref
 from neuralops.core.cuda_kernels.moe_routing import moe_dispatch_gather
@@ -27,6 +29,7 @@ from neuralops.core.cuda_kernels.paged_kv_cache import copy_blocks_cow, copy_blo
 
 
 def _benchmark_fn(fn, args, iters=50, warmup=10):
+    """Execute benchmark fn routine."""
     for _ in range(warmup):
         fn(*args)
     torch.cuda.synchronize()
@@ -44,6 +47,7 @@ def _benchmark_fn(fn, args, iters=50, warmup=10):
 
 
 def benchmark_all():
+    """Execute benchmark all routine."""
     device = "cuda" if torch.cuda.is_available() else "cpu"
     results = {}
 
@@ -124,15 +128,21 @@ def benchmark_all():
     print("Benchmarking 5: MoE Routing...")
     tokens = torch.randn(256, 128, device=device)
     gate_logits = torch.randn(256, 8, device=device)
-    def dummy_expert(x): return x * 1.5
+
+    def dummy_expert(x):
+        """Execute dummy expert routine."""
+        return x * 1.5
 
     t_cuda = _benchmark_fn(moe_dispatch_gather, (tokens, gate_logits, dummy_expert, 2))
+
     def py_moe(t, g):
+        """Execute py moe routine."""
         topk_vals, topk_idx = torch.topk(g, k=2, dim=-1)
         w = torch.softmax(topk_vals, dim=-1)
         disp = t.repeat_interleave(2, dim=0)
         exp_out = dummy_expert(disp)
         return (exp_out.view(256, 2, 128) * w.unsqueeze(-1)).sum(dim=1)
+
     t_ref = _benchmark_fn(py_moe, (tokens, gate_logits))
     results["moe_routing"] = {
         "cuda_ms": round(t_cuda, 3),

@@ -8,7 +8,6 @@ Properly initializes modules with GPT2Config and standard model structure.
 
 import os
 import sys
-import time
 
 # Ensure offline operation so diagnostics run without network delays or hangs
 os.environ.setdefault("HF_HUB_OFFLINE", "1")
@@ -17,7 +16,6 @@ os.environ.setdefault("HF_DATASETS_OFFLINE", "1")
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from transformers import GPT2Config
 
 from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
@@ -81,7 +79,7 @@ for idx, name in enumerate(attn_keys):
         except TypeError:
             try:
                 out = mod(hidden_states=x)
-            except Exception as e:
+            except Exception:
                 out = mod(x, x, x)
 
         if isinstance(out, (tuple, list)):
@@ -141,14 +139,19 @@ print(f"\n--- Testing {len(comp_keys)} Model Compression Engines ---")
 comp_passed = []
 comp_failed = []
 
+
 class DummyContainer(nn.Module):
+    """Dummycontainer definition."""
     def __init__(self):
+        """Execute init routine."""
         super().__init__()
         self.fc1 = nn.Linear(64, 64)
         self.fc2 = nn.Linear(64, 64)
 
     def forward(self, x):
+        """Execute forward routine."""
         return self.fc2(self.fc1(x))
+
 
 for idx, name in enumerate(comp_keys):
     cls = COMPRESSOR_REGISTRY.get(name)
@@ -159,7 +162,7 @@ for idx, name in enumerate(comp_keys):
     try:
         model = DummyContainer().to(device)
         linear_layer = model.fc1
-        
+
         # Check if cls is a factory function or class
         res = None
         # Attempt 1: factory function call (returns compressed model directly)

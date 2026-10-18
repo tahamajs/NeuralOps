@@ -3,12 +3,9 @@
 
 import inspect
 import json
-import os
-import sys
 from pathlib import Path
 
 from neuralops.attentions import ATTENTION_REGISTRY
-from neuralops.core.registry import ATTENTION_REGISTRY as CORE_ATTN_REGISTRY
 
 # Load authentic benchmark numbers
 bench_json_path = Path("results/triton_48_modules_benchmark.json")
@@ -26,25 +23,61 @@ for entry in bench_data:
 
 MODULE_KEYS = [
     # Sparse / Compressed Attention (5)
-    "adaptive_sparse_attention", "moba_attention", "xattention", "nsa_attention", "reap_moe",
+    "adaptive_sparse_attention",
+    "moba_attention",
+    "xattention",
+    "nsa_attention",
+    "reap_moe",
     # Modern GQA / ALiBi / Conv (4)
-    "alibi", "dynamic_conv_attention", "mla_attention", "mqa",
+    "alibi",
+    "dynamic_conv_attention",
+    "mla_attention",
+    "mqa",
     # Linear / Cosformer (3)
-    "cosformer", "cosformer_attention", "triton_cosformer",
+    "cosformer",
+    "cosformer_attention",
+    "triton_cosformer",
     # Gated & Recurrent Linear Attention (7)
-    "decay_linear_attention", "decay_linear_attn", "gated_linear_attention", "gated_linear_attn",
-    "gated_delta_net", "hgrn2_gated_layer", "kda_attention",
+    "decay_linear_attention",
+    "decay_linear_attn",
+    "gated_linear_attention",
+    "gated_linear_attn",
+    "gated_delta_net",
+    "hgrn2_gated_layer",
+    "kda_attention",
     # Kernel & Spectral Attention (9)
-    "linformer_attention", "performer_attention", "chela_slay", "chela_slay_attention",
-    "galerkin_attention", "gla_attention", "nystrom_attention", "rala_attention", "spectraformer_attention",
+    "linformer_attention",
+    "performer_attention",
+    "chela_slay",
+    "chela_slay_attention",
+    "galerkin_attention",
+    "gla_attention",
+    "nystrom_attention",
+    "rala_attention",
+    "spectraformer_attention",
     # Quantized / Span / Sink (4)
-    "spectron", "spectron_fp8", "adaptive_span_attention", "sink_attention",
+    "spectron",
+    "spectron_fp8",
+    "adaptive_span_attention",
+    "sink_attention",
     # SSM & Hybrid (6)
-    "mamba", "mamba_block", "selective_ssm", "selective_mamba", "jamba", "vspec",
+    "mamba",
+    "mamba_block",
+    "selective_ssm",
+    "selective_mamba",
+    "jamba",
+    "vspec",
     # SVD & Factorized Attention (10)
-    "svd_linear_attention", "svd_linear_decay", "triton_svd_linear_attention", "asvd_attention",
-    "factorised_matrix_state", "fused_svd_kernel_attention", "projection_factorized_attn",
-    "svd_llm_v2_attention", "svd_projection_attention", "svd_seq"
+    "svd_linear_attention",
+    "svd_linear_decay",
+    "triton_svd_linear_attention",
+    "asvd_attention",
+    "factorised_matrix_state",
+    "fused_svd_kernel_attention",
+    "projection_factorized_attn",
+    "svd_llm_v2_attention",
+    "svd_projection_attention",
+    "svd_seq",
 ]
 
 blueprint_lines = [
@@ -109,22 +142,24 @@ for idx, mod in enumerate(MODULE_KEYS, 1):
     else:
         src = f"# Module {mod} canonical class"
 
-    blueprint_lines.extend([
-        f"### {idx}. `{mod}`",
-        "",
-        f"- **Canonical Class**: `{cls.__module__ if cls else 'neuralops'}.{cls.__name__ if cls else mod}`",
-        f"- **Measured Performance ($B=2, D=256, H=4$)**:",
-        f"  - $T=512$: Triton `{t512} ms` vs Ref `{r512} ms` (**{sp512}x**, Peak VRAM: `{mem512} MB`)",
-        f"  - $T=2048$: Triton `{t2048} ms` vs Ref `{r2048} ms` (**{sp2048}x**, Peak VRAM: `{mem2048} MB`)",
-        f"  - **Mathematical Parity**: Forward Cosine Similarity = `{cos_fwd:.4f}`, Backward Gradient Cosine Similarity = `{cos_bwd:.4f}`",
-        "",
-        "```python",
-        src.strip(),
-        "```",
-        "",
-        "---",
-        ""
-    ])
+    blueprint_lines.extend(
+        [
+            f"### {idx}. `{mod}`",
+            "",
+            f"- **Canonical Class**: `{cls.__module__ if cls else 'neuralops'}.{cls.__name__ if cls else mod}`",
+            "- **Measured Performance ($B=2, D=256, H=4$)**:",
+            f"  - $T=512$: Triton `{t512} ms` vs Ref `{r512} ms` (**{sp512}x**, Peak VRAM: `{mem512} MB`)",
+            f"  - $T=2048$: Triton `{t2048} ms` vs Ref `{r2048} ms` (**{sp2048}x**, Peak VRAM: `{mem2048} MB`)",
+            f"  - **Mathematical Parity**: Forward Cosine Similarity = `{cos_fwd:.4f}`, Backward Gradient Cosine Similarity = `{cos_bwd:.4f}`",
+            "",
+            "```python",
+            src.strip(),
+            "```",
+            "",
+            "---",
+            "",
+        ]
+    )
 
 out_file = Path("docs/reports/FULL_48_MODULES_TRITON_IMPLEMENTATION_BLUEPRINT.md")
 with open(out_file, "w", encoding="utf-8") as f:

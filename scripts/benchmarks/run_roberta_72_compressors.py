@@ -15,8 +15,6 @@ Outputs:
   - results/v13_deep_empirical_suite/roberta_72_compressors/results.md
 """
 
-import os
-import sys
 import time
 import json
 import csv
@@ -57,18 +55,20 @@ train_metrics = finetune_classification(base_model, train_loader, epochs=1, lr=2
 eval_metrics = evaluate_classification(base_model, eval_loader, device=device_str)
 base_peak_vram = torch.cuda.max_memory_allocated() / (1024 * 1024) if device_str == "cuda" else 0.0
 
-records = [{
-    "compressor": "baseline_roberta",
-    "status": "success",
-    "accuracy": round(eval_metrics.get("accuracy", 0.0), 4),
-    "f1": round(eval_metrics.get("f1", 0.0), 4),
-    "loss": round(eval_metrics.get("loss", 0.0), 4),
-    "param_reduction_pct": 0.0,
-    "compression_ratio": 1.0,
-    "total_params": base_params,
-    "peak_vram_mb": round(base_peak_vram, 1),
-    "error": None,
-}]
+records = [
+    {
+        "compressor": "baseline_roberta",
+        "status": "success",
+        "accuracy": round(eval_metrics.get("accuracy", 0.0), 4),
+        "f1": round(eval_metrics.get("f1", 0.0), 4),
+        "loss": round(eval_metrics.get("loss", 0.0), 4),
+        "param_reduction_pct": 0.0,
+        "compression_ratio": 1.0,
+        "total_params": base_params,
+        "peak_vram_mb": round(base_peak_vram, 1),
+        "error": None,
+    }
+]
 del base_model
 torch.cuda.empty_cache()
 
@@ -101,37 +101,48 @@ for idx, comp_name in enumerate(compressor_keys, 1):
         peak_vram = torch.cuda.max_memory_allocated() / (1024 * 1024) if device_str == "cuda" else 0.0
         dur = round(time.time() - t0, 2)
 
-        records.append({
-            "compressor": comp_name,
-            "status": "success",
-            "accuracy": round(eval_m.get("accuracy", 0.0), 4),
-            "f1": round(eval_m.get("f1", 0.0), 4),
-            "loss": round(eval_m.get("loss", 0.0), 4),
-            "param_reduction_pct": reduc_pct,
-            "compression_ratio": comp_ratio,
-            "total_params": curr_params,
-            "peak_vram_mb": round(peak_vram, 1),
-            "duration_s": dur,
-            "error": None,
-        })
-        logger.info("  -> %s SUCCESS: acc=%.4f, f1=%.4f, vram=%.1f MB, time=%.1fs", comp_name, eval_m.get("accuracy", 0.0), eval_m.get("f1", 0.0), peak_vram, dur)
+        records.append(
+            {
+                "compressor": comp_name,
+                "status": "success",
+                "accuracy": round(eval_m.get("accuracy", 0.0), 4),
+                "f1": round(eval_m.get("f1", 0.0), 4),
+                "loss": round(eval_m.get("loss", 0.0), 4),
+                "param_reduction_pct": reduc_pct,
+                "compression_ratio": comp_ratio,
+                "total_params": curr_params,
+                "peak_vram_mb": round(peak_vram, 1),
+                "duration_s": dur,
+                "error": None,
+            }
+        )
+        logger.info(
+            "  -> %s SUCCESS: acc=%.4f, f1=%.4f, vram=%.1f MB, time=%.1fs",
+            comp_name,
+            eval_m.get("accuracy", 0.0),
+            eval_m.get("f1", 0.0),
+            peak_vram,
+            dur,
+        )
         del model
     except Exception as e:
         logger.warning("  -> %s FAILED: %s", comp_name, e)
         dur = round(time.time() - t0, 2)
-        records.append({
-            "compressor": comp_name,
-            "status": "failed",
-            "accuracy": None,
-            "f1": None,
-            "loss": None,
-            "param_reduction_pct": None,
-            "compression_ratio": None,
-            "total_params": None,
-            "peak_vram_mb": None,
-            "duration_s": dur,
-            "error": str(e)[:120],
-        })
+        records.append(
+            {
+                "compressor": comp_name,
+                "status": "failed",
+                "accuracy": None,
+                "f1": None,
+                "loss": None,
+                "param_reduction_pct": None,
+                "compression_ratio": None,
+                "total_params": None,
+                "peak_vram_mb": None,
+                "duration_s": dur,
+                "error": str(e)[:120],
+            }
+        )
     torch.cuda.empty_cache()
 
     # Incremental write
@@ -139,7 +150,19 @@ for idx, comp_name in enumerate(compressor_keys, 1):
         json.dump(records, f, indent=2)
 
 # Final outputs
-csv_cols = ["compressor", "status", "accuracy", "f1", "loss", "param_reduction_pct", "compression_ratio", "total_params", "peak_vram_mb", "duration_s", "error"]
+csv_cols = [
+    "compressor",
+    "status",
+    "accuracy",
+    "f1",
+    "loss",
+    "param_reduction_pct",
+    "compression_ratio",
+    "total_params",
+    "peak_vram_mb",
+    "duration_s",
+    "error",
+]
 with open(out_dir / "results.csv", "w", newline="", encoding="utf-8") as f:
     writer = csv.DictWriter(f, fieldnames=csv_cols)
     writer.writeheader()

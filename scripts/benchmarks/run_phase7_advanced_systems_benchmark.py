@@ -9,22 +9,19 @@ Benchmark for New NeuralOps v1.3.0 Subsystems:
 
 import json
 import logging
-import time
 from pathlib import Path
 
-import pandas as pd
 import torch
 import torch.nn as nn
 from transformers import GPT2Config, GPT2LMHeadModel
 
 from neuralops.core.triton_kernels.low_rank import (
-    pack_int4_weights,
     BitPackedW4A16Linear,
     BitPackedLowRankSVDLinear,
 )
 from neuralops.core.triton_kernels.elementwise import fast_hadamard_transform
-from neuralops.compression_engine.svd.hadamard_incoherent_svd import HadamardIncoherentSVDCompressor
 from neuralops.inference.speculative_decoding import SelfSpeculativeDecoder
+
 try:
     from evaluation.niah_passkey import NeedleInAHaystackEvaluator, plot_niah_heatmap
 except ImportError:
@@ -35,17 +32,24 @@ logger = logging.getLogger(__name__)
 
 
 class FastMockTokenizer:
+    """Fastmocktokenizer definition."""
     def __init__(self):
+        """Execute init routine."""
         self.pad_token_id = 0
+
     def encode(self, text, add_special_tokens=False):
+        """Execute encode routine."""
         return [abs(hash(w)) % 500 for w in text.strip().split()] or [1]
+
     def decode(self, ids):
+        """Execute decode routine."""
         if isinstance(ids, torch.Tensor):
             ids = ids.tolist()
         return " ".join([str(i) for i in ids])
 
 
 def main():
+    """Execute main routine."""
     out_dir = Path("results/v13_deep_empirical_suite")
     out_dir.mkdir(parents=True, exist_ok=True)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -61,9 +65,7 @@ def main():
 
     packed_linear = BitPackedW4A16Linear.from_linear(fp16_linear, group_size=128).to(device)
     packed_bytes = (
-        packed_linear.qweight.numel() * 1
-        + packed_linear.scales.numel() * 2
-        + packed_linear.zeros.numel() * 2
+        packed_linear.qweight.numel() * 1 + packed_linear.scales.numel() * 2 + packed_linear.zeros.numel() * 2
     )
     w4a16_ratio = fp16_bytes / packed_bytes
 
@@ -80,10 +82,10 @@ def main():
     svd_w4a16_ratio = fp16_bytes / svd_bytes
 
     results_summary["w4a16_bench"] = {
-        "fp16_weight_mb": round(fp16_bytes / (1024 ** 2), 2),
-        "w4a16_weight_mb": round(packed_bytes / (1024 ** 2), 2),
+        "fp16_weight_mb": round(fp16_bytes / (1024**2), 2),
+        "w4a16_weight_mb": round(packed_bytes / (1024**2), 2),
         "w4a16_compression_ratio": round(w4a16_ratio, 2),
-        "svd_w4a16_weight_mb": round(svd_bytes / (1024 ** 2), 2),
+        "svd_w4a16_weight_mb": round(svd_bytes / (1024**2), 2),
         "svd_w4a16_compression_ratio": round(svd_w4a16_ratio, 2),
     }
 

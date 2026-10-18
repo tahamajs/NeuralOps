@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""Run paper benchmarks module.
+
+Author: Taha Majlesi
+"""
+
 # Author: Taha Majlesi
 import logging
 import math

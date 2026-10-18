@@ -31,22 +31,25 @@ NOTEBOOK_BUILDERS = [
     ("notebooks/19_publication_figures_latex_generator.ipynb", generate_notebook_19),
 ]
 
+
 def main():
+    """Execute main routine."""
     print("=" * 80)
     print("🚀 NeuralOps Benchmark Notebooks (10-19) Generation Master")
     print("=" * 80)
-    
+
     repo_root = Path(__file__).resolve().parent.parent.parent
-    
+
     for rel_path, builder_fn in NOTEBOOK_BUILDERS:
         target_path = repo_root / rel_path
         print(f"\nBuilding: {rel_path} ...")
         nb = builder_fn()
         save_notebook(nb, target_path)
-        
+
     print("\n" + "=" * 80)
     print("✅ All 10 Benchmark Notebooks successfully generated!")
     print("=" * 80)
+
 
 if __name__ == "__main__":
     main()

@@ -15,11 +15,9 @@ Outputs:
 """
 
 import sys
-import os
 from pathlib import Path
 import csv
 import torch
-import torch.nn.functional as F
 
 # Ensure neuralops is importable
 repo_root = Path(__file__).resolve().parent.parent
@@ -40,7 +38,9 @@ from neuralops.core.cuda_kernels.cross_attention.cross_attn_autograd import (
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
+
 def benchmark_kernel(fwd_fn, bwd_fn, *args, warmup=10, iters=30):
+    """Execute benchmark kernel routine."""
     torch.cuda.synchronize()
     # Warmup
     for _ in range(warmup):
@@ -74,7 +74,9 @@ def benchmark_kernel(fwd_fn, bwd_fn, *args, warmup=10, iters=30):
 
     return fwd_time_ms, bwd_time_ms, out
 
+
 def run_benchmarks():
+    """Execute run benchmarks routine."""
     print(f"Running benchmarks on: {torch.cuda.get_device_name(0)}")
     results = []
 
@@ -119,8 +121,11 @@ def run_benchmarks():
 
         # PyTorch SDPA baseline
         def ref_sparse_fwd(q, k, v):
+            """Execute ref sparse fwd routine."""
             return block_sparse_attn_pytorch_ref(q, k, v, block_mask, block_size)
+
         def ref_bwd(out, grad):
+            """Execute ref bwd routine."""
             out.backward(grad, retain_graph=True)
 
         ref_fwd_ms, ref_bwd_ms, out_ref = benchmark_kernel(
@@ -129,6 +134,7 @@ def run_benchmarks():
 
         # CUDA Sparse Attention
         def cuda_sparse_fwd(q, k, v):
+            """Execute cuda sparse fwd routine."""
             return block_sparse_attn(q, k, v, block_mask, block_size)
 
         cuda_fwd_ms, cuda_bwd_ms, out_cuda = benchmark_kernel(
@@ -139,21 +145,25 @@ def run_benchmarks():
         speedup_fwd = ref_fwd_ms / max(cuda_fwd_ms, 1e-6)
         speedup_bwd = ref_bwd_ms / max(cuda_bwd_ms, 1e-6) if ref_bwd_ms > 0 else 1.0
 
-        results.append({
-            "kernel": "sparse_attention",
-            "batch": B,
-            "heads": H,
-            "seq_len": L,
-            "head_dim": D,
-            "ref_fwd_ms": f"{ref_fwd_ms:.3f}",
-            "cuda_fwd_ms": f"{cuda_fwd_ms:.3f}",
-            "speedup_fwd": f"{speedup_fwd:.2f}x",
-            "ref_bwd_ms": f"{ref_bwd_ms:.3f}",
-            "cuda_bwd_ms": f"{cuda_bwd_ms:.3f}",
-            "speedup_bwd": f"{speedup_bwd:.2f}x",
-            "max_diff": f"{max_diff:.2e}",
-        })
-        print(f"Sparse Attn: Ref Fwd={ref_fwd_ms:.2f}ms, CUDA Fwd={cuda_fwd_ms:.2f}ms (Speedup {speedup_fwd:.2f}x), Max Diff={max_diff:.2e}")
+        results.append(
+            {
+                "kernel": "sparse_attention",
+                "batch": B,
+                "heads": H,
+                "seq_len": L,
+                "head_dim": D,
+                "ref_fwd_ms": f"{ref_fwd_ms:.3f}",
+                "cuda_fwd_ms": f"{cuda_fwd_ms:.3f}",
+                "speedup_fwd": f"{speedup_fwd:.2f}x",
+                "ref_bwd_ms": f"{ref_bwd_ms:.3f}",
+                "cuda_bwd_ms": f"{cuda_bwd_ms:.3f}",
+                "speedup_bwd": f"{speedup_bwd:.2f}x",
+                "max_diff": f"{max_diff:.2e}",
+            }
+        )
+        print(
+            f"Sparse Attn: Ref Fwd={ref_fwd_ms:.2f}ms, CUDA Fwd={cuda_fwd_ms:.2f}ms (Speedup {speedup_fwd:.2f}x), Max Diff={max_diff:.2e}"
+        )
 
         # 2. Routing Attention
         q_rout = torch.randn(B, H, L, D, device=device, dtype=torch.float16, requires_grad=True)
@@ -164,8 +174,11 @@ def run_benchmarks():
         route_weights = torch.where(route_weights > 0.5, route_weights, torch.zeros_like(route_weights))
 
         def ref_rout_fwd(q, k, v):
+            """Execute ref rout fwd routine."""
             return routing_attention_ref(q, k, v, route_weights)
+
         def cuda_rout_fwd(q, k, v):
+            """Execute cuda rout fwd routine."""
             return routing_attention(q, k, v, route_weights)
 
         ref_fwd_ms, ref_bwd_ms, out_ref = benchmark_kernel(
@@ -179,21 +192,25 @@ def run_benchmarks():
         speedup_fwd = ref_fwd_ms / max(cuda_fwd_ms, 1e-6)
         speedup_bwd = ref_bwd_ms / max(cuda_bwd_ms, 1e-6) if ref_bwd_ms > 0 else 1.0
 
-        results.append({
-            "kernel": "routing_attention",
-            "batch": B,
-            "heads": H,
-            "seq_len": L,
-            "head_dim": D,
-            "ref_fwd_ms": f"{ref_fwd_ms:.3f}",
-            "cuda_fwd_ms": f"{cuda_fwd_ms:.3f}",
-            "speedup_fwd": f"{speedup_fwd:.2f}x",
-            "ref_bwd_ms": f"{ref_bwd_ms:.3f}",
-            "cuda_bwd_ms": f"{cuda_bwd_ms:.3f}",
-            "speedup_bwd": f"{speedup_bwd:.2f}x",
-            "max_diff": f"{max_diff:.2e}",
-        })
-        print(f"Routing Attn: Ref Fwd={ref_fwd_ms:.2f}ms, CUDA Fwd={cuda_fwd_ms:.2f}ms (Speedup {speedup_fwd:.2f}x), Max Diff={max_diff:.2e}")
+        results.append(
+            {
+                "kernel": "routing_attention",
+                "batch": B,
+                "heads": H,
+                "seq_len": L,
+                "head_dim": D,
+                "ref_fwd_ms": f"{ref_fwd_ms:.3f}",
+                "cuda_fwd_ms": f"{cuda_fwd_ms:.3f}",
+                "speedup_fwd": f"{speedup_fwd:.2f}x",
+                "ref_bwd_ms": f"{ref_bwd_ms:.3f}",
+                "cuda_bwd_ms": f"{cuda_bwd_ms:.3f}",
+                "speedup_bwd": f"{speedup_bwd:.2f}x",
+                "max_diff": f"{max_diff:.2e}",
+            }
+        )
+        print(
+            f"Routing Attn: Ref Fwd={ref_fwd_ms:.2f}ms, CUDA Fwd={cuda_fwd_ms:.2f}ms (Speedup {speedup_fwd:.2f}x), Max Diff={max_diff:.2e}"
+        )
 
         # 3. Cross Attention (L_q = L // 4, L_kv = L)
         L_q = max(32, L // 4)
@@ -203,8 +220,11 @@ def run_benchmarks():
         v_cross = torch.randn(B, H, L_kv, D, device=device, dtype=torch.float16, requires_grad=True)
 
         def ref_cross_fwd(q, k, v):
+            """Execute ref cross fwd routine."""
             return cross_attention_pytorch_ref(q, k, v)
+
         def cuda_cross_fwd(q, k, v):
+            """Execute cuda cross fwd routine."""
             return cross_attention(q, k, v)
 
         ref_fwd_ms, ref_bwd_ms, out_ref = benchmark_kernel(
@@ -218,29 +238,42 @@ def run_benchmarks():
         speedup_fwd = ref_fwd_ms / max(cuda_fwd_ms, 1e-6)
         speedup_bwd = ref_bwd_ms / max(cuda_bwd_ms, 1e-6) if ref_bwd_ms > 0 else 1.0
 
-        results.append({
-            "kernel": "cross_attention",
-            "batch": B,
-            "heads": H,
-            "seq_len": f"Q:{L_q}/KV:{L_kv}",
-            "head_dim": D,
-            "ref_fwd_ms": f"{ref_fwd_ms:.3f}",
-            "cuda_fwd_ms": f"{cuda_fwd_ms:.3f}",
-            "speedup_fwd": f"{speedup_fwd:.2f}x",
-            "ref_bwd_ms": f"{ref_bwd_ms:.3f}",
-            "cuda_bwd_ms": f"{cuda_bwd_ms:.3f}",
-            "speedup_bwd": f"{speedup_bwd:.2f}x",
-            "max_diff": f"{max_diff:.2e}",
-        })
-        print(f"Cross Attn: Ref Fwd={ref_fwd_ms:.2f}ms, CUDA Fwd={cuda_fwd_ms:.2f}ms (Speedup {speedup_fwd:.2f}x), Max Diff={max_diff:.2e}")
+        results.append(
+            {
+                "kernel": "cross_attention",
+                "batch": B,
+                "heads": H,
+                "seq_len": f"Q:{L_q}/KV:{L_kv}",
+                "head_dim": D,
+                "ref_fwd_ms": f"{ref_fwd_ms:.3f}",
+                "cuda_fwd_ms": f"{cuda_fwd_ms:.3f}",
+                "speedup_fwd": f"{speedup_fwd:.2f}x",
+                "ref_bwd_ms": f"{ref_bwd_ms:.3f}",
+                "cuda_bwd_ms": f"{cuda_bwd_ms:.3f}",
+                "speedup_bwd": f"{speedup_bwd:.2f}x",
+                "max_diff": f"{max_diff:.2e}",
+            }
+        )
+        print(
+            f"Cross Attn: Ref Fwd={ref_fwd_ms:.2f}ms, CUDA Fwd={cuda_fwd_ms:.2f}ms (Speedup {speedup_fwd:.2f}x), Max Diff={max_diff:.2e}"
+        )
 
     # Export CSV
     csv_path = repo_root / "docs" / "benchmarks" / "paper_benchmarks_attention.csv"
     csv_path.parent.mkdir(parents=True, exist_ok=True)
     fieldnames = [
-        "kernel", "batch", "heads", "seq_len", "head_dim",
-        "ref_fwd_ms", "cuda_fwd_ms", "speedup_fwd",
-        "ref_bwd_ms", "cuda_bwd_ms", "speedup_bwd", "max_diff"
+        "kernel",
+        "batch",
+        "heads",
+        "seq_len",
+        "head_dim",
+        "ref_fwd_ms",
+        "cuda_fwd_ms",
+        "speedup_fwd",
+        "ref_bwd_ms",
+        "cuda_bwd_ms",
+        "speedup_bwd",
+        "max_diff",
     ]
     with open(csv_path, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
@@ -256,20 +289,27 @@ def run_benchmarks():
         f.write("\\begin{table*}[t]\n")
         f.write("\\centering\n")
         f.write("\\small\n")
-        f.write("\\caption{Benchmarking Memory-Optimized CUDA Attention Kernels (SMEM Tiling, 128-bit Loads) vs PyTorch SDPA Reference on NVIDIA RTX 4070 GPU.}\n")
+        f.write(
+            "\\caption{Benchmarking Memory-Optimized CUDA Attention Kernels (SMEM Tiling, 128-bit Loads) vs PyTorch SDPA Reference on NVIDIA RTX 4070 GPU.}\n"
+        )
         f.write("\\label{tab:cuda_attention_benchmarks}\n")
         f.write("\\begin{tabular}{llrrrrrr}\n")
         f.write("\\toprule\n")
-        f.write("Kernel & Shape $(B, L, D)$ & PyTorch Fwd (ms) & CUDA Fwd (ms) & Fwd Speedup & PyTorch Bwd (ms) & CUDA Bwd (ms) & Bwd Speedup \\\\\n")
+        f.write(
+            "Kernel & Shape $(B, L, D)$ & PyTorch Fwd (ms) & CUDA Fwd (ms) & Fwd Speedup & PyTorch Bwd (ms) & CUDA Bwd (ms) & Bwd Speedup \\\\\n"
+        )
         f.write("\\midrule\n")
         for row in results:
             shape_str = f"({row['batch']}, {row['seq_len']}, {row['head_dim']})"
-            k_name = row['kernel'].replace('_', '\\_')
-            f.write(f"{k_name} & {shape_str} & {row['ref_fwd_ms']} & {row['cuda_fwd_ms']} & {row['speedup_fwd']} & {row['ref_bwd_ms']} & {row['cuda_bwd_ms']} & {row['speedup_bwd']} \\\\\n")
+            k_name = row["kernel"].replace("_", "\\_")
+            f.write(
+                f"{k_name} & {shape_str} & {row['ref_fwd_ms']} & {row['cuda_fwd_ms']} & {row['speedup_fwd']} & {row['ref_bwd_ms']} & {row['cuda_bwd_ms']} & {row['speedup_bwd']} \\\\\n"
+            )
         f.write("\\bottomrule\n")
         f.write("\\end{tabular}\n")
         f.write("\\end{table*}\n")
     print(f"Saved LaTeX table to {tex_path}")
+
 
 if __name__ == "__main__":
     run_benchmarks()

@@ -1,6 +1,15 @@
-import json, os, sys
+"""Merge accuracy ppl module.
+
+Author: Taha Majlesi
+"""
+
+import json
+import os
+import sys
+
 
 def merge(node_name, device_name):
+    """Execute merge routine."""
     p0 = f"results/accuracy_and_ppl_benchmark_{node_name}_part0.json"
     p1 = f"results/accuracy_and_ppl_benchmark_{node_name}_part1.json"
     if not (os.path.exists(p0) and os.path.exists(p1)):
@@ -14,7 +23,7 @@ def merge(node_name, device_name):
         "device": device_name,
         "baseline_roberta_accuracy_pct": d0.get("baseline_roberta_accuracy_pct", 95.0),
         "baseline_gpt2_ppl": d0.get("baseline_gpt2_ppl", 27.56),
-        "results": d0["results"] + d1["results"]
+        "results": d0["results"] + d1["results"],
     }
     print(f"Merged {node_name}: {len(merged['results'])} modules")
     with open(f"results/accuracy_and_ppl_benchmark_{node_name}.json", "w") as f:
@@ -34,6 +43,7 @@ def merge(node_name, device_name):
             ppl_val = f"**{r['perplexity']}**" if r["perplexity"] is not None else "N/A"
             err_val = r["error"] if r["error"] else "OK"
             f.write(f"| {i} | `{r['module']}` | {acc_val} | {ppl_val} | {r['duration_s']} | {err_val} |\n")
+
 
 if __name__ == "__main__":
     node = sys.argv[1] if len(sys.argv) > 1 else "taha"

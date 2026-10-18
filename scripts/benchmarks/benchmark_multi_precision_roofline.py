@@ -10,15 +10,13 @@ Outputs structured JSON to results/benchmarks_multi_precision_roofline.json.
 from __future__ import annotations
 
 import argparse
-import gc
-import json
 import math
-import os
 from pathlib import Path
 import sys
-import time
+
 
 def fmt_opt(val, fmt=".2f", suffix="", default="-"):
+    """Execute fmt opt routine."""
     if val is None:
         return default
     try:
@@ -29,8 +27,8 @@ def fmt_opt(val, fmt=".2f", suffix="", default="-"):
     except (ValueError, TypeError):
         return default
 
+
 import torch
-import torch.nn as nn
 
 repo_root = Path(__file__).resolve().parent.parent.parent
 if str(repo_root) not in sys.path:
@@ -42,6 +40,7 @@ from neuralops.core.registry import ATTENTION_REGISTRY, create_attention
 try:
     from rich.console import Console
     from rich.table import Table
+
     RICH_AVAILABLE = True
 except ImportError:
     RICH_AVAILABLE = False
@@ -58,6 +57,7 @@ TARGET_MECHANISMS = [
 
 
 def resolve_attention_key(key: str) -> str:
+    """Execute resolve attention key routine."""
     if key in ATTENTION_REGISTRY:
         return key
     for k in ATTENTION_REGISTRY:
@@ -67,6 +67,7 @@ def resolve_attention_key(key: str) -> str:
 
 
 def main():
+    """Execute main routine."""
     parser = argparse.ArgumentParser(description="Multi-Precision Roofline Benchmark")
     parser.add_argument("--device", type=str, default="cuda:0" if torch.cuda.is_available() else "cpu")
     parser.add_argument("--batch-size", type=int, default=2)
@@ -87,7 +88,7 @@ def main():
         ("BF16", torch.bfloat16, 2),
     ]
 
-    print(f"=== Multi-Precision Roofline & Arithmetic Intensity Benchmark ===")
+    print("=== Multi-Precision Roofline & Arithmetic Intensity Benchmark ===")
     print(f"Hardware: {hw.name} (Peak Bandwidth: {hw.peak_bandwidth_gb_s} GB/s)")
     print(f"Shapes: Batch={B}, SeqLen={T}, Dim={D}, Heads={H}\n")
 
@@ -109,9 +110,9 @@ def main():
             runner.reset_vram()
             # Calculate FLOPs & memory transactions
             if is_linear:
-                flops = 4.0 * B * T * (D ** 2)
+                flops = 4.0 * B * T * (D**2)
             else:
-                flops = 4.0 * B * (T ** 2) * D + 4.0 * B * T * (D ** 2)
+                flops = 4.0 * B * (T**2) * D + 4.0 * B * T * (D**2)
             # 2 inputs/outputs read/write
             bytes_moved = 2.0 * (B * T * D + B * T * D) * byte_per_elem
 
@@ -120,12 +121,15 @@ def main():
                 x = torch.randn(B, T, D, device=dev, dtype=dtype)
 
                 def _make_forward(target_mod, target_x):
+                    """Execute make forward routine."""
                     def run_forward():
+                        """Execute run forward routine."""
                         with torch.no_grad():
                             out = target_mod(target_x)
                             if isinstance(out, tuple):
                                 out = out[0]
                             return out
+
                     return run_forward
 
                 metric = runner.measure_callable(
@@ -150,7 +154,9 @@ def main():
                     "status": metric.status,
                     "error": metric.error,
                 }
-                print(f"    {prec_name:4s}: Latency={metric.latency_ms_trimmed_mean:6.2f} ms | TFLOPs={metric.tflops_per_sec:5.2f} | BW={metric.bandwidth_gb_s:6.1f} GB/s ({metric.bandwidth_utilization_pct:4.1f}% util) | {metric.throughput_tokens_sec:8.1f} tok/s")
+                print(
+                    f"    {prec_name:4s}: Latency={metric.latency_ms_trimmed_mean:6.2f} ms | TFLOPs={metric.tflops_per_sec:5.2f} | BW={metric.bandwidth_gb_s:6.1f} GB/s ({metric.bandwidth_utilization_pct:4.1f}% util) | {metric.throughput_tokens_sec:8.1f} tok/s"
+                )
 
             except Exception as e:
                 err = str(e)
@@ -182,11 +188,11 @@ def main():
 
         for r in results:
             p = r["precisions"]
-            fp32_ms = fmt_opt(p.get('FP32', {}).get('latency_ms'), fmt=".2f", default="-")
-            fp16_ms = fmt_opt(p.get('FP16', {}).get('latency_ms'), fmt=".2f", default="-")
-            bf16_ms = fmt_opt(p.get('BF16', {}).get('latency_ms'), fmt=".2f", default="-")
-            fp16_tf = fmt_opt(p.get('FP16', {}).get('tflops_per_sec'), fmt=".2f", default="-")
-            fp16_bw = fmt_opt(p.get('FP16', {}).get('bandwidth_util_pct'), fmt=".1f", suffix="%", default="-")
+            fp32_ms = fmt_opt(p.get("FP32", {}).get("latency_ms"), fmt=".2f", default="-")
+            fp16_ms = fmt_opt(p.get("FP16", {}).get("latency_ms"), fmt=".2f", default="-")
+            bf16_ms = fmt_opt(p.get("BF16", {}).get("latency_ms"), fmt=".2f", default="-")
+            fp16_tf = fmt_opt(p.get("FP16", {}).get("tflops_per_sec"), fmt=".2f", default="-")
+            fp16_bw = fmt_opt(p.get("FP16", {}).get("bandwidth_util_pct"), fmt=".1f", suffix="%", default="-")
             table.add_row(r["display_name"], fp32_ms, fp16_ms, bf16_ms, fp16_tf, fp16_bw)
 
         console.print(table)

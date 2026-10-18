@@ -16,15 +16,11 @@ across sequence lengths T in [512, 1024, 2048, 4096, 8192] for:
 
 import time
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print(f"Benchmarking on device: {device} ({torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU'})")
 
-import neuralops
-import neuralops.attentions
-import neuralops.attentions.gated.flagship_fla
 from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.core.triton_kernels.fused_ce import FusedLinearCrossEntropy
 from neuralops.core.triton_kernels.fused_kd import FusedLinearKLDivergence
@@ -45,7 +41,9 @@ models_to_test = [
     ("Cosformer", "cosformer"),
 ]
 
+
 def benchmark_attention(name, key, seq_len):
+    """Execute benchmark attention routine."""
     cls = ATTENTION_REGISTRY.get(key)
     if cls is None or not callable(cls):
         raise ValueError(f"Module '{key}' not found or not callable in ATTENTION_REGISTRY")
@@ -112,8 +110,11 @@ def benchmark_attention(name, key, seq_len):
 
     return fwd_time_ms, fwd_bwd_time_ms, peak_vram_mb
 
+
 print("\n" + "=" * 95, flush=True)
-print(f"{'Mechanism':<24} | {'SeqLen':<7} | {'Fwd (ms)':<10} | {'Fwd+Bwd (ms)':<14} | {'Peak VRAM (MB)':<14}", flush=True)
+print(
+    f"{'Mechanism':<24} | {'SeqLen':<7} | {'Fwd (ms)':<10} | {'Fwd+Bwd (ms)':<14} | {'Peak VRAM (MB)':<14}", flush=True
+)
 print("-" * 95, flush=True)
 
 results = []

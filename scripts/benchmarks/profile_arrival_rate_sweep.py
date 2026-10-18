@@ -1,5 +1,11 @@
+"""Profile arrival rate sweep module.
+
+Author: Taha Majlesi
+"""
+
 import sys
-sys.path.insert(0, '/mnt/d/SVD_linear_Attention')
+
+sys.path.insert(0, "/mnt/d/SVD_linear_Attention")
 import torch
 import torch.nn.functional as F
 import numpy as np
@@ -19,7 +25,7 @@ print(f"Device: {torch.cuda.get_device_name(0)}")
 # Capture P50, P90, P99, Max latency, SLA adherence (< 15 ms), aggregate QPS, Throughput (tok/s),
 # peak VRAM, and allocator fragmentation.
 
-lambda_values = [5, 10, 15, 20, 25] # ms
+lambda_values = [5, 10, 15, 20, 25]  # ms
 num_requests = 100
 min_len, max_len = 256, 4096
 chunk_budget = 4096
@@ -36,8 +42,8 @@ W_q = torch.randn(D, D, device=device, dtype=torch.float16)
 W_k = torch.randn(D, D, device=device, dtype=torch.float16)
 W_v = torch.randn(D, D, device=device, dtype=torch.float16)
 W_out = torch.randn(D, D, device=device, dtype=torch.float16)
-W_gate = torch.randn(D, 4*D, device=device, dtype=torch.float16)
-W_down = torch.randn(4*D, D, device=device, dtype=torch.float16)
+W_gate = torch.randn(D, 4 * D, device=device, dtype=torch.float16)
+W_down = torch.randn(4 * D, D, device=device, dtype=torch.float16)
 
 # Warmup CUDA
 torch.cuda.empty_cache()
@@ -52,37 +58,39 @@ for lam in lambda_values:
     req_lengths = np.random.randint(min_len, max_len + 1, size=num_requests)
     inter_arrival_ms = np.random.exponential(scale=float(lam), size=num_requests)
     arrival_times_ms = np.cumsum(inter_arrival_ms)
-    
+
     total_tokens = int(np.sum(req_lengths))
     offered_load_rps = 1000.0 / lam
-    
-    print(f"\n--- Testing Arrival Rate: Lambda={lam} ms (Offered Load: {offered_load_rps:.1f} req/s, {total_tokens:,} tokens) ---")
-    
+
+    print(
+        f"\n--- Testing Arrival Rate: Lambda={lam} ms (Offered Load: {offered_load_rps:.1f} req/s, {total_tokens:,} tokens) ---"
+    )
+
     torch.cuda.empty_cache()
     torch.cuda.reset_peak_memory_stats()
-    
+
     req_remaining = req_lengths.copy()
     req_finish_times = np.zeros(num_requests)
-    
+
     current_time_ms = 0.0
     req_idx = 0
     active_requests = []
-    
+
     # Continuous iteration-level dynamic batching execution loop
     while req_idx < num_requests or len(active_requests) > 0:
         while req_idx < num_requests and arrival_times_ms[req_idx] <= current_time_ms:
             active_requests.append(req_idx)
             req_idx += 1
-            
+
         if len(active_requests) == 0:
             current_time_ms = arrival_times_ms[req_idx]
             active_requests.append(req_idx)
             req_idx += 1
-            
+
         budget_left = chunk_budget
         step_tokens = 0
         scheduled_this_step = []
-        
+
         for r in active_requests:
             if budget_left <= 0:
                 break
@@ -91,10 +99,10 @@ for lam in lambda_values:
             budget_left -= tokens_to_take
             step_tokens += tokens_to_take
             scheduled_this_step.append((r, tokens_to_take))
-            
+
         # Execute packed forward step
         x_packed = torch.randn(step_tokens, D, device=device, dtype=torch.float16)
-        
+
         t0 = time.perf_counter()
         q = torch.matmul(x_packed, W_q).view(1, step_tokens, H, D_HEAD).transpose(1, 2)
         k = torch.matmul(x_packed, W_k).view(1, step_tokens, H, D_HEAD).transpose(1, 2)
@@ -106,9 +114,9 @@ for lam in lambda_values:
         _ = torch.matmul(mlp_h, W_down)
         torch.cuda.synchronize()
         exec_duration_ms = (time.perf_counter() - t0) * 1000.0
-        
+
         current_time_ms += exec_duration_ms
-        
+
         new_active = []
         for r in active_requests:
             if req_remaining[r] == 0:
@@ -124,50 +132,65 @@ for lam in lambda_values:
     p99 = float(np.percentile(latencies_arr, 99))
     mean_lat = float(np.mean(latencies_arr))
     max_lat = float(np.max(latencies_arr))
-    
+
     missed_deadlines = np.sum(latencies_arr > SLA_TARGET_MS)
     sla_compliance_pct = ((num_requests - missed_deadlines) / num_requests) * 100.0
-    
+
     total_time_sec = current_time_ms / 1000.0
     served_qps = num_requests / total_time_sec
     throughput_tps = total_tokens / total_time_sec
     peak_vram_mb = torch.cuda.max_memory_allocated() / (1024**2)
-    allocator_frag_pct = 1.34 # stable PyTorch allocator internal fragmentation
-    
+    allocator_frag_pct = 1.34  # stable PyTorch allocator internal fragmentation
+
     meets_sla = p99 < SLA_TARGET_MS
     sla_status = "CERTIFIED (<15ms)" if meets_sla else "DEGRADED"
-    
+
     print(f"Results for Lambda={lam} ms:")
     print(f"  P50: {p50:.2f} ms | P90: {p90:.2f} ms | P99: {p99:.2f} ms | Max: {max_lat:.2f} ms")
     print(f"  SLA Compliance (<15ms): {sla_compliance_pct:.1f}% ({sla_status})")
-    print(f"  Served QPS: {served_qps:.1f} req/s | Throughput: {throughput_tps:,.0f} tok/s | Peak VRAM: {peak_vram_mb:.1f} MB")
-    
-    results.append({
-        "Lambda_ms": lam,
-        "Offered_Load_RPS": round(offered_load_rps, 1),
-        "Total_Tokens": total_tokens,
-        "Mean_Latency_ms": round(mean_lat, 2),
-        "P50_ms": round(p50, 2),
-        "P90_ms": round(p90, 2),
-        "P95_ms": round(p95, 2),
-        "P99_ms": round(p99, 2),
-        "Max_Latency_ms": round(max_lat, 2),
-        "SLA_Compliance_pct": round(sla_compliance_pct, 1),
-        "Served_QPS": round(served_qps, 1),
-        "Throughput_tok_per_sec": round(throughput_tps, 1),
-        "Peak_VRAM_MB": round(peak_vram_mb, 2),
-        "Allocator_Frag_pct": allocator_frag_pct,
-        "Status": sla_status
-    })
+    print(
+        f"  Served QPS: {served_qps:.1f} req/s | Throughput: {throughput_tps:,.0f} tok/s | Peak VRAM: {peak_vram_mb:.1f} MB"
+    )
+
+    results.append(
+        {
+            "Lambda_ms": lam,
+            "Offered_Load_RPS": round(offered_load_rps, 1),
+            "Total_Tokens": total_tokens,
+            "Mean_Latency_ms": round(mean_lat, 2),
+            "P50_ms": round(p50, 2),
+            "P90_ms": round(p90, 2),
+            "P95_ms": round(p95, 2),
+            "P99_ms": round(p99, 2),
+            "Max_Latency_ms": round(max_lat, 2),
+            "SLA_Compliance_pct": round(sla_compliance_pct, 1),
+            "Served_QPS": round(served_qps, 1),
+            "Throughput_tok_per_sec": round(throughput_tps, 1),
+            "Peak_VRAM_MB": round(peak_vram_mb, 2),
+            "Allocator_Frag_pct": allocator_frag_pct,
+            "Status": sla_status,
+        }
+    )
 
 # Export to CSV
 csv_path = "/mnt/d/SVD_linear_Attention/docs/benchmarks/paper_benchmarks_arrival_rate_sweep.csv"
 os.makedirs(os.path.dirname(csv_path), exist_ok=True)
 fieldnames = [
-    "Lambda_ms", "Offered_Load_RPS", "Total_Tokens", "Mean_Latency_ms",
-    "P50_ms", "P90_ms", "P95_ms", "P99_ms", "Max_Latency_ms",
-    "SLA_Compliance_pct", "Served_QPS", "Throughput_tok_per_sec",
-    "Peak_VRAM_MB", "Allocator_Frag_pct", "Status"
+    "Lambda_ms",
+    "Offered_Load_RPS",
+    "Total_Tokens",
+    "Mean_Latency_ms",
+    "P50_ms",
+    "P90_ms",
+    "P95_ms",
+    "P99_ms",
+    "Max_Latency_ms",
+    "SLA_Compliance_pct",
+    "Served_QPS",
+    "Throughput_tok_per_sec",
+    "Peak_VRAM_MB",
+    "Allocator_Frag_pct",
+    "Status",
 ]
 
 with open(csv_path, mode="w", newline="") as f:

@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import gc
 import json
-import os
 import sys
 import time
 from pathlib import Path
@@ -24,11 +23,12 @@ if str(repo_root) not in sys.path:
 
 
 def main():
+    """Execute main routine."""
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    print(f"================================================================================")
-    print(f"PHASE 2: DIRECT SWEEP OF ALL NATIVE CUDA C++ KERNEL MODULES")
+    print("================================================================================")
+    print("PHASE 2: DIRECT SWEEP OF ALL NATIVE CUDA C++ KERNEL MODULES")
     print(f"Device: {device} ({torch.cuda.get_device_name(0)})")
-    print(f"================================================================================\n")
+    print("================================================================================\n")
 
     cuda_dir = repo_root / "neuralops" / "core" / "cuda_kernels"
     subdirs = sorted([d for d in cuda_dir.iterdir() if d.is_dir() and not d.name.startswith(("_", "."))])
@@ -59,6 +59,7 @@ def main():
             loaded_mod = None
             if py_files:
                 import importlib.util
+
                 spec = importlib.util.spec_from_file_location(f"dyn_{mod_name}", py_files[0])
                 if spec and spec.loader:
                     py_mod = importlib.util.module_from_spec(spec)
@@ -69,12 +70,13 @@ def main():
                         res_entry["compile_ms"] = round((time.perf_counter() - t_comp0) * 1000.0, 2)
                     elif hasattr(py_mod, "_get_module"):
                         t_comp0 = time.perf_counter()
-                        loaded_mod = getattr(py_mod, "_get_module")()
+                        loaded_mod = py_mod._get_module()
                         res_entry["compile_ms"] = round((time.perf_counter() - t_comp0) * 1000.0, 2)
 
             if loaded_mod is None:
                 # Try generic load via public cuda_kernels export
                 from neuralops.core.cuda_kernels import load_cuda_module
+
                 binding_files = list(d.glob("*binding*.cpp"))
                 if binding_files and cu_files:
                     cpp_src = binding_files[0].read_text(encoding="utf-8")
@@ -86,7 +88,7 @@ def main():
             if loaded_mod is None:
                 res_entry["status"] = "LOAD_FAILED"
                 res_entry["error"] = "Could not locate or compile C++ extension"
-                print(f"FAILED (No module loaded)")
+                print("FAILED (No module loaded)")
                 results.append(res_entry)
                 continue
 
@@ -96,7 +98,9 @@ def main():
             res_entry["exported_functions"] = exported_fns
 
             # Report success
-            print(f"PASS (Loaded {len(exported_fns)} functions in {res_entry['compile_ms']:.1f}ms: {', '.join(exported_fns[:3])})")
+            print(
+                f"PASS (Loaded {len(exported_fns)} functions in {res_entry['compile_ms']:.1f}ms: {', '.join(exported_fns[:3])})"
+            )
             results.append(res_entry)
 
         except Exception as e:
@@ -116,10 +120,10 @@ def main():
 
     passed = sum(1 for r in results if r["status"] == "COMPILED")
     failed = len(results) - passed
-    print(f"\n================================================================================")
+    print("\n================================================================================")
     print(f"PHASE 2 COMPILATION SWEEP SUMMARY: {passed}/{len(results)} PASSED ({failed} FAILED)")
     print(f"Saved results to {out_json}")
-    print(f"================================================================================\n")
+    print("================================================================================\n")
 
 
 if __name__ == "__main__":

@@ -4,6 +4,7 @@
 
 Delegates directly to canonical neuralops.benchmarks.benchmark_all_26_comprehensive.
 """
+
 import sys
 from neuralops.benchmarks.benchmark_all_26_comprehensive import *
 from neuralops.benchmarks.benchmark_all_26_comprehensive import main

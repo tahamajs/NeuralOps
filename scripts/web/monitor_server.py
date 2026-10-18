@@ -23,6 +23,7 @@ from neuralops.runners.monitor.server import ComprehensiveStudioHandler, run_ser
 
 
 def parse_args() -> argparse.Namespace:
+    """Execute parse args routine."""
     parser = argparse.ArgumentParser(description="NeuralOps Telemetry & Web Dashboard Server")
     parser.add_argument("--port", type=int, default=8080, help="Server port (default: 8080)")
     parser.add_argument("--host", type=str, default="0.0.0.0", help="Binding host (default: 0.0.0.0)")
@@ -51,6 +52,7 @@ def daemonize() -> None:
 
 
 def main() -> None:
+    """Execute main routine."""
     args = parse_args()
     if args.daemon:
         daemonize()

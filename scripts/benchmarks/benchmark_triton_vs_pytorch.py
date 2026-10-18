@@ -1,12 +1,15 @@
+"""Benchmark triton vs pytorch module.
+
+Author: Taha Majlesi
+"""
+
 import time
 import torch
 
 from neuralops.attentions.hybrid.positive_kernel_linear_attention import (
     PositiveKernelLinearAttention,
 )
-from neuralops.attentions.modern.alibi import ALiBiAttention
 import neuralops.core.triton_kernels as tk
-import neuralops.core.triton_kernels.elementwise as elem
 from neuralops.core.triton_kernels.elementwise import (
     fused_alibi_bias_pytorch,
     fused_alibi_bias_triton,
@@ -28,6 +31,7 @@ print("=" * 80 + "\n")
 
 
 def time_fn(fn, warmups=10, iters=50):
+    """Execute time fn routine."""
     for _ in range(warmups):
         fn()
     torch.cuda.synchronize()
@@ -83,9 +87,7 @@ results.append(("Selective Scan (Mamba SSM)", t_pt, t_tri, speedup, diff))
 
 # --- 3. Positive Kernel Linear Attention ---
 print("\n--- 3. Positive Kernel Linear Attention (B=4, L=512, D=256, H=8, FP16) ---")
-pk_attn = PositiveKernelLinearAttention(hidden_size=256, num_heads=8).to(
-    device=device, dtype=torch.float16
-)
+pk_attn = PositiveKernelLinearAttention(hidden_size=256, num_heads=8).to(device=device, dtype=torch.float16)
 x_pk = torch.randn(4, 512, 256, device=device, dtype=torch.float16)
 
 # Time Triton
@@ -97,6 +99,7 @@ orig_td = tk.triton_dispatch
 
 
 def mock_td(*args, **kwargs):
+    """Execute mock td routine."""
     raise RuntimeError("Triton disabled")
 
 
@@ -121,22 +124,10 @@ v_sp = torch.randn(4, 8, 512, 64, device=device, dtype=torch.float16)
 n_blocks = 512 // 64
 b_mask = torch.tril(torch.ones((n_blocks, n_blocks), device=device, dtype=torch.int32))
 
-t_pt = time_fn(
-    lambda: sparse_attn_pytorch_fallback(
-        q_sp, k_sp, v_sp, block_mask=b_mask, block_size=64, is_causal=True
-    )
-)
-t_tri = time_fn(
-    lambda: sparse_attn_mod.fwd(
-        q_sp, k_sp, v_sp, block_mask=b_mask, block_size=64, is_causal=True
-    )
-)
-out_pt = sparse_attn_pytorch_fallback(
-    q_sp, k_sp, v_sp, block_mask=b_mask, block_size=64, is_causal=True
-)
-out_tri = sparse_attn_mod.fwd(
-    q_sp, k_sp, v_sp, block_mask=b_mask, block_size=64, is_causal=True
-)
+t_pt = time_fn(lambda: sparse_attn_pytorch_fallback(q_sp, k_sp, v_sp, block_mask=b_mask, block_size=64, is_causal=True))
+t_tri = time_fn(lambda: sparse_attn_mod.fwd(q_sp, k_sp, v_sp, block_mask=b_mask, block_size=64, is_causal=True))
+out_pt = sparse_attn_pytorch_fallback(q_sp, k_sp, v_sp, block_mask=b_mask, block_size=64, is_causal=True)
+out_tri = sparse_attn_mod.fwd(q_sp, k_sp, v_sp, block_mask=b_mask, block_size=64, is_causal=True)
 diff = (out_pt - out_tri).abs().max().item()
 speedup = t_pt / t_tri
 print(f"PyTorch Latency : {t_pt:.3f} ms")

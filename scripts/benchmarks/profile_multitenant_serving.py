@@ -1,3 +1,8 @@
+"""Profile multitenant serving module.
+
+Author: Taha Majlesi
+"""
+
 import os
 import sys
 import gc
@@ -11,15 +16,19 @@ from neuralops.core.cuda_kernels.flash_gqa.flash_gqa_autograd import flash_gqa
 from neuralops.core.cuda_kernels.selective_scan import selective_scan
 from neuralops.core.cuda_kernels.low_rank_svd import fused_lowrank_gated_gemm
 
+
 def get_cuda_mem():
+    """Execute get cuda mem routine."""
     return {
-        "allocated_mb": round(torch.cuda.memory_allocated() / (1024 ** 2), 4),
-        "max_allocated_mb": round(torch.cuda.max_memory_allocated() / (1024 ** 2), 4),
-        "reserved_mb": round(torch.cuda.memory_reserved() / (1024 ** 2), 4),
-        "max_reserved_mb": round(torch.cuda.max_memory_reserved() / (1024 ** 2), 4),
+        "allocated_mb": round(torch.cuda.memory_allocated() / (1024**2), 4),
+        "max_allocated_mb": round(torch.cuda.max_memory_allocated() / (1024**2), 4),
+        "reserved_mb": round(torch.cuda.memory_reserved() / (1024**2), 4),
+        "max_reserved_mb": round(torch.cuda.max_memory_reserved() / (1024**2), 4),
     }
 
+
 def main():
+    """Execute main routine."""
     print("=== MULTI-TENANT 4-STREAM INFERENCE SERVING & CONTEXT SWITCHING PROFILE ===")
     device = torch.device("cuda:0")
     device_name = torch.cuda.get_device_name(0)
@@ -35,7 +44,7 @@ def main():
 
     # Shared Base Weights Resident in Memory (e.g. 2 GB model weights)
     print("Allocating resident model weights (2.0 GB)...")
-    base_weights = [torch.empty(256 * 1024 * 512, dtype=torch.float32, device=device) for _ in range(4)] # 2048 MB
+    base_weights = [torch.empty(256 * 1024 * 512, dtype=torch.float32, device=device) for _ in range(4)]  # 2048 MB
 
     # Tenant 1 Workload: FlashAttention
     B1, H1, S1, D1 = 2, 4, 1024, 64
@@ -156,12 +165,12 @@ def main():
             "tenant_1": "FlashAttention (FP16)",
             "tenant_2": "Selective SSM Scan (FP32)",
             "tenant_3": "Low-Rank SVD GEMM (FP16)",
-            "tenant_4": "Matmul Decomposition (FP16)"
+            "tenant_4": "Matmul Decomposition (FP16)",
         },
         "performance": {
             "sequential_latency_ms": round(t_seq_ms, 4),
             "concurrent_latency_ms": round(t_par_ms, 4),
-            "serving_speedup": round(serving_speedup, 3)
+            "serving_speedup": round(serving_speedup, 3),
         },
         "vram_allocator": {
             "allocated_mb": alloc_mb,
@@ -170,8 +179,8 @@ def main():
             "peak_reserved_mb": peak_res_mb,
             "fragmentation_ratio": round(frag_ratio_final, 4),
             "fragmentation_pct": round(frag_pct, 2),
-            "strictly_below_3_pct": bool(frag_pct < 3.0)
-        }
+            "strictly_below_3_pct": bool(frag_pct < 3.0),
+        },
     }
 
     out_file = "/mnt/d/SVD_linear_Attention/results/profiling/multitenant_serving_profile.json"
@@ -179,6 +188,7 @@ def main():
     with open(out_file, "w") as f:
         json.dump(results, f, indent=2)
     print(f"Saved profile results to {out_file}")
+
 
 if __name__ == "__main__":
     main()

@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import sys
 import time
-import json
 from pathlib import Path
 
 repo_root = Path(__file__).resolve().parent.parent.parent
@@ -44,6 +43,7 @@ from neuralops.core.cuda_kernels.goldfinch_ahn import goldfinch_ahn_autograd as 
 
 
 def bench(fn, iters=50, warmup=10):
+    """Execute bench routine."""
     for _ in range(warmup):
         fn()
     torch.cuda.synchronize()
@@ -55,166 +55,231 @@ def bench(fn, iters=50, warmup=10):
 
 
 def compute_diff(a, b):
+    """Execute compute diff routine."""
     if isinstance(a, tuple):
         return max(compute_diff(x, y) for x, y in zip(a, b))
     return float(torch.max(torch.abs(a.float() - b.float())).item())
 
 
 def check_nan(a):
+    """Execute check nan routine."""
     if isinstance(a, tuple):
         return any(check_nan(x) for x in a)
     return bool(torch.isnan(a).any().item() or torch.isinf(a).any().item())
 
 
 MODULE_SPECS = [
-    ("fused_ce",
-     lambda: (torch.randn(32, 1024, device="cuda", dtype=torch.float16), torch.randint(0, 1024, (32,), device="cuda")),
-     lambda args: m_fused_ce.fused_cross_entropy(args[0], args[1]),
-     lambda args: m_fused_ce.fused_cross_entropy_pytorch_ref(args[0].float(), args[1]).to(args[0].dtype)),
-
-    ("logcumsumexp",
-     lambda: (torch.randn(16, 512, device="cuda", dtype=torch.float16),),
-     lambda args: m_logcumsumexp.logcumsumexp(args[0]),
-     lambda args: m_logcumsumexp.logcumsumexp_pytorch_ref(args[0])),
-
-    ("lut_gemm",
-     lambda: (torch.randn(32, 128, device="cuda", dtype=torch.float16) * 0.1,
-              torch.randint(0, 256, (64, 64), device="cuda", dtype=torch.uint8),
-              torch.randn(2, 16, device="cuda", dtype=torch.float16) * 0.1),
-     lambda args: m_lut_gemm.lut_codebook_dequant_gemm(args[0], args[1], args[2], group_size=64),
-     lambda args: m_lut_gemm.lut_codebook_dequant_gemm_pytorch_ref(args[0], args[1], args[2], group_size=64)),
-
-    ("samba_moe",
-     lambda: (torch.randn(32, 64, device="cuda", dtype=torch.float16),
-              torch.randn(32, 64, device="cuda", dtype=torch.float16),
-              torch.randn(32, 2, device="cuda", dtype=torch.float16)),
-     lambda args: m_samba_moe.samba_moe(args[0], args[1], args[2]),
-     lambda args: m_samba_moe.samba_moe_ref(args[0], args[1], args[2])),
-
-    ("kronecker_gemm",
-     lambda: (torch.randn(8, 64, device="cuda", dtype=torch.float16) * 0.1,
-              torch.randn(8, 8, device="cuda", dtype=torch.float16) * 0.1,
-              torch.randn(8, 8, device="cuda", dtype=torch.float16) * 0.1),
-     lambda args: m_kronecker_gemm.kronecker_matmul(args[0], args[1], args[2]),
-     lambda args: m_kronecker_gemm.kronecker_matmul_pytorch_ref(args[0], args[1], args[2])),
-
-    ("rotational_svd",
-     lambda: (torch.randn(16, 32, device="cuda", dtype=torch.float16) * 0.1,
-              torch.randn(32, 32, device="cuda", dtype=torch.float16) * 0.1,
-              torch.randn(32, 32, device="cuda", dtype=torch.float16) * 0.1,
-              torch.randn(32, 32, device="cuda", dtype=torch.float16) * 0.1),
-     lambda args: m_rotational_svd.rotational_svd(args[0], args[1], args[2], args[3]),
-     lambda args: m_rotational_svd.rotational_svd_pytorch_ref(args[0], args[1], args[2], args[3])),
-
-    ("svd_prefix_scan",
-     lambda: (torch.randn(2, 4, 32, 32, device="cuda", dtype=torch.float16) * 0.1,
-              torch.randn(2, 4, 32, 32, device="cuda", dtype=torch.float16) * 0.1,
-              torch.randn(2, 4, 32, 32, device="cuda", dtype=torch.float16) * 0.1),
-     lambda args: m_svd_prefix_scan.svd_prefix_scan(args[0], args[1], args[2]),
-     lambda args: m_svd_prefix_scan.svd_prefix_scan_pytorch_ref(args[0], args[1], args[2])),
-
-    ("ternary_gemm",
-     lambda: (torch.randn(16, 64, device="cuda", dtype=torch.float16) * 0.1,
-              torch.randint(0, 256, (32, 16), device="cuda", dtype=torch.uint8),
-              torch.randn(32, device="cuda", dtype=torch.float32) * 0.1),
-     lambda args: m_ternary_gemm.ternary_gemm(args[0], args[1], args[2]),
-     lambda args: m_ternary_gemm.ternary_gemm_pytorch_ref(args[0], args[1], args[2])),
-
-    ("block_diag_gemm",
-     lambda: (torch.randn(8, 64, device="cuda", dtype=torch.float16),
-              torch.randn(2, 32, 32, device="cuda", dtype=torch.float16)),
-     lambda args: m_block_diag_gemm.block_diag_matmul(args[0], args[1]),
-     lambda args: m_block_diag_gemm.block_diag_matmul_pytorch_ref(args[0], args[1])),
-
-    ("spectral_shrinkage",
-     lambda: (torch.randn(32, 128, device="cuda", dtype=torch.float32),
-              torch.randn(32, 128, device="cuda", dtype=torch.float32),
-              torch.randn(32, 128, device="cuda", dtype=torch.float32),
-              torch.randn(32, 128, device="cuda", dtype=torch.float32),
-              torch.tensor(0.5, device="cuda", dtype=torch.float32)),
-     lambda args: m_spectral_shrinkage.spectral_shrinkage(args[0], args[1], args[2], args[3], args[4]),
-     lambda args: m_spectral_shrinkage.spectral_shrinkage_pytorch_ref(args[0], args[1], args[2], args[3], args[4])),
-
-    ("phantom",
-     lambda: (torch.randn(16, 64, device="cuda", dtype=torch.float16),
-              torch.randn(16, 64, device="cuda", dtype=torch.float16)),
-     lambda args: m_phantom.phantom(args[0], args[1]),
-     lambda args: m_phantom.phantom_ref(args[0], args[1])),
-
-    ("tt_contraction",
-     lambda: (torch.randn(1, 2, 2, 4, device="cuda", dtype=torch.float32),
-              torch.randn(4, 2, 2, 1, device="cuda", dtype=torch.float32)),
-     lambda args: m_tt_contraction.tt_contraction(args[0], args[1], (2, 2), (2, 2)),
-     lambda args: m_tt_contraction.tt_contraction_pytorch_ref(args[0], args[1], (2, 2), (2, 2))),
-
-    ("low_rank_svd",
-     lambda: (torch.randn(16, 64, device="cuda", dtype=torch.float16),
-              torch.randn(16, 64, device="cuda", dtype=torch.float16),
-              torch.randn(64, 16, device="cuda", dtype=torch.float16)),
-     lambda args: m_low_rank_svd.fused_lowrank_gated_gemm(args[0], args[1], args[2]),
-     lambda args: m_low_rank_svd.fused_lowrank_gated_gemm_pytorch_ref(args[0], args[1], args[2])),
-
-    ("hadamard_gemm",
-     lambda: (torch.randn(16, 64, device="cuda", dtype=torch.float16) * 0.1,
-              torch.randint(0, 256, (32, 32), device="cuda", dtype=torch.uint8),
-              torch.randn(32, 2, device="cuda", dtype=torch.float16) * 0.1,
-              torch.randn(32, 2, device="cuda", dtype=torch.float16) * 0.1),
-     lambda args: m_hadamard_gemm.hadamard_w4a16_gemm(args[0], args[1], args[2], args[3], group_size=32),
-     lambda args: m_hadamard_gemm.hadamard_w4a16_gemm_pytorch_ref(args[0], args[1], args[2], args[3], group_size=32)),
-
-    ("quantized_gemm",
-     lambda: (torch.randn(32, 64, device="cuda", dtype=torch.float16),
-              torch.randn(64, 32, device="cuda", dtype=torch.float16),
-              torch.tensor(1.0, device="cuda", dtype=torch.float32),
-              torch.tensor(1.0, device="cuda", dtype=torch.float32)),
-     lambda args: m_quantized_gemm.fp8_gemm(args[0], args[1], args[2], args[3]),
-     lambda args: m_quantized_gemm.fp8_gemm_pytorch_ref(args[0], args[1], args[2], args[3])),
-
-    ("rpca_sparse_svd",
-     lambda: (torch.randn(16, 32, device="cuda", dtype=torch.float16) * 0.1,
-              torch.randn(32, 16, device="cuda", dtype=torch.float16) * 0.1,
-              torch.randn(16, 32, device="cuda", dtype=torch.float16) * 0.1),
-     lambda args: m_rpca_sparse_svd.rpca_sparse_svd_gemm(args[0], args[1], args[2]),
-     lambda args: m_rpca_sparse_svd.rpca_sparse_svd_gemm_pytorch_ref(args[0], args[1], args[2])),
-
-    ("nasc_attention",
-     lambda: (torch.randn(1, 2, 32, 32, device="cuda", dtype=torch.float16) * 0.1,
-              torch.randn(1, 2, 32, 32, device="cuda", dtype=torch.float16) * 0.1,
-              torch.randn(1, 2, 32, 32, device="cuda", dtype=torch.float16) * 0.1,
-              torch.randn(1, 2, 32, 32, device="cuda", dtype=torch.float16).sigmoid()),
-     lambda args: m_nasc_attention.nasc_attention(args[0], args[1], args[2], args[3]),
-     lambda args: m_nasc_attention.nasc_attention_ref(args[0], args[1], args[2], args[3])),
-
-    ("nexus",
-     lambda: (torch.randn(1, 2, 32, 32, device="cuda", dtype=torch.float16) * 0.1,
-              torch.randn(1, 2, 32, 32, device="cuda", dtype=torch.float16) * 0.1,
-              torch.randn(1, 2, 32, 32, device="cuda", dtype=torch.float16) * 0.1),
-     lambda args: m_nexus.nexus(args[0], args[1], args[2]),
-     lambda args: m_nexus.nexus_ref(args[0], args[1], args[2])),
-
-    ("vspec",
-     lambda: (torch.randn(4, 32, 32, device="cuda", dtype=torch.float16),
-              torch.randn(4, 32, 32, device="cuda", dtype=torch.float16).sigmoid(),
-              torch.randn(4, 32, 32, device="cuda", dtype=torch.float16).sigmoid()),
-     lambda args: m_vspec.vspec(args[0], args[1], args[2]),
-     lambda args: m_vspec.vspec_ref(args[0], args[1], args[2])),
-
-    ("goldfinch_ahn",
-     lambda: (torch.randn(1, 2, 32, 32, device="cuda", dtype=torch.float16) * 0.1,
-              torch.randn(1, 2, 32, 32, device="cuda", dtype=torch.float16) * 0.1,
-              torch.randn(1, 2, 32, 32, device="cuda", dtype=torch.float16) * 0.1,
-              torch.randn(1, 2, 32, 32, device="cuda", dtype=torch.float16).sigmoid() * 0.1),
-     lambda args: m_goldfinch_ahn.goldfinch_ahn(args[0], args[1], args[2], args[3]),
-     lambda args: m_goldfinch_ahn.goldfinch_ahn_ref(args[0], args[1], args[2], args[3]))
+    (
+        "fused_ce",
+        lambda: (
+            torch.randn(32, 1024, device="cuda", dtype=torch.float16),
+            torch.randint(0, 1024, (32,), device="cuda"),
+        ),
+        lambda args: m_fused_ce.fused_cross_entropy(args[0], args[1]),
+        lambda args: m_fused_ce.fused_cross_entropy_pytorch_ref(args[0].float(), args[1]).to(args[0].dtype),
+    ),
+    (
+        "logcumsumexp",
+        lambda: (torch.randn(16, 512, device="cuda", dtype=torch.float16),),
+        lambda args: m_logcumsumexp.logcumsumexp(args[0]),
+        lambda args: m_logcumsumexp.logcumsumexp_pytorch_ref(args[0]),
+    ),
+    (
+        "lut_gemm",
+        lambda: (
+            torch.randn(32, 128, device="cuda", dtype=torch.float16) * 0.1,
+            torch.randint(0, 256, (64, 64), device="cuda", dtype=torch.uint8),
+            torch.randn(2, 16, device="cuda", dtype=torch.float16) * 0.1,
+        ),
+        lambda args: m_lut_gemm.lut_codebook_dequant_gemm(args[0], args[1], args[2], group_size=64),
+        lambda args: m_lut_gemm.lut_codebook_dequant_gemm_pytorch_ref(args[0], args[1], args[2], group_size=64),
+    ),
+    (
+        "samba_moe",
+        lambda: (
+            torch.randn(32, 64, device="cuda", dtype=torch.float16),
+            torch.randn(32, 64, device="cuda", dtype=torch.float16),
+            torch.randn(32, 2, device="cuda", dtype=torch.float16),
+        ),
+        lambda args: m_samba_moe.samba_moe(args[0], args[1], args[2]),
+        lambda args: m_samba_moe.samba_moe_ref(args[0], args[1], args[2]),
+    ),
+    (
+        "kronecker_gemm",
+        lambda: (
+            torch.randn(8, 64, device="cuda", dtype=torch.float16) * 0.1,
+            torch.randn(8, 8, device="cuda", dtype=torch.float16) * 0.1,
+            torch.randn(8, 8, device="cuda", dtype=torch.float16) * 0.1,
+        ),
+        lambda args: m_kronecker_gemm.kronecker_matmul(args[0], args[1], args[2]),
+        lambda args: m_kronecker_gemm.kronecker_matmul_pytorch_ref(args[0], args[1], args[2]),
+    ),
+    (
+        "rotational_svd",
+        lambda: (
+            torch.randn(16, 32, device="cuda", dtype=torch.float16) * 0.1,
+            torch.randn(32, 32, device="cuda", dtype=torch.float16) * 0.1,
+            torch.randn(32, 32, device="cuda", dtype=torch.float16) * 0.1,
+            torch.randn(32, 32, device="cuda", dtype=torch.float16) * 0.1,
+        ),
+        lambda args: m_rotational_svd.rotational_svd(args[0], args[1], args[2], args[3]),
+        lambda args: m_rotational_svd.rotational_svd_pytorch_ref(args[0], args[1], args[2], args[3]),
+    ),
+    (
+        "svd_prefix_scan",
+        lambda: (
+            torch.randn(2, 4, 32, 32, device="cuda", dtype=torch.float16) * 0.1,
+            torch.randn(2, 4, 32, 32, device="cuda", dtype=torch.float16) * 0.1,
+            torch.randn(2, 4, 32, 32, device="cuda", dtype=torch.float16) * 0.1,
+        ),
+        lambda args: m_svd_prefix_scan.svd_prefix_scan(args[0], args[1], args[2]),
+        lambda args: m_svd_prefix_scan.svd_prefix_scan_pytorch_ref(args[0], args[1], args[2]),
+    ),
+    (
+        "ternary_gemm",
+        lambda: (
+            torch.randn(16, 64, device="cuda", dtype=torch.float16) * 0.1,
+            torch.randint(0, 256, (32, 16), device="cuda", dtype=torch.uint8),
+            torch.randn(32, device="cuda", dtype=torch.float32) * 0.1,
+        ),
+        lambda args: m_ternary_gemm.ternary_gemm(args[0], args[1], args[2]),
+        lambda args: m_ternary_gemm.ternary_gemm_pytorch_ref(args[0], args[1], args[2]),
+    ),
+    (
+        "block_diag_gemm",
+        lambda: (
+            torch.randn(8, 64, device="cuda", dtype=torch.float16),
+            torch.randn(2, 32, 32, device="cuda", dtype=torch.float16),
+        ),
+        lambda args: m_block_diag_gemm.block_diag_matmul(args[0], args[1]),
+        lambda args: m_block_diag_gemm.block_diag_matmul_pytorch_ref(args[0], args[1]),
+    ),
+    (
+        "spectral_shrinkage",
+        lambda: (
+            torch.randn(32, 128, device="cuda", dtype=torch.float32),
+            torch.randn(32, 128, device="cuda", dtype=torch.float32),
+            torch.randn(32, 128, device="cuda", dtype=torch.float32),
+            torch.randn(32, 128, device="cuda", dtype=torch.float32),
+            torch.tensor(0.5, device="cuda", dtype=torch.float32),
+        ),
+        lambda args: m_spectral_shrinkage.spectral_shrinkage(args[0], args[1], args[2], args[3], args[4]),
+        lambda args: m_spectral_shrinkage.spectral_shrinkage_pytorch_ref(args[0], args[1], args[2], args[3], args[4]),
+    ),
+    (
+        "phantom",
+        lambda: (
+            torch.randn(16, 64, device="cuda", dtype=torch.float16),
+            torch.randn(16, 64, device="cuda", dtype=torch.float16),
+        ),
+        lambda args: m_phantom.phantom(args[0], args[1]),
+        lambda args: m_phantom.phantom_ref(args[0], args[1]),
+    ),
+    (
+        "tt_contraction",
+        lambda: (
+            torch.randn(1, 2, 2, 4, device="cuda", dtype=torch.float32),
+            torch.randn(4, 2, 2, 1, device="cuda", dtype=torch.float32),
+        ),
+        lambda args: m_tt_contraction.tt_contraction(args[0], args[1], (2, 2), (2, 2)),
+        lambda args: m_tt_contraction.tt_contraction_pytorch_ref(args[0], args[1], (2, 2), (2, 2)),
+    ),
+    (
+        "low_rank_svd",
+        lambda: (
+            torch.randn(16, 64, device="cuda", dtype=torch.float16),
+            torch.randn(16, 64, device="cuda", dtype=torch.float16),
+            torch.randn(64, 16, device="cuda", dtype=torch.float16),
+        ),
+        lambda args: m_low_rank_svd.fused_lowrank_gated_gemm(args[0], args[1], args[2]),
+        lambda args: m_low_rank_svd.fused_lowrank_gated_gemm_pytorch_ref(args[0], args[1], args[2]),
+    ),
+    (
+        "hadamard_gemm",
+        lambda: (
+            torch.randn(16, 64, device="cuda", dtype=torch.float16) * 0.1,
+            torch.randint(0, 256, (32, 32), device="cuda", dtype=torch.uint8),
+            torch.randn(32, 2, device="cuda", dtype=torch.float16) * 0.1,
+            torch.randn(32, 2, device="cuda", dtype=torch.float16) * 0.1,
+        ),
+        lambda args: m_hadamard_gemm.hadamard_w4a16_gemm(args[0], args[1], args[2], args[3], group_size=32),
+        lambda args: m_hadamard_gemm.hadamard_w4a16_gemm_pytorch_ref(args[0], args[1], args[2], args[3], group_size=32),
+    ),
+    (
+        "quantized_gemm",
+        lambda: (
+            torch.randn(32, 64, device="cuda", dtype=torch.float16),
+            torch.randn(64, 32, device="cuda", dtype=torch.float16),
+            torch.tensor(1.0, device="cuda", dtype=torch.float32),
+            torch.tensor(1.0, device="cuda", dtype=torch.float32),
+        ),
+        lambda args: m_quantized_gemm.fp8_gemm(args[0], args[1], args[2], args[3]),
+        lambda args: m_quantized_gemm.fp8_gemm_pytorch_ref(args[0], args[1], args[2], args[3]),
+    ),
+    (
+        "rpca_sparse_svd",
+        lambda: (
+            torch.randn(16, 32, device="cuda", dtype=torch.float16) * 0.1,
+            torch.randn(32, 16, device="cuda", dtype=torch.float16) * 0.1,
+            torch.randn(16, 32, device="cuda", dtype=torch.float16) * 0.1,
+        ),
+        lambda args: m_rpca_sparse_svd.rpca_sparse_svd_gemm(args[0], args[1], args[2]),
+        lambda args: m_rpca_sparse_svd.rpca_sparse_svd_gemm_pytorch_ref(args[0], args[1], args[2]),
+    ),
+    (
+        "nasc_attention",
+        lambda: (
+            torch.randn(1, 2, 32, 32, device="cuda", dtype=torch.float16) * 0.1,
+            torch.randn(1, 2, 32, 32, device="cuda", dtype=torch.float16) * 0.1,
+            torch.randn(1, 2, 32, 32, device="cuda", dtype=torch.float16) * 0.1,
+            torch.randn(1, 2, 32, 32, device="cuda", dtype=torch.float16).sigmoid(),
+        ),
+        lambda args: m_nasc_attention.nasc_attention(args[0], args[1], args[2], args[3]),
+        lambda args: m_nasc_attention.nasc_attention_ref(args[0], args[1], args[2], args[3]),
+    ),
+    (
+        "nexus",
+        lambda: (
+            torch.randn(1, 2, 32, 32, device="cuda", dtype=torch.float16) * 0.1,
+            torch.randn(1, 2, 32, 32, device="cuda", dtype=torch.float16) * 0.1,
+            torch.randn(1, 2, 32, 32, device="cuda", dtype=torch.float16) * 0.1,
+        ),
+        lambda args: m_nexus.nexus(args[0], args[1], args[2]),
+        lambda args: m_nexus.nexus_ref(args[0], args[1], args[2]),
+    ),
+    (
+        "vspec",
+        lambda: (
+            torch.randn(4, 32, 32, device="cuda", dtype=torch.float16),
+            torch.randn(4, 32, 32, device="cuda", dtype=torch.float16).sigmoid(),
+            torch.randn(4, 32, 32, device="cuda", dtype=torch.float16).sigmoid(),
+        ),
+        lambda args: m_vspec.vspec(args[0], args[1], args[2]),
+        lambda args: m_vspec.vspec_ref(args[0], args[1], args[2]),
+    ),
+    (
+        "goldfinch_ahn",
+        lambda: (
+            torch.randn(1, 2, 32, 32, device="cuda", dtype=torch.float16) * 0.1,
+            torch.randn(1, 2, 32, 32, device="cuda", dtype=torch.float16) * 0.1,
+            torch.randn(1, 2, 32, 32, device="cuda", dtype=torch.float16) * 0.1,
+            torch.randn(1, 2, 32, 32, device="cuda", dtype=torch.float16).sigmoid() * 0.1,
+        ),
+        lambda args: m_goldfinch_ahn.goldfinch_ahn(args[0], args[1], args[2], args[3]),
+        lambda args: m_goldfinch_ahn.goldfinch_ahn_ref(args[0], args[1], args[2], args[3]),
+    ),
 ]
 
 
 def run_sweep():
+    """Execute run sweep routine."""
     force_kernel_backend("cuda")
     seeds = [42, 1337, 2026]
     results = {}
 
-    print(f"{'Module':<20} | {'CUDA (ms)':<10} | {'Ref (ms)':<10} | {'Speedup':<8} | {'Max Diff':<10} | {'Zero NaNs':<9} | {'Status':<6}")
+    print(
+        f"{'Module':<20} | {'CUDA (ms)':<10} | {'Ref (ms)':<10} | {'Speedup':<8} | {'Max Diff':<10} | {'Zero NaNs':<9} | {'Status':<6}"
+    )
     print("-" * 85)
 
     all_pass = True
@@ -255,7 +320,9 @@ def run_sweep():
             all_pass = False
 
         status = "PASS" if passed else "FAIL"
-        print(f"{name:<20} | {c_ms:<10.4f} | {r_ms:<10.4f} | {speedup:<8.2f}x | {max_d:<10.6f} | {str(not any_nan):<9} | {status:<6}")
+        print(
+            f"{name:<20} | {c_ms:<10.4f} | {r_ms:<10.4f} | {speedup:<8.2f}x | {max_d:<10.6f} | {str(not any_nan):<9} | {status:<6}"
+        )
 
         results[name] = {
             "cuda_ms": c_ms,
@@ -263,7 +330,7 @@ def run_sweep():
             "speedup": speedup,
             "max_diff": max_d,
             "zero_nans": not any_nan,
-            "passed": passed
+            "passed": passed,
         }
 
     print("-" * 85)

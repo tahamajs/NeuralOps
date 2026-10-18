@@ -1,3 +1,8 @@
+"""Update pareto results module.
+
+Author: Taha Majlesi
+"""
+
 import json
 import csv
 from pathlib import Path
@@ -35,7 +40,18 @@ for r in records:
 with open(json_path, "w", encoding="utf-8") as f:
     json.dump(records, f, indent=2)
 
-csv_cols = ["compressor", "status", "perplexity", "param_reduction_pct", "compression_ratio", "total_params", "peak_vram_mb", "latency_ms_per_token", "throughput_tok_sec", "error"]
+csv_cols = [
+    "compressor",
+    "status",
+    "perplexity",
+    "param_reduction_pct",
+    "compression_ratio",
+    "total_params",
+    "peak_vram_mb",
+    "latency_ms_per_token",
+    "throughput_tok_sec",
+    "error",
+]
 with open(csv_path, "w", newline="", encoding="utf-8") as f:
     writer = csv.DictWriter(f, fieldnames=csv_cols)
     writer.writeheader()
@@ -57,4 +73,4 @@ for r in records:
 with open(md_path, "w", encoding="utf-8") as f:
     f.write(md_content)
 
-print(f"Successfully updated wikitext2_pareto_results: 100% (72/72) compressors verified!")
+print("Successfully updated wikitext2_pareto_results: 100% (72/72) compressors verified!")

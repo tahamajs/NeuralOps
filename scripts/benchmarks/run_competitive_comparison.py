@@ -18,8 +18,6 @@ from __future__ import annotations
 import argparse
 import csv
 import json
-import os
-import sys
 import time
 from pathlib import Path
 from typing import Any, Dict, List
@@ -28,7 +26,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-import neuralops
 from neuralops.api import create_attention
 
 
@@ -40,7 +37,7 @@ def benchmark_module_throughput_and_memory(
 ) -> Dict[str, float]:
     """Benchmark latency, throughput (tokens/sec), and peak VRAM allocation."""
     device = x.device
-    is_cuda = (device.type == "cuda")
+    is_cuda = device.type == "cuda"
     B, T, D = x.shape
 
     # Warmup
@@ -137,31 +134,41 @@ def run_benchmark_suite(
 
         # Wrap PyTorch baseline
         class BaselineMHA(nn.Module):
+            """Baselinemha definition."""
             def __init__(self, mha):
+                """Execute init routine."""
                 super().__init__()
                 self.mha = mha
+
             def forward(self, h):
+                """Execute forward routine."""
                 o, _ = self.mha(h, h, h)
                 return o
 
         mha_wrapper = BaselineMHA(ref_mha)
         mha_perf = benchmark_module_throughput_and_memory(mha_wrapper, x)
-        print(f"[Baseline PyTorch MHA] Latency: {mha_perf['latency_ms']} ms | Throughput: {mha_perf['throughput_tokens_per_sec']} tok/s | Peak VRAM: {mha_perf['peak_vram_mb']} MB")
+        print(
+            f"[Baseline PyTorch MHA] Latency: {mha_perf['latency_ms']} ms | Throughput: {mha_perf['throughput_tokens_per_sec']} tok/s | Peak VRAM: {mha_perf['peak_vram_mb']} MB"
+        )
 
-        results_table.append({
-            "sequence_length": seq_len,
-            "module": "pytorch_mha_baseline",
-            "framework": "PyTorch Reference",
-            "latency_ms": mha_perf["latency_ms"],
-            "throughput_tok_s": mha_perf["throughput_tokens_per_sec"],
-            "peak_vram_mb": mha_perf["peak_vram_mb"],
-            "speedup_vs_baseline": 1.0,
-            "cosine_similarity": 1.0,
-        })
+        results_table.append(
+            {
+                "sequence_length": seq_len,
+                "module": "pytorch_mha_baseline",
+                "framework": "PyTorch Reference",
+                "latency_ms": mha_perf["latency_ms"],
+                "throughput_tok_s": mha_perf["throughput_tokens_per_sec"],
+                "peak_vram_mb": mha_perf["peak_vram_mb"],
+                "speedup_vs_baseline": 1.0,
+                "cosine_similarity": 1.0,
+            }
+        )
 
         for mod_name in modules:
             try:
-                mod = create_attention(mod_name, embed_dim=embed_dim, num_heads=num_heads).to(target_dev, dtype=torch.float16)
+                mod = create_attention(mod_name, embed_dim=embed_dim, num_heads=num_heads).to(
+                    target_dev, dtype=torch.float16
+                )
                 mod.eval()
                 perf = benchmark_module_throughput_and_memory(mod, x)
                 speedup = round(mha_perf["latency_ms"] / max(perf["latency_ms"], 1e-6), 2)
@@ -174,18 +181,22 @@ def run_benchmark_suite(
                     # Numerical self-consistency check
                     cos_sim = 1.0 - (torch.isnan(out_fp16).float().mean().item())
 
-                print(f"[NeuralOps {mod_name}] Latency: {perf['latency_ms']} ms | Throughput: {perf['throughput_tokens_per_sec']} tok/s | Speedup: {speedup}x")
+                print(
+                    f"[NeuralOps {mod_name}] Latency: {perf['latency_ms']} ms | Throughput: {perf['throughput_tokens_per_sec']} tok/s | Speedup: {speedup}x"
+                )
 
-                results_table.append({
-                    "sequence_length": seq_len,
-                    "module": mod_name,
-                    "framework": "NeuralOps (Triton Fused)",
-                    "latency_ms": perf["latency_ms"],
-                    "throughput_tok_s": perf["throughput_tokens_per_sec"],
-                    "peak_vram_mb": perf["peak_vram_mb"],
-                    "speedup_vs_baseline": speedup,
-                    "cosine_similarity": round(cos_sim, 4),
-                })
+                results_table.append(
+                    {
+                        "sequence_length": seq_len,
+                        "module": mod_name,
+                        "framework": "NeuralOps (Triton Fused)",
+                        "latency_ms": perf["latency_ms"],
+                        "throughput_tok_s": perf["throughput_tokens_per_sec"],
+                        "peak_vram_mb": perf["peak_vram_mb"],
+                        "speedup_vs_baseline": speedup,
+                        "cosine_similarity": round(cos_sim, 4),
+                    }
+                )
             except Exception as e:
                 print(f"[!] Warning: failed benchmarking {mod_name} at T={seq_len}: {e}")
 
@@ -208,7 +219,9 @@ def run_benchmark_suite(
         f.write("# 🚀 NeuralOps v1.3.7 Cross-Framework Competitive Benchmark\n\n")
         f.write(f"**Hardware Platform**: {torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU'}\n")
         f.write(f"**Batch Size**: {batch_size} | **Embed Dim**: {embed_dim} | **Heads**: {num_heads}\n\n")
-        f.write("| Seq Len (T) | Module | Framework | Latency (ms) | Throughput (tok/s) | Peak VRAM (MB) | Speedup | Cosine Sim |\n")
+        f.write(
+            "| Seq Len (T) | Module | Framework | Latency (ms) | Throughput (tok/s) | Peak VRAM (MB) | Speedup | Cosine Sim |\n"
+        )
         f.write("|:---:|:---|:---|:---:|:---:|:---:|:---:|:---:|\n")
         for row in results_table:
             f.write(
@@ -217,7 +230,9 @@ def run_benchmark_suite(
             )
         f.write("\n\n*Generated automatically by `scripts/benchmarks/run_competitive_comparison.py`*\n")
 
-    print(f"\n[✓] Competitive benchmark completed. Reports generated at:\n    - {json_path}\n    - {csv_path}\n    - {md_path}")
+    print(
+        f"\n[✓] Competitive benchmark completed. Reports generated at:\n    - {json_path}\n    - {csv_path}\n    - {md_path}"
+    )
     return {"results": results_table, "report_path": str(md_path)}
 
 

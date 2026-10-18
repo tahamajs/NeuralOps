@@ -7,8 +7,8 @@ Classifies each compressor into:
   3. NO_OP_IGNORES_RANK: compressed weights at rank=8 and rank=64 are identical (ignores rank parameter)
   4. FAILED: crashes or constructor fails
 """
+
 import os
-import sys
 import copy
 import logging
 import torch
@@ -29,8 +29,8 @@ from scripts.benchmarks.batch_validate_all_compressors import (
     load_gpt2,
     get_probe_data,
     get_compressor,
-    evaluate,
 )
+
 
 def extract_reconstructed_weights(model: nn.Module) -> torch.Tensor:
     """Extract reconstructed full-rank dense weights across layers."""
@@ -54,7 +54,9 @@ def extract_reconstructed_weights(model: nn.Module) -> torch.Tensor:
         return torch.cat(tensors)
     return torch.tensor([0.0])
 
+
 def run_diagnostic(model_name: str = "synth_block"):
+    """Execute run diagnostic routine."""
     device = "cuda" if torch.cuda.is_available() else "cpu"
     logger.info("Running Rank Sensitivity Diagnostic on model '%s' via %s", model_name, device)
 
@@ -86,7 +88,9 @@ def run_diagnostic(model_name: str = "synth_block"):
     print("\n" + "=" * 115)
     print(f"RANK SENSITIVITY DIAGNOSTIC: {model_name.upper()}")
     print("=" * 115)
-    print(f"{'Method':<28s} {'Status':<22s} {'LogitDiff(8,64)':<16s} {'RelErr(r8)':<12s} {'RelErr(r64)':<12s} {'Details'}")
+    print(
+        f"{'Method':<28s} {'Status':<22s} {'LogitDiff(8,64)':<16s} {'RelErr(r8)':<12s} {'RelErr(r64)':<12s} {'Details'}"
+    )
     print("-" * 115)
 
     for method in COMPRESSOR_REGISTRY_KEYS:
@@ -109,7 +113,7 @@ def run_diagnostic(model_name: str = "synth_block"):
                 m8 = comp8
             elif getattr(comp8, "model", None) is not None:
                 m8 = comp8.model
-            
+
             with torch.no_grad():
                 if model_name == "roberta":
                     ids, mask = heldout
@@ -197,13 +201,16 @@ def run_diagnostic(model_name: str = "synth_block"):
     out_dir = Path("results/batch_validation") / "diagnostics"
     out_dir.mkdir(parents=True, exist_ok=True)
     import json
+
     with open(out_dir / f"{model_name}_diagnostic.json", "w") as f:
         json.dump(results, f, indent=2)
 
     return results
 
+
 if __name__ == "__main__":
     import argparse
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", default="synth_block", choices=["synth_block", "roberta", "gpt2"])
     args = parser.parse_args()

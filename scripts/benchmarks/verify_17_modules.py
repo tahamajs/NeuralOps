@@ -9,7 +9,6 @@ Author: Taha Majlesi
 
 import sys
 import torch
-import torch.nn as nn
 
 from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
 
@@ -33,8 +32,11 @@ TARGET_MODULES = [
     "adasplash_attention",
 ]
 
+
 class MockConfig:
+    """Mockconfig definition."""
     def __init__(self, hidden_size=256, num_heads=4, head_dim=64):
+        """Execute init routine."""
         self.hidden_size = hidden_size
         self.num_attention_heads = num_heads
         self.num_heads = num_heads
@@ -46,7 +48,8 @@ class MockConfig:
 
 
 def test_module(name: str):
-    print(f"\n{'='*20} Testing {name} {'='*20}")
+    """Execute test module routine."""
+    print(f"\n{'=' * 20} Testing {name} {'=' * 20}")
     if name not in ATTENTION_REGISTRY:
         print(f"FAILED: {name} not found in ATTENTION_REGISTRY!")
         return False
@@ -56,7 +59,7 @@ def test_module(name: str):
 
     try:
         mod = cls(config=config, hidden_size=256, num_heads=4, head_dim=64).cuda().float()
-    except Exception as e:
+    except Exception:
         try:
             mod = cls(config=config).cuda().float()
         except Exception as e2:
@@ -93,6 +96,7 @@ def test_module(name: str):
     except Exception as e:
         print(f"  [FAIL] Causal Fwd/Bwd failed: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 
@@ -119,10 +123,13 @@ def test_module(name: str):
 
         assert x_bi.grad is not None, "Gradient on input x_bi is None"
         assert torch.isfinite(x_bi.grad).all(), "Gradient on x_bi contains NaN or Inf"
-        print(f"  [PASS] Bidirectional Fwd/Bwd OK (out norm: {out_bi_tensor.norm().item():.4f}, x grad norm: {x_bi.grad.norm().item():.4f})")
+        print(
+            f"  [PASS] Bidirectional Fwd/Bwd OK (out norm: {out_bi_tensor.norm().item():.4f}, x grad norm: {x_bi.grad.norm().item():.4f})"
+        )
     except Exception as e:
         print(f"  [FAIL] Bidirectional Fwd/Bwd failed: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 
@@ -130,6 +137,7 @@ def test_module(name: str):
 
 
 def main():
+    """Execute main routine."""
     print(f"Testing {len(TARGET_MODULES)} modules on {torch.cuda.get_device_name(0)}...")
     print(f"Current ATTENTION_REGISTRY count: {len(ATTENTION_REGISTRY)}")
     print(f"Current COMPRESSOR_REGISTRY count: {len(COMPRESSOR_REGISTRY)}")
@@ -138,9 +146,9 @@ def main():
     for name in TARGET_MODULES:
         results[name] = test_module(name)
 
-    print("\n" + "="*50)
+    print("\n" + "=" * 50)
     print("SUMMARY RESULTS:")
-    print("="*50)
+    print("=" * 50)
     all_passed = True
     for name, passed in results.items():
         status = "PASSED" if passed else "FAILED"
@@ -148,7 +156,7 @@ def main():
         if not passed:
             all_passed = False
 
-    print("="*50)
+    print("=" * 50)
     assert len(ATTENTION_REGISTRY) == 131, f"Expected 131 attentions, got {len(ATTENTION_REGISTRY)}"
     assert len(COMPRESSOR_REGISTRY) == 72, f"Expected 72 compressors, got {len(COMPRESSOR_REGISTRY)}"
     print("Registry verification: 131 Attentions and 72 Compressors strictly preserved!")

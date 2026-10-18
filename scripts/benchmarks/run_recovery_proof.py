@@ -9,7 +9,6 @@ Measures: Output Cosine Similarity to Teacher, Final Logit KL Divergence, Linear
 
 import time
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 from transformers import GPT2Config, GPT2LMHeadModel
 
@@ -21,7 +20,9 @@ from neuralops.trainer.distillation.multi_level_kd import (
 from neuralops.trainer.peft_recovery.svd_adapters import inject_pissa_adapters
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print(f"Running Accuracy Recovery Proof Benchmark on: {device} ({torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU'})")
+print(
+    f"Running Accuracy Recovery Proof Benchmark on: {device} ({torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU'})"
+)
 
 torch.manual_seed(42)
 cfg = GPT2Config(n_layer=4, n_embd=256, n_head=4, vocab_size=50257)
@@ -52,7 +53,12 @@ with torch.no_grad():
     s_zero_out = student_zero(inputs)
     s_zero_logits = s_zero_out.logits
     zero_cos = F.cosine_similarity(s_zero_logits.view(-1, 50257), t_logits.view(-1, 50257), dim=-1).mean().item()
-    zero_kl = F.kl_div(F.log_softmax(s_zero_logits / 2.0, dim=-1), F.softmax(t_logits / 2.0, dim=-1), reduction="batchmean").item() * 4.0
+    zero_kl = (
+        F.kl_div(
+            F.log_softmax(s_zero_logits / 2.0, dim=-1), F.softmax(t_logits / 2.0, dim=-1), reduction="batchmean"
+        ).item()
+        * 4.0
+    )
 
 print(f"Condition 1 (Zero-Shot Post-Surgery, alpha=1.0): Cosine Sim={zero_cos:.4f}, KL Div={zero_kl:.4f}")
 
@@ -89,9 +95,16 @@ set_surgery_alpha(student_naive, 1.0)
 with torch.no_grad():
     s_naive_out = student_naive(inputs)
     naive_cos = F.cosine_similarity(s_naive_out.logits.view(-1, 50257), t_logits.view(-1, 50257), dim=-1).mean().item()
-    naive_kl = F.kl_div(F.log_softmax(s_naive_out.logits / 2.0, dim=-1), F.softmax(t_logits / 2.0, dim=-1), reduction="batchmean").item() * 4.0
+    naive_kl = (
+        F.kl_div(
+            F.log_softmax(s_naive_out.logits / 2.0, dim=-1), F.softmax(t_logits / 2.0, dim=-1), reduction="batchmean"
+        ).item()
+        * 4.0
+    )
 
-print(f"Condition 2 (Naive Fine-Tuning 50 steps, alpha=1.0): Cosine Sim={naive_cos:.4f}, KL Div={naive_kl:.4f}, Time={t_naive:.2f}s, VRAM={vram_naive:.1f}MB")
+print(
+    f"Condition 2 (Naive Fine-Tuning 50 steps, alpha=1.0): Cosine Sim={naive_cos:.4f}, KL Div={naive_kl:.4f}, Time={t_naive:.2f}s, VRAM={vram_naive:.1f}MB"
+)
 
 # 4. Condition C: 6-Pillar MOHAWK + PiSSA + DKD Engine
 student_mohawk = GPT2LMHeadModel(cfg).to(device)
@@ -130,10 +143,19 @@ student_mohawk.eval()
 set_surgery_alpha(student_mohawk, 1.0)
 with torch.no_grad():
     s_mohawk_out = student_mohawk(inputs)
-    mohawk_cos = F.cosine_similarity(s_mohawk_out.logits.view(-1, 50257), t_logits.view(-1, 50257), dim=-1).mean().item()
-    mohawk_kl = F.kl_div(F.log_softmax(s_mohawk_out.logits / 2.0, dim=-1), F.softmax(t_logits / 2.0, dim=-1), reduction="batchmean").item() * 4.0
+    mohawk_cos = (
+        F.cosine_similarity(s_mohawk_out.logits.view(-1, 50257), t_logits.view(-1, 50257), dim=-1).mean().item()
+    )
+    mohawk_kl = (
+        F.kl_div(
+            F.log_softmax(s_mohawk_out.logits / 2.0, dim=-1), F.softmax(t_logits / 2.0, dim=-1), reduction="batchmean"
+        ).item()
+        * 4.0
+    )
 
-print(f"Condition 3 (6-Pillar MOHAWK+PiSSA+DKD 50 steps, alpha=1.0): Cosine Sim={mohawk_cos:.4f}, KL Div={mohawk_kl:.4f}, Time={t_mohawk:.2f}s, VRAM={vram_mohawk:.1f}MB")
+print(
+    f"Condition 3 (6-Pillar MOHAWK+PiSSA+DKD 50 steps, alpha=1.0): Cosine Sim={mohawk_cos:.4f}, KL Div={mohawk_kl:.4f}, Time={t_mohawk:.2f}s, VRAM={vram_mohawk:.1f}MB"
+)
 
 report = f"""# Live GPU Accuracy-Recovery Proof Benchmark (RTX 4070)
 
@@ -144,5 +166,6 @@ report = f"""# Live GPU Accuracy-Recovery Proof Benchmark (RTX 4070)
 | **6-Pillar MOHAWK + PiSSA + DKD Engine (50 steps)** | **{mohawk_cos:.4f}** | **{mohawk_kl:.4f}** | **{vram_mohawk:.1f}** | **{t_mohawk:.2f}s** |
 """
 from pathlib import Path
+
 Path("results/recovery_proof_benchmark.md").write_text(report)
 print("\n" + report)

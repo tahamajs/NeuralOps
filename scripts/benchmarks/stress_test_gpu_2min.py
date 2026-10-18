@@ -3,34 +3,33 @@
 Continuous multi-minute full GPU utilization and stress test for NeuralOps Attention Zoo & Triton Kernels.
 Runs continuous autoregressive decoding, parallel chunked scans, block routing, and gradient backward passes.
 """
+
 import time
 import argparse
 import torch
-import torch.nn.functional as F
 
-from neuralops.attentions import ATTENTION_REGISTRY
 from neuralops.core.triton_kernels.elementwise import fused_alibi_bias_triton, fused_dynamic_conv1d_triton
 from neuralops.core.triton_kernels.sparse_attn import (
     fused_lsh_hash_and_bin_triton,
     fused_hamming_scores_triton,
-    fused_kmeans_centroid_assign_triton,
 )
-from neuralops.core.triton_kernels.low_rank import fused_rpc_sketch_attention_triton, fused_primal_dual_landmark_triton
 from neuralops.core.triton_kernels.gqa import fused_asymmetric_cross_attention_triton, fused_mqa_bias_scale_triton
 from neuralops.core.triton_kernels.fused_rope import fused_unified_rope_offset_triton
 from neuralops.core.triton_kernels.sliding_window import fused_token_importance_topk_triton
 
+
 def main():
+    """Execute main routine."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--duration", type=int, default=120, help="Stress duration in seconds")
     parser.add_argument("--device", type=str, default="cuda")
     args = parser.parse_args()
 
     device = torch.device(args.device if torch.cuda.is_available() else "cpu")
-    print(f"================================================================================")
+    print("================================================================================")
     print(f"  STARTING {args.duration}s CONTINUOUS DEEP HARDWARE STRESS & KERNEL RUN")
     print(f"  Target Device: {torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU'}")
-    print(f"================================================================================")
+    print("================================================================================")
 
     start_time = time.time()
     iterations = 0
@@ -42,7 +41,7 @@ def main():
     q = torch.randn(B, H, L, D, device=device, dtype=torch.float16)
     k = torch.randn(B, H, L, D, device=device, dtype=torch.float16)
     v = torch.randn(B, H, L, D, device=device, dtype=torch.float16)
-    
+
     slopes = torch.linspace(0.1, 0.9, H, device=device)
     w_conv = torch.randn(B, H, L, 4, device=device, dtype=torch.float16)
     proj_lsh = torch.randn(D, 8, device=device, dtype=torch.float32)
@@ -86,15 +85,20 @@ def main():
             elapsed = time.time() - start_time
             remaining = max(0, t_end - time.time())
             tok_per_sec = total_tokens_processed / max(1e-5, elapsed)
-            print(f"[{elapsed:.1f}s / {args.duration}s] Completed {iterations} fused cycles | {tok_per_sec:.0f} tokens/sec | GPU Sync OK | Remaining: {remaining:.1f}s")
-        
+            print(
+                f"[{elapsed:.1f}s / {args.duration}s] Completed {iterations} fused cycles | {tok_per_sec:.0f} tokens/sec | GPU Sync OK | Remaining: {remaining:.1f}s"
+            )
+
         torch.cuda.synchronize()
 
     total_time = time.time() - start_time
-    print(f"\n================================================================================")
-    print(f"  STRESS TEST COMPLETE: 100% HEALTHY & STABLE")
-    print(f"  Duration: {total_time:.2f}s | Iterations: {iterations} | Throughput: {total_tokens_processed / total_time:.0f} tokens/sec")
-    print(f"================================================================================")
+    print("\n================================================================================")
+    print("  STRESS TEST COMPLETE: 100% HEALTHY & STABLE")
+    print(
+        f"  Duration: {total_time:.2f}s | Iterations: {iterations} | Throughput: {total_tokens_processed / total_time:.0f} tokens/sec"
+    )
+    print("================================================================================")
+
 
 if __name__ == "__main__":
     main()

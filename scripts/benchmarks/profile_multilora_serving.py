@@ -1,26 +1,32 @@
 # -*- coding: utf-8 -*-
+"""Profile multilora serving module.
+
+Author: Taha Majlesi
+"""
+
 # Author: Taha Majlesi
 import os
 import sys
 import gc
 import json
 import time
-import math
 import csv
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 sys.path.insert(0, "/mnt/d/SVD_linear_Attention")
-from neuralops.core.cuda_kernels.low_rank_svd import fused_lowrank_gated_gemm
+
 
 def get_cuda_mem():
+    """Execute get cuda mem routine."""
     return {
-        "allocated_mb": round(torch.cuda.memory_allocated() / (1024 ** 2), 4),
-        "max_allocated_mb": round(torch.cuda.max_memory_allocated() / (1024 ** 2), 4),
-        "reserved_mb": round(torch.cuda.memory_reserved() / (1024 ** 2), 4),
-        "max_reserved_mb": round(torch.cuda.max_memory_reserved() / (1024 ** 2), 4),
+        "allocated_mb": round(torch.cuda.memory_allocated() / (1024**2), 4),
+        "max_allocated_mb": round(torch.cuda.max_memory_allocated() / (1024**2), 4),
+        "reserved_mb": round(torch.cuda.memory_reserved() / (1024**2), 4),
+        "max_reserved_mb": round(torch.cuda.max_memory_reserved() / (1024**2), 4),
     }
+
 
 class BatchedMultiLoRAOperator(nn.Module):
     """
@@ -30,7 +36,9 @@ class BatchedMultiLoRAOperator(nn.Module):
     Y_adapter = (X_i @ B_i) @ A_i * (scaling_i)
     for distinct adapter ranks R in {16, 32}.
     """
+
     def __init__(self, in_features=1024, out_features=1024, num_adapters=4, ranks=None, device="cuda:0"):
+        """Execute init routine."""
         super().__init__()
         ranks = [16, 32, 16, 32] if ranks is None else ranks
         self.in_features = in_features
@@ -40,17 +48,23 @@ class BatchedMultiLoRAOperator(nn.Module):
         self.device = torch.device(device)
 
         # Frozen Base Weight (e.g. 1024 x 1024 in FP16)
-        self.w_base = nn.Parameter(torch.randn(out_features, in_features, device=self.device, dtype=torch.float16), requires_grad=False)
+        self.w_base = nn.Parameter(
+            torch.randn(out_features, in_features, device=self.device, dtype=torch.float16), requires_grad=False
+        )
 
         # Multi-LoRA Adapters A_i [R, out_features], B_i [in_features, R]
-        self.lora_A = nn.ParameterList([
-            nn.Parameter(torch.randn(ranks[i], out_features, device=self.device, dtype=torch.float16) * 0.02)
-            for i in range(num_adapters)
-        ])
-        self.lora_B = nn.ParameterList([
-            nn.Parameter(torch.randn(in_features, ranks[i], device=self.device, dtype=torch.float16) * 0.02)
-            for i in range(num_adapters)
-        ])
+        self.lora_A = nn.ParameterList(
+            [
+                nn.Parameter(torch.randn(ranks[i], out_features, device=self.device, dtype=torch.float16) * 0.02)
+                for i in range(num_adapters)
+            ]
+        )
+        self.lora_B = nn.ParameterList(
+            [
+                nn.Parameter(torch.randn(in_features, ranks[i], device=self.device, dtype=torch.float16) * 0.02)
+                for i in range(num_adapters)
+            ]
+        )
         self.scalings = [16.0 / ranks[i] for i in range(num_adapters)]
 
     def forward_sequential(self, inputs):
@@ -74,7 +88,9 @@ class BatchedMultiLoRAOperator(nn.Module):
                 outputs[i] = y_base + y_lora
         return outputs
 
+
 def main():
+    """Execute main routine."""
     print("=== BATCHED MULTI-LORA CONCURRENT SERVING PROFILE ===")
     device = torch.device("cuda:0")
     device_name = torch.cuda.get_device_name(0)
@@ -82,7 +98,7 @@ def main():
 
     # Operational Parameters
     num_adapters = 4
-    ranks = [16, 32, 16, 32] # 4 separate low-rank adapter matrices
+    ranks = [16, 32, 16, 32]  # 4 separate low-rank adapter matrices
     batch_size = 4
     seq_len = 512
     dim = 1024
@@ -91,7 +107,9 @@ def main():
     lora_streams = [torch.cuda.Stream(device=device) for _ in range(num_adapters)]
 
     # Model instantiation
-    operator = BatchedMultiLoRAOperator(in_features=dim, out_features=dim, num_adapters=num_adapters, ranks=ranks, device=device)
+    operator = BatchedMultiLoRAOperator(
+        in_features=dim, out_features=dim, num_adapters=num_adapters, ranks=ranks, device=device
+    )
 
     # 4 Separate Client Queries (each routing to adapter 0, 1, 2, 3)
     inputs = [
@@ -202,10 +220,12 @@ def main():
             checkpoints[it] = {
                 "allocated_mb": mem["allocated_mb"],
                 "reserved_mb": mem["reserved_mb"],
-                "fragmentation_pct": round(frag, 2)
+                "fragmentation_pct": round(frag, 2),
             }
             drift = round(mem["allocated_mb"] - checkpoints[100]["allocated_mb"], 4) if 100 in checkpoints else 0.0
-            print(f"  Iter {it:4d}/1000: Alloc = {mem['allocated_mb']:.2f} MB, Res = {mem['reserved_mb']:.2f} MB | Frag = {frag:.2f}% | Drift = {drift:.4f} MB")
+            print(
+                f"  Iter {it:4d}/1000: Alloc = {mem['allocated_mb']:.2f} MB, Res = {mem['reserved_mb']:.2f} MB | Frag = {frag:.2f}% | Drift = {drift:.4f} MB"
+            )
 
     torch.cuda.synchronize()
     elapsed_stress = time.time() - t0_stress
@@ -215,8 +235,12 @@ def main():
     final_frag = round((1.0 - (m_final["allocated_mb"] / (m_final["reserved_mb"] + 1e-6))) * 100.0, 2)
 
     print("\n--- BATCHED MULTI-LORA SERVING SUMMARY ---")
-    print(f"Forward Latency:      Sequential = {seq_fwd_ms:.2f} ms | Concurrent = {par_fwd_ms:.2f} ms | Speedup = {fwd_speedup:.2f}x")
-    print(f"Fwd+Bwd Step Latency: Sequential = {seq_bwd_ms:.2f} ms | Concurrent = {par_bwd_ms:.2f} ms | Speedup = {bwd_speedup:.2f}x")
+    print(
+        f"Forward Latency:      Sequential = {seq_fwd_ms:.2f} ms | Concurrent = {par_fwd_ms:.2f} ms | Speedup = {fwd_speedup:.2f}x"
+    )
+    print(
+        f"Fwd+Bwd Step Latency: Sequential = {seq_bwd_ms:.2f} ms | Concurrent = {par_bwd_ms:.2f} ms | Speedup = {bwd_speedup:.2f}x"
+    )
     print(f"Total NaNs / Infs:    NaNs = {total_nans} | Infs = {total_infs}")
     print(f"Numerical Match:      diffs = {max_diffs} (Clean: {clean_match})")
     print(f"Alloc Drift (100->1k):{net_drift:.4f} MB (Zero Leak: {net_drift == 0.0})")
@@ -231,12 +255,36 @@ def main():
         writer.writerow(["Adapter_ID", "Rank_R", "Input_Shape", "Param_VRAM_KB", "Scaling_Alpha_Div_R"])
         for i in range(num_adapters):
             kb = round((operator.lora_A[i].numel() + operator.lora_B[i].numel()) * 2 / 1024, 2)
-            writer.writerow([f"Adapter_{i+1}", ranks[i], f"{batch_size}x{seq_len}x{dim}", kb, operator.scalings[i]])
+            writer.writerow([f"Adapter_{i + 1}", ranks[i], f"{batch_size}x{seq_len}x{dim}", kb, operator.scalings[i]])
         writer.writerow([])
         writer.writerow(["=== SERVING LATENCY & CONCURRENCY OVERLAP ==="])
-        writer.writerow(["Execution_Mode", "Sequential_Latency_MS", "Concurrent_Latency_MS", "Speedup_Factor", "Throughput_Queries_Sec"])
-        writer.writerow(["Forward_Inference_4_Adapters", round(seq_fwd_ms, 3), round(par_fwd_ms, 3), fwd_speedup, round(num_adapters / (par_fwd_ms/1000), 1)])
-        writer.writerow(["Forward_Backward_Step_4_Adapters", round(seq_bwd_ms, 3), round(par_bwd_ms, 3), bwd_speedup, round(num_adapters / (par_bwd_ms/1000), 1)])
+        writer.writerow(
+            [
+                "Execution_Mode",
+                "Sequential_Latency_MS",
+                "Concurrent_Latency_MS",
+                "Speedup_Factor",
+                "Throughput_Queries_Sec",
+            ]
+        )
+        writer.writerow(
+            [
+                "Forward_Inference_4_Adapters",
+                round(seq_fwd_ms, 3),
+                round(par_fwd_ms, 3),
+                fwd_speedup,
+                round(num_adapters / (par_fwd_ms / 1000), 1),
+            ]
+        )
+        writer.writerow(
+            [
+                "Forward_Backward_Step_4_Adapters",
+                round(seq_bwd_ms, 3),
+                round(par_bwd_ms, 3),
+                bwd_speedup,
+                round(num_adapters / (par_bwd_ms / 1000), 1),
+            ]
+        )
         writer.writerow([])
         writer.writerow(["=== 1000-ITERATION MEMORY LEAK & FRAGMENTATION ==="])
         writer.writerow(["Metric", "Value"])
@@ -258,17 +306,39 @@ def main():
         f.write("% Target Architecture: NVIDIA RTX 4070 Laptop GPU (8GB VRAM, Ada Lovelace SM 8.9)\n\n")
 
         f.write("\\begin{table*}[t]\n\\centering\n\\small\n")
-        f.write("\\caption{\\textbf{Batched Multi-LoRA Concurrent Serving and Dynamic Routing Overhead.} Evaluation of 4 concurrent low-rank adapter updates ($R \\in \\{16, 32\\}$) evaluated sequentially versus concurrently across 4 independent CUDA streams on physical NVIDIA RTX 4070 Laptop GPU. Dynamic stream routing achieves up to \\textbf{" + f"{fwd_speedup:.2f}" + "$\\times$} serving speedup while maintaining strictly \\textbf{0.0000~MB} memory drift and \\textbf{" + f"{final_frag:.2f}" + "\\%} fragmentation over 1,000 autograd steps.}\n")
+        f.write(
+            "\\caption{\\textbf{Batched Multi-LoRA Concurrent Serving and Dynamic Routing Overhead.} Evaluation of 4 concurrent low-rank adapter updates ($R \\in \\{16, 32\\}$) evaluated sequentially versus concurrently across 4 independent CUDA streams on physical NVIDIA RTX 4070 Laptop GPU. Dynamic stream routing achieves up to \\textbf{"
+            + f"{fwd_speedup:.2f}"
+            + "$\\times$} serving speedup while maintaining strictly \\textbf{0.0000~MB} memory drift and \\textbf{"
+            + f"{final_frag:.2f}"
+            + "\\%} fragmentation over 1,000 autograd steps.}\n"
+        )
         f.write("\\label{tab:multilora_serving}\n")
         f.write("\\begin{tabular}{l ccccc}\n\\toprule\n")
-        f.write("Operational Execution Mode & Sequential (ms) & Concurrent (ms) & Stream Speedup & Throughput (QPS) & Allocator Frag. \\\\\n\\midrule\n")
-        f.write(f"Forward Inference (4 LoRA Adapters) & {seq_fwd_ms:.2f} & {par_fwd_ms:.2f} & \\textbf{{{fwd_speedup:.2f}" + "\\times}} & " + f"{round(num_adapters/(par_fwd_ms/1000), 1)} & \\textbf{{{final_frag:.2f}\\%}} \\\\\n")
-        f.write(f"Forward+Backward Step (4 Adapters) & {seq_bwd_ms:.2f} & {par_bwd_ms:.2f} & \\textbf{{{bwd_speedup:.2f}" + "\\times}} & " + f"{round(num_adapters/(par_bwd_ms/1000), 1)} & \\textbf{{{final_frag:.2f}\\%}} \\\\\n")
+        f.write(
+            "Operational Execution Mode & Sequential (ms) & Concurrent (ms) & Stream Speedup & Throughput (QPS) & Allocator Frag. \\\\\n\\midrule\n"
+        )
+        f.write(
+            f"Forward Inference (4 LoRA Adapters) & {seq_fwd_ms:.2f} & {par_fwd_ms:.2f} & \\textbf{{{fwd_speedup:.2f}"
+            + "\\times}} & "
+            + f"{round(num_adapters / (par_fwd_ms / 1000), 1)} & \\textbf{{{final_frag:.2f}\\%}} \\\\\n"
+        )
+        f.write(
+            f"Forward+Backward Step (4 Adapters) & {seq_bwd_ms:.2f} & {par_bwd_ms:.2f} & \\textbf{{{bwd_speedup:.2f}"
+            + "\\times}} & "
+            + f"{round(num_adapters / (par_bwd_ms / 1000), 1)} & \\textbf{{{final_frag:.2f}\\%}} \\\\\n"
+        )
         f.write("\\midrule\n")
         f.write("\\multicolumn{6}{l}{\\textbf{Adapter Memory \\& Numerical Verification Profile:}} \\\\\n")
-        f.write(f"$\\bullet$ 4x LoRA Parameter Footprint: & \\multicolumn{{5}}{{l}}{{Total \\textbf{{{adapter_vram_kb}~KB}} (Adapter 1,3: $R=16$ [64~KB]; Adapter 2,4: $R=32$ [128~KB])}} \\\\\n")
-        f.write("$\\bullet$ 1,000-Step Memory Drift: & \\multicolumn{5}{l}{\\textbf{0.0000~MB} (Strict Zero Leak Verified across checkpoints 100 to 1,000)} \\\\\n")
-        f.write("$\\bullet$ Numerical Output Parity: & \\multicolumn{5}{l}{\\textbf{0 NaNs, 0 Infs}, Bitwise exact match with sequential baseline ($\\Delta = 0.000000$)} \\\\\n")
+        f.write(
+            f"$\\bullet$ 4x LoRA Parameter Footprint: & \\multicolumn{{5}}{{l}}{{Total \\textbf{{{adapter_vram_kb}~KB}} (Adapter 1,3: $R=16$ [64~KB]; Adapter 2,4: $R=32$ [128~KB])}} \\\\\n"
+        )
+        f.write(
+            "$\\bullet$ 1,000-Step Memory Drift: & \\multicolumn{5}{l}{\\textbf{0.0000~MB} (Strict Zero Leak Verified across checkpoints 100 to 1,000)} \\\\\n"
+        )
+        f.write(
+            "$\\bullet$ Numerical Output Parity: & \\multicolumn{5}{l}{\\textbf{0 NaNs, 0 Infs}, Bitwise exact match with sequential baseline ($\\Delta = 0.000000$)} \\\\\n"
+        )
         f.write("\\bottomrule\n\\end{tabular}\n\\end{table*}\n")
 
     print(f"Saved LaTeX table to {latex_path}")
@@ -286,12 +356,13 @@ def main():
             "net_drift_mb": net_drift,
             "zero_leak_verified": net_drift == 0.0,
             "final_fragmentation_pct": final_frag,
-            "checkpoints": checkpoints
-        }
+            "checkpoints": checkpoints,
+        },
     }
     with open(json_path, "w") as f:
         json.dump(summary, f, indent=2)
     print(f"Saved JSON summary to {json_path}")
+
 
 if __name__ == "__main__":
     main()

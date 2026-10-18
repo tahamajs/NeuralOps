@@ -80,6 +80,7 @@ regimes = [
 ]
 
 def build_student(arch_key: str):
+    """Execute build student routine."""
     s = GPT2LMHeadModel(cfg).to(device)
     s.load_state_dict(teacher.state_dict())
     
@@ -101,6 +102,7 @@ def build_student(arch_key: str):
     return s
 
 def evaluate_metrics(model):
+    """Execute evaluate metrics routine."""
     model.eval()
     set_surgery_alpha(model, 1.0)
     with torch.no_grad():

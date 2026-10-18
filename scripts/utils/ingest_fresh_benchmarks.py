@@ -18,7 +18,6 @@ Updates:
 
 import csv
 import json
-import os
 import sys
 from pathlib import Path
 
@@ -28,7 +27,9 @@ if str(repo_root) not in sys.path:
 
 from neuralops.core.results_ledger import ResultsLedger, ResultRecord, get_file_git_provenance, get_current_git_sha
 
+
 def ingest_all():
+    """Execute ingest all routine."""
     ledger = ResultsLedger(root_dir=repo_root / "results")
     curr_sha = get_current_git_sha(repo_root)
     total_ingested = 0
@@ -260,7 +261,7 @@ def ingest_all():
         )
         ledger.add_or_replace(rec_sum, mode="upsert")
         total_ingested += 1
-        print(f"[✓] Ingested multi-seed stress test summary record (125 attentions x 72 compressors)")
+        print("[✓] Ingested multi-seed stress test summary record (125 attentions x 72 compressors)")
 
     # 6. Ingest Serving Throughput & Paged KV Cache Benchmark
     f_serv = repo_root / "results" / "benchmarks_serving_ttft_itl_fresh.json"
@@ -330,7 +331,7 @@ def ingest_all():
             )
             ledger.add_or_replace(rec, mode="upsert")
             total_ingested += 1
-        print(f"[✓] Ingested serving and PagedKVCache records")
+        print("[✓] Ingested serving and PagedKVCache records")
 
     # Rebuild SQLite index and dossiers
     print("[+] Rebuilding SQLite index and deduplicating master_ledger.jsonl...")
@@ -374,6 +375,7 @@ def ingest_all():
     stats = ledger.get_summary_stats()
     print(f"[✓] Finished ingestion! Summary stats: {stats}")
     return stats
+
 
 if __name__ == "__main__":
     ingest_all()

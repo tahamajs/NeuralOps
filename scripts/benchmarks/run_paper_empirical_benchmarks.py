@@ -289,6 +289,7 @@ def ingest_records_into_ledger(scaling_records, precision_records, e2e_records, 
 
 
 def main():
+    """Execute main routine."""
     if not torch.cuda.is_available():
         print("CUDA is unavailable. Cannot proceed.")
         sys.exit(1)

@@ -4,6 +4,7 @@
 
 Delegates directly to canonical neuralops.benchmarks.benchmark_dynamic_range_stress.
 """
+
 import sys
 from neuralops.benchmarks.benchmark_dynamic_range_stress import *
 from neuralops.benchmarks.benchmark_dynamic_range_stress import main

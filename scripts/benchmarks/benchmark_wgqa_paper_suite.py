@@ -19,12 +19,10 @@ Outputs:
 """
 
 import os
-import sys
 import time
 import json
 import logging
 from pathlib import Path
-from collections import defaultdict
 
 # Enforce strict offline operation
 os.environ["HF_HUB_OFFLINE"] = "1"
@@ -33,12 +31,8 @@ os.environ["HF_DATASETS_OFFLINE"] = "1"
 
 import numpy as np
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
 from transformers import (
-    AutoConfig,
     AutoModelForSequenceClassification,
-    AutoModelForCausalLM,
     AutoTokenizer,
 )
 from datasets import load_dataset
@@ -74,13 +68,17 @@ MODEL_CONFIGS = {
     },
 }
 
+
 def set_seed(seed: int):
+    """Execute set seed routine."""
     torch.manual_seed(seed)
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
     np.random.seed(seed)
 
+
 def prepare_batches(task: str, tokenizer, max_samples: int = 1000, batch_size: int = 32):
+    """Execute prepare batches routine."""
     if task == "sst2":
         ds = load_dataset("nyu-mll/glue", "sst2", split="validation")
         texts = [x["sentence"] for x in ds]
@@ -120,7 +118,9 @@ def prepare_batches(task: str, tokenizer, max_samples: int = 1000, batch_size: i
         batches.append((enc, y))
     return batches
 
+
 def evaluate_classification(model, batches):
+    """Execute evaluate classification routine."""
     model.eval()
     correct = 0
     total = 0
@@ -139,11 +139,7 @@ def evaluate_classification(model, batches):
             total_tokens += enc["input_ids"].numel()
 
     elapsed = time.perf_counter() - t0
-    peak_vram = (
-        torch.cuda.max_memory_allocated(DEVICE) / (1024 * 1024)
-        if torch.cuda.is_available()
-        else 0.0
-    )
+    peak_vram = torch.cuda.max_memory_allocated(DEVICE) / (1024 * 1024) if torch.cuda.is_available() else 0.0
     acc = 100.0 * correct / max(total, 1)
     tok_per_sec = total_tokens / max(elapsed, 1e-6)
     ms_per_token = (elapsed * 1000.0) / max(total_tokens, 1)
@@ -157,12 +153,16 @@ def evaluate_classification(model, batches):
         "num_samples": total,
     }
 
+
 def count_params(model):
+    """Execute count params routine."""
     total = sum(p.numel() for p in model.parameters())
     trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
     return total, trainable
 
+
 def build_model(backbone: str, task: str, variant: str, seed: int, lora_rank: int = 16):
+    """Execute build model routine."""
     set_seed(seed)
     model_name = MODEL_CONFIGS[backbone].get(task, MODEL_CONFIGS[backbone]["base"])
     num_labels = 2 if task == "sst2" else (3 if task == "mnli" else 4)
@@ -180,7 +180,7 @@ def build_model(backbone: str, task: str, variant: str, seed: int, lora_rank: in
 
     total_before, _ = count_params(model)
 
-    is_dec = (backbone == "gpt2")
+    is_dec = backbone == "gpt2"
     if variant == "softmax":
         pass
     elif variant == "gqa":
@@ -194,7 +194,9 @@ def build_model(backbone: str, task: str, variant: str, seed: int, lora_rank: in
     total_after, trainable = count_params(model)
     return model, tokenizer, total_before, total_after, trainable
 
+
 def run_suite():
+    """Execute run suite routine."""
     backbones = ["distilbert", "roberta", "gpt2"]
     tasks = ["sst2", "mnli", "ag_news"]
     variants = ["softmax", "gqa", "wgqa"]
@@ -243,9 +245,7 @@ def run_suite():
     lora_ablation_results = []
     for r in lora_ranks:
         logger.info(f"Evaluating WGQA LoRA rank r={r}...")
-        model, tokenizer, p_before, p_after, p_train = build_model(
-            "distilbert", "sst2", "wgqa", seed=42, lora_rank=r
-        )
+        model, tokenizer, p_before, p_after, p_train = build_model("distilbert", "sst2", "wgqa", seed=42, lora_rank=r)
         batches = prepare_batches("sst2", tokenizer, max_samples=872)
         metrics = evaluate_classification(model, batches)
         del model
@@ -270,7 +270,8 @@ def run_suite():
             row = {"backbone": backbone, "task": task}
             for variant in variants:
                 matches = [
-                    r for r in raw_results
+                    r
+                    for r in raw_results
                     if r["backbone"] == backbone and r["task"] == task and r["variant"] == variant
                 ]
                 accs = [m["accuracy"] for m in matches]
@@ -287,22 +288,23 @@ def run_suite():
     for backbone in backbones:
         for task in tasks:
             wgqa_matches = [
-                r for r in raw_results
-                if r["backbone"] == backbone and r["task"] == task and r["variant"] == "wgqa"
+                r for r in raw_results if r["backbone"] == backbone and r["task"] == task and r["variant"] == "wgqa"
             ]
             s42 = next(m["accuracy"] for m in wgqa_matches if m["seed"] == 42)
             s123 = next(m["accuracy"] for m in wgqa_matches if m["seed"] == 123)
             s456 = next(m["accuracy"] for m in wgqa_matches if m["seed"] == 456)
             all_acc = [s42, s123, s456]
-            table2.append({
-                "backbone": backbone,
-                "task": task,
-                "seed_42": s42,
-                "seed_123": s123,
-                "seed_456": s456,
-                "mean": round(float(np.mean(all_acc)), 2),
-                "std": round(float(np.std(all_acc)), 2),
-            })
+            table2.append(
+                {
+                    "backbone": backbone,
+                    "task": task,
+                    "seed_42": s42,
+                    "seed_123": s123,
+                    "seed_456": s456,
+                    "mean": round(float(np.mean(all_acc)), 2),
+                    "std": round(float(np.std(all_acc)), 2),
+                }
+            )
 
     with open(OUTPUT_DIR / "table1_cross_architecture.json", "w") as f:
         json.dump(table1, f, indent=2)
@@ -314,6 +316,7 @@ def run_suite():
         json.dump(raw_results, f, indent=2)
 
     logger.info("BENCHMARK COMPLETE! Artifacts saved to results/wgqa_paper")
+
 
 if __name__ == "__main__":
     run_suite()

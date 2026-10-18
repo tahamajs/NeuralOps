@@ -1,7 +1,11 @@
-import sys, time
+"""Benchmark spec 9modules module.
+
+Author: Taha Majlesi
+"""
+
+import sys
 from pathlib import Path
 import torch
-import torch.nn.functional as F
 
 repo_root = Path(__file__).resolve().parent.parent.parent
 if str(repo_root) not in sys.path:
@@ -12,26 +16,30 @@ from neuralops.core.cuda_kernels import force_kernel_backend
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 assert torch.cuda.is_available(), "CUDA required for GPU benchmark"
 
+
 def benchmark(fn, warmup=10, iters=50):
+    """Execute benchmark routine."""
     for _ in range(warmup):
         fn()
     torch.cuda.synchronize()
-    
+
     start_event = torch.cuda.Event(enable_timing=True)
     end_event = torch.cuda.Event(enable_timing=True)
-    
+
     start_event.record()
     for _ in range(iters):
         fn()
     end_event.record()
     torch.cuda.synchronize()
-    
+
     return start_event.elapsed_time(end_event) / iters  # ms
+
 
 rows = []
 
 # 1. fwht_transform
 from neuralops.core.cuda_kernels.fwht_transform import fwht_transform, fwht_transform_pytorch_ref
+
 x_fwht = torch.randn(64, 512, device=device, dtype=torch.float16)
 with force_kernel_backend("cuda"):
     out_cuda_1 = fwht_transform(x_fwht, B_dim=512)
@@ -44,7 +52,8 @@ sp_1 = ref_ms_1 / cuda_ms_1 if cuda_ms_1 > 0 else 0
 rows.append(("fwht_transform", cuda_ms_1, ref_ms_1, sp_1, diff_1))
 
 # 2. unified_rope_offset
-from neuralops.core.cuda_kernels.unified_rope_offset import unified_rope_offset, fused_unified_rope_offset_pytorch
+from neuralops.core.cuda_kernels.unified_rope_offset import unified_rope_offset
+
 B, H, N, D = 8, 16, 128, 64
 x_rope = torch.randn(B, H, N, D, device=device, dtype=torch.float32)
 cos_rope = torch.cos(torch.randn(N + 16, D // 2, device=device, dtype=torch.float32))
@@ -61,6 +70,7 @@ rows.append(("unified_rope_offset", cuda_ms_2, ref_ms_2, sp_2, diff_2))
 
 # 3. moe_routing
 from neuralops.core.cuda_kernels.moe_routing import moe_dispatch_gather
+
 B_moe, D_moe = 128, 256
 tokens_moe = torch.randn(B_moe, D_moe, device=device, dtype=torch.float16)
 gate_logits_moe = torch.randn(B_moe, 8, device=device, dtype=torch.float16)
@@ -77,6 +87,7 @@ rows.append(("moe_routing", cuda_ms_3, ref_ms_3, sp_3, diff_3))
 
 # 4. split_head_norm
 from neuralops.core.cuda_kernels.split_head_norm import split_head_norm, split_head_norm_pytorch_ref
+
 x_shn = torch.randn(256, 128, device=device, dtype=torch.float32)
 w_shn = torch.randn(128, device=device, dtype=torch.float32)
 with force_kernel_backend("cuda"):
@@ -91,6 +102,7 @@ rows.append(("split_head_norm", cuda_ms_4, ref_ms_4, sp_4, diff_4))
 
 # 5. paged_attention
 from neuralops.core.cuda_kernels.paged_attention import paged_attention, paged_attention_pytorch_reference
+
 num_seqs, num_heads, num_kv_heads, head_dim, block_sz, max_blocks = 16, 16, 4, 64, 16, 16
 q_pa = torch.randn(num_seqs, num_heads, head_dim, device=device, dtype=torch.float32)
 num_total_blocks = num_seqs * max_blocks
@@ -103,16 +115,25 @@ for i in range(num_seqs):
     block_tables_pa[i, :nb] = torch.arange(i * max_blocks, i * max_blocks + nb, device=device)
 with force_kernel_backend("cuda"):
     out_cuda_5 = paged_attention(q_pa, k_pa, v_pa, block_tables_pa, context_lens_pa, block_size=block_sz)
-    cuda_ms_5 = benchmark(lambda: paged_attention(q_pa, k_pa, v_pa, block_tables_pa, context_lens_pa, block_size=block_sz))
+    cuda_ms_5 = benchmark(
+        lambda: paged_attention(q_pa, k_pa, v_pa, block_tables_pa, context_lens_pa, block_size=block_sz)
+    )
 with force_kernel_backend("pytorch"):
-    out_ref_5 = paged_attention_pytorch_reference(q_pa, k_pa, v_pa, block_tables_pa, context_lens_pa, block_size=block_sz)
-    ref_ms_5 = benchmark(lambda: paged_attention_pytorch_reference(q_pa, k_pa, v_pa, block_tables_pa, context_lens_pa, block_size=block_sz))
+    out_ref_5 = paged_attention_pytorch_reference(
+        q_pa, k_pa, v_pa, block_tables_pa, context_lens_pa, block_size=block_sz
+    )
+    ref_ms_5 = benchmark(
+        lambda: paged_attention_pytorch_reference(
+            q_pa, k_pa, v_pa, block_tables_pa, context_lens_pa, block_size=block_sz
+        )
+    )
 diff_5 = (out_cuda_5 - out_ref_5).abs().max().item()
 sp_5 = ref_ms_5 / cuda_ms_5 if cuda_ms_5 > 0 else 0
 rows.append(("paged_attention", cuda_ms_5, ref_ms_5, sp_5, diff_5))
 
 # 6. fused_dropout_add
 from neuralops.core.cuda_kernels.fused_dropout_add import fused_dropout_add, fused_dropout_add_pytorch_ref
+
 x_da = torch.randn(128, 512, device=device, dtype=torch.float32)
 res_da = torch.randn(128, 512, device=device, dtype=torch.float32)
 with force_kernel_backend("cuda"):
@@ -127,6 +148,7 @@ rows.append(("fused_dropout_add", cuda_ms_6, ref_ms_6, sp_6, diff_6))
 
 # 7. fused_ce
 from neuralops.core.cuda_kernels.fused_ce import fused_cross_entropy, fused_cross_entropy_pytorch_ref
+
 logits_ce = torch.randn(64, 1024, device=device, dtype=torch.float32)
 targets_ce = torch.randint(0, 1024, (64,), device=device, dtype=torch.int64)
 with force_kernel_backend("cuda"):
@@ -141,6 +163,7 @@ rows.append(("fused_ce", cuda_ms_7, ref_ms_7, sp_7, diff_7))
 
 # 8. logcumsumexp
 from neuralops.core.cuda_kernels.logcumsumexp import logcumsumexp, logcumsumexp_pytorch_ref
+
 x_lcse = torch.randn(64, 128, device=device, dtype=torch.float32)
 with force_kernel_backend("cuda"):
     out_cuda_8 = logcumsumexp(x_lcse)
@@ -154,6 +177,7 @@ rows.append(("logcumsumexp", cuda_ms_8, ref_ms_8, sp_8, diff_8))
 
 # 9. fused_norm_linear
 from neuralops.core.cuda_kernels.fused_norm_linear import fused_norm_linear, fused_norm_linear_pytorch_ref
+
 M_fnl, K_fnl, N_fnl = 64, 256, 128
 x_fnl = torch.randn(M_fnl, K_fnl, device=device, dtype=torch.float32)
 w_fnl = torch.randn(N_fnl, K_fnl, device=device, dtype=torch.float32)
@@ -174,7 +198,8 @@ print("-" * 90)
 all_pass = True
 for name, c_ms, r_ms, sp, diff in rows:
     status = "PASS" if diff < 1e-3 and c_ms > 0 and r_ms > 0 else "FAIL"
-    if status == "FAIL": all_pass = False
+    if status == "FAIL":
+        all_pass = False
     print(f"{name:<22} | {c_ms:<10.4f} | {r_ms:<10.4f} | {sp:<8.2f}x | {diff:<12.2e} | {status}")
 print("=" * 90)
 print(f"Overall Result: {'100% ALL PASS' if all_pass else 'SOME FAILED'}")

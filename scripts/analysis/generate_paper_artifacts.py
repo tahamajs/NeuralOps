@@ -17,11 +17,11 @@ Outputs:
 """
 
 import json
-import csv
 from pathlib import Path
 import numpy as np
 
 import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
@@ -32,33 +32,40 @@ paper_fig_dir.mkdir(parents=True, exist_ok=True)
 paper_tab_dir = Path("paper/tables")
 paper_tab_dir.mkdir(parents=True, exist_ok=True)
 
+
 def save_fig_all(fig, stem: str):
+    """Execute save fig all routine."""
     for d in [plots_dir, paper_fig_dir]:
         fig.savefig(d / f"{stem}.pdf")
         fig.savefig(d / f"{stem}.svg")
         fig.savefig(d / f"{stem}.png")
 
+
 def save_tex_all(content: str, stem: str):
+    """Execute save tex all routine."""
     for d in [plots_dir, paper_tab_dir]:
         with open(d / f"{stem}.tex", "w", encoding="utf-8") as f:
             f.write(content)
 
-plt.rcParams.update({
-    "font.family": "serif",
-    "font.size": 11,
-    "axes.labelsize": 12,
-    "axes.titlesize": 13,
-    "xtick.labelsize": 10,
-    "ytick.labelsize": 10,
-    "legend.fontsize": 10,
-    "figure.titlesize": 14,
-    "lines.linewidth": 1.8,
-    "axes.grid": True,
-    "grid.alpha": 0.3,
-    "grid.linestyle": "--",
-    "savefig.dpi": 300,
-    "savefig.bbox": "tight",
-})
+
+plt.rcParams.update(
+    {
+        "font.family": "serif",
+        "font.size": 11,
+        "axes.labelsize": 12,
+        "axes.titlesize": 13,
+        "xtick.labelsize": 10,
+        "ytick.labelsize": 10,
+        "legend.fontsize": 10,
+        "figure.titlesize": 14,
+        "lines.linewidth": 1.8,
+        "axes.grid": True,
+        "grid.alpha": 0.3,
+        "grid.linestyle": "--",
+        "savefig.dpi": 300,
+        "savefig.bbox": "tight",
+    }
+)
 
 # ==============================================================================
 # 1. Figure & Table: WikiText-2 Pareto Frontier (72 Compressors)
@@ -70,7 +77,11 @@ if wikitext_json.exists():
 
     succ = []
     for r in records:
-        if r.get("status") == "success" and r.get("perplexity") is not None and str(r.get("perplexity")).lower() != "nan":
+        if (
+            r.get("status") == "success"
+            and r.get("perplexity") is not None
+            and str(r.get("perplexity")).lower() != "nan"
+        ):
             entry = dict(r)
             try:
                 entry["perplexity"] = float(r["perplexity"])
@@ -93,14 +104,21 @@ if wikitext_json.exists():
     ax.set_title("Pareto Frontier: Parameter Reduction vs Perplexity")
 
     # Annotate notable points
-    notable = ["baseline_gpt2", "aatc_xkv_compressor", "kmeans_quantize", "mlorq_compressor", "bonsai_pruner", "aa_svd_compressor", "direct_svd"]
+    notable = [
+        "baseline_gpt2",
+        "aatc_xkv_compressor",
+        "kmeans_quantize",
+        "mlorq_compressor",
+        "bonsai_pruner",
+        "aa_svd_compressor",
+        "direct_svd",
+    ]
     for r in succ:
         if r["compressor"] in notable:
             p_red = r["param_reduction_pct"]
             p_val = min(r["perplexity"], 10000.0)
             ax.scatter([p_red], [p_val], c="#d62728", s=70, zorder=5)
-            ax.annotate(r["compressor"], (p_red, p_val),
-                        fontsize=8, xytext=(4, 4), textcoords="offset points")
+            ax.annotate(r["compressor"], (p_red, p_val), fontsize=8, xytext=(4, 4), textcoords="offset points")
 
     ax.legend(frameon=True, loc="upper left")
     plt.tight_layout()
@@ -120,7 +138,7 @@ if wikitext_json.exists():
 \\midrule
 """
     for r in top_10:
-        c_name = r['compressor'].replace('_', '\\_')
+        c_name = r["compressor"].replace("_", "\\_")
         tex_pareto += f"{c_name} & {r['perplexity']:.2f} & {r['param_reduction_pct']:.1f}\\% & {r['peak_vram_mb']:.1f} & {r['latency_ms_per_token']:.3f} \\\\\n"
     tex_pareto += """\\bottomrule
 \\end{tabular}
@@ -156,7 +174,9 @@ if ablation_json.exists():
     for i, r_label in enumerate(regime_labels):
         vals = []
         for a in archs:
-            match = [r for r in ablation_records if r["arch_label"] == a and r["regime_label"].startswith(f"Regime {i}")]
+            match = [
+                r for r in ablation_records if r["arch_label"] == a and r["regime_label"].startswith(f"Regime {i}")
+            ]
             vals.append(match[0]["cosine_sim"] if match else 0.0)
         ax.bar(x + (i - 2.5) * width, vals, width, label=r_label, color=colors[i], alpha=0.9)
 
@@ -273,4 +293,6 @@ tex_scaling += """\\bottomrule
 """
 save_tex_all(tex_scaling, "table_fla_scaling")
 
-print("All paper plots and LaTeX booktabs tables successfully generated in results/v13_deep_empirical_suite/plots/ and paper/{figures,tables}/!")
+print(
+    "All paper plots and LaTeX booktabs tables successfully generated in results/v13_deep_empirical_suite/plots/ and paper/{figures,tables}/!"
+)

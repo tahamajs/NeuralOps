@@ -227,6 +227,7 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
         v = torch.randn(B, H, T, D, device=device, dtype=torch.float16)
 
         def pt_linear_attn(q_in, k_in, v_in):
+            """Execute pt linear attn routine."""
             kv = torch.matmul(k_in.transpose(-1, -2), v_in)
             return torch.matmul(q_in, kv)
 
@@ -383,6 +384,7 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
         U_lr = torch.randn(Dout, R, device=device, dtype=torch.float16)
 
         def pt_low_rank(x, v, u):
+            """Execute pt low rank routine."""
             return (x @ v) @ u.t()
 
         t_tri = measure_ms(low_rank_forward, x_lr, V_lr, None, U_lr)
@@ -414,6 +416,7 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
         gate_e = torch.randn(M, D, device=device, dtype=torch.float16)
 
         def pt_swiglu(x, g):
+            """Execute pt swiglu routine."""
             return x * F.silu(g)
 
         t_tri = measure_ms(fused_swiglu, x_e, gate_e)
@@ -591,6 +594,7 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
         tables = torch.tensor([[0], [1], [2], [3]], device=device, dtype=torch.int32)
 
         def pt_paged_step(q_t, k_t, v_t, p_pool, b_tbl):
+            """Execute pt paged step routine."""
             out = []
             for b_idx in range(q_t.shape[0]):
                 st = p_pool[b_tbl[b_idx, 0]]
@@ -634,6 +638,7 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
 
         def pt_ssm_step(x, dt, a, b, c, d, s):
             # discretization
+            """Execute pt ssm step routine."""
             dA = torch.exp(dt.unsqueeze(-1) * a.unsqueeze(0))
             dB = dt.unsqueeze(-1) * b.unsqueeze(1)
             s_new = s * dA + x.unsqueeze(-1) * dB
@@ -1001,6 +1006,7 @@ def run_tier3_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
 
 
 def main():
+    """Execute main routine."""
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"Starting NeuralOps Hardware Leaderboard on: {device}")
     if device == "cuda":

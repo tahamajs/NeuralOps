@@ -1,3 +1,8 @@
+"""Stress 1000 multistream module.
+
+Author: Taha Majlesi
+"""
+
 import os
 import sys
 import gc
@@ -11,25 +16,29 @@ from neuralops.core.cuda_kernels.flash_gqa.flash_gqa_autograd import flash_gqa
 from neuralops.core.cuda_kernels.selective_scan import selective_scan
 from neuralops.core.cuda_kernels.low_rank_svd import fused_lowrank_gated_gemm
 
+
 def get_cuda_mem():
+    """Execute get cuda mem routine."""
     return {
-        "allocated_mb": round(torch.cuda.memory_allocated() / (1024 ** 2), 4),
-        "max_allocated_mb": round(torch.cuda.max_memory_allocated() / (1024 ** 2), 4),
-        "reserved_mb": round(torch.cuda.memory_reserved() / (1024 ** 2), 4),
-        "max_reserved_mb": round(torch.cuda.max_memory_reserved() / (1024 ** 2), 4),
+        "allocated_mb": round(torch.cuda.memory_allocated() / (1024**2), 4),
+        "max_allocated_mb": round(torch.cuda.max_memory_allocated() / (1024**2), 4),
+        "reserved_mb": round(torch.cuda.memory_reserved() / (1024**2), 4),
+        "max_reserved_mb": round(torch.cuda.max_memory_reserved() / (1024**2), 4),
     }
 
+
 def main():
+    """Execute main routine."""
     print("=== STARTING 1,000-ITERATION VRAM CONCURRENCY & LONG-DURATION STRESS TEST ===")
     device = torch.device("cuda:0")
     device_name = torch.cuda.get_device_name(0)
-    total_mem_gb = torch.cuda.get_device_properties(0).total_memory / (1024 ** 3)
+    total_mem_gb = torch.cuda.get_device_properties(0).total_memory / (1024**3)
     print(f"Target GPU: {device_name} ({total_mem_gb:.2f} GB VRAM)")
 
     # 3 Independent CUDA Streams
-    stream1 = torch.cuda.Stream(device=device) # FlashAttention
-    stream2 = torch.cuda.Stream(device=device) # SSM Recurrent Scan
-    stream3 = torch.cuda.Stream(device=device) # Low-Rank SVD GEMM
+    stream1 = torch.cuda.Stream(device=device)  # FlashAttention
+    stream2 = torch.cuda.Stream(device=device)  # SSM Recurrent Scan
+    stream3 = torch.cuda.Stream(device=device)  # Low-Rank SVD GEMM
 
     # Workload Tensors
     # Stream 1: FlashAttention / Flash GQA
@@ -58,11 +67,13 @@ def main():
     background_tensors = []
     num_chunks = 9  # 9 * 512 MB = 4608 MB (~4.5 GB)
     for _ in range(num_chunks):
-        background_tensors.append(torch.empty(256 * 1024 * 512, dtype=torch.float32, device=device)) # 512 MB chunk
-    
+        background_tensors.append(torch.empty(256 * 1024 * 512, dtype=torch.float32, device=device))  # 512 MB chunk
+
     torch.cuda.synchronize()
     bg_mem = get_cuda_mem()
-    print(f"Background load active: Allocated = {bg_mem['allocated_mb']:.2f} MB, Reserved = {bg_mem['reserved_mb']:.2f} MB")
+    print(
+        f"Background load active: Allocated = {bg_mem['allocated_mb']:.2f} MB, Reserved = {bg_mem['reserved_mb']:.2f} MB"
+    )
 
     # Warmup under heavy load
     print("Warming up concurrent kernels under load...")
@@ -81,7 +92,7 @@ def main():
     baseline_mem = get_cuda_mem()
 
     NUM_ITERS = 1000
-    print(f"\nLaunching 1,000-iteration multi-stream stress test under heavy memory pressure...")
+    print("\nLaunching 1,000-iteration multi-stream stress test under heavy memory pressure...")
 
     _checkpoints = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]
     checkpoint_stats = {}
@@ -102,15 +113,29 @@ def main():
 
         # Check for NaNs/Infs periodically
         if it % 100 == 0:
-            nan_cnt = int(torch.isnan(p1).sum().item()) + int(torch.isnan(p2).sum().item()) + int(torch.isnan(p3).sum().item())
-            inf_cnt = int(torch.isinf(p1).sum().item()) + int(torch.isinf(p2).sum().item()) + int(torch.isinf(p3).sum().item())
+            nan_cnt = (
+                int(torch.isnan(p1).sum().item())
+                + int(torch.isnan(p2).sum().item())
+                + int(torch.isnan(p3).sum().item())
+            )
+            inf_cnt = (
+                int(torch.isinf(p1).sum().item())
+                + int(torch.isinf(p2).sum().item())
+                + int(torch.isinf(p3).sum().item())
+            )
             total_nans += nan_cnt
             total_infs += inf_cnt
 
             mem = get_cuda_mem()
             checkpoint_stats[it] = mem
-            drift_from_100 = round(mem["allocated_mb"] - checkpoint_stats[100]["allocated_mb"], 4) if 100 in checkpoint_stats else 0.0
-            print(f"  Iter {it:4d}/1000: Allocated = {mem['allocated_mb']:.2f} MB, Reserved = {mem['reserved_mb']:.2f} MB | Drift from iter 100: {drift_from_100:.4f} MB")
+            drift_from_100 = (
+                round(mem["allocated_mb"] - checkpoint_stats[100]["allocated_mb"], 4)
+                if 100 in checkpoint_stats
+                else 0.0
+            )
+            print(
+                f"  Iter {it:4d}/1000: Allocated = {mem['allocated_mb']:.2f} MB, Reserved = {mem['reserved_mb']:.2f} MB | Drift from iter 100: {drift_from_100:.4f} MB"
+            )
 
         del p1, p2, p3
 
@@ -125,7 +150,7 @@ def main():
     frag_ratio = 1.0 - (final_mem["allocated_mb"] / (final_mem["reserved_mb"] + 1e-6))
 
     print("\n--- 1,000-ITERATION STRESS SUMMARY ---")
-    print(f"Total Elapsed Time:    {elapsed:.2f} s ({elapsed/NUM_ITERS*1000:.3f} ms/iter)")
+    print(f"Total Elapsed Time:    {elapsed:.2f} s ({elapsed / NUM_ITERS * 1000:.3f} ms/iter)")
     print(f"Baseline Allocated:    {baseline_mem['allocated_mb']:.2f} MB")
     print(f"Final Allocated:       {final_mem['allocated_mb']:.2f} MB")
     print(f"Peak Allocated:        {peak_allocated:.2f} MB")
@@ -157,9 +182,9 @@ def main():
         "numerical_integrity": {
             "total_nans": total_nans,
             "total_infs": total_infs,
-            "clean": (total_nans == 0 and total_infs == 0)
+            "clean": (total_nans == 0 and total_infs == 0),
         },
-        "checkpoints": checkpoint_stats
+        "checkpoints": checkpoint_stats,
     }
 
     out_file = "/mnt/d/SVD_linear_Attention/results/profiling/vram_concurrency_1000_stress.json"
@@ -167,6 +192,7 @@ def main():
     with open(out_file, "w") as f:
         json.dump(stress_report, f, indent=2)
     print(f"Saved stress profile to {out_file}")
+
 
 if __name__ == "__main__":
     main()
