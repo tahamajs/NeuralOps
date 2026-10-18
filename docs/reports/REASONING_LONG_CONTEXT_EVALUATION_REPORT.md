@@ -89,7 +89,26 @@ Evaluated over 128 consecutive autoregressive tokens under greedy decoding on NV
 
 ---
 
-## 5. Long-Context Scaling & Numerical Validation ($L=512 \dots 4096$)
+## 5. Concurrent Workload Jitter & Tail Bounds ($p99 \le 45\text{ ms}$)
+
+To validate real-time predictability under concurrent multi-tenant serving, continuous token generation was stress-tested against active concurrent background host-to-device/device-to-host transfers and background SVD tensor compression on the NVIDIA RTX 4070 Laptop GPU:
+
+| Background Workload Mode | Architecture | Throughput | Mean Latency | Std Dev ($\sigma$) | p50 | p90 | p95 | p99 (Tail) | Bound ($p99 \le 45\text{ms}$) | Peak VRAM |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **None (Isolated)** | GPT-2 Baseline (MHA) | 129.40 tok/s | 7.72 ms | 1.15 ms | 7.65 ms | 9.51 ms | 9.54 ms | 11.06 ms | **PASS** | 668.06 MB |
+| **None (Isolated)** | **GPT-2 + SVD Linear** | 73.63 tok/s | 13.58 ms | 3.75 ms | 14.40 ms | 17.41 ms | 19.74 ms | **20.47 ms** | **PASS** | **575.12 MB** |
+| **Pinned Host-Device KV Offload** | GPT-2 Baseline (MHA) | 123.86 tok/s | 8.04 ms | 2.63 ms | 8.07 ms | 9.81 ms | 10.01 ms | 10.08 ms | **PASS** | 668.06 MB |
+| **Pinned Host-Device KV Offload** | **GPT-2 + SVD Linear** | **90.89 tok/s** | **10.95 ms** | **2.14 ms** | **10.48 ms** | **13.81 ms** | **13.89 ms** | **13.96 ms** | **PASS** | **575.12 MB** |
+| **Background SVD Compression** | GPT-2 Baseline (MHA) | 79.44 tok/s | 12.45 ms | 1.82 ms | 12.92 ms | 13.91 ms | 14.75 ms | 14.92 ms | **PASS** | 676.18 MB |
+| **Background SVD Compression** | **GPT-2 + SVD Linear** | 72.27 tok/s | 13.57 ms | **0.83 ms** | 13.31 ms | 14.88 ms | 15.07 ms | **15.54 ms** | **PASS** | **586.02 MB** |
+
+**Key Observations:**
+1. Under high PCIe traffic (pinned KV tensor exchanges), SVD Linear Attention achieved **13.96 ms p99 latency**, comfortably bounded well within the strict $45.0\text{ ms}$ real-time SLO.
+2. Under concurrent compute-heavy SVD compression, SVD Linear Attention exhibited ultra-tight timing dispersion ($\sigma = 0.83\text{ ms}$) and a tail latency of **15.54 ms**, with 0 NaNs and 0 Infs throughout.
+
+---
+
+## 6. Long-Context Scaling & Numerical Validation ($L=512 \dots 4096$)
 
 Forward pass latency, peak VRAM, and numerical stability evaluated across sequence lengths $L \in \{512, 1024, 2048, 4096\}$ on NVIDIA RTX 4070 Laptop GPU:
 
@@ -104,7 +123,7 @@ Forward pass latency, peak VRAM, and numerical stability evaluated across sequen
 
 ---
 
-## 6. Bidirectional Encoder Surgery Validation
+## 7. Bidirectional Encoder Surgery Validation
 
 To confirm universality across model families, bidirectional encoder models were surgically adapted and evaluated:
 - **RoBERTa-base** (`RobertaForSequenceClassification`, 12 layers replaced):
@@ -116,11 +135,12 @@ To confirm universality across model families, bidirectional encoder models were
 
 ---
 
-## 7. Summary & Worktree Synchronization
+## 8. Summary & Worktree Synchronization
 
 All validation scripts, empirical outputs, and markdown reports have been verified on the RTX 4070 GPU host:
 - Master Report: [`docs/reports/REASONING_LONG_CONTEXT_EVALUATION_REPORT.md`](file:///Users/tahamajs/Documents/uni/Project/docs/reports/REASONING_LONG_CONTEXT_EVALUATION_REPORT.md)
 - Metric Sources:
+  - `/mnt/d/SVD_linear_Attention/concurrent_offloading_jitter_results.json`
   - `/mnt/d/SVD_linear_Attention/continuous_500token_stress_results.json`
   - `/mnt/d/SVD_linear_Attention/gsm8k_256step_reasoning_results.json`
   - `/mnt/d/SVD_linear_Attention/cot_jitter_128steps_results.json`
