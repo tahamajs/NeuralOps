@@ -10,13 +10,13 @@ from __future__ import annotations
 
 import inspect
 import logging
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Optional, Tuple
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.registry import ATTENTION_REGISTRY
-from neuralops.surgery.scanner import AttentionTargetSpec, UniversalArchitectureScanner
+from neuralops.surgery.scanner import AttentionTargetSpec
 
 logger = logging.getLogger("NeuralOps.Surgery.EndoskeletalShell")
 
@@ -37,8 +37,8 @@ def register_neuralops_with_huggingface() -> None:
         if not hasattr(hf_utils, "ALL_ATTENTION_FUNCTIONS"):
             return
         all_attn_fn = hf_utils.ALL_ATTENTION_FUNCTIONS
-    except Exception:
-        # HuggingFace transformers not installed or old version
+    except (ImportError, AttributeError) as e:
+        logger.debug("HuggingFace transformers ALL_ATTENTION_FUNCTIONS not available: %s", e)
         return
 
     def _make_hf_attention_callable(attn_name: str) -> Callable:
@@ -86,6 +86,7 @@ def register_neuralops_with_huggingface() -> None:
                 out = out.view(B, T, H_q, D_h)
             else:
                 # Fallback to standard PyTorch SDPA
+                assert callable(F.scaled_dot_product_attention), "F.scaled_dot_product_attention is not callable"
                 out = F.scaled_dot_product_attention(
                     query, key, value, attn_mask=attention_mask, is_causal=bool(is_causal)
                 )
@@ -108,8 +109,8 @@ def register_neuralops_with_huggingface() -> None:
 # Auto-register upon importing endoskeletal_shell
 try:
     register_neuralops_with_huggingface()
-except Exception:
-    pass
+except (RuntimeError, AttributeError, ValueError) as e:
+    logger.debug("Auto-registration with HuggingFace skipped: %s", e)
 
 
 # ==============================================================================
@@ -158,7 +159,8 @@ class SidecarGateBranch(nn.Module):
                 w = self.conv1d.weight.squeeze(1)
                 b = self.conv1d.bias
                 x_conv = dynconv1d_fwd_triton(x, w, b)
-            except Exception:
+            except (RuntimeError, ImportError) as e:
+                logger.debug("dynconv1d_fwd_triton failed: %s, falling back to PyTorch conv1d", e)
                 x_conv = self.conv1d(x.transpose(1, 2))[:, :, :T].transpose(1, 2).contiguous()
         else:
             x_conv = self.conv1d(x.transpose(1, 2))[:, :, :T].transpose(1, 2).contiguous()
@@ -285,6 +287,7 @@ class UniversalAttentionBridge(nn.Module):
         if self.sidecar is not None:
             hidden_states, _ = self.sidecar(hidden_states)
 
+        assert callable(self.new_attention), f"{type(self).__name__}.new_attention is not callable"
         # Forward through new attention mechanism
         attn_out = self.new_attention(hidden_states, *rest_args, **kwargs)
 
@@ -305,7 +308,6 @@ class UniversalAttentionBridge(nn.Module):
 
         if self.pattern_type == "conv1d_gpt2":
             # GPT2Attention returns (attn_output, present) or (attn_output, present, attentions)
-            use_cache = kwargs.get("use_cache", False)
             output_attentions = kwargs.get("output_attentions", False)
             present = extra_outputs[0] if len(extra_outputs) > 0 else None
             ret = [core_tensor, present]

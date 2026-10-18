@@ -42,7 +42,7 @@ def scan_for_secrets(directory_path: str | Path) -> list[str]:
                 for pattern in SECRET_PATTERNS:
                     if pattern.search(content):
                         findings.append(f"Potential secret in {f.name}")
-            except Exception:
+            except (OSError, UnicodeDecodeError):
                 pass
     return findings
 
@@ -151,5 +151,6 @@ def list_org_models(org: str = "neuralops-hub") -> list[str]:
         api = HfApi()
         models = api.list_models(author=org)
         return [m.id for m in models]
-    except Exception:
+    except (ImportError, RuntimeError, OSError) as e:
+        logger.warning("Failed to list org models for %s: %s", org, e)
         return []

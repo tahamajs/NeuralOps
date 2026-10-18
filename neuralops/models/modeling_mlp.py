@@ -8,9 +8,12 @@ Author: Taha Majlesi
 
 from __future__ import annotations
 
+import logging
 import torch
 import torch.nn as nn
 from transformers.activations import ACT2FN
+
+logger = logging.getLogger(__name__)
 
 
 __all__ = ["NeuralOpsMLP", "NeuralOpsStandardMLP", "NeuralOpsSwiGLU", "build_mlp"]
@@ -33,6 +36,10 @@ class NeuralOpsSwiGLU(nn.Module):
         self.act_fn = ACT2FN[hidden_act]
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        assert callable(self.gate_proj), f"{type(self).__name__}.gate_proj is not callable"
+        assert callable(self.up_proj), f"{type(self).__name__}.up_proj is not callable"
+        assert callable(self.down_proj), f"{type(self).__name__}.down_proj is not callable"
+        assert callable(self.act_fn), f"{type(self).__name__}.act_fn is not callable"
         gate = self.gate_proj(x)
         up = self.up_proj(x)
         if x.is_cuda and x.dtype in (torch.float16, torch.bfloat16) and hasattr(self, "act_fn") and getattr(self.act_fn, "__name__", "") == "silu":
@@ -40,8 +47,8 @@ class NeuralOpsSwiGLU(nn.Module):
                 from neuralops.core.triton_kernels.elementwise import swiglu_triton
                 act = swiglu_triton(gate, up)
                 return self.down_proj(act)
-            except Exception:
-                pass
+            except (RuntimeError, ImportError, TypeError, ValueError, AttributeError) as e:
+                logger.debug("swiglu_triton fallback to PyTorch: %s", e)
         return self.down_proj(self.act_fn(gate) * up)
 
 
@@ -61,6 +68,9 @@ class NeuralOpsStandardMLP(nn.Module):
         self.fc2 = nn.Linear(intermediate_size, hidden_size, bias=bias)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        assert callable(self.fc1), f"{type(self).__name__}.fc1 is not callable"
+        assert callable(self.act_fn), f"{type(self).__name__}.act_fn is not callable"
+        assert callable(self.fc2), f"{type(self).__name__}.fc2 is not callable"
         return self.fc2(self.act_fn(self.fc1(x)))
 
 

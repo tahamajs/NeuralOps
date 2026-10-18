@@ -54,8 +54,8 @@ class VLLMAdapter:
                 name,
             )
             return True
-        except Exception as e:
-            logger.error("Failed to register backend %s into vLLM: %s", name, e)
+        except (RuntimeError, ValueError, AttributeError) as e:
+            logger.error("Failed to register backend %s into vLLM: %s", name, e, exc_info=True)
             return False
 
     @staticmethod
@@ -207,7 +207,8 @@ def export_serving_bundle(
     try:
         from safetensors.torch import save_file
         save_file(model.state_dict(), str(out_p / "model.safetensors"))
-    except Exception:
+    except (ImportError, RuntimeError, OSError) as e:
+        logger.debug("Safetensors export skipped, using pytorch bin: %s", e)
         torch.save(model.state_dict(), out_p / "pytorch_model.bin")
 
     # 2. Extract architecture metadata
@@ -291,7 +292,7 @@ def validate_serving_metadata(bundle_dir: Union[str, Path]) -> tuple[bool, str]:
     try:
         with open(manifest_file, "r", encoding="utf-8") as f:
             manifest = json.load(f)
-    except Exception as e:
+    except (json.JSONDecodeError, OSError) as e:
         return False, f"Invalid serving_manifest.json: {e}"
 
     if not manifest.get("target_backend"):

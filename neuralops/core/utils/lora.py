@@ -8,10 +8,13 @@ Author: Taha Majlesi
 
 from __future__ import annotations
 
+import logging
 import math
 from typing import Any
 import torch
 import torch.nn as nn
+
+logger = logging.getLogger(__name__)
 
 __all__ = ["LoRALinear", "FactorizedLinear"]
 
@@ -118,7 +121,8 @@ class LoRALinear(nn.Module):
                 from neuralops.core.triton_kernels.low_rank import fused_down_up_gemm_bias_triton
                 drop_x = self.dropout(x)
                 lora_out = fused_down_up_gemm_bias_triton(drop_x, self.lora_A.t(), self.lora_B.t()) * self.lora_scaling
-            except Exception:
+            except (RuntimeError, ImportError) as e:
+                logger.debug("fused_down_up_gemm_bias_triton failed: %s, falling back to PyTorch matmul", e)
                 lora_out = (self.dropout(x) @ self.lora_A.t()) @ self.lora_B.t() * self.lora_scaling
             return out + lora_out
         return out

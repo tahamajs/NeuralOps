@@ -224,7 +224,7 @@ def inject_replace(
         _attach_new_attention(target, "attention", new_attn, model_type="")
 
         return new_attn
-    except Exception as e:
+    except (RuntimeError, TypeError, ValueError, AttributeError) as e:
         logger.exception("inject_replace failed at layer %d: %s", layer_idx, e)
         return None
 

@@ -90,8 +90,8 @@ if _HAS_TORCH_LIBRARY_CUSTOM_OP:
                 torch.library.register_autograd(
                     "neuralops::low_rank", _low_rank_bwd, setup_context=_low_rank_setup_context
                 )
-            except Exception:
-                pass
+            except (RuntimeError, ValueError, AttributeError) as e:
+                logger.debug("register_autograd low_rank failed: %s", e)
 
 
         # 4. GQA Op
@@ -113,8 +113,8 @@ if _HAS_TORCH_LIBRARY_CUSTOM_OP:
             if gdn_scan_triton is not None and q.is_cuda and q.dtype in (torch.float16, torch.bfloat16):
                 try:
                     return gdn_scan_triton(q, k, v, beta, alpha)
-                except Exception:
-                    pass
+                except (RuntimeError, ValueError) as e:
+                    logger.debug("gdn_scan_triton failed: %s", e)
             from neuralops.core.triton_kernels.gdn_scan import gdn_scan_torch
             return gdn_scan_torch(q, k, v, beta, alpha)
 
@@ -129,8 +129,8 @@ if _HAS_TORCH_LIBRARY_CUSTOM_OP:
             if gla_scan_triton is not None and q.is_cuda and q.dtype in (torch.float16, torch.bfloat16):
                 try:
                     return gla_scan_triton(q, k, v, g)
-                except Exception:
-                    pass
+                except (RuntimeError, ValueError) as e:
+                    logger.debug("gla_scan_triton failed: %s", e)
             from neuralops.core.triton_kernels.gla_scan import gla_scan_torch
             return gla_scan_torch(q, k, v, g)
 
@@ -145,8 +145,8 @@ if _HAS_TORCH_LIBRARY_CUSTOM_OP:
             if hgrn2_scan_triton is not None and f.is_cuda and f.dtype in (torch.float16, torch.bfloat16):
                 try:
                     return hgrn2_scan_triton(f, iv, res_clip=res_clip)
-                except Exception:
-                    pass
+                except (RuntimeError, ValueError) as e:
+                    logger.debug("hgrn2_scan_triton failed: %s", e)
             from neuralops.core.triton_kernels.hgrn2_scan import hgrn2_scan_pytorch
             return hgrn2_scan_pytorch(f, iv, res_clip=res_clip)
 
@@ -171,8 +171,8 @@ if _HAS_TORCH_LIBRARY_CUSTOM_OP:
             if x.is_cuda and x.dtype in (torch.float16, torch.bfloat16):
                 try:
                     return softplus_fwd(x)
-                except Exception:
-                    pass
+                except (RuntimeError, ValueError) as e:
+                    logger.debug("softplus_fwd failed: %s", e)
             return F.softplus(x)
 
         @_op_softplus.register_fake
@@ -358,7 +358,7 @@ if _HAS_TORCH_LIBRARY_CUSTOM_OP:
             return torch.empty_like(q_t)
 
         _CUSTOM_OPS_REGISTERED = True
-    except Exception as exc:
+    except (RuntimeError, ValueError, AttributeError) as exc:
         logger.debug("Failed registering custom ops with torch.library: %s", exc)
         _CUSTOM_OPS_REGISTERED = False
 else:
@@ -374,7 +374,7 @@ def compilable_linear_attn(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, **
     if _CUSTOM_OPS_REGISTERED and not kwargs:
         try:
             return torch.ops.neuralops.linear_attn(q, k, v)
-        except Exception:
+        except (RuntimeError, AttributeError):
             pass
     return triton_dispatch("linear_attn", q, k, v, **kwargs)
 
@@ -384,7 +384,7 @@ def compilable_sparse_attn(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, **
     if _CUSTOM_OPS_REGISTERED and not kwargs:
         try:
             return torch.ops.neuralops.sparse_attn(q, k, v)
-        except Exception:
+        except (RuntimeError, AttributeError):
             pass
     return triton_dispatch("sparse_attn", q, k, v, **kwargs)
 
@@ -394,7 +394,7 @@ def compilable_low_rank(x: torch.Tensor, U: torch.Tensor, V: torch.Tensor, bias:
     if _CUSTOM_OPS_REGISTERED and bias is None and not kwargs:
         try:
             return torch.ops.neuralops.low_rank(x, U, V)
-        except Exception:
+        except (RuntimeError, AttributeError):
             pass
     return triton_dispatch("low_rank", x, U, V, bias=bias, **kwargs)
 
@@ -405,7 +405,7 @@ def register_custom_op_meta_shape(op_name: str, fake_fn: Callable) -> bool:
         try:
             torch.library.register_fake(op_name, fake_fn)
             return True
-        except Exception as e:
+        except (RuntimeError, ValueError, AttributeError) as e:
             logger.debug("register_fake failed for %s: %s", op_name, e)
     return False
 

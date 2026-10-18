@@ -202,7 +202,7 @@ def save_surgical_checkpoint(
         clean_state = {k: v.contiguous().clone() for k, v in clean_state_dict.items()}
         save_file(clean_state, str(path / "model.safetensors"))
         saved_safetensors = True
-    except Exception as e_st:
+    except (ImportError, RuntimeError, OSError) as e_st:
         logger.debug("Safetensors save skipped: %s", e_st)
 
     # Always write standard PyTorch checkpoint as reliable companion
@@ -234,7 +234,7 @@ def load_surgical_checkpoint(
     if target_device is None:
         try:
             target_device = next(base_model.parameters()).device
-        except (StopIteration, Exception):
+        except (StopIteration, RuntimeError):
             target_device = torch.device("cpu")
 
     # 1. Reconstruct all modified submodules
@@ -247,12 +247,13 @@ def load_surgical_checkpoint(
         try:
             mod = importlib.import_module(import_path)
             cls = getattr(mod, cls_name)
-        except Exception:
+        except (ImportError, AttributeError, ModuleNotFoundError):
             from neuralops.core.registry import ATTENTION_REGISTRY
             target_key = info.get("target_attention", cls_name.lower())
             cls = ATTENTION_REGISTRY.get(target_key, unwrap=True) or ATTENTION_REGISTRY.get(cls_name.lower(), unwrap=True)
             if cls is None:
                 raise ImportError(f"Could not import or resolve class '{cls_name}' from '{import_path}'")
+        assert callable(cls), f"Class {cls_name} is not callable"
 
         if category == "attention":
             if cls_name == "ComposableAttention":
@@ -293,13 +294,13 @@ def load_surgical_checkpoint(
 
                 try:
                     new_sub = cls(config=cfg, **init_kwargs)
-                except Exception:
+                except (TypeError, ValueError, AttributeError):
                     try:
                         new_sub = cls(config=cfg)
-                    except Exception:
+                    except (TypeError, ValueError, AttributeError):
                         try:
                             new_sub = cls(**init_kwargs)
-                        except Exception:
+                        except (TypeError, ValueError, AttributeError):
                             new_sub = cls()
 
                 if info.get("is_nested_encoder") is not None:
@@ -333,11 +334,11 @@ def load_surgical_checkpoint(
             # Reconstruct factorized linear
             try:
                 new_sub = cls(in_features=in_f, out_features=out_f, rank=rank, bias=has_b)
-            except Exception:
+            except (TypeError, ValueError, AttributeError):
                 try:
                     dummy_linear = nn.Linear(in_f, out_f, bias=has_b)
                     new_sub = cls.from_linear(dummy_linear, rank=rank)
-                except Exception:
+                except (TypeError, ValueError, AttributeError):
                     new_sub = cls(in_features=in_f, out_features=out_f)
 
             if target_device is not None:
@@ -352,7 +353,8 @@ def load_surgical_checkpoint(
         try:
             from safetensors.torch import load_file
             state_dict = load_file(str(st_file), device=str(target_device or "cpu"))
-        except Exception:
+        except (ImportError, RuntimeError, OSError) as e:
+            logger.warning("Failed to load safetensors (%s), falling back to .pt: %s", st_file, e, exc_info=True)
             state_dict = torch.load(str(pt_file), map_location=target_device, weights_only=True)
     elif pt_file.exists():
         state_dict = torch.load(str(pt_file), map_location=target_device, weights_only=True)

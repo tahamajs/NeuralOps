@@ -8,8 +8,11 @@ Author: Taha Majlesi
 
 from __future__ import annotations
 
+import logging
 import torch
 import torch.nn as nn
+
+logger = logging.getLogger(__name__)
 
 
 __all__ = ["NeuralOpsRMSNorm", "build_norm_layer"]
@@ -28,8 +31,8 @@ class NeuralOpsRMSNorm(nn.Module):
             try:
                 from neuralops.core.triton_kernels.elementwise import rmsnorm_triton
                 return rmsnorm_triton(hidden_states, self.weight, self.variance_epsilon)
-            except Exception:
-                pass
+            except (RuntimeError, ImportError) as e:
+                logger.debug("rmsnorm_triton failed: %s, falling back to PyTorch reference", e)
         input_dtype = hidden_states.dtype
         hidden_states = hidden_states.to(torch.float32)
         variance = hidden_states.pow(2).mean(-1, keepdim=True)

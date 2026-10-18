@@ -159,7 +159,7 @@ class ComprehensiveStudioHandler(http.server.SimpleHTTPRequestHandler):
             body = self.rfile.read(length).decode("utf-8") if length > 0 else "{}"
             try:
                 params = json.loads(body)
-            except Exception:
+            except (json.JSONDecodeError, UnicodeDecodeError):
                 params = {}
             launch_res = launch_new_run(params)
             self._send_json(launch_res)

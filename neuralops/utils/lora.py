@@ -111,13 +111,17 @@ class LoRALinear(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass combining base projection with low-rank adapter delta."""
+        assert callable(self.base_layer), f"{type(self).__name__}.base_layer is not callable"
         base_out = self.base_layer(x)
         if self.r > 0 and not self.merged and self.lora_A is not None and self.lora_B is not None:
             lora_in = self.lora_dropout(x).to(dtype=self.lora_A.weight.dtype)
             try:
                 from neuralops.core.triton_kernels.low_rank import fused_down_up_gemm_bias_triton
                 lora_out = fused_down_up_gemm_bias_triton(lora_in, self.lora_A.weight.t(), self.lora_B.weight.t()) * self.scaling
-            except Exception:
+            except (RuntimeError, ImportError) as e:
+                logger.debug("fused_down_up_gemm_bias_triton failed: %s, falling back to PyTorch", e)
+                assert callable(self.lora_A), f"{type(self).__name__}.lora_A is not callable"
+                assert callable(self.lora_B), f"{type(self).__name__}.lora_B is not callable"
                 lora_out = self.lora_B(self.lora_A(lora_in)) * self.scaling
             return base_out + lora_out.to(dtype=base_out.dtype)
         return base_out

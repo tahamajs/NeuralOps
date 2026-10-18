@@ -260,12 +260,14 @@ def replay_surgery_manifest(
                 attention=attn_entry.attention_type,
                 **attn_entry.kwargs,
             )
-        except Exception as e:
-            logger.warning(
+        except (RuntimeError, AttributeError, ValueError, KeyError) as e:
+            logger.error(
                 "Could not re-transplant attention %s: %s",
                 attn_entry.attention_type,
                 e,
+                exc_info=True,
             )
+            raise
 
     # 2. Replay compression factorizations
     for comp_entry in manifest.compressions:
@@ -293,8 +295,9 @@ def replay_surgery_manifest(
 
         try:
             replace_module(model, path, replacement)
-        except Exception as e:
-            logger.warning("Could not replay factorized layer %s: %s", path, e)
+        except (RuntimeError, AttributeError, KeyError) as e:
+            logger.error("Could not replay factorized layer %s: %s", path, e, exc_info=True)
+            raise
 
     model._neuralops_surgery_manifest = manifest
     return model
@@ -313,8 +316,8 @@ def merge_for_inference(model: nn.Module, only_above_breakeven: bool = False) ->
                     merged = child.merge_and_unload()
                     setattr(module, child_name, merged)
                     continue
-                except Exception:
-                    pass
+                except (RuntimeError, AttributeError, ValueError) as e:
+                    logger.warning("Could not merge_and_unload %s: %s", child_name, e, exc_info=True)
 
             # 2. Factorized SVD linear layers
             cls_name = child.__class__.__name__
