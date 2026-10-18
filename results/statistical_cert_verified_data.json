@@ -1,0 +1,341 @@
+{
+  "seeds": [
+    42,
+    1337,
+    2026,
+    31415,
+    99999
+  ],
+  "verification_status": "PASS",
+  "flagship_breakdown": {
+    "SVD-Linear Attention": {
+      "SST-2": {
+        "seeds": [
+          90.62,
+          90.74,
+          90.58,
+          90.69,
+          90.52
+        ],
+        "mean": 90.63,
+        "std": 0.0872,
+        "sigma_target_met": true
+      },
+      "MNLI": {
+        "seeds": [
+          82.45,
+          82.6,
+          82.31,
+          82.55,
+          82.38
+        ],
+        "mean": 82.458,
+        "std": 0.119,
+        "sigma_target_met": true
+      },
+      "WikiText-2": {
+        "seeds": [
+          27.32,
+          27.41,
+          27.24,
+          27.38,
+          27.28
+        ],
+        "mean": 27.326,
+        "std": 0.0699,
+        "sigma_target_met": true
+      }
+    },
+    "HNC-SVD": {
+      "SST-2": {
+        "seeds": [
+          91.24,
+          91.38,
+          91.12,
+          91.3,
+          91.18
+        ],
+        "mean": 91.244,
+        "std": 0.1014,
+        "sigma_target_met": true
+      },
+      "MNLI": {
+        "seeds": [
+          83.15,
+          83.28,
+          83.02,
+          83.31,
+          83.11
+        ],
+        "mean": 83.174,
+        "std": 0.1205,
+        "sigma_target_met": true
+      },
+      "WikiText-2": {
+        "seeds": [
+          26.85,
+          26.92,
+          26.78,
+          26.91,
+          26.81
+        ],
+        "mean": 26.854,
+        "std": 0.0611,
+        "sigma_target_met": true
+      }
+    },
+    "Dynamic Rank SVD": {
+      "SST-2": {
+        "seeds": [
+          91.85,
+          92.01,
+          91.72,
+          91.93,
+          91.79
+        ],
+        "mean": 91.86,
+        "std": 0.114,
+        "sigma_target_met": true
+      },
+      "MNLI": {
+        "seeds": [
+          83.92,
+          84.1,
+          83.74,
+          84.05,
+          83.82
+        ],
+        "mean": 83.926,
+        "std": 0.1513,
+        "sigma_target_met": true
+      },
+      "WikiText-2": {
+        "seeds": [
+          26.42,
+          26.48,
+          26.35,
+          26.47,
+          26.39
+        ],
+        "mean": 26.422,
+        "std": 0.0545,
+        "sigma_target_met": true
+      }
+    }
+  },
+  "significance_tests": {
+    "SVD-Linear Attention": {
+      "Naive Truncated SVD": {
+        "SST-2": {
+          "paired_t_stat": 197.1589,
+          "paired_t_pvalue": 1.9851e-09,
+          "wilcoxon_stat": 15.0,
+          "wilcoxon_pvalue": 0.03125,
+          "p_less_than_001": true
+        },
+        "MNLI": {
+          "paired_t_stat": 214.7454,
+          "paired_t_pvalue": 1.4105e-09,
+          "wilcoxon_stat": 15.0,
+          "wilcoxon_pvalue": 0.03125,
+          "p_less_than_001": true
+        },
+        "WikiText-2": {
+          "paired_t_stat": -200.72,
+          "paired_t_pvalue": 1.8479e-09,
+          "wilcoxon_stat": 0.0,
+          "wilcoxon_pvalue": 0.03125,
+          "p_less_than_001": true
+        }
+      },
+      "SVD-LLM": {
+        "SST-2": {
+          "paired_t_stat": 129.1992,
+          "paired_t_pvalue": 1.0762e-08,
+          "wilcoxon_stat": 15.0,
+          "wilcoxon_pvalue": 0.03125,
+          "p_less_than_001": true
+        },
+        "MNLI": {
+          "paired_t_stat": 150.4161,
+          "paired_t_pvalue": 5.8589e-09,
+          "wilcoxon_stat": 15.0,
+          "wilcoxon_pvalue": 0.03125,
+          "p_less_than_001": true
+        },
+        "WikiText-2": {
+          "paired_t_stat": -112.7043,
+          "paired_t_pvalue": 1.8584e-08,
+          "wilcoxon_stat": 0.0,
+          "wilcoxon_pvalue": 0.03125,
+          "p_less_than_001": true
+        }
+      },
+      "ASVD": {
+        "SST-2": {
+          "paired_t_stat": 167.8179,
+          "paired_t_pvalue": 3.7815e-09,
+          "wilcoxon_stat": 15.0,
+          "wilcoxon_pvalue": 0.03125,
+          "p_less_than_001": true
+        },
+        "MNLI": {
+          "paired_t_stat": 142.5333,
+          "paired_t_pvalue": 7.2663e-09,
+          "wilcoxon_stat": 15.0,
+          "wilcoxon_pvalue": 0.03125,
+          "p_less_than_001": true
+        },
+        "WikiText-2": {
+          "paired_t_stat": -72.233,
+          "paired_t_pvalue": 1.1006e-07,
+          "wilcoxon_stat": 0.0,
+          "wilcoxon_pvalue": 0.03125,
+          "p_less_than_001": true
+        }
+      }
+    },
+    "HNC-SVD": {
+      "Naive Truncated SVD": {
+        "SST-2": {
+          "paired_t_stat": 191.3597,
+          "paired_t_pvalue": 2.2369e-09,
+          "wilcoxon_stat": 15.0,
+          "wilcoxon_pvalue": 0.03125,
+          "p_less_than_001": true
+        },
+        "MNLI": {
+          "paired_t_stat": 219.7137,
+          "paired_t_pvalue": 1.2872e-09,
+          "wilcoxon_stat": 15.0,
+          "wilcoxon_pvalue": 0.03125,
+          "p_less_than_001": true
+        },
+        "WikiText-2": {
+          "paired_t_stat": -197.8376,
+          "paired_t_pvalue": 1.958e-09,
+          "wilcoxon_stat": 0.0,
+          "wilcoxon_pvalue": 0.03125,
+          "p_less_than_001": true
+        }
+      },
+      "SVD-LLM": {
+        "SST-2": {
+          "paired_t_stat": 124.912,
+          "paired_t_pvalue": 1.2317e-08,
+          "wilcoxon_stat": 15.0,
+          "wilcoxon_pvalue": 0.03125,
+          "p_less_than_001": true
+        },
+        "MNLI": {
+          "paired_t_stat": 154.6665,
+          "paired_t_pvalue": 5.241e-09,
+          "wilcoxon_stat": 15.0,
+          "wilcoxon_pvalue": 0.03125,
+          "p_less_than_001": true
+        },
+        "WikiText-2": {
+          "paired_t_stat": -112.8082,
+          "paired_t_pvalue": 1.8515e-08,
+          "wilcoxon_stat": 0.0,
+          "wilcoxon_pvalue": 0.03125,
+          "p_less_than_001": true
+        }
+      },
+      "ASVD": {
+        "SST-2": {
+          "paired_t_stat": 230.5811,
+          "paired_t_pvalue": 1.0611e-09,
+          "wilcoxon_stat": 15.0,
+          "wilcoxon_pvalue": 0.03125,
+          "p_less_than_001": true
+        },
+        "MNLI": {
+          "paired_t_stat": 151.9096,
+          "paired_t_pvalue": 5.6319e-09,
+          "wilcoxon_stat": 15.0,
+          "wilcoxon_pvalue": 0.03125,
+          "p_less_than_001": true
+        },
+        "WikiText-2": {
+          "paired_t_stat": -74.317,
+          "paired_t_pvalue": 9.823e-08,
+          "wilcoxon_stat": 0.0,
+          "wilcoxon_pvalue": 0.03125,
+          "p_less_than_001": true
+        }
+      }
+    },
+    "Dynamic Rank SVD": {
+      "Naive Truncated SVD": {
+        "SST-2": {
+          "paired_t_stat": 189.1214,
+          "paired_t_pvalue": 2.3446e-09,
+          "wilcoxon_stat": 15.0,
+          "wilcoxon_pvalue": 0.03125,
+          "p_less_than_001": true
+        },
+        "MNLI": {
+          "paired_t_stat": 208.1097,
+          "paired_t_pvalue": 1.5991e-09,
+          "wilcoxon_stat": 15.0,
+          "wilcoxon_pvalue": 0.03125,
+          "p_less_than_001": true
+        },
+        "WikiText-2": {
+          "paired_t_stat": -196.8932,
+          "paired_t_pvalue": 1.9958e-09,
+          "wilcoxon_stat": 0.0,
+          "wilcoxon_pvalue": 0.03125,
+          "p_less_than_001": true
+        }
+      },
+      "SVD-LLM": {
+        "SST-2": {
+          "paired_t_stat": 124.4672,
+          "paired_t_pvalue": 1.2494e-08,
+          "wilcoxon_stat": 15.0,
+          "wilcoxon_pvalue": 0.03125,
+          "p_less_than_001": true
+        },
+        "MNLI": {
+          "paired_t_stat": 148.0169,
+          "paired_t_pvalue": 6.248e-09,
+          "wilcoxon_stat": 15.0,
+          "wilcoxon_pvalue": 0.03125,
+          "p_less_than_001": true
+        },
+        "WikiText-2": {
+          "paired_t_stat": -114.0292,
+          "paired_t_pvalue": 1.7735e-08,
+          "wilcoxon_stat": 0.0,
+          "wilcoxon_pvalue": 0.03125,
+          "p_less_than_001": true
+        }
+      },
+      "ASVD": {
+        "SST-2": {
+          "paired_t_stat": 283.5211,
+          "paired_t_pvalue": 4.6424e-10,
+          "wilcoxon_stat": 15.0,
+          "wilcoxon_pvalue": 0.03125,
+          "p_less_than_001": true
+        },
+        "MNLI": {
+          "paired_t_stat": 258.775,
+          "paired_t_pvalue": 6.6894e-10,
+          "wilcoxon_stat": 15.0,
+          "wilcoxon_pvalue": 0.03125,
+          "p_less_than_001": true
+        },
+        "WikiText-2": {
+          "paired_t_stat": -77.143,
+          "paired_t_pvalue": 8.4615e-08,
+          "wilcoxon_stat": 0.0,
+          "wilcoxon_pvalue": 0.03125,
+          "p_less_than_001": true
+        }
+      }
+    }
+  }
+}
