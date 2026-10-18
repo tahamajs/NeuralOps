@@ -19,17 +19,33 @@ def decay_linear_attention_ref(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor
     B, H, N, D = q.shape
     out = torch.empty_like(q)
     s = torch.zeros(B, H, D, device=q.device, dtype=q.dtype)
-    g = gamma.view(1, H, 1, D)
+    if gamma.dim() == 2 and gamma.shape == (H, D):
+        g = gamma.unsqueeze(0)
+    elif gamma.dim() == 2 and gamma.shape == (B, H):
+        g = gamma.unsqueeze(-1).expand(B, H, D)
+    elif gamma.dim() == 1 and gamma.shape == (H,):
+        g = gamma.view(1, H, 1).expand(B, H, D)
+    else:
+        g = gamma.reshape(1, H, -1).expand(B, H, D)
     for t in range(N):
-        s = g.squeeze(2) * s + k[:, :, t, :] * v[:, :, t, :]
+        s = g * s + k[:, :, t, :] * v[:, :, t, :]
         out[:, :, t, :] = q[:, :, t, :] * s
     return out
 
 def _decay_linear_attention_dispatch(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, gamma: torch.Tensor) -> torch.Tensor:
-    def cuda_fn(q, k, v, gamma):
+    B, H, N, D = q.shape
+    if gamma.dim() == 2 and gamma.shape == (H, D):
+        g_in = gamma
+    elif gamma.dim() == 2 and gamma.shape == (B, H):
+        g_in = gamma[0].unsqueeze(-1).expand(H, D).contiguous()
+    elif gamma.dim() == 1 and gamma.shape == (H,):
+        g_in = gamma.unsqueeze(-1).expand(H, D).contiguous()
+    else:
+        g_in = gamma.reshape(H, -1).expand(H, D).contiguous()
+    def cuda_fn(q, k, v, g_val):
         mod = _get_module()
-        return mod.decay_linear_fwd(q.contiguous(), k.contiguous(), v.contiguous(), gamma.contiguous())
-    return dispatch(cuda_fn, decay_linear_attention_ref, decay_linear_attention_ref, q, k=k, v=v, gamma=gamma, kernel_name="decay_linear_attention")
+        return mod.decay_linear_fwd(q.contiguous(), k.contiguous(), v.contiguous(), g_val.contiguous())
+    return dispatch(cuda_fn, decay_linear_attention_ref, decay_linear_attention_ref, q, k, v, g_in, kernel_name="decay_linear_attention")
 
 
 class _Decay_linear_attentionFunction(torch.autograd.Function):
@@ -54,17 +70,13 @@ class _Decay_linear_attentionFunction(torch.autograd.Function):
                 inputs.append(nt)
         with torch.enable_grad():
             out_p = decay_linear_attention_ref(*inputs)
-        tensor_inputs = [inp for inp, is_t in zip(inputs, ctx.tensors_mask) if is_t]
+        diff_inputs = [inp for inp, is_t in zip(inputs, ctx.tensors_mask) if (is_t and inp.requires_grad)]
         dout_val = douts[0] if len(douts) == 1 else douts
-        grads = torch.autograd.grad(out_p, tensor_inputs, dout_val, allow_unused=True)
-        grads = list(grads)
-        res = []
-        for is_t in ctx.tensors_mask:
-            if is_t:
-                res.append(grads.pop(0))
-            else:
-                res.append(None)
-        return tuple(res)
+        if not diff_inputs:
+            return tuple([None] * len(ctx.tensors_mask))
+        grads = torch.autograd.grad(out_p, diff_inputs, dout_val, allow_unused=True)
+        grad_map = dict(zip(diff_inputs, grads))
+        return tuple(grad_map.get(inp, None) if (is_t and inp.requires_grad) else None for inp, is_t in zip(inputs, ctx.tensors_mask))
 
 def decay_linear_attention(q, k, v, gamma):
     if any(isinstance(t, torch.Tensor) and t.requires_grad for t in (q, k, v, gamma)):

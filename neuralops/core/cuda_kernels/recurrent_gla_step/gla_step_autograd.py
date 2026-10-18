@@ -1,15 +1,12 @@
 from __future__ import annotations
-from typing import Any
+from typing import Any, Tuple, Optional
 """
-Recurrent GLA Step Interface and 3-Level Fallback.
+Recurrent GLA Step Interface with Native CUDA Analytical Backward Pass and 3-Level Fallback.
 Target: SM 8.9 (NVIDIA Ada Lovelace RTX 4070 Laptop GPU, 8GB VRAM).
 """
 
-
 import math
 from pathlib import Path
-from typing import Tuple
-
 import torch
 
 from neuralops.core.cuda_kernels._bindings import load_cuda_module
@@ -31,7 +28,7 @@ def _get_module():
             name="cuda_recurrent_gla_step",
             cpp_sources=cpp_src,
             cuda_sources=cuda_src,
-            functions=["recurrent_gla_step_fwd"],
+            functions=["recurrent_gla_step_fwd", "recurrent_gla_step_bwd"],
         )
     return _MODULE
 
@@ -94,36 +91,58 @@ def _recurrent_gla_step_dispatch(
 class _Recurrent_gla_stepFunction(torch.autograd.Function):
     @staticmethod
     def forward(ctx: Any, q, k, v, state, alpha):
-        out = _recurrent_gla_step_dispatch(q, k, v, state, alpha)
-        ctx.save_for_backward(*[t for t in (q, k, v, state, alpha) if isinstance(t, torch.Tensor)])
-        ctx.tensors_mask = [isinstance(t, torch.Tensor) for t in (q, k, v, state, alpha)]
-        ctx.non_tensors = [t if not isinstance(t, torch.Tensor) else None for t in (q, k, v, state, alpha)]
-        return out
+        out, s_next = _recurrent_gla_step_dispatch(q, k, v, state, alpha)
+        ctx.save_for_backward(q, k, v, state, alpha)
+        return out, s_next
 
     @staticmethod
     def backward(ctx: Any, *douts):
-        dout = douts[0] if len(douts) == 1 else douts
-        saved = list(ctx.saved_tensors)
-        inputs = []
-        for is_t, nt in zip(ctx.tensors_mask, ctx.non_tensors):
-            if is_t:
-                t = saved.pop(0)
-                inputs.append(t.detach().requires_grad_(t.requires_grad))
-            else:
-                inputs.append(nt)
-        with torch.enable_grad():
-            out_p = recurrent_gla_step_pytorch_ref(*inputs)
-        tensor_inputs = [inp for inp, is_t in zip(inputs, ctx.tensors_mask) if is_t]
-        dout_val = douts[0] if len(douts) == 1 else douts
-        grads = torch.autograd.grad(out_p, tensor_inputs, dout_val, allow_unused=True)
-        grads = list(grads)
-        res = []
-        for is_t in ctx.tensors_mask:
-            if is_t:
-                res.append(grads.pop(0))
-            else:
-                res.append(None)
-        return tuple(res)
+        q, k, v, state, alpha = ctx.saved_tensors
+        dout = douts[0] if len(douts) > 0 and douts[0] is not None else torch.zeros_like(v)
+        ds_next = douts[1] if len(douts) > 1 and douts[1] is not None else None
+
+        try:
+            mod = _get_module()
+            dq, dk, dv, dstate, dalpha = mod.recurrent_gla_step_bwd(
+                dout.contiguous(),
+                ds_next.contiguous() if ds_next is not None else None,
+                q.contiguous(),
+                k.contiguous(),
+                v.contiguous(),
+                state.contiguous(),
+                alpha.contiguous(),
+            )
+            return (
+                dq if q.requires_grad else None,
+                dk if k.requires_grad else None,
+                dv if v.requires_grad else None,
+                dstate if state.requires_grad else None,
+                dalpha if alpha.requires_grad else None,
+            )
+        except Exception:
+            q_p = q.detach().requires_grad_(q.requires_grad)
+            k_p = k.detach().requires_grad_(k.requires_grad)
+            v_p = v.detach().requires_grad_(v.requires_grad)
+            s_p = state.detach().requires_grad_(state.requires_grad)
+            a_p = alpha.detach().requires_grad_(alpha.requires_grad)
+            with torch.enable_grad():
+                out_p, next_s_p = recurrent_gla_step_pytorch_ref(q_p, k_p, v_p, s_p, a_p)
+            inputs = [q_p, k_p, v_p, s_p, a_p]
+            diff_inputs = [inp for inp in inputs if inp.requires_grad]
+            if not diff_inputs:
+                return None, None, None, None, None
+            outputs = []
+            grad_outputs = []
+            if len(douts) > 0 and douts[0] is not None:
+                outputs.append(out_p)
+                grad_outputs.append(douts[0])
+            if ds_next is not None:
+                outputs.append(next_s_p)
+                grad_outputs.append(ds_next)
+            grads = torch.autograd.grad(outputs, diff_inputs, grad_outputs, allow_unused=True)
+            grad_map = dict(zip(diff_inputs, grads))
+            return tuple(grad_map.get(inp, None) for inp in inputs)
+
 
 def recurrent_gla_step(q, k, v, state, alpha):
     if any(isinstance(t, torch.Tensor) and t.requires_grad for t in (q, k, v, state, alpha)):

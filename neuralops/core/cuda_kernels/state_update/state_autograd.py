@@ -1,12 +1,20 @@
 from __future__ import annotations
+from typing import Any
+"""
+Recurrent Linear Step (State Update) Interface and 3-Level Fallback.
+Target: SM 8.9 (NVIDIA Ada Lovelace RTX 4070 Laptop GPU, 8GB VRAM).
+"""
+
 from pathlib import Path
-from typing import Any, Tuple
+from typing import Tuple
+
 import torch
 
 from neuralops.core.cuda_kernels._bindings import load_cuda_module
 from neuralops.core.cuda_kernels._fallback import dispatch
 
 _MODULE = None
+
 
 def _get_module():
     global _MODULE
@@ -25,6 +33,7 @@ def _get_module():
         )
     return _MODULE
 
+
 def recurrent_linear_step_pytorch_ref(
     q_t: torch.Tensor,
     k_t: torch.Tensor,
@@ -33,19 +42,25 @@ def recurrent_linear_step_pytorch_ref(
     z_state: torch.Tensor,
     eps: float = 1e-6,
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """Pure PyTorch reference implementation for linear attention decode step."""
     kv_new = kv_state.float() + torch.einsum("bhk,bhv->bhkv", k_t.float(), v_t.float())
     z_new = z_state.float() + k_t.float()
+
     num = torch.einsum("bhk,bhkv->bhv", q_t.float(), kv_new)
-    denom = torch.einsum("bhk,bhk->bh", q_t.float(), z_new).unsqueeze(-1) + eps
-    out = (num / denom).to(q_t.dtype)
+    den = torch.einsum("bhk,bhk->bh", q_t.float(), z_new).unsqueeze(-1)
+    den = torch.clamp(den.abs(), min=eps) * torch.sign(den + 1e-12)
+
+    out = (num / den).to(q_t.dtype)
     return out, kv_new.to(kv_state.dtype), z_new.to(z_state.dtype)
+
 
 def _get_triton_impl():
     try:
         from neuralops.core.triton_kernels.state_update import fused_recurrent_linear_step
         return fused_recurrent_linear_step
-    except ImportError:
+    except (ImportError, AttributeError):
         return None
+
 
 def _recurrent_linear_step_fwd_dispatch(
     q_t: torch.Tensor,
@@ -55,18 +70,17 @@ def _recurrent_linear_step_fwd_dispatch(
     z_state: torch.Tensor,
     eps: float = 1e-6,
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-    def cuda_fn(q, k, v, kv, z, eps=1e-6, **kwargs):
+    """3-Level Dispatched Recurrent Linear Step Forward."""
+    def cuda_fn(q, k, v, kv, z, **kwargs):
         mod = _get_module()
         kv_copy = kv.clone()
         z_copy = z.clone()
         res = mod.recurrent_linear_step_fwd(
-            q.contiguous(), k.contiguous(), v.contiguous(), kv_copy, z_copy, float(eps)
+            q.contiguous(), k.contiguous(), v.contiguous(), kv_copy, z_copy, eps
         )
         return res[0], res[1], res[2]
 
     triton_fn = _get_triton_impl()
-    if q_t.shape[-1] > 128:
-        cuda_fn = None
 
     return dispatch(
         cuda_fn,
@@ -81,7 +95,8 @@ def _recurrent_linear_step_fwd_dispatch(
         kernel_name="recurrent_linear_step",
     )
 
-class _StateUpdateFunction(torch.autograd.Function):
+
+class _RecurrentLinearStepFunction(torch.autograd.Function):
     @staticmethod
     def forward(ctx: Any, q_t, k_t, v_t, kv_state, z_state, eps: float = 1e-6):
         out, next_kv, next_z = _recurrent_linear_step_fwd_dispatch(q_t, k_t, v_t, kv_state, z_state, eps)
@@ -101,6 +116,11 @@ class _StateUpdateFunction(torch.autograd.Function):
         with torch.enable_grad():
             out_p, next_kv_p, next_z_p = recurrent_linear_step_pytorch_ref(q_p, k_p, v_p, kv_p, z_p, ctx.eps)
 
+        inputs = [q_p, k_p, v_p, kv_p, z_p]
+        diff_inputs = [inp for inp in inputs if inp.requires_grad]
+        if not diff_inputs:
+            return None, None, None, None, None, None
+
         outputs = [out_p]
         grad_outputs = [dout]
         if dnext_kv is not None:
@@ -112,11 +132,13 @@ class _StateUpdateFunction(torch.autograd.Function):
 
         grads = torch.autograd.grad(
             outputs,
-            [q_p, k_p, v_p, kv_p, z_p],
+            diff_inputs,
             grad_outputs,
             allow_unused=True,
         )
-        return grads[0], grads[1], grads[2], grads[3], grads[4], None
+        grad_map = dict(zip(diff_inputs, grads))
+        return grad_map.get(q_p, None), grad_map.get(k_p, None), grad_map.get(v_p, None), grad_map.get(kv_p, None), grad_map.get(z_p, None), None
+
 
 def recurrent_linear_step(
     q_t: torch.Tensor,
@@ -126,6 +148,6 @@ def recurrent_linear_step(
     z_state: torch.Tensor,
     eps: float = 1e-6,
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-    if any(t.requires_grad for t in (q_t, k_t, v_t, kv_state, z_state) if isinstance(t, torch.Tensor)):
-        return _StateUpdateFunction.apply(q_t, k_t, v_t, kv_state, z_state, eps)
-    return _recurrent_linear_step_fwd_dispatch(q_t, k_t, v_t, kv_state, z_state, eps=eps)
+    if any(isinstance(t, torch.Tensor) and t.requires_grad for t in (q_t, k_t, v_t, kv_state, z_state)):
+        return _RecurrentLinearStepFunction.apply(q_t, k_t, v_t, kv_state, z_state, eps)
+    return _recurrent_linear_step_fwd_dispatch(q_t, k_t, v_t, kv_state, z_state, eps)
