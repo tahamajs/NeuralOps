@@ -807,7 +807,7 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
             "max_abs_diff": err,
             "parity_status": "PASS (Exact)"
         })
-        print(f" [26/26] _common.py / _types.py: Layout & Alignment Safety")
+        print(" [26/26] _common.py / _types.py: Layout & Alignment Safety")
     except Exception as e:
         print(f" Error in _common.py: {e}")
 
@@ -1028,7 +1028,7 @@ def main():
 
     # 3. Generate Markdown & LaTeX
     md_lines = [
-        f"# ⚡ NeuralOps v1.3.6 Hardware Speedup Leaderboard",
+        "# ⚡ NeuralOps v1.3.6 Hardware Speedup Leaderboard",
         f"**Benchmark Platform**: {dev_name} ({sm_ver}) | Peak Compute: {peak_tf} TFLOPS (FP16) | Peak Memory Bandwidth: {peak_bw} GB/s | Hardware Ridge Point: {peak_tf*1000/peak_bw:.1f} FLOPs/Byte\n",
         "## 1. Core Triton Kernel Modules (All 26 Modules Ranked by Speedup)",
         export_benchmark_table(
@@ -1056,7 +1056,7 @@ def main():
     md_content = "\n".join(md_lines)
     with open("results/triton_full_leaderboard_v136.md", "w", encoding="utf-8") as f:
         f.write(md_content)
-    print(f"[Saved Markdown]: results/triton_full_leaderboard_v136.md")
+    print("[Saved Markdown]: results/triton_full_leaderboard_v136.md")
 
     # LaTeX Booktabs
     tex_lines = [
@@ -1093,7 +1093,7 @@ def main():
     ]
     with open("results/triton_full_leaderboard_v136.tex", "w", encoding="utf-8") as f:
         f.write("\n".join(tex_lines))
-    print(f"[Saved LaTeX]: results/triton_full_leaderboard_v136.tex")
+    print("[Saved LaTeX]: results/triton_full_leaderboard_v136.tex")
 
     print("\n" + "=" * 70)
     print("BENCHMARK SUITE COMPLETE!")
