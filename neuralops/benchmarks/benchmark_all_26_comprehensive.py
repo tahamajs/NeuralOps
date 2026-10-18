@@ -519,44 +519,55 @@ def run_all_26_comprehensive(
             fused_moba_block_router_combine_triton,
             fused_moba_block_router_combine_pytorch,
         )
-        x_moba = torch.randn(B, 16, 256, device=device, dtype=torch.float32)
-        topk_idx = torch.randint(0, 8, (B, 16, 4), device=device)
-        topk_w = F.softmax(torch.randn(B, 16, 4, device=device, dtype=torch.float32), dim=-1)
+        Qb_moba = torch.randn(4, 4, 16, 16, 32, device=device, dtype=torch.float32)
+        Kb_moba = torch.randn(4, 4, 16, 16, 32, device=device, dtype=torch.float32)
+        Vb_moba = torch.randn(4, 4, 16, 16, 32, device=device, dtype=torch.float32)
         results.append(benchmark_single_kernel(
-            "fused_moba_block_router", "routing", "B=4,16x256,k=4",
-            fused_moba_block_router_combine_triton, fused_moba_block_router_combine_pytorch,
-            x_moba, topk_idx, topk_w, 8, warmup=warmup, reps=repeat, device=device,
+            "fused_moba_block_router", "routing", "16x16x32, topk=2",
+            lambda q, k, v: fused_moba_block_router_combine_triton(q, k, v, 0.25, 2, True),
+            lambda q, k, v: fused_moba_block_router_combine_pytorch(q, k, v, 0.25, 2, True),
+            Qb_moba, Kb_moba, Vb_moba, warmup=warmup, reps=repeat, device=device,
         ))
 
-    # 22. Varlen State Scatter (varlen_attention)
-    if should_run("fused_varlen_cross_attn"):
-        from neuralops.core.triton_kernels.varlen_attention import (
-            fused_varlen_cross_attn_state_scatter_triton,
-            fused_varlen_cross_attn_state_scatter_pytorch,
+    # 22. Linear Attn RALA Augmented Scan (linear_attn)
+    if should_run("fused_rala_augmented_scan"):
+        from neuralops.core.triton_kernels.linear_attn import (
+            fused_rala_augmented_scan_triton,
+            fused_rala_augmented_scan_pytorch,
         )
-        total_tokens = 2048
-        x_v = torch.randn(total_tokens, 256, device=device, dtype=torch.float32)
-        cu_seqlens = torch.tensor([0, 512, 1024, 1536, 2048], device=device, dtype=torch.int32)
-        out_state = torch.zeros(4, 256, device=device, dtype=torch.float32)
+        q_rala = F.softplus(torch.randn(2, 4, 512, 32, device=device, dtype=dtype))
+        k_rala = F.softplus(torch.randn(2, 4, 512, 32, device=device, dtype=dtype))
+        v_rala = torch.randn(2, 4, 512, 32, device=device, dtype=dtype)
+        lora_U = torch.randn(4, 32, 4, device=device, dtype=dtype)
+        lora_V = torch.randn(4, 32, 4, device=device, dtype=dtype)
         results.append(benchmark_single_kernel(
-            "fused_varlen_cross_attn", "varlen", "T=2048,dim=256,b=4",
-            fused_varlen_cross_attn_state_scatter_triton, fused_varlen_cross_attn_state_scatter_pytorch,
-            x_v, cu_seqlens, out_state, warmup=warmup, reps=repeat, device=device,
+            "fused_rala_augmented_scan", "linear_attention", "512x32, r=4",
+            lambda q, k, v, u, w: fused_rala_augmented_scan_triton(q, k, v, u, w, is_causal=True),
+            lambda q, k, v, u, w: fused_rala_augmented_scan_pytorch(q, k, v, u, w, is_causal=True),
+            q_rala, k_rala, v_rala, lora_U, lora_V, warmup=warmup, reps=repeat, device=device,
         ))
 
-    # 23. HGRN2 Recurrent Step (state_update)
-    if should_run("fused_hgrn2_recurrent_step"):
-        from neuralops.core.triton_kernels.state_update import (
-            fused_hgrn2_recurrent_step_triton,
-            fused_hgrn2_recurrent_step_pytorch,
-        )
-        h_rec = torch.randn(B, 512, device=device, dtype=dtype)
-        x_rec = torch.randn(B, 512, device=device, dtype=dtype)
-        g_rec = torch.sigmoid(torch.randn(B, 512, device=device, dtype=dtype))
+    # 23. Recurrent Linear Step (state_update)
+    if should_run("fused_recurrent_linear_step"):
+        from neuralops.core.triton_kernels.state_update import fused_recurrent_linear_step
+        q_rec = torch.randn(2, 4, 64, device=device, dtype=dtype)
+        k_rec = torch.randn(2, 4, 64, device=device, dtype=dtype)
+        v_rec = torch.randn(2, 4, 64, device=device, dtype=dtype)
+        kv_state_rec = torch.randn(2, 4, 64, 64, device=device, dtype=dtype)
+        z_state_rec = torch.randn(2, 4, 64, device=device, dtype=dtype)
+
+        def py_rec_step(q_t, k_t, v_t, kv_s, z_s, eps=1e-6):
+            kv = kv_s + torch.einsum("bhk,bhv->bhkv", k_t.float(), v_t.float()).to(kv_s.dtype)
+            z = z_s + k_t
+            num = torch.einsum("bhk,bhkv->bhv", q_t.float(), kv.float())
+            den = torch.einsum("bhk,bhk->bh", q_t.float(), z.float()).unsqueeze(-1) + eps
+            return (num / den).to(q_t.dtype), kv, z
+
         results.append(benchmark_single_kernel(
-            "fused_hgrn2_recurrent_step", "recurrent_cell", "B=4,dim=512",
-            fused_hgrn2_recurrent_step_triton, fused_hgrn2_recurrent_step_pytorch,
-            h_rec, x_rec, g_rec, warmup=warmup, reps=repeat, device=device,
+            "fused_recurrent_linear_step", "recurrent_cell", "B=2, H=4, D=64",
+            lambda q, k, v, kv, z: fused_recurrent_linear_step(q, k, v, kv.clone(), z.clone()),
+            lambda q, k, v, kv, z: py_rec_step(q, k, v, kv.clone(), z.clone()),
+            q_rec, k_rec, v_rec, kv_state_rec, z_state_rec, warmup=warmup, reps=repeat, device=device,
         ))
 
     # 24. Jamba Hybrid Gating (selective_scan)
