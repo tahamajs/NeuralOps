@@ -8,7 +8,6 @@ Author: Taha Majlesi
 
 from __future__ import annotations
 
-import math
 import torch
 import torch.nn as nn
 
@@ -42,6 +41,9 @@ class NeuralOpsRotaryEmbedding(nn.Module):
         self.max_position_embeddings = max_position_embeddings
         self.base = base
         self.scaling_factor = scaling_factor
+        self.max_seq_len_cached: int = max_position_embeddings
+        self.cos_cached: torch.Tensor | None = None
+        self.sin_cached: torch.Tensor | None = None
 
         inv_freq = 1.0 / (
             self.base ** (torch.arange(0, self.dim, 2, dtype=torch.int64).float() / self.dim)

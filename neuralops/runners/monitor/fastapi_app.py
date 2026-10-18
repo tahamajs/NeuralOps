@@ -63,7 +63,7 @@ class ConnectionManager:
         for conn in list(self.active_connections):
             try:
                 await conn.send_json(message)
-            except Exception:
+            except (RuntimeError, IOError, ConnectionError, OSError):
                 to_remove.add(conn)
         for dead in to_remove:
             self.active_connections.discard(dead)

@@ -370,15 +370,15 @@ def _ensure_registries_loaded() -> None:
     """Ensure all subpackages registering attentions and compressors are imported."""
     try:
         import neuralops.attentions  # noqa: F401
-    except Exception as exc:
+    except (ImportError, AttributeError) as exc:
         logger.debug("Error loading neuralops.attentions: %s", exc)
     try:
         import neuralops.trainer.ttt.test_time_trainer  # noqa: F401
-    except Exception as exc:
+    except (ImportError, AttributeError) as exc:
         logger.debug("Error loading neuralops.trainer.ttt: %s", exc)
     try:
         import neuralops.compression_engine  # noqa: F401
-    except Exception as exc:
+    except (ImportError, AttributeError) as exc:
         logger.debug("Error loading neuralops.compression_engine: %s", exc)
 
 
@@ -552,8 +552,8 @@ def compare_attentions_ablation(
                 "bottleneck": report.bottleneck_regime,
             }
             records.append(rec)
-        except Exception as e:
-            logger.warning("Failed to profile '%s' in ablation study: %s", name, e)
+        except (RuntimeError, ValueError, KeyError, AttributeError) as e:
+            logger.warning("Failed to profile '%s' in ablation study: %s", name, e, exc_info=True)
 
     pareto_mask = compute_pareto_frontier(records)
     for rec, is_p in zip(records, pareto_mask):
@@ -633,7 +633,7 @@ def surgical_transplant_and_heal_pipeline(
                 mse_raw = F.mse_loss(y_s.float(), y_t.float()).item()
                 cos_raw = F.cosine_similarity(y_s.float().flatten(), y_t.float().flatten(), dim=0).item()
                 initial_metrics = {"mse_raw": mse_raw, "cos_sim_raw": cos_raw}
-        except Exception as e_metric:
+        except (RuntimeError, ValueError, TypeError, AttributeError) as e_metric:
             logger.debug("Raw metric check skipped: %s", e_metric)
 
     # 2. Closed-Form Ridge Alignment & 3. Micro-Healing
@@ -893,7 +893,7 @@ def has_triton() -> bool:
     try:
         from neuralops.core.triton_kernels import HAS_TRITON
         return bool(HAS_TRITON)
-    except Exception:
+    except (ImportError, AttributeError):
         return False
 
 

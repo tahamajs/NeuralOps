@@ -8,8 +8,11 @@ Author: Taha Majlesi
 
 from __future__ import annotations
 
+import logging
 import torch
 import torch.nn as nn
+
+logger = logging.getLogger(__name__)
 
 
 class RMSNorm(nn.Module):
@@ -65,8 +68,8 @@ class RMSNorm(nn.Module):
             try:
                 from neuralops.core.triton_kernels.elementwise import rmsnorm_triton
                 return rmsnorm_triton(x, self.weight, self.eps)
-            except Exception:
-                pass
+            except (RuntimeError, ImportError) as e:
+                logger.debug("rmsnorm_triton failed: %s, falling back to PyTorch FP32 accumulator", e)
         variance = torch.mean(x.float() ** 2, dim=reduction_dims, keepdim=True)
         x_normed = (x.float() * torch.rsqrt(variance + self.eps)).to(input_dtype)
 

@@ -119,7 +119,7 @@ def get_device_hardware_profile(device: torch.device | str | int | None = None) 
         if hasattr(torch, "xpu") and torch.xpu.is_available():
             try:
                 dev_name = torch.xpu.get_device_name(device)
-            except Exception:
+            except (RuntimeError, AttributeError):
                 pass
         return HardwareProfile(
             backend="xpu",

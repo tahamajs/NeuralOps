@@ -37,7 +37,14 @@ class UniversalAttentionWrapper(nn.Module):
         self._wrapped_attention = inner_attn
         self.layer_name = layer_name
         self.return_tuple = return_tuple
-        self.is_t5 = False
+        self.is_t5: bool = False
+        self.has_relative_attention_bias = None
+        self.relative_attention_bias = None
+        self.relative_attention_num_buckets = None
+        self.relative_attention_max_distance = None
+        self.is_decoder = None
+        self.layer_idx = None
+        self.compute_bias = None
 
     @property
     def inner(self) -> nn.Module:
@@ -48,6 +55,7 @@ class UniversalAttentionWrapper(nn.Module):
         self._wrapped_attention = module
 
     def forward(self, *args: Any, **kwargs: Any) -> tuple[torch.Tensor, torch.Tensor | None]:
+        assert callable(self._wrapped_attention), f"{type(self).__name__}._wrapped_attention is not callable"
         # 1. Extract hidden states / input tensor
         hidden_states: torch.Tensor | None = None
         if len(args) > 0 and isinstance(args[0], tuple):
@@ -219,7 +227,7 @@ class UniversalAttentionWrapper(nn.Module):
                 import transformers
                 from packaging import version
                 is_legacy_hf_decoder = version.parse(transformers.__version__) < version.parse("4.49.0")
-            except Exception:
+            except (ImportError, AttributeError, ValueError):
                 is_legacy_hf_decoder = False
 
             if is_legacy_hf_decoder:
@@ -227,7 +235,7 @@ class UniversalAttentionWrapper(nn.Module):
                     try:
                         from transformers.cache_utils import DynamicCache
                         present = DynamicCache()
-                    except Exception:
+                    except (ImportError, AttributeError, TypeError):
                         present = ()
                 return (hidden, attn_weights, present)
             if present is not None and kwargs.get("use_cache", False):
@@ -453,7 +461,7 @@ def _try_instantiate(
                 result = attempt()
                 if isinstance(result, nn.Module):
                     return result
-            except Exception:
+            except (TypeError, ValueError, AttributeError):
                 continue
 
     attempts = [
@@ -523,7 +531,7 @@ def _try_instantiate(
         except (TypeError, AttributeError, ValueError) as e:
             last_err = e
             continue
-        except Exception as e:
+        except RuntimeError as e:
             last_err = e
             continue
 
@@ -588,10 +596,10 @@ def replace_attention(model, attention_key=None, layer_indices=None, new_attenti
     for name, old_module, layer_idx in targets:
         try:
             new_attn = _try_instantiate(attn_fn, config, layer_idx, total_layers, old_module)
-        except Exception as e:
-            print(f"[WARN] Could not replace {name} with '{attention_key}': {e}")
+        except (RuntimeError, ValueError, TypeError, AttributeError) as e:
+            logger.error("Could not replace %s with '%s': %s", name, attention_key, e, exc_info=True)
             failed_count += 1
-            continue
+            raise
 
         # Copy weights if supported
         copied_custom = False
@@ -655,8 +663,8 @@ def replace_attention(model, attention_key=None, layer_indices=None, new_attenti
                 # Transfer Output projection
                 if old_o is not None and new_o is not None and hasattr(old_o, "weight"):
                     _copy_projection_weights(new_o, old_o.weight, getattr(old_o, "bias", None))
-            except Exception as e:
-                pass
+            except (AttributeError, RuntimeError, ValueError, KeyError) as e:
+                logger.debug("Automatic projection transfer failed for %s: %s", name, e)
 
         # Match device and dtype of old_module
         try:
@@ -700,7 +708,7 @@ def replace_attention(model, attention_key=None, layer_indices=None, new_attenti
                                     R = torch.matmul(u_p, vt_p).to(dtype=o_mod.weight.dtype, device=o_mod.weight.device)
                                     if o_mod.weight.shape == R.shape:
                                         o_mod.weight.data.copy_(torch.matmul(o_mod.weight.data, R))
-            except Exception as calib_err:
+            except (RuntimeError, ValueError, AttributeError) as calib_err:
                 logger.debug("Closed-form Procrustes alignment skipped: %s", calib_err)
 
         # Wrap in universal adapter

@@ -8,13 +8,16 @@ Author: Taha Majlesi
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 import torch
 import torch.nn as nn
 
+logger = logging.getLogger(__name__)
+
 from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
-import neuralops.attentions  # Ensure attentions are registered
-import neuralops.compression_engine  # Ensure compressors are registered
+import neuralops.attentions  # noqa: F401
+import neuralops.compression_engine  # noqa: F401
 
 from neuralops.models.configuration import NeuralOpsConfig
 from neuralops.models.modeling_norm import build_norm_layer
@@ -78,8 +81,9 @@ class NeuralOpsBlock(nn.Module):
                 try:
                     compressor = comp_cls(self.self_attn, **comp_kwargs)
                     self.self_attn = compressor.compress()
-                except Exception:
-                    pass
+                except (RuntimeError, TypeError, ValueError, AttributeError) as e:
+                    logger.error("Failed to apply compressor %s on layer %d: %s", comp_type, layer_idx, e, exc_info=True)
+                    raise
 
     def forward(
         self,
@@ -91,6 +95,11 @@ class NeuralOpsBlock(nn.Module):
         use_cache: bool = False,
         **kwargs: Any,
     ) -> tuple[torch.Tensor, Any | None, Any | None]:
+        assert callable(self.input_layernorm), f"{type(self).__name__}.input_layernorm is not callable"
+        assert callable(self.self_attn), f"{type(self).__name__}.self_attn is not callable"
+        assert callable(self.post_attention_layernorm), f"{type(self).__name__}.post_attention_layernorm is not callable"
+        assert callable(self.mlp), f"{type(self).__name__}.mlp is not callable"
+
         residual = hidden_states
 
         normed_hidden_states = self.input_layernorm(hidden_states)

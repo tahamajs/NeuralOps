@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 
 # Active forced backend: "auto", "cuda", "triton", "pytorch"
 _FORCED_BACKEND: str = "auto"
+FORCE_PYTORCH_FALLBACK: bool = False
 
 # Last dispatch tracking
 _LAST_DISPATCH_BACKEND: dict[str, str] = {}
@@ -164,7 +165,7 @@ def dispatch(
     forced = _FORCED_BACKEND
 
     # Forced Level 3
-    if forced == "pytorch":
+    if FORCE_PYTORCH_FALLBACK or forced == "pytorch":
         _DISPATCH_STATS["pytorch"] += 1
         _LAST_DISPATCH_BACKEND[kernel_name] = "pytorch"
         return pytorch_fn(*args, **kwargs)
@@ -261,7 +262,8 @@ def dispatch(
             _DISPATCH_STATS["triton_failures"] += 1
             raise RuntimeError(f"[{kernel_name}] Backend forced to 'triton', but execution failed: {e}") from e
 
-    import os, sys
+    import os
+    import sys
     debug_dispatch = os.environ.get("NEURALOPS_DEBUG_DISPATCH") == "1"
     if debug_dispatch:
         print(f"[dispatch] {kernel_name}: cuda={'yes' if cuda_fn else 'no'} triton={'yes' if triton_fn else 'no'} pytorch=yes", file=sys.stderr)
@@ -305,5 +307,17 @@ def dispatch(
     if debug_dispatch:
         print(f"[dispatch] {kernel_name}: executed branch = PYTORCH_FALLBACK", file=sys.stderr)
     return pytorch_fn(*args, **kwargs)
+
+
+__all__ = [
+    "FORCE_PYTORCH_FALLBACK",
+    "dispatch",
+    "force_kernel_backend",
+    "get_dispatch_stats",
+    "reset_dispatch_stats",
+    "get_last_dispatch_backend",
+    "get_last_dispatch_error",
+]
+
 
 
