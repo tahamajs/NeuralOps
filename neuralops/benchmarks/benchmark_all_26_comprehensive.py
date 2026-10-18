@@ -477,7 +477,7 @@ def run_all_26_comprehensive(
 
     # 20. Fused RoPE JIT (fused_rope)
     if should_run("fused_rope"):
-        from neuralops.core.triton_kernels.fused_rope import fused_rope_fwd_kernel, _apply_rope_rotation
+        from neuralops.core.triton_kernels.fused_rope import fused_rope_fwd_kernel, apply_rope_rotation
         q_r = torch.randn(B, H, N, D, device=device, dtype=dtype)
         k_r = torch.randn(B, H, N, D, device=device, dtype=dtype)
         cos_r = torch.cos(torch.randn(N, D // 2, device=device, dtype=dtype))
@@ -503,7 +503,7 @@ def run_all_26_comprehensive(
 
         results.append(benchmark_single_kernel(
             "fused_rope", "positional_embedding", f"B={B},H={H},N={N},D={D}",
-            tri_rope_bench, lambda q, k, c, s: _apply_rope_rotation(q, c, s),
+            tri_rope_bench, lambda q, k, c, s: apply_rope_rotation(q, c, s),
             q_r, k_r, cos_r, sin_r, warmup=warmup, reps=repeat, device=device,
         ))
 
