@@ -113,7 +113,7 @@ class SVDLinear(nn.Module):
             try:
                 from neuralops.core.cuda_kernels.low_rank_svd import fused_lowrank_gated_gemm
                 u_eff = self.U * self.S.unsqueeze(0)
-                out = fused_lowrank_gated_gemm(x, self.V.t().contiguous(), u_eff.t().contiguous(), bias=self.bias)
+                out = fused_lowrank_gated_gemm(x, self.V.t().contiguous(), u_eff, bias=self.bias)
                 if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
                     out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.scaling
                 return out

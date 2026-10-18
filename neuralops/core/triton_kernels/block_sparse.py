@@ -443,7 +443,7 @@ def fused_dsa_sparse_attn_pytorch_ref(
     Returns:
         Output tensor matching q shape
     """
-    orig_shape = q.shape
+    _orig_shape = q.shape
     is_3d = (q.ndim == 3)
     if is_3d:
         B, L, D = q.shape
@@ -515,7 +515,7 @@ def fused_dsa_sparse_attn_triton(
     Returns:
         Output tensor matching q shape
     """
-    orig_shape = q.shape
+    _orig_shape = q.shape
     is_3d = (q.ndim == 3)
     if is_3d:
         B, L, D = q.shape
