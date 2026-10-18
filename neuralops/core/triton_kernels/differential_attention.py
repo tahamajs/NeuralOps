@@ -166,7 +166,7 @@ class TritonDifferentialAttentionFunction(torch.autograd.Function):
         sm_scale: Optional[float] = None,
     ) -> torch.Tensor:
         orig_shape = q1.shape
-        orig_dtype = q1.dtype
+        _orig_dtype = q1.dtype
         is_3d = (q1.ndim == 3)
         if is_3d:
             B, L, D = q1.shape
