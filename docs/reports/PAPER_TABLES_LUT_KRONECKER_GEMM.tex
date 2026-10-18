@@ -1,0 +1,19 @@
+% Auto-generated LUT & Kronecker Structured GEMM LaTeX Benchmark Tables on RTX 4070 (Ada Lovelace SM 8.9)
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{lcccccccc}
+\toprule
+\textbf{Kernel} & \textbf{Dimension $D$} & \textbf{Batch $M$} & \textbf{CUDA (ms)} & \textbf{PyTorch (ms)} & \textbf{cuBLAS (ms)} & \textbf{Speedup vs Ref} & $\mathbf{\max |\mathbf{Y} - \mathbf{Y}_{\text{ref}}|}$ & \textbf{Status} \\
+\midrule
+lut_gemm & 1024 & 16 & 0.0505 & 0.2231 & 0.0071 & 4.42x & 6.25e-02 & PASS \\
+lut_gemm & 2048 & 16 & 0.185 & 0.9561 & 0.0121 & 5.17x & 6.25e-02 & PASS \\
+lut_gemm & 4096 & 16 & 0.551 & 3.8479 & 0.0407 & 6.98x & 1.25e-01 & PASS \\
+kronecker_gemm & 1024 & 16 & 0.0634 & 0.0246 & 0.0061 & 0.39x & 6.10e-05 & PASS \\
+kronecker_gemm & 2048 & 16 & 0.4642 & 0.0244 & 0.0104 & 0.05x & 1.22e-04 & PASS \\
+kronecker_gemm & 4096 & 16 & 1.8508 & 0.0242 & 0.0354 & 0.01x & 1.22e-04 & PASS \\
+\bottomrule
+\end{tabular}
+\caption{Empirical evaluation of in-register bit-packed LUT codebook dequantization GEMM and factored Kronecker structured matmul on NVIDIA GeForce RTX 4070 Laptop GPU (Ada Lovelace SM 8.9, 8GB VRAM). Parity certified with zero NaNs/Infs.}
+\label{tab:lut_kronecker_gemm}
+\end{table*}
