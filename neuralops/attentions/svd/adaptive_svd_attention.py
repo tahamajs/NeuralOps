@@ -130,7 +130,7 @@ class AdaptiveSVDLinear(nn.Module):
         if x.is_cuda and x.dtype in (torch.float16, torch.bfloat16):
             try:
                 from neuralops.core.cuda_kernels.low_rank_svd import fused_lowrank_gated_gemm
-                base = fused_lowrank_gated_gemm(x, self.V, self.U.t().contiguous(), bias=self.bias)
+                base = fused_lowrank_gated_gemm(x, self.V, self.U, bias=self.bias)
                 if self.lora_A is not None and self.lora_B is not None:
                     base = base + F.linear(F.linear(x, self.lora_A.to(x.dtype)), self.lora_B.to(x.dtype)) * getattr(self, "lora_scaling", 1.0)
                 return base.to(orig_dtype)

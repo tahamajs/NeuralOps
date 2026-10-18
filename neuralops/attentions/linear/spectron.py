@@ -652,7 +652,7 @@ class SpectronAttention(BaseAttention):
         if x.is_cuda and x.dtype in (torch.float16, torch.bfloat16):
             try:
                 from neuralops.core.cuda_kernels.low_rank_svd import fused_lowrank_gated_gemm
-                base = fused_lowrank_gated_gemm(x, down.weight, up.weight.t().contiguous(), bias=up.bias)
+                base = fused_lowrank_gated_gemm(x, down.weight, up.weight, bias=up.bias)
                 if self.lora_rank > 0 and lora_A is not None and lora_B is not None:
                     base = base + F.linear(F.linear(x, lora_A.to(x.dtype)), lora_B.to(x.dtype)) * self.scaling
                 if self.add_sparse and sparse_w is not None:
