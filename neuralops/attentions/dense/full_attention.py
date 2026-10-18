@@ -30,10 +30,6 @@ from neuralops.utils.model_family import ModelAdapter
 logger = logging.getLogger(__name__)
 
 
-
-
-
-
 @ATTENTION_REGISTRY.register(
     "full",
     supports_causal=True,
@@ -187,7 +183,6 @@ class FullAttention(BaseAttention):
             "o": (None, None),
         }
 
-        # 1. UniversalAdapter extraction
         for proj in ["q", "k", "v", "o"]:
             try:
                 w, b = UniversalAdapter.get_weight_bias(src, proj)
@@ -196,7 +191,6 @@ class FullAttention(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter fallback failed: %s", e)
 
-        # 2. GPT-2 Fused c_attn Conv1D handling
         if hasattr(src, "c_attn") and (
             extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None
         ):
@@ -227,7 +221,6 @@ class FullAttention(BaseAttention):
             b_o = getattr(src.c_proj, "bias", None)
             extracted["o"] = (w_o, b_o.data if b_o is not None else None)
 
-        # 3. RoBERTa / BERT Nested Encoder handling
         if hasattr(src, "self") and (
             extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None
         ):
@@ -243,7 +236,6 @@ class FullAttention(BaseAttention):
             dense = src.output.dense
             extracted["o"] = (dense.weight.data, getattr(dense, "bias", None))
 
-        # 4. Modern Decoders (Qwen3.5, LLaMA, Mistral) & DistilBERT
         named_map = {
             "q": ["q_proj", "q_lin", "query"],
             "k": ["k_proj", "k_lin", "key"],
@@ -262,7 +254,6 @@ class FullAttention(BaseAttention):
                             )
                             break
 
-        # Detect nested encoder architecture
         cls_name = src.__class__.__name__
         has_out_proj = any(
             hasattr(src, attr)
@@ -294,7 +285,6 @@ class FullAttention(BaseAttention):
         else:
             self.is_nested_encoder = False
 
-        # Check required weights
         missing = [k for k in ["q", "k", "v"] if extracted[k][0] is None]
         if not self.is_nested_encoder and extracted["o"][0] is None:
             missing.append("o")
@@ -303,7 +293,6 @@ class FullAttention(BaseAttention):
                 "FullAttention copy_weights warning. Proceeding with initialized weights."
             )
 
-        # Frobenius norm validation
         for proj_key in ["q", "k", "v"]:
             w = extracted[proj_key][0]
             if w is not None:
@@ -328,7 +317,6 @@ class FullAttention(BaseAttention):
                 return w.t().contiguous()
             return w
 
-        # Copy into projection modules
         with torch.no_grad():
             for proj_key, target in [
                 ("q", self.query),
@@ -391,7 +379,6 @@ class FullAttention(BaseAttention):
         K = self.key(kv_input).view(B, N_k, self.num_kv_heads, d).transpose(1, 2).contiguous()
         V = self.value(kv_input).view(B, N_k, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
-        # Apply RoPE
         position_embeddings = kwargs.get("position_embeddings")
         if (
             position_embeddings is not None
@@ -401,12 +388,10 @@ class FullAttention(BaseAttention):
             cos, sin = position_embeddings[0], position_embeddings[1]
             Q, K = apply_rotary_pos_emb(Q, K, cos, sin, kwargs.get("position_ids"))
 
-        # GQA repeat
         if self.kv_repeat > 1:
             K = repeat_kv(K, self.kv_repeat)
             V = repeat_kv(V, self.kv_repeat)
 
-        # Explicit Causal Masking for decoders
         is_decoder = (
             self.is_decoder
             or getattr(self.config, "is_decoder", False)
@@ -416,7 +401,6 @@ class FullAttention(BaseAttention):
 
         mask = attention_mask if attention_mask is not None else kwargs.get("mask")
 
-        # Fast-Path: Use FlashAttention / Memory-Efficient SDPA when possible
         use_sdpa = (
             not output_attentions
             and head_mask is None
@@ -506,19 +490,6 @@ class FullAttention(BaseAttention):
         return output, (attn if output_attentions else None)
 
 
-# ============================================================================
-# FIXED (2026-09-26): inject_full_attention now handles all architecture variants
-#
-# Bug: Previously, the injection only checked `layer.attention.self` and
-# `layer.attention`. GPT-2 stores its attention under `layer.attn`, so the
-# injection silently added a new `.attention` attribute that was never read
-# by the model's forward pass. Result: num_injected_attention_layers == 0.
-#
-# Fix: Discover source attention across all common attribute names
-# ("attn", "attention", "self_attn", "self"), and replace in the correct
-# branch for each architecture. Added idempotency guard and explicit error
-# logging for unknown architectures.
-# ============================================================================
 def inject_full_attention(
     layer: Any = None,
     model: Any = None,
@@ -537,7 +508,6 @@ def inject_full_attention(
 
     cfg = model_config if model_config is not None else getattr(target, "config", None)
 
-    # ---- Whole-model traversal ----
     layer_list = None
     if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
         layer_list = target.distilbert.transformer.layer
@@ -578,21 +548,17 @@ def inject_full_attention(
                 num_injected += 1
         return target if num_injected > 0 else None
 
-    # ---- Single-layer injection ----
     layer = target
 
-    # FIX-3: single initialization (removed duplicate)
     if model_config is None:
         model_config = type("Cfg", (), {"hidden_size": 64, "num_heads": 4, "rank": 32})()
 
-    # ---- FIX-1: Discover source attention across all architecture variants ----
     src_attn = old_attn
     if src_attn is None:
         for attr in ("attn", "attention", "self_attn", "self"):
             candidate = getattr(layer, attr, None)
             if candidate is None:
                 continue
-            # FIX-4: idempotency guard
             if isinstance(candidate, FullAttention):
                 logger.debug(
                     "inject_full_attention: %s.%s is already FullAttention, skipping",
@@ -600,7 +566,6 @@ def inject_full_attention(
                     attr,
                 )
                 return None
-            # RoBERTa/BERT nested: layer.attention.self has .query
             if hasattr(candidate, "self") and hasattr(candidate.self, "query"):
                 src_attn = candidate.self
             else:
@@ -608,7 +573,6 @@ def inject_full_attention(
             break
 
     if src_attn is None:
-        # FIX-5: explicit error logging
         logger.warning(
             "inject_full_attention: no source attention found on layer %s "
             "(checked: attn, attention, self_attn, self)",
@@ -616,7 +580,6 @@ def inject_full_attention(
         )
         return None
 
-    # ---- Build FullAttention with copied weights ----
     try:
         new_attn = FullAttention(
             config=model_config,
@@ -626,15 +589,12 @@ def inject_full_attention(
         logger.error("FullAttention construction failed: %s", e)
         return None
 
-    # ---- FIX-2: Replace attention across all architecture variants ----
     replaced = False
     if hasattr(layer, "attn"):
-        # GPT-2, GPT-Neo, GPT-J
         layer.attn = new_attn
         replaced = True
     elif hasattr(layer, "attention"):
         if hasattr(layer.attention, "self") and hasattr(layer.attention.self, "query"):
-            # RoBERTa / BERT nested encoder
             layer.attention.self = new_attn
         else:
             layer.attention = new_attn

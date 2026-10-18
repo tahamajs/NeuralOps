@@ -57,7 +57,6 @@ class FisherSensitivityProfiler:
                 if not inp or inp[0] is None:
                     return
                 x = inp[0].detach()
-                # [B, T, D] -> [N, D]
                 x_2d = x.reshape(-1, x.shape[-1]).float()
                 g = torch.matmul(x_2d.t(), x_2d)
                 if name not in gram_matrices:
@@ -68,7 +67,6 @@ class FisherSensitivityProfiler:
                     counts[name] += x_2d.shape[0]
             return hook
 
-        # Register forward hooks on linear modules
         for name, mod in self.model.named_modules():
             if isinstance(mod, nn.Linear):
                 if target_layers is None or any(t in name for t in target_layers):
@@ -103,7 +101,6 @@ class FisherSensitivityProfiler:
             for h in hooks:
                 h.remove()
 
-        # Normalize by total token counts
         normalized_grams = {}
         for name, g in gram_matrices.items():
             cnt = max(1, counts[name])
@@ -202,7 +199,6 @@ def solve_optimal_rank_allocation(
     for name, mod in linear_layers.items():
         w = mod.weight.detach().float().cpu()
         if mod.__class__.__name__ == "Conv1D":
-            # HuggingFace Conv1D has weight of shape [in_features, out_features]
             in_f, out_f = w.shape
             w = w.t().contiguous()
         else:
@@ -210,9 +206,7 @@ def solve_optimal_rank_allocation(
         orig_p = in_f * out_f
         total_orig_params += orig_p
 
-        # SVD singular values
         U, S, Vt = torch.linalg.svd(w, full_matrices=False)
-        # Sensitivity weighting from Gram matrix or Fisher
         sens_weight = 1.0
         if fisher_weights is not None and name in fisher_weights:
             sens_weight = float(fisher_weights[name].mean().item()) + 1e-6
@@ -230,7 +224,6 @@ def solve_optimal_rank_allocation(
 
     target_total_params = int(total_orig_params * target_param_ratio)
 
-    # Candidate ranks per layer
     allocated_ranks: Dict[str, int] = {}
     current_params = 0
 
@@ -239,10 +232,8 @@ def solve_optimal_rank_allocation(
         allocated_ranks[name] = r_init
         current_params += r_init * (stats["in_f"] + stats["out_f"])
 
-    # Marginal sensitivity tuning (Greedy adjustment to match budget)
     step = 8
     if current_params > target_total_params:
-        # Prune ranks from least sensitive layers
         while current_params > target_total_params:
             best_layer = None
             min_drop_cost = float("inf")
@@ -260,7 +251,6 @@ def solve_optimal_rank_allocation(
             allocated_ranks[best_layer] -= step
             current_params -= step * (layer_stats[best_layer]["in_f"] + layer_stats[best_layer]["out_f"])
     else:
-        # Add ranks to most sensitive layers
         while current_params + (min_rank * 256) <= target_total_params:
             best_layer = None
             max_gain = -float("inf")
@@ -334,7 +324,6 @@ class AutoSVDCompressor(BaseCompressor):
             except Exception as e:
                 logger.warning("Could not compute Gram matrices: %s. Using standard SVD spectrum.", e)
 
-        # Solve Pareto optimal rank distribution
         allocated_ranks, pareto_info = solve_optimal_rank_allocation(
             self.model,
             target_param_ratio=self.target_param_ratio,
@@ -347,12 +336,10 @@ class AutoSVDCompressor(BaseCompressor):
         self.allocated_ranks = allocated_ranks
         self.pareto_stats = pareto_info
 
-        # Replace linear modules with SVDLinear
         from neuralops.core.model_utils import replace_module
 
         compressed_count = 0
         for name, rank in allocated_ranks.items():
-            # Locate parent and child module
             parts = name.split(".")
             curr = self.model
             for p in parts[:-1]:

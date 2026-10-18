@@ -24,7 +24,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 
 logger = logging.getLogger(__name__)
 
-# Check OpenAI Triton availability
 try:
     import triton
     import triton.language as tl
@@ -69,9 +68,6 @@ except (ImportError, ModuleNotFoundError):
     tl = _DummyTL
 
 
-# ===========================================================================
-# Safe config helpers
-# ===========================================================================
 def _safe_getattr(obj: Any, key: str, default: Any = None) -> Any:
     if obj is None:
         return default
@@ -106,11 +102,6 @@ def _resolve_attr(cfg: Any, *keys: str) -> Any:
     return None
 
 
-
-
-# ===========================================================================
-# Linear with LoRA Adapter
-# ===========================================================================
 class _ChelaLinearWithLoRA(nn.Module):
     def __init__(
         self,
@@ -180,11 +171,6 @@ class _ChelaLinearWithLoRA(nn.Module):
         return out
 
 
-# ===========================================================================
-# TRITON JIT KERNELS: Fused Causal Linear Attention
-# ===========================================================================
-# FIXED: OpenAI Triton JIT kernel for chunkwise parallel-scan causal linear attention.
-# Dynamically maintains running states S and Z in registers/SRAM, avoiding global memory trips.
 @triton.autotune(
     configs=[
         triton.Config({"BLOCK_C": 32}, num_warps=4, num_stages=2),
@@ -215,7 +201,6 @@ def _chela_slay_causal_linear_fwd_kernel(
     b_idx = bh_idx // H
     h_idx = bh_idx % H
 
-    # Base pointers for this (batch, head)
     q_base = Q + b_idx * stride_qb + h_idx * stride_qh
     k_base = K + b_idx * stride_kb + h_idx * stride_kh
     v_base = V + b_idx * stride_vb + h_idx * stride_vh
@@ -228,7 +213,6 @@ def _chela_slay_causal_linear_fwd_kernel(
     mask_f = offs_f < FEAT_2F
     mask_d = offs_d < D_V
 
-    # Inter-chunk running state accumulators in registers/SRAM
     S = tl.zeros((BLOCK_F, BLOCK_D), dtype=tl.float32)
     Z = tl.zeros((BLOCK_F,), dtype=tl.float32)
 
@@ -239,7 +223,6 @@ def _chela_slay_causal_linear_fwd_kernel(
         cur_offs_l = start_l + offs_c
         mask_l = cur_offs_l < L
 
-        # Load Q, K, V tiles with boundary masking
         q_ptrs = q_base + cur_offs_l[:, None] * stride_ql + offs_f[None, :] * stride_qf
         k_ptrs = k_base + cur_offs_l[:, None] * stride_kl + offs_f[None, :] * stride_kf
         v_ptrs = v_base + cur_offs_l[:, None] * stride_vl + offs_d[None, :] * stride_vd
@@ -248,7 +231,6 @@ def _chela_slay_causal_linear_fwd_kernel(
         k_tile = tl.load(k_ptrs, mask=(mask_l[:, None] & mask_f[None, :]), other=0.0).to(tl.float32)
         v_tile = tl.load(v_ptrs, mask=(mask_l[:, None] & mask_d[None, :]), other=0.0).to(tl.float32)
 
-        # 1. Intra-chunk causal masked attention
         scores = tl.dot(q_tile, tl.trans(k_tile))
         causal_mask = offs_c[:, None] >= offs_c[None, :]
         valid_mask = mask_l[:, None] & mask_l[None, :]
@@ -257,30 +239,22 @@ def _chela_slay_causal_linear_fwd_kernel(
         num_intra = tl.dot(scores_masked, v_tile)
         denom_intra = tl.sum(scores_masked, axis=1)
 
-        # 2. Inter-chunk attention from running state
         num_inter = tl.dot(q_tile, S)
         denom_inter = tl.sum(q_tile * Z[None, :], axis=1)
 
-        # 3. Combine and clamp denominator to min 1.0 (FIX-2)
         num_tot = num_intra + num_inter
         denom_tot = denom_intra + denom_inter
         denom_clamped = tl.maximum(tl.abs(denom_tot), 1.0)
 
         out_tile = num_tot / denom_clamped[:, None]
 
-        # 4. Store output chunk to global memory
         o_ptrs = o_base + cur_offs_l[:, None] * stride_ol + offs_d[None, :] * stride_od
         tl.store(o_ptrs, out_tile.to(Out.dtype.element_ty), mask=(mask_l[:, None] & mask_d[None, :]))
 
-        # 5. Update running state with unmasked K_c and V_c
         S += tl.dot(tl.trans(k_tile), v_tile)
         Z += tl.sum(k_tile, axis=0)
 
 
-# ===========================================================================
-# VECTORIZED PYTORCH FALLBACK (Zero Python Loops)
-# ===========================================================================
-# FIXED: Pure tensor parallel-scan replacing sequential Python loops on CPU/Mac/non-CUDA.
 def _py_causal_linear_attention_vectorized(
     q_feat: torch.Tensor,
     k_feat: torch.Tensor,
@@ -303,7 +277,6 @@ def _py_causal_linear_attention_vectorized(
     else:
         q_pad, k_pad, v_pad = q_feat, k_feat, v_masked
 
-    # Reshape into chunks: (B, H, num_chunks, chunk_size, dim)
     q_c = q_pad.view(B, H, num_chunks, chunk_size, F2).float()
     k_c = k_pad.view(B, H, num_chunks, chunk_size, F2).float()
     v_c = v_pad.view(B, H, num_chunks, chunk_size, D).float()
@@ -316,7 +289,6 @@ def _py_causal_linear_attention_vectorized(
         k_c = k_c * v_m
         v_c = v_c * v_m
 
-    # Intra-chunk causal scores: (B, H, num_chunks, chunk_size, chunk_size)
     scores = torch.matmul(q_c, k_c.transpose(-2, -1))
     mask = torch.triu(torch.ones(chunk_size, chunk_size, device=q_feat.device, dtype=torch.bool), diagonal=1)
     scores = scores.masked_fill(mask, 0.0)
@@ -324,7 +296,6 @@ def _py_causal_linear_attention_vectorized(
     num_intra = torch.matmul(scores, v_c)
     denom_intra = scores.sum(dim=-1, keepdim=True)
 
-    # Inter-chunk state computation via cumsum
     delta_s = torch.matmul(k_c.transpose(-2, -1), v_c)
     delta_z = k_c.sum(dim=-2)
 
@@ -343,10 +314,6 @@ def _py_causal_linear_attention_vectorized(
     return out.to(q_feat.dtype)
 
 
-# ===========================================================================
-# AUTOGRAD FUNCTION WRAPPER
-# ===========================================================================
-# FIXED: PyTorch Autograd Function wrapping Triton kernel with activation recomputation.
 class ChelaSlayCausalLinearFunction(torch.autograd.Function):
     r"""
     Autograd Function for Chela-Slay Causal Linear Attention.
@@ -420,7 +387,6 @@ class ChelaSlayCausalLinearFunction(torch.autograd.Function):
         q_feat, k_feat, v_masked = ctx.saved_tensors
         chunk_size = ctx.chunk_size
 
-        # Exact backward gradients via dynamic activation recomputation
         with torch.enable_grad():
             q_req = q_feat.detach().requires_grad_(True)
             k_req = k_feat.detach().requires_grad_(True)
@@ -439,9 +405,6 @@ class ChelaSlayCausalLinearFunction(torch.autograd.Function):
         return dq, dk, dv, None
 
 
-# ===========================================================================
-# ChelaSlayAttention
-# ===========================================================================
 @ATTENTION_REGISTRY.register(
     "chela_slay", supports_causal=True, supports_bidirectional=True, supports_gqa=True
 )
@@ -465,7 +428,7 @@ class ChelaSlayAttention(BaseAttention):
         feature_dim: int = 128,
         pretrained_attn: nn.Module | None = None,
         old_attn: nn.Module | None = None,
-        gate_init_bias: float = 0.0,  # FIXED: sigmoid(8.0)=0.9997 (99.97% dense fidelity at step 0)
+        gate_init_bias: float = 0.0,
         chunk_size: int = 64,
         comp_config: Any | None = None,
         layer_id: int | None = None,
@@ -489,7 +452,6 @@ class ChelaSlayAttention(BaseAttention):
         )
 
         if config is None and source_attn is not None:
-
             class _Dummy:
                 pass
 
@@ -523,7 +485,6 @@ class ChelaSlayAttention(BaseAttention):
             config.model_type = ""
 
         if config is None:
-
             class _DefaultCfg:
                 pass
 
@@ -648,12 +609,10 @@ class ChelaSlayAttention(BaseAttention):
             freeze_base=self.freeze_base,
         )
 
-        # Yat projection — small init to keep proj values in [-1, 1]
         self.yat_proj = nn.Parameter(
             torch.randn(self.head_dim, self.feature_dim, dtype=torch.float32) * 0.02
         )
 
-        # Adaptive gate — starts high at gate_init_bias (8.0 -> ~99.97% dense)
         self.lora_gate = nn.Linear(self.dim, self.num_heads)
         nn.init.zeros_(self.lora_gate.weight)
         with torch.no_grad():
@@ -681,7 +640,6 @@ class ChelaSlayAttention(BaseAttention):
                     "ChelaSlayAttention._copy_pretrained failed: %s. Using init.", e
                 )
 
-    # ---- aliases ----
     @property
     def gate(self): return self.lora_gate
     @property
@@ -713,9 +671,6 @@ class ChelaSlayAttention(BaseAttention):
     @property
     def c_proj(self): return self.out_proj
 
-    # ------------------------------------------------------------------
-    # Weight transfer
-    # ------------------------------------------------------------------
     def _copy_pretrained(self, pretrained_attn: nn.Module) -> None:
         if pretrained_attn is None:
             return
@@ -762,7 +717,6 @@ class ChelaSlayAttention(BaseAttention):
         def _unwrap(mod):
             return getattr(mod, "base_layer", mod)
 
-        # GPT-2 fused
         if hasattr(pretrained_attn, "c_attn") and pretrained_attn.c_attn is not None:
             c_attn_mod = _unwrap(pretrained_attn.c_attn)
             c_w = getattr(c_attn_mod, "weight", None)
@@ -795,7 +749,6 @@ class ChelaSlayAttention(BaseAttention):
                     o_b = getattr(c_proj_mod, "bias", None)
                     extracted["o"] = (o_w, o_b.data.clone() if o_b is not None else None)
 
-        # Nested
         elif hasattr(pretrained_attn, "self") and hasattr(pretrained_attn.self, "query"):
             s = pretrained_attn.self
             for key, sub_name in (("q", "query"), ("k", "key"), ("v", "value")):
@@ -808,7 +761,6 @@ class ChelaSlayAttention(BaseAttention):
                 b = getattr(out_mod, "bias", None)
                 extracted["o"] = (out_mod.weight.data.clone(), b.data.clone() if b is not None else None)
 
-        # Flat
         else:
             candidates = {
                 "q": ("q_lin", "q_proj", "query", "W_q"),
@@ -825,7 +777,6 @@ class ChelaSlayAttention(BaseAttention):
                             extracted[key] = (m.weight.data.clone(), b.data.clone() if b is not None else None)
                             break
 
-        # UniversalAdapter fallback
         missing = [
             k for k, (w, _) in extracted.items()
             if w is None and (k != "o" or not self.is_nested_encoder)
@@ -895,18 +846,12 @@ class ChelaSlayAttention(BaseAttention):
         except Exception:
             pass
 
-    # ------------------------------------------------------------------
-    # Spherical normalize
-    # ------------------------------------------------------------------
     def _spherical_normalize(self, x: torch.Tensor) -> torch.Tensor:
         """Map x to a unit vector times log(1 + |x|)."""
         norm = torch.norm(x, p=2, dim=-1, keepdim=True)
         magnitude = torch.log1p(norm.clamp_min(0.0))
         return x / (norm + 1e-6) * magnitude
 
-    # ------------------------------------------------------------------
-    # FIX-1: Non-negative Yat feature map
-    # ------------------------------------------------------------------
     def _yat_feature_map(self, x: torch.Tensor) -> torch.Tensor:
         """
         Non-negative shifted Yat feature map: ((cos + 1)/2, (sin + 1)/2) in [0, 1].
@@ -919,13 +864,10 @@ class ChelaSlayAttention(BaseAttention):
             )
         proj = torch.matmul(x, self.yat_proj.to(x.device, x.dtype))
         scale = math.sqrt(2.0 / float(self.feature_dim))
-        cos_shifted = (torch.cos(proj) + 1.0) * 0.5   # in [0, 1]
-        sin_shifted = (torch.sin(proj) + 1.0) * 0.5   # in [0, 1]
+        cos_shifted = (torch.cos(proj) + 1.0) * 0.5
+        sin_shifted = (torch.sin(proj) + 1.0) * 0.5
         return torch.cat([cos_shifted, sin_shifted], dim=-1) * scale
 
-    # ------------------------------------------------------------------
-    # Forward
-    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -998,7 +940,6 @@ class ChelaSlayAttention(BaseAttention):
             elif head_mask.dim() == 4:
                 head_mask_b = head_mask
 
-        # ---- Dense stream (FlashAttention / SDPA accelerated) ----
         dense_out = None
         if eff_mask is None and head_mask_b is None and not output_attentions:
             try:
@@ -1040,7 +981,6 @@ class ChelaSlayAttention(BaseAttention):
             dense_attn = self.dropout(dense_attn)
             dense_out = torch.matmul(dense_attn.to(v.dtype), v)
 
-        # ---- Linear stream (FIX-1, FIX-2) ----
         q_norm = self._spherical_normalize(q)
         k_norm = self._spherical_normalize(k)
         q_feat = self._yat_feature_map(q_norm)
@@ -1057,14 +997,12 @@ class ChelaSlayAttention(BaseAttention):
         else:
             linear_out = self._bidirectional_linear_attention(q_feat, k_feat, v_masked)
 
-        # FIX-3: Normalize linear_out magnitude
         linear_out = linear_out / linear_out.norm(dim=-1, keepdim=True).clamp_min(1.0)
 
         if head_mask_b is not None:
             hw = head_mask_b.squeeze(-1).squeeze(-1)
             linear_out = linear_out * hw.unsqueeze(-1).to(linear_out.dtype)
 
-        # ---- Adaptive gating (FIX-4: gate starts nearly 1) ----
         g = torch.sigmoid(self.lora_gate(x)).transpose(1, 2).contiguous().unsqueeze(-1)
         fused = g * dense_out + (1.0 - g) * linear_out
         out = fused.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
@@ -1076,9 +1014,6 @@ class ChelaSlayAttention(BaseAttention):
 
         return final_out, (dense_attn if output_attentions else None)
 
-    # ------------------------------------------------------------------
-    # FIX-2: Denom clamping in both attention paths
-    # ------------------------------------------------------------------
     def _bidirectional_linear_attention(self, q_feat, k_feat, v_masked):
         KV = torch.matmul(
             k_feat.transpose(-2, -1).contiguous().float(), v_masked.float()
@@ -1086,13 +1021,10 @@ class ChelaSlayAttention(BaseAttention):
         Z = k_feat.float().sum(dim=2, keepdim=True)
         num = torch.matmul(q_feat.float(), KV)
         denom = (q_feat.float() * Z).sum(dim=-1, keepdim=True)
-        # FIX-2: clamp to at least 1.0
         denom = denom.abs().clamp_min(1.0)
         return (num / denom).to(q_feat.dtype)
 
     def _causal_linear_attention(self, q_feat, k_feat, v_masked, L):
-        # FIXED: Replaced sequential Python chunk loop with hardware-fused Triton kernel
-        # via ChelaSlayCausalLinearFunction autograd wrapper (with vectorized parallel scan fallback).
         return ChelaSlayCausalLinearFunction.apply(q_feat, k_feat, v_masked, self.chunk_size)
 
     def storage_bytes(self) -> dict[str, int]:
@@ -1112,9 +1044,6 @@ class ChelaSlayAttention(BaseAttention):
         return out
 
 
-# ===========================================================================
-# Injector
-# ===========================================================================
 def inject_chela_slay(
     layer: Any = None,
     model: Any = None,
@@ -1136,7 +1065,6 @@ def inject_chela_slay(
 
     cfg = model_config if model_config is not None else getattr(target, "config", None)
 
-    # Whole-model traversal
     layer_list = None
     for path in (
         ("distilbert", "transformer", "layer"),
@@ -1171,7 +1099,6 @@ def inject_chela_slay(
                 n += 1
         return target if n > 0 else None
 
-    # Single-layer
     src = old_attn
     if src is None:
         for attr in ("attention", "attn", "self_attn", "self"):

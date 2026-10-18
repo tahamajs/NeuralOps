@@ -30,13 +30,6 @@ from neuralops.core.utils.rope import _rotate_half, apply_rotary_pos_emb
 logger = logging.getLogger(__name__)
 
 
-
-
-# =============================================================================
-# Grouped-Query Attention
-# =============================================================================
-
-
 @ATTENTION_REGISTRY.register(
     "gqa_attention",
     supports_causal=True,
@@ -80,7 +73,6 @@ class GroupedQueryAttention(BaseAttention):
 
         src_attn = pretrained_attn if pretrained_attn is not None else old_attn
 
-        # ---- hidden_size ----
         if dim is None and config is not None:
             dim = (
                 _cfg_get(config, "hidden_size", None)
@@ -100,7 +92,6 @@ class GroupedQueryAttention(BaseAttention):
                             break
         self.hidden_size = int(dim or kwargs.get("hidden_size", 768))
 
-        # ---- num_heads ----
         if num_heads is None and config is not None:
             num_heads = (
                 _cfg_get(config, "num_attention_heads", None)
@@ -117,14 +108,10 @@ class GroupedQueryAttention(BaseAttention):
             num_heads or kwargs.get("num_attention_heads", kwargs.get("num_heads", 8))
         )
 
-        # ---- head_dim ----
         self.head_dim = int(
             kwargs.get("head_dim", getattr(config, "head_dim", None) if config else None)
             or (self.hidden_size // max(1, self.num_heads))
         )
-# ==================================================================
-        # تفکیک دقیق: rank مال LoRA است، num_kv_heads فشرده‌سازی GQA است
-        # ==================================================================
         resolved_kv_heads = None
 
         if num_kv_heads is not None:
@@ -133,27 +120,22 @@ class GroupedQueryAttention(BaseAttention):
             cfg_kv = _cfg_get(config, "num_key_value_heads", None) or _cfg_get(config, "num_kv_heads", None)
             if cfg_kv is not None:
                 resolved_kv_heads = int(cfg_kv)
-        
+
         if resolved_kv_heads is None:
             kwargs_kv = kwargs.get("num_key_value_heads", kwargs.get("num_kv_heads"))
             if kwargs_kv is not None:
                 resolved_kv_heads = int(kwargs_kv)
 
-        # اگر مشخص نشده بود یا برابر با کل هدها بود، به نسبت ۴ برابر فشرده شود
         if resolved_kv_heads is None:
             resolved_kv_heads = self.num_heads
 
         self.num_kv_heads = int(resolved_kv_heads)
         self._num_kv_heads_source = "gqa_compressed"
 
-        # ---- sizes ----
         self.all_head_size = self.num_heads * self.head_dim
         self.kv_head_size = self.num_kv_heads * self.head_dim
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
 
-
-
-        # ---- decoder detection ----
         if is_decoder is not None:
             self.is_decoder = bool(is_decoder)
         else:
@@ -189,7 +171,6 @@ class GroupedQueryAttention(BaseAttention):
             self.is_decoder = bool(is_dec)
         self.is_nested_encoder = False
 
-        # ---- LoRA ----
         comp_config = getattr(config, "compression_config", None) if config else None
         self.lora_rank = int(
             _cfg_get(
@@ -206,7 +187,6 @@ class GroupedQueryAttention(BaseAttention):
             )
         )
         self.freeze_base = bool(kwargs.get("freeze_base", self.lora_rank > 0))
-        # ---- projections ----
         self.query = LoRALinear(
             self.hidden_size,
             self.all_head_size,
@@ -410,8 +390,6 @@ class GroupedQueryAttention(BaseAttention):
                 return w.t().contiguous()
             return w
 
-        # GQA-aware head selection / pooling (Head-Dimension Safe)
-# GQA-aware head selection (Variance-Preserving)
         def _pool_gqa(w: torch.Tensor, target_heads: int, head_dim: int) -> torch.Tensor:
             in_feat = w.shape[1] if w.dim() == 2 else 1
             src_heads = w.shape[0] // head_dim
@@ -423,7 +401,6 @@ class GroupedQueryAttention(BaseAttention):
 
             if src_heads > target_heads and src_heads % target_heads == 0:
                 group_size = src_heads // target_heads
-                # میانگین‌گیری روی هدهای هر گروه
                 w_pooled = w_reshaped.view(target_heads, group_size, head_dim, in_feat).mean(dim=1)
             elif src_heads > target_heads:
                 indices = torch.linspace(0, src_heads - 1, target_heads).long()
@@ -765,11 +742,6 @@ class GroupedQueryAttention(BaseAttention):
         return out
 
 
-# =============================================================================
-# Injection
-# =============================================================================
-
-
 def inject_gqa(
     layer: Any = None,
     model: Any = None,
@@ -795,7 +767,6 @@ def inject_gqa(
 
     cfg = model_config if model_config is not None else getattr(target, "config", None)
 
-    # ---- Whole-model traversal ----
     layer_list = None
     for path in (
         ("distilbert", "transformer", "layer"),
@@ -840,7 +811,6 @@ def inject_gqa(
                 n_injected += 1
         return target if n_injected > 0 else None
 
-    # ---- Single layer ----
     src_attn = old_attn
     if src_attn is None:
         for attr in ("attention", "self_attn", "attn", "self"):
@@ -891,7 +861,6 @@ def inject_gqa(
         logger.error("GQA construction failed: %s", e)
         return None
 
-    # ---- Safe device/dtype placement ----
     ref_param = None
     if src_attn is not None and src_attn is not target:
         ref_param = next(src_attn.parameters(), None)
@@ -900,7 +869,6 @@ def inject_gqa(
     if ref_param is not None:
         new_attn.to(device=ref_param.device, dtype=ref_param.dtype)
 
-    # ---- Splice into the parent module ----
     spliced = False
     if hasattr(target, "attention"):
         if hasattr(target.attention, "self"):

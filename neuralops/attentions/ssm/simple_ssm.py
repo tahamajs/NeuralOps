@@ -32,8 +32,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 logger = logging.getLogger(__name__)
 
 
-
-
 @ATTENTION_REGISTRY.register("simple_ssm")
 class SimpleSSM(BaseAttention):
     """SimpleSSM neural operator.
@@ -95,7 +93,6 @@ class SimpleSSM(BaseAttention):
         self.lora_alpha = float(_get("lora_alpha", kwargs.get("lora_alpha", lora_alpha)))
         self.freeze_base = self.lora_rank > 0
 
-        # Projections
         self.in_proj = LoRALinear(
             self.dim,
             self.dim,
@@ -113,10 +110,8 @@ class SimpleSSM(BaseAttention):
             freeze_base=self.freeze_base,
         )
 
-        # Recurrence decay gate
         self.decay_param = nn.Parameter(torch.randn(self.num_heads, 1, 1) * 0.05 - 1.0)
 
-        # Architecture detection
         model_type = str(_get("model_type", "")).lower()
         is_dec = _get("is_decoder", kwargs.get("is_decoder", False))
         if any(
@@ -229,11 +224,9 @@ class SimpleSSM(BaseAttention):
 
         is_dec = self.is_decoder or kwargs.get("is_decoder", False) or kwargs.get("is_causal", False)
 
-        # In-projection
         u = self.in_proj(hidden_states).to(target_dtype)
-        u_heads = u.view(B, L, H, d).transpose(1, 2)  # [B, H, L, d]
+        u_heads = u.view(B, L, H, d).transpose(1, 2)
 
-        # RoPE
         pos_emb = position_embeddings or kwargs.get("position_embeddings")
         pos_ids = kwargs.get("position_ids")
         if pos_emb is not None and isinstance(pos_emb, (tuple, list)) and len(pos_emb) >= 2:
@@ -248,7 +241,6 @@ class SimpleSSM(BaseAttention):
         pos_diff = pos.unsqueeze(-1) - pos.unsqueeze(-2)
 
         if is_dec:
-            # Replace O(L^2) dense matrix with O(L) recurrent scan
             y_heads = torch.empty_like(u_heads)
             state = torch.zeros(B, H, 1, d, device=u_heads.device, dtype=target_dtype)
             decay_val = decay.to(target_dtype)
@@ -294,7 +286,6 @@ def inject_simple_ssm(
     if target is None:
         return None
 
-    # Replace attention submodule if present
     for attr in ("attention", "self_attn", "attn", "self"):
         if hasattr(target, attr):
             old = getattr(target, attr)

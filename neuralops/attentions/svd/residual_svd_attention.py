@@ -28,11 +28,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 logger = logging.getLogger(__name__)
 
 
-# ===========================================================================
-# ResSVDAttention
-# ===========================================================================
-
-
 @ATTENTION_REGISTRY.register("residual_svd_attention")
 class ResidualSVDAttention(BaseAttention):
     """ResidualSVDAttention neural operator.
@@ -60,7 +55,6 @@ class ResidualSVDAttention(BaseAttention):
         **kwargs: Any,
     ) -> None:
         effective_rank = int(rank) if rank is not None else 16
-        # RES-14: pass rank explicitly
         try:
             super().__init__(config, effective_rank)
         except TypeError:
@@ -110,7 +104,6 @@ class ResidualSVDAttention(BaseAttention):
         self.factorize_base = bool(factorize_base)
         self.freeze_base = bool(freeze_base)
 
-        # RES-09: unified decoder detection
         if is_decoder is not None:
             self.is_decoder = bool(is_decoder)
         else:
@@ -144,7 +137,6 @@ class ResidualSVDAttention(BaseAttention):
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
         self.supports_gqa = True
 
-        # Projections
         self.query = ResSVDLinear(
             in_features=self.hidden_size,
             out_features=self.all_head_size,
@@ -209,7 +201,6 @@ class ResidualSVDAttention(BaseAttention):
             self.residual_rank,
         )
 
-    # ------------------------------------------------------------------
     @property
     def q_proj(self):
         return self.query
@@ -238,9 +229,6 @@ class ResidualSVDAttention(BaseAttention):
     def out_lin(self):
         return self.out_proj
 
-    # ------------------------------------------------------------------
-    # RES-02: shape-aware weight transfer via from_linear
-    # ------------------------------------------------------------------
     def _init_from_weight(
         self,
         target: ResSVDLinear,
@@ -252,7 +240,6 @@ class ResidualSVDAttention(BaseAttention):
             device = target.base_U.device if hasattr(target, "base_U") else torch.device("cpu")
             dtype = target.base_U.dtype if hasattr(target, "base_U") else torch.float32
 
-            # RES-03: temp_linear on same device/dtype
             temp_linear = nn.Linear(
                 target.in_features,
                 target.out_features,
@@ -260,12 +247,10 @@ class ResidualSVDAttention(BaseAttention):
                 device=device,
                 dtype=dtype,
             )
-            # Copy weight/bias into temp_linear
             temp_linear.weight.data.copy_(w.to(device=device, dtype=dtype))
             if b is not None and temp_linear.bias is not None:
                 temp_linear.bias.data.copy_(b.to(device=device, dtype=dtype))
 
-            # Build ResSVDLinear and copy state
             new_layer = ResSVDLinear.from_linear(
                 temp_linear,
                 base_rank=self.base_rank,
@@ -276,7 +261,6 @@ class ResidualSVDAttention(BaseAttention):
             )
             target.load_state_dict(new_layer.state_dict())
 
-    # ------------------------------------------------------------------
     def copy_weights(self, src: Any) -> None:
         if src is None:
             return
@@ -305,7 +289,6 @@ class ResidualSVDAttention(BaseAttention):
             and not has_out_lin
         ):
             is_nested = True
-        # RES-09: set consistently
         self.is_nested_encoder = bool(is_nested)
 
         extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
@@ -315,7 +298,6 @@ class ResidualSVDAttention(BaseAttention):
             "o": (None, None),
         }
 
-        # GPT-2 fused c_attn
         if hasattr(src, "c_attn") and src.c_attn is not None:
             c_attn_mod = src.c_attn
             base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
@@ -368,7 +350,6 @@ class ResidualSVDAttention(BaseAttention):
                         bias_o.data.clone() if bias_o is not None else None,
                     )
 
-        # BERT / RoBERTa nested
         elif hasattr(src, "self") and hasattr(src.self, "query"):
             s = src.self
             for proj_key, sub_name in (("q", "query"), ("k", "key"), ("v", "value")):
@@ -385,7 +366,6 @@ class ResidualSVDAttention(BaseAttention):
                     out_mod.bias.data.clone() if out_mod.bias is not None else None,
                 )
 
-        # Flat modules
         else:
             proj_candidates = {
                 "q": ["q_lin", "q_proj", "query"],
@@ -426,16 +406,13 @@ class ResidualSVDAttention(BaseAttention):
             for k, (w, _) in extracted.items()
             if w is None and (k != "o" or not self.is_nested_encoder)
         ]
-        # RES-04: raise instead of silently proceeding
         if missing_after:
             raise RuntimeError(
                 f"ResSVDAttention.copy_weights: missing {missing_after} "
                 f"from {cls_name}. Refusing random init."
             )
 
-        # Handle output projection
         if self.is_nested_encoder and extracted["o"][0] is None:
-            # Use identity
             eye = torch.eye(
                 self.all_head_size,
                 self.hidden_size,
@@ -446,7 +423,6 @@ class ResidualSVDAttention(BaseAttention):
         elif extracted["o"][0] is not None:
             self._init_from_weight(self.out_proj, extracted["o"][0], extracted["o"][1])
 
-        # q, k, v with GQA resize
         for proj_key, target in (("q", self.query), ("k", self.key), ("v", self.value)):
             w, b = extracted[proj_key]
             if w is None:
@@ -456,7 +432,6 @@ class ResidualSVDAttention(BaseAttention):
             in_t = target.in_features
             src_out, src_in = w.shape
 
-            # Resize for GQA
             if proj_key in ("k", "v"):
                 if src_out > out_t and src_out % out_t == 0:
                     rep = src_out // out_t
@@ -469,7 +444,6 @@ class ResidualSVDAttention(BaseAttention):
                     if b is not None:
                         b = b.repeat(rep)
 
-            # Shape alignment (pad / truncate)
             if w.shape[0] != out_t or w.shape[1] != in_t:
                 padded = torch.zeros(out_t, in_t, dtype=w.dtype, device=w.device)
                 r = min(out_t, w.shape[0])
@@ -482,9 +456,6 @@ class ResidualSVDAttention(BaseAttention):
         if hasattr(src, "is_decoder"):
             self.is_decoder = bool(src.is_decoder)
 
-    # ------------------------------------------------------------------
-    # RES-06: robust mask helper
-    # ------------------------------------------------------------------
     @staticmethod
     def _prepare_valid_mask(
         attention_mask: torch.Tensor | None,
@@ -516,9 +487,6 @@ class ResidualSVDAttention(BaseAttention):
             return v.any(dim=-2).squeeze(1)
         raise ValueError(f"Unsupported attention_mask dim: {attention_mask.dim()}")
 
-    # ------------------------------------------------------------------
-    # Forward
-    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -535,7 +503,6 @@ class ResidualSVDAttention(BaseAttention):
         *args: Any,
         **kwargs: Any,
     ):
-        # RES-13: explicit error for cross-attention
         if encoder_hidden_states is not None:
             raise NotImplementedError(
                 "ResSVDAttention: cross-attention (encoder_hidden_states) is not supported."
@@ -550,7 +517,6 @@ class ResidualSVDAttention(BaseAttention):
         K = self.key(hidden_states).view(B, N, self.num_kv_heads, D).permute(0, 2, 1, 3)
         V = self.value(hidden_states).view(B, N, self.num_kv_heads, D).permute(0, 2, 1, 3)
 
-        # RES-05: RoPE with past_len offset
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None:
@@ -565,7 +531,6 @@ class ResidualSVDAttention(BaseAttention):
             sin = sin[..., past_len : past_len + N, :]
             Q, K = apply_rotary_pos_emb(Q, K, cos, sin)
 
-        # GQA expansion
         if self.num_heads != self.num_kv_heads:
             repeats = self.num_heads // self.num_kv_heads
             K = repeat_kv(K, repeats)
@@ -574,7 +539,6 @@ class ResidualSVDAttention(BaseAttention):
         scale = 1.0 / math.sqrt(int(D))
         scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
 
-        # Causal masking
         is_causal = self.is_decoder and N > 1
         if is_causal:
             causal = (
@@ -587,7 +551,6 @@ class ResidualSVDAttention(BaseAttention):
             )
             scores = scores + causal
 
-        # Padding mask
         valid_mask = self._prepare_valid_mask(attention_mask, B, N, device)
         if valid_mask is not None:
             scores = scores.masked_fill(~valid_mask[:, None, None, :], -1e4)
@@ -597,7 +560,6 @@ class ResidualSVDAttention(BaseAttention):
         attn = torch.nan_to_num(attn, nan=0.0)
         attn = self.dropout(attn)
 
-        # RES-07: unified head_mask
         if head_mask is not None:
             if head_mask.dim() == 1:
                 head_mask = head_mask.view(1, -1, 1, 1)
@@ -627,11 +589,6 @@ class ResidualSVDAttention(BaseAttention):
         return output, (attn if output_attentions else None)
 
 
-# ===========================================================================
-# RES-08: injection with recursion guard
-# ===========================================================================
-
-
 def inject_res_svd(
     layer: Any = None,
     model: Any = None,
@@ -656,7 +613,6 @@ def inject_res_svd(
 
     cfg = model_config if model_config is not None else getattr(target, "config", None)
 
-    # Whole-model traversal
     layer_list = None
     if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
         layer_list = target.distilbert.transformer.layer
@@ -696,7 +652,6 @@ def inject_res_svd(
                 num_injected += 1
         return target if num_injected > 0 else None
 
-    # Single-layer injection
     try:
         src = old_attn
         if src is None:
@@ -709,7 +664,6 @@ def inject_res_svd(
         if src is None:
             src = target
 
-        # Double-injection guard
         if isinstance(src, ResSVDAttention) or "ResSVDAttention" in src.__class__.__name__:
             return None
 

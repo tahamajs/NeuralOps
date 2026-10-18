@@ -31,14 +31,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 logger = logging.getLogger(__name__)
 
 
-
-
-
-
-
-
-# DEPRECATED: Thin wrapper around PyTorch scaled_dot_product_attention without compression.
-# @ATTENTION_REGISTRY.register("spectra_v2")
 class SpectraV2Attention(BaseAttention):
     """DEPRECATED: Thin wrapper around PyTorch scaled_dot_product_attention without compression.
 
@@ -124,7 +116,6 @@ class SpectraV2Attention(BaseAttention):
         )
         self.freeze_base = self.lora_rank > 0
 
-        # Projections
         self.query = LoRALinear(
             self.dim,
             self.all_head_size,
@@ -207,7 +198,6 @@ class SpectraV2Attention(BaseAttention):
             "o": (None, None),
         }
 
-        # 1. GPT-2 fused c_attn / c_proj
         if hasattr(src, "c_attn") and src.c_attn is not None:
             c_attn_mod = src.c_attn
             base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
@@ -239,14 +229,12 @@ class SpectraV2Attention(BaseAttention):
             if hasattr(src, "c_proj") and src.c_proj is not None:
                 extracted["o"] = _unpack_weight_bias(src.c_proj)
 
-        # 2. DistilBERT style: q_lin, k_lin, v_lin, out_lin
         if hasattr(src, "q_lin") and src.q_lin is not None:
             extracted["q"] = _unpack_weight_bias(src.q_lin)
             extracted["k"] = _unpack_weight_bias(getattr(src, "k_lin", None))
             extracted["v"] = _unpack_weight_bias(getattr(src, "v_lin", None))
             extracted["o"] = _unpack_weight_bias(getattr(src, "out_lin", None))
 
-        # 3. BERT / RoBERTa style: query, key, value, dense
         if hasattr(src, "query") and src.query is not None and extracted["q"][0] is None:
             extracted["q"] = _unpack_weight_bias(src.query)
             extracted["k"] = _unpack_weight_bias(getattr(src, "key", None))
@@ -255,7 +243,6 @@ class SpectraV2Attention(BaseAttention):
                 getattr(src, "dense", getattr(src, "out_proj", None))
             )
 
-        # 4. Nested structures (RoBERTa / BERT container objects)
         if hasattr(src, "self") and hasattr(src.self, "query") and extracted["q"][0] is None:
             s = src.self
             extracted["q"] = _unpack_weight_bias(getattr(s, "query", None))
@@ -264,7 +251,6 @@ class SpectraV2Attention(BaseAttention):
             if hasattr(src, "output") and hasattr(src.output, "dense"):
                 extracted["o"] = _unpack_weight_bias(getattr(src.output, "dense", None))
 
-        # 5. Qwen / LLaMA / HF Attention style: q_proj, k_proj, v_proj, o_proj
         if hasattr(src, "q_proj") and src.q_proj is not None and extracted["q"][0] is None:
             extracted["q"] = _unpack_weight_bias(src.q_proj)
             extracted["k"] = _unpack_weight_bias(getattr(src, "k_proj", None))
@@ -273,7 +259,6 @@ class SpectraV2Attention(BaseAttention):
                 getattr(src, "o_proj", getattr(src, "dense", getattr(src, "out_proj", None)))
             )
 
-        # 6. UniversalAdapter fallback for custom names
         missing = [
             k
             for k, (w, _) in extracted.items()
@@ -330,7 +315,6 @@ class SpectraV2Attention(BaseAttention):
                     and w.shape[0] % target_mod.weight.shape[0] == 0
                 ):
                     repeats = w.shape[0] // target_mod.weight.shape[0]
-                    # For GQA: average the query head groups
                     w_grouped = w.view(target_mod.weight.shape[0], repeats, w.shape[1]).mean(dim=1)
                     target_mod.weight.copy_(w_grouped)
                 else:
@@ -409,14 +393,12 @@ class SpectraV2Attention(BaseAttention):
         K = self.key(kv_states).view(B, N_k, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
         V = self.value(kv_states).view(B, N_k, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
 
-        # Apply RoPE if provided
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None:
             cos, sin = position_embeddings
             Q, K = apply_rotary_pos_emb(Q, K, cos, sin)
 
-        # Repeat KV for GQA
         if self.num_heads != self.num_kv_heads:
             repeats = self.num_heads // self.num_kv_heads
             K = repeat_kv(K, repeats)
@@ -424,7 +406,6 @@ class SpectraV2Attention(BaseAttention):
 
         scale = 1.0 / math.sqrt(self.head_dim)
 
-        # Causal determination
         _is_causal = getattr(self, "is_decoder", False) and not is_cross and N > 1
 
         attn_weights = None
@@ -455,7 +436,6 @@ class SpectraV2Attention(BaseAttention):
 
                 _sdpa_out = _sdpa_out.to(hidden_states.dtype)
 
-                # Apply head_mask
                 if head_mask is not None and head_mask.dim() >= 1:
                     hm = head_mask.view(-1, self.num_heads)
                     if hm.shape[0] == 1:
@@ -495,7 +475,6 @@ class SpectraV2Attention(BaseAttention):
                 logger.debug("SDPA path failed or fell back: %s", e)
                 pass
 
-        # Fallback path (manual attention)
         scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
 
         if _is_causal:

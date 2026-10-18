@@ -23,8 +23,6 @@ from neuralops.core.registry import COMPRESSOR_REGISTRY
 logger = logging.getLogger(__name__)
 
 
-
-
 _ATTN_NAMES = {
     "attn",
     "attention",
@@ -44,7 +42,6 @@ _ATTN_NAMES = {
     "self_attn",
 }
 
-# LIFTR-FIX-10: safe GELU / SiLU references including HuggingFace activations
 _silu_list = [nn.GELU]
 if hasattr(nn, "SiLU"):
     _silu_list.append(nn.SiLU)
@@ -57,11 +54,6 @@ try:
 except Exception:
     pass
 _SILU_CLASSES: tuple[type, ...] = tuple(_silu_list)
-
-
-# ===========================================================================
-# Linearized activation
-# ===========================================================================
 
 
 class _LinearizedGELU(nn.Module):
@@ -78,11 +70,6 @@ class _LinearizedGELU(nn.Module):
 
     def extra_repr(self) -> str:
         return f"alpha={self.alpha}"
-
-
-# ===========================================================================
-# Linearized attention wrapper
-# ===========================================================================
 
 
 class _LinearizedAttentionWrapper(nn.Module):
@@ -102,7 +89,6 @@ class _LinearizedAttentionWrapper(nn.Module):
         super().__init__()
         self.original_attn = original_attn
         self.layer_name = layer_name
-        # LIFTR-FIX-05: determine return signature once at init.
         self._returns_tuple = self._detect_tuple_return(original_attn)
 
     @staticmethod
@@ -116,10 +102,8 @@ class _LinearizedAttentionWrapper(nn.Module):
         cls_name = original_attn.__class__.__name__.lower()
         if any(s in cls_name for s in ("linear", "delta", "mamba", "ssm")):
             return False
-        # GPT-2 and BERT-style return tuples.
         if any(s in cls_name for s in ("gpt", "bert", "roberta", "electra", "deberta")):
             return True
-        # Default: assume attention returns a tuple.
         return True
 
     def _resolve_hidden_size(self) -> int:
@@ -135,9 +119,7 @@ class _LinearizedAttentionWrapper(nn.Module):
             base = getattr(attn.c_attn, "base_layer", attn.c_attn)
             w = getattr(base, "weight", None)
             if w is not None and w.dim() == 2:
-                # Conv1D stores (in, out)
                 return int(w.shape[0])
-        # Fallback
         return 768
 
     def forward(
@@ -153,14 +135,12 @@ class _LinearizedAttentionWrapper(nn.Module):
         *args: Any,
         **kwargs: Any,
     ) -> torch.Tensor | tuple[torch.Tensor, torch.Tensor | None]:
-        # Determine input tensor.
         x = hidden_states
         if x is None:
             x = query
         if x is None:
             x = value
         if x is None:
-            # LIFTR-FIX-04: If we truly have no input, delegate to original.
             return self._delegate(
                 x if x is not None else None,
                 attention_mask=attention_mask,
@@ -171,12 +151,10 @@ class _LinearizedAttentionWrapper(nn.Module):
 
         attn = self.original_attn
         try:
-            # ---- 1. LLaMA / Mistral / Gemma / Qwen (v_proj + o_proj) ----
             if hasattr(attn, "v_proj") and hasattr(attn, "o_proj"):
                 v = attn.v_proj(x)
                 o_in = getattr(attn.o_proj, "in_features", v.shape[-1])
                 if v.shape[-1] != o_in:
-                    # Truncate or project (rare).
                     if v.shape[-1] > o_in:
                         v = v[..., :o_in]
                     else:
@@ -186,7 +164,6 @@ class _LinearizedAttentionWrapper(nn.Module):
                 output = attn.o_proj(ctx.to(x.dtype))
                 return self._format_output(output, output_attentions)
 
-            # ---- 2. DistilBERT (q_lin, v_lin, out_lin) ----
             if hasattr(attn, "q_lin") and hasattr(attn, "v_lin") and hasattr(attn, "out_lin"):
                 v = attn.v_lin(x)
                 o_in = getattr(attn.out_lin, "in_features", v.shape[-1])
@@ -200,13 +177,11 @@ class _LinearizedAttentionWrapper(nn.Module):
                 output = attn.out_lin(ctx.to(x.dtype))
                 return self._format_output(output, output_attentions)
 
-            # ---- 3. RoBERTa / BERT inner self-attention ----
             if hasattr(attn, "value") and hasattr(attn, "query"):
                 v = attn.value(x)
                 ctx = v.mean(dim=1, keepdim=True).expand_as(v)
                 return self._format_output(ctx.to(x.dtype), output_attentions)
 
-            # ---- 4. GPT-2 (fused c_attn + c_proj) ----
             if hasattr(attn, "c_attn") and hasattr(attn, "c_proj"):
                 qkv = attn.c_attn(x)
                 hidden_size = x.shape[-1]
@@ -221,7 +196,6 @@ class _LinearizedAttentionWrapper(nn.Module):
         except Exception as e:
             logger.debug("LIFTR wrapper: mean-attention path failed (%s); delegating.", e)
 
-        # ---- LIFTR-FIX-04: fallback to original ----
         return self._delegate(
             x,
             attention_mask=attention_mask,
@@ -241,7 +215,6 @@ class _LinearizedAttentionWrapper(nn.Module):
         """Call the underlying attention with matching signature."""
         try:
             if x is None:
-                # Cannot call — return an empty tensor of the right shape.
                 hs = self._resolve_hidden_size()
                 return self._format_output(
                     torch.zeros(1, 1, hs, dtype=torch.float32), output_attentions
@@ -285,11 +258,6 @@ class _LinearizedAttentionWrapper(nn.Module):
         return out
 
 
-# ===========================================================================
-# Compressor
-# ===========================================================================
-
-
 class LIFTRCompressor(BaseCompressor):
     """LIFTRCompressor neural operator.
 
@@ -299,7 +267,6 @@ class LIFTRCompressor(BaseCompressor):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
-    # LIFTR-FIX-01: this is a compressor, not an attention.
     is_custom_attention: bool = False
 
     CRITICAL_MODULE_KEYWORDS = [
@@ -421,13 +388,11 @@ class LIFTRCompressor(BaseCompressor):
                 if isinstance(child, _LinearizedAttentionWrapper):
                     continue
 
-            # Skip LoRA-wrapped modules.
             if hasattr(child, "lora_A") or child.__class__.__name__.lower() == "loralinear":
                 continue
 
             is_attn_layer = any(k in full_name.lower() for k in _ATTN_NAMES)
 
-            # --- Activation linearization ---
             if isinstance(child, nn.ReLU):
                 if self.target_attention_only and not is_attn_layer:
                     self.skipped_layers.append(full_name)
@@ -450,7 +415,6 @@ class LIFTRCompressor(BaseCompressor):
                 self.replaced_modules.append(full_name)
                 continue
 
-            # --- Attention linearization ---
             if self.replace_attention and is_attn_layer:
                 if "norm" in name.lower():
                     self._linearize_module(child, prefix=full_name, _depth=_depth + 1)
@@ -459,7 +423,6 @@ class LIFTRCompressor(BaseCompressor):
                     self._linearize_module(child, prefix=full_name, _depth=_depth + 1)
                     continue
 
-                # BERT / RoBERTa nested structure: linearize inner self-attention.
                 if hasattr(child, "self") and hasattr(child, "output"):
                     self._linearize_module(child, prefix=full_name, _depth=_depth + 1)
                     continue
@@ -479,12 +442,9 @@ class LIFTRCompressor(BaseCompressor):
                         logger.warning("LIFTR: failed to wrap %s: %s", full_name, e)
                 continue
 
-            # --- Recurse ---
             self._linearize_module(child, prefix=full_name, _depth=_depth + 1)
 
-    # ------------------------------------------------------------------
     def compress(self, **kwargs: Any) -> tuple[nn.Module, dict[str, Any]]:
-        # LIFTR-FIX-15: idempotence
         if getattr(self.model, "_liftr_compressed", False):
             logger.warning("LIFTR: model already compressed; skipping.")
             try:
@@ -493,11 +453,9 @@ class LIFTRCompressor(BaseCompressor):
                 stats = {}
             return self.model, stats
 
-        # LIFTR-FIX-11: safe device resolution.
         first_param = next(iter(self.model.parameters()), None)
         device = first_param.device if first_param is not None else torch.device("cpu")
 
-        # LIFTR-FIX-03: dummy_in defined at function scope.
         dummy_in: torch.Tensor | None = None
         orig_out: torch.Tensor | None = None
 
@@ -518,10 +476,8 @@ class LIFTRCompressor(BaseCompressor):
                 dummy_in = None
                 orig_out = None
 
-        # Apply linearization.
         self._linearize_module(self.model)
 
-        # Freeze parameters in skipped modules.
         if self.skipped_layers:
             skipped_set = set(self.skipped_layers)
             for name, module in self.model.named_modules():
@@ -529,7 +485,6 @@ class LIFTRCompressor(BaseCompressor):
                     for p in module.parameters(recurse=False):
                         p.requires_grad = False
 
-        # Post-linearization validation.
         validation_passed = True
         rel_diff = 0.0
         if self.validation_calibration and orig_out is not None and dummy_in is not None:
@@ -578,7 +533,6 @@ class LIFTRCompressor(BaseCompressor):
                 "validation_calibration": self.validation_calibration,
                 "validation_passed": validation_passed,
                 "calibration_rel_diff": rel_diff,
-                # LIFTR-FIX-08: explicit note.
                 "effective_parameter_ratio": 1.0,
                 "flops_reduction_pct": 0.0,
                 "method": "liftr_linearization",
@@ -597,11 +551,6 @@ class LIFTRCompressor(BaseCompressor):
             self.linearized_attentions_count,
         )
         return self.model, stats
-
-
-# ===========================================================================
-# Factory
-# ===========================================================================
 
 
 @COMPRESSOR_REGISTRY.register("liftr")

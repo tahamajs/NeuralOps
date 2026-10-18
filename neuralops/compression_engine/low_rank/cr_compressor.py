@@ -23,8 +23,6 @@ from neuralops.core.registry import COMPRESSOR_REGISTRY
 logger = logging.getLogger(__name__)
 
 
-
-
 class CRLinear(nn.Module):
     """
     Interpolative Decomposition / Column-Row Factorized Linear Layer.
@@ -48,7 +46,7 @@ class CRLinear(nn.Module):
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
-        self.nf = out_features  # Conv1D compatibility
+        self.nf = out_features
         self.rank = max(1, min(rank, in_features, out_features))
 
         self.C = nn.Parameter(torch.empty(out_features, self.rank, dtype=dtype, device=device))
@@ -113,7 +111,6 @@ class CRLinear(nn.Module):
             or hasattr(linear, "nf")
         )
         if is_conv1d:
-            # Conv1D weights are [in_features, out_features] -> transpose to [out_features, in_features]
             W = raw_w.t().contiguous()
         else:
             W = raw_w.contiguous()
@@ -132,7 +129,6 @@ class CRLinear(nn.Module):
 
         W_float = W.float()
 
-        # Step 1: Select skeleton columns via SciPy QRCP or robust PyTorch pivoted selection
         col_idx = None
         try:
             import scipy.linalg
@@ -144,7 +140,6 @@ class CRLinear(nn.Module):
             logger.debug("CRLinear pivoted QR failed; using greedy column selection: %s", e)
 
         if col_idx is None:
-            # Pure PyTorch QRCP-equivalent greedy pivoted column selection
             list(range(in_f))
             selected_cols = []
             norms = torch.sum(W_float**2, dim=0)
@@ -152,11 +147,9 @@ class CRLinear(nn.Module):
             for _ in range(r):
                 best_col_idx = int(torch.argmax(norms).item())
                 selected_cols.append(best_col_idx)
-                # Zero out selected norm
                 norms[best_col_idx] = -1.0
                 if len(selected_cols) >= r:
                     break
-                # Orthogonalize remaining columns against selected column
                 v = W_float[:, best_col_idx : best_col_idx + 1]
                 v_norm_sq = torch.sum(v**2).clamp_min(1e-12)
                 proj = torch.matmul(v.T, W_float) / v_norm_sq
@@ -168,21 +161,19 @@ class CRLinear(nn.Module):
             col_idx = torch.tensor(selected_cols, dtype=torch.long, device=W.device)
 
         W_float_orig = W.float()
-        C_data = W_float_orig[:, col_idx]  # (out_f, r)
+        C_data = W_float_orig[:, col_idx]
 
-        # Step 2: Tikhonov regularized pseudo-inverse: (C^T C + eps * I)^{-1} C^T
-        CtC = torch.matmul(C_data.T, C_data)  # (r, r)
+        CtC = torch.matmul(C_data.T, C_data)
         diag_mean = torch.trace(CtC) / max(1, r)
         eps = max(1e-4 * diag_mean.item(), 1e-4)
         reg_eye = eps * torch.eye(r, device=C_data.device, dtype=C_data.dtype)
         try:
-            C_pinv = torch.linalg.solve(CtC + reg_eye, C_data.T)  # (r, out_f)
+            C_pinv = torch.linalg.solve(CtC + reg_eye, C_data.T)
         except Exception:
             C_pinv = torch.linalg.pinv(C_data, rcond=1e-4)
 
-        P_data = torch.matmul(C_pinv, W_float_orig)  # (r, in_f)
+        P_data = torch.matmul(C_pinv, W_float_orig)
 
-        # Step 3: Symmetrically normalize factor magnitudes to ensure FP16 stability
         norm_C = torch.norm(C_data, p="fro").clamp_min(1e-8)
         norm_P = torch.norm(P_data, p="fro").clamp_min(1e-8)
         scale = torch.sqrt(norm_C / norm_P)
@@ -192,7 +183,6 @@ class CRLinear(nn.Module):
         cr_layer.C.data.copy_(C_data.to(dtype=W.dtype))
         cr_layer.P.data.copy_(P_data.to(dtype=W.dtype))
 
-        # Step 4: Row-wise L2 norm preservation to prevent activation variance collapse across deep networks
         with torch.no_grad():
             W_hat = (C_data @ P_data).float()
             row_norms_orig = torch.linalg.norm(W_float_orig, dim=1, keepdim=True).clamp_min(1e-8)
@@ -381,7 +371,6 @@ class CRCompressor(BaseCompressor):
             if max_rank < 16:
                 continue
 
-            # Parameter reduction check: r * (in_f + out_f) must be less than in_f * out_f
             target_r = min(self.rank, max_rank)
             if self.cfg is None and hasattr(self, "_auto_rank") and self._auto_rank:
                 if target_r * (in_f + out_f) >= 0.85 * (in_f * out_f):
@@ -412,7 +401,6 @@ class CRCompressor(BaseCompressor):
                 )
                 if self.fallback_to_original:
                     self.fallback_layers.append(name)
-                    # Freeze fallback layers during recovery
                     for p in module.parameters():
                         p.requires_grad = False
                     continue
@@ -420,7 +408,6 @@ class CRCompressor(BaseCompressor):
             if best_cr_layer is not None:
                 new_layer = best_cr_layer
                 compressed_layer = new_layer
-                # Preserve existing LoRA adapter weights if the source module has them
                 if (
                     hasattr(module, "lora_A")
                     and hasattr(module, "lora_B")
@@ -437,8 +424,7 @@ class CRCompressor(BaseCompressor):
                             new_layer.lora_B.data.copy_(src_lB.data)
 
                 if hasattr(module, "base_layer"):
-                    module.base_layer = compressed_layer  # put compressed layer inside wrapper
-                    # module itself (LoRALinear wrapper) remains the replacement
+                    module.base_layer = compressed_layer
                     new_module = module
                 else:
                     new_module = compressed_layer

@@ -22,7 +22,6 @@ from neuralops.utils.compat import should_compress_linear
 logger = logging.getLogger(__name__)
 
 
-
 class RPCALinear(nn.Module):
     """
     Robust PCA factorized linear layer:
@@ -80,7 +79,6 @@ class RPCALinear(nn.Module):
             except Exception as e:
                 logger.debug("Triton RPCALinear failed (%s); fallback to PyTorch", e)
 
-        # PyTorch fallback
         y_lr = F.linear(F.linear(x_flat, self.V), self.U)
         y_sp = F.linear(x_flat, self.S_sparse)
         out = y_lr + y_sp
@@ -162,7 +160,6 @@ class RPCACompressor(BaseCompressor):
         )
         self.min_numel = max(1, int(min_numel or _cfg_get(cfg_obj, "min_numel", 16)))
 
-        # Target device derivation
         if device is not None:
             try:
                 self.target_device = torch.device(device)
@@ -177,7 +174,6 @@ class RPCACompressor(BaseCompressor):
                 next(model.parameters()).device if list(model.parameters()) else torch.device("cpu")
             )
 
-        # Diagnostics & Tracking
         self.visited_modules: set[int] = set()
         self.compressed_layers: list[str] = []
         self.protected_layers: list[str] = []
@@ -217,7 +213,6 @@ class RPCACompressor(BaseCompressor):
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         name_l = name.lower()
-        # 1. Protection for critical / classification / head / pooler / embedding layers
         if any(
             k in name_l
             for k in [
@@ -235,7 +230,6 @@ class RPCACompressor(BaseCompressor):
             self.protected_layers.append(name)
             return False
 
-        # Target attention only filter
         if self.target_attention_only:
             attn_keywords = [
                 "attn",
@@ -253,12 +247,10 @@ class RPCACompressor(BaseCompressor):
             if not any(k in name_l for k in attn_keywords):
                 return False
 
-        # 2. GQA-aware skipping
         if self._is_gqa_asymmetric(name, module):
             self.skipped_layers.append(name)
             return False
 
-        # 3. Check linear or Conv1D nature
         base_mod = getattr(module, "base_layer", module)
         cls_name = base_mod.__class__.__name__
         raw_w = getattr(base_mod, "weight", None)
@@ -270,17 +262,14 @@ class RPCACompressor(BaseCompressor):
         if not is_linear_like or isinstance(base_mod, SVDLinear):
             return False
 
-        # 4. Tiny layer guard
         if raw_w.numel() < self.min_numel:
             self.skipped_layers.append(name)
             return False
 
-        # 5. Respect framework compatibility rules
         if not should_compress_linear(self.model, name):
             self.protected_layers.append(name)
             return False
 
-        # 6. User-defined explicit target modules
         if self.target_modules is not None:
             return any(t in name for t in self.target_modules)
         return True
@@ -324,24 +313,19 @@ class RPCACompressor(BaseCompressor):
         L = W.clone()
         S_sparse = torch.zeros_like(W)
 
-        # Inexact ALM / PCP Iterations in FP32 on device with try/except protection
         try:
             for _ in range(self.max_iter):
-                # Low-rank projection via truncated SVD
                 U, S_vals, Vt = torch.linalg.svd(L, full_matrices=False)
                 sqrt_S = torch.sqrt(torch.clamp(S_vals[:r], min=1e-12))
                 U_r = U[:, :r] * sqrt_S.unsqueeze(0)
                 V_r = sqrt_S.unsqueeze(1) * Vt[:r, :]
                 L_recon = U_r @ V_r
 
-                # Sparse soft-thresholding update on residual
                 resid = W - L_recon
                 S_sparse = torch.sign(resid) * torch.clamp(torch.abs(resid) - self.mu, min=0.0)
 
-                # Update low-rank target
                 L = W - S_sparse
 
-            # Final factorization of L
             U, S_vals, Vt = torch.linalg.svd(L, full_matrices=False)
         except Exception as e_svd:
             logger.warning(
@@ -358,13 +342,11 @@ class RPCACompressor(BaseCompressor):
         U_final = (U[:, :r] * sqrt_S.unsqueeze(0)).to(dtype=dtype, device=device)
         V_final = (sqrt_S.unsqueeze(1) * Vt[:r, :]).to(dtype=dtype, device=device)
 
-        # LoRA rank selection
         has_existing_lora = hasattr(layer, "lora_A") and hasattr(layer, "lora_B")
         effective_lora_r = self.lora_r
         if has_existing_lora and getattr(layer, "r", 0) > 0:
             effective_lora_r = getattr(layer, "r", self.lora_r)
 
-        # Frobenius reconstruction error check
         W_rec = torch.matmul(U_final.float(), V_final.float())
         W_dev = W.to(device=W_rec.device)
         norm_orig = torch.norm(W_dev, p="fro").clamp_min(1e-8)
@@ -397,7 +379,6 @@ class RPCACompressor(BaseCompressor):
         if base_layer.bias is not None:
             svd_layer.bias.data.copy_(base_layer.bias.data)
 
-        # Preserve existing LoRA adapters
         if has_existing_lora and svd_layer.use_lora:
             try:
                 if hasattr(layer.lora_A, "weight"):
@@ -459,7 +440,6 @@ class RPCACompressor(BaseCompressor):
                 for p in module.parameters():
                     p.requires_grad = False
 
-        # Post-compression forward sanity check
         forward_check_success = True
         try:
             device = next(self.model.parameters()).device

@@ -25,9 +25,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 logger = logging.getLogger(__name__)
 
 
-# ===========================================================================
-# Registered class
-# ===========================================================================
 @ATTENTION_REGISTRY.register("projection_factorized_attn")
 class ProjectionFactorizedAttention(SVDLinearAttention):
     r"""Projection Factorized SVD Linear Attention."""
@@ -35,13 +32,8 @@ class ProjectionFactorizedAttention(SVDLinearAttention):
     is_custom_attention: bool = True
 
 
-# ===========================================================================
-# Helpers
-# ===========================================================================
 _CANDIDATE_ATTRS = ("attn", "attention", "self_attn", "self")
 
-# Keys that must NOT be passed through `**kwargs` to the delegate, since
-# they are positional/keyword arguments of the delegate signature itself.
 _RESERVED_KEYS = frozenset(
     {
         "model",
@@ -81,15 +73,12 @@ def _find_source_attention(
         if candidate is None:
             continue
 
-        # FIX-10: skip already-injected attributes, keep scanning others.
         if _is_already_injected(candidate):
-            # Nested case: layer.attention.self may be injected.
             if hasattr(candidate, "self") and _is_already_injected(candidate.self):
                 continue
             if _is_already_injected(candidate):
                 continue
 
-        # RoBERTa/BERT nested: layer.attention.self has .query
         if hasattr(candidate, "self") and hasattr(candidate.self, "query"):
             return attr, candidate.self, True
 
@@ -138,9 +127,6 @@ def _attach_with_fallback(
     return False
 
 
-# ===========================================================================
-# Injector
-# ===========================================================================
 def inject_projection_factorized_attn(
     layer: Any = None,
     model: Any = None,
@@ -159,7 +145,6 @@ def inject_projection_factorized_attn(
 
     cfg = model_config if model_config is not None else getattr(target, "config", None)
 
-    # ---- Whole-model traversal ----
     layer_list = None
     if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
         layer_list = target.distilbert.transformer.layer
@@ -185,25 +170,22 @@ def inject_projection_factorized_attn(
     if layer_list is not None:
         num_injected = 0
         tot = len(layer_list)
-        # FIX-8: strip reserved keys once (they'll be re-supplied explicitly).
         forward_kwargs = {k: v for k, v in kwargs.items() if k not in _RESERVED_KEYS}
         for idx, lyr in enumerate(layer_list):
             res = inject_projection_factorized_attn(
                 layer=lyr,
                 model_config=cfg,
-                comp_config=comp_config,  # FIX-6
+                comp_config=comp_config,
                 layer_idx=idx,
-                total_layers=tot,  # FIX-11
+                total_layers=tot,
                 **forward_kwargs,
             )
             if res is not None:
                 num_injected += 1
         return target if num_injected > 0 else None
 
-    # ---- Single-layer injection ----
     layer = target
 
-    # FIX-1: discover source attention
     src_info = _find_source_attention(layer) if old_attn is None else None
     if old_attn is not None:
         src_attn = old_attn
@@ -219,7 +201,6 @@ def inject_projection_factorized_attn(
         )
         return None
 
-    # FIX-4 / FIX-10: already-injected guard for the specific src_attn
     if _is_already_injected(src_attn):
         logger.debug(
             "inject_projection_factorized_attn: %s is already injected, skipping",
@@ -227,19 +208,17 @@ def inject_projection_factorized_attn(
         )
         return None
 
-    # FIX-8: clean kwargs before delegating.
     delegate_kwargs = {k: v for k, v in kwargs.items() if k not in _RESERVED_KEYS}
 
-    # FIX-2 / FIX-6 / FIX-11: delegate with explicit old_attn + comp_config
     try:
         result = inject_svd_linear_attention(
             model=model,
             layer=layer,
             model_config=model_config if model_config is not None else cfg,
-            comp_config=comp_config,  # FIX-6
-            old_attn=src_attn,  # FIX-2
+            comp_config=comp_config,
+            old_attn=src_attn,
             layer_idx=layer_idx,
-            total_layers=total_layers,  # FIX-11
+            total_layers=total_layers,
             **delegate_kwargs,
         )
     except Exception as e:
@@ -253,7 +232,6 @@ def inject_projection_factorized_attn(
     if result is None:
         return None
 
-    # FIX-3 / FIX-9: fallback attribute replacement
     if src_attr_name is not None:
         _attach_with_fallback(
             layer=layer,

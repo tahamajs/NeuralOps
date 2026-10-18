@@ -64,7 +64,6 @@ try:
 except Exception:
     pass
 
-# Auto-wired submodules
 from neuralops.compression_engine.experimental import flat_llm
 from neuralops.compression_engine.experimental import hashed_net_compressor
 from neuralops.compression_engine.experimental import liftr

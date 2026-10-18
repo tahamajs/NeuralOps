@@ -33,16 +33,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 logger = logging.getLogger(__name__)
 
 
-
-
-
-
-
-# ============================================================================
-# HALO-ReGLA Attention
-# ============================================================================
-
-
 @ATTENTION_REGISTRY.register(
     "halo_regla",
     supports_causal=True,
@@ -81,7 +71,6 @@ class HALOReGLAAttention(BaseAttention):
         self.config = config
         src_attn = pretrained_attn if pretrained_attn is not None else old_attn
 
-        # ---- Resolve dim ----
         dim = None
         if config is not None:
             dim = _cfg_get(
@@ -104,7 +93,6 @@ class HALOReGLAAttention(BaseAttention):
                         break
         dim = dim or kwargs.get("hidden_size", kwargs.get("d_model", kwargs.get("dim", 768)))
 
-        # ---- Resolve num_heads ----
         num_heads = None
         if config is not None:
             num_heads = _cfg_get(
@@ -139,7 +127,6 @@ class HALOReGLAAttention(BaseAttention):
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
         self.hybrid_ratio = hybrid_ratio
 
-        # ---- Robust decoder detection ----
         if is_decoder is not None:
             self.is_decoder = bool(is_decoder)
         else:
@@ -170,7 +157,6 @@ class HALOReGLAAttention(BaseAttention):
         self.is_nested_encoder = False
         self.layer_idx = int(layer_idx if layer_idx is not None else kwargs.get("layer_idx", 0))
 
-        # ---- LoRA config ----
         comp_config = getattr(config, "compression_config", None) if config is not None else None
         self.lora_rank = int(
             _cfg_get(comp_config, "lora_rank",
@@ -182,7 +168,6 @@ class HALOReGLAAttention(BaseAttention):
         )
         self.freeze_base = self.lora_rank > 0
 
-        # ---- Projections ----
         self.q_proj = LoRALinear(
             self.dim, self.all_head_size, bias=True,
             lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
@@ -204,7 +189,6 @@ class HALOReGLAAttention(BaseAttention):
             freeze_base=self.freeze_base,
         )
 
-        # Aliases
         self.query = self.q_proj
         self.key = self.k_proj
         self.value = self.v_proj
@@ -216,13 +200,11 @@ class HALOReGLAAttention(BaseAttention):
         self.o_proj = self.out_proj
         self.c_proj = self.out_proj
 
-        # ---- Fusion gate ----
         self.lora_gate = nn.Linear(self.dim, self.num_heads, bias=True)
         with torch.no_grad():
             nn.init.normal_(self.lora_gate.weight, mean=0.0, std=1e-4)
             self.lora_gate.bias.data.fill_(gate_init_bias)
 
-        # ---- Dropout ----
         dropout_p = _cfg_get(
             config, "dropout",
             _cfg_get(config, "attention_probs_dropout_prob", 0.1)
@@ -230,7 +212,6 @@ class HALOReGLAAttention(BaseAttention):
         self.dropout_p = float(dropout_p)
         self.dropout = nn.Dropout(self.dropout_p)
 
-        # ---- Rotary embedding ----
         self.rotary_emb = getattr(src_attn, "rotary_emb", None) if src_attn is not None else None
 
         if src_attn is not None:
@@ -260,7 +241,6 @@ class HALOReGLAAttention(BaseAttention):
     ) -> Any:
         """[FIX-16] Write (k, v, linear_state) to cache."""
 
-        # DynamicCache.update()
         if past_key_value is not None and hasattr(past_key_value, "update"):
             try:
                 past_key_value.update(k, v, layer_idx)
@@ -274,7 +254,6 @@ class HALOReGLAAttention(BaseAttention):
             except Exception:
                 pass
 
-        # DynamicCache-like manual write
         if past_key_value is not None and hasattr(past_key_value, "key_cache"):
             if layer_idx < len(past_key_value.key_cache):
                 past_key_value.key_cache[layer_idx] = k
@@ -291,12 +270,8 @@ class HALOReGLAAttention(BaseAttention):
                 past_key_value._linear_states[layer_idx] = linear_state
             return past_key_value
 
-        # Plain tuple (k, v, linear_state)
         return (k, v, linear_state)
 
-    # ------------------------------------------------------------------
-    # Weight transfer
-    # ------------------------------------------------------------------
     def copy_weights(self, src: nn.Module) -> None:
         if src is None:
             return
@@ -327,7 +302,6 @@ class HALOReGLAAttention(BaseAttention):
             "v": (None, None), "o": (None, None),
         }
 
-        # 1. GPT-2 fused c_attn
         if hasattr(src, "c_attn") and src.c_attn is not None:
             c_w, c_b = _unpack_weight_bias(src.c_attn)
             if c_w is not None:
@@ -358,7 +332,6 @@ class HALOReGLAAttention(BaseAttention):
                         o_w = o_w.t().contiguous()
                     extracted["o"] = (o_w, o_b)
 
-        # 2. RoBERTa/BERT nested
         elif hasattr(src, "self") and hasattr(src.self, "query"):
             s = src.self
             for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
@@ -367,7 +340,6 @@ class HALOReGLAAttention(BaseAttention):
             if hasattr(src, "output") and hasattr(src.output, "dense"):
                 extracted["o"] = _unpack_weight_bias(src.output.dense)
 
-        # 3. Flat modules
         else:
             proj_candidates = {
                 "q": ["q_lin", "q_proj", "query"],
@@ -384,7 +356,6 @@ class HALOReGLAAttention(BaseAttention):
                             extracted[proj_key] = (cw, cb)
                             break
 
-        # UniversalAdapter fallback
         missing = [
             k for k, (w, _) in extracted.items()
             if w is None and (k != "o" or not self.is_nested_encoder)
@@ -453,13 +424,11 @@ class HALOReGLAAttention(BaseAttention):
             for mod in (self.q_proj, self.k_proj, self.v_proj, self.out_proj):
                 if hasattr(mod, "freeze_base_weights"):
                     mod.freeze_base_weights()
-            
-            # [FIX-2] Ensure fusion gate is trainable
+
             if hasattr(self, "lora_gate"):
                 self.lora_gate.weight.requires_grad = True
                 if self.lora_gate.bias is not None:
                     self.lora_gate.bias.requires_grad = True
-
 
         if hasattr(src, "is_decoder"):
             self.is_decoder = bool(src.is_decoder)
@@ -473,15 +442,6 @@ class HALOReGLAAttention(BaseAttention):
     ) -> "HALOReGLAAttention":
         return cls(config=model_config, pretrained_attn=old_attn, **kwargs)
 
-    # ------------------------------------------------------------------
-    # [FIX-3, FIX-16] TRUE O(1) causal linear attention with recurrent state
-    # ------------------------------------------------------------------
-# ------------------------------------------------------------------
-    # [FIX-3] Vectorized causal linear attention with True O(1) State
-    # ------------------------------------------------------------------
-# ------------------------------------------------------------------
-    # [FIX-3] Vectorized causal linear attention with True O(1) State
-    # ------------------------------------------------------------------
     def _causal_linear_attention(
         self,
         q: torch.Tensor,
@@ -502,18 +462,16 @@ class HALOReGLAAttention(BaseAttention):
         N_k = k_new.shape[2]
         device = q.device
 
-        # Feature maps (FP32 for stability)
         lin_scale = d ** -0.25
-        q_lin = F.elu(q.float() * lin_scale) + 1.0        # (B, H, N_q, d)
-        k_lin = F.elu(k_new.float() * lin_scale) + 1.0    # (B, H, N_k, d)
-        v_f = v_new.float()                                # (B, H, N_k, d)
+        q_lin = F.elu(q.float() * lin_scale) + 1.0
+        k_lin = F.elu(k_new.float() * lin_scale) + 1.0
+        v_f = v_new.float()
 
         if valid_mask is not None:
             valid_kv = valid_mask.to(dtype=k_lin.dtype)
             k_lin = k_lin * valid_kv
             v_f = v_f * valid_kv
 
-        # Load or init state — state stays (B, H, d, d) and (B, H, d) — never expands
         if linear_state is not None:
             S_state, Z_state = linear_state
             S_state = S_state.to(device=device, dtype=torch.float32)
@@ -522,7 +480,6 @@ class HALOReGLAAttention(BaseAttention):
             S_state = torch.zeros(B, H, d, d, device=device, dtype=torch.float32)
             Z_state = torch.zeros(B, H, d, device=device, dtype=torch.float32)
 
-        # ─── Decode mode (single query token) ───
         if N_q == 1 and N_k == 1:
             S_next = S_state + torch.einsum("bhd,bhe->bhde", k_lin[:, :, 0], v_f[:, :, 0])
             Z_next = Z_state + k_lin[:, :, 0]
@@ -531,7 +488,6 @@ class HALOReGLAAttention(BaseAttention):
             out = (num / den.unsqueeze(-1)).unsqueeze(2).to(q.dtype)
             return out, (S_next, Z_next)
 
-        # ─── Prefill mode: chunked cumsum ───
         from neuralops.core.triton_kernels._types import FORCE_PYTORCH_FALLBACK, HAS_TRITON
         if HAS_TRITON and not FORCE_PYTORCH_FALLBACK and q.is_cuda and linear_state is None and d <= 128:
             try:
@@ -547,36 +503,31 @@ class HALOReGLAAttention(BaseAttention):
             except Exception:
                 pass
 
-        # Memory: O(chunk_size · d²) per iteration — no full N² materialization
         outs = torch.empty(B, H, N_q, d, device=device, dtype=torch.float32)
         S_cur = S_state
         Z_cur = Z_state
 
         for start in range(0, N_q, chunk_size):
             end = min(start + chunk_size, N_q)
-            q_c = q_lin[:, :, start:end]         # (B, H, C, d)
-            k_c = k_lin[:, :, start:end]         # (B, H, C, d)
-            v_c = v_f[:, :, start:end]           # (B, H, C, d)
+            q_c = q_lin[:, :, start:end]
+            k_c = k_lin[:, :, start:end]
+            v_c = v_f[:, :, start:end]
 
-            # Local cumsum within chunk — C×d×d is small (e.g. 64×64×64)
             kv_local = torch.einsum("bhcd,bhce->bhcde", k_c, v_c).cumsum(dim=2)
             k_local = k_c.cumsum(dim=2)
 
-            # Add state from previous chunks
-            kv_total = kv_local + S_cur.unsqueeze(2)     # (B, H, C, d, d)
-            k_total = k_local + Z_cur.unsqueeze(2)       # (B, H, C, d)
+            kv_total = kv_local + S_cur.unsqueeze(2)
+            k_total = k_local + Z_cur.unsqueeze(2)
 
             num = torch.einsum("bhcd,bhcde->bhce", q_c, kv_total)
             den = torch.einsum("bhcd,bhcd->bhc", q_c, k_total).clamp(min=1e-5)
 
             outs[:, :, start:end] = num / den.unsqueeze(-1)
 
-            # Update state — only (B, H, d, d) held between chunks
             S_cur = kv_total[:, :, -1]
             Z_cur = k_total[:, :, -1]
 
         return outs.to(q.dtype), (S_cur, Z_cur)
-
 
     def _global_linear_attention(
             self,
@@ -597,9 +548,6 @@ class HALOReGLAAttention(BaseAttention):
             den = torch.matmul(q_lin, z.transpose(-2, -1).contiguous()).clamp(min=1e-5)
             return (num / den).to(q.dtype)
 
-    # ------------------------------------------------------------------
-    # Forward
-    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -627,17 +575,14 @@ class HALOReGLAAttention(BaseAttention):
         device = hidden_states.device
         dtype = hidden_states.dtype
 
-        # ---- Projections (only NEW tokens) ----
         q = self.q_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
         k_new = self.k_proj(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
         v_new = self.v_proj(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
 
-        # ---- Read past KV + linear state ----
         past_k, past_v, past_len, linear_state = self._read_past_kv(
             past_key_value, self.layer_idx
         )
 
-        # ---- RoPE ----
         pos_emb = (
             position_embeddings if position_embeddings is not None
             else kwargs.get("position_embeddings")
@@ -661,9 +606,6 @@ class HALOReGLAAttention(BaseAttention):
             except Exception as e:
                 logger.debug("rotary_emb failed: %s", e)
 
-        # ============================================================
-        # DENSE STREAM: uses concatenated (past + new) KV
-        # ============================================================
         if past_k is not None:
             K_dense = torch.cat([past_k.to(k_new.dtype), k_new], dim=-2)
             V_dense = torch.cat([past_v.to(v_new.dtype), v_new], dim=-2)
@@ -672,22 +614,18 @@ class HALOReGLAAttention(BaseAttention):
 
         N_kv = K_dense.shape[-2]
 
-        # GQA repeat for dense
         if self.kv_repeat > 1:
             K_full_dense = repeat_kv(K_dense, self.kv_repeat)
             V_full_dense = repeat_kv(V_dense, self.kv_repeat)
-            # Also prepare new-only K/V for linear branch (GQA-expanded)
             k_new_lin = repeat_kv(k_new, self.kv_repeat)
             v_new_lin = repeat_kv(v_new, self.kv_repeat)
         else:
             K_full_dense, V_full_dense = K_dense, V_dense
             k_new_lin, v_new_lin = k_new, v_new
 
-        # ---- Attention mask ----
         eff_mask = encoder_attention_mask if encoder_hidden_states is not None else attention_mask
         mask_val = _safe_mask_value(dtype)
 
-        # Valid mask for linear stream (only for NEW tokens)
         valid_kv_for_linear: torch.Tensor | None = None
         if eff_mask is not None:
             valid_kv_new = get_token_valid_mask(eff_mask, B, N, device)
@@ -696,18 +634,8 @@ class HALOReGLAAttention(BaseAttention):
                     valid_kv_new[:, None, :, None].to(dtype=torch.float32)
                 )
 
-        # ============================================================
-        # Stream 1: Dense Softmax Attention
-        # ============================================================
-# ============================================================
-        # Stream 1: Dense Softmax Attention
-        # ============================================================
-        # ============================================================
-        # Stream 1: Dense Softmax Attention
-        # ============================================================
         scale = 1.0 / math.sqrt(self.head_dim)
 
-        # Concatenate in the input dtype directly (avoid extra .float())
         K_dense_f = K_full_dense.to(dtype=torch.float32)
         V_dense_f = V_full_dense.to(dtype=torch.float32)
         q_f = q.to(dtype=torch.float32)
@@ -716,7 +644,6 @@ class HALOReGLAAttention(BaseAttention):
             q_f, K_dense_f.transpose(-2, -1).contiguous()
         ) * scale
 
-# Use dense_scores.dtype so the mask value is strictly compatible
         mask_val = _safe_mask_value(dense_scores.dtype)
 
         if self.is_causal:
@@ -740,17 +667,13 @@ class HALOReGLAAttention(BaseAttention):
         dense_attn = torch.nan_to_num(dense_attn, nan=0.0)
         dense_attn = self.dropout(dense_attn)
 
-        # matmul in FP32 then cast back — better precision, same memory
         dense_out = torch.matmul(dense_attn.float(), V_dense_f).to(dtype)
         dense_out = torch.nan_to_num(dense_out, nan=0.0, posinf=1e4, neginf=-1e4)
 
-        # ============================================================
-        # Stream 2: Linear Attention (with recurrent state)
         next_linear_state = None
         if self.is_causal:
-            # Pass ONLY new K, V to linear branch to update state efficiently
             linear_out, next_linear_state = self._causal_linear_attention(
-                q, k_new_lin, v_new_lin,  # <--- MUST BE NEW TOKENS ONLY
+                q, k_new_lin, v_new_lin,
                 past_len=past_len,
                 valid_mask=valid_kv_for_linear,
                 linear_state=linear_state
@@ -760,14 +683,10 @@ class HALOReGLAAttention(BaseAttention):
 
         linear_out = torch.nan_to_num(linear_out, nan=0.0, posinf=1e4, neginf=-1e4)
 
-        # ============================================================
-        # Fusion Gate
-        # ============================================================
         gate_out = self.lora_gate(hidden_states.to(self.lora_gate.weight.dtype))
         g = torch.sigmoid(gate_out).permute(0, 2, 1).unsqueeze(-1).to(dtype)
         fused = (g * dense_out + (1.0 - g) * linear_out).to(dtype)
 
-        # ---- Head mask ----
         if head_mask is not None:
             if head_mask.dim() == 1 and head_mask.size(0) == self.num_heads:
                 fused = fused * head_mask.view(1, self.num_heads, 1, 1).to(fused.dtype)
@@ -778,7 +697,6 @@ class HALOReGLAAttention(BaseAttention):
             elif head_mask.dim() == 4:
                 fused = fused * head_mask.to(fused.dtype)
 
-        # ---- Output projection ----
         out = fused.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
 
         if self.is_nested_encoder:
@@ -797,9 +715,6 @@ class HALOReGLAAttention(BaseAttention):
 
         out_final = torch.nan_to_num(out_final, nan=0.0, posinf=1e4, neginf=-1e4)
 
-        # ============================================================
-        # Write cache: (K_dense, V_dense, next_linear_state)
-        # ============================================================
         present_kv: Any = None
         use_cache = kwargs.get("use_cache", False) or (
             past_key_value is not None and past_key_value is not False
@@ -811,20 +726,12 @@ class HALOReGLAAttention(BaseAttention):
         else:
             present_kv = past_key_value
 
-        # ============================================================
-        # Return format
-        # ============================================================
         if self.is_decoder:
             if output_attentions:
                 return out_final.to(dtype), present_kv, dense_attn
             return out_final.to(dtype), present_kv
 
         return out_final.to(dtype), (dense_attn if output_attentions else None)
-
-
-# ============================================================================
-# Injection
-# ============================================================================
 
 
 def inject_halo_regla(
@@ -948,11 +855,6 @@ def inject_halo_regla(
         return None
 
     return new_layer
-
-
-# ============================================================================
-# Exports
-# ============================================================================
 
 
 __all__ = [

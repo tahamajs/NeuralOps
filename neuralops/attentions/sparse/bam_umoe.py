@@ -28,9 +28,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 logger = logging.getLogger(__name__)
 
 
-# ===========================================================================
-# Factorised Linear (SVD + LoRA) — for real compression
-# ===========================================================================
 class FactorisedLoRALinear(nn.Module):
     """
     Low-rank factorized linear with optional LoRA:
@@ -142,9 +139,6 @@ class FactorisedLoRALinear(nn.Module):
             self.lora_B.requires_grad = True
 
 
-# ===========================================================================
-# Unified MoE (compact, optional)
-# ===========================================================================
 class UnifiedMoE(nn.Module):
     """
     Compact MoE with top-k gating.
@@ -163,13 +157,12 @@ class UnifiedMoE(nn.Module):
         output_dim: int | None = None,
         noise_std: float = 0.1,
         expert_hidden_mult: float = 0.25,
-        gate_init: float = -3.0,  # BAM-FIX-11
+        gate_init: float = -3.0,
     ) -> None:
         super().__init__()
         self.dim = int(dim)
         self.num_experts = max(1, int(num_experts))
         self.top_k = min(max(1, int(top_k)), self.num_experts)
-        # BAM-FIX-02: default to dim // 4 for compact output
         self.out_dim = int(output_dim) if output_dim is not None else max(16, self.dim // 4)
         self.noise_std = float(noise_std)
 
@@ -194,10 +187,8 @@ class UnifiedMoE(nn.Module):
             if exp[2].bias is not None:
                 nn.init.zeros_(exp[2].bias)
 
-        # BAM-FIX-11: configurable gate init
         self.gate_bias = nn.Parameter(torch.tensor([float(gate_init)]))
 
-        # BAM-FIX-04: aux loss is an attribute, not a tensor
         self._aux_loss: torch.Tensor | None = None
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -213,7 +204,6 @@ class UnifiedMoE(nn.Module):
         scores = topk_scores / topk_scores.sum(dim=-1, keepdim=True).clamp(min=1e-6)
         scores = torch.nan_to_num(scores, nan=0.0)
 
-        # Load balancing aux loss
         if self.training and self.num_experts > 1:
             router_probs = all_probs.view(-1, self.num_experts)
             expert_mask = F.one_hot(topk_idx, num_classes=self.num_experts).float()
@@ -231,7 +221,6 @@ class UnifiedMoE(nn.Module):
         gate = torch.sigmoid(self.gate_bias).to(x.dtype)
         return (out * gate).to(x.dtype)
 
-
     def get_aux_loss(self, device: torch.device) -> torch.Tensor:
         """BAM-FIX-04: return aux loss on the correct device."""
         if self._aux_loss is None:
@@ -239,9 +228,6 @@ class UnifiedMoE(nn.Module):
         return self._aux_loss.to(device)
 
 
-# ===========================================================================
-# Main attention
-# ===========================================================================
 @ATTENTION_REGISTRY.register(
     "bam_umoe", supports_causal=True, supports_bidirectional=True, supports_gqa=True
 )
@@ -266,15 +252,13 @@ class BAMUMoEBlock(BaseAttention):
         num_layers: int | None = None,
         old_attn: nn.Module | None = None,
         comp_config: Any | None = None,
-        moe_enabled: bool = False,  # BAM-FIX-02
-        svd_rank: int | None = None,  # BAM-FIX-03
+        moe_enabled: bool = False,
+        svd_rank: int | None = None,
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
         **kwargs: Any,
     ) -> None:
-        # BAM-FIX-07: config None-safe
         if config is None:
-
             class _Cfg:
                 pass
 
@@ -350,7 +334,6 @@ class BAMUMoEBlock(BaseAttention):
         )
         self.freeze_base = self.lora_rank > 0
 
-        # BAM-FIX-03: SVD rank for real compression
         default_svd = min(128, self.dim)
         if svd_rank is not None:
             self.svd_rank = int(svd_rank)
@@ -361,7 +344,6 @@ class BAMUMoEBlock(BaseAttention):
         else:
             self.svd_rank = int(default_svd)
 
-        # Decoder detection
         mt = str(getattr(config, "model_type", "") or "").lower()
         is_dec = bool(getattr(config, "is_decoder", False) or getattr(config, "causal", False))
         if any(
@@ -394,9 +376,6 @@ class BAMUMoEBlock(BaseAttention):
         self.top_k = min(max(1, int(top_k)), self.num_experts)
         self.moe_enabled = bool(moe_enabled)
 
-        # ---- Q/K/V/O projections ----
-        # BAM-FIX-03: use FactorisedLoRALinear with svd_rank
-        # If svd_rank >= min(dim, all_head_size), degenerates to dense (no compression)
         Q_rank = min(self.svd_rank, self.dim, self.all_head_size)
         KV_rank = min(self.svd_rank, self.dim, self.all_kv_head_size)
         O_rank = min(self.svd_rank, self.all_head_size, self.dim)
@@ -434,13 +413,12 @@ class BAMUMoEBlock(BaseAttention):
             bias=True,
         )
 
-        # ---- Optional MoE ----
         if self.moe_enabled:
             self.qkv_moe: UnifiedMoE | None = UnifiedMoE(
                 self.dim,
                 num_experts=self.num_experts,
                 top_k=self.top_k,
-                output_dim=self.all_kv_head_size,  # MoE refines V (matches V dim)
+                output_dim=self.all_kv_head_size,
                 gate_init=kwargs.get("moe_gate_init", -3.0),
             )
         else:
@@ -456,14 +434,12 @@ class BAMUMoEBlock(BaseAttention):
         self.comp_config = comp_config
         self.rotary_emb = None
 
-        # BAM-FIX-09: storage accounting
         self._orig_storage_bytes = 0
         self._comp_storage_bytes = 0
 
         if old_attn is not None:
             self.copy_weights(old_attn)
 
-    # ---- aliases ----
     @property
     def q_proj(self):
         return self.q_lin
@@ -504,7 +480,6 @@ class BAMUMoEBlock(BaseAttention):
     def out_proj(self):
         return self.out_lin
 
-    # ------------------------------------------------------------------
     def copy_weights(self, pretrained_attn: nn.Module) -> None:
         if pretrained_attn is None:
             return
@@ -554,7 +529,6 @@ class BAMUMoEBlock(BaseAttention):
             "o": (None, None),
         }
 
-        # GPT-2 fused
         if hasattr(pretrained_attn, "c_attn") and pretrained_attn.c_attn is not None:
             c = pretrained_attn.c_attn
             base_c = getattr(c, "base_layer", c)
@@ -597,7 +571,6 @@ class BAMUMoEBlock(BaseAttention):
                     bo = getattr(base_o, "bias", getattr(o, "bias", None))
                     extracted["o"] = (ow, bo.data.clone() if bo is not None else None)
 
-        # Nested BERT / RoBERTa
         elif hasattr(pretrained_attn, "self") and hasattr(pretrained_attn.self, "query"):
             s = pretrained_attn.self
             for key, sub in (("q", "query"), ("k", "key"), ("v", "value")):
@@ -616,7 +589,6 @@ class BAMUMoEBlock(BaseAttention):
                     b.data.clone() if b is not None else None,
                 )
 
-        # Flat modules
         else:
             candidates = {
                 "q": ("q_lin", "q_proj", "query"),
@@ -636,7 +608,6 @@ class BAMUMoEBlock(BaseAttention):
                             )
                             break
 
-        # UniversalAdapter fallback
         missing = [
             k
             for k, (w, _) in extracted.items()
@@ -682,7 +653,6 @@ class BAMUMoEBlock(BaseAttention):
                 w, b = extracted[proj_key]
                 if w is None:
                     if proj_key == "o" and self.is_nested_encoder:
-                        # Identity for nested encoder bypass
                         eye = torch.eye(
                             target.out_features,
                             target.in_features,
@@ -695,11 +665,9 @@ class BAMUMoEBlock(BaseAttention):
                 if w.ndim != 2:
                     w = w.reshape(w.size(0), -1)
 
-                # Orient to (out, in)
                 in_dim = self.all_head_size if proj_key == "o" else self.dim
                 w = _orient(w, in_dim)
 
-                # BAM-FIX-08: shape tolerance
                 out_d = min(target.out_features, w.size(0))
                 in_d = min(target.in_features, w.size(1))
                 if (out_d, in_d) != (target.out_features, target.in_features):
@@ -712,7 +680,6 @@ class BAMUMoEBlock(BaseAttention):
                     padded[:out_d, :in_d] = w[:out_d, :in_d]
                     w = padded
 
-                # Handle GQA pooling for K/V
                 if proj_key in ("k", "v"):
                     src_out = w.shape[0]
                     tgt_out = target.out_features
@@ -726,7 +693,6 @@ class BAMUMoEBlock(BaseAttention):
                 target.set_svd_factors(w, b)
                 target.freeze_base_weights()
 
-        # Track compressed bytes
         try:
             for m in (self.q_lin, self.k_lin, self.v_lin, self.out_lin):
                 for p in m.parameters():
@@ -734,7 +700,6 @@ class BAMUMoEBlock(BaseAttention):
         except Exception:
             pass
 
-    # ------------------------------------------------------------------
     @property
     def aux_loss(self) -> torch.Tensor | None:
         if self.qkv_moe is not None:
@@ -747,7 +712,6 @@ class BAMUMoEBlock(BaseAttention):
             return torch.zeros((), device=device, dtype=torch.float32)
         return self.qkv_moe.get_aux_loss(device)
 
-    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -788,7 +752,6 @@ class BAMUMoEBlock(BaseAttention):
             .contiguous()
         )
 
-        # ---- RoPE ----
         cos = kwargs.get("cos")
         sin = kwargs.get("sin")
         pos_emb = kwargs.get("position_embeddings")
@@ -798,12 +761,10 @@ class BAMUMoEBlock(BaseAttention):
         if cos is not None and sin is not None and not is_cross:
             q, k = apply_rotary_pos_emb(q, k, cos, sin, kwargs.get("position_ids"))
 
-        # ---- GQA ----
         if self.kv_repeat > 1:
             k = repeat_kv(k, self.kv_repeat)
             v = repeat_kv(v, self.kv_repeat)
 
-        # ---- MoE refinement (only self-attn, only if enabled) ----
         if self.qkv_moe is not None and not is_cross:
             moe_delta_v = self.qkv_moe(hidden_states)
             moe_delta_v = moe_delta_v.view(B, L, self.num_kv_heads, self.head_dim)
@@ -812,7 +773,6 @@ class BAMUMoEBlock(BaseAttention):
                 moe_delta_v = repeat_kv(moe_delta_v, self.kv_repeat)
             v = (v + 0.1 * moe_delta_v.to(v.dtype)).to(v.dtype)
 
-        # ---- Dense attention (no SDPA shortcut when MoE enabled, to keep mask logic uniform) ----
         scale = 1.0 / math.sqrt(self.head_dim)
         scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
 
@@ -837,7 +797,6 @@ class BAMUMoEBlock(BaseAttention):
         probs = torch.nan_to_num(probs, nan=0.0)
         probs = self.dropout(probs)
 
-        # ---- head_mask (BAM-FIX-10) ----
         if head_mask is not None:
             hm = head_mask.to(probs.dtype)
             if hm.dim() == 1:
@@ -852,7 +811,6 @@ class BAMUMoEBlock(BaseAttention):
         context = context.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
         context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
 
-        # ---- Output projection ----
         if self.is_nested_encoder:
             out = context
         else:
@@ -864,9 +822,6 @@ class BAMUMoEBlock(BaseAttention):
         return out, (probs if output_attentions else None)
 
 
-# ===========================================================================
-# Injection
-# ===========================================================================
 def inject_bam_umoe(
     layer: Any = None,
     model: Any = None,
@@ -890,7 +845,6 @@ def inject_bam_umoe(
 
     cfg = model_config if model_config is not None else getattr(target, "config", None)
 
-    # ---- Whole-model traversal ----
     layer_list = None
     for path in (
         ("distilbert", "transformer", "layer"),
@@ -931,7 +885,6 @@ def inject_bam_umoe(
                 n_injected += 1
         return target if n_injected > 0 else None
 
-    # ---- Single-layer injection ----
     layer = target
 
     src_attn = old_attn
@@ -943,7 +896,6 @@ def inject_bam_umoe(
                     src_attn = getattr(cand, "self", cand)
                     break
 
-    # BAM-FIX-05: idempotency guard
     if src_attn is not None and (
         isinstance(src_attn, BAMUMoEBlock) or "BAMUMoE" in src_attn.__class__.__name__
     ):
@@ -952,7 +904,6 @@ def inject_bam_umoe(
     if cfg is None and src_attn is not None:
         cfg = getattr(src_attn, "config", None)
 
-    # Hidden size / heads detection
     hidden_size = kwargs.get("hidden_size")
     if hidden_size is None and src_attn is not None:
         hidden_size = getattr(src_attn, "hidden_size", None)
@@ -992,7 +943,6 @@ def inject_bam_umoe(
             if p is not None:
                 new_attn.to(device=p.device, dtype=p.dtype)
 
-        # Splice
         spliced = False
         if hasattr(layer, "attention"):
             if hasattr(layer.attention, "self"):

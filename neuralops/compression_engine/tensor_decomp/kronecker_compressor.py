@@ -41,13 +41,7 @@ def factorize_dim(dim: int) -> tuple[int, int]:
     return (1, dim)
 
 
-# ===========================================================================
-# KroneckerLinear
-# ===========================================================================
-
-
 class KroneckerLinear(nn.Module):
-    # KL-FIX-01: this is a linear layer, not an attention layer.
     is_custom_attention: bool = False
     is_custom_linear: bool = True
 
@@ -69,12 +63,11 @@ class KroneckerLinear(nn.Module):
         super().__init__()
         self.in_features = int(in_features)
         self.out_features = int(out_features)
-        self.nf = self.out_features  # Conv1D compatibility
+        self.nf = self.out_features
         self.lora_r = int(lora_r)
         self.lora_alpha = float(lora_alpha)
         self.scaling = (self.lora_alpha / self.lora_r) if self.lora_r > 0 else 1.0
 
-        # ---- Factor dimensions ----
         if m1 is not None and m2 is not None and n1 is not None and n2 is not None:
             if m1 * m2 != self.out_features or n1 * n2 != self.in_features:
                 raise ValueError(
@@ -87,7 +80,6 @@ class KroneckerLinear(nn.Module):
             self.n1, self.n2 = factorize_dim(self.in_features)
             self.m1, self.m2 = factorize_dim(self.out_features)
 
-        # Decomposable when both factorizations are non-trivial OR dims are tiny.
         self.can_decompose = (
             (self.n1 * self.n2 == self.in_features)
             and (self.m1 * self.m2 == self.out_features)
@@ -95,7 +87,6 @@ class KroneckerLinear(nn.Module):
             and (self.m1 > 1 or self.out_features <= 3)
         )
 
-        # ---- Parameter allocation ----
         requires_grad = not (self.lora_r > 0)
         self._init_base_parameters(
             bias=bias,
@@ -105,9 +96,7 @@ class KroneckerLinear(nn.Module):
             rank=rank,
         )
 
-        # ---- LoRA parameters ----
         if self.lora_r > 0:
-            # KL-FIX-12: keep LoRA in the same dtype as base parameters.
             param_dtype = (
                 next(self.parameters()).dtype
                 if any(True for _ in self.parameters())
@@ -137,9 +126,6 @@ class KroneckerLinear(nn.Module):
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
 
-    # ------------------------------------------------------------------
-    # KL-FIX-09: clean parameter initialization
-    # ------------------------------------------------------------------
     def _init_base_parameters(
         self,
         bias: bool,
@@ -149,7 +135,6 @@ class KroneckerLinear(nn.Module):
         rank: int | None,
     ) -> None:
         if self.can_decompose:
-            # Kronecker factors A (m1, n1), B (m2, n2)
             self.A = nn.Parameter(
                 torch.empty(self.m1, self.n1, dtype=dtype, device=device),
                 requires_grad=requires_grad,
@@ -163,7 +148,6 @@ class KroneckerLinear(nn.Module):
             nn.init.uniform_(self.A, -bound, bound)
             nn.init.uniform_(self.B, -bound, bound)
 
-            # Ensure U / V don't exist.
             self.register_parameter("U", None)
             self.register_parameter("V", None)
 
@@ -189,7 +173,6 @@ class KroneckerLinear(nn.Module):
             nn.init.xavier_uniform_(self.U)
             nn.init.xavier_uniform_(self.V)
 
-            # Ensure A / B don't exist.
             self.register_parameter("A", None)
             self.register_parameter("B", None)
 
@@ -201,26 +184,17 @@ class KroneckerLinear(nn.Module):
             else:
                 self.register_parameter("bias", None)
 
-    # ------------------------------------------------------------------
-    # KL-FIX-02 / KL-FIX-07: cache lifecycle
-    # ------------------------------------------------------------------
     def _load_from_state_dict(self, *args, **kwargs):
-        # KL-FIX-07: state_dict load invalidates weight cache.
         self._cached_weight = None
         super()._load_from_state_dict(*args, **kwargs)
 
     def _apply(self, fn, *args, **kwargs):
-        # _apply is called for .to(), .cuda(), .float(), .half(), etc.
-        # Invalidate cache whenever parameters move.
         self._cached_weight = None
         return super()._apply(fn, *args, **kwargs)
 
     def _invalidate_cache(self) -> None:
         self._cached_weight = None
 
-    # ------------------------------------------------------------------
-    # Weight accessors (KL-FIX-10: no stale caching)
-    # ------------------------------------------------------------------
     @property
     def weight(self) -> torch.Tensor:
         """Reconstructed effective weight matrix (out_features, in_features)."""
@@ -231,19 +205,14 @@ class KroneckerLinear(nn.Module):
             return torch.kron(self.A, self.B)
         if self.U is not None and self.V is not None:
             return torch.matmul(self.U, self.V)
-        # Fallback: should never happen for a properly initialized layer.
         raise RuntimeError("KroneckerLinear has no valid parameter set.")
 
-    # ------------------------------------------------------------------
-    # Forward
-    # ------------------------------------------------------------------
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         if self.can_decompose and self.A is not None and self.B is not None:
             out = self._forward_kron(x)
         else:
             out = self._forward_svd(x)
 
-        # KL-FIX-12: LoRA in native dtype (no explicit fp32 cast).
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
             lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B)
             out = out + self.scaling * lora_out.to(out.dtype)
@@ -262,19 +231,16 @@ class KroneckerLinear(nn.Module):
                 except Exception:
                     pass
 
-
         orig_shape = x.shape
-        x_flat = x.reshape(-1, self.in_features)  # (K, n1 * n2)
+        x_flat = x.reshape(-1, self.in_features)
         if x_flat.dtype != self.B.dtype:
             x_flat = x_flat.to(self.B.dtype)
         K = x_flat.shape[0]
 
-        # Step 1: contract with B over n2  ->  (K * n1, m2)
         x_b = torch.matmul(
             x_flat.reshape(K * self.n1, self.n2),
             self.B.t().contiguous(),
         )
-        # Step 2: (K, m2, n1) -> (K * m2, n1) @ A^T  ->  (K * m2, m1)
         x_b = (
             x_b.reshape(K, self.n1, self.m2)
             .transpose(1, 2)
@@ -282,7 +248,6 @@ class KroneckerLinear(nn.Module):
             .reshape(K * self.m2, self.n1)
         )
         x_a = torch.matmul(x_b, self.A.t().contiguous())
-        # Step 3: back to (K, m1 * m2)
         out = (
             x_a.reshape(K, self.m2, self.m1)
             .transpose(1, 2)
@@ -300,9 +265,6 @@ class KroneckerLinear(nn.Module):
         b_w = self.bias.to(x.dtype) if self.bias is not None else None
         return F.linear(F.linear(x, v_w), u_w, b_w)
 
-    # ------------------------------------------------------------------
-    # SVD fitting (KL-FIX-03, KL-FIX-05, KL-FIX-09, KL-FIX-11)
-    # ------------------------------------------------------------------
     def _fit_svd(
         self,
         weight: torch.Tensor,
@@ -312,7 +274,6 @@ class KroneckerLinear(nn.Module):
     ) -> None:
         """Fit low-rank SVD factors ensuring parameter reduction."""
         in_f, out_f = self.in_features, self.out_features
-        # Ensure target_dtype matches existing parameters or weight
         target_dtype = getattr(self, "dtype", None)
         if target_dtype is None and self.U is not None:
             target_dtype = self.U.dtype
@@ -323,7 +284,6 @@ class KroneckerLinear(nn.Module):
         target_device = weight.device
         W_norm = torch.norm(weight, p="fro").item()
 
-        # Parameter reduction constraint: r * (in + out) < in * out
         if rank is not None and rank > 0:
             base_r = min(int(rank), in_f, out_f)
             candidate_ranks = [base_r]
@@ -362,27 +322,20 @@ class KroneckerLinear(nn.Module):
             best_V_r = torch.zeros(best_r, in_f, device=target_device, dtype=torch.float32)
 
         self.can_decompose = False
-        # KL-FIX-05: clean removal of Kronecker parameters.
         self.register_parameter("A", None)
         self.register_parameter("B", None)
 
         self.rank = best_r
-        # KL-FIX-09: clean registration of SVD parameters.
         self.U = nn.Parameter(best_U_r.to(dtype=target_dtype, device=target_device))
         self.V = nn.Parameter(best_V_r.to(dtype=target_dtype, device=target_device))
 
-        # KL-FIX-03 + KL-FIX-11: unconditional, dtype-matched bias.
         if bias is not None:
             self.bias = nn.Parameter(bias.clone().to(dtype=target_dtype, device=target_device))
         else:
             self.register_parameter("bias", None)
 
-        # KL-FIX-10: invalidate cache.
         self._invalidate_cache()
 
-    # ------------------------------------------------------------------
-    # Factory (KL-FIX-04, KL-FIX-08)
-    # ------------------------------------------------------------------
     @classmethod
     def from_linear(
         cls,
@@ -416,7 +369,6 @@ class KroneckerLinear(nn.Module):
         target_dtype = raw_w.dtype
         target_device = raw_w.device
 
-        # KL-FIX-04: robust LoRA detection.
         existing_lora_A = getattr(linear, "lora_A", None)
         existing_lora_B = getattr(linear, "lora_B", None)
         effective_lora_r = lora_r
@@ -446,7 +398,6 @@ class KroneckerLinear(nn.Module):
             lora_alpha=effective_lora_alpha,
         )
 
-        # Transfer existing LoRA if shapes match.
         if (
             existing_lora_A is not None
             and existing_lora_B is not None
@@ -471,7 +422,6 @@ class KroneckerLinear(nn.Module):
             m1_, m2_ = kron_layer.m1, kron_layer.m2
             n1_, n2_ = kron_layer.n1, kron_layer.n2
             try:
-                # Rearrangement for Nearest Kronecker Product.
                 W_tensor = weight.view(m1_, m2_, n1_, n2_).permute(0, 2, 1, 3).contiguous()
                 W_reordered = W_tensor.view(m1_ * n1_, m2_ * n2_).float()
 
@@ -509,7 +459,6 @@ class KroneckerLinear(nn.Module):
                 bias.to(dtype=kron_layer.bias.dtype, device=kron_layer.bias.device)
             )
 
-        # KL-FIX-08: forward sanity check.
         try:
             with torch.no_grad():
                 dummy = torch.randn(2, in_features, device=target_device, dtype=target_dtype)
@@ -527,10 +476,6 @@ class KroneckerLinear(nn.Module):
 __all__ = ["KroneckerLinear", "factorize_dim"]
 
 logger = logging.getLogger(__name__)
-
-
-
-
 
 
 _ATTN_NAMES = {
@@ -552,11 +497,6 @@ _ATTN_NAMES = {
 }
 
 
-# ===========================================================================
-# Compressor
-# ===========================================================================
-
-
 class KroneckerCompressor(BaseCompressor):
     """KroneckerCompressor neural operator.
 
@@ -566,7 +506,6 @@ class KroneckerCompressor(BaseCompressor):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
-    # KC-FIX-01
     is_custom_attention: bool = False
 
     def __init__(
@@ -636,7 +575,6 @@ class KroneckerCompressor(BaseCompressor):
         self.stats: dict[str, Any] = {}
         self._compressed_params: int = 0
 
-    # ------------------------------------------------------------------
     def _is_gqa_asymmetric(self, name: str, module: nn.Module) -> bool:
         if not self.skip_attention_qkv:
             return False
@@ -659,7 +597,6 @@ class KroneckerCompressor(BaseCompressor):
                 return True
         return False
 
-    # KC-FIX-12: debug-enriched target check.
     def _is_target_module(self, name: str, module: nn.Module, _debug: bool = False) -> bool:
         name_lower = name.lower()
         if any(part in name.split(".") for part in ("lora_A", "lora_B", "base_layer")):
@@ -712,13 +649,11 @@ class KroneckerCompressor(BaseCompressor):
                 logger.info(f"  [skip] {name}: weight None")
             return False
 
-        # KC-FIX-11: filter tiny layers.
         if min(w.shape[0], w.shape[1]) < self.min_layer_dim:
             if _debug:
                 logger.info(f"  [skip] {name}: dim too small {tuple(w.shape)}")
             return False
 
-        # KC-FIX-14: guard against framework errors.
         if not self.skip_should_compress_filter:
             try:
                 if not should_compress_linear(self.model, name):
@@ -730,7 +665,6 @@ class KroneckerCompressor(BaseCompressor):
                     logger.info(f"  [skip] {name}: should_compress_linear raised {e}")
                 return False
 
-        # KC-FIX-13: empty target_layers means "no targets".
         if self.target_layers is not None:
             ok = any(t in name for t in self.target_layers)
             if not ok and _debug:
@@ -741,9 +675,7 @@ class KroneckerCompressor(BaseCompressor):
             logger.info(f"  [TARGET] {name}: shape={tuple(w.shape)}")
         return True
 
-    # ------------------------------------------------------------------
     def compress(self, model: nn.Module | None = None) -> tuple[nn.Module, dict[str, Any]]:
-        # KC-FIX-09: idempotence.
         if getattr(self.model, "_kronecker_compressed", False):
             logger.warning("KroneckerCompressor: model already compressed; skipping.")
             try:
@@ -769,7 +701,6 @@ class KroneckerCompressor(BaseCompressor):
         total_orig_params = 0
         total_comp_params = 0
 
-        # Freeze non-targets when attention_only.
         if self.target_attention_only:
             for name, module in self.model.named_modules():
                 target_mod = getattr(module, "base_layer", module)
@@ -791,7 +722,6 @@ class KroneckerCompressor(BaseCompressor):
         ]
 
         if not targets:
-            # KC-FIX-12: diagnostic breakdown.
             logger.warning("KroneckerCompressor: no targets found. Diagnostic...")
             n_scanned = 0
             for name, module in self.model.named_modules():
@@ -851,7 +781,6 @@ class KroneckerCompressor(BaseCompressor):
 
             self.layer_errors[name] = err
 
-            # KC-FIX-15: only set mode/rank after decision.
             if new_layer is None or (err > self.max_error and self.fallback_to_original and self.rank is None):
                 logger.warning(
                     "Kronecker: error %.4f on %s > %.4f. Falling back to original weight.",
@@ -867,7 +796,6 @@ class KroneckerCompressor(BaseCompressor):
                 total_comp_params += orig_layer_params
                 continue
 
-            # Accepted.
             mode = "kronecker" if getattr(new_layer, "can_decompose", False) else "svd"
             self.layer_modes[name] = mode
             self.layer_ranks[name] = getattr(new_layer, "rank", None)
@@ -882,7 +810,6 @@ class KroneckerCompressor(BaseCompressor):
                 logger.warning("Kronecker: replace_module failed for %s: %s", name, e)
                 self.fallback_layers.append(name)
 
-        # KC-FIX-08: robust forward check.
         forward_check_success = True
         try:
             with torch.no_grad():
@@ -900,13 +827,11 @@ class KroneckerCompressor(BaseCompressor):
             logger.warning("Kronecker forward check raised: %s", e)
             forward_check_success = False
 
-        # KC-FIX-03: safe param count.
         try:
             self._compressed_params = self._count_params(self.model)
         except Exception:
             self._compressed_params = sum(p.numel() for p in self.model.parameters())
 
-        # KC-FIX-05: avg_err only over compressed layers.
         compressed_errs = [
             self.layer_errors[n] for n in self.compressed_layers if n in self.layer_errors
         ]
@@ -947,7 +872,6 @@ class KroneckerCompressor(BaseCompressor):
         )
         self.stats = stats
 
-        # KC-FIX-09: write stats onto model.
         try:
             if not hasattr(self.model, "compression_stats") or self.model.compression_stats is None:
                 self.model.compression_stats = {}
@@ -972,11 +896,6 @@ class KroneckerCompressor(BaseCompressor):
             avg_err,
         )
         return self.model, stats
-
-
-# ===========================================================================
-# Factory (KC-FIX-02)
-# ===========================================================================
 
 
 @COMPRESSOR_REGISTRY.register("kronecker_compressor")

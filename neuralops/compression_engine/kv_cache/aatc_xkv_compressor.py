@@ -27,9 +27,6 @@ from neuralops.core.registry import COMPRESSOR_REGISTRY
 logger = logging.getLogger(__name__)
 
 
-# =========================================================================
-# Data containers
-# =========================================================================
 @dataclass
 class SharedSubspace:
     """Shared low-rank subspace for a group of consecutive transformer layers."""
@@ -44,9 +41,6 @@ class SharedSubspace:
     layer_indices: list[int] = field(default_factory=list)
 
 
-# =========================================================================
-# Reverse waterfilling bit allocation
-# =========================================================================
 def reverse_waterfilling(
     sigma_sq: torch.Tensor,
     sensitivity: torch.Tensor,
@@ -126,9 +120,6 @@ def reverse_waterfilling(
     return int_alloc
 
 
-# =========================================================================
-# Vectorized quantization
-# =========================================================================
 def quantize_coefficients(
     U: torch.Tensor,
     bit_alloc: torch.Tensor,
@@ -173,9 +164,6 @@ def dequantize_coefficients(
     return out.reshape(q.shape)
 
 
-# =========================================================================
-# Runtime cache
-# =========================================================================
 try:
     from transformers.cache_utils import DynamicCache as _HFDynamicCache
 
@@ -218,17 +206,12 @@ class AATC_XKVCache(_HFDynamicCache if _HAS_HF_CACHE else object):
         self.enabled = True
 
         self._compressed: dict[int, list[dict[str, torch.Tensor]]] = {}
-        # Reconstruction cache: layer_idx -> (full_k, full_v, n_entries_seen)
         self._reconstruction_cache: dict[int, tuple[torch.Tensor, torch.Tensor, int]] = {}
 
         self._total_original_bytes = 0
         self._total_compressed_bytes = 0
 
-    # ------------------------------------------------------------------
-    # HF API
-    # ------------------------------------------------------------------
     def __len__(self) -> int:
-        # AXKV-FIX-04: sum over all entries
         if not self._compressed:
             return 0
         total = 0
@@ -273,7 +256,6 @@ class AATC_XKVCache(_HFDynamicCache if _HAS_HF_CACHE else object):
         entry = self._new_entry(key_states, value_states, sub, layer_idx)
         self._compressed.setdefault(layer_idx, []).append(entry)
 
-        # AXKV-FIX-03: use reconstruction cache
         cached = self._reconstruction_cache.get(layer_idx)
         n_entries = len(self._compressed[layer_idx])
 
@@ -327,12 +309,8 @@ class AATC_XKVCache(_HFDynamicCache if _HAS_HF_CACHE else object):
                             e[k] = e[k].index_select(0, beam_idx.to(e[k].device))
                     for k in ("q_k", "q_v"):
                         e[k] = e[k].index_select(0, beam_idx.to(e[k].device))
-            # Invalidate reconstruction cache
             self._reconstruction_cache.clear()
 
-    # ------------------------------------------------------------------
-    # Entry creation
-    # ------------------------------------------------------------------
     def _new_entry(
         self,
         k: torch.Tensor,
@@ -342,8 +320,6 @@ class AATC_XKVCache(_HFDynamicCache if _HAS_HF_CACHE else object):
     ) -> dict[str, torch.Tensor]:
         B, H_kv, T_new, D = k.shape
 
-        # AXKV-FIX-12: sinks are prepended only once — the first time we
-        # ever see this layer's cache.
         is_first_chunk = len(self._compressed.get(layer_idx, [])) == 0
         sink_prefix = min(self.sink_tokens, T_new) if is_first_chunk else 0
 
@@ -358,7 +334,6 @@ class AATC_XKVCache(_HFDynamicCache if _HAS_HF_CACHE else object):
             rest_k = k
             rest_v = v
 
-        # AXKV-FIX-02: preserve_last_token only during prefill (T_new > 1).
         last_k = None
         last_v = None
         if self.preserve_last_token and T_new > 1 and rest_k.size(2) > 0:
@@ -398,7 +373,6 @@ class AATC_XKVCache(_HFDynamicCache if _HAS_HF_CACHE else object):
             "last_v": last_v,
         }
 
-        # AXKV-FIX-09: byte accounting
         with torch.no_grad():
             orig_b = (k.numel() + v.numel()) * k.element_size()
             comp_b = (
@@ -416,9 +390,6 @@ class AATC_XKVCache(_HFDynamicCache if _HAS_HF_CACHE else object):
 
         return entry
 
-    # ------------------------------------------------------------------
-    # Reconstruction helpers
-    # ------------------------------------------------------------------
     def _reconstruct_entry(
         self,
         e: dict[str, torch.Tensor],
@@ -473,12 +444,10 @@ class AATC_XKVCache(_HFDynamicCache if _HAS_HF_CACHE else object):
 
         sub = self.subspaces[self.layer_to_group[layer_idx]]
 
-        # Infer dtype from the first entry's sink or quantized buffer
         ref = entries[0].get("sink_k")
         if ref is None:
             ref = entries[0].get("last_k")
         if ref is None:
-            # Fall back to the dtype of the shared subspace
             out_dtype = sub.V_k.dtype
         else:
             out_dtype = ref.dtype
@@ -497,9 +466,6 @@ class AATC_XKVCache(_HFDynamicCache if _HAS_HF_CACHE else object):
         full_v = torch.cat(v_list, dim=2) if len(v_list) > 1 else v_list[0]
         return full_k, full_v
 
-    # ------------------------------------------------------------------
-    # Public metrics
-    # ------------------------------------------------------------------
     def memory_savings_ratio(self) -> float:
         if self._total_compressed_bytes == 0:
             return 1.0
@@ -512,9 +478,6 @@ class AATC_XKVCache(_HFDynamicCache if _HAS_HF_CACHE else object):
         }
 
 
-# =========================================================================
-# Calibration
-# =========================================================================
 def _forward_loss(model: nn.Module, batch: Any, device: torch.device) -> torch.Tensor:
     """
     AXKV-FIX-07: choose a sensible loss per model type.
@@ -547,7 +510,6 @@ def _forward_loss(model: nn.Module, batch: Any, device: torch.device) -> torch.T
     )
 
     if is_causal and input_ids is not None and logits.shape[1] >= 2:
-        # Shifted next-token prediction
         shift_logits = logits[:, :-1, :].contiguous()
         shift_labels = input_ids[:, 1:].contiguous()
         loss = F.cross_entropy(
@@ -556,7 +518,6 @@ def _forward_loss(model: nn.Module, batch: Any, device: torch.device) -> torch.T
             ignore_index=-100,
         )
     elif input_ids is not None:
-        # MLM-style: mask ~15% of tokens, predict them
         mask = torch.rand_like(input_ids.float()) < 0.15
         masked_ids = input_ids.clone()
         masked_ids[~mask] = -100
@@ -566,7 +527,6 @@ def _forward_loss(model: nn.Module, batch: Any, device: torch.device) -> torch.T
             ignore_index=-100,
         )
     else:
-        # Fallback: low-entropy regularizer on logits
         probs = F.softmax(logits.float(), dim=-1)
         loss = -(probs * torch.log(probs + 1e-10)).sum(-1).mean()
 
@@ -673,9 +633,6 @@ def _collect_calibration_data(
     }
 
 
-# =========================================================================
-# Subspace construction
-# =========================================================================
 def _joint_svd_shared_basis(
     stack: torch.Tensor,
     rank_cap: int,
@@ -687,20 +644,19 @@ def _joint_svd_shared_basis(
     Uses a memory-bounded randomized algorithm when N*D is large.
     """
     mean = stack.mean(dim=0, keepdim=True)
-    X = (stack - mean).float()  # (N, D)
+    X = (stack - mean).float()
 
     N, D = X.shape
     q = min(rank_cap + oversample, min(N, D))
 
     try:
         if N * D > 5_000_000:
-            # Randomized SVD (Halko et al. 2011)
             Omega = torch.randn(D, q, device=X.device, dtype=X.dtype)
-            Y = X @ Omega  # (N, q)
-            Q, _ = torch.linalg.qr(Y)  # (N, q)
-            B = Q.t() @ X  # (q, D)
+            Y = X @ Omega
+            Q, _ = torch.linalg.qr(Y)
+            B = Q.t() @ X
             Uhat, S, Vh = torch.linalg.svd(B, full_matrices=False)
-            V = Vh.t().contiguous()  # (D, q)
+            V = Vh.t().contiguous()
         else:
             _, S, Vh = torch.linalg.svd(X, full_matrices=False)
             V = Vh.t().contiguous()
@@ -716,7 +672,6 @@ def _joint_svd_shared_basis(
             S = torch.ones(r, device=X.device, dtype=X.dtype)
 
     if V.dim() != 2 or V.shape[0] != D:
-        # Sanity fallback
         r = min(rank_cap, D)
         V = torch.randn(D, r, device=X.device, dtype=X.dtype)
         S = torch.ones(r, device=X.device, dtype=X.dtype)
@@ -727,13 +682,10 @@ def _joint_svd_shared_basis(
     r_energy = int(hit[0].item()) + 1 if hit.numel() > 0 else len(S)
     r = max(4, min(r_energy, rank_cap, S.numel(), V.shape[1]))
 
-    V_r = V[:, :r].t().contiguous()  # (r, D)
+    V_r = V[:, :r].t().contiguous()
     return V_r, S[:r].contiguous(), mean.squeeze(0)
 
 
-# =========================================================================
-# Compressor
-# =========================================================================
 @COMPRESSOR_REGISTRY.register("aatc_xkv_compressor")
 class AATC_XKVCompressor(BaseCompressor):
     """AATC_XKVCompressor neural operator.
@@ -744,7 +696,6 @@ class AATC_XKVCompressor(BaseCompressor):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
-    # AXKV-FIX-01
     is_custom_attention: bool = False
     IS_DYNAMIC_KV_CACHE = True
 
@@ -781,11 +732,9 @@ class AATC_XKVCompressor(BaseCompressor):
         self.calib_batches = calib_batches
         self.stats: dict[str, Any] = {}
 
-        # Storage accounting
         self._orig_kv_bytes = 0
         self._comp_kv_bytes = 0
 
-    # ------------------------------------------------------------------
     def _find_attention_modules(self) -> list[tuple[int, str, nn.Module]]:
         """
         AXKV-FIX-08: identify attention submodules with K/V projections.
@@ -798,7 +747,6 @@ class AATC_XKVCompressor(BaseCompressor):
             if not any(k in name_lower for k in ("self_attn", "attention", "attn")):
                 continue
 
-            # Fused GPT-2 c_attn
             if hasattr(mod, "c_attn"):
                 is_attn = True
             else:
@@ -806,7 +754,6 @@ class AATC_XKVCompressor(BaseCompressor):
                 v_names = ("v_proj", "v_lin", "value", "W_v")
                 has_k = any(hasattr(mod, a) for a in k_names)
                 has_v = any(hasattr(mod, a) for a in v_names)
-                # Reject if the attribute exists but is a method (not a module)
                 if has_k:
                     has_k = any(
                         isinstance(getattr(mod, a, None), nn.Module)
@@ -834,7 +781,6 @@ class AATC_XKVCompressor(BaseCompressor):
         attn_modules.sort(key=lambda x: x[0])
         return attn_modules
 
-    # ------------------------------------------------------------------
     def _build_subspaces(
         self,
         calib: dict[str, dict[int, torch.Tensor]],
@@ -894,7 +840,6 @@ class AATC_XKVCompressor(BaseCompressor):
                 layer_indices=g_layers,
             )
 
-    # ------------------------------------------------------------------
     def compress(self) -> tuple[nn.Module, dict[str, Any]]:
         device = next(self.model.parameters()).device
         attn_modules = self._find_attention_modules()
@@ -916,33 +861,26 @@ class AATC_XKVCompressor(BaseCompressor):
         )
         self._build_subspaces(calib, attn_modules)
 
-        # Apply low-rank subspace projection to attention K/V weights
-        # so causal LM forward passes reflect compressed subspace representations
         with torch.no_grad():
             for idx, name, mod in attn_modules:
                 g_id = self.layer_to_group.get(idx)
                 if g_id is not None and g_id in self.subspaces:
                     sub = self.subspaces[g_id]
-                    # If model has separate k_proj / v_proj
                     for p_name, basis in [("k_proj", sub.V_k), ("v_proj", sub.V_v), ("key", sub.V_k), ("value", sub.V_v)]:
                         layer = getattr(mod, p_name, None)
                         if layer is not None and hasattr(layer, "weight"):
                             w = layer.weight.data
                             device_w, dtype_w = w.device, w.dtype
                             V_sub = basis.to(device=device_w, dtype=torch.float32)
-                            # w is (out_features, in_features)
-                            # Project out_features onto subspace: P = V^T @ V
                             proj_op = (V_sub.t() @ V_sub)
                             w_proj = torch.matmul(proj_op, w.float()).to(dtype_w)
                             layer.weight.data.copy_(w_proj)
-                    # If model has fused c_attn (e.g. GPT-2)
                     if hasattr(mod, "c_attn") and getattr(mod.c_attn, "weight", None) is not None:
                         c_w = mod.c_attn.weight.data
                         device_w, dtype_w = c_w.device, c_w.dtype
                         is_transposed = (mod.c_attn.__class__.__name__ == "Conv1D") or (c_w.shape[0] < c_w.shape[1])
                         W_mat = c_w.t().contiguous().float() if is_transposed else c_w.contiguous().float()
                         sz = W_mat.shape[0] // 3
-                        # K slice: sz : 2*sz, V slice: 2*sz : 3*sz
                         V_k_sub = sub.V_k.to(device=device_w, dtype=torch.float32)
                         V_v_sub = sub.V_v.to(device=device_w, dtype=torch.float32)
                         P_k = V_k_sub.t() @ V_k_sub
@@ -956,7 +894,6 @@ class AATC_XKVCompressor(BaseCompressor):
         self.model._aatc_xkv_cache_factory = factory
         self.model.aatc_xkv_runtime = factory
 
-        # AXKV-FIX-13: only mark support if transformers uses it
         try:
             import transformers
             from packaging import version
@@ -966,16 +903,12 @@ class AATC_XKVCompressor(BaseCompressor):
         except Exception:
             self.model._supports_cache_class = True
 
-        # AXKV-FIX-09: single, honest bit-accounting pass
         total_orig_bits = 0
         total_comp_bits = 0
         for g_id, sub in self.subspaces.items():
             D = sub.V_k.size(1)
             n_layers = len(sub.layer_indices)
-            # Original: 16 bits per K and per V element
             total_orig_bits += 16 * (2 * D) * n_layers
-            # Compressed: bit_alloc per K component + per V component,
-            # per token, per layer
             total_comp_bits += (
                 int(sub.bit_alloc_k.sum().item()) + int(sub.bit_alloc_v.sum().item())
             ) * n_layers
@@ -1005,7 +938,6 @@ class AATC_XKVCompressor(BaseCompressor):
         )
         return self.model, self.stats
 
-    # ------------------------------------------------------------------
     def _make_cache_factory(self):
         subspaces = self.subspaces
         layer_to_group = self.layer_to_group
@@ -1022,10 +954,8 @@ class AATC_XKVCompressor(BaseCompressor):
 
         return factory
 
-    # ------------------------------------------------------------------
     @staticmethod
     def _synthetic_calib(device) -> list[Any]:
-        # AXKV-FIX-10: deterministic seed
         logger.warning("AATC-XKV: synthetic calibration is not recommended.")
         gen = torch.Generator(device="cpu").manual_seed(42)
         batches = []

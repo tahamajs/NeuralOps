@@ -22,8 +22,6 @@ from neuralops.utils.compat import should_compress_linear
 logger = logging.getLogger(__name__)
 
 
-
-
 _ATTN_NAMES = {
     "q_proj",
     "k_proj",
@@ -41,11 +39,6 @@ _ATTN_NAMES = {
     "out_proj",
     "dense",
 }
-
-
-# ===========================================================================
-# FAQLinear
-# ===========================================================================
 
 
 class FAQLinear(nn.Module):
@@ -67,7 +60,7 @@ class FAQLinear(nn.Module):
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
-        self.nf = out_features  # Conv1D compat
+        self.nf = out_features
         self.bits = bits
         self.symmetric = symmetric
         self.lora_r = int(lora_r)
@@ -90,13 +83,12 @@ class FAQLinear(nn.Module):
         self.register_buffer(
             "act_scale",
             torch.ones(in_features, device=device, dtype=dtype),
-            persistent=False,  # FQ-FIX-03
+            persistent=False,
         )
         nn.init.kaiming_uniform_(self.weight, a=5**0.5)
         if self.bias is not None:
             nn.init.zeros_(self.bias)
 
-        # FQ-FIX-01: LoRA in base dtype.
         if self.lora_r > 0:
             self.lora_A = nn.Parameter(
                 torch.empty((self.lora_r, in_features), dtype=dtype, device=device)
@@ -116,7 +108,7 @@ class FAQLinear(nn.Module):
     def from_linear(
         cls,
         module: nn.Linear | Any,
-        act_scale: torch.Tensor | None = None,  # FQ-FIX-11: optional
+        act_scale: torch.Tensor | None = None,
         bits: int = 8,
         symmetric: bool = True,
         lora_r: int = 0,
@@ -165,13 +157,11 @@ class FAQLinear(nn.Module):
             ):
                 layer.bias.data.copy_(target_mod.bias.data)
 
-            # FQ-FIX-11: act_scale optional and shape-safe.
             if act_scale is not None:
                 s = act_scale.detach().view(-1)[:in_f].to(device=W.device, dtype=W.dtype)
                 n = min(layer.act_scale.numel(), s.numel())
                 layer.act_scale[:n].copy_(s[:n])
 
-            # Copy existing LoRA weights.
             if (
                 hasattr(module, "lora_A")
                 and hasattr(module, "lora_B")
@@ -224,7 +214,6 @@ class FAQLinear(nn.Module):
 
         b_q = None
         if self.bias is not None:
-            # FQ-FIX-07: same STE flag as weight.
             b_q = quantize_dequantize_tensor(
                 self.bias,
                 bits=self.bits,
@@ -251,16 +240,10 @@ class FAQLinear(nn.Module):
                 except Exception:
                     pass
 
-            # FQ-FIX-08: LoRA scaling matches PEFT convention.
             lora_out = nn.functional.linear(nn.functional.linear(x, self.lora_A), self.lora_B)
             out = out + self.scaling * lora_out
 
         return out
-
-
-# ===========================================================================
-# FAQQuantizer
-# ===========================================================================
 
 
 @COMPRESSOR_REGISTRY.register("faq_quantizer")
@@ -330,12 +313,9 @@ class FAQQuantizer(BaseCompressor):
         self.fallback_layers: list[str] = []
         self.skipped_layers: list[str] = []
         self.layer_errors: dict[str, float] = {}
-        self._compressed_params: int = 0  # FQ-FIX-10
-        self._injected: bool = False  # FQ-FIX-14
+        self._compressed_params: int = 0
+        self._injected: bool = False
 
-    # ------------------------------------------------------------------
-    # Target selection
-    # ------------------------------------------------------------------
     def _is_gqa_asymmetric(self, name: str, module: nn.Module) -> bool:
         if not self.skip_attention_qkv:
             return False
@@ -400,10 +380,6 @@ class FAQQuantizer(BaseCompressor):
 
         return True
 
-    # ------------------------------------------------------------------
-    # FQ-FIX-12: per-feature E[x^2] accumulation (diagonal of covariance).
-    # FQ-FIX-13: DataLoader support.
-    # ------------------------------------------------------------------
     @staticmethod
     def _normalize_calibration_batches(data: Any) -> list[Any]:
         """FQ-FIX-13: convert DataLoader / list / tensor / dict into a list of batches."""
@@ -444,7 +420,7 @@ class FAQQuantizer(BaseCompressor):
                 if n == 0:
                     return
 
-                sq = (x * x).sum(dim=0).cpu()  # (in_f,)
+                sq = (x * x).sum(dim=0).cpu()
                 if layer_name not in running_sq:
                     running_sq[layer_name] = sq
                     sample_counts[layer_name] = n
@@ -543,11 +519,7 @@ class FAQQuantizer(BaseCompressor):
                     act_scales[name] = torch.ones(in_f)
         return act_scales
 
-    # ------------------------------------------------------------------
-    # Main compress
-    # ------------------------------------------------------------------
     def compress(self) -> tuple[nn.Module, dict[str, Any]]:
-        # FQ-FIX-14: double-injection guard.
         if self._injected:
             logger.warning("FAQQuantizer.compress called twice; returning current stats.")
             try:
@@ -562,7 +534,6 @@ class FAQQuantizer(BaseCompressor):
         self.layer_errors = {}
         seen_weights: set = set()
 
-        # Mark non-target attention as skipped when target_attention_only is set.
         if self.target_attention_only:
             for name, module in self.model.named_modules():
                 if any(part in name.split(".") for part in ["lora_A", "lora_B", "base_layer"]):
@@ -645,7 +616,6 @@ class FAQQuantizer(BaseCompressor):
                             p.requires_grad = False
                         continue
 
-                    # FQ-FIX-02: no_grad mutation.
                     with torch.no_grad():
                         if is_conv1d:
                             target_mod.weight.data.copy_(W_recon.t().to(dtype=raw_w.dtype))
@@ -672,7 +642,6 @@ class FAQQuantizer(BaseCompressor):
                                 persistent=False,
                             )
 
-                    # Preserve LoRA trainability.
                     if hasattr(module, "lora_A") and hasattr(module, "lora_B"):
                         if hasattr(module.lora_A, "weight") and module.lora_A.weight is not None:
                             module.lora_A.weight.requires_grad = True
@@ -686,7 +655,6 @@ class FAQQuantizer(BaseCompressor):
                 for p in module.parameters():
                     p.requires_grad = False
 
-        # FQ-FIX-04: forward sanity check with attention_mask.
         forward_check_success = True
         try:
             with torch.no_grad():
@@ -736,7 +704,6 @@ class FAQQuantizer(BaseCompressor):
             (sum(self.layer_errors.values()) / len(self.layer_errors)) if self.layer_errors else 0.0
         )
 
-        # FQ-FIX-05: effective compression reflects actual quantized layers.
         num_targets = len(self.compressed_layers) + len(self.fallback_layers)
         if num_targets > 0 and self.bits > 0:
             quantized_fraction = len(self.compressed_layers) / num_targets
@@ -772,14 +739,8 @@ class FAQQuantizer(BaseCompressor):
             }
         )
 
-        # FQ-FIX-14: mark as injected.
         self._injected = True
         return self.model, stats
-
-
-# ===========================================================================
-# Factory
-# ===========================================================================
 
 
 def faq_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:

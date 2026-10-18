@@ -36,7 +36,7 @@ from neuralops.core.base import BaseCompressor
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 from neuralops.utils.compat import should_compress_linear
 
-logger = logging.getLogger(__name__)  # SP-FIX-02
+logger = logging.getLogger(__name__)
 
 
 def _get_lora_param(mod: Any) -> torch.Tensor | None:
@@ -50,9 +50,6 @@ def _get_lora_param(mod: Any) -> torch.Tensor | None:
     return None
 
 
-# ===========================================================================
-# SubspaceLinear
-# ===========================================================================
 class SubspaceLinear(nn.Module):
     """
     Subspace Projection Factorized Linear Layer with optional LoRA adapter.
@@ -65,7 +62,6 @@ class SubspaceLinear(nn.Module):
       y = ((x @ A^T) @ B^T) + bias + (lora_B @ lora_A @ x) * scaling
     """
 
-    # SP-FIX-01
     is_custom_attention: bool = False
 
     def __init__(
@@ -82,8 +78,8 @@ class SubspaceLinear(nn.Module):
         super().__init__()
         self.in_features = int(in_features)
         self.out_features = int(out_features)
-        self.nf = self.out_features  # Conv1D compatibility
-        self.nx = self.in_features  # Conv1D compatibility
+        self.nf = self.out_features
+        self.nx = self.in_features
         self.rank = max(1, min(rank, in_features, out_features))
         self.lora_r = int(lora_r)
         self.lora_alpha = float(lora_alpha)
@@ -92,7 +88,6 @@ class SubspaceLinear(nn.Module):
         self.A = nn.Parameter(torch.empty(self.rank, in_features, dtype=dtype, device=device))
         self.B = nn.Parameter(torch.empty(out_features, self.rank, dtype=dtype, device=device))
 
-        # Orthogonal init for A; xavier for B. Do it in fp32 for stability.
         with torch.no_grad():
             if dtype in (torch.float16, torch.bfloat16):
                 A_fp32 = torch.empty(self.rank, in_features, dtype=torch.float32)
@@ -122,7 +117,6 @@ class SubspaceLinear(nn.Module):
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
 
-    # ------------------------------------------------------------------
     @property
     def weight(self) -> torch.Tensor:
         return torch.matmul(self.B.float(), self.A.float()).to(self.A.dtype)
@@ -130,12 +124,10 @@ class SubspaceLinear(nn.Module):
     def get_weight(self) -> torch.Tensor:
         return self.weight
 
-    # ------------------------------------------------------------------
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         orig_shape = x.shape
         x_flat = x.reshape(-1, self.in_features)
 
-        # SP-FIX-03: dtype-safe
         A = self.A if self.A.dtype == x_flat.dtype else self.A.to(x_flat.dtype)
         B = self.B if self.B.dtype == x_flat.dtype else self.B.to(x_flat.dtype)
         b = None
@@ -155,8 +147,8 @@ class SubspaceLinear(nn.Module):
             except Exception:
                 pass
 
-        x_proj = F.linear(x_flat, A)  # (K, rank)
-        out = F.linear(x_proj, B, b)  # (K, out)
+        x_proj = F.linear(x_flat, A)
+        out = F.linear(x_proj, B, b)
 
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
             lora_out = F.linear(F.linear(x_flat.float(), self.lora_A), self.lora_B) * self.scaling
@@ -164,7 +156,6 @@ class SubspaceLinear(nn.Module):
 
         return out.view(*orig_shape[:-1], self.out_features)
 
-    # ------------------------------------------------------------------
     @classmethod
     def from_linear(
         cls,
@@ -192,12 +183,10 @@ class SubspaceLinear(nn.Module):
 
         bias = base_mod.bias.data if getattr(base_mod, "bias", None) is not None else None
 
-        # ---------------- Rank budget (SP-FIX-07) ----------------
         max_r = min(out_f, in_f)
         param_cap = max(1, (in_f * out_f) // max(1, in_f + out_f))
         r = max(1, min(int(rank), max_r, param_cap))
 
-        # ---------------- Existing LoRA detection ----------------
         has_existing_lora = (
             hasattr(linear, "lora_A")
             and hasattr(linear, "lora_B")
@@ -223,20 +212,17 @@ class SubspaceLinear(nn.Module):
             device=W.device,
         )
 
-        # ---------------- SVD factorization ----------------
         U, S, Vt = torch.linalg.svd(W.float(), full_matrices=False)
-        A_data = Vt[:r, :]  # (r, in_f)
-        B_data = U[:, :r] * S[:r].unsqueeze(0)  # (out_f, r)
+        A_data = Vt[:r, :]
+        B_data = U[:, :r] * S[:r].unsqueeze(0)
 
         with torch.no_grad():
             subspace_layer.A.data.copy_(A_data.to(dtype=W.dtype, device=W.device))
             subspace_layer.B.data.copy_(B_data.to(dtype=W.dtype, device=W.device))
 
-            # SP-FIX-11: bias under no_grad
             if bias is not None and subspace_layer.bias is not None:
                 subspace_layer.bias.data.copy_(bias.to(dtype=W.dtype, device=W.device))
 
-        # ---------------- LoRA transfer (SP-FIX-04) ----------------
         if (
             has_existing_lora
             and subspace_layer.lora_A is not None
@@ -266,16 +252,12 @@ class SubspaceLinear(nn.Module):
         return subspace_layer
 
 
-# ===========================================================================
-# Compressor
-# ===========================================================================
 @COMPRESSOR_REGISTRY.register("subspace_projection")
 class SubspaceProjectionCompressor(BaseCompressor):
     """
     Subspace Projection Compression Engine.
     """
 
-    # SP-FIX-01
     is_custom_attention: bool = False
 
     def __init__(
@@ -332,7 +314,6 @@ class SubspaceProjectionCompressor(BaseCompressor):
         self.layer_errors: dict[str, float] = {}
         self.stats: dict[str, Any] = {}
 
-    # ------------------------------------------------------------------
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         name_l = name.lower()
         if any(
@@ -388,7 +369,6 @@ class SubspaceProjectionCompressor(BaseCompressor):
             return True
         return any(t in name for t in self.target_layers)
 
-    # ------------------------------------------------------------------
     def compress(self, model: nn.Module | None = None) -> tuple[nn.Module, dict[str, Any]]:
         from neuralops.core.model_utils import replace_module
 
@@ -430,7 +410,6 @@ class SubspaceProjectionCompressor(BaseCompressor):
             max_rank = min(W_orig.shape[0], W_orig.shape[1])
             r = min(self.rank, max_rank)
 
-            # storage before
             orig_bytes = raw_w.numel() * raw_w.element_size()
             if getattr(base_mod, "bias", None) is not None:
                 orig_bytes += base_mod.bias.numel() * base_mod.bias.element_size()
@@ -454,7 +433,6 @@ class SubspaceProjectionCompressor(BaseCompressor):
                     p.requires_grad = False
                 continue
 
-            # error on forward path
             W_rec = new_layer.weight.float()
             if is_conv1d:
                 W_orig_cmp = W_orig
@@ -481,7 +459,6 @@ class SubspaceProjectionCompressor(BaseCompressor):
                         p.requires_grad = False
                     continue
 
-            # SP-FIX-10: preserve LoRA wrapper
             try:
                 if hasattr(module, "base_layer"):
                     module.base_layer = new_layer
@@ -504,7 +481,6 @@ class SubspaceProjectionCompressor(BaseCompressor):
                 }
             )
 
-            # storage after
             comp_bytes = (
                 new_layer.A.numel() * new_layer.A.element_size()
                 + new_layer.B.numel() * new_layer.B.element_size()
@@ -517,9 +493,6 @@ class SubspaceProjectionCompressor(BaseCompressor):
                 comp_bytes += new_layer.lora_B.numel() * new_layer.lora_B.element_size()
             total_comp_bytes += comp_bytes
 
-        # ------------------------------------------------------------------
-        # SP-FIX-08: Forward sanity check
-        # ------------------------------------------------------------------
         forward_check_success = True
         try:
             with torch.no_grad():
@@ -545,9 +518,6 @@ class SubspaceProjectionCompressor(BaseCompressor):
             logger.warning("SubspaceProjection forward sanity check failed: %s", e)
             forward_check_success = False
 
-        # ------------------------------------------------------------------
-        # Stats (SP-FIX-09)
-        # ------------------------------------------------------------------
         try:
             self._compressed_params = self._count_params(self.model)
         except Exception:
@@ -598,7 +568,6 @@ class SubspaceProjectionCompressor(BaseCompressor):
         self.stats = stats
         return self.model, stats
 
-    # ------------------------------------------------------------------
     def compress_linear(self, linear: nn.Module) -> SubspaceLinear:
         return SubspaceLinear.from_linear(
             linear,
@@ -610,9 +579,6 @@ class SubspaceProjectionCompressor(BaseCompressor):
         )
 
 
-# ===========================================================================
-# Factory
-# ===========================================================================
 def subspace_projection_factory(
     model: nn.Module,
     comp_config: Any | None = None,

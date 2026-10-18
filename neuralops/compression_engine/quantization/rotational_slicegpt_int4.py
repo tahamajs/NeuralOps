@@ -36,11 +36,6 @@ from neuralops.utils.compat import should_compress_linear
 logger = logging.getLogger(__name__)
 
 
-
-
-# ===========================================================================
-# Astro non-uniform quantizer with actual int storage
-# ===========================================================================
 class AstroQuantizer:
     """
     Non-uniform quantizer with INT2 / INT4 / INT8 codebooks optimized for
@@ -57,7 +52,6 @@ class AstroQuantizer:
         self.num_centroids = 2**self.bits
         k = torch.arange(self.num_centroids, dtype=torch.float32)
         mid = (self.num_centroids - 1.0) / 2.0
-        # Gaussian-shaped centroid grid (still spread over [-1, 1] before scaling).
         denom = max(mid, 1e-6)
         self.centroids_base = torch.sign(k - mid) * torch.pow(torch.abs(k - mid) / denom, 1.4)
 
@@ -81,7 +75,6 @@ class AstroQuantizer:
         z = w_min - c_min * s
 
         centroids = self.centroids_base.to(w.device, dtype=torch.float32) * s + z
-        # (..., 1) vs (1, ..., C) → (..., C)
         distances = torch.abs(w.unsqueeze(-1).float() - centroids)
         indices = torch.argmin(distances, dim=-1).to(torch.int8)
         return indices, centroids.to(torch.float32)
@@ -96,9 +89,6 @@ class AstroQuantizer:
 AstroQuant4Bit = AstroQuantizer
 
 
-# ===========================================================================
-# Compressed linear layer
-# ===========================================================================
 class RotationalSliceGPTINT4Linear(nn.Module):
     """
     Linear layer storing:
@@ -114,9 +104,9 @@ class RotationalSliceGPTINT4Linear(nn.Module):
 
     def __init__(
         self,
-        W_indices: torch.Tensor,  # (D_out, r) int8
-        W_centroids: torch.Tensor,  # (C,) fp32
-        Q_P_r: torch.Tensor,  # (D_in, r) float
+        W_indices: torch.Tensor,
+        W_centroids: torch.Tensor,
+        Q_P_r: torch.Tensor,
         bias: torch.Tensor | None = None,
     ) -> None:
         super().__init__()
@@ -133,8 +123,6 @@ class RotationalSliceGPTINT4Linear(nn.Module):
 
     def _dequantize_W(self) -> torch.Tensor:
         if self.W_centroids.ndim == 2:
-            # Per-column centroids: (r, C)
-            # W_indices: (D_out, r)
             r, C = self.W_centroids.shape
             D_out = self.W_indices.shape[0]
             cents_exp = self.W_centroids.unsqueeze(0).expand(D_out, r, C)
@@ -146,17 +134,14 @@ class RotationalSliceGPTINT4Linear(nn.Module):
     @property
     def weight(self) -> torch.Tensor:
         """Effective weight matrix (out_features, in_features)."""
-        W_q = self._dequantize_W()  # (D_out, r)
-        return torch.matmul(W_q, self.Q_P_r.T)  # (D_out, D_in)
+        W_q = self._dequantize_W()
+        return torch.matmul(W_q, self.Q_P_r.T)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # x: (..., D_in)
-        x_proj = torch.matmul(x, self.Q_P_r)  # (..., r)
-        # Attempt Triton fused INT4 LUT dequant GEMM if 1D centroids and CUDA
+        x_proj = torch.matmul(x, self.Q_P_r)
         if self.W_centroids.ndim == 1 and x.is_cuda and self.W_centroids.shape[0] == 16:
             try:
                 from neuralops.core.triton_kernels.low_rank import fused_int4_lut_dequant_matmul_triton
-                # W_indices is (D_out, r). We compute y = x_proj @ W_q.T
                 orig_shape = x_proj.shape
                 x_2d = x_proj.reshape(-1, orig_shape[-1])
                 y_2d = fused_int4_lut_dequant_matmul_triton(
@@ -169,29 +154,25 @@ class RotationalSliceGPTINT4Linear(nn.Module):
                 return y_2d.reshape(*orig_shape[:-1], self.W_indices.shape[0])
             except Exception:
                 pass
-        W_q = self._dequantize_W()  # (D_out, r)
-        y = torch.matmul(x_proj, W_q.T)  # (..., D_out)
+        W_q = self._dequantize_W()
+        y = torch.matmul(x_proj, W_q.T)
         if self.bias is not None:
             y = y + self.bias
         return y
 
 
-# ===========================================================================
-# Compressor
-# ===========================================================================
 @COMPRESSOR_REGISTRY.register("rotational_slicegpt_int4")
 class RotationalSliceGPTINT4Compressor(BaseCompressor):
     """
     Rotational-SliceGPT-INT4 hybrid compression engine.
     """
 
-    # RS-FIX-04: not an attention module.
     is_custom_attention: bool = False
 
     def __init__(
         self,
         model: nn.Module | None = None,
-        r_ratio: float = 0.4,  # RS-FIX-03: lower default
+        r_ratio: float = 0.4,
         lambda_reg: float = 1e-2,
         slice_ratio: float | None = None,
         quant_bits: int = 4,
@@ -203,10 +184,9 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
         device: str | torch.device | None = None,
         target_modules: list[str] | None = None,
         target_attention_only: bool = False,
-        seed: int = 42,  # RS-FIX-05
+        seed: int = 42,
         **kwargs: Any,
     ) -> None:
-        # Remove duplicates that arrive through kwargs/comp_config while capturing values
         fb = kwargs.pop("fallback_to_original", None)
         rk = kwargs.pop("target_rank", kwargs.pop("rank", None))
         for k in (
@@ -267,7 +247,6 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
         self._orig_bytes = 0
         self._comp_bytes = 0
 
-    # ------------------------------------------------------------------
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         name_l = name.lower()
         if any(
@@ -333,7 +312,6 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
             return True
         return any(t in name for t in self.target_modules)
 
-    # ------------------------------------------------------------------
     def get_orthogonal_matrix(self, d_in: int, device: torch.device) -> torch.Tensor:
         """Deterministic QR-based orthogonal Q (RS-FIX-05)."""
         gen = torch.Generator(device=device).manual_seed(self.seed)
@@ -341,7 +319,6 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
         Q, _ = torch.linalg.qr(H)
         return Q
 
-    # ------------------------------------------------------------------
     def compress_matrix(
         self,
         W: torch.Tensor,
@@ -359,29 +336,25 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
         r = max(1, min(r, D_in))
         device = W.device
 
-        # 1. Orthogonal rotation
         Q = self.get_orthogonal_matrix(D_in, device)
         W_fp32 = W.detach().float()
         X_fp32 = X.detach().float().to(device)
 
-        W_tilde = W_fp32 @ Q  # (D_out, D_in)
-        X_tilde = Q.T @ X_fp32  # (D_in, N)
+        W_tilde = W_fp32 @ Q
+        X_tilde = Q.T @ X_fp32
 
-        # 2. Variance-based slicing (RS-FIX-06: vectorized)
         if X_tilde.shape[1] > 1:
-            channel_variances = X_tilde.var(dim=1)  # (D_in,)
+            channel_variances = X_tilde.var(dim=1)
         else:
             channel_variances = torch.ones(D_in, device=device)
         top_r_indices = torch.argsort(channel_variances, descending=True)[:r]
 
-        # P_r as a (D_in, r) selector matrix via scatter
         P_r = torch.zeros(D_in, r, device=device, dtype=torch.float32)
         P_r[top_r_indices, torch.arange(r, device=device)] = 1.0
 
-        W_sliced = W_tilde @ P_r  # (D_out, r)
-        X_sliced = P_r.T @ X_tilde  # (r, N)
+        W_sliced = W_tilde @ P_r
+        X_sliced = P_r.T @ X_tilde
 
-        # 3. Second-order Hessian-based INT4 quantization
         H = 2.0 * (X_sliced @ X_sliced.T) / max(X_sliced.shape[1], 1) + self.lambda_reg * torch.eye(
             r, device=device
         )
@@ -391,9 +364,7 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
             H_inv = torch.linalg.pinv(H)
         H_inv = torch.nan_to_num(H_inv, nan=0.0)
 
-        # RS-FIX-10: quantize the entire column of residuals at once.
         W_quant = W_sliced.clone()
-        # Full-matrix OBS: quantize each column then propagate the error.
         for j in range(r):
             w_j = W_quant[:, j].clone()
             idx_j, cents_j = self.quantizer.quantize(w_j)
@@ -409,9 +380,7 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
                 h_slice = torch.nan_to_num(H_inv[j, j + 1 : r] / diag_inv, nan=0.0)
                 W_quant[:, j + 1 : r] -= torch.outer(e_j, h_slice)
 
-        # Re-quantize the final W_quant column-wise to get indices + centroids
-        # (OBS updates can change values slightly, so we requantize once).
-        W_quant.t().contiguous()  # (r, D_out) → quantize per row
+        W_quant.t().contiguous()
         _W_idx_list, _W_cents_list = [], []
         per_col_centroids = []
         W_indices = torch.empty_like(W_quant, dtype=torch.int8)
@@ -419,27 +388,23 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
             idx_j, cents_j = self.quantizer.quantize(W_quant[:, j])
             W_indices[:, j] = idx_j
             per_col_centroids.append(cents_j)
-        # Keep per-column centroids table: shape (r, C)
-        W_centroids = torch.stack(per_col_centroids, dim=0)  # (r, C)
+        W_centroids = torch.stack(per_col_centroids, dim=0)
 
-        # Reconstruct with per-column centroids and measure error
         D_out = W_indices.shape[0]
         C = W_centroids.shape[1]
         cents_exp = W_centroids.unsqueeze(0).expand(D_out, r, C)
         idx_exp = W_indices.long().unsqueeze(-1)
         W_deq = torch.gather(cents_exp, dim=2, index=idx_exp).squeeze(-1).to(W_quant.dtype)
-        W_recon = (W_deq @ P_r.T) @ Q.T  # (D_out, D_in)
+        W_recon = (W_deq @ P_r.T) @ Q.T
         norm_orig = W_fp32.norm(p="fro").clamp_min(1e-8)
         rel_error = float((W_fp32 - W_recon).norm(p="fro") / norm_orig)
 
-        Q_P_r = Q @ P_r  # (D_in, r) — RS-FIX-08
+        Q_P_r = Q @ P_r
         return W_indices, W_centroids, Q_P_r, rel_error
 
-    compress_tensor = compress_matrix  # backward-compat alias
+    compress_tensor = compress_matrix
 
-    # ------------------------------------------------------------------
     def compress(self, *args: Any, **kwargs: Any) -> Any:
-        # Dual-mode: .compress(W, X) → tuple, .compress() → (model, stats)
         if (
             len(args) >= 2
             and isinstance(args[0], torch.Tensor)
@@ -470,13 +435,11 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
             d_out, d_in = W.shape
             layer_shapes[name] = (d_out, d_in)
 
-            # Build X for slicing (RS-FIX-07: per-channel mean)
             act = activations_map.get(name, None)
             if act is not None and act.numel() > 0:
                 act_flat = act.reshape(-1, act.shape[-1]).float()
                 if act_flat.shape[-1] == d_in:
-                    # Synthesize a small sample matrix from the mean vector.
-                    mean_act = act_flat.mean(dim=0, keepdim=True).to(device=device)  # (1, D_in)
+                    mean_act = act_flat.mean(dim=0, keepdim=True).to(device=device)
                     gen_x = torch.Generator(device=device if (isinstance(device, torch.device) and device.type in ("cpu", "cuda")) else "cpu").manual_seed(self.seed + d_in)
                     X = mean_act.T + 0.01 * torch.randn(d_in, 32, device=device, generator=gen_x)
                 else:
@@ -508,7 +471,6 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
                         p.requires_grad = False
                     continue
 
-            # Cast buffers to the original dtype & device
             W_idx = W_idx.to(device=device)
             W_cents = W_cents.to(device=device, dtype=torch.float32)
             Q_P_r_dev = Q_P_r.to(device=device, dtype=dtype)
@@ -522,9 +484,7 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
                 bias=bias,
             )
 
-            # Splice into model
             if hasattr(module, "base_layer"):
-                # Preserve any LoRA params
                 if hasattr(module, "lora_A") and module.lora_A is not None:
                     if not hasattr(new_linear, "lora_A"):
                         new_linear.lora_A = module.lora_A
@@ -535,11 +495,9 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
             else:
                 replace_module(self.model, name, new_linear)
 
-            # RS-FIX-09: honest byte accounting
             orig_bytes = raw_w.numel() * raw_w.element_size()
             if base_mod.bias is not None:
                 orig_bytes += base_mod.bias.numel() * base_mod.bias.element_size()
-            # comp: int8 indices + fp32 centroid table + Q_P_r + bias
             comp_bytes = W_idx.numel() * W_idx.element_size()
             comp_bytes += W_cents.numel() * W_cents.element_size()
             comp_bytes += Q_P_r_dev.numel() * Q_P_r_dev.element_size()
@@ -550,7 +508,6 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
             self._comp_bytes += comp_bytes
             compressed_layers_count += 1
 
-        # Forward sanity check
         forward_check_success = True
         try:
             device = next(self.model.parameters()).device
@@ -613,7 +570,6 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
         )
         return self.model, stats
 
-    # ------------------------------------------------------------------
     def _collect_layer_activations(self) -> dict[str, torch.Tensor]:
         """
         RS-FIX-07: store per-channel mean |x| instead of full activation
@@ -668,7 +624,6 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
                 aggregated[name] = torch.stack([t.float() for t in lst], dim=0).mean(dim=0)
         return aggregated
 
-    # ------------------------------------------------------------------
     def compress_linear(
         self,
         linear_layer: nn.Linear,
@@ -693,14 +648,10 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
         )
 
 
-# Aliases
 RotationalSliceGPTCompressor = RotationalSliceGPTINT4Compressor
 RotationalSliceGPTInt4Compressor = RotationalSliceGPTINT4Compressor
 
 
-# ===========================================================================
-# Factory
-# ===========================================================================
 def rotational_slicegpt_int4_factory(
     model: Any,
     comp_config: Any = None,

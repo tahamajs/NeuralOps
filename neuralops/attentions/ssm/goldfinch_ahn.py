@@ -35,9 +35,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 logger = logging.getLogger(__name__)
 
 
-# ===========================================================================
-# GatedRecurrentMemory — chunked parallel scan (no Python loop)
-# ===========================================================================
 class GatedRecurrentMemory(nn.Module):
     """
     Gated recurrent memory with chunked parallel scan.
@@ -57,28 +54,24 @@ class GatedRecurrentMemory(nn.Module):
         self.chunk_size = max(1, int(chunk_size))
         self.gate_proj = nn.Linear(d_model, d_model, bias=True)
         self.value_proj = nn.Linear(d_model, d_model, bias=True)
-        # Start gate slightly open so memory doesn't dominate attention
         nn.init.constant_(self.gate_proj.bias, -1.0)
         nn.init.zeros_(self.value_proj.bias)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # x: (B, L, D)
         target_dtype = x.dtype
         gw = self.gate_proj.weight.to(target_dtype)
         gb = self.gate_proj.bias.to(target_dtype) if self.gate_proj.bias is not None else None
         vw = self.value_proj.weight.to(target_dtype)
         vb = self.value_proj.bias.to(target_dtype) if self.value_proj.bias is not None else None
 
-        g = torch.sigmoid(F.linear(x, gw, gb))   # (B, L, D)
-        v = torch.tanh(F.linear(x, vw, vb))       # (B, L, D)
+        g = torch.sigmoid(F.linear(x, gw, gb))
+        v = torch.tanh(F.linear(x, vw, vb))
         B, L, D = x.shape
 
         if _env_flag("GOLDFINCH_DISABLE_RECURRENCE", False):
-            # Ablation: return v (no recurrence)
             return v.to(target_dtype)
 
         if L <= self.chunk_size:
-            # Short sequence: simple sequential
             h = torch.zeros(B, D, device=x.device, dtype=target_dtype)
             outs = []
             for t in range(L):
@@ -91,10 +84,6 @@ class GatedRecurrentMemory(nn.Module):
         return fused_goldfinch_hopfield_lookup_triton(g, v, self.chunk_size)
 
 
-
-# ===========================================================================
-# Main attention
-# ===========================================================================
 @ATTENTION_REGISTRY.register(
     "goldfinch_ahn",
     supports_causal=True,
@@ -134,7 +123,6 @@ class GoldFinchAHNBlock(BaseAttention):
         except TypeError:
             super().__init__(config)
 
-        # ---- hidden size ----
         if d_model is None:
             d_model = kwargs.get("d_model") or kwargs.get("hidden_size") or kwargs.get("dim")
             if d_model is None:
@@ -162,7 +150,6 @@ class GoldFinchAHNBlock(BaseAttention):
         if hasattr(d_model, "hidden_size"):
             d_model = d_model.hidden_size
 
-        # ---- num_heads ----
         if num_heads is None:
             num_heads = kwargs.get("num_heads") or kwargs.get("num_attention_heads")
             if num_heads is None:
@@ -179,7 +166,6 @@ class GoldFinchAHNBlock(BaseAttention):
         self.hidden_size = self.dim
         self.num_heads = max(1, int(num_heads))
 
-        # ---- num_kv_heads ----
         if config is not None:
             self.num_kv_heads = getattr(
                 config, "num_key_value_heads",
@@ -195,7 +181,6 @@ class GoldFinchAHNBlock(BaseAttention):
             self.num_kv_heads = kwargs.get("num_kv_heads", self.num_heads)
         self.num_kv_heads = max(1, min(int(self.num_kv_heads), self.num_heads))
 
-        # ---- head_dim ----
         _head_dim = getattr(config, "head_dim", None) if config else None
         if _head_dim is None and source_attn is not None:
             _head_dim = getattr(source_attn, "head_dim", None)
@@ -206,8 +191,6 @@ class GoldFinchAHNBlock(BaseAttention):
         self.all_kv_head_size = self.num_kv_heads * self.head_dim
         self.kv_repeat = max(1, self.num_heads // self.num_kv_heads)
 
-        # ---- window (FIX 4: allow full context) ----
-        # If GOLDFINCH_FULL_CONTEXT=1, window_radius = inf (full causal)
         full_ctx = _env_flag("GOLDFINCH_FULL_CONTEXT", False)
         if config is not None:
             self.window_size = int(
@@ -223,11 +206,10 @@ class GoldFinchAHNBlock(BaseAttention):
             self.window_size = int(kwargs.get("window_size", window_size))
 
         if full_ctx or self.window_size <= 0:
-            self.window_radius = None  # sentinel: full context
+            self.window_radius = None
         else:
             self.window_radius = max(1, self.window_size // 2)
 
-        # ---- decoder detection ----
         model_type = str(getattr(config, "model_type", "") or "").lower() if config else ""
         is_dec = False
         if config is not None:
@@ -247,7 +229,6 @@ class GoldFinchAHNBlock(BaseAttention):
         self.is_causal = self.is_decoder
         self.is_nested_encoder = False
 
-        # ---- LoRA config ----
         if config is not None:
             self.lora_rank = int(getattr(config, "lora_rank",
                 getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16))
@@ -267,7 +248,6 @@ class GoldFinchAHNBlock(BaseAttention):
             getattr(source_attn, "rotary_emb", None) if source_attn is not None else None
         )
 
-        # ---- projections ----
         self.W_q = LoRALinear(self.dim, self.all_head_size, bias=True,
                               lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
                               freeze_base=self.freeze_base)
@@ -278,11 +258,8 @@ class GoldFinchAHNBlock(BaseAttention):
                               lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
                               freeze_base=self.freeze_base)
 
-        # Gated recurrent memory
         self.delta_mem = GatedRecurrentMemory(self.dim, chunk_size=16)
 
-        # Per-head attention / memory gate (FIX 8: single output, no waste)
-        # gate_init_bias can be overridden via env
         _gate_bias = float(os.environ.get("GOLDFINCH_GATE_BIAS", gate_init_bias))
         self.gate = nn.Linear(self.dim, 1)
         with torch.no_grad():
@@ -301,17 +278,14 @@ class GoldFinchAHNBlock(BaseAttention):
             dropout_p = float(getattr(comp_config, "dropout", 0.1))
         self.dropout = nn.Dropout(dropout_p)
 
-        # Single output scale, initialized to preserve pretrained signal
         self.output_scale = nn.Parameter(torch.ones(1))
 
-        # Storage accounting
         self._orig_storage_bytes = 0
         self._comp_storage_bytes = 0
 
         if source_attn is not None:
             self.copy_weights(source_attn)
 
-    # ---- aliases ----
     @property
     def query(self): return self.W_q
     @property
@@ -343,7 +317,6 @@ class GoldFinchAHNBlock(BaseAttention):
         for m in (self.W_q, self.W_k, self.W_v, self.out_proj):
             if hasattr(m, "freeze_base_weights"):
                 m.freeze_base_weights()
-        # FIX 6: freeze delta_mem base weights if freeze_base
         if self.freeze_base:
             for p in self.delta_mem.parameters():
                 p.requires_grad = False
@@ -355,9 +328,6 @@ class GoldFinchAHNBlock(BaseAttention):
         for p in self.delta_mem.parameters():
             p.requires_grad = True
 
-    # ------------------------------------------------------------------
-    # copy_weights (unchanged, but with FIX 12 for int masks)
-    # ------------------------------------------------------------------
     def copy_weights(self, src: Any) -> None:
         if src is None:
             return
@@ -384,7 +354,6 @@ class GoldFinchAHNBlock(BaseAttention):
         extracted = {"q": (None, None), "k": (None, None),
                      "v": (None, None), "o": (None, None)}
 
-        # GPT-2 fused
         if hasattr(src, "c_attn") and src.c_attn is not None:
             c_attn_mod = src.c_attn
             base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
@@ -423,7 +392,6 @@ class GoldFinchAHNBlock(BaseAttention):
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
                     extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
 
-        # Nested (BERT / RoBERTa)
         elif hasattr(src, "self") and hasattr(src.self, "query"):
             s = src.self
             for key, sub in (("q", "query"), ("k", "key"), ("v", "value")):
@@ -438,10 +406,8 @@ class GoldFinchAHNBlock(BaseAttention):
                 extracted["o"] = (d.weight.data.clone(),
                                   b.data.clone() if b is not None else None)
 
-        # Flat
         else:
             if hasattr(src, "weight") and isinstance(src, nn.Linear):
-                # When src is directly a Linear layer (e.g. BrokenLayer.attention)
                 extracted["q"] = (src.weight.data.clone(),
                                   src.bias.data.clone() if src.bias is not None else None)
 
@@ -463,7 +429,6 @@ class GoldFinchAHNBlock(BaseAttention):
                                               b.data.clone() if b is not None else None)
                             break
 
-        # UniversalAdapter fallback
         missing = [k for k, (w, _) in extracted.items()
                    if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing:
@@ -520,7 +485,6 @@ class GoldFinchAHNBlock(BaseAttention):
                 if self.freeze_base:
                     target.freeze_base_weights()
 
-        # Track compressed storage (FIX 9: include output_scale and gate)
         try:
             for m in (self.W_q, self.W_k, self.W_v, self.out_proj, self.delta_mem, self.gate):
                 for p in m.parameters():
@@ -536,9 +500,6 @@ class GoldFinchAHNBlock(BaseAttention):
     def from_distilbert_pretrained(cls, old_attn, model_config=None, **kwargs):
         return cls(config=model_config, pretrained_attn=old_attn, **kwargs)
 
-    # ------------------------------------------------------------------
-    # Mask helper (FIX 7: support more shapes)
-    # ------------------------------------------------------------------
     @staticmethod
     def _normalize_valid_mask(attention_mask, B, L, device):
         if attention_mask is None:
@@ -556,7 +517,6 @@ class GoldFinchAHNBlock(BaseAttention):
             if m.shape == (B, L):
                 return m
         elif attention_mask.dim() == 3:
-            # (B, 1, L) or (B, L, L)
             m = _to_bool(attention_mask)
             if m.shape[1] == 1:
                 m = m[:, 0, :]
@@ -566,11 +526,10 @@ class GoldFinchAHNBlock(BaseAttention):
                 return m
         elif attention_mask.dim() == 4:
             m = _to_bool(attention_mask)
-            # Extract token-level validity along the key sequence dimension
             if m.shape[-2] == 1:
-                m = m.squeeze(1).squeeze(1)  # (B, L)
+                m = m.squeeze(1).squeeze(1)
             else:
-                m = m[:, 0].any(dim=-2)      # (B, L)
+                m = m[:, 0].any(dim=-2)
             if m.shape == (B, L):
                 return m
 
@@ -582,9 +541,6 @@ class GoldFinchAHNBlock(BaseAttention):
             pass
         return None
 
-    # ------------------------------------------------------------------
-    # Forward
-    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -611,12 +567,10 @@ class GoldFinchAHNBlock(BaseAttention):
         device = x.device
         dtype_in = x.dtype
 
-        # ---- QKV ----
         q = self.W_q(x).view(B, L, H, d).transpose(1, 2).contiguous()
         k = self.W_k(x).view(B, L, self.num_kv_heads, d).transpose(1, 2).contiguous()
         v = self.W_v(x).view(B, L, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
-        # ---- RoPE ----
         if position_embeddings is not None:
             cos, sin = position_embeddings
             q, k = apply_rotary_pos_emb(q, k, cos, sin)
@@ -634,7 +588,6 @@ class GoldFinchAHNBlock(BaseAttention):
             if cos is not None and sin is not None:
                 q, k = apply_rotary_pos_emb(q, k, cos, sin, position_ids=pos_ids)
 
-        # ---- Autoregressive KV cache for decoders ----
         if self.is_decoder and past_key_value is not None:
             if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 2:
                 past_k, past_v = past_key_value[0], past_key_value[1]
@@ -643,13 +596,10 @@ class GoldFinchAHNBlock(BaseAttention):
                     v = torch.cat([past_v, v], dim=2)
         present_key_value = (k, v) if self.is_decoder else None
 
-        # ---- GQA ----
         if self.kv_repeat > 1:
             k = repeat_kv(k, self.kv_repeat)
             v = repeat_kv(v, self.kv_repeat)
 
-        # ---- Sliding-window attention (FIX 2: SDPA fast-path) ----
-        # Build additive bool mask
         L_kv = k.shape[-2]
         idx_q = torch.arange(L, device=device).unsqueeze(1)
         idx_k = torch.arange(L_kv, device=device).unsqueeze(0)
@@ -673,7 +623,6 @@ class GoldFinchAHNBlock(BaseAttention):
         else:
             valid_local_4d = valid_local.unsqueeze(0).unsqueeze(0)
 
-        # SDPA fast-path: use additive bool mask
         try:
             if valid_local_4d.dtype == torch.bool:
                 if valid_local_4d.shape[0] == 1 and B > 1:
@@ -686,7 +635,7 @@ class GoldFinchAHNBlock(BaseAttention):
                     q, k, v,
                     attn_mask=attn_mask,
                     dropout_p=self.dropout.p if self.training else 0.0,
-                    is_causal=False,  # already encoded in mask
+                    is_causal=False,
                 )
             else:
                 raise RuntimeError("mask not bool")
@@ -711,15 +660,12 @@ class GoldFinchAHNBlock(BaseAttention):
 
         short_out = short_out.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
 
-        # ---- Recurrent memory ----
-        long_out = self.delta_mem(x).to(dtype_in)  # (B, L, D)
+        long_out = self.delta_mem(x).to(dtype_in)
 
-        # ---- Gated fusion (FIX 8: gate is (B, L, 1)) ----
         gate_w = self.gate.weight.to(dtype_in)
         gate_b = self.gate.bias.to(dtype_in) if self.gate.bias is not None else None
-        gate = torch.sigmoid(F.linear(x, gate_w, gate_b)).to(dtype_in)  # (B, L, 1)
+        gate = torch.sigmoid(F.linear(x, gate_w, gate_b)).to(dtype_in)
 
-        # Ensure long_out matches all_head_size
         if long_out.shape[-1] != self.all_head_size:
             if long_out.shape[-1] < self.all_head_size:
                 long_out = F.pad(long_out, (0, self.all_head_size - long_out.shape[-1]))
@@ -731,7 +677,6 @@ class GoldFinchAHNBlock(BaseAttention):
         if valid_mask is not None:
             fused = fused * valid_mask.unsqueeze(-1).to(fused.dtype)
 
-        # ---- Output projection ----
         if self.is_nested_encoder:
             out = fused
         else:
@@ -743,7 +688,6 @@ class GoldFinchAHNBlock(BaseAttention):
         else:
             return out.to(dtype_in), None
 
-    # ------------------------------------------------------------------
     def storage_bytes(self) -> dict[str, int]:
         def _sz(p):
             if isinstance(p, (nn.Parameter, torch.Tensor)):
@@ -762,9 +706,6 @@ class GoldFinchAHNBlock(BaseAttention):
         return out
 
 
-# ===========================================================================
-# Injection (unchanged)
-# ===========================================================================
 def inject_goldfinch_ahn(
     layer: Any = None,
     model: Any = None,
@@ -788,7 +729,6 @@ def inject_goldfinch_ahn(
     if cfg is None and hasattr(target, "config"):
         cfg = target.config
 
-    # Whole-model traversal
     layer_list = None
     if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
         layer_list = target.distilbert.transformer.layer
@@ -829,7 +769,6 @@ def inject_goldfinch_ahn(
     if src_attn is None and target is not None and hasattr(target, "forward"):
         src_attn = target
 
-    # Idempotency guards
     if src_attn is not None and (
         isinstance(src_attn, GoldFinchAHNBlock)
         or "GoldFinch" in src_attn.__class__.__name__

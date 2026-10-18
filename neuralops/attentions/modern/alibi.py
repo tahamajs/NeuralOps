@@ -52,11 +52,6 @@ def get_alibi_slopes(num_heads: int) -> torch.Tensor:
     return base[:num_heads]
 
 
-# =============================================================================
-# ALiBi Attention
-# =============================================================================
-
-
 @ATTENTION_REGISTRY.register(
     "alibi",
     supports_causal=True,
@@ -99,7 +94,6 @@ class ALiBiAttention(BaseAttention):
         super().__init__(config, rank)
         src_attn = pretrained_attn if pretrained_attn is not None else old_attn
 
-        # ---------- Resolve dims ----------
         if hidden_size is None:
             hidden_size = (
                 kwargs.get("dim")
@@ -136,7 +130,6 @@ class ALiBiAttention(BaseAttention):
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
         self.scale = 1.0 / math.sqrt(self.head_dim)
 
-        # Decoder detection
         if is_decoder is not None:
             self.is_decoder = bool(is_decoder)
         else:
@@ -152,12 +145,10 @@ class ALiBiAttention(BaseAttention):
         self.is_nested_encoder: bool = False
         self.layer_idx: int = int(layer_idx or kwargs.get("layer_idx", 0))
 
-        # ---------- LoRA config ----------
         self.lora_rank = int(kwargs.get("lora_rank", _cfg_get(config, "lora_rank", lora_rank)))
         self.lora_alpha = float(kwargs.get("lora_alpha", _cfg_get(config, "lora_alpha", lora_alpha)))
         self.freeze_base = self.lora_rank > 0
 
-        # ---------- Projections ----------
         self.q_proj = LoRALinear(
             self.hidden_size, self.all_head_size,
             bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
@@ -179,14 +170,12 @@ class ALiBiAttention(BaseAttention):
             freeze_base=self.freeze_base,
         )
 
-        # ---------- ALiBi slopes (buffer, not trainable) ----------
         self.register_buffer(
             "alibi_slopes",
             get_alibi_slopes(self.num_heads),
             persistent=False,
         )
 
-        # ---------- Dropout ----------
         dropout_p = _cfg_get(
             config, "dropout",
             _cfg_get(
@@ -201,9 +190,6 @@ class ALiBiAttention(BaseAttention):
         if src_attn is not None:
             self.copy_weights(src_attn)
 
-    # ------------------------------------------------------------------
-    # Aliases
-    # ------------------------------------------------------------------
     @property
     def query(self): return self.q_proj
     @property
@@ -233,9 +219,6 @@ class ALiBiAttention(BaseAttention):
     @property
     def out(self): return self.out_proj
 
-    # ------------------------------------------------------------------
-    # KV-Cache helpers
-    # ------------------------------------------------------------------
     _read_past_kv = staticmethod(_read_past_kv)
 
     @staticmethod
@@ -264,12 +247,6 @@ class ALiBiAttention(BaseAttention):
 
         return (k, v)
 
-    # ------------------------------------------------------------------
-    # ALiBi bias computation
-    # ------------------------------------------------------------------
-# ------------------------------------------------------------------
-    # [OPTIMIZED] ALiBi bias computation with caching
-    # ------------------------------------------------------------------
     def _compute_alibi_bias(
         self,
         N_q: int,
@@ -279,18 +256,14 @@ class ALiBiAttention(BaseAttention):
         causal: bool,
     ) -> torch.Tensor:
         """Compute ALiBi bias of shape (1, H, N_q, N_k) with memory caching."""
-        # ایجاد کش در صورت عدم وجود
         if not hasattr(self, "_alibi_cache"):
             self._alibi_cache = {}
 
-        # تولید کلید یکتای کش
         cache_key = (N_q, N_k, past_len, causal, str(device))
 
-        # اگر ماتریس قبلاً محاسبه شده، مستقیماً همان را برمی‌گردانیم (کاهش 90% از سربار)
         if cache_key in self._alibi_cache:
             return self._alibi_cache[cache_key]
 
-        # Try fused Triton kernel for GPU SRAM acceleration
         try:
             from neuralops.core.triton_kernels.elementwise import fused_alibi_bias_triton
             bias = fused_alibi_bias_triton(
@@ -301,32 +274,28 @@ class ALiBiAttention(BaseAttention):
                 is_causal=causal,
             )
         except Exception:
-            q_pos = torch.arange(past_len, past_len + N_q, device=device).unsqueeze(1)  # (N_q, 1)
-            k_pos = torch.arange(0, N_k, device=device).unsqueeze(0)                    # (1, N_k)
+            q_pos = torch.arange(past_len, past_len + N_q, device=device).unsqueeze(1)
+            k_pos = torch.arange(0, N_k, device=device).unsqueeze(0)
 
             if causal:
-                dist = (q_pos - k_pos).clamp(min=0).float()      # i - j >= 0
+                dist = (q_pos - k_pos).clamp(min=0).float()
             else:
                 dist = (q_pos - k_pos).abs().float()
 
             slopes = self.alibi_slopes.view(1, self.num_heads, 1, 1).to(device)
-            bias = -slopes * dist.unsqueeze(0).unsqueeze(0)      # (1, H, N_q, N_k)
+            bias = -slopes * dist.unsqueeze(0).unsqueeze(0)
 
-        # Store in cache (limit size to 4 to prevent memory leaks)
         if len(self._alibi_cache) > 4:
             self._alibi_cache.clear()
         self._alibi_cache[cache_key] = bias
 
-        return bias    # ------------------------------------------------------------------
-    # copy_weights
-    # ------------------------------------------------------------------
+        return bias
     def copy_weights(self, src: Any) -> None:
         """Copy Q/K/V/O weights from any supported source attention."""
         extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
             "q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None),
         }
 
-        # 1. UniversalAdapter
         try:
             for proj in ("q", "k", "v", "o"):
                 w, b = UniversalAdapter.get_weight_bias(src, proj)
@@ -335,7 +304,6 @@ class ALiBiAttention(BaseAttention):
         except Exception as e:
             logger.debug("UniversalAdapter failed: %s", e)
 
-        # 2. GPT-2 fused c_attn (Conv1D)
         if hasattr(src, "c_attn") and any(extracted[k][0] is None for k in ("q", "k", "v")):
             c = src.c_attn
             base_c = getattr(c, "base_layer", c)
@@ -373,7 +341,6 @@ class ALiBiAttention(BaseAttention):
                 b_o = getattr(base_p, "bias", getattr(p, "bias", None))
                 extracted["o"] = (w_o, b_o.data.clone() if b_o is not None else None)
 
-        # 3. BERT / RoBERTa nested
         if hasattr(src, "self") and any(extracted[k][0] is None for k in ("q", "k", "v")):
             s = src.self
             if hasattr(s, "query"): extracted["q"] = (s.query.weight.data, getattr(s.query, "bias", None))
@@ -384,7 +351,6 @@ class ALiBiAttention(BaseAttention):
             d = src.output.dense
             extracted["o"] = (d.weight.data, getattr(d, "bias", None))
 
-        # 4. T5-style direct attributes
         if hasattr(src, "q") and hasattr(src.q, "weight") and extracted["q"][0] is None:
             extracted["q"] = (src.q.weight.data, getattr(src.q, "bias", None))
         if hasattr(src, "k") and hasattr(src.k, "weight") and extracted["k"][0] is None:
@@ -394,7 +360,6 @@ class ALiBiAttention(BaseAttention):
         if hasattr(src, "o") and hasattr(src.o, "weight") and extracted["o"][0] is None:
             extracted["o"] = (src.o.weight.data, getattr(src.o, "bias", None))
 
-        # 5. Named mapping
         named_map = {
             "q": ["q_proj", "q_lin", "query", "W_q", "q"],
             "k": ["k_proj", "k_lin", "key", "W_k", "k"],
@@ -410,7 +375,6 @@ class ALiBiAttention(BaseAttention):
                             extracted[proj] = (layer.weight.data, getattr(layer, "bias", None))
                             break
 
-        # ---------- Nested encoder detection ----------
         cls_name = getattr(src, "__class__", type(src)).__name__
         has_out = any(hasattr(src, a) for a in (
             "dense", "out_proj", "out_lin", "c_proj", "o_proj", "o",
@@ -421,14 +385,12 @@ class ALiBiAttention(BaseAttention):
             or (hasattr(src, "self") and hasattr(src, "output"))
         )
 
-        # ---------- Warn if missing ----------
         missing = [k for k in ("q", "k", "v") if extracted[k][0] is None]
         if not self.is_nested_encoder and extracted["o"][0] is None:
             missing.append("o")
         if missing:
             logger.warning("ALiBiAttention copy_weights: missing %s — random init.", missing)
 
-        # ---------- Copy ----------
         def _orient(w: torch.Tensor, in_dim: int) -> torch.Tensor:
             if w.dim() == 2 and w.shape[1] != in_dim and w.shape[0] == in_dim:
                 return w.t().contiguous()
@@ -497,9 +459,6 @@ class ALiBiAttention(BaseAttention):
         if hasattr(src, "is_decoder"):
             self.is_decoder = bool(src.is_decoder)
 
-    # ------------------------------------------------------------------
-    # Forward
-    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -514,7 +473,6 @@ class ALiBiAttention(BaseAttention):
         *args: Any,
         **kwargs: Any,
     ) -> tuple[torch.Tensor, Any]:
-        # Unwrap tuple input
         while isinstance(hidden_states, (tuple, list)):
             hidden_states = hidden_states[0]
         if not hidden_states.is_contiguous():
@@ -530,12 +488,10 @@ class ALiBiAttention(BaseAttention):
         device = hidden_states.device
         dtype = hidden_states.dtype
 
-        # -------- Projections --------
         Q = self.q_proj(hidden_states).view(B, N_q, H, d).transpose(1, 2).contiguous()
         K_new = self.k_proj(kv_input).view(B, N_kv_new, Hkv, d).transpose(1, 2).contiguous()
         V_new = self.v_proj(kv_input).view(B, N_kv_new, Hkv, d).transpose(1, 2).contiguous()
 
-        # -------- KV-Cache --------
         past_k, past_v, past_len = (None, None, 0)
         if not is_cross and past_key_value is not None and past_key_value is not False:
             past_k, past_v, past_len = self._read_past_kv(past_key_value, self.layer_idx)
@@ -556,27 +512,21 @@ class ALiBiAttention(BaseAttention):
 
         N_k = K.shape[-2]
 
-        # -------- GQA repeat --------
         if self.kv_repeat > 1:
             K_full = repeat_kv(K, self.kv_repeat)
             V_full = repeat_kv(V, self.kv_repeat)
         else:
             K_full, V_full = K, V
 
-        # -------- Effective causal flag --------
-        # Cross-attention is never causal. Self-attention is causal iff decoder.
         is_causal = bool(self.is_decoder and not is_cross)
 
-        # -------- Effective padding mask --------
         eff_mask = encoder_attention_mask if is_cross else attention_mask
         if eff_mask is None:
             eff_mask = kwargs.get("mask")
 
-        # -------- ALiBi bias + causal mask --------
         alibi_bias = self._compute_alibi_bias(N_q, N_k, past_len, device, causal=is_causal)
 
         if is_causal:
-            # Bottom-right-aligned causal mask
             if N_q == N_k - past_len and past_len == 0:
                 causal_bool = torch.tril(torch.ones((N_q, N_k), device=device, dtype=torch.bool))
             else:
@@ -585,7 +535,6 @@ class ALiBiAttention(BaseAttention):
                 causal_bool = k_idx <= q_idx
             alibi_bias = alibi_bias.masked_fill(~causal_bool.unsqueeze(0).unsqueeze(0), -1e4)
 
-        # -------- SDPA fast-path --------
         head_mask_ok = head_mask is None
         attn_out_ok = not output_attentions
         mask_ok = eff_mask is None
@@ -593,7 +542,6 @@ class ALiBiAttention(BaseAttention):
 
         if use_sdpa:
             try:
-                # کستینگ سریع‌تر با to به جای if-else های متوالی
                 _q = Q.to(dtype)
                 _k = K_full.to(dtype)
                 _v = V_full.to(dtype)
@@ -603,7 +551,7 @@ class ALiBiAttention(BaseAttention):
                 out = F.scaled_dot_product_attention(
                     _q, _k, _v,
                     attn_mask=_bias,
-                    is_causal=False,   # handled by alibi_bias
+                    is_causal=False,
                     dropout_p=self.dropout_p if self.training else 0.0,
                 )
                 out = out.to(dtype).transpose(1, 2).contiguous().view(B, N_q, self.all_head_size)
@@ -620,7 +568,6 @@ class ALiBiAttention(BaseAttention):
             except Exception as e:
                 logger.debug("ALiBi SDPA failed, falling back: %s", e)
 
-        # -------- Manual path --------
         scores = torch.matmul(Q.float(), K_full.float().transpose(-2, -1).contiguous()) * self.scale
         scores = scores + alibi_bias.to(scores.dtype)
 
@@ -660,11 +607,6 @@ class ALiBiAttention(BaseAttention):
         return output, attn_ret
 
 
-# =============================================================================
-# Injector  (registered)
-# =============================================================================
-
-
 def inject_alibi(
     layer: Any = None,
     model: Any = None,
@@ -684,7 +626,6 @@ def inject_alibi(
 
     cfg = model_config if model_config is not None else getattr(target, "config", None)
 
-    # ---------- Whole-model traversal ----------
     layer_list = None
     if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
         layer_list = target.distilbert.transformer.layer
@@ -716,10 +657,8 @@ def inject_alibi(
                 n_inj += 1
         return target if n_inj > 0 else None
 
-    # ---------- Single-layer injection ----------
     layer = target
 
-    # Find src_attn
     src_attn = old_attn
     if src_attn is None:
         for attr in ("attention", "self_attn", "attn", "self"):
@@ -728,14 +667,12 @@ def inject_alibi(
                 src_attn = getattr(cand, "self", cand)
                 break
 
-    # Skip if already wrapped
     if isinstance(src_attn, ALiBiAttention) or "ALiBi" in src_attn.__class__.__name__:
         return None
 
     if cfg is None:
         cfg = getattr(src_attn, "config", None) or getattr(target, "config", None)
 
-    # Extract dims
     hidden_size = (
         _cfg_get(cfg, "hidden_size")
         or _cfg_get(cfg, "n_embd")
@@ -782,13 +719,11 @@ def inject_alibi(
         logger.error("ALiBiAttention construction failed: %s", e)
         return None
 
-    # Match device/dtype of src
     if src_attn is not None:
         p = next(src_attn.parameters(), None)
         if p is not None:
             new_attn.to(device=p.device, dtype=p.dtype)
 
-    # ---------- Splice ----------
     if hasattr(layer, "attention"):
         if hasattr(layer.attention, "self"):
             layer.attention.self = new_attn

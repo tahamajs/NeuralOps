@@ -16,8 +16,6 @@ from neuralops.core.registry import COMPRESSOR_REGISTRY
 from neuralops.utils.compat import should_compress_linear
 
 
-
-
 logger = logging.getLogger(__name__)
 
 
@@ -41,7 +39,7 @@ class GFWSLoRALinear(nn.Module):
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
-        self.nf = out_features  # Conv1D compatibility
+        self.nf = out_features
         self.lora_r = int(lora_r)
         self.lora_alpha = float(lora_alpha)
         self.scaling = (self.lora_alpha / self.lora_r) if self.lora_r > 0 else 1.0
@@ -379,10 +377,10 @@ class GFWSCompressor(BaseCompressor):
 
             if is_conv1d:
                 in_f, out_f = raw_w.shape[0], raw_w.shape[1]
-                W = raw_w.t().contiguous().float()  # [out_features, in_features]
+                W = raw_w.t().contiguous().float()
             else:
                 out_f, in_f = raw_w.shape[0], raw_w.shape[1]
-                W = raw_w.float()  # [out_features, in_features]
+                W = raw_w.float()
 
             r = max(1, min(self.rank, out_f, in_f))
             device = target_mod.weight.device
@@ -408,20 +406,16 @@ class GFWSCompressor(BaseCompressor):
                     eigvals, eigvecs = torch.linalg.eigh(cov_reg)
                     eigvals_clamped = torch.clamp(eigvals, min=1e-6)
 
-                    # Cov(X)^{1/2} and Cov(X)^{-1/2}
                     cov_sqrt = eigvecs @ torch.diag(torch.sqrt(eigvals_clamped)) @ eigvecs.T
                     cov_inv_sqrt = (
                         eigvecs @ torch.diag(1.0 / torch.sqrt(eigvals_clamped)) @ eigvecs.T
                     )
 
-                    # Whiten weights: M = W * Cov(X)^{1/2}
                     M = torch.matmul(W, cov_sqrt)
                     U, S, Vt = torch.linalg.svd(M, full_matrices=False)
 
-                    # Low-rank approximation of M: U_r * S_r * Vt_r
                     M_r = (U[:, :r] * S[:r].unsqueeze(0)) @ Vt[:r, :]
 
-                    # De-whiten: candidate = M_r * Cov(X)^{-1/2}
                     candidate = torch.matmul(M_r, cov_inv_sqrt)
 
                     if not (torch.isnan(candidate).any() or torch.isinf(candidate).any()):
@@ -444,7 +438,6 @@ class GFWSCompressor(BaseCompressor):
                         e,
                     )
 
-            # Fallback to standard SVD if covariance whitening was not used or failed
             if W_approx is None:
                 try:
                     U, S, Vt = torch.linalg.svd(W, full_matrices=False)
@@ -477,7 +470,6 @@ class GFWSCompressor(BaseCompressor):
                     self.fallback_layers.append(name)
                     continue
 
-            # Replace with GFWSLoRALinear to support optional post-compression LoRA adapters
             new_layer = GFWSLoRALinear.from_linear(
                 target_mod,
                 weight=W_approx.to(dtype=dtype, device=device),
@@ -523,7 +515,6 @@ class GFWSCompressor(BaseCompressor):
             replace_module(self.model, name, new_layer)
             self.compressed_layers.append(name)
 
-        # Post-compression forward sanity check
         forward_check_success = True
         try:
             with torch.no_grad():

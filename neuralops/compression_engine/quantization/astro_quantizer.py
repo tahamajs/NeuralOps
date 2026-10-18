@@ -33,8 +33,6 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-
-
 class STEFakeQuantize(torch.autograd.Function):
     """
     Straight-Through Estimator (STE) fake-quantization autograd function.
@@ -52,14 +50,12 @@ class STEFakeQuantize(torch.autograd.Function):
         qmax: float | torch.Tensor,
     ) -> torch.Tensor:
         ctx.save_for_backward(x, scale, zero_point)
-        # Quantize, clamp to discrete range, and dequantize
         q = torch.clamp(torch.round(x / scale) + zero_point, qmin, qmax)
         dq = (q - zero_point) * scale
         return dq
 
     @staticmethod
     def backward(ctx: Any, grad_output: torch.Tensor) -> tuple[torch.Tensor | None, ...]:
-        # Straight-Through Estimator passes gradient unmodified
         grad_x = grad_output.clone()
         return grad_x, None, None, None, None
 
@@ -135,8 +131,6 @@ def quantize_dequantize_tensor(
     t = tensor.float()
 
     if per_channel_bits is not None and t.ndim >= 2:
-        # Per-channel dynamic bit allocation
-        # Shape of per_channel_bits: [out_channels]
         dim_to_reduce = tuple(range(1, t.ndim))
         b = per_channel_bits.view(-1, *([1] * (t.ndim - 1))).float().to(device=t.device)
 
@@ -154,7 +148,6 @@ def quantize_dequantize_tensor(
             scale = torch.clamp((max_val - min_val) / torch.clamp(qmax, min=1.0), min=1e-8)
             zero_point = torch.clamp(torch.round(-min_val / scale), qmin, qmax)
     else:
-        # Standard uniform bitwidth
         if symmetric:
             qmin = float(-(2 ** (bits - 1)))
             qmax = float((2 ** (bits - 1)) - 1)
@@ -207,7 +200,7 @@ class AstroLinear(nn.Module):
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
-        self.nf = out_features  # Conv1D compatibility
+        self.nf = out_features
         self.bits = bits
         self.symmetric = symmetric
         self.per_channel = per_channel
@@ -412,7 +405,6 @@ class AstroQuantizer(BaseCompressor):
         if isinstance(module, AstroLinear):
             return False
 
-        # Do not target inner submodules of LoRA or wrappers directly
         if any(
             name.endswith(sfx)
             for sfx in [".base_layer", ".lora_A", ".lora_B", ".lora_dropout", ".linear"]
@@ -435,7 +427,6 @@ class AstroQuantizer(BaseCompressor):
             return False
 
         name_lower = name.lower()
-        # Protect classification / output heads
         if any(
             skip in name_lower
             for skip in [
@@ -452,7 +443,6 @@ class AstroQuantizer(BaseCompressor):
             return False
 
         if self.target_attention_only:
-            # Skip FFN / MLP layers
             ffn_patterns = [
                 "ffn",
                 "mlp",
@@ -466,10 +456,8 @@ class AstroQuantizer(BaseCompressor):
             ]
             if any(p in name_lower for p in ffn_patterns):
                 return False
-            # In RoBERTa, layer.X.output.dense is FFN, while attention.output.dense is attention
             if "output.dense" in name_lower and "attention" not in name_lower:
                 return False
-            # Match attention projections
             attn_patterns = [
                 "attn",
                 "attention",
@@ -582,7 +570,6 @@ class AstroQuantizer(BaseCompressor):
             for h in hooks:
                 h.remove()
 
-        # Fallback to activation energy or weight L2 norm per channel for layers without gradient Fisher
         for name, module in self.model.named_modules():
             if self._is_target_module(name, module) and name not in fisher_info:
                 target_mod = getattr(module, "base_layer", getattr(module, "linear", module))
@@ -627,7 +614,6 @@ class AstroQuantizer(BaseCompressor):
             W = raw_w.t().clone().float() if is_conv1d else raw_w.clone().float()
             out_features, in_features = W.shape
 
-            # Determine bit-width allocation
             per_channel_bits = None
             if self.use_fisher_adaptive_bits:
                 imp = fisher_map.get(name, None)
@@ -647,7 +633,6 @@ class AstroQuantizer(BaseCompressor):
                 avg_bits = float(self.bits)
                 self.layer_average_bits[name] = avg_bits
 
-            # Quantize & de-quantize evaluation
             W_quant = quantize_dequantize_tensor(
                 W,
                 bits=self.bits,
@@ -671,12 +656,10 @@ class AstroQuantizer(BaseCompressor):
                 if self.fallback_to_original:
                     logger.info("Skipping AstroQuantizer for %s (fallback to original).", name)
                     self.fallback_layers.append(name)
-                    # Freeze fallback layers to ensure recovery fine-tuning does not touch them
                     for p in module.parameters():
                         p.requires_grad = False
                     continue
 
-            # Update module: AstroLinear (STE) or In-Place weights
             if self.use_ste:
                 astro_layer = AstroLinear.from_linear(
                     target_mod,
@@ -714,7 +697,6 @@ class AstroQuantizer(BaseCompressor):
                         b_quant.to(dtype=target_mod.bias.dtype, device=target_mod.bias.device)
                     )
 
-            # Preserve LoRA adapter parameters if layer was LoRALinear wrapper
             if has_lora:
                 for p_name, p in module.named_parameters():
                     if any(t in p_name.lower() for t in ("lora_a", "lora_b", "adapter")):

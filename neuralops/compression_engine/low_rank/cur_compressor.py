@@ -35,7 +35,7 @@ def compute_leverage_scores(W: torch.Tensor, rank: int) -> tuple[torch.Tensor, t
     """
     m, n = W.shape
     k = max(1, min(rank, m, n))
-    
+
     try:
         U, S, Vt = torch.linalg.svd(W.float(), full_matrices=False)
     except Exception as e:
@@ -43,11 +43,9 @@ def compute_leverage_scores(W: torch.Tensor, rank: int) -> tuple[torch.Tensor, t
         U, S, Vt = torch.linalg.svd(W.float().cpu(), full_matrices=False)
         U, Vt = U.to(W.device), Vt.to(W.device)
 
-    # Row leverage scores: norm of rows of U_k
     row_scores = (U[:, :k] ** 2).sum(dim=1) / float(k)
-    # Column leverage scores: norm of cols of V_k (rows of Vt_k)
     col_scores = (Vt[:k, :] ** 2).sum(dim=0) / float(k)
-    
+
     row_scores = row_scores / row_scores.sum().clamp_min(1e-12)
     col_scores = col_scores / col_scores.sum().clamp_min(1e-12)
     return col_scores, row_scores
@@ -84,13 +82,11 @@ def tikhonov_pinv(A: torch.Tensor, reg: float = 1e-3) -> torch.Tensor:
     try:
         u, s, vt = torch.linalg.svd(A_f, full_matrices=False)
     except Exception:
-        # Fallback to CPU if GPU SVD crashes
         u, s, vt = torch.linalg.svd(A_f.cpu(), full_matrices=False)
         u, s, vt = u.to(A.device), s.to(A.device), vt.to(A.device)
 
     eps = reg * s.max().clamp_min(1e-6)
     s_inv = s / (s**2 + eps**2)
-    # FIX: Use broadcasting instead of torch.diag for massive speedup and memory savings
     return torch.matmul(vt.T, s_inv.unsqueeze(1) * u.T).to(dtype=A.dtype)
 
 
@@ -179,11 +175,8 @@ class CURLinear(nn.Module):
             except Exception:
                 pass
 
-        # (..., in_features) -> (..., rank)
         x_r = F.linear(x, self.R)
-        # (..., rank) -> (..., rank)
         x_ru = F.linear(x_r, self.U)
-        # (..., rank) -> (..., out_features)
         out = F.linear(x_ru, self.C, self.bias)
 
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
@@ -211,7 +204,7 @@ class CURLinear(nn.Module):
         target_mod = getattr(linear, "base_layer", getattr(linear, "linear", linear))
         raw_w = target_mod.weight.data
         bias = target_mod.bias.data if getattr(target_mod, "bias", None) is not None else None
-        
+
         is_conv1d = "conv1d" in target_mod.__class__.__name__.lower() or hasattr(target_mod, "nf")
         W = raw_w.t().contiguous() if is_conv1d else raw_w.contiguous()
 
@@ -225,8 +218,7 @@ class CURLinear(nn.Module):
         )
 
         W_float = W.float()
-        
-        # Avoid SVD recalculation if scores are provided via params
+
         if col_scores is None or row_scores is None:
             if method == "leverage":
                 col_scores, row_scores = compute_leverage_scores(W_float, rank=r)
@@ -261,8 +253,6 @@ class CURLinear(nn.Module):
         return cur_layer
 
 
-
-
 @COMPRESSOR_REGISTRY.register("cur_compressor")
 class CURCompressor(BaseCompressor):
     """CURCompressor neural operator.
@@ -293,7 +283,7 @@ class CURCompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model if model is not None else nn.Identity(), name="cur", **kwargs)
-        
+
         self.rank = int(_cfg_get(cfg, "cur_rank", _cfg_get(cfg, "rank", rank)))
         self.min_rank = int(_cfg_get(cfg, "cur_min_rank", _cfg_get(cfg, "min_rank", min_rank)))
         self.method = str(_cfg_get(cfg, "cur_method", _cfg_get(cfg, "method", method)))
@@ -307,7 +297,7 @@ class CURCompressor(BaseCompressor):
         self.cfg = cfg
         self.target_names = target_names or _cfg_get(cfg, "cur_target_names", _cfg_get(cfg, "target_layers", None))
         self.exclude_names = exclude_names or _cfg_get(cfg, "cur_exclude_names", ["lm_head", "classifier", "head", "score", "pooler", "embedding", "router", "gate"])
-        
+
         c_max_error = _cfg_get(cfg, "cur_max_error", _cfg_get(cfg, "max_error", max_error))
         if c_max_error is None or c_max_error == 0.20:
             try:
@@ -386,7 +376,7 @@ class CURCompressor(BaseCompressor):
             if not hasattr(target_mod, "weight") or target_mod.weight is None:
                 for p in module.parameters(): p.requires_grad = False
                 continue
-                
+
             weight_id = id(target_mod.weight)
             if weight_id in visited_weight_ids:
                 for p in module.parameters(): p.requires_grad = False
@@ -416,7 +406,6 @@ class CURCompressor(BaseCompressor):
             norm_orig = torch.norm(orig_w, p="fro").clamp_min(1e-8)
             effective_lora_r = 0 if has_lora else self.lora_r
 
-            # FIX: Compute Score Matrices ONCE using the target rank (cur_r) to preserve CUR distribution logic
             col_scores, row_scores = None, None
             if self.method == "leverage":
                 col_scores, row_scores = compute_leverage_scores(orig_w, rank=cur_r)
@@ -477,7 +466,7 @@ class CURCompressor(BaseCompressor):
         stats = self.get_compression_stats()
         avg_err = (sum(self.layer_errors.values()) / len(self.layer_errors)) if self.layer_errors else 0.0
         effective_param_ratio = total_comp_decomp_params / total_orig_decomp_params if total_orig_decomp_params > 0 else 1.0
-        
+
         stats.update({
             "compressed_layers": self.compressed_layers,
             "compressed_layer_count": len(self.compressed_layers),

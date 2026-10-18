@@ -37,9 +37,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 logger = logging.getLogger(__name__)
 
 
-# ===========================================================================
-# Cache state container
-# ===========================================================================
 class KDAState:
     """
     Recurrent-state container for KDAAttention.
@@ -73,9 +70,6 @@ class KDAState:
         return (self.S, self.Z)[idx]
 
 
-# ===========================================================================
-# KDAAttention
-# ===========================================================================
 @ATTENTION_REGISTRY.register(
     "kda_attention",
     supports_causal=True,
@@ -119,7 +113,6 @@ class KDAAttention(BaseAttention):
         except TypeError:
             super().__init__(config)
 
-        # ---- Resolve d_model ----
         if d_model is None:
             d_model = (
                 kwargs.get("d_model")
@@ -176,7 +169,6 @@ class KDAAttention(BaseAttention):
         if hasattr(d_model, "hidden_size"):
             d_model = d_model.hidden_size
 
-        # ---- Resolve num_heads ----
         if num_heads is None:
             num_heads = kwargs.get("num_heads") or kwargs.get("num_attention_heads")
             if num_heads is None and config is not None:
@@ -198,7 +190,6 @@ class KDAAttention(BaseAttention):
         self.hidden_size = self.dim
         self.num_heads = int(num_heads)
 
-        # ---- GQA ----
         if config is not None:
             self.num_kv_heads = int(
                 getattr(
@@ -216,12 +207,10 @@ class KDAAttention(BaseAttention):
         self.all_kv_head_size = self.num_kv_heads * self.head_dim
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
 
-        # ---- Layer index ----
         self.layer_idx = int(
             layer_idx if layer_idx is not None else kwargs.get("layer_idx", 0)
         )
 
-        # ---- Decoder detection ----
         model_type = getattr(config, "model_type", "").lower() if config else ""
         is_dec = False
         if config is not None:
@@ -248,10 +237,8 @@ class KDAAttention(BaseAttention):
         self.is_causal: bool = self.is_decoder
         self.is_nested_encoder: bool = False
 
-        # ---- Chunk size ----
         self.chunk_size = max(32, int(chunk_size))
 
-        # ---- LoRA config ----
         if config is not None:
             self.lora_rank = int(
                 getattr(
@@ -283,11 +270,9 @@ class KDAAttention(BaseAttention):
             self.lora_alpha = float(kwargs.get("lora_alpha", 32.0))
         self.freeze_base = self.lora_rank > 0
 
-        # ---- [KDA-FIX-01] KD-compatible gates ----
         self.lora_beta = nn.Parameter(torch.ones(self.num_heads, 1, 1) * 5.0)
         self.lora_output_scale = nn.Parameter(torch.ones(1))
 
-        # ---- Projections ----
         self.q_proj = LoRALinear(
             self.dim, self.all_head_size, bias=True,
             lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
@@ -318,9 +303,6 @@ class KDAAttention(BaseAttention):
         if source_attn is not None:
             self.copy_weights(source_attn)
 
-    # ------------------------------------------------------------------
-    # [KDA-FIX-02] Backward-compat aliases
-    # ------------------------------------------------------------------
     @property
     def beta(self) -> nn.Parameter:
         return self.lora_beta
@@ -355,9 +337,6 @@ class KDAAttention(BaseAttention):
             if hasattr(mod, "freeze_base_weights"):
                 mod.freeze_base_weights()
 
-    # ------------------------------------------------------------------
-    # [KDA-FIX-07] Weight transfer with GQA-aware mean-pooling
-    # ------------------------------------------------------------------
     def copy_weights(self, src: Any) -> None:
         if src is None:
             return
@@ -384,7 +363,6 @@ class KDAAttention(BaseAttention):
             "o": (None, None),
         }
 
-        # ---- Pattern 1: GPT-2 fused c_attn ----
         if hasattr(src, "c_attn") and src.c_attn is not None:
             c_attn_mod = src.c_attn
             base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
@@ -433,7 +411,6 @@ class KDAAttention(BaseAttention):
                         bias_o.data.clone() if bias_o is not None else None,
                     )
 
-        # ---- Pattern 2: RoBERTa nested ----
         elif hasattr(src, "self") and hasattr(src.self, "query"):
             s = src.self
             for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
@@ -450,7 +427,6 @@ class KDAAttention(BaseAttention):
                     out_mod.bias.data.clone() if out_mod.bias is not None else None,
                 )
 
-        # ---- Pattern 3: Flat projections ----
         else:
             proj_candidates = {
                 "q": ["q_lin", "q_proj", "query"],
@@ -480,7 +456,6 @@ class KDAAttention(BaseAttention):
                             )
                             break
 
-        # ---- Fallback: UniversalAdapter ----
         missing = [
             k
             for k, (w, _) in extracted.items()
@@ -593,9 +568,6 @@ class KDAAttention(BaseAttention):
         if self.freeze_base:
             self.freeze_base_weights()
 
-    # ------------------------------------------------------------------
-    # [KDA-FIX-05, 06, 09] Chunked scan with state passthrough
-    # ------------------------------------------------------------------
     def _kda_scan(
         self,
         q: torch.Tensor,
@@ -618,7 +590,6 @@ class KDAAttention(BaseAttention):
             y: (B, H, L, d)
             (S, Z): final state
         """
-        # Execute scan strictly in FP32 outside AMP autocast to prevent half-precision overflow
         with torch.amp.autocast(device_type=q.device.type, enabled=False):
             return self._kda_scan_fp32(
                 q=q.float(),
@@ -643,22 +614,18 @@ class KDAAttention(BaseAttention):
         B, H, L, d = q.shape
         device = q.device
 
-        # ---- Feature map (ELU+1) ----
         q_f = F.elu(q.float()) + 1.0
         k_f = F.elu(k.float()) + 1.0
         v_f = v.float()
         D_dim = v_f.shape[-1]
 
-        # ---- Decay ----
         gamma = decay.float().clamp(min=1e-5, max=1.0 - 1e-5)
-        log_gamma = torch.log(gamma)  # (1, H, 1, 1)
+        log_gamma = torch.log(gamma)
 
-        # ---- Mask ----
         mask_float = None
         if mask_bool is not None:
-            mask_float = mask_bool.float()  # (B, L)
+            mask_float = mask_bool.float()
 
-        # ---- [KDA-FIX-06] Single-token decode fast path ----
         if L == 1:
             if initial_state is not None:
                 S_prev, Z_prev = initial_state
@@ -668,19 +635,15 @@ class KDAAttention(BaseAttention):
                 S_prev = torch.zeros(B, H, d, D_dim, device=device, dtype=torch.float32)
                 Z_prev = torch.zeros(B, H, d, 1, device=device, dtype=torch.float32)
 
-            # S_new = γ · S_prev + k^T v
             S_new = gamma * S_prev + torch.matmul(
                 k_f.transpose(-1, -2).contiguous(), v_f
             )
-            # Z_new = γ · Z_prev + k^T (as column)
             Z_new = gamma * Z_prev + k_f.transpose(-1, -2).contiguous()
 
-            # y = q · S_new / (q · Z_new)
             num = torch.matmul(q_f, S_new)
             den = torch.matmul(q_f, Z_new).clamp(min=1e-5)
             y = num / den
             return y.to(out_dtype), (S_new, Z_new)
-        # ---- [KDA-TRITON] Fast path on CUDA via kda_hla_chunk_scan_triton for long sequences ----
         if q.is_cuda and initial_state is None and mask_bool is None and d <= 64 and L > 64:
             try:
                 from neuralops.core.triton_kernels.gla_scan import kda_hla_chunk_scan_triton
@@ -690,8 +653,6 @@ class KDAAttention(BaseAttention):
             except Exception as e:
                 logger.debug("Triton KDA scan failed, using chunked PyTorch: %s", e)
 
-
-        # ---- Chunked path ----
         chunk_size = min(self.chunk_size, L)
         pad_len = (chunk_size - (L % chunk_size)) % chunk_size
         if pad_len > 0:
@@ -712,33 +673,28 @@ class KDAAttention(BaseAttention):
         else:
             mask_c = None
 
-        # ---- Intra-chunk causal decay matrix ----
         pos = torch.arange(chunk_size, device=device, dtype=torch.float32)
-        pos_diff = pos.unsqueeze(-1) - pos.unsqueeze(-2)  # (C, C), diff[i,j] = i - j
+        pos_diff = pos.unsqueeze(-1) - pos.unsqueeze(-2)
         tril = torch.tril(torch.ones(chunk_size, chunk_size, device=device, dtype=torch.bool))
-        exp_arg = pos_diff.view(1, 1, chunk_size, chunk_size) * log_gamma  # (1, H, C, C)
+        exp_arg = pos_diff.view(1, 1, chunk_size, chunk_size) * log_gamma
         D_intra = torch.where(
             tril.unsqueeze(0).unsqueeze(0),
             torch.exp(exp_arg.clamp(min=-40.0, max=0.0)),
             torch.zeros_like(exp_arg),
-        )  # (1, H, C, C)
+        )
 
-        # ---- Positional decay for inter-chunk: γ^(pos+1) ----
         pos_decay = torch.exp(
             ((pos + 1.0).view(1, 1, chunk_size, 1) * log_gamma).clamp(min=-40.0, max=0.0)
-        )  # (1, H, C, 1)
+        )
 
-        # ---- Update decay for chunk-level carry: γ^(C-1-pos) ----
         update_decay = torch.exp(
             ((chunk_size - 1 - pos).view(1, 1, chunk_size, 1) * log_gamma).clamp(
                 min=-40.0, max=0.0
             )
-        )  # (1, H, C, 1)
+        )
 
-        # ---- Block decay γ^C ----
         gamma_block = torch.exp((chunk_size * log_gamma).clamp(min=-40.0, max=0.0))
 
-        # ---- Init state ----
         if initial_state is not None:
             S_prev, Z_prev = initial_state
             S_prev = S_prev.to(device=device, dtype=torch.float32)
@@ -749,34 +705,31 @@ class KDAAttention(BaseAttention):
 
         outputs = []
         for c in range(N):
-            qc = q_c[:, :, c]  # (B, H, C, d)
+            qc = q_c[:, :, c]
             kc = k_c[:, :, c]
             vc = v_c[:, :, c]
 
             mc = None
             if mask_c is not None:
-                mc = mask_c[:, c]  # (B, C)
-                mc_k = mc.unsqueeze(1).unsqueeze(-1)  # (B, 1, C, 1)
+                mc = mask_c[:, c]
+                mc_k = mc.unsqueeze(1).unsqueeze(-1)
                 kc_masked = kc * mc_k
                 vc_masked = vc * mc_k
             else:
                 kc_masked = kc
                 vc_masked = vc
 
-            # ---- Intra-chunk contribution ----
-            qk = torch.matmul(qc, kc_masked.transpose(-1, -2).contiguous())  # (B, H, C, C)
-            scores_intra = qk * D_intra  # broadcast: (1,H,C,C) → (B,H,C,C)
+            qk = torch.matmul(qc, kc_masked.transpose(-1, -2).contiguous())
+            scores_intra = qk * D_intra
 
             if mc is not None:
-                # Mask invalid key positions
                 scores_intra = scores_intra * mc.unsqueeze(1).unsqueeze(-2)
 
-            num_intra = torch.matmul(scores_intra, vc_masked)  # (B, H, C, D)
-            den_intra = scores_intra.sum(dim=-1, keepdim=True)  # (B, H, C, 1)
+            num_intra = torch.matmul(scores_intra, vc_masked)
+            den_intra = scores_intra.sum(dim=-1, keepdim=True)
 
-            # ---- Inter-chunk from S_prev ----
-            qS = torch.matmul(qc, S_prev)  # (B, H, C, D)
-            qZ = torch.matmul(qc, Z_prev)  # (B, H, C, 1)
+            qS = torch.matmul(qc, S_prev)
+            qZ = torch.matmul(qc, Z_prev)
             num_inter = qS * pos_decay
             den_inter = qZ * pos_decay
 
@@ -785,7 +738,6 @@ class KDAAttention(BaseAttention):
                 num_inter = num_inter * mc_out
                 den_inter = den_inter * mc_out
 
-            # ---- Combine ----
             num = num_intra + num_inter
             den = (den_intra + den_inter).clamp(min=1e-4)
             yc = torch.clamp(num / den, min=-1e4, max=1e4).to(q.dtype)
@@ -794,12 +746,11 @@ class KDAAttention(BaseAttention):
                 yc = yc * mc.unsqueeze(1).unsqueeze(-1)
             outputs.append(yc)
 
-            # ---- Update state for next chunk ----
-            k_weighted = kc_masked * update_decay  # (1,H,C,1) broadcast → (B,H,C,d)
+            k_weighted = kc_masked * update_decay
             S_update = torch.matmul(
                 k_weighted.transpose(-1, -2).contiguous(), vc_masked
-            )  # (B, H, d, D)
-            Z_update = k_weighted.sum(dim=2).unsqueeze(-1)  # (B, H, d, 1)
+            )
+            Z_update = k_weighted.sum(dim=2).unsqueeze(-1)
 
             S_prev = gamma_block * S_prev + S_update
             Z_prev = gamma_block * Z_prev + Z_update
@@ -810,9 +761,6 @@ class KDAAttention(BaseAttention):
 
         return y.to(out_dtype), (S_prev, Z_prev)
 
-    # ------------------------------------------------------------------
-    # [KDA-FIX-03, 08, 10, 11] Forward
-    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -838,7 +786,6 @@ class KDAAttention(BaseAttention):
         kv_input = encoder_hidden_states if is_cross else hidden_states
         kv_len = kv_input.shape[1]
 
-        # ---- Projections ----
         q = self.q_proj(hidden_states).view(B, L, H, d).transpose(1, 2).contiguous()
         k = (
             self.k_proj(kv_input)
@@ -853,7 +800,6 @@ class KDAAttention(BaseAttention):
             .contiguous()
         )
 
-        # ---- [KDA-FIX-04] Read past state ----
         past_state: tuple[torch.Tensor, torch.Tensor] | None = None
         past_len = 0
         if past_key_value is not None and not is_cross:
@@ -865,16 +811,13 @@ class KDAAttention(BaseAttention):
                 if len(past_key_value) >= 2:
                     first = past_key_value[0]
                     if isinstance(first, torch.Tensor) and first.dim() == 4:
-                        # Legacy tuple: (S, Z)
                         S_c = first
                         Z_c = past_key_value[1]
                         if isinstance(Z_c, torch.Tensor):
                             past_state = (S_c, Z_c)
                     elif isinstance(first, (tuple, list)) and len(first) >= 2:
-                        # Nested tuple: ((S, Z),)
                         past_state = (first[0], first[1])
 
-        # ---- [KDA-FIX-03] RoPE with past_len slicing ----
         pos_emb = (
             position_embeddings
             if position_embeddings is not None
@@ -898,14 +841,10 @@ class KDAAttention(BaseAttention):
                 except Exception as e:
                     logger.debug("KDA rotary_emb forward failed: %s", e)
 
-        # ---- GQA ----
         if self.kv_repeat > 1:
             k = repeat_kv(k, self.kv_repeat)
             v = repeat_kv(v, self.kv_repeat)
 
-        # Feature map (ELU+1) is applied inside _kda_scan in float32 for numerical stability
-
-        # ---- Mask ----
         eff_mask = encoder_attention_mask if is_cross else attention_mask
         mask_bool = None
         if eff_mask is not None:
@@ -913,10 +852,7 @@ class KDAAttention(BaseAttention):
             if mask_bool is not None and mask_bool.dim() > 2:
                 mask_bool = mask_bool.reshape(B, kv_len)
 
-        # ---- [KDA-FIX-10] Cross-attention path ----
         if is_cross:
-            # Cross-attention: standard non-decayed linear attention.
-            # K, V from encoder; Q from decoder; no state caching.
             if mask_bool is not None:
                 m_kv = mask_bool.unsqueeze(1).unsqueeze(-1).to(k.dtype)
                 k = k * m_kv
@@ -932,7 +868,6 @@ class KDAAttention(BaseAttention):
             new_past_key_value = None
 
         else:
-            # Self-attention with decay and state caching
             decay = torch.sigmoid(self.lora_beta).view(1, H, 1, 1)
 
             y_fwd, next_state = self._kda_scan(
@@ -941,7 +876,6 @@ class KDAAttention(BaseAttention):
                 mask_bool=mask_bool,
             )
 
-            # ---- [KDA-FIX-11] Bidirectional for encoders ----
             if self.is_decoder:
                 y = y_fwd
             else:
@@ -957,7 +891,6 @@ class KDAAttention(BaseAttention):
                 y_bwd = y_bwd_rev.flip(dims=[2]).contiguous()
                 y = 0.5 * (y_fwd + y_bwd)
 
-            # ---- Package cache ----
             new_past_key_value = None
             use_cache = kwargs.get("use_cache", False) or (
                 past_key_value is not None and past_key_value is not False
@@ -969,7 +902,6 @@ class KDAAttention(BaseAttention):
                     past_len=past_len + L,
                 )
 
-        # ---- head_mask ----
         if head_mask is not None:
             hm = head_mask.to(y.dtype)
             if hm.dim() == 1:
@@ -982,10 +914,8 @@ class KDAAttention(BaseAttention):
 
         y = torch.nan_to_num(y, nan=0.0, posinf=1e4, neginf=-1e4)
 
-        # ---- Output ----
         out = y.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
 
-        # Variance-preserving RMS gain to prevent signal decay before out_proj
         v_flat = v.transpose(1, 2).contiguous().view(B, kv_len, -1)
         v_rms = torch.sqrt(torch.mean(v_flat ** 2, dim=-1, keepdim=True).clamp_min(1e-8))
         o_rms = torch.sqrt(torch.mean(out ** 2, dim=-1, keepdim=True).clamp_min(1e-8))
@@ -1022,7 +952,6 @@ class KDAAttention(BaseAttention):
             state = {}
         step_idx = state.get("step_idx", 0)
 
-        # 1. Projections
         q = self.q_proj(x).view(B, 1, H, Dh).transpose(1, 2)
         k = self.k_proj(x).view(B, 1, self.num_kv_heads, Dh).transpose(1, 2)
         v = self.v_proj(x).view(B, 1, self.num_kv_heads, Dh).transpose(1, 2)
@@ -1031,12 +960,10 @@ class KDAAttention(BaseAttention):
             k = repeat_kv(k, self.kv_repeat)
             v = repeat_kv(v, self.kv_repeat)
 
-        # 2. Kernel feature map: ELU + 1
         scale = 1.0 / math.sqrt(Dh)
         q_act = (F.elu(q.float() * scale) + 1.0)
         k_act = (F.elu(k.float()) + 1.0)
 
-        # 3. Decay gate: beta in [1e-4, 1 - 1e-4]
         beta_t = torch.sigmoid(self.lora_beta).view(1, H, 1, 1).to(device=device, dtype=torch.float32)
 
         if "kv_state" not in state or state["kv_state"] is None:
@@ -1063,7 +990,6 @@ class KDAAttention(BaseAttention):
 
         context = yt.transpose(1, 2).contiguous().view(B, 1, H * Dh)
 
-        # Variance-preserving RMS gain
         v_flat = v.transpose(1, 2).contiguous().view(B, 1, -1)
         v_rms = torch.sqrt(torch.mean(v_flat ** 2, dim=-1, keepdim=True).clamp_min(1e-8))
         o_rms = torch.sqrt(torch.mean(context ** 2, dim=-1, keepdim=True).clamp_min(1e-8))
@@ -1086,9 +1012,6 @@ class KDAAttention(BaseAttention):
         return torch.zeros((), device=dev)
 
 
-# ===========================================================================
-# Injection
-# ===========================================================================
 def inject_kda(
     layer: Any = None,
     model: Any = None,
@@ -1100,7 +1023,6 @@ def inject_kda(
     _depth: int = 0,
     **kwargs: Any,
 ) -> KDAAttention | nn.Module | None:
-    # [KDA-FIX-12] Recursion guard
     if _depth > 8:
         logger.warning("inject_kda: max recursion depth exceeded, aborting.")
         return None
@@ -1115,7 +1037,6 @@ def inject_kda(
     if cfg is None and hasattr(target, "config"):
         cfg = target.config
 
-    # ---- Whole-model traversal ----
     layer_list = None
     for path in (
         ("distilbert", "transformer", "layer"),
@@ -1156,7 +1077,6 @@ def inject_kda(
                 num_injected += 1
         return target if num_injected > 0 else None
 
-    # ---- Single-layer injection ----
     src_attn = old_attn
     if src_attn is None:
         if hasattr(target, "attention"):
@@ -1177,14 +1097,12 @@ def inject_kda(
     if src_attn is None and cfg is None:
         return None
 
-    # [KDA-FIX-12] Idempotency guard
     if src_attn is not None and (
         isinstance(src_attn, KDAAttention)
         or "KDAAttention" in src_attn.__class__.__name__
     ):
         return None
 
-    # ---- Resolve dims ----
     hidden_size = (
         getattr(src_attn, "hidden_size", None)
         or getattr(src_attn, "embed_dim", None)
@@ -1219,13 +1137,11 @@ def inject_kda(
         logger.exception("KDA injection failed: %s", e)
         return None
 
-    # ---- Move to source device/dtype ----
     if src_attn is not None and src_attn is not target:
         p = next(src_attn.parameters(), None)
         if p is not None:
             new_attn.to(device=p.device, dtype=p.dtype)
 
-    # ---- Splice ----
     if target is not None:
         spliced = False
         if hasattr(target, "attention"):

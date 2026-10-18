@@ -32,13 +32,6 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-
-
-# ===========================================================================
-# Saliency
-# ===========================================================================
-
-
 def compute_resilient_taylor_saliency(
     weight: torch.Tensor,
     grad: torch.Tensor | None = None,
@@ -63,12 +56,10 @@ def compute_resilient_taylor_saliency(
     if activations is not None and torch.is_tensor(activations) and activations.numel() > 0:
         act = activations.float().to(W.device)
 
-        # Case A: (in_features,) per-channel mean
         if act.dim() == 1 and act.numel() == W.shape[1]:
             act_scale = act.view(1, -1).clamp(min=1e-6)
             return torch.abs(W) * act_scale
 
-        # Case B: (N, in_features) full activations
         if act.dim() >= 2 and act.shape[-1] == W.shape[1]:
             X = act.reshape(-1, act.shape[-1])
             act_scale = torch.mean(torch.abs(X), dim=0, keepdim=True).to(W.device)
@@ -79,11 +70,6 @@ def compute_resilient_taylor_saliency(
     if not math.isfinite(w_std) or w_std <= 0.0:
         w_std = 1.0
     return torch.abs(W) * (1.0 + w_std)
-
-
-# ===========================================================================
-# ARMORLinear
-# ===========================================================================
 
 
 class ARMORLinear(nn.Module):
@@ -119,16 +105,13 @@ class ARMORLinear(nn.Module):
         self.nf = out_features
         self.rank = max(1, min(rank, in_features, out_features))
 
-        # AR-FIX-01: default alpha to rank so scaling is 1.0 by construction.
         self.lora_alpha = float(lora_alpha) if lora_alpha is not None else float(self.rank)
         self.scaling = (self.lora_alpha / self.rank) if self.rank > 0 else 1.0
 
-        # AR-FIX-11: store raw (un-masked) weight.
         self.sparse_weight = nn.Parameter(
             torch.empty(out_features, in_features, dtype=dtype, device=device),
             requires_grad=False,
         )
-        # AR-FIX-02: non-persistent mask.
         self.register_buffer(
             "sparse_mask",
             torch.ones(out_features, in_features, dtype=dtype, device=device),
@@ -162,11 +145,9 @@ class ARMORLinear(nn.Module):
             out_f, in_f = raw_w.shape
             w_data = raw_w
 
-        # AR-FIX-10: clamp rank to actual dims.
         requested_rank = int(lora_A.shape[0])
         actual_rank = max(1, min(requested_rank, in_f, out_f))
 
-        # AR-FIX-01: ensure scaling == 1.0 by default.
         effective_alpha = float(lora_alpha) if lora_alpha is not None else float(actual_rank)
 
         layer = cls(
@@ -180,7 +161,6 @@ class ARMORLinear(nn.Module):
         )
         mask_dev = mask.to(dtype=w_data.dtype, device=w_data.device)
         with torch.no_grad():
-            # AR-FIX-11: store raw weight, do not pre-mask.
             layer.sparse_weight.data.copy_(w_data)
             layer.sparse_mask.copy_(mask_dev)
             layer.lora_A.data.copy_(lora_A[:actual_rank].to(dtype=raw_w.dtype, device=raw_w.device))
@@ -197,7 +177,6 @@ class ARMORLinear(nn.Module):
 
     @property
     def weight(self) -> torch.Tensor:
-        # AR-FIX-09: compute in fp32, cast back to sparse_weight dtype.
         with torch.no_grad():
             base = (self.sparse_weight.float() * self.sparse_mask.float()).to(
                 self.sparse_weight.dtype
@@ -229,26 +208,18 @@ class ARMORLinear(nn.Module):
             except Exception:
                 pass
 
-        # 1. Sparse core. Mask applied once.
         w_eff = self.sparse_weight * self.sparse_mask
         out_sparse = F.linear(x_flat, w_eff)
 
-        # 2. Low-rank residual.
         lr_dtype = self.lora_A.dtype
         x_lr = x_flat.to(lr_dtype) if x_flat.dtype != lr_dtype else x_flat
         out_lr = F.linear(F.linear(x_lr, self.lora_A), self.lora_B)
-        # AR-FIX-03: explicit dtype of scaling.
         out_lr = (out_lr * self.scaling).to(out_sparse.dtype)
 
         out = out_sparse + out_lr
         if self.bias is not None:
             out = out + self.bias.to(out.dtype)
         return out.view(*orig_shape[:-1], self.out_features)
-
-
-# ===========================================================================
-# ARMOR Pruner
-# ===========================================================================
 
 
 @COMPRESSOR_REGISTRY.register("armor_pruner")
@@ -309,7 +280,6 @@ class ARMORPruner(BaseCompressor):
                 _cfg_get(conf, "recalibrate_ln", recalibrate_ln),
             )
         )
-        # AR-FIX-01: allow None, in which case it will be set to rank per-layer.
         self.lora_alpha = (
             float(_cfg_get(conf, "armor_lora_alpha", _cfg_get(conf, "lora_alpha", lora_alpha)))
             if lora_alpha is not None
@@ -367,7 +337,6 @@ class ARMORPruner(BaseCompressor):
         self.layer_effective_ratios: dict[str, float] = {}
         self.stats: dict[str, Any] = {}
 
-    # ------------------------------------------------------------------
     def _is_gqa_asymmetric(self, name: str, module: nn.Module) -> bool:
         """
         AR-FIX-13: always active (not gated by skip_attention_qkv).
@@ -405,7 +374,6 @@ class ARMORPruner(BaseCompressor):
         if weight_tensor is None or not hasattr(weight_tensor, "dim") or weight_tensor.dim() != 2:
             return False
 
-        # AR-FIX-05: Conv1D detection via class name.
         target_cls = target_mod.__class__.__name__.lower()
         is_conv1d = "conv1d" in target_cls
         is_linear_like = (
@@ -437,13 +405,11 @@ class ARMORPruner(BaseCompressor):
         ):
             return False
 
-        # AR-FIX-15: projection O skip is opt-in.
         if self.skip_attention_output and any(
             nested in name_lower for nested in ("attention.self.output", "self.output.dense")
         ):
             return False
 
-        # AR-FIX-13: GQA shape guard always active.
         if self._is_gqa_asymmetric(name, module):
             return False
 
@@ -494,7 +460,6 @@ class ARMORPruner(BaseCompressor):
             return any(t in name for t in self.target_modules)
         return True
 
-    # ------------------------------------------------------------------
     def _collect_activations(self) -> dict[str, torch.Tensor]:
         """
         AR-FIX-12: Collect per-channel mean |x| instead of full activation tensors.
@@ -508,7 +473,6 @@ class ARMORPruner(BaseCompressor):
             def hook(module, inp, outp):
                 if inp and isinstance(inp[0], torch.Tensor):
                     x = inp[0].detach()
-                    # Per-channel mean absolute value; collapse all dims but last.
                     if x.dim() >= 2:
                         col_mean = x.abs().mean(dim=tuple(range(x.dim() - 1)))
                     else:
@@ -564,7 +528,6 @@ class ARMORPruner(BaseCompressor):
             for h in hooks:
                 h.remove()
 
-        # Aggregate per layer by mean over batches.
         aggregated: dict[str, torch.Tensor] = {}
         for name, lst in activations.items():
             if lst:
@@ -572,7 +535,6 @@ class ARMORPruner(BaseCompressor):
                 aggregated[name] = stacked.mean(dim=0)
         return aggregated
 
-    # ------------------------------------------------------------------
     def compress(self, **kwargs: Any) -> tuple[nn.Module, dict[str, Any]]:
         act_map = self._collect_activations()
         self.compressed_layers = []
@@ -584,8 +546,8 @@ class ARMORPruner(BaseCompressor):
         total_correction_energy = 0.0
         seen_weights: set = set()
 
-        total_base_sparse_effective = 0  # non-zero entries
-        total_base_sparse_storage = 0  # dense storage slots
+        total_base_sparse_effective = 0
+        total_base_sparse_storage = 0
         total_correction = 0
         total_orig = 0
 
@@ -610,7 +572,6 @@ class ARMORPruner(BaseCompressor):
                 module, "base_layer"
             )
 
-            # AR-FIX-07: use the actual weight tensor id.
             weight_tensor = getattr(target_mod, "weight", None)
             if weight_tensor is None:
                 self.skipped_layers.append(name)
@@ -633,7 +594,6 @@ class ARMORPruner(BaseCompressor):
             try:
                 saliency = compute_resilient_taylor_saliency(W, grad=grad, activations=act)
 
-                # AR-FIX-04: robust mask handling.
                 if self.structured_24:
                     W_sparse, raw_mask = apply_24_structured_mask(W, saliency=saliency, dim=1)
                     if raw_mask is None:
@@ -650,7 +610,6 @@ class ARMORPruner(BaseCompressor):
                     mask = (saliency >= thr).float()
                     W_sparse = W * mask
 
-                # Residual low-rank.
                 residual = W - W_sparse
                 r = min(self.rank, residual.shape[0], residual.shape[1])
                 try:
@@ -665,12 +624,10 @@ class ARMORPruner(BaseCompressor):
                     lora_A = torch.zeros(r, in_features, dtype=dtype, device=device)
                     lora_B = torch.zeros(out_features, r, dtype=dtype, device=device)
 
-                # AR-FIX-01: alpha defaults to rank so scaling = 1.0.
                 effective_alpha = self.lora_alpha if self.lora_alpha is not None else float(r)
                 scaling = effective_alpha / r if r > 0 else 1.0
                 W_recon = W_sparse + scaling * torch.matmul(lora_B.float(), lora_A.float())
 
-                # AR-FIX-06: fast finite check.
                 if not torch.isfinite(W_recon).all():
                     raise RuntimeError("non-finite reconstruction")
 
@@ -725,8 +682,6 @@ class ARMORPruner(BaseCompressor):
                     else:
                         replace_module(self.model, name, armor_layer)
                 else:
-                    # AR-FIX: mutation under no_grad. NOTE: this branch does NOT
-                    # reduce parameter count; it is a numerical approximation only.
                     with torch.no_grad():
                         if is_conv1d:
                             weight_tensor.data.copy_(
@@ -743,7 +698,6 @@ class ARMORPruner(BaseCompressor):
                 for p in module.parameters():
                     p.requires_grad = False
 
-        # AR-FIX-08: LayerNorm recalibration only when data available.
         if self.recalibrate_ln and (
             self.calibration_loader is not None or self.calibration_texts is not None
         ):
@@ -758,7 +712,6 @@ class ARMORPruner(BaseCompressor):
             except Exception as e:
                 logger.warning("ARMOR LayerNorm recalibration skipped: %s", e)
 
-        # Forward sanity check.
         forward_check_success = True
         try:
             self.model.eval()
@@ -814,7 +767,6 @@ class ARMORPruner(BaseCompressor):
             else (0.5 if self.structured_24 else self.sparsity)
         )
 
-        # AR-FIX-14: honest accounting.
         effective_param_ratio = (
             float((total_base_sparse_effective + total_correction) / max(1, total_orig))
             if total_orig > 0
@@ -842,7 +794,6 @@ class ARMORPruner(BaseCompressor):
                 "actual_sparsity": avg_actual_sparsity,
                 "layer_actual_sparsities": self.layer_actual_sparsities,
                 "layer_effective_ratios": self.layer_effective_ratios,
-                # AR-FIX-14: distinguish storage from effective.
                 "base_sparse_storage": total_base_sparse_storage,
                 "base_sparse_params": total_base_sparse_storage,
                 "base_sparse_effective": total_base_sparse_effective,
@@ -869,11 +820,6 @@ class ARMORPruner(BaseCompressor):
         self.stats = stats
         self.model.compression_stats = stats
         return self.model, stats
-
-
-# ===========================================================================
-# Factory
-# ===========================================================================
 
 
 def armor_pruner_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
@@ -912,7 +858,6 @@ def armor_pruner_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> 
             _cfg_get(comp_config, "recalibrate_ln", True),
         ),
     )
-    # AR-FIX-01: allow None to mean "= rank".
     lora_alpha = kwargs.pop(
         "lora_alpha",
         _cfg_get(comp_config, "armor_lora_alpha", _cfg_get(comp_config, "lora_alpha", None)),

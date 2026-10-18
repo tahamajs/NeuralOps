@@ -28,8 +28,6 @@ from neuralops.utils.compat import should_compress_linear
 logger = logging.getLogger(__name__)
 
 
-
-
 _ATTN_NAMES = {
     "attn",
     "attention",
@@ -50,15 +48,6 @@ _ATTN_NAMES = {
 }
 
 
-
-
-
-
-# ===========================================================================
-# Compressor (LL-FIX-01, LL-FIX-02)
-# ===========================================================================
-
-
 class LiLLaMADistiller(BaseCompressor):
     """LiLLaMADistiller neural operator.
 
@@ -68,7 +57,6 @@ class LiLLaMADistiller(BaseCompressor):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
-    # LL-FIX-01: this is a local distillation / weight-rewriter, not standard factorized attention.
     is_custom_attention: bool = False
     category: str = "weight_rewriting"
 
@@ -108,7 +96,6 @@ class LiLLaMADistiller(BaseCompressor):
                 cfg, "max_calibration_batches", max_calibration_batches
             )
 
-        # LL-FIX-11: tokenizer resolution.
         self.tokenizer = (
             tokenizer
             or getattr(model, "tokenizer", None)
@@ -126,13 +113,11 @@ class LiLLaMADistiller(BaseCompressor):
         self.skip_should_compress_filter = bool(skip_should_compress_filter)
         self.max_calibration_batches = max(1, int(max_calibration_batches))
 
-        # LL-FIX-03: safe device.
         if device is not None:
             self.target_device = torch.device(device)
         else:
             self.target_device = _get_device(model)
 
-        # LL-FIX-15: initialize all lists in __init__.
         self.compressed_layers: list[str] = []
         self.fallback_layers: list[str] = []
         self.layer_errors: dict[str, float] = {}
@@ -140,9 +125,6 @@ class LiLLaMADistiller(BaseCompressor):
         self.stats: dict[str, Any] = {}
         self._compressed_params: int = 0
 
-    # ------------------------------------------------------------------
-    # Target check (LL-FIX-06)
-    # ------------------------------------------------------------------
     def _is_target_module(self, name: str, module: nn.Module, _debug: bool = False) -> bool:
         name_lower = name.lower()
         if any(part in name.split(".") for part in ("lora_A", "lora_B", "base_layer")):
@@ -150,7 +132,6 @@ class LiLLaMADistiller(BaseCompressor):
                 logger.info(f"  [skip] {name}: lora/base_layer part")
             return False
 
-        # Skip already-compressed.
         cls_name = module.__class__.__name__
         if cls_name in (
             "LSCPrunedLoRALinear",
@@ -189,7 +170,6 @@ class LiLLaMADistiller(BaseCompressor):
                 logger.info(f"  [skip] {name}: not linear-like")
             return False
 
-        # LL-FIX-09: allow bypassing framework filter.
         if not self.skip_should_compress_filter:
             try:
                 if not should_compress_linear(self.model, name):
@@ -201,7 +181,6 @@ class LiLLaMADistiller(BaseCompressor):
                     logger.info(f"  [skip] {name}: should_compress_linear raised {e}")
                 return False
 
-        # LL-FIX-10: filter tiny layers.
         w = getattr(target_mod, "weight", None)
         if w is None:
             if _debug:
@@ -252,9 +231,6 @@ class LiLLaMADistiller(BaseCompressor):
             logger.info(f"  [TARGET] {name}: shape={tuple(w.shape)}")
         return True
 
-    # ------------------------------------------------------------------
-    # IO activation collection
-    # ------------------------------------------------------------------
     def _collect_io_activations(
         self,
     ) -> dict[str, tuple[torch.Tensor, torch.Tensor]]:
@@ -363,9 +339,6 @@ class LiLLaMADistiller(BaseCompressor):
             return [calib_inputs]
         return [calib_inputs]
 
-    # ------------------------------------------------------------------
-    # SVD factorization helper
-    # ------------------------------------------------------------------
     def _factorize(
         self,
         W: torch.Tensor,
@@ -388,11 +361,7 @@ class LiLLaMADistiller(BaseCompressor):
             logger.debug("LiLLaMA SVD factorization failed: %s", e)
             return W, 0
 
-    # ------------------------------------------------------------------
-    # Main compress
-    # ------------------------------------------------------------------
     def compress(self, **kwargs: Any) -> tuple[nn.Module, dict[str, Any]]:
-        # LL-FIX-08: idempotence.
         if getattr(self.model, "_lillama_compressed", False):
             logger.warning("LiLLaMA: model already compressed; skipping.")
             try:
@@ -408,7 +377,6 @@ class LiLLaMADistiller(BaseCompressor):
         activations_map = self._collect_io_activations()
         logger.info("LiLLaMA: %d target activation sets collected.", len(activations_map))
 
-        # LL-FIX-06: diagnostic if no targets.
         target_list = [
             (name, module)
             for name, module in self.model.named_modules()
@@ -431,7 +399,6 @@ class LiLLaMADistiller(BaseCompressor):
         total_orig_params = 0
         total_comp_params = 0
 
-        # Deduplicated parameter accounting.
         seen_param_ids: set = set()
         count_param_ids: set = set()
 
@@ -459,7 +426,6 @@ class LiLLaMADistiller(BaseCompressor):
             used_cross_cov = False
             r_used = self.rank
 
-            # LL-FIX-04: initialize W_new to W (safe default).
             W_new = W
 
             if name in activations_map:
@@ -504,7 +470,6 @@ class LiLLaMADistiller(BaseCompressor):
                     _count_params_of(module)
                     continue
 
-            # Shape integrity check.
             final_w = W_new.t().contiguous() if is_conv1d else W_new
             if final_w.shape != target_layer.weight.shape:
                 logger.warning(
@@ -521,7 +486,6 @@ class LiLLaMADistiller(BaseCompressor):
             if getattr(target_layer, "bias", None) is not None:
                 target_layer.bias.requires_grad = False
 
-            # Preserve LoRA adapter trainability.
             if hasattr(module, "lora_A") and hasattr(module, "lora_B"):
                 for attr in ("lora_A", "lora_B"):
                     p = getattr(module, attr, None)
@@ -542,7 +506,6 @@ class LiLLaMADistiller(BaseCompressor):
                 "shape": tuple(final_w.shape),
             }
 
-        # LL-FIX-07: forward sanity check.
         forward_check_success = True
         try:
             with torch.no_grad():
@@ -564,7 +527,6 @@ class LiLLaMADistiller(BaseCompressor):
         except Exception:
             self._compressed_params = sum(p.numel() for p in self.model.parameters())
 
-        # LL-FIX-04: avg error only over compressed layers.
         compressed_errs = [
             self.layer_errors[n] for n in self.compressed_layers if n in self.layer_errors
         ]
@@ -592,7 +554,6 @@ class LiLLaMADistiller(BaseCompressor):
                 "effective_parameter_ratio": eff_ratio,
                 "forward_check_success": forward_check_success,
                 "method": "lillama_cross_covariance_svd",
-                # LL-FIX-12: honest note.
                 "note": (
                     "LiLLaMA rewrites weights in-place with the distilled reconstruction. "
                     "The dense weight keeps its full (out, in) shape; framework-level "
@@ -603,7 +564,6 @@ class LiLLaMADistiller(BaseCompressor):
         )
         self.stats = stats
 
-        # LL-FIX-13: write stats onto model.
         try:
             if not hasattr(self.model, "compression_stats") or self.model.compression_stats is None:
                 self.model.compression_stats = {}
@@ -630,13 +590,6 @@ class LiLLaMADistiller(BaseCompressor):
         return self.model, stats
 
 
-# ===========================================================================
-# Factory (LL-FIX-02, LL-FIX-05)
-# ===========================================================================
-
-
-# DEPRECATED: alias in eval_types.DEPRECATED_MODULES
-# @COMPRESSOR_REGISTRY.register("lillama_compressor")
 def lillama_factory(
     model: Any,
     comp_config: Any = None,

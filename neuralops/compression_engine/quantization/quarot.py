@@ -42,13 +42,11 @@ class QuaRotCompressor(BaseCompressor):
 
     def _quantize_layer(self, layer: nn.Linear, name: str) -> None:
         w = layer.weight.data.float()
-        # Apply orthogonal Hadamard rotation along input channels
         w_rot = fast_hadamard_transform(w, block_size=self.hadamard_block_size)
         q_max = 2 ** (self.bits - 1) - 1
         q_min = -2 ** (self.bits - 1)
         scale = (w_rot.abs().amax(dim=1, keepdim=True) / q_max).clamp(min=1e-8)
         w_q = torch.clamp(torch.round(w_rot / scale), q_min, q_max)
-        # Dequantize rotated weight and rotate back
         w_dequant_rot = w_q * scale
         w_rec = fast_hadamard_transform(w_dequant_rot, block_size=self.hadamard_block_size)
         layer.weight.data.copy_(w_rec.to(layer.weight.dtype))

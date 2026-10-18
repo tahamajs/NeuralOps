@@ -36,15 +36,10 @@ from neuralops.core.utils.rope import apply_rotary_pos_emb
 logger = logging.getLogger(__name__)
 
 
-# Set JAMBA_CHECKPOINT=1 to enable gradient checkpointing for mamba/moe branches.
-# Disabled by default to avoid redundant forward passes and restore iteration speed.
 def _is_checkpoint_enabled() -> bool:
     return os.environ.get("JAMBA_CHECKPOINT", "0").lower() in ("1", "true", "yes", "on")
 
 
-# ===========================================================================
-# SVD-Mamba Submodule
-# ===========================================================================
 class SVDMambaSub(nn.Module):
     """
     SVD-compressed Mamba / SSM branch with optional past state support.
@@ -117,9 +112,6 @@ class SVDMambaSub(nn.Module):
         return out, present_state
 
 
-# ===========================================================================
-# Jamba-2 Block
-# ===========================================================================
 @ATTENTION_REGISTRY.register(
     "jamba", supports_causal=True, supports_bidirectional=True, supports_gqa=True
 )
@@ -426,7 +418,6 @@ class Jamba2Block(BaseAttention):
                             nn.init.zeros_(target.bias)
                     continue
 
-                # Frobenius norm guard: warn if source weights appear degenerate/zero-initialized.
                 frob = float(w.float().norm(p="fro").item())
                 if frob < 1e-6:
                     msg = (
@@ -527,7 +518,6 @@ class Jamba2Block(BaseAttention):
 
         past_k, past_v, past_len, past_mamba = read_cache(past_key_value, layer_idx)
 
-        # ---- Branch 1: Mamba (Pre-LN with Checkpointing) ----
         mamba_out = torch.zeros_like(hidden_states)
         present_mamba = None
         if self.mamba is not None:
@@ -555,7 +545,6 @@ class Jamba2Block(BaseAttention):
 
             mamba_out = m_out.to(target_dtype) * self.lora_mamba_scale
 
-        # ---- Branch 2: Attention ----
         q = self.q_lin(hidden_states).view(B, L, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
         k = self.k_lin(hidden_states).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
         v = self.v_lin(hidden_states).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
@@ -598,7 +587,6 @@ class Jamba2Block(BaseAttention):
         scale = 1.0 / math.sqrt(self.head_dim)
         is_causal = bool(self.is_decoder and L > 1)
 
-        # Prioritize SDPA for all decoder paths whenever head_mask is None and past_len == 0
         can_use_sdpa = head_mask is None and past_len == 0 and not output_attentions
         if not self.is_decoder:
             can_use_sdpa = can_use_sdpa and (attention_mask is None)
@@ -609,7 +597,6 @@ class Jamba2Block(BaseAttention):
             try:
                 dropout_p = self.dropout.p if self.training else 0.0
 
-                # Dtype casting for SDPA: only cast fp32 -> bf16 on CUDA devices with bf16 support
                 q_sdpa, k_sdpa, v_sdpa = q, k_exp, v_exp
                 if (
                     hidden_states.device.type == "cuda"
@@ -713,7 +700,6 @@ class Jamba2Block(BaseAttention):
         attn_out = torch.nan_to_num(attn_out, nan=0.0, posinf=1e4, neginf=-1e4)
         attn_delta = attn_out if self.is_nested_encoder else self.out_lin(attn_out)
 
-        # ---- Branch 3: MoE ----
         moe_out = torch.zeros_like(hidden_states)
         if self.moe is not None:
             n3d = self._norm_dtype(self.norm3, target_dtype)
@@ -740,7 +726,6 @@ class Jamba2Block(BaseAttention):
         if mamba_out.is_cuda and attn_delta.is_cuda:
             try:
                 from neuralops.core.triton_kernels.selective_scan import fused_jamba_hybrid_ssm_attn_gate_triton
-                # Fused gate alpha=0.5
                 alpha_hybrid = torch.tensor(0.5, device=mamba_out.device, dtype=mamba_out.dtype)
                 fused_ma = fused_jamba_hybrid_ssm_attn_gate_triton(mamba_out, attn_delta, alpha_hybrid)
                 final_delta = fused_ma * 2.0 + moe_out

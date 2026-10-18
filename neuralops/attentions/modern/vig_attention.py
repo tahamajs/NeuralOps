@@ -31,17 +31,6 @@ from neuralops.utils.model_family import ModelAdapter
 logger = logging.getLogger(__name__)
 
 
-
-
-
-
-
-
-# ═══════════════════════════════════════════════════════════════════
-# ViG Attention
-# ═══════════════════════════════════════════════════════════════════
-
-
 @ATTENTION_REGISTRY.register(
     "vig_attention",
     supports_causal=True,
@@ -83,7 +72,6 @@ class ViGAttention(BaseAttention):
         src_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("old_attn")
         self.config = config
 
-        # ---- Dimensions ----
         if config is not None and not isinstance(config, int):
             self.adapter = ModelAdapter(config)
             self.num_heads: int = self.adapter.num_heads
@@ -117,17 +105,14 @@ class ViGAttention(BaseAttention):
             self.all_head_size = self.num_heads * self.head_dim
             self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
 
-        # ---- Decoder detection ----
         self.is_decoder = _detect_decoder(config, is_decoder, src_attn)
         self.is_nested_encoder: bool = False
 
         self.lora_rank = int(kwargs.get("lora_rank", _cfg_get(config, "lora_rank", lora_rank)))
         self.lora_alpha = float(kwargs.get("lora_alpha", _cfg_get(config, "lora_alpha", lora_alpha)))
 
-        # ---- Local window ----
         self.local_window: int = int(local_window)
 
-        # ---- Projections ----
         target_dtype = kwargs.get("dtype")
         if target_dtype is None and src_attn is not None:
             p = next(src_attn.parameters(), None)
@@ -155,9 +140,7 @@ class ViGAttention(BaseAttention):
             freeze_base=True, dtype=target_dtype,
         )
 
-        # ---- [FIX-10] gate_net stays fp32 for stability ----
         self.gate_net = nn.Linear(self.dim, 2 * self.num_heads).float()
-        # ---- [FIX-12] zero-init bias so softmax gives 0.5/0.5 at start ----
         nn.init.zeros_(self.gate_net.bias)
         nn.init.normal_(self.gate_net.weight, std=0.02)
 
@@ -169,20 +152,17 @@ class ViGAttention(BaseAttention):
         self.dropout = nn.Dropout(float(dropout_p))
         self.rotary_emb = getattr(src_attn, "rotary_emb", None)
 
-        # ---- [FIX-15] cache for graph_adj ----
         self._graph_adj_cache: dict = {}
 
         if src_attn is not None:
             self.copy_weights(src_attn)
 
-        # ---- [FIX-10] only cast projections, NOT the whole module ----
         if target_dtype is not None:
             self.q_proj.to(target_dtype)
             self.k_proj.to(target_dtype)
             self.v_proj.to(target_dtype)
             self.out_proj.to(target_dtype)
 
-    # ---- Aliases (state-dict compatibility) ----
     @property
     def query(self): return self.q_proj
     @property
@@ -204,7 +184,6 @@ class ViGAttention(BaseAttention):
     @property
     def c_proj(self): return self.out_proj
 
-    # ------------------------------------------------------------------
     def copy_weights(self, old_attn: Any) -> None:
         extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
             "q": (None, None), "k": (None, None),
@@ -219,7 +198,6 @@ class ViGAttention(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter fallback failed for %s: %s", proj, e)
 
-        # GPT-2 fused c_attn
         if hasattr(old_attn, "c_attn") and (
             extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None
         ):
@@ -257,7 +235,6 @@ class ViGAttention(BaseAttention):
             b_o = getattr(old_attn.c_proj, "bias", None)
             extracted["o"] = (w_o, b_o.data if b_o is not None else None)
 
-        # BERT/RoBERTa nested
         if hasattr(old_attn, "self") and (
             extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None
         ):
@@ -277,7 +254,6 @@ class ViGAttention(BaseAttention):
             dense = old_attn.output.dense
             extracted["o"] = (dense.weight.data, getattr(dense, "bias", None))
 
-        # Flat (DistilBERT, LLaMA, Qwen)
         named_map = {
             "q": ["q_proj", "q_lin", "query"],
             "k": ["k_proj", "k_lin", "key"],
@@ -310,7 +286,6 @@ class ViGAttention(BaseAttention):
         if missing:
             logger.warning("ViGAttention.copy_weights: missing %s; keeping random init.", missing)
 
-        # GQA head pooling
         def _pool_gqa_heads(w: torch.Tensor, target_heads: int, head_dim: int) -> torch.Tensor:
             if w.dim() != 2:
                 return w
@@ -375,7 +350,6 @@ class ViGAttention(BaseAttention):
 
                 target.freeze_base_weights()
 
-                # Copy LoRA adapter weights if present on source projection
                 src_proj = getattr(old_attn, f"{key}_proj", getattr(old_attn, key, None))
                 if src_proj is not None and hasattr(target, "lora_A") and target.lora_A is not None:
                     if hasattr(src_proj, "lora_A") and src_proj.lora_A is not None:
@@ -388,7 +362,6 @@ class ViGAttention(BaseAttention):
         if hasattr(old_attn, "is_decoder"):
             self.is_decoder = bool(old_attn.is_decoder)
 
-    # ------------------------------------------------------------------
     @staticmethod
     def _prepare_valid_mask(
         attention_mask: torch.Tensor | None,
@@ -419,7 +392,6 @@ class ViGAttention(BaseAttention):
             return _to_bool(attention_mask).any(dim=-2).squeeze(1)
         raise ValueError(f"Unsupported attention_mask dim: {attention_mask.dim()}")
 
-    # ------------------------------------------------------------------
     _read_past_kv = staticmethod(_read_past_kv)
 
     def _build_graph_adj(
@@ -441,45 +413,36 @@ class ViGAttention(BaseAttention):
           - Local window + first-token + last-token anchors.
           - Bidirectional.
         """
-        # ---- [FIX-15] cache key ----
         cache_key = (L, N_kv, past_len, is_decoder, str(device))
         if cache_key in self._graph_adj_cache:
             return self._graph_adj_cache[cache_key]
 
-        q_abs = torch.arange(L, device=device) + past_len   # (L,)
-        k_abs = torch.arange(N_kv, device=device)           # (N_kv,)
-        diff = k_abs.unsqueeze(0) - q_abs.unsqueeze(1)      # (L, N_kv): k - q
+        q_abs = torch.arange(L, device=device) + past_len
+        k_abs = torch.arange(N_kv, device=device)
+        diff = k_abs.unsqueeze(0) - q_abs.unsqueeze(1)
 
-        # Local window
         local = diff.abs() <= self.local_window
 
-        # First-token anchor (k=0)
         anchor_first = (k_abs == 0).unsqueeze(0).expand(L, -1)
 
         if is_decoder:
-            # ---- [FIX-9] STRICT CAUSALITY: k_abs <= q_abs ----
             causal = diff <= 0
             graph_adj = (local | anchor_first) & causal
         else:
-            # Encoder: bidirectional local + first + last
             anchor_last = (k_abs == N_kv - 1).unsqueeze(0).expand(L, -1)
             graph_adj = local | anchor_first | anchor_last
 
-        # ---- [FIX-15] cache (limit size) ----
         if len(self._graph_adj_cache) > 8:
             self._graph_adj_cache.clear()
         self._graph_adj_cache[cache_key] = graph_adj
 
         return graph_adj
 
-    # ------------------------------------------------------------------
-    # [FIX-3 + FIX-13 + FIX-17] Stabilized causal linear attention
-    # ------------------------------------------------------------------
     @staticmethod
     def _linear_attention_decoder_cumsum(
-        q_lin: torch.Tensor,   # (B, H, L, Dh)
-        k_lin: torch.Tensor,   # (B, H, N_kv, Dh)
-        v_f: torch.Tensor,     # (B, H, N_kv, Dh)
+        q_lin: torch.Tensor,
+        k_lin: torch.Tensor,
+        v_f: torch.Tensor,
         past_len: int,
         chunk_size: int = 128,
     ) -> torch.Tensor:
@@ -496,12 +459,10 @@ class ViGAttention(BaseAttention):
             except Exception:
                 pass
 
-        # Fully vectorized causal cumsum fallback without memory allocation loops
-        kv_outer = k_lin.unsqueeze(-1) * v_f.unsqueeze(-2)  # (B, H, N_kv, Dh, Dh)
+        kv_outer = k_lin.unsqueeze(-1) * v_f.unsqueeze(-2)
         kv_cumsum = kv_outer.cumsum(dim=2)
         k_cumsum = k_lin.cumsum(dim=2)
 
-        # Direct slice for current query length
         kv_at_q = kv_cumsum[:, :, past_len : past_len + L, :, :]
         k_at_q = k_cumsum[:, :, past_len : past_len + L, :]
 
@@ -517,16 +478,12 @@ class ViGAttention(BaseAttention):
         v_f: torch.Tensor,
     ) -> torch.Tensor:
         """Bidirectional linear attention via associativity: Q(K^T V)."""
-        kv = torch.matmul(k_lin.transpose(-1, -2).contiguous(), v_f)   # (B, H, Dh, Dh)
-        num = torch.matmul(q_lin, kv)                                   # (B, H, L, Dh)
-        k_sum = k_lin.sum(dim=-2, keepdim=True)                         # (B, H, 1, Dh)
-        # ---- [FIX-17] safer clamp ----
+        kv = torch.matmul(k_lin.transpose(-1, -2).contiguous(), v_f)
+        num = torch.matmul(q_lin, kv)
+        k_sum = k_lin.sum(dim=-2, keepdim=True)
         denom = torch.matmul(q_lin, k_sum.transpose(-1, -2).contiguous()).clamp(min=1e-4)
         return num / denom
 
-    # ------------------------------------------------------------------
-    # Forward
-    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -555,16 +512,13 @@ class ViGAttention(BaseAttention):
         kv_input = encoder_hidden_states if is_cross else hidden_states
         N_kv_new = kv_input.shape[1]
 
-        # ---- Projections ----
         q = self.q_proj(hidden_states).view(B, N, Hh, Dh).transpose(1, 2).contiguous()
         k_new = self.k_proj(kv_input).view(B, N_kv_new, H_kv, Dh).transpose(1, 2).contiguous()
         v_new = self.v_proj(kv_input).view(B, N_kv_new, H_kv, Dh).transpose(1, 2).contiguous()
 
-        # ---- Read past KV ----
         past_k, past_v, _ = self._read_past_kv(past_key_value, layer_idx) if not is_cross else (None, None, 0)
         past_len = past_k.shape[-2] if past_k is not None else 0
 
-        # ---- RoPE ----
         pos_emb = position_embeddings if position_embeddings is not None else kwargs.get("position_embeddings")
         if pos_emb is not None and isinstance(pos_emb, (tuple, list)) and len(pos_emb) >= 2:
             cos, sin = pos_emb[0], pos_emb[1]
@@ -581,7 +535,6 @@ class ViGAttention(BaseAttention):
             except Exception as e:
                 logger.debug("rotary_emb failed: %s", e)
 
-        # ---- Concat KV cache ----
         present_kv: Any | None = None
         if is_cross:
             K_cat, V_cat = k_new, v_new
@@ -606,28 +559,22 @@ class ViGAttention(BaseAttention):
 
         N_kv = K_cat.shape[-2]
 
-        # ---- GQA expand ----
         if self.kv_repeat > 1:
             K_full = repeat_kv(K_cat, self.kv_repeat)
             V_full = repeat_kv(V_cat, self.kv_repeat)
         else:
             K_full, V_full = K_cat, V_cat
 
-        # ---- Graph adjacency ----
         graph_adj = self._build_graph_adj(N, N_kv, past_len, device, self.is_decoder)
 
-        # ---- Padding mask ----
         eff_mask = encoder_attention_mask if is_cross else attention_mask
         token_valid = self._prepare_valid_mask(eff_mask, B, N_kv, device)
 
-        # ---- [FIX-11] safe mask value ----
         mask_val = _safe_mask_value(dtype)
 
-        # ---- Fast Graph Branch (Vectorized Float Masking) ----
         scale = 1.0 / math.sqrt(Dh)
         scores_graph = torch.matmul(q.float(), K_full.float().transpose(-2, -1)) * scale
 
-        # ترکیب ماسک همسایگی گراف و ماسک پدینگ توکن‌ها
         combined_mask = graph_adj.unsqueeze(0).unsqueeze(1)
         if token_valid is not None:
             combined_mask = combined_mask & token_valid[:, None, None, :]
@@ -636,12 +583,6 @@ class ViGAttention(BaseAttention):
         attn_graph = F.softmax(scores_graph, dim=-1).to(dtype)
         attn_graph_out = torch.matmul(attn_graph, V_full)
 
-        # ═══════════════════════════════════════════════════════════════
-        # [FIX-17] STABILIZED LINEAR BRANCH
-        # ═══════════════════════════════════════════════════════════════
-        # 1. L2-normalize Q and K before activation to prevent explosion.
-        # 2. Use softplus (bounded, strictly positive) instead of elu+1.
-        # 3. Small epsilon ensures no absolute zeros.
         q_norm = F.normalize(q.float(), p=2, dim=-1)
         k_norm = F.normalize(K_full.float(), p=2, dim=-1)
 
@@ -660,17 +601,15 @@ class ViGAttention(BaseAttention):
         else:
             out_global = self._linear_attention_encoder(q_lin, k_lin, v_f).to(dtype)
 
-        # ---- [FIX-10 + FIX-12] Gated fusion ----
         gates = F.softmax(
             self.gate_net(hidden_states.to(self.gate_net.weight.dtype)).view(B, N, Hh, 2), dim=-1
         ).to(dtype)
-        gate_graph = gates[..., 0].transpose(1, 2).contiguous().unsqueeze(-1)    # (B, H, N, 1)
-        gate_global = gates[..., 1].transpose(1, 2).contiguous().unsqueeze(-1)   # (B, H, N, 1)
+        gate_graph = gates[..., 0].transpose(1, 2).contiguous().unsqueeze(-1)
+        gate_global = gates[..., 1].transpose(1, 2).contiguous().unsqueeze(-1)
 
         out = gate_graph * attn_graph_out + gate_global * out_global
         out = self.dropout(out)
 
-        # ---- Head mask ----
         if head_mask is not None:
             if head_mask.dim() == 1:
                 head_mask = head_mask.view(1, -1, 1, 1)
@@ -689,7 +628,6 @@ class ViGAttention(BaseAttention):
             output = self.out_proj(out)
             output = torch.nan_to_num(output, nan=0.0, posinf=1e4, neginf=-1e4)
 
-        # ---- Return format ----
         if self.is_decoder and not is_cross:
             if output_attentions:
                 return output.to(dtype), present_kv, None
@@ -698,11 +636,6 @@ class ViGAttention(BaseAttention):
         if output_attentions:
             return output.to(dtype), None
         return output.to(dtype), None
-
-
-# ═══════════════════════════════════════════════════════════════════
-# Injector
-# ═══════════════════════════════════════════════════════════════════
 
 
 def inject_vig(
@@ -728,7 +661,6 @@ def inject_vig(
 
     cfg = model_config if model_config is not None else getattr(target, "config", None)
 
-    # ---- Whole-model traversal ----
     layer_list = None
     for path in (
         ("distilbert", "transformer", "layer"),
@@ -769,7 +701,6 @@ def inject_vig(
                 num_injected += 1
         return target if num_injected > 0 else None
 
-    # ---- Single layer ----
     try:
         def _already_injected(m):
             if m is None:

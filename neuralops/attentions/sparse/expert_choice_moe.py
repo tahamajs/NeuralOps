@@ -42,12 +42,6 @@ from neuralops.core.base import BaseAttention
 from neuralops.core.registry import ATTENTION_REGISTRY
 
 
-
-
-
-
-
-
 class ExpertChoiceMoE(nn.Module):
     r"""
     Expert Choice Routing MoE layer.
@@ -85,7 +79,6 @@ class ExpertChoiceMoE(nn.Module):
             ]
         )
 
-        # Active MoE expert representation
         for expert in self.experts:
             nn.init.normal_(expert[2].weight, std=0.02)
             if expert[2].bias is not None:
@@ -111,12 +104,8 @@ class ExpertChoiceMoE(nn.Module):
         if self.training and self.noise_std > 0:
             logits = logits + torch.randn_like(logits) * self.noise_std
 
-        # FIXED: Converted to Causal Token-Choice MoE routing to prevent future token leakage.
-        # Expert-Choice applies softmax over the sequence (dim=0), which catastrophically leaks future tokens into past states.
-        # We now apply softmax over the experts (dim=-1) and select top-k experts per token.
         gate_scores = F.softmax(logits.float(), dim=-1).to(dtype=logits.dtype)
-        
-        # Select top-2 experts per token (standard MoE)
+
         top_k_experts = min(2, self.n_experts)
         from neuralops.core.triton_kernels.sparse_attn import (
             fused_expert_choice_scatter_gather_triton,
@@ -133,19 +122,16 @@ class ExpertChoiceMoE(nn.Module):
 
         out_flat = torch.zeros_like(x_flat)
         for e in range(self.n_experts):
-            # Find tokens assigned to expert e
             expert_mask = topk_indices == e
             token_indices = expert_mask.any(dim=-1).nonzero(as_tuple=True)[0]
-            
+
             if token_indices.numel() == 0:
                 continue
 
-            # Get the gating values for the selected tokens
-            # expert_mask is [T, top_k], so we need to extract the matching topk_vals
             matched_vals = topk_vals[expert_mask]
 
             selected_x = x_flat[token_indices]
-            
+
             if selected_x.size(-1) == self.d_model:
                 expert_out = self.experts[e](selected_x)
             else:
@@ -170,10 +156,9 @@ class ExpertChoiceMoE(nn.Module):
             update_val = (
                 expert_out.to(out_flat.dtype) * matched_vals.unsqueeze(-1).to(out_flat.dtype)
             ).to(dtype=out_flat.dtype)
-            
+
             out_flat.index_add_(0, token_indices, update_val)
 
-        # Auxiliary load balancing loss
         prob_mean = F.softmax(logits.float() / 1.0, dim=-1).mean(dim=0)
         self.aux_loss = self.n_experts * torch.sum(prob_mean**2)
 
@@ -239,7 +224,6 @@ class ExpertChoiceMoEAttention(BaseAttention):
         self.kv_head_size = self.num_kv_heads * self.head_dim
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
 
-        # Static layer index
         resolved_layer_id = (
             layer_id
             if layer_id is not None
@@ -251,7 +235,6 @@ class ExpertChoiceMoEAttention(BaseAttention):
         )
         self.layer_idx: int = int(resolved_layer_id)
 
-        # LoRA adaptation configuration
         self.lora_rank: int = getattr(
             config,
             "lora_rank",
@@ -264,7 +247,6 @@ class ExpertChoiceMoEAttention(BaseAttention):
         )
         self.freeze_base: bool = self.lora_rank > 0
 
-        # Decoder & nested encoder detection
         model_type = getattr(config, "model_type", "").lower()
         is_dec = getattr(
             config,
@@ -300,7 +282,6 @@ class ExpertChoiceMoEAttention(BaseAttention):
         self.is_causal: bool = bool(is_dec)
         self.is_nested_encoder: bool = False
 
-        # Multi-head projections equipped with LoRA adapters
         self.q_lin = LoRALinear(
             self.dim,
             self.all_head_size,
@@ -337,7 +318,6 @@ class ExpertChoiceMoEAttention(BaseAttention):
         self.moe = ExpertChoiceMoE(
             self.all_head_size, n_experts=n_experts, capacity_factor=capacity_factor
         )
-        # Trainable gate for MoE output contribution (initialized with negative bias for smooth ramp-up)
         self.moe_gate = nn.Parameter(torch.tensor(float(moe_init_gate)))
 
         dropout_p = (
@@ -354,7 +334,6 @@ class ExpertChoiceMoEAttention(BaseAttention):
         if source_attn is not None:
             self.copy_weights(source_attn)
 
-    # Compatibility properties
     @property
     def query(self) -> LoRALinear:
         return self.q_lin
@@ -452,7 +431,6 @@ class ExpertChoiceMoEAttention(BaseAttention):
             "o": (None, None),
         }
 
-        # 1. GPT-2: Fused c_attn + c_proj
         if hasattr(pretrained_attn, "c_attn") and pretrained_attn.c_attn is not None:
             c_attn_mod = pretrained_attn.c_attn
             if hasattr(c_attn_mod, "merge") and not getattr(c_attn_mod, "merged", False):
@@ -504,7 +482,6 @@ class ExpertChoiceMoEAttention(BaseAttention):
                         bias_o.data.clone() if bias_o is not None else None,
                     )
 
-        # 2. RoBERTa / BERT nested self-attention
         elif hasattr(pretrained_attn, "self") and hasattr(pretrained_attn.self, "query"):
             s = pretrained_attn.self
             for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
@@ -521,7 +498,6 @@ class ExpertChoiceMoEAttention(BaseAttention):
                     out_mod.bias.data.clone() if out_mod.bias is not None else None,
                 )
 
-        # 3. Standard linear projections (DistilBERT, Qwen, LLaMA)
         else:
             proj_candidates = {
                 "q": ["q_lin", "q_proj", "query", "W_q"],
@@ -540,7 +516,6 @@ class ExpertChoiceMoEAttention(BaseAttention):
                             )
                             break
 
-        # Fallback via UniversalAdapter
         missing = [
             k
             for k, (w, _) in extracted.items()
@@ -611,7 +586,6 @@ class ExpertChoiceMoEAttention(BaseAttention):
                 elif target_mod.bias is not None:
                     nn.init.zeros_(target_mod.bias)
 
-                # Frobenius norm verification (>= 1e-4)
                 w_norm = float(torch.norm(target_mod.weight.data).item())
                 if w_norm < 1e-4:
                     logger.warning(
@@ -643,7 +617,6 @@ class ExpertChoiceMoEAttention(BaseAttention):
         kv_input = encoder_hidden_states if is_cross_attention else hidden_states
         kv_len = kv_input.shape[1]
 
-        # 1. Projections
         q = (
             self.q_lin(hidden_states)
             .view(B, L, self.num_heads, self.head_dim)
@@ -663,7 +636,6 @@ class ExpertChoiceMoEAttention(BaseAttention):
             .contiguous()
         )
 
-        # 2. Rotary Position Embeddings (RoPE)
         if position_embeddings is not None and not is_cross_attention:
             if isinstance(position_embeddings, tuple):
                 cos, sin = position_embeddings
@@ -676,14 +648,11 @@ class ExpertChoiceMoEAttention(BaseAttention):
                 cos, sin = self.rotary_emb(v, seq_len=kv_len)
                 q, k = apply_rotary_pos_emb(q, k, cos, sin, position_ids)
 
-        # 3. Grouped Query Attention (GQA) head expansion
         if self.num_kv_heads != self.num_heads:
             k = repeat_kv(k, self.kv_repeat)
             v = repeat_kv(v, self.kv_repeat)
 
-        # 4. Multi-head attention scores
         scale = 1.0 / math.sqrt(self.head_dim)
-        # Memory-efficient: use SDPA to avoid OOM on large seqs (when attention weights not requested)
 
         if not output_attentions:
             try:
@@ -751,7 +720,6 @@ class ExpertChoiceMoEAttention(BaseAttention):
         probs = torch.nan_to_num(probs, nan=0.0)
         probs = self.dropout(probs)
 
-        # 5. Head mask handling
         if head_mask is not None:
             if head_mask.dim() == 1:
                 head_mask = head_mask.view(1, -1, 1, 1)
@@ -768,13 +736,11 @@ class ExpertChoiceMoEAttention(BaseAttention):
             .view(B, L, self.all_head_size)
         )
 
-        # 6. MoE feedforward enrichment with gate blending
         moe_out = self.moe(attn_out)
         self.aux_loss = self.moe.aux_loss
         moe_weight = torch.sigmoid(self.moe_gate).to(attn_out.dtype)
         enriched_attn = (attn_out + moe_weight * moe_out.to(attn_out.dtype)).to(attn_out.dtype)
 
-        # 7. Output projection with nested encoder bypass
         if self.is_nested_encoder:
             if enriched_attn.shape[-1] != self.dim:
                 out = self.out_lin(enriched_attn)
@@ -811,7 +777,6 @@ def inject_expert_choice_moe(
 
     cfg = model_config if model_config is not None else getattr(target, "config", None)
 
-    # Whole-model traversal
     layer_list = None
     if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
         layer_list = target.distilbert.transformer.layer

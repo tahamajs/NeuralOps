@@ -33,12 +33,6 @@ logger = logging.getLogger(__name__)
 _DENOM_EPS = 1e-5
 
 
-
-
-
-
-
-
 @ATTENTION_REGISTRY.register("native_hybrid_attention")
 class NativeHybridAttention(BaseAttention):
     """NativeHybridAttention neural operator.
@@ -425,7 +419,6 @@ class NativeHybridAttention(BaseAttention):
             den = torch.matmul(phi_Q, Z.transpose(-2, -1)).clamp(min=_DENOM_EPS)
             return (num / den).to(dtype)
 
-        # Hardware-accelerated Triton linear chunk scan
         from neuralops.core.triton_kernels._types import FORCE_PYTORCH_FALLBACK, HAS_TRITON
         if HAS_TRITON and not FORCE_PYTORCH_FALLBACK and Q.is_cuda and past_len == 0 and valid_mask is None and phi_Q.shape[-1] <= 128:
             try:
@@ -434,22 +427,17 @@ class NativeHybridAttention(BaseAttention):
             except Exception:
                 pass
 
-        # ==========================================================
-        # Fully Vectorized Memory-Efficient Causal RFF (Inference-Safe)
-        # ==========================================================
-        # scores_lin: (B, H, N_q, N_k)
         scores_lin = torch.matmul(phi_Q, phi_K.transpose(-2, -1))
-        
-        # Causal Masking: Query i sees Key j if j <= i + past_len
+
         q_idx = torch.arange(N_q, device=device).unsqueeze(1)
         k_idx = torch.arange(N_k, device=device).unsqueeze(0)
         causal_mask = k_idx <= (q_idx + past_len)
-        
+
         scores_lin = scores_lin.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), 0.0)
-        
+
         denom = scores_lin.sum(dim=-1, keepdim=True).clamp(min=_DENOM_EPS)
         out = torch.matmul(scores_lin, V_masked) / denom
-        
+
         return out.to(dtype)
 
     _read_past_kv = staticmethod(_read_past_kv)

@@ -32,8 +32,8 @@ def extract_lora_from_diff(
     """Extract LoRA matrices (A, B) from weight delta using truncated SVD."""
     U, S, Vt = torch.linalg.svd(delta_W.to(torch.float32), full_matrices=False)
     r = min(rank, S.numel())
-    A = Vt[:r]  # shape: [r, in_features]
-    B = U[:, :r] * S[:r].unsqueeze(0)  # shape: [out_features, r]
+    A = Vt[:r]
+    B = U[:, :r] * S[:r].unsqueeze(0)
     return A.to(delta_W.dtype), B.to(delta_W.dtype)
 
 
@@ -82,12 +82,10 @@ class QLoRALinear(nn.Module):
         self.rank = rank
         self.scaling = lora_alpha / max(rank, 1)
 
-        # Frozen quantized base
         self.base = QuantizedLinear(in_features, out_features, bits=bits, bias=bias)
         self.base.weight.requires_grad = False
         self.base.scales.requires_grad = False
 
-        # Trainable LoRA
         self.lora_A = nn.Parameter(torch.randn(rank, in_features) * 0.01)
         self.lora_B = nn.Parameter(torch.randn(out_features, rank) * 1e-4)
 
@@ -126,7 +124,6 @@ class DoRALinear(nn.Module):
         self.base = nn.Linear(in_features, out_features, bias=bias)
         self.base.weight.requires_grad = False
 
-        # Magnitude parameter m = ||W_0||_c
         self.magnitude = nn.Parameter(self.base.weight.norm(dim=1, keepdim=True).clone())
         self.lora_A = nn.Parameter(torch.randn(rank, in_features) * 0.01)
         self.lora_B = nn.Parameter(torch.randn(out_features, rank) * 1e-4)
@@ -137,7 +134,6 @@ class DoRALinear(nn.Module):
                 from neuralops.core.triton_kernels.low_rank import fused_down_up_gemm_bias_triton
             except Exception:
                 pass
-        # Effective directional weight: V = W + scaling * (B @ A)
         W_dir = self.base.weight + (self.lora_B @ self.lora_A) * self.scaling
         W_dir = W_dir / W_dir.norm(dim=1, keepdim=True).clamp(min=1e-6)
         W_eff = self.magnitude * W_dir

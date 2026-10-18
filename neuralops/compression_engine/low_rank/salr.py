@@ -71,8 +71,6 @@ class SALRLayer(nn.Module):
         else:
             self.register_parameter("bias", None)
 
-        # 1D binary mask on singular bottleneck components: [rank, 1]
-        # FIX: Created in the exact dtype to avoid casting overheads
         mask = torch.ones(self.rank, 1, dtype=dtype, device=device)
         if 0.0 < self.sparsity < 1.0:
             num_zeros = int(round(self.rank * self.sparsity))
@@ -80,7 +78,6 @@ class SALRLayer(nn.Module):
                 mask[-num_zeros:, :] = 0.0
         self.register_buffer("mask", mask)
 
-        # FIX: LoRA is initialized with the correct dtype natively, not forced to float32
         if self.lora_r > 0:
             self.lora_A = nn.Parameter(
                 torch.empty((self.lora_r, in_features), dtype=dtype, device=device)
@@ -108,7 +105,6 @@ class SALRLayer(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Two-stage forward pass with sparse bottleneck mask and optional LoRA branch."""
-        # FIX: No dtype casting required if mask is created in matching dtype
         V_masked = self.V * self.mask
 
         from neuralops.core.triton_kernels._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
@@ -125,10 +121,9 @@ class SALRLayer(nn.Module):
             except Exception:
                 pass
 
-        latent = F.linear(x, V_masked)  # [..., rank]
-        out = F.linear(latent, self.U, self.bias)  # [..., out_features]
+        latent = F.linear(x, V_masked)
+        out = F.linear(latent, self.U, self.bias)
 
-        # FIX: x.float() is removed to maintain fast FP16/BF16 tensor cores inference
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
             lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.scaling
             out = out + lora_out
@@ -139,7 +134,7 @@ class SALRLayer(nn.Module):
         """Effective reconstructed weight matrix WITH sparsity applied."""
         V_masked = self.V * self.mask
         return torch.matmul(self.U, V_masked)
-        
+
     @property
     def pre_pruned_weight(self) -> torch.Tensor:
         """Weight matrix representing pure low-rank truncation (without sparsity mask)."""
@@ -147,8 +142,6 @@ class SALRLayer(nn.Module):
 
     def extra_repr(self) -> str:
         return f"in_features={self.in_features}, out_features={self.out_features}, rank={self.rank}, sparsity={self.sparsity}, lora_r={self.lora_r}"
-
-
 
 
 @COMPRESSOR_REGISTRY.register("salr")
@@ -231,7 +224,6 @@ class SALRCompressor(BaseCompressor):
         )
         self.min_numel = max(1, int(min_numel or _cfg_get(cfg_obj, "min_numel", 16)))
 
-        # Target device derivation
         if device is not None:
             try:
                 self.target_device = torch.device(device)
@@ -246,8 +238,7 @@ class SALRCompressor(BaseCompressor):
                 next(model.parameters()).device if list(model.parameters()) else torch.device("cpu")
             )
 
-        # Diagnostics & Tracking
-        self.visited_weights: set[int] = set() # FIX: track weight id, not module id
+        self.visited_weights: set[int] = set()
         self.compressed_layers: list[str] = []
         self.protected_layers: list[str] = []
         self.skipped_layers: list[str] = []
@@ -286,7 +277,6 @@ class SALRCompressor(BaseCompressor):
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         name_l = name.lower()
-        # 1. Protection for critical / classification / head / pooler / embedding layers
         if any(
             k in name_l
             for k in [
@@ -303,7 +293,6 @@ class SALRCompressor(BaseCompressor):
             self.protected_layers.append(name)
             return False
 
-        # Target attention only filter
         if self.target_attention_only:
             attn_keywords = [
                 "attn",
@@ -321,12 +310,10 @@ class SALRCompressor(BaseCompressor):
             if not any(k in name_l for k in attn_keywords):
                 return False
 
-        # 2. GQA-aware skipping
         if self._is_gqa_asymmetric(name, module):
             self.skipped_layers.append(name)
             return False
 
-        # 3. Check linear or Conv1D nature
         base_mod = getattr(module, "base_layer", module)
         cls_name = base_mod.__class__.__name__
         raw_w = getattr(base_mod, "weight", None)
@@ -338,17 +325,14 @@ class SALRCompressor(BaseCompressor):
         if not is_linear_like or isinstance(base_mod, SALRLayer):
             return False
 
-        # 4. Tiny layer guard
         if raw_w.numel() < self.min_numel:
             self.skipped_layers.append(name)
             return False
 
-        # 5. Respect framework compatibility rules
         if not should_compress_linear(self.model, name):
             self.protected_layers.append(name)
             return False
 
-        # 6. User-defined explicit target modules
         if self.target_modules is not None:
             return any(t in name for t in self.target_modules)
         return True
@@ -375,7 +359,7 @@ class SALRCompressor(BaseCompressor):
         max_r = min(out_f, in_f)
         param_cap = max(1, (in_f * out_f) // (in_f + out_f) - 1)
         r = max(self.min_rank, min(rank, max_r - 1, param_cap))
-        
+
         if r >= max_r:
             logger.debug(
                 "SALR: rank %d >= max_r %d; skipping layer for no parameter reduction",
@@ -386,7 +370,6 @@ class SALRCompressor(BaseCompressor):
         device = base_layer.weight.device
         dtype = base_layer.weight.dtype
 
-        # FIX: Add Robust CPU Fallback to prevent GPU Memory Crashes during SVD
         try:
             U, S, Vt = torch.linalg.svd(W, full_matrices=False)
         except Exception as e:
@@ -404,7 +387,6 @@ class SALRCompressor(BaseCompressor):
         U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).to(dtype=dtype, device=device)
         V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]).to(dtype=dtype, device=device)
 
-        # Clear SVD factors from memory
         del U, S, Vt
         torch.cuda.empty_cache()
 
@@ -428,14 +410,13 @@ class SALRCompressor(BaseCompressor):
         if base_layer.bias is not None:
             salr_layer.bias.data.copy_(base_layer.bias.data)
 
-        # Preserve existing LoRA adapters
         if has_existing_lora and salr_layer.lora_r > 0:
             try:
                 if hasattr(layer.lora_A, "weight") and salr_layer.lora_A is not None:
                     salr_layer.lora_A.data.copy_(layer.lora_A.weight.data)
                 elif hasattr(layer, "lora_A") and isinstance(layer.lora_A, torch.Tensor) and salr_layer.lora_A is not None:
                     salr_layer.lora_A.data.copy_(layer.lora_A.data)
-                
+
                 if hasattr(layer.lora_B, "weight") and salr_layer.lora_B is not None:
                     salr_layer.lora_B.data.copy_(layer.lora_B.weight.data)
                 elif hasattr(layer, "lora_B") and isinstance(layer.lora_B, torch.Tensor) and salr_layer.lora_B is not None:
@@ -443,7 +424,6 @@ class SALRCompressor(BaseCompressor):
             except Exception as e_lora:
                 logger.warning("Could not copy existing LoRA adapters: %s", e_lora)
 
-        # FIX: Calculate error on the Pure Low Rank Truncation (ignoring the intentional sparsity)
         W_rec_pure = salr_layer.pre_pruned_weight.float()
         target_w = W.float()
         norm_orig = torch.norm(target_w, p="fro").clamp_min(1e-8)
@@ -488,8 +468,7 @@ class SALRCompressor(BaseCompressor):
 
         for name, module in target_layers:
             base_mod = getattr(module, "base_layer", module)
-            
-            # FIX: Tracking by weight ID to safely prevent double compression of tied weights
+
             weight_id = id(getattr(base_mod, "weight", None))
             if weight_id in self.visited_weights:
                 logger.debug("SALR: Skipping tied module weight %s", name)
@@ -517,7 +496,6 @@ class SALRCompressor(BaseCompressor):
                 for p in module.parameters():
                     p.requires_grad = False
 
-        # Post-compression forward sanity check
         forward_check_success = True
         try:
             with torch.no_grad():

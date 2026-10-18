@@ -43,7 +43,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 try:
     from neuralops.attentions.Mamba import Mamba
 except Exception:
-
     class Mamba(nn.Module):
         def __init__(self, d_model: int = 768, **kwargs: Any) -> None:
             super().__init__()
@@ -57,12 +56,6 @@ except Exception:
             x1, x2 = self.in_proj(x).chunk(2, dim=-1)
             y = F.silu(x1) * x2
             return self.out_proj(y)
-
-
-
-
-
-
 
 
 @dataclass
@@ -87,17 +80,14 @@ class SpectralMamba(nn.Module):
     def __init__(self, d_model: int = 768, d_state: int = 16, **kwargs: Any) -> None:
         super().__init__()
         self.d_model = d_model
-        # Use a fixed resolution for frequency weights and interpolate to sequence length
         self.register_buffer(
             "freq_weights",
             torch.linspace(0.1, 1.0, 256).unsqueeze(1).expand(256, d_model).clone(),
         )
         self.register_buffer("dt_scale", torch.zeros(d_model))
-        # Low-rank adaptation projection
         self.lora_down = nn.Parameter(torch.randn(d_model, d_state) * 0.01)
         self.lora_up = nn.Parameter(torch.zeros(d_state, d_model))
 
-        # Causal depthwise 1D conv for causal decoders where FFT violates causality
         self.d_conv = 4
         self.causal_conv = nn.Conv1d(
             d_model,
@@ -116,15 +106,13 @@ class SpectralMamba(nn.Module):
         dtype = x.dtype
 
         if is_causal:
-            # Causal depthwise 1D conv with explicit left-padding
             x_t = x.transpose(1, 2).contiguous()
             x_padded = F.pad(x_t, (self.d_conv - 1, 0))
             x_filtered = self.causal_conv(x_padded).transpose(1, 2).contiguous()
             x_filtered = F.silu(x_filtered).to(dtype)
         else:
-            # FFT along sequence axis
             x_float = x.float()
-            x_fft = torch.fft.rfft(x_float, dim=1)  # (B, L//2+1, D)
+            x_fft = torch.fft.rfft(x_float, dim=1)
 
             freq_weights = self.freq_weights
             if freq_weights.shape[0] != x_fft.shape[1]:
@@ -141,23 +129,18 @@ class SpectralMamba(nn.Module):
 
             x_fft_filtered = x_fft * freq_weights.unsqueeze(0)
 
-            # Back to time domain
             x_filtered = torch.fft.irfft(x_fft_filtered, n=L, dim=1).to(dtype)
 
-        # Low-rank state projection
         state_act = F.linear(
             F.linear(x_filtered, self.lora_down.t()),
             self.lora_up.t(),
         )
 
-        # Learned channel gate
         gate = torch.sigmoid(self.dt_scale).unsqueeze(0).unsqueeze(0)
 
         return (x_filtered + state_act) * gate
 
 
-# DEPRECATED: Reverts to identity/bypass states under standard initialization.
-# @ATTENTION_REGISTRY.register("spectral_mamba")
 class SpectralMambaAttention(BaseAttention):
     """DEPRECATED: Reverts to identity/bypass states under standard initialization.
 
@@ -261,7 +244,6 @@ class SpectralMambaAttention(BaseAttention):
         )
         self.freeze_base = self.lora_rank > 0
 
-        # Projections
         self.q_lin = LoRALinear(
             self.dim,
             self.all_head_size,
@@ -305,10 +287,6 @@ class SpectralMambaAttention(BaseAttention):
 
         d_state = _cfg_get(comp_config, "d_state", _cfg_get(config, "d_state", 16))
         self.spectral_mamba = SpectralMamba(self.hidden_size, d_state=d_state)
-        # Gate implemented with frozen buffer weight/bias + LoRA adaptation so zero base parameters are added
-        # Gate initialization:
-        # output = gate * attn + (1 - gate) * mamba
-        # With gate_bias=10.0, sigmoid(10.0) ≈ 0.99995, so the model starts as ~pure attention (identical to pretrained).
         self.register_buffer("gate_weight", torch.zeros(1, self.hidden_size))
         self.register_buffer("gate_bias", torch.tensor([10.0]))
         self.gate_lora_A = nn.Parameter(torch.randn(4, self.hidden_size) * 0.01)
@@ -360,7 +338,6 @@ class SpectralMambaAttention(BaseAttention):
             "o": (None, None),
         }
 
-        # 1. GPT-2 fused
         if hasattr(src, "c_attn") and src.c_attn is not None:
             c_attn_mod = src.c_attn
             base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
@@ -407,7 +384,6 @@ class SpectralMambaAttention(BaseAttention):
                         bias_o.data.clone() if bias_o is not None else None,
                     )
 
-        # 2. RoBERTa nested
         elif hasattr(src, "self") and hasattr(src.self, "query"):
             s = src.self
             for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
@@ -421,7 +397,6 @@ class SpectralMambaAttention(BaseAttention):
                 if w is not None:
                     extracted["o"] = (w, b)
 
-        # 3. Flat modules
         else:
             proj_candidates = {
                 "q": ["q_lin", "q_proj", "query"],
@@ -495,14 +470,12 @@ class SpectralMambaAttention(BaseAttention):
                     and target_mod.weight.shape[0] % w.shape[0] == 0
                 ):
                     repeats = target_mod.weight.shape[0] // w.shape[0]
-                    # For GQA expansion or repeating
                     target_mod.weight.copy_(w.repeat(repeats, 1))
                 elif (
                     w.shape[0] > target_mod.weight.shape[0]
                     and w.shape[0] % target_mod.weight.shape[0] == 0
                 ):
                     repeats = w.shape[0] // target_mod.weight.shape[0]
-                    # For GQA: mean-average the head groups from source
                     w_grouped = w.view(target_mod.weight.shape[0], repeats, w.shape[1]).mean(dim=1)
                     target_mod.weight.copy_(w_grouped)
                 else:
@@ -603,7 +576,6 @@ class SpectralMambaAttention(BaseAttention):
             .permute(0, 2, 1, 3)
         )
 
-        # Apply RoPE if provided
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None:
@@ -612,7 +584,6 @@ class SpectralMambaAttention(BaseAttention):
 
         attn_weights = None
 
-        # Autoregressive KV-cache for causal decoders
         if self.is_decoder and past_key_value is not None:
             if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 2:
                 past_k, past_v = past_key_value[0], past_key_value[1]
@@ -621,7 +592,6 @@ class SpectralMambaAttention(BaseAttention):
                     v = torch.cat([past_v, v], dim=2)
         present_key_value = (k, v) if self.is_decoder else None
 
-        # Repeat KV for GQA
         if self.num_heads != self.num_kv_heads:
             repeats = self.num_heads // self.num_kv_heads
             k = repeat_kv(k, repeats)
@@ -630,7 +600,6 @@ class SpectralMambaAttention(BaseAttention):
         scale = 1.0 / math.sqrt(self.head_dim)
         attn_out = None
 
-        # Memory-efficient: use SDPA only when attention weights are NOT requested
         if not output_attentions and head_mask is None:
             try:
                 _qs = maybe_half(q)
@@ -662,7 +631,6 @@ class SpectralMambaAttention(BaseAttention):
         if attn_out is None:
             scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
 
-            # Causal masking
             is_causal = self.is_decoder or kwargs.get("is_causal", False)
             if is_causal:
                 L_kv = k.shape[2]
@@ -670,7 +638,6 @@ class SpectralMambaAttention(BaseAttention):
                 causal_mask = torch.tril(torch.ones(N, L_kv, device=scores.device), diagonal=past_len)
                 scores = scores.masked_fill(~causal_mask.bool().unsqueeze(0).unsqueeze(0), -1e4)
 
-            # Attention mask
             if attention_mask is not None:
                 scores = apply_attention_mask(scores, attention_mask)
 
@@ -678,7 +645,6 @@ class SpectralMambaAttention(BaseAttention):
             attn_weights = torch.nan_to_num(attn_weights, nan=0.0)
             attn_weights = self.dropout(attn_weights)
 
-            # head_mask handling
             if head_mask is not None:
                 if head_mask.dim() == 1 and head_mask.size(0) == self.num_heads:
                     attn_weights = attn_weights * head_mask.view(1, self.num_heads, 1, 1).to(
@@ -703,7 +669,6 @@ class SpectralMambaAttention(BaseAttention):
             else:
                 attn_out = self.out_lin(attn_ctx)
 
-        # Spectral Mamba stream with causal fallback for decoders
         mamba_out = self.spectral_mamba(hidden_states, is_causal=self.is_decoder)
         while isinstance(mamba_out, (tuple, list)):
             mamba_out = mamba_out[0]
@@ -714,7 +679,6 @@ class SpectralMambaAttention(BaseAttention):
             else:
                 mamba_out = mamba_out[..., : attn_out.shape[-1]]
 
-        # Adaptive gating: base linear + lora adapter
         gate_logits = F.linear(hidden_states, self.gate_weight, self.gate_bias)
         gate_logits = (
             gate_logits
@@ -723,15 +687,12 @@ class SpectralMambaAttention(BaseAttention):
         if hidden_states.is_cuda and attn_out.shape == mamba_out.shape:
             try:
                 from neuralops.core.triton_kernels.selective_scan import fused_jamba_hybrid_ssm_attn_gate_triton
-                # Note: fused_jamba_hybrid_ssm_attn_gate_triton blends: (1 - sigmoid(alpha)) * attn + sigmoid(alpha) * ssm
-                # Here g = sigmoid(gate_logits) weights attn_out and (1-g) weights mamba_out
-                # Therefore, alpha_ssm = -gate_logits so sigmoid(alpha_ssm) = 1 - g
                 out = fused_jamba_hybrid_ssm_attn_gate_triton(attn_out, mamba_out, -gate_logits)
             except Exception:
-                g = torch.sigmoid(gate_logits)  # (B, N, 1)
+                g = torch.sigmoid(gate_logits)
                 out = g * attn_out + (1.0 - g) * mamba_out
         else:
-            g = torch.sigmoid(gate_logits)  # (B, N, 1)
+            g = torch.sigmoid(gate_logits)
             out = g * attn_out + (1.0 - g) * mamba_out
 
         if out.shape[-1] != hidden_states.shape[-1]:
@@ -760,12 +721,10 @@ def inject_spectral_mamba(
     **kwargs: Any,
 ) -> Any | None:
     """Safely replace attention in model or layer with SpectralMambaAttention."""
-    # Support both `layer=` and `model=` call conventions
     if layer is None and model is not None:
         layer = model
     cfg = model_config or getattr(layer, "config", None)
 
-    # 1. Whole model traversal support
     if layer is not None and (
         hasattr(layer, "transformer")
         or hasattr(layer, "distilbert")
@@ -800,7 +759,6 @@ def inject_spectral_mamba(
                 )
             return layer
 
-    # 2. Named modules whole-model fallback
     if (
         old_attn is None
         and layer is not None

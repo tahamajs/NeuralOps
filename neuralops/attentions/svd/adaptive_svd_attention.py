@@ -26,12 +26,6 @@ from neuralops.utils.compat import repeat_kv
 logger = logging.getLogger(__name__)
 
 
-# ===========================================================================
-# Module-level RoPE helper (ASVD-FIX-05)
-# ===========================================================================
-# ===========================================================================
-# Factorized Linear
-# ===========================================================================
 class AdaptiveSVDLinear(nn.Module):
     """
     Frozen SVD base + trainable LoRA residual.
@@ -43,7 +37,6 @@ class AdaptiveSVDLinear(nn.Module):
         U (out, r), V (r, in), lora_A (residual_rank, in), lora_B (out, residual_rank)
     """
 
-    # ASVD-FIX-03: not attention
     is_custom_attention: bool = False
     is_svd_linear: bool = True
     is_compressed_svd: bool = True
@@ -120,7 +113,6 @@ class AdaptiveSVDLinear(nn.Module):
             if self.lora_B is not None:
                 nn.init.normal_(self.lora_B, mean=0.0, std=1e-4)
 
-    # ---- aliases for framework compatibility ----
     @property
     def A(self) -> nn.Parameter | None:
         return self.lora_A
@@ -137,7 +129,6 @@ class AdaptiveSVDLinear(nn.Module):
         return W
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # ASVD-FIX-09: dtype-safe
         orig_dtype = x.dtype
         try:
             from neuralops.core.triton_kernels.low_rank import fused_svd_lora_sparse_attn_triton
@@ -169,9 +160,6 @@ class AdaptiveSVDLinear(nn.Module):
         return out.to(orig_dtype)
 
 
-# ===========================================================================
-# Main attention
-# ===========================================================================
 @ATTENTION_REGISTRY.register(
     "adaptive_svd_attention",
     supports_causal=True,
@@ -192,19 +180,15 @@ class AdaptiveSVDAttention(BaseAttention):
         config: Any,
         svd_rank: int | None = None,
         residual_rank: int = 16,
-        energy_threshold: float = 0.999,  # ASVD-FIX-02
+        energy_threshold: float = 0.999,
         pretrained_attn: nn.Module | None = None,
         is_decoder: bool | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(config, **kwargs)
 
-        # ASVD-FIX-12: always store config
         self.config = config
 
-        # ===========================================================
-        # ASVD-FIX-04: single source of truth for dims
-        # ===========================================================
         def _first_attr(obj, names, default=None):
             if obj is None:
                 return default
@@ -214,7 +198,6 @@ class AdaptiveSVDAttention(BaseAttention):
                     return v
             return default
 
-        # hidden_size
         hidden_size = (
             kwargs.get("hidden_size")
             or _first_attr(config, ("hidden_size", "d_model", "n_embd", "dim"))
@@ -228,7 +211,6 @@ class AdaptiveSVDAttention(BaseAttention):
                     break
         self.hidden_size = int(hidden_size or 768)
 
-        # num_heads
         num_heads = (
             kwargs.get("num_heads")
             or kwargs.get("num_attention_heads")
@@ -237,7 +219,6 @@ class AdaptiveSVDAttention(BaseAttention):
         )
         self.num_heads = max(1, int(num_heads or 12))
 
-        # num_kv_heads
         num_kv_heads = (
             kwargs.get("num_kv_heads")
             or kwargs.get("num_key_value_heads")
@@ -247,7 +228,6 @@ class AdaptiveSVDAttention(BaseAttention):
         )
         self.num_kv_heads = max(1, min(int(num_kv_heads), self.num_heads))
 
-        # head_dim
         head_dim = kwargs.get("head_dim") or _first_attr(config, ("head_dim", "d_kv"))
         if not head_dim and pretrained_attn is not None:
             for attr in ("q_proj", "query", "q_lin"):
@@ -262,9 +242,6 @@ class AdaptiveSVDAttention(BaseAttention):
         self.kv_head_size = self.num_kv_heads * self.head_dim
         self.kv_repeat = max(1, self.num_heads // self.num_kv_heads)
 
-        # ===========================================================
-        # ASVD-FIX-08: is_causal computed once
-        # ===========================================================
         _mt = str(getattr(config, "model_type", "") or "").lower() if config else ""
         _decoder_prefixes = (
             "gpt",
@@ -304,21 +281,15 @@ class AdaptiveSVDAttention(BaseAttention):
         self.is_decoder = bool(is_causal)
         self.is_causal = bool(is_causal)
 
-        # ===========================================================
-        # SVD configuration
-        # ===========================================================
         cfg_svd_rank = getattr(config, "svd_rank", None) if config else None
         cfg_rank = getattr(config, "rank", None) if config else None
         resolved_svd_rank = svd_rank if svd_rank is not None else (cfg_svd_rank or cfg_rank or 64)
-        # Clamp to legal range
         self.svd_rank = max(1, min(int(resolved_svd_rank), self.hidden_size, self.all_head_size))
 
         self.residual_rank = max(0, int(residual_rank))
 
-        # ASVD-FIX-02: consistent threshold
         cfg_et = getattr(config, "energy_threshold", None) if config else None
         self.energy_threshold = float(cfg_et if cfg_et is not None else energy_threshold)
-        # Clamp to valid range so rank genuinely varies with svd_rank
         self.energy_threshold = max(0.5, min(self.energy_threshold, 0.9999))
 
         dropout_p = 0.1
@@ -336,7 +307,6 @@ class AdaptiveSVDAttention(BaseAttention):
 
         self.rotary_emb = getattr(pretrained_attn, "rotary_emb", None) if pretrained_attn else None
 
-        # Relative attention bias (T5)
         self.has_relative_attention_bias = False
         self.relative_attention_bias: nn.Embedding | None = None
         self.relative_attention_num_buckets = int(
@@ -346,9 +316,6 @@ class AdaptiveSVDAttention(BaseAttention):
             getattr(config, "relative_attention_max_distance", 128) if config else 128
         )
 
-        # ===========================================================
-        # Projections
-        # ===========================================================
         self.query = AdaptiveSVDLinear(
             self.hidden_size,
             self.all_head_size,
@@ -378,7 +345,6 @@ class AdaptiveSVDAttention(BaseAttention):
             bias=True,
         )
 
-        # Aliases
         self.q_proj = self.query
         self.k_proj = self.key
         self.v_proj = self.value
@@ -392,14 +358,12 @@ class AdaptiveSVDAttention(BaseAttention):
 
         self.is_nested_encoder: bool = False
 
-        # ASVD-FIX-11: storage accounting
         self._orig_storage_bytes = 0
         self._comp_storage_bytes = 0
 
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
 
-    # ------------------------------------------------------------------
     @property
     def q_lin_alias(self):
         return self.query
@@ -412,7 +376,6 @@ class AdaptiveSVDAttention(BaseAttention):
     def v_lin_alias(self):
         return self.value
 
-    # ------------------------------------------------------------------
     def _relative_position_bucket(
         self, relative_position, bidirectional=True, num_buckets=32, max_distance=128
     ):
@@ -452,7 +415,6 @@ class AdaptiveSVDAttention(BaseAttention):
         values = self.relative_attention_bias(rel_bucket)
         return values.permute([2, 0, 1]).unsqueeze(0)
 
-    # ------------------------------------------------------------------
     def _compute_energy_rank(self, S, max_rank, min_rank=4):
         """
         ASVD-FIX-02: with `energy_threshold` at 0.999, this returns a rank
@@ -493,7 +455,6 @@ class AdaptiveSVDAttention(BaseAttention):
                 n = min(layer.bias.numel(), bias_data.numel())
                 layer.bias.data[:n].copy_(bias_data[:n].to(layer.bias.dtype))
 
-    # ------------------------------------------------------------------
     def copy_weights(self, src: Any) -> None:
         from neuralops.core.adapters import UniversalAdapter
 
@@ -512,7 +473,6 @@ class AdaptiveSVDAttention(BaseAttention):
             except Exception:
                 pass
 
-        # ---- GPT-2 fused c_attn ----
         if hasattr(src, "c_attn") and (
             extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None
         ):
@@ -566,7 +526,6 @@ class AdaptiveSVDAttention(BaseAttention):
                 bo = getattr(base_o, "bias", getattr(o, "bias", None))
                 extracted["o"] = (wo, bo.data.clone() if bo is not None else None)
 
-        # ---- BERT / RoBERTa nested ----
         if hasattr(src, "self") and hasattr(src.self, "query"):
             s = src.self
             for key, sub in (("q", "query"), ("k", "key"), ("v", "value")):
@@ -580,7 +539,6 @@ class AdaptiveSVDAttention(BaseAttention):
             b = getattr(d, "bias", None)
             extracted["o"] = (d.weight.data, b.data if b is not None else None)
 
-        # ---- flat modules ----
         named_map = {
             "q": ("q_proj", "q_lin", "query"),
             "k": ("k_proj", "k_lin", "key"),
@@ -600,7 +558,6 @@ class AdaptiveSVDAttention(BaseAttention):
                             )
                             break
 
-        # ---- nested encoder detection ----
         cls_name = src.__class__.__name__
         has_out_proj = any(
             hasattr(src, a) for a in ("dense", "out_proj", "c_proj", "out_lin", "o_proj")
@@ -629,14 +586,12 @@ class AdaptiveSVDAttention(BaseAttention):
             is_nested = True
         self.is_nested_encoder = is_nested
 
-        # ---- tracking original bytes ----
         try:
             for p in src.parameters():
                 self._orig_storage_bytes += p.numel() * p.element_size()
         except Exception:
             pass
 
-        # ---- validation ----
         missing = [k for k in ("q", "k", "v") if extracted[k][0] is None]
         if not self.is_nested_encoder and extracted["o"][0] is None:
             missing.append("o")
@@ -652,7 +607,6 @@ class AdaptiveSVDAttention(BaseAttention):
                 if n < 1e-4:
                     logger.warning("AdaptiveSVDAttention: %s near-zero norm (%.2e)", k_, n)
 
-        # ---- factorize ----
         with torch.no_grad():
             for key, target in (
                 ("q", self.query),
@@ -663,7 +617,6 @@ class AdaptiveSVDAttention(BaseAttention):
                 w, b = extracted[key]
                 if w is None:
                     if key == "o" and self.is_nested_encoder:
-                        # identity
                         eye = torch.eye(
                             target.out_features,
                             target.in_features,
@@ -674,9 +627,6 @@ class AdaptiveSVDAttention(BaseAttention):
                     continue
                 self._init_svd_part(target, w, b)
 
-                # FIXED: Adaptive SVD Base Matrices: Explicitly unfreeze target.U and target.V 
-                # so the optimizer can adjust the base singular vectors during KD phase
-                # (A rank-16 LoRA cannot mathematically reconstruct 98% missing variance alone)
                 target.U.requires_grad = True
                 target.V.requires_grad = True
                 if target.bias is not None:
@@ -686,7 +636,6 @@ class AdaptiveSVDAttention(BaseAttention):
                 if target.lora_B is not None:
                     target.lora_B.requires_grad = True
 
-        # ---- track compressed bytes ----
         try:
             for m in (self.query, self.key, self.value, self.out_proj):
                 for p in m.parameters():
@@ -694,7 +643,6 @@ class AdaptiveSVDAttention(BaseAttention):
         except Exception:
             pass
 
-        # ---- inherit auxiliary state from source ----
         if hasattr(src, "has_relative_attention_bias"):
             self.has_relative_attention_bias = bool(src.has_relative_attention_bias)
         if hasattr(src, "relative_attention_bias") and src.relative_attention_bias is not None:
@@ -704,7 +652,6 @@ class AdaptiveSVDAttention(BaseAttention):
             self.is_decoder = bool(src.is_decoder)
             self.is_causal = self.is_decoder
 
-    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -719,7 +666,6 @@ class AdaptiveSVDAttention(BaseAttention):
         *args: Any,
         **kwargs: Any,
     ) -> tuple[torch.Tensor, torch.Tensor | None]:
-        # ASVD-FIX-06: always return (output, attn_weights)
         key_value_states = kwargs.get("key_value_states", encoder_hidden_states)
         is_cross = key_value_states is not None
         kv_input = key_value_states if is_cross else hidden_states
@@ -732,7 +678,6 @@ class AdaptiveSVDAttention(BaseAttention):
         K = self.key(kv_input).view(B, N_k, self.num_kv_heads, D).transpose(1, 2).contiguous()
         V = self.value(kv_input).view(B, N_k, self.num_kv_heads, D).transpose(1, 2).contiguous()
 
-        # ---- RoPE (ASVD-FIX-05: uses module-level helper) ----
         position_embeddings = kwargs.get("position_embeddings")
         if (
             position_embeddings is not None
@@ -769,7 +714,6 @@ class AdaptiveSVDAttention(BaseAttention):
         scale = 1.0 / math.sqrt(int(D))
         scores = torch.matmul(Q, K.transpose(-2, -1).contiguous()) * scale
 
-        # ---- Relative attention bias (T5) ----
         position_bias = kwargs.get("position_bias")
         if position_bias is None and self.has_relative_attention_bias:
             position_bias = self.compute_bias(N_q, N_k, device=hidden_states.device)
@@ -783,7 +727,6 @@ class AdaptiveSVDAttention(BaseAttention):
         elif mask is not None:
             scores = apply_attention_mask(scores, mask)
 
-        # ---- Causal mask (ASVD-FIX-08: use self.is_causal) ----
         if self.is_causal and not is_cross and N_q > 1:
             causal_diag = 1 + max(0, N_k - N_q)
             causal = (
@@ -827,7 +770,6 @@ class AdaptiveSVDAttention(BaseAttention):
         output = output.to(hidden_states.dtype)
         return output, (attn_weights if output_attentions else None)
 
-    # ------------------------------------------------------------------
     def storage_bytes(self) -> dict:
         def _sz(p):
             if isinstance(p, (nn.Parameter, torch.Tensor)):
@@ -846,9 +788,6 @@ class AdaptiveSVDAttention(BaseAttention):
         return out
 
 
-# ===========================================================================
-# Injection
-# ===========================================================================
 def inject_adaptive_svd(
     layer: Any = None,
     model: Any = None,
@@ -872,7 +811,6 @@ def inject_adaptive_svd(
     if cfg is None and hasattr(target, "config"):
         cfg = target.config
 
-    # ---- Whole-model traversal ----
     layer_list = None
     for path in (
         ("distilbert", "transformer", "layer"),
@@ -913,7 +851,6 @@ def inject_adaptive_svd(
                 n_inj += 1
         return target if n_inj > 0 else None
 
-    # ---- Single-layer injection ----
     src_attn = old_attn
     if src_attn is None:
         for attr in ("attention", "self_attn", "attn", "self"):
@@ -925,20 +862,11 @@ def inject_adaptive_svd(
     if src_attn is None:
         src_attn = target
 
-    # ---- ASVD-FIX-07: idempotency guard ----
     if isinstance(src_attn, AdaptiveSVDAttention) or "AdaptiveSVD" in src_attn.__class__.__name__:
         return None
 
-    # ===========================================================
-    # ASVD-FIX-01 / ASVD-FIX-13: priority for rank
-    #   1. explicit `kwargs["rank"]` (CLI)
-    #   2. `comp_config.svd_rank` / `comp_config.rank`
-    #   3. `model_config.svd_rank` / `model_config.rank`
-    #   4. fallback: min(64, head_dim)
-    # ===========================================================
     explicit_rank = kwargs.pop("rank", None)
 
-    # resolve fallback head_dim/hidden_size
     _h_size = (
         getattr(cfg, "hidden_size", None)
         or getattr(cfg, "d_model", None)
@@ -968,7 +896,6 @@ def inject_adaptive_svd(
         )
         svd_rank = int(svd_rank)
 
-    # Residual rank
     residual_rank = (
         getattr(comp_config, "residual_rank", None)
         or getattr(cfg, "residual_rank", None)
@@ -976,14 +903,12 @@ def inject_adaptive_svd(
     )
     residual_rank = int(residual_rank)
 
-    # Energy threshold — ASVD-FIX-02: default 0.999, not 0.92
     energy_threshold = float(
         getattr(comp_config, "energy_threshold", None)
         or getattr(cfg, "energy_threshold", None)
         or kwargs.pop("energy_threshold", 0.999)
     )
 
-    # ---- Config for building the module ----
     build_cfg = cfg
     if build_cfg is None:
         build_cfg = type(
@@ -1003,7 +928,6 @@ def inject_adaptive_svd(
             },
         )()
 
-    # ---- Instantiate ----
     try:
         new_attn = AdaptiveSVDAttention(
             config=build_cfg,
@@ -1018,13 +942,11 @@ def inject_adaptive_svd(
         logger.error("AdaptiveSVDAttention construction failed: %s", e)
         return None
 
-    # ---- Move to source device/dtype ----
     if src_attn is not None and src_attn is not target:
         p = next(src_attn.parameters(), None)
         if p is not None:
             new_attn.to(device=p.device, dtype=p.dtype)
 
-    # ---- Splice ----
     spliced = False
     if hasattr(target, "attention"):
         if hasattr(target.attention, "self"):

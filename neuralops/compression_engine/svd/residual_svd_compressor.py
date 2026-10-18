@@ -54,14 +54,12 @@ class ResSVDLinear(nn.Module):
         self.out_features = out_features
         max_possible_rank = min(in_features, out_features)
 
-        # Bounds validation
         self.base_rank = max(1, min(base_rank, max_possible_rank))
         remaining_rank = max(0, max_possible_rank - self.base_rank)
         self.residual_rank = max(0, min(residual_rank, remaining_rank))
         self.scaling = float(scaling)
         self.factorize_base = factorize_base
 
-        # Base parameters (Frozen)
         if self.factorize_base:
             self.base_V = nn.Parameter(
                 torch.empty(self.base_rank, in_features, dtype=dtype, device=device),
@@ -77,7 +75,6 @@ class ResSVDLinear(nn.Module):
                 requires_grad=False,
             )
 
-        # Trainable Residual LoRA Adapters
         if self.residual_rank > 0:
             self.lora_A = nn.Parameter(
                 torch.empty(self.residual_rank, in_features, dtype=dtype, device=device),
@@ -132,13 +129,11 @@ class ResSVDLinear(nn.Module):
         Forward execution:
         y = Base(x) + scaling * (x @ A^T) @ B^T + bias
         """
-        # RESEARCH FIX: Two-stage factorized forward for frozen base to minimize memory footprint
         from neuralops.core.triton_kernels._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
         suitable, _ = check_triton_suitability(x, "low_rank")
         if not FORCE_PYTORCH_FALLBACK and suitable and x.is_cuda and self.factorize_base:
             try:
                 from neuralops.core.triton_kernels.low_rank import fused_down_up_gemm_bias_triton
-                # Base projection
                 base_bias = self.bias if (self.residual_rank == 0 or self.lora_A is None) else None
                 base_out = fused_down_up_gemm_bias_triton(x, self.base_V, self.base_U.t().contiguous(), bias=base_bias)
                 if self.residual_rank > 0 and self.lora_A is not None and self.lora_B is not None:
@@ -154,7 +149,6 @@ class ResSVDLinear(nn.Module):
         else:
             base_out = F.linear(x, self.base_weight)
 
-        # Trainable spectral residual LoRA adapter forward
         if self.residual_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             res_intermediate = F.linear(x, self.lora_A)
             res_out = self.scaling * F.linear(res_intermediate, self.lora_B)
@@ -225,12 +219,10 @@ class ResSVDLinear(nn.Module):
             device=raw_w.device,
         )
 
-        # SVD decomposition of source weight on CPU to prevent CUDA OOM
         U, S, Vh = torch.linalg.svd(W.detach().cpu().float(), full_matrices=False)
 
-        # 1. Base Truncation (Dominant Top-r Singular Components)
-        U_base = U[:, :r] * torch.sqrt(S[:r]).unsqueeze(0)  # (out_f, r)
-        V_base = torch.sqrt(S[:r]).unsqueeze(1) * Vh[:r, :]  # (r, in_f)
+        U_base = U[:, :r] * torch.sqrt(S[:r]).unsqueeze(0)
+        V_base = torch.sqrt(S[:r]).unsqueeze(1) * Vh[:r, :]
 
         if factorize_base:
             new_layer.base_U.data.copy_(U_base.to(dtype=raw_w.dtype, device=raw_w.device))
@@ -242,28 +234,23 @@ class ResSVDLinear(nn.Module):
             new_layer.base_weight.data.copy_(W_base.to(dtype=raw_w.dtype, device=raw_w.device))
             new_layer.base_weight.requires_grad = not freeze_base
 
-        # 2. Residual Tail Initialization (Singular directions r to r+k)
-        # RESEARCH FIX: Analytical spectral initialization of LoRA adapter weights (A, B) directly
-        # from the residual tail E = W - U_r V_r minimizes initial reconstruction loss to zero-shot optimality.
         if k > 0:
             S_tail = S[r : r + k]
             U_tail = U[:, r : r + k]
             Vh_tail = Vh[r : r + k, :]
 
-            # Scale S_tail by adapter scaling factor gamma: (B @ A) * gamma = E_tail
             scale_factor = max(1e-8, float(scaling))
             S_tail_scaled = S_tail / scale_factor
 
             sqrt_S = torch.sqrt(torch.clamp(S_tail_scaled, min=0.0))
-            lora_A_init = sqrt_S.unsqueeze(1) * Vh_tail  # (k, in_f)
-            lora_B_init = U_tail * sqrt_S.unsqueeze(0)  # (out_f, k)
+            lora_A_init = sqrt_S.unsqueeze(1) * Vh_tail
+            lora_B_init = U_tail * sqrt_S.unsqueeze(0)
 
             new_layer.lora_A.data.copy_(lora_A_init.to(dtype=raw_w.dtype, device=raw_w.device))
             new_layer.lora_B.data.copy_(lora_B_init.to(dtype=raw_w.dtype, device=raw_w.device))
             new_layer.lora_A.requires_grad = True
             new_layer.lora_B.requires_grad = True
 
-        # Copy bias if present
         b = getattr(target_mod, "bias", None)
         if b is not None and new_layer.bias is not None:
             new_layer.bias.data.copy_(b.data)
@@ -400,7 +387,6 @@ class ResSVDCompressor(BaseCompressor):
         """
         self.replaced_layers = []
 
-        # Find target linear layers
         target_layers = [
             (name, mod)
             for name, mod in self.model.named_modules()
@@ -423,7 +409,6 @@ class ResSVDCompressor(BaseCompressor):
             replace_module(self.model, name, res_layer)
             self.replaced_layers.append(name)
 
-        # Calculate statistics
         total_params = self._count_params(self.model)
         trainable_params = sum(p.numel() for p in self.model.parameters() if p.requires_grad)
         frozen_params = total_params - trainable_params
@@ -441,7 +426,6 @@ class ResSVDCompressor(BaseCompressor):
         return self.model, stats
 
 
-# Alias class for PEFT terminology
 class SpectralResidualLoRA(ResSVDCompressor):
     """PEFT-focused wrapper for Spectral Residual LoRA."""
 
@@ -450,7 +434,6 @@ class SpectralResidualLoRA(ResSVDCompressor):
         self.name = "spectral_residual_lora"
 
 
-# Register under canonical name
 @COMPRESSOR_REGISTRY.register("residual_svd_compressor")
 class ResidualSVDCompressor(ResSVDCompressor):
     """ResidualSVDCompressor neural operator.

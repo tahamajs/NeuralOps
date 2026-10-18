@@ -30,10 +30,6 @@ from neuralops.utils.model_family import ModelAdapter
 logger = logging.getLogger(__name__)
 
 
-
-
-
-
 @ATTENTION_REGISTRY.register(
     "cluster_attention",
     supports_causal=True,
@@ -71,7 +67,6 @@ class ClusterAttention(BaseAttention):
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
         super().__init__(config, rank)
 
-        # Resolve hidden_size and num_heads safely even if config is None
         hidden_size = kwargs.get("d_model") or kwargs.get("hidden_size") or kwargs.get("dim")
         num_heads = (
             kwargs.get("num_heads") or kwargs.get("n_heads") or kwargs.get("num_attention_heads")
@@ -185,16 +180,13 @@ class ClusterAttention(BaseAttention):
             self.num_clusters = getattr(config, "cluster_num_clusters", num_clusters)
         else:
             self.num_clusters = num_clusters
-        # Fast K-means iterations (default 3, removed max(20, n_iters) constraint)
         self.n_iters: int = max(1, n_iters)
         self.window_size: int = window_size
         self.temp = nn.Parameter(torch.tensor(0.1))
         self.local_residual = nn.Parameter(torch.tensor(0.5))
 
-        # Pre-allocated index buffer for efficient windowed attention
         self.register_buffer("_seq_idx", torch.arange(4096), persistent=False)
 
-        # Decoder & nested encoder detection with robust prefix matching
         model_type = str(getattr(config, "model_type", "") or "").lower() if config else ""
         _decoder_prefixes = (
             "gpt",
@@ -325,7 +317,6 @@ class ClusterAttention(BaseAttention):
             "o": (None, None),
         }
 
-        # 1. HuggingFace / standard UniversalAdapter extraction
         for proj in ["q", "k", "v", "o"]:
             try:
                 w, b = UniversalAdapter.get_weight_bias(src, proj)
@@ -334,7 +325,6 @@ class ClusterAttention(BaseAttention):
             except Exception as e:
                 logger.debug(f"UniversalAdapter extraction failed for {proj}: {e}")
 
-        # 2. GPT-2 Fused c_attn Conv1D handling (including LoRALinear wrappers)
         if (
             hasattr(src, "c_attn")
             and src.c_attn is not None
@@ -403,7 +393,6 @@ class ClusterAttention(BaseAttention):
                     bias_o.data.clone() if bias_o is not None else None,
                 )
 
-        # 3. RoBERTa / BERT Nested Encoder handling
         if hasattr(src, "self") and (
             extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None
         ):
@@ -419,7 +408,6 @@ class ClusterAttention(BaseAttention):
             dense = src.output.dense
             extracted["o"] = (dense.weight.data, getattr(dense, "bias", None))
 
-        # 4. Modern Decoders (Qwen3.5, LLaMA, Mistral) & DistilBERT
         named_map = {
             "q": ["q_proj", "q_lin", "query"],
             "k": ["k_proj", "k_lin", "key"],
@@ -438,7 +426,6 @@ class ClusterAttention(BaseAttention):
                             )
                             break
 
-        # Detect nested encoder architecture
         cls_name = src.__class__.__name__
         has_out_proj = any(
             hasattr(src, attr)
@@ -482,7 +469,6 @@ class ClusterAttention(BaseAttention):
             is_nested = kwargs["is_nested_encoder"]
         self.is_nested_encoder = bool(is_nested)
 
-        # Check required weights
         missing = [k for k in ["q", "k", "v"] if extracted[k][0] is None]
         if not self.is_nested_encoder and extracted["o"][0] is None:
             missing.append("o")
@@ -491,7 +477,6 @@ class ClusterAttention(BaseAttention):
                 f"ClusterAttention missing required weights for projections: {missing}"
             )
 
-        # Frobenius norm validation
         for proj_key in ["q", "k", "v"]:
             w = extracted[proj_key][0]
             if w is not None:
@@ -508,7 +493,6 @@ class ClusterAttention(BaseAttention):
                     f"ClusterAttention extracted weight for output projection has near-zero Frobenius norm ({norm_o.item():.6f})"
                 )
 
-        # Copy into projection modules
         with torch.no_grad():
             for proj_key, target in [
                 ("q", self.q_proj),
@@ -560,21 +544,20 @@ class ClusterAttention(BaseAttention):
         K = min(K_num, L)
 
         if valid_mask is not None:
-            valid_f = valid_mask.float()  # [B, L]
-            num_valid = valid_f.sum(dim=-1, keepdim=True).clamp(min=1.0)  # [B, 1]
-            step = (num_valid / K).clamp(min=1.0)  # [B, 1]
-            k_idx = torch.arange(K, device=Q.device, dtype=torch.float32).unsqueeze(0)  # [1, K]
-            target_ranks = (k_idx * step).clamp(max=num_valid - 1.0).long()  # [B, K]
+            valid_f = valid_mask.float()
+            num_valid = valid_f.sum(dim=-1, keepdim=True).clamp(min=1.0)
+            step = (num_valid / K).clamp(min=1.0)
+            k_idx = torch.arange(K, device=Q.device, dtype=torch.float32).unsqueeze(0)
+            target_ranks = (k_idx * step).clamp(max=num_valid - 1.0).long()
 
-            # Assign rank to each valid token: 0, 1, ..., num_valid-1
-            ranks = (valid_f.cumsum(dim=-1) - 1.0) * valid_f  # [B, L]
-            is_valid_3d = valid_mask.unsqueeze(1)  # [B, 1, L]
+            ranks = (valid_f.cumsum(dim=-1) - 1.0) * valid_f
+            is_valid_3d = valid_mask.unsqueeze(1)
             rank_diff = torch.where(
                 is_valid_3d,
                 (ranks.unsqueeze(1) - target_ranks.unsqueeze(-1)).abs(),
                 torch.tensor(1e6, device=Q.device),
             )
-            chosen_indices = torch.argmin(rank_diff, dim=-1)  # [B, K]
+            chosen_indices = torch.argmin(rank_diff, dim=-1)
 
             idx_expanded = chosen_indices.unsqueeze(1).unsqueeze(-1).expand(B, H, K, d)
             centroids = torch.gather(Q, 2, idx_expanded).clone()
@@ -635,7 +618,6 @@ class ClusterAttention(BaseAttention):
         K = self.k_proj(kv_input).view(B, N_k, self.num_kv_heads, Dh).transpose(1, 2).contiguous()
         V = self.v_proj(kv_input).view(B, N_k, self.num_kv_heads, Dh).transpose(1, 2).contiguous()
 
-        # Apply RoPE (accept from position_embeddings or fallback to rotary_emb)
         pos_emb = (
             position_embeddings
             if position_embeddings is not None
@@ -668,7 +650,6 @@ class ClusterAttention(BaseAttention):
 
         scale = 1.0 / math.sqrt(int(Dh))
 
-        # Check for causal decoding (guard against self.config being None)
         _cfg = self.config
         is_dec_cfg = False
         if _cfg is not None:
@@ -696,7 +677,6 @@ class ClusterAttention(BaseAttention):
         is_decoder = bool(self.is_decoder or is_dec_cfg or kwargs.get("is_causal", False) or kwargs.get("causal", False))
 
         if is_cross_attention or is_decoder:
-            # Exact attention with causal masking to prevent future token leakage
             scores = torch.matmul(Q, K.transpose(-2, -1).contiguous()) * scale
             mask = attention_mask if attention_mask is not None else kwargs.get("mask")
             if mask is not None:
@@ -737,7 +717,6 @@ class ClusterAttention(BaseAttention):
                     out_context = out_context * valid_q.unsqueeze(1).unsqueeze(-1).to(dtype)
             attn_ret = attn if output_attentions else None
         else:
-            # Bidirectional clustering attention
             valid_mask_2d = get_token_valid_mask(attention_mask, B, L, device)
             key_valid_4d = (
                 valid_mask_2d.unsqueeze(1).unsqueeze(2)
@@ -755,15 +734,11 @@ class ClusterAttention(BaseAttention):
             else:
                 K_num = min(max(1, self.num_clusters), L)
 
-                # 1. Cluster Queries into K centroids with padding mask filtering
-                # K-means argmin is non-differentiable → detach centroids so backward
-                # does NOT flow through the argmin path (which produces NaN grads).
                 centroids, cluster_ids, counts = self._kmeans_cluster(
                     Q.detach(), K_num, self.n_iters, valid_mask=valid_mask_2d
                 )
                 centroids = torch.nan_to_num(centroids, nan=0.0).detach()
 
-                # 2. Centroid-to-Key Global Cross-Attention [B, H, K, L]
                 scores_cent = torch.matmul(centroids, K.transpose(-2, -1).contiguous()) * scale
                 scores_cent = scores_cent.clamp(min=-10000.0, max=10000.0)
                 scores_cent = scores_cent.masked_fill(~key_valid_4d, -10000.0)
@@ -772,28 +747,23 @@ class ClusterAttention(BaseAttention):
                 )
                 attn_cent = self.dropout(attn_cent)
 
-                # Centroid values: [B, H, K, Dh]
                 V_cent = torch.matmul(attn_cent, V)
                 V_cent = torch.nan_to_num(V_cent, nan=0.0)
 
-                # 3. Differentiable Query-to-Centroid soft assignment with learned sharpening & context gathering [B, H, L, Dh]
                 scores_assign = torch.matmul(Q, centroids.transpose(-2, -1).contiguous()) * scale
-                empty_clusters = (counts == 0).squeeze(-1).unsqueeze(2)  # [B, H, 1, K]
+                empty_clusters = (counts == 0).squeeze(-1).unsqueeze(2)
                 scores_assign = scores_assign.masked_fill(empty_clusters, -10000.0)
-                # Clamp scores to avoid -inf/-inf → NaN in backward for fully-masked rows
                 scores_assign = scores_assign.clamp(min=-10000.0, max=10000.0)
                 temp_clamped = self.temp.abs().clamp(min=0.1, max=10.0)
                 attn_assign = torch.nan_to_num(
                     F.softmax((scores_assign / temp_clamped).float(), dim=-1), nan=0.0
                 ).to(dtype)
-                # Guard denominator with eps to prevent NaN in backward (zero-sum padding rows)
                 assign_denom = attn_assign.sum(dim=-1, keepdim=True).clamp(min=1e-6)
                 attn_assign = attn_assign / assign_denom
                 attn_assign = torch.nan_to_num(attn_assign, nan=0.0)
                 global_context = torch.matmul(attn_assign, V_cent)
                 global_context = torch.nan_to_num(global_context, nan=0.0)
 
-                # 4. Optional Local Sliding Window Attention
                 if self.window_size > 0 and self.window_size < L:
                     scores_loc = torch.matmul(Q, K.transpose(-2, -1).contiguous()) * scale
                     idx = (
@@ -801,7 +771,6 @@ class ClusterAttention(BaseAttention):
                         if hasattr(self, "_seq_idx") and len(self._seq_idx) >= L
                         else torch.arange(L, device=device)
                     )
-                    # FIXED: Failure Mode 1 (Mode Collapse): Causal band mask prevents future token leakage
                     if is_decoder:
                         band_mask = (idx.unsqueeze(1) >= idx.unsqueeze(0)) & ((idx.unsqueeze(1) - idx.unsqueeze(0)) <= self.window_size)
                     else:
@@ -865,7 +834,6 @@ def inject_cluster(
     if cfg is None and hasattr(target, "config"):
         cfg = target.config
 
-    # 1. Whole model traversal
     layer_list = None
     if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
         layer_list = target.distilbert.transformer.layer
@@ -902,7 +870,6 @@ def inject_cluster(
                 num_injected += 1
         return target if num_injected > 0 else None
 
-    # 2. Single layer injection
     src_attn = old_attn
     if src_attn is None and target is not None:
         for attr in ("attention", "self_attn", "attn", "self"):

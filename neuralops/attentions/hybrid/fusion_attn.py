@@ -38,11 +38,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 logger = logging.getLogger(__name__)
 
 
-
-
-# ===========================================================================
-# FUSIONATTN
-# ===========================================================================
 @ATTENTION_REGISTRY.register(
     "fusion_attn", supports_causal=True, supports_bidirectional=True, supports_gqa=True
 )
@@ -248,7 +243,6 @@ class FUSIONATTN(BaseAttention):
             freeze_base=self.freeze_base,
         )
 
-        # KD-FIX: lora_ prefix so KD optimizer tracks these params
         self.lora_attn_gate = nn.Sequential(
             nn.Linear(self.head_dim * 2, 4 * self.head_dim),
             nn.GELU(),
@@ -278,7 +272,6 @@ class FUSIONATTN(BaseAttention):
         if source_attn is not None:
             self.copy_weights(source_attn)
 
-    # ---- aliases ----
     @property
     def query(self):
         return self.q_proj
@@ -331,9 +324,6 @@ class FUSIONATTN(BaseAttention):
     def c_proj(self):
         return self.out_proj
 
-    # ------------------------------------------------------------------
-    # copy_weights — unchanged from original (working correctly)
-    # ------------------------------------------------------------------
     def copy_weights(self, pretrained_attn: nn.Module) -> None:
         if pretrained_attn is None:
             return
@@ -544,9 +534,6 @@ class FUSIONATTN(BaseAttention):
                 if self.freeze_base:
                     target_mod.freeze_base_weights()
 
-    # ------------------------------------------------------------------
-    # KV-cache helpers
-    # ------------------------------------------------------------------
     _read_past_kv = staticmethod(_read_past_kv)
 
     @staticmethod
@@ -572,9 +559,6 @@ class FUSIONATTN(BaseAttention):
                 return m
         return None
 
-    # ------------------------------------------------------------------
-    # Dense path
-    # ------------------------------------------------------------------
     def _dense_attention(
         self,
         q: torch.Tensor,
@@ -649,9 +633,6 @@ class FUSIONATTN(BaseAttention):
         context = torch.matmul(probs, v).transpose(1, 2).contiguous().view(B, N, self.all_head_size)
         return context, (probs if output_attentions else None)
 
-    # ------------------------------------------------------------------
-    # Block-gated sparse attention (CLEANED)
-    # ------------------------------------------------------------------
     def _block_sparse_attention(
         self,
         q: torch.Tensor,
@@ -667,7 +648,6 @@ class FUSIONATTN(BaseAttention):
         bs = self.block_size
         device = q.device
 
-        # --- Pad to multiple of block_size ---
         pad_len = (bs - (N % bs)) % bs
         if pad_len > 0:
             q_pad = F.pad(q, (0, 0, 0, pad_len))
@@ -683,41 +663,35 @@ class FUSIONATTN(BaseAttention):
         num_blocks = N_pad // bs
         top_k = min(self.top_k_blocks, num_blocks)
 
-        # --- Block centroids ---
         q_blocks = q_pad.reshape(B, H, num_blocks, bs, D)
         k_blocks = k_pad.reshape(B, H, num_blocks, bs, D)
         v_blocks = v_pad.reshape(B, H, num_blocks, bs, D)
 
-        q_cent = q_blocks.mean(dim=3)  # (B, H, nb, D)
-        k_cent = k_blocks.mean(dim=3)  # (B, H, nb, D)
+        q_cent = q_blocks.mean(dim=3)
+        k_cent = k_blocks.mean(dim=3)
 
-        # --- Gate features ---
         q_feat = torch.cat([q_cent, torch.zeros_like(q_cent)], dim=-1)
         k_feat = torch.cat([torch.zeros_like(k_cent), k_cent], dim=-1)
 
-        q_gate = self.lora_attn_gate(q_feat).squeeze(-1)  # (B, H, nb)
-        k_gate = self.lora_attn_gate(k_feat).squeeze(-1)  # (B, H, nb)
+        q_gate = self.lora_attn_gate(q_feat).squeeze(-1)
+        k_gate = self.lora_attn_gate(k_feat).squeeze(-1)
 
-        # --- Gate scores (B, H, nb_q, nb_k) ---
         gate_scores = torch.matmul(q_gate.unsqueeze(-1), k_gate.unsqueeze(-2))
         gate_scores = (gate_scores + self.lora_gate_head_bias.view(1, H, 1, 1)) / (
             self.lora_gate_temp.abs() + 1e-5
         )
 
-        # --- Causal mask at block level ---
         if is_causal:
             q_blk = torch.arange(num_blocks, device=device).unsqueeze(1)
             k_blk = torch.arange(num_blocks, device=device).unsqueeze(0)
-            past_blocks = 0  # N == N_kv in this path
+            past_blocks = 0
             causal_blocks = k_blk <= (q_blk + past_blocks)
             gate_scores = gate_scores.masked_fill(
                 ~causal_blocks.unsqueeze(0).unsqueeze(0), float("-inf")
             )
 
-        # --- Top-k block selection ---
-        _, top_idx = torch.topk(gate_scores, top_k, dim=-1)  # (B, H, nb_q, top_k)
+        _, top_idx = torch.topk(gate_scores, top_k, dim=-1)
 
-        # Hardware-accelerated Triton Block-Sparse Attention
         from neuralops.core.triton_kernels._types import FORCE_PYTORCH_FALLBACK, HAS_TRITON
         if (
             HAS_TRITON
@@ -740,7 +714,6 @@ class FUSIONATTN(BaseAttention):
             except Exception:
                 pass
 
-        # --- Gather K / V / valid ---
         top_idx_exp = top_idx.unsqueeze(-1).unsqueeze(-1).expand(-1, -1, -1, -1, bs, D)
         k_exp = k_blocks.unsqueeze(2).expand(-1, -1, num_blocks, -1, -1, -1)
         v_exp = v_blocks.unsqueeze(2).expand(-1, -1, num_blocks, -1, -1, -1)
@@ -758,7 +731,6 @@ class FUSIONATTN(BaseAttention):
         else:
             valid_sel = None
 
-        # --- Attention ---
         scale = 1.0 / math.sqrt(int(D))
         scores = (
             torch.matmul(q_blocks.float(), k_sel.float().transpose(-2, -1).contiguous()) * scale
@@ -796,7 +768,7 @@ class FUSIONATTN(BaseAttention):
                 hm = hm.unsqueeze(1)
             probs = probs * hm
 
-        out_blocks = torch.matmul(probs, v_sel)  # (B, H, nb, bs, D)
+        out_blocks = torch.matmul(probs, v_sel)
         out_blocks = torch.nan_to_num(out_blocks, nan=0.0, posinf=1e4, neginf=-1e4)
 
         context = out_blocks.reshape(B, H, N_pad, D)[:, :, :N, :]
@@ -806,9 +778,6 @@ class FUSIONATTN(BaseAttention):
             return context, probs
         return context, None
 
-    # ------------------------------------------------------------------
-    # Forward
-    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -940,9 +909,6 @@ class FUSIONATTN(BaseAttention):
         return torch.tensor(0.0, device=self.out_proj.weight.device)
 
 
-# ===========================================================================
-# Injection
-# ===========================================================================
 def inject_fusion_attn(
     layer: Any = None,
     model: Any = None,

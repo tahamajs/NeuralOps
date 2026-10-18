@@ -19,18 +19,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 logger = logging.getLogger(__name__)
 
 
-
-
-
-
-
-
-
-# ===========================================================================
-# Config
-# ===========================================================================
-
-
 @dataclass
 class HybridLocalKernelConfig:
     hidden_size: int = 768
@@ -48,11 +36,6 @@ class HybridLocalKernelConfig:
 
 
 AegisConfigV2 = HybridLocalKernelConfig
-
-
-# ===========================================================================
-# FactorisedLinear (V2-FIX-10)
-# ===========================================================================
 
 
 class FactorisedLinear(nn.Module):
@@ -73,7 +56,6 @@ class FactorisedLinear(nn.Module):
         self.in_features = in_features
         self.out_features = out_features
         self.rank = min(rank, in_features, out_features)
-        # V2-FIX-10: alias so framework FLOPs detector sees the rank.
         self.svd_rank = self.rank
         self.energy = energy
         self.lora_rank = lora_rank
@@ -132,7 +114,6 @@ class FactorisedLinear(nn.Module):
                 W = padded
 
             dev = W.device
-            # Compute SVD on CPU float32 to avoid driver cuSOLVER illegal memory access issues across all architectures
             W_cpu = W.detach().cpu().float()
             U_cpu, S_cpu, Vt_cpu = torch.linalg.svd(W_cpu, full_matrices=False)
             U = U_cpu.to(dev)
@@ -193,11 +174,6 @@ class FactorisedLinear(nn.Module):
             b = self.lora_B.to(orig_dtype) if self.lora_B.dtype != orig_dtype else self.lora_B
             out = out.to(orig_dtype) + F.linear(F.linear(x, a), b) * self.lora_scaling
         return out.to(orig_dtype)
-
-
-# ===========================================================================
-# Attention primitives
-# ===========================================================================
 
 
 def _local_window_attention_v2(
@@ -277,21 +253,18 @@ def _global_linear_attention_v2(
     V_f = V.float()
 
     if token_valid is not None:
-        mask_kv = token_valid[:, None, :, None].to(phi_K.dtype)  # (B,1,N_k,1)
+        mask_kv = token_valid[:, None, :, None].to(phi_K.dtype)
         phi_K = phi_K * mask_kv
         V_f = V_f * mask_kv
 
-    # ---- Causal case: chunked cumsum ----
     if is_decoder:
         if N_k != N:
-            # Single-token decode: exact non-causal over the full history.
-            KV = torch.matmul(phi_K.transpose(-2, -1).contiguous(), V_f)  # (B,H,F,D)
-            Z = phi_K.sum(dim=-2, keepdim=True)  # (B,H,1,F)
+            KV = torch.matmul(phi_K.transpose(-2, -1).contiguous(), V_f)
+            Z = phi_K.sum(dim=-2, keepdim=True)
             num = torch.matmul(phi_Q, KV)
             den = torch.matmul(phi_Q, Z.transpose(-2, -1).contiguous()).clamp(min=1e-6)
             return torch.nan_to_num(num / den, nan=0.0).to(Q.dtype)
 
-        # Hardware-accelerated Triton linear chunk scan
         from neuralops.core.triton_kernels._types import FORCE_PYTORCH_FALLBACK, HAS_TRITON
         if HAS_TRITON and not FORCE_PYTORCH_FALLBACK and Q.is_cuda and token_valid is None and D <= 128:
             try:
@@ -325,17 +298,11 @@ def _global_linear_attention_v2(
 
         return torch.nan_to_num(torch.cat(outs, dim=2), nan=0.0).to(Q.dtype)
 
-    # ---- Non-causal case ----
-    KV = torch.matmul(phi_K.transpose(-2, -1).contiguous(), V_f)  # (B,H,F,D)
-    Z = phi_K.sum(dim=-2, keepdim=True)  # (B,H,1,F)
-    num = torch.matmul(phi_Q, KV)  # (B,H,N,D)
+    KV = torch.matmul(phi_K.transpose(-2, -1).contiguous(), V_f)
+    Z = phi_K.sum(dim=-2, keepdim=True)
+    num = torch.matmul(phi_Q, KV)
     den = torch.matmul(phi_Q, Z.transpose(-2, -1).contiguous()).clamp(min=1e-6)
     return torch.nan_to_num(num / den, nan=0.0).to(Q.dtype)
-
-
-# ===========================================================================
-# Main attention
-# ===========================================================================
 
 
 @ATTENTION_REGISTRY.register("hybrid_local_kernel", supports_causal=True, supports_gqa=True)
@@ -412,7 +379,6 @@ class HybridLocalKernelAttention(BaseAttention):
                 else n_heads
             )
 
-            # V2-FIX-01: robust decoder detection
             dec = _detect_decoder(config, is_decoder, pretrained_attn)
 
             config = AegisConfigV2(
@@ -498,9 +464,6 @@ class HybridLocalKernelAttention(BaseAttention):
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
 
-    # ------------------------------------------------------------------
-    # Aliases
-    # ------------------------------------------------------------------
     @property
     def q_proj1(self):
         return self.q_proj.down
@@ -573,9 +536,6 @@ class HybridLocalKernelAttention(BaseAttention):
     def c_proj(self):
         return self.out_proj
 
-    # ------------------------------------------------------------------
-    # Weight transfer (same logic as V5)
-    # ------------------------------------------------------------------
     def _copy_pretrained(self, old_attn: nn.Module) -> None:
         self.copy_weights(old_attn)
 
@@ -597,7 +557,6 @@ class HybridLocalKernelAttention(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter fallback failed: %s", e)
 
-        # GPT-2 fused c_attn (Conv1D)
         if hasattr(old_attn, "c_attn") and any(extracted[k][0] is None for k in ("q", "k", "v")):
             c_attn_mod = old_attn.c_attn
             base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
@@ -649,7 +608,6 @@ class HybridLocalKernelAttention(BaseAttention):
                 b_o = getattr(base_p, "bias", getattr(c_proj_mod, "bias", None))
                 extracted["o"] = (w_o, b_o.data if b_o is not None else None)
 
-        # BERT / RoBERTa nested encoder
         if hasattr(old_attn, "self") and any(extracted[k][0] is None for k in ("q", "k", "v")):
             s = old_attn.self
             if hasattr(s, "query"):
@@ -776,9 +734,6 @@ class HybridLocalKernelAttention(BaseAttention):
         elif hasattr(old_attn, "c_attn") or "gpt" in old_attn.__class__.__name__.lower():
             self.is_decoder = True
 
-    # ------------------------------------------------------------------
-    # V2-FIX-07: safe from_distilbert_pretrained
-    # ------------------------------------------------------------------
     @classmethod
     def from_distilbert_pretrained(
         cls, old_attn: nn.Module, model_config: Any | None = None, **kwargs: Any
@@ -812,9 +767,6 @@ class HybridLocalKernelAttention(BaseAttention):
             model_config.head_dim = model_config.hidden_size // n_heads
         return cls(config=model_config, pretrained_attn=old_attn, **kwargs)
 
-    # ------------------------------------------------------------------
-    # V2-FIX-05: unified mask handling
-    # ------------------------------------------------------------------
     @staticmethod
     def _prepare_valid_mask(
         attention_mask: torch.Tensor | None,
@@ -838,13 +790,9 @@ class HybridLocalKernelAttention(BaseAttention):
                 v = attention_mask > -1e4
             else:
                 v = attention_mask > 0
-            # (B, 1, N_q, N_kv) -> OR over query dim -> (B, N_kv)
             return v.any(dim=-2).squeeze(1)
         raise ValueError(f"Unsupported attention_mask dim: {attention_mask.dim()}")
 
-    # ------------------------------------------------------------------
-    # V2-FIX-02 + V2-FIX-09: forward
-    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -871,16 +819,13 @@ class HybridLocalKernelAttention(BaseAttention):
         kv_input = encoder_hidden_states if is_cross else hidden_states
         N_kv_new = kv_input.shape[1]
 
-        # ---- Mask (V2-FIX-05) ----
         eff_mask = encoder_attention_mask if is_cross else attention_mask
         token_valid = self._prepare_valid_mask(eff_mask, B, N_kv_new, device)
 
-        # ---- Projections ----
         Q = self.q_proj(hidden_states).view(B, N, H, D).transpose(1, 2).contiguous()
         K_new = self.k_proj(kv_input).view(B, N_kv_new, Hkv, D).transpose(1, 2).contiguous()
         V_new = self.v_proj(kv_input).view(B, N_kv_new, Hkv, D).transpose(1, 2).contiguous()
 
-        # ---- RoPE with past offset ----
         if position_embeddings is not None and not is_cross:
             cos, sin = position_embeddings
             past_len_rope = 0
@@ -893,7 +838,6 @@ class HybridLocalKernelAttention(BaseAttention):
             sin = sin[..., past_len_rope : past_len_rope + N, :]
             Q, K_new = apply_rotary_pos_emb(Q, K_new, cos, sin)
 
-        # ---- KV-cache concat ----
         past_k = past_v = None
         if past_key_value is not None and not is_cross:
             if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 2:
@@ -921,11 +865,9 @@ class HybridLocalKernelAttention(BaseAttention):
         N_kv = K_cat.shape[2]
         past_len = N_kv - N if (self.is_decoder and not is_cross) else 0
 
-        # ---- GQA expansion ----
         K_full = repeat_kv(K_cat, self.kv_repeat) if self.kv_repeat > 1 else K_cat
         V_full = repeat_kv(V_cat, self.kv_repeat) if self.kv_repeat > 1 else V_cat
 
-        # ---- Local attention (V2-FIX-03) ----
         local_out = _local_window_attention_v2(
             Q,
             K_full,
@@ -934,13 +876,11 @@ class HybridLocalKernelAttention(BaseAttention):
             token_valid=token_valid,
             is_decoder=self.is_decoder and not is_cross,
             past_len=past_len,
-        )  # (B, H, N, D)
+        )
 
-        # ---- Global attention (V2-FIX-08) ----
         if not is_cross:
             if self.prune_gate is not None:
-                keep = torch.sigmoid(self.prune_gate(hidden_states))  # (B, N, H)
-                # V2-FIX-06: expand across GQA heads
+                keep = torch.sigmoid(self.prune_gate(hidden_states))
                 if self.kv_repeat > 1:
                     keep_kv = keep[:, :, : self.num_kv_heads]
                 else:
@@ -960,26 +900,23 @@ class HybridLocalKernelAttention(BaseAttention):
                 Vg,
                 token_valid=token_valid,
                 is_decoder=self.is_decoder,
-            )  # (B, H, N, D)
+            )
 
-            alpha = torch.sigmoid(self.fusion_gate(hidden_states)).unsqueeze(-1)  # (B, N, H, 1)
-            alpha = alpha.transpose(1, 2)  # (B, H, N, 1)
+            alpha = torch.sigmoid(self.fusion_gate(hidden_states)).unsqueeze(-1)
+            alpha = alpha.transpose(1, 2)
             fused = alpha * local_out + (1.0 - alpha) * global_out
         else:
-            # Cross-attention: local only (global over encoder is questionable)
             fused = local_out
 
-        # ---- head_mask (V2-FIX-02) ----
         if head_mask is not None:
             if head_mask.dim() == 1:
                 head_mask = head_mask.view(1, -1, 1, 1)
             elif head_mask.dim() == 2:
-                head_mask = head_mask.unsqueeze(-1).unsqueeze(-1)  # (B, H, 1, 1)
+                head_mask = head_mask.unsqueeze(-1).unsqueeze(-1)
             elif head_mask.dim() == 3:
-                head_mask = head_mask[:, :, :1].unsqueeze(-1)  # (B, H, 1, 1)
+                head_mask = head_mask[:, :, :1].unsqueeze(-1)
             fused = fused * head_mask.to(fused.dtype)
 
-        # ---- Reshape to (B, N, H*D) ----
         out = fused.transpose(1, 2).contiguous().view(B, N, self.all_head_size)
         out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
 
@@ -991,30 +928,20 @@ class HybridLocalKernelAttention(BaseAttention):
         output = torch.nan_to_num(output, nan=0.0, posinf=1e4, neginf=-1e4)
         output = output.to(hidden_states.dtype)
 
-        # ---- HuggingFace-compatible return tuple ----
-        # Determine use_cache from arg or kwargs
         _use_cache = use_cache
         if _use_cache is None:
             _use_cache = bool(kwargs.get("use_cache", False))
 
-        # Build the present KV tuple (unexpanded, so downstream concat works)
         present = None
         if _use_cache and not is_cross:
             present = (K_new, V_new)
 
-        # Return tuple with correct length based on output_attentions
         if output_attentions:
-            # GPT-2 expects (hidden, present, attn_weights) when use_cache=True
             return (output, present, None)
         else:
             return (output, present)
     def get_ortho_loss(self) -> torch.Tensor:
         return torch.zeros((), device=self.out_proj.up.weight.device)
-
-
-# ===========================================================================
-# Injection (V2-FIX-04)
-# ===========================================================================
 
 
 def inject_hybrid_local_kernel(
@@ -1138,7 +1065,6 @@ def inject_hybrid_local_kernel(
             else getattr(layer, "attention", getattr(layer, "self", getattr(layer, "attn", None)))
         )
 
-        # V2-FIX-01: use shared helper
         is_dec = _detect_decoder(model_config, None, src_attn)
 
         cfg = AegisConfigV2(
@@ -1186,4 +1112,3 @@ AegisAttentionV2 = HybridLocalKernelAttention
 AegisAttentionV3 = HybridLocalKernelAttention
 AegisAttentionV4 = HybridLocalKernelAttention
 AegisAttentionV5 = HybridLocalKernelAttention
-

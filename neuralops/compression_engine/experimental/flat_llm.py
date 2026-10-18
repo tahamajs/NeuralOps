@@ -27,8 +27,6 @@ from neuralops.utils.compat import should_compress_linear
 logger = logging.getLogger(__name__)
 
 
-
-
 _ATTN_NAMES = {
     "q_proj",
     "k_proj",
@@ -48,9 +46,6 @@ _ATTN_NAMES = {
 }
 
 
-# ===========================================================================
-# Pruned channel linear layer (real storage reduction)
-# ===========================================================================
 class PrunedChannelLinear(nn.Module):
     """
     Linear layer with pruned output channels.
@@ -73,14 +68,14 @@ class PrunedChannelLinear(nn.Module):
         self,
         in_features: int,
         original_out_features: int,
-        kept_idx: torch.Tensor,  # (k,) int64
-        W_kept: torch.Tensor,  # (k, in_features)
+        kept_idx: torch.Tensor,
+        W_kept: torch.Tensor,
         bias_kept: torch.Tensor | None = None,
     ) -> None:
         super().__init__()
         self.in_features = int(in_features)
         self.original_out_features = int(original_out_features)
-        self.out_features = self.original_out_features  # for API compatibility
+        self.out_features = self.original_out_features
         self.num_kept = int(W_kept.shape[0])
 
         self.register_buffer("kept_idx", kept_idx.long(), persistent=True)
@@ -109,7 +104,7 @@ class PrunedChannelLinear(nn.Module):
                 from neuralops.core.triton_kernels.sparse_attn import fused_topk_sparse_route_and_combine_triton
             except Exception:
                 pass
-        h = F.linear(x, self.W_kept, self.bias_kept)  # (..., k)
+        h = F.linear(x, self.W_kept, self.bias_kept)
         out = torch.zeros(
             *x.shape[:-1],
             self.original_out_features,
@@ -127,9 +122,6 @@ class PrunedChannelLinear(nn.Module):
         )
 
 
-# ===========================================================================
-# Compressor
-# ===========================================================================
 @COMPRESSOR_REGISTRY.register("flat_llm")
 class FLATLLMCompressor(BaseCompressor):
     """
@@ -145,7 +137,6 @@ class FLATLLMCompressor(BaseCompressor):
     unless a sparse kernel is used).
     """
 
-    # FLT-FIX-09
     is_custom_attention: bool = False
 
     def __init__(
@@ -173,7 +164,6 @@ class FLATLLMCompressor(BaseCompressor):
         self.tokenizer = tokenizer or getattr(model, "tokenizer", None)
         raw_kr = _cfg_get(cfg, "flat_llm_keep_ratio", _cfg_get(cfg, "keep_ratio", keep_ratio))
         self.keep_ratio = max(0.05, min(float(raw_kr), 1.0))
-        # FLT-FIX-04
         self.damping = max(
             0.0,
             float(_cfg_get(cfg, "flat_llm_damping", _cfg_get(cfg, "damping", damping))),
@@ -224,7 +214,6 @@ class FLATLLMCompressor(BaseCompressor):
         self.layer_keep_ratios: dict[str, float] = {}
         self._compressed_params: int = 0
 
-    # ------------------------------------------------------------------
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         name_lower = name.lower()
         if any(part in name.split(".") for part in ["lora_A", "lora_B", "base_layer"]):
@@ -280,9 +269,6 @@ class FLATLLMCompressor(BaseCompressor):
             return any(t in name for t in self.target_modules)
         return True
 
-    # ------------------------------------------------------------------
-    # Calibration: per-output-channel energy (FLT-FIX-05)
-    # ------------------------------------------------------------------
     def _normalize_calibration_batches(self, calib_inputs: Any) -> list[Any]:
         if calib_inputs is None:
             return []
@@ -371,7 +357,6 @@ class FLATLLMCompressor(BaseCompressor):
             aggregated[name] = (esum / max(1, batch_count[name])).to(self.target_device)
         return aggregated
 
-    # ------------------------------------------------------------------
     def compress(self, **kwargs: Any) -> tuple[nn.Module, dict[str, Any]]:
         from neuralops.core.model_utils import replace_module
 
@@ -382,7 +367,6 @@ class FLATLLMCompressor(BaseCompressor):
         self.layer_errors = {}
         self.layer_keep_ratios = {}
 
-        # Honest accounting: storage params, not "effective" made-up numbers.
         total_orig_storage = 0
         total_comp_storage = 0
 
@@ -410,24 +394,18 @@ class FLATLLMCompressor(BaseCompressor):
             total_orig_storage += orig_layer_storage
             norm_w = torch.norm(W, p="fro").item()
 
-            # Activation-aware saliency
             act = outputs_map.get(name, None)
             if act is not None and act.numel() > 0 and act.shape[0] == d_out:
                 saliency = act.float().clamp(min=0.0).to(device)
             else:
                 saliency = W.pow(2).sum(dim=1)
 
-            # Apply damping to stabilize near-zero channels
             if self.damping > 0:
                 saliency = saliency + self.damping * saliency.mean().clamp_min(1e-12)
 
-            # ---- Decide kept channels ----
             if self.structured_24:
-                # 2:4 is a compute-only structured sparsity. For storage, we still
-                # keep all output channels; only the mask reduces the values.
                 sal_mat = saliency.unsqueeze(1).expand_as(W)
                 W_pruned, _mask = apply_24_structured_mask(W, saliency=sal_mat, dim=0)
-                # Storage: unchanged (dense)
                 kept_idx = torch.arange(d_out, device=device)
                 W_kept = W_pruned.contiguous()
                 keep_ratio_actual = 1.0
@@ -440,26 +418,22 @@ class FLATLLMCompressor(BaseCompressor):
             else:
                 keep_dims = max(1, min(int(round(d_out * self.keep_ratio)), d_out))
                 _, keep_idx = torch.topk(saliency, k=keep_dims, largest=True)
-                keep_idx, _ = torch.sort(keep_idx)  # stable order
+                keep_idx, _ = torch.sort(keep_idx)
                 kept_idx = keep_idx.to(device)
                 W_kept = W.index_select(0, kept_idx).contiguous()
                 keep_ratio_actual = keep_dims / d_out
 
-                # Compute error vs original (with pruned rows treated as zero)
                 W_pruned = torch.zeros_like(W)
                 W_pruned.index_copy_(0, kept_idx, W_kept)
 
-                # Bias handling: keep only the corresponding entries
                 if getattr(target_mod, "bias", None) is not None and target_mod.bias is not None:
                     bias_full = target_mod.bias.data.float()
                     bias_kept = bias_full.index_select(0, kept_idx).contiguous()
                 else:
                     bias_kept = None
 
-                # Storage: k * in instead of out * in
                 comp_layer_storage = int(keep_dims) * d_in
 
-            # ---- Error check ----
             if norm_w < 1e-12:
                 final_err = 0.0
             else:
@@ -487,10 +461,7 @@ class FLATLLMCompressor(BaseCompressor):
                         p.requires_grad = False
                     continue
 
-            # ---- Build the new module ----
             if self.structured_24:
-                # No storage reduction: keep original Linear, just overwrite
-                # its weight with the masked values (compute-only sparsity).
                 new_module = target_mod
                 with torch.no_grad():
                     if is_conv1d:
@@ -508,10 +479,8 @@ class FLATLLMCompressor(BaseCompressor):
                     ),
                 )
 
-            # ---- Splice into the model (preserve LoRA wrappers) ----
             if hasattr(module, "base_layer"):
                 module.base_layer = new_module
-                # Keep LoRA params trainable
                 for pn, p in module.named_parameters():
                     if "lora_" in pn.lower() and not pn.startswith("base_layer"):
                         p.requires_grad = True
@@ -521,7 +490,6 @@ class FLATLLMCompressor(BaseCompressor):
             self.compressed_layers.append(name)
             total_comp_storage += comp_layer_storage
 
-        # ---- Forward sanity check (FLT-FIX-07) ----
         forward_check_success = True
         try:
             with torch.no_grad():
@@ -550,7 +518,6 @@ class FLATLLMCompressor(BaseCompressor):
             logger.debug("FLAT-LLM forward sanity check failed: %s", e)
             forward_check_success = False
 
-        # Honest storage ratio
         storage_ratio = total_orig_storage / total_comp_storage if total_comp_storage > 0 else 1.0
         effective_ratio = total_comp_storage / total_orig_storage if total_orig_storage > 0 else 1.0
 
@@ -588,7 +555,6 @@ class FLATLLMCompressor(BaseCompressor):
                 "num_compressed": len(self.compressed_layers),
                 "num_fallback": len(self.fallback_layers),
                 "num_skipped": len(self.skipped_layers),
-                # Honest accounting (FLT-FIX-02)
                 "orig_layer_storage_params": total_orig_storage,
                 "comp_layer_storage_params": total_comp_storage,
                 "effective_parameter_ratio": round(effective_ratio, 4),
@@ -609,9 +575,6 @@ class FLATLLMCompressor(BaseCompressor):
         return self.model, stats
 
 
-# ===========================================================================
-# Factory (FLT-FIX-11)
-# ===========================================================================
 def flat_llm_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
     keep_ratio = kwargs.pop(

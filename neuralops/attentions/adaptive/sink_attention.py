@@ -50,9 +50,6 @@ from neuralops.core.attention_mask import get_token_valid_mask
 logger = logging.getLogger(__name__)
 
 
-# ===========================================================================
-# SinkCache — a lightweight tuple-like cache that stores (k, v, positions)
-# ===========================================================================
 class SinkCache:
     """
     Custom cache container used by SinkAttention.
@@ -106,7 +103,6 @@ class SinkCache:
         self.positions[layer_idx] = pos_all
         return k_all, v_all, pos_all
 
-    # Tuple-cache compatibility (so external code can use it like a tuple)
     def __getitem__(self, idx: int):
         if idx == 0:
             return self.keys
@@ -120,9 +116,6 @@ class SinkCache:
         return 3
 
 
-# ===========================================================================
-# SinkAttention
-# ===========================================================================
 @ATTENTION_REGISTRY.register("sink_attention")
 class SinkAttention(BaseAttention):
     """
@@ -158,7 +151,6 @@ class SinkAttention(BaseAttention):
         self.config = config
         comp_config = getattr(config, "compression_config", None)
 
-        # -------- Dimensions --------
         self.d_model = int(
             kwargs.get("dim")
             or getattr(config, "hidden_size", None) or d_model
@@ -184,7 +176,6 @@ class SinkAttention(BaseAttention):
         self.all_head_size = self.num_heads * self.head_dim
         self.all_kv_head_size = self.num_kv_heads * self.head_dim
 
-        # -------- Streaming config --------
         self.num_sink_tokens = int(
             getattr(comp_config, "num_sink_tokens",
                     kwargs.get("num_sink_tokens", num_sink_tokens))
@@ -200,7 +191,6 @@ class SinkAttention(BaseAttention):
         if self.window_size < self.num_sink_tokens + 1:
             raise ValueError("window_size must be > num_sink_tokens.")
 
-        # -------- Decoder / encoder --------
         is_dec = getattr(config, "is_decoder", kwargs.get("is_decoder", False))
         if kwargs.get("is_causal", False):
             is_dec = True
@@ -208,7 +198,6 @@ class SinkAttention(BaseAttention):
         self.is_causal = bool(is_dec)
         self.is_nested_encoder = False
 
-        # -------- LoRA --------
         self.lora_rank = int(
             getattr(config, "lora_rank",
                     getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16)))
@@ -222,7 +211,6 @@ class SinkAttention(BaseAttention):
         self.freeze_base = self.lora_rank > 0
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
 
-        # -------- Projections --------
         self.q_lin = LoRALinear(
             self.dim, self.all_head_size, bias=True,
             lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
@@ -244,7 +232,6 @@ class SinkAttention(BaseAttention):
             freeze_base=self.freeze_base,
         )
 
-        # -------- Aliases for HF compatibility --------
         self.q_proj = self.q_lin
         self.k_proj = self.k_lin
         self.v_proj = self.v_lin
@@ -263,7 +250,6 @@ class SinkAttention(BaseAttention):
         )
         self.dropout = nn.Dropout(dropout_p)
 
-        # -------- Weights --------
         src = (
             pretrained_attn if pretrained_attn is not None
             else (old_attn if old_attn is not None else kwargs.get("source_attn"))
@@ -271,9 +257,6 @@ class SinkAttention(BaseAttention):
         if src is not None:
             self.copy_weights(src)
 
-    # ------------------------------------------------------------------
-    # cache helpers
-    # ------------------------------------------------------------------
     @staticmethod
     def _read_cache(cache: Any, layer_idx: int):
         """
@@ -286,7 +269,6 @@ class SinkAttention(BaseAttention):
         if cache is None:
             return None, None, None, None
 
-        # Our custom SinkCache
         if isinstance(cache, SinkCache):
             if layer_idx >= len(cache.keys) or cache.keys[layer_idx] is None:
                 return None, None, None, "sink"
@@ -297,7 +279,6 @@ class SinkAttention(BaseAttention):
                 "sink",
             )
 
-        # Tuple: (k, v) or (k, v, positions)
         if isinstance(cache, (tuple, list)) and len(cache) >= 2:
             k, v = cache[0], cache[1]
             pos = cache[2] if len(cache) >= 3 else None
@@ -305,16 +286,12 @@ class SinkAttention(BaseAttention):
                 return None, None, None, "tuple"
             return k, v, pos, "tuple"
 
-        # HF DynamicCache
         if hasattr(cache, "key_cache") and cache.key_cache:
             idx = min(layer_idx, len(cache.key_cache) - 1)
             return cache.key_cache[idx], cache.value_cache[idx], None, "dynamic"
 
         return None, None, None, None
 
-    # ------------------------------------------------------------------
-    # copy_weights
-    # ------------------------------------------------------------------
     def copy_weights(self, src: Any) -> None:
         if src is None:
             return
@@ -347,7 +324,6 @@ class SinkAttention(BaseAttention):
             "v": (None, None), "o": (None, None),
         }
 
-        # GPT-2 fused
         if hasattr(src, "c_attn") and src.c_attn is not None:
             c_attn_mod = src.c_attn
             base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
@@ -390,7 +366,6 @@ class SinkAttention(BaseAttention):
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
                     extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
 
-        # BERT/RoBERTa nested
         elif hasattr(src, "self") and hasattr(src.self, "query"):
             s = src.self
             for key, sub in (("q", "query"), ("k", "key"), ("v", "value")):
@@ -407,7 +382,6 @@ class SinkAttention(BaseAttention):
                     out_mod.bias.data.clone() if out_mod.bias is not None else None,
                 )
 
-        # Flat
         else:
             candidates = {
                 "q": ("q_lin", "q_proj", "query"),
@@ -493,9 +467,6 @@ class SinkAttention(BaseAttention):
             for m in (self.q_lin, self.k_lin, self.v_lin, self.out_lin):
                 m.freeze_base_weights()
 
-    # ------------------------------------------------------------------
-    # streaming pruning (applied to cached K/V, not hidden_states)
-    # ------------------------------------------------------------------
     def _prune_kv(
         self,
         k: torch.Tensor,
@@ -515,7 +486,6 @@ class SinkAttention(BaseAttention):
         if N_k <= W:
             return k, v, positions
 
-        # Try fused Triton kernel in SRAM
         try:
             from neuralops.core.triton_kernels.sliding_window import fused_sink_rolling_cache_triton
             return fused_sink_rolling_cache_triton(k, v, positions, W, S)
@@ -532,9 +502,6 @@ class SinkAttention(BaseAttention):
         positions = positions.index_select(-1, keep_idx)
         return k, v, positions
 
-    # ------------------------------------------------------------------
-    # forward
-    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -560,20 +527,15 @@ class SinkAttention(BaseAttention):
 
         valid_mask = get_token_valid_mask(attention_mask, B, N, device)
 
-        # ---------- Read cache ----------
         past_k, past_v, past_pos, cache_type = self._read_cache(past_key_value, layer_idx)
         past_len = 0 if past_k is None else past_k.shape[-2]
 
-        # ---------- Projections ----------
         q = self.q_lin(x).view(B, N, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
         k_new = self.k_lin(x).view(B, N, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
         v_new = self.v_lin(x).view(B, N, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
 
-        # ---------- RoPE (uses absolute positions) ----------
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
-        # Absolute offset for RoPE is the number of tokens we have ever seen:
-        # if past cache exists, offset = last_cached_pos + 1
         if past_pos is not None and past_pos.numel() > 0:
             offset = int(past_pos[:, -1].max().item()) + 1
         else:
@@ -583,21 +545,18 @@ class SinkAttention(BaseAttention):
             cos, sin = position_embeddings
             q, k_new = apply_rotary_pos_emb(q, k_new, cos, sin, past_len=offset)
 
-        # ---------- Absolute positions of current tokens ----------
         new_positions = (
             torch.arange(offset, offset + N, device=device, dtype=torch.long)
             .unsqueeze(0)
             .expand(B, -1)
         )
 
-        # ---------- Concatenate past + new, then prune ----------
         if past_k is not None:
             k_all = torch.cat([past_k, k_new], dim=-2)
             v_all = torch.cat([past_v, v_new], dim=-2)
             if past_pos is not None:
                 pos_all = torch.cat([past_pos, new_positions], dim=-1)
             else:
-                # Fallback: reconstruct positions assuming contiguity.
                 pos_all = torch.arange(k_all.shape[-2], device=device)
                 pos_all = pos_all.unsqueeze(0).expand(B, -1)
         else:
@@ -605,14 +564,10 @@ class SinkAttention(BaseAttention):
             v_all = v_new
             pos_all = new_positions
 
-        # ---------- Prune (StreamingLLM magic happens HERE) ----------
         k_keep, v_keep, pos_keep = self._prune_kv(k_all, v_all, pos_all)
 
-        # ---------- FIX-02: update cache and return it ----------
         updated_cache: Any = None
         if cache_type == "sink":
-            # reuse the same SinkCache object
-            # write back pruned tensors
             cache = past_key_value
             while len(cache.keys) <= layer_idx:
                 cache.keys.append(None)
@@ -624,18 +579,12 @@ class SinkAttention(BaseAttention):
             cache.seen_tokens = max(cache.seen_tokens, int(pos_keep.max().item()) + 1)
             updated_cache = cache
         elif cache_type == "dynamic" or (cache_type is None and hasattr(past_key_value, "update")):
-            # HF DynamicCache: update with full (unpruned) K/V.
-            # (HF DynamicCache does not support positions; we store full K/V
-            #  and prune only inside this module, so memory is not reduced.
-            #  For memory savings, pass a SinkCache.)
             if past_key_value is not None and hasattr(past_key_value, "update"):
                 past_key_value.update(k_new, v_new, layer_idx)
                 updated_cache = past_key_value
         elif cache_type == "tuple" or (cache_type is None and past_key_value is not None):
-            # Return a 3-tuple with positions.
             updated_cache = (k_keep, v_keep, pos_keep)
 
-        # ---------- GQA expansion for attention ----------
         if self.num_heads != self.num_kv_heads:
             k_att = repeat_kv(k_keep, self.kv_repeat)
             v_att = repeat_kv(v_keep, self.kv_repeat)
@@ -645,7 +594,6 @@ class SinkAttention(BaseAttention):
 
         N_k = k_att.shape[-2]
 
-        # ---------- SDPA fast-path (when we can't prune further) ----------
         use_sdpa = (
             not self.training
             and N_k <= self.window_size
@@ -680,54 +628,35 @@ class SinkAttention(BaseAttention):
                 return out, None, updated_cache
             return out, None
 
-        # ---------- Manual attention ----------
         scale = 1.0 / math.sqrt(self.head_dim)
         scores = torch.matmul(
             q.float(), k_att.float().transpose(-2, -1).contiguous()
-        ) * scale  # (B, H, N, N_k)
+        ) * scale
 
-        # ---------- Causal mask using ABSOLUTE positions ----------
         if self.is_decoder:
-            q_pos = new_positions.view(B, 1, N, 1)          # (B,1,N,1)
-            k_pos = pos_keep.view(B, 1, 1, N_k)             # (B,1,1,N_k)
+            q_pos = new_positions.view(B, 1, N, 1)
+            k_pos = pos_keep.view(B, 1, 1, N_k)
             causal = k_pos > q_pos
             scores = scores.masked_fill(causal, float("-inf"))
 
-        # ---------- Padding mask (only for current-chunk tokens) ----------
-        # Mark which key positions are valid.
-        # Cache tokens are always valid (they were added when valid).
         if past_k is not None and past_pos is not None:
-            # Current tokens' validity is in valid_mask; map to kept positions.
-            # Simple approach: assume all cached tokens remain valid.
             all_valid = torch.ones(B, N_k, device=device, dtype=torch.bool)
         else:
-            all_valid = valid_mask  # (B, N) == (B, N_k)
+            all_valid = valid_mask
 
-        # But we must apply padding only to the *current* tokens.
-        # We'll build a validity tensor for k_keep positions:
-        #   - past positions  → True
-        #   - current valid positions → valid_mask
         if past_pos is not None and past_k is not None:
-            # Determine, for each k_keep position, whether it belongs to past
-            # or to the current chunk, and its validity.
-            # new_positions contains the positions of current tokens.
-            # past_pos contains past positions.
-            # We use a scatter:
             max_pos = int(pos_keep.max().item()) + 1
             valid_lookup = torch.zeros(B, max_pos, device=device, dtype=torch.bool)
-            # Past tokens always valid
             if past_pos is not None:
                 valid_lookup.scatter_(1, past_pos, True)
-            # Current tokens: valid_mask
             valid_lookup.scatter_(1, new_positions, valid_mask)
-            all_valid = valid_lookup.gather(1, pos_keep)     # (B, N_k)
+            all_valid = valid_lookup.gather(1, pos_keep)
 
         if all_valid.shape[-1] == scores.shape[-1]:
             scores = scores.masked_fill(
                 ~all_valid.unsqueeze(1).unsqueeze(2), float("-inf")
             )
         else:
-            # Broadcast or expand all_valid to match key dimension
             av = all_valid[:, None, None, :]
             if av.shape[-1] != scores.shape[-1]:
                 av = av.expand(-1, scores.shape[1], scores.shape[2], -1) if av.shape[-1] == scores.shape[-1] else None
@@ -738,7 +667,6 @@ class SinkAttention(BaseAttention):
         probs = torch.nan_to_num(probs, nan=0.0)
         probs = self.dropout(probs)
 
-        # ---------- head_mask ----------
         if head_mask is not None:
             if head_mask.dim() == 1 and head_mask.size(0) == self.num_heads:
                 probs = probs * head_mask.view(1, self.num_heads, 1, 1).to(probs.dtype)
@@ -749,7 +677,6 @@ class SinkAttention(BaseAttention):
             elif head_mask.dim() == 4:
                 probs = probs * head_mask.to(probs.dtype)
 
-        # ---------- Output ----------
         attn_out = (
             torch.matmul(probs, v_att)
             .permute(0, 2, 1, 3)
@@ -788,7 +715,6 @@ def inject_sink_attention(
 
     cfg = model_config if model_config is not None else getattr(target, "config", None)
 
-    # ---------- Whole-model traversal ----------
     if layer is None and model is not None:
         found = _find_layer_list(model)
         if found is None:
@@ -812,7 +738,6 @@ def inject_sink_attention(
                 num_injected += 1
         return model if num_injected > 0 else None
 
-    # ---------- Single-layer injection ----------
     try:
         src_attn = old_attn
         if src_attn is None:

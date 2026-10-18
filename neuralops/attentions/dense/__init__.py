@@ -28,6 +28,5 @@ try:
 except Exception:
     pass
 
-# Auto-wired submodules
 from neuralops.attentions.dense import full_attention
 from neuralops.attentions.dense import zeros_attention

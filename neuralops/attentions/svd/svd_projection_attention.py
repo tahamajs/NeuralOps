@@ -43,13 +43,6 @@ from neuralops.core.triton_kernels import triton_dispatch
 logger = logging.getLogger(__name__)
 
 
-
-
-
-
-# ===========================================================================
-# SVDProjectionLinear — FIX 1: Triton Fallback
-# ===========================================================================
 class SVDProjectionLinear(nn.Module):
     r"""Low-Rank SVD Linear Layer with Trainable LoRA Residual Adapters.
 
@@ -128,20 +121,15 @@ class SVDProjectionLinear(nn.Module):
         Attempts Triton kernel first; if unavailable, uses pure PyTorch matmul.
         This ensures CPU/MPS compatibility and production stability.
         """
-        # ---- Base SVD projection with safe fallback ----
         try:
             out = triton_dispatch(self.triton_kernel, x, self.U, self.V, bias=self.bias)
         except Exception as e:
-            # Fallback: pure PyTorch exact math
             logger.debug("Triton dispatch failed (%s); using PyTorch fallback.", e)
-            # Compute (x @ V^T) @ U^T = x @ (U @ V)^T
-            # Efficient order: first project to rank r, then to out_features
             u = self.U.to(x.dtype) if self.U.dtype != x.dtype else self.U
             v = self.V.to(x.dtype) if self.V.dtype != x.dtype else self.V
-            z = F.linear(x, v)          # (B, ..., in) @ (r, in)^T → (B, ..., r)
-            out = F.linear(z, u, self.bias)  # (B, ..., r) @ (out, r)^T → (B, ..., out)
+            z = F.linear(x, v)
+            out = F.linear(z, u, self.bias)
 
-        # ---- Trainable LoRA residual branch ----
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             a = self.lora_A.to(x.dtype) if self.lora_A.dtype != x.dtype else self.lora_A
             b = self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
@@ -160,9 +148,6 @@ class SVDProjectionLinear(nn.Module):
             self.V.data[:r, :].copy_(V[:r, :].to(device=self.V.device, dtype=self.V.dtype))
 
 
-# ===========================================================================
-# SVDProjectionAttention — FIX 2, 3, 4, 5
-# ===========================================================================
 @ATTENTION_REGISTRY.register("svd_projection_attention", supports_causal=True, supports_gqa=True)
 class SVDProjectionAttention(BaseAttention):
     r"""Multi-Head Attention using Factorized SVD Linear Projections.
@@ -193,7 +178,6 @@ class SVDProjectionAttention(BaseAttention):
     ) -> None:
         super().__init__(config, rank)
 
-        # 1. Dimensions & Architecture
         self.hidden_size: int = kwargs.get(
             "hidden_size",
             _cfg_get(
@@ -236,7 +220,6 @@ class SVDProjectionAttention(BaseAttention):
         self.q_head_size: int = self.num_heads * self.head_dim
         self.all_head_size: int = self.q_head_size
 
-        # 2. Causal decoder flag detection
         if is_decoder is not None:
             self.is_decoder = bool(is_decoder)
         else:
@@ -273,7 +256,6 @@ class SVDProjectionAttention(BaseAttention):
             config, "lora_alpha", _cfg_get(comp_config, "lora_alpha", lora_alpha)
         )
 
-        # 3. Factorized SVD linear projections
         self.q_proj = SVDProjectionLinear(
             self.hidden_size, self.q_head_size, self.rank,
             bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
@@ -306,7 +288,6 @@ class SVDProjectionAttention(BaseAttention):
         )
         self.dropout: nn.Dropout = nn.Dropout(dropout_p)
 
-        # 4. Copy weights if old_attn passed
         if old_attn is not None:
             self.copy_weights(old_attn)
             try:
@@ -315,7 +296,6 @@ class SVDProjectionAttention(BaseAttention):
             except StopIteration:
                 pass
 
-    # ---- compatibility aliases ----
     @property
     def query(self): return self.q_proj
     @property
@@ -374,7 +354,6 @@ class SVDProjectionAttention(BaseAttention):
             w_v, b_v = None, None
             w_o, b_o = None, None
 
-            # Detect nested encoder
             src_cls_name = getattr(old_attn, "__class__", type(old_attn)).__name__
             if src_cls_name in ("BertSelfAttention", "RobertaSelfAttention") or (
                 hasattr(old_attn, "query")
@@ -392,7 +371,6 @@ class SVDProjectionAttention(BaseAttention):
             else:
                 src = old_attn
 
-            # Pattern 1: GPT-2 Fused c_attn
             if hasattr(src, "c_attn") and hasattr(src, "c_proj"):
                 c_attn_w, c_attn_b = _unpack_weight_bias(src.c_attn)
                 if c_attn_w is not None:
@@ -418,7 +396,6 @@ class SVDProjectionAttention(BaseAttention):
                             b_v = c_attn_b[2 * split_size : 3 * split_size]
                 w_o, b_o = _unpack_weight_bias(src.c_proj)
 
-            # Pattern 2: RoBERTa / BERT
             elif hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value"):
                 w_q, b_q = _unpack_weight_bias(src.query)
                 w_k, b_k = _unpack_weight_bias(src.key)
@@ -429,7 +406,6 @@ class SVDProjectionAttention(BaseAttention):
                             w_o, b_o = _unpack_weight_bias(getattr(src, attr))
                             break
 
-            # Pattern 3: Qwen / LLaMA
             elif hasattr(src, "q_proj") and hasattr(src, "k_proj") and hasattr(src, "v_proj"):
                 w_q, b_q = _unpack_weight_bias(src.q_proj)
                 w_k, b_k = _unpack_weight_bias(src.k_proj)
@@ -437,7 +413,6 @@ class SVDProjectionAttention(BaseAttention):
                 if hasattr(src, "o_proj"):
                     w_o, b_o = _unpack_weight_bias(src.o_proj)
 
-            # Pattern 4: DistilBERT
             elif hasattr(src, "q_lin") and hasattr(src, "k_lin") and hasattr(src, "v_lin"):
                 w_q, b_q = _unpack_weight_bias(src.q_lin)
                 w_k, b_k = _unpack_weight_bias(src.k_lin)
@@ -445,7 +420,6 @@ class SVDProjectionAttention(BaseAttention):
                 if hasattr(src, "out_lin"):
                     w_o, b_o = _unpack_weight_bias(src.out_lin)
 
-            # Fallback: UniversalAdapter
             if w_q is None or w_k is None or w_v is None:
                 try:
                     w_q, b_q = UniversalAdapter.get_weight_bias(old_attn, "q")
@@ -456,7 +430,6 @@ class SVDProjectionAttention(BaseAttention):
                 except Exception as e:
                     logger.debug("UniversalAdapter fallback failed: %s", e)
 
-            # Verification
             missing = []
             if w_q is None: missing.append("query/q_proj")
             if w_k is None: missing.append("key/k_proj")
@@ -465,15 +438,12 @@ class SVDProjectionAttention(BaseAttention):
                 logger.warning(f"Failed to extract required projections: {missing}")
                 return
 
-            # Frobenius norm checks
             for name, w in [("w_q", w_q), ("w_k", w_k), ("w_v", w_v)]:
                 if torch.norm(w.float(), p="fro").item() < 1e-4:
                     logger.warning(f"Copied weight {name} has near-zero Frobenius norm")
 
-            # Decompose Q
             self._decompose_and_set(self.q_proj, w_q, b_q)
 
-            # GQA alignment for K and V
             def _align_kv(w, b):
                 if w.shape[0] == self.kv_head_size:
                     return w, b
@@ -519,15 +489,11 @@ class SVDProjectionAttention(BaseAttention):
             w_v_aligned, b_v_aligned = _align_kv(w_v, b_v)
             self._decompose_and_set(self.v_proj, w_v_aligned, b_v_aligned)
 
-            # Out projection (skip if nested encoder)
             if w_o is not None and not self.is_nested_encoder:
                 if torch.norm(w_o.float(), p="fro").item() < 1e-4:
                     logger.warning("Copied out_proj weight has near-zero Frobenius norm")
                 self._decompose_and_set(self.out_proj, w_o, b_o)
 
-    # ------------------------------------------------------------------
-    # Forward — FIX 2, 3, 4, 5
-    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -545,12 +511,10 @@ class SVDProjectionAttention(BaseAttention):
     ) -> tuple[torch.Tensor, torch.Tensor | None]:
         B, N, _ = hidden_states.shape
 
-        # FIX 2: Use direct variable, not `dir()` check
         is_cross = encoder_hidden_states is not None
         kv_input = encoder_hidden_states if is_cross else hidden_states
         kv_len = kv_input.shape[1]
 
-        # 1. Project Q, K, V
         Q = (
             self.q_proj(hidden_states)
             .view(B, N, self.num_heads, self.head_dim)
@@ -570,33 +534,24 @@ class SVDProjectionAttention(BaseAttention):
             .contiguous()
         )
 
-        # 2. RoPE support
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None and not is_cross:
             cos, sin = position_embeddings
             Q, K = apply_rotary_pos_emb(Q, K, cos, sin)
 
-        # 3. FIX 5: GQA handling — try native SDPA first (no manual repeat)
-        #    Only repeat if we fall back to manual attention
         eff_mask = encoder_attention_mask if is_cross else attention_mask
         is_causal = self.is_decoder and not is_cross and N > 1
 
-        # ---- Fast path: try native SDPA (handles GQA + precision internally) ----
         if not output_attentions and head_mask is None:
             try:
-                # Build attention mask for SDPA (bool mask where True = keep)
                 sdpa_attn_mask = None
                 if eff_mask is not None:
                     if eff_mask.dim() == 2:
-                        # (B, N) → (B, 1, 1, N) bool
                         sdpa_attn_mask = eff_mask.bool().unsqueeze(1).unsqueeze(2)
                     elif eff_mask.dim() == 4:
                         sdpa_attn_mask = eff_mask.bool()
 
-                # FIX 4: No forced FP16 casting — let Autocast handle precision.
-                # SDPA natively supports GQA (num_kv_heads < num_heads) in
-                # PyTorch ≥ 2.0 with no memory duplication.
                 _sdpa_out = F.scaled_dot_product_attention(
                     Q, K, V,
                     attn_mask=sdpa_attn_mask,
@@ -623,7 +578,6 @@ class SVDProjectionAttention(BaseAttention):
             except Exception as e:
                 logger.debug("SDPA fast path failed (%s); falling back to manual.", e)
 
-        # ---- Fallback: manual attention (needs GQA repeat) ----
         if self.num_kv_heads < self.num_heads:
             K = repeat_kv(K, self.kv_repeat)
             V = repeat_kv(V, self.kv_repeat)
@@ -631,7 +585,6 @@ class SVDProjectionAttention(BaseAttention):
         scale = 1.0 / math.sqrt(self.head_dim)
         scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
 
-        # Causal mask
         if is_causal:
             causal_mask = torch.triu(
                 torch.full(
@@ -642,7 +595,6 @@ class SVDProjectionAttention(BaseAttention):
             ).unsqueeze(0).unsqueeze(0)
             scores = scores + causal_mask
 
-        # Attention mask
         if eff_mask is not None:
             if eff_mask.dim() == 2:
                 scores = scores + (eff_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0
@@ -655,7 +607,6 @@ class SVDProjectionAttention(BaseAttention):
         attn_weights = F.softmax(scores, dim=-1).to(hidden_states.dtype)
         attn_weights = self.dropout(attn_weights)
 
-        # Head mask
         if head_mask is not None:
             if head_mask.dim() == 1:
                 head_mask = head_mask.view(1, -1, 1, 1)
@@ -665,20 +616,17 @@ class SVDProjectionAttention(BaseAttention):
                 head_mask = head_mask.unsqueeze(-1)
             attn_weights = attn_weights * head_mask
 
-        # Context & Head merge
         context = torch.matmul(attn_weights, V).transpose(1, 2).contiguous().view(B, N, -1)
         valid_mask = get_token_valid_mask(eff_mask, B, N, hidden_states.device)
         if valid_mask is not None:
             context = context * valid_mask.unsqueeze(-1).to(context.dtype)
         context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
 
-        # Output projection
         if self.is_nested_encoder:
             output = context
         else:
             output = self.out_proj(context)
 
-        # FIX 3: No silent padding — raise RuntimeError on shape mismatch
         if output.shape[-1] != hidden_states.shape[-1]:
             raise RuntimeError(
                 f"SVDProjectionAttention output dimension mismatch! "
@@ -691,9 +639,6 @@ class SVDProjectionAttention(BaseAttention):
         return output, (attn_weights if output_attentions else None)
 
 
-# ===========================================================================
-# Injection
-# ===========================================================================
 def inject_svd_proj_attn(
     layer: Any = None,
     model: Any = None,
@@ -710,7 +655,6 @@ def inject_svd_proj_attn(
     target = layer if layer is not None else model
     cfg = model_config or getattr(target, "config", None) or kwargs.get("config")
 
-    # Whole model traversal
     if target is not None and (
         hasattr(target, "transformer")
         or hasattr(target, "distilbert")

@@ -42,7 +42,6 @@ class FP8Compressor(BaseCompressor):
         self.scales: dict[str, torch.Tensor] = {}
         self.quantized_tensors: dict[str, torch.Tensor] = {}
 
-        # Detect SM capability
         self.has_sm89 = False
         if torch.cuda.is_available():
             try:
@@ -62,10 +61,8 @@ class FP8Compressor(BaseCompressor):
         """Quantizes weight tensor to FP8 and returns (dequantized_w, fp8_w, scale)."""
         w_float = w.float()
         if self.scale_type == "per_channel":
-            # Per-row (output channel) scaling: [out_features, 1]
             max_abs = w_float.abs().amax(dim=1, keepdim=True).clamp(min=1e-8)
         else:
-            # Per-tensor scaling: scalar
             max_abs = w_float.abs().amax().clamp(min=1e-8)
 
         scale = max_abs / self.max_val
@@ -75,9 +72,7 @@ class FP8Compressor(BaseCompressor):
             w_fp8 = w_scaled.to(self.target_dtype)
             w_dequant = w_fp8.to(w.dtype) * scale.to(w.dtype)
         else:
-            # High-precision FP8 emulation (rounding to 3 or 2 mantissa bits)
             mantissa_bits = 3 if self.fp8_format == "e4m3" else 2
-            # Quantize mantissa by scaling within each power-of-2 interval
             exp = torch.floor(torch.log2(w_scaled.abs().clamp(min=1e-8)))
             base = torch.pow(2.0, exp)
             step = base * (2.0 ** (-mantissa_bits))

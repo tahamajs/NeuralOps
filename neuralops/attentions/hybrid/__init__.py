@@ -184,7 +184,6 @@ try:
 except Exception:
     pass
 
-# Auto-wired submodules
 from neuralops.attentions.hybrid import fusion_attn
 from neuralops.attentions.hybrid import gated_hybrid_kernel_attention
 from neuralops.attentions.hybrid import granite_hybrid

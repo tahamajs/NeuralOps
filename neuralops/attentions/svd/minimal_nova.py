@@ -1,4 +1,3 @@
-
 from neuralops.core.attention_utils import (
     apply_rotary_pos_emb,
 )
@@ -16,8 +15,6 @@ from neuralops.core.utils.gqa import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
 
 logger = logging.getLogger(__name__)
-
-
 
 
 class FactorisedLinear(nn.Module):
@@ -85,7 +82,6 @@ class FactorisedLinear(nn.Module):
     ) -> None:
         with torch.no_grad():
             W = weight.float()
-            # Handle KV dimension matching for GQA
             if W.shape[0] < self.out_features and self.out_features % W.shape[0] == 0:
                 rep = self.out_features // W.shape[0]
                 W = W.repeat(rep, 1)
@@ -377,7 +373,6 @@ class MinimalNOVAAttention(BaseAttention):
             "o": (None, None),
         }
 
-        # 1. UniversalAdapter extraction
         for proj in ["q", "k", "v", "o"]:
             try:
                 w, b = UniversalAdapter.get_weight_bias(src, proj)
@@ -386,7 +381,6 @@ class MinimalNOVAAttention(BaseAttention):
             except Exception as e:
                 logger.debug(f"UniversalAdapter extraction failed for {proj}: {e}")
 
-        # 2. GPT-2 Fused c_attn / c_proj Conv1D handling
         if hasattr(src, "c_attn") and (
             extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None
         ):
@@ -435,7 +429,6 @@ class MinimalNOVAAttention(BaseAttention):
                 b_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
                 extracted["o"] = (w_o, b_o.data.clone() if b_o is not None else None)
 
-        # 3. RoBERTa / BERT Nested Encoder handling
         if hasattr(src, "self") and (
             extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None
         ):
@@ -451,7 +444,6 @@ class MinimalNOVAAttention(BaseAttention):
             dense = src.output.dense
             extracted["o"] = (dense.weight.data, getattr(dense, "bias", None))
 
-        # 4. Modern Decoders (Qwen3.5, LLaMA, Mistral) & DistilBERT
         named_map = {
             "q": ["q_proj", "q_lin", "query"],
             "k": ["k_proj", "k_lin", "key"],
@@ -470,7 +462,6 @@ class MinimalNOVAAttention(BaseAttention):
                             )
                             break
 
-        # Detect nested encoder architecture
         cls_name = src.__class__.__name__
         has_out_proj = any(
             hasattr(src, attr)
@@ -512,14 +503,12 @@ class MinimalNOVAAttention(BaseAttention):
                 is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
-        # Check required weights
         missing = [k for k in ["q", "k", "v"] if extracted[k][0] is None]
         if not self.is_nested_encoder and extracted["o"][0] is None:
             missing.append("o")
         if missing:
             logger.warning("Module copy_weights warning. Proceeding with initialized weights.")
 
-        # Frobenius norm validation
         for proj_key in ["q", "k", "v"]:
             w = extracted[proj_key][0]
             if w is not None:
@@ -541,7 +530,6 @@ class MinimalNOVAAttention(BaseAttention):
                 return w.t().contiguous()
             return w
 
-        # Copy into factorized projection modules
         with torch.no_grad():
             for proj_key, target in [
                 ("q", self.q_proj),
@@ -588,7 +576,6 @@ class MinimalNOVAAttention(BaseAttention):
         device = hidden_states.device
         dtype = hidden_states.dtype
 
-        # Defensive device check
         if self.q_proj.down.weight.device != device or self.q_proj.down.weight.dtype != dtype:
             self.to(device=device, dtype=dtype)
 
@@ -611,7 +598,6 @@ class MinimalNOVAAttention(BaseAttention):
             V = repeat_kv(V, self.kv_repeat)
 
         scale = 1.0 / math.sqrt(D)
-        # Memory-efficient: use SDPA to avoid OOM on large seqs; fallback to explicit if needed
 
         try:
             _qs = maybe_half(Q)
@@ -729,7 +715,6 @@ def inject_minimal_nova(
     energy = getattr(comp_config, "svd_energy", 0.95) if comp_config else 0.95
     dropout = getattr(comp_config, "dropout", 0.1) if comp_config else 0.1
 
-    # 1. Whole model traversal
     layer_list = None
     if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
         layer_list = target.distilbert.transformer.layer
@@ -751,7 +736,6 @@ def inject_minimal_nova(
         layer_list = target.layers
 
     if layer_list is not None:
-        # Pre-test on the first layer before mutating model
         test_src = getattr(layer_list[0], "attention", getattr(layer_list[0], "self", None))
         if test_src is not None:
             try:
@@ -781,7 +765,6 @@ def inject_minimal_nova(
                 count += 1
         return target if count > 0 else None
 
-    # 2. Single-layer injection
     src_attn = old_attn
     if src_attn is None and target is not None:
         for attr in ("attention", "self_attn", "attn", "self"):
@@ -797,7 +780,6 @@ def inject_minimal_nova(
         logger.warning("inject_minimal_nova: no source attention found, aborting.")
         return None
 
-    # Double injection guard
     if isinstance(src_attn, MinimalNOVAAttention) or "MinimalNOVA" in src_attn.__class__.__name__:
         return None
 

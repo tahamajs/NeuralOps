@@ -43,14 +43,7 @@ from neuralops.core.registry import COMPRESSOR_REGISTRY
 from neuralops.utils.compat import should_compress_linear
 
 
-
-
 logger = logging.getLogger(__name__)
-
-
-# ===========================================================================
-# BonsaiPrunedLoRALinear with Progressive Sparsity
-# ===========================================================================
 
 
 class BonsaiPrunedLoRALinear(nn.Module):
@@ -81,7 +74,7 @@ class BonsaiPrunedLoRALinear(nn.Module):
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
-        self.nf = out_features  # Conv1D compatibility
+        self.nf = out_features
         self.target_sp = float(target_sp)
         self.target_steps = max(1, int(target_steps))
         self.structured_24 = structured_24
@@ -94,13 +87,11 @@ class BonsaiPrunedLoRALinear(nn.Module):
 
         weight_dtype = dtype if dtype is not None else torch.float32
 
-        # FIXED: Base weights remain trainable so real KD/self-training backprop updates weights!
         self.weight = nn.Parameter(
             torch.empty(out_features, in_features, dtype=weight_dtype, device=device),
             requires_grad=not freeze_base,
         )
 
-        # FIXED: Mask starts at all ones (0% initial sparsity = 0 initial damage)
         self.register_buffer(
             "mask",
             torch.ones(out_features, in_features, dtype=weight_dtype, device=device),
@@ -139,8 +130,6 @@ class BonsaiPrunedLoRALinear(nn.Module):
         orig_shape = x.shape
         x_flat = x.reshape(-1, self.in_features)
 
-        # FIXED: Progressive Sparsity Scheduler during training forward passes
-        # Gradually ramp sparsity from 0.0 to target_sp via cubic warmup schedule.
         active_mask = self.mask
         if self.training and self.current_step < self.target_steps:
             with torch.no_grad():
@@ -227,11 +216,6 @@ class BonsaiPrunedLoRALinear(nn.Module):
             if bias_present and layer.bias is not None and linear.bias is not None:
                 layer.bias.data.copy_(linear.bias.data)
         return layer
-
-
-# ===========================================================================
-# BonsaiPruner Compressor
-# ===========================================================================
 
 
 class BonsaiPruner(BaseCompressor):
@@ -457,9 +441,6 @@ class BonsaiPruner(BaseCompressor):
 
             target_sp = self.sparsity
 
-            # FIXED: Deploy Progressive BonsaiPrunedLoRALinear.
-            # Base weights start 100% dense (0% damage) and remain trainable (requires_grad=True).
-            # Sparsity increases smoothly over self.target_steps in forward passes.
             pruned_layer = BonsaiPrunedLoRALinear.from_linear(
                 linear=target_mod,
                 weight=W0.to(dtype=dtype, device=device),
@@ -473,7 +454,6 @@ class BonsaiPruner(BaseCompressor):
                 freeze_base=False,
             )
 
-            # Ensure all weights remain trainable
             pruned_layer.weight.requires_grad = True
 
             if hasattr(module, "base_layer"):
@@ -497,10 +477,9 @@ class BonsaiPruner(BaseCompressor):
 
             replace_module(self.model, name, pruned_layer)
             self.pruned_layers.append(name)
-            self.layer_errors[name] = 0.0  # 0 initial reconstruction error
+            self.layer_errors[name] = 0.0
             self.layer_sparsities[name] = target_sp
 
-        # LayerNorm recalibration
         if self.recalibrate_ln:
             try:
                 recalibrate_layernorms(
@@ -513,7 +492,6 @@ class BonsaiPruner(BaseCompressor):
             except Exception as e:
                 logger.warning("BonsaiPruner: LayerNorm recalibration skipped: %s", e)
 
-        # Forward sanity check
         sanity_check_passed = True
         try:
             with torch.no_grad():
@@ -572,11 +550,6 @@ class BonsaiPruner(BaseCompressor):
             self.sparsity,
         )
         return self.model, stats
-
-
-# ===========================================================================
-# Factory
-# ===========================================================================
 
 
 @COMPRESSOR_REGISTRY.register("bonsai_pruner")

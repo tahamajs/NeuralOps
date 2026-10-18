@@ -37,11 +37,6 @@ from neuralops.utils.compat import get_dynamic_compression_rank, should_compress
 logger = logging.getLogger(__name__)
 
 
-
-
-# ===========================================================================
-# Factorized Linear
-# ===========================================================================
 class A3FactorizedLinear(nn.Module):
     """
     Low-rank factorized linear with optional LoRA:
@@ -91,7 +86,6 @@ class A3FactorizedLinear(nn.Module):
 
     def reset_parameters(self) -> None:
         with torch.no_grad():
-            # A3-FIX-14: proper orthogonal init for non-square matrices
             for param in (self.V, self.U):
                 if param.dtype in (torch.float16, torch.bfloat16):
                     tmp = torch.empty_like(param, dtype=torch.float32, device="cpu")
@@ -106,7 +100,6 @@ class A3FactorizedLinear(nn.Module):
                 nn.init.normal_(self.lora_B, mean=0.0, std=1e-4)
 
     def freeze_base_weights(self) -> None:
-        # A3-FIX-13: idempotent
         if self.V.requires_grad:
             self.V.requires_grad = False
         if self.U.requires_grad:
@@ -152,8 +145,6 @@ class A3FactorizedLinear(nn.Module):
         if self.bias is not None:
             out = out + self.bias
         return out
-
-    # A3-FIX-05: removed __iter__ and __getitem__.
 
     @classmethod
     def from_linear(
@@ -219,11 +210,6 @@ class A3FactorizedLinear(nn.Module):
         return layer
 
 
-
-
-# ===========================================================================
-# Compressor
-# ===========================================================================
 @COMPRESSOR_REGISTRY.register("a3_compressor")
 class A3Compressor(BaseCompressor):
     """
@@ -233,7 +219,6 @@ class A3Compressor(BaseCompressor):
     STRS rank search, and LayerNorm recalibration.
     """
 
-    # A3-FIX-01: not attention
     is_custom_attention: bool = False
 
     def __init__(
@@ -257,13 +242,12 @@ class A3Compressor(BaseCompressor):
         calibration_texts: list[str] | None = None,
         n_calib: int = 500,
         device: str | torch.device | None = None,
-        cov_dtype: str = "float32",  # A3-FIX-08: "float32" or "float16"
+        cov_dtype: str = "float32",
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="a3", **kwargs)
         cfg = kwargs.get("comp_config", kwargs.get("cfg", getattr(model, "config", None)))
 
-        # CLI overrides (kept for backward compatibility)
         import sys
 
         cli_cholesky = None
@@ -346,9 +330,8 @@ class A3Compressor(BaseCompressor):
             n_calib = _cfg_get(cfg, "a3_n_calib", _cfg_get(cfg, "n_calib", n_calib))
 
         self.rank = max(1, int(rank))
-        # A3-FIX-03: internal name is use_energy_weighting
         self.use_energy_weighting = bool(use_fisher)
-        self.use_fisher = self.use_energy_weighting  # backward compat
+        self.use_fisher = self.use_energy_weighting
         self.use_cholesky = bool(use_cholesky)
         self.allow_ln_failure = bool(allow_ln_failure)
         self.lora_rank = int(lora_rank)
@@ -378,18 +361,13 @@ class A3Compressor(BaseCompressor):
         self.skipped_layers: list[str] = []
         self.activations_cleared: bool = False
 
-        # A3-FIX-06 / A3-FIX-10
         self._last_r_ceiling: int = 0
         self._compressed_params: int = 0
         self._orig_storage_bytes: int = 0
         self._comp_storage_bytes: int = 0
 
-        # Cached target names for hook filtering
         self._target_module_names: list[str] | None = None
 
-    # ------------------------------------------------------------------
-    # A3-FIX-02: determine target layers once
-    # ------------------------------------------------------------------
     def _is_target(self, name: str, module: nn.Module) -> bool:
         cls_name = module.__class__.__name__.lower()
         target_mod = getattr(module, "base_layer", module)
@@ -480,9 +458,6 @@ class A3Compressor(BaseCompressor):
                 return False
         return True
 
-    # ------------------------------------------------------------------
-    # Activation & energy collection
-    # ------------------------------------------------------------------
     def _collect_activations_and_energy(
         self,
     ) -> tuple[dict[str, torch.Tensor], dict[str, torch.Tensor]]:
@@ -496,7 +471,6 @@ class A3Compressor(BaseCompressor):
         if not self.use_energy_weighting and not self.recalibrate_ln and not self.use_cholesky:
             return {}, {}
 
-        # Cache target names
         if self._target_module_names is None:
             self._target_module_names = [
                 name for name, m in self.model.named_modules() if self._is_target(name, m)
@@ -521,8 +495,6 @@ class A3Compressor(BaseCompressor):
                         return
                     last = x.shape[-1]
                     x_flat = x.reshape(-1, last)
-                    # A3-FIX-07: robust padding filter
-                    # Tokens with all-zero activations are treated as padding.
                     is_valid = x_flat.abs().amax(dim=-1) > 0
                     x_valid = x_flat[is_valid]
                     n_valid = x_valid.size(0)
@@ -626,7 +598,6 @@ class A3Compressor(BaseCompressor):
 
     _collect_activations_and_fisher = _collect_activations_and_energy
 
-    # ------------------------------------------------------------------
     def _compute_activation_error(self, W, W_r, X=None, C_X=None) -> float:
         if X is not None and X.numel() > 0:
             X_t = X.to(device=W.device, dtype=W.dtype).t()
@@ -647,14 +618,10 @@ class A3Compressor(BaseCompressor):
             return 0.0
         return float(torch.norm(W - W_r, p="fro").item() / (W_norm + 1e-9))
 
-    # ------------------------------------------------------------------
-    # A3-FIX-04 / A3-FIX-11: dynamic STRS candidates
-    # ------------------------------------------------------------------
     @staticmethod
     def _build_strs_candidates(r_floor: int, r_ceiling: int) -> list[int]:
         if r_ceiling < r_floor:
             return [r_ceiling]
-        # Geometric grid between r_floor and r_ceiling with ~8 points
         n_points = max(4, min(10, int(math.log2(max(2, r_ceiling // max(1, r_floor)))) + 2))
         cands = set()
         for i in range(n_points):
@@ -679,7 +646,7 @@ class A3Compressor(BaseCompressor):
         X=None,
         cov=None,
     ):
-        r_ceiling = min(r_ceiling, S.shape[0])  # A3-FIX-11
+        r_ceiling = min(r_ceiling, S.shape[0])
         candidates = self._build_strs_candidates(r_floor, r_ceiling)
         if not candidates:
             candidates = [r_floor]
@@ -721,7 +688,6 @@ class A3Compressor(BaseCompressor):
 
         return best_factors, best_err, best_r
 
-    # ------------------------------------------------------------------
     def compress_linear(
         self,
         module: nn.Module,
@@ -801,7 +767,6 @@ class A3Compressor(BaseCompressor):
         )
         r = max(1, min(int(r), in_f, out_f))
 
-        # ---- Weighting ----
         scale = None
         S_inv = None
         use_cholesky_this_layer = False
@@ -816,7 +781,6 @@ class A3Compressor(BaseCompressor):
                 W_w = W.float() @ S_white
                 use_cholesky_this_layer = True
             except Exception as e:
-                # A3-FIX-12: log
                 logger.warning("A3: Cholesky failed on %s (%s); using diagonal.", name, e)
                 diag_c = torch.diag(cov).float()
                 scale = torch.sqrt(diag_c.clamp(min=1e-8) + 1e-6)
@@ -854,7 +818,6 @@ class A3Compressor(BaseCompressor):
             logger.debug("A3: no calibration data for %s; using unweighted SVD.", name)
             W_w = W
 
-        # ---- SVD ----
         try:
             use_cpu_svd = not torch.cuda.is_available() or (in_f * out_f > 32_000_000)
             if use_cpu_svd:
@@ -961,7 +924,6 @@ class A3Compressor(BaseCompressor):
         factorized_layer.activation_error = best_err
         return factorized_layer, best_err, best_r
 
-    # ------------------------------------------------------------------
     def compress(self) -> tuple[nn.Module, dict[str, Any]]:
         has_calib_sources = (
             self.calibration_loader is not None
@@ -994,7 +956,6 @@ class A3Compressor(BaseCompressor):
             if not self._is_target(name, module):
                 continue
 
-            # Track original bytes
             target_mod = getattr(module, "base_layer", module)
             try:
                 for p in target_mod.parameters():
@@ -1033,7 +994,6 @@ class A3Compressor(BaseCompressor):
                 }
                 self.compressed_layers.append(name)
 
-                # Track compressed bytes
                 try:
                     for p in factorized_layer.parameters():
                         self._comp_storage_bytes += p.numel() * p.element_size()
@@ -1044,12 +1004,10 @@ class A3Compressor(BaseCompressor):
                 for p in module.parameters():
                     p.requires_grad = False
                 self.skipped_layers.append(name)
-                # Fallback storage equal to original
                 self._comp_storage_bytes += (
                     self._orig_storage_bytes
-                )  # approximate; overwritten below
+                )
 
-        # ---- LayerNorm recalibration ----
         if self.recalibrate_ln:
             has_calib_data = (
                 self.calibration_loader is not None
@@ -1116,7 +1074,6 @@ class A3Compressor(BaseCompressor):
                 "avg_reconstruction_error": avg_err,
                 "weighted_reconstruction_error": weighted_err,
                 "layer_stats": layer_stats,
-                # Storage accounting
                 "orig_storage_bytes": self._orig_storage_bytes,
                 "comp_storage_bytes": self._comp_storage_bytes,
                 "storage_compression_ratio": round(storage_ratio, 3),
@@ -1132,9 +1089,6 @@ class A3Compressor(BaseCompressor):
         return self.model, stats
 
 
-# ===========================================================================
-# Factory
-# ===========================================================================
 def a3_compressor_factory(
     model: nn.Module,
     comp_config: Any = None,

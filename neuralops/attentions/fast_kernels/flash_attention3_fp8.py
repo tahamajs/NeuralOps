@@ -42,12 +42,6 @@ except ImportError:
         FLASH_ATTN_AVAILABLE = False
 
 
-
-
-
-
-
-
 @ATTENTION_REGISTRY.register(
     "flash_attention3_fp8",
     supports_causal=True,
@@ -81,7 +75,6 @@ class FlashAttention3FP8(BaseAttention):
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
 
         if config is None:
-
             class DummyConfig:
                 pass
 
@@ -189,7 +182,6 @@ class FlashAttention3FP8(BaseAttention):
         self.kv_head_size: int = self.num_kv_heads * self.head_dim
         self.kv_repeat: int = max(1, self.num_heads // max(1, self.num_kv_heads))
 
-        # Check hardware capability for FP8 (requires Hopper SM 9.0+)
         self.use_fp8: bool = bool(use_fp8)
         if self.use_fp8:
             hopper_capable = False
@@ -210,7 +202,6 @@ class FlashAttention3FP8(BaseAttention):
                 )
                 self.use_fp8 = False
 
-        # Static layer index
         resolved_layer_id = (
             layer_id
             if layer_id is not None
@@ -222,7 +213,6 @@ class FlashAttention3FP8(BaseAttention):
         )
         self.layer_idx: int = int(resolved_layer_id)
 
-        # LoRA adaptation configuration
         self.lora_rank: int = getattr(
             config,
             "lora_rank",
@@ -235,7 +225,6 @@ class FlashAttention3FP8(BaseAttention):
         )
         self.freeze_base: bool = self.lora_rank > 0
 
-        # Decoder & nested encoder detection
         _mt = str(getattr(config, "model_type", "") or "").lower() if config is not None else ""
         _decoder_prefixes = (
             "gpt",
@@ -299,7 +288,6 @@ class FlashAttention3FP8(BaseAttention):
             getattr(config, "gradient_checkpointing", False) if config is not None else False
         )
 
-        # Multi-head projections equipped with LoRA adapters
         self.q_proj = LoRALinear(
             hidden_size,
             self.all_head_size,
@@ -346,7 +334,6 @@ class FlashAttention3FP8(BaseAttention):
         if source_attn is not None:
             self.copy_weights(source_attn)
 
-    # Compatibility properties
     @property
     def query(self) -> LoRALinear:
         return self.q_proj
@@ -440,7 +427,6 @@ class FlashAttention3FP8(BaseAttention):
             "o": (None, None),
         }
 
-        # 1. GPT-2: Fused c_attn + c_proj
         if hasattr(src, "c_attn") and src.c_attn is not None:
             c_attn_mod = src.c_attn
             if hasattr(c_attn_mod, "merge") and not getattr(c_attn_mod, "merged", False):
@@ -510,7 +496,6 @@ class FlashAttention3FP8(BaseAttention):
                         bias_o.data.clone() if bias_o is not None else None,
                     )
 
-        # 2. RoBERTa / BERT nested self-attention
         elif hasattr(src, "self") and hasattr(src.self, "query"):
             s = src.self
             for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
@@ -527,7 +512,6 @@ class FlashAttention3FP8(BaseAttention):
                     out_mod.bias.data.clone() if out_mod.bias is not None else None,
                 )
 
-        # 3. Standard linear projections (DistilBERT, Qwen, LLaMA)
         else:
             proj_candidates = {
                 "q": ["q_lin", "q_proj", "query", "W_q"],
@@ -546,7 +530,6 @@ class FlashAttention3FP8(BaseAttention):
                             )
                             break
 
-        # Fallback via UniversalAdapter
         missing = [
             k
             for k, (w, _) in extracted.items()
@@ -617,7 +600,6 @@ class FlashAttention3FP8(BaseAttention):
                 elif target_mod.bias is not None:
                     nn.init.zeros_(target_mod.bias)
 
-                # Frobenius norm verification (>= 1e-4)
                 w_norm = float(torch.linalg.norm(target_mod.weight.data.float()).item())
                 if w_norm < 1e-4:
                     logger.warning(
@@ -652,7 +634,6 @@ class FlashAttention3FP8(BaseAttention):
         kv_input = encoder_hidden_states if is_cross_attention else hidden_states
         kv_len = kv_input.shape[1]
 
-        # 1. Projections
         q = self.q_proj(hidden_states).view(B, L, H, Dh).transpose(1, 2).contiguous()
         k = (
             self.k_proj(kv_input)
@@ -667,7 +648,6 @@ class FlashAttention3FP8(BaseAttention):
             .contiguous()
         )
 
-        # 2. Rotary Position Embeddings (RoPE)
         if position_embeddings is not None and not is_cross_attention:
             if isinstance(position_embeddings, tuple):
                 cos, sin = position_embeddings
@@ -680,18 +660,14 @@ class FlashAttention3FP8(BaseAttention):
                 cos, sin = self.rotary_emb(v, seq_len=kv_len)
                 q, k = apply_rotary_pos_emb(q, k, cos, sin, position_ids)
 
-        # 3. Grouped Query Attention (GQA) head expansion
         if self.num_kv_heads != self.num_heads:
             k = repeat_kv(k, self.kv_repeat)
             v = repeat_kv(v, self.kv_repeat)
 
         causal_flag = bool(self.is_decoder and not is_cross_attention and kv_len == L)
 
-        # 4. FlashAttention-3 FP8 hardware acceleration path
-        # Requires Hopper architecture (SM 9.0+), flash_attn, and CUDA tensor
         out = None
         if FLASH_ATTN_AVAILABLE and self.use_fp8 and q.is_cuda and hasattr(torch, "float8_e4m3fn"):
-            # Check Hopper compute capability
             is_hopper = False
             if hasattr(torch.cuda, "get_device_capability"):
                 try:
@@ -701,31 +677,24 @@ class FlashAttention3FP8(BaseAttention):
 
             if is_hopper:
                 try:
-                    # FlashAttention expects shape (B, L, H, Dh)
                     q_perm = q.transpose(1, 2).contiguous()
                     k_perm = k.transpose(1, 2).contiguous()
                     v_perm = v.transpose(1, 2).contiguous()
 
-                    # Dynamic per-tensor scaling to FP8 max representable magnitude (448.0 for float8_e4m3fn)
                     fp8_max = 448.0
                     q_scale = (q_perm.abs().amax() / fp8_max).clamp(min=1e-6)
                     k_scale = (k_perm.abs().amax() / fp8_max).clamp(min=1e-6)
                     v_scale = (v_perm.abs().amax() / fp8_max).clamp(min=1e-6)
 
-                    # Scale and cast to FP8
                     q_fa = (q_perm / q_scale).to(torch.float8_e4m3fn)
                     k_fa = (k_perm / k_scale).to(torch.float8_e4m3fn)
                     v_fa = (v_perm / v_scale).to(torch.float8_e4m3fn)
 
-                    # Execute FlashAttention kernel
                     out_fp8 = flash_attn_func(q_fa, k_fa, v_fa, causal=causal_flag)
 
-                    # De-scale back: output is mathematically scaled by v_scale
                     out_tensor = (out_fp8.float() * v_scale).to(dtype)
 
-                    # Apply head_mask if provided
                     if head_mask is not None:
-                        # out_tensor is (B, L, H, Dh) -> transpose to (B, H, L, Dh) for head masking
                         out_tensor_h = out_tensor.transpose(1, 2)
                         if head_mask.dim() == 1:
                             hm = head_mask.view(1, -1, 1, 1)
@@ -742,22 +711,18 @@ class FlashAttention3FP8(BaseAttention):
                     else:
                         out = out_tensor.contiguous().view(B, L, self.all_head_size)
                 except (RuntimeError, NotImplementedError, ValueError) as e:
-
                     from neuralops.utils.logging_config import warn_once
                     warn_once(
                         "fa3_fp8_execution_fallback",
                         f"FlashAttention-3 FP8 execution failed: {e}; falling back to native SDPA."
                     )
             elif not is_hopper and hasattr(torch.cuda, "get_device_capability"):
-                # SM 8.9+ Ada Lovelace / Blackwell FP8 Tensor Core acceleration path
                 try:
                     from neuralops.core.triton_kernels._types import FORCE_PYTORCH_FALLBACK
                     major, minor = torch.cuda.get_device_capability(device)
                     if not FORCE_PYTORCH_FALLBACK and (major > 8 or (major == 8 and minor >= 9)):
                         from neuralops.core.triton_kernels.low_rank import fp8_tensorcore_matmul_triton
                         scale = 1.0 / math.sqrt(Dh)
-                        # Q: (B, H, L, Dh), K: (B, H, L, Dh)
-                        # Compute attention scores via FP8 GEMM on Ada Tensor Cores
                         scores = torch.matmul(q.float(), k.float().transpose(-1, -2).contiguous()) * scale
                         if causal_flag:
                             causal_mask = torch.tril(torch.ones(L, L, device=device, dtype=torch.bool))
@@ -769,17 +734,15 @@ class FlashAttention3FP8(BaseAttention):
                         attn = F.softmax(scores, dim=-1)
                         if self.dropout.p > 0.0 and self.training:
                             attn = self.dropout(attn)
-                        # Value reduction: (B, H, L, L) @ (B, H, L, Dh) -> (B, H, L, Dh) via Ada FP8 Tensor Cores
                         attn_2d = attn.contiguous().view(B * self.num_heads * L, L)
                         v_2d = v.contiguous().view(B * self.num_heads, L, Dh).view(B * self.num_heads * L, Dh)
-                        # For per-head GEMM:
                         out_heads = []
                         for h_idx in range(self.num_heads):
-                            ah = attn[:, h_idx].contiguous() # [B, L, L]
-                            vh = v[:, h_idx].contiguous()    # [B, L, Dh]
+                            ah = attn[:, h_idx].contiguous()
+                            vh = v[:, h_idx].contiguous()
                             oh = fp8_tensorcore_matmul_triton(ah, vh, out_dtype=dtype)
                             out_heads.append(oh.unsqueeze(1))
-                        out_tensor_h = torch.cat(out_heads, dim=1) # [B, H, L, Dh]
+                        out_tensor_h = torch.cat(out_heads, dim=1)
                         if head_mask is not None:
                             out_tensor_h = out_tensor_h * head_mask.view(1, -1, 1, 1).to(out_tensor_h.dtype)
                         out = out_tensor_h.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
@@ -788,7 +751,6 @@ class FlashAttention3FP8(BaseAttention):
 
                     out = None
 
-        # 5. SDPA / PyTorch native fallback path
         if out is None:
             eff_mask = encoder_attention_mask if is_cross_attention else attention_mask
             attn_mask = None
@@ -836,7 +798,6 @@ class FlashAttention3FP8(BaseAttention):
                     dropout_p=self.dropout.p if self.training else 0.0,
                 )
 
-            # Head mask handling
             if head_mask is not None:
                 if head_mask.dim() == 1:
                     head_mask = head_mask.view(1, -1, 1, 1)
@@ -848,7 +809,6 @@ class FlashAttention3FP8(BaseAttention):
 
             out = out_sdpa.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
 
-        # 6. Output projection with nested encoder bypass
         if self.is_nested_encoder:
             final_out = out
         else:
@@ -875,7 +835,6 @@ def inject_flash3_fp8(
 
     cfg = model_config if model_config is not None else getattr(target, "config", None)
 
-    # Whole-model traversal
     layer_list = None
     if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
         layer_list = target.distilbert.transformer.layer

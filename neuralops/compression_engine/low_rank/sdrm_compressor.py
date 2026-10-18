@@ -23,8 +23,6 @@ from neuralops.utils.compat import should_compress_linear
 logger = logging.getLogger(__name__)
 
 
-
-
 class SDRMCompressor(BaseCompressor):
     """SDRMCompressor neural operator.
 
@@ -96,7 +94,6 @@ class SDRMCompressor(BaseCompressor):
         self.min_numel = max(1, int(min_numel or _cfg_get(cfg_obj, "min_numel", 16)))
         self.protect_output_proj: bool = bool(_cfg_get(cfg_obj, "protect_output_proj", True))
 
-        # Target device derivation
         if device is not None:
             try:
                 self.target_device = torch.device(device)
@@ -111,7 +108,6 @@ class SDRMCompressor(BaseCompressor):
                 next(model.parameters()).device if list(model.parameters()) else torch.device("cpu")
             )
 
-        # Diagnostics & Tracking
         self.visited_modules: set[int] = set()
         self.compressed_layers: list[str] = []
         self.protected_layers: list[str] = []
@@ -155,7 +151,6 @@ class SDRMCompressor(BaseCompressor):
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         name_l = name.lower()
-        # 1. Protection for critical / classification / head / pooler / embedding layers
         PROTECTED_ALWAYS = [
             "classifier",
             "score",
@@ -176,7 +171,6 @@ class SDRMCompressor(BaseCompressor):
             self.protected_layers.append(name)
             return False
 
-        # Target attention only filter
         if self.target_attention_only:
             attn_keywords = [
                 "attn",
@@ -194,12 +188,10 @@ class SDRMCompressor(BaseCompressor):
             if not any(k in name_l for k in attn_keywords):
                 return False
 
-        # 2. GQA-aware skipping
         if self._is_gqa_asymmetric(name, module):
             self.skipped_layers.append(name)
             return False
 
-        # 3. Check linear or Conv1D nature
         base_mod = getattr(module, "base_layer", module)
         cls_name = base_mod.__class__.__name__
         raw_w = getattr(base_mod, "weight", None)
@@ -211,17 +203,14 @@ class SDRMCompressor(BaseCompressor):
         if not is_linear_like or isinstance(base_mod, SVDLinear):
             return False
 
-        # 4. Tiny layer guard
         if raw_w.numel() < self.min_numel:
             self.skipped_layers.append(name)
             return False
 
-        # 5. Respect framework compatibility rules
         if not should_compress_linear(self.model, name):
             self.protected_layers.append(name)
             return False
 
-        # 6. User-defined explicit target modules
         if self.target_modules is not None:
             return any(t in name for t in self.target_modules)
         return True
@@ -311,7 +300,6 @@ class SDRMCompressor(BaseCompressor):
         if base_layer.bias is not None:
             svd_layer.bias.data.copy_(base_layer.bias.data)
 
-        # Preserve existing LoRA adapters when replacing full module
         if not has_base_layer and has_existing_lora and svd_layer.use_lora:
             try:
                 src_lA = getattr(layer.lora_A, "weight", layer.lora_A)
@@ -333,7 +321,6 @@ class SDRMCompressor(BaseCompressor):
             except Exception as e_lora:
                 logger.warning("Could not copy existing LoRA adapters in SDRM: %s", e_lora)
 
-        # Frobenius reconstruction error check
         W_rec = torch.matmul(U_r.float(), V_r.float())
         norm_orig_clamped = torch.norm(W, p="fro").clamp_min(1e-8)
         rel_err = (torch.norm(W - W_rec, p="fro") / norm_orig_clamped).item()
@@ -434,7 +421,6 @@ class SDRMCompressor(BaseCompressor):
                 for p in module.parameters():
                     p.requires_grad = False
 
-        # Post-compression forward sanity check
         forward_check_success = True
         try:
             with torch.no_grad():

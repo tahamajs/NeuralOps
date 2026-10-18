@@ -43,10 +43,9 @@ from neuralops.core.pruning_utils import get_calibration_tensors
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 from neuralops.utils.compat import should_compress_linear
 
-# Real low-rank factorization layer
 try:
     from neuralops.compression_engine.aa_svd_compressor import SVDLinear
-except Exception as _svd_import_err:  # pragma: no cover
+except Exception as _svd_import_err:
     SVDLinear = None
     _SVD_IMPORT_ERROR = str(_svd_import_err)
 else:
@@ -190,8 +189,6 @@ class SliceGPTPCALoRALinear(nn.Module):
         return out
 
 
-
-
 @COMPRESSOR_REGISTRY.register("slicegpt_pca")
 class SliceGPTPCACompressor(BaseCompressor):
     """
@@ -266,7 +263,6 @@ class SliceGPTPCACompressor(BaseCompressor):
         self.min_numel = max(1, int(min_numel or _cfg_get(cfg_obj, "min_numel", 16)))
         self.target_modules = target_modules
 
-        # Target device derivation
         if device is not None:
             try:
                 self.target_device = torch.device(device)
@@ -281,7 +277,6 @@ class SliceGPTPCACompressor(BaseCompressor):
                 next(model.parameters()).device if list(model.parameters()) else torch.device("cpu")
             )
 
-        # Diagnostics & Tracking
         self.visited_modules: set[int] = set()
         self.sliced_layers: list[str] = []
         self.protected_layers: list[str] = []
@@ -322,7 +317,6 @@ class SliceGPTPCACompressor(BaseCompressor):
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         name_l = name.lower()
-        # 1. Protection for critical / pooler / classification / embedding / CLS layers
         if any(
             k in name_l
             for k in [
@@ -340,7 +334,6 @@ class SliceGPTPCACompressor(BaseCompressor):
             self.protected_layers.append(name)
             return False
 
-        # Target attention only filter
         if self.target_attention_only:
             attn_keywords = [
                 "attn",
@@ -358,12 +351,10 @@ class SliceGPTPCACompressor(BaseCompressor):
             if not any(k in name_l for k in attn_keywords):
                 return False
 
-        # 2. GQA-aware skipping
         if self._is_gqa_asymmetric(name, module):
             self.skipped_layers.append(name)
             return False
 
-        # 3. Check linear or Conv1D nature
         base_mod = getattr(module, "base_layer", module)
         cls_name = base_mod.__class__.__name__
         raw_w = getattr(base_mod, "weight", None)
@@ -375,21 +366,17 @@ class SliceGPTPCACompressor(BaseCompressor):
         if not is_linear_like:
             return False
 
-        # Skip already-factorized layers
         if SVDLinear is not None and isinstance(base_mod, SVDLinear):
             return False
 
-        # 4. Tiny layer guard
         if raw_w.numel() < self.min_numel:
             self.skipped_layers.append(name)
             return False
 
-        # 5. Respect framework compatibility rules
         if not should_compress_linear(self.model, name):
             self.protected_layers.append(name)
             return False
 
-        # 6. User-defined explicit target modules
         if self.target_modules is not None:
             return any(t in name for t in self.target_modules)
         return True
@@ -466,7 +453,6 @@ class SliceGPTPCACompressor(BaseCompressor):
                 try:
                     h.remove()
                 except Exception as e:
-                    # Fix 5: corrected error message (was "copy_weights failed")
                     logger.warning("SliceGPTPCA hook removal failed: %s", e)
 
         cov_map: dict[str, torch.Tensor] = {}
@@ -543,7 +529,6 @@ class SliceGPTPCACompressor(BaseCompressor):
         ]
 
         for name, module in target_items:
-            # Tied weight protection
             mod_id = id(module)
             if mod_id in self.visited_modules:
                 logger.debug("SliceGPTPCA: Skipping tied module %s", name)
@@ -559,7 +544,6 @@ class SliceGPTPCACompressor(BaseCompressor):
                 device = raw_w.device
                 dtype = raw_w.dtype
 
-                # FP32 weight extraction
                 if is_conv1d:
                     W = raw_w.t().contiguous().float()
                 else:
@@ -600,7 +584,6 @@ class SliceGPTPCACompressor(BaseCompressor):
                 V = V.to(device=device, dtype=torch.float32)
                 W = W.to(device=device, dtype=torch.float32)
 
-                # Compute cumulative variance
                 pos_eigvals = torch.clamp(eigvals.to(device=device), min=0.0)
                 total_var = torch.sum(pos_eigvals).item()
                 if total_var > 0:
@@ -611,19 +594,15 @@ class SliceGPTPCACompressor(BaseCompressor):
                 else:
                     keep = max(1, int(d_in * (1.0 - self.sparsity)))
 
-                # Rank cannot exceed min(d_out, d_in)
                 effective_keep = min(keep, d_out, d_in)
 
-                # Rotate weight into PCA coordinate space and truncate
                 W_pca = torch.matmul(W, V)
                 W_trunc = W_pca.clone()
                 if effective_keep < d_in:
                     W_trunc[:, effective_keep:] = 0.0
 
-                # Reconstruct truncated weight for error measurement
                 W_reconstructed = torch.matmul(W_trunc, V.T)
 
-                # Relative Frobenius error validation
                 norm_orig = torch.norm(W, p="fro").clamp_min(1e-8)
                 rel_err = (torch.norm(W - W_reconstructed, p="fro") / norm_orig).item()
                 self.layer_errors[name] = float(rel_err)
@@ -652,16 +631,10 @@ class SliceGPTPCACompressor(BaseCompressor):
                     total_params_after += d_out * d_in
                     continue
 
-                # === REAL LOW-RANK FACTORIZATION ===
-                # W_reconstructed = W_pca[:, :keep] @ V[:, :keep].T
-                # Factor:
-                #   U_factor  = W_pca[:, :keep]      shape (d_out, keep)
-                #   Vt_factor = V[:, :keep].T        shape (keep, d_in)
                 U_factor = W_pca[:, :effective_keep].contiguous().to(dtype=dtype, device=device)
                 Vt_factor = V[:, :effective_keep].T.contiguous().to(dtype=dtype, device=device)
 
                 factorized_params = effective_keep * (d_out + d_in)
-                # Only apply if it actually reduces parameter count
                 if factorized_params >= d_out * d_in:
                     logger.info(
                         "SliceGPTPCA: keep=%d on %s would not reduce params (%d >= %d). Keeping dense.",
@@ -673,7 +646,6 @@ class SliceGPTPCACompressor(BaseCompressor):
                     total_params_after += d_out * d_in
                     continue
 
-                # Detect existing LoRA adapters so we can preserve their weights
                 existing_lora_r, existing_lora_alpha = self._detect_lora(module)
                 if self.use_lora and self.lora_r > 0 and existing_lora_r == 0:
                     used_lora_r = self.lora_r
@@ -682,7 +654,6 @@ class SliceGPTPCACompressor(BaseCompressor):
                     used_lora_r = existing_lora_r
                     used_lora_alpha = existing_lora_alpha
 
-                # Build the SVDLinear factorization
                 svd_layer = SVDLinear(
                     in_features=d_in,
                     out_features=d_out,
@@ -697,7 +668,6 @@ class SliceGPTPCACompressor(BaseCompressor):
                 )
                 svd_layer.set_low_rank_factors(U_factor, Vt_factor)
 
-                # Copy bias
                 if (
                     getattr(base_mod, "bias", None) is not None
                     and base_mod.bias is not None
@@ -705,7 +675,6 @@ class SliceGPTPCACompressor(BaseCompressor):
                 ):
                     svd_layer.bias.data.copy_(base_mod.bias.data)
 
-                # Copy existing LoRA adapters if present
                 if existing_lora_r > 0 and getattr(svd_layer, "lora_A", None) is not None:
                     try:
                         src_la = getattr(module.lora_A, "weight", module.lora_A)
@@ -727,7 +696,6 @@ class SliceGPTPCACompressor(BaseCompressor):
                     except Exception as e_lora:
                         logger.debug("SliceGPTPCA LoRA copy skipped on %s: %s", name, e_lora)
 
-                # Replace module
                 is_wrapped = hasattr(module, "base_layer")
                 if is_wrapped:
                     module.base_layer = svd_layer
@@ -747,7 +715,6 @@ class SliceGPTPCACompressor(BaseCompressor):
                 for p in module.parameters():
                     p.requires_grad = False
 
-        # Post-compression forward sanity check
         forward_check_success = True
         try:
             with torch.no_grad():

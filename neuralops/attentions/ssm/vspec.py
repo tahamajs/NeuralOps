@@ -32,8 +32,6 @@ from neuralops.utils.model_family import ModelAdapter
 logger = logging.getLogger(__name__)
 
 
-
-
 def _masked_mean(x: torch.Tensor, valid_mask: torch.Tensor | None = None) -> torch.Tensor:
     """Computes mean over valid non-padded tokens."""
     if valid_mask is not None:
@@ -42,18 +40,15 @@ def _masked_mean(x: torch.Tensor, valid_mask: torch.Tensor | None = None) -> tor
     return x.mean(dim=1)
 
 
-
-
 class VariationalSpectralGate(nn.Module):
     r"""Input-dependent variational gate over truncated singular values with masked pooling."""
 
     def __init__(self, hidden_dim: int, rank: int) -> None:
         super().__init__()
         self.net = nn.Sequential(nn.Linear(hidden_dim, 64), nn.GELU(), nn.Linear(64, rank * 2))
-        # Initialize gate to neutral (near 1.0) so SVD representations are preserved at step 0
         nn.init.zeros_(self.net[-1].weight)
-        nn.init.constant_(self.net[-1].bias[:rank], 3.0)  # mu -> sigmoid(3.0) ≈ 0.95
-        nn.init.constant_(self.net[-1].bias[rank:], -3.0)  # log_sigma -> low variance
+        nn.init.constant_(self.net[-1].bias[:rank], 3.0)
+        nn.init.constant_(self.net[-1].bias[rank:], -3.0)
 
     def forward(
         self, x: torch.Tensor, valid_mask: torch.Tensor | None = None
@@ -78,7 +73,6 @@ class HeadGate(nn.Module):
     def __init__(self, hidden_dim: int, n_heads: int) -> None:
         super().__init__()
         self.net = nn.Sequential(nn.Linear(hidden_dim, 32), nn.GELU(), nn.Linear(32, n_heads))
-        # Initialize head gate to neutral 1.0 (bias=3.0 -> sigmoid(3.0) ≈ 0.95)
         nn.init.zeros_(self.net[-1].weight)
         nn.init.constant_(self.net[-1].bias, 3.0)
 
@@ -105,7 +99,7 @@ class TokenRouter(nn.Module):
     ) -> tuple[torch.Tensor, torch.Tensor]:
         B, N, D = x.shape
         net_dtype = next(self.net.parameters()).dtype
-        scores = torch.sigmoid(self.net(x.to(net_dtype)).squeeze(-1))  # (B, N)
+        scores = torch.sigmoid(self.net(x.to(net_dtype)).squeeze(-1))
         if valid_mask is not None:
             scores = scores.masked_fill(~valid_mask, -10000.0)
 
@@ -113,7 +107,6 @@ class TokenRouter(nn.Module):
             causal_mask = torch.tril(torch.ones(N, N, device=x.device, dtype=torch.bool))
             scores = scores.masked_fill(~causal_mask[0], -10000.0)
 
-        # Guarantee preservation of first token (index 0)
         scores[:, 0] = 1e4
 
         keep = min(
@@ -376,7 +369,6 @@ class VSpecAttention(BaseAttention):
             self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
             self.is_decoder = is_dec
 
-        # Explicit overrides
         if "hidden_size" in kwargs:
             self.hidden_size = kwargs["hidden_size"]
         if "num_heads" in kwargs:
@@ -519,7 +511,6 @@ class VSpecAttention(BaseAttention):
             "o": (None, None),
         }
 
-        # 1. UniversalAdapter extraction
         for proj in ["q", "k", "v", "o"]:
             try:
                 w, b = UniversalAdapter.get_weight_bias(src, proj)
@@ -528,7 +519,6 @@ class VSpecAttention(BaseAttention):
             except Exception:
                 pass
 
-        # 2. GPT-2 Fused c_attn Conv1D handling
         if hasattr(src, "c_attn") and (
             extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None
         ):
@@ -577,7 +567,6 @@ class VSpecAttention(BaseAttention):
                 b_o = getattr(base_o, "bias", getattr(p_mod, "bias", None))
                 extracted["o"] = (w_o, b_o.data.clone() if b_o is not None else None)
 
-        # 3. RoBERTa / BERT Nested Encoder handling
         if hasattr(src, "self") and (
             extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None
         ):
@@ -593,7 +582,6 @@ class VSpecAttention(BaseAttention):
             dense = src.output.dense
             extracted["o"] = (dense.weight.data, getattr(dense, "bias", None))
 
-        # 4. Modern Decoders (Qwen3.5, LLaMA, Mistral) & DistilBERT
         named_map = {
             "q": ["q_proj", "q_lin", "query", "W_q"],
             "k": ["k_proj", "k_lin", "key", "W_k"],
@@ -613,7 +601,6 @@ class VSpecAttention(BaseAttention):
                             )
                             break
 
-        # Detect nested encoder architecture
         cls_name = getattr(src, "__class__", type(src)).__name__
         has_out = (
             hasattr(src, "dense")
@@ -649,7 +636,6 @@ class VSpecAttention(BaseAttention):
                 return w.t().contiguous()
             return w
 
-        # Copy into projectors
         if extracted["q"][0] is not None:
             self.Pq.set_weight(_orient(extracted["q"][0], self.hidden_size), extracted["q"][1])
         if extracted["k"][0] is not None:
@@ -663,7 +649,6 @@ class VSpecAttention(BaseAttention):
             eye_w = torch.eye(self.all_head_size, self.all_head_size)
             self.Po.set_weight(eye_w, None)
 
-        # Preserve source LoRA adapters if present
         source_submodules = {
             "q": ["q_proj", "q_lin", "query", "W_q"],
             "k": ["k_proj", "k_lin", "key", "W_k"],
@@ -706,7 +691,6 @@ class VSpecAttention(BaseAttention):
         device = hidden_states.device
         dtype = hidden_states.dtype
 
-        # Mask handling
         mask = attention_mask if attention_mask is not None else kwargs.get("mask")
         valid = get_token_valid_mask(mask, B, N, device) if mask is not None else None
 
@@ -733,10 +717,6 @@ class VSpecAttention(BaseAttention):
             )
         )
 
-        # Token routing:
-        # 1. Causal decoders: MUST completely bypass token router to preserve autoregressive sequence integrity.
-        # 2. Nested encoders (RoBERTa/BERT): bypass router to preserve bidirectional full context.
-        # 3. Only bidirectional non-nested encoders perform token routing.
         if is_decoder or self.is_nested_encoder:
             routed = hidden_states
             idx = torch.arange(N, device=device).unsqueeze(0).expand(B, -1)
@@ -747,7 +727,6 @@ class VSpecAttention(BaseAttention):
             k_len = routed.shape[1]
             valid_routed = torch.gather(valid, 1, idx) if valid is not None else None
 
-        # Variational spectral gates using masked mean over tokens
         gq, _, _ = self.sg_q(routed, valid_routed)
         gk, _, _ = self.sg_k(routed, valid_routed)
         gv, _, _ = self.sg_v(routed, valid_routed)
@@ -764,7 +743,6 @@ class VSpecAttention(BaseAttention):
         K = K.view(B, k_len, H_kv, Dh).transpose(1, 2).contiguous()
         V = V.view(B, k_len, H_kv, Dh).transpose(1, 2).contiguous()
 
-        # Rotary position embeddings
         pos_emb = kwargs.get("position_embeddings")
         if pos_emb is not None and isinstance(pos_emb, (tuple, list)) and len(pos_emb) >= 2:
             cos, sin = pos_emb[0], pos_emb[1]
@@ -788,19 +766,12 @@ class VSpecAttention(BaseAttention):
                 from neuralops.utils.logging_config import warn_once
                 warn_once("vspec_rotary_failed", "maybe_apply_rotary failed: %s", e)
 
-        # GQA expansion
         if self.kv_repeat > 1:
             K = repeat_kv(K, self.kv_repeat)
             V = repeat_kv(V, self.kv_repeat)
 
         hg = self.head_gate(routed, valid_routed).unsqueeze(-1).unsqueeze(-1)
 
-        # SDPA condition check:
-        # 1. device is CUDA
-        # 2. head_dim <= 256
-        # 3. dtype is fp16 or bf16
-        # 4. self.use_sdpa is True
-        # 5. head_mask is None and not output_attentions
         can_use_sdpa = (
             getattr(self, "use_sdpa", True)
             and device.type == "cuda"
@@ -811,7 +782,6 @@ class VSpecAttention(BaseAttention):
         )
 
         if can_use_sdpa:
-            # When running a causal decoder without explicit padding mask, use native is_causal=True
             if valid_routed is None:
                 combined_mask = None
                 is_causal_sdpa = bool(is_decoder and k_len > 1)
@@ -839,7 +809,6 @@ class VSpecAttention(BaseAttention):
                 torch.matmul(Q.float(), K.float().transpose(-1, -2).contiguous()) * scale * hg.float()
             )
 
-            # Check causal decoder
             if is_decoder and k_len > 1:
                 causal_mask = torch.triu(
                     torch.full((k_len, k_len), float("-inf"), device=device, dtype=scores.dtype),
@@ -847,7 +816,6 @@ class VSpecAttention(BaseAttention):
                 )
                 scores = scores + causal_mask.unsqueeze(0).unsqueeze(0)
 
-            # Apply padding mask to attention scores over routed tokens
             if valid_routed is not None:
                 pad_mask = (
                     (~valid_routed).unsqueeze(1).unsqueeze(2).expand(-1, self.num_heads, k_len, k_len)
@@ -858,7 +826,6 @@ class VSpecAttention(BaseAttention):
             attn_weights = torch.nan_to_num(attn_weights, nan=0.0).to(dtype)
             attn_weights = self.dropout(attn_weights)
 
-            # Head mask broadcasting
             if head_mask is not None:
                 if head_mask.dim() == 1:
                     head_mask = head_mask.view(1, -1, 1, 1)
@@ -881,15 +848,12 @@ class VSpecAttention(BaseAttention):
         if self.is_nested_encoder:
             return (context, (attn_weights if output_attentions else None))
 
-        # Compute dedicated gate for output projection
         go, _, _ = self.sg_o(context, valid_routed)
         out = self.Po(context, go)
 
         if out.shape[-1] != D:
             out = F.pad(out, (0, D - out.shape[-1])) if out.shape[-1] < D else out[..., :D]
 
-        # Scatter back to full sequence length preserving residual:
-        # Non-routed tokens have zero attention delta, so outer block residual keeps them unchanged.
         if k_len == N:
             output = out
         else:
@@ -918,7 +882,6 @@ def inject_vspec_attn(
     if cfg is None and hasattr(target, "config"):
         cfg = target.config
 
-    # 1. Whole model traversal
     layer_list = None
     if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
         layer_list = target.distilbert.transformer.layer
@@ -955,7 +918,6 @@ def inject_vspec_attn(
                 num_injected += 1
         return target if num_injected > 0 else None
 
-    # 2. Single layer injection
     try:
         src = old_attn
         if src is None and target is not None:
@@ -974,7 +936,6 @@ def inject_vspec_attn(
         if src is None:
             return None
 
-        # Double-injection guard
         if src is not None:
             if isinstance(src, VSpecAttention):
                 return None
@@ -1003,7 +964,6 @@ def inject_vspec_attn(
                 ):
                     return None
 
-        # Skip Qwen3.5 hybrid DeltaNet/LinearAttention layers
         if src is not None:
             c_name = src.__class__.__name__
             if "DeltaNet" in c_name or "LinearAttention" in c_name:

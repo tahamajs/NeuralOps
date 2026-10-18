@@ -45,11 +45,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 logger = logging.getLogger(__name__)
 
 
-# ============================================================================
-# CP decomposition (improved with early stopping)
-# ============================================================================
-
-
 def _cp_decompose_qk(
     W: torch.Tensor,
     num_heads: int,
@@ -77,26 +72,21 @@ def _cp_decompose_qk(
             f"({W_f.shape[0] // H})"
         )
 
-    # Reshape to (H, rank_a, rank_b, in_dim)
     W_r = W_f.view(H, rank_a, rank_b, in_dim)
 
-    # Initialize with marginal means (better than random)
-    A = W_r.mean(dim=2) + eps  # (H, rank_a, in_dim)
-    B = W_r.mean(dim=1) + eps  # (H, rank_b, in_dim)
+    A = W_r.mean(dim=2) + eps
+    B = W_r.mean(dim=1) + eps
 
     prev_err = float("inf")
     for it in range(n_iter):
-        # Update A
         num_A = torch.einsum("habk,hbk->hak", W_r, B)
         den_A = torch.einsum("hbk,hbk->hk", B, B).unsqueeze(1)
         A = num_A / (den_A + eps)
 
-        # Update B
         num_B = torch.einsum("habk,hak->hbk", W_r, A)
         den_B = torch.einsum("hak,hak->hk", A, A).unsqueeze(1)
         B = num_B / (den_B + eps)
 
-        # Early stopping check (every 5 iterations to save compute)
         if it % 5 == 0 and it > 0:
             W_hat = torch.einsum("hak,hbk->habk", A, B).reshape(H * head_dim, in_dim)
             err = torch.norm(W_f - W_hat).item() / (torch.norm(W_f).item() + eps)
@@ -104,11 +94,9 @@ def _cp_decompose_qk(
                 break
             prev_err = err
 
-    # Final reconstruction error
     W_hat = torch.einsum("hak,hbk->habk", A, B).reshape(H * head_dim, in_dim)
     final_err = torch.norm(W_f - W_hat).item() / (torch.norm(W_f).item() + eps)
 
-    # Symmetric normalization: balance A and B
     norm_A = A.norm(dim=-1, keepdim=True).clamp(min=eps)
     norm_B = B.norm(dim=-1, keepdim=True).clamp(min=eps)
     scale = (norm_B / norm_A).sqrt()
@@ -158,8 +146,6 @@ def _svd_factorize(
     return A, B
 
 
-# DEPRECATED: Deprecated temporal pooling bypass causes delta = 0.
-# @ATTENTION_REGISTRY.register("tpa_attention", supports_causal=True, supports_gqa=True)
 class TPAttention(BaseAttention):
     """DEPRECATED: Deprecated temporal pooling bypass causes delta = 0.
 
@@ -198,7 +184,6 @@ class TPAttention(BaseAttention):
         self.max_cp_error = float(max_cp_error)
         self.cp_iterations = int(cp_iterations)
 
-        # ---- hidden size ----
         dim = None
         if config is not None and not isinstance(config, int):
             dim = _cfg_get(
@@ -220,7 +205,6 @@ class TPAttention(BaseAttention):
         if dim is None:
             dim = kwargs.get("hidden_size", 768)
 
-        # ---- heads ----
         num_heads = None
         if config is not None and not isinstance(config, int):
             num_heads = _cfg_get(
@@ -239,9 +223,8 @@ class TPAttention(BaseAttention):
 
         self.dim = int(dim)
         self.num_heads = max(1, int(num_heads))
-        self._use_tensor_product = False  # default; set properly below
+        self._use_tensor_product = False
 
-        # ---- head_dim ----
         cfg_hd = _cfg_get(config, "head_dim", None) if config is not None else None
         kw_hd = kwargs.get("head_dim")
         if cfg_hd is not None:
@@ -253,7 +236,6 @@ class TPAttention(BaseAttention):
         else:
             self.head_dim = self.dim // self.num_heads
 
-        # ---- GQA ----
         cfg_kv = (
             _cfg_get(config, "num_key_value_heads", _cfg_get(config, "num_kv_heads", None))
             if config is not None
@@ -266,15 +248,12 @@ class TPAttention(BaseAttention):
         self.q_head_size = self.num_heads * self.head_dim
         self.kv_head_size = self.num_kv_heads * self.head_dim
 
-        # ---- Asymmetric rank support ----
-        # Try to find (rank_a, rank_b) such that rank_a * rank_b == head_dim
         raw_ra = kwargs.pop("rank_a", rank_a)
         raw_rb = kwargs.pop("rank_b", rank_b)
         self.rank_a = int(raw_ra)
         self.rank_b = int(raw_rb)
 
         if self.rank_a * self.rank_b != self.head_dim:
-            # Try to auto-adjust rank_b to match head_dim
             if self.head_dim % self.rank_a == 0:
                 self.rank_b = self.head_dim // self.rank_a
                 logger.info(
@@ -301,7 +280,6 @@ class TPAttention(BaseAttention):
             self.rank_a = int(self.rank_a)
             self.rank_b = int(self.rank_b)
         else:
-            # Standard projection mode
             self.rank_a = self.head_dim
             self.rank_b = 1
 
@@ -312,7 +290,6 @@ class TPAttention(BaseAttention):
             kwargs.get("lora_alpha", _cfg_get(config, "lora_alpha", lora_alpha))
         )
 
-        # ---- decoder detection ----
         _mt = str(_cfg_get(config, "model_type", "") or "").lower() if config is not None else ""
         _dec_prefixes = (
             "gpt", "qwen", "llama", "mistral", "gemma", "phi",
@@ -338,9 +315,7 @@ class TPAttention(BaseAttention):
             if p is not None:
                 target_dtype = p.dtype
 
-        # ---- projections (tensor product or standard) ----
         if self._use_tensor_product:
-            # Tensor product: two factor projections
             self.q_proj1 = LoRALinear(
                 self.dim, self.num_heads * self.rank_a,
                 bias=False, lora_rank=0, freeze_base=True, dtype=target_dtype,
@@ -358,7 +333,6 @@ class TPAttention(BaseAttention):
                 bias=False, lora_rank=0, freeze_base=True, dtype=target_dtype,
             )
         else:
-            # Standard projection: single factor
             self.q_proj1 = LoRALinear(
                 self.dim, self.q_head_size,
                 bias=False, lora_rank=0, freeze_base=True, dtype=target_dtype,
@@ -381,7 +355,6 @@ class TPAttention(BaseAttention):
             freeze_base=True, dtype=target_dtype,
         )
 
-        # ---- LoRA on Q/K (optional) ----
         if self.lora_rank > 0 and self._use_tensor_product:
             self.q_lora_A = nn.Parameter(
                 torch.empty(self.lora_rank, self.dim, dtype=target_dtype)
@@ -420,9 +393,6 @@ class TPAttention(BaseAttention):
                 if proj is not None:
                     proj.to(target_dtype)
 
-    # ------------------------------------------------------------------
-    # Weight transfer
-    # ------------------------------------------------------------------
     def copy_weights(self, old_attn: Any) -> None:
         with torch.no_grad():
             w_q = w_k = w_v = w_o = None
@@ -450,7 +420,6 @@ class TPAttention(BaseAttention):
             else:
                 src = old_attn
 
-            # Extract weights from various architectures
             if hasattr(src, "c_attn"):
                 W = src.c_attn.weight.detach()
                 B_vec = src.c_attn.bias.detach() if src.c_attn.bias is not None else None
@@ -533,13 +502,11 @@ class TPAttention(BaseAttention):
                 )
                 return
 
-            # ---- Factorize Q and K (or copy directly if not tensor product) ----
             if self._use_tensor_product:
                 self._factorize_qk_tensor_product(w_q, w_k)
             else:
                 self._copy_qk_standard(w_q, w_k)
 
-            # ---- Copy V and O directly ----
             self._copy_layer(self.v_proj, w_v, b_v)
             if w_o is not None:
                 self._copy_layer(self.out_proj, w_o, b_o)
@@ -572,7 +539,6 @@ class TPAttention(BaseAttention):
                 )
 
                 if err <= self.max_cp_error and not (torch.isnan(A).any() or torch.isnan(B).any()):
-                    # Accept CP decomposition
                     proj1.weight.data.zero_()
                     proj2.weight.data.zero_()
                     r_a_rows = num_h * self.rank_a
@@ -585,7 +551,6 @@ class TPAttention(BaseAttention):
                     )
                     logger.info("TPAttention[%s]: CP accepted", name)
                 else:
-                    # Fallback to SVD
                     logger.warning(
                         "TPAttention[%s]: CP error %.4f > %.4f; using SVD fallback",
                         name, err, self.max_cp_error,
@@ -606,17 +571,12 @@ class TPAttention(BaseAttention):
         A, B = _svd_factorize(W_f, self.rank_a * self.rank_b)
         in_dim = W_f.shape[1]
 
-        # Store A in proj1, B in proj2 (truncated to their row counts)
         r_a_rows = num_h * self.rank_a
         r_b_rows = num_h * self.rank_b
 
         proj1.weight.data.zero_()
         proj2.weight.data.zero_()
 
-        # Distribute A and B across proj1/proj2 rows
-        # A has shape [out_dim, r], B has shape [r, in_dim]
-        # proj1 has shape [r_a_rows, in_dim], proj2 has shape [r_b_rows, in_dim]
-        # For tensor product fallback, initialize orthogonal random projections scaled by SVD energy
         nn.init.orthogonal_(proj1.weight.data)
         nn.init.orthogonal_(proj2.weight.data)
         energy = torch.norm(W_f) / math.sqrt(r_a_rows * r_b_rows)
@@ -649,9 +609,6 @@ class TPAttention(BaseAttention):
         elif target.bias is not None:
             target.bias.zero_()
 
-    # ------------------------------------------------------------------
-    # Forward (with KV cache support)
-    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -671,7 +628,6 @@ class TPAttention(BaseAttention):
         r_a, r_b = self.rank_a, self.rank_b
         hd = self.head_dim
 
-        # ---- Q, K via tensor product (or standard) ----
         def _compute_q(x):
             if self._use_tensor_product:
                 q1 = self.q_proj1(x).view(B, L, H, r_a)
@@ -729,17 +685,15 @@ class TPAttention(BaseAttention):
 
         v = self.v_proj(hidden_states).view(B, L, H_kv, hd)
 
-        Q = Q.transpose(1, 2).contiguous()  # (B, H, L, hd)
+        Q = Q.transpose(1, 2).contiguous()
         K = K.transpose(1, 2).contiguous()
         v = v.transpose(1, 2).contiguous()
 
-        # ---- RoPE ----
         pos_emb = kwargs.get("position_embeddings")
         if pos_emb is not None and isinstance(pos_emb, (tuple, list)) and len(pos_emb) == 2:
             cos, sin = pos_emb
             Q, K = apply_rotary_pos_emb(Q, K, cos, sin)
 
-        # ---- KV Cache ----
         if past_key_value is not None:
             past_k, past_v = past_key_value
             K = torch.cat([past_k, K], dim=2)
@@ -747,12 +701,10 @@ class TPAttention(BaseAttention):
 
         new_cache = (K, v) if kwargs.get("use_cache", False) else None
 
-        # ---- GQA ----
         if H_kv != H:
             K = repeat_kv(K, self.num_kv_groups)
             v = repeat_kv(v, self.num_kv_groups)
 
-        # ---- Mask handling ----
         is_causal = self.is_decoder and L > 1
         custom_mask = attention_mask if attention_mask is not None else kwargs.get("attn_mask")
 
@@ -778,7 +730,6 @@ class TPAttention(BaseAttention):
         N_k = K.shape[-2]
 
         if not output_attentions and head_mask is None:
-            # SDPA path
             sdpa_mask = custom_mask
             if is_causal and sdpa_mask is None and past_key_value is None:
                 sdpa_is_causal = True
@@ -794,7 +745,6 @@ class TPAttention(BaseAttention):
                         cm = cm.unsqueeze(1)
                     sdpa_mask = cm & causal_bool
                 elif is_causal and past_key_value is not None:
-                    # Build causal mask for the combined sequence
                     q_pos = torch.arange(N_k - L, N_k, device=Q.device).unsqueeze(1)
                     k_pos = torch.arange(N_k, device=Q.device).unsqueeze(0)
                     causal_bool = (k_pos <= q_pos).unsqueeze(0).unsqueeze(0)
@@ -826,7 +776,6 @@ class TPAttention(BaseAttention):
                 )
             attn_weights = None
         else:
-            # Manual path
             scale = 1.0 / math.sqrt(eff_hd)
             scores = torch.matmul(Q, K.transpose(-1, -2).contiguous()) * scale
 
@@ -857,7 +806,6 @@ class TPAttention(BaseAttention):
 
             context = torch.matmul(attn_weights, v)
 
-        # ---- Output projection ----
         ctx_flat = context.transpose(1, 2).contiguous().view(B, L, self.q_head_size)
         if self.is_nested_encoder:
             output = ctx_flat
@@ -871,11 +819,6 @@ class TPAttention(BaseAttention):
         if return_dict and new_cache is not None:
             return output, new_cache
         return output, (attn_weights if output_attentions else None)
-
-
-# ============================================================================
-# Injection
-# ============================================================================
 
 
 def inject_tpa(

@@ -31,9 +31,6 @@ from neuralops.core.triton_kernels import triton_dispatch
 logger = logging.getLogger(__name__)
 
 
-# ============================================================
-# Thread-local recursion guard (FIX 15)
-# ============================================================
 _inject_state = threading.local()
 
 
@@ -77,9 +74,6 @@ def _resolve_config_value(
     return default
 
 
-# ============================================================
-# Performer Attention
-# ============================================================
 @ATTENTION_REGISTRY.register(
     "performer_attention",
     supports_causal=True,
@@ -106,13 +100,12 @@ class PerformerAttention(BaseAttention):
         pretrained_attn: nn.Module | None = None,
         old_attn: nn.Module | None = None,
         comp_config: Any | None = None,
-        is_nested_encoder: bool | None = None,  # FIX 4: explicit override
+        is_nested_encoder: bool | None = None,
         **kwargs: Any,
     ) -> None:
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
         super().__init__(config, rank)
 
-        # ---------------- Hidden size & heads ----------------
         hidden_size = kwargs.get("hidden_size", kwargs.get("dim", kwargs.get("d_model")))
         num_heads = kwargs.get(
             "num_attention_heads", kwargs.get("num_heads", kwargs.get("n_heads"))
@@ -187,7 +180,6 @@ class PerformerAttention(BaseAttention):
         if num_kv_heads is None:
             num_kv_heads = num_heads
 
-        # FIX 8: validate divisibility
         if num_heads <= 0 or num_kv_heads <= 0:
             raise ValueError(
                 f"Invalid head counts: num_heads={num_heads}, num_kv_heads={num_kv_heads}"
@@ -208,7 +200,6 @@ class PerformerAttention(BaseAttention):
         self.supports_gqa = True
         self.eps = eps
 
-        # ---------------- num_features (FIX 7) ----------------
         num_features_default = rank if rank is not None else 64
         self.num_features = _resolve_config_value(
             config,
@@ -217,10 +208,8 @@ class PerformerAttention(BaseAttention):
             names=("performer_rank", "rank", "num_features"),
             default=num_features_default,
         )
-        # FIX 14: ensure at least 1
         self.num_features = max(1, int(self.num_features))
 
-        # ---------------- kernel_type ----------------
         self.kernel_type = _resolve_config_value(
             config,
             comp_config,
@@ -229,7 +218,6 @@ class PerformerAttention(BaseAttention):
             default="elu",
         )
 
-        # ---------------- Decoder detection ----------------
         model_type = getattr(config, "model_type", "").lower() if config else ""
         is_dec = (
             getattr(
@@ -269,7 +257,6 @@ class PerformerAttention(BaseAttention):
         self.is_decoder = bool(is_dec)
         self.is_causal = bool(is_dec)
 
-        # ---------------- LoRA rank & alpha (FIX 7) ----------------
         self.lora_rank = int(
             _resolve_config_value(
                 config,
@@ -290,19 +277,11 @@ class PerformerAttention(BaseAttention):
         )
         self.freeze_base = self.lora_rank > 0
 
-        # ---------------- Nested encoder detection (FIX 4) ----------------
-        # If explicit value passed, use it. Otherwise infer from source_attn.
         if is_nested_encoder is not None:
             self.is_nested_encoder = bool(is_nested_encoder)
         else:
-            self.is_nested_encoder = False  # will be updated by copy_weights
+            self.is_nested_encoder = False
 
-        # ---------------- Projections (FIX 2) ----------------
-        # out_proj gets LoRA only if NOT nested encoder (since nested encoder
-        # skips out_proj in forward pass).
-        # We determine nested-ness AFTER copy_weights, but we need to build
-        # modules before. So: build with lora on out_proj tentatively; if
-        # copy_weights reveals nested, we zero-out / disable it.
         self.query = LoRALinear(
             self.dim,
             self.all_head_size,
@@ -327,8 +306,6 @@ class PerformerAttention(BaseAttention):
             lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
-        # out_proj LoRA is created conditionally. We start with lora_rank,
-        # and if copy_weights detects nested, we disable it.
         self.out_proj = LoRALinear(
             self.all_head_size,
             self.dim,
@@ -338,16 +315,13 @@ class PerformerAttention(BaseAttention):
             freeze_base=self.freeze_base,
         )
 
-        # Aliases (no longer registered as parameters, only attribute access)
         self.q_proj = self.query
         self.k_proj = self.key
         self.v_proj = self.value
 
-        # ---------------- Omega matrix ----------------
         omega = self._build_orthogonal_matrix(self.head_dim, self.num_features)
         self.register_buffer("omega", omega, persistent=True)
 
-        # ---------------- Dropout (FIX 10) ----------------
         if config is not None:
             dropout_p = getattr(
                 config,
@@ -365,7 +339,6 @@ class PerformerAttention(BaseAttention):
             "sin_weight": None,
         }
 
-        # ---------------- Copy weights from source ----------------
         if source_attn is not None:
             success = self.copy_weights(source_attn)
             if not success:
@@ -376,11 +349,7 @@ class PerformerAttention(BaseAttention):
                 else:
                     raise RuntimeError("PerformerAttention: copy_weights failed")
 
-        # FIX 2: after is_nested_encoder is known, disable LoRA on out_proj
-        # if nested encoder (since out_proj is not used in forward).
         if self.is_nested_encoder and self.lora_rank > 0:
-            # Move out_proj LoRA params to a "dummy" state so they don't
-            # participate in optimization. We freeze them and zero-init.
             if self.out_proj.lora_A is not None:
                 with torch.no_grad():
                     self.out_proj.lora_A.zero_()
@@ -394,7 +363,6 @@ class PerformerAttention(BaseAttention):
                 "on out_proj (out_proj is bypassed in forward pass)."
             )
 
-    # ------------------------------------------------------------
     def _build_orthogonal_matrix(self, d: int, m: int) -> torch.Tensor:
         blocks = []
         remaining = m
@@ -408,7 +376,6 @@ class PerformerAttention(BaseAttention):
         W = W * math.sqrt(d)
         return W.t().contiguous()
 
-    # ------------------------------------------------------------
     def _feature_map(self, x: torch.Tensor) -> torch.Tensor:
         """FAVOR+ feature map.
 
@@ -417,7 +384,6 @@ class PerformerAttention(BaseAttention):
         FIX 11: removed .contiguous() (matmul handles non-contiguous).
         FIX 12: removed dead clamp(max=10.0).
         """
-        # Try accelerated fused Triton kernel
         try:
             from neuralops.core.triton_kernels.elementwise import fused_favor_plus_feature_map_triton
             return fused_favor_plus_feature_map_triton(
@@ -426,16 +392,13 @@ class PerformerAttention(BaseAttention):
         except Exception:
             pass
 
-        # x: [B, H, N, d]
-        # omega: [M, d]
-        omega_t = self.omega.to(dtype=x.dtype, device=x.device).t()  # [d, M]
-        proj = torch.matmul(x, omega_t)  # [B, H, N, M]
+        omega_t = self.omega.to(dtype=x.dtype, device=x.device).t()
+        proj = torch.matmul(x, omega_t)
 
         if self.kernel_type in ("favor_plus", "exp", "favor"):
-            diag_sq = torch.sum(x**2, dim=-1, keepdim=True) * 0.5  # [B,H,N,1]
-            # FIXED: Added max clamp to prevent FP16 overflow (which causes NaN collapse)
+            diag_sq = torch.sum(x**2, dim=-1, keepdim=True) * 0.5
             diff = torch.clamp(proj - diag_sq, min=-20.0, max=8.0)
-            phi = torch.exp(diff)  # FIX 6: no +eps
+            phi = torch.exp(diff)
             phi = phi / math.sqrt(self.num_features)
         elif self.kernel_type == "elu":
             phi = (F.elu(proj) + 1.0) / math.sqrt(self.num_features)
@@ -443,7 +406,6 @@ class PerformerAttention(BaseAttention):
             phi = (F.relu(proj) + self.eps) / math.sqrt(self.num_features)
         return phi
 
-    # ------------------------------------------------------------
     def copy_weights(self, src: Any) -> bool:
         """Copy weights from source attention module.
 
@@ -456,7 +418,6 @@ class PerformerAttention(BaseAttention):
         cls_name = src.__class__.__name__
         has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
 
-        # FIX 4: robust nested detection
         is_nested = False
         if (
             (
@@ -480,12 +441,6 @@ class PerformerAttention(BaseAttention):
         ):
             is_nested = True
 
-        # Only override if we didn't get explicit is_nested_encoder in __init__
-        # We know we didn't if current value is False (default) and no source
-        # was given... but actually we should always trust the source.
-        # Let's just set it (unless caller explicitly passed one, in which
-        # case we don't override — but we can't detect that here, so we
-        # assume the source is authoritative).
         self.is_nested_encoder = bool(is_nested)
 
         extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
@@ -495,7 +450,6 @@ class PerformerAttention(BaseAttention):
             "o": (None, None),
         }
 
-        # ---- 1. GPT-2 fused Conv1D ----
         if hasattr(src, "c_attn") and src.c_attn is not None:
             c_attn_mod = src.c_attn
             base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
@@ -542,7 +496,6 @@ class PerformerAttention(BaseAttention):
                         bias_o.data.clone() if bias_o is not None else None,
                     )
 
-        # ---- 2. RoBERTa/BERT nested ----
         elif hasattr(src, "self") and hasattr(src.self, "query"):
             s = src.self
             for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
@@ -559,7 +512,6 @@ class PerformerAttention(BaseAttention):
                     out_mod.bias.data.clone() if out_mod.bias is not None else None,
                 )
 
-        # ---- 3. Flat modules ----
         else:
             proj_candidates = {
                 "q": ["q_lin", "q_proj", "query"],
@@ -578,7 +530,6 @@ class PerformerAttention(BaseAttention):
                             )
                             break
 
-        # ---- 4. Fallback via UniversalAdapter ----
         missing = [
             k
             for k, (w, _) in extracted.items()
@@ -612,7 +563,6 @@ class PerformerAttention(BaseAttention):
             )
             return False
 
-        # ---- 5. Copy into target modules ----
         target_map = {
             "q": self.query,
             "k": self.key,
@@ -669,18 +619,15 @@ class PerformerAttention(BaseAttention):
                         w_norm,
                     )
 
-        # ---- 6. Ensure base weights frozen, LoRA A/B trainable ----
         if self.lora_rank > 0:
             self.query.freeze_base_weights()
             self.key.freeze_base_weights()
             self.value.freeze_base_weights()
             if not self.is_nested_encoder:
                 self.out_proj.freeze_base_weights()
-            # If nested encoder, out_proj LoRA was already disabled
 
         return True
 
-    # ------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -693,7 +640,6 @@ class PerformerAttention(BaseAttention):
         *args: Any,
         **kwargs: Any,
     ) -> tuple[torch.Tensor, torch.Tensor | None]:
-        # FIX 5: explicit error instead of silent None
         if output_attentions:
             raise NotImplementedError(
                 "PerformerAttention does not materialize attention matrices. "
@@ -702,7 +648,6 @@ class PerformerAttention(BaseAttention):
             )
 
         if encoder_hidden_states is not None:
-            # Cross-attention not supported
             return hidden_states, None
 
         while isinstance(hidden_states, (tuple, list)):
@@ -721,7 +666,6 @@ class PerformerAttention(BaseAttention):
         )
         V = self.value(hidden_states).view(B, N, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
-        # ---- RoPE ----
         if (
             position_embeddings is not None
             and isinstance(position_embeddings, (tuple, list))
@@ -739,24 +683,19 @@ class PerformerAttention(BaseAttention):
             except Exception as e:
                 logger.debug("RoPE application failed: %s", e)
 
-        # ---- GQA expansion ----
         if self.kv_repeat > 1:
             K = repeat_kv(K, self.kv_repeat)
             V = repeat_kv(V, self.kv_repeat)
 
-        # ---- Valid token mask ----
         valid_mask = get_token_valid_mask(attention_mask, B, N, device)
         if valid_mask is not None:
             mask_expanded = valid_mask.unsqueeze(1).unsqueeze(-1).to(dtype)
         else:
             mask_expanded = torch.ones(B, 1, N, 1, device=device, dtype=dtype)
 
-        # ---- Feature maps ----
-        # FIX 3: mask Q_feat in BOTH branches
         Q_feat = self._feature_map(Q) * mask_expanded
         K_feat = self._feature_map(K) * mask_expanded
 
-        # ---- Attention via shared Triton dispatcher ----
         context = triton_dispatch(
             self.triton_kernel,
             Q_feat,
@@ -769,7 +708,6 @@ class PerformerAttention(BaseAttention):
         context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
         context = self.dropout(context)
 
-        # ---- Head mask (FIX 9) ----
         if head_mask is not None:
             if head_mask.dim() == 1:
                 hm = head_mask.view(1, -1, 1, 1)
@@ -784,13 +722,11 @@ class PerformerAttention(BaseAttention):
         context = context * mask_expanded
         context = context.transpose(1, 2).contiguous().view(B, N, self.all_head_size)
 
-        # FIX 2: for nested encoder, skip out_proj (LoRA disabled)
         if self.is_nested_encoder:
             out = context
         else:
             out = self.out_proj(context)
 
-        # ---- Shape sanity ----
         if out.shape[-1] != hidden_states.shape[-1]:
             if out.shape[-1] < hidden_states.shape[-1]:
                 out = F.pad(out, (0, hidden_states.shape[-1] - out.shape[-1]))
@@ -799,7 +735,6 @@ class PerformerAttention(BaseAttention):
 
         return out.to(dtype), None
 
-    # ------------------------------------------------------------
     def _forward_causal(
         self,
         Q_feat: torch.Tensor,
@@ -849,7 +784,6 @@ class PerformerAttention(BaseAttention):
         out = (num / den).to(dtype)
         return torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
 
-    # ------------------------------------------------------------
     def _forward_bidirectional(
         self,
         Q_feat: torch.Tensor,
@@ -860,7 +794,6 @@ class PerformerAttention(BaseAttention):
         dtype: torch.dtype,
     ) -> torch.Tensor:
         """Standard linear attention (non-causal)."""
-        # FIX 9: only upcast to fp32 when needed (fp16 case)
         compute_dtype = torch.float32 if dtype == torch.float16 else dtype
         Kf = K_feat.to(compute_dtype)
         Vf = V.to(compute_dtype)
@@ -874,9 +807,6 @@ class PerformerAttention(BaseAttention):
         return torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
 
 
-# ============================================================
-# Injection hook
-# ============================================================
 def _is_single_layer(obj: Any) -> bool:
     """Return True if obj is a transformer layer, not a full model.
 
@@ -942,9 +872,8 @@ def inject_performer(
         target = layer if layer is not None else model
         cfg = model_config or getattr(target, "config", None) or kwargs.get("config")
 
-        # ---- Recursive descent into model containers ----
         if _is_single_layer(target):
-            pass  # handle below
+            pass
         elif hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
             return _inject_into_layers(
                 target.distilbert.transformer.layer,
@@ -1000,7 +929,6 @@ def inject_performer(
                 kwargs,
             )
 
-        # ---- Single layer injection ----
         src_attn = old_attn
         if src_attn is None and target is not None:
             if hasattr(target, "attention"):

@@ -34,11 +34,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 logger = logging.getLogger(__name__)
 
 
-
-
-# ===========================================================================
-# HeadRoPE (internal fallback for encoders without position embeddings)
-# ===========================================================================
 class HeadRoPE(nn.Module):
     def __init__(self, head_dim: int, max_seq_len: int = 4096, base: float = 10000.0) -> None:
         super().__init__()
@@ -79,14 +74,13 @@ def _uses_rope(config: Any, old_attn: nn.Module | None) -> bool:
     """
     if config is not None:
         mt = str(getattr(config, "model_type", "")).lower()
-        # Only models that ACTUALLY use RoPE:
         if mt.startswith(
             (
                 "llama",
-                "qwen",       # covers qwen2, qwen3, etc.
+                "qwen",
                 "mistral",
                 "mixtral",
-                "gemma",      # covers gemma2
+                "gemma",
                 "phi",
                 "phi3",
                 "deepseek",
@@ -97,15 +91,11 @@ def _uses_rope(config: Any, old_attn: nn.Module | None) -> bool:
         if getattr(config, "position_embedding_type", "") == "rotary":
             return True
     if old_attn is not None:
-        # If the source attention module has a rotary_emb attribute, use RoPE.
         if hasattr(old_attn, "rotary_emb") and getattr(old_attn, "rotary_emb", None) is not None:
             return True
     return False
 
 
-# ===========================================================================
-# HymbaTransX block
-# ===========================================================================
 @ATTENTION_REGISTRY.register(
     "hymba_transx", supports_causal=True, supports_bidirectional=True, supports_gqa=True
 )
@@ -204,14 +194,11 @@ class HymbaTransXBlock(BaseAttention):
         self.kv_repeat = max(1, self.num_heads // self.num_kv_heads)
         self.supports_gqa = True
 
-        # Decoder detection
         self.is_decoder = _detect_decoder(config, is_decoder, source_attn)
         self.is_causal = self.is_decoder
         self.is_nested_encoder = False
-        # HX-FIX-02: RoPE only for models that actually use it
         self.use_rope = _uses_rope(config, source_attn)
 
-        # LoRA config
         self.lora_rank = int(
             kwargs.get(
                 "lora_rank",
@@ -234,7 +221,6 @@ class HymbaTransXBlock(BaseAttention):
         )
         self.freeze_base = self.lora_rank > 0
 
-        # RoPE and projections
         self.rope = HeadRoPE(self.head_dim) if self.use_rope else None
 
         self.W_q1 = LoRALinear(
@@ -286,20 +272,16 @@ class HymbaTransXBlock(BaseAttention):
             freeze_base=self.freeze_base,
         )
 
-        # HX-FIX-06: W_q2 and W_k2 are EXACT copies (no noise)
         with torch.no_grad():
             self.W_q2.weight.data.copy_(self.W_q1.weight.data)
             self.W_k2.weight.data.copy_(self.W_k1.weight.data)
 
-        # HX-FIX-07: diff_lambda init = -2.0 (sigmoid ≈ 0.12)
         self.diff_lambda = nn.Parameter(torch.tensor(-2.0))
 
-        # HX-FIX-13: SSM branch DISABLED by default for GPT-2 decoder
         self.mamba = None
         use_ssm = not _env_flag("HYMBA_DISABLE_SSM", False)
         if use_ssm and config is not None:
             mt = str(getattr(config, "model_type", "")).lower()
-            # Only enable SSM for models where it makes sense (not GPT-2)
             if not mt.startswith("gpt"):
                 try:
                     from neuralops.attentions.simple_ssm import SimpleSSM
@@ -312,7 +294,6 @@ class HymbaTransXBlock(BaseAttention):
         if self.mamba is None:
             logger.info("HymbaTransX: SSM branch disabled (GPT-2 or unavailable).")
 
-        # HX-FIX-01: alpha init = 4.0 → sigmoid(4.0) ≈ 0.98 (attention-dominant)
         self.alpha = nn.Parameter(torch.tensor(4.0))
 
         dropout_p = float(
@@ -325,9 +306,6 @@ class HymbaTransXBlock(BaseAttention):
         if source_attn is not None:
             self.copy_weights(source_attn)
 
-    # ------------------------------------------------------------------
-    # Aliases
-    # ------------------------------------------------------------------
     @property
     def query(self):
         return self.W_q1
@@ -364,9 +342,6 @@ class HymbaTransXBlock(BaseAttention):
     def o_proj(self):
         return self.out_proj
 
-    # ------------------------------------------------------------------
-    # copy_weights
-    # ------------------------------------------------------------------
     def copy_weights(self, src: Any) -> None:
         if src is None:
             return
@@ -405,7 +380,6 @@ class HymbaTransXBlock(BaseAttention):
             "o": (None, None),
         }
 
-        # 1. GPT-2 fused
         if hasattr(src, "c_attn") and src.c_attn is not None:
             c_attn_mod = src.c_attn
             base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
@@ -456,7 +430,6 @@ class HymbaTransXBlock(BaseAttention):
                         bias_o.data.clone() if bias_o is not None else None,
                     )
 
-        # 2. RoBERTa / BERT nested
         elif hasattr(src, "self") and hasattr(src.self, "query"):
             s = src.self
             for key, sub in (("q", "query"), ("k", "key"), ("v", "value")):
@@ -473,7 +446,6 @@ class HymbaTransXBlock(BaseAttention):
                     out_mod.bias.data.clone() if out_mod.bias is not None else None,
                 )
 
-        # 3. Flat modules
         else:
             proj_candidates = {
                 "q": ["q_lin", "q_proj", "query"],
@@ -492,7 +464,6 @@ class HymbaTransXBlock(BaseAttention):
                             )
                             break
 
-        # 4. UniversalAdapter fallback
         missing = [
             k
             for k, (w, _) in extracted.items()
@@ -525,7 +496,6 @@ class HymbaTransXBlock(BaseAttention):
                     return w
                 if w.t().contiguous().shape == target_shape:
                     return w.t().contiguous()
-                # Truncate / pad
                 out_d, in_d = target_shape
                 s_out, s_in = w.shape
                 m_out = min(out_d, s_out)
@@ -534,28 +504,24 @@ class HymbaTransXBlock(BaseAttention):
                 padded[:m_out, :m_in] = w[:m_out, :m_in]
                 return padded
 
-            # W_q1
             wq = _adapt(w_q, self.W_q1.weight.shape)
             if wq is not None:
                 self.W_q1.weight.data.copy_(
                     wq.to(device=self.W_q1.weight.device, dtype=self.W_q1.weight.dtype)
                 )
 
-            # W_k1
             wk = _adapt(w_k, self.W_k1.weight.shape)
             if wk is not None:
                 self.W_k1.weight.data.copy_(
                     wk.to(device=self.W_k1.weight.device, dtype=self.W_k1.weight.dtype)
                 )
 
-            # W_v
             wv = _adapt(w_v, self.W_v.weight.shape)
             if wv is not None:
                 self.W_v.weight.data.copy_(
                     wv.to(device=self.W_v.weight.device, dtype=self.W_v.weight.dtype)
                 )
 
-            # W_o
             if w_o is not None:
                 wo = _adapt(w_o, self.out_proj.weight.shape)
                 if wo is not None:
@@ -575,13 +541,9 @@ class HymbaTransXBlock(BaseAttention):
                         )
                     )
 
-            # HX-FIX-06: W_q2 and W_k2 = EXACT copies (no noise)
             self.W_q2.weight.data.copy_(self.W_q1.weight.data)
             self.W_k2.weight.data.copy_(self.W_k1.weight.data)
 
-    # ------------------------------------------------------------------
-    # Mask helper
-    # ------------------------------------------------------------------
     @staticmethod
     def _prepare_valid_mask(
         attention_mask: torch.Tensor | None,
@@ -613,9 +575,6 @@ class HymbaTransXBlock(BaseAttention):
             return v.any(dim=-2).squeeze(1)
         raise ValueError(f"Unsupported attention_mask dim: {attention_mask.dim()}")
 
-    # ------------------------------------------------------------------
-    # Forward
-    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -651,14 +610,12 @@ class HymbaTransXBlock(BaseAttention):
         B, L, D = x.shape
         device = x.device
 
-        # Projections
         q1 = self.W_q1(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
         k1 = self.W_k1(x).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
         q2 = self.W_q2(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
         k2 = self.W_k2(x).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
         v = self.W_v(x).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
-        # KV-cache
         past_k1 = past_v = None
         past_k2 = None
         past_len = 0
@@ -689,7 +646,6 @@ class HymbaTransXBlock(BaseAttention):
 
         N_kv = k1_cat.shape[2]
 
-        # RoPE (only if use_rope)
         if self.use_rope:
             if position_embeddings is not None:
                 cos, sin = position_embeddings
@@ -703,18 +659,15 @@ class HymbaTransXBlock(BaseAttention):
                 q2 = self.rope(q2, past_len=past_len)
                 k2_cat = self.rope(k2_cat, past_len=0)
 
-        # GQA expansion
         if self.kv_repeat > 1:
             k1_cat = repeat_kv(k1_cat, self.kv_repeat)
             k2_cat = repeat_kv(k2_cat, self.kv_repeat)
             v_cat = repeat_kv(v_cat, self.kv_repeat)
 
-        # Differential attention
         scale = 1.0 / math.sqrt(self.head_dim)
         scores1 = torch.matmul(q1.float(), k1_cat.float().transpose(-2, -1).contiguous()) * scale
         scores2 = torch.matmul(q2.float(), k2_cat.float().transpose(-2, -1).contiguous()) * scale
 
-        # Causal mask (offset-aware for cache)
         if self.is_decoder:
             if past_len > 0:
                 abs_q = (past_len + torch.arange(L, device=device)).unsqueeze(1)
@@ -725,7 +678,6 @@ class HymbaTransXBlock(BaseAttention):
             scores1 = scores1.masked_fill(~causal.unsqueeze(0).unsqueeze(0), -1e4)
             scores2 = scores2.masked_fill(~causal.unsqueeze(0).unsqueeze(0), -1e4)
 
-        # Padding mask
         eff_mask = encoder_attention_mask if encoder_hidden_states is not None else attention_mask
         valid_mask = self._prepare_valid_mask(eff_mask, B, N_kv, device)
         if valid_mask is not None:
@@ -738,7 +690,6 @@ class HymbaTransXBlock(BaseAttention):
         attn1 = F.softmax(scores1, dim=-1)
         attn2 = F.softmax(scores2, dim=-1)
 
-        # Learnable lambda (init sigmoid(-2) ≈ 0.12)
         lam = torch.sigmoid(self.diff_lambda)
         diff_attn = F.relu(attn1 - lam * attn2)
         denom = diff_attn.sum(dim=-1, keepdim=True)
@@ -746,7 +697,6 @@ class HymbaTransXBlock(BaseAttention):
         diff_attn = torch.where(zero_mask, attn1, diff_attn / (denom + 1e-7))
         diff_attn = self.dropout(diff_attn).to(v_cat.dtype)
 
-        # head_mask broadcasting
         if head_mask is not None:
             if head_mask.dim() == 1:
                 head_mask = head_mask.view(1, -1, 1, 1)
@@ -763,7 +713,6 @@ class HymbaTransXBlock(BaseAttention):
             .view(B, L, self.all_head_size)
         )
 
-        # SSM branch (disabled for GPT-2 by default)
         M_out = None
         if self.mamba is not None:
             if x.requires_grad:
@@ -797,8 +746,6 @@ class HymbaTransXBlock(BaseAttention):
             A_out, M_out if self.mamba is not None else None, self.alpha
         )
 
-
-        # Output projection
         if self.is_nested_encoder:
             out = combined
         else:
@@ -806,7 +753,6 @@ class HymbaTransXBlock(BaseAttention):
 
         out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
 
-        # Build present KV-cache for autoregressive decoding
         present_key_value = (k1_cat, v_cat, k2_cat) if self.is_decoder else None
 
         if self.is_decoder:
@@ -819,9 +765,6 @@ class HymbaTransXBlock(BaseAttention):
             return out, None
 
 
-# ===========================================================================
-# Injection
-# ===========================================================================
 def inject_hymba_transx(
     layer: Any = None,
     model: Any = None,
@@ -843,7 +786,6 @@ def inject_hymba_transx(
 
     cfg = model_config or getattr(target, "config", None)
 
-    # Whole-model traversal
     layer_list = None
     if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
         layer_list = target.distilbert.transformer.layer
@@ -877,7 +819,6 @@ def inject_hymba_transx(
                 num_injected += 1
         return target if num_injected > 0 else None
 
-    # Single layer
     try:
         src = old_attn
         if src is None:
@@ -890,7 +831,6 @@ def inject_hymba_transx(
         if src is None:
             return None
 
-        # Double-injection guard
         if isinstance(src, HymbaTransXBlock):
             return None
         if "HymbaTransX" in src.__class__.__name__:
@@ -914,7 +854,6 @@ def inject_hymba_transx(
             **kwargs,
         )
 
-        # Attach
         if hasattr(target, "attention"):
             if hasattr(target.attention, "self"):
                 target.attention.self = new_attn

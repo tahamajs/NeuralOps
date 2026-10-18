@@ -46,11 +46,6 @@ from neuralops.utils.compat import should_compress_linear
 logger = logging.getLogger(__name__)
 
 
-
-
-# ===========================================================================
-# Dimension factorization (TT-FIX-03)
-# ===========================================================================
 def factorize_dimension_pair(
     in_features: int, out_features: int, num_factors: int = 2
 ) -> tuple[tuple[int, ...], tuple[int, ...]]:
@@ -71,7 +66,6 @@ def factorize_dimension_pair(
                 a -= 1
             return [1, n]
 
-        # For k > 2, greedily pick the near-root divisor at each step
         factors = []
         curr = n
         for step in range(k, 1, -1):
@@ -94,9 +88,6 @@ def factorize_dimension_pair(
     )
 
 
-# ===========================================================================
-# SVD fallback layer
-# ===========================================================================
 class SVDLinearLayer(nn.Module):
     """
     Low-rank SVD fallback used when TT cannot achieve the error threshold.
@@ -109,8 +100,8 @@ class SVDLinearLayer(nn.Module):
 
     def __init__(
         self,
-        A: torch.Tensor,  # (out, r)
-        B: torch.Tensor,  # (r, in)
+        A: torch.Tensor,
+        B: torch.Tensor,
         bias: torch.Tensor | None = None,
         is_conv1d: bool = False,
     ) -> None:
@@ -151,9 +142,6 @@ class SVDLinearLayer(nn.Module):
         return out.view(*orig_shape[:-1], self.out_features)
 
 
-# ===========================================================================
-# TT layer
-# ===========================================================================
 class TTLinearLayer(nn.Module):
     """
     Tensor-Train (TT) linear layer.
@@ -167,7 +155,6 @@ class TTLinearLayer(nn.Module):
     for d == 2; for larger d, an optimized generic path is used.
     """
 
-    # TT-FIX-01
     is_custom_attention: bool = False
 
     @staticmethod
@@ -260,14 +247,11 @@ class TTLinearLayer(nn.Module):
         self._cached_weight: torch.Tensor | None = None
         self._cached_version: int = -1
 
-    # ---- cache management (TT-FIX-06) ----
     def _invalidate_cache(self) -> None:
         self._cached_weight = None
         self._cached_version = -1
 
     def _current_version(self) -> int:
-        # Sum of _version counters for all cores + bias. Invalidates on any
-        # in-place mutation of any parameter.
         v = sum(getattr(c, "_version", 0) for c in self.cores)
         if self.bias is not None:
             v += getattr(self.bias, "_version", 0)
@@ -293,11 +277,11 @@ class TTLinearLayer(nn.Module):
             except Exception as e:
                 logger.debug("Triton strided TT contraction failed (%s); fallback", e)
 
-        res = self.cores[0][0]  # (p0, q0, r1)
+        res = self.cores[0][0]
         for i in range(1, self.d):
-            core = self.cores[i]  # (r_i, p_i, q_i, r_{i+1})
+            core = self.cores[i]
             res = torch.tensordot(res, core, dims=([-1], [0]))
-        res = res[..., 0]  # drop trailing r=1
+        res = res[..., 0]
 
         q_idx = [2 * k + 1 for k in range(self.d)]
         p_idx = [2 * k for k in range(self.d)]
@@ -326,7 +310,6 @@ class TTLinearLayer(nn.Module):
             except Exception as e:
                 logger.debug("Triton strided TT linear failed (%s); fallback to PyTorch", e)
 
-        # TT-FIX-09: generic path always works.
         W = self.materialize_weight()
         if W.dtype != x_flat.dtype or W.device != x_flat.device:
             W = W.to(device=x_flat.device, dtype=x_flat.dtype)
@@ -336,7 +319,6 @@ class TTLinearLayer(nn.Module):
             out = out + self.bias.to(out.device, out.dtype)
         return out.view(*orig_shape[:-1], self.out_features)
 
-    # ---- Adaptive TT-SVD (TT-FIX-04) ----
     @classmethod
     def from_linear(
         cls,
@@ -373,7 +355,6 @@ class TTLinearLayer(nn.Module):
         elif hasattr(base_layer, "in_features") and hasattr(base_layer, "out_features"):
             in_f = int(base_layer.in_features)
             out_f = int(base_layer.out_features)
-            # PyTorch Linear weights are [out_features, in_features]
             W = raw_w.float().contiguous()
         elif is_conv1d:
             in_f, out_f = raw_w.shape[0], raw_w.shape[1]
@@ -389,12 +370,11 @@ class TTLinearLayer(nn.Module):
             return None
 
         d = len(p_dims)
-        # Reshape to (q_0, q_1, ..., p_0, p_1, ...)
         W_tensor = W.view(*(list(q_dims) + list(p_dims)))
         perm = []
         for k in range(d):
-            perm.append(d + k)  # p_k
-            perm.append(k)  # q_k
+            perm.append(d + k)
+            perm.append(k)
         W_interleaved = W_tensor.permute(*perm).contiguous()
 
         max_rank = cls._max_rank_for_compression(out_f, in_f, p_dims, q_dims, safety_margin=0.9)
@@ -402,7 +382,6 @@ class TTLinearLayer(nn.Module):
 
         bias = base_layer.bias.data if getattr(base_layer, "bias", None) is not None else None
 
-        # ---- Build the layer with adaptive TT-SVD ----
         layer = cls(
             in_features=in_f,
             out_features=out_f,
@@ -422,12 +401,10 @@ class TTLinearLayer(nn.Module):
                 curr_matrix = curr_matrix.view(rows, -1)
 
                 U, S, Vt = torch.linalg.svd(curr_matrix, full_matrices=False)
-                # Adaptive rank: smallest r with retained energy >= threshold
                 S_sq = S**2
                 total_energy = S_sq.sum().clamp_min(1e-12)
                 cum = torch.cumsum(S_sq, dim=0) / total_energy
                 r_energy = int((cum >= energy_threshold).nonzero()[0].item()) + 1
-                # Cap by: configured tt_rank, max_rank budget, and the shape bound
                 r_right = min(r_energy, rank_cap, U.shape[1], S.numel())
                 r_right = max(1, r_right)
 
@@ -453,11 +430,9 @@ class TTLinearLayer(nn.Module):
                 with torch.no_grad():
                     layer.bias.data.copy_(bias.to(dtype=orig_dtype, device=orig_device))
 
-            # ---- Error check ----
             W_rec = layer.materialize_weight().float()
             rel_err = (torch.norm(W - W_rec) / norm_orig).item()
 
-            # TT-FIX-05: fall back to SVD if TT error is too high.
             if rel_err > max_error:
                 logger.info(
                     "TT: rel_err=%.4f > max_error=%.4f, trying SVD fallback",
@@ -466,7 +441,6 @@ class TTLinearLayer(nn.Module):
                 )
                 return None
 
-            # Check parameter count
             tt_params = sum(p.numel() for p in layer.parameters())
             if tt_params >= out_f * in_f:
                 logger.info(
@@ -488,9 +462,6 @@ class TTLinearLayer(nn.Module):
 TTLinear = TTLinearLayer
 
 
-# ===========================================================================
-# SVD fallback builder (TT-FIX-05)
-# ===========================================================================
 def _try_svd_fallback(
     linear_layer: nn.Module,
     max_error: float,
@@ -517,7 +488,6 @@ def _try_svd_fallback(
     norm_orig = W.norm().item() + 1e-12
     r_max = min(out_f, in_f)
 
-    # Try several ranks
     candidate_ranks = []
     if target_rank is not None:
         candidate_ranks.append(min(target_rank, r_max))
@@ -535,12 +505,11 @@ def _try_svd_fallback(
 
     best = None
     for r in candidate_ranks:
-        A = U[:, :r] * S[:r].unsqueeze(0)  # (out, r)
-        B = Vt[:r, :]  # (r, in)
+        A = U[:, :r] * S[:r].unsqueeze(0)
+        B = Vt[:r, :]
         W_rec = A @ B
         rel_err = (torch.norm(W - W_rec) / norm_orig).item()
         if rel_err <= max_error:
-            # Preserve row-wise L2 norm energy
             row_orig = torch.linalg.norm(W, dim=1, keepdim=True).clamp_min(1e-8)
             row_rec = torch.linalg.norm(W_rec, dim=1, keepdim=True).clamp_min(1e-8)
             gain = (row_orig / row_rec).clamp(0.2, 5.0)
@@ -563,10 +532,6 @@ def _try_svd_fallback(
     return layer
 
 
-# ===========================================================================
-# Compressor
-# ===========================================================================
-# DEPRECATED: alias of kronecker_tt_lora
 @COMPRESSOR_REGISTRY.register("tt_compressor")
 class TTCompressor(BaseCompressor):
     """
@@ -584,7 +549,6 @@ class TTCompressor(BaseCompressor):
         strict_rank:       Do not exceed tt_rank.
     """
 
-    # TT-FIX-01
     is_custom_attention: bool = False
 
     def __init__(
@@ -597,7 +561,7 @@ class TTCompressor(BaseCompressor):
         target_layers: list[str] | None = None,
         max_error: float = 1.0,
         energy_threshold: float = 0.995,
-        fallback_policy: str = "svd",  # 'svd' | 'original' | 'none'
+        fallback_policy: str = "svd",
         target_attention_only: bool = False,
         strict_rank: bool = False,
         **kwargs: Any,
@@ -615,7 +579,6 @@ class TTCompressor(BaseCompressor):
             )
             strict_rank = _cfg_get(comp_cfg, "strict_rank", strict_rank)
 
-        # kwargs overrides
         for k, caster in (
             ("rank", int),
             ("tt_rank", int),
@@ -629,8 +592,7 @@ class TTCompressor(BaseCompressor):
                 if k == "rank":
                     rank = caster(kwargs[k])
                 else:
-                    locals_dict = None  # noqa
-                    # direct assignment below
+                    locals_dict = None
         if "max_error" in kwargs and kwargs["max_error"] is not None:
             max_error = float(kwargs["max_error"])
         if "num_factors" in kwargs and kwargs["num_factors"] is not None:
@@ -663,7 +625,6 @@ class TTCompressor(BaseCompressor):
         self.tt_layers: list[str] = []
         self.svd_layers: list[str] = []
 
-    # ------------------------------------------------------------------
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         name_l = name.lower()
         if any(
@@ -737,7 +698,6 @@ class TTCompressor(BaseCompressor):
             return False
         return True
 
-    # ------------------------------------------------------------------
     def compress(self, model: nn.Module | None = None) -> tuple[nn.Module, dict[str, Any]]:
         if model is not None:
             self.model = model
@@ -769,7 +729,6 @@ class TTCompressor(BaseCompressor):
             else:
                 out_f, in_f = raw_w.shape[0], raw_w.shape[1]
 
-            # 1) Try TT
             tt_layer = TTLinearLayer.from_linear(
                 module,
                 tt_rank=self.tt_rank,
@@ -788,7 +747,6 @@ class TTCompressor(BaseCompressor):
                 chosen_layer = tt_layer
                 method = "tt"
 
-            # 2) If TT failed, try SVD fallback
             if chosen_layer is None and self.fallback_policy in ("svd", "original"):
                 svd_layer = _try_svd_fallback(
                     module,
@@ -800,7 +758,6 @@ class TTCompressor(BaseCompressor):
                     method = "svd"
                     rel_err = getattr(svd_layer, "reconstruction_error", None)
 
-            # 3) If both failed, decide fallback
             if chosen_layer is None:
                 if self.fallback_policy == "original":
                     fallback_layers.append(name)
@@ -811,13 +768,11 @@ class TTCompressor(BaseCompressor):
                     fallback_layers.append(name)
                     continue
 
-            # Splice into model
             if hasattr(module, "base_layer"):
                 module.base_layer = chosen_layer
             else:
                 replace_module(self.model, name, chosen_layer)
 
-            # Byte accounting (TT-FIX-08)
             o_bytes = raw_w.numel() * raw_w.element_size()
             if getattr(base_layer, "bias", None) is not None and base_layer.bias is not None:
                 o_bytes += base_layer.bias.numel() * base_layer.bias.element_size()
@@ -844,7 +799,6 @@ class TTCompressor(BaseCompressor):
             if rel_err is not None:
                 total_error += float(rel_err)
 
-        # Forward sanity check
         forward_ok = True
         try:
             self.model.eval()
@@ -901,7 +855,6 @@ class TTCompressor(BaseCompressor):
         )
         return self.model, stats
 
-    # ------------------------------------------------------------------
     def compress_linear(self, linear_layer: nn.Module) -> nn.Module | None:
         """Compress a single layer to TT (or SVD if TT fails)."""
         tt = TTLinearLayer.from_linear(
@@ -919,9 +872,6 @@ class TTCompressor(BaseCompressor):
         return None
 
 
-# ===========================================================================
-# Factory
-# ===========================================================================
 def tt_compressor_factory(
     model: nn.Module,
     comp_config: Any | None = None,

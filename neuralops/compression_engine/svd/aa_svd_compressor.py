@@ -30,9 +30,6 @@ from neuralops.utils.compat import get_dynamic_compression_rank, should_compress
 logger = logging.getLogger(__name__)
 
 
-# ---------------------------------------------------------------------------
-# Default multi-domain calibration corpus
-# ---------------------------------------------------------------------------
 DEFAULT_CALIBRATION_CORPUS: list[str] = [
     (
         "Transformers rely heavily on multi-head self-attention mechanisms to capture complex syntactic "
@@ -64,8 +61,6 @@ DEFAULT_CALIBRATION_CORPUS: list[str] = [
 ]
 
 
-
-
 def _autocast_off(x: torch.Tensor) -> contextlib.AbstractContextManager:
     """AASVD-FIX-05: robust autocast-disable context."""
     dev_type = x.device.type
@@ -77,9 +72,6 @@ def _autocast_off(x: torch.Tensor) -> contextlib.AbstractContextManager:
     return contextlib.nullcontext()
 
 
-# ===========================================================================
-# SVDLinear
-# ===========================================================================
 class SVDLinear(nn.Module):
     """
     Low-rank factorized linear layer:
@@ -87,7 +79,6 @@ class SVDLinear(nn.Module):
     Parameter count: r·(d_in + d_out) + LoRA params.
     """
 
-    # AASVD-FIX-01
     is_custom_attention: bool = False
 
     def __init__(
@@ -112,7 +103,6 @@ class SVDLinear(nn.Module):
         self.use_fused_kernel = bool(use_fused_kernel)
         self.use_triton = bool(use_triton)
 
-        # Accept both lora_rank and legacy lora_r
         eff_lora = int(lora_r) if (lora_r is not None and lora_r > 0) else max(0, int(lora_rank))
         self.lora_rank = eff_lora
         self.lora_r = eff_lora
@@ -146,12 +136,10 @@ class SVDLinear(nn.Module):
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
 
-        # Input mean buffer for mean-shifted SVD calibration and serialization
         self.register_buffer("_input_mean", None, persistent=True)
 
         self.reset_parameters()
 
-    # ------------------------------------------------------------------
     @property
     def weight(self) -> torch.Tensor:
         return self.get_weight()
@@ -266,11 +254,6 @@ class SVDLinear(nn.Module):
             self.V.data[:r, :].copy_(V_factor[:r, :].to(self.V.device, self.V.dtype))
 
 
-
-
-# ===========================================================================
-# Compressor
-# ===========================================================================
 @COMPRESSOR_REGISTRY.register("aa_svd_compressor")
 class AASVDCompressor(BaseCompressor):
     """AASVDCompressor neural operator.
@@ -296,17 +279,15 @@ class AASVDCompressor(BaseCompressor):
         target_modules: list[str] | None = None,
         target_attention_only: bool = True,
         force_rank: bool = False,
-        lora_rank: int = 0,  # AASVD-FIX-03
-        lora_alpha: float = 1.0,  # AASVD-FIX-03
-        cov_dtype: str = "float32",  # AASVD-FIX-09
+        lora_rank: int = 0,
+        lora_alpha: float = 1.0,
+        cov_dtype: str = "float32",
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="aasvd", **kwargs)
         cfg = kwargs.get("comp_config", kwargs.get("cfg"))
-        # AASVD-FIX-02
         self.comp_config = cfg
 
-        # AASVD-FIX-04: use _cfg_get everywhere
         rank = _cfg_get(cfg, "aasvd_rank", _cfg_get(cfg, "rank", rank))
         ema_beta = float(_cfg_get(cfg, "aasvd_ema_beta", _cfg_get(cfg, "ema_beta", ema_beta)))
         tokenizer = _cfg_get(cfg, "tokenizer", tokenizer)
@@ -332,12 +313,10 @@ class AASVDCompressor(BaseCompressor):
         )
         cov_dtype = str(_cfg_get(cfg, "cov_dtype", cov_dtype))
 
-        # override from kwargs (highest priority after explicit args)
         lora_rank = int(kwargs.get("lora_rank", lora_rank))
         lora_alpha = float(kwargs.get("lora_alpha", lora_alpha))
         cov_dtype = str(kwargs.get("cov_dtype", cov_dtype))
 
-        # force_rank resolution
         has_explicit_rank = (
             "rank" in kwargs
             or "target_rank" in kwargs
@@ -353,9 +332,7 @@ class AASVDCompressor(BaseCompressor):
         )
         self.force_rank = force_rank
         self.use_strs = bool(kwargs.get("use_strs", not force_rank)) and not force_rank
-        # AASVD-FIX-10: dynamic STRS candidates are computed per-layer
 
-        # ---- tokenizer auto-resolve ----
         if tokenizer is None:
             tokenizer = getattr(model, "tokenizer", None) or getattr(
                 getattr(model, "config", None), "tokenizer", None
@@ -374,7 +351,6 @@ class AASVDCompressor(BaseCompressor):
                     logger.debug("Auto-tokenizer load failed for %s: %s", mp, e)
                     self.tokenizer = None
 
-        # ---- basic params ----
         self.rank = max(1, int(rank))
         self.ema_beta = float(max(0.0, min(ema_beta, 0.999)))
         self.max_error = float(max_error)
@@ -384,44 +360,34 @@ class AASVDCompressor(BaseCompressor):
         self.target_modules = target_modules
         self.lora_rank = max(0, int(lora_rank))
         self.lora_alpha = float(lora_alpha)
-        # AASVD-FIX-03
-        self.lora_r = self.lora_rank  # legacy alias
+        self.lora_r = self.lora_rank
 
-        # AASVD-FIX-09
         self.cov_dtype_name = str(cov_dtype).lower()
         if self.cov_dtype_name not in ("float32", "float16"):
             self.cov_dtype_name = "float32"
         self.cov_dtype = torch.float32 if self.cov_dtype_name == "float32" else torch.float16
 
-        # AASVD-FIX-08: single source of truth for device
         self.device = (
             torch.device(device)
             if device is not None
             else next(model.parameters(), torch.tensor(0.0)).device
         )
 
-        # ---- state ----
         self.compressed_layers: list[str] = []
         self.fallback_layers: list[str] = []
         self.layer_errors: dict[str, float] = {}
         self.layer_ranks: dict[str, int] = {}
 
-        # AASVD-FIX-14
         self._compressed_params: int = 0
         try:
             self._original_params = self._count_params(self.model)
         except Exception:
             self._original_params = sum(p.numel() for p in self.model.parameters())
 
-        # AASVD-FIX-11
         self._orig_storage_bytes: int = 0
         self._comp_storage_bytes: int = 0
 
-    # ------------------------------------------------------------------
-    # Target selection
-    # ------------------------------------------------------------------
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
-        # AASVD-FIX-13: skip already compressed
         if isinstance(module, SVDLinear):
             return False
         if any(
@@ -509,9 +475,6 @@ class AASVDCompressor(BaseCompressor):
             return any(t in name for t in self.target_modules)
         return True
 
-    # ------------------------------------------------------------------
-    # AASVD-FIX-10: dynamic STRS candidates
-    # ------------------------------------------------------------------
     @staticmethod
     def _build_strs_candidates(r_floor: int, r_ceiling: int) -> list[int]:
         if r_ceiling < r_floor:
@@ -526,7 +489,6 @@ class AASVDCompressor(BaseCompressor):
         cands.add(r_ceiling)
         return sorted(cands)
 
-    # ------------------------------------------------------------------
     def compress_linear(
         self,
         layer: nn.Module,
@@ -575,7 +537,6 @@ class AASVDCompressor(BaseCompressor):
             r = min(r, max_allowed_rank)
             W_norm = torch.norm(W, p="fro").item()
 
-            # ---- covariance preconditioning ----
             cov_sqrt = cov_inv_sqrt = None
             if cov_factors is not None:
                 cov_sqrt, cov_inv_sqrt = cov_factors
@@ -583,7 +544,6 @@ class AASVDCompressor(BaseCompressor):
                 try:
                     cov_fp32 = cov.to(self.device, torch.float32)
                     cov_sym = 0.5 * (cov_fp32 + cov_fp32.T)
-                    # Trace-proportional Tikhonov damping lambda >= 0.05
                     trace_val = torch.trace(cov_sym).clamp(min=1e-8)
                     damping = 0.05 * (trace_val / in_feat)
                     cov_damped = cov_sym + damping * torch.eye(in_feat, device=cov_sym.device, dtype=torch.float32)
@@ -601,7 +561,6 @@ class AASVDCompressor(BaseCompressor):
             W_w_dev = W_weighted.to(self.device, torch.float32)
             U, S, Vt = torch.linalg.svd(W_w_dev, full_matrices=False)
 
-            # ---- STRS / fixed rank ----
             if not self.use_strs:
                 selected_r = min(r, len(S))
                 sqrt_S = torch.sqrt(torch.clamp(S[:selected_r], min=1e-12))
@@ -639,7 +598,6 @@ class AASVDCompressor(BaseCompressor):
                         break
 
                 if best_Ur is None or best_err > self.max_error:
-                    # Fallback to break-even rank
                     be_r = max(
                         1,
                         min(
@@ -657,7 +615,6 @@ class AASVDCompressor(BaseCompressor):
                         torch.norm(W - best_Ur @ best_Vr, p="fro").item() / max(W_norm, 1e-12)
                     )
 
-            # Row-wise L2 norm scaling gain to preserve Frobenius energy and variance
             W_recon = best_Ur @ best_Vr
             orig_row_norms = torch.norm(W, dim=-1, keepdim=True)
             comp_row_norms = torch.norm(W_recon, dim=-1, keepdim=True).clamp_min(1e-6)
@@ -692,7 +649,6 @@ class AASVDCompressor(BaseCompressor):
             logger.warning("AASVD factorization failed: %s", e)
             return None, float("inf"), 0
 
-    # ------------------------------------------------------------------
     def compress(self) -> tuple[nn.Module, dict[str, Any]]:
         self.model.eval()
         self.compressed_layers = []
@@ -703,7 +659,6 @@ class AASVDCompressor(BaseCompressor):
         self._comp_storage_bytes = 0
 
         covariances: dict[str, torch.Tensor] = {}
-        # AASVD-FIX-06: track per-layer update count
         update_counts: dict[str, int] = {}
 
         if self.tokenizer is None:
@@ -716,7 +671,6 @@ class AASVDCompressor(BaseCompressor):
                     if not inp or inp[0] is None:
                         return
                     x = inp[0].detach()
-                    # AASVD-FIX-05
                     with _autocast_off(x):
                         target_mod = getattr(module, "base_layer", module)
                         cls_name = module.__class__.__name__.lower()
@@ -734,7 +688,6 @@ class AASVDCompressor(BaseCompressor):
 
                         x_fp32 = x.float()
                         x_flat = x_fp32.reshape(-1, in_f)
-                        # AASVD-FIX-12
                         valid = x_flat.abs().amax(dim=-1) > 0
                         if valid.sum() == 0:
                             return
@@ -744,7 +697,6 @@ class AASVDCompressor(BaseCompressor):
                         if self.cov_dtype == torch.float16:
                             batch_cov = batch_cov.half()
 
-                        # AASVD-FIX-06: EMA with first-observation handling
                         if layer_name not in covariances:
                             covariances[layer_name] = batch_cov
                             update_counts[layer_name] = 1
@@ -778,7 +730,6 @@ class AASVDCompressor(BaseCompressor):
                 for h in hooks:
                     h.remove()
 
-        # ---- Precompute covariance square roots ----
         cov_factor_cache: dict[str, tuple[torch.Tensor, torch.Tensor]] = {}
         for name, cov in covariances.items():
             try:
@@ -793,7 +744,6 @@ class AASVDCompressor(BaseCompressor):
             except Exception as e:
                 logger.debug("AASVD covariance factor failed for %s: %s", name, e)
 
-        # ---- Compress each target ----
         for name, module in list(self.model.named_modules()):
             if not self._is_target_module(name, module):
                 continue
@@ -829,7 +779,7 @@ class AASVDCompressor(BaseCompressor):
                     self.fallback_layers.append(name)
                     self._comp_storage_bytes += (
                         self._orig_storage_bytes
-                    )  # approximation; corrected below
+                    )
                     continue
                 logger.warning(
                     "AASVD: %s exceeds max_error but fallback is False.",
@@ -860,14 +810,12 @@ class AASVDCompressor(BaseCompressor):
             except Exception:
                 pass
 
-        # Freeze fallback layers
         for name, mod in self.model.named_modules():
             if name in self.fallback_layers:
                 target = getattr(mod, "base_layer", mod)
                 for p in target.parameters():
                     p.requires_grad = False
 
-        # ---- Free memory ----
         covariances.clear()
         cov_factor_cache.clear()
         del cov_factor_cache
@@ -887,8 +835,6 @@ class AASVDCompressor(BaseCompressor):
             else 0.0
         )
 
-        # AASVD-FIX-11: proper storage accounting
-        # comp_storage was approximated for fallback layers; recompute honestly.
         comp_bytes_real = 0
         for name, mod in self.model.named_modules():
             if name in self.compressed_layers or name in self.fallback_layers:
@@ -944,9 +890,6 @@ class AASVDCompressor(BaseCompressor):
         return self.model, stats
 
 
-# ===========================================================================
-# Factory
-# ===========================================================================
 def aasvd_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> nn.Module:
     rank = kwargs.pop(
         "rank", _cfg_get(comp_config, "aasvd_rank", _cfg_get(comp_config, "rank", 64))

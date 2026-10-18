@@ -27,15 +27,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 logger = logging.getLogger(__name__)
 
 
-
-
-
-
-
-
-# ===========================================================================
-# HGRN2GatedDeltaNet
-# ===========================================================================
 @ATTENTION_REGISTRY.register(
     "hgrn2_gated_deltanet",
     supports_causal=True,
@@ -69,13 +60,11 @@ class HGRN2GatedDeltaNet(BaseAttention):
         is_decoder: bool | None = None,
         **kwargs: Any,
     ) -> None:
-        # [HGD-FIX-01] None-safe super
         try:
             super().__init__(config, rank if rank is not None else 64)
         except TypeError:
             super().__init__(config)
 
-        # ---- Resolve d_model ----
         if d_model is None:
             if isinstance(config, int):
                 d_model = config
@@ -103,7 +92,6 @@ class HGRN2GatedDeltaNet(BaseAttention):
         if hasattr(d_model, "hidden_size"):
             d_model = d_model.hidden_size
 
-        # ---- Resolve num_heads ----
         if num_heads is None and config is not None and not isinstance(config, int):
             num_heads = (
                 _cfg_get(config, "num_attention_heads", None)
@@ -123,7 +111,6 @@ class HGRN2GatedDeltaNet(BaseAttention):
         self.d_model: int = int(d_model)
         self.num_heads: int = int(num_heads)
 
-        # ---- Decoder detection ----
         if is_decoder is not None:
             self.is_decoder = bool(is_decoder)
         else:
@@ -154,7 +141,6 @@ class HGRN2GatedDeltaNet(BaseAttention):
                 is_dec = True
             self.is_decoder = bool(is_dec)
 
-        # ---- LoRA config ----
         self.lora_rank: int = int(
             _cfg_get(comp_config, "lora_rank", kwargs.get("lora_rank", lora_rank))
         )
@@ -163,8 +149,6 @@ class HGRN2GatedDeltaNet(BaseAttention):
         )
         self.freeze_base: bool = self.lora_rank > 0
 
-        # ---- Filter kwargs to avoid overflow into branches ----
-        # [HGD-FIX-05]
         _reserved = {
             "is_decoder",
             "is_causal",
@@ -177,7 +161,6 @@ class HGRN2GatedDeltaNet(BaseAttention):
         }
         sub_kwargs = {k: v for k, v in kwargs.items() if k not in _reserved}
 
-        # ---- Branches ----
         self.hgrn = HGRN2Layer(
             config=config,
             rank=rank,
@@ -198,22 +181,18 @@ class HGRN2GatedDeltaNet(BaseAttention):
             **sub_kwargs,
         )
 
-        # ---- [HGD-FIX-02] Fusion gate with lora_ prefix ----
         _gate_bias = _env_float("HGD_GATE_BIAS", 4.0)
         self.lora_gate = nn.Linear(self.d_model, 1)
         with torch.no_grad():
             self.lora_gate.weight.zero_()
             self.lora_gate.bias.fill_(_gate_bias)
 
-        # ---- Storage accounting ----
         self._orig_storage_bytes = 0
         self._comp_storage_bytes = 0
 
-        # ---- Weight transfer ----
         if old_attn is not None:
             self.copy_weights(old_attn)
 
-        # ---- Optional dtype cast ----
         target_dtype = kwargs.get("dtype")
         if target_dtype is None and old_attn is not None:
             p = next(old_attn.parameters(), None)
@@ -222,7 +201,6 @@ class HGRN2GatedDeltaNet(BaseAttention):
         if target_dtype is not None:
             self.to(target_dtype)
 
-        # ---- Trainable params report ----
         self._per_layer_trainable = sum(
             p.numel() for p in self.parameters() if p.requires_grad
         )
@@ -232,9 +210,6 @@ class HGRN2GatedDeltaNet(BaseAttention):
                 self._per_layer_trainable / 1e6,
             )
 
-    # ------------------------------------------------------------------
-    # Backward-compat aliases
-    # ------------------------------------------------------------------
     @property
     def gate(self) -> nn.Linear:
         return self.lora_gate
@@ -243,9 +218,6 @@ class HGRN2GatedDeltaNet(BaseAttention):
     def out_proj(self):
         return self.deltanet.out_proj
 
-    # ------------------------------------------------------------------
-    # Weight transfer
-    # ------------------------------------------------------------------
     def copy_weights(self, old_attn: nn.Module) -> None:
         """Transfer weights to both branches; adjust gate if only one succeeds."""
         try:
@@ -271,17 +243,15 @@ class HGRN2GatedDeltaNet(BaseAttention):
             except Exception as ex:
                 logger.warning("DeltaNet copy_weights failed: %s", ex)
 
-        # Bias gate based on which branch was successfully loaded
         if hgrn_ok and not deltanet_ok:
             with torch.no_grad():
-                self.lora_gate.bias.fill_(math.log(0.95 / 0.05))  # ≈ 2.94
+                self.lora_gate.bias.fill_(math.log(0.95 / 0.05))
             logger.info("Only HGRN copied — biased gate to HGRN")
         elif deltanet_ok and not hgrn_ok:
             with torch.no_grad():
                 self.lora_gate.bias.fill_(-math.log(0.95 / 0.05))
             logger.info("Only DeltaNet copied — biased gate to DeltaNet")
 
-        # ---- [HGD-FIX-09] Trust branches' freeze; only protect gate ----
         if self.freeze_base:
             for branch in (self.hgrn, self.deltanet):
                 if hasattr(branch, "freeze_base_weights"):
@@ -294,12 +264,10 @@ class HGRN2GatedDeltaNet(BaseAttention):
                             e,
                         )
 
-            # [HGD-FIX-10] The fusion gate MUST remain trainable
             self.lora_gate.weight.requires_grad = True
             if self.lora_gate.bias is not None:
                 self.lora_gate.bias.requires_grad = True
 
-        # ---- Storage accounting ----
         try:
             for m in (self.hgrn, self.deltanet):
                 for p in m.parameters():
@@ -307,9 +275,6 @@ class HGRN2GatedDeltaNet(BaseAttention):
         except Exception:
             pass
 
-    # ------------------------------------------------------------------
-    # Forward
-    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -330,7 +295,6 @@ class HGRN2GatedDeltaNet(BaseAttention):
         if not hidden_states.is_contiguous():
             hidden_states = hidden_states.contiguous()
 
-        # ---- Env flags for ablation ----
         disable_hgrn = _env_flag("HGD_DISABLE_HGRN", False)
         disable_delta = _env_flag("HGD_DISABLE_DELTANET", False)
 
@@ -348,7 +312,6 @@ class HGRN2GatedDeltaNet(BaseAttention):
                 self.deltanet.is_decoder = True
                 self.deltanet.is_causal = True
 
-        # ---- [HGD-FIX-11] Route past cache to correct branch ----
         hgrn_past = None
         delta_past = None
         if past_key_value is not None:
@@ -357,14 +320,11 @@ class HGRN2GatedDeltaNet(BaseAttention):
                     hgrn_past = past_key_value[0]
                     delta_past = past_key_value[1]
                 elif len(past_key_value) == 1:
-                    # Single-slot cache: give it to both branches
                     hgrn_past = past_key_value[0]
                     delta_past = past_key_value[0]
             elif hasattr(past_key_value, "key_cache"):
-                # HF DynamicCache: not supported for recurrent states
                 pass
 
-        # ---- Forward each branch ----
         hgrn_out: torch.Tensor | None = None
         hgrn_state: Any = None
         delta_out: torch.Tensor | None = None
@@ -378,7 +338,6 @@ class HGRN2GatedDeltaNet(BaseAttention):
                 past_key_value=hgrn_past,
                 **kwargs,
             )
-            # [HGD-FIX-04] Safe tuple unpacking
             if isinstance(hgrn_res, tuple):
                 hgrn_out = hgrn_res[0]
                 if len(hgrn_res) > 1:
@@ -401,8 +360,6 @@ class HGRN2GatedDeltaNet(BaseAttention):
             else:
                 delta_out = delta_res
 
-        # ---- Fusion ----
-        # [HGD-FIX-12] Shape validation
         if hgrn_out is None:
             if delta_out is None:
                 raise RuntimeError("Both branches returned None.")
@@ -416,13 +373,10 @@ class HGRN2GatedDeltaNet(BaseAttention):
                     f"{tuple(hgrn_out.shape)} vs {tuple(delta_out.shape)}."
                 )
             gate_dtype = next(self.lora_gate.parameters()).dtype
-            # lora_gate produces raw logits for gamma
             raw_gamma = self.lora_gate(hidden_states.to(gate_dtype))
             if hidden_states.is_cuda:
                 try:
                     from neuralops.core.triton_kernels.selective_scan import fused_jamba_hybrid_ssm_attn_gate_triton
-                    # fused_jamba_hybrid_ssm_attn_gate_triton blends: (1 - sigmoid(alpha)) * attn + sigmoid(alpha) * ssm
-                    # Here: hgrn_out is weighted by gamma = sigmoid(raw_gamma) and delta_out by (1 - gamma)
                     out = fused_jamba_hybrid_ssm_attn_gate_triton(
                         delta_out.to(hidden_states.dtype),
                         hgrn_out.to(hidden_states.dtype),
@@ -439,14 +393,10 @@ class HGRN2GatedDeltaNet(BaseAttention):
                     1.0 - gamma
                 ) * delta_out.to(hidden_states.dtype)
 
-        # ---- [HGD-FIX-08] No output_scale here (branches handle their own) ----
         out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
 
-        # ---- Package recurrent states ----
-        # [HGD-FIX-03] Return composite state for HF KV-cache compatibility
         new_past_key_value: Any = None
         if self.is_decoder:
-            # Only return cache if use_cache or a past was provided
             use_cache = kwargs.get("use_cache", False) or (
                 past_key_value is not None and past_key_value is not False
             )
@@ -457,17 +407,11 @@ class HGRN2GatedDeltaNet(BaseAttention):
             return out, new_past_key_value, None
         return out, new_past_key_value
 
-    # ------------------------------------------------------------------
-    # Ortho loss hook
-    # ------------------------------------------------------------------
     def get_ortho_loss(self) -> torch.Tensor:
         p = next(self.parameters(), None)
         dev = p.device if p is not None else torch.device("cpu")
         return torch.zeros((), device=dev)
 
-    # ------------------------------------------------------------------
-    # Storage accounting
-    # ------------------------------------------------------------------
     def storage_bytes(self) -> dict[str, int]:
         def _sz(p: Any) -> int:
             if isinstance(p, (nn.Parameter, torch.Tensor)):
@@ -485,9 +429,6 @@ class HGRN2GatedDeltaNet(BaseAttention):
         return out
 
 
-# ===========================================================================
-# Injection
-# ===========================================================================
 def inject_hgrn2_gated_deltanet(
     layer: Any = None,
     model: Any = None,
@@ -501,7 +442,6 @@ def inject_hgrn2_gated_deltanet(
     _depth: int = 0,
     **kwargs: Any,
 ):
-    # [HGD-FIX-07] Recursion guard
     if _depth > 8:
         logger.warning(
             "inject_hgrn2_gated_deltanet: max recursion depth exceeded."
@@ -518,7 +458,6 @@ def inject_hgrn2_gated_deltanet(
         else getattr(target, "config", None)
     )
 
-    # ---- Whole-model traversal ----
     layer_list = None
     for path in (
         ("distilbert", "transformer", "layer"),
@@ -546,7 +485,6 @@ def inject_hgrn2_gated_deltanet(
         n = 0
         tot = len(layer_list)
         last = None
-        # Filter kwargs before recursion
         _reserved = {"lora_rank", "lora_alpha"}
         sub_kwargs = {k: v for k, v in kwargs.items() if k not in _reserved}
         for idx, lyr in enumerate(layer_list):
@@ -570,7 +508,6 @@ def inject_hgrn2_gated_deltanet(
                 logger.warning("Total trainable across model: %.1fM", total / 1e6)
         return target if n > 0 else None
 
-    # ---- Single-layer injection ----
     src_attn = old_attn
     if src_attn is None:
         for attr in ("attention", "self_attn", "attn", "self"):
@@ -582,7 +519,6 @@ def inject_hgrn2_gated_deltanet(
     if src_attn is None:
         src_attn = target
 
-    # [HGD-FIX-06] Idempotency guard
     if isinstance(src_attn, HGRN2GatedDeltaNet):
         return None
     if "HGRN2GatedDeltaNet" in src_attn.__class__.__name__:
@@ -608,12 +544,10 @@ def inject_hgrn2_gated_deltanet(
         logger.exception("HGRN2GatedDeltaNet construction failed: %s", ex)
         return None
 
-    # ---- Move to source device / dtype ----
     p = next(src_attn.parameters(), None) if src_attn is not target else None
     if p is not None:
         new_layer.to(device=p.device, dtype=p.dtype)
 
-    # ---- Splice ----
     spliced = False
     if hasattr(target, "attention"):
         if hasattr(target.attention, "self"):

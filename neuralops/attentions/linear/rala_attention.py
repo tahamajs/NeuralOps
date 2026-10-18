@@ -27,11 +27,6 @@ from neuralops.core.utils.gqa import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
 
 
-# ============================================================================
-# RALALinearAttention
-# ============================================================================
-
-
 @ATTENTION_REGISTRY.register("rala_attention")
 class RALALinearAttention(BaseAttention):
     """RALALinearAttention neural operator.
@@ -95,12 +90,10 @@ class RALALinearAttention(BaseAttention):
             getattr(config, "rala_rank", kwargs.get("rala_rank", 8)),
         )
 
-        # RALA-FIX-01: rename trainable params with `lora_` prefix
         self.lora_U = nn.Parameter(torch.randn(self.num_heads, self.head_dim, self.rank_r) * 0.01)
         self.lora_V = nn.Parameter(torch.randn(self.num_heads, self.head_dim, self.rank_r) * 0.01)
         self.lora_rank_alpha = nn.Parameter(torch.tensor(0.0))
 
-        # Decoder detection
         _mt = str(getattr(config, "model_type", "") or "").lower()
         _decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt")
         self.is_decoder = (
@@ -144,7 +137,6 @@ class RALALinearAttention(BaseAttention):
             if p is not None:
                 target_dtype = p.dtype
 
-        # Projections
         self.q_proj = LoRALinear(
             self.dim,
             self.all_head_size,
@@ -197,9 +189,6 @@ class RALALinearAttention(BaseAttention):
         if target_dtype is not None:
             self.to(target_dtype)
 
-    # ------------------------------------------------------------------
-    # Weight transfer
-    # ------------------------------------------------------------------
     def copy_weights(self, src: Any) -> None:
         if src is None:
             return
@@ -237,7 +226,6 @@ class RALALinearAttention(BaseAttention):
             "o": (None, None),
         }
 
-        # 1. GPT-2 fused
         if hasattr(src, "c_attn") and src.c_attn is not None:
             c_attn_mod = src.c_attn
             base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
@@ -284,7 +272,6 @@ class RALALinearAttention(BaseAttention):
                         bias_o.data.clone() if bias_o is not None else None,
                     )
 
-        # 2. RoBERTa nested
         elif hasattr(src, "self") and hasattr(src.self, "query"):
             s = src.self
             for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
@@ -301,7 +288,6 @@ class RALALinearAttention(BaseAttention):
                     out_mod.bias.data.clone() if out_mod.bias is not None else None,
                 )
 
-        # 3. Flat modules
         else:
             proj_candidates = {
                 "q": ["q_lin", "q_proj", "query"],
@@ -419,14 +405,10 @@ class RALALinearAttention(BaseAttention):
         if self.freeze_base:
             for mod in (self.q_proj, self.k_proj, self.v_proj, self.out_proj):
                 mod.freeze_base_weights()
-            # RALA-FIX-01: U, V, alpha trainable via lora_ prefix
             self.lora_U.requires_grad = True
             self.lora_V.requires_grad = True
             self.lora_rank_alpha.requires_grad = True
 
-    # ------------------------------------------------------------------
-    # Forward
-    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -460,14 +442,12 @@ class RALALinearAttention(BaseAttention):
             .permute(0, 2, 1, 3)
         )
 
-        # RoPE
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None:
             cos, sin = position_embeddings
             q, k = apply_rotary_pos_emb(q, k, cos, sin)
 
-        # GQA
         if self.num_heads != self.num_kv_heads:
             repeats = self.num_heads // self.num_kv_heads
             k = repeat_kv(k, repeats)
@@ -482,7 +462,6 @@ class RALALinearAttention(BaseAttention):
 
         is_causal = self.is_decoder or kwargs.get("is_causal", False)
 
-        # Try accelerated Triton kernel scan
         try:
             from neuralops.core.triton_kernels.linear_attn import fused_rala_augmented_scan_triton
             lin_out, aug_out = fused_rala_augmented_scan_triton(
@@ -490,7 +469,6 @@ class RALALinearAttention(BaseAttention):
             )
         except Exception:
             if is_causal:
-                # State-based linear scan in FP32 outside AMP autocast to prevent half-precision overflow
                 with torch.amp.autocast(device_type=hidden_states.device.type, enabled=False):
                     q_p = q_prime.float()
                     k_p = k_prime.float()
@@ -547,11 +525,8 @@ class RALALinearAttention(BaseAttention):
                     rank_mat = torch.einsum("hdr,her->hde", self.lora_U.float(), self.lora_V.float())
                     aug_out = torch.nan_to_num(torch.einsum("bhnd,hde->bhne", q_p, rank_mat) / denom, nan=0.0, posinf=1e4, neginf=-1e4).to(q.dtype)
 
-        # RALA-FIX-04: removed dead scale_factor=1.0
-        # RALA-FIX-01: use lora_rank_alpha (trainable)
         out = (lin_out + self.lora_rank_alpha * aug_out) * mask_4d
 
-        # head_mask
         if head_mask is not None:
             if head_mask.dim() == 1 and head_mask.size(0) == self.num_heads:
                 out = out * head_mask.view(1, self.num_heads, 1, 1).to(out.dtype)
@@ -567,11 +542,6 @@ class RALALinearAttention(BaseAttention):
 
         output = self.out_proj(out)
         return output, None
-
-
-# ============================================================================
-# Injection (RALA-FIX-03: recursion guard)
-# ============================================================================
 
 
 def inject_rala(
@@ -597,7 +567,6 @@ def inject_rala(
     if cfg is None and hasattr(target, "config"):
         cfg = target.config
 
-    # Whole-model traversal
     layer_list = None
     if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
         layer_list = target.distilbert.transformer.layer
@@ -635,7 +604,6 @@ def inject_rala(
                 num_injected += 1
         return target if num_injected > 0 else None
 
-    # Single-layer injection
     try:
         src_attn = old_attn
         if src_attn is None:
@@ -651,7 +619,6 @@ def inject_rala(
         if src_attn is None:
             return None
 
-        # Double-injection guard
         if isinstance(src_attn, RALALinearAttention):
             return None
         if "RALA" in src_attn.__class__.__name__:
@@ -661,7 +628,6 @@ def inject_rala(
             if isinstance(sub_mod, RALALinearAttention):
                 return None
 
-        # Skip Qwen3.5 hybrid DeltaNet/LinearAttention layers
         c_name = src_attn.__class__.__name__
         if "DeltaNet" in c_name or "LinearAttention" in c_name:
             return None

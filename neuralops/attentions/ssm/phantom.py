@@ -49,10 +49,6 @@ class PHANTOMConfig:
     dropout: float = 0.1
 
 
-
-
-
-
 class FactorisedLinear_CUR(nn.Module):
     is_custom_attention: bool = True
     r"""Linear projection compressed via leverage-score CUR matrix decomposition with LoRA support."""
@@ -142,7 +138,6 @@ class FactorisedLinear_CUR(nn.Module):
                 orig_norm = float(torch.linalg.norm(W))
 
                 if rec_norm > 2.0 * orig_norm or not math.isfinite(rec_norm):
-                    # Ill-conditioned CUR intersection -> fallback to stable truncated SVD
                     U_r = U_full[:, :rank]
                     S_r = S_full[:rank]
                     Vt_r = Vt_full[:rank, :]
@@ -204,7 +199,6 @@ def lsh_attention(
     _, _, N_k, _ = K.shape
     scale = 1.0 / math.sqrt(int(D))
 
-    # Direct vectorized SDPA fallback when rounds <= 1 or for short contexts without custom mask/dropout
     if (rounds <= 1 or N_q <= 128) and token_valid is None and dropout is None:
         if is_causal and past_len == 0 and N_q == N_k:
             return F.scaled_dot_product_attention(Q, K, V, is_causal=True)
@@ -217,7 +211,7 @@ def lsh_attention(
 
     scores_base = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
     if token_valid is not None:
-        val_mask = token_valid.unsqueeze(1).unsqueeze(2)  # [B, 1, 1, N_k]
+        val_mask = token_valid.unsqueeze(1).unsqueeze(2)
         scores_base = scores_base.masked_fill(~val_mask, -1e4)
 
     if causal_mask is not None:
@@ -238,17 +232,16 @@ def lsh_attention(
     eye = (q_idx == k_idx).unsqueeze(0).unsqueeze(0)
 
     for r in range(rounds):
-        # Deterministic pseudo-random projection vector for each round to ensure batch-element invariance
         rng_state = torch.random.get_rng_state()
         torch.manual_seed(10007 + r * 37)
         hash_proj = torch.randn(D, n_bits, device=Q.device, dtype=Q.dtype)
         torch.random.set_rng_state(rng_state)
         hash_proj = F.normalize(hash_proj, p=2, dim=0, eps=1e-5)
 
-        hq = (torch.matmul(Q_norm, hash_proj) > 0).float() @ bit_shifts  # [B, H, N_q]
-        hk = (torch.matmul(K_norm, hash_proj) > 0).float() @ bit_shifts  # [B, H, N_k]
+        hq = (torch.matmul(Q_norm, hash_proj) > 0).float() @ bit_shifts
+        hk = (torch.matmul(K_norm, hash_proj) > 0).float() @ bit_shifts
 
-        match = hq.unsqueeze(-1) == hk.unsqueeze(-2)  # [B, H, N_q, N_k]
+        match = hq.unsqueeze(-1) == hk.unsqueeze(-2)
         match = match | eye
 
         if causal_mask is not None:
@@ -324,8 +317,7 @@ class PHANTOMAttention(BaseAttention):
         is_dec = getattr(config, "is_decoder", kwargs.get("is_decoder", False))
         if kwargs.get("is_causal", False) or getattr(config, "causal", False):
             is_dec = True
-        
-        # Robust detection like in NASC
+
         m_type = str(getattr(config, "model_type", "")).lower() if config else ""
         if any(m_type.startswith(p) for p in ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt")):
             is_dec = True
@@ -361,7 +353,6 @@ class PHANTOMAttention(BaseAttention):
             if not isinstance(target_dtype, torch.dtype):
                 target_dtype = torch.float32
 
-        # Projections
         self.q_proj = FactorisedLinear_CUR(
             self.dim,
             self.all_head_size,
@@ -448,7 +439,6 @@ class PHANTOMAttention(BaseAttention):
             "o": (None, None),
         }
 
-        # 1. GPT-2 fused
         if hasattr(src, "c_attn") and src.c_attn is not None:
             c_attn_mod = src.c_attn
             base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
@@ -495,7 +485,6 @@ class PHANTOMAttention(BaseAttention):
                         bias_o.data.clone() if bias_o is not None else None,
                     )
 
-        # 2. RoBERTa nested
         elif hasattr(src, "self") and hasattr(src.self, "query"):
             s = src.self
             for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
@@ -512,7 +501,6 @@ class PHANTOMAttention(BaseAttention):
                     out_mod.bias.data.clone() if out_mod.bias is not None else None,
                 )
 
-        # 3. Flat modules
         else:
             proj_candidates = {
                 "q": ["q_lin", "q_proj", "query"],
@@ -629,19 +617,16 @@ class PHANTOMAttention(BaseAttention):
         H, D = self.num_heads, self.head_dim
         is_causal = bool(kwargs.get("is_causal", False) or kwargs.get("causal", False) or getattr(self, "is_decoder", False) or getattr(self, "is_causal", False))
 
-
         Q = self.q_proj(hidden_states).view(B, N, H, D).permute(0, 2, 1, 3)
         K = self.k_proj(hidden_states).view(B, N, self.num_kv_heads, D).permute(0, 2, 1, 3)
         V = self.v_proj(hidden_states).view(B, N, self.num_kv_heads, D).permute(0, 2, 1, 3)
 
-        # Apply RoPE if provided
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None:
             cos, sin = position_embeddings
             Q, K = apply_rotary_pos_emb(Q, K, cos, sin)
 
-        # Autoregressive KV-cache for causal decoders
         past_len = 0
         if past_key_value is not None:
             past_k, past_v = past_key_value[0], past_key_value[1]
@@ -650,13 +635,11 @@ class PHANTOMAttention(BaseAttention):
             V = torch.cat([past_v, V], dim=2)
         present_key_value = (K, V) if self.is_decoder else None
 
-        # Repeat KV for GQA
         if self.num_heads != self.num_kv_heads:
             repeats = self.num_heads // self.num_kv_heads
             K = repeat_kv(K, repeats)
             V = repeat_kv(V, repeats)
 
-        # Robust Float / Multi-dim Attention Mask Handling
         token_valid = None
         if attention_mask is not None:
             if attention_mask.dim() == 2:
@@ -687,8 +670,6 @@ class PHANTOMAttention(BaseAttention):
 
         context = fused_phantom_ghost_state_scan_triton(Q, K, V, is_causal=is_causal)
 
-
-        # head_mask handling
         if head_mask is not None:
             if head_mask.dim() == 1 and head_mask.size(0) == self.num_heads:
                 context = context * head_mask.view(1, self.num_heads, 1, 1).to(context.dtype)
@@ -733,7 +714,6 @@ def inject_phantom(
     if cfg is None and hasattr(target, "config"):
         cfg = target.config
 
-    # 1. Whole model traversal
     layer_list = None
     if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
         layer_list = target.distilbert.transformer.layer
@@ -770,7 +750,6 @@ def inject_phantom(
                 num_injected += 1
         return target if num_injected > 0 else None
 
-    # 2. Single layer injection
     try:
         src_attn = old_attn
         if src_attn is None and target is not None:
@@ -789,7 +768,6 @@ def inject_phantom(
         if src_attn is None:
             return None
 
-        # Double-injection guard
         if src_attn is not None:
             if isinstance(src_attn, PHANTOMAttention):
                 return None
@@ -818,7 +796,6 @@ def inject_phantom(
                 ):
                     return None
 
-        # Skip Qwen3.5 hybrid DeltaNet/LinearAttention layers
         if src_attn is not None:
             c_name = src_attn.__class__.__name__
             if "DeltaNet" in c_name or "LinearAttention" in c_name:
@@ -889,6 +866,5 @@ def inject_phantom(
         return None
 
 
-# Aliases and Registry
 def inject_phantom_attention(*args: Any, **kwargs: Any) -> PHANTOMAttention | nn.Module | None:
     return inject_phantom(*args, **kwargs)

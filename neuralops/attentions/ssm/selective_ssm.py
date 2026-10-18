@@ -29,8 +29,6 @@ from neuralops.core.selective_scan import selective_scan
 logger = logging.getLogger(__name__)
 
 
-
-
 @ATTENTION_REGISTRY.register("selective_ssm")
 class SelectiveSSM(BaseAttention):
     r"""
@@ -73,10 +71,8 @@ class SelectiveSSM(BaseAttention):
         )
         self.weights_init = weights_init
 
-        # Input projection: x -> (x_ssm, z)
         self.in_proj = nn.Linear(self.d_model, self.d_inner * 2, bias=bias)
 
-        # Depthwise 1D conv (padding=0 to enforce causality via explicit left-padding)
         self.conv1d = nn.Conv1d(
             self.d_inner,
             self.d_inner,
@@ -86,23 +82,17 @@ class SelectiveSSM(BaseAttention):
             bias=conv_bias,
         )
 
-        # Delta, B, C projections from x_ssm
         self.x_proj = nn.Linear(self.d_inner, self.dt_rank + 2 * self.d_state, bias=False)
 
-        # Delta projection from dt_rank -> d_inner
         self.dt_proj = nn.Linear(self.dt_rank, self.d_inner, bias=True)
 
-        # A parameterization: A = -exp(A_log)
         A = torch.arange(1, self.d_state + 1, dtype=torch.float32).repeat(self.d_inner, 1)
         self.A_log = nn.Parameter(torch.log(A))
 
-        # D skip connection
         self.D = nn.Parameter(torch.ones(self.d_inner))
 
-        # Output projection
         self.out_proj = nn.Linear(self.d_inner, self.d_model, bias=bias)
 
-        # Decoder detection
         is_dec = _cfg_get(config, "is_decoder", kwargs.get("is_decoder", False))
         model_type = str(_cfg_get(config, "model_type", "") or "").lower()
         dec_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo")
@@ -110,12 +100,9 @@ class SelectiveSSM(BaseAttention):
             is_dec = True
         self.is_decoder = bool(is_dec)
 
-        # For encoder models (BERT, RoBERTa), enable bidirectional scanning by default
-        # so token 0 (<s>/[CLS]) observes the entire sequence.
         if not self.is_decoder and "bidirectional" not in kwargs:
             self.bidirectional = True
 
-        # Bidirectional components if requested (disabled for causal decoders)
         if self.bidirectional and not self.is_decoder:
             self.conv1d_bwd = nn.Conv1d(
                 self.d_inner,
@@ -133,7 +120,7 @@ class SelectiveSSM(BaseAttention):
             self.out_proj_bwd = nn.Linear(self.d_inner, self.d_model, bias=bias)
         else:
             self.bidirectional = False
-        
+
         self.triton_kwargs = {}
         self._reset_parameters()
 
@@ -143,7 +130,6 @@ class SelectiveSSM(BaseAttention):
 
     def _reset_parameters(self) -> None:
         if self.weights_init == "mamba":
-            # Delta bias init: softplus^-1(Uniform(0.001, 0.1))
             dt_min, dt_max = 0.001, 0.1
             dt_init = torch.exp(
                 torch.rand(self.d_inner) * (math.log(dt_max) - math.log(dt_min)) + math.log(dt_min)
@@ -179,13 +165,13 @@ class SelectiveSSM(BaseAttention):
 
     def _step_ssm(
         self,
-        u_t: torch.Tensor,       # (B, d_inner)
-        dt_t: torch.Tensor,      # (B, d_inner)
-        B_t: torch.Tensor,       # (B, d_state)
-        C_t: torch.Tensor,       # (B, d_state)
-        A_param: torch.Tensor,   # (d_inner, d_state)
-        D_param: torch.Tensor,   # (d_inner,)
-        h_prev: torch.Tensor | None,  # (B, d_inner, d_state)
+        u_t: torch.Tensor,
+        dt_t: torch.Tensor,
+        B_t: torch.Tensor,
+        C_t: torch.Tensor,
+        A_param: torch.Tensor,
+        D_param: torch.Tensor,
+        h_prev: torch.Tensor | None,
     ) -> tuple[torch.Tensor, torch.Tensor]:
         """Single-step recurrent SSM update for autoregressive streaming inference."""
         B, d_inner = u_t.shape
@@ -196,12 +182,10 @@ class SelectiveSSM(BaseAttention):
         else:
             h_prev = h_prev.to(dtype)
 
-        # Discretize: delta_a = exp(dt * A)
-        delta_a = torch.exp(dt_t.unsqueeze(-1) * A_param.unsqueeze(0))  # (B, d_inner, d_state)
-        delta_b_u = dt_t.unsqueeze(-1) * (u_t.unsqueeze(-1) * B_t.unsqueeze(1))  # (B, d_inner, d_state)
+        delta_a = torch.exp(dt_t.unsqueeze(-1) * A_param.unsqueeze(0))
+        delta_b_u = dt_t.unsqueeze(-1) * (u_t.unsqueeze(-1) * B_t.unsqueeze(1))
         h_next = delta_a * h_prev + delta_b_u
 
-        # Output: y = h_next @ C_t + D * u_t
         y = torch.matmul(h_next, C_t.unsqueeze(-1)).squeeze(-1) + D_param.unsqueeze(0) * u_t
         return y, h_next
 
@@ -221,20 +205,17 @@ class SelectiveSSM(BaseAttention):
         target_dtype = x_ssm.dtype
         device = x_ssm.device
 
-        # 1. Depthwise 1D conv with explicit left-padding / streaming buffer
-        x_ssm_t = x_ssm.transpose(1, 2).contiguous()  # (B, d_inner, L)
+        x_ssm_t = x_ssm.transpose(1, 2).contiguous()
         if conv_prev is not None:
-            conv_buf = conv_prev.to(target_dtype)  # (B, d_inner, d_conv - 1)
+            conv_buf = conv_prev.to(target_dtype)
             x_cat = torch.cat([conv_buf, x_ssm_t], dim=2)
         else:
-            # Explicit left-padding by (d_conv - 1) to enforce strict causality
             x_cat = F.pad(x_ssm_t, (self.d_conv - 1, 0))
 
         x_conv_full = conv1d_layer(x_cat)
         x_conv = x_conv_full[..., -L:].transpose(1, 2).contiguous()
         x_conv = F.silu(x_conv)
 
-        # Update conv buffer: last (d_conv - 1) tokens
         if self.d_conv - 1 <= x_cat.shape[2]:
             conv_next = x_cat[..., -(self.d_conv - 1) :].contiguous()
         else:
@@ -244,15 +225,13 @@ class SelectiveSSM(BaseAttention):
                 dim=2,
             ).contiguous()
 
-        # 2. Selective projections
-        x_dbl = x_proj_layer(x_conv)  # (B, L, dt_rank + 2 * d_state)
+        x_dbl = x_proj_layer(x_conv)
         dt, B_ssm, C_ssm = x_dbl.split([self.dt_rank, self.d_state, self.d_state], dim=-1)
-        dt = dt_proj_layer(dt)  # (B, L, d_inner)
+        dt = dt_proj_layer(dt)
         dt = F.softplus(dt)
 
-        A = -torch.exp(A_log_param.float())  # (d_inner, d_state)
+        A = -torch.exp(A_log_param.float())
 
-        # 3. Scan or recurrent step
         if past_h is not None and L == 1:
             u_step = x_conv.squeeze(1)
             dt_step = dt.squeeze(1)
@@ -276,21 +255,19 @@ class SelectiveSSM(BaseAttention):
                 B=B_ssm.transpose(1, 2).contiguous(),
                 C=C_ssm.transpose(1, 2).contiguous(),
                 D=D_param,
-            )  # (B, d_inner, L)
-            y = y.transpose(1, 2).contiguous()  # (B, L, d_inner)
+            )
+            y = y.transpose(1, 2).contiguous()
 
-            # Approximate final recurrent state for caching if requested: (B, d_inner, d_state)
-            dt_last = dt[:, -1, :].unsqueeze(-1)  # (B, d_inner, 1)
-            delta_a_last = torch.exp(dt_last * A.unsqueeze(0))  # (B, d_inner, d_state)
-            u_last = x_conv[:, -1, :].unsqueeze(-1)  # (B, d_inner, 1)
-            b_last = B_ssm[:, -1, :].unsqueeze(1)    # (B, 1, d_state)
-            delta_b_u_last = dt_last * (u_last * b_last)  # (B, d_inner, d_state)
+            dt_last = dt[:, -1, :].unsqueeze(-1)
+            delta_a_last = torch.exp(dt_last * A.unsqueeze(0))
+            u_last = x_conv[:, -1, :].unsqueeze(-1)
+            b_last = B_ssm[:, -1, :].unsqueeze(1)
+            delta_b_u_last = dt_last * (u_last * b_last)
             if past_h is not None:
                 h_next = delta_a_last * past_h.to(target_dtype) + delta_b_u_last
             else:
                 h_next = delta_b_u_last
 
-        # 4. Gating (computed in float32 and sanitized to prevent fp16 overflow)
         y_gated = y.float() * F.silu(z.float())
         y = torch.nan_to_num(y_gated, nan=0.0, posinf=65000.0, neginf=-65000.0).clamp(-65000.0, 65000.0).to(target_dtype)
         present_state = (h_next, conv_next)
@@ -330,7 +307,6 @@ class SelectiveSSM(BaseAttention):
             dev = self.in_proj.weight.device
             dt = self.in_proj.weight.dtype
 
-            # 1. in_proj: first half from W_v, second half from W_q
             if w_v is not None:
                 mapped_v = _to_shape(w_v, self.d_inner, self.d_model)
                 if mapped_v is not None:
@@ -349,7 +325,6 @@ class SelectiveSSM(BaseAttention):
                     min_b = min(self.d_inner, b_q.numel())
                     self.in_proj.bias.data[self.d_inner : self.d_inner + min_b].copy_(b_q[:min_b].to(dev, dt))
 
-            # 2. out_proj from W_o
             if w_o is not None:
                 mapped_o = _to_shape(w_o, self.d_model, self.d_inner)
                 if mapped_o is not None:
@@ -361,10 +336,8 @@ class SelectiveSSM(BaseAttention):
                 else:
                     self.out_proj.bias.data.zero_()
 
-            # 3. conv1d identity-at-init passthrough
             self.conv1d.weight.data.zero_()
             if self.conv1d.weight.dim() == 3:
-                # Shape (d_inner, 1, d_conv); set the last tap to 1.0
                 self.conv1d.weight.data[:, 0, -1] = 1.0
             if self.conv1d.bias is not None:
                 self.conv1d.bias.data.zero_()
@@ -387,7 +360,6 @@ class SelectiveSSM(BaseAttention):
         if encoder_hidden_states is not None:
             raise NotImplementedError("SelectiveSSM does not support cross-attention.")
 
-        # Accept past_key_value as alias for past_state
         if past_state is None and past_key_value is not None:
             past_state = past_key_value
 
@@ -396,11 +368,9 @@ class SelectiveSSM(BaseAttention):
 
         h_prev, conv_prev = self._read_state(past_state)
 
-        # Project directly into SSM and gating paths without duplicating LayerNorm
         x_proj = self.in_proj(hidden_states).to(target_dtype)
         x_ssm, z = x_proj.chunk(2, dim=-1)
 
-        # Prevent State Poisoning from Padded Tokens
         if attention_mask is not None:
             valid_mask = get_token_valid_mask(attention_mask, B, L, hidden_states.device)
             if valid_mask is not None:
@@ -426,7 +396,7 @@ class SelectiveSSM(BaseAttention):
         if self.bidirectional and not is_causal:
             x_ssm_bwd = torch.flip(x_ssm, [1]).contiguous()
             z_bwd = torch.flip(z, [1]).contiguous()
-            
+
             y_bwd, _ = self._forward_core(
                 x_ssm=x_ssm_bwd,
                 z=z_bwd,
@@ -436,7 +406,7 @@ class SelectiveSSM(BaseAttention):
                 A_log_param=self.A_log_bwd,
                 D_param=self.D_bwd,
             )
-            
+
             y_bwd = torch.flip(y_bwd, [1]).contiguous()
             out = out + self.out_proj_bwd(y_bwd.to(target_dtype))
 

@@ -45,13 +45,6 @@ from neuralops.core.registry import COMPRESSOR_REGISTRY
 logger = logging.getLogger(__name__)
 
 
-
-
-# ============================================================================
-# ASTPrunedLoRALinear with Soft STE
-# ============================================================================
-
-
 class ASTPrunedLoRALinear(nn.Module):
     """
     Linear layer with trainable base weights and dynamic 2:4 structured sparsity
@@ -77,7 +70,7 @@ class ASTPrunedLoRALinear(nn.Module):
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
-        self.nf = out_features  # Conv1D compat
+        self.nf = out_features
         self.lora_r = int(lora_r)
         self.lora_alpha = float(lora_alpha)
         self.scaling = (self.lora_alpha / self.lora_r) if self.lora_r > 0 else 1.0
@@ -85,7 +78,6 @@ class ASTPrunedLoRALinear(nn.Module):
         target_device = device if device is not None else weight.device
         target_dtype = dtype if dtype is not None else weight.dtype
 
-        # FIXED: Ensure base weight is trainable with requires_grad=True so STE passes dense gradients back
         self.weight = nn.Parameter(
             weight.to(device=target_device, dtype=target_dtype),
             requires_grad=True,
@@ -177,7 +169,6 @@ class ASTPrunedLoRALinear(nn.Module):
                 self.weight.data = (self.weight.data.float() - delta).to(self.weight.dtype)
                 self._merged = False
 
-
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         orig_shape = x.shape
         x_flat = x.reshape(-1, self.in_features)
@@ -200,8 +191,6 @@ class ASTPrunedLoRALinear(nn.Module):
             except Exception:
                 pass
 
-        # FIXED: Soft Straight-Through Estimator (STE) for 2:4 structured sparsity.
-        # W_forward has strict 2:4 sparsity in forward pass, but d(W_forward)/d(W) = 1 in backward pass.
         if self.mask is not None:
             w_pruned = self.weight * self.mask
             w_forward = w_pruned + self.weight - self.weight.detach()
@@ -216,11 +205,6 @@ class ASTPrunedLoRALinear(nn.Module):
             out = out + (self.scaling * lora_out).to(out.dtype)
 
         return out.reshape(*orig_shape[:-1], self.out_features)
-
-
-# ============================================================================
-# ASTPruner
-# ============================================================================
 
 
 @COMPRESSOR_REGISTRY.register("ast_pruner")
@@ -566,13 +550,11 @@ class ASTPruner(BaseCompressor):
             cls_name = module.__class__.__name__.lower()
             is_conv1d = "conv1d" in cls_name or hasattr(module, "nf")
 
-            # W: (d_out, d_in)
             W = raw_w.t().clone().float() if is_conv1d else raw_w.clone().float()
             d_out, d_in = W.shape
             device = W.device
             dtype = target_mod.weight.dtype
 
-            # 1. Compute saliency in ORIGINAL basis
             fisher = fisher_map.get(name, None)
             if fisher is not None and self.use_fisher:
                 F_mat = fisher.to(device).float()
@@ -599,12 +581,10 @@ class ASTPruner(BaseCompressor):
 
             saliency = torch.nan_to_num(saliency, nan=0.0, posinf=1e4, neginf=0.0)
 
-            # 2. Compute 2:4 structured mask on ORIGINAL weights
             W_pruned, mask_24 = apply_24_structured_mask(W, saliency=saliency, dim=self.dim)
             W_final = torch.nan_to_num(W_pruned, nan=0.0, posinf=0.0, neginf=0.0)
             mask_final = torch.nan_to_num(mask_24, nan=1.0, posinf=1.0, neginf=1.0)
 
-            # 3. Error check
             w_norm = torch.linalg.norm(W).item()
             err = float(torch.linalg.norm(W - W_final).item() / max(w_norm, 1e-12))
             self.layer_errors[name] = err
@@ -618,15 +598,11 @@ class ASTPruner(BaseCompressor):
                 )
                 if self.fallback_to_original:
                     logger.info("AST: falling back to original for %s.", name)
-                    # Keep fallback layers trainable
                     for pn, p in module.named_parameters(recurse=False):
                         p.requires_grad = True
                     self.fallback_layers.append(name)
                     continue
 
-            # 4. FIXED: Replace with ASTPrunedLoRALinear implementing Soft STE
-            # Store dense trainable W in weight parameter and mask in buffer.
-            # Base weights remain trainable (requires_grad=True) to absorb KD gradients.
             new_layer = ASTPrunedLoRALinear.from_linear(
                 target_mod,
                 weight=W.contiguous().to(dtype=dtype, device=device),
@@ -634,7 +610,6 @@ class ASTPruner(BaseCompressor):
                 lora_r=self.lora_r,
                 lora_alpha=self.lora_alpha,
             )
-            # Ensure base weight is trainable
             new_layer.weight.requires_grad = True
 
             if hasattr(module, "base_layer"):
@@ -739,11 +714,6 @@ class ASTPruner(BaseCompressor):
             self.max_error,
         )
         return self.model, stats
-
-
-# ============================================================================
-# Factory
-# ============================================================================
 
 
 def ast_pruner_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:

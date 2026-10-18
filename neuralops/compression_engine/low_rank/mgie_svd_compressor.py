@@ -24,8 +24,6 @@ from neuralops.utils.compat import should_compress_linear
 logger = logging.getLogger(__name__)
 
 
-
-
 _ATTN_NAMES = {
     "attn",
     "attention",
@@ -46,16 +44,12 @@ _ATTN_NAMES = {
 }
 
 
-# ===========================================================================
-# Compressor
-# ===========================================================================
 @COMPRESSOR_REGISTRY.register("mgie_budget")
 class MGIESVDBudgetCompressor(BaseCompressor):
     """
     MGIE-SVD Budget Compressor: Global Entropy-Proportional Rank Allocation.
     """
 
-    # MGIE-BUDGET-FIX-01
     is_custom_attention: bool = False
 
     def __init__(
@@ -116,7 +110,6 @@ class MGIESVDBudgetCompressor(BaseCompressor):
         self.layer_ranks: dict[str, int] = {}
         self.stats: dict[str, Any] = {}
 
-    # ------------------------------------------------------------------
     def _is_gqa_asymmetric(self, name: str, module: nn.Module) -> bool:
         if not self.skip_attention_qkv:
             return False
@@ -141,7 +134,6 @@ class MGIESVDBudgetCompressor(BaseCompressor):
         return False
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
-        # MGIE-BUDGET-FIX-07: skip already-compressed SVDLinear
         if isinstance(module, SVDLinear):
             return False
         name_l = name.lower()
@@ -187,7 +179,6 @@ class MGIESVDBudgetCompressor(BaseCompressor):
             return True
         return any(t in name for t in self.target_modules)
 
-    # ------------------------------------------------------------------
     @staticmethod
     def _compute_entropy(
         W: torch.Tensor,
@@ -205,7 +196,6 @@ class MGIESVDBudgetCompressor(BaseCompressor):
         entropy = -torch.sum(p * torch.log(p)).item()
         return max(0.0, float(entropy)), U, S, Vt
 
-    # ------------------------------------------------------------------
     def _allocate_ranks(
         self,
         entropies: list[float],
@@ -219,13 +209,11 @@ class MGIESVDBudgetCompressor(BaseCompressor):
         if n == 0:
             return []
 
-        # Fallback if all entropies ≈ 0.
         total_ent = sum(max(e, 1e-4) for e in entropies)
         if total_ent <= 1e-9:
             per = max(1, self.total_rank_budget // max(1, n))
             return [max(1, min(per, mr)) for mr in max_ranks]
 
-        # Initial allocation.
         ranks = []
         for e, mr in zip(entropies, max_ranks):
             frac = max(e, 1e-4) / total_ent
@@ -233,11 +221,8 @@ class MGIESVDBudgetCompressor(BaseCompressor):
             r = max(self.min_rank, min(r, mr))
             ranks.append(r)
 
-        # Enforce budget: reduce the largest ranks first.
-        # We never go below min_rank (or 1 if max_rank < min_rank).
         total = sum(ranks)
         while total > self.total_rank_budget:
-            # pick the layer with the largest current rank that can be reduced
             candidates = [
                 i for i in range(n) if ranks[i] > max(1, min(self.min_rank, max_ranks[i]))
             ]
@@ -247,9 +232,6 @@ class MGIESVDBudgetCompressor(BaseCompressor):
             ranks[idx] -= 1
             total = sum(ranks)
 
-        # If under budget, try to increase ranks of layers with largest
-        # entropy-per-bit deficit (simple heuristic: increase the layer with
-        # the largest max_rank - rank, weighted by entropy).
         if total < self.total_rank_budget:
             order = sorted(
                 range(n),
@@ -268,11 +250,9 @@ class MGIESVDBudgetCompressor(BaseCompressor):
                 if not progressed:
                     break
 
-        # Final clamp.
         ranks = [max(1, min(r, max_ranks[i])) for i, r in enumerate(ranks)]
         return ranks
 
-    # ------------------------------------------------------------------
     def compress(self, **kwargs: Any) -> tuple[nn.Module, dict[str, Any]]:
         self.compressed_layers = []
         self.fallback_layers = []
@@ -284,9 +264,6 @@ class MGIESVDBudgetCompressor(BaseCompressor):
 
         total_orig_params = sum(p.numel() for p in self.model.parameters())
 
-        # ------------------------------------------------------------------
-        # 1. Collect target layers.
-        # ------------------------------------------------------------------
         target_layers: list[tuple[str, nn.Module, nn.Module]] = []
         for name, module in list(self.model.named_modules()):
             if not self._is_target_module(name, module):
@@ -315,9 +292,6 @@ class MGIESVDBudgetCompressor(BaseCompressor):
             self.stats = stats
             return self.model, stats
 
-        # ------------------------------------------------------------------
-        # 2. Compute per-layer entropy and SVD.
-        # ------------------------------------------------------------------
         layer_data: list[dict[str, Any]] = []
         entropies: list[float] = []
         max_ranks: list[int] = []
@@ -350,11 +324,7 @@ class MGIESVDBudgetCompressor(BaseCompressor):
             entropies.append(ent)
             max_ranks.append(max_r)
 
-        # ------------------------------------------------------------------
-        # 3. Allocate ranks (with budget enforcement).
-        # ------------------------------------------------------------------
         if self.rank is not None:
-            # Explicit rank overrides budget.
             for info in layer_data:
                 info["rank"] = max(1, min(self.rank, info["max_r"]))
         else:
@@ -362,9 +332,6 @@ class MGIESVDBudgetCompressor(BaseCompressor):
             for info, r in zip(layer_data, ranks):
                 info["rank"] = max(1, min(r, info["max_r"]))
 
-        # ------------------------------------------------------------------
-        # 4. Apply compression.
-        # ------------------------------------------------------------------
         for info in layer_data:
             name = info["name"]
             module = info["module"]
@@ -405,7 +372,6 @@ class MGIESVDBudgetCompressor(BaseCompressor):
 
                 existing_lora_r = getattr(module, "r", getattr(module, "lora_r", 0))
                 eff_lora_r = existing_lora_r if existing_lora_r > 0 else self.lora_r
-                # MGIE-BUDGET-FIX-08: correct lora_alpha retrieval
                 eff_lora_alpha = getattr(module, "lora_alpha", None)
                 if eff_lora_alpha is None:
                     eff_lora_alpha = getattr(module, "alpha", self.lora_alpha)
@@ -422,7 +388,6 @@ class MGIESVDBudgetCompressor(BaseCompressor):
                     lora_alpha=eff_lora_alpha,
                 )
 
-                # MGIE-BUDGET-FIX-09: verify API availability
                 if not hasattr(svd_layer, "set_low_rank_factors"):
                     raise AttributeError(
                         "SVDLinear does not implement set_low_rank_factors; "
@@ -430,7 +395,6 @@ class MGIESVDBudgetCompressor(BaseCompressor):
                     )
                 svd_layer.set_low_rank_factors(U_r, V_r)
 
-                # MGIE-BUDGET-FIX-05: bias copy under no_grad.
                 if target_layer.bias is not None and svd_layer.bias is not None:
                     with torch.no_grad():
                         svd_layer.bias.data.copy_(
@@ -440,7 +404,6 @@ class MGIESVDBudgetCompressor(BaseCompressor):
                             )
                         )
 
-                # Preserve pre-existing LoRA adapter parameters if wrapped.
                 if (
                     hasattr(module, "lora_A")
                     and hasattr(module, "lora_B")
@@ -477,7 +440,6 @@ class MGIESVDBudgetCompressor(BaseCompressor):
                     svd_layer.lora_A.requires_grad = True
                     svd_layer.lora_B.requires_grad = True
 
-                # MGIE-BUDGET-FIX-02: preserve LoRA wrapper.
                 if hasattr(module, "base_layer"):
                     module.base_layer = svd_layer
                 else:
@@ -492,9 +454,6 @@ class MGIESVDBudgetCompressor(BaseCompressor):
                 for p in module.parameters():
                     p.requires_grad = False
 
-        # ------------------------------------------------------------------
-        # 5. Forward sanity check (MGIE-BUDGET-FIX-03)
-        # ------------------------------------------------------------------
         forward_check_success = True
         try:
             with torch.no_grad():
@@ -521,9 +480,6 @@ class MGIESVDBudgetCompressor(BaseCompressor):
             logger.warning("MGIE-Budget forward sanity check failed: %s", e)
             forward_check_success = False
 
-        # ------------------------------------------------------------------
-        # 6. Stats (MGIE-BUDGET-FIX-04)
-        # ------------------------------------------------------------------
         try:
             self._compressed_params = self._count_params(self.model)
         except Exception:
@@ -572,9 +528,6 @@ class MGIESVDBudgetCompressor(BaseCompressor):
         return self.model, stats
 
 
-# ===========================================================================
-# Factory
-# ===========================================================================
 def mgie_budget_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """MGIE budget factory function."""
     total_rank_budget = kwargs.pop(

@@ -31,7 +31,6 @@ def wanda_prune_layer(
 
     if act_norm is None:
         if calib_data is None:
-            # Fallback to pure magnitude pruning
             act_norm = torch.ones(W.shape[1], device=W.device, dtype=W.dtype)
         else:
             if isinstance(calib_data, list):
@@ -41,13 +40,10 @@ def wanda_prune_layer(
             if stacked.shape[-1] != W.shape[1]:
                 act_norm = torch.ones(W.shape[1], device=W.device, dtype=W.dtype)
             else:
-                # L2 norm across samples for each input column
                 act_norm = torch.norm(stacked.to(torch.float32), p=2, dim=0).to(W.device, dtype=W.dtype)
 
-    # Compute Wanda importance metric: S = |W| * ||X||_2
     metric = torch.abs(W) * act_norm.unsqueeze(0)
 
-    # Per-row (per-output channel) structured/unstructured pruning threshold
     k = max(int(metric.shape[1] * sparsity), 1)
     threshold = torch.kthvalue(metric, k, dim=1, keepdim=True).values
     mask = metric > threshold
@@ -71,4 +67,3 @@ def wanda_prune_model(
             _, mask = wanda_prune_layer(module, sparsity=sparsity, calib_data=calib_data)
             masks[name] = mask
     return masks
-

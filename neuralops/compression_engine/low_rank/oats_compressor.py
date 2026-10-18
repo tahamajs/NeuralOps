@@ -60,7 +60,7 @@ class OATSLoRALinear(nn.Module):
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
-        self.nf = out_features  # Conv1D compatibility
+        self.nf = out_features
         self.lora_r = int(lora_r)
         self.lora_alpha = float(lora_alpha)
         self.scaling = (self.lora_alpha / self.lora_r) if self.lora_r > 0 else 1.0
@@ -68,8 +68,6 @@ class OATSLoRALinear(nn.Module):
         target_device = device if device is not None else weight.device
         target_dtype = dtype if dtype is not None else weight.dtype
 
-        # Strictly ensure nn.Linear weight orientation (out_features, in_features) for F.linear.
-        # Conv1D stores weight as (in_features, out_features) = (nx, nf).
         if weight.shape == (in_features, out_features) and in_features != out_features:
             weight = weight.t().contiguous()
 
@@ -133,7 +131,6 @@ class OATSLoRALinear(nn.Module):
         elif out_features is None:
             out_features = weight.shape[0] if weight.shape[1] == in_features else weight.shape[1]
 
-        # Strictly orient weight as (out_features, in_features) for F.linear
         if weight.shape == (in_features, out_features) and in_features != out_features:
             weight = weight.t().contiguous()
 
@@ -152,7 +149,6 @@ class OATSLoRALinear(nn.Module):
             dtype=weight.dtype,
         )
 
-        # Preserve existing LoRA weights if present
         if (
             hasattr(linear, "lora_A")
             and hasattr(linear, "lora_B")
@@ -198,8 +194,6 @@ class OATSLoRALinear(nn.Module):
                 out.dtype
             )
         return out
-
-
 
 
 _ATTN_NAMES = {
@@ -414,7 +408,6 @@ class OATSCompressor(BaseCompressor):
         d_out, d_in = W.shape
         device = W.device
 
-        # Compute M
         if activations is not None and activations.numel() > 0:
             X = activations.reshape(-1, activations.shape[-1]).float().to(device)
             if X.shape[-1] == d_in:
@@ -436,14 +429,12 @@ class OATSCompressor(BaseCompressor):
             L_M = torch.eye(d_in, device=device)
             L_M_inv = torch.eye(d_in, device=device)
 
-        # Scale weights: W_scaled = W @ L_M
         W_scaled = torch.matmul(W, L_M)
         rank = max(
             min(self.min_rank, min(d_out, d_in)),
             min(int(self.rank_ratio * min(d_out, d_in)), min(d_out, d_in)),
         )
 
-        # Initialize L via truncated SVD
         try:
             U, S, Vh = torch.linalg.svd(W_scaled, full_matrices=False)
             r = min(rank, len(S))
@@ -452,7 +443,6 @@ class OATSCompressor(BaseCompressor):
             r = rank
             L = torch.zeros_like(W_scaled)
 
-        # Initialize S
         R = W_scaled - L
         if self.structured_24:
             S_mat, _ = apply_24_structured_mask(R, saliency=torch.abs(R), dim=1)
@@ -463,7 +453,6 @@ class OATSCompressor(BaseCompressor):
             mask = (R.abs() >= thr).float()
             S_mat = R * mask
 
-        # Alternating minimization iterations
         for _ in range(self.num_iters):
             try:
                 U, S, Vh = torch.linalg.svd(W_scaled - S_mat, full_matrices=False)
@@ -486,7 +475,6 @@ class OATSCompressor(BaseCompressor):
                 mask = (R.abs() >= thr).float()
                 S_mat = R * mask
 
-        # De-scale: W_comp = (L + S_mat) @ L_M^-1
         try:
             W_comp = torch.matmul(L + S_mat, L_M_inv)
         except Exception as e:
@@ -579,7 +567,6 @@ class OATSCompressor(BaseCompressor):
                         p.requires_grad = False
                         total_comp_params += p.numel()
 
-        # Post-compression forward sanity check
         forward_check_success = True
         try:
             with torch.no_grad():

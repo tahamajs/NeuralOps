@@ -148,7 +148,6 @@ try:
 except Exception:
     pass
 
-# Auto-wired submodules
 from neuralops.attentions.sparse import adaptive_sparse_attention
 from neuralops.attentions.sparse import bam_umoe
 from neuralops.attentions.sparse import cluster_attention

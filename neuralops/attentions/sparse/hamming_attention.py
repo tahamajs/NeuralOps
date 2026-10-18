@@ -44,15 +44,6 @@ except Exception:
     _HAS_MODEL_ADAPTER = False
 
 
-
-
-
-
-# ============================================================================
-# HammingAttention
-# ============================================================================
-
-
 @ATTENTION_REGISTRY.register("hamming_attention", supports_causal=True, supports_gqa=True)
 class HammingAttention(BaseAttention):
     """HammingAttention neural operator.
@@ -85,7 +76,6 @@ class HammingAttention(BaseAttention):
 
         num_heads, num_kv_heads, hidden_size, head_dim, kv_repeat = 0, 0, 0, 0, 1
 
-        # HAD-FIX-07: ModelAdapter failures are surfaced (debug), not silently swallowed
         if config is not None and _HAS_MODEL_ADAPTER:
             try:
                 self.adapter = ModelAdapter(config)
@@ -97,7 +87,6 @@ class HammingAttention(BaseAttention):
             except Exception as e:
                 logger.debug("ModelAdapter failed: %s", e)
 
-        # Fallback to direct config attributes
         if not hidden_size and config is not None:
             hidden_size = getattr(
                 config,
@@ -111,7 +100,6 @@ class HammingAttention(BaseAttention):
                 getattr(config, "num_heads", getattr(config, "n_heads", 0)),
             )
 
-        # Fallback to source attention module
         if not hidden_size and pretrained_attn is not None:
             hidden_size = getattr(
                 pretrained_attn, "hidden_size", getattr(pretrained_attn, "embed_dim", 0)
@@ -135,7 +123,6 @@ class HammingAttention(BaseAttention):
                     if out_l is not None and hasattr(out_l, "out_features"):
                         hidden_size = out_l.out_features
 
-        # Final defaults
         hidden_size = hidden_size or kwargs.get("hidden_size", kwargs.get("d_model", 768))
         num_heads = num_heads or kwargs.get("num_heads", kwargs.get("num_attention_heads", 12))
         num_kv_heads = num_kv_heads or _cfg_get(
@@ -152,11 +139,9 @@ class HammingAttention(BaseAttention):
         self.kv_head_size: int = self.num_kv_heads * self.head_dim
         self.kv_repeat: int = int(kv_repeat)
 
-        # HAD-FIX-06: keep API compat args but they're informational
         self.distill_temperature: float = float(distill_temperature)
         self.sparsity_ratio: float = float(sparsity_ratio)
 
-        # ---- Decoder detection ----
         model_type = str(_cfg_get(config, "model_type", "")).lower()
         is_dec = _cfg_get(
             config,
@@ -190,7 +175,6 @@ class HammingAttention(BaseAttention):
 
         self.lora_rank = int(_cfg_get(config, "lora_rank", kwargs.get("lora_rank", lora_rank)))
 
-        # ---- Projections ----
         self.q_proj = LoRALinear(
             self.hidden_size,
             self.all_head_size,
@@ -231,8 +215,6 @@ class HammingAttention(BaseAttention):
         )
         self.dropout = nn.Dropout(dropout_p)
 
-        # HAD-FIX-01: rename trainable scalars with `lora_` prefix so that
-        # framework's get_recovery_params recognizes them.
         self.lora_q_scale = nn.Parameter(torch.ones(self.num_heads, 1))
         self.lora_k_scale = nn.Parameter(torch.ones(self.num_heads, 1))
         self.lora_temp = nn.Parameter(torch.tensor(max(distill_temperature, 1e-2)))
@@ -242,9 +224,6 @@ class HammingAttention(BaseAttention):
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
 
-    # ------------------------------------------------------------------
-    # Weight transfer
-    # ------------------------------------------------------------------
     def copy_weights(self, src: Any) -> None:
         from neuralops.core.adapters import UniversalAdapter
 
@@ -255,7 +234,6 @@ class HammingAttention(BaseAttention):
             "o": (None, None),
         }
 
-        # 1. UniversalAdapter
         for proj in ["q", "k", "v", "o"]:
             try:
                 w, b = UniversalAdapter.get_weight_bias(src, proj)
@@ -264,7 +242,6 @@ class HammingAttention(BaseAttention):
             except Exception:
                 pass
 
-        # 2. GPT-2 Fused c_attn
         if hasattr(src, "c_attn") and any(extracted[k][0] is None for k in ("q", "k", "v")):
             weight, bias_data = _unpack_weight_bias(src.c_attn)
             if weight is not None:
@@ -295,7 +272,6 @@ class HammingAttention(BaseAttention):
                     w_o = w_o.t().contiguous()
                 extracted["o"] = (w_o, b_o)
 
-        # 3. RoBERTa / BERT nested
         if hasattr(src, "self") and any(extracted[k][0] is None for k in ("q", "k", "v")):
             s = src.self
             if hasattr(s, "query") and extracted["q"][0] is None:
@@ -308,7 +284,6 @@ class HammingAttention(BaseAttention):
         if hasattr(src, "output") and hasattr(src.output, "dense") and extracted["o"][0] is None:
             extracted["o"] = _unpack_weight_bias(src.output.dense)
 
-        # 4. Flat modules
         named_map = {
             "q": ["q_proj", "q_lin", "query"],
             "k": ["k_proj", "k_lin", "key"],
@@ -324,7 +299,6 @@ class HammingAttention(BaseAttention):
                             extracted[proj] = (w, b)
                             break
 
-        # ---- Nested encoder detection ----
         cls_name = getattr(src, "__class__", type(src)).__name__
         has_out = any(hasattr(src, a) for a in ("dense", "out_proj", "out_lin", "c_proj", "o_proj"))
         if hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj"):
@@ -347,7 +321,6 @@ class HammingAttention(BaseAttention):
         if missing:
             logger.debug("HammingAttention partial extraction; missing: %s", missing)
 
-        # Frobenius check
         for proj_key in ("q", "k", "v"):
             w = extracted[proj_key][0]
             if w is not None:
@@ -397,9 +370,6 @@ class HammingAttention(BaseAttention):
         if hasattr(src, "is_decoder"):
             self.is_decoder = bool(src.is_decoder)
 
-    # ------------------------------------------------------------------
-    # Forward
-    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -429,7 +399,6 @@ class HammingAttention(BaseAttention):
         K = self.k_proj(kv_input).view(B, L_k, self.num_kv_heads, Dh).transpose(1, 2).contiguous()
         V = self.v_proj(kv_input).view(B, L_k, self.num_kv_heads, Dh).transpose(1, 2).contiguous()
 
-        # ---- RoPE ----
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None and not is_cross_attention:
@@ -437,13 +406,10 @@ class HammingAttention(BaseAttention):
                 cos, sin = position_embeddings[0], position_embeddings[1]
                 Q, K = apply_rotary_pos_emb(Q, K, cos, sin, kwargs.get("position_ids"))
 
-        # ---- GQA ----
         if self.kv_repeat > 1:
             K = repeat_kv(K, self.kv_repeat)
             V = repeat_kv(V, self.kv_repeat)
 
-        # ---- Hamming attention scores ----
-        # Continuous relaxation of Hamming distance via tanh binarization.
         from neuralops.core.triton_kernels.sparse_attn import (
             fused_hamming_scores_triton,
             fused_hamming_scores_pytorch,
@@ -457,7 +423,6 @@ class HammingAttention(BaseAttention):
                 Q, K, self.lora_q_scale, self.lora_k_scale, self.lora_temp
             )
 
-        # ---- Masking ----
         mask = attention_mask if attention_mask is not None else kwargs.get("mask")
         if mask is not None:
             if mask.dim() == 4:
@@ -467,7 +432,6 @@ class HammingAttention(BaseAttention):
                 if valid_m is not None:
                     scores = scores.masked_fill((~valid_m).unsqueeze(1).unsqueeze(2), -1e4)
 
-        # ---- Causal mask ----
         if self.is_decoder and not is_cross_attention and L_q > 1:
             causal_tril = (
                 torch.tril(
@@ -484,7 +448,6 @@ class HammingAttention(BaseAttention):
         attn = torch.nan_to_num(attn, nan=0.0)
         attn = self.dropout(attn)
 
-        # ---- head_mask ----
         if head_mask is not None:
             if head_mask.dim() == 1:
                 head_mask = head_mask.view(1, -1, 1, 1)
@@ -511,11 +474,6 @@ class HammingAttention(BaseAttention):
         return output, (attn if output_attentions else None)
 
 
-# ============================================================================
-# Injection (HAD-FIX-04: recursion guard)
-# ============================================================================
-
-
 def inject_hamming_attention(
     layer: Any = None,
     model: Any = None,
@@ -540,7 +498,6 @@ def inject_hamming_attention(
 
     cfg = model_config or getattr(target, "config", None) or kwargs.get("config")
 
-    # Whole-model traversal
     if target is not None and (
         hasattr(target, "distilbert")
         or hasattr(target, "roberta")
@@ -580,7 +537,6 @@ def inject_hamming_attention(
                     num_injected += 1
             return target if num_injected > 0 else None
 
-    # Single layer
     curr_attn = old_attn
     if curr_attn is None and target is not None:
         if hasattr(target, "attention"):

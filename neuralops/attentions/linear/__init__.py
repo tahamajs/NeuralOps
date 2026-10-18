@@ -196,7 +196,6 @@ try:
 except Exception:
     pass
 
-# Auto-wired submodules
 from neuralops.attentions.linear import chela_slay
 from neuralops.attentions.linear import cosformer
 from neuralops.attentions.linear import galerkin_attention

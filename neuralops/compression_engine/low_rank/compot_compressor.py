@@ -22,8 +22,6 @@ from neuralops.core.registry import COMPRESSOR_REGISTRY
 from neuralops.utils.compat import should_compress_linear
 
 
-
-
 logger = logging.getLogger(__name__)
 
 
@@ -126,10 +124,10 @@ class COMPOTLinear(nn.Module):
 
         if is_conv1d:
             in_f, out_f = raw_w.shape[0], raw_w.shape[1]
-            W_float = raw_w.t().contiguous().float()  # [out_features, in_features]
+            W_float = raw_w.t().contiguous().float()
         else:
             out_f, in_f = raw_w.shape[0], raw_w.shape[1]
-            W_float = raw_w.float()  # [out_features, in_features]
+            W_float = raw_w.float()
 
         bias = layer.bias.data if layer.bias is not None else None
         r = max(1, min(rank, out_f, in_f))
@@ -149,7 +147,6 @@ class COMPOTLinear(nn.Module):
         A_data = None
         B_data = None
 
-        # Direct SVD on weight matrix guarantees minimal Frobenius error
         U, S, Vt = torch.linalg.svd(W_float, full_matrices=False)
         sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
         B_data = U[:, :r] * sqrt_S.unsqueeze(0)
@@ -162,7 +159,6 @@ class COMPOTLinear(nn.Module):
         if bias is not None and compot_layer.bias is not None:
             compot_layer.bias.data.copy_(bias)
 
-        # Compute relative Frobenius reconstruction error
         W_recon = torch.matmul(B_data, A_data)
         norm_orig = torch.norm(W_float, p="fro").item()
         if norm_orig < 1e-12:
@@ -354,17 +350,12 @@ class COMPOTCompressor(BaseCompressor):
             else:
                 out_f, in_f = raw_w.shape[0], raw_w.shape[1]
 
-            # FIXED: Layer-Sniffing Rank Allocation.
-            # Inspect layer dimensions to distinguish dense MLP projections (e.g. 768->3072, 3072->768)
-            # from standard attention projections. Wide MLP layers destroy up to 93% of the Frobenius norm
-            # if compressed to a tiny rank, so we allocate double/quadruple rank capacity.
             is_mlp = (max(in_f, out_f) >= 3072) or (max(in_f, out_f) >= 4 * min(in_f, out_f))
             if is_mlp:
                 adaptive_rank = max(128, self.rank * 2) if self.rank > 0 else 128
             else:
                 adaptive_rank = self.rank
 
-            # Guarantee parameter reduction: r * (in_f + out_f) < in_f * out_f
             max_reduction_r = max(1, (in_f * out_f) // (in_f + out_f) - 1)
             max_r = max(1, min(in_f - 1, out_f - 1, max_reduction_r))
             r = max(1, min(adaptive_rank, max_r))
@@ -377,7 +368,6 @@ class COMPOTCompressor(BaseCompressor):
             self.layer_ranks[name] = r
             self.used_activations[name] = used_act
 
-            # Validate dimensions
             if compot_layer.in_features != in_f or compot_layer.out_features != out_f:
                 logger.warning(
                     "Dimension mismatch on %s: (%d, %d) vs (%d, %d)",

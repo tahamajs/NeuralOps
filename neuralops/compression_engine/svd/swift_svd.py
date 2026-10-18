@@ -22,8 +22,6 @@ from neuralops.utils.compat import should_compress_linear
 logger = logging.getLogger(__name__)
 
 
-
-
 @COMPRESSOR_REGISTRY.register("swift_svd")
 class SwiftSVDCompressor(BaseCompressor):
     """SwiftSVDCompressor neural operator.
@@ -109,13 +107,9 @@ class SwiftSVDCompressor(BaseCompressor):
         self.lora_alpha = float(lora_alpha)
 
         self.compressed_layers: list[dict[str, Any]] = []
-        # SV-FIX-02: initialize in __init__.
         self._compressed_params: int = 0
         self.stats: dict[str, Any] = {}
 
-    # ------------------------------------------------------------------
-    # Target selection
-    # ------------------------------------------------------------------
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         if self.target_attention_only:
             attn_keywords = [
@@ -157,9 +151,6 @@ class SwiftSVDCompressor(BaseCompressor):
             return True
         return any(t in name for t in self.target_modules)
 
-    # ------------------------------------------------------------------
-    # Per-layer compression
-    # ------------------------------------------------------------------
     def compress_linear(
         self,
         layer: nn.Module,
@@ -178,7 +169,6 @@ class SwiftSVDCompressor(BaseCompressor):
         is_conv1d = "conv1d" in cls_name or hasattr(base_layer, "nf")
 
         raw_w = base_layer.weight.data
-        # Always move weight to a canonical (out_features, in_features) form.
         if is_conv1d:
             W = raw_w.t().contiguous().float()
             out_f, in_f = W.shape[0], W.shape[1]
@@ -186,19 +176,16 @@ class SwiftSVDCompressor(BaseCompressor):
             W = raw_w.float()
             out_f, in_f = W.shape[0], W.shape[1]
 
-        # Param budget: r * (in_f + out_f) < in_f * out_f
         max_param_r = max(1, (in_f * out_f) // (in_f + out_f) - 1)
         max_r = min(out_f, in_f, max_param_r)
         if max_r < 1:
             return None, 1.0, 0
 
-        # Target rank
         if rank is not None:
             target_r = max(1, min(int(rank), max_r))
         else:
             target_r = max(1, min(int(round(min(out_f, in_f) * self.rank_ratio)), max_r))
 
-        # SV-FIX-01: single try/except with explicit CUDA OOM handling.
         U: torch.Tensor | None = None
         S: torch.Tensor | None = None
         Vt: torch.Tensor | None = None
@@ -225,7 +212,6 @@ class SwiftSVDCompressor(BaseCompressor):
         best_err = float("inf")
         best_r = cur_r
 
-        # Iterative rank-step retries
         attempts = self.max_retries + 1
         for attempt in range(attempts):
             sqrt_S = torch.sqrt(torch.clamp(S[:cur_r], min=1e-12))
@@ -277,7 +263,6 @@ class SwiftSVDCompressor(BaseCompressor):
         has_existing_lora = hasattr(layer, "lora_A") and hasattr(layer, "lora_B")
 
         if has_base_layer:
-            # Wrapped: SVD becomes the new base, existing LoRA stays on outer.
             effective_lora_r = 0
         elif has_existing_lora:
             detected = self._detect_lora_rank(layer)
@@ -300,7 +285,6 @@ class SwiftSVDCompressor(BaseCompressor):
         if has_bias and svd_layer.bias is not None and base_layer.bias is not None:
             svd_layer.bias.data.copy_(base_layer.bias.data.to(dtype=dtype, device=device))
 
-        # SV-FIX-04: robust LoRA copy via data-shape check.
         if not has_base_layer and has_existing_lora and getattr(svd_layer, "use_lora", False):
             try:
                 src_lA = getattr(layer, "lora_A", None)
@@ -317,7 +301,6 @@ class SwiftSVDCompressor(BaseCompressor):
             except Exception as e:
                 logger.warning("SwiftSVD LoRA copy warning for %s: %s", name, e)
 
-        # Dimensional integrity check
         if svd_layer.in_features != in_f or svd_layer.out_features != out_f:
             logger.error(
                 "SwiftSVD: shape mismatch for %s: expected (in=%d, out=%d), got (in=%d, out=%d)",
@@ -329,7 +312,6 @@ class SwiftSVDCompressor(BaseCompressor):
             )
             return None, best_err, best_r
 
-        # Optional calibration validation
         if self.validation_calibration:
             try:
                 with torch.no_grad():
@@ -353,9 +335,6 @@ class SwiftSVDCompressor(BaseCompressor):
 
         return svd_layer, best_err, best_r
 
-    # ------------------------------------------------------------------
-    # LoRA rank detection
-    # ------------------------------------------------------------------
     @staticmethod
     def _detect_lora_rank(module: nn.Module) -> int:
         for attr in ("r", "lora_r", "rank"):
@@ -373,12 +352,8 @@ class SwiftSVDCompressor(BaseCompressor):
                 return int(la.weight.shape[0])
         return 0
 
-    # ------------------------------------------------------------------
-    # Main compress
-    # ------------------------------------------------------------------
     def compress(self, **kwargs: Any) -> tuple[nn.Module, dict[str, Any]]:
         """Compress all eligible linear and Conv1D layers."""
-        # SV-FIX-07: deduplicate shared weights.
         seen_weights: set = set()
         target_layers: list[tuple[str, nn.Module]] = []
         for name, mod in self.model.named_modules():
@@ -410,7 +385,6 @@ class SwiftSVDCompressor(BaseCompressor):
             svd_layer, rel_err, final_rank = self.compress_linear(module, rank=self.rank, name=name)
 
             if svd_layer is not None:
-                # SV-FIX-03: raw_shape from base_layer, correctly oriented.
                 base_mod = getattr(module, "base_layer", module)
                 cls_name = base_mod.__class__.__name__.lower()
                 is_conv1d = "conv1d" in cls_name or hasattr(base_mod, "nf")
@@ -461,13 +435,11 @@ class SwiftSVDCompressor(BaseCompressor):
                     p.requires_grad = False
                 logger.info("SwiftSVD: kept original layer for %s.", name)
 
-        # SV-FIX-02: safe param count.
         try:
             self._compressed_params = self._count_params(self.model)
         except Exception:
             self._compressed_params = sum(p.numel() for p in self.model.parameters())
 
-        # SV-FIX-05: guard stats.
         try:
             stats = self.get_compression_stats()
         except Exception:
@@ -497,11 +469,6 @@ class SwiftSVDCompressor(BaseCompressor):
             stats.get("param_reduction_pct", 0.0),
         )
         return self.model, stats
-
-
-# ===========================================================================
-# Factories
-# ===========================================================================
 
 
 def swift_svd_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) -> Any:

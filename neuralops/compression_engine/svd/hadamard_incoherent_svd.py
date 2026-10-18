@@ -48,37 +48,29 @@ class HadamardIncoherentSVDCompressor(BaseCompressor):
         total_error = 0.0
 
         for name, module in list(self.model.named_modules()):
-            if isinstance(module, nn.Linear) or hasattr(module, "nf"): # Linear or HF Conv1D
+            if isinstance(module, nn.Linear) or hasattr(module, "nf"):
                 is_conv1d = hasattr(module, "nf")
                 w_orig = module.weight.data.t().contiguous() if is_conv1d else module.weight.data.contiguous()
-                
-                # Check dimensions
+
                 d_out, d_in = w_orig.shape
                 if min(d_out, d_in) <= self.rank:
                     continue
 
-                # 1. Apply Fast Walsh-Hadamard orthogonal rotation to weight matrix
-                # W_rot = W @ H
                 w_rot = fast_hadamard_transform(w_orig.float(), block_size=self.hadamard_block_size)
 
-                # 2. SVD on rotated matrix
                 U, S, Vh = torch.linalg.svd(w_rot, full_matrices=False)
                 r = min(self.rank, len(S))
-                
+
                 U_r = U[:, :r] * torch.sqrt(S[:r])
                 Vh_r = (torch.sqrt(S[:r])[:, None] * Vh[:r, :])
 
-                # 3. Rotate back the right singular vectors: Vh_orig = Vh_r @ H^T = Vh_r @ H
                 Vh_orig = fast_hadamard_transform(Vh_r, block_size=self.hadamard_block_size)
 
-                # Reconstructed weight: W_rec = U_r @ Vh_orig
                 w_rec = torch.matmul(U_r, Vh_orig).to(w_orig.dtype)
 
-                # Calculate reconstruction relative error
                 norm_orig = torch.norm(w_orig.float(), p="fro").item()
                 err = float(torch.norm(w_orig.float() - w_rec.float(), p="fro").item() / max(norm_orig, 1e-8))
 
-                # Copy reconstructed weight into layer (or replace with low-rank linear)
                 res_w = w_rec.t().contiguous() if is_conv1d else w_rec
                 module.weight.data.copy_(res_w)
 

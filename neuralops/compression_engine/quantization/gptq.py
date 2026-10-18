@@ -40,17 +40,14 @@ class GPTQQuantizer:
     def _quantize_column(self, W: torch.Tensor, H_inv: torch.Tensor, i: int) -> torch.Tensor:
         """Quantize column i and propagate error across subsequent unquantized columns."""
         w = W[:, i]
-        # Quantization grid
         q_max = 2 ** (self.bits - 1) - 1 if self.sym else 2 ** self.bits - 1
         scale = (w.abs().max() / max(q_max, 1)).clamp(min=1e-8)
         q = torch.round(w / scale).clamp(-2 ** (self.bits - 1), q_max)
         w_q = q * scale
 
-        # Compute error scaled by inverse Hessian diagonal entry
         h_ii = H_inv[i, i].clamp(min=1e-8)
         err = (w - w_q) / h_ii
 
-        # Propagate error to remaining columns: W[:, i+1:] -= err * H_inv[i, i+1:]
         if i + 1 < self.columns:
             W[:, i + 1 :] -= err.unsqueeze(1) * H_inv[i, i + 1 :].unsqueeze(0)
 
@@ -65,7 +62,6 @@ class GPTQQuantizer:
         dead = torch.diag(H) == 0
         H[dead, dead] = 1.0
 
-        # Damping to ensure numerical stability and positive-definiteness
         damp_val = damp * torch.mean(torch.diag(H))
         H[torch.eye(self.columns, dtype=torch.bool, device=H.device)] += damp_val
 

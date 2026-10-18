@@ -32,12 +32,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.utils.model_family import ModelAdapter
 
 
-
-
-
-
-
-
 @ATTENTION_REGISTRY.register(
     "zeros_attention",
     supports_causal=True,
@@ -89,7 +83,6 @@ class ZeroSAttention(BaseAttention):
             self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
             self.is_decoder = bool(_cfg_get(config, "is_decoder", kwargs.get("is_decoder", False)))
 
-        # Prioritize explicit kwargs
         if "hidden_size" in kwargs:
             self.hidden_size = kwargs["hidden_size"]
             self.head_dim = self.hidden_size // max(1, self.num_heads)
@@ -158,7 +151,6 @@ class ZeroSAttention(BaseAttention):
             "o": (None, None),
         }
 
-        # 1. UniversalAdapter extraction
         for proj in ["q", "k", "v", "o"]:
             try:
                 w, b = UniversalAdapter.get_weight_bias(src, proj)
@@ -167,7 +159,6 @@ class ZeroSAttention(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter fallback failed: %s", e)
 
-        # 2. GPT-2 Fused c_attn Conv1D handling
         if hasattr(src, "c_attn") and (
             extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None
         ):
@@ -198,7 +189,6 @@ class ZeroSAttention(BaseAttention):
             b_o = getattr(src.c_proj, "bias", None)
             extracted["o"] = (w_o, b_o.data if b_o is not None else None)
 
-        # 3. RoBERTa / BERT Nested Encoder handling
         if hasattr(src, "self") and (
             extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None
         ):
@@ -214,7 +204,6 @@ class ZeroSAttention(BaseAttention):
             dense = src.output.dense
             extracted["o"] = (dense.weight.data, getattr(dense, "bias", None))
 
-        # 4. Modern Decoders (Qwen3.5, LLaMA, Mistral) & DistilBERT
         named_map = {
             "q": ["q_proj", "q_lin", "query", "W_q"],
             "k": ["k_proj", "k_lin", "key", "W_k"],
@@ -233,7 +222,6 @@ class ZeroSAttention(BaseAttention):
                             )
                             break
 
-        # Detect nested encoder architecture
         cls_name = src.__class__.__name__
         has_out_proj = any(
             hasattr(src, attr)
@@ -259,7 +247,6 @@ class ZeroSAttention(BaseAttention):
                 return w.t().contiguous()
             return w
 
-        # Copy base weights into projection modules
         with torch.no_grad():
             for proj_key, target in [
                 ("q", self.W_q),
@@ -291,7 +278,6 @@ class ZeroSAttention(BaseAttention):
 
                 target.freeze_base_weights()
 
-        # Preserve source LoRA adapters if present on source module
         source_submodules = {
             "q": ["q_proj", "q_lin", "query", "W_q"],
             "k": ["k_proj", "k_lin", "key", "W_k"],
@@ -371,7 +357,6 @@ class ZeroSAttention(BaseAttention):
         K = self.W_k(kv_input).view(B, N_k, self.num_kv_heads, Dh).transpose(1, 2).contiguous()
         V = self.W_v(kv_input).view(B, N_k, self.num_kv_heads, Dh).transpose(1, 2).contiguous()
 
-        # Apply RoPE: Priority 1 = position_embeddings, Priority 2 = rotary_emb fallback
         position_embeddings = kwargs.get("position_embeddings")
         if (
             position_embeddings is not None
@@ -401,7 +386,6 @@ class ZeroSAttention(BaseAttention):
                     from neuralops.utils.logging_config import warn_once
                     warn_once("zeros_rotary_failed", "zeros_attention rotary failed: %s", e)
 
-        # GQA repeat
         if self.kv_repeat > 1:
             K = repeat_kv(K, self.kv_repeat)
             V = repeat_kv(V, self.kv_repeat)
@@ -436,8 +420,8 @@ class ZeroSAttention(BaseAttention):
 
                 k_centered = K_f - k_running_mean
 
-                q_hat = F.relu(Q_f) + eps  # [B, H, L, d]
-                k_hat = F.relu(k_centered) + eps  # [B, H, N_k, d]
+                q_hat = F.relu(Q_f) + eps
+                k_hat = F.relu(k_centered) + eps
 
                 sim = None
                 context = None
@@ -451,29 +435,28 @@ class ZeroSAttention(BaseAttention):
                         context = None
 
                 if context is None:
-                    # Causal linear attention via cumulative states fallback
-                    kv = torch.einsum("b h j d, b h j e -> b h j d e", k_hat, V_f)  # [B, H, N_k, d, d]
-                    kv_cum = torch.cumsum(kv, dim=2)  # [B, H, N_k, d, d]
-                    k_cum = torch.cumsum(k_hat, dim=2)  # [B, H, N_k, d]
+                    kv = torch.einsum("b h j d, b h j e -> b h j d e", k_hat, V_f)
+                    kv_cum = torch.cumsum(kv, dim=2)
+                    k_cum = torch.cumsum(k_hat, dim=2)
 
                     if N_k == L:
-                        num = torch.einsum("b h l d, b h l d e -> b h l e", q_hat, kv_cum)  # [B, H, L, d]
-                        den = (q_hat * k_cum).sum(dim=-1, keepdim=True)  # [B, H, L, 1]
+                        num = torch.einsum("b h l d, b h l d e -> b h l e", q_hat, kv_cum)
+                        den = (q_hat * k_cum).sum(dim=-1, keepdim=True)
                         context = torch.nan_to_num(num / den.clamp(min=eps), nan=0.0, posinf=1e4, neginf=-1e4).to(Q.dtype)
                     elif N_k >= L:
                         kv_cum_slice = kv_cum[:, :, -L:, :, :]
                         k_cum_slice = k_cum[:, :, -L:, :]
                         num = torch.einsum(
                             "b h l d, b h l d e -> b h l e", q_hat, kv_cum_slice
-                        )  # [B, H, L, d]
-                        den = (q_hat * k_cum_slice).sum(dim=-1, keepdim=True)  # [B, H, L, 1]
+                        )
+                        den = (q_hat * k_cum_slice).sum(dim=-1, keepdim=True)
                         context = torch.nan_to_num(num / den.clamp(min=eps), nan=0.0, posinf=1e4, neginf=-1e4).to(Q.dtype)
                     else:
-                        sim = torch.matmul(q_hat, k_hat.transpose(-1, -2).contiguous())  # [B, H, L, N_k]
+                        sim = torch.matmul(q_hat, k_hat.transpose(-1, -2).contiguous())
                         causal_mask = torch.tril(torch.ones(L, N_k, device=device, dtype=torch.bool))
                         sim = sim.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), 0.0)
-                        num = torch.matmul(sim, V_f)  # [B, H, L, d]
-                        den = sim.sum(dim=-1, keepdim=True)  # [B, H, L, 1]
+                        num = torch.matmul(sim, V_f)
+                        den = sim.sum(dim=-1, keepdim=True)
                         context = torch.nan_to_num(num / den.clamp(min=eps), nan=0.0, posinf=1e4, neginf=-1e4).to(Q.dtype)
 
                 context = self.dropout(context)
@@ -484,7 +467,6 @@ class ZeroSAttention(BaseAttention):
                     else:
                         attn_map = None
             else:
-                # Bidirectional Mean-Centering
                 valid_m = get_token_valid_mask(attention_mask, B, N_k, device)
                 if valid_m is not None:
                     mask_f = valid_m.unsqueeze(1).unsqueeze(-1).to(torch.float32)
@@ -497,8 +479,8 @@ class ZeroSAttention(BaseAttention):
                 q_hat = F.relu(Q_f) + eps
                 k_hat = F.relu(k_centered) + eps
 
-                S_kv = torch.matmul(k_hat.transpose(-2, -1).contiguous(), V_f)  # [B, H, d, d]
-                num = torch.matmul(q_hat, S_kv)  # [B, H, L, d]
+                S_kv = torch.matmul(k_hat.transpose(-2, -1).contiguous(), V_f)
+                num = torch.matmul(q_hat, S_kv)
                 den = (
                     torch.matmul(q_hat, k_hat.sum(dim=2, keepdim=True).transpose(-2, -1).contiguous())
                     + eps
@@ -511,7 +493,6 @@ class ZeroSAttention(BaseAttention):
                         min=eps
                     )).to(Q.dtype)
 
-        # Head mask broadcasting across 1D/2D/3D/4D
         if head_mask is not None:
             if head_mask.dim() == 1:
                 head_mask = head_mask.view(1, -1, 1, 1)
@@ -529,7 +510,6 @@ class ZeroSAttention(BaseAttention):
 
         context = context.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
 
-        # Variance-preserving RMS gain to prevent signal decay before output projection
         v_flat = V.transpose(1, 2).contiguous().view(B, N_k, -1)
         v_rms = torch.sqrt(torch.mean(v_flat ** 2, dim=-1, keepdim=True).clamp_min(1e-8))
         c_rms = torch.sqrt(torch.mean(context ** 2, dim=-1, keepdim=True).clamp_min(1e-8))
@@ -562,7 +542,6 @@ def inject_zeros_attention(
 
     cfg = model_config if model_config is not None else getattr(target, "config", None)
 
-    # Whole-model traversal
     layer_list = None
     if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
         layer_list = target.distilbert.transformer.layer

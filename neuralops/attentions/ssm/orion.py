@@ -42,11 +42,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 logger = logging.getLogger(__name__)
 
 
-# ============================================================================
-# ORIONConfig
-# ============================================================================
-
-
 @dataclass
 class ORIONConfig:
     svd_energy: float = 0.95
@@ -57,11 +52,6 @@ class ORIONConfig:
     rff_features: int = 256
     softpick_temperature: float = 1.0
     dropout: float = 0.1
-
-
-# ============================================================================
-# FactorisedLinear
-# ============================================================================
 
 
 class FactorisedLinear(nn.Module):
@@ -94,7 +84,7 @@ class FactorisedLinear(nn.Module):
 
         rank = max(min_rank, min(max_rank, min(in_features, out_features)))
         self.rank = rank
-        self.svd_rank = rank  # alias for framework FLOPs detection
+        self.svd_rank = rank
 
         factory_kwargs = {"device": device, "dtype": dtype}
         self.down = nn.Linear(in_features, rank, bias=False, **factory_kwargs)
@@ -134,7 +124,6 @@ class FactorisedLinear(nn.Module):
         out_dim, in_dim = weight.shape
         with torch.no_grad():
             W = weight.float()
-            # Shape alignment
             if W.shape[0] != self.out_features or W.shape[1] != self.in_features:
                 padded = torch.zeros(
                     self.out_features, self.in_features, device=W.device, dtype=W.dtype
@@ -217,12 +206,6 @@ class FactorisedLinear(nn.Module):
             lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
             out = out + lora_out
         return out
-
-
-
-# ============================================================================
-# ORIONAttention
-# ============================================================================
 
 
 @ATTENTION_REGISTRY.register("orion", supports_causal=True, supports_gqa=True)
@@ -334,7 +317,6 @@ class ORIONAttention(BaseAttention):
         self.cfg = orion_cfg
         self.bert_mode = bert_mode
 
-        # Allocate kernel vs full heads
         if self.num_heads <= 1:
             self.num_kernel_heads = 1
             self.num_full_heads = 0
@@ -342,7 +324,6 @@ class ORIONAttention(BaseAttention):
             self.num_full_heads = max(1, self.num_heads // 3)
             self.num_kernel_heads = self.num_heads - self.num_full_heads
 
-        # Decoder detection
         model_type = str(getattr(cfg, "model_type", "") or "").lower() if cfg else ""
         is_dec = (
             bool(
@@ -373,7 +354,6 @@ class ORIONAttention(BaseAttention):
         self.is_causal = bool(is_dec)
         self.is_nested_encoder = False
 
-        # LoRA config
         self.lora_rank = (
             getattr(
                 cfg,
@@ -400,7 +380,6 @@ class ORIONAttention(BaseAttention):
             if p is not None:
                 target_dtype = p.dtype
 
-        # Projections
         self.q_proj = FactorisedLinear(
             hidden_size,
             self.all_head_size,
@@ -462,7 +441,6 @@ class ORIONAttention(BaseAttention):
         if target_dtype is not None:
             self.to(target_dtype)
 
-    # ------------------------------------------------------------------
     @property
     def query(self) -> FactorisedLinear:
         return self.q_proj
@@ -503,9 +481,6 @@ class ORIONAttention(BaseAttention):
     def c_proj(self) -> FactorisedLinear:
         return self.out_proj
 
-    # ------------------------------------------------------------------
-    # copy_weights
-    # ------------------------------------------------------------------
     def copy_weights(self, src: Any) -> None:
         if src is None:
             return
@@ -539,7 +514,6 @@ class ORIONAttention(BaseAttention):
             "o": (None, None),
         }
 
-        # GPT-2 fused
         if hasattr(src, "c_attn") and src.c_attn is not None:
             c_attn_mod = src.c_attn
             base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
@@ -586,7 +560,6 @@ class ORIONAttention(BaseAttention):
                         bias_o.data.clone() if bias_o is not None else None,
                     )
 
-        # RoBERTa nested
         elif hasattr(src, "self") and hasattr(src.self, "query"):
             s = src.self
             for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
@@ -603,7 +576,6 @@ class ORIONAttention(BaseAttention):
                     out_mod.bias.data.clone() if out_mod.bias is not None else None,
                 )
 
-        # Flat modules (DistilBERT, Qwen, etc.)
         else:
             proj_candidates = {
                 "q": ["q_lin", "q_proj", "query"],
@@ -622,7 +594,6 @@ class ORIONAttention(BaseAttention):
                             )
                             break
 
-        # UniversalAdapter fallback
         missing = [
             k
             for k, (w, _) in extracted.items()
@@ -665,7 +636,6 @@ class ORIONAttention(BaseAttention):
                 w, b = extracted[proj_key]
                 if w is None:
                     if proj_key == "o" and self.is_nested_encoder:
-                        # Identity for nested encoders
                         target_mod.down.weight.data.zero_()
                         target_mod.up.weight.data.zero_()
                         r = min(target_mod.rank, self.hidden_size, self.all_head_size)
@@ -678,7 +648,6 @@ class ORIONAttention(BaseAttention):
                 if w.ndim != 2:
                     w = w.reshape(w.size(0), -1)
 
-                # Orientation
                 expected = (target_mod.out_features, target_mod.in_features)
                 if w.shape != expected and w.t().contiguous().shape == expected:
                     w = w.t().contiguous()
@@ -695,10 +664,6 @@ class ORIONAttention(BaseAttention):
                         proj_key,
                         norm,
                     )
-
-        # ------------------------------------------------------------------
-        # OR-FIX-03: _kernel_linear_attention with token_valid
-        # ------------------------------------------------------------------
 
     def _kernel_linear_attention(
         self,
@@ -723,31 +688,24 @@ class ORIONAttention(BaseAttention):
         F_dim = self.cfg.rff_features
         orig_dtype = Q.dtype
         Q, K, V = Q.float(), K.float(), V.float()
-        proj = self.rff_proj[:Hk].to(Q.device).float()  # (Hk, D, m); ω ~ N(0, I_d)
+        proj = self.rff_proj[:Hk].to(Q.device).float()
 
-        # Scale x ONCE by 1/sqrt(d). This is the "x" entering the FAVOR+ formula.
         scale = 1.0 / math.sqrt(self.head_dim)
         Q_scaled = Q * scale
         K_scaled = K * scale
 
-        # Project onto random features:  (B, Hk, N, m)
         Q_proj = torch.einsum("bhnd,hdf->bhnf", Q_scaled, proj)
         K_proj = torch.einsum("bhnd,hdf->bhnf", K_scaled, proj)
 
-        # Subtract ||x||²/2 (per query/key) → unbiased FAVOR+ feature map
-        Q_norm_sq = (Q_scaled**2).sum(dim=-1, keepdim=True) / 2.0  # (B, Hk, N, 1)
-        K_norm_sq = (K_scaled**2).sum(dim=-1, keepdim=True) / 2.0  # (B, Hk, N, 1)
+        Q_norm_sq = (Q_scaled**2).sum(dim=-1, keepdim=True) / 2.0
+        K_norm_sq = (K_scaled**2).sum(dim=-1, keepdim=True) / 2.0
 
-        # Numerical safety: subtract per-token max before exp (log-sum-exp style)
-        # Mathematically cancels out in numerator and denominator for every (q_t, k_s) pair,
-        # while preventing any future tokens (s > t) from affecting past feature representations.
         max_q = (Q_proj - Q_norm_sq).detach().amax(dim=-1, keepdim=True).clamp(min=0.0)
         max_k = (K_proj - K_norm_sq).detach().amax(dim=-1, keepdim=True).clamp(min=0.0)
 
         Q_feat = torch.exp(Q_proj - Q_norm_sq - max_q) / math.sqrt(F_dim)
         K_feat = torch.exp(K_proj - K_norm_sq - max_k) / math.sqrt(F_dim)
 
-        # Padding mask on K and V
         if token_valid is not None:
             mask_kv = token_valid.unsqueeze(1).unsqueeze(-1).to(K_feat.dtype)
             K_feat = K_feat * mask_kv
@@ -792,9 +750,6 @@ class ORIONAttention(BaseAttention):
             ctx = torch.einsum("bhnf,bhfd->bhnd", Q_feat, KV) / denom
         return ctx.to(orig_dtype)
 
-    # ------------------------------------------------------------------
-    # OR-FIX-02: _full_softpick_attention rewritten
-    # ------------------------------------------------------------------
     def _full_softpick_attention(
         self,
         Q: torch.Tensor,
@@ -818,13 +773,11 @@ class ORIONAttention(BaseAttention):
         scale = 1.0 / math.sqrt(int(self.head_dim))
         is_causal = bool(self.is_decoder) and (N > 1 or past_len > 0)
 
-        # Build additive attention bias for padding
         attn_bias = None
         if token_valid is not None:
             valid_bias = ((1.0 - token_valid.float()) * -1e4).view(B, 1, 1, N_kv)
             attn_bias = valid_bias.to(Q.dtype)
 
-        # Try SDPA
         try:
             q_sdp = maybe_half(Q)
             k_sdp = maybe_half(K)
@@ -833,10 +786,8 @@ class ORIONAttention(BaseAttention):
             if attn_bias is not None:
                 bias_sdp = attn_bias.to(q_sdp.dtype)
 
-            # Note: when past_len > 0, is_causal in standard SDPA assumes N == N_kv, so use explicit bias/fallback
             use_sdpa_causal = is_causal and past_len == 0 and N == N_kv and bias_sdp is None
             if past_len > 0 and is_causal:
-                # Custom causal mask with past_len offset
                 causal_mask = torch.tril(torch.ones(N, N_kv, device=Q.device, dtype=torch.bool), diagonal=past_len)
                 c_bias = (~causal_mask).unsqueeze(0).unsqueeze(0).to(q_sdp.dtype) * -1e4
                 bias_sdp = c_bias if bias_sdp is None else bias_sdp + c_bias
@@ -855,7 +806,6 @@ class ORIONAttention(BaseAttention):
         except Exception:
             pass
 
-        # Fallback: manual temperature softmax
         scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
 
         if is_causal:
@@ -872,9 +822,6 @@ class ORIONAttention(BaseAttention):
         attn_w = self.dropout(attn_w)
         return torch.matmul(attn_w, V)
 
-    # ------------------------------------------------------------------
-    # Forward
-    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -924,12 +871,10 @@ class ORIONAttention(BaseAttention):
             .contiguous()
         )
 
-        # RoPE
         if position_embeddings is not None and not is_cross:
             cos, sin = position_embeddings
             Q_all, K_all = apply_rotary_pos_emb(Q_all, K_all, cos, sin)
 
-        # Autoregressive KV-Caching for causal decoders
         past_len = 0
         if self.is_decoder and past_key_value is not None:
             if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 2:
@@ -940,12 +885,10 @@ class ORIONAttention(BaseAttention):
                     V_all = torch.cat([past_v, V_all], dim=2)
         present_key_value = (K_all, V_all) if self.is_decoder else None
 
-        # GQA expansion
         if self.kv_repeat > 1:
             K_all = repeat_kv(K_all, self.kv_repeat)
             V_all = repeat_kv(V_all, self.kv_repeat)
 
-        # Token valid mask
         token_valid = None
         eff_mask = encoder_attention_mask if is_cross else attention_mask
         if eff_mask is not None:
@@ -957,7 +900,6 @@ class ORIONAttention(BaseAttention):
 
         ctx_list = []
 
-        # OR-FIX-04: pass token_valid to both branches
         if Hk > 0:
             Q_kernel = Q_all[:, :Hk]
             K_kernel = K_all[:, :Hk]
@@ -979,7 +921,6 @@ class ORIONAttention(BaseAttention):
 
         context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
 
-        # head_mask
         if head_mask is not None:
             if head_mask.dim() == 1:
                 hm = head_mask.view(1, -1, 1, 1)
@@ -989,11 +930,9 @@ class ORIONAttention(BaseAttention):
                 hm = head_mask
             context = context * hm.to(context.dtype)
 
-        # Reshape to (B, N, H*D)
         context = context.transpose(1, 2).contiguous().view(B, N, self.all_head_size)
         context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
 
-        # Output projection (skipped for nested encoders)
         if self.is_nested_encoder:
             output = context
         else:
@@ -1068,11 +1007,6 @@ class ORIONAttention(BaseAttention):
         return torch.norm(diff, p="fro") / (W.size(0) ** 2)
 
 
-# ============================================================================
-# Injection
-# ============================================================================
-
-
 def inject_orion(
     layer: Any = None,
     model: Any = None,
@@ -1085,7 +1019,6 @@ def inject_orion(
     **kwargs: Any,
 ) -> ORIONAttention | nn.Module | None:
     """Safe injection hook for ORIONAttention across diverse transformer architectures."""
-    # OR-FIX-07: recursion guard
     if _depth > 8:
         logger.warning("inject_orion: max recursion depth exceeded, aborting.")
         return None
@@ -1100,7 +1033,6 @@ def inject_orion(
     if cfg is None and hasattr(target, "config"):
         cfg = target.config
 
-    # Whole-model traversal
     layer_list = None
     if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
         layer_list = target.distilbert.transformer.layer
@@ -1138,7 +1070,6 @@ def inject_orion(
                 num_injected += 1
         return target if num_injected > 0 else None
 
-    # Single layer injection
     try:
         src_attn = old_attn
         if src_attn is None:
@@ -1159,7 +1090,6 @@ def inject_orion(
         if src_attn is None:
             return None
 
-        # Double-injection guard
         if isinstance(src_attn, ORIONAttention):
             return None
         if "ORION" in src_attn.__class__.__name__:
@@ -1169,7 +1099,6 @@ def inject_orion(
             if isinstance(sub, ORIONAttention):
                 return None
 
-        # Skip hybrid DeltaNet/LinearAttention layers (Qwen3.5)
         c_name = src_attn.__class__.__name__
         if "DeltaNet" in c_name or "LinearAttention" in c_name:
             return None
@@ -1219,7 +1148,6 @@ def inject_orion(
             **kwargs,
         )
 
-        # Attach in-place
         if hasattr(target, "attention"):
             if hasattr(target.attention, "self"):
                 target.attention.self = new_attn

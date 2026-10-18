@@ -39,7 +39,7 @@ class NaiveSVDAttention(MinimalSVDAttention):
         dropout: float = 0.1,
         pretrained_attn: nn.Module | None = None,
         rank: int | None = None,
-        lora_rank: int = 0,  # Zero recovery parameters for naive baseline
+        lora_rank: int = 0,
         lora_alpha: float = 1.0,
         is_decoder: bool | None = None,
         **kwargs: Any,

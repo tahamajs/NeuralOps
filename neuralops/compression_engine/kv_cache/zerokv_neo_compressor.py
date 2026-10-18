@@ -107,7 +107,7 @@ class ZeroKVNeoCache:
         if heavy_budget > 0 and cur_len > (sinks + window):
             mid_k = self.k_cache[:, :, sinks : cur_len - window, :]
             mid_v = self.v_cache[:, :, sinks : cur_len - window, :]
-            mid_norms = torch.norm(mid_k.float(), dim=-1)  # (B, H, mid_len)
+            mid_norms = torch.norm(mid_k.float(), dim=-1)
             _, top_idx = torch.topk(mid_norms, min(heavy_budget, mid_norms.size(-1)), dim=-1)
             top_idx, _ = torch.sort(top_idx, dim=-1)
 
@@ -122,8 +122,6 @@ class ZeroKVNeoCache:
             self.v_cache = torch.cat([sink_v, win_v], dim=2).contiguous() if window > 0 else sink_v
 
         return self.k_cache, self.v_cache
-
-
 
 
 @COMPRESSOR_REGISTRY.register("zerokv_neo_compressor")
@@ -198,7 +196,6 @@ class ZeroKVNeoCompressor(BaseCompressor):
         self.layer_errors: dict[str, float] = {}
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
-        # Protect critical classification heads, poolers, lm_heads, and embeddings
         if any(
             k in name.lower() for k in ["classifier", "score", "lm_head", "pooler", "embedding"]
         ):
@@ -319,7 +316,6 @@ class ZeroKVNeoCompressor(BaseCompressor):
                     p.requires_grad = False
                 continue
 
-            # Assign pruned weights to base_layer
             if is_conv1d:
                 W_assigned = (
                     (W * best_mask.unsqueeze(1))
@@ -343,9 +339,7 @@ class ZeroKVNeoCompressor(BaseCompressor):
                 continue
 
             base_layer.weight.data.copy_(W_assigned)
-            # ZeroKV-Neo compresses in-place: base_layer already holds the pruned weight
             compressed_layer = base_layer
-            # Preserve existing LoRA adapter weights if the source module has them
             if (
                 hasattr(module, "lora_A")
                 and hasattr(module, "lora_B")
@@ -362,8 +356,7 @@ class ZeroKVNeoCompressor(BaseCompressor):
                         compressed_layer.lora_B.data.copy_(src_lB.data)
 
             if hasattr(module, "base_layer"):
-                module.base_layer = compressed_layer  # put compressed layer inside wrapper
-                # module itself (LoRALinear wrapper) remains the replacement
+                module.base_layer = compressed_layer
             else:
                 pass
             if getattr(base_layer, "bias", None) is not None and base_layer.bias is not None:
@@ -425,7 +418,6 @@ class ZeroKVNeoCompressor(BaseCompressor):
         """
         name_lower = name.lower()
 
-        # Exclusion list: output projections must never be treated as QKV targets
         output_proj_keywords = [
             "out_lin",
             "out_proj",
@@ -438,7 +430,6 @@ class ZeroKVNeoCompressor(BaseCompressor):
         if any(kw in name_lower for kw in output_proj_keywords):
             return False
 
-        # Inclusion list: only match true QKV projections
         qkv_keywords = [
             "q_lin",
             "k_lin",

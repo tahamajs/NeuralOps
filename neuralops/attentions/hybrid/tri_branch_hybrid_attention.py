@@ -28,26 +28,12 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 logger = logging.getLogger(__name__)
 
 
-
-
-
-
-
-
-# ===========================================================================
-# Decoder detection (FIX 2)
-# ===========================================================================
 _DECODER_PREFIXES = (
     "gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt",
     "bloom", "falcon", "olmo", "mpt", "stablelm",
 )
 
 
-
-
-# ===========================================================================
-# Config (FIX 9: is_decoder not False by default)
-# ===========================================================================
 @dataclass
 class AegisHybridConfig:
     hidden_size: int = 768
@@ -59,8 +45,8 @@ class AegisHybridConfig:
     lora_rank: int = 32
     dropout: float = 0.1
     use_adaptive_pruning: bool = False
-    gate_init_bias: float = 0.0   # Zero-init to match GPT-2 exactly at step 0, avoiding KD shock
-    is_decoder: bool | None = None  # FIX 9: None = auto-detect
+    gate_init_bias: float = 0.0
+    is_decoder: bool | None = None
     use_global: bool = True
     kernel_feature_dim: int = 128
     kernel_seed: int = 1234
@@ -71,9 +57,6 @@ class AegisHybridConfig:
             self.num_key_value_heads = self.num_attention_heads
 
 
-# ===========================================================================
-# KernelFeatureMap (FIX 4: proper FAVOR+)
-# ===========================================================================
 class KernelFeatureMap(nn.Module):
     """
     FAVOR+ random Fourier features:
@@ -88,14 +71,10 @@ class KernelFeatureMap(nn.Module):
         self.head_dim = int(head_dim)
         self.num_features = int(num_features)
         gen = torch.Generator(device="cpu").manual_seed(int(seed))
-        # FIX 4: ω ~ N(0, I), NO extra scaling
         proj = torch.randn(self.head_dim, self.num_features, generator=gen)
-        # Optional orthogonal init for variance reduction when m <= d
         if self.num_features <= self.head_dim:
             q, _ = torch.linalg.qr(proj)
             proj = q
-        # NOTE: standard FAVOR+ does NOT scale proj by sqrt(d).
-        # The feature map itself handles scaling via 1/sqrt(m) and -||x||²/2.
         self.register_buffer("proj", proj)
         self.scale = 1.0 / math.sqrt(self.num_features)
 
@@ -103,18 +82,13 @@ class KernelFeatureMap(nn.Module):
         with torch.autocast(device_type=x.device.type, enabled=False):
             x_f = x.float()
             proj = self.proj.float()
-            # φ(x) = exp(ω·x - ||x||²/2)
-            proj_x = torch.matmul(x_f, proj)  # (..., m)
-            norm_sq_half = 0.5 * (x_f * x_f).sum(dim=-1, keepdim=True)  # (..., 1)
-            # Numerical safety: clamp the exponent
+            proj_x = torch.matmul(x_f, proj)
+            norm_sq_half = 0.5 * (x_f * x_f).sum(dim=-1, keepdim=True)
             exponent = torch.clamp(proj_x - norm_sq_half, min=-30.0, max=10.0)
             phi = self.scale * torch.exp(exponent)
             return phi.to(x.dtype)
 
 
-# ===========================================================================
-# Chunked sliding-window local attention (FIX 5, 6, 7, 8)
-# ===========================================================================
 def _local_window_attention_chunked(
     Q: torch.Tensor,
     K: torch.Tensor,
@@ -128,7 +102,6 @@ def _local_window_attention_chunked(
 ) -> tuple[torch.Tensor, torch.Tensor | None]:
     B, H, N, D = Q.shape
     N_kv = K.shape[2]
-    # FIX 5: if window covers full sequence, use radius = N_kv (full context)
     if window >= N_kv:
         radius = N_kv
     else:
@@ -147,7 +120,6 @@ def _local_window_attention_chunked(
     scale = 1.0 / math.sqrt(int(D))
     device = Q.device
 
-    # FIX 6: avoid .item() — compute q_min/q_max from past_len + indices
     chunk = max(64, min(radius * 2, 256))
 
     outs = []
@@ -157,7 +129,6 @@ def _local_window_attention_chunked(
         q_end = min(q_start + chunk, N)
         Qc = Q[:, :, q_start:q_end]
 
-        # FIX 6: pure integer arithmetic, no .item()
         q_min_abs = past_len + q_start
         q_max_abs = past_len + q_end - 1
         k_lo = max(0, q_min_abs - radius)
@@ -170,7 +141,6 @@ def _local_window_attention_chunked(
         Kc = K[:, :, k_lo:k_hi]
         Vc = V[:, :, k_lo:k_hi]
 
-        # Absolute positions
         q_abs = past_len + torch.arange(q_start, q_end, device=device)
         k_abs = torch.arange(k_lo, k_hi, device=device)
 
@@ -209,9 +179,6 @@ def _local_window_attention_chunked(
     return output, attn_full
 
 
-# ===========================================================================
-# Global linear attention (FAVOR+)
-# ===========================================================================
 def _global_linear_attention(
     Q: torch.Tensor,
     K: torch.Tensor,
@@ -271,7 +238,6 @@ def _causal_linear_attention(
             out = num / den
             return torch.nan_to_num(out, nan=0.0, posinf=0.0, neginf=0.0).to(Q.dtype)
 
-        # FIX 7: chunk_size adaptive to sequence
         chunk_size = min(chunk_size, N)
         pad_len = (chunk_size - (N % chunk_size)) % chunk_size
 
@@ -323,9 +289,6 @@ def _causal_linear_attention(
         return torch.nan_to_num(out.to(Q.dtype), nan=0.0, posinf=0.0, neginf=0.0)
 
 
-# ===========================================================================
-# Main attention
-# ===========================================================================
 @ATTENTION_REGISTRY.register(
     "tri_branch_hybrid", supports_causal=True, supports_gqa=True, supports_rope=True
 )
@@ -374,7 +337,6 @@ class TriBranchHybridAttention(BaseAttention):
             r = rank or getattr(cfg_src, "rank", min(128, h_size))
             l_r = lora_rank or getattr(cfg_src, "lora_rank", 32)
 
-            # FIX 2: detect decoder using old_attn if available
             dec = _detect_decoder(config, is_decoder, pretrained_attn)
 
             config = AegisHybridConfig(
@@ -405,7 +367,6 @@ class TriBranchHybridAttention(BaseAttention):
         self.lora_rank: int = max(1, min(int(config.lora_rank), self.hidden_size))
         self.dropout = nn.Dropout(config.dropout)
 
-        # FIX 2: pass pretrained_attn to _detect_decoder for stronger signal
         self.is_decoder: bool = _detect_decoder(config, is_decoder, pretrained_attn)
         self.use_global: bool = bool(config.use_global)
         self.is_nested_encoder: bool = False
@@ -413,7 +374,6 @@ class TriBranchHybridAttention(BaseAttention):
 
         self.whitening = whitening or {}
 
-        # ---- projections ----
         self.q_proj = FactorizedLinear(
             self.hidden_size, self.all_head_size,
             rank=self.rank, lora_rank=self.lora_rank, bias=True,
@@ -431,27 +391,23 @@ class TriBranchHybridAttention(BaseAttention):
             rank=self.rank, lora_rank=self.lora_rank, bias=True,
         )
 
-        # ---- kernel feature map ----
         self.kernel_map = KernelFeatureMap(
             head_dim=self.head_dim,
             num_features=config.kernel_feature_dim,
             seed=config.kernel_seed,
         )
 
-        # FIX 3: zero-init fusion_gate to match GPT-2 exactly at step 0, avoiding KD shock.
         _beta_init = _env_float("AEGIS_FUSION_BETA", getattr(config, "gate_init_bias", 0.0))
         self.fusion_gate = nn.Parameter(
             torch.full((self.num_heads,), _beta_init), requires_grad=True
         )
 
-        # storage accounting
         self._orig_storage_bytes = 0
         self._comp_storage_bytes = 0
 
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
 
-    # ---- aliases ----
     @property
     def fusion_beta(self) -> nn.Parameter:
         return self.fusion_gate
@@ -481,9 +437,6 @@ class TriBranchHybridAttention(BaseAttention):
     @property
     def c_proj(self): return self.out_proj
 
-    # ------------------------------------------------------------------
-    # SVD init
-    # ------------------------------------------------------------------
     @staticmethod
     def _svd_init(
         w: torch.Tensor,
@@ -551,7 +504,6 @@ class TriBranchHybridAttention(BaseAttention):
             US = U[:, :r] @ torch.diag(S[:r])
             proj.up.weight.data[:, :r].copy_(US.to(proj.up.weight.dtype))
 
-            # Standard stable LoRA init: lora_A kaiming, lora_B zero so initial ΔW = 0
             if proj.lora_A is not None and proj.lora_B is not None and proj.lora_rank > 0:
                 nn.init.kaiming_uniform_(proj.lora_A, a=math.sqrt(5))
                 proj.lora_B.data.zero_()
@@ -565,9 +517,6 @@ class TriBranchHybridAttention(BaseAttention):
             proj._cached_weight = None
             proj._cached_versions = ()
 
-    # ------------------------------------------------------------------
-    # copy_weights (FIX 8)
-    # ------------------------------------------------------------------
     def copy_weights(self, old_attn: nn.Module) -> None:
         try:
             for p in old_attn.parameters():
@@ -584,7 +533,6 @@ class TriBranchHybridAttention(BaseAttention):
             "q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None),
         }
 
-        # UniversalAdapter first
         if UniversalAdapter is not None:
             for p in ("q", "k", "v", "o"):
                 try:
@@ -594,7 +542,6 @@ class TriBranchHybridAttention(BaseAttention):
                 except Exception:
                     pass
 
-        # FIX 8: GPT-2 fused c_attn with correct condition
         if hasattr(old_attn, "c_attn") and extracted["q"][0] is None:
             c = old_attn.c_attn
             c_w = c.weight.data.clone()
@@ -618,7 +565,6 @@ class TriBranchHybridAttention(BaseAttention):
             b_o = getattr(c, "bias", None)
             extracted["o"] = (w_o, b_o.data.clone() if b_o is not None else None)
 
-        # Nested BERT/RoBERTa
         if hasattr(old_attn, "self") and hasattr(old_attn.self, "query"):
             self.is_nested_encoder = True
             s = old_attn.self
@@ -636,7 +582,6 @@ class TriBranchHybridAttention(BaseAttention):
                 extracted["o"] = (d.weight.data.clone(),
                                   b.data.clone() if b is not None else None)
 
-        # Flat modules
         named_map = {
             "q": ("q_proj", "q_lin", "query"),
             "k": ("k_proj", "k_lin", "key"),
@@ -654,12 +599,10 @@ class TriBranchHybridAttention(BaseAttention):
                                               b.data.clone() if b is not None else None)
                             break
 
-        # Fail-loud validation for mandatory projections
         missing = [k for k in ("q", "k", "v") if extracted[k][0] is None]
         if missing:
             raise RuntimeError(f"AegisHybridAttention: mandatory projections {missing} missing")
 
-        # Apply SVD init
         for key, target in (
             ("q", self.q_proj), ("k", self.k_proj),
             ("v", self.v_proj), ("o", self.out_proj),
@@ -685,9 +628,6 @@ class TriBranchHybridAttention(BaseAttention):
         except Exception:
             pass
 
-    # ------------------------------------------------------------------
-    # Mask
-    # ------------------------------------------------------------------
     @staticmethod
     def _prepare_valid_mask(attention_mask, B, L, device) -> torch.Tensor | None:
         if attention_mask is None:
@@ -762,7 +702,6 @@ class TriBranchHybridAttention(BaseAttention):
             .transpose(1, 2).contiguous()
         )
 
-        # RoPE
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None and not is_cross:
@@ -773,7 +712,6 @@ class TriBranchHybridAttention(BaseAttention):
             sin = sin[..., past_len_rope : past_len_rope + N, :]
             Q, K_new = apply_rotary_pos_emb(Q, K_new, cos, sin)
 
-        # KV cache
         past_k, past_v, _ = self._read_past_kv(past_key_value, layer_idx)
         if past_k is not None and not is_cross:
             K_cat = torch.cat([past_k, K_new], dim=-2)
@@ -793,7 +731,6 @@ class TriBranchHybridAttention(BaseAttention):
         eff_mask = encoder_attention_mask if is_cross else attention_mask
         token_valid = self._prepare_valid_mask(eff_mask, B, N_kv, device)
 
-        # Local
         local_out, attn_local = _local_window_attention_chunked(
             Q, K_full, V_full,
             window=self.local_window,
@@ -804,9 +741,7 @@ class TriBranchHybridAttention(BaseAttention):
             training=self.training,
         )
 
-        # Global
         if self.use_global:
-            # FIX 2: use causal version when is_decoder=True
             if self.is_decoder and not is_cross:
                 global_out = _causal_linear_attention(
                     Q, K_full, V_full, self.kernel_map, token_valid,
@@ -843,9 +778,6 @@ class TriBranchHybridAttention(BaseAttention):
         final = torch.nan_to_num(final, nan=0.0, posinf=1e4, neginf=-1e4)
         final = final.to(hidden_states.dtype)
 
-        # HuggingFace-compatible return tuple
-        # GPT-2 expects (hidden, present, attn_weights) when
-        # use_cache=True and output_attentions=True.
         _use_cache = kwargs.get("use_cache", False) or (
             past_key_value is not None and past_key_value is not False
         )
@@ -873,9 +805,6 @@ class TriBranchHybridAttention(BaseAttention):
         return out
 
 
-# ===========================================================================
-# Injector
-# ===========================================================================
 def inject_aegis_hybrid(
     layer: Any = None,
     model: Any = None,
@@ -961,7 +890,6 @@ def inject_aegis_hybrid(
                           getattr(src, "num_heads", kwargs.get("num_heads", 12)))
     n_heads = int(n_heads)
 
-    # FIX 2: pass src to _detect_decoder
     dec = _detect_decoder(cfg, kwargs.get("is_decoder"), src)
 
     aegis_cfg = AegisHybridConfig(
@@ -980,7 +908,7 @@ def inject_aegis_hybrid(
         is_decoder=dec,
         use_global=kwargs.get("use_global",
                               getattr(comp_config, "use_global", True) if comp_config else True),
-        gate_init_bias=kwargs.get("gate_init_bias", 0.0),  # FIX 3
+        gate_init_bias=kwargs.get("gate_init_bias", 0.0),
     )
 
     try:
@@ -1027,7 +955,6 @@ def inject_aegis_hybrid(
     return new_attn
 
 
-# Backward-compatibility aliases for tests and external callers
 AegisHybridAttention = TriBranchHybridAttention
 TriBranchHybridConfig = AegisHybridConfig
 

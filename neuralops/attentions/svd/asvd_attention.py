@@ -31,8 +31,6 @@ from neuralops.core.triton_kernels import triton_dispatch
 logger = logging.getLogger(__name__)
 
 
-
-
 class ASVDLinear(nn.Module):
     is_custom_attention: bool = True
     r"""Low-rank factorized linear layer with explicit singular value scaling and trainable LoRA adapters:
@@ -69,7 +67,6 @@ class ASVDLinear(nn.Module):
         else:
             self.register_parameter("bias", None)
 
-        # Trainable LoRA adapter parameters
         if self.lora_rank > 0:
             self.lora_A = nn.Parameter(torch.empty(lora_rank, in_features, **factory_kwargs))
             self.lora_B = nn.Parameter(torch.empty(out_features, lora_rank, **factory_kwargs))
@@ -212,26 +209,19 @@ class ASVDLinear(nn.Module):
     triton_kernel: str = "low_rank"
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # x: (*, in_features)
-        # Factorized SVD projection: y = ((x @ V.T) * S) @ U.T + bias
-        # FIXED: Triton Guard: Check if tensor is on CUDA and half-precision (float16/bfloat16).
-        # For torch.float32 or CPU execution, gracefully bypass Triton kernel and run
-        # standard PyTorch matrix multiplication to avoid fallback warnings and dispatch overhead.
         if x.is_cuda and x.dtype in (torch.float16, torch.bfloat16):
             V_eff = self.S.view(-1, 1) * self.V
             out = triton_dispatch(self.triton_kernel, x, self.U, V_eff, bias=self.bias)
         else:
-            # High-precision PyTorch evaluation: ((x @ V.T) * S) @ U.T + bias
             u = self.U.to(x.dtype)
             s = self.S.to(x.dtype)
             v = self.V.to(x.dtype)
             b = self.bias.to(x.dtype) if self.bias is not None else None
 
-            x_v = F.linear(x, v)       # x @ V.T -> shape (*, rank)
-            x_vs = x_v * s             # (*, rank) * (rank,)
-            out = F.linear(x_vs, u, b) # ((x @ V.T) * S) @ U.T + bias -> shape (*, out_features)
+            x_v = F.linear(x, v)
+            x_vs = x_v * s
+            out = F.linear(x_vs, u, b)
 
-        # 4. Residual LoRA adapter path: (x @ lora_A.T) @ lora_B.T
         if getattr(self, "lora_A", None) is not None and self.lora_A is not None:
             a = self.lora_A.to(x.dtype)
             bb = self.lora_B.to(x.dtype)
@@ -269,7 +259,6 @@ class ASVDAttention(BaseAttention):
         pretrained_attn: nn.Module | None = None,
         **kwargs: Any,
     ) -> None:
-        # Extract rank whether passed positionally (as args[0]), as explicit keyword, or in kwargs dict
         pos_rank = args[0] if len(args) > 0 else None
         if len(args) > 1 and pretrained_attn is None:
             pretrained_attn = args[1]
@@ -348,16 +337,13 @@ class ASVDAttention(BaseAttention):
         self.kv_head_size: int = self.num_kv_heads * self.head_dim
         self.kv_repeat: int = max(1, self.num_heads // max(1, self.num_kv_heads))
 
-        # Rank configuration
         self.rank: int = resolved_rank
 
-        # Flags & metadata
         self.supports_gqa: bool = True
         self.supports_rope: bool = True
         self.is_nested_encoder: bool = False
         self.rotary_emb: Any | None = None
 
-        # Decoder detection
         model_type = getattr(config, "model_type", "").lower()
         is_dec = getattr(config, "is_decoder", False)
         decoder_prefixes = (
@@ -385,7 +371,6 @@ class ASVDAttention(BaseAttention):
             is_dec = True
         self.is_decoder: bool = bool(is_dec)
 
-        # Projections
         self.query = ASVDLinear(
             self.hidden_size,
             self.all_head_size,
@@ -434,9 +419,6 @@ class ASVDAttention(BaseAttention):
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
 
-    # --------------------------------------------------------------------------
-    # Compatibility properties for parameter inspection & framework integration
-    # --------------------------------------------------------------------------
     @property
     def q_proj(self) -> ASVDLinear:
         return self.query
@@ -487,7 +469,6 @@ class ASVDAttention(BaseAttention):
         """Decomposes src_weight into low-rank SVD factors and verifies relative Frobenius error."""
         with torch.no_grad():
             W = src_weight.detach().float()
-            # Ensure correct orientation: [out_features, in_features]
             if W.ndim != 2:
                 raise ValueError(
                     f"Expected 2D weight matrix for projection {proj_name}, got shape {W.shape}"
@@ -498,7 +479,6 @@ class ASVDAttention(BaseAttention):
             ):
                 W = W.t().contiguous()
 
-            # Perform SVD strictly in FP32 with CPU fallback for driver robustness
             dev = W.device
             try:
                 U, S, Vt = torch.linalg.svd(W, full_matrices=False)
@@ -508,7 +488,6 @@ class ASVDAttention(BaseAttention):
                 S = S.to(dev)
                 Vt = Vt.to(dev)
 
-            # Energy-based dynamic rank selection
             total_energy = torch.sum(S**2)
             cum_energy = torch.cumsum(S**2, dim=0) / (total_energy + 1e-12)
 
@@ -522,8 +501,6 @@ class ASVDAttention(BaseAttention):
             else:
                 r_energy = min(U.size(1), Vt.size(0))
 
-            # Cap rank so factorized layer strictly compresses or matches original parameter count
-            # Dense size: in_features * out_features. Factored size: r * (in_features + out_features) + r
             max_param_r = max(
                 1,
                 int(
@@ -542,7 +519,6 @@ class ASVDAttention(BaseAttention):
             denom = torch.norm(W, p="fro") + 1e-9
             rel_err = float((diff / denom).item())
 
-            # If error exceeds threshold under dynamic rank, expand rank within safe compression bound
             if self.error_threshold is not None and rel_err > self.error_threshold:
                 if self.dynamic_rank and r < min(U.size(1), Vt.size(0), max_param_r):
                     indices_strict = (
@@ -571,11 +547,6 @@ class ASVDAttention(BaseAttention):
             "o": (None, None),
         }
 
-        # 1. Robust Nested Encoder Detection (prior to extraction)
-        # Robustly detects both:
-        # a) Outer RobertaAttention / BertAttention with inner 'self' (query/key/value) and 'output.dense'
-        # b) Inner RobertaSelfAttention / BertSelfAttention
-        # Prevents double output projection signal attenuation
         cls_name = src.__class__.__name__
         has_out_lin = hasattr(src, "out_lin")
 
@@ -586,7 +557,6 @@ class ASVDAttention(BaseAttention):
             and hasattr(src, "output")
             and hasattr(src.output, "dense")
         ):
-            # Outer RobertaAttention containing inner self-attention and output dense
             is_nested_encoder = True
         elif (
             cls_name
@@ -599,12 +569,10 @@ class ASVDAttention(BaseAttention):
             ]
             or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
         ) and not has_out_lin:
-            # Inner SelfAttention module
             is_nested_encoder = True
 
         self.is_nested_encoder = bool(is_nested_encoder)
 
-        # 2. GPT-2: Fused Conv1D c_attn + Conv1D c_proj
         if hasattr(src, "c_attn") and src.c_attn is not None:
             c_attn_mod = src.c_attn
             base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
@@ -655,7 +623,6 @@ class ASVDAttention(BaseAttention):
                         o_w = o_w.t().contiguous()
                     extracted_weights["o"] = (o_w, o_b)
 
-        # 3. RoBERTa / BERT Nested Encoder: self.query, self.key, self.value
         s = getattr(src, "self", src)
         name_map = {"q": "query", "k": "key", "v": "value"}
         for proj, attr in name_map.items():
@@ -684,7 +651,6 @@ class ASVDAttention(BaseAttention):
                 b.data if b is not None else None,
             )
 
-        # 4. Qwen / LLaMA: q_proj, k_proj, v_proj, o_proj
         for proj in ["q", "k", "v", "o"]:
             if extracted_weights[proj][0] is None:
                 for candidate in [f"{proj}_proj", f"{proj}_lin", proj]:
@@ -697,7 +663,6 @@ class ASVDAttention(BaseAttention):
                         )
                         break
 
-        # 5. Fallback to UniversalAdapter
         for proj in ["q", "k", "v", "o"]:
             if extracted_weights[proj][0] is None:
                 try:
@@ -707,7 +672,6 @@ class ASVDAttention(BaseAttention):
                 except Exception as e:
                     logger.warning(f"copy_weights failed: {e}")
 
-        # 6. Check for missing essential projections and Frobenius norm verification
         missing = [p for p in ["q", "k", "v"] if extracted_weights[p][0] is None]
         if not self.is_nested_encoder and extracted_weights["o"][0] is None:
             missing.append("o")
@@ -733,7 +697,6 @@ class ASVDAttention(BaseAttention):
                     f"ASVDAttention extracted weight for 'o' has near-zero Frobenius norm ({norm_o:.2e})"
                 )
 
-        # 7. SVD Factorization & Reconstruction Verification
         for proj, target in [
             ("q", self.query),
             ("k", self.key),
@@ -747,7 +710,6 @@ class ASVDAttention(BaseAttention):
             if w is not None:
                 self._decompose_and_set(target, w, b, proj_name=proj)
 
-        # 8. Inherit Decoder & Rotary Metadata
         if hasattr(src, "rotary_emb"):
             self.rotary_emb = src.rotary_emb
         if hasattr(src, "is_decoder"):
@@ -792,18 +754,15 @@ class ASVDAttention(BaseAttention):
         if encoder_hidden_states is not None:
             raise NotImplementedError("Cross-attention is not supported in ASVDAttention.")
 
-        # Extract rotary kwargs if supplied
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
         if position_ids is None:
             position_ids = kwargs.get("position_ids")
 
-        # 1. Project Q, K, V using low-rank factorized linear layers
         q: torch.Tensor = self.query(hidden_states).view(B, N, H, d).transpose(1, 2).contiguous()
         k: torch.Tensor = self.key(hidden_states).view(B, N, kv_H, d).transpose(1, 2).contiguous()
         v: torch.Tensor = self.value(hidden_states).view(B, N, kv_H, d).transpose(1, 2).contiguous()
 
-        # 2. Apply Rotary Position Embedding (RoPE) before GQA expansion and masking
         if (
             position_embeddings is not None
             and isinstance(position_embeddings, (tuple, list))
@@ -813,7 +772,6 @@ class ASVDAttention(BaseAttention):
             q, k = apply_rotary_pos_emb(q, k, cos, sin, position_ids)
         elif getattr(self, "rotary_emb", None) is not None:
             try:
-                # Use query tensor q (full H heads) to infer sequence length, shapes, and device correctly
                 rotary_out = (
                     self.rotary_emb(q, position_ids)
                     if position_ids is not None
@@ -825,18 +783,15 @@ class ASVDAttention(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter fallback failed: %s", e)
 
-        # 3. GQA Expansion: Expand key/value heads to match query heads if kv_H < H
         if kv_H < H:
             k = repeat_kv(k, H // kv_H)
             v = repeat_kv(v, H // kv_H)
 
-        # 4. Attention Scoring strictly in FP32 to prevent FP16 overflow
         scale: float = 1.0 / math.sqrt(d)
         scores: torch.Tensor = (
             torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
         )
 
-        # 5. Causal Masking for Decoder Models
         if getattr(self, "is_decoder", False):
             causal_mask = torch.triu(
                 torch.full((N, N), -10000.0, device=scores.device, dtype=scores.dtype),
@@ -844,7 +799,6 @@ class ASVDAttention(BaseAttention):
             )
             scores = scores + causal_mask.unsqueeze(0).unsqueeze(0)
 
-        # 6. Padding Attention Mask (Broadcast 2D/3D to 4D additive logits format)
         if attention_mask is not None:
             if attention_mask.dim() == 2:
                 if attention_mask.dtype == torch.bool:
@@ -866,12 +820,10 @@ class ASVDAttention(BaseAttention):
                 attention_mask = extended_mask.unsqueeze(1)
             scores = apply_attention_mask(scores, attention_mask)
 
-        # 7. Softmax & NaN Protection
         attn: torch.Tensor = F.softmax(scores, dim=-1).to(hidden_states.dtype)
         attn = torch.nan_to_num(attn, nan=0.0)
         attn = self.dropout(attn)
 
-        # 8. Safe Head Mask Handling
         if head_mask is not None:
             if head_mask.dim() == 1:
                 head_mask_tensor = head_mask.view(1, -1, 1, 1)
@@ -883,11 +835,9 @@ class ASVDAttention(BaseAttention):
                 head_mask_tensor = head_mask
             attn = attn * head_mask_tensor
 
-        # 9. Context Aggregation
         context: torch.Tensor = torch.matmul(attn, v)
         context = context.transpose(1, 2).contiguous().view(B, N, self.all_head_size)
 
-        # 10. Output Projection (Bypassed for nested encoders to prevent double projection)
         if getattr(self, "is_nested_encoder", False):
             out = context
         else:
@@ -914,12 +864,9 @@ def inject_asvd(
 
     cfg = model_config if model_config is not None else kwargs.pop("config", getattr(target, "config", None))
 
-    # FIXED: Keyword Argument Cleanup: pop rank and copy_weights early from kwargs
-    # so they are never passed twice when delegating to inject_attention or ASVDAttention
     rank = kwargs.pop("rank", 64)
     copy_weights = kwargs.pop("copy_weights", True)
 
-    # Whole-model traversal
     layer_list = None
     if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
         layer_list = target.distilbert.transformer.layer
@@ -1000,7 +947,6 @@ def inject_asvd(
     if target_config is None and layer is not None:
         target_config = getattr(layer, "config", None)
 
-    # Pre-flight extraction test: ensure source layer has extractable projections
     if old_attn is not None:
         try:
             new_attn = ASVDAttention(target_config, rank=rank, pretrained_attn=old_attn, **kwargs)
@@ -1029,7 +975,6 @@ def inject_asvd(
                 err,
             )
 
-    # Fallback to random initialization with a warning
     new_attn = ASVDAttention(target_config, rank=rank, **kwargs)
     if layer is not None:
         if hasattr(layer, "attention"):

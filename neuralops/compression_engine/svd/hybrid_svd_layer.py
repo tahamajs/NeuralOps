@@ -31,8 +31,6 @@ from neuralops.utils.compat import should_compress_linear
 logger = logging.getLogger(__name__)
 
 
-
-
 _ATTN_NAMES = {
     "q_proj",
     "k_proj",
@@ -47,11 +45,6 @@ _ATTN_NAMES = {
     "k_lin",
     "v_lin",
 }
-
-
-# ===========================================================================
-# Deprecated single-head SVD attention (backward compat only)
-# ===========================================================================
 
 
 class SVDSingleHead(nn.Module):
@@ -118,11 +111,6 @@ class SVDSingleHead(nn.Module):
             return x
 
 
-# ===========================================================================
-# DirectSVDEncoderLayer (unchanged; kept for backward compat)
-# ===========================================================================
-
-
 class DirectSVDEncoderLayer(nn.Module):
     """Encoder layer that replaces MHA with SVDSingleHead + standard FFN."""
 
@@ -186,11 +174,6 @@ class DirectSVDEncoderLayer(nn.Module):
         return output
 
 
-# ===========================================================================
-# Main Compressor
-# ===========================================================================
-
-
 @COMPRESSOR_REGISTRY.register("hybrid_svd_layer")
 class HybridSVDCompressor(BaseCompressor):
     """
@@ -252,7 +235,6 @@ class HybridSVDCompressor(BaseCompressor):
         self.layer_errors: dict[str, float] = {}
         self._compressed_params: int = 0
 
-    # ------------------------------------------------------------------
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         name_lower = name.lower()
         if any(part in name.split(".") for part in ["lora_A", "lora_B", "base_layer"]):
@@ -287,7 +269,6 @@ class HybridSVDCompressor(BaseCompressor):
             return any(t in name for t in self.target_modules)
         return True
 
-    # ------------------------------------------------------------------
     def compress(self) -> tuple[nn.Module, dict[str, Any]]:
         """Decompose linear layers via SVD and replace with SVDLinear."""
         replaced_count = 0
@@ -300,7 +281,6 @@ class HybridSVDCompressor(BaseCompressor):
         total_orig_params = 0
         total_comp_params = 0
 
-        # Freeze non-target layers if attention-only.
         if self.target_attention_only:
             for name, module in self.model.named_modules():
                 if any(part in name.split(".") for part in ["lora_A", "lora_B", "base_layer"]):
@@ -314,7 +294,6 @@ class HybridSVDCompressor(BaseCompressor):
                         p.requires_grad = False
                     self.skipped_layers.append(name)
 
-        # Fallback: linear-layer SVD.
         for name, module in list(self.model.named_modules()):
             if not self._is_target_module(name, module):
                 continue
@@ -397,7 +376,6 @@ class HybridSVDCompressor(BaseCompressor):
                 if name in self.fallback_layers:
                     continue
 
-                # Detect existing LoRA rank.
                 existing_lora_A = getattr(module, "lora_A", None)
                 existing_lora_B = getattr(module, "lora_B", None)
                 effective_lora_r = self.lora_r
@@ -445,7 +423,6 @@ class HybridSVDCompressor(BaseCompressor):
                 replaced_count += 1
                 self.compressed_layers.append(name)
 
-                # FIX: use actual svd_layer.rank for parameter accounting.
                 actual_rank = int(getattr(svd_layer, "rank", r))
                 comp_params = actual_rank * (in_f + out_f)
                 if getattr(svd_layer, "lora_r", 0) > 0:
@@ -459,7 +436,6 @@ class HybridSVDCompressor(BaseCompressor):
                     p.requires_grad = False
                 total_comp_params += orig_params
 
-        # Post-compression forward sanity check (single attempt).
         forward_check_success = True
         try:
             self.model.eval()
@@ -475,7 +451,6 @@ class HybridSVDCompressor(BaseCompressor):
                 try:
                     self.model(input_ids=dummy, attention_mask=attn_mask)
                 except Exception:
-                    # Try hidden-states form.
                     first_linear = next(
                         (m for m in self.model.modules() if isinstance(m, (nn.Linear, SVDLinear))),
                         None,
@@ -529,11 +504,6 @@ class HybridSVDCompressor(BaseCompressor):
             }
         )
         return self.model, stats
-
-
-# ===========================================================================
-# Factory
-# ===========================================================================
 
 
 def hybrid_svd_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:

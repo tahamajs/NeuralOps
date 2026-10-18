@@ -31,13 +31,6 @@ from neuralops.core.utils.gqa import repeat_kv
 logger = logging.getLogger(__name__)
 
 
-
-
-# ===========================================================================
-# Multi-Query Attention
-# ===========================================================================
-
-
 @ATTENTION_REGISTRY.register("mqa", supports_causal=True, supports_gqa=True)
 class MultiQueryAttention(BaseAttention):
     """
@@ -88,7 +81,6 @@ class MultiQueryAttention(BaseAttention):
 
         src_attn = pretrained_attn if pretrained_attn is not None else old_attn
 
-        # ---------------- Dimensions ----------------
         h_size = (
             hidden_size
             or kwargs.get("embed_dim")
@@ -139,18 +131,14 @@ class MultiQueryAttention(BaseAttention):
         )
         self.all_head_size = self.num_heads * self.head_dim
 
-        # ---------------- MQA: single KV head ----------------
-        # If explicit num_kv_heads given and > 1, this becomes GQA-like.
-        # Default: exactly 1 (true MQA).
         if num_kv_heads is not None:
             self.num_kv_heads = max(1, int(num_kv_heads))
         else:
-            self.num_kv_heads = 1  # ← MQA
+            self.num_kv_heads = 1
 
         self.kv_head_size = self.num_kv_heads * self.head_dim
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
 
-        # ---------------- Decoder detection ----------------
         if is_decoder is not None:
             self.is_decoder = bool(is_decoder)
         else:
@@ -170,7 +158,6 @@ class MultiQueryAttention(BaseAttention):
         self.is_nested_encoder: bool = False
         self.layer_idx: int = int(kwargs.get("layer_idx", 0))
 
-        # ---------------- LoRA config ----------------
         comp_config = getattr(config, "compression_config", None) if config else None
         self.lora_rank = int(
             _cfg_get(
@@ -188,7 +175,6 @@ class MultiQueryAttention(BaseAttention):
         )
         self.freeze_base = self.lora_rank > 0
 
-        # ---------------- Projections ----------------
         self.q_proj = LoRALinear(
             self.hidden_size, self.all_head_size,
             bias=bias, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
@@ -210,7 +196,6 @@ class MultiQueryAttention(BaseAttention):
             freeze_base=self.freeze_base,
         )
 
-        # ---------------- Dropout ----------------
         dropout_p = float(
             dropout
             or _cfg_get(config, "dropout")
@@ -225,9 +210,6 @@ class MultiQueryAttention(BaseAttention):
         if src_attn is not None:
             self.copy_weights(src_attn)
 
-    # ------------------------------------------------------------------
-    # Aliases for multi-architecture compatibility
-    # ------------------------------------------------------------------
     @property
     def query(self) -> LoRALinear:
         return self.q_proj
@@ -268,9 +250,6 @@ class MultiQueryAttention(BaseAttention):
     def c_proj(self) -> LoRALinear:
         return self.out_proj
 
-    # ------------------------------------------------------------------
-    # Weight copying (multi-architecture + MQA head pooling)
-    # ------------------------------------------------------------------
     def copy_weights(self, src: Any) -> None:
         """
         Copy weights from a pretrained attention module.
@@ -287,7 +266,6 @@ class MultiQueryAttention(BaseAttention):
             "o": (None, None),
         }
 
-        # ----- 1. UniversalAdapter fallback -----
         for proj in ("q", "k", "v", "o"):
             try:
                 w, b = UniversalAdapter.get_weight_bias(src, proj)
@@ -296,7 +274,6 @@ class MultiQueryAttention(BaseAttention):
             except Exception as e:
                 logger.debug("MQA UniversalAdapter %s failed: %s", proj, e)
 
-        # ----- 2. GPT-2 fused c_attn -----
         if hasattr(src, "c_attn") and any(extracted[k][0] is None for k in ("q", "k", "v")):
             weight, bias = _unpack_weight_bias(src.c_attn)
             if weight is not None:
@@ -317,7 +294,6 @@ class MultiQueryAttention(BaseAttention):
         if hasattr(src, "c_proj") and extracted["o"][0] is None:
             extracted["o"] = _unpack_weight_bias(src.c_proj)
 
-        # ----- 3. BERT / RoBERTa nested -----
         if hasattr(src, "self") and any(extracted[k][0] is None for k in ("q", "k", "v")):
             s = src.self
             if hasattr(s, "query") and extracted["q"][0] is None:
@@ -334,7 +310,6 @@ class MultiQueryAttention(BaseAttention):
         ):
             extracted["o"] = _unpack_weight_bias(src.output.dense)
 
-        # ----- 4. Named attribute fallback -----
         named_map = {
             "q": ("q_proj", "q_lin", "query"),
             "k": ("k_proj", "k_lin", "key"),
@@ -350,7 +325,6 @@ class MultiQueryAttention(BaseAttention):
                             extracted[proj] = (w, b)
                             break
 
-        # ----- 5. Nested encoder detection -----
         cls_name = src.__class__.__name__
         has_out_proj = any(
             hasattr(src, a)
@@ -361,7 +335,6 @@ class MultiQueryAttention(BaseAttention):
             or (cls_name.endswith("SelfAttention") and not has_out_proj)
         ) and not has_out_proj
 
-        # ----- 6. Validate required weights -----
         missing = [k for k in ("q", "k", "v") if extracted[k][0] is None]
         if not self.is_nested_encoder and extracted["o"][0] is None:
             missing.append("o")
@@ -371,7 +344,6 @@ class MultiQueryAttention(BaseAttention):
                 f"{src.__class__.__name__}. Refusing random init."
             )
 
-        # ----- 7. Helpers -----
         def _orient(w: torch.Tensor, target_shape: tuple[int, int]) -> torch.Tensor:
             if w.dim() != 2:
                 return w
@@ -413,7 +385,6 @@ class MultiQueryAttention(BaseAttention):
 
             return w_pooled.reshape(target_heads * head_dim, -1).contiguous()
 
-        # ----- 8. Copy -----
         with torch.no_grad():
             for key, target in (
                 ("q", self.q_proj),
@@ -434,7 +405,6 @@ class MultiQueryAttention(BaseAttention):
 
                 w = _orient(w, target.weight.shape)
 
-                # MQA: pool K and V down to a single head
                 if key in ("k", "v"):
                     w = _pool_kv_heads(w, self.num_kv_heads, self.head_dim)
                     if b is not None:
@@ -461,15 +431,11 @@ class MultiQueryAttention(BaseAttention):
 
                 target.freeze_base_weights()
 
-        # ----- 9. Preserve decoder flag / rotary -----
         if hasattr(src, "is_decoder"):
             self.is_decoder = bool(src.is_decoder)
         if getattr(src, "rotary_emb", None) is not None:
             self.rotary_emb = src.rotary_emb
 
-    # ------------------------------------------------------------------
-    # KV-cache helpers
-    # ------------------------------------------------------------------
     @staticmethod
     def _read_cache(past_key_value: Any, layer_idx: int) -> tuple[
         torch.Tensor | None, torch.Tensor | None, int
@@ -523,9 +489,6 @@ class MultiQueryAttention(BaseAttention):
             return past_key_value
         return (k, v)
 
-    # ------------------------------------------------------------------
-    # Forward
-    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -555,7 +518,6 @@ class MultiQueryAttention(BaseAttention):
         kv_input = encoder_hidden_states if is_cross else hidden_states
         N_k_new = kv_input.shape[1]
 
-        # ---- Projections ----
         q = self.q_proj(hidden_states).view(B, N_q, H, d).transpose(1, 2).contiguous()
         k_new = (
             self.k_proj(kv_input)
@@ -570,7 +532,6 @@ class MultiQueryAttention(BaseAttention):
             .contiguous()
         )
 
-        # ---- RoPE with past offset ----
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None and not is_cross:
@@ -595,7 +556,6 @@ class MultiQueryAttention(BaseAttention):
             if cos is not None and sin is not None:
                 q, k_new = apply_rotary_pos_emb(q, k_new, cos, sin, position_ids)
 
-        # ---- KV-cache ----
         past_k = past_v = None
         past_len = 0
         if not is_cross and past_key_value is not None:
@@ -612,14 +572,12 @@ class MultiQueryAttention(BaseAttention):
 
         N_k = k.shape[-2]
 
-        # ---- GQA expansion (MQA = repeat_kv by H) ----
         if self.kv_repeat > 1:
             k_full = repeat_kv(k, self.kv_repeat)
             v_full = repeat_kv(v, self.kv_repeat)
         else:
             k_full, v_full = k, v
 
-        # ---- Update cache ----
         present_key_value: Any | None = None
         if not is_cross:
             if past_key_value is not None or kwargs.get("use_cache", False):
@@ -629,12 +587,10 @@ class MultiQueryAttention(BaseAttention):
 
         is_causal = bool(self.is_decoder and not is_cross and N_q > 1)
 
-        # ---- Mask preparation ----
         eff_mask = encoder_attention_mask if is_cross else attention_mask
         if eff_mask is None:
             eff_mask = kwargs.get("mask")
 
-        # ---- SDPA fast path ----
         use_sdpa = (
             head_mask is None
             and not output_attentions
@@ -658,7 +614,6 @@ class MultiQueryAttention(BaseAttention):
                 logger.debug("MQA SDPA fast-path failed (%s); falling back", e)
                 use_sdpa = False
 
-        # ---- Manual path ----
         if not use_sdpa:
             scale = 1.0 / math.sqrt(d)
             raw_scores = torch.matmul(q.float(), k_full.float().transpose(-2, -1).contiguous())
@@ -714,7 +669,6 @@ class MultiQueryAttention(BaseAttention):
             output = self.out_proj(context)
             output = torch.nan_to_num(output, nan=0.0, posinf=1e4, neginf=-1e4)
 
-        # ---- Return format ----
         if output_attentions:
             if self.is_decoder and not is_cross:
                 return output, present_key_value, attn_weights
@@ -738,11 +692,6 @@ def _safe_mask_val(dtype: torch.dtype) -> float:
     if dtype in (torch.float16, torch.bfloat16):
         return -1e4
     return -1e9
-
-
-# ===========================================================================
-# Injection
-# ===========================================================================
 
 
 def inject_mqa(
@@ -769,7 +718,6 @@ def inject_mqa(
 
     cfg = model_config if model_config is not None else getattr(target, "config", None)
 
-    # ---- Whole-model traversal ----
     layer_list = None
     for path in (
         ("distilbert", "transformer", "layer"),
@@ -813,7 +761,6 @@ def inject_mqa(
                 n_injected += 1
         return target if n_injected > 0 else None
 
-    # ---- Single layer ----
     src_attn = old_attn
     if src_attn is None:
         for attr in ("attention", "self_attn", "attn", "self"):
@@ -825,7 +772,6 @@ def inject_mqa(
     if src_attn is None:
         src_attn = target
 
-    # idempotency
     if isinstance(src_attn, MultiQueryAttention) or "MultiQueryAttention" in src_attn.__class__.__name__:
         return None
 
@@ -861,7 +807,6 @@ def inject_mqa(
         logger.error("MQA construction failed: %s", e)
         return None
 
-    # ---- Device/dtype placement ----
     ref_param = None
     if src_attn is not None and src_attn is not target:
         ref_param = next(src_attn.parameters(), None)
@@ -870,7 +815,6 @@ def inject_mqa(
     if ref_param is not None:
         new_attn.to(device=ref_param.device, dtype=ref_param.dtype)
 
-    # ---- Splice ----
     spliced = False
     if hasattr(target, "attention"):
         if hasattr(target.attention, "self"):

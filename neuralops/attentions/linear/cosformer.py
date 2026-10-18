@@ -29,8 +29,6 @@ except Exception:
     triton_dispatch = None
 
 
-
-
 _inject_state = threading.local()
 _MAX_DEPTH = 4
 
@@ -42,12 +40,6 @@ def _set_inject_depth(depth: int) -> None:
 def _neg_inf(dtype: torch.dtype) -> float:
     """Return the smallest finite value representable in `dtype`."""
     return torch.finfo(dtype).min
-
-
-
-
-
-
 
 
 @ATTENTION_REGISTRY.register("cosformer", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
@@ -71,7 +63,6 @@ class CosformerAttention(BaseAttention):
                  eps=1e-6, pretrained_attn=None, old_attn=None, comp_config=None,
                  layer_id=None, layer_idx=None, window_size=256, **kwargs):
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
-
 
         hidden_size = (
             kwargs.get("hidden_size")
@@ -130,8 +121,7 @@ class CosformerAttention(BaseAttention):
         self.max_seq_len = int(_cfg_get(config, "max_position_embeddings", max_seq_len))
         self.act_fun = act_fun
         self.eps = float(eps)
-        
-        # Local attention parameters
+
         self.window_size = int(_cfg_get(config, "window_size", window_size))
 
         self.layer_idx = int(kwargs.get("layer_id", kwargs.get("layer_idx", 0)))
@@ -142,7 +132,7 @@ class CosformerAttention(BaseAttention):
         model_type = getattr(config, "model_type", "").lower() if config is not None else ""
         is_dec = _cfg_get(config, "is_decoder", _cfg_get(config, "is_causal", kwargs.get("is_causal", False)))
         _decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "phi", "gemma", "opt", "bloom", "falcon")
-        
+
         if (any(model_type.startswith(p) for p in _decoder_prefixes)
             or (hasattr(config, "architectures") and any(
                 "GPT" in str(a) or "CausalLM" in str(a)
@@ -155,7 +145,7 @@ class CosformerAttention(BaseAttention):
                 is_dec = True
         if config is None and source_attn is None:
             is_dec = True
-            
+
         self.is_decoder = bool(is_dec)
         self.is_causal = bool(is_dec)
         self.is_nested_encoder = bool(kwargs.get("is_nested_encoder", False))
@@ -166,16 +156,13 @@ class CosformerAttention(BaseAttention):
                                   lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
         self.v_proj = LoRALinear(self.dim, self.all_kv_head_size, bias=True,
                                   lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        
+
         self.v_proj_attn = LoRALinear(self.dim, self.all_kv_head_size, bias=True,
                                        lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
 
         self.out_proj = LoRALinear(self.all_head_size, self.dim, bias=True,
                                     lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
 
-        # Additive residual scale for global cosformer branch.
-        # Zero-init to match GPT-2 exactly at step 0, avoiding KD shock.
-        # As LoRA trains, fusion_scale learns when/how much global context to blend.
         self.fusion_scale = nn.Parameter(torch.zeros(1))
 
         dropout_p = getattr(config, "attention_probs_dropout_prob", 0.1) if config else 0.1
@@ -274,7 +261,7 @@ class CosformerAttention(BaseAttention):
                 w, b = extracted[proj_key]
                 if w is None: continue
                 if w.ndim != 2: w = w.reshape(w.size(0), -1)
-                
+
                 targets_list = targets if isinstance(targets, list) else [targets]
                 for target_mod in targets_list:
                     w_to_use = w
@@ -319,7 +306,7 @@ class CosformerAttention(BaseAttention):
             pos = pos_ids.float().to(device=device)
             m = max(16384, self.max_seq_len)
             angles = (math.pi / 2.0 / m) * pos
-            cos_weight = torch.cos(angles).unsqueeze(1).unsqueeze(-1).to(dtype=dtype)  # [B, 1, seq_len, 1]
+            cos_weight = torch.cos(angles).unsqueeze(1).unsqueeze(-1).to(dtype=dtype)
             sin_weight = torch.sin(angles).unsqueeze(1).unsqueeze(-1).to(dtype=dtype)
             return cos_weight, sin_weight
 
@@ -330,7 +317,6 @@ class CosformerAttention(BaseAttention):
         sin_weight = torch.sin(angles).view(1, 1, seq_len, 1).to(dtype=dtype)
         return cos_weight, sin_weight
 
-    
     def _build_padding_mask(self, attention_mask, L, device, dtype):
         """Convert (B, L) padding mask to additive (B, 1, 1, L) mask.
         Returns None if attention_mask is None or dimensionality does not match sequence length.
@@ -384,7 +370,6 @@ class CosformerAttention(BaseAttention):
         attn = F.softmax(scores, dim=-1)
         return torch.matmul(attn, V_local)
 
-
     def _forward_causal(self, Q_cos, Q_sin, K_cos, K_sin, V, padding_mask, B, H, d, N, device, dtype):
         """
         O(N d^2) Chunked Causal Linear Attention for Cosformer.
@@ -401,7 +386,6 @@ class CosformerAttention(BaseAttention):
             V = V.float()
 
             if padding_mask is not None:
-                # If padding_mask is additive (-inf for padded tokens) or 0/1
                 if padding_mask.min() < -1.0:
                     valid_k = (padding_mask >= -1.0).float()
                 else:
@@ -411,24 +395,20 @@ class CosformerAttention(BaseAttention):
                     K_cos = K_cos * valid_k
                     K_sin = K_sin * valid_k
 
-
             if not self.is_decoder:
-                # Full bidirectional linear attention O(N d^2)
-                S_cos = torch.matmul(K_cos.transpose(-1, -2), V)  # [B, H, d, d]
+                S_cos = torch.matmul(K_cos.transpose(-1, -2), V)
                 S_sin = torch.matmul(K_sin.transpose(-1, -2), V)
-                Z_cos = K_cos.sum(dim=-2, keepdim=True)           # [B, H, 1, d]
+                Z_cos = K_cos.sum(dim=-2, keepdim=True)
                 Z_sin = K_sin.sum(dim=-2, keepdim=True)
 
-                num = torch.matmul(Q_cos, S_cos) + torch.matmul(Q_sin, S_sin)  # [B, H, N, d]
+                num = torch.matmul(Q_cos, S_cos) + torch.matmul(Q_sin, S_sin)
                 denom = (Q_cos * Z_cos).sum(dim=-1, keepdim=True) + (Q_sin * Z_sin).sum(dim=-1, keepdim=True)
                 from neuralops.utils.amp_safety import safe_linear_attn_denominator
                 denom_safe = safe_linear_attn_denominator(denom, eps=1e-5, floor_val=1e-4)
                 res = num / denom_safe
                 return torch.nan_to_num(res, nan=0.0, posinf=1e4, neginf=-1e4).to(dtype)
 
-            # Causal mode: High-performance Triton cosformer routing on CUDA
             if device.type == "cuda":
-
                 if N > 64:
                     try:
                         from fla.ops.linear_attn import chunk_linear_attn
@@ -445,7 +425,6 @@ class CosformerAttention(BaseAttention):
                     except Exception as _triton_err:
                         pass
 
-            # Causal mode: Chunked streaming execution fallback (chunk_size = 64)
             chunk_size = 64
             num_chunks = (N + chunk_size - 1) // chunk_size
             out = torch.empty((B, H, N, d), dtype=torch.float32, device=device)
@@ -467,11 +446,9 @@ class CosformerAttention(BaseAttention):
                 ks = K_sin[:, :, start:end]
                 vc = V[:, :, start:end]
 
-                # 1. Inter-chunk projection: Q @ S_prev
                 num_inter = torch.matmul(qc, S_cos) + torch.matmul(qs, S_sin)
                 denom_inter = (qc * Z_cos).sum(dim=-1, keepdim=True) + (qs * Z_sin).sum(dim=-1, keepdim=True)
 
-                # 2. Intra-chunk causal computation (within chunk_size x chunk_size)
                 A_intra = torch.matmul(qc, kc.transpose(-1, -2)) + torch.matmul(qs, ks.transpose(-1, -2))
                 causal_mask = torch.tril(torch.ones(end - start, end - start, device=device, dtype=torch.bool))
                 A_intra = torch.where(causal_mask, A_intra, torch.zeros_like(A_intra))
@@ -485,35 +462,32 @@ class CosformerAttention(BaseAttention):
                 chunk_out = (num_inter + num_intra) / denom_safe
                 out[:, :, start:end] = chunk_out
 
-                # 3. Update running recurrent states
                 S_cos = S_cos + torch.matmul(kc.transpose(-1, -2), vc)
                 S_sin = S_sin + torch.matmul(ks.transpose(-1, -2), vc)
                 Z_cos = Z_cos + kc.sum(dim=-2, keepdim=True)
                 Z_sin = Z_sin + ks.sum(dim=-2, keepdim=True)
 
             return torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4).to(dtype)
-    
+
     def forward(self, hidden_states, attention_mask=None, head_mask=None,
                 encoder_hidden_states=None, encoder_attention_mask=None,
                 position_ids=None, position_embeddings=None, *args, **kwargs):
-        
+
         from neuralops.core.mask_utils import prepare_mask_and_positions, mask_kv_states
         valid_mask, derived_pos_ids, clean_hidden = prepare_mask_and_positions(
             hidden_states, attention_mask=attention_mask, position_ids=position_ids
         )
-        
+
         B, N, D = clean_hidden.shape
         H, d = self.num_heads, self.head_dim
         device = clean_hidden.device
         input_dtype = clean_hidden.dtype
 
-        # Cast projections to float32 immediately so backward gradients stay in fp32 range.
         Q_raw = self.q_proj(clean_hidden).float().view(B, N, H, d).transpose(1, 2).contiguous()
         K_raw = self.k_proj(clean_hidden).float().view(B, N, self.num_kv_heads, d).transpose(1, 2).contiguous()
         V_global = self.v_proj(clean_hidden).float().view(B, N, self.num_kv_heads, d).transpose(1, 2).contiguous()
         V_local = self.v_proj_attn(clean_hidden).float().view(B, N, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
-        # Zero out padding positions in keys and values
         K_raw, V_global = mask_kv_states(K_raw, V_global, valid_mask)
         _, V_local = mask_kv_states(K_raw, V_local, valid_mask)
 
@@ -525,7 +499,7 @@ class CosformerAttention(BaseAttention):
         scale = 1.0 / math.sqrt(d)
         Q_scaled = torch.clamp(Q_raw * scale, min=-50.0, max=50.0)
         K_clamped = torch.clamp(K_raw, min=-50.0, max=50.0)
-        
+
         if self.act_fun == "softplus":
             Q_k = F.softplus(Q_scaled.float())
             K_k = F.softplus(K_clamped.float())
@@ -592,8 +566,7 @@ class CosformerAttention(BaseAttention):
             state = {}
         step_idx = state.get("step_idx", 0)
 
-        # 1. Projections
-        q_raw = self.q_proj(x).float().view(B, 1, H, d).transpose(1, 2)  # [B, H, 1, d]
+        q_raw = self.q_proj(x).float().view(B, 1, H, d).transpose(1, 2)
         k_raw = self.k_proj(x).float().view(B, 1, self.num_kv_heads, d).transpose(1, 2)
         v_global = self.v_proj(x).float().view(B, 1, self.num_kv_heads, d).transpose(1, 2)
         v_local = self.v_proj_attn(x).float().view(B, 1, self.num_kv_heads, d).transpose(1, 2)
@@ -614,7 +587,6 @@ class CosformerAttention(BaseAttention):
             q_act = F.elu(q_scaled) + 1.0
             k_act = F.elu(k_clamped) + 1.0
 
-        # 2. Angle at current step_idx
         m = max(16384, self.max_seq_len)
         angle = (math.pi / 2.0 / m) * float(step_idx)
         cos_val = math.cos(angle)
@@ -625,12 +597,10 @@ class CosformerAttention(BaseAttention):
         kc = k_act * cos_val
         ks = k_act * sin_val
 
-        # Concatenate cosine and sine feature maps: [B, H, 2d]
         q_aug = torch.cat([qc.squeeze(2), qs.squeeze(2)], dim=-1)
         k_aug = torch.cat([kc.squeeze(2), ks.squeeze(2)], dim=-1)
-        v_in = v_global.squeeze(2)  # [B, H, d]
+        v_in = v_global.squeeze(2)
 
-        # 3. Retrieve or initialize recurrent state [B, H, 2d, d] and [B, H, 2d]
         if "kv_state" not in state or state["kv_state"] is None:
             state["kv_state"] = torch.zeros((B, H, 2 * d, d), device=device, dtype=torch.float32)
             state["z_state"] = torch.zeros((B, H, 2 * d), device=device, dtype=torch.float32)
@@ -638,14 +608,12 @@ class CosformerAttention(BaseAttention):
         kv_state = state["kv_state"]
         z_state = state["z_state"]
 
-        # 4. Fused recurrent linear step: S_t = S_{t-1} + k_t \otimes v_t
         out_token, kv_state, z_state = fused_recurrent_linear_step(
             q_aug, k_aug, v_in, kv_state, z_state, eps=1e-5
         )
         state["kv_state"] = kv_state
         state["z_state"] = z_state
 
-        # 5. Local attention window calculation (if window_size > 0 and step_idx < 1024)
         if self.window_size > 0 and step_idx < 1024:
             if "local_k" not in state or state["local_k"] is None:
                 state["local_k"] = k_raw
@@ -657,13 +625,12 @@ class CosformerAttention(BaseAttention):
                     state["local_k"] = state["local_k"][:, :, -(self.window_size + 1):, :]
                     state["local_v"] = state["local_v"][:, :, -(self.window_size + 1):, :]
 
-            # Attn scores: q_raw @ local_k^T * scale
             q_clamped = torch.clamp(q_raw, min=-1e4, max=1e4)
             k_win = torch.clamp(state["local_k"], min=-1e4, max=1e4)
             v_win = torch.clamp(state["local_v"], min=-1e4, max=1e4)
-            scores = torch.matmul(q_clamped, k_win.transpose(-1, -2)) * scale  # [B, H, 1, win_len]
+            scores = torch.matmul(q_clamped, k_win.transpose(-1, -2)) * scale
             attn_weights = F.softmax(scores, dim=-1)
-            local_token = torch.matmul(attn_weights, v_win).squeeze(2)  # [B, H, d]
+            local_token = torch.matmul(attn_weights, v_win).squeeze(2)
             blended_token = local_token + self.fusion_scale.to(torch.float32) * out_token
         else:
             blended_token = out_token
@@ -763,7 +730,7 @@ def inject_cosformer(layer=None, model=None, model_config=None, comp_config=None
         else:
             setattr(target, container, new_attn)
         return new_attn
-        
+
     finally:
         _set_inject_depth(depth)
 

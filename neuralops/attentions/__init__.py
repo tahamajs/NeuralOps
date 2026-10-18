@@ -74,7 +74,6 @@ _LEGACY_MAP = {
     'adaptive_svd_attention': 'svd.adaptive_svd_attention'
 }
 
-# Renamed module alias mappings: (subpath, {old_class_name: target_attr_name})
 _RENAMED_MODULES = {
     'aegis_hybrid': ('hybrid.tri_branch_hybrid_attention', {'AegisHybridAttention': 'TriBranchHybridAttention', 'inject_aegis_hybrid': 'inject_tri_branch_hybrid'}),
     'aegis_spectron_fp8': ('hybrid.spectron_fp8_attention', {'AegisSpectronFP8Attention': 'SpectronFP8Attention', 'inject_aegis_spectron_fp8': 'inject_spectron_fp8'}),
@@ -87,7 +86,6 @@ _RENAMED_MODULES = {
     'res_svd': ('svd.residual_svd_attention', {'ResSVDAttention': 'ResidualSVDAttention', 'inject_res_svd': 'inject_residual_svd_attention'}),
 }
 
-# 1. Backward compatibility shim for sys.modules and import hooks (old flat import paths -> new subpackages)
 from importlib.abc import MetaPathFinder, Loader
 from importlib.util import spec_from_loader
 import types
@@ -126,7 +124,6 @@ class _LegacyAttnFinder(MetaPathFinder):
 
 sys.meta_path.insert(0, _LegacyAttnFinder())
 
-# Pre-populate sys.modules aliases (keep 'replace' dynamic on import so it doesn't affect canonical registry keys)
 for _old in list(_LEGACY_MAP.keys()) + list(_RENAMED_MODULES.keys()):
     try:
         _mod = _get_target_module(_old)
@@ -143,7 +140,6 @@ def __getattr__(name):
             return mod
     raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
 
-# 2. Import all subpackages and re-export classes at top level
 for _sub in _SUBPACKAGES:
     try:
         _submod = importlib.import_module(f".{_sub}", __package__)
@@ -157,7 +153,6 @@ for _sub in _SUBPACKAGES:
     except Exception as _e:
         logger.debug(f"Failed importing subpackage {_sub}: {_e}")
 
-# Auto-wired package members
 from neuralops.attentions import adaptive
 from neuralops.attentions import dense
 from neuralops.attentions import experimental
@@ -171,7 +166,6 @@ from neuralops.attentions import ssm
 from neuralops.attentions import svd
 
 try:
-    import neuralops.trainer.ttt.test_time_trainer as _ttt  # noqa: F401
+    import neuralops.trainer.ttt.test_time_trainer as _ttt
 except Exception:
     pass
-

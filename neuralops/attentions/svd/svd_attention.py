@@ -57,10 +57,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 logger = logging.getLogger(__name__)
 
 
-
-
-
-
 @ATTENTION_REGISTRY.register("svd_seq", supports_causal=True, supports_gqa=True)
 class SVDLinearAttention(BaseAttention):
     r"""Low-Rank SVD-Compressed Sequence Attention Mechanism.
@@ -84,7 +80,6 @@ class SVDLinearAttention(BaseAttention):
     ) -> None:
         super().__init__(config, rank)
 
-        # 1. Dimensions & Architecture
         self.hidden_size: int = int(_cfg_get(config, "hidden_size", kwargs.get("hidden_size", 768)))
         self.num_heads: int = int(
             kwargs.get("num_heads")
@@ -120,7 +115,6 @@ class SVDLinearAttention(BaseAttention):
         self.q_head_size: int = self.num_heads * self.head_dim
         self.all_head_size: int = self.q_head_size
 
-        # Explicitly allow None to disable SVD compression
         if rank is None:
             svd_disabled = _cfg_get(config, "svd_disabled", False)
             if svd_disabled or ("rank" in kwargs and kwargs["rank"] is None):
@@ -133,7 +127,6 @@ class SVDLinearAttention(BaseAttention):
         self.lora_rank: int = int(lora_rank if lora_rank is not None else 16)
         self.lora_alpha: float = lora_alpha
 
-        # 2. Causal decoder flag detection
         if is_decoder is not None:
             self.is_decoder = bool(is_decoder)
         else:
@@ -161,7 +154,6 @@ class SVDLinearAttention(BaseAttention):
 
         self.is_nested_encoder: bool = False
 
-        # 3. Projections with LoRA
         self.query = LoRALinear(
             self.hidden_size,
             self.q_head_size,
@@ -199,8 +191,6 @@ class SVDLinearAttention(BaseAttention):
         self.dropout: nn.Dropout = nn.Dropout(dropout_val)
         self._last_u_r: torch.Tensor | None = None
 
-        # Persistent SVD projection buffer (populated in copy_weights from W_K)
-        # Shape: [hidden_size, rank] — the top-r right singular vectors of W_K
         init_rank = max(1, self.rank or 64)
         self.register_buffer("svd_proj", torch.eye(self.hidden_size, init_rank), persistent=True)
         self._svd_proj_ready: bool = False
@@ -241,7 +231,6 @@ class SVDLinearAttention(BaseAttention):
             w_v, b_v = None, None
             w_o, b_o = None, None
 
-            # Detect nested encoder container or inner self-attention
             src_cls_name = getattr(old_attn, "__class__", type(old_attn)).__name__
             if src_cls_name in ("BertSelfAttention", "RobertaSelfAttention") or (
                 hasattr(old_attn, "query")
@@ -252,21 +241,18 @@ class SVDLinearAttention(BaseAttention):
 
             if hasattr(old_attn, "self") and hasattr(old_attn, "output"):
                 self.is_nested_encoder = True
-                # Unwrap nested encoder modules to find innermost attention
                 src = old_attn
                 while hasattr(src, "self") and not any(
                     hasattr(src, attr)
                     for attr in ["query", "key", "value", "q_proj", "k_proj", "v_proj"]
                 ):
                     src = src.self
-                # Copy output projection if available
                 if hasattr(old_attn.output, "dense"):
                     w_o = old_attn.output.dense.weight
                     b_o = old_attn.output.dense.bias
             else:
                 src = old_attn
 
-            # Pattern 1: GPT-2 Fused c_attn
             if hasattr(src, "c_attn") and hasattr(src, "c_proj"):
                 c_attn_w = src.c_attn.weight.detach()
                 c_attn_b = src.c_attn.bias.detach() if src.c_attn.bias is not None else None
@@ -305,7 +291,6 @@ class SVDLinearAttention(BaseAttention):
                 w_o = out_w
                 b_o = src.c_proj.bias.detach() if src.c_proj.bias is not None else None
 
-            # Pattern 2: RoBERTa / BERT separate query, key, value
             elif hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value"):
                 w_q = src.query.weight.detach()
                 b_q = src.query.bias.detach() if src.query.bias is not None else None
@@ -322,7 +307,6 @@ class SVDLinearAttention(BaseAttention):
                             b_o = proj.bias.detach() if proj.bias is not None else None
                             break
 
-            # Pattern 3: Qwen / LLaMA (q_proj, k_proj, v_proj, o_proj)
             elif hasattr(src, "q_proj") and hasattr(src, "k_proj") and hasattr(src, "v_proj"):
                 w_q = src.q_proj.weight.detach()
                 b_q = src.q_proj.bias.detach() if src.q_proj.bias is not None else None
@@ -334,7 +318,6 @@ class SVDLinearAttention(BaseAttention):
                     w_o = src.o_proj.weight.detach()
                     b_o = src.o_proj.bias.detach() if src.o_proj.bias is not None else None
 
-            # Pattern 4: DistilBERT (q_lin, k_lin, v_lin, out_lin)
             elif hasattr(src, "q_lin") and hasattr(src, "k_lin") and hasattr(src, "v_lin"):
                 w_q = src.q_lin.weight.detach()
                 b_q = src.q_lin.bias.detach() if src.q_lin.bias is not None else None
@@ -346,7 +329,6 @@ class SVDLinearAttention(BaseAttention):
                     w_o = src.out_lin.weight.detach()
                     b_o = src.out_lin.bias.detach() if src.out_lin.bias is not None else None
 
-            # Fallback: UniversalAdapter
             if w_q is None or w_k is None or w_v is None:
                 try:
                     w_q, b_q = UniversalAdapter.get_weight_bias(old_attn, "q")
@@ -357,7 +339,6 @@ class SVDLinearAttention(BaseAttention):
                 except Exception as e:
                     logger.debug("UniversalAdapter fallback failed: %s", e)
 
-            # Verification of essential projections
             missing = []
             if w_q is None:
                 missing.append("query/q_proj")
@@ -372,7 +353,6 @@ class SVDLinearAttention(BaseAttention):
                     f"Aborting to avoid silent corruption."
                 )
 
-            # Frobenius norm checks with None guard
             for name, w in [("w_q", w_q), ("w_k", w_k), ("w_v", w_v)]:
                 if w is None:
                     continue
@@ -382,7 +362,6 @@ class SVDLinearAttention(BaseAttention):
                         f"Frobenius norm. This will destroy the model."
                     )
 
-            # Copy Q
             if w_q.shape == self.query.weight.shape:
                 self.query.weight.copy_(w_q)
             else:
@@ -400,14 +379,12 @@ class SVDLinearAttention(BaseAttention):
                     b_q[: min(len(self.query.bias), len(b_q))]
                 )
 
-            # Copy K & V with GQA pooling/repetition if needed
             def _copy_kv(target_proj, w, b):
                 if w.shape[0] == self.kv_head_size:
                     target_proj.weight.copy_(w)
                     if b is not None and target_proj.bias is not None:
                         target_proj.bias.copy_(b)
                 elif w.shape[0] > self.kv_head_size and w.shape[0] % self.kv_head_size == 0:
-                    # GQA: take the first group from each cluster (deterministic)
                     rep = w.shape[0] // self.kv_head_size
                     w_grouped = w.view(self.num_kv_heads, rep, self.head_dim, -1)[:, 0].reshape(
                         self.kv_head_size, -1
@@ -439,8 +416,6 @@ class SVDLinearAttention(BaseAttention):
             _copy_kv(self.key, w_k, b_k)
             _copy_kv(self.value, w_v, b_v)
 
-            # Always copy Out projection — our module fully replaces BertAttention
-            # (including BertSelfOutput), so we must apply out_proj in all cases.
             if w_o is not None:
                 if torch.norm(w_o.float(), p="fro").item() < 1e-4:
                     logger.warning("out_proj weight has near-zero Frobenius norm — skipping copy")
@@ -455,17 +430,12 @@ class SVDLinearAttention(BaseAttention):
                         mn = min(len(self.out_proj.bias), len(b_o))
                         self.out_proj.bias.data[:mn].copy_(b_o[:mn])
 
-            # Compute SVD of W_K to get a fixed weight-space projection
-            # W_K shape: [kv_head_size, hidden_size] → SVD gives right singular vectors of shape [hidden_size, ...]
-            # We use the top-r right singular vectors (Vh rows) as the projection basis
             try:
                 with torch.no_grad():
-                    wk = self.key.weight.float()  # [kv_head_size, hidden_size]
+                    wk = self.key.weight.float()
                     _, _, Vh = torch.linalg.svd(wk, full_matrices=False)
-                    # Vh: [min(kv_head_size, hidden_size), hidden_size]
                     r = min(self.rank or 64, Vh.shape[0], self.hidden_size)
-                    # svd_proj: [hidden_size, r] — project hidden_states → rank-r space
-                    proj = Vh[:r, :].T  # [hidden_size, r]
+                    proj = Vh[:r, :].T
                     if proj.shape == self.svd_proj.shape:
                         self.svd_proj.copy_(proj)
                     else:
@@ -506,7 +476,6 @@ class SVDLinearAttention(BaseAttention):
         kv_input = encoder_hidden_states if is_cross else hidden_states
         kv_len = kv_input.shape[1]
 
-        # 1. Project Q, K, V
         Q = (
             self.query(hidden_states)
             .view(batch_size, seq_len, self.num_heads, self.head_dim)
@@ -526,14 +495,12 @@ class SVDLinearAttention(BaseAttention):
             .contiguous()
         )
 
-        # 2. RoPE support
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None and not is_cross:
             cos, sin = position_embeddings
             Q, K = apply_rotary_pos_emb(Q, K, cos, sin)
 
-        # 3. GQA expansion
         if self.num_kv_heads < self.num_heads:
             K = repeat_kv(K, self.kv_repeat)
             V = repeat_kv(V, self.kv_repeat)
@@ -541,14 +508,11 @@ class SVDLinearAttention(BaseAttention):
         eff_mask = encoder_attention_mask if is_cross else attention_mask
         is_causal = self.is_decoder and not is_cross
 
-        # Full attention if sequence is too short for SVD compression
-        # (SVD with r >= N is meaningless — the projection is identity)
         use_full_attention = (
-            self.rank is None or kv_len <= (self.rank or 0) + 8  # small buffer
+            self.rank is None or kv_len <= (self.rank or 0) + 8
         )
 
         if use_full_attention:
-            # Use SDPA when possible (no explicit head_mask/output_attentions)
             _use_sdpa = head_mask is None and output_attentions is False
 
             if _use_sdpa:
@@ -557,7 +521,6 @@ class SVDLinearAttention(BaseAttention):
                     _k = K if K.dtype in (torch.float16, torch.bfloat16) else K.half()
                     _v = V if V.dtype in (torch.float16, torch.bfloat16) else V.half()
 
-                    # Prepare attn_mask for SDPA if eff_mask is provided
                     _attn_mask = None
                     if eff_mask is not None and eff_mask.dim() == 2:
                         _attn_mask = eff_mask.bool().view(
@@ -574,13 +537,12 @@ class SVDLinearAttention(BaseAttention):
                         is_causal=is_causal if _attn_mask is None else False,
                         dropout_p=self.dropout.p if self.training else 0.0,
                     ).to(dtype)
-                    probs = None  # not available in SDPA
+                    probs = None
                 except Exception as e:
                     logger.debug("SDPA failed: %s, falling back", e)
                     _use_sdpa = False
 
             if not _use_sdpa:
-                # Manual softmax path
                 scores = torch.matmul(
                     Q.float(), K.float().transpose(-2, -1).contiguous()
                 ) / math.sqrt(self.head_dim)
@@ -625,41 +587,33 @@ class SVDLinearAttention(BaseAttention):
                     context = context * q_valid_mask.unsqueeze(1).unsqueeze(-1).to(dtype)
             attn_ret = probs if output_attentions else None
         else:
-            # Use the fixed SVD subspace precomputed from W_K in copy_weights.
-            # This is stable across batches — LoRA can converge on a fixed subspace.
-            # svd_proj: [hidden_size, r]  (registered buffer, frozen)
             with torch.no_grad():
-                proj = self.svd_proj.to(device=device, dtype=dtype)  # [hidden_size, r]
+                proj = self.svd_proj.to(device=device, dtype=dtype)
                 actual_r = proj.shape[1]
 
-                # Project the kv_input sequence through the fixed subspace
-                # kv_input: [B, kv_len, hidden_size] → scores: [B, kv_len, actual_r]
-                seq_scores = torch.matmul(kv_input.float(), proj.float())  # [B, kv_len, r]
+                seq_scores = torch.matmul(kv_input.float(), proj.float())
                 try:
-                    U_r, _ = torch.linalg.qr(seq_scores.float(), mode="reduced")  # [B, kv_len, r]
+                    U_r, _ = torch.linalg.qr(seq_scores.float(), mode="reduced")
                 except Exception:
                     U_r, _ = torch.linalg.qr(seq_scores.cpu().float(), mode="reduced")
                     U_r = U_r.to(device=device)
-                U_r = U_r.to(dtype)  # [B, kv_len, actual_r]
+                U_r = U_r.to(dtype)
 
-            # Store detached — the ortho loss is a metric, not a gradient source
             self._last_u_r = U_r.detach()
 
-            # Project K and V through the stable subspace
-            U_r_t = U_r.unsqueeze(1)  # [B, 1, kv_len, actual_r]
+            U_r_t = U_r.unsqueeze(1)
             K_proj = torch.matmul(
                 U_r_t.transpose(-2, -1).contiguous(), K
-            )  # [B, H, actual_r, head_dim]
+            )
             V_proj = torch.matmul(
                 U_r_t.transpose(-2, -1).contiguous(), V
-            )  # [B, H, actual_r, head_dim]
+            )
 
             scores = torch.matmul(
                 Q.float(), K_proj.float().transpose(-2, -1).contiguous()
             ) / math.sqrt(self.head_dim)
 
             if is_causal and seq_len > 1 and actual_r == kv_len:
-                # Only apply causal mask if we kept the full sequence
                 causal_mask = (
                     torch.triu(
                         torch.full(
@@ -696,7 +650,7 @@ class SVDLinearAttention(BaseAttention):
                     head_mask = head_mask.unsqueeze(-1)
                 probs = probs * head_mask
 
-            context = torch.matmul(probs, V_proj)  # [B, H, seq_len, head_dim]
+            context = torch.matmul(probs, V_proj)
             if attention_mask is not None:
                 q_valid_mask = get_token_valid_mask(
                     attention_mask,
@@ -708,11 +662,9 @@ class SVDLinearAttention(BaseAttention):
                     context = context * q_valid_mask.unsqueeze(1).unsqueeze(-1).to(dtype)
             attn_ret = probs if output_attentions else None
 
-        # 4. Context merge & Output projection
         context = context.transpose(1, 2).contiguous().view(batch_size, seq_len, self.all_head_size)
         context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
 
-        # Always apply out_proj — our module replaces the full BertAttention container
         out = self.out_proj(context)
 
         if out.shape[-1] != hidden_states.shape[-1]:
@@ -733,10 +685,8 @@ class SVDLinearAttention(BaseAttention):
             return torch.tensor(0.0, device=device)
         U = self._last_u_r
         r = U.size(-1)
-        # Mean per-batch orthogonality error
         gram = torch.matmul(U.transpose(-2, -1).float(), U.float())
         I = torch.eye(r, device=U.device, dtype=torch.float32)
-        # Average over batch
         loss = (gram - I.unsqueeze(0)).abs().mean()
         return loss.detach()
 
@@ -762,7 +712,6 @@ def inject_svd_linear_attention(
 
     cfg = model_config if model_config is not None else getattr(target, "config", None)
 
-    # Whole-model traversal
     layer_list = None
     if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
         layer_list = target.distilbert.transformer.layer

@@ -33,16 +33,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 logger = logging.getLogger(__name__)
 
 
-
-
-
-
-
-
-
-
-
-
 class Mamba2(nn.Module):
     r"""Simplified Mamba-2 State Space Model with parallel scan.
 
@@ -106,14 +96,12 @@ class Mamba2(nn.Module):
 
         h = torch.empty(B, L, inner, state, device=device, dtype=dtype)
 
-        # [FIX-2b] Read initial state
         running_h = (
             initial_state
             if initial_state is not None
             else torch.zeros(B, inner, state, device=device, dtype=dtype)
         )
 
-        # Fast path for single-token (step-by-step decode)
         if L == 1:
             running_h = dA[:, 0] * running_h + dBx[:, 0]
             h[:, 0] = running_h
@@ -160,18 +148,15 @@ class Mamba2(nn.Module):
         B, L, D = x.shape
         inner_dim = self.inner_dim
 
-        # 1. Input projection + split
         x_proj = self.in_proj(x)
         x_ssm, z = x_proj.chunk(2, dim=-1)
 
-        # 2. Depthwise conv (causal)
         x_ssm = (
             self.conv1d(x_ssm.transpose(1, 2).contiguous())[..., :L]
             .transpose(1, 2)
             .contiguous()
         )
 
-        # 3. Discretization
         dt = F.softplus(self.dt_proj(x_ssm))
         A = -torch.exp(torch.clamp(self.A_log.float(), min=-20.0, max=10.0)).to(dtype=x.dtype)
 
@@ -181,7 +166,6 @@ class Mamba2(nn.Module):
 
         dBx = torch.einsum("bli,blin->blin", x_ssm, dt.unsqueeze(-1))
 
-        # 4. Streamed chunk scan & readout to avoid materializing full 4D (B, L, inner, state) tensor
         chunk_len = min(L, 64) if L > 0 else 1
         num_chunks = (L + chunk_len - 1) // chunk_len
         running_h = (
@@ -213,11 +197,8 @@ class Mamba2(nn.Module):
 
         y = torch.cat(y_chunks, dim=1) if len(y_chunks) > 1 else y_chunks[0]
 
-        # 5. Gating + output projection
         y = y * F.silu(z)
         return self.out_proj(y), running_h
-
-
 
 
 class MixtureOfExperts(nn.Module):
@@ -241,7 +222,6 @@ class MixtureOfExperts(nn.Module):
         self.num_experts = num_experts
         self.top_k = top_k
 
-        # [FIX-5] lora_ prefix ensures KD optimizer picks these up
         self.lora_experts: nn.ModuleList = nn.ModuleList(
             [
                 nn.Sequential(
@@ -255,7 +235,6 @@ class MixtureOfExperts(nn.Module):
         self.lora_router: nn.Linear = nn.Linear(dim, num_experts)
         self.lora_output_scale = nn.Parameter(torch.ones(1))
 
-    # ---- Backward-compat aliases ----
     @property
     def experts(self) -> nn.ModuleList:
         return self.lora_experts
@@ -277,13 +256,11 @@ class MixtureOfExperts(nn.Module):
         orig_dtype = x.dtype
         E = self.num_experts
 
-        # ---- Routing ----
         scores = self.lora_router(x)
         k = min(self.top_k, E)
         topk_weights, topk_indices = torch.topk(scores, k, dim=-1)
         topk_weights = F.softmax(topk_weights, dim=-1)
 
-        # ---- [FIX-3] fp32 accumulation ----
         out = torch.zeros(B, L, D, device=x.device, dtype=torch.float32)
 
         for e in range(E):
@@ -297,7 +274,6 @@ class MixtureOfExperts(nn.Module):
 
         out = out * self.lora_output_scale.float()
 
-        # ---- [FIX-4] Load-balancing loss ----
         with torch.no_grad():
             one_hot = F.one_hot(topk_indices, num_classes=E).float()
             f_e = one_hot.sum(dim=(0, 1, 2)) / (B * L * k)
@@ -306,11 +282,6 @@ class MixtureOfExperts(nn.Module):
 
         out = out.to(orig_dtype)
         return out, aux_loss
-
-
-# =============================================================================
-# Main Granite Hybrid Block
-# =============================================================================
 
 
 @ATTENTION_REGISTRY.register("granite_hybrid", supports_causal=True, supports_gqa=True)
@@ -358,7 +329,6 @@ class GraniteHybridBlock(BaseAttention):
                         return val
             return kwargs.get(k, default)
 
-        # ---- Resolve dims ----
         if dim is None:
             dim = _get("hidden_size", _get("d_model", _get("n_embd", _get("dim", None))))
         if dim is None and src_attn is not None:
@@ -407,7 +377,6 @@ class GraniteHybridBlock(BaseAttention):
         self.all_head_size: int = self.num_heads * self.head_dim
         self.kv_repeat: int = max(1, self.num_heads // max(1, self.num_kv_heads))
 
-        # ---- [FIX-10] Decoder detection ----
         model_type = str(_get("model_type", "")).lower()
         is_dec = _get(
             "is_decoder",
@@ -424,12 +393,10 @@ class GraniteHybridBlock(BaseAttention):
                 is_dec = True
         self.is_decoder: bool = bool(is_dec)
 
-        # ---- LoRA config ----
         self.lora_rank: int = int(_get("lora_rank", kwargs.get("lora_rank", lora_rank)))
         self.lora_alpha: float = float(_get("lora_alpha", kwargs.get("lora_alpha", lora_alpha)))
         self.freeze_base: bool = self.lora_rank > 0
 
-        # ---- Dropout ----
         dropout_p = float(
             _get("dropout", _get("hidden_dropout_prob",
                                  _get("attention_probs_dropout_prob", 0.1)))
@@ -437,7 +404,6 @@ class GraniteHybridBlock(BaseAttention):
         self.dropout_p = dropout_p
         self.dropout = nn.Dropout(dropout_p)
 
-        # ---- Submodules ----
         self.mamba = Mamba2(d_model=self.dim)
 
         self.q_proj = LoRALinear(
@@ -480,9 +446,6 @@ class GraniteHybridBlock(BaseAttention):
         if src_attn is not None:
             self.copy_weights(src_attn)
 
-    # ------------------------------------------------------------------
-    # Aliases
-    # ------------------------------------------------------------------
     @property
     def query(self): return self.q_proj
     @property
@@ -504,9 +467,6 @@ class GraniteHybridBlock(BaseAttention):
     @property
     def c_proj(self): return self.out_proj
 
-    # ------------------------------------------------------------------
-    # KV-cache helpers  — [FIX-7] includes Mamba state
-    # ------------------------------------------------------------------
     @staticmethod
     def _read_past_kv(
         past_key_value: Any, layer_idx: int
@@ -545,7 +505,6 @@ class GraniteHybridBlock(BaseAttention):
 
         return None, None, 0, None
 
-
     @staticmethod
     def _write_past_kv(
         k: torch.Tensor,
@@ -555,7 +514,6 @@ class GraniteHybridBlock(BaseAttention):
         layer_idx: int,
     ) -> Any:
         """Write to cache. Returns updated past_key_value."""
-        # DynamicCache with update()
         if past_key_value is not None and hasattr(past_key_value, "update"):
             try:
                 past_key_value.update(k, v, layer_idx)
@@ -569,7 +527,6 @@ class GraniteHybridBlock(BaseAttention):
             except Exception as e:
                 logger.debug("DynamicCache.update failed: %s", e)
 
-        # DynamicCache-like append
         if past_key_value is not None and hasattr(past_key_value, "key_cache"):
             if layer_idx < len(past_key_value.key_cache):
                 past_key_value.key_cache[layer_idx] = k
@@ -587,12 +544,8 @@ class GraniteHybridBlock(BaseAttention):
                 past_key_value._mamba_states[layer_idx] = mamba_state
             return past_key_value
 
-        # Plain tuple
         return (k, v, mamba_state)
 
-    # ------------------------------------------------------------------
-    # Forward
-    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -608,7 +561,6 @@ class GraniteHybridBlock(BaseAttention):
         *args: Any,
         **kwargs: Any,
     ) -> tuple[torch.Tensor, Any]:
-        # Unwrap tuple input (HF compatibility)
         while isinstance(hidden_states, (tuple, list)):
             hidden_states = hidden_states[0]
         if not hidden_states.is_contiguous():
@@ -616,7 +568,6 @@ class GraniteHybridBlock(BaseAttention):
 
         is_cross = encoder_hidden_states is not None
         if is_cross:
-            # Cross-attention not supported here — pass through
             return hidden_states, None
 
         B, L, D = hidden_states.shape
@@ -624,17 +575,14 @@ class GraniteHybridBlock(BaseAttention):
         H, Dh = self.num_heads, self.head_dim
         H_kv = self.num_kv_heads
 
-        # ---- Read past KV + Mamba state ----
         past_k, past_v, past_len, past_mamba_state = self._read_past_kv(
             past_key_value, self.layer_idx
         )
 
-        # ---- Q/K/V projections ----
         q = self.q_proj(hidden_states).view(B, L, H, Dh).transpose(1, 2).contiguous()
         k_new = self.k_proj(hidden_states).view(B, L, H_kv, Dh).transpose(1, 2).contiguous()
         v_new = self.v_proj(hidden_states).view(B, L, H_kv, Dh).transpose(1, 2).contiguous()
 
-        # ---- RoPE with past offset ----
         pos_emb = (
             position_embeddings if position_embeddings is not None
             else kwargs.get("position_embeddings")
@@ -658,7 +606,6 @@ class GraniteHybridBlock(BaseAttention):
             except Exception as e:
                 logger.debug("rotary_emb failed: %s", e)
 
-        # ---- Concat KV-cache ----
         if past_k is not None and past_v is not None:
             K = torch.cat([past_k.to(k_new.dtype), k_new], dim=-2)
             V = torch.cat([past_v.to(v_new.dtype), v_new], dim=-2)
@@ -667,26 +614,22 @@ class GraniteHybridBlock(BaseAttention):
 
         N_kv = K.shape[-2]
 
-        # ---- GQA repeat ----
         if self.kv_repeat > 1:
             K_full = repeat_kv(K, self.kv_repeat)
             V_full = repeat_kv(V, self.kv_repeat)
         else:
             K_full, V_full = K, V
 
-        # ---- Attention scores ----
         scale = 1.0 / math.sqrt(Dh)
         scores = torch.matmul(q.float(), K_full.float().transpose(-2, -1).contiguous()) * scale
         mask_val = _safe_mask_value(scores.dtype)
 
-        # ---- Causal mask (bottom-right aligned) ----
         if self.is_decoder:
             q_idx = torch.arange(past_len, past_len + L, device=device).unsqueeze(1)
             k_idx = torch.arange(N_kv, device=device).unsqueeze(0)
             causal = (k_idx <= q_idx).unsqueeze(0).unsqueeze(0)
             scores = scores.masked_fill(~causal, mask_val)
 
-        # ---- Padding mask ----
         if attention_mask is not None:
             if attention_mask.dim() == 2:
                 pad_mask = (attention_mask == 0).view(B, 1, 1, N_kv)
@@ -696,7 +639,6 @@ class GraniteHybridBlock(BaseAttention):
             elif attention_mask.dim() == 4:
                 scores = scores + attention_mask.to(scores.dtype)
 
-        # ---- Softmax + context ----
         scores = torch.nan_to_num(scores, nan=mask_val, posinf=1e9, neginf=mask_val)
         attn_weights = F.softmax(scores.float(), dim=-1).to(hidden_states.dtype)
         attn_weights = torch.nan_to_num(attn_weights, nan=0.0)
@@ -710,35 +652,29 @@ class GraniteHybridBlock(BaseAttention):
             attn_out = self.out_proj(context)
         attn_out = self.dropout(attn_out)
 
-        # ---- Mamba-2 branch (with cache) ----
         mamba_out, next_mamba_state = self.mamba(
             hidden_states, past_state=past_mamba_state
         )
 
-        # ---- Fused Triton / PyTorch Gated Fusion ----
         from neuralops.core.triton_kernels._types import FORCE_PYTORCH_FALLBACK, HAS_TRITON
-        gate_out = self.lora_gate(hidden_states.to(self.lora_gate.weight.dtype))  # (B, N, H)
+        gate_out = self.lora_gate(hidden_states.to(self.lora_gate.weight.dtype))
         if HAS_TRITON and not FORCE_PYTORCH_FALLBACK and attn_out.is_cuda and attn_out.shape == mamba_out.shape:
             try:
                 from neuralops.core.triton_kernels.selective_scan import fused_jamba_hybrid_ssm_attn_gate_triton
-                # Note: gate_out represents logit for alpha where blended = (1-alpha)*attn + alpha*ssm
-                # Here g = sigmoid(gate_out) weights attn, so alpha_ssm = -gate_out
                 alpha_ssm = -gate_out.mean(dim=-1, keepdim=True)
                 x = fused_jamba_hybrid_ssm_attn_gate_triton(attn_out, mamba_out, alpha_ssm)
             except Exception:
                 g = torch.sigmoid(gate_out).mean(dim=-1, keepdim=True).to(attn_out.dtype)
                 x = g * attn_out + (1.0 - g) * mamba_out
         else:
-            g = torch.sigmoid(gate_out).mean(dim=-1, keepdim=True).to(attn_out.dtype)  # (B, N, 1)
+            g = torch.sigmoid(gate_out).mean(dim=-1, keepdim=True).to(attn_out.dtype)
             x = g * attn_out + (1.0 - g) * mamba_out
 
-        # ---- MoE branch ----
         moe_out, moe_aux_loss = self.moe(x)
         x = x + self.lora_moe_scale * moe_out
 
         self._last_moe_aux_loss = moe_aux_loss
 
-        # ---- Safety: shape alignment (should not happen) ----
         if x.shape[-1] != hidden_states.shape[-1]:
             if x.shape[-1] < hidden_states.shape[-1]:
                 x = F.pad(x, (0, hidden_states.shape[-1] - x.shape[-1]))
@@ -747,7 +683,6 @@ class GraniteHybridBlock(BaseAttention):
 
         x = torch.nan_to_num(x, nan=0.0, posinf=1e4, neginf=-1e4)
 
-        # ---- Write back to cache ----
         use_cache = kwargs.get("use_cache", False) or (
             past_key_value is not None and past_key_value is not False
         )
@@ -761,7 +696,6 @@ class GraniteHybridBlock(BaseAttention):
 
         attn_ret = attn_weights if output_attentions else None
 
-        # ---- HF return format ----
         if self.is_decoder:
             if output_attentions:
                 return x, present_kv, attn_ret
@@ -770,9 +704,6 @@ class GraniteHybridBlock(BaseAttention):
             return x, attn_ret
         return x, None
 
-    # ------------------------------------------------------------------
-    # Copy weights  — [FIX-9]
-    # ------------------------------------------------------------------
     def copy_weights(self, old_attn: Any) -> None:
         if old_attn is None:
             return
@@ -782,7 +713,6 @@ class GraniteHybridBlock(BaseAttention):
             "v": (None, None), "o": (None, None),
         }
 
-        # 1. UniversalAdapter
         try:
             adapter = UniversalAdapter()
             for p in ("q", "k", "v", "o"):
@@ -792,7 +722,6 @@ class GraniteHybridBlock(BaseAttention):
         except Exception as e:
             logger.debug("UniversalAdapter failed: %s", e)
 
-        # 2. GPT-2 fused c_attn
         if hasattr(old_attn, "c_attn") and any(extracted[k][0] is None for k in ("q", "k", "v")):
             c_w, c_b = _unpack_weight_bias(old_attn.c_attn)
             if c_w is not None:
@@ -812,7 +741,6 @@ class GraniteHybridBlock(BaseAttention):
                     o_w = o_w.t().contiguous()
                 extracted["o"] = (o_w, o_b)
 
-        # 3. BERT/RoBERTa nested
         elif hasattr(old_attn, "self") and hasattr(old_attn.self, "query"):
             s = old_attn.self
             for proj_key, sub_name in (("q", "query"), ("k", "key"), ("v", "value")):
@@ -820,7 +748,6 @@ class GraniteHybridBlock(BaseAttention):
             if hasattr(old_attn, "output") and hasattr(old_attn.output, "dense"):
                 extracted["o"] = _unpack_weight_bias(old_attn.output.dense)
 
-        # 4. Named mapping
         else:
             candidates = {
                 "q": ["q_proj", "q_lin", "query"],
@@ -837,7 +764,6 @@ class GraniteHybridBlock(BaseAttention):
                                 extracted[proj_key] = (cw, cb)
                                 break
 
-        # ---- Copy into LoRALinear.base_layer ----
         target_map = {
             "q": self.q_proj,
             "k": self.k_proj,
@@ -890,13 +816,7 @@ class GraniteHybridBlock(BaseAttention):
             self.is_decoder = bool(old_attn.is_decoder)
 
 
-# Backward-compat alias
 GraniteHybridAttention = GraniteHybridBlock
-
-
-# =============================================================================
-# Injection  — [FIX-14]
-# =============================================================================
 
 
 def inject_granite_hybrid(
@@ -919,7 +839,6 @@ def inject_granite_hybrid(
 
     cfg = model_config or getattr(target, "config", None) or kwargs.get("config")
 
-    # ---- Whole model traversal ----
     layer_list = None
     for path in (
         ("distilbert", "transformer", "layer"),
@@ -960,7 +879,6 @@ def inject_granite_hybrid(
                 n_inj += 1
         return target if n_inj > 0 else None
 
-    # ---- Single-layer injection ----
     src = old_attn
     if src is None:
         for attr in ("attention", "self_attn", "attn", "self"):
@@ -1027,11 +945,6 @@ def inject_granite_hybrid(
         return None
 
     return new_layer
-
-
-# =============================================================================
-# Backward-compatibility aliases  — [FIX-16]
-# =============================================================================
 
 
 __all__ = [

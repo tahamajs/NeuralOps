@@ -38,8 +38,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 logger = logging.getLogger(__name__)
 
 
-
-
 def _write_past_kv(
     k_new: torch.Tensor,
     v_new: torch.Tensor,
@@ -54,7 +52,6 @@ def _write_past_kv(
         except Exception:
             pass
 
-    # Concatenate to existing
     if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 2:
         k_prev, v_prev = past_key_value[0], past_key_value[1]
         if isinstance(k_prev, torch.Tensor):
@@ -65,9 +62,6 @@ def _write_past_kv(
     return (k_new, v_new)
 
 
-# ===========================================================================
-# FactorizedLoRAUp
-# ===========================================================================
 class FactorizedLoRAUp(nn.Module):
     """Up-projection with frozen base weight and trainable LoRA adapter."""
 
@@ -107,7 +101,6 @@ class FactorizedLoRAUp(nn.Module):
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
 
-        # Freeze base by default
         self.weight.requires_grad = False
         if self.bias is not None:
             self.bias.requires_grad = False
@@ -132,9 +125,6 @@ class FactorizedLoRAUp(nn.Module):
         return out
 
 
-# ===========================================================================
-# SOAAttention
-# ===========================================================================
 @ATTENTION_REGISTRY.register(
     "soa_attn",
     supports_causal=True,
@@ -181,12 +171,10 @@ class SOAAttention(BaseAttention):
         except TypeError:
             super().__init__(cfg)
 
-        # ---- Layer index for cache routing ----
         self.layer_idx = int(
             layer_idx if layer_idx is not None else kwargs.get("layer_idx", 0)
         )
 
-        # ---- Dimensions ----
         self.hidden_size: int = (
             getattr(
                 cfg,
@@ -223,7 +211,6 @@ class SOAAttention(BaseAttention):
             else kwargs.get("num_attention_heads", kwargs.get("num_heads", 12))
         ) or 12
 
-        # ---- head_dim ----
         head_dim = kwargs.get("head_dim")
         if not head_dim and src_attn is not None:
             for attr in ("q_proj", "query", "q_lin"):
@@ -244,7 +231,6 @@ class SOAAttention(BaseAttention):
             head_dim = self.hidden_size // max(1, self.num_heads)
         self.head_dim = int(head_dim)
 
-        # ---- GQA ----
         cfg_kv = (
             getattr(
                 cfg,
@@ -271,7 +257,6 @@ class SOAAttention(BaseAttention):
         self.kv_head_size: int = self.num_kv_heads * self.head_dim
         self.all_head_size: int = self.q_head_size
 
-        # ---- Factorized rank ----
         comp_config = getattr(cfg, "compression_config", None)
         if k_rank is None or k_rank == 64:
             effective_rank = getattr(
@@ -290,7 +275,6 @@ class SOAAttention(BaseAttention):
         self.lora_rank: int = int(lora_rank)
         self.lora_alpha: float = float(lora_alpha)
 
-        # ---- Decoder detection ----
         _mt = str(getattr(cfg, "model_type", "") or "").lower() if cfg else ""
         _decoder_prefixes = (
             "gpt", "qwen", "llama", "mistral", "gemma", "phi",
@@ -312,7 +296,6 @@ class SOAAttention(BaseAttention):
         self.is_causal: bool = self.is_decoder
         self.is_nested_encoder: bool = False
 
-        # ---- Factorized SVD projections for Q, K, V ----
         self.q_down = nn.Linear(self.hidden_size, self.k_rank, bias=False)
         self.q_up = FactorizedLoRAUp(
             self.k_rank,
@@ -340,7 +323,6 @@ class SOAAttention(BaseAttention):
             lora_alpha=self.lora_alpha,
         )
 
-        # ---- Output projection ----
         self.out_proj: nn.Module = LoRALinear(
             self.q_head_size,
             self.hidden_size,
@@ -350,7 +332,6 @@ class SOAAttention(BaseAttention):
             freeze_base=True,
         )
 
-        # ---- Dropout ----
         dropout_p = (
             getattr(
                 cfg,
@@ -362,7 +343,6 @@ class SOAAttention(BaseAttention):
         )
         self.dropout = nn.Dropout(dropout_p)
 
-        # ---- Target dtype ----
         target_dtype = kwargs.get("dtype")
         if target_dtype is None and src_attn is not None:
             try:
@@ -371,16 +351,12 @@ class SOAAttention(BaseAttention):
             except StopIteration:
                 target_dtype = torch.float32
 
-        # ---- Weight transfer ----
         if src_attn is not None:
             self.copy_weights(src_attn)
 
         if target_dtype is not None and isinstance(target_dtype, torch.dtype):
             self.to(target_dtype)
 
-    # ------------------------------------------------------------------
-    # Aliases
-    # ------------------------------------------------------------------
     @property
     def q_proj(self) -> FactorizedLinear:
         return FactorizedLinear(self.q_down, self.q_up)
@@ -433,9 +409,6 @@ class SOAAttention(BaseAttention):
     def c_proj(self) -> nn.Module:
         return self.out_proj
 
-    # ------------------------------------------------------------------
-    # Weight transfer (multi-architecture)
-    # ------------------------------------------------------------------
     def copy_weights(self, old_attn: nn.Module) -> None:
         """Extract Q/K/V/O weights and SVD-factorize them into down/up pairs."""
         with torch.no_grad():
@@ -452,7 +425,6 @@ class SOAAttention(BaseAttention):
                 or hasattr(old_attn, "dense")
             )
 
-            # ---- Detect nested encoder ----
             if src_cls_name in ("BertSelfAttention", "RobertaSelfAttention") or (
                 hasattr(old_attn, "query") and not has_out_lin
             ):
@@ -470,7 +442,6 @@ class SOAAttention(BaseAttention):
             else:
                 src = old_attn
 
-            # ---- Pattern 1: GPT-2 fused c_attn (Conv1D) ----
             if hasattr(src, "c_attn") and hasattr(src, "c_proj"):
                 self.is_decoder = True
                 self.is_causal = True
@@ -485,7 +456,6 @@ class SOAAttention(BaseAttention):
                 )
                 c_b = c_b.detach() if c_b is not None else None
 
-                # Conv1D transpose
                 is_conv = (
                     "Conv1D" in base_c.__class__.__name__
                     or "Conv1D" in c_attn_mod.__class__.__name__
@@ -509,7 +479,6 @@ class SOAAttention(BaseAttention):
                     b_k = c_b[q_dim : q_dim + k_dim]
                     b_v = c_b[q_dim + k_dim : q_dim + k_dim + v_dim]
 
-                # Output
                 c_proj_mod = src.c_proj
                 base_p = getattr(c_proj_mod, "base_layer", c_proj_mod)
                 out_w = getattr(
@@ -531,7 +500,6 @@ class SOAAttention(BaseAttention):
                     out_w = out_w.t().contiguous()
                 w_o = out_w
 
-            # ---- Pattern 2: BERT / RoBERTa nested ----
             elif (
                 hasattr(src, "query")
                 and hasattr(src, "key")
@@ -556,7 +524,6 @@ class SOAAttention(BaseAttention):
                             )
                             break
 
-            # ---- Pattern 3: LLaMA / Qwen ----
             elif (
                 hasattr(src, "q_proj")
                 and hasattr(src, "k_proj")
@@ -589,7 +556,6 @@ class SOAAttention(BaseAttention):
                         else None
                     )
 
-            # ---- Pattern 4: DistilBERT ----
             elif (
                 hasattr(src, "q_lin")
                 and hasattr(src, "k_lin")
@@ -622,7 +588,6 @@ class SOAAttention(BaseAttention):
                         else None
                     )
 
-            # ---- Pattern 5: UniversalAdapter fallback ----
             if w_q is None or w_k is None or w_v is None:
                 try:
                     adapter = UniversalAdapter()
@@ -634,7 +599,6 @@ class SOAAttention(BaseAttention):
                 except Exception as e:
                     logger.debug("UniversalAdapter fallback failed: %s", e)
 
-            # ---- Validation ----
             missing = []
             if w_q is None:
                 missing.append("Q")
@@ -650,7 +614,6 @@ class SOAAttention(BaseAttention):
                     f"from {type(old_attn).__name__}"
                 )
 
-            # ---- SVD Factorization ----
             def _factorize_svd(
                 W: torch.Tensor,
                 down: nn.Linear,
@@ -685,7 +648,6 @@ class SOAAttention(BaseAttention):
                 elif up.bias is not None:
                     up.bias.zero_()
 
-                # Frobenius verification
                 rec = up.weight @ down.weight
                 f_norm = float(torch.linalg.norm(rec.float()).item())
                 if f_norm < 1e-4:
@@ -699,7 +661,6 @@ class SOAAttention(BaseAttention):
             _factorize_svd(w_k, self.k_down, self.k_up, b_k, "k")
             _factorize_svd(w_v, self.v_down, self.v_up, b_v, "v")
 
-            # ---- Output projection ----
             if w_o is not None and not self.is_nested_encoder:
                 if isinstance(self.out_proj, LoRALinear):
                     out_d = min(self.out_proj.weight.size(0), w_o.size(0))
@@ -723,10 +684,8 @@ class SOAAttention(BaseAttention):
                             "SOAAttention: out_proj norm near zero (%.2e)", f_norm_o
                         )
             elif self.is_nested_encoder:
-                # Nested encoder bypass
                 self.out_proj = nn.Identity()
 
-            # ---- Freeze base weights ----
             for mod in (self.q_down, self.k_down, self.v_down):
                 mod.weight.requires_grad = False
             for mod in (self.q_up, self.k_up, self.v_up):
@@ -745,9 +704,6 @@ class SOAAttention(BaseAttention):
     ) -> "SOAAttention":
         return cls(model_config=model_config, pretrained_attn=old_attn, **kwargs)
 
-    # ------------------------------------------------------------------
-    # Forward (with full KV-cache support)
-    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -770,7 +726,6 @@ class SOAAttention(BaseAttention):
         kv_input = encoder_hidden_states if is_cross else hidden_states
         kv_len_new = kv_input.shape[1]
 
-        # ---- Factorized projections ----
         from neuralops.core.triton_kernels._types import FORCE_PYTORCH_FALLBACK, HAS_TRITON
         if (
             HAS_TRITON
@@ -816,12 +771,10 @@ class SOAAttention(BaseAttention):
             .contiguous()
         )
 
-        # ---- [SOA-FIX-01] Read past KV cache ----
         past_k, past_v, past_len = (None, None, 0)
         if past_key_value is not None and not is_cross:
             past_k, past_v, past_len = _read_past_kv(past_key_value, self.layer_idx)
 
-        # ---- [SOA-FIX-02] RoPE with past_len ----
         pos_emb = kwargs.get("position_embeddings")
         if (
             pos_emb is not None
@@ -853,7 +806,6 @@ class SOAAttention(BaseAttention):
             except Exception as e:
                 logger.debug("SOAAttention rotary_emb failed: %s", e)
 
-        # ---- [SOA-FIX-01] Concatenate with past cache ----
         if past_k is not None and past_v is not None and not is_cross:
             k = torch.cat([past_k.to(k_new.dtype), k_new], dim=-2)
             v = torch.cat([past_v.to(v_new.dtype), v_new], dim=-2)
@@ -862,7 +814,6 @@ class SOAAttention(BaseAttention):
 
         N_kv = k.shape[-2]
 
-        # ---- [SOA-FIX-01] Prepare new cache ----
         new_past_kv: Any = None
         use_cache = kwargs.get("use_cache", False) or (
             past_key_value is not None and past_key_value is not False
@@ -872,7 +823,6 @@ class SOAAttention(BaseAttention):
                 k_new, v_new, past_key_value, self.layer_idx
             )
 
-        # ---- GQA expansion ----
         if H_kv != H:
             k = repeat_kv(k, self.num_key_value_groups)
             v = repeat_kv(v, self.num_key_value_groups)
@@ -880,13 +830,12 @@ class SOAAttention(BaseAttention):
         scale = 1.0 / math.sqrt(head_dim)
         is_causal = self.is_decoder and not is_cross and N > 1
 
-        # ---- [SOA-FIX-08] Mask normalization ----
         eff_mask = encoder_attention_mask if is_cross else attention_mask
         key_padding_mask: torch.Tensor | None = None
         if eff_mask is not None:
             if eff_mask.dim() == 2:
                 if eff_mask.dtype == torch.bool:
-                    key_padding_mask = ~eff_mask  # True = padding
+                    key_padding_mask = ~eff_mask
                 elif eff_mask.dtype.is_floating_point:
                     key_padding_mask = eff_mask <= -1e4
                 else:
@@ -902,31 +851,26 @@ class SOAAttention(BaseAttention):
         attn_weights: torch.Tensor | None = None
         context: torch.Tensor | None = None
 
-        # ---- [SOA-FIX-03, SOA-FIX-05] Dispatch: SDPA vs Manual ----
         use_sdpa = (not output_attentions) and (head_mask is None)
 
         if use_sdpa:
             try:
-                # Build explicit additive bias (SDPA cannot mix is_causal + attn_mask
-                # consistently across PyTorch versions)
                 attn_bias = None
 
                 if is_causal or (key_padding_mask is not None):
-                    # Build a dense float mask
                     bias_val = _safe_mask_value(q.dtype)
                     attn_bias = torch.zeros(
                         (B, 1, N, N_kv), device=q.device, dtype=q.dtype
                     )
 
                     if is_causal:
-                        # Causal with past_len offset
                         q_pos = (
                             past_len + torch.arange(N, device=q.device)
                         ).unsqueeze(1)
                         k_pos = torch.arange(
                             N_kv, device=q.device
                         ).unsqueeze(0)
-                        causal_bool = k_pos <= q_pos  # (N, N_kv)
+                        causal_bool = k_pos <= q_pos
                         attn_bias = attn_bias.masked_fill(
                             ~causal_bool.unsqueeze(0).unsqueeze(0), bias_val
                         )
@@ -946,7 +890,7 @@ class SOAAttention(BaseAttention):
                     _ks,
                     _vs,
                     attn_mask=attn_bias,
-                    is_causal=False,  # We build the mask explicitly
+                    is_causal=False,
                     dropout_p=self.dropout.p if self.training else 0.0,
                 )
 
@@ -966,14 +910,12 @@ class SOAAttention(BaseAttention):
                 )
                 context = None
 
-        # ---- Manual path ----
         if context is None:
             scores = (
                 torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous())
                 * scale
             )
 
-            # Causal mask with past_len offset
             if is_causal:
                 q_pos = (
                     past_len + torch.arange(N, device=scores.device)
@@ -981,7 +923,7 @@ class SOAAttention(BaseAttention):
                 k_pos = torch.arange(
                     N_kv, device=scores.device
                 ).unsqueeze(0)
-                causal_bool = k_pos <= q_pos  # (N, N_kv)
+                causal_bool = k_pos <= q_pos
                 bias_val = _safe_mask_value(scores.dtype)
                 scores = scores.masked_fill(
                     ~causal_bool.unsqueeze(0).unsqueeze(0), bias_val
@@ -1017,7 +959,6 @@ class SOAAttention(BaseAttention):
                 .view(B, N, self.all_head_size)
             )
 
-        # ---- Output projection ----
         if self.is_nested_encoder:
             output = context
         else:
@@ -1025,7 +966,6 @@ class SOAAttention(BaseAttention):
 
         output = torch.nan_to_num(output, nan=0.0, posinf=1e4, neginf=-1e4)
 
-        # ---- Return ----
         if self.is_decoder and not is_cross:
             if output_attentions:
                 return output, new_past_kv, attn_weights
@@ -1036,11 +976,6 @@ class SOAAttention(BaseAttention):
         return output, None
 
 
-
-
-# ===========================================================================
-# Injection
-# ===========================================================================
 def inject_soa_attn(
     model: nn.Module | None = None,
     layer: nn.Module | None = None,
@@ -1054,7 +989,6 @@ def inject_soa_attn(
     **kwargs: Any,
 ) -> SOAAttention | nn.Module | None:
     """Replace self-attention with SOAAttention across model families."""
-    # [SOA-FIX-09] Recursion guard
     if _depth > 8:
         logger.warning("inject_soa_attn: max recursion depth exceeded.")
         return None
@@ -1067,7 +1001,6 @@ def inject_soa_attn(
     if cfg is None and hasattr(target, "config"):
         cfg = target.config
 
-    # ---- Whole-model traversal ----
     layer_list = None
     for path in (
         ("distilbert", "transformer", "layer"),
@@ -1110,7 +1043,6 @@ def inject_soa_attn(
                 num_injected += 1
         return target if num_injected > 0 else None
 
-    # ---- Single layer injection ----
     try:
         src_attn = old_attn
         if src_attn is None and target is not None:
@@ -1126,7 +1058,6 @@ def inject_soa_attn(
         if src_attn is None:
             return None
 
-        # [SOA-FIX-09] Idempotency guard
         if isinstance(src_attn, SOAAttention) or "SOA" in src_attn.__class__.__name__:
             return None
         if hasattr(src_attn, "inner") and isinstance(src_attn.inner, SOAAttention):
@@ -1140,7 +1071,6 @@ def inject_soa_attn(
                 if isinstance(cand, SOAAttention) or "SOA" in cand.__class__.__name__:
                     return None
 
-        # Skip hybrid layers (DeltaNet, LinearAttention)
         c_name = src_attn.__class__.__name__
         if "DeltaNet" in c_name or "LinearAttention" in c_name:
             return None
@@ -1170,7 +1100,6 @@ def inject_soa_attn(
             **kwargs,
         )
 
-        # ---- Splice ----
         if target is not None:
             spliced = False
             if hasattr(target, "attention"):
@@ -1209,15 +1138,10 @@ def inject_soa_attn(
         return None
 
 
-# ===========================================================================
-# Backward-compat aliases (minimal — one canonical per the clean-naming policy)
-# ===========================================================================
 SOAFusedAttention = SOAAttention
 inject_soa = inject_soa_attn
-# Aliases for testing compatibility
 inject_soa_attention = inject_soa_attn
 inject_soafusedattention = inject_soa_attn
-
 
 
 __all__ = [

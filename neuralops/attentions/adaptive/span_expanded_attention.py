@@ -39,9 +39,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 logger = logging.getLogger(__name__)
 
 
-# ===========================================================================
-# SinkCache (recommended cache container)
-# ===========================================================================
 class SinkCache:
     """
     Cache container used by SpanExpandedAttention.
@@ -97,7 +94,6 @@ class SinkCache:
         self.positions[layer_idx] = p_all
         return k_all, v_all, p_all
 
-    # Tuple-like access for compatibility
     def __getitem__(self, idx: int):
         if idx == 0:
             return self.keys
@@ -111,8 +107,6 @@ class SinkCache:
         return 3
 
 
-# DEPRECATED: Dynamic span expansion defaults to full sequence horizon without dynamic pruning signals.
-# @ATTENTION_REGISTRY.register("span_expanded_attention")
 class SpanExpandedAttention(BaseAttention):
     """DEPRECATED: Dynamic span expansion defaults to full sequence horizon without dynamic pruning signals.
 
@@ -192,7 +186,6 @@ class SpanExpandedAttention(BaseAttention):
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
         self.supports_gqa = True
 
-        # Projections
         self.q_proj = LoRALinear(
             self.dim, self.all_head_size, bias=True,
             lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
@@ -244,9 +237,6 @@ class SpanExpandedAttention(BaseAttention):
         if source_attn is not None:
             self.copy_weights(source_attn)
 
-    # ------------------------------------------------------------------
-    # copy_weights (unchanged — production hardened)
-    # ------------------------------------------------------------------
     def copy_weights(self, src: Any) -> None:
         if src is None:
             return
@@ -279,7 +269,6 @@ class SpanExpandedAttention(BaseAttention):
             "v": (None, None), "o": (None, None),
         }
 
-        # GPT-2 fused c_attn
         if hasattr(src, "c_attn") and src.c_attn is not None:
             c_attn_mod = src.c_attn
             base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
@@ -325,7 +314,6 @@ class SpanExpandedAttention(BaseAttention):
                         o_w, bias_o.data.clone() if bias_o is not None else None,
                     )
 
-        # RoBERTa/BERT nested
         elif hasattr(src, "self") and hasattr(src.self, "query"):
             s = src.self
             for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
@@ -342,7 +330,6 @@ class SpanExpandedAttention(BaseAttention):
                     out_mod.bias.data.clone() if out_mod.bias is not None else None,
                 )
 
-        # Flat
         else:
             proj_candidates = {
                 "q": ["q_lin", "q_proj", "query"],
@@ -445,9 +432,6 @@ class SpanExpandedAttention(BaseAttention):
             for mod in (self.q_proj, self.k_proj, self.v_proj, self.out_proj):
                 mod.freeze_base_weights()
 
-    # ------------------------------------------------------------------
-    # Cache helpers
-    # ------------------------------------------------------------------
     def _get_past_kv(
         self, past_key_value: Any, layer_idx: int = 0
     ) -> tuple[torch.Tensor | None, torch.Tensor | None, torch.Tensor | None, int]:
@@ -464,7 +448,6 @@ class SpanExpandedAttention(BaseAttention):
         if past_key_value is None:
             return None, None, None, 0
 
-        # SinkCache
         if isinstance(past_key_value, SinkCache):
             if layer_idx >= len(past_key_value.keys) or past_key_value.keys[layer_idx] is None:
                 return None, None, None, 0
@@ -475,7 +458,6 @@ class SpanExpandedAttention(BaseAttention):
                 past_key_value.seen_tokens,
             )
 
-        # Tuple
         if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 2:
             past_k = past_key_value[0]
             past_v = past_key_value[1]
@@ -485,12 +467,10 @@ class SpanExpandedAttention(BaseAttention):
             seen = int(past_pos[:, -1].max().item()) + 1 if past_pos is not None else past_k.shape[-2]
             return past_k, past_v, past_pos, seen
 
-        # HF DynamicCache
         if hasattr(past_key_value, "key_cache") and past_key_value.key_cache:
             idx = min(layer_idx, len(past_key_value.key_cache) - 1)
             past_k = past_key_value.key_cache[idx]
             past_v = past_key_value.value_cache[idx]
-            # HF DynamicCache does not store positions; rely on len.
             seen = past_k.shape[-2]
             return past_k, past_v, None, seen
 
@@ -519,7 +499,6 @@ class SpanExpandedAttention(BaseAttention):
             keep = slice(N_k - span, N_k)
             return k[..., keep, :], v[..., keep, :], positions[..., keep]
 
-        # Keep first `sink` + last `span - sink`
         sink_idx = torch.arange(0, sink, device=k.device)
         recent_start = N_k - (span - sink)
         recent_idx = torch.arange(recent_start, N_k, device=k.device)
@@ -528,7 +507,6 @@ class SpanExpandedAttention(BaseAttention):
         if k.is_cuda:
             try:
                 from neuralops.core.triton_kernels.paged_attention import paged_kv_evict_compact_triton
-                # Keep index selection accelerated
                 return (
                     k.index_select(-2, keep_idx),
                     v.index_select(-2, keep_idx),
@@ -543,9 +521,6 @@ class SpanExpandedAttention(BaseAttention):
             positions.index_select(-1, keep_idx),
         )
 
-    # ------------------------------------------------------------------
-    # Forward
-    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -571,7 +546,6 @@ class SpanExpandedAttention(BaseAttention):
         H, Dh = self.num_heads, self.head_dim
         device = hidden_states.device
 
-        # ---- 1) QKV projections (compact, no GQA expansion yet) ----
         q = self.q_proj(hidden_states).view(B, L, H, Dh).permute(0, 2, 1, 3).contiguous()
         k_new = self.k_proj(hidden_states).view(
             B, L, self.num_kv_heads, Dh
@@ -580,13 +554,10 @@ class SpanExpandedAttention(BaseAttention):
             B, L, self.num_kv_heads, Dh
         ).permute(0, 2, 1, 3).contiguous()
 
-        # ---- 2) Extract past cache (compact) ----
         past_k, past_v, past_pos, seen = self._get_past_kv(past_key_value, layer_idx)
 
-        # ---- 3) FIX-01: absolute position offset ----
         position_ids = kwargs.get("position_ids")
         if position_ids is not None:
-            # Explicit positions (preferred)
             if position_ids.dim() == 1:
                 position_ids = position_ids.unsqueeze(0).expand(B, -1)
             start_pos = int(position_ids[0, 0].item())
@@ -598,9 +569,6 @@ class SpanExpandedAttention(BaseAttention):
                 .unsqueeze(0).expand(B, -1)
             )
         else:
-            # Fallback: use `seen` counter (from custom cache or HF cache length)
-            # NOTE: for HF DynamicCache without position tracking this can be
-            # correct only if no pruning was ever applied.
             start_pos = seen
             new_positions = (
                 torch.arange(start_pos, start_pos + L, device=device)
@@ -617,14 +585,12 @@ class SpanExpandedAttention(BaseAttention):
                     self.expansion_span,
                 )
 
-        # ---- 4) RoPE with absolute offset ----
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None:
             cos, sin = position_embeddings
             q, k_new = apply_rotary_pos_emb(q, k_new, cos, sin, past_len=start_pos)
 
-        # ---- 5) FIX-03: concat + truncate on COMPACT KV ----
         if past_k is not None:
             k_full = torch.cat([past_k, k_new], dim=-2)
             v_full = torch.cat([past_v, v_new], dim=-2)
@@ -640,20 +606,16 @@ class SpanExpandedAttention(BaseAttention):
             v_full = v_new
             pos_full = new_positions
 
-        # ---- 6) FIX-02: prefill vs decode ----
         is_prefill = L > 1
 
         if is_prefill:
-            # Prefill: compute attention on the FULL sequence (causality-safe).
             attn_k = k_full
             attn_v = v_full
             attn_pos = pos_full
-            # Cache the TRUNCATED version for future steps.
             cache_k, cache_v, cache_pos = self._truncate_cache_with_sinks(
                 k_full, v_full, pos_full
             )
         else:
-            # Decode: truncate first (memory-efficient), then attend.
             cache_k, cache_v, cache_pos = self._truncate_cache_with_sinks(
                 k_full, v_full, pos_full
             )
@@ -661,7 +623,6 @@ class SpanExpandedAttention(BaseAttention):
             attn_v = cache_v
             attn_pos = cache_pos
 
-        # ---- 7) Prepare present_key_value ----
         if isinstance(past_key_value, SinkCache):
             past_key_value.keys[layer_idx if layer_idx < len(past_key_value.keys) else -1] = cache_k
             if layer_idx >= len(past_key_value.keys):
@@ -675,14 +636,11 @@ class SpanExpandedAttention(BaseAttention):
             past_key_value.seen_tokens = max(past_key_value.seen_tokens, start_pos + L)
             present_key_value = past_key_value
         elif hasattr(past_key_value, "update"):
-            # HF DynamicCache: store FULL K/V (positions handled upstream).
             past_key_value.update(k_new, v_new, layer_idx)
             present_key_value = past_key_value
         else:
-            # Tuple cache: return (k, v, positions)
             present_key_value = (cache_k, cache_v, cache_pos)
 
-        # ---- 8) FIX-03: expand GQA just before attention ----
         if self.num_heads != self.num_kv_heads:
             attn_k_exp = repeat_kv(attn_k, self.kv_repeat)
             attn_v_exp = repeat_kv(attn_v, self.kv_repeat)
@@ -692,7 +650,6 @@ class SpanExpandedAttention(BaseAttention):
 
         N_k = attn_k_exp.shape[-2]
 
-        # ---- 9) FIX-05: SDPA fast path (only when safe) ----
         use_sdpa = (
             attention_mask is None
             and head_mask is None
@@ -700,7 +657,6 @@ class SpanExpandedAttention(BaseAttention):
             and not self.training
         )
         if use_sdpa:
-            # is_causal only valid when we're at the "real" prefill start
             _is_causal = bool(self.is_decoder) and is_prefill and start_pos == 0
             try:
                 sdpa_out = F.scaled_dot_product_attention(
@@ -718,22 +674,19 @@ class SpanExpandedAttention(BaseAttention):
                 out = self.out_proj(sdpa_out)
                 return out, None, present_key_value
             except Exception:
-                pass  # fall through
+                pass
 
-        # ---- 10) Manual attention ----
         scale = 1.0 / math.sqrt(int(Dh))
         scores = torch.matmul(
             q.float(), attn_k_exp.float().transpose(-2, -1).contiguous()
-        ) * scale  # (B, H, L, N_k)
+        ) * scale
 
-        # FIX-02: causal mask uses absolute positions of K and Q.
         if self.is_decoder:
-            q_pos = new_positions.view(B, 1, L, 1)          # absolute
-            k_pos = attn_pos.view(B, 1, 1, N_k)             # absolute
+            q_pos = new_positions.view(B, 1, L, 1)
+            k_pos = attn_pos.view(B, 1, 1, N_k)
             causal = k_pos > q_pos
             scores = scores.masked_fill(causal, float("-inf"))
 
-        # External mask (padding)
         if attention_mask is not None:
             scores = apply_attention_mask(scores, attention_mask, is_causal=False)
 
@@ -741,7 +694,6 @@ class SpanExpandedAttention(BaseAttention):
         probs = torch.nan_to_num(probs, nan=0.0)
         probs = self.dropout(probs)
 
-        # FIX-06: head_mask
         if head_mask is not None:
             if head_mask.dim() == 1 and head_mask.size(0) == self.num_heads:
                 probs = probs * head_mask.view(1, self.num_heads, 1, 1).to(probs.dtype)
@@ -791,7 +743,6 @@ def inject_span_expanded(
 
     cfg = model_config if model_config is not None else getattr(target, "config", None)
 
-    # Whole-model traversal
     if layer is None and model is not None:
         found = _find_layer_list(model)
         if found is None:
@@ -815,7 +766,6 @@ def inject_span_expanded(
                 num_injected += 1
         return model if num_injected > 0 else None
 
-    # Single-layer injection
     try:
         src_attn = old_attn
         if src_attn is None:
