@@ -690,7 +690,7 @@ class XAttention(BaseAttention):
         else:
             K_full, V_full = K_cat, V_cat
 
-        scale = d**-0.5
+        scale = 1.0 / math.sqrt(int(d))
         attn: torch.Tensor | None = None
         context: torch.Tensor | None = None
 

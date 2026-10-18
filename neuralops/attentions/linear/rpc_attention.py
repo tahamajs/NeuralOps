@@ -208,7 +208,7 @@ class RPCAttention(BaseAttention):
         # RPC-19: non-persistent (recomputed on load with same seed)
         seed = int(kwargs.get("sketch_seed", 0xC0FFEE))
         gen = torch.Generator(device="cpu").manual_seed(seed)
-        std = self.head_dim**-0.5
+        std = 1.0 / math.sqrt(self.head_dim)
         proj_q = torch.randn(self.num_heads, self.head_dim, self.sketch_rank, generator=gen) * std
         proj_k = torch.randn(self.num_heads, self.head_dim, self.sketch_rank, generator=gen) * std
         self.register_buffer("proj_q", proj_q.float(), persistent=False)

@@ -665,7 +665,7 @@ class GalerkinAttention(BaseAttention):
                     pass
 
             # Manual causal path
-            scale = d**-0.5
+            scale = 1.0 / math.sqrt(int(d))
             scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
 
             # GAL-FIX-04: explicit causal mask
@@ -718,7 +718,7 @@ class GalerkinAttention(BaseAttention):
             Phi = self._get_orthonormal_basis(kv_len, r_actual, device, dtype)
             # Phi: (N, r)
 
-            scale = d**-0.5
+            scale = 1.0 / math.sqrt(int(d))
 
             if not output_attentions and head_mask is None:
                 try:

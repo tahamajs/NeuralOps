@@ -14,6 +14,7 @@ from neuralops.core.attention_utils import (
 )
 
 import logging
+import math
 from typing import Any
 
 import torch
@@ -582,7 +583,7 @@ class RoutingAttention(BaseAttention):
         joint_feat = F.normalize(Q + K, p=2, dim=-1)  # (B, H, L, d)
         cluster_ids = self._kmeans_assign(joint_feat, K_num, self.n_iters)  # (B, H, L) long
 
-        scale = d**-0.5
+        scale = 1.0 / math.sqrt(int(d))
         is_causal = self.is_decoder or kwargs.get("is_causal", False)
 
         # ===========================================================

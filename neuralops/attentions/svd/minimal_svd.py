@@ -601,11 +601,7 @@ class MinimalSVDAttention(BaseAttention):
             _ks = maybe_half(K)
             _vs = maybe_half(V)
 
-            _is_causal = (
-                getattr(self, "is_decoder", False) and not is_cross and N > 1
-                if "is_cross" in dir()
-                else getattr(self, "is_decoder", False) and N > 1
-            )
+            _is_causal = getattr(self, "is_decoder", False) and not is_cross and N > 1
 
             _sdpa_out = torch.nn.functional.scaled_dot_product_attention(
                 _qs,

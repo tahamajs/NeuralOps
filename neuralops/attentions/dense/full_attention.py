@@ -14,6 +14,7 @@ from neuralops.core.attention_utils import (
 )
 
 import logging
+import math
 from typing import Any
 
 import torch
@@ -453,7 +454,7 @@ class FullAttention(BaseAttention):
                 use_sdpa = False
 
         if not use_sdpa:
-            scale = d**-0.5
+            scale = 1.0 / math.sqrt(int(d))
             scores = torch.matmul(Q, K.transpose(-2, -1).contiguous()) * scale
 
             if mask is not None:

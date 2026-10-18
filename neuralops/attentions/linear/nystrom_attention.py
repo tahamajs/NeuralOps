@@ -410,7 +410,7 @@ class NystromAttention(BaseAttention):
         """Stable iterative pseudoinverse (Schultz method from Nyströmformer paper)."""
         norm_1 = A.abs().sum(dim=-2).amax(dim=-1, keepdim=True).unsqueeze(-1)
         norm_inf = A.abs().sum(dim=-1).amax(dim=-1, keepdim=True).unsqueeze(-1)
-        alpha = 1.0 / (norm_1 * norm_inf + 1e-5)
+        alpha = 1.0 / (norm_1 * norm_inf + 1e-5).clamp(min=1e-6)
         V = alpha * A.transpose(-2, -1).contiguous()
         I = torch.eye(A.size(-1), device=A.device, dtype=A.dtype).unsqueeze(0).unsqueeze(0)
         for _ in range(iters):

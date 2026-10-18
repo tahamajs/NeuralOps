@@ -691,7 +691,7 @@ class AdaptiveSparseAttention(BaseAttention):
             V = repeat_kv(V, self.kv_repeat)
 
         chunk_size = 64
-        scale = d**-0.5
+        scale = 1.0 / math.sqrt(int(d))
 
         # Handle T5 position bias
         position_bias = kwargs.get("position_bias")

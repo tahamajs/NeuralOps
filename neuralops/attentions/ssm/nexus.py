@@ -76,7 +76,7 @@ class XAttentionScorer:
         K_sample = K[:, :, ::stride, :]
         N_s = Q_sample.size(2)
 
-        scale = D**-0.5
+        scale = 1.0 / math.sqrt(int(D))
         attn_sample = torch.matmul(Q_sample, K_sample.transpose(-2, -1).contiguous()) * scale
 
         b_s = max(1, block_size // stride)
@@ -214,7 +214,7 @@ class DualStageStripeAttention(nn.Module):
         bs = self.cfg.block_size
         nb = (N + bs - 1) // bs
         top_k = self.cfg.top_k_blocks
-        scale = D**-0.5
+        scale = 1.0 / math.sqrt(int(D))
 
         if self.cfg.xattn_enabled:
             block_scores = self.xattn_scorer.score_blocks(Q, K, bs, self.cfg.xattn_stride)

@@ -24,6 +24,22 @@ CAUSAL_MODELS = {"GPT-2", "GPT-2-Medium", "Qwen", "Qwen2.5", "Qwen3.5", "LLaMA-3
 BIDIRECTIONAL_MODELS = {"DistilBERT", "BERT", "RoBERTa", "Albert", "DeBERTa"}
 
 
+TRITON_KERNELS_REQUIRE_HALF = {
+    "sparse_attn", "low_rank", "linear_attn", "gqa", "flash_decode", "flash_decoding",
+    "fused_rope", "fused_ce", "fused_kd", "fused_norm_linear",
+    "gla_scan", "gdn_scan", "hgrn2_scan", "selective_scan", "fms_scan",
+    "state_update", "cosformer_triton_kernel", "block_sparse",
+    "varlen_attention", "softplus", "elementwise",
+}
+
+
+def get_benchmark_dtype(attn_name: str) -> torch.dtype:
+    name = attn_name.lower()
+    if name in TRITON_KERNELS_REQUIRE_HALF or any(k in name for k in TRITON_KERNELS_REQUIRE_HALF):
+        return torch.float16
+    return torch.float32
+
+
 def get_is_decoder(model_name: str) -> bool:
     if model_name in CAUSAL_MODELS:
         return True
@@ -89,25 +105,36 @@ def benchmark_torch_compile(strict_compile_check: bool = True, output_path: str 
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
 
+            dtype = get_benchmark_dtype(attn_name) if device == "cuda" else torch.float32
+
             # Instantiate module with causal safety awareness
             inst_kwargs = {"dim": DIM, "num_heads": NUM_HEADS, "is_decoder": True}
             try:
-                mod = cls(**inst_kwargs).to(device).eval()
+                mod = cls(**inst_kwargs).to(device)
             except TypeError:
                 try:
-                    mod = cls(dim=DIM, num_heads=NUM_HEADS).to(device).eval()
+                    mod = cls(dim=DIM, num_heads=NUM_HEADS).to(device)
                 except Exception:
                     try:
-                        mod = cls(dim=DIM).to(device).eval()
+                        mod = cls(dim=DIM).to(device)
                     except Exception:
-                        mod = cls(hidden_size=DIM, num_heads=NUM_HEADS).to(device).eval()
+                        mod = cls(hidden_size=DIM, num_heads=NUM_HEADS).to(device)
+
+            if dtype != torch.float32:
+                try:
+                    mod = mod.to(dtype=dtype)
+                except Exception:
+                    pass
+            mod.eval()
 
             # Compile with reduce-overhead & dynamic=True
             compiled_mod = torch.compile(mod, mode="reduce-overhead", dynamic=True)
 
             # 1. Warmup and initial dynamic compilation at L=128
-            x128 = torch.randn(BATCH_SIZE, 128, DIM, device=device)
+            x128 = torch.randn(BATCH_SIZE, 128, DIM, device=device, dtype=dtype)
             t0 = time.perf_counter()
+            if hasattr(torch.compiler, "cudagraph_mark_step_begin"):
+                torch.compiler.cudagraph_mark_step_begin()
             with torch.no_grad():
                 out128_compiled = compiled_mod(x128)
             if torch.cuda.is_available():
@@ -136,9 +163,13 @@ def benchmark_torch_compile(strict_compile_check: bool = True, output_path: str 
             }
 
             # 2. Forward pass at L=256 (Should reuse dynamic graph)
-            x256 = torch.randn(BATCH_SIZE, 256, DIM, device=device)
+            x256 = torch.randn(BATCH_SIZE, 256, DIM, device=device, dtype=dtype)
+            if hasattr(torch.compiler, "cudagraph_mark_step_begin"):
+                torch.compiler.cudagraph_mark_step_begin()
             with torch.no_grad():
                 out256_compiled = compiled_mod(x256)
+            if torch.cuda.is_available():
+                torch.cuda.synchronize()
             if isinstance(out256_compiled, tuple):
                 out256_compiled = out256_compiled[0]
 
@@ -153,9 +184,13 @@ def benchmark_torch_compile(strict_compile_check: bool = True, output_path: str 
             }
 
             # 3. Forward pass at L=512 (Should reuse dynamic graph)
-            x512 = torch.randn(BATCH_SIZE, 512, DIM, device=device)
+            x512 = torch.randn(BATCH_SIZE, 512, DIM, device=device, dtype=dtype)
+            if hasattr(torch.compiler, "cudagraph_mark_step_begin"):
+                torch.compiler.cudagraph_mark_step_begin()
             with torch.no_grad():
                 out512_compiled = compiled_mod(x512)
+            if torch.cuda.is_available():
+                torch.cuda.synchronize()
             if isinstance(out512_compiled, tuple):
                 out512_compiled = out512_compiled[0]
 
@@ -199,12 +234,16 @@ def benchmark_torch_compile(strict_compile_check: bool = True, output_path: str 
             t_eager = (time.perf_counter() - t0) / 10 * 1000
 
             for _ in range(3):
+                if hasattr(torch.compiler, "cudagraph_mark_step_begin"):
+                    torch.compiler.cudagraph_mark_step_begin()
                 with torch.no_grad():
                     _ = compiled_mod(x256)
             if torch.cuda.is_available():
                 torch.cuda.synchronize()
             t0 = time.perf_counter()
             for _ in range(10):
+                if hasattr(torch.compiler, "cudagraph_mark_step_begin"):
+                    torch.compiler.cudagraph_mark_step_begin()
                 with torch.no_grad():
                     _ = compiled_mod(x256)
             if torch.cuda.is_available():

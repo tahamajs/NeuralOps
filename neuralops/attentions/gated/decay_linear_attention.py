@@ -683,7 +683,7 @@ class DecayLinearAttention(BaseAttention):
         lambdas_f = lambdas.float()
 
         # FIX: Proper scaling to keep scores in a reasonable range
-        scale = d**-0.5
+        scale = 1.0 / math.sqrt(int(d))
         q_f = q_f * scale
 
         # FIX: Wide decay range for both local and global context

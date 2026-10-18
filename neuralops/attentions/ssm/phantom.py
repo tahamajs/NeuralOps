@@ -202,7 +202,7 @@ def lsh_attention(
 ) -> torch.Tensor:
     B, H, N_q, D = Q.shape
     _, _, N_k, _ = K.shape
-    scale = D**-0.5
+    scale = 1.0 / math.sqrt(int(D))
 
     # Direct vectorized SDPA fallback when rounds <= 1 or for short contexts without custom mask/dropout
     if (rounds <= 1 or N_q <= 128) and token_valid is None and dropout is None:

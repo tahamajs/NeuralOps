@@ -27,6 +27,17 @@ __all__ = [
     "BenchmarkRunner",
     "BenchmarkMetric",
     "HardwareProfile",
+    "bench_llm_bandwidth",
+    "benchmark_torch_compile",
+    "benchmark_all_26_comprehensive",
+    "benchmark_all_26_kernels",
+    "benchmark_extrapolation_32k",
+    "benchmark_dynamic_range_stress",
+    "measure_multiprecision",
+    "multi_seed_stress_test_131_72",
+    "stress_test_seeds_100_200_300",
+    "stress_test_seeds_404_777_999",
+    "benchmark_torch_compile_131_attentions",
 ]
 
 _LAZY_BENCHMARK_SYMBOLS: dict[str, tuple[str, str]] = {

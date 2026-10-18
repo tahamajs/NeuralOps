@@ -1,7 +1,12 @@
-from neuralops.trainer.metrics import get_task_metrics as compute_metrics
-from neuralops.data.preprocessing import preprocess_function
-from neuralops.data.glue_loader import get_num_labels_and_is_regression
-from neuralops.data.glue_loader import load_glue_local
+try:
+    from neuralops.trainer.metrics import get_task_metrics as compute_metrics
+    from neuralops.data.preprocessing import preprocess_function
+    from neuralops.data.glue_loader import get_num_labels_and_is_regression, load_glue_local
+except ImportError:
+    compute_metrics = None
+    preprocess_function = None
+    get_num_labels_and_is_regression = None
+    load_glue_local = None
 from neuralops.core.common import _cfg_get
 from neuralops.core.common import _unpack_weight_bias
 

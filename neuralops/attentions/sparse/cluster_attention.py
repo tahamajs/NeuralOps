@@ -14,6 +14,7 @@ from neuralops.core.attention_utils import (
 )
 
 import logging
+import math
 from typing import Any
 
 import torch
@@ -665,7 +666,7 @@ class ClusterAttention(BaseAttention):
             K = repeat_kv(K, self.kv_repeat)
             V = repeat_kv(V, self.kv_repeat)
 
-        scale = Dh**-0.5
+        scale = 1.0 / math.sqrt(int(Dh))
 
         # Check for causal decoding (guard against self.config being None)
         _cfg = self.config

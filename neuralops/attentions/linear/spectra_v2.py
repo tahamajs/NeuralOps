@@ -14,6 +14,7 @@ from neuralops.core.attention_utils import (
 )
 
 import logging
+import math
 from typing import Any
 
 import torch
@@ -421,7 +422,7 @@ class SpectraV2Attention(BaseAttention):
             K = repeat_kv(K, repeats)
             V = repeat_kv(V, repeats)
 
-        scale = self.head_dim**-0.5
+        scale = 1.0 / math.sqrt(self.head_dim)
 
         # Causal determination
         _is_causal = getattr(self, "is_decoder", False) and not is_cross and N > 1

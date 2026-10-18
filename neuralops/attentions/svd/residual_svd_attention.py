@@ -13,6 +13,7 @@ from neuralops.core.attention_utils import (
 )
 
 import logging
+import math
 from typing import Any
 
 import torch
@@ -570,7 +571,7 @@ class ResidualSVDAttention(BaseAttention):
             K = repeat_kv(K, repeats)
             V = repeat_kv(V, repeats)
 
-        scale = D**-0.5
+        scale = 1.0 / math.sqrt(int(D))
         scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
 
         # Causal masking
