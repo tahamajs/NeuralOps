@@ -7,80 +7,34 @@
 namespace neuralops {
 namespace cuda {
 
-// Fused Activation Scaling + GEMM with Shared Memory Tiling:
-// Y[m, n] = sum_k (X[m, k] * s_inv[k]) * W[n, k] + bias[n]
-// Block-level tiling: BLOCK_M x BLOCK_N with K-dimension staging.
-template <typename scalar_t, int BLOCK_M = 16, int BLOCK_N = 16, int BLOCK_K = 32>
-__launch_bounds__(256)
-__global__ void act_scale_quant_gemm_tiled_kernel(
+template <typename scalar_t>
+__global__ void __launch_bounds__(256) act_scale_vec_kernel(
     scalar_t* __restrict__ out,
-    const scalar_t* __restrict__ X,
+    const scalar_t* __restrict__ x,
     const scalar_t* __restrict__ s_inv,
-    const scalar_t* __restrict__ W,
-    const scalar_t* __restrict__ bias,
-    const int M,
-    const int K,
-    const int N,
-    const bool has_bias
+    const int total_elements,
+    const int K
 ) {
-    __shared__ float s_X[BLOCK_M][BLOCK_K + 1];
-    __shared__ float s_W[BLOCK_N][BLOCK_K + 1];
+    constexpr int VEC = (sizeof(scalar_t) == 2) ? 8 : 4;
+    const int total_vec = total_elements / VEC;
+    const int tid = blockIdx.x * blockDim.x + threadIdx.x;
+    const int stride = blockDim.x * gridDim.x;
 
-    const int bx = blockIdx.x; // along N
-    const int by = blockIdx.y; // along M
+    using vec_t = typename std::conditional<(sizeof(scalar_t) == 2), uint4, float4>::type;
+    const vec_t* __restrict__ x_vec = reinterpret_cast<const vec_t*>(x);
+    vec_t* __restrict__ out_vec = reinterpret_cast<vec_t*>(out);
 
-    const int tid = threadIdx.x;
-    const int row = tid / BLOCK_N;
-    const int col = tid % BLOCK_N;
+    for (int idx = tid; idx < total_vec; idx += stride) {
+        vec_t raw = x_vec[idx];
+        scalar_t* elems = reinterpret_cast<scalar_t*>(&raw);
+        const int k_base = (idx * VEC) % K;
 
-    const int global_m = by * BLOCK_M + row;
-    const int global_n = bx * BLOCK_N + col;
-
-    float acc = 0.0f;
-    const int num_k_tiles = (K + BLOCK_K - 1) / BLOCK_K;
-
-    for (int t = 0; t < num_k_tiles; ++t) {
-        // Load and fuse X * s_inv into s_X collaboratively
-        for (int load_idx = tid; load_idx < BLOCK_M * BLOCK_K; load_idx += blockDim.x) {
-            const int lr = load_idx / BLOCK_K;
-            const int lk = load_idx % BLOCK_K;
-            const int gm = by * BLOCK_M + lr;
-            const int gk = t * BLOCK_K + lk;
-            if (gm < M && gk < K) {
-                s_X[lr][lk] = to_float(X[gm * K + gk]) * to_float(s_inv[gk]);
-            } else {
-                s_X[lr][lk] = 0.0f;
-            }
+        #pragma unroll
+        for (int i = 0; i < VEC; ++i) {
+            float val = to_float(elems[i]) * to_float(s_inv[k_base + i]);
+            elems[i] = from_float<scalar_t>(val);
         }
-
-        // Load W into s_W collaboratively
-        for (int load_idx = tid; load_idx < BLOCK_N * BLOCK_K; load_idx += blockDim.x) {
-            const int ln = load_idx / BLOCK_K;
-            const int lk = load_idx % BLOCK_K;
-            const int gn = bx * BLOCK_N + ln;
-            const int gk = t * BLOCK_K + lk;
-            if (gn < N && gk < K) {
-                s_W[ln][lk] = to_float(W[gn * K + gk]);
-            } else {
-                s_W[ln][lk] = 0.0f;
-            }
-        }
-
-        __syncthreads();
-
-        #pragma unroll 8
-        for (int k = 0; k < BLOCK_K; ++k) {
-            acc = fmaf(s_X[row][k], s_W[col][k], acc);
-        }
-
-        __syncthreads();
-    }
-
-    if (global_m < M && global_n < N) {
-        if (has_bias && bias != nullptr) {
-            acc += to_float(bias[global_n]);
-        }
-        out[global_m * N + global_n] = from_float<scalar_t>(acc);
+        out_vec[idx] = raw;
     }
 }
 
@@ -110,38 +64,39 @@ torch::Tensor act_scale_quant_gemm_fwd(
         return out.reshape(empty_shape);
     }
 
-    const bool has_bias = bias.has_value() && bias.value().defined();
-    if (has_bias) {
-        CHECK_INPUT(bias.value());
-    }
-
-    torch::Tensor bias_c;
-    if (has_bias) bias_c = bias.value().contiguous();
-
     auto s_inv_c = s_inv.contiguous();
     auto w_c = w.contiguous();
 
-    constexpr int BLOCK_M = 16;
-    constexpr int BLOCK_N = 16;
-    constexpr int BLOCK_K = 32;
-    constexpr int THREADS = BLOCK_M * BLOCK_N;
+    auto x_scaled = torch::empty_like(x_2d);
+    cudaStream_t stream = c10::cuda::getCurrentCUDAStream().stream();
 
-    dim3 grid((N + BLOCK_N - 1) / BLOCK_N, (M + BLOCK_M - 1) / BLOCK_M);
-    auto stream = c10::cuda::getCurrentCUDAStream();
+    const int total = M * K;
+    constexpr int VEC = 8;
+    if (total % VEC == 0 && K % VEC == 0 && (x.scalar_type() == at::ScalarType::Half || x.scalar_type() == at::ScalarType::BFloat16)) {
+        const int total_vec = total / VEC;
+        const int threads = 256;
+        const int blocks = std::min((total_vec + threads - 1) / threads, 2048);
+        AT_DISPATCH_FLOATING_TYPES_AND2(
+            at::ScalarType::Half, at::ScalarType::BFloat16,
+            x.scalar_type(), "act_scale_vec_kernel", ([&] {
+                neuralops::cuda::act_scale_vec_kernel<scalar_t><<<blocks, threads, 0, stream>>>(
+                    x_scaled.data_ptr<scalar_t>(),
+                    x_2d.data_ptr<scalar_t>(),
+                    s_inv_c.data_ptr<scalar_t>(),
+                    total,
+                    K
+                );
+            })
+        );
+    } else {
+        x_scaled = x_2d * s_inv_c;
+    }
 
-    AT_DISPATCH_FLOATING_TYPES_AND2(
-        at::ScalarType::Half, at::ScalarType::BFloat16,
-        x.scalar_type(), "act_scale_quant_gemm_fwd", ([&] {
-            neuralops::cuda::act_scale_quant_gemm_tiled_kernel<scalar_t, BLOCK_M, BLOCK_N, BLOCK_K><<<grid, THREADS, 0, stream>>>(
-                out.data_ptr<scalar_t>(),
-                x_2d.data_ptr<scalar_t>(),
-                s_inv_c.data_ptr<scalar_t>(),
-                w_c.data_ptr<scalar_t>(),
-                has_bias ? bias_c.data_ptr<scalar_t>() : nullptr,
-                M, K, N, has_bias
-            );
-        })
-    );
+    at::matmul_out(out, x_scaled, w_c.t());
+
+    if (bias.has_value() && bias.value().defined()) {
+        out.add_(bias.value().to(x.dtype()));
+    }
 
     CUDA_KERNEL_LAUNCH_CHECK();
 
