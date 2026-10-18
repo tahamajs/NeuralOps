@@ -857,13 +857,13 @@ G = \nabla^2 \mathcal{L}_{\text{func}}(\theta_0) = J^\top J \succeq 0
 \end{equation}
 که در آن $J = \nabla_\theta M_{\theta_0}(x)$ ماتریس ژاکوبی است. عملگر ادامه‌سازی فضای پوچ هسین (\lr{Hessian Null Space Continuation}) گام بهینه‌سازی فشرده‌سازی کم‌مرتبه را به فضای پوچ ماتریس اطلاعات فیشر / هسین محدود می‌سازد:
 \begin{equation}
-\Delta \theta^* = \arg\min_{\Delta \theta} \phi_{\text{SVD}}(\theta_0 + \Delta \theta) \quad \text{s.t.} \quad \Delta \theta^\top G \Delta \theta \le \epsilon
+\Delta \theta^* = \arg\min_{\Delta \theta} \left\{ \langle \nabla \phi_{\text{SVD}}(\theta_0), \Delta \theta \rangle + \frac{1}{2} \|\Delta \theta\|_2^2 + \frac{1}{2\mu} \Delta \theta^\top G \Delta \theta \right\} \quad \text{با شرط رتبه} \quad r \le \operatorname{dim}(\mathcal{S}_\epsilon)
 \end{equation}
-پاسخ بسته این مسئله از طریق نگاشت تصحیح‌گر گرادیان مزدوج با پایدارساز تیخونوف $\mu > 0$ به صورت زیر محاسبه می‌گردد:
+پاسخ تحلیلی بسته و یکتای این بهینه‌سازی درجه دوم منظم‌شده با تیخونوف $\mu > 0$ به صورت زیر محاسبه می‌گردد:
 \begin{equation}
 \Delta \theta^* = -\left( I + \frac{1}{\mu} G \right)^{-1} \nabla \phi_{\text{SVD}}(\theta_0)
 \end{equation}
-این نگاشت تضمین می‌نماید که بازنمایی تابعی مدل فشرده‌شده با مرتبه خطای $\mathcal{O}(\epsilon^2)$ بر روی منیفاولد بهینه بدون تخریب گرادیانی حفظ شود.
+این گام میراشده در زیرفضای پوچ تضمین می‌نماید که بازنمایی تابعی مدل فشرده‌شده با مرتبه خطای $\mathcal{O}(\epsilon^2)$ بر روی منیفاولد بهینه بدون تخریب گرادیانی حفظ شود.
 \end{theorem}
 
 \subsection{قضیه ۴: انقباض بازگشتی قانون دلتای هاوس‌هولدر در Gated DeltaNet}
