@@ -95,7 +95,8 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
             "parity_status": "PASS" if err < 1e-2 else "PASS (FP16)"
         })
         print(f" [1/26] selective_scan.py: {t_pt:.2f}ms -> {t_tri:.2f}ms ({t_pt/t_tri:.2f}x)")
-    except Exception as e:
+    except (RuntimeError, MemoryError, AssertionError) as e:
+        logger.warning("Kernel execution failed: %s", e, exc_info=True)
         print(f" Error in selective_scan.py: {e}")
 
     # 2. gdn_scan.py
@@ -125,7 +126,8 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
             "parity_status": "PASS" if err < 1e-1 else "PASS (FP16)"
         })
         print(f" [2/26] gdn_scan.py: {t_pt:.2f}ms -> {t_tri:.2f}ms ({t_pt/t_tri:.2f}x)")
-    except Exception as e:
+    except (RuntimeError, MemoryError, AssertionError) as e:
+        logger.warning("Kernel execution failed: %s", e, exc_info=True)
         print(f" Error in gdn_scan.py: {e}")
 
     # 3. gla_scan.py
@@ -154,7 +156,8 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
             "parity_status": "PASS"
         })
         print(f" [3/26] gla_scan.py: {t_pt:.2f}ms -> {t_tri:.2f}ms ({t_pt/t_tri:.2f}x)")
-    except Exception as e:
+    except (RuntimeError, MemoryError, AssertionError) as e:
+        logger.warning("Kernel execution failed: %s", e, exc_info=True)
         print(f" Error in gla_scan.py: {e}")
 
     # 4. hgrn2_scan.py
@@ -181,7 +184,8 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
             "parity_status": "PASS"
         })
         print(f" [4/26] hgrn2_scan.py: {t_pt:.2f}ms -> {t_tri:.2f}ms ({t_pt/t_tri:.2f}x)")
-    except Exception as e:
+    except (RuntimeError, MemoryError, AssertionError) as e:
+        logger.warning("Kernel execution failed: %s", e, exc_info=True)
         print(f" Error in hgrn2_scan.py: {e}")
 
     # 5. fms_scan.py
@@ -210,7 +214,8 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
             "parity_status": "PASS"
         })
         print(f" [5/26] fms_scan.py: {t_pt:.2f}ms -> {t_tri:.2f}ms ({t_pt/t_tri:.2f}x)")
-    except Exception as e:
+    except (RuntimeError, MemoryError, AssertionError) as e:
+        logger.warning("Kernel execution failed: %s", e, exc_info=True)
         print(f" Error in fms_scan.py: {e}")
 
     # 6. linear_attn.py
@@ -242,7 +247,8 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
             "parity_status": "PASS"
         })
         print(f" [6/26] linear_attn.py: {t_pt:.2f}ms -> {t_tri:.2f}ms ({t_pt/t_tri:.2f}x)")
-    except Exception as e:
+    except (RuntimeError, MemoryError, AssertionError) as e:
+        logger.warning("Kernel execution failed: %s", e, exc_info=True)
         print(f" Error in linear_attn.py: {e}")
 
     # 7. cosformer_triton_kernel.py
@@ -275,7 +281,8 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
             "parity_status": "PASS"
         })
         print(f" [7/26] cosformer_triton_kernel.py: {t_pt:.2f}ms -> {t_tri:.2f}ms ({t_pt/t_tri:.2f}x)")
-    except Exception as e:
+    except (RuntimeError, MemoryError, AssertionError) as e:
+        logger.warning("Kernel execution failed: %s", e, exc_info=True)
         print(f" Error in cosformer_triton_kernel.py: {e}")
 
     # 8. sliding_window.py
@@ -304,7 +311,8 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
             "parity_status": "PASS"
         })
         print(f" [8/26] sliding_window.py: {t_pt:.2f}ms -> {t_tri:.2f}ms ({t_pt/t_tri:.2f}x)")
-    except Exception as e:
+    except (RuntimeError, MemoryError, AssertionError) as e:
+        logger.warning("Kernel execution failed: %s", e, exc_info=True)
         print(f" Error in sliding_window.py: {e}")
 
     # 9. block_sparse.py
@@ -334,7 +342,8 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
             "parity_status": "PASS"
         })
         print(f" [9/26] block_sparse.py: {t_pt:.2f}ms -> {t_tri:.2f}ms ({t_pt/t_tri:.2f}x)")
-    except Exception as e:
+    except (RuntimeError, MemoryError, AssertionError) as e:
+        logger.warning("Kernel execution failed: %s", e, exc_info=True)
         print(f" Error in block_sparse.py: {e}")
 
     # 10. sparse_attn.py
@@ -361,7 +370,8 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
             "parity_status": "PASS"
         })
         print(f" [10/26] sparse_attn.py: {t_pt:.2f}ms -> {t_tri:.2f}ms ({t_pt/t_tri:.2f}x)")
-    except Exception as e:
+    except (RuntimeError, MemoryError, AssertionError) as e:
+        logger.warning("Kernel execution failed: %s", e, exc_info=True)
         print(f" Error in sparse_attn.py: {e}")
 
     # 11. low_rank.py
@@ -392,7 +402,8 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
             "parity_status": "PASS"
         })
         print(f" [11/26] low_rank.py: {t_pt:.2f}ms -> {t_tri:.2f}ms ({t_pt/t_tri:.2f}x)")
-    except Exception as e:
+    except (RuntimeError, MemoryError, AssertionError) as e:
+        logger.warning("Kernel execution failed: %s", e, exc_info=True)
         print(f" Error in low_rank.py: {e}")
 
     # 12. elementwise.py (SwiGLU & RMSNorm)
@@ -422,7 +433,8 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
             "parity_status": "PASS"
         })
         print(f" [12/26] elementwise.py: {t_pt:.2f}ms -> {t_tri:.2f}ms ({t_pt/t_tri:.2f}x)")
-    except Exception as e:
+    except (RuntimeError, MemoryError, AssertionError) as e:
+        logger.warning("Kernel execution failed: %s", e, exc_info=True)
         print(f" Error in elementwise.py: {e}")
 
     # 13. fused_ce.py
@@ -449,7 +461,8 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
             "parity_status": "PASS"
         })
         print(f" [13/26] fused_ce.py: {t_pt:.2f}ms -> {t_tri:.2f}ms ({t_pt/t_tri:.2f}x)")
-    except Exception as e:
+    except (RuntimeError, MemoryError, AssertionError) as e:
+        logger.warning("Kernel execution failed: %s", e, exc_info=True)
         print(f" Error in fused_ce.py: {e}")
 
     # 14. fused_kd.py
@@ -476,7 +489,8 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
             "parity_status": "PASS"
         })
         print(f" [14/26] fused_kd.py: {t_pt:.2f}ms -> {t_tri:.2f}ms ({t_pt/t_tri:.2f}x)")
-    except Exception as e:
+    except (RuntimeError, MemoryError, AssertionError) as e:
+        logger.warning("Kernel execution failed: %s", e, exc_info=True)
         print(f" Error in fused_kd.py: {e}")
 
     # 15. fused_norm_linear.py
@@ -504,7 +518,8 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
             "parity_status": "PASS"
         })
         print(f" [15/26] fused_norm_linear.py: {t_pt:.2f}ms -> {t_tri:.2f}ms ({t_pt/t_tri:.2f}x)")
-    except Exception as e:
+    except (RuntimeError, MemoryError, AssertionError) as e:
+        logger.warning("Kernel execution failed: %s", e, exc_info=True)
         print(f" Error in fused_norm_linear.py: {e}")
 
     # 16. fused_rope.py
@@ -532,7 +547,8 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
             "parity_status": "PASS"
         })
         print(f" [16/26] fused_rope.py: {t_pt:.2f}ms -> {t_tri:.2f}ms ({t_pt/t_tri:.2f}x)")
-    except Exception as e:
+    except (RuntimeError, MemoryError, AssertionError) as e:
+        logger.warning("Kernel execution failed: %s", e, exc_info=True)
         print(f" Error in fused_rope.py: {e}")
 
     # 17. gqa.py
@@ -560,7 +576,8 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
             "parity_status": "PASS"
         })
         print(f" [17/26] gqa.py: {t_pt:.2f}ms -> {t_tri:.2f}ms ({t_pt/t_tri:.2f}x)")
-    except Exception as e:
+    except (RuntimeError, MemoryError, AssertionError) as e:
+        logger.warning("Kernel execution failed: %s", e, exc_info=True)
         print(f" Error in gqa.py: {e}")
 
     # 18. paged_attention.py
@@ -599,7 +616,8 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
             "parity_status": "PASS"
         })
         print(f" [18/26] paged_attention.py: {t_pt:.2f}ms -> {t_tri:.2f}ms ({t_pt/t_tri:.2f}x)")
-    except Exception as e:
+    except (RuntimeError, MemoryError, AssertionError) as e:
+        logger.warning("Kernel execution failed: %s", e, exc_info=True)
         print(f" Error in paged_attention.py: {e}")
 
     # 19. state_update.py
@@ -641,7 +659,8 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
             "parity_status": "PASS"
         })
         print(f" [19/26] state_update.py: {t_pt:.2f}ms -> {t_tri:.2f}ms ({t_pt/t_tri:.2f}x)")
-    except Exception as e:
+    except (RuntimeError, MemoryError, AssertionError) as e:
+        logger.warning("Kernel execution failed: %s", e, exc_info=True)
         print(f" Error in state_update.py: {e}")
 
     # 20. softplus.py
@@ -667,7 +686,8 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
             "parity_status": "PASS"
         })
         print(f" [20/26] softplus.py: {t_pt:.2f}ms -> {t_tri:.2f}ms ({t_pt/t_tri:.2f}x)")
-    except Exception as e:
+    except (RuntimeError, MemoryError, AssertionError) as e:
+        logger.warning("Kernel execution failed: %s", e, exc_info=True)
         print(f" Error in softplus.py: {e}")
 
     # 21. flash_decoding.py
@@ -695,7 +715,8 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
             "parity_status": "PASS"
         })
         print(f" [21/26] flash_decoding.py: {t_pt:.2f}ms -> {t_tri:.2f}ms ({t_pt/t_tri:.2f}x)")
-    except Exception as e:
+    except (RuntimeError, MemoryError, AssertionError) as e:
+        logger.warning("Kernel execution failed: %s", e, exc_info=True)
         print(f" Error in flash_decoding.py: {e}")
 
     # 22. varlen_attention.py
@@ -724,7 +745,8 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
             "parity_status": "PASS"
         })
         print(f" [22/26] varlen_attention.py: {t_pt:.2f}ms -> {t_tri:.2f}ms ({t_pt/t_tri:.2f}x)")
-    except Exception as e:
+    except (RuntimeError, MemoryError, AssertionError) as e:
+        logger.warning("Kernel execution failed: %s", e, exc_info=True)
         print(f" Error in varlen_attention.py: {e}")
 
     # 23. autotuner.py
@@ -744,7 +766,8 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
             "parity_status": "PASS (Analytic)"
         })
         print(f" [23/26] autotuner.py: Analytic SRAM Modeling ({sram_b} bytes)")
-    except Exception as e:
+    except (RuntimeError, MemoryError, AssertionError) as e:
+        logger.warning("Kernel execution failed: %s", e, exc_info=True)
         print(f" Error in autotuner.py: {e}")
 
     # 24. hardware_profile.py
@@ -764,7 +787,8 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
             "parity_status": "PASS (Hardware)"
         })
         print(f" [24/26] hardware_profile.py: Device Profiler ({prof.device_name})")
-    except Exception as e:
+    except (RuntimeError, MemoryError, AssertionError) as e:
+        logger.warning("Kernel execution failed: %s", e, exc_info=True)
         print(f" Error in hardware_profile.py: {e}")
 
     # 25. op_registry.py
@@ -785,7 +809,8 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
             "parity_status": "PASS (Dispatch)"
         })
         print(f" [25/26] op_registry.py: PyTorch Custom Op Dispatcher ({suitable=})")
-    except Exception as e:
+    except (RuntimeError, MemoryError, AssertionError) as e:
+        logger.warning("Kernel execution failed: %s", e, exc_info=True)
         print(f" Error in op_registry.py: {e}")
 
     # 26. _types.py / _common.py
@@ -808,7 +833,8 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
             "parity_status": "PASS (Exact)"
         })
         print(" [26/26] _common.py / _types.py: Layout & Alignment Safety")
-    except Exception as e:
+    except (RuntimeError, MemoryError, AssertionError) as e:
+        logger.warning("Kernel execution failed: %s", e, exc_info=True)
         print(f" Error in _common.py: {e}")
 
     # Sort results by speedup descending
@@ -894,7 +920,8 @@ def run_tier2_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
                 "bottleneck_regime": report.bottleneck_regime
             })
             print(f" {report.latency_pytorch_ms:.2f}ms -> {report.latency_triton_ms:.2f}ms ({report.speedup_x:.2f}x | {toks_per_sec:,} tok/s)")
-        except Exception as e:
+        except (RuntimeError, MemoryError, AssertionError) as e:
+            logger.warning("Tier 2 attention roofline failed: %s", e, exc_info=True)
             print(f" Error: {e}")
 
     # Mark Pareto frontier
@@ -964,7 +991,8 @@ def run_tier3_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
                 "arithmetic_intensity_fused": 142.5
             })
             print(f" {t_pt:.2f}ms -> {t_tri:.2f}ms ({speedup:.2f}x)")
-        except Exception as e:
+        except (RuntimeError, MemoryError, AssertionError) as e:
+            logger.warning("Tier 3 compressor benchmark failed: %s", e, exc_info=True)
             print(f" Error: {e}")
             triton_types.FORCE_PYTORCH_FALLBACK = False
 

@@ -143,22 +143,24 @@ def main():
 
                 x = torch.randn(B, L, D, device=device, dtype=torch.float16)
 
-                def run_step():
-                    with torch.no_grad():
-                        out = model(x)
-                        if isinstance(out, tuple):
-                            out = out[0]
-                        return out
+                def _make_step(target_model, target_x):
+                    def run_step():
+                        with torch.no_grad():
+                            out = target_model(target_x)
+                            if isinstance(out, tuple):
+                                out = out[0]
+                            return out
+                    return run_step
 
                 metric = runner.measure_callable(
-                    run_step,
+                    _make_step(model, x),
                     total_flops=total_flops,
                     total_bytes=total_bytes,
                     batch_size=B,
                     seq_len=L,
                 )
 
-                del x
+                x = None
                 runner.reset_vram()
 
                 point_record = {
