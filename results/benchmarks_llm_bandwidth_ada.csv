@@ -1,0 +1,33 @@
+Kernel,Config,CUDA (ms),PyTorch (ms),Speedup,Bandwidth (GB/s),Saturation %,Regime
+fused_dropout_add,"B=4, S=512, H=2048",0.0276,0.0205,0.745x,912.48,N/A (L2-resident),L2-resident
+rms_variance_match,"B=4, S=512, H=2048",0.0337,0.4358,12.9x,746.99,N/A (L2-resident),L2-resident
+aegis_gate_norm,"B=4, S=512, H=2048",0.0527,0.8507,16.1x,477.51,N/A (L2-resident),L2-resident
+fused_norm_linear,"B=4, S=512, H=2048",106.3536,0.4419,241x SLOWER,0.24,N/A (L2-resident),L2-resident
+fused_dropout_add,"B=8, S=512, H=2048",0.2097,0.2114,1.01x,240.00,93.7%,DRAM-bound
+rms_variance_match,"B=8, S=512, H=2048",0.2112,1.2874,6.10x,238.34,93.1%,DRAM-bound
+aegis_gate_norm,"B=8, S=512, H=2048",0.2128,3.0746,14.4x,236.69,92.5%,DRAM-bound
+fused_norm_linear,"B=8, S=512, H=2048",213.1455,0.9453,225x SLOWER,0.20,0.1%,DRAM-bound
+fused_dropout_add,"B=4, S=1024, H=2048",0.2133,0.2132,1.000x,236.00,92.2%,DRAM-bound
+rms_variance_match,"B=4, S=1024, H=2048",0.2104,1.2909,6.13x,239.19,93.4%,DRAM-bound
+aegis_gate_norm,"B=4, S=1024, H=2048",0.2122,3.0307,14.3x,237.30,92.7%,DRAM-bound
+fused_norm_linear,"B=4, S=1024, H=2048",213.5152,0.9484,225x SLOWER,0.20,0.1%,DRAM-bound
+fused_dropout_add,"B=8, S=1024, H=2048",0.4291,0.4357,1.02x,234.60,91.6%,DRAM-bound
+rms_variance_match,"B=8, S=1024, H=2048",0.4234,2.8688,6.78x,237.74,92.9%,DRAM-bound
+aegis_gate_norm,"B=8, S=1024, H=2048",0.4350,6.8227,15.7x,231.58,90.5%,DRAM-bound
+fused_norm_linear,"B=8, S=1024, H=2048",426.8524,1.8594,230x SLOWER,0.18,0.1%,DRAM-bound
+fused_dropout_add,"B=4, S=512, H=4096",0.2121,0.2110,0.995x,237.26,92.7%,DRAM-bound
+rms_variance_match,"B=4, S=512, H=4096",0.2138,1.2060,5.64x,235.40,92.0%,DRAM-bound
+aegis_gate_norm,"B=4, S=512, H=4096",0.2153,3.0622,14.2x,233.84,91.3%,DRAM-bound
+fused_norm_linear,"B=4, S=512, H=4096",414.0960,1.7320,239x SLOWER,0.16,0.1%,DRAM-bound
+fused_dropout_add,"B=8, S=512, H=4096",0.4314,0.4352,1.01x,233.32,91.1%,DRAM-bound
+rms_variance_match,"B=8, S=512, H=4096",0.4343,2.8650,6.60x,231.79,90.5%,DRAM-bound
+aegis_gate_norm,"B=8, S=512, H=4096",0.4360,6.8302,15.7x,230.98,90.2%,DRAM-bound
+fused_norm_linear,"B=8, S=512, H=4096",827.8330,3.3922,244x SLOWER,0.12,0.0%,DRAM-bound
+fused_dropout_add,"B=16, S=512, H=2048",0.4350,0.4353,1.00x,231.39,90.4%,DRAM-bound
+rms_variance_match,"B=16, S=512, H=2048",0.4342,2.8687,6.61x,231.85,90.6%,DRAM-bound
+aegis_gate_norm,"B=16, S=512, H=2048",0.4333,6.8320,15.8x,232.45,90.8%,DRAM-bound
+fused_norm_linear,"B=16, S=512, H=2048",426.7660,1.8582,230x SLOWER,0.18,0.1%,DRAM-bound
+fused_dropout_add,"B=4, S=1024, H=4096",0.4354,0.4384,1.01x,231.18,90.3%,DRAM-bound
+rms_variance_match,"B=4, S=1024, H=4096",0.4346,2.8663,6.60x,231.63,90.5%,DRAM-bound
+aegis_gate_norm,"B=4, S=1024, H=4096",0.4332,6.8238,15.8x,232.44,90.8%,DRAM-bound
+fused_norm_linear,"B=4, S=1024, H=4096",827.7336,3.3875,244x SLOWER,0.12,0.0%,DRAM-bound
