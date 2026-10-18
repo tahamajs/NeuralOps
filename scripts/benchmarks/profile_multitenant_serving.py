@@ -78,7 +78,7 @@ def main():
 
     torch.cuda.synchronize()
     torch.cuda.reset_peak_memory_stats()
-    mem_initial = get_cuda_mem()
+    _mem_initial = get_cuda_mem()
 
     NUM_ROUNDS = 200
     print(f"\nBenchmarking Sequential vs Multi-Tenant Serving ({NUM_ROUNDS} rounds)...")

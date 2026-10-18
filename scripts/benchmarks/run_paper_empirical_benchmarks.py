@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Author: Taha Majlesi
 """
 Comprehensive Empirical Benchmark Suite for ICLR 2027 Submission.
 
@@ -13,9 +15,7 @@ from __future__ import annotations
 
 import gc
 import json
-import os
 import sys
-import time
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
@@ -77,23 +77,23 @@ def run_scaling_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
 
         # Baseline SDPA
         ms_sdpa, vram_sdpa = measure_peak_memory_and_latency(
-            lambda: F.scaled_dot_product_attention(q, k, v)
+            lambda _q=q, _k=k, _v=v: F.scaled_dot_product_attention(_q, _k, _v)
         )
 
         # Chunk GLA
         ms_gla, vram_gla = measure_peak_memory_and_latency(
-            lambda: gla_scan(q, k, v, g)
+            lambda _q=q, _k=k, _v=v, _g=g: gla_scan(_q, _k, _v, _g)
         )
 
         # Chunk GDN
         beta = torch.sigmoid(torch.randn(B_fixed, H, N, device=device, dtype=torch.float16))
         ms_gdn, vram_gdn = measure_peak_memory_and_latency(
-            lambda: gdn_scan(q, k, v, beta, g)
+            lambda _q=q, _k=k, _v=v, _beta=beta, _g=g: gdn_scan(_q, _k, _v, _beta, _g)
         )
 
         # Cosformer
         ms_cos, vram_cos = measure_peak_memory_and_latency(
-            lambda: triton_cosformer_linear_attention(q, k, v)
+            lambda _q=q, _k=k, _v=v: triton_cosformer_linear_attention(_q, _k, _v)
         )
 
         record = {
@@ -123,10 +123,10 @@ def run_scaling_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
         g = torch.sigmoid(torch.randn(B, H, N_fixed, device=device, dtype=torch.float16)).clamp(1e-4, 1.0 - 1e-4)
 
         ms_sdpa, vram_sdpa = measure_peak_memory_and_latency(
-            lambda: F.scaled_dot_product_attention(q, k, v)
+            lambda _q=q, _k=k, _v=v: F.scaled_dot_product_attention(_q, _k, _v)
         )
         ms_gla, vram_gla = measure_peak_memory_and_latency(
-            lambda: gla_scan(q, k, v, g)
+            lambda _q=q, _k=k, _v=v, _g=g: gla_scan(_q, _k, _v, _g)
         )
 
         record = {

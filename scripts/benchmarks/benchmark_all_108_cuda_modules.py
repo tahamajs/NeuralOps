@@ -193,9 +193,9 @@ def main():
         # Force compile CUDA module
         try:
             if hasattr(py_mod, "_get_module"):
-                c_mod = py_mod._get_module()
+                _c_mod = py_mod._get_module()
             else:
-                c_mod = None
+                _c_mod = None
         except Exception as e:
             print(f"{idx:<4} | {mod_name:<28} | {'-':<10} | {'-':<10} | {'-':<9} | {'-':<10} | COMPILE ERROR: {str(e)[:30]}")
             failed += 1
