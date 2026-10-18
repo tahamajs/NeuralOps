@@ -34,9 +34,6 @@ from neuralops.utils.compat import should_compress_linear
 logger = logging.getLogger(__name__)
 
 
-# ===========================================================================
-# Low-rank linear with optional SHARED V basis
-# ===========================================================================
 class MoDeGPTLowRankLinear(nn.Module):
     """
     Low-rank linear layer.
@@ -53,7 +50,6 @@ class MoDeGPTLowRankLinear(nn.Module):
     frozen low-rank base.
     """
 
-    # MD-FIX-01
     is_custom_attention: bool = False
 
     def __init__(
@@ -61,8 +57,8 @@ class MoDeGPTLowRankLinear(nn.Module):
         in_features: int,
         out_features: int,
         rank: int,
-        U: torch.Tensor,  # (out, r)
-        V: torch.Tensor | None = None,  # (r, in) — may be None if shared
+        U: torch.Tensor,
+        V: torch.Tensor | None = None,
         shared_V: torch.Tensor | None = None,
         bias: torch.Tensor | None = None,
         lora_r: int = 0,
@@ -86,7 +82,6 @@ class MoDeGPTLowRankLinear(nn.Module):
         self.U = nn.Parameter(U.to(device=target_device, dtype=target_dtype), requires_grad=False)
 
         if shared_V is not None:
-            # External tensor — NOT a parameter (owned by another module)
             self._shared_V = shared_V.to(device=target_device, dtype=target_dtype)
             self.register_parameter("V", None)
             self._uses_shared_V = True
@@ -106,7 +101,6 @@ class MoDeGPTLowRankLinear(nn.Module):
         else:
             self.register_parameter("bias", None)
 
-        # LoRA — MD-FIX-06: matching dtype
         if self.lora_r > 0:
             self.lora_A = nn.Parameter(
                 torch.empty(
@@ -134,16 +128,13 @@ class MoDeGPTLowRankLinear(nn.Module):
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
 
-    # ------------------------------------------------------------------
     def _V(self) -> torch.Tensor:
         if self._uses_shared_V:
             return self._shared_V
         return self.V
 
-    # ------------------------------------------------------------------
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         V = self._V()
-        # dtype-safe (MD-FIX-07: no forced .float() for base path)
         if V.dtype != x.dtype:
             V = V.to(x.dtype)
         U = self.U.to(x.dtype) if self.U.dtype != x.dtype else self.U
@@ -169,8 +160,8 @@ class MoDeGPTLowRankLinear(nn.Module):
             except Exception:
                 pass
 
-        h = F.linear(x, V)  # (..., r)
-        out = F.linear(h, U, b)  # (..., out)
+        h = F.linear(x, V)
+        out = F.linear(h, U, b)
 
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
             a = self.lora_A.to(x.dtype) if self.lora_A.dtype != x.dtype else self.lora_A
@@ -211,7 +202,6 @@ _ATTN_NAMES = {
     "self_attn",
 }
 
-# MD-FIX-10: broadened pair candidates
 _PAIR_CANDIDATES = (
     ("q_proj", "k_proj"),
     ("q_proj", "v_proj"),
@@ -222,15 +212,12 @@ _PAIR_CANDIDATES = (
     ("W_q", "W_k"),
     ("W_q", "W_v"),
     ("gate_proj", "up_proj"),
-    ("w1", "w3"),  # LLaMA-style MLP
-    ("fc1", "fc2"),  # BERT-style MLP pair (dim mismatch — will be filtered)
-    ("dense_h_to_4h", "dense_4h_to_h"),  # (dim mismatch)
+    ("w1", "w3"),
+    ("fc1", "fc2"),
+    ("dense_h_to_4h", "dense_4h_to_h"),
 )
 
 
-# ===========================================================================
-# Compressor
-# ===========================================================================
 @COMPRESSOR_REGISTRY.register("modegpt_compressor")
 class MoDeGPTCompressor(BaseCompressor):
     """
@@ -292,7 +279,6 @@ class MoDeGPTCompressor(BaseCompressor):
         self.target_attention_only = bool(target_attention_only)
         self.min_rank = max(1, int(min_rank))
 
-        # MD-FIX-09: empty list → None
         if target_modules is not None and len(target_modules) == 0:
             target_modules = None
         self.target_modules = target_modules
@@ -306,9 +292,7 @@ class MoDeGPTCompressor(BaseCompressor):
         self._orig_storage_bytes: int = 0
         self._comp_storage_bytes: int = 0
 
-    # ------------------------------------------------------------------
     def _is_gqa_asymmetric(self, name: str, module: nn.Module) -> bool:
-        # MD-FIX-03: always active
         cfg = getattr(self.model, "config", None)
         if cfg is None:
             return False
@@ -376,7 +360,6 @@ class MoDeGPTCompressor(BaseCompressor):
             return True
         return any(t in name for t in self.target_modules)
 
-    # ------------------------------------------------------------------
     def _get_weight(self, module: nn.Module) -> tuple[torch.Tensor, bool]:
         target_layer = getattr(module, "base_layer", module)
         raw_w = target_layer.weight.data
@@ -388,18 +371,12 @@ class MoDeGPTCompressor(BaseCompressor):
     def _select_rank(self, joint_out: int, in_f: int) -> int:
         """MD-FIX-04: rank cap for real compression."""
         max_r = min(joint_out, in_f)
-        # Break-even for paired storage:
-        #   r·in + r·(out1+out2) < in·(out1+out2)
-        #   r < in·(out1+out2) / (in + out1 + out2)
         denom = in_f + joint_out
         cap = max(1, (in_f * joint_out) // denom - 1) if denom > 0 else max_r
         cap = max(1, min(cap, max_r))
         r = max(min(self.min_rank, cap), min(self.rank, cap))
         return max(1, min(r, cap))
 
-    # ------------------------------------------------------------------
-    # Joint decomposition: returns (U1, U2, V_shared, r)
-    # ------------------------------------------------------------------
     def _decompose_joint_pair(
         self,
         W1: torch.Tensor,
@@ -410,11 +387,10 @@ class MoDeGPTCompressor(BaseCompressor):
         if in_f != in2:
             return None
 
-        W_joint = torch.cat([W1, W2], dim=0)  # (out1+out2, in)
+        W_joint = torch.cat([W1, W2], dim=0)
         joint_out = W_joint.shape[0]
         r = self._select_rank(joint_out, in_f)
 
-        # SVD of concatenated matrix
         try:
             U, S, Vt = torch.linalg.svd(W_joint, full_matrices=False)
         except Exception as e:
@@ -425,13 +401,11 @@ class MoDeGPTCompressor(BaseCompressor):
         if r <= 0:
             return None
 
-        # U_r = U[:, :r] · diag(S[:r]);  V_r = Vt[:r, :]
-        U_r = U[:, :r] * S[:r].unsqueeze(0)  # (out1+out2, r)
-        V_shared = Vt[:r, :].contiguous()  # (r, in)
+        U_r = U[:, :r] * S[:r].unsqueeze(0)
+        V_shared = Vt[:r, :].contiguous()
 
-        # Split U_r into U1, U2
-        U1 = U_r[:out1, :].contiguous()  # (out1, r)
-        U2 = U_r[out1:, :].contiguous()  # (out2, r)
+        U1 = U_r[:out1, :].contiguous()
+        U2 = U_r[out1:, :].contiguous()
 
         return U1, U2, V_shared, r
 
@@ -449,11 +423,10 @@ class MoDeGPTCompressor(BaseCompressor):
         r = min(r, len(S))
         if r <= 0:
             return None
-        U_r = U[:, :r] * S[:r].unsqueeze(0)  # (out, r)
-        V_r = Vt[:r, :].contiguous()  # (r, in)
+        U_r = U[:, :r] * S[:r].unsqueeze(0)
+        V_r = Vt[:r, :].contiguous()
         return U_r, V_r, r
 
-    # ------------------------------------------------------------------
     def _storage_bytes(self, module: nn.Module) -> int:
         total = 0
         for p in module.parameters():
@@ -463,7 +436,6 @@ class MoDeGPTCompressor(BaseCompressor):
                 total += b.numel() * b.element_size()
         return total
 
-    # ------------------------------------------------------------------
     def compress(self, **kwargs: Any) -> tuple[nn.Module, dict[str, Any]]:
         self.compressed_layers = []
         self.fallback_layers = []
@@ -475,7 +447,6 @@ class MoDeGPTCompressor(BaseCompressor):
         self._orig_storage_bytes = 0
         self._comp_storage_bytes = 0
 
-        # ---------- Step 1: joint pairs ----------
         for parent_name, parent_mod in list(self.model.named_modules()):
             for attr1, attr2 in _PAIR_CANDIDATES:
                 if not (hasattr(parent_mod, attr1) and hasattr(parent_mod, attr2)):
@@ -506,10 +477,8 @@ class MoDeGPTCompressor(BaseCompressor):
                 W1_orig, _ = self._get_weight(mod1)
                 W2_orig, _ = self._get_weight(mod2)
                 if W1_orig.shape[1] != W2_orig.shape[1]:
-                    # Shape mismatch — skip this pair
                     continue
 
-                # Track original storage
                 self._orig_storage_bytes += self._storage_bytes(target_l1)
                 self._orig_storage_bytes += self._storage_bytes(target_l2)
 
@@ -525,7 +494,6 @@ class MoDeGPTCompressor(BaseCompressor):
 
                 U1, U2, V_shared, r = result
 
-                # Reconstruction error
                 W1_rec = U1 @ V_shared
                 W2_rec = U2 @ V_shared
                 n1 = torch.norm(W1_orig).clamp_min(1e-12).item()
@@ -561,7 +529,6 @@ class MoDeGPTCompressor(BaseCompressor):
                         self._comp_storage_bytes += self._storage_bytes(target_l2)
                         continue
 
-                # MD-FIX-13: LoRA rank inherits from wrapper if present
                 lora_r_1 = getattr(mod1, "lora_r", getattr(mod1, "r", self.lora_r)) or self.lora_r
                 lora_r_2 = getattr(mod2, "lora_r", getattr(mod2, "r", self.lora_r)) or self.lora_r
                 bias1 = (
@@ -575,7 +542,6 @@ class MoDeGPTCompressor(BaseCompressor):
                 out1 = W1_orig.shape[0]
                 out2 = W2_orig.shape[0]
 
-                # Row-wise L2 norm preservation to prevent activation variance decay
                 with torch.no_grad():
                     g1 = (torch.linalg.norm(W1_orig, dim=1, keepdim=True).clamp_min(1e-8) /
                           torch.linalg.norm(W1_rec, dim=1, keepdim=True).clamp_min(1e-8)).clamp(0.2, 5.0)
@@ -609,7 +575,6 @@ class MoDeGPTCompressor(BaseCompressor):
                     device=target_l2.weight.device,
                 )
 
-                # Splice — MD-FIX-08
                 if hasattr(mod1, "base_layer"):
                     mod1.base_layer = new1
                 else:
@@ -624,15 +589,11 @@ class MoDeGPTCompressor(BaseCompressor):
                 seen_weights.add(w1_id)
                 seen_weights.add(w2_id)
 
-                # Storage: shared V counted once + U1 + U2 + biases + LoRA
-                # Note: shared_V is NOT a Parameter, so it isn't double-counted
-                # in module.parameters(). We count it manually.
                 shared_v_bytes = V_shared.numel() * V_shared.element_size()
                 self._comp_storage_bytes += shared_v_bytes
                 self._comp_storage_bytes += self._storage_bytes(new1)
                 self._comp_storage_bytes += self._storage_bytes(new2)
 
-        # ---------- Step 2: single layers ----------
         for name, module in list(self.model.named_modules()):
             if name in processed_names:
                 continue
@@ -706,7 +667,6 @@ class MoDeGPTCompressor(BaseCompressor):
             processed_names.add(name)
             self._comp_storage_bytes += self._storage_bytes(new_layer)
 
-        # ---------- Forward sanity check (MD-FIX-12) ----------
         forward_check_success = True
         try:
             with torch.no_grad():
@@ -768,7 +728,6 @@ class MoDeGPTCompressor(BaseCompressor):
                 "method": self.method,
                 "lora_r": self.lora_r,
                 "lora_alpha": self.lora_alpha,
-                # MD-FIX-05: honest byte accounting
                 "orig_storage_bytes": self._orig_storage_bytes,
                 "comp_storage_bytes": self._comp_storage_bytes,
                 "storage_compression_ratio": round(storage_ratio, 3),
@@ -788,9 +747,6 @@ class MoDeGPTCompressor(BaseCompressor):
         return self.model, stats
 
 
-# ===========================================================================
-# Factory
-# ===========================================================================
 def modegpt_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) -> Any:
     rank = kwargs.pop(
         "rank", _cfg_get(comp_config, "modegpt_rank", _cfg_get(comp_config, "rank", 64))

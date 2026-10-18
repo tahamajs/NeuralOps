@@ -50,9 +50,7 @@ class CoopQSTEFakeQuantize(torch.autograd.Function):
         ctx.qmin = qmin
         ctx.qmax = qmax
 
-        # Quantize and clamp
         q = torch.clamp(torch.round(x / scale) + zero_point, qmin, qmax)
-        # De-quantize
         dq = (q - zero_point) * scale
         return dq
 
@@ -60,7 +58,6 @@ class CoopQSTEFakeQuantize(torch.autograd.Function):
     def backward(
         ctx: Any, grad_output: torch.Tensor
     ) -> tuple[torch.Tensor, None, None, None, None]:
-        # STE passes gradient uninhibited to parameter tensor
         grad_x = grad_output.clone()
         return grad_x, None, None, None, None
 
@@ -97,7 +94,6 @@ def quantize_dequantize_coopq(
             scale = torch.clamp(max_abs / max(float(qmax), 1.0), min=1e-8)
             zero_point = torch.tensor(0.0, device=t.device, dtype=t.dtype)
     else:
-        # Asymmetric quantization with explicit zero-point offset calibration
         qmin = 0.0
         qmax = float((2**bits) - 1)
         if per_channel and t.ndim >= 2:
@@ -121,8 +117,6 @@ def quantize_dequantize_coopq(
     return out.to(dtype=orig_dtype)
 
 
-
-
 class CoopQLinear(nn.Module):
     """
     CoopQ Linear layer with per-channel asymmetric quantization and STE backpropagation.
@@ -143,7 +137,7 @@ class CoopQLinear(nn.Module):
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
-        self.nf = out_features  # Conv1D compatibility
+        self.nf = out_features
         self.bits = max(4, int(bits))
         self.symmetric = symmetric
         self.per_channel = per_channel
@@ -279,7 +273,6 @@ class CoopQQuantizer(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="coopq", **kwargs)
-        # Extract config values with _cfg_get fallbacks
         c_bits = _cfg_get(cfg, "coopq_bits", _cfg_get(cfg, "bits", bits))
         c_min_bits = _cfg_get(cfg, "coopq_min_bits", _cfg_get(cfg, "min_bits", min_bits))
         c_max_bits = _cfg_get(cfg, "coopq_max_bits", _cfg_get(cfg, "max_bits", max_bits))
@@ -420,12 +413,10 @@ class CoopQQuantizer(BaseCompressor):
         num_layers = len(sensitivities)
         target_total_bits = self.bits * num_layers
 
-        # Allowed bit-levels with floor >= self.min_bits (>= 4)
         allowed_bits = [b for b in [4, 5, 6, 7, 8] if self.min_bits <= b <= self.max_bits]
         if not allowed_bits:
             allowed_bits = [self.min_bits]
 
-        # Continuous allocation proportional to sensitivity
         raw_allocations: dict[str, float] = {}
         mean_sens = total_sens / num_layers
         for name, sens in sensitivities.items():
@@ -438,7 +429,6 @@ class CoopQQuantizer(BaseCompressor):
             closest_b = min(allowed_bits, key=lambda b: abs(b - raw_b))
             discrete_allocations[name] = closest_b
 
-        # Adjust sum to match target total bits budget
         current_sum = sum(discrete_allocations.values())
         sorted_names = sorted(sensitivities.keys(), key=lambda k: sensitivities[k], reverse=True)
 
@@ -461,7 +451,6 @@ class CoopQQuantizer(BaseCompressor):
                     if current_sum >= target_total_bits:
                         break
 
-        # Ensure strict min_bits floor on all layers
         for k in discrete_allocations:
             discrete_allocations[k] = max(self.min_bits, discrete_allocations[k])
 
@@ -479,7 +468,6 @@ class CoopQQuantizer(BaseCompressor):
 
         for name, module in list(self.model.named_modules()):
             if not self._is_target_module(name, module):
-                # When target_attention_only is True, unselected FFN/MLP layers must be frozen during fine-tuning
                 if self.target_attention_only:
                     is_lin_like = (
                         isinstance(module, nn.Linear)
@@ -530,7 +518,6 @@ class CoopQQuantizer(BaseCompressor):
                 )
                 new_layer = coopq_layer
                 compressed_layer = new_layer
-                # Preserve existing LoRA adapter weights if the source module has them
                 if (
                     hasattr(module, "lora_A")
                     and hasattr(module, "lora_B")
@@ -547,8 +534,7 @@ class CoopQQuantizer(BaseCompressor):
                             new_layer.lora_B.data.copy_(src_lB.data)
 
                 if hasattr(module, "base_layer"):
-                    module.base_layer = compressed_layer  # put compressed layer inside wrapper
-                    # module itself (LoRALinear wrapper) remains the replacement
+                    module.base_layer = compressed_layer
                     new_module = module
                 else:
                     new_module = compressed_layer
@@ -589,7 +575,6 @@ class CoopQQuantizer(BaseCompressor):
                         b_quant.to(dtype=target_mod.bias.dtype, device=target_mod.bias.device)
                     )
 
-            # Preserve pre-existing LoRA adapter parameters and trainability
             if has_lora:
                 for p_name, p in module.named_parameters():
                     if any(t in p_name.lower() for t in ("lora_a", "lora_b", "adapter")):
@@ -597,7 +582,6 @@ class CoopQQuantizer(BaseCompressor):
 
             compressed_layers.append(name)
 
-        # LayerNorm Recalibration
         if self.recalibrate_ln:
             recalibrate_layernorms(
                 self.model,

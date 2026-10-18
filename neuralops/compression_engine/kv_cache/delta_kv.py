@@ -26,11 +26,6 @@ from neuralops.core.registry import COMPRESSOR_REGISTRY
 logger = logging.getLogger(__name__)
 
 
-# ===========================================================================
-# KV cache store (optional, DKV-FIX-13)
-# ===========================================================================
-
-
 class DeltaKVStore:
     """
     Optional runtime cache that stores delta residuals relative to retrieved
@@ -89,13 +84,11 @@ class DeltaKVStore:
             if self.ref_k.is_cuda and self.ref_k.shape[-1] in (16, 32, 64, 128, 256):
                 try:
                     from neuralops.core.triton_kernels.paged_attention import paged_kv_evict_compact_triton
-                    # Compute token norm as importance score across (B*H*N)
                     k_flat = self.ref_k.reshape(-1, self.ref_k.shape[-1])
                     v_flat = self.ref_v.reshape(-1, self.ref_v.shape[-1])
                     scores = torch.norm(k_flat.float(), dim=-1)
                     keep_ratio = float(self.max_refs) / float(self.ref_k.size(2))
                     k_c, v_c = paged_kv_evict_compact_triton(k_flat, v_flat, scores, keep_ratio=keep_ratio)
-                    # Reshape or keep the most recent window safely
                 except Exception:
                     pass
             self.ref_k = self.ref_k[:, :, -self.max_refs :, :].contiguous()
@@ -178,13 +171,6 @@ _ATTN_NAMES = {
 }
 
 
-
-
-# ===========================================================================
-# Compressor (DKV-FIX-01, DKV-FIX-02)
-# ===========================================================================
-
-
 class DeltaKVCompressor(BaseCompressor):
     """DeltaKVCompressor neural operator.
 
@@ -194,7 +180,6 @@ class DeltaKVCompressor(BaseCompressor):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
-    # DKV-FIX-01: this is a compressor, not attention.
     is_custom_attention: bool = False
 
     def __init__(
@@ -251,9 +236,6 @@ class DeltaKVCompressor(BaseCompressor):
         self.stats: dict[str, Any] = {}
         self._compressed_params: int = 0
 
-    # ------------------------------------------------------------------
-    # Target check (DKV-FIX-07)
-    # ------------------------------------------------------------------
     def _is_target_module(self, name: str, module: nn.Module, _debug: bool = False) -> bool:
         name_lower = name.lower()
         if any(part in name.split(".") for part in ("lora_A", "lora_B", "base_layer")):
@@ -261,7 +243,6 @@ class DeltaKVCompressor(BaseCompressor):
                 logger.info(f"  [skip] {name}: lora/base_layer part")
             return False
 
-        # Skip already compressed (DKV-FIX-05 companion)
         cls_name = module.__class__.__name__
         if cls_name in (
             "DeltaKVLinear",
@@ -298,7 +279,6 @@ class DeltaKVCompressor(BaseCompressor):
                 logger.info(f"  [skip] {name}: not Linear/Conv1D")
             return False
 
-        # DKV-FIX-06: bypass framework filter if requested.
         if not self.skip_should_compress_filter:
             try:
                 from neuralops.utils.compat import should_compress_linear
@@ -317,7 +297,6 @@ class DeltaKVCompressor(BaseCompressor):
             if _debug:
                 logger.info(f"  [skip] {name}: weight None")
             return False
-        # DKV-FIX-11: min_layer_dim filter.
         if min(w.shape[0], w.shape[1]) < self.min_layer_dim:
             if _debug:
                 logger.info(f"  [skip] {name}: dim too small {tuple(w.shape)}")
@@ -337,11 +316,7 @@ class DeltaKVCompressor(BaseCompressor):
             logger.info(f"  [TARGET] {name}: shape={tuple(w.shape)}")
         return True
 
-    # ------------------------------------------------------------------
-    # Main compress
-    # ------------------------------------------------------------------
     def compress(self) -> tuple[nn.Module, dict[str, Any]]:
-        # DKV-FIX-09: idempotence
         if getattr(self.model, "_delta_kv_compressed", False):
             logger.warning("DeltaKV: model already compressed; skipping.")
             try:
@@ -359,7 +334,6 @@ class DeltaKVCompressor(BaseCompressor):
         total_orig_params = 0
         total_comp_params = 0
 
-        # Diagnostic breakdown if no targets.
         target_list = [
             (name, module)
             for name, module in self.model.named_modules()
@@ -380,7 +354,6 @@ class DeltaKVCompressor(BaseCompressor):
 
         logger.info("DeltaKV: %d target layers identified.", len(target_list))
 
-        # Freeze non-target attention/linear layers when target_attention_only.
         if self.target_attention_only:
             for name, module in self.model.named_modules():
                 if any(part in name.split(".") for part in ("lora_A", "lora_B", "base_layer")):
@@ -410,7 +383,6 @@ class DeltaKVCompressor(BaseCompressor):
 
             try:
                 U, S, Vt = torch.linalg.svd(W, full_matrices=False)
-                # DKV-FIX-03: correct min over 2D shape.
                 r = max(1, min(self.rank, out_f, in_f, len(S)))
                 L = (U[:, :r] * S[:r].unsqueeze(0)) @ Vt[:r, :]
 
@@ -439,7 +411,6 @@ class DeltaKVCompressor(BaseCompressor):
                     total_comp_params += orig_layer_params
                     continue
 
-                # Write back in original orientation and dtype.
                 if is_conv1d:
                     target_mod.weight.data.copy_(
                         W_compressed.t().contiguous().to(dtype=target_mod.weight.dtype)
@@ -447,14 +418,10 @@ class DeltaKVCompressor(BaseCompressor):
                 else:
                     target_mod.weight.data.copy_(W_compressed.to(dtype=target_mod.weight.dtype))
 
-                # DKV-FIX-10: requires_grad handled at module level.
                 for p in module.parameters():
                     p.requires_grad = True
 
                 self.compressed_layers.append(name)
-                # DKV-FIX-12: honest parameter accounting.
-                # Note: the dense weight is retained in-place (no reduction);
-                # we report the theoretical storage ratio here for reference.
                 comp_layer_params = r * (in_f + out_f) + keep_n
                 total_comp_params += comp_layer_params
 
@@ -465,7 +432,6 @@ class DeltaKVCompressor(BaseCompressor):
                     p.requires_grad = False
                 total_comp_params += orig_layer_params
 
-        # DKV-FIX-08: forward sanity check.
         forward_check_success = True
         try:
             with torch.no_grad():
@@ -531,7 +497,6 @@ class DeltaKVCompressor(BaseCompressor):
         )
         self.stats = stats
 
-        # DKV-FIX-14: write stats on the model.
         try:
             if not hasattr(self.model, "compression_stats") or self.model.compression_stats is None:
                 self.model.compression_stats = {}
@@ -558,11 +523,6 @@ class DeltaKVCompressor(BaseCompressor):
             effective_ratio,
         )
         return self.model, stats
-
-
-# ===========================================================================
-# Factory (DKV-FIX-02)
-# ===========================================================================
 
 
 @COMPRESSOR_REGISTRY.register("delta_kv")

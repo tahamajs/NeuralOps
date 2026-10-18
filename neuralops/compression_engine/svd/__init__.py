@@ -220,7 +220,6 @@ try:
 except Exception:
     pass
 
-# Auto-wired submodules
 from neuralops.compression_engine.svd import aa_svd_compressor
 from neuralops.compression_engine.svd import adaptive_ranks
 from neuralops.compression_engine.svd import adasvd_compressor
@@ -251,4 +250,3 @@ from neuralops.compression_engine.svd.hnc_svd_continuation import (
     solve_soft_nullspace_projection_cg,
     solve_layerwise_kronecker_nullspace_step,
 )
-

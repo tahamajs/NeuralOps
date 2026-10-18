@@ -33,9 +33,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 
 logger = logging.getLogger(__name__)
 
-# ---------------------------------------------------------------------------
-# Safe Triton dispatch — fall back to F.linear if kernel unavailable
-# ---------------------------------------------------------------------------
 try:
     from neuralops.core.triton_kernels import triton_dispatch as _triton_dispatch
     HAS_TRITON_DISPATCH = True
@@ -52,13 +49,9 @@ def _safe_low_rank(x: torch.Tensor, up_weight: torch.Tensor, down_weight: torch.
             return _triton_dispatch("low_rank", x, up_weight, down_weight)
         except Exception as e:
             logger.debug("MLA: triton_dispatch failed (%s); falling back to F.linear", e)
-    # F.linear fallback — mathematically identical
     return F.linear(F.linear(x, down_weight), up_weight)
 
 
-# ===========================================================================
-# MLA Attention
-# ===========================================================================
 @ATTENTION_REGISTRY.register("mla_attention", supports_causal=True, supports_gqa=True)
 class MLAAttention(BaseAttention):
     """MLAAttention neural operator.
@@ -86,7 +79,6 @@ class MLAAttention(BaseAttention):
         **kwargs: Any,
     ) -> None:
         if config is None:
-
             class _Cfg:
                 pass
 
@@ -147,7 +139,6 @@ class MLAAttention(BaseAttention):
         self.max_error: float = float(max_error)
         self.fallback_to_original: bool = bool(fallback_to_original)
 
-        # ---- decoder detection ----
         if is_decoder is not None:
             self.is_decoder = bool(is_decoder)
         else:
@@ -165,7 +156,6 @@ class MLAAttention(BaseAttention):
         self.is_nested_encoder: bool = False
         self.layer_idx: int = int(kwargs.get("layer_idx", 0))
 
-        # ---- projections ----
         self.q_proj = LoRALinear(
             self.hidden_size,
             self.q_dim,
@@ -175,7 +165,6 @@ class MLAAttention(BaseAttention):
             freeze_base=True,
         )
         self.kv_down = nn.Linear(self.hidden_size, self.rank, bias=False)
-        # FIX 3: bias=True for K/V up-projections so original biases are preserved
         self.k_up = nn.Linear(self.rank, self.kv_dim, bias=True)
         self.v_up = nn.Linear(self.rank, self.kv_dim, bias=True)
         self.out_proj = LoRALinear(
@@ -202,9 +191,6 @@ class MLAAttention(BaseAttention):
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
 
-    # ------------------------------------------------------------------
-    # Aliases
-    # ------------------------------------------------------------------
     @property
     def query(self):
         return self.q_proj
@@ -245,7 +231,6 @@ class MLAAttention(BaseAttention):
     def o_proj(self):
         return self.out_proj
 
-    # ------------------------------------------------------------------
     def copy_weights(self, src: Any) -> None:
         from neuralops.core.adapters import UniversalAdapter
 
@@ -268,7 +253,6 @@ class MLAAttention(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter fallback failed for %s: %s", proj, e)
 
-        # GPT-2 fused c_attn
         if hasattr(src, "c_attn") and (
             extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None
         ):
@@ -311,7 +295,6 @@ class MLAAttention(BaseAttention):
                     w_o = w_o.t().contiguous()
                 b_o = getattr(base_o, "bias", getattr(c_proj, "bias", None))
                 extracted["o"] = (w_o, b_o.data if b_o is not None else None)
-        # BERT / RoBERTa nested
         if hasattr(src, "self") and (
             extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None
         ):
@@ -327,7 +310,6 @@ class MLAAttention(BaseAttention):
             dense = src.output.dense
             extracted["o"] = (dense.weight.data, getattr(dense, "bias", None))
 
-        # Flat modules
         named_map = {
             "q": ("q_proj", "q_lin", "query"),
             "k": ("k_proj", "k_lin", "key"),
@@ -346,7 +328,6 @@ class MLAAttention(BaseAttention):
                             )
                             break
 
-        # nested encoder detection
         cls_name = src.__class__.__name__
         has_out_proj = any(
             hasattr(src, a)
@@ -381,7 +362,6 @@ class MLAAttention(BaseAttention):
             pass
 
         with torch.no_grad():
-            # ---------- 1. Q ----------
             w_q, b_q = extracted["q"]
             w_q_oriented = _orient(w_q, self.hidden_size)
             out_q = min(self.q_dim, w_q_oriented.shape[0])
@@ -400,7 +380,6 @@ class MLAAttention(BaseAttention):
                 )
             self.q_proj.freeze_base_weights()
 
-            # ---------- 2. Output ----------
             w_o, b_o = extracted["o"]
             if w_o is not None:
                 w_o_oriented = _orient(w_o, self.q_dim)
@@ -426,8 +405,6 @@ class MLAAttention(BaseAttention):
                     self.out_proj.bias.data.zero_()
             self.out_proj.freeze_base_weights()
 
-            # ---------- 3. K/V low-rank SVD ----------
-            # FIX 3: extract K/V biases and apply to k_up / v_up
             w_k, b_k = extracted["k"]
             w_v, b_v = extracted["v"]
             w_k_f = _orient(w_k, self.hidden_size).float()
@@ -463,7 +440,6 @@ class MLAAttention(BaseAttention):
             else:
                 b_v_f = None
 
-            # Joint SVD of [K; V]
             w_kv = torch.cat(
                 [
                     w_k_f[: self.kv_dim, : self.hidden_size],
@@ -486,12 +462,10 @@ class MLAAttention(BaseAttention):
             self.k_up.weight.data.zero_()
             self.v_up.weight.data.zero_()
 
-            # kv_down: (rank, hidden_size) = vh_kv[:r, :]
             self.kv_down.weight.data[:r, :].copy_(
                 vh_kv[:r, :].to(self.kv_down.weight.device, self.kv_down.weight.dtype)
             )
 
-            # up: (2 * kv_dim, r) = U[:, :r] * Σ[:r]
             up = (u_kv[:, :r] * s_kv[:r].unsqueeze(0)).to(
                 self.k_up.weight.device, self.k_up.weight.dtype
             )
@@ -501,7 +475,6 @@ class MLAAttention(BaseAttention):
             self.k_up.weight.data[:d_k, :r].copy_(up[:d_k, :r])
             self.v_up.weight.data[:d_v, :r].copy_(up[self.kv_dim : self.kv_dim + d_v, :r])
 
-            # FIX 3: copy K/V biases into up-projections
             if b_k_f is not None and self.k_up.bias is not None:
                 mb = min(self.k_up.bias.numel(), b_k_f.numel())
                 self.k_up.bias.data.zero_()
@@ -519,7 +492,6 @@ class MLAAttention(BaseAttention):
             self.k_up.weight.requires_grad = False
             self.v_up.weight.requires_grad = False
 
-            # reconstruction error
             W_recon = torch.cat(
                 [
                     self.k_up.weight.data.float() @ self.kv_down.weight.data.float(),
@@ -544,7 +516,6 @@ class MLAAttention(BaseAttention):
                     self.max_error,
                 )
 
-        # ---- storage accounting ----
         try:
             for m in (self.q_proj, self.kv_down, self.k_up, self.v_up, self.out_proj):
                 for p in m.parameters():
@@ -552,7 +523,6 @@ class MLAAttention(BaseAttention):
         except Exception:
             pass
 
-        # ---- is_decoder / nested override ----
         if hasattr(src, "is_decoder"):
             self.is_decoder = bool(src.is_decoder)
         elif (
@@ -564,7 +534,6 @@ class MLAAttention(BaseAttention):
 
         self._source_attn_id = id(src)
 
-    # ------------------------------------------------------------------
     def is_compatible(self) -> bool:
         if self._reconstruction_error_kv is None:
             return True
@@ -580,14 +549,10 @@ class MLAAttention(BaseAttention):
             "kv_reconstruction_error": self._reconstruction_error_kv,
         }
 
-    # ------------------------------------------------------------------
-    # KV-cache helpers (FIX 4)
-    # ------------------------------------------------------------------
     @staticmethod
     def _read_cache(past_key_value: Any, layer_idx: int) -> tuple[torch.Tensor | None, torch.Tensor | None, int]:
         if past_key_value is None:
             return None, None, 0
-        # tuple/list form
         if isinstance(past_key_value, (tuple, list)):
             if len(past_key_value) == 0:
                 return None, None, 0
@@ -605,7 +570,6 @@ class MLAAttention(BaseAttention):
             if k is None:
                 return None, None, 0
             return k, v, k.shape[-2]
-        # DynamicCache / object with key_cache
         if hasattr(past_key_value, "key_cache") and past_key_value.key_cache:
             if layer_idx < len(past_key_value.key_cache):
                 k = past_key_value.key_cache[layer_idx]
@@ -633,9 +597,6 @@ class MLAAttention(BaseAttention):
             return past_key_value
         return (k, v)
 
-    # ------------------------------------------------------------------
-    # Forward
-    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -659,17 +620,14 @@ class MLAAttention(BaseAttention):
         kv_input = encoder_hidden_states if is_cross else hidden_states
         kv_len_new = kv_input.shape[1]
 
-        # ---- projections ----
         q = (
             self.q_proj(hidden_states)
             .view(B, N, self.num_heads, self.head_dim)
             .transpose(1, 2)
             .contiguous()
         )
-        # FIX 2: safe triton dispatch with F.linear fallback
         k_new = _safe_low_rank(kv_input, self.k_up.weight, self.kv_down.weight)
         v_new = _safe_low_rank(kv_input, self.v_up.weight, self.kv_down.weight)
-        # add biases (FIX 3)
         if self.k_up.bias is not None:
             k_new = k_new + self.k_up.bias.to(k_new.dtype)
         if self.v_up.bias is not None:
@@ -686,13 +644,11 @@ class MLAAttention(BaseAttention):
             .contiguous()
         )
 
-        # ---- KV-cache (FIX 4) ----
         past_k = past_v = None
         past_len = 0
         if not is_cross and past_key_value is not None:
             past_k, past_v, past_len = self._read_cache(past_key_value, self.layer_idx)
 
-        # ---- RoPE with past offset ----
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None and not is_cross:
@@ -717,7 +673,6 @@ class MLAAttention(BaseAttention):
 
         kv_len = k.shape[-2]
 
-        # ---- GQA expansion ----
         if self.num_kv_heads < self.num_heads:
             k = repeat_kv(k, self.kv_repeat)
             v = repeat_kv(v, self.kv_repeat)
@@ -726,7 +681,6 @@ class MLAAttention(BaseAttention):
         eff_mask = encoder_attention_mask if is_cross else attention_mask
         is_causal = bool(self.is_decoder and not is_cross and N > 1)
 
-        # ---- SDPA fast path ----
         if eff_mask is None and head_mask is None and not output_attentions:
             try:
                 _qs = maybe_half(q)
@@ -745,7 +699,6 @@ class MLAAttention(BaseAttention):
             except Exception:
                 pass
 
-        # ---- Manual path ----
         scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
 
         if is_causal:
@@ -798,9 +751,6 @@ class MLAAttention(BaseAttention):
             return output, attn
         return output, None
 
-# ===========================================================================
-# Injection  (FIX 1: registered in registry)
-# ===========================================================================
 def inject_mla(
     model: nn.Module | None = None,
     layer: nn.Module | None = None,
@@ -822,7 +772,6 @@ def inject_mla(
 
     cfg = model_config or getattr(target, "config", None)
 
-    # ---- Whole-model traversal ----
     layer_list = None
     if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
         layer_list = target.distilbert.transformer.layer
@@ -860,7 +809,6 @@ def inject_mla(
                 num_injected += 1
         return target if num_injected > 0 else None
 
-    # ---- Single-layer ----
     src_attn = old_attn
     if src_attn is None:
         for attr in ("attn", "attention", "self_attn", "self"):
@@ -906,7 +854,6 @@ def inject_mla(
         logger.error("inject_mla construction/copy failed: %s", e, exc_info=True)
         return None
 
-    # fallback if reconstruction error is too high
     if fallback and not new_attn.is_compatible():
         logger.warning(
             "inject_mla: MLA rejected on %s (err=%.4f > %.4f); keeping original.",
@@ -920,7 +867,6 @@ def inject_mla(
     if p is not None:
         new_attn.to(device=p.device, dtype=p.dtype)
 
-    # ---- Splice ----
     replaced = False
     if hasattr(target, "attn"):
         target.attn = new_attn

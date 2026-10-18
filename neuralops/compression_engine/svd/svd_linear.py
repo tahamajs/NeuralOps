@@ -29,8 +29,6 @@ from neuralops.utils.compat import should_compress_linear
 logger = logging.getLogger(__name__)
 
 
-
-
 class SVDLinearLayer(nn.Module):
     is_custom_attention: bool = True
     """
@@ -64,7 +62,7 @@ class SVDLinearLayer(nn.Module):
             self.out_features = getattr(base_layer, "out_features", W.shape[0])
             self.in_features = getattr(base_layer, "in_features", W.shape[1])
 
-        self.nf = self.out_features  # Conv1D compatibility
+        self.nf = self.out_features
         param_cap = max(
             1,
             (self.in_features * self.out_features) // (self.in_features + self.out_features) - 1,
@@ -127,7 +125,6 @@ class SVDLinearLayer(nn.Module):
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
 
-        # Frobenius reconstruction error
         W_rec = torch.matmul(U_weighted.float(), V_weighted.float())
         norm_orig = torch.norm(W, p="fro")
         self.reconstruction_error = (torch.norm(W - W_rec, p="fro") / (norm_orig + 1e-8)).item()
@@ -378,7 +375,6 @@ class SVDLinearCompressor(BaseCompressor):
                 for p in module.parameters():
                     p.requires_grad = False
 
-        # Post-compression forward sanity check
         forward_check_success = False
         try:
             self.model.eval()

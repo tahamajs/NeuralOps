@@ -76,7 +76,6 @@ try:
 except Exception:
     pass
 
-# Auto-wired submodules
 from neuralops.compression_engine.kv_cache import aatc_xkv_compressor
 from neuralops.compression_engine.kv_cache import cachenotes_compressor
 from neuralops.compression_engine.kv_cache import delta_kv

@@ -40,10 +40,9 @@ from neuralops.core.pruning_utils import get_calibration_tensors
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 from neuralops.utils.compat import should_compress_linear
 
-# Real low-rank factorization layer (used by AA-SVD / ERC-SVD)
 try:
     from neuralops.compression_engine.aa_svd_compressor import SVDLinear
-except Exception as _svd_import_err:  # pragma: no cover - defensive fallback
+except Exception as _svd_import_err:
     SVDLinear = None
     _SVD_IMPORT_ERROR = str(_svd_import_err)
 else:
@@ -52,9 +51,6 @@ else:
 logger = logging.getLogger(__name__)
 
 
-
-
-# Backward-compat aliases (deprecated — will be removed)
 @COMPRESSOR_REGISTRY.register("slicegpt")
 class PCAActivationAwareSVDCompressor(BaseCompressor):
     """
@@ -159,7 +155,6 @@ class PCAActivationAwareSVDCompressor(BaseCompressor):
         )
         if not is_linear_like:
             return False
-        # Skip layers that are already factorized
         if SVDLinear is not None and isinstance(base_mod, SVDLinear):
             return False
         if not should_compress_linear(self.model, name):
@@ -168,9 +163,6 @@ class PCAActivationAwareSVDCompressor(BaseCompressor):
             return True
         return any(t in name for t in self.target_modules)
 
-    # ------------------------------------------------------------------
-    # FIX 1: Online covariance accumulation (no RAM bomb)
-    # ------------------------------------------------------------------
     def _collect_layer_covariances(self) -> dict[str, torch.Tensor]:
         """
         Collect input activation covariances online, avoiding catastrophic RAM usage.
@@ -192,13 +184,10 @@ class PCAActivationAwareSVDCompressor(BaseCompressor):
                     inp = inputs[0]
                     if inp.numel() == 0:
                         return
-                    # FIX 3: .detach() prevents autograd graph retention
                     inp = inp.detach().float()
-                    # Flatten leading dims: (B, seq, d) -> (B*seq, d)
                     d_in = inp.shape[-1]
                     inp_flat = inp.reshape(-1, d_in)
 
-                    # Online covariance: C += X^T X
                     batch_cov = torch.matmul(inp_flat.T, inp_flat).cpu()
                     batch_count = inp_flat.shape[0]
 
@@ -222,7 +211,6 @@ class PCAActivationAwareSVDCompressor(BaseCompressor):
             device=self.target_device,
         )
 
-        # FIX 2: try/finally guarantees hook cleanup even on crash
         try:
             with torch.no_grad():
                 if isinstance(calib_inputs, dict):
@@ -244,15 +232,11 @@ class PCAActivationAwareSVDCompressor(BaseCompressor):
                 except Exception:
                     pass
 
-        # Normalize covariances by sample count
         for name in list(covariances.keys()):
             covariances[name] /= max(1, counts[name])
 
         return covariances
 
-    # ------------------------------------------------------------------
-    # FIX: _compute_orthogonal_rotation takes covariance directly
-    # ------------------------------------------------------------------
     def _compute_orthogonal_rotation(
         self,
         cov: torch.Tensor | None,
@@ -278,11 +262,9 @@ class PCAActivationAwareSVDCompressor(BaseCompressor):
         if cov is not None and cov.numel() > 0:
             cov = cov.to(device)
             if cov.shape == (d_in, d_in):
-                # Add small damping for numerical stability
                 cov = cov + 1e-4 * torch.eye(d_in, device=device)
                 try:
                     eigvals, Q = torch.linalg.eigh(cov)
-                    # eigh returns ascending order; we want descending
                     idx = torch.argsort(eigvals, descending=True)
                     return Q[:, idx], eigvals[idx]
                 except Exception as e:
@@ -291,7 +273,6 @@ class PCAActivationAwareSVDCompressor(BaseCompressor):
                         e,
                     )
 
-        # Fallback: deterministic orthogonal basis
         gen_dev = device if (isinstance(device, torch.device) and device.type in ("cpu", "cuda")) else "cpu"
         gen = torch.Generator(device=gen_dev).manual_seed(42 + d_in)
         rand_mat = torch.randn(d_in, d_in, device=gen_dev, generator=gen).to(device)
@@ -345,7 +326,6 @@ class PCAActivationAwareSVDCompressor(BaseCompressor):
         self.layer_errors = {}
         self.layer_ranks = {}
 
-        # FIX: Collect covariances, not activations
         covariances_map = self._collect_layer_covariances()
 
         sliced_layers_count = 0
@@ -363,7 +343,6 @@ class PCAActivationAwareSVDCompressor(BaseCompressor):
             device = raw_w.device
             dtype = raw_w.dtype
 
-            # FIX 3: .detach() prevents autograd graph retention
             if is_conv1d:
                 W = raw_w.detach().t().float()
                 d_out, d_in = W.shape
@@ -373,15 +352,12 @@ class PCAActivationAwareSVDCompressor(BaseCompressor):
 
             total_params_before += d_out * d_in
 
-            # FIX: pass covariance (not activations)
             cov = covariances_map.get(name, None)
             Q, _ = self._compute_orthogonal_rotation(cov, d_in, device=device)
             Q = Q.to(device=device, dtype=torch.float32)
 
-            # Rotate weight into PCA basis
             W_pca = torch.matmul(W, Q)
 
-            # Determine number of principal coordinates to retain
             if self.rank is not None:
                 keep = max(1, self.rank)
             elif self.non_uniform and any(k in name for k in ("query", "key", "q_lin", "k_lin")):
@@ -393,10 +369,8 @@ class PCAActivationAwareSVDCompressor(BaseCompressor):
             else:
                 keep = max(1, int(d_in * (1.0 - self.sparsity)))
 
-            # Rank r cannot exceed min(d_out, d_in)
             effective_keep = min(keep, d_out, d_in)
 
-            # Reconstruct truncated dense weight for error measurement only
             W_trunc = W_pca.clone()
             if effective_keep < d_in:
                 W_trunc[:, effective_keep:] = 0.0
@@ -406,7 +380,6 @@ class PCAActivationAwareSVDCompressor(BaseCompressor):
             rel_err = (torch.norm(W - W_reconstructed, p="fro") / norm_orig).item()
             self.layer_errors[name] = float(rel_err)
 
-            # Fallback on high reconstruction error
             if rel_err > self.max_error:
                 logger.warning(
                     "PCA-ASVD reconstruction error %.4f on %s exceeded threshold %.4f. Compressing anyway.",
@@ -418,15 +391,11 @@ class PCAActivationAwareSVDCompressor(BaseCompressor):
                     total_params_after += d_out * d_in
                     continue
 
-            # === REAL LOW-RANK FACTORIZATION ===
-            # W_reconstructed = W_pca[:, :keep] @ Q[:, :keep]^T
             U_factor = W_pca[:, :effective_keep].contiguous().to(dtype=dtype, device=device)
             Vt_factor = Q[:, :effective_keep].T.contiguous().to(dtype=dtype, device=device)
 
-            # Parameter count of factorization
             factorized_params = effective_keep * (d_out + d_in)
 
-            # Only apply if it actually reduces parameter count (unless explicit rank requested)
             if factorized_params >= d_out * d_in and self.rank is None:
                 logger.info(
                     "PCA-ASVD: keep=%d on %s would not reduce params (%d >= %d). Keeping dense.",
@@ -435,7 +404,6 @@ class PCAActivationAwareSVDCompressor(BaseCompressor):
                 total_params_after += d_out * d_in
                 continue
 
-            # Detect existing LoRA adapters
             existing_lora_r, existing_lora_alpha = self._detect_lora(module)
             if self.use_lora and self.lora_r > 0 and existing_lora_r == 0:
                 used_lora_r = self.lora_r
@@ -444,7 +412,6 @@ class PCAActivationAwareSVDCompressor(BaseCompressor):
                 used_lora_r = existing_lora_r
                 used_lora_alpha = existing_lora_alpha
 
-            # Build SVDLinear factorization
             svd_layer = SVDLinear(
                 in_features=d_in,
                 out_features=d_out,
@@ -457,7 +424,6 @@ class PCAActivationAwareSVDCompressor(BaseCompressor):
             )
             svd_layer.set_low_rank_factors(U_factor, Vt_factor)
 
-            # Copy bias
             if (
                 getattr(base_mod, "bias", None) is not None
                 and base_mod.bias is not None
@@ -465,7 +431,6 @@ class PCAActivationAwareSVDCompressor(BaseCompressor):
             ):
                 svd_layer.bias.data.copy_(base_mod.bias.data)
 
-            # Copy existing LoRA adapters
             if existing_lora_r > 0 and getattr(svd_layer, "lora_A", None) is not None:
                 try:
                     src_la = getattr(module.lora_A, "weight", module.lora_A)
@@ -487,7 +452,6 @@ class PCAActivationAwareSVDCompressor(BaseCompressor):
                 except Exception as e_lora:
                     logger.debug("PCA-ASVD LoRA adapter copy skipped on %s: %s", name, e_lora)
 
-            # Replace the module
             is_wrapped = hasattr(module, "base_layer")
             if is_wrapped:
                 module.base_layer = svd_layer
@@ -498,7 +462,6 @@ class PCAActivationAwareSVDCompressor(BaseCompressor):
             sliced_layers_count += 1
             total_params_after += factorized_params
 
-        # Post-compression forward sanity check
         forward_check_success = True
         try:
             with torch.no_grad():
@@ -560,7 +523,6 @@ class PCAActivationAwareSVDCompressor(BaseCompressor):
         return self.model, stats
 
 
-# Backward-compat alias (deprecated)
 def pca_asvd_factory(
     model: Any,
     comp_config: Any = None,

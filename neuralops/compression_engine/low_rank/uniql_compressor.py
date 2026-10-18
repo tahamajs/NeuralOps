@@ -20,9 +20,6 @@ from neuralops.utils.compat import should_compress_linear
 logger = logging.getLogger(__name__)
 
 
-# ---------------------------------------------------------------------------
-# Real low-rank + quantized linear layer
-# ---------------------------------------------------------------------------
 class UniQLinear(nn.Module):
     """
     Replaces a Linear (or Conv1D) with a stored factorization:
@@ -40,19 +37,19 @@ class UniQLinear(nn.Module):
     Original bias (if any) is stored as-is unless quantize_bias=True.
     """
 
-    is_custom_attention: bool = False  # UQ-01: compressors are not attention.
+    is_custom_attention: bool = False
 
     def __init__(
         self,
         in_features: int,
         out_features: int,
         rank: int,
-        U_q: torch.Tensor,  # (out, r) int8
-        S_q: torch.Tensor,  # (r,)    int8
-        Vt_q: torch.Tensor,  # (r, in) int8
-        scale_u: torch.Tensor,  # (out,)
-        scale_s: torch.Tensor,  # (r,)
-        scale_v: torch.Tensor,  # (in,)
+        U_q: torch.Tensor,
+        S_q: torch.Tensor,
+        Vt_q: torch.Tensor,
+        scale_u: torch.Tensor,
+        scale_s: torch.Tensor,
+        scale_v: torch.Tensor,
         bias: torch.Tensor | None = None,
         is_conv1d: bool = False,
         dtype: torch.dtype = torch.float32,
@@ -64,7 +61,6 @@ class UniQLinear(nn.Module):
         self.rank = max(1, min(rank, in_features, out_features))
         self.is_conv1d = is_conv1d
 
-        # Store quantized factors as non-trainable buffers.
         self.register_buffer("U_q", U_q.to(device=device), persistent=True)
         self.register_buffer("S_q", S_q.to(device=device), persistent=True)
         self.register_buffer("Vt_q", Vt_q.to(device=device), persistent=True)
@@ -85,12 +81,11 @@ class UniQLinear(nn.Module):
 
         self._weight_dtype = dtype
 
-    # ---- Reconstruct in fp32 for numerical stability ----
     def _reconstruct_weight(self) -> torch.Tensor:
-        U = self.U_q.float() * self.scale_u.unsqueeze(1)  # (out, r)
-        S = self.S_q.float() * self.scale_s  # (r,)
-        Vt = self.Vt_q.float() * self.scale_v.unsqueeze(1)  # (r, in) UQ-FIX: per-row
-        W = (U * S.unsqueeze(0)) @ Vt  # (out, in)
+        U = self.U_q.float() * self.scale_u.unsqueeze(1)
+        S = self.S_q.float() * self.scale_s
+        Vt = self.Vt_q.float() * self.scale_v.unsqueeze(1)
+        W = (U * S.unsqueeze(0)) @ Vt
         return W.to(self._weight_dtype)
 
     @property
@@ -104,12 +99,10 @@ class UniQLinear(nn.Module):
         if not FORCE_PYTORCH_FALLBACK and suitable and x.is_cuda:
             try:
                 from neuralops.core.triton_kernels.low_rank import fused_down_up_gemm_bias_triton
-                # W_down = diag(S) @ Vt : (r, in)
-                # W_up = U : (out, r)
                 U = (self.U_q.float() * self.scale_u.unsqueeze(1)).to(x.dtype)
                 S = (self.S_q.float() * self.scale_s).to(x.dtype)
                 Vt = (self.Vt_q.float() * self.scale_v.unsqueeze(1)).to(x.dtype)
-                w_down = S.unsqueeze(1) * Vt  # (r, in)
+                w_down = S.unsqueeze(1) * Vt
                 return fused_down_up_gemm_bias_triton(x, w_down, U.t().contiguous(), bias=self.bias)
             except Exception:
                 pass
@@ -125,9 +118,6 @@ class UniQLinear(nn.Module):
         )
 
 
-# ---------------------------------------------------------------------------
-# Quantization helpers
-# ---------------------------------------------------------------------------
 def _uniform_quantize(t: torch.Tensor, bits: int) -> tuple[torch.Tensor, torch.Tensor, float]:
     """
     Uniform min-max quantization to signed int8 (symmetric) with per-row or
@@ -138,10 +128,9 @@ def _uniform_quantize(t: torch.Tensor, bits: int) -> tuple[torch.Tensor, torch.T
     """
     tf = t.float()
     if tf.dim() == 2:
-        # per-row symmetric
         max_abs = tf.abs().amax(dim=1, keepdim=True).clamp(min=1e-8)
         qmax = float((2 ** (bits - 1)) - 1)
-        scale = (max_abs / qmax).squeeze(1)  # (rows,)
+        scale = (max_abs / qmax).squeeze(1)
         q = torch.clamp(torch.round(tf / scale.unsqueeze(1)), -qmax - 1, qmax).to(torch.int8)
         return q, scale, 0.0
     elif tf.dim() == 1:
@@ -151,7 +140,6 @@ def _uniform_quantize(t: torch.Tensor, bits: int) -> tuple[torch.Tensor, torch.T
         q = torch.clamp(torch.round(tf / scale), -qmax - 1, qmax).to(torch.int8)
         return q, scale, 0.0
     else:
-        # fallback: per-tensor symmetric
         max_abs = tf.abs().max().clamp(min=1e-8)
         qmax = float((2 ** (bits - 1)) - 1)
         scale = (max_abs / qmax).reshape(())
@@ -159,9 +147,6 @@ def _uniform_quantize(t: torch.Tensor, bits: int) -> tuple[torch.Tensor, torch.T
         return q, scale, 0.0
 
 
-# ---------------------------------------------------------------------------
-# Compressor
-# ---------------------------------------------------------------------------
 @COMPRESSOR_REGISTRY.register("uniql_compressor")
 class UniQLCompressor(BaseCompressor):
     """
@@ -173,7 +158,6 @@ class UniQLCompressor(BaseCompressor):
     (out + in) * r / (out * in).
     """
 
-    # UQ-01: NOT an attention module.
     is_custom_attention: bool = False
 
     def __init__(
@@ -217,7 +201,7 @@ class UniQLCompressor(BaseCompressor):
             quantize_bias = bool(kwargs["quantize_bias"])
 
         self.rank = max(1, int(rank))
-        self.bits = max(2, min(16, int(bits)))  # cap at 16 bits (int8 storage assumption)
+        self.bits = max(2, min(16, int(bits)))
         self.max_error = float(max_error)
         self.max_retries = max(0, int(max_retries))
         self.fallback_to_original = bool(fallback_to_original)
@@ -225,9 +209,7 @@ class UniQLCompressor(BaseCompressor):
         self.quantize_bias = bool(quantize_bias)
         self.compressed_layers: list[dict[str, Any]] = []
 
-    # ------------------------------------------------------------------
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
-        # Protect classifier, pooler, lm_head, embeddings, norms.
         name_lower = name.lower()
         if any(
             k in name_lower
@@ -250,7 +232,6 @@ class UniQLCompressor(BaseCompressor):
         ):
             return False
 
-        # Skip if already compressed.
         if isinstance(module, UniQLinear):
             return False
 
@@ -273,7 +254,6 @@ class UniQLCompressor(BaseCompressor):
 
         base_layer = getattr(module, "base_layer", module)
         cls_name = base_layer.__class__.__name__.lower()
-        # UQ-10: Conv1D detection across transformers versions.
         is_conv1d = "conv1d" in cls_name or (
             hasattr(base_layer, "nf") and hasattr(base_layer, "weight")
         )
@@ -289,7 +269,6 @@ class UniQLCompressor(BaseCompressor):
         if not is_linear_like:
             return False
 
-        # Respect framework policy (e.g. Qwen GQA asymmetric skips).
         try:
             if not should_compress_linear(self.model, name):
                 return False
@@ -297,7 +276,6 @@ class UniQLCompressor(BaseCompressor):
             pass
         return True
 
-    # ------------------------------------------------------------------
     def _normalize_weight(self, base_layer: nn.Module) -> tuple[torch.Tensor, bool]:
         """
         Return (W as (out, in) fp32, is_conv1d).
@@ -314,7 +292,6 @@ class UniQLCompressor(BaseCompressor):
             W = raw_w.float().contiguous()
         return W, is_conv1d
 
-    # ------------------------------------------------------------------
     def _try_compress(self, W: torch.Tensor) -> dict[str, Any] | None:
         """
         Attempt SVD + quantization with adaptive bit/rank escalation.
@@ -328,23 +305,18 @@ class UniQLCompressor(BaseCompressor):
 
         norm_orig = torch.linalg.norm(W).item() + 1e-12
 
-        # ---- SVD once, in fp32 ----
         try:
             U, S, Vt = torch.linalg.svd(W, full_matrices=False)
         except Exception as e:
             logger.warning("UniQL SVD failed: %s", e)
             return None
 
-        # Candidate ranks: start at requested rank, cap at 2x base_r.
-        # UQ-FIX: do NOT escalate to max_r (full rank = lossless compression).
         base_r = max(1, min(self.rank, max_r))
         rank_candidates = [base_r]
         double_r = min(max_r, base_r * 2)
         if double_r > base_r:
             rank_candidates.append(double_r)
-        # Never append max_r — that would reconstruct the original perfectly.
 
-        # Candidate bits: bits, then 8, then 16 (int8 storage cap).
         bit_candidates = [self.bits]
         for b in (8, 16):
             if b > bit_candidates[-1]:
@@ -358,15 +330,13 @@ class UniQLCompressor(BaseCompressor):
             S_r = S[:cur_r]
             Vt_r = Vt[:cur_r, :]
             for cur_bits in bit_candidates:
-                # UQ-03: quantize the actual stored factors.
                 U_q, scale_u, _ = _uniform_quantize(U_r, cur_bits)
                 S_q, scale_s, _ = _uniform_quantize(S_r, cur_bits)
                 Vt_q, scale_v, _ = _uniform_quantize(Vt_r, cur_bits)
 
-                # Reconstruct in fp32 for error measurement.
                 U_hat = U_q.float() * scale_u.unsqueeze(1)
                 S_hat = S_q.float() * scale_s
-                Vt_hat = Vt_q.float() * scale_v.unsqueeze(1)  # UQ-FIX: per-row scale => unsqueeze(1)
+                Vt_hat = Vt_q.float() * scale_v.unsqueeze(1)
                 W_rec = (U_hat * S_hat.unsqueeze(0)) @ Vt_hat
                 rel_err = (torch.linalg.norm(W - W_rec).item()) / norm_orig
 
@@ -390,7 +360,6 @@ class UniQLCompressor(BaseCompressor):
             return None
         return best
 
-    # ------------------------------------------------------------------
     def compress(self) -> tuple[nn.Module, dict[str, Any]]:
         self.compressed_layers = []
         fallback_layers: list[str] = []
@@ -419,7 +388,6 @@ class UniQLCompressor(BaseCompressor):
                 fallback_layers.append(name)
                 continue
 
-            # ---- Build the new module ----
             bias_tensor = None
             if getattr(base_layer, "bias", None) is not None and base_layer.bias is not None:
                 b = base_layer.bias.data
@@ -428,7 +396,6 @@ class UniQLCompressor(BaseCompressor):
                     b = bq.float() * bs
                 bias_tensor = b.to(dtype=orig_dtype, device=orig_device)
 
-            # Preserve row-wise L2 norm energy across quantization & truncation
             scale_u = result["scale_u"].to(orig_device).clone()
             with torch.no_grad():
                 U_hat = result["U_q"].float().to(orig_device) * scale_u.unsqueeze(1)
@@ -457,30 +424,23 @@ class UniQLCompressor(BaseCompressor):
             )
             new_layer.train(mode=module.training)
 
-            # ---- Splice into the model ----
             if hasattr(module, "base_layer"):
-                # Wrapped (e.g. LoRALinear). Keep wrapper; replace its base_layer.
                 module.base_layer = new_layer
-                # Freeze any remaining LoRA parameters so recovery can still
-                # train them if the pipeline expects that.
                 for p_name, p in module.named_parameters():
                     if "lora_" in p_name.lower() and not p_name.startswith("base_layer"):
                         p.requires_grad = False
             else:
-                # Plain Linear / Conv1D: replace in the model.
                 parent_name, _, child_name = name.rpartition(".")
                 parent = self.model.get_submodule(parent_name) if parent_name else self.model
                 setattr(parent, child_name, new_layer)
 
-            # ---- Storage accounting (honest) ----
-            # UQ-07: report real bytes.
             orig_bytes = raw_w.numel() * raw_w.element_size()
             comp_bytes = (
                 result["U_q"].numel() + result["S_q"].numel() + result["Vt_q"].numel()
-            )  # int8: 1 byte each
+            )
             comp_bytes += (
                 result["scale_u"].numel() + result["scale_s"].numel() + result["scale_v"].numel()
-            ) * 4  # fp32 scales
+            ) * 4
             if bias_tensor is not None:
                 orig_bytes += base_layer.bias.numel() * base_layer.bias.element_size()
                 comp_bytes += bias_tensor.numel() * bias_tensor.element_size()
@@ -501,7 +461,6 @@ class UniQLCompressor(BaseCompressor):
             )
             total_err += result["rel_err"]
 
-        # ---- Stats ----
         try:
             self._compressed_params = self._count_params(self.model)
         except Exception:
@@ -521,7 +480,6 @@ class UniQLCompressor(BaseCompressor):
                 "bits": self.bits,
                 "avg_reconstruction_error": avg_err,
                 "max_error": self.max_error,
-                # UQ-07: honest accounting
                 "orig_storage_bytes": orig_storage_bytes,
                 "comp_storage_bytes": comp_storage_bytes,
                 "storage_compression_ratio": round(ratio, 3),
@@ -541,9 +499,6 @@ class UniQLCompressor(BaseCompressor):
         return self.model, stats
 
 
-# ---------------------------------------------------------------------------
-# Factory
-# ---------------------------------------------------------------------------
 def uniql_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """UniQL factory."""
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))

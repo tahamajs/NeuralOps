@@ -23,8 +23,6 @@ from neuralops.utils.compat import should_compress_linear
 logger = logging.getLogger(__name__)
 
 
-
-
 _ATTN_NAMES = {
     "q_proj",
     "k_proj",
@@ -162,7 +160,7 @@ class GreCoDeCLinear(nn.Module):
         if is_conv1d:
             in_f = raw_w.shape[0]
             out_f = raw_w.shape[1]
-            W_float = raw_w.t().contiguous().float()  # [out_features, in_features]
+            W_float = raw_w.t().contiguous().float()
         else:
             out_f = raw_w.shape[0]
             in_f = raw_w.shape[1]
@@ -175,19 +173,15 @@ class GreCoDeCLinear(nn.Module):
         )
         r = max(1, min(rank, out_f, in_f))
 
-        # Check existing LoRA parameters
         existing_lora_A = getattr(linear, "lora_A", None)
         existing_lora_B = getattr(linear, "lora_B", None)
 
-        # Coordinate descent low-rank approximation with SVD initialization fallback
         U_init, S_init, Vt_init = torch.linalg.svd(W_float, full_matrices=False)
         sqrt_S = torch.sqrt(torch.clamp(S_init[:r], min=1e-12))
         U_mat = (U_init[:, :r] * sqrt_S.unsqueeze(0)).clone()
         V_mat = (sqrt_S.unsqueeze(1) * Vt_init[:r, :]).clone()
 
-        # Iterative coordinate descent refinement
         for _ in range(max_iter):
-            # Update U given V: min_U ||W - U V||_F^2 => U = W V^T (V V^T)^{-1}
             VVt = torch.matmul(V_mat, V_mat.t().contiguous())
             VVt_reg = VVt + 1e-6 * torch.eye(r, device=VVt.device, dtype=VVt.dtype)
             try:
@@ -196,7 +190,6 @@ class GreCoDeCLinear(nn.Module):
             except Exception:
                 break
 
-            # Update V given U: min_V ||W - U V||_F^2 => V = (U^T U)^{-1} U^T W
             UtU = torch.matmul(U_mat.t().contiguous(), U_mat)
             UtU_reg = UtU + 1e-6 * torch.eye(r, device=UtU.device, dtype=UtU.dtype)
             try:
@@ -205,7 +198,6 @@ class GreCoDeCLinear(nn.Module):
             except Exception:
                 break
 
-        # Symmetrical norm balancing
         U_norm = torch.norm(U_mat, p=2, dim=0, keepdim=True).clamp_min(1e-8)
         V_norm = torch.norm(V_mat, p=2, dim=1, keepdim=True).clamp_min(1e-8)
         geom = torch.sqrt(U_norm.squeeze(0) * V_norm.squeeze(1))
@@ -380,7 +372,6 @@ class GreCoDeCCompressor(BaseCompressor):
         total_orig_params = 0
         total_comp_params = 0
 
-        # Freeze skipped non-target layers if target_attention_only is enabled
         if self.target_attention_only:
             for name, module in self.model.named_modules():
                 if any(part in name.split(".") for part in ["lora_A", "lora_B", "base_layer"]):
@@ -459,7 +450,6 @@ class GreCoDeCCompressor(BaseCompressor):
                     p.requires_grad = False
                 total_comp_params += orig_params
 
-        # Post-compression forward sanity check
         forward_check_success = True
         try:
             with torch.no_grad():

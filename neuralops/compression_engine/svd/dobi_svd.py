@@ -55,7 +55,6 @@ class DobiSVDLinearLayer(nn.Module):
 
         self.V = nn.Parameter(torch.empty(self.rank, in_features, dtype=dtype, device=device))
         self.U = nn.Parameter(torch.empty(out_features, self.rank, dtype=dtype, device=device))
-        # Learnable spectral gate parameter initialized to +2.5 so sigma(alpha) ~ 0.92
         self.gate = nn.Parameter(
             torch.full((self.rank,), fill_value=init_gate_val, dtype=dtype, device=device)
         )
@@ -116,8 +115,8 @@ class DobiSVDLinearLayer(nn.Module):
             except Exception as e:
                 logger.debug("Triton fused low-rank gated gemm failed (%s); falling back to PyTorch", e)
 
-        g = torch.sigmoid(self.gate).unsqueeze(1)  # [rank, 1]
-        V_gated = self.V * g  # [rank, in_features]
+        g = torch.sigmoid(self.gate).unsqueeze(1)
+        V_gated = self.V * g
 
         from neuralops.core.triton_kernels._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
         suitable, _ = check_triton_suitability(x_flat, "low_rank")
@@ -129,14 +128,12 @@ class DobiSVDLinearLayer(nn.Module):
             except Exception:
                 pass
 
-        latent = F.linear(x_flat, V_gated)  # [..., rank]
-        out = F.linear(latent, self.U, self.bias)  # [..., out_features]
+        latent = F.linear(x_flat, V_gated)
+        out = F.linear(latent, self.U, self.bias)
         return out.view(*orig_shape[:-1], self.out_features)
 
     def extra_repr(self) -> str:
         return f"in_features={self.in_features}, out_features={self.out_features}, rank={self.rank}, bias={self.bias is not None}"
-
-
 
 
 _ATTN_NAMES = {
@@ -300,7 +297,6 @@ class DobiSVDCompressor(BaseCompressor):
         cls_name = target_mod.__class__.__name__.lower()
         raw_w = target_mod.weight.data
 
-        # Determine in_features and out_features accurately for Linear, Conv1D, and fused QKV
         in_f = None
         out_f = None
         if (
@@ -310,10 +306,8 @@ class DobiSVDCompressor(BaseCompressor):
         ):
             bias_len = target_mod.bias.shape[0]
             if raw_w.shape[1] == bias_len and raw_w.shape[0] != bias_len:
-                # Conv1D format: [in_features, out_features]
                 in_f, out_f = raw_w.shape[0], raw_w.shape[1]
             elif raw_w.shape[0] == bias_len and raw_w.shape[1] != bias_len:
-                # Linear format: [out_features, in_features]
                 out_f, in_f = raw_w.shape[0], raw_w.shape[1]
 
         if in_f is None or out_f is None:
@@ -326,7 +320,6 @@ class DobiSVDCompressor(BaseCompressor):
             else:
                 out_f, in_f = raw_w.shape[0], raw_w.shape[1]
 
-        # W must strictly be [out_features, in_features]
         if raw_w.shape == (out_f, in_f):
             W = raw_w.float()
         elif raw_w.shape == (in_f, out_f):
@@ -354,12 +347,10 @@ class DobiSVDCompressor(BaseCompressor):
             )
             return None, 1.0, 0
 
-        # Outlier smoothing via fast Walsh-Hadamard transform if truncate_activations
         W_target = W
         if self.truncate_activations:
             try:
                 from neuralops.core.triton_kernels.elementwise import fast_hadamard_transform
-                # Apply orthogonal Hadamard rotation along input channel dimension
                 W_target = fast_hadamard_transform(W, block_size=min(128, in_f))
             except Exception:
                 W_target = W
@@ -374,7 +365,6 @@ class DobiSVDCompressor(BaseCompressor):
         best_err = 1.0
         chosen_r = current_r
 
-        # Initial gate scaling factor to achieve exact initial SVD energy
         init_gate_scale = 1.0 / (1.0 / (1.0 + math.exp(-self.init_gate_val)))
 
         retries = 0 if rank is not None else self.max_retries
@@ -382,7 +372,6 @@ class DobiSVDCompressor(BaseCompressor):
             r = max(1, min(current_r, max_r))
             sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
             U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).to(dtype=dtype, device=device)
-            # Pre-scale V by 1/sigma(alpha) so initial gated output matches SVD reconstruction
             V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :] * init_gate_scale).to(dtype=dtype, device=device)
 
             dobi_layer = DobiSVDLinearLayer(
@@ -463,7 +452,6 @@ class DobiSVDCompressor(BaseCompressor):
             logger.warning("Dobi-SVD: No compressible linear layers found.")
             return self.model, self.get_compression_stats()
 
-        # If target_attention_only=True, freeze non-target linear/conv layers during recovery
         if self.target_attention_only:
             for name, module in list(self.model.named_modules()):
                 target_mod = getattr(module, "base_layer", module)
@@ -528,7 +516,6 @@ class DobiSVDCompressor(BaseCompressor):
                     total_comp_decomp_params += orig_params
                     continue
 
-            # If wrapped in LoRALinear, replace the inner base_layer or linear
             has_base_layer = hasattr(module, "base_layer") or (
                 hasattr(module, "linear") and (hasattr(module, "lora_A") or hasattr(module, "r"))
             )
@@ -545,7 +532,6 @@ class DobiSVDCompressor(BaseCompressor):
                         p.requires_grad = True
 
             self.compressed_layers.append(name)
-            # Parameters: U (out*r) + V (r*in) + gate (r)
             comp_params = r * (in_f + out_f) + r
             total_comp_decomp_params += comp_params
 

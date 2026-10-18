@@ -71,10 +71,8 @@ def smoothquant_layer(
 
     w_max = module.weight.abs().amax(dim=0).clamp(min=1e-5)
 
-    # Compute smoothing scale factor
     s = (a_max.pow(alpha) / w_max.pow(1.0 - alpha)).clamp(min=1e-5)
 
-    # Apply to weights in-place
     module.weight.data = (module.weight.data * s.unsqueeze(0)).to(module.weight.dtype)
     module.register_buffer("s_inv", (1.0 / s).to(module.weight.dtype))
 

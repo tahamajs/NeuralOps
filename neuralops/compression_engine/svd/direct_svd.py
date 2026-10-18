@@ -23,8 +23,6 @@ from neuralops.utils.compat import get_dynamic_compression_rank, should_compress
 logger = logging.getLogger(__name__)
 
 
-
-
 _ATTN_NAMES = {
     "q_proj",
     "k_proj",
@@ -259,15 +257,10 @@ class DirectSVDCompressor(BaseCompressor):
         if self.rank_ratio is not None:
             r = int(round(min(in_f, out_f) * max(0.01, min(0.99, self.rank_ratio))))
         elif target_r is not None:
-            # Use explicit rank directly without architecture scaling.
-            # ref_dim scaling only applies to the default rank=32 fallback so that
-            # large models get proportionally larger ranks. An explicitly requested
-            # rank (e.g. rank=4 for a 64×128 test layer) must be honoured as-is.
             r = int(target_r)
         else:
             r = int(round(32 * (min(in_f, out_f) / ref_dim)))
 
-        # Dynamic architecture-aware rank selection for large models
         r = get_dynamic_compression_rank(
             in_f,
             out_f,
@@ -275,12 +268,9 @@ class DirectSVDCompressor(BaseCompressor):
             default_rank=r,
             comp_config=getattr(self, "cfg", None),
         )
-        # Only enforce min_rank floor when using default/ratio-based rank selection.
-        # When the caller passes an explicit target_r, honour it as requested.
         if target_r is None and self.rank_ratio is None:
             r = max(self.min_rank, r)
         return max(1, min(r, max_r))
-
 
     def compress_linear(
         self,
@@ -298,10 +288,10 @@ class DirectSVDCompressor(BaseCompressor):
 
         if is_conv1d:
             in_f, out_f = raw_w.shape[0], raw_w.shape[1]
-            W = raw_w.t().contiguous().float()  # [out_features, in_features]
+            W = raw_w.t().contiguous().float()
         else:
             out_f, in_f = raw_w.shape[0], raw_w.shape[1]
-            W = raw_w.float()  # [out_features, in_features]
+            W = raw_w.float()
 
         max_reduction_r = max(1, (in_f * out_f) // (in_f + out_f) - 1)
         max_r = max(1, min(in_f - 1, out_f - 1, max_reduction_r))
@@ -322,7 +312,6 @@ class DirectSVDCompressor(BaseCompressor):
         best_err = 1.0
         chosen_r = current_r
 
-        # Retry with higher rank if error exceeds threshold
         for attempt in range(self.max_retries + 1):
             r = max(1, min(current_r, max_r))
             sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
@@ -344,7 +333,6 @@ class DirectSVDCompressor(BaseCompressor):
             best_err = err
             chosen_r = r
 
-            # Determine LoRA parameters to preserve or initialize
             eff_lora_r = self.lora_r
             eff_lora_alpha = self.lora_alpha
             if hasattr(layer, "lora_A") and hasattr(layer, "r"):
@@ -366,7 +354,6 @@ class DirectSVDCompressor(BaseCompressor):
             if target_mod.bias is not None and svd_layer.bias is not None:
                 svd_layer.bias.data.copy_(target_mod.bias.data)
 
-            # If the original layer was a LoRALinear wrapper, copy over existing adapter weights
             if (
                 hasattr(layer, "lora_A")
                 and hasattr(layer, "lora_B")
@@ -421,7 +408,6 @@ class DirectSVDCompressor(BaseCompressor):
             logger.warning("DirectSVD: No compressible linear layers found.")
             return self.model, self.get_compression_stats()
 
-        # If HNC continuation is requested and probe inputs are provided, pre-compress singular tail in null space
         hnc_factors_dict = {}
         if self.use_hnc_continuation and self.probe_inputs is not None:
             try:
@@ -443,7 +429,6 @@ class DirectSVDCompressor(BaseCompressor):
             except Exception as e_hnc:
                 logger.warning("DirectSVD: HNC Null Space Continuation skipped due to: %s", e_hnc)
 
-        # Handle freezing of non-target layers when target_attention_only=True
         if self.target_attention_only:
             for name, module in list(self.model.named_modules()):
                 target_mod = getattr(module, "base_layer", module)
@@ -478,7 +463,6 @@ class DirectSVDCompressor(BaseCompressor):
             total_orig_decomp_params += orig_params
 
             if name in hnc_factors_dict:
-                # Use the exact restored low-rank factors from HNC
                 A_hnc, B_hnc = hnc_factors_dict[name]
                 r_hnc = A_hnc.shape[1]
                 svd_layer = SVDLinear(
@@ -526,14 +510,12 @@ class DirectSVDCompressor(BaseCompressor):
             self.compressed_layers.append(name)
             total_comp_decomp_params += r * (in_f + out_f)
 
-
         if not self.compressed_layers:
             raise RuntimeError(
                 f"DirectSVD failed to replace any modules. All {len(target_layers)} candidate layers "
                 f"either exceeded error threshold {self.max_error} with fallback enabled, or failed decomposition."
             )
 
-        # Post-compression forward sanity check
         forward_check_success = False
         try:
             self.model.eval()
@@ -686,7 +668,6 @@ def merge_for_inference(
 
     for name, module in list(model.named_modules()):
         for child_name, child in list(module.named_children()):
-            # 1. PiSSALinear
             if hasattr(child, "merge_and_unload") and callable(child.merge_and_unload):
                 child_rank = getattr(child, "rank", 0)
                 if rank_threshold is None or child_rank >= rank_threshold:
@@ -695,7 +676,6 @@ def merge_for_inference(
                     merged_count += 1
                 continue
 
-            # 2. SVDLinear (from aa_svd_compressor or svd_linear)
             cls_name = child.__class__.__name__
             if cls_name in ("SVDLinear", "SVDLinearLayer"):
                 child_rank = getattr(child, "rank", 0)
@@ -705,7 +685,6 @@ def merge_for_inference(
                 in_f = getattr(child, "in_features", None)
                 out_f = getattr(child, "out_features", None)
 
-                # Compute full fused weight matrix W = U @ V + (lora_B @ lora_A * scale)
                 with torch.no_grad():
                     if hasattr(child, "get_weight"):
                         w_dense = child.get_weight()
@@ -808,7 +787,7 @@ class SVDLLMv2Compressor(BaseCompressor):
                 else:
                     out = self.model(batch)
                 logits = out.logits if hasattr(out, "logits") else (out[0] if isinstance(out, tuple) else out)
-                loss = torch.mean(logits ** 2) * 1e-3  # Smooth proxy regularization
+                loss = torch.mean(logits ** 2) * 1e-3
                 loss.backward()
                 optimizer.step()
                 total_loss += loss.item()
@@ -837,5 +816,3 @@ __all__ = [
     "direct_svd_compressor_factory",
     "merge_for_inference",
 ]
-
-

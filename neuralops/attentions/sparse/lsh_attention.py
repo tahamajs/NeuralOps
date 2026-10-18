@@ -38,11 +38,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 logger = logging.getLogger(__name__)
 
 
-# ===========================================================================
-# Main LSH attention
-# ===========================================================================
-
-
 @ATTENTION_REGISTRY.register("lsh_attention", supports_causal=True, supports_gqa=True)
 class LSHAttention(BaseAttention):
     """LSHAttention neural operator.
@@ -73,16 +68,13 @@ class LSHAttention(BaseAttention):
     ) -> None:
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
 
-        # LSH-02: robust super().__init__
         try:
             super().__init__(config, rank)
         except TypeError:
             super().__init__(config)
 
-        # LSH-10: set self.config explicitly
         self.config = config
 
-        # LSH-03, LSH-13: robust dimension detection (independent of ModelAdapter)
         hidden_size = self._detect_hidden_size(config, source_attn, kwargs)
         num_heads = self._detect_num_heads(config, source_attn, kwargs, hidden_size)
         num_kv_heads = self._detect_num_kv_heads(config, source_attn, kwargs, num_heads)
@@ -96,19 +88,16 @@ class LSHAttention(BaseAttention):
         self.kv_head_size = self.num_kv_heads * self.head_dim
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
 
-        # LSH-11: clamp num_buckets
         self.rounds = max(1, int(getattr(config, "lsh_rounds", rounds) if config else rounds))
         self.num_buckets = max(
             2,
             int(getattr(config, "lsh_buckets", num_buckets) if config else num_buckets),
         )
 
-        # Decoder detection
         self.is_decoder = _detect_decoder(config, is_decoder, source_attn)
         self.is_causal = self.is_decoder
         self.is_nested_encoder = False
 
-        # LoRA config
         self.lora_rank = int(
             (getattr(config, "lora_rank", None) if config else None)
             or (getattr(comp_config, "lora_rank", None) if comp_config else None)
@@ -120,14 +109,12 @@ class LSHAttention(BaseAttention):
             or lora_alpha
         )
 
-        # LSH-08: projection rank
         self.proj_rank = int(
             kwargs.get("proj_rank")
             or (getattr(comp_config, "proj_rank", None) if comp_config else None)
             or (rank if rank is not None else 64)
         )
 
-        # FactorizedLoRALinear projections
         FF = FactorizedLoRALinear
         self.query = FF(
             self.hidden_size,
@@ -177,20 +164,14 @@ class LSHAttention(BaseAttention):
         )
         self.dropout = nn.Dropout(dropout_p)
 
-        # LSH-14: per-round random hyperplane projection, normalized per column
-        # Shape: (rounds, head_dim, num_buckets // 2)
         half_buckets = max(1, self.num_buckets // 2)
         proj_data = torch.randn(self.rounds, self.head_dim, half_buckets)
-        # Normalize each hyperplane (column) to unit L2 norm
         proj_data = F.normalize(proj_data, p=2, dim=1)
         self.register_buffer("proj_matrices", proj_data, persistent=False)
 
         if source_attn is not None:
             self.copy_weights(source_attn)
 
-    # ------------------------------------------------------------------
-    # LSH-13: dimension detection
-    # ------------------------------------------------------------------
     @staticmethod
     def _detect_hidden_size(config: Any, src: nn.Module | None, kwargs: dict[str, Any]) -> int:
         for k in ("hidden_size", "d_model", "n_embd", "dim"):
@@ -278,9 +259,6 @@ class LSHAttention(BaseAttention):
                         pass
         return max(1, hidden_size // max(1, num_heads))
 
-    # ------------------------------------------------------------------
-    # SVD init
-    # ------------------------------------------------------------------
     @staticmethod
     def _svd_init(w: torch.Tensor, b: torch.Tensor | None, proj: FactorizedLoRALinear) -> None:
         with torch.no_grad():
@@ -315,9 +293,6 @@ class LSHAttention(BaseAttention):
             elif proj.up.bias is not None:
                 proj.up.bias.data.zero_()
 
-    # ------------------------------------------------------------------
-    # LSH-07: copy_weights raises on missing
-    # ------------------------------------------------------------------
     def copy_weights(self, src: Any) -> None:
         if src is None:
             return
@@ -355,7 +330,6 @@ class LSHAttention(BaseAttention):
             "o": (None, None),
         }
 
-        # Try UniversalAdapter first
         try:
             from neuralops.core.adapters import UniversalAdapter
 
@@ -369,7 +343,6 @@ class LSHAttention(BaseAttention):
         except Exception:
             pass
 
-        # 1. GPT-2 fused c_attn
         if (
             hasattr(src, "c_attn")
             and src.c_attn is not None
@@ -422,7 +395,6 @@ class LSHAttention(BaseAttention):
                         bias_o.data.clone() if bias_o is not None else None,
                     )
 
-        # 2. BERT / RoBERTa nested
         elif (
             hasattr(src, "self")
             and hasattr(src.self, "query")
@@ -443,7 +415,6 @@ class LSHAttention(BaseAttention):
                 dense = src.output.dense
                 extracted["o"] = (dense.weight.data, getattr(dense, "bias", None))
 
-        # 3. Flat modules (DistilBERT, Qwen, LLaMA)
         else:
             named_map = {
                 "q": ["q_proj", "q_lin", "query"],
@@ -529,7 +500,6 @@ class LSHAttention(BaseAttention):
                 )
                 self._svd_init(eye, None, self.out_proj)
 
-            # Norm verification
             for name, mod in (
                 ("query", self.query),
                 ("key", self.key),
@@ -550,7 +520,6 @@ class LSHAttention(BaseAttention):
             for mod in (self.query, self.key, self.value, self.out_proj):
                 mod.freeze_base_weights()
 
-        # Forward sanity check
         try:
             with torch.no_grad():
                 d = next(self.parameters()).device
@@ -560,9 +529,6 @@ class LSHAttention(BaseAttention):
         except Exception as e:
             logger.debug("LSHAttention forward sanity check warning: %s", e)
 
-    # ------------------------------------------------------------------
-    # LSH hashing
-    # ------------------------------------------------------------------
     def _hash(self, vectors: torch.Tensor, proj: torch.Tensor) -> torch.Tensor:
         """
         Hash vectors via random hyperplane sign pattern.
@@ -578,15 +544,12 @@ class LSHAttention(BaseAttention):
         except Exception:
             return fused_lsh_hash_and_bin_pytorch(vectors, proj, self.num_buckets)
 
-    # ------------------------------------------------------------------
-    # LSH-09: chunked LSH attention
-    # ------------------------------------------------------------------
     def _lsh_attention_chunked(
         self,
-        Q: torch.Tensor,  # (B, H, N, d)
-        K: torch.Tensor,  # (B, H, N, d)
-        V: torch.Tensor,  # (B, H, N, d)
-        valid_mask: torch.Tensor | None,  # (B, N) bool
+        Q: torch.Tensor,
+        K: torch.Tensor,
+        V: torch.Tensor,
+        valid_mask: torch.Tensor | None,
     ) -> tuple[torch.Tensor, torch.Tensor | None]:
         """
         Chunked LSH attention. For each round, compute per-query chunk attention
@@ -605,24 +568,21 @@ class LSHAttention(BaseAttention):
 
         for r in range(rounds_eff):
             proj_r = self.proj_matrices[r].to(device=device, dtype=dtype)
-            q_hash = self._hash(Q, proj_r)  # (B, H, N)
+            q_hash = self._hash(Q, proj_r)
             k_hash = self._hash(K, proj_r)
 
             for c in range(num_chunks):
                 c_start = c * chunk_size
                 c_end = min(c_start + chunk_size, N)
-                Qc = Q[:, :, c_start:c_end]  # (B, H, C, d)
-                hq_c = q_hash[:, :, c_start:c_end]  # (B, H, C)
+                Qc = Q[:, :, c_start:c_end]
+                hq_c = q_hash[:, :, c_start:c_end]
 
-                # bucket match: (B, H, C, N)
                 bucket_match = hq_c.unsqueeze(-1) == k_hash.unsqueeze(-2)
 
-                # Mask padding keys
                 if valid_mask is not None:
-                    kv_mask = valid_mask[:, None, None, :]  # (B, 1, 1, N)
+                    kv_mask = valid_mask[:, None, None, :]
                     bucket_match = bucket_match & kv_mask
 
-                # scores: (B, H, C, N)
                 scores_c = (
                     torch.matmul(Qc.float(), K.float().transpose(-2, -1).contiguous()) * scale
                 )
@@ -639,9 +599,6 @@ class LSHAttention(BaseAttention):
         accum = accum / float(rounds_eff)
         return accum, None
 
-    # ------------------------------------------------------------------
-    # Forward
-    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -658,7 +615,6 @@ class LSHAttention(BaseAttention):
         *args: Any,
         **kwargs: Any,
     ) -> tuple[torch.Tensor, torch.Tensor | None]:
-        # Handle key_value_states via kwargs
         key_value_states = kwargs.get("key_value_states", encoder_hidden_states)
         is_cross = key_value_states is not None
         kv_input = key_value_states if is_cross else hidden_states
@@ -673,7 +629,6 @@ class LSHAttention(BaseAttention):
         K = self.key(kv_input).view(B, N_k, self.num_kv_heads, d).transpose(1, 2).contiguous()
         V = self.value(kv_input).view(B, N_k, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
-        # RoPE with past_len offset
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None and not is_cross:
@@ -689,12 +644,10 @@ class LSHAttention(BaseAttention):
                 sin = sin[..., past_len : past_len + N_q, :]
             Q, K = apply_rotary_pos_emb(Q, K, cos, sin)
 
-        # GQA
         if self.kv_repeat > 1:
             K = repeat_kv(K, self.kv_repeat)
             V = repeat_kv(V, self.kv_repeat)
 
-        # Valid mask
         eff_mask = encoder_attention_mask if is_cross else attention_mask
         valid_mask = None
         if eff_mask is not None:
@@ -714,7 +667,6 @@ class LSHAttention(BaseAttention):
                     v = eff_mask > 0
                 valid_mask = v.any(dim=-2).squeeze(1)
 
-        # LSH-15: decoders fall back to exact attention (LSH doesn't naturally support causal)
         use_exact = self.is_decoder or is_cross or N_q <= self.num_buckets
 
         if use_exact:
@@ -751,10 +703,8 @@ class LSHAttention(BaseAttention):
             context = torch.matmul(attn, V)
             attn_ret = attn if output_attentions else None
         else:
-            # LSH-09: chunked LSH attention
             context, _ = self._lsh_attention_chunked(Q, K, V, valid_mask)
             attn_ret = None
-            # Note: LSH path does not produce a single interpretable attention matrix.
 
         context = context.transpose(1, 2).contiguous().view(B, N_q, self.all_head_size)
         context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
@@ -765,11 +715,6 @@ class LSHAttention(BaseAttention):
             out = self.out_proj(context)
 
         return out.to(dtype), attn_ret
-
-
-# ===========================================================================
-# Injection (LSH-04: recursion guard)
-# ===========================================================================
 
 
 def inject_lsh_attention(
@@ -795,7 +740,6 @@ def inject_lsh_attention(
 
     cfg = model_config if model_config is not None else getattr(target, "config", None)
 
-    # Whole-model traversal
     layer_list = None
     if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
         layer_list = target.distilbert.transformer.layer
@@ -845,7 +789,6 @@ def inject_lsh_attention(
                     src_attn = getattr(cand, "self", cand)
                     break
 
-        # Double-injection guard
         if isinstance(src_attn, LSHAttention) or "LSH" in src_attn.__class__.__name__:
             return None
 

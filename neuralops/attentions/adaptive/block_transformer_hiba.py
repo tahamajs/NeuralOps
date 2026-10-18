@@ -48,9 +48,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 logger = logging.getLogger(__name__)
 
 
-# ===========================================================================
-# BlockTransformerHIBA
-# ===========================================================================
 @ATTENTION_REGISTRY.register("block_transformer_hiba")
 class BlockTransformerHIBA(BaseAttention):
     """
@@ -94,7 +91,6 @@ class BlockTransformerHIBA(BaseAttention):
             )
         )
 
-        # ---- Dimensions ----
         self.dim: int = (
             kwargs.get("dim")
             or kwargs.get("hidden_size")
@@ -135,12 +131,10 @@ class BlockTransformerHIBA(BaseAttention):
         self.all_kv_head_size: int = self.num_kv_heads * self.head_dim
         self.kv_repeat: int = max(1, self.num_heads // max(1, self.num_kv_heads))
 
-        # ---- Block config ----
         self.block_size: int = max(8, int(block_size))
         self.top_k_inter: int = max(1, int(top_k_inter))
         self.rectification_interval: int = max(1, int(rectification_interval if rectification_interval is not None else 4))
 
-        # ---- Layer index ----
         resolved_layer_id = (
             layer_id
             if layer_id is not None
@@ -152,7 +146,6 @@ class BlockTransformerHIBA(BaseAttention):
         )
         self.layer_idx: int = int(resolved_layer_id)
 
-        # ---- LoRA ----
         self.lora_rank: int = int(
             getattr(
                 config,
@@ -169,7 +162,6 @@ class BlockTransformerHIBA(BaseAttention):
         )
         self.freeze_base: bool = self.lora_rank > 0
 
-        # ---- Decoder detection ----
         model_type = getattr(config, "model_type", "").lower() if config else ""
         is_dec = False
         if config is not None:
@@ -193,7 +185,6 @@ class BlockTransformerHIBA(BaseAttention):
         self.is_causal: bool = self.is_decoder
         self.is_nested_encoder: bool = False
 
-        # ---- Projections ----
         self.W_q = LoRALinear(
             self.dim,
             self.all_head_size,
@@ -244,9 +235,6 @@ class BlockTransformerHIBA(BaseAttention):
         if source_attn is not None:
             self.copy_weights(source_attn)
 
-    # ------------------------------------------------------------------
-    # Aliases
-    # ------------------------------------------------------------------
     @property
     def q_proj(self): return self.W_q
     @property
@@ -274,9 +262,6 @@ class BlockTransformerHIBA(BaseAttention):
     @property
     def c_proj(self): return self.out_proj
 
-    # ------------------------------------------------------------------
-    # Weight transfer
-    # ------------------------------------------------------------------
     def copy_weights(self, pretrained_attn: nn.Module) -> None:
         if pretrained_attn is None:
             return
@@ -320,7 +305,6 @@ class BlockTransformerHIBA(BaseAttention):
             "o": (None, None),
         }
 
-        # ---- 1. GPT-2 fused c_attn ----
         if hasattr(pretrained_attn, "c_attn") and pretrained_attn.c_attn is not None:
             c_attn_mod = pretrained_attn.c_attn
             if (
@@ -375,7 +359,6 @@ class BlockTransformerHIBA(BaseAttention):
                         bias_o.data.clone() if bias_o is not None else None,
                     )
 
-        # ---- 2. BERT / RoBERTa nested ----
         elif hasattr(pretrained_attn, "self") and hasattr(pretrained_attn.self, "query"):
             s = pretrained_attn.self
             for proj_key, sub_name in (
@@ -399,7 +382,6 @@ class BlockTransformerHIBA(BaseAttention):
                     out_mod.bias.data.clone() if out_mod.bias is not None else None,
                 )
 
-        # ---- 3. Flat projections ----
         else:
             proj_candidates = {
                 "q": ("q_lin", "q_proj", "query", "W_q"),
@@ -418,7 +400,6 @@ class BlockTransformerHIBA(BaseAttention):
                             )
                             break
 
-        # ---- 4. UniversalAdapter fallback ----
         missing = [
             k
             for k, (w, _) in extracted.items()
@@ -448,7 +429,6 @@ class BlockTransformerHIBA(BaseAttention):
                 cls_name,
             )
 
-        # ---- 5. Copy with shape-safe logic ----
         target_map = {
             "q": self.W_q,
             "k": self.W_k,
@@ -459,7 +439,6 @@ class BlockTransformerHIBA(BaseAttention):
         with torch.no_grad():
             for proj_key, target_mod in target_map.items():
                 if proj_key == "o" and self.is_nested_encoder:
-                    # Outer container handles output → use Identity
                     self.out_proj = nn.Identity()
                     continue
 
@@ -497,7 +476,6 @@ class BlockTransformerHIBA(BaseAttention):
                 elif target_mod.bias is not None:
                     nn.init.zeros_(target_mod.bias)
 
-                # Frobenius verification
                 w_norm = float(torch.linalg.norm(target_mod.weight.data.float()).item())
                 if w_norm < 1e-4:
                     logger.warning(
@@ -509,9 +487,6 @@ class BlockTransformerHIBA(BaseAttention):
                 if self.freeze_base:
                     target_mod.freeze_base_weights()
 
-    # ------------------------------------------------------------------
-    # [HIBA-FIX-07] Mask normalization
-    # ------------------------------------------------------------------
     @staticmethod
     def _convert_mask_to_bool(
         attention_mask: torch.Tensor | None,
@@ -546,9 +521,6 @@ class BlockTransformerHIBA(BaseAttention):
 
         return torch.ones(B, L, device=device, dtype=torch.bool)
 
-    # ------------------------------------------------------------------
-    # [HIBA-FIX-01, 02, 03, 05] Combined intra + inter scores → single softmax
-    # ------------------------------------------------------------------
     def _hierarchical_attention(
         self,
         q: torch.Tensor,
@@ -576,7 +548,6 @@ class BlockTransformerHIBA(BaseAttention):
         scale = 1.0 / math.sqrt(D)
         is_causal = self.is_decoder and not is_cross
 
-        # ---- Pad to full blocks ----
         num_blocks = (L + bs - 1) // bs
         pad = num_blocks * bs - L
 
@@ -590,14 +561,11 @@ class BlockTransformerHIBA(BaseAttention):
 
         L_pad = num_blocks * bs
 
-        # Reshape into blocks: (B, H, num_blocks, bs, D)
         q_blk = q_p.view(B, H, num_blocks, bs, D)
         k_blk = k_p.view(B, H, num_blocks, bs, D)
         v_blk = v_p.view(B, H, num_blocks, bs, D)
-        valid_blk = valid_p.view(B, num_blocks, bs)  # (B, NB, bs)
+        valid_blk = valid_p.view(B, num_blocks, bs)
 
-        # ---- [HIBA-FIX-02] Vectorized intra-block scores ----
-        # (B, H, NB, bs, bs)
         if q_blk.is_cuda and k_blk.is_cuda:
             try:
                 from neuralops.core.triton_kernels.block_sparse import block_sparse_triton
@@ -608,7 +576,6 @@ class BlockTransformerHIBA(BaseAttention):
             intra_scores = torch.matmul(q_blk, k_blk.transpose(-1, -2)) * scale
 
         if is_causal:
-            # Causal within block
             causal_in_blk = torch.tril(
                 torch.ones(bs, bs, device=q.device, dtype=torch.bool)
             )
@@ -616,14 +583,10 @@ class BlockTransformerHIBA(BaseAttention):
                 ~causal_in_blk.view(1, 1, 1, bs, bs), -1e4
             )
 
-        # Padding mask on K side
         if valid_blk is not None and not valid_blk.all():
-            pad_k_intra = ~valid_blk.unsqueeze(1).unsqueeze(-2)  # (B, 1, NB, 1, bs)
+            pad_k_intra = ~valid_blk.unsqueeze(1).unsqueeze(-2)
             intra_scores = intra_scores.masked_fill(pad_k_intra, -1e4)
 
-        # ---- Inter-block: sparse top-k (per query block) ----
-        # Since top-k selection differs per query block, we loop over query blocks
-        # only for the INTER path. The INTRA path is fully vectorized above.
         inter_scores_list: list[torch.Tensor] = []
         inter_v_list: list[torch.Tensor] = []
 
@@ -631,9 +594,7 @@ class BlockTransformerHIBA(BaseAttention):
             start_b = b_idx * bs
             end_b = start_b + bs
 
-            # ---- Gather neighbor tokens (all except current block) ----
             if is_causal:
-                # For causal: only keys strictly BEFORE current block
                 if b_idx > 0:
                     k_nb = k_p[:, :, :start_b, :]
                     v_nb = v_p[:, :, :start_b, :]
@@ -643,7 +604,6 @@ class BlockTransformerHIBA(BaseAttention):
                     v_nb = None
                     valid_nb = None
             else:
-                # Bidirectional: all tokens outside current block
                 parts_k = []
                 parts_v = []
                 parts_m = []
@@ -666,7 +626,6 @@ class BlockTransformerHIBA(BaseAttention):
                     valid_nb = None
 
             if k_nb is None:
-                # No neighbors → empty inter block
                 inter_scores_list.append(
                     intra_scores.new_zeros(B, H, bs, 0)
                 )
@@ -674,19 +633,15 @@ class BlockTransformerHIBA(BaseAttention):
                 continue
 
             N_nb = k_nb.size(2)
-            q_b = q_blk[:, :, b_idx]  # (B, H, bs, D)
+            q_b = q_blk[:, :, b_idx]
 
-            # Raw scores: (B, H, bs, N_nb)
             nb_scores = torch.matmul(q_b, k_nb.transpose(-1, -2)) * scale
 
-            # Mask invalid neighbors
             if valid_nb is not None and not valid_nb.all():
-                pad_nb = ~valid_nb.unsqueeze(1).unsqueeze(2)  # (B, 1, 1, N_nb)
+                pad_nb = ~valid_nb.unsqueeze(1).unsqueeze(2)
                 nb_scores = nb_scores.masked_fill(pad_nb, -1e4)
 
-            # ---- Top-k selection ----
             k_keep = min(self.top_k_inter, N_nb)
-            # Force-include position 0 (CLS-like) for b_idx > 0
             score_for_topk = nb_scores
             if b_idx > 0:
                 score_for_topk = nb_scores.clone()
@@ -694,24 +649,17 @@ class BlockTransformerHIBA(BaseAttention):
 
             _, topk_idx = torch.topk(score_for_topk, k_keep, dim=-1)
 
-            # Gather selected scores and V (B, H, bs, k_keep) and (B, H, bs, k_keep, D)
             topk_scores = torch.gather(nb_scores, -1, topk_idx)
 
-            v_nb_expanded = v_nb.unsqueeze(2).expand(-1, -1, bs, -1, -1)  # (B,H,bs,N_nb,D)
+            v_nb_expanded = v_nb.unsqueeze(2).expand(-1, -1, bs, -1, -1)
             topk_v = torch.gather(
                 v_nb_expanded,
                 3,
                 topk_idx.unsqueeze(-1).expand(-1, -1, -1, -1, D),
-            )  # (B, H, bs, k_keep, D)
+            )
 
             inter_scores_list.append(topk_scores)
             inter_v_list.append(topk_v)
-
-        # ---- Concatenate inter scores per query block ----
-        # All inter_scores have shape (B, H, bs, k_keep) except empty ones with k=0
-        # We need to ensure they're all the same size or handle variable k
-        # Since k_keep can differ per block (only the last block might have fewer),
-        # we pad to a common k
 
         max_k = max(s.size(-1) for s in inter_scores_list)
         if max_k > 0:
@@ -722,28 +670,22 @@ class BlockTransformerHIBA(BaseAttention):
                 if k_actual < max_k:
                     pad_amount = max_k - k_actual
                     s = F.pad(s, (0, pad_amount), value=-1e4)
-                    vv = F.pad(vv, (0, 0, 0, pad_amount))  # pad along k dim
+                    vv = F.pad(vv, (0, 0, 0, pad_amount))
                 padded_inter_scores.append(s)
                 padded_inter_v.append(vv)
-            inter_scores_cat = torch.stack(padded_inter_scores, dim=2)  # (B,H,NB,bs,max_k)
-            inter_v_cat = torch.stack(padded_inter_v, dim=2)  # (B,H,NB,bs,max_k,D)
+            inter_scores_cat = torch.stack(padded_inter_scores, dim=2)
+            inter_v_cat = torch.stack(padded_inter_v, dim=2)
         else:
             inter_scores_cat = intra_scores.new_zeros(B, H, num_blocks, bs, 0)
             inter_v_cat = v_blk.unsqueeze(3).new_zeros(B, H, num_blocks, bs, 0, D)
 
-        # ---- [HIBA-FIX-01] Combine intra + inter into single attention ----
-        # all_scores: (B, H, NB, bs, bs + max_k)
         all_scores = torch.cat([intra_scores, inter_scores_cat], dim=-1)
 
-        # Combine V: intra (bs slots) + inter (max_k slots)
-        # v_blk is (B,H,NB,bs,D) -> expand to (B,H,NB,bs,bs,D) for per-query-token keys
         v_intra_expanded = v_blk.unsqueeze(3).expand(-1, -1, -1, bs, -1, -1)
-        all_v = torch.cat([v_intra_expanded, inter_v_cat], dim=4)  # (B,H,NB,bs,bs+max_k,D)
+        all_v = torch.cat([v_intra_expanded, inter_v_cat], dim=4)
 
-        # ---- [HIBA-FIX-05] Safe softmax (max-subtraction) in FP32 ----
         scores_f = all_scores.float()
         m = scores_f.amax(dim=-1, keepdim=True)
-        # Handle fully-masked rows
         m_safe = torch.where(
             m < -1e3, torch.zeros_like(m), m
         )
@@ -753,18 +695,15 @@ class BlockTransformerHIBA(BaseAttention):
 
         probs = self.dropout(probs)
 
-        # ---- head_mask ----
         if head_mask is not None:
             hm = head_mask
             if hm.dim() == 1:
-                # [H] → [1, H, 1, 1]
                 if hm.shape[0] != self.num_heads:
                     raise ValueError(
                         f"head_mask 1D has {hm.shape[0]} heads, expected {self.num_heads}"
                     )
                 hm = hm.view(1, -1, 1, 1)
             elif hm.dim() == 2:
-                # [B, H] → [B, H, 1, 1]
                 if hm.shape[-1] != self.num_heads:
                     raise ValueError(
                         f"head_mask 2D last dim = {hm.shape[-1]}, expected {self.num_heads}"
@@ -777,18 +716,13 @@ class BlockTransformerHIBA(BaseAttention):
                     )
                 hm = hm.unsqueeze(-1)
             head_mask = hm
-        # ---- Weighted sum ----
         out_blocks = torch.matmul(
             probs.unsqueeze(-2), all_v
-        ).squeeze(-2)  # (B, H, NB, bs, D)
+        ).squeeze(-2)
 
-        # ---- Reshape back to (B, H, L, D) ----
         out = out_blocks.reshape(B, H, L_pad, D)[:, :, :L, :]
         return out
 
-    # ------------------------------------------------------------------
-    # Forward
-    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -812,7 +746,6 @@ class BlockTransformerHIBA(BaseAttention):
         kv_states = encoder_hidden_states if is_cross_attention else hidden_states
         S = kv_states.shape[1]
 
-        # ---- Projections ----
         q = (
             self.W_q(hidden_states)
             .view(B, L, H, self.head_dim)
@@ -832,7 +765,6 @@ class BlockTransformerHIBA(BaseAttention):
             .contiguous()
         )
 
-        # ---- RoPE ----
         pos_emb = kwargs.get("position_embeddings")
         cos = kwargs.get(
             "cos",
@@ -863,12 +795,10 @@ class BlockTransformerHIBA(BaseAttention):
             except Exception as e:
                 logger.debug("HIBA rotary_emb failed: %s", e)
 
-        # ---- GQA ----
         if self.kv_repeat > 1:
             k = repeat_kv(k, self.kv_repeat)
             v = repeat_kv(v, self.kv_repeat)
 
-        # ---- head_mask prep ----
         if head_mask is not None:
             hm = head_mask
             if hm.dim() == 1:
@@ -879,11 +809,9 @@ class BlockTransformerHIBA(BaseAttention):
                 hm = hm.unsqueeze(-1)
             head_mask = hm
 
-        # ---- Validity mask ----
         active_mask = encoder_attention_mask if is_cross_attention else attention_mask
         valid_mask = self._convert_mask_to_bool(active_mask, B, S, hidden_states.device)
 
-        # ---- Decide path ----
         num_blocks = (L + self.block_size - 1) // self.block_size
         use_rectify = (
             (self.layer_idx % self.rectification_interval == 0)
@@ -899,7 +827,6 @@ class BlockTransformerHIBA(BaseAttention):
             is_causal_dense = self.is_decoder and not is_cross_attention and L > 1
 
             if not need_attn_or_hm:
-                # ─── Fast SDPA path (no head_mask, no attn output) ───
                 try:
                     attn_bias = None
                     if valid_mask is not None and not valid_mask.all():
@@ -936,10 +863,9 @@ class BlockTransformerHIBA(BaseAttention):
                     from neuralops.utils.logging_config import warn_once
                     warn_once("hiba_dense_sdpa", "HIBA dense SDPA failed, using manual fallback: %s", e)
 
-            # ─── Manual path (either head_mask given, attn needed, or SDPA failed) ───
             scale = 1.0 / math.sqrt(self.head_dim)
-            scores = torch.matmul(q, k.transpose(-2, -1)) * scale  # ضرب در فرمت اصلی (bfloat16/float16)
-            scores = scores.float() # فقط برای محاسبه امن Softmax به float32 کست شود
+            scores = torch.matmul(q, k.transpose(-2, -1)) * scale
+            scores = scores.float()
             if is_causal_dense:
                 causal_mask = torch.triu(
                     torch.full((L, S), float("-inf"), device=scores.device),
@@ -950,15 +876,12 @@ class BlockTransformerHIBA(BaseAttention):
             if valid_mask is not None and not valid_mask.all():
                 scores = scores.masked_fill(~valid_mask.unsqueeze(1).unsqueeze(2), -1e4)
 
-            # Safe softmax
-
             m = scores.amax(dim=-1, keepdim=True)
             m_safe = torch.where(m < -1e3, torch.zeros_like(m), m)
             exp_s = torch.exp((scores - m_safe).clamp(max=0.0))
             probs = (exp_s / exp_s.sum(dim=-1, keepdim=True).clamp(min=1e-9)).to(v.dtype)
             probs = self.dropout(probs)
 
-            # Apply head_mask (now hm has correct shape check upstream)
             if head_mask is not None:
                 probs = probs * head_mask
 
@@ -966,15 +889,11 @@ class BlockTransformerHIBA(BaseAttention):
             return_attn = probs if output_attentions else None
 
         else:
-            # ============================================================
-            # Hierarchical block path
-            # ============================================================
             out = self._hierarchical_attention(
                 q, k, v, valid_mask, head_mask, is_cross_attention
             )
             return_attn = None
 
-        # ---- Reshape + output projection ----
         out = out.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
         out = torch.nan_to_num(out, nan=0.0)
 
@@ -988,9 +907,6 @@ class BlockTransformerHIBA(BaseAttention):
 
         return final_out.to(hidden_states.dtype), return_attn 
 
-# ===========================================================================
-# Injection
-# ===========================================================================
 def inject_block_transformer_hiba(
     layer: Any = None,
     model: Any = None,
@@ -1002,7 +918,6 @@ def inject_block_transformer_hiba(
     _depth: int = 0,
     **kwargs: Any,
 ):
-    # [HIBA-FIX-10] Recursion guard
     if _depth > 8:
         logger.warning("inject_block_transformer_hiba: max recursion depth exceeded.")
         return None
@@ -1019,7 +934,6 @@ def inject_block_transformer_hiba(
         else getattr(target, "config", None)
     )
 
-    # ---- Whole-model traversal ----
     layer_list = None
     for path in (
         ("distilbert", "transformer", "layer"),
@@ -1062,7 +976,6 @@ def inject_block_transformer_hiba(
             target.compression_stats = {"num_compressed": num_injected}
         return target if num_injected > 0 else None
 
-    # ---- Single-layer injection ----
     src_attn = old_attn
     if src_attn is None:
         for attr in ("attention", "self_attn", "attn", "self"):
@@ -1079,7 +992,6 @@ def inject_block_transformer_hiba(
         )
         return None
 
-    # [HIBA-FIX-10] Idempotency guard
     if (
         isinstance(src_attn, BlockTransformerHIBA)
         or "BlockTransformerHIBA" in src_attn.__class__.__name__
@@ -1120,12 +1032,10 @@ def inject_block_transformer_hiba(
         logger.exception("BlockTransformerHIBA construction failed: %s", e)
         return None
 
-    # ---- Move to source device/dtype ----
     p = next(src_attn.parameters(), None)
     if p is not None:
         new_attn.to(device=p.device, dtype=p.dtype)
 
-    # ---- Splice ----
     spliced = False
     if hasattr(target, "attention"):
         if hasattr(target.attention, "self"):

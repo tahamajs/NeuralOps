@@ -28,9 +28,6 @@ from neuralops.utils.compat import should_compress_linear
 logger = logging.getLogger(__name__)
 
 
-# ===========================================================================
-# Bit packing helpers
-# ===========================================================================
 def _quantize_packed(t: torch.Tensor, bits: int) -> tuple[torch.Tensor, torch.Tensor, torch.Size]:
     """
     Symmetric per-tensor quantization with bit packing.
@@ -60,7 +57,6 @@ def _quantize_packed(t: torch.Tensor, bits: int) -> tuple[torch.Tensor, torch.Te
     scale = max_abs / float(qmax)
     q = torch.round(flat / scale).clamp(-qmax - 1, qmax).to(torch.int32)
 
-    # shift to unsigned
     offset = 1 << (bits - 1)
     q_unsigned = (q + offset).to(torch.int32)
 
@@ -101,15 +97,11 @@ def _dequantize_packed(
 
     offset = 1 << (bits - 1)
     q = out - offset
-    # trim padding
     total = int(torch.tensor(orig_shape).prod().item())
     q = q[:total]
     return (q.float() * scale).to(device=device, dtype=dtype).reshape(orig_shape)
 
 
-# ===========================================================================
-# Compressed linear layer
-# ===========================================================================
 class MLoRQLoRALinear(nn.Module):
     """
     Low-rank quantized linear layer:
@@ -119,7 +111,7 @@ class MLoRQLoRALinear(nn.Module):
     where U, S, Vt are stored as PACKED int8 tensors with per-tensor scales.
     """
 
-    is_custom_attention: bool = False  # MLR-FIX-01
+    is_custom_attention: bool = False
 
     def __init__(
         self,
@@ -200,7 +192,6 @@ class MLoRQLoRALinear(nn.Module):
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
 
-    # ------------------------------------------------------------------
     def _dequantize(self, dtype: torch.dtype, device: torch.device):
         U = _dequantize_packed(self.U_packed, self.bits, self.U_scale, self.U_shape, device, dtype)
         S = _dequantize_packed(self.S_packed, self.bits, self.S_scale, self.S_shape, device, dtype)
@@ -218,7 +209,6 @@ class MLoRQLoRALinear(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         U, S, Vt = self._dequantize(x.dtype, x.device)
-        # (B, in) @ (in, r) -> (B, r)
         x_v = F.linear(x, Vt)
         x_v = x_v * S
         out = F.linear(x_v, U)
@@ -263,7 +253,6 @@ class MLoRQLoRALinear(nn.Module):
         out_features = int(getattr(base_layer, "out_features", U.shape[0]))
         rank = int(min(U.shape[1], Vt.shape[0], S.numel()))
 
-        # quantize + pack
         U_packed, U_scale, U_shape = _quantize_packed(U, bits)
         S_packed, S_scale, S_shape = _quantize_packed(S, bits)
         Vt_packed, Vt_scale, Vt_shape = _quantize_packed(Vt, bits)
@@ -293,7 +282,6 @@ class MLoRQLoRALinear(nn.Module):
             dtype=U.dtype,
         )
 
-        # Preserve existing LoRA weights if present
         if (
             hasattr(linear, "lora_A")
             and hasattr(linear, "lora_B")
@@ -340,16 +328,13 @@ _ATTN_NAMES = {
 }
 
 
-# ===========================================================================
-# Compressor
-# ===========================================================================
 @COMPRESSOR_REGISTRY.register("mlorq_compressor")
 class MLoRQCompressor(BaseCompressor):
     """
     MLoRQ Compressor: Multi-Layer Optimal Rank and Quantization under Memory Budget.
     """
 
-    is_custom_attention: bool = False  # MLR-FIX-01
+    is_custom_attention: bool = False
 
     def __init__(
         self,
@@ -391,7 +376,7 @@ class MLoRQCompressor(BaseCompressor):
             target_attention_only = _cfg_get(cfg, "target_attention_only", target_attention_only)
             min_rank = _cfg_get(cfg, "min_rank", min_rank)
 
-        self.total_budget_bits = float(total_memory_budget_mb) * 8 * 1024 * 1024  # bits
+        self.total_budget_bits = float(total_memory_budget_mb) * 8 * 1024 * 1024
         self.bits_candidates = sorted(set(int(b) for b in (bits_candidates or [4, 8])))
         self.max_error = float(max_error)
         self.fallback_to_original = bool(fallback_to_original)
@@ -410,7 +395,6 @@ class MLoRQCompressor(BaseCompressor):
         self.layer_bits: dict[str, int] = {}
         self.stats: dict[str, Any] = {}
 
-    # ------------------------------------------------------------------
     def _is_gqa_asymmetric(self, name: str, module: nn.Module) -> bool:
         if not self.skip_attention_qkv:
             return False
@@ -479,7 +463,6 @@ class MLoRQCompressor(BaseCompressor):
             return True
         return any(t in name for t in self.target_modules)
 
-    # ------------------------------------------------------------------
     @staticmethod
     def _quantize_float(t: torch.Tensor, bits: int) -> torch.Tensor:
         """Non-packed quantization for error estimation."""
@@ -494,13 +477,11 @@ class MLoRQCompressor(BaseCompressor):
         scale = max_abs / float(qmax)
         return torch.round(tf / scale).clamp(-qmax - 1, qmax) * scale
 
-    # ------------------------------------------------------------------
     def _generate_candidates(self, W: torch.Tensor) -> list[dict[str, Any]]:
         """Generate (rank, bits, error, cost_bits, U, S, Vt) candidates for a weight."""
         out_f, in_f = W.shape
         max_rank = min(out_f, in_f)
 
-        # Randomized SVD for large matrices (MLR-FIX-09)
         q = min(max_rank + 10, max_rank)
         if W.numel() > 1_000_000:
             try:
@@ -511,7 +492,6 @@ class MLoRQCompressor(BaseCompressor):
         else:
             U, S, Vt = torch.linalg.svd(W.float(), full_matrices=False)
 
-        # Rank list (unique, <= max_rank)
         ranks = set()
         ranks.add(min(self.min_rank, max_rank))
         for frac in (8, 4, 2):
@@ -538,7 +518,6 @@ class MLoRQCompressor(BaseCompressor):
                 w_norm = torch.norm(W, p="fro").clamp_min(1e-12).item()
                 err = float((torch.norm(W - W_rec, p="fro") / w_norm).item())
 
-                # cost in bits for packed storage
                 cost_bits = (out_f * r + r * in_f + r) * bits
                 candidates.append(
                     {
@@ -554,7 +533,6 @@ class MLoRQCompressor(BaseCompressor):
         candidates.sort(key=lambda c: c["cost_bits"])
         return candidates
 
-    # ------------------------------------------------------------------
     def compress(self, **kwargs: Any) -> tuple[nn.Module, dict[str, Any]]:
         self.compressed_layers = []
         self.fallback_layers = []
@@ -564,7 +542,6 @@ class MLoRQCompressor(BaseCompressor):
         self.layer_bits = {}
         seen_weights: set[int] = set()
 
-        # ---------- 1. Collect target layers ----------
         layer_infos: list[dict[str, Any]] = []
         total_orig_bits = 0
 
@@ -611,28 +588,23 @@ class MLoRQCompressor(BaseCompressor):
             self.stats = stats
             return self.model, stats
 
-        # ---------- 2. Generate candidates ----------
         for info in layer_infos:
             cands = self._generate_candidates(info["W"])
-            # Filter by max_error
             valid = [c for c in cands if c["error"] <= self.max_error]
             if not valid:
-                # fallback original
                 info["candidates"] = []
                 info["chosen"] = None
                 info["current_cost"] = info["orig_bits"]
                 info["current_error"] = 0.0
             else:
                 info["candidates"] = valid
-                info["chosen"] = valid[0]  # cheapest valid
+                info["chosen"] = valid[0]
                 info["current_cost"] = valid[0]["cost_bits"]
                 info["current_error"] = valid[0]["error"]
 
-        # ---------- 3. Greedy budget allocation (MLR-FIX-04) ----------
         total_cost = sum(info["current_cost"] for info in layer_infos)
         budget = self.total_budget_bits
 
-        # Downgrade if over budget
         while total_cost > budget:
             best_info = None
             best_ratio = float("inf")
@@ -640,12 +612,9 @@ class MLoRQCompressor(BaseCompressor):
             for info in layer_infos:
                 if info["chosen"] is None:
                     continue
-                # find cheaper candidate than current
                 cheaper = [c for c in info["candidates"] if c["cost_bits"] < info["current_cost"]]
                 if not cheaper:
                     continue
-                # choose the cheapest cheaper candidate? Actually we want the one with smallest error increase per bit saved.
-                # We can evaluate each cheaper candidate, but for simplicity pick the next cheaper (max cost < current).
                 next_cheaper = max(cheaper, key=lambda c: c["cost_bits"])
                 delta_cost = info["current_cost"] - next_cheaper["cost_bits"]
                 delta_err = next_cheaper["error"] - info["current_error"]
@@ -658,13 +627,11 @@ class MLoRQCompressor(BaseCompressor):
                     best_new = next_cheaper
             if best_info is None:
                 break
-            # apply downgrade
             best_info["chosen"] = best_new
             best_info["current_cost"] = best_new["cost_bits"]
             best_info["current_error"] = best_new["error"]
             total_cost = sum(info["current_cost"] for info in layer_infos)
 
-        # Upgrade if under budget
         while total_cost < budget:
             best_info = None
             best_ratio = -1.0
@@ -672,7 +639,6 @@ class MLoRQCompressor(BaseCompressor):
             for info in layer_infos:
                 if info["chosen"] is None:
                     continue
-                # find more expensive candidate
                 more = [c for c in info["candidates"] if c["cost_bits"] > info["current_cost"]]
                 if not more:
                     continue
@@ -695,7 +661,6 @@ class MLoRQCompressor(BaseCompressor):
             best_info["current_error"] = best_new["error"]
             total_cost = sum(info["current_cost"] for info in layer_infos)
 
-        # ---------- 4. Apply chosen candidates ----------
         total_comp_bytes = 0
         for info in layer_infos:
             name = info["name"]
@@ -703,7 +668,6 @@ class MLoRQCompressor(BaseCompressor):
             chosen = info["chosen"]
 
             if chosen is None:
-                # fallback original
                 self.fallback_layers.append(name)
                 total_comp_bytes += info["orig_bits"] // 8
                 continue
@@ -718,7 +682,6 @@ class MLoRQCompressor(BaseCompressor):
                     lora_r=self.lora_r,
                     lora_alpha=self.lora_alpha,
                 )
-                # MLR-FIX-05: preserve wrapper
                 if hasattr(module, "base_layer"):
                     module.base_layer = new_layer
                 else:
@@ -734,7 +697,6 @@ class MLoRQCompressor(BaseCompressor):
                 self.fallback_layers.append(name)
                 total_comp_bytes += info["orig_bits"] // 8
 
-        # ---------- 5. Forward sanity check (MLR-FIX-06) ----------
         forward_check_success = True
         try:
             with torch.no_grad():
@@ -761,7 +723,6 @@ class MLoRQCompressor(BaseCompressor):
             logger.warning("MLoRQ forward sanity check failed: %s", e)
             forward_check_success = False
 
-        # ---------- 6. Stats ----------
         try:
             self._compressed_params = self._count_params(self.model)
         except Exception:
@@ -809,9 +770,6 @@ class MLoRQCompressor(BaseCompressor):
         return self.model, stats
 
 
-# ===========================================================================
-# Factory
-# ===========================================================================
 def mlorq_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     total_budget_mb = kwargs.pop(
         "total_memory_budget_mb",

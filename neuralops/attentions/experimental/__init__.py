@@ -16,5 +16,4 @@ try:
 except Exception:
     pass
 
-# Auto-wired submodules
 from neuralops.attentions.experimental import template_attention

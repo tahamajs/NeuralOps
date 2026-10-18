@@ -31,13 +31,6 @@ from neuralops.utils.model_family import ModelAdapter
 logger = logging.getLogger(__name__)
 
 
-
-
-# =============================================================================
-# WGQA
-# =============================================================================
-
-
 @ATTENTION_REGISTRY.register(
     "wgqa_attention",
     supports_causal=True,
@@ -92,7 +85,6 @@ class WeightedGroupedQueryAttention(BaseAttention):
             self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
             self.is_decoder = bool(_cfg_get(config, "is_decoder", kwargs.get("is_decoder", False)))
 
-        # Prioritize explicit kwargs
         if "hidden_size" in kwargs:
             self.hidden_size = kwargs["hidden_size"]
             self.head_dim = self.hidden_size // max(1, self.num_heads)
@@ -104,9 +96,6 @@ class WeightedGroupedQueryAttention(BaseAttention):
             self.all_head_size = self.num_heads * self.head_dim
             self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
 
-        # ==================================================================
-        # KV head resolution: compress KV heads when converting MHA -> WGQA
-        # ==================================================================
         resolved_kv_heads = None
         if num_kv_heads is not None:
             resolved_kv_heads = int(num_kv_heads)
@@ -120,7 +109,6 @@ class WeightedGroupedQueryAttention(BaseAttention):
             if kwargs_kv is not None:
                 resolved_kv_heads = int(kwargs_kv)
 
-        # Default GQA compression: compress KV heads (max(1, num_heads // 4)) if not specified or equals full heads
         if resolved_kv_heads is None or resolved_kv_heads >= self.num_heads:
             resolved_kv_heads = max(1, self.num_heads // 4)
 
@@ -168,7 +156,6 @@ class WeightedGroupedQueryAttention(BaseAttention):
             freeze_base=True,
         )
 
-        # Learnable per-KV-head importance weights
         self.lora_k_weights = nn.Parameter(torch.zeros(self.num_kv_heads, 1))
         self.lora_v_weights = nn.Parameter(torch.zeros(self.num_kv_heads, 1))
         dropout_p = _cfg_get(
@@ -183,15 +170,11 @@ class WeightedGroupedQueryAttention(BaseAttention):
         self.dropout = nn.Dropout(dropout_p)
         self.rotary_emb = getattr(src_attn, "rotary_emb", None)
 
-        # Layer index for cache (set by injector)
         self.layer_idx: int = int(kwargs.get("layer_idx", 0))
 
         if src_attn is not None:
             self.copy_weights(src_attn)
 
-    # ------------------------------------------------------------------
-    # Aliases
-    # ------------------------------------------------------------------
     @property
     def W_q(self): return self.q_proj
     @property
@@ -225,9 +208,6 @@ class WeightedGroupedQueryAttention(BaseAttention):
     @property
     def v_weights(self): return self.lora_v_weights
 
-    # ------------------------------------------------------------------
-    # KV-Cache helpers  (FIX 2)
-    # ------------------------------------------------------------------
     _read_past_kv = staticmethod(_read_past_kv)
 
     @staticmethod
@@ -257,15 +237,11 @@ class WeightedGroupedQueryAttention(BaseAttention):
 
         return (k, v)
 
-    # ------------------------------------------------------------------
-    # copy_weights
-    # ------------------------------------------------------------------
     def copy_weights(self, src: Any) -> None:
         extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
             "q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None),
         }
 
-        # 1. UniversalAdapter
         for proj in ["q", "k", "v", "o"]:
             try:
                 w, b = UniversalAdapter.get_weight_bias(src, proj)
@@ -274,7 +250,6 @@ class WeightedGroupedQueryAttention(BaseAttention):
             except Exception:
                 pass
 
-        # 2. GPT-2 c_attn Conv1D
         if hasattr(src, "c_attn") and (
             extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None
         ):
@@ -317,7 +292,6 @@ class WeightedGroupedQueryAttention(BaseAttention):
                 b_o = getattr(base_o, "bias", getattr(p_mod, "bias", None))
                 extracted["o"] = (w_o, b_o.data.clone() if b_o is not None else None)
 
-        # 3. Nested BERT/RoBERTa
         if hasattr(src, "self") and (
             extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None
         ):
@@ -330,7 +304,6 @@ class WeightedGroupedQueryAttention(BaseAttention):
             d = src.output.dense
             extracted["o"] = (d.weight.data, getattr(d, "bias", None))
 
-        # 4. Named mappings
         named_map = {
             "q": ["q_proj", "q_lin", "query", "W_q"],
             "k": ["k_proj", "k_lin", "key", "W_k"],
@@ -346,7 +319,6 @@ class WeightedGroupedQueryAttention(BaseAttention):
                             extracted[proj] = (layer.weight.data, getattr(layer, "bias", None))
                             break
 
-        # Nested encoder detection
         cls_name = getattr(src, "__class__", type(src)).__name__
         has_out = any(hasattr(src, a) for a in ("dense", "out_proj", "out_lin", "c_proj", "o_proj"))
         is_nested = False
@@ -369,7 +341,6 @@ class WeightedGroupedQueryAttention(BaseAttention):
             return w
 
         with torch.no_grad():
-            # Q
             w_q, b_q = extracted["q"]
             if w_q is not None:
                 w_q = _orient(w_q, self.hidden_size)
@@ -381,7 +352,6 @@ class WeightedGroupedQueryAttention(BaseAttention):
                     n = min(len(self.q_proj.bias), len(bv))
                     self.q_proj.bias.data[:n].copy_(bv[:n])
 
-            # K with mean pooling if needed
             w_k, b_k = extracted["k"]
             if w_k is not None:
                 w_k = _orient(w_k, self.hidden_size)
@@ -405,7 +375,6 @@ class WeightedGroupedQueryAttention(BaseAttention):
                         n = min(len(self.k_proj.bias), len(b_k_p))
                         self.k_proj.bias.data[:n].copy_(b_k_p[:n])
 
-            # V with mean pooling
             w_v, b_v = extracted["v"]
             if w_v is not None:
                 w_v = _orient(w_v, self.hidden_size)
@@ -429,7 +398,6 @@ class WeightedGroupedQueryAttention(BaseAttention):
                         n = min(len(self.v_proj.bias), len(b_v_p))
                         self.v_proj.bias.data[:n].copy_(b_v_p[:n])
 
-            # O
             w_o, b_o = extracted["o"]
             if w_o is not None and not self.is_nested_encoder:
                 w_o = _orient(w_o, self.all_head_size)
@@ -450,7 +418,6 @@ class WeightedGroupedQueryAttention(BaseAttention):
             for t in (self.q_proj, self.k_proj, self.v_proj, self.out_proj):
                 t.freeze_base_weights()
 
-        # Preserve source LoRA if present
         source_submodules = {
             "q": ["q_proj", "q_lin", "query", "W_q"],
             "k": ["k_proj", "k_lin", "key", "W_k"],
@@ -481,9 +448,6 @@ class WeightedGroupedQueryAttention(BaseAttention):
         if hasattr(src, "is_decoder"):
             self.is_decoder = bool(src.is_decoder)
 
-    # ------------------------------------------------------------------
-    # Forward
-    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -508,16 +472,10 @@ class WeightedGroupedQueryAttention(BaseAttention):
         device = hidden_states.device
         dtype = hidden_states.dtype
 
-        # -------- Projections --------
         Q = self.q_proj(hidden_states).view(B, N_q, H, d).transpose(1, 2).contiguous()
         K_new = self.k_proj(kv_input).view(B, N_k_new, self.num_kv_heads, d).transpose(1, 2).contiguous()
         V_new = self.v_proj(kv_input).view(B, N_k_new, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
-        # -------- [FIX] Softmax-Normalized Importance Weighting (Budget Conserving) --------
-        # Softmax normalization over the num_kv_heads dimension scaled by num_kv_heads
-        # ensures that sum(scale) == num_kv_heads and mean(scale) == 1.0 exactly.
-        # At initialization (zeros), softmax(0) * H_kv == 1.0 exactly.
-        # This completely eliminates logit temperature drift and PPL regression.
         if not hasattr(self, "lora_k_weights") or self.lora_k_weights is None:
             self.lora_k_weights = nn.Parameter(torch.zeros(self.num_kv_heads, 1, device=device, dtype=dtype))
         if not hasattr(self, "lora_v_weights") or self.lora_v_weights is None:
@@ -529,7 +487,6 @@ class WeightedGroupedQueryAttention(BaseAttention):
         K_new = K_new * scale_k
         V_new = V_new * scale_v
 
-        # -------- RoPE --------
         if not is_cross_attention:
             position_embeddings = kwargs.get("position_embeddings")
             if (position_embeddings is not None
@@ -545,7 +502,6 @@ class WeightedGroupedQueryAttention(BaseAttention):
                 except Exception:
                     pass
 
-        # -------- KV-Cache Handling --------
         past_k, past_v, past_len = (None, None, 0)
         if not is_cross_attention and past_key_value is not None and past_key_value is not False:
             past_k, past_v, past_len = self._read_past_kv(past_key_value, self.layer_idx)
@@ -566,7 +522,6 @@ class WeightedGroupedQueryAttention(BaseAttention):
 
         N_k = K.shape[-2]
 
-        # -------- GQA repeat --------
         if self.kv_repeat > 1:
             K_full = repeat_kv(K, self.kv_repeat)
             V_full = repeat_kv(V, self.kv_repeat)
@@ -576,15 +531,12 @@ class WeightedGroupedQueryAttention(BaseAttention):
         scale = 1.0 / math.sqrt(int(d))
         is_cross = bool(kwargs.get("is_cross_attention", False)) or is_cross_attention
 
-        # -------- [FIX] Accelerated SDPA Execution Path --------
         mask = attention_mask if attention_mask is not None else kwargs.get("mask")
 
-        # اگر خروجی اتنشن یا head_mask درخواست نشده باشد، همیشه از هسته بهینه PyTorch استفاده شود
         if head_mask is None and not output_attentions:
             try:
                 _is_causal = self.is_decoder and not is_cross and N_q > 1 and mask is None
 
-                # تبدیل ماسک پدینگ به فرمت سازگار با SDPA
                 sdpa_mask = None
                 if mask is not None:
                     if mask.dim() == 2:
@@ -620,10 +572,8 @@ class WeightedGroupedQueryAttention(BaseAttention):
                 return output, None
             except Exception as e:
                 logger.debug("SDPA failed, running manual path: %s", e)
-        # -------- Manual path --------
         scores = torch.matmul(Q.float(), K_full.float().transpose(-2, -1).contiguous()) * scale
 
-        # FIX 3: Bottom-right causal mask when N_q != N_k
         if self.is_decoder and not is_cross:
             if N_q == N_k:
                 causal = torch.tril(torch.ones((N_q, N_k), device=device, dtype=torch.bool))
@@ -634,7 +584,6 @@ class WeightedGroupedQueryAttention(BaseAttention):
                 causal = k_idx <= q_idx
             scores = scores.masked_fill(~causal.unsqueeze(0).unsqueeze(0), -10000.0)
 
-        # Padding mask
         eff_mask = encoder_attention_mask if is_cross else mask
         if eff_mask is not None:
             if eff_mask.dim() == 4:
@@ -647,7 +596,6 @@ class WeightedGroupedQueryAttention(BaseAttention):
         attn = torch.nan_to_num(F.softmax(scores, dim=-1), nan=0.0).to(dtype)
         attn = self.dropout(attn)
 
-        # head_mask
         if head_mask is not None:
             if head_mask.dim() == 1:
                 head_mask = head_mask.view(1, -1, 1, 1)
@@ -672,10 +620,6 @@ class WeightedGroupedQueryAttention(BaseAttention):
         return output, attn_ret
 
 
-# =============================================================================
-# Injection  (FIX 1: registered in ATTENTION_REGISTRY)
-# =============================================================================
-
 def inject_wgqa(
     layer: Any = None,
     model: Any = None,
@@ -694,7 +638,6 @@ def inject_wgqa(
 
     cfg = model_config if model_config is not None else getattr(target, "config", None)
 
-    # Whole-model traversal
     layer_list = None
     if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
         layer_list = target.distilbert.transformer.layer
@@ -746,7 +689,6 @@ def inject_wgqa(
     if _already_injected(old_attn):
         return None
 
-    # Find src_attn if not provided
     if old_attn is None:
         for attr in ("attention", "self_attn", "attn", "self"):
             if hasattr(layer, attr):
@@ -810,7 +752,6 @@ def inject_wgqa(
         logger.error("WGQA construction failed: %s", e)
         return None
 
-    # Safe device/dtype placement
     ref_param = None
     if old_attn is not None and old_attn is not target:
         ref_param = next(old_attn.parameters(), None)
@@ -819,7 +760,6 @@ def inject_wgqa(
     if ref_param is not None:
         new_attn.to(device=ref_param.device, dtype=ref_param.dtype)
 
-    # Splice into layer
     if hasattr(layer, "attention"):
         if hasattr(layer.attention, "self"):
             layer.attention.self = new_attn

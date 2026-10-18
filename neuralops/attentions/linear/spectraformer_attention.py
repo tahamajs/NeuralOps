@@ -29,10 +29,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 logger = logging.getLogger(__name__)
 
 
-
-
-
-
 @ATTENTION_REGISTRY.register("spectraformer_attention")
 class SpectraformerAttention(BaseAttention):
     """
@@ -97,7 +93,6 @@ class SpectraformerAttention(BaseAttention):
             _cfg_get(config, "spectraformer_rank", kwargs.pop("rank", rank or 64)),
         )
 
-        # Causal decoder detection
         is_dec = _cfg_get(config, "is_decoder", kwargs.get("is_decoder", False))
         model_type = _cfg_get(config, "model_type", "").lower() if config else ""
         _mt = (model_type or "").lower()
@@ -123,7 +118,6 @@ class SpectraformerAttention(BaseAttention):
         self.is_causal = bool(is_dec)
         self.is_nested_encoder = False
 
-        # LoRA config
         self.lora_rank = _cfg_get(
             config,
             "lora_rank",
@@ -169,13 +163,10 @@ class SpectraformerAttention(BaseAttention):
             freeze_base=self.freeze_base,
         )
 
-        # Aliases
         self.query = self.q_proj
         self.key = self.k_proj
         self.value = self.v_proj
 
-        # Persistent orthogonal random feature matrix R: [head_dim, rank]
-        # Generated once with QR decomposition for maximum feature variance coverage
         torch.manual_seed(42)
         H = torch.randn(self.head_dim, self.rank)
         if self.head_dim <= self.rank:
@@ -237,7 +228,6 @@ class SpectraformerAttention(BaseAttention):
             "o": (None, None),
         }
 
-        # 1. GPT-2 fused c_attn
         if hasattr(src, "c_attn") and src.c_attn is not None:
             c_attn_mod = src.c_attn
             base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
@@ -284,7 +274,6 @@ class SpectraformerAttention(BaseAttention):
                         bias_o.data.clone() if bias_o is not None else None,
                     )
 
-        # 2. RoBERTa nested encoder
         elif hasattr(src, "self") and hasattr(src.self, "query"):
             s = src.self
             for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
@@ -301,7 +290,6 @@ class SpectraformerAttention(BaseAttention):
                     out_mod.bias.data.clone() if out_mod.bias is not None else None,
                 )
 
-        # 3. Flat modules (DistilBERT, Qwen, LLaMA)
         else:
             proj_candidates = {
                 "q": ["q_lin", "q_proj", "query"],
@@ -413,7 +401,6 @@ class SpectraformerAttention(BaseAttention):
             for mod in [self.q_proj, self.k_proj, self.v_proj, self.out_proj]:
                 mod.freeze_base_weights()
 
-        # Preserve existing LoRA adapters from source projections
         for proj_key, target_mod in target_map.items():
             sub_name = {"q": "query", "k": "key", "v": "value", "o": "dense"}.get(proj_key, "")
             src_sub = getattr(src, sub_name, None)
@@ -486,19 +473,16 @@ class SpectraformerAttention(BaseAttention):
             .contiguous()
         )
 
-        # Apply RoPE if provided
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None:
             cos, sin = position_embeddings
             q, k = apply_rotary_pos_emb(q, k, cos, sin)
 
-        # GQA head expansion
         if self.num_heads != self.num_kv_heads:
             k = repeat_kv(k, self.num_heads // self.num_kv_heads)
             v = repeat_kv(v, self.num_heads // self.num_kv_heads)
 
-        # Ensure R matches head_dim and rank
         R = self.R.to(dtype=hidden_states.dtype, device=hidden_states.device)
         if R.shape[0] != self.head_dim or R.shape[1] != self.rank:
             g = torch.Generator(
@@ -523,7 +507,6 @@ class SpectraformerAttention(BaseAttention):
                 self.R = R
 
         scale = 1.0 / math.sqrt(self.head_dim)
-        # Q_proj, K_proj: (B, H, N, r) - positive ELU+1 feature map with single scale on Q
         Q_proj = torch.nan_to_num(
             (F.elu(torch.matmul(q, R)) + 1.0) * scale,
             nan=0.0,
@@ -537,7 +520,6 @@ class SpectraformerAttention(BaseAttention):
             neginf=0.0,
         )
 
-        # Mask padding in K_proj
         if attention_mask is not None:
             valid_tok = get_token_valid_mask(attention_mask, B, N, hidden_states.device)
             v_mask_4d = valid_tok.unsqueeze(1).unsqueeze(-1).to(dtype=hidden_states.dtype)
@@ -547,27 +529,25 @@ class SpectraformerAttention(BaseAttention):
         device_type = hidden_states.device.type
         with torch.autocast(device_type=device_type, enabled=False):
             if self.is_decoder:
-                # Recurrent linear causal attention: exact vectorized computation
                 causal_mask = torch.tril(torch.ones(N, N, device=Q_proj.device, dtype=torch.bool))
                 aff = torch.matmul(
                     Q_proj.float(), K_proj.float().transpose(-2, -1).contiguous()
-                )  # (B, H, N, N)
+                )
                 aff = aff.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), 0.0)
 
-                num = torch.matmul(aff, v.float())  # (B, H, N, d)
-                den = aff.sum(dim=-1, keepdim=True) + 1e-8  # (B, H, N, 1)
+                num = torch.matmul(aff, v.float())
+                den = aff.sum(dim=-1, keepdim=True) + 1e-8
                 context = (num / den).to(hidden_states.dtype)
             else:
-                # Bidirectional linear attention: exact O(N·r·d) computation
                 KV = torch.matmul(
                     K_proj.transpose(-2, -1).contiguous().float(), v.float()
-                )  # (B, H, r, d)
+                )
                 Z = (
                     K_proj.float().sum(dim=2, keepdim=True).transpose(-2, -1).contiguous()
-                )  # (B, H, r, 1)
+                )
 
-                num = torch.matmul(Q_proj.float(), KV)  # (B, H, N, d)
-                den = torch.matmul(Q_proj.float(), Z) + 1e-8  # (B, H, N, 1)
+                num = torch.matmul(Q_proj.float(), KV)
+                den = torch.matmul(Q_proj.float(), Z) + 1e-8
                 context = (num / den).to(hidden_states.dtype)
 
             context = torch.nan_to_num(context.float(), nan=0.0, posinf=65000.0, neginf=-65000.0).to(hidden_states.dtype)
@@ -584,7 +564,6 @@ class SpectraformerAttention(BaseAttention):
 
         context = context.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
 
-        # Variance-Preserving RMS Scaling
         v_flat = v.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
         v_rms = v_flat.float().pow(2).mean(dim=-1, keepdim=True).add(1e-6).sqrt()
         c_rms = context.float().pow(2).mean(dim=-1, keepdim=True).add(1e-6).sqrt()
@@ -629,9 +608,9 @@ class SpectraformerAttention(BaseAttention):
             v = repeat_kv(v, self.num_heads // self.num_kv_heads)
 
         R = self.R.to(device=device, dtype=q.dtype)
-        Q_proj = (F.elu(torch.matmul(q, R)) + 1.0).squeeze(2)  # [B, H, r]
-        K_proj = (F.elu(torch.matmul(k, R)) + 1.0).squeeze(2)  # [B, H, r]
-        v_in = v.squeeze(2)                                    # [B, H, d]
+        Q_proj = (F.elu(torch.matmul(q, R)) + 1.0).squeeze(2)
+        K_proj = (F.elu(torch.matmul(k, R)) + 1.0).squeeze(2)
+        v_in = v.squeeze(2)
 
         r = Q_proj.shape[-1]
         d = v_in.shape[-1]
@@ -652,7 +631,6 @@ class SpectraformerAttention(BaseAttention):
 
         context = out_token.unsqueeze(1).contiguous().view(B, 1, self.all_head_size)
 
-        # Variance-Preserving RMS Scaling
         v_flat = v_in.unsqueeze(1).contiguous().view(B, 1, self.all_head_size)
         v_rms = v_flat.float().pow(2).mean(dim=-1, keepdim=True).add(1e-6).sqrt()
         c_rms = context.float().pow(2).mean(dim=-1, keepdim=True).add(1e-6).sqrt()
@@ -685,7 +663,6 @@ def inject_spectraformer(
         layer = model
     cfg = model_config or getattr(layer, "config", None)
 
-    # 1. Whole model traversal support
     if layer is not None and (
         hasattr(layer, "transformer")
         or hasattr(layer, "distilbert")
@@ -769,7 +746,6 @@ def inject_spectraformer(
             **kwargs,
         )
 
-        # Output equivalence check against src_attn
         if src_attn is not None:
             device = (
                 next(src_attn.parameters()).device

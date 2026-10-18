@@ -29,7 +29,7 @@ def entmax_bisect(
     alpha: float = 1.5,
     valid_mask: torch.Tensor | None = None,
     dim: int = -1,
-    n_iter: int = 15,  # FIX: Reduced max iterations from 25 to 15
+    n_iter: int = 15,
 ) -> torch.Tensor:
     r"""
     Compute α-entmax via stabilized bisection strictly over valid tokens.
@@ -43,7 +43,6 @@ def entmax_bisect(
     dtype = scores.dtype
     neg_inf_val = torch.tensor(-10000.0, device=device, dtype=dtype)
 
-    # Ensure all scores are finite before processing to prevent NaNs
     scores = torch.where(torch.isfinite(scores), scores, neg_inf_val)
 
     if abs(alpha - 1.0) < 1e-4:
@@ -59,13 +58,11 @@ def entmax_bisect(
     alpha_minus_1 = max(1e-4, alpha - 1.0)
     inv_alpha_minus_1 = 1.0 / alpha_minus_1
 
-    # Mask invalid keys with large negative value
     if valid_mask is not None:
         scores_valid = scores.masked_fill(~valid_mask, -10000.0)
     else:
         scores_valid = scores
 
-    # Shift scores for numerical stability
     max_scores = scores_valid.amax(dim=dim, keepdim=True)
     max_scores = torch.where(max_scores < -5000.0, torch.zeros_like(max_scores), max_scores)
     scores_shift = scores_valid - max_scores
@@ -80,9 +77,6 @@ def entmax_bisect(
 
     tau_hi = torch.zeros_like(tau_lo)
 
-    # =========================================================================
-    # FIX: Added early stopping to escape the python 'for' loop bottleneck
-    # =========================================================================
     for _ in range(n_iter):
         tau = (tau_lo + tau_hi) / 2.0
         p = torch.clamp(scaled - tau, min=0.0) ** inv_alpha_minus_1
@@ -94,7 +88,6 @@ def entmax_bisect(
         tau_lo = torch.where(mask, tau, tau_lo)
         tau_hi = torch.where(mask, tau_hi, tau)
 
-        # Early breaking if the bracket is sufficiently small
         if (tau_hi - tau_lo).max() < 1e-3:
             break
 
@@ -105,7 +98,6 @@ def entmax_bisect(
 
     denom = p.sum(dim=dim, keepdim=True)
 
-    # Softmax fallback for numerical stabilization
     scores_for_sm = scores.masked_fill(~valid_mask, -10000.0) if valid_mask is not None else scores
     scores_for_sm = torch.where(torch.isfinite(scores_for_sm), scores_for_sm, neg_inf_val)
     sf = torch.nan_to_num(F.softmax(scores_for_sm.float(), dim=dim), nan=0.0).to(dtype)
@@ -154,7 +146,6 @@ class AdaSplashLinear(nn.Module):
 
         factory_kwargs = {"dtype": dtype, "device": device}
 
-        # Base weights - frozen to maintain pretrained stability
         self.weight: nn.Parameter = nn.Parameter(
             torch.empty((out_features, in_features), **factory_kwargs),
             requires_grad=False,
@@ -235,8 +226,6 @@ class AdaSplashAttention(BaseAttention):
         self,
         config: Any,
         rank: int | None = None,
-        # FIXED: Failure Mode 1 (Mode Collapse): Default alpha = 1.0 (exact softmax)
-        # Prevents sparse entmax from zeroing out the entire distribution tail, stopping degenerate "eseseses..." loops.
         alpha: float = 1.0,
         n_iter: int = 15,
         splash_radius: int = 128,
@@ -328,7 +317,6 @@ class AdaSplashAttention(BaseAttention):
             self.all_head_size, self.hidden_size, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha
         )
 
-        # Aliases
         self.q_lin = self.q_proj
         self.k_lin = self.k_proj
         self.v_lin = self.v_proj
@@ -415,7 +403,6 @@ class AdaSplashAttention(BaseAttention):
                 pass
 
             if w is None:
-                # Output projection checks first
                 if proj == "o":
                     if hasattr(src, "output") and hasattr(src.output, "dense"):
                         mod = src.output.dense
@@ -441,7 +428,6 @@ class AdaSplashAttention(BaseAttention):
                         mod = getattr(src.wo, "base_layer", src.wo)
                         w = mod.weight
                         b = getattr(mod, "bias", None)
-                # GPT-2 Fused c_attn
                 elif hasattr(src, "c_attn") and proj in ["q", "k", "v"]:
                     c_attn_mod = getattr(src.c_attn, "base_layer", src.c_attn)
                     fused_w = c_attn_mod.weight.T
@@ -454,7 +440,6 @@ class AdaSplashAttention(BaseAttention):
                         if fused_b is not None
                         else None
                     )
-                # RoBERTa / BERT
                 elif (
                     proj in ["q", "k", "v"] and hasattr(src, "self") and hasattr(src.self, "query")
                 ):
@@ -472,7 +457,6 @@ class AdaSplashAttention(BaseAttention):
                 elif hasattr(src, "value") and proj == "v":
                     w = src.value.weight
                     b = getattr(src.value, "bias", None)
-                # DistilBERT manual fallback
                 elif hasattr(src, "q_lin") and proj == "q":
                     w = src.q_lin.weight
                     b = getattr(src.q_lin, "bias", None)
@@ -485,7 +469,6 @@ class AdaSplashAttention(BaseAttention):
                 elif hasattr(src, "out_lin") and proj == "o":
                     w = src.out_lin.weight
                     b = getattr(src.out_lin, "bias", None)
-                # Modern Decoders
                 elif hasattr(src, f"{proj}_proj"):
                     mod = getattr(src, f"{proj}_proj")
                     w = mod.weight

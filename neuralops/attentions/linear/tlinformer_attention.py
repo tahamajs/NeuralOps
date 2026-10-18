@@ -37,24 +37,9 @@ from neuralops.core.utils.rope import _rotate_half
 from neuralops.core.utils.gqa import repeat_kv
 
 
-
 logger = logging.getLogger(__name__)
 
 
-
-
-# ===========================================================================
-# RoPE helpers
-# ===========================================================================
-
-
-# ===========================================================================
-# LoRALinear
-# ===========================================================================
-
-
-# DEPRECATED: Identity projection under causal LM masking.
-# @ATTENTION_REGISTRY.register("tlinformer_attention")
 class TLinFormerAttention(BaseAttention):
     """DEPRECATED: Identity projection under causal LM masking."""
 
@@ -71,7 +56,6 @@ class TLinFormerAttention(BaseAttention):
         self.config = config
         comp_config = getattr(config, "compression_config", None)
 
-        # ---- hidden size ----
         self.hidden_size = getattr(config, "hidden_size", kwargs.get("hidden_size", 768))
         if config is None or not hasattr(config, "hidden_size"):
             if pretrained_attn is not None:
@@ -83,7 +67,6 @@ class TLinFormerAttention(BaseAttention):
                             self.hidden_size = w.shape[1]
                             break
 
-        # ---- heads ----
         self.num_heads = int(
             getattr(config, "num_attention_heads", kwargs.get("num_attention_heads", 12))
             if config
@@ -107,7 +90,6 @@ class TLinFormerAttention(BaseAttention):
         self.all_kv_head_size = self.num_kv_heads * self.head_dim
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
 
-        # ---- rank ----
         requested_rank = int(
             _cfg_get(
                 comp_config,
@@ -124,7 +106,6 @@ class TLinFormerAttention(BaseAttention):
             else 2048
         )
 
-        # ---- decoder detection ----
         _mt = (getattr(config, "model_type", "") if config else "").lower()
         is_dec = bool(
             getattr(config, "is_decoder", kwargs.get("is_decoder", False)) if config else False
@@ -143,7 +124,6 @@ class TLinFormerAttention(BaseAttention):
         self.is_causal = is_dec
         self.is_nested_encoder = False
 
-        # ---- LoRA ----
         self.lora_rank = int(
             getattr(
                 config,
@@ -164,7 +144,6 @@ class TLinFormerAttention(BaseAttention):
         )
         self.freeze_base = self.lora_rank > 0
 
-        # ---- projections ----
         self.q_proj = LoRALinear(
             self.hidden_size, self.all_head_size,
             bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
@@ -186,10 +165,8 @@ class TLinFormerAttention(BaseAttention):
             freeze_base=self.freeze_base,
         )
 
-        # ---- FIX 1: Sequence projections as LEARNABLE Parameters ----
         proj_k = torch.empty(self.rank, self.max_seq_len)
         proj_v = torch.empty(self.rank, self.max_seq_len)
-        # Better init: scaled normal + identity on leading diagonal
         nn.init.normal_(proj_k, std=1.0 / math.sqrt(max(1, self.rank)))
         nn.init.normal_(proj_v, std=1.0 / math.sqrt(max(1, self.rank)))
         md = min(self.rank, self.max_seq_len)
@@ -207,7 +184,6 @@ class TLinFormerAttention(BaseAttention):
         )
         self.dropout = nn.Dropout(dropout_p)
 
-        # ---- FIX: non-persistent caches for KV-cache mode ----
         self.register_buffer("_cached_K_proj", None, persistent=False)
         self.register_buffer("_cached_V_proj", None, persistent=False)
 
@@ -215,7 +191,6 @@ class TLinFormerAttention(BaseAttention):
         if src is not None:
             self.copy_weights(src)
 
-    # ---- compatibility aliases ----
     @property
     def query(self):
         return self.q_proj
@@ -264,9 +239,6 @@ class TLinFormerAttention(BaseAttention):
     def F(self):
         return self.proj_v
 
-    # ------------------------------------------------------------------
-    # copy_weights
-    # ------------------------------------------------------------------
     def copy_weights(self, src: Any) -> None:
         if src is None:
             return
@@ -304,7 +276,6 @@ class TLinFormerAttention(BaseAttention):
             "o": (None, None),
         }
 
-        # ---- GPT-2 fused c_attn / c_proj ----
         if hasattr(src, "c_attn") and src.c_attn is not None:
             c = src.c_attn
             base_c = getattr(c, "base_layer", c)
@@ -351,7 +322,6 @@ class TLinFormerAttention(BaseAttention):
                     bo = getattr(base_o, "bias", getattr(o, "bias", None))
                     extracted["o"] = (ow, bo.data.clone() if bo is not None else None)
 
-        # ---- RoBERTa / BERT nested ----
         elif hasattr(src, "self") and hasattr(src.self, "query"):
             s = src.self
             for key, sub in (("q", "query"), ("k", "key"), ("v", "value")):
@@ -368,7 +338,6 @@ class TLinFormerAttention(BaseAttention):
                     om.bias.data.clone() if om.bias is not None else None,
                 )
 
-        # ---- flat modules ----
         else:
             cand = {
                 "q": ("q_lin", "q_proj", "query"),
@@ -387,7 +356,6 @@ class TLinFormerAttention(BaseAttention):
                             )
                             break
 
-        # ---- UniversalAdapter fallback ----
         missing = [
             k
             for k, (w, _) in extracted.items()
@@ -459,7 +427,6 @@ class TLinFormerAttention(BaseAttention):
                 elif target.bias is not None:
                     nn.init.zeros_(target.bias)
 
-        # ---- LoRA copy ----
         for key, target in target_map.items():
             src_mod = None
             if key == "o" and hasattr(src, "output") and hasattr(src.output, "dense"):
@@ -502,9 +469,6 @@ class TLinFormerAttention(BaseAttention):
             for m in (self.q_proj, self.k_proj, self.v_proj, self.out_proj):
                 m.freeze_base_weights()
 
-    # ------------------------------------------------------------------
-    # Helpers
-    # ------------------------------------------------------------------
     @staticmethod
     def _prepare_valid_mask(attention_mask, B, N, device):
         if attention_mask is None:
@@ -542,12 +506,11 @@ class TLinFormerAttention(BaseAttention):
         This is the safest approach — it doesn't fabricate out-of-distribution
         projection weights for unseen positions.
         """
-        buf = getattr(self, name)  # (rank, max_seq_len)
+        buf = getattr(self, name)
 
         if L <= self.max_seq_len:
             return buf[:, :L].to(dtype=dtype, device=device)
 
-        # L > max_seq_len: use full projection + zero-pad remaining positions
         logger.warning(
             "TLinFormer: sequence length %d exceeds max_seq_len %d; "
             "using zero-padding for positions beyond training length.",
@@ -564,21 +527,15 @@ class TLinFormerAttention(BaseAttention):
             return None
         hm = head_mask.to(device=device, dtype=dtype)
         if hm.dim() == 1:
-            # (H,) → (1, H, 1, 1)
             return hm.view(1, H, 1, 1)
         if hm.dim() == 2:
-            # (B, H) → (B, H, 1, 1)
             return hm.view(hm.shape[0], H, 1, 1)
         if hm.dim() == 3:
-            # Interpret as (B, H, 1) → (B, H, 1, 1)
             return hm.unsqueeze(-1)
         if hm.dim() == 4:
             return hm
         raise ValueError(f"Unsupported head_mask dim: {hm.dim()}")
 
-    # ------------------------------------------------------------------
-    # Forward
-    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -598,32 +555,24 @@ class TLinFormerAttention(BaseAttention):
         B, N, _ = hidden_states.shape
         H, H_kv, Dh = self.num_heads, self.num_kv_heads, self.head_dim
 
-        # ---- Projections ----
         q = self.q_proj(hidden_states).view(B, N, H, Dh).transpose(1, 2).contiguous()
         k = self.k_proj(hidden_states).view(B, N, H_kv, Dh).transpose(1, 2).contiguous()
         v = self.v_proj(hidden_states).view(B, N, H_kv, Dh).transpose(1, 2).contiguous()
 
-        # ---- RoPE ----
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None:
             cos, sin = position_embeddings
             q, k = apply_rotary_pos_emb(q, k, cos, sin)
 
-        # ---- Valid mask ----
         valid = self._prepare_valid_mask(attention_mask, B, N, hidden_states.device)
-        q_mask = valid.unsqueeze(1).unsqueeze(-1)  # (B, 1, N, 1)
-        key_mask = valid.unsqueeze(1).unsqueeze(2)  # (B, 1, 1, N)
+        q_mask = valid.unsqueeze(1).unsqueeze(-1)
+        key_mask = valid.unsqueeze(1).unsqueeze(2)
 
         scale = 1.0 / math.sqrt(Dh)
 
-        # ============================================================
-        # Decoder / causal path: dense attention
-        # ============================================================
         if self.is_decoder:
-            # ---- KV Cache handling ----
             if past_key_value is not None:
-                # Concatenate with cached K, V
                 if isinstance(past_key_value, (tuple, list)):
                     past_k, past_v = past_key_value[0], past_key_value[1]
                 else:
@@ -633,25 +582,20 @@ class TLinFormerAttention(BaseAttention):
                     k = torch.cat([past_k, k], dim=2)
                     v = torch.cat([past_v, v], dim=2)
 
-            # GQA repeat
             if self.kv_repeat > 1:
                 k = repeat_kv(k, self.kv_repeat)
                 v = repeat_kv(v, self.kv_repeat)
 
             N_kv = k.shape[-2]
 
-            # Compute attention
             scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
 
-            # Causal mask
             q_pos = torch.arange(N_kv - N, N_kv, device=scores.device).unsqueeze(1)
             k_pos = torch.arange(N_kv, device=scores.device).unsqueeze(0)
             causal = (k_pos > q_pos).unsqueeze(0).unsqueeze(0)
             scores = scores.masked_fill(causal, -1e4)
 
-            # Padding mask
             if attention_mask is not None:
-                # For padded positions
                 if N_kv == N:
                     scores = scores.masked_fill(~key_mask, -1e4)
 
@@ -669,10 +613,8 @@ class TLinFormerAttention(BaseAttention):
             ctx = ctx.transpose(1, 2).contiguous().view(B, N, self.all_head_size)
             out = ctx if self.is_nested_encoder else self.out_proj(ctx)
 
-            # Cache for next step
             new_cache = None
             if use_cache:
-                # Undo GQA repeat before caching
                 if self.kv_repeat > 1:
                     k_cache = k[:, ::self.kv_repeat, :, :].contiguous()
                     v_cache = v[:, ::self.kv_repeat, :, :].contiguous()
@@ -685,11 +627,6 @@ class TLinFormerAttention(BaseAttention):
                 return out, new_cache
             return out, attn_out
 
-        # ============================================================
-        # Encoder path: Linformer linear attention
-        # ============================================================
-
-        # Degenerate case: N ≤ rank → dense attention (identity-ish projection)
         if self.rank >= N:
             if self.kv_repeat > 1:
                 k = repeat_kv(k, self.kv_repeat)
@@ -708,19 +645,12 @@ class TLinFormerAttention(BaseAttention):
             out = ctx if self.is_nested_encoder else self.out_proj(ctx)
             return out, (attn if output_attentions else None)
 
-        # ---- Linformer proper: N > rank ----
-
-        # FIX 2 (Broadcasting bug): use q_mask (B,1,N,1), not key_mask (B,1,1,N)
-        # Both masks are logically equivalent for masking K/V along sequence dim,
-        # but q_mask broadcasts correctly against (B, H, N, Dh).
-        k_for_proj = k.masked_fill(~q_mask, 0.0)  # (B, H_kv, N, Dh)
+        k_for_proj = k.masked_fill(~q_mask, 0.0)
         v_for_proj = v.masked_fill(~q_mask, 0.0)
 
-        # FIX 3 (GQA waste): project on H_kv heads FIRST, then repeat
         P_k = self._projection_matrix("proj_k", N, hidden_states.dtype, hidden_states.device)
         P_v = self._projection_matrix("proj_v", N, hidden_states.dtype, hidden_states.device)
 
-        # Project on H_kv heads (cheap!)
         if k_for_proj.is_cuda and P_k.is_cuda:
             try:
                 from neuralops.core.triton_kernels.low_rank import fused_linformer_seq_proj_triton
@@ -730,15 +660,13 @@ class TLinFormerAttention(BaseAttention):
                 K_proj = torch.einsum("rn,bhnd->bhrd", P_k, k_for_proj)
                 V_proj = torch.einsum("rn,bhnd->bhrd", P_v, v_for_proj)
         else:
-            K_proj = torch.einsum("rn,bhnd->bhrd", P_k, k_for_proj)  # (B, H_kv, r, Dh)
-            V_proj = torch.einsum("rn,bhnd->bhrd", P_v, v_for_proj)  # (B, H_kv, r, Dh)
+            K_proj = torch.einsum("rn,bhnd->bhrd", P_k, k_for_proj)
+            V_proj = torch.einsum("rn,bhnd->bhrd", P_v, v_for_proj)
 
-        # NOW apply GQA repeat on the small (r-sized) tensors
         if self.kv_repeat > 1:
-            K_proj = repeat_kv(K_proj, self.kv_repeat)  # (B, H, r, Dh)
-            V_proj = repeat_kv(V_proj, self.kv_repeat)  # (B, H, r, Dh)
+            K_proj = repeat_kv(K_proj, self.kv_repeat)
+            V_proj = repeat_kv(V_proj, self.kv_repeat)
 
-        # scores: (B, H, N, r)
         scores = torch.matmul(q.float(), K_proj.float().transpose(-2, -1).contiguous()) * scale
 
         attn = F.softmax(scores, dim=-1).to(hidden_states.dtype)
@@ -748,21 +676,15 @@ class TLinFormerAttention(BaseAttention):
         if head_mask is not None:
             attn = attn * self._reshape_head_mask(head_mask, B, H, attn.device, attn.dtype)
 
-        # context: (B, H, N, r) @ (B, H, r, Dh) → (B, H, N, Dh)
         ctx = torch.matmul(attn, V_proj)
         ctx = ctx * q_mask.to(ctx.dtype)
 
         ctx = ctx.transpose(1, 2).contiguous().view(B, N, self.all_head_size)
         out = ctx if self.is_nested_encoder else self.out_proj(ctx)
 
-        # FIX 4 (output_attentions): return None or approximate reconstruction
         if output_attentions:
-            # Approximate reconstruction using key projection:
-            # Original attention shape (B, H, N, N)
-            # Reconstruction: attn @ P_k  where P_k: (r, N) → (B, H, N, N)
-            pseudo_attn = torch.matmul(attn.float(), P_k.float())  # (B, H, N, N)
+            pseudo_attn = torch.matmul(attn.float(), P_k.float())
             pseudo_attn = pseudo_attn.to(hidden_states.dtype)
-            # Zero-out padded positions
             pseudo_attn = pseudo_attn * key_mask.to(pseudo_attn.dtype)
         else:
             pseudo_attn = None
@@ -770,9 +692,6 @@ class TLinFormerAttention(BaseAttention):
         return out, pseudo_attn
 
 
-# ===========================================================================
-# Injection
-# ===========================================================================
 def inject_tlinformer(
     layer: Any = None,
     model: Any = None,
@@ -791,7 +710,6 @@ def inject_tlinformer(
 
     cfg = model_config if model_config is not None else getattr(target, "config", None)
 
-    # Whole-model traversal
     layer_list = None
     if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
         layer_list = target.distilbert.transformer.layer
@@ -832,21 +750,19 @@ def inject_tlinformer(
 
     layer = target
     try:
-        # Resolve the actual attention submodule (not the transformer block)
         if old_attn is not None:
             source_module = old_attn
         elif hasattr(layer, "attn"):
-            source_module = layer.attn               # GPT-2: GPT2Attention
+            source_module = layer.attn
         elif hasattr(layer, "attention") and hasattr(layer.attention, "self"):
-            source_module = layer.attention.self     # BERT/RoBERTa: BertSelfAttention
+            source_module = layer.attention.self
         elif hasattr(layer, "attention"):
-            source_module = layer.attention           # DistilBERT
+            source_module = layer.attention
         elif hasattr(layer, "self_attn"):
-            source_module = layer.self_attn           # LLaMA/Qwen
+            source_module = layer.self_attn
         else:
             source_module = layer
 
-        # Verification: ensure source has the required weight attributes
         has_weights = any(
             hasattr(source_module, attr)
             for attr in ("c_attn", "q_proj", "query", "q_lin")
@@ -858,15 +774,13 @@ def inject_tlinformer(
                 type(source_module).__name__,
             )
             return None
-            
-            
+
         new_attn = TLinFormerAttention(
             config=model_config,
             pretrained_attn=source_module,
             **kwargs,
         )
 
-        # Splice
         if hasattr(layer, "attention") and hasattr(layer.attention, "self"):
             new_attn.is_nested_encoder = True
             layer.attention.self = new_attn

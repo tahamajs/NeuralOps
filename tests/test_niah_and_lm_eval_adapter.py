@@ -8,11 +8,11 @@ import torch
 import torch.nn as nn
 from transformers import GPT2Config, GPT2LMHeadModel, GPT2TokenizerFast
 
-from neuralops.evaluation.niah_passkey import (
+from evaluation.niah_passkey import (
     NeedleInAHaystackEvaluator,
     plot_niah_heatmap,
 )
-from neuralops.evaluation.lm_eval_adapter import (
+from evaluation.lm_eval_adapter import (
     NeuralOpsLMEvalAdapter,
     evaluate_zero_shot_tasks,
 )

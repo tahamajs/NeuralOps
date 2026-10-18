@@ -41,7 +41,6 @@ class ASVDCompressor(AASVDCompressor):
         compressed_layers = {}
 
         for name, module in target_model.named_modules():
-            # Find attention projections for key and value
             is_kv = any(k in name.lower() for k in ["k_proj", "v_proj", "key", "value"])
             if is_kv and isinstance(module, nn.Linear):
                 dev = module.weight.device
@@ -66,7 +65,6 @@ class ASVDCompressor(AASVDCompressor):
                 if module.bias is not None:
                     svd_layer.bias.data.copy_(module.bias.data)
 
-                # Store hook references
                 compressed_layers[name] = {
                     "U_r": U_r,
                     "V_r": V_r,

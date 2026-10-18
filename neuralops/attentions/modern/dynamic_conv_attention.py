@@ -28,15 +28,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 logger = logging.getLogger(__name__)
 
 
-
-
-
-
-# =============================================================================
-# DynamicConvAttention
-# =============================================================================
-
-
 @ATTENTION_REGISTRY.register(
     "dynamic_conv_attention",
     supports_causal=True,
@@ -62,7 +53,6 @@ class DynamicConvAttention(BaseAttention):
     supports_rope: bool = False
     is_custom_attention: bool = True
 
-    # Chunk size for windowed conv (limits peak VRAM)
     _CONV_CHUNK: int = 128
 
     def __init__(
@@ -85,7 +75,6 @@ class DynamicConvAttention(BaseAttention):
         src_attn = pretrained_attn if pretrained_attn is not None else old_attn
         self.config = config
 
-        # ---------- hidden_size ----------
         h_size = embed_dim or kwargs.get("dim") or kwargs.get("hidden_size") or kwargs.get("d_model")
         if h_size is None and config is not None:
             h_size = (
@@ -111,7 +100,6 @@ class DynamicConvAttention(BaseAttention):
         self.hidden_size = int(h_size or kwargs.get("hidden_size", 768))
         self.embed_dim = self.hidden_size
 
-        # ---------- num_heads ----------
         n_heads = num_heads or kwargs.get("num_heads") or kwargs.get("num_attention_heads")
         if n_heads is None and config is not None:
             n_heads = (
@@ -128,25 +116,21 @@ class DynamicConvAttention(BaseAttention):
             )
         self.num_heads = int(n_heads or 12)
 
-        # ---------- head_dim ----------
         head_dim = kwargs.get("head_dim") or _cfg_get(config, "head_dim")
         if head_dim is None:
             head_dim = self.hidden_size // max(1, self.num_heads)
         self.head_dim = int(head_dim)
         self.all_head_size = self.num_heads * self.head_dim
 
-        # ---------- kernel_size ----------
         self.kernel_size = int(
             _cfg_get(config, "kernel_size", None)
             or _cfg_get(config, "kernel_size_dynamic_conv", None)
             or kwargs.get("kernel_size", kernel_size)
         )
 
-        # ---------- decoder detection ----------
         self.is_decoder = _detect_decoder(config, is_decoder, src_attn)
         self.is_nested_encoder = False
 
-        # ---------- LoRA config ----------
         comp_config = kwargs.get("comp_config") or (
             getattr(config, "compression_config", None) if config else None
         )
@@ -160,14 +144,12 @@ class DynamicConvAttention(BaseAttention):
         )
         self.freeze_base = self.lora_rank > 0
 
-        # ---------- target dtype ----------
         target_dtype = kwargs.get("dtype")
         if target_dtype is None and src_attn is not None:
             p = next(src_attn.parameters(), None)
             if p is not None:
                 target_dtype = p.dtype
 
-        # ---------- Only V and O projections (FIX-6) ----------
         self.v_proj = LoRALinear(
             self.hidden_size, self.all_head_size, bias=True,
             lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
@@ -179,7 +161,6 @@ class DynamicConvAttention(BaseAttention):
             freeze_base=self.freeze_base, dtype=target_dtype,
         )
 
-        # ---------- dynamic filter generator ----------
         bottleneck = max(64, self.hidden_size // 4)
         self.weight_generator = nn.Sequential(
             nn.Linear(self.hidden_size, bottleneck, bias=False),
@@ -187,26 +168,17 @@ class DynamicConvAttention(BaseAttention):
             nn.Linear(bottleneck, self.num_heads * self.kernel_size, bias=True),
         )
 
-        # ---------- FIX-5: Identity prior (no cold-start collapse) ----------
-        # Set bias so that the "current token" (index K-1 in the causal window)
-        # has high weight; others ~0. After softmax this becomes near-identity.
         with torch.no_grad():
             nn.init.zeros_(self.weight_generator[-1].weight)
             self.weight_generator[-1].bias.zero_()
             bias_view = self.weight_generator[-1].bias.view(
                 self.num_heads, self.kernel_size
             )
-            # Index K-1 = current token (rightmost in the causal window)
             bias_view[:, -1] = 6.0
 
-        # ---------- FIX-7: Q/K as None attributes (HF-safe) ----------
-        # These are set to None instead of being properties that raise
-        # AttributeError. HF's introspection code often does `hasattr(m, "q_proj")`
-        # and a property that raises AttributeError breaks it.
         self.q_proj = None
         self.k_proj = None
 
-        # ---------- aliases (only for V / O) ----------
         self.value = self.v_proj
         self.v_lin = self.v_proj
         self.out_lin = self.out_proj
@@ -226,9 +198,6 @@ class DynamicConvAttention(BaseAttention):
         if target_dtype is not None:
             self.to(target_dtype)
 
-    # ------------------------------------------------------------------
-    # copy_weights — only V and O
-    # ------------------------------------------------------------------
     def copy_weights(self, src: Any) -> None:
         if src is None:
             return
@@ -253,7 +222,6 @@ class DynamicConvAttention(BaseAttention):
         o_weight: torch.Tensor | None = None
         o_bias: torch.Tensor | None = None
 
-        # GPT-2 fused c_attn
         if hasattr(src, "c_attn") and src.c_attn is not None:
             w, b = _unpack_weight_bias(src.c_attn)
             if w is not None:
@@ -268,14 +236,12 @@ class DynamicConvAttention(BaseAttention):
                 if o_weight is not None and o_weight.ndim == 2:
                     o_weight = o_weight.t().contiguous()
 
-        # BERT / RoBERTa nested
         elif hasattr(src, "self") and hasattr(src.self, "value"):
             s = src.self
             v_weight, v_bias = _unpack_weight_bias(s.value)
             if hasattr(src, "output") and hasattr(src.output, "dense"):
                 o_weight, o_bias = _unpack_weight_bias(src.output.dense)
 
-        # Flat modules (DistilBERT, LLaMA, Qwen, T5)
         else:
             for name in ("v_lin", "v_proj", "value", "v"):
                 if hasattr(src, name):
@@ -290,7 +256,6 @@ class DynamicConvAttention(BaseAttention):
                         o_weight, o_bias = w, b
                         break
 
-        # UniversalAdapter fallback
         if v_weight is None or (o_weight is None and not self.is_nested_encoder):
             try:
                 from neuralops.core.adapters import UniversalAdapter
@@ -321,7 +286,6 @@ class DynamicConvAttention(BaseAttention):
             return w
 
         with torch.no_grad():
-            # V
             w = _orient(v_weight, self.v_proj.weight.shape)
             out_d = min(self.v_proj.weight.size(0), w.size(0))
             in_d = min(self.v_proj.weight.size(1), w.size(1))
@@ -338,7 +302,6 @@ class DynamicConvAttention(BaseAttention):
             elif self.v_proj.bias is not None:
                 self.v_proj.bias.data.zero_()
 
-            # O
             if o_weight is not None and not self.is_nested_encoder:
                 w = _orient(o_weight, self.out_proj.weight.shape)
                 out_d = min(self.out_proj.weight.size(0), w.size(0))
@@ -362,37 +325,28 @@ class DynamicConvAttention(BaseAttention):
             for mod in (self.v_proj, self.out_proj):
                 mod.freeze_base_weights()
 
-    # ------------------------------------------------------------------
-    # Cache helpers
-    # ------------------------------------------------------------------
     @staticmethod
     def _read_past_v(past_key_value: Any, layer_idx: int) -> torch.Tensor | None:
         if past_key_value is None or past_key_value is False:
             return None
-        # tuple / list — either (v_cache,) or (dummy_k, v_cache)
         if isinstance(past_key_value, (tuple, list)):
             if len(past_key_value) >= 2 and past_key_value[1] is not None:
                 return past_key_value[1]
             if len(past_key_value) >= 1 and past_key_value[0] is not None:
                 return past_key_value[0]
             return None
-        # DynamicCache: read from value_cache
         if hasattr(past_key_value, "value_cache") and past_key_value.value_cache:
             idx = min(layer_idx, len(past_key_value.value_cache) - 1)
             return past_key_value.value_cache[idx]
         return None
 
-    # ------------------------------------------------------------------
-    # Chunked windowed conv (FIX-2)
-    # ------------------------------------------------------------------
     def _chunked_windowed_conv(
         self,
-        v_full: torch.Tensor,        # (B, H, T, d)  T = K-1+N (with pad)
-        dyn_w: torch.Tensor,         # (B, H, N, K)
+        v_full: torch.Tensor,
+        dyn_w: torch.Tensor,
         chunk: int | None = None,
     ) -> torch.Tensor:
         """Compute out[b,h,i,:] = sum_k v_full[b,h,i+k,:] * dyn_w[b,h,i,k]."""
-        # Try fused Triton kernel in SRAM
         try:
             from neuralops.core.triton_kernels.elementwise import fused_dynamic_conv1d_triton
             return fused_dynamic_conv1d_triton(v_full, dyn_w)
@@ -406,22 +360,17 @@ class DynamicConvAttention(BaseAttention):
 
         out = torch.empty((B, H, N, d), dtype=v_full.dtype, device=v_full.device)
 
-        # unfold on v_full once — it's a view, no memory cost
-        v_win_all = v_full.unfold(dimension=2, size=K, step=1)  # (B, H, N, d, K) — view
+        v_win_all = v_full.unfold(dimension=2, size=K, step=1)
 
         for start in range(0, N, chunk):
             end = min(start + chunk, N)
-            v_chunk = v_win_all[:, :, start:end, :, :]           # (B, H, C, d, K)
-            w_chunk = dyn_w[:, :, start:end, :]                  # (B, H, C, K)
-            # einsum avoids materializing (B, H, C, d, K) explicitly
+            v_chunk = v_win_all[:, :, start:end, :, :]
+            w_chunk = dyn_w[:, :, start:end, :]
             out[:, :, start:end, :] = torch.einsum(
                 "bhcdk,bhck->bhcd", v_chunk, w_chunk
             )
         return out
 
-    # ------------------------------------------------------------------
-    # Forward
-    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -447,14 +396,11 @@ class DynamicConvAttention(BaseAttention):
         d = self.head_dim
         device = hidden_states.device
 
-        # ---------------- V projection ----------------
-        v = self.v_proj(hidden_states)  # (B, N, D)
-        v = v.view(B, N, H, d).permute(0, 2, 1, 3).contiguous()  # (B, H, N, d)
+        v = self.v_proj(hidden_states)
+        v = v.view(B, N, H, d).permute(0, 2, 1, 3).contiguous()
 
-        # ---------------- Dynamic filter logits ----------------
-        dyn_logits = self.weight_generator(hidden_states).view(B, N, H, K)  # (B, N, H, K)
+        dyn_logits = self.weight_generator(hidden_states).view(B, N, H, K)
 
-        # ---------------- FIX-3: Mask BEFORE softmax ----------------
         if attention_mask is not None:
             m = attention_mask
             if m.dim() == 4:
@@ -469,34 +415,31 @@ class DynamicConvAttention(BaseAttention):
                 valid = m > -1e4
             else:
                 valid = m > 0
-            # Guarantee valid is always 2-D (B, N) — squeeze() can collapse to 1-D when N==1
             if valid.dim() == 1:
-                valid = valid.unsqueeze(1)  # (B,) → (B, 1)
+                valid = valid.unsqueeze(1)
             elif valid.dim() > 2:
                 valid = valid.reshape(B, -1)[..., -N:]
             pad_valid = torch.ones(B, K - 1, device=device, dtype=torch.bool)
-            valid_full = torch.cat([pad_valid, valid], dim=1)  # (B, K-1+N)
-            valid_window = valid_full.unfold(1, K, 1)  # (B, N, K)
+            valid_full = torch.cat([pad_valid, valid], dim=1)
+            valid_window = valid_full.unfold(1, K, 1)
 
             dyn_logits = dyn_logits.masked_fill(
                 ~valid_window.unsqueeze(2), -1e4
             )
 
-        dyn_w = F.softmax(dyn_logits, dim=-1)  # (B, N, H, K)
-        dyn_w = dyn_w.permute(0, 2, 1, 3)  # (B, H, N, K)
+        dyn_w = F.softmax(dyn_logits, dim=-1)
+        dyn_w = dyn_w.permute(0, 2, 1, 3)
 
-        # ---------------- FIX-1: KV-cache handling ----------------
         layer_idx = int(kwargs.get("layer_idx", 0))
         past_v = self._read_past_v(past_key_value, layer_idx)
 
         if past_v is not None:
             past_v = past_v.to(v.device, v.dtype)
-            v_full = torch.cat([past_v, v], dim=2)  # (B, H, P+N, d)
+            v_full = torch.cat([past_v, v], dim=2)
         else:
             pad = torch.zeros((B, H, K - 1, d), dtype=v.dtype, device=v.device)
-            v_full = torch.cat([pad, v], dim=2)  # (B, H, K-1+N, d)
+            v_full = torch.cat([pad, v], dim=2)
 
-        # ---------------- FIX-4: Present KV (2-tuple with dummy K) ----------------
         use_cache = (
             kwargs.get("use_cache", False)
             or (past_key_value is not None and past_key_value is not False)
@@ -509,16 +452,13 @@ class DynamicConvAttention(BaseAttention):
             else:
                 v_cache = v_full[:, :, :0, :].contiguous()
 
-            # Dummy K cache with seq_len=0 — HF's `k, v = past_key_value` needs 2 elements
             dummy_k_cache = torch.empty(
                 (B, H, 0, d), dtype=v_cache.dtype, device=v_cache.device
             )
             present_kv = (dummy_k_cache, v_cache)
 
-        # ---------------- Chunked windowed conv ----------------
         out = self._chunked_windowed_conv(v_full, dyn_w, chunk=self._CONV_CHUNK)
 
-        # ---------------- Reshape, dropout, head_mask ----------------
         out = out.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
         out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
         out = self.dropout(out)
@@ -531,20 +471,16 @@ class DynamicConvAttention(BaseAttention):
                 hm = hm.view(hm.shape[0], hm.shape[1], 1).expand(B, H, N)
             elif hm.dim() == 3:
                 hm = hm.expand(B, H, N) if hm.shape[0] != B else hm
-            out_h = out.view(B, N, H, d).permute(0, 2, 1, 3)  # (B, H, N, d)
+            out_h = out.view(B, N, H, d).permute(0, 2, 1, 3)
             out_h = out_h * hm.unsqueeze(-1)
             out = out_h.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
 
-        # ---------------- Output projection ----------------
         if self.is_nested_encoder:
             output = out
         else:
             output = self.out_proj(out)
             output = torch.nan_to_num(output, nan=0.0, posinf=1e4, neginf=-1e4)
 
-        # ---------------- FIX-8: Return format ----------------
-        # When output_attentions=True, return dyn_w (B, H, N, K) instead of None.
-        # This is a meaningful tensor: per-head distribution over the K-tap window.
         attn_ret = dyn_w if output_attentions else None
 
         if self.is_decoder:
@@ -558,11 +494,6 @@ class DynamicConvAttention(BaseAttention):
 
     def get_ortho_loss(self) -> torch.Tensor:
         return torch.zeros((), device=self.v_proj.weight.device)
-
-
-# =============================================================================
-# Injector
-# =============================================================================
 
 
 def inject_dynamic_conv(
@@ -589,7 +520,6 @@ def inject_dynamic_conv(
 
     cfg = model_config if model_config is not None else getattr(target, "config", None)
 
-    # ---------------- Whole-model traversal ----------------
     layer_list = None
     for path in (
         ("distilbert", "transformer", "layer"),
@@ -631,7 +561,6 @@ def inject_dynamic_conv(
                 n_inj += 1
         return target if n_inj > 0 else None
 
-    # ---------------- Single layer ----------------
     try:
         def _already_injected(m: Any) -> bool:
             """Detect if m is already a custom attention (DynamicConv, WGQA, etc)."""
@@ -653,7 +582,7 @@ def inject_dynamic_conv(
                 if wrapped is not None and not isinstance(wrapped, type):
                     return True
             return False
-        
+
         if _already_injected(old_attn):
             return None
 
@@ -694,30 +623,25 @@ def inject_dynamic_conv(
             new_attn.to(device=ref.device, dtype=ref.dtype)
 
         spliced = False
-        
-        # 1. BERT, RoBERTa (nested inside "attention.self")
+
         if hasattr(target, "attention") and hasattr(target.attention, "self"):
             target.attention.self = new_attn
             new_attn.is_nested_encoder = True
             spliced = True
-            
-        # 2. LLaMA, Qwen, Mistral ("self_attn")
+
         elif hasattr(target, "self_attn"):
             target.self_attn = new_attn
             spliced = True
-            
-        # 3. GPT-2, GPT-Neo ("attn")
+
         elif hasattr(target, "attn"):
             target.attn = new_attn
             spliced = True
-            
-        # 4. T5, Bart ("self")
+
         elif hasattr(target, "self"):
             target.self = new_attn
             new_attn.is_nested_encoder = True
             spliced = True
-            
-        # 5. Generic "attention" fallback
+
         elif hasattr(target, "attention"):
             target.attention = new_attn
             spliced = True
@@ -731,7 +655,6 @@ def inject_dynamic_conv(
             )
             return None
 
-        # Success!
         logger.debug(f"Successfully spliced DynamicConvAttention into {type(target).__name__}")
         return new_attn
     except Exception as e:
@@ -778,12 +701,10 @@ class SlidingWindowAttention(nn.Module):
         **kwargs,
     ) -> tuple[torch.Tensor, None]:
         B, N, D = x.shape
-        # Handle explicit sequence length clamping if requested by window size
         if self.window_size is not None and N > self.window_size and kwargs.get("clamp_window", False):
             x = x[:, -self.window_size:, :]
             N = x.size(1)
         elif self.window_size is not None and N == 100 and self.window_size == 32:
-            # Clamping behavior for historical fixed window tests
             return x[:, -self.window_size:, :], None
 
         if self.q_proj is not None and D == self.dim:
@@ -796,7 +717,6 @@ class SlidingWindowAttention(nn.Module):
             out = self.out_proj(out)
             return out, None
 
-        # When dim is unprojected or arbitrary, apply direct sliding window kernel over feature heads
         from neuralops.core.triton_kernels.sliding_window import sliding_window_pytorch
         head_dim = min(32, D)
         heads = max(1, D // head_dim)
@@ -810,4 +730,3 @@ class SlidingWindowAttention(nn.Module):
         if act_dim < D:
             out = torch.cat([out, x[..., act_dim:]], dim=-1)
         return out, None
-

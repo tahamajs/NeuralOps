@@ -24,7 +24,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 
 logger = logging.getLogger(__name__)
 
-# ── FLA availability check ──────────────────────────────────────────
 FLA_AVAILABLE = True
 
 try:
@@ -97,7 +96,6 @@ class GLAttention(BaseAttention):
             else compute_dtype
         )
 
-        # Decoder / Causal detection
         model_type = str(getattr(config, "model_type", "") or "").lower() if config else ""
         dec_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo")
         is_dec = False
@@ -109,26 +107,18 @@ class GLAttention(BaseAttention):
             is_dec = True
         self.is_decoder = is_dec
 
-        # Projections
         self.q_proj = nn.Linear(self.dim, self.all_head_size, bias=True)
         self.k_proj = nn.Linear(self.dim, self.all_head_size, bias=True)
         self.v_proj = nn.Linear(self.dim, self.all_head_size, bias=True)
         self.out_proj = nn.Linear(self.all_head_size, self.dim, bias=True)
 
-        # Low-rank data-dependent gate
         self.gate_W1 = nn.Linear(self.dim, gate_rank, bias=False)
         self.gate_W2 = nn.Linear(gate_rank, self.num_heads, bias=True)
 
         with torch.no_grad():
-            # bias=16 → logsigmoid(16/16) = logsigmoid(1) = -0.3133
-            # per-token decay = exp(-0.3133) = 0.731
-            # steady-state |S| = 1/(1-0.731) = 3.72  (vs 1666 for bias=120)
-            # After 256 tokens: 0.731^256 ≈ 2e-34 (state fully recycled)
-            # This matches GPT-2's effective attention span (~128-256 tokens)
             self.gate_W2.bias.fill_(16.0)
-            self.gate_W1.weight.normal_(0.0, 0.02)   # keep random, NOT zero
+            self.gate_W1.weight.normal_(0.0, 0.02)
 
-        # ── Output norm per head (critical for numerical stability) ──
         self.o_norm = nn.RMSNorm(self.head_dim, eps=1e-6)
 
         self._fla_kernel = chunk_gla if self.use_fla else None
@@ -145,7 +135,6 @@ class GLAttention(BaseAttention):
         if src is None:
             return
 
-        # Handle GPT-2 fused c_attn (Conv1D: weight is [in_features, 3 * out_features])
         if hasattr(src, "c_attn") and src.c_attn is not None:
             is_conv1d = "Conv1D" in type(src.c_attn).__name__
             c_w = src.c_attn.weight.data
@@ -172,7 +161,6 @@ class GLAttention(BaseAttention):
                     if src.c_proj.bias is not None:
                         self.out_proj.bias.copy_(src.c_proj.bias.data)
         else:
-            # Handle separate linear projections (LLaMA style)
             aliases = {
                 "q_proj": ["q_proj", "query", "q_lin"],
                 "k_proj": ["k_proj", "key", "k_lin"],
@@ -205,11 +193,9 @@ class GLAttention(BaseAttention):
         B, N, D = hidden_states.shape
         H, d = self.num_heads, self.head_dim
 
-        # 1. Gate calculation directly in log-space: logsigmoid(logits) <= 0
-        gate_logits = self.gate_W2(self.gate_W1(hidden_states))  # (B, N, H)
-        g = F.logsigmoid(gate_logits / self.gate_tau)           # (B, N, H)
+        gate_logits = self.gate_W2(self.gate_W1(hidden_states))
+        g = F.logsigmoid(gate_logits / self.gate_tau)
 
-        # 2. Projections
         Q = self.q_proj(hidden_states).view(B, N, H, d)
         K = self.k_proj(hidden_states).view(B, N, H, d)
         V = self.v_proj(hidden_states).view(B, N, H, d)
@@ -219,7 +205,6 @@ class GLAttention(BaseAttention):
                 Q_f = Q.to(torch.bfloat16)
                 K_f = K.to(torch.bfloat16)
                 V_f = V.to(torch.bfloat16)
-                # FLA expects g with shape [B, N, H, d]
                 g_f = g.unsqueeze(-1).expand(B, N, H, d).to(torch.bfloat16)
 
                 out, _ = self._fla_kernel(
@@ -238,7 +223,6 @@ class GLAttention(BaseAttention):
         else:
             out = self._pytorch_gla_stable(Q, K, V, g).float()
 
-        # Bidirectional scan for bidirectional encoder models (e.g. RoBERTa, BERT)
         if not self.is_decoder:
             Q_r = torch.flip(Q, dims=[1])
             K_r = torch.flip(K, dims=[1])
@@ -248,10 +232,8 @@ class GLAttention(BaseAttention):
             out_bwd = torch.flip(out_bwd_raw, dims=[1])
             out = 0.5 * (out + out_bwd)
 
-        # 4. RMSNorm per head (essential for stable magnitude, done in float32 before dtype cast)
-        out = self.o_norm(out.float()).to(hidden_states.dtype)  # (B, N, H, d)
+        out = self.o_norm(out.float()).to(hidden_states.dtype)
 
-        # 5. Out projection with variance-preserving RMS gain (computed in fp32)
         out = out.contiguous().view(B, N, self.all_head_size)
         v_flat = V.contiguous().view(B, N, self.all_head_size).float()
         out_f = out.float()
@@ -283,29 +265,25 @@ class GLAttention(BaseAttention):
             state = {}
         step_idx = state.get("step_idx", 0)
 
-        # 1. Gate calculation: logsigmoid(gate_logits / tau) <= 0
-        gate_logits = self.gate_W2(self.gate_W1(x))  # (B, 1, H)
-        g = F.logsigmoid(gate_logits / self.gate_tau)  # (B, 1, H)
+        gate_logits = self.gate_W2(self.gate_W1(x))
+        g = F.logsigmoid(gate_logits / self.gate_tau)
 
-        # 2. Projections
-        Q = self.q_proj(x).view(B, 1, H, d).transpose(1, 2).squeeze(2)  # [B, H, d]
+        Q = self.q_proj(x).view(B, 1, H, d).transpose(1, 2).squeeze(2)
         K = self.k_proj(x).view(B, 1, H, d).transpose(1, 2).squeeze(2)
         V = self.v_proj(x).view(B, 1, H, d).transpose(1, 2).squeeze(2)
-        g_in = g.transpose(1, 2).squeeze(2)                              # [B, H]
+        g_in = g.transpose(1, 2).squeeze(2)
 
         if "kv_state" not in state or state["kv_state"] is None:
             state["kv_state"] = torch.zeros((B, H, d, d), device=device, dtype=torch.float32)
 
         kv_state = state["kv_state"]
 
-        # 3. Recurrent update
         out_t, kv_state = fused_recurrent_gla_step(
             Q, K, V, g_in, kv_state, scale=self.scale
         )
         state["kv_state"] = kv_state
         state["step_idx"] = step_idx + 1
 
-        # 4. RMSNorm per head + out_proj
         out_h = out_t.unsqueeze(1).view(B, 1, H, d)
         out_normed = self.o_norm(out_h.float()).to(dtype).contiguous().view(B, 1, self.all_head_size)
 
@@ -363,12 +341,10 @@ class GLAttention(BaseAttention):
 
             g_cumsum = torch.cumsum(g_c, dim=-1)
 
-            # 1. Inter-chunk contribution from past state
             decay_inter = g_cumsum.exp()
             q_inter = q_c * decay_inter.unsqueeze(-1)
             o_inter = torch.einsum("bhld,bhde->bhle", q_inter, state)
 
-            # 2. Intra-chunk contribution
             g_diff = g_cumsum.unsqueeze(-1) - g_cumsum.unsqueeze(-2)
             decay_intra = g_diff.exp() * causal_mask[:L, :L].float()
             qk = torch.einsum("bhld,bhsd->bhls", q_c, k_c)
@@ -377,7 +353,6 @@ class GLAttention(BaseAttention):
 
             outputs.append((o_inter + o_intra).to(dtype))
 
-            # 3. State update
             g_last = g_cumsum[:, :, -1:]
             decay_state = g_last.exp().unsqueeze(-1)
             state = state * decay_state
@@ -419,37 +394,33 @@ class GLAttention(BaseAttention):
             end = min(start + chunk_size, N)
             L = end - start
 
-            # Pre-apply scale to Q for unified scaling across chunk paths
-            q = (Q[:, start:end] * self.scale).float()  # (B, L, H, d)
-            k = K[:, start:end].float()                 # (B, L, H, d)
-            v = V[:, start:end].float()                 # (B, L, H, d)
-            g_c = g[:, start:end].float()               # (B, L, H)
+            q = (Q[:, start:end] * self.scale).float()
+            k = K[:, start:end].float()
+            v = V[:, start:end].float()
+            g_c = g[:, start:end].float()
 
-            b_log = torch.cumsum(g_c, dim=1)            # (B, L, H), cumulative decay <= 0
+            b_log = torch.cumsum(g_c, dim=1)
             causal = causal_full[:L, :L]
 
-            # ── Inter-chunk contribution ──
-            q_b = q * b_log.exp().unsqueeze(-1)         # (B, L, H, d)
+            q_b = q * b_log.exp().unsqueeze(-1)
             inter = torch.einsum("blhd,bhde->blhe", q_b, S)
 
-            # ── Intra-chunk contribution ──
-            diff_log = b_log.unsqueeze(2) - b_log.unsqueeze(1)  # (B, L, L, H)
+            diff_log = b_log.unsqueeze(2) - b_log.unsqueeze(1)
             decay = torch.exp(diff_log.clamp(max=0.0))
 
-            qk = torch.einsum("bihd,bjhd->bijh", q, k)          # (B, L, L, H)
-            scores = (qk * decay).permute(0, 3, 1, 2)           # (B, H, L, L)
+            qk = torch.einsum("bihd,bjhd->bijh", q, k)
+            scores = (qk * decay).permute(0, 3, 1, 2)
             scores = scores.masked_fill(~causal, 0.0)
-            intra = torch.einsum("bhij,bjhd->bihd", scores, v)  # (B, L, H, d)
+            intra = torch.einsum("bhij,bjhd->bihd", scores, v)
 
             out_chunks.append(inter + intra)
 
-            # ── State update ──
-            g_end = b_log[:, -1, :]                             # (B, H)
-            decay_total = g_end.exp()                           # (B, H)
+            g_end = b_log[:, -1, :]
+            decay_total = g_end.exp()
             weights = torch.exp((g_end.unsqueeze(1) - b_log).clamp(max=0.0))
 
-            k_w = k * weights.unsqueeze(-1)                     # (B, L, H, d)
-            kv = torch.einsum("blhd,blhe->bhde", k_w, v)        # (B, H, d, d)
+            k_w = k * weights.unsqueeze(-1)
+            kv = torch.einsum("blhd,blhe->bhde", k_w, v)
 
             S = S * decay_total.unsqueeze(-1).unsqueeze(-1) + kv
 

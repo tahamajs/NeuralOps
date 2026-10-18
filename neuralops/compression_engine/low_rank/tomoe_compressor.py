@@ -54,7 +54,6 @@ class ToMoELinear(nn.Module):
     ):
         super().__init__()
 
-        # Fix 2: Handle both nn.Linear, Conv1D, and LoRALinear wrappers
         if original is not None:
             base_layer = getattr(original, "base_layer", original)
             cls_name = base_layer.__class__.__name__.lower()
@@ -62,12 +61,11 @@ class ToMoELinear(nn.Module):
                 hasattr(base_layer, "nx") and hasattr(base_layer, "nf")
             )
             if is_conv1d:
-                # Conv1D stores weight as (nx, nf) where nx=in_features, nf=out_features
                 in_feat = base_layer.weight.shape[0]
                 out_feat = base_layer.weight.shape[1]
                 orig_w = (
                     base_layer.weight.data.t().contiguous().clone()
-                )  # Transpose to (out_features, in_features)
+                )
                 orig_b = base_layer.bias.data.clone() if base_layer.bias is not None else None
             elif isinstance(base_layer, nn.Linear):
                 in_feat = base_layer.in_features
@@ -99,11 +97,9 @@ class ToMoELinear(nn.Module):
         self.in_features = in_feat
         self.out_features = out_feat
 
-        # Guard against num_experts > out_features
         self.num_experts = max(1, min(num_experts, out_feat))
         self.top_k = max(1, min(top_k, self.num_experts))
 
-        # Check for existing LoRA in original
         has_orig_lora = (
             original is not None and hasattr(original, "lora_A") and hasattr(original, "lora_B")
         )
@@ -116,7 +112,6 @@ class ToMoELinear(nn.Module):
         self.freeze_experts = freeze_experts
         self.max_error = max_error
 
-        # Perform clustering with MiniBatchKMeans for large layers, standard KMeans otherwise
         W_fp32 = orig_w.detach().float().cpu().numpy()
         assignments = None
 
@@ -145,13 +140,10 @@ class ToMoELinear(nn.Module):
                     )
                     assignments = None
                 else:
-                    # Balance KMeans clusters to equal size for fast vectorized path
                     target_size = self.out_features // self.num_experts
                     rem = self.out_features % self.num_experts
                     if rem == 0 and not (counts == target_size).all():
-                        # Distances to cluster centers for balanced reassignment
-                        dists = km.transform(W_fp32)  # [out_features, num_experts]
-                        # Sort neurons by distance margin between assigned cluster and others
+                        dists = km.transform(W_fp32)
                         order = np.argsort(np.min(dists, axis=1))
                         balanced_assign = np.full(self.out_features, -1, dtype=int)
                         exp_occupancy = np.zeros(self.num_experts, dtype=int)
@@ -173,7 +165,6 @@ class ToMoELinear(nn.Module):
                 assignments = None
 
         if assignments is None or (assignments < 0).any():
-            # Deterministic equal contiguous division ensuring zero empty experts
             assignments = np.zeros(self.out_features, dtype=int)
             chunk = self.out_features // self.num_experts
             rem = self.out_features % self.num_experts
@@ -183,7 +174,6 @@ class ToMoELinear(nn.Module):
                 assignments[start:end] = e
                 start = end
 
-        # Create expert sub-layers and record neuron assignment masks
         self.experts = nn.ModuleList()
         self.register_buffer(
             "_masks", torch.zeros(self.num_experts, self.out_features, dtype=torch.bool)
@@ -220,7 +210,6 @@ class ToMoELinear(nn.Module):
 
             self.experts.append(expert)
 
-        # Register padded expert indices as a proper buffer so it moves with .to(device)
         max_size = max(len(idx) for idx in expert_indices_list)
         padded_indices = torch.zeros(self.num_experts, max_size, dtype=torch.long)
         for e, idx in enumerate(expert_indices_list):
@@ -237,7 +226,6 @@ class ToMoELinear(nn.Module):
         else:
             self.expert_out_dim = -1
 
-        # Router in FP32 for numerical stability & speed
         self.router = nn.Linear(
             self.in_features, self.num_experts, device=device, dtype=torch.float32
         )
@@ -248,7 +236,6 @@ class ToMoELinear(nn.Module):
         if self.router.bias is not None:
             self.router.bias.requires_grad = True
 
-        # Trainable LoRA Adapters
         if self.lora_r > 0:
             self.expert_lora_A = nn.ParameterList()
             self.expert_lora_B = nn.ParameterList()
@@ -306,7 +293,6 @@ class ToMoELinear(nn.Module):
         x_flat = x.reshape(-1, in_feat)
         N = x_flat.shape[0]
 
-        # Compute router logits in FP32
         router_logits = self.router(x_flat.float())
         if self.lora_r > 0 and hasattr(self, "lora_A_router") and hasattr(self, "lora_B_router"):
             router_lora = (
@@ -317,23 +303,21 @@ class ToMoELinear(nn.Module):
         if torch.isnan(router_logits).any() or torch.isinf(router_logits).any():
             router_logits = torch.nan_to_num(router_logits, nan=0.0, posinf=1.0, neginf=-1.0)
 
-        # Top-k routing with GPU Triton acceleration
         if x.is_cuda and not self.training:
             try:
                 from neuralops.core.triton_kernels.sparse_attn import fused_topk_sparse_route_and_combine_triton
             except Exception:
                 pass
-        topk_vals, topk_idx = torch.topk(router_logits, self.top_k, dim=-1)  # (N, top_k)
-        topk_weights = torch.softmax(topk_vals, dim=-1).to(x.dtype)  # (N, top_k)
+        topk_vals, topk_idx = torch.topk(router_logits, self.top_k, dim=-1)
+        topk_weights = torch.softmax(topk_vals, dim=-1).to(x.dtype)
 
         out = torch.zeros(N, self.out_features, device=x.device, dtype=x.dtype)
 
         if self.equal_expert_size:
-            # Fast vectorized gather & scatter_add_ for equal-sized expert partitions
             D_exp = self.expert_out_dim
             all_expert_outs = torch.stack(
                 [exp(x_flat) for exp in self.experts], dim=1
-            )  # (N, E, D_exp)
+            )
 
             if self.lora_r > 0 and hasattr(self, "expert_lora_A"):
                 lora_outs = []
@@ -349,11 +333,11 @@ class ToMoELinear(nn.Module):
             expanded_idx = topk_idx.unsqueeze(-1).expand(N, self.top_k, D_exp)
             selected_outs = torch.gather(
                 all_expert_outs, dim=1, index=expanded_idx
-            )  # (N, top_k, D_exp)
-            weighted_selected = selected_outs * topk_weights.unsqueeze(-1)  # (N, top_k, D_exp)
+            )
+            weighted_selected = selected_outs * topk_weights.unsqueeze(-1)
 
             col_map = self.expert_col_map
-            dest_cols = col_map[topk_idx]  # (N, top_k, D_exp)
+            dest_cols = col_map[topk_idx]
 
             out.scatter_add_(
                 dim=1,
@@ -361,9 +345,8 @@ class ToMoELinear(nn.Module):
                 src=weighted_selected.reshape(N, self.top_k * D_exp),
             )
         else:
-            # Vectorized token dispatch per expert with scatter_add_
             for e in range(self.num_experts):
-                expert_match = topk_idx == e  # (N, top_k)
+                expert_match = topk_idx == e
                 if not expert_match.any():
                     continue
                 token_idx, rank_pos = torch.where(expert_match)
@@ -389,8 +372,6 @@ class ToMoELinear(nn.Module):
         return out.reshape(*orig_shape[:-1], self.out_features)
 
 
-
-
 class ToMoECompressor(BaseCompressor):
     """
     ToMoE Compressor: dynamically replaces dense feed-forward and projection layers
@@ -408,7 +389,6 @@ class ToMoECompressor(BaseCompressor):
         target_modules: Optional list of target layer name substrings.
     """
 
-    # Fix 6: Protection of Critical Layers
     PROTECTED_KEYWORDS = [
         "classifier",
         "score",
@@ -478,7 +458,6 @@ class ToMoECompressor(BaseCompressor):
             return False
         if not should_compress_linear(self.model, name):
             return False
-        # Exclude fused QKV (c_attn, in_proj_qkv) to prevent mixing semantic groups across heads in clustering
         if "c_attn" in name.lower() or "in_proj" in name.lower():
             return False
         if self.target_modules is not None:
@@ -498,7 +477,6 @@ class ToMoECompressor(BaseCompressor):
                 "value",
             ]
             return any(k in low for k in attn_keywords)
-        # Default: target FFN, MLP, and linear projections across all supported families
         return any(
             t in low
             for t in [
@@ -554,7 +532,6 @@ class ToMoECompressor(BaseCompressor):
             if not self._is_target(name):
                 continue
 
-            # Fix 2: Check for supported layer type (nn.Linear or Conv1D) on base module
             base_mod = getattr(module, "base_layer", module)
             cls_name = base_mod.__class__.__name__.lower()
             is_linear = isinstance(base_mod, nn.Linear)
@@ -575,7 +552,6 @@ class ToMoECompressor(BaseCompressor):
                 skipped_layers.append((name, f"unsupported_type_{type(base_mod).__name__}"))
                 continue
 
-            # H20: Detect and protect tied weights (e.g. wte and lm_head sharing same storage)
             if hasattr(base_mod, "weight") and base_mod.weight is not None:
                 w_ptr = base_mod.weight.data_ptr()
                 if w_ptr in seen_weight_ptrs:
@@ -587,7 +563,6 @@ class ToMoECompressor(BaseCompressor):
                     continue
                 seen_weight_ptrs.add(w_ptr)
 
-            # Determine weights and feature shapes ensuring orientation is (out_features, in_features)
             if is_conv1d:
                 in_f = base_mod.weight.shape[0]
                 out_f = base_mod.weight.shape[1]
@@ -605,7 +580,6 @@ class ToMoECompressor(BaseCompressor):
                 skipped_layers.append((name, f"out_features_too_small_{out_f}"))
                 continue
 
-            # Respect GQA dimensions (e.g. Qwen k_proj/v_proj with fewer heads)
             eff_num_experts = max(1, min(self.num_experts, out_f))
             eff_top_k = max(1, min(self.top_k, eff_num_experts))
 
@@ -618,7 +592,6 @@ class ToMoECompressor(BaseCompressor):
                 skipped_layers.append((name, "parent_not_found"))
                 continue
 
-            # Construct ToMoELinear
             try:
                 moe_layer = ToMoELinear(
                     original=module,
@@ -634,7 +607,6 @@ class ToMoECompressor(BaseCompressor):
                 skipped_layers.append((name, f"construction_error_{e}"))
                 continue
 
-            # Meaningful fidelity check: activation reconstruction error on a calibration batch
             with torch.no_grad():
                 device = orig_w_2d.device
                 dtype = orig_w_2d.dtype
@@ -658,7 +630,6 @@ class ToMoECompressor(BaseCompressor):
                     p.requires_grad = False
                 continue
 
-            # Replace layer in parent module preserving outer LoRALinear wrapper if present
             orig_p_count = sum(p.numel() for p in module.parameters())
             new_p_count = sum(p.numel() for p in moe_layer.parameters())
             if hasattr(module, "base_layer"):
@@ -700,7 +671,6 @@ class ToMoECompressor(BaseCompressor):
         new_total_params = sum(p.numel() for p in self.model.parameters())
         self._compressed_params = new_total_params
 
-        # Fix 5: Per-Layer Stats and Logging
         self.stats = {
             "converted_layers": converted_layers,
             "num_converted_layers": len(converted_layers),

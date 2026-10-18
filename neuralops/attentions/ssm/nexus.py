@@ -55,15 +55,10 @@ class NEXUSConfig:
     sparse_min_seq_len: int = 8
     enable_spectraformer: bool = False
     dropout: float = 0.1
-    # NEW: causal chunk size for chunked causal NEXUS
     causal_chunk_size: int = 256
-    # NEW: number of landmarks per chunk for inter-chunk Nyström
     causal_landmarks: int = 32
 
 
-# ===========================================================================
-# 1. XAttention antidiagonal block scoring
-# ===========================================================================
 class XAttentionScorer:
     @staticmethod
     def score_blocks(
@@ -91,9 +86,6 @@ class XAttentionScorer:
         return scores
 
 
-# ===========================================================================
-# 2. SeerAttention learnable gating
-# ===========================================================================
 class SeerGating(nn.Module):
     def __init__(
         self,
@@ -138,40 +130,29 @@ class SeerGating(nn.Module):
             torch.matmul(q_gate, k_gate).squeeze(-1).squeeze(-1) / self.temperature
         )
 
-        # FIXED: Gradient breakage due to .long() and .item() in python loop.
-        # Implemented a fully vectorized Soft Straight-Through Estimator (STE) mask
-        # so gate_score receives dense gradients while maintaining hard sparsity in forward pass.
         k_float = gate_score * n_blocks
-        
+
         idx = torch.arange(n_blocks, device=Q.device).view(1, 1, 1, n_blocks)
         k_float_exp = k_float.unsqueeze(-1).unsqueeze(-1)
-        
-        # Soft mask for differentiability
+
         temperature = 0.1
         soft_mask = torch.sigmoid((k_float_exp - idx) / temperature)
-        
-        # Hard mask for strict sparsity (k_float rounded)
+
         k_int = torch.clamp(k_float.round(), min=1, max=n_blocks).long().unsqueeze(-1).unsqueeze(-1)
         hard_mask = (idx < k_int).float()
-        
-        # STE Trick: Forward is hard, backward is soft
+
         ste_mask = hard_mask + soft_mask - soft_mask.detach()
-        
+
         mask = torch.zeros(B, H, n_blocks, n_blocks, device=Q.device, dtype=ste_mask.dtype)
-        # Apply STE mask across all queries (dim 2) for the selected key blocks (dim 3)
         mask = mask + ste_mask
-        
-        # Ensure diagonal and first block are always kept
+
         diag_idx = torch.arange(n_blocks, device=Q.device)
         mask[:, :, diag_idx, diag_idx] = 1.0
         mask[:, :, :, 0] = 1.0
-        
+
         return mask
 
 
-# ===========================================================================
-# 3. Dual-Stage + Stripe Attention (for non-causal)
-# ===========================================================================
 class DualStageStripeAttention(nn.Module):
     def __init__(
         self,
@@ -222,7 +203,6 @@ class DualStageStripeAttention(nn.Module):
         else:
             inter_mask = torch.ones(B, H, nb, nb, device=Q.device, dtype=torch.bool)
 
-        # Handle boolean base mask
         inter_mask[:, :, :, 0] = True
         diag_idx = torch.arange(nb, device=Q.device)
         inter_mask[:, :, diag_idx, diag_idx] = True
@@ -233,9 +213,7 @@ class DualStageStripeAttention(nn.Module):
         scores = scores.masked_fill(~expanded_inter_mask, -10000.0)
 
         if seer_mask is not None:
-            # seer_mask is an STE float mask [B, H, nb, nb]
             expanded_seer = seer_mask.repeat_interleave(bs, dim=2).repeat_interleave(bs, dim=3)[:, :, :N, :N]
-            # Inject differentiable mask via additive penalty
             scores = scores + (expanded_seer - 1.0) * 10000.0
 
         if self.cfg.stripe_enabled and N > 256:
@@ -260,9 +238,6 @@ class DualStageStripeAttention(nn.Module):
         return context
 
 
-# ===========================================================================
-# 4. Spectraformer-style random-feature global rectification
-# ===========================================================================
 class SpectraformerRectify(nn.Module):
     def __init__(self, head_dim: int, rff_features: int = 128, **kwargs) -> None:
         super().__init__()
@@ -297,9 +272,6 @@ class SpectraformerRectify(nn.Module):
         return (ctx / norm.clamp(min=1e-5)).to(orig_dtype)
 
 
-# ===========================================================================
-# 5. NEXUS Attention (full module with Chunked Causal)
-# ===========================================================================
 @ATTENTION_REGISTRY.register("nexus", supports_causal=True, supports_gqa=True)
 class NEXUSAttention(BaseAttention):
     """NEXUSAttention neural operator.
@@ -514,12 +486,9 @@ class NEXUSAttention(BaseAttention):
             return v.any(dim=-2).squeeze(1).to(device)
         return torch.ones(B, N, device=device, dtype=torch.bool)
 
-    # ------------------------------------------------------------------
-    # CHUNKED CAUSAL NEXUS — NEW
-    # ------------------------------------------------------------------
     def _chunked_causal_nexus(
         self,
-        Q: torch.Tensor,           # (B, H, N, D)
+        Q: torch.Tensor,
         K: torch.Tensor,
         V: torch.Tensor,
         token_valid: torch.Tensor | None = None,
@@ -552,7 +521,6 @@ class NEXUSAttention(BaseAttention):
         B, H, N, D = Q.shape
         device = Q.device
 
-        # Force FP32 for numerical stability (pinv backward compat)
         Q = Q.float()
         K = K.float()
         V = V.float()
@@ -560,7 +528,6 @@ class NEXUSAttention(BaseAttention):
         scale = 1.0 / math.sqrt(D)
         m = min(num_landmarks, N)
 
-        # If sequence fits in one chunk, do intra-chunk only
         if N <= chunk_size:
             scores = torch.matmul(Q, K.transpose(-2, -1).contiguous()) * scale
             causal = torch.tril(torch.ones(N, N, device=device, dtype=torch.bool))
@@ -597,7 +564,6 @@ class NEXUSAttention(BaseAttention):
             V_c = V[:, :, start:end, :]
             mask_c = token_valid[:, start:end] if token_valid is not None else None
 
-            # ---- 1. Intra-chunk causal attention (dense within chunk) ----
             scores_intra = torch.matmul(Q_c, K_c.transpose(-2, -1).contiguous()) * scale
             causal_intra = torch.tril(
                 torch.ones(C_len, C_len, device=device, dtype=torch.bool)
@@ -629,12 +595,10 @@ class NEXUSAttention(BaseAttention):
 
             out_intra = torch.matmul(attn_intra, V_c)
 
-            # ---- First chunk: no inter-chunk ----
             if c_idx == 0:
                 outputs.append(out_intra)
                 continue
 
-            # ---- 2. Inter-chunk Nyström ----
             K_prev = K[:, :, :start, :]
             V_prev = V[:, :, :start, :]
             mask_prev = token_valid[:, :start] if token_valid is not None else None
@@ -642,7 +606,6 @@ class NEXUSAttention(BaseAttention):
 
             m_prev = min(m, prev_len)
 
-            # Pool landmarks
             def _pool(X, n_landmarks):
                 Bx, Hx, Nx, Dx = X.shape
                 if n_landmarks >= Nx:
@@ -655,19 +618,16 @@ class NEXUSAttention(BaseAttention):
 
             K_landmarks = _pool(K_prev, m_prev)
 
-            # F1 (queries to landmarks): (B, H, C, m_prev)
             scores1 = torch.matmul(
                 Q_c, K_landmarks.transpose(-2, -1).contiguous()
             ) * scale
             F1 = F.softmax(scores1, dim=-1)
 
-            # F2 (landmarks self-interaction): (B, H, m_prev, m_prev)
             scores2 = torch.matmul(
                 K_landmarks, K_landmarks.transpose(-2, -1).contiguous()
             ) * scale
             F2 = F.softmax(scores2, dim=-1)
 
-            # F3 (landmarks to full prev keys): (B, H, m_prev, prev_len)
             scores3 = torch.matmul(
                 K_landmarks, K_prev.transpose(-2, -1).contiguous()
             ) * scale
@@ -677,7 +637,6 @@ class NEXUSAttention(BaseAttention):
                 )
             F3 = F.softmax(scores3, dim=-1)
 
-            # Stable pseudoinverse with rcond clamping
             try:
                 F2_pinv = torch.linalg.pinv(F2, rcond=1e-3)
             except Exception:
@@ -685,22 +644,20 @@ class NEXUSAttention(BaseAttention):
                 F2_reg = F2 + 1e-2 * torch.eye(mx, device=device, dtype=torch.float32).unsqueeze(0).unsqueeze(0)
                 F2_pinv = torch.linalg.inv(F2_reg)
 
-            # Cross-chunk output with bounded scaling
             if F1.is_cuda and V_prev.is_cuda:
                 try:
                     from neuralops.core.triton_kernels.low_rank import fused_nystrom_landmark_pinv_step_triton
                     out_cross = fused_nystrom_landmark_pinv_step_triton(F1, F2_pinv, F3, V_prev)
                 except Exception:
-                    step1 = torch.matmul(F3, V_prev)          # (B, H, m_prev, D)
-                    step2 = torch.matmul(F2_pinv, step1)      # (B, H, m_prev, D)
-                    out_cross = torch.matmul(F1, step2)       # (B, H, C, D)
+                    step1 = torch.matmul(F3, V_prev)
+                    step2 = torch.matmul(F2_pinv, step1)
+                    out_cross = torch.matmul(F1, step2)
             else:
-                step1 = torch.matmul(F3, V_prev)          # (B, H, m_prev, D)
-                step2 = torch.matmul(F2_pinv, step1)      # (B, H, m_prev, D)
-                out_cross = torch.matmul(F1, step2)       # (B, H, C, D)
+                step1 = torch.matmul(F3, V_prev)
+                step2 = torch.matmul(F2_pinv, step1)
+                out_cross = torch.matmul(F1, step2)
             out_cross = torch.nan_to_num(out_cross, nan=0.0, posinf=50.0, neginf=-50.0)
 
-            # Combine
             out_c = out_intra + 0.1 * out_cross
             outputs.append(out_c)
 
@@ -708,9 +665,6 @@ class NEXUSAttention(BaseAttention):
         context = self.dropout(context)
         return context.to(original_dtype)
 
-    # ------------------------------------------------------------------
-    # copy_weights (unchanged from original)
-    # ------------------------------------------------------------------
     def copy_weights(self, src: Any) -> None:
         from neuralops.core.adapters import UniversalAdapter
 
@@ -862,9 +816,6 @@ class NEXUSAttention(BaseAttention):
             if hasattr(self, "dss_attn"):
                 self.dss_attn.is_decoder = self.is_decoder
 
-    # ------------------------------------------------------------------
-    # Forward
-    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -894,7 +845,6 @@ class NEXUSAttention(BaseAttention):
         K = self._reshape(self.key(kv_input), self.num_kv_heads)
         V = self._reshape(self.value(kv_input), self.num_kv_heads)
 
-        # RoPE with past_len offset
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None and not is_cross:
@@ -920,9 +870,6 @@ class NEXUSAttention(BaseAttention):
 
         is_causal = bool(self.is_decoder and not is_cross)
 
-        # ============================================================
-        # PATH 1: CAUSAL (decoder) → Chunked Causal NEXUS
-        # ============================================================
         if is_causal and not is_cross:
             context = self._chunked_causal_nexus(
                 Q, K, V, token_valid,
@@ -932,9 +879,6 @@ class NEXUSAttention(BaseAttention):
             if token_valid is not None:
                 context = context * token_valid.unsqueeze(1).unsqueeze(-1).to(context.dtype)
 
-        # ============================================================
-        # PATH 2: CROSS-ATTENTION or SHORT SEQUENCE → dense
-        # ============================================================
         elif is_cross or (self.cfg.sparse_min_seq_len >= N) or (self.dss_attn is None):
             scale = 1.0 / math.sqrt(D)
             scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
@@ -962,9 +906,6 @@ class NEXUSAttention(BaseAttention):
 
             context = torch.matmul(attn_weights, V)
 
-        # ============================================================
-        # PATH 3: BIDIRECTIONAL (encoder) → sparse NEXUS
-        # ============================================================
         else:
             if self.is_rectify and self.spec_rectify is not None:
                 context = self.spec_rectify(Q, K, V)
@@ -983,7 +924,6 @@ class NEXUSAttention(BaseAttention):
         context = context.transpose(1, 2).contiguous().view(B, N, H * D)
         context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
 
-        # Variance-Preserving RMS Scaling
         v_flat = V.transpose(1, 2).contiguous().view(B, N, H * D)
         v_rms = v_flat.float().pow(2).mean(dim=-1, keepdim=True).add(1e-6).sqrt()
         c_rms = context.float().pow(2).mean(dim=-1, keepdim=True).add(1e-6).sqrt()
@@ -1025,7 +965,6 @@ class NEXUSAttention(BaseAttention):
             K = repeat_kv(K, self.kv_repeat)
             V = repeat_kv(V, self.kv_repeat)
 
-        # Maintain bounded past cache
         if "k_cache" not in state or state["k_cache"] is None:
             state["k_cache"] = K
             state["v_cache"] = V
@@ -1072,9 +1011,6 @@ class NEXUSAttention(BaseAttention):
         return loss
 
 
-# ===========================================================================
-# Injection helper
-# ===========================================================================
 def inject_nexus(
     model: nn.Module | None = None,
     layer: nn.Module | None = None,

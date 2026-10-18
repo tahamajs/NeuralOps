@@ -28,15 +28,6 @@ from neuralops.core.base import BaseAttention
 from neuralops.core.registry import ATTENTION_REGISTRY
 
 
-
-
-
-
-
-
-# ===========================================================================
-# QCQA Attention
-# ===========================================================================
 @ATTENTION_REGISTRY.register(
     "qcqa_attention",
     supports_causal=True,
@@ -73,7 +64,6 @@ class QCQAAttention(BaseAttention):
             getattr(config, "compression_config", None) if config else None
         )
 
-        # ---- hidden_size ----
         h_size = (
             kwargs.get("hidden_size")
             or getattr(config, "hidden_size", None)
@@ -152,7 +142,6 @@ class QCQAAttention(BaseAttention):
             if p is not None:
                 target_dtype = p.dtype
 
-        # ---- Projections ----
         self.q_proj = LoRALinear(
             self.dim, self.all_head_size, bias=True,
             lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
@@ -174,7 +163,6 @@ class QCQAAttention(BaseAttention):
             freeze_base=self.freeze_base, dtype=target_dtype,
         )
 
-        # Aliases for cross-architecture compatibility
         self.query = self.q_proj
         self.key = self.k_proj
         self.value = self.v_proj
@@ -186,15 +174,11 @@ class QCQAAttention(BaseAttention):
         self.o_proj = self.out_proj
         self.c_proj = self.out_proj
 
-        # ---- FIX-1 + FIX-4: Static routing (cache-stable, GQA-mimicking init) ----
-        # Shape: (num_heads, num_kv_heads) — learnable per-head mixing weights
         self.router_static = nn.Parameter(
             torch.zeros(self.num_heads, self.num_kv_heads)
         )
         self._init_router_gqa()
 
-        # ---- Dynamic routing for encoder-only (optional) ----
-        # Shape: (num_kv_heads, head_dim) — computes per-token routing from Q
         self.router_dynamic = nn.Linear(self.head_dim, self.num_kv_heads, bias=False)
         nn.init.normal_(self.router_dynamic.weight, std=0.02)
 
@@ -210,7 +194,6 @@ class QCQAAttention(BaseAttention):
         if target_dtype is not None:
             self.to(target_dtype)
 
-    # ------------------------------------------------------------------
     def _init_router_gqa(self) -> None:
         """FIX-4: Initialize routing to mimic standard GQA at step 0.
 
@@ -224,7 +207,6 @@ class QCQAAttention(BaseAttention):
                 kv_idx = min(i // self.kv_repeat, self.num_kv_heads - 1)
                 self.router_static.data[i, kv_idx] = 2.0
 
-    # ------------------------------------------------------------------
     def copy_weights(self, src: Any) -> None:
         if src is None:
             return
@@ -258,7 +240,6 @@ class QCQAAttention(BaseAttention):
             "v": (None, None), "o": (None, None),
         }
 
-        # GPT-2 fused c_attn
         if hasattr(src, "c_attn") and src.c_attn is not None:
             c_attn_mod = src.c_attn
             base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
@@ -299,7 +280,6 @@ class QCQAAttention(BaseAttention):
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
                     extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
 
-        # BERT/RoBERTa nested
         elif hasattr(src, "self") and hasattr(src.self, "query"):
             s = src.self
             for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
@@ -316,7 +296,6 @@ class QCQAAttention(BaseAttention):
                     out_mod.bias.data.clone() if out_mod.bias is not None else None,
                 )
 
-        # Flat (DistilBERT, LLaMA)
         else:
             proj_candidates = {
                 "q": ["q_lin", "q_proj", "query"],
@@ -411,7 +390,6 @@ class QCQAAttention(BaseAttention):
             for mod in [self.q_proj, self.k_proj, self.v_proj, self.out_proj]:
                 mod.freeze_base_weights()
 
-    # ------------------------------------------------------------------
     @staticmethod
     def _prepare_valid_mask(
         attention_mask: torch.Tensor | None,
@@ -444,7 +422,6 @@ class QCQAAttention(BaseAttention):
             return v.any(dim=-2).squeeze(1)
         raise ValueError(f"Unsupported attention_mask dim: {attention_mask.dim()}")
 
-    # ------------------------------------------------------------------
     _read_past_kv = staticmethod(_read_past_kv)
 
     def forward(
@@ -470,12 +447,10 @@ class QCQAAttention(BaseAttention):
         kv_input = encoder_hidden_states if is_cross else hidden_states
         N_kv_new = kv_input.shape[1]
 
-        # ---- Projections ----
         q = self.q_proj(hidden_states).view(B, L, self.num_heads, self.head_dim)
         k_new = self.k_proj(kv_input).view(B, N_kv_new, self.num_kv_heads, self.head_dim)
         v_new = self.v_proj(kv_input).view(B, N_kv_new, self.num_kv_heads, self.head_dim)
 
-        # ---- RoPE ----
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None and not is_cross:
@@ -506,7 +481,6 @@ class QCQAAttention(BaseAttention):
             q = q_rot.permute(0, 2, 1, 3).contiguous()
             k_new = k_rot.permute(0, 2, 1, 3).contiguous()
 
-        # ---- KV cache ----
         past_k, past_v, _ = self._read_past_kv(past_key_value, layer_idx) if not is_cross else (None, None, 0)
 
         if past_k is not None and past_v is not None and not is_cross:
@@ -516,7 +490,6 @@ class QCQAAttention(BaseAttention):
             K_cat = k_new
             V_cat = v_new
 
-        # ---- FIX-2: Return proper present_key_value ----
         present_kv: Any | None = None
         if not is_cross:
             use_cache = kwargs.get("use_cache", False) or past_key_value is not None
@@ -533,51 +506,40 @@ class QCQAAttention(BaseAttention):
         N_kv = K_cat.shape[1]
         past_len = N_kv - N_kv_new if (self.is_decoder and not is_cross) else 0
 
-        # ============================================================
-        # FIX-1: Routing
-        #   Decoder → static (cache-stable)
-        #   Encoder → dynamic (input-dependent, averaged)
-        # ============================================================
         if self.is_decoder and not is_cross:
-            # Static routing (H_q, H_kv) — independent of input, stable across time
-            w_head = F.softmax(self.router_static.float(), dim=-1).to(q.dtype)  # (H_q, H_kv)
-            w_head = w_head.unsqueeze(0).expand(B, -1, -1).contiguous()  # (B, H_q, H_kv)
+            w_head = F.softmax(self.router_static.float(), dim=-1).to(q.dtype)
+            w_head = w_head.unsqueeze(0).expand(B, -1, -1).contiguous()
         else:
-            # Encoder: dynamic per-token routing, averaged over sequence
             route_logits = self.router_dynamic(q) / max(self.router_temp, 1e-4)
             route_weights = F.softmax(route_logits.float(), dim=-1).to(q.dtype)
-            w_head = route_weights.mean(dim=1)  # (B, H_q, H_kv)
+            w_head = route_weights.mean(dim=1)
             w_head = w_head / w_head.sum(dim=-1, keepdim=True).clamp(min=1e-9)
 
-        # Mix KV heads on-the-fly (raw K_cat/V_cat stay in cache)
-        K_perm = K_cat.permute(0, 2, 1, 3)  # (B, H_kv, N_kv, d)
+        K_perm = K_cat.permute(0, 2, 1, 3)
         V_perm = V_cat.permute(0, 2, 1, 3)
         if K_perm.is_cuda and w_head.is_cuda:
             try:
                 from neuralops.core.triton_kernels.sparse_attn import fused_topk_sparse_route_and_combine_triton
-                # K_perm: (B, H_kv, N_kv, d) -> permute to (B, N_kv, H_kv, d) -> (B*N_kv, H_kv, d)
                 B_q, H_kv_q, N_kv_q, d_q = K_perm.shape
                 H_q = w_head.shape[1]
-                # Fast batched contraction
                 K_mixed = torch.einsum("bqk,bkjd->bqjd", w_head, K_perm)
                 V_mixed = torch.einsum("bqk,bkjd->bqjd", w_head, V_perm)
             except Exception:
                 K_mixed = torch.einsum("bqk,bkjd->bqjd", w_head, K_perm)
                 V_mixed = torch.einsum("bqk,bkjd->bqjd", w_head, V_perm)
         else:
-            K_mixed = torch.einsum("bqk,bkjd->bqjd", w_head, K_perm)  # (B, H_q, N_kv, d)
+            K_mixed = torch.einsum("bqk,bkjd->bqjd", w_head, K_perm)
             V_mixed = torch.einsum("bqk,bkjd->bqjd", w_head, V_perm)
 
-        q_heads = q.permute(0, 2, 1, 3).contiguous()  # (B, H_q, L, d)
+        q_heads = q.permute(0, 2, 1, 3).contiguous()
         scale = 1.0 / math.sqrt(self.head_dim)
 
-        # ---- Causal mask ----
         causal_mask = None
         if self.is_decoder and not is_cross:
             if past_len > 0:
                 abs_q = (past_len + torch.arange(L, device=device)).unsqueeze(1)
                 abs_k = torch.arange(N_kv, device=device).unsqueeze(0)
-                causal = (abs_k <= abs_q).unsqueeze(0).unsqueeze(0)  # (1, 1, L, N_kv)
+                causal = (abs_k <= abs_q).unsqueeze(0).unsqueeze(0)
             else:
                 causal = (
                     torch.tril(torch.ones(L, N_kv, device=device, dtype=torch.bool))
@@ -585,25 +547,20 @@ class QCQAAttention(BaseAttention):
                 )
             causal_mask = causal
 
-        # ---- Padding mask ----
         eff_mask = encoder_attention_mask if is_cross else attention_mask
-        token_valid = self._prepare_valid_mask(eff_mask, B, N_kv, device)  # (B, N_kv) or None
+        token_valid = self._prepare_valid_mask(eff_mask, B, N_kv, device)
 
-        # ============================================================
-        # FIX-3: SDPA with bool mask (FlashAttention-compatible)
-        # ============================================================
         use_sdpa = (not output_attentions) and (head_mask is None)
         context: torch.Tensor | None = None
         attn_probs_out: torch.Tensor | None = None
 
         if use_sdpa:
             try:
-                # Build a single bool mask (or None)
                 bool_mask = None
                 if causal_mask is not None and token_valid is not None:
                     bool_mask = (causal_mask & token_valid[:, None, None, :]).expand(B, 1, L, N_kv)
                 elif causal_mask is not None:
-                    bool_mask = causal_mask  # (1, 1, L, N_kv)
+                    bool_mask = causal_mask
                 elif token_valid is not None:
                     bool_mask = token_valid[:, None, None, :].expand(B, 1, L, N_kv)
 
@@ -627,7 +584,6 @@ class QCQAAttention(BaseAttention):
                 logger.debug("QCQA SDPA failed: %s; falling back to manual.", e)
                 context = None
 
-        # ---- Manual path (fallback or when output_attentions/head_mask) ----
         if context is None:
             scores = torch.matmul(
                 q_heads.float(), K_mixed.float().transpose(-2, -1).contiguous()
@@ -657,14 +613,12 @@ class QCQAAttention(BaseAttention):
             context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
             attn_probs_out = attn_probs if output_attentions else None
 
-        # ---- Output projection ----
         if self.is_nested_encoder:
             out = context
         else:
             out = self.out_proj(context)
             out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
 
-        # ---- FIX-2: Return in the correct format ----
         if self.is_decoder and not is_cross:
             if output_attentions:
                 return out, present_kv, attn_probs_out
@@ -674,9 +628,6 @@ class QCQAAttention(BaseAttention):
         return out, None
 
 
-# ===========================================================================
-# Injector (FIX-5: registered in ATTENTION_REGISTRY)
-# ===========================================================================
 def inject_qcqa(
     layer: Any = None,
     model: Any = None,
@@ -701,7 +652,6 @@ def inject_qcqa(
 
     cfg = model_config if model_config is not None else getattr(target, "config", None)
 
-    # ---- Whole-model traversal ----
     layer_list = None
     for path in (
         ("distilbert", "transformer", "layer"),
@@ -742,7 +692,6 @@ def inject_qcqa(
                 num_injected += 1
         return target if num_injected > 0 else None
 
-    # ---- Single layer ----
     try:
         def _already_injected(m):
             if m is None:
@@ -782,7 +731,6 @@ def inject_qcqa(
             **kwargs,
         )
 
-        # Place on correct device/dtype
         try:
             ref = next(src.parameters(), None)
             if ref is not None:
@@ -790,7 +738,6 @@ def inject_qcqa(
         except Exception:
             pass
 
-        # Splice into parent
         spliced = False
         if hasattr(target, "attention"):
             if hasattr(target.attention, "self"):

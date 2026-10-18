@@ -49,7 +49,6 @@ def inject_svd_linear_decay(
 
     cfg = model_config if model_config is not None else getattr(target, "config", None)
 
-    # ---- Whole-model traversal ----
     layer_list = None
     if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
         layer_list = target.distilbert.transformer.layer
@@ -90,12 +89,8 @@ def inject_svd_linear_decay(
                 num_injected += 1
         return target if num_injected > 0 else None
 
-    # ---- Single-layer injection ----
     layer = target
 
-    # ============================================================
-    # FIX-1: Discover source attention across all architecture variants
-    # ============================================================
     src_attn = old_attn
     src_attr_name: str | None = None
     src_is_nested: bool = False
@@ -106,7 +101,6 @@ def inject_svd_linear_decay(
             if candidate is None:
                 continue
 
-            # FIX-4: idempotency guard
             if (
                 isinstance(candidate, SVDLinearAttention)
                 or "SVDLinear" in candidate.__class__.__name__
@@ -118,7 +112,6 @@ def inject_svd_linear_decay(
                 )
                 return None
 
-            # RoBERTa/BERT nested: layer.attention.self has .query
             if hasattr(candidate, "self") and hasattr(candidate.self, "query"):
                 src_attn = candidate.self
                 src_attr_name = attr
@@ -130,7 +123,6 @@ def inject_svd_linear_decay(
             break
 
     if src_attn is None:
-        # FIX-5: explicit error logging
         logger.warning(
             "inject_svd_linear_decay: no source attention found on %s "
             "(checked: attn, attention, self_attn, self)",
@@ -138,10 +130,6 @@ def inject_svd_linear_decay(
         )
         return None
 
-    # ============================================================
-    # Delegate to underlying injector with explicit old_attn
-    # (so it never has to guess the source attribute)
-    # ============================================================
     kwargs["use_decay_gating"] = True
     try:
         result = inject_svd_linear_attention(
@@ -158,9 +146,6 @@ def inject_svd_linear_decay(
     if result is None:
         return None
 
-    # ============================================================
-    # FIX-3: Fallback replacement for GPT-2 and other missed architectures
-    # ============================================================
     if src_attr_name is not None and result is not layer:
         if src_is_nested:
             parent = getattr(layer, src_attr_name, None)

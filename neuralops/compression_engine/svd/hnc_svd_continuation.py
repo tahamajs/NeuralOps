@@ -57,7 +57,6 @@ def compute_function_matching_loss(
         else:
             out = model(x_batch)
 
-        # Extract primary representation / logits
         if hasattr(out, "logits"):
             y_pred = out.logits
         elif isinstance(out, tuple):
@@ -86,7 +85,6 @@ def hvp_gauss_newton(
 
     Runs in O(P) time and O(P) memory using double backward.
     """
-    # First backward: compute gradients with graph retention
     grads = torch.autograd.grad(
         loss,
         params,
@@ -95,7 +93,6 @@ def hvp_gauss_newton(
         allow_unused=True,
     )
 
-    # Clean None gradients
     clean_grads = []
     clean_v = []
     for g, vi, p in zip(grads, v, params):
@@ -106,12 +103,10 @@ def hvp_gauss_newton(
             clean_grads.append(torch.zeros_like(p))
             clean_v.append(vi)
 
-    # Compute inner product grad^T * v
     grad_dot_v = torch.sum(
         torch.stack([torch.sum(g * vi) for g, vi in zip(clean_grads, clean_v)])
     )
 
-    # Second backward: derivative of inner product with respect to params gives H * v
     hvps = torch.autograd.grad(
         grad_dot_v,
         params,
@@ -129,7 +124,6 @@ def estimate_top_eigenvalue(
     eps: float = 1e-8,
 ) -> Tuple[float, List[torch.Tensor]]:
     """Estimate top eigenvalue lambda_1 = lambda_max(G) via matrix-free power iteration."""
-    # Initialize random unit vector
     v = [torch.randn_like(p) for p in params]
     norm_v = math.sqrt(sum(torch.sum(vi ** 2).item() for vi in v)) + eps
     v = [vi / norm_v for vi in v]
@@ -163,61 +157,49 @@ def find_flat_subspace_lobpcg(
     P = sum(p.numel() for p in params)
     k = min(k, P)
 
-    # Initialize k orthogonal random parameter vectors
     V: List[List[torch.Tensor]] = []
     for _ in range(k):
         vec = [torch.randn_like(p) for p in params]
-        # Gram-Schmidt against previous
         for prev in V:
             dot = sum(torch.sum(vi * pi).item() for vi, pi in zip(vec, prev))
             vec = [vi - dot * pi for vi, pi in zip(vec, prev)]
         norm = math.sqrt(sum(torch.sum(vi ** 2).item() for vi in vec)) + 1e-9
         V.append([vi / norm for vi in vec])
 
-    # LOBPCG block iterations
     P_prev: Optional[List[List[torch.Tensor]]] = None
     eigenvalues = torch.zeros(k, device=device)
 
     for it in range(num_iters):
-        # Compute AV = G * V
         AV = [loss_fn_or_hvp(v_i) for v_i in V]
 
-        # Compute Rayleigh quotient per vector
         rayleigh = []
         for v_i, av_i in zip(V, AV):
             num = sum(torch.sum(vi * avi).item() for vi, avi in zip(v_i, av_i))
             den = sum(torch.sum(vi * vi).item() for vi in v_i) + 1e-9
             rayleigh.append(num / den)
 
-        # Residual R = AV - lambda * V
         R = []
         for i in range(k):
             r_i = [avi - rayleigh[i] * vi for avi, vi in zip(AV[i], V[i])]
             R.append(r_i)
 
-        # Subspace basis S = [V, R, P_prev]
         candidate_blocks = [V, R]
         if P_prev is not None:
             candidate_blocks.append(P_prev)
 
-        # Flatten block vectors to 2D matrix [P, block_size]
         flat_cols = []
         for block in candidate_blocks:
             for vec in block:
                 c = torch.cat([vi.flatten() for vi in vec])
                 flat_cols.append(c)
 
-        S_mat = torch.stack(flat_cols, dim=1)  # [P, num_candidates]
-        # Orthonormalize S_mat via QR
+        S_mat = torch.stack(flat_cols, dim=1)
         Q_mat, _ = torch.linalg.qr(S_mat, mode="reduced")
         m_dim = Q_mat.shape[1]
 
-        # Form projected operator G_sub = Q^T G Q
-        # Compute G * Q column by column
         GQ_cols = []
         for j in range(m_dim):
             q_col = Q_mat[:, j]
-            # Unflatten
             q_vec = []
             idx = 0
             for p in params:
@@ -230,17 +212,13 @@ def find_flat_subspace_lobpcg(
 
         GQ_mat = torch.stack(GQ_cols, dim=1)
         G_sub = torch.matmul(Q_mat.t(), GQ_mat)
-        # Ensure symmetric
         G_sub = 0.5 * (G_sub + G_sub.t())
 
-        # Solve small dense eigenvalue problem
         sub_eigvals, sub_eigvecs = torch.linalg.eigh(G_sub)
 
-        # Select bottom-k eigenvectors (flattest directions)
         V_new_cols = torch.matmul(Q_mat, sub_eigvecs[:, :k])
         eigenvalues = sub_eigvals[:k]
 
-        # Update P_prev as difference
         new_V = []
         idx = 0
         for col_idx in range(k):
@@ -280,7 +258,6 @@ def compute_spectral_tail_potential_and_gradient(
     orig_device = W.device
     W_f32 = W.float()
 
-    # Full SVD of W
     U, S, Vh = torch.linalg.svd(W_f32, full_matrices=False)
     m = S.shape[0]
     r = min(rank, m - 1)
@@ -295,7 +272,6 @@ def compute_spectral_tail_potential_and_gradient(
     if sigma_tilde is None or sigma_tilde <= 0.0:
         sigma_tilde = float(torch.median(tail_S).item()) + 1e-4
 
-    # Potential calculation
     loss_l2 = -torch.sum(tail_S ** 2) / denom_sq
     loss_nuc = -gamma_nuc * torch.sum(tail_S) / denom_lin
     bump_exponent = -(tail_S ** 2) / (2.0 * (sigma_tilde ** 2))
@@ -303,15 +279,12 @@ def compute_spectral_tail_potential_and_gradient(
 
     phi_val = loss_l2 + loss_nuc + loss_bump
 
-    # Closed-form analytical gradient:
-    # d phi / d sigma_i for i > r
     g_i = (
         - (2.0 * tail_S) / denom_sq
         - (gamma_nuc / denom_lin)
         - (gamma_bump / m_tail) * (tail_S / (sigma_tilde ** 2)) * torch.exp(bump_exponent)
     )
 
-    # grad_W = U[:, r:] * diag(g_i) * Vh[r:, :]
     U_tail = U[:, r:]
     Vh_tail = Vh[r:, :]
     grad_W = torch.matmul(U_tail * g_i.unsqueeze(0), Vh_tail)
@@ -345,7 +318,6 @@ def solve_soft_nullspace_projection_cg(
     else:
         d = [torch.zeros_like(g) for g in grad_phi]
 
-    # Matrix-vector operator A(v) = v + (1/mu) * G(v)
     def A_op(v_vec: List[torch.Tensor]) -> List[torch.Tensor]:
         Gv = hvp_fn(v_vec)
         return [vi + (gvi / mu) for vi, gvi in zip(v_vec, Gv)]
@@ -412,11 +384,9 @@ def solve_layerwise_kronecker_nullspace_step(
     grad_phi_f32 = grad_phi.float().to(orig_device)
     d_in = Hx_f32.shape[0]
 
-    # Compute top eigenvalue of Hx
     lambda_max = float(torch.linalg.eigvalsh(Hx_f32)[-1].item())
     mu_X = max(mu_rel * lambda_max, 1e-8)
 
-    # Resolvent matrix: (I + (1/mu_X) Hx)^{-1}
     I_d = torch.eye(d_in, device=orig_device, dtype=torch.float32)
     resolvent = torch.linalg.inv(I_d + (Hx_f32 / mu_X))
 
@@ -436,7 +406,7 @@ class HessianNullSpaceSVDContinuation:
         self,
         model: Optional[nn.Module] = None,
         target_rank: int = 32,
-        mode: str = "kronecker",  # "kronecker" or "global_cg"
+        mode: str = "kronecker",
         walk_steps: int = 600,
         step_size_eta: float = 0.03,
         restore_steps_m: int = 12,
@@ -497,30 +467,24 @@ class HessianNullSpaceSVDContinuation:
         X_f = calibration_activations.reshape(-1, W.shape[1]).float().to(W.device)
         N = X_f.shape[0]
         d_in = W.shape[1]
-        
-        # 1. Activation covariance H_X
+
         H_X = torch.matmul(X_f.t(), X_f) / max(N, 1)
-        
-        # 2. Regularized Cholesky factor L (lower triangular)
+
         reg = eps * (torch.trace(H_X) / float(d_in)).item() + 1e-6
         S_X = H_X + reg * torch.eye(d_in, device=orig_device, dtype=torch.float32)
         L = torch.linalg.cholesky(S_X)
-        
-        # 3. Whiten weights: W_white = W @ L
+
         W_white = torch.matmul(W_f, L)
-        
-        # 4. Truncate W_white to rank r via SVD
+
         r = max(1, min(rank, min(W.shape) - 1)) if min(W.shape) > 1 else 1
         U, S, Vh = torch.linalg.svd(W_white, full_matrices=False)
         U_r = U[:, :r] * torch.sqrt(S[:r]).unsqueeze(0)
         V_white_r = torch.sqrt(S[:r]).unsqueeze(1) * Vh[:r, :]
-        
-        # 5. Unwhiten: V_r = (L^{-1})^T @ V_white_r^T = (L^{-T} @ V_white_r^T)^T
-        # via torch.linalg.solve_triangular: L^T @ V_unwhiten^T = V_white_r^T
+
         V_unwhitened = torch.linalg.solve_triangular(
             L.t(), V_white_r.t(), upper=True
         ).t()
-        
+
         A_r = U_r.to(device=orig_device, dtype=orig_dtype)
         B_r = V_unwhitened.to(device=orig_device, dtype=orig_dtype)
         return A_r, B_r
@@ -549,7 +513,6 @@ class HessianNullSpaceSVDContinuation:
         N_tok = max(px.shape[0], 1)
         Hx = torch.matmul(px.t(), px) / float(N_tok)
 
-        # Stage A: Scale-Invariant Null-Space Spectral Continuation Walk
         cur_eta = self.eta
         for _ in range(self.walk_steps):
             _, grad_phi, _ = compute_spectral_tail_potential_and_gradient(
@@ -562,7 +525,6 @@ class HessianNullSpaceSVDContinuation:
             w_norm = torch.norm(w)
             w = (w + cur_eta * w_norm * (delta_w / dw_norm)).detach()
 
-        # Stage B: Generalized Eckart-Young Activation-Aware Cholesky-Whitened SVD Truncation
         r = max(1, min(self.target_rank, min(d_out, d_in) - 1)) if min(d_out, d_in) > 1 else 1
         try:
             reg = 1e-3 * (torch.trace(Hx) / float(d_in)).item() + 1e-6
@@ -574,7 +536,6 @@ class HessianNullSpaceSVDContinuation:
             V_unwhitened = torch.linalg.solve_triangular(
                 L.t(), (torch.sqrt(S[:r]).unsqueeze(1) * Vh[:r, :]).t(), upper=True
             ).t()
-            # Post-truncation local factor refinement
             U_param = nn.Parameter(U_r.clone())
             V_param = nn.Parameter(V_unwhitened.clone())
             opt_local = torch.optim.Adam([U_param, V_param], lr=1e-3)
@@ -602,7 +563,6 @@ class HessianNullSpaceSVDContinuation:
         self.model.eval()
         self.model.to(self.device)
 
-        # 1. Record Anchor Model Outputs Y_0
         anchor_outputs = []
         with torch.no_grad():
             if isinstance(probe_inputs, torch.Tensor):
@@ -629,7 +589,6 @@ class HessianNullSpaceSVDContinuation:
                 else:
                     anchor_outputs.append(o.clone())
 
-        # 2. Identify target linear weights
         target_layers = {}
         for name, mod in self.model.named_modules():
             cls_name = mod.__class__.__name__.lower()
@@ -661,7 +620,6 @@ class HessianNullSpaceSVDContinuation:
             logger.warning("No target linear modules found for HNC SVD continuation.")
             return {"status": "NO_OP", "accepted_steps": 0}
 
-        # 3. Cache input activations and initial weights W_0
         initial_weights = {name: mod.weight.data.clone() for name, mod in target_layers.items()}
         input_covariances = {}
         input_means = {}
@@ -697,13 +655,11 @@ class HessianNullSpaceSVDContinuation:
             active_target_layers[name] = target_layers[name]
         target_layers = active_target_layers
 
-        # 4. Continuation Walk Loop (Predict - Correct - Accept/Reject)
         accepted_steps = 0
         rejected_steps = 0
         step_history = []
         cur_eta = self.eta
 
-        # Precompute initial tail sigma for annealed schedule (Appendix F.6)
         initial_sigma_tildes = {}
         if self.anneal_sigma:
             for name, mod in target_layers.items():
@@ -714,10 +670,8 @@ class HessianNullSpaceSVDContinuation:
                 initial_sigma_tildes[name] = max(med, 1e-4)
 
         for step in range(self.walk_steps):
-            # Backup weights for rollback on rejection
             saved_weights = {name: mod.weight.data.clone() for name, mod in target_layers.items()}
 
-            # Per-step relinearization if requested
             if self.relinearize_every > 0 and step > 0 and step % self.relinearize_every == 0:
                 with torch.no_grad():
                     relin_inputs = {name: [] for name in target_layers}
@@ -741,10 +695,8 @@ class HessianNullSpaceSVDContinuation:
                             N_tok = flat_inps.shape[0]
                             input_covariances[name] = torch.matmul(flat_inps.t(), flat_inps) / max(N_tok, 1)
 
-            # Compute annealed sigma scale for current step (starts at median, shrinks to 10%)
             alpha_step = step / float(max(self.walk_steps - 1, 1))
 
-            # A. PREDICT: Scale-Invariant Null-Space Step with Annealed Sigma
             for name, mod in target_layers.items():
                 W = mod.weight.data
                 sigma_tilde_val = None
@@ -767,13 +719,11 @@ class HessianNullSpaceSVDContinuation:
                 else:
                     D_W = grad_phi
 
-                # Scale step proportionally to ||W||_F
                 dw_norm = torch.norm(D_W) + 1e-8
                 w_norm = torch.norm(W)
                 step_direction = cur_eta * w_norm * (D_W / dw_norm)
                 mod.weight.data.add_(step_direction)
 
-            # B. CORRECT: Run m gradient descent restoration steps on L_func
             pre_loss = compute_function_matching_loss(self.model, anchor_outputs, batches, self.device).item()
             if self.restore_steps_m > 0:
                 for _ in range(self.restore_steps_m):
@@ -797,11 +747,9 @@ class HessianNullSpaceSVDContinuation:
             if step % 50 == 0 or step == 0:
                 logger.info("Step %d: pre=%.6e, post=%.6e, delta=%.6e", step, pre_loss, post_loss, delta)
 
-            # C. ACCEPT / REJECT: Check loss ceiling
             cur_loss = post_loss
 
             if cur_loss > self.loss_ceiling_tau:
-                # Reject step: rollback and shrink step size
                 for name, mod in target_layers.items():
                     mod.weight.data.copy_(saved_weights[name])
                 cur_eta = max(0.5 * cur_eta, 1e-4)
@@ -812,7 +760,6 @@ class HessianNullSpaceSVDContinuation:
                 accepted_steps += 1
                 step_history.append({"step": step, "status": "ACCEPTED", "loss": cur_loss, "eta": cur_eta})
 
-        # Record pre-truncation post-walk steered tail energies
         steered_tail_energies = {}
         for name, mod in target_layers.items():
             S_steered = torch.linalg.svdvals(mod.weight.data.float())
@@ -820,7 +767,6 @@ class HessianNullSpaceSVDContinuation:
             t_ratio = (S_steered[r_cur:] ** 2).sum().item() / max((S_steered ** 2).sum().item(), 1e-12)
             steered_tail_energies[name] = t_ratio
 
-        # 5. Generalized Eckart-Young Cholesky-Whitened SVD Truncation & Bias Drift Compensation
         low_rank_factors = {}
         for name, mod in target_layers.items():
             cls_name = mod.__class__.__name__.lower()
@@ -834,7 +780,6 @@ class HessianNullSpaceSVDContinuation:
             d_out, d_in = W_steered.shape
             r = max(1, min(self.target_rank, min(d_out, d_in) - 1)) if min(d_out, d_in) > 1 else 1
 
-            # Activation-Aware Cholesky-Whitened Truncation
             if name in input_covariances and self.use_whitening:
                 Hx = input_covariances[name].float()
                 try:
@@ -860,7 +805,6 @@ class HessianNullSpaceSVDContinuation:
 
             W_hat = torch.matmul(A_r, B_r)
 
-            # Stage C: Bias drift compensation
             if name in input_means:
                 mu_x = input_means[name].float()
                 drift_bias = torch.matmul(W_0 - W_hat, mu_x)
@@ -873,8 +817,6 @@ class HessianNullSpaceSVDContinuation:
                 mod.weight.data.copy_(W_hat.to(dtype=mod.weight.dtype))
             low_rank_factors[name] = (A_r, B_r, mod, is_conv1d)
 
-        # 6. Stage D: Post-Truncation Low-Rank Factor Function-Restoration Steps
-        # Invariant: rank(W_hat) <= r strictly preserved because W_hat = A_r @ B_r
         optimizer_factors = []
         for name, (A_r, B_r, mod, is_conv1d) in low_rank_factors.items():
             A_r.requires_grad_(True)
@@ -882,13 +824,12 @@ class HessianNullSpaceSVDContinuation:
             optimizer_factors.extend([A_r, B_r])
 
         if optimizer_factors and self.stage_d_steps > 0:
-            # Temporarily replace mod.weight parameter with dynamic low-rank matrix product
             orig_params = {}
             for name, (A_r, B_r, mod, is_conv1d) in low_rank_factors.items():
                 orig_params[name] = mod._parameters.pop("weight")
 
             try:
-                m_post = self.stage_d_steps  # Restoration steps for reliable function preservation
+                m_post = self.stage_d_steps
                 base_lr = 3e-3
                 post_opt = torch.optim.Adam(optimizer_factors, lr=base_lr, betas=(0.9, 0.99))
                 scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
@@ -902,15 +843,12 @@ class HessianNullSpaceSVDContinuation:
 
                     loss_post = compute_function_matching_loss(self.model, anchor_outputs, batches, self.device)
                     loss_post.backward()
-                    # Gradient clipping prevents factor explosion
                     torch.nn.utils.clip_grad_norm_(optimizer_factors, max_norm=1.0)
                     post_opt.step()
                     scheduler.step()
-                    # Early stop when function loss is tight enough
                     if loss_post.item() < 1e-5:
                         break
             finally:
-                # Ensure mod.weight is always properly restored as nn.Parameter
                 with torch.no_grad():
                     for name, (A_r, B_r, mod, is_conv1d) in low_rank_factors.items():
                         if hasattr(mod, "weight"):
@@ -934,4 +872,3 @@ class HessianNullSpaceSVDContinuation:
                 for name, (A_r, B_r, *_) in low_rank_factors.items()
             },
         }
-

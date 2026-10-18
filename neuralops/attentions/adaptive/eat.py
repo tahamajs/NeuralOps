@@ -65,7 +65,6 @@ class EATBlock(BaseAttention):
     ) -> None:
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
 
-        # [EAT-FIX-10] Config None-safety
         cfg_obj = getattr(config, "text_config", config) if config is not None else None
         hidden_size = getattr(cfg_obj, "hidden_size", None) if cfg_obj is not None else None
         num_heads = (
@@ -106,7 +105,6 @@ class EATBlock(BaseAttention):
         self.n_heads = int(num_heads)
         self.num_heads = self.n_heads
 
-        # ---- num_kv_heads ----
         cfg_kv = None
         if config is not None:
             cfg_kv = getattr(
@@ -117,13 +115,12 @@ class EATBlock(BaseAttention):
         if cfg_kv is None:
             cfg_kv = kwargs.get("num_kv_heads", None)
         if cfg_kv is None:
-            cfg_kv = max(1, self.num_heads // 4)   # ← فشرده‌سازی ۴ برابر
+            cfg_kv = max(1, self.num_heads // 4)
         self.num_kv_heads = max(1, min(int(cfg_kv), self.num_heads))
 
         self.num_kv_heads = max(1, min(int(cfg_kv), self.num_heads))
         self.kv_repeat = max(1, self.num_heads // self.num_kv_heads)
 
-        # ---- head_dim ----
         cfg_hd = getattr(config, "head_dim", None) if config else None
         self.head_dim = int(
             cfg_hd
@@ -145,7 +142,6 @@ class EATBlock(BaseAttention):
         )
         self.layer_idx = int(resolved_layer_id)
 
-        # ---- LoRA ----
         self.lora_rank = int(
             getattr(
                 config,
@@ -174,7 +170,6 @@ class EATBlock(BaseAttention):
         )
         self.freeze_base = self.lora_rank > 0
 
-        # ---- Decoder detection ----
         model_type = str(getattr(config, "model_type", "") if config else "").lower()
         is_dec = False
         if config is not None:
@@ -200,10 +195,8 @@ class EATBlock(BaseAttention):
         self.is_decoder = bool(is_dec)
         self.is_causal = self.is_decoder
 
-        # [EAT-FIX-03]
         self.is_nested_encoder = False
 
-        # ---- Projections ----
         self.q_lin = LoRALinear(
             self.dim,
             self.all_head_size,
@@ -250,7 +243,6 @@ class EATBlock(BaseAttention):
             dropout_p = float(getattr(comp_config, "dropout", 0.1))
         self.dropout = nn.Dropout(dropout_p)
 
-        # [EAT-FIX-07] Pruning only when explicitly requested
         self.prune_layer: Any | None = None
         if prune_layer is not None:
             self.prune_layer = prune_layer
@@ -298,16 +290,12 @@ class EATBlock(BaseAttention):
         )
         self.comp_config = comp_config
 
-        # [EAT-FIX-09]
         self._orig_storage_bytes = 0
         self._comp_storage_bytes = 0
 
         if source_attn is not None:
             self.copy_weights(source_attn)
 
-    # ------------------------------------------------------------------
-    # Aliases
-    # ------------------------------------------------------------------
     @property
     def query(self): return self.q_lin
     @property
@@ -329,9 +317,6 @@ class EATBlock(BaseAttention):
     @property
     def c_proj(self): return self.out_lin
 
-    # ------------------------------------------------------------------
-    # Weight transfer
-    # ------------------------------------------------------------------
     def copy_weights(self, pretrained_attn: nn.Module) -> None:
         if pretrained_attn is None:
             return
@@ -390,7 +375,6 @@ class EATBlock(BaseAttention):
         def _unwrap(m):
             return getattr(m, "base_layer", m)
 
-        # ---- GPT-2 fused c_attn ----
         if hasattr(pretrained_attn, "c_attn") and pretrained_attn.c_attn is not None:
             c_attn_mod = pretrained_attn.c_attn
             if (
@@ -470,7 +454,6 @@ class EATBlock(BaseAttention):
                         bias_o.data.clone() if bias_o is not None else None,
                     )
 
-        # ---- BERT / RoBERTa nested ----
         elif hasattr(pretrained_attn, "self") and hasattr(
             pretrained_attn.self, "query"
         ):
@@ -493,7 +476,6 @@ class EATBlock(BaseAttention):
                     b.data.clone() if b is not None else None,
                 )
 
-        # ---- Flat projections ----
         else:
             candidates = {
                 "q": ("q_lin", "q_proj", "query"),
@@ -513,7 +495,6 @@ class EATBlock(BaseAttention):
                             )
                             break
 
-        # ---- UniversalAdapter fallback ----
         missing = [
             k
             for k, (w, _) in extracted.items()
@@ -601,7 +582,6 @@ class EATBlock(BaseAttention):
                 if self.freeze_base:
                     target.freeze_base_weights()
 
-        # [EAT-FIX-09]
         try:
             for m in (self.q_lin, self.k_lin, self.v_lin, self.out_lin):
                 for p in m.parameters():
@@ -615,9 +595,6 @@ class EATBlock(BaseAttention):
     ):
         return cls(config=model_config, pretrained_attn=old_attn, **kwargs)
 
-    # ------------------------------------------------------------------
-    # Forward
-    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -643,12 +620,10 @@ class EATBlock(BaseAttention):
         is_cross = encoder_hidden_states is not None
         kv_input = encoder_hidden_states if is_cross else hidden_states
 
-        # ---- Projections ----
         q = self.q_lin(hidden_states).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
         k = self.k_lin(kv_input).view(B, kv_input.shape[1], self.num_kv_heads, self.head_dim).transpose(1, 2)
         v = self.v_lin(kv_input).view(B, kv_input.shape[1], self.num_kv_heads, self.head_dim).transpose(1, 2)
 
-        # ---- 1. Read KV-Cache ----
         past_len = 0
         if past_key_value is not None and not is_cross:
             if isinstance(past_key_value, (tuple, list)):
@@ -656,10 +631,9 @@ class EATBlock(BaseAttention):
             elif hasattr(past_key_value, "get_usable_length"):
                 past_len = past_key_value.get_usable_length(L, self.layer_idx)
 
-        # ---- 2. RoPE (With Correct Position Offset) ----
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
-            
+
         if position_embeddings is not None and not is_cross:
             cos, sin = position_embeddings
             cos_shifted = cos[..., past_len : past_len + L, :] if cos.shape[-2] >= past_len + L else cos
@@ -668,22 +642,20 @@ class EATBlock(BaseAttention):
         elif self.rotary_emb is not None and not is_cross:
             try:
                 cos_, sin_ = self.rotary_emb(k, seq_len=past_len + L)
-                # SLICE BEFORE PASSING
                 if cos_.shape[-2] >= past_len + L:
                     cos_ = cos_[..., past_len : past_len + L, :]
                     sin_ = sin_[..., past_len : past_len + L, :]
-                q, k = apply_rotary_pos_emb(q, k, cos_, sin_)   # ← بدون position_ids
+                q, k = apply_rotary_pos_emb(q, k, cos_, sin_)
             except Exception as e:
                 logger.debug("EAT: rotary apply failed: %s", e)
 
-        # ---- 3. Update KV-Cache ----
         if past_key_value is not None and not is_cross:
             if hasattr(past_key_value, "update"):
                 k, v = past_key_value.update(k, v, self.layer_idx, {"use_cache": True})
             elif isinstance(past_key_value, (tuple, list)):
                 k = torch.cat([past_key_value[0], k], dim=-2)
                 v = torch.cat([past_key_value[1], v], dim=-2)
-                
+
         present_key_value = (k, v) if (not is_cross and kwargs.get("use_cache", True)) else None
         kv_len = k.shape[-2]
 
@@ -694,7 +666,6 @@ class EATBlock(BaseAttention):
         eff_mask = encoder_attention_mask if is_cross else attention_mask
         is_causal = bool(self.is_decoder and not is_cross and L > 1)
 
-        # ---- Unified Mask ----
         attn_mask_combined: torch.Tensor | None = None
         if eff_mask is not None or is_causal:
             if eff_mask is not None:
@@ -710,7 +681,7 @@ class EATBlock(BaseAttention):
                     torch.ones(L, kv_len, device=hidden_states.device, dtype=torch.bool),
                     diagonal=kv_len - L
                 )[None, None, :, :]
-                
+
                 if attn_mask_combined is not None:
                     attn_mask_combined = attn_mask_combined & causal
                 else:
@@ -724,7 +695,7 @@ class EATBlock(BaseAttention):
 
         if use_sdpa:
             _is_causal = is_causal and (L == kv_len)
-            
+
             _sdpa_out = F.scaled_dot_product_attention(
                 q.to(dtype_in), k.to(dtype_in), v.to(dtype_in),
                 is_causal=_is_causal,
@@ -740,15 +711,12 @@ class EATBlock(BaseAttention):
 
             scores = torch.nan_to_num(scores, nan=mask_val, posinf=1e4, neginf=mask_val)
 
-            # Safe softmax
             m = scores.amax(dim=-1, keepdim=True)
             m_safe = torch.where(m < -1e3, torch.zeros_like(m), m)
             exp_s = torch.exp((scores - m_safe).clamp(max=0.0))
             probs = (exp_s / exp_s.sum(dim=-1, keepdim=True).clamp(min=1e-9)).to(dtype_in)
             probs = self.dropout(probs)
 
-        # ---- head_mask ----
-# ---- head_mask ----
         if head_mask is not None:
             hm = head_mask.to(dtype_in)
             if hm.dim() == 1:
@@ -761,8 +729,7 @@ class EATBlock(BaseAttention):
                 hm = hm.view(hm.shape[0], hm.shape[1], 1, 1)
             elif hm.dim() == 3:
                 hm = hm.unsqueeze(1)
-            
-            # Apply head mask
+
             if probs is not None:
                 probs = probs * hm
                 context = torch.matmul(probs.to(v.dtype), v)
@@ -773,7 +740,6 @@ class EATBlock(BaseAttention):
             context = torch.matmul(probs.to(v.dtype), v) if probs is not None else _sdpa_out
         context = context.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
 
-        # ---- Output projection ----
         if context.is_cuda and hasattr(self.out_lin, "weight"):
             try:
                 from neuralops.core.triton_kernels.low_rank import fused_svd_lora_sparse_attn_triton
@@ -798,12 +764,9 @@ class EATBlock(BaseAttention):
             outputs = (out, present_key_value)
         else:
             outputs = (out, None)
-            
+
         return outputs 
 
-# ===========================================================================
-# Injection
-# ===========================================================================
 def inject_eat(
     layer: Any = None,
     model: Any = None,
@@ -815,7 +778,6 @@ def inject_eat(
     _depth: int = 0,
     **kwargs: Any,
 ):
-    # [EAT-FIX-04] Recursion guard
     if _depth > 8:
         logger.warning("inject_eat: max recursion depth exceeded.")
         return None
@@ -832,7 +794,6 @@ def inject_eat(
         else getattr(target, "config", None)
     )
 
-    # ---- Whole-model traversal ----
     layer_list = None
     for path in (
         ("distilbert", "transformer", "layer"),
@@ -874,7 +835,6 @@ def inject_eat(
                 n_injected += 1
         return target if n_injected > 0 else None
 
-    # ---- Single-layer injection ----
     src_attn = old_attn
     if src_attn is None:
         for attr in ("attention", "self_attn", "attn", "self"):
@@ -884,7 +844,6 @@ def inject_eat(
                     src_attn = getattr(cand, "self", cand)
                     break
 
-    # [EAT-FIX-04] Idempotency guard
     if src_attn is not None and (
         isinstance(src_attn, EATBlock)
         or "EATBlock" in src_attn.__class__.__name__
@@ -920,7 +879,6 @@ def inject_eat(
             if p is not None:
                 new_attn.to(device=p.device, dtype=p.dtype)
 
-        # ---- Splice ----
         spliced = False
         if hasattr(target, "attention"):
             if hasattr(target.attention, "self"):

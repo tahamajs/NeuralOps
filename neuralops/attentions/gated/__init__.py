@@ -124,7 +124,6 @@ try:
 except Exception:
     pass
 
-# Auto-wired submodules
 from neuralops.attentions.gated import decay_linear_attention
 from neuralops.attentions.gated import gated_delta_net
 from neuralops.attentions.gated import gated_deltanet_block
@@ -134,4 +133,3 @@ from neuralops.attentions.gated import hgrn2_gated_outer
 from neuralops.attentions.gated import hla_attention
 from neuralops.attentions.gated import kda_attention
 from neuralops.attentions.gated import flagship_fla
-

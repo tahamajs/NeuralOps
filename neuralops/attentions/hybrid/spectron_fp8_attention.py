@@ -26,10 +26,6 @@ from neuralops.core.base import BaseAttention
 from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.core.utils.rope import _rotate_half
 
-# ===========================================================================
-# FP8 simulation (SP-FIX-01, SP-FIX-14)
-# ===========================================================================
-
 
 def fp8_cast_simulate(x: torch.Tensor, format: str = "e4m3", per_channel: bool = False, use_ste: bool | None = None) -> torch.Tensor:
     if os.environ.get("AEGIS_DISABLE_FP8", "0") == "1":
@@ -38,13 +34,8 @@ def fp8_cast_simulate(x: torch.Tensor, format: str = "e4m3", per_channel: bool =
     if use_ste is None: use_ste = x.requires_grad and torch.is_grad_enabled()
     orig_dtype = x.dtype
 
-    # Fast hardware / native FP8 path on PyTorch 2.1+ CUDA.
-    # CRITICAL: Always use per-token (per-row) scaling in the last dimension.
-    # Using global amax() would couple future token activations to past token
-    # quantization, causing causal leakage in decoder/causal contexts.
     if x.is_cuda and hasattr(torch, "float8_e4m3fn") and format.lower() in ("e4m3", "float8_e4m3fn"):
         x_f = x.float()
-        # Per-token scale: amax over the last (channel) dimension only — each token is independent
         amax = x_f.abs().amax(dim=-1, keepdim=True).clamp(min=1e-12)
         scale = 448.0 / amax
         x_scaled = (x_f * scale).clamp(min=-448.0, max=448.0)
@@ -53,7 +44,6 @@ def fp8_cast_simulate(x: torch.Tensor, format: str = "e4m3", per_channel: bool =
             return x + (x_dequant - x).detach()
         return x_dequant
 
-
     x_f = x.float()
     fmt = format.lower()
     if fmt in ("e4m3", "float8_e4m3fn"):
@@ -61,7 +51,7 @@ def fp8_cast_simulate(x: torch.Tensor, format: str = "e4m3", per_channel: bool =
     else:
         max_val, mantissa_bits, torch_dtype = 57344.0, 2, getattr(torch, "float8_e5m2", None)
 
-    amax = x_f.abs().amax(dim=-1, keepdim=True).clamp(min=1e-12)  # Per-token scale for causal correctness
+    amax = x_f.abs().amax(dim=-1, keepdim=True).clamp(min=1e-12)
 
     scale = max_val / amax
     x_scaled = (x_f * scale).clamp(min=-max_val, max=max_val)
@@ -81,11 +71,6 @@ def fp8_cast_simulate(x: torch.Tensor, format: str = "e4m3", per_channel: bool =
 
     if use_ste: return x + (x_dequant - x).detach()
     return x_dequant
-
-
-# ===========================================================================
-# Config (SP-FIX-08)
-# ===========================================================================
 
 
 class AegisSpectronFP8Config:
@@ -127,11 +112,6 @@ class AegisSpectronFP8Config:
         self.chunk_size = int(kwargs.get("chunk_size", 64))
 
 
-# ===========================================================================
-# Router (SP-FIX-12, SP-FIX-16)
-# ===========================================================================
-
-
 class SpectronSpectralEntropyRouter(nn.Module):
     def __init__(self, config: AegisSpectronFP8Config):
         super().__init__()
@@ -151,26 +131,19 @@ class SpectronSpectralEntropyRouter(nn.Module):
             S_sq = X.float().pow(2)
             denom = S_sq.sum(dim=-1, keepdim=True).clamp(min=1e-6)
             p = (S_sq / denom).clamp(min=1e-8, max=1.0)
-            entropy = -(p * torch.log(p)).sum(dim=-1)  # (B, N)
+            entropy = -(p * torch.log(p)).sum(dim=-1)
 
             if token_valid is not None:
                 entropy = entropy * token_valid.float()
-            
-            # FIXED: Normalize by theoretical maximum entropy log(D) instead of sequence amax() 
-            # to strictly preserve causality and prevent future token leakage.
+
             entropy = entropy / math.log(D)
 
-        h = self.h_proj(X.to(self.h_proj.weight.dtype))  # (B, N, 3)
+        h = self.h_proj(X.to(self.h_proj.weight.dtype))
         h = h * entropy.unsqueeze(-1).to(h.dtype)
 
         c = self.costs.to(h.dtype)
         logits = (h - self.lam * c) / max(self.tau, 1e-4)
         return F.softmax(logits.float(), dim=-1).to(X.dtype)
-
-
-# ===========================================================================
-# Local sliding-window attention (SP-FIX-10)
-# ===========================================================================
 
 
 def _local_window_attention(
@@ -189,8 +162,8 @@ def _local_window_attention(
     radius = window // 2
     scale = 1.0 / math.sqrt(int(d))
 
-    abs_q = (past_len + torch.arange(N, device=Q.device)).unsqueeze(1)  # (N, 1)
-    abs_k = torch.arange(N_k, device=Q.device).unsqueeze(0)  # (1, N_k)
+    abs_q = (past_len + torch.arange(N, device=Q.device)).unsqueeze(1)
+    abs_k = torch.arange(N_k, device=Q.device).unsqueeze(0)
 
     band = (abs_q - abs_k).abs() <= radius
     band = band.unsqueeze(0).unsqueeze(0)
@@ -200,7 +173,6 @@ def _local_window_attention(
         band = band & causal.unsqueeze(0).unsqueeze(0)
 
     if os.environ.get("AEGIS_DISABLE_LOCAL", "0") == "1":
-        # Fall back to unconstrained causal attention
         scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
         if is_decoder:
             causal = abs_k <= abs_q
@@ -211,7 +183,6 @@ def _local_window_attention(
         attn = F.dropout(attn, p=dropout_p, training=training)
         return torch.matmul(attn, V.to(attn.dtype)), attn
 
-    # Fast path: use fused scaled_dot_product_attention when no token padding mask is needed
     if token_valid is None or bool(token_valid.all()):
         mask_val = -1e4
         attn_bias = torch.zeros(1, 1, N, N_k, device=Q.device, dtype=Q.dtype)
@@ -242,18 +213,10 @@ def _local_window_attention(
     return torch.matmul(attn, V.to(attn.dtype)), attn
 
 
-# ===========================================================================
-# Global linear attention (SP-FIX-04, SP-FIX-17)
-# ===========================================================================
-# IMPORTANT: After low-rank projection, Q and K are (B, N, rank) — there is no
-# "per-head" axis. V is (B, N, h*d). We compute the linear attention over the
-# (B, N, rank) / (B, N, h*d) tensors and reshape at the very end.
-
-
 def _causal_global_linear_attention(
-    Q_feat: torch.Tensor,  # (B, N, rank)
-    K_feat: torch.Tensor,  # (B, N, rank)
-    V_flat: torch.Tensor,  # (B, N, h*d)
+    Q_feat: torch.Tensor,
+    K_feat: torch.Tensor,
+    V_flat: torch.Tensor,
     chunk_size: int,
 ) -> torch.Tensor:
     """Chunked causal cumsum, memory O(B * chunk * rank * h*d)."""
@@ -268,44 +231,37 @@ def _causal_global_linear_attention(
 
     for start in range(0, N, chunk_size):
         end = min(start + chunk_size, N)
-        Qc = Q_feat[:, start:end]  # (B, C, rank)
-        Kc = K_feat[:, start:end]  # (B, C, rank)
-        Vc = V_flat[:, start:end]  # (B, C, D)
+        Qc = Q_feat[:, start:end]
+        Kc = K_feat[:, start:end]
+        Vc = V_flat[:, start:end]
 
-        # Local cumsum: (B, C, rank, D) via outer product then cumsum.
         KV_local = torch.einsum("bcr,bcd->bcrd", Kc, Vc).cumsum(dim=1)
-        K_local = Kc.cumsum(dim=1)  # (B, C, rank)
+        K_local = Kc.cumsum(dim=1)
 
-        KV_total = KV_local + state_kv.unsqueeze(1)  # (B, C, rank, D)
-        K_total = K_local + state_k.unsqueeze(1)  # (B, C, rank)
+        KV_total = KV_local + state_kv.unsqueeze(1)
+        K_total = K_local + state_k.unsqueeze(1)
 
-        num = torch.einsum("bcr,bcrd->bcd", Qc, KV_total)  # (B, C, D)
+        num = torch.einsum("bcr,bcrd->bcd", Qc, KV_total)
         den = torch.einsum("bcr,bcr->bc", Qc, K_total).unsqueeze(-1).clamp(min=1e-6)
         outs.append(num / den)
 
-        state_kv = KV_total[:, -1]  # (B, rank, D)
-        state_k = K_total[:, -1]  # (B, rank)
+        state_kv = KV_total[:, -1]
+        state_k = K_total[:, -1]
 
-    return torch.cat(outs, dim=1)  # (B, N, D)
+    return torch.cat(outs, dim=1)
 
 
 def _noncausal_global_linear_attention(
-    Q_feat: torch.Tensor,  # (B, N, rank)
-    K_feat: torch.Tensor,  # (B, N, rank)
-    V_flat: torch.Tensor,  # (B, N, h*d)
+    Q_feat: torch.Tensor,
+    K_feat: torch.Tensor,
+    V_flat: torch.Tensor,
 ) -> torch.Tensor:
     """Bidirectional linear attention via KV-first associativity."""
-    # (B, rank, h*d)
     KV = torch.matmul(K_feat.transpose(-2, -1).contiguous(), V_flat)
-    Z = K_feat.sum(dim=-2, keepdim=True)  # (B, 1, rank)
-    num = torch.matmul(Q_feat, KV)  # (B, N, h*d)
+    Z = K_feat.sum(dim=-2, keepdim=True)
+    num = torch.matmul(Q_feat, KV)
     den = torch.matmul(Q_feat, Z.transpose(-2, -1).contiguous()).clamp(min=1e-6)
     return num / den
-
-
-# ===========================================================================
-# Linear state recurrence (SP-FIX-05)
-# ===========================================================================
 
 
 def _state_recurrence_jit(u: torch.Tensor, gamma: torch.Tensor, reverse: bool = False) -> torch.Tensor:
@@ -315,7 +271,6 @@ def _state_recurrence_jit(u: torch.Tensor, gamma: torch.Tensor, reverse: bool = 
         u = torch.flip(u, dims=[1])
     B, N, D = u.shape
 
-    # For short sequences, simple sequential loop is fast
     if N <= 64:
         gamma_b = gamma.view(1, 1, -1).squeeze(1)
         state = torch.zeros(B, D, device=u.device, dtype=u.dtype)
@@ -328,7 +283,6 @@ def _state_recurrence_jit(u: torch.Tensor, gamma: torch.Tensor, reverse: bool = 
             out = torch.flip(out, dims=[1])
         return out
 
-    # For N > 64, execute fast O(N/C) vectorized chunked scan
     chunk = min(64, N)
     pad_len = (chunk - (N % chunk)) % chunk
     if pad_len > 0:
@@ -340,8 +294,8 @@ def _state_recurrence_jit(u: torch.Tensor, gamma: torch.Tensor, reverse: bool = 
     num_chunks = N_pad // chunk
 
     pos = torch.arange(chunk, device=u.device, dtype=torch.float32)
-    diff = pos.unsqueeze(1) - pos.unsqueeze(0)  # [chunk, chunk]
-    tril = (diff >= 0).unsqueeze(-1)  # [chunk, chunk, 1]
+    diff = pos.unsqueeze(1) - pos.unsqueeze(0)
+    tril = (diff >= 0).unsqueeze(-1)
 
     log_gamma = torch.log(gamma.float().clamp(min=1e-5, max=1.0 - 1e-5)).view(1, 1, D)
     decay_intra = torch.where(
@@ -371,11 +325,6 @@ def _state_recurrence_jit(u: torch.Tensor, gamma: torch.Tensor, reverse: bool = 
     if reverse:
         out = torch.flip(out, dims=[1])
     return out
-
-
-# ===========================================================================
-# Main attention module
-# ===========================================================================
 
 
 @ATTENTION_REGISTRY.register("spectron_fp8", supports_causal=True, supports_gqa=True)
@@ -497,17 +446,14 @@ class SpectronFP8Attention(BaseAttention):
             bias=True,
         )
 
-        # SP-FIX-15: separate Q/K low-rank projections.
         self.svd_U_q = nn.Parameter(torch.randn(self.all_head_size, self.rank) * 0.02)
         self.svd_U_k = nn.Parameter(torch.randn(self.all_head_size, self.rank) * 0.02)
 
-        # Linear recurrence parameters (SP-FIX-06: no dead linear_A).
         rec_scale = 1.0 / math.sqrt(max(1, config.window_size))
         self.linear_B = nn.Parameter(torch.full((self.all_head_size,), rec_scale))
         self.linear_C = nn.Parameter(torch.full((self.all_head_size,), rec_scale))
         self.decay_param = nn.Parameter(torch.zeros(self.all_head_size))
         self.state_norm = nn.LayerNorm(self.all_head_size)
-        # SP-FIX-13: per-head gate.
         self.bidir_gate = nn.Parameter(torch.zeros(self.num_heads))
         self.linear_in = (
             nn.Linear(self.hidden_size, self.all_head_size, bias=False)
@@ -518,9 +464,6 @@ class SpectronFP8Attention(BaseAttention):
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
 
-    # ------------------------------------------------------------------
-    # Aliases
-    # ------------------------------------------------------------------
     @property
     def query(self):
         return self.q_proj
@@ -577,9 +520,6 @@ class SpectronFP8Attention(BaseAttention):
     def o(self):
         return self.out_proj
 
-    # ------------------------------------------------------------------
-    # SVD init of FactorizedLinear
-    # ------------------------------------------------------------------
     @staticmethod
     def _svd_init(w: torch.Tensor, b: torch.Tensor | None, proj: FactorizedLinear) -> None:
         with torch.no_grad():
@@ -615,9 +555,6 @@ class SpectronFP8Attention(BaseAttention):
                 nn.init.kaiming_uniform_(proj.lora_A, a=math.sqrt(5))
                 nn.init.normal_(proj.lora_B, mean=0.0, std=1e-4)
 
-    # ------------------------------------------------------------------
-    # Weight extraction (universal across architectures)
-    # ------------------------------------------------------------------
     def _extract_proj_weights(
         self, old_attn: nn.Module
     ) -> dict[str, tuple[torch.Tensor | None, torch.Tensor | None]]:
@@ -630,7 +567,6 @@ class SpectronFP8Attention(BaseAttention):
             "o": (None, None),
         }
 
-        # 1. GPT-2 fused c_attn
         if hasattr(old_attn, "c_attn"):
             mod = old_attn.c_attn
             if hasattr(mod, "merge") and not getattr(mod, "merged", False):
@@ -659,7 +595,6 @@ class SpectronFP8Attention(BaseAttention):
                         c_b[i * split : (i + 1) * split] if c_b is not None else None,
                     )
 
-        # 2. GPT-2 c_proj
         if hasattr(old_attn, "c_proj"):
             mod = old_attn.c_proj
             if hasattr(mod, "merge") and not getattr(mod, "merged", False):
@@ -686,7 +621,6 @@ class SpectronFP8Attention(BaseAttention):
                 b = getattr(base, "bias", getattr(mod, "bias", None))
                 extracted["o"] = (w, b.data if b is not None else None)
 
-        # 3. BERT / RoBERTa nested encoder
         if hasattr(old_attn, "self"):
             s = old_attn.self
             if hasattr(s, "query") and extracted["q"][0] is None:
@@ -696,7 +630,6 @@ class SpectronFP8Attention(BaseAttention):
             if hasattr(s, "value") and extracted["v"][0] is None:
                 extracted["v"] = (s.value.weight.data, getattr(s.value, "bias", None))
 
-        # 4. BERT output.dense
         if (
             hasattr(old_attn, "output")
             and hasattr(old_attn.output, "dense")
@@ -705,7 +638,6 @@ class SpectronFP8Attention(BaseAttention):
             d = old_attn.output.dense
             extracted["o"] = (d.weight.data, getattr(d, "bias", None))
 
-        # 5. Named projections
         named_map = {
             "q": ["q_proj", "q_lin", "query"],
             "k": ["k_proj", "k_lin", "key"],
@@ -721,7 +653,6 @@ class SpectronFP8Attention(BaseAttention):
                             extracted[proj] = (m.weight.data, getattr(m, "bias", None))
                             break
 
-        # 6. UniversalAdapter fallback
         for p in ("q", "k", "v", "o"):
             if extracted[p][0] is None:
                 try:
@@ -797,7 +728,6 @@ class SpectronFP8Attention(BaseAttention):
         elif extracted["o"][0] is not None:
             self._svd_init(extracted["o"][0], extracted["o"][1], self.out_proj)
 
-        # Init svd_U_q / svd_U_k from Q / K weights.
         with torch.no_grad():
             if extracted["q"][0] is not None:
                 U, _, _ = torch.linalg.svd(extracted["q"][0].float(), full_matrices=False)
@@ -814,9 +744,6 @@ class SpectronFP8Attention(BaseAttention):
         elif hasattr(old_attn, "c_attn") or "gpt" in old_attn.__class__.__name__.lower():
             self.is_decoder = True
 
-    # ------------------------------------------------------------------
-    # Mask helper
-    # ------------------------------------------------------------------
     @staticmethod
     def _prepare_valid_mask(
         attention_mask: torch.Tensor | None,
@@ -842,9 +769,6 @@ class SpectronFP8Attention(BaseAttention):
             return v.any(dim=-2).squeeze(1)
         raise ValueError(f"Unsupported attention_mask dim: {attention_mask.dim()}")
 
-    # ------------------------------------------------------------------
-    # Branch: local
-    # ------------------------------------------------------------------
     def _local_branch(
         self,
         Q: torch.Tensor,
@@ -865,9 +789,6 @@ class SpectronFP8Attention(BaseAttention):
             training=self.training,
         )
 
-    # ------------------------------------------------------------------
-    # Branch: global (SP-FIX-17 — correct shapes)
-    # ------------------------------------------------------------------
     def _global_branch(
         self,
         Q: torch.Tensor,
@@ -885,28 +806,23 @@ class SpectronFP8Attention(BaseAttention):
         B, h, N, d = Q.shape
         D = h * d
 
-        # Flatten heads → (B, N, h*d)
         Q_flat = Q.transpose(1, 2).contiguous().view(B, N, D)
         K_flat = K.transpose(1, 2).contiguous().view(B, N, D)
         V_flat = V.transpose(1, 2).contiguous().view(B, N, D)
 
-        # Low-rank projection → (B, N, rank)
         Q_lr = torch.matmul(Q_flat, self.svd_U_q.to(Q_flat.dtype))
         K_lr = torch.matmul(K_flat, self.svd_U_k.to(K_flat.dtype))
 
-        # Non-negative kernel feature map φ(x) = ELU(x) + 1
-        phi_Q = F.elu(Q_lr) + 1.0  # (B, N, rank)
+        phi_Q = F.elu(Q_lr) + 1.0
         phi_K = F.elu(K_lr) + 1.0
 
-        # Run in fp32 for numerical stability (normalization can overflow in fp16).
         with torch.autocast(device_type=Q.device.type, enabled=False):
             phi_Q_f = phi_Q.float()
             phi_K_f = phi_K.float()
             V_f = V_flat.float()
 
-            # SP-FIX-02: mask padding keys.
             if token_valid is not None:
-                m = token_valid[:, :, None].to(phi_K_f.dtype)  # (B, N, 1)
+                m = token_valid[:, :, None].to(phi_K_f.dtype)
                 phi_K_f = phi_K_f * m
                 V_f = V_f * m
 
@@ -920,7 +836,6 @@ class SpectronFP8Attention(BaseAttention):
             else:
                 out = _noncausal_global_linear_attention(phi_Q_f, phi_K_f, V_f)
 
-            # (B, N, h*d) → (B, h, N, d)
             return (
                 torch.nan_to_num(out, nan=0.0)
                 .to(Q.dtype)
@@ -929,9 +844,6 @@ class SpectronFP8Attention(BaseAttention):
                 .contiguous()
             )
 
-    # ------------------------------------------------------------------
-    # Branch: linear recurrence (SP-FIX-05)
-    # ------------------------------------------------------------------
     def _linear_branch(
         self,
         X: torch.Tensor,
@@ -962,9 +874,6 @@ class SpectronFP8Attention(BaseAttention):
         out_h = out_h * self.linear_C.view(1, self.num_heads, 1, self.head_dim).to(X.dtype)
         return out_h.contiguous()
 
-    # ------------------------------------------------------------------
-    # Forward
-    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -990,7 +899,6 @@ class SpectronFP8Attention(BaseAttention):
         eff_mask = encoder_attention_mask if is_cross else attention_mask
         token_valid_new = self._prepare_valid_mask(eff_mask, B, N_kv_new, device)
 
-        # Routing on hidden states (self-attention only).
         alpha = self.router(hidden_states, token_valid=token_valid_new)
         force_branch = os.environ.get("AEGIS_FORCE_BRANCH", "").lower()
         if force_branch == "loc":
@@ -1007,7 +915,6 @@ class SpectronFP8Attention(BaseAttention):
         alpha_glob = alpha[:, :, 1].view(B, 1, N, 1)
         alpha_lin = alpha[:, :, 2].view(B, 1, N, 1)
 
-        # FP8 on projected activations (SP-FIX-01).
         fp8_fmt = self.fp8_format
         use_ste = self.training
 
@@ -1023,7 +930,6 @@ class SpectronFP8Attention(BaseAttention):
             V_new.view(B, N_kv_new, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
         )
 
-        # RoPE with past_len offset (SP-FIX-09).
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None and not is_cross:
@@ -1038,7 +944,6 @@ class SpectronFP8Attention(BaseAttention):
             sin = sin[..., past_len_rope : past_len_rope + N, :]
             Q, K_new_h = self._apply_rope(Q, K_new_h, cos, sin)
 
-        # KV cache (SP-FIX-03).
         past_k = past_v = None
         if past_key_value is not None and not is_cross:
             if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 2:
@@ -1081,7 +986,6 @@ class SpectronFP8Attention(BaseAttention):
             + alpha_lin.to(target_dt) * out_lin.to(target_dt)
         )
 
-        # head_mask (SP-FIX-03).
         if head_mask is not None:
             if head_mask.dim() == 1:
                 head_mask = head_mask.view(1, -1, 1, 1)
@@ -1142,7 +1046,6 @@ class SpectronFP8Attention(BaseAttention):
             K = repeat_kv(K, self.kv_repeat)
             V = repeat_kv(V, self.kv_repeat)
 
-        # 1. Sliding window branch cache
         if "k_cache" not in state or state["k_cache"] is None:
             state["k_cache"] = K
             state["v_cache"] = V
@@ -1154,7 +1057,6 @@ class SpectronFP8Attention(BaseAttention):
         attn_loc = F.softmax(scores, dim=-1)
         out_loc = torch.matmul(attn_loc, state["v_cache"])
 
-        # 2. Global low-rank linear step
         q_elu = F.elu(Q.float() / math.sqrt(d)) + 1.0
         k_elu = F.elu(K.float()) + 1.0
         v_float = V.float()
@@ -1173,7 +1075,6 @@ class SpectronFP8Attention(BaseAttention):
         state["z_state"] = z_state
         out_glob = out_glob_t.unsqueeze(2).to(dtype)
 
-        # 3. Recurrent state branch
         gamma = torch.sigmoid(self.decay_param.to(device=device, dtype=torch.float32)).view(1, H, 1, d)
         if "lin_state" not in state or state["lin_state"] is None:
             state["lin_state"] = torch.zeros((B, H, 1, d), device=device, dtype=torch.float32)
@@ -1186,7 +1087,6 @@ class SpectronFP8Attention(BaseAttention):
         out_lin_flat = self.state_norm(lin_state.transpose(1, 2).contiguous().view(B, 1, -1).to(dtype))
         out_lin = out_lin_flat.view(B, 1, H, d).transpose(1, 2)
 
-        # Combine 3 branches
         fused = alpha_loc * out_loc + alpha_glob * out_glob + alpha_lin * out_lin.to(dtype)
         state["step_idx"] = step_idx + 1
 
@@ -1198,7 +1098,6 @@ class SpectronFP8Attention(BaseAttention):
 
         return final.to(dtype), state
 
-    # ------------------------------------------------------------------
     @staticmethod
     def _apply_rope(
         q: torch.Tensor,
@@ -1233,11 +1132,6 @@ class SpectronFP8Attention(BaseAttention):
         return torch.zeros((), device=self.out_proj.lin1.weight.device)
 
 
-# ===========================================================================
-# Injection
-# ===========================================================================
-
-
 AegisSpectronFP8Attention = SpectronFP8Attention
 
 def inject_aegis_spectron_fp8(
@@ -1263,7 +1157,6 @@ def inject_aegis_spectron_fp8(
 
     cfg_root = model_config if model_config is not None else getattr(target, "config", None)
 
-    # Whole-model traversal.
     layer_list = None
     if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
         layer_list = target.distilbert.transformer.layer

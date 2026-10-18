@@ -256,7 +256,6 @@ try:
 except Exception:
     pass
 
-# Auto-wired submodules
 from neuralops.attentions.svd import adaptive_svd_attention
 from neuralops.attentions.svd import asvd_attention
 from neuralops.attentions.svd import compressed_attention

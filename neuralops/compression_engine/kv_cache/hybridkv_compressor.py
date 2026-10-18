@@ -23,8 +23,6 @@ from neuralops.core.registry import COMPRESSOR_REGISTRY
 logger = logging.getLogger(__name__)
 
 
-
-
 _ATTN_NAMES = {
     "q_proj",
     "k_proj",
@@ -120,7 +118,6 @@ class HybridKVCache:
                 return out_k.squeeze(1), out_v.squeeze(1)
             return out_k, out_v
 
-        # GPU Triton accelerated paged compaction hook
         if self.k_cache.is_cuda:
             try:
                 from neuralops.core.triton_kernels.paged_attention import paged_kv_evict_compact_triton
@@ -128,7 +125,6 @@ class HybridKVCache:
             except Exception:
                 pass
 
-        # Eviction per head according to static vs dynamic classification
         target_len = self.max_cache_len
         head_k_list: list[torch.Tensor] = []
         head_v_list: list[torch.Tensor] = []
@@ -140,11 +136,10 @@ class HybridKVCache:
         )
 
         for h_idx in range(H):
-            k_h = self.k_cache[:, h_idx, :, :]  # (B, cur_len, D)
+            k_h = self.k_cache[:, h_idx, :, :]
             v_h = self.v_cache[:, h_idx, :, :]
 
             if is_static[h_idx]:
-                # Static head policy: Sink tokens + Heavy Hitters via L2 Key norm
                 sinks_k = k_h[:, : self.num_sinks, :]
                 sinks_v = v_h[:, : self.num_sinks, :]
                 remaining_k = k_h[:, self.num_sinks :, :]
@@ -163,7 +158,6 @@ class HybridKVCache:
                     evicted_k = sinks_k
                     evicted_v = sinks_v
             else:
-                # Dynamic head policy: Sliding local window strictly
                 window_budget = min(self.recent_window, target_len)
                 evicted_k = k_h[:, -window_budget:, :]
                 evicted_v = v_h[:, -window_budget:, :]
@@ -305,16 +299,13 @@ class HybridKVCompressor(BaseCompressor):
                     static_ratio=self.static_ratio,
                     static_heads_mask=static_mask,
                 )
-                # Attach KV cache manager
                 module.hybrid_kv_cache = kv_cache
                 if hasattr(module, "base_layer"):
                     module.base_layer.hybrid_kv_cache = kv_cache
 
-                # Apply low-rank projection to dynamic heads to reflect cache compression
                 if num_dynamic > 0 and self.budget < 1.0:
                     with torch.no_grad():
                         W_mat = W.t().contiguous().float() if is_conv1d else W.contiguous().float()
-                        # Dynamic heads slice
                         start_idx = num_static * head_dim
                         if start_idx < out_f:
                             dyn_w = W_mat[start_idx:, :]
@@ -335,11 +326,9 @@ class HybridKVCompressor(BaseCompressor):
                 static_heads_count += num_static
                 dynamic_heads_count += num_dynamic
             elif hasattr(module, "weight") or list(module.parameters(recurse=False)):
-                # Freeze fallback/skipped layers to prevent unintended gradient flow
                 for p in module.parameters(recurse=False):
                     p.requires_grad = False
 
-        # Forward sanity check
         forward_check_success = True
         try:
             with torch.no_grad():

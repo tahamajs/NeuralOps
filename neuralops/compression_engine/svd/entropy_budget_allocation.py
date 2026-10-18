@@ -22,8 +22,6 @@ from neuralops.utils.compat import should_compress_linear
 logger = logging.getLogger(__name__)
 
 
-
-
 _ATTN_NAMES = {
     "q_proj",
     "k_proj",
@@ -266,7 +264,6 @@ class EntropyBudgetCompressor(BaseCompressor):
         total_orig_params = 0
         total_comp_params = 0
 
-        # Freeze skipped layers if target_attention_only is enabled
         if self.target_attention_only:
             for name, module in self.model.named_modules():
                 if any(part in name.split(".") for part in ["lora_A", "lora_B", "base_layer"]):
@@ -294,7 +291,6 @@ class EntropyBudgetCompressor(BaseCompressor):
         residual_candidates = []
         layer_decomp_info = {}
 
-        # Step 1: Compute covariance-whitened singular decomposition and singular entropy per layer
         for name, module in target_layers:
             target_mod = getattr(module, "base_layer", module)
             cls_name = target_mod.__class__.__name__.lower()
@@ -358,17 +354,14 @@ class EntropyBudgetCompressor(BaseCompressor):
             else:
                 total_s = S.sum() + self.eps
                 p = torch.clamp(S / total_s, min=self.eps, max=1.0)
-                # B18: Shannon entropy in bits using log2
                 entropy = -torch.sum(p * torch.log2(p)).item()
                 entropy = max(entropy, 1e-4)
-
 
             for i in range(r_floor, max_r):
                 s_val = S[i].item()
                 score = (s_val**2) / entropy
                 residual_candidates.append((name, i, s_val, score))
 
-        # Step 2: Allocate ranks
         if self.rank is not None:
             allocated_ranks = {
                 name: max(1, min(self.rank, layer_decomp_info[name][4]))
@@ -388,7 +381,6 @@ class EntropyBudgetCompressor(BaseCompressor):
             for c in residual_candidates[:residual_budget]:
                 allocated_ranks[c[0]] += 1
 
-        # Step 3: Factorized replacement with validation & fallback
         forward_check_success = True
 
         for name, module in target_layers:
@@ -413,7 +405,6 @@ class EntropyBudgetCompressor(BaseCompressor):
             else:
                 V_r = sqrt_S.unsqueeze(1) * Vt[:r, :]
 
-            # Compute reconstructed weight & Frobenius error
             W_recon = torch.matmul(U_r.float(), V_r.float())
             norm_w = torch.norm(W, p="fro").item()
             err = (
@@ -461,7 +452,6 @@ class EntropyBudgetCompressor(BaseCompressor):
             ):
                 svd_layer.bias.data.copy_(target_mod.bias.data)
 
-            # If module was LoRALinear wrapper, copy existing trained adapter weights
             if (
                 hasattr(module, "lora_A")
                 and hasattr(module, "lora_B")
@@ -482,7 +472,6 @@ class EntropyBudgetCompressor(BaseCompressor):
             comp_layer_params = r * (in_f + out_f)
             total_comp_params += comp_layer_params
 
-        # Sanity check forward pass
         try:
             with torch.no_grad():
                 first_p = next(self.model.parameters(), None)

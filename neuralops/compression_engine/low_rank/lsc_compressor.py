@@ -78,13 +78,7 @@ _ATTN_NAMES = {
 }
 
 
-# ===========================================================================
-# LSCPrunedLoRALinear (LSC-FIX-03, LSC-FIX-07)
-# ===========================================================================
-
-
 class LSCPrunedLoRALinear(nn.Module):
-    # LSC-FIX-07: this is a linear layer, not an attention module.
     is_custom_attention: bool = False
     is_custom_linear: bool = True
 
@@ -102,11 +96,11 @@ class LSCPrunedLoRALinear(nn.Module):
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
-        self.nf = out_features  # Conv1D compatibility
+        self.nf = out_features
         self.lora_r = int(lora_r)
         self.lora_alpha = float(lora_alpha)
         self.scaling = (self.lora_alpha / self.lora_r) if self.lora_r > 0 else 1.0
-        self.rank = self.lora_r  # Alias for detection
+        self.rank = self.lora_r
 
         target_device = device if device is not None else weight.device
         target_dtype = dtype if dtype is not None else weight.dtype
@@ -124,7 +118,6 @@ class LSCPrunedLoRALinear(nn.Module):
             self.register_parameter("bias", None)
 
         if self.lora_r > 0:
-            # LSC-FIX-03: LoRA parameters in base weight's dtype for forward consistency.
             self.lora_A = nn.Parameter(
                 torch.empty((self.lora_r, in_features), dtype=target_dtype, device=target_device)
             )
@@ -174,7 +167,6 @@ class LSCPrunedLoRALinear(nn.Module):
         cls_name = base_layer.__class__.__name__.lower()
         layer.is_conv1d = "conv1d" in cls_name or hasattr(base_layer, "nf")
 
-        # Preserve existing LoRA if shapes match.
         if (
             hasattr(linear, "lora_A")
             and hasattr(linear, "lora_B")
@@ -213,11 +205,6 @@ class LSCPrunedLoRALinear(nn.Module):
         return out
 
 
-# ===========================================================================
-# Compressor
-# ===========================================================================
-
-
 class LSCCompressor(BaseCompressor):
     """LSCCompressor neural operator.
 
@@ -227,7 +214,6 @@ class LSCCompressor(BaseCompressor):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
-    # LSC-FIX-01: this is a compressor, not an attention layer.
     is_custom_attention: bool = False
 
     def __init__(
@@ -311,9 +297,6 @@ class LSCCompressor(BaseCompressor):
                 return True
         return False
 
-    # ------------------------------------------------------------------
-    # Target check with debug
-    # ------------------------------------------------------------------
     def _is_target_module(self, name: str, module: nn.Module, _debug: bool = False) -> bool:
         name_lower = name.lower()
         if any(part in name.split(".") for part in ("lora_A", "lora_B", "base_layer")):
@@ -384,9 +367,6 @@ class LSCCompressor(BaseCompressor):
             logger.info(f"  [TARGET] {name}: shape={tuple(w.shape)}")
         return True
 
-    # ------------------------------------------------------------------
-    # Main compress
-    # ------------------------------------------------------------------
     def compress(self, **kwargs: Any) -> tuple[nn.Module, dict[str, Any]]:
         self.compressed_layers = []
         self.fallback_layers = []
@@ -399,7 +379,6 @@ class LSCCompressor(BaseCompressor):
         total_orig_params = 0
         total_comp_params = 0
 
-        # LSC-FIX-12: deduplicated parameter accounting.
         for p in self.model.parameters():
             if id(p) not in seen_param_ids:
                 seen_param_ids.add(id(p))
@@ -414,7 +393,6 @@ class LSCCompressor(BaseCompressor):
                     count_param_ids.add(id(p))
                     total_comp_params += p.numel()
 
-        # LSC-FIX-06: diagnostic breakdown if no targets
         target_list = [
             (name, module)
             for name, module in self.model.named_modules()
@@ -454,7 +432,6 @@ class LSCCompressor(BaseCompressor):
             device = raw_w.device
             dtype = raw_w.dtype
 
-            # FP32 for numerical stability
             W = raw_w.t().clone().float() if is_conv1d else raw_w.clone().float()
             d_out, d_in = W.shape
             total_coeffs = d_out * d_in
@@ -464,7 +441,6 @@ class LSCCompressor(BaseCompressor):
                 magnitude = torch.abs(W_fft)
                 flat_mag = magnitude.reshape(-1)
 
-                # LSC-FIX-08: guard against all-zero magnitude
                 if flat_mag.max().item() <= 1e-12:
                     logger.warning(
                         "LSC: all-zero magnitude for %s; keeping original.",
@@ -564,7 +540,6 @@ class LSCCompressor(BaseCompressor):
                     p.requires_grad = False
                 _add_params(module)
 
-        # LSC-FIX-04 + LSC-FIX-10: robust forward sanity check
         forward_check_success = True
         try:
             with torch.no_grad():
@@ -632,7 +607,6 @@ class LSCCompressor(BaseCompressor):
         )
         self.stats = stats
 
-        # LSC-FIX-13: write stats onto the model for framework visibility.
         try:
             if not hasattr(self.model, "compression_stats") or self.model.compression_stats is None:
                 self.model.compression_stats = {}
@@ -665,11 +639,6 @@ class LSCCompressor(BaseCompressor):
             eff_ratio,
         )
         return self.model, stats
-
-
-# ===========================================================================
-# Factory (LSC-FIX-11)
-# ===========================================================================
 
 
 @COMPRESSOR_REGISTRY.register("lsc_compressor")

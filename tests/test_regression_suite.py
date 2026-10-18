@@ -31,7 +31,7 @@ class TestKnownBugs:
 
     def test_eval_file_split_preserves_api(self):
         """Regression: eval file split must preserve public API."""
-        from neuralops.evaluation.eval_all_models_datasets import (
+        from evaluation.eval_all_models_datasets import (
             TRACK_MODULES,
             apply_module_to_model,
             evaluate_single_combination_opt,
@@ -40,6 +40,12 @@ class TestKnownBugs:
         assert callable(apply_module_to_model)
         assert callable(evaluate_single_combination_opt)
         assert TRACK_MODULES is not None
+
+        # Verify backward-compatibility shim
+        from neuralops.evaluation.eval_all_models_datasets import (
+            apply_module_to_model as shim_apply,
+        )
+        assert callable(shim_apply)
 
     def test_legacy_runner_shims_work(self):
         """Regression: legacy runners should still import."""

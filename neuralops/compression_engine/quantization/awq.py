@@ -39,13 +39,10 @@ class AWQQuantizer:
     def quantize(self) -> torch.Tensor:
         """Applies activation-aware channel re-scaling and quantizes."""
         W = self.layer.weight.data.clone().to(torch.float32)
-        # Protect salient channels using activation magnitude: s = act^alpha
         scales = self.act_scales.clamp(min=1e-5).pow(self.alpha)
 
-        # Re-scale weights: W' = W * diag(s)
         W_scaled = W * scales.unsqueeze(0)
         Q_scaled = self._quantize_int4(W_scaled)
-        # Restore scaling: Q = Q' / diag(s)
         Q = Q_scaled / scales.unsqueeze(0)
 
         self.layer.weight.data.copy_(Q.to(self.layer.weight.dtype))

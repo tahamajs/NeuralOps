@@ -29,14 +29,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 logger = logging.getLogger(__name__)
 
 
-
-
-
-
-
-
-
-
 class SVDLinear(nn.Module):
     is_custom_attention: bool = True
     r"""SVD-factorized linear layer with trainable LoRA adapters.
@@ -126,7 +118,6 @@ class SVDLinear(nn.Module):
         return out
 
 
-
 @ATTENTION_REGISTRY.register("svd_mamba", supports_causal=True)
 class SVDMamba(BaseAttention):
     r"""SVD-Mamba module with SVD-factorized projections, causal convolution, and selective SSM."""
@@ -182,7 +173,6 @@ class SVDMamba(BaseAttention):
             config, "lora_alpha", _cfg_get(comp_config, "lora_alpha", lora_alpha)
         )
 
-        # Decoder / Causal flag
         model_type = str(_cfg_get(config, "model_type", "") or "").lower()
         decoder_prefixes = (
             "gpt",
@@ -248,7 +238,6 @@ class SVDMamba(BaseAttention):
             if not isinstance(target_dtype, torch.dtype):
                 target_dtype = torch.float32
 
-        # Attention path projections with LoRA
         self.q_proj = SVDLinear(
             self.d_model,
             self.all_head_size,
@@ -277,12 +266,10 @@ class SVDMamba(BaseAttention):
             dtype=target_dtype,
         )
 
-        # Gating for dynamic aggregation (negative initial bias preserves pretrained attention path)
         self.gating = nn.Linear(self.d_model, self.d_model)
         nn.init.zeros_(self.gating.weight)
         nn.init.constant_(self.gating.bias, -2.0)
 
-        # Attention output projection
         self.attn_out_proj = SVDLinear(
             self.all_head_size,
             self.d_model,
@@ -293,7 +280,6 @@ class SVDMamba(BaseAttention):
             dtype=target_dtype,
         )
 
-        # SVD-factorized projections
         self.in_proj = SVDLinear(
             self.d_model,
             2 * self.inner_dim,
@@ -319,7 +305,6 @@ class SVDMamba(BaseAttention):
         nn.init.uniform_(self.dt_proj.weight, -0.01, 0.01)
         nn.init.zeros_(self.dt_proj.bias)
 
-        # Causal depthwise convolution
         self.conv1d = nn.Conv1d(
             in_channels=self.inner_dim,
             out_channels=self.inner_dim,
@@ -328,12 +313,10 @@ class SVDMamba(BaseAttention):
             bias=False,
         )
 
-        # State-space parameters
         self.A_log = nn.Parameter(torch.log(torch.arange(1, self.d_state + 1, dtype=torch.float32)))
         self.D = nn.Parameter(torch.ones(self.inner_dim))
         self.dt_bias = nn.Parameter(torch.zeros(self.inner_dim))
 
-        # Global SVD mixing
         self.global_V = nn.Parameter(torch.randn(self.d_model, self.global_rank) * 0.02)
         self.global_out = SVDLinear(
             self.global_rank,
@@ -383,7 +366,6 @@ class SVDMamba(BaseAttention):
             w_v, b_v = None, None
             w_o, b_o = None, None
 
-            # Check nested encoder container
             src_cls_name = getattr(old_attn, "__class__", type(old_attn)).__name__
             if src_cls_name in ("BertSelfAttention", "RobertaSelfAttention") or (
                 hasattr(old_attn, "query")
@@ -400,7 +382,6 @@ class SVDMamba(BaseAttention):
             else:
                 src = old_attn
 
-            # Pattern 1: GPT-2 Fused c_attn
             if hasattr(src, "c_attn") and hasattr(src, "c_proj"):
                 c_attn_w, c_attn_b = _unpack_weight_bias(src.c_attn)
                 if c_attn_w is not None:
@@ -430,7 +411,6 @@ class SVDMamba(BaseAttention):
                     w_o = c_proj_w
                     b_o = c_proj_b
 
-            # Pattern 2: RoBERTa / BERT separate query, key, value
             elif hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value"):
                 w_q, b_q = _unpack_weight_bias(src.query)
                 w_k, b_k = _unpack_weight_bias(src.key)
@@ -442,7 +422,6 @@ class SVDMamba(BaseAttention):
                             w_o, b_o = _unpack_weight_bias(getattr(src, attr))
                             break
 
-            # Pattern 3: Qwen / LLaMA (q_proj, k_proj, v_proj, o_proj)
             elif hasattr(src, "q_proj") and hasattr(src, "k_proj") and hasattr(src, "v_proj"):
                 w_q, b_q = _unpack_weight_bias(src.q_proj)
                 w_k, b_k = _unpack_weight_bias(src.k_proj)
@@ -450,7 +429,6 @@ class SVDMamba(BaseAttention):
                 if hasattr(src, "o_proj"):
                     w_o, b_o = _unpack_weight_bias(src.o_proj)
 
-            # Pattern 4: DistilBERT (q_lin, k_lin, v_lin, out_lin)
             elif hasattr(src, "q_lin") and hasattr(src, "k_lin") and hasattr(src, "v_lin"):
                 w_q, b_q = _unpack_weight_bias(src.q_lin)
                 w_k, b_k = _unpack_weight_bias(src.k_lin)
@@ -458,7 +436,6 @@ class SVDMamba(BaseAttention):
                 if hasattr(src, "out_lin"):
                     w_o, b_o = _unpack_weight_bias(src.out_lin)
 
-            # Pattern 5: UniversalAdapter fallback
             if w_q is None or w_v is None:
                 try:
                     adapter = UniversalAdapter()
@@ -471,7 +448,6 @@ class SVDMamba(BaseAttention):
                 except Exception as e:
                     logger.debug("UniversalAdapter fallback failed: %s", e)
 
-            # Strict validation
             missing = []
             if w_q is None:
                 missing.append("Q projection")
@@ -489,7 +465,6 @@ class SVDMamba(BaseAttention):
             if w_k is None:
                 w_k = w_q
 
-            # Copy into attention path
             self.q_proj.decompose_from_weight(
                 w_q[: self.all_head_size, : self.d_model],
                 b_q[: self.all_head_size] if b_q is not None else None,
@@ -503,7 +478,6 @@ class SVDMamba(BaseAttention):
                 b_v[: self.kv_head_size] if b_v is not None else None,
             )
 
-            # Assemble in_proj weight: [V, Q, V, Q] repeated to 2 * inner_dim
             if w_v.shape[0] < self.inner_dim:
                 n_rep = math.ceil(self.inner_dim / w_v.shape[0])
                 v_chunk = w_v.repeat(n_rep, 1)[: self.inner_dim, : self.d_model]
@@ -536,7 +510,6 @@ class SVDMamba(BaseAttention):
 
             self.in_proj.decompose_from_weight(in_w, in_b)
 
-        # Out proj (goes to attn_out_proj)
         if w_o is not None:
             out_w = w_o[: self.d_model, : self.all_head_size]
             if out_w.shape[1] < self.all_head_size:
@@ -546,7 +519,6 @@ class SVDMamba(BaseAttention):
                 out_w, b_o[: self.d_model] if b_o is not None else None
             )
 
-            # Verify Frobenius norms
             if float(torch.linalg.norm(self.in_proj.weight.float())) < 1e-4:
                 logger.warning("SVDMamba: in_proj near-zero norm")
             if float(torch.linalg.norm(self.q_proj.weight.float())) < 1e-4:
@@ -597,9 +569,6 @@ class SVDMamba(BaseAttention):
         if mask_bool is None:
             mask_bool = torch.ones(batch, seqlen, device=hidden_states.device, dtype=torch.bool)
 
-        # ---------------------------------------------------------
-        # 1. Attention Path (Multi-Head Attention with RoPE and Causal Masking)
-        # ---------------------------------------------------------
         Q = (
             self.q_proj(hidden_states)
             .view(batch, seqlen, self.num_heads, self.head_dim)
@@ -680,19 +649,16 @@ class SVDMamba(BaseAttention):
             )
             attn_out = self.attn_out_proj(attn_out)
 
-        # ---------------------------------------------------------
-        # 2. Selective SSM Path (Bounded FP32 associative update with min=1.0 denominator clamp)
-        # ---------------------------------------------------------
-        xz = self.in_proj(hidden_states)  # [B, L, 2*inner]
-        x, z = xz.chunk(2, dim=-1)  # each [B, L, inner]
+        xz = self.in_proj(hidden_states)
+        x, z = xz.chunk(2, dim=-1)
 
-        x_t = x.transpose(1, 2).contiguous()  # [B, inner, L]
+        x_t = x.transpose(1, 2).contiguous()
         x_pad = F.pad(x_t, (self.d_conv - 1, 0))
         x_conv = self.conv1d(x_pad)[..., :seqlen]
-        x_conv = x_conv.transpose(1, 2).contiguous()  # [B, L, inner]
+        x_conv = x_conv.transpose(1, 2).contiguous()
         x_conv = F.silu(x_conv)
 
-        x_proj = self.x_proj(x_conv)  # [B, L, dt_rank+2*d_state]
+        x_proj = self.x_proj(x_conv)
         delta = x_proj[:, :, : self.dt_rank]
         B_ssm = x_proj[:, :, self.dt_rank : self.dt_rank + self.d_state]
         C_ssm = x_proj[:, :, self.dt_rank + self.d_state :]
@@ -732,7 +698,6 @@ class SVDMamba(BaseAttention):
             h_den_inter = decay_c * h_den_running.unsqueeze(1)
             h_den_chunk = torch.clamp(h_den_intra + h_den_inter, min=0.0, max=1e4)
 
-            # Bounded denominator clamp to prevent explosive activations
             denom_c = (
                 (C_ssm[:, s_idx:e_idx].abs().unsqueeze(2).float() * h_den_chunk)
                 .sum(dim=-1)
@@ -748,16 +713,12 @@ class SVDMamba(BaseAttention):
         y = y + self.D * x_conv
         ssm_out = y * F.silu(z)
 
-        # Global SVD mixing
         global_scores = hidden_states @ self.global_V
         global_mix = self.global_out(global_scores)
         ssm_out = ssm_out + global_mix
 
         ssm_proj = self.out_proj(ssm_out)
 
-        # ---------------------------------------------------------
-        # 3. Dynamic Aggregation with Negative-Biased Gating
-        # ---------------------------------------------------------
         gamma = torch.sigmoid(self.gating(hidden_states))
         Y = gamma * ssm_proj + (1.0 - gamma) * attn_out
         Y = torch.nan_to_num(Y, nan=0.0, posinf=1e4, neginf=-1e4)
@@ -793,7 +754,6 @@ def inject_svd_mamba(
     target = layer if layer is not None else model
     cfg = model_config or getattr(target, "config", None)
 
-    # 1. Whole model traversal support
     if target is not None and (
         hasattr(target, "transformer")
         or hasattr(target, "distilbert")
@@ -829,7 +789,6 @@ def inject_svd_mamba(
                 )
             return target
 
-    # 2. Layer injection
     try:
         src = old_attn
         if src is None and target is not None:
@@ -856,7 +815,6 @@ def inject_svd_mamba(
         if src is None:
             return None
 
-        # Double-injection guard
         if src is not None:
             if isinstance(src, SVDMamba):
                 return None
@@ -883,7 +841,6 @@ def inject_svd_mamba(
                 ):
                     return None
 
-        # Skip Qwen3.5 hybrid DeltaNet/LinearAttention layers
         if src is not None:
             c_name = src.__class__.__name__
             if "DeltaNet" in c_name or "LinearAttention" in c_name:

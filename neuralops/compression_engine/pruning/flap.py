@@ -29,8 +29,6 @@ from neuralops.utils.compat import should_compress_linear
 logger = logging.getLogger(__name__)
 
 
-
-
 _ATTN_NAMES = {
     "q_proj",
     "k_proj",
@@ -78,7 +76,7 @@ class FLAPCompressor(BaseCompressor):
         structured_24: bool = False,
         target_modules: list[str] | None = None,
         cfg: Any | None = None,
-        num_calibration_batches: int = 8,  # FL-FIX-04
+        num_calibration_batches: int = 8,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="flap", **kwargs)
@@ -140,7 +138,6 @@ class FLAPCompressor(BaseCompressor):
         self.layer_sparsities: dict[str, float] = {}
         self._compressed_params: int = 0
 
-    # ------------------------------------------------------------------
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         name_lower = name.lower()
         if any(part in name.split(".") for part in ["lora_A", "lora_B", "base_layer"]):
@@ -184,9 +181,6 @@ class FLAPCompressor(BaseCompressor):
 
         return True
 
-    # ------------------------------------------------------------------
-    # FL-FIX-04/05: multiple calibration batches, mean-of-variance accumulation
-    # ------------------------------------------------------------------
     def _normalize_calibration_batches(self, calib_inputs: Any) -> list[Any]:
         if calib_inputs is None:
             return []
@@ -272,7 +266,6 @@ class FLAPCompressor(BaseCompressor):
             aggregated[name] = (vsum / max(1, batch_count[name])).to(self.target_device)
         return aggregated
 
-    # ------------------------------------------------------------------
     def _compute_fluctuation_metric(
         self,
         weight: torch.Tensor,
@@ -303,7 +296,6 @@ class FLAPCompressor(BaseCompressor):
 
         return scores
 
-    # ------------------------------------------------------------------
     def compress(self, **kwargs: Any) -> tuple[nn.Module, dict[str, Any]]:
         activations_map = self._collect_layer_activations()
         self.compressed_layers = []
@@ -356,7 +348,6 @@ class FLAPCompressor(BaseCompressor):
             act = activations_map.get(name, None)
             scores = self._compute_fluctuation_metric(W, act)
 
-            # FL-FIX-01: compute actual sparsity from mask.
             if self.structured_24:
                 saliency_matrix = scores.unsqueeze(0).expand_as(W)
                 W_pruned, mask = apply_24_structured_mask(W, saliency=saliency_matrix, dim=1)
@@ -364,7 +355,6 @@ class FLAPCompressor(BaseCompressor):
                     mask_f = mask.float()
                     effective_sparsity = 1.0 - (mask_f.sum().item() / max(1, mask_f.numel()))
                 else:
-                    # Fallback: count zeros.
                     zeros = (W_pruned.abs() < 1e-12).float().sum().item()
                     effective_sparsity = zeros / max(1, W_pruned.numel())
             else:
@@ -402,7 +392,6 @@ class FLAPCompressor(BaseCompressor):
                     total_comp_params += orig_layer_params
                     continue
 
-            # FL-FIX-02: no_grad for weight copy.
             if is_conv1d:
                 res_w = W_pruned.t().to(dtype=dtype, device=device).contiguous()
             else:
@@ -416,7 +405,6 @@ class FLAPCompressor(BaseCompressor):
             with torch.no_grad():
                 target_mod.weight.data.copy_(res_w)
 
-            # LoRA trainability.
             if hasattr(module, "lora_A") and hasattr(module, "lora_B"):
                 if hasattr(module.lora_A, "weight") and module.lora_A.weight is not None:
                     module.lora_A.weight.requires_grad = True
@@ -424,11 +412,9 @@ class FLAPCompressor(BaseCompressor):
                     module.lora_B.weight.requires_grad = True
 
             self.compressed_layers.append(name)
-            # FL-FIX-03: effective params based on actual sparsity.
             comp_layer_params = int((1.0 - effective_sparsity) * orig_layer_params)
             total_comp_params += max(1, comp_layer_params)
 
-        # FL-FIX-06: forward sanity check with attention_mask.
         forward_check_success = True
         try:
             with torch.no_grad():
@@ -509,11 +495,6 @@ class FLAPCompressor(BaseCompressor):
             self.max_error,
         )
         return self.model, stats
-
-
-# ===========================================================================
-# Factory (FL-FIX-07)
-# ===========================================================================
 
 
 def flap_compressor_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:

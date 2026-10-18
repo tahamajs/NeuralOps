@@ -35,8 +35,6 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-
-
 class SpectralMamba(nn.Module):
     def __init__(self, d_model: int = 768, config: Any | None = None, **kwargs: Any) -> None:
         super().__init__()
@@ -56,7 +54,6 @@ class SpectralMamba(nn.Module):
                     self.mamba = SimpleSSM(self.d_model)
         else:
             self.mamba = nn.Identity()
-        # SM3-FIX-12: bounded per-channel gate (0..1)
         self.dt_scale = nn.Parameter(torch.full((self.d_model,), 0.5))
 
     def forward(self, x: torch.Tensor, **kwargs: Any) -> tuple[torch.Tensor, torch.Tensor | None]:
@@ -73,7 +70,6 @@ class SpectralMamba(nn.Module):
         if is_2d and out.dim() == 3:
             out = out.squeeze(1)
 
-        # SM3-FIX-02: cast gate to out.dtype
         gate = torch.sigmoid(self.dt_scale).to(out.dtype)
         if out.dim() == 3:
             gate = gate.view(1, 1, -1)
@@ -89,7 +85,6 @@ class SpectralMamba(nn.Module):
         if hasattr(self.mamba, "step") and callable(getattr(self.mamba, "step")):
             out, next_state = self.mamba.step(x, state=state, **kwargs)
         else:
-            # Fallback for SimpleSSM / identity if step is not implemented
             out, next_state = self.forward(x, **kwargs)
         return out, next_state
 
@@ -119,7 +114,6 @@ class SAMBAM3Block(nn.Module):
             d_model = config
             config = None
 
-        # ---- d_model / n_heads ----
         if d_model is None:
             if config is not None:
                 d_model = _cfg_get(config, "hidden_size", _cfg_get(config, "d_model", 768))
@@ -165,7 +159,6 @@ class SAMBAM3Block(nn.Module):
         self.q_head_size: int = self.n_heads * self.head_dim
         self.kv_head_size: int = self.num_kv_heads * self.head_dim
 
-        # ---- SM3-FIX-08: decoder detection (override wins) ----
         if is_decoder is not None:
             is_dec = bool(is_decoder)
         else:
@@ -198,7 +191,6 @@ class SAMBAM3Block(nn.Module):
         self.is_causal: bool = self.is_decoder
         self.is_nested_encoder: bool = False
 
-        # ---- Projections ----
         self.q_lin = LoRALinear(
             self.d_model,
             self.q_head_size,
@@ -232,12 +224,10 @@ class SAMBAM3Block(nn.Module):
             freeze_base=True,
         )
 
-        # ---- Mamba branch ----
         self.mamba = SpectralMamba(
             self.d_model, config=config, is_decoder=self.is_decoder, **kwargs
         )
 
-        # ---- SM3-FIX-04: alpha always fp32, cast in forward ----
         self.alpha = nn.Parameter(torch.tensor(0.0, dtype=torch.float32))
         self.gate_fn = nn.Sigmoid()
 
@@ -249,7 +239,6 @@ class SAMBAM3Block(nn.Module):
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
 
-    # ---- aliases ----
     @property
     def query(self):
         return self.q_lin
@@ -285,9 +274,6 @@ class SAMBAM3Block(nn.Module):
         for m in (self.q_lin, self.k_lin, self.v_lin, self.out_lin):
             m.unfreeze_base_weights()
 
-    # ------------------------------------------------------------------
-    # Weight transfer (SM3-FIX-09)
-    # ------------------------------------------------------------------
     def copy_weights(self, pretrained_attn: nn.Module) -> None:
         with torch.no_grad():
             w_q = b_q = w_k = b_k = w_v = b_v = w_o = b_o = None
@@ -309,7 +295,6 @@ class SAMBAM3Block(nn.Module):
             else:
                 src = pretrained_attn
 
-            # --- GPT-2 fused ---
             if hasattr(src, "c_attn") and hasattr(src, "c_proj"):
                 c_attn_w = src.c_attn.weight.detach()
                 c_attn_b = src.c_attn.bias.detach() if src.c_attn.bias is not None else None
@@ -341,7 +326,6 @@ class SAMBAM3Block(nn.Module):
                 w_o = out_w
                 b_o = src.c_proj.bias.detach() if src.c_proj.bias is not None else None
 
-            # --- BERT/RoBERTa nested ---
             elif hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value"):
                 w_q = src.query.weight.detach()
                 b_q = src.query.bias.detach() if src.query.bias is not None else None
@@ -357,7 +341,6 @@ class SAMBAM3Block(nn.Module):
                             b_o = proj.bias.detach() if proj.bias is not None else None
                             break
 
-            # --- Qwen / LLaMA ---
             elif hasattr(src, "q_proj") and hasattr(src, "k_proj") and hasattr(src, "v_proj"):
                 w_q = src.q_proj.weight.detach()
                 b_q = (
@@ -385,7 +368,6 @@ class SAMBAM3Block(nn.Module):
                         else None
                     )
 
-            # --- Flat (DistilBERT) ---
             elif hasattr(src, "q_lin") and hasattr(src, "k_lin") and hasattr(src, "v_lin"):
                 w_q = src.q_lin.weight.detach()
                 b_q = src.q_lin.bias.detach() if src.q_lin.bias is not None else None
@@ -397,7 +379,6 @@ class SAMBAM3Block(nn.Module):
                     w_o = src.out_lin.weight.detach()
                     b_o = src.out_lin.bias.detach() if src.out_lin.bias is not None else None
 
-            # --- Fallback ---
             if w_q is None:
                 try:
                     adapter = UniversalAdapter()
@@ -421,7 +402,6 @@ class SAMBAM3Block(nn.Module):
                 except Exception as e:
                     logger.debug("UniversalAdapter fallback failed: %s", e)
 
-            # --- Copy into targets (SM3-FIX-09: cast + freeze) ---
             for target_mod, w_src, b_src, name in (
                 (self.q_lin, w_q, b_q, "q_lin"),
                 (self.k_lin, w_k, b_k, "k_lin"),
@@ -432,7 +412,6 @@ class SAMBAM3Block(nn.Module):
                     continue
                 tw = target_mod.weight
                 w_cast = w_src.to(dtype=tw.dtype, device=tw.device)
-                # orient if transposed
                 if w_cast.shape != tw.shape and w_cast.t().contiguous().shape == tw.shape:
                     w_cast = w_cast.t().contiguous()
                 min_r = min(tw.shape[0], w_cast.shape[0])
@@ -460,7 +439,6 @@ class SAMBAM3Block(nn.Module):
         B, H, L, d = q.shape
         scale = 1.0 / math.sqrt(d)
 
-        # Fused Triton sliding window acceleration
         if q.is_cuda and past_len == 0 and attention_mask is None and head_mask is None and d <= 64:
             try:
                 from neuralops.core.triton_kernels._types import FORCE_PYTORCH_FALLBACK
@@ -474,17 +452,14 @@ class SAMBAM3Block(nn.Module):
         chunk = 64
         outputs = []
 
-
         for start in range(0, L, chunk):
             end = min(start + chunk, L)
             q_c = q[:, :, start:end]
             C_q = end - start
 
-            # Absolute query positions (offset by past_len)
             q_abs_start = past_len + start
             q_abs_end = past_len + end
 
-            # Key range: absolute positions in [max(0, q_abs_start - window), q_abs_end + window) for bidir
             is_dec = getattr(self, "_active_is_decoder", self.is_decoder)
             if is_dec:
                 k_abs_start = max(0, q_abs_start - self.window)
@@ -493,7 +468,6 @@ class SAMBAM3Block(nn.Module):
                 k_abs_start = max(0, q_abs_start - self.window)
                 k_abs_end = min(past_len + L, q_abs_end + self.window)
 
-            # Slice keys in the *cache coordinates* (0..past_len+L)
             k_c = k[:, :, k_abs_start:k_abs_end]
             v_c = v[:, :, k_abs_start:k_abs_end]
 
@@ -508,10 +482,8 @@ class SAMBAM3Block(nn.Module):
 
             scores = scores.masked_fill(~valid, -1e4)
 
-            # SM3-FIX-07: head_mask dim==3 handled uniformly
             if attention_mask is not None:
                 if attention_mask.dim() == 2:
-                    # (B, N_total)
                     pad = (attention_mask[:, k_abs_start:k_abs_end] == 0).unsqueeze(1).unsqueeze(2)
                     scores = scores.masked_fill(pad, -1e4)
                 elif attention_mask.dim() == 3:
@@ -534,7 +506,6 @@ class SAMBAM3Block(nn.Module):
                 elif hm.dim() == 2:
                     hm = hm.view(hm.shape[0], hm.shape[1], 1, 1)
                 elif hm.dim() == 3:
-                    # (B, H, Lk) — align to current key slice and unsqueeze
                     hm = hm[:, :, k_abs_start:k_abs_end].unsqueeze(2)
                 hm = hm.to(probs.dtype)
                 probs = probs * hm
@@ -568,7 +539,6 @@ class SAMBAM3Block(nn.Module):
         is_dec = self.is_decoder or kwargs.get("is_decoder", False) or kwargs.get("is_causal", False)
         self._active_is_decoder = is_dec
 
-        # ---- SM3-FIX-05: read cache ----
         past_k = past_v = past_mamba = None
         past_len = 0
         if past_key_value is not None:
@@ -587,7 +557,6 @@ class SAMBAM3Block(nn.Module):
                 if hasattr(past_key_value, "mamba_state") and past_key_value.mamba_state:
                     past_mamba = past_key_value.mamba_state[0]
 
-        # ---- QKV ----
         q = (
             self.q_lin(hidden_states)
             .view(B, L, self.n_heads, self.head_dim)
@@ -607,7 +576,6 @@ class SAMBAM3Block(nn.Module):
             .contiguous()
         )
 
-        # ---- SM3-FIX-06: RoPE with offset ----
         pos_emb = position_embeddings or kwargs.get("position_embeddings")
         if pos_emb is not None and isinstance(pos_emb, tuple) and len(pos_emb) == 2:
             cos, sin = pos_emb
@@ -616,19 +584,16 @@ class SAMBAM3Block(nn.Module):
                 sin = sin.narrow(-2, past_len, L)
             q, k = apply_rotary_pos_emb(q, k, cos, sin)
 
-        # ---- Append to KV cache ----
         if past_k is not None:
             k = torch.cat([past_k.to(k.dtype), k], dim=-2)
             v = torch.cat([past_v.to(v.dtype), v], dim=-2)
 
-        # ---- GQA expand ----
         if self.num_kv_heads != self.n_heads:
             k_exp = repeat_kv(k, self.num_key_value_groups)
             v_exp = repeat_kv(v, self.num_key_value_groups)
         else:
             k_exp, v_exp = k, v
 
-        # ---- Attention ----
         attn_out = self._chunked_sliding_window_attention(
             q,
             k_exp,
@@ -640,7 +605,6 @@ class SAMBAM3Block(nn.Module):
         attn_out = attn_out.transpose(1, 2).contiguous().view(B, L, self.q_head_size)
         attn_out = attn_out.to(target_dtype)
 
-        # ---- Mamba branch ----
         kwargs_mamba = dict(kwargs)
         past_mamba = kwargs_mamba.pop("past_state", past_mamba)
         kwargs_mamba["is_decoder"] = is_dec
@@ -669,10 +633,8 @@ class SAMBAM3Block(nn.Module):
             attn_proj = self.out_lin(attn_out).to(target_dtype)
             out = fused_samba_sw_mamba_combine_triton(attn_proj, mamba_out, self.alpha)
 
-
         out = torch.nan_to_num(out.to(target_dtype), nan=0.0)
 
-        # ---- SM3-FIX-11: no silent pad; assert shape ----
         if out.shape[-1] != D:
             raise RuntimeError(f"SAMBAM3Block: output dim {out.shape[-1]} != expected {D}")
 
@@ -703,7 +665,6 @@ class SAMBAM3Block(nn.Module):
         device = x.device
         dtype = x.dtype
 
-        # 1. Attention KV step
         q = self.q_lin(x).view(B, 1, self.n_heads, self.head_dim).transpose(1, 2)
         k = self.k_lin(x).view(B, 1, self.num_kv_heads, self.head_dim).transpose(1, 2)
         v = self.v_lin(x).view(B, 1, self.num_kv_heads, self.head_dim).transpose(1, 2)
@@ -724,7 +685,6 @@ class SAMBAM3Block(nn.Module):
             k_exp = k_cat
             v_exp = v_cat
 
-        # Keep only the last window tokens in sliding-window cache
         if k_cat.shape[-2] > self.window:
             next_past_k = k_cat[:, :, -self.window :, :]
             next_past_v = v_cat[:, :, -self.window :, :]
@@ -737,11 +697,9 @@ class SAMBAM3Block(nn.Module):
         probs = F.softmax(scores, dim=-1).to(dtype)
         attn_out = torch.matmul(probs, v_exp).transpose(1, 2).contiguous().view(B, 1, self.q_head_size)
 
-        # 2. Mamba step
         mamba_state = state.get("mamba_state", None)
         mamba_out, next_mamba_state = self.mamba.step(x, state=mamba_state, **kwargs)
 
-        # 3. Combine branches
         if self.is_nested_encoder:
             out = fused_samba_sw_mamba_combine_triton(attn_out, mamba_out, self.alpha)
         else:
@@ -830,7 +788,6 @@ def inject_samba_m3(
     if src is None:
         return None
 
-    # Idempotency
     if isinstance(src, SAMBAM3Block) or "SAMBAM3" in src.__class__.__name__:
         return None
     for attr in ("attention", "self_attn", "attn", "self"):

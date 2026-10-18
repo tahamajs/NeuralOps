@@ -37,7 +37,6 @@ from neuralops.utils.compat import should_compress_linear
 
 logger = logging.getLogger(__name__)
 
-# Standard multi-domain calibration corpus (shared with AASVD for direct parity)
 DEFAULT_CALIBRATION_CORPUS: list[str] = [
     (
         "Transformers rely heavily on multi-head self-attention mechanisms to capture complex syntactic "
@@ -101,7 +100,6 @@ class SVDLLMLinear(nn.Module):
         self.lora_alpha = lora_alpha
         self.scaling = lora_alpha / max(1, lora_rank)
 
-        # Explicit factor buffers: W_u and W_v
         self.W_u = nn.Parameter(torch.empty(out_features, self.rank, device=device, dtype=dtype))
         self.W_v = nn.Parameter(torch.empty(self.rank, in_features, device=device, dtype=dtype))
         if bias:
@@ -109,9 +107,7 @@ class SVDLLMLinear(nn.Module):
         else:
             self.register_parameter("bias", None)
 
-        # LoRA adapters for W_u and W_v
         if self.lora_rank > 0:
-            # LoRA for W_u: input dim = r, output dim = out_features
             self.lora_A_u = nn.Parameter(
                 torch.empty(lora_rank, self.rank, device=device, dtype=dtype)
             )
@@ -119,7 +115,6 @@ class SVDLLMLinear(nn.Module):
                 torch.empty(out_features, lora_rank, device=device, dtype=dtype)
             )
 
-            # LoRA for W_v: input dim = in_features, output dim = r
             self.lora_A_v = nn.Parameter(
                 torch.empty(lora_rank, in_features, device=device, dtype=dtype)
             )
@@ -209,8 +204,6 @@ class SVDLLMLinear(nn.Module):
             except Exception:
                 pass
 
-        # 1. Compute latent representation through W_v
-        # latent = x @ W_v.T + (optional LoRA_v)
         latent = F.linear(x, self.W_v)
         if self.lora_rank > 0 and self.lora_A_v is not None and self.lora_B_v is not None:
             lora_v = (
@@ -219,8 +212,6 @@ class SVDLLMLinear(nn.Module):
             )
             latent = latent + lora_v.to(latent.dtype)
 
-        # 2. Compute output through W_u
-        # out = latent @ W_u.T + (optional LoRA_u)
         out = F.linear(latent, self.W_u)
         if self.lora_rank > 0 and self.lora_A_u is not None and self.lora_B_u is not None:
             lora_u = (
@@ -512,7 +503,6 @@ class SVDLLMCompressor(BaseCompressor):
             except Exception:
                 continue
 
-        # Eigen-fallback for extreme singularity
         eigvals, eigvecs = torch.linalg.eigh(C)
         eigvals = torch.clamp(eigvals, min=1e-6)
         return eigvecs @ torch.diag(torch.sqrt(eigvals))
@@ -546,7 +536,6 @@ class SVDLLMCompressor(BaseCompressor):
                 S_inv = torch.inverse(S + 1e-5 * torch.eye(n, device=S.device, dtype=S.dtype))
             W_white = W_fp32 @ S
         else:
-            # Identity whitening (standard SVD fallback if covariance unavailable)
             S = torch.eye(n, device=W.device, dtype=W_fp32.dtype)
             S_inv = torch.eye(n, device=W.device, dtype=W_fp32.dtype)
             W_white = W_fp32
@@ -578,7 +567,6 @@ class SVDLLMCompressor(BaseCompressor):
         - Sequence Classification (DistilBERT, RoBERTa): unsupervised entropy minimization over predicted logits.
         """
         try:
-            # 1. CausalLM path
             if (
                 hasattr(self.model, "lm_head")
                 or "causallm" in self.model.__class__.__name__.lower()
@@ -591,7 +579,6 @@ class SVDLLMCompressor(BaseCompressor):
                     loss = outputs[0]
                 return loss
 
-            # 2. Sequence Classification / generic encoder path: entropy minimization
             outputs = self.model(input_ids=batch_ids, attention_mask=batch_mask)
             logits = getattr(outputs, "logits", None)
             if logits is None and isinstance(outputs, tuple):
@@ -622,11 +609,9 @@ class SVDLLMCompressor(BaseCompressor):
         )
         device = self.device
 
-        # Step 0: Freeze ALL model parameters (embeddings, layernorms, heads, and base weights)
         for p in self.model.parameters():
             p.requires_grad = False
 
-        # Prepare calibration DataLoader
         encodings = self.tokenizer(
             self.calibration_texts,
             padding=True,
@@ -646,7 +631,6 @@ class SVDLLMCompressor(BaseCompressor):
             ("stage2", "Stage 2 (Update W_v)"),
         ]:
             logger.info(f"[SVD-LLM Sequential LoRA] {stage_name}...")
-            # Set active LoRA adapters
             for m in self.model.modules():
                 if isinstance(m, SVDLLMLinear):
                     m.set_active_lora_stage(stage)
@@ -677,7 +661,6 @@ class SVDLLMCompressor(BaseCompressor):
                         optimizer.step()
                     step += 1
 
-        # Freeze all adapters after recovery
         for p in self.model.parameters():
             p.requires_grad = False
         for m in self.model.modules():
@@ -724,7 +707,6 @@ class SVDLLMCompressor(BaseCompressor):
             m, n = W.shape
             r = self.compute_rank_from_ratio(m, n, self.rank_ratio)
 
-            # Check parameter reduction condition
             if r * (m + n) >= m * n:
                 self.fallback_layers.append(name)
                 continue
@@ -740,7 +722,6 @@ class SVDLLMCompressor(BaseCompressor):
             self.layer_errors[name] = error
             self.layer_ranks[name] = r
 
-            # In faithful SVD-LLM (ICLR 2025), fallback is not used; all target layers are compressed.
             if self.fallback_to_original and error > self.max_error:
                 logger.info(
                     "SVD-LLM layer %s error %.4f > max_error %.4f; skipping (fallback).",
@@ -766,7 +747,6 @@ class SVDLLMCompressor(BaseCompressor):
             replace_module(self.model, name, svd_layer)
             self.compressed_layers.append(name)
 
-        # Run sequential LoRA fine-tuning
         self._sequential_lora_recovery()
 
         stats = {

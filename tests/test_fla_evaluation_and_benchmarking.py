@@ -3,8 +3,8 @@
 test_fla_evaluation_and_benchmarking.py
 =======================================
 Comprehensive Verification Suite for FLA Evaluation & Benchmarking Tools in NeuralOps:
-1. neuralops.evaluation.harness (NeuralOpsLMWrapper, HAS_LM_EVAL, run_evaluation)
-2. neuralops.evaluation.ppl (PerplexityEvaluator)
+1. evaluation.harness (NeuralOpsLMWrapper, HAS_LM_EVAL, run_evaluation)
+2. evaluation.ppl (PerplexityEvaluator)
 3. neuralops.benchmarks.generation (GenerationBenchmark)
 4. neuralops.benchmarks.training_throughput (TrainingThroughputProfiler)
 5. neuralops.benchmarks.ops_runner (OP_REGISTRY, run_benchmark_worker, format_table)
@@ -19,10 +19,8 @@ import math
 import pytest
 import torch
 import torch.nn as nn
-from transformers import AutoConfig, AutoModelForCausalLM
-
-from neuralops.evaluation.harness import NeuralOpsLMWrapper, HAS_LM_EVAL, run_evaluation
-from neuralops.evaluation.ppl import PerplexityEvaluator
+from evaluation.harness import NeuralOpsLMWrapper, HAS_LM_EVAL, run_evaluation
+from evaluation.ppl import PerplexityEvaluator
 from neuralops.benchmarks.generation import GenerationBenchmark
 from neuralops.benchmarks.training_throughput import TrainingThroughputProfiler
 from neuralops.benchmarks.ops_runner import OP_REGISTRY, run_benchmark_worker, format_table
@@ -54,7 +52,7 @@ def tiny_causal_lm(device):
 
 
 # ============================================================================
-# 1. EVALUATION: Perplexity & Positional NLL (neuralops.evaluation.ppl)
+# 1. EVALUATION: Perplexity & Positional NLL (evaluation.ppl)
 # ============================================================================
 
 def test_ppl_evaluator_synthetic_model(tiny_causal_lm, device):
@@ -80,7 +78,7 @@ def test_ppl_evaluator_synthetic_model(tiny_causal_lm, device):
 
 
 # ============================================================================
-# 2. EVALUATION: LM-Eval Harness Integration (neuralops.evaluation.harness)
+# 2. EVALUATION: LM-Eval Harness Integration (evaluation.harness)
 # ============================================================================
 
 def test_harness_model_wrapper(tiny_causal_lm, device):

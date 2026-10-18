@@ -40,8 +40,6 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-
-
 class CacheNotesLoRALinear(nn.Module):
     """
     Linear layer containing CacheNotes compressed base weights (frozen)
@@ -62,7 +60,7 @@ class CacheNotesLoRALinear(nn.Module):
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
-        self.nf = out_features  # Conv1D compatibility
+        self.nf = out_features
         self.lora_r = int(lora_r)
         self.lora_alpha = float(lora_alpha)
         self.scaling = (self.lora_alpha / self.lora_r) if self.lora_r > 0 else 1.0
@@ -221,7 +219,6 @@ class CompressionPlanningTokens:
         task_lower = str(task_type).lower()
         importance = torch.zeros(num_features, device=device)
 
-        # Baseline structure: prompt position bias
         pos_dim = max(1, num_features // 4)
         importance[:pos_dim] = 0.25
 
@@ -289,19 +286,17 @@ class CPTGenerator(nn.Module):
         """
         target_device = device if device is not None else next(self.parameters()).device
         tokens = self._tokenize_text(task, target_device)
-        h = self.text_embedding(tokens.unsqueeze(0)).squeeze(0)  # [hidden_dim]
-        h = self.encoder(h)  # [hidden_dim]
+        h = self.text_embedding(tokens.unsqueeze(0)).squeeze(0)
+        h = self.encoder(h)
 
-        # Continuous NeRF-style positional coordinate encoding
         coords = torch.linspace(0.0, 1.0, d, device=target_device)
         freqs = (2.0 ** torch.arange(self.num_freqs, device=target_device)) * math.pi
-        args = coords.unsqueeze(1) * freqs.unsqueeze(0)  # [d, num_freqs]
-        enc = torch.cat([torch.sin(args), torch.cos(args)], dim=-1)  # [d, 2 * num_freqs]
+        args = coords.unsqueeze(1) * freqs.unsqueeze(0)
+        enc = torch.cat([torch.sin(args), torch.cos(args)], dim=-1)
 
-        h_exp = h.unsqueeze(0).expand(d, -1)  # [d, hidden_dim]
-        inp = torch.cat([h_exp, enc], dim=-1)  # [d, in_dim]
+        h_exp = h.unsqueeze(0).expand(d, -1)
+        inp = torch.cat([h_exp, enc], dim=-1)
 
-        # Importance modulation strictly in [0.1, 2.0]
         importance = self.projector(inp).squeeze(-1) * 1.9 + 0.1
         return importance
 
@@ -357,7 +352,6 @@ class CacheNotesKVCache:
 
         B, H, N, D = k_4d.shape
 
-        # H6: Prevent cross-sequence cache pollution on prompt prefill (N > 1) or explicit flag
         if is_new_sequence or N > 1:
             self.reset()
 
@@ -378,7 +372,6 @@ class CacheNotesKVCache:
         sinks = min(self.num_sinks, cur_len)
         retained_cap = max(sinks + 1, self.max_cache_len)
 
-        # Task importance weighting across tokens
         if self.cpt_generator is not None:
             cpt_importance = self.cpt_generator(self.task_type, D, device=self.k_cache.device)
         else:
@@ -387,9 +380,8 @@ class CacheNotesKVCache:
             )
 
         weighted_k = self.k_cache * cpt_importance.view(1, 1, 1, D)
-        token_scores = torch.norm(weighted_k.float(), dim=-1)  # (B, H, cur_len)
+        token_scores = torch.norm(weighted_k.float(), dim=-1)
 
-        # Always preserve initial sink tokens
         token_scores[:, :, :sinks] += 1e6
 
         _, top_indices = torch.topk(token_scores, retained_cap, dim=-1)
@@ -538,7 +530,6 @@ class CacheNotesCompressor(BaseCompressor):
         )
         self.comp_config = cfg
 
-        # Initialize learnable CPT Generator
         self.cpt_generator = CPTGenerator().to(self.target_device)
         self.cpt_generator_trained = False
 
@@ -585,7 +576,7 @@ class CacheNotesCompressor(BaseCompressor):
                 (name, mod)
                 for name, mod in self.model.named_modules()
                 if self._is_target_module(name, mod)
-            ][:4]  # train on up to 4 sample layers for efficiency
+            ][:4]
 
         if not sample_layers:
             logger.warning("No sample layers found to train CPT generator.")
@@ -612,7 +603,6 @@ class CacheNotesCompressor(BaseCompressor):
                     W = raw_w.t().contiguous() if is_conv1d else raw_w
                     out_f, in_f = W.shape
 
-                    # Generate learned importance
                     importance = self.cpt_generator(task, out_f, device=W.device)
                     W_cpt = W * importance.unsqueeze(1)
 
@@ -706,7 +696,6 @@ class CacheNotesCompressor(BaseCompressor):
         if isinstance(module, CacheNotesLoRALinear):
             return False
 
-        # Do not target inner submodules of LoRA or wrappers directly
         if any(
             name.endswith(sfx)
             for sfx in [".base_layer", ".lora_A", ".lora_B", ".lora_dropout", ".linear"]
@@ -733,7 +722,6 @@ class CacheNotesCompressor(BaseCompressor):
             return False
 
         name_lower = name.lower()
-        # Protect classification / output heads
         if any(
             skip in name_lower
             for skip in [
@@ -753,7 +741,6 @@ class CacheNotesCompressor(BaseCompressor):
             return False
 
         if self.target_attention_only:
-            # Skip FFN / MLP layers
             ffn_patterns = [
                 "ffn",
                 "mlp",
@@ -767,10 +754,8 @@ class CacheNotesCompressor(BaseCompressor):
             ]
             if any(p in name_lower for p in ffn_patterns):
                 return False
-            # In RoBERTa, layer.X.output.dense is FFN, while attention.output.dense is attention
             if "output.dense" in name_lower and "attention" not in name_lower:
                 return False
-            # Match attention projections
             attn_patterns = [
                 "attn",
                 "attention",
@@ -802,7 +787,6 @@ class CacheNotesCompressor(BaseCompressor):
 
     def compress(self, **kwargs: Any) -> tuple[nn.Module, dict[str, Any]]:
         """Compress linear layers using task-guided CPT-weighted low-rank SVD."""
-        # Auto-train learnable CPT generator if active and untrained
         if self.use_learned_cpt and not self.cpt_generator_trained:
             logger.info(
                 "CPT generator not yet trained. Running initial task-aware training pass..."
@@ -844,24 +828,18 @@ class CacheNotesCompressor(BaseCompressor):
             device = raw_w.device
             dtype = raw_w.dtype
 
-            # Standardize shape to [out_features, in_features] in FP32
             W = raw_w.t().contiguous().clone().float() if is_conv1d else raw_w.clone().float()
             out_f, in_f = W.shape
 
-            # Retrieve CPT importance modulation per output feature (learned or static)
             importance = self.get_importance(out_f, device=device)
 
-            # Weight rows by CPT importance
             W_cpt = W * importance.unsqueeze(1)
 
-            # Compute SVD in CPT-weighted space
             r = max(1, min(int(min(out_f, in_f) * self.keep_ratio), min(out_f, in_f)))
             self.actual_ranks[name] = r
             try:
                 U, S, Vt = torch.linalg.svd(W_cpt, full_matrices=False)
-                # Low-rank approximation
                 W_lowrank = torch.matmul(U[:, :r] * S[:r].unsqueeze(0), Vt[:r, :])
-                # Unweight back to physical space: all channels remain active and non-zero
                 W_approx = W_lowrank / importance.unsqueeze(1)
                 if torch.isnan(W_approx).any() or torch.isinf(W_approx).any():
                     W_approx = W
@@ -886,14 +864,11 @@ class CacheNotesCompressor(BaseCompressor):
                         name,
                     )
                     self.fallback_layers.append(name)
-                    # Freeze fallback layers
                     for p in module.parameters():
                         p.requires_grad = False
                     continue
 
-            # Update weights / module
             if has_lora:
-                # Layer is already a LoRALinear wrapper: update base layer weights in-place
                 if is_conv1d:
                     target_mod.weight.data.copy_(
                         W_approx.t().contiguous().to(dtype=dtype, device=device)
@@ -902,7 +877,6 @@ class CacheNotesCompressor(BaseCompressor):
                     target_mod.weight.data.copy_(
                         W_approx.contiguous().to(dtype=dtype, device=device)
                     )
-                # Keep base weights frozen, but keep LoRA adapters trainable
                 target_mod.weight.requires_grad = False
                 if getattr(target_mod, "bias", None) is not None and target_mod.bias is not None:
                     target_mod.bias.requires_grad = False
@@ -910,7 +884,6 @@ class CacheNotesCompressor(BaseCompressor):
                     if any(t in p_name.lower() for t in ("lora_a", "lora_b", "adapter")):
                         p.requires_grad = True
             elif self.lora_r > 0:
-                # Not LoRALinear yet, and lora_r > 0: wrap in CacheNotesLoRALinear
                 cn_layer = CacheNotesLoRALinear.from_linear(
                     target_mod,
                     weight=W_approx,
@@ -922,7 +895,6 @@ class CacheNotesCompressor(BaseCompressor):
                 else:
                     replace_module(self.model, name, cn_layer)
             else:
-                # Pure static compression (lora_r == 0)
                 if is_conv1d:
                     target_mod.weight.data.copy_(
                         W_approx.t().contiguous().to(dtype=dtype, device=device)
@@ -934,7 +906,6 @@ class CacheNotesCompressor(BaseCompressor):
 
             self.compressed_layers.append(name)
 
-        # LayerNorm Recalibration
         if self.recalibrate_ln and (
             self.calibration_loader is not None or self.calibration_texts is not None
         ):
@@ -949,7 +920,6 @@ class CacheNotesCompressor(BaseCompressor):
             except Exception as e:
                 logger.warning("CacheNotes LayerNorm recalibration skipped: %s", e)
 
-        # Post-compression forward sanity check
         forward_check_success = False
         try:
             self.model.eval()

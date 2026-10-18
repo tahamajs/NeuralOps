@@ -34,13 +34,6 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-
-
-# ===========================================================================
-# STE Prune
-# ===========================================================================
-
-
 class ADMMSTEPrune(torch.autograd.Function):
     """
     Straight-Through Estimator for ADMM sparse weights.
@@ -55,13 +48,7 @@ class ADMMSTEPrune(torch.autograd.Function):
 
     @staticmethod
     def backward(ctx, grad_output: torch.Tensor):
-        # AD-FIX-10: no clone; STE identity.
         return grad_output, None
-
-
-# ===========================================================================
-# ADMMMaskedLinear
-# ===========================================================================
 
 
 class ADMMMaskedLinear(nn.Module):
@@ -83,7 +70,6 @@ class ADMMMaskedLinear(nn.Module):
         self.weight = nn.Parameter(
             torch.empty(out_features, in_features, dtype=dtype, device=device)
         )
-        # AD-FIX-07: non-persistent mask.
         self.register_buffer(
             "mask",
             torch.ones(out_features, in_features, dtype=dtype, device=device),
@@ -97,7 +83,6 @@ class ADMMMaskedLinear(nn.Module):
 
     @classmethod
     def from_linear(cls, linear: nn.Module, mask: torch.Tensor) -> ADMMMaskedLinear:
-        # AD-FIX-05: handle Conv1D (nn.Module with .nf) as well as nn.Linear.
         raw_w = linear.weight.data
         is_conv1d = "conv1d" in linear.__class__.__name__.lower() or hasattr(linear, "nf")
         if is_conv1d:
@@ -142,11 +127,6 @@ class ADMMMaskedLinear(nn.Module):
                 pass
         w_masked = ADMMSTEPrune.apply(self.weight, self.mask)
         return F.linear(x, w_masked, self.bias)
-
-
-# ===========================================================================
-# ADMM Pruner
-# ===========================================================================
 
 
 @COMPRESSOR_REGISTRY.register("admm_pruner")
@@ -325,7 +305,6 @@ class ADMMPruner(BaseCompressor):
         self.layer_distill_losses: dict[str, float] = {}
         self.stats: dict[str, Any] = {}
 
-    # ------------------------------------------------------------------
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         if isinstance(module, ADMMMaskedLinear):
             return False
@@ -420,7 +399,6 @@ class ADMMPruner(BaseCompressor):
             return any(t in name for t in self.target_modules)
         return True
 
-    # ------------------------------------------------------------------
     def _collect_calibration_inputs(self, target_names: list[str]) -> dict[str, torch.Tensor]:
         collected: dict[str, list[torch.Tensor]] = {name: [] for name in target_names}
 
@@ -444,7 +422,6 @@ class ADMMPruner(BaseCompressor):
                 if not inp or inp[0] is None:
                     return
                 cur_total = sum(t.shape[0] for t in collected[layer_name])
-                # AD-FIX-09: budget check before slicing.
                 rem = self.distill_batch_size - cur_total
                 if rem <= 0:
                     return
@@ -510,7 +487,6 @@ class ADMMPruner(BaseCompressor):
                 result[name] = torch.cat(tensor_list, dim=0)
         return result
 
-    # ------------------------------------------------------------------
     def _project_sparse(self, candidate: torch.Tensor, layer_sparsity: float | None = None) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Project candidate (typically W + U) onto the sparse constraint set.
@@ -546,7 +522,6 @@ class ADMMPruner(BaseCompressor):
             mask = (candidate.abs() >= thr).float()
             return candidate * mask, mask
 
-    # ------------------------------------------------------------------
     def compress(self, **kwargs: Any) -> tuple[nn.Module, dict[str, Any]]:
         self.compressed_layers = []
         self.fallback_layers = []
@@ -597,7 +572,6 @@ class ADMMPruner(BaseCompressor):
                         device=device,
                     ) / math.sqrt(in_features)
                 else:
-                    # AD-FIX-08: cast X_calib to match W0 dtype.
                     X_calib = X_calib.to(device=device, dtype=torch.float32)
                     if X_calib.ndim > 2:
                         X_calib = X_calib.reshape(-1, in_features)
@@ -615,11 +589,10 @@ class ADMMPruner(BaseCompressor):
             else:
                 layer_sparsity = self.sparsity
 
-            # Baseline projection.
             Z0, mask0 = self._project_sparse(W0, layer_sparsity=layer_sparsity)
             W_sparse_0 = W0 * mask0
             best_W_sparse = W_sparse_0
-            best_mask = mask0.clone()  # AD-FIX-04
+            best_mask = mask0.clone()
             base_w_err = float(torch.norm(W0 - W_sparse_0, p="fro").item() / max(w_norm, 1e-12))
             best_err = base_w_err
             best_score = base_w_err
@@ -630,7 +603,6 @@ class ADMMPruner(BaseCompressor):
                 )
                 best_score = base_w_err + self.lambda_distill * base_y_err
 
-            # ADMM state.
             W = W0.clone()
             Z = Z0.clone()
             mask = mask0.clone()
@@ -648,14 +620,10 @@ class ADMMPruner(BaseCompressor):
                     with torch.no_grad():
                         Z_prev = Z.clone()
 
-                        # 1. Sparse projection.
                         Z, mask = self._project_sparse(W + U, layer_sparsity=layer_sparsity)
 
-                        # 2. Closed-form W update.
                         W = (W0 + rho * (Z - U)) / (1.0 + rho)
 
-                        # 3. Layer-Wise Reconstruction Distillation.
-                        # AD-FIX-02: scheduled, bounded distill step.
                         if self.lambda_distill > 0 and X_calib is not None and Y0 is not None:
                             for _ in range(self.distill_steps):
                                 if self.use_ste:
@@ -670,8 +638,6 @@ class ADMMPruner(BaseCompressor):
 
                                 grad_norm = torch.norm(grad_W)
                                 if grad_norm > 1e-8:
-                                    # AD-FIX-02: no artificial scaling distortion;
-                                    # lr already encodes lambda_distill influence.
                                     lr_eff = self.distill_lr
                                     direction = grad_W / grad_norm.clamp(min=1e-12)
                                     step_size = lr_eff * min(1.0, float(grad_norm))
@@ -679,10 +645,8 @@ class ADMMPruner(BaseCompressor):
                                 else:
                                     break
 
-                        # 4. Dual update.
                         U = U + W - Z
 
-                        # 5. Dynamic rho scheduling.
                         if self.dynamic_rho:
                             primal_res = torch.norm(W - Z).item()
                             dual_res = (rho * torch.norm(Z - Z_prev)).item()
@@ -699,7 +663,6 @@ class ADMMPruner(BaseCompressor):
                             )
                             break
 
-                        # Monotonic best-iterate tracking.
                         W_sparse_curr = W * mask
                         curr_w_err = float(
                             torch.norm(W0 - W_sparse_curr, p="fro").item() / max(w_norm, 1e-12)
@@ -716,9 +679,8 @@ class ADMMPruner(BaseCompressor):
                             best_score = curr_score
                             best_err = curr_w_err
                             best_W_sparse = W_sparse_curr.clone()
-                            best_mask = mask.clone()  # AD-FIX-04
+                            best_mask = mask.clone()
 
-                # Final distill loss on best sparse candidate.
                 if self.lambda_distill > 0 and X_calib is not None and Y0 is not None:
                     with torch.no_grad():
                         final_distill_loss = float(
@@ -771,7 +733,6 @@ class ADMMPruner(BaseCompressor):
                 module, "base_layer"
             )
 
-            # AD-FIX-05: ADMMMaskedLinear applies whenever use_ste is on and no LoRA / no Conv1D.
             if self.use_ste and not has_lora and not is_conv1d and isinstance(module, nn.Linear):
                 admm_layer = ADMMMaskedLinear.from_linear(module, mask=best_mask)
                 replace_module(self.model, name, admm_layer)
@@ -793,7 +754,6 @@ class ADMMPruner(BaseCompressor):
 
             self.compressed_layers.append(name)
 
-        # LayerNorm recalibration.
         if self.recalibrate_ln and (
             self.calibration_loader is not None or self.calibration_texts is not None
         ):
@@ -867,11 +827,6 @@ class ADMMPruner(BaseCompressor):
         self.stats = stats
         self.model.compression_stats = stats
         return self.model, stats
-
-
-# ===========================================================================
-# Factory
-# ===========================================================================
 
 
 def admm_pruner_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:

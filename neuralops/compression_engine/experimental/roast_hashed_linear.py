@@ -23,8 +23,6 @@ from neuralops.utils.compat import should_compress_linear
 logger = logging.getLogger(__name__)
 
 
-
-
 class ROASTLinear(nn.Module):
     """
     Linear layer with weight sharing based on tiles (blocks) rather than
@@ -53,11 +51,9 @@ class ROASTLinear(nn.Module):
         self.lora_alpha = float(lora_alpha)
         self.scaling = (self.lora_alpha / self.lora_r) if self.lora_r > 0 else 1.0
 
-        # Number of tiles along each dimension (padded)
         self.tiles_out = (out_features + self.tile_size - 1) // self.tile_size
         self.tiles_in = (in_features + self.tile_size - 1) // self.tile_size
 
-        # Weight table: frozen if LoRA is active
         requires_grad = not (self.lora_r > 0)
         self.weight_table = nn.Parameter(
             torch.randn(self.n_buckets, device=device, dtype=dtype),
@@ -72,7 +68,6 @@ class ROASTLinear(nn.Module):
         else:
             self.register_parameter("bias", None)
 
-        # Precompute tile indices with high-entropy bitwise mixing (B11, J1)
         tile_idx_i = (
             torch.arange(self.tiles_out, device=device).unsqueeze(1).expand(-1, self.tiles_in)
         )
@@ -114,7 +109,7 @@ class ROASTLinear(nn.Module):
         """Reconstructed effective weight matrix (out_features, in_features) with evaluation caching."""
         if self._cached_weight is not None and not self._cache_stale and not self.training:
             return self._cached_weight
-        W_tiles = self.weight_table[self.tile_hash_idx]  # (tiles_out, tiles_in)
+        W_tiles = self.weight_table[self.tile_hash_idx]
         W_full = torch.repeat_interleave(
             torch.repeat_interleave(W_tiles, self.tile_size, dim=0),
             self.tile_size,
@@ -133,7 +128,6 @@ class ROASTLinear(nn.Module):
         if x.is_cuda and not self.training:
             try:
                 from neuralops.core.triton_kernels.low_rank import fused_roast_hashed_gather_gemm_triton
-                # Tile hash indices flattened
                 flat_h_idx = self.tile_hash_idx.view(-1).to(device=x.device)
                 signs = torch.ones_like(flat_h_idx, dtype=x.dtype, device=x.device)
                 out = fused_roast_hashed_gather_gemm_triton(x, self.weight_table.to(x.dtype), flat_h_idx, signs, bias=self.bias)
@@ -188,7 +182,6 @@ class ROASTLinear(nn.Module):
         if bias and base_mod.bias is not None:
             roast.bias.data.copy_(base_mod.bias.data)
 
-        # Preserve existing source LoRA weights if present
         if (
             hasattr(linear, "lora_A")
             and hasattr(linear, "lora_B")
@@ -207,7 +200,6 @@ class ROASTLinear(nn.Module):
         tiles_out = (out_f + ts - 1) // ts
         tiles_in = (in_f + ts - 1) // ts
 
-        # Vectorized computation of per-tile means and scatter into weight_table
         with torch.no_grad():
             pad_out = tiles_out * ts - out_f
             pad_in = tiles_in * ts - in_f
@@ -247,7 +239,6 @@ class ROASTLinear(nn.Module):
             )
             roast.weight_table.data.scatter_(0, flat_idx, flat_means)
 
-            # Row-wise L2 norm restoration g_i = ||W_orig[i, :]||_2 / (||W_hat[i, :]||_2 + 1e-6)
             W_recon_unscaled = roast.weight.detach().float()
             orig_row_norms = torch.norm(W, p=2, dim=1)
             recon_row_norms = torch.norm(W_recon_unscaled, p=2, dim=1).clamp(min=1e-6)
@@ -326,7 +317,6 @@ class ROASTCompressor(BaseCompressor):
             int(min_numel if min_numel is not None else _cfg_get(cfg_obj, "min_numel", 16)),
         )
 
-        # Target device derivation
         if device is not None:
             try:
                 self.target_device = torch.device(device)
@@ -341,7 +331,6 @@ class ROASTCompressor(BaseCompressor):
                 next(model.parameters()).device if list(model.parameters()) else torch.device("cpu")
             )
 
-        # Diagnostics & Tracking
         self.visited_modules: set[int] = set()
         self.compressed_layers: list[str] = []
         self.protected_layers: list[str] = []
@@ -516,7 +505,6 @@ class ROASTCompressor(BaseCompressor):
                     for p in module.parameters():
                         p.requires_grad = False
 
-        # Post-compression forward sanity check
         forward_check_success = True
         try:
             with torch.no_grad():

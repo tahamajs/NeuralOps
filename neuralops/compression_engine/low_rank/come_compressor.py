@@ -42,8 +42,6 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-
-
 def _rank_to_bridge_rank(rank: int, hidden_size: int) -> int:
     """Map an SVD-style rank to a bridge bottleneck rank."""
     return max(8, min(hidden_size, rank // 4))
@@ -51,7 +49,6 @@ def _rank_to_bridge_rank(rank: int, hidden_size: int) -> int:
 
 def _rank_to_sparsity(rank: int) -> float:
     """Map an SVD-style rank to a safe layer-shedding sparsity."""
-    # Conservative mapping — higher rank => more aggressive shedding.
     if rank <= 64:
         return 0.20
     if rank <= 128:
@@ -63,9 +60,6 @@ def _rank_to_sparsity(rank: int) -> float:
     return 0.02
 
 
-# ---------------------------------------------------------------------------
-# CoMeBridge — low-rank learnable interpolation adapter (fixed)
-# ---------------------------------------------------------------------------
 class CoMeBridge(nn.Module):
     """
     Learnable low-rank interpolation adapter bridging representation gaps
@@ -89,14 +83,10 @@ class CoMeBridge(nn.Module):
         super().__init__()
         self.hidden_size = int(hidden_size)
         self.bridge_rank = int(max(1, min(bridge_rank, hidden_size)))
-        # Low-rank factors (actual residual low-rank approximation)
         self.A = nn.Parameter(torch.empty(self.bridge_rank, self.hidden_size))
         self.B = nn.Parameter(torch.zeros(self.hidden_size, self.bridge_rank))
-        # Optional bias on the low-rank correction (kept zero by default)
         self.correction_bias = nn.Parameter(torch.zeros(self.hidden_size))
-        # Learnable mixing coefficient (scalar per bridge)
         self.alpha = nn.Parameter(torch.tensor(float(alpha_init)))
-        # Initialize A with kaiming to get good gradient flow
         nn.init.kaiming_uniform_(self.A, a=math.sqrt(5))
 
     def _bridge_tensor(self, t: torch.Tensor) -> torch.Tensor:
@@ -113,25 +103,21 @@ class CoMeBridge(nn.Module):
                     return t + self.alpha.to(device=t.device, dtype=t.dtype) * low.reshape(orig_shape)
                 except Exception:
                     pass
-            # residual = B @ (A @ t^T)^T + bias
             low = F.linear(F.linear(t, A), B) + cb
             return t + self.alpha.to(device=t.device, dtype=t.dtype) * low
         return t
 
     def forward(self, hidden_states: Any, *args: Any, **kwargs: Any) -> Any:
-        # Tuple return
         if isinstance(hidden_states, tuple):
             if len(hidden_states) > 0 and isinstance(hidden_states[0], torch.Tensor):
                 return (self._bridge_tensor(hidden_states[0]), *hidden_states[1:])
             return hidden_states
 
-        # List return
         if isinstance(hidden_states, list):
             if len(hidden_states) > 0 and isinstance(hidden_states[0], torch.Tensor):
                 return [self._bridge_tensor(hidden_states[0])] + hidden_states[1:]
             return hidden_states
 
-        # Dict return
         if isinstance(hidden_states, dict):
             out_dict = dict(hidden_states)
             for k in ("last_hidden_state", "hidden_states", "x"):
@@ -140,7 +126,6 @@ class CoMeBridge(nn.Module):
                     return out_dict
             return hidden_states
 
-        # BaseModelOutput or objects with .last_hidden_state / .hidden_states
         modified = False
         if hasattr(hidden_states, "last_hidden_state"):
             t = hidden_states.last_hidden_state
@@ -159,16 +144,12 @@ class CoMeBridge(nn.Module):
         if modified:
             return hidden_states
 
-        # Raw tensor
         if isinstance(hidden_states, torch.Tensor):
             return self._bridge_tensor(hidden_states)
 
         return hidden_states
 
 
-# ---------------------------------------------------------------------------
-# CoMeBridgedLayer — wraps a retained layer + optional bridge
-# ---------------------------------------------------------------------------
 class CoMeBridgedLayer(nn.Module):
     """Wraps a retained transformer layer with a learnable CoMeBridge."""
 
@@ -211,9 +192,6 @@ class CoMeBridgedLayer(nn.Module):
         return out
 
 
-# ---------------------------------------------------------------------------
-# CoMeLoRALinear — frozen base + trainable LoRA
-# ---------------------------------------------------------------------------
 class CoMeLoRALinear(nn.Module):
     """Linear layer: frozen base weights + optional trainable LoRA adapters."""
 
@@ -231,7 +209,7 @@ class CoMeLoRALinear(nn.Module):
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
-        self.nf = out_features  # Conv1D compatibility
+        self.nf = out_features
         self.lora_r = int(lora_r)
         self.lora_alpha = float(lora_alpha)
         self.scaling = (self.lora_alpha / self.lora_r) if self.lora_r > 0 else 1.0
@@ -331,9 +309,6 @@ class CoMeLoRALinear(nn.Module):
         return out.reshape(*orig_shape[:-1], self.out_features)
 
 
-# ---------------------------------------------------------------------------
-# CoMeCompressor — main class
-# ---------------------------------------------------------------------------
 @COMPRESSOR_REGISTRY.register("come_compressor")
 class CoMeCompressor(BaseCompressor):
     """
@@ -384,7 +359,6 @@ class CoMeCompressor(BaseCompressor):
         super().__init__(model, name="come", **kwargs)
         conf = kwargs.get("comp_config", kwargs.get("cfg"))
 
-        # -------- Read config with precedence: explicit kwarg > comp_config > default --------
         rank = _cfg_get(conf, "rank", _cfg_get(conf, "come_rank", rank))
         if rank is not None:
             rank = int(rank)
@@ -395,7 +369,6 @@ class CoMeCompressor(BaseCompressor):
         if target_layers is not None:
             target_layers = int(target_layers)
 
-        # sparsity: if rank provided and sparsity not explicitly overridden, derive
         sparsity_explicit = _cfg_get(
             conf,
             "come_sparsity",
@@ -405,9 +378,7 @@ class CoMeCompressor(BaseCompressor):
             sparsity = _rank_to_sparsity(rank)
         elif sparsity_explicit is not None:
             sparsity = float(sparsity_explicit)
-        # else: keep the constructor default (0.10)
 
-        # bridge_rank: if rank provided and bridge_rank not explicitly overridden, derive
         bridge_rank_explicit = _cfg_get(
             conf,
             "come_bridge_rank",
@@ -423,7 +394,6 @@ class CoMeCompressor(BaseCompressor):
         elif bridge_rank_explicit is not None:
             bridge_rank = int(bridge_rank_explicit)
         else:
-            # default: full hidden size (no bottleneck) — safest default
             bridge_rank = hidden_size_probe or 64
 
         alpha_init = float(
@@ -469,7 +439,6 @@ class CoMeCompressor(BaseCompressor):
             )
         )
 
-        # -------- Store --------
         self.tokenizer = tokenizer or kwargs.get("tokenizer", getattr(model, "tokenizer", None))
         self.target_layers = target_layers
         self.sparsity = max(0.0, min(sparsity, 0.95))
@@ -496,9 +465,6 @@ class CoMeCompressor(BaseCompressor):
         self.skipped_layers: list[str] = []
         self.stats: dict[str, Any] = {}
 
-    # ------------------------------------------------------------------
-    # helpers
-    # ------------------------------------------------------------------
     def _is_gqa_asymmetric(self, name: str, module: nn.Module) -> bool:
         if not self.skip_attention_qkv or self.target_attention_only:
             return False
@@ -755,9 +721,6 @@ class CoMeCompressor(BaseCompressor):
             return best_match
         return None, None, None
 
-    # ------------------------------------------------------------------
-    # compress
-    # ------------------------------------------------------------------
     def compress(self, **kwargs: Any) -> tuple[nn.Module, dict[str, Any]]:
         parent, attr_name, layers = self._find_layer_container()
         bridges_inserted = 0
@@ -785,7 +748,6 @@ class CoMeCompressor(BaseCompressor):
                     is_gap = i < len(kept_indices) - 1 and kept_indices[i + 1] > layer_idx + 1
                     if is_gap:
                         hidden_size = self._get_hidden_size(layer)
-                        # Use hidden_size as cap on bridge_rank
                         effective_bridge_rank = max(1, min(self.bridge_rank, hidden_size))
                         bridge = CoMeBridge(
                             hidden_size=hidden_size,
@@ -807,7 +769,6 @@ class CoMeCompressor(BaseCompressor):
                 setattr(parent, attr_name, container)
                 self.compressed_layers.append(f"{attr_name} (shed {orig_len - keep_len} layers)")
         else:
-            # Fallback SVD compression (still supported)
             seen_weights: set[int] = set()
             for name, module in list(self.model.named_modules()):
                 if self._is_target_module(name, module):
@@ -831,7 +792,6 @@ class CoMeCompressor(BaseCompressor):
                             else raw_w.clone().float()
                         )
                         U, S, Vt = torch.linalg.svd(W, full_matrices=False)
-                        # Prefer explicit rank, otherwise derive from sparsity
                         if self.rank is not None:
                             r = max(1, min(int(self.rank), len(S)))
                         else:
@@ -864,7 +824,6 @@ class CoMeCompressor(BaseCompressor):
                         for p in module.parameters():
                             p.requires_grad = False
 
-        # Optional post-shedding LoRA
         if self.lora_r > 0:
             seen_weights: set[int] = set()
             for name, module in list(self.model.named_modules()):
@@ -896,7 +855,6 @@ class CoMeCompressor(BaseCompressor):
                         )
                         replace_module(self.model, name, lora_mod)
 
-        # LayerNorm recalibration
         if self.recalibrate_ln:
             try:
                 recalibrate_layernorms(
@@ -907,7 +865,6 @@ class CoMeCompressor(BaseCompressor):
             except Exception as e:
                 logger.warning("CoMe LayerNorm recalibration skipped: %s", e)
 
-        # Forward sanity check
         forward_check_success = False
         try:
             self.model.eval()
@@ -950,7 +907,6 @@ class CoMeCompressor(BaseCompressor):
         num_compressed = len(self.compressed_layers)
         num_fallback = len(self.fallback_layers)
 
-        # Write BOTH naming conventions so downstream readers find them
         stats.update(
             {
                 "original_layer_count": orig_len,
@@ -973,10 +929,8 @@ class CoMeCompressor(BaseCompressor):
                 "compressed_layers": self.compressed_layers,
                 "fallback_layers": self.fallback_layers,
                 "skipped_layers": self.skipped_layers,
-                # Primary keys expected by run_quality_sweep.py:
                 "num_compressed": num_compressed,
                 "num_fallback": num_fallback,
-                # Alternate key names used by some readers:
                 "num_compressed_layers": num_compressed,
                 "num_fallback_layers": num_fallback,
                 "compressed_layers_count": num_compressed,
@@ -988,7 +942,6 @@ class CoMeCompressor(BaseCompressor):
         )
         self.stats = stats
         self.model.compression_stats = stats
-        # Also attach to the compressor instance itself so nested pipelines can recover it
         try:
             self.model._come_stats = stats
         except Exception:
@@ -1003,9 +956,6 @@ class CoMeCompressor(BaseCompressor):
         return trainable
 
 
-# ---------------------------------------------------------------------------
-# Factory
-# ---------------------------------------------------------------------------
 def come_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Factory function for the CoMe compressor."""
     return_tuple = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
@@ -1054,7 +1004,6 @@ def come_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     elif bridge_rank_cfg is not None:
         bridge_rank = int(bridge_rank_cfg)
     else:
-        # derive from rank if possible, else let __init__ decide
         bridge_rank = None
 
     alpha_init = float(

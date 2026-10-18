@@ -292,7 +292,6 @@ try:
 except Exception:
     pass
 
-# Auto-wired submodules
 from neuralops.compression_engine.low_rank import a3_compressor
 from neuralops.compression_engine.low_rank import come_compressor
 from neuralops.compression_engine.low_rank import compot_compressor

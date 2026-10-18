@@ -208,7 +208,6 @@ try:
 except Exception:
     pass
 
-# Auto-wired submodules
 from neuralops.attentions.ssm import goldfinch_ahn
 from neuralops.attentions.ssm import griffin_ssd
 from neuralops.attentions.ssm import hymba_transx

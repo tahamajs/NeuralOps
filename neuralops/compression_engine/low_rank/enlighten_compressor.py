@@ -20,8 +20,6 @@ from neuralops.utils.compat import should_compress_linear
 logger = logging.getLogger(__name__)
 
 
-
-
 _ATTN_NAMES = {
     "q_proj",
     "k_proj",
@@ -50,7 +48,6 @@ def vectorized_24_prune(residual: torch.Tensor) -> torch.Tensor:
         res_padded = residual
 
     num_blocks = res_padded.shape[1] // 4
-    # Reshape to [out_features, num_blocks, 4]
     blocks = res_padded.view(out_f, num_blocks, 4)
     _, top_idx = torch.topk(blocks.abs(), k=2, dim=-1)
     mask = torch.zeros_like(blocks)
@@ -111,7 +108,7 @@ class ENLightenCompressor(BaseCompressor):
         rank: int = 64,
         sparsity: float = 0.5,
         structured_24: bool = True,
-        max_error: float = 0.45,  # raised from 0.35: at rank=64 + 2:4 sparsity, theoretical error is ~0.39
+        max_error: float = 0.45,
         target_attention_only: bool = False,
         fallback_to_original: bool = True,
         max_retries: int = 2,
@@ -285,10 +282,10 @@ class ENLightenCompressor(BaseCompressor):
             raw_w = target_mod.weight.data
             if is_conv1d:
                 in_f, out_f = raw_w.shape[0], raw_w.shape[1]
-                W = raw_w.t().contiguous().float()  # [out_features, in_features]
+                W = raw_w.t().contiguous().float()
             else:
                 out_f, in_f = raw_w.shape[0], raw_w.shape[1]
-                W = raw_w.float()  # [out_features, in_features]
+                W = raw_w.float()
 
             orig_layer_params = out_f * in_f
             total_orig_params += orig_layer_params
@@ -297,7 +294,6 @@ class ENLightenCompressor(BaseCompressor):
             best_w_new: torch.Tensor | None = None
             final_err = 1.0
 
-            # Iterative rank retry on error threshold exceedance
             for attempt in range(self.max_retries + 1):
                 try:
                     w_cand, err = self._decompose_and_prune(W, current_r)
@@ -350,7 +346,6 @@ class ENLightenCompressor(BaseCompressor):
                     total_comp_params += orig_layer_params
                     continue
 
-            # Assign compressed weight back in original orientation and dtype
             if is_conv1d:
                 target_mod.weight.data.copy_(
                     best_w_new.t()
@@ -362,7 +357,6 @@ class ENLightenCompressor(BaseCompressor):
                     best_w_new.to(dtype=target_mod.weight.dtype, device=target_mod.weight.device)
                 )
 
-            # Preserve LoRA adapter trainability if layer is a LoRALinear wrapper
             if hasattr(module, "lora_A") and hasattr(module, "lora_B"):
                 if hasattr(module.lora_A, "weight") and module.lora_A.weight is not None:
                     module.lora_A.weight.requires_grad = True
@@ -370,8 +364,6 @@ class ENLightenCompressor(BaseCompressor):
                     module.lora_B.weight.requires_grad = True
 
             self.compressed_layers.append(name)
-            # Effective compressed parameter representation:
-            # Low-rank factor params (current_r * (in_f + out_f)) + non-zero sparse residual params (0.5 * in_f * out_f for 2:4)
             effective_sparse_frac = 0.5 if self.structured_24 else (1.0 - self.sparsity)
             comp_layer_params = current_r * (in_f + out_f) + int(
                 effective_sparse_frac * orig_layer_params
@@ -409,16 +401,12 @@ class ENLightenCompressor(BaseCompressor):
                 "num_compressed": len(self.compressed_layers),
                 "num_injected_attention_layers": len(
                     self.compressed_layers
-                ),  # field used by framework CSV writer
+                ),
                 "num_fallback": len(self.fallback_layers),
                 "effective_parameter_ratio": round(effective_ratio, 4),
             }
         )
 
-        # Register stats directly on the model object so the framework can read
-        # num_compressed_layers. ENLighten is a weight-rewriting compressor (no
-        # module replacement), so the framework cannot discover compression via
-        # module-type inspection — we expose it explicitly here.
         if not hasattr(self.model, "compression_stats") or self.model.compression_stats is None:
             self.model.compression_stats = {}
         self.model.compression_stats.update(

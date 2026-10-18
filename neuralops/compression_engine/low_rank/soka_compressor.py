@@ -29,8 +29,6 @@ from neuralops.utils.compat import should_compress_linear
 logger = logging.getLogger(__name__)
 
 
-
-
 class LowRankLinear(nn.Module):
     """
     Factorized Linear Layer executing as y = (x @ V) @ U^T + b.
@@ -51,8 +49,6 @@ class LowRankLinear(nn.Module):
         self.out_features = out_features
         self.rank = max(1, min(rank, in_features, out_features))
 
-        # V: [in_features, rank] -> maps x to bottleneck
-        # U: [out_features, rank] -> maps bottleneck to output
         self.V = nn.Parameter(torch.empty((in_features, self.rank), device=device, dtype=dtype))
         self.U = nn.Parameter(torch.empty((out_features, self.rank), device=device, dtype=dtype))
 
@@ -70,19 +66,17 @@ class LowRankLinear(nn.Module):
         return torch.matmul(self.U, self.V.t().contiguous())
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # x: [..., in_features]
         from neuralops.core.triton_kernels._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
         suitable, _ = check_triton_suitability(x, "low_rank")
         if not FORCE_PYTORCH_FALLBACK and suitable and x.is_cuda:
             try:
                 from neuralops.core.triton_kernels.low_rank import fused_down_up_gemm_bias_triton
-                # V is [in_features, rank] -> W_down is [rank, in_features]
                 return fused_down_up_gemm_bias_triton(x, self.V.t().contiguous(), self.U.t().contiguous(), bias=self.bias)
             except Exception:
                 pass
 
-        bottleneck = torch.matmul(x, self.V)  # [..., rank]
-        out = torch.matmul(bottleneck, self.U.T)  # [..., out_features]
+        bottleneck = torch.matmul(x, self.V)
+        out = torch.matmul(bottleneck, self.U.T)
         if self.bias is not None:
             out = out + self.bias
         return out
@@ -237,8 +231,6 @@ class LowRankCompressor(BaseCompressor):
                     dtype=dtype,
                 )
 
-                # Assign factorized weights: W ≈ (U_r sqrt(S)) @ (sqrt(S) V_r^T)
-                # U: [d_out, r], V: [d_in, r]
                 new_layer.U.data = (U[:, :r] * sqrt_S.unsqueeze(0)).to(dtype=dtype, device=device)
                 new_layer.V.data = (Vh[:r, :].T * sqrt_S.unsqueeze(0)).to(
                     dtype=dtype, device=device
@@ -247,7 +239,6 @@ class LowRankCompressor(BaseCompressor):
                 if base_mod.bias is not None:
                     new_layer.bias.data.copy_(base_mod.bias.data)
 
-                # Frobenius reconstruction error check
                 W_rec = new_layer.weight.float()
                 norm_orig = torch.norm(W, p="fro")
                 rel_err = (torch.norm(W - W_rec, p="fro") / (norm_orig + 1e-8)).item()
@@ -266,7 +257,6 @@ class LowRankCompressor(BaseCompressor):
                         continue
 
                 compressed_layer = new_layer
-                # Preserve existing LoRA adapter weights if the source module has them
                 if (
                     hasattr(module, "lora_A")
                     and hasattr(module, "lora_B")
@@ -283,8 +273,7 @@ class LowRankCompressor(BaseCompressor):
                             new_layer.lora_B.data.copy_(src_lB.data)
 
                 if hasattr(module, "base_layer"):
-                    module.base_layer = compressed_layer  # put compressed layer inside wrapper
-                    # module itself (LoRALinear wrapper) remains the replacement
+                    module.base_layer = compressed_layer
                     new_module = module
                 else:
                     new_module = compressed_layer
@@ -324,7 +313,6 @@ class LowRankCompressor(BaseCompressor):
         return self.model, stats
 
 
-# Aliases for framework naming compatibility
 SoKACompressor = LowRankCompressor
 
 

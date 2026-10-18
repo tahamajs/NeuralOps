@@ -1,4 +1,3 @@
-
 from neuralops.core.attention_utils import (
     apply_rotary_pos_emb,
     LoRALinear,
@@ -26,11 +25,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 logger = logging.getLogger(__name__)
 
 
-# ===========================================================================
-# TA-10: single registry key per role
-# ===========================================================================
-
-
 @ATTENTION_REGISTRY.register("template_attention")
 class YourCustomAttention(BaseAttention):
     r"""Template attention layer with optional low-rank pooling modulation."""
@@ -56,7 +50,6 @@ class YourCustomAttention(BaseAttention):
 
         src = pretrained_attn if pretrained_attn is not None else kwargs.get("old_attn")
 
-        # -------- hidden_size inference --------
         dim = None
         if config is not None and not isinstance(config, int):
             dim = _cfg_get(
@@ -79,7 +72,6 @@ class YourCustomAttention(BaseAttention):
             dim = kwargs.get("hidden_size", 768)
         self.hidden_size: int = int(dim)
 
-        # -------- num_heads inference (TA-13) --------
         num_heads = None
         if config is not None and not isinstance(config, int):
             num_heads = _cfg_get(
@@ -94,11 +86,9 @@ class YourCustomAttention(BaseAttention):
                 getattr(src, "num_attention_heads", getattr(src, "n_head", None)),
             )
         if num_heads is None:
-            # Fallback: assume head_dim ≈ 64
             num_heads = max(1, self.hidden_size // 64)
         self.num_heads: int = max(1, int(num_heads))
 
-        # -------- head_dim --------
         head_dim = None
         if config is not None and not isinstance(config, int):
             head_dim = _cfg_get(config, "head_dim", None)
@@ -108,7 +98,6 @@ class YourCustomAttention(BaseAttention):
             head_dim = self.hidden_size // self.num_heads
         self.head_dim: int = int(head_dim)
 
-        # -------- num_kv_heads (GQA) --------
         cfg_kv = None
         if config is not None and not isinstance(config, int):
             cfg_kv = _cfg_get(config, "num_key_value_heads", _cfg_get(config, "num_kv_heads", None))
@@ -118,7 +107,6 @@ class YourCustomAttention(BaseAttention):
         self.num_kv_heads = max(1, min(self.num_kv_heads, self.num_heads))
         self.num_key_value_groups: int = max(1, self.num_heads // self.num_kv_heads)
 
-        # TA-04: all_head_size explicitly defined
         self.q_head_size: int = self.num_heads * self.head_dim
         self.kv_head_size: int = self.num_kv_heads * self.head_dim
         self.all_head_size: int = self.q_head_size
@@ -136,7 +124,6 @@ class YourCustomAttention(BaseAttention):
             )
         )
 
-        # -------- decoder detection --------
         if is_decoder is not None:
             self.is_decoder: bool = bool(is_decoder)
         elif config is not None and not isinstance(config, int):
@@ -167,7 +154,6 @@ class YourCustomAttention(BaseAttention):
         self.is_causal = self.is_decoder
         self.is_nested_encoder: bool = False
 
-        # -------- projections --------
         self.query = LoRALinear(
             self.hidden_size,
             self.q_head_size,
@@ -201,12 +187,10 @@ class YourCustomAttention(BaseAttention):
             freeze_base=True,
         )
 
-        # Aliases
         self.q_proj = self.query
         self.k_proj = self.key
         self.v_proj = self.value
 
-        # TA-06: rank_proj respects device/dtype
         if rank is not None and rank > 0:
             self.rank_proj: nn.Linear | None = nn.Linear(
                 self.hidden_size,
@@ -227,7 +211,6 @@ class YourCustomAttention(BaseAttention):
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
 
-    # ------------------------------------------------------------------
     @property
     def out_lin(self):
         return self.out_proj
@@ -256,9 +239,6 @@ class YourCustomAttention(BaseAttention):
     def v_lin(self):
         return self.value
 
-    # ------------------------------------------------------------------
-    # copy_weights
-    # ------------------------------------------------------------------
     def copy_weights(self, old_attn: Any) -> None:
         """Robust weight copying from DistilBERT, RoBERTa nested, GPT-2, Qwen/LLaMA."""
         with torch.no_grad():
@@ -285,7 +265,6 @@ class YourCustomAttention(BaseAttention):
             else:
                 src = old_attn
 
-            # Pattern 1: GPT-2 Conv1D fused c_attn
             if hasattr(src, "c_attn") and hasattr(src, "c_proj"):
                 c_attn_w = src.c_attn.weight.detach()
                 c_attn_b = src.c_attn.bias.detach() if src.c_attn.bias is not None else None
@@ -309,7 +288,6 @@ class YourCustomAttention(BaseAttention):
                 w_o = out_w
                 b_o = src.c_proj.bias.detach() if src.c_proj.bias is not None else None
 
-            # Pattern 2: RoBERTa / BERT
             elif hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value"):
                 w_q = src.query.weight.detach()
                 b_q = src.query.bias.detach() if src.query.bias is not None else None
@@ -325,7 +303,6 @@ class YourCustomAttention(BaseAttention):
                             b_o = proj.bias.detach() if proj.bias is not None else None
                             break
 
-            # Pattern 3: Qwen / LLaMA
             elif hasattr(src, "q_proj") and hasattr(src, "k_proj") and hasattr(src, "v_proj"):
                 w_q = src.q_proj.weight.detach()
                 b_q = src.q_proj.bias.detach() if src.q_proj.bias is not None else None
@@ -337,7 +314,6 @@ class YourCustomAttention(BaseAttention):
                     w_o = src.o_proj.weight.detach()
                     b_o = src.o_proj.bias.detach() if src.o_proj.bias is not None else None
 
-            # Pattern 4: DistilBERT
             elif hasattr(src, "q_lin") and hasattr(src, "k_lin") and hasattr(src, "v_lin"):
                 w_q = src.q_lin.weight.detach()
                 b_q = src.q_lin.bias.detach() if src.q_lin.bias is not None else None
@@ -349,7 +325,6 @@ class YourCustomAttention(BaseAttention):
                     w_o = src.out_lin.weight.detach()
                     b_o = src.out_lin.bias.detach() if src.out_lin.bias is not None else None
 
-            # Fallback: UniversalAdapter
             if w_q is None or w_k is None or w_v is None:
                 try:
                     adapter = UniversalAdapter()
@@ -410,7 +385,6 @@ class YourCustomAttention(BaseAttention):
             if w_o is not None:
                 _copy_layer(self.out_proj, w_o, b_o)
 
-            # Frobenius validation
             for name, layer in (
                 ("q", self.query),
                 ("k", self.key),
@@ -425,9 +399,6 @@ class YourCustomAttention(BaseAttention):
                         norm,
                     )
 
-    # ------------------------------------------------------------------
-    # Forward
-    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -470,7 +441,6 @@ class YourCustomAttention(BaseAttention):
             .contiguous()
         )
 
-        # TA-02: RoPE with past_len offset
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None:
@@ -485,14 +455,12 @@ class YourCustomAttention(BaseAttention):
             sin = sin[..., past_len : past_len + L, :]
             q, k = apply_rotary_pos_emb(q, k, cos, sin)
 
-        # GQA expansion
         if self.num_kv_heads != self.num_heads:
             k = repeat_kv(k, self.num_key_value_groups)
             v = repeat_kv(v, self.num_key_value_groups)
 
         scale = 1.0 / math.sqrt(self.head_dim)
 
-        # TA-05: unify mask
         eff_mask = encoder_attention_mask if encoder_attention_mask is not None else attention_mask
         if eff_mask is None:
             eff_mask = kwargs.get("attn_mask")
@@ -515,7 +483,6 @@ class YourCustomAttention(BaseAttention):
                     v_mask = eff_mask > 0
                 valid_mask_2d = v_mask.any(dim=-2).squeeze(1)
 
-        # SDPA fast path (TA-03: mask-aware)
         is_causal = self.is_decoder and L > 1
         use_sdpa = self.rank_proj is None and head_mask is None and not output_attentions
 
@@ -551,13 +518,10 @@ class YourCustomAttention(BaseAttention):
                 result = torch.nan_to_num(result, nan=0.0, posinf=1e4, neginf=-1e4)
                 return result, None
             except Exception as e:
-                # TA-08: log instead of silent pass
                 logger.debug("SDPA path failed (%s); falling back to explicit.", e)
 
-        # Explicit path
         scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
 
-        # Low-rank modulation
         if self.rank_proj is not None:
             H_pool = hidden_states.mean(dim=1)
             H_rank = self.rank_proj(H_pool)
@@ -583,7 +547,6 @@ class YourCustomAttention(BaseAttention):
         attn = torch.nan_to_num(attn, nan=0.0)
         attn = self.dropout(attn)
 
-        # TA-05: head_mask unified
         if head_mask is not None:
             if head_mask.dim() == 1:
                 head_mask = head_mask.view(1, -1, 1, 1)
@@ -609,18 +572,12 @@ class YourCustomAttention(BaseAttention):
             else:
                 output = self.out_proj(context)
 
-        # TA-14: no silent pad/truncate
         if output.shape[-1] != self.hidden_size:
             raise RuntimeError(
                 f"YourCustomAttention: output dim {output.shape[-1]} != hidden_size {self.hidden_size}"
             )
 
         return output, (attn if output_attentions else None)
-
-
-# ===========================================================================
-# TA-09 / TA-10: injector with recursion guard
-# ===========================================================================
 
 
 @ATTENTION_REGISTRY.register("template_attention")
@@ -703,7 +660,6 @@ def inject_custom_attn(
         if src is None:
             src = target
 
-        # Double-injection guard
         if isinstance(src, YourCustomAttention) or "YourCustomAttention" in src.__class__.__name__:
             return None
         if "DeltaNet" in src.__class__.__name__ or "LinearAttention" in src.__class__.__name__:

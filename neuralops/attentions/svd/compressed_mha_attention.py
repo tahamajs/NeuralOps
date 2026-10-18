@@ -29,8 +29,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.utils.model_family import ModelAdapter
 
 
-
-
 @ATTENTION_REGISTRY.register(
     "compressed_mha_attention",
     supports_causal=True,
@@ -109,7 +107,6 @@ class CompressedDistilBertAttention(BaseAttention):
 
         qkv_out_dim = self.all_head_size + 2 * self.kv_head_size
 
-        # Frozen base SVD parameters
         self.U_qkv = nn.Parameter(
             torch.randn(qkv_out_dim, self.rank_qkv) * 0.02, requires_grad=False
         )
@@ -131,7 +128,6 @@ class CompressedDistilBertAttention(BaseAttention):
         self.bias_v = nn.Parameter(torch.zeros(self.kv_head_size), requires_grad=False)
         self.bias_out = nn.Parameter(torch.zeros(self.hidden_size), requires_grad=False)
 
-        # Trainable LoRA residual adapters
         if self.lora_rank > 0:
             self.lora_A_qkv = nn.Parameter(torch.empty(self.lora_rank, self.hidden_size))
             self.lora_B_qkv = nn.Parameter(torch.empty(qkv_out_dim, self.lora_rank))
@@ -182,7 +178,6 @@ class CompressedDistilBertAttention(BaseAttention):
             "o": (None, None),
         }
 
-        # 1. HuggingFace / standard UniversalAdapter extraction
         for proj in ["q", "k", "v", "o"]:
             try:
                 w, b = UniversalAdapter.get_weight_bias(src, proj)
@@ -191,9 +186,8 @@ class CompressedDistilBertAttention(BaseAttention):
             except Exception as e:
                 logger.debug(
                     f"UniversalAdapter failed for {proj}: {e}"
-                )  # continue to fallback paths
+                )
 
-        # 2. GPT-2 Fused c_attn Conv1D handling
         if hasattr(src, "c_attn") and (
             extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None
         ):
@@ -231,7 +225,6 @@ class CompressedDistilBertAttention(BaseAttention):
             b_o = getattr(src.c_proj, "bias", None)
             extracted["o"] = (w_o, b_o.data if b_o is not None else None)
 
-        # 3. RoBERTa / BERT Nested Encoder handling
         if hasattr(src, "self") and (
             extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None
         ):
@@ -247,7 +240,6 @@ class CompressedDistilBertAttention(BaseAttention):
             dense = src.output.dense
             extracted["o"] = (dense.weight.data, getattr(dense, "bias", None))
 
-        # 4. Modern Decoders (Qwen3.5, LLaMA, Mistral) & DistilBERT
         named_map = {
             "q": ["q_proj", "q_lin", "query"],
             "k": ["k_proj", "k_lin", "key"],
@@ -266,7 +258,6 @@ class CompressedDistilBertAttention(BaseAttention):
                             )
                             break
 
-        # Detect nested encoder architecture
         cls_name = src.__class__.__name__
         has_out_proj = any(
             hasattr(src, attr)
@@ -281,7 +272,6 @@ class CompressedDistilBertAttention(BaseAttention):
                 "proj",
             )
         )
-        # Check output projection attrs FIRST — DistilBERT has out_lin and is NOT nested
         if hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj"):
             self.is_nested_encoder = False
         elif (
@@ -301,7 +291,6 @@ class CompressedDistilBertAttention(BaseAttention):
         else:
             self.is_nested_encoder = False
 
-        # Check required weights
         missing = [k for k in ["q", "k", "v"] if extracted[k][0] is None]
         if not self.is_nested_encoder and extracted["o"][0] is None:
             missing.append("o")
@@ -310,7 +299,6 @@ class CompressedDistilBertAttention(BaseAttention):
                 f"CompressedDistilBertAttention: missing weights for projections {missing}; proceeding with random init"
             )
 
-        # Frobenius norm validation
         for proj_key in ["q", "k", "v"]:
             w = extracted[proj_key][0]
             if w is not None:
@@ -327,7 +315,6 @@ class CompressedDistilBertAttention(BaseAttention):
                     f"CompressedDistilBertAttention: extracted weight for output projection has near-zero Frobenius norm ({norm_o.item():.6f}); continuing"
                 )
 
-        # Joint SVD on Q, K, V
         def _orient(w: torch.Tensor, in_dim: int) -> torch.Tensor:
             if w.dim() == 2 and w.shape[1] != in_dim and w.shape[0] == in_dim:
                 return w.t().contiguous()
@@ -370,7 +357,6 @@ class CompressedDistilBertAttention(BaseAttention):
                     b_v_data[: min(self.kv_head_size, len(b_v_data))]
                 )
 
-            # Output projection SVD
             if extracted["o"][0] is not None:
                 w_o = _orient(extracted["o"][0].float(), self.all_head_size)
                 U_o, S_o, Vh_o = torch.linalg.svd(w_o, full_matrices=False)
@@ -399,7 +385,6 @@ class CompressedDistilBertAttention(BaseAttention):
                 self.Vh_out.data[:min_d, :min_d].fill_diagonal_(1.0)
                 self.bias_out.data.zero_()
 
-            # Ensure base weights are frozen
             self.U_qkv.requires_grad = False
             self.S_qkv.requires_grad = False
             self.Vh_qkv.requires_grad = False
@@ -478,7 +463,6 @@ class CompressedDistilBertAttention(BaseAttention):
         k = k.view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
         v = v.view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
-        # Apply RoPE
         position_embeddings = kwargs.get("position_embeddings")
         if (
             position_embeddings is not None
@@ -488,7 +472,6 @@ class CompressedDistilBertAttention(BaseAttention):
             cos, sin = position_embeddings[0], position_embeddings[1]
             q, k = apply_rotary_pos_emb(q, k, cos, sin, kwargs.get("position_ids"))
 
-        # GQA repeat
         if self.kv_repeat > 1:
             k = repeat_kv(k, self.kv_repeat)
             v = repeat_kv(v, self.kv_repeat)
@@ -505,7 +488,6 @@ class CompressedDistilBertAttention(BaseAttention):
                 if valid_m is not None:
                     scores = scores.masked_fill((~valid_m).unsqueeze(1).unsqueeze(2), -10000.0)
 
-        # Explicit Causal Masking for decoders
         mt = str(getattr(self.config, "model_type", "") or "").lower()
         decoder_prefixes = (
             "gpt",
@@ -598,7 +580,6 @@ def inject_compressed_mha(
 
     cfg = model_config if model_config is not None else getattr(target, "config", None)
 
-    # Whole-model traversal
     layer_list = None
     if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
         layer_list = target.distilbert.transformer.layer

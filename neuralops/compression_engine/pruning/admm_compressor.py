@@ -26,8 +26,6 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-
-
 @COMPRESSOR_REGISTRY.register("admm_compressor")
 class ADMMCompressor(BaseCompressor):
     """
@@ -48,7 +46,7 @@ class ADMMCompressor(BaseCompressor):
         fallback_to_original: bool = True,
         target_attention_only: bool = False,
         target_modules: list[str] | None = None,
-        quant_per_channel: bool = True,  # AC-FIX-02
+        quant_per_channel: bool = True,
         comp_config: Any = None,
         **kwargs: Any,
     ) -> None:
@@ -104,7 +102,6 @@ class ADMMCompressor(BaseCompressor):
         self.layer_sparsities: dict[str, float] = {}
         self.layer_actual_sparsities: dict[str, float] = {}
 
-    # ------------------------------------------------------------------
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         if any(
             name.endswith(sfx)
@@ -196,9 +193,6 @@ class ADMMCompressor(BaseCompressor):
             return any(t in name for t in self.target_modules)
         return True
 
-    # ------------------------------------------------------------------
-    # AC-FIX-02/10: per-channel quantization with outlier robustness.
-    # ------------------------------------------------------------------
     def _quantize_projection(self, tensor: torch.Tensor) -> torch.Tensor:
         """
         Project continuous tensor onto a b-bit uniform quantization grid (FP32).
@@ -219,9 +213,6 @@ class ADMMCompressor(BaseCompressor):
         quantized = torch.round(normalized * scale_levels) / scale_levels
         return quantized * max_val
 
-    # ------------------------------------------------------------------
-    # AC-FIX-03: no_grad projection helper.
-    # ------------------------------------------------------------------
     def _prune_projection(self, tensor: torch.Tensor) -> torch.Tensor:
         with torch.no_grad():
             if self.structured_24:
@@ -239,7 +230,6 @@ class ADMMCompressor(BaseCompressor):
                 mask = (tensor.abs() >= thr).float()
                 return tensor * mask
 
-    # ------------------------------------------------------------------
     def compress(self, **kwargs: Any) -> tuple[nn.Module, dict[str, Any]]:
         self.compressed_layers = []
         self.fallback_layers = []
@@ -268,7 +258,6 @@ class ADMMCompressor(BaseCompressor):
             dtype = raw_w.dtype
 
             W0 = raw_w.t().float() if is_conv1d else raw_w.float()
-            # AC-FIX-07: safe norm.
             norm_w0 = float(torch.norm(W0, p="fro").item())
             norm_w0 = max(norm_w0, 1e-12)
 
@@ -277,9 +266,7 @@ class ADMMCompressor(BaseCompressor):
 
             try:
                 with torch.no_grad():
-                    # Baseline candidate.
                     Z0 = self._prune_projection(W0)
-                    # AC-FIX-06: mask excludes non-finite.
                     finite_mask = torch.isfinite(Z0).float()
                     mask0 = (Z0 != 0.0).float() * finite_mask
                     W_cand = self._quantize_projection(Z0) * mask0
@@ -287,7 +274,6 @@ class ADMMCompressor(BaseCompressor):
                     best_W_final = W_cand
                     best_err = err0
 
-                    # ADMM state in FP32.
                     W = W0.clone()
                     Z = Z0.clone()
                     Q = self._quantize_projection(W0)
@@ -297,20 +283,15 @@ class ADMMCompressor(BaseCompressor):
                     denom = 1.0 + self.rho1 + self.rho2
 
                     for it in range(self.max_iter):
-                        # W-update.
                         W = (W0 + self.rho1 * (Z - U1) + self.rho2 * (Q - U2)) / denom
 
-                        # Z-update (sparse).
                         Z = self._prune_projection(W + U1)
 
-                        # Q-update (quantized).
                         Q = self._quantize_projection(W + U2)
 
-                        # Dual updates.
                         U1 = U1 + (W - Z)
                         U2 = U2 + (W - Q)
 
-                        # Non-finite guard.
                         if (
                             not torch.isfinite(W).all()
                             or not torch.isfinite(Z).all()
@@ -323,7 +304,6 @@ class ADMMCompressor(BaseCompressor):
                             )
                             break
 
-                        # AC-FIX-04: track best iterate using ADMM state Z (strictly pruned).
                         finite_mask_curr = torch.isfinite(Z).float()
                         mask_curr = (Z != 0.0).float() * finite_mask_curr
                         W_curr = self._quantize_projection(Z) * mask_curr
@@ -374,14 +354,12 @@ class ADMMCompressor(BaseCompressor):
                     p.requires_grad = False
                 continue
 
-            # AC-FIX-09: mutation under no_grad.
             with torch.no_grad():
                 target_mod.weight.data.copy_(res_w)
 
             actual_zero_frac = float((res_w == 0).sum().item() / max(1, res_w.numel()))
             self.layer_actual_sparsities[name] = actual_zero_frac
 
-            # AC-FIX-05: LoRA always trainable (recovery).
             has_lora = (hasattr(module, "lora_A") and module.lora_A is not None) or hasattr(
                 module, "base_layer"
             )
@@ -422,7 +400,6 @@ class ADMMCompressor(BaseCompressor):
             else 0.0
         )
 
-        # AC-FIX-01: effective compression rate combines quantization and sparsity.
         quant_factor = 16.0 / max(1, self.quant_bits)
         sparse_factor = 1.0 / max(1e-6, 1.0 - avg_actual_sparsity)
         effective_storage_comp_rate = round(quant_factor * sparse_factor, 2)
@@ -462,11 +439,6 @@ class ADMMCompressor(BaseCompressor):
             effective_storage_comp_rate,
         )
         return self.model, stats
-
-
-# ===========================================================================
-# Factory (AC-FIX-08)
-# ===========================================================================
 
 
 def admm_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:

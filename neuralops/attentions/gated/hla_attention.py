@@ -34,9 +34,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 logger = logging.getLogger(__name__)
 
 
-# ===========================================================================
-# Cache state container
-# ===========================================================================
 class HLAState:
     """
     Recurrent-state container for HLAAttention.
@@ -70,9 +67,6 @@ class HLAState:
         return (self.S, self.Z)[idx]
 
 
-# ===========================================================================
-# HLAAttention
-# ===========================================================================
 @ATTENTION_REGISTRY.register(
     "hla_attention",
     supports_causal=True,
@@ -113,7 +107,6 @@ class HLAAttention(BaseAttention):
         except TypeError:
             super().__init__(config)
 
-        # ---- Resolve d_model ----
         if d_model is None:
             if config is not None:
                 d_model = getattr(config, "hidden_size", getattr(config, "dim", 768))
@@ -122,7 +115,6 @@ class HLAAttention(BaseAttention):
         if hasattr(d_model, "hidden_size"):
             d_model = d_model.hidden_size
 
-        # ---- Resolve num_heads ----
         if num_heads is None:
             if config is not None:
                 num_heads = getattr(
@@ -131,7 +123,6 @@ class HLAAttention(BaseAttention):
             else:
                 num_heads = kwargs.get("num_attention_heads", 12)
 
-        # ---- LoRA config ----
         comp_cfg = kwargs.get("comp_config")
         if comp_cfg is not None:
             lora_rank = getattr(
@@ -152,7 +143,6 @@ class HLAAttention(BaseAttention):
         self.lora_rank: int = int(lora_rank) if lora_rank is not None else 16
         self.lora_alpha: float = float(lora_alpha) if lora_alpha is not None else 32.0
 
-        # ---- GQA ----
         cfg_kv = (
             getattr(
                 config,
@@ -170,7 +160,6 @@ class HLAAttention(BaseAttention):
         self.q_head_size: int = self.num_heads * self.head_dim
         self.kv_head_size: int = self.num_kv_heads * self.head_dim
 
-        # ---- Decoder detection ----
         if is_decoder is not None:
             self.is_decoder: bool = bool(is_decoder)
         elif config is not None:
@@ -188,7 +177,6 @@ class HLAAttention(BaseAttention):
 
         self.is_nested_encoder: bool = False
 
-        # ---- Projections ----
         self.q_proj = LoRALinear(
             self.hidden_size,
             self.q_head_size,
@@ -222,21 +210,15 @@ class HLAAttention(BaseAttention):
             freeze_base=True,
         )
 
-        # ---- [HLA-FIX-01] KD-compatible gates with lora_ prefix ----
         self.lora_beta = nn.Parameter(torch.ones(self.num_heads, 1, 1) * 2.0)
         self.lora_output_scale = nn.Parameter(torch.ones(1))
 
-        # ---- Chunk size ----
         self.chunk_size: int = max(16, int(chunk_size))
 
-        # ---- Weight transfer ----
         old_attn = kwargs.get("old_attn", kwargs.get("pretrained_attn"))
         if old_attn is not None:
             self.copy_weights(old_attn)
 
-    # ------------------------------------------------------------------
-    # [HLA-FIX-02] Backward-compat property aliases
-    # ------------------------------------------------------------------
     @property
     def beta(self) -> nn.Parameter:
         return self.lora_beta
@@ -266,9 +248,6 @@ class HLAAttention(BaseAttention):
     @property
     def o_proj(self): return self.out_proj
 
-    # ------------------------------------------------------------------
-    # Weight transfer (multi-architecture)
-    # ------------------------------------------------------------------
     def copy_weights(self, old_attn: Any) -> None:
         """
         Robust weight copying from DistilBERT, RoBERTa-nested,
@@ -280,7 +259,6 @@ class HLAAttention(BaseAttention):
             w_v = b_v = None
             w_o = b_o = None
 
-            # ---- Detect nested encoder container ----
             src_cls_name = getattr(old_attn, "__class__", type(old_attn)).__name__
             if src_cls_name in ("BertSelfAttention", "RobertaSelfAttention") or (
                 hasattr(old_attn, "query")
@@ -298,7 +276,6 @@ class HLAAttention(BaseAttention):
             else:
                 src = old_attn
 
-            # ---- Pattern 1: GPT-2 fused c_attn ----
             if hasattr(src, "c_attn") and hasattr(src, "c_proj"):
                 c_attn_w = src.c_attn.weight.detach()
                 c_attn_b = (
@@ -338,7 +315,6 @@ class HLAAttention(BaseAttention):
                     else None
                 )
 
-            # ---- Pattern 2: BERT / RoBERTa nested ----
             elif (
                 hasattr(src, "query")
                 and hasattr(src, "key")
@@ -363,7 +339,6 @@ class HLAAttention(BaseAttention):
                             )
                             break
 
-            # ---- Pattern 3: LLaMA / Qwen ----
             elif (
                 hasattr(src, "q_proj")
                 and hasattr(src, "k_proj")
@@ -384,7 +359,6 @@ class HLAAttention(BaseAttention):
                         else None
                     )
 
-            # ---- Pattern 4: DistilBERT ----
             elif (
                 hasattr(src, "q_lin")
                 and hasattr(src, "k_lin")
@@ -405,7 +379,6 @@ class HLAAttention(BaseAttention):
                         else None
                     )
 
-            # ---- Pattern 5: UniversalAdapter fallback ----
             if w_q is None or w_k is None or w_v is None:
                 try:
                     adapter = UniversalAdapter()
@@ -417,7 +390,6 @@ class HLAAttention(BaseAttention):
                 except Exception as e:
                     logger.debug("UniversalAdapter fallback failed: %s", e)
 
-            # ---- Validation ----
             missing = []
             if w_q is None:
                 missing.append("Q")
@@ -433,7 +405,6 @@ class HLAAttention(BaseAttention):
                     f"from {type(old_attn).__name__}"
                 )
 
-            # ---- Copy ----
             for target_mod, w_src in (
                 (self.q_proj, w_q),
                 (self.k_proj, w_k),
@@ -449,7 +420,6 @@ class HLAAttention(BaseAttention):
                     tw.data.zero_()
                     tw.data[:min_r, :min_c].copy_(w_cast[:min_r, :min_c])
 
-            # ---- Frobenius verification ----
             f_norm_q = float(torch.linalg.norm(self.q_proj.weight.detach().float()))
             if f_norm_q < 1e-4:
                 logger.warning(
@@ -482,9 +452,6 @@ class HLAAttention(BaseAttention):
                         f_norm_o,
                     )
 
-    # ------------------------------------------------------------------
-    # [HLA-FIX-03, 04, 05] Memory-bounded chunked scan with full state
-    # ------------------------------------------------------------------
     def _hla_chunked_scan(
         self,
         q: torch.Tensor,
@@ -519,11 +486,9 @@ class HLAAttention(BaseAttention):
             k_f = k_f.flip(dims=[2])
             v_f = v_f.flip(dims=[2])
 
-        # γ per head: (1, H, 1, 1)
         gamma = decay.float().clamp(min=1e-5, max=1.0 - 1e-5)
-        log_gamma = torch.log(gamma)  # (1, H, 1, 1)
+        log_gamma = torch.log(gamma)
 
-        # ---- [HLA-FIX-05] L=1 decode fast path ----
         if L == 1:
             if initial_state is not None:
                 S_prev, Z_prev = initial_state
@@ -533,19 +498,16 @@ class HLAAttention(BaseAttention):
                 S_prev = torch.zeros(B, H, d, d, device=device, dtype=torch.float32)
                 Z_prev = torch.zeros(B, H, d, 1, device=device, dtype=torch.float32)
 
-            # S_1 = γ · S_0 + k_1ᵀ · v_1
             S_curr = gamma * S_prev + torch.matmul(
                 k_f.transpose(-1, -2).contiguous(), v_f
             )
-            # Z_1 = γ · Z_0 + k_1ᵀ
             Z_curr = gamma * Z_prev + k_f.transpose(-1, -2).contiguous()
 
-            y_num = torch.matmul(q_f, S_curr)  # (B, H, 1, d)
-            y_den = torch.matmul(q_f, Z_curr).clamp(min=1e-5)  # (B, H, 1, 1)
+            y_num = torch.matmul(q_f, S_curr)
+            y_den = torch.matmul(q_f, Z_curr).clamp(min=1e-5)
             y = y_num / y_den
             return y.to(q.dtype), (S_curr, Z_curr)
 
-        # ---- Chunked path ----
         C = self.chunk_size
         pad_len = (C - (L % C)) % C
         if pad_len > 0:
@@ -560,34 +522,26 @@ class HLAAttention(BaseAttention):
         k_c = k_f.view(B, H, N, C, d)
         v_c = v_f.view(B, H, N, C, d)
 
-        # ---- Intra-chunk decay matrix: decay[i, j] = γ^(i-j) for j <= i ----
         t_idx = torch.arange(C, device=device)
-        diff = t_idx.unsqueeze(1) - t_idx.unsqueeze(0)  # (C, C), diff[i,j] = i - j
+        diff = t_idx.unsqueeze(1) - t_idx.unsqueeze(0)
         tril = torch.tril(
             torch.ones(C, C, device=device, dtype=torch.bool)
         )
-        # log-decay: (1, H, C, C)
-        exp_arg = diff.view(1, 1, C, C) * log_gamma  # broadcast: (1, H, C, C)
+        exp_arg = diff.view(1, 1, C, C) * log_gamma
         decay_mat = torch.where(
             tril.unsqueeze(0).unsqueeze(0),
             torch.exp(exp_arg),
             torch.zeros_like(exp_arg),
         )
 
-        # ---- Position decay within chunk: γ^(t+1) for t in [0, C-1] ----
-        # shape (1, H, C, 1)
         pos_decay = torch.exp((t_idx.float() + 1.0).view(1, 1, C, 1) * log_gamma)
 
-        # ---- Update-weight for chunk-level state carry: γ^(C-1-t) ----
         update_weight = torch.exp(
             (C - 1 - t_idx.float()).view(1, 1, C, 1) * log_gamma
-        )  # (1, H, C, 1)
+        )
 
-        # ---- Block decay γ^C ----
-        block_decay = torch.exp(C * log_gamma)  # (1, H, 1, 1)
+        block_decay = torch.exp(C * log_gamma)
 
-
-        # ---- Initialize state ----
         if initial_state is not None:
             S_prev, Z_prev = initial_state
             S_prev = S_prev.to(device=device, dtype=torch.float32)
@@ -598,40 +552,37 @@ class HLAAttention(BaseAttention):
 
         outputs = []
         for c in range(N):
-            q_chunk = q_c[:, :, c]  # (B, H, C, d)
+            q_chunk = q_c[:, :, c]
             k_chunk = k_c[:, :, c]
             v_chunk = v_c[:, :, c]
 
-            # ---- Intra-chunk ----
             qk = torch.matmul(q_chunk, k_chunk.transpose(-1, -2).contiguous())
-            scores = qk * decay_mat  # (B, H, C, C) × (1, H, C, C) → (B, H, C, C)
-            num_intra = torch.matmul(scores, v_chunk)  # (B, H, C, d)
-            den_intra = scores.sum(dim=-1, keepdim=True)  # (B, H, C, 1)
+            scores = qk * decay_mat
+            num_intra = torch.matmul(scores, v_chunk)
+            den_intra = scores.sum(dim=-1, keepdim=True)
 
-            # ---- Inter-chunk ----
-            qS = torch.matmul(q_chunk, S_prev)  # (B, H, C, d)
-            num_inter = qS * pos_decay  # (1, H, C, 1) × (B, H, C, d) → (B, H, C, d)
+            qS = torch.matmul(q_chunk, S_prev)
+            num_inter = qS * pos_decay
 
-            qZ = torch.matmul(q_chunk, Z_prev)  # (B, H, C, 1)
-            den_inter = qZ * pos_decay  # (B, H, C, 1)
+            qZ = torch.matmul(q_chunk, Z_prev)
+            den_inter = qZ * pos_decay
 
             num = num_intra + num_inter
             den = den_intra + den_inter + 1e-5
             y_chunk = num / den
             outputs.append(y_chunk)
 
-            # ---- Update S_prev, Z_prev for next chunk ----
-            k_weighted = k_chunk * update_weight  # (1, H, C, 1) × (B, H, C, d)
+            k_weighted = k_chunk * update_weight
 
             S_update = torch.matmul(
                 k_weighted.transpose(-1, -2).contiguous(), v_chunk
-            )  # (B, H, d, d)
-            Z_update = k_weighted.sum(dim=2).unsqueeze(-1)  # (B, H, d, 1)
+            )
+            Z_update = k_weighted.sum(dim=2).unsqueeze(-1)
 
             S_prev = block_decay * S_prev + S_update
             Z_prev = block_decay * Z_prev + Z_update
 
-        y_out = torch.cat(outputs, dim=2)  # (B, H, L_pad, d)
+        y_out = torch.cat(outputs, dim=2)
         if pad_len > 0:
             y_out = y_out[:, :, :L, :]
         if reverse:
@@ -639,9 +590,6 @@ class HLAAttention(BaseAttention):
 
         return y_out.to(q.dtype), (S_prev, Z_prev)
 
-    # ------------------------------------------------------------------
-    # [HLA-FIX-04, 06, 07, 11] Forward
-    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -667,7 +615,6 @@ class HLAAttention(BaseAttention):
         kv_input = encoder_hidden_states if is_cross else hidden_states
         kv_len = kv_input.shape[1]
 
-        # ---- Projections ----
         q = (
             self.q_proj(hidden_states)
             .view(B, L, H, Dh)
@@ -687,7 +634,6 @@ class HLAAttention(BaseAttention):
             .contiguous()
         )
 
-        # ---- [HLA-FIX-04] Read past state ----
         past_state: tuple[torch.Tensor, torch.Tensor] | None = None
         past_len = 0
 
@@ -713,7 +659,6 @@ class HLAAttention(BaseAttention):
                         inner = past_key_value[0]
                         past_state = (inner[0], inner[1])
 
-        # ---- RoPE ----
         pos_emb = (
             position_embeddings
             if position_embeddings is not None
@@ -727,20 +672,16 @@ class HLAAttention(BaseAttention):
                     sin = sin[..., past_len : past_len + L, :]
                 q, k = apply_rotary_pos_emb(q, k, cos, sin)
 
-        # ---- GQA expansion ----
         if self.num_kv_heads != self.num_heads:
             k = repeat_kv(k, self.num_key_value_groups)
             v = repeat_kv(v, self.num_key_value_groups)
 
-        # ---- Kernel feature map (ELU + 1) ----
         scale = 1.0 / math.sqrt(Dh)
         q = F.elu(q.float() * scale) + 1.0
         k = F.elu(k.float()) + 1.0
 
-        # ---- [HLA-FIX-01] Decay gate (lora_ prefix) ----
-        decay = torch.sigmoid(self.lora_beta).unsqueeze(0)  # (1, H, 1, 1)
+        decay = torch.sigmoid(self.lora_beta).unsqueeze(0)
 
-        # ---- [HLA-FIX-06] Mask handling ----
         mask_bool = None
         if attention_mask is not None:
             if attention_mask.dim() == 2:
@@ -766,14 +707,12 @@ class HLAAttention(BaseAttention):
             k = k * m_exp
             v = v * m_exp
 
-        # ---- Forward scan ----
         y_fwd, next_state = self._hla_chunked_scan(
             q, k, v, decay,
             initial_state=past_state,
             reverse=False,
         )
 
-        # ---- [HLA-FIX-03] Bidirectional for encoders ----
         if self.is_decoder or is_cross:
             y = y_fwd
         else:
@@ -784,7 +723,6 @@ class HLAAttention(BaseAttention):
             )
             y = 0.5 * (y_fwd + y_bwd)
 
-        # ---- head_mask ----
         if head_mask is not None:
             hm = head_mask.to(y.dtype)
             if hm.dim() == 1:
@@ -795,29 +733,24 @@ class HLAAttention(BaseAttention):
                 hm = hm.unsqueeze(-1)
             y = y * hm
 
-        # ---- Reshape to (B, L, H·d) ----
         context = y.transpose(1, 2).contiguous().view(B, L, H * Dh)
 
-        # Variance-preserving RMS gain to prevent signal decay before out_proj
         v_flat = v.transpose(1, 2).contiguous().view(B, kv_len, -1)
         v_rms = torch.sqrt(torch.mean(v_flat ** 2, dim=-1, keepdim=True).clamp_min(1e-8))
         c_rms = torch.sqrt(torch.mean(context ** 2, dim=-1, keepdim=True).clamp_min(1e-8))
         scale = (v_rms / c_rms).clamp(0.25, 4.0)
         context = context * scale
 
-        # ---- Output projection ----
         if self.is_nested_encoder:
             out = context * self.lora_output_scale
         else:
             out = self.out_proj(context) * self.lora_output_scale
 
-        # ---- Final output mask ----
         if mask_bool is not None:
             out = out * mask_bool.unsqueeze(-1).to(out.dtype)
 
         out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
 
-        # ---- [HLA-FIX-08, 11] Package cache state ----
         new_past_key_value: Any = None
         use_cache = kwargs.get("use_cache", False) or (
             past_key_value is not None and past_key_value is not False
@@ -851,7 +784,6 @@ class HLAAttention(BaseAttention):
             state = {}
         step_idx = state.get("step_idx", 0)
 
-        # 1. Projections
         q = self.q_proj(x).view(B, 1, H, Dh).transpose(1, 2)
         k = self.k_proj(x).view(B, 1, self.num_kv_heads, Dh).transpose(1, 2)
         v = self.v_proj(x).view(B, 1, self.num_kv_heads, Dh).transpose(1, 2)
@@ -860,12 +792,10 @@ class HLAAttention(BaseAttention):
             k = repeat_kv(k, self.kv_repeat)
             v = repeat_kv(v, self.kv_repeat)
 
-        # 2. Kernel feature map: ELU + 1
         scale = 1.0 / math.sqrt(Dh)
         q_act = (F.elu(q.float() * scale) + 1.0)
         k_act = (F.elu(k.float()) + 1.0)
 
-        # 3. Per-head exponential decay
         gamma_t = torch.sigmoid(self.lora_beta).view(1, H, 1, 1).to(device=device, dtype=torch.float32)
 
         if "kv_state" not in state or state["kv_state"] is None:
@@ -892,7 +822,6 @@ class HLAAttention(BaseAttention):
 
         context = yt.transpose(1, 2).contiguous().view(B, 1, H * Dh)
 
-        # Variance-preserving RMS gain
         v_flat = v.transpose(1, 2).contiguous().view(B, 1, -1)
         v_rms = torch.sqrt(torch.mean(v_flat ** 2, dim=-1, keepdim=True).clamp_min(1e-8))
         c_rms = torch.sqrt(torch.mean(context ** 2, dim=-1, keepdim=True).clamp_min(1e-8))
@@ -915,9 +844,6 @@ class HLAAttention(BaseAttention):
         return torch.zeros((), device=dev)
 
 
-# ===========================================================================
-# Injection
-# ===========================================================================
 def inject_hla(
     layer: Any = None,
     model: Any = None,
@@ -929,7 +855,6 @@ def inject_hla(
     _depth: int = 0,
     **kwargs: Any,
 ):
-    # [HLA-FIX-09] Recursion guard
     if _depth > 8:
         logger.warning("inject_hla: max recursion depth exceeded.")
         return None
@@ -942,7 +867,6 @@ def inject_hla(
 
     cfg = model_config if model_config is not None else getattr(target, "config", None)
 
-    # ---- Whole-model traversal ----
     layer_list = None
     for path in (
         ("distilbert", "transformer", "layer"),
@@ -983,7 +907,6 @@ def inject_hla(
                 num_injected += 1
         return target if num_injected > 0 else None
 
-    # ---- Single-layer injection ----
     src = old_attn
     if src is None:
         for attr in ("attention", "self_attn", "attn", "self"):
@@ -996,18 +919,15 @@ def inject_hla(
     if src is None:
         return None
 
-    # [HLA-FIX-09] Idempotency guard
     if isinstance(src, HLAAttention) or "HLA" in src.__class__.__name__:
         return None
 
-    # ---- Resolve dims ----
     d_model = 768
     num_heads = 12
     if cfg is not None:
         d_model = getattr(cfg, "hidden_size", getattr(cfg, "dim", 768))
         num_heads = getattr(cfg, "num_attention_heads", getattr(cfg, "n_heads", 12))
 
-    # ---- Decoder detection ----
     _mt = str(getattr(cfg, "model_type", "") or "").lower() if cfg else ""
     _dec_pfx = (
         "gpt", "qwen", "llama", "mistral", "gemma", "phi",
@@ -1039,7 +959,6 @@ def inject_hla(
         if p is not None:
             new_block.to(device=p.device, dtype=p.dtype)
 
-        # ---- Splice ----
         spliced = False
         if hasattr(target, "attention"):
             if hasattr(target.attention, "self"):

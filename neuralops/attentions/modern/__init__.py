@@ -134,7 +134,6 @@ try:
 except Exception:
     pass
 
-# Auto-wired submodules
 from neuralops.attentions.modern import alibi
 from neuralops.attentions.modern import cross_attention
 from neuralops.attentions.modern import dynamic_conv_attention

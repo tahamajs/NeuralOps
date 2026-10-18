@@ -112,7 +112,6 @@ try:
 except Exception:
     pass
 
-# Auto-wired submodules
 from neuralops.compression_engine.pruning import admm_compressor
 from neuralops.compression_engine.pruning import admm_pruner
 from neuralops.compression_engine.pruning import armor_pruner

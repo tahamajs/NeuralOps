@@ -35,9 +35,6 @@ from neuralops.utils.model_family import ModelAdapter
 logger = logging.getLogger(__name__)
 
 
-# ===========================================================================
-# Main Attention
-# ===========================================================================
 @ATTENTION_REGISTRY.register(
     "lora_attention",
     supports_causal=True,
@@ -64,7 +61,7 @@ class LoRAAttention(BaseAttention):
         self,
         config: Any | None = None,
         model_config: Any | None = None,
-        rank: int | None = None,  # accepted for compat, ignored
+        rank: int | None = None,
         lora_rank: int = 16,
         alpha: float = 32.0,
         dropout: float = 0.1,
@@ -72,12 +69,9 @@ class LoRAAttention(BaseAttention):
         **kwargs: Any,
     ) -> None:
         cfg = config if config is not None else model_config
-        # LORA2-FIX-01: LoRA rank is what actually matters. `rank` from
-        # the sweep (compression rank) is not used for LoRA.
         actual_lora_rank = int(lora_rank) if lora_rank is not None else 16
 
         super().__init__(cfg, actual_lora_rank)
-        # LORA2-FIX-05: cfg may be None
         if cfg is None:
             cfg = getattr(pretrained_attn, "config", None)
 
@@ -144,16 +138,12 @@ class LoRAAttention(BaseAttention):
         self.dropout = nn.Dropout(dropout_p)
         self.rotary_emb = getattr(pretrained_attn, "rotary_emb", None)
 
-        # LORA2-FIX-08: storage accounting
         self._orig_storage_bytes: int = 0
         self._comp_storage_bytes: int = 0
 
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
 
-    # ------------------------------------------------------------------
-    # Aliases
-    # ------------------------------------------------------------------
     @property
     def query(self):
         return self.q_proj
@@ -194,13 +184,9 @@ class LoRAAttention(BaseAttention):
     def c_proj(self):
         return self.out_proj
 
-    # ------------------------------------------------------------------
-    # copy_weights
-    # ------------------------------------------------------------------
     def copy_weights(self, src: Any) -> None:
         from neuralops.core.adapters import UniversalAdapter
 
-        # Track original bytes
         try:
             for p in src.parameters():
                 self._orig_storage_bytes += p.numel() * p.element_size()
@@ -214,7 +200,6 @@ class LoRAAttention(BaseAttention):
             "o": (None, None),
         }
 
-        # 1. UniversalAdapter
         for proj in ("q", "k", "v", "o"):
             try:
                 w, b = UniversalAdapter.get_weight_bias(src, proj)
@@ -223,7 +208,6 @@ class LoRAAttention(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter fallback failed: %s", e)
 
-        # 2. GPT-2 fused c_attn
         if hasattr(src, "c_attn") and any(extracted[p][0] is None for p in ("q", "k", "v")):
             c_attn = src.c_attn
             base_c = getattr(c_attn, "base_layer", c_attn)
@@ -266,7 +250,6 @@ class LoRAAttention(BaseAttention):
                 bo = getattr(base_o, "bias", getattr(c_proj, "bias", None))
                 extracted["o"] = (ow, bo.data.clone() if bo is not None else None)
 
-        # 3. Nested BERT / RoBERTa
         if hasattr(src, "self") and any(extracted[p][0] is None for p in ("q", "k", "v")):
             s = src.self
             if hasattr(s, "query") and extracted["q"][0] is None:
@@ -295,7 +278,6 @@ class LoRAAttention(BaseAttention):
                 d.bias.data if d.bias is not None else None,
             )
 
-        # 4. Modern decoders and flat modules
         named_map = {
             "q": ("q_proj", "q_lin", "query"),
             "k": ("k_proj", "k_lin", "key"),
@@ -315,7 +297,6 @@ class LoRAAttention(BaseAttention):
                             )
                             break
 
-        # Detect nested encoder
         cls_name = src.__class__.__name__
         has_out_proj = any(
             hasattr(src, attr)
@@ -354,7 +335,6 @@ class LoRAAttention(BaseAttention):
         if missing:
             logger.warning("LoRAAttention copy_weights: missing %s", missing)
 
-        # Frobenius norm checks
         for k in ("q", "k", "v"):
             w = extracted[k][0]
             if w is not None:
@@ -384,7 +364,6 @@ class LoRAAttention(BaseAttention):
                     w_oriented = _orient(w, in_dim)
                     out_d, in_d = target.weight.shape
                     src_out, src_in = w_oriented.shape
-                    # K/V: GQA-safe copy with mean-pooling if needed
                     if key in ("k", "v") and src_out != out_d:
                         if src_out > out_d and src_out % out_d == 0:
                             rep = src_out // out_d
@@ -423,7 +402,6 @@ class LoRAAttention(BaseAttention):
 
                 target.freeze_base_weights()
 
-        # Track compressed bytes
         try:
             for m in (self.q_proj, self.k_proj, self.v_proj, self.out_proj):
                 for p in m.parameters():
@@ -434,9 +412,6 @@ class LoRAAttention(BaseAttention):
         if hasattr(src, "is_decoder"):
             self.is_decoder = bool(src.is_decoder)
 
-    # ------------------------------------------------------------------
-    # Mask helper (LORA2-FIX-11)
-    # ------------------------------------------------------------------
     @staticmethod
     def _normalize_valid_mask(attention_mask, B, N_kv, device):
         if attention_mask is None:
@@ -460,9 +435,6 @@ class LoRAAttention(BaseAttention):
             return m if m.shape == (B, N_kv) else None
         return None
 
-    # ------------------------------------------------------------------
-    # Forward
-    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -492,7 +464,6 @@ class LoRAAttention(BaseAttention):
         K = self.k_proj(kv_input).view(B, N_k, self.num_kv_heads, d).transpose(1, 2).contiguous()
         V = self.v_proj(kv_input).view(B, N_k, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
-        # RoPE
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
         if (
@@ -504,7 +475,6 @@ class LoRAAttention(BaseAttention):
             cos, sin = position_embeddings[0], position_embeddings[1]
             Q, K = apply_rotary_pos_emb(Q, K, cos, sin, kwargs.get("position_ids"))
 
-        # GQA repeat
         if self.kv_repeat > 1:
             K = repeat_kv(K, self.kv_repeat)
             V = repeat_kv(V, self.kv_repeat)
@@ -512,13 +482,11 @@ class LoRAAttention(BaseAttention):
         scale = 1.0 / math.sqrt(int(d))
         scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
 
-        # Attention mask
         mask = attention_mask if attention_mask is not None else kwargs.get("mask")
         valid_m = self._normalize_valid_mask(mask, B, N_k, device)
         if valid_m is not None:
             scores = scores.masked_fill(~valid_m[:, None, None, :], -1e4)
 
-        # LORA2-FIX-04: causal only for self-attention
         is_decoder = bool(
             self.is_decoder
             or getattr(self.config, "is_decoder", False)
@@ -526,14 +494,12 @@ class LoRAAttention(BaseAttention):
             in ("gpt2", "qwen", "qwen2", "qwen3_5", "llama")
         )
         if is_decoder and not is_cross:
-            # FIXED: added diagonal shift for KV cache alignment
             causal = torch.tril(
                 torch.ones(N_q, N_k, device=device, dtype=torch.bool),
                 diagonal=max(0, N_k - N_q)
             )
             scores = scores.masked_fill(~causal.unsqueeze(0).unsqueeze(0), -1e4)
 
-        # FIXED: Removed destructive torch.nan_to_num(..., nan=-1e4) before softmax
         attn = F.softmax(scores, dim=-1).to(dtype)
         attn = torch.nan_to_num(attn, nan=0.0)
         attn = self.dropout(attn)
@@ -567,9 +533,6 @@ class LoRAAttention(BaseAttention):
         return output, (attn if output_attentions else None)
 
 
-# ===========================================================================
-# Injection
-# ===========================================================================
 def inject_lora_attention(
     layer: Any = None,
     model: Any = None,
@@ -593,7 +556,6 @@ def inject_lora_attention(
 
     cfg = model_config if model_config is not None else getattr(target, "config", None)
 
-    # Whole-model traversal
     layer_list = None
     for path in (
         ("distilbert", "transformer", "layer"),
@@ -634,7 +596,6 @@ def inject_lora_attention(
                 n_inj += 1
         return target if n_inj > 0 else None
 
-    # Single-layer injection
     src_attn = old_attn
     if src_attn is None:
         for attr in ("attn", "attention", "self_attn", "self"):
@@ -646,7 +607,6 @@ def inject_lora_attention(
     if src_attn is None:
         src_attn = target
 
-    # LORA2-FIX-07: idempotency guard
     if isinstance(src_attn, LoRAAttention) or "LoRAAttention" in src_attn.__class__.__name__:
         return None
 
@@ -654,8 +614,6 @@ def inject_lora_attention(
         cfg = getattr(src_attn, "config", None) or getattr(target, "config", None)
 
     try:
-        # LORA2-FIX-01: lora_rank is the meaningful knob for LoRA.
-        # `rank` from sweep is ignored.
         lora_rank = int(kwargs.pop("lora_rank", 16))
         if comp_config is not None:
             lora_rank = int(getattr(comp_config, "lora_rank", lora_rank))
@@ -674,7 +632,6 @@ def inject_lora_attention(
         if p is not None:
             new_attn.to(device=p.device, dtype=p.dtype)
 
-        # LORA2-FIX-02/03: single, correct splice branch
         if hasattr(target, "attn"):
             new_attn.is_nested_encoder = False
             target.attn = new_attn
@@ -698,7 +655,6 @@ def inject_lora_attention(
             )
             return None
 
-        # Propagate training mode (LORA2-FIX-06)
         if src_attn is not target:
             new_attn.train(src_attn.training)
         return new_attn

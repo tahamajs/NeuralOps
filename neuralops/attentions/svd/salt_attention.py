@@ -27,10 +27,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 logger = logging.getLogger(__name__)
 
 
-
-
-
-
 class SALTLinear(nn.Module):
     is_custom_attention: bool = True
     r"""
@@ -65,10 +61,8 @@ class SALTLinear(nn.Module):
         else:
             W = torch.randn(out_features, in_features) * (1.0 / math.sqrt(in_features))
 
-        # Fisher-weighted SVD
         if use_fisher and fisher_diag is not None and fisher_diag.shape[0] == in_features:
             scale = torch.sqrt(fisher_diag.float().clamp(min=1e-6) + 1e-6)
-            # Normalize scale to avoid extreme values
             scale = scale / (scale.norm() / math.sqrt(in_features) + 1e-8)
             W_white = W * scale.unsqueeze(0)
         else:
@@ -77,7 +71,6 @@ class SALTLinear(nn.Module):
 
         U, S, Vt = torch.linalg.svd(W_white, full_matrices=False)
 
-        # Unwhiten Vt
         if scale is not None:
             Vt_unw = Vt / scale.unsqueeze(0)
         else:
@@ -170,8 +163,6 @@ class SALTLinear(nn.Module):
         if x.is_cuda:
             try:
                 from neuralops.core.triton_kernels.low_rank import fused_svd_gemm_triton
-                # Fused SVD base: x @ Vt.T @ diag(adapted_S) @ U.T
-                # fused_svd_gemm_triton(x, U, S, Vt, bias) computes (x @ Vt.T * S) @ U.T + bias
                 x_svd = fused_svd_gemm_triton(x, self.U, adapted_S, self.Vt, bias=None)
                 x_lora = F.linear(F.linear(x, self.B.to(dtype=x.dtype)), self.A.to(dtype=x.dtype))
                 out = x_svd + x_lora
@@ -181,10 +172,8 @@ class SALTLinear(nn.Module):
             except Exception:
                 pass
 
-        # SVD branch: (x @ Vt.T) * adapted_S @ U.T
         x_vt = F.linear(x, self.Vt.to(dtype=x.dtype))
         x_svd = F.linear(x_vt * adapted_S, self.U.to(dtype=x.dtype))
-        # LoRA branch: (x @ B.T) @ A.T
         x_lora = F.linear(F.linear(x, self.B.to(dtype=x.dtype)), self.A.to(dtype=x.dtype))
         out = x_svd + x_lora
         if self.bias is not None:
@@ -201,7 +190,6 @@ class SALTLinear(nn.Module):
             self.Vt.requires_grad = False
         if self.bias is not None and isinstance(self.bias, nn.Parameter):
             self.bias.requires_grad = False
-
 
 
 def _compute_energy_rank(
@@ -289,7 +277,6 @@ class SALTAttention(BaseAttention):
         max_rank = min(self.hidden_size, self.all_head_size) // 2
         self.rank = min(self.rank, max_rank)
 
-        # Adaptive rank & Fisher flags
         if adaptive_rank is not None:
             self.adaptive_rank = bool(adaptive_rank)
         else:
@@ -437,7 +424,6 @@ class SALTAttention(BaseAttention):
             "o": (None, None),
         }
 
-        # 1. UniversalAdapter extraction
         for proj in ["q", "k", "v", "o"]:
             try:
                 w, b = UniversalAdapter.get_weight_bias(src, proj)
@@ -446,7 +432,6 @@ class SALTAttention(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter fallback failed: %s", e)
 
-        # 2. GPT-2 Fused c_attn Conv1D handling
         if hasattr(src, "c_attn") and (
             extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None
         ):
@@ -477,7 +462,6 @@ class SALTAttention(BaseAttention):
             b_o = getattr(src.c_proj, "bias", None)
             extracted["o"] = (w_o, b_o.data if b_o is not None else None)
 
-        # 3. RoBERTa / BERT Nested Encoder handling
         if hasattr(src, "self") and (
             extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None
         ):
@@ -493,7 +477,6 @@ class SALTAttention(BaseAttention):
             dense = src.output.dense
             extracted["o"] = (dense.weight.data, getattr(dense, "bias", None))
 
-        # 4. Modern Decoders (Qwen3.5, LLaMA, Mistral) & DistilBERT
         named_map = {
             "q": ["q_proj", "q_lin", "query"],
             "k": ["k_proj", "k_lin", "key"],
@@ -512,7 +495,6 @@ class SALTAttention(BaseAttention):
                             )
                             break
 
-        # Detect nested encoder architecture
         cls_name = src.__class__.__name__
         has_out_proj = any(
             hasattr(src, attr)
@@ -532,7 +514,6 @@ class SALTAttention(BaseAttention):
             or (cls_name.endswith("SelfAttention") and not has_out_proj)
         ) and not has_out_proj
 
-        # Check required weights
         missing = [k for k in ["q", "k", "v"] if extracted[k][0] is None]
         if not self.is_nested_encoder and extracted["o"][0] is None:
             missing.append("o")
@@ -541,7 +522,6 @@ class SALTAttention(BaseAttention):
                 "Attention module copy_weights warning. Proceeding with initialized weights."
             )
 
-        # Frobenius norm validation
         for proj_key in ["q", "k", "v"]:
             w = extracted[proj_key][0]
             if w is not None:
@@ -566,14 +546,12 @@ class SALTAttention(BaseAttention):
                 return w
             if w.shape == (in_dim, out_dim):
                 return w.t().contiguous()
-            # fallback
             if w.shape[1] == in_dim:
                 return w
             if w.shape[0] == in_dim:
                 return w.t().contiguous()
             return w
 
-        # Recalculate adaptive ranks from actual extracted weights if available
         if getattr(self, "adaptive_rank", True):
             for proj_key in ["q", "k", "v", "o"]:
                 w_cand = extracted[proj_key][0]
@@ -586,7 +564,6 @@ class SALTAttention(BaseAttention):
                     except Exception:
                         pass
 
-        # Initialize SALTLinear projections
         with torch.no_grad():
             for proj_key, attr, in_dim, out_dim in [
                 ("q", "q_proj", self.hidden_size, self.all_head_size),
@@ -600,7 +577,6 @@ class SALTAttention(BaseAttention):
                     w_oriented = _orient(w, in_dim, out_dim)
                     src_out, src_in = w_oriented.shape
 
-                    # Handle KV dimension matching for GQA
                     if proj_key in ("k", "v"):
                         if src_out == out_dim:
                             final_w = w_oriented
@@ -806,7 +782,6 @@ def inject_salt_attention(
 
     cfg = model_config or getattr(target, "config", None)
 
-    # 1. Whole model traversal support
     if target is not None and (
         hasattr(target, "transformer")
         or hasattr(target, "distilbert")
@@ -842,7 +817,6 @@ def inject_salt_attention(
                 )
             return target
 
-    # 2. Layer injection
     try:
         src = old_attn
         if src is None and target is not None:
@@ -854,7 +828,6 @@ def inject_salt_attention(
         if src is None:
             return None
 
-        # Double-injection guard
         if isinstance(src, SALTAttention) or "SALT" in src.__class__.__name__:
             return None
         if target is not None:
@@ -948,7 +921,6 @@ def calibrate_gamma(
     else:
         inputs = calibration_data
 
-    # Hook to capture gradients
     grads: dict[str, torch.Tensor] = {}
     handles = []
 
@@ -995,16 +967,15 @@ def calibrate_gamma(
     for h in handles:
         h.remove()
 
-    # Update gamma per layer
     for name, module in model.named_modules():
         if isinstance(module, SALTLinear) and name in grads:
-            g = grads[name]  # (..., r) or (..., in_features)
+            g = grads[name]
             try:
                 if g.shape[-1] == module.rank:
                     s = (g**2).mean(dim=tuple(range(g.dim() - 1)))
                 else:
-                    U = module.U  # (out, r)
-                    g_proj = g @ U  # (..., r)
+                    U = module.U
+                    g_proj = g @ U
                     s = (g_proj**2).mean(dim=tuple(range(g_proj.dim() - 1)))
 
                 if s.numel() == module.rank:

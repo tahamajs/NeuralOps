@@ -54,22 +54,11 @@ except Exception:
 logger = logging.getLogger(__name__)
 
 
-# ===========================================================================
-# Helpers
-# ===========================================================================
-
-
-
-
-# ===========================================================================
-# KV-cache helpers
-# ===========================================================================
 def _read_past_kv(past_key_value: Any, layer_idx: int):
     r"""Reads past K, V from either a tuple or a DynamicCache-style object."""
     if past_key_value is None:
         return None, None
 
-    # HF DynamicCache-style
     if hasattr(past_key_value, "key_cache") and hasattr(past_key_value, "value_cache"):
         keys = past_key_value.key_cache
         vals = past_key_value.value_cache
@@ -81,7 +70,6 @@ def _read_past_kv(past_key_value: Any, layer_idx: int):
             return k, v
         return None, None
 
-    # Tuple / list style
     if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 2:
         k, v = past_key_value[0], past_key_value[1]
         if isinstance(k, torch.Tensor) and isinstance(v, torch.Tensor):
@@ -90,14 +78,6 @@ def _read_past_kv(past_key_value: Any, layer_idx: int):
     return None, None
 
 
-# ===========================================================================
-# LoRALinear
-# ===========================================================================
-
-
-# ===========================================================================
-# DecayLinearAttention
-# ===========================================================================
 @ATTENTION_REGISTRY.register(
     "decay_linear_attention",
     supports_causal=True,
@@ -143,8 +123,6 @@ class DecayLinearAttention(BaseAttention):
     ) -> None:
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
 
-
-        # --- Resolve hidden_size ---
         hidden_size = kwargs.get("dim") or kwargs.get("hidden_size")
         if hidden_size is None and d_model is not None:
             hidden_size = d_model
@@ -169,7 +147,6 @@ class DecayLinearAttention(BaseAttention):
         if hasattr(hidden_size, "hidden_size"):
             hidden_size = hidden_size.hidden_size
 
-        # --- Resolve num_heads ---
         if num_heads is None:
             num_heads = kwargs.get("num_attention_heads")
         if num_heads is None:
@@ -191,7 +168,6 @@ class DecayLinearAttention(BaseAttention):
         self.dim: int = int(hidden_size)
         self.num_heads: int = int(num_heads)
 
-        # --- Resolve head_dim ---
         resolved_head_dim = _cfg_get(config, "head_dim", None)
         if resolved_head_dim is None and source_attn is not None:
             resolved_head_dim = getattr(source_attn, "head_dim", None)
@@ -206,7 +182,6 @@ class DecayLinearAttention(BaseAttention):
             resolved_head_dim = self.dim // max(1, self.num_heads)
         self.head_dim: int = int(resolved_head_dim)
 
-        # --- Resolve num_kv_heads (GQA) ---
         kv_heads = _cfg_get(config, "num_key_value_heads", None)
         if kv_heads is None and source_attn is not None:
             kv_heads = getattr(
@@ -231,7 +206,6 @@ class DecayLinearAttention(BaseAttention):
         self.kv_head_size: int = self.num_kv_heads * self.head_dim
         self.kv_repeat: int = max(1, self.num_heads // max(1, self.num_kv_heads))
 
-        # --- Static layer index ---
         resolved_layer_id = (
             layer_id
             if layer_id is not None
@@ -243,12 +217,10 @@ class DecayLinearAttention(BaseAttention):
         )
         self.layer_idx: int = int(resolved_layer_id)
 
-        # --- LoRA config ---
         self.lora_rank: int = int(_cfg_get(config, "lora_rank", kwargs.get("lora_rank", 16)))
         self.lora_alpha: float = float(_cfg_get(config, "lora_alpha", kwargs.get("lora_alpha", 32.0)))
         self.freeze_base: bool = self.lora_rank > 0
 
-        # --- Decoder / nested-encoder detection ---
         model_type = getattr(config, "model_type", "").lower() if config is not None else ""
         is_dec = _cfg_get(config, "is_decoder", _cfg_get(config, "is_causal", kwargs.get("is_causal", False)))
         _decoder_prefixes = (
@@ -277,7 +249,6 @@ class DecayLinearAttention(BaseAttention):
         self.is_causal: bool = bool(is_dec)
         self.is_nested_encoder: bool = bool(kwargs.get("is_nested_encoder", False))
 
-        # --- Projections ---
         self.q_proj = LoRALinear(
             self.dim,
             self.all_head_size,
@@ -311,9 +282,7 @@ class DecayLinearAttention(BaseAttention):
             freeze_base=self.freeze_base,
         )
 
-        # --- KD-FIX: lora_ prefix so KD optimizer tracks these params ---
         self.lora_decay_gate = nn.Linear(self.dim, self.num_heads, bias=True)
-        # Wide range [0.01, 0.999] via sigmoid; log_decay from -4.6 to +6.9
         self.lora_log_decay = nn.Parameter(torch.linspace(0.0, 3.0, self.num_heads))
         nn.init.zeros_(self.lora_decay_gate.weight)
         nn.init.zeros_(self.lora_decay_gate.bias)
@@ -325,7 +294,6 @@ class DecayLinearAttention(BaseAttention):
         if source_attn is not None:
             self.copy_weights(source_attn)
 
-    # ---- Compatibility properties ----
     @property
     def query(self) -> LoRALinear:
         return self.q_proj
@@ -378,9 +346,6 @@ class DecayLinearAttention(BaseAttention):
     def c_proj(self) -> LoRALinear:
         return self.out_proj
 
-    # ------------------------------------------------------------------
-    # Weight transfer
-    # ------------------------------------------------------------------
     def copy_weights(self, old_attn: Any) -> None:
         r"""Transfer pretrained projection weights with strict Frobenius norm verification."""
         if old_attn is None:
@@ -425,7 +390,6 @@ class DecayLinearAttention(BaseAttention):
             "o": (None, None),
         }
 
-        # 1. GPT-2 fused c_attn
         if hasattr(old_attn, "c_attn") and old_attn.c_attn is not None:
             c_attn_mod = old_attn.c_attn
             if hasattr(c_attn_mod, "merge") and not getattr(c_attn_mod, "merged", False):
@@ -481,7 +445,6 @@ class DecayLinearAttention(BaseAttention):
                         bias_o.data.clone() if bias_o is not None else None,
                     )
 
-        # 2. RoBERTa / BERT nested
         elif hasattr(old_attn, "self") and hasattr(old_attn.self, "query"):
             s = old_attn.self
             for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
@@ -508,7 +471,6 @@ class DecayLinearAttention(BaseAttention):
                     ),
                 )
 
-        # 3. Flat projections (DistilBERT, Qwen, LLaMA)
         else:
             proj_candidates = {
                 "q": ["q_lin", "q_proj", "query", "W_q"],
@@ -540,7 +502,6 @@ class DecayLinearAttention(BaseAttention):
                             )
                             break
 
-        # Fallback via UniversalAdapter
         missing = [
             k
             for k, (w, _) in extracted.items()
@@ -620,9 +581,6 @@ class DecayLinearAttention(BaseAttention):
                 if self.freeze_base:
                     target_mod.freeze_base_weights()
 
-    # ------------------------------------------------------------------
-    # Decay scan (chunked, numerically stable, with scaling)
-    # ------------------------------------------------------------------
     def _decay_scan_linear(
         self,
         q: torch.Tensor,
@@ -639,7 +597,6 @@ class DecayLinearAttention(BaseAttention):
         """
         B, H, L, d = q.shape
 
-        # Path 1: Hardware-fused Triton / FLA Tensor Core scan
         if (
             HAS_TRITON_DECAY
             and q.is_cuda
@@ -676,21 +633,18 @@ class DecayLinearAttention(BaseAttention):
             except Exception as e:
                 logger.debug("Triton decay scan failed, falling back to chunked PyTorch: %s", e)
 
-
         q_f = q.float()
         k_f = k.float()
         v_f = v.float()
         lambdas_f = lambdas.float()
 
-        # FIX: Proper scaling to keep scores in a reasonable range
         scale = 1.0 / math.sqrt(int(d))
         q_f = q_f * scale
 
-        # FIX: Wide decay range for both local and global context
         lambdas_f = lambdas_f.clamp(min=0.01, max=0.999)
 
         if mask is not None:
-            m_f = mask.float().unsqueeze(1).unsqueeze(-1)  # [B, 1, L, 1]
+            m_f = mask.float().unsqueeze(1).unsqueeze(-1)
             k_f = k_f * m_f
             v_f = v_f * m_f
 
@@ -805,9 +759,6 @@ class DecayLinearAttention(BaseAttention):
 
         return y.to(q.dtype)
 
-    # ------------------------------------------------------------------
-    # Forward
-    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -834,14 +785,12 @@ class DecayLinearAttention(BaseAttention):
         kv_input = encoder_hidden_states if is_cross_attention else hidden_states
         kv_len = kv_input.shape[1]
 
-        # --- 1. Read past KV cache ---
         past_k, past_v = None, None
         past_len = 0
         if past_key_value is not None and not is_cross_attention:
             past_k, past_v = _read_past_kv(past_key_value, self.layer_idx)
             past_len = past_k.shape[-2] if past_k is not None else 0
 
-        # --- 2. Projections ---
         q = self.q_proj(hidden_states).view(B, L, H, d).transpose(1, 2).contiguous()
         k_new = (
             self.k_proj(kv_input)
@@ -856,7 +805,6 @@ class DecayLinearAttention(BaseAttention):
             .contiguous()
         )
 
-        # --- 3. RoPE with past_len offset ---
         if not is_cross_attention:
             if position_embeddings is not None and isinstance(position_embeddings, tuple):
                 cos, sin = position_embeddings
@@ -874,14 +822,12 @@ class DecayLinearAttention(BaseAttention):
                 except Exception as e:
                     logger.debug("rotary_emb forward failed: %s", e)
 
-        # --- 4. KV-cache concat + update ---
         if past_k is not None and not is_cross_attention:
             k = torch.cat([past_k.to(k_new.dtype), k_new], dim=-2)
             v = torch.cat([past_v.to(v_new.dtype), v_new], dim=-2)
         else:
             k, v = k_new, v_new
 
-        # Update cache in place if DynamicCache
         new_past_key_value = past_key_value
         if not is_cross_attention and (kwargs.get("use_cache", False) or past_key_value is not None):
             if hasattr(past_key_value, "update"):
@@ -894,30 +840,24 @@ class DecayLinearAttention(BaseAttention):
 
         full_kv_len = k.shape[-2]
 
-        # --- 5. GQA expansion ---
         if self.kv_repeat > 1:
             k = repeat_kv(k, self.kv_repeat)
             v = repeat_kv(v, self.kv_repeat)
 
-        # --- 6. Non-negative kernel feature map ---
         q = F.elu(q) + 1.0
         k = F.elu(k) + 1.0
 
-        # --- 7. Decay lambdas (KD-trackable via lora_ prefix) ---
         decay_logits = (
             self.lora_decay_gate(hidden_states).transpose(1, 2).contiguous()
             + self.lora_log_decay.view(1, -1, 1)
         )
-        # FIX: wide range [0.01, 0.999] for local + global context
         lambdas = torch.sigmoid(decay_logits).clamp(min=0.01, max=0.999)
 
-        # --- 8. Valid mask ---
         eff_mask = encoder_attention_mask if is_cross_attention else attention_mask
         mask_bool = None
         if eff_mask is not None:
             mask_bool = get_token_valid_mask(eff_mask, B, full_kv_len, hidden_states.device)
 
-        # --- 9. Linear decay scan ---
         y_fwd = self._decay_scan_linear(q, k, v, lambdas, mask=mask_bool, reverse=False)
 
         if self.is_decoder or is_cross_attention:
@@ -926,7 +866,6 @@ class DecayLinearAttention(BaseAttention):
             y_bwd = self._decay_scan_linear(q, k, v, lambdas, mask=mask_bool, reverse=True)
             y = 0.5 * (y_fwd + y_bwd)
 
-        # --- 10. head_mask ---
         if head_mask is not None:
             if head_mask.dim() == 1:
                 head_mask = head_mask.view(1, -1, 1, 1)
@@ -939,7 +878,6 @@ class DecayLinearAttention(BaseAttention):
         y = torch.nan_to_num(y, nan=0.0)
         out = y.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
 
-        # --- 11. Output projection (nested encoder bypass) ---
         if self.is_nested_encoder:
             final_out = out
         else:
@@ -948,7 +886,6 @@ class DecayLinearAttention(BaseAttention):
         if mask_bool is not None and not is_cross_attention and mask_bool.shape[-1] == L:
             final_out = final_out * mask_bool.unsqueeze(-1).to(final_out.dtype)
 
-        # --- 12. Return ---
         present = new_past_key_value if (self.is_decoder and not is_cross_attention) else None
         if output_attentions:
             return (final_out, present, None)
@@ -959,9 +896,6 @@ class DecayLinearAttention(BaseAttention):
         return torch.tensor(0.0, device=self.out_proj.weight.device)
 
 
-# ===========================================================================
-# Injection
-# ===========================================================================
 def inject_decay_linear(
     layer: Any = None,
     model: Any = None,
@@ -985,7 +919,6 @@ def inject_decay_linear(
 
     cfg = model_config if model_config is not None else getattr(target, "config", None)
 
-    # Whole-model traversal
     layer_list = None
     if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
         layer_list = target.distilbert.transformer.layer
@@ -1025,7 +958,6 @@ def inject_decay_linear(
                 num_injected += 1
         return target if num_injected > 0 else None
 
-    # Single-layer injection
     src_attn = old_attn
     if src_attn is None:
         for attr in ("attention", "attn", "self_attn", "self"):

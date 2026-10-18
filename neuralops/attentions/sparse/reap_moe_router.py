@@ -48,7 +48,6 @@ def calibrate_expert_activations(
         world_size = dist.get_world_size()
         rank = dist.get_rank()
 
-    # Find all REAPMoE or REAPMoEAttention modules in the model
     target_modules: Dict[str, nn.Module] = {}
     for name, module in model.named_modules():
         if isinstance(module, REAPMoE):
@@ -62,7 +61,6 @@ def calibrate_expert_activations(
         logger.warning("No REAP MoE modules found in model for calibration.")
         return {}
 
-    # Initialize accumulators
     importance_accumulators: Dict[str, torch.Tensor] = {}
     token_counts: Dict[str, int] = {}
     for name, module in target_modules.items():
@@ -72,13 +70,11 @@ def calibrate_expert_activations(
 
     model.eval()
 
-    # Register forward hooks to capture router activations
     handles = []
     current_activations: Dict[str, torch.Tensor] = {}
 
     def make_hook(mod_name: str):
         def hook(mod, inputs, outputs):
-            # Capture inputs to router or compute scores directly
             with torch.no_grad():
                 x = inputs[0]
                 if hasattr(mod, "router_ln"):
@@ -90,7 +86,6 @@ def calibrate_expert_activations(
                 top_k = getattr(mod, "top_k", 1)
                 topk_vals, topk_indices = torch.topk(probs, top_k, dim=-1)
                 mask = torch.zeros_like(probs).scatter_(-1, topk_indices, 1.0)
-                # Weighted activation mass: probs * mask
                 weighted_mass = (probs * mask).sum(dim=0).to(torch.float64)
                 importance_accumulators[mod_name] += weighted_mass
                 token_counts[mod_name] += probs.shape[0]
@@ -100,7 +95,6 @@ def calibrate_expert_activations(
         handles.append(mod.register_forward_hook(make_hook(name)))
 
     try:
-        # Iterate through dataset / dataloader
         step = 0
         with torch.no_grad():
             for batch in dataloader_or_dataset:
@@ -112,7 +106,7 @@ def calibrate_expert_activations(
                     inp = batch.to(device)
                 else:
                     inp = batch
-                
+
                 if hasattr(model, "__call__"):
                     if isinstance(inp, torch.Tensor):
                         model(inp)
@@ -126,7 +120,6 @@ def calibrate_expert_activations(
         for h in handles:
             h.remove()
 
-    # All-reduce expert importance across all distributed ranks
     global_importance: Dict[str, torch.Tensor] = {}
     for name, accum in importance_accumulators.items():
         total_tokens = torch.tensor(token_counts[name], dtype=torch.float64, device=device)
@@ -161,7 +154,6 @@ def prune_moe_experts(
     n_experts = getattr(moe_module, "n_experts", len(moe_module.experts))
     retain_experts = max(1, min(retain_experts, n_experts))
 
-    # Identify retained and pruned experts
     sorted_indices = torch.argsort(expert_scores, descending=True).tolist()
     retained_indices = sorted(sorted_indices[:retain_experts])
     pruned_indices = sorted(sorted_indices[retain_experts:])
@@ -174,16 +166,13 @@ def prune_moe_experts(
         pruned_indices,
     )
 
-    # Slice experts ModuleList
     new_experts = nn.ModuleList([moe_module.experts[idx] for idx in retained_indices])
     moe_module.experts = new_experts
 
-    # Slice router weight and bias
     with torch.no_grad():
         retained_tensor = torch.tensor(retained_indices, device=moe_module.router.weight.device)
         if hasattr(moe_module.router, "weight") and moe_module.router.weight is not None:
             new_weight = moe_module.router.weight[retained_tensor, :].clone()
-            # Re-normalize router weights to preserve output activation scale
             norm_factor = (n_experts / retain_experts) ** 0.5
             new_weight.mul_(norm_factor)
             moe_module.router.weight = nn.Parameter(new_weight)
@@ -236,10 +225,8 @@ def distributed_reap_prune(
 
     logger.info("Starting distributed REAP pruning calibration (rank %d/%d)...", rank, world_size)
 
-    # 1. Fallback synthetic calibration data if none provided
     if dataset is None:
         logger.info("No calibration dataset provided. Using synthetic dummy activations.")
-        # Infer d_model from model
         d_model = 768
         for p in model.parameters():
             if p.ndim == 2:
@@ -248,7 +235,6 @@ def distributed_reap_prune(
         dev = device or next(model.parameters()).device
         dataset = [torch.randn(4, 32, d_model, device=dev) for _ in range(max_calibration_steps or 10)]
 
-    # 2. Calibrate expert activations across all ranks
     importance_map = calibrate_expert_activations(
         model=model,
         dataloader_or_dataset=dataset,
@@ -258,7 +244,6 @@ def distributed_reap_prune(
         device=device,
     )
 
-    # 3. Prune bottom experts and re-normalize remaining routing weights
     results = {}
     for name, module in model.named_modules():
         target_mod = None

@@ -46,13 +46,6 @@ except Exception as _e:
     MAX_REGISTER_DIM = 64
 
 
-
-
-
-
-# ===========================================================================
-# Delta-rule recurrence
-# ===========================================================================
 def _delta_chunk_forward(
     S: torch.Tensor,
     q_i: torch.Tensor,
@@ -79,28 +72,26 @@ def _delta_chunk_forward(
     curr = S
 
     for t in range(C):
-        kt = k_i[:, :, t : t + 1, :]              # (B, H, 1, d)
-        vt = v_i[:, :, t : t + 1, :]              # (B, H, 1, d)
-        qt = q_i[:, :, t : t + 1, :]              # (B, H, 1, d)
-        bt = beta_i[:, :, t : t + 1].unsqueeze(-1)   # (B, H, 1, 1)
-        at = alpha_i[:, :, t : t + 1].unsqueeze(-1)  # (B, H, 1, 1)
+        kt = k_i[:, :, t : t + 1, :]
+        vt = v_i[:, :, t : t + 1, :]
+        qt = q_i[:, :, t : t + 1, :]
+        bt = beta_i[:, :, t : t + 1].unsqueeze(-1)
+        at = alpha_i[:, :, t : t + 1].unsqueeze(-1)
 
-        # --- Pad handling: zero out K, V for padded tokens ---
         if mask_i is not None:
-            m_t = mask_i[:, :, t : t + 1].unsqueeze(-1).to(kt.dtype)  # (B, H, 1, 1)
+            m_t = mask_i[:, :, t : t + 1].unsqueeze(-1).to(kt.dtype)
             kt = kt * m_t
             vt = vt * m_t
 
-        # --- Recurrence ---
-        inter_v = torch.matmul(kt, curr)             # (B, H, 1, d)
+        inter_v = torch.matmul(kt, curr)
         err = vt - inter_v
-        norm_k_sq = (kt * kt).sum(dim=-1, keepdim=True)  # (B, H, 1, 1)
+        norm_k_sq = (kt * kt).sum(dim=-1, keepdim=True)
         step = at / (1.0 + norm_k_sq).clamp_min(1.0)
         delta = step * torch.matmul(kt.transpose(-1, -2).contiguous(), err)
         curr = bt * curr + delta
         curr = torch.nan_to_num(curr, nan=0.0, posinf=1e4, neginf=-1e4)
 
-        yt = torch.matmul(qt, curr)                  # (B, H, 1, d)
+        yt = torch.matmul(qt, curr)
         outs.append(yt)
 
     return torch.cat(outs, dim=2), curr
@@ -140,12 +131,10 @@ def chunked_delta_rule_scan(
     beta_f = beta.float().clamp(min=1e-4, max=1.0 - 1e-4)
     alpha_f = alpha.float().clamp(min=1e-4, max=1.0)
 
-    # Expand mask to (B, H, L) for per-head use
     mask_h = None
     if mask is not None:
         mask_h = mask[:, None, :].expand(-1, H, -1).contiguous()
 
-    # --- Triton scan path (with full initial_state & mask support) ---
     if (
         HAS_TRITON_GDN
         and gdn_scan_triton is not None
@@ -170,14 +159,12 @@ def chunked_delta_rule_scan(
         except Exception as e:
             logger.warning("Triton gdn_scan failed, falling back to PyTorch: %s", e)
 
-    # --- Optional FLA chunk_gdn path for inference (when not requires_grad) ---
     if q.is_cuda and d <= 64 and initial_state is None and mask_h is None and not (q.requires_grad or k.requires_grad or v.requires_grad):
         try:
             from fla.ops import chunk_gdn
             q_fl = q.transpose(1, 2).contiguous()
             k_fl = k.transpose(1, 2).contiguous()
             v_fl = v.transpose(1, 2).contiguous()
-            # g in FLA is the log-decay gate [B, T, H]
             log_g = torch.log(beta_f.clamp(min=1e-4, max=1.0)).transpose(1, 2).to(q.dtype).contiguous()
             step_beta = alpha_f.transpose(1, 2).to(q.dtype).contiguous()
             res = chunk_gdn(q_fl, k_fl, v_fl, log_g, step_beta)
@@ -188,21 +175,17 @@ def chunked_delta_rule_scan(
         except Exception:
             pass
 
-    # --- PyTorch fallback ---
-    # Initialize state
     if initial_state is not None:
         S = initial_state.to(device=device, dtype=torch.float32).clone()
     else:
         S = torch.zeros((B, H, d, d), device=device, dtype=torch.float32)
 
-    # --- Single-token case (autoregressive decode) ---
     if L == 1:
         y_i, S_out = _delta_chunk_forward(
             S, q_f, k_f, v_f, beta_f, alpha_f, mask_h
         )
         return torch.nan_to_num(y_i, nan=0.0).to(q.dtype), S_out
 
-    # --- Chunked prefill ---
     pad_len = (chunk_size - L % chunk_size) % chunk_size
     if pad_len > 0:
         q_f = F.pad(q_f, (0, 0, 0, pad_len))
@@ -261,9 +244,6 @@ def chunked_delta_rule_scan(
     return torch.nan_to_num(y, nan=0.0).to(q.dtype), S
 
 
-# ===========================================================================
-# GatedDeltaNet
-# ===========================================================================
 @ATTENTION_REGISTRY.register(
     "gated_delta_net",
     supports_causal=True,
@@ -304,7 +284,6 @@ class GatedDeltaNet(BaseAttention):
     ) -> None:
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
 
-        # ---- Resolve d_model ----
         if d_model is None:
             d_model = (
                 kwargs.get("d_model")
@@ -340,7 +319,6 @@ class GatedDeltaNet(BaseAttention):
         if hasattr(d_model, "hidden_size"):
             d_model = d_model.hidden_size
 
-        # ---- Resolve num_heads ----
         if num_heads is None:
             num_heads = kwargs.get("num_heads") or kwargs.get("num_attention_heads")
             if num_heads is None and config is not None:
@@ -362,7 +340,6 @@ class GatedDeltaNet(BaseAttention):
             if num_heads is None:
                 num_heads = 12
 
-        # None-safe super().__init__
         try:
             super().__init__(config, rank if rank is not None else 64)
         except TypeError:
@@ -371,7 +348,6 @@ class GatedDeltaNet(BaseAttention):
         self.d_model = int(d_model)
         self.num_heads = max(1, int(num_heads))
 
-        # ---- Resolve num_kv_heads (GQA) ----
         cfg_kv = None
         if config is not None:
             cfg_kv = getattr(
@@ -382,7 +358,6 @@ class GatedDeltaNet(BaseAttention):
         self.num_kv_heads = max(1, min(int(cfg_kv), self.num_heads))
         self.kv_repeat = max(1, self.num_heads // self.num_kv_heads)
 
-        # ---- Resolve head_dim ----
         head_dim = getattr(config, "head_dim", None) if config else None
         if head_dim is None and source_attn is not None:
             for q_cand in ("q_proj", "query", "q_lin", "W_q"):
@@ -396,7 +371,6 @@ class GatedDeltaNet(BaseAttention):
         self.all_head_size = self.num_heads * self.head_dim
         self.kv_head_size = self.num_kv_heads * self.head_dim
 
-        # ---- Layer index ----
         resolved_layer_id = (
             layer_id
             if layer_id is not None
@@ -408,7 +382,6 @@ class GatedDeltaNet(BaseAttention):
         )
         self.layer_idx = int(resolved_layer_id)
 
-        # ---- LoRA ----
         if config is not None:
             self.lora_rank = int(
                 getattr(
@@ -435,14 +408,11 @@ class GatedDeltaNet(BaseAttention):
             self.lora_rank = int(kwargs.get("lora_rank", 16))
             self.lora_alpha = float(kwargs.get("lora_alpha", 32.0))
 
-        # By default do NOT freeze base projections so gradients propagate directly to base weights
-        # during end-to-end task fine-tuning and distillation, unless explicitly requested.
         explicit_freeze = kwargs.get("freeze_base", None)
         if explicit_freeze is None and comp_config is not None:
             explicit_freeze = getattr(comp_config, "freeze_base", None)
         self.freeze_base = bool(explicit_freeze) if explicit_freeze is not None else False
 
-        # ---- Decoder detection ----
         model_type = str(getattr(config, "model_type", "") if config else "").lower()
         is_dec = False
         if config is not None:
@@ -476,7 +446,6 @@ class GatedDeltaNet(BaseAttention):
         self.is_decoder = bool(is_dec)
         self.is_causal = self.is_decoder
 
-        # ---- Nested encoder detection ----
         is_nested = False
         if source_attn is not None:
             src_cls = source_attn.__class__.__name__
@@ -503,7 +472,6 @@ class GatedDeltaNet(BaseAttention):
             is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
-        # ---- Projections ----
         self.q_proj = LoRALinear(
             self.d_model, self.all_head_size, bias=True,
             lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
@@ -530,20 +498,15 @@ class GatedDeltaNet(BaseAttention):
             freeze_base=self.freeze_base,
         )
 
-        # ---- KD-compatible gates (lora_ prefix) ----
-        # [GDN-FIX-07] Renamed from beta_proj / alpha_proj / output_scale
         self.lora_output_scale = nn.Parameter(torch.ones(1))
         self.lora_beta_proj = nn.Linear(self.d_model, self.num_heads, bias=True)
         self.lora_alpha_proj = nn.Linear(self.d_model, self.num_heads, bias=True)
         with torch.no_grad():
-            # beta init ~ sigmoid(2.0) ≈ 0.88  → mostly retain memory
             nn.init.constant_(self.lora_beta_proj.bias, 2.0)
             nn.init.zeros_(self.lora_beta_proj.weight)
-            # alpha init ~ sigmoid(0.0) = 0.5 → moderate step size
             nn.init.constant_(self.lora_alpha_proj.bias, 0.0)
             nn.init.zeros_(self.lora_alpha_proj.weight)
 
-        # ---- Chunk size ----
         cs = int(_cfg_get(comp_config, "chunk_size", kwargs.get("chunk_size", 32)))
         self.chunk_size = max(8, min(cs, 128))
 
@@ -553,16 +516,12 @@ class GatedDeltaNet(BaseAttention):
         )
         self.comp_config = comp_config
 
-        # ---- Storage accounting ----
         self._orig_storage_bytes = 0
         self._comp_storage_bytes = 0
 
         if source_attn is not None:
             self.copy_weights(source_attn)
 
-    # ------------------------------------------------------------------
-    # Backward-compat aliases for the old (unprefixed) gate names
-    # ------------------------------------------------------------------
     @property
     def beta_proj(self) -> nn.Linear:
         return self.lora_beta_proj
@@ -580,7 +539,6 @@ class GatedDeltaNet(BaseAttention):
             if hasattr(m, "freeze_base_weights"):
                 m.freeze_base_weights()
 
-    # ---- HF state-dict compatibility aliases ----
     @property
     def W_q(self): return self.q_proj
     @property
@@ -608,33 +566,26 @@ class GatedDeltaNet(BaseAttention):
     @property
     def c_proj(self): return self.out_proj
 
-    # ------------------------------------------------------------------
-    # KV-cache helpers
-    # ------------------------------------------------------------------
     @staticmethod
     def _read_past_state(past_key_value: Any) -> torch.Tensor | None:
         """Extract the recurrent state from a cache object or tuple."""
         if past_key_value is None or past_key_value is False:
             return None
 
-        # Tuple / list of state tensors (our convention)
         if isinstance(past_key_value, (tuple, list)):
             if len(past_key_value) >= 1 and isinstance(past_key_value[0], torch.Tensor):
                 s = past_key_value[0]
                 if s.dim() == 4 and s.shape[-1] == s.shape[-2]:
                     return s
 
-        # HF DynamicCache-style (unlikely for GDN but handle gracefully)
         if hasattr(past_key_value, "key_cache") and hasattr(past_key_value, "value_cache"):
-            return None  # GDN doesn't use K/V cache
+            return None
 
         return None
 
     @staticmethod
     def _write_past_state(state: torch.Tensor, past_key_value: Any) -> Any:
         """Package the new state into the cache format."""
-        # If caller gave us a dynamic cache with an `update` method, we cannot
-        # use it (it expects K/V), so return a tuple instead.
         if (
             past_key_value is not None
             and hasattr(past_key_value, "update")
@@ -643,9 +594,6 @@ class GatedDeltaNet(BaseAttention):
             return (state,)
         return (state,)
 
-    # ------------------------------------------------------------------
-    # Mask helper
-    # ------------------------------------------------------------------
     @staticmethod
     def _normalize_valid_mask(
         mask: torch.Tensor | None, B: int, L: int, device: torch.device
@@ -678,9 +626,6 @@ class GatedDeltaNet(BaseAttention):
                 return m
         return None
 
-    # ------------------------------------------------------------------
-    # Weight transfer
-    # ------------------------------------------------------------------
     def copy_weights(self, old_attn: Any) -> None:
         if old_attn is None:
             return
@@ -722,7 +667,6 @@ class GatedDeltaNet(BaseAttention):
             "v": (None, None), "o": (None, None),
         }
 
-        # --- GPT-2 fused c_attn ---
         if hasattr(old_attn, "c_attn") and old_attn.c_attn is not None:
             c = old_attn.c_attn
             if hasattr(c, "merge") and callable(c.merge) and not getattr(c, "merged", False):
@@ -774,7 +718,6 @@ class GatedDeltaNet(BaseAttention):
                     bo = getattr(base_o, "bias", getattr(o, "bias", None))
                     extracted["o"] = (ow, bo.data.clone() if bo is not None else None)
 
-        # --- BERT / RoBERTa nested ---
         elif hasattr(old_attn, "self") and hasattr(old_attn.self, "query"):
             s = old_attn.self
             for key, sub in (("q", "query"), ("k", "key"), ("v", "value")):
@@ -793,7 +736,6 @@ class GatedDeltaNet(BaseAttention):
                     b.data.clone() if b is not None else None,
                 )
 
-        # --- Flat projections ---
         else:
             candidates = {
                 "q": ("q_lin", "q_proj", "query", "W_q"),
@@ -813,7 +755,6 @@ class GatedDeltaNet(BaseAttention):
                             )
                             break
 
-        # --- UniversalAdapter fallback ---
         missing = [
             k
             for k, (w, _) in extracted.items()
@@ -886,7 +827,6 @@ class GatedDeltaNet(BaseAttention):
                 if self.freeze_base:
                     target.freeze_base_weights()
 
-            # z_proj from q
             w_q = extracted["q"][0]
             if w_q is not None:
                 out_z = min(self.z_proj.weight.size(0), w_q.size(0))
@@ -899,7 +839,6 @@ class GatedDeltaNet(BaseAttention):
                 if self.freeze_base:
                     self.z_proj.freeze_base_weights()
 
-        # ---- Storage accounting ----
         try:
             for m in (
                 self.q_proj, self.k_proj, self.v_proj,
@@ -913,9 +852,6 @@ class GatedDeltaNet(BaseAttention):
         if self.freeze_base:
             self.freeze_base_weights()
 
-    # ------------------------------------------------------------------
-    # Forward
-    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -942,7 +878,6 @@ class GatedDeltaNet(BaseAttention):
         kv_input = encoder_hidden_states if is_cross else hidden_states
         kv_len = kv_input.shape[1]
 
-        # ---- 1. Read past recurrent state ----
         past_state = None
         past_len = 0
         if not is_cross and past_key_value is not None:
@@ -955,7 +890,6 @@ class GatedDeltaNet(BaseAttention):
                     ):
                         past_len = past_key_value[1]
 
-        # ---- 2. Projections ----
         q = self.q_proj(hidden_states).view(B, L, H, d).transpose(1, 2).contiguous()
         k = (
             self.k_proj(kv_input)
@@ -971,7 +905,6 @@ class GatedDeltaNet(BaseAttention):
         )
         z = self.z_proj(hidden_states)
 
-        # ---- 3. RoPE ----
         if not is_cross:
             if position_embeddings is not None and isinstance(
                 position_embeddings, tuple
@@ -999,32 +932,28 @@ class GatedDeltaNet(BaseAttention):
                 except Exception as e:
                     logger.debug("rotary_emb forward failed: %s", e)
 
-        # ---- 4. GQA expansion ----
         if self.num_kv_heads != self.num_heads:
             k = repeat_kv(k, self.kv_repeat)
             v = repeat_kv(v, self.kv_repeat)
 
-        # ---- 5. Gates (lora_ prefix) ----
         hs_beta = hidden_states.to(self.lora_beta_proj.weight.dtype)
         beta = (
             torch.sigmoid(self.lora_beta_proj(hs_beta))
             .transpose(1, 2)
             .contiguous()
-        )  # (B, H, L)
+        )
         hs_alpha = hidden_states.to(self.lora_alpha_proj.weight.dtype)
         alpha = (
             torch.sigmoid(self.lora_alpha_proj(hs_alpha))
             .transpose(1, 2)
             .contiguous()
-        )  # (B, H, L)
+        )
 
-        # ---- 6. Mask ----
         eff_mask = encoder_attention_mask if is_cross else attention_mask
         mask_bool = self._normalize_valid_mask(
             eff_mask, B, kv_len, hidden_states.device
         )
 
-        # ---- 7. Delta scan with state passthrough ----
         y_fwd, present_state = chunked_delta_rule_scan(
             q, k, v, beta, alpha,
             initial_state=past_state,
@@ -1032,7 +961,6 @@ class GatedDeltaNet(BaseAttention):
             chunk_size=self.chunk_size,
         )
 
-        # ---- 8. Bidirectional scan for encoders ----
         if not self.is_decoder:
             q_b = torch.flip(q, dims=[2])
             k_b = torch.flip(k, dims=[2])
@@ -1051,7 +979,6 @@ class GatedDeltaNet(BaseAttention):
         else:
             y = y_fwd
 
-        # ---- 9. head_mask ----
         if head_mask is not None:
             hm = head_mask.to(y.dtype)
             if hm.dim() == 1:
@@ -1062,12 +989,10 @@ class GatedDeltaNet(BaseAttention):
                 hm = hm.unsqueeze(1)
             y = y * hm
 
-        # ---- 10. Recombine + SiLU gating ----
         y = torch.nan_to_num(y, nan=0.0, posinf=1e4, neginf=-1e4)
         y = y.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
         gated_y = y.to(z.dtype) * F.silu(z)
 
-        # ---- 11. Output projection ----
         if self.is_nested_encoder:
             out = gated_y
         else:
@@ -1076,11 +1001,9 @@ class GatedDeltaNet(BaseAttention):
         out = out * self.lora_output_scale
         out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
 
-        # ---- 12. Final output masking (single application) ----
         if mask_bool is not None:
             out = out * mask_bool.unsqueeze(-1).to(out.dtype)
 
-        # ---- 13. Package the new state ----
         present_kv = None
         use_cache = kwargs.get("use_cache", False) or (
             past_key_value is not None and past_key_value is not False
@@ -1115,8 +1038,7 @@ class GatedDeltaNet(BaseAttention):
             state = {}
         step_idx = state.get("step_idx", 0)
 
-        # 1. Projections
-        q = self.q_proj(x).view(B, 1, H, d).transpose(1, 2).contiguous()  # [B, H, 1, d]
+        q = self.q_proj(x).view(B, 1, H, d).transpose(1, 2).contiguous()
         k = self.k_proj(x).view(B, 1, self.num_kv_heads, d).transpose(1, 2).contiguous()
         v = self.v_proj(x).view(B, 1, self.num_kv_heads, d).transpose(1, 2).contiguous()
         z = self.z_proj(x)
@@ -1125,24 +1047,21 @@ class GatedDeltaNet(BaseAttention):
             k = repeat_kv(k, self.kv_repeat)
             v = repeat_kv(v, self.kv_repeat)
 
-        # 2. L2 normalize Q and K
         q_norm = F.normalize(q, p=2, dim=-1, eps=1e-12)
         k_norm = F.normalize(k, p=2, dim=-1, eps=1e-12)
 
-        # 3. Gates
-        beta = torch.sigmoid(self.lora_beta_proj(x)).view(B, 1, H).transpose(1, 2).squeeze(-1)    # [B, H]
-        alpha = torch.sigmoid(self.lora_alpha_proj(x)).view(B, 1, H).transpose(1, 2).squeeze(-1)  # [B, H]
+        beta = torch.sigmoid(self.lora_beta_proj(x)).view(B, 1, H).transpose(1, 2).squeeze(-1)
+        alpha = torch.sigmoid(self.lora_alpha_proj(x)).view(B, 1, H).transpose(1, 2).squeeze(-1)
 
         if "kv_state" not in state or state["kv_state"] is None:
             state["kv_state"] = torch.zeros((B, H, d, d), device=device, dtype=torch.float32)
 
         kv_state = state["kv_state"]
 
-        q_t = q_norm.squeeze(2)  # [B, H, d]
+        q_t = q_norm.squeeze(2)
         k_t = k_norm.squeeze(2)
         v_t = v.squeeze(2)
 
-        # 4. Fused GDN step: S_t = beta * S_{t-1} + alpha * k_t \otimes (v_t - S_{t-1}^T @ k_t)
         out_t, kv_state = fused_recurrent_gdn_step(
             q_t, k_t, v_t, beta, alpha, kv_state, scale=1.0
         )
@@ -1163,9 +1082,6 @@ class GatedDeltaNet(BaseAttention):
 
         return out, state
 
-    # ------------------------------------------------------------------
-    # Storage accounting
-    # ------------------------------------------------------------------
     def storage_bytes(self) -> dict[str, int]:
         def _sz(p):
             if isinstance(p, (nn.Parameter, torch.Tensor)):
@@ -1194,9 +1110,6 @@ class GatedDeltaNet(BaseAttention):
             return torch.tensor(0.0)
 
 
-# ===========================================================================
-# Injection
-# ===========================================================================
 def inject_gated_delta_net(
     layer: Any = None,
     model: Any = None,
@@ -1220,7 +1133,6 @@ def inject_gated_delta_net(
     if cfg is None and hasattr(target, "config"):
         cfg = target.config
 
-    # ---- Whole-model traversal ----
     layer_list = None
     if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
         layer_list = target.distilbert.transformer.layer
@@ -1258,7 +1170,6 @@ def inject_gated_delta_net(
                 n_inj += 1
         return target if n_inj > 0 else None
 
-    # ---- Single-layer injection ----
     src_attn = old_attn
     if src_attn is None and target is not None:
         for attr in ("attention", "self_attn", "attn", "self"):
@@ -1270,7 +1181,6 @@ def inject_gated_delta_net(
     if src_attn is None and target is not None and hasattr(target, "forward"):
         src_attn = target
 
-    # Idempotency guard
     if src_attn is not None and (
         isinstance(src_attn, GatedDeltaNet)
         or "GatedDeltaNet" in src_attn.__class__.__name__
@@ -1316,13 +1226,11 @@ def inject_gated_delta_net(
         )
         return None
 
-    # ---- Move to same device/dtype as source ----
     if src_attn is not None and src_attn is not target:
         p = next(src_attn.parameters(), None)
         if p is not None:
             new_block.to(device=p.device, dtype=p.dtype)
 
-    # ---- Splice ----
     if target is not None:
         if hasattr(target, "attention"):
             if hasattr(target.attention, "self"):

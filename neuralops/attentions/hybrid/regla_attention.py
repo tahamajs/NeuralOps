@@ -22,13 +22,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 logger = logging.getLogger(__name__)
 
 
-
-
-
-
-# ===========================================================================
-# ReGLAAttention
-# ===========================================================================
 @ATTENTION_REGISTRY.register("regla_attention")
 class ReGLAAttention(BaseAttention):
     """ReGLAAttention neural operator.
@@ -61,13 +54,11 @@ class ReGLAAttention(BaseAttention):
         comp_config = getattr(config, "compression_config", None) if config else None
         src = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn")
 
-        # -------- hidden_size --------
         dim = hidden_size
         if dim is None:
             dim = _cfg_get(config, "hidden_size", kwargs.get("hidden_size", 768))
         self.dim = int(dim)
 
-        # -------- num_heads --------
         n_heads = num_heads
         if n_heads is None:
             n_heads = _cfg_get(config, "num_attention_heads", kwargs.get("num_attention_heads", 12))
@@ -81,7 +72,6 @@ class ReGLAAttention(BaseAttention):
             n_heads = max(1, self.dim // 64)
         self.num_heads = max(1, int(n_heads))
 
-        # -------- head_dim --------
         cfg_hd = _cfg_get(config, "head_dim", None)
         if cfg_hd is not None:
             self.head_dim = int(cfg_hd)
@@ -102,7 +92,6 @@ class ReGLAAttention(BaseAttention):
         if self.dim % self.num_heads != 0:
             self.head_dim = self.dim // self.num_heads
 
-        # -------- num_kv_heads --------
         self.num_kv_heads = int(
             _cfg_get(
                 config,
@@ -121,7 +110,6 @@ class ReGLAAttention(BaseAttention):
 
         self.conv_scale = nn.Parameter(torch.zeros(1))
 
-        # -------- is_decoder --------
         if is_decoder is not None:
             self.is_decoder = bool(is_decoder)
         else:
@@ -149,7 +137,6 @@ class ReGLAAttention(BaseAttention):
         self.is_causal = self.is_decoder
         self.is_nested_encoder = False
 
-        # -------- LoRA config --------
         self.lora_rank = int(
             _cfg_get(
                 config,
@@ -166,7 +153,6 @@ class ReGLAAttention(BaseAttention):
         )
         self.freeze_base = self.lora_rank > 0
 
-        # -------- device/dtype --------
         target_dtype = kwargs.get("dtype")
         target_device = kwargs.get("device")
         if target_dtype is None and src is not None:
@@ -178,7 +164,6 @@ class ReGLAAttention(BaseAttention):
         if target_dtype is None:
             target_dtype = torch.float32
 
-        # -------- projections --------
         self.q_proj = LoRALinear(
             self.dim,
             self.all_head_size,
@@ -230,7 +215,6 @@ class ReGLAAttention(BaseAttention):
             dtype=target_dtype,
         )
 
-        # Aliases
         self.query = self.q_proj
         self.key = self.k_proj
         self.value = self.v_proj
@@ -240,7 +224,6 @@ class ReGLAAttention(BaseAttention):
         self.out_lin = self.out_proj
         self.dense = self.out_proj
 
-        # Conv1d
         self.conv = nn.Conv1d(
             in_channels=self.dim,
             out_channels=self.dim,
@@ -259,7 +242,6 @@ class ReGLAAttention(BaseAttention):
         if src is not None:
             self.copy_weights(src)
 
-    # ------------------------------------------------------------------
     def copy_weights(self, src: Any) -> None:
         if src is None:
             return
@@ -300,7 +282,6 @@ class ReGLAAttention(BaseAttention):
         def _unwrap_linear(layer: Any) -> Any:
             return getattr(layer, "base_layer", layer)
 
-        # GPT-2 fused
         if hasattr(src, "c_attn") and src.c_attn is not None:
             c_attn_mod = _unwrap_linear(src.c_attn)
             c_w = c_attn_mod.weight.data.clone() if hasattr(c_attn_mod, "weight") else None
@@ -343,7 +324,6 @@ class ReGLAAttention(BaseAttention):
                         bias_o.data.clone() if bias_o is not None else None,
                     )
 
-        # RoBERTa nested (outer container)
         elif hasattr(src, "self") and hasattr(src.self, "query"):
             s = src.self
             for proj_key, sub_name in (("q", "query"), ("k", "key"), ("v", "value")):
@@ -360,7 +340,6 @@ class ReGLAAttention(BaseAttention):
                     out_mod.bias.data.clone() if out_mod.bias is not None else None,
                 )
 
-        # Flat modules
         else:
             proj_candidates = {
                 "q": ["q_lin", "q_proj", "query"],
@@ -460,7 +439,6 @@ class ReGLAAttention(BaseAttention):
                 if self.freeze_base:
                     target_mod.freeze_base_weights()
 
-    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -507,7 +485,6 @@ class ReGLAAttention(BaseAttention):
             .contiguous()
         )
 
-        # RoPE with past_len offset
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None:
@@ -522,18 +499,15 @@ class ReGLAAttention(BaseAttention):
             sin = sin[..., past_len : past_len + L, :]
             q, k = apply_rotary_pos_emb(q, k, cos, sin)
 
-        # GQA expansion
         if self.num_heads != self.num_kv_heads:
             k = repeat_kv(k, self.kv_repeat)
             v = repeat_kv(v, self.kv_repeat)
             g = repeat_kv(g, self.kv_repeat)
 
-        # Non-negative kernel activation & gating
         q_act = F.elu(q.float()) + 1.0
         k_act = F.elu(k.float()) + 1.0
         g_sig = torch.sigmoid(g.float())
 
-        # Valid mask
         if attention_mask is not None:
             if attention_mask.dim() == 2:
                 valid_mask = (
@@ -628,7 +602,6 @@ class ReGLAAttention(BaseAttention):
 
         out = out.permute(0, 2, 1, 3).contiguous().view(B, L, self.all_head_size).to(dtype)
 
-        # Depthwise 1D conv branch
         x_in = (x * valid_mask.unsqueeze(-1).to(dtype)).permute(0, 2, 1)
         conv_w = self.conv.weight.to(dtype)
         conv_b = self.conv.bias.to(dtype) if self.conv.bias is not None else None
@@ -678,9 +651,6 @@ class ReGLAAttention(BaseAttention):
         return output.to(dtype), None
 
 
-# ===========================================================================
-# Injector
-# ===========================================================================
 @ATTENTION_REGISTRY.register("regla_attention")
 def inject_regla(
     model: nn.Module | None = None,
@@ -705,7 +675,6 @@ def inject_regla(
 
     cfg = model_config if model_config is not None else getattr(target, "config", None)
 
-    # Whole model traversal
     layer_list = None
     if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
         layer_list = target.distilbert.transformer.layer
@@ -745,7 +714,6 @@ def inject_regla(
                 num_injected += 1
         return target if num_injected > 0 else None
 
-    # Single layer injection
     try:
         src_attn = old_attn
         if src_attn is None:
@@ -753,8 +721,6 @@ def inject_regla(
                 if hasattr(target, attr):
                     cand = getattr(target, attr)
                     if isinstance(cand, nn.Module) and cand is not target:
-                        # RE-18: pass the OUTER container (cand) so copy_weights
-                        # can extract output projection for nested models.
                         src_attn = cand
                         break
         if src_attn is None:
@@ -800,7 +766,6 @@ def inject_regla(
             or _cfg_get(cfg, "num_attention_heads", 12)
         )
 
-        # RE-19: propagate kernel_size, chunk_size, rank from comp_config
         attn_kwargs = {}
         if comp_config is not None:
             for key in ("kernel_size", "chunk_size", "rank"):
@@ -824,7 +789,6 @@ def inject_regla(
         if p is not None:
             new_attn.to(device=p.device, dtype=p.dtype)
 
-        # RE-20: ensure out_proj is Identity when attaching to nested encoder
         if hasattr(target, "attention"):
             if hasattr(target.attention, "self"):
                 new_attn.is_nested_encoder = True

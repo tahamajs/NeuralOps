@@ -30,9 +30,6 @@ from neuralops.core.utils.gqa import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
 
 
-# ===========================================================================
-# SVDLinear
-# ===========================================================================
 class SVDLinear(nn.Module):
     is_custom_attention: bool = True
 
@@ -82,9 +79,6 @@ class SVDLinear(nn.Module):
         return out.to(target_dtype)
 
 
-# ===========================================================================
-# REAP-MoE block
-# ===========================================================================
 class REAPMoE(nn.Module):
     def __init__(
         self,
@@ -117,7 +111,6 @@ class REAPMoE(nn.Module):
         nn.init.uniform_(self.router.weight, -0.01, 0.01)
 
         if use_svd:
-
             def expert_layer():
                 return nn.Sequential(
                     SVDLinear(d_model, d_model, rank=max(1, d_model // 8), **factory_kwargs),
@@ -126,7 +119,6 @@ class REAPMoE(nn.Module):
                 )
 
         else:
-
             def expert_layer():
                 return nn.Sequential(
                     nn.Linear(d_model, d_model, **factory_kwargs),
@@ -197,9 +189,6 @@ class REAPMoE(nn.Module):
         return out, aux_loss
 
 
-# ===========================================================================
-# REAP-MoE Attention
-# ===========================================================================
 @ATTENTION_REGISTRY.register("reap_moe")
 class REAPMoEAttention(BaseAttention):
     """REAPMoEAttention neural operator.
@@ -221,17 +210,15 @@ class REAPMoEAttention(BaseAttention):
         pretrained_attn: nn.Module | None = None,
         is_decoder: bool | None = None,
         pre_ln: bool | None = None,
-        comp_config: Any | None = None,  # RP-FIX-21
+        comp_config: Any | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(config, rank or 64)
         self.config = config
-        # If comp_config passed, prefer it; else fall back to config attribute.
         if comp_config is None:
             comp_config = getattr(config, "compression_config", None)
         self.comp_config = comp_config
 
-        # RP-FIX-10: strict hidden_size
         h_size = (
             kwargs.get("hidden_size")
             or getattr(config, "hidden_size", None)
@@ -266,7 +253,6 @@ class REAPMoEAttention(BaseAttention):
             or getattr(config, "num_kv_heads", None)
             or self.num_heads
         )
-        # RP-FIX-23
         self.num_kv_heads = min(self.num_kv_heads, self.num_heads)
         self.head_dim = (
             kwargs.get("head_dim")
@@ -277,16 +263,12 @@ class REAPMoEAttention(BaseAttention):
         self.all_head_size = self.num_heads * self.head_dim
         self.all_kv_head_size = self.num_kv_heads * self.head_dim
 
-        # RP-FIX-11
         self.is_decoder = _detect_decoder(config, is_decoder, pretrained_attn)
-        self.is_nested_encoder = False  # RP-FIX-22
+        self.is_nested_encoder = False
 
-        # RP-FIX-12
         if pre_ln is None:
             pre_ln = getattr(config, "pre_ln", True) if config is not None else True
         self.pre_ln = bool(pre_ln)
-        # Standalone attention mode: when replacing a pure attention submodule (e.g. model.h[i].attn),
-        # return the attention projection without adding external residual/LayerNorm/MoE block twice.
         self.standalone_attn = bool(
             kwargs.get("standalone_attn", kwargs.get("pure_attention", True))
         )
@@ -357,7 +339,6 @@ class REAPMoEAttention(BaseAttention):
             dtype=target_dtype,
         )
 
-        # Aliases
         self.q_proj = self.q_lin
         self.k_proj = self.k_lin
         self.v_proj = self.v_lin
@@ -398,7 +379,6 @@ class REAPMoEAttention(BaseAttention):
     def aux_loss(self) -> torch.Tensor:
         return self.moe.aux_loss
 
-    # ------------------------------------------------------------------
     def copy_weights(self, src: Any) -> None:
         if src is None:
             return
@@ -436,7 +416,6 @@ class REAPMoEAttention(BaseAttention):
             "o": (None, None),
         }
 
-        # GPT-2 fused
         if hasattr(src, "c_attn") and src.c_attn is not None:
             c_attn_mod = src.c_attn
             base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
@@ -483,7 +462,6 @@ class REAPMoEAttention(BaseAttention):
                         bias_o.data.clone() if bias_o is not None else None,
                     )
 
-        # RoBERTa / BERT nested
         elif hasattr(src, "self") and hasattr(src.self, "query"):
             s = src.self
             for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
@@ -500,7 +478,6 @@ class REAPMoEAttention(BaseAttention):
                     out_mod.bias.data.clone() if out_mod.bias is not None else None,
                 )
 
-        # Flat modules
         else:
             proj_candidates = {
                 "q": ["q_lin", "q_proj", "query"],
@@ -519,7 +496,6 @@ class REAPMoEAttention(BaseAttention):
                             )
                             break
 
-        # UniversalAdapter fallback
         missing = [
             k
             for k, (w, _) in extracted.items()
@@ -560,7 +536,6 @@ class REAPMoEAttention(BaseAttention):
                 w, b = extracted[proj_key]
                 if w is None:
                     if proj_key == "o" and self.is_nested_encoder:
-                        # For nested, out_lin will be Identity (set below).
                         continue
                     else:
                         raise RuntimeError(f"REAPMoEAttention: missing weight for {proj_key}.")
@@ -610,13 +585,9 @@ class REAPMoEAttention(BaseAttention):
             for mod in [self.q_lin, self.k_lin, self.v_lin, self.out_lin]:
                 mod.freeze_base_weights()
 
-        # RP-FIX-16: nested encoder should NOT apply its own out_lin.
         if self.is_nested_encoder:
             self.out_lin = nn.Identity()
 
-    # ------------------------------------------------------------------
-    # Mask helper (RP-FIX-20)
-    # ------------------------------------------------------------------
     @staticmethod
     def _prepare_valid_mask(
         attention_mask: torch.Tensor | None,
@@ -633,18 +604,16 @@ class REAPMoEAttention(BaseAttention):
                 return attention_mask > -1e4
             return attention_mask > 0
         if attention_mask.dim() == 3:
-            # (B, N_q, N_kv) or (B, 1, N_kv)
             if attention_mask.dtype == torch.bool:
                 v = attention_mask
             elif attention_mask.dtype.is_floating_point:
                 v = attention_mask > -1e4
             else:
                 v = attention_mask > 0
-            # Reduce over query dimension if present, else keep as is.
             if v.shape[1] > 1:
-                v = v.any(dim=1)  # (B, N_kv)
+                v = v.any(dim=1)
             else:
-                v = v.squeeze(1)  # (B, N_kv)
+                v = v.squeeze(1)
             return v
         if attention_mask.dim() == 4:
             if attention_mask.dtype == torch.bool:
@@ -656,9 +625,6 @@ class REAPMoEAttention(BaseAttention):
             return v.any(dim=-2).squeeze(1)
         raise ValueError(f"Unsupported attention_mask dim: {attention_mask.dim()}")
 
-    # ------------------------------------------------------------------
-    # Forward
-    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -675,7 +641,6 @@ class REAPMoEAttention(BaseAttention):
         *args: Any,
         **kwargs: Any,
     ) -> tuple[torch.Tensor, torch.Tensor | None]:
-        # RP-FIX-24
         if encoder_hidden_states is not None:
             raise NotImplementedError("REAPMoEAttention does not support cross-attention.")
 
@@ -684,9 +649,6 @@ class REAPMoEAttention(BaseAttention):
 
         target_dtype = hidden_states.dtype
 
-        # Pre-LN: apply norm before attention (RP-FIX-17)
-        # Note: in standalone_attn mode (replacing a pure attention block), the model outer block
-        # already performs layer normalization (e.g. ln_1(x)). Re-normalizing here distorts scales.
         if self.pre_ln and not getattr(self, "standalone_attn", False):
             n1_dtype = (
                 self.norm1.weight.dtype
@@ -700,7 +662,6 @@ class REAPMoEAttention(BaseAttention):
             attn_input = hidden_states
             residual = hidden_states
 
-        # Projections on attn_input
         q = self.q_lin(attn_input).view(B, L, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
         k_new = (
             self.k_lin(attn_input).view(B, L, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
@@ -709,7 +670,6 @@ class REAPMoEAttention(BaseAttention):
             self.v_lin(attn_input).view(B, L, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
         )
 
-        # RoPE with past_len
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None:
@@ -719,14 +679,12 @@ class REAPMoEAttention(BaseAttention):
                 if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 1:
                     past_len_rope = past_key_value[0].shape[-2]
                 elif hasattr(past_key_value, "key_cache") and past_key_value.key_cache:
-                    # RP-FIX-19: use layer_idx
                     idx = min(layer_idx, len(past_key_value.key_cache) - 1)
                     past_len_rope = past_key_value.key_cache[idx].shape[-2]
             cos = cos[..., past_len_rope : past_len_rope + L, :]
             sin = sin[..., past_len_rope : past_len_rope + L, :]
             q, k_new = apply_rotary_pos_emb(q, k_new, cos, sin)
 
-        # KV-cache
         past_k = past_v = None
         if past_key_value is not None:
             if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 2:
@@ -749,7 +707,6 @@ class REAPMoEAttention(BaseAttention):
         N_kv = K_cat.shape[2]
         past_len = N_kv - L if self.is_decoder else 0
 
-        # GQA expansion
         if self.num_heads != self.num_kv_heads:
             repeats = self.num_heads // self.num_kv_heads
             K_full = repeat_kv(K_cat, repeats)
@@ -758,7 +715,6 @@ class REAPMoEAttention(BaseAttention):
             K_full = K_cat
             V_full = V_cat
 
-        # RP-FIX-18: disable SDPA if causal and past_len > 0
         use_sdpa = (
             not output_attentions and head_mask is None and not (self.is_decoder and past_len > 0)
         )
@@ -841,7 +797,6 @@ class REAPMoEAttention(BaseAttention):
             )
             attn_ret = probs if output_attentions else None
 
-        # RP-FIX-16: skip out_lin for nested encoder
         if self.is_nested_encoder:
             proj = attn_out
         else:
@@ -849,11 +804,9 @@ class REAPMoEAttention(BaseAttention):
 
         proj = torch.nan_to_num(proj, nan=0.0, posinf=1e4, neginf=-1e4)
 
-        # Standalone attention mode: return pure attention output for drop-in replacement
         if getattr(self, "standalone_attn", False):
             return proj.to(target_dtype), attn_ret
 
-        # Residual + MoE (RP-FIX-17)
         n2_dtype = (
             self.norm2.weight.dtype
             if hasattr(self.norm2, "weight") and self.norm2.weight is not None
@@ -865,7 +818,6 @@ class REAPMoEAttention(BaseAttention):
             moe_out, _ = self.moe(h1_norm)
             out = (h1 + self.dropout(moe_out.to(target_dtype))).to(target_dtype)
         else:
-            # Post-LN: norm after residual
             n1_dtype = (
                 self.norm1.weight.dtype
                 if hasattr(self.norm1, "weight") and self.norm1.weight is not None
@@ -881,9 +833,6 @@ class REAPMoEAttention(BaseAttention):
         return out.to(target_dtype), attn_ret
 
 
-# ===========================================================================
-# Injection
-# ===========================================================================
 def inject_reap_moe(
     model: nn.Module | None = None,
     layer: nn.Module | None = None,
@@ -907,7 +856,6 @@ def inject_reap_moe(
 
     cfg = model_config if model_config is not None else getattr(target, "config", None)
 
-    # Whole-model traversal
     layer_list = None
     if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
         layer_list = target.distilbert.transformer.layer
@@ -985,7 +933,6 @@ def inject_reap_moe(
         if cfg is None and hasattr(src_attn, "config"):
             cfg = src_attn.config
 
-        # RP-FIX-25: propagate n_experts, top_k from comp_config
         extra_kwargs = {}
         if comp_config is not None:
             for key in ("n_experts", "top_k"):

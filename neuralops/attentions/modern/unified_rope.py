@@ -27,13 +27,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 logger = logging.getLogger(__name__)
 
 
-
-
-
-
-# ═══════════════════════════════════════════════════════════════════
-# UnifiedRoPE Attention
-# ═══════════════════════════════════════════════════════════════════
 @ATTENTION_REGISTRY.register(
     "unified_rope",
     supports_causal=True,
@@ -71,7 +64,6 @@ class UnifiedRoPE(BaseAttention):
         src = pretrained_attn if pretrained_attn is not None else kwargs.get("old_attn")
         self.config = config
 
-        # ---- hidden_size ----
         if dim is None:
             if config is not None and not isinstance(config, int):
                 dim = _cfg_get(config, "hidden_size",
@@ -90,7 +82,6 @@ class UnifiedRoPE(BaseAttention):
             if dim is None:
                 dim = kwargs.get("hidden_size", 768)
 
-        # ---- num_heads ----
         if num_heads is None:
             if config is not None and not isinstance(config, int):
                 num_heads = _cfg_get(
@@ -114,7 +105,6 @@ class UnifiedRoPE(BaseAttention):
         self.lora_rank = int(kwargs.get("lora_rank", _cfg_get(config, "lora_rank", lora_rank)))
         self.lora_alpha = float(kwargs.get("lora_alpha", _cfg_get(config, "lora_alpha", lora_alpha)))
 
-        # ---- num_kv_heads ----
         cfg_kv = (
             _cfg_get(config, "num_key_value_heads", _cfg_get(config, "num_kv_heads", None))
             if config is not None else None
@@ -128,11 +118,9 @@ class UnifiedRoPE(BaseAttention):
         self.q_head_size = self.num_heads * self.head_dim
         self.kv_head_size = self.num_kv_heads * self.head_dim
 
-        # ---- FIX-1: decoder detection ----
         self.is_decoder = _detect_decoder(config, is_decoder, src)
         self.is_nested_encoder = False
 
-        # ---- Projections ----
         target_dtype = kwargs.get("dtype")
         if target_dtype is None and src is not None:
             p = next(src.parameters(), None)
@@ -160,7 +148,6 @@ class UnifiedRoPE(BaseAttention):
             freeze_base=True, dtype=target_dtype,
         )
 
-        # ---- Aliases ----
         self.query = self.q_proj
         self.key = self.k_proj
         self.value = self.v_proj
@@ -172,7 +159,6 @@ class UnifiedRoPE(BaseAttention):
         self.o_proj = self.out_proj
         self.c_proj = self.out_proj
 
-        # ---- Dropout ----
         dropout_p = (
             getattr(config, "dropout",
                     getattr(config, "attention_probs_dropout_prob", dropout))
@@ -180,7 +166,6 @@ class UnifiedRoPE(BaseAttention):
         )
         self.dropout = nn.Dropout(float(dropout_p))
 
-        # ---- FIX-5: Chunked cache pre-allocation ----
         self.rotary_dim = 2 * (self.head_dim // 2)
         if self.rotary_dim > 0:
             inv_freq = 1.0 / (base ** (torch.arange(0, self.rotary_dim, 2).float() / self.rotary_dim))
@@ -190,17 +175,14 @@ class UnifiedRoPE(BaseAttention):
         self._cache_max_len = 0
         self._build_cache(max_seq_len)
 
-        # ---- copy weights ----
         if src is not None:
             self.copy_weights(src)
 
         if target_dtype is not None:
             self.to(target_dtype)
 
-    # ------------------------------------------------------------------
     def _build_cache(self, seq_len: int) -> None:
         """Precompute cos/sin up to seq_len. FIX-5: allocate round-up to avoid rebuilds."""
-        # Round up to next power of 2 (min 512) to reduce rebuild frequency
         new_len = max(512, 1 << max(0, (seq_len - 1).bit_length()))
         if new_len <= self._cache_max_len:
             return
@@ -242,7 +224,6 @@ class UnifiedRoPE(BaseAttention):
         if rotary_dim == 0:
             return x
 
-        # FIX-3: slice with past_len offset
         cos = self.cos_cached[past_len:total_len, :rotary_dim].unsqueeze(0).unsqueeze(0)
         sin = self.sin_cached[past_len:total_len, :rotary_dim].unsqueeze(0).unsqueeze(0)
         cos = cos.to(x.device, x.dtype)
@@ -257,9 +238,6 @@ class UnifiedRoPE(BaseAttention):
         except Exception:
             return fused_unified_rope_offset_pytorch(x, cos, sin, rotary_dim)
 
-    # ------------------------------------------------------------------
-    # copy_weights (same as before, kept intact)
-    # ------------------------------------------------------------------
     def copy_weights(self, old_attn: Any) -> None:
         with torch.no_grad():
             w_q = b_q = w_k = b_k = w_v = b_v = w_o = b_o = None
@@ -281,7 +259,6 @@ class UnifiedRoPE(BaseAttention):
             else:
                 src = old_attn
 
-            # Pattern 1: GPT-2 fused c_attn
             if hasattr(src, "c_attn") and hasattr(src, "c_proj"):
                 c_w = src.c_attn.weight.detach()
                 c_b = src.c_attn.bias.detach() if src.c_attn.bias is not None else None
@@ -301,7 +278,6 @@ class UnifiedRoPE(BaseAttention):
                 w_o = out_w
                 b_o = src.c_proj.bias.detach() if src.c_proj.bias is not None else None
 
-            # Pattern 2: BERT / RoBERTa
             elif hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value"):
                 w_q = src.query.weight.detach()
                 b_q = src.query.bias.detach() if src.query.bias is not None else None
@@ -317,7 +293,6 @@ class UnifiedRoPE(BaseAttention):
                             b_o = proj.bias.detach() if proj.bias is not None else None
                             break
 
-            # Pattern 3: Qwen / LLaMA
             elif hasattr(src, "q_proj") and hasattr(src, "k_proj") and hasattr(src, "v_proj"):
                 w_q = src.q_proj.weight.detach()
                 b_q = src.q_proj.bias.detach() if src.q_proj.bias is not None else None
@@ -339,7 +314,6 @@ class UnifiedRoPE(BaseAttention):
                                 b_o = pl.bias.detach() if pl.bias is not None else None
                                 break
 
-            # Pattern 4: DistilBERT
             elif hasattr(src, "q_lin") and hasattr(src, "k_lin") and hasattr(src, "v_lin"):
                 w_q = src.q_lin.weight.detach()
                 b_q = src.q_lin.bias.detach() if src.q_lin.bias is not None else None
@@ -351,7 +325,6 @@ class UnifiedRoPE(BaseAttention):
                     w_o = src.out_lin.weight.detach()
                     b_o = src.out_lin.bias.detach() if src.out_lin.bias is not None else None
 
-            # Pattern 5: UniversalAdapter fallback
             if w_q is None or w_k is None or w_v is None or w_o is None:
                 try:
                     adapter = UniversalAdapter()
@@ -362,7 +335,6 @@ class UnifiedRoPE(BaseAttention):
                 except Exception as e:
                     logger.debug("UniversalAdapter fallback failed: %s", e)
 
-            # Validation
             missing = []
             if w_q is None: missing.append("Q")
             if w_k is None: missing.append("K")
@@ -400,9 +372,6 @@ class UnifiedRoPE(BaseAttention):
             if w_o is not None:
                 _copy_layer(self.out_proj, w_o, b_o)
 
-    # ------------------------------------------------------------------
-    # FIX-1 + FIX-6: forward with KV-cache and proper return format
-    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -425,12 +394,10 @@ class UnifiedRoPE(BaseAttention):
         N_kv_new = kv_input.shape[1]
         layer_idx = int(kwargs.get("layer_idx", 0))
 
-        # ---- Projections ----
         q = self.q_proj(hidden_states).view(B, L, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
         k_new = self.k_proj(kv_input).view(B, N_kv_new, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
         v_new = self.v_proj(kv_input).view(B, N_kv_new, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
-        # ---- FIX-1: Read past KV cache ----
         past_k = past_v = None
         past_len = 0
         if past_key_value is not None and not is_cross:
@@ -443,17 +410,14 @@ class UnifiedRoPE(BaseAttention):
             if past_k is not None:
                 past_len = past_k.shape[-2]
 
-        # ---- FIX-3: RoPE with past_len offset ----
         pos_emb = position_embeddings if position_embeddings is not None else kwargs.get("position_embeddings")
         if pos_emb is not None and isinstance(pos_emb, (tuple, list)) and len(pos_emb) == 2:
             cos, sin = pos_emb
-            # Caller is responsible for slicing; assume correct length
             q, k_new = apply_rotary_pos_emb(q, k_new, cos, sin)
         else:
-            q = self._apply_rope(q, L, past_len=0)          # q is always current positions
-            k_new = self._apply_rope(k_new, N_kv_new, past_len=past_len)  # k continues from past
+            q = self._apply_rope(q, L, past_len=0)
+            k_new = self._apply_rope(k_new, N_kv_new, past_len=past_len)
 
-        # ---- FIX-1: Concatenate KV cache ----
         present_kv: Any | None = None
         if is_cross:
             K_cat, V_cat = k_new, v_new
@@ -478,14 +442,12 @@ class UnifiedRoPE(BaseAttention):
 
         N_kv = K_cat.shape[-2]
 
-        # ---- GQA expand ----
         if self.num_key_value_groups > 1:
             K_full = repeat_kv(K_cat, self.num_key_value_groups)
             V_full = repeat_kv(V_cat, self.num_key_value_groups)
         else:
             K_full, V_full = K_cat, V_cat
 
-        # ---- FIX-4: SDPA fast-path with bool mask ----
         is_causal = bool(self.is_decoder and not is_cross and L > 1)
         attn_out: torch.Tensor | None = None
         attn_weights_out: torch.Tensor | None = None
@@ -493,13 +455,11 @@ class UnifiedRoPE(BaseAttention):
         use_sdpa = (not output_attentions) and (head_mask is None)
         if use_sdpa:
             try:
-                # Build bool mask
                 bool_mask = None
                 if is_causal:
-                    # Bottom-right aligned causal mask
                     q_idx = torch.arange(L, device=device).unsqueeze(1) + (N_kv - L)
                     k_idx = torch.arange(N_kv, device=device).unsqueeze(0)
-                    causal = (k_idx <= q_idx).unsqueeze(0).unsqueeze(0)  # (1, 1, L, N_kv)
+                    causal = (k_idx <= q_idx).unsqueeze(0).unsqueeze(0)
                     bool_mask = causal
                 if attention_mask is not None:
                     if attention_mask.dim() == 2:
@@ -519,7 +479,7 @@ class UnifiedRoPE(BaseAttention):
                 out_sdp = F.scaled_dot_product_attention(
                     q_s, k_s, v_s,
                     attn_mask=bool_mask,
-                    is_causal=False,  # Already handled in mask
+                    is_causal=False,
                     dropout_p=self.dropout.p if self.training else 0.0,
                 )
                 attn_out = out_sdp.to(q.dtype)
@@ -527,7 +487,6 @@ class UnifiedRoPE(BaseAttention):
                 logger.debug("UnifiedRoPE SDPA failed, falling back: %s", e)
                 attn_out = None
 
-        # ---- Manual path (fallback or when output_attentions/head_mask) ----
         if attn_out is None:
             scores = torch.matmul(q.float(), K_full.float().transpose(-2, -1).contiguous()) * self.scale
 
@@ -557,7 +516,6 @@ class UnifiedRoPE(BaseAttention):
             attn_out = torch.matmul(attn, V_full)
             attn_weights_out = attn if output_attentions else None
 
-        # ---- Output projection ----
         context = attn_out.transpose(1, 2).contiguous().view(B, L, self.q_head_size)
         context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
 
@@ -567,7 +525,6 @@ class UnifiedRoPE(BaseAttention):
             output = self.out_proj(context)
             output = torch.nan_to_num(output, nan=0.0, posinf=1e4, neginf=-1e4)
 
-        # FIX-6: Correct return format
         if self.is_decoder and not is_cross:
             if output_attentions:
                 return output.to(hidden_states.dtype), present_kv, attn_weights_out
@@ -578,9 +535,6 @@ class UnifiedRoPE(BaseAttention):
         return output.to(hidden_states.dtype), None
 
 
-# ═══════════════════════════════════════════════════════════════════
-# FIX-2: Injector registered in ATTENTION_REGISTRY
-# ═══════════════════════════════════════════════════════════════════
 def inject_unified_rope(
     layer: Any = None,
     model: Any = None,
@@ -604,7 +558,6 @@ def inject_unified_rope(
 
     cfg = model_config if model_config is not None else getattr(target, "config", None)
 
-    # ---- Whole-model traversal ----
     layer_list = None
     for path in (
         ("distilbert", "transformer", "layer"),
@@ -645,7 +598,6 @@ def inject_unified_rope(
                 num_injected += 1
         return target if num_injected > 0 else None
 
-    # ---- Single layer ----
     try:
         def _already_injected(m):
             if m is None:
@@ -693,7 +645,6 @@ def inject_unified_rope(
             **kwargs,
         )
 
-        # Place on correct device/dtype
         try:
             ref = next(src.parameters(), None)
             if ref is not None:
@@ -701,7 +652,6 @@ def inject_unified_rope(
         except Exception:
             pass
 
-        # Splice
         spliced = False
         if hasattr(target, "attention"):
             if hasattr(target.attention, "self"):

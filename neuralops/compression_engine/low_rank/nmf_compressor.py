@@ -22,9 +22,6 @@ from neuralops.core.base import BaseCompressor
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 
 
-# ===========================================================================
-# NMF Linear Layer
-# ===========================================================================
 class NMFLinear(nn.Module):
     """
     Linear layer with weight factorized via sign-aware NMF:
@@ -40,7 +37,6 @@ class NMFLinear(nn.Module):
     the priority, use a signed-NMF variant that avoids storing W_sign.
     """
 
-    # NMF-FIX-01
     is_custom_attention: bool = False
 
     def __init__(
@@ -63,8 +59,6 @@ class NMFLinear(nn.Module):
         self.lora_alpha = float(lora_alpha)
         self.scaling = (self.lora_alpha / self.lora_r) if self.lora_r > 0 else 1.0
 
-        # NMF-FIX-02: W_sign always registered (default: all +1).
-        # Stored as fp16 to keep memory reasonable; sign is exact in fp16.
         _dtype = dtype if dtype is not None else torch.float32
         self.H = nn.Parameter(
             torch.empty(out_features, self.rank, dtype=_dtype, device=device),
@@ -104,7 +98,6 @@ class NMFLinear(nn.Module):
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
 
-    # ------------------------------------------------------------------
     @property
     def weight(self) -> torch.Tensor:
         """Reconstructed effective weight matrix: H @ V * W_sign."""
@@ -114,18 +107,12 @@ class NMFLinear(nn.Module):
     def get_weight(self) -> torch.Tensor:
         return self.weight
 
-    # ------------------------------------------------------------------
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         orig_shape = x.shape
         x_flat = x.reshape(-1, self.in_features)
 
-        # NMF-FIX-06: dtype-safe
         x_v = F.linear(x_flat, self.V.to(dtype=x_flat.dtype))
         F.linear(x_v, self.H.to(dtype=x_v.dtype))
-        # Sign-aware reconstruction: y = x @ W^T where W = H@V * W_sign.
-        # (H@V * W_sign) @ x = (H@V) @ (W_sign * x) element-wise? No —
-        # we must build the effective weight for F.linear.
-        # Alternative: rely on `weight` for correctness.
         W_eff = self.weight.to(dtype=x_flat.dtype)
         out = F.linear(x_flat, W_eff)
 
@@ -142,7 +129,6 @@ class NMFLinear(nn.Module):
 
         return out.view(*orig_shape[:-1], self.out_features)
 
-    # ------------------------------------------------------------------
     @classmethod
     def from_linear(
         cls,
@@ -174,24 +160,18 @@ class NMFLinear(nn.Module):
 
         bias = base_layer.bias.data if getattr(base_layer, "bias", None) is not None else None
 
-        # ---------------- Rank budget (NMF-FIX-08) ----------------
         max_r = min(out_f, in_f)
-        # rank*(in+out) < in*out  →  rank < in*out / (in+out)
         param_cap = max(1, (in_f * out_f) // max(1, in_f + out_f))
         r = max(1, min(int(rank), max_r, param_cap))
 
-        # ---------------- Sign-aware factorization ----------------
-        # Decompose |W| with NMF; store sign(W) separately.
         W_f = W.float()
         W_sign = torch.sign(W_f)
-        W_sign[W_sign == 0] = 1.0  # NMF-FIX-10
+        W_sign[W_sign == 0] = 1.0
         W_abs = W_f.abs().clamp_min(1e-6)
 
-        # NMF-FIX-05: compute on GPU if available, return to orig device.
         compute_device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
         W_abs_c = W_abs.to(compute_device)
 
-        # ---- NNDSVD init ----
         k = min(r + 10, max_r)
         try:
             U, S, V = torch.svd_lowrank(W_abs_c, q=k, niter=2)
@@ -226,7 +206,6 @@ class NMFLinear(nn.Module):
             H_init = torch.rand(out_f, r, device=compute_device) * 0.1 + 1e-4
             V_init = torch.rand(r, in_f, device=compute_device) * 0.1 + 1e-4
 
-        # ---- Multiplicative updates ----
         n_iter = min(max(1, int(max_iter)), 50)
         H = H_init.clone()
         V = V_init.clone()
@@ -242,9 +221,8 @@ class NMFLinear(nn.Module):
                 HVVT = torch.matmul(torch.matmul(H, V), VT).clamp_min(1e-10)
                 H = H * (WVT / HVVT)
         except Exception:
-            pass  # keep H_init, V_init on failure
+            pass
 
-        # ---- Build target layer (NMF-FIX-05: return to orig device/dtype) ----
         existing_lora_r = getattr(linear, "r", getattr(linear, "lora_r", 0))
         eff_lora_r = existing_lora_r if existing_lora_r > 0 else lora_r
         eff_lora_alpha = getattr(linear, "lora_alpha", getattr(linear, "alpha", lora_alpha))
@@ -267,7 +245,6 @@ class NMFLinear(nn.Module):
             if bias is not None and nmf_layer.bias is not None:
                 nmf_layer.bias.data.copy_(bias.to(device=orig_device, dtype=orig_dtype))
 
-        # Preserve existing LoRA weights if present
         if (
             hasattr(linear, "lora_A")
             and hasattr(linear, "lora_B")
@@ -318,9 +295,6 @@ _ATTN_NAMES = {
 }
 
 
-# ===========================================================================
-# Compressor
-# ===========================================================================
 @COMPRESSOR_REGISTRY.register("nmf_compressor")
 class NMFCompressor(BaseCompressor):
     """
@@ -328,7 +302,6 @@ class NMFCompressor(BaseCompressor):
     low-rank factors, preserving the sign pattern of the original weight.
     """
 
-    # NMF-FIX-01
     is_custom_attention: bool = False
 
     def __init__(
@@ -367,7 +340,6 @@ class NMFCompressor(BaseCompressor):
         self.fallback_layers: list[str] = []
         self.skipped_layers: list[str] = []
 
-    # ------------------------------------------------------------------
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         name_l = name.lower()
         if any(
@@ -413,7 +385,6 @@ class NMFCompressor(BaseCompressor):
             return True
         return any(t in name for t in self.target_layers)
 
-    # ------------------------------------------------------------------
     def compress(self, model: nn.Module | None = None) -> tuple[nn.Module, dict[str, Any]]:
         if model is not None:
             self.model = model
@@ -428,7 +399,6 @@ class NMFCompressor(BaseCompressor):
         self.fallback_layers = []
         self.skipped_layers = []
 
-        # NMF-FIX-07: accurate accounting.
         total_orig_storage = 0
         total_comp_storage = 0
         seen_weights = set()
@@ -454,7 +424,6 @@ class NMFCompressor(BaseCompressor):
                 orig_bytes += base_module.bias.numel() * base_module.bias.element_size()
             total_orig_storage += orig_bytes
 
-            # rank budget
             if raw_w.ndim == 2:
                 cls_name = base_module.__class__.__name__.lower()
                 is_conv1d = "conv1d" in cls_name or hasattr(base_module, "nf")
@@ -473,7 +442,6 @@ class NMFCompressor(BaseCompressor):
                     lora_alpha=self.lora_alpha,
                 )
 
-                # NMF-FIX-09: error on the exact forward path.
                 W_rec = nmf_layer.weight.float().to(orig_device)
                 W_orig = raw_w.float().to(orig_device)
                 if is_conv1d:
@@ -497,7 +465,6 @@ class NMFCompressor(BaseCompressor):
                         p.requires_grad = False
                     continue
 
-                # NMF-FIX-04: preserve wrapper.
                 if hasattr(module, "base_layer"):
                     module.base_layer = nmf_layer
                 else:
@@ -511,7 +478,6 @@ class NMFCompressor(BaseCompressor):
                     }
                 )
 
-                # Storage: H + V + W_sign + bias + LoRA
                 comp_bytes = (
                     nmf_layer.H.numel() * nmf_layer.H.element_size()
                     + nmf_layer.V.numel() * nmf_layer.V.element_size()
@@ -532,7 +498,6 @@ class NMFCompressor(BaseCompressor):
                 for p in module.parameters():
                     p.requires_grad = False
 
-        # Forward sanity check
         forward_check_success = True
         try:
             with torch.no_grad():
@@ -579,7 +544,6 @@ class NMFCompressor(BaseCompressor):
         self.stats = stats
         return self.model, stats
 
-    # ------------------------------------------------------------------
     def compress_linear(self, linear: nn.Module) -> NMFLinear:
         return NMFLinear.from_linear(
             linear,
@@ -590,9 +554,6 @@ class NMFCompressor(BaseCompressor):
         )
 
 
-# ===========================================================================
-# Factory
-# ===========================================================================
 def nmf_factory(
     model: nn.Module,
     comp_config: Any | None = None,

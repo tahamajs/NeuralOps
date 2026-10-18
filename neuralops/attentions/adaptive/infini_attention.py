@@ -31,11 +31,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 logger = logging.getLogger(__name__)
 
 
-
-
-# ===========================================================================
-# SSM Sub-branch
-# ===========================================================================
 class SVDMambaSub(nn.Module):
     """
     SVD-Mamba sub-branch.
@@ -60,7 +55,6 @@ class SVDMambaSub(nn.Module):
         self.in_proj = nn.Linear(d_model, d_model)
         self.out_proj = nn.Linear(d_model, d_model)
 
-        # ---- [JAMBA-FIX-01] NORMAL init, NOT zeros ----
         nn.init.xavier_uniform_(self.out_proj.weight)
         if self.out_proj.bias is not None:
             nn.init.zeros_(self.out_proj.bias)
@@ -141,9 +135,6 @@ def _write_cache(
     return (k, v)
 
 
-# ===========================================================================
-# Jamba-2 Block
-# ===========================================================================
 @ATTENTION_REGISTRY.register(
     "jamba",
     supports_causal=True,
@@ -184,7 +175,6 @@ class Jamba2Block(BaseAttention):
 
         self.config = config
 
-        # ---- Dimensions ----
         d_model = (
             kwargs.get("d_model")
             or kwargs.get("hidden_size")
@@ -242,7 +232,6 @@ class Jamba2Block(BaseAttention):
         self.n_heads = int(n_heads)
         self.num_heads = self.n_heads
 
-        # ---- GQA ----
         num_kv_heads = None
         if config is not None:
             num_kv_heads = getattr(
@@ -262,7 +251,6 @@ class Jamba2Block(BaseAttention):
         self.all_kv_head_size = self.num_kv_heads * self.head_dim
         self.kv_repeat = max(1, self.num_heads // self.num_kv_heads)
 
-        # ---- Decoder detection ----
         self.is_decoder = _detect_decoder(
             config, kwargs.get("is_decoder"), source_attn
         )
@@ -270,7 +258,6 @@ class Jamba2Block(BaseAttention):
         self.is_nested_encoder = False
         self._return_format: str = "llama"
 
-        # ---- LoRA config ----
         if config is not None:
             self.lora_rank = int(
                 getattr(
@@ -309,7 +296,6 @@ class Jamba2Block(BaseAttention):
             else None
         )
 
-        # ---- Projections ----
         self.q_lin = LoRALinear(
             self.d_model,
             self.all_head_size,
@@ -348,11 +334,9 @@ class Jamba2Block(BaseAttention):
         self.v_proj = self.v_lin
         self.out_proj = self.out_lin
 
-        # ---- Mamba sub-branch ----
         self.mamba = SVDMambaSub(
             self.d_model, config=config, rank=rank, is_decoder=self.is_decoder
         )
-        # ---- MoE sub-branch ----
         try:
             self.moe = ExpertChoiceMoE(
                 self.d_model, n_experts=n_experts, capacity_factor=1.0
@@ -361,13 +345,9 @@ class Jamba2Block(BaseAttention):
             logger.warning("Jamba2: MoE construction failed (%s); disabling.", e)
             self.moe = None
 
-        # ---- Pre-LayerNorms ----
-        self.norm1 = nn.LayerNorm(self.d_model)  # Mamba input norm
-        self.norm3 = nn.LayerNorm(self.d_model)  # MoE input norm
+        self.norm1 = nn.LayerNorm(self.d_model)
+        self.norm3 = nn.LayerNorm(self.d_model)
 
-        # ---- [JAMBA-FIX-01] ReZero with correct init ----
-        # Only the SCALE parameters are zero.
-        # out_proj inside mamba/moe use normal init so gradients flow.
         self.mamba_scale = nn.Parameter(torch.zeros(1))
         self.moe_scale = nn.Parameter(torch.zeros(1))
 
@@ -391,9 +371,6 @@ class Jamba2Block(BaseAttention):
             source_attn, self.is_nested_encoder
         )
 
-    # ------------------------------------------------------------------
-    # Aux loss bookkeeping
-    # ------------------------------------------------------------------
     @property
     def aux_loss(self) -> float:
         if self._aux_loss_count == 0:
@@ -414,9 +391,6 @@ class Jamba2Block(BaseAttention):
             if hasattr(mod, "unfreeze_base_weights"):
                 mod.unfreeze_base_weights()
 
-    # ------------------------------------------------------------------
-    # Weight transfer
-    # ------------------------------------------------------------------
     def copy_weights(self, src: Any) -> None:
         if src is None:
             return
@@ -440,7 +414,6 @@ class Jamba2Block(BaseAttention):
             "o": (None, None),
         }
 
-        # ---- GPT-2 fused c_attn ----
         if hasattr(src, "c_attn") and src.c_attn is not None:
             c = src.c_attn
             base_c = getattr(c, "base_layer", c)
@@ -489,7 +462,6 @@ class Jamba2Block(BaseAttention):
                         bo.data.clone() if bo is not None else None,
                     )
 
-        # ---- BERT / RoBERTa nested ----
         elif hasattr(src, "self") and hasattr(src.self, "query"):
             s = src.self
             for key, sub in (("q", "query"), ("k", "key"), ("v", "value")):
@@ -508,7 +480,6 @@ class Jamba2Block(BaseAttention):
                     b.data.clone() if b is not None else None,
                 )
 
-        # ---- Flat projections ----
         else:
             candidates = {
                 "q": ("q_lin", "q_proj", "query"),
@@ -539,7 +510,6 @@ class Jamba2Block(BaseAttention):
                             )
                             break
 
-        # ---- Fallback ----
         missing = [
             k
             for k, (w, _) in extracted.items()
@@ -609,9 +579,6 @@ class Jamba2Block(BaseAttention):
         if self.freeze_base:
             self.freeze_base_weights()
 
-    # ------------------------------------------------------------------
-    # Helpers
-    # ------------------------------------------------------------------
     def _norm_dtype(self, norm: nn.LayerNorm, fallback: torch.dtype) -> torch.dtype:
         return norm.weight.dtype if getattr(norm, "weight", None) is not None else fallback
 
@@ -651,9 +618,6 @@ class Jamba2Block(BaseAttention):
             hm = hm.unsqueeze(2)
         return attn * hm
 
-    # ------------------------------------------------------------------
-    # Forward
-    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -678,9 +642,6 @@ class Jamba2Block(BaseAttention):
 
         past_k, past_v, past_len, past_mamba = _read_cache(past_key_value, layer_idx)
 
-        # =========================================================
-        # Branch 1: Mamba (Pre-LN + ReZero)
-        # =========================================================
         mamba_out = 0
         present_mamba = None
         if self.mamba is not None:
@@ -689,14 +650,8 @@ class Jamba2Block(BaseAttention):
             m_out, present_mamba = self.mamba(
                 x_norm1, attention_mask=attention_mask, past_state=past_mamba
             )
-            # [JAMBA-FIX-01] ReZero scaling by mamba_scale (=0 initially).
-            # out_proj is normally initialized inside SVDMambaSub so
-            # gradient on mamba_scale is m_out (nonzero) → learning starts.
             mamba_out = m_out.to(target_dtype) * self.mamba_scale
 
-        # =========================================================
-        # Branch 2: Multi-Head Attention
-        # =========================================================
         q = (
             self.q_lin(hidden_states)
             .view(B, L, self.num_heads, self.head_dim)
@@ -716,7 +671,6 @@ class Jamba2Block(BaseAttention):
             .contiguous()
         )
 
-        # ---- [JAMBA-FIX-05] RoPE applied only to NEW tokens ----
         if position_embeddings is not None:
             cos, sin = position_embeddings
             if cos.shape[-2] >= past_len + L:
@@ -745,14 +699,12 @@ class Jamba2Block(BaseAttention):
             if cos is not None and sin is not None:
                 q, k = apply_rotary_pos_emb(q, k, cos, sin, position_ids=pos_ids)
 
-        # ---- Concat with past KV ----
         if past_k is not None:
             k = torch.cat([past_k.to(k.dtype), k], dim=-2)
             v = torch.cat([past_v.to(v.dtype), v], dim=-2)
 
         present_key_value = _write_cache(k, v, present_mamba, past_key_value, layer_idx)
 
-        # ---- GQA ----
         if self.kv_repeat > 1:
             k_exp = repeat_kv(k, self.kv_repeat)
             v_exp = repeat_kv(v, self.kv_repeat)
@@ -763,15 +715,12 @@ class Jamba2Block(BaseAttention):
         is_causal = bool(self.is_decoder and L > 1)
         mask_val = _safe_mask_value(target_dtype)
 
-        # ---- [JAMBA-FIX-02] SDPA can now work with attention_mask ----
-        # ---- [JAMBA-FIX-03] is_causal and attn_mask are mutually exclusive ----
         use_sdpa = (head_mask is None) and (not output_attentions)
 
         attn_weights: torch.Tensor | None = None
         attn_out: torch.Tensor | None = None
 
         if use_sdpa:
-            # Build an explicit additive mask when needed
             attn_bias: torch.Tensor | None = None
 
             if attention_mask is not None:
@@ -802,10 +751,8 @@ class Jamba2Block(BaseAttention):
                 _ks = k_exp.to(target_dtype)
                 _vs = v_exp.to(target_dtype)
 
-                # Combine causal into attn_bias when present
                 if is_causal:
                     if attn_bias is None:
-                        # Pure causal → use is_causal=True (fastest)
                         _sdpa_out = F.scaled_dot_product_attention(
                             _qs,
                             _ks,
@@ -814,7 +761,6 @@ class Jamba2Block(BaseAttention):
                             dropout_p=self.dropout.p if self.training else 0.0,
                         )
                     else:
-                        # Add causal to the existing bias
                         kv_len = k_exp.shape[-2]
                         causal_bool = torch.tril(
                             torch.ones(
@@ -864,14 +810,12 @@ class Jamba2Block(BaseAttention):
                 logger.debug("Jamba2 SDPA path failed (%s); falling back.", e)
                 attn_out = None
 
-        # ---- Manual path ----
         if attn_out is None:
             scores = (
                 torch.matmul(q.float(), k_exp.float().transpose(-2, -1).contiguous())
                 * scale
             )
 
-            # [JAMBA-FIX-04] Causal with diagonal=past_len (KV-cache safe)
             if is_causal:
                 kv_len = k_exp.shape[-2]
                 causal = torch.tril(
@@ -899,7 +843,6 @@ class Jamba2Block(BaseAttention):
                     else:
                         scores = scores + attention_mask.float()
 
-            # ---- Safe softmax ----
             m = scores.amax(dim=-1, keepdim=True)
             m_safe = torch.where(m < -1e3, torch.zeros_like(m), m)
             exp_s = torch.exp((scores - m_safe).clamp(max=0.0))
@@ -922,9 +865,6 @@ class Jamba2Block(BaseAttention):
         attn_out = torch.nan_to_num(attn_out, nan=0.0, posinf=1e4, neginf=-1e4)
         attn_delta = attn_out if self.is_nested_encoder else self.out_lin(attn_out)
 
-        # =========================================================
-        # Branch 3: MoE (Pre-LN + ReZero)
-        # =========================================================
         moe_out = 0
         if self.moe is not None:
             n3d = self._norm_dtype(self.norm3, target_dtype)
@@ -932,14 +872,12 @@ class Jamba2Block(BaseAttention):
             moe_res = self.moe(x_norm3)
             if isinstance(moe_res, (tuple, list)):
                 moe_res = moe_res[0]
-            moe_out = moe_res.to(target_dtype) * self.moe_scale  # ReZero
+            moe_out = moe_res.to(target_dtype) * self.moe_scale
             self._accumulate_aux_loss()
 
-        # ---- [JAMBA-FIX-06] Parallel deltas only; outer block adds residual ----
         if mamba_out.is_cuda and attn_delta.is_cuda:
             try:
                 from neuralops.core.triton_kernels.selective_scan import fused_jamba_hybrid_ssm_attn_gate_triton
-                # Fused gate alpha=0.5
                 alpha_hybrid = torch.tensor(0.5, device=mamba_out.device, dtype=mamba_out.dtype)
                 fused_ma = fused_jamba_hybrid_ssm_attn_gate_triton(mamba_out, attn_delta, alpha_hybrid)
                 final_delta = fused_ma * 2.0 + moe_out
@@ -980,9 +918,6 @@ class Jamba2Block(BaseAttention):
         return out
 
 
-# ===========================================================================
-# Injection
-# ===========================================================================
 def inject_jamba(
     layer: Any = None,
     model: Any = None,
@@ -994,7 +929,6 @@ def inject_jamba(
     _depth: int = 0,
     **kwargs: Any,
 ) -> Jamba2Block | nn.Module | None:
-    # [JAMBA-FIX-09] Recursion guard
     if _depth > 8:
         logger.warning("inject_jamba: max recursion depth exceeded.")
         return None
@@ -1007,7 +941,6 @@ def inject_jamba(
     if cfg is None and hasattr(target, "config"):
         cfg = target.config
 
-    # ---- Whole-model traversal ----
     layer_list = None
     for path in (
         ("distilbert", "transformer", "layer"),
@@ -1048,7 +981,6 @@ def inject_jamba(
                 num_injected += 1
         return target if num_injected > 0 else None
 
-    # ---- Single-layer injection ----
     src_attn = old_attn
     if src_attn is None:
         for attr in ("attention", "self", "attn", "self_attn"):
@@ -1060,7 +992,6 @@ def inject_jamba(
     if src_attn is None and hasattr(target, "forward"):
         src_attn = target
 
-    # [JAMBA-FIX-09] Idempotency guard
     if isinstance(src_attn, Jamba2Block) or "Jamba2" in src_attn.__class__.__name__:
         return None
     for attr in ("attention", "self_attn", "attn", "self"):
@@ -1087,7 +1018,6 @@ def inject_jamba(
     )
 
     try:
-        # Filter duplicated kwargs
         for k in (
             "d_model", "hidden_size", "num_heads", "num_attention_heads", "old_attn"
         ):
@@ -1111,7 +1041,6 @@ def inject_jamba(
         logger.exception("Jamba2Block injection failed: %s", e)
         return None
 
-    # ---- Splice ----
     if target is not None:
         spliced = False
         if hasattr(target, "attention"):

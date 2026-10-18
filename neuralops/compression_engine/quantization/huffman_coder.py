@@ -23,8 +23,6 @@ from neuralops.utils.compat import should_compress_linear
 logger = logging.getLogger(__name__)
 
 
-
-
 _ATTN_NAMES = {
     "q_proj",
     "k_proj",
@@ -153,7 +151,6 @@ class HuffmanCoder:
         min_val = flat.min().item()
         max_val = flat.max().item()
 
-        # Handle high quantize_bits properly: skip quantization / identity mapping
         if quantize_bits is None or quantize_bits >= 16:
             if tensor.dtype == torch.bfloat16:
                 raw_bytes = tensor.detach().cpu().view(torch.int16).numpy().tobytes()
@@ -172,7 +169,6 @@ class HuffmanCoder:
             }
             return raw_bytes, {}, metadata
 
-        # Robust zero-point aligned quantization with outlier suppression
         num_levels = 2 ** int(quantize_bits)
         if numel > 1024:
             p_low = torch.quantile(flat, 0.0005).item()
@@ -193,7 +189,6 @@ class HuffmanCoder:
         probs = counts / numel
         entropy = -float(np.sum(probs * np.log2(probs + 1e-12)))
 
-        # Vectorized bitstream packing using LUT mapping and numpy.packbits
         max_sym = int(symbols.max())
         lut = [code_table.get(i, "0") for i in range(max_sym + 1)]
         bit_chunks = [lut[v] for v in q_np]
@@ -201,7 +196,6 @@ class HuffmanCoder:
         pad_len = (8 - len(bitstream_str) % 8) % 8
         padded = bitstream_str + "0" * pad_len
 
-        # Fast bit packing using np.packbits
         bit_arr = np.frombuffer(padded.encode("ascii"), dtype=np.uint8) - ord("0")
         packed_np = np.packbits(bit_arr)
         byte_array = packed_np.tobytes()
@@ -257,14 +251,12 @@ class HuffmanCoder:
         min_val = metadata.get("min_val", 0.0)
         shape = metadata.get("orig_shape", [total_elements])
 
-        # Vectorized unpacking of bits
         pad_len = metadata.get("pad_len", 0)
         raw_arr = np.frombuffer(packed_bytes, dtype=np.uint8)
         bits = np.unpackbits(raw_arr)
         if pad_len > 0:
             bits = bits[:-pad_len]
 
-        # Fast flat-array binary trie traversal
         node_left = [-1]
         node_right = [-1]
         node_sym = [-1]
@@ -296,7 +288,6 @@ class HuffmanCoder:
         curr = 0
         idx = 0
 
-        # Fast traversal loop
         for b in bits:
             curr = nr[curr] if b else nl[curr]
             sym = ns[curr]
@@ -413,7 +404,6 @@ class HuffmanCompressor(BaseCompressor):
         self.layer_errors = {}
         seen_weights: set[int] = set()
 
-        # Freeze skipped non-target layers if target_attention_only is enabled
         if self.target_attention_only:
             for name, module in self.model.named_modules():
                 if any(part in name.split(".") for part in ["lora_A", "lora_B", "base_layer"]):
@@ -447,7 +437,6 @@ class HuffmanCompressor(BaseCompressor):
             orig_device = raw_w.device
             orig_dtype = raw_w.dtype
 
-            # Byte accounting based on actual element_size()
             elem_bytes = raw_w.element_size() if hasattr(raw_w, "element_size") else 2
             layer_orig_bytes = raw_w.numel() * elem_bytes
 
@@ -488,7 +477,6 @@ class HuffmanCompressor(BaseCompressor):
                         total_comp_bytes += layer_orig_bytes
                         continue
 
-                # Apply reconstructed weight
                 if is_conv1d:
                     res_w = W_rec.t().to(dtype=orig_dtype, device=orig_device)
                 else:
@@ -499,7 +487,6 @@ class HuffmanCompressor(BaseCompressor):
                 )
                 target_mod.weight.data.copy_(res_w)
 
-                # Preserve LoRA adapter trainability
                 for lora_attr in ("lora_A", "lora_B", "lora_a", "lora_b"):
                     if hasattr(module, lora_attr):
                         l_mod = getattr(module, lora_attr)
@@ -524,7 +511,6 @@ class HuffmanCompressor(BaseCompressor):
                 total_orig_bytes += layer_orig_bytes
                 total_comp_bytes += layer_orig_bytes
 
-        # Ensure all parameters on target device
         self.model.to(device=_model_device)
 
         forward_check_success = None
@@ -540,7 +526,6 @@ class HuffmanCompressor(BaseCompressor):
                     self.model(**tok_out)
                     forward_check_success = True
                 else:
-                    # Look for token embeddings
                     has_embed = any(
                         any(kw in n.lower() for kw in ("embed_tokens", "wte", "word_embeddings"))
                         for n, _ in self.model.named_modules()

@@ -55,8 +55,6 @@ from neuralops.core.utils.gqa import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
 
 
-
-
 try:
     from transformers import (
         AutoConfig,
@@ -84,14 +82,8 @@ except Exception:
             torch.cuda.manual_seed_all(s)
 
 
-
 warnings.filterwarnings("ignore", category=UserWarning)
 log = logging.getLogger(__name__)
-
-
-# =============================================================================
-# 1. Helper functions for spectral analysis
-# =============================================================================
 
 
 def calculate_spectral_entropy(singular_values: np.ndarray) -> float:
@@ -114,11 +106,6 @@ def compute_cumulative_entropy(singular_values: np.ndarray, max_rank: int) -> np
         return np.ones(max_rank)
     cum = np.cumsum(s_sq[:max_rank]) / total
     return cum
-
-
-# =============================================================================
-# 2. Lagrangian optimisation for rank allocation
-# =============================================================================
 
 
 def lagrangian_rank_allocation(
@@ -174,8 +161,6 @@ def lagrangian_rank_allocation(
     return rank_dict
 
 
-
-
 @ATTENTION_REGISTRY.register("svd_compressed", supports_causal=True, supports_gqa=True)
 class SVDCompressedAttention(BaseAttention):
     r"""Multi-head attention with truncated SVD projections, trainable LoRA adapters,
@@ -201,7 +186,6 @@ class SVDCompressedAttention(BaseAttention):
     ) -> None:
         model_config = config or kwargs.get("model_config")
         super().__init__(model_config)
-        # 1. Dimensions & Architecture
         self.hidden_size: int = int(
             _cfg_get(model_config, "hidden_size", kwargs.get("hidden_size", 768))
         )
@@ -241,7 +225,6 @@ class SVDCompressedAttention(BaseAttention):
         self.q_head_size: int = self.num_heads * self.head_dim
         self.all_head_size: int = self.q_head_size
 
-        # 2. Causal decoder flag detection
         if is_decoder is not None:
             self.is_decoder = bool(is_decoder)
         else:
@@ -284,7 +267,6 @@ class SVDCompressedAttention(BaseAttention):
         self.lora_alpha = lora_alpha
         self.scaling = lora_alpha / max(1, self.lora_rank)
 
-        # 3. Factorized projections
         self.q_down = nn.Linear(self.hidden_size, self.ranks["q"], bias=False)
         self.q_up = nn.Linear(self.ranks["q"], self.q_head_size, bias=True)
         self.k_down = nn.Linear(self.hidden_size, self.ranks["k"], bias=False)
@@ -312,7 +294,6 @@ class SVDCompressedAttention(BaseAttention):
                 if mod.bias is not None:
                     mod.bias.requires_grad = False
 
-        # 4. Trainable LoRA parameters
         if self.lora_rank > 0:
             self.q_lora_A = nn.Parameter(torch.empty(self.lora_rank, self.hidden_size))
             self.q_lora_B = nn.Parameter(torch.empty(self.q_head_size, self.lora_rank))
@@ -412,7 +393,6 @@ class SVDCompressedAttention(BaseAttention):
             w_v, b_v = None, None
             w_o, b_o = None, None
 
-            # Detect nested encoder container or inner self-attention
             src_cls_name = getattr(old_attn, "__class__", type(old_attn)).__name__
             has_out_proj = any(
                 hasattr(old_attn, attr)
@@ -440,7 +420,6 @@ class SVDCompressedAttention(BaseAttention):
             else:
                 src = old_attn
 
-            # Pattern 1: GPT-2 Fused c_attn
             if hasattr(src, "c_attn") and hasattr(src, "c_proj"):
                 c_w, c_b = _unpack_weight_bias(src.c_attn)
                 if c_w is not None:
@@ -467,7 +446,6 @@ class SVDCompressedAttention(BaseAttention):
                     w_o = out_w
                     b_o = out_b
 
-            # Pattern 2: RoBERTa / BERT separate query, key, value
             elif hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value"):
                 w_q, b_q = _unpack_weight_bias(src.query)
                 w_k, b_k = _unpack_weight_bias(src.key)
@@ -479,7 +457,6 @@ class SVDCompressedAttention(BaseAttention):
                             w_o, b_o = _unpack_weight_bias(getattr(src, attr))
                             break
 
-            # Pattern 3: Qwen / LLaMA (q_proj, k_proj, v_proj, o_proj)
             elif hasattr(src, "q_proj") and hasattr(src, "k_proj") and hasattr(src, "v_proj"):
                 w_q, b_q = _unpack_weight_bias(src.q_proj)
                 w_k, b_k = _unpack_weight_bias(src.k_proj)
@@ -487,7 +464,6 @@ class SVDCompressedAttention(BaseAttention):
                 if hasattr(src, "o_proj"):
                     w_o, b_o = _unpack_weight_bias(src.o_proj)
 
-            # Pattern 4: DistilBERT (q_lin, k_lin, v_lin, out_lin)
             elif hasattr(src, "q_lin") and hasattr(src, "k_lin") and hasattr(src, "v_lin"):
                 w_q, b_q = _unpack_weight_bias(src.q_lin)
                 w_k, b_k = _unpack_weight_bias(src.k_lin)
@@ -495,7 +471,6 @@ class SVDCompressedAttention(BaseAttention):
                 if hasattr(src, "out_lin"):
                     w_o, b_o = _unpack_weight_bias(src.out_lin)
 
-            # Fallback: UniversalAdapter
             if w_q is None or w_k is None or w_v is None:
                 try:
                     adapter = UniversalAdapter(old_attn)
@@ -513,7 +488,6 @@ class SVDCompressedAttention(BaseAttention):
                 except Exception as e:
                     log.debug("UniversalAdapter fallback failed: %s", e)
 
-            # Verification of essential projections
             missing = []
             if w_q is None:
                 missing.append("query/q_proj")
@@ -525,12 +499,10 @@ class SVDCompressedAttention(BaseAttention):
                 log.warning("Failed to extract required projections: %s", missing)
                 return
 
-            # Frobenius norm checks
             for name, w in [("w_q", w_q), ("w_k", w_k), ("w_v", w_v)]:
                 if torch.norm(w.float(), p="fro").item() < 1e-4:
                     log.warning(f"Copied weight {name} has near-zero Frobenius norm (< 1e-4)")
 
-            # Orient weights if needed
             def _orient(w: torch.Tensor, out_dim: int, in_dim: int) -> torch.Tensor:
                 if w.shape == (out_dim, in_dim):
                     return w
@@ -539,10 +511,8 @@ class SVDCompressedAttention(BaseAttention):
                 return w
 
             w_q = _orient(w_q, self.q_head_size, self.hidden_size)
-            # Factorize and set Q
             self._set_factorised_weights(w_q, b_q, self.q_down, self.q_up, self.ranks["q"])
 
-            # Factorize and set K & V with GQA pooling if needed
             if w_k.shape[0] == self.kv_head_size:
                 w_k = _orient(w_k, self.kv_head_size, self.hidden_size)
                 self._set_factorised_weights(w_k, b_k, self.k_down, self.k_up, self.ranks["k"])
@@ -581,14 +551,12 @@ class SVDCompressedAttention(BaseAttention):
                     w_v_pooled, b_v_pooled, self.v_down, self.v_up, self.ranks["v"]
                 )
 
-            # Set Out projection if not nested encoder
             if w_o is not None and not self.is_nested_encoder:
                 if torch.norm(w_o.float(), p="fro").item() < 1e-4:
                     log.warning("Copied out_proj weight has near-zero Frobenius norm (< 1e-4)")
                 w_o = _orient(w_o, self.hidden_size, self.q_head_size)
                 self._set_factorised_weights(w_o, b_o, self.o_down, self.o_up, self.ranks["o"])
 
-            # Initialize sparse residuals if enabled
             if self.add_sparse:
                 low_rank_q = self.q_up.weight @ self.q_down.weight
                 res_q = w_q - low_rank_q
@@ -623,7 +591,6 @@ class SVDCompressedAttention(BaseAttention):
         **kwargs: Any,
     ) -> tuple[torch.Tensor, torch.Tensor | None]:
         B, N, _ = hidden_states.shape
-        # Defensive device alignment
         if self.q_down.weight.device != hidden_states.device:
             self.to(device=hidden_states.device)
 
@@ -727,7 +694,6 @@ class SVDCompressedAttention(BaseAttention):
                 out = out + F.linear(x, self.o_sparse_weight)
             return out
 
-        # 1. Projections
         Q = (
             proj_q(hidden_states)
             .view(B, N, self.num_heads, self.head_dim)
@@ -747,23 +713,19 @@ class SVDCompressedAttention(BaseAttention):
             .contiguous()
         )
 
-        # 2. RoPE support
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None and not is_cross:
             cos, sin = position_embeddings
             Q, K = apply_rotary_pos_emb(Q, K, cos, sin)
 
-        # 3. GQA expansion
         if self.num_kv_heads < self.num_heads:
             K = repeat_kv(K, self.kv_repeat)
             V = repeat_kv(V, self.kv_repeat)
 
-        # 4. Attention scores in FP32
         scale = 1.0 / math.sqrt(self.head_dim)
         scores = torch.matmul(Q.float(), K.float().transpose(-1, -2).contiguous()) * scale
 
-        # 5. Masking
         if self.is_decoder and not is_cross and N > 1:
             causal_mask = (
                 torch.triu(
@@ -788,7 +750,6 @@ class SVDCompressedAttention(BaseAttention):
         attn_weights = F.softmax(scores, dim=-1).to(hidden_states.dtype)
         attn_weights = self.dropout(attn_weights)
 
-        # 6. Safe head_mask application
         if head_mask is not None:
             if head_mask.dim() == 1:
                 head_mask = head_mask.view(1, -1, 1, 1)
@@ -798,7 +759,6 @@ class SVDCompressedAttention(BaseAttention):
                 head_mask = head_mask.unsqueeze(-1)
             attn_weights = attn_weights * head_mask
 
-        # 7. Context computation & Head Merge
         context = (
             torch.matmul(attn_weights, V)
             .transpose(1, 2)
@@ -807,7 +767,6 @@ class SVDCompressedAttention(BaseAttention):
         )
         context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
 
-        # 8. Output projection (bypassed if nested encoder)
         if self.is_nested_encoder:
             output = context
         else:
@@ -820,11 +779,6 @@ class SVDCompressedAttention(BaseAttention):
                 output = output[..., : hidden_states.shape[-1]]
 
         return output, (attn_weights if output_attentions else None)
-
-
-# =============================================================================
-# 4. Injection helpers
-# =============================================================================
 
 
 def gather_all_attention_weights(model: Any) -> tuple[list[np.ndarray], list[str]]:
@@ -879,10 +833,6 @@ def inject_all_layers(
             distil_layer.attention = new_attn
 
 
-# =============================================================================
-# 5. GLUE data loading
-# =============================================================================
-
 GLUE_TASK_KEYS: dict[str, tuple[str, str | None]] = {
     "cola": ("sentence", None),
     "sst2": ("sentence", None),
@@ -894,11 +844,6 @@ GLUE_TASK_KEYS: dict[str, tuple[str, str | None]] = {
     "rte": ("sentence1", "sentence2"),
     "wnli": ("sentence1", "sentence2"),
 }
-
-
-# =============================================================================
-# 6. Main training script
-# =============================================================================
 
 
 def main() -> None:
@@ -1044,7 +989,6 @@ def inject_svd_compressed(
     if cfg is None and hasattr(target, "config"):
         cfg = target.config
 
-    # 1. Whole model traversal
     layer_list = None
     if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
         layer_list = target.distilbert.transformer.layer
@@ -1082,7 +1026,6 @@ def inject_svd_compressed(
                 num_injected += 1
         return target if num_injected > 0 else None
 
-    # 2. Single layer injection
     try:
         src_attn = old_attn
         if src_attn is None and target is not None:
@@ -1097,7 +1040,6 @@ def inject_svd_compressed(
         if src_attn is None:
             return None
 
-        # Double-injection guard
         if src_attn is not None:
             if isinstance(src_attn, SVDCompressedAttention):
                 return None
@@ -1126,7 +1068,6 @@ def inject_svd_compressed(
                 ):
                     return None
 
-        # Skip Qwen3.5 hybrid DeltaNet/LinearAttention layers
         if src_attn is not None:
             c_name = src_attn.__class__.__name__
             if "DeltaNet" in c_name or "LinearAttention" in c_name:

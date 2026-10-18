@@ -124,7 +124,6 @@ try:
 except Exception:
     pass
 
-# Auto-wired submodules
 from neuralops.attentions.adaptive import adaptive_span_attention
 from neuralops.attentions.adaptive import block_transformer_hiba
 from neuralops.attentions.adaptive import eat

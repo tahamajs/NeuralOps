@@ -29,9 +29,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 logger = logging.getLogger(__name__)
 
 
-# ===========================================================================
-# Main LEKAv1
-# ===========================================================================
 @ATTENTION_REGISTRY.register("positive_kernel_linear_attention")
 class PositiveKernelLinearAttention(BaseAttention):
     """Linear-time attention via ELU+1 kernel feature map.
@@ -90,7 +87,6 @@ class PositiveKernelLinearAttention(BaseAttention):
             if config is not None else 0.1
         )
 
-        # [FIX-7] Decoder detection
         self.is_decoder = _detect_decoder(config, is_decoder, source_attn)
         self.is_causal = self.is_decoder
         self.is_nested_encoder = False
@@ -112,7 +108,6 @@ class PositiveKernelLinearAttention(BaseAttention):
             or (rank if rank is not None else 64)
         )
 
-        # ---- Projections ----
         FF = FactorizedLoRALinear
         self.query = FF(
             self.dim, self.all_head_size,
@@ -142,20 +137,14 @@ class PositiveKernelLinearAttention(BaseAttention):
         self.norm = nn.LayerNorm(self.head_dim)
         self.dropout = nn.Dropout(dropout_p)
 
-        # [FIX-2] pres_gate with lora_ prefix
-        # sigmoid(2.0) ≈ 0.88 → attention dominant at init
         self.lora_pres_gate = nn.Parameter(torch.tensor(2.0))
 
-        # ---- Kernel feature projection ----
         proj_data = self._build_projection_buffer()
         self.register_buffer("proj", proj_data, persistent=True)
 
         if source_attn is not None:
             self.copy_weights(source_attn)
 
-    # ------------------------------------------------------------------
-    # Dimension detection
-    # ------------------------------------------------------------------
     @staticmethod
     def _detect_hidden_size(
         config: Any, src: nn.Module | None, kwargs: dict[str, Any]
@@ -245,9 +234,6 @@ class PositiveKernelLinearAttention(BaseAttention):
                         pass
         return max(1, hidden_size // max(1, num_heads))
 
-    # ------------------------------------------------------------------
-    # Robust QR-orthogonal projection builder
-    # ------------------------------------------------------------------
     def _build_projection_buffer(self) -> torch.Tensor:
         d = self.head_dim
         F_dim = self.feature_dim
@@ -267,9 +253,6 @@ class PositiveKernelLinearAttention(BaseAttention):
 
         return proj
 
-    # ------------------------------------------------------------------
-    # SVD init
-    # ------------------------------------------------------------------
     @staticmethod
     def _svd_init(
         w: torch.Tensor, b: torch.Tensor | None, proj: FactorizedLoRALinear
@@ -306,9 +289,6 @@ class PositiveKernelLinearAttention(BaseAttention):
             elif proj.up.bias is not None:
                 proj.up.bias.data.zero_()
 
-    # ------------------------------------------------------------------
-    # Kernel feature map (ELU + 1)
-    # ------------------------------------------------------------------
     def kernel_feature_map(self, x: torch.Tensor) -> torch.Tensor:
         """Positive kernel feature embedding using ELU + 1.
 
@@ -320,9 +300,6 @@ class PositiveKernelLinearAttention(BaseAttention):
         features = torch.einsum("bhnd,hdf->bhnf", x_norm, proj_matrix)
         return F.elu(features) + 1.0 + 1e-6
 
-    # ------------------------------------------------------------------
-    # Weight transfer
-    # ------------------------------------------------------------------
     def copy_weights(self, src: Any) -> None:
         if src is None:
             return
@@ -350,7 +327,6 @@ class PositiveKernelLinearAttention(BaseAttention):
             "v": (None, None), "o": (None, None),
         }
 
-        # 1. GPT-2 fused c_attn
         if hasattr(src, "c_attn") and src.c_attn is not None:
             c_attn_mod = src.c_attn
             base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
@@ -399,7 +375,6 @@ class PositiveKernelLinearAttention(BaseAttention):
                         bias_o.data.clone() if bias_o is not None else None,
                     )
 
-        # 2. BERT / RoBERTa nested
         elif hasattr(src, "self") and hasattr(src.self, "query"):
             s = src.self
             for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
@@ -416,7 +391,6 @@ class PositiveKernelLinearAttention(BaseAttention):
                     out_mod.bias.data.clone() if out_mod.bias is not None else None,
                 )
 
-        # 3. Flat modules (DistilBERT, LLaMA, Qwen)
         else:
             proj_candidates = {
                 "q": ["q_lin", "q_proj", "query"],
@@ -527,12 +501,10 @@ class PositiveKernelLinearAttention(BaseAttention):
             for mod in (self.query, self.key, self.value, self.out_proj):
                 mod.freeze_base_weights()
 
-        # Inherit decoder flag
         if hasattr(src, "is_decoder"):
             self.is_decoder = bool(src.is_decoder)
             self.is_causal = self.is_decoder
 
-        # Forward sanity check
         try:
             with torch.no_grad():
                 d = next(self.parameters()).device
@@ -542,14 +514,11 @@ class PositiveKernelLinearAttention(BaseAttention):
         except Exception as e:
             logger.debug("LEKAv1 forward sanity check warning: %s", e)
 
-    # ------------------------------------------------------------------
-    # [FIX-3, FIX-11] Vectorized causal linear attention (KV-cache aware)
-    # ------------------------------------------------------------------
     @staticmethod
     def _causal_linear_attention(
-        Q_feat: torch.Tensor,   # (B, H, N, F)
-        K_feat: torch.Tensor,   # (B, H, N_kv, F)
-        V: torch.Tensor,        # (B, H, N_kv, d)
+        Q_feat: torch.Tensor,
+        K_feat: torch.Tensor,
+        V: torch.Tensor,
         past_len: int,
     ) -> torch.Tensor:
         """Fully vectorized causal linear attention.
@@ -563,19 +532,15 @@ class PositiveKernelLinearAttention(BaseAttention):
         B, H, N, F_dim = Q_feat.shape
         N_kv = K_feat.shape[2]
 
-        # Compute cumulative state over KV history
-        KV_outer = K_feat.unsqueeze(-1) * V.unsqueeze(-2)   # (B, H, N_kv, F, d)
-        KV_cumsum = KV_outer.cumsum(dim=2)                   # inclusive
-        K_cumsum = K_feat.cumsum(dim=2)                      # (B, H, N_kv, F)
+        KV_outer = K_feat.unsqueeze(-1) * V.unsqueeze(-2)
+        KV_cumsum = KV_outer.cumsum(dim=2)
+        K_cumsum = K_feat.cumsum(dim=2)
 
-        # Slice at query positions (past_len .. past_len + N)
         KV_at_q = KV_cumsum[:, :, past_len:past_len + N, :, :]
         K_at_q = K_cumsum[:, :, past_len:past_len + N, :]
 
-        # Numerator: (B, H, N, F) × (B, H, N, F, d) → (B, H, N, d)
         num = torch.matmul(Q_feat.unsqueeze(-2), KV_at_q).squeeze(-2)
 
-        # Denominator: strictly positive due to ELU+1
         den = (
             torch.einsum("bhnf,bhnf->bhn", Q_feat, K_at_q)
             .unsqueeze(-1)
@@ -584,9 +549,6 @@ class PositiveKernelLinearAttention(BaseAttention):
 
         return num / den
 
-    # ------------------------------------------------------------------
-    # [FIX-1] KV-cache helpers
-    # ------------------------------------------------------------------
     _read_past_kv = staticmethod(_read_past_kv)
 
     @staticmethod
@@ -619,9 +581,6 @@ class PositiveKernelLinearAttention(BaseAttention):
 
         return (k, v)
 
-    # ------------------------------------------------------------------
-    # Forward  — [FIX-1, FIX-3, FIX-4]
-    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -634,7 +593,6 @@ class PositiveKernelLinearAttention(BaseAttention):
         *args: Any,
         **kwargs: Any,
     ) -> tuple[torch.Tensor, Any]:
-        # Unwrap tuple input
         while isinstance(hidden_states, (tuple, list)):
             hidden_states = hidden_states[0]
         if not hidden_states.is_contiguous():
@@ -645,7 +603,6 @@ class PositiveKernelLinearAttention(BaseAttention):
         dtype = hidden_states.dtype
         device = hidden_states.device
 
-        # ---- Projections ----
         q = self.query(hidden_states).view(B, N, H, d).transpose(1, 2).contiguous()
         k_new = (
             self.key(hidden_states)
@@ -660,10 +617,8 @@ class PositiveKernelLinearAttention(BaseAttention):
             .contiguous()
         )
 
-        # ---- [FIX-1] Read past KV ----
         past_k, past_v, past_len = self._read_past_kv(past_key_value, self.layer_idx)
 
-        # ---- RoPE with past offset ----
         pos_emb = (
             position_embeddings if position_embeddings is not None
             else kwargs.get("position_embeddings")
@@ -673,7 +628,6 @@ class PositiveKernelLinearAttention(BaseAttention):
         if pos_emb is not None:
             cos, sin = pos_emb
             if past_len > 0:
-                # Slice for absolute positions
                 if cos.dim() == 4:
                     cos_q = cos[..., past_len:past_len + N, :]
                     sin_q = sin[..., past_len:past_len + N, :]
@@ -693,14 +647,12 @@ class PositiveKernelLinearAttention(BaseAttention):
             except Exception as e:
                 logger.debug("rotary_emb failed: %s", e)
 
-        # ---- [FIX-1] Concat KV cache ----
         if past_k is not None:
             k = torch.cat([past_k.to(k_new.dtype), k_new], dim=-2)
             v = torch.cat([past_v.to(v_new.dtype), v_new], dim=-2)
         else:
             k, v = k_new, v_new
 
-        # ---- [FIX-1, FIX-14] Write back cache ----
         present_kv: Any = None
         use_cache = kwargs.get("use_cache", False) or (
             past_key_value is not None and past_key_value is not False
@@ -712,23 +664,19 @@ class PositiveKernelLinearAttention(BaseAttention):
 
         N_kv = k.shape[-2]
 
-        # ---- GQA repeat ----
         if self.kv_repeat > 1:
             k = repeat_kv(k, self.kv_repeat)
             v = repeat_kv(v, self.kv_repeat)
 
-        # ---- [FIX-4] Padding mask on N_kv (not N_q) ----
         valid_mask: torch.Tensor | None = None
         if attention_mask is not None:
             valid_mask = get_token_valid_mask(attention_mask, B, N_kv, device)
             if valid_mask is not None:
-                kv_mask = valid_mask[:, None, :, None].to(dtype)   # (B, 1, N_kv, 1)
+                kv_mask = valid_mask[:, None, :, None].to(dtype)
                 k = k * kv_mask
                 v = v * kv_mask
 
-        # ---- Compute attention ----
         context = None
-        # Path 1: Fused hardware Triton linear attention kernel on CUDA
         if q.is_cuda and valid_mask is None and past_len == 0 and q.shape[-1] <= 128:
             try:
                 from neuralops.core.triton_kernels import triton_dispatch
@@ -746,7 +694,6 @@ class PositiveKernelLinearAttention(BaseAttention):
                 context = None
 
         if context is None:
-            # Path 2: Vectorized PyTorch implementation
             Q_features = self.kernel_feature_map(q)
             K_features = self.kernel_feature_map(k)
 
@@ -758,7 +705,6 @@ class PositiveKernelLinearAttention(BaseAttention):
                     past_len=past_len,
                 ).to(dtype)
             else:
-                # Bidirectional linear attention via associativity Q(K^T V)
                 KV = torch.einsum("bhnf,bhnd->bhfd", K_features.float(), v.float())
                 K_sum = K_features.float().sum(dim=2)
                 num = torch.einsum("bhnf,bhfd->bhnd", Q_features.float(), KV)
@@ -771,7 +717,6 @@ class PositiveKernelLinearAttention(BaseAttention):
 
         context = torch.nan_to_num(context, nan=0.0)
 
-        # ---- Head mask ----
         if head_mask is not None:
             if head_mask.dim() == 1:
                 hm = head_mask.view(1, -1, 1, 1)
@@ -783,7 +728,6 @@ class PositiveKernelLinearAttention(BaseAttention):
                 hm = head_mask
             context = context * hm.to(context.dtype)
 
-        # ---- Reshape and output projection ----
         context = (
             context.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
         )
@@ -793,12 +737,10 @@ class PositiveKernelLinearAttention(BaseAttention):
         else:
             attn_out = self.out_proj(context)
 
-        # ---- [FIX-2] Residual blend via lora_pres_gate ----
         alpha = torch.sigmoid(self.lora_pres_gate)
         out = alpha * attn_out + (1.0 - alpha) * hidden_states
         out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
 
-        # ---- [FIX-13] Return format ----
         if self.is_decoder:
             if output_attentions:
                 return out.to(dtype), present_kv, None
@@ -810,13 +752,9 @@ class PositiveKernelLinearAttention(BaseAttention):
         return 0.0
 
 
-# Backward-compat aliases
 LEKAV1Attention = PositiveKernelLinearAttention
 
 
-# ===========================================================================
-# [FIX-9, FIX-10] Injection
-# ===========================================================================
 def inject_positive_kernel_linear(
     layer: Any = None,
     model: Any = None,
@@ -840,7 +778,6 @@ def inject_positive_kernel_linear(
 
     cfg = model_config if model_config is not None else getattr(target, "config", None)
 
-    # ---- Whole-model traversal ----
     layer_list = None
     for path in (
         ("distilbert", "transformer", "layer"),
@@ -881,7 +818,6 @@ def inject_positive_kernel_linear(
                 n_inj += 1
         return target if n_inj > 0 else None
 
-    # ---- Single-layer injection ----
     src_attn = old_attn
     if src_attn is None:
         for attr in ("attention", "self_attn", "attn", "self"):
@@ -893,7 +829,6 @@ def inject_positive_kernel_linear(
     if src_attn is None:
         src_attn = target
 
-    # [FIX-10] Idempotency
     if (
         isinstance(src_attn, PositiveKernelLinearAttention)
         or "PositiveKernelLinear" in src_attn.__class__.__name__
@@ -925,7 +860,6 @@ def inject_positive_kernel_linear(
             if p is not None:
                 new_attn.to(device=p.device, dtype=p.dtype)
 
-        # ---- Splice ----
         spliced = False
         if hasattr(target, "attention"):
             if hasattr(target.attention, "self"):
@@ -961,13 +895,9 @@ def inject_positive_kernel_linear(
         return None
 
 
-# Backward-compat aliases
 inject_leka_v1 = inject_positive_kernel_linear
 
 
-# ===========================================================================
-# [FIX-12] Exports
-# ===========================================================================
 __all__ = [
     "PositiveKernelLinearAttention",
     "LEKAV1Attention",

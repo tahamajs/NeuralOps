@@ -19,7 +19,6 @@ _RENAMED_MODULES = {
     'res_svd': ('svd.residual_svd_compressor', {'ResSVDCompressor': 'ResidualSVDCompressor', 'inject_res_svd': 'inject_residual_svd_compressor'}),
 }
 
-# 1. Backward compatibility shim for sys.modules and import hooks (old flat import paths -> new subpackages)
 from importlib.abc import MetaPathFinder, Loader
 from importlib.util import spec_from_loader
 import types
@@ -56,7 +55,6 @@ class _LegacyCompFinder(MetaPathFinder):
 
 sys.meta_path.insert(0, _LegacyCompFinder())
 
-# Pre-populate sys.modules aliases
 for _old in list(_LEGACY_MAP.keys()) + list(_RENAMED_MODULES.keys()):
     try:
         _mod = _get_target_module(_old)
@@ -73,7 +71,6 @@ def __getattr__(name):
             return mod
     raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
 
-# 2. Import all subpackages and re-export classes at top level
 for _sub in _SUBPACKAGES:
     try:
         _submod = importlib.import_module(f".{_sub}", __package__)
@@ -87,7 +84,6 @@ for _sub in _SUBPACKAGES:
     except Exception as _e:
         logger.debug(f"Failed importing subpackage {_sub}: {_e}")
 
-# Auto-wired package members
 from neuralops.compression_engine import experimental
 from neuralops.compression_engine import kv_cache
 from neuralops.compression_engine import low_rank

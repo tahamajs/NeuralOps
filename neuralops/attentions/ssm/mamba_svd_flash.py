@@ -32,9 +32,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 logger = logging.getLogger(__name__)
 
 
-# ===========================================================================
-# SVD-SSM sub-module (parameter-efficient bottleneck)
-# ===========================================================================
 class SVDS6StateSpace(nn.Module):
     """
     Per-token low-rank SVD state transition.
@@ -62,27 +59,18 @@ class SVDS6StateSpace(nn.Module):
 
         fk = {"device": device, "dtype": dtype}
 
-        # MSF-FIX-10: bottleneck to keep params small
         self.down = nn.Linear(d_model, self.bottleneck_dim, bias=False, **fk)
 
-        # Outputs from the bottleneck:
-        #   - U:   d_model * rank         (per-token basis for columns)
-        #   - V:   rank * d_model         (per-token basis for rows)
-        #   - sigma: rank                 (per-token singular values)
-        #   - B:   d_model                (input gate)
-        #   - C:   d_model                (output gate)
         self.up_u = nn.Linear(self.bottleneck_dim, d_model * self.rank, bias=False, **fk)
         self.up_v = nn.Linear(self.bottleneck_dim, self.rank * d_model, bias=False, **fk)
         self.up_sigma = nn.Linear(self.bottleneck_dim, self.rank, bias=True, **fk)
         self.up_b = nn.Linear(self.bottleneck_dim, d_model, bias=True, **fk)
         self.up_c = nn.Linear(self.bottleneck_dim, d_model, bias=True, **fk)
 
-        # Sigma bias: initial sigmoid ≈ 0.85 (stable contraction)
         with torch.no_grad():
             nn.init.zeros_(self.up_sigma.weight)
-            nn.init.constant_(self.up_sigma.bias, 1.75)  # sigmoid(1.75) ≈ 0.85
+            nn.init.constant_(self.up_sigma.bias, 1.75)
 
-        # C bias: identity-like start
         with torch.no_grad():
             if self.up_c.bias is not None:
                 nn.init.zeros_(self.up_c.bias)
@@ -91,25 +79,20 @@ class SVDS6StateSpace(nn.Module):
         B, L, D = x.shape
         r = self.rank
 
-        z = self.down(x)  # (B, L, bottleneck)
+        z = self.down(x)
 
         U = self.up_u(z).view(B, L, D, r)
         V = self.up_v(z).view(B, L, r, D)
-        sigma = torch.sigmoid(self.up_sigma(z))  # (B, L, r) ∈ (0,1)
-        B_seq = self.up_b(z)  # (B, L, D)
-        C_seq = self.up_c(z)  # (B, L, D)
+        sigma = torch.sigmoid(self.up_sigma(z))
+        B_seq = self.up_b(z)
+        C_seq = self.up_c(z)
 
-        # MSF-FIX-03: enforce unit spectral norms on U, V
         U = F.normalize(U, p=2, dim=-2, eps=1e-8)
         V = F.normalize(V, p=2, dim=-2, eps=1e-8)
 
         return U, sigma, V, B_seq, C_seq
 
 
-# ===========================================================================
-# Main attention block
-# ===========================================================================
-# DEPRECATED: alias of simple_ssm
 @ATTENTION_REGISTRY.register("mamba_svd_flash", supports_causal=True, supports_gqa=True)
 class MambaSVDFlash(BaseAttention):
     """
@@ -142,7 +125,6 @@ class MambaSVDFlash(BaseAttention):
     ) -> None:
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
 
-        # ---- d_model ----
         dim = (
             kwargs.get("d_model")
             or kwargs.get("hidden_size")
@@ -180,9 +162,8 @@ class MambaSVDFlash(BaseAttention):
         self.d_model = int(dim or 128)
         self.dim = self.d_model
         self.hidden_size = self.d_model
-        self.rank = max(1, int(rank if rank is not None else 16))  # MSF-FIX-02
+        self.rank = max(1, int(rank if rank is not None else 16))
 
-        # ---- LoRA config ----
         if config_obj is not None:
             self.lora_rank = int(
                 getattr(
@@ -208,7 +189,6 @@ class MambaSVDFlash(BaseAttention):
             self.lora_alpha = float(kwargs.get("lora_alpha", 32.0))
         self.freeze_base = self.lora_rank > 0
 
-        # ---- decoder detection ----
         model_type = (
             str(getattr(config_obj, "model_type", "") or "").lower()
             if config_obj is not None
@@ -246,7 +226,6 @@ class MambaSVDFlash(BaseAttention):
         self.is_causal = self.is_decoder
         self.is_nested_encoder = False
 
-        # ---- heads / GQA ----
         n_heads = num_heads or kwargs.get("n_heads") or kwargs.get("num_attention_heads")
         if n_heads is None:
             if config_obj is not None:
@@ -283,7 +262,6 @@ class MambaSVDFlash(BaseAttention):
         self.all_head_size = self.num_heads * self.head_dim
         self.all_kv_head_size = self.num_kv_heads * self.head_dim
 
-        # ---- SSM sub-module (MSF-FIX-10) ----
         bd = int(
             getattr(comp_config, "bottleneck_dim", bottleneck_dim)
             if comp_config
@@ -293,13 +271,11 @@ class MambaSVDFlash(BaseAttention):
 
         if not self.is_decoder:
             self.ssm_bwd = SVDS6StateSpace(self.d_model, rank=self.rank, bottleneck_dim=bd)
-            # MSF-FIX-13: per-head mix
             self.bidirectional_mix = nn.Parameter(torch.zeros(self.num_heads))
         else:
             self.ssm_bwd = None
             self.bidirectional_mix = None
 
-        # ---- Attention projections ----
         self.q_proj = LoRALinear(
             self.d_model,
             self.all_head_size,
@@ -333,7 +309,6 @@ class MambaSVDFlash(BaseAttention):
             freeze_base=self.freeze_base,
         )
 
-        # ---- Gating (MSF-FIX-12: LoRALinear, per-head output) ----
         self.gating = LoRALinear(
             self.d_model,
             self.num_heads,
@@ -347,7 +322,6 @@ class MambaSVDFlash(BaseAttention):
             if self.gating.bias is not None:
                 nn.init.constant_(self.gating.bias, -2.0)
 
-        # ---- Dropout ----
         dropout_p = 0.1
         if config_obj is not None:
             dropout_p = float(
@@ -371,7 +345,6 @@ class MambaSVDFlash(BaseAttention):
         if source_attn is not None:
             self.copy_weights(source_attn)
 
-    # ---- aliases ----
     @property
     def q_lin(self):
         return self.q_proj
@@ -400,9 +373,7 @@ class MambaSVDFlash(BaseAttention):
     def value(self):
         return self.v_proj
 
-    # ------------------------------------------------------------------
     def freeze_base_weights(self):
-        # MSF-FIX-09: freeze SSM projections too
         for m in (
             self.q_proj,
             self.k_proj,
@@ -421,7 +392,6 @@ class MambaSVDFlash(BaseAttention):
         if self.ssm_bwd is not None:
             for p in self.ssm_bwd.parameters():
                 p.requires_grad = False
-        # Keep LoRA adapters trainable
         for m in (self.q_proj, self.k_proj, self.v_proj, self.out_proj, self.gating):
             for name, p in m.named_parameters():
                 if "lora_" in name:
@@ -447,9 +417,6 @@ class MambaSVDFlash(BaseAttention):
             for p in self.ssm_bwd.parameters():
                 p.requires_grad = True
 
-    # ------------------------------------------------------------------
-    # copy_weights
-    # ------------------------------------------------------------------
     def copy_weights(self, old_attn: Any) -> None:
         if old_attn is None:
             return
@@ -493,7 +460,6 @@ class MambaSVDFlash(BaseAttention):
             "o": (None, None),
         }
 
-        # GPT-2 fused
         if hasattr(old_attn, "c_attn") and old_attn.c_attn is not None:
             c = old_attn.c_attn
             base_c = getattr(c, "base_layer", c)
@@ -536,7 +502,6 @@ class MambaSVDFlash(BaseAttention):
                     bo = getattr(base_o, "bias", getattr(o, "bias", None))
                     extracted["o"] = (ow, bo.data.clone() if bo is not None else None)
 
-        # Nested (BERT/RoBERTa)
         elif hasattr(old_attn, "self") and hasattr(old_attn.self, "query"):
             s = old_attn.self
             for key, sub in (("q", "query"), ("k", "key"), ("v", "value")):
@@ -549,7 +514,6 @@ class MambaSVDFlash(BaseAttention):
                 b = getattr(d, "bias", None)
                 extracted["o"] = (d.weight.data, b.data if b is not None else None)
 
-        # Flat
         else:
             cand = {
                 "q": ("q_proj", "q_lin", "query", "attention"),
@@ -569,7 +533,6 @@ class MambaSVDFlash(BaseAttention):
                             )
                             break
 
-        # UniversalAdapter fallback
         missing = [
             k
             for k, (w, _) in extracted.items()
@@ -637,7 +600,6 @@ class MambaSVDFlash(BaseAttention):
                 if self.freeze_base:
                     target.freeze_base_weights()
 
-            # MSF-FIX-17: initialise SSM projections from W_q, W_k using SVD
             w_q, _ = extracted["q"]
             w_k, _ = extracted["k"]
             w_v, _ = extracted["v"]
@@ -662,8 +624,6 @@ class MambaSVDFlash(BaseAttention):
         bottleneck outputs to approximate U/V/Sigma/B/C from these weights.
         Simpler approach: leave SSM at random init but scale to match.
         """
-        # Practical approach: fit the up_b / up_c linear layers so that
-        # B(x) ≈ W_k @ x and C(x) ≈ W_q @ x  (best-effort, through the bottleneck)
         try:
             if w_k is None and w_q is None:
                 return
@@ -675,7 +635,6 @@ class MambaSVDFlash(BaseAttention):
             if target_b is None or target_c is None:
                 return
 
-            # Ensure shapes match (D, D)
             def _fit(mat):
                 if mat is None:
                     return
@@ -684,22 +643,17 @@ class MambaSVDFlash(BaseAttention):
                 if mat.shape != (D, D):
                     return
                 mat_f = mat.float()
-                # SVD to get top-r singular values
                 try:
                     U, S, Vh = torch.linalg.svd(mat_f, full_matrices=False)
                 except Exception:
                     return
                 r = min(self.rank, S.numel())
-                # Project through the bottleneck using the top-r singular directions
-                # Store in up_b / up_c (approximation; leaves low-rank heads)
                 with torch.no_grad():
                     if self.ssm_fwd.up_b.weight.shape == (
                         D,
                         self.ssm_fwd.bottleneck_dim,
                     ):
-                        # up_b is (D, bottleneck_dim); use Vh rows as bottleneck features
-                        Vh_r = Vh[:r, :]  # (r, D)
-                        # down projection: (bd, D)  -- we set down.weight rows to Vh_r
+                        Vh_r = Vh[:r, :]
                         self.ssm_fwd.down.weight.data[:r, :].copy_(
                             Vh_r.to(
                                 self.ssm_fwd.down.weight.device,
@@ -710,9 +664,6 @@ class MambaSVDFlash(BaseAttention):
         except Exception as e:
             logger.debug("SSM weight init from attention failed: %s", e)
 
-    # ------------------------------------------------------------------
-    # Mask helper (MSF-FIX-04)
-    # ------------------------------------------------------------------
     @staticmethod
     def _normalize_valid_mask(
         attention_mask: torch.Tensor | None,
@@ -757,19 +708,16 @@ class MambaSVDFlash(BaseAttention):
 
         return torch.ones(B, L, device=device, dtype=torch.bool)
 
-    # ------------------------------------------------------------------
-    # Scan (MSF-FIX-06, MSF-FIX-07, MSF-FIX-08)
-    # ------------------------------------------------------------------
     def _ssm_scan(
         self,
-        U: torch.Tensor,  # (B, L, D, r)
-        Sigma: torch.Tensor,  # (B, L, r)
-        V: torch.Tensor,  # (B, L, r, D)
-        B_seq: torch.Tensor,  # (B, L, D)
-        C_seq: torch.Tensor,  # (B, L, D)
-        x: torch.Tensor,  # (B, L, D)
-        mask: torch.Tensor | None = None,  # (B, L) bool
-        h0: torch.Tensor | None = None,  # (B, D)
+        U: torch.Tensor,
+        Sigma: torch.Tensor,
+        V: torch.Tensor,
+        B_seq: torch.Tensor,
+        C_seq: torch.Tensor,
+        x: torch.Tensor,
+        mask: torch.Tensor | None = None,
+        h0: torch.Tensor | None = None,
         reverse: bool = False,
     ) -> tuple[torch.Tensor, torch.Tensor]:
         """
@@ -782,7 +730,6 @@ class MambaSVDFlash(BaseAttention):
         r = Sigma.shape[-1]
         device = x.device
 
-        # Hardware-accelerated Triton selective scan path
         if x.is_cuda and mask is None and h0 is None and not reverse and r <= 64:
             try:
                 from neuralops.core.triton_kernels.selective_scan import selective_scan_fn
@@ -791,15 +738,15 @@ class MambaSVDFlash(BaseAttention):
                 if suitable:
                     delta = Sigma.mean(dim=-1, keepdim=True).expand(-1, -1, D).contiguous()
                     A = -torch.ones(D, r, device=device, dtype=torch.float32)
-                    B_mat = V.mean(dim=-1).transpose(1, 2).contiguous() # (B, r, L)
-                    C_mat = U.mean(dim=-2).transpose(1, 2).contiguous() # (B, r, L)
+                    B_mat = V.mean(dim=-1).transpose(1, 2).contiguous()
+                    C_mat = U.mean(dim=-2).transpose(1, 2).contiguous()
                     y_triton = selective_scan_fn(x, delta, A, B_mat, C_mat, D=None, delta_softplus=False)
                     return y_triton.to(x.dtype), y_triton[:, -1].to(x.dtype)
             except Exception as e:
                 logger.debug("Triton selective scan failed in MambaSVDFlash: %s", e)
 
         h = torch.zeros(B, D, device=device, dtype=torch.float32) if h0 is None else h0.float()
-        US = (U.float() * Sigma.float().unsqueeze(-2)).contiguous()  # (B, L, D, r)
+        US = (U.float() * Sigma.float().unsqueeze(-2)).contiguous()
         V_f = V.float().contiguous()
         bx = (B_seq.float() * x.float()).contiguous()
 
@@ -814,8 +761,8 @@ class MambaSVDFlash(BaseAttention):
             curr_h = h_in
             curr_col = curr_h.unsqueeze(-1)
             for t in sub_steps:
-                v_t = torch.bmm(V_f[:, t], curr_col)  # (B, r, 1)
-                h_trans = torch.bmm(US[:, t], v_t).squeeze(-1)  # (B, D)
+                v_t = torch.bmm(V_f[:, t], curr_col)
+                h_trans = torch.bmm(US[:, t], v_t).squeeze(-1)
                 h_next = h_trans + bx[:, t]
                 if mask is not None:
                     m_t = mask[:, t].unsqueeze(-1).to(h_next.dtype)
@@ -843,9 +790,6 @@ class MambaSVDFlash(BaseAttention):
         out = C_seq.float() * H
         return out.to(x.dtype), h.to(x.dtype)
 
-    # ------------------------------------------------------------------
-    # Forward
-    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -865,7 +809,6 @@ class MambaSVDFlash(BaseAttention):
         if encoder_hidden_states is not None:
             raise NotImplementedError("MambaSVDFlash does not support cross-attention.")
 
-        # MSF-FIX-16: bounded unpack
         if isinstance(hidden_states, (tuple, list)) and hidden_states:
             hidden_states = hidden_states[0]
         if isinstance(attention_mask, (tuple, list)) and attention_mask:
@@ -877,7 +820,6 @@ class MambaSVDFlash(BaseAttention):
         dtype_in = hidden_states.dtype
         device = hidden_states.device
 
-        # MSF-FIX-15: read cache
         past_h = None
         past_attn_k = None
         past_attn_v = None
@@ -901,7 +843,6 @@ class MambaSVDFlash(BaseAttention):
 
         mask_bool = self._normalize_valid_mask(attention_mask, B, L, device)
 
-        # ---------------- 1. SSM path ----------------
         U_f, Sig_f, V_f, B_f, C_f = self.ssm_fwd(hidden_states)
 
         if self.is_decoder:
@@ -917,7 +858,6 @@ class MambaSVDFlash(BaseAttention):
                 reverse=False,
             )
         else:
-            # Forward direction
             ssm_fwd, _ = self._ssm_scan(
                 U_f,
                 Sig_f,
@@ -929,7 +869,6 @@ class MambaSVDFlash(BaseAttention):
                 h0=None,
                 reverse=False,
             )
-            # Backward direction (only meaningful for encoder)
             if self.ssm_bwd is not None:
                 U_b, Sig_b, V_b, B_b, C_b = self.ssm_bwd(hidden_states)
                 x_rev = torch.flip(hidden_states, dims=[1])
@@ -946,7 +885,6 @@ class MambaSVDFlash(BaseAttention):
                     reverse=False,
                 )
                 ssm_bwd = torch.flip(ssm_bwd_rev, dims=[1])
-                # MSF-FIX-13: per-head mix
                 w = torch.sigmoid(self.bidirectional_mix).view(1, self.num_heads, 1, 1)
                 ssm_fwd_h = ssm_fwd.view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
                 ssm_bwd_h = ssm_bwd.view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
@@ -958,7 +896,6 @@ class MambaSVDFlash(BaseAttention):
                 ssm_out = ssm_fwd
                 ssm_h_next = None
 
-        # ---------------- 2. Attention path ----------------
         Q = (
             self.q_proj(hidden_states)
             .view(B, L, self.num_heads, self.head_dim)
@@ -978,7 +915,6 @@ class MambaSVDFlash(BaseAttention):
             .contiguous()
         )
 
-        # MSF-FIX-18: RoPE with offset
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
         if position_ids is None:
@@ -986,7 +922,6 @@ class MambaSVDFlash(BaseAttention):
 
         if position_embeddings is not None:
             cos, sin = position_embeddings
-            # Slice to [past_len, past_len + L)
             if cos.shape[-2] >= past_len + L:
                 cos = cos.narrow(-2, past_len, L)
                 sin = sin.narrow(-2, past_len, L)
@@ -1010,12 +945,10 @@ class MambaSVDFlash(BaseAttention):
             if cos is not None and sin is not None:
                 Q, K = apply_rotary_pos_emb(Q, K, cos, sin, position_ids=position_ids)
 
-        # MSF-FIX-15: append to attention cache
         if past_attn_k is not None:
             K = torch.cat([past_attn_k.to(K.dtype), K], dim=-2)
             V_a = torch.cat([past_attn_v.to(V_a.dtype), V_a], dim=-2)
 
-        # Store compact (before GQA expand)
         present_attn_k = K
         present_attn_v = V_a
 
@@ -1027,11 +960,10 @@ class MambaSVDFlash(BaseAttention):
         attn_out: torch.Tensor | None = None
         probs: torch.Tensor | None = None
 
-        # SDPA fast path
         can_sdpa = (
             head_mask is None
             and not output_attentions
-            and bool(mask_bool.all().item())  # single sync at call time
+            and bool(mask_bool.all().item())
             and past_len == 0
         )
         if can_sdpa:
@@ -1068,7 +1000,6 @@ class MambaSVDFlash(BaseAttention):
                 )
                 scores = scores.masked_fill(~causal.unsqueeze(0).unsqueeze(0), -1e4)
 
-            # Padding mask: keys that are invalid get -inf
             if not mask_bool.all().item():
                 scores = scores.masked_fill(~mask_bool[:, None, None, :], -1e4)
 
@@ -1085,19 +1016,15 @@ class MambaSVDFlash(BaseAttention):
             )
             attn_out = torch.nan_to_num(attn_out, nan=0.0)
 
-        # ---------------- 3. Per-head gating fusion ----------------
-        # gamma: (B, L, num_heads)
         gamma = torch.sigmoid(self.gating(hidden_states))
-        # Reshape for per-head fusion
         ssm_h = ssm_out.view(B, L, self.num_heads, self.head_dim)
         attn_h = attn_out.view(B, L, self.num_heads, self.head_dim)
-        g = gamma.unsqueeze(-1)  # (B, L, H, 1)
+        g = gamma.unsqueeze(-1)
         Y = (g * ssm_h + (1 - g) * attn_h).contiguous().view(B, L, self.all_head_size)
         Y = torch.nan_to_num(Y, nan=0.0, posinf=1e4, neginf=-1e4)
 
         out = Y if self.is_nested_encoder else self.out_proj(Y)
 
-        # Build present_key_value
         present_key_value = {
             "ssm_h": (
                 ssm_h_next
@@ -1124,7 +1051,6 @@ class MambaSVDFlash(BaseAttention):
             else:
                 hm = hm.view(1, -1, 1, 1)
         elif hm.dim() == 2:
-            # (B, H) or (H, 1)
             if hm.shape[-1] == H:
                 hm = hm.view(hm.shape[0], H, 1, 1)
             elif hm.shape[0] == H:
@@ -1132,17 +1058,14 @@ class MambaSVDFlash(BaseAttention):
             else:
                 hm = hm.view(1, hm.shape[-1], 1, 1)
         elif hm.dim() == 3:
-            # (B, H, Lk) or (B, Lk, H)
             if hm.shape[1] == H:
-                hm = hm.unsqueeze(2)  # (B, H, 1, Lk)
+                hm = hm.unsqueeze(2)
             elif hm.shape[2] == H:
                 hm = hm.permute(0, 2, 1).unsqueeze(2)
             else:
                 hm = hm.unsqueeze(1)
-        # dim == 4: pass through
         return probs * hm
 
-    # ------------------------------------------------------------------
     def storage_bytes(self) -> dict[str, int]:
         def _sz(p):
             if isinstance(p, (nn.Parameter, torch.Tensor)):
@@ -1165,9 +1088,6 @@ class MambaSVDFlash(BaseAttention):
         return out
 
 
-# ===========================================================================
-# Injector
-# ===========================================================================
 def inject_mamba_svd_flash(
     layer: Any = None,
     model: Any = None,
@@ -1191,7 +1111,6 @@ def inject_mamba_svd_flash(
     if cfg is None and hasattr(target, "config"):
         cfg = target.config
 
-    # ---- Whole-model traversal ----
     layer_list = None
     for path in (
         ("distilbert", "transformer", "layer"),
@@ -1232,7 +1151,6 @@ def inject_mamba_svd_flash(
                 num_injected += 1
         return target if num_injected > 0 else None
 
-    # ---- Single-layer ----
     src_attn = old_attn
     if src_attn is None:
         for attr in ("attention", "self_attn", "attn", "self"):

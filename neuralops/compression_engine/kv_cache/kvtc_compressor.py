@@ -38,8 +38,6 @@ from neuralops.utils.compat import should_compress_linear
 logger = logging.getLogger(__name__)
 
 
-
-
 _ATTN_NAMES = {
     "attn",
     "attention",
@@ -104,7 +102,6 @@ class KVTCStore:
         k_flat = k.detach().float().reshape(-1, k.shape[-1])
         v_flat = v.detach().float().reshape(-1, v.shape[-1])
 
-        # SVD on centered channels in FP32
         _, _, Vt_k = torch.linalg.svd(
             k_flat - k_flat.mean(dim=0, keepdim=True), full_matrices=False
         )
@@ -183,7 +180,7 @@ class KVTCQuantizedLoRALinear(nn.Module):
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
-        self.nf = out_features  # Conv1D compatibility
+        self.nf = out_features
         self.compute_dtype = compute_dtype
         self.lora_r = int(lora_r)
         self.lora_alpha = float(lora_alpha)
@@ -191,7 +188,6 @@ class KVTCQuantizedLoRALinear(nn.Module):
 
         target_device = device if device is not None else int_weight.device
 
-        # Store true integer weights as buffer (not float Parameter)
         self.register_buffer("int_weight", int_weight.to(device=target_device))
         self.register_buffer("scale", scale.to(device=target_device, dtype=torch.float32))
         self.register_buffer("zero_point", zero_point.to(device=target_device, dtype=torch.float32))
@@ -522,10 +518,8 @@ class KVTCCompressor(BaseCompressor):
         total_orig_params = 0
         total_comp_params = 0
 
-        # Physical byte tracking before compression
         initial_actual_bytes = self._estimate_actual_bytes(self.model)
 
-        # Freeze non-target linear/conv1d layers when target_attention_only is True
         if self.target_attention_only:
             for name, module in self.model.named_modules():
                 target_mod = getattr(module, "base_layer", module)
@@ -566,7 +560,6 @@ class KVTCCompressor(BaseCompressor):
             min_dim = min(d_out, d_in)
 
             try:
-                # Step 1: PCA decorrelation via SVD in FP32
                 U, S, Vt = torch.linalg.svd(W, full_matrices=False)
                 total_energy = (S**2).sum()
                 if total_energy > 0:
@@ -579,21 +572,17 @@ class KVTCCompressor(BaseCompressor):
                 effective_min_rank = min(self.min_rank, min_dim)
                 rank = max(effective_min_rank, min(rank, min_dim))
 
-                # Reconstruct low-rank approximation
                 U_r = U[:, :rank]
                 S_r = S[:rank]
                 Vt_r = Vt[:rank, :]
                 W_lowrank = (U_r * S_r.unsqueeze(0)) @ Vt_r
 
-                # Step 2: Percentile outlier clipping before quantization
                 W_clipped = self._percentile_clip(W_lowrank, low=0.001, high=0.999)
 
-                # Step 3: Integer quantization
                 int_w, scale, zp = self._quantize_to_int(W_clipped, bits=self.bits)
                 W_quant = self._dequantize_from_int(int_w, scale, zp)
                 W_quant = torch.nan_to_num(W_quant, nan=0.0)
 
-                # Reconstruction error check against original W
                 norm_orig = torch.norm(W, p="fro").item()
                 rel_err = (torch.norm(W - W_quant, p="fro") / max(norm_orig, 1e-12)).item()
                 self.layer_errors[name] = float(rel_err)
@@ -617,7 +606,6 @@ class KVTCCompressor(BaseCompressor):
                         total_comp_params += orig_params
                         continue
 
-                # Step 4: Empirical Shannon entropy calculation on discrete integer symbols
                 entropy = SimpleEntropyCoder.compute_entropy(int_w)
                 total_entropy += entropy
 
@@ -631,7 +619,6 @@ class KVTCCompressor(BaseCompressor):
                     compute_dtype=dtype,
                 )
 
-                # Effective compressed parameters count for reporting
                 quant_equiv_params = int(orig_params * (self.bits / 16.0))
                 lora_params = (
                     (new_layer.lora_A.numel() + new_layer.lora_B.numel())
@@ -660,10 +647,8 @@ class KVTCCompressor(BaseCompressor):
                 total_comp_params += orig_params
                 self.layer_errors[name] = 1.0
 
-        # Physical byte tracking after compression
         final_actual_bytes = self._estimate_actual_bytes(self.model)
 
-        # Real post-compression forward sanity check
         forward_check_success = False
         forward_check_error = None
         try:
@@ -673,7 +658,6 @@ class KVTCCompressor(BaseCompressor):
             dev = p0.device if p0 is not None else torch.device("cpu")
             self.model.eval()
 
-            # Try text classification / sequence classification format: input_ids (1, 8)
             with torch.no_grad():
                 test_passed = False
                 try:
@@ -684,7 +668,6 @@ class KVTCCompressor(BaseCompressor):
                     pass
 
                 if not test_passed:
-                    # Dynamically inspect first linear/factorized layer for hidden dimension
                     in_dim = 64
                     for m in self.model.modules():
                         if hasattr(m, "in_features") and isinstance(getattr(m, "in_features"), int):

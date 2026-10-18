@@ -24,12 +24,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 logger = logging.getLogger(__name__)
 
 
-
-
-
-
-
-
 @ATTENTION_REGISTRY.register("nasc_attention", supports_causal=True, supports_gqa=True)
 class NASCAttention(BaseAttention):
     r"""NASC: NEXUS-AEGIS Spectral Cascade Attention.
@@ -200,7 +194,6 @@ class NASCAttention(BaseAttention):
             "o": (None, None),
         }
 
-        # 1. UniversalAdapter extraction
         for proj in ["q", "k", "v", "o"]:
             try:
                 w, b = UniversalAdapter.get_weight_bias(src, proj)
@@ -209,7 +202,6 @@ class NASCAttention(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter extraction fallback for %s: %s", proj, e)
 
-        # 2. GPT-2 Fused c_attn Conv1D handling
         if hasattr(src, "c_attn") and (
             extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None
         ):
@@ -258,7 +250,6 @@ class NASCAttention(BaseAttention):
                     w_o = w_o.t().contiguous()
                 extracted["o"] = (w_o, b_o.data.clone() if b_o is not None else None)
 
-        # 3. RoBERTa / BERT Nested Encoder handling
         if hasattr(src, "self") and (
             extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None
         ):
@@ -274,7 +265,6 @@ class NASCAttention(BaseAttention):
             dense = src.output.dense
             extracted["o"] = (dense.weight.data, getattr(dense, "bias", None))
 
-        # 4. Modern Decoders (Qwen3.5, LLaMA, Mistral) & DistilBERT
         named_map = {
             "q": ["q_proj", "q_lin", "query"],
             "k": ["k_proj", "k_lin", "key"],
@@ -293,7 +283,6 @@ class NASCAttention(BaseAttention):
                             )
                             break
 
-        # Detect nested encoder architecture
         cls_name = src.__class__.__name__
         has_out_proj = any(
             hasattr(src, attr)
@@ -332,14 +321,12 @@ class NASCAttention(BaseAttention):
         else:
             self.is_nested_encoder = False
 
-        # Check required weights
         missing = [k for k in ["q", "k", "v"] if extracted[k][0] is None]
         if not self.is_nested_encoder and extracted["o"][0] is None:
             missing.append("o")
         if missing:
             logger.warning("Module copy_weights warning. Proceeding with initialized weights.")
 
-        # Frobenius norm validation
         for proj_key in ["q", "k", "v"]:
             w = extracted[proj_key][0]
             if w is not None:
@@ -361,7 +348,6 @@ class NASCAttention(BaseAttention):
                 return w.t().contiguous()
             return w
 
-        # Copy into projection modules
         with torch.no_grad():
             for proj_key, target in [
                 ("q", self.q_proj),
@@ -430,11 +416,9 @@ class NASCAttention(BaseAttention):
         dist = (idx.unsqueeze(0) - idx.unsqueeze(1)).abs()
         mask = dist > self.window_size
         if is_causal:
-            # Query i attending to key j: future keys (j > i) must be masked
             mask = mask | (idx.unsqueeze(0) > idx.unsqueeze(1))
         scores = scores.masked_fill(mask.unsqueeze(0).unsqueeze(0), -10000.0)
 
-        # Padding mask
         pad_k = (~valid_mask).unsqueeze(1).unsqueeze(2)
         scores = scores.masked_fill(pad_k, -10000.0)
         scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
@@ -526,8 +510,6 @@ class NASCAttention(BaseAttention):
             Q, K, V, self.rff_proj, valid_mask=valid_mask, is_causal=is_causal
         )
 
-
-
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -595,7 +577,6 @@ class NASCAttention(BaseAttention):
             self._logged_once = True
 
         if use_dense:
-            # Fall back to standard scaled dot product attention for short/cross sequences or encoders
             scale = 1.0 / math.sqrt(d)
             scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
             if is_causal:
@@ -636,13 +617,13 @@ class NASCAttention(BaseAttention):
             O = torch.matmul(attn, V)
         else:
             if is_causal:
-                gates = F.softmax(self.gate_proj(hidden_states), dim=-1)  # [B, L, 3]
-                g0 = gates[:, :, 0].unsqueeze(1).unsqueeze(-1)  # [B, 1, L, 1]
+                gates = F.softmax(self.gate_proj(hidden_states), dim=-1)
+                g0 = gates[:, :, 0].unsqueeze(1).unsqueeze(-1)
                 g1 = gates[:, :, 1].unsqueeze(1).unsqueeze(-1)
                 g2 = gates[:, :, 2].unsqueeze(1).unsqueeze(-1)
             else:
                 summary = hidden_states.mean(dim=1)
-                gates = F.softmax(self.gate_proj(summary), dim=-1)  # [B, 3]
+                gates = F.softmax(self.gate_proj(summary), dim=-1)
                 g0 = gates[:, 0].view(B, 1, 1, 1)
                 g1 = gates[:, 1].view(B, 1, 1, 1)
                 g2 = gates[:, 2].view(B, 1, 1, 1)
@@ -693,7 +674,6 @@ def inject_nasc(
     if cfg is None and hasattr(target, "config"):
         cfg = target.config
 
-    # 1. Whole model traversal
     layer_list = None
     if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
         layer_list = target.distilbert.transformer.layer
@@ -730,7 +710,6 @@ def inject_nasc(
                 num_injected += 1
         return target if num_injected > 0 else None
 
-    # 2. Single layer injection
     try:
         src_attn = old_attn
         if src_attn is None and target is not None:
@@ -749,13 +728,11 @@ def inject_nasc(
         if src_attn is None:
             return None
 
-        # Double-injection guard
         if isinstance(src_attn, NASCAttention):
             return None
         if "NASC" in src_attn.__class__.__name__:
             return None
 
-        # Skip Qwen3.5 hybrid DeltaNet/LinearAttention layers
         c_name = src_attn.__class__.__name__
         if "DeltaNet" in c_name or "LinearAttention" in c_name:
             return None
@@ -837,5 +814,4 @@ def inject_nasc(
         return None
 
 
-# Aliases
 inject_nasc_attention = inject_nasc

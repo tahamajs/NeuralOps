@@ -33,14 +33,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 logger = logging.getLogger(__name__)
 
 
-
-
-
-
-
-
-
-
 @ATTENTION_REGISTRY.register("griffin_ssd")
 class GriffinSSDBlock(BaseAttention):
     """Griffin Hybrid Block: local window + SSD linear attention."""
@@ -311,17 +303,13 @@ class GriffinSSDBlock(BaseAttention):
         B, H, L, d = q.shape
         target_dtype = q.dtype
 
-        # Symmetric normalization (FIX 7)
-        q_n = F.normalize(q.float(), p=2, dim=-1)               # (B, H, L, d)
-        k_n = F.normalize(k.float(), p=2, dim=-1) / math.sqrt(d) # (B, H, L, d)
-        v_f = v.float()                                          # (B, H, L, d)
+        q_n = F.normalize(q.float(), p=2, dim=-1)
+        k_n = F.normalize(k.float(), p=2, dim=-1) / math.sqrt(d)
+        v_f = v.float()
 
-        # decay: (1, H, 1, 1)
         decay_f = decay.to(torch.float32).view(1, H, 1, 1)
-        # log decay for stable exponentiation
-        log_decay = torch.log(decay_f.clamp(min=1e-6, max=1.0 - 1e-6))  # (1, H, 1, 1)
+        log_decay = torch.log(decay_f.clamp(min=1e-6, max=1.0 - 1e-6))
 
-        # ---- Pad to multiple of chunk_size ----
         chunk_size = min(chunk_size, L)
         pad_len = (chunk_size - (L % chunk_size)) % chunk_size
         Lp = L + pad_len
@@ -332,93 +320,49 @@ class GriffinSSDBlock(BaseAttention):
 
         n_chunks = Lp // chunk_size
 
-        # ---- Reshape to (B, H, n_chunks, chunk_size, d) ----
         q_c = q_n.view(B, H, n_chunks, chunk_size, d)
         k_c = k_n.view(B, H, n_chunks, chunk_size, d)
         v_c = v_f.view(B, H, n_chunks, chunk_size, d)
 
-        # ---- Intra-chunk: parallel attention within each chunk with decay ----
-        # Positions within chunk
         pos = torch.arange(chunk_size, device=q.device, dtype=torch.float32)
-        # diff[i,j] = i - j (causal: i >= j)
-        diff = pos.unsqueeze(1) - pos.unsqueeze(0)  # (C, C) where diff[i, j] = i - j
-        causal = diff >= 0  # (C, C) bool
+        diff = pos.unsqueeze(1) - pos.unsqueeze(0)
+        causal = diff >= 0
 
-        # D_intra[i,j] = decay^(i-j) if i>=j else 0
         log_decay_5d = log_decay.view(1, H, 1, 1, 1)
-        diff_5d = diff.view(1, 1, 1, chunk_size, chunk_size)  # (1,1,1,C,C)
-        exp_arg = (diff_5d * log_decay_5d).clamp(min=-40.0, max=0.0)  # (1,H,1,C,C)
+        diff_5d = diff.view(1, 1, 1, chunk_size, chunk_size)
+        exp_arg = (diff_5d * log_decay_5d).clamp(min=-40.0, max=0.0)
         D_intra = torch.exp(exp_arg) * causal.view(1, 1, 1, chunk_size, chunk_size).float()
 
-        # scores_intra[b,h,c,i,j] = q_c[b,h,c,i] · k_c[b,h,c,j]
-        # q_c: (B,H,nc,C,d), k_c^T: (B,H,nc,d,C) → scores: (B,H,nc,C,C)
-        scores_intra = torch.matmul(q_c, k_c.transpose(-1, -2))  # (B,H,nc,C,C)
-        scores_intra = scores_intra * D_intra  # broadcast (1,H,1,C,C) → (B,H,nc,C,C) ✓
+        scores_intra = torch.matmul(q_c, k_c.transpose(-1, -2))
+        scores_intra = scores_intra * D_intra
 
-        # y_intra[b,h,c] = scores_intra[b,h,c] @ v_c[b,h,c]
-        y_intra = torch.matmul(scores_intra, v_c)  # (B,H,nc,C,d)
+        y_intra = torch.matmul(scores_intra, v_c)
 
-        # ---- Inter-chunk: parallel scan over n_chunks ----
-        # Each chunk's final state: state_after_chunk[c] = decay^C * state_before + sum of kv in chunk
-        # Contribution of chunk c to next chunks: k_v_chunk[c] = sum_{i=0}^{C-1} decay^(C-1-i) * k_c[i]^T @ v_c[i]
-        # Actually simpler: state contribution = k_c^T @ v_c (matrix) with proper decay weights
-        
-        # For chunk c, kv_contrib[c] = sum_{i=0}^{C-1} decay^(C-1-i) * (k_c[i]^T @ v_c[i])
-        # decay^j where j = C-1-i
         pos_in_chunk = torch.arange(chunk_size, device=q.device, dtype=torch.float32)
-        # decay_weights[i] = decay^(C-1-i)
         decay_in_chunk = torch.exp(
             ((chunk_size - 1 - pos_in_chunk).view(1, 1, 1, chunk_size, 1) * log_decay_5d).clamp(min=-40.0, max=0.0)
-        )  # (1,H,1,C,1)
+        )
 
-        # k_c: (B,H,nc,C,d), v_c: (B,H,nc,C,d)
-        # weighted k: (B,H,nc,C,d) * (1,H,1,C,1) → (B,H,nc,C,d)
-        k_weighted = k_c * decay_in_chunk  # (B,H,nc,C,d)
-        
-        # kv_contrib[c] = k_weighted[c]^T @ v_c[c]
-        # (B,H,nc,d,C) @ (B,H,nc,C,d) → (B,H,nc,d,d)
-        kv_contrib = torch.matmul(k_weighted.transpose(-1, -2), v_c)  # (B,H,nc,d,d)
+        k_weighted = k_c * decay_in_chunk
 
-        # Now parallel scan over chunks with chunk_decay = decay^chunk_size
+        kv_contrib = torch.matmul(k_weighted.transpose(-1, -2), v_c)
+
         chunk_decay = torch.exp((log_decay.view(1, H, 1, 1) * chunk_size).clamp(min=-40.0, max=0.0))
 
-        # states_before[c] = state before processing chunk c
-        # states_before[0] = 0
-        # states_before[c] = chunk_decay * states_before[c-1] + kv_contrib[c-1]
         states_before = torch.zeros(B, H, n_chunks, d, d, device=q.device, dtype=torch.float32)
         running = torch.zeros(B, H, d, d, device=q.device, dtype=torch.float32)
         for c in range(n_chunks):
             states_before[:, :, c] = running
             running = running * chunk_decay + kv_contrib[:, :, c]
 
-        # ---- Inter-chunk output ----
-        # y_inter[b,h,c,i] = q_c[b,h,c,i] @ states_before[b,h,c] * decay^(i+1)
-        # Actually: q at position i in chunk c sees state_before[c] with decay^(i+1)?
-        # Let's be precise: 
-        # state_before[c] = sum_{c'<c} decay^(chunk_size * (c-1-c')) * kv_contrib[c']
-        # For query at position i in chunk c, the contribution from past chunks is:
-        #   q_i @ state_before[c] * decay^(i) — the (i) accounts for positions within current chunk
-        # Wait, more carefully:
-        # state after processing chunk c-1 is states_before[c]
-        # At position i in chunk c, we've had i decay steps since start of chunk
-        # state_at_position_i = decay^i * state_before[c] + sum_{j=0}^{i-1} decay^(i-1-j) * k[c,j]^T v[c,j]
-        # The first term: query sees decay^i * state_before[c]
-        # The second term is captured by y_intra
-        
-        # query positions: pos (C,)
-        # decay^i for i in [0, C-1]
-        q_decay = torch.exp((pos.view(1, 1, 1, chunk_size, 1) * log_decay_5d).clamp(min=-40.0, max=0.0))  # (1,H,1,C,1)
+        q_decay = torch.exp((pos.view(1, 1, 1, chunk_size, 1) * log_decay_5d).clamp(min=-40.0, max=0.0))
 
-        # q_c: (B,H,nc,C,d), states_before: (B,H,nc,d,d)
-        # q_c @ states_before: (B,H,nc,C,d)
-        q_state = torch.matmul(q_c, states_before)  # (B,H,nc,C,d)
-        y_inter = q_state * q_decay  # (1,H,1,C,1) broadcast → (B,H,nc,C,d) ✓
+        q_state = torch.matmul(q_c, states_before)
+        y_inter = q_state * q_decay
 
-        # ---- Combine ----
-        y = y_intra + y_inter  # (B,H,nc,C,d)
+        y = y_intra + y_inter
         y = y.view(B, H, Lp, d)[:, :, :L, :]
 
-        # Apply mask to query output (FIX 6)
         if mask is not None:
             m = mask.view(B, 1, L, 1).float()
             y = y * m
@@ -436,7 +380,7 @@ class GriffinSSDBlock(BaseAttention):
         log_decay = torch.log(decay_f.clamp(min=1e-6, max=1.0 - 1e-6))
 
         pos = torch.arange(L, device=q.device, dtype=torch.float32)
-        dist = torch.abs(pos.unsqueeze(0) - pos.unsqueeze(1))  # (L, L)
+        dist = torch.abs(pos.unsqueeze(0) - pos.unsqueeze(1))
         D_sym = torch.exp((dist.unsqueeze(0).unsqueeze(0) * log_decay).clamp(min=-40.0, max=0.0))
 
         if mask is not None:
@@ -518,7 +462,6 @@ class GriffinSSDBlock(BaseAttention):
             if cos is not None and sin is not None:
                 q, k = apply_rotary_pos_emb(q, k, cos, sin, position_ids=pos_ids)
 
-        # Autoregressive KV Cache for decoders
         if self.is_decoder and past_key_value is not None:
             if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 2:
                 past_k, past_v = past_key_value[0], past_key_value[1]
@@ -535,7 +478,6 @@ class GriffinSSDBlock(BaseAttention):
             k_exp = k
             v_exp = v
 
-        # Local sliding window
         scores = torch.matmul(q, k_exp.transpose(-1, -2).contiguous()) / math.sqrt(d)
         L_kv = k_exp.shape[-2]
         idx_q = torch.arange(L, device=hidden_states.device).unsqueeze(1)
@@ -566,7 +508,6 @@ class GriffinSSDBlock(BaseAttention):
         local_attn = torch.nan_to_num(local_attn, nan=0.0)
         local_out = torch.matmul(local_attn, v_exp).to(target_dtype)
 
-        # Global SSD
         if _env_flag("GRIFFIN_DISABLE_SSD", False):
             global_out = torch.zeros_like(local_out)
         else:
@@ -582,8 +523,6 @@ class GriffinSSDBlock(BaseAttention):
             else:
                 global_out = self._ssd_symmetric(q_ssd, k_ssd, v_ssd, decay, mask_bool)
 
-
-        # Fusion gate
         gate = torch.sigmoid(self.fusion_gate).view(1, H, 1, 1).to(target_dtype)
         fused = (gate * local_out + (1.0 - gate) * global_out).to(target_dtype)
 

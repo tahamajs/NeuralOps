@@ -37,13 +37,6 @@ except Exception as _e:
     HAS_TRITON_HGRN2 = False
 
 
-
-
-
-
-# ===========================================================================
-# Cache wrapper (HF-compatible without tuple-attribute hacks)
-# ===========================================================================
 class HGRN2CacheState:
     """Lightweight cache container for HGRN2Layer."""
 
@@ -62,7 +55,6 @@ class HGRN2CacheState:
         self.past_len = int(past_len)
 
     def __iter__(self):
-        # Allows tuple-unpacking for backward compat: (hgrn_state,)
         yield self.hgrn_state
 
     def __len__(self):
@@ -72,9 +64,6 @@ class HGRN2CacheState:
         return (self.hgrn_state,)[idx]
 
 
-# ===========================================================================
-# HGRN2Layer
-# ===========================================================================
 @ATTENTION_REGISTRY.register("hgrn2_gated_layer")
 class HGRN2Layer(BaseAttention):
     """
@@ -101,7 +90,6 @@ class HGRN2Layer(BaseAttention):
         except TypeError:
             super().__init__(config)
 
-        # ---- Resolve d_model ----
         if d_model is None:
             d_model = kwargs.get("d_model") or kwargs.get("hidden_size")
             if d_model is None and isinstance(config, int):
@@ -125,7 +113,6 @@ class HGRN2Layer(BaseAttention):
         self.dim = self.d_model
         self.hidden_size = self.d_model
 
-        # ---- res_clip ----
         _res_clip_default = _env_float("HGRN2_RES_CLIP", 0.0)
         self.res_clip = (
             res_clip
@@ -135,7 +122,6 @@ class HGRN2Layer(BaseAttention):
 
         self.freeze_base = bool(freeze_base)
 
-        # ---- Decoder detection ----
         _mt = str(_cfg_get(config, "model_type", "") or "").lower()
         _decoder_prefixes = (
             "gpt", "qwen", "llama", "mistral", "gemma", "phi",
@@ -174,7 +160,6 @@ class HGRN2Layer(BaseAttention):
             (self.lora_alpha / max(1, self.lora_rank)) if self.lora_rank > 0 else 1.0
         )
 
-        # ---- num_heads ----
         self.num_heads = int(
             _cfg_get(config, "num_attention_heads", _cfg_get(config, "num_heads", 12))
         )
@@ -182,29 +167,23 @@ class HGRN2Layer(BaseAttention):
             self.num_heads -= 1
         self.head_dim = self.d_model // max(1, self.num_heads)
 
-        # ---- Attention projections (frozen base) ----
         self.q_proj = nn.Linear(self.d_model, self.d_model, bias=True)
         self.k_proj = nn.Linear(self.d_model, self.d_model, bias=True)
         self.v_proj_attn = nn.Linear(self.d_model, self.d_model, bias=True)
 
-        # ---- [HGRN2-FIX-01] Recurrent gates with lora_ prefix ----
         self.lora_forget_gate = nn.Linear(self.d_model, self.d_model, bias=True)
         self.lora_input_gate = nn.Linear(self.d_model, self.d_model, bias=True)
         self.lora_g_proj = nn.Linear(self.d_model, self.d_model, bias=True)
 
-        # ---- V projection (base) ----
         self.v_proj = nn.Linear(self.d_model, self.d_model, bias=True)
 
-        # ---- State norm ----
         self.state_norm = nn.LayerNorm(self.d_model)
         with torch.no_grad():
             self.state_norm.weight.fill_(1.0)
             self.state_norm.bias.zero_()
 
-        # ---- Output projection (base) ----
         self.out_proj = nn.Linear(self.d_model, self.d_model, bias=True)
 
-        # ---- Init gates ----
         _forget_bias = _env_float("HGRN2_FORGET_BIAS", -4.0)
         nn.init.normal_(self.lora_forget_gate.weight, mean=0.0, std=0.01)
         nn.init.constant_(self.lora_forget_gate.bias, _forget_bias)
@@ -216,27 +195,22 @@ class HGRN2Layer(BaseAttention):
         nn.init.normal_(self.lora_g_proj.weight, mean=0.0, std=0.02)
         nn.init.constant_(self.lora_g_proj.bias, _g_bias)
 
-        # ---- Init projections ----
         for mod in (self.v_proj, self.q_proj, self.k_proj, self.v_proj_attn, self.out_proj):
             nn.init.normal_(mod.weight, mean=0.0, std=0.02)
             if mod.bias is not None:
                 nn.init.zeros_(mod.bias)
 
-        # ---- Output scale ----
         _out_scale = _env_float("HGRN2_OUTPUT_SCALE", 1.0)
         self.lora_output_scale = nn.Parameter(torch.full((1,), _out_scale))
 
-        # ---- [HGRN2-FIX-01] Fusion gate with lora_ prefix ----
         _fusion_init = _env_float("HGRN2_FUSION_GATE", -4.0)
         self.lora_fusion_gate = nn.Linear(self.d_model, 1, bias=True)
         with torch.no_grad():
             nn.init.zeros_(self.lora_fusion_gate.weight)
             self.lora_fusion_gate.bias.fill_(_fusion_init)
 
-        # ---- Window size ----
         self.window_size = int(_cfg_get(config, "window_size", window_size))
 
-        # ---- LoRA adapters ----
         if self.lora_rank > 0:
             self.v_lora_A = nn.Parameter(torch.randn(self.lora_rank, self.d_model) * 0.01)
             self.v_lora_B = nn.Parameter(torch.randn(self.d_model, self.lora_rank) * 1e-4)
@@ -248,7 +222,6 @@ class HGRN2Layer(BaseAttention):
             self.register_parameter("out_lora_A", None)
             self.register_parameter("out_lora_B", None)
 
-        # ---- Freeze base; keep gates trainable ----
         if self.freeze_base:
             for mod in (self.v_proj, self.out_proj, self.q_proj, self.k_proj, self.v_proj_attn):
                 for p in mod.parameters():
@@ -262,7 +235,6 @@ class HGRN2Layer(BaseAttention):
                 for p in mod.parameters():
                     p.requires_grad = True
 
-        # ---- Weight transfer from pretrained attention ----
         old_attn = kwargs.get("old_attn", kwargs.get("pretrained_attn"))
         if old_attn is not None:
             self.copy_weights(old_attn)
@@ -274,9 +246,6 @@ class HGRN2Layer(BaseAttention):
             if target_dtype is not None:
                 self.to(target_dtype)
 
-    # ------------------------------------------------------------------
-    # [HGRN2-FIX-02] Backward-compat aliases
-    # ------------------------------------------------------------------
     @property
     def forget_gate(self) -> nn.Linear:
         return self.lora_forget_gate
@@ -313,9 +282,6 @@ class HGRN2Layer(BaseAttention):
     def value(self):
         return self.v_proj_attn
 
-    # ------------------------------------------------------------------
-    # Weight transfer
-    # ------------------------------------------------------------------
     def copy_weights(self, old_attn: nn.Module) -> None:
         w_q = w_k = w_v = w_o = None
         b_q = b_k = b_v = b_o = None
@@ -339,7 +305,6 @@ class HGRN2Layer(BaseAttention):
         else:
             src = old_attn
 
-        # --- GPT-2 fused c_attn ---
         if hasattr(src, "c_attn") and hasattr(src, "c_proj"):
             c_attn_w, c_attn_b = _unpack_weight_bias(src.c_attn)
             if c_attn_w is not None:
@@ -353,7 +318,6 @@ class HGRN2Layer(BaseAttention):
                     b_v = c_attn_b[2 * split_size :]
             w_o, b_o = _unpack_weight_bias(src.c_proj)
 
-        # --- BERT / RoBERTa nested ---
         elif hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value"):
             w_q, b_q = _unpack_weight_bias(src.query)
             w_k, b_k = _unpack_weight_bias(src.key)
@@ -364,7 +328,6 @@ class HGRN2Layer(BaseAttention):
                         w_o, b_o = _unpack_weight_bias(getattr(src, attr))
                         break
 
-        # --- LLaMA/Qwen style ---
         elif hasattr(src, "q_proj") and hasattr(src, "k_proj") and hasattr(src, "v_proj"):
             w_q, b_q = _unpack_weight_bias(src.q_proj)
             w_k, b_k = _unpack_weight_bias(src.k_proj)
@@ -372,7 +335,6 @@ class HGRN2Layer(BaseAttention):
             if hasattr(src, "o_proj"):
                 w_o, b_o = _unpack_weight_bias(src.o_proj)
 
-        # --- DistilBERT style ---
         elif hasattr(src, "q_lin") and hasattr(src, "k_lin") and hasattr(src, "v_lin"):
             w_q, b_q = _unpack_weight_bias(src.q_lin)
             w_k, b_k = _unpack_weight_bias(src.k_lin)
@@ -380,7 +342,6 @@ class HGRN2Layer(BaseAttention):
             if hasattr(src, "out_lin"):
                 w_o, b_o = _unpack_weight_bias(src.out_lin)
 
-        # --- UniversalAdapter fallback ---
         if w_q is None or w_k is None or w_v is None:
             try:
                 adapter = UniversalAdapter(old_attn)
@@ -415,14 +376,12 @@ class HGRN2Layer(BaseAttention):
                         tb.data.zero_()
                         tb.data[:min_b].copy_(b[:min_b].to(tb.dtype))
 
-        # Copy to attention projections
         _copy_param(self.q_proj, w_q, b_q)
         _copy_param(self.k_proj, w_k, b_k)
         _copy_param(self.v_proj_attn, w_v, b_v)
         _copy_param(self.v_proj, w_v, b_v)
         _copy_param(self.out_proj, w_o, b_o)
 
-        # Heuristic: map W_q → g_proj and W_k → input_gate
         _copy_param(self.lora_g_proj, w_q, b_q)
         _copy_param(self.lora_input_gate, w_k, b_k)
 
@@ -435,9 +394,6 @@ class HGRN2Layer(BaseAttention):
                 for p in mod.parameters():
                     p.requires_grad = False
 
-    # ------------------------------------------------------------------
-    # HGRN-2 chunked scan
-    # ------------------------------------------------------------------
     def _scan_direction(
         self,
         f: torch.Tensor,
@@ -478,7 +434,6 @@ class HGRN2Layer(BaseAttention):
             except Exception as e:
                 logger.debug("HGRN2 Triton scan failed, falling back: %s", e)
 
-        # --- PyTorch chunked scan ---
         B, L, D = iv.shape
         f_fp32 = f.float()
         iv_fp32 = iv.float()
@@ -496,22 +451,20 @@ class HGRN2Layer(BaseAttention):
             f_c = log_f[:, start:end]
             iv_c = iv_fp32[:, start:end]
 
-            # Cumulative log-decay within the chunk
-            A = torch.cumsum(f_c, dim=1)  # (B, C, D)
-            # Pairwise differences: A[i] - A[j] for i >= j
-            A_diff = A.unsqueeze(2) - A.unsqueeze(1)  # (B, C, C, D)
+            A = torch.cumsum(f_c, dim=1)
+            A_diff = A.unsqueeze(2) - A.unsqueeze(1)
 
             mask = torch.tril(
                 torch.ones(C, C, device=iv.device, dtype=torch.bool)
             )
-            mask_4d = mask.unsqueeze(0).unsqueeze(-1)  # (1, C, C, 1)
+            mask_4d = mask.unsqueeze(0).unsqueeze(-1)
             A_diff = torch.where(
                 mask_4d, A_diff, torch.full_like(A_diff, -1e4)
             )
 
-            decay_weights = torch.exp(A_diff) * mask_4d.float()  # (B, C, C, D)
-            intra = torch.sum(decay_weights * iv_c.unsqueeze(1), dim=2)  # (B, C, D)
-            inter = h_prev.unsqueeze(1) * torch.exp(A)  # (B, C, D)
+            decay_weights = torch.exp(A_diff) * mask_4d.float()
+            intra = torch.sum(decay_weights * iv_c.unsqueeze(1), dim=2)
+            inter = h_prev.unsqueeze(1) * torch.exp(A)
 
             h_c = inter + intra
             if self.res_clip is not None and self.res_clip > 0:
@@ -538,7 +491,6 @@ class HGRN2Layer(BaseAttention):
             h_bwd: (B, L, D) or None
             h_last: (B, D) final forward state
         """
-        # Normalize mask to (B, L)
         if mask is not None:
             if mask.dim() == 4:
                 mask = (mask > -1e4) if mask.dtype.is_floating_point else mask.bool()
@@ -546,9 +498,8 @@ class HGRN2Layer(BaseAttention):
             elif mask.dim() == 3:
                 mask = (mask > -1e4) if mask.dtype.is_floating_point else mask.bool()
                 mask = mask.any(dim=1)
-            mask_float = mask.float().unsqueeze(-1)  # (B, L, 1)
+            mask_float = mask.float().unsqueeze(-1)
             iv = iv * mask_float
-            # Set forget gate to 1.0 on padding (no decay)
             f = torch.where(mask_float.bool(), f, torch.ones_like(f))
 
         h_fwd, h_last = self._scan_direction(f, iv, initial_state=initial_state)
@@ -556,16 +507,12 @@ class HGRN2Layer(BaseAttention):
         if self.is_decoder:
             return h_fwd, None, h_last
 
-        # Bidirectional
         f_rev = torch.flip(f, dims=[1])
         iv_rev = torch.flip(iv, dims=[1])
         h_rev, _ = self._scan_direction(f_rev, iv_rev, initial_state=None)
         h_bwd = torch.flip(h_rev, dims=[1])
         return h_fwd, h_bwd, h_last
 
-    # ------------------------------------------------------------------
-    # Local sliding-window attention
-    # ------------------------------------------------------------------
     def _local_attention(
         self,
         hidden_states: torch.Tensor,
@@ -584,11 +531,10 @@ class HGRN2Layer(BaseAttention):
         B, L, D = hidden_states.shape
         H, d = self.num_heads, self.head_dim
 
-        q = self.q_proj(hidden_states).view(B, L, H, d).transpose(1, 2)  # (B, H, L, d)
+        q = self.q_proj(hidden_states).view(B, L, H, d).transpose(1, 2)
         k_new = self.k_proj(hidden_states).view(B, L, H, d).transpose(1, 2)
         v_new = self.v_proj_attn(hidden_states).view(B, L, H, d).transpose(1, 2)
 
-        # Concatenate with past cache
         if past_k is not None and past_v is not None and past_len > 0:
             k = torch.cat([past_k, k_new], dim=2)
             v = torch.cat([past_v, v_new], dim=2)
@@ -597,7 +543,6 @@ class HGRN2Layer(BaseAttention):
 
         N_kv = k.shape[2]
 
-        # Window + causal mask (at token level)
         out = None
         if past_len == 0:
             if self.window_size >= L:
@@ -619,30 +564,26 @@ class HGRN2Layer(BaseAttention):
                     out = None
 
         if out is None:
-            # Absolute positions
             q_pos = (past_len + torch.arange(L, device=hidden_states.device)).unsqueeze(1)
             k_pos = torch.arange(N_kv, device=hidden_states.device).unsqueeze(0)
 
             scale = 1.0 / math.sqrt(d)
-            scores = torch.matmul(q, k.transpose(-1, -2)) * scale  # (B, H, L, N_kv)
+            scores = torch.matmul(q, k.transpose(-1, -2)) * scale
             dist = (q_pos - k_pos).abs()
-            window_mask = dist <= self.window_size  # (L, N_kv)
+            window_mask = dist <= self.window_size
             if self.is_decoder:
-                causal = k_pos <= q_pos  # (L, N_kv)
+                causal = k_pos <= q_pos
                 window_mask = window_mask & causal
 
-            window_mask = window_mask.unsqueeze(0).unsqueeze(0)  # (1, 1, L, N_kv)
+            window_mask = window_mask.unsqueeze(0).unsqueeze(0)
             scores = scores.masked_fill(~window_mask, -1e4)
 
             attn = F.softmax(scores.float(), dim=-1).to(q.dtype)
-            out = torch.matmul(attn, v)  # (B, H, L, d)
+            out = torch.matmul(attn, v)
             out = out.transpose(1, 2).contiguous().view(B, L, D)
 
         return out, k_new, v_new
 
-    # ------------------------------------------------------------------
-    # Forward
-    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -674,7 +615,6 @@ class HGRN2Layer(BaseAttention):
         B, L, D = hidden_states.shape
         target_dtype = hidden_states.dtype
 
-        # ---- [HGRN2-FIX-03] Read past state ----
         past_hgrn_state = None
         past_local_k = None
         past_local_v = None
@@ -696,7 +636,6 @@ class HGRN2Layer(BaseAttention):
                 if len(past_key_value) >= 4:
                     past_len = int(past_key_value[3])
 
-        # ---- HGRN-2 branch ----
         raw_log_decay = -F.softplus(self.lora_forget_gate(hidden_states))
         bounded_log_decay = raw_log_decay.clamp(min=-3.0, max=-1e-4)
         f = torch.exp(bounded_log_decay).to(target_dtype)
@@ -721,7 +660,6 @@ class HGRN2Layer(BaseAttention):
         z = self.lora_g_proj(hidden_states).to(target_dtype)
         iv = (input_scale * v).to(target_dtype)
 
-        # ---- [HGRN2-FIX-06] Robust mask normalization ----
         mask_bool = None
         if attention_mask is not None:
             if attention_mask.dim() == 2:
@@ -741,7 +679,6 @@ class HGRN2Layer(BaseAttention):
                 )
                 mask_bool = m.any(dim=-2).any(dim=1)
 
-        # ---- HGRN scan ----
         h_fwd, h_bwd, next_hgrn_state = self._recurrent_scan(
             f, iv, initial_state=past_hgrn_state, mask=mask_bool
         )
@@ -759,7 +696,6 @@ class HGRN2Layer(BaseAttention):
         h_norm = self.state_norm(h_ctx.to(sn_dtype)).to(target_dtype)
         hgrn_out = (h_norm * F.silu(z)).to(target_dtype)
 
-        # ---- [HGRN2-FIX-05] Local attention with rolling cache ----
         local_out, next_local_k, next_local_v = self._local_attention(
             hidden_states,
             past_k=past_local_k,
@@ -767,12 +703,10 @@ class HGRN2Layer(BaseAttention):
             past_len=past_len,
         )
 
-        # ---- Fusion gate ----
         fusion_logits = self.lora_fusion_gate(hidden_states).to(target_dtype)
         gate = torch.sigmoid(fusion_logits)
         fused = gate * hgrn_out + (1 - gate) * local_out
 
-        # ---- Output projection ----
         out = self.out_proj(fused).to(target_dtype)
         if self.lora_rank > 0 and self.out_lora_A is not None and self.out_lora_B is not None:
             out_lora = (
@@ -798,7 +732,6 @@ class HGRN2Layer(BaseAttention):
         if attention_mask is not None and mask_bool is not None:
             out = out * mask_bool.unsqueeze(-1).to(out.dtype)
 
-        # ---- [HGRN2-FIX-03, HGRN2-FIX-08] Package state for next step ----
         new_past_key_value: Any = None
         use_cache = kwargs.get("use_cache", False) or (
             past_key_value is not None and past_key_value is not False
@@ -814,9 +747,6 @@ class HGRN2Layer(BaseAttention):
         return out.to(target_dtype), new_past_key_value
 
 
-# ===========================================================================
-# Injection
-# ===========================================================================
 def inject_hgrn2_layer(
     layer: Any = None,
     model: Any = None,
@@ -830,7 +760,6 @@ def inject_hgrn2_layer(
     _depth: int = 0,
     **kwargs: Any,
 ):
-    # [HGRN2-FIX-09] Recursion guard
     if _depth > 8:
         logger.warning("inject_hgrn2_layer: max recursion depth exceeded.")
         return None
@@ -841,7 +770,6 @@ def inject_hgrn2_layer(
 
     cfg = model_config or getattr(target, "config", None) or kwargs.get("config")
 
-    # ---- Whole-model traversal ----
     if target is not None and (
         hasattr(target, "transformer")
         or hasattr(target, "distilbert")
@@ -890,7 +818,6 @@ def inject_hgrn2_layer(
                     num_injected += 1
             return target if num_injected > 0 else None
 
-    # ---- Single-layer injection ----
     curr_attn = old_attn
     is_nested_target = False
     if curr_attn is None and target is not None:
@@ -910,13 +837,11 @@ def inject_hgrn2_layer(
     if curr_attn is None:
         return None
 
-    # [HGRN2-FIX-09] Idempotency guard
     if isinstance(curr_attn, HGRN2Layer):
         return None
     if "HGRN2" in curr_attn.__class__.__name__:
         return None
 
-    # ---- Decoder detection ----
     _mt = str(getattr(cfg, "model_type", "") or "").lower()
     _dec_pfx = (
         "gpt", "qwen", "llama", "mistral", "gemma", "phi",
@@ -947,7 +872,6 @@ def inject_hgrn2_layer(
         logger.exception("Failed to instantiate HGRN2Layer: %s", ex)
         return None
 
-    # ---- Splice ----
     if target is not None:
         spliced = False
         if (

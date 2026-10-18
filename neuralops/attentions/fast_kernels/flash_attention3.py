@@ -39,12 +39,6 @@ except ImportError:
         FLASH_ATTN_AVAILABLE = False
 
 
-
-
-
-
-
-
 @ATTENTION_REGISTRY.register(
     "flash_attention3",
     supports_causal=True,
@@ -71,7 +65,6 @@ class FlashAttention3(BaseAttention):
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
 
         if config is None:
-
             class DummyConfig:
                 pass
 
@@ -166,7 +159,6 @@ class FlashAttention3(BaseAttention):
         self.kv_repeat: int = max(1, self.num_heads // max(1, self.num_kv_heads))
         self.use_fp8: bool = bool(use_fp8)
 
-        # Static layer index
         resolved_layer_id = (
             layer_id
             if layer_id is not None
@@ -178,7 +170,6 @@ class FlashAttention3(BaseAttention):
         )
         self.layer_idx: int = int(resolved_layer_id)
 
-        # LoRA adaptation configuration
         self.lora_rank: int = getattr(
             config,
             "lora_rank",
@@ -191,7 +182,6 @@ class FlashAttention3(BaseAttention):
         )
         self.freeze_base: bool = self.lora_rank > 0
 
-        # Decoder & nested encoder detection
         _mt = str(getattr(config, "model_type", "") or "").lower() if config is not None else ""
         _decoder_prefixes = (
             "gpt",
@@ -255,7 +245,6 @@ class FlashAttention3(BaseAttention):
             getattr(config, "gradient_checkpointing", False) if config is not None else False
         )
 
-        # Multi-head projections equipped with LoRA adapters
         self.q_proj = LoRALinear(
             self.hidden_size,
             self.all_head_size,
@@ -302,7 +291,6 @@ class FlashAttention3(BaseAttention):
         if source_attn is not None:
             self.copy_weights(source_attn)
 
-    # Compatibility properties
     @property
     def query(self) -> LoRALinear:
         return self.q_proj
@@ -396,7 +384,6 @@ class FlashAttention3(BaseAttention):
             "o": (None, None),
         }
 
-        # 1. GPT-2: Fused c_attn + c_proj
         if hasattr(src, "c_attn") and src.c_attn is not None:
             c_attn_mod = src.c_attn
             if hasattr(c_attn_mod, "merge") and not getattr(c_attn_mod, "merged", False):
@@ -466,7 +453,6 @@ class FlashAttention3(BaseAttention):
                         bias_o.data.clone() if bias_o is not None else None,
                     )
 
-        # 2. RoBERTa / BERT nested self-attention
         elif hasattr(src, "self") and hasattr(src.self, "query"):
             s = src.self
             for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
@@ -483,7 +469,6 @@ class FlashAttention3(BaseAttention):
                     out_mod.bias.data.clone() if out_mod.bias is not None else None,
                 )
 
-        # 3. Standard linear projections (DistilBERT, Qwen, LLaMA)
         else:
             proj_candidates = {
                 "q": ["q_lin", "q_proj", "query", "W_q"],
@@ -502,7 +487,6 @@ class FlashAttention3(BaseAttention):
                             )
                             break
 
-        # Fallback via UniversalAdapter
         missing = [
             k
             for k, (w, _) in extracted.items()
@@ -573,7 +557,6 @@ class FlashAttention3(BaseAttention):
                 elif target_mod.bias is not None:
                     nn.init.zeros_(target_mod.bias)
 
-                # Frobenius norm verification (>= 1e-4)
                 w_norm = float(torch.linalg.norm(target_mod.weight.data.float()).item())
                 if w_norm < 1e-4:
                     logger.warning(
@@ -608,7 +591,6 @@ class FlashAttention3(BaseAttention):
         kv_input = encoder_hidden_states if is_cross_attention else hidden_states
         kv_len = kv_input.shape[1]
 
-        # 1. Projections
         q = self.q_proj(hidden_states).view(B, L, H, Dh).transpose(1, 2).contiguous()
         k = (
             self.k_proj(kv_input)
@@ -623,7 +605,6 @@ class FlashAttention3(BaseAttention):
             .contiguous()
         )
 
-        # 2. Rotary Position Embeddings (RoPE)
         if position_embeddings is not None and not is_cross_attention:
             if isinstance(position_embeddings, tuple):
                 cos, sin = position_embeddings
@@ -636,14 +617,12 @@ class FlashAttention3(BaseAttention):
                 cos, sin = self.rotary_emb(v, seq_len=kv_len)
                 q, k = apply_rotary_pos_emb(q, k, cos, sin, position_ids)
 
-        # 3. Grouped Query Attention (GQA) head expansion
         if self.num_kv_heads != self.num_heads:
             k = repeat_kv(k, self.kv_repeat)
             v = repeat_kv(v, self.kv_repeat)
 
         causal_flag = bool(self.is_decoder and not is_cross_attention and kv_len == L)
 
-        # 4. FlashAttention-3 execution path
         if FLASH_ATTN_AVAILABLE and hidden_states.is_cuda:
             try:
                 q_fa = q.transpose(1, 2).contiguous()
@@ -662,7 +641,6 @@ class FlashAttention3(BaseAttention):
         else:
             out = None
 
-        # 5. SDPA fallback path
         if out is None:
             eff_mask = encoder_attention_mask if is_cross_attention else attention_mask
             attn_mask = None
@@ -709,7 +687,6 @@ class FlashAttention3(BaseAttention):
                     dropout_p=self.dropout.p if self.training else 0.0,
                 )
 
-            # Head mask handling
             if head_mask is not None:
                 if head_mask.dim() == 1:
                     head_mask = head_mask.view(1, -1, 1, 1)
@@ -721,7 +698,6 @@ class FlashAttention3(BaseAttention):
 
             out = out_sdpa.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
 
-        # 6. Output projection with nested encoder bypass
         if self.is_nested_encoder:
             final_out = out
         else:
@@ -755,7 +731,6 @@ def inject_flash_attention3(
 
     cfg = model_config if model_config is not None else getattr(target, "config", None)
 
-    # Whole-model traversal
     layer_list = None
     if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
         layer_list = target.distilbert.transformer.layer

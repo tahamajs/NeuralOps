@@ -22,8 +22,6 @@ from .cur_compressor import CURLinear
 logger = logging.getLogger(__name__)
 
 
-
-
 class CURMoECompressor(BaseCompressor):
     """
     Compresses Mixture of Experts (MoE) layers and dense FFN layers using CUR cross-approximation.
@@ -119,7 +117,6 @@ class CURMoECompressor(BaseCompressor):
         if max_rank < self.min_rank:
             return False
 
-        # Parameter reduction check: r*(in_f + out_f + r) < in_f * out_f
         target_r = min(self.rank, max_rank)
         while target_r >= self.min_rank and (target_r * (in_f + out_f + target_r)) >= 0.85 * (
             in_f * out_f
@@ -170,7 +167,6 @@ class CURMoECompressor(BaseCompressor):
             )
             if self.fallback_to_original:
                 self.fallback_layers.append(name)
-                # Freeze fallback layers
                 for p in module.parameters():
                     p.requires_grad = False
                 return False
@@ -181,7 +177,6 @@ class CURMoECompressor(BaseCompressor):
         has_base_layer = hasattr(module, "base_layer") or (
             hasattr(module, "linear") and (hasattr(module, "lora_A") or hasattr(module, "r"))
         )
-        # Preserve existing LoRA adapter weights if the source module has them and not wrapped
         if (
             not has_base_layer
             and hasattr(module, "lora_A")
@@ -209,10 +204,10 @@ class CURMoECompressor(BaseCompressor):
                 dst_lB.data.copy_(src_lB.data)
 
         if hasattr(module, "base_layer"):
-            module.base_layer = compressed_layer  # put compressed layer inside wrapper
+            module.base_layer = compressed_layer
             new_module = module
         elif hasattr(module, "linear") and (hasattr(module, "lora_A") or hasattr(module, "r")):
-            module.linear = compressed_layer  # put compressed layer inside framework LoRALinear
+            module.linear = compressed_layer
             new_module = module
         else:
             new_module = compressed_layer
@@ -248,7 +243,6 @@ class CURMoECompressor(BaseCompressor):
         self.total_comp_decomp_params = 0
         experts_detected = False
 
-        # Scan for explicit MoE modules (module.experts or expert submodules)
         for name, module in list(self.model.named_modules()):
             name_lower = name.lower()
             if any(
@@ -295,7 +289,6 @@ class CURMoECompressor(BaseCompressor):
                     experts_detected = True
                     self._compress_single_layer(name, module)
 
-        # Fallback to FFN linear layers if no explicit MoE structure was found
         _ATTN_NAMES = frozenset(
             {
                 "query",
@@ -340,10 +333,8 @@ class CURMoECompressor(BaseCompressor):
                     k in name_lower for k in ("attn", "attention")
                 )
 
-                # In target_attention_only mode (or default MoE behavior), we protect attention projections
                 if is_attn_proj:
                     if self.target_attention_only:
-                        # Freeze attention layers to protect them during fine-tuning
                         for p in module.parameters():
                             p.requires_grad = False
                     continue

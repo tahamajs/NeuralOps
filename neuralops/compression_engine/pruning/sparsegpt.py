@@ -36,8 +36,6 @@ from neuralops.utils.compat import should_compress_linear
 logger = logging.getLogger(__name__)
 
 
-
-
 class SparseGPTCompressor(BaseCompressor):
     """
     In-memory PyTorch SparseGPT Compressor.
@@ -220,7 +218,6 @@ class SparseGPTCompressor(BaseCompressor):
         d_out, d_in = W.shape
         device = W.device
 
-        # Compute empirical Hessian and inverse
         if activations is not None and activations.numel() > 0:
             act_flat = activations.reshape(-1, activations.shape[-1]).float()
             if act_flat.shape[-1] == d_in:
@@ -234,7 +231,6 @@ class SparseGPTCompressor(BaseCompressor):
 
         H_inv = H_inv.to(device=device, dtype=torch.float32)
 
-        # Iterate over columns in blocks
         W_pruned = W.clone()
         block_cols = min(self.block_size, d_in)
 
@@ -251,11 +247,9 @@ class SparseGPTCompressor(BaseCompressor):
                 diag_inv = max(H_inv_block[j, j].item(), 1e-8)
                 saliency_col = (w_col**2) / (2.0 * diag_inv)
 
-                # N:M structured or unstructured pruning with OBS error compensation (B10, H25)
                 if self.structured_24 or (self.prunem > 0 and self.prunen > 0):
                     M = max(1, self.prunem)
                     N = max(1, min(self.prunen, M))
-                    # At the end of every M-group or block boundary, apply N:M mask across the group
                     if (j + 1) % M == 0 or (j + 1 == count):
                         start_c = (j // M) * M
                         sub_w = W_block[:, start_c : j + 1]
@@ -271,7 +265,6 @@ class SparseGPTCompressor(BaseCompressor):
                         err_sub = sub_w - pruned_sub
                         W_block[:, start_c : j + 1] = pruned_sub
 
-                        # Optimal Brain Surgeon error compensation update
                         if j < count - 1:
                             err_col = err_sub[:, -1]
                             h_slice = H_inv_block[j, j + 1 : count] / diag_inv
@@ -291,22 +284,19 @@ class SparseGPTCompressor(BaseCompressor):
                         err = w_col - pruned_w_col
                         W_block[:, j] = pruned_w_col
 
-                        # Optimal Brain Surgeon error compensation update
                         if j < count - 1:
                             h_slice = H_inv_block[j, j + 1 : count] / diag_inv
                             W_block[:, j + 1 : count] -= torch.outer(err, h_slice)
 
             W_pruned[:, i1:i2] = W_block
 
-            # Update remaining columns outside the current block
             if i2 < d_in:
                 err_block = W_block_init - W_block
-                h_cross = H_inv[i1:i2, i2:]  # [count, d_in - i2]
+                h_cross = H_inv[i1:i2, i2:]
                 inv_diag_block = torch.linalg.pinv(H_inv_block)
                 update = torch.matmul(err_block, torch.matmul(inv_diag_block, h_cross))
                 W_pruned[:, i2:] -= update
 
-        # Relative Frobenius error check
         norm_orig = torch.norm(W, p="fro")
         rel_err = (torch.norm(W - W_pruned, p="fro") / (norm_orig + 1e-8)).item()
         self.layer_errors[name] = rel_err
@@ -331,7 +321,6 @@ class SparseGPTCompressor(BaseCompressor):
             dtype=base_mod.weight.dtype, device=base_mod.weight.device
         )
         compressed_layer = base_mod
-        # Preserve existing LoRA adapter weights if the source module has them
         if (
             hasattr(module, "lora_A")
             and hasattr(module, "lora_B")
@@ -347,7 +336,6 @@ class SparseGPTCompressor(BaseCompressor):
                 if hasattr(src_lB, "data") and src_lB.shape == compressed_layer.lora_B.shape:
                     compressed_layer.lora_B.data.copy_(src_lB.data)
 
-        # Determine if module is wrapped (LoRALinear) or standalone
         is_wrapped = hasattr(module, "base_layer")
         if is_wrapped:
             module.base_layer = compressed_layer

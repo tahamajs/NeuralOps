@@ -40,7 +40,6 @@ try:
 except Exception:
     pass
 
-# Auto-wired submodules
 from neuralops.compression_engine.tensor_decomp import kronecker_compressor
 from neuralops.compression_engine.tensor_decomp import kronecker_tt_lora
 from neuralops.compression_engine.tensor_decomp import tt_compressor

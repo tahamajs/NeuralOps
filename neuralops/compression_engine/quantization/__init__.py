@@ -100,7 +100,6 @@ try:
 except Exception:
     pass
 
-# Auto-wired submodules
 from neuralops.compression_engine.quantization import astro_quantizer
 from neuralops.compression_engine.quantization import awq
 from neuralops.compression_engine.quantization import awq_real

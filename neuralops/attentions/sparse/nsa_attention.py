@@ -39,10 +39,6 @@ from neuralops.core.utils.gqa import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
 
 
-
-
-
-
 class DSAConfig:
     """Configuration for Dynamic Sparse Attention (DSA) Learned Block Routing."""
 
@@ -194,10 +190,8 @@ class NativeSparseAttention(BaseAttention):
             kwargs.get("router_hidden", getattr(config, "router_hidden", 64))
         )
 
-        # DSA Router placeholder (instantiated dynamically or explicitly)
         self._learned_router: LearnedBlockRouter | None = None
 
-        # Decoder detection
         model_type = getattr(config, "model_type", "").lower() if config else ""
         is_dec = (
             getattr(
@@ -238,7 +232,6 @@ class NativeSparseAttention(BaseAttention):
         self.is_causal = bool(is_dec)
         self.is_nested_encoder = False
 
-        # LoRA config
         self.lora_rank = (
             getattr(
                 config,
@@ -259,7 +252,6 @@ class NativeSparseAttention(BaseAttention):
         )
         self.freeze_base = self.lora_rank > 0
 
-        # Projections
         self.q_proj = LoRALinear(
             self.dim,
             self.all_head_size,
@@ -333,7 +325,6 @@ class NativeSparseAttention(BaseAttention):
             "o": (None, None),
         }
 
-        # 1. GPT-2 fused
         if hasattr(src, "c_attn") and src.c_attn is not None:
             c_attn_mod = src.c_attn
             base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
@@ -382,7 +373,6 @@ class NativeSparseAttention(BaseAttention):
                         bias_o.data.clone() if bias_o is not None else None,
                     )
 
-        # 2. RoBERTa nested
         elif hasattr(src, "self") and hasattr(src.self, "query"):
             s = src.self
             for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
@@ -399,7 +389,6 @@ class NativeSparseAttention(BaseAttention):
                     out_mod.bias.data.clone() if out_mod.bias is not None else None,
                 )
 
-        # 3. Flat modules
         else:
             proj_candidates = {
                 "q": ["q_lin", "q_proj", "query"],
@@ -525,7 +514,6 @@ class NativeSparseAttention(BaseAttention):
 
         return_mask = return_mask or kwargs.get("return_mask", False)
 
-        # Compute query representation for router / projections
         q_raw = self.q_proj(hidden_states)
         k_raw = self.k_proj(hidden_states)
         v_raw = self.v_proj(hidden_states)
@@ -539,7 +527,6 @@ class NativeSparseAttention(BaseAttention):
             ).to(device=device, dtype=q_raw.dtype)
 
         _, selected_blocks = self._learned_router(q_raw, top_k=self.top_k)
-        # Construct boolean block_mask: [B, num_blocks]
         block_mask = torch.zeros(B, num_blocks, device=device, dtype=torch.bool).scatter_(-1, selected_blocks, True)
 
         Q = q_raw.view(B, L, H, d).permute(0, 2, 1, 3)
@@ -592,16 +579,13 @@ class NativeSparseAttention(BaseAttention):
 
         scores = (
             torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
-        )  # [B, H, L, L]
+        )
 
-        # Valid mask handling
         valid_mask_2d = get_token_valid_mask(attention_mask, B, L, device)
         key_valid_4d = valid_mask_2d.unsqueeze(1).unsqueeze(2)
 
-        # DSA block sparsity token mask: [B, 1, 1, L]
         token_block_mask = block_mask.repeat_interleave(self.block_size, dim=-1)[..., :L].unsqueeze(1).unsqueeze(2)
 
-        # Local sliding window boolean mask
         idx = torch.arange(L, device=device)
         if self.is_decoder:
             local_mask = (idx.unsqueeze(1) - idx.unsqueeze(0) <= self.window_size) & (
@@ -623,7 +607,6 @@ class NativeSparseAttention(BaseAttention):
             local_mask = (idx.unsqueeze(1) - idx.unsqueeze(0)).abs() <= self.window_size
         local_mask_4d = local_mask.unsqueeze(0).unsqueeze(0)
 
-        # Mask combines local context and DSA routed blocks
         if return_mask:
             total_mask = token_block_mask & key_valid_4d
         else:
@@ -678,7 +661,6 @@ def inject_nsa(
 
     cfg = model_config if model_config is not None else getattr(target, "config", None)
 
-    # Whole-model traversal
     layer_list = None
     if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
         layer_list = target.distilbert.transformer.layer
@@ -781,6 +763,5 @@ def inject_nsa(
         return None
 
 
-# Aliases
 NSAAttention = NativeSparseAttention
 inject_nsa_attention = inject_nsa

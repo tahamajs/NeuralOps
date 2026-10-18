@@ -34,8 +34,6 @@ from neuralops.utils.compat import should_compress_linear
 logger = logging.getLogger(__name__)
 
 
-
-
 @COMPRESSOR_REGISTRY.register("slim_compressor")
 class SLiMCompressor(BaseCompressor):
     """SLiMCompressor neural operator.
@@ -60,7 +58,7 @@ class SLiMCompressor(BaseCompressor):
         structured_24: bool = True,
         target_attention_only: bool = False,
         max_error: float = 0.5,
-        fallback_to_original: bool = True,  # Fix 1: Default changed to True
+        fallback_to_original: bool = True,
         target_modules: list[str] | None = None,
         **kwargs: Any,
     ) -> None:
@@ -116,7 +114,6 @@ class SLiMCompressor(BaseCompressor):
 
         base_mod = getattr(module, "base_layer", module)
         cls_name = base_mod.__class__.__name__.lower()
-        # Fix 2: Reliable Conv1D check using class name and hasattr(nf)
         is_linear_like = (
             isinstance(base_mod, nn.Linear) or "conv1d" in cls_name or hasattr(base_mod, "nf")
         )
@@ -151,17 +148,14 @@ class SLiMCompressor(BaseCompressor):
                 base_mod = getattr(module, "base_layer", module)
                 raw_w = base_mod.weight.data
                 cls_name = base_mod.__class__.__name__.lower()
-                # Fix 2: Check for Conv1D via class name and nf attribute
                 is_conv1d = "conv1d" in cls_name or hasattr(base_mod, "nf")
                 device = raw_w.device
                 dtype = raw_w.dtype
 
                 W = raw_w.t().contiguous().clone().float() if is_conv1d else raw_w.clone().float()
 
-                # 1. Quantize (Weights only; biases are preserved in full precision to avoid drift)
                 W_q = self._quantize(W)
 
-                # 2. Apply 2:4 structured sparsity or magnitude sparsity
                 if self.structured_24:
                     W_sp, _ = apply_24_structured_mask(W_q, saliency=torch.abs(W_q), dim=1)
                 else:
@@ -171,7 +165,6 @@ class SLiMCompressor(BaseCompressor):
                     mask = (W_q.abs() >= thr).float()
                     W_sp = W_q * mask
 
-                # 3. Low-Rank Residual Correction
                 residual = W - W_sp
                 try:
                     U, S, Vh = torch.linalg.svd(residual, full_matrices=False)
@@ -186,12 +179,10 @@ class SLiMCompressor(BaseCompressor):
                     logger.debug("SVD residual correction exception in %s: %s", name, e)
                     W_final = W_sp
 
-                # Relative Frobenius error check
                 norm_orig = torch.norm(W, p="fro")
                 rel_err = (torch.norm(W - W_final, p="fro") / (norm_orig + 1e-8)).item()
                 self.layer_errors[name] = rel_err
 
-                # Fix 3: Always log a warning when reconstruction error exceeds max_error
                 if rel_err > self.max_error:
                     logger.warning(
                         "SLiM reconstruction error %.4f on %s exceeded threshold %.4f%s",
@@ -216,7 +207,6 @@ class SLiMCompressor(BaseCompressor):
                 final_w = W_final.t().contiguous() if is_conv1d else W_final
                 base_mod.weight.data = final_w.to(dtype=dtype, device=device)
                 compressed_layer = base_mod
-                # Preserve existing LoRA adapter weights if the source module has them
                 if (
                     hasattr(module, "lora_A")
                     and hasattr(module, "lora_B")
@@ -238,7 +228,6 @@ class SLiMCompressor(BaseCompressor):
                         ):
                             compressed_layer.lora_B.data.copy_(src_lB.data)
 
-                # Determine if module is wrapped (LoRALinear) or standalone
                 is_wrapped = hasattr(module, "base_layer")
                 if is_wrapped:
                     module.base_layer = compressed_layer
@@ -250,7 +239,6 @@ class SLiMCompressor(BaseCompressor):
 
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
-        # Fix 6: Store max_error and fallback_to_original in stats
         stats.update(
             {
                 "pruned_layers": pruned_layers_count,
@@ -262,7 +250,7 @@ class SLiMCompressor(BaseCompressor):
                 "max_error": self.max_error,
                 "fallback_to_original": self.fallback_to_original,
                 "target_attention_only": self.target_attention_only,
-                "biases_quantized": False,  # Fix 5: Explicitly document bias policy
+                "biases_quantized": False,
                 "method": "slim_quant_sparse_lowrank",
             }
         )

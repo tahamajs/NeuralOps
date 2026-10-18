@@ -63,8 +63,6 @@ def get_total_span_loss(model: nn.Module, lambda_span: float = 0.01) -> torch.Te
     return torch.stack(losses).mean()
 
 
-
-
 def _rotate_half_q(x: torch.Tensor) -> torch.Tensor:
     """Rotate last dim by half. Cached canonical version."""
     d = x.shape[-1]
@@ -85,7 +83,6 @@ def _gather_cos_sin(
 
     [FIX-1] Handles 2D, 3D, AND 4D cos/sin.
     """
-    # Normalize to (Bc, Hc, S, d)
     if cos.dim() == 2:
         cos = cos.unsqueeze(0).unsqueeze(0)
         sin = sin.unsqueeze(0).unsqueeze(0)
@@ -93,26 +90,24 @@ def _gather_cos_sin(
         cos = cos.unsqueeze(1)
         sin = sin.unsqueeze(1)
     elif cos.dim() == 4:
-        # Already (B, H, S, d) — no-op
         pass
     else:
         raise ValueError(f"Unsupported cos.dim()={cos.dim()}")
 
     Bc, Hc, S, d = cos.shape
-    ids = position_ids.clamp(min=0, max=S - 1)  # (B, N)
+    ids = position_ids.clamp(min=0, max=S - 1)
 
     if Bc == 1:
-        # Broadcast cos/sin across batch
-        cos_g = cos[0, 0][ids]  # (B, N, d)
+        cos_g = cos[0, 0][ids]
         sin_g = sin[0, 0][ids]
-        cos_g = cos_g.unsqueeze(1)  # (B, 1, N, d)
+        cos_g = cos_g.unsqueeze(1)
         sin_g = sin_g.unsqueeze(1)
     else:
-        cos_flat = cos[:, 0].contiguous()  # (B, S, d)
+        cos_flat = cos[:, 0].contiguous()
         sin_flat = sin[:, 0].contiguous()
         cos_g = torch.gather(
             cos_flat, 1, ids.unsqueeze(-1).expand(-1, -1, d)
-        ).unsqueeze(1)  # (B, 1, N, d)
+        ).unsqueeze(1)
         sin_g = torch.gather(
             sin_flat, 1, ids.unsqueeze(-1).expand(-1, -1, d)
         ).unsqueeze(1)
@@ -139,7 +134,7 @@ def _build_keep_mask(
             q_idx = torch.arange(N_q, device=device).unsqueeze(1) + offset
             k_idx = torch.arange(N_k, device=device).unsqueeze(0)
             causal = k_idx <= q_idx
-        mask = causal.unsqueeze(0).unsqueeze(0)  # (1, 1, N_q, N_k)
+        mask = causal.unsqueeze(0).unsqueeze(0)
 
     def _combine(am: torch.Tensor) -> torch.Tensor:
         if am.dim() == 2:
@@ -173,10 +168,6 @@ def _build_keep_mask(
     return mask
 
 
-
-
-
-
 class IdentityOutProj(nn.Identity):
     """Placeholder for nested encoders where out_proj is external."""
 
@@ -187,11 +178,6 @@ class IdentityOutProj(nn.Identity):
 
     def freeze_base_weights(self) -> None:
         pass
-
-
-# =============================================================================
-# Adaptive Span Attention
-# =============================================================================
 
 
 @ATTENTION_REGISTRY.register("adaptive_span_attention")
@@ -229,7 +215,6 @@ class AdaptiveSpanAttention(BaseAttention):
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
         super().__init__(config, rank)
 
-        # ---------------- Dimensions ----------------
         hidden_size = kwargs.get("d_model") or kwargs.get("hidden_size") or kwargs.get("dim")
         num_heads = (
             kwargs.get("num_heads") or kwargs.get("n_heads") or kwargs.get("num_attention_heads")
@@ -263,7 +248,6 @@ class AdaptiveSpanAttention(BaseAttention):
         num_kv_heads = int(num_kv_heads or num_heads)
         head_dim = head_dim if head_dim > 0 else (hidden_size // num_heads if num_heads > 0 else 64)
 
-        # [FIX-9] Single source of truth: `hidden_size`. `d_model` is an alias property.
         self.hidden_size: int = hidden_size
         self.num_heads: int = num_heads
         self.num_kv_heads: int = num_kv_heads
@@ -274,7 +258,6 @@ class AdaptiveSpanAttention(BaseAttention):
         self.layer_idx: int = int(layer_idx) if layer_idx is not None else 0
         self.rolling_cache_size: int | None = rolling_cache_size
 
-        # ---------------- Span config ----------------
         cfg_max_span = getattr(config, "max_span", max_span) if config else max_span
         cfg_ramp = getattr(config, "ramp_size", ramp_size) if config else ramp_size
         if comp_config is not None:
@@ -286,7 +269,6 @@ class AdaptiveSpanAttention(BaseAttention):
             kwargs.get("min_span", getattr(config, "min_span", 32.0) if config else 32.0)
         )
 
-        # ---------------- Decoder / nested encoder detection ----------------
         model_type = getattr(config, "model_type", "").lower() if config else ""
         is_dec = (
             getattr(
@@ -351,7 +333,6 @@ class AdaptiveSpanAttention(BaseAttention):
             getattr(config, "relative_attention_max_distance", 128) if config else 128
         )
 
-        # ---------------- LoRA config ----------------
         if config is not None:
             resolved_lora_rank = getattr(
                 config,
@@ -384,7 +365,6 @@ class AdaptiveSpanAttention(BaseAttention):
         self.lora_alpha = float(resolved_lora_alpha)
         self.freeze_base: bool = self.lora_rank > 0
 
-        # ---------------- Projections ----------------
         self.q_proj = LoRALinear(
             self.hidden_size, self.all_head_size, bias=True,
             lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
@@ -409,11 +389,8 @@ class AdaptiveSpanAttention(BaseAttention):
                 freeze_base=self.freeze_base, dtype=target_dtype,
             )
 
-        # ---------------- Span logits ----------------
-        # Init at -1.5 (span ≈ 0.18 * max_span ≈ 23 tokens) so compression takes active effect
         self.span_logits = nn.Parameter(torch.full((self.num_heads,), -1.5, dtype=torch.float32))
 
-        # ---------------- Dropout ----------------
         dropout_p = (
             getattr(
                 config,
@@ -436,16 +413,12 @@ class AdaptiveSpanAttention(BaseAttention):
         if source_attn is not None:
             self.copy_weights(source_attn)
 
-        # Convert only if target_dtype was explicitly specified AND weights were not copied
         if target_dtype is not None and source_attn is None:
             self.q_proj.to(target_dtype)
             self.k_proj.to(target_dtype)
             self.v_proj.to(target_dtype)
             self.out_proj.to(target_dtype)
 
-    # ------------------------------------------------------------------
-    # Property aliases (backward compat + HF conventions)
-    # ------------------------------------------------------------------
     @property
     def d_model(self) -> int:
         return self.hidden_size
@@ -461,9 +434,6 @@ class AdaptiveSpanAttention(BaseAttention):
     def get_span_regularization_loss(self, lambda_span: float = 0.01) -> torch.Tensor:
         return lambda_span * torch.sigmoid(self.span_logits).mean()
 
-    # ------------------------------------------------------------------
-    # Relative position bias (T5-style)
-    # ------------------------------------------------------------------
     def _relative_position_bucket(
         self, relative_position, bidirectional=True, num_buckets=32, max_distance=128
     ):
@@ -502,9 +472,6 @@ class AdaptiveSpanAttention(BaseAttention):
         values = self.relative_attention_bias(buckets)
         return values.permute([2, 0, 1]).unsqueeze(0)
 
-    # ------------------------------------------------------------------
-    # Weight transfer
-    # ------------------------------------------------------------------
     def copy_weights(self, src: Any) -> None:
         from neuralops.core.adapters import UniversalAdapter
 
@@ -515,7 +482,6 @@ class AdaptiveSpanAttention(BaseAttention):
             "o": (None, None),
         }
 
-        # 1. Try UniversalAdapter (handles most HF models)
         for proj in ["q", "k", "v", "o"]:
             try:
                 w, b = UniversalAdapter.get_weight_bias(src, proj)
@@ -524,7 +490,6 @@ class AdaptiveSpanAttention(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter fallback for %s: %s", proj, e)
 
-        # 2. GPT-2 fused c_attn
         if hasattr(src, "c_attn") and any(extracted[k][0] is None for k in ("q", "k", "v")):
             c_attn_layer = src.c_attn
             base_c = getattr(c_attn_layer, "base_layer", c_attn_layer)
@@ -555,7 +520,6 @@ class AdaptiveSpanAttention(BaseAttention):
                     bias_data[2 * split :].contiguous() if bias_data is not None else None,
                 )
 
-        # 3. GPT-2 c_proj
         if hasattr(src, "c_proj") and extracted["o"][0] is None:
             c_proj_layer = src.c_proj
             base_o = getattr(c_proj_layer, "base_layer", c_proj_layer)
@@ -576,7 +540,6 @@ class AdaptiveSpanAttention(BaseAttention):
                     b_o.data.clone().contiguous() if b_o is not None else None,
                 )
 
-        # 4. BERT / RoBERTa nested
         if hasattr(src, "self") and any(extracted[k][0] is None for k in ("q", "k", "v")):
             s = src.self
             if hasattr(s, "query") and extracted["q"][0] is None:
@@ -586,7 +549,6 @@ class AdaptiveSpanAttention(BaseAttention):
             if hasattr(s, "value") and extracted["v"][0] is None:
                 extracted["v"] = (s.value.weight.data, getattr(s.value, "bias", None))
 
-        # 5. BERT output.dense
         if (
             hasattr(src, "output")
             and getattr(src, "output", None) is not None
@@ -596,7 +558,6 @@ class AdaptiveSpanAttention(BaseAttention):
             dense = src.output.dense
             extracted["o"] = (dense.weight.data, getattr(dense, "bias", None))
 
-        # 6. Named fallback
         named_map = {
             "q": ["q_proj", "q_lin", "query"],
             "k": ["k_proj", "k_lin", "key"],
@@ -612,7 +573,6 @@ class AdaptiveSpanAttention(BaseAttention):
                             extracted[proj] = (layer.weight.data, getattr(layer, "bias", None))
                             break
 
-        # Determine nested encoder
         cls_name = src.__class__.__name__
         cfg_type = getattr(self.config, "model_type", "").lower() if self.config else ""
         if not self.is_nested_encoder:
@@ -629,7 +589,6 @@ class AdaptiveSpanAttention(BaseAttention):
         if self.is_nested_encoder and not isinstance(self.out_proj, IdentityOutProj):
             self.out_proj = IdentityOutProj()
 
-        # Verify Frobenius norm of extracted weights or source module
         if hasattr(src, "weight") and torch.norm(src.weight.float()).item() == 0.0:
             raise RuntimeError("Source weight tensor has zero Frobenius norm")
         for k in ("q", "k", "v", "o"):
@@ -643,7 +602,6 @@ class AdaptiveSpanAttention(BaseAttention):
         if missing:
             logger.warning("AdaptiveSpanAttention missing weights for: %s", missing)
 
-        # Copy into targets
         with torch.no_grad():
             for proj_key, target in (
                 ("q", self.q_proj),
@@ -666,7 +624,6 @@ class AdaptiveSpanAttention(BaseAttention):
                 if hasattr(target, "freeze_base_weights"):
                     target.freeze_base_weights()
 
-        # Extra config copy
         if getattr(src, "rotary_emb", None) is not None:
             self.rotary_emb = src.rotary_emb
         if hasattr(src, "has_relative_attention_bias"):
@@ -677,9 +634,6 @@ class AdaptiveSpanAttention(BaseAttention):
         if hasattr(src, "is_decoder"):
             self.is_decoder = bool(src.is_decoder)
 
-    # ------------------------------------------------------------------
-    # KV cache helpers
-    # ------------------------------------------------------------------
     @staticmethod
     def _read_past_len(past_key_value: Any, layer_idx: int) -> int:
         if past_key_value is None or past_key_value is False:
@@ -705,20 +659,17 @@ class AdaptiveSpanAttention(BaseAttention):
         if past_key_value is None or past_key_value is False:
             return K_new, V_new, None
 
-        # HF DynamicCache
         if hasattr(past_key_value, "update"):
             try:
                 result = past_key_value.update(K_new, V_new, self.layer_idx)
                 if isinstance(result, tuple) and len(result) == 3:
                     return result[0], result[1], result[2]
-                # Some versions return just the cache
                 K = past_key_value.key_cache[self.layer_idx]
                 V = past_key_value.value_cache[self.layer_idx]
                 return K, V, past_key_value
             except Exception as e:
                 logger.debug("DynamicCache.update failed: %s", e)
 
-        # Tuple (K, V)
         if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 2:
             past_k, past_v = past_key_value[0], past_key_value[1]
             if past_k is not None:
@@ -730,9 +681,6 @@ class AdaptiveSpanAttention(BaseAttention):
 
         return K_new, V_new, (K_new, V_new)
 
-    # ------------------------------------------------------------------
-    # Span penalty (FP32, batch-aware, sync-free)
-    # ------------------------------------------------------------------
     def _compute_span_penalty(
         self,
         scores: torch.Tensor,
@@ -749,25 +697,21 @@ class AdaptiveSpanAttention(BaseAttention):
         B, H, N_q, N_k = scores.shape
 
         effective_min = min(self.min_span, float(N_k))
-        raw_span = torch.sigmoid(self.span_logits) * self.max_span  # (H,)
-        span = raw_span.clamp(min=effective_min)  # (H,)
+        raw_span = torch.sigmoid(self.span_logits) * self.max_span
+        span = raw_span.clamp(min=effective_min)
 
-        # [FIX-8, FIX-6] Use full position_ids (batch-aware), no .item()
         if position_ids is not None:
-            q_pos = position_ids.to(torch.float32)  # (B, N_q)
+            q_pos = position_ids.to(torch.float32)
             if N_k == N_q:
-                k_pos = q_pos  # (B, N_k)
+                k_pos = q_pos
             else:
-                # Decode: last q_pos is anchor, walk backwards
-                # k_pos[b, j] = q_pos[b, N_q-1] - (N_k - 1 - j)
-                anchor = q_pos[:, -1:]  # (B, 1)
-                offsets = torch.arange(N_k - 1, -1, -1, device=device, dtype=torch.float32)  # (N_k,)
-                k_pos = anchor - offsets.unsqueeze(0)  # (B, N_k)
+                anchor = q_pos[:, -1:]
+                offsets = torch.arange(N_k - 1, -1, -1, device=device, dtype=torch.float32)
+                k_pos = anchor - offsets.unsqueeze(0)
         else:
             q_pos = torch.arange(N_q, device=device, dtype=torch.float32).unsqueeze(0).expand(B, -1)
             k_pos = torch.arange(N_k, device=device, dtype=torch.float32).unsqueeze(0).expand(B, -1)
 
-        # Try fused Triton kernel in SRAM
         try:
             from neuralops.core.triton_kernels.elementwise import fused_adaptive_span_penalty_triton
             penalty = fused_adaptive_span_penalty_triton(
@@ -777,25 +721,19 @@ class AdaptiveSpanAttention(BaseAttention):
         except Exception:
             pass
 
-        # dist: (B, N_q, N_k)
         if is_causal:
             dist = (q_pos.unsqueeze(2) - k_pos.unsqueeze(1)).clamp(min=0.0)
         else:
             dist = (q_pos.unsqueeze(2) - k_pos.unsqueeze(1)).abs()
 
-        # span_h: (H, 1, 1) → ramp: (H, B, N_q, N_k) → log: same
-        span_h = span.view(H, 1, 1).unsqueeze(1)  # (H, 1, 1, 1)
-        dist_e = dist.unsqueeze(0)  # (1, B, N_q, N_k)
+        span_h = span.view(H, 1, 1).unsqueeze(1)
+        dist_e = dist.unsqueeze(0)
         ramp = ((self.ramp_size + span_h - dist_e) / self.ramp_size).clamp(0.0, 1.0)
-        span_mask = torch.log(ramp.clamp(min=1e-9))  # (H, B, N_q, N_k) FP32
+        span_mask = torch.log(ramp.clamp(min=1e-9))
 
-        # Reorder to (B, H, N_q, N_k) then cast to scores.dtype
         penalty = span_mask.permute(1, 0, 2, 3).contiguous()
         return penalty.to(scores.dtype)
 
-    # ------------------------------------------------------------------
-    # Forward
-    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -820,7 +758,6 @@ class AdaptiveSpanAttention(BaseAttention):
         device = hidden_states.device
         dtype = hidden_states.dtype
 
-        # ---- Projections ----
         Q = self.q_proj(hidden_states).view(B, N_q, H, d).transpose(1, 2).contiguous()
         K_new = (
             self.k_proj(kv_input).view(B, -1, self.num_kv_heads, d).transpose(1, 2).contiguous()
@@ -829,7 +766,6 @@ class AdaptiveSpanAttention(BaseAttention):
             self.v_proj(kv_input).view(B, -1, self.num_kv_heads, d).transpose(1, 2).contiguous()
         )
 
-        # ---- Position IDs ----
         position_ids = kwargs.get("position_ids")
         past_len = self._read_past_len(past_key_value, self.layer_idx) if not is_cross_attention else 0
         if position_ids is None and not is_cross_attention:
@@ -839,7 +775,6 @@ class AdaptiveSpanAttention(BaseAttention):
                 .expand(B, -1)
             )
 
-        # ---- RoPE ----
         pos_emb = (
             position_embeddings
             if position_embeddings is not None
@@ -865,14 +800,12 @@ class AdaptiveSpanAttention(BaseAttention):
             if cos is not None and sin is not None:
                 Q, K_new = apply_rotary_pos_emb(Q, K_new, cos, sin, position_ids=position_ids)
 
-        # ---- KV cache ----
         use_cache = kwargs.get("use_cache", False) or past_key_value is not None
         if is_cross_attention:
             K, V = K_new, V_new
             new_past_key_value = past_key_value
         else:
             K, V, new_past_key_value = self._update_cache(K_new, V_new, past_key_value)
-            # Rolling cache
             if (
                 self.rolling_cache_size is not None
                 and K.shape[-2] > self.rolling_cache_size
@@ -884,7 +817,6 @@ class AdaptiveSpanAttention(BaseAttention):
 
         N_k = K.shape[-2]
 
-        # ---- GQA ----
         if self.kv_repeat > 1:
             if K.shape[1] == self.num_kv_heads:
                 K_full = repeat_kv(K, self.kv_repeat)
@@ -896,18 +828,15 @@ class AdaptiveSpanAttention(BaseAttention):
         else:
             K_full, V_full = K, V
 
-        # ---- Scores (in FP32 for stability) ----
         scale = 1.0 / math.sqrt(int(d))
         scores = (torch.matmul(Q.float(), K_full.float().transpose(-2, -1).contiguous()) * scale)
 
-        # ---- Relative position bias ----
         position_bias = kwargs.get("position_bias")
         if position_bias is None and self.has_relative_attention_bias:
             position_bias = self.compute_bias(N_q, N_k, device=device)
         if position_bias is not None:
             scores = scores + position_bias.float()
 
-        # ---- [FIX-3] Span penalty in FP32 ----
         if not is_cross_attention:
             is_causal_here = self.is_decoder or kwargs.get("is_causal", False)
             penalty = self._compute_span_penalty(
@@ -915,7 +844,6 @@ class AdaptiveSpanAttention(BaseAttention):
             )
             scores = scores + penalty.float()
 
-        # ---- [FIX-4] Combined mask ----
         is_causal = self.is_decoder and not is_cross_attention
         keep_mask = _build_keep_mask(
             B=B, N_q=N_q, N_k=N_k, is_causal=is_causal,
@@ -926,14 +854,13 @@ class AdaptiveSpanAttention(BaseAttention):
 
         fully_masked: torch.Tensor | None = None
         if keep_mask is not None:
-            fully_masked = ~keep_mask.any(dim=-1, keepdim=True)  # (B, 1, N_q, 1)
+            fully_masked = ~keep_mask.any(dim=-1, keepdim=True)
             mask_val = _safe_mask_value(scores.dtype)
             scores = scores.masked_fill(~keep_mask, mask_val)
 
         if fully_masked is not None:
             scores = torch.where(fully_masked, torch.zeros_like(scores), scores)
 
-        # ---- Softmax (in FP32) ----
         attn = F.softmax(scores.float(), dim=-1)
 
         if fully_masked is not None:
@@ -942,20 +869,15 @@ class AdaptiveSpanAttention(BaseAttention):
         attn = attn.to(dtype)
         attn = self.dropout(attn)
 
-        # ---- [FIX-2] head_mask: proper broadcasting ----
         if head_mask is not None:
             if head_mask.dim() == 1:
-                head_mask = head_mask.view(1, H, 1, 1)  # (1, H, 1, 1)
+                head_mask = head_mask.view(1, H, 1, 1)
             elif head_mask.dim() == 2:
-                # Could be (B, H) or (1, H) — normalize to (B, H, 1, 1)
                 head_mask = head_mask.view(head_mask.shape[0], H, 1, 1)
             elif head_mask.dim() == 3:
-                # (B, N_q, H) → (B, H, N_q, 1)
                 head_mask = head_mask.transpose(1, 2).unsqueeze(-1)
-            # head_mask.dim() == 4 → already (B, H, N_q, N_k) or (B, H, 1, 1)
             attn = attn * head_mask.to(attn.dtype)
 
-        # ---- Context ----
         context = torch.matmul(attn, V_full.to(attn.dtype)).to(dtype)
         context = context.transpose(1, 2).contiguous().view(B, N_q, self.all_head_size)
 
@@ -964,7 +886,6 @@ class AdaptiveSpanAttention(BaseAttention):
         else:
             output = self.out_proj(context)
 
-        # ---- Format output ----
         return self._format_output(
             output,
             attn if output_attentions else None,
@@ -997,11 +918,6 @@ class AdaptiveSpanAttention(BaseAttention):
         return output, past_kv
 
 
-# =============================================================================
-# Injector
-# =============================================================================
-
-
 def inject_adaptive_span(
     layer: Any = None,
     model: Any = None,
@@ -1020,7 +936,6 @@ def inject_adaptive_span(
     if cfg is None and hasattr(target, "config"):
         cfg = target.config
 
-    # ---- Detect layer list ----
     layer_list = None
     for path in (
         ("distilbert", "transformer", "layer"),
@@ -1065,7 +980,6 @@ def inject_adaptive_span(
             return target
         return None
 
-    # ---- Find source attention ----
     src_attn = old_attn
     if src_attn is None:
         for attr in ("attention", "self_attn", "attn", "self"):
@@ -1078,7 +992,6 @@ def inject_adaptive_span(
     if src_attn is None and cfg is None:
         return None
 
-    # ---- Idempotency ----
     def _already_wrapped(obj: Any) -> bool:
         if obj is None:
             return False
@@ -1098,13 +1011,11 @@ def inject_adaptive_span(
         if _already_wrapped(getattr(target, attr, None)):
             return None
 
-    # ---- Skip DeltaNet/LinearAttention ----
     if src_attn is not None:
         c_name = src_attn.__class__.__name__
         if "DeltaNet" in c_name or "LinearAttention" in c_name:
             return None
 
-    # ---- Extract dims ----
     hidden_size = (
         getattr(src_attn, "hidden_size", None)
         or getattr(src_attn, "embed_dim", None)
@@ -1158,7 +1069,6 @@ def inject_adaptive_span(
         logger.exception("AdaptiveSpanAttention construction failed.")
         return None
 
-    # ---- Splice ----
     if target is not None:
         if hasattr(target, "attention"):
             if hasattr(target.attention, "self"):

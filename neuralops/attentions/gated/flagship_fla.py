@@ -19,9 +19,6 @@ from neuralops.core.common import _cfg_get, repeat_kv
 from neuralops.core.triton_kernels.fused_norm_linear import fused_rmsnorm_gate
 
 
-# ==============================================================================
-# 1. Gated DeltaNet 2 (Decoupled Erase & Write Linear Recurrence)
-# ==============================================================================
 def gdn2_recurrent_step(
     S: torch.Tensor,
     q_t: torch.Tensor,
@@ -44,21 +41,17 @@ def gdn2_recurrent_step(
         v_t: (B, H, 1, d_v)
         alpha_t, beta_erase_t, beta_write_t: (B, H, 1, 1)
     """
-    # Normalized features
     kt_norm = F.normalize(k_t, p=2, dim=-1, eps=1e-6)
-    
-    # 1. Erase from memory
-    inter_mem = torch.matmul(kt_norm, S)  # (B, H, 1, d_v)
-    erase_term = beta_erase_t * torch.matmul(kt_norm.transpose(-1, -2), inter_mem)  # (B, H, d_k, d_v)
+
+    inter_mem = torch.matmul(kt_norm, S)
+    erase_term = beta_erase_t * torch.matmul(kt_norm.transpose(-1, -2), inter_mem)
     S_decayed = alpha_t * (S - erase_term)
-    
-    # 2. Write new memory
-    write_term = beta_write_t * torch.matmul(kt_norm.transpose(-1, -2), v_t)  # (B, H, d_k, d_v)
+
+    write_term = beta_write_t * torch.matmul(kt_norm.transpose(-1, -2), v_t)
     S_next = S_decayed + write_term
-    
-    # 3. Readout
+
     qt_norm = F.normalize(q_t, p=2, dim=-1, eps=1e-6)
-    y_t = torch.matmul(qt_norm, S_next)  # (B, H, 1, d_v)
+    y_t = torch.matmul(qt_norm, S_next)
     return y_t, S_next
 
 
@@ -86,7 +79,6 @@ def gdn2_chunk_scan(
     else:
         S = initial_state.to(device=device, dtype=torch.float32)
 
-    # For short sequences, unroll directly
     if L <= 64 or not torch.is_grad_enabled():
         outs = []
         for t in range(L):
@@ -101,7 +93,6 @@ def gdn2_chunk_scan(
             outs.append(yt.to(dtype))
         return torch.cat(outs, dim=2), S.to(dtype)
 
-    # Chunked execution with torch.utils.checkpoint
     num_chunks = (L + chunk_size - 1) // chunk_size
     pad_len = (chunk_size - (L % chunk_size)) % chunk_size
 
@@ -189,16 +180,15 @@ class GDN2Attention(BaseAttention):
         self.z_proj = nn.Linear(self.d_model, self.num_heads * self.head_dim, bias=False)
         self.out_proj = nn.Linear(self.num_heads * self.head_dim, self.d_model, bias=False)
 
-        # Decoupled Erase & Write Gating Projections
         self.alpha_proj = nn.Linear(self.d_model, self.num_heads, bias=True)
         self.erase_proj = nn.Linear(self.d_model, self.num_heads, bias=True)
         self.write_proj = nn.Linear(self.d_model, self.num_heads, bias=True)
         self.norm_weight = nn.Parameter(torch.ones(self.num_heads * self.head_dim))
 
         with torch.no_grad():
-            nn.init.constant_(self.alpha_proj.bias, 2.0)  # retention ~ 0.88
-            nn.init.constant_(self.erase_proj.bias, 0.0)  # moderate erase
-            nn.init.constant_(self.write_proj.bias, 1.0)  # strong write
+            nn.init.constant_(self.alpha_proj.bias, 2.0)
+            nn.init.constant_(self.erase_proj.bias, 0.0)
+            nn.init.constant_(self.write_proj.bias, 1.0)
 
     def forward(
         self,
@@ -231,16 +221,12 @@ class GDN2Attention(BaseAttention):
             elif isinstance(past_key_value, torch.Tensor):
                 init_state = past_key_value
 
-        # Fast path via native FLA chunk_gdn2 on CUDA when head_dim <= 64 and no cache
         if init_state is None and D <= 64 and q.is_cuda and not use_cache:
             try:
                 from fla.ops.gdn2 import chunk_gdn2
-                # FLA chunk_gdn2 requires [B, T, H, K] layout
-                # g is log-decay gate [B, T, H, K], b is erase gate [B, T, H, K], w is write gate [B, T, H, K]
                 q_fl = q.transpose(1, 2).contiguous()
                 k_fl = k.transpose(1, 2).contiguous()
                 v_fl = v.transpose(1, 2).contiguous()
-                # Expand gates along head_dim
                 g_fl = torch.log(alpha.float().clamp(min=1e-4, max=1.0)).transpose(1, 2).unsqueeze(-1).expand(-1, -1, -1, D).to(q.dtype).contiguous()
                 b_fl = beta_erase.transpose(1, 2).unsqueeze(-1).expand(-1, -1, -1, D).to(q.dtype).contiguous()
                 w_fl = beta_write.transpose(1, 2).unsqueeze(-1).expand(-1, -1, -1, D).to(q.dtype).contiguous()
@@ -259,7 +245,6 @@ class GDN2Attention(BaseAttention):
         )
 
         y = y.transpose(1, 2).contiguous().view(B, L, H * D)
-        # Apply fused rmsnorm + gating
         y_gated = fused_rmsnorm_gate(y, z, self.norm_weight, eps=1e-5, activation="silu")
         out = self.out_proj(y_gated)
 
@@ -286,7 +271,7 @@ class GDN2Attention(BaseAttention):
             state = {}
         step_idx = state.get("step_idx", 0)
 
-        q = self.q_proj(x).view(B, 1, H, D).transpose(1, 2)  # [B, H, 1, D]
+        q = self.q_proj(x).view(B, 1, H, D).transpose(1, 2)
         k = self.k_proj(x).view(B, 1, self.num_kv_heads, D).transpose(1, 2)
         v = self.v_proj(x).view(B, 1, self.num_kv_heads, D).transpose(1, 2)
         z = self.z_proj(x)
@@ -295,9 +280,9 @@ class GDN2Attention(BaseAttention):
             k = repeat_kv(k, self.kv_repeat)
             v = repeat_kv(v, self.kv_repeat)
 
-        alpha = torch.sigmoid(self.alpha_proj(x)).transpose(1, 2).unsqueeze(-1)        # [B, H, 1, 1]
-        beta_erase = torch.sigmoid(self.erase_proj(x)).transpose(1, 2).unsqueeze(-1)   # [B, H, 1, 1]
-        beta_write = torch.sigmoid(self.write_proj(x)).transpose(1, 2).unsqueeze(-1)   # [B, H, 1, 1]
+        alpha = torch.sigmoid(self.alpha_proj(x)).transpose(1, 2).unsqueeze(-1)
+        beta_erase = torch.sigmoid(self.erase_proj(x)).transpose(1, 2).unsqueeze(-1)
+        beta_write = torch.sigmoid(self.write_proj(x)).transpose(1, 2).unsqueeze(-1)
 
         if "kv_state" not in state or state["kv_state"] is None:
             state["kv_state"] = torch.zeros((B, H, D, D), device=device, dtype=torch.float32)
@@ -317,9 +302,6 @@ class GDN2Attention(BaseAttention):
         return out, state
 
 
-# ==============================================================================
-# 2. Householder Product & PaTH Attention (DeltaProductAttention)
-# ==============================================================================
 def householder_reflection(
     v: torch.Tensor,
     u: torch.Tensor,
@@ -386,7 +368,7 @@ class DeltaProductAttention(BaseAttention):
         k = self.k_proj(hidden_states).view(B, L, H, D).transpose(1, 2)
         v = self.v_proj(hidden_states).view(B, L, H, D).transpose(1, 2)
         u = self.u_proj(hidden_states).view(B, L, H, D).transpose(1, 2)
-        beta_raw = torch.sigmoid(self.beta_proj(hidden_states))  # [B, L, H]
+        beta_raw = torch.sigmoid(self.beta_proj(hidden_states))
 
         init_state = None
         if past_key_value is not None:
@@ -395,11 +377,9 @@ class DeltaProductAttention(BaseAttention):
             elif isinstance(past_key_value, torch.Tensor):
                 init_state = past_key_value
 
-        # Fast path via native FLA parallel_path_attn on CUDA when head_dim <= 64 and no cache
         if init_state is None and D <= 64 and q.is_cuda and not use_cache:
             try:
                 from fla.ops import parallel_path_attn
-                # FLA parallel_path_attn expects [B, T, H, K], w and beta in float32
                 q_fl = q.transpose(1, 2).contiguous()
                 k_fl = k.transpose(1, 2).contiguous()
                 v_fl = v.transpose(1, 2).contiguous()
@@ -419,7 +399,6 @@ class DeltaProductAttention(BaseAttention):
             else init_state.to(device=q.device, dtype=torch.float32)
         )
 
-        # Chunked execution with torch.utils.checkpoint
         def _run_delta_product_chunk(s_in, qc, kc, vc, uc, bc):
             curr = s_in
             c_outs = []
@@ -505,7 +484,7 @@ class DeltaProductAttention(BaseAttention):
         k = self.k_proj(x).view(B, 1, self.num_kv_heads, D).transpose(1, 2)
         v = self.v_proj(x).view(B, 1, self.num_kv_heads, D).transpose(1, 2)
         u = self.u_proj(x).view(B, 1, H, D).transpose(1, 2)
-        beta = torch.sigmoid(self.beta_proj(x)).transpose(1, 2).unsqueeze(-1)  # [B, H, 1, 1]
+        beta = torch.sigmoid(self.beta_proj(x)).transpose(1, 2).unsqueeze(-1)
 
         if self.kv_repeat > 1:
             k = repeat_kv(k, self.kv_repeat)
@@ -540,9 +519,6 @@ class DeltaProductAttention(BaseAttention):
         return out, state
 
 
-# ==============================================================================
-# 3. Preconditioned Gated DeltaNet (PreconditionedGDNAttention / PGDNAttention)
-# ==============================================================================
 @ATTENTION_REGISTRY.register("preconditioned_gdn_attention", is_alias=True)
 @ATTENTION_REGISTRY.register("preconditioned_gdn", is_alias=True)
 @ATTENTION_REGISTRY.register("pgdn_attention", is_alias=True)
@@ -598,7 +574,6 @@ class PreconditionedGDNAttention(BaseAttention):
         k = self.k_proj(hidden_states).view(B, L, H, D).transpose(1, 2)
         v = self.v_proj(hidden_states).view(B, L, H, D).transpose(1, 2)
 
-        # Precondition keys with curvature diagonal P = (diag(s) + damping)^{-1/2} across entire sequence in parallel
         p_scale = torch.rsqrt(F.softplus(self.curvature_diag) + self.damping).view(1, H, 1, D)
         k_preconditioned = k * p_scale
 
@@ -612,7 +587,6 @@ class PreconditionedGDNAttention(BaseAttention):
             elif isinstance(past_key_value, torch.Tensor):
                 init_state = past_key_value
 
-        # Fast path via fused chunk_gdn when D <= 64 on CUDA and without cache
         if init_state is None and D <= 64 and q.is_cuda and not use_cache:
             try:
                 from fla.ops import chunk_gdn
@@ -629,7 +603,6 @@ class PreconditionedGDNAttention(BaseAttention):
             except Exception:
                 pass
 
-        # Checkpointed chunked recurrence fallback
         def _run_pgdn_chunk(s_in, qc, kc, vc, ac, bc):
             curr = s_in
             c_outs = []
@@ -722,10 +695,9 @@ class PreconditionedGDNAttention(BaseAttention):
             k = repeat_kv(k, self.kv_repeat)
             v = repeat_kv(v, self.kv_repeat)
 
-        alpha = torch.sigmoid(self.alpha_proj(x)).transpose(1, 2).unsqueeze(-1)  # [B, H, 1, 1]
-        beta = torch.sigmoid(self.beta_proj(x)).transpose(1, 2).unsqueeze(-1)    # [B, H, 1, 1]
+        alpha = torch.sigmoid(self.alpha_proj(x)).transpose(1, 2).unsqueeze(-1)
+        beta = torch.sigmoid(self.beta_proj(x)).transpose(1, 2).unsqueeze(-1)
 
-        # Update curvature state: running EMA s_t = rho * s_{t-1} + (1 - rho) * k^2
         if "curvature_state" not in state or state["curvature_state"] is None:
             state["curvature_state"] = torch.zeros((B, H, 1, D), device=device, dtype=torch.float32)
 

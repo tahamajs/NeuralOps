@@ -67,7 +67,6 @@ def _extract_valid_token_mask(
         return mask > 0
 
     if mask.dim() == 4:
-        # (B, 1, 1, N) padding  or  (B, 1, N, N) attention bias
         if mask.size(2) == 1:
             m = mask[:, 0, 0, :]
         else:
@@ -87,11 +86,6 @@ def _extract_valid_token_mask(
     return torch.ones((batch_size, seq_len), dtype=torch.bool, device=device)
 
 
-
-
-# ===========================================================================
-# XAttention
-# ===========================================================================
 @ATTENTION_REGISTRY.register(
     "xattention",
     supports_causal=True,
@@ -135,7 +129,6 @@ class XAttention(BaseAttention):
         except TypeError:
             super().__init__(config)
 
-        # ---- Resolve dims ----
         d_model = (
             kwargs.get("dim")
             or kwargs.get("hidden_size")
@@ -169,7 +162,6 @@ class XAttention(BaseAttention):
         self.kv_head_size = self.num_kv_heads * self.head_dim
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
 
-        # ---- Decoder detection ----
         mt = str(_cfg_get(config, "model_type", "") or "").lower()
         _dec_pfx = (
             "gpt", "qwen", "llama", "mistral", "gemma", "phi",
@@ -193,7 +185,6 @@ class XAttention(BaseAttention):
             layer_idx if layer_idx is not None else kwargs.get("layer_idx", 0)
         )
 
-        # ---- Block config ----
         self.block_size: int = max(
             0,
             int(
@@ -211,12 +202,10 @@ class XAttention(BaseAttention):
             self.keep_ratio = 1.0 - self.sparsity
         self.keep_ratio = max(0.0, min(1.0, self.keep_ratio))
 
-        # ---- LoRA config ----
         self.lora_rank = int(
             kwargs.get("lora_rank", _cfg_get(config, "lora_rank", lora_rank))
         )
 
-        # ---- Target dtype ----
         target_dtype = kwargs.get("dtype")
         if target_dtype is None and pretrained_attn is not None:
             try:
@@ -226,7 +215,6 @@ class XAttention(BaseAttention):
         if target_dtype is None:
             target_dtype = torch.float32
 
-        # ---- Projections ----
         self.q_proj = LoRALinear(
             self.hidden_size,
             self.all_head_size,
@@ -260,12 +248,10 @@ class XAttention(BaseAttention):
             dtype=target_dtype,
         )
 
-        # ---- [XATTN-FIX-01] KD-compatible output scale ----
         self.lora_output_scale = nn.Parameter(
             torch.ones(1, dtype=target_dtype)
         )
 
-        # ---- Dropout ----
         dropout_p = _cfg_get(
             config,
             "dropout",
@@ -284,9 +270,6 @@ class XAttention(BaseAttention):
 
         self.to(target_dtype)
 
-    # ------------------------------------------------------------------
-    # [XATTN-FIX-02] Backward-compat aliases
-    # ------------------------------------------------------------------
     @property
     def output_scale(self) -> nn.Parameter:
         return self.lora_output_scale
@@ -324,9 +307,6 @@ class XAttention(BaseAttention):
     @property
     def c_proj(self): return self.out_proj
 
-    # ------------------------------------------------------------------
-    # [XATTN-FIX-05, XATTN-FIX-06, XATTN-FIX-12] Weight transfer
-    # ------------------------------------------------------------------
     def copy_weights(self, src: Any) -> None:
         """Extract Q/K/V/O weights across multiple architectures."""
         if src is None:
@@ -341,7 +321,6 @@ class XAttention(BaseAttention):
             "o": (None, None),
         }
 
-        # ---- 1. UniversalAdapter extraction ----
         try:
             adapter = UniversalAdapter()
             for proj in ["q", "k", "v", "o"]:
@@ -354,7 +333,6 @@ class XAttention(BaseAttention):
         except Exception as e:
             logger.debug("UniversalAdapter init failed: %s", e)
 
-        # ---- 2. GPT-2 fused c_attn (Conv1D) ----
         if hasattr(src, "c_attn") and any(
             extracted[k][0] is None for k in ("q", "k", "v")
         ):
@@ -383,7 +361,6 @@ class XAttention(BaseAttention):
                 bias_data[2 * split_size :] if bias_data is not None else None,
             )
 
-        # ---- 3. GPT-2 c_proj ----
         if hasattr(src, "c_proj") and extracted["o"][0] is None:
             c_proj = getattr(src.c_proj, "base_layer", src.c_proj)
             w_o = c_proj.weight.data
@@ -397,7 +374,6 @@ class XAttention(BaseAttention):
             b_o = getattr(c_proj, "bias", None)
             extracted["o"] = (w_o, b_o.data if b_o is not None else None)
 
-        # ---- 4. BERT / RoBERTa nested encoder ----
         if hasattr(src, "self") and any(
             extracted[k][0] is None for k in ("q", "k", "v")
         ):
@@ -422,7 +398,6 @@ class XAttention(BaseAttention):
             b = getattr(dense, "bias", None)
             extracted["o"] = (dense.weight.data, b.data if b is not None else None)
 
-        # ---- 5. Flat projections ----
         named_map = {
             "q": ["q_proj", "q_lin", "query", "W_q"],
             "k": ["k_proj", "k_lin", "key", "W_k"],
@@ -443,7 +418,6 @@ class XAttention(BaseAttention):
                             )
                             break
 
-        # ---- Detect nested encoder ----
         cls_name = src.__class__.__name__
         has_out_proj = any(
             hasattr(src, attr)
@@ -457,7 +431,6 @@ class XAttention(BaseAttention):
             or (cls_name.endswith("SelfAttention") and not has_out_proj)
         ) and not has_out_proj
 
-        # ---- [XATTN-FIX-06] GQA-aware mean-pooling ----
         def _align_kv(
             w: torch.Tensor,
             b: torch.Tensor | None,
@@ -483,7 +456,6 @@ class XAttention(BaseAttention):
                 return w.t().contiguous()
             return w
 
-        # ---- Copy into projections ----
         with torch.no_grad():
             for proj_key, target in (
                 ("q", self.q_proj),
@@ -491,7 +463,6 @@ class XAttention(BaseAttention):
                 ("v", self.v_proj),
                 ("o", self.out_proj),
             ):
-                # [XATTN-FIX-05] Skip output projection for nested encoders
                 if proj_key == "o" and self.is_nested_encoder:
                     self.out_proj = nn.Identity()
                     continue
@@ -508,7 +479,6 @@ class XAttention(BaseAttention):
                 )
                 w = _orient(w, in_dim)
 
-                # GQA mean-pooling for K and V
                 if proj_key in ("k", "v"):
                     w, b = _align_kv(w, b, target.weight.size(0))
 
@@ -534,7 +504,6 @@ class XAttention(BaseAttention):
                 elif target.bias is not None:
                     nn.init.zeros_(target.bias)
 
-                # [XATTN-FIX-12] Frobenius verification
                 w_norm = float(
                     torch.linalg.norm(target.weight.data.float()).item()
                 )
@@ -550,9 +519,6 @@ class XAttention(BaseAttention):
         if hasattr(src, "is_decoder"):
             self.is_decoder = bool(src.is_decoder)
 
-    # ------------------------------------------------------------------
-    # Forward
-    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -567,7 +533,6 @@ class XAttention(BaseAttention):
         *args: Any,
         **kwargs: Any,
     ) -> tuple[torch.Tensor, Any]:
-        # [XATTN-FIX-10] Explicit rejection of cross-attention
         key_value_states = kwargs.get("key_value_states", encoder_hidden_states)
         if key_value_states is not None:
             raise NotImplementedError(
@@ -582,7 +547,6 @@ class XAttention(BaseAttention):
         device = hidden_states.device
         dtype = hidden_states.dtype
 
-        # ---- [XATTN-FIX-03] Read past KV cache ----
         past_k: torch.Tensor | None = None
         past_v: torch.Tensor | None = None
         past_len = 0
@@ -602,7 +566,6 @@ class XAttention(BaseAttention):
                     past_v = past_key_value.value_cache[self.layer_idx]
                     past_len = past_k.shape[-2] if past_k is not None else 0
 
-        # ---- Projections ----
         Q = (
             self.q_proj(hidden_states)
             .view(B, N_q, H, d)
@@ -622,7 +585,6 @@ class XAttention(BaseAttention):
             .contiguous()
         )
 
-        # ---- [XATTN-FIX-04] RoPE with past_len ----
         pos_emb = (
             kwargs.get("position_embeddings")
             if "position_embeddings" in kwargs
@@ -659,14 +621,12 @@ class XAttention(BaseAttention):
             except Exception as e:
                 logger.debug("XAttention rotary_emb failed: %s", e)
 
-        # ---- Concatenate with cache ----
         if past_k is not None and past_v is not None:
             K_cat = torch.cat([past_k.to(K_new.dtype), K_new], dim=-2)
             V_cat = torch.cat([past_v.to(V_new.dtype), V_new], dim=-2)
         else:
             K_cat, V_cat = K_new, V_new
 
-        # ---- Update cache ----
         new_past_key_value: Any = None
         use_cache = kwargs.get("use_cache", False) or (
             past_key_value is not None and past_key_value is not False
@@ -683,7 +643,6 @@ class XAttention(BaseAttention):
 
         N_k = K_cat.shape[-2]
 
-        # ---- GQA expansion ----
         if self.kv_repeat > 1:
             K_full = repeat_kv(K_cat, self.kv_repeat)
             V_full = repeat_kv(V_cat, self.kv_repeat)
@@ -694,24 +653,19 @@ class XAttention(BaseAttention):
         attn: torch.Tensor | None = None
         context: torch.Tensor | None = None
 
-        # ---- Decide path: dense vs block-sparse ----
         use_dense = (
             self.block_size <= 0
             or self.keep_ratio >= 1.0
             or N_k <= self.block_size
             or N_q <= self.block_size
-            or N_q == 1  # generation fast path
+            or N_q == 1
         )
 
-        # ---- Fine-grained validity mask ----
         valid_m = _extract_valid_token_mask(
             attention_mask, B, N_k, device
         ) if attention_mask is not None else None
 
         if use_dense:
-            # =============================================================
-            # DENSE PATH (short sequences / generation)
-            # =============================================================
             scores = torch.matmul(Q, K_full.transpose(-2, -1).contiguous()) * scale
 
             if self.is_decoder and N_q > 1:
@@ -736,9 +690,6 @@ class XAttention(BaseAttention):
             context = torch.matmul(attn, V_full)
 
         else:
-            # =============================================================
-            # BLOCK-SPARSE PATH (long sequences)
-            # =============================================================
             scores = torch.matmul(Q, K_full.transpose(-2, -1).contiguous()) * scale
 
             bsz = self.block_size
@@ -753,7 +704,6 @@ class XAttention(BaseAttention):
             num_q_blocks = total_q // bsz
             num_k_blocks = total_k // bsz
 
-            # ---- [XATTN-FIX-07] Padding-aware block averaging ----
             q_valid = torch.zeros((B, 1, total_q, 1), device=device, dtype=Q.dtype)
             q_valid[:, :, :N_q, :] = 1.0
             k_valid = torch.zeros((B, 1, total_k, 1), device=device, dtype=K_full.dtype)
@@ -803,12 +753,10 @@ class XAttention(BaseAttention):
 
             if self.is_decoder and causal_blk is not None:
                 block_mask = block_mask & causal_blk
-                # Always keep the diagonal (self-attention block)
                 diag_k = min(num_q_blocks, num_k_blocks)
                 diag_idx = torch.arange(diag_k, device=device)
                 block_mask[:, :, diag_idx, diag_idx] = True
 
-            # ---- [XATTN-FIX-11] Triton fast path ----
             from neuralops.core.triton_kernels._types import FORCE_PYTORCH_FALLBACK
             if (
                 not FORCE_PYTORCH_FALLBACK
@@ -840,7 +788,6 @@ class XAttention(BaseAttention):
             else:
                 context = None
 
-            # ---- PyTorch fallback ----
             if context is None:
                 if pad_q > 0 or pad_k > 0:
                     scores_p = F.pad(
@@ -884,7 +831,6 @@ class XAttention(BaseAttention):
                 attn = self.dropout(attn)
                 context = torch.matmul(attn, V_full)
 
-        # ---- head_mask ----
         if head_mask is not None and attn is not None:
             hm = head_mask.to(attn.dtype)
             if hm.dim() == 1:
@@ -896,7 +842,6 @@ class XAttention(BaseAttention):
             attn = attn * hm
             context = torch.matmul(attn, V_full)
 
-        # ---- Reshape + output projection ----
         context = (
             context.transpose(1, 2)
             .contiguous()
@@ -910,7 +855,6 @@ class XAttention(BaseAttention):
 
         output = torch.nan_to_num(output, nan=0.0, posinf=1e4, neginf=-1e4)
 
-        # ---- Mask output on padding query tokens ----
         if attention_mask is not None:
             v_m = _extract_valid_token_mask(attention_mask, B, N_q, device)
             output = output * v_m.unsqueeze(-1).to(output.dtype)
@@ -924,9 +868,6 @@ class XAttention(BaseAttention):
         )
 
 
-# ===========================================================================
-# Injection
-# ===========================================================================
 def inject_xattention(
     layer: Any = None,
     model: Any = None,
@@ -938,7 +879,6 @@ def inject_xattention(
     _depth: int = 0,
     **kwargs: Any,
 ):
-    # [XATTN-FIX-09] Recursion guard
     if _depth > 8:
         logger.warning("inject_xattention: max recursion depth exceeded.")
         return None
@@ -955,7 +895,6 @@ def inject_xattention(
         else getattr(target, "config", None)
     )
 
-    # ---- Whole-model traversal ----
     layer_list = None
     for path in (
         ("distilbert", "transformer", "layer"),
@@ -996,7 +935,6 @@ def inject_xattention(
                 num_injected += 1
         return target if num_injected > 0 else None
 
-    # ---- Single-layer injection ----
     src_attn = old_attn
     if src_attn is None:
         for attr in ("attention", "self_attn", "attn", "self"):
@@ -1013,14 +951,12 @@ def inject_xattention(
         )
         return None
 
-    # [XATTN-FIX-09] Idempotency guard
     if isinstance(src_attn, XAttention) or "XAttention" in src_attn.__class__.__name__:
         return None
 
     if cfg is None:
         cfg = getattr(src_attn, "config", None) or getattr(target, "config", None)
 
-    # ---- Resolve dims ----
     hidden_size = (
         _cfg_get(cfg, "hidden_size")
         or _cfg_get(cfg, "d_model")
@@ -1056,7 +992,6 @@ def inject_xattention(
         or 12
     )
 
-    # ---- Fallback config ----
     if cfg is None:
         import types
 
@@ -1090,12 +1025,10 @@ def inject_xattention(
             **kwargs,
         )
 
-        # ---- Move to source device/dtype ----
         p = next(src_attn.parameters(), None)
         if p is not None:
             new_attn.to(device=p.device, dtype=p.dtype)
 
-        # ---- Splice ----
         spliced = False
         if hasattr(target, "attention"):
             if hasattr(target.attention, "self"):

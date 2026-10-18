@@ -34,12 +34,6 @@ from neuralops.core.triton_kernels import triton_dispatch
 logger = logging.getLogger(__name__)
 
 
-
-
-
-
-
-
 @ATTENTION_REGISTRY.register("svd_llm_v2_attention")
 class SVDLLMV2Attention(BaseAttention):
     r"""SVD-factorized attention layer with explicit U, Sigma, V^H matrix buffers
@@ -74,7 +68,6 @@ class SVDLLMV2Attention(BaseAttention):
         )
         super().__init__(config, actual_rank)
 
-        # 1. Dimensions & Architecture
         self.hidden_size: int = kwargs.get(
             "hidden_size",
             _cfg_get(
@@ -139,7 +132,6 @@ class SVDLLMV2Attention(BaseAttention):
         )
         self.scaling: float = self.lora_alpha / max(1, self.lora_rank)
 
-        # 2. Causal decoder flag detection
         _mt = str(_cfg_get(config, "model_type", "") or "").lower()
         _decoder_prefixes = (
             "gpt",
@@ -165,12 +157,10 @@ class SVDLLMV2Attention(BaseAttention):
 
         self.is_nested_encoder: bool = False
 
-        # Device & Dtype detection from old_attn
         src_p = next(old_attn.parameters(), None) if old_attn is not None else None
         target_dtype = kwargs.get("dtype", src_p.dtype if src_p is not None else torch.float32)
         target_device = kwargs.get("device", src_p.device if src_p is not None else None)
 
-        # 3. Create parameter buffers for SVD factors
         self.query_u = nn.Parameter(
             torch.empty(self.q_head_size, self.rank, device=target_device, dtype=target_dtype)
         )
@@ -221,7 +211,6 @@ class SVDLLMV2Attention(BaseAttention):
             torch.zeros(self.hidden_size, device=target_device, dtype=target_dtype)
         )
 
-        # 4. Trainable LoRA Adapters
         if self.lora_rank > 0:
             self.q_lora_A = nn.Parameter(
                 torch.empty(
@@ -304,7 +293,6 @@ class SVDLLMV2Attention(BaseAttention):
 
         self._init_random()
 
-        # Freeze base SVD parameters
         for p in (
             self.query_u,
             self.query_s,
@@ -434,7 +422,6 @@ class SVDLLMV2Attention(BaseAttention):
                 if hasattr(old_attn.output, "dense"):
                     w_o, b_o = _unpack_weight_bias(old_attn.output.dense)
 
-            # Pattern 1: GPT-2 Fused c_attn
             if hasattr(src, "c_attn") and hasattr(src, "c_proj"):
                 c_attn_w, c_attn_b = _unpack_weight_bias(src.c_attn)
                 if c_attn_w is not None:
@@ -449,7 +436,6 @@ class SVDLLMV2Attention(BaseAttention):
 
                 w_o, b_o = _unpack_weight_bias(src.c_proj)
 
-            # Pattern 2: RoBERTa / BERT separate query, key, value
             elif hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value"):
                 w_q, b_q = _unpack_weight_bias(src.query)
                 w_k, b_k = _unpack_weight_bias(src.key)
@@ -461,7 +447,6 @@ class SVDLLMV2Attention(BaseAttention):
                             w_o, b_o = _unpack_weight_bias(getattr(src, attr))
                             break
 
-            # Pattern 3: Qwen / LLaMA (q_proj, k_proj, v_proj, o_proj)
             elif hasattr(src, "q_proj") and hasattr(src, "k_proj") and hasattr(src, "v_proj"):
                 w_q, b_q = _unpack_weight_bias(src.q_proj)
                 w_k, b_k = _unpack_weight_bias(src.k_proj)
@@ -469,7 +454,6 @@ class SVDLLMV2Attention(BaseAttention):
                 if hasattr(src, "o_proj"):
                     w_o, b_o = _unpack_weight_bias(src.o_proj)
 
-            # Pattern 4: DistilBERT (q_lin, k_lin, v_lin, out_lin)
             elif hasattr(src, "q_lin") and hasattr(src, "k_lin") and hasattr(src, "v_lin"):
                 w_q, b_q = _unpack_weight_bias(src.q_lin)
                 w_k, b_k = _unpack_weight_bias(src.k_lin)
@@ -477,7 +461,6 @@ class SVDLLMV2Attention(BaseAttention):
                 if hasattr(src, "out_lin"):
                     w_o, b_o = _unpack_weight_bias(src.out_lin)
 
-            # Fallback: UniversalAdapter
             if w_q is None or w_k is None or w_v is None:
                 try:
                     adapter = UniversalAdapter(old_attn)
@@ -495,7 +478,6 @@ class SVDLLMV2Attention(BaseAttention):
                 except Exception as e:
                     logger.debug("UniversalAdapter fallback failed: %s", e)
 
-            # Verification of essential projections
             missing = []
             if w_q is None:
                 missing.append("query/q_proj")
@@ -507,17 +489,14 @@ class SVDLLMV2Attention(BaseAttention):
                 logger.warning(f"Failed to extract required projections: {missing}")
                 return
 
-            # Frobenius norm checks
             for name, w in [("w_q", w_q), ("w_k", w_k), ("w_v", w_v)]:
                 if torch.norm(w.float(), p="fro").item() < 1e-4:
                     logger.warning(f"Copied weight {name} has near-zero Frobenius norm (< 1e-4)")
 
-            # Decompose and set Q
             self._decompose_and_set(
                 self.query_u, self.query_s, self.query_vh, self.query_bias, w_q, b_q
             )
 
-            # Decompose and set K & V with GQA pooling if needed
             if w_k.shape[0] == self.kv_head_size:
                 self._decompose_and_set(
                     self.key_u, self.key_s, self.key_vh, self.key_bias, w_k, b_k
@@ -568,7 +547,6 @@ class SVDLLMV2Attention(BaseAttention):
                     b_v_pooled,
                 )
 
-            # Decompose and set Out projection (if not nested encoder)
             if w_o is not None and not self.is_nested_encoder:
                 if torch.norm(w_o.float(), p="fro").item() < 1e-4:
                     logger.warning("Copied out_proj weight has near-zero Frobenius norm (< 1e-4)")
@@ -618,7 +596,6 @@ class SVDLLMV2Attention(BaseAttention):
         device = hidden_states.device
         dtype = hidden_states.dtype
 
-        # Defensive device check
         if self.query_u.device != device or self.query_u.dtype != dtype:
             self.to(device=device, dtype=dtype)
 
@@ -626,7 +603,6 @@ class SVDLLMV2Attention(BaseAttention):
         kv_input = encoder_hidden_states if is_cross else hidden_states
         kv_len = kv_input.shape[1]
 
-        # 1. Factorized linear projections with LoRA
         Q_act = self._project(
             hidden_states,
             self.query_vh,
@@ -671,19 +647,16 @@ class SVDLLMV2Attention(BaseAttention):
             .contiguous()
         )
 
-        # 2. RoPE support
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None and not is_cross:
             cos, sin = position_embeddings
             Q, K = apply_rotary_pos_emb(Q, K, cos, sin)
 
-        # 3. GQA expansion
         if self.num_kv_heads < self.num_heads:
             K = repeat_kv(K, self.kv_repeat)
             V = repeat_kv(V, self.kv_repeat)
 
-        # 4. Attention scores in FP32
         scale = 1.0 / math.sqrt(self.head_dim)
         eff_mask = encoder_attention_mask if is_cross else attention_mask
         if eff_mask is None and head_mask is None and not output_attentions:
@@ -729,7 +702,6 @@ class SVDLLMV2Attention(BaseAttention):
 
         scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
 
-        # 5. Masking
         if self.is_decoder and not is_cross and seq_len > 1:
             causal_mask = (
                 torch.triu(
@@ -770,7 +742,6 @@ class SVDLLMV2Attention(BaseAttention):
         probs = F.softmax(scores, dim=-1).to(hidden_states.dtype)
         probs = self.dropout(probs)
 
-        # 6. Safe head_mask application
         if head_mask is not None:
             if head_mask.dim() == 1:
                 head_mask = head_mask.view(1, -1, 1, 1)
@@ -780,7 +751,6 @@ class SVDLLMV2Attention(BaseAttention):
                 head_mask = head_mask.unsqueeze(-1)
             probs = probs * head_mask
 
-        # 7. Context computation & Head Merge
         context = (
             torch.matmul(probs, V)
             .transpose(1, 2)
@@ -789,7 +759,6 @@ class SVDLLMV2Attention(BaseAttention):
         )
         context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
 
-        # 8. Output projection (bypassed if nested encoder)
         if self.is_nested_encoder:
             out = context
         else:
@@ -831,7 +800,6 @@ def inject_svd_llm_v2(
 
     cfg = model_config or getattr(target, "config", None) or kwargs.get("config")
 
-    # 1. Whole model traversal support
     layer_list = None
     if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
         layer_list = target.distilbert.transformer.layer
@@ -849,7 +817,6 @@ def inject_svd_llm_v2(
         layer_list = target.layers
 
     if layer_list is not None:
-        # Pre-test on the first layer before mutating model
         test_src = getattr(layer_list[0], "attention", getattr(layer_list[0], "self", None))
         if test_src is not None:
             try:
@@ -892,7 +859,6 @@ def inject_svd_llm_v2(
     if src is None:
         return None
 
-    # Double-injection guard
     if isinstance(src, SVDLLMV2Attention) or "SVDLLMV2" in src.__class__.__name__:
         return None
 

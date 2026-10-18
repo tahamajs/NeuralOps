@@ -1,4 +1,3 @@
-
 from neuralops.core.attention_utils import (
     apply_rotary_pos_emb,
 )
@@ -16,8 +15,6 @@ from neuralops.core.utils.gqa import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
 
 logger = logging.getLogger(__name__)
-
-
 
 
 class FactorisedLinear(nn.Module):
@@ -75,7 +72,6 @@ class FactorisedLinear(nn.Module):
     ) -> None:
         with torch.no_grad():
             W = weight.float()
-            # Handle KV dimension matching for GQA
             if W.shape[0] < self.out_features and self.out_features % W.shape[0] == 0:
                 rep = self.out_features // W.shape[0]
                 W = W.repeat(rep, 1)
@@ -359,7 +355,6 @@ class MinimalSVDAttention(BaseAttention):
             "o": (None, None),
         }
 
-        # 1. UniversalAdapter extraction
         for proj in ["q", "k", "v", "o"]:
             try:
                 w, b = UniversalAdapter.get_weight_bias(src, proj)
@@ -368,7 +363,6 @@ class MinimalSVDAttention(BaseAttention):
             except Exception as e:
                 logger.debug(f"UniversalAdapter extraction failed for {proj}: {e}")
 
-        # 2. GPT-2 Fused c_attn / c_proj Conv1D handling
         if hasattr(src, "c_attn") and (
             extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None
         ):
@@ -417,7 +411,6 @@ class MinimalSVDAttention(BaseAttention):
                 b_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
                 extracted["o"] = (w_o, b_o.data.clone() if b_o is not None else None)
 
-        # 3. RoBERTa / BERT Nested Encoder handling
         if hasattr(src, "self") and (
             extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None
         ):
@@ -433,7 +426,6 @@ class MinimalSVDAttention(BaseAttention):
             dense = src.output.dense
             extracted["o"] = (dense.weight.data, getattr(dense, "bias", None))
 
-        # 4. Modern Decoders (Qwen3.5, LLaMA, Mistral) & DistilBERT
         named_map = {
             "q": ["q_proj", "q_lin", "query"],
             "k": ["k_proj", "k_lin", "key"],
@@ -452,7 +444,6 @@ class MinimalSVDAttention(BaseAttention):
                             )
                             break
 
-        # Detect nested encoder architecture
         cls_name = src.__class__.__name__
         has_out_proj = any(
             hasattr(src, attr)
@@ -494,7 +485,6 @@ class MinimalSVDAttention(BaseAttention):
                 is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
-        # Check required weights
         missing = [k for k in ["q", "k", "v"] if extracted[k][0] is None]
         if not self.is_nested_encoder and extracted["o"][0] is None:
             missing.append("o")
@@ -503,7 +493,6 @@ class MinimalSVDAttention(BaseAttention):
                 f"MinimalSVDAttention missing required weights for projections: {missing}. Proceeding with initialized weights."
             )
 
-        # Frobenius norm validation
         for proj_key in ["q", "k", "v"]:
             w = extracted[proj_key][0]
             if w is not None:
@@ -525,7 +514,6 @@ class MinimalSVDAttention(BaseAttention):
                 return w.t().contiguous()
             return w
 
-        # Copy into factorized projection modules
         with torch.no_grad():
             for proj_key, target in [
                 ("q", self.q_proj),
@@ -594,7 +582,6 @@ class MinimalSVDAttention(BaseAttention):
             V = repeat_kv(V, self.kv_repeat)
 
         scale = 1.0 / math.sqrt(D)
-        # Memory-efficient: use SDPA to avoid OOM on large seqs; fallback to explicit if needed
 
         try:
             _qs = maybe_half(Q)
@@ -705,7 +692,6 @@ def inject_minimal_svd(
 
     cfg = model_config if model_config is not None else getattr(target, "config", None)
 
-    # Whole-model traversal
     layer_list = None
     if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
         layer_list = target.distilbert.transformer.layer

@@ -39,12 +39,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 logger = logging.getLogger(__name__)
 
 
-
-
-
-
-
-
 @ATTENTION_REGISTRY.register("padre_attention")
 class PADReAttention(BaseAttention):
     """
@@ -111,7 +105,6 @@ class PADReAttention(BaseAttention):
             _cfg_get(self.comp_config, "max_error", kwargs.get("max_error", 0.20))
         )
 
-        # Causal decoder detection
         is_dec = _cfg_get(config, "is_decoder", kwargs.get("is_decoder", False))
         model_type = str(_cfg_get(config, "model_type", "")).lower()
         _mt = (model_type or "").lower()
@@ -138,7 +131,6 @@ class PADReAttention(BaseAttention):
         self.is_nested_encoder = False
         self.effective_parameter_ratio = 1.0
 
-        # LoRA config
         self.lora_rank = _cfg_get(
             self.comp_config,
             "lora_rank",
@@ -184,7 +176,6 @@ class PADReAttention(BaseAttention):
             freeze_base=self.freeze_base,
         )
 
-        # Aliases
         self.query = self.q_proj
         self.key = self.k_proj
         self.value = self.v_proj
@@ -256,7 +247,6 @@ class PADReAttention(BaseAttention):
             "o": ["out_lin", "out_proj", "dense", "o_proj"],
         }
 
-        # 1. GPT-2 fused c_attn
         if hasattr(src, "c_attn") and src.c_attn is not None:
             c_attn_mod = src.c_attn
             base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
@@ -303,7 +293,6 @@ class PADReAttention(BaseAttention):
                         bias_o.data.clone() if bias_o is not None else None,
                     )
 
-        # 2. RoBERTa nested encoder
         elif hasattr(src, "self") and hasattr(src.self, "query"):
             s = src.self
             for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
@@ -328,7 +317,6 @@ class PADReAttention(BaseAttention):
                         b.data.clone() if b is not None else None,
                     )
 
-        # 3. Flat modules (DistilBERT, Qwen, LLaMA)
         else:
             proj_candidates = {
                 "q": ["q_lin", "q_proj", "query"],
@@ -388,7 +376,6 @@ class PADReAttention(BaseAttention):
             "o": self.out_proj,
         }
 
-        # Check source for LoRA adapters to preserve if present
         source_lora: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {}
         for proj_key, target_mod in target_map.items():
             mod = None
@@ -406,7 +393,6 @@ class PADReAttention(BaseAttention):
                 lA = getattr(mod, "lora_A", None)
                 lB = getattr(mod, "lora_B", None)
                 if lA is not None and lB is not None:
-                    # In some implementations lora_A is a Parameter, in PEFT it's a ModuleDict/Linear
                     tA = getattr(lA, "weight", lA)
                     tB = getattr(lB, "weight", lB)
                     if isinstance(tA, (torch.Tensor, nn.Parameter)) and isinstance(
@@ -469,7 +455,6 @@ class PADReAttention(BaseAttention):
                         "Compressor copy_weights warning. Proceeding with initialized weights."
                     )
 
-                # Copy source LoRA adapter weights if compatible
                 if (
                     proj_key in source_lora
                     and target_mod.lora_A is not None
@@ -532,57 +517,47 @@ class PADReAttention(BaseAttention):
             .contiguous()
         )
 
-        # Apply RoPE if provided
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None:
             cos, sin = position_embeddings
             q, k = apply_rotary_pos_emb(q, k, cos, sin)
 
-        # GQA head expansion
         if self.num_heads != self.num_kv_heads:
             k = repeat_kv(k, self.num_heads // self.num_kv_heads)
             v = repeat_kv(v, self.num_heads // self.num_kv_heads)
 
-        # Raw scores: (B, H, N, N)
         scale = 1.0 / math.sqrt(self.head_dim)
         scores = torch.matmul(q, k.transpose(-2, -1).contiguous()) * scale
 
-        # Determine invalid mask for padding and causal
         invalid_mask = torch.zeros(B, 1, N, N, device=scores.device, dtype=torch.bool)
         if attention_mask is not None:
-            valid_tok = get_token_valid_mask(attention_mask, B, N, scores.device)  # (B, N) bool
-            invalid_pad = ~valid_tok.unsqueeze(1).unsqueeze(2)  # (B, 1, 1, N)
+            valid_tok = get_token_valid_mask(attention_mask, B, N, scores.device)
+            invalid_pad = ~valid_tok.unsqueeze(1).unsqueeze(2)
             invalid_mask = invalid_mask | invalid_pad
 
         if self.is_decoder:
             causal_mask = torch.tril(torch.ones(N, N, device=scores.device, dtype=torch.bool))
-            invalid_causal = ~causal_mask.unsqueeze(0).unsqueeze(0)  # (1, 1, N, N)
+            invalid_causal = ~causal_mask.unsqueeze(0).unsqueeze(0)
             invalid_mask = invalid_mask | invalid_causal
 
         from neuralops.core.triton_kernels.sparse_attn import fused_padre_polynomial_attn_triton
 
-        # Apply temperature and re-center over valid scores for numerical stability
         fill_val = -1e4 if scores.dtype in (torch.float16, torch.bfloat16) else -1e9
         masked_for_max = scores.masked_fill(invalid_mask, fill_val)
         max_scores = masked_for_max.max(dim=-1, keepdim=True).values
-        # If all keys are masked, avoid large negative value producing NaN
         thresh = -5e3 if scores.dtype in (torch.float16, torch.bfloat16) else -1e8
         max_scores = torch.where(max_scores <= thresh, torch.zeros_like(max_scores), max_scores)
 
         scores_centered = (scores - max_scores) / max(self.temperature, 1e-6)
 
-        # Polynomial kernel: (1 + S/order)^order, clamped to avoid negative base or overflow
         base = torch.clamp(1.0 + (scores_centered / self.order), min=0.0, max=10.0)
         attn_weights = base**self.order
 
-        # Zero out invalid positions
         attn_weights = attn_weights.masked_fill(invalid_mask, 0.0)
 
-        # Normalize across key dimension
         denom = attn_weights.sum(dim=-1, keepdim=True) + 1e-8
         attn_weights = attn_weights / denom
-
 
         if head_mask is not None:
             hm = head_mask.to(scores.device)
@@ -628,7 +603,6 @@ def inject_padre(
         if target is None:
             return None
 
-        # 1. Whole model traversal
         layer_list = None
         if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
             layer_list = target.distilbert.transformer.layer
@@ -688,7 +662,6 @@ def inject_padre(
         output_error = 0.0
         forward_check_success = True
 
-        # Validation with dummy/calibration input against source module
         if source_module is not None:
             try:
                 target_dev = next(new_attn.parameters()).device
@@ -748,7 +721,6 @@ def inject_padre(
                 }
             )
 
-        # Replace attention sub-module in layer
         if hasattr(layer, "attention"):
             if hasattr(layer.attention, "self"):
                 layer.attention.self = new_attn

@@ -34,13 +34,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 logger = logging.getLogger(__name__)
 
 
-
-
-# ===========================================================================
-# Config
-# ===========================================================================
-
-
 @dataclass
 class SplitHeadHybridConfig:
     """Configuration for SplitHeadHybridAttention."""
@@ -50,8 +43,6 @@ class SplitHeadHybridConfig:
     max_rank: int = 384
     num_local_heads: int = 8
     num_global_heads: int = 4
-    # V5-FIX-09: local_window = full width of the sliding window.
-    # Effective radius = local_window // 2 (queried keys are |q - k| <= radius).
     local_window: int = 64
     softpick_temperature: float = 1.0
     rff_features: int = 128
@@ -60,18 +51,9 @@ class SplitHeadHybridConfig:
     gate_init_bias: float = 1.8
     dropout: float = 0.1
     is_decoder: bool = False
-    # V5-FIX-14: rff_proj as buffer (fixed random features). Set True to make trainable.
-    # FIXED: Set rff_trainable = True so the global projection buffers become trainable nn.Parameters
     rff_trainable: bool = True
-    # SDPA fast path for very short sequences.
     use_sdpa_fast_path: bool = True
-    # Chunk size for causal kernel linear attention (lower = less memory, slower).
     causal_chunk_size: int = 64
-
-
-# ===========================================================================
-# FactorisedLinear
-# ===========================================================================
 
 
 class FactorisedLinear(nn.Module):
@@ -96,7 +78,6 @@ class FactorisedLinear(nn.Module):
         max_rank: int = 384,
         rank: int | None = None,
         bias: bool = True,
-        # FIXED: Capacity Bottleneck: Increased default lora_rank from 16 to 64
         lora_rank: int = 64,
         lora_alpha: float = 32.0,
         **kwargs: Any,
@@ -110,7 +91,6 @@ class FactorisedLinear(nn.Module):
         self.lora_alpha = float(lora_alpha)
         self.lora_scaling = (self.lora_alpha / self.lora_rank) if self.lora_rank > 0 else 1.0
 
-        # --- Weight-tensor init path ---
         if isinstance(in_features_or_weight, torch.Tensor):
             W = in_features_or_weight
             b = out_features_or_bias if isinstance(out_features_or_bias, torch.Tensor) else None
@@ -136,7 +116,6 @@ class FactorisedLinear(nn.Module):
                 self.lora_B = nn.Parameter(
                     torch.randn(out_dim, self.lora_rank, device=device, dtype=dtype) * 1e-4
                 )
-                # V5-FIX-12: consistent init with int path
                 nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
                 nn.init.normal_(self.lora_B, mean=0.0, std=1e-4)
             else:
@@ -145,7 +124,6 @@ class FactorisedLinear(nn.Module):
 
             self.decompose_from_weight(W, b, self.energy)
 
-        # --- Dimension init path ---
         else:
             in_dim = int(in_features_or_weight)
             out_dim = int(out_features_or_bias) if out_features_or_bias is not None else in_dim
@@ -183,11 +161,6 @@ class FactorisedLinear(nn.Module):
         bias: torch.Tensor | None = None,
         energy: float | None = None,
     ) -> None:
-        # V5-FIX-17: document the padding / repeat handling.
-        # If the source weight does not match (out_features, in_features), we
-        # either repeat (upsample), average (downsample), or zero-pad. The
-        # zero-pad case silently discards information for out-of-range entries,
-        # which is safe but lossy. Prefer exact shape matches whenever possible.
         with torch.no_grad():
             W = weight.float()
             if W.shape[0] < self.out_features and self.out_features % W.shape[0] == 0:
@@ -224,8 +197,8 @@ class FactorisedLinear(nn.Module):
             r = min(self.rank, calc_rank, U.size(1), Vt.size(0))
             r = max(1, r)
 
-            A = U[:, :r] * S[:r].unsqueeze(0)  # (out, r)
-            B = Vt[:r, :]  # (r, in)
+            A = U[:, :r] * S[:r].unsqueeze(0)
+            B = Vt[:r, :]
 
             self.down.weight.data.zero_()
             self.up.weight.data.zero_()
@@ -241,8 +214,6 @@ class FactorisedLinear(nn.Module):
             self.freeze_base_weights()
 
     def freeze_base_weights(self) -> None:
-        # FIXED: Capacity Bottleneck: Explicitly unfreeze base factorized projections
-        # so they can absorb the teacher's dense knowledge during Phase 1
         self.down.weight.requires_grad = True
         self.up.weight.requires_grad = True
         if self.up.bias is not None:
@@ -305,8 +276,8 @@ def local_window_attention(
 
     scale = (1.0 / math.sqrt(int(D))) / max(1e-4, float(softpick_temperature))
 
-    abs_q = (past_len + torch.arange(N, device=Q.device)).unsqueeze(1)  # (N, 1)
-    abs_k = torch.arange(N_k, device=Q.device).unsqueeze(0)  # (1, N_k)
+    abs_q = (past_len + torch.arange(N, device=Q.device)).unsqueeze(1)
+    abs_k = torch.arange(N_k, device=Q.device).unsqueeze(0)
     dist = (abs_q - abs_k).abs()
     mask = (dist <= radius).unsqueeze(0).unsqueeze(0)
 
@@ -318,12 +289,10 @@ def local_window_attention(
     mask_val = -10000.0
     scores = scores.masked_fill(~mask, mask_val)
     if token_valid is not None:
-        # token_valid: (B, N_k)
         kv_valid = token_valid[:, None, None, :].to(torch.bool)
         scores = scores.masked_fill(~kv_valid, mask_val)
     scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
 
-    # Guard against all-masked rows: softmax on -1e4 gives uniform, which is wrong.
     any_valid = (
         mask
         & (
@@ -410,11 +379,10 @@ def causal_kernel_linear_attention(
     outputs = []
     for start in range(0, N, chunk_size):
         end = min(start + chunk_size, N)
-        Qc = Q_feat[:, :, start:end]  # (B, H, C, F)
-        Kc = K_feat[:, :, start:end]  # (B, H, C, F)
-        Vc = V[:, :, start:end]  # (B, H, C, D)
+        Qc = Q_feat[:, :, start:end]
+        Kc = K_feat[:, :, start:end]
+        Vc = V[:, :, start:end]
 
-        # Per-chunk cumulative outer product. Shape (B, H, C, F, D). C is small.
         KV_local = (Kc.unsqueeze(-1) * Vc.unsqueeze(-2)).cumsum(dim=2)
         K_local = Kc.cumsum(dim=2)
 
@@ -429,11 +397,6 @@ def causal_kernel_linear_attention(
         state_k = K_total[:, :, -1]
 
     return torch.nan_to_num(torch.cat(outputs, dim=2), nan=0.0)
-
-
-# ===========================================================================
-# Main attention
-# ===========================================================================
 
 
 @ATTENTION_REGISTRY.register("split_head_hybrid", supports_causal=True, supports_gqa=True)
@@ -529,7 +492,6 @@ class SplitHeadHybridAttention(BaseAttention):
         self.is_decoder: bool = _detect_decoder(cfg, is_decoder, pretrained_attn)
         self.is_nested_encoder: bool = False
 
-        # Split-head allocation
         if self.cfg.num_local_heads + self.cfg.num_global_heads != self.num_heads:
             self.num_local_heads = (self.num_heads * 2) // 3
             self.num_global_heads = self.num_heads - self.num_local_heads
@@ -540,7 +502,6 @@ class SplitHeadHybridAttention(BaseAttention):
             self.num_local_heads = max(1, self.num_heads // 2)
             self.num_global_heads = self.num_heads - self.num_local_heads
 
-        # Projections
         self.q_proj = FactorisedLinear(
             self.hidden_size,
             self.all_head_size,
@@ -574,7 +535,6 @@ class SplitHeadHybridAttention(BaseAttention):
             rank=self.rank,
         )
 
-        # RFF projection for global heads (V5-FIX-14: buffer by default)
         rff_init = torch.empty(self.num_global_heads, self.head_dim, self.cfg.rff_features)
         for h in range(self.num_global_heads):
             dim = max(self.head_dim, self.cfg.rff_features)
@@ -588,7 +548,6 @@ class SplitHeadHybridAttention(BaseAttention):
             self.register_buffer("rff_proj", rff_init)
         self.rff_features = self.cfg.rff_features
 
-        # Adaptive gate (V5-FIX-10/11: only local heads need the blend).
         if self.cfg.use_adaptive_gate:
             self.blend_logits = nn.Parameter(torch.zeros(self.num_local_heads))
             self.gate_bias: float = float(self.cfg.gate_init_bias)
@@ -601,9 +560,6 @@ class SplitHeadHybridAttention(BaseAttention):
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
 
-    # ------------------------------------------------------------------
-    # Aliases
-    # ------------------------------------------------------------------
     @property
     def query(self) -> FactorisedLinear:
         return self.q_proj
@@ -644,9 +600,6 @@ class SplitHeadHybridAttention(BaseAttention):
     def c_proj(self) -> FactorisedLinear:
         return self.out_proj
 
-    # ------------------------------------------------------------------
-    # Weight transfer
-    # ------------------------------------------------------------------
     def copy_weights(self, old_attn: Any) -> None:
         from neuralops.core.adapters import UniversalAdapter
 
@@ -665,7 +618,6 @@ class SplitHeadHybridAttention(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter failed for %s: %s", proj, e)
 
-        # GPT-2 fused c_attn (Conv1D)
         if hasattr(old_attn, "c_attn") and any(extracted[k][0] is None for k in ("q", "k", "v")):
             weight = old_attn.c_attn.weight.data
             bias = getattr(old_attn.c_attn, "bias", None)
@@ -697,7 +649,6 @@ class SplitHeadHybridAttention(BaseAttention):
             b_o = getattr(old_attn.c_proj, "bias", None)
             extracted["o"] = (w_o, b_o.data if b_o is not None else None)
 
-        # BERT / RoBERTa nested encoder
         if hasattr(old_attn, "self") and any(extracted[k][0] is None for k in ("q", "k", "v")):
             s = old_attn.self
             if hasattr(s, "query"):
@@ -715,7 +666,6 @@ class SplitHeadHybridAttention(BaseAttention):
             dense = old_attn.output.dense
             extracted["o"] = (dense.weight.data, getattr(dense, "bias", None))
 
-        # Modern decoders / DistilBERT named mapping
         named_map = {
             "q": ["q_proj", "q_lin", "query"],
             "k": ["k_proj", "k_lin", "key"],
@@ -734,7 +684,6 @@ class SplitHeadHybridAttention(BaseAttention):
                             )
                             break
 
-        # Nested encoder detection
         cls_name = old_attn.__class__.__name__
         has_out_proj = any(
             hasattr(old_attn, a)
@@ -825,9 +774,6 @@ class SplitHeadHybridAttention(BaseAttention):
         if hasattr(old_attn, "is_decoder"):
             self.is_decoder = bool(old_attn.is_decoder)
 
-    # ------------------------------------------------------------------
-    # Mask handling (V5-FIX-18: centralized)
-    # ------------------------------------------------------------------
     @staticmethod
     def _prepare_valid_mask(
         attention_mask: torch.Tensor | None,
@@ -854,13 +800,9 @@ class SplitHeadHybridAttention(BaseAttention):
                 v = attention_mask > -1e4
             else:
                 v = attention_mask > 0
-            # (B, 1, N_q, N_kv) -> OR over query dim -> (B, N_kv)
             return v.any(dim=-2).squeeze(1)
         raise ValueError(f"Unsupported attention_mask dim: {attention_mask.dim()}")
 
-    # ------------------------------------------------------------------
-    # Forward
-    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -885,12 +827,10 @@ class SplitHeadHybridAttention(BaseAttention):
         kv_input = encoder_hidden_states if is_cross else hidden_states
         N_kv_new = kv_input.shape[1]
 
-        # --- Projections ---
         Q = self.q_proj(hidden_states).view(B, N, H, D).transpose(1, 2).contiguous()
         K_new = self.k_proj(kv_input).view(B, N_kv_new, Hkv, D).transpose(1, 2).contiguous()
         V_new = self.v_proj(kv_input).view(B, N_kv_new, Hkv, D).transpose(1, 2).contiguous()
 
-        # --- RoPE with past offset ---
         if position_embeddings is not None and not is_cross:
             cos, sin = position_embeddings
             past_k_probe = None
@@ -904,7 +844,6 @@ class SplitHeadHybridAttention(BaseAttention):
             sin = sin[..., past_len : past_len + N, :]
             Q, K_new = apply_rotary_pos_emb(Q, K_new, cos, sin)
 
-        # --- KV cache concat ---
         past_k = past_v = None
         if past_key_value is not None and not is_cross:
             if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 2:
@@ -924,7 +863,6 @@ class SplitHeadHybridAttention(BaseAttention):
             K_cat = K_new
             V_cat = V_new
 
-        # Update DynamicCache in place if applicable (V5-FIX-K2 semantic).
         if past_key_value is not None and hasattr(past_key_value, "update") and not is_cross:
             idx = getattr(self, "layer_idx", 0)
             past_key_value.update(K_new, V_new, idx)
@@ -934,15 +872,12 @@ class SplitHeadHybridAttention(BaseAttention):
         N_kv = K_cat.shape[2]
         past_len = N_kv - N if (self.is_decoder and not is_cross) else 0
 
-        # --- GQA expansion ---
         K_full = repeat_kv(K_cat, self.kv_repeat) if self.kv_repeat > 1 else K_cat
         V_full = repeat_kv(V_cat, self.kv_repeat) if self.kv_repeat > 1 else V_cat
 
-        # --- Mask ---
         eff_mask = encoder_attention_mask if is_cross else attention_mask
         token_valid = self._prepare_valid_mask(eff_mask, B, N_kv, device)
 
-        # --- Decide path: SDPA fast path vs split-head ---
         use_sdpa = (
             self.cfg.use_sdpa_fast_path
             and N_kv <= max(self.cfg.local_window, 32)
@@ -950,9 +885,6 @@ class SplitHeadHybridAttention(BaseAttention):
         )
 
         if use_sdpa:
-            # ------------------------------------------------------------------
-            # SDPA fast path
-            # ------------------------------------------------------------------
             q_sdp = maybe_half(Q)
             k_sdp = maybe_half(K_full)
             v_sdp = maybe_half(V_full)
@@ -977,15 +909,11 @@ class SplitHeadHybridAttention(BaseAttention):
             out = out.to(hidden_states.dtype)
             attn_weights_out = None
         else:
-            # ------------------------------------------------------------------
-            # Split-head path
-            # ------------------------------------------------------------------
             Hl, _Hg = self.num_local_heads, self.num_global_heads
             Q_local, Q_global = Q[:, :Hl], Q[:, Hl:]
             K_local, K_global = K_full[:, :Hl], K_full[:, Hl:]
             V_local, V_global = V_full[:, :Hl], V_full[:, Hl:]
 
-            # Local heads: sliding-window attention.
             ctx_local = local_window_attention(
                 Q_local,
                 K_local,
@@ -997,7 +925,6 @@ class SplitHeadHybridAttention(BaseAttention):
                 past_len=past_len,
             )
 
-            # Global heads: kernel linear attention.
             Q_g_norm = F.normalize(Q_global.float(), p=2, dim=-1)
             K_g_norm = F.normalize(K_global.float(), p=2, dim=-1)
             if self.cfg.use_zero_sum_keys:
@@ -1011,7 +938,6 @@ class SplitHeadHybridAttention(BaseAttention):
             Q_feat = torch.exp(Q_proj) * scale_rff
             K_feat = torch.exp(K_proj) * scale_rff
 
-            # Zero-out invalid keys.
             if token_valid is not None:
                 kv_valid = token_valid[:, None, :, None].to(K_feat.dtype)
                 K_feat = K_feat * kv_valid
@@ -1033,40 +959,33 @@ class SplitHeadHybridAttention(BaseAttention):
                 ctx_global = torch.einsum("bhnf,bhfd->bhnd", Q_feat, KV) / denom
                 ctx_global = torch.nan_to_num(ctx_global, nan=0.0).to(Q.dtype)
 
-            # Adaptive gate (V5-FIX-10): blend local heads with global mean.
             if self.blend_logits is not None:
-                global_mean = ctx_global.mean(dim=1, keepdim=True)  # (B, 1, N, D)
+                global_mean = ctx_global.mean(dim=1, keepdim=True)
                 clamped_logits = torch.clamp(self.blend_logits, -10.0, 10.0)
                 gate_local = torch.sigmoid(
                     clamped_logits.view(1, Hl, 1, 1) + self.gate_bias
-                )  # (1, Hl, 1, 1)
+                )
                 ctx_local = gate_local * ctx_local + (1.0 - gate_local) * global_mean.to(
                     ctx_local.dtype
                 )
             context = torch.cat([ctx_local, ctx_global], dim=1)
 
-
-            # Reshape to (B, N, H, D)
             out = context.transpose(1, 2).contiguous().view(B, N, H * D)
-            attn_weights_out = None  # not available in split-head path
+            attn_weights_out = None
 
-        # --- head_mask (V5-FIX-01/19) ---
         if head_mask is not None:
             if head_mask.dim() == 1:
                 head_mask = head_mask.view(1, -1, 1, 1)
             elif head_mask.dim() == 2:
-                head_mask = head_mask.unsqueeze(-1).unsqueeze(-1)  # (B, H, 1, 1)
+                head_mask = head_mask.unsqueeze(-1).unsqueeze(-1)
             elif head_mask.dim() == 3:
-                head_mask = head_mask[:, :, :1].unsqueeze(-1)  # (B, H, 1, 1)
-            # Normalize to (B, H, 1, 1) whether `out` is (B, H, N, D) or (B, N, H, D).
+                head_mask = head_mask[:, :, :1].unsqueeze(-1)
             if out.dim() == 4 and out.shape[1] == H:
                 out = out * head_mask.to(out.dtype)
             else:
-                # out is (B, N, H*D) — reshape
                 out = out.view(B, N, H, D) * head_mask.to(out.dtype)
                 out = out.reshape(B, N, H * D)
 
-        # --- Ensure out is (B, N, H*D) ---
         if out.dim() == 4:
             if out.shape[1] == H:
                 out = out.transpose(1, 2).contiguous().view(B, N, self.all_head_size)
@@ -1075,7 +994,6 @@ class SplitHeadHybridAttention(BaseAttention):
 
         out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
 
-        # --- Output projection (skipped for nested encoders) ---
         if self.is_nested_encoder:
             output = out
         else:
@@ -1083,7 +1001,6 @@ class SplitHeadHybridAttention(BaseAttention):
             output = self.out_proj(out.to(proj_dtype))
         output = torch.nan_to_num(output, nan=0.0, posinf=1e4, neginf=-1e4)
 
-        # ---- HuggingFace-compatible return tuple ----
         _use_cache = kwargs.get("use_cache", False) or (past_key_value is not None and past_key_value is not False)
 
         present = None
@@ -1099,11 +1016,6 @@ class SplitHeadHybridAttention(BaseAttention):
         return torch.zeros((), device=self.out_proj.up.weight.device)
 
 
-# ===========================================================================
-# Injection
-# ===========================================================================
-
-
 def inject_split_head_hybrid(
     layer: Any = None,
     model: Any = None,
@@ -1112,7 +1024,7 @@ def inject_split_head_hybrid(
     layer_idx: int = 0,
     total_layers: int = 12,
     old_attn: nn.Module | None = None,
-    _depth: int = 0,  # V5-FIX-04: recursion guard
+    _depth: int = 0,
     **kwargs: Any,
 ):
     if _depth > 8:
@@ -1127,7 +1039,6 @@ def inject_split_head_hybrid(
 
     cfg = model_config if model_config is not None else getattr(target, "config", None)
 
-    # Whole-model traversal
     layer_list = None
     if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
         layer_list = target.distilbert.transformer.layer
@@ -1200,7 +1111,6 @@ def inject_split_head_hybrid(
             )
         )
 
-        # V5-FIX-05: robust decoder detection.
         is_dec = _detect_decoder(model_config, None, src_attn)
 
         new_attn = AegisAttention(
@@ -1237,10 +1147,8 @@ def inject_split_head_hybrid(
         return None
 
 
-# Backward-compatibility aliases for tests and external callers
 AegisAttention = SplitHeadHybridAttention
 AegisConfigV5 = SplitHeadHybridConfig
 AegisAttentionV5 = SplitHeadHybridAttention
 inject_aegis_v5 = inject_split_head_hybrid
 inject_aegis_into_distilbert = inject_split_head_hybrid
-

@@ -24,7 +24,6 @@ import torch.nn.functional as F
 from neuralops.core.amp_utils import maybe_half
 from neuralops.core.utils.gqa import repeat_kv
 
-# Check Triton availability
 try:
     import triton
     import triton.language as tl
@@ -35,15 +34,14 @@ except ImportError:
 
 
 if HAS_TRITON:
-
     @triton.jit
     def _fused_svd_linear_fwd_kernel(
-        X_ptr,  # [M, K_in]  (M = Batch * SeqLen)
-        V_ptr,  # [R, K_in]  (V matrix: rank x in_features)
-        U_ptr,  # [K_out, R] (U matrix: out_features x rank)
-        Norm_w_ptr,  # [R]        (RMSNorm scale parameter)
-        Bias_ptr,  # [K_out]    (Optional bias vector)
-        Y_ptr,  # [M, K_out] Output matrix
+        X_ptr,
+        V_ptr,
+        U_ptr,
+        Norm_w_ptr,
+        Bias_ptr,
+        Y_ptr,
         stride_xm,
         stride_xk,
         stride_vr,
@@ -76,36 +74,28 @@ if HAS_TRITON:
         mask_m = offs_m < M
         mask_k_out = offs_k_out < K_out
 
-        # Step 1: Compute SRAM-resident Z = X @ V^T of shape [BLOCK_M, R]
-        # Initialize accumulator for Z in FP32 registers
         acc_z = tl.zeros((BLOCK_M, R), dtype=tl.float32)
 
         for k_idx in range(0, K_in, BLOCK_K_IN):
             offs_k_in = k_idx + tl.arange(0, BLOCK_K_IN)
             mask_k_in = offs_k_in < K_in
 
-            # Load tile of X: [BLOCK_M, BLOCK_K_IN]
             x_ptrs = X_ptr + (offs_m[:, None] * stride_xm + offs_k_in[None, :] * stride_xk)
             x_tile = tl.load(x_ptrs, mask=mask_m[:, None] & mask_k_in[None, :], other=0.0)
 
-            # Load tile of V: [R, BLOCK_K_IN]
             offs_r = tl.arange(0, R)
             v_ptrs = V_ptr + (offs_r[:, None] * stride_vr + offs_k_in[None, :] * stride_vk)
             v_tile = tl.load(v_ptrs, mask=mask_k_in[None, :], other=0.0)
 
-            # Accumulate partial inner product: [BLOCK_M, BLOCK_K_IN] @ [BLOCK_K_IN, R]
             acc_z += tl.dot(x_tile, tl.trans(v_tile))
 
-        # Step 2: In-SRAM RMSNorm on acc_z along rank dimension R
         if USE_RMS_NORM:
             z_sq = acc_z * acc_z
             z_mean_sq = tl.sum(z_sq, axis=1) / R
             rsqrt_scale = tl.math.rsqrt(z_mean_sq + eps)
 
-            # Scale Z in registers
             z_norm = acc_z * rsqrt_scale[:, None]
 
-            # Optional RMSNorm learnable weight
             if HAS_NORM_WEIGHT:
                 offs_r = tl.arange(0, R)
                 norm_w = tl.load(Norm_w_ptr + offs_r)
@@ -113,19 +103,16 @@ if HAS_TRITON:
         else:
             z_norm = acc_z
 
-        # Step 3: Up-projection Y = Z_norm @ U^T + bias: [BLOCK_M, R] @ [R, BLOCK_K_OUT]
         offs_r = tl.arange(0, R)
         u_ptrs = U_ptr + (offs_k_out[None, :] * stride_uo + offs_r[:, None] * stride_ur)
         u_tile = tl.load(u_ptrs, mask=mask_k_out[None, :], other=0.0)
 
-        # Accumulate output Y: [BLOCK_M, BLOCK_K_OUT]
         acc_y = tl.dot(z_norm.to(u_tile.dtype), u_tile)
 
         if HAS_BIAS:
             bias_tile = tl.load(Bias_ptr + offs_k_out, mask=mask_k_out, other=0.0)
             acc_y += bias_tile[None, :]
 
-        # Store output tile to DRAM
         y_ptrs = Y_ptr + (offs_m[:, None] * stride_ym + offs_k_out[None, :] * stride_yk)
         tl.store(y_ptrs, acc_y, mask=mask_m[:, None] & mask_k_out[None, :])
 
@@ -154,7 +141,6 @@ class _FusedSVDLinearAutogradFunction(torch.autograd.Function):
         R, _ = V.shape
         K_out, _ = U.shape
 
-        # Use Triton kernel on CUDA when available and device supports Triton JIT (SM >= 7.0)
         device_sm = torch.cuda.get_device_capability(x.device)[0] if (torch.cuda.is_available() and x.is_cuda) else 0
         use_triton = (
             HAS_TRITON
@@ -210,7 +196,6 @@ class _FusedSVDLinearAutogradFunction(torch.autograd.Function):
                     BLOCK_K_IN=BLOCK_K_IN,
                     BLOCK_K_OUT=BLOCK_K_OUT,
                 )
-                # RESEARCH FIX: Exact analytical intermediate reconstruction for backward caching
                 with torch.no_grad():
                     z = F.linear(x_2d, V.to(x_2d.dtype))
                     if use_rms_norm:
@@ -231,11 +216,9 @@ class _FusedSVDLinearAutogradFunction(torch.autograd.Function):
                 ctx.use_rms_norm = use_rms_norm
                 return y_2d.view(*orig_shape[:-1], K_out)
             except Exception:
-                pass  # Fall back to PyTorch native reference below
+                pass
 
-        # PyTorch Native Reference Implementation (Fallback / CPU / MPS)
-        # RESEARCH FIX: Numerically identical reference implementation for CPU/MPS
-        z = F.linear(x_2d, V.to(x_2d.dtype))  # [M, R]
+        z = F.linear(x_2d, V.to(x_2d.dtype))
         if use_rms_norm:
             if z.dtype in (torch.float16, torch.bfloat16):
                 rms = torch.rsqrt(torch.mean(z.float() ** 2, dim=-1, keepdim=True) + eps).to(
@@ -274,12 +257,10 @@ class _FusedSVDLinearAutogradFunction(torch.autograd.Function):
         z_hat_c = z_hat.to(dtype=dtype, device=device)
         rms_c = rms.to(dtype=dtype, device=device)
 
-        # 1. Gradient with respect to bias and U
         grad_bias = grad_output_2d.sum(dim=0).to(bias.dtype) if bias is not None else None
-        grad_U = torch.matmul(grad_output_2d.T, z_norm_c).to(U.dtype)  # [K_out, R]
+        grad_U = torch.matmul(grad_output_2d.T, z_norm_c).to(U.dtype)
 
-        # 2. Gradient backpropagated to z_norm
-        grad_z_norm = torch.matmul(grad_output_2d, U_c)  # [M, R]
+        grad_z_norm = torch.matmul(grad_output_2d, U_c)
 
         if use_rms_norm:
             if norm_weight is not None:
@@ -297,8 +278,7 @@ class _FusedSVDLinearAutogradFunction(torch.autograd.Function):
             grad_norm_weight = None
             grad_z = grad_z_norm
 
-        # 5. Gradient with respect to V and input x
-        grad_V = torch.matmul(grad_z.T, x_2d_c).to(V.dtype)  # [R, K_in]
+        grad_V = torch.matmul(grad_z.T, x_2d_c).to(V.dtype)
         grad_x = (
             torch.matmul(grad_z, V_c).view(*grad_output.shape[:-1], x_2d.shape[-1]).to(x_2d.dtype)
         )
@@ -358,7 +338,6 @@ class FusedSVDLinear(nn.Module):
         self.eps = eps
         self.use_rms_norm = use_rms_norm
 
-        # Low-rank factorized parameters
         self.V = nn.Parameter(torch.empty(rank, in_features, dtype=dtype, device=device))
         self.U = nn.Parameter(torch.empty(out_features, rank, dtype=dtype, device=device))
 
@@ -375,7 +354,6 @@ class FusedSVDLinear(nn.Module):
         self.reset_parameters()
 
     def reset_parameters(self) -> None:
-        # Symmetrical square-root initialization
         nn.init.orthogonal_(self.U)
         nn.init.orthogonal_(self.V)
         if self.bias is not None:
@@ -389,7 +367,6 @@ class FusedSVDLinear(nn.Module):
         return torch.matmul(self.U, self.V)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # RESEARCH FIX: Dispatches fused kernel executing down-projection, RMSNorm, and up-projection
         return fused_svd_linear(
             x=x,
             V=self.V,
@@ -450,8 +427,6 @@ from neuralops.core.base import BaseAttention
 from neuralops.core.common import _cfg_get
 
 logger = logging.getLogger(__name__)
-
-
 
 
 from neuralops.core.registry import ATTENTION_REGISTRY
@@ -685,7 +660,6 @@ class FusedSVDKernelAttention(BaseAttention):
                 self.is_nested_encoder = True
                 src = src.self
 
-            # 1. GPT-2 Conv1D fused c_attn & c_proj
             if hasattr(src, "c_attn") and src.c_attn is not None:
                 self.is_decoder = True
                 self.is_causal = True
@@ -749,7 +723,6 @@ class FusedSVDKernelAttention(BaseAttention):
                         out_b = getattr(base_o, "bias", getattr(mod_o, "bias", None))
                         b_o = out_b.data.clone() if out_b is not None else None
 
-            # 2. DistilBERT flat projections (q_lin, k_lin, v_lin, out_lin)
             elif hasattr(src, "q_lin") and hasattr(src, "k_lin") and hasattr(src, "v_lin"):
                 w_q = src.q_lin.weight.data.clone()
                 b_q = (
@@ -781,7 +754,6 @@ class FusedSVDKernelAttention(BaseAttention):
                         else None
                     )
 
-            # 3. Flat projection splitting (single in_proj_weight or qkv_proj / Wqkv / qkv)
             elif (
                 (
                     hasattr(src, "in_proj_weight")
@@ -858,7 +830,6 @@ class FusedSVDKernelAttention(BaseAttention):
                         )
                         break
 
-            # 4. RoBERTa / BERT separate query, key, value
             elif hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value"):
                 w_q = src.query.weight.data.clone()
                 b_q = (
@@ -894,7 +865,6 @@ class FusedSVDKernelAttention(BaseAttention):
                             )
                             break
 
-            # 5. Qwen / LLaMA (q_proj, k_proj, v_proj, o_proj)
             elif hasattr(src, "q_proj") and hasattr(src, "k_proj") and hasattr(src, "v_proj"):
                 w_q = src.q_proj.weight.data.clone()
                 b_q = (
@@ -926,7 +896,6 @@ class FusedSVDKernelAttention(BaseAttention):
                         else None
                     )
 
-            # 6. Fallback: UniversalAdapter
             if w_q is None or w_k is None or w_v is None:
                 try:
                     from neuralops.core.adapters import UniversalAdapter
@@ -958,7 +927,6 @@ class FusedSVDKernelAttention(BaseAttention):
                     f"Failed to extract required projections {missing} from {src_cls_name}"
                 )
 
-            # Frobenius norm verification >= 1e-4 on copied weights
             for name, w in [("w_q", w_q), ("w_k", w_k), ("w_v", w_v)]:
                 if w is not None and torch.linalg.norm(w.float()).item() < 1e-4:
                     logger.warning(f"Copied weight {name} failed Frobenius norm check (< 1e-4)")
@@ -966,7 +934,6 @@ class FusedSVDKernelAttention(BaseAttention):
                 if torch.linalg.norm(w_o.float()).item() < 1e-4:
                     logger.warning("Copied weight w_o failed Frobenius norm check (< 1e-4)")
 
-            # SVD decomposition into low-rank factors
             self.q_proj.decompose_from_weight(w_q, b_q)
             self.k_proj.decompose_from_weight(w_k, b_k)
             self.v_proj.decompose_from_weight(w_v, b_v)
@@ -1022,7 +989,6 @@ class FusedSVDKernelAttention(BaseAttention):
             v = repeat_kv(v, self.kv_repeat)
 
         scale = 1.0 / math.sqrt(self.head_dim)
-        # Memory-efficient: use SDPA to avoid OOM on large seqs
 
         try:
             _qs = maybe_half(q)
@@ -1103,7 +1069,6 @@ def inject_fused_svd_kernel(
 
     cfg = model_config or getattr(target, "config", None)
 
-    # 1. Whole model traversal support
     if (
         old_attn is None
         and target is not None
@@ -1155,7 +1120,6 @@ def inject_fused_svd_kernel(
             logger.error("inject_fused_svd_kernel whole-model traversal failed: %s", e)
             return None
 
-    # 2. Named modules whole-model fallback
     if (
         old_attn is None
         and target is not None
@@ -1220,7 +1184,6 @@ def inject_fused_svd_kernel(
         if src_attn is not None:
             new_attn.copy_weights(src_attn)
         if layer is not None:
-            # Transfer new_attn to the target layer's device and dtype
             target_param = next(layer.parameters(), None)
             if target_param is not None:
                 new_attn.to(device=target_param.device, dtype=target_param.dtype)

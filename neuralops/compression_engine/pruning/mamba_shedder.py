@@ -63,9 +63,6 @@ _ATTN_NAMES = {
 }
 
 
-# ===========================================================================
-# Pruned Linear layer (MS-FIX-15)
-# ===========================================================================
 class MambaShedderPrunedLinear(nn.Module):
     """
     Linear layer with pruned output channels.
@@ -144,7 +141,7 @@ class MambaShedderPrunedLinear(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         orig_shape = x.shape
         x_flat = x.reshape(-1, self.in_features)
-        h = F.linear(x_flat, self.W_kept, self.bias_kept)  # (..., k)
+        h = F.linear(x_flat, self.W_kept, self.bias_kept)
         out = torch.zeros(
             *x_flat.shape[:-1],
             self.original_out_features,
@@ -183,9 +180,6 @@ class MambaShedderPrunedLinear(nn.Module):
         return total
 
 
-# ===========================================================================
-# Compressor
-# ===========================================================================
 class MambaShedderCompressor(BaseCompressor):
     """MambaShedderCompressor neural operator.
 
@@ -195,7 +189,7 @@ class MambaShedderCompressor(BaseCompressor):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
-    is_custom_attention: bool = False  # MS-FIX-01
+    is_custom_attention: bool = False
 
     def __init__(
         self,
@@ -283,9 +277,6 @@ class MambaShedderCompressor(BaseCompressor):
         self.stats: dict[str, Any] = {}
         self._compressed_params: int = 0
 
-    # ------------------------------------------------------------------
-    # Target check (MS-FIX-16: cached)
-    # ------------------------------------------------------------------
     def _is_target_module(self, name: str, module: nn.Module, _debug: bool = False) -> bool:
         name_lower = name.lower()
         if any(part in name.split(".") for part in ("lora_A", "lora_B", "base_layer")):
@@ -353,9 +344,6 @@ class MambaShedderCompressor(BaseCompressor):
             logger.info(f"  [TARGET] {name}: shape={tuple(w.shape)}")
         return True
 
-    # ------------------------------------------------------------------
-    # Activation collection
-    # ------------------------------------------------------------------
     def _collect_activations(self, target_names: list[str]) -> dict[str, torch.Tensor]:
         self.model.eval()
         accum: dict[str, list[torch.Tensor]] = {}
@@ -429,9 +417,6 @@ class MambaShedderCompressor(BaseCompressor):
             return [calib_inputs]
         return [calib_inputs]
 
-    # ------------------------------------------------------------------
-    # Layer shedding
-    # ------------------------------------------------------------------
     def _apply_layer_shedding(self) -> int:
         if self.shed_layers <= 0:
             return 0
@@ -477,7 +462,6 @@ class MambaShedderCompressor(BaseCompressor):
                 break
 
         if target_container is None:
-            # Generic search: longest module list.
             best_len = 0
             for name, mod in self.model.named_modules():
                 if not isinstance(mod, nn.ModuleList):
@@ -499,7 +483,6 @@ class MambaShedderCompressor(BaseCompressor):
         orig_len = len(target_container)
         keep_len = orig_len - self.shed_layers
 
-        # Always keep first and last (per Mamba-Shedder paper).
         keep_set = {0, orig_len - 1}
         n_middle = keep_len - len(keep_set)
         if n_middle > 0 and orig_len > 2:
@@ -515,7 +498,6 @@ class MambaShedderCompressor(BaseCompressor):
         new_layers = nn.ModuleList([target_container[i] for i in kept_indices])
         setattr(container_parent, container_attr, new_layers)
 
-        # Validation with revert
         if self.validate_after_shed:
             try:
                 self.model.eval()
@@ -554,15 +536,11 @@ class MambaShedderCompressor(BaseCompressor):
         self.model._mamba_shed_done = True
         return shed_done
 
-    # ------------------------------------------------------------------
-    # Main compress
-    # ------------------------------------------------------------------
     def compress(self, **kwargs: Any) -> tuple[nn.Module, dict[str, Any]]:
         from neuralops.core.model_utils import replace_module
 
         shed_done = self._apply_layer_shedding()
 
-        # Single-pass target discovery (MS-FIX-16)
         targets = [
             (name, module)
             for name, module in self.model.named_modules()
@@ -611,14 +589,12 @@ class MambaShedderCompressor(BaseCompressor):
                 orig_bytes += base_mod.bias.numel() * base_mod.bias.element_size()
             total_orig_bytes += orig_bytes
 
-            # Sensitivity: output channel sensitivity for channel pruning (dim=1)
             act = activations_map.get(name, None)
             used_act_sensitivity = False
             if act is not None and act.numel() > 0:
                 try:
                     act_flat = act.reshape(-1, act.shape[-1]).float().to(device)
                     if act_flat.shape[-1] == d_in:
-                        # act_flat @ W.T gives output activations (N, d_out)
                         out_acts = torch.matmul(act_flat, W.t())
                         fisher_out = (out_acts**2).mean(dim=0).clamp(min=1e-8)
                         sens = fisher_out.sqrt()
@@ -631,14 +607,10 @@ class MambaShedderCompressor(BaseCompressor):
             else:
                 sens = torch.norm(W, dim=1)
 
-            # Ensure sens length matches d_out
             if sens.numel() != d_out:
                 sens = torch.norm(W, dim=1)
 
-            # Decide kept output channels (or 2:4 mask).
             if self.structured_24:
-                # 2:4 → no storage savings (dense storage kept). Fallback to
-                # in-place weight modification.
                 saliency = sens.unsqueeze(0).expand_as(W)
                 try:
                     W_pruned, _ = apply_24_structured_mask(W, saliency=saliency, dim=1)
@@ -667,7 +639,7 @@ class MambaShedderCompressor(BaseCompressor):
                         base_mod.bias.requires_grad = False
 
                 pruned_layers_count += 1
-                total_comp_bytes += orig_bytes  # no real storage change
+                total_comp_bytes += orig_bytes
                 layer_details[name] = {
                     "rel_error": rel_err,
                     "used_act_sensitivity": used_act_sensitivity,
@@ -676,7 +648,6 @@ class MambaShedderCompressor(BaseCompressor):
                     "note": "2:4 sparsity: no storage savings",
                 }
             else:
-                # Channel pruning → real storage savings.
                 if sens.numel() == 0:
                     sens = torch.norm(W, dim=1)
                 n_keep = max(1, min(int(d_out * (1.0 - self.sparsity)), sens.numel()))
@@ -711,7 +682,6 @@ class MambaShedderCompressor(BaseCompressor):
                         b_full.index_select(0, keep_idx).contiguous().to(dtype=dtype, device=device)
                     )
 
-                # Existing LoRA
                 lora_A_src = getattr(module, "lora_A", None)
                 lora_B_src = getattr(module, "lora_B", None)
                 eff_lora_r = self.lora_r
@@ -728,7 +698,6 @@ class MambaShedderCompressor(BaseCompressor):
                     lora_alpha=self.lora_alpha,
                 )
 
-                # Preserve LoRA weights if shapes match.
                 if (
                     lora_A_src is not None
                     and lora_B_src is not None
@@ -762,7 +731,6 @@ class MambaShedderCompressor(BaseCompressor):
                                 )
                             )
 
-                # Splice with wrapper preservation (MS-FIX-18)
                 if hasattr(module, "base_layer"):
                     module.base_layer = new_layer
                 else:
@@ -778,9 +746,6 @@ class MambaShedderCompressor(BaseCompressor):
                     "keep_ratio": n_keep / d_out,
                 }
 
-        # ------------------------------------------------------------------
-        # Forward sanity check (MS-FIX-17)
-        # ------------------------------------------------------------------
         forward_check_success = True
         try:
             with torch.no_grad():
@@ -806,9 +771,6 @@ class MambaShedderCompressor(BaseCompressor):
             logger.warning("MambaShedder forward sanity check failed: %s", e)
             forward_check_success = False
 
-        # ------------------------------------------------------------------
-        # Stats
-        # ------------------------------------------------------------------
         try:
             self._compressed_params = self._count_params(self.model)
         except Exception:
@@ -868,9 +830,6 @@ class MambaShedderCompressor(BaseCompressor):
         return self.model, stats
 
 
-# ===========================================================================
-# Factory
-# ===========================================================================
 @COMPRESSOR_REGISTRY.register("mamba_shedder")
 def mamba_shedder_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Factory function for sensitivity-based structured pruning and layer shedding.

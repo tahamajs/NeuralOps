@@ -25,8 +25,6 @@ from neuralops.utils.compat import should_compress_linear
 logger = logging.getLogger(__name__)
 
 
-
-
 def _dtype_for_clusters(n_clusters: int) -> torch.dtype:
     """KM-FIX-16: smallest integer dtype that fits n_clusters indices."""
     if n_clusters <= 2**7:
@@ -55,9 +53,6 @@ _ATTN_NAMES = {
 }
 
 
-# ===========================================================================
-# Straight-Through Estimator (KM-FIX-17)
-# ===========================================================================
 class KMeansSTEFunction(torch.autograd.Function):
     """
     STE for codebook lookup.
@@ -69,7 +64,6 @@ class KMeansSTEFunction(torch.autograd.Function):
 
     @staticmethod
     def forward(ctx, centroids, indices, x, bias):
-        # KM-FIX-17: safe indexing
         idx_long = indices.long()
         W = centroids.index_select(0, idx_long.reshape(-1)).reshape(
             indices.shape[0], indices.shape[1]
@@ -84,7 +78,6 @@ class KMeansSTEFunction(torch.autograd.Function):
         dtype = grad_output.dtype
         device = grad_output.device
 
-        # Reconstruct W
         W = (
             centroids.index_select(0, idx_long.reshape(-1))
             .reshape(idx_long.shape[0], idx_long.shape[1])
@@ -116,9 +109,6 @@ class KMeansSTEFunction(torch.autograd.Function):
         return grad_centroids, None, grad_x, grad_bias
 
 
-# ===========================================================================
-# 1D Lloyd k-means (KM-FIX-21: deterministic)
-# ===========================================================================
 def fast_kmeans_1d(
     tensor: torch.Tensor,
     n_clusters: int = 256,
@@ -158,7 +148,6 @@ def fast_kmeans_1d(
 
         new_centroids = torch.zeros_like(centroids)
         counts = torch.zeros_like(centroids)
-        # Use int64 index for scatter_add
         idx_long = idx.long()
         new_centroids.scatter_add_(0, idx_long, flat)
         counts.scatter_add_(0, idx_long, torch.ones_like(flat))
@@ -174,9 +163,6 @@ def fast_kmeans_1d(
     return centroids, idx.view(tensor.shape)
 
 
-# ===========================================================================
-# LoRA detection (KM-FIX-02, KM-FIX-19)
-# ===========================================================================
 def _detect_lora(
     layer: nn.Module,
 ) -> tuple[int, float, torch.Tensor | None, torch.Tensor | None]:
@@ -200,7 +186,6 @@ def _detect_lora(
 
     rank = int(a_t.shape[0])
 
-    # Prefer explicit lora_alpha
     alpha = 1.0
     alpha_attr = getattr(layer, "lora_alpha", None)
     if alpha_attr is not None:
@@ -209,7 +194,6 @@ def _detect_lora(
         except (TypeError, ValueError):
             alpha = 1.0
     else:
-        # KM-FIX-19: try both scaling attribute names
         for attr in ("scaling", "lora_scaling"):
             sc = getattr(layer, attr, None)
             if isinstance(sc, (int, float)) and sc > 0:
@@ -224,9 +208,6 @@ def _detect_lora(
     )
 
 
-# ===========================================================================
-# KMeansLinear
-# ===========================================================================
 class KMeansLinear(nn.Module):
     """
     Linear layer with weight matrix quantized via 1D k-means codebook.
@@ -271,35 +252,29 @@ class KMeansLinear(nn.Module):
         self.n_clusters = int(min(n_clusters, W.numel()))
         self._index_dtype = _dtype_for_clusters(self.n_clusters)
 
-        # Detect existing LoRA
         detected_r, detected_alpha, src_A, src_B = _detect_lora(linear)
         self.lora_r = int(detected_r) if detected_r > 0 else int(lora_r)
         self.lora_alpha = float(detected_alpha) if detected_r > 0 else float(lora_alpha)
         self.scaling = (self.lora_alpha / self.lora_r) if self.lora_r > 0 else 1.0
 
-        # Fit centroids and indices
         centroids, indices = fast_kmeans_1d(
             W,
             n_clusters=self.n_clusters,
             seed=kmeans_seed,
         )
-        # KM-FIX-23: centroids frozen if LoRA exists (pure quantizer mode).
         centroids_trainable = self.lora_r == 0
         self.centroids = nn.Parameter(
             centroids.to(dtype=raw_w.dtype),
             requires_grad=centroids_trainable,
         )
-        # Store indices as int8/int16/int32
         self.register_buffer("indices", indices.to(self._index_dtype))
 
-        # Bias
         bias_holder = getattr(target_mod, "bias", None)
         if bias_holder is not None:
             self.bias = nn.Parameter(bias_holder.data.clone(), requires_grad=False)
         else:
             self.register_parameter("bias", None)
 
-        # LoRA branch
         if self.lora_r > 0:
             dev = raw_w.device
             dt = raw_w.dtype
@@ -320,12 +295,9 @@ class KMeansLinear(nn.Module):
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
 
-        # KM-FIX-20: cache in eval
         self._cached_weight: torch.Tensor | None = None
 
-    # ------------------------------------------------------------------
     def get_weight(self) -> torch.Tensor:
-        # KM-FIX-20: cache in eval mode
         if not self.training and self._cached_weight is not None:
             return self._cached_weight
         idx_long = self.indices.long().reshape(-1)
@@ -344,7 +316,6 @@ class KMeansLinear(nn.Module):
             self._cached_weight = None
         return self
 
-    # ------------------------------------------------------------------
     def storage_bytes(self) -> dict[str, int]:
         """KM-FIX-07/22: honest storage accounting."""
 
@@ -361,9 +332,7 @@ class KMeansLinear(nn.Module):
             "lora_B": _sz(self.lora_B.data) if self.lora_B is not None else 0,
         }
 
-    # ------------------------------------------------------------------
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # Bias cast only when dtype/device mismatch
         if self.bias is not None:
             b = self.bias
             if b.dtype != x.dtype or b.device != x.device:
@@ -388,9 +357,6 @@ class KMeansLinear(nn.Module):
         return out
 
 
-# ===========================================================================
-# Compressor
-# ===========================================================================
 class KMeansCompressor(BaseCompressor):
     """KMeansCompressor neural operator.
 
@@ -563,9 +529,7 @@ class KMeansCompressor(BaseCompressor):
             logger.info(f"  [TARGET] {name}: shape={tuple(w.shape)}")
         return True
 
-    # ------------------------------------------------------------------
     def compress(self, model: nn.Module | None = None) -> tuple[nn.Module, dict[str, Any]]:
-        # Idempotence
         if getattr(self.model, "_kmeans_compressed", False):
             logger.warning("KMeansCompressor: model already compressed; skipping.")
             try:
@@ -628,7 +592,6 @@ class KMeansCompressor(BaseCompressor):
             norm_orig = torch.norm(W_target, p="fro").clamp_min(1e-8)
             _out_f, _in_f = W_target.shape[0], W_target.shape[1]
 
-            # Original bytes
             orig_bytes = orig_w.numel() * orig_w.element_size()
             bias_holder = getattr(target_mod, "bias", None)
             if bias_holder is not None:
@@ -668,11 +631,9 @@ class KMeansCompressor(BaseCompressor):
                 total_comp_bytes += orig_bytes
                 continue
 
-            # KM-FIX-18: preserve LoRA wrapper
             try:
                 if hasattr(module, "base_layer"):
                     module.base_layer = new_layer
-                    # Keep LoRA param trainable
                     for pn, p in module.named_parameters():
                         if "lora_" in pn.lower() and not pn.startswith("base_layer"):
                             p.requires_grad = True
@@ -685,12 +646,10 @@ class KMeansCompressor(BaseCompressor):
                 total_comp_bytes += orig_bytes
                 continue
 
-            # Honest byte accounting
             st = new_layer.storage_bytes()
             self.layer_storage[name] = st
             total_comp_bytes += sum(st.values())
 
-        # Forward sanity check
         forward_check_success = True
         try:
             with torch.no_grad():
@@ -747,7 +706,6 @@ class KMeansCompressor(BaseCompressor):
                 "effective_bits_per_weight": self.bits,
                 "lora_r": self.lora_r,
                 "lora_alpha": self.lora_alpha,
-                # Honest accounting
                 "orig_storage_bytes": total_orig_bytes,
                 "comp_storage_bytes": total_comp_bytes,
                 "storage_compression_ratio": round(storage_ratio, 3),
@@ -791,9 +749,6 @@ class KMeansCompressor(BaseCompressor):
         return self.model, stats
 
 
-# ===========================================================================
-# Factory
-# ===========================================================================
 @COMPRESSOR_REGISTRY.register("kmeans_quantize")
 def kmeans_factory(
     model: Any,

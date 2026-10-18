@@ -28,11 +28,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 logger = logging.getLogger(__name__)
 
 
-# ===========================================================================
-# Primal Attention
-# ===========================================================================
-
-
 @ATTENTION_REGISTRY.register("primal_attention")
 class PrimalAttention(BaseAttention):
     """PrimalAttention neural operator.
@@ -76,7 +71,6 @@ class PrimalAttention(BaseAttention):
         self.all_head_size = self.num_heads * self.head_dim
         self.all_kv_head_size = self.num_kv_heads * self.head_dim
 
-        # PR-FIX-03: guard self.rank against None
         _rank_candidate = None
         if comp_config is not None:
             _rank_candidate = getattr(comp_config, "rank", None)
@@ -117,11 +111,8 @@ class PrimalAttention(BaseAttention):
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
         self.supports_gqa = True
 
-        # PR-FIX-07: chunked head processing threshold.
-        # If rank is large, split heads into chunks of CHUNK_HEADS to bound memory.
-        self.chunk_heads = int(kwargs.get("chunk_heads", 0))  # 0 = disabled
+        self.chunk_heads = int(kwargs.get("chunk_heads", 0))
 
-        # Projections
         self.query = LoRALinear(
             self.dim,
             self.all_head_size,
@@ -170,9 +161,6 @@ class PrimalAttention(BaseAttention):
         if source_attn is not None:
             self.copy_weights(source_attn)
 
-    # ------------------------------------------------------------------
-    # copy_weights
-    # ------------------------------------------------------------------
     def copy_weights(self, src: Any) -> None:
         if src is None:
             return
@@ -210,7 +198,6 @@ class PrimalAttention(BaseAttention):
             "o": (None, None),
         }
 
-        # 1. GPT-2 fused
         if hasattr(src, "c_attn") and src.c_attn is not None:
             c_attn_mod = src.c_attn
             base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
@@ -259,7 +246,6 @@ class PrimalAttention(BaseAttention):
                         bias_o.data.clone() if bias_o is not None else None,
                     )
 
-        # 2. RoBERTa / BERT nested
         elif hasattr(src, "self") and hasattr(src.self, "query"):
             s = src.self
             for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
@@ -276,7 +262,6 @@ class PrimalAttention(BaseAttention):
                     out_mod.bias.data.clone() if out_mod.bias is not None else None,
                 )
 
-        # 3. Flat modules (DistilBERT, GPT-2 style without c_attn)
         else:
             proj_candidates = {
                 "q": ["q_lin", "q_proj", "query"],
@@ -349,7 +334,6 @@ class PrimalAttention(BaseAttention):
                         )
                         continue
 
-                # Shape alignment
                 if w.shape == target_mod.weight.shape:
                     target_mod.weight.copy_(w)
                 elif w.t().contiguous().shape == target_mod.weight.shape:
@@ -394,9 +378,6 @@ class PrimalAttention(BaseAttention):
             for mod in [self.query, self.key, self.value, self.out_proj]:
                 mod.freeze_base_weights()
 
-    # ------------------------------------------------------------------
-    # Forward
-    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -430,14 +411,12 @@ class PrimalAttention(BaseAttention):
             .permute(0, 2, 1, 3)
         )
 
-        # RoPE
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None:
             cos, sin = position_embeddings
             Q, K = apply_rotary_pos_emb(Q, K, cos, sin)
 
-        # GQA expansion
         if self.num_heads != self.num_kv_heads:
             num_reps = self.num_heads // self.num_kv_heads
             K = repeat_kv(K, num_reps)
@@ -447,8 +426,6 @@ class PrimalAttention(BaseAttention):
         is_causal = bool(self.is_decoder or kwargs.get("is_causal", False) or kwargs.get("causal", False))
 
         if is_causal:
-            # Strictly causal prefix accumulation: exact causal dot-product attention
-            # (token t only depends on tokens <= t via lower-triangular causal mask)
             scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
             causal_mask = torch.triu(
                 torch.full((seq_len, seq_len), -1e4, device=scores.device),
@@ -468,7 +445,6 @@ class PrimalAttention(BaseAttention):
             output = self.out_proj(context)
             return output, (probs if output_attentions else None)
 
-        # Landmark computation (non-causal / bidirectional mode)
         num_landmarks = min(self.rank, seq_len)
         if seq_len % num_landmarks == 0:
             seg = seq_len // num_landmarks
@@ -489,11 +465,6 @@ class PrimalAttention(BaseAttention):
             Q_land = Q[:, :, idx, :]
             K_land = K[:, :, idx, :]
 
-
-
-
-        # PR-FIX-01 + PR-FIX-07: chunked head processing to bound peak memory.
-        # The chunk_heads attribute (default 0) disables chunking.
         if self.chunk_heads > 0 and self.num_heads > self.chunk_heads:
             head_chunks = [
                 (h0, min(h0 + self.chunk_heads, self.num_heads))
@@ -517,9 +488,6 @@ class PrimalAttention(BaseAttention):
                 F2 = torch.matmul(Ql.float(), Kl.float().transpose(-2, -1).contiguous()) * scale
                 F3 = torch.matmul(Ql.float(), Kc.float().transpose(-2, -1).contiguous()) * scale
 
-                # PR-FIX-01: pseudoinverse + Schulz without gradient tracking.
-                # This eliminates the ~20x backward memory of pinv and stabilizes
-                # the iteration numerically (rcond clamps near-singular values).
                 with torch.no_grad():
                     F2_f32 = F2.detach().to(torch.float32)
                     F2_pinv = torch.linalg.pinv(F2_f32, rcond=1e-4)
@@ -537,7 +505,6 @@ class PrimalAttention(BaseAttention):
                         X = torch.matmul(X, 2.0 * I - torch.matmul(F2_f32, X))
                     X = X.detach()
 
-                    # PR-FIX-02: free pinv intermediates.
                     del F2_pinv, I
 
                 from neuralops.core.triton_kernels.low_rank import (
@@ -551,7 +518,6 @@ class PrimalAttention(BaseAttention):
 
                 del F1, F2, F3, F2_f32, X
 
-            # Causal mask
             is_causal = self.is_decoder or kwargs.get("is_causal", False)
             if is_causal:
                 causal_mask = torch.triu(
@@ -560,7 +526,6 @@ class PrimalAttention(BaseAttention):
                 )
                 attn_c = attn_c + causal_mask.unsqueeze(0).unsqueeze(0)
 
-            # Padding mask
             if attention_mask is not None:
                 attn_c = apply_attention_mask(attn_c, attention_mask)
 
@@ -568,7 +533,6 @@ class PrimalAttention(BaseAttention):
             probs_c = torch.nan_to_num(probs_c, nan=0.0)
             probs_c = self.dropout(probs_c)
 
-            # head_mask (per-head, so select chunk)
             if head_mask is not None:
                 if head_mask.dim() == 1 and head_mask.size(0) == self.num_heads:
                     hm = head_mask[h0:h1].view(1, h1 - h0, 1, 1).to(probs_c.dtype)
@@ -586,10 +550,8 @@ class PrimalAttention(BaseAttention):
             context_heads.append(ctx_c)
 
             if output_attentions and attn_for_return is None:
-                # PR-FIX-05: return softmax probs, not logits.
                 attn_for_return = probs_c
 
-        # Concatenate chunks along head axis: (B, H_total, N, D)
         context = torch.cat(context_heads, dim=1)
         context = (
             context.permute(0, 2, 1, 3).contiguous().view(batch_size, seq_len, self.all_head_size)
@@ -600,11 +562,6 @@ class PrimalAttention(BaseAttention):
 
         out = self.out_proj(context)
         return out, (attn_for_return if output_attentions else None)
-
-
-# ===========================================================================
-# Injection
-# ===========================================================================
 
 
 def inject_primal(
@@ -632,7 +589,6 @@ def inject_primal(
 
     cfg = model_config if model_config is not None else getattr(target, "config", None)
 
-    # Whole-model traversal
     layer_list = None
     if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
         layer_list = target.distilbert.transformer.layer
@@ -694,7 +650,6 @@ def inject_primal(
                 **kwargs,
             )
 
-            # Attach in-place
             for attr in ("self_attn", "attn", "self"):
                 if hasattr(layer, attr):
                     setattr(layer, attr, new_attn)

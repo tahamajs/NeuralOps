@@ -28,11 +28,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 logger = logging.getLogger(__name__)
 
 
-# ===========================================================================
-# RoutingAttention
-# ===========================================================================
-
-
 @ATTENTION_REGISTRY.register("routing_attention")
 class RoutingAttention(BaseAttention):
     """RoutingAttention neural operator.
@@ -142,7 +137,6 @@ class RoutingAttention(BaseAttention):
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
         self.supports_gqa = True
 
-        # Factorized projections
         FF = FactorizedLoRALinear
         self.q_proj = FF(
             self.dim,
@@ -185,7 +179,6 @@ class RoutingAttention(BaseAttention):
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
 
-    # ------------------------------------------------------------------
     @property
     def query(self):
         return self.q_proj
@@ -214,7 +207,6 @@ class RoutingAttention(BaseAttention):
     def out_lin(self):
         return self.out_proj
 
-    # ------------------------------------------------------------------
     @staticmethod
     def _svd_init(w: torch.Tensor, b: torch.Tensor | None, proj: FactorizedLoRALinear) -> None:
         with torch.no_grad():
@@ -249,7 +241,6 @@ class RoutingAttention(BaseAttention):
             elif proj.up.bias is not None:
                 proj.up.bias.data.zero_()
 
-    # ------------------------------------------------------------------
     def copy_weights(self, src: Any) -> None:
         if src is None:
             return
@@ -287,7 +278,6 @@ class RoutingAttention(BaseAttention):
             "o": (None, None),
         }
 
-        # GPT-2 fused c_attn
         if hasattr(src, "c_attn") and src.c_attn is not None:
             c_attn_mod = src.c_attn
             base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
@@ -336,7 +326,6 @@ class RoutingAttention(BaseAttention):
                         bias_o.data.clone() if bias_o is not None else None,
                     )
 
-        # Nested / flat
         elif hasattr(src, "self"):
             s = src
             while hasattr(s, "self") and not any(
@@ -419,7 +408,6 @@ class RoutingAttention(BaseAttention):
                     self._svd_init(eye, None, target)
                 continue
 
-            # GQA resize for k, v
             if proj_key in ("k", "v"):
                 out_t = target.out_features
                 src_out = w.shape[0]
@@ -440,9 +428,6 @@ class RoutingAttention(BaseAttention):
         if hasattr(src, "is_decoder"):
             self.is_decoder = bool(src.is_decoder)
 
-    # ------------------------------------------------------------------
-    # Robust valid-mask helper
-    # ------------------------------------------------------------------
     @staticmethod
     def _prepare_valid_mask(
         attention_mask: torch.Tensor | None,
@@ -474,9 +459,6 @@ class RoutingAttention(BaseAttention):
             return v.any(dim=-2).squeeze(1)
         raise ValueError(f"Unsupported attention_mask dim: {attention_mask.dim()}")
 
-    # ------------------------------------------------------------------
-    # Stable k-means
-    # ------------------------------------------------------------------
     @staticmethod
     def _kmeans_assign(feat: torch.Tensor, K: int, n_iters: int) -> torch.Tensor:
         """
@@ -492,7 +474,7 @@ class RoutingAttention(BaseAttention):
             init_idx = torch.cat([init_idx, extra])
 
         feat_f = feat.float()
-        centroids = feat_f[:, :, init_idx, :].clone()  # (B, H, K, d)
+        centroids = feat_f[:, :, init_idx, :].clone()
 
         if feat.is_cuda:
             try:
@@ -505,10 +487,9 @@ class RoutingAttention(BaseAttention):
 
         cluster_ids = torch.zeros(B, H, L, dtype=torch.long, device=feat.device)
         for _ in range(n_iters):
-            # (B, H, L, K) via squared-distance expansion
-            x_norm = (feat_f**2).sum(dim=-1, keepdim=True)  # (B, H, L, 1)
-            c_norm = (centroids**2).sum(dim=-1).unsqueeze(-2)  # (B, H, 1, K)
-            cross = torch.matmul(feat_f, centroids.transpose(-2, -1))  # (B, H, L, K)
+            x_norm = (feat_f**2).sum(dim=-1, keepdim=True)
+            c_norm = (centroids**2).sum(dim=-1).unsqueeze(-2)
+            cross = torch.matmul(feat_f, centroids.transpose(-2, -1))
             dist = x_norm - 2 * cross + c_norm
             cluster_ids = torch.argmin(dist, dim=-1)
 
@@ -519,9 +500,6 @@ class RoutingAttention(BaseAttention):
 
         return cluster_ids
 
-    # ------------------------------------------------------------------
-    # Forward
-    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -539,7 +517,6 @@ class RoutingAttention(BaseAttention):
         device = hidden_states.device
         dtype = hidden_states.dtype
 
-        # --- Projections ---
         Q = self.q_proj(hidden_states).view(B, L, H, d).permute(0, 2, 1, 3).contiguous()
         K = (
             self.k_proj(hidden_states)
@@ -554,7 +531,6 @@ class RoutingAttention(BaseAttention):
             .contiguous()
         )
 
-        # --- RoPE ---
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None:
@@ -569,78 +545,57 @@ class RoutingAttention(BaseAttention):
             sin = sin[..., past_len : past_len + L, :]
             Q, K = apply_rotary_pos_emb(Q, K, cos, sin)
 
-        # --- GQA ---
         if self.num_heads != self.num_kv_heads:
             repeats = self.num_heads // self.num_kv_heads
             K = repeat_kv(K, repeats)
             V = repeat_kv(V, repeats)
 
-        # --- Valid mask ---
-        valid_mask_2d = self._prepare_valid_mask(attention_mask, B, L, device)  # (B, L) bool
+        valid_mask_2d = self._prepare_valid_mask(attention_mask, B, L, device)
 
-        # --- Clustering ---
         K_num = min(max(1, self.num_clusters), L)
-        joint_feat = F.normalize(Q + K, p=2, dim=-1)  # (B, H, L, d)
-        cluster_ids = self._kmeans_assign(joint_feat, K_num, self.n_iters)  # (B, H, L) long
+        joint_feat = F.normalize(Q + K, p=2, dim=-1)
+        cluster_ids = self._kmeans_assign(joint_feat, K_num, self.n_iters)
 
         scale = 1.0 / math.sqrt(int(d))
         is_causal = self.is_decoder or kwargs.get("is_causal", False)
 
-        # ===========================================================
-        # Sort + Gather + Chunk attention (real O(N²/K))
-        # ===========================================================
-        # For each cluster k:
-        #   1. Use sort-trick to gather cluster members into a compact block
-        #   2. Compute attention on the small (max_q × max_k) matrix
-        #   3. Scatter the result back to the original positions
-        # ===========================================================
-
-        outputs = torch.zeros_like(Q)  # (B, H, L, d)
+        outputs = torch.zeros_like(Q)
         arange_L = torch.arange(L, device=device)
 
         for k in range(K_num):
-            q_mask_k = cluster_ids == k  # (B, H, L) bool
-            # Keys: cluster members + token 0 (global anchor) ∩ valid
+            q_mask_k = cluster_ids == k
             k_mask_k = q_mask_k | (arange_L.view(1, 1, -1) == 0)
-            k_mask_k = k_mask_k & valid_mask_2d.unsqueeze(1)  # (B, H, L)
+            k_mask_k = k_mask_k & valid_mask_2d.unsqueeze(1)
 
-            # Determine compact block sizes
             max_q = int(q_mask_k.sum(dim=-1).max().item())
             max_k = int(k_mask_k.sum(dim=-1).max().item())
 
             if max_q == 0 or max_k == 0:
                 continue
 
-            # Sort trick: cluster members get score 2L - pos, others get -pos
-            # → argsort descending puts cluster members first (ordered by position desc)
             q_score = q_mask_k.to(torch.int64) * (2 * L) - arange_L.view(1, 1, L)
             k_score = k_mask_k.to(torch.int64) * (2 * L) - arange_L.view(1, 1, L)
 
-            q_idx = q_score.argsort(dim=-1, descending=True)[:, :, :max_q]  # (B, H, max_q)
-            k_idx = k_score.argsort(dim=-1, descending=True)[:, :, :max_k]  # (B, H, max_k)
+            q_idx = q_score.argsort(dim=-1, descending=True)[:, :, :max_q]
+            k_idx = k_score.argsort(dim=-1, descending=True)[:, :, :max_k]
 
-            # Padding mask (which entries are real cluster members)
-            valid_q = torch.gather(q_mask_k, 2, q_idx)  # (B, H, max_q)
-            valid_k = torch.gather(k_mask_k, 2, k_idx)  # (B, H, max_k)
+            valid_q = torch.gather(q_mask_k, 2, q_idx)
+            valid_k = torch.gather(k_mask_k, 2, k_idx)
 
-            # Gather Q, K, V for this cluster
             q_idx_exp = q_idx.unsqueeze(-1).expand(-1, -1, -1, d)
             k_idx_exp = k_idx.unsqueeze(-1).expand(-1, -1, -1, d)
 
-            Q_k = torch.gather(Q, 2, q_idx_exp)  # (B, H, max_q, d)
-            K_k = torch.gather(K, 2, k_idx_exp)  # (B, H, max_k, d)
-            V_k = torch.gather(V, 2, k_idx_exp)  # (B, H, max_k, d)
+            Q_k = torch.gather(Q, 2, q_idx_exp)
+            K_k = torch.gather(K, 2, k_idx_exp)
+            V_k = torch.gather(V, 2, k_idx_exp)
 
-            # Compact attention: (B, H, max_q, max_k) — this is O((N/K)²), not O(N²)
             scores_k = torch.matmul(Q_k.float(), K_k.float().transpose(-2, -1).contiguous()) * scale
 
-            # Build pair mask
             pair_mask = valid_q.unsqueeze(-1) & valid_k.unsqueeze(-2)
 
-            # Causal mask via ABSOLUTE positions (preserves causality after sort)
             if is_causal:
-                abs_pos_q = q_idx.unsqueeze(-1)  # (B, H, max_q, 1)
-                abs_pos_k = k_idx.unsqueeze(-2)  # (B, H, 1, max_k)
+                abs_pos_q = q_idx.unsqueeze(-1)
+                abs_pos_k = k_idx.unsqueeze(-2)
                 causal_mask = abs_pos_q >= abs_pos_k
                 pair_mask = pair_mask & causal_mask
 
@@ -651,19 +606,12 @@ class RoutingAttention(BaseAttention):
             attn_k = torch.nan_to_num(attn_k, nan=0.0)
             attn_k = self.dropout(attn_k)
 
-            out_k = torch.matmul(attn_k, V_k)  # (B, H, max_q, d)
+            out_k = torch.matmul(attn_k, V_k)
 
-            # Zero out padded queries before scattering
             out_k = out_k * valid_q.unsqueeze(-1).to(out_k.dtype)
 
-            # Scatter back (each token belongs to exactly one cluster → safe)
             outputs.scatter_add_(2, q_idx_exp, out_k.to(outputs.dtype))
 
-        # ===========================================================
-        # Post-processing
-        # ===========================================================
-
-        # head_mask
         if head_mask is not None:
             if head_mask.dim() == 1:
                 hm = head_mask.view(1, -1, 1, 1)
@@ -675,10 +623,8 @@ class RoutingAttention(BaseAttention):
                 hm = head_mask
             outputs = outputs * hm.to(outputs.dtype)
 
-        # Zero out invalid query positions
         outputs = outputs * valid_mask_2d.unsqueeze(1).unsqueeze(-1).to(outputs.dtype)
 
-        # Reshape
         context = outputs.permute(0, 2, 1, 3).contiguous().view(B, L, self.all_head_size)
         context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
 
@@ -688,11 +634,6 @@ class RoutingAttention(BaseAttention):
         output = self.out_proj(context)
         output = torch.nan_to_num(output, nan=0.0, posinf=1e4, neginf=-1e4)
         return output, None
-
-
-# ===========================================================================
-# Injection with recursion guard
-# ===========================================================================
 
 
 @ATTENTION_REGISTRY.register("routing_attention")
@@ -719,7 +660,6 @@ def inject_routing(
 
     cfg = model_config if model_config is not None else getattr(target, "config", None)
 
-    # Whole-model traversal
     layer_list = None
     if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
         layer_list = target.distilbert.transformer.layer
@@ -759,7 +699,6 @@ def inject_routing(
                 num_injected += 1
         return target if num_injected > 0 else None
 
-    # Single-layer injection
     try:
         src = old_attn
         if src is None:
@@ -772,16 +711,13 @@ def inject_routing(
         if src is None:
             src = target
 
-        # Double-injection guard
         if isinstance(src, RoutingAttention) or "RoutingAttention" in src.__class__.__name__:
             return None
 
-        # Skip hybrid layers
         c_name = src.__class__.__name__
         if "DeltaNet" in c_name or "LinearAttention" in c_name:
             return None
 
-        # Pass through num_clusters and n_iters
         num_clusters = kwargs.pop(
             "num_clusters",
             _cfg_get(comp_config, "num_clusters", _cfg_get(cfg, "routing_num_clusters", 16)),
@@ -805,7 +741,6 @@ def inject_routing(
             if p is not None:
                 new_attn.to(device=p.device, dtype=p.dtype)
 
-        # Attach to parent layer
         if hasattr(target, "attention"):
             if hasattr(target.attention, "self"):
                 new_attn.is_nested_encoder = True
@@ -829,7 +764,6 @@ def inject_routing(
         return None
 
 
-# Aliases
 inject_routing_attention = inject_routing
 inject_routing_into_distilbert = inject_routing
 

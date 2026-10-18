@@ -47,14 +47,6 @@ except Exception as _e:
     MAX_REGISTER_DIM = 64
 
 
-
-
-
-
-
-
-
-
 @ATTENTION_REGISTRY.register(
     "factorised_matrix_state",
     supports_causal=True,
@@ -133,7 +125,6 @@ class FactorisedMatrixState(BaseAttention):
         self.kv_repeat: int = max(1, self.num_heads // max(1, self.num_kv_heads))
         self.proj_rank: int = rank if rank is not None else 32
 
-        # Static layer index
         resolved_layer_id = (
             layer_id
             if layer_id is not None
@@ -145,7 +136,6 @@ class FactorisedMatrixState(BaseAttention):
         )
         self.layer_idx: int = int(resolved_layer_id)
 
-        # LoRA adaptation configuration
         if config is not None:
             self.lora_rank: int = getattr(
                 config,
@@ -167,7 +157,6 @@ class FactorisedMatrixState(BaseAttention):
             self.lora_alpha: float = kwargs.get("lora_alpha", 32.0)
         self.freeze_base: bool = self.lora_rank > 0
 
-        # Decoder & nested encoder detection
         model_type = getattr(config, "model_type", "").lower()
         is_dec = getattr(
             config,
@@ -204,7 +193,6 @@ class FactorisedMatrixState(BaseAttention):
         self.is_causal: bool = bool(is_dec)
         self.is_nested_encoder: bool = False
 
-        # Multi-head projections equipped with LoRA adapters
         self.q_proj = LoRALinear(
             self.d_model,
             self.all_head_size,
@@ -230,9 +218,6 @@ class FactorisedMatrixState(BaseAttention):
             freeze_base=self.freeze_base,
         )
 
-        # Factorized low-rank projection parameters L and R
-        # L is initialized with Kaiming uniform and R with zeros so that the initial low-rank perturbation
-        # is exactly zero (W_res alone acts as base projection), but gradients into L are non-zero.
         self.L = nn.Parameter(torch.empty(self.all_head_size, self.proj_rank))
         self.R = nn.Parameter(torch.zeros(self.d_model, self.proj_rank))
         nn.init.kaiming_uniform_(self.L, a=math.sqrt(5))
@@ -252,7 +237,6 @@ class FactorisedMatrixState(BaseAttention):
         if source_attn is not None:
             self.copy_weights(source_attn)
 
-    # Compatibility properties
     @property
     def query(self) -> LoRALinear:
         return self.q_proj
@@ -354,7 +338,6 @@ class FactorisedMatrixState(BaseAttention):
             "o": (None, None),
         }
 
-        # 1. GPT-2: Fused c_attn + c_proj
         if hasattr(old_attn, "c_attn") and old_attn.c_attn is not None:
             c_attn_mod = old_attn.c_attn
             if hasattr(c_attn_mod, "merge") and not getattr(c_attn_mod, "merged", False):
@@ -406,7 +389,6 @@ class FactorisedMatrixState(BaseAttention):
                         bias_o.data.clone() if bias_o is not None else None,
                     )
 
-        # 2. RoBERTa / BERT nested self-attention
         elif hasattr(old_attn, "self") and hasattr(old_attn.self, "query"):
             s = old_attn.self
             for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
@@ -423,7 +405,6 @@ class FactorisedMatrixState(BaseAttention):
                     out_mod.bias.data.clone() if out_mod.bias is not None else None,
                 )
 
-        # 3. Standard linear projections (DistilBERT, Qwen, LLaMA)
         else:
             proj_candidates = {
                 "q": ["q_lin", "q_proj", "query", "W_q"],
@@ -442,7 +423,6 @@ class FactorisedMatrixState(BaseAttention):
                             )
                             break
 
-        # Fallback via UniversalAdapter
         missing = [
             k
             for k, (w, _) in extracted.items()
@@ -513,7 +493,6 @@ class FactorisedMatrixState(BaseAttention):
                 elif target_mod.bias is not None:
                     nn.init.zeros_(target_mod.bias)
 
-                # Weight verification (Frobenius norm >= 1e-4)
                 w_norm = float(torch.norm(target_mod.weight.data).item())
                 if w_norm < 1e-4:
                     logger.warning(
@@ -575,12 +554,10 @@ class FactorisedMatrixState(BaseAttention):
             idx = torch.arange(L, device=q.device, dtype=torch.float32)
             dist = idx.unsqueeze(1) - idx.unsqueeze(0)
             causal_mask = dist >= 0
-            # Memory optimization: compute D without extra unsqueeze where possible
             D = torch.exp(dist.unsqueeze(0).unsqueeze(0) * log_decay).masked_fill(
                 ~causal_mask.unsqueeze(0).unsqueeze(0), 0.0
             )
 
-            # Avoid .contiguous() after transpose if not absolutely required
             scores = torch.matmul(q_f, k_f.transpose(-1, -2)) * D
             num = torch.matmul(scores, v_f)
             denom = scores.sum(dim=-1, keepdim=True).clamp_min(1e-5)
@@ -610,24 +587,17 @@ class FactorisedMatrixState(BaseAttention):
                     ~causal_mask_c.unsqueeze(0).unsqueeze(0), 0.0
                 )
 
-                # Intra-chunk
                 scores_c = torch.matmul(qc, kc.transpose(-1, -2)) * Dc
                 num_intra = torch.matmul(scores_c, vc)
                 denom_intra = scores_c.sum(dim=-1, keepdim=True)
 
-                # Inter-chunk
                 decay_from_prev = torch.exp(
                     (idx_c + 1).view(1, 1, curr_c, 1) * log_decay
-                )  # (1, H, curr_c, 1)
+                )
 
-                # MEMORY FIX: Use einsum instead of expanding S to (B, H, curr_c, d, d)
-                # num_inter = (qc @ S) * decay_from_prev
-                # qc: (B, H, C, d), S: (B, H, d, d) -> output: (B, H, C, d)
                 num_inter = torch.einsum("bhcd,bhde->bhce", qc, S)
                 num_inter = num_inter * decay_from_prev
 
-                # denom_inter = (qc @ z) * decay_from_prev
-                # qc: (B, H, C, d), z: (B, H, d, 1) -> output: (B, H, C, 1)
                 denom_inter = torch.einsum("bhcd,bhde->bhce", qc, z)
                 denom_inter = denom_inter * decay_from_prev
 
@@ -635,22 +605,16 @@ class FactorisedMatrixState(BaseAttention):
                 denom_c = (denom_intra + denom_inter).clamp_min(1e-5)
                 y_chunks.append(num_c / denom_c)
 
-                # Update state (S, z) for next chunk
-                decay_chunk = torch.exp(float(curr_c) * log_decay)  # (1, H, 1, 1)
+                decay_chunk = torch.exp(float(curr_c) * log_decay)
 
                 dist_to_end = (curr_c - 1 - idx_c).view(1, 1, curr_c, 1)
-                decay_to_end = torch.exp(dist_to_end * log_decay)  # (1, H, curr_c, 1)
+                decay_to_end = torch.exp(dist_to_end * log_decay)
 
-                # MEMORY FIX: Apply decay to keys BEFORE outer product!
-                # Instead of computing a huge (B,H,C,d,d) tensor, we scale kc first.
-                kc_decayed = kc * decay_to_end  # (B, H, C, d)
+                kc_decayed = kc * decay_to_end
 
-                # Now compute the accumulated state over the chunk directly into (B,H,d,d) using einsum
-                # chunk_S = sum_{c} (kc_decayed_c \otimes vc_c)
                 chunk_S = torch.einsum("bhcd,bhce->bhde", kc_decayed, vc)
 
-                # chunk_z = sum_{c} kc_decayed_c
-                chunk_z = kc_decayed.sum(dim=2).unsqueeze(-1)  # (B, H, d, 1)
+                chunk_z = kc_decayed.sum(dim=2).unsqueeze(-1)
 
                 S = S * decay_chunk + chunk_S
                 z = z * decay_chunk + chunk_z
@@ -685,12 +649,10 @@ class FactorisedMatrixState(BaseAttention):
         kv_input = encoder_hidden_states if is_cross_attention else hidden_states
         kv_len = kv_input.shape[1]
 
-        # 1. Projections
         q = self.q_proj(hidden_states).view(B, L, H, d).transpose(1, 2).contiguous()
         k = self.k_proj(kv_input).view(B, kv_len, self.num_kv_heads, d).transpose(1, 2).contiguous()
         v = self.v_proj(kv_input).view(B, kv_len, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
-        # 2. Rotary Position Embeddings (RoPE)
         if position_embeddings is not None and not is_cross_attention:
             if isinstance(position_embeddings, tuple):
                 cos, sin = position_embeddings
@@ -703,7 +665,6 @@ class FactorisedMatrixState(BaseAttention):
                 cos, sin = self.rotary_emb(v, seq_len=kv_len)
                 q, k = apply_rotary_pos_emb(q, k, cos, sin, position_ids)
 
-        # 3. Grouped Query Attention (GQA) head expansion
         if self.num_kv_heads != self.num_heads:
             k = repeat_kv(k, self.kv_repeat)
             v = repeat_kv(v, self.kv_repeat)
@@ -717,9 +678,8 @@ class FactorisedMatrixState(BaseAttention):
                 m_sub = eff_mask > -1000.0 if eff_mask.dtype != torch.bool else eff_mask
                 mask_bool = m_sub.any(dim=1).any(dim=-2).bool()
 
-        decay = torch.sigmoid(self.beta)  # [H, 1, 1]
+        decay = torch.sigmoid(self.beta)
 
-        # 5. Associative Matrix Scan (Forward + Anticausal Backward for encoders)
         y_fwd = self._matrix_scan_linear(q, k, v, decay, mask=mask_bool, reverse=False)
 
         if self.is_decoder or is_cross_attention:
@@ -728,7 +688,6 @@ class FactorisedMatrixState(BaseAttention):
             y_bwd = self._matrix_scan_linear(q, k, v, decay, mask=mask_bool, reverse=True)
             y = 0.5 * (y_fwd + y_bwd)
 
-        # 6. Head mask handling
         if head_mask is not None:
             if head_mask.dim() == 1:
                 head_mask = head_mask.view(1, -1, 1, 1)
@@ -741,11 +700,9 @@ class FactorisedMatrixState(BaseAttention):
         y = torch.nan_to_num(y, nan=0.0)
         y_flat = y.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
 
-        # 7. Output projection with nested encoder bypass
         if self.is_nested_encoder:
             out = y_flat
         else:
-            # Low-rank factorized bilinear output projection + residual output projection
             low_rank = torch.matmul(torch.matmul(y_flat, self.L), self.R.t().contiguous())
             out = self.W_res(y_flat) + low_rank
 
@@ -770,7 +727,6 @@ def inject_factorised_matrix_state(
 
     cfg = model_config if model_config is not None else getattr(target, "config", None)
 
-    # Whole-model traversal
     layer_list = None
     if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
         layer_list = target.distilbert.transformer.layer

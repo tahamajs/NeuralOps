@@ -53,12 +53,6 @@ log = logging.getLogger(__name__)
 logger = log
 
 
-# ======================================================================
-# 1. Config helper
-# ======================================================================
-# ======================================================================
-# 2. Spectral utilities
-# ======================================================================
 def spectral_entropy(singular_values: np.ndarray) -> float:
     s2 = singular_values.astype(np.float64) ** 2
     total = s2.sum()
@@ -78,9 +72,6 @@ def cumulative_entropy_fraction(s: np.ndarray, max_rank: int) -> np.ndarray:
     return cum
 
 
-# ======================================================================
-# 3. Lagrangian rank allocator (ON WHITENED weights)
-# ======================================================================
 def allocate_ranks_spectron(
     weight_matrices: list[np.ndarray],
     target_budget: int,
@@ -138,9 +129,6 @@ def allocate_ranks_spectron(
     return {n: r for n, r in zip(names, best_ranks)}
 
 
-# ======================================================================
-# 4. Low-Rank + Sparse linear layer
-# ======================================================================
 class LowRankSparseLinear(nn.Module):
     """
     y = up(down(x)) + F.linear(x, S) + b
@@ -177,7 +165,6 @@ class LowRankSparseLinear(nn.Module):
         return torch.matmul(self.up.weight, self.down.weight) + self.sparse_weight
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # SP-FIX-11: dtype-safe
         down_w = self.down.weight.to(x.dtype)
         up_w = self.up.weight.to(x.dtype)
         up_b = self.up.bias.to(x.dtype) if self.up.bias is not None else None
@@ -185,8 +172,6 @@ class LowRankSparseLinear(nn.Module):
         if x.is_cuda and down_w.shape[0] <= 128:
             try:
                 from neuralops.core.triton_kernels.low_rank import fwd as fused_low_rank_fwd
-                # F.linear(F.linear(x, down_w), up_w, up_b) is x @ down_w.T @ up_w.T + up_b
-                # fused_low_rank_fwd computes x @ V.T @ U.T + bias where V is down_w and U is up_w
                 x_lr = fused_low_rank_fwd(x, up_w, down_w, bias=up_b)
             except Exception:
                 x_lr = F.linear(F.linear(x, down_w), up_w, up_b)
@@ -219,11 +204,6 @@ class LowRankSparseLinear(nn.Module):
         return self.sparse_weight.abs().sum()
 
 
-
-
-# ======================================================================
-# 6. Activation collection (EMA covariance)
-# ======================================================================
 def _autocast_off(x: torch.Tensor):
     import contextlib
 
@@ -235,9 +215,6 @@ def _autocast_off(x: torch.Tensor):
     return contextlib.nullcontext()
 
 
-# ======================================================================
-# 7. SpectronAttention
-# ======================================================================
 @ATTENTION_REGISTRY.register("spectron", supports_causal=True, supports_gqa=True)
 class SpectronAttention(BaseAttention):
     """SpectronAttention neural operator.
@@ -308,7 +285,6 @@ class SpectronAttention(BaseAttention):
         self.q_head_size = self.num_heads * self.head_dim
         self.all_head_size = self.q_head_size
 
-        # SP-FIX-04: explicit decoder detection
         if is_decoder is not None:
             self.is_decoder = bool(is_decoder)
         else:
@@ -336,7 +312,6 @@ class SpectronAttention(BaseAttention):
 
         self.is_nested_encoder = False
 
-        # Ranks (with global clamp)
         default_r = int(_cfg_get(model_config, "svd_rank", _cfg_get(model_config, "rank", 64)))
         default_r = max(1, min(default_r, self.hidden_size, self.all_head_size))
         self.ranks: dict[str, int] = {}
@@ -350,10 +325,8 @@ class SpectronAttention(BaseAttention):
         self.lora_alpha = float(lora_alpha)
         self.scaling = (lora_alpha / self.lora_rank) if self.lora_rank > 0 else 1.0
 
-        # Whitening factors per projection (from calibration)
         self.whitening = whitening or {}
 
-        # ---- factorised base projections (SVD) ----
         self.q_down = nn.Linear(self.hidden_size, self.ranks["q"], bias=False)
         self.q_up = nn.Linear(self.ranks["q"], self.q_head_size, bias=True)
         self.k_down = nn.Linear(self.hidden_size, self.ranks["k"], bias=False)
@@ -380,7 +353,6 @@ class SpectronAttention(BaseAttention):
             if mod.bias is not None:
                 mod.bias.requires_grad = False
 
-        # ---- LoRA adapters ----
         if self.lora_rank > 0:
             self.q_lora_A = nn.Parameter(torch.empty(self.lora_rank, self.hidden_size))
             self.q_lora_B = nn.Parameter(torch.randn(self.q_head_size, self.lora_rank) * 1e-4)
@@ -402,7 +374,6 @@ class SpectronAttention(BaseAttention):
             self.register_parameter("o_lora_A", None)
             self.register_parameter("o_lora_B", None)
 
-        # ---- optional sparse residuals (init from zero) ----
         if self.add_sparse:
             self.q_sparse = nn.Parameter(torch.zeros(self.q_head_size, self.hidden_size))
             self.k_sparse = nn.Parameter(torch.zeros(self.kv_head_size, self.hidden_size))
@@ -429,9 +400,6 @@ class SpectronAttention(BaseAttention):
         if src_attn is not None:
             self.copy_weights(src_attn)
 
-    # ------------------------------------------------------------------
-    # SP-FIX-01: activation-aware factorization
-    # ------------------------------------------------------------------
     def _factorise_and_set(
         self,
         W: torch.Tensor,
@@ -467,11 +435,11 @@ class SpectronAttention(BaseAttention):
                 eps = 1e-6 * torch.trace(L @ L.t()).item() / max(1, d_in)
                 eye = torch.eye(d_in, device=W_f.device, dtype=W_f.dtype)
                 try:
-                    L_reg = L + eps * eye  # small regularization
+                    L_reg = L + eps * eye
                     W_eff = W_f @ L_reg
                     U, s, Vt = torch.linalg.svd(W_eff, full_matrices=False)
                     L_inv = torch.linalg.inv(L_reg)
-                    Vt = Vt @ L_inv  # bring back to original coordinate
+                    Vt = Vt @ L_inv
                 except Exception as e:
                     log.debug("Whitening failed on factorise (%s); fallback.", e)
                     U, s, Vt = torch.linalg.svd(W_f, full_matrices=False)
@@ -489,9 +457,6 @@ class SpectronAttention(BaseAttention):
             if bias is not None and up.bias is not None:
                 up.bias.data.copy_(bias.to(up.bias.device, up.bias.dtype))
 
-    # ------------------------------------------------------------------
-    # copy_weights with activation-aware factorization
-    # ------------------------------------------------------------------
     def copy_weights(self, old_attn: Any) -> None:
         with torch.no_grad():
             w_q, b_q = None, None
@@ -530,7 +495,6 @@ class SpectronAttention(BaseAttention):
             else:
                 src = old_attn
 
-            # GPT-2 fused c_attn
             if hasattr(src, "c_attn") and hasattr(src, "c_proj"):
                 c_w, c_b = _unpack_weight_bias(src.c_attn)
                 if c_w is not None:
@@ -553,7 +517,6 @@ class SpectronAttention(BaseAttention):
                         out_w = out_w.t().contiguous()
                     w_o, b_o = out_w, out_b
 
-            # BERT / RoBERTa nested
             elif hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value"):
                 w_q, b_q = _unpack_weight_bias(src.query)
                 w_k, b_k = _unpack_weight_bias(src.key)
@@ -564,7 +527,6 @@ class SpectronAttention(BaseAttention):
                             w_o, b_o = _unpack_weight_bias(getattr(src, attr))
                             break
 
-            # Qwen / LLaMA
             elif hasattr(src, "q_proj") and hasattr(src, "k_proj") and hasattr(src, "v_proj"):
                 w_q, b_q = _unpack_weight_bias(src.q_proj)
                 w_k, b_k = _unpack_weight_bias(src.k_proj)
@@ -572,7 +534,6 @@ class SpectronAttention(BaseAttention):
                 if hasattr(src, "o_proj"):
                     w_o, b_o = _unpack_weight_bias(src.o_proj)
 
-            # DistilBERT
             elif hasattr(src, "q_lin") and hasattr(src, "k_lin") and hasattr(src, "v_lin"):
                 w_q, b_q = _unpack_weight_bias(src.q_lin)
                 w_k, b_k = _unpack_weight_bias(src.k_lin)
@@ -580,7 +541,6 @@ class SpectronAttention(BaseAttention):
                 if hasattr(src, "out_lin"):
                     w_o, b_o = _unpack_weight_bias(src.out_lin)
 
-            # UniversalAdapter fallback
             if w_q is None or w_k is None or w_v is None:
                 try:
                     adapter = UniversalAdapter(old_attn)
@@ -616,7 +576,6 @@ class SpectronAttention(BaseAttention):
                     return w.t().contiguous()
                 return w
 
-            # ---- activation-aware factorization using self.whitening ----
             w_q = _orient(w_q, self.q_head_size, self.hidden_size)
             self._factorise_and_set(
                 w_q,
@@ -627,7 +586,6 @@ class SpectronAttention(BaseAttention):
                 whitening_L=self.whitening.get("q", None),
             )
 
-            # K with GQA pooling
             if w_k.shape[0] == self.kv_head_size:
                 w_k = _orient(w_k, self.kv_head_size, self.hidden_size)
                 self._factorise_and_set(
@@ -659,7 +617,6 @@ class SpectronAttention(BaseAttention):
                     whitening_L=self.whitening.get("k", None),
                 )
 
-            # V with GQA pooling
             if w_v.shape[0] == self.kv_head_size:
                 w_v = _orient(w_v, self.kv_head_size, self.hidden_size)
                 self._factorise_and_set(
@@ -691,7 +648,6 @@ class SpectronAttention(BaseAttention):
                     whitening_L=self.whitening.get("v", None),
                 )
 
-            # Output projection
             if w_o is not None and not self.is_nested_encoder:
                 w_o = _orient(w_o, self.hidden_size, self.q_head_size)
                 self._factorise_and_set(
@@ -703,9 +659,6 @@ class SpectronAttention(BaseAttention):
                     whitening_L=self.whitening.get("o", None),
                 )
 
-    # ------------------------------------------------------------------
-    # Forward helpers
-    # ------------------------------------------------------------------
     def _linear_proj(
         self,
         x: torch.Tensor,
@@ -724,9 +677,6 @@ class SpectronAttention(BaseAttention):
             out = out + F.linear(x, sparse_w.to(x.dtype))
         return out
 
-    # ------------------------------------------------------------------
-    # Forward
-    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -776,7 +726,6 @@ class SpectronAttention(BaseAttention):
         K = K.view(B, kv_len, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
         V = V.view(B, kv_len, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
-        # RoPE
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None and not is_cross:
@@ -791,14 +740,12 @@ class SpectronAttention(BaseAttention):
             sin = sin[..., past_len : past_len + N, :]
             Q, K = apply_rotary_pos_emb(Q, K, cos, sin)
 
-        # GQA
         if self.num_kv_heads < self.num_heads:
             K = repeat_kv(K, self.kv_repeat)
             V = repeat_kv(V, self.kv_repeat)
 
         scale = 1.0 / math.sqrt(self.head_dim)
 
-        # SP-FIX-04: correct causal condition
         is_causal = self.is_decoder and not is_cross and N > 1
 
         context = None
@@ -813,7 +760,6 @@ class SpectronAttention(BaseAttention):
                 context = None
 
         if context is None:
-            # SP-FIX-05: fallback dense calculation
             scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
 
             if is_causal:
@@ -877,7 +823,6 @@ class SpectronAttention(BaseAttention):
 
         return output, (attn_weights if output_attentions else None)
 
-    # ------------------------------------------------------------------
     def total_sparse_l1(self) -> torch.Tensor:
         """Sum of L1 norms of all sparse residuals. Add to training loss."""
         if not self.add_sparse:
@@ -904,9 +849,6 @@ class SpectronAttention(BaseAttention):
                 s.mul_(s.abs() >= kth)
 
 
-# ======================================================================
-# 8. Multi-architecture weight gathering (SP-FIX-06)
-# ======================================================================
 def gather_attention_weights(model: Any) -> tuple[list[np.ndarray], list[str]]:
     """
     Return flattened list of Q/K/V/O weight matrices and their layer names.
@@ -916,12 +858,10 @@ def gather_attention_weights(model: Any) -> tuple[list[np.ndarray], list[str]]:
     names: list[str] = []
 
     def _collect_attention_block(attn, layer_id):
-        # GPT-2 fused c_attn
         if hasattr(attn, "c_attn") and hasattr(attn, "c_proj"):
             w = attn.c_attn.weight.data.cpu().numpy()
             if w.shape[0] < w.shape[1]:
                 w = w.T
-            # split into q, k, v
             q_d = w.shape[0] // 3
             for tag, part in zip(("q", "k", "v"), (w[:q_d], w[q_d : 2 * q_d], w[2 * q_d :])):
                 weights.append(part)
@@ -930,7 +870,6 @@ def gather_attention_weights(model: Any) -> tuple[list[np.ndarray], list[str]]:
             names.append(f"layer{layer_id}_o")
             return
 
-        # BERT / RoBERTa nested
         inner = getattr(attn, "self", attn)
         for proj, attr in (("q", "query"), ("k", "key"), ("v", "value")):
             if hasattr(inner, attr):
@@ -938,14 +877,12 @@ def gather_attention_weights(model: Any) -> tuple[list[np.ndarray], list[str]]:
                 weights.append(w)
                 names.append(f"layer{layer_id}_{proj}")
 
-        # output
         for attr in ("dense", "out_proj", "o_proj", "out_lin"):
             if hasattr(attn, attr):
                 weights.append(getattr(attn, attr).weight.data.cpu().numpy())
                 names.append(f"layer{layer_id}_o")
                 break
 
-        # Flat modules
         for proj, names_ in (
             ("q", ("q_proj", "q_lin")),
             ("k", ("k_proj", "k_lin")),
@@ -958,7 +895,6 @@ def gather_attention_weights(model: Any) -> tuple[list[np.ndarray], list[str]]:
                         names.append(f"layer{layer_id}_{proj}")
                         break
 
-    # Try whole-model traversal
     layer_lists = []
     for path in (
         ("distilbert", "transformer", "layer"),
@@ -993,9 +929,6 @@ def gather_attention_weights(model: Any) -> tuple[list[np.ndarray], list[str]]:
     return weights, names
 
 
-# ======================================================================
-# 9. Injector
-# ======================================================================
 def inject_spectron(
     layer: Any = None,
     model: Any = None,
@@ -1019,7 +952,6 @@ def inject_spectron(
 
     cfg = model_config if model_config is not None else getattr(target, "config", None)
 
-    # Whole-model traversal
     layer_list = None
     for path in (
         ("distilbert", "transformer", "layer"),
@@ -1060,7 +992,6 @@ def inject_spectron(
                 n_injected += 1
         return target if n_injected > 0 else None
 
-    # Single-layer injection
     src_attn = old_attn
     if src_attn is None:
         for attr in ("attention", "attn", "self_attn", "self"):
@@ -1072,7 +1003,6 @@ def inject_spectron(
     if src_attn is None:
         src_attn = target
 
-    # SP-FIX-09: idempotency guard
     if isinstance(src_attn, SpectronAttention) or "Spectron" in src_attn.__class__.__name__:
         return None
 
@@ -1129,9 +1059,6 @@ def inject_spectron(
     return new_attn
 
 
-# ======================================================================
-# 10. Generic sparse pruning callback (SP-FIX-08)
-# ======================================================================
 try:
     from transformers import TrainerCallback as _HFTrainerCallback
 except ImportError:
@@ -1156,9 +1083,6 @@ class SparsePruningCallback(_HFTrainerCallback):
                     m.prune_all_sparse(self.final_sparsity)
 
 
-# ======================================================================
-# 11. GLUE helpers (unchanged)
-# ======================================================================
 GLUE_TASK_KEYS: dict[str, tuple[str, str | None]] = {
     "cola": ("sentence", None),
     "sst2": ("sentence", None),

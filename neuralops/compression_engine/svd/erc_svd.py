@@ -33,8 +33,6 @@ from neuralops.utils.compat import should_compress_linear
 logger = logging.getLogger(__name__)
 
 
-
-
 _ATTN_NAMES = {
     "q_proj",
     "k_proj",
@@ -121,8 +119,6 @@ class ERCCompressor(BaseCompressor):
         self.max_retries = max(0, int(max_retries))
         self.target_modules = target_modules
 
-        # Pre-LayerNorm encoder detection (e.g., RoBERTa): pre-LN amplifies residual truncation noise.
-        # Enforce stricter maximum error threshold (0.15) to prevent below-chance catastrophic collapse.
         model_name_or_cls = (
             getattr(getattr(model, "config", None), "_name_or_path", "") or model.__class__.__name__
         ).lower()
@@ -142,7 +138,6 @@ class ERCCompressor(BaseCompressor):
         self.layer_errors: dict[str, float] = {}
         self._compressed_params: int = 0
 
-    # ------------------------------------------------------------------
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         name_lower = name.lower()
         if any(part in name.split(".") for part in ["lora_A", "lora_B", "base_layer"]):
@@ -186,9 +181,6 @@ class ERCCompressor(BaseCompressor):
 
         return True
 
-    # ------------------------------------------------------------------
-    # ER-FIX-02: PEFT-compatible LoRA rank detection
-    # ------------------------------------------------------------------
     @staticmethod
     def _detect_lora(module: nn.Module) -> tuple[int, float]:
         """Return (lora_rank, lora_alpha) from an existing LoRA wrapper if present."""
@@ -212,7 +204,6 @@ class ERCCompressor(BaseCompressor):
                 break
         return rank, alpha
 
-    # ------------------------------------------------------------------
     def compress_linear(
         self,
         module: nn.Module,
@@ -343,7 +334,6 @@ class ERCCompressor(BaseCompressor):
             best_svd_layer.reconstruction_error = best_err
         return best_svd_layer, best_err, chosen_r
 
-    # ------------------------------------------------------------------
     def compress(self) -> tuple[nn.Module, dict[str, Any]]:
         """Compress all target linear and Conv1D layers across the model."""
         self.compressed_layers = []
@@ -388,7 +378,6 @@ class ERCCompressor(BaseCompressor):
             self.layer_errors[name] = err
             self.layer_ranks[name] = r
 
-            # ER-FIX-01: safe fallback when svd_layer is None.
             if svd_layer is None:
                 logger.warning(
                     "ERC-SVD: could not compress %s (rank floor not met or SVD failed).",
@@ -414,14 +403,12 @@ class ERCCompressor(BaseCompressor):
                         p.requires_grad = False
                     total_comp_params += orig_params
                     continue
-                # fallback_to_original=False: proceed with high error (warned).
 
             replace_module(self.model, name, svd_layer)
             self.compressed_layers.append(name)
             comp_params = r * (svd_layer.in_features + svd_layer.out_features)
             total_comp_params += comp_params
 
-        # ER-FIX-03/04: forward sanity check with attention_mask.
         forward_check_success = True
         try:
             with torch.no_grad():
@@ -501,11 +488,6 @@ class ERCCompressor(BaseCompressor):
             self.max_error,
         )
         return self.model, stats
-
-
-# ===========================================================================
-# Factory
-# ===========================================================================
 
 
 def erc_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:

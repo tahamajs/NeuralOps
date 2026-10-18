@@ -46,11 +46,6 @@ from neuralops.utils.compat import should_compress_linear
 logger = logging.getLogger(__name__)
 
 
-
-
-# ===========================================================================
-# Pruned LoRA linear layer
-# ===========================================================================
 class ProxSparsePrunedLoRALinear(nn.Module):
     """
     Frozen pruned base weight + trainable LoRA adapters.
@@ -82,12 +77,10 @@ class ProxSparsePrunedLoRALinear(nn.Module):
         target_device = device if device is not None else pruned_weight.device
         target_dtype = dtype if dtype is not None else pruned_weight.dtype
 
-        # PS-FIX-02: weight is already masked; do not multiply again.
         self.weight = nn.Parameter(
             pruned_weight.to(device=target_device, dtype=target_dtype),
             requires_grad=False,
         )
-        # PS-FIX-03: bool buffer (1 byte per element, non-persistent).
         self.register_buffer(
             "mask",
             mask.bool().to(device=target_device),
@@ -133,7 +126,6 @@ class ProxSparsePrunedLoRALinear(nn.Module):
     ) -> ProxSparsePrunedLoRALinear:
         base_mod = getattr(linear, "base_layer", linear)
 
-        # PS-FIX-09: robust in/out detection for Linear and Conv1D.
         cls_name = base_mod.__class__.__name__.lower()
         is_conv1d = "conv1d" in cls_name or hasattr(base_mod, "nf")
 
@@ -160,7 +152,6 @@ class ProxSparsePrunedLoRALinear(nn.Module):
             dtype=pruned_weight.dtype,
         )
 
-        # Preserve existing source LoRA parameters if shapes match.
         if hasattr(linear, "lora_A") and hasattr(linear, "lora_B"):
             src_A = getattr(linear.lora_A, "weight", linear.lora_A)
             src_B = getattr(linear.lora_B, "weight", linear.lora_B)
@@ -197,9 +188,7 @@ class ProxSparsePrunedLoRALinear(nn.Module):
             except Exception:
                 pass
 
-        # PS-FIX-02: no re-multiplication by mask; weight is already masked.
         w = self.weight.to(dtype=x.dtype, device=x.device)
-        # PS-FIX-06: bias cast includes device.
         b = None
         if self.bias is not None:
             b = self.bias.to(dtype=x.dtype, device=x.device)
@@ -212,9 +201,6 @@ class ProxSparsePrunedLoRALinear(nn.Module):
         return out
 
 
-# ===========================================================================
-# Compressor
-# ===========================================================================
 @COMPRESSOR_REGISTRY.register("proxsparse")
 class ProxSparsePruner(BaseCompressor):
     """
@@ -228,7 +214,7 @@ class ProxSparsePruner(BaseCompressor):
         sparsity: float = 0.5,
         lambda_prox: float = 0.01,
         steps: int = 5,
-        learning_rate: float = 0.5,  # PS-FIX-04
+        learning_rate: float = 0.5,
         structured_24: bool = False,
         block_size: tuple[int, int] = (1, 1),
         skip_attention_qkv: bool = True,
@@ -278,7 +264,6 @@ class ProxSparsePruner(BaseCompressor):
                 else _cfg_get(cfg_obj, "proxsparse_steps", _cfg_get(cfg_obj, "steps", 5))
             ),
         )
-        # PS-FIX-04
         self.learning_rate = max(
             1e-4,
             float(
@@ -327,7 +312,6 @@ class ProxSparsePruner(BaseCompressor):
             else _cfg_get(cfg_obj, "fallback_to_original", True)
         )
 
-        # Device
         if device is not None:
             try:
                 self.target_device = torch.device(device)
@@ -352,7 +336,6 @@ class ProxSparsePruner(BaseCompressor):
         self.layer_actual_sparsity: dict[str, float] = {}
         self.stats: dict[str, Any] = {}
 
-    # ------------------------------------------------------------------
     def _is_gqa_asymmetric(self, name: str, module: nn.Module) -> bool:
         if self.target_attention_only:
             return False
@@ -444,7 +427,6 @@ class ProxSparsePruner(BaseCompressor):
             return any(t in name for t in self.target_modules)
         return True
 
-    # ------------------------------------------------------------------
     def _soft_threshold(self, tensor: torch.Tensor, threshold: float) -> torch.Tensor:
         """prox_{a ||.||_1}(x) = sign(x) * max(|x| - a, 0)."""
         return torch.sign(tensor) * torch.clamp(torch.abs(tensor) - threshold, min=0.0)
@@ -466,7 +448,6 @@ class ProxSparsePruner(BaseCompressor):
             mask = tensor.abs() >= thr
             return tensor * mask.float(), mask
 
-    # ------------------------------------------------------------------
     def compress(self, **kwargs: Any) -> tuple[nn.Module, dict[str, Any]]:
         self.compressed_layers.clear()
         self.visited_modules.clear()
@@ -495,35 +476,28 @@ class ProxSparsePruner(BaseCompressor):
                 device = raw_w.device
                 dtype = raw_w.dtype
 
-                # Always operate in (out, in) orientation.
                 W_0 = raw_w.t().contiguous().float() if is_conv1d else raw_w.contiguous().float()
 
-                # Early NaN/Inf guard on source.
                 if not torch.isfinite(W_0).all():
                     logger.warning("ProxSparse: %s has non-finite weights; skipping.", name)
                     self.failed_layers.append(name)
                     continue
 
-                # ------------------------------------------------
-                # PS-FIX-01: Correct proximal gradient iteration.
-                # ------------------------------------------------
                 eta = self.learning_rate
                 W = W_0.clone()
                 mask = None
                 for _ in range(self.steps):
-                    grad_W = W - W_0  # grad of 0.5*||W - W_0||^2
-                    W_grad = W - eta * grad_W  # gradient descent step
+                    grad_W = W - W_0
+                    W_grad = W - eta * grad_W
                     W_prox = self._soft_threshold(W_grad, eta * self.lambda_prox)
                     W, mask = self._project_sparse(W_prox)
 
-                # Final projection (mask from last iteration already applied).
                 W_final = torch.nan_to_num(W, nan=0.0, posinf=0.0, neginf=0.0)
 
                 w_norm = torch.norm(W_0, p="fro").clamp_min(1e-12).item()
                 err = (torch.norm(W_0 - W_final, p="fro") / w_norm).item()
                 self.layer_errors[name] = float(err)
 
-                # Actual sparsity in the final weight.
                 actual_zero = (W_final.abs() < 1e-12).float().mean().item()
                 self.layer_actual_sparsity[name] = float(actual_zero)
 
@@ -543,7 +517,6 @@ class ProxSparsePruner(BaseCompressor):
                         p.requires_grad = False
                     continue
 
-                # ---- Commit ----
                 if self.use_lora and self.lora_r > 0:
                     lora_layer = ProxSparsePrunedLoRALinear.from_linear(
                         linear=module,
@@ -565,7 +538,6 @@ class ProxSparsePruner(BaseCompressor):
                 for p in module.parameters():
                     p.requires_grad = False
 
-        # Forward sanity check
         forward_check_success = True
         try:
             with torch.no_grad():
@@ -586,17 +558,14 @@ class ProxSparsePruner(BaseCompressor):
             else 0.0
         )
 
-        # PS-FIX-08: effective_parameter_ratio separate from compression_ratio.
         effective_ratio = 1.0
         if self.compressed_layers:
             ratios = []
             for n in self.compressed_layers:
                 actual_sp = self.layer_actual_sparsity.get(n, 0.0)
-                # Non-zeros in the pruned base + LoRA params (if any)
                 ratio = 1.0 - actual_sp
                 if self.use_lora and self.lora_r > 0:
-                    # Very rough estimate; LoRA adds lora_r*(in+out) params.
-                    ratio += 0.02  # approximate placeholder; real accounting per layer
+                    ratio += 0.02
                 ratios.append(ratio)
             effective_ratio = sum(ratios) / len(ratios)
 
@@ -634,13 +603,9 @@ class ProxSparsePruner(BaseCompressor):
         return self.model, stats
 
 
-# Aliases
 ProxSparseCompressor = ProxSparsePruner
 
 
-# ===========================================================================
-# Factory
-# ===========================================================================
 def proxsparse_factory(
     model: Any,
     comp_config: Any = None,

@@ -37,8 +37,6 @@ from neuralops.utils.compat import should_compress_linear
 logger = logging.getLogger(__name__)
 
 
-
-
 def _gelu_derivative_sq(y: torch.Tensor) -> torch.Tensor:
     r"""
     Compute (GELU'(y))^2 elementwise.
@@ -71,14 +69,12 @@ def _detect_activation_type(layer_name: str, model: nn.Module | None = None) -> 
     - None: other layers (attention out, FFN down_proj/lin2)
     """
     nl = layer_name.lower()
-    # Check for GELU patterns
     if any(k in nl for k in ["ffn.lin1", "intermediate.dense"]) or (
         nl.endswith(".lin1") and "ffn" in nl
     ):
         return "gelu"
     if "lin1" in nl and not any(skip in nl for skip in ["q_lin", "k_lin", "v_lin", "out_lin"]):
         return "gelu"
-    # Check for SiLU patterns (SwiGLU)
     if any(k in nl for k in ["gate_proj", "up_proj"]):
         return "silu"
     return "none"
@@ -104,7 +100,6 @@ def _is_attention_qk(layer_name: str) -> bool:
     )
 
 
-# Backward compatibility alias
 AdaptiveSVDLinear = SVDLinear
 
 
@@ -162,7 +157,6 @@ class AdaptiveRanksCompressor(BaseCompressor):
         if cfg is None and hasattr(model, "config") and model.config is not None:
             cfg = model.config
 
-        # Check sys.argv for CLI overrides
         cli_use_jg_svd = None
         cli_use_cholesky_jg = None
         import sys
@@ -280,7 +274,6 @@ class AdaptiveRanksCompressor(BaseCompressor):
             CompressedAttentionLayer is not None and isinstance(module, CompressedAttentionLayer)
         ):
             return False
-        # Do not target inner submodules of LoRA or wrappers
         if any(
             name.endswith(sfx) for sfx in [".base_layer", ".lora_A", ".lora_B", ".lora_dropout"]
         ):
@@ -561,7 +554,6 @@ class AdaptiveRanksCompressor(BaseCompressor):
                 ):
                     p = outp[1].detach().float()
                 elif isinstance(outp, torch.Tensor) and outp.ndim >= 3:
-                    # In some modules attention probabilities or softmax is exposed as square sequence matrices
                     if outp.shape[-1] == outp.shape[-2]:
                         p = outp.detach().float()
                     else:
@@ -637,8 +629,7 @@ class AdaptiveRanksCompressor(BaseCompressor):
         for h in hooks:
             h.remove()
 
-        # Compute Attention Softmax scalar Jacobian E[P(1-P)]
-        global_attn_scalar = 0.08  # Default baseline for softmax distribution with entropy ~2.5
+        global_attn_scalar = 0.08
         for name, p_list in attn_probs.items():
             if p_list:
                 cat_p = torch.cat(p_list, dim=0)
@@ -664,7 +655,6 @@ class AdaptiveRanksCompressor(BaseCompressor):
                 self.layer_D_gating[name] = torch.clamp(d_vec, min=1e-6)
                 logger.debug("JG-SVD SiLU' weighting on %s: mean=%.4f", name, d_vec.mean().item())
             elif _is_attention_qk(name):
-                # Apply Attention Softmax Jacobian scalar weighting
                 matching_attn = [v for k, v in self.attn_jacobian.items() if k in name or name in k]
                 scalar_val = matching_attn[0] if matching_attn else global_attn_scalar
                 out_dim = cat_y.shape[-1]
@@ -677,7 +667,6 @@ class AdaptiveRanksCompressor(BaseCompressor):
                     scalar_val,
                 )
             else:
-                # Other layers: empirical output variance fallback
                 d_var = cat_y.var(dim=0, unbiased=False).cpu()
                 self.layer_D_gating[name] = torch.clamp(d_var, min=1e-6)
 
@@ -698,7 +687,6 @@ class AdaptiveRanksCompressor(BaseCompressor):
         device = W.device
         dtype = W.dtype
 
-        # 1. Whitened SVD initialization
         if cov is not None and cov.shape == (in_f, in_f):
             cov_dev = cov.to(device=device, dtype=torch.float32)
             diag_mean = torch.diagonal(cov_dev).mean().item()
@@ -756,9 +744,7 @@ class AdaptiveRanksCompressor(BaseCompressor):
         best_recon = A @ B
         best_err = float(torch.norm(W - best_recon, p="fro").item() / max(W_norm, 1e-12))
 
-        # 2. Alternating Least Squares (ALS) optimization loop
         for _ in range(num_iters):
-            # Update A: A = (W @ E @ B.T) @ inv(B @ E @ B.T + eps * I)
             BEBt = B @ E @ B.T
             eps_B = max(1e-8, float(1e-5 * BEBt.trace().item() / max(1, r)))
             try:
@@ -770,7 +756,6 @@ class AdaptiveRanksCompressor(BaseCompressor):
             except Exception:
                 break
 
-            # Update B: B = inv(A.T @ D @ A + eps * I) @ (A.T @ D @ W)
             AtDA = A_new.T @ D_diag @ A_new
             eps_A = max(1e-8, float(1e-5 * AtDA.trace().item() / max(1, r)))
             try:
@@ -861,18 +846,14 @@ class AdaptiveRanksCompressor(BaseCompressor):
         min_dim = min(out_f, in_f)
         W_norm = torch.norm(W, p="fro").item()
 
-        # Parameter reduction constraint: r * (in + out) < in * out
         max_allowed_rank = max(1, min(min_dim - 1, int(0.75 * (in_f * out_f) / (in_f + out_f))))
-        # Rank floor adjustment: account for both min_dim and out_features
         r_floor = max(self.min_rank, 1, int(0.15 * min_dim), int(0.10 * out_f))
         r_floor = min(r_floor, max_allowed_rank)
 
-        # Check for LoRA parameters on module
         lora_r = getattr(layer, "lora_rank", getattr(layer, "r", 0))
         lora_a = getattr(layer, "lora_alpha", 1.0)
         has_lora = (hasattr(layer, "lora_A") and hasattr(layer, "lora_B")) or (lora_r > 0)
 
-        # Attempt 0: Jacobian-Gated SVD (JG-SVD) if enabled
         svd_layer: AdaptiveSVDLinear | None = None
         best_err = 1.0
         best_rank = r_floor
@@ -880,7 +861,6 @@ class AdaptiveRanksCompressor(BaseCompressor):
         if self.use_jg_svd:
             D_gating = self.layer_D_gating.get(layer_name, None) if layer_name else None
             try:
-                # Rank selection using singular values
                 if cov is not None and cov.shape == (in_f, in_f):
                     cov_dev = cov.to(device=device, dtype=torch.float32)
                     diag_mean = torch.diagonal(cov_dev).mean().item()
@@ -921,8 +901,6 @@ class AdaptiveRanksCompressor(BaseCompressor):
                     return svd_layer, err_jg, r_jg, cov is not None, True
             except Exception as e:
                 logger.debug("JG-SVD factorization exception on %s: %s", layer_name, e)
-
-        # Attempt 1: Covariance whitening SVD
 
         if cov is not None and cov.shape == (in_f, in_f):
             try:
@@ -972,7 +950,6 @@ class AdaptiveRanksCompressor(BaseCompressor):
             except Exception as e:
                 logger.debug("Covariance whitening exception on linear layer: %s", e)
 
-        # Attempt 2: Unweighted Direct SVD with rank escalation
         try:
             U, S, Vt = torch.linalg.svd(W, full_matrices=False)
             candidate_thresholds = [
@@ -1048,7 +1025,6 @@ class AdaptiveRanksCompressor(BaseCompressor):
                         and target_mod.in_proj_weight is not None
                     ):
                         W_in = target_mod.in_proj_weight.data.float()
-                        # in_proj_weight is [3 * embed_dim, embed_dim]. Split into Q, K, V
                         w_q, w_k, w_v = W_in.chunk(3, dim=0)
                         _, s_q, _ = torch.linalg.svd(w_q, full_matrices=False)
                         _, s_k, _ = torch.linalg.svd(w_k, full_matrices=False)
@@ -1115,7 +1091,6 @@ class AdaptiveRanksCompressor(BaseCompressor):
                         )
 
                 if hasattr(module, "base_layer"):
-                    # Check if svd_layer has its own LoRA parameters populated
                     if (
                         hasattr(module, "lora_A")
                         and module.lora_A is not None
@@ -1123,7 +1098,6 @@ class AdaptiveRanksCompressor(BaseCompressor):
                         and svd_layer.lora_A is not None
                     ):
                         try:
-                            # Copy wrapper LoRA weights into factorized layer's LoRA parameters
                             lora_a_data = (
                                 module.lora_A.data
                                 if hasattr(module.lora_A, "data")
@@ -1170,7 +1144,6 @@ class AdaptiveRanksCompressor(BaseCompressor):
                     replace_module(self.model, name, svd_layer)
                 self.compressed_layers.append(name)
 
-        # Ensure fallback layers are frozen so recovery fine-tuning does not touch them
         for name, mod in self.model.named_modules():
             if name in self.fallback_layers:
                 for p in mod.parameters():
@@ -1216,7 +1189,6 @@ class AdaptiveRanksCompressor(BaseCompressor):
         return self.model, stats
 
 
-# Backward compatibility alias
 AdaptiveTransformerCompressor = AdaptiveRanksCompressor
 
 

@@ -28,9 +28,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 logger = logging.getLogger(__name__)
 
 
-# ===========================================================================
-# Main LEKAv2 Attention
-# ===========================================================================
 @ATTENTION_REGISTRY.register("landmark_local_attention")
 class LandmarkLocalAttention(BaseAttention):
     """LandmarkLocalAttention neural operator.
@@ -81,7 +78,6 @@ class LandmarkLocalAttention(BaseAttention):
         self.supports_gqa = True
         self.layer_idx = int(layer_idx)
 
-        # Hyper-parameters
         self.landmark_ratio = float(
             getattr(comp_config, "landmark_ratio", 0.5) if comp_config else 0.5
         )
@@ -106,7 +102,6 @@ class LandmarkLocalAttention(BaseAttention):
             if config is not None else 0.1
         )
 
-        # [FIX-14] Decoder detection
         self.is_decoder = _detect_decoder(config, is_decoder, source_attn)
         self.is_causal = self.is_decoder
         self.is_nested_encoder = False
@@ -127,7 +122,6 @@ class LandmarkLocalAttention(BaseAttention):
             or (rank if rank is not None else 64)
         )
 
-        # Projections
         FF = FactorizedLoRALinear
         self.query = FF(
             self.dim, self.all_head_size,
@@ -153,7 +147,6 @@ class LandmarkLocalAttention(BaseAttention):
         self.k_proj = self.key
         self.v_proj = self.value
 
-        # Random projections for kernel feature map (dual-scale)
         self.register_buffer(
             "rand_proj1",
             torch.randn(self.head_dim, self.feature_dim) / math.sqrt(self.head_dim),
@@ -165,7 +158,6 @@ class LandmarkLocalAttention(BaseAttention):
             persistent=True,
         )
 
-        # [FIX-2] Landmark scorer with lora_ prefix
         tot_feat = self.feature_dim * 2 + (self.feature_dim // 2) * 2
         self.lora_landmark_scorer = nn.Sequential(
             nn.LayerNorm(tot_feat),
@@ -174,20 +166,15 @@ class LandmarkLocalAttention(BaseAttention):
             nn.Linear(64, 1),
         )
 
-        # Per-head correlation matrix (trainable)
         self.lora_W_corr = nn.Parameter(
             torch.eye(self.head_dim).unsqueeze(0).repeat(self.num_heads, 1, 1)
         )
-        # [FIX-3] Local/landmark fusion gate (trainable)
         self.lora_local_gate = nn.Parameter(torch.full((self.num_heads,), -2.0))
         self.dropout = nn.Dropout(dropout_p)
 
         if source_attn is not None:
             self.copy_weights(source_attn)
 
-    # ------------------------------------------------------------------
-    # Dimension detectors
-    # ------------------------------------------------------------------
     @staticmethod
     def _detect_hidden_size(
         config: Any, src: nn.Module | None, kwargs: dict[str, Any]
@@ -277,9 +264,6 @@ class LandmarkLocalAttention(BaseAttention):
                         pass
         return max(1, hidden_size // max(1, num_heads))
 
-    # ------------------------------------------------------------------
-    # Kernel feature map (dual-scale RFF)
-    # ------------------------------------------------------------------
     def kernel_feature_map(self, x: torch.Tensor) -> torch.Tensor:
         W1 = self.rand_proj1.to(device=x.device, dtype=x.dtype)
         W2 = self.rand_proj2.to(device=x.device, dtype=x.dtype)
@@ -296,9 +280,6 @@ class LandmarkLocalAttention(BaseAttention):
 
         return torch.cat([f1, f2], dim=-1)
 
-    # ------------------------------------------------------------------
-    # [FIX-4] Chunk-wise Landmark Selection
-    # ------------------------------------------------------------------
     def select_landmarks_chunked(
         self,
         K_features: torch.Tensor,
@@ -325,26 +306,20 @@ class LandmarkLocalAttention(BaseAttention):
         k_per_chunk = max(1, int(chunk_sz * self.landmark_ratio))
 
         with torch.no_grad():
-            # [FIX-2] use lora_-prefixed scorer
-            scores = self.lora_landmark_scorer(K_features).squeeze(-1)  # (B, H, N_k)
+            scores = self.lora_landmark_scorer(K_features).squeeze(-1)
 
-            # Anchor boost for position 0
             anchor_boost = torch.zeros_like(scores)
             if N_k > 0:
                 anchor_boost[:, :, 0] = 1e4
             scores = scores + anchor_boost
 
-            # [FIX-15] Safe valid_mask handling
             if valid_mask is not None:
-                # valid_mask is (B, N_k)
                 vm = valid_mask
                 while vm.dim() < 3:
                     vm = vm.unsqueeze(1)
-                # vm now (B, 1, N_k) → broadcast against (B, H, N_k)
                 vm = vm.expand(-1, H, -1)
                 scores = scores.masked_fill(~vm.bool(), -1e4)
 
-            # Pad to multiple of chunk_size
             pad_len = (chunk_sz - N_k % chunk_sz) % chunk_sz
             if pad_len > 0:
                 scores_pad = F.pad(scores, (0, pad_len), value=-1e4)
@@ -355,12 +330,12 @@ class LandmarkLocalAttention(BaseAttention):
             scores_c = scores_pad.view(B, H, num_chunks, chunk_sz)
 
             k_act = min(k_per_chunk, chunk_sz)
-            _, local_idx = scores_c.topk(k_act, dim=-1)  # (B, H, num_chunks, k_act)
+            _, local_idx = scores_c.topk(k_act, dim=-1)
 
             offsets = torch.arange(
                 0, num_chunks * chunk_sz, chunk_sz, device=scores.device
             ).view(1, 1, -1, 1)
-            global_idx = (local_idx + offsets).view(B, H, -1)  # (B, H, L)
+            global_idx = (local_idx + offsets).view(B, H, -1)
             global_idx = global_idx.clamp(min=0, max=max(0, N_k - 1))
 
         K_land = torch.gather(
@@ -375,9 +350,6 @@ class LandmarkLocalAttention(BaseAttention):
         )
         return K_land, V_land, global_idx
 
-    # ------------------------------------------------------------------
-    # [FIX-5, FIX-16] Block-wise sliding window — memory-efficient
-    # ------------------------------------------------------------------
     def block_local_attention(
         self,
         q: torch.Tensor,
@@ -422,7 +394,6 @@ class LandmarkLocalAttention(BaseAttention):
         k_b = k_p.view(B, H, num_blocks, W, d)
         v_b = v_p.view(B, H, num_blocks, W, d)
 
-        # 1. Intra-block attention
         attn_intra = torch.matmul(q_b, k_b.transpose(-1, -2)) * scale
         if self.is_decoder:
             causal_mask = torch.tril(
@@ -432,24 +403,19 @@ class LandmarkLocalAttention(BaseAttention):
                 ~causal_mask.view(1, 1, 1, W, W), -1e4
             )
 
-        # 2. Inter-block (previous block) attention
         k_b_shifted = F.pad(k_b[:, :, :-1, :, :], (0, 0, 0, 0, 1, 0))
         v_b_shifted = F.pad(v_b[:, :, :-1, :, :], (0, 0, 0, 0, 1, 0))
         attn_inter = torch.matmul(q_b, k_b_shifted.transpose(-1, -2)) * scale
-        # First block: no previous block
         if num_blocks > 0:
             attn_inter = attn_inter.clone()
             attn_inter[:, :, 0, :, :] = -1e4
 
-        # Combine
-        attn_combined = torch.cat([attn_inter, attn_intra], dim=-1)  # (B, H, nb, W, 2W)
+        attn_combined = torch.cat([attn_inter, attn_intra], dim=-1)
 
-        # [FIX-16] Efficient valid_mask handling
         if valid_mask is not None:
             v_mask_p = F.pad(
                 valid_mask.float(), (0, pad_len), value=0.0
-            ).bool()  # (B, N_pad)
-            # Repeat for both blocks
+            ).bool()
             v_mask_2w = torch.cat([v_mask_p, v_mask_p], dim=-1).view(
                 B, num_blocks, 1, 2 * W
             )
@@ -463,14 +429,11 @@ class LandmarkLocalAttention(BaseAttention):
         attn_weights = F.softmax(attn_combined, dim=-1).to(v.dtype)
         attn_weights = self.dropout(attn_weights)
 
-        v_combined = torch.cat([v_b_shifted, v_b], dim=-2)  # (B, H, nb, 2W, d)
-        out_local = torch.matmul(attn_weights, v_combined)   # (B, H, nb, W, d)
+        v_combined = torch.cat([v_b_shifted, v_b], dim=-2)
+        out_local = torch.matmul(attn_weights, v_combined)
 
         return out_local.reshape(B, H, N_pad, d)[:, :, :N, :]
 
-    # ------------------------------------------------------------------
-    # [FIX-5] Exact decode fallback for N_q < N_k
-    # ------------------------------------------------------------------
     def _exact_decode_local(
         self,
         q: torch.Tensor,
@@ -489,16 +452,12 @@ class LandmarkLocalAttention(BaseAttention):
         scale = 1.0 / math.sqrt(d)
         device = q.device
 
-        # Raw scores
         scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
 
-        # Absolute positions
-        q_abs = (torch.arange(N_q, device=device) + past_len).unsqueeze(1)   # (N_q, 1)
-        k_abs = torch.arange(N_k, device=device).unsqueeze(0)                 # (1, N_k)
+        q_abs = (torch.arange(N_q, device=device) + past_len).unsqueeze(1)
+        k_abs = torch.arange(N_k, device=device).unsqueeze(0)
 
-        # Window mask
         window_mask = (q_abs - k_abs).abs() <= W
-        # Causal mask
         if self.is_decoder:
             causal_mask = k_abs <= q_abs
             valid = window_mask & causal_mask
@@ -508,9 +467,8 @@ class LandmarkLocalAttention(BaseAttention):
         mask_val = _safe_mask_value(scores.dtype)
         scores = scores.masked_fill(~valid.unsqueeze(0).unsqueeze(0), mask_val)
 
-        # Padding mask
         if valid_mask is not None:
-            kv_valid = valid_mask.to(device=device, dtype=torch.bool)  # (B, N_k)
+            kv_valid = valid_mask.to(device=device, dtype=torch.bool)
             scores = scores.masked_fill(
                 ~kv_valid[:, None, None, :], mask_val
             )
@@ -522,9 +480,6 @@ class LandmarkLocalAttention(BaseAttention):
         out = torch.matmul(attn, v.float()).to(q.dtype)
         return out
 
-    # ------------------------------------------------------------------
-    # [FIX-7] SVD init
-    # ------------------------------------------------------------------
     @staticmethod
     def _svd_init(
         w: torch.Tensor,
@@ -563,9 +518,6 @@ class LandmarkLocalAttention(BaseAttention):
             elif proj.up.bias is not None:
                 proj.up.bias.data.zero_()
 
-    # ------------------------------------------------------------------
-    # Weight transfer
-    # ------------------------------------------------------------------
     def copy_weights(self, src: Any) -> None:
         if src is None:
             return
@@ -593,7 +545,6 @@ class LandmarkLocalAttention(BaseAttention):
             "v": (None, None), "o": (None, None),
         }
 
-        # 1. GPT-2 fused c_attn
         if hasattr(src, "c_attn") and src.c_attn is not None:
             c_attn_mod = src.c_attn
             base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
@@ -642,7 +593,6 @@ class LandmarkLocalAttention(BaseAttention):
                         bias_o.data.clone() if bias_o is not None else None,
                     )
 
-        # 2. BERT / RoBERTa nested
         elif hasattr(src, "self") and hasattr(src.self, "query"):
             s = src.self
             for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
@@ -659,7 +609,6 @@ class LandmarkLocalAttention(BaseAttention):
                     out_mod.bias.data.clone() if out_mod.bias is not None else None,
                 )
 
-        # 3. Flat modules (DistilBERT, LLaMA, Qwen)
         else:
             proj_candidates = {
                 "q": ["q_lin", "q_proj", "query"],
@@ -753,7 +702,6 @@ class LandmarkLocalAttention(BaseAttention):
                 )
                 self._svd_init(eye, None, self.out_proj)
 
-            # Norm verification
             for name, mod in (
                 ("query", self.query),
                 ("key", self.key),
@@ -773,14 +721,10 @@ class LandmarkLocalAttention(BaseAttention):
             for mod in (self.query, self.key, self.value, self.out_proj):
                 mod.freeze_base_weights()
 
-        # ---- Inherit decoder flag ----
         if hasattr(src, "is_decoder"):
             self.is_decoder = bool(src.is_decoder)
             self.is_causal = self.is_decoder
 
-    # ------------------------------------------------------------------
-    # KV-cache helpers  — [FIX-1]
-    # ------------------------------------------------------------------
     _read_past_kv = staticmethod(_read_past_kv)
 
     @staticmethod
@@ -807,9 +751,6 @@ class LandmarkLocalAttention(BaseAttention):
             return past_key_value
         return (k, v)
 
-    # ------------------------------------------------------------------
-    # Forward  — [FIX-1, FIX-5, FIX-6]
-    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -825,7 +766,6 @@ class LandmarkLocalAttention(BaseAttention):
         *args: Any,
         **kwargs: Any,
     ) -> tuple[torch.Tensor, Any]:
-        # Unwrap tuple
         while isinstance(hidden_states, (tuple, list)):
             hidden_states = hidden_states[0]
         if not hidden_states.is_contiguous():
@@ -836,7 +776,6 @@ class LandmarkLocalAttention(BaseAttention):
         device = hidden_states.device
         dtype = hidden_states.dtype
 
-        # ---- Projections ----
         q = self.query(hidden_states).view(B, N, H, self.head_dim).transpose(1, 2).contiguous()
         k_new = (
             self.key(hidden_states)
@@ -851,10 +790,8 @@ class LandmarkLocalAttention(BaseAttention):
             .contiguous()
         )
 
-        # ---- [FIX-1] Read past KV ----
         past_k, past_v, past_len = self._read_past_kv(past_key_value, self.layer_idx)
 
-        # ---- RoPE with past offset ----
         pos_emb = (
             position_embeddings if position_embeddings is not None
             else kwargs.get("position_embeddings")
@@ -875,14 +812,12 @@ class LandmarkLocalAttention(BaseAttention):
             except Exception as e:
                 logger.debug("rotary_emb failed: %s", e)
 
-        # ---- Concat KV-cache ----
         if past_k is not None:
             K = torch.cat([past_k.to(k_new.dtype), k_new], dim=-2)
             V = torch.cat([past_v.to(v_new.dtype), v_new], dim=-2)
         else:
             K, V = k_new, v_new
 
-        # ---- [FIX-1] Write back cache ----
         present_kv: Any = None
         use_cache = kwargs.get("use_cache", False) or (
             past_key_value is not None and past_key_value is not False
@@ -894,30 +829,23 @@ class LandmarkLocalAttention(BaseAttention):
 
         N_kv = K.shape[-2]
 
-        # ---- GQA repeat ----
         if self.kv_repeat > 1:
             K_full = repeat_kv(K, self.kv_repeat)
             V_full = repeat_kv(V, self.kv_repeat)
         else:
             K_full, V_full = K, V
 
-        # ---- Kernel features ----
         Q_features = self.kernel_feature_map(q)
         K_features = self.kernel_feature_map(K_full)
 
-        # ---- Valid mask ----
         eff_mask = encoder_attention_mask if encoder_hidden_states is not None else attention_mask
         token_valid_kv: torch.Tensor | None = None
         if eff_mask is not None:
             token_valid_kv = get_token_valid_mask(eff_mask, B, N_kv, device)
 
-        # ============================================================
-        # 1. Landmark branch  — [FIX-4]
-        # ============================================================
         K_land, V_land, land_idx = self.select_landmarks_chunked(
             K_features, V_full, valid_mask=token_valid_kv,
         )
-        # Apply per-head correlation
         V_land_adj = torch.einsum(
             "bhld,hde->bhle", V_land, self.lora_W_corr.to(V_land.dtype)
         )
@@ -926,41 +854,30 @@ class LandmarkLocalAttention(BaseAttention):
             Q_features.float(), K_land.transpose(-2, -1).contiguous().float()
         )
 
-        # [FIX-6] Causal mask using absolute positions
         if self.is_decoder:
             q_abs = (
                 torch.arange(past_len, past_len + N, device=device)
                 .view(1, 1, N, 1)
             )
-            # land_idx is (B, H, L_land) with absolute positions
-            causal_land_mask = land_idx.unsqueeze(2) <= q_abs  # (B, H, N, L_land)
+            causal_land_mask = land_idx.unsqueeze(2) <= q_abs
             attn_land = attn_land.masked_fill(~causal_land_mask, -1e4)
 
         attn_land = softpick(attn_land, dim=-1)
         attn_land = self.dropout(attn_land)
         context_leka = torch.matmul(attn_land.to(V_full.dtype), V_land_adj)
 
-        # ============================================================
-        # 2. Local branch  — [FIX-5, FIX-6]
-        # ============================================================
         if N == N_kv:
-            # Prefill mode: block-wise is valid
             context_local = self.block_local_attention(
                 q, K_full, V_full, token_valid_kv
             )
         else:
-            # Decode mode: exact fallback
             context_local = self._exact_decode_local(
                 q, K_full, V_full, past_len, token_valid_kv
             )
 
-        # ============================================================
-        # 3. Gate fusion  — [FIX-3]
-        # ============================================================
         gate_val = torch.sigmoid(self.lora_local_gate).view(1, H, 1, 1).to(V_full.dtype)
         context = (1.0 - gate_val) * context_local + gate_val * context_leka
 
-        # ---- Head mask ----
         if head_mask is not None:
             if head_mask.dim() == 1:
                 hm = head_mask.view(1, -1, 1, 1)
@@ -972,7 +889,6 @@ class LandmarkLocalAttention(BaseAttention):
                 hm = head_mask
             context = context * hm.to(context.dtype)
 
-        # ---- Output projection ----
         context = (
             context.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
         )
@@ -985,7 +901,6 @@ class LandmarkLocalAttention(BaseAttention):
 
         out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
 
-        # ---- Return format ----
         if self.is_decoder:
             return out.to(dtype), present_kv
         return out.to(dtype), None
@@ -994,14 +909,10 @@ class LandmarkLocalAttention(BaseAttention):
         return 0.0
 
 
-# Backward-compat aliases
 LEKAv2Attention = LandmarkLocalAttention
 LEKAV2Attention = LandmarkLocalAttention
 
 
-# ===========================================================================
-# [FIX-10, FIX-11] Injection
-# ===========================================================================
 def inject_landmark_local(
     layer: Any = None,
     model: Any = None,
@@ -1025,7 +936,6 @@ def inject_landmark_local(
 
     cfg = model_config if model_config is not None else getattr(target, "config", None)
 
-    # ---- Whole-model traversal ----
     layer_list = None
     for path in (
         ("distilbert", "transformer", "layer"),
@@ -1066,7 +976,6 @@ def inject_landmark_local(
                 n_inj += 1
         return target if n_inj > 0 else None
 
-    # ---- Single-layer injection ----
     src_attn = old_attn
     if src_attn is None:
         for attr in ("attention", "self_attn", "attn", "self"):
@@ -1082,7 +991,6 @@ def inject_landmark_local(
     if src_attn is None:
         return None
 
-    # [FIX-11] Idempotency
     if (
         isinstance(src_attn, LandmarkLocalAttention)
         or "LandmarkLocal" in src_attn.__class__.__name__
@@ -1090,7 +998,6 @@ def inject_landmark_local(
     ):
         return None
 
-    # Skip hybrid layers
     c_name = src_attn.__class__.__name__
     if "DeltaNet" in c_name or "LinearAttention" in c_name:
         return None
@@ -1121,7 +1028,6 @@ def inject_landmark_local(
         if p is not None:
             new_attn.to(device=p.device, dtype=p.dtype)
 
-    # ---- Splice ----
     spliced = False
     if hasattr(target, "attention"):
         if hasattr(target.attention, "self"):
@@ -1154,9 +1060,6 @@ def inject_landmark_local(
     return new_attn
 
 
-# ===========================================================================
-# [FIX-13] Exports
-# ===========================================================================
 __all__ = [
     "LandmarkLocalAttention",
     "LEKAv2Attention",

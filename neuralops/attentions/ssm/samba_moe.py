@@ -29,8 +29,6 @@ except Exception:
 logger = logging.getLogger(__name__)
 
 
-
-
 class MinimalMoEFallback(nn.Module):
     """Fallback MoE layer when REAPMoE cannot be instantiated."""
 
@@ -83,8 +81,7 @@ class MinimalMoEFallback(nn.Module):
                 if out.shape[-1] < x.shape[-1]
                 else out[..., : x.shape[-1]]
             )
-        # Router aux loss: n_experts * sum(f_i * P_i)
-        density_1 = weights.view(-1, self.n_experts).mean(dim=0)  # [n_experts]
+        density_1 = weights.view(-1, self.n_experts).mean(dim=0)
         density_1_proxy = logits.softmax(dim=-1).view(-1, self.n_experts).mean(dim=0)
         self.aux_loss = self.n_experts * torch.sum(density_1 * density_1_proxy)
         return out, weights
@@ -303,7 +300,6 @@ class SambaMoEBlock(BaseAttention):
         moe_out = moe_out.to(target_dtype)
 
         if self.is_nested_encoder:
-            # Nested encoder: bypass outer LayerNorm (self.norm) and double residual
             out = x + moe_out
         else:
             norm_dtype = self.norm.weight.dtype if self.norm.weight is not None else target_dtype
@@ -343,7 +339,6 @@ def inject_samba_moe(
         if target is None:
             return None
 
-        # 1. Whole model traversal
         layer_list = None
         if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
             layer_list = target.distilbert.transformer.layer
@@ -376,7 +371,6 @@ def inject_samba_moe(
                     num_injected += 1
             return target if num_injected > 0 else None
 
-        # 2. Single layer injection
         src = old_attn
         if src is None:
             for attr in ("attention", "self_attn", "attn", "self"):
