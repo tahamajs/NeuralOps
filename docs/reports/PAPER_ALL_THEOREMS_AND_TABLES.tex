@@ -479,4 +479,25 @@ $4096$ & $0.001037$ & $0.500000$ & $0.00207$ & \textbf{TRUE} \\
 \end{tabular}
 \end{table}
 
+
+% ------------------------------------------------------------------------------
+% APPENDIX: ADJOINT BACKWARD STATE DYNAMICS
+% ------------------------------------------------------------------------------
+\appendices
+\section{Adjoint Backward State Dynamics and Roundoff Stability}
+
+\begin{lemma}[Floating-Point Roundoff Stability of the Adjoint Backward Recursion]
+Let the backward sensitivity state (adjoint variable) evolve according to the adjoint recursion:
+\begin{equation}
+\boldsymbol{\Lambda}_{t-1} = \gamma \boldsymbol{\Lambda}_t + \mathbf{G}_t, \quad \mathbf{G}_t = \nabla_{S_{t-1}} \ell_t, \quad t \in \{L, L-1, \dots, 1\}
+\end{equation}
+with boundary condition $\boldsymbol{\Lambda}_L = \mathbf{0}$, contractive decay $\gamma \in (0, 1)$, and bounded local gradient innovations \|\mathbf{G}_t\|_2 \le B_{\text{grad}}.
+Let $\hat{\boldsymbol{\Lambda}}_{t-1} = \operatorname{fl}(\gamma \hat{\boldsymbol{\Lambda}}_t + \mathbf{G}_t) = \gamma \hat{\boldsymbol{\Lambda}}_t + \mathbf{G}_t + \mathbf{E}_t^{\text{bwd}}$ denote the machine floating-point representation evaluated under machine precision $\epsilon_{\text{mach}}$ with local arithmetic roundoff perturbation \|\mathbf{E}_t^{\text{bwd}}\|_2 \le C_{\text{bwd}} \epsilon_{\text{mach}} (\gamma \|\hat{\boldsymbol{\Lambda}}_t\|_2 + \|\mathbf{G}_t\|_2).
+
+Then the accumulated backward roundoff error $\boldsymbol{\Delta}_0 = \boldsymbol{\Lambda}_0 - \hat{\boldsymbol{\Lambda}}_0$ is unconditionally bounded for arbitrary sequence length  \to \infty$:
+\begin{equation}
+\|\boldsymbol{\Lambda}_0 - \hat{\boldsymbol{\Lambda}}_0\|_2 \le \sum_{t=1}^L \gamma^{t-1} \|\mathbf{E}_t^{\text{bwd}}\|_2 \le \frac{C_{\text{bwd}} B_{\text{grad}} \epsilon_{\text{mach}}}{(1 - \gamma)^2} < \infty.
+\end{equation}
+\end{lemma}
+
 \end{document}
