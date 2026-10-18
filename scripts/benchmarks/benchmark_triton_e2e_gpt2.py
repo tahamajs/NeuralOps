@@ -12,7 +12,7 @@ import torch.nn.functional as F
 from transformers import GPT2Config, GPT2LMHeadModel
 
 import neuralops
-import neuralops.core.triton_kernels._types as tk_types
+import neuralops.core.triton_kernels as tk_types
 
 
 def run_benchmark():

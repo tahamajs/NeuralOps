@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# Author: Taha Majlesi
 """Comprehensive Pareto & Recovery Benchmark across all 72 compression engines.
 
 Sweeps across all 72 compression engines on simulated transformer weight layers:
@@ -18,10 +19,22 @@ import argparse
 import copy
 import gc
 import json
+import math
 import os
 from pathlib import Path
 import sys
 import time
+
+def fmt_opt(val, fmt=".2f", suffix="", default="-"):
+    if val is None:
+        return default
+    try:
+        f = float(val)
+        if math.isnan(f) or math.isinf(f):
+            return default
+        return f"{f:{fmt}}{suffix}"
+    except (ValueError, TypeError):
+        return default
 
 import torch
 import torch.nn as nn
@@ -164,11 +177,13 @@ def run_compression_pareto_benchmark(
                 comp_ratio = (orig_params / max(comp_params, 1))
 
                 # Decompression / inference forward latency
-                def comp_forward():
-                    with torch.no_grad():
-                        return comp_layer(probe_x)
+                def _make_forward(target_layer, target_x):
+                    def comp_forward():
+                        with torch.no_grad():
+                            return target_layer(target_x)
+                    return comp_forward
 
-                forward_metric = runner.measure_callable(comp_forward, batch_size=16, seq_len=1)
+                forward_metric = runner.measure_callable(_make_forward(comp_layer, probe_x), batch_size=16, seq_len=1)
 
                 shape_rec = {
                     "shape": f"{in_f}x{out_f}",
@@ -184,7 +199,11 @@ def run_compression_pareto_benchmark(
                 engine_record["shapes"][shape_name] = shape_rec
                 print(f"      {shape_name:20s}: Ratio={comp_ratio:4.1f}x | FrobErr={frobenius_err:7.4f} | CompTime={compress_ms:6.1f}ms | Latency={forward_metric.latency_ms_trimmed_mean:5.2f}ms")
 
-                del base_layer, comp_layer, probe_x, orig_y, comp_y
+                base_layer = None
+                comp_layer = None
+                probe_x = None
+                orig_y = None
+                comp_y = None
                 runner.reset_vram()
 
             except Exception as e:
@@ -219,9 +238,9 @@ def run_compression_pareto_benchmark(
             s = r["shapes"].get("attention_proj_4096", {})
             table.add_row(
                 r["name"],
-                f"{s.get('compression_ratio', 0.0):.1f}x",
-                f"{s.get('frobenius_error', 1.0):.4f}",
-                f"{s.get('compression_time_ms', 0.0):.1f}",
+                fmt_opt(s.get("compression_ratio"), fmt=".1f", suffix="x", default="0.0x"),
+                fmt_opt(s.get("frobenius_error"), fmt=".4f", default="1.0000"),
+                fmt_opt(s.get("compression_time_ms"), fmt=".1f", default="0.0"),
                 "[green]OK[/green]" if s.get("status") == "OK" else "[red]ERR[/red]",
             )
         console.print(table)

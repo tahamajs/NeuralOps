@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# Author: Taha Majlesi
 """
 Comprehensive 6-Pillar Accuracy-Recovery & Distillation Benchmark on NVIDIA RTX 4070.
 Evaluates 6 architectures:
@@ -23,15 +25,12 @@ Outputs:
   - Markdown: results/v13_deep_empirical_suite/ablation_6pillar/ablation_summary.md
 """
 
-import os
-import sys
-import time
-import json
 import csv
+import json
+import time
 from pathlib import Path
 
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 from transformers import GPT2Config, GPT2LMHeadModel
 
@@ -117,9 +116,9 @@ def evaluate_metrics(model):
 results = []
 
 for arch_key, arch_label in architectures:
-    print(f"\n=======================================================")
+    print("\n=======================================================")
     print(f"BENCHMARKING ARCHITECTURE: {arch_label} ({arch_key})")
-    print(f"=======================================================")
+    print("=======================================================")
 
     for regime_key, regime_label in regimes:
         student = build_student(arch_key)
