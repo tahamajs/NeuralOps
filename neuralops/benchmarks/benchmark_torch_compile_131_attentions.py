@@ -334,10 +334,15 @@ def benchmark_torch_compile(strict_compile_check: bool = True, output_path: str 
     print("=" * 80)
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser(description="Strict torch.compile Inductor Benchmark for Attention Mechanisms")
     parser.add_argument("--strict-compile-check", action="store_true", default=True, help="Enforce strict compile validation")
     parser.add_argument("--output", type=str, default="results/benchmark_torch_compile_131_corrected.csv", help="Output CSV path")
     args = parser.parse_args()
 
     benchmark_torch_compile(strict_compile_check=args.strict_compile_check, output_path=args.output)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
