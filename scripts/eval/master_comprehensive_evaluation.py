@@ -458,7 +458,7 @@ def generate_markdown_report(payload: Dict[str, Any]) -> str:
         "",
         "## 1. Attention Architectural Families Across Context Horizons",
         "",
-        "| Architecture Family | Context (L) | Perplexity (PPL) | Linear CKA | Output CosSim | Max Abs Dev ($\ell_\\infty$) | Peak VRAM (MB) | Latency P50 (ms) | Throughput (tok/s) |",
+        r"| Architecture Family | Context (L) | Perplexity (PPL) | Linear CKA | Output CosSim | Max Abs Dev ($\ell_\infty$) | Peak VRAM (MB) | Latency P50 (ms) | Throughput (tok/s) |",
         "| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |",
     ]
 
