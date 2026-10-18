@@ -1,7 +1,7 @@
 """Tests for eval_data module."""
 
 import torch
-from neuralops.evaluation.eval_data import (
+from evaluation.eval_data import (
     _generate_synthetic_batch,
     get_dataset_batch,
 )
