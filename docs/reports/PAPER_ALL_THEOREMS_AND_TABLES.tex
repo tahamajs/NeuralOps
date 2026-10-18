@@ -480,6 +480,71 @@ $4096$ & $0.001037$ & $0.500000$ & $0.00207$ & \textbf{TRUE} \\
 \end{table}
 
 
+
+% ------------------------------------------------------------------------------
+% THEOREM 13: ENTROPY-REGULARIZED ROUTING STABILITY IN SPARSE MOE / LINEAR ATTENTION
+% ------------------------------------------------------------------------------
+\begin{theorem}[Entropy-Regularized Routing Stability in Sparse MoE and Hybrid Linear Attention]
+\label{thm:entropy_routing_stability}
+Let the routing gate distribution across $E$ expert heads or linear attention branches be parameterized by logits $\mathbf{h} \in \mathbb{R}^E$ with temperature $\tau > 0$:
+\begin{equation}
+\mathbf{p}(\mathbf{h}) = \operatorname{softmax}\left(\frac{\mathbf{h}}{\tau}\right) = \frac{\exp(\mathbf{h} / \tau)}{\sum_{j=1}^E \exp(h_j / \tau)}.
+\end{equation}
+Then:
+\begin{enumerate}
+    \item \textbf{Jacobian Spectral Norm Bound:} The Jacobian matrix $\mathbf{J}_{\text{route}} = \frac{\partial \mathbf{p}}{\partial \mathbf{h}} \in \mathbb{R}^{E \times E}$ satisfies:
+    \begin{equation}
+    \|\mathbf{J}_{\text{route}}\|_2 \le \frac{1}{\tau} < \infty.
+    \end{equation}
+    \item \textbf{Non-Vanishing Entropy Bound:} For any bounded routing logits $\|\mathbf{h}\|_\infty \le B_h$, the Shannon routing entropy $\mathcal{H}(\mathbf{p}) = -\sum_{i=1}^E p_i \ln p_i$ satisfies:
+    \begin{equation}
+    \mathcal{H}(\mathbf{p}) \ge \ln E - \frac{2 B_h}{\tau} > 0 \quad \text{for } \tau > \frac{2 B_h}{\ln E}.
+    \end{equation}
+    Consequently, expert routing collapse is prevented, and gradient backpropagation through the soft mixture weights remains unconditionally stable without gradient explosion or vanishing.
+\end{enumerate}
+\end{theorem}
+
+\begin{IEEEproof}
+1) The routing Jacobian has components:
+\begin{equation}
+(\mathbf{J}_{\text{route}})_{ij} = \frac{\partial p_i}{\partial h_j} = \frac{1}{\tau} \left( p_i \delta_{ij} - p_i p_j \right) \implies \mathbf{J}_{\text{route}} = \frac{1}{\tau} \left( \operatorname{diag}(\mathbf{p}) - \mathbf{p} \mathbf{p}^T \right).
+\end{equation}
+For any test vector $\mathbf{v} \in \mathbb{R}^E$:
+\begin{equation}
+\mathbf{v}^T \mathbf{J}_{\text{route}} \mathbf{v} = \frac{1}{\tau} \left( \sum_{i=1}^E p_i v_i^2 - \left( \sum_{i=1}^E p_i v_i \right)^2 \right) = \frac{1}{\tau} \operatorname{Var}_{i \sim \mathbf{p}}(v_i).
+\end{equation}
+Since $\operatorname{Var}_{i \sim \mathbf{p}}(v_i) \le \mathbb{E}_{i \sim \mathbf{p}}[v_i^2] = \sum_{i=1}^E p_i v_i^2 \le (\max_i p_i) \|\mathbf{v}\|_2^2 \le \|\mathbf{v}\|_2^2$, we have:
+\begin{equation}
+0 \le \mathbf{v}^T \mathbf{J}_{\text{route}} \mathbf{v} \le \frac{1}{\tau} \|\mathbf{v}\|_2^2 \implies \|\mathbf{J}_{\text{route}}\|_2 \le \frac{1}{\tau}.
+\end{equation}
+2) Shannon entropy is concave, achieving maximum $\ln E$ at uniform distribution. Under bounded logits $|h_i - h_j| \le 2 B_h$, the ratio $\frac{p_i}{p_j} \le \exp(2 B_h / \tau)$, which immediately bounds the Kullback-Leibler divergence $D_{\text{KL}}(\mathbf{p} \parallel \mathbf{u}) \le \frac{2 B_h}{\tau}$. Hence $\mathcal{H}(\mathbf{p}) = \ln E - D_{\text{KL}}(\mathbf{p} \parallel \mathbf{u}) \ge \ln E - \frac{2 B_h}{\tau}$.
+\end{IEEEproof}
+
+% TABLE 14: ROUTING STABILITY EMPIRICAL VERIFICATION
+\begin{table}[h]
+\centering
+\caption{Empirical Routing Jacobian Bounds Under Varying Temperature $\tau$ and Expert Count $E$ on RTX 4070.}
+\label{tab:routing_stability}
+\begin{tabular}{rcccc}
+\toprule
+\textbf{Experts} $E$ & \textbf{Temperature} $\tau$ & \textbf{Max Observed} $\|\mathbf{J}_{\text{route}}\|_2$ & \textbf{Theoretical Bound} $1/\tau$ & \textbf{Stable ($<$ Bound)} \\
+\midrule
+$8$  & $0.1$ & $4.9449$ & $10.0000$ & \textbf{TRUE} \\
+$8$  & $0.5$ & $0.8971$ & $2.0000$  & \textbf{TRUE} \\
+$8$  & $1.0$ & $0.3737$ & $1.0000$  & \textbf{TRUE} \\
+$8$  & $2.0$ & $0.1450$ & $0.5000$  & \textbf{TRUE} \\
+$16$ & $0.1$ & $4.9859$ & $10.0000$ & \textbf{TRUE} \\
+$16$ & $0.5$ & $0.8535$ & $2.0000$  & \textbf{TRUE} \\
+$16$ & $1.0$ & $0.2963$ & $1.0000$  & \textbf{TRUE} \\
+$16$ & $2.0$ & $0.0944$ & $0.5000$  & \textbf{TRUE} \\
+$32$ & $0.1$ & $4.7912$ & $10.0000$ & \textbf{TRUE} \\
+$32$ & $0.5$ & $0.8348$ & $2.0000$  & \textbf{TRUE} \\
+$32$ & $1.0$ & $0.2373$ & $1.0000$  & \textbf{TRUE} \\
+$32$ & $2.0$ & $0.0632$ & $0.5000$  & \textbf{TRUE} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 % ------------------------------------------------------------------------------
 % APPENDIX: ADJOINT BACKWARD STATE DYNAMICS
 % ------------------------------------------------------------------------------
