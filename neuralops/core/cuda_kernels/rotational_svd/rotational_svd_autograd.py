@@ -113,7 +113,7 @@ class _RotationalSVDFunction(torch.autograd.Function):
         U = u_r if u_r.shape[1] == R else u_r.t()
         N = U.shape[0]
 
-        mod = _get_module()
+        _mod = _get_module()
         x_rot = torch.matmul(x_2d, r_in)
         z = torch.matmul(x_rot, V.t())
         out_2d = torch.matmul(z, U.t())
