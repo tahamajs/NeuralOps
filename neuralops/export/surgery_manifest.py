@@ -95,12 +95,63 @@ class SurgeryManifest:
         manifest.metadata.update(kwargs)
         return manifest
 
+    def compute_sha256(self) -> str:
+        """Computes deterministic SHA-256 hash of manifest structure for cryptographic integrity."""
+        import hashlib
+        serialized = json.dumps(self.to_dict(), sort_keys=True)
+        return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
+
+    @property
+    def manifest_hash(self) -> str:
+        return self.compute_sha256()
+
+    def validate_schema(self) -> bool:
+        """Validates that all surgery entries conform to required fields and types."""
+        for att in self.attentions:
+            if not isinstance(att.layer_path, str) or not isinstance(att.attention_type, str):
+                return False
+        for comp in self.compressions:
+            if not isinstance(comp.layer_path, str) or not isinstance(comp.compressor_name, str):
+                return False
+            if comp.rank <= 0:
+                return False
+        return True
+
+    def checkpoint(self, checkpoint_path: Union[str, Path]) -> str:
+        """Saves a standalone versioned manifest checkpoint with embedded integrity hash."""
+        p = Path(checkpoint_path)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        payload = self.to_dict()
+        payload["_manifest_sha256"] = self.compute_sha256()
+        with open(p, "w", encoding="utf-8") as f:
+            json.dump(payload, f, indent=2)
+        return str(p)
+
+    @classmethod
+    def load_checkpoint(cls, checkpoint_path: Union[str, Path], verify_hash: bool = True) -> SurgeryManifest:
+        """Loads and verifies a manifest checkpoint."""
+        p = Path(checkpoint_path)
+        with open(p, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        saved_hash = data.pop("_manifest_sha256", None)
+        manifest = cls.from_dict(data)
+        if verify_hash and saved_hash:
+            current_hash = manifest.compute_sha256()
+            if current_hash != saved_hash:
+                logger.warning(
+                    "SurgeryManifest checksum mismatch: expected %s, got %s",
+                    saved_hash,
+                    current_hash,
+                )
+        return manifest
+
     def save_pretrained(self, save_directory: Union[str, Path]) -> None:
         save_path = Path(save_directory)
         save_path.mkdir(parents=True, exist_ok=True)
         manifest_file = save_path / "surgery_manifest.json"
         with open(manifest_file, "w", encoding="utf-8") as f:
             json.dump(self.to_dict(), f, indent=2)
+
 
 
 def record_attention_surgery(

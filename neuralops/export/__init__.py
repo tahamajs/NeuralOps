@@ -11,7 +11,12 @@ from neuralops.export.exporter import (
     compile_to_so,
     AOTICompiledModelRunner,
 )
-from neuralops.export.serving import VLLMAdapter, TGIAdapter
+from neuralops.export.serving import (
+    VLLMAdapter,
+    TGIAdapter,
+    export_serving_bundle,
+    validate_serving_metadata,
+)
 from neuralops.export.surgery_manifest import (
     SurgeryManifest,
     replay_surgery_manifest,
@@ -26,6 +31,8 @@ __all__ = [
     "AOTICompiledModelRunner",
     "VLLMAdapter",
     "TGIAdapter",
+    "export_serving_bundle",
+    "validate_serving_metadata",
     "SurgeryManifest",
     "replay_surgery_manifest",
     "merge_for_inference",

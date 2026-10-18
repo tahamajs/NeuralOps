@@ -221,6 +221,98 @@ class ColumnParallelSVDLinear(nn.Module):
         return out
 
 
+class ColumnParallelLinear(nn.Module):
+    """
+    Standard Megatron-style ColumnParallelLinear.
+    Splits output features d_out across TP workers (d_out_local = d_out / W).
+    """
+
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        tp_size: int = 1,
+        tp_rank: int = 0,
+        bias: bool = True,
+        process_group: Any = None,
+        gather_output: bool = False,
+    ) -> None:
+        super().__init__()
+        assert out_features % tp_size == 0, f"out_features {out_features} must be divisible by tp_size {tp_size}"
+        self.in_features = in_features
+        self.out_features = out_features
+        self.tp_size = tp_size
+        self.tp_rank = tp_rank
+        self.local_out_features = out_features // tp_size
+        self.process_group = process_group
+        self.gather_output = gather_output
+
+        self.weight = nn.Parameter(torch.empty(self.local_out_features, in_features))
+        nn.init.kaiming_uniform_(self.weight, a=5**0.5)
+
+        if bias:
+            self.bias = nn.Parameter(torch.zeros(self.local_out_features))
+        else:
+            self.register_parameter("bias", None)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        input_parallel = copy_to_model_parallel_region(x, self.process_group)
+        output_parallel = torch.matmul(input_parallel, self.weight.t())
+        if self.bias is not None:
+            output_parallel = output_parallel + self.bias
+        return output_parallel
+
+
+class RowParallelLinear(nn.Module):
+    """
+    Standard Megatron-style RowParallelLinear.
+    Splits input features d_in across TP workers (d_in_local = d_in / W).
+    Performs local GEMM and an All-Reduce sum across the TP group.
+    """
+
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        tp_size: int = 1,
+        tp_rank: int = 0,
+        bias: bool = True,
+        input_is_parallel: bool = True,
+        process_group: Any = None,
+    ) -> None:
+        super().__init__()
+        assert in_features % tp_size == 0, f"in_features {in_features} must be divisible by tp_size {tp_size}"
+        self.in_features = in_features
+        self.out_features = out_features
+        self.tp_size = tp_size
+        self.tp_rank = tp_rank
+        self.local_in_features = in_features // tp_size
+        self.input_is_parallel = input_is_parallel
+        self.process_group = process_group
+
+        self.weight = nn.Parameter(torch.empty(out_features, self.local_in_features))
+        nn.init.kaiming_uniform_(self.weight, a=5**0.5)
+
+        if bias:
+            self.bias = nn.Parameter(torch.zeros(out_features))
+        else:
+            self.register_parameter("bias", None)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        if not self.input_is_parallel and self.tp_size > 1:
+            start_idx = self.tp_rank * self.local_in_features
+            end_idx = start_idx + self.local_in_features
+            x_local = x[..., start_idx:end_idx]
+        else:
+            x_local = x
+
+        output_parallel = torch.matmul(x_local, self.weight.t())
+        output_ = reduce_from_model_parallel_region(output_parallel, self.process_group)
+        if self.bias is not None:
+            output_ = output_ + self.bias
+        return output_
+
+
 # ---------------------------------------------------------------------------
 # 3. TensorParallelRecurrentAttention
 # ---------------------------------------------------------------------------
@@ -303,6 +395,8 @@ def shard_model_tensor_parallel(
 
 __all__ = [
     "SimulatedTPGroup",
+    "ColumnParallelLinear",
+    "RowParallelLinear",
     "RankParallelSVDLinear",
     "RowParallelSVDLinear",
     "ColumnParallelSVDLinear",

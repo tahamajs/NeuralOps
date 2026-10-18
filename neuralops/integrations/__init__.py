@@ -6,7 +6,14 @@ Author: Taha Majlesi
 
 from __future__ import annotations
 
-from neuralops.integrations.hf_automodel import register_hf_automodel, AutoNeuralOpsModel
+from neuralops.integrations.hf_automodel import (
+    register_hf_automodel,
+    AutoNeuralOpsModel,
+    AutoNeuralOpsForCausalLM,
+    AutoNeuralOpsForSequenceClassification,
+    patch_model_attention,
+    patch_transformers,
+)
 from neuralops.integrations.distributed_compile import (
     compile_attention_module,
     get_deepspeed_config,
@@ -42,6 +49,10 @@ from neuralops.integrations.tensorrt_llm import (
 __all__ = [
     "register_hf_automodel",
     "AutoNeuralOpsModel",
+    "AutoNeuralOpsForCausalLM",
+    "AutoNeuralOpsForSequenceClassification",
+    "patch_model_attention",
+    "patch_transformers",
     "compile_attention_module",
     "get_deepspeed_config",
     "apply_fsdp_wrapping",

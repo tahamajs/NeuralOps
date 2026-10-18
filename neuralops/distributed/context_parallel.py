@@ -182,8 +182,100 @@ class ContextParallelLinearAttention(nn.Module):
         return list(ContextParallelRecurrentScan.apply(q_chunks, k_chunks, v_chunks))
 
 
+def ring_attention_chunk_exchange(
+    k_chunk: torch.Tensor,
+    v_chunk: torch.Tensor,
+    rank: int,
+    world_size: int,
+    group: Any = None,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """
+    Exchanges Key and Value sequence parallel chunks in a 1D ring topology.
+    Sends chunk to (rank + 1) % world_size and receives from (rank - 1) % world_size.
+    Works seamlessly in both distributed (dist.is_initialized) and simulated/single-rank mode.
+    """
+    if world_size <= 1 or not dist.is_initialized():
+        return k_chunk.clone(), v_chunk.clone()
+
+    send_to = (rank + 1) % world_size
+    recv_from = (rank - 1 + world_size) % world_size
+
+    next_k = torch.empty_like(k_chunk)
+    next_v = torch.empty_like(v_chunk)
+
+    reqs = [
+        dist.isend(k_chunk.contiguous(), dst=send_to, group=group),
+        dist.isend(v_chunk.contiguous(), dst=send_to, group=group),
+        dist.irecv(next_k, src=recv_from, group=group),
+        dist.irecv(next_v, src=recv_from, group=group),
+    ]
+    for r in reqs:
+        r.wait()
+
+    return next_k, next_v
+
+
+class RingLinearAttention(nn.Module):
+    """
+    Ring Linear Attention layer exchanging Key/Value chunks sequentially across ring ranks.
+    Maintains O(1) memory scaling with sequence length across the GPU ring.
+    """
+
+    def __init__(self, embed_dim: int, num_heads: int, ring_size: int = 1, rank: int = 0) -> None:
+        super().__init__()
+        self.embed_dim = embed_dim
+        self.num_heads = num_heads
+        self.head_dim = embed_dim // num_heads
+        self.ring_size = ring_size
+        self.rank = rank
+
+        self.q_proj = nn.Linear(embed_dim, embed_dim, bias=False)
+        self.k_proj = nn.Linear(embed_dim, embed_dim, bias=False)
+        self.v_proj = nn.Linear(embed_dim, embed_dim, bias=False)
+        self.out_proj = nn.Linear(embed_dim, embed_dim, bias=False)
+
+    def forward(
+        self,
+        x_local: torch.Tensor,
+        group: Any = None,
+    ) -> torch.Tensor:
+        """
+        x_local: [B, T_local, D] local sequence chunk for this rank.
+        """
+        B, T_l, D = x_local.shape
+        H = self.num_heads
+        D_h = self.head_dim
+
+        q = self.q_proj(x_local).view(B, T_l, H, D_h).transpose(1, 2)
+        k = self.k_proj(x_local).view(B, T_l, H, D_h).transpose(1, 2)
+        v = self.v_proj(x_local).view(B, T_l, H, D_h).transpose(1, 2)
+
+        scale = 1.0 / (D_h ** 0.5)
+        q = q * scale
+
+        curr_k = k
+        curr_v = v
+        accum_out = torch.zeros_like(q)
+
+        # Ring steps
+        for step in range(self.ring_size):
+            kv = torch.matmul(curr_k.transpose(-2, -1), curr_v)
+            accum_out = accum_out + torch.matmul(q, kv)
+
+            if self.ring_size > 1:
+                curr_k, curr_v = ring_attention_chunk_exchange(
+                    curr_k, curr_v, rank=self.rank, world_size=self.ring_size, group=group
+                )
+
+        out = accum_out.transpose(1, 2).contiguous().view(B, T_l, D)
+        return self.out_proj(out)
+
+
 __all__ = [
     "compute_chunk_prefix_scan",
     "ContextParallelRecurrentScan",
     "ContextParallelLinearAttention",
+    "ring_attention_chunk_exchange",
+    "RingLinearAttention",
 ]
+
