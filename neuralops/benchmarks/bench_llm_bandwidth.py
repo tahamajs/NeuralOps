@@ -133,7 +133,7 @@ def run_bandwidth_benchmark(
 
     device = torch.device(device_str if (torch.cuda.is_available() and "cuda" in device_str) else "cpu")
     if device.type == "cuda":
-        torch.cuda.set_device(device)
+        torch.cuda.set_device(device.index if device.index is not None else 0)
 
     dtype_map = {
         "float16": torch.float16,
@@ -337,7 +337,7 @@ def main():
     parser.add_argument("--output", type=str, default="results/benchmark_4_kernels_corrected.csv", help="Path to save CSV output")
     parser.add_argument("--output-json", type=str, default=None, help="Path to save JSON output (defaults to same stem as --output)")
     parser.add_argument("--device", type=str, default="cuda:0" if torch.cuda.is_available() else "cpu", help="Device to execute benchmark")
-    parser.add_argument("--dtype", type=str, default="float16", choices=["float16", "float32", "bfloat16"], help="Data type precision")
+    parser.add_argument("--dtype", type=str, default="float16", choices=["float16", "float32", "bfloat16", "fp16", "fp32", "bf16"], help="Data type precision")
     parser.add_argument("--warmup", type=int, default=10, help="Number of warmup iterations")
     parser.add_argument("--repeat", type=int, default=30, help="Number of measurement repetitions")
     parser.add_argument("--quick", action="store_true", help="Quick verification pass with fewer configs and iterations")
@@ -349,19 +349,26 @@ def main():
     warmup = 2 if args.quick else args.warmup
     repeat = 5 if args.quick else args.repeat
     output_json = args.output_json
-    if output_json is None and args.output:
+    output_csv = args.output
+    if args.output and args.output.endswith(".json"):
+        output_json = args.output
+        output_csv = args.output[:-5] + ".csv"
+    elif output_json is None and args.output:
         base, _ = os.path.splitext(args.output)
         output_json = base + ".json"
+
+    dtype_map = {"fp16": "float16", "fp32": "float32", "bf16": "bfloat16"}
+    dtype_str = dtype_map.get(args.dtype.lower(), args.dtype.lower())
 
     run_bandwidth_benchmark(
         configs=configs,
         device_str=args.device,
-        dtype_str=args.dtype,
+        dtype_str=dtype_str,
         warmup=warmup,
         repeat=repeat,
         peak_bw_gbps=args.peak_bw,
         l2_cache_mb=args.l2_cache_mb,
-        output_csv=args.output,
+        output_csv=output_csv,
         output_json=output_json,
     )
     return 0

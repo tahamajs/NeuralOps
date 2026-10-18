@@ -33,7 +33,7 @@ def run_backward_stress_test(
 
     device = torch.device(device_str if (torch.cuda.is_available() and "cuda" in device_str) else "cpu")
     if device.type == "cuda":
-        torch.cuda.set_device(device)
+        torch.cuda.set_device(device.index if device.index is not None else 0)
 
     from neuralops.core.cuda_kernels.cross_attention.cross_attn_autograd import cross_attention, cross_attention_pytorch_ref
     from neuralops.core.cuda_kernels.tt_contraction.tt_autograd import tt_contraction, tt_contraction_pytorch_ref

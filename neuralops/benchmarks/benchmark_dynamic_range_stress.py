@@ -41,7 +41,7 @@ def run_dynamic_range_benchmark(
 
     device = torch.device(device_str if (torch.cuda.is_available() and "cuda" in device_str) else "cpu")
     if device.type == "cuda":
-        torch.cuda.set_device(device)
+        torch.cuda.set_device(device.index if device.index is not None else 0)
 
     from neuralops.core.triton_kernels.gla_scan import gla_scan
     from neuralops.core.cuda_kernels.sparse_attention import block_sparse_attn

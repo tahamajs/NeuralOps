@@ -30,7 +30,7 @@ def run_all_26_kernels(
     """Execute direct 26 Triton kernel benchmarks against PyTorch references."""
     device = torch.device(device_str if (torch.cuda.is_available() and "cuda" in device_str) else "cpu")
     if device.type == "cuda":
-        torch.cuda.set_device(device)
+        torch.cuda.set_device(device.index if device.index is not None else 0)
 
     dtype_map = {
         "float16": torch.float16,

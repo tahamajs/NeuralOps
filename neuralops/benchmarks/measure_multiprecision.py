@@ -48,7 +48,7 @@ def measure_benchmark(
 
     device = torch.device(device_str if (torch.cuda.is_available() and "cuda" in device_str) else "cpu")
     if device.type == "cuda":
-        torch.cuda.set_device(device)
+        torch.cuda.set_device(device.index if device.index is not None else 0)
 
     from neuralops.core.triton_kernels.gla_scan import gla_scan
     from neuralops.core.triton_kernels.differential_attention import triton_differential_attention
@@ -348,13 +348,19 @@ def main():
 
     selected_kernels = [k.strip() for k in args.kernels.split(",")] if args.kernels else None
 
+    output_json = args.output_json
+    output_csv = args.output
+    if args.output and args.output.endswith(".json"):
+        output_json = args.output
+        output_csv = args.output[:-5] + ".csv"
+
     measure_benchmark(
         device_str=args.device,
         precisions_list=prec_list,
         warmup=warmup,
         repeat=repeat,
-        output_csv=args.output,
-        output_json=args.output_json,
+        output_csv=output_csv,
+        output_json=output_json,
         output_tex=args.tex_output,
         selected_kernels=selected_kernels,
     )
