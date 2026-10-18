@@ -21,7 +21,7 @@ from datasets import load_dataset
 
 from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.eval_all_models_datasets import apply_module_to_model
-from neuralops.core._attention_surgery import calibrate_surgically_replaced_model
+from neuralops.core.attention_surgery import calibrate_surgically_replaced_model
 
 def main():
     device = "cuda" if torch.cuda.is_available() else "cpu"

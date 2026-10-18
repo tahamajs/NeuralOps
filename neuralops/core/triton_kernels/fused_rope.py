@@ -12,8 +12,6 @@ import torch
 from neuralops.core.triton_kernels._common import HAS_TRITON, triton, tl
 from neuralops.core.utils.rope import fused_rope_embedding
 
-__all__ = ["fused_rope_triton", "fused_rope_embedding_kernel"]
-
 
 if HAS_TRITON and tl is not None:
     @triton.jit
@@ -62,6 +60,8 @@ if HAS_TRITON and tl is not None:
 
         tl.store(OUT_K_ptr + i_b * stride_okb + i_h * stride_okh + offs_n[:, None] * stride_okn + offs_d1[None, :] * stride_okd, ok1, mask=mask_n)
         tl.store(OUT_K_ptr + i_b * stride_okb + i_h * stride_okh + offs_n[:, None] * stride_okn + offs_d2[None, :] * stride_okd, ok2, mask=mask_n)
+else:
+    fused_rope_fwd_kernel = None
 
 
 def _apply_rope_rotation(x: torch.Tensor, cos: torch.Tensor, sin: torch.Tensor) -> torch.Tensor:
@@ -79,6 +79,9 @@ def _apply_rope_rotation(x: torch.Tensor, cos: torch.Tensor, sin: torch.Tensor) 
     out1 = x1 * c - x2 * s
     out2 = x2 * c + x1 * s
     return torch.cat([out1, out2], dim=-1)
+
+
+apply_rope_rotation = _apply_rope_rotation
 
 
 def _apply_rope_inverse_rotation(grad: torch.Tensor, cos: torch.Tensor, sin: torch.Tensor) -> torch.Tensor:
@@ -287,4 +290,7 @@ __all__ = [
     "fused_rope_embedding_kernel",
     "fused_unified_rope_offset_triton",
     "fused_unified_rope_offset_pytorch",
+    "fused_rope_fwd_kernel",
+    "_apply_rope_rotation",
+    "apply_rope_rotation",
 ]

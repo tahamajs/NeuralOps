@@ -211,6 +211,13 @@ def _local_window_attention_v2(
     radius = window // 2
     scale = 1.0 / math.sqrt(int(D))
 
+    if Q.is_cuda and token_valid is None and past_len == 0 and N == N_k and D <= 256:
+        try:
+            from neuralops.core.cuda_kernels.hybrid_local_kernel import hybrid_local_attn
+            return hybrid_local_attn(Q, K, V, radius=radius, is_causal=is_decoder)
+        except Exception:
+            pass
+
     abs_q = (past_len + torch.arange(N, device=Q.device)).unsqueeze(1)
     abs_k = torch.arange(N_k, device=Q.device).unsqueeze(0)
     dist = (abs_q - abs_k).abs()
@@ -912,7 +919,14 @@ class HybridLocalKernelAttention(BaseAttention):
 
             alpha = torch.sigmoid(self.fusion_gate(hidden_states)).unsqueeze(-1)
             alpha = alpha.transpose(1, 2)
-            fused = alpha * local_out + (1.0 - alpha) * global_out
+            if local_out.is_cuda:
+                try:
+                    from neuralops.core.cuda_kernels.hybrid_local_kernel import hybrid_two_branch_blend
+                    fused = hybrid_two_branch_blend(local_out, global_out, alpha)
+                except Exception:
+                    fused = alpha * local_out + (1.0 - alpha) * global_out
+            else:
+                fused = alpha * local_out + (1.0 - alpha) * global_out
         else:
             fused = local_out
 
