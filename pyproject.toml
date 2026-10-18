@@ -128,8 +128,13 @@ export = [
     "onnxruntime",
 ]
 
-# Development
+# Test
+test = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+]
 
+# Development
 dev = [
     "pytest>=7.4.0",
     "pytest-cov>=4.1.0",
@@ -169,11 +174,11 @@ neuralops_vllm = "neuralops.integrations.vllm:register_neuralops_vllm_plugin"
 
 
 [project.urls]
-Homepage = "https://github.com/tahamajs/SVD_linear_Attention"
-Repository = "https://github.com/tahamajs/SVD_linear_Attention"
-Issues = "https://github.com/tahamajs/SVD_linear_Attention/issues"
-Documentation = "https://github.com/tahamajs/SVD_linear_Attention#readme"
-Changelog = "https://github.com/tahamajs/SVD_linear_Attention/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/tahamajs/NeuralOps"
+Repository = "https://github.com/tahamajs/NeuralOps"
+Issues = "https://github.com/tahamajs/NeuralOps/issues"
+Documentation = "https://github.com/tahamajs/NeuralOps#readme"
+Changelog = "https://github.com/tahamajs/NeuralOps/blob/main/CHANGELOG.md"
 
 [tool.setuptools.packages.find]
 where = ["."]
@@ -202,3 +207,11 @@ neuralops = [
     "**/*.cpp",
     "**/*.h",
 ]
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+

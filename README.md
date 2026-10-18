@@ -12,11 +12,11 @@
 [![PyPI Downloads](https://img.shields.io/pypi/dm/neuralops.svg)](https://pypi.org/project/neuralops/)
 [![Python Versions](https://img.shields.io/pypi/pyversions/neuralops.svg)](https://pypi.org/project/neuralops/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![CI/CD Status](https://img.shields.io/badge/CI%2FCD-1%2C703%20%2F%201%2C703%20PASS%20(100%25)-brightgreen)](https://github.com/tahamajs/SVD_linear_Attention/actions)
+[![CI/CD Status](https://img.shields.io/badge/CI%2FCD-1%2C703%20%2F%201%2C703%20PASS%20(100%25)-brightgreen)](https://github.com/tahamajs/NeuralOps/actions)
 [![PyTorch 2.11+](https://img.shields.io/badge/PyTorch-2.11%2B%20torch.compile-EE4C2C?logo=pytorch&logoColor=white)](https://pytorch.org/)
 [![CUDA 12.8+](https://img.shields.io/badge/CUDA-12.8%20%2F%2013.2-76B900?logo=nvidia&logoColor=white)](https://developer.nvidia.com/cuda-toolkit)
 [![Hardware Verified](https://img.shields.io/badge/Hardware%20Verified-RTX%204070%20(SM%208.9)-76B900?logo=nvidia&logoColor=white)](docs/reports/GPU_ALL_MODULES_CAPABILITIES_REPORT.md)
-[![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://tahamajs.github.io/SVD_linear_Attention/)
+[![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://tahamajs.github.io/NeuralOps/)
 [![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-neuralops-yellow)](https://huggingface.co/tahamajs/distilbert-svd-attention)
 
 </div>
@@ -423,8 +423,8 @@ pip install neuralops
 pip install "neuralops[cuda,export,eval,mlops]"
 
 # 3. Development editable install from source
-git clone https://github.com/tahamajs/SVD_linear_Attention.git
-cd SVD_linear_Attention
+git clone https://github.com/tahamajs/NeuralOps.git
+cd NeuralOps
 pip install -e ".[dev,cuda]"
 ```
 
@@ -1590,7 +1590,7 @@ If you use NeuralOps, its subquadratic attention kernels, compression engines, o
   title = {NeuralOps: Unified Platform for Subquadratic Attention and Deep Model Compression},
   year = {2026},
   publisher = {GitHub},
-  howpublished = {\url{https://github.com/tahamajs/SVD_linear_Attention}},
+  howpublished = {\url{https://github.com/tahamajs/NeuralOps}},
   version = {1.4.0}
 }
 

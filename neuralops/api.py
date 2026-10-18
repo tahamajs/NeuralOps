@@ -377,15 +377,27 @@ def compile_to_so(
 
 # =====================================================================
 # 2. Discovery Operations
-# =====================================================================
+def _ensure_registries_loaded() -> None:
+    """Ensure all subpackages registering attentions and compressors are imported."""
+    try:
+        import neuralops.attentions  # noqa: F401
+    except Exception as exc:
+        logger.debug("Error loading neuralops.attentions: %s", exc)
+    try:
+        import neuralops.compression_engine  # noqa: F401
+    except Exception as exc:
+        logger.debug("Error loading neuralops.compression_engine: %s", exc)
+
 
 def list_attentions() -> List[str]:
     """Return a sorted list of all available canonical attention module names."""
+    _ensure_registries_loaded()
     return sorted(list(ATTENTION_REGISTRY.keys()))
 
 
 def list_compressors() -> List[str]:
     """Return a sorted list of all available canonical compressor names."""
+    _ensure_registries_loaded()
     return sorted(list(COMPRESSOR_REGISTRY.keys()))
 
 
@@ -929,6 +941,7 @@ def validate(
 
 def info() -> Dict[str, Any]:
     """Return diagnostic overview of NeuralOps installation and system capabilities."""
+    _ensure_registries_loaded()
     return {
         "version": get_version(),
         "attentions_count": len(ATTENTION_REGISTRY),

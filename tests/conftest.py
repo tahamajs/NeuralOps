@@ -1,12 +1,21 @@
-"""Shared pytest fixtures for neuralops test suite."""
+"""Shared pytest fixtures for neuralops unified test suite."""
 from __future__ import annotations
 
+import os
 import sys
+from pathlib import Path
+
+# Add project root and tests dir to sys.path
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent
+_TESTS_DIR = Path(__file__).resolve().parent
+
+if str(_PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_PROJECT_ROOT))
+if str(_TESTS_DIR) not in sys.path:
+    sys.path.insert(0, str(_TESTS_DIR))
+
 if "numpy" in sys.modules:
     import numpy  # noqa: F401
-
-import os
-from pathlib import Path
 
 import pytest
 import torch
@@ -84,14 +93,14 @@ def dummy_qkv():
 @pytest.fixture
 def repo_root():
     """Absolute path to repository root."""
-    return Path(__file__).resolve().parents[2]
+    return _PROJECT_ROOT
 
 
 @pytest.fixture
 def tmp_results_dir(tmp_path):
     """Temporary results directory."""
     d = tmp_path / "results"
-    d.mkdir()
+    d.mkdir(parents=True, exist_ok=True)
     return d
 
 
@@ -112,6 +121,7 @@ def compressor_registry():
     import neuralops.compression_engine  # noqa: F401
     return COMPRESSOR_REGISTRY
 
+
 # Skip the entire module on CPU for Triton kernels
 requires_cuda = pytest.mark.skipif(
     not torch.cuda.is_available(),
@@ -122,6 +132,7 @@ requires_fp16_cuda = pytest.mark.skipif(
     not (torch.cuda.is_available() and torch.cuda.is_bf16_supported()),
     reason="Requires CUDA with fp16/bf16 support"
 )
+
 
 def pytest_configure(config):
     config.addinivalue_line("markers", "requires_cuda: skip if no CUDA")

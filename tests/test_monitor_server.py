@@ -58,7 +58,7 @@ def test_advanced_monitor_endpoints():
     )
     from neuralops.runners.monitor.fastapi_app import create_app
 
-    project_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    project_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     attns = get_all_131_attentions(project_dir)
     assert len(attns) >= 131, f"Expected at least 131 attentions, got {len(attns)}"
     assert "name" in attns[0]
@@ -85,7 +85,7 @@ def test_websocket_multi_client_concurrent_stress():
     from starlette.testclient import TestClient
     from neuralops.runners.monitor.fastapi_app import create_app, ws_manager
 
-    project_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    project_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     app = create_app(project_dir)
     client = TestClient(app)
 
@@ -109,7 +109,7 @@ def test_websocket_resiliency_rapid_reconnect():
     from starlette.testclient import TestClient
     from neuralops.runners.monitor.fastapi_app import create_app, ws_manager
 
-    project_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    project_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     app = create_app(project_dir)
     client = TestClient(app)
 
