@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# Author: Taha Majlesi
 """
 Master Paper Publication Benchmark Suite for NeuralOps (v1.3.7).
 
@@ -15,14 +17,13 @@ Modes:
   --mode targeted-wgqa  : Fast focused validation for paper tables (< 2-3 mins)
 """
 
-import os
-import sys
-import time
-import json
 import argparse
+import json
 import logging
-from pathlib import Path
+import os
+import time
 from collections import defaultdict
+from pathlib import Path
 
 # Enforce strict offline operation
 os.environ["HF_HUB_OFFLINE"] = "1"
@@ -31,15 +32,12 @@ os.environ["HF_DATASETS_OFFLINE"] = "1"
 
 import numpy as np
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
+from datasets import load_dataset
 from transformers import (
-    AutoConfig,
-    AutoModelForSequenceClassification,
     AutoModelForCausalLM,
+    AutoModelForSequenceClassification,
     AutoTokenizer,
 )
-from datasets import load_dataset
 
 from neuralops.attentions.modern.gqa_attention import inject_gqa
 from neuralops.attentions.modern.wgqa_attention import inject_wgqa

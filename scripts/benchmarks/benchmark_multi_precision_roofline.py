@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# Author: Taha Majlesi
 """Multi-Precision (FP32, FP16, BF16) Roofline & TFLOPs Benchmark for Attention Mechanisms.
 
 Measures latency, effective TFLOPs/s, memory bandwidth utilization against
@@ -11,10 +12,22 @@ from __future__ import annotations
 import argparse
 import gc
 import json
+import math
 import os
 from pathlib import Path
 import sys
 import time
+
+def fmt_opt(val, fmt=".2f", suffix="", default="-"):
+    if val is None:
+        return default
+    try:
+        f = float(val)
+        if math.isnan(f) or math.isinf(f):
+            return default
+        return f"{f:{fmt}}{suffix}"
+    except (ValueError, TypeError):
+        return default
 
 import torch
 import torch.nn as nn
