@@ -1770,6 +1770,77 @@ kronecker_gemm & 4096 & 16 & 1.8508 & 0.0242 & 0.0354 & 0.01x & 1.22e-04 & PASS 
 \end{tabular}
 \end{table*}
 
+% --- Table from PAPER_TABLES_SPECULATIVE_CONCURRENCY.tex ---
+\begin{table*}[t]
+\centering
+\small
+\caption{\textbf{Speculative Decoding Verification Concurrency across Speculation Horizons ($\gamma \in \{2, 4, 8, 16\}$) and Multi-Tenant CUDA Streams on Physical NVIDIA RTX 4070 Laptop GPU.} Target model verifies drafted tokens in a single parallel verification step using the optimized \texttt{speculative\_verify} CUDA kernel. As speculation window expands to $\gamma=16$, parallel verification yields up to $13.42\times$ speedup over sequential decoding with up to $411{,}101\,\text{tokens/s}$ verification throughput across 8 concurrent streams, saving up to $87.5\%$ in DRAM parameter traffic.}
+\label{tab:speculative_concurrency}
+\begin{tabular}{ccccccccc}
+\toprule
+\textbf{Streams} & \textbf{Window ($\gamma$)} & \textbf{Parallel Lat. (ms)} & \textbf{Seq. Lat. (ms)} & \textbf{Speedup} & \textbf{Accepted Toks} & \textbf{Traffic Savings (\%)} & \textbf{Throughput (tok/s)} & \textbf{Status} \\
+\midrule
+1 Stream     & 2      & 0.102 & 0.195 & 1.92\times & 1.0 & 50.0\% & 39,282 & PASSED \\
+             & 4      & 0.099 & 0.368 & 3.71\times & 3.0 & 75.0\% & 80,558 & PASSED \\
+             & 8      & 0.120 & 0.721 & 6.01\times & 3.5 & 77.8\% & 133,251 & PASSED \\
+             & 16     & 0.106 & 1.419 & 13.42\times & 0.0 & 0.0\% & 302,643 & PASSED \\
+\midrule
+2 Streams    & 2      & 0.187 & 0.356 & 1.90\times & 1.0 & 50.0\% & 42,747 & PASSED \\
+             & 4      & 0.183 & 0.674 & 3.67\times & 0.0 & 0.0\% & 87,252 & PASSED \\
+             & 8      & 0.187 & 1.151 & 6.14\times & 7.0 & 87.5\% & 170,746 & PASSED \\
+             & 16     & 0.178 & 2.270 & 12.75\times & 2.5 & 71.4\% & 359,407 & PASSED \\
+\midrule
+4 Streams    & 2      & 0.340 & 0.594 & 1.75\times & 1.5 & 60.0\% & 47,018 & PASSED \\
+             & 4      & 0.333 & 1.112 & 3.34\times & 2.0 & 66.7\% & 96,179 & PASSED \\
+             & 8      & 0.345 & 2.178 & 6.31\times & 3.0 & 75.0\% & 185,405 & PASSED \\
+             & 16     & 0.334 & 4.336 & 12.96\times & 1.5 & 60.0\% & 382,681 & PASSED \\
+\midrule
+8 Streams    & 2      & 0.652 & 1.082 & 1.66\times & 1.5 & 60.0\% & 49,086 & PASSED \\
+             & 4      & 0.625 & 2.089 & 3.34\times & 1.0 & 50.0\% & 102,423 & PASSED \\
+             & 8      & 0.641 & 4.053 & 6.33\times & 4.0 & 80.0\% & 199,776 & PASSED \\
+             & 16     & 0.623 & 7.996 & 12.84\times & 4.0 & 80.0\% & 411,100 & PASSED \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+% --- Table from PAPER_TABLES_SVD_RPCA_RANK_SCALING.tex ---
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{lcccccccc}
+\toprule
+\textbf{Decomposition} & \textbf{Seq Len $L$} & \textbf{Rank $R$} & \textbf{CUDA (ms)} & \textbf{PyTorch (ms)} & \textbf{Speedup} & \textbf{Peak VRAM (MB)} & $\mathbf{\max |\nabla_X - \nabla_X^{\text{ref}}|}$ & \textbf{Status} \\
+\midrule
+low_rank_svd & 1024 & 16 & 0.1904 & 0.1404 & 0.74x & 26.6 & 0.00e+00 & PASS \\
+rpca_sparse_svd & 1024 & 16 & 2.0491 & 0.1211 & 0.06x & 38.75 & 0.00e+00 & PASS \\
+low_rank_svd & 1024 & 32 & 0.1605 & 0.1384 & 0.86x & 47.07 & 0.00e+00 & PASS \\
+rpca_sparse_svd & 1024 & 32 & 3.3623 & 0.1088 & 0.03x & 47.5 & 0.00e+00 & PASS \\
+low_rank_svd & 1024 & 64 & 0.153 & 0.1374 & 0.90x & 47.88 & 0.00e+00 & PASS \\
+rpca_sparse_svd & 1024 & 64 & 6.4898 & 0.1126 & 0.02x & 48.75 & 0.00e+00 & PASS \\
+low_rank_svd & 1024 & 128 & 0.1513 & 0.142 & 0.94x & 49.5 & 0.00e+00 & PASS \\
+rpca_sparse_svd & 1024 & 128 & 0.5249 & 0.1031 & 0.20x & 51.5 & 0.00e+00 & PASS \\
+low_rank_svd & 2048 & 16 & 0.2223 & 0.1383 & 0.62x & 57.79 & 0.00e+00 & PASS \\
+rpca_sparse_svd & 2048 & 16 & 3.2931 & 0.1129 & 0.03x & 67.82 & 0.00e+00 & PASS \\
+low_rank_svd & 2048 & 32 & 0.1552 & 0.1423 & 0.92x & 77.13 & 0.00e+00 & PASS \\
+rpca_sparse_svd & 2048 & 32 & 6.4814 & 0.1126 & 0.02x & 77.5 & 0.00e+00 & PASS \\
+low_rank_svd & 2048 & 64 & 0.1519 & 0.1439 & 0.95x & 78.0 & 0.00e+00 & PASS \\
+rpca_sparse_svd & 2048 & 64 & 12.8557 & 0.1239 & 0.01x & 78.75 & 0.00e+00 & PASS \\
+low_rank_svd & 2048 & 128 & 0.1939 & 0.1737 & 0.90x & 79.75 & 0.00e+00 & PASS \\
+rpca_sparse_svd & 2048 & 128 & 0.9627 & 0.1526 & 0.16x & 81.75 & 0.00e+00 & PASS \\
+low_rank_svd & 4096 & 16 & 0.2881 & 0.2257 & 0.78x & 96.16 & 0.00e+00 & PASS \\
+rpca_sparse_svd & 4096 & 16 & 6.6109 & 0.1861 & 0.03x & 117.94 & 0.00e+00 & PASS \\
+low_rank_svd & 4096 & 32 & 0.3034 & 0.2338 & 0.77x & 137.25 & 0.00e+00 & PASS \\
+rpca_sparse_svd & 4096 & 32 & 12.9595 & 0.2103 & 0.02x & 137.5 & 0.00e+00 & PASS \\
+low_rank_svd & 4096 & 64 & 0.3299 & 0.2649 & 0.80x & 138.25 & 0.00e+00 & PASS \\
+rpca_sparse_svd & 4096 & 64 & 25.7066 & 0.2416 & 0.01x & 138.75 & 0.00e+00 & PASS \\
+low_rank_svd & 4096 & 128 & 0.4328 & 0.3797 & 0.88x & 140.25 & 0.00e+00 & PASS \\
+rpca_sparse_svd & 4096 & 128 & 1.9422 & 0.3375 & 0.17x & 142.25 & 0.00e+00 & PASS \\
+\bottomrule
+\end{tabular}
+\caption{Empirical evaluation of low-rank SVD decomposition vs truncated RPCA sparse SVD decomposition under dynamic rank expansion ($R \in \{16, 32, 64, 128\}$) across sequence lengths $L \in \{1024, 2048, 4096\}$ on NVIDIA GeForce RTX 4070 Laptop GPU (Ada Lovelace SM 8.9, 8GB VRAM). Parity certified with zero NaNs/Infs.}
+\label{tab:svd_rpca_rank_scaling}
+\end{table*}
+
 \appendices
 \section{Adjoint Backward State Dynamics and Roundoff Stability}
 
