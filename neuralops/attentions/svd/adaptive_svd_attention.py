@@ -127,6 +127,15 @@ class AdaptiveSVDLinear(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         orig_dtype = x.dtype
+        if x.is_cuda and x.dtype in (torch.float16, torch.bfloat16):
+            try:
+                from neuralops.core.cuda_kernels.low_rank_svd import fused_lowrank_gated_gemm
+                base = fused_lowrank_gated_gemm(x, self.V, self.U.t().contiguous(), bias=self.bias)
+                if self.lora_A is not None and self.lora_B is not None:
+                    base = base + F.linear(F.linear(x, self.lora_A.to(x.dtype)), self.lora_B.to(x.dtype)) * getattr(self, "lora_scaling", 1.0)
+                return base.to(orig_dtype)
+            except Exception:
+                pass
         try:
             from neuralops.core.triton_kernels.low_rank import fused_svd_lora_sparse_attn_triton
             return fused_svd_lora_sparse_attn_triton(
