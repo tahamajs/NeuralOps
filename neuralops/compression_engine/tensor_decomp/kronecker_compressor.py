@@ -264,6 +264,15 @@ class KroneckerLinear(nn.Module):
         v_w = self.V.to(x.dtype)
         u_w = self.U.to(x.dtype)
         b_w = self.bias.to(x.dtype) if self.bias is not None else None
+        if x.is_cuda:
+            try:
+                from neuralops.core.triton_kernels._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
+                suitable, _ = check_triton_suitability(x, "low_rank")
+                if not FORCE_PYTORCH_FALLBACK and suitable:
+                    from neuralops.core.triton_kernels.low_rank import _TritonLowRankAutogradFunction
+                    return _TritonLowRankAutogradFunction.apply(x, u_w, v_w, b_w, None)
+            except Exception:
+                pass
         return F.linear(F.linear(x, v_w), u_w, b_w)
 
     def _fit_svd(
