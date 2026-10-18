@@ -207,7 +207,7 @@ def benchmark_serving(
 def main():
     parser = argparse.ArgumentParser(description="NeuralOps Serving Benchmark")
     parser.add_argument("--device", type=str, default="cuda:0" if torch.cuda.is_available() else "cpu")
-    parser.add_argument("--out-file", type=str, default="results/benchmarks_serving_ttft_itl.json")
+    parser.add_argument("--output", "--out-file", dest="out_file", type=str, default="results/benchmarks_serving_ttft_itl.json", help="Path to save JSON output")
     args = parser.parse_args()
 
     results = benchmark_serving(device=args.device)
