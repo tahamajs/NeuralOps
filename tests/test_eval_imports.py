@@ -4,6 +4,35 @@ import importlib
 class TestEvaluationImports(unittest.TestCase):
     def test_imports(self):
         modules = [
+            "evaluation.ab_testing",
+            "evaluation.eval_all_models_datasets",
+            "evaluation.eval_data",
+            "evaluation.eval_patcher",
+            "evaluation.eval_perplexity",
+            "evaluation.eval_pipeline",
+            "evaluation.eval_reporter",
+            "evaluation.eval_types",
+            "evaluation.eval_utils",
+            "evaluation.fairness",
+            "evaluation.full_mnli_validation",
+            "evaluation.label_quality",
+            "evaluation.metrics",
+            "evaluation.retraining",
+            "evaluation.run_baseline_comparison",
+            "evaluation.run_lm_eval_harness",
+            "evaluation.harness",
+            "evaluation.ppl",
+            "evaluation.niah",
+            "evaluation.niah_passkey",
+            "evaluation.lm_eval_adapter",
+        ]
+        for mod in modules:
+            with self.subTest(module=mod):
+                m = importlib.import_module(mod)
+                self.assertIsNotNone(m)
+
+    def test_backwards_compatible_shims(self):
+        legacy_modules = [
             "neuralops.evaluation.ab_testing",
             "neuralops.evaluation.eval_all_models_datasets",
             "neuralops.evaluation.eval_data",
@@ -21,8 +50,8 @@ class TestEvaluationImports(unittest.TestCase):
             "neuralops.evaluation.run_baseline_comparison",
             "neuralops.evaluation.run_lm_eval_harness",
         ]
-        for mod in modules:
-            with self.subTest(module=mod):
+        for mod in legacy_modules:
+            with self.subTest(legacy_module=mod):
                 m = importlib.import_module(mod)
                 self.assertIsNotNone(m)
 
