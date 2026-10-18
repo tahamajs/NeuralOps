@@ -47,6 +47,8 @@ models_to_test = [
 
 def benchmark_attention(name, key, seq_len):
     cls = ATTENTION_REGISTRY.get(key)
+    if cls is None or not callable(cls):
+        raise ValueError(f"Module '{key}' not found or not callable in ATTENTION_REGISTRY")
     cfg = GPT2Config(n_embd=D, n_head=H, hidden_size=D, num_attention_heads=H)
     try:
         mod = cls(config=cfg)
@@ -63,7 +65,7 @@ def benchmark_attention(name, key, seq_len):
     for _ in range(3):
         try:
             out = mod(x)
-        except Exception:
+        except TypeError:
             out = mod(x, x, x)
         if isinstance(out, (tuple, list)):
             out = out[0]
@@ -82,7 +84,7 @@ def benchmark_attention(name, key, seq_len):
     for _ in range(iters):
         try:
             out = mod(x)
-        except Exception:
+        except TypeError:
             out = mod(x, x, x)
     torch.cuda.synchronize()
     fwd_time_ms = (time.perf_counter() - t0) * 1000.0 / iters
@@ -96,7 +98,7 @@ def benchmark_attention(name, key, seq_len):
     for _ in range(iters):
         try:
             out = mod(x)
-        except Exception:
+        except TypeError:
             out = mod(x, x, x)
         if isinstance(out, (tuple, list)):
             out = out[0]

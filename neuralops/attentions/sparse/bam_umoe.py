@@ -212,6 +212,7 @@ class UnifiedMoE(nn.Module):
 
         from neuralops.core.triton_kernels.sparse_attn import fused_bam_unified_qkv_moe_triton
 
+        exp_outs = [exp(x) for exp in self.experts]
         if x.is_cuda and len(self.experts) == 2 and self.top_k == 2:
             try:
                 from neuralops.core.cuda_kernels.samba_moe import samba_moe

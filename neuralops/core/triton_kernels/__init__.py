@@ -6,6 +6,8 @@ Author: Taha Majlesi
 
 from __future__ import annotations
 
+from typing import Any
+
 from neuralops.core.triton_kernels import (
     gqa,
     linear_attn,

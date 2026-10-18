@@ -161,6 +161,19 @@ class SALTLinear(nn.Module):
 
         adapted_S = (self.S * self.gamma).to(dtype=x.dtype)
 
+        if x.is_cuda and x.dtype in (torch.float16, torch.bfloat16):
+            try:
+                from neuralops.core.cuda_kernels.low_rank_svd import fused_lowrank_gated_gemm
+                u_eff = (self.U * adapted_S.unsqueeze(0)).to(dtype=x.dtype)
+                x_svd = fused_lowrank_gated_gemm(x, self.Vt.to(dtype=x.dtype), u_eff)
+                x_lora = F.linear(F.linear(x, self.B.to(dtype=x.dtype)), self.A.to(dtype=x.dtype))
+                out = x_svd + x_lora
+                if self.bias is not None:
+                    out = out + self.bias.to(dtype=x.dtype)
+                return out.to(orig_dtype)
+            except Exception:
+                pass
+
         if x.is_cuda:
             try:
                 from neuralops.core.triton_kernels.low_rank import fused_svd_gemm_triton

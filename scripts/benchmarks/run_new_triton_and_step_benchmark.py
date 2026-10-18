@@ -35,13 +35,17 @@ def benchmark_step_throughput(device, models=None):
     print(f"\n--- Recurrent .step() Autoregressive Throughput Benchmark (Steps = {decode_steps}) ---")
     for name in models:
         cls = ATTENTION_REGISTRY.get(name)
-        if cls is None:
+        if cls is None or not callable(cls):
             continue
         try:
             m = cls(dim=dim, num_heads=heads, is_decoder=True, window_size=0).to(device=device)
-        except Exception:
+        except (TypeError, ValueError):
             m = cls(hidden_size=dim, num_heads=heads).to(device=device)
         m.eval()
+
+        if not hasattr(m, "step") or not callable(getattr(m, "step", None)):
+            print(f"[{name}] Skipping recurrent benchmark: no callable step() method found.")
+            continue
 
         # Warmup
         x_warm = torch.randn(1, 1, dim, device=device)
