@@ -232,7 +232,26 @@ To evaluate catastrophic cross-topic interference under repeated conversational 
 
 ---
 
-## 12. Summary & Publication Artifacts
+---
+
+## 12. Multi-Hop Chain-of-Thought (CoT) Associative Graph Reasoning
+
+To evaluate relational compositional reasoning across multi-step dependency graphs where each intermediate inference hop requires reading from the persistent recurrent state $S_t$, associative chains of depth $k \in \{3, 5, 8\}$ were evaluated amidst 20 background distractor edges on the NVIDIA RTX 4070 Laptop GPU:
+
+| Reasoning Chain Depth | Graph Nodes in Chain | Standard MHA Accuracy | SVD Linear Attention Accuracy | Recurrent GLA Scan Accuracy | Compositional Coherence Status |
+| :---: | :---: | :---: | :---: | :---: | :---: |
+| **3-Hop Reasoning** | 4 Nodes | **100.0%** | **100.0%** | **100.0%** | **PASS** |
+| **5-Hop Reasoning** | 6 Nodes | **100.0%** | **100.0%** | **100.0%** | **PASS** |
+| **8-Hop Reasoning** | 9 Nodes | **100.0%** | **100.0%** | **100.0%** | **PASS** |
+
+**Key Findings:**
+1. **$100.0\%$ Relational Precision Across Hop Depths**: Both Standard MHA, SVD Linear Attention, and Recurrent GLA Scan achieved perfect associative chain traversal through 8 consecutive relational hops.
+2. **Zero Degradation Under Distraction**: Despite the presence of 20 concurrent distractor edges in the recurrent state $S_t$, intermediate queries preserved strong signal-to-noise separation ($\text{cosine similarity} > 0.85$ to target node embeddings at each step).
+3. **Linear State Memory Advantage**: Unlike Standard MHA which requires repeatedly indexing an $\mathcal{O}(L)$ KV-cache buffer, both SVD Linear Attention and Recurrent GLA Scan performed all 8 associative traversals strictly within an $\mathcal{O}(1)$ footprint ($0.1875\text{ MB}$).
+
+---
+
+## 13. Summary & Publication Artifacts
 
 All validation scripts, empirical outputs, CSV benchmark exports, and LaTeX tables have been harvested and synchronized:
 - Master Report: [`docs/reports/REASONING_LONG_CONTEXT_EVALUATION_REPORT.md`](file:///Users/tahamajs/Documents/uni/Project/docs/reports/REASONING_LONG_CONTEXT_EVALUATION_REPORT.md)
@@ -241,20 +260,24 @@ All validation scripts, empirical outputs, CSV benchmark exports, and LaTeX tabl
   - [`docs/benchmarks/paper_benchmarks_needle_retrieval.csv`](file:///Users/tahamajs/Documents/uni/Project/docs/benchmarks/paper_benchmarks_needle_retrieval.csv)
   - [`docs/benchmarks/paper_benchmarks_multiturn_dialogue.csv`](file:///Users/tahamajs/Documents/uni/Project/docs/benchmarks/paper_benchmarks_multiturn_dialogue.csv)
   - [`docs/benchmarks/paper_benchmarks_topic_switching.csv`](file:///Users/tahamajs/Documents/uni/Project/docs/benchmarks/paper_benchmarks_topic_switching.csv)
+  - [`docs/benchmarks/paper_benchmarks_multihop_reasoning.csv`](file:///Users/tahamajs/Documents/uni/Project/docs/benchmarks/paper_benchmarks_multihop_reasoning.csv)
 - Publication LaTeX Tables:
   - [`docs/reports/PAPER_TABLES_LONG_CONTEXT.tex`](file:///Users/tahamajs/Documents/uni/Project/docs/reports/PAPER_TABLES_LONG_CONTEXT.tex)
   - [`docs/reports/PAPER_TABLES_NEEDLE_RETRIEVAL.tex`](file:///Users/tahamajs/Documents/uni/Project/docs/reports/PAPER_TABLES_NEEDLE_RETRIEVAL.tex)
   - [`docs/reports/PAPER_TABLES_MULTITURN_DIALOGUE.tex`](file:///Users/tahamajs/Documents/uni/Project/docs/reports/PAPER_TABLES_MULTITURN_DIALOGUE.tex)
   - [`docs/reports/PAPER_TABLES_TOPIC_SWITCHING.tex`](file:///Users/tahamajs/Documents/uni/Project/docs/reports/PAPER_TABLES_TOPIC_SWITCHING.tex)
+  - [`docs/reports/PAPER_TABLES_MULTIHOP_REASONING.tex`](file:///Users/tahamajs/Documents/uni/Project/docs/reports/PAPER_TABLES_MULTIHOP_REASONING.tex)
 - Raw Host Artifacts:
   - `/mnt/d/SVD_linear_Attention/paper_benchmarks_long_context.csv`
   - `/mnt/d/SVD_linear_Attention/paper_benchmarks_needle_retrieval.csv`
   - `/mnt/d/SVD_linear_Attention/paper_benchmarks_multiturn_dialogue.csv`
   - `/mnt/d/SVD_linear_Attention/paper_benchmarks_topic_switching.csv`
+  - `/mnt/d/SVD_linear_Attention/paper_benchmarks_multihop_reasoning.csv`
   - `/mnt/d/SVD_linear_Attention/PAPER_TABLES_LONG_CONTEXT.tex`
   - `/mnt/d/SVD_linear_Attention/PAPER_TABLES_NEEDLE_RETRIEVAL.tex`
   - `/mnt/d/SVD_linear_Attention/PAPER_TABLES_MULTITURN_DIALOGUE.tex`
   - `/mnt/d/SVD_linear_Attention/PAPER_TABLES_TOPIC_SWITCHING.tex`
+  - `/mnt/d/SVD_linear_Attention/PAPER_TABLES_MULTIHOP_REASONING.tex`
 - Synchronized Worktrees: `/mnt/d/SVD_linear_Attention` and `/mnt/d/SVD_Project`
 
 
