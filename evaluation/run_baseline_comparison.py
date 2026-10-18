@@ -48,9 +48,12 @@ except ImportError:
 
 from neuralops.core.registry import ATTENTION_REGISTRY
 try:
-    from neuralops.evaluation.eval_all_models_datasets import apply_module_to_model
+    from evaluation.eval_all_models_datasets import apply_module_to_model
 except ImportError:
-    apply_module_to_model = None
+    try:
+        from neuralops.evaluation.eval_all_models_datasets import apply_module_to_model
+    except ImportError:
+        apply_module_to_model = None
 
 LOG = logging.getLogger("BaselineComparison")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
