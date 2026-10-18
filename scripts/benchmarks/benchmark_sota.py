@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# Author: Taha Majlesi
 """
 Comprehensive SOTA Gap Closure Benchmark Suite.
 
@@ -14,8 +16,6 @@ Writes full verification report to `results/SOTA_GAP_CLOSURE_REPORT.md`.
 
 import copy
 import logging
-import math
-import os
 import sys
 import time
 from pathlib import Path
@@ -23,7 +23,6 @@ from typing import Any, Dict
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("benchmark_sota")
@@ -35,7 +34,6 @@ def benchmark_gap_1_svd_llm_v2(device: torch.device) -> Dict[str, Any]:
     """Gap 1: SVD-LLM v2 & HNC Activation Truncation."""
     logger.info("=== Running Gap 1: SVD-LLM v2 & HNC Activation Truncation ===")
     from neuralops.compression_engine.svd.direct_svd import DirectSVDCompressor, SVDLLMv2Compressor
-    from neuralops.compression_engine.svd.hnc_svd_continuation import HessianNullSpaceSVDContinuation
 
     torch.manual_seed(42)
     in_f, hid_f, out_f = 64, 128, 32
