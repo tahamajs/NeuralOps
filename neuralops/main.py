@@ -58,6 +58,8 @@ except (
 # ---------------------------------------------------------------------------
 _HERE = Path(__file__).resolve().parent
 _CODES = _HERE.parent
+if sys.path and sys.path[0] == str(_HERE):
+    sys.path.pop(0)
 if str(_CODES) not in sys.path:
     sys.path.insert(0, str(_CODES))
 
