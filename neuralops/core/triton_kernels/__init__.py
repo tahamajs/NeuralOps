@@ -523,6 +523,10 @@ from neuralops.core.triton_kernels import fused_ce as fused_ce_module
 from neuralops.core.triton_kernels import fused_kd as fused_kd_module
 from neuralops.core.triton_kernels import fused_norm_linear as fused_norm_linear_module
 
+# Root Bridge Modules
+from neuralops.core.triton_linear_attn import fast_linear_attention, LinearAttentionTriton
+from neuralops.core.triton_sparse_attn import triton_block_sparse_attention
+
 # 13 Standalone Flagship Modules
 from neuralops.kernels.triton import (
     block_sparse_streaming_attn,
@@ -539,10 +543,6 @@ from neuralops.kernels.triton import (
     spectral_entropy_svd_gate,
     strided_tt,
 )
-
-# Root Bridge Modules
-from neuralops.core.triton_linear_attn import fast_linear_attention, LinearAttentionTriton
-from neuralops.core.triton_sparse_attn import triton_block_sparse_attention
 
 
 def __getattr__(name: str) -> Any:
