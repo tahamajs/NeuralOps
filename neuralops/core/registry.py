@@ -227,6 +227,12 @@ class Registry:
                     obj, "supports_gqa", False if supports_gqa is None else supports_gqa
                 ),
             }
+            if self.name == "compressors":
+                caps["hardware_accelerated"] = getattr(
+                    obj,
+                    "hardware_accelerated",
+                    extra_metadata.get("hardware_accelerated", True),
+                )
             caps.update(extra_metadata)
             self._metadata[k] = caps
             return obj
