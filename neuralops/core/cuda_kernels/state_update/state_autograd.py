@@ -113,7 +113,10 @@ class _RecurrentLinearStepFunction(torch.autograd.Function):
         return out, next_kv, next_z
 
     @staticmethod
-    def backward(ctx: Any, dout, dnext_kv=None, dnext_z=None):
+    def backward(ctx: Any, *grad_outputs: Any) -> tuple[torch.Tensor | None, ...]:
+        dout = grad_outputs[0] if len(grad_outputs) > 0 else None
+        dnext_kv = grad_outputs[1] if len(grad_outputs) > 1 else None
+        dnext_z = grad_outputs[2] if len(grad_outputs) > 2 else None
         q_t, k_t, v_t, kv_state, z_state = ctx.saved_tensors
         q_p = q_t.detach().requires_grad_(q_t.requires_grad)
         k_p = k_t.detach().requires_grad_(k_t.requires_grad)
@@ -130,18 +133,18 @@ class _RecurrentLinearStepFunction(torch.autograd.Function):
             return None, None, None, None, None, None
 
         outputs = [out_p]
-        grad_outputs = [dout]
+        actual_grads = [dout]
         if dnext_kv is not None:
             outputs.append(next_kv_p)
-            grad_outputs.append(dnext_kv)
+            actual_grads.append(dnext_kv)
         if dnext_z is not None:
             outputs.append(next_z_p)
-            grad_outputs.append(dnext_z)
+            actual_grads.append(dnext_z)
 
         grads = torch.autograd.grad(
             outputs,
             diff_inputs,
-            grad_outputs,
+            actual_grads,
             allow_unused=True,
         )
         grad_map = dict(zip(diff_inputs, grads))

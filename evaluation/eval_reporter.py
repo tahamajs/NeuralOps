@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Author: Taha Majlesi
 """Evaluation artifact generation and summary reporting.
 
 Handles persistence of benchmark run artifacts (result.json, run directory metadata),

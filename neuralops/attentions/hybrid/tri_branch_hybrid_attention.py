@@ -110,13 +110,10 @@ def _local_window_attention_chunked(
     else:
         radius = max(1, window // 2)
 
-    if Q.is_cuda and past_len == 0 and N == N_kv and token_valid is None:
+    if Q.is_cuda and past_len == 0 and N == N_kv and token_valid is None and D <= 256:
         try:
-            from neuralops.core.triton_kernels.sliding_window import sliding_window_triton
-            from neuralops.core.triton_kernels._types import check_triton_suitability
-            suitable, _ = check_triton_suitability(Q, "sliding_window", head_dim=D, seq_len=N)
-            if suitable:
-                return sliding_window_triton(Q, K, V, window_size=radius), None
+            from neuralops.core.cuda_kernels.hybrid_local_kernel import hybrid_local_attn
+            return hybrid_local_attn(Q, K, V, radius=radius, is_causal=is_decoder), None
         except Exception:
             pass
 
@@ -756,7 +753,14 @@ class TriBranchHybridAttention(BaseAttention):
                 )
             clamped_gate = torch.clamp(self.fusion_gate, -10.0, 10.0)
             beta = torch.sigmoid(clamped_gate).view(1, self.num_heads, 1, 1)
-            fused = beta * local_out + (1.0 - beta) * global_out
+            if local_out.is_cuda:
+                try:
+                    from neuralops.core.cuda_kernels.hybrid_local_kernel import hybrid_two_branch_blend
+                    fused = hybrid_two_branch_blend(local_out, global_out, beta.expand_as(local_out).to(local_out.dtype))
+                except Exception:
+                    fused = beta * local_out + (1.0 - beta) * global_out
+            else:
+                fused = beta * local_out + (1.0 - beta) * global_out
         else:
             fused = local_out
 

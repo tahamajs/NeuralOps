@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Author: Taha Majlesi
 """
 Benchmark and Correctness Verification Suite for Part 1 (12 Modules) on NVIDIA RTX 4070 GPU.
 Measures:

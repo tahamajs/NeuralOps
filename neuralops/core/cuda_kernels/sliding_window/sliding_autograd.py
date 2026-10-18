@@ -123,7 +123,8 @@ class _SlidingWindowAttnFunction(torch.autograd.Function):
         return out
 
     @staticmethod
-    def backward(ctx, grad_output):
+    def backward(ctx: Any, *grad_outputs: Any) -> Any:
+        grad_output = grad_outputs[0]
         q, k, v = ctx.saved_tensors
         window_size = ctx.window_size
         num_sinks = ctx.num_sinks

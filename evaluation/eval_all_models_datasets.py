@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Author: Taha Majlesi
 """Evaluation harness and unified entry point for NeuralOps benchmark suite.
 
 This module is a clean re-export hub providing backward compatibility across all existing

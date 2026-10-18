@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Author: Taha Majlesi
 """
 Comprehensive diagnostic script for ALL 131+ Attention Modules and 72 Compressors.
 Tests forward, causal masking, backward differentiability, and numerical stability.

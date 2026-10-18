@@ -649,6 +649,31 @@ class SpectronAttention(BaseAttention):
         lora_B: nn.Parameter | None,
         sparse_w: nn.Parameter | None,
     ) -> torch.Tensor:
+        if x.is_cuda and x.dtype in (torch.float16, torch.bfloat16):
+            try:
+                from neuralops.core.cuda_kernels.low_rank_svd import fused_lowrank_gated_gemm
+                base = fused_lowrank_gated_gemm(x, down.weight, up.weight.t().contiguous(), bias=up.bias)
+                if self.lora_rank > 0 and lora_A is not None and lora_B is not None:
+                    base = base + F.linear(F.linear(x, lora_A.to(x.dtype)), lora_B.to(x.dtype)) * self.scaling
+                if self.add_sparse and sparse_w is not None:
+                    base = base + F.linear(x, sparse_w.to(x.dtype))
+                return base
+            except Exception:
+                try:
+                    from neuralops.core.triton_kernels._types import FORCE_PYTORCH_FALLBACK
+                    if not FORCE_PYTORCH_FALLBACK:
+                        from neuralops.core.triton_kernels.low_rank import fused_down_up_gemm_bias_triton
+                        base = fused_down_up_gemm_bias_triton(
+                            x, down.weight.t().contiguous(), up.weight.t().contiguous(), up.bias
+                        )
+                        if self.lora_rank > 0 and lora_A is not None and lora_B is not None:
+                            base = base + F.linear(F.linear(x, lora_A.to(x.dtype)), lora_B.to(x.dtype)) * self.scaling
+                        if self.add_sparse and sparse_w is not None:
+                            base = base + F.linear(x, sparse_w.to(x.dtype))
+                        return base
+                except Exception:
+                    pass
+
         out = up(down(x))
         if self.lora_rank > 0 and lora_A is not None and lora_B is not None:
             a = lora_A.to(x.dtype)
