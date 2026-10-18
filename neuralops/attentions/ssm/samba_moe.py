@@ -60,7 +60,26 @@ class MinimalMoEFallback(nn.Module):
             x_in = x
         logits = self.router(x_in)
         weights = F.softmax(logits, dim=-1)
-        if x_in.is_cuda and len(self.experts) > 0:
+        if x_in.is_cuda and len(self.experts) >= 2:
+            try:
+                from neuralops.core.cuda_kernels.samba_moe import samba_moe
+                e1 = self.experts[0](x_in)
+                e2 = self.experts[1](x_in)
+                rw = weights[..., :2]
+                out = samba_moe(e1, e2, rw)
+                for i in range(2, len(self.experts)):
+                    out = out + weights[..., i : i + 1] * self.experts[i](x_in)
+            except Exception:
+                try:
+                    from neuralops.core.triton_kernels.sparse_attn import fused_topk_sparse_route_and_combine_triton
+                    exp_outputs = [exp(x_in) for exp in self.experts]
+                    stacked = torch.stack(exp_outputs, dim=-2)
+                    out = fused_topk_sparse_route_and_combine_triton(stacked, logits, top_k=min(2, self.n_experts))
+                except Exception:
+                    out = torch.zeros_like(x_in)
+                    for i, exp in enumerate(self.experts):
+                        out = out + weights[..., i : i + 1] * exp(x_in)
+        elif x_in.is_cuda and len(self.experts) > 0:
             try:
                 from neuralops.core.triton_kernels.sparse_attn import fused_topk_sparse_route_and_combine_triton
                 exp_outputs = [exp(x_in) for exp in self.experts]
