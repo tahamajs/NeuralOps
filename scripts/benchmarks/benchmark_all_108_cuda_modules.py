@@ -192,8 +192,10 @@ def main():
 
         # Force compile CUDA module
         try:
-            if hasattr(py_mod, "_get_module"):
-                _c_mod = py_mod._get_module()
+            if hasattr(py_mod, "get_module"):
+                _c_mod = py_mod.get_module()
+            elif hasattr(py_mod, "_get_module"):
+                _c_mod = getattr(py_mod, "_get_module")()
             else:
                 _c_mod = None
         except Exception as e:
@@ -204,7 +206,7 @@ def main():
         # Build test inputs
         try:
             sig = inspect.signature(fn)
-            args, kwargs = generate_args_for_sig(sig, py_mod.__dict__, device, dtype)
+            args, kwargs = generate_args_for_sig(sig, vars(py_mod), device, dtype)
             # Test direct call through wrapper (or direct C++ if available)
             out = fn(*args, **kwargs)
             cuda_ms = time_callable(lambda: fn(*args, **kwargs), warmup=3, iters=10)

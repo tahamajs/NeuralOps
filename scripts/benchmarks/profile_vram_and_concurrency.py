@@ -129,9 +129,9 @@ def run_multistream_test():
     # Warmup
     for _ in range(10):
         with torch.cuda.stream(stream_attn):
-            out_attn = gla(x_attn)[0]
+            _out_attn = gla(x_attn)[0]
         with torch.cuda.stream(stream_gemm):
-            out_gemm = torch.mm(torch.mm(x_gemm, w_u), w_v)
+            _out_gemm = torch.mm(torch.mm(x_gemm, w_u), w_v)
         torch.cuda.synchronize()
         
     torch.cuda.synchronize()

@@ -7,12 +7,16 @@ across all 131 attention mechanisms in ATTENTION_REGISTRY
 for dimensions D = 128, 256, and 768.
 """
 
+import logging
 import sys
+
 import torch
-import neuralops
-import neuralops.attentions
-from neuralops.core.registry import ATTENTION_REGISTRY
 from transformers import GPT2Config
+
+import neuralops
+from neuralops.core.registry import ATTENTION_REGISTRY
+
+logger = logging.getLogger("verify_131_dimensions")
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print(f"[Dimension Verification] Running on device: {device} ({torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU'})")
@@ -29,9 +33,9 @@ print(f"Total attention modules in registry: {len(attentions)}")
 failures_by_dim = {d: [] for d, _ in dims_to_test}
 
 for D, H in dims_to_test:
-    print(f"\n=======================================================")
+    print("\n=======================================================")
     print(f"TESTING DIMENSION: D = {D}, H = {H}")
-    print(f"=======================================================")
+    print("=======================================================")
     
     cfg = GPT2Config(n_embd=D, n_head=H, hidden_size=D, num_attention_heads=H)
     B, T = 2, 32
@@ -62,7 +66,7 @@ for D, H in dims_to_test:
             # Forward pass
             try:
                 out = mod(x)
-            except Exception:
+            except (TypeError, ValueError, RuntimeError):
                 out = mod(x, x, x)
                 
             if isinstance(out, (tuple, list)):
@@ -78,7 +82,8 @@ for D, H in dims_to_test:
             if x.grad is None or not torch.isfinite(x.grad).all():
                 raise RuntimeError("Gradient is None or contains NaNs/Infs")
                 
-        except Exception as e:
+        except (RuntimeError, MemoryError, AssertionError, ValueError, TypeError) as e:
+            logger.warning("Verification failed for %s (D=%d, H=%d): %s", name, D, H, e, exc_info=True)
             err_str = f"{type(e).__name__}: {str(e)[:140]}"
             failures_by_dim[D].append((name, err_str))
 
