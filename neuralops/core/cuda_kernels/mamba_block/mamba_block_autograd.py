@@ -89,13 +89,19 @@ class _MambaBlockFunction(torch.autograd.Function):
             outputs.append(next_s_p)
             grad_outputs.append(dnext_state)
 
+        inputs = [u_p, delta_p, A_p, B_p, C_p, prev_p]
+        diff_inputs = [inp for inp in inputs if inp.requires_grad]
+        if not diff_inputs:
+            return None, None, None, None, None, None
+
         grads = torch.autograd.grad(
             outputs,
-            [u_p, delta_p, A_p, B_p, C_p, prev_p],
+            diff_inputs,
             grad_outputs,
             allow_unused=True,
         )
-        return grads[0], grads[1], grads[2], grads[3], grads[4], grads[5]
+        grad_map = dict(zip(diff_inputs, grads))
+        return tuple(grad_map.get(inp, None) for inp in inputs)
 
 def mamba_block(
     u: torch.Tensor,
