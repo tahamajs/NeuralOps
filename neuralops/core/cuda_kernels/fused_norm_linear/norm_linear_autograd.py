@@ -104,19 +104,12 @@ def fused_norm_linear(
     bias: torch.Tensor | None = None,
     eps: float = 1e-6,
 ) -> torch.Tensor:
-    """3-Level Dispatched Fused Norm Linear."""
-    def cuda_fn(x, weight, bias=None, eps=1e-6):
-        return _FusedNormLinearFunction.apply(x, weight, bias, eps)
-
-    triton_fn = _get_triton_impl()
-
-    return dispatch(
-        cuda_fn,
-        triton_fn,
-        fused_norm_linear_pytorch_ref,
-        x,
-        weight,
-        bias=bias,
-        eps=eps,
-        kernel_name="fused_norm_linear",
-    )
+    """3-Level Dispatched Fused Norm Linear.
+    NOTE: The native CUDA kernel is currently 240x slower than PyTorch due to lack of
+    shared-memory tiling and uncoalesced memory access. Emergency fallback to Triton/PyTorch.
+    """
+    try:
+        from neuralops.core.triton_kernels.fused_norm_linear import fused_norm_linear as triton_impl
+        return triton_impl(x, weight, bias=bias, eps=eps)
+    except Exception:
+        return fused_norm_linear_pytorch_ref(x, weight, bias=bias, eps=eps)
