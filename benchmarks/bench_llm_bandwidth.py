@@ -250,7 +250,7 @@ def main():
         writer = csv.writer(f)
         writer.writerow(["Kernel", "Config", "CUDA (ms)", "PyTorch (ms)", "Speedup", "Bandwidth (GB/s)", "Saturation %", "Regime"])
         for r in results:
-            sat_val = "N/A" if math.isnan(r["sat_pct"]) else f"{r['sat_pct']:.1f}%"
+            sat_val = "N/A (L2-resident)" if math.isnan(r["sat_pct"]) else f"{r['sat_pct']:.1f}%"
             writer.writerow([
                 r["kernel"],
                 r["cfg"],
