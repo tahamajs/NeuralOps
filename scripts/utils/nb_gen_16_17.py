@@ -286,7 +286,7 @@ line2 = ax2.plot(working_sets_mb, sat_pcts, marker='s', color='#34d399', linewid
 
 ax1.axvline(x=32.0, color='#f59e0b', linestyle='-.', linewidth=2.0, label='32MB L2 Cache Capacity Boundary')
 ax1.set_xscale('log', base=2)
-ax1.set_xlabel("Working Set Size (MB, $\log_2$ scale)", fontweight="bold")
+ax1.set_xlabel(r"Working Set Size (MB, $\log_2$ scale)", fontweight="bold")
 ax1.set_ylabel("Effective Bandwidth (GB/s)", color='#38bdf8', fontweight="bold")
 ax2.set_ylabel("DRAM Saturation Percentage (%)", color='#34d399', fontweight="bold")
 ax1.tick_params(axis='y', labelcolor='#38bdf8')

@@ -84,6 +84,7 @@ HARDWARE_CONTEXT_CELL = create_code_cell('''"""
 Standardized Hardware Detection & Telemetry Verification Cell
 Author: Taha Majlesi
 """
+%matplotlib inline
 import os
 import sys
 import gc

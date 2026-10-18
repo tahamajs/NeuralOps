@@ -321,8 +321,8 @@ if not oom_sub.empty:
 
 ax.set_xscale('log', base=2)
 ax.set_yscale('log')
-ax.set_xlabel("Sequence Length $T$ (tokens, $\log_2$ scale)", fontweight="bold")
-ax.set_ylabel("Forward Latency $\\tau$ (ms, $\log_{10}$ scale)", fontweight="bold")
+ax.set_xlabel(r"Sequence Length $T$ (tokens, $\log_2$ scale)", fontweight="bold")
+ax.set_ylabel(r"Forward Latency $\tau$ (ms, $\log_{10}$ scale)", fontweight="bold")
 ax.set_title("Forward Latency Scaling: Quadratic vs Linear Attention on RTX 4070 (8GB)", fontweight="bold", pad=12)
 ax.grid(True, which="both", linestyle=":", alpha=0.6)
 ax.legend(frameon=True, facecolor="#1e293b", framealpha=0.9, loc="upper left")
@@ -361,7 +361,7 @@ for arch in df_results['Architecture'].unique():
 ax.axhline(y=8188.0, color="#f59e0b", linestyle="-.", linewidth=2.0, label="RTX 4070 Hardware VRAM Ceiling (8,188 MB)")
 
 ax.set_xscale('log', base=2)
-ax.set_xlabel("Sequence Length $T$ (tokens, $\log_2$ scale)", fontweight="bold")
+ax.set_xlabel(r"Sequence Length $T$ (tokens, $\log_2$ scale)", fontweight="bold")
 ax.set_ylabel("Peak Allocated VRAM (MB)", fontweight="bold")
 ax.set_title("VRAM Allocation & OOM Wall: Softmax vs Linear Attention", fontweight="bold", pad=12)
 ax.grid(True, which="both", linestyle=":", alpha=0.6)
@@ -435,7 +435,7 @@ for arch in df_results['Architecture'].unique():
     )
 
 ax.set_xscale('log', base=2)
-ax.set_xlabel("Sequence Length $T$ (tokens, $\log_2$ scale)", fontweight="bold")
+ax.set_xlabel(r"Sequence Length $T$ (tokens, $\log_2$ scale)", fontweight="bold")
 ax.set_ylabel("Throughput (tokens / second)", fontweight="bold")
 ax.set_title("Effective Processing Throughput vs Sequence Length", fontweight="bold", pad=12)
 ax.grid(True, which="both", linestyle=":", alpha=0.6)
@@ -792,7 +792,7 @@ rects2 = ax.bar(x_pos, df_matrix['Triton JIT (ms)'], width, label='Level 2: Trit
 rects3 = ax.bar(x_pos + width, df_matrix['CUDA C++ (ms)'], width, label='Level 1: Native CUDA C++', color='#34d399', alpha=0.9)
 
 ax.set_yscale('log')
-ax.set_ylabel('Execution Latency (ms, $\log_{10}$ scale)', fontweight='bold')
+ax.set_ylabel(r'Execution Latency (ms, $\log_{10}$ scale)', fontweight='bold')
 ax.set_title('Three-Level Execution Hierarchy Latency Matrix (18 Canonical Kernels)', fontweight='bold', pad=14)
 ax.set_xticks(x_pos)
 ax.set_xticklabels(df_matrix['Kernel Name'], rotation=45, ha='right', fontsize=8.5)
