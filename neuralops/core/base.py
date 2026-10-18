@@ -202,10 +202,8 @@ class BaseAttention(nn.Module):
                         self.in_proj.weight[:dim].copy_(w_q[:dim])
                         self.in_proj.weight[dim : 2 * dim].copy_(w_k[:dim])
                         self.in_proj.weight[2 * dim :].copy_(w_v[:dim])
-        except (AttributeError, RuntimeError, ValueError) as e:
+        except (AttributeError, RuntimeError, ValueError, KeyError, TypeError) as e:
             logger.debug("BaseAttention.copy_weights failed: %s", e)
-        except Exception as e:
-            logger.warning("Unexpected error in BaseAttention.copy_weights: %s", e)
 
     def extra_repr(self) -> str:
         """Extra repr."""
@@ -221,11 +219,13 @@ class BaseCompressor:
         self.model = model
         self.name = name
         self.kwargs = kwargs
+        self._compressed_once: bool = False
         self._original_params = self._count_params(model)
 
     def __call__(self, *args, **kwargs) -> Any:
         """Allow compressor instance to act as a callable model forward wrapper."""
-        if not getattr(self, "_compressed_once", False):
+        assert callable(self.model), f"{type(self).__name__}.model is not callable"
+        if not self._compressed_once:
             self.compress()
             self._compressed_once = True
         return self.model(*args, **kwargs)

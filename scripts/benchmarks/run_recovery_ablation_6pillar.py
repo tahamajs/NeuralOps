@@ -171,7 +171,7 @@ for arch_key, arch_label in architectures:
 
         t0 = time.perf_counter()
 
-        for step in range(50):
+        for _step in range(50):
             optimizer.zero_grad()
             out = student(inputs)
             logits = out.logits

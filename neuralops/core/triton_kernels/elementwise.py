@@ -1433,6 +1433,8 @@ def fused_entmax_bisect_triton(
 
 fused_fast_gelu = fast_gelu
 fast_gelu_triton = fast_gelu
+swiglu_triton = fused_swiglu
+rmsnorm_triton = fused_rmsnorm
 
 
 def dropout_add_triton(x: torch.Tensor, residual: torch.Tensor, p: float = 0.0, training: bool = False, **kwargs) -> torch.Tensor:
@@ -1487,9 +1489,11 @@ def speculative_verify_triton(
 
 __all__ = [
     "fused_swiglu",
+    "swiglu_triton",
     "fast_gelu",
     "fast_gelu_triton",
     "fused_rmsnorm",
+    "rmsnorm_triton",
     "fused_fast_gelu",
     "dropout_add_triton",
     "layernorm_triton",
