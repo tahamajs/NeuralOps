@@ -162,13 +162,15 @@ def main():
     with force_kernel_backend("triton"):
         try:
             lat_tri, vram_tri = benchmark_fn(fn_sw)
-        except Exception:
+        except (RuntimeError, MemoryError, AssertionError) as e:
+            logger.warning("Backend benchmark failed: %s", e, exc_info=True)
             lat_tri, vram_tri = None, None
 
     with force_kernel_backend("cuda"):
         try:
             lat_cuda, vram_cuda = benchmark_fn(fn_sw)
-        except Exception:
+        except (RuntimeError, MemoryError, AssertionError) as e:
+            logger.warning("Backend benchmark failed: %s", e, exc_info=True)
             lat_cuda, vram_cuda = None, None
 
     sp_cuda = (lat_py / lat_cuda) if lat_cuda else 1.0
@@ -204,13 +206,15 @@ def main():
     with force_kernel_backend("triton"):
         try:
             lat_tri, vram_tri = benchmark_fn(fn_bs)
-        except Exception:
+        except (RuntimeError, MemoryError, AssertionError) as e:
+            logger.warning("Backend benchmark failed: %s", e, exc_info=True)
             lat_tri, vram_tri = None, None
 
     with force_kernel_backend("cuda"):
         try:
             lat_cuda, vram_cuda = benchmark_fn(fn_bs)
-        except Exception:
+        except (RuntimeError, MemoryError, AssertionError) as e:
+            logger.warning("Backend benchmark failed: %s", e, exc_info=True)
             lat_cuda, vram_cuda = None, None
 
     sp_cuda = (lat_py / lat_cuda) if lat_cuda else 1.0
@@ -246,7 +250,8 @@ def main():
     with force_kernel_backend("cuda"):
         try:
             lat_cuda, vram_cuda = benchmark_fn(fn_w4)
-        except Exception:
+        except (RuntimeError, MemoryError, AssertionError) as e:
+            logger.warning("Backend benchmark failed: %s", e, exc_info=True)
             lat_cuda, vram_cuda = None, None
 
     sp_cuda = (lat_py / lat_cuda) if lat_cuda else 1.0
@@ -280,13 +285,15 @@ def main():
     with force_kernel_backend("triton"):
         try:
             lat_tri, vram_tri = benchmark_fn(fn_fp8)
-        except Exception:
+        except (RuntimeError, MemoryError, AssertionError) as e:
+            logger.warning("Backend benchmark failed: %s", e, exc_info=True)
             lat_tri, vram_tri = None, None
 
     with force_kernel_backend("cuda"):
         try:
             lat_cuda, vram_cuda = benchmark_fn(fn_fp8)
-        except Exception:
+        except (RuntimeError, MemoryError, AssertionError) as e:
+            logger.warning("Backend benchmark failed: %s", e, exc_info=True)
             lat_cuda, vram_cuda = None, None
 
     sp_cuda = (lat_py / lat_cuda) if lat_cuda else 1.0
@@ -321,13 +328,15 @@ def main():
     with force_kernel_backend("triton"):
         try:
             lat_tri, vram_tri = benchmark_fn(fn_gqa)
-        except Exception:
+        except (RuntimeError, MemoryError, AssertionError) as e:
+            logger.warning("Backend benchmark failed: %s", e, exc_info=True)
             lat_tri, vram_tri = None, None
 
     with force_kernel_backend("cuda"):
         try:
             lat_cuda, vram_cuda = benchmark_fn(fn_gqa)
-        except Exception:
+        except (RuntimeError, MemoryError, AssertionError) as e:
+            logger.warning("Backend benchmark failed: %s", e, exc_info=True)
             lat_cuda, vram_cuda = None, None
 
     sp_cuda = (lat_py / lat_cuda) if lat_cuda else 1.0
@@ -368,7 +377,8 @@ def main():
     with force_kernel_backend("cuda"):
         try:
             lat_cuda, vram_cuda = benchmark_fn(fn_pa)
-        except Exception:
+        except (RuntimeError, MemoryError, AssertionError) as e:
+            logger.warning("Backend benchmark failed: %s", e, exc_info=True)
             lat_cuda, vram_cuda = None, None
 
     sp_cuda = (lat_py / lat_cuda) if lat_cuda else 1.0
@@ -406,7 +416,8 @@ def main():
     with force_kernel_backend("cuda"):
         try:
             lat_cuda, vram_cuda = benchmark_fn(fn_moe)
-        except Exception:
+        except (RuntimeError, MemoryError, AssertionError) as e:
+            logger.warning("Backend benchmark failed: %s", e, exc_info=True)
             lat_cuda, vram_cuda = None, None
 
     sp_cuda = (lat_py / lat_cuda) if lat_cuda else 1.0
@@ -440,12 +451,14 @@ def main():
     with force_kernel_backend("triton"):
         try:
             lat_tri, vram_tri = benchmark_fn(fn_lr)
-        except Exception:
+        except (RuntimeError, MemoryError, AssertionError) as e:
+            logger.warning("Backend benchmark failed: %s", e, exc_info=True)
             lat_tri, vram_tri = None, None
     with force_kernel_backend("cuda"):
         try:
             lat_cuda, vram_cuda = benchmark_fn(fn_lr)
-        except Exception:
+        except (RuntimeError, MemoryError, AssertionError) as e:
+            logger.warning("Backend benchmark failed: %s", e, exc_info=True)
             lat_cuda, vram_cuda = None, None
 
     sp_cuda = (lat_py / lat_cuda) if lat_cuda else 1.0
@@ -479,12 +492,14 @@ def main():
     with force_kernel_backend("triton"):
         try:
             lat_tri, vram_tri = benchmark_fn(fn_gdn)
-        except Exception:
+        except (RuntimeError, MemoryError, AssertionError) as e:
+            logger.warning("Backend benchmark failed: %s", e, exc_info=True)
             lat_tri, vram_tri = None, None
     with force_kernel_backend("cuda"):
         try:
             lat_cuda, vram_cuda = benchmark_fn(fn_gdn)
-        except Exception:
+        except (RuntimeError, MemoryError, AssertionError) as e:
+            logger.warning("Backend benchmark failed: %s", e, exc_info=True)
             lat_cuda, vram_cuda = None, None
 
     sp_cuda = (lat_py / lat_cuda) if lat_cuda else 1.0
@@ -515,12 +530,14 @@ def main():
     with force_kernel_backend("triton"):
         try:
             lat_tri, vram_tri = benchmark_fn(fn_hgrn)
-        except Exception:
+        except (RuntimeError, MemoryError, AssertionError) as e:
+            logger.warning("Backend benchmark failed: %s", e, exc_info=True)
             lat_tri, vram_tri = None, None
     with force_kernel_backend("cuda"):
         try:
             lat_cuda, vram_cuda = benchmark_fn(fn_hgrn)
-        except Exception:
+        except (RuntimeError, MemoryError, AssertionError) as e:
+            logger.warning("Backend benchmark failed: %s", e, exc_info=True)
             lat_cuda, vram_cuda = None, None
 
     sp_cuda = (lat_py / lat_cuda) if lat_cuda else 1.0
@@ -552,12 +569,14 @@ def main():
     with force_kernel_backend("triton"):
         try:
             lat_tri, vram_tri = benchmark_fn(fn_cos)
-        except Exception:
+        except (RuntimeError, MemoryError, AssertionError) as e:
+            logger.warning("Backend benchmark failed: %s", e, exc_info=True)
             lat_tri, vram_tri = None, None
     with force_kernel_backend("cuda"):
         try:
             lat_cuda, vram_cuda = benchmark_fn(fn_cos)
-        except Exception:
+        except (RuntimeError, MemoryError, AssertionError) as e:
+            logger.warning("Backend benchmark failed: %s", e, exc_info=True)
             lat_cuda, vram_cuda = None, None
 
     sp_cuda = (lat_py / lat_cuda) if lat_cuda else 1.0
@@ -589,12 +608,14 @@ def main():
     with force_kernel_backend("triton"):
         try:
             lat_tri, vram_tri = benchmark_fn(fn_norm_lin)
-        except Exception:
+        except (RuntimeError, MemoryError, AssertionError) as e:
+            logger.warning("Backend benchmark failed: %s", e, exc_info=True)
             lat_tri, vram_tri = None, None
     with force_kernel_backend("cuda"):
         try:
             lat_cuda, vram_cuda = benchmark_fn(fn_norm_lin)
-        except Exception:
+        except (RuntimeError, MemoryError, AssertionError) as e:
+            logger.warning("Backend benchmark failed: %s", e, exc_info=True)
             lat_cuda, vram_cuda = None, None
 
     sp_cuda = (lat_py / lat_cuda) if lat_cuda else 1.0
@@ -627,12 +648,14 @@ def main():
     with force_kernel_backend("triton"):
         try:
             lat_tri, vram_tri = benchmark_fn(fn_rope)
-        except Exception:
+        except (RuntimeError, MemoryError, AssertionError) as e:
+            logger.warning("Backend benchmark failed: %s", e, exc_info=True)
             lat_tri, vram_tri = None, None
     with force_kernel_backend("cuda"):
         try:
             lat_cuda, vram_cuda = benchmark_fn(fn_rope)
-        except Exception:
+        except (RuntimeError, MemoryError, AssertionError) as e:
+            logger.warning("Backend benchmark failed: %s", e, exc_info=True)
             lat_cuda, vram_cuda = None, None
 
     sp_cuda = (lat_py / lat_cuda) if lat_cuda else 1.0
@@ -665,12 +688,14 @@ def main():
     with force_kernel_backend("triton"):
         try:
             lat_tri, vram_tri = benchmark_fn(fn_kron)
-        except Exception:
+        except (RuntimeError, MemoryError, AssertionError) as e:
+            logger.warning("Backend benchmark failed: %s", e, exc_info=True)
             lat_tri, vram_tri = None, None
     with force_kernel_backend("cuda"):
         try:
             lat_cuda, vram_cuda = benchmark_fn(fn_kron)
-        except Exception:
+        except (RuntimeError, MemoryError, AssertionError) as e:
+            logger.warning("Backend benchmark failed: %s", e, exc_info=True)
             lat_cuda, vram_cuda = None, None
 
     sp_cuda = (lat_py / lat_cuda) if lat_cuda else 1.0
@@ -705,12 +730,14 @@ def main():
     with force_kernel_backend("triton"):
         try:
             lat_tri, vram_tri = benchmark_fn(fn_lut)
-        except Exception:
+        except (RuntimeError, MemoryError, AssertionError) as e:
+            logger.warning("Backend benchmark failed: %s", e, exc_info=True)
             lat_tri, vram_tri = None, None
     with force_kernel_backend("cuda"):
         try:
             lat_cuda, vram_cuda = benchmark_fn(fn_lut)
-        except Exception:
+        except (RuntimeError, MemoryError, AssertionError) as e:
+            logger.warning("Backend benchmark failed: %s", e, exc_info=True)
             lat_cuda, vram_cuda = None, None
 
     sp_cuda = (lat_py / lat_cuda) if lat_cuda else 1.0
@@ -742,12 +769,14 @@ def main():
     with force_kernel_backend("triton"):
         try:
             lat_tri, vram_tri = benchmark_fn(fn_la)
-        except Exception:
+        except (RuntimeError, MemoryError, AssertionError) as e:
+            logger.warning("Backend benchmark failed: %s", e, exc_info=True)
             lat_tri, vram_tri = None, None
     with force_kernel_backend("cuda"):
         try:
             lat_cuda, vram_cuda = benchmark_fn(fn_la)
-        except Exception:
+        except (RuntimeError, MemoryError, AssertionError) as e:
+            logger.warning("Backend benchmark failed: %s", e, exc_info=True)
             lat_cuda, vram_cuda = None, None
 
     sp_cuda = (lat_py / lat_cuda) if lat_cuda else 1.0
@@ -778,12 +807,14 @@ def main():
     with force_kernel_backend("triton"):
         try:
             lat_tri, vram_tri = benchmark_fn(fn_ce)
-        except Exception:
+        except (RuntimeError, MemoryError, AssertionError) as e:
+            logger.warning("Backend benchmark failed: %s", e, exc_info=True)
             lat_tri, vram_tri = None, None
     with force_kernel_backend("cuda"):
         try:
             lat_cuda, vram_cuda = benchmark_fn(fn_ce)
-        except Exception:
+        except (RuntimeError, MemoryError, AssertionError) as e:
+            logger.warning("Backend benchmark failed: %s", e, exc_info=True)
             lat_cuda, vram_cuda = None, None
 
     sp_cuda = (lat_py / lat_cuda) if lat_cuda else 1.0
@@ -797,6 +828,7 @@ def main():
         "speedup_cuda_vs_py": sp_cuda,
         "speedup_cuda_vs_tri": (lat_tri / lat_cuda) if (lat_cuda and lat_tri) else 1.0,
         "pytorch_vram_mb": vram_py,
+        "triton_vram_mb": vram_tri,
         "cuda_vram_mb": vram_cuda,
     })
 
