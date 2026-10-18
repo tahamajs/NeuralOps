@@ -564,6 +564,41 @@ Following server revival and code finalization on host `taha@192.168.1.100` (NVI
 
 ---
 
+## 8.10 Long-Horizon Sequence Extrapolation & Recurrent State Scaling ($L \in [4\text{K}, 32\text{K}]$)
+
+To quantify empirical asymptotic scaling and KV-cache footprint bounds across long horizons, sequence extrapolation was benchmarked for $L \in \{4096, 8192, 16384, 32768\}$ comparing standard causal quadratic attention against recurrent associative scan architectures (`Chunk GLA`, `Gated Delta Net`, and `SVD Linear Attention`) on NVIDIA GeForce RTX 4070 Laptop GPU (Ada Lovelace, SM 8.9).
+
+### 8.10.1 Key Extrapolation Insights
+1. **Constant State Footprint ($\mathcal{O}(1)$ Memory)**: While standard quadratic attention KV-cache memory explodes linearly from $4.0$ MB at $L=4\text{K}$ to $32.0$ MB at $L=32\text{K}$ per head/batch, recurrent architectures maintain a constant state footprint of $32$ KB for full-rank recurrent scans (`GLA`, `GDN`) and an ultra-compact $8$ KB footprint for `SVD Linear Attention` ($4\times$ smaller than associative scan state, $4096\times$ smaller than full KV cache at $32\text{K}$).
+2. **Numerical Health & State Drift**: Recurrent linear scans demonstrate vanishing state drift ($\|\Delta\|_F / \|Y\|_F \approx 2.07 \times 10^{-4}$ for GLA and GDN) relative to FP32 across all context lengths up to $32,768$ tokens, with zero NaNs and zero Infs.
+
+### 8.10.2 Long-Horizon Benchmark Matrix Summary
+
+| Sequence Length ($L$) | Architecture Mechanism | Forward Latency (ms) | Peak VRAM (MB) | Recurrent KV-State Size | Relative State Drift | Zero-NaN / Zero-Inf |
+| :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| **4,096** | Standard Quadratic Attention | 0.42 | 12.3 | 4,096 KB ($\mathcal{O}(L)$) | Baseline ($0.0$) | Pass |
+| | Chunk GLA | 3.28 | 36.3 | 32 KB ($\mathcal{O}(1)$) | $2.07 \times 10^{-4}$ | Pass |
+| | Gated Delta Net | 3.83 | 40.4 | 32 KB ($\mathcal{O}(1)$) | $2.08 \times 10^{-4}$ | Pass |
+| | SVD Linear Attention | 0.83 | 70.0 | 8 KB ($\mathcal{O}(1)$) | $4.36 \times 10^{-1}$ | Pass |
+| **8,192** | Standard Quadratic Attention | 1.27 | 65.2 | 8,192 KB ($\mathcal{O}(L)$) | Baseline ($0.0$) | Pass |
+| | Chunk GLA | 6.56 | 82.0 | 32 KB ($\mathcal{O}(1)$) | $2.07 \times 10^{-4}$ | Pass |
+| | Gated Delta Net | 7.01 | 90.2 | 32 KB ($\mathcal{O}(1)$) | $2.08 \times 10^{-4}$ | Pass |
+| | SVD Linear Attention | 2.30 | 130.6 | 8 KB ($\mathcal{O}(1)$) | $4.27 \times 10^{-1}$ | Pass |
+| **16,384** | Standard Quadratic Attention | 3.71 | 120.8 | 16,384 KB ($\mathcal{O}(L)$) | Baseline ($0.0$) | Pass |
+| | Chunk GLA | 13.30 | 154.4 | 32 KB ($\mathcal{O}(1)$) | $2.07 \times 10^{-4}$ | Pass |
+| | Gated Delta Net | 15.46 | 170.9 | 32 KB ($\mathcal{O}(1)$) | $2.07 \times 10^{-4}$ | Pass |
+| | SVD Linear Attention | 8.37 | 251.6 | 8 KB ($\mathcal{O}(1)$) | $3.20 \times 10^{-1}$ | Pass |
+| **32,768** | Standard Quadratic Attention | 13.90 | 231.9 | 32,768 KB ($\mathcal{O}(L)$) | Baseline ($0.0$) | Pass |
+| | Chunk GLA | 27.46 | 299.3 | 32 KB ($\mathcal{O}(1)$) | $2.07 \times 10^{-4}$ | Pass |
+| | Gated Delta Net | 33.56 | 332.3 | 32 KB ($\mathcal{O}(1)$) | $2.07 \times 10^{-4}$ | Pass |
+| | SVD Linear Attention | 31.31 | 493.8 | 8 KB ($\mathcal{O}(1)$) | $3.05 \times 10^{-1}$ | Pass |
+
+Exported deliverables:
+- `docs/benchmarks/paper_benchmarks_extrapolation_32k.csv`
+- `docs/reports/PAPER_TABLES_EXTRAPOLATION_32K.tex`
+
+---
+
 ## 9. Worktree Synchronization & Repository Integrity
 
 - **Primary Working Directory**: `/mnt/d/SVD_linear_Attention`
