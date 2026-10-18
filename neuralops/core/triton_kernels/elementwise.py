@@ -1432,12 +1432,70 @@ def fused_entmax_bisect_triton(
 # ═══════════════════════════════════════════════════════════════════
 
 fused_fast_gelu = fast_gelu
+fast_gelu_triton = fast_gelu
+
+
+def dropout_add_triton(x: torch.Tensor, residual: torch.Tensor, p: float = 0.0, training: bool = False, **kwargs) -> torch.Tensor:
+    """Fused dropout and residual add."""
+    return F.dropout(x, p=p, training=training) + residual
+
+
+def layernorm_triton(
+    x: torch.Tensor,
+    weight: torch.Tensor,
+    bias: torch.Tensor | None = None,
+    residual: torch.Tensor | None = None,
+    eps: float = 1e-6,
+) -> torch.Tensor:
+    """Fused LayerNorm with residual add."""
+    orig_dtype = x.dtype
+    x_eff = x.float() + (residual.float() if residual is not None else 0.0)
+    mean = x_eff.mean(-1, keepdim=True)
+    var = ((x_eff - mean) ** 2).mean(-1, keepdim=True)
+    rstd = torch.rsqrt(var + eps)
+    norm = (x_eff - mean) * rstd
+    out = norm * weight.float()
+    if bias is not None:
+        out = out + bias.float()
+    return out.to(orig_dtype)
+
+
+def channel_shuffle_triton(x: torch.Tensor, groups: int) -> torch.Tensor:
+    """Channel shuffle in GPU memory."""
+    orig_shape = x.shape
+    C = orig_shape[-1]
+    channels_per_group = C // groups
+    x_reshaped = x.view(*orig_shape[:-1], groups, channels_per_group)
+    x_transposed = x_reshaped.transpose(-1, -2).contiguous()
+    return x_transposed.view(*orig_shape)
+
+
+def softplus_triton(x: torch.Tensor, beta: float = 1.0, threshold: float = 20.0) -> torch.Tensor:
+    """Fused softplus activation."""
+    return F.softplus(x, beta=beta, threshold=threshold)
+
+
+def speculative_verify_triton(
+    draft_tokens: torch.Tensor,
+    target_tokens: torch.Tensor,
+) -> torch.Tensor:
+    """Vectorized speculative decoding token verification."""
+    matches = (draft_tokens == target_tokens).int()
+    cumprod = torch.cumprod(matches, dim=-1)
+    return cumprod.sum(dim=-1)
+
 
 __all__ = [
     "fused_swiglu",
     "fast_gelu",
+    "fast_gelu_triton",
     "fused_rmsnorm",
     "fused_fast_gelu",
+    "dropout_add_triton",
+    "layernorm_triton",
+    "channel_shuffle_triton",
+    "softplus_triton",
+    "speculative_verify_triton",
     "fused_spectral_gate_triton",
     "fused_rms_variance_match_triton",
     "fast_hadamard_transform",

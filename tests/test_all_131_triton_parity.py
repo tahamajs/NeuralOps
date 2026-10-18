@@ -11,6 +11,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+import neuralops
 from neuralops.attentions import ATTENTION_REGISTRY
 import neuralops.core.triton_kernels._types as tt
 
