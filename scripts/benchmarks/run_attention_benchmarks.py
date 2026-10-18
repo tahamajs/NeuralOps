@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Author: Taha Majlesi
 """
 Publication Attention Benchmark Suite.
 Compares specialized attention kernels (sparse_attention, routing_attention, cross_attention)
