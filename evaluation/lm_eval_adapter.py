@@ -48,6 +48,7 @@ class NeuralOpsLMEvalAdapter(BaseLM):
         device: torch.device | str = "cuda",
         **kwargs: Any,
     ) -> None:
+        """Execute init routine."""
         if HAS_LM_EVAL and hasattr(super(), "__init__"):
             try:
                 super().__init__()
@@ -63,10 +64,12 @@ class NeuralOpsLMEvalAdapter(BaseLM):
 
     @property
     def device(self) -> torch.device:
+        """Execute device routine."""
         return getattr(self, "_device", torch.device("cpu"))
 
     @device.setter
     def device(self, val: torch.device | str) -> None:
+        """Execute device routine."""
         self._device = torch.device(val)
 
     def loglikelihood(self, requests: List[Tuple[str, str]]) -> List[Tuple[float, bool]]:

@@ -19,6 +19,7 @@ RETRAIN_TRIGGER_REGISTRY = Registry("retrain_triggers")
 
 
 class TriggerType(Enum):
+    """Triggertype definition."""
     DRIFT = "drift"
     PERFORMANCE = "performance"
     SCHEDULE = "schedule"

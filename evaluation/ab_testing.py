@@ -8,6 +8,7 @@ from scipy import stats
 
 @dataclass
 class ABTestResult:
+    """Abtestresult definition."""
     metric: str
     mean_a: float
     mean_b: float
@@ -19,6 +20,7 @@ class ABTestResult:
 
 
 class ABTester:
+    """Abtester definition."""
     def __init__(self, alpha: float = 0.05) -> None:
         """Execute __init__ operation."""
         self.alpha = alpha

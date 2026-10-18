@@ -50,6 +50,7 @@ class NeedleInAHaystackEvaluator:
         passkey_digits: int = 5,
         device: torch.device | str = "cuda",
     ) -> None:
+        """Execute init routine."""
         self.model = model
         self.tokenizer = tokenizer
         self.context_lengths = context_lengths or [256, 512, 1024, 2048]
@@ -58,6 +59,7 @@ class NeedleInAHaystackEvaluator:
         self.device = torch.device(device if torch.cuda.is_available() and device == "cuda" else "cpu")
 
     def _generate_passkey(self) -> str:
+        """Execute generate passkey routine."""
         low = 10 ** (self.passkey_digits - 1)
         high = (10 ** self.passkey_digits) - 1
         return str(random.randint(low, high))

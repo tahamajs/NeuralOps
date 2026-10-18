@@ -43,6 +43,7 @@ class FairnessEvaluator:
     """
 
     def __init__(self, threshold: float = 0.05) -> None:
+        """Execute init routine."""
         self.threshold = threshold
 
     # ── Main API ────────────────────────────────────────────────────
