@@ -1,0 +1,146 @@
+{
+  "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+  "vram_gb": 7.62,
+  "sequence_scaling": [
+    {
+      "seq_len": 512,
+      "std_mem_mb": 34.75,
+      "std_time_ms": 1.07,
+      "gla_mem_mb": 89.01,
+      "gla_time_ms": 193.52,
+      "sparse_mem_mb": 27.26,
+      "sparse_time_ms": 5.2,
+      "flash_mem_mb": 18.25,
+      "flash_time_ms": 0.58
+    },
+    {
+      "seq_len": 1024,
+      "std_mem_mb": 85.25,
+      "std_time_ms": 3.59,
+      "gla_mem_mb": 161.77,
+      "gla_time_ms": 431.08,
+      "sparse_mem_mb": 38.27,
+      "sparse_time_ms": 11.23,
+      "flash_mem_mb": 20.25,
+      "flash_time_ms": 0.79
+    },
+    {
+      "seq_len": 2048,
+      "std_mem_mb": 282.25,
+      "std_time_ms": 13.2,
+      "gla_mem_mb": 307.31,
+      "gla_time_ms": 1031.13,
+      "sparse_mem_mb": 60.33,
+      "sparse_time_ms": 39.69,
+      "flash_mem_mb": 24.25,
+      "flash_time_ms": 3.22
+    },
+    {
+      "seq_len": 4096,
+      "std_mem_mb": 1060.25,
+      "std_time_ms": 78.5,
+      "gla_mem_mb": 598.37,
+      "gla_time_ms": 1627.77,
+      "sparse_mem_mb": 104.56,
+      "sparse_time_ms": 149.79,
+      "flash_mem_mb": 32.25,
+      "flash_time_ms": 6.61
+    },
+    {
+      "seq_len": 8192,
+      "std_mem_mb": "OOM",
+      "std_time_ms": "OOM",
+      "gla_mem_mb": 1204.49,
+      "gla_time_ms": 4159.38,
+      "sparse_mem_mb": 217.5,
+      "sparse_time_ms": 420.33,
+      "flash_mem_mb": 72.25,
+      "flash_time_ms": 22.3
+    },
+    {
+      "seq_len": 16384,
+      "std_mem_mb": "OOM",
+      "std_time_ms": "OOM",
+      "gla_mem_mb": 2392.74,
+      "gla_time_ms": 18877.19,
+      "sparse_mem_mb": 421.25,
+      "sparse_time_ms": 1055.23,
+      "flash_mem_mb": 128.25,
+      "flash_time_ms": 39.5
+    }
+  ],
+  "tenant_concurrency": [
+    {
+      "num_streams": 1,
+      "seq_latency_ms": 0.319,
+      "concurrent_latency_ms": 0.317,
+      "speedup": 1.01,
+      "seq_throughput_qps": 3134.8,
+      "concurrent_throughput_qps": 3154.6
+    },
+    {
+      "num_streams": 2,
+      "seq_latency_ms": 0.68,
+      "concurrent_latency_ms": 0.404,
+      "speedup": 1.68,
+      "seq_throughput_qps": 2941.2,
+      "concurrent_throughput_qps": 4950.5
+    },
+    {
+      "num_streams": 4,
+      "seq_latency_ms": 1.311,
+      "concurrent_latency_ms": 0.544,
+      "speedup": 2.41,
+      "seq_throughput_qps": 3051.1,
+      "concurrent_throughput_qps": 7352.9
+    },
+    {
+      "num_streams": 8,
+      "seq_latency_ms": 2.726,
+      "concurrent_latency_ms": 1.002,
+      "speedup": 2.72,
+      "seq_throughput_qps": 2934.7,
+      "concurrent_throughput_qps": 7984.0
+    }
+  ],
+  "fragmentation_profile": {
+    "iterations": 1000,
+    "elapsed_sec": 2.06,
+    "ms_per_iter": 2.062,
+    "initial_allocated_mb": 2187.626,
+    "final_allocated_mb": 2187.626,
+    "peak_allocated_mb": 2197.1309,
+    "peak_reserved_mb": 2400.0,
+    "net_drift_iter100_to_1000_mb": 0.0,
+    "zero_leak_verified": true,
+    "final_fragmentation_pct": 8.85,
+    "strictly_below_5_pct": false,
+    "checkpoints": {
+      "100": {
+        "allocated_mb": 2187.626,
+        "reserved_mb": 2400.0,
+        "fragmentation_pct": 8.85
+      },
+      "250": {
+        "allocated_mb": 2187.626,
+        "reserved_mb": 2400.0,
+        "fragmentation_pct": 8.85
+      },
+      "500": {
+        "allocated_mb": 2187.626,
+        "reserved_mb": 2400.0,
+        "fragmentation_pct": 8.85
+      },
+      "750": {
+        "allocated_mb": 2187.626,
+        "reserved_mb": 2400.0,
+        "fragmentation_pct": 8.85
+      },
+      "1000": {
+        "allocated_mb": 2187.626,
+        "reserved_mb": 2400.0,
+        "fragmentation_pct": 8.85
+      }
+    }
+  }
+}
