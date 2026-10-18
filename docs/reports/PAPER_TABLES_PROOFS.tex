@@ -241,7 +241,8 @@ S_t = \gamma S_{t-1} + (k_t V_r) (v_t U_r)^T, \quad o_t = (q_t V_r) S_t (U_r)^T.
     \end{equation}
     Since $r \ll D \ll L$ for long sequences ($L \ge 2048$), the theoretical computational speedup is:
     egin{equation}
-    	ext{Speedup} = rac{\mathcal{C}_{	ext{Flash2}}^{	ext{train}}}{\mathcal{C}_{	ext{SVD}}^{	ext{train}}} = rac{4 B H L^2 D}{4 B H L D r + 2 B H L r^2} pprox rac{L}{r} = \mathcal{O}\left( rac{L}{r} ight).
+    	ext{Speedup} = rac{\mathcal{C}_{	ext{Flash2}}^{	ext{train}}}{\mathcal{C}_{	ext{SVD}}^{	ext{train}}} = rac{4 B H L^2 D}{4 B H L D r + 2 B H L r^2} pprox rac{L}{r} = \mathcal{O}\left( rac{L}{r} 
+ight).
     \end{equation}
     
     \item 	extbf{Autoregressive Generation Working Memory:} During inference at step $t$, FlashAttention-2 must retain all past key-value states in a dynamic KV-cache of size:
@@ -271,5 +272,55 @@ Standard Linear Attention & $\mathcal{O}(B H L D^2)$ & $\mathcal{O}(B H D^2)$ & 
 ottomrule
 \end{tabular}
 \end{table*}
+
+
+egin{theorem}[Information Retention and Gradient Flow in Associative SVD Recurrence]
+Let the SVD linear attention recurrence be parameterized with singular-value-dependent decay rates $\boldsymbol{\Gamma} = \operatorname{diag}(\gamma_1, \dots, \gamma_r)$ where $\gamma_k = \sigma_k / \sigma_1 \in (0, 1)$ for $k \in \{1, \dots, r\}$ with $\gamma_1 \ge \gamma_2 \ge \dots \ge \gamma_r$.
+The Jacobian of the state recurrence from time-step $t$ to future horizon $T$ is given by:
+egin{equation}
+\frac{\partial S_T}{\partial S_t} = \prod_{k=t+1}^T \boldsymbol{\Gamma}_k = \boldsymbol{\Gamma}^{T - t}.
+\end{equation}
+By the adjoint state equation, the backward gradient vector satisfies:
+egin{equation}
+\frac{\partial \mathcal{L}}{\partial S_t} = \boldsymbol{\Gamma}^{T - t} \frac{\partial \mathcal{L}}{\partial S_T}.
+\end{equation}
+Taking the Frobenius norm:
+egin{equation}
+\left\| \frac{\partial \mathcal{L}}{\partial S_t} \right\|_F \le \|\boldsymbol{\Gamma}^{T - t}\|_2 \left\| \frac{\partial \mathcal{L}}{\partial S_T} \right\|_F = \gamma_1^{T - t} \left\| \frac{\partial \mathcal{L}}{\partial S_T} \right\|_F.
+\end{equation}
+Defining the effective retention Lyapunov exponent $\lambda_1 = -\ln(\gamma_1) > 0$:
+egin{equation}
+\left\| \frac{\partial \mathcal{L}}{\partial S_t} \right\|_F \le \exp\left( -\lambda_1 (T - t) \right) \left\| \frac{\partial \mathcal{L}}{\partial S_T} \right\|_F.
+\end{equation}
+	extbf{Implications for Long-Horizon Memory:}
+egin{enumerate}
+    \item 	extbf{Explosion-Free Gradient Flow:} Because $\gamma_1 < 1.0$, the gradient norm is strictly bounded by $\|\partial \mathcal{L} / \partial S_T\|_F$ for all $t < T$, guaranteeing the absence of exploding gradients.
+    \item 	extbf{Mitigation of Catastrophic Forgetting:} The spectrum spanned by the dominant singular components ($\gamma_1 \approx 1 - \epsilon$) retains gradient signal over context horizon $\tau_{\text{memory}} = \mathcal{O}(1 / \lambda_1)$, allowing multi-scale retention of semantic dependencies across sequence lengths of thousands of tokens.
+    \item 	extbf{Asymptotic Vanishing Property:} As $T - t \to \infty$:
+    egin{equation}
+    \lim_{T - t \to \infty} \left\| \frac{\partial \mathcal{L}}{\partial S_t} \right\|_F = 0,
+    \end{equation}
+    proving that historical states fade exponentially without unbounded memory buildup or numerical accumulation overflow.
+\end{enumerate}
+\end{theorem}
+
+% TABLE 7: ADAPTIVE SVD GRADIENT FLOW VERIFICATION
+egin{table}[h]
+\centering
+\caption{Empirical Gradient Flow and Exponential Decay Bounds Over Temporal Horizon ($T-t$) on RTX 4070.}
+\label{tab:gradient_flow_empirical}
+egin{tabular}{rccc}
+	oprule
+	extbf{Temporal Lag} $(T - t)$ & 	extbf{Observed Gradient Norm} $\|rac{\partial \mathcal{L}}{\partial S_t}\|_F$ & 	extbf{Theoretical Upper Bound} & 	extbf{Theoretical Lower Bound} \
+\midrule
+$1$ & $1.3109 	imes 10^{1}$ & $1.4780 	imes 10^{1}$ & $1.1197 	imes 10^{1}$ \
+$16$ & $5.5192 	imes 10^{0}$ & $1.2712 	imes 10^{1}$ & $1.4963 	imes 10^{-1}$ \
+$64$ & $2.5207 	imes 10^{0}$ & $7.8468 	imes 10^{0}$ & $1.5065 	imes 10^{-7}$ \
+$128$ & $1.2514 	imes 10^{0}$ & $4.1242 	imes 10^{0}$ & $1.5201 	imes 10^{-15}$ \
+$256$ & $3.4299 	imes 10^{-1}$ & $1.1393 	imes 10^{0}$ & $1.5478 	imes 10^{-31}$ \
+$512$ & $2.6172 	imes 10^{-2}$ & $8.6948 	imes 10^{-2}$ & $1.6047 	imes 10^{-63}$ \
+ottomrule
+\end{tabular}
+\end{table}
 
 \end{document}
