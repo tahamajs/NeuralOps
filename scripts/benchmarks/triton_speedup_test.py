@@ -37,6 +37,7 @@ def measure_latency_and_memory(
     """
     Measures mean execution time (ms) using CUDA events and peak allocated VRAM (MB).
     """
+    assert callable(fn), "fn must be callable"
     torch.cuda.empty_cache()
     gc.collect()
     torch.cuda.reset_peak_memory_stats()

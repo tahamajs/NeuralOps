@@ -88,7 +88,8 @@ def run_speculative_gamma_benchmark(
     prompt = torch.randint(0, 1000, (1, 16), device=dev)
 
     # 1. Standard autoregressive baseline
-    torch.cuda.synchronize() if dev.type == "cuda" else None
+    if dev.type == "cuda":
+        torch.cuda.synchronize()
     t0 = time.perf_counter()
     curr_ids = prompt.clone()
     with torch.no_grad():
@@ -96,7 +97,8 @@ def run_speculative_gamma_benchmark(
             logits = target_model(curr_ids)[:, -1, :]
             next_tok = torch.argmax(logits, dim=-1, keepdim=True)
             curr_ids = torch.cat([curr_ids, next_tok], dim=-1)
-    torch.cuda.synchronize() if dev.type == "cuda" else None
+    if dev.type == "cuda":
+        torch.cuda.synchronize()
     baseline_time_s = time.perf_counter() - t0
     baseline_tok_s = tokens_to_generate / baseline_time_s
 
@@ -113,7 +115,8 @@ def run_speculative_gamma_benchmark(
             adaptive_k=False,
         )
 
-        torch.cuda.synchronize() if dev.type == "cuda" else None
+        if dev.type == "cuda":
+            torch.cuda.synchronize()
         t_start = time.perf_counter()
 
         gen_ids, stats = decoder.generate(
@@ -122,7 +125,8 @@ def run_speculative_gamma_benchmark(
             temperature=0.0,
         )
 
-        torch.cuda.synchronize() if dev.type == "cuda" else None
+        if dev.type == "cuda":
+            torch.cuda.synchronize()
         elapsed_s = time.perf_counter() - t_start
 
         speedup = baseline_time_s / max(elapsed_s, 1e-6)

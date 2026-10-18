@@ -17,6 +17,9 @@ def run_benchmark():
     k = torch.randn(B, H_KV, N, D, device=device, dtype=torch.float32)
     v = torch.randn(B, H_KV, N, D, device=device, dtype=torch.float32)
 
+    assert callable(flash_gqa), "flash_gqa must be callable"
+    assert callable(flash_gqa_pytorch_ref), "flash_gqa_pytorch_ref must be callable"
+
     # Warmup
     for _ in range(10):
         _ = flash_gqa(q, k, v, is_causal=False)

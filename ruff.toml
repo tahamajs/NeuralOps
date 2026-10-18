@@ -1,27 +1,39 @@
-# Ruff configuration for NeuralOps
-target-version = "py310"
+# Author: Taha Majlesi
+# [tool.ruff]
+target-version = "py312"
 line-length = 120
+exclude = [
+    "paper/",
+    "thesis_final/",
+    "results/",
+    "docs/",
+    "notebooks/*.ipynb",
+    ".git/",
+    "*.egg-info",
+]
 
+# [tool.ruff.lint]
 [lint]
-select = [
-    "E",    # pycodestyle errors
-    "W",    # pycodestyle warnings
-    "F",    # Pyflakes
-    "I",    # isort
-    "B",    # flake8-bugbear
-    "UP",   # pyupgrade
-]
+select = ["E", "F", "B", "F401", "F841", "B006", "B008"]
 ignore = [
-    "E501",  # Line too long (handled by formatter)
-    "E731",  # Do not assign a lambda expression, use a def
+    "N803",
+    "N806",  # B, H, N, D for tensor dims (ML standard)
+    "E501",  # long lines
+    "D100",
+    "D101",
+    "D102",
+    "D103",
+    "D104",
+    "D105",
+    "D107",
+    "D205",
+    "D400",
+    "B006",  # mutable default — only flag, do not auto-remove
+    "E402",  # module level import not at top of file (sys.path manipulation in scripts)
+    "E741",  # ambiguous variable name
+    "B023",  # function definition does not bind loop variable
+    "E731",  # do not assign a lambda expression, use a def
+    "B007",  # loop control variable not used within loop body
+    "B905",  # zip() without explicit strict= parameter
 ]
 
-[lint.per-file-ignores]
-"__init__.py" = ["F401", "F403"]
-"tests/*" = ["F401", "F841"]
-
-[format]
-quote-style = "double"
-indent-style = "space"
-skip-magic-trailing-comma = false
-line-ending = "auto"

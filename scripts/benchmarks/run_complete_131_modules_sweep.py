@@ -39,6 +39,7 @@ def run_sweep(output_dir="results"):
         gc.collect()
         t0 = time.time()
         cls = ATTENTION_REGISTRY.get(name)
+        assert callable(cls), f"Attention module '{name}' from registry must be callable"
         status = "PASS"
         err = ""
 

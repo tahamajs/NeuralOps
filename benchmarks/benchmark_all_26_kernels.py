@@ -6,7 +6,6 @@ Delegates directly to canonical neuralops.benchmarks.benchmark_all_26_kernels.
 """
 
 import sys
-from neuralops.benchmarks.benchmark_all_26_kernels import *
 from neuralops.benchmarks.benchmark_all_26_kernels import main
 
 if __name__ == "__main__":

@@ -193,24 +193,28 @@ for N in seq_lengths:
     v = torch.randn(1, 4, N, 64, device=device)
     
     # Linear Attention: O(N * D^2)
-    torch.cuda.synchronize() if torch.cuda.is_available() else None
+    if torch.cuda.is_available():
+        torch.cuda.synchronize()
     t0 = time.perf_counter()
     for _ in range(10):
         phi_q = F.elu(q) + 1.0
         phi_k = F.elu(k) + 1.0
         kv = torch.matmul(phi_k.transpose(-1, -2), v)
         out_lin = torch.matmul(phi_q, kv)
-    torch.cuda.synchronize() if torch.cuda.is_available() else None
+    if torch.cuda.is_available():
+        torch.cuda.synchronize()
     timings["linear_attention"].append((time.perf_counter() - t0) / 10 * 1000)
     
     # Quadratic Softmax: O(N^2 * D)
-    torch.cuda.synchronize() if torch.cuda.is_available() else None
+    if torch.cuda.is_available():
+        torch.cuda.synchronize()
     t0 = time.perf_counter()
     for _ in range(10):
         scores = torch.matmul(q, k.transpose(-1, -2)) / 8.0
         attn = torch.softmax(scores, dim=-1)
         out_soft = torch.matmul(attn, v)
-    torch.cuda.synchronize() if torch.cuda.is_available() else None
+    if torch.cuda.is_available():
+        torch.cuda.synchronize()
     timings["standard_softmax"].append((time.perf_counter() - t0) / 10 * 1000)
 
 print(f"{'Seq Length':<12} | {'Linear Attn (ms)':<18} | {'Softmax Attn (ms)':<18} | {'Speedup':<10}")

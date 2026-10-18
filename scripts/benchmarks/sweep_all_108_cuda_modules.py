@@ -94,6 +94,10 @@ def main():
 
             # Module successfully compiled and loaded
             exported_fns = [fn for fn in dir(loaded_mod) if not fn.startswith("_")]
+            for fn_name in exported_fns:
+                fn_obj = getattr(loaded_mod, fn_name, None)
+                if fn_obj is not None and not fn_name.startswith("__"):
+                    assert callable(fn_obj), f"Exported function {fn_name} in {mod_name} must be callable"
             res_entry["status"] = "COMPILED"
             res_entry["exported_functions"] = exported_fns
 

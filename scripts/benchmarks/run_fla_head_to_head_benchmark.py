@@ -47,6 +47,7 @@ def benchmark_attention(name, key, seq_len):
     cls = ATTENTION_REGISTRY.get(key)
     if cls is None or not callable(cls):
         raise ValueError(f"Module '{key}' not found or not callable in ATTENTION_REGISTRY")
+    assert callable(cls), f"Module '{key}' not callable in ATTENTION_REGISTRY"
     cfg = GPT2Config(n_embd=D, n_head=H, hidden_size=D, num_attention_heads=H)
     try:
         mod = cls(config=cfg)
@@ -54,7 +55,10 @@ def benchmark_attention(name, key, seq_len):
         try:
             mod = cls(hidden_size=D, num_heads=H)
         except TypeError:
-            mod = cls()
+            try:
+                mod = cls(dim=D, num_heads=H)
+            except TypeError:
+                mod = cls()
 
     mod = mod.to(device=device, dtype=torch.bfloat16).train()
     x = torch.randn(B, seq_len, D, device=device, dtype=torch.bfloat16, requires_grad=True)
@@ -64,7 +68,10 @@ def benchmark_attention(name, key, seq_len):
         try:
             out = mod(x)
         except TypeError:
-            out = mod(x, x, x)
+            try:
+                out = mod(x, x, x)
+            except TypeError:
+                out = mod(hidden_states=x)
         if isinstance(out, (tuple, list)):
             out = out[0]
         loss = out.sum()
@@ -77,36 +84,79 @@ def benchmark_attention(name, key, seq_len):
     torch.cuda.synchronize()
 
     # Forward benchmark
-    t0 = time.perf_counter()
     iters = 3 if seq_len >= 4096 else 5
-    for _ in range(iters):
-        try:
-            out = mod(x)
-        except TypeError:
-            out = mod(x, x, x)
-    torch.cuda.synchronize()
-    fwd_time_ms = (time.perf_counter() - t0) * 1000.0 / iters
+    if device == "cuda":
+        start_evt = torch.cuda.Event(enable_timing=True)
+        end_evt = torch.cuda.Event(enable_timing=True)
+        start_evt.record()
+        for _ in range(iters):
+            try:
+                out = mod(x)
+            except TypeError:
+                try:
+                    out = mod(x, x, x)
+                except TypeError:
+                    out = mod(hidden_states=x)
+        end_evt.record()
+        torch.cuda.synchronize()
+        fwd_time_ms = start_evt.elapsed_time(end_evt) / iters
+    else:
+        t0 = time.perf_counter()
+        for _ in range(iters):
+            try:
+                out = mod(x)
+            except TypeError:
+                try:
+                    out = mod(x, x, x)
+                except TypeError:
+                    out = mod(hidden_states=x)
+        fwd_time_ms = (time.perf_counter() - t0) * 1000.0 / iters
 
     # Fwd + Bwd benchmark
     torch.cuda.empty_cache()
     torch.cuda.reset_peak_memory_stats()
     torch.cuda.synchronize()
 
-    t0 = time.perf_counter()
-    for _ in range(iters):
-        try:
-            out = mod(x)
-        except TypeError:
-            out = mod(x, x, x)
-        if isinstance(out, (tuple, list)):
-            out = out[0]
-        loss = out.sum()
-        loss.backward()
-        if x.grad is not None:
-            x.grad.zero_()
-    torch.cuda.synchronize()
-    fwd_bwd_time_ms = (time.perf_counter() - t0) * 1000.0 / iters
-    peak_vram_mb = torch.cuda.max_memory_allocated() / (1024 * 1024)
+    if device == "cuda":
+        start_evt = torch.cuda.Event(enable_timing=True)
+        end_evt = torch.cuda.Event(enable_timing=True)
+        start_evt.record()
+        for _ in range(iters):
+            try:
+                out = mod(x)
+            except TypeError:
+                try:
+                    out = mod(x, x, x)
+                except TypeError:
+                    out = mod(hidden_states=x)
+            if isinstance(out, (tuple, list)):
+                out = out[0]
+            loss = out.sum()
+            loss.backward()
+            if x.grad is not None:
+                x.grad.zero_()
+        end_evt.record()
+        torch.cuda.synchronize()
+        fwd_bwd_time_ms = start_evt.elapsed_time(end_evt) / iters
+    else:
+        t0 = time.perf_counter()
+        for _ in range(iters):
+            try:
+                out = mod(x)
+            except TypeError:
+                try:
+                    out = mod(x, x, x)
+                except TypeError:
+                    out = mod(hidden_states=x)
+            if isinstance(out, (tuple, list)):
+                out = out[0]
+            loss = out.sum()
+            loss.backward()
+            if x.grad is not None:
+                x.grad.zero_()
+        fwd_bwd_time_ms = (time.perf_counter() - t0) * 1000.0 / iters
+
+    peak_vram_mb = torch.cuda.max_memory_allocated() / (1024 * 1024) if device == "cuda" else 0.0
 
     return fwd_time_ms, fwd_bwd_time_ms, peak_vram_mb
 

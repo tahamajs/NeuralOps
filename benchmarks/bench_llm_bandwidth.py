@@ -6,7 +6,6 @@ Delegates directly to canonical neuralops.benchmarks.bench_llm_bandwidth.
 """
 
 import sys
-from neuralops.benchmarks.bench_llm_bandwidth import *
 from neuralops.benchmarks.bench_llm_bandwidth import main
 
 if __name__ == "__main__":

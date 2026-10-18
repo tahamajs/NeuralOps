@@ -609,6 +609,7 @@ def run_test(mod_name):
     fn = getattr(py_mod, entry_name, None)
     if fn is None or not callable(fn):
         return {{"status": "NO_ENTRYPOINT", "entry": entry_name}}
+    assert callable(fn), f"Dynamically loaded kernel '{entry_name}' in {mod_name} must be callable"
 
     # JIT Compile
     if hasattr(py_mod, "_get_module"):
@@ -780,6 +781,10 @@ def main():
     """Execute main routine."""
     parser = argparse.ArgumentParser(description="Subprocess-Isolated Master Benchmark for CUDA Modules")
     parser.add_argument("--classify-strict", action="store_true", help="Apply strict PASS/FAIL classification")
+    parser.add_argument(
+        "--modules", type=str, default=None, help="Limit number of modules (e.g. 3) or comma-separated names"
+    )
+    parser.add_argument("--limit", type=int, default=None, help="Limit number of modules to run")
     parser.add_argument("--output", type=str, default=None, help="Output JSON results path")
     args = parser.parse_args()
 
@@ -789,6 +794,15 @@ def main():
 
     cuda_dir = repo_root / "neuralops" / "core" / "cuda_kernels"
     subdirs = sorted([d for d in cuda_dir.iterdir() if d.is_dir() and not d.name.startswith(("_", "."))])
+
+    if args.modules:
+        if args.modules.isdigit():
+            subdirs = subdirs[: int(args.modules)]
+        else:
+            mod_filter = {m.strip() for m in args.modules.split(",")}
+            subdirs = [d for d in subdirs if d.name in mod_filter]
+    elif args.limit:
+        subdirs = subdirs[: args.limit]
 
     # Write worker script
     # Write worker script

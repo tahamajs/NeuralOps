@@ -6,7 +6,6 @@ Delegates directly to canonical neuralops.benchmarks.benchmark_dynamic_range_str
 """
 
 import sys
-from neuralops.benchmarks.benchmark_dynamic_range_stress import *
 from neuralops.benchmarks.benchmark_dynamic_range_stress import main
 
 if __name__ == "__main__":

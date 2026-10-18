@@ -122,6 +122,7 @@ def main():
 
                 def _make_forward(target_mod, target_x):
                     """Execute make forward routine."""
+
                     def run_forward():
                         """Execute run forward routine."""
                         with torch.no_grad():

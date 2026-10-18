@@ -29,6 +29,7 @@ from neuralops.inference.paged_cache import PagedKVCache
 try:
     from rich.console import Console
     from rich.table import Table
+
     RICH_AVAILABLE = True
 except ImportError:
     RICH_AVAILABLE = False
@@ -37,7 +38,9 @@ except ImportError:
 class ContiguousKVCache:
     """Standard preallocated contiguous tensor KV cache (baseline comparison)."""
 
-    def __init__(self, max_batch_size: int, max_seq_len: int, num_heads: int, head_dim: int, dtype=torch.float16, device="cuda"):
+    def __init__(
+        self, max_batch_size: int, max_seq_len: int, num_heads: int, head_dim: int, dtype=torch.float16, device="cuda"
+    ):
         """Execute init routine."""
         self.device = torch.device(device)
         self.k_cache = torch.zeros((max_batch_size, max_seq_len, num_heads, head_dim), dtype=dtype, device=self.device)
@@ -73,7 +76,7 @@ class MockDecoderLayer(nn.Module):
         """Execute forward routine."""
         q, k, v = self.q_proj(x), self.k_proj(x), self.v_proj(x)
         # Scaled dot-product
-        attn = torch.matmul(q, k.transpose(-1, -2)) * (self.head_dim ** -0.5)
+        attn = torch.matmul(q, k.transpose(-1, -2)) * (self.head_dim**-0.5)
         attn = torch.softmax(attn, dim=-1)
         out = self.out_proj(torch.matmul(attn, v)) + x
         ffn = self.fc2(torch.relu(self.fc1(out)))
@@ -145,7 +148,9 @@ def benchmark_serving(
             "status": "OK",
         }
         ttft_itl_results.append(rec)
-        print(f"  N_req={N_req:2d} | TTFT: {ttft_ms:6.2f} ms | ITL: {itl_ms:5.2f} ms | Throughput: {gen_tokens_sec:8.1f} tok/s | VRAM: {decode_metric.peak_vram_mb:5.1f} MB")
+        print(
+            f"  N_req={N_req:2d} | TTFT: {ttft_ms:6.2f} ms | ITL: {itl_ms:5.2f} ms | Throughput: {gen_tokens_sec:8.1f} tok/s | VRAM: {decode_metric.peak_vram_mb:5.1f} MB"
+        )
 
     # KV Cache Fragmentation & Capacity Benchmark
     print("\n=== PagedKVCache vs Contiguous Cache Memory Benchmark ===")
@@ -203,7 +208,9 @@ def benchmark_serving(
             "max_supported_concurrent_seqs": (num_blocks * bs) // 512,
         }
         cache_results.append(cache_rec)
-        print(f"  BlockSize={bs:2d} | Paged VRAM: {paged_vram:6.1f} MB | Contig VRAM: {contig_vram:6.1f} MB | Ratio: {cache_rec['memory_savings_ratio']:.2f}x | Dynamic append: {paged_alloc_time:6.2f} ms")
+        print(
+            f"  BlockSize={bs:2d} | Paged VRAM: {paged_vram:6.1f} MB | Contig VRAM: {contig_vram:6.1f} MB | Ratio: {cache_rec['memory_savings_ratio']:.2f}x | Dynamic append: {paged_alloc_time:6.2f} ms"
+        )
 
     return {
         "serving_ttft_itl": ttft_itl_results,
@@ -215,7 +222,14 @@ def main():
     """Execute main routine."""
     parser = argparse.ArgumentParser(description="NeuralOps Serving Benchmark")
     parser.add_argument("--device", type=str, default="cuda:0" if torch.cuda.is_available() else "cpu")
-    parser.add_argument("--output", "--out-file", dest="out_file", type=str, default="results/benchmarks_serving_ttft_itl.json", help="Path to save JSON output")
+    parser.add_argument(
+        "--output",
+        "--out-file",
+        dest="out_file",
+        type=str,
+        default="results/benchmarks_serving_ttft_itl.json",
+        help="Path to save JSON output",
+    )
     args = parser.parse_args()
 
     results = benchmark_serving(device=args.device)

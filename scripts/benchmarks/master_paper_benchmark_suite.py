@@ -77,7 +77,9 @@ def set_seed(seed: int):
     np.random.seed(seed)
 
 
-def prepare_classification_batches(task: str, tokenizer, backbone: str = "", max_samples: int = 200, batch_size: int = 32):
+def prepare_classification_batches(
+    task: str, tokenizer, backbone: str = "", max_samples: int = 200, batch_size: int = 32
+):
     """Execute prepare classification batches routine."""
     if task == "sst2":
         ds = load_dataset("nyu-mll/glue", "sst2", split="validation")
@@ -170,15 +172,11 @@ def evaluate_classification(model, batches):
             correct += (preds == y).sum().item()
             total += y.size(0)
             total_tokens += enc["input_ids"].numel()
-            total_time += (t1 - t0)
+            total_time += t1 - t0
 
     acc = (correct / total) * 100.0 if total > 0 else 0.0
     throughput = total_tokens / total_time if total_time > 0 else 0.0
-    vram = (
-        torch.cuda.max_memory_allocated() / (1024 * 1024)
-        if torch.cuda.is_available()
-        else 0.0
-    )
+    vram = torch.cuda.max_memory_allocated() / (1024 * 1024) if torch.cuda.is_available() else 0.0
 
     return {
         "accuracy": round(acc, 2),
@@ -210,16 +208,12 @@ def evaluate_lm_ppl(model, batches):
             num_tokens = chunk.numel()
             total_loss += loss * num_tokens
             total_tokens += num_tokens
-            total_time += (t1 - t0)
+            total_time += t1 - t0
 
     avg_loss = total_loss / total_tokens if total_tokens > 0 else 0.0
     ppl = float(np.exp(avg_loss)) if avg_loss < 20.0 else 999999.0
     throughput = total_tokens / total_time if total_time > 0 else 0.0
-    vram = (
-        torch.cuda.max_memory_allocated() / (1024 * 1024)
-        if torch.cuda.is_available()
-        else 0.0
-    )
+    vram = torch.cuda.max_memory_allocated() / (1024 * 1024) if torch.cuda.is_available() else 0.0
 
     return {
         "perplexity": round(ppl, 2),
@@ -328,7 +322,7 @@ def main():
     # 2. GPT-2 Language Modeling Benchmark (WikiText-2)
     lm_results = []
     for var in variants:
-        for seed in (seeds[:1] if args.mode == "smoke-test" else seeds):
+        for seed in seeds[:1] if args.mode == "smoke-test" else seeds:
             logger.info(f"Run: gpt2 | wikitext2 | {var} | seed={seed}")
             model, tokenizer, pb, pa, pt = build_lm_model(var, seed, lora_rank=16)
             batches = prepare_lm_batches(tokenizer, max_tokens=2048 if args.mode == "smoke-test" else 4096)
@@ -356,7 +350,7 @@ def main():
     for r in lora_ranks:
         logger.info(f"Run LoRA Ablation: distilbert | sst2 | wgqa | rank={r}")
         model, tokenizer, pb, pa, pt = build_classification_model("distilbert", "sst2", "wgqa", seed=42, lora_rank=r)
-        
+
         # Apply calibrated rank capacity: top-r residual singular values
         with torch.no_grad():
             for m in model.modules():
@@ -397,7 +391,9 @@ def main():
     gpt2_summary = {}
     for entry in lm_results:
         gpt2_summary.setdefault(entry["variant"], []).append(entry["perplexity"])
-    table1_summary["gpt2_wikitext2_ppl"] = {var_name: round(float(np.mean(ppls)), 2) for var_name, ppls in gpt2_summary.items()}
+    table1_summary["gpt2_wikitext2_ppl"] = {
+        var_name: round(float(np.mean(ppls)), 2) for var_name, ppls in gpt2_summary.items()
+    }
 
     # Build Table 2: Multi-seed Robustness (Mean +- Std)
     table2 = {}
@@ -418,11 +414,15 @@ def main():
         json.dump(lora_results, f, indent=2)
 
     with open(OUTPUT_DIR / "wgqa_all_raw_metrics.json", "w") as f:
-        json.dump({
-            "classification": cls_results,
-            "language_modeling": lm_results,
-            "lora_ablation": lora_results,
-        }, f, indent=2)
+        json.dump(
+            {
+                "classification": cls_results,
+                "language_modeling": lm_results,
+                "lora_ablation": lora_results,
+            },
+            f,
+            indent=2,
+        )
 
     logger.info("=== Benchmark Suite Completed Successfully ===")
     logger.info(f"Table 1 Summary:\n{json.dumps(table1_summary, indent=2)}")

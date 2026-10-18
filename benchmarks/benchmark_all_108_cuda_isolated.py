@@ -5,9 +5,9 @@
 
 Delegates directly to scripts.benchmarks.benchmark_all_108_cuda_isolated.
 """
+
 from pathlib import Path
 import runpy
-import sys
 
 _script = Path(__file__).resolve().parent.parent / "scripts" / "benchmarks" / "benchmark_all_108_cuda_isolated.py"
 

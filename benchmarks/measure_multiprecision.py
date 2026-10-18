@@ -6,7 +6,6 @@ Delegates directly to canonical neuralops.benchmarks.measure_multiprecision.
 """
 
 import sys
-from neuralops.benchmarks.measure_multiprecision import *
 from neuralops.benchmarks.measure_multiprecision import main
 
 if __name__ == "__main__":

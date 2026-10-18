@@ -135,6 +135,7 @@ def run_benchmark_suite(
         # Wrap PyTorch baseline
         class BaselineMHA(nn.Module):
             """Baselinemha definition."""
+
             def __init__(self, mha):
                 """Execute init routine."""
                 super().__init__()
