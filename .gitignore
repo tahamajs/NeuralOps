@@ -229,7 +229,7 @@ MasterHttpRelayVPN-python_testing/
 !setup.py
 
 # ============================================================
-# Absolute Overrides: Never Track Bytecode, Cache or Logs
+# Absolute Overrides: Never Track Bytecode, Cache, Non-Code, or Large Artifacts
 # ============================================================
 **/__pycache__/
 __pycache__/
@@ -239,13 +239,18 @@ __pycache__/
 *$py.class
 *.log
 *.jsonl
-!results/registry/master_ledger.jsonl
-audit/
+*.pdf
+*.tar.gz
+*.zip
+*.bundle
+
+# Non-code & academic directories completely ignored
 academic/
-results/batch_validation/
-thesis_final/master_thesis_lite.pdf
-thesis_final/810101504.pdf
-thesis_final/master_thesis.pdf
-paper/iclr2027-submission/iclr2027_conference.pdf
+paper/
+thesis_final/
+results/
+logs/
+audit/
 scratch/
 grading.log
+
