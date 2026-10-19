@@ -360,15 +360,15 @@ def _ensure_registries_loaded() -> None:
     try:
         import neuralops.attentions  # noqa: F401
     except (ImportError, AttributeError) as exc:
-        logger.debug("Error loading neuralops.attentions: %s", exc)
+        logger.warning("Error loading neuralops.attentions: %s", exc)
     try:
         import neuralops.trainer.ttt.test_time_trainer  # noqa: F401
     except (ImportError, AttributeError) as exc:
-        logger.debug("Error loading neuralops.trainer.ttt: %s", exc)
+        logger.warning("Error loading neuralops.trainer.ttt: %s", exc)
     try:
         import neuralops.compression_engine  # noqa: F401
     except (ImportError, AttributeError) as exc:
-        logger.debug("Error loading neuralops.compression_engine: %s", exc)
+        logger.warning("Error loading neuralops.compression_engine: %s", exc)
 
 
 def list_attentions() -> List[str]:
@@ -666,7 +666,7 @@ def train(
     epochs: int = 3,
     lr: float = 2e-5,
     eval_dataset: Optional[Any] = None,
-    device: Union[str, torch.device] = "cpu",
+    device: Optional[Union[str, torch.device]] = None,
     **kwargs: Any,
 ) -> Dict[str, Any]:
     """Train or fine-tune a model on a dataset.
@@ -689,13 +689,14 @@ def train(
     train_loader = dataset if isinstance(dataset, DataLoader) else DataLoader(dataset, batch_size=kwargs.pop("batch_size", 32), shuffle=True)
     eval_loader = eval_dataset if (eval_dataset is None or isinstance(eval_dataset, DataLoader)) else DataLoader(eval_dataset, batch_size=kwargs.pop("eval_batch_size", 32))
 
+    dev = device or ("cuda" if torch.cuda.is_available() else "cpu")
     return finetune_classification(
         model=model,
         train_loader=train_loader,
         eval_loader=eval_loader,
         epochs=epochs,
         lr=lr,
-        device=device,
+        device=dev,
         **kwargs,
     )
 
@@ -706,7 +707,7 @@ def distill(
     dataset: Any,
     epochs: int = 3,
     lr: float = 2e-5,
-    device: Union[str, torch.device] = "cpu",
+    device: Optional[Union[str, torch.device]] = None,
     temperature: float = 2.0,
     alpha: float = 0.5,
     **kwargs: Any,
@@ -732,13 +733,14 @@ def distill(
 
     train_loader = dataset if isinstance(dataset, DataLoader) else DataLoader(dataset, batch_size=kwargs.pop("batch_size", 32), shuffle=True)
 
+    dev = device or ("cuda" if torch.cuda.is_available() else "cpu")
     return train_kd(
         student=student,
         teacher=teacher,
         train_loader=train_loader,
         epochs=epochs,
         lr=lr,
-        device=device,
+        device=dev,
         temperature=temperature,
         alpha=alpha,
         **kwargs,
@@ -747,30 +749,70 @@ def distill(
 
 def evaluate(
     model: nn.Module,
-    dataset: str = "sst2",
+    dataset: Any = "sst2",
     device: Optional[Union[str, torch.device]] = None,
     batch_size: int = 16,
     seq_len: int = 128,
+    metric_fn: Optional[Any] = None,
     **kwargs: Any,
 ) -> Dict[str, Any]:
-    """Evaluate model performance, accuracy, latency, and throughput.
+    """Evaluate a named benchmark dataset or an arbitrary PyTorch loader.
 
     Args:
         model: Model to evaluate.
-        dataset: Dataset identifier (e.g., 'sst2', 'wikitext2').
+        dataset: Dataset identifier or a ``DataLoader``/iterable of batches.
         device: Execution device.
         batch_size: Evaluation batch size.
         seq_len: Sequence length.
-        **kwargs: Extra evaluation parameters.
+        metric_fn: Optional callable receiving ``(predictions, labels)``.
+        **kwargs: Extra evaluation parameters for the named benchmark path.
 
     Returns:
         Dictionary containing evaluation metrics (accuracy, latency, memory, etc.).
     """
-    try:
-        from neuralops.evaluation.eval_all_models_datasets import evaluate_single_combination_opt
-    except ImportError:
-        from neuralops.evaluation.eval_all_models_datasets import evaluate_single_combination_opt
     dev = device or ("cuda" if torch.cuda.is_available() else "cpu")
+    if not isinstance(dataset, str):
+        from torch.utils.data import DataLoader
+
+        loader = dataset if isinstance(dataset, DataLoader) else DataLoader(dataset, batch_size=batch_size)
+        model = model.to(dev)
+        model.eval()
+        totals: Dict[str, float] = {}
+        samples = 0
+        with torch.no_grad():
+            for batch in loader:
+                if isinstance(batch, dict):
+                    labels = batch.pop("labels", batch.pop("label", None))
+                    inputs = {
+                        key: value.to(dev) if hasattr(value, "to") else value
+                        for key, value in batch.items()
+                    }
+                elif isinstance(batch, (tuple, list)) and len(batch) >= 2:
+                    inputs, labels = {"input_ids": batch[0].to(dev)}, batch[-1].to(dev)
+                else:
+                    raise TypeError("Evaluation batches must be mappings or (inputs, labels) tuples.")
+                outputs = model(**inputs)
+                logits = outputs.logits if hasattr(outputs, "logits") else outputs[0]
+                predictions = logits.argmax(dim=-1) if logits.ndim > 1 else logits
+                count = int(labels.shape[0]) if labels is not None and hasattr(labels, "shape") else 0
+                samples += count
+                if metric_fn is not None:
+                    metrics = metric_fn(predictions, labels)
+                    if isinstance(metrics, dict):
+                        for key, value in metrics.items():
+                            totals[key] = totals.get(key, 0.0) + float(value) * max(count, 1)
+                    else:
+                        totals["metric"] = totals.get("metric", 0.0) + float(metrics) * max(count, 1)
+                elif labels is not None:
+                    totals["accuracy"] = totals.get("accuracy", 0.0) + float((predictions == labels).sum())
+        divisor = max(samples, 1)
+        if metric_fn is not None:
+            totals = {key: value / divisor for key, value in totals.items()}
+        elif samples:
+            totals["accuracy"] /= samples
+        return {"metrics": totals, "num_samples": samples, "device": str(dev)}
+
+    from neuralops.evaluation.eval_all_models_datasets import evaluate_single_combination_opt
     result = evaluate_single_combination_opt(
         track=kwargs.pop("track", "track1_svd"),
         module_name=kwargs.pop("module_name", "standard"),
@@ -783,6 +825,82 @@ def evaluate(
         **kwargs,
     )
     return result.to_dict() if hasattr(result, "to_dict") else dict(result.__dict__)
+
+
+def load_and_prepare_dataset(
+    dataset_name: str,
+    tokenizer: Any,
+    max_length: int = 128,
+    batch_size: int = 16,
+    eval_batch_size: Optional[int] = None,
+    max_samples: Optional[int] = None,
+) -> Tuple[Any, Any]:
+    """Load a supported HF dataset and return train/evaluation DataLoaders.
+
+    ``dataset_name`` accepts GLUE aliases such as ``sst2`` and Wikitext
+    aliases such as ``wikitext2``. Dataset downloading remains lazy and only
+    occurs when this helper is called.
+    """
+    from neuralops.benchmarks.core.data_loader import load_dataset_by_name, make_dataloader
+
+    train_dataset = load_dataset_by_name(
+        dataset_name, tokenizer, max_length=max_length, split="train", max_samples=max_samples
+    )
+    eval_split = "validation" if dataset_name.lower().replace("glue_", "") in {"sst2", "mrpc", "mnli", "qqp", "qnli", "rte", "cola", "stsb", "wnli"} else "test"
+    eval_dataset = load_dataset_by_name(
+        dataset_name, tokenizer, max_length=max_length, split=eval_split, max_samples=max_samples
+    )
+    return (
+        make_dataloader(train_dataset, batch_size=batch_size, shuffle=True),
+        make_dataloader(eval_dataset, batch_size=eval_batch_size or batch_size, shuffle=False),
+    )
+
+
+def train_grpo(
+    model: nn.Module,
+    reward_funcs: Any,
+    dataset: Any,
+    training_args: Any = None,
+    **kwargs: Any,
+) -> Any:
+    """Train with TRL's GRPO trainer when the optional dependency is present.
+
+    The import is intentionally lazy so the core NeuralOps import does not
+    require TRL. ``training_args`` may be a ``GRPOConfig``; otherwise keyword
+    arguments are passed to a newly constructed config.
+    """
+    try:
+        from trl import GRPOConfig, GRPOTrainer
+    except ImportError as exc:  # pragma: no cover - optional dependency
+        raise ImportError("train_grpo requires the optional 'trl' package.") from exc
+
+    return_trainer = bool(kwargs.pop("return_trainer", False))
+    args = training_args
+    if args is None:
+        config_kwargs = kwargs.pop("grpo_config", {})
+        args = GRPOConfig(output_dir=kwargs.pop("output_dir", "./neuralops-grpo"), **config_kwargs)
+    trainer_kwargs = dict(kwargs)
+    try:
+        trainer = GRPOTrainer(
+            model=model,
+            reward_funcs=reward_funcs,
+            args=args,
+            train_dataset=dataset,
+            **trainer_kwargs,
+        )
+    except TypeError as exc:
+        if "reward_funcs" not in str(exc):
+            raise
+        trainer = GRPOTrainer(
+            model=model,
+            reward_func=reward_funcs,
+            args=args,
+            train_dataset=dataset,
+            **trainer_kwargs,
+        )
+    if return_trainer:
+        return trainer
+    return trainer.train()
 
 
 def benchmark(
@@ -939,6 +1057,9 @@ def info() -> Dict[str, Any]:
     }
 
 
+from neuralops.trainer import NeuralOpsTrainer  # noqa: E402
+
+
 __all__ = [
     "load_model",
     "replace_attention",
@@ -968,6 +1089,8 @@ __all__ = [
     "train",
     "distill",
     "evaluate",
+    "load_and_prepare_dataset",
+    "train_grpo",
     "benchmark",
     "benchmark_all",
     "info",
@@ -987,6 +1110,7 @@ __all__ = [
     "AutoNeuralOpsForCausalLM",
     "AutoNeuralOpsForSequenceClassification",
     "merge_for_inference",
+    "NeuralOpsTrainer",
     "save_attention_only",
     "load_attention_from_hub",
 ]

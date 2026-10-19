@@ -5,6 +5,21 @@ All notable changes to the **NeuralOps** library (`SVD_linear_Attention`) will b
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-10-19
+
+### Added
+- FLA-style benchmark suite spanning 11 benchmark categories, with a completed 203-row release ledger and explicit correctness statuses.
+- Unified `neuralops.replace_attention` and training APIs, including the `NeuralOpsTrainer` workflow for standard, LoRA, KD, and hybrid training.
+- Executed Jupyter Notebook workflows for surgery, training, benchmarking, compression, export, and serving.
+- ONNX export and optional vLLM integration surfaces with documented dependency boundaries.
+
+### Fixed
+- Corrected LoRA and DoRA initialization/dropout paths for exact zero-step equivalence.
+
+### Known limitations
+- The final 203-module ledger records `PASS_FAST=15`, `PASS_SLOW=115`, `FAIL_CORRECTNESS=71`, `FAIL=1`, `PASS_HIGH_DIFF=0`, and `TIMEOUT=1`.
+- The 71 correctness failures and one timeout remain explicitly documented; they are not treated as successful acceleration.
+
 ## [1.4.3] - 2026-10-19
 
 ### Multi-Dataset Ingestion, Varlen Document Packing & Production CLI
@@ -259,5 +274,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Baseline configuration files and YAML hyperparameter specifications.
 - Automated weight transplantation from standard multi-head self-attention projections to factorized low-rank weights.
 - Early stopping criteria based on validation cross-entropy and task accuracy.
-
 

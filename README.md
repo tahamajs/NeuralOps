@@ -2,7 +2,7 @@
 
 <img src="assets/banner.svg" alt="NeuralOps Banner" width="100%" />
 
-# 🧬 NeuralOps v1.4.0
+# 🧬 NeuralOps v1.5.0
 
 ### **Unified Subquadratic Attention and Deep Model Compression Platform**
 
@@ -11,6 +11,7 @@
 > **Registry count contract:** the current remote registry reports 131 attention mechanisms and 72 compression engines. Hardware source counts are reported separately.
 
 [![PyPI version](https://badge.fury.io/py/neuralops.svg)](https://pypi.org/project/neuralops/)
+[![Release](https://img.shields.io/badge/release-v1.5.0-blue.svg)](https://github.com/tahamajs/NeuralOps/releases/tag/v1.5.0)
 [![PyPI Downloads](https://img.shields.io/pypi/dm/neuralops.svg)](https://pypi.org/project/neuralops/)
 [![Python Versions](https://img.shields.io/pypi/pyversions/neuralops.svg)](https://pypi.org/project/neuralops/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -147,10 +148,10 @@ Standard self-attention suffers from an intrinsic quadratic time and memory bott
 
 ---
 
-## 🚀 What's New in v1.4.0 (Multi-Dataset Streaming, Varlen Packing & Production CLI)
+## 🚀 What's New in v1.5.0 (Unified Benchmarks, APIs & Verified Workflows)
 
 > [!NOTE]
-> NeuralOps v1.4.0 introduces high-throughput multi-dataset streaming, variable-length document packing, Warmup-Stable-Decay (WSD) scheduling, and a production-grade CLI suite. Below is the comprehensive breakdown of major innovations, algorithmic upgrades, and physical GPU certifications introduced in this milestone release.
+> NeuralOps v1.5.0 adds the FLA-style 11-category benchmark surface, unified attention and training APIs, corrected LoRA/DoRA initialization paths, and executed end-to-end workflows. The multi-dataset, packing, WSD, and production CLI work from v1.4.x remains included.
 
 ### 🌟 Release Highlights at a Glance
 | Feature / Subsystem | v1.3.x Baseline | **v1.4.0 Production Release** | Impact & Metrics |
@@ -169,7 +170,7 @@ Standard self-attention suffers from an intrinsic quadratic time and memory bott
 
 ---
 
-### 🔬 Deep Dive: Key Technical Additions in v1.4.0
+### 🔬 Deep Dive: Key Technical Additions in v1.5.0
 
 0. **Multi-Dataset Streaming, Varlen Document Packing & WSD Scheduling (`neuralops.data`, `neuralops.trainer`)**:
    - `MultiDatasetLoader`: Ingests comma-separated dataset specifications (e.g. `--dataset "HuggingFaceFW/fineweb-edu,opencsg/Fineweb-Edu-Chinese-V2"`), interleaving multiple token streams with weighted round-robin scheduling and offline synthetic fallback.
@@ -217,9 +218,9 @@ Standard self-attention suffers from an intrinsic quadratic time and memory bott
    - Every single Python file (1,481 modules) standardizes on the canonical `#!/usr/bin/env python3` shebang and uniform MIT copyright header referencing official contributors (`https://github.com/tahamajs/NeuralOps/graphs/contributors`).
    - Completely purged inline author docstring tags, redundant mid-code comments, and temporary patch debris.
 
-8. **Permanent Quality Gate & PyPI v1.4.0 Release**:
+8. **Permanent Quality Gate & PyPI v1.5.0 Release**:
    - Enforced continuous AST quality gates asserting 0 shadowed definitions, 0 unreachable statements, and 0 unwired Triton kernels across the entire codebase.
-   - Production distribution published to PyPI (`pip install neuralops==1.4.0`) accompanied by hardened multi-platform GitHub Actions workflows.
+   - Production distribution published to PyPI (`pip install neuralops==1.5.0`) accompanied by hardened multi-platform GitHub Actions workflows.
 
 ---
 
@@ -538,14 +539,14 @@ Every module in NeuralOps v1.4.0 has undergone rigorous forensic validation on p
 ### 6.1 Installation
 
 ```bash
-# 1. Production release from PyPI (v1.4.0)
-pip install neuralops==1.4.0
+# 1. Production release from PyPI (v1.5.0)
+pip install neuralops==1.5.0
 
 # 2. NVIDIA GPU full production setup (PyTorch 2.11+, Triton, Safetensors)
-pip install "neuralops[cuda,export,eval,mlops]==1.4.0"
+pip install "neuralops[cuda,export,eval,mlops]==1.5.0"
 
 # 3. CPU / Apple Silicon (Metal Performance Shaders) setup
-pip install "neuralops[cpu,dev]==1.4.0"
+pip install "neuralops[cpu,dev]==1.5.0"
 
 # 4. Development editable install from source
 git clone https://github.com/tahamajs/NeuralOps.git
@@ -553,7 +554,30 @@ cd NeuralOps
 pip install -e ".[dev,cuda]"
 ```
 
-### 6.2 3-Line Attention Surgery & Layerwise Micro-Healing
+### 6.2 Executed Notebook Quickstart
+
+The repository includes small, executed workflows for the main v1.5.0 paths:
+
+- [`01_attention_surgery_and_lora.ipynb`](notebooks/01_attention_surgery_and_lora.ipynb) — attention surgery, LoRA, KD, and save/reload.
+- [`02_unified_training.ipynb`](notebooks/02_unified_training.ipynb) — standard, LoRA, KD, and hybrid `NeuralOpsTrainer` modes.
+- [`04_end_to_end_3level_benchmarking.ipynb`](notebooks/04_end_to_end_3level_benchmarking.ipynb) — benchmarking, `torch.compile`, and export.
+- [`07_master_all_72_compression_engines_quant_and_svd.ipynb`](notebooks/07_master_all_72_compression_engines_quant_and_svd.ipynb) — compression and serving.
+
+Run a notebook locally with `jupyter nbconvert --to notebook --execute --inplace <path>`.
+
+### 6.2.1 Dataset Pipeline
+
+The data layer supports GLUE tasks (SST-2, MRPC, QQP, MNLI, QNLI, RTE, CoLA,
+STS-B, and WNLI), WikiText-2/103 language modeling, local CSV/JSON/JSONL files,
+Hugging Face cache reuse, and streaming/interleaved corpora through
+`neuralops.data.MultiDatasetLoader`. Benchmark loaders tokenize deterministically
+with truncation and fixed max-length padding; training collators provide dynamic
+padding. Set `HF_DATASETS_OFFLINE=1` to require the local cache. Missing cached
+datasets produce a descriptive error, while the evaluation batch API offers an
+explicit `allow_synthetic=True` fallback for offline smoke tests. See
+[`neuralops/data/README.md`](neuralops/data/README.md) for the supported paths.
+
+### 6.3 3-Line Attention Surgery & Layerwise Micro-Healing
 
 Transplant any of the 131 subquadratic attention mechanisms into pre-trained transformers in seconds:
 
@@ -1717,7 +1741,7 @@ The complete directory and export synchronization utility for the Hooshaai organ
 
 The `neuralops` package is verified against strict packaging standards prior to every release:
 
-- [x] **Package Distribution**: Published on PyPI as [`neuralops v1.4.0`](https://pypi.org/project/neuralops/).
+   - [x] **Package Distribution**: Published on PyPI as [`neuralops v1.5.0`](https://pypi.org/project/neuralops/).
 - [x] **Metadata Linter**: `twine check dist/*` passes with 0 warnings, 0 errors.
 - [x] **Wheel Hygiene**: Pure Python + Triton wheel (`neuralops-py3-none-any.whl`, size ~1.2 MB). Scratch files, test logs, and raw checkpoint weights are excluded via `pyproject.toml`.
 - [x] **Source Distribution**: Complete source archive includes all source files, C++/CUDA headers, LICENSE, and documentation.
@@ -1729,7 +1753,7 @@ The `neuralops` package is verified against strict packaging standards prior to 
 
 | NeuralOps Version | Python Versions | PyTorch Versions | Triton Versions | CUDA Versions | Supported OS |
 | :---: | :---: | :---: | :---: | :---: | :--- |
-| **v1.4.0** (Current) | `3.10`, `3.11`, `3.12`, `3.14` | `2.1.0` – `2.11.0+` | `3.0.0` – `3.6.0+` | `11.8`, `12.1`–`12.8`, `13.0`–`13.2` | Linux (Ubuntu, Debian, RHEL), macOS 13+, Windows 10/11 (WSL2) |
+| **v1.5.0** (Current) | `3.10`, `3.11`, `3.12`, `3.14` | `2.1.0` – `2.11.0+` | `3.0.0` – `3.6.0+` | `11.8`, `12.1`–`12.8`, `13.0`–`13.2` | Linux (Ubuntu, Debian, RHEL), macOS 13+, Windows 10/11 (WSL2) |
 | **v1.4.2** | `3.10`, `3.11`, `3.12`, `3.14` | `2.1.0` – `2.11.0+` | `3.0.0` – `3.6.0+` | `11.8`, `12.1`–`12.8`, `13.0`–`13.2` | Linux (Ubuntu, Debian, RHEL), macOS 13+, Windows 10/11 (WSL2) |
 | **v1.3.7** | `3.10`, `3.11`, `3.12`, `3.14` | `2.1.0` – `2.6.0+` | `3.0.0` – `3.6.0+` | `11.8`, `12.1`–`12.8`, `13.0`–`13.2` | Linux, macOS 13+, Windows 10/11 |
 | **v1.3.0** | `3.9`, `3.10`, `3.11` | `2.0.0` – `2.2.0` | `2.1.0` – `2.2.0` | `11.7`, `11.8`, `12.0` | Linux, macOS 12+ |

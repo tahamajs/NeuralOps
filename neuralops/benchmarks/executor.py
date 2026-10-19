@@ -397,7 +397,25 @@ def execute_single(
             )
 
         if exec_error:
-            raise exec_error[0]
+            error = exec_error[0]
+            error_text = str(error)
+            if any(token in error_text.lower() for token in ("dataset", "tokenizer", "wikitext", "glue")):
+                end_time_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+                return BenchmarkResult(
+                    run_id=run_id,
+                    run_name=f"{module}_{model}_{dataset}",
+                    timestamp_start=start_time_iso,
+                    timestamp_end=end_time_iso,
+                    module=mod_dict,
+                    model={"name": model},
+                    dataset={"name": dataset},
+                    config=config_dict,
+                    status="DATASET_ERROR",
+                    error=error_text,
+                    traceback="".join(traceback.format_exception(error)),
+                    timeout_s=effective_timeout,
+                )
+            raise error
 
         duration_s = time.perf_counter() - start_t
         end_time_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())

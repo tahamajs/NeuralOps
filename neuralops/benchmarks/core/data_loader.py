@@ -15,9 +15,11 @@ from __future__ import annotations
 
 import logging
 import os
+from collections.abc import Iterable, Iterator
+from pathlib import Path
 from typing import Any
 import torch
-from torch.utils.data import DataLoader, Dataset, TensorDataset
+from torch.utils.data import DataLoader, Dataset, IterableDataset, TensorDataset
 
 
 from neuralops.benchmarks.result import DatasetMetadata
@@ -39,6 +41,47 @@ GLUE_TASKS: dict[str, dict[str, Any]] = {
 GLUE_VALIDATION_SIZES: dict[str, int] = {
     task: info["val_size"] for task, info in GLUE_TASKS.items()
 }
+
+
+class _TokenizedIterableDataset(IterableDataset):
+    """Lazily tokenize a Hugging Face or local streaming dataset."""
+
+    def __init__(self, rows: Iterable[dict[str, Any]], tokenizer: Any, columns: tuple[str, str | None], max_length: int) -> None:
+        super().__init__()
+        self.rows = rows
+        self.tokenizer = tokenizer
+        self.columns = columns
+        self.max_length = max_length
+
+    def __iter__(self) -> Iterator[dict[str, Any]]:
+        first, second = self.columns
+        for row in self.rows:
+            args = (row[first], row[second]) if second else (row[first],)
+            encoded = self.tokenizer(
+                *args,
+                padding="max_length",
+                truncation=True,
+                max_length=self.max_length,
+            )
+            encoded["labels"] = row.get("label", row.get("labels", 0))
+            yield encoded
+
+
+def _load_local_dataset(path: Path, streaming: bool, cache_dir: str | None = None) -> Any:
+    """Load CSV/JSON/JSONL through ``datasets`` while preserving streaming."""
+    from datasets import load_dataset
+
+    suffix = path.suffix.lower()
+    if suffix == ".csv":
+        builder = "csv"
+    elif suffix in {".json", ".jsonl"}:
+        builder = "json"
+    else:
+        raise ValueError(f"Unsupported local dataset format '{suffix}'. Use .csv, .json, or .jsonl.")
+    kwargs: dict[str, Any] = {"data_files": str(path), "split": "train", "streaming": streaming}
+    if cache_dir:
+        kwargs["cache_dir"] = cache_dir
+    return load_dataset(builder, **kwargs)
 
 
 def get_num_labels(dataset_name: str) -> int:
@@ -82,10 +125,16 @@ def load_dataset_by_name(
     max_length: int = 128,
     split: str = "validation",
     max_samples: int | None = None,
-) -> Dataset:
+    streaming: bool = False,
+    cache_dir: str | None = None,
+) -> Dataset | IterableDataset:
     """
-    Load dataset by name from local cache or HuggingFace hub.
-    Supports GLUE tasks and language modeling (Wikitext).
+    Load GLUE, WikiText, or a local CSV/JSONL dataset.
+
+    ``streaming=True`` returns a lazy iterable with tokenization performed as
+    samples are consumed. Network/cache failures are converted into a clear
+    ``RuntimeError``; callers may opt into synthetic data explicitly through
+    :mod:`neuralops.evaluation.eval_data`.
     """
     import os
     hf_cache_dir = os.environ.get("HF_DATASETS_CACHE") or os.path.expanduser("~/.cache/huggingface/datasets")
@@ -98,14 +147,59 @@ def load_dataset_by_name(
             max_samples = int(env_samples)
 
     name_clean = name.lower().replace("glue_", "")
-    from datasets import load_dataset
+    try:
+        from datasets import load_dataset
+    except ImportError as exc:
+        raise RuntimeError(
+            "The 'datasets' package is required for GLUE, WikiText, and local dataset loading."
+        ) from exc
+
+    local_path = Path(name).expanduser()
+    if local_path.is_file():
+        try:
+            raw_local = _load_local_dataset(local_path, streaming=streaming, cache_dir=hf_cache_dir)
+            if streaming:
+                columns = tuple(c for c in ("sentence", "text", "sentence1") if c in raw_local.column_names)
+                first = columns[0] if columns else next(c for c in raw_local.column_names if c not in {"label", "labels"})
+                second = "sentence2" if "sentence2" in raw_local.column_names else None
+                return _TokenizedIterableDataset(raw_local, tokenizer, (first, second), max_length)
+            rows = raw_local
+            text_columns = [c for c in ("sentence", "text", "sentence1") if c in rows.column_names]
+            first = text_columns[0] if text_columns else next(c for c in rows.column_names if c not in {"label", "labels"})
+            second = "sentence2" if "sentence2" in rows.column_names else None
+            texts1 = list(rows[first])
+            texts2 = list(rows[second]) if second else None
+            enc = tokenizer(
+                texts1,
+                texts2,
+                padding="max_length",
+                truncation=True,
+                max_length=max_length,
+                return_tensors="pt",
+            )
+            labels = torch.tensor(
+                rows["label"] if "label" in rows.column_names
+                else rows["labels"] if "labels" in rows.column_names
+                else [0] * len(rows)
+            )
+            return TensorDataset(enc["input_ids"], enc["attention_mask"], labels)
+        except Exception as exc:
+            raise RuntimeError(f"Failed to load local dataset '{local_path}': {exc}") from exc
 
     if name_clean in GLUE_TASKS:
         cfg = GLUE_TASKS[name_clean]
         try:
-            raw_ds = load_dataset("nyu-mll/glue", name_clean, split=split)
+            raw_ds = load_dataset("nyu-mll/glue", name_clean, split=split, streaming=streaming, cache_dir=cache_dir)
         except Exception:
-            raw_ds = load_dataset("glue", name_clean, split=split)
+            try:
+                raw_ds = load_dataset("glue", name_clean, split=split, streaming=streaming, cache_dir=cache_dir)
+            except Exception as exc:
+                raise RuntimeError(
+                    f"Could not load GLUE dataset '{name_clean}' split '{split}'. "
+                    "Check the local cache or unset HF_DATASETS_OFFLINE."
+                ) from exc
+        if streaming:
+            return _TokenizedIterableDataset(raw_ds, tokenizer, cfg["cols"], max_length)
         if max_samples is not None and max_samples < len(raw_ds):
             raw_ds = raw_ds.select(range(max_samples))
             LOG.info("Subsampled %s split '%s' to %d samples", name_clean, split, len(raw_ds))
@@ -142,9 +236,20 @@ def load_dataset_by_name(
         subset = "wikitext-2-raw-v1" if "wikitext2" in name_clean or "wikitext-2" in name_clean else "wikitext-103-raw-v1"
         split_name = "test" if split in ("val", "validation", "test") else split
         try:
-            raw_ds = load_dataset("Salesforce/wikitext", subset, split=split_name)
+            raw_ds = load_dataset("Salesforce/wikitext", subset, split=split_name, streaming=streaming, cache_dir=cache_dir)
         except Exception:
-            raw_ds = load_dataset("wikitext", subset, split=split_name)
+            try:
+                raw_ds = load_dataset("wikitext", subset, split=split_name, streaming=streaming, cache_dir=cache_dir)
+            except Exception as exc:
+                raise RuntimeError(
+                    f"Could not load WikiText dataset '{subset}' split '{split_name}'. "
+                    "Check the local cache or unset HF_DATASETS_OFFLINE."
+                ) from exc
+        if streaming:
+            return _TokenizedIterableDataset(raw_ds, tokenizer, ("text", None), max_length)
+        if max_samples is not None and max_samples < len(raw_ds):
+            raw_ds = raw_ds.select(range(max_samples))
+            LOG.info("Subsampled WikiText split '%s' to %d samples", split_name, len(raw_ds))
         full_text = "\n\n".join(raw_ds["text"])
         enc = tokenizer(full_text, return_tensors="pt")
         input_ids = enc.input_ids[0]

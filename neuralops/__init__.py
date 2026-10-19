@@ -70,7 +70,7 @@ if TYPE_CHECKING:
     from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY  # noqa: F401
     from neuralops.kernels import list_cuda_kernels, list_triton_kernels  # noqa: F401
 
-__version__ = "1.4.0"
+__version__ = "1.5.0"
 
 import importlib.machinery
 from importlib.abc import MetaPathFinder
@@ -398,6 +398,8 @@ _API_EXPORTS = {
     "train": "neuralops.api",
     "distill": "neuralops.api",
     "evaluate": "neuralops.api",
+    "load_and_prepare_dataset": "neuralops.api",
+    "train_grpo": "neuralops.api",
     "benchmark": "neuralops.api",
     "benchmark_all": "neuralops.api",
     "info": "neuralops.api",
