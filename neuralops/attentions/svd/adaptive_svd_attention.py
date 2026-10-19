@@ -316,10 +316,10 @@ class AdaptiveSVDAttention(BaseAttention):
             )
         self.dropout = nn.Dropout(float(dropout_p))
 
-        self.rotary_emb = getattr(pretrained_attn, "rotary_emb", None) if pretrained_attn else None
+        self.rotary_emb: Any = getattr(pretrained_attn, "rotary_emb", None) if pretrained_attn else None
 
         self.has_relative_attention_bias = False
-        self.relative_attention_bias: nn.Embedding | None = None
+        self.relative_attention_bias: Any = None
         self.relative_attention_num_buckets = int(
             getattr(config, "relative_attention_num_buckets", 32) if config else 32
         )
