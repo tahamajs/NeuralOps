@@ -74,6 +74,7 @@ class MGIESVDBudgetCompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="mgie_budget", **kwargs)
+        self._compressed_params: int | None = None
         cfg = kwargs.get("comp_config", kwargs.get("cfg"))
 
         if cfg is not None:
