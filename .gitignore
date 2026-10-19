@@ -283,6 +283,7 @@ logs/
 audit/
 scratch/
 grading.log
-neuralops/data/
+neuralops/data/cache/
+neuralops/data/*.parquet
 *.arrow
 

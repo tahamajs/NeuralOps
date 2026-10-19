@@ -5,8 +5,13 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
+"""Author: Taha Majlesi
+
+
 NeuralOps Training Subpackage.
+
+Provides training orchestration, foundation pretraining engines, optimizers,
+schedulers (including WSD), multi-dataset streaming, and document packing loaders.
 """
 
 from __future__ import annotations
@@ -19,6 +24,9 @@ from neuralops.trainer.hf_trainer import HuggingFaceTrainer
 from neuralops.trainer.registry import TrainerRegistry
 from neuralops.trainer.trainer import SVDAwareTrainer
 from neuralops.trainer.utils import train_model
+from neuralops.trainer.schedulers import WSDScheduler
+from neuralops.data.multidataset import MultiDatasetLoader
+from neuralops.data.packing import PackedDataset
 from neuralops.benchmarks.core.training import (
     finetune_classification,
     train_kd,
@@ -80,6 +88,9 @@ __all__ = [
     "fused_linear_cross_entropy",
     "FusedLinearKLDivergence",
     "fused_linear_kl_divergence",
+    "MultiDatasetLoader",
+    "PackedDataset",
+    "WSDScheduler",
 ]
 
 if _has_distill:
