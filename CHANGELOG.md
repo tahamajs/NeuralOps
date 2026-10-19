@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.4.2] - 2026-10-19
+
+### Highlights & Ecosystem Polish
+- **Universal Shebang Standard**: Added canonical `#!/usr/bin/env python3` shebang across all 1,481 Python source files in the repository.
+- **Header & Authorship Standardization**: Standardized top-of-file MIT license headers referencing `https://github.com/tahamajs/NeuralOps/graphs/contributors` and excised all inline `Author: Taha Majlesi` docstrings.
+- **Zero Dead-Code Assurance**: Verified 0 shadowed definitions, 0 unreachable statements, 0 unlaunched Triton kernels, 0 unlaunched CUDA kernels, and 0 unused private helpers across all 1,481 modules.
+- **Workflow Resilience**: Hardened `.github/workflows/` (`publish.yml`, `ci.yml`, `test.yml`, `test-triton.yml`) with robust token handling, `--skip-existing`, and matrix safety.
+
+---
+
+## [1.4.1] - 2026-10-19
+
+### Highlights
+- **Uniform PEP 8 Indentation**: Expanded single-line property/if statements to canonical 4-space blocks and purged mid-code conversational comments.
+- **PyPI Release**: Production distribution published to PyPI.
+
+---
+
 ## [1.4.0] - 2026-10-18
 
 `NeuralOps` v1.4.0 marks the definitive transition from research codebase to publication-grade, hardware-certified production ecosystem.
