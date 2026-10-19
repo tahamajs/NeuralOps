@@ -53,7 +53,7 @@ class CompressionSurgeryEntry:
 
 @dataclass
 class SurgeryManifest:
-    version: str = "1.4.0"
+    version: str = "1.4.2"
     base_model_name: Optional[str] = None
     attentions: List[AttentionSurgeryEntry] = field(default_factory=list)
     compressions: List[CompressionSurgeryEntry] = field(default_factory=list)
@@ -77,7 +77,7 @@ class SurgeryManifest:
             CompressionSurgeryEntry(**c) for c in data.get("compressions", [])
         ]
         return cls(
-            version=data.get("version", "1.4.0"),
+            version=data.get("version", "1.4.2"),
             base_model_name=data.get("base_model_name"),
             attentions=attentions,
             compressions=compressions,

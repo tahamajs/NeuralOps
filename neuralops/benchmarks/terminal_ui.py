@@ -129,13 +129,13 @@ def print_banner() -> None:
     """Prints the styled NeuralOps CLI banner."""
     if not HAS_RICH or console is None:
         print("================================================================")
-        print("                   NeuralOps CLI (v1.4.0)                       ")
+        print("                   NeuralOps CLI (v1.4.2)                       ")
         print("     High-Performance Attention Zoo, SVD Compression & Triton   ")
         print("================================================================")
         return
 
     banner_text = Text(BANNER_ART, style="bold cyan")
-    tagline = Text("NeuralOps v1.4.0 — High-Performance Attention Zoo, SVD Compression & Fused Triton Kernels\n", style="bold white")
+    tagline = Text("NeuralOps v1.4.2 — High-Performance Attention Zoo, SVD Compression & Fused Triton Kernels\n", style="bold white")
     tagline.append("https://github.com/tahamajs/SVD_linear_Attention", style="dim underline blue")
 
     panel = Panel(
