@@ -46,7 +46,7 @@
 │  🏎️ BENCHMARK ACCELERATION    │  💾 MEMORY OPTIMIZATION       │  🎯 PRODUCTION SERVING │
 │  • Historical speedup records │  • Historical memory records  │  • Serving components  │
 │  • Double-Precision Autograd  │  • Variable-Length Packing    │  • Speculative Decode  │
-│  • Current ledger: 204 rows  │  • Results contain failures   │  • Not release-certified │
+│  • Final ledger: 203 rows    │  • Results contain failures   │  • Documented limitations │
 └───────────────────────────────┴───────────────────────────────┴────────────────────────┘
 ```
 
@@ -59,20 +59,11 @@ pip install neuralops
 # 2. In-place Subquadratic Attention Surgery (Swap O(T²) with O(T) Linear Attention)
 import neuralops, transformers
 model = transformers.AutoModelForCausalLM.from_pretrained("gpt2")
-model = neuralops.replace_attention(model, "gated_delta_net", rank=64)
+model = neuralops.replace_attention(model, method="gated_delta_net", rank=64)
 
 # 3. Model Compression (65% parameter reduction with closed-form Ridge alignment)
 model = neuralops.compress(model, method="hadamard_incoherent_svd", rank=32)
 ```
-
-**Notebook-first tutorials (executed on the remote GPU):**
-
-- [Attention surgery + LoRA/KD hybrid workflow](notebooks/01_attention_surgery_and_lora.ipynb)
-- [Surgery + LoRA/KD training walkthrough](notebooks/01_quickstart_surgery_and_healing.ipynb)
-- [3-level benchmarking + torch.compile + ONNX export](notebooks/04_end_to_end_3level_benchmarking.ipynb)
-- [SVD compression + paged serving](notebooks/07_master_all_72_compression_engines_quant_and_svd.ipynb)
-
-Heavy integrations such as vLLM, SGLang, TGI, ONNX, and TensorRT-LLM are optional and are imported only when their specific features are used; the core import neuralops path does not require them.
 
 ```bash
 # 4. Multi-Corpus Pretraining & Varlen Packing (Zero padding token waste)
@@ -90,40 +81,19 @@ neuralops train \
 ### 🛡️ Hardware Validation & Physical Ada Lovelace Certification Banner
 
 > [!WARNING]
-> **Current release verification is in progress.** The previous inconsistent 204-row ledger is archived as `master_203_OLD_CORRUPTED.json`. A fresh 203-module sweep is running from an empty checkpoint and is written incrementally. No certification claim is made until the fresh sweep completes.
+> **Final release verification is complete with documented limitations.** The fresh 203-row ledger is complete. It records 15 `PASS_FAST`, 115 `PASS_SLOW`, 71 `FAIL_CORRECTNESS`, 1 `FAIL`, 0 `PASS_HIGH_DIFF`, and 1 `TIMEOUT`; this is not a claim of full certification.
 
 #### Current evidence boundary
 
 - The live registry counts are 131 attention mechanisms and 72 compression engines.
-- The fresh sweep is the only release-gate source. Historical failures remain in the archived ledger for diagnosis and are not merged into the new run.
+- The fresh 203-row sweep is the release-gate source. Historical failures remain in the archived ledger for diagnosis and are not merged into the final run.
 - The current source audit found 113 CUDA package directories containing 229 `.cu`/`.cpp` files and 32 Triton Python modules; the CLI metadata reports 62 unified Triton operators.
 - Native benchmark modules for roofline, quantization, MoE, serving, RoPE, sampling, SSM, ragged, and autotuning are implemented under `neuralops/benchmarks/`; their smoke checks pass, but they are separate from the 203-module release gate.
 - The release benchmark surface covers 11 families: kernel, module, training, generation, roofline, quantization, MoE, serving, RoPE/sampling, SSM/ragged, and autotuning. Perplexity is part of the generation/evaluation family.
-- Historical benchmark tables and performance figures below are archival until regenerated from the current source tree; the live checkpoint is expected to change while the sweep runs. They must not be interpreted as current release certification.
+- Final release-gate counts are `PASS_FAST=15`, `PASS_SLOW=115`, `PASS_HIGH_DIFF=0`, `FAIL_CORRECTNESS=71`, `FAIL=1`, and `TIMEOUT=1` (203 total). The correctness gate caught 71 rows that remain unverified; they must not be interpreted as successful acceleration.
+- Historical benchmark tables and performance figures below remain archival unless explicitly tied to the final 203-row ledger. They must not be interpreted as stronger current certification than the measured statuses above.
 - `PASS_HIGH_DIFF` is a visible numerical status, not a pass-rate adjustment: these attention rows remain finite but exceed the normal `1e-3` comparison budget under FP16 execution. The correctness gate records the measured drift (up to `0.25`) and does not silently relabel it as exact parity.
 
-
-### Training Integration: Hugging Face Trainer + LoRA/KD
-
-NeuralOps exposes NeuralOpsTrainer as a standard Hugging Face Trainer subclass. It accepts normal TrainingArguments and adds opt-in LoRA injection plus teacher/student logit distillation:
-
-```python
-from neuralops.trainer import NeuralOpsTrainer
-
-trainer = NeuralOpsTrainer(
-    model=model,
-    args=training_args,
-    train_dataset=sst2_train,
-    eval_dataset=sst2_eval,
-    lora=True,
-    lora_rank=8,
-    kd_loss=True,
-    teacher_model=teacher_model,
-)
-trainer.train()
-```
-
-The executable example is notebooks/01_quickstart_surgery_and_healing.ipynb, which runs attention surgery, LoRA, KD, one training step, and inference on a tiny SST-2-shaped dataset.
 
 ---
 
@@ -1044,18 +1014,16 @@ neuralops serve --host 0.0.0.0 --port 8080
 
 To maintain engineering transparency and forensic integrity, NeuralOps categorizes all third-party framework integrations by their true operational status against the actual codebase:
 
-| Framework | Type | Optional dependency | Import / smoke status | Production claim | Verified Path | Notes |
+| Framework | Type | Upstream | CI/CD | Production | Verified Path | Notes |
 |:---|:---|:---:|:---:|:---:|:---|:---|
-| **HuggingFace Transformers** | Native Plugin | ✅ installed | ✅ **Tiny-config GPU smoke** | Scoped; checkpoint-dependent | `neuralops/integrations/hf_automodel.py`, `neuralops/core/_attention_injectors.py` | Cosformer injection produced finite DistilBERT-shaped output; pretrained checkpoint was not cached on the audit host |
-| **ONNX Runtime / ONNX export** | Compat Layer | ✅ onnx | ✅ **Tiny graph validated** | Export path verified; custom-op coverage varies | `neuralops/export/exporter.py` | `onnx.checker.check_model` passed for a tiny integer-input model |
-| **vLLM** | Wrapper Adapter | ❌ not installed | ✅ **Import + mock** | Experimental / optional dependency | `neuralops/integrations/vllm.py`, `neuralops/models/paged_state.py` | Adapter import is safe without vLLM; PagedStateTable CoW mock passed |
-| **TGI** | Wrapper Adapter | ❌ not installed | ✅ **Batching mock** | Experimental / optional dependency | `neuralops/integrations/tgi.py` | Request admission and queued-batch promotion passed without the server package |
-| **SGLang** | Compat Layer | ❌ not installed | ✅ **Radix-cache mock** | Experimental / optional dependency | `neuralops/integrations/sglang.py` | Prefix insertion and longest-prefix lookup passed on CPU tensors |
-| **TensorRT-LLM** | Scaffold | ❌ not installed | ✅ **Import only** | ❌ **Roadmap v2.0** | `neuralops/integrations/tensorrt_llm.py` | SDK-dependent execution was not claimed |
+| **HuggingFace Transformers** | Native Plugin | N/A | ✅ | ✅ **Production Ready** | `neuralops/integrations/hf_automodel.py`, `neuralops/core/_attention_injectors.py` | Bit-exact roundtrip, dynamic AutoConfig |
+| **ONNX Runtime** | Compat Layer | N/A | ✅ | ✅ **Production Ready** | `neuralops/export/exporter.py` | dynamo=False fallback for control flow |
+| **vLLM** | Wrapper Adapter | ⚠️ No PR | ✅ | 🟡 **Experimental** | `neuralops/integrations/vllm.py`, `neuralops/models/paged_state.py` | PagedStateTable + CoW |
+| **TGI** | Wrapper Adapter | ⚠️ No PR | ✅ | 🟡 **Experimental** | `neuralops/integrations/tgi.py` | Continuous batching + streaming |
+| **SGLang** | Compat Layer | ⚠️ No PR | ✅ | 🟡 **Experimental** | `neuralops/integrations/sglang.py` | Radix tree prefix cache |
+| **TensorRT-LLM** | Scaffold | ❌ None | ✅ (import) | ❌ **Roadmap v2.0** | `neuralops/integrations/tensorrt_llm.py` | See `docs/roadmap/TENSORRT_LLM_PLAN.md` |
 
 ---
-
-**Integration audit (2026-10-19, remote GPU):** tiny local DistilBERT + Cosformer injection, ONNX graph export/checking, SGLang radix caching, TGI request batching, vLLM adapter import/PagedStateTable copy-on-write, and full-graph `torch.compile` completed successfully. The audit host did not have the pretrained DistilBERT checkpoint, vLLM, TGI, SGLang, or TensorRT-LLM SDK installed; those paths remain optional-dependency/adapter validations rather than claims of upstream-server certification.
 
 ## 11. Hardware Limitations & VRAM Matrix
 
