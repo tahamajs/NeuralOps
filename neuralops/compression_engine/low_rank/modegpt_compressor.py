@@ -124,6 +124,7 @@ class MoDeGPTLowRankLinear(nn.Module):
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
+        self._compressed_params: int | None = None
 
     def _V(self) -> torch.Tensor:
         if self._uses_shared_V:
