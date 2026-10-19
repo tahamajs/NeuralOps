@@ -18,7 +18,6 @@ from __future__ import annotations
 import logging
 import torch
 
-# Re-export data models and constants
 from evaluation.eval_types import (
     ACTIVATION_AWARE_MODULES,
     BenchmarkResult,
@@ -31,7 +30,6 @@ from evaluation.eval_types import (
     TRACK_MODULES,
 )
 
-# Re-export evaluation utilities
 from evaluation.eval_utils import (
     DEFAULT_MAX_CACHE_SIZE,
     _evict_if_needed,
@@ -39,14 +37,12 @@ from evaluation.eval_utils import (
     _filter_batch,
 )
 
-# Re-export data helpers
 from evaluation.eval_data import (
     _generate_synthetic_batch,
     build_calibration_loader,
     get_dataset_batch,
 )
 
-# Re-export patcher functions
 from evaluation.eval_patcher import (
     apply_module_to_model,
     build_model_instance,
