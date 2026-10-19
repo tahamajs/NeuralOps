@@ -101,7 +101,7 @@ class SVDLinear(nn.Module):
         super().__init__()
         self.in_features = int(in_features)
         self.out_features = int(out_features)
-        self.rank = max(1, min(rank, self.in_features, self.out_features))
+        self.rank: int = int(max(1, min(int(rank), self.in_features, self.out_features)))
         self.use_fused_kernel = bool(use_fused_kernel)
         self.use_triton = bool(use_triton)
 
@@ -492,11 +492,11 @@ class AASVDCompressor(BaseCompressor):
         if r_ceiling < r_floor:
             return [r_ceiling]
         cands = set()
-        n = max(4, min(10, int(math.log2(max(2, r_ceiling // max(1, r_floor)))) + 2))
+        n = int(max(4, min(10, int(math.log2(max(2, r_ceiling // max(1, r_floor)))) + 2)))
         for i in range(n):
             t = i / (n - 1) if n > 1 else 0
             r = int(round(r_floor * (r_ceiling / max(1, r_floor)) ** t))
-            cands.add(max(r_floor, min(r, r_ceiling)))
+            cands.add(int(max(int(r_floor), min(int(r), int(r_ceiling)))))
         cands.add(r_floor)
         cands.add(r_ceiling)
         return sorted(cands)
