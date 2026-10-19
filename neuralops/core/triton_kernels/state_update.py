@@ -113,15 +113,15 @@ class _TritonStateUpdateAutogradFunction(torch.autograd.Function):
     @staticmethod
     def forward(
         ctx: Any,
-        u: torch.Tensor,
-        delta: torch.Tensor,
-        A: torch.Tensor,
-        B: torch.Tensor,
-        C: torch.Tensor,
-        D: torch.Tensor | None,
-        state: torch.Tensor | None,
-        eps: float,
-    ) -> tuple[torch.Tensor, torch.Tensor]:
+        u: Any,
+        delta: Any,
+        A: Any,
+        B: Any,
+        C: Any,
+        D: Any,
+        state: Any,
+        eps: Any,
+    ) -> Any:
         B_sz, L_sz, D_sz = u.shape
         N_sz = A.shape[-1]
 
