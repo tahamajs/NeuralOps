@@ -94,10 +94,13 @@ def audit_repository(root: Path) -> int:
                 commented_code_blocks.append(f"{path}:{i} -> Agent chatter comment: {line.strip()[:80]}")
 
     # 5. Detect unlaunched CUDA __global__ kernels in .cu files
+    cu_pattern = re.compile(r"__global__\s+(?:void\s+)?(?:__launch_bounds__\([^)]*\)\s+)?(?:void\s+)?([a-zA-Z0-9_]+)\s*\(")
     for cu_path in cu_files:
         cu_src = cu_path.read_text(encoding="utf-8", errors="ignore")
-        for match in re.finditer(r"__global__\s+void\s+([a-zA-Z0-9_]+)\s*\(", cu_src):
+        for match in cu_pattern.finditer(cu_src):
             k_name = match.group(1)
+            if k_name in ("__launch_bounds__", "void"):
+                continue
             if len(re.findall(rf"\b{re.escape(k_name)}\b", cu_src)) <= 1:
                 dead_cuda_kernels.append(
                     f"{cu_path} -> __global__ kernel '{k_name}' is defined but never launched"

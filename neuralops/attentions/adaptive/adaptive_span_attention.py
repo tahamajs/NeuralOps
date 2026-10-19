@@ -7,7 +7,6 @@ Author: Taha Majlesi
 """
 
 from __future__ import annotations
-from neuralops.core.attention_utils import normalize_attention_mask as _normalize_mask
 
 from neuralops.core.attention_utils import (
     safe_mask_value as _safe_mask_value,
@@ -65,57 +64,6 @@ def get_total_span_loss(model: nn.Module, lambda_span: float = 0.01) -> torch.Te
             return torch.zeros((), dtype=torch.float32)
 
     return torch.stack(losses).mean()
-
-
-def _rotate_half_q(x: torch.Tensor) -> torch.Tensor:
-    """Rotate last dim by half. Cached canonical version."""
-    d = x.shape[-1]
-    half = d // 2
-    x1, x2 = x[..., :half], x[..., half : 2 * half]
-    rotated = torch.cat((-x2, x1), dim=-1)
-    if d % 2 == 1:
-        rotated = torch.cat([rotated, x[..., -1:]], dim=-1)
-    return rotated
-
-
-def _gather_cos_sin(
-    cos: torch.Tensor,
-    sin: torch.Tensor,
-    position_ids: torch.Tensor,
-) -> tuple[torch.Tensor, torch.Tensor]:
-    """Extract cos/sin values at given position_ids.
-
-    [FIX-1] Handles 2D, 3D, AND 4D cos/sin.
-    """
-    if cos.dim() == 2:
-        cos = cos.unsqueeze(0).unsqueeze(0)
-        sin = sin.unsqueeze(0).unsqueeze(0)
-    elif cos.dim() == 3:
-        cos = cos.unsqueeze(1)
-        sin = sin.unsqueeze(1)
-    elif cos.dim() == 4:
-        pass
-    else:
-        raise ValueError(f"Unsupported cos.dim()={cos.dim()}")
-
-    Bc, Hc, S, d = cos.shape
-    ids = position_ids.clamp(min=0, max=S - 1)
-
-    if Bc == 1:
-        cos_g = cos[0, 0][ids]
-        sin_g = sin[0, 0][ids]
-        cos_g = cos_g.unsqueeze(1)
-        sin_g = sin_g.unsqueeze(1)
-    else:
-        cos_flat = cos[:, 0].contiguous()
-        sin_flat = sin[:, 0].contiguous()
-        cos_g = torch.gather(
-            cos_flat, 1, ids.unsqueeze(-1).expand(-1, -1, d)
-        ).unsqueeze(1)
-        sin_g = torch.gather(
-            sin_flat, 1, ids.unsqueeze(-1).expand(-1, -1, d)
-        ).unsqueeze(1)
-    return cos_g, sin_g
 
 
 def _build_keep_mask(

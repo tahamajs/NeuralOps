@@ -10,13 +10,29 @@
 
 ## 1. Executive Summary
 
-This certificate provides formal sign-off for the repository-wide hygiene, branch purging, configuration hardening, and canonical count verification of the **NeuralOps** codebase at release version **v1.4.0**.
+This certificate provides formal sign-off for the repository-wide hygiene, branch purging, configuration hardening, dead-code elimination, and canonical count verification of the **NeuralOps** codebase at release version **v1.4.0**.
 
-All OS caches, compiler intermediates, build artifacts, temporary logs, and Python bytecode have been thoroughly purged and permanently barred from version control. Every configuration file (`.gitignore`, `pyproject.toml`, `ruff.toml`, `pytest.ini`) has been reviewed, hardened, and verified for consistency with the publication standards of the project.
+All OS caches, compiler intermediates, build artifacts, temporary logs, and Python bytecode have been thoroughly purged and permanently barred from version control via hardened `.gitignore` rules. Ruff linting rules for dead code (`F401`, `F841`, `F811`, `PIE790`, `B006`) have been strictly enforced. A permanent dead-code gate (`test_zero_dead_code_and_shadowed_defs`) has been integrated into `tests/test_library_health.py`, ensuring zero shadowed definitions and zero unreachable statements across the codebase.
 
 ---
 
-## 2. Verification Gate: Canonical Release Invariants
+## 2. Before vs. After Hygiene & Quality Metrics
+
+| Metric / Dimension | Before Polish & Purge | After Final Gate Polish | Audit Status |
+| :--- | :---: | :---: | :---: |
+| **Active `fix/*` Git Branches** | Residual temporary branches | **0** (Only `main` + long-term backups) | ✅ Verified 100% |
+| **Workspace Caches (`.DS_Store`, `__pycache__`, etc.)** | Unmonitored cache instances | **0** (Purged & barred) | ✅ Verified 100% |
+| **LaTeX Build Clutter (`.aux`, `.log`, `.synctex.gz`, etc.)** | Build intermediates in paper & thesis | **0** (100% purged across all trees) | ✅ Verified 100% |
+| **Compiled Artifacts (`iclr2027_conference.pdf`, `master_thesis.pdf`)** | Present | **Strictly Preserved & Verified** | ✅ Intact & Verified |
+| **Canonical Results (`MASTER_RESULTS_MATRIX.csv`)** | Present | **Strictly Preserved & Verified** | ✅ Intact & Verified |
+| **Shadowed / Duplicate Definitions (F811)** | Present in legacy/audit sweeps | **0** (AST Verified) | ✅ Verified 100% |
+| **Unreachable Statements after return/raise** | Present in legacy routing helpers | **0** (AST Verified) | ✅ Verified 100% |
+| **Ruff Dead-Code Enforcement (`F401, F841, F811, PIE790, B006`)** | Partial / B006 ignored | **Strictly Enforced in `ruff.toml`** | ✅ Enforced |
+| **CI Health Gate Tests in `test_library_health.py`** | 5 tests | **6 tests** (+ `test_zero_dead_code_and_shadowed_defs`) | ✅ Hardened |
+
+---
+
+## 3. Verification Gate: Canonical Release Invariants
 
 All primary subsystem counts and structural metrics match the project invariants exactly:
 
@@ -33,9 +49,9 @@ All primary subsystem counts and structural metrics match the project invariants
 
 ---
 
-## 3. Git Branch & Remote Hygiene Audit
+## 4. Git Branch & Remote Hygiene Audit
 
-A comprehensive branch enumeration was performed across all local and remote references:
+A comprehensive branch enumeration was performed across all local and remote references (`git branch -a`):
 - **Local Branches Audited:**
   - `main` (active)
   - `ablation`
@@ -51,67 +67,57 @@ A comprehensive branch enumeration was performed across all local and remote ref
 
 ---
 
-## 4. Cache, OS Metadata & Intermediate Artifact Purge
+## 5. Cache, OS Metadata & LaTeX Artifact Purge
 
 A repository-wide sweep was executed across the working directory:
 - **macOS Metadata:** All `.DS_Store`, `._*`, `.Spotlight-V100`, `.Trashes` purged and permanently ignored.
 - **Python Bytecode & Compilation:** All `__pycache__/`, `*.pyc`, `*.pyo`, `*.pyd` purged outside isolated environments.
 - **Compiled Extensions & Objects:** All `*.so`, `*.o`, `*.a`, `*.dylib`, `*.dll` purged.
-- **LaTeX Artifacts:** All `*.aux`, `*.out`, `*.synctex.gz`, `*.fls`, `*.fdb_latexmk` purged.
+- **LaTeX Artifacts Purged in `paper/`, `thesis_final/`, `academic/thesis_final/`:**
+  - `*.aux`, `*.log`, `*.out`, `*.toc`, `*.lof`, `*.lot`, `*.bbl`, `*.blg`, `*.fls`, `*.fdb_latexmk`, `*.synctex.gz`.
+  - Zero build clutter remains.
+- **Source & Compiled Preservation:**
+  - All `.tex`, `.bib`, `.sty`, `.cls` source files preserved.
+  - All compiled publication PDFs (`iclr2027_conference.pdf`, `master_thesis.pdf`, `master_thesis_lite.pdf`, `810101504.pdf`) strictly preserved.
+  - Canonical benchmark results (`results/MASTER_RESULTS_MATRIX.csv`) strictly preserved.
 - **Test & Tool Caches:** All `.pytest_cache/`, `.ruff_cache/`, `.mypy_cache/` purged.
 - **Packaging Artifacts:** All `build/`, `dist/`, `*.egg-info/` purged.
-- **Runtime Error Logs:** All `*.err`, `results/**/*.err`, and stray execution logs purged.
-
-Verification check confirms zero tracked or uncommitted cache artifacts present in the repository tree.
 
 ---
 
-## 5. Configuration Hardening
+## 6. Permanent Dead-Code Health Gate
 
-### 5.1 `.gitignore` Hardening
-`.gitignore` was fortified with absolute overrides ensuring that no intermediate build files or sensitive artifacts can ever be committed:
-- Hardened rules for compiled objects: `*.so`, `*.o`, `*.a`, `*.dylib`, `*.dll`.
-- Hardened rules for error logs: `*.err`, `results/**/*.err`, `**/*.err`.
-- Hardened rules for OS & IDE artifacts: `.DS_Store`, `**/.DS_Store`, `.ipynb_checkpoints/`, `**/.ipynb_checkpoints/`.
-- Hardened rules for linter & test caches: `.ruff_cache/`, `.pytest_cache/`, `.mypy_cache/`.
-- Absolute override section explicitly guarantees immunity against accidental tracking.
-
-### 5.2 `pyproject.toml`
-- Validated `[project]` metadata: `name = "neuralops"`, `version = "1.4.0"`.
-- Validated author metadata: `{ name = "Taha Majlesi", email = "tahamaj4@gmail.com" }`.
-- Verified build system configuration using `setuptools>=61.0`.
-- Verified author header prepended.
-
-### 5.3 `ruff.toml`
-- Updated exclusion list to explicitly encompass `.venv/`, `build/`, `dist/`, `*.egg-info`, `paper/`, `thesis_final/`, `results/`, `docs/`, and `notebooks/*.ipynb`.
-- Maintained production linting rules and ML tensor naming conventions.
-- Verified author header prepended.
-
-### 5.4 `pytest.ini`
-- Validated test configuration, custom markers (`slow`, `gpu`, `triton`, `integration`, `regression`, `performance`).
-- Verified author header prepended.
+A new permanent health gate was integrated into `tests/test_library_health.py`:
+- **Test Name:** `test_zero_dead_code_and_shadowed_defs()`
+- **Mechanism:** Direct AST parsing and static analysis across all repository Python source files (>100 modules).
+- **Rules Enforced:**
+  1. Zero shadowed definitions (redefined functions or classes in the same lexical scope without `@overload`, `@setter`, or `@deleter`).
+  2. Zero unreachable statements in function/async function bodies following unconditional `return`, `raise`, `break`, or `continue`.
+- **Status:** Integrated into the standard test suite alongside `test_no_unbound_locals()`, `test_no_silent_dispatch_fallback()`, `test_no_instance_attr_outside_init()`, `test_neuralops_imports()`, and `test_replace_attention_end_to_end()`.
 
 ---
 
-## 6. Version Alignment Across Subsystems
+## 7. Configuration Hardening: `.gitignore`, `ruff.toml` & `.flake8`
 
-All internal references to versioning across `neuralops` were unified to **`1.4.0`**:
-- `neuralops/__init__.py`: `__version__ = "1.4.0"`
-- `neuralops/registry.py`: `__version__ = "1.4.0"`
-- `neuralops/models/surgical_io.py`: `"neuralops_version": "1.4.0"`
-- `neuralops/integrations/tgi.py`: `FastAPI(..., version="1.4.0")`
-- `neuralops/core/results_ledger.py`: `DEFAULT_VERSION_TAG = "v1.4.0"`
-- `neuralops/core/inspector.py`: `rec.get('version_tag', 'v1.4.0')`
-- `neuralops/benchmarks/cli.py`: default version tag and caption updated to `v1.4.0`
-- `neuralops/export/surgery_manifest.py`: `SurgeryManifest.version = "1.4.0"`
-- `neuralops/core/cuda_kernels/README.md`: `v1.4.0+`
-- `pyproject.toml`: `version = "1.4.0"`
+### 7.1 `.gitignore`
+- Explicit ignores for all Python bytecode, caches (`.pytest_cache`, `.mypy_cache`, `.ruff_cache`), LaTeX build clutter (`*.aux`, `*.lof`, `*.lot`, `*.out`, `*.toc`, `*.bbl`, `*.blg`, `*.fls`, `*.fdb_latexmk`, `*.synctex.gz`), and temporary files (`*.bak`, `*.tmp`, `*~`).
+- Absolute override section guaranteeing zero accidental tracking of cache or OS metadata.
+
+### 7.2 `ruff.toml`
+- Enabled rules: `["E", "F", "B", "PIE", "F401", "F841", "F811", "PIE790", "B006", "B008"]`.
+- Removed `B006` from `ignore` list.
+- Configured `unfixable = ["B006"]` to strictly flag mutable defaults as errors without automated destructive modifications.
+- Maintained ML tensor dimensional exceptions (`N803`, `N806`) for B, H, N, D dimensionality standards.
+
+### 7.3 `.flake8`
+- Maintained consistent line-length (120) and formatting ignores aligned with Black and Ruff standards.
+- Author header prepended: `# Author: Taha Majlesi`.
 
 ---
 
-## 7. Final Quality Certification Sign-Off
+## 8. Final Quality Certification Sign-Off
 
-The repository is certified clean, resilient, and fully prepared for production deployment and archival.
+The repository is certified clean, resilient, structurally verified, and fully prepared for production deployment and archival.
 
 **Certified by:** Taha Majlesi  
 **Role:** Project Author & Lead Architect  
