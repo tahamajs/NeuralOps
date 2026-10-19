@@ -151,6 +151,7 @@ class ZeroKVNeoCompressor(BaseCompressor):
         fallback_to_original: bool = True,
         target_attention_only: bool = True,
         **kwargs: Any,
+    ) -> None:
         super().__init__(model, name="zerokv_neo", **kwargs)
         self.model: nn.Module = self.model
         self._original_params: int = getattr(self, "_original_params", 0)
