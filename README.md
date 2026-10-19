@@ -1505,12 +1505,12 @@ Every table and figure in this repository is reproducible from scratch on physic
 - **GPU**: NVIDIA GeForce RTX 4070 Laptop GPU (Ada Lovelace, 36 SMs, 8GB GDDR6, Subsystem ID: `10de:2860`).
 - **Host OS**: Linux 6.6.137+ / Ubuntu 22.04 LTS.
 - **Driver & CUDA**: NVIDIA Driver `595.99.02`, CUDA `12.8` / `13.2`, PyTorch `2.11.0+cu128`, OpenAI Triton `3.6.0`.
-- **Primary Worktree**: `/mnt/d/SVD_linear_Attention`
+- **Primary Worktree**: `/mnt/d/NeuralOps`
 - **Reproducibility Seed**: `torch.manual_seed(42)`
 
 ### Benchmark Execution Commands
 
-To reproduce the physical GPU benchmarks exactly as certified, execute on the remote GPU server (`taha@192.168.1.100` within `/mnt/d/SVD_linear_Attention`) using the production environment:
+To reproduce the physical GPU benchmarks exactly as certified, execute on the remote GPU server (`taha@192.168.1.100` within `/mnt/d/NeuralOps`) using the production environment:
 
 ```bash
 # Environment interpreter

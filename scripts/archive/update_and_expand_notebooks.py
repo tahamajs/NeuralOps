@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Update and expand notebooks 00 through 09 to guarantee:
 1. 'Author: Taha Majlesi' in cell 0 markdown.
 2. 20-30+ rich cells for every notebook.

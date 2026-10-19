@@ -50,10 +50,14 @@ jobs:
         with:
           repository-url: https://test.pypi.org/legacy/
           password: ${{ secrets.TEST_PYPI_API_TOKEN }}
-        if: github.event.inputs.repository == 'testpypi'
+          skip-existing: true
+          print-hash: true
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.repository == 'testpypi'
 
       - name: Publish to PyPI (Production)
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          password: ${{ secrets.PYPI_API_TOKEN }}
-        if: github.event.inputs.repository != 'testpypi'
+          password: ${{ secrets.PYPI_API_TOKEN || secrets.PYPI_TOKEN || secrets.TWINE_PASSWORD }}
+          skip-existing: true
+          print-hash: true
+        if: github.event_name != 'workflow_dispatch' || github.event.inputs.repository == 'pypi'
