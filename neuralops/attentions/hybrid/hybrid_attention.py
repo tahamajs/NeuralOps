@@ -638,6 +638,9 @@ class HybridAttention(BaseAttention):
 WeightedEnsembleAttention = HybridAttention
 SmartWeightedEnsembleAttention = HybridAttention
 
+ATTENTION_REGISTRY.register("weighted_ensemble", is_alias=True)(HybridAttention)
+ATTENTION_REGISTRY.register("smart_weighted_ensemble", is_alias=True)(HybridAttention)
+
 
 def inject_weighted_ensemble(
     layer: Any = None,
