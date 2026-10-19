@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Context Parallelism Module
 
 Distributes sequence context across multiple GPUs for long-context attention execution.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -44,13 +48,11 @@ def compute_chunk_prefix_scan(
     outs = []
     for t in range(T_c):
         if g is not None:
-            decay = torch.exp(g[:, :, t, :])  # [B, H, D_k]
+            decay = torch.exp(g[:, :, t, :])
             S = S * decay.unsqueeze(-1)
-        # S += k_t^T v_t
         kt = k[:, :, t:t+1, :]
         vt = v[:, :, t:t+1, :]
         S = S + torch.matmul(kt.transpose(-2, -1), vt)
-        # out_t = q_t @ S
         ot = torch.matmul(q[:, :, t:t+1, :], S)
         outs.append(ot)
 
@@ -81,7 +83,6 @@ class _ContextParallelScanFunction(torch.autograd.Function):
         out_list = []
         curr_state = None
 
-        # Stage 1 & 2 & 3: Prefix state propagation across chunks
         for p in range(W):
             qp = q_chunks[p]
             kp = k_chunks[p]
@@ -106,7 +107,6 @@ class _ContextParallelScanFunction(torch.autograd.Function):
         v_chunks = all_chunks[2*W:3*W]
         g_chunks = all_chunks[3*W:4*W]
 
-        # Re-run forward with autograd tape on chunks to compute exact analytical gradients
         with torch.enable_grad():
             q_vars = [qc.detach().requires_grad_(True) for qc in q_chunks]
             k_vars = [kc.detach().requires_grad_(True) for kc in k_chunks]
@@ -150,7 +150,6 @@ def context_parallel_recurrent_scan(
     return _ContextParallelScanFunction.apply(W, float(scale), *all_tensors)
 
 
-# Backward-compatible alias
 class ContextParallelRecurrentScan:
     @staticmethod
     def apply(q_chunks, k_chunks, v_chunks, g_chunks=None, scale=None):
@@ -257,7 +256,6 @@ class RingLinearAttention(nn.Module):
         curr_v = v
         accum_out = torch.zeros_like(q)
 
-        # Ring steps
         for step in range(self.ring_size):
             kv = torch.matmul(curr_k.transpose(-2, -1), curr_v)
             accum_out = accum_out + torch.matmul(q, kv)

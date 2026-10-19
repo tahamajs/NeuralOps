@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Phantom Gated Sparsity Autograd Interface
 
 Hardware-accelerated CUDA C++ autograd implementation with analytical gradients and three-level fallback dispatch.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -74,7 +78,6 @@ class _PhantomFunction(torch.autograd.Function):
 
         dgate = None
         if ctx.needs_input_grad[1]:
-            # For g >= threshold: d/dgate [x * g] = x * g * (1 - g)
             dg = g * (1.0 - g)
             dgate = (dout.float() * x.float() * dg * active.float()).to(gate.dtype)
 

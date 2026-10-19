@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -6,11 +13,6 @@
 namespace neuralops {
 namespace cuda {
 
-// Causal Linear Attention Recurrent Scan Kernel
-// q, k: [B, H, L, D_K], v: [B, H, L, D_V] -> out: [B, H, L, D_V]
-// Recurrence: S_t = S_{t-1} + k_t^T @ v_t (matrix [D_K, D_V])
-//             z_t = z_{t-1} + k_t       (vector [D_K])
-//             out_t = (q_t @ S_t) / max(q_t @ z_t, 1e-5)
 template <typename scalar_t, int MAX_DK, int MAX_DV>
 __launch_bounds__(64)
 __global__ void linear_attention_fwd_kernel(
@@ -31,14 +33,12 @@ __global__ void linear_attention_fwd_kernel(
     const int tid = threadIdx.x;
     const int num_threads = blockDim.x;
 
-    // Shared memory for S [MAX_DK, MAX_DV] and z [MAX_DK]
     __shared__ float s_S[MAX_DK][MAX_DV];
     __shared__ float s_z[MAX_DK];
     __shared__ float s_k[MAX_DK];
     __shared__ float s_v[MAX_DV];
     __shared__ float s_q[MAX_DK];
 
-    // Initialize state
     for (int idx = tid; idx < D_K * D_V; idx += num_threads) {
         int r = idx / D_V;
         int c = idx % D_V;
@@ -64,20 +64,17 @@ __global__ void linear_attention_fwd_kernel(
         }
         __syncthreads();
 
-        // Step 1: Update z += k_t
         if (tid < D_K) {
             s_z[tid] += s_k[tid];
         }
 
-        // Step 2: Update S += k_t^T @ v_t
         for (int idx = tid; idx < D_K * D_V; idx += num_threads) {
-            int r = idx / D_V; // dim in D_K
-            int c = idx % D_V; // dim in D_V
+            int r = idx / D_V;
+            int c = idx % D_V;
             s_S[r][c] += s_k[r] * s_v[c];
         }
         __syncthreads();
 
-        // Step 3: Compute denominator = q_t @ z
         float local_denom = 0.0f;
         for (int i = tid; i < D_K; i += num_threads) {
             local_denom += s_q[i] * s_z[i];
@@ -90,7 +87,6 @@ __global__ void linear_attention_fwd_kernel(
         __syncthreads();
         const float denom = s_denom;
 
-        // Step 4: Compute out_t = (q_t @ S) / denom
         for (int col = tid; col < D_V; col += num_threads) {
             float num = 0.0f;
             for (int r = 0; r < D_K; ++r) {
@@ -102,8 +98,8 @@ __global__ void linear_attention_fwd_kernel(
     }
 }
 
-} // namespace cuda
-} // namespace neuralops
+}
+}
 
 torch::Tensor linear_attention_fwd(
     const torch::Tensor& q,

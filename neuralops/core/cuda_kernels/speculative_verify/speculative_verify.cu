@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -7,9 +14,6 @@
 namespace neuralops {
 namespace cuda {
 
-// Speculative draft verify kernel
-// draft_tokens: [B, K], target_tokens: [B, K]
-// accept_mask: [B, K] (bool/uint8), accept_count: [B] (int32)
 __global__ void __launch_bounds__(32) speculative_verify_kernel(
     uint8_t* __restrict__ accept_mask,
     int32_t* __restrict__ accept_count,
@@ -40,8 +44,8 @@ __global__ void __launch_bounds__(32) speculative_verify_kernel(
     }
 }
 
-} // namespace cuda
-} // namespace neuralops
+}
+}
 
 std::vector<torch::Tensor> speculative_verify_fwd(
     const torch::Tensor& draft_tokens,

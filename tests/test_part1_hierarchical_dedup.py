@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Part 1 Verification: Hierarchical Prefix Deduplication (RCA-1)."""
 import pytest
 import torch
@@ -32,7 +38,6 @@ def test_t5_encoder_decoder_counts():
     cfg = T5Config(num_layers=2, num_decoder_layers=2, num_heads=2, d_model=32, d_kv=16, d_ff=64, vocab_size=100)
     model = T5ForConditionalGeneration(cfg)
     attns = get_attention_modules(model)
-    # 2 self in encoder + 2 self + 2 cross in decoder = 6
     assert len(attns) == 6
 
 def test_nested_container_prefix_drop():

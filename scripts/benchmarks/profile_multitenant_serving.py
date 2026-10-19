@@ -1,6 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Profile multitenant serving module.
-
-Author: Taha Majlesi
 """
 
 import os
@@ -34,25 +38,16 @@ def main():
     device_name = torch.cuda.get_device_name(0)
     print(f"Device: {device_name}")
 
-    # 4 Concurrent Tenant CUDA Streams
-    # Simulating 4 distinct client inference requests served asynchronously
-    # Tenant 1: FlashAttention query (e.g. conversational prompt)
-    # Tenant 2: Selective SSM scan query (e.g. long state-space summarization)
-    # Tenant 3: Low-Rank SVD GEMM projection (e.g. compressed adapter inference)
-    # Tenant 4: Matrix state causal attention query (e.g. reasoning step)
     tenant_streams = [torch.cuda.Stream(device=device) for _ in range(4)]
 
-    # Shared Base Weights Resident in Memory (e.g. 2 GB model weights)
     print("Allocating resident model weights (2.0 GB)...")
-    base_weights = [torch.empty(256 * 1024 * 512, dtype=torch.float32, device=device) for _ in range(4)]  # 2048 MB
+    base_weights = [torch.empty(256 * 1024 * 512, dtype=torch.float32, device=device) for _ in range(4)]
 
-    # Tenant 1 Workload: FlashAttention
     B1, H1, S1, D1 = 2, 4, 1024, 64
     q1 = torch.randn(B1, H1, S1, D1, device=device, dtype=torch.float16)
     k1 = torch.randn(B1, H1, S1, D1, device=device, dtype=torch.float16)
     v1 = torch.randn(B1, H1, S1, D1, device=device, dtype=torch.float16)
 
-    # Tenant 2 Workload: Selective SSM Scan
     B2, D2, L2, N2 = 2, 64, 1024, 16
     u2 = torch.randn(B2, D2, L2, device=device, dtype=torch.float32)
     delta2 = F.softplus(torch.randn(B2, D2, L2, device=device, dtype=torch.float32) - 4.0)
@@ -60,18 +55,15 @@ def main():
     B2_p = torch.randn(B2, N2, L2, device=device, dtype=torch.float32) * 0.1
     C2_p = torch.randn(B2, N2, L2, device=device, dtype=torch.float32) * 0.1
 
-    # Tenant 3 Workload: Low-Rank SVD Gated GEMM
     M3, K3, R3 = 2048, 768, 64
     X3 = torch.randn(M3, K3, device=device, dtype=torch.float16)
     V_r3 = torch.randn(R3, K3, device=device, dtype=torch.float16)
     U_r3 = torch.randn(K3, R3, device=device, dtype=torch.float16)
     alpha3 = torch.randn(R3, device=device, dtype=torch.float16)
 
-    # Tenant 4 Workload: Matmul Decomposition
     A4 = torch.randn(1024, 1024, device=device, dtype=torch.float16)
     B4 = torch.randn(1024, 1024, device=device, dtype=torch.float16)
 
-    # Warmup
     print("Warming up 4 tenant streams...")
     for _ in range(25):
         with torch.cuda.stream(tenant_streams[0]):
@@ -92,7 +84,6 @@ def main():
     NUM_ROUNDS = 200
     print(f"\nBenchmarking Sequential vs Multi-Tenant Serving ({NUM_ROUNDS} rounds)...")
 
-    # Sequential Serving (All queries queued sequentially on default stream)
     torch.cuda.synchronize()
     t0_seq = time.perf_counter()
     for _ in range(NUM_ROUNDS):
@@ -104,7 +95,6 @@ def main():
     torch.cuda.synchronize()
     t_seq_ms = (time.perf_counter() - t0_seq) / NUM_ROUNDS * 1000
 
-    # Multi-Tenant Concurrent Serving with Asynchronous Context Switching
     torch.cuda.synchronize()
     t0_par = time.perf_counter()
     checkpoint_frags = []
@@ -152,7 +142,6 @@ def main():
     print(f"Peak Reserved Pool:      {peak_res_mb:.2f} MB")
     print(f"Allocator Fragmentation: {frag_pct:.2f}% (< 3.0%: {frag_pct < 3.0})")
 
-    # Clean up base weights
     del base_weights
     gc.collect()
     torch.cuda.empty_cache()

@@ -1,6 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Profile prefill decode mixing module.
-
-Author: Taha Majlesi
 """
 
 import sys
@@ -14,26 +18,16 @@ import csv
 device = torch.device("cuda:0")
 print(f"Device: {torch.cuda.get_device_name(0)}")
 
-# Benchmark parameters:
-# Multi-stream inference latency profiling under concurrent Prefill + Decode mixing.
-# 4 concurrent CUDA streams:
-# - Streams 0 & 1 execute heavy prompt prefill (L_prefill in {1024, 2048, 4096})
-# - Streams 2 & 3 execute continuous autoregressive decoding (L_decode = 64 tokens, 1 token per step)
-# Measure interference penalty:
-# 1. Isolated Prefill Latency (ms) vs Mixed Prefill Latency (ms) -> Prefill Latency Expansion (%)
-# 2. Isolated Decode Step Latency (ms) vs Mixed Decode Step Latency (ms) -> Decode Step Slowdown (%)
-# 3. Memory overhead, allocator fragmentation, and overlap efficiency.
 
 H = 16
 D_HEAD = 64
 D = H * D_HEAD
 
 prefill_lengths = [1024, 2048, 4096]
-decode_cache_len = 1024  # historical KV cache for decoding streams
+decode_cache_len = 1024
 
 print("\n=== STARTING MULTI-STREAM PREFILL + DECODE MIXING BENCHMARK ===")
 
-# Model weights
 W_q = torch.randn(D, D, device=device, dtype=torch.float16)
 W_k = torch.randn(D, D, device=device, dtype=torch.float16)
 W_v = torch.randn(D, D, device=device, dtype=torch.float16)
@@ -41,13 +35,11 @@ W_out = torch.randn(D, D, device=device, dtype=torch.float16)
 W_gate = torch.randn(D, 4 * D, device=device, dtype=torch.float16)
 W_down = torch.randn(4 * D, D, device=device, dtype=torch.float16)
 
-# Streams
 stream_prefill_0 = torch.cuda.Stream()
 stream_prefill_1 = torch.cuda.Stream()
 stream_decode_0 = torch.cuda.Stream()
 stream_decode_1 = torch.cuda.Stream()
 
-# Decode caches for Streams 2 & 3
 k_decode_0 = torch.randn(decode_cache_len, H, D_HEAD, device=device, dtype=torch.float16)
 v_decode_0 = torch.randn(decode_cache_len, H, D_HEAD, device=device, dtype=torch.float16)
 k_decode_1 = torch.randn(decode_cache_len, H, D_HEAD, device=device, dtype=torch.float16)
@@ -57,7 +49,6 @@ tok_decode_0 = torch.randn(1, D, device=device, dtype=torch.float16)
 tok_decode_1 = torch.randn(1, D, device=device, dtype=torch.float16)
 
 
-# Decode step function
 def decode_step(stream, tok, k_cache, v_cache):
     """Execute decode step routine."""
     with torch.cuda.stream(stream):
@@ -76,7 +67,6 @@ def decode_step(stream, tok, k_cache, v_cache):
         return next_tok
 
 
-# Prefill function
 def prefill_step(stream, prompt):
     """Execute prefill step routine."""
     with torch.cuda.stream(stream):
@@ -103,7 +93,6 @@ for L_pref in prefill_lengths:
     prompt_0 = torch.randn(1, L_pref, D, device=device, dtype=torch.float16)
     prompt_1 = torch.randn(1, L_pref, D, device=device, dtype=torch.float16)
 
-    # 1. Isolated Prefill (Dual Streams 0 & 1 only)
     for _ in range(5):
         _ = prefill_step(stream_prefill_0, prompt_0)
         _ = prefill_step(stream_prefill_1, prompt_1)
@@ -123,7 +112,6 @@ for L_pref in prefill_lengths:
     torch.cuda.synchronize()
     isolated_prefill_ms = ev_pref_start.elapsed_time(ev_pref_end) / iters_prefill
 
-    # 2. Isolated Decode (Dual Streams 2 & 3 only)
     for _ in range(10):
         _ = decode_step(stream_decode_0, tok_decode_0, k_decode_0, v_decode_0)
         _ = decode_step(stream_decode_1, tok_decode_1, k_decode_1, v_decode_1)
@@ -143,8 +131,6 @@ for L_pref in prefill_lengths:
     torch.cuda.synchronize()
     isolated_decode_step_ms = ev_dec_start.elapsed_time(ev_dec_end) / iters_decode
 
-    # 3. Mixed Execution: Prefill (Streams 0, 1) + Decode (Streams 2, 3) running simultaneously
-    # During one prefill batch, decode streams run continuously
     for _ in range(5):
         _ = prefill_step(stream_prefill_0, prompt_0)
         _ = prefill_step(stream_prefill_1, prompt_1)
@@ -159,7 +145,6 @@ for L_pref in prefill_lengths:
     for _ in range(iters_prefill):
         _ = prefill_step(stream_prefill_0, prompt_0)
         _ = prefill_step(stream_prefill_1, prompt_1)
-        # Decode steps interleaved
         _ = decode_step(stream_decode_0, tok_decode_0, k_decode_0, v_decode_0)
         _ = decode_step(stream_decode_1, tok_decode_1, k_decode_1, v_decode_1)
 
@@ -171,16 +156,13 @@ for L_pref in prefill_lengths:
     torch.cuda.synchronize()
     mixed_prefill_ms = ev_mixed_start.elapsed_time(ev_mixed_end) / iters_prefill
 
-    # Measure decode step latency under active concurrent prefill load
     ev_dec_under_pref_start = torch.cuda.Event(enable_timing=True)
     ev_dec_under_pref_end = torch.cuda.Event(enable_timing=True)
 
     ev_dec_under_pref_start.record()
     for _ in range(iters_prefill):
-        # Fire long-running prefill kernels in background streams
         _ = prefill_step(stream_prefill_0, prompt_0)
         _ = prefill_step(stream_prefill_1, prompt_1)
-        # Measure decode step time while prefill is active
         _ = decode_step(stream_decode_0, tok_decode_0, k_decode_0, v_decode_0)
         _ = decode_step(stream_decode_1, tok_decode_1, k_decode_1, v_decode_1)
         stream_decode_0.synchronize()
@@ -190,7 +172,6 @@ for L_pref in prefill_lengths:
     ev_dec_under_pref_end.record()
     torch.cuda.synchronize()
 
-    # Decode step under concurrent prefill
     mixed_decode_step_ms = isolated_decode_step_ms * (mixed_prefill_ms / isolated_prefill_ms)
 
     prefill_expansion_pct = ((mixed_prefill_ms - isolated_prefill_ms) / isolated_prefill_ms) * 100.0
@@ -223,7 +204,6 @@ for L_pref in prefill_lengths:
         }
     )
 
-# Export to CSV
 csv_path = "/mnt/d/SVD_linear_Attention/docs/benchmarks/paper_benchmarks_prefill_decode_mixing.csv"
 os.makedirs(os.path.dirname(csv_path), exist_ok=True)
 fieldnames = [

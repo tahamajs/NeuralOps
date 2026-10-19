@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Comprehensive tests for all training pipelines, custom loops,
 callbacks, losses, optimizers, and schedulers in neuralops.trainer.
@@ -42,12 +48,10 @@ def test_custom_loop_trainer_train_step():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = DummyClassificationModel().to(device)
 
-    # Synthetic batch
     x = torch.randn(16, 32)
     y = torch.randint(0, 2, (16,))
     dataset = TensorDataset(x, y)
 
-    # Adapt dataset for standard collator
     class DictDataset:
         def __init__(self, ds):
             self.ds = ds
@@ -79,7 +83,6 @@ def test_custom_loop_trainer_train_step():
     )
     assert trainer is not None
 
-    # Test data loader creation
     loader = trainer._make_loader(train_ds, shuffle=False)
     batch = next(iter(loader))
     assert "input_ids" in batch and "labels" in batch
@@ -109,17 +112,13 @@ def test_surgery_hf_callback_step_and_lifecycle():
     state = MockState()
     control = MockControl()
 
-    # Step 10: Stage 1
     state.global_step = 10
     callback.on_step_begin(args=None, state=state, control=control, model=model)
-    # Step 40: Stage 2
     state.global_step = 40
     callback.on_step_begin(args=None, state=state, control=control, model=model)
-    # Step 80: Stage 3
     state.global_step = 80
     callback.on_step_begin(args=None, state=state, control=control, model=model)
 
-    # Train end
     callback.on_train_end(args=None, state=state, control=control, model=model)
 
 
@@ -132,7 +131,6 @@ def test_loss_functions_and_schedulers():
     sched = get_lr_scheduler("cosine", optimizer=opt, num_warmup_steps=10, num_training_steps=100)
     assert sched is not None
 
-    # Step through scheduler
     for _ in range(5):
         opt.step()
         sched.step()
@@ -141,7 +139,6 @@ def test_loss_functions_and_schedulers():
 
 def test_riemannian_adam_optimizer():
     """Verify Riemannian Adam optimizer for orthogonal low-rank manifolds."""
-    # Orthogonal matrix parameter (e.g., Stiefel manifold)
     p = nn.Parameter(torch.linalg.qr(torch.randn(16, 8))[0])
     opt = RiemannianAdam([p], lr=1e-3)
 

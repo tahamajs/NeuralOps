@@ -1,4 +1,9 @@
-# -*- coding: utf-8 -*-
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Standardized, Clean Benchmark Runner for All 72 Compression Engines.
 
 Features:
@@ -130,7 +135,6 @@ def main():
                 torch.cuda.synchronize(dev)
             t0 = time.perf_counter()
 
-            # Execute compression
             comp_model, stats = _build_compressed_model(target, base_model)
 
             if dev.type == "cuda":

@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 HuggingFace Trainer Integration
 
 Wraps and registers HuggingFace Trainer extensions for seamless pipeline execution.
-
-Author: Taha Majlesi
 """
 
 from typing import Any
@@ -81,9 +85,7 @@ class HuggingFaceTrainer(BaseTrainer):
             "logging_dir": str(self.results_manager.log_dir),
             "logging_steps": self.config.get("logging_steps", 10),
             "report_to": "none",
-            # Disable safetensors to avoid RuntimeError from shared-memory tensors in custom attention modules
             "save_safetensors": False,
-            # GPU throughput
             "dataloader_pin_memory": True,
             "dataloader_num_workers": self.config.get("num_workers", 0),
             "remove_unused_columns": False,

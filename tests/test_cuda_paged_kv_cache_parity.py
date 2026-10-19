@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Parity tests for Paged KV Cache block allocation and CoW copy (Module 8).
 """
@@ -30,7 +36,6 @@ def test_kv_cache_cow_copy_parity():
     dst_k_ref = torch.zeros_like(src_k)
     dst_v_ref = torch.zeros_like(src_v)
 
-    # Copy blocks 0->2, 1->5, 3->7
     block_mapping = torch.tensor([[0, 2], [1, 5], [3, 7]], device="cuda", dtype=torch.int32)
 
     copy_blocks_cow(dst_k_cuda, dst_v_cuda, src_k, src_v, block_mapping, block_size, num_heads, head_dim)

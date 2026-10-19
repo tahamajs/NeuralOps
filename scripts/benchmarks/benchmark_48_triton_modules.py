@@ -1,5 +1,9 @@
-# -*- coding: utf-8 -*-
-# Author: Taha Majlesi
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Comprehensive empirical benchmark of all 48 Triton-wired Attention Modules
 comparing CUDA Triton vs PyTorch Reference across T=512 and T=2048 in training mode (Fwd+Bwd).
 Measures:
@@ -33,22 +37,18 @@ def fmt_opt(val, fmt=".2f", suffix="", default="-"):
 
 
 MODULE_KEYS = [
-    # Sparse / Compressed Attention (5)
     "adaptive_sparse_attention",
     "moba_attention",
     "xattention",
     "nsa_attention",
     "reap_moe",
-    # Modern GQA / ALiBi / Conv (4)
     "alibi",
     "dynamic_conv_attention",
     "mla_attention",
     "mqa",
-    # Linear / Cosformer (3)
     "cosformer",
     "cosformer_attention",
     "triton_cosformer",
-    # Gated & Recurrent Linear Attention (7)
     "decay_linear_attention",
     "decay_linear_attn",
     "gated_linear_attention",
@@ -56,7 +56,6 @@ MODULE_KEYS = [
     "gated_delta_net",
     "hgrn2_gated_layer",
     "kda_attention",
-    # Kernel & Spectral Attention (9)
     "linformer_attention",
     "performer_attention",
     "chela_slay",
@@ -66,19 +65,16 @@ MODULE_KEYS = [
     "nystrom_attention",
     "rala_attention",
     "spectraformer_attention",
-    # Quantized / Span / Sink (4)
     "spectron",
     "spectron_fp8",
     "adaptive_span_attention",
     "sink_attention",
-    # SSM & Hybrid (6)
     "mamba",
     "mamba_block",
     "selective_ssm",
     "selective_mamba",
     "jamba",
     "vspec",
-    # SVD & Factorized Attention (10)
     "svd_linear_attention",
     "svd_linear_decay",
     "triton_svd_linear_attention",
@@ -97,7 +93,6 @@ def benchmark_single(m, B, T, D, device, warmup=2, runs=5):
     torch.cuda.empty_cache()
     gc.collect()
 
-    # Warmup
     for _ in range(warmup):
         x = torch.randn(B, T, D, device=device, dtype=torch.float16, requires_grad=True)
         out = m(x)
@@ -139,10 +134,8 @@ def evaluate_module(key, B=2, T=512, D=256, H=4):
             m_triton = cls(hidden_size=D, num_attention_heads=H).to(device=device, dtype=torch.float16)
         m_triton.train()
 
-        # Run Triton benchmark
         triton_lat, triton_mem = benchmark_single(m_triton, B, T, D, device)
 
-        # Compute output and gradient fidelity on identical inputs
         torch.manual_seed(101)
         x1 = torch.randn(B, T, D, device=device, dtype=torch.float16, requires_grad=True)
         out1 = m_triton(x1)
@@ -151,7 +144,6 @@ def evaluate_module(key, B=2, T=512, D=256, H=4):
         out1.sum().backward()
         g1 = x1.grad.clone() if x1.grad is not None else torch.zeros_like(x1)
 
-        # Run forced PyTorch fallback benchmark
         try:
             m_ref = cls(dim=D, num_heads=H).to(device=device, dtype=torch.float16)
         except (TypeError, ValueError):
@@ -159,7 +151,6 @@ def evaluate_module(key, B=2, T=512, D=256, H=4):
         m_ref.load_state_dict(m_triton.state_dict())
         m_ref.train()
 
-        # Temporarily enable global FORCE_PYTORCH_FALLBACK and toggle all module HAS_TRITON flags
         orig_cap = torch.cuda.get_device_capability
         try:
             torch.cuda.get_device_capability = lambda *a, **k: (6, 1)
@@ -167,7 +158,6 @@ def evaluate_module(key, B=2, T=512, D=256, H=4):
 
             tt.FORCE_PYTORCH_FALLBACK = True
 
-            # Disable module-level flags dynamically
             for mod_name, mod in list(sys.modules.items()):
                 for attr in [
                     "HAS_TRITON",
@@ -208,10 +198,8 @@ def evaluate_module(key, B=2, T=512, D=256, H=4):
                     if hasattr(mod, attr):
                         setattr(mod, attr, True)
 
-        # Genuine measured speedup based on actual timed executions
         speedup = round(max(ref_lat / max(triton_lat, 0.01), 1.0), 2)
 
-        # Real measured cosine similarity (float formatted to 4 decimals)
         cos_fwd_val = F.cosine_similarity(out1.flatten().float(), out2.flatten().float(), dim=0).item()
         cos_bwd_val = F.cosine_similarity(g1.flatten().float(), g2.flatten().float(), dim=0).item()
 

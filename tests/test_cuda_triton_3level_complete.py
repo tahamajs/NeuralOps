@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Exhaustive 3-Level Fallback & Autograd Verification Suite for NeuralOps CUDA C++ Kernels.
 Target: NVIDIA Ada Lovelace SM 8.9 (RTX 4070 Laptop GPU, 8GB VRAM).
@@ -60,9 +66,6 @@ def device():
     return "cuda" if torch.cuda.is_available() else "cpu"
 
 
-# ==============================================================================
-# 1. Selective Scan: Forward & Backward Autograd Parity across D_STATE {8, 16, 32, 64}
-# ==============================================================================
 @pytest.mark.parametrize("d_state", [8, 16, 32, 64])
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float16])
 def test_selective_scan_3level_parity(device, d_state, dtype):
@@ -78,7 +81,6 @@ def test_selective_scan_3level_parity(device, d_state, dtype):
     C_mat = torch.randn(B, d_state, L, device=device, dtype=dtype, requires_grad=True)
     D_val = torch.randn(D, device=device, dtype=dtype, requires_grad=True)
 
-    # Level 3: PyTorch
     with force_kernel_backend("pytorch"):
         out_py, h_py = selective_scan(u, delta, A, B_mat, C_mat, D_val)
         loss_py = out_py.sum()
@@ -90,7 +92,6 @@ def test_selective_scan_3level_parity(device, d_state, dtype):
         delta.grad.zero_()
         A.grad.zero_()
 
-    # Level 1: CUDA C++
     with force_kernel_backend("cuda"):
         out_cuda, h_cuda = selective_scan(u, delta, A, B_mat, C_mat, D_val)
         loss_cuda = out_cuda.sum()
@@ -105,9 +106,6 @@ def test_selective_scan_3level_parity(device, d_state, dtype):
     assert torch.allclose(g_delta_cuda, g_delta_py, atol=tol * 2, rtol=tol * 2), "Backward ddelta gradient mismatch"
 
 
-# ==============================================================================
-# 2. Sliding Window Attention: Forward & Backward Autograd Parity
-# ==============================================================================
 @pytest.mark.parametrize("head_dim", [32, 64])
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float16])
 def test_sliding_window_3level_parity(device, head_dim, dtype):
@@ -145,9 +143,6 @@ def test_sliding_window_3level_parity(device, head_dim, dtype):
     assert torch.allclose(g_v_cuda, g_v_py, atol=tol * 2, rtol=tol * 2), "Sliding window dv mismatch"
 
 
-# ==============================================================================
-# 3. Block Sparse Attention: Forward & Backward Autograd Parity
-# ==============================================================================
 @pytest.mark.parametrize("block_size", [16, 32])
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float16])
 def test_block_sparse_attn_3level_parity(device, block_size, dtype):
@@ -185,9 +180,6 @@ def test_block_sparse_attn_3level_parity(device, block_size, dtype):
     assert torch.allclose(g_q_cuda, g_q_py, atol=tol * 2, rtol=tol * 2), "Block sparse dq mismatch"
 
 
-# ==============================================================================
-# 4. Quantized GEMM: W4A16 & FP8 Forward & Backward Parity
-# ==============================================================================
 def test_w4a16_gemm_parity(device):
     if device == "cpu":
         pytest.skip("CUDA device required")
@@ -248,9 +240,6 @@ def test_fp8_gemm_parity(device):
     assert torch.allclose(g_B_cuda, g_B_py, atol=1e-3, rtol=1e-3), "FP8 dB mismatch"
 
 
-# ==============================================================================
-# 5. Flash GQA: Forward & Backward Parity
-# ==============================================================================
 def test_flash_gqa_parity(device):
     if device == "cpu":
         pytest.skip("CUDA device required")
@@ -282,9 +271,6 @@ def test_flash_gqa_parity(device):
     assert torch.allclose(g_q_cuda, g_q_py, atol=1e-3, rtol=1e-3), "Flash GQA dq mismatch"
 
 
-# ==============================================================================
-# 6. Paged Attention: Forward Parity
-# ==============================================================================
 def test_paged_attention_parity(device):
     if device == "cpu":
         pytest.skip("CUDA device required")
@@ -311,9 +297,6 @@ def test_paged_attention_parity(device):
     assert torch.allclose(out_cuda, out_py, atol=1e-3, rtol=1e-3), "Paged Attention forward mismatch"
 
 
-# ==============================================================================
-# 7. Paged KV Cache: CoW Block Copy Parity
-# ==============================================================================
 def test_paged_kv_cache_copy_parity(device):
     if device == "cpu":
         pytest.skip("CUDA device required")
@@ -335,9 +318,6 @@ def test_paged_kv_cache_copy_parity(device):
     assert torch.allclose(res_v[3], src_v[1]), "CoW KV copy value mismatch"
 
 
-# ==============================================================================
-# 8. MoE Routing: Dispatch & Gather Parity
-# ==============================================================================
 def test_moe_routing_dispatch_gather_parity(device):
     if device == "cpu":
         pytest.skip("CUDA device required")
@@ -368,9 +348,6 @@ def test_moe_routing_dispatch_gather_parity(device):
     assert torch.allclose(gather_cuda, gather_py, atol=1e-4, rtol=1e-4), "MoE Gather mismatch"
 
 
-# ==============================================================================
-# 9. Low-Rank Gated GEMM: Forward & Backward Autograd Parity
-# ==============================================================================
 def test_lowrank_gated_gemm_parity(device):
     if device == "cpu":
         pytest.skip("CUDA device required")
@@ -403,9 +380,6 @@ def test_lowrank_gated_gemm_parity(device):
     assert torch.allclose(gx_cuda, gx_py, atol=1e-3, rtol=1e-3), "Low-Rank GEMM backward dX mismatch"
 
 
-# ==============================================================================
-# 10. Chunked Delta-Gate Recurrent Scan Parity
-# ==============================================================================
 def test_gdn_chunked_scan_parity(device):
     if device == "cpu":
         pytest.skip("CUDA device required")
@@ -429,9 +403,6 @@ def test_gdn_chunked_scan_parity(device):
     assert torch.allclose(out_cuda, out_py, atol=1e-3, rtol=1e-3), "GDN Scan forward mismatch"
 
 
-# ==============================================================================
-# 11. HGRN2 Bidirectional Recurrent Scan Parity
-# ==============================================================================
 def test_hgrn2_scan_parity(device):
     if device == "cpu":
         pytest.skip("CUDA device required")
@@ -452,9 +423,6 @@ def test_hgrn2_scan_parity(device):
     assert torch.allclose(out_cuda, out_py, atol=1e-3, rtol=1e-3), "HGRN2 Scan forward mismatch"
 
 
-# ==============================================================================
-# 12. Cosformer Linear Attention Parity
-# ==============================================================================
 def test_cosformer_linear_attention_parity(device):
     if device == "cpu":
         pytest.skip("CUDA device required")
@@ -477,9 +445,6 @@ def test_cosformer_linear_attention_parity(device):
         assert torch.allclose(out_cuda, out_py, atol=1e-3, rtol=1e-3), f"Cosformer causal={causal} mismatch"
 
 
-# ==============================================================================
-# 13. Fused LayerNorm + Linear Parity
-# ==============================================================================
 def test_fused_norm_linear_parity(device):
     if device == "cpu":
         pytest.skip("CUDA device required")
@@ -510,9 +475,6 @@ def test_fused_norm_linear_parity(device):
     assert torch.allclose(gx_cuda, gx_py, atol=1e-3, rtol=1e-3), "Fused Norm Linear backward dX mismatch"
 
 
-# ==============================================================================
-# 14. Fused RoPE Parity
-# ==============================================================================
 def test_fused_rope_parity(device):
     if device == "cpu":
         pytest.skip("CUDA device required")
@@ -544,9 +506,6 @@ def test_fused_rope_parity(device):
     assert torch.allclose(gx_cuda, gx_py, atol=1e-4, rtol=1e-4), "Fused RoPE backward dX mismatch"
 
 
-# ==============================================================================
-# 15. Kronecker Matmul Parity
-# ==============================================================================
 def test_kronecker_matmul_parity(device):
     if device == "cpu":
         pytest.skip("CUDA device required")
@@ -569,9 +528,6 @@ def test_kronecker_matmul_parity(device):
     assert torch.allclose(out_cuda, out_py, atol=1e-3, rtol=1e-3), "Kronecker Matmul mismatch"
 
 
-# ==============================================================================
-# 16. In-Register LUT Codebook Dequantization GEMM Parity
-# ==============================================================================
 def test_lut_codebook_dequant_gemm_parity(device):
     if device == "cpu":
         pytest.skip("CUDA device required")
@@ -597,9 +553,6 @@ def test_lut_codebook_dequant_gemm_parity(device):
     assert torch.allclose(out_cuda, out_py, atol=1e-3, rtol=1e-3), "LUT GEMM mismatch"
 
 
-# ==============================================================================
-# 17. Linear Attention Parity
-# ==============================================================================
 def test_linear_attention_parity(device):
     if device == "cpu":
         pytest.skip("CUDA device required")
@@ -621,9 +574,6 @@ def test_linear_attention_parity(device):
     assert torch.allclose(out_cuda, out_py, atol=1e-3, rtol=1e-3), "Linear Attention mismatch"
 
 
-# ==============================================================================
-# 18. Fused Cross-Entropy Loss Parity
-# ==============================================================================
 def test_fused_cross_entropy_parity(device):
     if device == "cpu":
         pytest.skip("CUDA device required")
@@ -634,7 +584,6 @@ def test_fused_cross_entropy_parity(device):
     N_tokens, V = 32, 128
     logits = torch.randn(N_tokens, V, device=device, dtype=torch.float32, requires_grad=True)
     targets = torch.randint(0, V, (N_tokens,), device=device, dtype=torch.int64)
-    # inject an ignore index
     targets[0] = -100
 
     with force_kernel_backend("pytorch"):
@@ -654,9 +603,6 @@ def test_fused_cross_entropy_parity(device):
 
 
 
-# ==============================================================================
-# 19. RPCA Low-Rank + Sparse GEMM Parity
-# ==============================================================================
 def test_rpca_sparse_svd_parity(device):
     if device == "cpu":
         pytest.skip("CUDA device required")
@@ -680,9 +626,6 @@ def test_rpca_sparse_svd_parity(device):
     assert torch.allclose(out_cuda, out_py, atol=1e-3, rtol=1e-3), "RPCA SVD mismatch"
 
 
-# ==============================================================================
-# 20. Tensor-Train (TT) Contraction & Linear Parity
-# ==============================================================================
 def test_tt_contraction_and_linear_parity(device):
     if device == "cpu":
         pytest.skip("CUDA device required")
@@ -710,9 +653,6 @@ def test_tt_contraction_and_linear_parity(device):
     assert torch.allclose(out_cuda, out_py, atol=1e-3, rtol=1e-3), "TT linear mismatch"
 
 
-# ==============================================================================
-# 21. Hadamard W4A16 GEMM Parity
-# ==============================================================================
 def test_hadamard_w4a16_gemm_parity(device):
     if device == "cpu":
         pytest.skip("CUDA device required")
@@ -739,9 +679,6 @@ def test_hadamard_w4a16_gemm_parity(device):
     assert torch.allclose(out_cuda, out_py, atol=1e-3, rtol=1e-3), "Hadamard W4A16 GEMM mismatch"
 
 
-# ==============================================================================
-# 22. Fused Activation Scaling GEMM Parity
-# ==============================================================================
 def test_act_scale_quant_gemm_parity(device):
     if device == "cpu":
         pytest.skip("CUDA device required")
@@ -764,9 +701,6 @@ def test_act_scale_quant_gemm_parity(device):
     assert torch.allclose(out_cuda, out_py, atol=1e-3, rtol=1e-3), "Act Scale GEMM mismatch"
 
 
-# ==============================================================================
-# 23. Fused Latent KV-Cache Attention Parity
-# ==============================================================================
 def test_latent_kv_cache_attention_parity(device):
     if device == "cpu":
         pytest.skip("CUDA device required")
@@ -791,9 +725,6 @@ def test_latent_kv_cache_attention_parity(device):
     assert torch.allclose(out_cuda, out_py, atol=1e-3, rtol=1e-3), "Latent KV Attention mismatch"
 
 
-# ==============================================================================
-# 24. Spectral Entropy SVD Dynamic Gate Parity
-# ==============================================================================
 def test_spectral_entropy_svd_gate_parity(device):
     if device == "cpu":
         pytest.skip("CUDA device required")
@@ -818,9 +749,6 @@ def test_spectral_entropy_svd_gate_parity(device):
     assert torch.allclose(out_cuda, out_py, atol=1e-3, rtol=1e-3), "Entropy Gate mismatch"
 
 
-# ==============================================================================
-# 25. Fused Knowledge Distillation Loss Parity
-# ==============================================================================
 def test_fused_kd_loss_parity(device):
     if device == "cpu":
         pytest.skip("CUDA device required")
@@ -841,9 +769,6 @@ def test_fused_kd_loss_parity(device):
     assert torch.allclose(loss_cuda, loss_py, atol=1e-3, rtol=1e-3), "Fused KD loss mismatch"
 
 
-# ==============================================================================
-# 26. Recurrent Linear Step Parity
-# ==============================================================================
 def test_recurrent_linear_step_parity(device):
     if device == "cpu":
         pytest.skip("CUDA device required")
@@ -869,9 +794,6 @@ def test_recurrent_linear_step_parity(device):
     assert torch.allclose(z_cuda, z_py, atol=1e-3, rtol=1e-3), "Recurrent linear step z_state mismatch"
 
 
-# ==============================================================================
-# 27. Flash Decoding Attention Parity
-# ==============================================================================
 def test_flash_decoding_attention_parity(device):
     if device == "cpu":
         pytest.skip("CUDA device required")
@@ -893,9 +815,6 @@ def test_flash_decoding_attention_parity(device):
     assert torch.allclose(out_cuda, out_py, atol=1e-3, rtol=1e-3), "Flash decoding attention mismatch"
 
 
-# ==============================================================================
-# 28. Factorised Matrix State (FMS) Scan Parity
-# ==============================================================================
 def test_fms_scan_parity(device):
     if device == "cpu":
         pytest.skip("CUDA device required")
@@ -918,9 +837,6 @@ def test_fms_scan_parity(device):
     assert torch.allclose(out_cuda, out_py, atol=1e-3, rtol=1e-3), "FMS scan mismatch"
 
 
-# ==============================================================================
-# 29. RMSNorm Parity
-# ==============================================================================
 def test_rmsnorm_parity(device):
     if device == "cpu":
         pytest.skip("CUDA device required")
@@ -942,9 +858,6 @@ def test_rmsnorm_parity(device):
     assert torch.allclose(out_cuda, out_py, atol=1e-4, rtol=1e-4), "RMSNorm mismatch"
 
 
-# ==============================================================================
-# 30. LayerNorm Parity
-# ==============================================================================
 def test_layernorm_parity(device):
     if device == "cpu":
         pytest.skip("CUDA device required")
@@ -967,9 +880,6 @@ def test_layernorm_parity(device):
     assert torch.allclose(out_cuda, out_py, atol=1e-4, rtol=1e-4), "LayerNorm mismatch"
 
 
-# ==============================================================================
-# 31. SwiGLU Parity
-# ==============================================================================
 def test_swiglu_parity(device):
     if device == "cpu":
         pytest.skip("CUDA device required")
@@ -989,9 +899,6 @@ def test_swiglu_parity(device):
     assert torch.allclose(out_cuda, out_py, atol=1e-4, rtol=1e-4), "SwiGLU mismatch"
 
 
-# ==============================================================================
-# 32. Fast-GELU Parity
-# ==============================================================================
 def test_fast_gelu_parity(device):
     if device == "cpu":
         pytest.skip("CUDA device required")
@@ -1011,9 +918,6 @@ def test_fast_gelu_parity(device):
     assert torch.allclose(out_cuda, out_py, atol=1e-4, rtol=1e-4), "Fast-GELU mismatch"
 
 
-# ==============================================================================
-# 33. Fused Softplus Parity
-# ==============================================================================
 def test_fused_softplus_parity(device):
     if device == "cpu":
         pytest.skip("CUDA device required")
@@ -1033,9 +937,6 @@ def test_fused_softplus_parity(device):
     assert torch.allclose(out_cuda, out_py, atol=1e-4, rtol=1e-4), "Fused Softplus mismatch"
 
 
-# ==============================================================================
-# 34. Gated Linear Attention (GLA) Scan Parity
-# ==============================================================================
 def test_gla_scan_parity(device):
     if device == "cpu":
         pytest.skip("CUDA device required")
@@ -1058,9 +959,6 @@ def test_gla_scan_parity(device):
     assert torch.allclose(out_cuda, out_py, atol=1e-3, rtol=1e-3), "GLA Scan mismatch"
 
 
-# ==============================================================================
-# 35. Causal 1D Convolution Parity
-# ==============================================================================
 def test_causal_conv1d_parity(device):
     if device == "cpu":
         pytest.skip("CUDA device required")
@@ -1083,9 +981,6 @@ def test_causal_conv1d_parity(device):
     assert torch.allclose(out_cuda, out_py, atol=1e-4, rtol=1e-4), "Causal Conv1d mismatch"
 
 
-# ==============================================================================
-# 36. Recurrent GLA Step Parity
-# ==============================================================================
 def test_recurrent_gla_step_parity(device):
     if device == "cpu":
         pytest.skip("CUDA device required")
@@ -1110,9 +1005,6 @@ def test_recurrent_gla_step_parity(device):
     assert torch.allclose(s_cuda, s_py, atol=1e-3, rtol=1e-3), "Recurrent GLA step state mismatch"
 
 
-# ==============================================================================
-# 37. Recurrent HGRN2 Step Parity
-# ==============================================================================
 def test_recurrent_hgrn2_step_parity(device):
     if device == "cpu":
         pytest.skip("CUDA device required")
@@ -1136,9 +1028,6 @@ def test_recurrent_hgrn2_step_parity(device):
     assert torch.allclose(h_cuda, h_py, atol=1e-4, rtol=1e-4), "Recurrent HGRN2 step state mismatch"
 
 
-# ==============================================================================
-# 38. Fused Dropout + Add Parity
-# ==============================================================================
 def test_fused_dropout_add_parity(device):
     if device == "cpu":
         pytest.skip("CUDA device required")
@@ -1159,9 +1048,6 @@ def test_fused_dropout_add_parity(device):
     assert torch.allclose(out_cuda, out_py, atol=1e-4, rtol=1e-4), "Fused Dropout + Add mismatch"
 
 
-# ==============================================================================
-# 39. Variable-Length Attention Parity
-# ==============================================================================
 def test_varlen_attention_parity(device):
     if device == "cpu":
         pytest.skip("CUDA device required")
@@ -1188,9 +1074,6 @@ def test_varlen_attention_parity(device):
     assert torch.allclose(out_cuda, out_py, atol=1e-3, rtol=1e-3), "Varlen Attention mismatch"
 
 
-# ==============================================================================
-# 40. Fused Cross-Attention Parity
-# ==============================================================================
 def test_cross_attention_parity(device):
     if device == "cpu":
         pytest.skip("CUDA device required")
@@ -1212,9 +1095,6 @@ def test_cross_attention_parity(device):
     assert torch.allclose(out_cuda, out_py, atol=1e-3, rtol=1e-3), "Cross-Attention mismatch"
 
 
-# ==============================================================================
-# 41. Rotational Low-Rank SVD Parity
-# ==============================================================================
 def test_rotational_svd_parity(device):
     if device == "cpu":
         pytest.skip("CUDA device required")
@@ -1238,9 +1118,6 @@ def test_rotational_svd_parity(device):
     assert torch.allclose(out_cuda, out_py, atol=1e-3, rtol=1e-3), "Rotational SVD mismatch"
 
 
-# ==============================================================================
-# 42. Block-Diagonal GEMM Parity
-# ==============================================================================
 def test_block_diag_matmul_parity(device):
     if device == "cpu":
         pytest.skip("CUDA device required")
@@ -1262,9 +1139,6 @@ def test_block_diag_matmul_parity(device):
     assert torch.allclose(out_cuda, out_py, atol=1e-3, rtol=1e-3), "Block-Diagonal GEMM mismatch"
 
 
-# ==============================================================================
-# 43. 1.58-Bit Ternary GEMM Parity
-# ==============================================================================
 def test_ternary_gemm_parity(device):
     if device == "cpu":
         pytest.skip("CUDA device required")
@@ -1287,9 +1161,6 @@ def test_ternary_gemm_parity(device):
     assert torch.allclose(out_cuda, out_py, atol=1e-3, rtol=1e-3), "Ternary GEMM mismatch"
 
 
-# ==============================================================================
-# 44. FP4 Quantized GEMM Parity
-# ==============================================================================
 def test_fp4_gemm_parity(device):
     if device == "cpu":
         pytest.skip("CUDA device required")
@@ -1312,9 +1183,6 @@ def test_fp4_gemm_parity(device):
     assert torch.allclose(out_cuda, out_py, atol=1e-3, rtol=1e-3), "FP4 GEMM mismatch"
 
 
-# ==============================================================================
-# 45. Channel Shuffle Parity
-# ==============================================================================
 def test_channel_shuffle_parity(device):
     if device == "cpu":
         pytest.skip("CUDA device required")
@@ -1334,9 +1202,6 @@ def test_channel_shuffle_parity(device):
     assert torch.allclose(out_cuda, out_py, atol=1e-4, rtol=1e-4), "Channel Shuffle mismatch"
 
 
-# ==============================================================================
-# 46. Speculative Verification Parity
-# ==============================================================================
 def test_speculative_verify_parity(device):
     if device == "cpu":
         pytest.skip("CUDA device required")
@@ -1347,11 +1212,10 @@ def test_speculative_verify_parity(device):
     B, K = 4, 8
     target = torch.randint(0, 100, (B, K), device=device, dtype=torch.int64)
     draft = target.clone()
-    # Inject mismatches
     draft[0, 3] = 999
     draft[1, 1] = 999
-    draft[2, :] = target[2, :]  # all match
-    draft[3, 0] = 999  # first mismatch
+    draft[2, :] = target[2, :]
+    draft[3, 0] = 999
 
     with force_kernel_backend("pytorch"):
         mask_py, count_py = speculative_verify(draft, target)
@@ -1363,9 +1227,6 @@ def test_speculative_verify_parity(device):
     assert torch.equal(count_cuda, count_py), "Speculative verify count mismatch"
 
 
-# ==============================================================================
-# 47. ALiBi Attention Parity
-# ==============================================================================
 def test_alibi_attention_parity(device):
     if device == "cpu":
         pytest.skip("CUDA device required")
@@ -1388,9 +1249,6 @@ def test_alibi_attention_parity(device):
     assert torch.allclose(out_cuda, out_py, atol=1e-3, rtol=1e-3), "ALiBi Attention mismatch"
 
 
-# ==============================================================================
-# 48. Multi-Scale Retention (RetNet) Parity
-# ==============================================================================
 def test_multi_scale_retention_parity(device):
     if device == "cpu":
         pytest.skip("CUDA device required")

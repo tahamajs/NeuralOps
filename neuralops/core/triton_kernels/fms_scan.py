@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Factorised Matrix State Recurrent Scan
 
 Computes associative matrix memory state recurrence with per-head constant decay factors.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -67,17 +71,13 @@ def _fms_fwd_kernel(
     offs_d = tl.arange(0, BLOCK_D)
     mask_d = offs_d < D_size
 
-    # Load constant decay for this head: decay_h in (0, 1)
     decay_val = tl.load(decay_ptr + pid_h * stride_dh).to(tl.float32)
     inv_sqrt_d = 1.0 / tl.sqrt(D_size.to(tl.float32))
 
-    # Recurrent state in SRAM registers
-    # S is (BLOCK_D, BLOCK_D), Z is (BLOCK_D,)
     S = tl.zeros((BLOCK_D, BLOCK_D), dtype=tl.float32)
     Z = tl.zeros((BLOCK_D,), dtype=tl.float32)
 
     for t in range(L_size):
-        # Load raw inputs q, k, v
         q_raw = tl.load(
             q_ptr + pid_b * stride_qb + pid_h * stride_qh + t * stride_ql + offs_d * stride_qd,
             mask=mask_d,
@@ -94,42 +94,32 @@ def _fms_fwd_kernel(
             other=0.0,
         ).to(tl.float32)
 
-        # Feature maps: ELU + 1
         q_f = tl.where(q_raw > 0.0, q_raw + 1.0, tl.exp(q_raw))
         k_elu = tl.where(k_raw > 0.0, k_raw + 1.0, tl.exp(k_raw))
         k_f = k_elu * inv_sqrt_d
         v_f = v_raw
 
-        # Zero out padding elements
         q_f = tl.where(mask_d, q_f, 0.0)
         k_f = tl.where(mask_d, k_f, 0.0)
         v_f = tl.where(mask_d, v_f, 0.0)
 
-        # Recurrent state update:
-        # S_t = decay_val * S_{t-1} + k_f^T @ v_f (outer product: [i, j] = k_f[i] * v_f[j])
         kv_outer = k_f[:, None] * v_f[None, :]
         S = decay_val * S + kv_outer
 
-        # Z_t = decay_val * Z_{t-1} + k_f
         Z = decay_val * Z + k_f
 
-        # Output projection:
-        # num = q_f @ S -> num[j] = sum_i q_f[i] * S[i, j]
-        num_t = tl.sum(q_f[:, None] * S, axis=0)  # (BLOCK_D,)
-        # denom = q_f @ Z -> scalar
+        num_t = tl.sum(q_f[:, None] * S, axis=0)
         denom_raw = tl.sum(q_f * Z)
         denom_t = tl.maximum(denom_raw, 1e-5)
 
         y_t = num_t / denom_t
 
-        # Store y
         tl.store(
             y_ptr + pid_b * stride_yb + pid_h * stride_yh + t * stride_yl + offs_d * stride_yd,
             y_t.to(y_ptr.dtype.element_ty),
             mask=mask_d,
         )
 
-        # Save S and Z in workspace for backward pass
         if STORE_WORKSPACE:
             s_ptrs = (
                 s_workspace_ptr
@@ -220,18 +210,14 @@ def _fms_bwd_kernel(
     decay_val = tl.load(decay_ptr + pid_h * stride_dh).to(tl.float32)
     inv_sqrt_d = 1.0 / tl.sqrt(D_size.to(tl.float32))
 
-    # Adjoint states in registers: dS is (BLOCK_D, BLOCK_D), dZ is (BLOCK_D,)
     dS = tl.zeros((BLOCK_D, BLOCK_D), dtype=tl.float32)
     dZ = tl.zeros((BLOCK_D,), dtype=tl.float32)
 
-    # Accumulator for decay gradient for this head from this batch item
     ddecay_local = 0.0
 
-    # Reverse pass over tokens
     for step_rev in range(L_size):
         t = L_size - 1 - step_rev
 
-        # Load inputs at step t
         q_raw = tl.load(
             q_ptr + pid_b * stride_qb + pid_h * stride_qh + t * stride_ql + offs_d * stride_qd,
             mask=mask_d,
@@ -253,7 +239,6 @@ def _fms_bwd_kernel(
             other=0.0,
         ).to(tl.float32)
 
-        # Feature activations
         q_f = tl.where(q_raw > 0.0, q_raw + 1.0, tl.exp(q_raw))
         k_elu = tl.where(k_raw > 0.0, k_raw + 1.0, tl.exp(k_raw))
         k_f = k_elu * inv_sqrt_d
@@ -263,7 +248,6 @@ def _fms_bwd_kernel(
         k_f = tl.where(mask_d, k_f, 0.0)
         v_f = tl.where(mask_d, v_f, 0.0)
 
-        # Load S_t and Z_t
         s_t_ptrs = (
             s_workspace_ptr
             + pid_b * stride_swb
@@ -283,42 +267,26 @@ def _fms_bwd_kernel(
         )
         Z_t = tl.load(z_t_ptrs, mask=mask_d, other=0.0)
 
-        # Recompute forward intermediates num_t and den_t
-        num_t = tl.sum(q_f[:, None] * S_t, axis=0)  # (BLOCK_D,)
+        num_t = tl.sum(q_f[:, None] * S_t, axis=0)
         denom_raw = tl.sum(q_f * Z_t)
         denom_t = tl.maximum(denom_raw, 1e-5)
 
-        # Gradients from y_t = num_t / denom_t
-        # dL/dnum_t = dy_t / denom_t
         dnum_t = dy_t / denom_t
-        # dL/ddenom_t = - sum(dy_t * num_t) / (denom_t * denom_t)
         ddenom_t = -tl.sum(dy_t * num_t) / (denom_t * denom_t)
 
-        # Adjoint accumulation into dS and dZ at step t:
-        # num_t = q_f @ S_t  =>  dL/dS_t += q_f^T @ dnum_t
         dS += q_f[:, None] * dnum_t[None, :]
-        # denom_t = q_f @ Z_t => dL/dZ_t += q_f * ddenom_t
         dZ += q_f * ddenom_t
 
-        # dq_f:
-        # from num_t: sum_j S_t[i, j] * dnum_t[j]
         dq_from_num = tl.sum(S_t * dnum_t[None, :], axis=1)
-        # from denom_t: Z_t * ddenom_t
         dq_from_den = Z_t * ddenom_t
         dq_f = dq_from_num + dq_from_den
 
-        # Gradient through ELU + 1: dELU(x)/dx = 1 if x > 0 else exp(x)
         dq_t = tl.where(q_raw > 0.0, dq_f, dq_f * tl.exp(q_raw))
         dq_t = tl.where(mask_d, dq_t, 0.0)
 
-        # dv_t from S_t = decay * S_{t-1} + k_f^T @ v_f:
-        # dL/dv_f[j] = sum_i k_f[i] * dS[i, j]
         dv_f = tl.sum(k_f[:, None] * dS, axis=0)
         dv_t = tl.where(mask_d, dv_f, 0.0)
 
-        # dk_f from S_t and Z_t:
-        # from S_t: sum_j dS[i, j] * v_f[j]
-        # from Z_t: dZ[i]
         dk_from_S = tl.sum(dS * v_f[None, :], axis=1)
         dk_from_Z = dZ
         dk_f = (dk_from_S + dk_from_Z) * inv_sqrt_d
@@ -326,7 +294,6 @@ def _fms_bwd_kernel(
         dk_t = tl.where(k_raw > 0.0, dk_f, dk_f * tl.exp(k_raw))
         dk_t = tl.where(mask_d, dk_t, 0.0)
 
-        # Store input gradients
         tl.store(
             dq_ptr + pid_b * stride_dqb + pid_h * stride_dqh + t * stride_dql + offs_d * stride_dqd,
             dq_t.to(dq_ptr.dtype.element_ty),
@@ -343,9 +310,6 @@ def _fms_bwd_kernel(
             mask=mask_d,
         )
 
-        # Decay gradient accumulation:
-        # S_t = decay * S_{t-1} + ... => dL/ddecay += sum(dS * S_{t-1})
-        # Z_t = decay * Z_{t-1} + ... => dL/ddecay += sum(dZ * Z_{t-1})
         if t > 0:
             s_prev_ptrs = (
                 s_workspace_ptr
@@ -368,12 +332,9 @@ def _fms_bwd_kernel(
 
             ddecay_local += tl.sum(dS * S_prev) + tl.sum(dZ * Z_prev)
 
-        # Backward propagation to previous step:
-        # dS_{t-1} = decay * dS_t, dZ_{t-1} = decay * dZ_t
         dS = decay_val * dS
         dZ = decay_val * dZ
 
-    # Atomically accumulate ddecay into global head buffer
     tl.atomic_add(ddecay_acc_ptr + pid_h * stride_dah, ddecay_local)
 
 
@@ -524,7 +485,6 @@ def fms_scan_triton(
     if D > MAX_REGISTER_DIM:
         raise ValueError(f"FMS Triton head_dim {D} > {MAX_REGISTER_DIM}")
 
-    # Ensure decay is (H,)
     if decay.dim() > 1:
         decay = decay.squeeze()
     elif decay.dim() == 0:
@@ -549,7 +509,6 @@ def fms_scan_pytorch(
     elif decay.dim() == 0:
         decay = decay.repeat(H)
 
-    # Feature maps: ELU + 1
     q_f = torch.where(q.float() > 0.0, q.float() + 1.0, torch.exp(q.float()))
     k_elu = torch.where(k.float() > 0.0, k.float() + 1.0, torch.exp(k.float()))
 
@@ -564,19 +523,17 @@ def fms_scan_pytorch(
     decay_3d = decay.view(1, H, 1).float()
 
     for t in range(L):
-        q_t = q_f[:, :, t, :]  # (B, H, D)
-        k_t = k_f[:, :, t, :]  # (B, H, D)
-        v_t = v_f[:, :, t, :]  # (B, H, D)
+        q_t = q_f[:, :, t, :]
+        k_t = k_f[:, :, t, :]
+        v_t = v_f[:, :, t, :]
 
-        # S_t = decay * S_{t-1} + k_t^T @ v_t
-        kv = torch.matmul(k_t.unsqueeze(-1), v_t.unsqueeze(-2))  # (B, H, D, D)
+        kv = torch.matmul(k_t.unsqueeze(-1), v_t.unsqueeze(-2))
         S = decay_4d * S + kv
 
-        # Z_t = decay * Z_{t-1} + k_t
         Z = decay_3d * Z + k_t
 
-        num_t = torch.matmul(q_t.unsqueeze(-2), S).squeeze(-2)  # (B, H, D)
-        den_t = (q_t * Z).sum(dim=-1, keepdim=True).clamp(min=1e-5)  # (B, H, 1)
+        num_t = torch.matmul(q_t.unsqueeze(-2), S).squeeze(-2)
+        den_t = (q_t * Z).sum(dim=-1, keepdim=True).clamp(min=1e-5)
         y_t = num_t / den_t
         ys.append(y_t)
 
@@ -633,8 +590,8 @@ def fused_goldfinch_hopfield_lookup_pytorch(
         h_curr = (1.0 - g_c[:, :, s]) * h_curr + g_c[:, :, s] * v_c[:, :, s]
         chunk_intra[:, :, s] = h_curr
 
-    chunk_final_decay = cum_decay[:, :, -1, :]  # (B, n_chunks, D)
-    chunk_final_h = chunk_intra[:, :, -1, :]     # (B, n_chunks, D)
+    chunk_final_decay = cum_decay[:, :, -1, :]
+    chunk_final_h = chunk_intra[:, :, -1, :]
 
     inter_h = torch.zeros(B, D, device=g.device, dtype=target_dtype)
     inter_offsets = []
@@ -642,7 +599,7 @@ def fused_goldfinch_hopfield_lookup_pytorch(
         inter_offsets.append(inter_h)
         inter_h = inter_h * chunk_final_decay[:, c] + chunk_final_h[:, c]
 
-    inter_offsets_t = torch.stack(inter_offsets, dim=1).unsqueeze(2)  # (B, n_chunks, 1, D)
+    inter_offsets_t = torch.stack(inter_offsets, dim=1).unsqueeze(2)
     y_chunks = chunk_intra + inter_offsets_t * cum_decay
     y = y_chunks.view(B, Lp, D)[:, :L, :]
     return y.to(target_dtype)

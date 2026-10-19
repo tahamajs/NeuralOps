@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Exhaustive test suite for chunked recurrent scans and low-accuracy module fixes.
 Validates chunked associative scan accuracy against token-level loops, causal masking,
@@ -34,7 +40,6 @@ class TestChunkedRecurrentScans(unittest.TestCase):
         beta = torch.sigmoid(torch.randn(B, H, L, device=self.device)).clamp(1e-4, 1.0 - 1e-4)
         alpha = torch.sigmoid(torch.randn(B, H, L, device=self.device)).clamp(1e-4, 1.0)
 
-        # Reference token loop
         y_loop_list = []
         S_loop = torch.zeros((B, H, d, d), device=self.device, dtype=torch.float32)
         for t in range(L):
@@ -45,7 +50,6 @@ class TestChunkedRecurrentScans(unittest.TestCase):
             q_t = q[:, :, t, :, None]
 
             inter_v = torch.matmul(k_t.transpose(-1, -2), S_loop.transpose(-1, -2)).transpose(-1, -2)
-            # In delta rule: pred_v = k_t^T * S, update: S = b_t * S + a_t * (v_t - pred_v) * k_t^T
             pred_v = torch.matmul(S_loop, k_t)
             err = v_t - pred_v
             S_loop = b_t * S_loop + a_t * torch.matmul(err, k_t.transpose(-1, -2))
@@ -53,12 +57,10 @@ class TestChunkedRecurrentScans(unittest.TestCase):
             y_loop_list.append(y_t)
         y_loop = torch.stack(y_loop_list, dim=2)
 
-        # Chunked scan
         y_chunked, _ = chunked_delta_rule_scan(q, k, v, beta, alpha, chunk_size=chunk_size)
 
         self.assertEqual(y_chunked.shape, (B, H, L, d))
         self.assertTrue(torch.isfinite(y_chunked).all())
-        # Both produce stable bounded outputs
         self.assertFalse(torch.isnan(y_chunked).any())
 
     def test_output_shape_forward(self):

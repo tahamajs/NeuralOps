@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Unit tests for hardened AstroQuantizer with Fisher-Adaptive Bit Allocation.
 Verifies:
@@ -43,17 +49,14 @@ class DummyTransformerModel(nn.Module):
 
     def __init__(self):
         super().__init__()
-        # Attention projections
         self.attn_q = nn.Linear(32, 32)
         self.attn_k = nn.Linear(32, 32)
-        self.attn_v = Conv1D(32, 32)  # Conv1D in attention
-        self.attn_out = DummyLoRALinear(nn.Linear(32, 32))  # LoRA in attention
+        self.attn_v = Conv1D(32, 32)
+        self.attn_out = DummyLoRALinear(nn.Linear(32, 32))
 
-        # FFN projections
         self.ffn_lin1 = nn.Linear(32, 64)
         self.ffn_lin2 = nn.Linear(64, 32)
 
-        # Classification head
         self.classifier = nn.Linear(32, 2)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -75,18 +78,15 @@ class TestAstroHardened(unittest.TestCase):
         N = 100
         importance = torch.rand(N) * 10.0
         
-        # Test target 6.0
         bits_6 = allocate_fisher_bits(importance, target_avg_bits=6.0, min_bits=2, max_bits=8)
         self.assertEqual(bits_6.shape, (N,))
         self.assertTrue((bits_6 >= 2).all() and (bits_6 <= 8).all())
         avg_6 = bits_6.float().mean().item()
         self.assertAlmostEqual(avg_6, 6.0, delta=1.0 / N)
 
-        # Check that highest importance channels got max_bits
         sorted_idx = torch.argsort(importance, descending=True)
         self.assertEqual(bits_6[sorted_idx[0]].item(), 8)
 
-        # Test target 4.5
         bits_45 = allocate_fisher_bits(importance, target_avg_bits=4.5, min_bits=2, max_bits=8)
         avg_45 = bits_45.float().mean().item()
         self.assertAlmostEqual(avg_45, 4.5, delta=1.0 / N)
@@ -96,14 +96,12 @@ class TestAstroHardened(unittest.TestCase):
         W = torch.randn(8, 16)
         channel_bits = torch.tensor([2, 3, 4, 5, 6, 7, 8, 4])
         
-        # Symmetric
         W_q_sym = quantize_dequantize_tensor(
             W, per_channel=True, per_channel_bits=channel_bits, symmetric=True
         )
         self.assertEqual(W_q_sym.shape, W.shape)
         self.assertTrue(torch.isfinite(W_q_sym).all())
 
-        # Asymmetric
         W_q_asym = quantize_dequantize_tensor(
             W, per_channel=True, per_channel_bits=channel_bits, symmetric=False
         )
@@ -142,13 +140,11 @@ class TestAstroHardened(unittest.TestCase):
         compressed_model, stats = quantizer.compress()
 
         compressed = stats["compressed_layers"]
-        # Attention layers must be compressed
         self.assertIn("attn_q", compressed)
         self.assertIn("attn_k", compressed)
         self.assertIn("attn_v", compressed)
         self.assertIn("attn_out", compressed)
 
-        # FFN and classifier must NOT be compressed
         self.assertNotIn("ffn_lin1", compressed)
         self.assertNotIn("ffn_lin2", compressed)
         self.assertNotIn("classifier", compressed)
@@ -165,18 +161,14 @@ class TestAstroHardened(unittest.TestCase):
         )
         compressed_model, stats = quantizer.compress()
 
-        # Check attn_out is still a DummyLoRALinear
         self.assertIsInstance(model.attn_out, DummyLoRALinear)
-        # Check base_layer is now AstroLinear
         self.assertIsInstance(model.attn_out.base_layer, AstroLinear)
-        # Check lora_A and lora_B are trainable
         self.assertTrue(model.attn_out.lora_A.requires_grad)
         self.assertTrue(model.attn_out.lora_B.requires_grad)
 
     def test_06_fallback_and_freezing(self):
         """Verify layer exceeding max_error falls back to original and has its parameters frozen."""
         model = DummyTransformerModel()
-        # Set impossible max_error=0.00001 to force all layers to fallback
         quantizer = AstroQuantizer(
             model,
             bits=4,
@@ -189,7 +181,6 @@ class TestAstroHardened(unittest.TestCase):
         self.assertEqual(len(stats["compressed_layers"]), 0)
         self.assertGreater(len(stats["fallback_layers"]), 0)
 
-        # Verify fallback parameters are frozen
         for name in stats["fallback_layers"]:
             mod = dict(model.named_modules())[name]
             for p in mod.parameters():

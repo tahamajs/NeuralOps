@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Ingestion script for fresh deep GPU benchmarks (RTX 4070 SM 8.9).
 Ingests:
@@ -14,8 +20,6 @@ Updates:
 - results/MASTER_RESULTS_MATRIX.csv
 - Module dossiers in results/by_module/
 - Category summaries in results/by_category/
-
-Author: Taha Majlesi
 """
 
 import csv
@@ -36,7 +40,6 @@ def ingest_all():
     curr_sha = get_current_git_sha(repo_root)
     total_ingested = 0
 
-    # 1. Ingest LLM Memory Bandwidth & Roofline Benchmark
     f_bw = repo_root / "results" / "benchmarks_llm_bandwidth_ada.json"
     if f_bw.exists():
         sha, ts = get_file_git_provenance(f_bw, repo_root)
@@ -83,7 +86,6 @@ def ingest_all():
             total_ingested += 1
         print(f"[✓] Ingested {len(data)} LLM memory bandwidth records")
 
-    # 2. Ingest Long-Context Extrapolation Benchmark (32k Scaling)
     f_extrap = repo_root / "results" / "benchmark_extrapolation_32k_fresh.json"
     if f_extrap.exists():
         sha, ts = get_file_git_provenance(f_extrap, repo_root)
@@ -127,7 +129,6 @@ def ingest_all():
             total_ingested += 1
         print(f"[✓] Ingested {len(data)} long-context extrapolation records")
 
-    # 3. Ingest Multi-Precision Quantization & Compression Trade-off Benchmark
     f_mp = repo_root / "results" / "benchmark_multiprecision_pareto.json"
     if f_mp.exists():
         sha, ts = get_file_git_provenance(f_mp, repo_root)
@@ -167,7 +168,6 @@ def ingest_all():
             total_ingested += 1
         print(f"[✓] Ingested {len(data)} multi-precision records")
 
-    # 4. Ingest 26 Core Triton JIT Kernels Speedup Matrix Benchmark
     f_26 = repo_root / "results" / "benchmark_all_26_comprehensive_matrix.json"
     matrix_updates = {}
     if f_26.exists():
@@ -218,7 +218,6 @@ def ingest_all():
             }
         print(f"[✓] Ingested {len(data)} 26-kernel comprehensive records")
 
-    # 5. Ingest Multi-Seed Statistical Stress Suite
     f_seed = repo_root / "results" / "multi_seed_robustness_fresh.json"
     if f_seed.exists():
         sha, ts = get_file_git_provenance(f_seed, repo_root)
@@ -228,7 +227,6 @@ def ingest_all():
         comps = data.get("compressors", {})
         seeds_list = data.get("seeds", [])
 
-        # Ingest summary record for statistical robustness
         rec_sum = ResultRecord(
             record_id="",
             module_name="multi_seed_statistical_stress_suite",
@@ -265,7 +263,6 @@ def ingest_all():
         total_ingested += 1
         print("[✓] Ingested multi-seed stress test summary record (125 attentions x 72 compressors)")
 
-    # 6. Ingest Serving Throughput & Paged KV Cache Benchmark
     f_serv = repo_root / "results" / "benchmarks_serving_ttft_itl_fresh.json"
     if f_serv.exists():
         sha, ts = get_file_git_provenance(f_serv, repo_root)
@@ -335,7 +332,6 @@ def ingest_all():
             total_ingested += 1
         print("[✓] Ingested serving and PagedKVCache records")
 
-    # Rebuild SQLite index and dossiers
     print("[+] Rebuilding SQLite index and deduplicating master_ledger.jsonl...")
     unique_count = ledger.rebuild_sqlite_index()
     print(f"[✓] Rebuilt SQLite index! Total unique records: {unique_count}")
@@ -349,7 +345,6 @@ def ingest_all():
     for cat, c in cat_counts.items():
         print(f"  -> {cat}: {c} records")
 
-    # Update MASTER_RESULTS_MATRIX.csv
     matrix_csv_path = repo_root / "results" / "MASTER_RESULTS_MATRIX.csv"
     if matrix_csv_path.exists():
         rows = []
@@ -358,7 +353,6 @@ def ingest_all():
             fieldnames = reader.fieldnames
             for row in reader:
                 mod = row.get("Module Name")
-                # Update 26 kernels if updated in fresh benchmark
                 if mod in matrix_updates:
                     u = matrix_updates[mod]
                     row["Triton Latency (ms)"] = f"{u['triton_ms']:.4f}"

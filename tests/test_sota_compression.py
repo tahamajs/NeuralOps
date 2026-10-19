@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Unit Tests for State-of-the-Art (SOTA) Compression Engines:
 1. Dynamic Entropy SVD Compressor & Dynamic Rank Allocator (dynamic_rank.py).
@@ -17,7 +23,6 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
 
-# Ensure framework is in search path
 from neuralops.compression_engine.dynamic_rank import (
     DynamicEntropySVDCompressor, DynamicSVDLinear, allocate_entropy_ranks,
     compute_singular_entropy)
@@ -40,7 +45,6 @@ class ToyTransformerBlock(nn.Module):
         self.mlp_out = nn.Linear(intermediate_size, hidden_size)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # Simplified attention + MLP forward
         q = self.q_proj(x)
         k = self.k_proj(x)
         v = self.v_proj(x)
@@ -80,9 +84,6 @@ class TestDynamicEntropySVD(unittest.TestCase):
         self.hidden_dim = 64
         self.x = torch.randn(self.batch_size, self.seq_len, self.hidden_dim)
 
-    # -------------------------------------------------------------------------
-    # 1. Singular Entropy Mathematics Tests
-    # -------------------------------------------------------------------------
 
     def test_singular_entropy_uniform_spectrum(self) -> None:
         """Uniform singular spectrum should achieve maximal entropy ln(K)."""
@@ -108,14 +109,12 @@ class TestDynamicEntropySVD(unittest.TestCase):
 
     def test_singular_entropy_2d_covariance_and_weight(self) -> None:
         """Compute entropy on 2D covariance and 2D rectangular weight matrices."""
-        # Square symmetric covariance
         x_samples = torch.randn(100, 32)
         cov = x_samples.t() @ x_samples / 100.0
         cov_entropy = compute_singular_entropy(cov)
         self.assertGreater(cov_entropy, 0.0)
         self.assertFalse(math.isnan(cov_entropy))
 
-        # Rectangular weight matrix
         w = torch.randn(64, 32)
         w_entropy = compute_singular_entropy(w)
         self.assertGreater(w_entropy, 0.0)
@@ -127,9 +126,6 @@ class TestDynamicEntropySVD(unittest.TestCase):
         entropy = compute_singular_entropy(zeros_mat)
         self.assertEqual(entropy, 0.0)
 
-    # -------------------------------------------------------------------------
-    # 2. Dynamic Rank Budget Allocator Tests
-    # -------------------------------------------------------------------------
 
     def test_rank_allocation_proportional_and_bounded(self) -> None:
         """Higher entropy layers must receive higher rank, respecting [min_rank, max_rank]."""
@@ -140,7 +136,7 @@ class TestDynamicEntropySVD(unittest.TestCase):
         }
         min_r = 8
         max_r = 32
-        total_budget = 48  # Average 16 per layer
+        total_budget = 48
 
         ranks = allocate_entropy_ranks(
             entropies=entropies,
@@ -149,16 +145,13 @@ class TestDynamicEntropySVD(unittest.TestCase):
             total_rank_budget=total_budget,
         )
 
-        # Monotonicity check
         self.assertLessEqual(ranks["layer_low"], ranks["layer_mid"])
         self.assertLessEqual(ranks["layer_mid"], ranks["layer_high"])
 
-        # Boundary checks
         for name, r in ranks.items():
             self.assertGreaterEqual(r, min_r)
             self.assertLessEqual(r, max_r)
 
-        # Total budget sum check
         self.assertEqual(sum(ranks.values()), total_budget)
 
     def test_rank_allocation_physical_dimension_clamping(self) -> None:
@@ -197,9 +190,6 @@ class TestDynamicEntropySVD(unittest.TestCase):
             self.assertGreaterEqual(r, 4)
             self.assertLessEqual(r, 32)
 
-    # -------------------------------------------------------------------------
-    # 3. DynamicSVDLinear Layer Tests
-    # -------------------------------------------------------------------------
 
     def test_dynamic_svd_linear_forward_and_backward(self) -> None:
         """Factorized DynamicSVDLinear computes correct shapes and supports autograd."""
@@ -230,7 +220,6 @@ class TestDynamicEntropySVD(unittest.TestCase):
         svd_out = svd_layer(self.x)
         self.assertEqual(dense_out.shape, svd_out.shape)
 
-        # Truncated SVD error check
         rel_diff = torch.norm(dense_out - svd_out) / torch.norm(dense_out)
         self.assertLess(rel_diff.item(), 0.5)
 
@@ -244,16 +233,12 @@ class TestDynamicEntropySVD(unittest.TestCase):
         out = svd_layer(self.x)
         self.assertEqual(out.shape, (self.batch_size, self.seq_len, 64))
 
-    # -------------------------------------------------------------------------
-    # 4. DynamicEntropySVDCompressor End-to-End Tests
-    # -------------------------------------------------------------------------
 
     def test_dynamic_entropy_svd_compressor_end_to_end(self) -> None:
         """End-to-end compression of multi-layer model with calibration data."""
         model = ToyMultiLayerModel(num_layers=2, hidden_size=64)
         orig_params = sum(p.numel() for p in model.parameters())
 
-        # Calibration dataset
         dummy_data = torch.randn(16, 8, 64)
         loader = DataLoader(TensorDataset(dummy_data), batch_size=4)
 
@@ -267,7 +252,6 @@ class TestDynamicEntropySVD(unittest.TestCase):
 
         compressed_model, stats = compressor.compress()
 
-        # Check parameter reduction
         compressed_params = sum(p.numel() for p in compressed_model.parameters())
         self.assertLess(compressed_params, orig_params)
         self.assertEqual(stats["original_parameters"], orig_params)
@@ -275,7 +259,6 @@ class TestDynamicEntropySVD(unittest.TestCase):
         self.assertIn("layer_entropies", stats)
         self.assertIn("layer_ranks", stats)
 
-        # Check forward pass on compressed model
         test_in = torch.randn(2, 8, 64)
         logits = compressed_model(test_in)
         self.assertEqual(logits.shape, (2, 10))
@@ -294,9 +277,6 @@ class TestResSVD(unittest.TestCase):
         self.x = torch.randn(self.batch_size, self.seq_len, self.in_dim)
         self.dense = nn.Linear(self.in_dim, self.out_dim, bias=True)
 
-    # -------------------------------------------------------------------------
-    # 1. ResSVDLinear Layer Tests
-    # -------------------------------------------------------------------------
 
     def test_res_svd_linear_construction_and_grad_freeze(self) -> None:
         """ResSVDLinear freezes base weights and enables grad on adapter matrices."""
@@ -311,11 +291,9 @@ class TestResSVD(unittest.TestCase):
             freeze_base=True,
         )
 
-        # Base must be frozen
         self.assertFalse(res_layer.base_V.requires_grad)
         self.assertFalse(res_layer.base_U.requires_grad)
 
-        # Adapters must be trainable
         self.assertTrue(res_layer.lora_A.requires_grad)
         self.assertTrue(res_layer.lora_B.requires_grad)
 
@@ -330,14 +308,12 @@ class TestResSVD(unittest.TestCase):
         base_r = 8
         res_r = 8
 
-        # Base only layer
         base_only = ResSVDLinear.from_linear(
             linear=self.dense,
             base_rank=base_r,
             residual_rank=0,
         )
 
-        # Base + Spectral Residual LoRA
         res_svd = ResSVDLinear.from_linear(
             linear=self.dense,
             base_rank=base_r,
@@ -348,7 +324,6 @@ class TestResSVD(unittest.TestCase):
         err_base = base_only.get_residual_error_norm(W)
         err_res = res_svd.get_residual_error_norm(W)
 
-        # Tail inclusion must strictly reduce reconstruction error
         self.assertLess(err_res, err_base)
 
     def test_res_svd_linear_forward_and_backward(self) -> None:
@@ -366,11 +341,9 @@ class TestResSVD(unittest.TestCase):
         loss = out.sum()
         loss.backward()
 
-        # Base factors should have no gradients
         self.assertIsNone(res_layer.base_V.grad)
         self.assertIsNone(res_layer.base_U.grad)
 
-        # LoRA adapters must have valid gradients
         self.assertIsNotNone(res_layer.lora_A.grad)
         self.assertIsNotNone(res_layer.lora_B.grad)
 
@@ -405,9 +378,6 @@ class TestResSVD(unittest.TestCase):
         out = res_layer(self.x)
         self.assertEqual(out.shape, (self.batch_size, self.seq_len, self.out_dim))
 
-    # -------------------------------------------------------------------------
-    # 2. ResSVDCompressor End-to-End Tests
-    # -------------------------------------------------------------------------
 
     def test_res_svd_compressor_end_to_end(self) -> None:
         """End-to-end compression with ResSVDCompressor and parameter stats check."""
@@ -431,10 +401,8 @@ class TestResSVD(unittest.TestCase):
         self.assertGreater(stats["frozen_parameters"], 0)
         self.assertGreater(stats["trainable_parameters"], 0)
 
-        # Trainable parameters should be a small fraction (PEFT)
         self.assertLess(stats["trainable_parameters"], stats["frozen_parameters"])
 
-        # Forward pass verification
         test_x = torch.randn(2, 8, 64)
         logits = compressed_model(test_x)
         self.assertEqual(logits.shape, (2, 10))
@@ -457,22 +425,18 @@ class TestCompressorRegistrations(unittest.TestCase):
 
     def test_registry_lookups(self) -> None:
         """Verify dynamic_entropy_svd, entropy_rank_allocator, res_svd, and spectral_residual_lora."""
-        # 1. dynamic_entropy_svd
         self.assertIn("dynamic_entropy_svd_class", COMPRESSOR_REGISTRY)
         cls_dynamic = COMPRESSOR_REGISTRY.get("dynamic_entropy_svd_class")
         self.assertTrue(callable(cls_dynamic))
 
-        # 2. entropy_rank_allocator
         self.assertIn("entropy_rank_allocator_class", COMPRESSOR_REGISTRY)
         cls_alloc = COMPRESSOR_REGISTRY.get("entropy_rank_allocator_class")
         self.assertTrue(callable(cls_alloc))
 
-        # 3. res_svd
         self.assertIn("res_svd", COMPRESSOR_REGISTRY)
         cls_res = COMPRESSOR_REGISTRY.get("res_svd")
         self.assertTrue(callable(cls_res) or issubclass(cls_res, ResSVDCompressor))
 
-        # 4. spectral_residual_lora
         self.assertIn("spectral_residual_lora", COMPRESSOR_REGISTRY)
         cls_spectral = COMPRESSOR_REGISTRY.get("spectral_residual_lora")
         self.assertTrue(callable(cls_spectral))

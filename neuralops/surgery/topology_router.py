@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Attention Topology Router
 
 Routes attention topologies and sanitizes masks for causal, bidirectional, and cross-attention.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -39,33 +43,25 @@ def extract_binary_token_mask(
     if device is not None and mask.device != device:
         mask = mask.to(device=device)
 
-    # If already 4D additive float mask (0.0 for valid, negative large for pad)
     if mask.ndim == 4:
-        # Check if additive format (min < -1.0)
         if mask.min() < -1.0:
-            # (mask > -100.0) gives boolean keep mask
             keep_mask = (mask > -100.0).to(dtype=dtype)
         else:
             keep_mask = (mask > 0.5).to(dtype=dtype)
 
-        # Slice or pool along query dimension to get (B, 1, T_kv, 1)
         if keep_mask.shape[-2] == keep_mask.shape[-1] and keep_mask.shape[-1] == seq_len:
-            # Causal or full square mask: take the diagonal or column presence
             keep_mask = keep_mask[:, :, -1:, :].transpose(-1, -2)
         elif keep_mask.shape[-1] == seq_len:
             keep_mask = keep_mask.view(mask.shape[0], 1, seq_len, 1)
         return keep_mask
 
-    # If 2D mask (B, T)
     if mask.ndim == 2:
         if mask.dtype in (torch.int64, torch.int32, torch.bool):
             keep_mask = (mask > 0).to(dtype=dtype)
         else:
             keep_mask = (mask > -100.0).to(dtype=dtype)
-        # Reshape to (B, 1, T, 1)
         return keep_mask.unsqueeze(1).unsqueeze(-1)
 
-    # If 3D mask (B, 1, T) or (B, T, 1)
     if mask.ndim == 3:
         if mask.shape[1] == 1 and mask.shape[2] == seq_len:
             keep_mask = (mask > 0 if mask.dtype != torch.float32 else mask > -100.0).to(dtype=dtype)
@@ -98,13 +94,10 @@ def sanitize_kv_for_padding_mask(
     if keep_mask is None:
         return k, v
 
-    # Broadcast keep_mask to match k and v shape
     if k.ndim == 4:
-        # keep_mask is (B, 1, T, 1), k is (B, H, T, D)
         k_sanitized = k * keep_mask
         v_sanitized = v * keep_mask
     elif k.ndim == 3:
-        # keep_mask is (B, 1, T, 1), squeeze to (B, T, 1)
         mask_3d = keep_mask.squeeze(1)
         k_sanitized = k * mask_3d
         v_sanitized = v * mask_3d
@@ -139,11 +132,9 @@ class BiDirectionalScanWrapper(nn.Module):
             self.fusion_gate = None
 
     def forward(self, hidden_states: torch.Tensor, *args: Any, **kwargs: Any) -> Any:
-        # hidden_states: (B, T, D)
         B, T, D = hidden_states.shape
         attention_mask = kwargs.get("attention_mask", None)
 
-        # 1. Forward scan
         out_fwd = self.core_attention(hidden_states, *args, **kwargs)
         if isinstance(out_fwd, tuple):
             core_fwd = out_fwd[0]
@@ -152,18 +143,15 @@ class BiDirectionalScanWrapper(nn.Module):
             core_fwd = out_fwd
             extra_fwd = ()
 
-        # 2. Backward scan on flipped sequence
         x_flipped = torch.flip(hidden_states, dims=[1])
         kwargs_flipped = dict(kwargs)
         if attention_mask is not None and attention_mask.ndim in (2, 3, 4):
-            # Flip attention mask along the sequence dimension
             kwargs_flipped["attention_mask"] = torch.flip(attention_mask, dims=[-1])
 
         out_bwd = self.core_attention(x_flipped, *args, **kwargs_flipped)
         core_bwd = out_bwd[0] if isinstance(out_bwd, tuple) else out_bwd
         core_bwd_unflipped = torch.flip(core_bwd, dims=[1])
 
-        # 3. Combine forward and backward streams
         if self.fusion_gate is not None:
             cat_feat = torch.cat([core_fwd, core_bwd_unflipped], dim=-1)
             gate = torch.sigmoid(self.fusion_gate(cat_feat))
@@ -200,8 +188,6 @@ class AsymmetricCrossAttentionRouter(nn.Module):
         attention_mask: Optional[torch.Tensor] = None,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
-        # hidden_states: (B, T_q, D)
-        # encoder_hidden_states: (B, T_kv, D)
         if encoder_hidden_states is None:
             encoder_hidden_states = hidden_states
 
@@ -213,10 +199,8 @@ class AsymmetricCrossAttentionRouter(nn.Module):
         k = self.k_proj(encoder_hidden_states).view(B, T_kv, H, D_h).transpose(1, 2)
         v = self.v_proj(encoder_hidden_states).view(B, T_kv, H, D_h).transpose(1, 2)
 
-        # Sanitize keys and values if padding mask is present
         k, v = sanitize_kv_for_padding_mask(k, v, attention_mask)
 
-        # Cross attention execution via SDPA
         out = F.scaled_dot_product_attention(q, k, v, attn_mask=None, is_causal=False)
         out = out.transpose(1, 2).contiguous().view(B, T_q, D)
         return self.out_proj(out), None

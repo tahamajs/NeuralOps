@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 SVD Low-Rank Recovery Adapters
 
 Principal Singular values and Singular vectors Adaptation (PiSSA) and Weight-Decomposed LoRA (DoRA).
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -42,7 +46,6 @@ class PiSSALinear(nn.Module):
             scaling = float(alpha) / float(rank) if rank > 0 else 1.0
         self.scaling = scaling
 
-        # Decompose base weight in FP32
         w = base_layer.weight.data.float()
         if hasattr(base_layer, "weight") and base_layer.__class__.__name__ == "Conv1D":
             w = w.t().contiguous()
@@ -58,11 +61,9 @@ class PiSSALinear(nn.Module):
         B_data = torch.matmul(U_r, sqrt_S)
         A_data = torch.matmul(sqrt_S, Vh_r)
 
-        # Frozen residual matrix
         w_res = w - torch.matmul(B_data, A_data)
         self.register_buffer("weight_residual", w_res.to(base_layer.weight.dtype))
 
-        # Trainable low-rank factors
         self.lora_A = nn.Parameter(A_data.to(base_layer.weight.dtype))
         self.lora_B = nn.Parameter(B_data.to(base_layer.weight.dtype))
 
@@ -72,7 +73,6 @@ class PiSSALinear(nn.Module):
             self.register_parameter("bias", None)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # Base residual forward + LoRA delta
         res = F.linear(x, self.weight_residual, self.bias)
         try:
             from neuralops.core.triton_kernels.low_rank import fused_down_up_gemm_bias_triton

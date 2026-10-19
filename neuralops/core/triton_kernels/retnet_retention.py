@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 RetNet Multi-Scale Retention
 
 Computes multi-scale retention mechanism with exponential decay matrices and dual chunked/recurrent formulations.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -183,7 +187,6 @@ class TritonRetNetRetentionFunction(torch.autograd.Function):
         dout_c = dout.view(B, H, L, D).contiguous()
         orig_dtype = q.dtype
 
-        # Exact analytical adjoint backward:
         i_idx = torch.arange(L, device=q.device).view(1, L, 1)
         j_idx = torch.arange(L, device=q.device).view(1, 1, L)
         diff = i_idx - j_idx
@@ -203,7 +206,6 @@ class TritonRetNetRetentionFunction(torch.autograd.Function):
 
         dg = None
         if ctx.needs_input_grad[3]:
-            # Derivative with respect to gamma: d(gamma^(i-j))/dgamma = (i-j) * gamma^(i-j-1)
             ddecay = torch.where(
                 causal & (diff > 0),
                 diff.float() * (g ** (diff.float() - 1.0)),

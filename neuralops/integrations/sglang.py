@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 SGLang Serving Integration
 
 Integrates NeuralOps attention backends and kernels with the SGLang runtime engine.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -71,7 +75,6 @@ class SGLangRadixAdapter:
         self.root = RadixPrefixNode([])
         self._lock = threading.RLock()
 
-        # Operational metrics
         self._hit_count = 0
         self._miss_count = 0
         self._eviction_count = 0
@@ -92,7 +95,6 @@ class SGLangRadixAdapter:
             return self.root
 
         with self._lock:
-            # Check capacity and evict if full
             while self._total_nodes >= self.max_cached_prefixes:
                 freed = self.evict_lru()
                 if freed == 0:
@@ -107,7 +109,6 @@ class SGLangRadixAdapter:
                 first_tok = tokens[idx]
 
                 if first_tok not in curr.children:
-                    # Create new child branch
                     new_node = RadixPrefixNode(tokens[idx:], kv_cache=kv_cache)
                     new_node.parent = curr
                     new_node.ref_count = 1
@@ -126,11 +127,9 @@ class SGLangRadixAdapter:
                     common_len += 1
 
                 if common_len == len(chunk):
-                    # Full chunk matches, traverse deeper
                     idx += common_len
                     curr = child
                 else:
-                    # Split existing child node at common_len
                     split_node = RadixPrefixNode(chunk[:common_len], kv_cache=None)
                     split_node.parent = curr
                     split_node.ref_count = child.ref_count + 1
@@ -138,12 +137,10 @@ class SGLangRadixAdapter:
                     curr.children[first_tok] = split_node
                     self._total_nodes += 1
 
-                    # Shorten original child chunk and attach under split_node
                     child.token_chunk = chunk[common_len:]
                     child.parent = split_node
                     split_node.children[child.token_chunk[0]] = child
 
-                    # Insert remainder of new tokens
                     idx += common_len
                     if idx < len(tokens):
                         new_leaf = RadixPrefixNode(tokens[idx:], kv_cache=kv_cache)
@@ -193,7 +190,6 @@ class SGLangRadixAdapter:
                     match_count += 1
 
                 if match_count == len(chunk):
-                    # Completely matched this node's chunk
                     idx += match_count
                     curr = child
                     curr.last_accessed = time.time()
@@ -227,24 +223,19 @@ class SGLangRadixAdapter:
 
         with torch.no_grad():
             if matched_len > 0 and cached_kv is not None and matched_len < len(tokens):
-                # Prefill only uncached suffix tokens
                 suffix = inp[:, matched_len:]
                 outputs = self.model(suffix, past_key_values=cached_kv, use_cache=True)
                 full_kv = getattr(outputs, "past_key_values", cached_kv)
                 logits = outputs.logits[:, -1, :] if hasattr(outputs, "logits") else outputs[:, -1, :]
             elif matched_len == len(tokens) and cached_kv is not None:
-                # 100% prompt prefix hit
                 full_kv = cached_kv
-                # Step 1 token forward to obtain logits
                 outputs = self.model(inp[:, -1:], past_key_values=cached_kv, use_cache=True)
                 logits = outputs.logits[:, -1, :] if hasattr(outputs, "logits") else outputs[:, -1, :]
             else:
-                # Complete miss: full prefill
                 outputs = self.model(inp, use_cache=True)
                 full_kv = getattr(outputs, "past_key_values", None)
                 logits = outputs.logits[:, -1, :] if hasattr(outputs, "logits") else outputs[:, -1, :]
 
-            # Insert full prompt into prefix tree for future reuse
             self.insert_prefix(tokens, full_kv)
 
         return full_kv, logits
@@ -294,7 +285,6 @@ class SGLangRadixAdapter:
             if not unpinned_leaves:
                 return 0
 
-            # Sort by oldest access time
             unpinned_leaves.sort(key=lambda x: x[0])
             _, target_leaf, first_tok = unpinned_leaves[0]
             parent = target_leaf.parent

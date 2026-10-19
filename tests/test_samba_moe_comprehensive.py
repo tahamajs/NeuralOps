@@ -1,3 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 import types
 
 import pytest
@@ -88,9 +95,6 @@ def test_samba_moe_inject():
     assert inject_samba_moe(empty_layer, model_config=cfg, old_attn=None) is None
 
 
-# ===========================================================================
-# Targeted Tests for Samba-MoE Bug Fixes
-# ===========================================================================
 
 def test_samba_moe_decoder_return_signature_and_kv():
     """Verify return signature and past_state propagation for decoders and encoders."""
@@ -98,21 +102,18 @@ def test_samba_moe_decoder_return_signature_and_kv():
     block = SambaMoEBlock(cfg, d_model=64, n_heads=4, is_decoder=True)
 
     x = torch.randn(2, 4, 64)
-    # Decoder output_attentions=False -> (out, past_state)
     res = block(x, output_attentions=False)
     assert len(res) == 2, f"Expected 2-tuple, got {len(res)}"
     out, past_state = res
     assert out.shape == (2, 4, 64)
     assert past_state is not None
 
-    # Decoder output_attentions=True -> (out, past_state, None)
     res_attn = block(x, output_attentions=True)
     assert len(res_attn) == 3, f"Expected 3-tuple, got {len(res_attn)}"
     out_a, past_a, attn_w = res_attn
     assert out_a.shape == (2, 4, 64)
     assert attn_w is None
 
-    # Encoder -> (out, None)
     cfg_enc = make_config(hidden_size=64, num_heads=4, num_kv_heads=2, is_decoder=False, model_type="bert")
     block_enc = SambaMoEBlock(cfg_enc, d_model=64, n_heads=4, is_decoder=False)
     res_enc = block_enc(x)

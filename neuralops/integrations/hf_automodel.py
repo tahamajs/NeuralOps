@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 HuggingFace AutoModel Compatibility
 
 Provides compatibility wrappers, attention layer patching, and model loaders for HuggingFace.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -34,7 +38,6 @@ def patch_model_attention(model: nn.Module, attention_type: str = "full_attentio
     for name, module in list(model.named_modules()):
         for child_name, child in list(module.named_children()):
             if any(k in child_name.lower() for k in ["self_attn", "attention", "attn"]):
-                # Extract hidden dimension if available
                 dim = getattr(child, "embed_dim", getattr(child, "hidden_size", 64))
                 try:
                     new_attn = cls(config=None, pretrained_attn=child, **kwargs)
@@ -92,7 +95,6 @@ class _BaseAutoNeuralOps:
         else:
             model = nn.Sequential(nn.Linear(64, 64))
 
-        # 1. Apply declarative recipe if given
         if recipe is not None:
             try:
                 from neuralops.recipes import oneshot
@@ -100,7 +102,6 @@ class _BaseAutoNeuralOps:
             except Exception as e:
                 logger.debug("oneshot recipe failed or not found: %s", e)
 
-        # 2. Attention transplantation
         if attn_to_use is not None:
             try:
                 from neuralops.api import replace_attention
@@ -108,7 +109,6 @@ class _BaseAutoNeuralOps:
             except Exception:
                 model = patch_model_attention(model, attention_type=attn_to_use, rank=rank)
 
-        # 3. Model compression
         if compressor is not None:
             try:
                 from neuralops.api import compress
@@ -116,7 +116,6 @@ class _BaseAutoNeuralOps:
             except Exception as e:
                 logger.debug("compress failed: %s", e)
 
-        # 4. PEFT recovery adapter injection (e.g. PiSSA)
         if peft_recovery is not None:
             peft_str = peft_recovery.lower()
             if "pissa" in peft_str:

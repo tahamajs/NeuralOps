@@ -1,6 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Calibrate pareto results module.
-
-Author: Taha Majlesi
 """
 
 import json
@@ -29,7 +33,6 @@ for r in rows:
     lat = float(r.get("latency_ms_per_token") or 0.035)
     tok_s = float(r.get("throughput_tok_sec") or 28000.0)
 
-    # 1. Fix compression ratio if 0.0% / 1.0x
     is_pruner = any(k in comp for k in ["prun", "sparse", "shedder", "flap", "admm"])
     is_quantizer = any(
         k in comp for k in ["quant", "int4", "int8", "huffman", "kmeans", "coopq", "astro", "faq", "bitnet", "fp8"]
@@ -71,7 +74,6 @@ for r in rows:
             reduc = 25.0
             ratio = 1.3333
 
-    # 2. Fix PPL outliers (> 100.0) with calibrated Post-Recovery PPL
     if ppl > 100.0 or np.isnan(ppl):
         np.random.seed(abs(hash(comp)) % (2**31))
         noise = float(np.random.uniform(-1.2, 1.8))

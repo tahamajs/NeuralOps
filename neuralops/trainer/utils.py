@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Training and Optimization Utilities
 
 Provides factorized gradient clipping, memory optimization, and evaluation utilities for model training.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -64,7 +68,6 @@ def clip_grad_norm_factorized(
     v_params: list[torch.Tensor] = []
     dense_params: list[torch.Tensor] = []
 
-    # FIX: Partition parameters into U factors, V factors, and dense projections based on named module semantics and tensor shape
     if isinstance(parameters, nn.Module):
         for name, p in parameters.named_parameters():
             if p.grad is None or not p.requires_grad:
@@ -102,7 +105,6 @@ def clip_grad_norm_factorized(
             ):
                 v_params.append(p)
             elif p.dim() >= 2 and min(p.shape) <= 128 and max(p.shape) >= 256:
-                # Shape-based heuristic for low-rank bottleneck: tall = U, wide = V
                 if p.shape[0] >= p.shape[1]:
                     u_params.append(p)
                 else:
@@ -127,24 +129,20 @@ def clip_grad_norm_factorized(
     if not u_params and not v_params and not dense_params:
         return torch.tensor(0.0)
 
-    # FIX: Scale grad(U) and grad(V) independently to maintain balanced gradient propagation through factorized layers
     group_norms: list[torch.Tensor] = []
 
-    # 1. Clip Left Factor U
     if u_params:
         norm_u = torch.nn.utils.clip_grad_norm_(u_params, max_norm=u_limit, norm_type=norm_type)
         group_norms.append(
             norm_u if isinstance(norm_u, torch.Tensor) else torch.tensor(float(norm_u))
         )
 
-    # 2. Clip Right Factor V independently
     if v_params:
         norm_v = torch.nn.utils.clip_grad_norm_(v_params, max_norm=v_limit, norm_type=norm_type)
         group_norms.append(
             norm_v if isinstance(norm_v, torch.Tensor) else torch.tensor(float(norm_v))
         )
 
-    # 3. Clip Dense & Normalization Parameters independently
     if dense_params:
         norm_dense = torch.nn.utils.clip_grad_norm_(
             dense_params, max_norm=dense_limit, norm_type=norm_type
@@ -191,7 +189,6 @@ def train_model(
         enabled=(use_amp and device.type == "cuda" and amp_dtype == torch.float16)
     )
 
-    # Optimizer with fused AdamW option if available on CUDA
     optimizer_kwargs = {
         "lr": getattr(config, "learning_rate", 2e-5),
         "weight_decay": getattr(config, "weight_decay", 0.01),
@@ -212,12 +209,10 @@ def train_model(
         pbar = tqdm(train_loader, desc=f"Epoch {epoch + 1}/{epochs}", leave=True)
 
         for step, batch in enumerate(pbar):
-            # FIX: Determine whether this micro-batch is the synchronization step of the accumulation window
             is_sync_step = ((step + 1) % gradient_accumulation_steps == 0) or (
                 step + 1 == len(train_loader)
             )
 
-            # FIX: Wrap non-final micro-batches in model.no_sync() for DDP to eliminate redundant all-reduce synchronization
             sync_context = (
                 contextlib.nullcontext()
                 if (is_sync_step or not hasattr(model, "no_sync") or not callable(model.no_sync))
@@ -257,7 +252,6 @@ def train_model(
                         )
                         loss = nn.functional.cross_entropy(logits, labels)
 
-                    # FIX: Normalize loss for accumulation steps
                     if gradient_accumulation_steps > 1:
                         loss = loss / gradient_accumulation_steps
 
@@ -273,7 +267,6 @@ def train_model(
                 else:
                     curr_loss = 0.0
 
-            # FIX: Gradient clipping and optimizer step on accumulation boundaries
             if is_sync_step:
                 if scaler.is_enabled():
                     try:

@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Zero-Graph-Break torch.compile(fullgraph=True) and Dynamo Explanation Verification.
 Tests custom op registration and FakeTensor metadata shape propagation across kernel modules.
@@ -49,7 +55,6 @@ def test_dynamo_explain_zero_graph_breaks():
     explanation = torch._dynamo.explain(model)(x, q, k, v)
     assert explanation.graph_break_count == 0, f"Expected 0 graph breaks, got {explanation.graph_break_count}: {explanation.graph_breaks}"
 
-    # Also test compile execution (Inductor requires SM >= 7.0)
     major, _ = torch.cuda.get_device_capability()
     backend = "inductor" if major >= 7 else "aot_eager"
     compiled_model = torch.compile(model, fullgraph=True, backend=backend)

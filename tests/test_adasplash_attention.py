@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Hardening tests for AdaSplashAttention (adasplash_attention.py).
 
@@ -11,9 +17,6 @@ import pytest
 import torch
 import torch.nn as nn
 
-# ---------------------------------------------------------------------------
-# Dummy model stubs
-# ---------------------------------------------------------------------------
 
 class DummyDistilBertAttn(nn.Module):
     def __init__(self):
@@ -39,7 +42,7 @@ class DummyRobertaAttn(nn.Module):
 class DummyGPT2Attn(nn.Module):
     def __init__(self):
         super().__init__()
-        self.c_attn = nn.Linear(64, 192)   # fused q+k+v
+        self.c_attn = nn.Linear(64, 192)
         self.c_proj = nn.Linear(64, 64)
 
 class DummyQwenAttn(nn.Module):
@@ -60,16 +63,10 @@ class DummyLayer(nn.Module):
         super().__init__()
         self.attention = attn
 
-# ---------------------------------------------------------------------------
-# Import
-# ---------------------------------------------------------------------------
 
 from neuralops.attentions.adasplash_attention import (AdaSplashAttention,
                                                       inject_adasplash)
 
-# ---------------------------------------------------------------------------
-# Tests: copy_weights fail-loud
-# ---------------------------------------------------------------------------
 
 class TestCopyWeightsFailLoud:
     def _make_attn(self):
@@ -78,22 +75,22 @@ class TestCopyWeightsFailLoud:
     def test_copy_distilbert_succeeds(self):
         attn = self._make_attn()
         src = DummyDistilBertAttn()
-        attn.copy_weights(src)  # must not raise
+        attn.copy_weights(src)
 
     def test_copy_roberta_succeeds(self):
         attn = self._make_attn()
         src = DummyRobertaAttn()
-        attn.copy_weights(src)  # must not raise
+        attn.copy_weights(src)
 
     def test_copy_gpt2_succeeds(self):
         attn = self._make_attn()
         src = DummyGPT2Attn()
-        attn.copy_weights(src)  # must not raise
+        attn.copy_weights(src)
 
     def test_copy_qwen_succeeds(self):
         attn = self._make_attn()
         src = DummyQwenAttn()
-        attn.copy_weights(src)  # must not raise
+        attn.copy_weights(src)
 
     def test_copy_empty_raises_runtimeerror(self):
         attn = self._make_attn()
@@ -110,9 +107,6 @@ class TestCopyWeightsFailLoud:
             raised = True
         assert raised, "copy_weights should raise RuntimeError, not silently return"
 
-# ---------------------------------------------------------------------------
-# Tests: odd-dim RoPE guard in forward
-# ---------------------------------------------------------------------------
 
 class TestOddDimRoPE:
     def _make_attn(self):
@@ -146,9 +140,6 @@ class TestOddDimRoPE:
         out, _ = attn(x, position_embeddings=(cos, sin))
         assert out.shape == (1, 4, 56)
 
-# ---------------------------------------------------------------------------
-# Tests: inject safety
-# ---------------------------------------------------------------------------
 
 class TestInjectSafety:
     def test_inject_none_returns_none(self):
@@ -178,9 +169,6 @@ class TestInjectSafety:
         res = inject_adasplash(layer=layer, model_config=MockConfig())
         assert isinstance(res, AdaSplashAttention)
 
-# ---------------------------------------------------------------------------
-# Tests: forward shapes
-# ---------------------------------------------------------------------------
 
 class TestForwardShapes:
     def _make_attn(self):

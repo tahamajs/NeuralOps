@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Unit tests for all 16 Recurrent, State Space & Linear DeltaNet Attention modules.
 
 Verifies:
@@ -11,7 +17,6 @@ Verifies:
 import unittest
 from typing import Any
 
-# Ensure all attentions are loaded into ATTENTION_REGISTRY
 import neuralops.attentions
 import torch
 import torch.nn as nn
@@ -45,16 +50,14 @@ class TestRecurrentSSMAttentions(unittest.TestCase):
             self.batch_size, self.seq_len, self.hidden_size, requires_grad=True
         )
         self.mask_2d = torch.ones(self.batch_size, self.seq_len)
-        self.mask_2d[:, 100:] = 0.0  # Last 28 tokens padded
+        self.mask_2d[:, 100:] = 0.0
 
-        # Mock pretrained MHA layer
         self.old_mha = nn.MultiheadAttention(self.hidden_size, 12, batch_first=True)
 
     def _test_module_lifecycle(self, key: str) -> None:
         self.assertIn(key, ATTENTION_REGISTRY, f"Key '{key}' not in ATTENTION_REGISTRY!")
         cls = ATTENTION_REGISTRY.get(key)
         
-        # Instantiate
         try:
             mod = cls(config=self.config)
         except TypeError:
@@ -63,11 +66,9 @@ class TestRecurrentSSMAttentions(unittest.TestCase):
             except TypeError:
                 mod = cls(d_model=self.hidden_size)
 
-        # Weight transfer
         if hasattr(mod, "copy_weights") and callable(mod.copy_weights):
             mod.copy_weights(self.old_mha)
 
-        # Forward pass (unmasked)
         x = self.dummy_x.clone().detach().requires_grad_(True)
         res = mod(x)
         out = res[0] if isinstance(res, tuple) else res
@@ -80,14 +81,12 @@ class TestRecurrentSSMAttentions(unittest.TestCase):
         self.assertFalse(torch.isnan(out).any(), f"Module '{key}' output contains NaNs!")
         self.assertFalse(torch.isinf(out).any(), f"Module '{key}' output contains Infs!")
 
-        # Backward pass
         loss = out.sum()
         loss.backward()
 
         self.assertIsNotNone(x.grad, f"Module '{key}' did not backpropagate gradient to input x!")
         self.assertFalse(torch.isnan(x.grad).any(), f"Module '{key}' input gradients contain NaNs!")
 
-        # Forward pass (with 2D attention mask)
         x_masked = self.dummy_x.clone().detach().requires_grad_(True)
         res_m = mod(x_masked, attention_mask=self.mask_2d)
         out_m = res_m[0] if isinstance(res_m, tuple) else res_m

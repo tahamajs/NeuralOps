@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 CUR Matrix Decomposition Linear Projection
 
 Computes low-rank CUR matrix factorized projections with fused cross-factor contractions and analytical gradients.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -116,7 +120,6 @@ def triton_cur_linear_pytorch_ref(
     K = orig_shape[-1]
     x_2d = x.reshape(-1, K)
 
-    # R: [r, K], U: [r, r], C: [N, r]
     z1 = torch.matmul(x_2d.float(), R.float().t())
     z2 = torch.matmul(z1, U.float().t())
     out_2d = torch.matmul(z2, C.float().t())
@@ -153,12 +156,10 @@ class TritonCURLinearFunction(torch.autograd.Function):
         U_c = U.contiguous()
         C_c = C.contiguous()
 
-        # Effective factorized intermediate: W_down = U @ R [r, K]
         W_down = torch.matmul(U_c, R_c)
         W_down_t = W_down.t().contiguous()
         z = torch.empty((M, r), device=x.device, dtype=x.dtype)
 
-        # Stage 1: Z = X @ W_down.T [M, r]
         grid_1 = lambda META: (triton.cdiv(M, META["BLOCK_M"]), triton.cdiv(r, META["BLOCK_N"]))
         _gemm_bias_kernel[grid_1](
             x_c, W_down_t, None, z,
@@ -169,7 +170,6 @@ class TritonCURLinearFunction(torch.autograd.Function):
             HAS_BIAS=False,
         )
 
-        # Stage 2: Out = Z @ C.T + bias [M, N]
         C_t = C_c.t().contiguous()
         b_c = bias.contiguous() if bias is not None else None
         out_2d = torch.empty((M, N), device=x.device, dtype=x.dtype)
@@ -194,20 +194,16 @@ class TritonCURLinearFunction(torch.autograd.Function):
         N, r = C.shape
         dout_2d = dout.reshape(-1, N).float()
 
-        # Analytical exact adjoint backward:
-        # z1 = x @ R.T  [M, r]
-        # z2 = z1 @ U.T [M, r]
-        # Y = z2 @ C.T + bias
         z1 = torch.matmul(x_2d.float(), R.float().t())
         z2 = torch.matmul(z1, U.float().t())
 
         dbias = dout_2d.sum(dim=0).to(bias.dtype) if (bias is not None and ctx.needs_input_grad[4]) else None
         dC = torch.matmul(dout_2d.t(), z2).to(C.dtype) if ctx.needs_input_grad[3] else None
 
-        dz2 = torch.matmul(dout_2d, C.float())  # [M, r]
+        dz2 = torch.matmul(dout_2d, C.float())
         dU = torch.matmul(dz2.t(), z1).to(U.dtype) if ctx.needs_input_grad[2] else None
 
-        dz1 = torch.matmul(dz2, U.float())     # [M, r]
+        dz1 = torch.matmul(dz2, U.float())
         dR = torch.matmul(dz1.t(), x_2d.float()).to(R.dtype) if ctx.needs_input_grad[1] else None
 
         dx = torch.matmul(dz1, R.float()).to(x_2d.dtype) if ctx.needs_input_grad[0] else None

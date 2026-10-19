@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Parity tests for MoE Routing dispatch and gather (Module 5).
 """
@@ -24,13 +30,11 @@ def test_moe_routing_parity():
     tokens = torch.randn(num_tokens, hidden_dim, device="cuda", dtype=torch.float32)
     gate_logits = torch.randn(num_tokens, num_experts, device="cuda", dtype=torch.float32)
 
-    # Simple expert compute (e.g. scale by 2)
     def dummy_expert(x):
         return x * 2.0
 
     out_cuda = moe_dispatch_gather(tokens, gate_logits, dummy_expert, top_k=top_k)
 
-    # Reference
     routing_weights, topk_indices, expert_offsets = moe_route_pytorch_ref(tokens, gate_logits, top_k=top_k)
     dispatched = tokens.repeat_interleave(top_k, dim=0)
     ref_expert_out = dummy_expert(dispatched)

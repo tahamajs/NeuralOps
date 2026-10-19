@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Low-Rank SVD Utilities
 
 Canonical singular value decomposition, truncated low-rank approximation, and energy retention routines.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -63,7 +67,6 @@ def randomized_svd(
     return U[:, :eff_rank], S[:eff_rank], Vh[:eff_rank, :]
 
 
-# Backward-compatibility alias
 _randomized_svd = randomized_svd
 
 __all__ = ["randomized_svd", "_randomized_svd"]

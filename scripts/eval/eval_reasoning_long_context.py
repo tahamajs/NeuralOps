@@ -1,10 +1,12 @@
-# -*- coding: utf-8 -*-
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Eval reasoning long context module.
-
-Author: Taha Majlesi
 """
 
-# Author: Taha Majlesi
 import gc
 import time
 import math
@@ -22,7 +24,6 @@ def print_log(msg):
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print_log(f"Running on device: {torch.cuda.get_device_name(0)}")
 
-# 1. Base model loading
 model_path = "/mnt/d/models/gpt2"
 tokenizer = AutoTokenizer.from_pretrained(model_path)
 tokenizer.pad_token = tokenizer.eos_token
@@ -35,7 +36,6 @@ def get_adapted_model(attention_type=None):
     config.max_position_embeddings = 4096
     model = GPT2LMHeadModel(config)
 
-    # Copy weights
     model.transformer.wte.load_state_dict(base.transformer.wte.state_dict())
     model.lm_head.load_state_dict(base.lm_head.state_dict())
     model.transformer.ln_f.load_state_dict(base.transformer.ln_f.state_dict())
@@ -63,7 +63,6 @@ def get_adapted_model(attention_type=None):
     return model
 
 
-# 2. Text corpora
 eval_text = (
     "Artificial intelligence and deep learning models have achieved remarkable success in natural language processing. "
     "The multi-head attention mechanism enables pairwise token interactions across the entire sequence context. "
@@ -106,7 +105,6 @@ def eval_long_context_scaling(attention_key=None, seq_lens=None):
         model = get_adapted_model(attention_key)
         inp = torch.randint(100, 1000, (1, L), device=device)
 
-        # Warmup
         try:
             with torch.no_grad():
                 _ = model(inp[:, : min(128, L)])
@@ -120,7 +118,6 @@ def eval_long_context_scaling(attention_key=None, seq_lens=None):
             t_ms = (time.perf_counter() - t0) * 1000.0
             peak_mb = torch.cuda.max_memory_allocated() / (1024**2)
 
-            # Check numerical sanity
             has_nan = torch.isnan(out.logits).any().item()
             has_inf = torch.isinf(out.logits).any().item()
 
@@ -147,7 +144,6 @@ def eval_o1_cache_state(attention_key=None, steps=32):
     torch.cuda.empty_cache()
     model = get_adapted_model(attention_key)
 
-    # Track incremental memory allocation per step
     curr_ids = reasoning_tokens.clone()
     mems = []
 
@@ -159,7 +155,6 @@ def eval_o1_cache_state(attention_key=None, steps=32):
             torch.cuda.synchronize()
             mems.append(torch.cuda.memory_allocated() / (1024**2))
 
-    # Autoregressive generation result
     gen_text = tokenizer.decode(curr_ids[0][reasoning_tokens.shape[1] :], skip_special_tokens=True)
 
     del model, curr_ids
@@ -187,7 +182,6 @@ final_report_data = {}
 
 for name, key in models_to_test:
     print_log(f"=== Testing {name} ===")
-    # 1. PPL
     m = get_adapted_model(key)
     loss, ppl = eval_perplexity(m)
     del m
@@ -195,12 +189,10 @@ for name, key in models_to_test:
     gc.collect()
     print_log(f"{name} -> Loss: {loss}, PPL: {ppl}")
 
-    # 2. Scaling
     print_log(f"Benchmarking long-context scaling for {name}...")
     scaling = eval_long_context_scaling(key, [512, 1024, 2048, 4096])
     print_log(f"{name} Scaling: {scaling}")
 
-    # 3. O(1) state caching & CoT
     print_log(f"Evaluating O(1) cache memory and CoT coherence for {name}...")
     o1_cot = eval_o1_cache_state(key, steps=32)
     print_log(f"{name} CoT: {o1_cot['generated_cot']}")

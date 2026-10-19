@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Production Forward & Backward Autograd Benchmark and Verification Suite for Agent 4 (GEMM & Matrix Decomposition).
 Verifies all 20 modules across both forward AND backward passes:
@@ -343,10 +349,8 @@ def run_benchmark():
             torch.manual_seed(seed)
             torch.cuda.manual_seed_all(seed)
 
-            # Generate inputs for CUDA
             args_cuda = gen_fn()
 
-            # Generate identical inputs for Ref
             args_ref = []
             for a in args_cuda:
                 if isinstance(a, torch.Tensor) and a.requires_grad:
@@ -356,7 +360,6 @@ def run_benchmark():
                 else:
                     args_ref.append(a)
 
-            # Forward verification
             with force_kernel_backend("cuda"):
                 out_cuda = cuda_fn(args_cuda)
             out_ref = ref_fn(args_ref)
@@ -367,7 +370,6 @@ def run_benchmark():
             if has_nans_infs(out_cuda) or has_nans_infs(out_ref):
                 zero_nans = False
 
-            # Backward verification
             if isinstance(out_cuda, tuple):
                 loss_cuda = sum(o.sum() for o in out_cuda if isinstance(o, torch.Tensor) and o.requires_grad)
                 loss_ref = sum(o.sum() for o in out_ref if isinstance(o, torch.Tensor) and o.requires_grad)
@@ -381,7 +383,6 @@ def run_benchmark():
             loss_cuda.backward()
             loss_ref.backward()
 
-            # Compare gradients of all differentiable inputs
             for ac, ar in zip(args_cuda, args_ref):
                 if isinstance(ac, torch.Tensor) and ac.requires_grad:
                     if ac.grad is not None and ar.grad is not None:
@@ -390,7 +391,6 @@ def run_benchmark():
                         g_diff = compute_diff(ac.grad, ar.grad)
                         max_grad_diff = max(max_grad_diff, g_diff)
 
-            # Benchmark timing
             bench_args_cuda = gen_fn()
             bench_args_ref = gen_fn()
 
@@ -410,7 +410,6 @@ def run_benchmark():
         avg_bwd_ref = sum(bwd_ref_times) / len(bwd_ref_times)
         bwd_speedup = avg_bwd_ref / max(avg_bwd_cuda, 1e-6)
 
-        # Tolerance: FP16 < 0.01, FP32 < 1e-4
         tol = 0.01
         passed = (
             (max_fwd_diff <= tol)

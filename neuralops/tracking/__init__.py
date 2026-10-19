@@ -1,7 +1,11 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 NeuralOps Tracking Subpackage.
-
-Author: Taha Majlesi
 """
 
 from .backends import (
@@ -24,7 +28,6 @@ __all__ = [
     "MLFLOW_BACKEND",
 ]
 
-# Auto-wired package members
 from neuralops.tracking import backends
 from neuralops.tracking import callbacks
 from neuralops.tracking import tracker

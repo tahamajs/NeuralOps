@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Unified Pipeline Orchestrator
 
 Central execution orchestrator managing worker pipelines, evaluation tasks, and result reporting.
-
-Author: Taha Majlesi
 """
 
 import csv
@@ -16,9 +20,7 @@ import sys
 import time
 from pathlib import Path
 
-# Paths
 HERE = Path(__file__).resolve().parent
-# HERE is neuralops/runners
 NEURALOPS_DIR = HERE.parent
 PROJECT_ROOT = NEURALOPS_DIR.parent
 TRAINER_SCRIPT = NEURALOPS_DIR / "benchmarks" / "run_quality_sweep.py"
@@ -36,10 +38,8 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(na
 
 
 def run_orchestrator(module_key: str, default_args: list = None):
-    # Merge default arguments with any user-provided sys.argv
     extra_args = list(default_args) if default_args else []
 
-    # If the user passed arguments to the wrapper (e.g. --batch_size 32), append them!
     if len(sys.argv) > 1:
         extra_args.extend(sys.argv[1:])
 

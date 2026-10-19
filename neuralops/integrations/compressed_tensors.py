@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Compressed Tensors Exporter
 
 Exports compressed weights compatible with vLLM, HuggingFace, and downstream serving engines.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -41,7 +45,6 @@ class CompressedTensorsExporter:
         os.makedirs(path, exist_ok=True)
         artifacts: dict[str, str] = {}
 
-        # 1. Resolve tensors
         tensors: dict[str, torch.Tensor] = {}
         if hasattr(compressor_or_model, "compress_to_tensors"):
             tensors = compressor_or_model.compress_to_tensors()
@@ -60,14 +63,11 @@ class CompressedTensorsExporter:
         else:
             raise TypeError(f"Unsupported compressor_or_model type: {type(compressor_or_model)}")
 
-        # Ensure tensors are contiguous and on CPU/consistent device for serializing
         serialized_tensors = {k: v.contiguous() for k, v in tensors.items()}
 
-        # 2. Save model.safetensors or model.pt
         safetensors_path = os.path.join(path, "model.safetensors")
         if HAS_SAFETENSORS:
             try:
-                # Filter to plain tensor objects for safetensors
                 clean_tensors = {k: v.detach().cpu() for k, v in serialized_tensors.items() if isinstance(v, torch.Tensor)}
                 safetensors.torch.save_file(clean_tensors, safetensors_path)
                 artifacts["model.safetensors"] = safetensors_path
@@ -81,14 +81,12 @@ class CompressedTensorsExporter:
             torch.save(serialized_tensors, pt_path)
             artifacts["model.pt"] = pt_path
 
-        # 3. Resolve and write quantization_config.json
         quant_config: dict[str, Any] = {}
         if hasattr(compressor_or_model, "get_quantization_config"):
             quant_config = compressor_or_model.get_quantization_config()
         elif hasattr(compressor_or_model, "quantization_config"):
             quant_config = getattr(compressor_or_model, "quantization_config")
         else:
-            # Default fallback W4A16 compressed-tensors configuration
             quant_config = {
                 "quant_method": "compressed-tensors",
                 "format": "W4A16",
@@ -110,7 +108,6 @@ class CompressedTensorsExporter:
             json.dump(quant_config, f, indent=2)
         artifacts["quantization_config.json"] = quant_config_path
 
-        # 4. Generate and save config.json (HuggingFace compatible configuration)
         hf_config: dict[str, Any] = {}
         model_obj = getattr(compressor_or_model, "model", compressor_or_model)
         if hasattr(model_obj, "config") and model_obj.config is not None:
@@ -122,7 +119,6 @@ class CompressedTensorsExporter:
             else:
                 hf_config = {k: getattr(c, k) for k in dir(c) if not k.startswith("_") and not callable(getattr(c, k))}
         else:
-            # Synthetic standard causal LM config
             hf_config = {
                 "architectures": ["NeuralOpsForCausalLM"],
                 "model_type": "neuralops",
@@ -133,7 +129,6 @@ class CompressedTensorsExporter:
                 "torch_dtype": "float16",
             }
 
-        # Embed quantization_config reference in HF config
         hf_config["quantization_config"] = quant_config
 
         config_path = os.path.join(path, "config.json")

@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Test-Time Training Engine
 
 Implements test-time training (TTT) and dynamic sequence-level model adaptation.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -49,7 +53,6 @@ class TTTLinearAttentionLayer(BaseAttention):
         self.v_proj = nn.Linear(resolved_dim, resolved_dim, bias=False)
         self.out_proj = nn.Linear(resolved_dim, resolved_dim, bias=False)
 
-        # Meta-learned token-dependent learning rate generator
         self.eta_net = nn.Sequential(
             nn.Linear(resolved_dim, resolved_heads),
             nn.Sigmoid(),
@@ -71,7 +74,6 @@ class TTTLinearAttentionLayer(BaseAttention):
 
         k_norm = F.normalize(k, p=2, dim=-1)
 
-        # Accelerated fused Triton / PyTorch online inner-loop memory scan
         from neuralops.core.triton_kernels.linear_attn import fused_ttt_linear_scan_triton
         y_heads = fused_ttt_linear_scan_triton(q, k_norm, v, etas)
 

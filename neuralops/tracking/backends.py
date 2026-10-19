@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Experiment Tracking Backends
 
 Provides adapters for logging metrics to Weights & Biases, MLflow, and local files.
-
-Author: Taha Majlesi
 """
 
 import json
@@ -17,9 +21,6 @@ from typing import Any
 logger = logging.getLogger(__name__)
 
 
-# ----------------------------------------------------------------------
-# Enum & backend keys
-# ----------------------------------------------------------------------
 class TrackingBackend(Enum):
     LOCAL = "local"
     TENSORBOARD = "tensorboard"
@@ -27,16 +28,12 @@ class TrackingBackend(Enum):
     MLFLOW = "mlflow"
 
 
-# Convenience constants for configuration
 LOCAL_BACKEND = TrackingBackend.LOCAL.value
 TENSORBOARD_BACKEND = TrackingBackend.TENSORBOARD.value
 WANDB_BACKEND = TrackingBackend.WANDB.value
 MLFLOW_BACKEND = TrackingBackend.MLFLOW.value
 
 
-# ----------------------------------------------------------------------
-# Abstract base
-# ----------------------------------------------------------------------
 class BaseTracker(ABC):
     """Every backend must implement these five methods."""
 
@@ -66,9 +63,6 @@ class BaseTracker(ABC):
         pass
 
 
-# ----------------------------------------------------------------------
-# Local JSON backend
-# ----------------------------------------------------------------------
 class LocalTracker(BaseTracker):
     """
     Writes metrics and parameters to a JSON lines file.
@@ -95,7 +89,6 @@ class LocalTracker(BaseTracker):
             "timestamp": datetime.now().isoformat(),
         }
         self.metrics.append(entry)
-        # Append to file immediately for resilience
         with open(self.metrics_file, "a") as f:
             f.write(json.dumps(entry) + "\n")
 
@@ -123,9 +116,6 @@ class LocalTracker(BaseTracker):
         pass
 
 
-# ----------------------------------------------------------------------
-# TensorBoard backend
-# ----------------------------------------------------------------------
 class TensorBoardTracker(BaseTracker):
     """Writes scalar metrics to TensorBoard event files."""
 
@@ -144,13 +134,10 @@ class TensorBoardTracker(BaseTracker):
             self.writer.add_scalar(name, value, global_step=0)
 
     def log_params(self, params: dict[str, Any]) -> None:
-        # TensorBoard doesn't natively support hyperparameters well;
-        # we store them as an HParams experiment
         """Log params."""
         self._params.update(params)
 
     def log_artifact(self, local_path: str) -> None:
-        # TensorBoard doesn't support artifacts; fallback to local copy
         """Log artifact."""
         import shutil
 
@@ -174,9 +161,6 @@ class TensorBoardTracker(BaseTracker):
         self.writer.close()
 
 
-# ----------------------------------------------------------------------
-# Weights & Biases backend
-# ----------------------------------------------------------------------
 class WandBTracker(BaseTracker):
     """Logs to Weights & Biases."""
 
@@ -214,9 +198,6 @@ class WandBTracker(BaseTracker):
         self.run.finish()
 
 
-# ----------------------------------------------------------------------
-# MLflow backend
-# ----------------------------------------------------------------------
 class MLflowTracker(BaseTracker):
     """Logs to MLflow."""
 

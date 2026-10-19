@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Attention Layer Replacement Utility
 
 Replaces native model attention mechanisms with linear and factorized attention modules.
-
-Author: Taha Majlesi
 """
 
 import logging
@@ -56,11 +60,8 @@ class UniversalAttentionWrapper(nn.Module):
 
     def forward(self, *args: Any, **kwargs: Any) -> tuple[torch.Tensor, torch.Tensor | None]:
         assert callable(self._wrapped_attention), f"{type(self).__name__}._wrapped_attention is not callable"
-        # 1. Extract hidden states / input tensor
         hidden_states: torch.Tensor | None = None
         if len(args) > 0 and isinstance(args[0], tuple):
-            # Unwrap tuple-wrapped hidden_states (e.g. BERT layer output passed through).
-            # The first element of the tuple is always the hidden tensor.
             args = (args[0][0],) + args[1:]
         if len(args) > 0 and isinstance(args[0], torch.Tensor):
             hidden_states = args[0]
@@ -72,7 +73,6 @@ class UniversalAttentionWrapper(nn.Module):
         elif "x" in kwargs:
             hidden_states = kwargs.pop("x")
 
-        # 2. Extract attention mask
         attention_mask: torch.Tensor | None = None
         if len(args) > 0 and (isinstance(args[0], torch.Tensor) or args[0] is None):
             attention_mask = args[0]
@@ -84,14 +84,7 @@ class UniversalAttentionWrapper(nn.Module):
         elif "attn_mask" in kwargs:
             attention_mask = kwargs.pop("attn_mask")
 
-        # Qwen supplies a prepared 4-D causal mask and rotary position
-        # embeddings. Legacy replacements generally implement their own
-        # masking and cannot consume that representation. The base Qwen model
-        # is untouched; this applies only to an injected replacement.
         if "position_embeddings" in kwargs:
-            # Native Qwen attention owns RoPE. A legacy replacement may opt
-            # out explicitly; positional tensors are then removed only from
-            # this injected call, never from the base model.
             if not getattr(self._wrapped_attention, "supports_rope", False):
                 kwargs = bypass_qwen_rope(kwargs, self._wrapped_attention)
                 kwargs.pop("qwen_rope_bypassed", None)
@@ -130,13 +123,11 @@ class UniversalAttentionWrapper(nn.Module):
             )
             return out, ret_pos_bias, None
 
-        # Clean redundant or mismatched args
         kwargs.pop("key", None)
         kwargs.pop("value", None)
         head_mask = kwargs.pop("head_mask", None)
         output_attentions = kwargs.pop("output_attentions", False)
 
-        # 3. Dynamic call dispatch
         out = None
         call_attempts = [
             lambda: self._wrapped_attention(
@@ -156,7 +147,6 @@ class UniversalAttentionWrapper(nn.Module):
                 mask=attention_mask,
                 **kwargs,
             ),
-            # Filter kwargs down to supported params if wrapped module has strict signature
             lambda: self._wrapped_attention(
                 hidden_states,
                 **{k: v for k, v in kwargs.items() if k in ("position_embeddings", "past_key_value", "past_key_values", "use_cache", "cache_position")}
@@ -182,7 +172,6 @@ class UniversalAttentionWrapper(nn.Module):
                 f"Failed to execute forward pass on {type(self._wrapped_attention).__name__}"
             )
 
-        # 4. Standardize output format
         from neuralops.utils.compat import is_decoder_family
         from neuralops.utils.model_family import detect_family
 
@@ -197,7 +186,6 @@ class UniversalAttentionWrapper(nn.Module):
             "ssm",
         }
 
-        # ---- Standardize output tuple to match HuggingFace contract ----
         incoming_cache = kwargs.get("past_key_value", kwargs.get("past_key_values", None))
         if isinstance(out, tuple):
             hidden = out[0] if len(out) >= 1 else None
@@ -214,15 +202,10 @@ class UniversalAttentionWrapper(nn.Module):
         if "linear_attn" in self.layer_name and not output_attentions:
             return hidden
 
-        # For LLaMA, Mistral, Qwen2 and modern decoders expecting (attn_output, attn_weights) or (attn_output, attn_weights, past_key_value)
-        # depending on transformers version and use_cache
         if fam in ("llama", "mistral", "qwen", "qwen3_5", "qwen2", "qwen2_5") or (
             hasattr(cfg, "model_type")
             and getattr(cfg, "model_type", "").lower() in ("llama", "mistral", "qwen2", "qwen2_5", "qwen")
         ):
-            # Check transformers version to determine decoder layer contract:
-            # - transformers < 4.49 expects 3-tuple: (hidden, attn_weights, present)
-            # - transformers >= 4.49 / 5.x expects 2-tuple: (hidden, attn_weights)
             try:
                 import transformers
                 from packaging import version
@@ -254,7 +237,6 @@ class UniversalAttentionWrapper(nn.Module):
         **kwargs: Any,
     ) -> tuple[torch.Tensor, torch.Tensor]:
         """T5 forward pass executing relative position bias and cross/self attention correctly."""
-        # 1. If inner module implements custom forward_t5, call it
         if hasattr(self._wrapped_attention, "forward_t5") and callable(
             self._wrapped_attention.forward_t5
         ):
@@ -269,7 +251,6 @@ class UniversalAttentionWrapper(nn.Module):
                 return res[0], (res[1] if len(res) > 1 else position_bias)
             return res, position_bias
 
-        # 2. Determine cross-attention vs self-attention
         is_cross_attention = key_value_states is not None
         kv_input = key_value_states if is_cross_attention else hidden_states
         B, N_q, D = hidden_states.shape
@@ -277,7 +258,6 @@ class UniversalAttentionWrapper(nn.Module):
         H = getattr(self._wrapped_attention, "num_heads", getattr(self, "num_heads", 8))
         d = getattr(self._wrapped_attention, "head_dim", getattr(self, "head_dim", 64))
 
-        # 3. Position bias computation and propagation
         if position_bias is None:
             compute_bias_fn = getattr(
                 self._wrapped_attention,
@@ -309,7 +289,6 @@ class UniversalAttentionWrapper(nn.Module):
                 if causal_mask is not None:
                     position_bias = position_bias + causal_mask.to(position_bias.dtype)
 
-        # 4. Extract projection layers from self._wrapped_attention
         q_mod = getattr(
             self._wrapped_attention,
             "q_proj",
@@ -362,7 +341,6 @@ class UniversalAttentionWrapper(nn.Module):
             if H_v < H:
                 V = V.repeat_interleave(H // H_v, dim=1)
 
-            # T5 computes Q @ K.T without sqrt(d) division
             scores = torch.matmul(Q, K.transpose(-2, -1))
             if position_bias is not None:
                 scores = scores + position_bias.to(scores.dtype)
@@ -372,7 +350,6 @@ class UniversalAttentionWrapper(nn.Module):
                 extended_mask = attention_mask.unsqueeze(1).unsqueeze(2) == 0
                 scores = scores.masked_fill(extended_mask, min_val)
 
-            # Float32 Softmax to guarantee finite FP16
             import torch.nn.functional as F
 
             probs = F.softmax(scores.float(), dim=-1).to(scores.dtype)
@@ -386,7 +363,6 @@ class UniversalAttentionWrapper(nn.Module):
             output = o_mod(context) if o_mod is not None else context
             return output, position_bias
 
-        # Fallback to direct inner call
         try:
             res = self._wrapped_attention(
                 hidden_states,
@@ -427,7 +403,6 @@ def _try_instantiate(
       3. AttnClass(config, layer_idx=N, total_layers=N)
       4. AttnClass(config)
     """
-    # Enrich config with commonly missing attributes so modules don't crash
     for attr, default in [
         ("dropout", 0.1),
         ("hidden_dropout_prob", 0.1),
@@ -443,7 +418,6 @@ def _try_instantiate(
         if not hasattr(config, attr):
             setattr(config, attr, default)
 
-    # Build a default ranks dict for spectron/svd_compressed which require it
     _default_ranks = {"q": 64, "k": 64, "v": 64, "o": 64}
 
     if isinstance(attn_fn, type) and issubclass(attn_fn, nn.Module):
@@ -465,11 +439,8 @@ def _try_instantiate(
                 continue
 
     attempts = [
-        # Pattern A: full positional (layer, model_config, comp_config, layer_idx, total_layers, old_attn)
         lambda: attn_fn(old_attn, config, None, layer_idx, total_layers, old_attn),
-        # Pattern A2: 5-arg positional (layer, model_config, comp_config, layer_idx, total_layers)
         lambda: attn_fn(old_attn, config, None, layer_idx, total_layers),
-        # Pattern A3: keyword comp_config
         lambda: attn_fn(
             old_attn,
             config,
@@ -477,9 +448,7 @@ def _try_instantiate(
             layer_idx=layer_idx,
             total_layers=total_layers,
         ),
-        # Pattern A4: layer + model_config only
         lambda: attn_fn(old_attn, config),
-        # Pattern B: full inject keyword (comp_config + old_attn + layer aware)
         lambda: attn_fn(
             config,
             comp_config=None,
@@ -487,38 +456,24 @@ def _try_instantiate(
             layer_idx=layer_idx,
             total_layers=total_layers,
         ),
-        # Pattern B2: inject with layer only
         lambda: attn_fn(config, layer_idx=layer_idx, total_layers=total_layers),
-        # Pattern B3: inject with comp_config + old_attn, no layer
         lambda: attn_fn(config, comp_config=None, old_attn=old_attn),
-        # Pattern C: spectron/svd_compressed: (model_config, pretrained_attn=..., ranks=...)
         lambda: attn_fn(
             config, pretrained_attn=old_attn, ranks=_default_ranks, layer_idx=layer_idx
         ),
         lambda: attn_fn(config, pretrained_attn=old_attn, ranks=_default_ranks),
-        # Pattern D: config + pretrained_attn (mla, nha, salt, vig, vspec, soa_fused_module)
         lambda: attn_fn(config, pretrained_attn=old_attn, layer_idx=layer_idx),
         lambda: attn_fn(config, pretrained_attn=old_attn),
-        # Pattern E: soa_module: (model_config, k_rank=32, pretrained_attn=...)
         lambda: attn_fn(config, k_rank=32, pretrained_attn=old_attn),
-        # Pattern F: orion_module/phantom_module: (model_config, None)
         lambda: attn_fn(config, None, pretrained_attn=old_attn),
         lambda: attn_fn(config, None),
-        # Pattern G: nha_compressor: (model, tokenizer)
         lambda: attn_fn(None, None),
-        # Pattern H: config + hidden_size derived
         lambda: attn_fn(config, config.hidden_size, getattr(config, "num_attention_heads", 12)),
-        # Pattern I: class(config) only
         lambda: attn_fn(config),
-        # Pattern J: class(hidden_size, heads)
         lambda: attn_fn(config.hidden_size, getattr(config, "num_attention_heads", 12)),
-        # Pattern K: compressed_attention_layer(original_layer, rank_qkv, rank_out)
         lambda: attn_fn(old_attn, 32, 32),
-        # Pattern L: compressed_attention_layer_energy(original_layer, energy_threshold)
         lambda: attn_fn(old_attn, 0.95),
-        # Pattern A5: layer only (with defaults)
         lambda: attn_fn(old_attn),
-        # Pattern M: no-arg fallback
         lambda: attn_fn(),
     ]
 
@@ -567,7 +522,6 @@ def replace_attention(model, attention_key=None, layer_indices=None, new_attenti
     config = model.config
     total_layers = getattr(config, "num_hidden_layers", 12)
 
-    # Collect top-level attention module targets (avoiding submodules)
     targets: list[tuple[str, nn.Module, int]] = []
     for name, module in model.named_modules():
         parts = name.split(".")
@@ -601,7 +555,6 @@ def replace_attention(model, attention_key=None, layer_indices=None, new_attenti
             failed_count += 1
             raise
 
-        # Copy weights if supported
         copied_custom = False
         if hasattr(new_attn, "copy_weights") and callable(new_attn.copy_weights):
             try:
@@ -619,7 +572,6 @@ def replace_attention(model, attention_key=None, layer_indices=None, new_attenti
                 pass
 
         if not copied_custom:
-            # Automatic GQA-aware subspace expansion and projection transfer
             try:
                 from neuralops.core._attention_surgery import PROJ_REGEX_PATTERNS, _find_submodule_by_regex, _copy_projection_weights
                 old_q = _find_submodule_by_regex(old_module, PROJ_REGEX_PATTERNS["q"])
@@ -632,48 +584,40 @@ def replace_attention(model, attention_key=None, layer_indices=None, new_attenti
                 new_v = _find_submodule_by_regex(new_attn, PROJ_REGEX_PATTERNS["v"])
                 new_o = _find_submodule_by_regex(new_attn, PROJ_REGEX_PATTERNS["o"])
 
-                # Transfer Q
                 if old_q is not None and new_q is not None and hasattr(old_q, "weight"):
                     _copy_projection_weights(new_q, old_q.weight, getattr(old_q, "bias", None))
 
-                # Transfer K (with GQA subspace expansion if needed)
                 if old_k is not None and new_k is not None and hasattr(old_k, "weight"):
                     w_k = old_k.weight
                     b_k = getattr(old_k, "bias", None)
                     if old_q is not None and hasattr(old_q, "weight") and w_k.shape[0] < old_q.weight.shape[0]:
-                        # GQA detected: expand W_k across query groups
                         g = old_q.weight.shape[0] // w_k.shape[0]
                         w_k = w_k.repeat_interleave(g, dim=0)
                         if b_k is not None:
                             b_k = b_k.repeat_interleave(g, dim=0)
                     _copy_projection_weights(new_k, w_k, b_k)
 
-                # Transfer V (with GQA subspace expansion if needed)
                 if old_v is not None and new_v is not None and hasattr(old_v, "weight"):
                     w_v = old_v.weight
                     b_v = getattr(old_v, "bias", None)
                     if old_q is not None and hasattr(old_q, "weight") and w_v.shape[0] < old_q.weight.shape[0]:
-                        # GQA detected: expand W_v across query groups
                         g = old_q.weight.shape[0] // w_v.shape[0]
                         w_v = w_v.repeat_interleave(g, dim=0)
                         if b_v is not None:
                             b_v = b_v.repeat_interleave(g, dim=0)
                     _copy_projection_weights(new_v, w_v, b_v)
 
-                # Transfer Output projection
                 if old_o is not None and new_o is not None and hasattr(old_o, "weight"):
                     _copy_projection_weights(new_o, old_o.weight, getattr(old_o, "bias", None))
             except (AttributeError, RuntimeError, ValueError, KeyError) as e:
                 logger.debug("Automatic projection transfer failed for %s: %s", name, e)
 
-        # Match device and dtype of old_module
         try:
             old_param = next(old_module.parameters())
             new_attn.to(dtype=old_param.dtype, device=old_param.device)
         except (StopIteration, RuntimeError):
             pass
 
-        # Closed-form Procrustes alignment / Instantaneous calibration if calibration data provided
         calib_data = kwargs.get("calibration_data", kwargs.get("calibration_batch", None))
         if calib_data is not None:
             try:
@@ -693,7 +637,6 @@ def replace_attention(model, attention_key=None, layer_indices=None, new_attenti
                         else:
                             h_in = None
                         if h_in is not None:
-                            # Instantaneous Procrustes Alignment: min_R ||Y_student R - Y_teacher||_F
                             o_mod = getattr(new_attn, "o_proj", getattr(new_attn, "c_proj", getattr(new_attn, "out_proj", None)))
                             if o_mod is not None and hasattr(o_mod, "weight") and isinstance(o_mod.weight, nn.Parameter):
                                 old_out = old_module(h_in)
@@ -711,10 +654,8 @@ def replace_attention(model, attention_key=None, layer_indices=None, new_attenti
             except (RuntimeError, ValueError, AttributeError) as calib_err:
                 logger.debug("Closed-form Procrustes alignment skipped: %s", calib_err)
 
-        # Wrap in universal adapter
         wrapped_attn = UniversalAttentionWrapper(new_attn)
 
-        # Pass T5 metadata to new_attn and wrapper
         from neuralops.core.t5_compat import is_t5_model
 
         if is_t5_model(config):
@@ -752,7 +693,6 @@ def replace_attention(model, attention_key=None, layer_indices=None, new_attenti
     else:
         print(f"Successfully replaced {replaced_count} attention layers with '{attention_key}'.")
 
-    # Track surgery metadata on model
     meta_entry = {
         "op": "replace",
         "type": str(attention_key) if attention_key is not None else getattr(new_attention_cls, "__name__", "custom"),

@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Comprehensive Verification and Parity Test Suite for the 13 Flagship Triton GPU Kernels.
 Targeting SM 8.9 (NVIDIA Ada Lovelace RTX 4070 Laptop GPU, 8GB VRAM).
@@ -49,9 +55,6 @@ def device():
     return "cuda" if torch.cuda.is_available() else "cpu"
 
 
-# ---------------------------------------------------------------------------
-# Kernel 1: Fused Low-Rank Gated GEMM
-# ---------------------------------------------------------------------------
 def test_kernel_1_fused_lowrank_gated_gemm(device):
     torch.manual_seed(42)
     M, K, r, N = 64, 256, 32, 128
@@ -67,16 +70,12 @@ def test_kernel_1_fused_lowrank_gated_gemm(device):
     assert torch.allclose(out_ref, out_tri, atol=0.15, rtol=0.03)
 
 
-# ---------------------------------------------------------------------------
-# Kernel 2: Fused Low-Rank + Sparse GEMM (RPCA)
-# ---------------------------------------------------------------------------
 def test_kernel_2_fused_lowrank_sparse_gemm(device):
     torch.manual_seed(42)
     M, K, r, N = 64, 256, 32, 128
     x = torch.randn(M, K, device=device, dtype=torch.float16)
     V = torch.randn(r, K, device=device, dtype=torch.float16)
     U = torch.randn(N, r, device=device, dtype=torch.float16)
-    # 5% sparse outlier matrix
     s = torch.randn(N, K, device=device, dtype=torch.float16) * (torch.rand(N, K, device=device) < 0.05).to(torch.float16)
     bias = torch.randn(N, device=device, dtype=torch.float16)
 
@@ -87,16 +86,11 @@ def test_kernel_2_fused_lowrank_sparse_gemm(device):
     assert torch.allclose(out_ref, out_tri, atol=2e-2, rtol=1e-2)
 
 
-# ---------------------------------------------------------------------------
-# Kernel 3: Strided Tensor-Train (TT) Contraction & Linear
-# ---------------------------------------------------------------------------
 def test_kernel_3_strided_tt(device):
     torch.manual_seed(42)
     p_dims = [8, 8]
     q_dims = [8, 8]
     r = 8
-    # Core 1: (1, 8, 8, 8) -> (8, 8, 8)
-    # Core 2: (8, 8, 8, 1) -> (8, 8, 8)
     core1 = torch.randn(1, p_dims[0], q_dims[0], r, device=device, dtype=torch.float16)
     core2 = torch.randn(r, p_dims[1], q_dims[1], 1, device=device, dtype=torch.float16)
 
@@ -115,9 +109,6 @@ def test_kernel_3_strided_tt(device):
     assert torch.allclose(out_linear, out_ref_linear, atol=3e-2, rtol=2e-2)
 
 
-# ---------------------------------------------------------------------------
-# Kernel 4: Fused Hadamard W4A16 GEMM
-# ---------------------------------------------------------------------------
 def test_kernel_4_hadamard_w4a16_gemm(device):
     torch.manual_seed(42)
     M, K, N = 32, 128, 64
@@ -135,9 +126,6 @@ def test_kernel_4_hadamard_w4a16_gemm(device):
     assert torch.allclose(out_ref, out_tri, atol=3e-2, rtol=2e-2)
 
 
-# ---------------------------------------------------------------------------
-# Kernel 5: In-Register LUT Codebook Dequantization GEMM
-# ---------------------------------------------------------------------------
 def test_kernel_5_lut_codebook_dequant_gemm(device):
     torch.manual_seed(42)
     M, K, N = 32, 128, 64
@@ -155,9 +143,6 @@ def test_kernel_5_lut_codebook_dequant_gemm(device):
     assert torch.allclose(out_ref, out_tri, atol=3e-2, rtol=2e-2)
 
 
-# ---------------------------------------------------------------------------
-# Kernel 6: Fused Kronecker Matmul
-# ---------------------------------------------------------------------------
 def test_kernel_6_fused_kronecker_matmul(device):
     torch.manual_seed(42)
     M1, N1 = 16, 16
@@ -175,9 +160,6 @@ def test_kernel_6_fused_kronecker_matmul(device):
     assert torch.allclose(out_ref, out_tri, atol=3e-2, rtol=2e-2)
 
 
-# ---------------------------------------------------------------------------
-# Kernel 7: Chunked Delta-Gate Recurrent Scan
-# ---------------------------------------------------------------------------
 def test_kernel_7_chunked_delta_gate_scan(device):
     torch.manual_seed(42)
     B, H, L, D_K, D_V = 2, 4, 32, 32, 32
@@ -194,9 +176,6 @@ def test_kernel_7_chunked_delta_gate_scan(device):
     assert torch.allclose(out_ref, out_tri, atol=1e-3, rtol=1e-3)
 
 
-# ---------------------------------------------------------------------------
-# Kernel 8: Cosformer Linear Attention
-# ---------------------------------------------------------------------------
 def test_kernel_8_cosformer_linear_attention(device):
     torch.manual_seed(42)
     B, H, L, D = 2, 4, 64, 32
@@ -214,9 +193,6 @@ def test_kernel_8_cosformer_linear_attention(device):
     assert torch.allclose(out_ref_noncausal, out_tri_noncausal, atol=2e-2, rtol=1e-2)
 
 
-# ---------------------------------------------------------------------------
-# Kernel 9: Block-Sparse Streaming Attention
-# ---------------------------------------------------------------------------
 def test_kernel_9_block_sparse_streaming_attn(device):
     torch.manual_seed(42)
     B, H, L, D = 2, 2, 64, 32
@@ -228,7 +204,6 @@ def test_kernel_9_block_sparse_streaming_attn(device):
     k = torch.randn(B, H, L, D, device=device, dtype=torch.float16)
     v = torch.randn(B, H, L, D, device=device, dtype=torch.float16)
 
-    # Simple active block index table: [B, H, num_q_blocks, K_active]
     active_indices = torch.randint(0, num_q_blocks, (B, H, num_q_blocks, K_active), device=device, dtype=torch.int32)
 
     out_ref = triton_block_sparse_streaming_attn_pytorch_ref(q, k, v, active_indices, block_size=block_size)
@@ -237,9 +212,6 @@ def test_kernel_9_block_sparse_streaming_attn(device):
     assert torch.allclose(out_ref, out_tri, atol=3e-2, rtol=2e-2)
 
 
-# ---------------------------------------------------------------------------
-# Kernel 10: Fused Bidirectional HGRN2 Recurrent Scan
-# ---------------------------------------------------------------------------
 def test_kernel_10_hgrn2_fused_bwd_scan(device):
     torch.manual_seed(42)
     B, H, L, D = 2, 4, 32, 32
@@ -253,9 +225,6 @@ def test_kernel_10_hgrn2_fused_bwd_scan(device):
     assert torch.allclose(out_ref, out_tri, atol=1e-3, rtol=1e-3)
 
 
-# ---------------------------------------------------------------------------
-# Kernel 11: Spectral Entropy SVD Gate
-# ---------------------------------------------------------------------------
 def test_kernel_11_spectral_entropy_svd_gate(device):
     torch.manual_seed(42)
     M, K, R_MAX, N = 32, 128, 64, 128
@@ -269,14 +238,10 @@ def test_kernel_11_spectral_entropy_svd_gate(device):
     out_ref = triton_spectral_entropy_svd_gate_pytorch_ref(x, V_r, U_r, effective_rank=eff_r, s_weights=s_weights, bias=bias)
     out_tri = triton_spectral_entropy_svd_gate(x, V_r, U_r, effective_rank=eff_r, s_weights=s_weights, bias=bias)
 
-    # On Ada Lovelace SM 8.9 Tensor Cores, FP16 accumulator vs FP32 accumulation differences in multi-stage GEMM yield max absolute error up to ~0.06 with magnitude ~100 (rel error ~0.001)
     assert torch.allclose(out_ref, out_tri, atol=8e-2, rtol=2e-2)
 
 
 
-# ---------------------------------------------------------------------------
-# Kernel 12: Fused Activation-Scaling Quantized GEMM
-# ---------------------------------------------------------------------------
 def test_kernel_12_fused_act_scale_quant_gemm(device):
     torch.manual_seed(42)
     M, K, N = 32, 128, 64
@@ -292,9 +257,6 @@ def test_kernel_12_fused_act_scale_quant_gemm(device):
     assert torch.allclose(out_ref, out_tri, atol=2e-2, rtol=1e-2)
 
 
-# ---------------------------------------------------------------------------
-# Kernel 13: Fused Latent KV-Cache Attention
-# ---------------------------------------------------------------------------
 def test_kernel_13_fused_latent_kv_cache_attention(device):
     torch.manual_seed(42)
     B, H, L_Q, L_KV, R, D_K, D_V = 2, 4, 32, 64, 32, 64, 64

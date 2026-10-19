@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Long Range Arena Training Harness
 
 Trains and evaluates neural network architectures on Long Range Arena (LRA) benchmark tasks.
-
-Author: Taha Majlesi
 """
 
 import argparse
@@ -15,7 +19,6 @@ import torch
 from torch.utils.data import DataLoader
 from transformers import AutoConfig, AutoModelForSequenceClassification
 
-# Add Codes to sys.path
 _cur_dir = Path(__file__).resolve().parent
 _codes_dir = _cur_dir.parent
 if str(_codes_dir) not in sys.path:
@@ -125,7 +128,7 @@ def _setup_datasets(task: str, current_seq_len: int, cfg: dict):
                 super().__init__()
                 torch.manual_seed(seed)
                 self.input_ids = torch.randint(1, vocab_size, (size, seq_len))
-                op = self.input_ids[:, 0] % 3  # 0: sum, 1: max, 2: min
+                op = self.input_ids[:, 0] % 3
                 labels = torch.zeros(size, dtype=torch.long)
                 for i in range(size):
                     if op[i] == 0:
@@ -328,7 +331,6 @@ def train_task(
             max_steps=max_steps,
         )
 
-        # Evaluate every 5 epochs or last epoch
         if (
             (epoch + 1) % 5 == 0
             or (epoch + 1) == num_epochs

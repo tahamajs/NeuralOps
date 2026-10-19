@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Nyström Attention Autograd Interface
 
 Hardware-accelerated CUDA C++ autograd implementation with analytical gradients and three-level fallback dispatch.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -23,7 +27,6 @@ def _get_module():
     return _MODULE
 
 def nystrom_attention_ref(q_landmarks: torch.Tensor, k_landmarks: torch.Tensor, v_landmarks: torch.Tensor, pinv_landmarks: torch.Tensor) -> torch.Tensor:
-    # A_hat = S_tilde @ pinv(K_tilde) @ V_tilde
     return torch.matmul(torch.matmul(q_landmarks, pinv_landmarks), v_landmarks)
 
 def nystrom_attention(q_landmarks: torch.Tensor, k_landmarks: torch.Tensor, v_landmarks: torch.Tensor, pinv_landmarks: torch.Tensor) -> torch.Tensor:

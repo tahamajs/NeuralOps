@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -5,8 +12,6 @@
 
 namespace neuralops { namespace cuda {
 
-// Spectral bandpass filter with magnitude thresholding
-// 128-bit float4 vectorized kernel
 template <typename scalar_t>
 __global__ void __launch_bounds__(256) spectra_v2_fwd_vectorized_kernel(
     scalar_t* __restrict__ out,
@@ -51,7 +56,6 @@ __global__ void __launch_bounds__(256) spectra_v2_fwd_vectorized_kernel(
         }
     }
 
-    // Remainder loop
     const int rem_start = num_vec * 4;
     for (int idx = rem_start + tid; idx < total_elements; idx += stride) {
         const int d = idx % D;
@@ -62,7 +66,7 @@ __global__ void __launch_bounds__(256) spectra_v2_fwd_vectorized_kernel(
     }
 }
 
-}} // namespace neuralops::cuda
+}}
 
 torch::Tensor spectra_v2_fwd(
     const torch::Tensor& x,

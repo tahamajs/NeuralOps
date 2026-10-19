@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -27,8 +34,8 @@ __global__ void sigmoid_scale_kernel(
     }
 }
 
-} // namespace cuda
-} // namespace neuralops
+}
+}
 
 torch::Tensor fused_lowrank_gated_gemm_fwd(
     const torch::Tensor& X,
@@ -44,7 +51,6 @@ torch::Tensor fused_lowrank_gated_gemm_fwd(
     const int M = X.size(0);
     const int R = V.size(0);
 
-    // Z = X @ V^T  [M, K] x [R, K]^T -> [M, R]
     auto Z = at::matmul(X, V.t());
 
     const bool has_alpha = alpha.defined() && alpha.numel() > 0;
@@ -65,7 +71,6 @@ torch::Tensor fused_lowrank_gated_gemm_fwd(
         );
     }
 
-    // out = Z @ U^T  [M, R] x [N, R]^T -> [M, N]
     auto out = at::matmul(Z, U.t());
 
     const bool has_bias = bias.defined() && bias.numel() > 0;
@@ -91,7 +96,6 @@ torch::Tensor fused_lowrank_gated_gemm_bwd(
     const int M = X.size(0);
     const int R = V.size(0);
 
-    // dz = dout @ U  [M, N] x [N, R] -> [M, R]
     auto dz = at::matmul(dout, U);
 
     const bool has_alpha = alpha.defined() && alpha.numel() > 0;
@@ -112,7 +116,6 @@ torch::Tensor fused_lowrank_gated_gemm_bwd(
         );
     }
 
-    // dX = dz @ V  [M, R] x [R, K] -> [M, K]
     auto dX = at::matmul(dz, V);
     return dX;
 }

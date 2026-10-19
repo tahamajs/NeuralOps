@@ -1,4 +1,9 @@
-# -*- coding: utf-8 -*-
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Execution test suite for all NeuralOps interactive Jupyter notebooks.
 
 Verifies:
@@ -33,7 +38,6 @@ def _execute_notebook_cells(nb_path: Path):
         code_lines = []
         for line in lines:
             stripped = line.strip()
-            # Skip shell commands like !pip install
             if stripped.startswith("!"):
                 continue
             code_lines.append(line)

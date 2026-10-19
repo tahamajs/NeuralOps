@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Unit tests for framework directory integrity, python compilation, and clean workspace."""
 
 import os
@@ -66,7 +72,6 @@ class TestFileStructureAndCompilation:
         for filename in overlap:
             p1 = (neuralops_root / "attentions" / filename).read_text(encoding="utf-8")
             p2 = (neuralops_root / "compression_engine" / filename).read_text(encoding="utf-8")
-            # One must re-export the other, or they must be complementary
             is_reexport = ("Canonical home:" in p1 or "Canonical home:" in p2 or
                            "Re-exports" in p1 or "Re-exports" in p2 or
                            "import *" in p1 or "import *" in p2 or

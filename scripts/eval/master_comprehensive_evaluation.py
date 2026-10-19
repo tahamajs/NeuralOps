@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Master Comprehensive End-to-End Evaluation Matrix for NeuralOps Ecosystem.
 
@@ -33,8 +39,6 @@ Evaluates across:
 Outputs:
   - results/master_comprehensive_evaluation_matrix.json
   - results/master_comprehensive_evaluation_matrix.md
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -53,7 +57,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 from transformers import AutoTokenizer, GPT2LMHeadModel
 
-# Ensure repo root is on sys.path
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
@@ -103,7 +106,6 @@ def build_extended_gpt2(model_path: str, max_positions: int = 4096, device: str 
     config.max_position_embeddings = max_positions
     model = GPT2LMHeadModel(config)
 
-    # Copy weights
     model.transformer.wte.load_state_dict(base.transformer.wte.state_dict())
     model.lm_head.load_state_dict(base.lm_head.state_dict())
     model.transformer.ln_f.load_state_dict(base.transformer.ln_f.state_dict())
@@ -163,7 +165,6 @@ def evaluate_model_pipeline(
     model.eval()
     teacher_model.eval()
 
-    # 1. Peak VRAM & Forward Pass
     def run_forward():
         """Execute run forward routine."""
         with torch.no_grad():
@@ -178,7 +179,6 @@ def evaluate_model_pipeline(
     )
     del outputs
 
-    # 2. Teacher Forward Pass (Baseline reference)
     if model is teacher_model:
         teacher_logits = student_logits
         teacher_hidden = student_hidden
@@ -193,16 +193,13 @@ def evaluate_model_pipeline(
             )
             del teacher_outputs
 
-    # 3. Numerical Deviations (computed on CPU)
     num_dev = compute_numerical_deviation(teacher_logits, student_logits)
 
-    # 4. Hidden Feature Representation Similarity (CKA)
     if teacher_hidden is not None and student_hidden is not None:
         rep_sim = compute_representation_similarity(teacher_hidden, student_hidden)
     else:
         rep_sim = {"linear_cka": 1.0, "mean_cosine_similarity": 1.0}
 
-    # 5. Top-1 and Top-5 Next-Token Accuracy (using teacher predictions as target reference)
     with torch.no_grad():
         target_labels = teacher_logits.argmax(dim=-1)[:, :-1].contiguous()
         eval_student_logits = student_logits[:, :-1, :].contiguous()
@@ -212,7 +209,6 @@ def evaluate_model_pipeline(
             top_k=(1, 5),
         )
 
-    # 6. Perplexity and Cross-Entropy Loss
     with torch.no_grad():
         shift_logits = student_logits[:, :-1, :].contiguous()
         shift_labels = input_ids[:, 1:].contiguous().cpu()
@@ -220,7 +216,6 @@ def evaluate_model_pipeline(
         ce_loss = float(loss_fct(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1)).item())
         ppl = compute_perplexity_from_loss(ce_loss)
 
-    # 7. Latency and Throughput Profiling
     perf_stats = measure_latency_and_throughput(
         model,
         input_ids,
@@ -229,7 +224,6 @@ def evaluate_model_pipeline(
         device=device,
     )
 
-    # 8. Parameter Count & Compression Ratio
     total_params = sum(p.numel() for p in model.parameters())
     teacher_params = sum(p.numel() for p in teacher_model.parameters())
     comp_ratio = float(teacher_params / max(1, total_params))
@@ -276,7 +270,6 @@ def main():
     tokenizer = AutoTokenizer.from_pretrained(args.model_path)
     tokenizer.pad_token = tokenizer.eos_token
 
-    # Target Matrix Definitions
     attention_families = [
         {"family": "Dense", "key": "none", "display_name": "Standard Dense Softmax"},
         {
@@ -320,19 +313,14 @@ def main():
         },
     ]
 
-    # Pre-generate long test sequence
     max_len = max(args.context_lengths)
     logger.info(f"Generating deterministic evaluation token sequence up to {max_len} tokens...")
     full_input_ids = generate_evaluation_sequence(tokenizer, target_tokens=max_len, device=str(device))
 
     results_matrix = []
 
-    # -------------------------------------------------------------
-    # Phase 1: Attention Families across Context Lengths L in {512, 1024, 2048, 4096}
-    # -------------------------------------------------------------
     logger.info("=== Phase 1: Evaluating Attention Families across Sequence Context Lengths ===")
 
-    # Load Teacher Baseline (Dense Attention)
     teacher = build_extended_gpt2(args.model_path, max_positions=max_len, device=str(device))
 
     for attn in attention_families:
@@ -393,9 +381,6 @@ def main():
                     }
                 )
 
-    # -------------------------------------------------------------
-    # Phase 2: Compression Engines across Context Lengths L in {512, 1024, 2048, 4096}
-    # -------------------------------------------------------------
     logger.info("=== Phase 2: Evaluating Compression Engines across Sequence Context Lengths ===")
 
     for comp in compression_engines:
@@ -458,9 +443,6 @@ def main():
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
 
-    # -------------------------------------------------------------
-    # Phase 3: Serialization & Publication-Ready Artifact Generation
-    # -------------------------------------------------------------
     logger.info("=== Phase 3: Serializing Results Matrix & Generating Reports ===")
     out_json_path = Path(args.output_json)
     out_json_path.parent.mkdir(parents=True, exist_ok=True)
@@ -481,7 +463,6 @@ def main():
         json.dump(master_payload, f, indent=2)
     logger.info(f"Successfully saved certified JSON artifact to: {out_json_path}")
 
-    # Generate Markdown Table Report
     md_content = generate_markdown_report(master_payload)
     out_md_path = Path(args.output_md)
     with open(out_md_path, "w", encoding="utf-8") as f:

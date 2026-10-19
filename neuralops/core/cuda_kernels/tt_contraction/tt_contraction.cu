@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -7,12 +14,6 @@
 namespace neuralops {
 namespace cuda {
 
-// Core contraction matching exact tensordot + permute(1, 3, 0, 2):
-// c0 shape: [d0, d1, R] where d0 = c0.size(0), d1 = c0.size(1)
-// c1 shape: [R, d2, d3] where d2 = c1.size(1), d3 = c1.size(2)
-// res = tensordot(c0, c1, [-1], [0]) -> [d0, d1, d2, d3]
-// res = res.permute(1, 3, 0, 2) -> [d1, d3, d0, d2]
-// out shape: [d1 * d3, d0 * d2]
 template <typename scalar_t>
 __launch_bounds__(256)
 __global__ void tt_contraction_kernel(
@@ -33,19 +34,15 @@ __global__ void tt_contraction_kernel(
     const int n = idx / K;
     const int k = idx % K;
 
-    // n = i1 * d3 + i3
     const int i1 = n / d3;
     const int i3 = n % d3;
 
-    // k = i0 * d2 + i2
     const int i0 = k / d2;
     const int i2 = k % d2;
 
     float acc = 0.0f;
     for (int r = 0; r < R; ++r) {
-        // c0[i0, i1, r]
         const int c0_idx = i0 * (d1 * R) + i1 * R + r;
-        // c1[r, i2, i3]
         const int c1_idx = r * (d2 * d3) + i2 * d3 + i3;
         acc += to_float(c0[c0_idx]) * to_float(c1[c1_idx]);
     }
@@ -53,8 +50,8 @@ __global__ void tt_contraction_kernel(
     W[idx] = from_float<scalar_t>(acc);
 }
 
-} // namespace cuda
-} // namespace neuralops
+}
+}
 
 torch::Tensor tt_contraction_fwd(
     const torch::Tensor& core0,

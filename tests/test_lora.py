@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Comprehensive unit tests for native LoRA module."""
 
 import os
@@ -61,7 +67,6 @@ class TestLoRALinear:
         base = nn.Linear(32, 32, bias=False)
         lora = LoRALinear(base, r=4, alpha=8.0, dropout=0.0)
         lora.eval()
-        # Assign non-zero to lora_B to produce a delta
         lora.lora_B.weight.data.fill_(0.1)
 
         x = torch.randn(2, 32)
@@ -107,19 +112,17 @@ class TestApplyLoRAOnModels:
         model = MockQwenModel()
         model, count = apply_lora(model, r=16, alpha=32.0)
 
-        # 4 attn + 3 mlp = 7 linear layers adapted
         assert count == 7
         assert isinstance(model.attn.q_proj, LoRALinear)
         assert isinstance(model.attn.k_proj, LoRALinear)
         assert isinstance(model.mlp.gate_proj, LoRALinear)
-        assert not isinstance(model.score, LoRALinear)  # Score head must not be wrapped
+        assert not isinstance(model.score, LoRALinear)
 
-        # Verify trainable parameters
         trainable = get_lora_trainable_parameters(model)
         assert len(trainable) > 0
         total_trainable = sum(p.numel() for p in trainable)
         total_base = sum(p.numel() for p in model.parameters())
-        assert total_trainable < total_base  # Substantial parameter efficiency
+        assert total_trainable < total_base
 
     def test_apply_lora_to_distilbert_style(self):
         class MockDistilBertBlock(nn.Module):
@@ -161,7 +164,6 @@ class TestLoRACompressorIntegration:
         lora = LoRALinear(base, r=4, alpha=8.0)
         assert not lora.merged
 
-        # Mock compressor factorizing the base_layer
         class SVDCompressedBase(nn.Module):
             def __init__(self, in_features, out_features, rank=4):
                 super().__init__()
@@ -173,7 +175,6 @@ class TestLoRACompressorIntegration:
         lora.base_layer = SVDCompressedBase(32, 32, rank=4)
         assert not lora.merged
 
-        # Gradient flow check
         x = torch.randn(2, 32)
         opt = torch.optim.AdamW(lora.parameters(), lr=1e-3)
         for _ in range(2):
@@ -222,7 +223,6 @@ class TestLoRACompressorIntegration:
         head = nn.Linear(16, 2)
         model = nn.Sequential(lora, head)
 
-        # Freeze base
         lora.base_layer.weight.requires_grad = False
         opt = torch.optim.AdamW([p for p in model.parameters() if p.requires_grad], lr=0.05)
         loss_fn = nn.CrossEntropyLoss()

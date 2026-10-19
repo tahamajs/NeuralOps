@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Experiment Logging Configuration
 
 Defines structured configuration dataclasses for logging and experiment tracking.
-
-Author: Taha Majlesi
 """
 
 from dataclasses import dataclass, field
@@ -15,19 +19,16 @@ class LoggingConfig:
     """Complete logging & experiment tracking configuration."""
 
     log_level: str = "INFO"
-    log_format: str = "structured"  # "structured" (JSON lines) or "human"
+    log_format: str = "structured"
     log_to_console: bool = True
     log_to_file: bool = True
     log_dir: str = "./logs"
     experiment_name: str = "experiment"
     run_id: str | None = None
     use_timestamp: bool = True
-    # Rank-specific and thread-safe logging
-    rank: int | None = None  # FIX: Local rank for DDP isolated file logging
-    rank_specific_logs: bool = True  # FIX: Enforce isolated rank_{i}.log files per process
-    use_queue_handler: bool = True  # FIX: Enforce thread-safe asynchronous logging via QueueHandler
-    # Metrics tracking
+    rank: int | None = None
+    rank_specific_logs: bool = True
+    use_queue_handler: bool = True
     metrics_enabled: bool = True
-    metrics_flush_every: int = 10  # flush metrics file every N logs
-    # Extra metadata added to every event
+    metrics_flush_every: int = 10
     extra_metadata: dict[str, Any] = field(default_factory=dict)

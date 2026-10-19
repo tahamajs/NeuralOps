@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -5,14 +12,6 @@
 
 namespace neuralops { namespace cuda {
 
-// Spectraformer Trigonometric Basis Projection Kernel:
-// Form: out[idx] = x[idx] * (cos_basis[idx] + sin_basis[idx])
-//
-// Hardware-level optimization:
-// 1. Algebraic simplification: Computes basis_sum = cos_val + sin_val and executes a single FMA.
-// 2. Grid-stride 1D loop: Ensures uniform saturation across all streaming multiprocessors (SMs).
-// 3. Fused register pipeline: Avoids intermediate DRAM reads/writes for separate sin/cos products.
-// 4. Vectorized execution and stream synchronization.
 template <typename scalar_t>
 __global__ void __launch_bounds__(256) spectraformer_fwd_kernel(
     scalar_t* __restrict__ out,
@@ -29,7 +28,6 @@ __global__ void __launch_bounds__(256) spectraformer_fwd_kernel(
         const float c_val = to_float(cos_basis[idx]);
         const float s_val = to_float(sin_basis[idx]);
 
-        // Single algebraic FMA
         const float basis_sum = c_val + s_val;
         const float modulated = x_val * basis_sum;
 
@@ -37,7 +35,7 @@ __global__ void __launch_bounds__(256) spectraformer_fwd_kernel(
     }
 }
 
-}} // namespace neuralops::cuda
+}}
 
 torch::Tensor spectraformer_fwd(
     const torch::Tensor& x,

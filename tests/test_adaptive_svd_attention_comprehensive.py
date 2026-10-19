@@ -1,3 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 from .testing_utils import MockConfig, DummyDistilBertAttention
 import pytest
 import torch
@@ -50,7 +57,6 @@ def test_adaptive_svd_distilbert_weight_copy():
     cfg = MockConfig()
     old_attn = DummyDistilBertAttention(64)
     attn = AdaptiveSVDAttention(config=cfg, pretrained_attn=old_attn)
-    # Check frozen SVD base & trainable lora adapters
     assert attn.query.lora_A.requires_grad
     assert attn.query.lora_B.requires_grad
     x = torch.randn(2, 8, 64)

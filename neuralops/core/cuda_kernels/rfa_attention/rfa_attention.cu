@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -5,16 +12,6 @@
 
 namespace neuralops { namespace cuda {
 
-// Random Feature Attention (RFA) Kernel:
-// Form: s_t = s_{t-1} + \phi(k_t) \cdot v_t
-//       z_t = z_{t-1} + \phi(k_t)
-//       out_t = (\phi(q_t) \cdot s_t) / \max(z_t, \epsilon)
-//
-// Hardware-level optimization:
-// 1. Decoupled 2D Grid: dim3 grid(ceil(D / 128), B * H) with 128 threads/block.
-// 2. Strict FP32 intermediate register accumulation.
-// 3. 4-way loop unrolling for memory latency hiding.
-// 4. Eliminates threads = D anti-pattern.
 template <typename scalar_t>
 __global__ void __launch_bounds__(128) rfa_fwd_kernel(
     scalar_t* __restrict__ out,
@@ -51,7 +48,7 @@ __global__ void __launch_bounds__(128) rfa_fwd_kernel(
     }
 }
 
-}} // namespace neuralops::cuda
+}}
 
 torch::Tensor rfa_fwd(
     const torch::Tensor& phi_q,

@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Comprehensive test suite for Factorised Matrix State Attention.
 
 Tests:
@@ -77,7 +83,6 @@ def test_chunked_scan_equivalence():
     v = torch.randn(B, H, L, d)
     decay = torch.sigmoid(fms.beta)
 
-    # Run with small chunk size (32) and larger chunk size (64)
     y_c32 = fms._matrix_scan_linear(q, k, v, decay, chunk_size=32)
     y_c64 = fms._matrix_scan_linear(q, k, v, decay, chunk_size=64)
     diff = (y_c32 - y_c64).abs().max().item()

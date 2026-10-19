@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Tests for neuralops.data.base module."""
 
 import pytest
@@ -77,7 +83,6 @@ class TestProductionDataCollator:
         batch = collator(features)
         assert "input_ids" in batch
         assert batch["input_ids"].shape[0] == 2
-        # padded to multiple of 8: length should be 8
         assert batch["input_ids"].shape[1] == 8
         assert batch["labels"].shape[0] == 2
 

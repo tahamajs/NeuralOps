@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-# Author: Taha Majlesi
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Generate publication-grade figures (.pdf, .svg) and LaTeX booktabs tables
 from empirical data in results/v13_deep_empirical_suite/.
@@ -67,9 +71,6 @@ plt.rcParams.update(
     }
 )
 
-# ==============================================================================
-# 1. Figure & Table: WikiText-2 Pareto Frontier (72 Compressors)
-# ==============================================================================
 wikitext_json = Path("results/v13_deep_empirical_suite/wikitext2_sweep/wikitext2_pareto_results.json")
 if wikitext_json.exists():
     with open(wikitext_json, "r") as f:
@@ -92,7 +93,6 @@ if wikitext_json.exists():
             except (ValueError, TypeError):
                 continue
 
-    # Plot Pareto Frontier
     fig, ax = plt.subplots(figsize=(7.0, 4.8))
     x_reduc = [r["param_reduction_pct"] for r in succ]
     y_ppl = [min(r["perplexity"], 10000.0) for r in succ]
@@ -103,7 +103,6 @@ if wikitext_json.exists():
     ax.set_ylabel("WikiText-2 Perplexity (log scale, ↓)")
     ax.set_title("Pareto Frontier: Parameter Reduction vs Perplexity")
 
-    # Annotate notable points
     notable = [
         "baseline_gpt2",
         "aatc_xkv_compressor",
@@ -125,7 +124,6 @@ if wikitext_json.exists():
     save_fig_all(fig, "figure_pareto_wikitext2")
     plt.close(fig)
 
-    # Export LaTeX Booktabs Table
     top_10 = sorted(succ, key=lambda x: x["perplexity"])[:10]
     tex_pareto = """\\begin{table}[h]
 \\centering
@@ -146,15 +144,11 @@ if wikitext_json.exists():
 """
     save_tex_all(tex_pareto, "table_wikitext2_pareto")
 
-# ==============================================================================
-# 2. Figure & Table: 6-Pillar Accuracy-Recovery Ablation Suite
-# ==============================================================================
 ablation_json = Path("results/v13_deep_empirical_suite/ablation_6pillar/ablation_summary.json")
 if ablation_json.exists():
     with open(ablation_json, "r") as f:
         ablation_records = json.load(f)
 
-    # Create Grouped Bar Chart of Cosine Similarity across Regimes
     archs = ["Cosformer", "Chunk GLA", "GDN-2", "PGDN", "Mamba Block", "Cosformer + AASVD"]
     regime_labels = [
         "Regime 0: Zero-Shot",
@@ -190,7 +184,6 @@ if ablation_json.exists():
     save_fig_all(fig, "figure_recovery_ablation_6pillar")
     plt.close(fig)
 
-    # Export LaTeX Table for 6-Pillar Suite
     tex_ablation = """\\begin{table}[h]
 \\centering
 \\small
@@ -209,10 +202,6 @@ if ablation_json.exists():
 """
     save_tex_all(tex_ablation, "table_recovery_ablation_6pillar")
 
-# ==============================================================================
-# 3. Figure & Table: FLA Scaling Benchmark (Head-to-Head Latency & VRAM)
-# ==============================================================================
-# Empirical measurements from run_fla_head_to_head_benchmark.py on RTX 4070
 seq_lens = [512, 1024, 2048, 4096, 8192]
 scaling_data = {
     "PyTorch SDPA": {
@@ -273,7 +262,6 @@ plt.tight_layout()
 save_fig_all(fig, "figure_fla_scaling")
 plt.close(fig)
 
-# Export LaTeX Table for Scaling
 tex_scaling = """\\begin{table}[h]
 \\centering
 \\small

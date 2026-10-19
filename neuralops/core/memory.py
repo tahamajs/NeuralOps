@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 VRAM and Memory Allocation Profiler
 
 GPU memory tracking, peak allocation measurement, and activation footprint analysis utilities.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -21,10 +25,8 @@ def cleanup_gpu_memory(force: bool = True) -> None:
     Perform exhaustive GPU / MPS / CPU memory deallocation.
     Frees all cached blocks, calls cyclic garbage collector, and flushes allocators.
     """
-    # 1. Python garbage collection
     gc.collect()
 
-    # 2. CUDA Memory Cleanup
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
         if hasattr(torch.cuda, "ipc_collect"):
@@ -32,7 +34,6 @@ def cleanup_gpu_memory(force: bool = True) -> None:
         if force and hasattr(torch.cuda, "reset_peak_memory_stats"):
             torch.cuda.reset_peak_memory_stats()
 
-    # 3. Apple Silicon (MPS) Memory Cleanup
     if hasattr(torch, "mps") and hasattr(torch.mps, "empty_cache"):
         try:
             torch.mps.empty_cache()

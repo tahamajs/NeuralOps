@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Academic LaTeX and Pareto Exporter
 
 Automated LaTeX table generation and Pareto frontier export tools for research papers.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -48,7 +52,6 @@ def compute_pareto_frontier(
     if n == 1:
         return [True]
 
-    # Find keys present across records
     active_min = [k for k in minimize_keys if any(k in r for r in records)]
     active_max = [k for k in maximize_keys if any(k in r for r in records)]
 
@@ -64,11 +67,9 @@ def compute_pareto_frontier(
                 continue
             r_j = records[j]
 
-            # Check if j dominates i
             j_as_good = True
             j_strictly_better = False
 
-            # Minimize objectives
             for k in active_min:
                 val_i = float(r_i.get(k, float("inf")))
                 val_j = float(r_j.get(k, float("inf")))
@@ -81,7 +82,6 @@ def compute_pareto_frontier(
             if not j_as_good:
                 continue
 
-            # Maximize objectives
             for k in active_max:
                 val_i = float(r_i.get(k, float("-inf")))
                 val_j = float(r_j.get(k, float("-inf")))
@@ -155,7 +155,6 @@ def export_benchmark_table(
     if not records:
         return ""
 
-    # 1. Determine columns
     if columns is None:
         preferred = [
             "module",
@@ -173,10 +172,8 @@ def export_benchmark_table(
         if not columns:
             columns = list(records[0].keys())
 
-    # 2. Compute Pareto mask
     pareto_mask = compute_pareto_frontier(records) if mark_pareto else [False] * len(records)
 
-    # 3. Find best and second-best values per numeric column
     best_vals: Dict[str, float] = {}
     second_vals: Dict[str, float] = {}
 
@@ -197,7 +194,6 @@ def export_benchmark_table(
                 best_vals[col] = unique_vals[-1]
                 second_vals[col] = unique_vals[-2] if len(unique_vals) > 1 else unique_vals[-1]
 
-    # 4. Generate Output by Format
     fmt = format.lower()
     if fmt == "csv":
         import io
@@ -243,7 +239,7 @@ def export_benchmark_table(
 
         return "\n".join(lines)
 
-    else:  # LaTeX mode
+    else:
         col_align = []
         for c in columns:
             col_align.append("l" if any(k in c.lower() for k in ("name", "module", "regime")) else "r")
@@ -258,7 +254,6 @@ def export_benchmark_table(
             r"\toprule",
         ]
 
-        # Headers
         headers = []
         for c in columns:
             esc = _escape_latex(c.replace("_", " ").title())
@@ -271,7 +266,6 @@ def export_benchmark_table(
         lines.append(" & ".join(headers) + r" \\")
         lines.append(r"\midrule")
 
-        # Rows
         for i, r in enumerate(records):
             row_items = []
             for j, c in enumerate(columns):

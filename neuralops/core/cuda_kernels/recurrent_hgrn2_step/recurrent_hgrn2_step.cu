@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -7,12 +14,6 @@
 namespace neuralops {
 namespace cuda {
 
-// Recurrent HGRN2 step: h_t = alpha_t * h_{prev} + (1 - alpha_t) * x_t, y_t = h_t * g_t
-//
-// Hardware-level optimization:
-// 1. 128-bit float4 vectorized memory loads & stores for alpha, x, h, g, and out.
-// 2. Strict FP32 intermediate accumulation: fmaf(a_val, h_val - x_val, x_val).
-// 3. Vectorized memory layout and in-place state update.
 template <typename scalar_t>
 __global__ void __launch_bounds__(256) recurrent_hgrn2_step_vectorized_kernel(
     scalar_t* __restrict__ out,
@@ -63,7 +64,6 @@ __global__ void __launch_bounds__(256) recurrent_hgrn2_step_vectorized_kernel(
         }
     }
 
-    // Remainder loop
     const int rem_start = num_vec * 4;
     for (int idx = rem_start + tid; idx < total_elements; idx += stride) {
         const float a_val = to_float(alpha_t[idx]);
@@ -77,8 +77,8 @@ __global__ void __launch_bounds__(256) recurrent_hgrn2_step_vectorized_kernel(
     }
 }
 
-} // namespace cuda
-} // namespace neuralops
+}
+}
 
 std::vector<torch::Tensor> recurrent_hgrn2_step_fwd(
     const torch::Tensor& x_t,

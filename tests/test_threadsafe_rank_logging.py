@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Unit tests for thread-safe QueueHandler logging and isolated rank-specific log files.
 """
@@ -41,7 +47,6 @@ class TestThreadSafeRankLogging(unittest.TestCase):
         logger = setup_logging(config)
         logger.info("Message from Rank 3")
 
-        # Flush queue
         shutdown_logging()
 
         expected_log = os.path.join(self.temp_dir, "rank_3.log")
@@ -81,7 +86,6 @@ class TestThreadSafeRankLogging(unittest.TestCase):
         with open(expected_log, "r") as f:
             lines = [json.loads(line) for line in f if line.strip()]
         
-        # 8 workers * 25 messages = 200 messages + 1 init message = 201 messages
         worker_messages = [item for item in lines if "Worker" in item.get("message", "")]
         self.assertEqual(len(worker_messages), 200)
 

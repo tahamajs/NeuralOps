@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Hardening test suite for aegis_hybrid.py (AegisHybridAttention)."""
 from .testing_utils import MockConfig, DummyDistilBertAttention
 import pytest
@@ -48,18 +54,15 @@ class DummyEmptyAttn(nn.Module):
         super().__init__()
         self.foo = nn.Linear(64, 64)
 
-# --- Registry ---
 def test_registry():
     assert ATTENTION_REGISTRY.get("aegis_hybrid") is not None
 
-# --- config=None ---
 def test_config_none():
     attn = AegisHybridAttention(config=None, hidden_size=64, num_heads=4)
     out, _ = attn(torch.randn(1, 8, 64))
     assert out.shape == (1, 8, 64)
     assert torch.isfinite(out).all()
 
-# --- Nested _rotate_half: odd head_dim doesn't crash ---
 def test_rope_odd_head_dim():
     attn = AegisHybridAttention(config=MockConfig(hidden_size=68, num_attention_heads=4, head_dim=17))
     cos = torch.randn(1, 4, 17)
@@ -76,7 +79,6 @@ def test_rope_even_head_dim():
     assert out.shape == (1, 8, 64)
     assert torch.isfinite(out).all()
 
-# --- Weight copy ---
 def test_distilbert_copy():
     attn = AegisHybridAttention(config=MockConfig(), pretrained_attn=DummyDistilBertAttn(64))
     out, _ = attn(torch.randn(1, 8, 64))
@@ -99,11 +101,9 @@ def test_qwen_gqa():
     cfg = MockConfig(hidden_size=64, num_attention_heads=4, num_key_value_heads=2,
                      head_dim=16, is_decoder=True, model_type="qwen2")
     attn = AegisHybridAttention(config=cfg, pretrained_attn=DummyQwenAttn(64, 2, 16))
-    # kv_repeat may be named differently in hybrid — just verify output shape
     out, _ = attn(torch.randn(1, 8, 64))
     assert out.shape == (1, 8, 64)
 
-# --- Fail-loud ---
 def test_fail_loud():
     attn = AegisHybridAttention(config=MockConfig())
     with pytest.raises(RuntimeError, match="mandatory projections"):
@@ -116,7 +116,6 @@ def test_inject_none_on_failure():
             self.attention = DummyEmptyAttn()
     assert inject_aegis_hybrid(layer=DummyLayer(), model_config=MockConfig()) is None
 
-# --- Decoder ---
 def test_decoder():
     cfg = MockConfig(is_decoder=True, model_type="gpt2")
     attn = AegisHybridAttention(config=cfg)
@@ -124,7 +123,6 @@ def test_decoder():
     assert out.shape == (1, 8, 64)
     assert torch.isfinite(out).all()
 
-# --- inject ---
 def test_inject_distilbert():
     class DummyLayer(nn.Module):
         def __init__(self):
@@ -140,7 +138,6 @@ def test_inject_distilbert():
 def test_inject_none():
     assert inject_aegis_hybrid(layer=None, model=None) is None
 
-# --- Stability ---
 def test_forward_stable():
     attn = AegisHybridAttention(config=MockConfig())
     out, _ = attn(torch.randn(2, 12, 64))

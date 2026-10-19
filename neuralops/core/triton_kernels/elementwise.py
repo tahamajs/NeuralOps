@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Fused Elementwise Kernels
 
 High-throughput elementwise kernels for SwiGLU, Fast GELU, and RMSNorm with transparent fallback dispatch.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -18,14 +22,10 @@ __all__ = [
     "fused_swiglu",
     "fast_gelu",
     "fused_rmsnorm",
-    # backward-compat aliases
     "fused_fast_gelu",
 ]
 
 
-# ═══════════════════════════════════════════════════════════════════
-#  Shared helpers
-# ═══════════════════════════════════════════════════════════════════
 
 _FLOAT_DTYPES = (torch.float16, torch.bfloat16, torch.float32)
 
@@ -45,7 +45,6 @@ def _cuda_ok(*tensors: torch.Tensor) -> bool:
         profile = get_device_hardware_profile(tensors[0].device)
         if not profile.supports_triton_jit:
             return False
-        # If any tensor is bf16, verify hardware supports bf16
         if any(t.dtype == torch.bfloat16 for t in tensors) and not profile.supports_bf16:
             return False
     except Exception:
@@ -54,9 +53,6 @@ def _cuda_ok(*tensors: torch.Tensor) -> bool:
 
 
 
-# ═══════════════════════════════════════════════════════════════════
-#  SwiGLU
-# ═══════════════════════════════════════════════════════════════════
 
 if HAS_TRITON and tl is not None:
 
@@ -73,7 +69,6 @@ if HAS_TRITON and tl is not None:
         x = tl.load(X + offs, mask=mask, other=0.0)
         g = tl.load(GATE + offs, mask=mask, other=0.0)
 
-        # Numerically stable SiLU: g * sigmoid(g) = g / (1.0 + exp(-g))
         g_f = g.to(tl.float32)
         silu = g_f / (1.0 + tl.exp(-g_f))
         out = (silu * x.to(tl.float32)).to(OUT.dtype.element_ty)
@@ -105,9 +100,6 @@ def fused_swiglu(x: torch.Tensor, gate: torch.Tensor) -> torch.Tensor:
     return F.silu(gate) * x
 
 
-# ═══════════════════════════════════════════════════════════════════
-#  Fast GELU
-# ═══════════════════════════════════════════════════════════════════
 
 def fast_gelu(x: torch.Tensor) -> torch.Tensor:
     """Tanh-approximated GELU.
@@ -119,9 +111,6 @@ def fast_gelu(x: torch.Tensor) -> torch.Tensor:
     return F.gelu(x, approximate="tanh")
 
 
-# ═══════════════════════════════════════════════════════════════════
-#  RMSNorm
-# ═══════════════════════════════════════════════════════════════════
 
 if HAS_TRITON and tl is not None:
 
@@ -139,7 +128,6 @@ if HAS_TRITON and tl is not None:
 
         x = tl.load(X + row * N + cols, mask=mask, other=0.0)
 
-        # Single-pass reduction: sum of squares.
         sq_sum = tl.sum(x * x, axis=0)
         inv_rms = 1.0 / tl.sqrt(sq_sum / N + eps)
 
@@ -180,12 +168,12 @@ def fused_rmsnorm(
     can_use_triton = (
         _cuda_ok(x2d)
         and (weight is None or _cuda_ok(weight))
-        and N <= _RMSNORM_BLOCK * 8   # avoid silly tile sizes
+        and N <= _RMSNORM_BLOCK * 8
     )
 
     if can_use_triton:
         x_c = x2d.contiguous()
-        w_c = weight.contiguous() if has_weight else x_c  # unused when HAS_WEIGHT=False
+        w_c = weight.contiguous() if has_weight else x_c
         out = torch.empty_like(x_c)
 
         BLOCK_N = triton.next_power_of_2(N)
@@ -198,7 +186,6 @@ def fused_rmsnorm(
         )
         return out.reshape(orig_shape)
 
-    # PyTorch fallback.
     variance = x2d.pow(2).mean(-1, keepdim=True)
     y = x2d * torch.rsqrt(variance + eps)
     if has_weight:
@@ -206,9 +193,6 @@ def fused_rmsnorm(
     return y.reshape(orig_shape)
 
 
-# ═══════════════════════════════════════════════════════════════════
-#  SpectraFormer: Fused Complex Spectral Gate & RMS Variance Match
-# ═══════════════════════════════════════════════════════════════════
 
 if HAS_TRITON:
     @triton.jit
@@ -228,11 +212,9 @@ if HAS_TRITON:
         w_im = tl.load(W_im_ptr + offs, mask=mask, other=0.0).to(tl.float32)
         tau = tl.load(Tau_ptr + offs, mask=mask, other=0.0).to(tl.float32)
 
-        # Complex multiplication: (x_re + i x_im) * (w_re + i w_im)
         y_hat_re = x_re * w_re - x_im * w_im
         y_hat_im = x_re * w_im + x_im * w_re
 
-        # Magnitude and soft thresholding shrinkage
         mag = tl.sqrt(y_hat_re * y_hat_re + y_hat_im * y_hat_im + 1e-8)
         sig_tau = 1.0 / (1.0 + tl.exp(-tau))
         diff = mag - sig_tau
@@ -272,7 +254,6 @@ def fused_spectral_gate_triton(
         )
         return torch.complex(y_re, y_im)
 
-    # PyTorch Fallback
     y_hat = x_complex * w_complex
     mag = torch.abs(y_hat).clamp_min(1e-8)
     sig_tau = torch.sigmoid(tau)
@@ -359,16 +340,12 @@ def fused_rms_variance_match_triton(
     return y * gain
 
 
-# ═══════════════════════════════════════════════════════════════════
-#  Fast Walsh-Hadamard Transform (FWHT) & Orthogonal Rotation
-# ═══════════════════════════════════════════════════════════════════
 
 def _pytorch_fwht_butterfly(x: torch.Tensor) -> torch.Tensor:
     """Vectorized in-place butterfly stages for Walsh-Hadamard Transform."""
     orig_shape = x.shape
     dim = orig_shape[-1]
     
-    # Must be power of 2
     if dim & (dim - 1) != 0:
         next_pow2 = 1 << (dim - 1).bit_length()
         x_pad = torch.nn.functional.pad(x, (0, next_pow2 - dim))
@@ -409,12 +386,8 @@ if HAS_TRITON and tl is not None:
         x_ptrs = X_ptr + pid_m * BLOCK_D + offs_d
         val = tl.load(x_ptrs).to(tl.float32)
 
-        # In-register butterfly stages for power-of-two BLOCK_D (e.g. 64, 128, 256)
-        # Butterfly step h = 1, 2, 4, 8, ...
-        # Implemented using parallel bit-parity signs and strided pairs
         norm = 1.0 / tl.sqrt(tl.cast(BLOCK_D, tl.float32))
         
-        # Sequentially unroll butterfly rounds
         h = 1
         while h < BLOCK_D:
             partner = offs_d ^ h
@@ -437,29 +410,23 @@ def fast_hadamard_transform(x: torch.Tensor, block_size: int = 128) -> torch.Ten
     orig_shape = x.shape
     d = orig_shape[-1]
     
-    # Ensure block_size is power of 2 and <= d
     b = min(block_size, 1 << (d.bit_length() - 1))
     if b < 2:
         return x
 
 
-    # Chunk along last dimension
     rem = d % b
     if rem == 0:
         x_blocks = x.view(-1, d // b, b)
         y_blocks = _pytorch_fwht_butterfly(x_blocks)
         return y_blocks.view(orig_shape)
     else:
-        # Pad last dimension to multiple of b
         pad_len = b - rem
         x_pad = torch.nn.functional.pad(x, (0, pad_len))
         y_pad = fast_hadamard_transform(x_pad, block_size=b)
         return y_pad[..., :d].contiguous()
 
 
-# ═══════════════════════════════════════════════════════════════════
-#  ALiBi Bias Fusion: Fused Relative Position Bias Kernel
-# ═══════════════════════════════════════════════════════════════════
 
 if HAS_TRITON:
     @triton.jit
@@ -570,9 +537,6 @@ def fused_alibi_bias_triton(
         return fused_alibi_bias_pytorch(slopes, N_q, N_k, past_len=past_len, is_causal=is_causal)
 
 
-# ═══════════════════════════════════════════════════════════════════
-#  DynamicConv1D Fusion: Fused Causal Depthwise Conv Kernel
-# ═══════════════════════════════════════════════════════════════════
 
 if HAS_TRITON:
     @triton.jit
@@ -651,12 +615,10 @@ if HAS_TRITON:
         offs_d = tl.arange(0, BLOCK_D)
         mask_d = offs_d < d
 
-        # Load dout for timestep pid_n
         dout_off = b * stride_dob + h * stride_doh + pid_n * stride_don + offs_d * stride_dod
         dout_val = tl.load(dout_ptr + dout_off, mask=mask_d, other=0.0).to(tl.float32)
 
         for k in range(0, K):
-            # dw[b, h, n, k] = sum_d(dout[b, h, n, d] * v[b, h, n + k, d])
             v_off = b * stride_vb + h * stride_vh + (pid_n + k) * stride_vt + offs_d * stride_vd
             v_val = tl.load(v_ptr + v_off, mask=mask_d, other=0.0).to(tl.float32)
             dw_val = tl.sum(dout_val * v_val)
@@ -667,7 +629,6 @@ if HAS_TRITON:
             dw_off = b * stride_dwb + h * stride_dwh + pid_n * stride_dwn + k * stride_dwk
             tl.store(dw_ptr + dw_off, dw_val.to(dw_ptr.dtype.element_ty))
 
-            # dv[b, h, n + k, d] += dout[b, h, n, d] * w[b, h, n, k]
             dv_off = b * stride_dvb + h * stride_dvh + (pid_n + k) * stride_dvt + offs_d * stride_dvd
             dv_val = dout_val * w_val
             tl.atomic_add(dv_ptr + dv_off, dv_val.to(dv_ptr.dtype.element_ty), mask=mask_d)
@@ -727,8 +688,7 @@ class _FusedDynamicConv1DTritonFn(torch.autograd.Function):
             except Exception:
                 pass
 
-        # Exact PyTorch fallback backward for SM < 70 (e.g. Pascal SM 6.1)
-        v_win = v_full.unfold(dimension=2, size=K, step=1)  # (B, H, N, d, K)
+        v_win = v_full.unfold(dimension=2, size=K, step=1)
         dw = torch.einsum("bhnd,bhndk->bhnk", dout_c, v_win)
         dv = torch.zeros_like(v_full)
         for k in range(K):
@@ -769,9 +729,6 @@ def fused_dynamic_conv1d_triton(
         return fused_dynamic_conv1d_pytorch(v_full, dyn_w)
 
 
-# ═══════════════════════════════════════════════════════════════════
-#  Adaptive Span Penalty Fusion: Fused Span Mask Kernel
-# ═══════════════════════════════════════════════════════════════════
 
 if HAS_TRITON:
     @triton.jit
@@ -906,10 +863,6 @@ def fused_adaptive_span_penalty_triton(
         return fused_adaptive_span_penalty_pytorch(spans, q_pos, k_pos, ramp_size, is_causal=is_causal)
 
 
-# ═══════════════════════════════════════════════════════════════════
-# ═══════════════════════════════════════════════════════════════════
-#  FAVOR+ Feature Map Fusion: Fused Random Projection & Normalizer
-# ═══════════════════════════════════════════════════════════════════
 
 def fused_favor_plus_feature_map_pytorch(
     x: torch.Tensor,
@@ -1047,13 +1000,13 @@ def fused_entropy_token_pruning_mask_pytorch(
     """Exact PyTorch fallback for entropy token pruning."""
     if scores.dim() == 2:
         probs = F.softmax(scores.float(), dim=-1)
-        entropy = -probs * torch.log(probs + 1e-8)  # (B, L)
+        entropy = -probs * torch.log(probs + 1e-8)
         B, L = entropy.shape
     elif scores.dim() >= 3:
         probs = F.softmax(scores.float(), dim=-1)
-        entropy = -torch.sum(probs * torch.log(probs + 1e-8), dim=-1)  # (B, H, L) or (B, L)
+        entropy = -torch.sum(probs * torch.log(probs + 1e-8), dim=-1)
         if entropy.dim() == 3:
-            entropy = entropy.mean(dim=1)  # (B, L)
+            entropy = entropy.mean(dim=1)
         B, L = entropy.shape
     else:
         raise ValueError(f"scores must be at least 2D, got shape {scores.shape}")
@@ -1061,7 +1014,6 @@ def fused_entropy_token_pruning_mask_pytorch(
     k = max(1, min(L, int(math.ceil(L * keep_ratio))))
     topk_vals, topk_indices = torch.topk(entropy, k=k, dim=-1)
     mask = torch.zeros(B, L, device=scores.device, dtype=torch.bool).scatter_(-1, topk_indices, True)
-    # Always preserve first token ([CLS]/BOS)
     mask[:, 0] = True
     return mask, entropy.to(scores.dtype)
 
@@ -1123,7 +1075,7 @@ def fused_aegis_multibranch_gate_norm_pytorch(
 ) -> torch.Tensor:
     """Exact PyTorch fallback for Aegis multi-branch RMSNorm + router combination."""
     M = len(branches)
-    weights = F.softmax(gate_logits.float() / max(tau, 1e-4), dim=-1)  # (B, L, M)
+    weights = F.softmax(gate_logits.float() / max(tau, 1e-4), dim=-1)
     out = torch.zeros_like(branches[0])
     for m in range(M):
         bm = branches[m].float()
@@ -1151,17 +1103,14 @@ if HAS_TRITON and tl is not None:
         offs_d = tl.arange(0, BLOCK_D)
         mask = offs_d < D
 
-        # Load weights
         w0 = tl.load(W_ptr + pid * stride_wn + 0 * stride_wm).to(tl.float32)
         w1 = tl.load(W_ptr + pid * stride_wn + 1 * stride_wm).to(tl.float32)
 
-        # Branch 0
         b0 = tl.load(B0_ptr + pid * stride_b0n + offs_d * stride_b0d, mask=mask, other=0.0).to(tl.float32)
         mean_sq0 = tl.sum(b0 * b0, axis=0) / tl.cast(D, tl.float32)
         inv_rms0 = tl.rsqrt(mean_sq0 + eps)
         normed_b0 = b0 * inv_rms0
 
-        # Branch 1
         b1 = tl.load(B1_ptr + pid * stride_b1n + offs_d * stride_b1d, mask=mask, other=0.0).to(tl.float32)
         mean_sq1 = tl.sum(b1 * b1, axis=0) / tl.cast(D, tl.float32)
         inv_rms1 = tl.rsqrt(mean_sq1 + eps)
@@ -1353,16 +1302,13 @@ if HAS_TRITON:
 
         x = tl.load(row_s + offs * stride_sn, mask=mask, other=-10000.0).to(tl.float32)
 
-        # 1. Row max
         m = tl.max(tl.where(mask, x, -10000.0), axis=0)
 
-        # 2. Bisection bounds: low = m - 2.0, high = m
         low = m - 2.0
         high = m
 
         for _ in range(N_ITER):
             mid = 0.5 * (low + high)
-            # p = clamp((x - mid) * 0.5, min=0.0) ** 2.0
             diff = (x - mid) * 0.5
             p = tl.where(diff > 0.0, diff * diff, 0.0)
             p = tl.where(mask, p, 0.0)
@@ -1427,9 +1373,6 @@ def fused_entmax_bisect_triton(
     return fused_entmax_bisect_pytorch(scores, alpha=alpha, valid_mask=valid_mask, dim=dim, n_iter=n_iter)
 
 
-# ═══════════════════════════════════════════════════════════════════
-#  Backward-compatibility aliases
-# ═══════════════════════════════════════════════════════════════════
 
 fused_fast_gelu = fast_gelu
 fast_gelu_triton = fast_gelu

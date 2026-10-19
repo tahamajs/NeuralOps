@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 TensorRT-LLM Integration Engine
 
 Builds TensorRT network definitions and plugin adapters for accelerated GPU serving.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -20,7 +24,6 @@ import torch.nn as nn
 
 logger = logging.getLogger("NeuralOps.TensorRTLLM")
 
-# Safe dynamic detection of NVIDIA TensorRT SDK
 try:
     import tensorrt as trt
     HAS_TRT = True
@@ -38,9 +41,6 @@ except (ImportError, Exception):
     HAS_TRT_LLM = False
 
 
-# =====================================================================
-# 1. TensorRT C++ / CUDA Plugin Specifications & Metadata Descriptors
-# =====================================================================
 
 class TRTPluginSpec:
     """Represents a compiled or dynamic TensorRT IPluginV2DynamicExt definition."""
@@ -101,9 +101,6 @@ class TRTPluginSpec:
         return creator.create_plugin(self.name, fc)
 
 
-# =====================================================================
-# 2. TensorRT-LLM Plugin Builder & Graph Exporter
-# =====================================================================
 
 class TensorRTLLMPluginBuilder:
     """
@@ -132,7 +129,6 @@ class TensorRTLLMPluginBuilder:
         self.max_input_len = max_input_len
         self.max_output_len = max_output_len
 
-        # Plugin definitions
         self.plugins: Dict[str, TRTPluginSpec] = {}
         self._register_default_plugin_specs()
 
@@ -191,10 +187,6 @@ class TensorRTLLMPluginBuilder:
         out_dir.mkdir(parents=True, exist_ok=True)
 
         header_content = """#pragma once
-#include <NvInfer.h>
-#include <cuda_runtime.h>
-#include <string>
-#include <vector>
 
 namespace neuralops {
 namespace trt {
@@ -255,9 +247,6 @@ private:
 """
 
         cu_content = """#include "svd_linear_attention_plugin.h"
-#include <cuda_fp16.h>
-#include <stdexcept>
-#include <cstring>
 
 namespace neuralops {
 namespace trt {
@@ -430,7 +419,6 @@ set_target_properties(neuralops_trt_plugins PROPERTIES
         if not HAS_TRT:
             raise RuntimeError("NVIDIA TensorRT is not installed in this environment.")
 
-        # 1. Register input tensor (input_ids: [batch_size, seq_len])
         input_ids = network.add_input(
             name="input_ids",
             dtype=trt.DataType.INT32,
@@ -439,27 +427,22 @@ set_target_properties(neuralops_trt_plugins PROPERTIES
 
         curr_tensor = input_ids
 
-        # 2. Iterate through model submodules and map to TensorRT layers
         if self.model is not None:
             for name, module in self.model.named_modules():
                 mod_name = module.__class__.__name__
 
-                # Low-Rank SVD Linear: Y = (X @ U) @ V + bias
                 if "SVDLinear" in mod_name or hasattr(module, "linear_u"):
                     u_weight = module.linear_u.weight.detach().cpu().numpy()
                     v_weight = module.linear_v.weight.detach().cpu().numpy()
 
-                    # TensorRT constant weights
                     u_const = network.add_constant(u_weight.shape, trt.Weights(u_weight)).get_output(0)
                     v_const = network.add_constant(v_weight.shape, trt.Weights(v_weight)).get_output(0)
 
-                    # Matrix multiplication 1: X @ U^T
                     mm1 = network.add_matrix_multiply(
                         curr_tensor, trt.MatrixOperation.NONE,
                         u_const, trt.MatrixOperation.TRANSPOSE,
                     ).get_output(0)
 
-                    # Matrix multiplication 2: (X @ U^T) @ V^T
                     mm2 = network.add_matrix_multiply(
                         mm1, trt.MatrixOperation.NONE,
                         v_const, trt.MatrixOperation.TRANSPOSE,
@@ -483,7 +466,6 @@ set_target_properties(neuralops_trt_plugins PROPERTIES
         out_file.parent.mkdir(parents=True, exist_ok=True)
 
         if not HAS_TRT:
-            # When TRT SDK is not installed on workstation, generate full architecture deployment manifest
             manifest = {
                 "format": "tensorrt_llm_engine_spec",
                 "model_architecture": self.model.__class__.__name__ if self.model else "NeuralOpsModel",
@@ -499,7 +481,6 @@ set_target_properties(neuralops_trt_plugins PROPERTIES
             with open(manifest_file, "w", encoding="utf-8") as f:
                 json.dump(manifest, f, indent=2)
 
-            # Generate C++ plugin compilation files alongside
             self.generate_cpp_plugin_source(out_file.parent / "csrc")
 
             with open(out_file, "wb") as f:
@@ -509,7 +490,6 @@ set_target_properties(neuralops_trt_plugins PROPERTIES
             logger.info("Generated TensorRT-LLM engine manifest and C++ plugins at %s", out_file)
             return out_file
 
-        # Full native TensorRT compilation pipeline
         TRT_LOGGER = trt.Logger(trt.Logger.INFO)
         builder = trt.Builder(TRT_LOGGER)
         network = builder.create_network(1 << int(trt.NetworkDefinitionCreationFlag.EXPLICIT_BATCH))
@@ -520,7 +500,6 @@ set_target_properties(neuralops_trt_plugins PROPERTIES
         elif self.precision == "bfloat16" and builder.platform_has_fast_bf16:
             config.set_flag(trt.BuilderFlag.BF16)
 
-        # Dynamic profile configuration
         profile = builder.create_optimization_profile()
         profile.set_shape("input_ids", (1, 1), (2, 128), (self.max_batch_size, self.max_input_len))
         config.add_optimization_profile(profile)
@@ -542,9 +521,6 @@ set_target_properties(neuralops_trt_plugins PROPERTIES
         return TensorRTRuntimeRunner(engine_path=engine_path)
 
 
-# =====================================================================
-# 3. High-Throughput TensorRT Runtime Runner
-# =====================================================================
 
 class TensorRTRuntimeRunner:
     """
@@ -577,11 +553,9 @@ class TensorRTRuntimeRunner:
     def forward(self, input_ids: torch.Tensor) -> torch.Tensor:
         """Executes forward inference through the TensorRT execution context."""
         if not HAS_TRT or self.context is None or self.is_manifest:
-            # Fallback exact deterministic emulation
             B, S = input_ids.shape
             return torch.randn(B, S, 100, dtype=torch.float32, device=input_ids.device)
 
-        # GPU tensor execution via buffer address bindings
         bindings = [input_ids.data_ptr()]
         out = torch.empty((input_ids.shape[0], input_ids.shape[1], 100), dtype=torch.float32, device=input_ids.device)
         bindings.append(out.data_ptr())

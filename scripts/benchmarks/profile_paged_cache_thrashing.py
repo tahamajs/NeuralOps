@@ -1,6 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Profile paged cache thrashing module.
-
-Author: Taha Majlesi
 """
 
 import sys
@@ -16,19 +20,12 @@ from neuralops.core.cuda_kernels.paged_kv_evict.paged_kv_evict_autograd import p
 device = torch.device("cuda:0")
 print(f"Device: {torch.cuda.get_device_name(0)}")
 
-# Benchmark parameters:
-# Cross-stream KV-cache page thrashing under extreme concurrency:
-# - 8 concurrent CUDA streams sharing a paged attention pool with 1,024 physical pages.
-# - block_size = 16 tokens -> Total physical pool capacity = 1,024 * 16 = 16,384 tokens.
-# - Attention head config: H = 16, D_HEAD = 64 (dim = 1024).
-# - 5,000 continuous steps simulating random continuous page allocation, hit reads, and evictions.
-# - Zero memory leak certified: drift = 0.0000 MB across checkpoints after warmup.
 
 num_steps = 5000
 num_streams = 8
 total_pages = 1024
 block_size = 16
-total_pool_tokens = total_pages * block_size  # 16,384 tokens
+total_pool_tokens = total_pages * block_size
 checkpoint_interval = 1000
 
 H = 16
@@ -39,7 +36,6 @@ print("\n=== STARTING CROSS-STREAM PAGED CACHE THRASHING PROFILING ===")
 print(f"Total Physical Pages: {total_pages} | Block Size: {block_size} | Pool Capacity: {total_pool_tokens:,} tokens")
 print(f"Streams: {num_streams} Concurrent Streams | Steps: {num_steps:,}")
 
-# Physical memory pool for shared paged attention (K and V caches)
 k_pool = torch.randn(total_pages, block_size, H, D_HEAD, device=device, dtype=torch.float16)
 v_pool = torch.randn(total_pages, block_size, H, D_HEAD, device=device, dtype=torch.float16)
 
@@ -59,7 +55,6 @@ tenant_active_pages = [total_pages // num_streams for _ in range(num_streams)]
 
 query_tokens = [torch.randn(1, 1, D, device=device, dtype=torch.float16) for _ in range(num_streams)]
 
-# Warmup 50 steps including page index gather and eviction
 for step in range(50):
     for s_idx in range(num_streams):
         with torch.cuda.stream(streams[s_idx]):
@@ -87,7 +82,6 @@ for s_idx in range(num_streams):
 torch.cuda.synchronize()
 torch.cuda.reset_peak_memory_stats()
 
-# Post-warmup baseline
 baseline_allocated_mb = torch.cuda.memory_allocated() / (1024**2)
 baseline_reserved_mb = torch.cuda.memory_reserved() / (1024**2)
 print(
@@ -175,7 +169,6 @@ for step in range(1, num_steps + 1):
             }
         )
 
-# Export to CSV
 csv_path = "/mnt/d/SVD_linear_Attention/docs/benchmarks/paper_benchmarks_paged_cache_thrashing.csv"
 os.makedirs(os.path.dirname(csv_path), exist_ok=True)
 fieldnames = [

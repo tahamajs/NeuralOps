@@ -1,5 +1,9 @@
-# -*- coding: utf-8 -*-
-# Author: Taha Majlesi
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Long-Context Scaling Benchmark (L in {512, 1024, 2048, 4096, 8192, 16384}).
 
 Compares Quadratic FlashAttention vs Linear Attention (GDN, GLA, Cosformer, SVD-Linear)
@@ -62,17 +66,14 @@ def resolve_attention_key(key: str) -> str:
     for alt in FALLBACK_MAP.get(key, []):
         if alt in ATTENTION_REGISTRY:
             return alt
-    # Default to first linear or first available
     return next(iter(ATTENTION_REGISTRY.keys()))
 
 
 def compute_attention_flops(B: int, T: int, D: int, is_linear: bool = False) -> float:
     """Theoretical forward FLOPs for attention block."""
     if is_linear:
-        # Q(K^T V): Q(B, H, T, d) * [K(B, H, T, d)^T * V(B, H, T, d)]: ~ 4 * B * T * D^2
         return 4.0 * B * T * (D**2)
     else:
-        # Standard QK^T: 2 * B * H * T^2 * d = 2 * B * T^2 * D; Softmax(A)*V: 2 * B * T^2 * D; Projections: 4 * B * T * D^2
         return 4.0 * B * (T**2) * D + 4.0 * B * T * (D**2)
 
 
@@ -91,7 +92,6 @@ def main():
     device = torch.device(args.device)
     runner = BenchmarkRunner(device=device, warmup_iters=args.warmup, benchmark_iters=args.iters)
 
-    # Sequence lengths sweep as mandated: 512, 1024, 2048, 4096, 8192, 16384
     seq_lens = [512, 1024, 2048, 4096, 8192, 16384]
     B = args.batch_size
     D = args.embed_dim
@@ -126,10 +126,9 @@ def main():
         for L in seq_lens:
             runner.reset_vram()
             total_flops = compute_attention_flops(B, L, D, is_linear=is_linear)
-            total_bytes = 2.0 * (B * L * D + B * L * D) * 2  # inputs + outputs FP16
+            total_bytes = 2.0 * (B * L * D + B * L * D) * 2
 
             try:
-                # Check VRAM capacity before allocating
                 if device.type == "cuda":
                     free_mem = torch.cuda.mem_get_info(device)[0] / (1024.0 * 1024.0)
                     est_req = (B * L * D * 2 * 6) / (1024.0 * 1024.0)

@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 CUDA Graph Decode Runner
 
 CUDA Graph capture and replay engine for ultra-low latency autoregressive sequence decoding.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -63,20 +67,16 @@ class CUDAGraphDecodeRunner:
 
         self.model.eval()
 
-        # 1. Allocate static input buffer
         self.static_input_ids = torch.zeros(
             (self.batch_size, 1), dtype=torch.long, device=self.device
         )
 
-        # 2. Setup static cache structure
         if sample_cache is not None:
             self.static_cache = sample_cache
         else:
-            # Build unified hybrid cache if model has num_hidden_layers
             num_layers = getattr(getattr(self.model, "config", None), "num_hidden_layers", 12)
             self.static_cache = UnifiedHybridCache(num_layers=num_layers)
 
-        # 3. Warmup on private CUDA stream
         stream = torch.cuda.Stream(device=self.device)
         stream.wait_stream(torch.cuda.current_stream(device=self.device))
 
@@ -94,7 +94,6 @@ class CUDAGraphDecodeRunner:
 
         torch.cuda.current_stream(device=self.device).wait_stream(stream)
 
-        # 4. Capture Graph
         self.graph = torch.cuda.CUDAGraph()
         with torch.cuda.graph(self.graph, stream=stream), torch.no_grad():
             out = self.model(
@@ -128,7 +127,6 @@ class CUDAGraphDecodeRunner:
             Logits tensor of shape [B, 1, V].
         """
         if not self.is_captured or self.graph is None or self.static_input_ids is None:
-            # Fallback to standard eager forward pass
             if isinstance(token_id, int):
                 tok_tensor = torch.tensor([[token_id]], device=self.device, dtype=torch.long)
             elif token_id.dim() == 1:
@@ -147,7 +145,6 @@ class CUDAGraphDecodeRunner:
                 return out[0]
             return out
 
-        # Copy token into static buffer
         if isinstance(token_id, int):
             self.static_input_ids.fill_(token_id)
         elif isinstance(token_id, torch.Tensor):
@@ -156,7 +153,6 @@ class CUDAGraphDecodeRunner:
             else:
                 self.static_input_ids.copy_(token_id.view(self.batch_size, 1))
 
-        # Replay graph
         self.graph.replay()
         return self.static_logits
 

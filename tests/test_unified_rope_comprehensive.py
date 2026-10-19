@@ -1,3 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 import types
 
 import pytest
@@ -84,14 +91,12 @@ def test_unified_rope_masks():
     B, L, D = 2, 12, 64
     x = torch.randn(B, L, D)
 
-    # 2D mask
     mask_2d = torch.ones(B, L)
     mask_2d[:, -3:] = 0
     out_2d, _ = attn(x, attention_mask=mask_2d)
     assert out_2d.shape == (B, L, D)
     assert not torch.isnan(out_2d).any()
 
-    # 4D mask
     mask_4d = torch.zeros(B, 1, L, L)
     mask_4d[:, :, :, -3:] = -10000.0
     out_4d, _ = attn(x, attention_mask=mask_4d)
@@ -104,7 +109,6 @@ def test_unified_rope_lora_and_gradients():
     attn = UnifiedRoPE(cfg, pretrained_attn=DummyAttn(64, 4), lora_rank=8)
     attn.train()
 
-    # Base frozen, lora trainable
     assert not attn.q_proj.weight.requires_grad
     assert attn.q_proj.lora_A.requires_grad
     assert attn.q_proj.lora_B.requires_grad
@@ -131,8 +135,7 @@ def test_unified_rope_inject():
     assert isinstance(injected, UnifiedRoPE)
     assert layer.attention is injected
 
-    # Test None old_attn graceful handling
     res = inject_unified_rope(layer, model_config=cfg, old_attn=None)
-    assert isinstance(res, UnifiedRoPE)  # finds layer.attention
+    assert isinstance(res, UnifiedRoPE)
     empty_layer = nn.Module()
     assert inject_unified_rope(empty_layer, model_config=cfg, old_attn=None) is None

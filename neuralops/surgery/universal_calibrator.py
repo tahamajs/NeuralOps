@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Universal Activation Calibrator
 
 Streaming activation calibrator computing Gram and Hessian statistics across compression engines.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -36,7 +40,6 @@ class UniversalActivationCalibrator:
         self.exclude_keywords = exclude_keywords
         self.damping = damping
 
-        # Storage for streaming statistics
         self.hessian_dict: Dict[str, torch.Tensor] = {}
         self.channel_scale_dict: Dict[str, torch.Tensor] = {}
         self.sample_count_dict: Dict[str, int] = {}
@@ -67,11 +70,9 @@ class UniversalActivationCalibrator:
                     if not isinstance(x, torch.Tensor):
                         return
 
-                    # x shape: (B, T, D) or (B, D)
                     x_mat = x.detach().reshape(-1, x.shape[-1]).float()
                     num_samples = x_mat.shape[0]
 
-                    # 1. Update streaming Gram matrix H = X^T X
                     gram = torch.matmul(x_mat.t(), x_mat)
                     if mod_name not in self.hessian_dict:
                         self.hessian_dict[mod_name] = gram
@@ -80,7 +81,6 @@ class UniversalActivationCalibrator:
                         self.hessian_dict[mod_name] += gram
                         self.sample_count_dict[mod_name] += num_samples
 
-                    # 2. Update streaming channel norm scales (for Wanda / AWQ)
                     channel_rms = torch.sqrt((x_mat ** 2).mean(dim=0) + 1e-6)
                     if mod_name not in self.channel_scale_dict:
                         self.channel_scale_dict[mod_name] = channel_rms
@@ -150,7 +150,6 @@ class UniversalActivationCalibrator:
         if was_training:
             self.model.train()
 
-        # Normalize Gram matrices by sample count and add damping
         results: Dict[str, Dict[str, torch.Tensor]] = {}
         for name, gram in self.hessian_dict.items():
             n = max(1, self.sample_count_dict.get(name, 1))
@@ -217,10 +216,8 @@ def transplant_and_compress(
     """
     from neuralops.api import replace_attention
 
-    # 1. Transplant attention
     model = replace_attention(model, attention=attention_type, **kwargs)
 
-    # 2. Compress projections
     model = compress_model_universal(
         model=model,
         method=compression_method,

@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Eval speculative decoding module.
-
-Author: Taha Majlesi
 """
 
-# Author: Taha Majlesi
 import json
 import time
 
@@ -28,7 +30,6 @@ model_path = "/mnt/d/models/gpt2"
 tokenizer = AutoTokenizer.from_pretrained(model_path)
 tokenizer.pad_token = tokenizer.eos_token
 
-# Prompts spanning mathematical reasoning, deductive logic, and natural text
 prompts = [
     "Problem: In a sequence of reasoning steps, let x_0 = 3. At each step t >= 1, x_t = 2 * x_{t-1} + 1. Compute x_1, x_2, x_3, and explain: ",
     "The primary advantages of speculative decoding in large language models are ",
@@ -36,7 +37,6 @@ prompts = [
     "Deep neural networks achieve efficient inference through model compression, singular value decomposition, and ",
 ]
 
-# Baseline Target Model (Full 12-layer MHA GPT-2)
 print_log("Loading full Target Model (GPT-2 Baseline MHA)...")
 target_model = GPT2LMHeadModel.from_pretrained(model_path).to(device).eval()
 
@@ -89,7 +89,6 @@ def benchmark_standard_autoregressive(target_mod, input_ids, max_new_tokens=40):
 
 results_list = []
 
-# Benchmark K sweep: K in [1, 2, 3, 4, 5]
 k_values = [1, 2, 3, 4, 5]
 
 print_log("=== Running Draft-and-Verify Speculative Decoding Benchmarks ===")
@@ -98,12 +97,10 @@ for p_idx, prompt in enumerate(prompts):
     input_ids = tokenizer(prompt, return_tensors="pt").input_ids.to(device)
     print_log(f"\n--- Prompt {p_idx + 1}: '{prompt[:45]}...' (len={input_ids.shape[1]}) ---")
 
-    # 1. Baseline Target standard generation
     std_tokens, std_time, std_tok_s = benchmark_standard_autoregressive(target_model, input_ids, max_new_tokens=40)
     print_log(f"Baseline Autoregressive Target: {std_tok_s:.2f} tok/s ({std_time:.4f}s)")
 
     for k_val in k_values:
-        # 2. Speculative Decoding with Compact 4-layer SVD Linear Draft
         decoder_compact = SelfSpeculativeDecoder(
             target_model=target_model, draft_model=draft_compact_svd, max_draft_k=k_val, adaptive_k=False
         )
@@ -111,10 +108,8 @@ for p_idx, prompt in enumerate(prompts):
         spec_tokens_c, stats_c = decoder_compact.generate(input_ids, max_new_tokens=40, temperature=0.0)
         torch.cuda.synchronize()
 
-        # Verify exact token match with target greedy output
         exact_match_c = torch.equal(spec_tokens_c, std_tokens)
 
-        # 3. Speculative Decoding with Full 12-layer SVD Linear Draft
         decoder_full = SelfSpeculativeDecoder(
             target_model=target_model, draft_model=draft_full_svd, max_draft_k=k_val, adaptive_k=False
         )

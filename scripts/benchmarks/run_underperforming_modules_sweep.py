@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Targeted Re-training & Debugging Sweep for Underperforming Modules on tahoora (GTX 1060).
 Executes full fine-tuning (e.g. 3 epochs, batch_size=4, seq_len=64, 500 samples)
@@ -14,9 +20,7 @@ from pathlib import Path
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
 
-# List of modules that had low accuracy (<= 0.45) or high loss (> 2.0) during single-epoch/tiny-sample sweep
 UNDERPERFORMING_MODULES = [
-    # Top critical low-accuracy modules
     "kda_attention",
     "block_transformer_hiba",
     "aegis_hybrid",

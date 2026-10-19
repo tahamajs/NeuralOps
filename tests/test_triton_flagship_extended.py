@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Comprehensive Unit Tests & Benchmarks for Extended Triton JIT Flagship Hardware Kernels (v1.4.0).
 Hardware Target: SM 8.9 (NVIDIA Ada Lovelace RTX 4070 Laptop GPU, 8GB VRAM).
@@ -52,9 +58,6 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 DTYPE = torch.float16 if torch.cuda.is_available() else torch.float32
 
 
-# ---------------------------------------------------------------------------
-# 1. Differential Attention Tests
-# ---------------------------------------------------------------------------
 def test_differential_attention_forward_and_backward():
     if not torch.cuda.is_available():
         pytest.skip("CUDA device required")
@@ -69,17 +72,14 @@ def test_differential_attention_forward_and_backward():
     k2 = torch.randn(B, H, L, D, device=DEVICE, dtype=DTYPE, requires_grad=True)
     v  = torch.randn(B, H, L, D, device=DEVICE, dtype=DTYPE, requires_grad=True)
 
-    # Forward
     out_triton = triton_differential_attention(q1, k1, q2, k2, v, lambda_val=lambda_val)
     out_ref = triton_differential_attention_pytorch_ref(q1, k1, q2, k2, v, lambda_val=lambda_val)
 
-    # Parity & Safety
     assert torch.isfinite(out_triton).all(), "Triton diff attn forward has NaNs/Infs"
     assert torch.isfinite(out_ref).all(), "PyTorch diff attn forward has NaNs/Infs"
     cos_sim = F.cosine_similarity(out_triton.flatten().float(), out_ref.flatten().float(), dim=0).item()
     assert cos_sim >= 0.999, f"Diff attn cosine similarity {cos_sim} < 0.999"
 
-    # Backward
     loss = out_triton.sum()
     loss.backward()
 
@@ -90,9 +90,6 @@ def test_differential_attention_forward_and_backward():
     assert v.grad is not None and torch.isfinite(v.grad).all()
 
 
-# ---------------------------------------------------------------------------
-# 2. Hydra Attention Tests
-# ---------------------------------------------------------------------------
 def test_hydra_attention_forward_and_backward():
     if not torch.cuda.is_available():
         pytest.skip("CUDA device required")
@@ -104,16 +101,13 @@ def test_hydra_attention_forward_and_backward():
     k = torch.randn(B, H, L, D, device=DEVICE, dtype=DTYPE, requires_grad=True)
     v = torch.randn(B, H, L, D, device=DEVICE, dtype=DTYPE, requires_grad=True)
 
-    # Forward
     out_triton = triton_hydra_attention(q, k, v)
     out_ref = triton_hydra_attention_pytorch_ref(q, k, v)
 
-    # Parity & Safety
     assert torch.isfinite(out_triton).all(), "Triton hydra attention forward has NaNs/Infs"
     cos_sim = F.cosine_similarity(out_triton.flatten().float(), out_ref.flatten().float(), dim=0).item()
     assert cos_sim >= 0.9999, f"Hydra attention cosine similarity {cos_sim} < 0.9999"
 
-    # Backward
     loss = out_triton.sum()
     loss.backward()
 
@@ -122,9 +116,6 @@ def test_hydra_attention_forward_and_backward():
     assert v.grad is not None and torch.isfinite(v.grad).all()
 
 
-# ---------------------------------------------------------------------------
-# 3. RetNet Retention Tests
-# ---------------------------------------------------------------------------
 def test_retnet_retention_forward_and_backward():
     if not torch.cuda.is_available():
         pytest.skip("CUDA device required")
@@ -137,7 +128,6 @@ def test_retnet_retention_forward_and_backward():
     k = torch.randn(B, H, L, D, device=DEVICE, dtype=torch.float32, requires_grad=True)
     v = torch.randn(B, H, L, D, device=DEVICE, dtype=torch.float32, requires_grad=True)
 
-    # Forward
     out_triton = triton_multi_scale_retention(q, k, v, gammas)
     out_ref = triton_multi_scale_retention_pytorch_ref(q, k, v, gammas)
 
@@ -145,7 +135,6 @@ def test_retnet_retention_forward_and_backward():
     cos_sim = F.cosine_similarity(out_triton.flatten(), out_ref.flatten(), dim=0).item()
     assert cos_sim >= 0.9999, f"RetNet cosine similarity {cos_sim} < 0.9999"
 
-    # Backward
     loss = out_triton.sum()
     loss.backward()
 
@@ -154,9 +143,6 @@ def test_retnet_retention_forward_and_backward():
     assert v.grad is not None and torch.isfinite(v.grad).all()
 
 
-# ---------------------------------------------------------------------------
-# 4. Dynamic Sparse Attention Tests
-# ---------------------------------------------------------------------------
 def test_dynamic_sparse_attention_forward_and_backward():
     if not torch.cuda.is_available():
         pytest.skip("CUDA device required")
@@ -171,7 +157,6 @@ def test_dynamic_sparse_attention_forward_and_backward():
     k = torch.randn(B, H, L, D, device=DEVICE, dtype=torch.float32, requires_grad=True)
     v = torch.randn(B, H, L, D, device=DEVICE, dtype=torch.float32, requires_grad=True)
 
-    # Forward
     out_triton = triton_dynamic_sparse_attention(q, k, v, active_blocks, block_size=block_size)
     out_ref = triton_dynamic_sparse_attention_pytorch_ref(q, k, v, active_blocks, block_size=block_size)
 
@@ -179,7 +164,6 @@ def test_dynamic_sparse_attention_forward_and_backward():
     cos_sim = F.cosine_similarity(out_triton.flatten(), out_ref.flatten(), dim=0).item()
     assert cos_sim >= 0.9999, f"DSA cosine similarity {cos_sim} < 0.9999"
 
-    # Backward
     loss = out_triton.sum()
     loss.backward()
 
@@ -188,9 +172,6 @@ def test_dynamic_sparse_attention_forward_and_backward():
     assert v.grad is not None and torch.isfinite(v.grad).all()
 
 
-# ---------------------------------------------------------------------------
-# 5. CUR Linear Decomposition Tests
-# ---------------------------------------------------------------------------
 def test_cur_linear_forward_and_backward():
     if not torch.cuda.is_available():
         pytest.skip("CUDA device required")
@@ -204,7 +185,6 @@ def test_cur_linear_forward_and_backward():
     C = torch.randn(N, r, device=DEVICE, dtype=DTYPE, requires_grad=True)
     bias = torch.randn(N, device=DEVICE, dtype=DTYPE, requires_grad=True)
 
-    # Forward
     out_triton = triton_cur_linear(x, R, U, C, bias=bias)
     out_ref = triton_cur_linear_pytorch_ref(x, R, U, C, bias=bias)
 
@@ -212,7 +192,6 @@ def test_cur_linear_forward_and_backward():
     cos_sim = F.cosine_similarity(out_triton.flatten().float(), out_ref.flatten().float(), dim=0).item()
     assert cos_sim >= 0.999, f"CUR cosine similarity {cos_sim} < 0.999"
 
-    # Backward
     loss = out_triton.sum()
     loss.backward()
 
@@ -223,27 +202,21 @@ def test_cur_linear_forward_and_backward():
     assert bias.grad is not None and torch.isfinite(bias.grad).all()
 
 
-# ---------------------------------------------------------------------------
-# Benchmark Suite
-# ---------------------------------------------------------------------------
 def benchmark_kernel(name, triton_fn, ref_fn, args, kwargs=None, reps=50):
     if kwargs is None:
         kwargs = {}
 
-    # Warmup
     for _ in range(5):
         t_out = triton_fn(*args, **kwargs)
         r_out = ref_fn(*args, **kwargs)
     torch.cuda.synchronize()
 
-    # Time Triton
     t0 = time.perf_counter()
     for _ in range(reps):
         t_out = triton_fn(*args, **kwargs)
     torch.cuda.synchronize()
     t_triton = (time.perf_counter() - t0) / reps * 1000.0
 
-    # Time Reference
     t0 = time.perf_counter()
     reps_ref = min(reps, 20)
     for _ in range(reps_ref):
@@ -277,7 +250,6 @@ def run_all_benchmarks():
 
     bench_results = []
 
-    # 1. Differential Attention
     B, H, L, D = 4, 8, 512, 64
     q1 = torch.randn(B, H, L, D, device=DEVICE, dtype=DTYPE)
     k1 = torch.randn(B, H, L, D, device=DEVICE, dtype=DTYPE)
@@ -292,7 +264,6 @@ def run_all_benchmarks():
         {"lambda_val": 0.8},
     ))
 
-    # 2. Hydra Attention
     B, H, L, D = 4, 8, 1024, 64
     q = torch.randn(B, H, L, D, device=DEVICE, dtype=DTYPE)
     k = torch.randn(B, H, L, D, device=DEVICE, dtype=DTYPE)
@@ -304,7 +275,6 @@ def run_all_benchmarks():
         (q, k, v),
     ))
 
-    # 3. RetNet Multi-Scale Retention
     B, H, L, D = 2, 4, 128, 64
     gammas = (1.0 - 2.0 ** (-5.0 - torch.arange(H, device=DEVICE).float())).contiguous()
     q = torch.randn(B, H, L, D, device=DEVICE, dtype=torch.float32)
@@ -317,7 +287,6 @@ def run_all_benchmarks():
         (q, k, v, gammas),
     ))
 
-    # 4. Dynamic Sparse Attention
     B, H, L, D = 2, 4, 256, 64
     block_size = 32
     num_blocks = L // block_size
@@ -333,7 +302,6 @@ def run_all_benchmarks():
         {"block_size": block_size},
     ))
 
-    # 5. CUR Linear Decomposition
     M, K, r, N = 1024, 2048, 64, 2048
     x = torch.randn(M, K, device=DEVICE, dtype=DTYPE)
     R = torch.randn(r, K, device=DEVICE, dtype=DTYPE)

@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Comprehensive test suite verifying framework completeness across:
 1. Unified step-by-step autoregressive generation on BaseAttention.
@@ -50,7 +56,6 @@ class DummyLinearAttention(BaseAttention):
         k = self.k(hidden_states)
         v = self.v(hidden_states)
 
-        # O(1) recurrent step when T=1
         if past_key_values is not None:
             new_state = past_key_values + torch.einsum("btd,bte->bde", k, v)
             out = torch.einsum("btd,bde->bte", q, new_state)
@@ -85,24 +90,20 @@ def test_unified_hybrid_cache_multi_family():
     """Verify UnifiedHybridCache manages dense KV layers and recurrent states simultaneously."""
     cache = UnifiedHybridCache(num_layers=3)
     
-    # Layer 0: Full attention (K, V)
     k0 = torch.randn(2, 4, 16, 32)
     v0 = torch.randn(2, 4, 16, 32)
     state0 = cache.update_layer(0, (k0, v0), layer_type="full")
     assert state0[0].shape == (2, 4, 16, 32)
 
-    # Decode step 1 for Layer 0
     k0_next = torch.randn(2, 4, 1, 32)
     v0_next = torch.randn(2, 4, 1, 32)
     state0_next = cache.update_layer(0, (k0_next, v0_next), layer_type="full")
     assert state0_next[0].shape == (2, 4, 17, 32)
 
-    # Layer 1: Recurrent attention O(1) state
     recurrent_state = torch.randn(2, 4, 32, 32)
     state1 = cache.update_layer(1, recurrent_state, layer_type="linear")
     assert state1.shape == (2, 4, 32, 32)
 
-    # Layer 2: Sliding window
     kw = torch.randn(2, 4, 20, 32)
     vw = torch.randn(2, 4, 20, 32)
     state2 = cache.update_layer(2, (kw, vw), layer_type="window", window_size=8)

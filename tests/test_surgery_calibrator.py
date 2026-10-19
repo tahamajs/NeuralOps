@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Unit tests for Phase 6 Universal Streaming Activation Calibrator."""
 
 import torch
@@ -25,7 +31,6 @@ def test_streaming_activation_calibrator():
     model = MockMLP(d=32)
     calibrator = UniversalActivationCalibrator(model)
 
-    # Provide calibration batches
     batches = [torch.randn(4, 32) for _ in range(3)]
     results = calibrator.calibrate(batches)
 
@@ -44,6 +49,5 @@ def test_compress_model_universal():
         model, method="svd", rank=16, calibration_data=batches
     )
     assert compressed_model is not None
-    # Model remains runnable
     out = compressed_model(torch.randn(2, 32))
     assert out.shape == (2, 32)

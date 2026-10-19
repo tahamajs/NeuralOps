@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Verify my 5 modules module.
-
-Author: Taha Majlesi
 """
 
 import sys
@@ -33,9 +37,6 @@ def time_op(fn, warmup=5, iters=20):
 
 results = {}
 
-# ==============================================================================
-# 1. MODULE gdn_scan (chunked_delta_gate_scan)
-# ==============================================================================
 print("\n" + "=" * 60)
 print("1. Benchmarking & Verifying MODULE gdn_scan")
 print("=" * 60)
@@ -64,7 +65,6 @@ with force_kernel_backend("pytorch"):
     ref_ms = time_op(lambda: chunked_delta_gate_scan_pytorch_ref(q, k, v, alpha, beta))
 speedup = ref_ms / max(cuda_ms, 1e-5)
 
-# Verify fallback when D > 64
 q_large = torch.randn(B, H, 16, 128, device=device, dtype=torch.float32) * 0.1
 k_large = torch.randn(B, H, 16, 128, device=device, dtype=torch.float32) * 0.1
 v_large = torch.randn(B, H, 16, 128, device=device, dtype=torch.float32) * 0.1
@@ -86,9 +86,6 @@ print(
     f"gdn_scan: CUDA={cuda_ms:.3f} ms, Ref={ref_ms:.3f} ms, Speedup={speedup:.2f}x, MaxDiff={diff_gdn:.2e}, Fallback=OK"
 )
 
-# ==============================================================================
-# 2. MODULE linear_attention
-# ==============================================================================
 print("\n" + "=" * 60)
 print("2. Benchmarking & Verifying MODULE linear_attention")
 print("=" * 60)
@@ -115,7 +112,6 @@ with force_kernel_backend("pytorch"):
     ref_ms = time_op(lambda: linear_attention_pytorch_ref(q, k, v))
 speedup = ref_ms / max(cuda_ms, 1e-5)
 
-# Verify fallback when D > 64
 q_large = torch.nn.functional.elu(torch.randn(B, H, 16, 128, device=device, dtype=torch.float32)) + 1.0
 k_large = torch.nn.functional.elu(torch.randn(B, H, 16, 128, device=device, dtype=torch.float32)) + 1.0
 v_large = torch.randn(B, H, 16, 128, device=device, dtype=torch.float32) * 0.1
@@ -124,7 +120,6 @@ ref_large = linear_attention_pytorch_ref(q_large, k_large, v_large)
 diff_fb = (out_fallback - ref_large).abs().max().item()
 assert diff_fb < 1e-3
 
-# Verify TORCH_CHECK on direct CUDA invocation
 try:
     mod_lin = get_linear_mod()
     mod_lin.linear_attention_fwd(q_large, k_large, v_large)
@@ -143,9 +138,6 @@ print(
     f"linear_attention: CUDA={cuda_ms:.3f} ms, Ref={ref_ms:.3f} ms, Speedup={speedup:.2f}x, MaxDiff={diff_lin:.2e}, Fallback=OK, TORCH_CHECK=OK"
 )
 
-# ==============================================================================
-# 3. MODULE gdn_delta_rule
-# ==============================================================================
 print("\n" + "=" * 60)
 print("3. Benchmarking & Verifying MODULE gdn_delta_rule")
 print("=" * 60)
@@ -173,7 +165,6 @@ with force_kernel_backend("pytorch"):
     ref_ms = time_op(lambda: gdn_delta_rule_pytorch_ref(q, k, v, beta))
 speedup = ref_ms / max(cuda_ms, 1e-5)
 
-# Verify large dynamic shared memory: D=128 (64 KB > 48 KB)
 D_large = 128
 q_128 = torch.randn(2, 4, 16, D_large, device=device, dtype=torch.float32) * 0.1
 k_128 = torch.randn(2, 4, 16, D_large, device=device, dtype=torch.float32) * 0.1
@@ -185,7 +176,6 @@ ref_128 = gdn_delta_rule_pytorch_ref(q_128, k_128, v_128, beta_128)
 diff_128 = (out_128 - ref_128).abs().max().item()
 assert diff_128 < 1e-3, f"D=128 diff too large: {diff_128}"
 
-# Verify TORCH_CHECK on D=160 (>96 KB shared memory)
 try:
     mod_delta = get_gdn_delta_mod()
     q_huge = torch.randn(1, 1, 1, 160, device=device, dtype=torch.float32)
@@ -208,9 +198,6 @@ print(
     f"gdn_delta_rule: CUDA={cuda_ms:.3f} ms, Ref={ref_ms:.3f} ms, Speedup={speedup:.2f}x, MaxDiff={diff_delta:.2e}, Shmem_128=OK, TORCH_CHECK=OK"
 )
 
-# ==============================================================================
-# 4. MODULE svd_prefix_scan
-# ==============================================================================
 print("\n" + "=" * 60)
 print("4. Benchmarking & Verifying MODULE svd_prefix_scan")
 print("=" * 60)
@@ -237,7 +224,6 @@ with force_kernel_backend("pytorch"):
     ref_ms = time_op(lambda: svd_prefix_scan_pytorch_ref(q, k, v))
 speedup = ref_ms / max(cuda_ms, 1e-5)
 
-# Verify large dynamic shared memory: D=128 (64 KB > 48 KB)
 D_large = 128
 q_128 = torch.randn(2, 4, 16, D_large, device=device, dtype=torch.float32) * 0.1
 k_128 = torch.randn(2, 4, 16, D_large, device=device, dtype=torch.float32) * 0.1
@@ -248,7 +234,6 @@ ref_128 = svd_prefix_scan_pytorch_ref(q_128, k_128, v_128)
 diff_128 = (out_128 - ref_128).abs().max().item()
 assert diff_128 < 1e-3, f"D=128 diff too large: {diff_128}"
 
-# Verify TORCH_CHECK on D=160 (>96 KB shared memory)
 try:
     mod_svd = get_svd_mod()
     q_huge = torch.randn(1, 1, 1, 160, device=device, dtype=torch.float32)
@@ -270,9 +255,6 @@ print(
     f"svd_prefix_scan: CUDA={cuda_ms:.3f} ms, Ref={ref_ms:.3f} ms, Speedup={speedup:.2f}x, MaxDiff={diff_svd:.2e}, Shmem_128=OK, TORCH_CHECK=OK"
 )
 
-# ==============================================================================
-# 5. MODULE mamba_block
-# ==============================================================================
 print("\n" + "=" * 60)
 print("5. Benchmarking & Verifying MODULE mamba_block")
 print("=" * 60)

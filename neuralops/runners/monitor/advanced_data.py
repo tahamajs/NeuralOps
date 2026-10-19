@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Monitor Data Catalog
 
 Provides catalog and telemetry data generators for attention modules, compressors, and caches.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -24,7 +28,6 @@ def get_all_131_attentions(project_dir: str) -> List[Dict[str, Any]]:
 
     modules_map: Dict[str, Dict[str, Any]] = {}
 
-    # 1. Load triton benchmark file
     triton_path = os.path.join(project_dir, "results", "triton_all_131_attentions_benchmark.json")
     if os.path.exists(triton_path):
         try:
@@ -44,7 +47,6 @@ def get_all_131_attentions(project_dir: str) -> List[Dict[str, Any]]:
         except Exception:
             pass
 
-    # 2. Merge accuracy & ppl data
     acc_path = os.path.join(project_dir, "results", "accuracy_and_ppl_benchmark_all131.json")
     if os.path.exists(acc_path):
         try:
@@ -67,7 +69,6 @@ def get_all_131_attentions(project_dir: str) -> List[Dict[str, Any]]:
         except Exception:
             pass
 
-    # 3. Fallback catalog enrichment if empty
     if not modules_map:
         for idx in range(1, 132):
             name = f"subquadratic_module_{idx:03d}"

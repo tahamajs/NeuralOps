@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Comprehensive test suite verifying all 6 pillars of the post-surgery attention training,
 distillation, staged surgery, SVD-PEFT, RL alignment, and stability engine on CUDA.
@@ -56,7 +62,6 @@ class TestAttentionTrainingEngine:
             assert s_logits.grad is not None
             s_logits.grad.zero_()
 
-        # Hedgehog Feature Map KD
         H, d = 4, 32
         spiky_q = SpikyFeatureMap(d).cuda()
         spiky_k = SpikyFeatureMap(d).cuda()
@@ -72,7 +77,6 @@ class TestAttentionTrainingEngine:
         assert not torch.isnan(hh_loss)
         hh_loss.backward()
 
-        # MiniLM Value Relation
         v_s = torch.randn(B, H, T, d, device="cuda", requires_grad=True)
         v_t = torch.randn(B, H, T, d, device="cuda")
         minilm_fn = MiniLMValueRelationKDLoss()
@@ -80,7 +84,6 @@ class TestAttentionTrainingEngine:
         assert not torch.isnan(v_loss)
         v_loss.backward()
 
-        # Blockwise Operator Cloning & Linear CKA
         out_s = torch.randn(B, T, 64, device="cuda", requires_grad=True)
         out_t = torch.randn(B, T, 64, device="cuda")
         b_fn = BlockwiseOperatorCloningLoss()
@@ -93,13 +96,11 @@ class TestAttentionTrainingEngine:
         assert not torch.isnan(cka_loss)
 
     def test_pillar2_staged_surgery_and_homotopy(self):
-        # Homotopy scheduler
         sched = AttentionHomotopyScheduler(total_steps=100, schedule="cosine")
         assert abs(sched.get_alpha(0) - 0.0) < 1e-4
         assert abs(sched.get_alpha(100) - 1.0) < 1e-4
         assert 0.0 < sched.get_alpha(50) < 1.0
 
-        # Blending wrapper
         l1 = nn.Linear(32, 32).cuda()
         l2 = nn.Linear(32, 32).cuda()
         wrapper = AlphaBlendingAttentionWrapper(l1, l2)
@@ -117,20 +118,16 @@ class TestAttentionTrainingEngine:
 
         pissa = PiSSALinear(lin, rank=16).cuda()
         y_pissa = pissa(x)
-        # Step-0 exact identity guarantee
         assert torch.allclose(y_orig, y_pissa, atol=1e-4)
 
-        # Gradient flows through adapters
         loss = y_pissa.sum()
         loss.backward()
         assert pissa.lora_A.grad is not None
         assert pissa.lora_B.grad is not None
 
-        # Merge and unload
         merged = pissa.merge_and_unload()
         assert torch.allclose(y_orig, merged(x), atol=1e-4)
 
-        # DoRA test
         dora = DoRALinear(lin, rank=16).cuda()
         y_dora = dora(x)
         assert y_dora.shape == (2, 8, 128)

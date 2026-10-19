@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Tests for production SmoothQuant."""
 import torch
 import torch.nn as nn
@@ -8,17 +14,14 @@ def test_smoothquant_layer_real():
     torch.manual_seed(42)
     layer = nn.Linear(32, 32, bias=False)
     x = torch.randn(16, 32)
-    # Add activation outlier
     x[:, 5] *= 10.0
 
     orig_out = layer(x)
     mod, s = smoothquant_layer(layer, alpha=0.5, calib_data=x)
 
-    # Verified invariant: mod applies s_inv internally so mod(x) == orig_out
     new_out = mod(x)
     assert torch.allclose(orig_out, new_out, atol=1e-4)
 
-    # And manual scaled linear: (x / s) @ (W * s)^T == x @ W^T == orig_out
     import torch.nn.functional as F
     scaled_x = x / s.unsqueeze(0)
     manual_out = F.linear(scaled_x, mod.weight)

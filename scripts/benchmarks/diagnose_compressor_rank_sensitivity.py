@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Forensic diagnostic script to verify rank-sensitivity across all 26 compressors.
 Classifies each compressor into:
@@ -37,7 +43,6 @@ def extract_reconstructed_weights(model: nn.Module) -> torch.Tensor:
     tensors = []
     for name, m in model.named_modules():
         if hasattr(m, "U") and hasattr(m, "V") and m.U is not None and m.V is not None:
-            # Low-rank factorized layer
             U, V = m.U.data.float(), m.V.data.float()
             if U.shape[1] == V.shape[0]:
                 w = torch.matmul(U, V)
@@ -94,7 +99,6 @@ def run_diagnostic(model_name: str = "synth_block"):
     print("-" * 115)
 
     for method in COMPRESSOR_REGISTRY_KEYS:
-        # Test rank 8
         m8 = copy.deepcopy(anchor)
         comp8 = get_compressor(method, m8, 8, probe)
         if comp8 is None:
@@ -128,7 +132,6 @@ def run_diagnostic(model_name: str = "synth_block"):
             print(f"{method:<28s} {'FAILED (Exec r8)':<22s} {'—':<16s} {'—':<12s} {'—':<12s} {str(e)[:30]}")
             continue
 
-        # Test rank 64
         m64 = copy.deepcopy(anchor)
         comp64 = get_compressor(method, m64, 64, probe)
         if comp64 is None:
@@ -197,7 +200,6 @@ def run_diagnostic(model_name: str = "synth_block"):
     for m, err in results["FAILED"]:
         print(f"  - {m:<28s} ({err})")
 
-    # Save to JSON
     out_dir = Path("results/batch_validation") / "diagnostics"
     out_dir.mkdir(parents=True, exist_ok=True)
     import json

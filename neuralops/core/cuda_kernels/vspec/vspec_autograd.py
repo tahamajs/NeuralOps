@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 VSPEC Variable Spectral Recurrent Step Autograd Interface
 
 Hardware-accelerated CUDA C++ autograd implementation with analytical gradients and three-level fallback dispatch.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -78,7 +82,6 @@ class _VSPECFunction(torch.autograd.Function):
         eps = ctx.eps
         B, N, D = x.shape
 
-        # Re-compute forward states for adjoint backpropagation
         x_f = x.float()
         g_f = torch.sigmoid(spec_gate.float())
         decay_f = decay.float()
@@ -90,7 +93,6 @@ class _VSPECFunction(torch.autograd.Function):
             s = decay_f[:, t, :] * s + (x_f[:, t, :] * g_f[:, t, :])
             states.append(s)
 
-        # Adjoint backward scan from t = N-1 downto 0
         dx = torch.empty_like(x_f)
         dspec_gate = torch.empty_like(spec_gate, dtype=torch.float32)
         ddecay = torch.empty_like(decay, dtype=torch.float32)
@@ -103,17 +105,13 @@ class _VSPECFunction(torch.autograd.Function):
 
             denom = s_t.pow(2) + eps
             rsqrt_denom = torch.rsqrt(denom)
-            # d(s * (s^2 + eps)^(-0.5)) / ds = rsqrt - s^2 * (s^2 + eps)^(-1.5) = eps * (s^2 + eps)^(-1.5)
             dout_t = dout_f[:, t, :]
             ds_from_out = dout_t * (eps * torch.pow(denom, -1.5))
             ds_t = ds_from_out + ds_next
 
-            # Inputs into s_t:
-            # s_t = decay_t * s_{t-1} + x_t * g_t
             ddecay[:, t, :] = ds_t * s_prev
             inp_grad = ds_t * g_f[:, t, :]
             dx[:, t, :] = inp_grad
-            # dsigmoid / dgate = g * (1 - g)
             dspec_gate[:, t, :] = ds_t * x_f[:, t, :] * (g_f[:, t, :] * (1.0 - g_f[:, t, :]))
 
             ds_next = ds_t * decay_f[:, t, :]

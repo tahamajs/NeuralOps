@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Transformer Block Architecture
 
 Modular transformer decoder block unifying pre-norm attention, feed-forward projections, and residual connections.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -35,7 +39,6 @@ class NeuralOpsBlock(nn.Module):
         self.layer_idx = layer_idx
         self.hidden_size = config.hidden_size
 
-        # Pre-attention and pre-FFN normalization
         self.input_layernorm = build_norm_layer(
             config.norm_type, config.hidden_size, eps=config.rms_norm_eps
         )
@@ -43,7 +46,6 @@ class NeuralOpsBlock(nn.Module):
             config.norm_type, config.hidden_size, eps=config.rms_norm_eps
         )
 
-        # Retrieve per-layer attention specification
         attn_spec = config.get_layer_attn_spec(layer_idx)
         attn_type = attn_spec["type"]
         if attn_type not in ATTENTION_REGISTRY:
@@ -52,7 +54,6 @@ class NeuralOpsBlock(nn.Module):
             )
         attn_cls = ATTENTION_REGISTRY[attn_type]
 
-        # Extract extra arguments for attention mechanism
         attn_kwargs = {k: v for k, v in attn_spec.items() if k != "type"}
         try:
             self.self_attn = attn_cls(config, **attn_kwargs)
@@ -62,7 +63,6 @@ class NeuralOpsBlock(nn.Module):
             except TypeError:
                 self.self_attn = attn_cls()
 
-        # MLP
         self.mlp = build_mlp(
             config.mlp_type,
             hidden_size=config.hidden_size,
@@ -70,14 +70,12 @@ class NeuralOpsBlock(nn.Module):
             hidden_act=config.hidden_act,
         )
 
-        # Apply compression layer if specified
         comp_spec = config.get_layer_compression_spec(layer_idx)
         if comp_spec is not None:
             comp_type = comp_spec["type"]
             if comp_type in COMPRESSOR_REGISTRY:
                 comp_cls = COMPRESSOR_REGISTRY[comp_type]
                 comp_kwargs = {k: v for k, v in comp_spec.items() if k != "type"}
-                # Apply compressor to block or self_attn
                 try:
                     compressor = comp_cls(self.self_attn, **comp_kwargs)
                     self.self_attn = compressor.compress()
@@ -104,7 +102,6 @@ class NeuralOpsBlock(nn.Module):
 
         normed_hidden_states = self.input_layernorm(hidden_states)
 
-        # Self Attention forward
         attn_outputs = self.self_attn(
             normed_hidden_states,
             attention_mask=attention_mask,
@@ -126,7 +123,6 @@ class NeuralOpsBlock(nn.Module):
 
         hidden_states = residual + attn_output
 
-        # Fully Connected Feed-Forward
         residual = hidden_states
         normed_hidden_states = self.post_attention_layernorm(hidden_states)
         mlp_output = self.mlp(normed_hidden_states)

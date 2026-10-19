@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Configuration Extraction Utilities
 
 Helper functions extracting architecture parameters, head dimensions, and layer counts from configurations.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -20,9 +24,7 @@ def _cfg_get(config_or_key: Any, key_or_default: Any = None, default: Any = None
       1. Standard: _cfg_get(config, key, default=None)
       2. Key-first / single-arg: _cfg_get(key, default=None) -> returns default
     """
-    # If first arg is a string and second is not a string, it was called as _cfg_get('key', default)
     if isinstance(config_or_key, str):
-        # Called without a config object, return default
         return key_or_default
 
     config = config_or_key

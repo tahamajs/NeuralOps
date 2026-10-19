@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Exhaustive Verification Suite for the 20 Extended Production Kernels.
 Tests all 20 kernels on CPU and CUDA for numerical validity, parity, and 3-level fallback.
@@ -38,7 +44,6 @@ def device():
     return "cuda" if torch.cuda.is_available() else "cpu"
 
 
-# 1. SwiGLU
 def test_kernel_1_swiglu(device):
     torch.manual_seed(42)
     B, Din, Dout = 2, 32, 64
@@ -55,7 +60,6 @@ def test_kernel_1_swiglu(device):
     assert torch.allclose(out_auto, out_py, atol=1e-4, rtol=1e-4)
 
 
-# 2. RMSNorm
 def test_kernel_2_rmsnorm(device):
     torch.manual_seed(42)
     B, T, D = 2, 16, 64
@@ -71,7 +75,6 @@ def test_kernel_2_rmsnorm(device):
     assert torch.allclose(out_auto, out_py, atol=1e-4, rtol=1e-4)
 
 
-# 3. RoPE
 def test_kernel_3_rotary_emb(device):
     torch.manual_seed(42)
     B, H, T, D = 2, 4, 16, 32
@@ -88,7 +91,6 @@ def test_kernel_3_rotary_emb(device):
     assert torch.allclose(out_auto, out_py, atol=1e-5, rtol=1e-5)
 
 
-# 4. ALiBi Attention
 def test_kernel_4_alibi_attention(device):
     torch.manual_seed(42)
     B, H, T = 2, 8, 16
@@ -103,7 +105,6 @@ def test_kernel_4_alibi_attention(device):
     assert torch.allclose(out_auto, out_py, atol=1e-5, rtol=1e-5)
 
 
-# 5. Sink Token Attention
 def test_kernel_5_sink_token_attention(device):
     torch.manual_seed(42)
     B, H, T, D = 2, 2, 32, 16
@@ -120,7 +121,6 @@ def test_kernel_5_sink_token_attention(device):
     assert torch.allclose(out_auto, out_py, atol=1e-4, rtol=1e-4)
 
 
-# 6. Exponential Decay Scan
 def test_kernel_6_decay_scan(device):
     torch.manual_seed(42)
     B, T, Dk, Dv = 2, 16, 8, 8
@@ -136,7 +136,6 @@ def test_kernel_6_decay_scan(device):
     assert torch.allclose(out_auto, out_py, atol=1e-4, rtol=1e-4)
 
 
-# 7. Fast Walsh-Hadamard Transform
 def test_kernel_7_hadamard_transform(device):
     torch.manual_seed(42)
     B, N = 4, 32
@@ -151,7 +150,6 @@ def test_kernel_7_hadamard_transform(device):
     assert torch.allclose(out_auto, out_py, atol=1e-5, rtol=1e-5)
 
 
-# 8. INT4 Dequantization
 def test_kernel_8_int4_dequant(device):
     torch.manual_seed(42)
     K, N = 16, 32
@@ -168,7 +166,6 @@ def test_kernel_8_int4_dequant(device):
     assert torch.allclose(out_auto, out_py, atol=1e-5, rtol=1e-5)
 
 
-# 9. FP8 Scaled GEMM
 def test_kernel_9_fp8_e4m3_gemm(device):
     torch.manual_seed(42)
     M, K, N = 16, 32, 16
@@ -184,7 +181,6 @@ def test_kernel_9_fp8_e4m3_gemm(device):
     assert torch.allclose(out_auto, out_py, atol=1e-5, rtol=1e-5)
 
 
-# 10. Discrete Cosine Transform (DCT-II)
 def test_kernel_10_spectral_dct(device):
     torch.manual_seed(42)
     B, T, D = 2, 8, 16
@@ -199,7 +195,6 @@ def test_kernel_10_spectral_dct(device):
     assert torch.allclose(out_auto, out_py, atol=1e-5, rtol=1e-5)
 
 
-# 11. Chunked Cumsum
 def test_kernel_11_chunked_cumsum(device):
     torch.manual_seed(42)
     B, T, D = 2, 32, 8
@@ -214,7 +209,6 @@ def test_kernel_11_chunked_cumsum(device):
     assert torch.allclose(out_auto, out_py, atol=1e-5, rtol=1e-5)
 
 
-# 12. CKA Alignment
 def test_kernel_12_cka_alignment(device):
     torch.manual_seed(42)
     N, D = 32, 16
@@ -230,7 +224,6 @@ def test_kernel_12_cka_alignment(device):
     assert torch.allclose(out_auto, out_py, atol=1e-5, rtol=1e-5)
 
 
-# 13. MOHAWK Homotopy
 def test_kernel_13_mohawk_homotopy(device):
     torch.manual_seed(42)
     D = 16
@@ -246,7 +239,6 @@ def test_kernel_13_mohawk_homotopy(device):
     assert torch.allclose(out_auto, out_py, atol=1e-5, rtol=1e-5)
 
 
-# 14. Null Space Projection
 def test_kernel_14_nullspace_project(device):
     torch.manual_seed(42)
     D, K = 32, 4
@@ -262,7 +254,6 @@ def test_kernel_14_nullspace_project(device):
     assert torch.allclose(out_auto, out_py, atol=1e-5, rtol=1e-5)
 
 
-# 15. Householder Reflection
 def test_kernel_15_householder_reflect(device):
     torch.manual_seed(42)
     B, D = 4, 16
@@ -278,7 +269,6 @@ def test_kernel_15_householder_reflect(device):
     assert torch.allclose(out_auto, out_py, atol=1e-5, rtol=1e-5)
 
 
-# 16. Simplex Projection
 def test_kernel_16_simplex_project(device):
     torch.manual_seed(42)
     B, D = 4, 8
@@ -295,7 +285,6 @@ def test_kernel_16_simplex_project(device):
     assert torch.allclose(out_auto, out_py, atol=1e-5, rtol=1e-5)
 
 
-# 17. Top-K Gating
 def test_kernel_17_topk_gating(device):
     torch.manual_seed(42)
     B, E = 8, 16
@@ -312,7 +301,6 @@ def test_kernel_17_topk_gating(device):
     assert torch.equal(idx_auto, idx_py)
 
 
-# 18. Label Smoothed Cross Entropy
 def test_kernel_18_label_smoothing_ce(device):
     torch.manual_seed(42)
     N, C = 16, 5
@@ -328,7 +316,6 @@ def test_kernel_18_label_smoothing_ce(device):
     assert torch.allclose(loss_auto, loss_py, atol=1e-5, rtol=1e-5)
 
 
-# 19. KL Divergence Distillation
 def test_kernel_19_kl_divergence(device):
     torch.manual_seed(42)
     N, C = 16, 10
@@ -344,7 +331,6 @@ def test_kernel_19_kl_divergence(device):
     assert torch.allclose(loss_auto, loss_py, atol=1e-5, rtol=1e-5)
 
 
-# 20. Low-Rank with Residual Addition
 def test_kernel_20_lowrank_residual_add(device):
     torch.manual_seed(42)
     B, T, Din, Dout, R = 2, 8, 16, 16, 4

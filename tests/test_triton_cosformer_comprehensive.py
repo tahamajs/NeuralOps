@@ -1,3 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 import math
 import warnings
 from types import SimpleNamespace
@@ -12,14 +19,12 @@ from neuralops.attentions.linear.triton_cosformer import (TritonCosformerAttenti
 
 def test_triton_cosformer_config_handling():
     """Verify safe config handling when config is None, SimpleNamespace, or full Config."""
-    # 1. config=None, explicit kwargs
     attn1 = TritonCosformerAttention(config=None, embed_dim=64, num_heads=4)
     assert attn1.embed_dim == 64
     assert attn1.num_heads == 4
     assert attn1.head_dim == 16
     assert attn1.max_length == 2048
 
-    # 2. config present
     cfg = SimpleNamespace(hidden_size=128, num_attention_heads=8, max_position_embeddings=1024, is_decoder=True)
     attn2 = TritonCosformerAttention(config=cfg)
     assert attn2.embed_dim == 128
@@ -36,7 +41,6 @@ def test_triton_cosformer_rope_support():
     H = 4
     d = D // H
 
-    # Generate synthetic RoPE (cos, sin)
     angles = torch.arange(N).float()[:, None] * 0.1
     cos = torch.cos(angles).unsqueeze(0).unsqueeze(0).expand(B, 1, N, d)
     sin = torch.sin(angles).unsqueeze(0).unsqueeze(0).expand(B, 1, N, d)
@@ -47,7 +51,6 @@ def test_triton_cosformer_rope_support():
 
     assert out_rope.shape == (B, N, D)
     assert torch.isfinite(out_rope).all()
-    # RoPE should alter the representations
     assert not torch.allclose(out_rope, out_base, atol=1e-4)
 
 
@@ -56,13 +59,11 @@ def test_triton_cosformer_bidirectional_and_causal_shapes():
     B, N, D = 2, 16, 64
     x = torch.randn(B, N, D)
 
-    # 1. Causal mode
     attn_causal = TritonCosformerAttention(embed_dim=D, num_heads=4, is_decoder=True)
     out_causal, _ = attn_causal(x)
     assert out_causal.shape == (B, N, D)
     assert torch.isfinite(out_causal).all()
 
-    # 2. Bidirectional mode
     attn_bidi = TritonCosformerAttention(embed_dim=D, num_heads=4, is_decoder=False)
     out_bidi, _ = attn_bidi(x)
     assert out_bidi.shape == (B, N, D)
@@ -75,7 +76,6 @@ def test_triton_cosformer_attention_masking():
     attn = TritonCosformerAttention(embed_dim=D, num_heads=4, is_decoder=True)
     x = torch.randn(B, N, D, requires_grad=True)
 
-    # Batch 0: length 8; Batch 1: length 5 (tokens 5, 6, 7 are padding)
     mask = torch.tensor([
         [1, 1, 1, 1, 1, 1, 1, 1],
         [1, 1, 1, 1, 1, 0, 0, 0],
@@ -85,7 +85,6 @@ def test_triton_cosformer_attention_masking():
     assert out.shape == (B, N, D)
     assert torch.isfinite(out).all()
 
-    # Backward gradient pass
     loss = out.sum()
     loss.backward()
     assert x.grad is not None
@@ -121,11 +120,9 @@ def test_triton_cosformer_weight_copy_multi_arch():
     dim = 64
     num_heads = 4
 
-    # 1. GPT-2 Fused Conv1D style
     class MockGPT2Attn(nn.Module):
         def __init__(self):
             super().__init__()
-            # In GPT-2: c_attn weight is [dim, 3 * dim]
             self.c_attn = nn.Linear(dim, 3 * dim)
             self.c_proj = nn.Linear(dim, dim)
     
@@ -133,14 +130,12 @@ def test_triton_cosformer_weight_copy_multi_arch():
     cos_gpt2 = TritonCosformerAttention(embed_dim=dim, num_heads=num_heads, pretrained_attn=gpt2_src)
 
     x = torch.randn(1, 4, dim)
-    # Verify projections match GPT-2 source projections
     q_src, k_src, v_src = gpt2_src.c_attn(x).split(dim, dim=-1)
     assert torch.allclose(cos_gpt2.q_proj(x), q_src, atol=1e-5)
     assert torch.allclose(cos_gpt2.k_proj(x), k_src, atol=1e-5)
     assert torch.allclose(cos_gpt2.v_proj(x), v_src, atol=1e-5)
     assert torch.allclose(cos_gpt2.out_proj(x), gpt2_src.c_proj(x), atol=1e-5)
 
-    # 2. RoBERTa nested self-attention style
     class MockRobertaAttn(nn.Module):
         def __init__(self):
             super().__init__()
@@ -158,7 +153,6 @@ def test_triton_cosformer_weight_copy_multi_arch():
     assert torch.allclose(cos_rob.v_proj(x), rob_src.self.value(x), atol=1e-5)
     assert torch.allclose(cos_rob.out_proj(x), rob_src.output.dense(x), atol=1e-5)
 
-    # 3. DistilBERT flat style
     class MockDistilBertAttn(nn.Module):
         def __init__(self):
             super().__init__()

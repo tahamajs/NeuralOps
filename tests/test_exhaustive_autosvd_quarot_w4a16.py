@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Suite 6: Exhaustive Verification Battery for AutoSVD, QuaRot, and W4A16 Quantization.
 Expanded to 15+ parameterized tests verifying:
@@ -63,7 +69,6 @@ def test_6_1_fisher_sensitivity_and_autosvd_rank_search(target_ratio, min_rank):
 
 @pytest.mark.parametrize("dim", [32, 64, 128])
 def test_6_2_hadamard_involutory_orthogonality(dim):
-    # Fast Walsh-Hadamard Transform must be involutory: H(H(x)) == x up to scaling
     x = torch.randn(2, 4, dim, device=DEVICE)
     H_x = fast_hadamard_transform(x)
     H_H_x = fast_hadamard_transform(H_x)
@@ -87,7 +92,6 @@ def test_6_3_bitpacked_w4a16_linear_group_sizes(group_size, dtype):
 @pytest.mark.parametrize("in_features,out_features", [(64, 128), (128, 64), (128, 128)])
 @pytest.mark.parametrize("group_size", [32, 64])
 def test_6_4_pack_unpack_int4_roundtrip(in_features, out_features, group_size):
-    # Floating point weights to pack with scale and zeros
     weight_fp = torch.randn(out_features, in_features, dtype=torch.float16, device=DEVICE)
     packed, scales, zeros = pack_int4_weights(weight_fp, group_size=group_size)
     assert packed.shape == (out_features, in_features // 2)

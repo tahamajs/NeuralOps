@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <cuda_runtime.h>
 #include <torch/extension.h>
 #include <c10/cuda/CUDAStream.h>
@@ -8,15 +15,15 @@
 template<int D_STATE>
 __launch_bounds__(128)
 __global__ void selective_scan_fwd_kernel(
-    float* __restrict__ out,         // [B, D, L]
-    float* __restrict__ last_state,  // [B, D, D_STATE]
-    float* __restrict__ states,      // [B, D, L, D_STATE]
-    const float* __restrict__ u,     // [B, D, L]
-    const float* __restrict__ delta, // [B, D, L]
-    const float* __restrict__ A,     // [D, D_STATE]
-    const float* __restrict__ B,     // [B, D_STATE, L]
-    const float* __restrict__ C,     // [B, D_STATE, L]
-    const float* __restrict__ D_val, // [D]
+    float* __restrict__ out,
+    float* __restrict__ last_state,
+    float* __restrict__ states,
+    const float* __restrict__ u,
+    const float* __restrict__ delta,
+    const float* __restrict__ A,
+    const float* __restrict__ B,
+    const float* __restrict__ C,
+    const float* __restrict__ D_val,
     const int B_sz,
     const int D_sz,
     const int L_sz
@@ -128,20 +135,20 @@ __global__ void selective_scan_fwd_generic_kernel(
 template<int D_STATE>
 __launch_bounds__(128)
 __global__ void selective_scan_bwd_kernel(
-    float* __restrict__ du,          // [B, D, L]
-    float* __restrict__ ddelta,      // [B, D, L]
-    float* __restrict__ dA,          // [D, D_STATE]
-    float* __restrict__ dB,          // [B, D_STATE, L]
-    float* __restrict__ dC,          // [B, D_STATE, L]
-    float* __restrict__ dD,          // [D]
-    const float* __restrict__ u,     // [B, D, L]
-    const float* __restrict__ delta, // [B, D, L]
-    const float* __restrict__ A,     // [D, D_STATE]
-    const float* __restrict__ B,     // [B, D_STATE, L]
-    const float* __restrict__ C,     // [B, D_STATE, L]
-    const float* __restrict__ D_val, // [D]
-    const float* __restrict__ states,// [B, D, L, D_STATE]
-    const float* __restrict__ dout,  // [B, D, L]
+    float* __restrict__ du,
+    float* __restrict__ ddelta,
+    float* __restrict__ dA,
+    float* __restrict__ dB,
+    float* __restrict__ dC,
+    float* __restrict__ dD,
+    const float* __restrict__ u,
+    const float* __restrict__ delta,
+    const float* __restrict__ A,
+    const float* __restrict__ B,
+    const float* __restrict__ C,
+    const float* __restrict__ D_val,
+    const float* __restrict__ states,
+    const float* __restrict__ dout,
     const int B_sz,
     const int D_sz,
     const int L_sz

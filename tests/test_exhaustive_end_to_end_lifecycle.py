@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Suite 11: Exhaustive Verification Battery for Full End-to-End Model Lifecycles.
 Expanded to 8+ parameterized tests verifying:
@@ -34,12 +40,10 @@ def test_11_1_causal_lm_lifecycle(attn_mech, seq_len, rank):
     x = torch.randint(0, 64, (2, seq_len), device=DEVICE)
     labels = x.clone()
 
-    # Forward pass and loss
     out = model(x, labels=labels)
     assert out.loss is not None
     assert torch.isfinite(out.loss)
 
-    # Backward gradient flow
     out.loss.backward()
     for p in model.parameters():
         if p.requires_grad and p.grad is not None:

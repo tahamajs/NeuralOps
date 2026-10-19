@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 RMS Variance Match Autograd Interface
 
 Hardware-accelerated CUDA C++ autograd implementation with analytical gradients and three-level fallback dispatch.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -93,22 +97,6 @@ class _RMSVarianceMatchFunction(torch.autograd.Function):
         clamp_min = ctx.clamp_min
         clamp_max = ctx.clamp_max
 
-        # Analytical adjoint derivation:
-        # v_sq = mean(v_ref^2, -1), v_rms = sqrt(v_sq)
-        # y_sq = mean(y^2, -1), y_rms = sqrt(y_sq)
-        # ratio = v_rms / y_rms
-        # active = (ratio > clamp_min) & (ratio < clamp_max)
-        # gain = clamp(ratio, clamp_min, clamp_max)
-        # out = y * gain
-        # dL/dy:
-        # out_i = y_i * gain
-        # dout_i * gain + y_i * (d gain / dy_i)
-        # When active:
-        # d gain / dy_i = - (v_rms / y_rms^2) * (d y_rms / dy_i)
-        # d y_rms / dy_i = (1 / (2 * y_rms)) * (2 * y_i / D) = y_i / (D * y_rms)
-        # => d gain / dy_i = - (v_rms / (D * y_rms^3)) * y_i
-        # sum_i [dout_i * y_i * (- v_rms / (D * y_rms^3)) * y_k] ...
-        # d gain / dv_ref_j = (1 / y_rms) * (v_ref_j / (D * v_rms)) = v_ref_j / (D * y_rms * v_rms)
 
         y_f = y.float()
         v_f = v_ref.float()
@@ -126,16 +114,13 @@ class _RMSVarianceMatchFunction(torch.autograd.Function):
 
         dy = None
         if ctx.needs_input_grad[0]:
-            # term 1: dout * gain
             term1 = dout_f * gain
-            # term 2: sum(dout * y, -1, keepdim) * (- v_rms / (D * y_rms^3)) * y * active
             dot_y = (dout_f * y_f).sum(dim=-1, keepdim=True)
             term2 = active * (- v_rms / (D * (y_rms ** 3))) * dot_y * y_f
             dy = (term1 + term2).to(y.dtype)
 
         dv_ref = None
         if ctx.needs_input_grad[1]:
-            # dL/dv_ref = dot_y * (active / (D * y_rms * v_rms)) * v_ref
             dot_y = (dout_f * y_f).sum(dim=-1, keepdim=True)
             dv_ref = (active * (dot_y / (D * y_rms * v_rms)) * v_f).to(v_ref.dtype)
 

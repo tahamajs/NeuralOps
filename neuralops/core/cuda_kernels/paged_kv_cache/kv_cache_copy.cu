@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <cuda_runtime.h>
 #include <torch/extension.h>
 #include <c10/cuda/CUDAStream.h>
@@ -11,7 +18,7 @@ __global__ void kv_cache_copy_cow_kernel(
     scalar_t* __restrict__ dst_v,
     const scalar_t* __restrict__ src_k,
     const scalar_t* __restrict__ src_v,
-    const int32_t* __restrict__ block_mapping, // [num_blocks_to_copy, 2] (src_idx, dst_idx)
+    const int32_t* __restrict__ block_mapping,
     const int num_blocks_to_copy,
     const int elements_per_block,
     const int max_blocks_src,
@@ -26,7 +33,6 @@ __global__ void kv_cache_copy_cow_kernel(
     const int src_block = block_mapping[copy_idx * 2 + 0];
     const int dst_block = block_mapping[copy_idx * 2 + 1];
 
-    // Safe bounds guard for negative or invalid block indices
     if (src_block < 0 || dst_block < 0 || src_block >= max_blocks_src || dst_block >= max_blocks_dst) {
         return;
     }
@@ -34,7 +40,6 @@ __global__ void kv_cache_copy_cow_kernel(
     const int64_t src_offset = static_cast<int64_t>(src_block) * elements_per_block;
     const int64_t dst_offset = static_cast<int64_t>(dst_block) * elements_per_block;
 
-    // 128-bit vectorized transfer if elements * sizeof(scalar_t) is divisible by 16
     if ((elements_per_block * sizeof(scalar_t)) % 16 == 0) {
         constexpr int VEC_SIZE = 16 / sizeof(scalar_t);
         const int num_vecs = elements_per_block / VEC_SIZE;

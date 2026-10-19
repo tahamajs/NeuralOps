@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Tests for ecosystem and integration modules."""
 import tempfile
 from pathlib import Path
@@ -67,7 +73,6 @@ def test_serving_adapters():
     tgi = TGIAttentionAdapter(max_batch_size=2)
     assert len(tgi.prepare_batch([1, 2, 3, 4])) == 2
 
-    # OpenAI serving app
     app = create_openai_serving_app()
     assert app is not None
     assert app.title == "NeuralOps Serving Engine"
@@ -118,17 +123,14 @@ def test_paged_cache_fork_and_cow():
     cache.append_token(1, k1, v1)
     assert cache.seq_lengths[1] == 1
 
-    # Zero-copy fork
     forked_blocks = cache.fork_sequence(parent_seq_id=1, child_seq_id=2)
     assert cache.seq_lengths[2] == 1
     assert cache.block_ref_counts[forked_blocks[0]] == 2
 
-    # Append to child triggers CoW
     k2 = torch.randn(2, 8)
     v2 = torch.randn(2, 8)
     cache.append_token(2, k2, v2)
     assert cache.seq_lengths[2] == 2
-    # Verify child now has its own unique block
     assert cache.block_tables[1][0] != cache.block_tables[2][0]
 
     cache.free_sequence(1)
@@ -177,7 +179,6 @@ def test_export_serving_bundle_and_metadata():
         is_valid, msg = validate_serving_metadata(bundle_path)
         assert is_valid is True, msg
 
-        # Test AWQ & GGUF export formats
         awq_dir = Path(tmpdir) / "awq_bundle"
         export_model(model, output_dir=awq_dir, format="awq")
         assert (awq_dir / "quant_config.json").exists()

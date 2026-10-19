@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Phase 1 Smoke & Invariant Test Suite for CUDA C++ Infrastructure.
 Verifies compilation, caching, SM detection, and the 3-level fallback chain.
@@ -70,15 +76,12 @@ def test_fallback_chain_all_levels():
 
     x = torch.zeros(4)
 
-    # 1. Normal CUDA execution
     res1 = dispatch(cuda_mock, triton_mock, pytorch_ref, x)
     assert torch.allclose(res1, x + 3.0)
 
-    # 2. CUDA fails -> Triton succeeds
     res2 = dispatch(cuda_failing, triton_mock, pytorch_ref, x)
     assert torch.allclose(res2, x + 2.0)
 
-    # 3. CUDA & Triton fail -> PyTorch succeeds
     res3 = dispatch(cuda_failing, triton_failing, pytorch_ref, x)
     assert torch.allclose(res3, x + 1.0)
 

@@ -1,4 +1,9 @@
-# -*- coding: utf-8 -*-
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Exhaustive mathematical parity, gradient sanity, and multi-shape verification
 for all 48 Triton-wired Attention Modules across training and inference modes.
 """
@@ -9,24 +14,19 @@ import torch
 import torch.nn as nn
 from neuralops.attentions import ATTENTION_REGISTRY
 
-# Canonical list of 48 Triton-wired Attention modules
 CANONICAL_48_MODULES = [
-    # Sparse / Compressed Attention (5)
     "adaptive_sparse_attention",
     "moba_attention",
     "xattention",
     "nsa_attention",
     "reap_moe",
-    # Modern GQA / ALiBi / Conv (4)
     "alibi",
     "dynamic_conv_attention",
     "mla_attention",
     "mqa",
-    # Linear / Cosformer (3)
     "cosformer",
     "cosformer_attention",
     "triton_cosformer",
-    # Gated & Recurrent Linear Attention (7)
     "decay_linear_attention",
     "decay_linear_attn",
     "gated_linear_attention",
@@ -34,7 +34,6 @@ CANONICAL_48_MODULES = [
     "gated_delta_net",
     "hgrn2_gated_layer",
     "kda_attention",
-    # Kernel & Spectral Attention (9)
     "linformer_attention",
     "performer_attention",
     "chela_slay",
@@ -44,19 +43,16 @@ CANONICAL_48_MODULES = [
     "nystrom_attention",
     "rala_attention",
     "spectraformer_attention",
-    # Quantized / Span / Sink (4)
     "spectron",
     "spectron_fp8",
     "adaptive_span_attention",
     "sink_attention",
-    # SSM & Hybrid (6)
     "mamba",
     "mamba_block",
     "selective_ssm",
     "selective_mamba",
     "jamba",
     "vspec",
-    # SVD & Factorized Attention (10)
     "svd_linear_attention",
     "svd_linear_decay",
     "triton_svd_linear_attention",

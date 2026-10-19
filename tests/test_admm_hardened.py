@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Unit tests for production-hardened ADMM Compressor.
 
@@ -66,7 +72,6 @@ class ToyTransformer(nn.Module):
 
     def __init__(self):
         super().__init__()
-        # Attention projection layers
         self.attn = nn.ModuleDict({
             "q_proj": nn.Linear(64, 64),
             "k_proj": nn.Linear(64, 64),
@@ -74,14 +79,12 @@ class ToyTransformer(nn.Module):
             "c_attn": MockLoRALinear(MockConv1D(64, 192), r=8),
             "o_proj": MockConv1D(64, 64),
         })
-        # FFN / MLP layers
         self.mlp = nn.ModuleDict({
             "gate_proj": nn.Linear(64, 128),
             "up_proj": nn.Linear(64, 128),
             "down_proj": nn.Linear(128, 64),
             "c_fc": MockConv1D(64, 128),
         })
-        # Classification head
         self.classifier = nn.Linear(64, 2)
 
 
@@ -105,31 +108,25 @@ class TestADMMHardened(unittest.TestCase):
         )
         _, stats = compressor.compress()
 
-        # Check that LoRA linear and Conv1D were compressed
         self.assertIn("attn.v_proj", compressor.compressed_layers)
         self.assertIn("attn.c_attn", compressor.compressed_layers)
         self.assertIn("attn.o_proj", compressor.compressed_layers)
 
-        # Check that shapes were strictly preserved
         self.assertEqual(model.attn["c_attn"].base_layer.weight.shape, (64, 192))
         self.assertEqual(model.attn["o_proj"].weight.shape, (64, 64))
 
-        # Check that LoRA wrappers are intact
         self.assertTrue(isinstance(model.attn["c_attn"], MockLoRALinear))
         self.assertTrue(model.attn["c_attn"].lora_A.weight.requires_grad)
         self.assertTrue(model.attn["c_attn"].lora_B.weight.requires_grad)
-        # Base layer should be frozen
         self.assertFalse(model.attn["c_attn"].base_layer.weight.requires_grad)
 
     def test_admm_factory_with_none_config(self):
         """2. Verify admm_factory works safely with None, dict, and config object."""
-        # None config
         model1 = ToyTransformer()
         res_model1 = admm_factory(model1, comp_config=None, max_error=0.60, target_attention_only=True)
         self.assertTrue(hasattr(res_model1, "compression_stats"))
         self.assertGreater(res_model1.compression_stats["num_compressed"], 0)
 
-        # Dict config
         model2 = ToyTransformer()
         cfg_dict = {"admm_max_error": 0.60, "admm_quant_bits": 4, "admm_target_attention_only": True}
         res_model2 = admm_factory(model2, comp_config=cfg_dict)
@@ -140,7 +137,6 @@ class TestADMMHardened(unittest.TestCase):
         model = ToyTransformer()
         orig_q_weight = model.attn["q_proj"].weight.clone()
 
-        # Set impossible max_error = 0.01 -> must trigger fallback
         compressor = ADMMCompressor(
             model,
             max_error=0.01,
@@ -151,7 +147,6 @@ class TestADMMHardened(unittest.TestCase):
 
         self.assertIn("attn.q_proj", compressor.fallback_layers)
         self.assertEqual(len(compressor.compressed_layers), 0)
-        # Weight must remain completely unchanged
         self.assertTrue(torch.equal(model.attn["q_proj"].weight, orig_q_weight))
 
     def test_quantized_pruned_weight_properties(self):
@@ -171,12 +166,10 @@ class TestADMMHardened(unittest.TestCase):
         self.assertFalse(torch.isnan(q_w).any())
         self.assertFalse(torch.isinf(q_w).any())
 
-        # Check 2:4 pattern: in every group of 4 columns, at least 2 should be zero (2:4 structure preserved under quantization)
         q_blocks = q_w.reshape(64, 16, 4)
         zeros_per_block = (q_blocks == 0).sum(dim=-1)
         self.assertTrue(torch.all(zeros_per_block >= 2))
 
-        # Check reported actual sparsity and effective compression rate
         self.assertGreaterEqual(stats["actual_sparsity"], 0.50)
         self.assertGreaterEqual(stats["effective_compression_rate"], 4.0)
 
@@ -193,39 +186,34 @@ class TestADMMHardened(unittest.TestCase):
         )
         _, stats = compressor.compress()
 
-        # All compressed layers must be attention
         for name in compressor.compressed_layers:
             self.assertTrue(name.startswith("attn."))
             self.assertFalse("mlp" in name)
             self.assertFalse("classifier" in name)
 
-        # MLP and classifier weights must be pristine
         self.assertTrue(torch.equal(model.mlp["down_proj"].weight, orig_mlp_down))
         self.assertTrue(torch.equal(model.classifier.weight, orig_classifier))
 
     def test_fallback_layers_are_frozen(self):
         """6. Verify that fallback layers have requires_grad=False and are excluded from recovery."""
         model = ToyTransformer()
-        # Ensure parameters initially require grad
         for p in model.parameters():
             p.requires_grad = True
 
         compressor = ADMMCompressor(
             model,
-            max_error=0.01,  # triggers 100% fallback
+            max_error=0.01,
             fallback_to_original=True,
             target_attention_only=True,
         )
         compressed_model, stats = compressor.compress()
         setattr(compressed_model, "compression_stats", stats)
 
-        # Fallback layers must have requires_grad=False
         for name in compressor.fallback_layers:
             mod = dict(compressed_model.named_modules())[name]
             for p in mod.parameters():
                 self.assertFalse(p.requires_grad, f"Parameter in fallback layer {name} was not frozen!")
 
-        # get_recovery_params must not include any fallback parameters
         recovery_params = get_recovery_params(compressed_model)
         recovery_param_ids = {id(rp) for rp in recovery_params}
         for name in compressor.fallback_layers:

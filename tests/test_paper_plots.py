@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Test Publication-Grade Paper Plot Generator.
 """
@@ -20,7 +26,6 @@ def test_paper_plots_generation():
     with tempfile.TemporaryDirectory() as tmpdir:
         out_dir = Path(tmpdir) / "plots"
 
-        # Test individual functions
         model = nn.Sequential(
             nn.Linear(32, 64),
             nn.ReLU(),
@@ -44,7 +49,6 @@ def test_paper_plots_generation():
         fig3 = plot_pareto_frontier(pts, save_path=p_pareto)
         assert p_pareto.exists()
 
-        # Test batch generator (.svg and .pdf)
         all_plots = generate_all_paper_plots(model=model, output_dir=out_dir / "batch")
         assert len(all_plots) == 6
         for p in all_plots:

@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Comprehensive unit test suite for hardened KVTC (KV Cache Transform Coding / PCA-Quant) compressor.
 
@@ -30,7 +36,6 @@ from typing import Any, Dict
 import torch
 import torch.nn as nn
 
-# Ensure project root is in path
 _PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 from neuralops.compression_engine.kvtc_compressor import (
     KVTCCompressor, KVTCQuantizedLoRALinear, KVTCStore, SimpleEntropyCoder,
@@ -100,12 +105,9 @@ class TestKVTCHardened(unittest.TestCase):
         compressor = KVTCCompressor(model, bits=8, pca_energy=0.95, max_error=0.50)
         compressed_model, stats = compressor.compress()
 
-        # The compressed layers are named linear modules within the model
         self.assertGreater(stats["num_compressed"], 0)
         self.assertIn("q_lin", stats["compressed_layers"])
-        # The module type has been replaced with KVTCQuantizedLoRALinear
         self.assertIsInstance(compressed_model.q_lin, KVTCQuantizedLoRALinear)
-        # Verify stats method confirms weight PCA quantization
         self.assertEqual(stats["method"], "kvtc_pca_quant")
 
     def test_integer_quantization(self):
@@ -115,17 +117,14 @@ class TestKVTCHardened(unittest.TestCase):
         comp = KVTCCompressor(nn.Linear(in_dim, out_dim), bits=8)
         int_w, scale, zp = comp._quantize_to_int(raw_w, bits=8)
 
-        # Must be integer tensor
         self.assertEqual(int_w.dtype, torch.int8)
         self.assertEqual(int_w.element_size(), 1)
 
-        # Test in KVTCQuantizedLoRALinear
         layer = KVTCQuantizedLoRALinear(in_dim, out_dim, int_w, scale, zp)
         self.assertIn("int_weight", dict(layer.named_buffers()))
         self.assertIn("scale", dict(layer.named_buffers()))
         self.assertIn("zero_point", dict(layer.named_buffers()))
 
-        # Forward output verification
         x = torch.randn(2, in_dim)
         out = layer(x)
         self.assertEqual(out.shape, (2, out_dim))
@@ -143,17 +142,14 @@ class TestKVTCHardened(unittest.TestCase):
         model = MockGQAModel(hidden_size=self.d_model)
         compressor = KVTCCompressor(model, bits=8, skip_attention_qkv=True)
 
-        # q_proj, k_proj, v_proj should be identified as GQA asymmetric
         self.assertTrue(compressor._is_gqa_asymmetric("q_proj", model.q_proj))
         self.assertTrue(compressor._is_gqa_asymmetric("k_proj", model.k_proj))
         self.assertTrue(compressor._is_gqa_asymmetric("v_proj", model.v_proj))
 
-        # Target module check should exclude them
         self.assertFalse(compressor._is_target_module("q_proj", model.q_proj))
         self.assertFalse(compressor._is_target_module("k_proj", model.k_proj))
         self.assertFalse(compressor._is_target_module("v_proj", model.v_proj))
 
-        # But o_proj is symmetric and can be compressed
         self.assertTrue(compressor._is_target_module("o_proj", model.o_proj))
 
     def test_percentile_clip(self):
@@ -174,7 +170,6 @@ class TestKVTCHardened(unittest.TestCase):
 
         self.assertGreater(initial_bytes, 0)
         self.assertGreater(final_bytes, 0)
-        # Compressed model with int8 buffers should have substantially smaller physical footprint
         self.assertLess(final_bytes, initial_bytes)
         self.assertGreater(stats["actual_bytes_reduction_pct"], 30.0)
 
@@ -195,7 +190,6 @@ class TestKVTCHardened(unittest.TestCase):
         self.assertIn("entropy_coding_note", stats)
         self.assertTrue(stats["forward_check_success"])
 
-        # Forward pass on compressed model
         out = comp_model(self.dummy_x)
         self.assertEqual(out.shape, (self.batch_size, self.seq_len, self.d_model))
         self.assertFalse(torch.isnan(out).any())

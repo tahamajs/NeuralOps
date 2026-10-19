@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 HuggingFace DynamicCache Generation Bridge
 
 Bridges NeuralOps recurrent and hybrid state caches with HuggingFace DynamicCache.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -14,7 +18,6 @@ import torch
 
 logger = logging.getLogger("NeuralOps.Surgery.HFCacheBridge")
 
-# Attempt importing HuggingFace Cache base classes
 try:
     from transformers.cache_utils import Cache, DynamicCache
     _HF_CACHE_BASE = DynamicCache
@@ -72,7 +75,6 @@ class NeuralOpsHybridHFCache(_HF_CACHE_BASE):
             self.key_cache[layer_idx] = torch.cat([self.key_cache[layer_idx], key_states], dim=-2)
             self.value_cache[layer_idx] = torch.cat([self.value_cache[layer_idx], value_states], dim=-2)
 
-        # Update global seen tokens on layer 0 update
         if layer_idx == 0:
             self._seen_tokens += key_states.shape[-2]
 
@@ -109,7 +111,6 @@ def wrap_model_for_generation(model: torch.nn.Module) -> torch.nn.Module:
         def _patched_prep(input_ids: torch.Tensor, **kwargs: Any) -> Dict[str, Any]:
             model_inputs = orig_prep(input_ids, **kwargs)
             if model_inputs.get("past_key_values", None) is None and kwargs.get("use_cache", True):
-                # Ensure cache is instantiated
                 if not isinstance(kwargs.get("past_key_values"), NeuralOpsHybridHFCache):
                     model_inputs["past_key_values"] = NeuralOpsHybridHFCache()
             return model_inputs

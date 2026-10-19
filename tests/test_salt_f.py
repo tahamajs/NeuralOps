@@ -1,3 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 import math
 import sys
 
@@ -23,7 +30,6 @@ def test_salt_linear_init_recovers_W_r():
     W = torch.randn(64, 64)
     layer = SALTLinear(64, 64, rank=16, original_weight=W)
     W_r = layer.weight
-    # Compare with truncated SVD
     U, S, Vt = torch.linalg.svd(W, full_matrices=False)
     W_r_expected = (U[:, :16] * S[:16].unsqueeze(0)) @ Vt[:16, :]
     err = (W_r - W_r_expected).norm() / (W_r_expected.norm() + 1e-8)
@@ -35,14 +41,13 @@ def test_fisher_weighted_svd():
     """Fisher weighting changes the SVD."""
     W = torch.randn(64, 64)
     F = torch.ones(64)
-    F[10:20] = 100.0  # some high-activation dims
+    F[10:20] = 100.0
     
     layer_fisher = SALTLinear(64, 64, rank=16, 
                               original_weight=W, fisher_diag=F)
     layer_plain = SALTLinear(64, 64, rank=16, 
                              original_weight=W, fisher_diag=None)
     
-    # Different SVD directions should be captured
     diff = (layer_fisher.U - layer_plain.U).abs().mean()
     assert diff > 0.01, "Fisher should change U"
     print(f"[OK] test_fisher_weighted_svd (diff={diff:.4f})")
@@ -53,14 +58,11 @@ def test_attention_aware_gamma_init():
     W = torch.randn(64, 64)
     layer = SALTLinear(64, 64, rank=16, original_weight=W)
     
-    # Default gamma = 1
     assert (layer.gamma == 1.0).all()
     
-    # Set custom sensitivity
     sens = torch.tensor([1.0] * 8 + [10.0] * 8)
     layer.init_gamma_from_sensitivity(sens)
     
-    # High sensitivity should give higher gamma
     assert layer.gamma[8:].mean() > layer.gamma[:8].mean()
     print("[OK] test_attention_aware_gamma_init")
 
@@ -74,7 +76,6 @@ def test_per_projection_adaptive_rank():
     
     attn = SALTAttention(config=FakeConfig(), rank=16)
     ranks = attn.proj_ranks
-    # Just verify all keys exist and are positive
     assert all(r > 0 for r in ranks.values())
     print(f"[OK] test_per_projection_adaptive_rank (ranks={ranks})")
 

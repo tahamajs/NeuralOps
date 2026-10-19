@@ -1,3 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 import types
 
 import pytest
@@ -60,14 +67,12 @@ def test_upi_mamba_masks():
     B, L, D = 2, 12, 64
     x = torch.randn(B, L, D)
 
-    # 2D boolean/binary mask
     mask_2d = torch.ones(B, L)
     mask_2d[:, -3:] = 0
     out_2d, _ = attn(x, attention_mask=mask_2d)
     assert out_2d.shape == (B, L, D)
     assert not torch.isnan(out_2d).any()
 
-    # 4D attention mask
     mask_4d = torch.zeros(B, 1, L, L)
     mask_4d[:, :, :, -3:] = -10000.0
     out_4d, _ = attn(x, attention_mask=mask_4d)
@@ -80,7 +85,6 @@ def test_upi_mamba_lora_and_gradients():
     attn = UPIMambaBlock(cfg, pretrained_attn=DummyAttn(64), lora_rank=8)
     attn.train()
 
-    # Check base weights frozen and lora weights trainable
     assert not attn.in_proj.weight.requires_grad
     assert attn.in_proj.lora_A.requires_grad
     assert attn.in_proj.lora_B.requires_grad
@@ -113,7 +117,6 @@ def test_upi_mamba_inject():
     assert isinstance(injected, UPIMambaBlock)
     assert layer.attention is injected
 
-    # Test None graceful handling
     res = inject_upi_mamba(layer, model_config=cfg, old_attn=None)
     assert res is None
 
@@ -122,7 +125,6 @@ def test_upi_mamba_copy_weights_all_4_architectures():
     d = 64
     cfg = make_config(hidden_size=d)
 
-    # 1. DistilBERT
     class DummyDistilBert(nn.Module):
         def __init__(self):
             super().__init__()
@@ -136,7 +138,6 @@ def test_upi_mamba_copy_weights_all_4_architectures():
     out1, _ = m_distil(x)
     assert out1.shape == (2, 8, d)
 
-    # 2. RoBERTa nested
     class DummyRoberta(nn.Module):
         def __init__(self):
             super().__init__()
@@ -151,7 +152,6 @@ def test_upi_mamba_copy_weights_all_4_architectures():
     out2, _ = m_roberta(x)
     assert out2.shape == (2, 8, d)
 
-    # 3. GPT-2 Conv1D
     class Conv1D(nn.Module):
         def __init__(self, nf, nx):
             super().__init__()
@@ -168,7 +168,6 @@ def test_upi_mamba_copy_weights_all_4_architectures():
     out3, _ = m_gpt2(x)
     assert out3.shape == (2, 8, d)
 
-    # 4. Qwen GQA
     class DummyQwen(nn.Module):
         def __init__(self):
             super().__init__()
@@ -192,22 +191,18 @@ def test_upi_mamba_is_selective():
     L = 16
     x1 = torch.randn(1, L, d)
     x2 = x1.clone()
-    # Inject large perturbation only at position 5
     x2[0, 5, :] += 10.0
 
     with torch.no_grad():
         out1, _ = m(x1)
         out2, _ = m(x2)
 
-    # State evolution: outputs prior to position 5 should be identical (causal)
     diff_before = torch.norm(out1[0, :5] - out2[0, :5]).item()
     assert diff_before < 1e-4, f"Causality violated before spike: diff={diff_before}"
 
-    # Output at and after position 5 must differ due to state evolution
     diff_at_and_after = torch.norm(out1[0, 5:] - out2[0, 5:]).item()
     assert diff_at_and_after > 1.0, f"Expected state to evolve after spike, got diff={diff_at_and_after}"
 
-    # Verify B_t and C_t projections are input-dependent
     x_proj_out1 = m.x_proj(x1)
     _, B_t1, C_t1 = torch.split(x_proj_out1, [m.dt_rank, m.d_state, m.d_state], dim=-1)
     x_proj_out2 = m.x_proj(x2)

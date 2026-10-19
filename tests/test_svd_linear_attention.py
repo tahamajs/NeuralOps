@@ -1,3 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 import math
 import sys
 
@@ -14,11 +21,9 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 
 def test_svdlinear_no_custom_attention_attr():
     """Test 1: SVDLinear does not have is_custom_attention = True as class attribute."""
-    # is_custom_attention should NOT be True on SVDLinear class or instances
     assert not getattr(SVDLinear, "is_custom_attention", False), "SVDLinear must not have is_custom_attention=True"
     linear = SVDLinear(in_features=32, out_features=64, rank=16)
     assert not getattr(linear, "is_custom_attention", False), "SVDLinear instance must not have is_custom_attention=True"
-    # But SVDLinearAttention MUST have is_custom_attention = True
     assert getattr(SVDLinearAttention, "is_custom_attention", False) is True
     print("[OK] test_svdlinear_no_custom_attention_attr")
 
@@ -39,19 +44,15 @@ def test_svdlinear_get_weight():
 def test_svdlinear_set_low_rank_factors_zeroing():
     """Test 3: set_low_rank_factors only zeroes written slice and handles smaller rank."""
     linear = SVDLinear(in_features=32, out_features=64, rank=16, bias=True)
-    # Fill with sentinel values
     linear.U.data.fill_(7.0)
     linear.V.data.fill_(7.0)
 
-    # Provide rank 8 factors (smaller than rank 16)
     U_sub = torch.randn(64, 8)
     V_sub = torch.randn(8, 32)
     linear.set_low_rank_factors(U_sub, V_sub)
 
-    # Columns 8:16 in U and rows 8:16 in V must be 0
     assert torch.allclose(linear.U.data[:, 8:], torch.zeros(64, 8))
     assert torch.allclose(linear.V.data[8:, :], torch.zeros(8, 32))
-    # Loaded factors in :8 must match
     assert torch.allclose(linear.U.data[:, :8], U_sub)
     assert torch.allclose(linear.V.data[:8, :], V_sub)
     print("[OK] test_svdlinear_set_low_rank_factors_zeroing")
@@ -97,7 +98,6 @@ def test_copy_weights_near_zero_frobenius_raises():
             self.k_lin = nn.Linear(64, 64)
             self.v_lin = nn.Linear(64, 64)
             self.out_lin = nn.Linear(64, 64)
-            # Set q_lin weight to zero
             self.q_lin.weight.data.zero_()
 
     dummy = DummyNearZero()
@@ -121,7 +121,6 @@ def test_copy_weights_distilbert():
 
     dummy = DistilBertStyleAttention()
     attn.copy_weights(dummy)
-    # Forward check after copy
     x = torch.randn(2, 8, 64)
     out, _ = attn(x)
     assert out.shape == (2, 8, 64)
@@ -150,7 +149,6 @@ def test_copy_weights_gpt2():
 
 def test_adapt_to_kv_size_modes():
     """Test 9: GQA adaptation modes 'slice', 'mean', and 'first' work properly."""
-    # hidden_size=64, num_heads=4 -> head_dim=16. 2 KV heads -> kv_head_size = 32.
     attn = SVDLinearAttention(hidden_size=64, num_heads=4, num_kv_heads=2, rank=16)
     assert attn.num_kv_heads == 2
     assert attn.head_dim == 16
@@ -160,7 +158,7 @@ def test_adapt_to_kv_size_modes():
         def __init__(self):
             super().__init__()
             self.q_proj = nn.Linear(64, 64)
-            self.k_proj = nn.Linear(64, 64)  # 4 heads (64) in source, to be adapted to 2 heads (32)
+            self.k_proj = nn.Linear(64, 64)
             self.v_proj = nn.Linear(64, 64)
             self.o_proj = nn.Linear(64, 64)
 
@@ -178,13 +176,11 @@ def test_sdpa_in_exact_mode():
     attn = SVDLinearAttention(hidden_size=64, num_heads=4, rank=16, mode="exact")
     x = torch.randn(2, 8, 64)
 
-    # 1. output_attentions=False -> attn_probs should be None (SDPA path)
     out, attn_probs = attn(x, output_attentions=False)
     assert out.shape == (2, 8, 64)
     assert attn_probs is None
     assert not torch.isnan(out).any()
 
-    # 2. output_attentions=True -> attn_probs should be returned (B, H, N, N)
     out2, attn_probs2 = attn(x, output_attentions=True)
     assert out2.shape == (2, 8, 64)
     assert attn_probs2 is not None
@@ -198,7 +194,6 @@ def test_chunked_decay_scan_bf16():
     attn = SVDLinearAttention(
         hidden_size=64, num_heads=4, rank=16, mode="decay_linear", use_decay_gating=True
     )
-    # Test with sequence length 128 (crosses chunk boundary of 64)
     x = torch.randn(2, 128, 64, dtype=torch.bfloat16)
     attn.to(torch.bfloat16)
     out, _ = attn(x)
@@ -217,7 +212,6 @@ def test_linear_kernel_and_recurrent():
     out, _ = attn(x)
     assert out.shape == (2, 16, 64)
 
-    # Step recurrent test
     past_state = None
     outputs = []
     for t in range(5):

@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Comprehensive Mathematical Proof Suite: Parallel Causal Forward vs Token-by-Token Recurrent .step() Equivalence.
 
 Tests:
@@ -50,7 +56,6 @@ def test_parallel_vs_recurrent_step_equivalence(name, device_str):
     if hasattr(module, "window_size"):
         module.window_size = 0
     if hasattr(module, "fusion_scale"):
-        # Zero out local additive branch for pure linear global test
         if hasattr(module, "v_proj_attn"):
             for p in module.v_proj_attn.parameters():
                 p.data.zero_()
@@ -62,12 +67,10 @@ def test_parallel_vs_recurrent_step_equivalence(name, device_str):
     T = 8
     x = torch.randn(B, T, dim, device=device, dtype=dtype)
 
-    # 1. Parallel forward
     with torch.no_grad():
         out_parallel = module(x)
         y_parallel = out_parallel[0] if isinstance(out_parallel, tuple) else out_parallel
 
-    # 2. Token-by-token .step()
     state = None
     y_steps = []
     with torch.no_grad():
@@ -103,19 +106,16 @@ def test_constant_o1_state_memory(name):
             return 0
         total = 0
         if isinstance(s, dict):
-            # Track fixed recurrent state tensors (excluding metadata or local sliding windows)
             for k, v in s.items():
                 if isinstance(v, torch.Tensor) and k in ("kv_state", "z_state", "ssm_state", "S", "Z"):
                     total += v.numel() * v.element_size()
         return total
 
-    # Step 1
     x1 = torch.randn(1, 1, dim, device=device)
     with torch.no_grad():
         _, state = module.step(x1, state=state)
     bytes_step_1 = get_state_bytes(state)
 
-    # Steps 2 to 64
     for _ in range(63):
         xt = torch.randn(1, 1, dim, device=device)
         with torch.no_grad():

@@ -1,5 +1,9 @@
-# -*- coding: utf-8 -*-
-# Author: Taha Majlesi
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Multi-Precision (FP32, FP16, BF16) Roofline & TFLOPs Benchmark for Attention Mechanisms.
 
 Measures latency, effective TFLOPs/s, memory bandwidth utilization against
@@ -108,12 +112,10 @@ def main():
 
         for prec_name, dtype, byte_per_elem in precisions:
             runner.reset_vram()
-            # Calculate FLOPs & memory transactions
             if is_linear:
                 flops = 4.0 * B * T * (D**2)
             else:
                 flops = 4.0 * B * (T**2) * D + 4.0 * B * T * (D**2)
-            # 2 inputs/outputs read/write
             bytes_moved = 2.0 * (B * T * D + B * T * D) * byte_per_elem
 
             try:

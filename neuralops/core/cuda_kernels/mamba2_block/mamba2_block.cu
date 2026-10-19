@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda.h>
 #include <cuda_runtime.h>
@@ -9,15 +16,15 @@
 
 template <typename scalar_t>
 __global__ void mamba2_block_fwd_kernel(
-    const scalar_t* __restrict__ u,       // [B, D, L]
-    const scalar_t* __restrict__ delta,   // [B, D, L]
-    const scalar_t* __restrict__ A,       // [D]
-    const scalar_t* __restrict__ B_mat,   // [B, N, L]
-    const scalar_t* __restrict__ C_mat,   // [B, N, L]
-    const scalar_t* __restrict__ D_val,   // [D] (optional)
-    const scalar_t* __restrict__ prev_state, // [B, D, N] (optional)
-    scalar_t* __restrict__ out,           // [B, D, L]
-    scalar_t* __restrict__ final_state,   // [B, D, N]
+    const scalar_t* __restrict__ u,
+    const scalar_t* __restrict__ delta,
+    const scalar_t* __restrict__ A,
+    const scalar_t* __restrict__ B_mat,
+    const scalar_t* __restrict__ C_mat,
+    const scalar_t* __restrict__ D_val,
+    const scalar_t* __restrict__ prev_state,
+    scalar_t* __restrict__ out,
+    scalar_t* __restrict__ final_state,
     int B, int D, int L, int N
 ) {
     int d = blockIdx.x * blockDim.x + threadIdx.x;

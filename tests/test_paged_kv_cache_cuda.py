@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Comprehensive GPU tests for Paged KV Cache (Module 8).
 Validates 3-level dispatch, float32/float16/bfloat16 safety, int64/int32 mapping,
@@ -27,7 +33,6 @@ def test_paged_kv_cache_dtypes_and_shapes(dtype, block_mapping_dtype, num_heads,
     dst_k_ref = torch.zeros_like(src_k)
     dst_v_ref = torch.zeros_like(src_v)
 
-    # Remap 8 blocks
     mapping = torch.tensor([[0, 5], [1, 7], [3, 12], [4, 15], [8, 2], [9, 6], [10, 11], [14, 20]],
                            device="cuda", dtype=block_mapping_dtype)
 
@@ -47,7 +52,6 @@ def test_paged_kv_cache_empty_and_negative_indices():
     src_k = torch.randn(num_blocks, 8, 16, 64, device="cuda", dtype=torch.float32)
     src_v = torch.randn(num_blocks, 8, 16, 64, device="cuda", dtype=torch.float32)
 
-    # 1. Empty mapping test (0 blocks)
     dst_k = torch.zeros_like(src_k)
     dst_v = torch.zeros_like(src_v)
     empty_mapping = torch.empty((0, 2), device="cuda", dtype=torch.int64)
@@ -56,7 +60,6 @@ def test_paged_kv_cache_empty_and_negative_indices():
     assert torch.all(dst_k == 0.0)
     assert torch.all(dst_v == 0.0)
 
-    # 2. Negative and out-of-bounds indices guard
     dst_k_ref = torch.zeros_like(src_k)
     dst_v_ref = torch.zeros_like(src_v)
     bad_mapping = torch.tensor([[-1, 2], [3, -1], [999, 1], [2, 999], [0, 4]], device="cuda", dtype=torch.int64)
@@ -66,7 +69,6 @@ def test_paged_kv_cache_empty_and_negative_indices():
 
     torch.testing.assert_close(dst_k, dst_k_ref)
     torch.testing.assert_close(dst_v, dst_v_ref)
-    # Check that valid mapping [0, 4] was successfully copied
     torch.testing.assert_close(dst_k[4], src_k[0])
     torch.testing.assert_close(dst_v[4], src_v[0])
 
@@ -79,7 +81,6 @@ def test_paged_kv_cache_non_contiguous():
     raw_src_k = torch.randn(num_blocks, 16, 8, 64, device="cuda", dtype=torch.float32)
     raw_src_v = torch.randn(num_blocks, 16, 8, 64, device="cuda", dtype=torch.float32)
 
-    # Transposed (non-contiguous) view
     src_k = raw_src_k.transpose(1, 2)
     src_v = raw_src_v.transpose(1, 2)
     dst_k = torch.zeros_like(src_k)

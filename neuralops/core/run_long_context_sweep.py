@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Long-Context Evaluation Sweep Runner
 
 Evaluation harness benchmarking compression and attention modules on long-sequence byte-level tasks.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -21,7 +25,6 @@ import torch
 import torch.nn as nn
 from transformers import AutoModelForSequenceClassification
 
-# Framework import paths
 HERE = Path(__file__).resolve().parent
 CODES = HERE.parent
 ROOT = CODES.parent
@@ -206,11 +209,9 @@ def adapt_model_pos_embeddings(model: nn.Module, target_seq_len: int = 4096) -> 
         return
     max_pos = getattr(cfg, "max_position_embeddings", None)
     if max_pos is not None and max_pos < target_seq_len:
-        # DistilBERT
         if hasattr(model, "distilbert") and hasattr(model.distilbert, "embeddings"):
             pos_emb = model.distilbert.embeddings.position_embeddings
-            old_w = pos_emb.weight.data  # [max_pos, dim]
-            # Interpolate: [1, dim, max_pos] -> [1, dim, target_seq_len]
+            old_w = pos_emb.weight.data
             new_w = (
                 torch.nn.functional.interpolate(
                     old_w.t().unsqueeze(0),
@@ -232,7 +233,6 @@ def adapt_model_pos_embeddings(model: nn.Module, target_seq_len: int = 4096) -> 
                     torch.arange(target_seq_len).expand((1, -1)).to(old_w.device),
                 )
             cfg.max_position_embeddings = target_seq_len
-        # RoBERTa / BERT
         elif hasattr(model, "roberta") and hasattr(model.roberta, "embeddings"):
             pos_emb = model.roberta.embeddings.position_embeddings
             old_w = pos_emb.weight.data
@@ -314,7 +314,6 @@ def main():
     if args.max_length:
         args.seq_len = args.max_length
 
-    # Parse comma-separated modules if passed as a single string
     parsed_mods = []
     if isinstance(args.modules, list):
         for item in args.modules:
@@ -348,7 +347,6 @@ def main():
     out_dir.mkdir(parents=True, exist_ok=True)
     summary_csv = out_dir / "summary.csv"
 
-    # Prepare DataLoader
     loader = get_byte_imdb_dataloader(
         split="test",
         batch_size=args.batch_size,
@@ -356,7 +354,6 @@ def main():
         dataset_dir=args.dataset_dir,
     )
 
-    # 1. Baseline Evaluation
     LOG.info("Evaluating baseline uncompressed model on 4096-token Byte IMDb...")
     base_model = AutoModelForSequenceClassification.from_pretrained(args.model_path)
     adapt_model_pos_embeddings(base_model, target_seq_len=args.seq_len)
@@ -401,7 +398,6 @@ def main():
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
 
-    # 2. Iterate through modules
     for idx, mod in enumerate(args.modules, 1):
         if mod == "full":
             continue

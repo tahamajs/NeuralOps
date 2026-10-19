@@ -1,10 +1,12 @@
-# -*- coding: utf-8 -*-
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Run qwen llama benchmarks module.
-
-Author: Taha Majlesi
 """
 
-# Author: Taha Majlesi
 import os
 import time
 from pathlib import Path
@@ -16,7 +18,6 @@ from neuralops.utils.replace_attention import replace_attention
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print(f"Running on device: {device} ({torch.cuda.get_device_name(0)})")
 
-# 1. Prepare Architectures
 print("\n=== Initializing Qwen-2.5 and LLaMA-3 Architectures ===")
 try:
     cfg_path = os.path.expanduser("~/.cache/huggingface/hub/models--Qwen--Qwen2.5-0.5B/snapshots")
@@ -37,7 +38,6 @@ except Exception:
             max_position_embeddings=32768,
         )
 
-# LLaMA-3 architecture configuration (16 layers, 2048 hidden, 16 heads)
 cfg_llama = AutoConfig.for_model(
     "llama",
     vocab_size=32000,
@@ -71,7 +71,6 @@ for arch_name, cfg in architectures:
                 if mech != "baseline":
                     m = replace_attention(m, attention_key=mech)
 
-                # Warmup
                 with torch.no_grad():
                     _ = m(inputs)
 
@@ -138,7 +137,6 @@ for arch_name, cfg in architectures:
                     }
                 )
 
-# Export CSV
 df = pd.DataFrame(results)
 repo_root = Path(__file__).resolve().parent.parent.parent
 bench_dir = repo_root / "docs" / "benchmarks"
@@ -147,7 +145,6 @@ csv_path = bench_dir / "paper_benchmarks_qwen_surgery.csv"
 df.to_csv(csv_path, index=False)
 print(f"\nExported {csv_path} successfully.")
 
-# Export LaTeX Deliverable
 latex_content = r"""% Publication Benchmark Deliverable: Qwen-2.5 & LLaMA-3 Architecture Model Surgery
 % Hardware: NVIDIA GeForce RTX 4070 Laptop GPU (8GB VRAM), CUDA 12.8, PyTorch 2.11.0+cu128
 

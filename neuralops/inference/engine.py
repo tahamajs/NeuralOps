@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 LLM Inference Engine
 
 High-throughput inference engine supporting sampling, beam search, and continuous batching.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -69,7 +73,6 @@ class NeuralOpsInferenceEngine:
 
             next_token_logits = logits[:, -1, :].clone() / max(temperature, 1e-5)
 
-            # Repetition penalty
             if repetition_penalty != 1.0:
                 for b in range(next_token_logits.shape[0]):
                     for tok in curr[b].tolist():
@@ -78,17 +81,14 @@ class NeuralOpsInferenceEngine:
                         else:
                             next_token_logits[b, tok] *= repetition_penalty
 
-            # Top-k filtering
             if top_k is not None and top_k > 0:
                 val, _ = torch.topk(next_token_logits, min(top_k, next_token_logits.shape[-1]))
                 next_token_logits[next_token_logits < val[:, -1:]] = float("-inf")
 
-            # Top-p (nucleus) filtering
             if top_p is not None and 0.0 < top_p < 1.0:
                 sorted_logits, sorted_indices = torch.sort(next_token_logits, descending=True)
                 cumulative_probs = torch.cumsum(F.softmax(sorted_logits, dim=-1), dim=-1)
                 sorted_indices_to_remove = cumulative_probs > top_p
-                # Shift right to keep at least one token above threshold
                 sorted_indices_to_remove[..., 1:] = sorted_indices_to_remove[..., :-1].clone()
                 sorted_indices_to_remove[..., 0] = 0
                 for b in range(next_token_logits.shape[0]):
@@ -139,7 +139,6 @@ def speculative_generate(
         draft_ids = curr.clone()
         draft_probs = []
 
-        # Draft model proposes K tokens
         for _ in range(K):
             d_out = draft_model(draft_ids)
             d_logits = d_out.logits if hasattr(d_out, "logits") else d_out
@@ -148,7 +147,6 @@ def speculative_generate(
             tok = torch.argmax(p, dim=-1, keepdim=True)
             draft_ids = torch.cat([draft_ids, tok], dim=-1)
 
-        # Target model verifies draft tokens in single parallel forward pass
         t_out = target_model(draft_ids)
         t_logits = t_out.logits if hasattr(t_out, "logits") else t_out
         target_probs = F.softmax(t_logits, dim=-1)
@@ -195,7 +193,7 @@ def beam_search_generate(
     for _ in range(max_new_tokens):
         out = model(beams)
         logits = out.logits if hasattr(out, "logits") else out
-        log_probs = F.log_softmax(logits[:, -1, :], dim=-1)  # [beam_size, V]
+        log_probs = F.log_softmax(logits[:, -1, :], dim=-1)
 
         total_scores = log_probs + scores.unsqueeze(-1)
         vocab_size = total_scores.shape[-1]

@@ -1,4 +1,9 @@
-# -*- coding: utf-8 -*-
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Comprehensive Empirical Accuracy & PPL Benchmark for Attention Modules across RoBERTa (SST-2 Accuracy) & GPT-2 (WikiText-2 Perplexity).
 Evaluates each module in parallel across two complementary metrics:
   1. SST-2 Accuracy (%) on RoBERTa-base (Classification Head Accuracy)
@@ -34,7 +39,6 @@ def main():
 
     print(f"[{node_name}] Starting Accuracy & PPL Benchmark on {gpu_name} ({device})...")
 
-    # 1. Prepare Datasets & Tokenizers
     print("Loading SST-2 and WikiText-2 validation evaluation data...")
     tok_roberta = AutoTokenizer.from_pretrained("textattack/roberta-base-SST-2")
     ds_sst2 = load_dataset("nyu-mll/glue", "sst2", split="validation[:100]")
@@ -49,16 +53,13 @@ def main():
     wiki_text = "\n\n".join([t for t in ds_wiki["text"][:50] if len(t.strip()) > 20])
     enc_wiki = tok_gpt2(wiki_text, return_tensors="pt", max_length=512, truncation=True).input_ids.to(device)
 
-    # 2. Evaluate Baselines
     print("Evaluating Baseline Models...")
-    # Baseline RoBERTa
     base_roberta = AutoModelForSequenceClassification.from_pretrained("textattack/roberta-base-SST-2").to(device)
     with torch.no_grad():
         base_acc = (base_roberta(**enc_sst2).logits.argmax(dim=-1) == labels_sst2).float().mean().item()
     del base_roberta
     torch.cuda.empty_cache()
 
-    # Baseline GPT-2
     base_gpt2 = AutoModelForCausalLM.from_pretrained("gpt2", torch_dtype=torch.float16).to(device)
     with torch.no_grad():
         base_loss = base_gpt2(enc_wiki, labels=enc_wiki).loss.item()
@@ -70,7 +71,6 @@ def main():
     print(f"Baseline GPT-2 WikiText-2 PPL: {base_ppl:.2f}")
 
     keys = sorted(ATTENTION_REGISTRY.keys())
-    # Allow passing module subset from command line for fast multi-node partitioning
     if len(sys.argv) > 1 and sys.argv[1] == "--split":
         part = int(sys.argv[2])
         total_parts = int(sys.argv[3])
@@ -88,7 +88,6 @@ def main():
         acc = None
         ppl = None
         err = ""
-        # A. Evaluate SST-2 Accuracy on RoBERTa
         try:
             with torch.no_grad():
                 base_ref = AutoModelForSequenceClassification.from_pretrained("textattack/roberta-base-SST-2").to(
@@ -104,7 +103,6 @@ def main():
                     fallback_to_original=False,
                 )
 
-                # Closed-Form Layerwise Ridge Output Calibration (8 samples for guaranteed memory safety across 6GB GPUs)
                 calib_batch = {k: v[:8] for k, v in enc_sst2.items()}
                 m_rob = calibrate_surgically_replaced_model(
                     base_ref, m_rob, calib_batch, ridge_lambda=1e-3, blend_alpha=0.15
@@ -129,7 +127,6 @@ def main():
         torch.cuda.empty_cache()
         gc.collect()
 
-        # B. Evaluate WikiText-2 PPL on GPT-2
         try:
             with torch.no_grad():
                 base_gpt_ref = AutoModelForCausalLM.from_pretrained("gpt2", torch_dtype=torch.float16).to(device)
@@ -143,7 +140,6 @@ def main():
                     fallback_to_original=False,
                 )
 
-                # Closed-Form Layerwise Ridge Output Calibration (first 128 tokens)
                 calib_wiki = enc_wiki[:, :128]
                 m_gpt = calibrate_surgically_replaced_model(
                     base_gpt_ref, m_gpt, calib_wiki, ridge_lambda=1e-3, blend_alpha=0.03
@@ -165,7 +161,6 @@ def main():
 
         results.append({"module": name, "accuracy_pct": acc, "perplexity": ppl, "duration_s": dur, "error": err})
 
-    # Save output artifacts
     has_split = "--split" in sys.argv
     split_part = sys.argv[sys.argv.index("--split") + 1] if has_split else ""
     suffix = f"_{node_name}_part{split_part}" if has_split else f"_{node_name}"

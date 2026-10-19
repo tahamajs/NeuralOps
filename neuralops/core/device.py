@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Universal Hardware Device Abstraction
 
 Device detection, multi-GPU topology allocation, and safe context management for CUDA, MPS, and CPU.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -112,7 +116,6 @@ def safe_to_device(
     target_dev = get_current_device(device)
 
     if isinstance(obj, torch.Tensor):
-        # Harmonize dtype BEFORE moving to avoid MPS runtime exception with float64
         harmonized_obj = obj
         if target_dev.type == "mps":
             if obj.dtype == torch.float64:
@@ -191,7 +194,6 @@ class UniversalDispatcher:
         device: Optional[Union[str, torch.device]] = None,
         **kwargs: Any,
     ) -> Any:
-        # Determine executing device from tensor arg or target device
         first_tensor = None
         for a in args:
             if isinstance(a, torch.Tensor):
@@ -206,14 +208,12 @@ class UniversalDispatcher:
         exec_device = torch.device(device) if device else (first_tensor.device if first_tensor is not None else get_current_device())
         topo = probe_hardware(exec_device)
 
-        # Tier 1: Hardware-Native C++ / HIP (Only when explicitly running on CUDA/ROCm)
         if topo.is_cuda_or_rocm and native_fn is not None:
             try:
                 return native_fn(*args, **kwargs)
             except Exception as e:
                 logger.debug("Tier 1 Native kernel for '%s' unavailable/failed (%s), trying Tier 2...", op_name, e)
 
-        # Tier 2: OpenAI Triton JIT (CUDA SM >= 7.0 or ROCm)
         if topo.supports_triton_jit and triton_fn is not None:
             try:
                 import triton  # noqa: F401
@@ -221,7 +221,6 @@ class UniversalDispatcher:
             except Exception as e:
                 logger.debug("Tier 2 Triton JIT for '%s' failed (%s), falling back to Tier 3 Universal PyTorch...", op_name, e)
 
-        # Tier 3: Universal PyTorch Fallback (CPU, Apple Silicon MPS, XPU)
         if pytorch_fallback_fn is not None:
             return pytorch_fallback_fn(*args, **kwargs)
 

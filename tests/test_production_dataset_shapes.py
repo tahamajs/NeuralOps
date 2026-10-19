@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Production Dataset Shapes & Collation Verification Test Suite.
 
@@ -30,14 +36,12 @@ class TestProductionDatasetShapes:
         """Verify ProductionDataCollator pads sequences to multiples of 8 for GPU Tensor Cores."""
         collator = ProductionDataCollator(pad_token_id=0, pad_to_multiple_of=8)
 
-        # Inhomogeneous variable-length input sequences
         features = [
             {"input_ids": [101, 2054, 102], "attention_mask": [1, 1, 1], "labels": 1},
             {"input_ids": [101, 2054, 2003, 1037, 3899, 102], "attention_mask": [1, 1, 1, 1, 1, 1], "labels": 0},
         ]
         batch = collator(features)
 
-        # Max length was 6 -> padded to multiple of 8 = 8
         assert "input_ids" in batch
         assert "attention_mask" in batch
         assert "labels" in batch
@@ -45,12 +49,10 @@ class TestProductionDatasetShapes:
         assert batch["attention_mask"].shape == (2, 8)
         assert batch["labels"].shape == (2,)
 
-        # Check dtypes
         assert batch["input_ids"].dtype == torch.long
         assert batch["attention_mask"].dtype == torch.long
         assert batch["labels"].dtype == torch.long
 
-        # Check padding tokens
         assert (batch["input_ids"][0, 3:] == 0).all()
         assert (batch["attention_mask"][0, 3:] == 0).all()
 
@@ -68,7 +70,6 @@ class TestProductionDatasetShapes:
         assert batch["labels"].shape == (2, 8)
         assert batch["labels"].dtype == torch.long
 
-        # Verify trailing positions are filled with -100
         assert (batch["labels"][0, 3:] == -100).all()
         assert (batch["labels"][1, 5:] == -100).all()
 
@@ -144,6 +145,5 @@ class TestProductionDatasetShapes:
         for k, v in batch.items():
             if isinstance(v, torch.Tensor):
                 assert v.is_contiguous(), f"Tensor {k} must be memory contiguous for GPU transfer."
-                # Verify .to(dtype=...) and clone works cleanly
                 cloned = v.clone()
                 assert cloned.shape == v.shape

@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 LoRA Layer Utilities
 
 Helper utilities for low-rank adaptation matrix creation, merging, and decomposition.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -31,7 +35,6 @@ class LoRALinear(nn.Module):
             self.in_features = linear.in_features
             self.out_features = linear.out_features
         elif hasattr(linear, "weight"):
-            # HuggingFace Conv1D (used in GPT-2) has weight shape [in_features, out_features]
             self.in_features = linear.weight.shape[0]
             self.out_features = linear.weight.shape[1]
         else:
@@ -41,18 +44,14 @@ class LoRALinear(nn.Module):
         self.scaling = float(alpha) / max(1, self.r) if self.r > 0 else 1.0
         self.merged = False
 
-        # Base linear layer (frozen)
         self.base_layer = linear
         self.base_layer.weight.requires_grad = False
         if self.base_layer.bias is not None:
             self.base_layer.bias.requires_grad = False
 
         device = linear.weight.device
-        # Trainable LoRA parameters are kept in FP32 for numerical stability
-        # and compatibility with torch.amp.GradScaler in mixed precision.
         dtype = torch.float32
 
-        # LoRA trainable low-rank matrices
         if self.r > 0:
             self.lora_A = nn.Linear(
                 self.in_features, self.r, bias=False, device=device, dtype=dtype
@@ -212,7 +211,6 @@ def apply_lora(
     else:
         targets = set(target_modules)
 
-    # 1. Freeze all existing parameters in the model
     for p in model.parameters():
         p.requires_grad = False
 
@@ -222,14 +220,12 @@ def apply_lora(
         nonlocal adapted_count
         for name, child in list(module.named_children()):
             full_name = f"{prefix}.{name}" if prefix else name
-            # Check if this child's name matches any target module
             is_target = any(target in name for target in targets) or any(
                 target == name for target in targets
             )
             is_linear_like = isinstance(child, nn.Linear) or child.__class__.__name__ == "Conv1D"
 
             if is_linear_like and is_target:
-                # Do not adapt classification heads
                 if any(head in name.lower() for head in ("score", "classifier", "lm_head")):
                     continue
                 wrapped = LoRALinear(child, r=r, alpha=alpha, dropout=dropout)

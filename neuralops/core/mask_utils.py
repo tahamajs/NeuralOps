@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Mask Construction Utilities
 
 High-performance mask generation and manipulation utilities for causal and non-causal attention patterns.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -37,17 +41,14 @@ def prepare_mask_and_positions(
     B, N, D = hidden_states.shape
     device = hidden_states.device
 
-    valid_mask = get_token_valid_mask(attention_mask, B, N, device)  # [B, N] bool
+    valid_mask = get_token_valid_mask(attention_mask, B, N, device)
 
     if position_ids is None:
-        # Cumulative sum over valid tokens:
-        # e.g., mask = [0, 0, 1, 1] -> cumsum = [0, 0, 1, 2] -> pos_ids = [0, 0, 0, 1]
         cumsum = torch.cumsum(valid_mask.long(), dim=-1)
         pos_ids = torch.clamp(cumsum - 1, min=0)
     else:
         pos_ids = position_ids
 
-    # Zero out padded activations so they do not leak into cumulative sums or state updates
     mask_expanded = valid_mask.unsqueeze(-1).to(hidden_states.dtype)
     clean_hidden = hidden_states * mask_expanded
 
@@ -67,13 +68,13 @@ def mask_kv_states(
         return K, V
 
     if K.dim() == 4:
-        if K.shape[1] == valid_mask.shape[1]:  # [B, N, H, d]
+        if K.shape[1] == valid_mask.shape[1]:
             m = valid_mask.unsqueeze(-1).unsqueeze(-1).to(K.dtype)
-        else:  # [B, H, N, d]
+        else:
             m = valid_mask.unsqueeze(1).unsqueeze(-1).to(K.dtype)
         return K * m, V * m
 
-    elif K.dim() == 3:  # [B, N, D]
+    elif K.dim() == 3:
         m = valid_mask.unsqueeze(-1).to(K.dtype)
         return K * m, V * m
 

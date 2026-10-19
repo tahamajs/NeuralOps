@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Generate publication-quality SVG figures and render them to 300+ DPI PNG and vector PDF.
 Synchronize across results/plots/, paper/iclr2027-submission/figures/, and paper/neurips2026-submission/figures/.
@@ -9,13 +15,11 @@ import math
 import subprocess
 from pathlib import Path
 
-# Target directories
 DIRS = [Path("results/plots"), Path("paper/iclr2027-submission/figures"), Path("paper/neurips2026-submission/figures")]
 
 for d in DIRS:
     d.mkdir(parents=True, exist_ok=True)
 
-# Common SVG Style & Colors
 BG_COLOR = "#0f172a"
 PANEL_BG = "#1e293b"
 GRID_COLOR = "#334155"
@@ -51,7 +55,6 @@ def svg_footer():
     return "</svg>\n"
 
 
-# 1. Pareto Frontier: Accuracy vs Compression Ratio
 def gen_pareto_acc_vs_compression():
     """Execute gen pareto acc vs compression routine."""
     w, h = 900, 600
@@ -64,11 +67,9 @@ def gen_pareto_acc_vs_compression():
         )
     ]
 
-    # Plot area
     x0, y0, pw, ph = 100, 80, 740, 460
     svg.append(f'  <rect x="{x0}" y="{y0}" width="{pw}" height="{ph}" fill="{PANEL_BG}" rx="6" stroke="{GRID_COLOR}"/>')
 
-    # Axes limits: X in [1.0, 3.0], Y in [30, 90]
     xmin, xmax = 1.0, 3.0
     ymin, ymax = 30.0, 90.0
 
@@ -78,7 +79,6 @@ def gen_pareto_acc_vs_compression():
         sy = y0 + ph - ((y - ymin) / (ymax - ymin)) * ph
         return sx, sy
 
-    # Grid & Ticks X
     for x in [1.0, 1.4, 1.8, 2.2, 2.6, 3.0]:
         sx, _ = to_screen(x, ymin)
         svg.append(
@@ -88,7 +88,6 @@ def gen_pareto_acc_vs_compression():
             f'  <text x="{sx}" y="{y0 + ph + 20}" fill="{TEXT_MUTED}" font-size="11" font-family="{FONT_FAMILY}" text-anchor="middle">{x:.1f}x</text>'
         )
 
-    # Grid & Ticks Y
     for y in range(30, 95, 10):
         _, sy = to_screen(xmin, y)
         svg.append(
@@ -105,7 +104,6 @@ def gen_pareto_acc_vs_compression():
         f'  <text x="35" y="{y0 + ph / 2}" fill="{TEXT_MUTED}" font-size="13" font-family="{FONT_FAMILY}" text-anchor="middle" transform="rotate(-90 35 {y0 + ph / 2})">Accuracy Retention (%) [Higher is Better]</text>'
     )
 
-    # Methods Data (Table 8 and roberta results)
     methods = [
         {"name": "Dense Baseline", "x": 1.00, "y": 81.80, "cat": "Baseline", "pareto": True},
         {"name": "kmeans (VQ)", "x": 2.73, "y": 81.40, "cat": "Quantization", "pareto": True},
@@ -121,7 +119,6 @@ def gen_pareto_acc_vs_compression():
         {"name": "reap_pruner", "x": 2.30, "y": 71.50, "cat": "Pruning", "pareto": False},
     ]
 
-    # Pareto envelope curve
     p_pts = sorted(
         [
             m
@@ -141,7 +138,6 @@ def gen_pareto_acc_vs_compression():
         f'  <path d="{" ".join(path_d)}" fill="none" stroke="{ACCENT_CYAN}" stroke-width="2.5" stroke-dasharray="5,4"/>'
     )
 
-    # Plot points
     cat_colors = {
         "Baseline": "#e2e8f0",
         "Quantization": ACCENT_GREEN,
@@ -161,7 +157,6 @@ def gen_pareto_acc_vs_compression():
             f'  <text x="{sx:.1f}" y="{sy + offset_y:.1f}" fill="{c}" font-size="10" font-family="{FONT_FAMILY}" font-weight="{"bold" if m["pareto"] else "normal"}" text-anchor="middle">{m["name"]}</text>'
         )
 
-    # Legend
     lx, ly = x0 + 20, y0 + 20
     svg.append(
         f'  <rect x="{lx}" y="{ly}" width="240" height="120" fill="{BG_COLOR}" rx="4" stroke="{GRID_COLOR}" opacity="0.9"/>'
@@ -181,7 +176,6 @@ def gen_pareto_acc_vs_compression():
     return "\n".join(svg)
 
 
-# 2. Pareto Frontier: Accuracy vs Peak VRAM Footprint
 def gen_pareto_acc_vs_vram():
     """Execute gen pareto acc vs vram routine."""
     w, h = 900, 600
@@ -196,7 +190,7 @@ def gen_pareto_acc_vs_vram():
     x0, y0, pw, ph = 100, 80, 740, 460
     svg.append(f'  <rect x="{x0}" y="{y0}" width="{pw}" height="{ph}" fill="{PANEL_BG}" rx="6" stroke="{GRID_COLOR}"/>')
 
-    xmin, xmax = 100.0, 200.0  # MB
+    xmin, xmax = 100.0, 200.0
     ymin, ymax = 30.0, 90.0
 
     def to_screen(x, y):
@@ -267,7 +261,6 @@ def gen_pareto_acc_vs_vram():
     return "\n".join(svg)
 
 
-# 3. Pareto Frontier: Accuracy vs Throughput
 def gen_pareto_acc_vs_throughput():
     """Execute gen pareto acc vs throughput routine."""
     w, h = 900, 600
@@ -282,7 +275,7 @@ def gen_pareto_acc_vs_throughput():
     x0, y0, pw, ph = 100, 80, 740, 460
     svg.append(f'  <rect x="{x0}" y="{y0}" width="{pw}" height="{ph}" fill="{PANEL_BG}" rx="6" stroke="{GRID_COLOR}"/>')
 
-    xmin, xmax = 54000.0, 70000.0  # tok/s
+    xmin, xmax = 54000.0, 70000.0
     ymin, ymax = 30.0, 90.0
 
     def to_screen(x, y):
@@ -352,7 +345,6 @@ def gen_pareto_acc_vs_throughput():
     return "\n".join(svg)
 
 
-# 4. Perplexity vs Compression Ratio (WikiText-2)
 def gen_pareto_ppl_vs_compression():
     """Execute gen pareto ppl vs compression routine."""
     w, h = 900, 600
@@ -368,7 +360,6 @@ def gen_pareto_ppl_vs_compression():
     svg.append(f'  <rect x="{x0}" y="{y0}" width="{pw}" height="{ph}" fill="{PANEL_BG}" rx="6" stroke="{GRID_COLOR}"/>')
 
     xmin, xmax = 1.0, 3.5
-    # Log scale for PPL: from 10 to 5000
     log_ymin, log_ymax = math.log10(10), math.log10(5000)
 
     def to_screen(x, ppl):
@@ -403,7 +394,6 @@ def gen_pareto_ppl_vs_compression():
         f'  <text x="35" y="{y0 + ph / 2}" fill="{TEXT_MUTED}" font-size="13" font-family="{FONT_FAMILY}" text-anchor="middle" transform="rotate(-90 35 {y0 + ph / 2})">WikiText-2 Perplexity (log scale) [Lower is Better]</text>'
     )
 
-    # Baseline line at 22.79
     _, b_sy = to_screen(xmin, 22.79)
     svg.append(
         f'  <line x1="{x0}" y1="{b_sy}" x2="{x0 + pw}" y2="{b_sy}" stroke="{ACCENT_RED}" stroke-width="1.5" stroke-dasharray="4,4"/>'
@@ -412,7 +402,6 @@ def gen_pareto_ppl_vs_compression():
         f'  <text x="{x0 + pw - 10}" y="{b_sy - 6}" fill="{ACCENT_RED}" font-size="10" font-family="{FONT_FAMILY}" text-anchor="end">GPT-2 Dense Baseline (22.79)</text>'
     )
 
-    # WikiText-2 points
     wiki_methods = [
         {"name": "direct_svd", "x": 1.46, "ppl": 20.85, "cat": "Low-Rank", "pareto": True},
         {"name": "aa_svd", "x": 1.40, "ppl": 20.95, "cat": "Low-Rank", "pareto": True},
@@ -448,7 +437,6 @@ def gen_pareto_ppl_vs_compression():
     return "\n".join(svg)
 
 
-# 5. Triton GPU Acceleration Leaderboard (top-26 kernels)
 def gen_triton_leaderboard():
     """Execute gen triton leaderboard routine."""
     with open("results/triton_full_leaderboard_v136.json") as f:
@@ -468,7 +456,6 @@ def gen_triton_leaderboard():
     x0, y0, pw, ph = 240, 80, 650, 640
     svg.append(f'  <rect x="{x0}" y="{y0}" width="{pw}" height="{ph}" fill="{PANEL_BG}" rx="6" stroke="{GRID_COLOR}"/>')
 
-    # Log scale for speedup: 0.1x to 150x
     min_log, max_log = math.log10(0.1), math.log10(150.0)
 
     def to_screen_x(speedup):
@@ -476,7 +463,6 @@ def gen_triton_leaderboard():
         l_s = math.log10(max(0.1, speedup))
         return x0 + ((l_s - min_log) / (max_log - min_log)) * pw
 
-    # Grid lines
     for tick in [0.2, 0.5, 1.0, 2.0, 5.0, 10.0, 20.0, 50.0, 100.0]:
         sx = to_screen_x(tick)
         is_one = tick == 1.0
@@ -498,16 +484,13 @@ def gen_triton_leaderboard():
         ry = y0 + i * row_h
         mid_y = ry + row_h / 2.0
 
-        # Row zebra
         if i % 2 == 1:
             svg.append(f'  <rect x="{x0}" y="{ry}" width="{pw}" height="{row_h}" fill="#1b2438"/>')
 
-        # Name label
         svg.append(
             f'  <text x="{x0 - 10}" y="{mid_y + 4}" fill="{TEXT_COLOR}" font-size="10.5" font-family="{FONT_FAMILY}" text-anchor="end">{i + 1}. {name}</text>'
         )
 
-        # Bar
         x_base = to_screen_x(1.0)
         x_val = to_screen_x(speedup)
         bx = min(x_base, x_val)
@@ -522,7 +505,6 @@ def gen_triton_leaderboard():
     return "\n".join(svg)
 
 
-# 6. 3-Level Latency Comparison (CUDA C++ vs. Triton JIT vs. PyTorch Reference)
 def gen_3level_latency_comparison():
     """Execute gen 3level latency comparison routine."""
     operators = [
@@ -581,27 +563,22 @@ def gen_3level_latency_comparison():
             f'  <text x="{x0 - 10}" y="{mid_y + 4}" fill="{TEXT_COLOR}" font-size="10.5" font-family="{FONT_FAMILY}" text-anchor="end">{op["name"]}</text>'
         )
 
-        # Level 3 PyTorch (Red)
         px = to_screen_x(op["py"])
         svg.append(f'  <circle cx="{px:.1f}" cy="{mid_y - 5}" r="4.5" fill="{ACCENT_RED}"/>')
 
-        # Level 2 Triton (Blue)
         if op["tri"] is not None:
             tx = to_screen_x(op["tri"])
             svg.append(f'  <circle cx="{tx:.1f}" cy="{mid_y}" r="4.5" fill="{ACCENT_BLUE}"/>')
 
-        # Level 1 CUDA (Green)
         cx = to_screen_x(op["cuda"])
         svg.append(f'  <circle cx="{cx:.1f}" cy="{mid_y + 5}" r="4.5" fill="{ACCENT_GREEN}"/>')
 
-        # Connect them
         min_x = min(cx, tx if op["tri"] is not None else cx, px)
         max_x = max(cx, tx if op["tri"] is not None else cx, px)
         svg.append(
             f'  <line x1="{min_x:.1f}" y1="{mid_y}" x2="{max_x:.1f}" y2="{mid_y}" stroke="{TEXT_MUTED}" stroke-width="0.8" stroke-dasharray="2,2"/>'
         )
 
-    # Legend
     lx, ly = x0 + 20, y0 + 15
     svg.append(
         f'  <rect x="{lx}" y="{ly}" width="280" height="60" fill="{BG_COLOR}" rx="4" stroke="{GRID_COLOR}" opacity="0.9"/>'
@@ -623,9 +600,7 @@ def gen_3level_latency_comparison():
     return "\n".join(svg)
 
 
-# 7. Sequence Length Scaling (T in [128, 8192])
 def gen_sequence_length_scaling():
-    # Table 7 data
     """Execute gen sequence length scaling routine."""
     T_vals = [512, 1024, 2048, 4096, 8192]
     models = {
@@ -683,7 +658,6 @@ def gen_sequence_length_scaling():
         f'  <text x="35" y="{y0 + ph / 2}" fill="{TEXT_MUTED}" font-size="13" font-family="{FONT_FAMILY}" text-anchor="middle" transform="rotate(-90 35 {y0 + ph / 2})">Kernel Latency (ms, Log10 Scale) [Lower is Faster]</text>'
     )
 
-    # Curves
     for name, d in models.items():
         pts = [to_screen(t, lat) for t, lat in zip(T_vals, d["lat"])]
         d_str = " ".join([f"{'M' if i == 0 else 'L'} {px:.1f} {py:.1f}" for i, (px, py) in enumerate(pts)])
@@ -693,7 +667,6 @@ def gen_sequence_length_scaling():
         for px, py in pts:
             svg.append(f'  <circle cx="{px:.1f}" cy="{py:.1f}" r="5" fill="{d["color"]}"/>')
 
-    # Legend
     lx, ly = x0 + 20, y0 + 15
     svg.append(
         f'  <rect x="{lx}" y="{ly}" width="300" height="90" fill="{BG_COLOR}" rx="4" stroke="{GRID_COLOR}" opacity="0.9"/>'
@@ -713,15 +686,12 @@ def gen_sequence_length_scaling():
     return "\n".join(svg)
 
 
-# 8. SVD-LLM v2 Truncation Optimality Curve
 def gen_svd_llm_v2_truncation():
-    # Load and reuse the exact SVG style from results/plots/svd_llm_v2_vs_naive_svd.svg
     """Execute gen svd llm v2 truncation routine."""
     with open("results/plots/svd_llm_v2_vs_naive_svd.svg", "r") as f:
         return f.read()
 
 
-# 9. KV-Cache Latent Memory Scaling (O(L * r) vs O(L * d))
 def gen_kv_cache_scaling():
     """Execute gen kv cache scaling routine."""
     with open("results/plots/asvd_kv_cache_memory_scaling.svg", "r") as f:
@@ -749,27 +719,22 @@ def main():
     for key, gen_func in generators.items():
         svg_content = gen_func()
 
-        # Save SVG to all target directories
         for target_dir in DIRS:
             svg_file = target_dir / f"{key}.svg"
             with open(svg_file, "w", encoding="utf-8") as f:
                 f.write(svg_content)
 
-            # Convert to PNG (300 DPI)
             png_file = target_dir / f"{key}.png"
             cmd_png = ["/opt/homebrew/bin/magick", "-font", font_path, "-density", "300", str(svg_file), str(png_file)]
             subprocess.run(cmd_png, check=True)
 
-            # Convert to PDF
             pdf_file = target_dir / f"{key}.pdf"
             cmd_pdf = ["/opt/homebrew/bin/magick", "-font", font_path, "-density", "300", str(svg_file), str(pdf_file)]
             subprocess.run(cmd_pdf, check=True)
 
         print(f"Generated {key} [SVG, PNG 300 DPI, PDF] across all directories.")
 
-    # Also synchronize pareto_frontier.{svg,png,pdf} which is referenced in paper tex
     print("Synchronizing pareto_frontier across all directories...")
-    # Generate overall pareto_frontier as an alias of pareto_accuracy_vs_compression or composite
     pf_svg = gen_pareto_acc_vs_compression()
     for target_dir in DIRS:
         svg_file = target_dir / "pareto_frontier.svg"

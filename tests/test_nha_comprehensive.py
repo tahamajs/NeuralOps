@@ -1,3 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 from types import SimpleNamespace
 
 import pytest
@@ -10,7 +17,6 @@ from neuralops.attentions.nha_attention import (LoRALinear,
 
 
 def test_nha_lora_config_independence():
-    # 1. config=None, comp_config present
     comp_cfg = SimpleNamespace(lora_rank=8, lora_alpha=16.0, window_size=32, rff_features=64)
     p1 = NativeHybridAttention(config=None, comp_config=comp_cfg, dim=64, num_heads=4)
     assert p1.lora_rank == 8
@@ -18,7 +24,6 @@ def test_nha_lora_config_independence():
     assert p1.window_size == 32
     assert p1.rff_features == 64
 
-    # 2. config=None, comp_config=None, kwargs override
     p2 = NativeHybridAttention(config=None, comp_config=None, dim=64, num_heads=4, lora_rank=4, lora_alpha=8.0, window_size=16, rff_features=32)
     assert p2.lora_rank == 4
     assert p2.lora_alpha == 8.0
@@ -52,15 +57,13 @@ def test_nha_rotary_fallback():
 def test_nha_bidirectional_and_causal_shapes():
     x = torch.randn(2, 10, 64)
     mask = torch.ones(2, 10)
-    mask[:, 7:] = 0  # 3 padding tokens
+    mask[:, 7:] = 0
 
-    # Bidirectional
     p_bidi = NativeHybridAttention(dim=64, num_heads=4, is_decoder=False, lora_rank=8)
     out_bidi, _ = p_bidi(x, attention_mask=mask)
     assert out_bidi.shape == (2, 10, 64)
     assert torch.isfinite(out_bidi).all()
 
-    # Causal
     p_causal = NativeHybridAttention(dim=64, num_heads=4, is_decoder=True, lora_rank=8)
     out_causal, _ = p_causal(x, attention_mask=mask)
     assert out_causal.shape == (2, 10, 64)
@@ -74,7 +77,7 @@ def test_nha_frobenius_norm_verification():
             self.k_proj = nn.Linear(64, 64)
             self.v_proj = nn.Linear(64, 64)
             self.out_proj = nn.Linear(64, 64)
-            self.q_proj.weight.data.zero_()  # Zero norm
+            self.q_proj.weight.data.zero_()
 
     old = ZeroAttn()
     with pytest.raises(RuntimeError, match="norm.*< 1e-4"):
@@ -85,11 +88,11 @@ def test_nha_fallback_on_copy_weights_failure():
         def __init__(self):
             super().__init__()
             self.attention = nn.Linear(64, 64)
-            self.attention.weight.data.zero_()  # Causes copy_weights to raise
+            self.attention.weight.data.zero_()
     
     layer = BrokenLayer()
     res = inject_nha(layer=layer)
-    assert res is None  # Graceful fallback, no crash
+    assert res is None
 
 def test_nha_lora_adapters_freezing():
     class DummyAttn(nn.Module):
@@ -119,7 +122,6 @@ def test_nha_injection_all_4_architectures():
             self.hidden_size = 64
             self.num_heads = 4
 
-    # 1. DistilBERT clone
     class DistilBertClone(nn.Module):
         def __init__(self):
             super().__init__()
@@ -133,7 +135,6 @@ def test_nha_injection_all_4_architectures():
     assert res_d is not None
     assert isinstance(d_model.distilbert.transformer.layer[0].attention, NativeHybridAttention)
 
-    # 2. RoBERTa clone
     class RobertaClone(nn.Module):
         def __init__(self):
             super().__init__()
@@ -148,7 +149,6 @@ def test_nha_injection_all_4_architectures():
     assert res_r is not None
     assert isinstance(r_model.roberta.encoder.layer[0].attention.self, NativeHybridAttention)
 
-    # 3. GPT-2 clone
     class GPT2Clone(nn.Module):
         def __init__(self):
             super().__init__()
@@ -161,7 +161,6 @@ def test_nha_injection_all_4_architectures():
     assert res_g is not None
     assert isinstance(g_model.transformer.h[0].attn, NativeHybridAttention)
 
-    # 4. Qwen3.5 clone
     class QwenClone(nn.Module):
         def __init__(self):
             super().__init__()

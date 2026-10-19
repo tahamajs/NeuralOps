@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Unit and Integration Tests for PagedStateTable and RadixPrefixStateCache.
 """
@@ -35,17 +41,14 @@ def test_paged_state_zero_copy_fork_and_cow():
     p_id = parent_pages[0]
     table.page_pool[p_id, 0, 0, 0] = 42.0
 
-    # Fork sequence 20 from 10
     child_pages = table.fork_sequence(parent_seq_id=10, child_seq_id=20)
     assert child_pages[0] == p_id
     assert table.ref_counts[p_id] == 2
 
-    # Mutate child sequence via prepare_write (CoW)
     new_child_p = table.prepare_write(seq_id=20, page_slot=0)
     assert new_child_p != p_id
     assert table.ref_counts[p_id] == 1
     assert table.ref_counts[new_child_p] == 1
-    # Check data was cloned during CoW
     assert float(table.page_pool[new_child_p, 0, 0, 0].item()) == 42.0
 
 
@@ -55,18 +58,16 @@ def test_radix_prefix_state_cache():
     table = PagedStateTable(num_pages=32, num_heads=4, head_dim=32, device=device)
     cache = RadixPrefixStateCache(table)
 
-    prefix_tokens = [101, 2054, 2003, 1037]  # e.g., "[CLS] What is a"
+    prefix_tokens = [101, 2054, 2003, 1037]
     page = table.allocate_page()
     table.page_pool[page].fill_(1.23)
 
     cache.insert_prefix(prefix_tokens, physical_page=page)
 
-    # Exact match
     matched_page, matched_len = cache.match_prefix(prefix_tokens)
     assert matched_page == page
     assert matched_len == 4
 
-    # Longer prompt sharing same prefix
     long_prompt = prefix_tokens + [1045, 2023]
     m_page, m_len = cache.match_prefix(long_prompt)
     assert m_page == page

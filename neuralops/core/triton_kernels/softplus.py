@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Fused Softplus Activation
 
 Numerically stabilized Softplus activation kernel with customized analytical gradient backward pass.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -47,7 +51,6 @@ if HAS_TRITON and tl is not None:
         x = tl.load(X_ptr + offs, mask=mask, other=0.0)
         x_f = x.to(tl.float32)
         scaled_x = x_f * BETA
-        # Numerical threshold check with FP32 math
         y_f = tl.where(scaled_x > THRESHOLD, x_f, tl.log(1.0 + tl.exp(scaled_x)) / BETA)
         tl.store(Y_ptr + offs, y_f.to(Y_ptr.dtype.element_ty), mask=mask)
 
@@ -61,7 +64,6 @@ if HAS_TRITON and tl is not None:
         x_f = x.to(tl.float32)
         dy_f = dy.to(tl.float32)
         scaled_x = x_f * BETA
-        # d/dx (log(1+exp(beta*x))/beta) = sigmoid(beta * x)
         sig = 1.0 / (1.0 + tl.exp(-scaled_x))
         dx_f = tl.where(scaled_x > THRESHOLD, dy_f, dy_f * sig)
         tl.store(DX_ptr + offs, dx_f.to(DX_ptr.dtype.element_ty), mask=mask)

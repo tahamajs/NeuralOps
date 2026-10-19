@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Comprehensive test suite for neuralops.core.triton_kernels.state_update.
 
@@ -17,9 +23,6 @@ from neuralops.core.triton_kernels._common import HAS_TRITON, state_update_pytor
 from neuralops.core.triton_kernels.state_update import fwd, is_supported
 
 
-# ═══════════════════════════════════════════════════
-# Test fixtures
-# ═══════════════════════════════════════════════════
 
 @pytest.fixture
 def device():
@@ -50,14 +53,12 @@ def reference_ssm_recurrence_pytorch(u, delta, A, B, C, D=None, initial_state=No
     C_f = c_c.float()
 
     for t in range(L_sz):
-        # discrete dA = exp(delta_t * A)
-        d_t = delta_f[:, t, :, None]  # [B, D, 1]
-        dA = torch.exp(d_t * A_f)     # [B, D, N]
-        dB = d_t * B_f[:, t, None, :] # [B, D, N]
-        u_t = u_f[:, t, :, None]      # [B, D, 1]
+        d_t = delta_f[:, t, :, None]
+        dA = torch.exp(d_t * A_f)
+        dB = d_t * B_f[:, t, None, :]
+        u_t = u_f[:, t, :, None]
 
         state = state * dA + dB * u_t
-        # y_t = state @ C_t
         y[:, t, :] = torch.sum(state * C_f[:, t, None, :], dim=-1)
 
     if D is not None:
@@ -67,9 +68,6 @@ def reference_ssm_recurrence_pytorch(u, delta, A, B, C, D=None, initial_state=No
     return y.to(u.dtype), state.to(u.dtype)
 
 
-# ═══════════════════════════════════════════════════
-# Numerical correctness
-# ═══════════════════════════════════════════════════
 
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float16])
 @pytest.mark.parametrize("batch", [1, 2])
@@ -94,9 +92,6 @@ def test_state_update_correctness(device, dtype, batch, seq_len, d_dim, n_dim):
     assert torch.allclose(next_state, state_ref, atol=1e-2, rtol=1e-2)
 
 
-# ═══════════════════════════════════════════════════
-# State carry-over & Reset
-# ═══════════════════════════════════════════════════
 
 def test_state_carryover(device):
     """Running step 1 then step 2 with state carry-over matches full sequence."""
@@ -107,10 +102,8 @@ def test_state_carryover(device):
     B_t = torch.randn(B, L, N_sz, device=device, dtype=torch.float32)
     C_t = torch.randn(B, L, N_sz, device=device, dtype=torch.float32)
 
-    # Full sequence run
     y_full, state_full = fwd(u, delta, A, B_t, C_t)
 
-    # Split into 2 chunks of 8
     y_part1, state_mid = fwd(u[:, :8], delta[:, :8], A, B_t[:, :8], C_t[:, :8])
     y_part2, state_end = fwd(u[:, 8:], delta[:, 8:], A, B_t[:, 8:], C_t[:, 8:], state=state_mid)
 
@@ -119,9 +112,6 @@ def test_state_carryover(device):
     assert torch.allclose(state_full, state_end, atol=1e-4)
 
 
-# ═══════════════════════════════════════════════════
-# Fallback path & Edge cases
-# ═══════════════════════════════════════════════════
 
 def test_state_update_cpu_fallback():
     """Verify PyTorch fallback works seamlessly on CPU."""

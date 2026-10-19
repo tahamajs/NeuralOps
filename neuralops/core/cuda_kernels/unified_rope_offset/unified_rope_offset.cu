@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -5,14 +12,6 @@
 
 namespace neuralops { namespace cuda {
 
-// Unified RoPE with Offset Kernel:
-// Form: out[..., i]             = x[..., i] * cos[pos, i] - x[..., half_rope + i] * sin[pos, i]
-//       out[..., half_rope + i] = x[..., i] * sin[pos, i] + x[..., half_rope + i] * cos[pos, i]
-//
-// Hardware-level optimization:
-// 1. 128-bit float4 vectorized memory loads & stores when half_rope is divisible by 4.
-// 2. Fused Multiply-Add (FMA): computes rotation using fast hardware fmaf intrinsics.
-// 3. Decoupled 2D grid mapping and pass-through copy for channels beyond rope_dim.
 template <typename scalar_t>
 __global__ void __launch_bounds__(128) unified_rope_offset_vectorized_kernel(
     scalar_t* __restrict__ out,
@@ -79,7 +78,6 @@ __global__ void __launch_bounds__(128) unified_rope_offset_vectorized_kernel(
         }
     }
 
-    // Remainder loop
     const int rem_start = num_vec * 4;
     for (int i = rem_start + tid; i < half_rope; i += blockDim.x * gridDim.x) {
         const float c = cos_tab[tab_base + i];
@@ -94,14 +92,13 @@ __global__ void __launch_bounds__(128) unified_rope_offset_vectorized_kernel(
         out[base_idx + half_rope + i] = from_float<scalar_t>(r1);
     }
 
-    // Pass through trailing channels (if rope_dim < D)
     const int rope_dim = half_rope * 2;
     for (int i = rope_dim + tid; i < D; i += blockDim.x * gridDim.x) {
         out[base_idx + i] = x[base_idx + i];
     }
 }
 
-}} // namespace neuralops::cuda
+}}
 
 torch::Tensor unified_rope_offset_fwd(
     const torch::Tensor& x,

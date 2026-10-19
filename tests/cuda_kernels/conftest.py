@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Shared test verification utilities for NeuralOps CUDA C++ Kernel Verification Suite.
 
 Designed for NVIDIA Ada Lovelace SM 8.9 (RTX 4070 Laptop GPU, 8GB VRAM).
@@ -75,6 +81,5 @@ def assert_tuple_numerical_parity(
 def create_non_contiguous(tensor: torch.Tensor) -> torch.Tensor:
     """Creates a strictly non-contiguous layout of the same shape and values."""
     if tensor.dim() >= 2:
-        # Transpose first two dimensions and back, or clone transpose
         return tensor.clone().transpose(0, 1).contiguous().transpose(0, 1)
     return tensor.clone()[::1]

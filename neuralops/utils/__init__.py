@@ -1,7 +1,11 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 NeuralOps Utils Subpackage.
-
-Author: Taha Majlesi
 """
 
 from . import (
@@ -52,7 +56,6 @@ __all__ = [
     "CuTeTiledVarlenPadding",
 ]
 
-# Re-exported utility functions
 from .architecture import (  # noqa: E402
     get_compression_targets,
     get_hidden_size,
@@ -113,10 +116,8 @@ __all__ += [
     "CheckpointManager",
 ]
 
-# Checkpoint utilities
 from .checkpoint import CheckpointManager  # noqa: E402
 
-# Auto-wired package members
 from neuralops.utils import compat
 from neuralops.utils import architecture
 from neuralops.utils import attention_profiler
@@ -138,6 +139,5 @@ from neuralops.utils import replace_attention
 from neuralops.utils import results_saver
 from neuralops.utils import seed
 
-# Expose replace_attention function directly
 from neuralops.utils.replace_attention import replace_attention
 

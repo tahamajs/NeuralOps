@@ -1,4 +1,9 @@
-# -*- coding: utf-8 -*-
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Subprocess-Isolated Master Benchmark across ALL 108 Native CUDA C++ Modules.
 
 Runs each CUDA kernel test inside an independent isolated Python subprocess.
@@ -45,7 +50,6 @@ def generate_args(mod_name, sig, device, dtype, B=4, H=8, N=512, D=64):
     args = []
     kwargs = {{}}
 
-    # Custom shapes and normalized inputs for numerical stability and exact interface matching
     if mod_name == "kronecker_gemm":
         x = torch.randn(B * 8, 16 * 16, device=device, dtype=dtype) * 0.1
         A = torch.randn(16, 16, device=device, dtype=dtype) * 0.1
@@ -530,7 +534,6 @@ def generate_args(mod_name, sig, device, dtype, B=4, H=8, N=512, D=64):
         norm_factor = 0.5
         return [proj, diag_sq, norm_factor], {{}}
 
-    # Generic parameter resolution
     for param_name, param in sig.parameters.items():
         if param.default is not inspect.Parameter.empty:
             anno = str(param.annotation)
@@ -611,7 +614,6 @@ def run_test(mod_name):
         return {{"status": "NO_ENTRYPOINT", "entry": entry_name}}
     assert callable(fn), f"Dynamically loaded kernel '{entry_name}' in {mod_name} must be callable"
 
-    # JIT Compile
     if hasattr(py_mod, "_get_module"):
         py_mod._get_module()
 
@@ -681,7 +683,6 @@ def run_test(mod_name):
         status = "CUDA_FAILED"
         reason = "CUDA path raised or returned None"
     else:
-        # Bug B — Aliasing check
         if isinstance(cuda_out, torch.Tensor) and isinstance(ref_out, torch.Tensor):
             assert cuda_out.data_ptr() != ref_out.data_ptr(), f"{{mod_name}}: cuda_out and ref_out alias the same storage"
         elif isinstance(cuda_out, (tuple, list)) and isinstance(ref_out, (tuple, list)):
@@ -689,7 +690,6 @@ def run_test(mod_name):
                 if isinstance(o_elem, torch.Tensor) and isinstance(r_elem, torch.Tensor):
                     assert o_elem.data_ptr() != r_elem.data_ptr(), f"{{mod_name}}: cuda_out and ref_out tuple elements alias the same storage"
 
-        # Compute max_diff
         if mod_name == "bitonic_topk":
             val_out = torch.gather(args[0], -1, cuda_out.long()).sort(dim=-1).values
             val_ref = torch.gather(args[0], -1, ref_out.long()).sort(dim=-1).values
@@ -703,7 +703,6 @@ def run_test(mod_name):
                     diffs.append((o_elem.float() - r_elem.float()).abs().max().item())
             max_diff = max(diffs) if diffs else 0.0
 
-        # Bug C — Bit-identical check
         is_bit_identical = False
         if max_diff == 0.0:
             if isinstance(cuda_out, torch.Tensor) and isinstance(ref_out, torch.Tensor):
@@ -804,8 +803,6 @@ def main():
     elif args.limit:
         subdirs = subdirs[: args.limit]
 
-    # Write worker script
-    # Write worker script
     artifact_dir = repo_root / "scratch"
     artifact_dir.mkdir(parents=True, exist_ok=True)
     worker_path = artifact_dir / "_isolated_worker.py"

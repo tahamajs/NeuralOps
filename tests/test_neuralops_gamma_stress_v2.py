@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Incremental & Robust Stress Test Suite for NeuralOps v1.4 (Agent Gamma)
 """
@@ -63,7 +69,6 @@ class ToyModel(nn.Module):
         super().__init__()
         self.lin = nn.Linear(16, 32)
     def forward(self, x):
-        # x shape: (B, T) or similar. Let's make it accept token ids or embeddings.
         return torch.zeros((x.shape[0], x.shape[1], 32))
 
 class ToyEmbeddingModel(nn.Module):

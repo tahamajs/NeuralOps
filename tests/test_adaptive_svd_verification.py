@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Verification test script for AdaptiveSVDAttention and AdaptiveRanksCompressor.
 Validates:
@@ -16,7 +22,6 @@ import types
 import torch
 import torch.nn as nn
 
-# Ensure framework is in path
 FRAMEWORK_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 from neuralops.attentions.adaptive_svd_attention import (AdaptiveSVDAttention,
                                                          AdaptiveSVDLinear)
@@ -78,7 +83,6 @@ def test_energy_thresholding_math():
     """Verify exact formula sum(s[:r]^2)/sum(s^2) >= tau."""
     print("\n--- Test 1: Cumulative Singular Value Energy Thresholding Math ---")
     tau = 0.92
-    # Create decaying singular values
     d = 768
     i_indices = torch.arange(1, d + 1, dtype=torch.float32)
     s_vals = 1.0 / (i_indices ** 0.7)
@@ -108,15 +112,12 @@ def test_symmetric_sqrt_sigma():
     cum_e = torch.cumsum(s_sq, dim=0) / s_sq.sum()
     r = int(torch.where(cum_e >= tau)[0][0].item()) + 1
     
-    # Symmetrical distribution
     sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
     U_r = U[:, :r] * sqrt_S.unsqueeze(0)
     V_r = sqrt_S.unsqueeze(1) * Vt[:r, :]
     
-    # Reconstructed W_approx = U_r @ V_r
     W_approx = torch.matmul(U_r, V_r)
     
-    # Direct truncated SVD reconstruction: U[:, :r] @ diag(S[:r]) @ Vt[:r, :]
     W_direct = torch.matmul(U[:, :r] * S[:r].unsqueeze(0), Vt[:r, :])
     
     diff = torch.norm(W_approx - W_direct).item()
@@ -150,12 +151,10 @@ def test_adaptive_svd_attention_fp32_fp16():
             energy_threshold=0.92,
         ).to(dtype=dtype)
         
-        # Test input tensor [2, 128, 768]
         x = torch.randn(2, 128, 768, dtype=dtype, requires_grad=True)
         mask = torch.ones(2, 128, dtype=dtype)
         mask[:, 100:] = 0
         
-        # Forward pass
         out, attn_weights = model(x, attention_mask=mask, output_attentions=True)
         
         assert out.shape == (2, 128, 768), f"Output shape mismatch: {out.shape}"
@@ -164,7 +163,6 @@ def test_adaptive_svd_attention_fp32_fp16():
         assert attn_weights is not None
         assert attn_weights.shape == (2, 12, 128, 128)
         
-        # Backward pass
         loss = out.sum()
         loss.backward()
         
@@ -172,7 +170,6 @@ def test_adaptive_svd_attention_fp32_fp16():
         assert not torch.isnan(x.grad).any(), f"NaN in input gradient for {dtype_name}"
         assert not torch.isinf(x.grad).any(), f"Inf in input gradient for {dtype_name}"
         
-        # Check trainable adapter gradients
         assert model.query.A.grad is not None, "query.A grad is None"
         assert model.query.B.grad is not None, "query.B grad is None"
         assert not torch.isnan(model.query.A.grad).any(), "NaN in query.A grad"
@@ -200,7 +197,6 @@ def test_adaptive_ranks_compressor_fp32_fp16():
         print(f"  Original params: {orig_params:,}, Compressed params: {comp_params:,}, Ratio: {stats['compression_ratio']:.2f}x")
         assert comp_params < orig_params, "Compression did not reduce parameter count"
         
-        # Forward pass on [2, 128, 768]
         x = torch.randn(2, 128, 768, dtype=dtype, requires_grad=True)
         out = comp_model(x)
         
@@ -208,7 +204,6 @@ def test_adaptive_ranks_compressor_fp32_fp16():
         assert not torch.isnan(out).any(), f"NaN detected in {dtype_name} compressed output"
         assert not torch.isinf(out).any(), f"Inf detected in {dtype_name} compressed output"
         
-        # Backward pass
         loss = out.sum()
         loss.backward()
         

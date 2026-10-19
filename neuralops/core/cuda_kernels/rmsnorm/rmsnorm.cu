@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -8,7 +15,6 @@
 namespace neuralops {
 namespace cuda {
 
-// Single-pass cooperative warp shuffle reduction RMSNorm with fused register scale multiplication
 template <typename scalar_t>
 __launch_bounds__(256)
 __global__ void rmsnorm_fwd_kernel(
@@ -39,7 +45,6 @@ __global__ void rmsnorm_fwd_kernel(
         sum_sq += val * val;
     }
 
-    // Cooperative warp shuffle reduction using __shfl_down_sync
     #pragma unroll
     for (int mask = 16; mask > 0; mask >>= 1) {
         sum_sq += __shfl_down_sync(0xffffffff, sum_sq, mask);
@@ -64,7 +69,6 @@ __global__ void rmsnorm_fwd_kernel(
 
     const float rrms = s_rrms;
 
-    // Fused normalization and scale multiplication directly in registers
     for (int d = tid; d < D; d += blockDim.x) {
         float val = to_float(x[offset + d]);
         if (has_residual && residual != nullptr) {
@@ -75,8 +79,8 @@ __global__ void rmsnorm_fwd_kernel(
     }
 }
 
-} // namespace cuda
-} // namespace neuralops
+}
+}
 
 torch::Tensor rmsnorm_fwd(
     const torch::Tensor& x,

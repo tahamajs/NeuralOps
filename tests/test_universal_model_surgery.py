@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Universal Model Surgery & Attention Transplantation 5-Architecture Verification Suite.
 
@@ -58,27 +64,23 @@ def test_arch1_bidirectional_encoder_bert():
     model = BertModel(config)
     model.eval()
 
-    # Scan and verify pattern
     specs = UniversalArchitectureScanner.scan(model)
     assert len(specs) >= 2
     assert specs[0].pattern_type == "bert_nested"
     assert specs[0].output_dense_module is not None
     assert specs[0].output_layernorm_module is not None
 
-    # Replace attention using transplant_attention
     transplanted = transplant_attention(model, attention="cosformer")
     assert transplanted is not None
 
-    # Run forward pass with input_ids and attention_mask (with padded tokens)
     input_ids = torch.randint(0, 100, (2, 16))
     attention_mask = torch.ones(2, 16)
-    attention_mask[0, 10:] = 0  # pad last 6 tokens of first sequence
+    attention_mask[0, 10:] = 0
 
     with torch.no_grad():
         out = transplanted(input_ids=input_ids, attention_mask=attention_mask)
     assert out.last_hidden_state.shape == (2, 16, 64)
 
-    # Verify that BiDirectionalScanWrapper works cleanly on bidirectional cosformer
     from neuralops.attentions.linear.cosformer import CosformerAttention
     cosformer = CosformerAttention(hidden_size=64, num_heads=4)
     bidir_cosformer = BiDirectionalScanWrapper(cosformer)
@@ -184,20 +186,17 @@ def test_arch3_modern_gqa_rope_decoder():
     model = MockLlamaModel(embed_dim=64, n_layers=2)
     model.eval()
 
-    # Scan and verify split_4proj
     specs = UniversalArchitectureScanner.scan(model)
     assert len(specs) == 2
     assert specs[0].pattern_type == "split_4proj"
     assert specs[0].num_heads == 4
     assert specs[0].num_kv_heads == 2
 
-    # Transplant cosformer into the model
     transplanted = transplant_attention(model, attention="cosformer")
     x = torch.randn(2, 12, 64)
     out, pasts = transplanted(x)
     assert out.shape == (2, 12, 64)
 
-    # Verify NeuralOpsHybridHFCache interaction
     cache = NeuralOpsHybridHFCache()
     wrapped_model = wrap_model_for_generation(transplanted)
     out_wrapped = wrapped_model(x, past_key_values=cache)
@@ -242,7 +241,6 @@ def test_arch4_vit_fused_qkv():
     assert specs[0].pattern_type == "fused_qkv"
     assert specs[0].embed_dim == 64
 
-    # Bridge transplant
     transplanted = transplant_attention(vit, attention="cosformer")
     x = torch.randn(2, 16, 64)
     out = transplanted(x)
@@ -277,12 +275,10 @@ def test_arch5_custom_cross_attention_and_shadow_twin():
     q_x = torch.randn(2, 8, 64)
     kv_x = torch.randn(2, 16, 64)
 
-    # 1. Asymmetric Cross-Attention Router verification
     router = AsymmetricCrossAttentionRouter(d_model=64, num_heads=4)
     routed_out, _ = router(q_x, kv_x)
     assert routed_out.shape == (2, 8, 64)
 
-    # 2. Shadow-Twin Distillation Lifecycle verification
     specs = UniversalArchitectureScanner.scan(orig_cross_attn)
     assert len(specs) == 1
     spec = specs[0]
@@ -298,7 +294,6 @@ def test_arch5_custom_cross_attention_and_shadow_twin():
     )
     enable_shadow_twin(bridge, stage="stage1_orientation")
 
-    # Stage 1: pure shadow twin distillation
     set_surgery_stage(bridge, stage="stage1_orientation")
     set_surgery_alpha(bridge, alpha=0.5)
 
@@ -309,7 +304,6 @@ def test_arch5_custom_cross_attention_and_shadow_twin():
     assert loss.ndim == 0
     assert loss.item() >= 0.0
 
-    # Finalize surgery
     finalized = finalize_surgery(bridge)
     assert finalized.teacher_branch is None
     out_final = finalized(q_x)

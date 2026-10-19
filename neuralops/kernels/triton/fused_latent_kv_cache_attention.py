@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Fused Latent KV-Cache Attention
 
 Decompresses compressed latent KV cache representations on-the-fly during attention computation to minimize memory bandwidth.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -64,7 +68,6 @@ def _latent_kv_cache_attn_kernel(
 
     mask_m = offs_m < L_Q
 
-    # 1. Load Query projected into latent space Q_latent [BLOCK_M, R]
     q_ptrs = (
         q_latent_ptr
         + pid_b * stride_qb
@@ -74,10 +77,8 @@ def _latent_kv_cache_attn_kernel(
     )
     q_latent_tile = tl.load(q_ptrs, mask=mask_m[:, None], other=0.0).to(tl.float32)
 
-    # Online softmax statistics
     m_i = tl.full([BLOCK_M], float("-inf"), dtype=tl.float32)
     l_i = tl.zeros([BLOCK_M], dtype=tl.float32)
-    # Context accumulated in rank-r space: [BLOCK_M, R]
     acc_latent = tl.zeros([BLOCK_M, R], dtype=tl.float32)
 
     num_n_blocks = tl.cdiv(L_KV, BLOCK_N)
@@ -85,30 +86,24 @@ def _latent_kv_cache_attn_kernel(
         offs_n = n_idx * BLOCK_N + tl.arange(0, BLOCK_N)
         mask_n = offs_n < L_KV
 
-        # Load compressed latent cache slice C_kv [BLOCK_N, R]
         c_ptrs = c_kv_ptr + pid_b * stride_cb + offs_n[:, None] * stride_cl + offs_r[None, :] * stride_cr
         c_tile = tl.load(c_ptrs, mask=mask_n[:, None], other=0.0).to(tl.float32)
 
-        # Dot product in rank-r latent space: S = Q_latent @ C_kv^T * sm_scale
         s_tile = tl.dot(q_latent_tile, tl.trans(c_tile), allow_tf32=True) * sm_scale
         s_tile = tl.where(mask_m[:, None] & mask_n[None, :], s_tile, float("-inf"))
 
-        # Online softmax update
         m_ij = tl.maximum(m_i, tl.max(s_tile, axis=1))
         p = tl.exp(s_tile - m_ij[:, None])
         l_ij = tl.sum(p, axis=1)
 
         alpha = tl.exp(m_i - m_ij)
         l_i = l_i * alpha + l_ij
-        # Accumulate directly in latent space [BLOCK_M, R]
         acc_latent = acc_latent * alpha[:, None] + tl.dot(p, c_tile, allow_tf32=True)
         m_i = m_ij
 
-    # Normalize latent context
     safe_l_i = tl.maximum(l_i[:, None], 1e-5)
     acc_latent_norm = acc_latent / safe_l_i
 
-    # 2. Final Up-projection by U_V: [BLOCK_M, R] @ [R, D_V] -> [BLOCK_M, D_V]
     u_ptrs = u_v_ptr + offs_r[:, None] * stride_ur + offs_dv[None, :] * stride_ud
     u_v_tile = tl.load(u_ptrs).to(tl.float32)
 
@@ -151,19 +146,14 @@ def triton_fused_latent_kv_cache_attention(
     if sm_scale is None:
         sm_scale = 1.0 / math.sqrt(R)
 
-    # 1. Project Query to rank-r latent space: Q_latent = Q @ U_K -> (B, H, L_Q, R)
     q_latent = torch.matmul(q, u_k)
 
     if not q.is_cuda or R > 128 or D_V > 128:
-        # PyTorch reference
-        # Latent attention scores: Q_latent @ C_kv^T
-        # c_kv has shape (B, L_KV, R) -> expand to (B, 1, L_KV, R)
         c_expanded = c_kv.unsqueeze(1)
         scores = torch.matmul(q_latent.float(), c_expanded.float().transpose(-1, -2)) * sm_scale
         probs = F.softmax(scores, dim=-1)
-        # Latent context
-        acc_latent = torch.matmul(probs, c_expanded.float())  # (B, H, L_Q, R)
-        out = torch.matmul(acc_latent.to(q.dtype), u_v)       # (B, H, L_Q, D_V)
+        acc_latent = torch.matmul(probs, c_expanded.float())
+        out = torch.matmul(acc_latent.to(q.dtype), u_v)
         return out
 
     out = torch.empty((B, H, L_Q, D_V), device=q.device, dtype=q.dtype)

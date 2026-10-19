@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Unit tests for Adaptive Ranks Compressor with Jacobian-Gated SVD (JG-SVD).
 Tests all 9 core properties:
@@ -116,7 +122,6 @@ def test_9_opt_in_jg_svd_on():
     assert compressor.use_jg_svd is True
     assert compressor.use_cholesky_jg is True
 
-    # Test factorization directly
     W = torch.randn(64, 64)
     cov = torch.eye(64) + 0.1 * torch.randn(64, 64)
     cov = cov.T @ cov

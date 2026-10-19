@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Track 2 Comprehensive Audit & Dynamic Validation Suite.
 Audits all Spectral, SSM, and Recurrent Attention modules:
@@ -19,7 +25,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-# Ensure neuralops/ is in path
 
 class MockMHA(nn.Module):
     """Mock pretrained MHA for weight transfer testing."""
@@ -41,7 +46,6 @@ class TestTrack2Modules(unittest.TestCase):
         module_instance.eval()
         x = torch.randn(B, L, D, requires_grad=True)
         
-        # 1. Forward pass
         out, _ = module_instance(x)
         if isinstance(out, tuple):
             out = out[0]
@@ -49,7 +53,6 @@ class TestTrack2Modules(unittest.TestCase):
         self.assertFalse(torch.isnan(out).any(), f"{name}: NaN detected in forward output")
         self.assertFalse(torch.isinf(out).any(), f"{name}: Inf detected in forward output")
 
-        # 2. Backward pass
         module_instance.train()
         x_train = torch.randn(B, L, D, requires_grad=True)
         out_train, _ = module_instance(x_train)
@@ -61,15 +64,13 @@ class TestTrack2Modules(unittest.TestCase):
         self.assertFalse(torch.isnan(x_train.grad).any(), f"{name}: NaN detected in input gradient")
         self.assertFalse(torch.isinf(x_train.grad).any(), f"{name}: Inf detected in input gradient")
 
-        # 3. Masking test (2D padding mask)
         mask = torch.ones(B, L, dtype=torch.long)
-        mask[:, L // 2:] = 0  # pad second half
+        mask[:, L // 2:] = 0
         out_masked, _ = module_instance(x, attention_mask=mask)
         if isinstance(out_masked, tuple):
             out_masked = out_masked[0]
         self.assertFalse(torch.isnan(out_masked).any(), f"{name}: NaN detected with 2D mask")
 
-        # 4. Variable sequence length
         for short_l in [16, 32, 128]:
             x_var = torch.randn(1, short_l, D)
             out_var, _ = module_instance(x_var)
@@ -78,7 +79,6 @@ class TestTrack2Modules(unittest.TestCase):
             self.assertEqual(out_var.shape, (1, short_l, D), f"{name}: Failed variable length {short_l}")
             self.assertFalse(torch.isnan(out_var).any(), f"{name}: NaN on length {short_l}")
 
-    # ==================== AEGIS VARIANTS ====================
 
     def test_aegis_v1(self):
         from neuralops.attentions.aegis_v1 import AegisAttentionV1
@@ -121,7 +121,6 @@ class TestTrack2Modules(unittest.TestCase):
         m = AegisSpectronFP8Attention(config=self.config, pretrained_attn=self.mock_attn)
         self._test_module_lifecycle(m, "AegisSpectronFP8Attention")
 
-    # ==================== SPECTRAL & SSM VARIANTS ====================
 
     def test_spectra_v2(self):
         from neuralops.attentions.spectra_v2 import SpectraV2Attention

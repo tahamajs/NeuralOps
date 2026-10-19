@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Block-Sparse Streaming Attention
 
 Iterates over active block index tables with online FlashAttention softmax to eliminate redundant masked zero tiles.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -73,15 +77,12 @@ def _block_sparse_streaming_attn_kernel(
     q_ptrs = q_ptr + pid_b * stride_qb + pid_h * stride_qh + offs_m[:, None] * stride_ql + offs_d[None, :] * stride_qd
     q_tile = tl.load(q_ptrs, mask=mask_m[:, None], other=0.0).to(tl.float32)
 
-    # Online softmax statistics
     m_i = tl.full([BLOCK_M], float("-inf"), dtype=tl.float32)
     l_i = tl.zeros([BLOCK_M], dtype=tl.float32)
     acc = tl.zeros([BLOCK_M, D], dtype=tl.float32)
 
-    # Determine query block index for the active table
     q_block_id = pid_m * BLOCK_M // BLOCK_SIZE
 
-    # Iterate ONLY over active KV blocks in the index table
     for active_idx in range(0, K_ACTIVE):
         active_block_ptr = (
             active_blocks_ptr
@@ -102,11 +103,9 @@ def _block_sparse_streaming_attn_kernel(
             k_tile = tl.load(k_ptrs, mask=mask_n[:, None], other=0.0).to(tl.float32)
             v_tile = tl.load(v_ptrs, mask=mask_n[:, None], other=0.0).to(tl.float32)
 
-            # S = Q @ K.T * sm_scale
             s_tile = tl.dot(q_tile, tl.trans(k_tile), allow_tf32=True) * sm_scale
             s_tile = tl.where(mask_m[:, None] & mask_n[None, :], s_tile, float("-inf"))
 
-            # Online softmax update
             m_ij = tl.maximum(m_i, tl.max(s_tile, axis=1))
             p = tl.exp(s_tile - m_ij[:, None])
             l_ij = tl.sum(p, axis=1)
@@ -152,7 +151,6 @@ def triton_block_sparse_streaming_attn(
         sm_scale = 1.0 / math.sqrt(D)
 
     if not q.is_cuda or D > 128:
-        # PyTorch reference
         out = torch.empty_like(v)
         num_q_blocks = (L + block_size - 1) // block_size
 
@@ -163,7 +161,6 @@ def triton_block_sparse_streaming_attn(
                     q_ed = min(L, q_st + block_size)
                     q_sub = q[b, h, q_st:q_ed]
 
-                    # Gather active KV blocks
                     active_ids = active_block_indices[b, h, q_blk]
                     valid_ids = active_ids[active_ids >= 0]
 

@@ -1,5 +1,9 @@
-# -*- coding: utf-8 -*-
-# Author: Taha Majlesi
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Head-to-head FLA-style benchmark on NVIDIA RTX 4070.
 Evaluates Forward (ms), Forward+Backward (ms), and Peak VRAM (MB)
@@ -63,7 +67,6 @@ def benchmark_attention(name, key, seq_len):
     mod = mod.to(device=device, dtype=torch.bfloat16).train()
     x = torch.randn(B, seq_len, D, device=device, dtype=torch.bfloat16, requires_grad=True)
 
-    # Warmup
     for _ in range(3):
         try:
             out = mod(x)
@@ -83,7 +86,6 @@ def benchmark_attention(name, key, seq_len):
     torch.cuda.reset_peak_memory_stats()
     torch.cuda.synchronize()
 
-    # Forward benchmark
     iters = 3 if seq_len >= 4096 else 5
     if device == "cuda":
         start_evt = torch.cuda.Event(enable_timing=True)
@@ -112,7 +114,6 @@ def benchmark_attention(name, key, seq_len):
                     out = mod(hidden_states=x)
         fwd_time_ms = (time.perf_counter() - t0) * 1000.0 / iters
 
-    # Fwd + Bwd benchmark
     torch.cuda.empty_cache()
     torch.cuda.reset_peak_memory_stats()
     torch.cuda.synchronize()
@@ -182,7 +183,6 @@ for name, key in models_to_test:
             print(f"{name:<24} | {T:<7} | {'ERR':<10} | {'ERR':<14} | {str(e)[:14]}", flush=True)
             torch.cuda.empty_cache()
 
-# Loss benchmarking
 print("\n" + "=" * 95)
 print("LOSS BENCHMARKS: Standard vs Fused Linear Modules (Vocab=50,257)")
 print("=" * 95)
@@ -191,7 +191,6 @@ print("-" * 95)
 
 V = 50257
 for T in [512, 1024, 2048, 4096]:
-    # Standard CE
     try:
         h = torch.randn(B, T, D, device=device, dtype=torch.bfloat16, requires_grad=True)
         w = torch.randn(V, D, device=device, dtype=torch.bfloat16, requires_grad=True)
@@ -215,7 +214,6 @@ for T in [512, 1024, 2048, 4096]:
         print(f"{'Standard Linear CE':<30} | {T:<7} | {'OOM':<14} | {'OOM':<14}")
         torch.cuda.empty_cache()
 
-    # Fused Linear CE
     try:
         fused_ce = FusedLinearCrossEntropy().to(device)
         h = torch.randn(B, T, D, device=device, dtype=torch.bfloat16, requires_grad=True)
@@ -239,7 +237,6 @@ for T in [512, 1024, 2048, 4096]:
         print(f"{'Fused Linear CE (FLA-style)':<30} | {T:<7} | {'ERR':<14} | {str(e)[:14]}")
         torch.cuda.empty_cache()
 
-    # Standard KD
     try:
         s_h = torch.randn(B, T, D, device=device, dtype=torch.bfloat16, requires_grad=True)
         t_h = torch.randn(B, T, D, device=device, dtype=torch.bfloat16)
@@ -265,7 +262,6 @@ for T in [512, 1024, 2048, 4096]:
         print(f"{'Standard Linear KL-Div':<30} | {T:<7} | {'OOM':<14} | {'OOM':<14}")
         torch.cuda.empty_cache()
 
-    # Fused Linear KD
     try:
         fused_kd = FusedLinearKLDivergence().to(device)
         s_h = torch.randn(B, T, D, device=device, dtype=torch.bfloat16, requires_grad=True)

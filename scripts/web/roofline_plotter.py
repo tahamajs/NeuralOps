@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Interactive Hardware Roofline Visualizer for NeuralOps.
 
 Generates standalone interactive HTML Plotly roofline charts for empirical Triton kernels.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -48,12 +52,10 @@ def generate_roofline_html(
     intensities = [0.1, 0.5, 1.0, 2.0, 5.0, 10.0, ridge_point, 50.0, 100.0, 500.0, 1000.0]
     intensities = sorted(list(set(intensities)))
 
-    # Roofline ceiling calculation
     ceilings = [min(peak_tflops, (i * peak_bandwidth_gb_s) / 1000.0) for i in intensities]
 
     fig = go.Figure()
 
-    # Ceiling curve
     fig.add_trace(
         go.Scatter(
             x=intensities,
@@ -64,7 +66,6 @@ def generate_roofline_html(
         )
     )
 
-    # Kernel sample benchmark points
     sample_kernels = [
         {"name": "Standard PyTorch Softmax", "ai": 2.4, "tflops": 18.2, "color": "#f87171"},
         {"name": "FlashAttention-2", "ai": 45.0, "tflops": 195.4, "color": "#34d399"},

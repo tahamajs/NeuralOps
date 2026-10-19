@@ -1,6 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Profile ttft decode module.
-
-Author: Taha Majlesi
 """
 
 import sys
@@ -14,10 +18,6 @@ import csv
 device = torch.device("cuda:0")
 print(f"Device: {torch.cuda.get_device_name(0)}")
 
-# Benchmark parameters:
-# Multi-stream inference under variable prompt prefix lengths (L_prefix in {512, 1024, 2048, 4096}).
-# Measure Time-To-First-Token (TTFT in ms) for prefill, and single token decode step latency (ms/token),
-# under asynchronous multi-tenant arrival (profiling 1, 2, 4, 8 concurrent tenant streams).
 
 prefix_lengths = [512, 1024, 2048, 4096]
 concurrency_levels = [1, 2, 4, 8]
@@ -28,7 +28,6 @@ D = H * D_HEAD
 
 print("\n=== STARTING MULTI-STREAM TTFT & DECODE LATENCY PROFILING ===")
 
-# Shared model weights across tenants
 W_q = torch.randn(D, D, device=device, dtype=torch.float16)
 W_k = torch.randn(D, D, device=device, dtype=torch.float16)
 W_v = torch.randn(D, D, device=device, dtype=torch.float16)
@@ -36,7 +35,6 @@ W_out = torch.randn(D, D, device=device, dtype=torch.float16)
 W_gate = torch.randn(D, 4 * D, device=device, dtype=torch.float16)
 W_down = torch.randn(4 * D, D, device=device, dtype=torch.float16)
 
-# Warmup CUDA
 torch.cuda.empty_cache()
 torch.cuda.reset_peak_memory_stats()
 _ = torch.randn(2000, 2000, device=device) @ torch.randn(2000, 2000, device=device)
@@ -52,7 +50,6 @@ for num_streams in concurrency_levels:
         torch.cuda.empty_cache()
         torch.cuda.reset_peak_memory_stats()
 
-        # Prepare tenant prompt inputs: [1, L_prefix, D] per stream
         prompt_tensors = [torch.randn(1, L_prefix, D, device=device, dtype=torch.float16) for _ in range(num_streams)]
         k_caches = [
             torch.zeros(L_prefix + 64, H, D_HEAD, device=device, dtype=torch.float16) for _ in range(num_streams)
@@ -62,8 +59,6 @@ for num_streams in concurrency_levels:
         ]
         decode_tokens = [torch.randn(1, 1, D, device=device, dtype=torch.float16) for _ in range(num_streams)]
 
-        # 1. Benchmark Prefill -> TTFT (Time-To-First-Token)
-        # Prefill processes prompt: Q, K, V projection + causal self-attention + MLP to generate the first token
         def run_prefill(s_idx):
             """Execute run prefill routine."""
             with torch.cuda.stream(streams[s_idx]):
@@ -72,7 +67,6 @@ for num_streams in concurrency_levels:
                 k = torch.matmul(x, W_k).view(1, L_prefix, H, D_HEAD).transpose(1, 2)
                 v = torch.matmul(x, W_v).view(1, L_prefix, H, D_HEAD).transpose(1, 2)
 
-                # Populate cache
                 k_caches[s_idx][:L_prefix] = k.transpose(1, 2).squeeze(0)
                 v_caches[s_idx][:L_prefix] = v.transpose(1, 2).squeeze(0)
 
@@ -80,16 +74,14 @@ for num_streams in concurrency_levels:
                 attn_flat = attn_out.transpose(1, 2).reshape(L_prefix, D)
                 proj_out = torch.matmul(attn_flat, W_out)
                 mlp_h = F.silu(torch.matmul(proj_out, W_gate))
-                first_token = torch.matmul(mlp_h[-1:], W_down)  # last token prediction
+                first_token = torch.matmul(mlp_h[-1:], W_down)
                 decode_tokens[s_idx] = first_token
 
-        # Warmup prefill
         for s_idx in range(num_streams):
             run_prefill(s_idx)
         for s_idx in range(num_streams):
             streams[s_idx].synchronize()
 
-        # Measure TTFT over 20 iterations
         iters_prefill = 20
         ttft_start = torch.cuda.Event(enable_timing=True)
         ttft_end = torch.cuda.Event(enable_timing=True)
@@ -104,11 +96,9 @@ for num_streams in concurrency_levels:
         torch.cuda.synchronize()
 
         ttft_batch_ms = ttft_start.elapsed_time(ttft_end) / iters_prefill
-        # Per-tenant TTFT (since streams execute concurrently in parallel)
         ttft_per_tenant_ms = ttft_batch_ms
         prefill_tok_per_sec = (num_streams * L_prefix * 1000.0) / ttft_batch_ms
 
-        # 2. Benchmark Single Token Decode Step Latency (at context length L_prefix)
         def run_decode_step(s_idx):
             """Execute run decode step routine."""
             with torch.cuda.stream(streams[s_idx]):
@@ -130,7 +120,6 @@ for num_streams in concurrency_levels:
                 next_tok = torch.matmul(mlp_h, W_down)
                 decode_tokens[s_idx] = next_tok
 
-        # Warmup decode
         for s_idx in range(num_streams):
             run_decode_step(s_idx)
         for s_idx in range(num_streams):
@@ -173,7 +162,6 @@ for num_streams in concurrency_levels:
             }
         )
 
-# Export to CSV
 csv_path = "/mnt/d/SVD_linear_Attention/docs/benchmarks/paper_benchmarks_ttft_decode.csv"
 os.makedirs(os.path.dirname(csv_path), exist_ok=True)
 fieldnames = [

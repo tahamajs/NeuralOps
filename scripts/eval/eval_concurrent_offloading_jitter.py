@@ -1,6 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Eval concurrent offloading jitter module.
-
-Author: Taha Majlesi
 """
 
 import gc
@@ -25,7 +29,6 @@ model_path = "/mnt/d/models/gpt2"
 tokenizer = AutoTokenizer.from_pretrained(model_path)
 tokenizer.pad_token = tokenizer.eos_token
 
-# Inductive reasoning prompt
 reasoning_prompt = (
     "Question: Let a sequence be defined by S_0 = 1, and for all k >= 1, S_k = 3 * S_{k-1} + 2. "
     "Derive the step-by-step reasoning chain for S_1, S_2, S_3, S_4, and establish the general closed form: "
@@ -56,19 +59,17 @@ class BackgroundWorker:
         with torch.cuda.stream(self.stream):
             while not self.stop_event.is_set():
                 if self.mode == "offload":
-                    # Pinned memory host-device copy stream
                     tensor_gpu = torch.randn((12, 16, 64, 64), device=device, dtype=torch.float16)
                     tensor_cpu = torch.empty((12, 16, 64, 64), dtype=torch.float16, pin_memory=True)
                     tensor_cpu.copy_(tensor_gpu, non_blocking=True)
                     del tensor_gpu, tensor_cpu
                 elif self.mode == "compression":
-                    # Background SVD matrix compression
                     mat = torch.randn((256, 256), device=device, dtype=torch.float32)
                     U, S, V = torch.linalg.svd(mat, full_matrices=False)
                     recon = (U[:, :64] * S[:64]) @ V[:64, :]
                     del mat, U, S, V, recon
                 self.iterations += 1
-                time.sleep(0.005)  # Yield
+                time.sleep(0.005)
 
     def start(self):
         """Execute start routine."""
@@ -101,12 +102,10 @@ for mode in concurrency_modes:
             replace_attention(m, attention_key=key)
         m = m.to(device).eval()
 
-        # Warmup
         with torch.no_grad():
             _ = m(input_ids)
         torch.cuda.synchronize()
 
-        # Start background worker if applicable
         worker = None
         if mode == "kv_offload":
             worker = BackgroundWorker(mode="offload")

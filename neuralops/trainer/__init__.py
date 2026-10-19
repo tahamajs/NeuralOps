@@ -1,7 +1,11 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 NeuralOps Trainer Subpackage.
-
-Author: Taha Majlesi
 """
 
 from .base_trainer import BaseTrainer, Trainer
@@ -14,7 +18,6 @@ from .callbacks import (
 )
 from .custom_loop_trainer import CustomLoopTrainer
 
-# Import trainers to register them
 from .hf_trainer import HuggingFaceTrainer
 from .hyperopt import (
     HyperparameterOptimizer,
@@ -88,7 +91,6 @@ __all__ = [
 from .foundation_pretrainer import InfiniteContextFoundationPretrainer
 
 
-# Optimizer factories
 from .optimizers import (  # noqa: E402
     create_adabelief,
     create_adam,
@@ -102,7 +104,6 @@ from .optimizers import (  # noqa: E402
     create_sgd,
 )
 
-# Scheduler factories
 from .schedulers import (  # noqa: E402
     create_cosine,
     create_linear,
@@ -112,7 +113,6 @@ from .schedulers import (  # noqa: E402
 )
 
 __all__ += [
-    # Optimizers
     "create_muon",
     "create_muon_adamw_reg",
     "create_riemannian_stiefel",
@@ -123,7 +123,6 @@ __all__ += [
     "create_ranger",
     "create_lamb",
     "create_lars",
-    # Schedulers
     "create_linear",
     "create_cosine",
     "create_rop",
@@ -131,7 +130,6 @@ __all__ += [
     "create_poly",
 ]
 
-# Loss functions
 from .losses import (  # noqa: E402
     ContrastiveLoss,
     CrossEntropyLoss,
@@ -150,7 +148,6 @@ __all__ += [
     "ContrastiveLoss",
 ]
 
-# Pillar 1-6 exports
 from .distillation.multi_level_kd import (
     LogitDistillationLoss,
     SpikyFeatureMap,
@@ -207,7 +204,6 @@ __all__ += [
     "TTTLinearAttentionLayer",
 ]
 
-# Auto-wired package members
 from neuralops.trainer import methods
 from neuralops.trainer import optimizers
 from neuralops.trainer import base_trainer

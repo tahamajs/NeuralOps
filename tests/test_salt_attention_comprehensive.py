@@ -1,3 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 import types
 
 import pytest
@@ -35,11 +42,9 @@ class DummyAttn(nn.Module):
 
 def test_salt_linear_properties():
     layer = SALTLinear(64, 64, rank=8)
-    # Check buffers
     assert "U" in dict(layer.named_buffers())
     assert "S" in dict(layer.named_buffers())
     assert "Vt" in dict(layer.named_buffers())
-    # Check parameters
     assert layer.gamma.requires_grad
     assert layer.A.requires_grad
     assert layer.B.requires_grad

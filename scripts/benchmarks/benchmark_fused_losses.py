@@ -1,6 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Benchmark fused losses module.
-
-Author: Taha Majlesi
 """
 
 import torch
@@ -13,7 +17,6 @@ device = "cuda"
 torch.cuda.empty_cache()
 torch.cuda.reset_peak_memory_stats()
 
-# Benchmark parameters: B=4, T=2048, D=1024, V=50257 (GPT-2 standard)
 B, T, D, V = 4, 2048, 1024, 50257
 dtype = torch.float16
 
@@ -24,7 +27,6 @@ w = torch.randn(V, D, dtype=dtype, device=device, requires_grad=True)
 b = torch.randn(V, dtype=dtype, device=device, requires_grad=True)
 targets = torch.randint(0, V, (N_tokens,), device=device)
 
-# 1. Standard PyTorch Materialized Logits CE
 torch.cuda.empty_cache()
 torch.cuda.reset_peak_memory_stats()
 t0 = time.time()
@@ -42,7 +44,6 @@ b.grad = None
 torch.cuda.empty_cache()
 torch.cuda.reset_peak_memory_stats()
 
-# 2. Fused Linear Cross Entropy
 fused_ce = FusedLinearCrossEntropy(chunk_size=512)
 t0 = time.time()
 loss_fused = fused_ce(h, w, targets=targets, bias=b)
@@ -55,12 +56,10 @@ print(f"Standard PyTorch CE      - Peak VRAM: {mem_std:8.2f} MB | Latency: {t_st
 print(f"FusedLinearCrossEntropy - Peak VRAM: {mem_fused:8.2f} MB | Latency: {t_fused * 1000:7.2f} ms")
 print(f"CE VRAM Reduction: {(1 - mem_fused / mem_std) * 100:.1f}%")
 
-# 3. Knowledge Distillation Benchmark
 t_h = torch.randn(N_tokens, D, dtype=dtype, device=device)
 t_w = torch.randn(V, D, dtype=dtype, device=device)
 t_b = torch.randn(V, dtype=dtype, device=device)
 
-# Standard KD
 torch.cuda.empty_cache()
 torch.cuda.reset_peak_memory_stats()
 t0 = time.time()
@@ -82,7 +81,6 @@ b.grad = None
 torch.cuda.empty_cache()
 torch.cuda.reset_peak_memory_stats()
 
-# Fused Linear KD
 fused_kd = FusedLinearKLDivergence(temperature=2.0, chunk_size=512)
 t0 = time.time()
 loss_kd_fused = fused_kd(h, w, t_h, t_w, student_bias=b, teacher_bias=t_b)
@@ -95,7 +93,6 @@ print(f"Standard PyTorch KD      - Peak VRAM: {mem_kd_std:8.2f} MB | Latency: {t
 print(f"FusedLinearKLDivergence - Peak VRAM: {mem_kd_fused:8.2f} MB | Latency: {t_kd_fused * 1000:7.2f} ms")
 print(f"KD VRAM Reduction: {(1 - mem_kd_fused / mem_kd_std) * 100:.1f}%")
 
-# Larger Vocab benchmark: V=128256 (Llama 3 vocabulary)
 print("\n=== LARGE VOCAB BENCHMARK (Llama-3 Vocab): B=2, T=1024, D=1024, Vocab=128256 ===")
 B_l, T_l, D_l, V_l = 2, 1024, 1024, 128256
 N_l = B_l * T_l
@@ -103,7 +100,6 @@ h_l = torch.randn(N_l, D_l, dtype=dtype, device=device, requires_grad=True)
 w_l = torch.randn(V_l, D_l, dtype=dtype, device=device, requires_grad=True)
 targets_l = torch.randint(0, V_l, (N_l,), device=device)
 
-# Standard CE
 torch.cuda.empty_cache()
 torch.cuda.reset_peak_memory_stats()
 t0 = time.time()
@@ -120,7 +116,6 @@ w_l.grad = None
 torch.cuda.empty_cache()
 torch.cuda.reset_peak_memory_stats()
 
-# Fused CE
 fused_ce_l = FusedLinearCrossEntropy(chunk_size=256)
 t0 = time.time()
 loss_fused_l = fused_ce_l(h_l, w_l, targets=targets_l)

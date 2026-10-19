@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Parameter Recovery Utilities
 
 Parameter recovery selection and budget pruning for compressed models.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -14,7 +18,6 @@ import torch.nn as nn
 
 logger = logging.getLogger(__name__)
 
-# Priority buckets for recovery pruning (Fix CP-01/CP-02)
 PROTECTED_KEYWORDS: tuple[str, ...] = (
     "lora_a",
     "lora_b",
@@ -171,7 +174,6 @@ def _collect_trainable_params(
             for k, _ in model.named_parameters()
         )
 
-        # Recurrent/hybrid module detection.
         is_recurrent_module = False
         parts = name.split(".")
         for i in range(len(parts)):
@@ -182,14 +184,12 @@ def _collect_trainable_params(
                     is_recurrent_module = True
                     break
 
-        # Fallback layers remain strictly frozen.
         if fallback_layers and (
             parent_module_prefix in fallback_layers
             or any(name.startswith(fb + ".") or name == fb for fb in fallback_layers)
         ):
             continue
 
-        # For recurrent/hybrid modules, only LoRA params are trainable.
         if is_recurrent_module:
             if any(tag in n_low for tag in ("lora_a", "lora_b")):
                 trainable_params.append(param)
@@ -205,7 +205,6 @@ def _collect_trainable_params(
         ):
             trainable_params.append(param)
 
-    # Deduplicate preserving order.
     seen_ids: set[int] = set()
     unique_trainable: list[nn.Parameter] = []
     for p in trainable_params:
@@ -233,10 +232,10 @@ def _prune_to_budget(
         List of retained trainable parameters.
     """
     priority_buckets: dict[int, list[tuple[str, nn.Parameter]]] = {
-        0: [],  # protected (LoRA/gates/classifier/alpha/beta)
-        1: [],  # SVDLinear U/V factors
-        2: [],  # small params (1D or numel <= 32768)
-        3: [],  # other large 2D params
+        0: [],
+        1: [],
+        2: [],
+        3: [],
     }
     for name, param in model.named_parameters():
         if id(param) not in trainable_id_set:
@@ -314,7 +313,6 @@ def get_recovery_params(model: nn.Module) -> list[nn.Parameter]:
         model, svd_param_ids=svd_param_ids, has_svd=has_svd, has_lora=has_lora
     )
 
-    # Set requires_grad across the model.
     trainable_id_set = {id(p) for p in trainable_params}
     for _, param in model.named_parameters():
         param.requires_grad = id(param) in trainable_id_set
@@ -332,7 +330,6 @@ def get_recovery_params(model: nn.Module) -> list[nn.Parameter]:
     )
     prune_threshold = 10_000_000 if (has_lora or is_nested_or_deep) else 2_000_000
 
-    # Fix CP-03: Shrink LoRA rank properly, preserving the r/alpha scaling.
     if total_trainable > 5_000_000:
         for m in model.modules():
             if hasattr(m, "lora_rank") and getattr(m, "lora_rank", 0) > 8:
@@ -343,7 +340,6 @@ def get_recovery_params(model: nn.Module) -> list[nn.Parameter]:
                 if hasattr(m, "lora_scaling") and hasattr(m, "lora_alpha"):
                     m.lora_scaling = m.lora_alpha / 8
 
-    # Fix CP-01/CP-02: Priority-based pruning.
     if total_trainable > prune_threshold:
         logger.warning(
             "Total trainable parameters (%d) exceeds %d threshold for recovery. "

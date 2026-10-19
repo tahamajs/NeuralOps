@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Comprehensive test suite for neuralops.core.triton_kernels.low_rank.
 
@@ -17,9 +23,6 @@ from neuralops.core.triton_kernels._common import HAS_TRITON, low_rank_pytorch_f
 from neuralops.core.triton_kernels.low_rank import fwd, bwd, is_supported
 
 
-# ═══════════════════════════════════════════════════
-# Test fixtures
-# ═══════════════════════════════════════════════════
 
 @pytest.fixture
 def device():
@@ -42,9 +45,6 @@ def reference_low_rank_pytorch(x: torch.Tensor, U: torch.Tensor, V: torch.Tensor
     return y
 
 
-# ═══════════════════════════════════════════════════
-# Numerical correctness
-# ═══════════════════════════════════════════════════
 
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float16, torch.bfloat16])
 @pytest.mark.parametrize("has_bias", [True, False])
@@ -56,8 +56,8 @@ def test_low_rank_correctness(device, dtype, has_bias, batch, seq_len, in_dim, r
         pytest.skip("bfloat16 cuda not supported")
 
     x = torch.randn(batch, seq_len, in_dim, device=device, dtype=dtype)
-    V = torch.randn(rank, in_dim, device=device, dtype=dtype) # [Rank, D_in]
-    U = torch.randn(out_dim, rank, device=device, dtype=dtype) # [D_out, Rank]
+    V = torch.randn(rank, in_dim, device=device, dtype=dtype)
+    U = torch.randn(out_dim, rank, device=device, dtype=dtype)
     bias = torch.randn(out_dim, device=device, dtype=dtype) if has_bias else None
 
     out = fwd(x, U, V, bias=bias)
@@ -68,9 +68,6 @@ def test_low_rank_correctness(device, dtype, has_bias, batch, seq_len, in_dim, r
     assert torch.allclose(out, ref, atol=tol, rtol=tol)
 
 
-# ═══════════════════════════════════════════════════
-# Edge cases & Non-power-of-2
-# ═══════════════════════════════════════════════════
 
 def test_low_rank_single_token(device):
     """Single token sequence."""
@@ -92,9 +89,6 @@ def test_low_rank_non_power_of_2(device):
     assert torch.isfinite(out).all()
 
 
-# ═══════════════════════════════════════════════════
-# Fallback path & Determinism
-# ═══════════════════════════════════════════════════
 
 def test_low_rank_cpu_fallback():
     """Verify fallback executes cleanly on CPU."""
@@ -116,9 +110,6 @@ def test_low_rank_deterministic(device):
     assert torch.equal(out1, out2)
 
 
-# ═══════════════════════════════════════════════════
-# Backward gradients
-# ═══════════════════════════════════════════════════
 
 def test_low_rank_backward_gradients(device):
     """Verify gradients propagate to x, U, V, and bias."""

@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 NeuralOps Transformation Recipes
 
 Declarative one-shot recipe engine and hardware-aware pipeline advisor for model transformation.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -111,7 +115,7 @@ def recommend(
     if torch.cuda.is_available():
         sm_major = torch.cuda.get_device_capability()[0]
 
-    if sm_major >= 8:  # Ada Lovelace, Hopper, Ampere
+    if sm_major >= 8:
         rec = {
             "recommended_attention": "gdn2_attention" if seq_len >= 2048 else "gla_attention",
             "recommended_compressor": "swift_svd_act",
@@ -120,7 +124,7 @@ def recommend(
             "optimal_chunk_size": 64,
             "hardware_tier": f"SM {sm_major}.x (Modern Tensor Core / Full Triton)",
         }
-    else:  # Pascal / Legacy
+    else:
         rec = {
             "recommended_attention": "cosformer",
             "recommended_compressor": "rotational_slicegpt_int4",

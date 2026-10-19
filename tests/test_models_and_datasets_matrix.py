@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Comprehensive Matrix Test Suite: Small Models (BERT, RoBERTa, DistilBERT, GPT-2)
 across all Datasets (GLUE tasks, WikiText-2, C4, Multi-Choice) and SOTA Optimizers/Compressors.
@@ -41,7 +47,6 @@ from neuralops.trainer.optimizers import RiemannianStiefelOptimizer
 from neuralops.trainer.utils import clip_grad_norm_factorized
 from torch.utils.data import DataLoader
 
-# ── Compact Model Definitions for Testing ──────────────────────────────
 
 
 class CompactBertSelfAttention(nn.Module):
@@ -122,7 +127,7 @@ class CompactBertForClassification(nn.Module):
         x = self.embeddings(input_ids)
         for layer in self.layers:
             x = layer(x, attention_mask=attention_mask)
-        pooled = torch.tanh(self.pooler(x[:, 0]))  # [CLS] token representation
+        pooled = torch.tanh(self.pooler(x[:, 0]))
         logits = self.classifier(pooled)
 
         loss = None
@@ -189,7 +194,6 @@ class CompactGPT2ForCausalLM(nn.Module):
         return {"logits": logits, "loss": loss if loss is not None else torch.tensor(0.0)}
 
 
-# ── Test Cases Across Models and Datasets ──────────────────────────────
 
 
 class TestModelsAndDatasetsMatrix:
@@ -201,7 +205,6 @@ class TestModelsAndDatasetsMatrix:
         model = CompactBertForClassification(vocab_size=500, hidden_size=64, num_labels=2)
         optimizer = RiemannianStiefelOptimizer(model.parameters(), lr=1e-3, base_optimizer="adamw")
 
-        # Load synthetic SST-2 dataset
         dataset = SyntheticClassificationDataset(num_samples=16, seq_len=16, vocab_size=500, num_classes=2)
         loader = DataLoader(dataset, batch_size=4)
 
@@ -250,7 +253,6 @@ class TestModelsAndDatasetsMatrix:
         compressed_model, stats = compressor.compress()
         assert stats["compressed_parameters"] <= stats["original_parameters"]
 
-        # Run inference on compressed DistilBERT
         sample = dataset[0]
         input_ids = sample["input_ids"].unsqueeze(0)
         out = compressed_model(input_ids)
@@ -263,13 +265,11 @@ class TestModelsAndDatasetsMatrix:
         model = CompactGPT2ForCausalLM(vocab_size=500, hidden_size=64, num_layers=2, num_heads=4)
         optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3)
 
-        # Load WikiText-2 synthetic benchmark
         w2_samples = load_benchmark_dataset(
             "wikitext2", use_synthetic=True, max_samples=8, return_dataloader=False
         )
         assert len(w2_samples) == 8
 
-        # Train on sequence batch
         tokens = generate_zipfian_tokens(num_samples=4, seq_len=32, vocab_size=500)
         optimizer.zero_grad()
         out = model(input_ids=tokens, labels=tokens)
@@ -294,7 +294,6 @@ class TestModelsAndDatasetsMatrix:
         res_model, stats = compressor.compress()
         assert len(stats["replaced_layers"]) > 0
 
-        # Fine-tune adapter parameters
         optimizer = torch.optim.AdamW(
             [p for p in res_model.parameters() if p.requires_grad], lr=1e-3
         )
@@ -347,7 +346,6 @@ class TestModelsAndDatasetsMatrix:
         num_heads = 4
         head_dim = 16
 
-        # Standard MHA: [3 * hidden_size, hidden_size]
         fused_w_mha = torch.randn(3 * hidden_size, hidden_size)
         fused_b_mha = torch.randn(3 * hidden_size)
         qkv_mha = slice_fused_qkv(fused_w_mha, fused_b_mha, num_heads=num_heads, head_dim=head_dim)
@@ -355,7 +353,6 @@ class TestModelsAndDatasetsMatrix:
         assert qkv_mha["k"][0].shape == (hidden_size, hidden_size)
         assert qkv_mha["v"][0].shape == (hidden_size, hidden_size)
 
-        # GQA: 4 query heads, 2 key/value heads
         fused_w_gqa = torch.randn(4 * head_dim + 2 * head_dim + 2 * head_dim, hidden_size)
         qkv_gqa = slice_fused_qkv(
             fused_w_gqa, None, num_heads=4, num_kv_heads=2, head_dim=head_dim

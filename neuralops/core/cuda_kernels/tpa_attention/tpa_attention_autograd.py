@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Temporal Pattern Attention Autograd Interface
 
 Hardware-accelerated CUDA C++ autograd implementation with analytical gradients and three-level fallback dispatch.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -23,7 +27,6 @@ def _get_module():
     return _MODULE
 
 def tpa_attention_ref(h_states: torch.Tensor, weights: torch.Tensor) -> torch.Tensor:
-    # weights: [B, N], h_states: [B, N, D] -> [B, D]
     return torch.bmm(weights.unsqueeze(1), h_states).squeeze(1)
 
 def tpa_attention(h_states: torch.Tensor, weights: torch.Tensor) -> torch.Tensor:

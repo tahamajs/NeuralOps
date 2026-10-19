@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Deep forensic telemetry analysis of full_queue_all_modules/results.jsonl.
-
-Author: Taha Majlesi
 """
 
 import json
@@ -28,7 +32,6 @@ def analyze_queue(results_path: str):
     print(f"FORENSIC AUDIT OF BENCHMARK QUEUE ({total} total runs)")
     print("==================================================================")
 
-    # 1. Status breakdown
     statuses = {}
     for r in records:
         s = r.get("status", "unknown")
@@ -37,7 +40,6 @@ def analyze_queue(results_path: str):
     for s, c in statuses.items():
         print(f"   - {s}: {c} ({c / total * 100:.1f}%)")
 
-    # 2. Module types
     types = {}
     for r in records:
         t = r.get("module_type", "unknown")
@@ -46,7 +48,6 @@ def analyze_queue(results_path: str):
     for t, c in types.items():
         print(f"   - {t}: {c}")
 
-    # 3. Top performers (Accuracy & F1)
     valid_acc = [r for r in records if r.get("accuracy") is not None]
     valid_acc.sort(key=lambda x: (x.get("accuracy", 0), x.get("f1", 0)), reverse=True)
 
@@ -59,7 +60,6 @@ def analyze_queue(results_path: str):
             f"   {r['module']:<32} {r.get('module_type', ''):<12} {r.get('accuracy', 0):<10.4f} {r.get('f1', 0):<10.4f} {r.get('loss', 0):<10.4f} {vram:<10.1f}"
         )
 
-    # 4. Outliers & Degradations
     nan_loss = [r for r in records if str(r.get("loss")).lower() == "nan"]
     inf_loss = [r for r in records if str(r.get("loss")).lower() == "inf"]
     low_acc = [r for r in records if r.get("accuracy") is not None and r.get("accuracy") < 0.50]
@@ -85,7 +85,6 @@ def analyze_queue(results_path: str):
                 f"     * {r['module']:<30} (type={r.get('module_type')}): loss={r.get('loss', 0):.4f}, acc={r.get('accuracy', 0):.4f}"
             )
 
-    # 5. Compressors audit
     comps = [r for r in records if r.get("module_type") == "compressor"]
     print(f"\n5. COMPRESSORS AUDIT ({len(comps)} compressors):")
     comps_sorted = sorted(comps, key=lambda x: (x.get("accuracy", 0), x.get("f1", 0)), reverse=True)

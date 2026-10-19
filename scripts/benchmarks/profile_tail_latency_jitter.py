@@ -1,6 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Profile tail latency jitter module.
-
-Author: Taha Majlesi
 """
 
 import sys
@@ -15,11 +19,6 @@ import csv
 device = torch.device("cuda:0")
 print(f"Device: {torch.cuda.get_device_name(0)}")
 
-# Benchmark parameters:
-# 100 consecutive requests under multi-tenant concurrent execution across streams: 1, 2, 4, 8 streams.
-# Under multi-tenant serving, each stream represents an independent tenant issuing requests.
-# We measure per-request latency across all 100 requests for each stream concurrency level,
-# and compute Mean, Std Dev, P50, P90, P99, Max Tail Latency, and aggregate Throughput (QPS / tokens/sec).
 
 num_requests = 100
 stream_counts = [1, 2, 4, 8]
@@ -31,7 +30,6 @@ dim = num_heads * head_dim
 
 print("\n=== STARTING MULTI-STREAM INFERENCE LATENCY JITTER PROFILING ===")
 
-# Warmup
 torch.cuda.empty_cache()
 torch.cuda.reset_peak_memory_stats()
 _ = torch.randn(2000, 2000, device=device) @ torch.randn(2000, 2000, device=device)
@@ -44,8 +42,6 @@ for num_streams in stream_counts:
     print(f"\n--- Profiling Concurrency: {num_streams} Active Streams ({num_requests} consecutive requests) ---")
     streams = [torch.cuda.Stream() for _ in range(num_streams)]
 
-    # Pre-allocate tenant inputs to isolate scheduling and execution jitter from memory allocation overhead
-    # Each tenant executes a fused layer: SVD Linear projection + Attention + Selective SSM block
     q_tensors = [
         torch.randn(batch_per_stream, num_heads, seq_len, head_dim, device=device, dtype=torch.float16)
         for _ in range(num_streams)
@@ -59,10 +55,8 @@ for num_streams in stream_counts:
         for _ in range(num_streams)
     ]
 
-    # Weight matrices for projection
     W_proj = torch.randn(dim, dim, device=device, dtype=torch.float16)
 
-    # Warmup streams
     for i in range(num_streams):
         with torch.cuda.stream(streams[i]):
             out = F.scaled_dot_product_attention(q_tensors[i], k_tensors[i], v_tensors[i])
@@ -72,8 +66,6 @@ for num_streams in stream_counts:
 
     latencies_ms = []
 
-    # Execute 100 consecutive request rounds
-    # In each round, we dispatch concurrent requests across all active streams and measure round execution time
     torch.cuda.reset_peak_memory_stats()
 
     start_events = [torch.cuda.Event(enable_timing=True) for _ in range(num_requests)]
@@ -87,7 +79,6 @@ for num_streams in stream_counts:
                 out_flat = out.transpose(1, 2).reshape(batch_per_stream * seq_len, dim)
                 _ = torch.matmul(out_flat, W_proj)
 
-        # Ensure completion of all streams for this request round
         for s_idx in range(num_streams):
             streams[s_idx].synchronize()
         end_events[r].record()
@@ -108,10 +99,8 @@ for num_streams in stream_counts:
     max_lat = float(np.max(latencies_arr))
     min_lat = float(np.min(latencies_arr))
 
-    # Jitter ratio = (P99 - P50) / P50
     jitter_ratio = (p99_lat - p50_lat) / p50_lat * 100.0 if p50_lat > 0 else 0.0
 
-    # Throughput QPS = (num_requests * num_streams) / total_time
     total_time_sec = float(np.sum(latencies_arr)) / 1000.0
     total_requests_served = num_requests * num_streams
     qps = total_requests_served / total_time_sec
@@ -143,7 +132,6 @@ for num_streams in stream_counts:
         }
     )
 
-# Export to CSV
 csv_path = "/mnt/d/SVD_linear_Attention/docs/benchmarks/paper_benchmarks_tail_latency_jitter.csv"
 os.makedirs(os.path.dirname(csv_path), exist_ok=True)
 fieldnames = [

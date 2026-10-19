@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Shadow-Twin Distillation Engine
 
 Performs in-place shadow-twin distillation, homotopy scheduling, and surgery finalization.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -20,9 +24,6 @@ from neuralops.surgery.endoskeletal_shell import UniversalAttentionBridge
 logger = logging.getLogger("NeuralOps.Surgery.ShadowTwin")
 
 
-# ==============================================================================
-# 1. Distillation Alignment Loss Functions
-# ==============================================================================
 
 def compute_operator_cloning_loss(
     teacher_out: torch.Tensor,
@@ -40,15 +41,12 @@ def compute_linear_cka_loss(
     eps: float = 1e-6,
 ) -> torch.Tensor:
     """Computes Linear Centered Kernel Alignment (CKA) difference loss: 1.0 - CKA."""
-    # teacher_act: (B, T, D_t), student_act: (B, T, D_s)
     X = teacher_act.reshape(-1, teacher_act.shape[-1]).float()
     Y = student_act.reshape(-1, student_act.shape[-1]).float()
 
-    # Center matrices
     X = X - X.mean(dim=0, keepdim=True)
     Y = Y - Y.mean(dim=0, keepdim=True)
 
-    # Compute dot product similarities
     dot_xy = torch.norm(torch.matmul(X.t(), Y), p="fro") ** 2
     dot_xx = torch.norm(torch.matmul(X.t(), X), p="fro") ** 2
     dot_yy = torch.norm(torch.matmul(Y.t(), Y), p="fro") ** 2
@@ -58,9 +56,6 @@ def compute_linear_cka_loss(
     return 1.0 - cka.clamp(min=0.0, max=1.0)
 
 
-# ==============================================================================
-# 2. Shadow-Twin Lifecycle Operations
-# ==============================================================================
 
 def enable_shadow_twin(
     bridge_or_model: nn.Module,
@@ -83,7 +78,7 @@ def enable_shadow_twin(
                 p.requires_grad = False
 
         bridge.stage = stage
-        bridge.alpha = 0.0  # Output 100% teacher activation in stage 2
+        bridge.alpha = 0.0
         patch_bridge_for_shadow_twin(bridge)
 
 
@@ -165,9 +160,6 @@ def finalize_surgery(model: nn.Module) -> nn.Module:
     return model
 
 
-# ==============================================================================
-# 3. Enhanced Forward Hook for UniversalAttentionBridge
-# ==============================================================================
 
 def patch_bridge_for_shadow_twin(bridge: UniversalAttentionBridge) -> None:
     """Patches bridge forward to support in-place twin distillation and homotopy blending."""
@@ -180,27 +172,23 @@ def patch_bridge_for_shadow_twin(bridge: UniversalAttentionBridge) -> None:
         if bridge.teacher_branch is None or getattr(bridge, "stage", None) == "inference":
             return orig_forward(*args, **kwargs)
 
-        # 1. Forward through teacher (detached, no grad)
         with torch.no_grad():
             teacher_ret = bridge.teacher_branch(*args, **kwargs)
             teacher_core = teacher_ret[0] if isinstance(teacher_ret, tuple) else teacher_ret
 
-        # 2. Forward through student
         student_ret = orig_forward(*args, **kwargs)
         student_core = student_ret[0] if isinstance(student_ret, tuple) else student_ret
 
-        # 3. Compute stage-specific loss (guarded against recomputation mutability)
         stage = getattr(bridge, "stage", "stage2_block_cloning")
         if stage in ("stage1_orientation", "stage2_block_cloning") and torch.is_grad_enabled():
             loss_clone = compute_operator_cloning_loss(teacher_core, student_core)
             loss_cka = compute_linear_cka_loss(teacher_core, student_core)
             bridge._last_twin_loss = loss_clone + 0.05 * loss_cka
         elif not torch.is_grad_enabled():
-            pass  # Do not mutate state or overwrite graph during checkpoint backward re-entrant pass
+            pass
         else:
             bridge._last_twin_loss = None
 
-        # 4. Homotopy blending: (1 - alpha) * teacher + alpha * student
         alpha = getattr(bridge, "alpha", 1.0)
         if alpha < 1.0:
             blended_core = (1.0 - alpha) * teacher_core.detach() + alpha * student_core

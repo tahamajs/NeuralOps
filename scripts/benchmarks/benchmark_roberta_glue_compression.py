@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Benchmark RoBERTa-Base on GLUE SST-2: Naive DirectSVD vs HNC-SVD.
 
@@ -35,7 +41,6 @@ def run_benchmark():
     model_name = "textattack/roberta-base-SST-2"
     tokenizer = AutoTokenizer.from_pretrained(model_name)
 
-    # Load SST-2 validation dataset directly from local cache or hub
     parquet_path = (
         Path.home()
         / ".cache/huggingface/hub/datasets--nyu-mll--glue/snapshots/bcdcba79d07bc864c1c254ccfcedcce55bcc9a8c/sst2/validation-00000-of-00001.parquet"
@@ -47,7 +52,6 @@ def run_benchmark():
 
     logger.info("Loaded SST-2 validation split: %d samples", len(ds))
 
-    # Pre-tokenize evaluation batches (all 872 validation samples)
     eval_batches = []
     batch_size = 32
     for i in range(0, len(ds), batch_size):
@@ -58,12 +62,10 @@ def run_benchmark():
         labels = torch.tensor(chunk["label"], device=device)
         eval_batches.append((inputs, labels))
 
-    # Calibration batch (32 samples from validation split for activation statistics)
     calib_inputs = tokenizer(
         ds[:32]["sentence"], padding=True, truncation=True, max_length=128, return_tensors="pt"
     ).to(device)
 
-    # 1. Uncompressed Baseline Evaluation
     logger.info("Evaluating Uncompressed Baseline RoBERTa-base...")
     base_model = AutoModelForSequenceClassification.from_pretrained(model_name).to(device).eval()
     total_params_base = sum(p.numel() for p in base_model.parameters())
@@ -103,9 +105,6 @@ def run_benchmark():
         "experiments": [],
     }
 
-    # Configurations to evaluate:
-    # Layer depths: 1 layer (encoder.0), 2 layers (encoder.0-1), 4 layers (encoder.0-3)
-    # Ranks: 256 (33.3% rank of intermediate 768), 128 (16.7% rank)
     depth_configs = [
         ("1 Layer (Layer 0)", [f"roberta.encoder.layer.{i}.intermediate.dense" for i in range(1)]),
         ("2 Layers (Layers 0-1)", [f"roberta.encoder.layer.{i}.intermediate.dense" for i in range(2)]),
@@ -120,7 +119,6 @@ def run_benchmark():
                 method_name = "HNC-SVD (Ours)" if use_hnc else "Naive DirectSVD"
                 logger.info("Running %s | %s | Rank=%d ...", method_name, depth_name, r)
 
-                # Fresh model copy for each run
                 model = AutoModelForSequenceClassification.from_pretrained(model_name).to(device)
 
                 comp = DirectSVDCompressor(
@@ -143,7 +141,6 @@ def run_benchmark():
                 reduc_pct = ((total_params_base - comp_params) / total_params_base) * 100.0
                 ratio = total_params_base / max(1, comp_params)
 
-                # Evaluate accuracy and logit cosine similarity across all 872 validation samples
                 comp_model.eval()
                 torch.cuda.reset_peak_memory_stats()
                 t_eval_start = time.time()
@@ -198,7 +195,6 @@ def run_benchmark():
     with open(json_path, "w", encoding="utf-8") as f:
         json.dump(results, f, indent=2)
 
-    # Format Markdown Report
     md_content = f"""# 🧪 RoBERTa-Base Downstream GLUE SST-2 Compression Benchmark
 
 **Hardware**: {results["hardware"]}  
@@ -208,7 +204,6 @@ def run_benchmark():
 
 ---
 
-## Downstream Accuracy & Subspace Fidelity Results
 
 | Target Depth | Rank ($r$) | Method | Accuracy (↑) | Acc Retention (%) | Cosine Sim to Anchor | Param Reduction (%) | Latency (ms) | Peak VRAM (MB) |
 |:---|:---:|:---|:---:|:---:|:---:|:---:|:---:|:---:|
@@ -223,7 +218,6 @@ def run_benchmark():
     md_content += """
 ---
 
-## Key Mathematical & Empirical Insights
 1. **Compounding Cross-Layer Error Mitigation**: When compressing 4 transformer layers down to rank 256, Naive DirectSVD experiences severe compounding activation drift that collapses downstream classification accuracy to random guessing (50.00%). In sharp contrast, HNC-SVD preserves **71.88% accuracy** (+21.88% over Naive), proving that activation-aware Cholesky whitening combined with Stage D factor restoration stabilizes intermediate latent representations.
 2. **Subspace Alignment Fidelity**: HNC-SVD maintains significantly higher output logit cosine similarity to the uncompressed baseline anchor model across all layers and ranks.
 3. **Zero Inference Latency Overhead**: Once decomposed into low-rank factors $A_r, B_r$, HNC-SVD and Naive DirectSVD share identical low-rank projection architectures with identical inference latencies ($~0.9$ ms per batch).

@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 RPCA Low-Rank and Sparse GEMM
 
 Fuses low-rank factor projection with structured sparse outlier matrix multiplication into a single unified pass.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -68,9 +72,6 @@ def _fused_rpca_gemm_kernel(
     mask_n = offs_n < N
     mask_r = offs_r < R
 
-    # -------------------------------------------------------------
-    # 1. Compute Low-Rank Latent: Z_tile = X[offs_m, :] @ V_r^T [:, offs_r]
-    # -------------------------------------------------------------
     z_acc = tl.zeros((BLOCK_M, BLOCK_R), dtype=tl.float32)
     num_k_blocks = tl.cdiv(K, BLOCK_K)
     for k_idx in range(0, num_k_blocks):
@@ -87,17 +88,11 @@ def _fused_rpca_gemm_kernel(
 
     z_tile = z_acc.to(x_ptr.dtype.element_ty)
 
-    # -------------------------------------------------------------
-    # 2. Low-Rank Projection: Y_tile = Z_tile @ U_r^T [offs_r, offs_n]
-    # -------------------------------------------------------------
     u_ptrs = u_ptr + offs_r[:, None] * stride_ur + offs_n[None, :] * stride_un
     u_tile = tl.load(u_ptrs, mask=mask_r[:, None] & mask_n[None, :], other=0.0)
 
     y_acc = tl.dot(z_tile, u_tile, allow_tf32=True)
 
-    # -------------------------------------------------------------
-    # 3. Sparse Accumulation on the fly: Y_tile += X[offs_m, col] * val
-    # -------------------------------------------------------------
     if HAS_SPARSE:
         for i in range(0, BLOCK_N):
             curr_n = pid_n * BLOCK_N + i
@@ -105,22 +100,17 @@ def _fused_rpca_gemm_kernel(
                 row_start = tl.load(crow_ptr + curr_n)
                 row_end = tl.load(crow_ptr + curr_n + 1)
 
-                # Unroll entries for the active sparse row
                 for idx in range(row_start, row_end):
                     col = tl.load(col_ptr + idx)
                     val = tl.load(val_ptr + idx)
                     x_vals = tl.load(x_ptr + offs_m * stride_xm + col * stride_xk, mask=mask_m, other=0.0)
                     
-                    # Accumulate into column i of y_acc in SRAM
                     y_acc = y_acc + tl.where(
                         (tl.arange(0, BLOCK_N) == i)[None, :],
                         (x_vals * val).to(tl.float32)[:, None],
                         0.0,
                     )
 
-    # -------------------------------------------------------------
-    # 4. Epilogue: Optional Bias & Coalesced Write to HBM
-    # -------------------------------------------------------------
     if HAS_BIAS:
         b_ptrs = b_ptr + offs_n
         b_tile = tl.load(b_ptrs, mask=mask_n, other=0.0)
@@ -159,7 +149,6 @@ def triton_fused_lowrank_sparse_gemm(
     x_2d = x.view(-1, orig_shape[-1])
     M, K = x_2d.shape
 
-    # Normalize V_r to (K, R)
     if v_r.shape[0] == K:
         V_mat = v_r
     elif v_r.shape[1] == K:
@@ -169,7 +158,6 @@ def triton_fused_lowrank_sparse_gemm(
 
     R = V_mat.shape[1]
 
-    # Normalize U_r to (R, N)
     if u_r.shape[0] == R:
         U_mat = u_r
     elif u_r.shape[1] == R:
@@ -179,7 +167,6 @@ def triton_fused_lowrank_sparse_gemm(
 
     N = U_mat.shape[1]
 
-    # Parse sparse component
     has_sparse = s is not None
     crow_indices = None
     col_indices = None
@@ -202,9 +189,7 @@ def triton_fused_lowrank_sparse_gemm(
         else:
             has_sparse = False
 
-    # CPU or Fallback Check
     if not x.is_cuda or R > 256:
-        # Reference PyTorch implementation
         y_lr = torch.matmul(torch.matmul(x_2d, V_mat), U_mat)
         if has_sparse:
             if isinstance(s, torch.Tensor) and not s.is_sparse:
@@ -278,7 +263,6 @@ def triton_fused_lowrank_sparse_gemm(
     return y.view(*orig_shape[:-1], N)
 
 
-# Aliases
 rpca_sparse_gemm = triton_fused_lowrank_sparse_gemm
 fused_lowrank_sparse_gemm = triton_fused_lowrank_sparse_gemm
 

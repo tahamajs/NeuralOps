@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Qwen Architecture Compatibility
 
 Compatibility shims and attention adapters tailored for Qwen model architectures.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -89,8 +93,6 @@ def install_qwen_aliases(model: nn.Module) -> nn.Module:
     for module in model.modules():
         if not hasattr(module, "q_proj"):
             continue
-        # object.__setattr__ avoids registering duplicate parameter paths in
-        # state_dict while still making getattr(module, "q_lin") work.
         for legacy, native in (
             ("q_lin", "q_proj"),
             ("k_lin", "k_proj"),
@@ -190,10 +192,6 @@ def qwen_module_policy(module_name: str) -> str:
         "decay_linear_attn",
         "dobi",
         "dynamic_rank",
-        # These legacy replacements currently implement full-MHA, padding
-        # masks, or absolute-position assumptions.  Until their forward pass
-        # explicitly handles Qwen GQA + RoPE + causal masks, skipping is safer
-        # than reporting a numerically valid but semantically invalid result.
         "a3",
         "aasvd",
         "adaptive_svd",

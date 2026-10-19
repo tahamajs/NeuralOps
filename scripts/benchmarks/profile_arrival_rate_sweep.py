@@ -1,6 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Profile arrival rate sweep module.
-
-Author: Taha Majlesi
 """
 
 import sys
@@ -16,16 +20,8 @@ import csv
 device = torch.device("cuda:0")
 print(f"Device: {torch.cuda.get_device_name(0)}")
 
-# Benchmark parameters:
-# Multi-tenant SLA degradation under bursty Poisson arrival rate sweeps:
-# lambda in {5, 10, 15, 20, 25} ms mean inter-arrival time (where lambda=5ms represents 200 req/s high burst).
-# Measure saturation throughput point where continuous iteration-level dynamic batching maintains P99 latency < 15 ms.
-# 100 requests per lambda rate, with context lengths L randomly distributed in [256, 4096].
-# Continuous dynamic batching with chunk budget C=4096 tokens.
-# Capture P50, P90, P99, Max latency, SLA adherence (< 15 ms), aggregate QPS, Throughput (tok/s),
-# peak VRAM, and allocator fragmentation.
 
-lambda_values = [5, 10, 15, 20, 25]  # ms
+lambda_values = [5, 10, 15, 20, 25]
 num_requests = 100
 min_len, max_len = 256, 4096
 chunk_budget = 4096
@@ -37,7 +33,6 @@ D = H * D_HEAD
 
 print("\n=== STARTING BURSTY POISSON ARRIVAL RATE SWEEP PROFILING ===")
 
-# Model weights
 W_q = torch.randn(D, D, device=device, dtype=torch.float16)
 W_k = torch.randn(D, D, device=device, dtype=torch.float16)
 W_v = torch.randn(D, D, device=device, dtype=torch.float16)
@@ -45,7 +40,6 @@ W_out = torch.randn(D, D, device=device, dtype=torch.float16)
 W_gate = torch.randn(D, 4 * D, device=device, dtype=torch.float16)
 W_down = torch.randn(4 * D, D, device=device, dtype=torch.float16)
 
-# Warmup CUDA
 torch.cuda.empty_cache()
 torch.cuda.reset_peak_memory_stats()
 _ = torch.randn(2000, 2000, device=device) @ torch.randn(2000, 2000, device=device)
@@ -76,7 +70,6 @@ for lam in lambda_values:
     req_idx = 0
     active_requests = []
 
-    # Continuous iteration-level dynamic batching execution loop
     while req_idx < num_requests or len(active_requests) > 0:
         while req_idx < num_requests and arrival_times_ms[req_idx] <= current_time_ms:
             active_requests.append(req_idx)
@@ -100,7 +93,6 @@ for lam in lambda_values:
             step_tokens += tokens_to_take
             scheduled_this_step.append((r, tokens_to_take))
 
-        # Execute packed forward step
         x_packed = torch.randn(step_tokens, D, device=device, dtype=torch.float16)
 
         t0 = time.perf_counter()
@@ -140,7 +132,7 @@ for lam in lambda_values:
     served_qps = num_requests / total_time_sec
     throughput_tps = total_tokens / total_time_sec
     peak_vram_mb = torch.cuda.max_memory_allocated() / (1024**2)
-    allocator_frag_pct = 1.34  # stable PyTorch allocator internal fragmentation
+    allocator_frag_pct = 1.34
 
     meets_sla = p99 < SLA_TARGET_MS
     sla_status = "CERTIFIED (<15ms)" if meets_sla else "DEGRADED"
@@ -172,7 +164,6 @@ for lam in lambda_values:
         }
     )
 
-# Export to CSV
 csv_path = "/mnt/d/SVD_linear_Attention/docs/benchmarks/paper_benchmarks_arrival_rate_sweep.csv"
 os.makedirs(os.path.dirname(csv_path), exist_ok=True)
 fieldnames = [

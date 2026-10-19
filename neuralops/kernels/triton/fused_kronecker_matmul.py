@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Fused Kronecker Matrix Multiplication
 
 Fuses dual batched matrix multiplications and axis transpositions for Kronecker factorized linear layers directly in SRAM.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -51,7 +55,6 @@ def _fused_kronecker_gemm_kernel(
     offs_m = pid_m * BLOCK_M + tl.arange(0, BLOCK_M)
     mask_m = offs_m < M
 
-    # Load factor matrices A [M1, N1] and B [M2, N2] into SRAM once per CTA
     offs_m1 = tl.arange(0, M1)
     offs_n1 = tl.arange(0, N1)
     offs_m2 = tl.arange(0, M2)
@@ -60,25 +63,17 @@ def _fused_kronecker_gemm_kernel(
     a_tile = tl.load(a_ptr + offs_m1[:, None] * stride_a_m + offs_n1[None, :] * stride_a_n)
     b_tile = tl.load(b_ptr + offs_m2[:, None] * stride_b_m + offs_n2[None, :] * stride_b_n)
 
-    # For each row in the BLOCK_M tile:
     for m_idx in range(0, BLOCK_M):
         curr_m = pid_m * BLOCK_M + m_idx
         if curr_m < M:
-            # Load X_m of shape (N1, N2) or (N2, N1)
-            # In standard Kronecker: X_m has shape (N1, N2) where flat index = n1 * N2 + n2
             flat_offs_k = offs_n1[:, None] * N2 + offs_n2[None, :]
             x_ptrs = x_ptr + curr_m * stride_xm + flat_offs_k * stride_xk
-            x_slice = tl.load(x_ptrs)  # (N1, N2)
+            x_slice = tl.load(x_ptrs)
 
-            # 1. Compute T = x_slice @ B^T -> shape (N1, M2)
-            # x_slice is (N1, N2), b_tile is (M2, N2) -> dot(x_slice, trans(b_tile))
             t = tl.dot(x_slice.to(tl.float32), tl.trans(b_tile).to(tl.float32), allow_tf32=True)
 
-            # 2. Compute Y_slice = A @ t -> shape (M1, M2)
-            # a_tile is (M1, N1), t is (N1, M2) -> dot(a_tile, t)
             y_slice = tl.dot(a_tile.to(tl.float32), t.to(tl.float32), allow_tf32=True)
 
-            # Flatten Y_slice (M1, M2) -> flat_offs_out = m1 * M2 + m2
             flat_offs_out = offs_m1[:, None] * M2 + offs_m2[None, :]
             y_ptrs = y_ptr + curr_m * stride_ym + flat_offs_out * stride_yn
 
@@ -120,18 +115,14 @@ def triton_fused_kronecker_matmul(
     assert K == N1 * N2, f"Input feature mismatch: {K} != {N1} * {N2}"
 
     if not x.is_cuda:
-        # PyTorch reference
         X_reshaped = x_2d.view(M, N1, N2)
-        # T = X @ B.T -> (M, N1, M2)
         T = torch.matmul(X_reshaped, B.t())
-        # Y = A @ T -> (M, M1, M2)
         Y = torch.matmul(A, T.transpose(1, 2)).transpose(1, 2)
         Y_flat = Y.reshape(M, out_features)
         if bias is not None:
             Y_flat = Y_flat + bias.to(dtype=Y_flat.dtype, device=Y_flat.device)
         return Y_flat.view(*orig_shape[:-1], out_features)
 
-    # If dimensions exceed small-matrix register capacity, use optimized batched GEMMs
     if M1 > 64 or M2 > 64 or N1 > 64 or N2 > 64:
         X_reshaped = x_2d.view(M, N1, N2)
         T = torch.matmul(X_reshaped, B.t())

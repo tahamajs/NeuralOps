@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-# Author: Taha Majlesi
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 3-Level GPU Benchmark Suite: Native CUDA C++ vs. Triton JIT vs. Pure PyTorch Reference.
 Target: NVIDIA Ada Lovelace SM 8.9 (GeForce RTX 4070 Laptop GPU, 8GB VRAM).
@@ -104,9 +108,6 @@ def main():
 
     results: List[Dict[str, Any]] = []
 
-    # -------------------------------------------------------------------------
-    # 1. Selective Scan
-    # -------------------------------------------------------------------------
     print("\n[1/8] selective_scan (Mamba SSM)")
     B, D, L, D_STATE = 4, 64, 512, 16
     u = torch.randn(B, D, L, device=device, dtype=torch.float32)
@@ -153,9 +154,6 @@ def main():
         }
     )
 
-    # -------------------------------------------------------------------------
-    # 2. Sliding Window Attention
-    # -------------------------------------------------------------------------
     print("\n[2/8] sliding_window_attn")
     B, H, N, D = 4, 8, 512, 64
     q = torch.randn(B, H, N, D, device=device, dtype=torch.float32)
@@ -199,9 +197,6 @@ def main():
         }
     )
 
-    # -------------------------------------------------------------------------
-    # 3. Block Sparse Attention
-    # -------------------------------------------------------------------------
     print("\n[3/8] block_sparse_attn")
     B, H, N, D = 4, 8, 512, 64
     block_size = 32
@@ -247,9 +242,6 @@ def main():
         }
     )
 
-    # -------------------------------------------------------------------------
-    # 4. W4A16 Quantized GEMM
-    # -------------------------------------------------------------------------
     print("\n[4/8] w4a16_gemm")
     M, K, N = 128, 1024, 1024
     group_size = 64
@@ -285,9 +277,6 @@ def main():
         }
     )
 
-    # -------------------------------------------------------------------------
-    # 5. FP8 Scaled GEMM
-    # -------------------------------------------------------------------------
     print("\n[5/8] fp8_gemm")
     M, K, N = 256, 1024, 1024
     A_fp8 = torch.randn(M, K, device=device, dtype=torch.float32)
@@ -332,9 +321,6 @@ def main():
         }
     )
 
-    # -------------------------------------------------------------------------
-    # 6. Flash GQA
-    # -------------------------------------------------------------------------
     print("\n[6/8] flash_gqa")
     B, H, N_Q, D = 4, 8, 256, 64
     H_KV, N_KV = 2, 256
@@ -379,9 +365,6 @@ def main():
         }
     )
 
-    # -------------------------------------------------------------------------
-    # 7. Paged Attention
-    # -------------------------------------------------------------------------
     print("\n[7/8] paged_attention")
     num_seqs = 8
     num_heads = 8
@@ -422,9 +405,6 @@ def main():
         }
     )
 
-    # -------------------------------------------------------------------------
-    # 8. MoE Routing
-    # -------------------------------------------------------------------------
     print("\n[8/8] moe_routing (dispatch + gather)")
     num_tokens, hidden_dim, top_k = 512, 1024, 2
     total_slots = 1024
@@ -464,9 +444,6 @@ def main():
         }
     )
 
-    # -------------------------------------------------------------------------
-    # 9. Fused Low-Rank Gated GEMM
-    # -------------------------------------------------------------------------
     print("\n[9/18] fused_lowrank_gated_gemm")
     M, K, r, N = 64, 512, 32, 256
     x_lr = torch.randn(M, K, device=device, dtype=torch.float32)
@@ -509,9 +486,6 @@ def main():
         }
     )
 
-    # -------------------------------------------------------------------------
-    # 10. Chunked Delta-Gate Recurrent Scan
-    # -------------------------------------------------------------------------
     print("\n[10/18] chunked_delta_gate_scan")
     B_g, H_g, L_g, D_K_g, D_V_g = 2, 4, 128, 32, 32
     q_g = torch.randn(B_g, H_g, L_g, D_K_g, device=device, dtype=torch.float32)
@@ -554,9 +528,6 @@ def main():
         }
     )
 
-    # -------------------------------------------------------------------------
-    # 11. HGRN2 Bidirectional Recurrent Scan
-    # -------------------------------------------------------------------------
     print("\n[11/18] hgrn2_fused_bwd_scan")
     B_h, H_h, L_h, D_h = 2, 4, 128, 64
     x_h = torch.randn(B_h, H_h, L_h, D_h, device=device, dtype=torch.float32)
@@ -596,9 +567,6 @@ def main():
         }
     )
 
-    # -------------------------------------------------------------------------
-    # 12. Cosformer Linear Attention
-    # -------------------------------------------------------------------------
     print("\n[12/18] cosformer_linear_attention")
     B_c, H_c, L_c, D_c = 2, 4, 128, 32
     q_c = torch.randn(B_c, H_c, L_c, D_c, device=device, dtype=torch.float32)
@@ -639,9 +607,6 @@ def main():
         }
     )
 
-    # -------------------------------------------------------------------------
-    # 13. Fused Norm Linear
-    # -------------------------------------------------------------------------
     print("\n[13/18] fused_norm_linear")
     M_fn, K_fn, N_fn = 64, 512, 256
     x_fn = torch.randn(M_fn, K_fn, device=device, dtype=torch.float32)
@@ -682,9 +647,6 @@ def main():
         }
     )
 
-    # -------------------------------------------------------------------------
-    # 14. Fused RoPE
-    # -------------------------------------------------------------------------
     print("\n[14/18] fused_rotary_emb")
     B_rp, H_rp, N_rp, D_rp = 4, 8, 256, 64
     half_rp = D_rp // 2
@@ -726,9 +688,6 @@ def main():
         }
     )
 
-    # -------------------------------------------------------------------------
-    # 15. Kronecker Matmul
-    # -------------------------------------------------------------------------
     print("\n[15/18] kronecker_matmul")
     M_kr, M1_kr, N1_kr, M2_kr, N2_kr = 64, 16, 16, 16, 16
     x_kr = torch.randn(M_kr, N1_kr * N2_kr, device=device, dtype=torch.float32)
@@ -770,9 +729,6 @@ def main():
         }
     )
 
-    # -------------------------------------------------------------------------
-    # 16. In-Register LUT Codebook Dequantization GEMM
-    # -------------------------------------------------------------------------
     print("\n[16/18] lut_codebook_dequant_gemm")
     M_lt, K_lt, N_lt = 64, 256, 128
     grp_lt = 64
@@ -816,9 +772,6 @@ def main():
         }
     )
 
-    # -------------------------------------------------------------------------
-    # 17. Causal Linear Attention
-    # -------------------------------------------------------------------------
     print("\n[17/18] linear_attention")
     B_la, H_la, L_la, D_K_la, D_V_la = 2, 4, 128, 32, 32
     q_la = torch.randn(B_la, H_la, L_la, D_K_la, device=device, dtype=torch.float32)
@@ -859,9 +812,6 @@ def main():
         }
     )
 
-    # -------------------------------------------------------------------------
-    # 18. Fused Cross-Entropy Loss
-    # -------------------------------------------------------------------------
     print("\n[18/18] fused_cross_entropy")
     N_ce, V_ce = 512, 1024
     logits_ce = torch.randn(N_ce, V_ce, device=device, dtype=torch.float32)
@@ -902,7 +852,6 @@ def main():
         }
     )
 
-    # Save to JSON, CSV, MD
     os.makedirs("results", exist_ok=True)
     json_path = "results/benchmark_3level_cuda_triton_pytorch.json"
     csv_path = "results/benchmark_3level_cuda_triton_pytorch.csv"

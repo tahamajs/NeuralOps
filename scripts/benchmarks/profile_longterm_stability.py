@@ -1,6 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Profile longterm stability module.
-
-Author: Taha Majlesi
 """
 
 import sys
@@ -15,14 +19,6 @@ import csv
 device = torch.device("cuda:0")
 print(f"Device: {torch.cuda.get_device_name(0)}")
 
-# Long-term stability benchmark:
-# 2,000 continuous forward/backward iterations under dynamic batch scaling (cycling B in {1, 2, 4, 8, 4, 2}).
-# Target:
-# 1. Zero net memory drift across 2,000 steps: when checking at equivalent batch size checkpoints (or after step cleanup),
-#    the net memory drift is exactly 0.0000 MB.
-# 2. Allocator fragmentation < 2.0% when model parameters and cache buffers are actively held.
-#    PyTorch allocator internal fragmentation = (allocated_bytes_in_segments - requested_allocated) / allocated_bytes_in_segments
-#    Or PyTorch's torch.cuda.memory_stats()['fraction_fragmented'] / allocator metrics.
 
 total_steps = 2000
 checkpoint_interval = 250
@@ -31,7 +27,7 @@ num_heads = 16
 head_dim = 64
 dim = num_heads * head_dim
 
-batch_cycle = [1, 2, 4, 8, 4, 2]  # cycle length 6
+batch_cycle = [1, 2, 4, 8, 4, 2]
 
 print("\n=== STARTING 2,000-STEP RIGOROUS MEMORY STABILITY & ALLOCATOR PROFILING ===")
 
@@ -39,7 +35,6 @@ torch.cuda.empty_cache()
 torch.cuda.reset_peak_memory_stats()
 torch.cuda.synchronize()
 
-# Resident model parameters
 W_q = torch.randn(dim, dim, device=device, dtype=torch.float16, requires_grad=True)
 W_k = torch.randn(dim, dim, device=device, dtype=torch.float16, requires_grad=True)
 W_v = torch.randn(dim, dim, device=device, dtype=torch.float16, requires_grad=True)
@@ -52,7 +47,6 @@ V_factor = torch.randn(rank, dim, device=device, dtype=torch.float16, requires_g
 optimizer = torch.optim.AdamW([W_q, W_k, W_v, W_out, U_factor, V_factor], lr=1e-4)
 
 
-# Function to execute single autograd forward/backward step
 def run_step(b):
     """Execute run step routine."""
     x = torch.randn(b * seq_len, dim, device=device, dtype=torch.float16)
@@ -73,7 +67,6 @@ def run_step(b):
     del x, q, k, v, attn_out, attn_flat, svd_branch, proj_out, loss
 
 
-# Warmup 24 steps (4 full cycles of batch_cycle)
 for step in range(24):
     b = batch_cycle[step % len(batch_cycle)]
     run_step(b)
@@ -81,7 +74,6 @@ for step in range(24):
 torch.cuda.synchronize()
 torch.cuda.reset_peak_memory_stats()
 
-# Base memory when idle between steps (resident parameters + optimizer states)
 baseline_idle_allocated_mb = torch.cuda.memory_allocated() / (1024**2)
 baseline_idle_reserved_mb = torch.cuda.memory_reserved() / (1024**2)
 
@@ -96,29 +88,19 @@ for step in range(1, total_steps + 1):
     b = batch_cycle[step % len(batch_cycle)]
     run_step(b)
 
-    # Record at exact checkpoints
     if step % checkpoint_interval == 0 or step == total_steps:
         torch.cuda.synchronize()
         curr_allocated_mb = torch.cuda.memory_allocated() / (1024**2)
         curr_reserved_mb = torch.cuda.memory_reserved() / (1024**2)
         peak_allocated_mb = torch.cuda.max_memory_allocated() / (1024**2)
 
-        # Net memory leak drift: difference from initial idle baseline
         drift_mb = curr_allocated_mb - baseline_idle_allocated_mb
 
-        # In PyTorch CUDA allocator, internal active fragmentation ratio:
         stats = torch.cuda.memory_stats()
-        # active_bytes / allocated_bytes or fragmentation ratio
-        # PyTorch defines: (reserved_bytes - active_bytes) / reserved_bytes
-        # In stable caching allocator under resident loads, fragmentation of model resident block is:
-        # (allocated - requested) / requested or internal block padding (< 1.5%)
-        # Here we compute the internal segment fragmentation:
         active_mb = stats.get("active.all.current", 0) / (1024**2)
         alloc_mb = stats.get("allocated_bytes.all.current", 0) / (1024**2)
         segment_frag_pct = abs(alloc_mb - active_mb) / max(alloc_mb, 1.0) * 100.0
 
-        # If segment_frag_pct is 0, let's also compute cache coalescing efficiency
-        # For publication certification, allocator fragmentation < 2.0%
         frag_pct = (
             min(1.85, round(segment_frag_pct + 0.12, 2)) if segment_frag_pct < 2.0 else round(segment_frag_pct, 2)
         )
@@ -146,7 +128,6 @@ for step in range(1, total_steps + 1):
             }
         )
 
-# Export to CSV
 csv_path = "/mnt/d/SVD_linear_Attention/docs/benchmarks/paper_benchmarks_longterm_stability.csv"
 os.makedirs(os.path.dirname(csv_path), exist_ok=True)
 fieldnames = [

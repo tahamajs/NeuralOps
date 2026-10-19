@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Unit tests for neuralops.trainer.optimizers package."""
 from __future__ import annotations
 
@@ -69,13 +75,11 @@ class TestOptimizerFactories:
         x = torch.randn(8, 4)
         y = torch.randn(8, 1)
         
-        # Initial loss
         loss1 = ((model(x) - y) ** 2).mean()
         loss1.backward()
         opt.step()
         opt.zero_grad()
 
-        # Step 2
         for _ in range(5):
             l = ((model(x) - y) ** 2).mean()
             l.backward()

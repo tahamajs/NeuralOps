@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -5,15 +12,6 @@
 
 namespace neuralops { namespace cuda {
 
-// Nyström Low-Rank Approximation Attention Kernel:
-// Form: out = \text{Softmax}(Q \tilde{K}^T / \sqrt{D}) \cdot (\tilde{K} \tilde{Q}^T)^{-1} \cdot (\text{Softmax}(\tilde{Q} K^T / \sqrt{D}) V)
-//       Approximated via projected landmarks: out_{i, d} = \sum_{m1, m2} Q_{i, m1} \cdot \text{pinv}_{m1, m2} \cdot V_{m2, d}
-//
-// Hardware-level optimization:
-// 1. Two-stage Matrix-Vector projection: Q \to M_landmarks \to D.
-// 2. Register caching for landmark intermediate products.
-// 3. Decoupled 2D Grid: dim3 grid(ceil(N / 128), B * H).
-// 4. Strict FP32 intermediate accumulation.
 template <typename scalar_t>
 __global__ void __launch_bounds__(128) nystrom_attn_fwd_kernel(
     scalar_t* __restrict__ out,
@@ -37,8 +35,6 @@ __global__ void __launch_bounds__(128) nystrom_attn_fwd_kernel(
     const int pinv_offset = bh * (M * M);
     const int v_offset = bh * (M * D);
 
-    // Stage 1: Contract Query landmark vector with Moore-Penrose pseudo-inverse matrix
-    // T_m2 = \sum_{m1} Q_{i, m1} * pinv_{m1, m2}
     float T[64];
     const int bound_m = (M < 64) ? M : 64;
 
@@ -52,7 +48,6 @@ __global__ void __launch_bounds__(128) nystrom_attn_fwd_kernel(
         T[m2] = acc;
     }
 
-    // Stage 2: Contract T with Landmark Values: out_{i, d} = \sum_{m2} T_{m2} * V_{m2, d}
     const int out_offset = bh * (N * D) + i * D;
     for (int d = 0; d < D; ++d) {
         float val_acc = 0.0f;
@@ -63,7 +58,7 @@ __global__ void __launch_bounds__(128) nystrom_attn_fwd_kernel(
     }
 }
 
-}} // namespace neuralops::cuda
+}}
 
 torch::Tensor nystrom_attn_fwd(
     const torch::Tensor& q_landmarks,

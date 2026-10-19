@@ -1,7 +1,11 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 NeuralOps Kernels Hardware Operators.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -9,11 +13,9 @@ from __future__ import annotations
 import sys
 from typing import Any, List, Optional
 
-# Core Triton & CUDA Subpackages
 from neuralops.kernels import triton
 from neuralops.kernels import cuda
 
-# Discovery and Kernel Listing APIs
 from neuralops.kernels.triton import (
     list_triton_kernels,
     TRITON_KERNEL_CATALOG,
@@ -27,7 +29,6 @@ from neuralops.kernels.cuda import (
     CUDA_KERNEL_CATALOG,
 )
 
-# Common Hardware Dispatch & Diagnostic Flags
 from neuralops.core.triton_kernels import (
     HAS_TRITON,
     FORCE_PYTORCH_FALLBACK,
@@ -49,7 +50,6 @@ from neuralops.core.cuda_kernels import (
     get_cuda_arch_flags,
 )
 
-# Standalone Triton Flagship Kernels
 from neuralops.kernels.triton import (
     block_sparse_streaming_attn,
     chunked_delta_gate_scan,
@@ -80,7 +80,6 @@ from neuralops.kernels.triton import (
     triton_fused_latent_kv_cache_attention,
 )
 
-# Core Triton Categorized Modules
 from neuralops.core.triton_kernels import (
     linear_attn,
     sparse_attn,
@@ -113,7 +112,6 @@ from neuralops.core.triton_kernels import (
 from neuralops.core.triton_linear_attn import fast_linear_attention, LinearAttentionTriton
 from neuralops.core.triton_sparse_attn import triton_block_sparse_attention
 
-# Extended Fused Kernels
 from neuralops.kernels.extended_kernels import (
     fused_swiglu,
     fused_rmsnorm,
@@ -137,7 +135,6 @@ from neuralops.kernels.extended_kernels import (
     fused_lowrank_residual_add,
 )
 
-# Primary Native CUDA C++ Operators
 from neuralops.core.cuda_kernels import (
     fused_lowrank_gated_gemm,
     hgrn2_fused_bwd_scan as cuda_hgrn2_fused_bwd_scan,
@@ -190,10 +187,8 @@ from neuralops.core.cuda_kernels import (
 )
 
 __all__ = [
-    # Subpackages
     "triton",
     "cuda",
-    # Discovery APIs
     "list_triton_kernels",
     "list_cuda_kernels",
     "TRITON_KERNEL_CATALOG",
@@ -202,7 +197,6 @@ __all__ = [
     "TRITON_ROOT_MODULES",
     "TRITON_EXTENDED_KERNELS",
     "CUDA_KERNEL_CATALOG",
-    # Dispatch & Diagnostics
     "HAS_TRITON",
     "FORCE_PYTORCH_FALLBACK",
     "triton_dispatch",
@@ -219,7 +213,6 @@ __all__ = [
     "autotune_kernel",
     "check_triton_suitability",
     "log_fallback_reason",
-    # Standalone Flagship Triton Modules
     "block_sparse_streaming_attn",
     "chunked_delta_gate_scan",
     "cosformer_linear_attention",
@@ -233,7 +226,6 @@ __all__ = [
     "rpca_sparse_gemm",
     "spectral_entropy_svd_gate",
     "strided_tt",
-    # Standalone Triton Callables
     "triton_fused_lowrank_gated_gemm",
     "triton_fused_lowrank_sparse_gemm",
     "triton_strided_tt_contraction",
@@ -248,7 +240,6 @@ __all__ = [
     "triton_spectral_entropy_svd_gate",
     "triton_fused_act_scale_quant_gemm",
     "triton_fused_latent_kv_cache_attention",
-    # Core Triton Modules
     "block_sparse",
     "cosformer_triton_kernel",
     "cur_linear",
@@ -277,11 +268,9 @@ __all__ = [
     "sparse_attn",
     "state_update",
     "varlen_attention",
-    # Root Bridge Modules
     "fast_linear_attention",
     "LinearAttentionTriton",
     "triton_block_sparse_attention",
-    # Extended Fused Kernels
     "fused_swiglu",
     "fused_rmsnorm",
     "fused_rotary_emb",
@@ -302,7 +291,6 @@ __all__ = [
     "fused_label_smoothing_ce",
     "fused_kl_divergence",
     "fused_lowrank_residual_add",
-    # Primary CUDA Operators
     "fused_lowrank_gated_gemm",
     "cuda_hgrn2_fused_bwd_scan",
     "cuda_cosformer_linear_attention",

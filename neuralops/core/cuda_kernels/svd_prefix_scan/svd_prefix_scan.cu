@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -9,18 +16,6 @@ using namespace nvcuda;
 
 namespace neuralops { namespace cuda {
 
-// ============================================================================
-// Ada Lovelace SM 8.9 Optimized SVD Prefix Scan Kernel:
-// Performs causal cumulative outer-product state updates and linear attention projection:
-// S_t = S_{t-1} + k_t \otimes v_t
-// y_t = q_t S_t
-//
-// Hardware Optimizations:
-// 1. Cooperative unrolled SMEM state initialization across all threads.
-// 2. Loop unrolling (#pragma unroll 4 and 8) on outer-product and query projections.
-// 3. Register accumulation to eliminate shared-memory read bank contention.
-// 4. Vectorized warp scheduling on Ada Lovelace SM 8.9.
-// ============================================================================
 
 template <typename scalar_t>
 __global__ void __launch_bounds__(256) svd_prefix_scan_opt_fwd_kernel(
@@ -40,7 +35,7 @@ __global__ void __launch_bounds__(256) svd_prefix_scan_opt_fwd_kernel(
     const int tid = threadIdx.x;
     const int num_threads = blockDim.x;
 
-    extern __shared__ float s_matrix[]; // [D * D + 3 * D]
+    extern __shared__ float s_matrix[];
     float* s_k = s_matrix + D * D;
     float* s_v = s_k + D;
     float* s_q = s_v + D;
@@ -85,7 +80,7 @@ __global__ void __launch_bounds__(256) svd_prefix_scan_opt_fwd_kernel(
     }
 }
 
-}} // namespace neuralops::cuda
+}}
 
 torch::Tensor svd_prefix_scan_fwd(
     const torch::Tensor& q,

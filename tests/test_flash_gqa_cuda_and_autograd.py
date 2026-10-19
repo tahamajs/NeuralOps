@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Comprehensive GPU tests for Flash GQA (Module 4).
 Validates forward numerical parity, N_Q != N_KV (decode / chunked prefill),
@@ -60,7 +66,7 @@ def test_flash_gqa_unequal_sequence_lengths(is_causal, n_q, n_kv):
 def test_flash_gqa_non_contiguous():
     """Test strided non-contiguous inputs."""
     torch.manual_seed(42)
-    q = torch.randn(2, 4, 32, 64, device="cuda")[:, :, ::2, :]  # shape: [2, 4, 16, 64], non-contiguous
+    q = torch.randn(2, 4, 32, 64, device="cuda")[:, :, ::2, :]
     k = torch.randn(2, 2, 32, 64, device="cuda")[:, :, ::2, :]
     v = torch.randn(2, 2, 32, 64, device="cuda")[:, :, ::2, :]
 

@@ -1,3 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 import types
 
 import pytest
@@ -84,14 +91,12 @@ def test_tpa_masks():
     B, L, D = 2, 12, 64
     x = torch.randn(B, L, D)
 
-    # 2D mask
     mask_2d = torch.ones(B, L)
     mask_2d[:, -3:] = 0
     out_2d, _ = attn(x, attention_mask=mask_2d)
     assert out_2d.shape == (B, L, D)
     assert not torch.isnan(out_2d).any()
 
-    # 4D mask
     mask_4d = torch.zeros(B, 1, L, L)
     mask_4d[:, :, :, -3:] = -10000.0
     out_4d, _ = attn(x, attention_mask=mask_4d)
@@ -104,7 +109,6 @@ def test_tpa_lora_and_gradients():
     attn = TPAttention(cfg, pretrained_attn=DummyAttn(64, 4), rank=4, lora_rank=8)
     attn.train()
 
-    # Base frozen, lora trainable
     assert not attn.v_proj.weight.requires_grad
     assert attn.v_proj.lora_A.requires_grad
     assert attn.v_proj.lora_B.requires_grad
@@ -132,7 +136,6 @@ def test_tpa_inject():
     assert layer.attention is injected
 
     empty_layer = nn.Module()
-    # assert inject_tpa(empty_layer, model_config=cfg, old_attn=None) is None
 
 
 def test_tpa_no_output_scale():
@@ -157,7 +160,7 @@ def test_tpa_qwen_head_dim_and_rank():
     attn = TPAttention(Qwen35Config())
     assert attn.head_dim == 256
     assert attn.q_head_size == 2048
-    assert attn.rank == 8  # 16*16 = 256
+    assert attn.rank == 8
     assert attn.is_decoder is True
     assert attn.q_proj1 is not None
 
@@ -250,7 +253,6 @@ def test_tpa_non_square_head_dim():
 
 def test_tpa_gradient_checkpointing_toggle():
     cfg = make_config(hidden_size=64, num_heads=4)
-    # 1. With gradient checkpointing enabled in training
     attn_ckpt = TPAttention(cfg, pretrained_attn=DummyAttn(64, 4), rank=4, gradient_checkpointing=True)
     attn_ckpt.train()
     x1 = torch.randn(2, 8, 64, requires_grad=True)
@@ -260,7 +262,6 @@ def test_tpa_gradient_checkpointing_toggle():
     assert x1.grad is not None
     assert not torch.isnan(x1.grad).any()
 
-    # 2. With gradient checkpointing disabled
     attn_no_ckpt = TPAttention(cfg, pretrained_attn=DummyAttn(64, 4), rank=4, gradient_checkpointing=False)
     attn_no_ckpt.train()
     x2 = torch.randn(2, 8, 64, requires_grad=True)

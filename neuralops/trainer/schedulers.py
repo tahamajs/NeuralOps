@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Learning Rate Schedulers
 
 Provides custom learning rate scheduling policies and warmup decay routines.
-
-Author: Taha Majlesi
 """
 
 import math
@@ -57,7 +61,6 @@ def create_cosine_warmup(
         progress = float(current_step - num_warmup_steps) / float(
             max(1, num_training_steps - num_warmup_steps)
         )
-        # FIX: Use math.cos and math.pi instead of torch.cos on Python float to avoid TypeError
         return max(0.0, 0.5 * (1.0 + math.cos(math.pi * progress)))
 
     return lr_scheduler.LambdaLR(optimizer, lr_lambda)
@@ -69,7 +72,6 @@ def create_poly(optimizer, total_iters=10000, power=1.0, **kwargs) -> Any:
     return lr_scheduler.PolynomialLR(optimizer, total_iters=total_iters, power=power)
 
 
-# FIX: Public alias for standard cosine warmup scheduler
 get_cosine_schedule_with_warmup = create_cosine_warmup
 
 

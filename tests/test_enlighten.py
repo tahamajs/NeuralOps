@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Comprehensive test suite for ENLighten compressor.
 
 Tests:
@@ -52,7 +58,6 @@ def test_vectorized_24_pruning():
     W = torch.randn(16, 32)
     pruned = vectorized_24_prune(W)
     assert pruned.shape == W.shape
-    # Check each block of 4 has at most 2 non-zeros
     blocks = pruned.view(16, 8, 4)
     non_zeros = (blocks != 0.0).sum(dim=-1)
     assert (non_zeros <= 2).all(), "Every 4-block must have <= 2 non-zero elements"
@@ -89,7 +94,6 @@ def test_no_scale_distortion():
     compressor = ENLightenCompressor(model, rank=16, structured_24=True)
     W = torch.randn(64, 64)
     W_recon, err = compressor._decompose_and_prune(W, rank=16)
-    # The reconstruction error should equal ||W - W_recon||_F / ||W||_F exactly
     expected_err = float(torch.linalg.norm(W - W_recon) / torch.linalg.norm(W))
     assert abs(err - expected_err) < 1e-6
 
@@ -109,7 +113,6 @@ def test_target_attention_only():
 def test_fallback_on_unreachable_error():
     """Verify fallback to original module if max_error threshold cannot be met."""
     model = DummyLinearModel(64, 64)
-    # Setting max_error impossibly tight (1e-6) forces fallback
     compressor = ENLightenCompressor(model, rank=2, max_error=1e-6, fallback_to_original=True)
     comp_model, stats = compressor.compress()
 

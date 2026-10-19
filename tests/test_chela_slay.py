@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Tests for CHELA-SLAY Attention Module."""
 
 from .testing_utils import MockConfig, DummyDistilBertAttention
@@ -27,7 +33,6 @@ def test_trainable_yat_proj_and_lora_gate():
     assert isinstance(attn.yat_proj, nn.Parameter)
     assert attn.yat_proj.requires_grad
     assert isinstance(attn.lora_gate, nn.Linear)
-    # gate alias property
     assert attn.gate is attn.lora_gate
     assert attn.random_proj is attn.yat_proj
 
@@ -37,7 +42,6 @@ def test_magnitude_preserving_spherical_norm():
     x = torch.randn(2, 4, 8, 16) * 10.0
     norm_x = attn._spherical_normalize(x)
     assert norm_x.shape == x.shape
-    # check that it scales with log1p(norm)
     norms = torch.norm(norm_x, p=2, dim=-1)
     orig_norms = torch.norm(x, p=2, dim=-1)
     expected_norms = torch.log1p(orig_norms)
@@ -47,7 +51,6 @@ def test_chunked_causal_cumsum_equivalence():
     cfg = MockConfig(is_decoder=True, model_type="gpt2")
     attn = ChelaSlayAttention(config=cfg, feature_dim=32)
     attn.eval()
-    # Sequence length 128 > chunk_size 64
     x = torch.randn(2, 128, 64)
     with torch.no_grad():
         out, _ = attn(x)
@@ -74,7 +77,6 @@ def test_fail_loud_missing_weights():
         def __init__(self):
             super().__init__()
             self.q_lin = nn.Linear(64, 64)
-            # k_lin and v_lin are intentionally missing
 
     incomplete = IncompleteAttention()
     with pytest.raises(RuntimeError):

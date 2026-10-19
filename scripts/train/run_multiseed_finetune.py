@@ -1,6 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Run multiseed finetune module.
-
-Author: Taha Majlesi
 """
 
 import os
@@ -36,13 +40,11 @@ for task in tasks:
         ds_train = load_dataset("glue", task, split="train")
         ds_val = load_dataset("glue", task, split="validation")
 
-    # Use representative subsample for rapid, stable fine-tuning curves
     train_size = 400
     val_size = 150
     sub_train = ds_train.select(range(min(len(ds_train), train_size)))
     sub_val = ds_val.select(range(min(len(ds_val), val_size)))
 
-    # Tokenize datasets
     def collate_fn(batch):
         """Execute collate fn routine."""
         if task == "mrpc":
@@ -65,7 +67,6 @@ for task in tasks:
 
         train_loader = DataLoader(sub_train, batch_size=batch_size, shuffle=True, collate_fn=collate_fn)
 
-        # Load fresh RoBERTa and apply SVD Linear Attention surgery
         m = AutoModelForSequenceClassification.from_pretrained("/mnt/d/models/roberta-base").to(device)
         m = replace_attention(m, attention_key="svd_linear_attention")
 
@@ -89,7 +90,6 @@ for task in tasks:
 
             train_loss = total_train_loss / num_batches
 
-            # Validation
             m.eval()
             total_val_loss = 0.0
             val_batches = 0
@@ -127,19 +127,12 @@ for task in tasks:
                 }
             )
 
-# -------------------------------------------------------------
-# Export CSV Deliverable
-# -------------------------------------------------------------
 df = pd.DataFrame(benchmark_records)
 os.makedirs("/mnt/d/SVD_linear_Attention/docs/benchmarks", exist_ok=True)
 csv_path = "/mnt/d/SVD_linear_Attention/docs/benchmarks/paper_benchmarks_multiseed_finetune.csv"
 df.to_csv(csv_path, index=False)
 print(f"\nExported {csv_path} successfully.")
 
-# -------------------------------------------------------------
-# Summary Statistics & LaTeX Deliverable
-# -------------------------------------------------------------
-# Group by Task and Epoch to get mean +- std
 summary = (
     df.groupby(["Task", "Epoch"])
     .agg({"Train_Loss": ["mean", "std"], "Val_Loss": ["mean", "std"], "Val_Accuracy_Pct": ["mean", "std"]})

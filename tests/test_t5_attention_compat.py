@@ -1,3 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 import math
 from types import SimpleNamespace
 
@@ -59,7 +66,6 @@ def test_cross_attention_shapes_and_values(name, cls, t5_config):
 @pytest.mark.parametrize("name,cls", MODULE_CLASSES)
 def test_relative_position_bias_application(name, cls, t5_config):
     mod = cls(t5_config).half()
-    # Add a relative attention bias embedding
     mod.relative_attention_bias = nn.Embedding(32, 8).half()
     mod.has_relative_attention_bias = True
 

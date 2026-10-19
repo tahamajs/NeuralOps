@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Monitor FastAPI Application
 
 FastAPI service providing REST, SSE, and WebSocket endpoints for live telemetry.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -69,7 +73,6 @@ class ConnectionManager:
             self.active_connections.discard(dead)
 
 
-# Global connection manager instance for server & testing
 ws_manager = ConnectionManager()
 
 
@@ -123,7 +126,6 @@ def create_app(
         await ws_manager.connect(websocket)
         try:
             while True:
-                # Check for client messages (heartbeat/ping) with non-blocking check
                 try:
                     data = await asyncio.wait_for(websocket.receive_text(), timeout=0.02)
                     if data in ("ping", "{\"type\":\"ping\"}"):
@@ -286,7 +288,6 @@ def create_app(
         res = stop_current_run()
         return ApiResponse(success=res.get("success", True), message="Run termination signal sent", data=res)
 
-    # Static assets mounting and SPA index serving
     if os.path.exists(docs_dir):
         app.mount("/static", StaticFiles(directory=docs_dir, html=True), name="static")
 

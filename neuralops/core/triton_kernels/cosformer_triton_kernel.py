@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Cosformer Linear Attention Kernel
 
 Triton implementation of cosformer linear attention with cosine reweighting and linear memory scaling.
-
-Author: Taha Majlesi
 """
 
 import math
@@ -151,7 +155,6 @@ def cosformer_pytorch_fwd(
         denom_safe = denom.clamp(min=eps)
         return (num / denom_safe).to(dtype)
 
-    # Causal linear chunked streaming
     chunk_size = 64
     num_chunks = (N + chunk_size - 1) // chunk_size
     out = torch.empty((B, H, N, D), dtype=torch.float32, device=device)
@@ -227,7 +230,6 @@ def _cosformer_bwd_kernel(
     q_sin = tl.load(q_sin_ptrs, mask=mask_n[:, None] & mask_d[None, :], other=0.0)
     do = tl.load(do_ptrs, mask=mask_n[:, None] & mask_d[None, :], other=0.0)
 
-    # First compute denominator
     acc_denom = tl.zeros((BLOCK_N,), dtype=tl.float32)
     for start_k in range(0, N, BLOCK_N):
         offs_k = start_k + tl.arange(0, BLOCK_N)
@@ -248,7 +250,6 @@ def _cosformer_bwd_kernel(
     dq_cos_acc = tl.zeros((BLOCK_N, BLOCK_D), dtype=tl.float32)
     dq_sin_acc = tl.zeros((BLOCK_N, BLOCK_D), dtype=tl.float32)
 
-    # Accumulate gradients across keys/values
     for start_k in range(0, N, BLOCK_N):
         offs_k = start_k + tl.arange(0, BLOCK_N)
         mask_k = offs_k < N
@@ -266,12 +267,10 @@ def _cosformer_bwd_kernel(
         score = tl.where(causal_mask, score, 0.0)
         p = score / denom
 
-        # dV += P^T @ DO
         dv_ptrs = DV_ptr + b * stride_vb + h * stride_vh + offs_k[:, None] * stride_vn + offs_d[None, :] * stride_vd
         dv = tl.dot(tl.trans(p.to(do.dtype)), do)
         tl.atomic_add(dv_ptrs, dv, mask=mask_k[:, None] & mask_d[None, :])
 
-        # dP = DO @ V^T
         dp = tl.dot(do, tl.trans(v))
         ds = (dp - tl.sum(p * dp, axis=1)[:, None]) / denom
 
@@ -331,7 +330,6 @@ class _CosformerAutograd(torch.autograd.Function):
         from neuralops.core.triton_kernels._types import check_triton_suitability
         suitable, _ = check_triton_suitability(q, "cosformer", head_dim=q.shape[-1], seq_len=q.shape[-2])
 
-        # Apply canonical non-negative mapping to ensure positive denominator and stable quotient derivative
         scale = 1.0 / math.sqrt(q.shape[-1])
         q_act = torch.nn.functional.elu(q.float() * scale) + 1.0
         k_act = torch.nn.functional.elu(k.float()) + 1.0
@@ -364,7 +362,6 @@ class _CosformerAutograd(torch.autograd.Function):
         eps = ctx.eps
         scale = 1.0 / math.sqrt(q.shape[-1])
 
-        # Exact quotient-rule derivative for non-negative cosformer
         q_r = q_act.detach().requires_grad_(True)
         k_r = k_act.detach().requires_grad_(True)
         v_r = v.detach().requires_grad_(True)
@@ -372,7 +369,6 @@ class _CosformerAutograd(torch.autograd.Function):
             out_eval = cosformer_pytorch_fwd(q_r, k_r, v_r, is_causal=is_causal, eps=eps, apply_act=False)
             g_q_act, g_k_act, g_v = torch.autograd.grad(out_eval, [q_r, k_r, v_r], grad_output, retain_graph=False)
 
-        # Backprop through ELU+1 activation: d/dx (elu(x*scale)+1) = scale * (1.0 if x>0 else exp(x*scale))
         if ctx.needs_input_grad[0]:
             q_scaled = q.float() * scale
             d_elu_q = torch.where(q_scaled > 0.0, torch.ones_like(q_scaled), torch.exp(q_scaled)) * scale
@@ -401,10 +397,6 @@ def cosformer_triton_fwd(
     return _CosformerAutograd.apply(q, k, v, is_causal, eps)
 
 
-# ==============================================================================
-# Fused Cosformer Linear Attention Kernel
-# Target: cosformer, chela_slay, performer, decay_linear_attention
-# ==============================================================================
 
 if HAS_TRITON and hasattr(tl, "constexpr"):
     @triton.jit

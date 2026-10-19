@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Hardware Telemetry Monitor
 
 Collects real-time GPU utilization, memory bandwidth, temperature, and host metrics.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -17,14 +21,12 @@ import sys
 import time
 from typing import Any, Dict, List, Optional
 
-# Globals for caching
 _GPU_CACHE: Optional[Dict[str, Any]] = None
 _GPU_CACHE_TIME: float = 0.0
 
 
 def query_hardware_gpu() -> Optional[Dict[str, Any]]:
     """Query live GPU hardware metrics via NVML, PyTorch, or nvidia-smi."""
-    # 1. Try PyTorch CUDA / NVML if available
     try:
         import torch
         if torch.cuda.is_available():
@@ -34,7 +36,6 @@ def query_hardware_gpu() -> Optional[Dict[str, Any]]:
             alloc_mb = torch.cuda.memory_allocated(dev_idx) / (1024 ** 2)
             reserved_mb = torch.cuda.memory_reserved(dev_idx) / (1024 ** 2)
             
-            # Probe nvidia-smi for power, temp, and SM utilization
             smi_path = shutil.which("nvidia-smi")
             gpu_util = 0.0
             power_w = 0.0
@@ -80,7 +81,6 @@ def query_hardware_gpu() -> Optional[Dict[str, Any]]:
     except Exception:
         pass
 
-    # 2. Try standalone nvidia-smi if torch failed
     smi_path = shutil.which("nvidia-smi")
     if smi_path:
         try:
@@ -120,7 +120,6 @@ def get_live_gpu_telemetry(project_dir: str, is_local_gpu: bool = False) -> Dict
     if _GPU_CACHE and (now - _GPU_CACHE_TIME < 1.0):
         return _GPU_CACHE
 
-    # Direct hardware query
     hw_data = query_hardware_gpu()
     if hw_data:
         _GPU_CACHE = hw_data

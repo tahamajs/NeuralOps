@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Tests for neuralops.data.cached_tensors module."""
 
 import pytest
@@ -47,7 +53,6 @@ class TestCachedTensorDataset:
         assert len(res["val"]) == 4
 
     def test_in_memory_cache_hit(self, tmp_path):
-        # Second call with same parameters should return the cached in-memory dictionary
         res1 = get_cached_tokenized_dataset(
             dataset_name="sst2",
             model_family="distilbert",
@@ -67,7 +72,6 @@ class TestCachedTensorDataset:
         with open(corrupt_file, "wb") as f:
             f.write(b"not a valid torch file")
 
-        # Loading corrupt cache without download source should gracefully handle or raise
         with pytest.raises(Exception):
             get_cached_tokenized_dataset(
                 dataset_name="mrpc",

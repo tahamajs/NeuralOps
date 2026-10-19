@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Smoke tests for 10 low-coverage or core modules across attention and compression families.
 
 Tests import, basic forward pass, and edge-cases (shapes, masks, configuration).
@@ -62,14 +68,12 @@ def test_attention_smoke_edge_cases(attn_name):
     except Exception:
         mod = cls()
 
-    # Edge case 1: Single token (batch=1, seq_len=1)
     x1 = torch.randn(1, 1, 64)
     out1 = mod(x1)
     if isinstance(out1, tuple):
         out1 = out1[0]
     assert out1.shape == (1, 1, 64)
 
-    # Edge case 2: Variable length sequence
     x2 = torch.randn(1, 16, 64)
     out2 = mod(x2)
     if isinstance(out2, tuple):

@@ -1,3 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 from .testing_utils import MockConfig, DummyDistilBertAttention
 import pytest
 import torch
@@ -98,18 +105,15 @@ def test_hymba_transx_inject_safe():
     assert out.shape == (2, 8, 64)
 
 
-# ── FIX-1: KV-cache return tuple ───────────────────────────────────────────
 def test_hymba_transx_decoder_kv_cache_return():
     """Decoder must return (out, present_key_value) where present is (k1, v, k2)."""
     cfg = MockConfig(is_decoder=True, model_type="gpt2")
     attn = HymbaTransXBlock(config=cfg, hidden_size=64, num_heads=4)
     x = torch.randn(2, 4, 64)
     result = attn(x)
-    # Decoder without output_attentions → 2-tuple
     assert len(result) == 2, f"Expected 2-tuple, got {len(result)}"
     out, present = result
     assert out.shape == (2, 4, 64)
-    # present_key_value must be a 3-tuple of tensors
     assert isinstance(present, tuple) and len(present) == 3, (
         f"present_key_value should be (k1, v, k2), got {type(present)}"
     )
@@ -139,7 +143,6 @@ def test_hymba_transx_encoder_no_present_kv():
     assert present is None, "Encoder should not return a KV cache"
 
 
-# ── FIX-2: 3D attention mask ────────────────────────────────────────────────
 def test_hymba_transx_3d_bool_mask():
     """3D boolean attention mask (B, 1, L) must not raise ValueError."""
     cfg = MockConfig(is_decoder=True, model_type="gpt2")
@@ -155,17 +158,15 @@ def test_hymba_transx_3d_float_mask():
     cfg = MockConfig(is_decoder=False, model_type="bert")
     attn = HymbaTransXBlock(config=cfg, hidden_size=64, num_heads=4)
     x = torch.randn(2, 6, 64)
-    mask3d = torch.zeros(2, 1, 6)  # 0 = valid
+    mask3d = torch.zeros(2, 1, 6)
     out, _ = attn(x, attention_mask=mask3d)
     assert out.shape == (2, 6, 64)
 
 
-# ── FIX-3: safe diff_attn when relu output is all-zero ─────────────────────
 def test_hymba_transx_safe_diff_attn_no_nan():
     """When all ReLU(attn1 - lam*attn2) == 0, output must be finite (no NaN/Inf)."""
     cfg = MockConfig(is_decoder=True, model_type="gpt2")
     attn = HymbaTransXBlock(config=cfg, hidden_size=64, num_heads=4)
-    # Force diff_lambda very large so lam→1 and attn2 ≈ attn1 → ReLU → 0
     with torch.no_grad():
         attn.diff_lambda.fill_(50.0)
     x = torch.randn(2, 4, 64)

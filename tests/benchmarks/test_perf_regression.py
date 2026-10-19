@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Regression test for attention latency and memory footprint.
 Outputs JSON report comparing standard MHA vs key NeuralOps subquadratic variants.
@@ -23,7 +29,6 @@ def benchmark_mha_vs_linear():
     k = torch.randn(B, H, N, D)
     v = torch.randn(B, H, N, D)
 
-    # Standard quadratic attention
     t0 = time.perf_counter()
     for _ in range(5):
         scale = 1.0 / (D ** 0.5)
@@ -32,7 +37,6 @@ def benchmark_mha_vs_linear():
         _ = torch.matmul(attn, v)
     t_mha = (time.perf_counter() - t0) / 5
 
-    # Linear attention (O(N))
     t0 = time.perf_counter()
     for _ in range(5):
         _ = compilable_linear_attn(q, k, v)

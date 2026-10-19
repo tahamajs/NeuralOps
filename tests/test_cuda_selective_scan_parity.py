@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Parity and backward tests for Selective Scan (Module 2).
 """
@@ -39,9 +45,8 @@ def test_selective_scan_numerical_stability():
     if not torch.cuda.is_available():
         pytest.skip("CUDA required for Selective Scan test")
 
-    # Extreme scale test
     u, delta, A, B_sel, C_sel, D_val = _setup_scan_inputs()
-    delta = delta * 100.0  # Test clamping to prevent exp overflow
+    delta = delta * 100.0
     out_cuda, _ = selective_scan(u, delta, A, B_sel, C_sel, D_val)
 
     assert not torch.isnan(out_cuda).any()

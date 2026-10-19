@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Tests for neuralops.analysis.layerwise_analyzer module."""
 
 import pytest
@@ -45,7 +51,6 @@ class TestLayerwiseAnalyzer:
         assert analyzer.device == "cpu"
 
     def test_estimate_intrinsic_dimension(self):
-        # 100 samples in 20 dimensions with effective rank ~5
         rng = np_rng = torch.randn(100, 5)
         proj = torch.randn(5, 20)
         X = (rng @ proj).numpy()

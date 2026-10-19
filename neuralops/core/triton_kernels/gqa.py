@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Grouped Query Attention Head Expansion
 
 Expands key and value heads for grouped query attention directly in registers during attention loading.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -234,9 +238,6 @@ def fused_mqa_bias_scale_triton(
 
 
 
-# ---------------------------------------------------------------------------
-# Fused Asymmetric Cross Attention (CrossAttention)
-# ---------------------------------------------------------------------------
 def fused_asymmetric_cross_attention_pytorch(
     q: torch.Tensor,
     k: torch.Tensor,
@@ -270,9 +271,6 @@ def fused_asymmetric_cross_attention_triton(
     return fused_asymmetric_cross_attention_pytorch(q, k, v, scale, causal_mask, eff_mask)
 
 
-# ---------------------------------------------------------------------------
-# Fused Weighted GQA / MQA / QCQA Online-Softmax Kernel in SRAM
-# ---------------------------------------------------------------------------
 if HAS_TRITON:
     @triton.jit
     def _triton_gqa_online_softmax_fwd_kernel(
@@ -314,7 +312,6 @@ if HAS_TRITON:
         if HAS_HEAD_WEIGHTS:
             hw_val = tl.load(HeadWeights_ptr + h_q * stride_hw).to(tl.float32)
 
-        # Iterate over KV blocks
         end_n = N_K
         if IS_CAUSAL:
             end_n = tl.minimum(N_K, (start_m + 1) * BLOCK_M)

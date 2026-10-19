@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 HuggingFace Surgery Callback
 
 Automates model surgery schedules, curriculum transitions, and distillation callbacks.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -47,7 +51,6 @@ class NeuralOpsSurgeryCallback(TrainerCallback):
 
         from neuralops.api import set_surgery_alpha, set_surgery_stage
 
-        # Stage transitions
         if step < self.stage1_steps:
             set_surgery_stage(model, 1)
         elif step < self.stage2_steps:
@@ -55,7 +58,6 @@ class NeuralOpsSurgeryCallback(TrainerCallback):
         else:
             set_surgery_stage(model, 3)
 
-        # Alpha annealing
         alpha = min(1.0, max(0.0, step / max(1, self.total_steps)))
         set_surgery_alpha(model, alpha)
 

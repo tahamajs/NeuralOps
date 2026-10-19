@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Benchmark for New NeuralOps v1.3.0 Subsystems:
 1. Bit-Packed W4A16 & Low-Rank SVD memory & throughput
@@ -58,11 +64,10 @@ def main():
 
     results_summary = {}
 
-    # 1. W4A16 Memory Benchmark
     logger.info("--- 1. Evaluating W4A16 Real Memory Reduction ---")
     d_out, d_in = 4096, 4096
     fp16_linear = nn.Linear(d_in, d_out, bias=False).half().to(device)
-    fp16_bytes = fp16_linear.weight.numel() * 2  # 33,554,432 bytes = 32 MB
+    fp16_bytes = fp16_linear.weight.numel() * 2
 
     packed_linear = BitPackedW4A16Linear.from_linear(fp16_linear, group_size=128).to(device)
     packed_bytes = (
@@ -70,7 +75,6 @@ def main():
     )
     w4a16_ratio = fp16_bytes / packed_bytes
 
-    # Low-Rank SVD + W4A16
     svd_packed = BitPackedLowRankSVDLinear.from_linear(fp16_linear, rank=64, exact_rank=8, group_size=64).to(device)
     svd_bytes = (
         svd_packed.u_exact.numel() * 2
@@ -90,20 +94,16 @@ def main():
         "svd_w4a16_compression_ratio": round(svd_w4a16_ratio, 2),
     }
 
-    # 2. Hadamard Incoherent SVD Error Reduction
     logger.info("--- 2. Evaluating Hadamard Incoherent SVD Rotation ---")
     torch.manual_seed(42)
-    # Layer with synthetic channel outliers
     raw_W = torch.randn(1024, 1024, device=device)
     raw_W[:, 15] *= 12.0
     raw_W[:, 120] *= 16.0
 
-    # Standard SVD (rank 32)
     U_std, S_std, Vh_std = torch.linalg.svd(raw_W, full_matrices=False)
     W_std_rec = torch.matmul(U_std[:, :32] * S_std[:32], Vh_std[:32, :])
     err_std = float(torch.norm(raw_W - W_std_rec, p="fro").item() / torch.norm(raw_W, p="fro").item())
 
-    # Hadamard Rotated SVD (rank 32)
     W_rot = fast_hadamard_transform(raw_W, block_size=128)
     U_had, S_had, Vh_had = torch.linalg.svd(W_rot, full_matrices=False)
     Vh_orig = fast_hadamard_transform(Vh_had[:32, :], block_size=128)
@@ -117,7 +117,6 @@ def main():
         "error_reduction_pct": round(err_reduction_pct, 2),
     }
 
-    # 3. Lossless Self-Speculative Decoding Benchmark
     logger.info("--- 3. Evaluating Self-Speculative Decoding Speedup ---")
     config = GPT2Config(vocab_size=1000, n_positions=4096, n_embd=256, n_layer=4, n_head=4)
     target_mod = GPT2LMHeadModel(config).eval().to(device)
@@ -137,7 +136,6 @@ def main():
         "tokens_per_sec": stats.tokens_per_sec,
     }
 
-    # 4. Needle-In-A-Haystack Passkey Retrieval Matrix
     logger.info("--- 4. Evaluating NIAH Passkey Retrieval Grid ---")
     niah_evaluator = NeedleInAHaystackEvaluator(
         model=target_mod,
@@ -154,11 +152,9 @@ def main():
         "mean_retrieval_accuracy": niah_grid_res["mean_retrieval_accuracy"],
     }
 
-    # Plot NIAH Heatmap
     heatmap_path = Path("paper/figures/fig_niah_passkey_heatmap.png")
     plot_niah_heatmap(niah_grid_res, heatmap_path, title="NeuralOps Long-Context NIAH Retrieval Heatmap")
 
-    # Save Results JSON & MD
     res_json_path = out_dir / "advanced_systems_benchmark.json"
     with open(res_json_path, "w", encoding="utf-8") as f:
         json.dump(results_summary, f, indent=2)

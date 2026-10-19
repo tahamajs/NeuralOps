@@ -1,4 +1,9 @@
-# -*- coding: utf-8 -*-
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 test_production_kernel_ecosystem_exhaustive.py
 ==============================================
@@ -25,7 +30,6 @@ import torch.nn.functional as F
 
 from neuralops.core.cuda_kernels import force_kernel_backend
 
-# CUDA Kernel modules
 from neuralops.core.cuda_kernels.low_rank_svd import fused_lowrank_gated_gemm, fused_lowrank_gated_gemm_pytorch_ref
 from neuralops.core.cuda_kernels.rpca_sparse_svd import rpca_sparse_svd_gemm, rpca_sparse_svd_gemm_pytorch_ref
 from neuralops.core.cuda_kernels.rotational_svd import rotational_svd, rotational_svd_pytorch_ref
@@ -48,7 +52,6 @@ from neuralops.core.cuda_kernels.bitonic_topk.bitonic_topk_autograd import biton
 from neuralops.core.cuda_kernels.fused_norm_linear.norm_linear_autograd import fused_norm_linear, fused_norm_linear_pytorch_ref
 from neuralops.core.cuda_kernels.sparse_attention import block_sparse_attn, block_sparse_attn_pytorch_ref
 
-# Triton Kernel modules
 from neuralops.core.triton_kernels.differential_attention import (
     triton_differential_attention,
     triton_differential_attention_pytorch_ref,
@@ -91,9 +94,6 @@ def device():
     return "cuda:0"
 
 
-# ============================================================================
-# 1. FORWARD PRECISION & NUMERICAL PARITY (FP16 & FP32 Bounds)
-# ============================================================================
 
 @pytest.mark.parametrize("dtype", [torch.float16, torch.float32])
 def test_cuda_low_rank_svd_forward_parity(device, dtype):
@@ -272,9 +272,6 @@ def test_triton_cur_linear_forward_parity(device, dtype):
     assert cos_sim >= 0.995, f"CUR cos_sim {cos_sim} < 0.995"
 
 
-# ============================================================================
-# 2. AUTOGRAD BACKWARD GRADIENT PARITY (Analytical & Autograd)
-# ============================================================================
 
 def test_cuda_low_rank_svd_autograd_backward(device):
     """Autograd backward gradient parity for low_rank_svd."""
@@ -375,9 +372,6 @@ def test_triton_cur_linear_autograd_backward(device):
     assert dx_diff < 1e-4, f"CUR dx_diff={dx_diff:.4e}"
 
 
-# ============================================================================
-# 3. DYNAMIC BOUNDARY STRESS (Non-Power-of-2 seq_len & Odd Head Dims)
-# ============================================================================
 
 @pytest.mark.parametrize("L", [127, 255, 513])
 @pytest.mark.parametrize("D", [32, 64, 128])
@@ -387,18 +381,15 @@ def test_boundary_non_power_of_two_kernels(device, L, D):
     B, H = 2, 4
     x = torch.randn(B, L, D, device=device, dtype=torch.float32)
 
-    # 1. RMSNorm dynamic length
     w = torch.ones(D, device=device)
     out_rms = rmsnorm(x, w)
     assert out_rms.shape == (B, L, D)
     assert not torch.isnan(out_rms).any()
 
-    # 2. Fast GeLU dynamic length
     out_gelu = fast_gelu(x)
     assert out_gelu.shape == (B, L, D)
     assert not torch.isnan(out_gelu).any()
 
-    # 3. Low Rank SVD dynamic length (M = B*L)
     M = B * L
     R, N_out = 8, 32
     scale = 0.1
@@ -411,7 +402,6 @@ def test_boundary_non_power_of_two_kernels(device, L, D):
     assert out_lr.shape == (M, N_out)
     assert not torch.isnan(out_lr).any()
 
-    # 4. Triton Hydra Attention dynamic length
     q = torch.randn(B, H, L, D, device=device)
     k = torch.randn(B, H, L, D, device=device)
     v = torch.randn(B, H, L, D, device=device)
@@ -433,9 +423,6 @@ def test_boundary_extreme_prompt_context_8k(device):
     assert not torch.isinf(out).any()
 
 
-# ============================================================================
-# 4. EXTREME DYNAMIC RANGE & ZERO-NAN/INF INVARIANCE
-# ============================================================================
 
 @pytest.mark.parametrize("scale", [1e-4, 1e-2, 1.0, 1e2, 1e4])
 def test_dynamic_range_zero_nan_inf_invariance(device, scale):
@@ -445,26 +432,20 @@ def test_dynamic_range_zero_nan_inf_invariance(device, scale):
     x = torch.randn(B, N, D, device=device) * scale
     w = torch.ones(D, device=device)
 
-    # RMSNorm
     out_rms = rmsnorm(x, w, eps=1e-5)
     assert not torch.isnan(out_rms).any(), f"NaN in rmsnorm at scale {scale}"
     assert not torch.isinf(out_rms).any(), f"Inf in rmsnorm at scale {scale}"
 
-    # Softplus
     out_sp = fused_softplus(x)
     assert not torch.isnan(out_sp).any(), f"NaN in softplus at scale {scale}"
     assert not torch.isinf(out_sp).any(), f"Inf in softplus at scale {scale}"
 
-    # SwiGLU
     gate = torch.randn(B, N, D, device=device) * scale
     out_swiglu = swiglu(x, gate)
     assert not torch.isnan(out_swiglu).any(), f"NaN in swiglu at scale {scale}"
     assert not torch.isinf(out_swiglu).any(), f"Inf in swiglu at scale {scale}"
 
 
-# ============================================================================
-# 5. ASYNCHRONOUS MULTI-STREAM EXECUTION CONCURRENCY (4 CUDA STREAMS)
-# ============================================================================
 
 def test_async_multi_stream_concurrency_stress(device):
     """Stress test concurrent execution across 4 independent CUDA streams with CUDA events."""
@@ -475,7 +456,6 @@ def test_async_multi_stream_concurrency_stress(device):
     results = [None] * num_streams
     torch.manual_seed(42)
 
-    # Launch workloads concurrently on separate streams
     for i in range(num_streams):
         with torch.cuda.stream(streams[i]):
             M, K, R, N = 64, 64, 8, 64
@@ -486,23 +466,19 @@ def test_async_multi_stream_concurrency_stress(device):
             alpha = torch.randn(R, device=device) * scale
             bias = torch.randn(N, device=device) * scale
 
-            # Alternate between CUDA kernel and Triton kernel across streams
             if i % 2 == 0:
                 out = fused_lowrank_gated_gemm(x, V, U, alpha=alpha, bias=bias)
             else:
                 out = triton_cur_linear(x, V, torch.eye(R, device=device), U, bias=bias)
             
-            # Apply subsequent normalization
             w = torch.ones(N, device=device)
             normed = rmsnorm(out, w)
             results[i] = normed
             events[i].record(streams[i])
 
-    # Wait for all streams to finish and synchronize
     for i in range(num_streams):
         events[i].synchronize()
 
-    # Validate all outputs
     for i in range(num_streams):
         res = results[i]
         assert res is not None

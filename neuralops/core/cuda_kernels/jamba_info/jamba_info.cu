@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -5,11 +12,6 @@
 
 namespace neuralops { namespace cuda {
 
-// Jamba Info Concept Bottleneck Projection Kernel:
-// Projects input sequence vectors of dimension D into concept space K via matrix W,
-// and applies a fused GeLU non-linear activation:
-// c_{b, t, k} = GeLU(\sum_{d=0}^{D-1} x_{b, t, d} * W_{k, d})
-// Thread mapping: 2D Grid over (ceil(N / 128), B) with 128 threads per block.
 template <typename scalar_t>
 __global__ void __launch_bounds__(128) jamba_info_fwd_kernel(
     scalar_t* __restrict__ out,
@@ -39,13 +41,12 @@ __global__ void __launch_bounds__(128) jamba_info_fwd_kernel(
             acc += x_val * w_val;
         }
 
-        // Fused GELU activation: 0.5 * acc * (1 + tanh(sqrt(2/pi) * (acc + 0.044715 * acc^3)))
         const float c = 0.5f * acc * (1.0f + tanhf(0.7978845608f * (acc + 0.044715f * acc * acc * acc)));
         out[out_offset + k] = from_float<scalar_t>(c);
     }
 }
 
-}} // namespace neuralops::cuda
+}}
 
 torch::Tensor jamba_info_fwd(
     const torch::Tensor& x,

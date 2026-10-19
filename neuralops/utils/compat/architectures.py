@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Architecture Compatibility Adapters
 
 Architectural utilities and family-aware adapters for model compatibility.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -181,10 +185,10 @@ def should_compress_linear(model: Any, name: str, family: str | None = None) -> 
         return should_compress_qwen3_5(name)
 
     recognized_attn = [
-        "q_lin", "k_lin", "v_lin", "out_lin",  # DistilBERT
-        "query", "key", "value", "dense", "output.dense",  # RoBERTa / BERT
-        "c_attn", "c_proj",  # GPT-2
-        "q_proj", "k_proj", "v_proj", "o_proj", "out_proj",  # Qwen / LLaMA
+        "q_lin", "k_lin", "v_lin", "out_lin",
+        "query", "key", "value", "dense", "output.dense",
+        "c_attn", "c_proj",
+        "q_proj", "k_proj", "v_proj", "o_proj", "out_proj",
     ]
 
     if any(leaf == k or k in name_low.split(".") for k in recognized_attn):

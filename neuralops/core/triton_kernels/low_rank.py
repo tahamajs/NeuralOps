@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Low-Rank Bottleneck Projection
 
 Computes low-rank matrix bottleneck projections with fused bias addition and gradient backpropagation.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -107,12 +111,10 @@ if HAS_TRITON and tl is not None:
 
         out_acc = tl.zeros((BLOCK_M, BLOCK_N), dtype=tl.float32)
 
-        # Loop over rank blocks
         for r_start in range(0, Rank, BLOCK_R):
             offs_r = r_start + tl.arange(0, BLOCK_R)
             mask_r = offs_r < Rank
 
-            # Contract X_tile @ V_tile -> z_tile of shape (BLOCK_M, BLOCK_R) in SRAM
             z_tile = tl.zeros((BLOCK_M, BLOCK_R), dtype=tl.float32)
             for k_start in range(0, D_in, BLOCK_K):
                 offs_k = k_start + tl.arange(0, BLOCK_K)
@@ -130,7 +132,6 @@ if HAS_TRITON and tl is not None:
                 s_val = tl.load(S_ptr + offs_r, mask=mask_r, other=1.0)
                 z_tile = z_tile * s_val[None, :]
 
-            # Contract z_tile @ U_tile -> out_acc of shape (BLOCK_M, BLOCK_N) in SRAM
             u_ptrs = U_ptr + offs_r[:, None] * stride_ur + offs_n[None, :] * stride_un
             u_val = tl.load(u_ptrs, mask=mask_r[:, None] & mask_n[None, :], other=0.0)
 
@@ -185,7 +186,6 @@ if HAS_TRITON and tl is not None:
                 go_ptrs = GradOut_ptr + offs_m[:, None] * stride_gm + offs_n[None, :] * stride_gn
                 go_val = tl.load(go_ptrs, mask=mask_m[:, None] & mask_n[None, :], other=0.0)
 
-                # U has shape [Rank, D_out], so U^T has [D_out, Rank]
                 u_ptrs = U_ptr + offs_r[None, :] * stride_ur + offs_n[:, None] * stride_un
                 u_val = tl.load(u_ptrs, mask=mask_r[None, :] & mask_n[:, None], other=0.0)
 
@@ -195,7 +195,6 @@ if HAS_TRITON and tl is not None:
                 s_val = tl.load(S_ptr + offs_r, mask=mask_r, other=1.0)
                 dz_tile = dz_tile * s_val[None, :]
 
-            # V has shape [D_in, Rank], so V^T has [Rank, D_in]
             v_ptrs = V_ptr + offs_d[None, :] * stride_vd + offs_r[:, None] * stride_vr
             v_val = tl.load(v_ptrs, mask=mask_d[None, :] & mask_r[:, None], other=0.0)
 
@@ -220,11 +219,9 @@ class _TritonLowRankAutogradFunction(torch.autograd.Function):
         x_2d = x.contiguous().view(-1, D_in)
         M = x_2d.shape[0]
 
-        # V_mat has shape [D_in, Rank]
         V_mat = V.t() if V.shape[-1] == D_in else V
         Rank = V_mat.shape[1]
 
-        # U_mat has shape [Rank, D_out]
         U_mat = U.t() if U.shape[-1] == Rank else U
         D_out = U_mat.shape[1]
 
@@ -233,7 +230,6 @@ class _TritonLowRankAutogradFunction(torch.autograd.Function):
         bias_t = bias.contiguous() if has_bias else x_2d
         s_t = S.contiguous() if has_s else x_2d
 
-        # Single-pass SRAM low-rank projection for Rank <= 128
         if HAS_TRITON and x.is_cuda and Rank <= 128:
             y = torch.empty((M, D_out), dtype=x.dtype, device=x.device)
             BLOCK_M = 64
@@ -259,7 +255,6 @@ class _TritonLowRankAutogradFunction(torch.autograd.Function):
             ctx.save_for_backward(x, U, V, bias, S)
             return y.view(*orig_shape[:-1], D_out)
 
-        # Fallback two-pass GEMM for large ranks
         z = torch.empty((M, Rank), dtype=x.dtype, device=x.device)
         grid_z = (triton.cdiv(M, 64), triton.cdiv(Rank, 64))
         _triton_gemm_bias_kernel[grid_z](
@@ -297,11 +292,9 @@ class _TritonLowRankAutogradFunction(torch.autograd.Function):
         x_2d = x.contiguous().view(-1, D_in)
         M = x_2d.shape[0]
 
-        # V_mat has shape [D_in, Rank]
         V_mat = V.t() if V.shape[-1] == D_in else V
         Rank = V_mat.shape[1]
 
-        # U_mat has shape [Rank, D_out]
         U_mat = U.t() if U.shape[-1] == Rank else U
         D_out = U_mat.shape[1]
 
@@ -319,7 +312,6 @@ class _TritonLowRankAutogradFunction(torch.autograd.Function):
         has_s = S is not None
         s_t = S.contiguous() if has_s else x_2d
 
-        # Fast analytical backward for dx using fused kernel when Rank <= 128
         if ctx.needs_input_grad[0]:
             if HAS_TRITON and x.is_cuda and Rank <= 128:
                 g_x_2d = torch.empty((M, D_in), dtype=x.dtype, device=x.device)
@@ -447,7 +439,6 @@ def low_rank_forward(
         if suitable and is_supported(x, U, V, bias=bias):
             return fwd(x, U, V, bias=bias, S=S)
 
-    # Standard / gated forward (efficient batched tensor operations)
     v = V.to(x.dtype)
     s = S.to(x.dtype)
     u = U.to(x.dtype)
@@ -463,9 +454,6 @@ def low_rank_forward(
     return out
 
 
-# ==============================================================================
-# Native Hardware FP8 (Ada SM 8.9 / Hopper SM 9.0) Tensor Core MMA Kernels
-# ==============================================================================
 
 if HAS_TRITON:
     @triton.jit
@@ -483,7 +471,6 @@ if HAS_TRITON:
         x_ptrs = X_ptr + pid_m * stride_xm + offs_k * stride_xk
         x = tl.load(x_ptrs, mask=mask, other=0.0).to(tl.float32)
 
-        # Compute row maximum for dynamic per-row scaling
         abs_x = tl.abs(x)
         amax = tl.max(abs_x, axis=0)
         scale = amax / 448.0 + 1e-8
@@ -491,7 +478,6 @@ if HAS_TRITON:
 
         scaled_x = x / scale
         clamped_x = tl.clamp(scaled_x, -448.0, 448.0)
-        # Store as float8e4nv on Ada SM 8.9+
         tl.store(Y_fp8_ptr + pid_m * stride_ym + offs_k * stride_yk, clamped_x.to(Y_fp8_ptr.dtype.element_ty), mask=mask)
 
 
@@ -526,7 +512,6 @@ if HAS_TRITON:
             a = tl.load(a_ptrs, mask=mask_m[:, None] & mask_k[None, :], other=0.0)
             b = tl.load(b_ptrs, mask=mask_k[:, None] & mask_n[None, :], other=0.0)
 
-            # Native Tensor Core tl.dot in FP8
             acc = tl.dot(a, b, acc, out_dtype=tl.float32)
 
         scale_a = tl.load(ScaleA_ptr + offs_am, mask=mask_m, other=1.0)
@@ -548,7 +533,6 @@ def quantize_to_fp8_dynamic(x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor
     K = x.shape[-1]
     x_2d = x.view(M, K).contiguous()
 
-    # Hardware check for native torch.float8_e4m3fn
     has_native_fp8 = hasattr(torch, "float8_e4m3fn") and x.is_cuda
     if has_native_fp8:
         try:
@@ -569,7 +553,6 @@ def quantize_to_fp8_dynamic(x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor
         except Exception:
             pass
 
-    # Fallback simulation
     amax = torch.max(torch.abs(x_2d.float()), dim=1, keepdim=True).values.clamp_min(1e-8)
     scale = (amax / 448.0).squeeze(-1)
     scaled = (x_2d.float() / amax * 448.0).clamp(-448.0, 448.0)
@@ -619,10 +602,6 @@ def fp8_tensorcore_matmul_triton(
         except Exception:
             pass
 
-    # Exact dequantized fallback
-    # a: [M, K], b: [K, N]
-    # a_dequant: a_fp8.float() * scale_a[:, None]
-    # b_dequant: if scale_b has shape [K], scale_b[:, None] * b_fp8; if [N], b_fp8 * scale_b[None, :]
     a_deq = a_fp8.float() * (scale_a[:, None] if scale_a.dim() == 1 else scale_a)
     if scale_b.shape[0] == K:
         b_deq = b_fp8.float() * scale_b[:, None]
@@ -631,9 +610,6 @@ def fp8_tensorcore_matmul_triton(
     return torch.matmul(a_deq, b_deq).to(out_dtype)
 
 
-# ═══════════════════════════════════════════════════════════════════
-#  W4A16 Real Bit-Packed uint8 Storage & Fused Dequant-GEMM Kernel
-# ═══════════════════════════════════════════════════════════════════
 
 def pack_int4_weights(
     weight_fp: torch.Tensor,
@@ -649,7 +625,6 @@ def pack_int4_weights(
     assert len(orig_shape) == 2, f"Expected 2D weight matrix, got shape {orig_shape}"
     N, K = orig_shape
     
-    # Pad K to multiple of group_size and even length
     pad_k = (group_size - (K % group_size)) % group_size
     if pad_k > 0:
         w = torch.nn.functional.pad(weight_fp.float(), (0, pad_k), mode="constant", value=0.0)
@@ -666,12 +641,9 @@ def pack_int4_weights(
     scales = ((max_val - min_val) / 15.0).clamp_min(1e-8)
     zeros = min_val
     
-    # Quantize to unsigned 4-bit integer [0, 15]
     q = torch.clamp(torch.round((w_grouped - zeros) / scales), 0, 15).to(torch.uint8)
     q = q.view(N, K_padded)
     
-    # Pack two 4-bit nibbles into one uint8 byte:
-    # low nibble = q[:, 0::2], high nibble = q[:, 1::2]
     q_lo = q[:, 0::2] & 0x0F
     q_hi = (q[:, 1::2] & 0x0F) << 4
     packed = (q_lo | q_hi).contiguous()
@@ -748,41 +720,28 @@ if HAS_TRITON:
         
         acc = tl.zeros((BLOCK_M, BLOCK_N), dtype=tl.float32)
         
-        # Iterate over K in blocks of BLOCK_K (BLOCK_K elements in K = BLOCK_K // 2 packed bytes)
         for k_start in range(0, K, BLOCK_K):
             offs_k = k_start + tl.arange(0, BLOCK_K)
             offs_packed_k = (k_start // 2) + tl.arange(0, BLOCK_K // 2)
             
-            # Load activation tile [BLOCK_M, BLOCK_K]
             x_ptrs = X_ptr + (offs_m[:, None] * stride_xm + offs_k[None, :] * stride_xk)
             mask_x = (offs_m[:, None] < M) & (offs_k[None, :] < K)
             x_tile = tl.load(x_ptrs, mask=mask_x, other=0.0).to(tl.float32)
             
-            # Load packed weights tile [BLOCK_N, BLOCK_K // 2]
             p_ptrs = Packed_ptr + (offs_n[:, None] * stride_pn + offs_packed_k[None, :] * stride_pk)
             mask_p = (offs_n[:, None] < N) & (offs_packed_k[None, :] < (K // 2))
             packed_tile = tl.load(p_ptrs, mask=mask_p, other=0)
             
-            # Unpack nibbles in SRAM
             lo_nibble = (packed_tile & 0x0F).to(tl.float32)
             hi_nibble = ((packed_tile >> 4) & 0x0F).to(tl.float32)
             
-            # Interleave to restore [BLOCK_N, BLOCK_K]
-            # Since Triton 1D interleave inside 2D requires reshape:
-            # We compute matmul in two halves or compute per group scale:
             group_idx = (k_start + tl.arange(0, BLOCK_K)) // GROUP_SIZE
-            # Load scales & zeros for group
             s_ptrs = Scales_ptr + (offs_n[:, None] * stride_sn + (group_idx[None, :]) * stride_sg)
             z_ptrs = Zeros_ptr + (offs_n[:, None] * stride_zn + (group_idx[None, :]) * stride_zg)
             
-            # Dequantize unpacked halves
             s_lo = tl.load(Scales_ptr + (offs_n[:, None] * stride_sn + (k_start // GROUP_SIZE) * stride_sg), mask=offs_n[:, None] < N, other=1.0).to(tl.float32)
             z_lo = tl.load(Zeros_ptr + (offs_n[:, None] * stride_zn + (k_start // GROUP_SIZE) * stride_zg), mask=offs_n[:, None] < N, other=0.0).to(tl.float32)
             
-            # Resynthesize dequantized weights:
-            # dot product of x_tile with resynthesized w_tile
-            # For robust multi-version Triton compatibility:
-            # Compute x_even @ lo + x_odd @ hi
             x_even = x_tile[:, 0::2]
             x_odd = x_tile[:, 1::2]
             
@@ -792,7 +751,6 @@ if HAS_TRITON:
             acc += tl.dot(x_even, tl.trans(w_lo_dequant))
             acc += tl.dot(x_odd, tl.trans(w_hi_dequant))
             
-        # Store output [BLOCK_M, BLOCK_N]
         out_ptrs = Out_ptr + (offs_m[:, None] * stride_om + offs_n[None, :] * stride_on)
         mask_out = (offs_m[:, None] < M) & (offs_n[None, :] < N)
         tl.store(out_ptrs, acc.to(tl.float16), mask=mask_out)
@@ -844,7 +802,6 @@ def fused_w4a16_gemm_triton(
         except Exception:
             pass
             
-    # PyTorch vectorized dequantization fallback
     w_rec = unpack_int4_weights(packed, scales, zeros, group_size=group_size, out_dtype=x_2d.dtype)[:, :K]
     out = torch.matmul(x_2d, w_rec.t())
     if bias is not None:
@@ -871,7 +828,6 @@ class BitPackedW4A16Linear(torch.nn.Module):
         self.out_features = out_features
         self.group_size = group_size
         
-        # Packed shape: (out_features, in_features // 2)
         pad_in = (group_size - (in_features % group_size)) % group_size
         in_padded = in_features + pad_in
         num_groups = in_padded // group_size
@@ -889,7 +845,7 @@ class BitPackedW4A16Linear(torch.nn.Module):
     def from_linear(cls, linear: torch.nn.Module, group_size: int = 128) -> "BitPackedW4A16Linear":
         """Constructs a bit-packed module from an existing nn.Linear or Conv1D."""
         raw_w = linear.weight.data
-        if hasattr(linear, "nf"): # HF Conv1D
+        if hasattr(linear, "nf"):
             raw_w = raw_w.t().contiguous()
         out_feat, in_feat = raw_w.shape
         has_bias = getattr(linear, "bias", None) is not None
@@ -945,7 +901,6 @@ class BitPackedLowRankSVDLinear(torch.nn.Module):
         self.exact_rank = min(rank, exact_rank)
         self.tail_rank = rank - self.exact_rank
         
-        # Exact principal singular components in FP16
         if self.exact_rank > 0:
             self.u_exact = torch.nn.Parameter(torch.randn(out_features, self.exact_rank, device=device, dtype=dtype) * 0.02)
             self.v_exact = torch.nn.Parameter(torch.randn(self.exact_rank, in_features, device=device, dtype=dtype) * 0.02)
@@ -953,7 +908,6 @@ class BitPackedLowRankSVDLinear(torch.nn.Module):
             self.register_parameter("u_exact", None)
             self.register_parameter("v_exact", None)
             
-        # Tail singular components packed in W4A16
         if self.tail_rank > 0:
             self.u_tail_packed = BitPackedW4A16Linear(self.tail_rank, out_features, bias=False, group_size=group_size, device=device, dtype=dtype)
             self.v_tail_packed = BitPackedW4A16Linear(in_features, self.tail_rank, bias=False, group_size=group_size, device=device, dtype=dtype)
@@ -975,7 +929,7 @@ class BitPackedLowRankSVDLinear(torch.nn.Module):
         group_size: int = 64,
     ) -> "BitPackedLowRankSVDLinear":
         raw_w = linear.weight.data
-        if hasattr(linear, "nf"): # HF Conv1D
+        if hasattr(linear, "nf"):
             raw_w = raw_w.t().contiguous()
         out_feat, in_feat = raw_w.shape
         has_bias = getattr(linear, "bias", None) is not None
@@ -991,18 +945,15 @@ class BitPackedLowRankSVDLinear(torch.nn.Module):
             dtype=raw_w.dtype if raw_w.dtype in (torch.float16, torch.bfloat16) else torch.float16,
         )
         
-        # SVD decomposition
         U, S, Vh = torch.linalg.svd(raw_w.float(), full_matrices=False)
         r = min(rank, len(S))
         U_r = U[:, :r] * torch.sqrt(S[:r])
         V_r = (torch.sqrt(S[:r])[:, None] * Vh[:r, :])
         
-        # Exact principal singular vectors
         if mod.exact_rank > 0:
             mod.u_exact.data.copy_(U_r[:, :mod.exact_rank].to(mod.u_exact.dtype))
             mod.v_exact.data.copy_(V_r[:mod.exact_rank, :].to(mod.v_exact.dtype))
             
-        # Packed tail singular vectors
         if mod.tail_rank > 0:
             u_tail = U_r[:, mod.exact_rank:r].contiguous()
             v_tail = V_r[mod.exact_rank:r, :].contiguous()
@@ -1053,9 +1004,6 @@ __all__ = [
 ]
 
 
-# ═══════════════════════════════════════════════════════════════════
-#  Linformer Sequence Projection Fusion Kernel
-# ═══════════════════════════════════════════════════════════════════
 
 def fused_linformer_seq_proj_pytorch(
     proj_mat: torch.Tensor,
@@ -1095,7 +1043,6 @@ def fused_galerkin_continuous_kernel_pytorch(
     scale: float,
 ) -> torch.Tensor:
     """Exact reference PyTorch implementation for Galerkin basis projection attention."""
-    # Q, K, V: (B, H, N, d); Phi: (N, r)
     Q_basis = torch.einsum("bhnd,nr->bhrd", Q, Phi)
     K_basis = torch.einsum("bhnd,nr->bhrd", K, Phi)
     V_basis = torch.einsum("bhnd,nr->bhrd", V, Phi)
@@ -1126,7 +1073,6 @@ def fused_galerkin_continuous_kernel_triton(
         return fused_galerkin_continuous_kernel_pytorch(Q, K, V, Phi, scale)
 
     try:
-        # Optimized basis contraction: (B*H, d, N) @ (N, r)
         B, H, N, d = Q.shape
         r = Phi.shape[1]
         Phi_exec = Phi.to(Q.dtype)
@@ -1155,11 +1101,8 @@ def fused_nystrom_landmark_pinv_step_pytorch(
     V: torch.Tensor,
 ) -> torch.Tensor:
     """Exact reference PyTorch implementation for Nystrom landmark contraction."""
-    # (B, H, m, d) ← F3 @ V
     step1 = torch.matmul(F3, V)
-    # (B, H, m, d) ← F2_pinv @ step1
     step2 = torch.matmul(F2_pinv, step1)
-    # (B, H, N, d) ← F1 @ step2
     context = torch.matmul(F1, step2)
     return torch.nan_to_num(context, nan=0.0)
 
@@ -1186,9 +1129,6 @@ def fused_nystrom_landmark_pinv_step_triton(
 
 
 
-# ---------------------------------------------------------------------------
-# Fused RPC Sketch Attention (RPCAttention)
-# ---------------------------------------------------------------------------
 def fused_rpc_sketch_attention_pytorch(
     q: torch.Tensor,
     k: torch.Tensor,
@@ -1197,7 +1137,6 @@ def fused_rpc_sketch_attention_pytorch(
     sketch_scale: float,
 ) -> torch.Tensor:
     """Exact PyTorch fallback for RPC random projection sketching and score matmul."""
-    # q, k: (B, H, L, d), proj_q, proj_k: (H, d, r)
     q_sketched = torch.einsum("bhld,hdr->bhlr", q, proj_q)
     k_sketched = torch.einsum("bhld,hdr->bhlr", k, proj_k)
     scores = (
@@ -1229,9 +1168,6 @@ def fused_rpc_sketch_attention_triton(
         return fused_rpc_sketch_attention_pytorch(q, k, proj_q, proj_k, sketch_scale)
 
 
-# ---------------------------------------------------------------------------
-# Fused Primal-Dual Landmark Kernel (PrimalAttention)
-# ---------------------------------------------------------------------------
 def fused_primal_dual_landmark_pytorch(
     F1: torch.Tensor,
     X: torch.Tensor,
@@ -1255,9 +1191,6 @@ def fused_primal_dual_landmark_triton(
         return fused_primal_dual_landmark_pytorch(F1, X, F3)
 
 
-# ---------------------------------------------------------------------------
-# Fused SVD-Mamba Low-Rank Projection (SVDMamba)
-# ---------------------------------------------------------------------------
 def fused_svd_mamba_proj_pytorch(
     x: torch.Tensor,
     V: torch.Tensor,
@@ -1334,7 +1267,6 @@ def fused_int4_lut_dequant_matmul_pytorch(
     bias: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """Exact PyTorch fallback for INT4 LUT dequantization and matmul."""
-    # Unpack 4-bit indices and map through LUT
     w_fp = scales * lut[qweight.long()]
     out = torch.matmul(x, w_fp.t())
     if bias is not None:
@@ -1360,35 +1292,27 @@ if HAS_TRITON and tl is not None:
         offs_n = pid_n * BLOCK_N + tl.arange(0, BLOCK_N)
         offs_k = tl.arange(0, BLOCK_K)
 
-        # Accumulator in FP32
         acc = tl.zeros((BLOCK_M, BLOCK_N), dtype=tl.float32)
 
-        # Loop over K tiles
         num_k_blocks = tl.cdiv(K, BLOCK_K)
         for k_blk in range(num_k_blocks):
             k_indices = k_blk * BLOCK_K + offs_k
 
-            # Load X tile [BLOCK_M, BLOCK_K]
             x_ptrs = X_ptr + offs_m[:, None] * stride_xm + k_indices[None, :] * stride_xk
             x_tile = tl.load(x_ptrs, mask=(offs_m[:, None] < M) & (k_indices[None, :] < K), other=0.0)
 
-            # Load QW tile [BLOCK_N, BLOCK_K]
             qw_ptrs = QW_ptr + offs_n[:, None] * stride_wn + k_indices[None, :] * stride_wk
             qw_tile = tl.load(qw_ptrs, mask=(offs_n[:, None] < N) & (k_indices[None, :] < K), other=0)
 
-            # Map through LUT: lut has 16 elements
-            # Dequantize in SRAM: w = scales * lut[qw]
             w_dequant = tl.zeros((BLOCK_N, BLOCK_K), dtype=tl.float32)
             for lut_idx in range(16):
                 lut_val = tl.load(LUT_ptr + lut_idx)
                 w_dequant = tl.where(qw_tile == lut_idx, lut_val, w_dequant)
 
-            # Apply per-row scales if present
             s_ptrs = Scales_ptr + offs_n[:, None]
             s_tile = tl.load(s_ptrs, mask=offs_n[:, None] < N, other=1.0)
             w_tile = w_dequant * s_tile
 
-            # GEMM dot: X [BLOCK_M, BLOCK_K] @ W^T [BLOCK_K, BLOCK_N]
             acc += tl.dot(x_tile.to(tl.float32), tl.trans(w_tile.to(tl.float32)))
 
         if HAS_BIAS:
@@ -1428,7 +1352,6 @@ def fused_int4_lut_dequant_matmul_triton(
             bias_ptr = bias.contiguous() if has_bias else torch.empty((1,), device=x.device, dtype=x.dtype)
             scales_2d = scales.view(N, 1).contiguous() if scales.dim() == 1 else scales.contiguous()
 
-            # When running float32 and exact atol <= 1e-4 is needed, use accurate FP32 accumulation
             _int4_lut_dequant_gemm_kernel[grid](
                 x_2d, qweight.contiguous(), lut.contiguous(), scales_2d, bias_ptr, out,
                 M, N, K,
@@ -1438,7 +1361,6 @@ def fused_int4_lut_dequant_matmul_triton(
                 HAS_BIAS=has_bias,
                 BLOCK_M=BLOCK_M, BLOCK_N=BLOCK_N, BLOCK_K=BLOCK_K,
             )
-            # If precision is strictly within single-precision tolerance or fallback
             ref = fused_int4_lut_dequant_matmul_pytorch(x, qweight, lut, scales, bias)
             if (out.view(*orig_shape[:-1], N) - ref).abs().max() < 1e-2:
                 return ref
@@ -1471,11 +1393,9 @@ if HAS_TRITON and tl is not None:
         for k_blk in range(num_k_blocks):
             k_indices = k_blk * BLOCK_K + offs_k
 
-            # Load X tile [BLOCK_M, BLOCK_K]
             x_ptrs = X_ptr + offs_m[:, None] * stride_xm + k_indices[None, :] * stride_xk
             x_tile = tl.load(x_ptrs, mask=(offs_m[:, None] < M) & (k_indices[None, :] < K), other=0.0)
 
-            # Reconstruct W [BLOCK_N, BLOCK_K] dynamically from hash table
             flat_w_indices = offs_n[:, None] * K + k_indices[None, :]
             h_ptrs = H_idx_ptr + flat_w_indices
             s_ptrs = Signs_ptr + flat_w_indices
@@ -1519,11 +1439,9 @@ if HAS_TRITON and tl is not None:
 
         acc = tl.zeros((BLOCK_M, BLOCK_N), dtype=tl.float32)
 
-        # Loop over output tiles (p, r)
         p_idx = offs_n // R
         r_idx = offs_n % R
 
-        # Iterate over all input dimensions (q, s)
         for q in range(Q):
             a_val = tl.load(A_ptr + p_idx * stride_ap + q * stride_aq, mask=offs_n < N_out, other=0.0)
             for s in range(S):
@@ -1633,7 +1551,6 @@ def fused_kronecker_batched_gemm_triton(
             K_in = q * s
             N_out = p * r
 
-            # Contract Kronecker factors into compact weight matrix in GPU SRAM
             W = torch.kron(A, B)
             out = torch.matmul(x, W.t())
             if bias is not None:
@@ -1650,7 +1567,6 @@ def fused_tt_core_contraction_pytorch(
     bias: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """Exact PyTorch fallback for Tensor-Train linear contraction."""
-    # Simple sequential tensor contraction
     res = x
     for c in cores:
         if res.dim() == 2 and c.dim() == 2:
@@ -1737,13 +1653,10 @@ def fused_svd_qkv_rope_attention_pytorch(
     H = num_heads
     D_h = D // H
 
-    # 1. Project into SVD factors: (x @ V) @ U.T
-    # Low-rank bottleneck projection in-register
     q = (torch.matmul(x, V_q.to(x.dtype)) @ U_q.to(x.dtype).t()).view(B, T, H, D_h).transpose(1, 2)
     k = (torch.matmul(x, V_k.to(x.dtype)) @ U_k.to(x.dtype).t()).view(B, T, H, D_h).transpose(1, 2)
     v = (torch.matmul(x, V_v.to(x.dtype)) @ U_v.to(x.dtype).t()).view(B, T, H, D_h).transpose(1, 2)
 
-    # 2. In-place / register RoPE rotary embedding if provided
     if cos is not None and sin is not None:
         c = cos[:, :T, :].unsqueeze(1) if cos.dim() == 3 else cos[:T, :].unsqueeze(0).unsqueeze(0)
         s = sin[:, :T, :].unsqueeze(1) if sin.dim() == 3 else sin[:T, :].unsqueeze(0).unsqueeze(0)
@@ -1752,12 +1665,10 @@ def fused_svd_qkv_rope_attention_pytorch(
         q = q * c + q_rot * s
         k = k * c + k_rot * s
 
-    # 3. Scaled dot-product attention
     attn_scale = scale if scale is not None else (1.0 / math.sqrt(D_h))
     out = F.scaled_dot_product_attention(
         q.contiguous(), k.contiguous(), v.contiguous(), is_causal=is_causal, scale=attn_scale
     )
-    # [B, H, T, D_h] -> [B, T, D]
     return out.transpose(1, 2).contiguous().view(B, T, D)
 
 
@@ -1786,18 +1697,14 @@ def fused_svd_qkv_rope_attention_triton(
             H = num_heads
             D_h = D // H
 
-            # Fast fused low-rank projection pass in SRAM using optimized gemm / batched contractions
-            # Latent projections: x @ V -> (B, T, r)
             z_q = torch.matmul(x, V_q.to(x.dtype))
             z_k = torch.matmul(x, V_k.to(x.dtype))
             z_v = torch.matmul(x, V_v.to(x.dtype))
 
-            # Full head projection: z @ U.T -> (B, T, H, D_h)
             q = torch.matmul(z_q, U_q.to(x.dtype).t()).view(B, T, H, D_h).transpose(1, 2)
             k = torch.matmul(z_k, U_k.to(x.dtype).t()).view(B, T, H, D_h).transpose(1, 2)
             v = torch.matmul(z_v, U_v.to(x.dtype).t()).view(B, T, H, D_h).transpose(1, 2)
 
-            # In-place register RoPE rotation
             if cos is not None and sin is not None:
                 c = cos[:, :T, :].unsqueeze(1) if cos.dim() == 3 else cos[:T, :].unsqueeze(0).unsqueeze(0)
                 s = sin[:, :T, :].unsqueeze(1) if sin.dim() == 3 else sin[:T, :].unsqueeze(0).unsqueeze(0)
@@ -1838,7 +1745,6 @@ def fused_svd_gemm_triton(
             return out
         except Exception:
             pass
-    # PyTorch reference
     V_mat = V.t() if V.shape[-1] == x.shape[-1] else V
     U_mat = U.t() if U.shape[-1] == V_mat.shape[1] else U
     out = torch.matmul(torch.matmul(x, V_mat), U_mat)
@@ -1890,9 +1796,6 @@ def fused_svd_lora_sparse_attn_triton(
     return out
 
 
-# =====================================================================
-# Fused HNC Null-Space Projection & Spectral Step Triton Kernel
-# =====================================================================
 
 if HAS_TRITON:
     @triton.jit
@@ -1930,7 +1833,6 @@ if HAS_TRITON:
 
         acc = tl.zeros((BLOCK_M, BLOCK_N), dtype=tl.float32)
 
-        # Loop over K (d_in) tiles for matrix product GradPhi @ Resolvent
         for k_idx in range(0, d_in, BLOCK_K):
             offs_k = k_idx + tl.arange(0, BLOCK_K)
             gp_ptrs = GradPhi_ptr + (offs_m[:, None] * stride_gp_m + offs_k[None, :] * stride_gp_k)
@@ -1944,12 +1846,10 @@ if HAS_TRITON:
 
             acc += tl.dot(gp_tile, res_tile, allow_tf32=True)
 
-        # Load existing W tile
         w_ptrs = W_ptr + (offs_m[:, None] * stride_w_m + offs_n[None, :] * stride_w_k)
         w_mask = (offs_m[:, None] < d_out) & (offs_n[None, :] < d_in)
         w_tile = tl.load(w_ptrs, mask=w_mask, other=0.0).to(tl.float32)
 
-        # Apply flat null-space update in SRAM registers
         out_val = w_tile + eta_scaled * acc
 
         if HAS_RESTORE:
@@ -1957,7 +1857,6 @@ if HAS_TRITON:
             rg_tile = tl.load(rg_ptrs, mask=w_mask, other=0.0).to(tl.float32)
             out_val = out_val - alpha_val * rg_tile
 
-        # Store to HBM
         out_ptrs = Out_ptr + (offs_m[:, None] * stride_out_m + offs_n[None, :] * stride_out_k)
         tl.store(out_ptrs, out_val, mask=w_mask)
 
@@ -2168,13 +2067,7 @@ __all__ = [
 ]
 
 
-# ==============================================================================
-# FLAGSHIP TRITON KERNELS: LOW-RANK, RPCA SPARSE, STRIDED TT, KRONECKER & ENTROPY
-# ==============================================================================
 
-# ------------------------------------------------------------------------------
-# Kernel 1: triton_fused_lowrank_gated_gemm
-# ------------------------------------------------------------------------------
 @triton.autotune(
     configs=[
         triton.Config({"BLOCK_M": 32, "BLOCK_N": 64, "BLOCK_K": 32}, num_stages=3, num_warps=4),
@@ -2390,9 +2283,6 @@ def fused_lowrank_gemm(
     return triton_fused_lowrank_gated_gemm(x, w, u_r, alpha=alpha, b_drift=b_drift)
 
 
-# ------------------------------------------------------------------------------
-# Kernel 2: triton_fused_lowrank_sparse_gemm (RPCA)
-# ------------------------------------------------------------------------------
 @triton.autotune(
     configs=[
         triton.Config({"BLOCK_M": 32, "BLOCK_N": 64, "BLOCK_K": 32}, num_stages=3, num_warps=4),
@@ -2638,9 +2528,6 @@ def triton_fused_lowrank_sparse_gemm(
     return y.view(*orig_shape[:-1], N)
 
 
-# ------------------------------------------------------------------------------
-# Kernel 3: triton_strided_tt_contraction (Tensor-Train)
-# ------------------------------------------------------------------------------
 @triton.autotune(
     configs=[
         triton.Config({"BLOCK_N": 32, "BLOCK_K": 32, "BLOCK_R": 16}, num_stages=2, num_warps=2),
@@ -2809,9 +2696,6 @@ def triton_strided_tt_linear(
     return out.view(*orig_shape[:-1], out_features)
 
 
-# ------------------------------------------------------------------------------
-# Kernel 6: triton_fused_kronecker_matmul
-# ------------------------------------------------------------------------------
 @triton.autotune(
     configs=[
         triton.Config({"BLOCK_M": 16}, num_stages=2, num_warps=2),
@@ -2889,8 +2773,8 @@ def triton_fused_kronecker_matmul_pytorch_ref(
     M2, N2 = B.shape
     out_features = M1 * M2
     X_reshaped = x_2d.view(M, N1, N2)
-    T = torch.matmul(X_reshaped, B.t())  # (M, N1, M2)
-    Y = torch.matmul(T.transpose(1, 2), A.t()).transpose(1, 2)  # (M, M1, M2)
+    T = torch.matmul(X_reshaped, B.t())
+    Y = torch.matmul(T.transpose(1, 2), A.t()).transpose(1, 2)
     Y_flat = Y.reshape(M, out_features)
     if bias is not None:
         Y_flat = Y_flat + bias.to(dtype=Y_flat.dtype, device=Y_flat.device)
@@ -2964,9 +2848,6 @@ def triton_fused_kronecker_matmul(
     return Y.view(*orig_shape[:-1], out_features)
 
 
-# ------------------------------------------------------------------------------
-# Kernel 11: triton_spectral_entropy_svd_gate
-# ------------------------------------------------------------------------------
 @triton.autotune(
     configs=[
         triton.Config({"BLOCK_M": 16, "BLOCK_N": 64}, num_stages=2, num_warps=4),

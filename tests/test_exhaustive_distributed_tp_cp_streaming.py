@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Suite 8: Exhaustive Verification Battery for Distributed Tensor Parallelism, Context Parallelism, and Streaming.
 Expanded to 15+ parameterized tests verifying:
@@ -79,7 +85,6 @@ def test_8_2_streaming_dataset(seq_len):
 def test_8_3_row_and_column_parallel_svd_linear_parity(tp_size, d_in, d_out):
     B, T = 2, 8
     x = torch.randn(B, T, d_in, device=DEVICE)
-    # Column parallel splits d_out across tp_size
     col_layers = [
         ColumnParallelSVDLinear(d_in, d_out, rank=8, tp_size=tp_size, tp_rank=r, bias=False).to(DEVICE)
         for r in range(tp_size)
@@ -89,7 +94,6 @@ def test_8_3_row_and_column_parallel_svd_linear_parity(tp_size, d_in, d_out):
     assert combined_col.shape == (B, T, d_out)
     assert not torch.isnan(combined_col).any()
 
-    # Row parallel splits d_in across tp_size
     chunk_in = d_in // tp_size
     row_layers = [
         RowParallelSVDLinear(d_in, d_out, rank=8, tp_size=tp_size, tp_rank=r, bias=False).to(DEVICE)
@@ -110,7 +114,6 @@ def test_8_4_context_parallel_recurrent_scan_prefix(num_heads, seq_len):
     v = torch.randn(B, H, T, D, device=DEVICE)
     g = torch.sigmoid(torch.randn(B, H, T, D, device=DEVICE))
 
-    # Compute chunk prefix scan
     out, final_state = compute_chunk_prefix_scan(q, k, v, g)
     assert out.shape == (B, H, T, D)
     assert final_state.shape == (B, H, D, D)

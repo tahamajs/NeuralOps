@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Paged Attention Kernel
 
 Executes attention lookups over non-contiguous paged memory blocks for high-throughput KV caching.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -43,13 +47,11 @@ if HAS_TRITON and tl is not None:
         num_blocks = tl.cdiv(seq_len, BLOCK_SIZE)
         offs_d = tl.arange(0, BLOCK_D)
 
-        # Load query vector q: [BLOCK_D]
         q_ptrs = Q_ptr + pid_b * stride_qb + pid_h * stride_qh + offs_d * stride_qd
         q = tl.load(q_ptrs).to(tl.float32)
 
         sm_scale = 1.0 / tl.sqrt(tl.cast(BLOCK_D, tl.float32))
 
-        # Online softmax state in registers
         m_i = -1e4
         l_i = 0.0
         acc = tl.zeros([BLOCK_D], dtype=tl.float32)
@@ -60,7 +62,6 @@ if HAS_TRITON and tl is not None:
             offs_tok = i * BLOCK_SIZE + tl.arange(0, BLOCK_SIZE)
             mask_tok = offs_tok < seq_len
 
-            # Load K block: [BLOCK_SIZE, BLOCK_D]
             k_ptrs = (
                 K_CACHE_ptr
                 + phys_block * stride_kblk
@@ -70,18 +71,15 @@ if HAS_TRITON and tl is not None:
             )
             k = tl.load(k_ptrs, mask=mask_tok[:, None], other=0.0).to(tl.float32)
 
-            # Dot-product scores: [BLOCK_SIZE]
             scores = tl.sum(q[None, :] * k, axis=1) * sm_scale
             scores = tl.where(mask_tok, scores, -1e4)
 
-            # Online softmax update
             m_curr = tl.maximum(m_i, tl.max(scores, axis=0))
             alpha = tl.exp(m_i - m_curr)
             p = tl.exp(scores - m_curr)
             l_curr = l_i * alpha + tl.sum(p, axis=0)
             acc = acc * alpha
 
-            # Load V block: [BLOCK_SIZE, BLOCK_D]
             v_ptrs = (
                 V_CACHE_ptr
                 + phys_block * stride_vblk
@@ -121,21 +119,19 @@ def paged_attention_pytorch(
         num_blocks = (slen + block_size - 1) // block_size
         blocks = block_tables[b, :num_blocks]
 
-        # Gather physical blocks
-        k_blocks = k_cache[blocks]  # [num_blocks, block_size, H, D]
+        k_blocks = k_cache[blocks]
         v_blocks = v_cache[blocks]
 
-        k_flat = k_blocks.view(-1, H, D)[:slen]  # [slen, H, D]
+        k_flat = k_blocks.view(-1, H, D)[:slen]
         v_flat = v_blocks.view(-1, H, D)[:slen]
 
-        # Attention for this sequence: Q is [H, 1, D], K is [H, slen, D]
-        q_b = q[b].unsqueeze(1)  # [H, 1, D]
-        k_b = k_flat.transpose(0, 1)  # [H, slen, D]
-        v_b = v_flat.transpose(0, 1)  # [H, slen, D]
+        q_b = q[b].unsqueeze(1)
+        k_b = k_flat.transpose(0, 1)
+        v_b = v_flat.transpose(0, 1)
 
-        scores = torch.matmul(q_b, k_b.transpose(-2, -1)) * scale  # [H, 1, slen]
+        scores = torch.matmul(q_b, k_b.transpose(-2, -1)) * scale
         weights = F.softmax(scores, dim=-1)
-        res = torch.matmul(weights, v_b).squeeze(1)  # [H, D]
+        res = torch.matmul(weights, v_b).squeeze(1)
         out[b] = res
 
     return out
@@ -180,9 +176,6 @@ def paged_attention_kernel(
     return paged_attention_pytorch(q, k_cache, v_cache, block_tables, seq_lens, block_size=block_size)
 
 
-# ---------------------------------------------------------------------------
-# Paged Recurrent State Step (for Linear RNNs / S4 / Mamba / GLA / GDN)
-# ---------------------------------------------------------------------------
 
 if HAS_TRITON and tl is not None:
     @triton.jit
@@ -207,7 +200,6 @@ if HAS_TRITON and tl is not None:
         pid_b = tl.program_id(0)
         pid_h = tl.program_id(1)
 
-        # Look up physical page index for this sequence
         phys_page = tl.load(BLOCK_TABLE_ptr + pid_b * stride_bt_b + 0 * stride_bt_idx)
 
         offs_d1 = tl.arange(0, BLOCK_D)
@@ -217,7 +209,6 @@ if HAS_TRITON and tl is not None:
         k = tl.load(K_ptr + pid_b * stride_kb + pid_h * stride_kh + offs_d1 * stride_kd)
         v = tl.load(V_ptr + pid_b * stride_vb + pid_h * stride_vh + offs_d2 * stride_vd)
 
-        # Pointers into page pool S matrix: [phys_page, pid_h, offs_d1, offs_d2]
         s_ptrs = (
             PAGE_POOL_ptr
             + phys_page * stride_pp_page
@@ -230,10 +221,8 @@ if HAS_TRITON and tl is not None:
         kv = k[:, None] * v[None, :]
         new_s = s_val * decay + kv
 
-        # Store updated state back to physical page
         tl.store(s_ptrs, new_s)
 
-        # Output = q @ new_s
         out = tl.sum(q[:, None] * new_s, axis=0)
         tl.store(OUT_ptr + pid_b * stride_ob + pid_h * stride_oh + offs_d2 * stride_od, out)
 
@@ -262,15 +251,13 @@ def paged_recurrent_state_step_pytorch(
     """
     B, H, D = q_t.shape
     if block_tables.dim() == 1:
-        phys_pages = block_tables  # [B]
+        phys_pages = block_tables
     else:
-        phys_pages = block_tables[:, page_slot]  # [B]
-    # S: [B, H, D, D]
+        phys_pages = block_tables[:, page_slot]
     S_curr = page_pool[phys_pages]
-    kv = torch.matmul(k_t.unsqueeze(-1), v_t.unsqueeze(-2))  # [B, H, D, D]
+    kv = torch.matmul(k_t.unsqueeze(-1), v_t.unsqueeze(-2))
     S_next = decay * S_curr + kv
     page_pool[phys_pages] = S_next
-    # y: [B, H, D] = sum(q * S, dim=-2)
     y = torch.matmul(q_t.unsqueeze(-2), S_next).squeeze(-2)
     return y
 
@@ -360,7 +347,6 @@ def paged_kv_evict_compact_triton(
     total_tokens, D = k_cache.shape[0], k_cache.shape[-1]
     num_keep = max(1, int(total_tokens * keep_ratio))
 
-    # Fast Top-K selection on GPU
     _, keep_indices = torch.topk(importance_scores, k=num_keep, sorted=True)
     keep_indices = keep_indices.sort().values.contiguous()
 

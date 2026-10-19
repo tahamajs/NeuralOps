@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Low-Rank SVD Gated GEMM Autograd Interface
 
 Hardware-accelerated CUDA C++ autograd implementation with analytical gradients and three-level fallback dispatch.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -89,7 +93,6 @@ class _FusedLowRankGatedGemmFunction(torch.autograd.Function):
         x, V, U, a_arg = ctx.saved_tensors
         dout = dout.contiguous()
 
-        # Fast analytical adjoint gradients using WMMA Tensor Cores
         dz = torch.matmul(dout, U)
         sig = None
         if ctx.has_alpha:

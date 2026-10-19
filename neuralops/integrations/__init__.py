@@ -1,7 +1,11 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 NeuralOps Integrations Subpackage.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -80,7 +84,6 @@ __all__ = [
 from neuralops.integrations.compressed_tensors import CompressedTensorsExporter
 from neuralops.integrations.vllm_plugin import NeuralOpsLinearMethod, register_neuralops_linear_method
 
-# Auto-wired package members
 from neuralops.integrations import compressed_tensors
 from neuralops.integrations import distributed_compile
 from neuralops.integrations import hf_automodel

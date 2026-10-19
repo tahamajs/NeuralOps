@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Tests verifying the 8 critical benchmark bugfixes."""
 
 import json
@@ -82,7 +88,6 @@ def test_dual_format_logging_to_disk():
         logger.info("Test log line 1")
         logger.info("Test log line 2")
 
-        # Flush handlers
         for h in logger.handlers:
             h.flush()
 
@@ -99,7 +104,6 @@ def test_dual_format_logging_to_disk():
         assert entry["module"] == "test_module"
         assert entry["message"] == "Test log line 1"
 
-        # Explicitly close and clear handlers so Windows releases file handles before tmpdir cleanup
         for h in list(logger.handlers):
             h.close()
             logger.removeHandler(h)
@@ -107,7 +111,6 @@ def test_dual_format_logging_to_disk():
 
 def test_executor_timeout_enforcement():
     """Bug 2: Verify executor handles timeouts properly."""
-    # Test unknown module fails with clear error
     res = execute_single(module="non_existent_module_xyz", timeout_s=1)
     assert res.status == "failed"
     assert "ModuleNotFoundError" in res.error

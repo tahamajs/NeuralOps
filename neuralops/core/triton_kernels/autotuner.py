@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Triton Kernel Autotuner
 
 Adaptive configuration manager and SRAM-budget autotuner optimizing tile sizes across GPU architectures.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -65,7 +69,6 @@ def get_safe_autotune_configs(
     if profile is None:
         profile = get_device_hardware_profile(device)
 
-    # 1. Determine element byte width
     if dtype in (torch.float16, torch.bfloat16):
         dtype_bytes = 2
     elif dtype == torch.float32:
@@ -75,16 +78,12 @@ def get_safe_autotune_configs(
     else:
         dtype_bytes = 2
 
-    # 2. Maximum allowable shared memory per block (85% safety margin)
     sram_budget = int(profile.max_shared_memory_bytes * 0.85) if profile.max_shared_memory_bytes > 0 else 49152
 
-    # SM 7.0 / 7.5 tight threshold (strict 48 KB limit)
     if profile.sm_major == 7 or (dtype_bytes == 4 and head_dim >= 128):
         sram_budget = min(sram_budget, 49152)
 
-    # 3. Default base configurations if none provided
     if base_configs is None:
-        # Standard configuration ladder
         base_configs = [
             {"BLOCK_M": 128, "BLOCK_N": 64, "num_warps": 4, "num_stages": 3},
             {"BLOCK_M": 64, "BLOCK_N": 64, "num_warps": 4, "num_stages": 2},
@@ -102,7 +101,6 @@ def get_safe_autotune_configs(
         stages = cfg.get("num_stages", 2)
         warps = cfg.get("num_warps", 4)
 
-        # On SM 7.x, limit stages to 1 or 2
         if profile.sm_major == 7:
             stages = min(stages, 2)
             if bm > 64:
@@ -125,13 +123,11 @@ def get_safe_autotune_configs(
             clean_cfg["num_stages"] = stages
             clean_cfg["num_warps"] = warps
 
-            # AMD ROCm wavefront adjustments
             if profile.backend == "rocm":
                 clean_cfg["waves_per_eu"] = 2
 
             safe_configs.append(clean_cfg)
 
-    # 4. Ultra-conservative guarantee fallback
     if not safe_configs:
         safe_configs.append(
             {
@@ -164,13 +160,11 @@ class Autotuner:
 
         for cfg in configs:
             try:
-                # Warmup
                 for _ in range(self.warmup):
                     fn(cfg)
                 if torch.cuda.is_available():
                     torch.cuda.synchronize()
 
-                # Timing
                 start = time.perf_counter()
                 for _ in range(self.rep):
                     fn(cfg)
@@ -222,35 +216,29 @@ def select_optimal_triton_config(
     profile = get_device_hardware_profile(device)
     sm_major = profile.sm_major
 
-    # 1. Tile sizing based on token / sequence dimension M
     if M <= 128:
-        # Latency-sensitive small batch / decoding mode
         block_m = 32 if M <= 64 else 64
         block_n = 32 if N <= 64 else 64
         block_k = 32
         warps = 2 if M <= 32 else 4
         stages = 2
     elif M <= 1024:
-        # Standard medium-length sequence chunk
         block_m = 64
         block_n = 64
         block_k = 32
         warps = 4
         stages = 3 if sm_major >= 8 else 2
     else:
-        # Large context / high throughput mode
         block_m = 128 if sm_major >= 8 else 64
         block_n = 64
         block_k = 32
         warps = 8 if (sm_major >= 8 and block_m >= 128) else 4
         stages = 3 if sm_major >= 8 else 2
 
-    # Respect physical shared memory budget
     sram_budget = int(profile.max_shared_memory_bytes * 0.85) if profile.max_shared_memory_bytes > 0 else 49152
     if sm_major <= 7:
         sram_budget = min(sram_budget, 49152)
 
-    # In GEMM, the live K tile resident in SRAM per stage is block_k, not full tensor K!
     k_tile = min(K, block_k)
     est_sram = estimate_kernel_sram_bytes(block_m, block_n, k_tile, dtype_bytes, stages)
     while est_sram > sram_budget and (block_m > 16 or block_n > 16 or stages > 1):

@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 SUITE 1: Exhaustive Micro-Level & Algebraic Invariant Test Suite for All 131 Attention Mechanisms.
 
@@ -37,11 +43,9 @@ def test_1_1_multi_signature_instantiation(attn_name):
     """Test 1.1: Instantiation via class, factory, and config across non-standard dimensions."""
     cls = ATTENTION_REGISTRY.get(attn_name)
     
-    # 1. Direct call with dim & num_heads
     m1 = cls(dim=128, num_heads=4)
     assert m1 is not None
 
-    # 2. Config object call
     cfg = SimpleNamespace(
         hidden_size=192,
         num_attention_heads=6,
@@ -96,7 +100,6 @@ def test_1_3_strict_causal_non_leakage(attn_name):
     B, T, D = 1, 16, 64
     x1 = torch.randn(B, T, D, device=device)
     x2 = x1.clone()
-    # Corrupt future tokens heavily
     x2[:, 8:, :] += 100.0 * torch.randn_like(x2[:, 8:, :])
 
     def forward_causal(m, inp):
@@ -157,7 +160,6 @@ def test_1_5_padding_mask_invariance(attn_name):
 
     B, T, D = 1, 16, 64
     x = torch.randn(B, T, D, device=device)
-    # Mask out last 4 tokens
     mask_2d = torch.ones(B, T, device=device)
     mask_2d[:, 12:] = 0.0
 
@@ -167,7 +169,6 @@ def test_1_5_padding_mask_invariance(attn_name):
             out = out[0]
         assert not torch.isnan(out[:, :12, :]).any(), f"{attn_name}: NaNs produced in valid unmasked tokens!"
     except TypeError:
-        # Module might accept mask via keyword
         pass
     except NotImplementedError:
         pass

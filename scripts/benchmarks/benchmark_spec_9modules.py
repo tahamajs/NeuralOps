@@ -1,6 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Benchmark spec 9modules module.
-
-Author: Taha Majlesi
 """
 
 import sys
@@ -33,12 +37,11 @@ def benchmark(fn, warmup=10, iters=50):
     end_event.record()
     torch.cuda.synchronize()
 
-    return start_event.elapsed_time(end_event) / iters  # ms
+    return start_event.elapsed_time(end_event) / iters
 
 
 rows = []
 
-# 1. fwht_transform
 from neuralops.core.cuda_kernels.fwht_transform import fwht_transform, fwht_transform_pytorch_ref
 
 x_fwht = torch.randn(64, 512, device=device, dtype=torch.float16)
@@ -52,7 +55,6 @@ diff_1 = (out_cuda_1.float() - out_ref_1.float()).abs().max().item()
 sp_1 = ref_ms_1 / cuda_ms_1 if cuda_ms_1 > 0 else 0
 rows.append(("fwht_transform", cuda_ms_1, ref_ms_1, sp_1, diff_1))
 
-# 2. unified_rope_offset
 from neuralops.core.cuda_kernels.unified_rope_offset import unified_rope_offset
 
 B, H, N, D = 8, 16, 128, 64
@@ -69,7 +71,6 @@ diff_2 = (out_cuda_2 - out_ref_2).abs().max().item()
 sp_2 = ref_ms_2 / cuda_ms_2 if cuda_ms_2 > 0 else 0
 rows.append(("unified_rope_offset", cuda_ms_2, ref_ms_2, sp_2, diff_2))
 
-# 3. moe_routing
 from neuralops.core.cuda_kernels.moe_routing import moe_dispatch_gather
 
 B_moe, D_moe = 128, 256
@@ -86,7 +87,6 @@ diff_3 = (out_cuda_3.float() - out_ref_3.float()).abs().max().item()
 sp_3 = ref_ms_3 / cuda_ms_3 if cuda_ms_3 > 0 else 0
 rows.append(("moe_routing", cuda_ms_3, ref_ms_3, sp_3, diff_3))
 
-# 4. split_head_norm
 from neuralops.core.cuda_kernels.split_head_norm import split_head_norm, split_head_norm_pytorch_ref
 
 x_shn = torch.randn(256, 128, device=device, dtype=torch.float32)
@@ -101,7 +101,6 @@ diff_4 = (out_cuda_4 - out_ref_4).abs().max().item()
 sp_4 = ref_ms_4 / cuda_ms_4 if cuda_ms_4 > 0 else 0
 rows.append(("split_head_norm", cuda_ms_4, ref_ms_4, sp_4, diff_4))
 
-# 5. paged_attention
 from neuralops.core.cuda_kernels.paged_attention import paged_attention, paged_attention_pytorch_reference
 
 num_seqs, num_heads, num_kv_heads, head_dim, block_sz, max_blocks = 16, 16, 4, 64, 16, 16
@@ -132,7 +131,6 @@ diff_5 = (out_cuda_5 - out_ref_5).abs().max().item()
 sp_5 = ref_ms_5 / cuda_ms_5 if cuda_ms_5 > 0 else 0
 rows.append(("paged_attention", cuda_ms_5, ref_ms_5, sp_5, diff_5))
 
-# 6. fused_dropout_add
 from neuralops.core.cuda_kernels.fused_dropout_add import fused_dropout_add, fused_dropout_add_pytorch_ref
 
 x_da = torch.randn(128, 512, device=device, dtype=torch.float32)
@@ -147,7 +145,6 @@ diff_6 = (out_cuda_6 - out_ref_6).abs().max().item()
 sp_6 = ref_ms_6 / cuda_ms_6 if cuda_ms_6 > 0 else 0
 rows.append(("fused_dropout_add", cuda_ms_6, ref_ms_6, sp_6, diff_6))
 
-# 7. fused_ce
 from neuralops.core.cuda_kernels.fused_ce import fused_cross_entropy, fused_cross_entropy_pytorch_ref
 
 logits_ce = torch.randn(64, 1024, device=device, dtype=torch.float32)
@@ -162,7 +159,6 @@ diff_7 = (out_cuda_7 - out_ref_7).abs().item()
 sp_7 = ref_ms_7 / cuda_ms_7 if cuda_ms_7 > 0 else 0
 rows.append(("fused_ce", cuda_ms_7, ref_ms_7, sp_7, diff_7))
 
-# 8. logcumsumexp
 from neuralops.core.cuda_kernels.logcumsumexp import logcumsumexp, logcumsumexp_pytorch_ref
 
 x_lcse = torch.randn(64, 128, device=device, dtype=torch.float32)
@@ -176,7 +172,6 @@ diff_8 = (out_cuda_8 - out_ref_8).abs().max().item()
 sp_8 = ref_ms_8 / cuda_ms_8 if cuda_ms_8 > 0 else 0
 rows.append(("logcumsumexp", cuda_ms_8, ref_ms_8, sp_8, diff_8))
 
-# 9. fused_norm_linear
 from neuralops.core.cuda_kernels.fused_norm_linear import fused_norm_linear, fused_norm_linear_pytorch_ref
 
 M_fnl, K_fnl, N_fnl = 64, 256, 128

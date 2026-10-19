@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Normalization Layer Implementations
 
 Layer normalization and RMSNorm layers with optional fused Triton acceleration and scale calibration.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations

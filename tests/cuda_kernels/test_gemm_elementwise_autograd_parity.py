@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Exhaustive Forward and Backward Autograd Parity and Speed Verification Suite
 Target: 15 GEMM decomposition and elementwise kernels on SM 8.9 (RTX 4070 Laptop GPU):
@@ -55,7 +61,6 @@ def assert_parity(actual: torch.Tensor, expected: torch.Tensor, tol: float = 0.0
     assert_clean(actual, name)
     diff = (actual.float() - expected.float()).abs().max().item()
     if diff > tol:
-        # Check relative diff
         rel_diff = ((actual.float() - expected.float()).abs() / (expected.float().abs() + 1e-4)).max().item()
         assert rel_diff < 0.10 or diff < 0.05, f"{name} parity failed: max_diff={diff:.6e}, rel_diff={rel_diff:.6e} > tol={tol}"
 

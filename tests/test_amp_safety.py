@@ -1,3 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 import pytest
 import torch
 import torch.nn as nn
@@ -10,14 +17,12 @@ def test_safe_amp_math_numerical_stability():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     device_type = "cuda" if device.type == "cuda" else "cpu"
 
-    # 1. Denominator safety under near-zero and extreme values
     near_zero = torch.tensor([0.0, 1e-9, -1e-8, 1e-5], device=device)
     safe_denom = safe_linear_attn_denominator(near_zero, eps=1e-5, floor_val=1e-4)
     assert not torch.isnan(safe_denom).any()
     assert not torch.isinf(safe_denom).any()
     assert (safe_denom.abs() >= 1e-4).all()
 
-    # 2. SVD with AMP enabled
     with torch.amp.autocast(device_type=device_type, enabled=True):
         mat = torch.randn(32, 32, device=device, dtype=torch.float16 if device_type == "cuda" else torch.float32)
         U, S, Vh = safe_svd(mat)
@@ -25,10 +30,6 @@ def test_safe_amp_math_numerical_stability():
         assert not torch.isnan(S).any()
         assert not torch.isnan(Vh).any()
 
-    # 3. Cholesky with AMP enabled — use a fresh seeded float32 matrix guaranteed
-    # to be PSD (M @ M.T + eps * I) regardless of global CUDA state from prior tests.
-    # Running in torch.no_grad + fp32 construction prevents test-order flakiness on
-    # Pascal (SM 6.1) where FP16 dynamic range causes ill-conditioned gram matrices.
     with torch.no_grad():
         gen = torch.Generator(device=device)
         gen.manual_seed(42)
@@ -37,7 +38,6 @@ def test_safe_amp_math_numerical_stability():
 
     with torch.amp.autocast(device_type=device_type, enabled=True):
         L = safe_cholesky(A_fp32)
-        # Cast to fp32 before NaN check: valid FP16 denormals should not be misread.
         assert not torch.isnan(L.float()).any()
 
 
@@ -52,7 +52,6 @@ def test_cosformer_long_seq_extreme_fp16():
     ).to(device)
     attn.eval()
 
-    # Stress test: T = 2048, scaled by 5.0 in FP16 to challenge dynamic range
     B, N, D = 1, 2048, 64
     x = (torch.randn(B, N, D, device=device) * 5.0)
 

@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -5,16 +12,6 @@
 
 namespace neuralops { namespace cuda {
 
-// Spectral Shrinkage (Complex Soft-Thresholding) Kernel:
-// Form: z = x_re + i * x_im, w = w_re + i * w_im
-//       s = z * w = (x_re * w_re - x_im * w_im) + i * (x_re * w_im + x_im * w_re)
-//       shrink(s, tau) = s * max(0, 1 - tau / (|s| + eps))
-//
-// Hardware-level optimization:
-// 1. 128-bit float4 vectorized global memory loads & stores.
-// 2. Fused complex arithmetic: Complex product and phase reconstruction fused directly in registers.
-// 3. Division-by-zero protection: Guarded with eps = 1e-12f and branchless fmaxf.
-// 4. Strict FP32 intermediate accumulation for transcendental operations (sqrtf, expf).
 template <typename scalar_t>
 __global__ void __launch_bounds__(256) spectral_shrinkage_vectorized_kernel(
     scalar_t* __restrict__ y_re,
@@ -80,7 +77,6 @@ __global__ void __launch_bounds__(256) spectral_shrinkage_vectorized_kernel(
         }
     }
 
-    // Remainder loop
     const int rem_start = num_vec * 4;
     for (int idx = rem_start + tid; idx < total_elements; idx += stride) {
         const float xr = to_float(x_re[idx]);
@@ -100,7 +96,7 @@ __global__ void __launch_bounds__(256) spectral_shrinkage_vectorized_kernel(
     }
 }
 
-}} // namespace neuralops::cuda
+}}
 
 std::vector<torch::Tensor> spectral_shrinkage_fwd(
     const torch::Tensor& x_re,

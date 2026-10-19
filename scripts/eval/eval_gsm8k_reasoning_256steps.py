@@ -1,6 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Eval gsm8k reasoning 256steps module.
-
-Author: Taha Majlesi
 """
 
 import gc
@@ -23,7 +27,6 @@ model_path = "/mnt/d/models/gpt2"
 tokenizer = AutoTokenizer.from_pretrained(model_path)
 tokenizer.pad_token = tokenizer.eos_token
 
-# 4 Diverse GSM8K-style multi-step arithmetic reasoning problems
 gsm8k_prompts = [
     {
         "id": "gsm8k_01",
@@ -150,10 +153,8 @@ for p_data in gsm8k_prompts:
         gen_text = tokenizer.decode(gen_tokens, skip_special_tokens=True).strip()
         first_emitted_token = tokenizer.decode(gen_tokens[:2], skip_special_tokens=True).strip()
 
-        # Check numerical accuracy (first tokens match expected target number)
         is_exact_number = p_target in first_emitted_token or p_target in gen_text[:20]
 
-        # Intermediate numerical token drift check (is there any exploding loss / NaN)
         zero_drift = (not nan_detected) and (not inf_detected)
 
         print_log(

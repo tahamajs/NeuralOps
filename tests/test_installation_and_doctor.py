@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Comprehensive tests for post-installation environment integrity, verification,
 and system diagnostics (doctor & installation checkers).
@@ -42,7 +48,6 @@ def test_flagship_fla_aliases_available():
     for alias in ["pgdn", "gdn2", "delta_product"]:
         attn_cls = ATTENTION_REGISTRY.get(alias)
         assert attn_cls is not None, f"Alias '{alias}' should resolve in ATTENTION_REGISTRY"
-        # Test basic instantiation
         instance = attn_cls(dim=128, num_heads=4)
         assert isinstance(instance, torch.nn.Module)
 

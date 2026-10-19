@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Transformer Model Utilities
 
 Model loading, parameter freezing, weight inspection, and buffer verification helper functions.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -35,9 +39,6 @@ def run_calibration_forward(
     return model
 
 
-# ------------------------------------------------------------------ #
-# Weight‑copying for attention modules
-# ------------------------------------------------------------------ #
 ATTENTION_WEIGHT_MAP = {
     "query": ["q_lin", "q_proj", "query"],
     "key": ["k_lin", "k_proj", "key"],
@@ -117,7 +118,6 @@ def count_parameters(model: nn.Module, trainable_only: bool = False) -> int:
     return sum(p.numel() for p in model.parameters())
 
 
-# Alias for backward-compatibility with core lazy imports
 count_params = count_parameters
 
 
@@ -159,9 +159,6 @@ def activation_hooks(
             hook.remove()
 
 
-# ------------------------------------------------------------------ #
-# Decoder and return format detection helpers
-# ------------------------------------------------------------------ #
 def detect_decoder(
     config: Any = None,
     is_decoder: bool | None = None,
@@ -220,6 +217,5 @@ def detect_return_format(source_attn: nn.Module | None, is_nested_encoder: bool)
     return "llama"
 
 
-# Backward compatibility aliases
 _detect_decoder = detect_decoder
 _detect_return_format = detect_return_format

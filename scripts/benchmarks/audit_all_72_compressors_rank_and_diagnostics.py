@@ -1,6 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Audit all 72 compressors rank and diagnostics module.
-
-Author: Taha Majlesi
 """
 
 import torch
@@ -50,7 +54,6 @@ for name in sorted(list(COMPRESSOR_REGISTRY.keys())):
     }
 
     try:
-        # Test rank 8
         m8 = TinyTransformer(64)
         m8_orig = copy.deepcopy(m8)
         x = torch.randn(2, 64)
@@ -87,7 +90,6 @@ for name in sorted(list(COMPRESSOR_REGISTRY.keys())):
         err8 = (torch.norm(y8 - y_orig) / torch.norm(y_orig)).item()
         w8 = get_weights(m8)
 
-        # Test rank 32
         m32 = TinyTransformer(64)
         c32 = None
         for init_call in [
@@ -116,11 +118,10 @@ for name in sorted(list(COMPRESSOR_REGISTRY.keys())):
         err32 = (torch.norm(y32 - y_orig) / torch.norm(y_orig)).item()
         w32 = get_weights(m32)
 
-        # Check divergence
         if w8.shape == w32.shape:
             w_diff = torch.norm(w8 - w32).item()
         else:
-            w_diff = 999.0  # structural parameter count change
+            w_diff = 999.0
 
         entry["err_r8"] = round(err8, 4)
         entry["err_r32"] = round(err32, 4)

@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <cuda_runtime.h>
 #include <torch/extension.h>
 #include <c10/cuda/CUDAStream.h>
@@ -6,11 +13,11 @@
 
 __launch_bounds__(1024)
 __global__ void w4a16_gemm_tiled_kernel(
-    float* __restrict__ out,              // [M, N]
-    const float* __restrict__ A,          // [M, K]
-    const uint8_t* __restrict__ W_q,      // [K, N / 2] packed int4
-    const float* __restrict__ scales,     // [K / group_size, N]
-    const float* __restrict__ zeros,      // [K / group_size, N]
+    float* __restrict__ out,
+    const float* __restrict__ A,
+    const uint8_t* __restrict__ W_q,
+    const float* __restrict__ scales,
+    const float* __restrict__ zeros,
     const int M,
     const int N,
     const int K,
@@ -32,7 +39,6 @@ __global__ void w4a16_gemm_tiled_kernel(
     for (int t = 0; t < num_k_tiles; ++t) {
         const int k_tile_start = t * 32;
 
-        // Load A into A_smem
         const int a_k = k_tile_start + tx;
         if (row < M && a_k < K) {
             A_smem[ty][tx] = A[row * K + a_k];
@@ -40,7 +46,6 @@ __global__ void w4a16_gemm_tiled_kernel(
             A_smem[ty][tx] = 0.0f;
         }
 
-        // Unpack and dequantize W into W_smem
         const int w_k = k_tile_start + ty;
         if (col < N && w_k < K) {
             const int packed_col = col / 2;
@@ -71,11 +76,11 @@ __global__ void w4a16_gemm_tiled_kernel(
 
 __launch_bounds__(1024)
 __global__ void w4a16_gemm_bwd_tiled_kernel(
-    float* __restrict__ dA,               // [M, K]
-    const float* __restrict__ dout,       // [M, N]
-    const uint8_t* __restrict__ W_q,      // [K, N / 2] packed int4
-    const float* __restrict__ scales,     // [K / group_size, N]
-    const float* __restrict__ zeros,      // [K / group_size, N]
+    float* __restrict__ dA,
+    const float* __restrict__ dout,
+    const uint8_t* __restrict__ W_q,
+    const float* __restrict__ scales,
+    const float* __restrict__ zeros,
     const int M,
     const int N,
     const int K,
@@ -87,8 +92,8 @@ __global__ void w4a16_gemm_bwd_tiled_kernel(
     const int tx = threadIdx.x;
     const int ty = threadIdx.y;
 
-    const int row = blockIdx.y * 32 + ty; // row in M
-    const int col_k = blockIdx.x * 32 + tx; // col in K
+    const int row = blockIdx.y * 32 + ty;
+    const int col_k = blockIdx.x * 32 + tx;
 
     float acc = 0.0f;
     const int num_n_tiles = (N + 31) / 32;
@@ -96,7 +101,6 @@ __global__ void w4a16_gemm_bwd_tiled_kernel(
     for (int t = 0; t < num_n_tiles; ++t) {
         const int n_tile_start = t * 32;
 
-        // Load dout into DO_smem
         const int do_n = n_tile_start + tx;
         if (row < M && do_n < N) {
             DO_smem[ty][tx] = dout[row * N + do_n];
@@ -104,7 +108,6 @@ __global__ void w4a16_gemm_bwd_tiled_kernel(
             DO_smem[ty][tx] = 0.0f;
         }
 
-        // Dequantize W and store transposed in WT_smem: WT[ty][tx] corresponds to W[col_k, n_tile_start + ty]
         const int w_n = n_tile_start + ty;
         if (col_k < K && w_n < N) {
             const int packed_col = w_n / 2;

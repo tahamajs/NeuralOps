@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Sliding Window Attention
 
 Local windowed self-attention restricting receptive field to local bands for linear complexity.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -39,12 +43,10 @@ if HAS_TRITON and tl is not None:
         q_ptrs = Q + i_b * stride_qb + i_h * stride_qh + offs_m[:, None] * stride_qn + offs_d[None, :] * stride_qd
         q = tl.load(q_ptrs, mask=offs_m[:, None] < N, other=0.0)
 
-        # Online softmax state
         m_i = tl.full([BLOCK_M], -1e4, dtype=tl.float32)
         l_i = tl.zeros([BLOCK_M], dtype=tl.float32)
         acc = tl.zeros([BLOCK_M, BLOCK_D], dtype=tl.float32)
 
-        # Iterate over key blocks within window
         start_col = tl.maximum(0, (pid_m * BLOCK_M) - WINDOW)
         if IS_CAUSAL:
             end_col = tl.minimum(N, (pid_m + 1) * BLOCK_M)
@@ -135,10 +137,8 @@ if HAS_TRITON and tl is not None:
         q = tl.load(q_ptrs, mask=offs_m[:, None] < N, other=0.0)
         do = tl.load(do_ptrs, mask=offs_m[:, None] < N, other=0.0)
 
-        # Scale factor
         sm_scale = 1.0 / tl.sqrt(tl.cast(BLOCK_D, tl.float32))
 
-        # Recompute softmax denominator for query tile
         m_i = tl.full([BLOCK_M], -1e4, dtype=tl.float32)
         l_i = tl.zeros([BLOCK_M], dtype=tl.float32)
 
@@ -162,7 +162,6 @@ if HAS_TRITON and tl is not None:
             l_i = l_i * alpha + tl.sum(p, 1)
             m_i = m_curr
 
-        # Gradient accumulator for Q
         dq = tl.zeros([BLOCK_M, BLOCK_D], dtype=tl.float32)
 
         for j in range(num_k_blocks):
@@ -172,7 +171,6 @@ if HAS_TRITON and tl is not None:
             k = tl.load(k_ptrs, mask=offs_n[:, None] < N, other=0.0)
             v = tl.load(v_ptrs, mask=offs_n[:, None] < N, other=0.0)
 
-            # Recompute P_ij
             scores = tl.dot(q, tl.trans(k)) * sm_scale
             dist = offs_m[:, None] - offs_n[None, :]
             mask_window = (dist >= 0) & (dist < WINDOW) & (offs_m[:, None] < N) & (offs_n[None, :] < N)
@@ -180,7 +178,6 @@ if HAS_TRITON and tl is not None:
             p = tl.exp(scores - m_i[:, None]) / tl.maximum(l_i[:, None], 1e-6)
             p = tl.where(mask_window, p, 0.0)
 
-            # dv += P^T @ DO
             dp = tl.dot(do, tl.trans(v))
             ds = p * (dp - tl.sum(p * dp, 1)[:, None]) * sm_scale
             dq += tl.dot(ds.to(k.dtype), k)
@@ -310,9 +307,6 @@ sliding_window_triton = sliding_window_attention_kernel
 sliding_window_attention = sliding_window_attention_kernel
 
 
-# ═══════════════════════════════════════════════════════════════════
-#  Sink Attention: Fused Sink & Rolling KV-Cache Pruning Kernel
-# ═══════════════════════════════════════════════════════════════════
 
 if HAS_TRITON:
     @triton.jit
@@ -335,15 +329,12 @@ if HAS_TRITON:
         stride_oposb, stride_oposn,
         BLOCK_D: tl.constexpr,
     ):
-        pid_w = tl.program_id(0)   # target token slot in [0, W)
-        pid_bh = tl.program_id(1)  # b * H + h
+        pid_w = tl.program_id(0)
+        pid_bh = tl.program_id(1)
 
         b = pid_bh // H
         h = pid_bh % H
 
-        # Map target slot to source token index
-        # [0, S) -> [0, S)
-        # [S, W) -> [N_in - (W - S), N_in)
         if pid_w < S:
             src_n = pid_w
         else:
@@ -352,19 +343,16 @@ if HAS_TRITON:
         offs_d = tl.arange(0, BLOCK_D)
         mask_d = offs_d < d
 
-        # Copy K
         k_in_offs = b * stride_kb + h * stride_kh + src_n * stride_kn + offs_d * stride_kd
         k_val = tl.load(k_in_ptr + k_in_offs, mask=mask_d, other=0.0)
         k_out_offs = b * stride_okb + h * stride_okh + pid_w * stride_okn + offs_d * stride_okd
         tl.store(k_out_ptr + k_out_offs, k_val, mask=mask_d)
 
-        # Copy V
         v_in_offs = b * stride_kb + h * stride_kh + src_n * stride_kn + offs_d * stride_kd
         v_val = tl.load(v_in_ptr + v_in_offs, mask=mask_d, other=0.0)
         v_out_offs = b * stride_okb + h * stride_okh + pid_w * stride_okn + offs_d * stride_okd
         tl.store(v_out_ptr + v_out_offs, v_val, mask=mask_d)
 
-        # Only first head writes positions once
         if h == 0 and pid_bh == (b * H):
             pos_val = tl.load(pos_in_ptr + b * stride_posb + src_n * stride_posn)
             tl.store(pos_out_ptr + b * stride_oposb + pid_w * stride_oposn, pos_val)
@@ -434,9 +422,6 @@ def fused_sink_rolling_cache_triton(
 
 
 
-# ---------------------------------------------------------------------------
-# Fused Token Importance Top-K (TokenCompressedAttention)
-# ---------------------------------------------------------------------------
 def fused_token_importance_topk_pytorch(
     x: torch.Tensor,
     q: torch.Tensor,
@@ -592,14 +577,11 @@ def fused_sink_sliding_window_linear_hybrid_pytorch(
     B, H, L, D = q.shape
     scale = 1.0 / math.sqrt(D)
 
-    # 1. Exact Softmax on Sink (tokens 0..sink_tokens-1) + Sliding Window (t - window_size .. t)
     scores = torch.matmul(q, k.transpose(-2, -1).contiguous()) * scale
     q_idx = torch.arange(L, device=q.device).unsqueeze(1)
     k_idx = torch.arange(L, device=q.device).unsqueeze(0)
 
-    # Sink mask: first `sink_tokens` tokens always visible
     sink_mask = k_idx < sink_tokens
-    # Local window mask
     window_mask = (q_idx >= k_idx) & ((q_idx - k_idx) < window_size) if is_causal else (q_idx - k_idx).abs() < window_size
     active_mask = sink_mask | window_mask
 
@@ -607,12 +589,10 @@ def fused_sink_sliding_window_linear_hybrid_pytorch(
     attn_weights = torch.softmax(scores.float(), dim=-1).to(v.dtype)
     out_local = torch.matmul(attn_weights, v)
 
-    # 2. Linear feature state for long-range distant tokens
     phi_q = F.elu(q.float()) + 1.0
     phi_k = F.elu(k.float()) + 1.0
     v_f = v.float()
 
-    # Inter-chunk / causal linear attention for distant context
     causal_dist = (q_idx >= k_idx) & ~active_mask
     dist_scores = causal_dist.float().unsqueeze(0).unsqueeze(0)
     linear_attn_weights = (torch.matmul(phi_q, phi_k.transpose(-2, -1)) * dist_scores)
@@ -637,9 +617,7 @@ def fused_sink_sliding_window_linear_hybrid_triton(
         try:
             suitable, _ = check_triton_suitability(q, "sliding_window", head_dim=q.shape[-1], seq_len=q.shape[-2])
             if suitable and is_causal:
-                # Accelerate local sliding window tokens with Triton compiled kernel
                 sw_out = sliding_window_triton(q, k, v, window_size=window_size)
-                # Compute sink tokens prefix and blend
                 if sink_tokens > 0 and q.shape[-2] > sink_tokens:
                     q_s = q[:, :, :sink_tokens, :]
                     k_s = k[:, :, :sink_tokens, :]
@@ -689,7 +667,6 @@ if HAS_TRITON and tl is not None:
         l_i = tl.zeros([BLOCK_M], dtype=tl.float32)
         acc = tl.zeros([BLOCK_M, BLOCK_D], dtype=tl.float32)
 
-        # Branch 1: Initial Sink Tokens
         if SINK_TOKENS > 0:
             offs_sink = tl.arange(0, SINK_TOKENS)
             k_sink_ptrs = K_ptr + i_b * stride_kb + i_h * stride_kh + offs_sink[None, :] * stride_kn + offs_d[:, None] * stride_kd
@@ -707,7 +684,6 @@ if HAS_TRITON and tl is not None:
             acc = acc * alpha[:, None] + tl.dot(p_sink.to(v_sink.dtype), v_sink)
             m_i = m_curr
 
-        # Branch 2: Sliding Window Local Tokens
         start_col = tl.maximum(SINK_TOKENS, (pid_m * BLOCK_M) - WINDOW)
         end_col = tl.minimum(N, (pid_m + 1) * BLOCK_M)
         num_k_blocks = tl.cdiv(end_col - start_col, BLOCK_N)

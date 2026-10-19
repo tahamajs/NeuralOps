@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Hydra Multi-Head Linear Attention
 
 Multi-head linear attention mechanism combining linear RNN state mixing with sub-quadratic complexity.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -207,7 +211,6 @@ class TritonHydraAttentionFunction(torch.autograd.Function):
         k_c = k_4d.contiguous()
         v_c = v_4d.contiguous()
 
-        # Compute per-head global KV state: S [B, H, D]
         s_vec = (k_c.float() * v_c.float()).mean(dim=2).to(q_c.dtype).contiguous()
         out_4d = torch.empty_like(q_c)
 
@@ -233,7 +236,6 @@ class TritonHydraAttentionFunction(torch.autograd.Function):
         B, H, L, D = q.shape
         dout_c = dout.view(B, H, L, D).contiguous()
 
-        # T = sum_{t=1}^L (dout * q) [B, H, D]
         t_vec = (dout_c.float() * q.float()).sum(dim=2).to(dout_c.dtype).contiguous()
 
         dq = torch.empty_like(q)

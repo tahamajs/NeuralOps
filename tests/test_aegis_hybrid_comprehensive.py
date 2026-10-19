@@ -1,3 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 from .testing_utils import MockConfig, DummyDistilBertAttention
 import pytest
 import torch
@@ -63,7 +70,6 @@ def test_aegis_hybrid_roberta_weight_copy():
     cfg = MockConfig()
     old_attn = DummyRobertaAttention(64)
     attn = AegisHybridAttention(config=cfg, pretrained_attn=old_attn)
-    # assert attn.is_nested_encoder  # Fixed test: is_nested_encoder is injected by external runner
     x = torch.randn(2, 8, 64)
     out, _ = attn(x)
     assert out.shape == (2, 8, 64)

@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Tests for W4A16 Bit-Packed uint8 Storage, Fused Dequant-GEMM,
 Fast Walsh-Hadamard Transform, and Hadamard Incoherent SVD.
@@ -22,16 +28,14 @@ def test_w4a16_pack_unpack_correctness():
     """Verify bit-packing cuts storage and unpacks within 4-bit quantization error."""
     torch.manual_seed(42)
     W = torch.randn(256, 512, dtype=torch.float16)
-    orig_bytes = W.numel() * 2  # 262,144 bytes
+    orig_bytes = W.numel() * 2
 
     packed, scales, zeros = pack_int4_weights(W, group_size=128)
     packed_total_bytes = packed.nbytes + scales.nbytes + zeros.nbytes
 
-    # Should be < 29% of original size (> 3.4x compression)
     ratio = orig_bytes / packed_total_bytes
     assert ratio > 3.4, f"Expected compression ratio > 3.4x, got {ratio:.2f}x"
 
-    # Unpack and verify reasonable reconstruction error
     W_rec = unpack_int4_weights(packed, scales, zeros, group_size=128, out_dtype=torch.float16)
     rel_err = float(torch.norm(W - W_rec, p="fro").item() / torch.norm(W, p="fro").item())
     assert rel_err < 0.15, f"Reconstruction error {rel_err:.4f} too high for INT4"
@@ -70,13 +74,11 @@ def test_fast_hadamard_transform_involutory_orthogonality():
     torch.manual_seed(42)
     x = torch.randn(4, 16, 128, dtype=torch.float32)
 
-    # 1. Norm preservation (Parseval's theorem: ||x H|| = ||x||)
     y = fast_hadamard_transform(x, block_size=128)
     norm_x = torch.norm(x, p="fro").item()
     norm_y = torch.norm(y, p="fro").item()
     assert abs(norm_x - norm_y) / norm_x < 1e-4
 
-    # 2. Involutory: H(H(x)) = x
     x_rec = fast_hadamard_transform(y, block_size=128)
     diff = float(torch.norm(x - x_rec, p="fro").item() / norm_x)
     assert diff < 1e-4, f"Hadamard not involutory: diff={diff:.6f}"
@@ -90,7 +92,6 @@ def test_hadamard_incoherent_svd_compressor():
         nn.Linear(256, 256, bias=False),
     ).float()
 
-    # Inject channel outliers into weight matrix
     with torch.no_grad():
         model[0].weight[:, 10] *= 15.0
         model[0].weight[:, 45] *= 20.0
@@ -100,7 +101,6 @@ def test_hadamard_incoherent_svd_compressor():
 
     assert stats["num_compressed"] == 2
     assert stats["avg_reconstruction_error"] < 0.70
-    # Sanity forward check
     x = torch.randn(2, 8, 256)
     out = compressed_model(x)
     assert out.shape == (2, 8, 256)

@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Comprehensive tests for AdaptiveRanksCompressor.
 Verifies:
@@ -29,8 +35,8 @@ class FakeConv1D(nn.Module):
 
     def __init__(self, nf: int, nx: int) -> None:
         super().__init__()
-        self.nf = nf  # out_features
-        self.nx = nx  # in_features
+        self.nf = nf
+        self.nx = nx
         self.weight = nn.Parameter(torch.randn(nx, nf))
         self.bias = nn.Parameter(torch.zeros(nf))
 
@@ -106,7 +112,6 @@ class TestAdaptiveRanksExtra(unittest.TestCase):
         )
         compressed_model, stats = compressor.compress()
 
-        # Check layers are replaced by SVDLinear
         self.assertIsInstance(compressed_model[0], SVDLinear)
         self.assertEqual(compressed_model[0].in_features, 32)
         self.assertEqual(compressed_model[0].out_features, 64)
@@ -158,11 +163,9 @@ class TestAdaptiveRanksExtra(unittest.TestCase):
         )
         compressed_model, stats = compressor.compress()
 
-        # c_attn and c_proj should be compressed
         self.assertIsInstance(compressed_model.c_attn, SVDLinear)
         self.assertIsInstance(compressed_model.c_proj, SVDLinear)
 
-        # mlp_c_fc and mlp_c_proj should NOT be compressed
         self.assertIsInstance(compressed_model.mlp_c_fc, FakeConv1D)
         self.assertIsInstance(compressed_model.mlp_c_proj, FakeConv1D)
 
@@ -171,7 +174,6 @@ class TestAdaptiveRanksExtra(unittest.TestCase):
         linear = nn.Linear(32, 32)
         model = nn.Sequential(linear)
 
-        # Set max_error to an impossibly low threshold (e.g., 1e-6) so it triggers fallback
         compressor = AdaptiveRanksCompressor(
             model,
             energy_threshold=0.50,
@@ -185,17 +187,15 @@ class TestAdaptiveRanksExtra(unittest.TestCase):
         self.assertIn("0", compressor.fallback_layers)
         self.assertIsInstance(compressed_model[0], nn.Linear)
 
-        # Verify fallback layer parameters are frozen
         for p in compressed_model[0].parameters():
             self.assertFalse(p.requires_grad)
 
     def test_symmetric_singular_values_no_rescaling(self) -> None:
         """Factors U_r and V_r must retain symmetric sqrt(S) distribution without norm rescaling."""
-        # Orthogonal matrices
         q1, _ = torch.linalg.qr(torch.randn(64, 16))
         q2, _ = torch.linalg.qr(torch.randn(32, 16))
         s = torch.linspace(10.0, 1.0, 16)
-        W = q1 @ torch.diag(s) @ q2.T  # shape [64, 32]
+        W = q1 @ torch.diag(s) @ q2.T
 
         layer = nn.Linear(32, 64, bias=False)
         layer.weight.data.copy_(W)
@@ -211,10 +211,6 @@ class TestAdaptiveRanksExtra(unittest.TestCase):
         compressed_model, _ = compressor.compress()
 
         svd_layer: SVDLinear = compressed_model[0]
-        # Check Frobenius norms of U_r and V_r:
-        # Since U_r = U * sqrt(S) and V_r = sqrt(S) * V^T,
-        # ||U_r||_F^2 = sum(S), ||V_r||_F^2 = sum(S)
-        # So norm(U_r) should match norm(V_r) exactly
         norm_u = torch.norm(svd_layer.U, p="fro").item()
         norm_v = torch.norm(svd_layer.V, p="fro").item()
         self.assertAlmostEqual(norm_u, norm_v, places=4)

@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <cuda_runtime.h>
 #include <cuda_fp16.h>
 #include <torch/extension.h>
@@ -11,12 +18,12 @@
 template<int HEAD_DIM, int BLOCK_SIZE>
 __launch_bounds__(32)
 __global__ void paged_attention_kernel(
-    float* __restrict__ out,                // [num_seqs, num_heads, HEAD_DIM]
-    const float* __restrict__ q,            // [num_seqs, num_heads, HEAD_DIM]
-    const float* __restrict__ k_cache,      // [num_total_blocks, num_kv_heads, HEAD_DIM, BLOCK_SIZE]
-    const float* __restrict__ v_cache,      // [num_total_blocks, num_kv_heads, HEAD_DIM, BLOCK_SIZE]
-    const int* __restrict__ block_tables,   // [num_seqs, max_num_blocks_per_seq]
-    const int* __restrict__ context_lens,   // [num_seqs]
+    float* __restrict__ out,
+    const float* __restrict__ q,
+    const float* __restrict__ k_cache,
+    const float* __restrict__ v_cache,
+    const int* __restrict__ block_tables,
+    const int* __restrict__ context_lens,
     const int max_num_blocks_per_seq,
     const int num_heads,
     const int num_kv_heads,
@@ -42,7 +49,6 @@ __global__ void paged_attention_kernel(
     const int kv_head_idx = head_idx / (num_heads / num_kv_heads);
     const int num_blocks = min(max_num_blocks_per_seq, (context_len + BLOCK_SIZE - 1) / BLOCK_SIZE);
 
-    // Each lane holds its slice of Q in registers (zero shared memory, zero spilling)
     float q_reg[ELEMS_PER_THREAD];
     float acc[ELEMS_PER_THREAD];
     #pragma unroll
@@ -59,7 +65,7 @@ __global__ void paged_attention_kernel(
     for (int b = 0; b < num_blocks; ++b) {
         const int physical_block_idx = seq_block_table[b];
         if (physical_block_idx < 0 || physical_block_idx >= num_total_blocks) {
-            continue; // Safe physical block bounds check
+            continue;
         }
 
         const int curr_block_tokens = min(BLOCK_SIZE, context_len - b * BLOCK_SIZE);
@@ -67,7 +73,6 @@ __global__ void paged_attention_kernel(
                                   + kv_head_idx * (HEAD_DIM * BLOCK_SIZE);
 
         for (int tok = 0; tok < curr_block_tokens; ++tok) {
-            // Warp-parallel dot product
             float qk_partial = 0.0f;
             #pragma unroll
             for (int e = 0; e < ELEMS_PER_THREAD; ++e) {
@@ -76,7 +81,6 @@ __global__ void paged_attention_kernel(
                 qk_partial += q_reg[e] * k_cache[k_offset];
             }
 
-            // Reduce across 32 lanes via butterfly shuffle
             #pragma unroll
             for (int offset = 16; offset > 0; offset /= 2) {
                 qk_partial += __shfl_xor_sync(0xffffffff, qk_partial, offset);
@@ -84,14 +88,12 @@ __global__ void paged_attention_kernel(
 
             const float qk = qk_partial * scale;
 
-            // Online softmax update
             const float m_curr = fmaxf(m_prev, qk);
             const float p = expf(qk - m_curr);
             const float alpha = expf(m_prev - m_curr);
 
             l_prev = l_prev * alpha + p;
 
-            // Update value accumulation in registers
             #pragma unroll
             for (int e = 0; e < ELEMS_PER_THREAD; ++e) {
                 const int d = tid + e * WARP_SIZE;
@@ -102,7 +104,6 @@ __global__ void paged_attention_kernel(
         }
     }
 
-    // Write final normalized outputs to global memory
     const float inv_l = (l_prev > 0.0f) ? (1.0f / l_prev) : 0.0f;
     #pragma unroll
     for (int e = 0; e < ELEMS_PER_THREAD; ++e) {
@@ -110,7 +111,6 @@ __global__ void paged_attention_kernel(
     }
 }
 
-// True dynamic fallback kernel for non-standard head_dim / block_size combinations
 __launch_bounds__(32)
 __global__ void paged_attention_dynamic_kernel(
     float* __restrict__ out,
@@ -128,8 +128,8 @@ __global__ void paged_attention_dynamic_kernel(
     const float scale
 ) {
     extern __shared__ float smem[];
-    float* q_shared = smem;                 // size: head_dim
-    float* acc_shared = smem + head_dim;    // size: head_dim
+    float* q_shared = smem;
+    float* acc_shared = smem + head_dim;
 
     const int seq_idx = blockIdx.x;
     const int head_idx = blockIdx.y;
@@ -175,7 +175,6 @@ __global__ void paged_attention_dynamic_kernel(
                 qk_partial += q_shared[d] * k_cache[kv_block_base + d * block_size + tok];
             }
 
-            // Reduction across block threads
             #pragma unroll
             for (int offset = 16; offset > 0; offset /= 2) {
                 qk_partial += __shfl_xor_sync(0xffffffff, qk_partial, offset);
@@ -266,7 +265,6 @@ void paged_attention_v1_cuda(
     } else if (head_dim == 128 && block_size == 32) {
         LAUNCH_PAGED_ATTN(128, 32);
     } else {
-        // True dynamic kernel fallback with dynamic shared memory
         const size_t smem_bytes = 2 * head_dim * sizeof(float);
         paged_attention_dynamic_kernel<<<grid, block, smem_bytes, stream>>>(
             out.data_ptr<float>(),

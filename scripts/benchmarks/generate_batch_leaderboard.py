@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Combine batch validation results from all models into a rigorous, categorized leaderboard.
 Separates:
@@ -54,7 +60,6 @@ INCOMPATIBLE_DETAILS = {
 
 
 def main():
-    # Load all aggregates
     """Execute main routine."""
     all_data: Dict[str, Dict[str, Any]] = {}
     for model in MODELS:
@@ -79,9 +84,6 @@ def main():
             "**Excluded Methods** (Table 2: pruning, quantization, or heuristic rank overrides that ignore the rank parameter).\n\n"
         )
 
-        # -------------------------------------------------------------
-        # TABLE 1: VALID COMPRESSORS
-        # -------------------------------------------------------------
         f.write("## 1. Verified Rank-Sensitive Low-Rank Compressors (Main Leaderboard)\n\n")
         f.write(
             "Methods that legitimately scale matrix factorization rank with parameter count and output behavior:\n\n"
@@ -99,7 +101,6 @@ def main():
             _base_key = f"direct_svd_rank{rank}"
             for method in VALID_RANK_SENSITIVE:
                 row = f"| **`{method}`** | "
-                # Family tag
                 if "hnc" in method:
                     fam = "Hessian Null Space"
                 elif "fisher" in method or "fwsvd" in method:
@@ -152,9 +153,6 @@ def main():
                 f.write(row + "\n")
             f.write("\n")
 
-        # -------------------------------------------------------------
-        # TABLE 2: EXCLUDED NO-OP COMPRESSORS
-        # -------------------------------------------------------------
         f.write("## 2. Forensic Audit of Excluded Compressors (Rank-Insensitive / NO-OP)\n\n")
         f.write(
             "The following methods were evaluated but **excluded from the primary rank leaderboard** because diagnostic testing proved they ignore the `--rank` parameter, apply fixed-sparsity pruning, or fall back to original weights:\n\n"
@@ -162,7 +160,6 @@ def main():
         f.write("| Excluded Method | Primary Family | Constant RelErr Observed | Forensic Diagnostic Finding |\n")
         f.write("|:---|:---|:---:|:---|\n")
         for m, reason in sorted(EXCLUDED_NO_OP_DETAILS.items()):
-            # Find sample error if present
             sample_err = "—"
             for model in MODELS:
                 if model in all_data:
@@ -180,9 +177,6 @@ def main():
             f.write(f"| **`{m}`** | {fam} | `{sample_err}` | {reason} |\n")
         f.write("\n")
 
-        # -------------------------------------------------------------
-        # TABLE 3: INCOMPATIBLE / FAILED COMPRESSORS
-        # -------------------------------------------------------------
         f.write("## 3. Incompatible / Failed Compressors\n\n")
         f.write("| Compressor | Status | Root Cause Analysis |\n")
         f.write("|:---|:---:|:---|\n")

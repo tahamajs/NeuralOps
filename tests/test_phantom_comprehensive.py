@@ -1,3 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 from .testing_utils import MockConfig, DummyDistilBertAttention
 import pytest
 import torch
@@ -104,9 +111,6 @@ def test_phantom_inject_safe():
     assert out.shape == (2, 8, 64)
 
 
-# ===========================================================================
-# Targeted Tests for PHANTOM Bug Fixes
-# ===========================================================================
 
 def test_phantom_decoder_kv_cache_and_tuple_layout():
     """Verify autoregressive KV-caching and decoder return format."""
@@ -114,7 +118,6 @@ def test_phantom_decoder_kv_cache_and_tuple_layout():
     pcfg = PHANTOMConfig(cur_rank=8, lsh_rounds=1, lsh_bucket_size=2)
     attn = PHANTOMAttention(config=cfg, phantom_cfg=pcfg, hidden_size=64, num_heads=4)
 
-    # Step 1: Prompt phase (L=4)
     x = torch.randn(2, 4, 64)
     res = attn(x, output_attentions=False)
     assert len(res) == 2, f"Expected (output, present_key_value), got len={len(res)}"
@@ -125,14 +128,12 @@ def test_phantom_decoder_kv_cache_and_tuple_layout():
     assert past_k.shape == (2, 4, 4, 16)
     assert past_v.shape == (2, 4, 4, 16)
 
-    # Step 2: Next token generation (L=1) with past_key_value
     x_next = torch.randn(2, 1, 64)
     out_next, next_kv = attn(x_next, past_key_value=past_kv, output_attentions=False)
     assert out_next.shape == (2, 1, 64)
     assert next_kv[0].shape == (2, 4, 5, 16)
     assert next_kv[1].shape == (2, 4, 5, 16)
 
-    # Step 3: Decoder with output_attentions=True returns (output, present_key_value, None)
     res_attn = attn(x_next, past_key_value=past_kv, output_attentions=True)
     assert len(res_attn) == 3
     assert res_attn[2] is None
@@ -158,13 +159,11 @@ def test_phantom_robust_mask_handling():
     attn = PHANTOMAttention(config=cfg, phantom_cfg=pcfg, hidden_size=64, num_heads=4)
     x = torch.randn(2, 6, 64)
 
-    # 1. 2D binary float mask
     mask_2d = torch.tensor([[1.0, 1.0, 1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0, 0.0, 0.0]])
     out1, _ = attn(x, attention_mask=mask_2d)
     assert out1.shape == (2, 6, 64)
     assert torch.isfinite(out1).all()
 
-    # 2. 3D float additive mask (-1e4 for pad)
     mask_3d = torch.zeros(2, 1, 6)
     mask_3d[1, 0, 4:] = -1e4
     out2, _ = attn(x, attention_mask=mask_3d)
@@ -177,7 +176,6 @@ def test_phantom_cur_fallback_device_dtype():
     from neuralops.attentions.phantom import FactorisedLinear_CUR
     linear = FactorisedLinear_CUR(in_features=64, out_features=64, cur_rank=8)
     
-    # Pass a tensor with NaNs to trigger except block
     bad_weight = torch.full((64, 64), float('nan'))
     bias = torch.randn(64)
     linear.copy_cur(bad_weight, bias=bias)

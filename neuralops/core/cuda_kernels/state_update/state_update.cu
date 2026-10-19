@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -7,7 +14,6 @@
 namespace neuralops {
 namespace cuda {
 
-// Recurrent linear step kernel: updates kv_state, z_state, and computes out
 template <typename scalar_t, int MAX_DK>
 __launch_bounds__(128)
 __global__ void recurrent_linear_step_vectorized_kernel(
@@ -45,7 +51,6 @@ __global__ void recurrent_linear_step_vectorized_kernel(
     }
     __syncthreads();
 
-    // Compute denominator = sum_k q_t[k] * z_new[k] + eps
     float denom_acc = 0.0f;
     #pragma unroll 4
     for (int k = tid; k < Dk && k < MAX_DK; k += blockDim.x) {
@@ -80,8 +85,8 @@ __global__ void recurrent_linear_step_vectorized_kernel(
     }
 }
 
-} // namespace cuda
-} // namespace neuralops
+}
+}
 
 std::vector<torch::Tensor> recurrent_linear_step_fwd(
     const torch::Tensor& q_t,

@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Fused Low-Rank Gated GEMM
 
 Fuses low-rank bottleneck projections and non-linear gating mechanisms into a single memory-bandwidth efficient kernel pass.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -66,9 +70,6 @@ def _fused_lowrank_gated_gemm_1d_kernel(
     offs_r = tl.arange(0, BLOCK_R)
     mask_r = offs_r < R
 
-    # -------------------------------------------------------------
-    # 1. Compute Z_tile = X[offs_m, :] @ V_r^T [:, offs_r] in SRAM
-    # -------------------------------------------------------------
     z_acc = tl.zeros((BLOCK_M, BLOCK_R), dtype=tl.float32)
 
     num_k_blocks = tl.cdiv(K, BLOCK_K)
@@ -84,21 +85,14 @@ def _fused_lowrank_gated_gemm_1d_kernel(
 
         z_acc += tl.dot(x_tile, v_tile, allow_tf32=True)
 
-    # -------------------------------------------------------------
-    # 2. In-Place Spectral Gating: Z = Z * sigmoid(alpha) in SRAM
-    # -------------------------------------------------------------
     if HAS_ALPHA:
         alpha_ptrs = alpha_ptr + offs_r
         alpha_tile = tl.load(alpha_ptrs, mask=mask_r, other=0.0)
         gate = tl.sigmoid(alpha_tile.to(tl.float32))
         z_acc = z_acc * gate[None, :]
 
-    # Convert accumulator to FP16/BF16/FP32 for second GEMM
     z_tile = z_acc.to(x_ptr.dtype.element_ty)
 
-    # -------------------------------------------------------------
-    # 3. Stream over N dimension: Y = Z @ U_r^T + b_drift -> HBM
-    # -------------------------------------------------------------
     num_n_blocks = tl.cdiv(N, BLOCK_N)
     for n_idx in range(0, num_n_blocks):
         offs_n = n_idx * BLOCK_N + tl.arange(0, BLOCK_N)
@@ -168,7 +162,6 @@ def _fused_lowrank_gated_gemm_2d_kernel(
     mask_n = offs_n < N
     mask_r = offs_r < R
 
-    # Compute Z_tile = X[offs_m, :] @ V_r^T [:, offs_r]
     z_acc = tl.zeros((BLOCK_M, BLOCK_R), dtype=tl.float32)
     num_k_blocks = tl.cdiv(K, BLOCK_K)
     for k_idx in range(0, num_k_blocks):
@@ -191,7 +184,6 @@ def _fused_lowrank_gated_gemm_2d_kernel(
 
     z_tile = z_acc.to(x_ptr.dtype.element_ty)
 
-    # Compute Y_tile = Z_tile @ U_r^T [offs_r, offs_n] + b_drift
     u_ptrs = u_ptr + offs_r[:, None] * stride_ur + offs_n[None, :] * stride_un
     u_tile = tl.load(u_ptrs, mask=mask_r[:, None] & mask_n[None, :], other=0.0)
 
@@ -231,7 +223,6 @@ def triton_fused_lowrank_gated_gemm(
     x_2d = x.view(-1, orig_shape[-1])
     M, K = x_2d.shape
 
-    # Normalize V_r orientation so it represents (K, R) for dot(x, V)
     if v_r.shape[0] == K:
         V_mat = v_r
     elif v_r.shape[1] == K:
@@ -241,7 +232,6 @@ def triton_fused_lowrank_gated_gemm(
 
     R = V_mat.shape[1]
 
-    # Normalize U_r orientation so it represents (R, N) for dot(Z, U)
     if u_r.shape[0] == R:
         U_mat = u_r
     elif u_r.shape[1] == R:
@@ -251,7 +241,6 @@ def triton_fused_lowrank_gated_gemm(
 
     N = U_mat.shape[1]
 
-    # Fallback to PyTorch for CPU or unsupported small dimensions
     if not x.is_cuda or R > 256:
         z = torch.matmul(x_2d, V_mat)
         if alpha is not None:
@@ -262,10 +251,8 @@ def triton_fused_lowrank_gated_gemm(
             y = y + b_drift.to(dtype=y.dtype, device=y.device)
         return y.view(*orig_shape[:-1], N)
 
-    # Allocate output tensor
     y = torch.empty((M, N), device=x.device, dtype=x.dtype)
 
-    # Next power of 2 for rank dimension
     BLOCK_R = max(16, triton.next_power_of_2(R))
 
     has_alpha = alpha is not None
@@ -277,7 +264,6 @@ def triton_fused_lowrank_gated_gemm(
     V_c = V_mat.contiguous()
     U_c = U_mat.contiguous()
 
-    # Kernel dispatch: 1D grid for M >= 16 (maximal SRAM reuse), 2D for decoding M < 16
     if M >= 16:
         grid = lambda META: (triton.cdiv(M, META["BLOCK_M"]),)
         _fused_lowrank_gated_gemm_1d_kernel[grid](

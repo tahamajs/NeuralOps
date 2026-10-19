@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Quantized Attention Kernels
 
 FP8 and INT8 quantized attention routines featuring dynamic scaling factors and numerical clamping.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -65,7 +69,6 @@ def fp8_scaled_attention(
     if scale_factor is None:
         scale_factor = 1.0 / math.sqrt(q.shape[-1])
 
-    # If torch supports float8 types on device, cast; otherwise clamp to simulated E4M3 range (~448.0)
     has_fp8 = hasattr(torch, "float8_e4m3fn")
     if has_fp8:
         try:

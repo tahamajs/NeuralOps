@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Standalone Benchmark & Profiling Script for High-ROI Triton Kernels (Phase 4).
 
@@ -42,12 +48,10 @@ def measure_latency_and_memory(
     gc.collect()
     torch.cuda.reset_peak_memory_stats()
 
-    # Warmup
     for _ in range(warmup):
         fn()
     torch.cuda.synchronize()
 
-    # Reset peak memory before benchmark run
     torch.cuda.reset_peak_memory_stats()
     start_event = torch.cuda.Event(enable_timing=True)
     end_event = torch.cuda.Event(enable_timing=True)
@@ -87,16 +91,13 @@ def benchmark_kernel1_lowrank_gated_gemm(
     alpha = torch.randn(rank, device=device, dtype=dtype)
     b_drift = torch.randn(out_features, device=device, dtype=dtype)
 
-    # 1. Vanilla PyTorch reference
     def pytorch_ref():
-        # Intermediate Z materialized in HBM
         """Execute pytorch ref routine."""
         Z = torch.matmul(X, V_r.t())
         Z_gated = Z * torch.sigmoid(alpha).unsqueeze(0).unsqueeze(0)
         Y = torch.matmul(Z_gated, U_r.t()) + b_drift
         return Y
 
-    # 2. Triton fused implementation
     def triton_fn():
         """Execute triton fn routine."""
         return triton_fused_lowrank_gated_gemm(X, V_r, U_r, alpha=alpha, b_drift=b_drift)
@@ -104,7 +105,6 @@ def benchmark_kernel1_lowrank_gated_gemm(
     out_ref = pytorch_ref()
     out_triton = triton_fn()
 
-    # Parity verification
     max_diff = (out_ref - out_triton).abs().max().item()
     is_close = torch.allclose(out_triton, out_ref, atol=1e-3, rtol=1e-3)
     print(f"Numerical Parity: {'PASSED' if is_close else 'FAILED'} (Max Diff: {max_diff:.6f}, atol=1e-3, rtol=1e-3)")
@@ -154,7 +154,6 @@ def benchmark_kernel2_rpca_sparse_gemm(
     U_r = torch.randn(out_features, rank, device=device, dtype=dtype)
     bias = torch.randn(out_features, device=device, dtype=dtype)
 
-    # Generate sparse matrix S
     raw_s = torch.randn(out_features, in_features, device=device, dtype=dtype)
     mask = torch.rand(out_features, in_features, device=device) < sparsity
     S_sparse = raw_s * mask
@@ -216,7 +215,6 @@ def benchmark_kernel3_strided_tt(
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     torch.manual_seed(42)
 
-    # Balanced 2-factor split: 768 = 24 * 32
     p_dims = (24, 32)
     q_dims = (24, 32)
 
@@ -225,11 +223,10 @@ def benchmark_kernel3_strided_tt(
     X = torch.randn(B, seq_len, in_features, device=device, dtype=dtype)
     bias = torch.randn(out_features, device=device, dtype=dtype)
 
-    # 1. Vanilla PyTorch contraction (forcing .permute().contiguous().view())
     def pytorch_reconstruct():
         """Execute pytorch reconstruct routine."""
-        res = torch.tensordot(core0, core1, dims=([-1], [0]))  # (p0, q0, p1, q1)
-        res = res.permute(1, 3, 0, 2).contiguous()  # forces VRAM alloc and copy
+        res = torch.tensordot(core0, core1, dims=([-1], [0]))
+        res = res.permute(1, 3, 0, 2).contiguous()
         W = res.view(out_features, in_features)
         return W
 
@@ -238,7 +235,6 @@ def benchmark_kernel3_strided_tt(
         W = pytorch_reconstruct()
         return F.linear(X, W, bias)
 
-    # 2. Triton zero-copy contraction
     def triton_reconstruct():
         """Execute triton reconstruct routine."""
         return triton_strided_tt_contraction(core0, core1, p_dims, q_dims)
@@ -247,7 +243,6 @@ def benchmark_kernel3_strided_tt(
         """Execute triton linear routine."""
         return triton_strided_tt_linear(X, core0, core1, p_dims, q_dims, bias=bias)
 
-    # Parity check on reconstructed weight matrix
     W_ref = pytorch_reconstruct()
     W_triton = triton_reconstruct()
     w_diff = (W_ref - W_triton).abs().max().item()
@@ -255,7 +250,6 @@ def benchmark_kernel3_strided_tt(
     print(f"Weight Reconstruct Parity: {'PASSED' if is_w_close else 'FAILED'} (Max Diff: {w_diff:.6f})")
     assert is_w_close, f"TT Reconstructed weight mismatch! Max diff: {w_diff}"
 
-    # Parity check on linear layer forward
     out_ref = pytorch_linear()
     out_triton = triton_linear()
     out_diff = (out_ref - out_triton).abs().max().item()

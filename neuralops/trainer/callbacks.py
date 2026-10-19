@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Trainer Callbacks
 
 Provides training event callbacks for memory tracking, checkpoint management, and progress logging.
-
-Author: Taha Majlesi
 """
 
 import os
@@ -59,10 +63,8 @@ class GradientNormCallback(TrainerCallback):
                 param_norm = p.grad.data.norm(2)
                 total_norm += param_norm.item() ** 2
         total_norm = total_norm**0.5
-        # logs will be passed to on_log? Actually we can just log to the trainer
         if hasattr(args, "logging_dir"):
-            pass  # We can't easily log here; the SVDAwareTrainer logs it automatically
-        # For simplicity we just print
+            pass
         print(f"Step {state.global_step}: grad norm = {total_norm:.4f}")
 
 

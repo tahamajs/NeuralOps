@@ -1,6 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Profile peak batch saturation module.
-
-Author: Taha Majlesi
 """
 
 import os
@@ -36,18 +40,12 @@ def standard_attention_ref(q, k, v):
 
 
 def svd_linear_attention_kernel(q, k, v, u_proj, v_proj):
-    # SVD low-rank factorized attention projection:
-    # Q, K, V projected into low-rank subspace R
-    # Linear attention: (Q @ K^T) @ V computed with causal prefix scan or kernel factorization
-    # In SVD Linear Attention: Q_svd = Q @ V_proj^T, K_svd = K @ V_proj^T
     """Execute svd linear attention kernel routine."""
     B, H, L, D = q.shape
     scale = 1.0 / math.sqrt(D)
     phi_q = F.elu(q) + 1.0
     phi_k = F.elu(k) + 1.0
-    # O(L * D^2) kernel associative contraction: S = sum_t phi_k_t @ v_t^T
-    # Linear causal attention accumulator
-    kv = torch.einsum("bhld,bhlm->bhldm", phi_k, v)  # or cumulative sum along L
+    kv = torch.einsum("bhld,bhlm->bhldm", phi_k, v)
     kv_cumsum = torch.cumsum(kv, dim=2)
     out = torch.einsum("bhld,bhldm->bhlm", phi_q, kv_cumsum) * scale
     return out
@@ -96,12 +94,10 @@ def find_b_max_svd_linear_attn(L, device, H=8, D=64):
             q = torch.randn(b, H, L, D, device=device, dtype=torch.float16, requires_grad=True)
             k = torch.randn(b, H, L, D, device=device, dtype=torch.float16, requires_grad=True)
             v = torch.randn(b, H, L, D, device=device, dtype=torch.float16, requires_grad=True)
-            # SVD Linear Attention O(L)
             scale = 1.0 / math.sqrt(D)
             phi_q = F.elu(q) + 1.0
             phi_k = F.elu(k) + 1.0
-            # Chunked / Linear formulation to save peak intermediate activation
-            kv = torch.matmul(phi_k.unsqueeze(-1), v.unsqueeze(-2))  # [B, H, L, D, D]
+            kv = torch.matmul(phi_k.unsqueeze(-1), v.unsqueeze(-2))
             kv_cumsum = torch.cumsum(kv, dim=2)
             out = torch.matmul(phi_q.unsqueeze(-2), kv_cumsum).squeeze(-2) * scale
             loss = out.sum()
@@ -163,17 +159,14 @@ def main():
     for L in seq_lens:
         print(f"\n--- Testing Sequence Length L = {L} ---")
 
-        # Standard MHA
         print("  Evaluating Standard MHA B_max...")
         b_mha, vram_mha = find_b_max_standard_mha(L, device)
         print(f"    Standard MHA: B_max = {b_mha} (Peak VRAM: {vram_mha} MB)")
 
-        # SVD Linear Attention
         print("  Evaluating SVD Linear Attention B_max...")
         b_svd, vram_svd = find_b_max_svd_linear_attn(L, device)
         print(f"    SVD Linear Attention: B_max = {b_svd} (Peak VRAM: {vram_svd} MB)")
 
-        # Block-Sparse Attention
         print("  Evaluating Block-Sparse Attention B_max...")
         b_sparse, vram_sparse = find_b_max_block_sparse_attn(L, device)
         print(f"    Block-Sparse Attention: B_max = {b_sparse} (Peak VRAM: {vram_sparse} MB)")
@@ -195,7 +188,6 @@ def main():
             }
         )
 
-    # Export to CSV
     csv_dir = "/mnt/d/SVD_linear_Attention/docs/benchmarks"
     os.makedirs(csv_dir, exist_ok=True)
     csv_path = os.path.join(csv_dir, "paper_benchmarks_peak_batch_saturation.csv")
@@ -230,7 +222,6 @@ def main():
             )
     print(f"\nSaved CSV deliverable to {csv_path}")
 
-    # Generate LaTeX Table
     latex_dir = "/mnt/d/SVD_linear_Attention/docs/reports"
     os.makedirs(latex_dir, exist_ok=True)
     latex_path = os.path.join(latex_dir, "PAPER_TABLES_PEAK_BATCH.tex")
@@ -261,7 +252,6 @@ def main():
         f.write("\\bottomrule\n\\end{tabular}\n\\end{table*}\n")
     print(f"Saved LaTeX deliverable to {latex_path}")
 
-    # JSON summary
     json_path = "/mnt/d/SVD_linear_Attention/results/profiling/peak_batch_saturation.json"
     os.makedirs(os.path.dirname(json_path), exist_ok=True)
     with open(json_path, "w") as f:

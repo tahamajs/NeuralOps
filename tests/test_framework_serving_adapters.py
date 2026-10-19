@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Comprehensive Verification Test Battery for NeuralOps Serving Infrastructure and Framework Integrations.
 
@@ -35,9 +41,6 @@ from neuralops.integrations.tensorrt_llm import (
 )
 
 
-# =====================================================================
-# 1. TGI SERVING ADAPTER TESTS (7 tests)
-# =====================================================================
 
 def test_tgi_adapter_imports_cleanly():
     """Verify TGI adapter classes import and initialize cleanly."""
@@ -106,7 +109,6 @@ def test_tgi_stop_sequence_termination():
         max_new_tokens=20,
         stop_sequences=None,
     )
-    # Simulate stopping token
     is_stop = adapter.check_stop(req, 99)
     assert is_stop is True
 
@@ -117,7 +119,6 @@ def test_tgi_continuous_batching_variable_length():
     model = GPT2LMHeadModel(config).eval()
     adapter = TGIServingAdapter(model=model, tokenizer=None, max_batch_size=4, device="cpu")
 
-    # Add short and long requests
     adapter.add_request("req_short", [1, 2], max_new_tokens=2)
     adapter.add_request("req_long", [1, 2, 3, 4, 5], max_new_tokens=5)
 
@@ -140,9 +141,6 @@ def test_tgi_stats_tracking():
     assert "avg_tokens_per_sec" in s
 
 
-# =====================================================================
-# 2. SGLANG RADIX TREE ADAPTER TESTS (7 tests)
-# =====================================================================
 
 def test_sglang_imports_cleanly():
     """Verify SGLang adapter imports and initializes cleanly."""
@@ -158,7 +156,7 @@ def test_sglang_insert_single_prefix():
     dummy_kv = torch.randn(2, 2, 4, 16)
     node = adapter.insert_prefix([101, 2054, 2003], dummy_kv)
     assert node is not None
-    assert adapter.stats()["total_nodes"] == 2  # Root + 1 child
+    assert adapter.stats()["total_nodes"] == 2
 
 
 def test_sglang_match_exact_prefix():
@@ -201,7 +199,6 @@ def test_sglang_branching():
     adapter.insert_prefix([1, 2, 3], torch.randn(1))
     adapter.insert_prefix([1, 2, 4], torch.randn(1))
 
-    # Shared prefix [1, 2] should form a split node with 2 children (3 and 4)
     split_node = adapter.root.children[1]
     assert split_node.token_chunk == [1, 2]
     assert 3 in split_node.children
@@ -220,9 +217,6 @@ def test_sglang_lru_eviction():
     assert adapter.stats()["eviction_count"] >= 1
 
 
-# =====================================================================
-# 3. TENSORRT-LLM SCAFFOLD & ROADMAP TESTS (4 tests)
-# =====================================================================
 
 def test_tensorrt_llm_imports_cleanly():
     """Verify TensorRT-LLM scaffold imports and instantiates without TensorRT SDK installed."""
@@ -253,9 +247,6 @@ def test_tensorrt_llm_roadmap_doc_exists():
     assert len(content.split()) >= 500
 
 
-# =====================================================================
-# 4. REGRESSION TESTS (3 tests)
-# =====================================================================
 
 def test_hf_roundtrip_still_works(tmp_path: Path):
     """Verify Hugging Face replace_attention + safetensors bit-exact roundtrip."""

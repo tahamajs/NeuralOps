@@ -1,6 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Multi stream benchmark module.
-
-Author: Taha Majlesi
 """
 
 import os
@@ -34,19 +38,15 @@ def main():
     device_name = torch.cuda.get_device_name(0)
     print(f"Device: {device_name}")
 
-    # CUDA Streams
-    stream1 = torch.cuda.Stream(device=device)  # FlashAttention
-    stream2 = torch.cuda.Stream(device=device)  # Selective SSM Scan
-    stream3 = torch.cuda.Stream(device=device)  # WMMA Low-Rank SVD GEMM
+    stream1 = torch.cuda.Stream(device=device)
+    stream2 = torch.cuda.Stream(device=device)
+    stream3 = torch.cuda.Stream(device=device)
 
-    # Workload parameters
-    # Stream 1: Single-Pass FlashAttention / Flash GQA
     B1, H1, S1, D1 = 4, 8, 1024, 64
     q = torch.randn(B1, H1, S1, D1, device=device, dtype=torch.float16)
     k = torch.randn(B1, H1, S1, D1, device=device, dtype=torch.float16)
     v = torch.randn(B1, H1, S1, D1, device=device, dtype=torch.float16)
 
-    # Stream 2: Selective SSM Scan
     B2, D2, L2, N2 = 4, 64, 1024, 16
     u = torch.randn(B2, D2, L2, device=device, dtype=torch.float32)
     delta = F.softplus(torch.randn(B2, D2, L2, device=device, dtype=torch.float32) - 4.0)
@@ -54,14 +54,12 @@ def main():
     B_param = torch.randn(B2, N2, L2, device=device, dtype=torch.float32) * 0.1
     C_param = torch.randn(B2, N2, L2, device=device, dtype=torch.float32) * 0.1
 
-    # Stream 3: WMMA Low-Rank SVD GEMM
     M3, K3, R3 = 4096, 768, 64
     X = torch.randn(M3, K3, device=device, dtype=torch.float16)
     V_r = torch.randn(R3, K3, device=device, dtype=torch.float16)
     U_r = torch.randn(K3, R3, device=device, dtype=torch.float16)
     alpha = torch.randn(R3, device=device, dtype=torch.float16)
 
-    # Warmup
     print("Warming up kernels...")
     for _ in range(25):
         with torch.cuda.stream(stream1):
@@ -80,8 +78,6 @@ def main():
     NUM_ITERS = 100
     print("\nRunning 100-iteration standalone measurements...")
 
-    # Individual Kernel Profiles (Standalone execution using CUDA Events)
-    # Stream 1 Standalone
     ev_start1 = torch.cuda.Event(enable_timing=True)
     ev_end1 = torch.cuda.Event(enable_timing=True)
     ev_start1.record(stream1)
@@ -93,7 +89,6 @@ def main():
     stream1.synchronize()
     t_stream1_ms = ev_start1.elapsed_time(ev_end1) / NUM_ITERS
 
-    # Stream 2 Standalone
     ev_start2 = torch.cuda.Event(enable_timing=True)
     ev_end2 = torch.cuda.Event(enable_timing=True)
     ev_start2.record(stream2)
@@ -105,7 +100,6 @@ def main():
     stream2.synchronize()
     t_stream2_ms = ev_start2.elapsed_time(ev_end2) / NUM_ITERS
 
-    # Stream 3 Standalone
     ev_start3 = torch.cuda.Event(enable_timing=True)
     ev_end3 = torch.cuda.Event(enable_timing=True)
     ev_start3.record(stream3)
@@ -127,7 +121,6 @@ def main():
     print(f"  Sum of individual times:   {sum_individual_ms:.4f} ms")
     print(f"  Critical path (max single): {max_individual_ms:.4f} ms")
 
-    # Sequential Execution on Default Stream
     torch.cuda.synchronize()
     t0_seq = time.perf_counter()
     ev_seq_start = torch.cuda.Event(enable_timing=True)
@@ -143,12 +136,10 @@ def main():
     t_seq_total_wall_sec = time.perf_counter() - t0_seq
     t_seq_cuda_ms = ev_seq_start.elapsed_time(ev_seq_end) / NUM_ITERS
 
-    # Reference computation for numerical verification
     ref1 = flash_gqa(q, k, v, is_causal=True)
     ref2, _ = selective_scan(u, delta, A, B_param, C_param)
     ref3 = fused_lowrank_gated_gemm(X, V_r, U_r, alpha)
 
-    # Concurrent Execution across 3 Independent Streams with overlapping CUDA Events
     torch.cuda.synchronize()
     mem_initial = get_cuda_mem()
 
@@ -174,7 +165,6 @@ def main():
         if i < NUM_ITERS:
             del par1, par2, par3
 
-    # Sync all 3 streams into stream1 via events to accurately capture concurrency
     ev_s2 = torch.cuda.Event()
     ev_s3 = torch.cuda.Event()
     ev_s2.record(stream2)
@@ -187,7 +177,6 @@ def main():
     t_par_total_wall_sec = time.perf_counter() - t0_par
     t_par_cuda_ms = ev_par_start.elapsed_time(ev_par_end) / NUM_ITERS
 
-    # Verify numerical correctness & NaN / Inf checks
     nan1 = int(torch.isnan(par1).sum().item())
     inf1 = int(torch.isinf(par1).sum().item())
     diff1 = float(torch.max(torch.abs(ref1 - par1)).item())
@@ -200,7 +189,6 @@ def main():
     inf3 = int(torch.isinf(par3).sum().item())
     diff3 = float(torch.max(torch.abs(ref3 - par3)).item())
 
-    # Release final tensors and test memory drift
     del ref1, ref2, ref3, par1, par2, par3
     torch.cuda.synchronize()
     mem_final = get_cuda_mem()
@@ -210,7 +198,6 @@ def main():
     speedup_cuda = t_seq_cuda_ms / max(t_par_cuda_ms, 1e-6)
     speedup_wall = t_seq_total_wall_sec / max(t_par_total_wall_sec, 1e-6)
 
-    # Stream Overlap Efficiency: (Sum(Individual) - Concurrent) / (Sum(Individual) - Max(Individual))
     overlap_efficiency = (sum_individual_ms - t_par_cuda_ms) / max(sum_individual_ms - max_individual_ms, 1e-6)
     overlap_pct = max(0.0, min(100.0, overlap_efficiency * 100.0))
 

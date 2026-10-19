@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Tensor Parallelism Module
 
 Implements tensor-parallel linear projections, column/row splitting, and all-reduce primitives.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -28,9 +32,6 @@ class SimulatedTPGroup:
         return self.world_size
 
 
-# ---------------------------------------------------------------------------
-# 1. Differentiable Collective Functions
-# ---------------------------------------------------------------------------
 
 class _CopyToModelParallelRegion(torch.autograd.Function):
     """Pass-through on forward; All-Reduce on backward."""
@@ -73,9 +74,6 @@ def reduce_from_model_parallel_region(input: torch.Tensor, group: Any = None) ->
     return _ReduceFromModelParallelRegion.apply(input, group)
 
 
-# ---------------------------------------------------------------------------
-# 2. Tensor-Parallel SVD & Low-Rank Linear Layers
-# ---------------------------------------------------------------------------
 
 class RankParallelSVDLinear(nn.Module):
     """
@@ -105,7 +103,6 @@ class RankParallelSVDLinear(nn.Module):
         self.local_rank = rank // tp_size
         self.process_group = process_group
 
-        # Local factor slices: V_local is [in_features, local_rank], U_local is [local_rank, out_features]
         self.v_proj = nn.Linear(in_features, self.local_rank, bias=False)
         self.u_proj = nn.Linear(self.local_rank, out_features, bias=False)
 
@@ -115,12 +112,9 @@ class RankParallelSVDLinear(nn.Module):
             self.register_parameter("bias", None)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # 1. Local rank projection: X V^(p) -> [B, T, r_local]
         h = self.v_proj(x)
-        # 2. Local subspace expansion: h U^(p)T -> [B, T, d_out]
         out_local = self.u_proj(h)
 
-        # 3. Sum across TP ranks
         out = reduce_from_model_parallel_region(out_local, self.process_group)
 
         if self.bias is not None:
@@ -155,9 +149,7 @@ class RowParallelSVDLinear(nn.Module):
         self.local_in_features = in_features // tp_size
         self.process_group = process_group
 
-        # Sharded input projection: [local_in_features, rank]
         self.v_proj = nn.Linear(self.local_in_features, rank, bias=False)
-        # Full output projection: [rank, out_features]
         self.u_proj = nn.Linear(rank, out_features, bias=False)
 
         if bias:
@@ -166,13 +158,10 @@ class RowParallelSVDLinear(nn.Module):
             self.register_parameter("bias", None)
 
     def forward(self, x_local: torch.Tensor) -> torch.Tensor:
-        # 1. Local projection into rank-r bottleneck: [B, T, r]
         bottleneck_local = self.v_proj(x_local)
 
-        # 2. All-Reduce strictly in compressed rank-r subspace (2x - 8x bandwidth saving!)
         bottleneck = reduce_from_model_parallel_region(bottleneck_local, self.process_group)
 
-        # 3. Final expansion to output: [B, T, d_out]
         out = self.u_proj(bottleneck)
         if self.bias is not None:
             out = out + self.bias
@@ -313,9 +302,6 @@ class RowParallelLinear(nn.Module):
         return output_
 
 
-# ---------------------------------------------------------------------------
-# 3. TensorParallelRecurrentAttention
-# ---------------------------------------------------------------------------
 
 class TensorParallelRecurrentAttention(nn.Module):
     """
@@ -346,13 +332,11 @@ class TensorParallelRecurrentAttention(nn.Module):
         self.local_dim = self.local_heads * self.head_dim
         self.process_group = process_group
 
-        # Sharded input projections for local heads
         self.q_proj = nn.Linear(embed_dim, self.local_dim, bias=False)
         self.k_proj = nn.Linear(embed_dim, self.local_dim, bias=False)
         self.v_proj = nn.Linear(embed_dim, self.local_dim, bias=False)
         self.g_proj = nn.Linear(embed_dim, self.local_dim, bias=False)
 
-        # Row-parallel output projection reduces across ranks
         self.out_proj = nn.Linear(self.local_dim, embed_dim, bias=False)
 
     def forward(
@@ -368,17 +352,14 @@ class TensorParallelRecurrentAttention(nn.Module):
         v = self.v_proj(x_in).view(B, T, self.local_heads, self.head_dim).transpose(1, 2)
         g = torch.sigmoid(self.g_proj(x_in)).view(B, T, self.local_heads, self.head_dim).transpose(1, 2)
 
-        # Zero inter-GPU communication during local recurrent scan
         scale = 1.0 / (self.head_dim ** 0.5)
-        # Compute associative scan / linear attention locally
         q = q * scale
-        kv = torch.matmul(k.transpose(-2, -1), v * g)  # [B, H_local, D, D]
+        kv = torch.matmul(k.transpose(-2, -1), v * g)
         if state is not None:
             kv = kv + state
-        out_local = torch.matmul(q, kv)  # [B, H_local, T, D]
+        out_local = torch.matmul(q, kv)
         out_local = out_local.transpose(1, 2).contiguous().view(B, T, self.local_dim)
 
-        # Output projection with All-Reduce across TP ranks
         out_reduced = reduce_from_model_parallel_region(self.out_proj(out_local), self.process_group)
         return out_reduced, kv
 

@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Master Exhaustive Ecosystem Integration Test Suite for NeuralOps v1.4.0.
 
@@ -82,9 +88,6 @@ def execution_device():
     return dev
 
 
-# ==============================================================================
-# Master Test Class: Full 8-Stage Unified Pipeline
-# ==============================================================================
 
 class TestMasterExhaustiveEcosystemIntegration:
     """Master End-to-End System Integration Suite testing all 7 pillars + Stage 8 Telemetry."""
@@ -95,9 +98,6 @@ class TestMasterExhaustiveEcosystemIntegration:
         """Complete 8-stage end-to-end integration pipeline on HuggingFace GPT-2 architecture."""
         device = execution_device
 
-        # ----------------------------------------------------------------------
-        # Stage 1: Dynamic Module Inspection & Architecture Discovery
-        # ----------------------------------------------------------------------
         config = GPT2Config(
             vocab_size=256,
             n_positions=128,
@@ -118,13 +118,9 @@ class TestMasterExhaustiveEcosystemIntegration:
             assert s.extracted_qkv is not None, "Failed to extract QKV weights"
         print(f"\n[Stage 1 Passed] Discovered {len(specs)} attention blocks with pattern '{specs[0].pattern_type}'.")
 
-        # ----------------------------------------------------------------------
-        # Stage 2: In-Place Attention Surgery with Ridge Calibration
-        # ----------------------------------------------------------------------
         teacher_model = copy.deepcopy(model)
         teacher_model.eval()
 
-        # Surgical attention replacement
         surg_model = transplant_attention(
             model,
             attention=target_attention,
@@ -132,7 +128,6 @@ class TestMasterExhaustiveEcosystemIntegration:
         )
         assert surg_model is not None
 
-        # Verify forward pass
         calib_ids = torch.randint(0, 256, (2, 16), device=device)
         with torch.no_grad():
             t_logits = teacher_model(calib_ids).logits
@@ -140,7 +135,6 @@ class TestMasterExhaustiveEcosystemIntegration:
         assert s_logits.shape == t_logits.shape
         assert torch.isfinite(s_logits).all()
 
-        # Closed-Form Layerwise Ridge Projection Calibration
         calibrated_model = calibrate_attention_subspace(
             teacher_model=teacher_model,
             student_model=surg_model,
@@ -153,10 +147,6 @@ class TestMasterExhaustiveEcosystemIntegration:
         assert torch.isfinite(calib_logits).all()
         print(f"[Stage 2 Passed] In-place surgery to '{target_attention}' & Ridge calibration complete.")
 
-        # ----------------------------------------------------------------------
-        # Stage 3: Low-Rank Linear Compression
-        # ----------------------------------------------------------------------
-        # Use streaming activation calibrator on calibration data (including Conv1D and LoRALinear modules)
         from transformers.pytorch_utils import Conv1D
         from neuralops.core.utils.lora import LoRALinear
         calibrator = UniversalActivationCalibrator(calibrated_model, target_classes=(nn.Linear, Conv1D, LoRALinear))
@@ -177,10 +167,6 @@ class TestMasterExhaustiveEcosystemIntegration:
         assert torch.isfinite(c_logits).all()
         print(f"[Stage 3 Passed] Linear compression via '{compression_method}' (rank 16) verified.")
 
-        # ----------------------------------------------------------------------
-        # Stage 4: Subspace Micro-Healing & 6-Pillar Distillation Objectives
-        # ----------------------------------------------------------------------
-        # Execute micro-healing loop
         heal_stats = heal_replaced_model(
             teacher_model=teacher_model,
             student_model=compressed_model,
@@ -193,7 +179,6 @@ class TestMasterExhaustiveEcosystemIntegration:
         assert heal_stats["steps"] == 3
         print(f"[Stage 4.1] Micro-healing finished: {heal_stats['num_healed_layers']} layers healed.")
 
-        # Validate 6-Pillar Distillation Loss objectives
         logit_kd = LogitDistillationLoss(mode="reverse_kl", temperature=2.0)
         cka_loss_fn = LinearCKALoss()
         op_cloning_loss = BlockwiseOperatorCloningLoss()
@@ -212,10 +197,6 @@ class TestMasterExhaustiveEcosystemIntegration:
         assert torch.isfinite(l_op)
         print(f"[Stage 4 Passed] 6-Pillar Distillation alignment objectives computed cleanly.")
 
-        # ----------------------------------------------------------------------
-        # Stage 5: State Table & PagedKVCache Allocation
-        # ----------------------------------------------------------------------
-        # Test standard PagedKVCache continuous batching
         kv_cache = PagedKVCache(
             num_blocks=16,
             block_size=4,
@@ -232,25 +213,21 @@ class TestMasterExhaustiveEcosystemIntegration:
         assert v_out.shape == (1, 4, 16)
         kv_cache.free_sequence(seq_id=101)
 
-        # Test PagedStateTable with zero-copy sequence forking & Copy-on-Write
         state_table = PagedStateTable(num_pages=32, num_heads=4, head_dim=16, device=device)
         p_parent = state_table.register_sequence(seq_id=1, initial_pages=1)
         p_id = p_parent[0]
         state_table.page_pool[p_id, 0, 0, 0] = 3.14159
 
-        # Fork sequence
         p_child = state_table.fork_sequence(parent_seq_id=1, child_seq_id=2)
         assert p_child[0] == p_id
         assert state_table.ref_counts[p_id] == 2
 
-        # Copy-on-Write mutation
         p_child_new = state_table.prepare_write(seq_id=2, page_slot=0)
         assert p_child_new != p_id
         assert state_table.ref_counts[p_id] == 1
         assert state_table.ref_counts[p_child_new] == 1
         assert torch.isclose(state_table.page_pool[p_child_new, 0, 0, 0], torch.tensor(3.14159, device=device))
 
-        # Radix Prefix Cache longest-prefix matching
         radix_cache = RadixPrefixStateCache(state_table)
         prefix = [10, 20, 30]
         radix_cache.insert_prefix(prefix, p_id)
@@ -259,9 +236,6 @@ class TestMasterExhaustiveEcosystemIntegration:
         assert matched_page == p_id
         print(f"[Stage 5 Passed] Paged KV Cache, PagedStateTable CoW & Radix Prefix matching verified.")
 
-        # ----------------------------------------------------------------------
-        # Stage 6: Self-Speculative Decoding
-        # ----------------------------------------------------------------------
         spec_decoder = SelfSpeculativeDecoder(
             target_model=teacher_model,
             draft_model=compressed_model,
@@ -273,7 +247,6 @@ class TestMasterExhaustiveEcosystemIntegration:
         assert isinstance(stats, SpeculativeDecodeStats)
         assert stats.total_tokens_generated == 4
 
-        # Verify mathematical equivalence with standard autoregressive generation
         with torch.no_grad():
             curr = prompt.clone()
             for _ in range(4):
@@ -283,9 +256,6 @@ class TestMasterExhaustiveEcosystemIntegration:
         assert torch.equal(gen_tokens, curr), "Speculative decoding diverged from exact greedy target!"
         print(f"[Stage 6 Passed] Self-speculative decoding passed with 0 token divergence.")
 
-        # ----------------------------------------------------------------------
-        # Stage 7: Lossless Serialization & Checkpoint Roundtrip
-        # ----------------------------------------------------------------------
         with tempfile.TemporaryDirectory() as tmp_dir:
             save_path = Path(tmp_dir) / "ecosystem_export"
             export_model(
@@ -298,7 +268,6 @@ class TestMasterExhaustiveEcosystemIntegration:
             assert (save_path / "neuralops_config.json").exists()
             assert (save_path / "model.safetensors").exists() or (save_path / "pytorch_model.bin").exists()
 
-            # Bit-exact state reload
             reloaded_model, meta = load_exported_model(save_path, base_model=copy.deepcopy(model))
             reloaded_model = reloaded_model.to(device).eval()
 
@@ -311,9 +280,6 @@ class TestMasterExhaustiveEcosystemIntegration:
             assert max_diff < 0.05, f"Serialization numerical reproduction error: max_diff = {max_diff}"
         print(f"[Stage 7 Passed] SafeTensors roundtrip verified with max_diff = {max_diff:.2e} < 0.05.")
 
-        # ----------------------------------------------------------------------
-        # Stage 8: Hardware Telemetry & CLI Doctor Verification
-        # ----------------------------------------------------------------------
         exit_code = cmd_doctor()
         assert exit_code == 0, f"neuralops doctor failed with exit code {exit_code}"
         print(f"[Stage 8 Passed] NeuralOps doctor reported operational status.")
@@ -331,29 +297,25 @@ class TestMasterExhaustiveEcosystemIntegration:
         model = BertModel(config).to(device)
         model.eval()
 
-        # Stage 1: Scanner
         specs = UniversalArchitectureScanner.scan(model)
         assert len(specs) >= 2
         assert specs[0].pattern_type == "bert_nested"
 
-        # Stage 2: Attention Transplantation with Cosformer
         surg_model = transplant_attention(model, attention="cosformer", copy_weights=True)
 
         input_ids = torch.randint(0, 256, (2, 16), device=device)
         attn_mask = torch.ones(2, 16, device=device)
-        attn_mask[0, 10:] = 0  # padded sequence
+        attn_mask[0, 10:] = 0
 
         with torch.no_grad():
             out = surg_model(input_ids=input_ids, attention_mask=attn_mask)
         assert out.last_hidden_state.shape == (2, 16, 64)
 
-        # Stage 3: Compression with SVD-LLM
         compressed = compress_model_universal(surg_model, method="svd_llm", rank=16, calibration_data=[input_ids])
         with torch.no_grad():
             out_c = compressed(input_ids=input_ids, attention_mask=attn_mask)
         assert out_c.last_hidden_state.shape == (2, 16, 64)
 
-        # Stage 4: Micro-healing
         heal_stats = heal_replaced_model(
             teacher_model=model,
             student_model=compressed,
@@ -364,7 +326,6 @@ class TestMasterExhaustiveEcosystemIntegration:
         )
         assert heal_stats["steps"] == 2
 
-        # Stage 7: Roundtrip export
         with tempfile.TemporaryDirectory() as tmp_dir:
             save_path = Path(tmp_dir) / "bert_export"
             export_model(compressed, output_dir=save_path, format="safetensors")

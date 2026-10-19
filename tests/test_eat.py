@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Comprehensive test suite for EAT (Efficient Attention Transformer)."""
 
 from types import SimpleNamespace
@@ -22,7 +28,6 @@ def test_lora_linear():
     out = layer(x)
     assert out.shape == (2, 10, 128)
 
-    # Base weight frozen check
     layer.freeze_base_weights()
     assert not layer.weight.requires_grad
     assert not layer.bias.requires_grad
@@ -64,7 +69,6 @@ def test_rotate_half_odd_dimension():
     x = torch.randn(2, 4, 15)
     rot = _rotate_half(x)
     assert rot.shape == x.shape
-    # even part (0..13) is rotated, last element (14) is passed through untouched
     assert torch.allclose(rot[..., 14], x[..., 14])
 
 

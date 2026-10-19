@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 HuggingFace Hub Integration
 
 Model publishing, versioning, and weight serialization utilities for the HuggingFace Hub.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -111,14 +115,12 @@ def push_model_to_hub(
     if not hf_token:
         raise ValueError("HF_TOKEN must be provided as parameter or environment variable.")
 
-    # Temporarily save and secret-scan
     import tempfile
     with tempfile.TemporaryDirectory() as tmp_dir:
         model.save_pretrained(tmp_dir)
         if tokenizer is not None:
             tokenizer.save_pretrained(tmp_dir)
 
-        # Generate model card
         card_content = generate_model_card(repo_id, model.config)
         (Path(tmp_dir) / "README.md").write_text(card_content)
 

@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Quantized GEMM Autograd Interface
 
 Hardware-accelerated CUDA C++ autograd implementation with analytical gradients and three-level fallback dispatch.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -77,9 +81,6 @@ def _w4a16_gemm_triton_fallback(
 ) -> torch.Tensor | None:
     try:
         from neuralops.core.triton_kernels.low_rank import fused_w4a16_gemm_triton
-        # fused_w4a16_gemm_triton computes X @ W.T
-        # Here W_q is [K, N/2] so W is [K, N]. To match A @ W, we pass W_q transposed if needed,
-        # or fallback cleanly
         return None
     except (RuntimeError, MemoryError, AssertionError, ValueError, ImportError, AttributeError) as exc:
         logger.warning("Failed in Triton fallback for w4a16: %s", exc, exc_info=True)
@@ -131,7 +132,6 @@ class _W4A16GemmFunction(torch.autograd.Function):
             except (RuntimeError, MemoryError, AssertionError, ValueError, ImportError, AttributeError) as exc:
                 logger.warning("CUDA w4a16_gemm_bwd failed: %s; falling back to PyTorch", exc, exc_info=True)
 
-        # Analytical PyTorch backward for dA = dout @ W_dequant.T
         K = ctx.K
         num_groups, N = scales.shape
         low = (W_q & 0x0F).to(torch.float32)

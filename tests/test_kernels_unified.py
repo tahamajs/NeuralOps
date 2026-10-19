@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Verification suite for Complete Unified Triton & CUDA Kernels in NeuralOps.
 
 Validates:
@@ -77,18 +83,15 @@ def test_bidirectional_triton_compatibility():
     import neuralops.kernels.triton as nkt
     import neuralops.core.triton_kernels as ctk
 
-    # 1. Access core module from kernels.triton
     assert hasattr(nkt, "cur_linear")
     assert hasattr(nkt, "differential_attention")
     assert hasattr(nkt, "hydra_attention")
     assert hasattr(nkt, "retnet_retention")
 
-    # 2. Access standalone kernel from core.triton_kernels
     assert hasattr(ctk, "cosformer_linear_attention")
     assert hasattr(ctk, "fused_lowrank_gemm")
     assert hasattr(ctk, "spectral_entropy_svd_gate")
 
-    # 3. Discovery functions available from both
     assert callable(nkt.list_triton_kernels)
     assert callable(ctk.list_triton_kernels)
     assert len(nkt.list_triton_kernels()) == len(ctk.list_triton_kernels()) == 62
@@ -99,19 +102,16 @@ def test_bidirectional_cuda_compatibility():
     import neuralops.kernels.cuda as nkc
     import neuralops.core.cuda_kernels as cck
 
-    # 1. Operators accessible from both
     assert hasattr(nkc, "fused_lowrank_gated_gemm")
     assert hasattr(cck, "fused_lowrank_gated_gemm")
     assert hasattr(nkc, "chunked_delta_gate_scan")
     assert hasattr(cck, "chunked_delta_gate_scan")
 
-    # 2. Submodules accessible from both
     assert hasattr(nkc, "act_scale_gemm")
     assert hasattr(cck, "act_scale_gemm")
     assert hasattr(nkc, "cosformer")
     assert hasattr(cck, "cosformer")
 
-    # 3. Discovery functions available from both
     assert callable(nkc.list_cuda_kernels)
     assert callable(cck.list_cuda_kernels)
     assert len(nkc.list_cuda_kernels()) == len(cck.list_cuda_kernels()) == 114

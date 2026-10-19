@@ -1,6 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Harvest paper vram benchmarks module.
-
-Author: Taha Majlesi
 """
 
 import os
@@ -52,7 +56,6 @@ def run_sequence_length_scaling(device):
 
     for L in seq_lens:
         print(f"\nEvaluating Sequence Length L = {L}...")
-        # 1. Standard Self-Attention O(L^2)
         gc.collect()
         torch.cuda.empty_cache()
         torch.cuda.reset_peak_memory_stats()
@@ -63,7 +66,6 @@ def run_sequence_length_scaling(device):
             k_std = torch.randn(B, H, L, D, device=device, dtype=torch.float16, requires_grad=True)
             v_std = torch.randn(B, H, L, D, device=device, dtype=torch.float16, requires_grad=True)
 
-            # Warmup
             out = standard_attention_ref(q_std, k_std, v_std)
             loss = out.sum()
             loss.backward()
@@ -89,7 +91,6 @@ def run_sequence_length_scaling(device):
         except Exception as e:
             print(f"  Standard Attention failed at L = {L}: {e}")
 
-        # 2. Vectorized GLA Scan O(L)
         gc.collect()
         torch.cuda.empty_cache()
         torch.cuda.reset_peak_memory_stats()
@@ -125,7 +126,6 @@ def run_sequence_length_scaling(device):
         except Exception as e:
             print(f"  GLA Scan failed at L = {L}: {e}")
 
-        # 3. Block Sparse Attention O(L * Block)
         gc.collect()
         torch.cuda.empty_cache()
         torch.cuda.reset_peak_memory_stats()
@@ -136,7 +136,6 @@ def run_sequence_length_scaling(device):
             q_sp = torch.randn(B, H, L, D, device=device, dtype=torch.float16, requires_grad=True)
             k_sp = torch.randn(B, H, L, D, device=device, dtype=torch.float16, requires_grad=True)
             v_sp = torch.randn(B, H, L, D, device=device, dtype=torch.float16, requires_grad=True)
-            # Banded causal sparse mask
             mask = torch.tril(torch.ones(num_blocks, num_blocks, device=device, dtype=torch.int8))
 
             out = block_sparse_attn(q_sp, k_sp, v_sp, mask, block_size)
@@ -162,7 +161,6 @@ def run_sequence_length_scaling(device):
         except Exception as e:
             print(f"  Sparse Attention failed at L = {L}: {e}")
 
-        # 4. Flash GQA / Exact Linear Flash
         gc.collect()
         torch.cuda.empty_cache()
         torch.cuda.reset_peak_memory_stats()
@@ -218,7 +216,6 @@ def run_multi_tenant_concurrency_scaling(device):
     for n_streams in stream_counts:
         streams = [torch.cuda.Stream(device=device) for _ in range(n_streams)]
 
-        # Prepare inputs per stream
         q_list = [torch.randn(B, H, S, D, device=device, dtype=torch.float16) for _ in range(n_streams)]
         k_list = [torch.randn(B, H, S, D, device=device, dtype=torch.float16) for _ in range(n_streams)]
         v_list = [torch.randn(B, H, S, D, device=device, dtype=torch.float16) for _ in range(n_streams)]
@@ -228,14 +225,12 @@ def run_multi_tenant_concurrency_scaling(device):
         Ur_list = [torch.randn(K, R, device=device, dtype=torch.float16) for _ in range(n_streams)]
         al_list = [torch.randn(R, device=device, dtype=torch.float16) for _ in range(n_streams)]
 
-        # Warmup
         for i in range(n_streams):
             with torch.cuda.stream(streams[i]):
                 _ = flash_gqa(q_list[i], k_list[i], v_list[i], is_causal=True)
                 _ = fused_lowrank_gated_gemm(X_list[i], Vr_list[i], Ur_list[i], al_list[i])
         torch.cuda.synchronize()
 
-        # Sequential measurement
         torch.cuda.synchronize()
         t0_seq = time.perf_counter()
         for _ in range(50):
@@ -245,7 +240,6 @@ def run_multi_tenant_concurrency_scaling(device):
         torch.cuda.synchronize()
         seq_ms = round((time.perf_counter() - t0_seq) / 50 * 1000, 3)
 
-        # Concurrent measurement
         torch.cuda.synchronize()
         t0_par = time.perf_counter()
         for _ in range(50):
@@ -281,7 +275,6 @@ def run_multi_tenant_concurrency_scaling(device):
 def run_1000_iteration_fragmentation(device):
     """Execute run 1000 iteration fragmentation routine."""
     print("\n--- 3. 1,000-ITERATION MEMORY FRAGMENTATION & LEAK TRACKING ---")
-    # Base resident weights 2.0 GB
     weights = [torch.empty(256 * 1024 * 512, dtype=torch.float32, device=device) for _ in range(4)]
 
     B, H, S, D = 2, 4, 512, 64
@@ -291,7 +284,6 @@ def run_1000_iteration_fragmentation(device):
     v = torch.randn(B, H, S, D, device=device, dtype=torch.float16, requires_grad=True)
     mask = (torch.rand(S // block_size, S // block_size, device=device) > 0.5).to(torch.int8)
 
-    # Warmup 25 iters
     for _ in range(25):
         out = block_sparse_attn(q, k, v, mask, block_size)
         loss = out.sum()
@@ -369,7 +361,6 @@ def main():
     tenant_scaling = run_multi_tenant_concurrency_scaling(device)
     frag_profile = run_1000_iteration_fragmentation(device)
 
-    # Export to CSV
     csv_dir = "/mnt/d/SVD_linear_Attention/docs/benchmarks"
     os.makedirs(csv_dir, exist_ok=True)
     csv_path = os.path.join(csv_dir, "paper_benchmarks_vram_concurrency.csv")
@@ -438,13 +429,11 @@ def main():
 
     print(f"\nSaved CSV to {csv_path}")
 
-    # Generate LaTeX Tables
     latex_path = "/mnt/d/SVD_linear_Attention/docs/reports/PAPER_TABLES_VRAM_SCALING.tex"
     with open(latex_path, "w") as f:
         f.write("% Publication-Grade LaTeX Tables: Memory Scaling & Concurrency Profiling\n")
         f.write("% Target Architecture: NVIDIA RTX 4070 Laptop GPU (8GB VRAM, Ada Lovelace SM 8.9)\n\n")
 
-        # Table 1: Sequence Length Scaling
         f.write("\\begin{table*}[t]\n\\centering\n\\small\n")
         f.write(
             "\\caption{\\textbf{Sequence Length Scaling and VRAM Footprint Comparison.} Peak allocated VRAM (MB) and forward+backward execution latency (ms) measured on physical NVIDIA RTX 4070 Laptop GPU (8GB VRAM) across sequence lengths $L \\in [512, 16384]$. Standard Self-Attention triggers Out-of-Memory (OOM) at $L \\ge 8192$, whereas NeuralOps Linear GLA and Block-Sparse Attention exhibit strictly bounded linear memory $\\mathcal{O}(L)$ footprint and sub-linear scaling.}\n"
@@ -471,7 +460,6 @@ def main():
             )
         f.write("\\bottomrule\n\\end{tabular}\n\\end{table*}\n\n")
 
-        # Table 2: Multi-Tenant Concurrency Scaling
         f.write("\\begin{table}[h]\n\\centering\n\\small\n")
         f.write(
             "\\caption{\\textbf{Multi-Tenant CUDA Stream Concurrency and Asynchronous Throughput.} Scalability profile under simultaneous heterogeneous client query execution across $1, 2, 4,$ and $8$ independent CUDA streams on 36 Ada Lovelace Streaming Multiprocessors.}\n"
@@ -485,7 +473,6 @@ def main():
             )
         f.write("\\bottomrule\n\\end{tabular}\n\\end{table}\n\n")
 
-        # Table 3: Allocator Fragmentation
         f.write("\\begin{table}[h]\n\\centering\n\\small\n")
         f.write(
             "\\caption{\\textbf{Long-Duration Allocator Fragmentation and Memory Leak Audit.} Telemetry captured over 1,000 continuous autograd iterations with 2.0~GB resident parameters on RTX 4070 Laptop GPU.}\n"
@@ -510,7 +497,6 @@ def main():
 
     print(f"Saved LaTeX tables to {latex_path}")
 
-    # Save JSON summary
     json_path = "/mnt/d/SVD_linear_Attention/results/profiling/paper_vram_concurrency_scaling.json"
     summary = {
         "device": device_name,

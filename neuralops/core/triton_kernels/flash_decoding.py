@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Flash-Decoding Attention
 
 Accelerates autoregressive decoding via split-KV sequence chunking and multi-block parallel reduction.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -48,11 +52,9 @@ if HAS_TRITON and tl is not None:
         k_ptrs = K_ptr + i_b * stride_kb + i_h * stride_kh + offs_n[:, None] * stride_kn + offs_d[None, :] * stride_kd
         k = tl.load(k_ptrs, mask=mask_n[:, None], other=0.0).to(tl.float32)
 
-        # Compute dot product scores: (CHUNK_SIZE,)
         scores = tl.sum(q[None, :] * k, axis=1) * scale
         scores = tl.where(mask_n, scores, -1e4)
 
-        # Online softmax over chunk
         m_c = tl.max(scores, axis=0)
         p = tl.exp(scores - m_c)
         l_c = tl.sum(p, axis=0)
@@ -60,13 +62,10 @@ if HAS_TRITON and tl is not None:
         v_ptrs = V_ptr + i_b * stride_vb + i_h * stride_vh + offs_n[:, None] * stride_vn + offs_d[None, :] * stride_vd
         v = tl.load(v_ptrs, mask=mask_n[:, None], other=0.0).to(tl.float32)
 
-        # Chunk output: sum(p_i * v_i) / l_c
         out_chunk = tl.sum(p[:, None] * v, axis=0) / tl.maximum(l_c, 1e-6)
 
-        # Logsumexp of chunk: m_c + log(l_c)
         lse_c = m_c + tl.log(tl.maximum(l_c, 1e-6))
 
-        # Store intermediate chunk outputs and logsumexp
         out_ptrs = MidOut_ptr + i_b * stride_mb + i_h * stride_mh + pid_c * stride_mc + offs_d * stride_md
         tl.store(out_ptrs, out_chunk.to(MidOut_ptr.dtype.element_ty))
 
@@ -108,8 +107,7 @@ def flash_decoding_pytorch(
         chunk_outputs.append(out_chunk)
         chunk_logsumexps.append(lse)
 
-    # Multi-block logsumexp reduction across chunks
-    all_lse = torch.cat(chunk_logsumexps, dim=-1)  # [B, H, N_q, num_chunks]
+    all_lse = torch.cat(chunk_logsumexps, dim=-1)
     global_lse = torch.logsumexp(all_lse, dim=-1, keepdim=True)
 
     final_out = torch.zeros_like(q)
@@ -140,17 +138,14 @@ if HAS_TRITON and tl is not None:
         offs_c = tl.arange(0, BLOCK_C)
         mask_c = offs_c < num_chunks
 
-        # Load chunk logsumexps
         lse_ptrs = MidLse_ptr + i_b * stride_lb + i_h * stride_lh + offs_c * stride_lc
         lse_vals = tl.load(lse_ptrs, mask=mask_c, other=-1e4)
 
-        # Global max of lse
         max_lse = tl.max(lse_vals, axis=0)
         p = tl.where(mask_c, tl.exp(lse_vals - max_lse), 0.0)
         global_sum = tl.sum(p, axis=0)
-        _alpha = p / tl.maximum(global_sum, 1e-6)  # (BLOCK_C,)
+        _alpha = p / tl.maximum(global_sum, 1e-6)
 
-        # Accumulate weighted chunk outputs
         acc = tl.zeros([BLOCK_D], dtype=tl.float32)
         for c in range(num_chunks):
             w_c = tl.load(MidLse_ptr + i_b * stride_lb + i_h * stride_lh + c * stride_lc)
@@ -178,7 +173,6 @@ def flash_decoding_attention(
     B, H, N_q, D = q.shape
     N_kv = k.shape[-2]
 
-    # Only decode (N_q == 1) benefits from split-KV chunking
     if HAS_TRITON and not FORCE_PYTORCH_FALLBACK and q.is_cuda and N_q == 1 and D in (16, 32, 64, 128, 256):
         try:
             num_chunks = triton.cdiv(N_kv, chunk_size)
@@ -198,7 +192,6 @@ def flash_decoding_attention(
                 BLOCK_D=D,
             )
 
-            # Stage 2: Reduction across chunks in GPU SRAM via stage 2 kernel
             final_out = torch.empty((B, H, 1, D), dtype=q.dtype, device=q.device)
             block_c = triton.next_power_of_2(max(16, num_chunks))
             grid2 = (B * H,)

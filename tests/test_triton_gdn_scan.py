@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Comprehensive test suite for neuralops.core.triton_kernels.gdn_scan.
 
@@ -49,13 +55,13 @@ def reference_gdn_scan_pytorch(q, k, v, beta, alpha):
         for h in range(H):
             S = torch.zeros(D, D, device=q.device, dtype=torch.float32)
             for t in range(L):
-                qt = q_f[b, h, t]          # (D,)
-                kt = k_f[b, h, t]          # (D,)
-                vt = v_f[b, h, t]          # (D,)
-                bt = beta_f[b, h, t]       # scalar
-                at = alpha_f[b, h, t]      # scalar
+                qt = q_f[b, h, t]
+                kt = k_f[b, h, t]
+                vt = v_f[b, h, t]
+                bt = beta_f[b, h, t]
+                at = alpha_f[b, h, t]
 
-                inter_v = torch.matmul(kt, S)  # (D,)
+                inter_v = torch.matmul(kt, S)
                 err = vt - inter_v
                 norm_sq = torch.dot(kt, kt)
                 step = at / max(1.0 + norm_sq.item(), 1.0)

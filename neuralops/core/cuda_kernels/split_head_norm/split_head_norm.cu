@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -5,7 +12,6 @@
 
 namespace neuralops { namespace cuda {
 
-// Heterogeneous split-head group RMSNorm with warp-level reduction
 template <typename scalar_t>
 __global__ void __launch_bounds__(256) split_head_norm_kernel(
     scalar_t* __restrict__ out,
@@ -43,7 +49,7 @@ __global__ void __launch_bounds__(256) split_head_norm_kernel(
     }
 }
 
-}} // namespace neuralops::cuda
+}}
 
 torch::Tensor split_head_norm_fwd(
     const torch::Tensor& x,

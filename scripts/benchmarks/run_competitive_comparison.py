@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Automated Cross-Framework Comparative Benchmark Harness for NeuralOps v1.3.7.
 
 Compares NeuralOps fused Triton kernels and subquadratic linear attention mechanisms
@@ -40,14 +45,12 @@ def benchmark_module_throughput_and_memory(
     is_cuda = device.type == "cuda"
     B, T, D = x.shape
 
-    # Warmup
     with torch.no_grad():
         for _ in range(warmup):
             _ = module(x)
             if is_cuda:
                 torch.cuda.synchronize(device)
 
-    # Reset max memory tracker
     if is_cuda:
         torch.cuda.reset_peak_memory_stats(device)
         torch.cuda.synchronize(device)
@@ -128,11 +131,9 @@ def run_benchmark_suite(
         print(f"\n--- Sequence Length: T = {seq_len} ---")
         x = torch.randn(batch_size, seq_len, embed_dim, device=target_dev, dtype=torch.float16)
 
-        # PyTorch standard baseline (MHA)
         ref_mha = nn.MultiheadAttention(embed_dim, num_heads, batch_first=True).to(target_dev, dtype=torch.float16)
         ref_mha.eval()
 
-        # Wrap PyTorch baseline
         class BaselineMHA(nn.Module):
             """Baselinemha definition."""
 
@@ -174,12 +175,10 @@ def run_benchmark_suite(
                 perf = benchmark_module_throughput_and_memory(mod, x)
                 speedup = round(mha_perf["latency_ms"] / max(perf["latency_ms"], 1e-6), 2)
 
-                # Parity test against module float32 reference
                 with torch.no_grad():
                     out_fp16 = mod(x)
                     if isinstance(out_fp16, tuple):
                         out_fp16 = out_fp16[0]
-                    # Numerical self-consistency check
                     cos_sim = 1.0 - (torch.isnan(out_fp16).float().mean().item())
 
                 print(
@@ -201,12 +200,10 @@ def run_benchmark_suite(
             except Exception as e:
                 print(f"[!] Warning: failed benchmarking {mod_name} at T={seq_len}: {e}")
 
-    # Save JSON
     json_path = out_path / "competitive_comparison_v137.json"
     with open(json_path, "w", encoding="utf-8") as f:
         json.dump(results_table, f, indent=2)
 
-    # Save CSV
     csv_path = out_path / "competitive_comparison_v137.csv"
     if results_table:
         with open(csv_path, "w", newline="", encoding="utf-8") as f:
@@ -214,7 +211,6 @@ def run_benchmark_suite(
             writer.writeheader()
             writer.writerows(results_table)
 
-    # Generate Markdown Summary
     md_path = out_path / "competitive_comparison_v137.md"
     with open(md_path, "w", encoding="utf-8") as f:
         f.write("# 🚀 NeuralOps v1.3.7 Cross-Framework Competitive Benchmark\n\n")

@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Spectral Singular Value Shrinkage Autograd Interface
 
 Hardware-accelerated CUDA C++ autograd implementation with analytical gradients and three-level fallback dispatch.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -61,7 +65,6 @@ def spectral_shrinkage(x_re: torch.Tensor, x_im: torch.Tensor, w_re: torch.Tenso
         )
         return torch.complex(out[0], out[1])
 
-    # If requires_grad, use autograd tracking with the exact mathematical formulation
     if torch.is_grad_enabled() and any(t.requires_grad for t in (x_re, x_im, w_re, w_im, tau) if isinstance(t, torch.Tensor)):
         return spectral_shrinkage_pytorch_ref(x_re, x_im, w_re, w_im, tau)
 

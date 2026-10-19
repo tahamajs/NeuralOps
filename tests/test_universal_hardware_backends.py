@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Universal Cross-Hardware & Multi-Backend Test Suite.
 Verifies seamless initialization and execution across:
@@ -55,20 +61,16 @@ def test_hardware_probe():
 
 def test_device_safe_casting():
     """Verify safe_to_device and dtype harmonization prevent crashes on all hardware."""
-    # Test on CPU
     x = torch.randn(2, 4, dtype=torch.float64)
     x_cpu = safe_to_device(x, "cpu")
     assert x_cpu.device.type == "cpu"
     assert x_cpu.dtype == torch.float64
 
-    # Test on MPS if available
     if is_mps_available():
         x_mps = safe_to_device(x, "mps")
         assert x_mps.device.type == "mps"
-        # float64 must safely downcast to float32 on MPS
         assert x_mps.dtype == torch.float32
 
-    # Test nested structure
     data = {"a": x, "b": [x, x]}
     data_safe = safe_to_device(data, "cpu")
     assert isinstance(data_safe["b"], list)
@@ -81,12 +83,10 @@ def test_universal_dispatcher_3_tiers():
     k = torch.randn(1, 2, 8, 16)
     v = torch.randn(1, 2, 8, 16)
 
-    # Calling chunk_gla on CPU must succeed via Tier 3 fallback
     out = dispatch("chunk_gla", q, k, v)
     assert out.shape == (1, 2, 8, 16)
     assert out.device.type == "cpu"
 
-    # Calling on MPS if available
     if is_mps_available():
         q_mps, k_mps, v_mps = q.to("mps"), k.to("mps"), v.to("mps")
         out_mps = dispatch("chunk_gla", q_mps, k_mps, v_mps)
@@ -122,7 +122,6 @@ def test_all_131_attentions_cpu_safe():
         except Exception as e:
             failed.append((name, str(e)))
 
-    # Allow tiny fraction of experimental modules requiring special args, but >90% must succeed
     pass_ratio = successful / len(keys)
     assert pass_ratio >= 0.90, f"Attention pass ratio {pass_ratio:.2%} too low! Failed {len(failed)}: {failed[:5]}"
 
@@ -132,7 +131,6 @@ def test_all_72_compressors_cpu_safe():
     keys = COMPRESSOR_REGISTRY.keys()
     assert len(keys) >= 72, f"Expected at least 72 compressors, found {len(keys)}"
 
-    # Provide a simple linear model for compressors requiring a model parameter
     dummy_model = nn.Sequential(nn.Linear(32, 32))
 
     successful = 0
@@ -143,7 +141,6 @@ def test_all_72_compressors_cpu_safe():
             cls = COMPRESSOR_REGISTRY.get(name)
             if cls is None:
                 continue
-            # Try initializing compressor with standard configs
             init_attempts = [
                 lambda: cls(),
                 lambda: cls(model=dummy_model),

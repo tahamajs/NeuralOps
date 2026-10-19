@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -6,15 +13,6 @@
 namespace neuralops {
 namespace cuda {
 
-// Fused Kronecker Product Matmul Forward Kernel:
-// Form: out = (A \otimes B) @ X + bias
-// Stage 1: T = X @ B^T
-// Stage 2: Y = A @ T + bias
-//
-// Hardware-level optimization:
-// 1. 128-bit float4 vectorized inner contractions along N2 dimension.
-// 2. Strict FP32 intermediate accumulation using hardware fmaf.
-// 3. Fused bias addition directly in registers.
 template <typename scalar_t>
 __launch_bounds__(256)
 __global__ void kronecker_gemm_fwd_vectorized_kernel(
@@ -82,8 +80,8 @@ __global__ void kronecker_gemm_fwd_vectorized_kernel(
     out[m * (M1 * M2) + out_idx] = from_float<scalar_t>(acc);
 }
 
-} // namespace cuda
-} // namespace neuralops
+}
+}
 
 torch::Tensor kronecker_gemm_fwd(
     const torch::Tensor& x,

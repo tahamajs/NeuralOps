@@ -1,3 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 from types import SimpleNamespace
 
 import pytest
@@ -8,18 +15,15 @@ from neuralops.attentions.cluster_attention import (ClusterAttention,
 
 
 def test_cluster_lora_config_independence():
-    # 1. config=None, comp_config present
     comp_cfg = SimpleNamespace(lora_rank=8, lora_alpha=16.0)
     p1 = ClusterAttention(config=None, comp_config=comp_cfg, d_model=64, num_heads=4)
     assert p1.lora_rank == 8
     assert p1.lora_alpha == 16.0
 
-    # 2. config=None, comp_config=None, kwargs override
     p2 = ClusterAttention(config=None, comp_config=None, d_model=64, num_heads=4, lora_rank=4, lora_alpha=8.0)
     assert p2.lora_rank == 4
     assert p2.lora_alpha == 8.0
 
-    # 3. config present
     cfg = SimpleNamespace(lora_rank=12, lora_alpha=24.0, num_attention_heads=4, hidden_size=64)
     p3 = ClusterAttention(config=cfg)
     assert p3.lora_rank == 12
@@ -52,15 +56,13 @@ def test_cluster_rotary_fallback():
 def test_cluster_bidirectional_and_causal_shapes():
     x = torch.randn(2, 10, 64)
     mask = torch.ones(2, 10)
-    mask[:, 7:] = 0  # 3 padding tokens
+    mask[:, 7:] = 0
 
-    # Bidirectional (encoder) with clustering
     p_bidi = ClusterAttention(d_model=64, num_heads=4, is_causal=False, is_decoder=False, lora_rank=8, num_clusters=4)
     out_bidi, _ = p_bidi(x, attention_mask=mask)
     assert out_bidi.shape == (2, 10, 64)
     assert torch.isfinite(out_bidi).all()
 
-    # Causal (decoder) with exact attention
     p_causal = ClusterAttention(d_model=64, num_heads=4, is_causal=True, is_decoder=True, lora_rank=8)
     out_causal, _ = p_causal(x, attention_mask=mask)
     assert out_causal.shape == (2, 10, 64)
@@ -73,7 +75,7 @@ def test_cluster_kmeans_forward():
     assert out.shape == (2, 12, 64)
     assert torch.isfinite(out).all()
     if attn is not None:
-        assert attn.shape == (2, 4, 4, 12)  # [B, H, K, L]
+        assert attn.shape == (2, 4, 4, 12)
 
 def test_cluster_frobenius_norm_verification():
     class ZeroAttn(nn.Module):
@@ -83,7 +85,7 @@ def test_cluster_frobenius_norm_verification():
             self.k_proj = nn.Linear(64, 64)
             self.v_proj = nn.Linear(64, 64)
             self.out_proj = nn.Linear(64, 64)
-            self.q_proj.weight.data.zero_()  # Zero norm
+            self.q_proj.weight.data.zero_()
 
     old = ZeroAttn()
     with pytest.raises(RuntimeError, match="norm"):
@@ -94,11 +96,11 @@ def test_cluster_fallback_on_copy_weights_failure():
         def __init__(self):
             super().__init__()
             self.attention = nn.Linear(64, 64)
-            self.attention.weight.data.zero_()  # Causes copy_weights to raise
+            self.attention.weight.data.zero_()
     
     layer = BrokenLayer()
     res = inject_cluster(layer=layer)
-    assert res is None  # Graceful fallback, no crash
+    assert res is None
 
 def test_cluster_lora_adapters_freezing():
     class DummyAttn(nn.Module):
@@ -128,7 +130,6 @@ def test_cluster_injection_all_4_architectures():
             self.hidden_size = 64
             self.num_heads = 4
 
-    # 1. DistilBERT clone
     class DistilBertClone(nn.Module):
         def __init__(self):
             super().__init__()
@@ -142,7 +143,6 @@ def test_cluster_injection_all_4_architectures():
     assert res_d is not None
     assert isinstance(d_model.distilbert.transformer.layer[0].attention, ClusterAttention)
 
-    # 2. RoBERTa clone
     class RobertaClone(nn.Module):
         def __init__(self):
             super().__init__()
@@ -156,7 +156,6 @@ def test_cluster_injection_all_4_architectures():
     assert res_r is not None
     assert isinstance(r_model.roberta.encoder.layer[0].attention, ClusterAttention)
 
-    # 3. GPT-2 clone
     class GPT2Clone(nn.Module):
         def __init__(self):
             super().__init__()
@@ -169,7 +168,6 @@ def test_cluster_injection_all_4_architectures():
     assert res_g is not None
     assert isinstance(g_model.transformer.h[0].attn, ClusterAttention)
 
-    # 4. Qwen3.5 clone
     class QwenClone(nn.Module):
         def __init__(self):
             super().__init__()
@@ -219,9 +217,8 @@ def test_cluster_rope_uses_query_not_key():
     p = ClusterAttention(d_model=64, num_heads=4, pretrained_attn=old, lora_rank=0)
     x = torch.randn(2, 8, 64)
     p(x, position_embeddings=None)
-    # rotary_emb must have been called with Q: shape [2, 4, 8, 16] (seq_len=8, head_dim=16)
     assert len(calls) >= 1, "rotary_emb was never called"
-    rotary_L = calls[0][2]   # sequence length dimension of the input passed to rotary_emb
+    rotary_L = calls[0][2]
     assert rotary_L == 8, f"rotary_emb called with seq_len={rotary_L}, expected 8 (Q length, not K length)"
 
 
@@ -231,7 +228,7 @@ def test_cluster_num_kv_heads_from_source_attn():
         def __init__(self):
             super().__init__()
             self.q_proj = nn.Linear(64, 64)
-            self.k_proj = nn.Linear(64, 32)   # 2 kv_heads * 16
+            self.k_proj = nn.Linear(64, 32)
             self.v_proj = nn.Linear(64, 32)
             self.out_proj = nn.Linear(64, 64)
             self.hidden_size = 64
@@ -266,12 +263,10 @@ def test_cluster_head_dim_fallback():
 
 
 def test_cluster_padding_mask_query_zeroing():
-    # 2D attention_mask with zeros at pad tokens
     p_dec = ClusterAttention(d_model=64, num_heads=4, is_decoder=True, is_causal=True)
     x = torch.randn(2, 6, 64)
     mask = torch.tensor([[1, 1, 1, 1, 0, 0], [1, 1, 1, 0, 0, 0]])
     out_dec, _ = p_dec(x, attention_mask=mask)
-    # Positions 4, 5 in sample 0 and 3, 4, 5 in sample 1 must be exactly zero
     assert torch.all(out_dec[0, 4:] == 0.0)
     assert torch.all(out_dec[1, 3:] == 0.0)
 
@@ -282,7 +277,6 @@ def test_cluster_padding_mask_query_zeroing():
 
 
 def test_cluster_third_rope_fallback_signature():
-    # Mock rotary that only accepts rotary_mod(Q) without arguments
     class MinimalRotary(nn.Module):
         def forward(self, q):
             return torch.ones_like(q), torch.zeros_like(q)

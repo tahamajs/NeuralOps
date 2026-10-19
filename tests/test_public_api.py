@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Public API Verification Tests for NeuralOps 1.3.0.
 
@@ -105,7 +111,6 @@ def test_validation_and_backends():
     triton_avail = has_triton()
     assert isinstance(triton_avail, bool)
 
-    # Validate on dummy model
     class SimpleToyModel(nn.Module):
         def __init__(self):
             super().__init__()
@@ -136,25 +141,21 @@ def test_model_surgery_metadata_and_export_roundtrip(tmp_path):
     )
     model = BertModel(config)
 
-    # 1. Replace attention
     model = replace_attention(model, "cosformer")
     assert hasattr(model, "_neuralops_metadata")
     assert len(model._neuralops_metadata) == 1
     assert model._neuralops_metadata[0]["op"] == "replace"
     assert model._neuralops_metadata[0]["type"] == "cosformer"
 
-    # 2. Compress
     model = compress(model, method="direct_svd", rank=8)
     assert len(model._neuralops_metadata) == 2
     assert model._neuralops_metadata[1]["op"] == "compress"
     assert model._neuralops_metadata[1]["type"] == "direct_svd"
 
-    # 3. Export
     out_dir = tmp_path / "exported_model"
     export_model(model, out_dir, format="safetensors")
     assert (out_dir / "neuralops_config.json").exists()
 
-    # 4. Load
     fresh_base = BertModel(config)
     loaded = load_model(out_dir, base_model=fresh_base)
     assert hasattr(loaded, "_neuralops_metadata")

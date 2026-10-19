@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Unit tests validating fixes for low-accuracy modules:
 - GPT-2 fused c_attn splitting prior to SVD
@@ -32,7 +38,6 @@ class TestLowAccuracyModulesFixes(unittest.TestCase):
         asvd = ASVDAttention(hidden_size=64, num_heads=4, is_decoder=True)
         asvd.copy_weights(orig)
 
-        # Ensure query, key, value weights each have Frobenius norm >= 1e-4
         for proj in (asvd.query, asvd.key, asvd.value, asvd.out_proj):
             w = proj.weight if hasattr(proj, "weight") else proj.get_weight()
             norm = torch.linalg.norm(w.float()).item()
@@ -50,7 +55,6 @@ class TestLowAccuracyModulesFixes(unittest.TestCase):
         """Cluster attention excludes padding tokens from centroid calculation."""
         cluster_attn = ClusterAttention(hidden_size=64, num_heads=4, num_clusters=4)
         x = torch.randn(2, 16, 64)
-        # Sequence 2 has last 8 tokens as padding
         mask = torch.ones(2, 16)
         mask[1, 8:] = 0.0
         out, _ = cluster_attn(x, attention_mask=mask)

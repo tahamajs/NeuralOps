@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Master End-to-End Test Suite for All Framework Features and Subsystems.
 
@@ -23,7 +29,6 @@ import tempfile
 import unittest
 from typing import Any, Dict
 
-# Ensure framework can be imported from root or neuralops/
 current_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.abspath(os.path.join(current_dir, "../../.."))
 codes_dir = os.path.abspath(os.path.join(current_dir, "../.."))
@@ -94,7 +99,6 @@ class ToyClassifierModel(nn.Module):
         x = self.embeddings(input_ids)
         for layer in self.transformer["layer"]:
             x = layer(x, attention_mask=attention_mask)
-        # Sequence pooler on [CLS] token (index 0)
         cls_rep = x[:, 0, :]
         logits = self.classifier(cls_rep)
         
@@ -129,9 +133,6 @@ class TestFullFrameworkEndToEnd(unittest.TestCase):
         if os.path.exists(self.temp_dir):
             shutil.rmtree(self.temp_dir)
 
-    # --------------------------------------------------------------------------
-    # 1. Configuration & Serialization Tests
-    # --------------------------------------------------------------------------
     def test_01_configuration_lifecycle(self) -> None:
         """Test ExperimentConfig creation and serialization."""
         ds_cfg = DatasetConfig(name="sst2", path="glue/sst2", task_type="single", num_labels=2)
@@ -149,9 +150,6 @@ class TestFullFrameworkEndToEnd(unittest.TestCase):
         self.assertEqual(exp_cfg.svd_ranks, [8, 16, 32])
         self.assertEqual(len(exp_cfg.datasets), 1)
 
-    # --------------------------------------------------------------------------
-    # 2. Registry Integrity & Discovery Tests
-    # --------------------------------------------------------------------------
     def test_02_registries_completeness(self) -> None:
         """Verify ATTENTION_REGISTRY and COMPRESSOR_REGISTRY contain all expected modules."""
         attn_keys = ATTENTION_REGISTRY.keys()
@@ -166,9 +164,6 @@ class TestFullFrameworkEndToEnd(unittest.TestCase):
         for k in ["aasvd", "slicegpt", "sparsegpt", "astro", "faq", "admm_pruner", "zerokv_neo"]:
             self.assertIsNotNone(COMPRESSOR_REGISTRY.get(k), f"Expected compressor key '{k}' missing or unresolvable")
 
-    # --------------------------------------------------------------------------
-    # 3. Universal Adapter & Weight Copying Tests
-    # --------------------------------------------------------------------------
     def test_03_universal_adapter_weight_extraction(self) -> None:
         """Verify UniversalAdapter extracts Q, K, V, and Output projections from diverse blocks."""
         block = ToyEncoderBlock(hidden_size=64, num_heads=4)
@@ -185,9 +180,6 @@ class TestFullFrameworkEndToEnd(unittest.TestCase):
         self.assertIsNotNone(q_b)
         self.assertIsNotNone(o_b)
 
-    # --------------------------------------------------------------------------
-    # 4. Attention Mask Engine Tests (2D, 3D, 4D, Causal, Band)
-    # --------------------------------------------------------------------------
     def test_04_attention_mask_subsystem(self) -> None:
         """Verify attention mask helpers across 2D, 3D, 4D, and causal configurations."""
         B, N = 2, 8
@@ -215,9 +207,6 @@ class TestFullFrameworkEndToEnd(unittest.TestCase):
         self.assertEqual(masked_scores.shape, (B, 1, N, N))
         self.assertLess(masked_scores[0, 0, :, 7].mean().item(), -9000.0)
 
-    # --------------------------------------------------------------------------
-    # 5. Attention Injection Subsystem
-    # --------------------------------------------------------------------------
     def test_05_attention_injection_pipeline(self) -> None:
         """Verify dynamic injection of custom attention modules into transformer backbones."""
         class DummyConfig:
@@ -240,9 +229,6 @@ class TestFullFrameworkEndToEnd(unittest.TestCase):
         loss.backward()
         self.assertIsNotNone(model_injected.classifier.weight.grad)
 
-    # --------------------------------------------------------------------------
-    # 6. Compression Engine Lifecycle
-    # --------------------------------------------------------------------------
     def test_06_compression_engine_lifecycle(self) -> None:
         """Verify compression engine factorizes linear modules and returns accurate statistics."""
         model = ToyClassifierModel(hidden_size=64, num_layers=2)
@@ -255,9 +241,6 @@ class TestFullFrameworkEndToEnd(unittest.TestCase):
         out = compressed_model(dummy_input)
         self.assertEqual(out.logits.shape, (2, 2))
 
-    # --------------------------------------------------------------------------
-    # 7. Metrics & ModelProfiler
-    # --------------------------------------------------------------------------
     def test_07_metrics_and_profiler(self) -> None:
         """Verify accuracy/f1 computation and ModelProfiler forward hooks."""
         preds = np.array([0, 1, 1, 0])
@@ -279,9 +262,6 @@ class TestFullFrameworkEndToEnd(unittest.TestCase):
         report = profiler.get_report()
         self.assertIsInstance(report, dict)
 
-    # --------------------------------------------------------------------------
-    # 8. Complete Trainer Execution Loop
-    # --------------------------------------------------------------------------
     def test_08_trainer_execution_loop(self) -> None:
         """Verify end-to-end training and evaluation loops on synthetic batches."""
         model = ToyClassifierModel(hidden_size=64, num_layers=2)
@@ -318,9 +298,6 @@ class TestFullFrameworkEndToEnd(unittest.TestCase):
         self.assertEqual(len(all_preds), 8)
         self.assertEqual(len(all_labels), 8)
 
-    # --------------------------------------------------------------------------
-    # 9. Worker Status & Telemetry Output
-    # --------------------------------------------------------------------------
     def test_09_worker_telemetry_serialization(self) -> None:
         """Verify worker telemetry status file creation and JSON schema."""
         status_data = {

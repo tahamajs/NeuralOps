@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Comprehensive Test Suite for Vectorized Huffman Coder & Huffman Compressor.
 Tests roundtrip correctness, compression metrics, fallback LoRA freezing,
@@ -51,7 +57,6 @@ class DummyTransformerModel(nn.Module):
 
 class TestHuffmanCoder(unittest.TestCase):
 
-    # 2.1 Roundtrip Correctness
     def test_roundtrip_small_tensor(self):
         x = torch.randn(1000)
         packed, table, meta = HuffmanCoder.encode(x, quantize_bits=8)
@@ -84,25 +89,19 @@ class TestHuffmanCoder(unittest.TestCase):
         self.assertTrue(torch.allclose(x, rec, atol=1e-5), "High-bit quantization must be lossless identity")
         self.assertTrue(meta.get("is_raw", False))
 
-    # 2.2 Compression Metrics
     def test_entropy_calculation(self):
-        # 4 symbols with uniform frequency: entropy should be log2(4) = 2.0
         x = torch.tensor([0.0, 1.0, 2.0, 3.0] * 250)
         packed, table, meta = HuffmanCoder.encode(x, quantize_bits=2)
         entropy = meta["entropy"]
         self.assertAlmostEqual(entropy, 2.0, places=1)
 
     def test_compression_ratio(self):
-        # Skewed tensor: mostly zeros
         x = torch.zeros(1000)
         x[0:10] = 5.0
         packed, table, meta = HuffmanCoder.encode(x, quantize_bits=8)
-        # Original bytes: 1000 * 4 = 4000
-        # Compressed should be much smaller
         orig_bytes = x.numel() * x.element_size()
         self.assertLess(meta["compressed_bytes"], orig_bytes)
 
-    # 2.3 Fallback and LoRA Freezing
     def test_fallback_freezes_only_base(self):
         mod = DummyLoRAModule(64, 64, r=16)
         _freeze_base_only(mod)
@@ -118,7 +117,6 @@ class TestHuffmanCoder(unittest.TestCase):
         self.assertFalse(mod.weight.requires_grad, "Plain linear weight should be frozen")
         self.assertFalse(mod.bias.requires_grad, "Plain linear bias should be frozen")
 
-    # 2.4 Cross-Architecture Integration
     def test_injection_transformer(self):
         model = DummyTransformerModel(d_model=64, num_layers=2)
         comp = HuffmanCompressor(model, quantize_bits=8, max_error=0.20)

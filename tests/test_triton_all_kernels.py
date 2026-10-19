@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Integration and registry test suite for all Triton kernels in neuralops.
 
@@ -61,27 +67,23 @@ def test_kernel_exports_and_imports():
 
 def test_cpu_fallbacks_execution():
     """Verify fallbacks execute reliably on CPU without crashing or NaN."""
-    # 1. softplus
     x = torch.randn(4, 4)
     from neuralops.core.triton_kernels.softplus import softplus_fn
     assert torch.allclose(softplus_fn(x), F.softplus(x))
     assert callable(softplus)
 
-    # 2. low_rank fallback
     u = torch.randn(4, 8)
     v = torch.randn(8, 4)
     act = low_rank_pytorch_fallback(x, u, v)
     assert act.shape == (4, 4)
     assert torch.isfinite(act).all()
 
-    # 3. gqa fallback
     k = torch.randn(2, 2, 8, 16)
     v_t = torch.randn(2, 2, 8, 16)
     k_exp, v_exp = gqa_pytorch_fallback(k, v_t, num_kv_heads=2, num_heads=4)
     assert k_exp.shape == (2, 4, 8, 16)
     assert v_exp.shape == (2, 4, 8, 16)
 
-    # 4. linear_attn fallback
     q = torch.randn(2, 2, 16, 16)
     k_l = torch.randn(2, 2, 16, 16)
     v_l = torch.randn(2, 2, 16, 16)
@@ -89,7 +91,6 @@ def test_cpu_fallbacks_execution():
     assert out_l.shape == (2, 2, 16, 16)
     assert torch.isfinite(out_l).all()
 
-    # 5. state_update fallback
     u_s = torch.randn(2, 4, 8)
     delta = torch.randn(2, 4, 8).sigmoid() * 0.1
     A = -torch.rand(8, 4)
@@ -105,13 +106,11 @@ def test_cosformer_and_svd_linear_attention_modules():
     """Verify higher-level attention layers built on Triton kernels instantiate and run."""
     x = torch.randn(2, 8, 64)
 
-    # Cosformer attention
     cosformer = TritonCosformerAttention(embed_dim=64, num_heads=4)
     out_cos, _ = cosformer(x)
     assert out_cos.shape == (2, 8, 64)
     assert torch.isfinite(out_cos).all()
 
-    # SVD linear attention
     svd_attn = TritonSVDLinearAttention(embed_dim=64, num_heads=4, rank=16)
     out_svd, _ = svd_attn(x)
     assert out_svd.shape == (2, 8, 64)
@@ -124,7 +123,6 @@ def test_triton_kernels_unification_and_interoperability():
     import neuralops.kernels.triton as nkt
     import neuralops.core.triton_kernels as ctk
 
-    # 1. 13 Flagship Kernel Callables exported on nkt
     flagship_callables = [
         "triton_fused_lowrank_gated_gemm",
         "triton_fused_lowrank_sparse_gemm",
@@ -147,7 +145,6 @@ def test_triton_kernels_unification_and_interoperability():
         assert hasattr(ctk, fn_name), f"Missing {fn_name} in neuralops.core.triton_kernels"
         assert callable(getattr(ctk, fn_name))
 
-    # 2. PyTorch reference functions
     py_refs = [
         "triton_fused_lowrank_gated_gemm_pytorch_ref",
         "triton_fused_lowrank_sparse_gemm_pytorch_ref",
@@ -169,11 +166,9 @@ def test_triton_kernels_unification_and_interoperability():
         assert hasattr(ctk, ref_name), f"Missing {ref_name} in neuralops.core.triton_kernels"
         assert callable(getattr(ctk, ref_name))
 
-    # 3. Direct access via neuralops.kernels
     assert hasattr(neuralops.kernels, "triton")
     assert neuralops.kernels.triton is nkt
 
-    # 4. Cross-namespace imports via transparent aliasing
     from neuralops.core.triton_kernels import chunked_delta_gate_scan as cdgs_alias
     from neuralops.kernels.triton import chunked_delta_gate_scan as cdgs_direct
     assert cdgs_alias is cdgs_direct

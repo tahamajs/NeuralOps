@@ -1,3 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 import pytest
 import torch
 import torch.nn as nn
@@ -12,7 +19,6 @@ from neuralops.compression_engine.svd.aa_svd_compressor import SVDLinear
 
 @pytest.mark.parametrize("orig_dim", [48, 80, 112, 160])
 def test_tensor_core_head_dim_auto_padding(orig_dim):
-    # Tests non-power-of-2 dimensions common in Qwen, Falcon, etc.
     B, H, N = 2, 4, 16
     q = torch.randn(B, H, N, orig_dim)
     k = torch.randn(B, H, N, orig_dim)
@@ -20,19 +26,16 @@ def test_tensor_core_head_dim_auto_padding(orig_dim):
 
     (q_pad, k_pad, v_pad), d_orig = pad_head_dim_for_triton(q, k, v)
 
-    # Padded dim must be power of 2 >= 16
     padded_dim = q_pad.shape[-1]
     assert (padded_dim & (padded_dim - 1)) == 0, f"{padded_dim} is not a power of 2!"
     assert padded_dim >= orig_dim
 
-    # Slicing unpad must perfectly restore original shape and tensor values
     q_restored = unpad_head_dim(q_pad, d_orig)
     assert q_restored.shape == q.shape
     assert torch.equal(q_restored, q)
 
 
 def test_svd_linear_rank_tensor_core_alignment():
-    # Tests that ranks can be freely initialized or aligned without dimension crashes
     in_features, out_features = 128, 256
     layer = SVDLinear(in_features, out_features, rank=16, bias=True)
     x = torch.randn(2, 8, in_features)
@@ -52,7 +55,6 @@ def test_all_131_attentions_direct_dim_256():
         cls = ATTENTION_REGISTRY.get(name)
         assert cls is not None, f"Could not retrieve attention class {name}"
         
-        # 1. Direct Class Instantiation cls(dim=256, num_heads=4)
         try:
             inst_direct = cls(dim=256, num_heads=4)
         except Exception as e:
@@ -67,7 +69,6 @@ def test_all_131_attentions_direct_dim_256():
         except Exception as e:
             pytest.fail(f"Direct instantiation forward failed for {name}: {e}")
 
-        # 2. create_attention(name, dim=256, num_heads=4)
         try:
             inst_factory = create_attention(name, dim=256, num_heads=4)
         except Exception as e:

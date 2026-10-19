@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Comprehensive suite verifying all native CUDA kernel dispatchers, mathematical correctness, and fallback pipelines."""
 import torch
 import pytest
@@ -42,7 +48,6 @@ def test_fwht_transform_correctness():
     x = torch.randn(2, 16, 64)
     out = ck.fwht_transform(x, B_dim=64)
     assert out.shape == x.shape
-    # Involution property: H(H(x)) = x
     out2 = ck.fwht_transform(out, B_dim=64)
     assert torch.allclose(out2, x, atol=1e-4)
 

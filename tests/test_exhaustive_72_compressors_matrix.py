@@ -1,16 +1,9 @@
-# Copyright (c) 2026 NeuralOps Authors. All Rights Reserved.
+# Copyright (c) 2024-2026, Taha Majlesi
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 
 """Exhaustive 72 Compression Engines Matrix Test Suite (Suite 2).
 
@@ -94,7 +87,6 @@ def _build_compressed_model(name: str, base_model: nn.Module, **override_kwargs)
     try:
         res = target(base_model, **kwargs)
     except TypeError:
-        # Fallback to single argument call if kwargs not accepted
         res = target(base_model)
     model, stats = _extract_model_and_stats(res)
     return model, stats
@@ -116,7 +108,6 @@ def test_2_1_multi_signature_compression_init(compressor_name: str):
 def test_2_2_extreme_compression_ratios(compressor_name: str):
     """Test 2.2: Compression ratio / rank scaling flexibility."""
     model = TinyTransformer(64)
-    # Attempt to inject rank or compression ratio parameter
     param_kwargs = {"rank": 16, "target_rank": 16, "compression_ratio": 0.5, "keep_ratio": 0.5}
     comp_model, _ = _build_compressed_model(compressor_name, model, **param_kwargs)
     assert isinstance(comp_model, nn.Module)
@@ -134,7 +125,6 @@ def test_2_3_weight_reconstruction_error(compressor_name: str):
     comp_model, stats = _build_compressed_model(compressor_name, model)
     for n, p in comp_model.named_parameters():
         assert torch.isfinite(p).all(), f"Non-finite parameter {n} in {compressor_name}"
-    # Verify overall energy preservation or finite outputs
     x = torch.randn(2, 8, 64)
     with torch.no_grad():
         out = comp_model(x)

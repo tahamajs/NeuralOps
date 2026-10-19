@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Continuous Batching Paged Recurrent State
 
 Paged virtual-to-physical memory tables and radix-tree state caching for recurrent attention decoding.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -40,18 +44,14 @@ class PagedStateTable:
         self.dtype = dtype
         self.device = torch.device(device) if isinstance(device, str) else device
 
-        # Allocate contiguous GPU physical page pool: [num_pages, num_heads, head_dim, state_dim]
         self.page_pool = torch.zeros(
             (num_pages, num_heads, head_dim, self.state_dim),
             dtype=self.dtype,
             device=self.device,
         )
 
-        # Free-list of physical page IDs
         self.free_pages: collections.deque[int] = collections.deque(range(num_pages))
-        # Reference count per physical page ID
         self.ref_counts: Dict[int, int] = collections.defaultdict(int)
-        # Sequence virtual-to-physical mapping: seq_id -> list of physical page IDs
         self.seq_page_tables: Dict[int, List[int]] = {}
 
     def allocate_page(self) -> int:
@@ -108,7 +108,6 @@ class PagedStateTable:
         pages = self.seq_page_tables[seq_id]
         old_page = pages[page_slot]
         if self.ref_counts[old_page] > 1:
-            # Shared: must clone (Copy-on-Write)
             new_page = self.allocate_page()
             self.page_pool[new_page].copy_(self.page_pool[old_page])
             self.free_page(old_page)
@@ -133,7 +132,6 @@ class _RadixNode:
     def __init__(self, token_chunk: Tuple[int, ...] = ()):
         self.token_chunk = token_chunk
         self.children: Dict[int, _RadixNode] = {}
-        # Physical page ID holding state after processing token_chunk
         self.physical_page: Optional[int] = None
         self.last_access_time: float = 0.0
 
@@ -185,7 +183,6 @@ class RadixPrefixStateCache:
                 self.total_nodes += 1
             curr = curr.children[tok]
 
-        # Associate physical page with node
         if curr.physical_page is not None and curr.physical_page != physical_page:
             self.paged_table.free_page(curr.physical_page)
 

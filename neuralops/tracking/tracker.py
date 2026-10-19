@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Experiment Tracker
 
 Manages experiment lifecycles, run parameters, and metric artifact persistence.
-
-Author: Taha Majlesi
 """
 
 from typing import Any
@@ -72,7 +76,6 @@ class ExperimentTracker:
         self.config_dict = config_dict or {}
         self.tracking_uri = tracking_uri
 
-        # Instantiate the backend
         if backend == LOCAL_BACKEND:
             self._tracker = LocalTracker(log_dir=log_dir, experiment_name=experiment_name)
         elif backend == TENSORBOARD_BACKEND:

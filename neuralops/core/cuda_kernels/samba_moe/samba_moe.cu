@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -5,11 +12,6 @@
 
 namespace neuralops { namespace cuda {
 
-// Production Samba MoE Expert Combination Kernel:
-// Fuses weighted routing of two expert representations across tokens and feature dimensions.
-// Fully coalesced 1D grid with 256 threads per block:
-// Adjacent threads access consecutive memory addresses with stride 1.
-// Supports arbitrary rank tensors [..., D].
 template <typename scalar_t>
 __global__ void __launch_bounds__(256) samba_moe_combine_fwd_kernel(
     scalar_t* __restrict__ out,
@@ -31,7 +33,7 @@ __global__ void __launch_bounds__(256) samba_moe_combine_fwd_kernel(
     out[idx] = from_float<scalar_t>(w1 * v1 + w2 * v2);
 }
 
-}} // namespace neuralops::cuda
+}}
 
 torch::Tensor samba_moe_combine_fwd(
     const torch::Tensor& expert_out1,

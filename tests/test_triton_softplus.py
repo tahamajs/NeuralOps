@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Comprehensive test suite for neuralops.core.triton_kernels.softplus.
 
@@ -18,9 +24,6 @@ from neuralops.core.triton_kernels._common import HAS_TRITON
 from neuralops.core.triton_kernels.softplus import softplus
 
 
-# ═══════════════════════════════════════════════════
-# Test fixtures
-# ═══════════════════════════════════════════════════
 
 @pytest.fixture
 def device():
@@ -34,9 +37,6 @@ def reference_softplus_pytorch(x: torch.Tensor, beta: float = 1.0, threshold: fl
     return F.softplus(x, beta=beta, threshold=threshold)
 
 
-# ═══════════════════════════════════════════════════
-# Numerical correctness
-# ═══════════════════════════════════════════════════
 
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float16, torch.bfloat16])
 @pytest.mark.parametrize("shape", [(1, 16), (2, 64), (4, 128, 64), (2, 8, 32, 64)])
@@ -49,18 +49,13 @@ def test_softplus_correctness(device, dtype, shape):
     out_ref = reference_softplus_pytorch(x.float()).to(dtype)
 
     if HAS_TRITON and device.type == "cuda":
-        # When running under Triton JIT
         out_func = reference_softplus_pytorch(x)
         assert torch.allclose(out_func, out_ref, atol=1e-2, rtol=1e-2)
     else:
-        # Fallback / reference check
         out_func = reference_softplus_pytorch(x)
         assert torch.allclose(out_func, out_ref, atol=1e-2, rtol=1e-2)
 
 
-# ═══════════════════════════════════════════════════
-# Edge cases & Extreme values
-# ═══════════════════════════════════════════════════
 
 def test_softplus_extreme_positive(device):
     """Extreme positive input should not overflow and approach identity."""
@@ -102,9 +97,6 @@ def test_softplus_non_power_of_2(device):
     assert torch.isfinite(out).all()
 
 
-# ═══════════════════════════════════════════════════
-# Determinism
-# ═══════════════════════════════════════════════════
 
 def test_softplus_deterministic(device):
     """Identical input yields identical output."""
@@ -114,9 +106,6 @@ def test_softplus_deterministic(device):
     assert torch.equal(out1, out2)
 
 
-# ═══════════════════════════════════════════════════
-# Gradient correctness
-# ═══════════════════════════════════════════════════
 
 def test_softplus_gradient(device):
     """Derivative of softplus(x) is sigmoid(x)."""
@@ -126,14 +115,10 @@ def test_softplus_gradient(device):
     assert x.grad is not None
     assert torch.isfinite(x.grad).all()
 
-    # Mathematical derivative check
     expected_grad = torch.sigmoid(x.detach())
     assert torch.allclose(x.grad, expected_grad, atol=1e-5)
 
 
-# ═══════════════════════════════════════════════════
-# Triton presence check
-# ═══════════════════════════════════════════════════
 
 def test_softplus_jit_compilation():
     """Verify that softplus JIT function is properly defined."""

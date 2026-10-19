@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Automated analytical vs numerical finite difference gradient verification (torch.autograd.gradcheck).
 Audits a diverse sample of 25 attention mechanisms and 15 compression engines.
@@ -12,7 +18,6 @@ import torch
 import torch.nn as nn
 from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
 
-# Ensure TF32 is enabled
 torch.backends.cuda.matmul.allow_tf32 = True
 torch.backends.cudnn.allow_tf32 = True
 
@@ -82,7 +87,6 @@ def test_attention_gradcheck(attn_name, stream=None):
 
     try:
         with torch.cuda.stream(stream) if stream else torch.nullcontext():
-            # Instantiate with small test dimension for O(D^2) finite differences
             try:
                 mod = cls(embed_dim=D, num_heads=H).to(device=DEVICE, dtype=torch.float64)
             except Exception:
@@ -186,12 +190,11 @@ def test_compressor_gradcheck(comp_name, stream=None):
                     except Exception:
                         comp_layer = cls(lin)
 
-            # If return is tuple, unwrap model
             if isinstance(comp_layer, tuple):
                 comp_layer = comp_layer[0]
 
             if comp_layer is not None and isinstance(comp_layer, nn.Module):
-                comp_layer.train()  # use native PyTorch autograd graph
+                comp_layer.train()
                 if hasattr(comp_layer, "use_triton"):
                     comp_layer.use_triton = False
                 if hasattr(comp_layer, "use_fused_kernel"):
@@ -223,7 +226,6 @@ def test_compressor_gradcheck(comp_name, stream=None):
                     }
                 )
             else:
-                # Direct factorized layer verification
                 from neuralops.compression_engine.aa_svd_compressor import SVDLinear
 
                 svd_l = SVDLinear(
@@ -260,7 +262,6 @@ def main():
     print(f"GPU: {torch.cuda.get_device_name(0)} | Precision: float64 | fast_mode=True")
     print("==================================================================")
 
-    # Multi-stream execution setup
     num_streams = 4
     streams = [torch.cuda.Stream() for _ in range(num_streams)]
 

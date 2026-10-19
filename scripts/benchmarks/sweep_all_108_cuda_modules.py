@@ -1,5 +1,9 @@
-# -*- coding: utf-8 -*-
-# Author: Taha Majlesi
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Exhaustive Phase 2 sweep across all 108 native CUDA C++ kernel modules.
 
 Validates JIT compilation, direct C++ function invocation without fallback,
@@ -16,7 +20,6 @@ from pathlib import Path
 
 import torch
 
-# Ensure repo root is on sys.path
 repo_root = Path(__file__).resolve().parent.parent.parent
 if str(repo_root) not in sys.path:
     sys.path.insert(0, str(repo_root))
@@ -55,7 +58,6 @@ def main():
         }
 
         try:
-            # Find the loader
             loaded_mod = None
             if py_files:
                 import importlib.util
@@ -74,7 +76,6 @@ def main():
                         res_entry["compile_ms"] = round((time.perf_counter() - t_comp0) * 1000.0, 2)
 
             if loaded_mod is None:
-                # Try generic load via public cuda_kernels export
                 from neuralops.core.cuda_kernels import load_cuda_module
 
                 binding_files = list(d.glob("*binding*.cpp"))
@@ -92,7 +93,6 @@ def main():
                 results.append(res_entry)
                 continue
 
-            # Module successfully compiled and loaded
             exported_fns = [fn for fn in dir(loaded_mod) if not fn.startswith("_")]
             for fn_name in exported_fns:
                 fn_obj = getattr(loaded_mod, fn_name, None)
@@ -101,7 +101,6 @@ def main():
             res_entry["status"] = "COMPILED"
             res_entry["exported_functions"] = exported_fns
 
-            # Report success
             print(
                 f"PASS (Loaded {len(exported_fns)} functions in {res_entry['compile_ms']:.1f}ms: {', '.join(exported_fns[:3])})"
             )

@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Tests for production AWQ quantizer."""
 import torch
 import torch.nn as nn
@@ -11,7 +17,6 @@ def test_awq_numerical_preservation():
     awq = AWQQuantizer(layer, bits=4, alpha=0.5)
 
     x = torch.randn(32, 64)
-    # Introduce significant activation outlier channel
     x[:, 10] *= 20.0
     awq.observe(x)
 

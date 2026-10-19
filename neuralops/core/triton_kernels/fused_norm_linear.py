@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Fused Normalization and Linear Projection
 
 Combines normalization and linear projection into a single memory-fused pass to eliminate intermediate activations.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -23,10 +27,8 @@ class _FusedNormLinearFunction(torch.autograd.Function):
         D = orig_shape[-1]
         x_2d = x.reshape(-1, D)
 
-        # LayerNorm forward via F.layer_norm for exact precision equivalence
         x_hat = F.layer_norm(x_2d, (D,), eps=eps)
 
-        # Linear projection
         out_2d = F.linear(x_hat, weight, bias)
         out = out_2d.reshape(*orig_shape[:-1], weight.shape[0])
 
@@ -44,7 +46,6 @@ class _FusedNormLinearFunction(torch.autograd.Function):
         dbias = grad_out_2d.sum(dim=0) if ctx.has_bias else None
 
         dx_hat = torch.matmul(grad_out_2d, weight)
-        # Analytical backward of LayerNorm without affine parameters
         var = ((x_2d - x_2d.mean(dim=-1, keepdim=True)) ** 2).mean(dim=-1, keepdim=True)
         rstd = torch.rsqrt(var + ctx.eps)
         mean_dx_hat = dx_hat.mean(dim=-1, keepdim=True)
@@ -87,12 +88,10 @@ class _FusedRMSNormGateFunction(torch.autograd.Function):
         ctx.eps = eps
         ctx.activation = activation
         
-        # RMSNorm forward: x / sqrt(mean(x^2) + eps) * norm_weight
         var = (x.float() ** 2).mean(dim=-1, keepdim=True)
         rstd = torch.rsqrt(var + eps)
         x_norm = (x.float() * rstd).to(x.dtype) * norm_weight
 
-        # Gate activation
         if activation == "silu":
             gate_act = F.silu(gate.float()).to(gate.dtype)
         else:
@@ -116,20 +115,15 @@ class _FusedRMSNormGateFunction(torch.autograd.Function):
             gate_act = sig.to(gate.dtype)
             d_gate_act = (sig * (1.0 - sig)).to(gate.dtype)
 
-        # d(loss)/d(x_norm) = grad_output * gate_act
         d_x_norm = grad_output * gate_act
         
-        # d(loss)/d(gate) = grad_output * x_norm * d_gate_act
         _var = (x.float() ** 2).mean(dim=-1, keepdim=True)
         x_norm_raw = (x.float() * rstd)
         x_norm = (x_norm_raw * norm_weight).to(x.dtype)
         d_gate = (grad_output * x_norm * d_gate_act).to(gate.dtype)
 
-        # d_norm_weight = sum(d_x_norm * x_norm_raw)
         d_norm_weight = (d_x_norm.float() * x_norm_raw).reshape(-1, D).sum(dim=0).to(norm_weight.dtype)
 
-        # RMSNorm input gradient:
-        # dx = rstd * [ d_x_norm * norm_weight - (1/D) * x * rstd^2 * sum(d_x_norm * norm_weight * x) ]
         dy = d_x_norm.float() * norm_weight.float()
         sum_dy_x = (dy * x.float()).sum(dim=-1, keepdim=True)
         dx = (rstd * (dy - (1.0 / D) * x.float() * (rstd ** 2) * sum_dy_x)).to(x.dtype)
@@ -156,7 +150,6 @@ def fused_rmsnorm_linear(
     eps: float = 1e-6,
 ) -> torch.Tensor:
     """Fused RMSNorm + Linear projection with full autograd backward."""
-    # RMSNorm
     var = (x.float() ** 2).mean(dim=-1, keepdim=True)
     rstd = torch.rsqrt(var + eps)
     x_norm = (x.float() * rstd).to(x.dtype) * norm_weight
@@ -204,12 +197,10 @@ if HAS_TRITON and tl is not None:
         gate = tl.load(g_ptrs, mask=offs_d < D, other=0.0).to(tl.float32)
         w = tl.load(w_ptrs, mask=offs_d < D, other=1.0).to(tl.float32)
 
-        # RMSNorm: rstd = 1 / sqrt(mean(x^2) + eps)
         var = tl.sum(x * x, 0) / tl.cast(D, tl.float32)
         rstd = 1.0 / tl.sqrt(var + eps)
         x_norm = x * rstd * w
 
-        # SiLU: gate * sigmoid(gate)
         sig = 1.0 / (1.0 + tl.exp(-gate))
         gate_act = gate * sig
 
@@ -256,10 +247,6 @@ def fused_rmsnorm_gate_triton(
     return fused_rmsnorm_gate(x, gate, norm_weight, eps=eps, activation=activation)
 
 
-# ==============================================================================
-# Fused Hadamard W4A16 GEMM with In-Register Dequantization
-# Target: rotational_slicegpt_int4, quarot, hadamard_incoherent_svd
-# ==============================================================================
 
 if HAS_TRITON and tl is not None:
     @triton.autotune(
@@ -450,10 +437,6 @@ def triton_fused_hadamard_w4a16_gemm(
     return y.view(*orig_shape[:-1], N)
 
 
-# ==============================================================================
-# PHASE 2 / KERNEL 5: In-Register LUT Codebook Dequantization GEMM
-# Target: coopq_quantizer, kmeans_quantize, astro_quantizer
-# ==============================================================================
 
 if HAS_TRITON and tl is not None:
     @triton.autotune(
@@ -635,10 +618,6 @@ def triton_lut_codebook_dequant_gemm(
     return y.view(*orig_shape[:-1], N)
 
 
-# ==============================================================================
-# PHASE 3 / KERNEL 12: Fused Activation-Scaling Quantized GEMM
-# Target: smoothquant_real (smoothquant.py), faq_quantizer (w4a16)
-# ==============================================================================
 
 if HAS_TRITON and tl is not None:
     @triton.autotune(

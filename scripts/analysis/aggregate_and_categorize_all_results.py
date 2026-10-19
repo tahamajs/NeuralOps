@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Aggregate and categorize all benchmark results across the NeuralOps repository.
 
@@ -15,8 +21,6 @@ Categorizes all 203 canonical modules (131 Attentions + 72 Compressors) into 5 d
   Tier 3: REQUIRES_KD_OR_HNC_RECOVERY
   Tier 4: PARAMETER_INFLATION_OR_NO_COMPRESSION
   Tier 5: UNDERPERFORMING_OR_BUGGY_NEEDS_FIX
-
-Author: Taha Majlesi
 """
 
 import json
@@ -26,7 +30,6 @@ from typing import Dict, Any
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 
-# 8 Canonical Attention Families (131 Modules)
 ATTENTION_FAMILIES_MAP = {
     "Kernelized & Feature-Map Linear Attentions": [
         "cosformer",
@@ -186,7 +189,6 @@ ATTENTION_FAMILIES_MAP = {
     "Dense Reference Baselines": ["full", "full_attention", "cross_attention", "template_attention", "zeros_attention"],
 }
 
-# 5 Canonical Compression Paradigms (72 Modules)
 COMPRESSION_PARADIGMS_MAP = {
     "Activation-Aware, Whitened & HNC-Steered SVD Factorizations": [
         "a3_compressor",
@@ -282,7 +284,6 @@ def load_all_existing_metrics() -> Dict[str, Dict[str, Any]]:
         s = str(n).lower().strip().replace("-", "_")
         return s
 
-    # 1. Load MASTER_UNIFIED_SUMMARY.json
     master_path = REPO_ROOT / "results" / "01_unified_runs" / "03_unified_runs" / "MASTER_UNIFIED_SUMMARY.json"
     if master_path.exists():
         try:
@@ -313,13 +314,11 @@ def load_all_existing_metrics() -> Dict[str, Dict[str, Any]]:
                         if norm not in records:
                             records[norm] = entry
                         else:
-                            # Keep highest accuracy
                             if acc > records[norm].get("sst2", 0.0):
                                 records[norm].update(entry)
         except Exception as e:
             print(f"Notice: loading {master_path} returned {e}")
 
-    # 2. Load thesis_final/master_verified_results.json
     thesis_path = REPO_ROOT / "thesis_final" / "master_verified_results.json"
     if thesis_path.exists():
         try:
@@ -342,7 +341,6 @@ def load_all_existing_metrics() -> Dict[str, Dict[str, Any]]:
         except Exception as e:
             print(f"Notice: loading {thesis_path} returned {e}")
 
-    # 3. Load jsonl files (e.g. results/full_training_underperforming/results.jsonl)
     for jpath in REPO_ROOT.glob("results/**/*.jsonl"):
         try:
             with open(jpath, "r", encoding="utf-8") as f:
@@ -395,23 +393,18 @@ def determine_tier(name: str, metrics: Dict[str, Any], is_attn: bool) -> str:
     comp = float(metrics.get("compression_rate", metrics.get("compression_ratio", 1.0)) or 1.0)
     status = str(metrics.get("status", "")).upper()
 
-    # Tier 4: Parameter inflation / No compression
     if comp < 0.99 or "EXPANSION" in status or "INFLATION" in status:
         return "Tier 4 (PARAMETER_INFLATION_OR_NO_COMPRESSION)"
 
-    # Tier 5: Buggy / Underperforming (accuracy below chance or crash or PPL blowup)
     if "FAIL" in status or "CRASH" in status or (0 < sst2 < 56.0) or (0 < ppl and ppl > 500):
         return "Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX)"
 
-    # Tier 1: Pareto Optimal
     if (sst2 >= 88.0 and (comp > 1.05 or metrics.get("throughput", 0) > 60000)) or (mnli >= 78.0 and comp > 1.05):
         return "Tier 1 (PARETO_OPTIMAL)"
 
-    # Tier 3: Requires KD or HNC recovery
     if (56.0 <= sst2 < 78.0) or ("PASS_LOW" in status) or ("RECOVERY" in status):
         return "Tier 3 (REQUIRES_KD_OR_HNC_RECOVERY)"
 
-    # Tier 2: Valid Pass
     return "Tier 2 (VALID_PASS)"
 
 
@@ -434,7 +427,6 @@ def main():
 
     categorized = []
 
-    # 1. Exact 131 Canonical Attentions
     for mod in sorted(ATTENTION_REGISTRY.keys()):
         m_data = find_module_metrics(mod, records)
         tier = determine_tier(mod, m_data, is_attn=True)
@@ -455,7 +447,6 @@ def main():
             }
         )
 
-    # 2. Exact 72 Canonical Compressors
     for eng in sorted(COMPRESSOR_REGISTRY.keys()):
         m_data = find_module_metrics(eng, records)
         tier = determine_tier(eng, m_data, is_attn=False)
@@ -476,7 +467,6 @@ def main():
             }
         )
 
-    # Summary counts
     tier_counts = {}
     attn_count = sum(1 for e in categorized if e["type"] == "attention")
     comp_count = sum(1 for e in categorized if e["type"] == "compressor")

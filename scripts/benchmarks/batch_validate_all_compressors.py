@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Batch validation of all major compressors across seeds, ranks, and models.
 
@@ -28,7 +34,6 @@ from typing import Any, Dict, List, Optional, Tuple
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-# Enforce strict offline operation to eliminate remote network hangs
 os.environ["HF_HUB_OFFLINE"] = "1"
 os.environ["TRANSFORMERS_OFFLINE"] = "1"
 os.environ["HF_DATASETS_OFFLINE"] = "1"
@@ -41,12 +46,7 @@ import torch.nn.functional as F
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("BatchValidation")
 
-# ============================================================
-# CONFIGURATION: ALL 26 MAJOR COMPRESSORS
-# ============================================================
-# All 26 registered candidates
 COMPRESSOR_REGISTRY_KEYS = [
-    # SVD family
     "direct_svd",
     "hnc_svd",
     "erc_svd",
@@ -56,30 +56,25 @@ COMPRESSOR_REGISTRY_KEYS = [
     "dobi_svd",
     "fwsvd",
     "asvd_compressor",
-    # Pruning family
     "wanda_real",
     "sparsegpt",
     "flap",
     "slicegpt",
     "admm_pruner",
-    # Quantization family
     "gptq_real",
     "smoothquant_real",
     "quarot",
     "w4a16",
     "int4_lut_quantizer",
-    # Tensor decomposition
     "kronecker_compressor",
     "tt_compressor",
     "rpca_compressor",
     "tucker_compressor",
-    # Adaptive
     "adaptive_ranks",
     "adasvd_compressor",
     "entropy_budget_allocation",
 ]
 
-# Verified genuinely rank-sensitive low-rank matrix decomposition compressors
 VALID_RANK_SENSITIVE_COMPRESSORS = [
     "direct_svd",
     "hnc_svd",
@@ -105,7 +100,6 @@ VALID_RANK_SENSITIVE_COMPRESSORS = [
 ]
 
 
-# Models: name -> loader function
 def load_synthetic_block(device: str) -> nn.Module:
     """Execute load synthetic block routine."""
     from scripts.benchmarks.benchmark_hnc_svd_comprehensive import BenchmarkTransformerBlock
@@ -158,9 +152,6 @@ MODELS = {
 }
 
 
-# ============================================================
-# PROBE / HELDOUT DATA LOADERS (OFFLINE-SAFE)
-# ============================================================
 def get_probe_data(model_name: str, device: str):
     """Return (probe_inputs, heldout_inputs, heldout_labels, eval_fn)"""
     if model_name == "synth_block":
@@ -223,9 +214,6 @@ def get_probe_data(model_name: str, device: str):
     raise ValueError(f"Unknown model_name: {model_name}")
 
 
-# ============================================================
-# COMPRESSOR LOADER
-# ============================================================
 class ModuleWrapper:
     """Wrapper for factory functions that return a pre-compressed nn.Module directly."""
 
@@ -242,7 +230,6 @@ def get_compressor(name: str, model: nn.Module, rank: int, probe_inputs: Any):
     """Instantiate a compressor by registry name or specialized wrapper."""
     from neuralops.core.registry import COMPRESSOR_REGISTRY
 
-    # 1. HNC-SVD
     if name == "hnc_svd":
         from neuralops.compression_engine.svd.direct_svd import DirectSVDCompressor
 
@@ -263,7 +250,6 @@ def get_compressor(name: str, model: nn.Module, rank: int, probe_inputs: Any):
             max_retries=0,
         )
 
-    # 2. Whitened SVD
     if name == "whitened_svd":
         from neuralops.compression_engine.svd.direct_svd import DirectSVDCompressor
 
@@ -280,25 +266,22 @@ def get_compressor(name: str, model: nn.Module, rank: int, probe_inputs: Any):
             use_hnc_continuation=True,
             probe_inputs=probe_formatted,
             hnc_walk_steps=0,
-            hnc_stage_d_steps=0,  # Zero Stage D -> Pure Whitened SVD + Bias Drift
+            hnc_stage_d_steps=0,
             max_retries=0,
         )
 
-    # 2.5 AA-SVD & ASVD
     if name in ("aa_svd", "asvd_compressor"):
         from neuralops.compression_engine.svd.aa_svd_compressor import AASVDCompressor
 
         tok = getattr(model, "tokenizer", None)
         return AASVDCompressor(model=model, rank=rank, tokenizer=tok, force_rank=True, fallback_to_original=False)
 
-    # 2.6 AdaSVD
     if name == "adasvd_compressor":
         from neuralops.compression_engine.svd.adasvd_compressor import AdaSVDCompressor
 
         tok = getattr(model, "tokenizer", None)
         return AdaSVDCompressor(model=model, rank=rank, min_rank=1, tokenizer=tok, fallback_to_original=False)
 
-    # 3. Fisher SVD & FWSVD
     if name in ("fisher_svd", "fwsvd"):
         from neuralops.compression_engine.svd.fwsvd_compressor import FWSVDCompressor
 
@@ -308,7 +291,6 @@ def get_compressor(name: str, model: nn.Module, rank: int, probe_inputs: Any):
         except Exception:
             return None
 
-    # 4. Wanda Pruner
     if name == "wanda_real":
         from neuralops.compression_engine.pruning.wanda import wanda_prune_model
 
@@ -329,13 +311,11 @@ def get_compressor(name: str, model: nn.Module, rank: int, probe_inputs: Any):
 
         return WandaWrapper(model, probe_inputs, rank)
 
-    # 5. GPTQ
     if name == "gptq_real":
         try:
             from neuralops.compression_engine.quantization.gptq import GPTQQuantizer
             from neuralops.utils.compat.architectures import should_compress_linear
 
-            # Apply layer-by-layer across linear projections (protecting task heads)
             class FullModelGPTQWrapper:
                 """Fullmodelgptqwrapper definition."""
 
@@ -358,7 +338,6 @@ def get_compressor(name: str, model: nn.Module, rank: int, probe_inputs: Any):
         except Exception:
             return None
 
-    # 6. SmoothQuant
     if name == "smoothquant_real":
         try:
             from neuralops.compression_engine.quantization.smoothquant import smoothquant_model
@@ -381,7 +360,6 @@ def get_compressor(name: str, model: nn.Module, rank: int, probe_inputs: Any):
         except Exception:
             return None
 
-    # 7. QuaRot / Rotational SliceGPT INT4
     if name in ("quarot", "rotational_slicegpt_int4"):
         try:
             from neuralops.compression_engine.quantization.rotational_slicegpt_int4 import (
@@ -392,7 +370,6 @@ def get_compressor(name: str, model: nn.Module, rank: int, probe_inputs: Any):
         except Exception:
             return None
 
-    # 7.1 Pruners: SparseGPT, FLAP, ADMM, SliceGPT
     if name == "sparsegpt":
         try:
             from neuralops.compression_engine.pruning.sparsegpt import SparseGPTCompressor
@@ -425,7 +402,6 @@ def get_compressor(name: str, model: nn.Module, rank: int, probe_inputs: Any):
         except Exception:
             return None
 
-    # 7.2 Low-Rank & SVD: ERC, CUR, CR, RPCA, TT
     if name == "erc_svd":
         try:
             from neuralops.compression_engine.svd.erc_svd import ERCSVDCompressor
@@ -466,7 +442,6 @@ def get_compressor(name: str, model: nn.Module, rank: int, probe_inputs: Any):
         except Exception:
             return None
 
-    # 8. W4A16
     if name == "w4a16":
         try:
             from neuralops.compression_engine.quantization.faq_quantizer import FAQQuantizer
@@ -475,7 +450,6 @@ def get_compressor(name: str, model: nn.Module, rank: int, probe_inputs: Any):
         except Exception:
             return None
 
-    # 9. INT4 LUT Quantizer
     if name in ("int4_lut_quantizer", "coopq_quantizer"):
         try:
             from neuralops.compression_engine.quantization.coopq_quantizer import CoopQQuantizer
@@ -484,7 +458,6 @@ def get_compressor(name: str, model: nn.Module, rank: int, probe_inputs: Any):
         except Exception:
             return None
 
-    # 10. Tucker / COMPOT Compressor
     if name in ("tucker_compressor", "compot_compressor"):
         try:
             from neuralops.compression_engine.low_rank.compot_compressor import COMPOTCompressor
@@ -493,7 +466,6 @@ def get_compressor(name: str, model: nn.Module, rank: int, probe_inputs: Any):
         except Exception:
             return None
 
-    # 10.5 Kronecker Compressor
     if name == "kronecker_compressor":
         try:
             from neuralops.compression_engine.tensor_decomp.kronecker_compressor import KroneckerCompressor
@@ -502,12 +474,10 @@ def get_compressor(name: str, model: nn.Module, rank: int, probe_inputs: Any):
         except Exception:
             return None
 
-    # 11. Generic COMPRESSOR_REGISTRY resolution
     cls = COMPRESSOR_REGISTRY.get(name)
     if cls is None:
         return None
 
-    # Try common instantiation patterns
     attempts = [
         lambda: cls(model=model, rank=rank, min_rank=1, protect_critical=True, max_retries=0),
         lambda: cls(model=model, rank=rank, min_rank=1),
@@ -528,9 +498,6 @@ def get_compressor(name: str, model: nn.Module, rank: int, probe_inputs: Any):
     return None
 
 
-# ============================================================
-# EVALUATION FUNCTION
-# ============================================================
 def evaluate(
     model: nn.Module, heldout: Any, y_anchor: Any, model_name: str, device: str, heldout_labels: Any = None
 ) -> Dict[str, Any]:
@@ -575,9 +542,6 @@ def evaluate(
         return res
 
 
-# ============================================================
-# CLOSED-FORM BIAS DRIFT CORRECTION & 50-STEP KD RECOVERY
-# ============================================================
 def apply_mean_bias_correction(student: nn.Module, probe: Any, model_name: str, device: str):
     """
     Closed-form activation mean bias correction:
@@ -591,7 +555,6 @@ def setup_trainable_parameters_for_kd(student: nn.Module) -> List[nn.Parameter]:
         p.requires_grad = False
 
     trainable_params = []
-    # 1. Structural low-rank modules and normalization layers (excluding trained heads)
     for name, module in student.named_modules():
         name_l = name.lower()
         if any(h in name_l for h in ["classifier", "lm_head", "score"]):
@@ -606,7 +569,6 @@ def setup_trainable_parameters_for_kd(student: nn.Module) -> List[nn.Parameter]:
                 p.requires_grad = True
                 trainable_params.append(p)
 
-    # 2. Match any remaining biases and low-rank factor parameters by name (strictly excluding trained heads)
     for name, p in student.named_parameters():
         name_l = name.lower()
         if any(h in name_l for h in ["classifier", "lm_head", "score"]):
@@ -621,7 +583,6 @@ def setup_trainable_parameters_for_kd(student: nn.Module) -> List[nn.Parameter]:
             if not any(p is t for t in trainable_params):
                 trainable_params.append(p)
 
-    # Fallback: if no parameters matched, unfreeze 2D parameters with rank <= 256 (excluding trained heads)
     if not trainable_params:
         for name, p in student.named_parameters():
             name_l = name.lower()
@@ -695,9 +656,6 @@ def run_kd_recovery(
     return time.time() - t_start
 
 
-# ============================================================
-# BATCH EXECUTION ENGINE
-# ============================================================
 def run_batch(
     model_name: str,
     seeds: List[int],
@@ -733,11 +691,9 @@ def run_batch(
         torch.manual_seed(seed)
         np.random.seed(seed)
 
-        # Load fresh uncompressed anchor model
         anchor = MODELS[model_name](device)
         probe, heldout, heldout_labels, _ = get_probe_data(model_name, device)
 
-        # Compute ground truth anchor predictions
         with torch.no_grad():
             if model_name == "roberta":
                 ids, mask = heldout
@@ -764,7 +720,6 @@ def run_batch(
             else:
                 y_anchor = anchor(heldout)
 
-        # Pre-cache uncompressed teacher calibration batches and logits for fast KD recovery
         teacher_batches = []
         with torch.no_grad():
             if model_name == "roberta":
@@ -823,7 +778,6 @@ def run_batch(
                         m = comp.model
                     elapsed = time.time() - t0
 
-                    # Guarantee trained task head (classifier / lm_head / score) is 100% uncompressed and untouched
                     if hasattr(anchor, "classifier") and hasattr(m, "classifier"):
                         m.classifier = copy.deepcopy(anchor.classifier)
                     if hasattr(anchor, "lm_head") and hasattr(m, "lm_head"):
@@ -835,10 +789,8 @@ def run_batch(
                     comp_params = sum(p.numel() for p in m.parameters())
                     comp_ratio = round(comp_params / max(1, orig_params), 4)
 
-                    # 1. Closed-form activation mean bias correction
                     apply_mean_bias_correction(m, probe, model_name, device)
 
-                    # 2. Fast 50-step post-compression Knowledge Distillation recovery
                     kd_s = 0.0
                     if use_kd_recovery and kd_steps > 0:
                         kd_s = run_kd_recovery(m, teacher_batches, model_name, steps=kd_steps, lr=1e-3)
@@ -893,7 +845,6 @@ def run_batch(
         del anchor
         torch.cuda.empty_cache()
 
-    # Aggregate Statistics
     aggregate: Dict[str, Any] = {}
     for (method, rank), runs in results.items():
         valid = [r for r in runs if r.get("status") == "SUCCESS" and "rel_err" in r]
@@ -940,7 +891,6 @@ def run_batch(
             entry["perplexity_mean"] = float(ppls.mean())
         aggregate[key_str] = entry
 
-    # Save JSON data
     json_path = out_path / f"{model_name}_batch_results.json"
     with open(json_path, "w", encoding="utf-8") as f:
         json.dump(
@@ -955,7 +905,6 @@ def run_batch(
             indent=2,
         )
 
-    # Print Summary Table
     logger.info("\n" + "=" * 90)
     logger.info("BATCH VALIDATION SUMMARY: %s (N=%d seeds)", model_name.upper(), len(seeds))
     logger.info("=" * 90)
@@ -981,9 +930,6 @@ def run_batch(
     return aggregate
 
 
-# ============================================================
-# STATISTICAL COMPARISON (T-TEST & ANOVA)
-# ============================================================
 def compare_methods_statistical(aggregate: Dict[str, Any], methods: List[str], rank: int):
     """Execute compare methods statistical routine."""
     logger.info("\n" + "=" * 80)
@@ -1011,13 +957,11 @@ def compare_methods_statistical(aggregate: Dict[str, Any], methods: List[str], r
         delta = comp["rel_err_mean"] - base["rel_err_mean"]
         ratio = comp["rel_err_mean"] / max(base["rel_err_mean"], 1e-8)
 
-        # Welch's two-sample t-test from sample statistics
         s1, s2 = base["rel_err_std"], comp["rel_err_std"]
         n1, n2 = base["n_seeds"], comp["n_seeds"]
         denom = np.sqrt((s1**2) / n1 + (s2**2) / n2)
         if denom > 1e-9:
             t_stat = (base["rel_err_mean"] - comp["rel_err_mean"]) / denom
-            # Two-tailed p-value
             from scipy.stats import norm
 
             p_val = 2 * (1.0 - norm.cdf(abs(t_stat)))
@@ -1036,9 +980,6 @@ def compare_methods_statistical(aggregate: Dict[str, Any], methods: List[str], r
         logger.info("%-25s %10.4f %+10.4f %10.4f %14.4e %16s", m, comp["rel_err_mean"], delta, ratio, p_val, verdict)
 
 
-# ============================================================
-# CLI ENTRY POINT
-# ============================================================
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Multi-seed multi-rank batch validation of compressors.")
     parser.add_argument("--model", choices=list(MODELS.keys()), required=True, help="Target model architecture")
@@ -1068,7 +1009,6 @@ if __name__ == "__main__":
         use_kd_recovery=not args.no_kd,
     )
 
-    # Statistical significance comparisons across evaluated compressors
     methods_to_compare = VALID_RANK_SENSITIVE_COMPRESSORS if valid_only else COMPRESSOR_REGISTRY_KEYS
     for r in rank_list:
         compare_methods_statistical(agg, methods_to_compare, r)

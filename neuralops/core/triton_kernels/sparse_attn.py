@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Triton Block-Sparse Attention
 
 Evaluates arbitrary 2D block-sparse attention masks with configurable tiling and online softmax reduction.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -71,7 +75,6 @@ if HAS_TRITON:
         q_ptrs = q_base + (offs_q[:, None] * stride_qn + offs_d[None, :] * stride_qd)
         q = tl.load(q_ptrs, mask=mask_q[:, None], other=0.0)
 
-        # Online softmax accumulators
         m_prev = tl.zeros((BLOCK_SIZE,), dtype=tl.float32) - float("inf")
         l_prev = tl.zeros((BLOCK_SIZE,), dtype=tl.float32)
         acc = tl.zeros((BLOCK_SIZE, D), dtype=tl.float32)
@@ -97,7 +100,6 @@ if HAS_TRITON:
                 k = tl.load(k_ptrs, mask=mask_k[:, None], other=0.0)
                 v = tl.load(v_ptrs, mask=mask_k[:, None], other=0.0)
 
-                # Compute S_ij = Q_i @ K_j^T * sm_scale
                 s = (tl.dot(q, tl.trans(k)) * sm_scale).to(tl.float32)
 
                 if IS_CAUSAL:
@@ -110,7 +112,6 @@ if HAS_TRITON:
                 else:
                     s = tl.where(mask_q[:, None] & mask_k[None, :], s, float("-inf"))
 
-                # Online safe softmax update
                 m_curr = tl.maximum(m_prev, tl.max(s, axis=1))
                 alpha = tl.exp(m_prev - m_curr)
                 p = tl.exp(s - m_curr[:, None])
@@ -121,7 +122,6 @@ if HAS_TRITON:
                 m_prev = m_curr
                 l_prev = l_curr
 
-        # Normalize output
         out = acc / (l_prev[:, None] + 1e-6)
         out_ptrs = out_base + (offs_q[:, None] * stride_on + offs_d[None, :] * stride_od)
         tl.store(out_ptrs, out.to(Out_ptr.dtype.element_ty), mask=mask_q[:, None])
@@ -177,7 +177,6 @@ if HAS_TRITON and tl is not None:
         q = tl.load(q_ptrs, mask=mask_q[:, None], other=0.0)
         do = tl.load(do_ptrs, mask=mask_q[:, None], other=0.0)
 
-        # First pass to compute normalizer
         m_prev = tl.zeros((BLOCK_SIZE,), dtype=tl.float32) - float("inf")
         l_prev = tl.zeros((BLOCK_SIZE,), dtype=tl.float32)
         n_k_blocks = (N_K + BLOCK_SIZE - 1) // BLOCK_SIZE
@@ -214,7 +213,6 @@ if HAS_TRITON and tl is not None:
         denom = l_prev[:, None] + 1e-6
         dq_acc = tl.zeros((BLOCK_SIZE, D), dtype=tl.float32)
 
-        # Second pass to compute gradients dQ, dK, dV
         for k_blk_idx in range(0, n_k_blocks):
             process_block = True
             if IS_CAUSAL:
@@ -238,20 +236,15 @@ if HAS_TRITON and tl is not None:
                 p = tl.exp(s - m_prev[:, None]) / denom
                 p = tl.where(cond & mask_q[:, None] & mask_k[None, :], p, 0.0)
 
-                # dV += P^T @ DO
                 dv = tl.dot(tl.trans(p.to(do.dtype)), do)
                 dv_ptrs = dv_base + (offs_k[:, None] * stride_dvn + offs_d[None, :] * stride_dvd)
                 tl.atomic_add(dv_ptrs, dv, mask=mask_k[:, None])
 
-                # dP = DO @ V^T
                 dp = tl.dot(do, tl.trans(v))
-                # dS = P * (dP - sum(P * dP)) * sm_scale
                 ds = p * (dp - tl.sum(p * dp, axis=1)[:, None]) * sm_scale
 
-                # dQ += dS @ K
                 dq_acc += tl.dot(ds.to(k.dtype), k)
 
-                # dK += dS^T @ Q
                 dk = tl.dot(tl.trans(ds.to(q.dtype)), q)
                 dk_ptrs = dk_base + (offs_k[:, None] * stride_dkn + offs_d[None, :] * stride_dkd)
                 tl.atomic_add(dk_ptrs, dk, mask=mask_k[:, None])
@@ -288,7 +281,6 @@ class _TritonSparseAttnAutogradFunction(torch.autograd.Function):
         if has_mask:
             bm_flat = block_mask.to(torch.int32).contiguous()
             stride_mq, stride_mk = bm_flat.stride(-2), bm_flat.stride(-1)
-            # If block_mask has batch/head dims, stride_mbh tracks the leading dims
             stride_mbh = bm_flat.stride(-3) if bm_flat.ndim > 2 else 0
         else:
             bm_flat = torch.empty((1, 1), dtype=torch.int32, device=q.device)
@@ -427,7 +419,6 @@ def is_supported(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, **kwargs: An
     """Check whether block-sparse attention can run on the Triton kernel."""
     head_dim = q.shape[-1]
     seq_len = q.shape[-2]
-    # Triton tl.arange requires powers of 2
     if head_dim <= 0 or (head_dim & (head_dim - 1)) != 0:
         return False
     block_size = kwargs.get("block_size", 64)
@@ -493,9 +484,6 @@ def bwd(
     return g_q, g_k, g_v
 
 
-# ==============================================================================
-# Fused Multi-Scale Top-k Sparse Block Routing & Combine Kernel (NEXUS & Orion)
-# ==============================================================================
 
 if HAS_TRITON:
     @triton.jit
@@ -571,7 +559,7 @@ def fused_topk_sparse_route_and_combine_triton(
     suitable, _ = check_triton_suitability(b0, "sparse_attn")
     if b0.is_cuda and HAS_TRITON and suitable:
         try:
-            stacked_branches = torch.stack(branch_list, dim=0).contiguous()  # [M, B, T, D]
+            stacked_branches = torch.stack(branch_list, dim=0).contiguous()
             w_c = router_weights.expand(B, T, M).contiguous()
             out = torch.empty((B, T, D), device=b0.device, dtype=b0.dtype)
             BLOCK_D = triton.next_power_of_2(D)
@@ -590,16 +578,12 @@ def fused_topk_sparse_route_and_combine_triton(
         except Exception:
             pass
 
-    # Exact PyTorch Fallback
-    stacked = torch.stack(branch_list, dim=-1)  # [B, T, D, M]
-    w = router_weights.unsqueeze(-2)              # [B, T, 1, M]
+    stacked = torch.stack(branch_list, dim=-1)
+    w = router_weights.unsqueeze(-2)
     return (stacked * w).sum(dim=-1).to(b0.dtype)
 
 
 
-# ---------------------------------------------------------------------------
-# Fused LSH Hash & Bin Kernel (LSHAttention)
-# ---------------------------------------------------------------------------
 if HAS_TRITON:
     @triton.jit
     def _triton_lsh_hash_bin_kernel(
@@ -620,7 +604,6 @@ if HAS_TRITON:
         offs_d = tl.arange(0, BLOCK_D)
         mask_d = offs_d < D
 
-        # Load normalized vector
         vec_ptr = Norm_ptr + b_id * stride_nb + h_id * stride_nh + n_id * stride_nn + offs_d * stride_nd
         v = tl.load(vec_ptr, mask=mask_d, other=0.0).to(tl.float32)
 
@@ -666,7 +649,6 @@ def fused_lsh_hash_and_bin_triton(
 
     B, H, N, D = vectors.shape
     num_planes = proj.shape[1]
-    # LSH planes are typically <= 16
     if num_planes > 32 or D > 256:
         return fused_lsh_hash_and_bin_pytorch(vectors, proj, num_buckets)
 
@@ -692,9 +674,6 @@ def fused_lsh_hash_and_bin_triton(
         return fused_lsh_hash_and_bin_pytorch(vectors, proj, num_buckets)
 
 
-# ---------------------------------------------------------------------------
-# Fused Hamming Attention Continuous Scores (HammingAttention)
-# ---------------------------------------------------------------------------
 def fused_hamming_scores_pytorch(
     q: torch.Tensor,
     k: torch.Tensor,
@@ -733,20 +712,15 @@ def fused_hamming_scores_triton(
         import torch.nn.functional as F
         Dh = q.shape[-1]
         H = q.shape[1]
-        # In SRAM continuous relaxation
         q_b = torch.tanh(5.0 * q * lora_q_scale.view(1, H, 1, 1)).contiguous()
         k_b = torch.tanh(5.0 * k * lora_k_scale.view(1, H, 1, 1)).contiguous()
         t = (F.softplus(temp) + 1e-3) / (2.0 * math.sqrt(Dh))
-        # Fused matmul with subtraction and scale
         scores = (torch.matmul(q_b, k_b.transpose(-2, -1).contiguous()) - Dh) * t
         return scores
     except Exception:
         return fused_hamming_scores_pytorch(q, k, lora_q_scale, lora_k_scale, temp)
 
 
-# ---------------------------------------------------------------------------
-# Fused KMeans Centroid Assignment & Aggregation (ClusterAttention)
-# ---------------------------------------------------------------------------
 def fused_kmeans_centroid_assign_pytorch(
     Q: torch.Tensor,
     centroids: torch.Tensor,
@@ -789,9 +763,6 @@ def fused_kmeans_centroid_assign_triton(
         return fused_kmeans_centroid_assign_pytorch(Q, centroids, valid_mask)
 
 
-# ---------------------------------------------------------------------------
-# Fused Expert Choice Scatter-Gather (ExpertChoiceMoE)
-# ---------------------------------------------------------------------------
 def fused_expert_choice_scatter_gather_pytorch(
     x_flat: torch.Tensor,
     gate_scores: torch.Tensor,
@@ -811,9 +782,6 @@ def fused_expert_choice_scatter_gather_triton(
     return fused_expert_choice_scatter_gather_pytorch(x_flat, gate_scores, top_k_experts)
 
 
-# ---------------------------------------------------------------------------
-# Fused ViG KNN Graph Aggregation Kernel (ViGAttention)
-# ---------------------------------------------------------------------------
 def fused_vig_knn_graph_agg_pytorch(
     q: torch.Tensor,
     k: torch.Tensor,
@@ -823,7 +791,6 @@ def fused_vig_knn_graph_agg_pytorch(
     is_causal: bool = False,
 ) -> torch.Tensor:
     """Exact PyTorch fallback for ViG graph branch KNN aggregation."""
-    # Pairwise feature similarity
     scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
     if is_causal:
         L = q.shape[2]
@@ -833,11 +800,10 @@ def fused_vig_knn_graph_agg_pytorch(
     topk_vals, topk_indices = scores.topk(act_k, dim=-1)
     attn = torch.softmax(topk_vals, dim=-1).to(v.dtype)
 
-    # Gather selected V
     B, H, L, d = v.shape
     idx_exp = topk_indices.unsqueeze(-1).expand(-1, -1, -1, -1, d)
     v_exp = v.unsqueeze(2).expand(-1, -1, L, -1, -1)
-    v_sel = torch.gather(v_exp, 3, idx_exp)  # (B, H, L, act_k, d)
+    v_sel = torch.gather(v_exp, 3, idx_exp)
     out = (attn.unsqueeze(-1) * v_sel).sum(dim=3)
     return out
 
@@ -859,9 +825,6 @@ def fused_vig_knn_graph_agg_triton(
         return fused_vig_knn_graph_agg_pytorch(q, k, v, top_k, scale, is_causal)
 
 
-# ---------------------------------------------------------------------------
-# Fused NSA Hierarchical Sparse Attention Kernel (NSAAttention)
-# ---------------------------------------------------------------------------
 def fused_nsa_hierarchical_sparse_pytorch(
     scores: torch.Tensor,
     local_mask_4d: torch.Tensor,
@@ -902,9 +865,6 @@ def fused_nsa_hierarchical_sparse_triton(
     return fused_nsa_hierarchical_sparse_pytorch(scores, local_mask_4d, key_valid_4d, top_k, is_causal)
 
 
-# ---------------------------------------------------------------------------
-# Fused REAP-MoE Recurrent Router Kernel (REAPMoEAttention)
-# ---------------------------------------------------------------------------
 def fused_reap_moe_router_pytorch(
     gate_logits: torch.Tensor,
     top_k: int,
@@ -924,9 +884,6 @@ def fused_reap_moe_router_triton(
     return fused_reap_moe_router_pytorch(gate_logits, top_k)
 
 
-# ---------------------------------------------------------------------------
-# Fused PADRe Polynomial Attention Kernel (PADReAttention)
-# ---------------------------------------------------------------------------
 def fused_padre_polynomial_attn_pytorch(
     q: torch.Tensor,
     k: torch.Tensor,
@@ -984,7 +941,6 @@ def fused_bam_unified_qkv_moe_pytorch(
     topk_vals, topk_ind = torch.topk(weights, act_k, dim=-1)
     norm_w = topk_vals / topk_vals.sum(dim=-1, keepdim=True).clamp(min=1e-8)
     
-    # Weighted expert combination
     out = torch.zeros_like(expert_outputs[0])
     for i in range(act_k):
         expert_idx = topk_ind[..., i]

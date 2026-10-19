@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-# Author: Taha Majlesi
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Master Paper Publication Benchmark Suite for NeuralOps (v1.3.7).
 
@@ -25,7 +29,6 @@ import time
 from collections import defaultdict
 from pathlib import Path
 
-# Enforce strict offline operation
 os.environ["HF_HUB_OFFLINE"] = "1"
 os.environ["TRANSFORMERS_OFFLINE"] = "1"
 os.environ["HF_DATASETS_OFFLINE"] = "1"
@@ -95,7 +98,6 @@ def prepare_classification_batches(
         texts = [f"{x['premise']} {sep} {x['hypothesis']}" for x in ds]
         labels = [x["label"] for x in ds]
         if backbone == "roberta":
-            # textattack/roberta-base-MNLI uses {0: contradiction, 1: neutral, 2: entailment}
             labels = [2 - lbl if lbl in (0, 2) else 1 for lbl in labels]
     elif task == "ag_news":
         ds = load_dataset("fancyzhx/ag_news", split="test")
@@ -287,7 +289,6 @@ def main():
     logger.info(f"=== Running Master Paper Benchmark Suite in mode: {args.mode} ===")
     logger.info(f"Device: {DEVICE} | Samples: {max_samples} | Seeds: {seeds}")
 
-    # 1. Classification Benchmarks (DistilBERT & RoBERTa across SST-2, MNLI, AG News)
     cls_results = []
     backbones = ["distilbert", "roberta"]
     tasks = ["sst2", "mnli", "ag_news"]
@@ -319,7 +320,6 @@ def main():
                     cls_results.append(entry)
                     logger.info(f"  -> Acc: {res['accuracy']}%, VRAM: {res['peak_vram_mb']}MB")
 
-    # 2. GPT-2 Language Modeling Benchmark (WikiText-2)
     lm_results = []
     for var in variants:
         for seed in seeds[:1] if args.mode == "smoke-test" else seeds:
@@ -345,13 +345,11 @@ def main():
             lm_results.append(entry)
             logger.info(f"  -> PPL: {res['perplexity']}, VRAM: {res['peak_vram_mb']}MB")
 
-    # 3. LoRA Rank Ablation on DistilBERT SST-2
     lora_results = []
     for r in lora_ranks:
         logger.info(f"Run LoRA Ablation: distilbert | sst2 | wgqa | rank={r}")
         model, tokenizer, pb, pa, pt = build_classification_model("distilbert", "sst2", "wgqa", seed=42, lora_rank=r)
 
-        # Apply calibrated rank capacity: top-r residual singular values
         with torch.no_grad():
             for m in model.modules():
                 b_param = getattr(m, "lora_B", None)
@@ -376,7 +374,6 @@ def main():
         lora_results.append(entry)
         logger.info(f"  -> Rank {r}: Acc {res['accuracy']}%, Trainable: {pt}")
 
-    # Build Table 1: Cross-Architecture (averaged over seeds)
     table1 = defaultdict(dict)
     for entry in cls_results:
         key = f"{entry['backbone']}_{entry['task']}"
@@ -387,7 +384,6 @@ def main():
     for key, vars_data in table1.items():
         table1_summary[key] = {var_name: round(float(np.mean(accs)), 2) for var_name, accs in vars_data.items()}
 
-    # Add GPT-2 PPL to table1
     gpt2_summary = {}
     for entry in lm_results:
         gpt2_summary.setdefault(entry["variant"], []).append(entry["perplexity"])
@@ -395,7 +391,6 @@ def main():
         var_name: round(float(np.mean(ppls)), 2) for var_name, ppls in gpt2_summary.items()
     }
 
-    # Build Table 2: Multi-seed Robustness (Mean +- Std)
     table2 = {}
     for key, vars_data in table1.items():
         table2[key] = {
@@ -403,7 +398,6 @@ def main():
             for var_name, accs in vars_data.items()
         }
 
-    # Save output artifacts
     with open(OUTPUT_DIR / "table1_cross_architecture.json", "w") as f:
         json.dump(table1_summary, f, indent=2)
 
