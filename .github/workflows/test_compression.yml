@@ -1,0 +1,56 @@
+name: Compression Engines & Model Surgery Test Suite
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'paper/**'
+      - 'results/**'
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'paper/**'
+      - 'results/**'
+  workflow_dispatch:
+
+jobs:
+  test-compression:
+    name: Compression Engines & Surgery Tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11"]
+
+    steps:
+      - name: Checkout Codebase
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
+      - name: Install CPU PyTorch & Dependencies
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+          pip install -e ".[cpu,dev]"
+
+      - name: Run Compression & Model Surgery Test Suite
+        env:
+          PYTHONPATH: .
+        run: |
+          pytest tests/test_all_compression_engines.py \
+                 tests/test_surgery_calibrator.py \
+                 tests/test_surgery_manifest_roundtrip.py \
+                 tests/test_universal_model_surgery.py \
+                 -v --tb=short
