@@ -4,7 +4,7 @@
 
 # 🧬 NeuralOps v1.5.0
 
-### **Unified Subquadratic Attention and Deep Model Compression Platform**
+### **A correctness-gated platform for attention surgery, compression, and hardware-aware benchmarking**
 
 > **131 registered attention mechanisms · 72 compression engines · 113 CUDA kernel packages (229 `.cu`/`.cpp` sources) · 32 Triton Python modules (62 registered unified operators) · 29 notebooks present in the checkout**
 
@@ -24,32 +24,38 @@
 [![Contributors](https://img.shields.io/github/contributors/tahamajs/NeuralOps?color=blue)](https://github.com/tahamajs/NeuralOps/graphs/contributors)
 
 <p align="center">
-  <a href="#-30-second-quickstart"><b>⚡ Quickstart</b></a> •
-  <a href="#-roofline-acceleration-leaderboard-rtx-4070-sm-89"><b>🏎️ Benchmarks</b></a> •
-  <a href="#1-master-27-jupyter-notebooks-suite-00-to-25--paper-empirical-master"><b>📓 27 Master Notebooks</b></a> •
-  <a href="#13-attention-zoo-131-canonical-modules"><b>🧬 131 Attentions</b></a> •
-  <a href="#14-compression-engines-72-canonical-methods"><b>📦 72 Compressors</b></a> •
-  <a href="#4-production-serving--speculative-decoding-engine"><b>🚀 Serving</b></a> •
-  <a href="#65-command-line-interface-cli-guide"><b>💻 CLI</b></a>
+  <a href="#-30-second-quickstart"><b>⚡ Quickstart</b></a> ·
+  <a href="#-release-at-a-glance"><b>📊 Evidence</b></a> ·
+  <a href="#1-notebook-workflows"><b>📓 Notebooks</b></a> ·
+  <a href="#13-attention-zoo-131-canonical-modules"><b>🧬 Attention Zoo</b></a> ·
+  <a href="#14-compression-engines-72-canonical-methods"><b>📦 Compressors</b></a> ·
+  <a href="#4-production-serving--speculative-decoding-engine"><b>🚀 Serving</b></a>
 </p>
 
 </div>
 
+## 📊 Release at a Glance
+
+| Surface | Verified scope |
+| --- | --- |
+| **Attention registry** | 131 mechanisms across dense, linear, gated, SSM, sparse, and hybrid families |
+| **Compression registry** | 72 engines covering SVD, quantization, pruning, and tensor decompositions |
+| **Hardware source inventory** | 113 CUDA package directories, 229 `.cu`/`.cpp` files, 32 Triton modules, 62 registered Triton operators |
+| **Final benchmark ledger** | 203 logical rows: 42 `PASS_FAST`, 161 `PASS_SLOW`, 0 fallback, 0 timeout |
+| **Notebook suite** | 27 master notebooks plus 2 integration notebooks present in the checkout |
+
+```mermaid
+flowchart LR
+    A[NeuralOps operation] --> B{Correctness gate}
+    B -->|compiled extension| C[CUDA C++]
+    B -->|registered JIT path| D[Triton]
+    B -->|universal safe path| E[PyTorch]
+    C --> F[Measured result]
+    D --> F
+    E --> F
 ```
-┌────────────────────────────────────────────────────────────────────────────────────────┐
-│                                   NEURALOPS AT A GLANCE                                │
-├───────────────────────────────┬───────────────────────────────┬────────────────────────┤
-│  ⚡ ATTENTION REGISTRY        │  📦 COMPRESSION ENGINES       │  🚀 TRITON & CUDA      │
-│  • 131 Registered Mechanisms  │  • 72 Factorization Engines   │  • 32 Triton Modules   │
-│  • 8 Mathematical Families    │  • SVD, RPCA, Tensor-Train    │  • 62 Unified JIT Ops  │
-│  • Linear, SSM, Gated, Hybrid │  • FP8, INT4, Dynamic Pruning │  • 113 CUDA Packages   │
-├───────────────────────────────┼───────────────────────────────┼────────────────────────┤
-│  🏎️ BENCHMARK ACCELERATION    │  💾 MEMORY OPTIMIZATION       │  🎯 PRODUCTION SERVING │
-│  • Historical speedup records │  • Historical memory records  │  • Serving components  │
-│  • Double-Precision Autograd  │  • Variable-Length Packing    │  • Speculative Decode  │
-│  • Final ledger: 203 rows    │  • 42 fast / 161 valid slow   │  • Documented limitations │
-└───────────────────────────────┴───────────────────────────────┴────────────────────────┘
-```
+
+The dispatch hierarchy is intentionally conservative: a source file is not counted as an accelerated result unless the operation actually dispatches, passes correctness checks, and produces a measured latency.
 
 ### ⚡ 30-Second Quickstart
 
