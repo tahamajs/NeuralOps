@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Utility to remove redundant 'Author: Taha Majlesi' lines across the codebase.
 
 The repository now uniformly uses the standard top-level MIT license header:

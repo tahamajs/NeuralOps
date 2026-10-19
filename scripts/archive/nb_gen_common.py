@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # Copyright (c) 2024-2026, Taha Majlesi
 #
 # This source code is licensed under the MIT license found in the
@@ -7,7 +8,6 @@
 #!/usr/bin/env python3
 """
 Common utilities for generating NeuralOps Benchmark Notebooks (10-19).
-Author: Taha Majlesi
 """
 
 import json
@@ -75,7 +75,6 @@ def make_header_cell(title):
     source = f'''"""
 {title}
 
-Author: Taha Majlesi
 """
 
 # {title}
@@ -90,7 +89,6 @@ Author: Taha Majlesi
 
 HARDWARE_CONTEXT_CELL = create_code_cell('''"""
 Standardized Hardware Detection & Telemetry Verification Cell
-Author: Taha Majlesi
 """
 %matplotlib inline
 import os

@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # Copyright (c) 2024-2026, Taha Majlesi
 #
 # This source code is licensed under the MIT license found in the
@@ -9,7 +10,6 @@
 2. 20-30+ rich cells for every notebook.
 3. Clean JSON structure and metadata.
 
-Author: Taha Majlesi
 """
 
 import glob

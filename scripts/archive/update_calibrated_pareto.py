@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # Copyright (c) 2024-2026, Taha Majlesi
 #
 # This source code is licensed under the MIT license found in the
@@ -7,7 +8,6 @@
 #!/usr/bin/env python3
 """Update calibrated pareto module.
 
-Author: Taha Majlesi
 """
 
 import json
