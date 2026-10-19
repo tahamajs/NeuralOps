@@ -1,3 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 import pytest
 import torch
 import torch.nn as nn
@@ -23,7 +30,6 @@ class MultiLayerTransformer(nn.Module):
     def forward(self, x, use_checkpoint=True, use_reentrant=False):
         for layer in self.layers:
             if use_checkpoint:
-                # Test with user-specified reentrancy
                 x = checkpoint(layer, x, use_reentrant=use_reentrant)
             else:
                 x = layer(x)
@@ -37,7 +43,6 @@ def test_gradient_checkpointing_compatibility():
     model = MultiLayerTransformer(d_model=32, num_heads=2, num_layers=4).to(device)
     model.train()
 
-    # 1. Non-reentrant checkpointing (PyTorch modern standard)
     x = torch.randn(2, 8, 32, device=device, requires_grad=True)
     out1 = model(x, use_checkpoint=True, use_reentrant=False)
     loss1 = out1.sum()
@@ -47,7 +52,6 @@ def test_gradient_checkpointing_compatibility():
     assert not torch.isnan(x.grad).any(), "NaN in gradients with use_reentrant=False!"
     assert not torch.isinf(x.grad).any(), "Inf in gradients with use_reentrant=False!"
 
-    # 2. Re-entrant checkpointing (classic standard)
     model.zero_grad()
     x2 = torch.randn(2, 8, 32, device=device, requires_grad=True)
     out2 = model(x2, use_checkpoint=True, use_reentrant=True)

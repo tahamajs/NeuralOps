@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Common Triton Kernel Utilities
 
 Shared helper routines, input validation, and PyTorch reference fallbacks for Triton kernel implementations.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -17,9 +21,6 @@ import torch.nn.functional as F
 
 logger = logging.getLogger("TritonKernels")
 
-# ---------------------------------------------------------------------------
-# Triton Environment Detection
-# ---------------------------------------------------------------------------
 try:
     import triton
     import triton.language as tl
@@ -40,13 +41,11 @@ except ImportError:
     )
     tl = None
 
-# Ensure torch.library custom ops and meta kernels are loaded
 try:
     import neuralops.core.triton_kernels.op_registry  # noqa: F401
 except Exception:
     pass
 
-# Wire _types and autotuner into _common namespace
 from neuralops.core.triton_kernels._types import (
     BLOCK_SIZE,
     MAX_TRITON_SEQ_LEN,
@@ -62,9 +61,6 @@ from neuralops.core.triton_kernels.hardware_profile import get_device_hardware_p
 _RUNTIME_FALLBACK_CACHE: set[str] = set()
 
 
-# ---------------------------------------------------------------------------
-# Power-of-2 Head-Dim Auto-Padding & Slicing
-# ---------------------------------------------------------------------------
 
 
 def pad_to_triton_power_of_2(*tensors: torch.Tensor, min_dim: int = 16) -> tuple[tuple[torch.Tensor, ...], int]:
@@ -79,11 +75,9 @@ def pad_to_triton_power_of_2(*tensors: torch.Tensor, min_dim: int = 16) -> tuple
 
     first = tensors[0]
     orig_d = first.shape[-1]
-    # Check if power of 2 and >= min_dim
     if orig_d >= min_dim and (orig_d & (orig_d - 1)) == 0:
         return tensors, orig_d
 
-    # Calculate next power of 2
     padded_d = max(min_dim, 1 << (orig_d - 1).bit_length())
     pad_len = padded_d - orig_d
 
@@ -92,7 +86,6 @@ def pad_to_triton_power_of_2(*tensors: torch.Tensor, min_dim: int = 16) -> tuple
         if t is None:
             padded_list.append(None)
         elif t.shape[-1] == orig_d:
-            # Pad last dimension (left_pad=0, right_pad=pad_len)
             padded_list.append(F.pad(t, (0, pad_len)))
         else:
             padded_list.append(t)
@@ -111,9 +104,6 @@ pad_head_dim_for_triton = pad_to_triton_power_of_2
 unpad_head_dim = unpad_from_triton_power_of_2
 
 
-# ---------------------------------------------------------------------------
-# Architecture Dtype Coercion
-# ---------------------------------------------------------------------------
 
 
 def coerce_tensor_for_hardware(t: torch.Tensor) -> tuple[torch.Tensor, torch.dtype]:
@@ -154,9 +144,6 @@ def should_use_triton(
     return suitable
 
 
-# ===========================================================================
-# PYTORCH FALLBACK IMPLEMENTATIONS
-# ===========================================================================
 
 
 def linear_attn_pytorch_fallback(
@@ -179,14 +166,12 @@ def linear_attn_pytorch_fallback(
     orig_dim = q.dim()
 
     if orig_dim == 3:
-        # [B, N, D] -> [B, 1, N, D]
         q = q.unsqueeze(1)
         k = k.unsqueeze(1)
         v = v.unsqueeze(1)
 
     device_type = q.device.type
     with torch.autocast(device_type=device_type, enabled=False):
-        # 1. Feature Map phi
         q_f = q.float()
         k_f = k.float()
         v_f = v.float()
@@ -210,12 +195,10 @@ def linear_attn_pytorch_fallback(
         B, H, N, D_k = phi_q.shape
         D_v = v_f.shape[-1]
 
-        # 2. Positional modulation (e.g. cosformer)
         has_modulation = cos_weight is not None and sin_weight is not None
         if has_modulation:
             cos_w = cos_weight.float()
             sin_w = sin_weight.float()
-            # Broadcast weights to [B, H, N, 1] or [1, 1, N, 1]
             if cos_w.dim() == 1:
                 cos_w = cos_w.view(1, 1, -1, 1)
                 sin_w = sin_w.view(1, 1, -1, 1)
@@ -234,7 +217,6 @@ def linear_attn_pytorch_fallback(
         eff_eps = max(eps, 1e-4) if orig_dtype == torch.float16 else eps
 
         if is_causal:
-            # Memory-efficient streaming chunked prefix recurrence
             chunk_size = min(64, max(1, N))
             num_chunks = (N + chunk_size - 1) // chunk_size
             out = torch.empty((B, H, N, D_v), dtype=torch.float32, device=q.device)
@@ -255,13 +237,11 @@ def linear_attn_pytorch_fallback(
                     ks = k_s[:, :, start:end]
                     vc = v_f[:, :, start:end]
 
-                    # Inter-chunk projection
                     num_inter = torch.matmul(qc, S_cos) + torch.matmul(qs, S_sin)
                     denom_inter = torch.matmul(qc, Z_cos.unsqueeze(-1)).squeeze(-1) + torch.matmul(
                         qs, Z_sin.unsqueeze(-1)
                     ).squeeze(-1)
 
-                    # Intra-chunk causal scores
                     A_intra = torch.matmul(qc, kc.transpose(-1, -2)) + torch.matmul(
                         qs, ks.transpose(-1, -2)
                     )
@@ -334,7 +314,6 @@ def linear_attn_pytorch_fallback(
 
             res = out.to(orig_dtype)
         else:
-            # Bidirectional global parallel reduction
             if has_modulation:
                 S_cos = torch.matmul(k_c.transpose(-1, -2), v_f)
                 S_sin = torch.matmul(k_s.transpose(-1, -2), v_f)
@@ -397,7 +376,6 @@ def sparse_attn_pytorch_fallback(
     N_q, N_k = scores.shape[-2], scores.shape[-1]
 
     if block_mask is not None:
-        # Expand block_mask to element-wise boolean mask
         bm = block_mask.to(torch.bool)
         if bm.dim() == 2:
             expanded_mask = bm.repeat_interleave(block_size, dim=0).repeat_interleave(
@@ -436,13 +414,11 @@ def low_rank_pytorch_fallback(
     Pure PyTorch fallback for low-rank projection: y = (x @ V.T) @ U.T + bias.
     Handles flexible shape conventions for U and V.
     """
-    # Contract with V
     if V.shape[-1] == x.shape[-1]:
         z = torch.matmul(x, V.transpose(-1, -2))
     else:
         z = torch.matmul(x, V)
 
-    # Contract with U
     if U.shape[-1] == z.shape[-1]:
         y = torch.matmul(z, U.transpose(-1, -2))
     else:
@@ -468,7 +444,6 @@ def state_update_pytorch_fallback(
     Pure PyTorch fallback for SSM state updates (Mamba/S4/RWKV recurrence).
     Computes discrete recurrent state scan: h_t = A_bar * h_{t-1} + B_bar * u_t, y_t = C * h_t + D * u_t.
     """
-    # Shapes: u: [B, L, D], delta: [B, L, D] or [B, L, 1]
     B_sz, L_sz, D_sz = u.shape
     N_sz = A.shape[-1] if A.dim() >= 2 else 16
 
@@ -478,19 +453,17 @@ def state_update_pytorch_fallback(
         state = state.float().clone()
 
     y_list = []
-    # Vectorized / sequential scan
     for t in range(L_sz):
-        u_t = u[:, t, :].float()  # [B, D]
+        u_t = u[:, t, :].float()
         delta_t = delta[:, t, :].float() if delta.dim() == 3 else delta.float()
         if delta_t.shape[-1] == 1:
             delta_t = delta_t.expand(-1, D_sz)
 
-        # Discretization
-        dA = torch.exp(delta_t.unsqueeze(-1) * A.float())  # [B, D, N]
+        dA = torch.exp(delta_t.unsqueeze(-1) * A.float())
         if B.dim() == 3:
             B_t = B[:, t, :].float()
             if B_t.dim() == 2 and B_t.shape[-1] == N_sz:
-                dB = delta_t.unsqueeze(-1) * B_t.unsqueeze(1)  # [B, D, N]
+                dB = delta_t.unsqueeze(-1) * B_t.unsqueeze(1)
             else:
                 dB = delta_t.unsqueeze(-1) * B_t
         else:
@@ -529,16 +502,12 @@ def gqa_pytorch_fallback(
         return k, v
 
     n_rep = num_heads // num_kv_heads
-    # Expected shape: [B, H_kv, N, D]
     B, H_kv, N, D = k.shape
     k_exp = k[:, :, None, :, :].expand(B, H_kv, n_rep, N, D).reshape(B, num_heads, N, D)
     v_exp = v[:, :, None, :, :].expand(B, H_kv, n_rep, N, D).reshape(B, num_heads, N, D)
     return k_exp, v_exp
 
 
-# ===========================================================================
-# UNIFIED DISPATCHER
-# ===========================================================================
 
 
 def triton_dispatch(kernel_name: str, *args: Any, **kwargs: Any) -> Any:
@@ -547,7 +516,6 @@ def triton_dispatch(kernel_name: str, *args: Any, **kwargs: Any) -> Any:
     or transparently falls back to optimized PyTorch implementations.
     Integrates directly with torch.library custom op registrations for clean torch.compile tracing.
     """
-    # 0. torch.compile integration: if custom op is registered and torch.compiler is tracing
     if not kwargs and len(args) >= 3:
         if kernel_name == "linear_attn" and hasattr(torch.ops, "neuralops") and hasattr(torch.ops.neuralops, "linear_attn"):
             try:
@@ -562,7 +530,6 @@ def triton_dispatch(kernel_name: str, *args: Any, **kwargs: Any) -> Any:
             except Exception:
                 pass
 
-    # Circuit-breaker: check if this kernel has encountered fatal hardware/runtime failure
     if kernel_name in _RUNTIME_FALLBACK_CACHE:
         return _fallback_for_kernel(kernel_name, *args, **kwargs)
 
@@ -577,9 +544,7 @@ def triton_dispatch(kernel_name: str, *args: Any, **kwargs: Any) -> Any:
                 q, kernel_name, head_dim=head_dim, seq_len=seq_len
             )
             if suitable and is_supported(q, k, v, **kwargs):
-                # Auto-pad non-power-of-2 head dimensions
                 (q_pad, k_pad, v_pad), orig_d = pad_to_triton_power_of_2(q, k, v)
-                # Architecture dtype coercion (e.g. bf16 on SM < 8.0)
                 q_exec, orig_dtype = coerce_tensor_for_hardware(q_pad)
                 k_exec, _ = coerce_tensor_for_hardware(k_pad)
                 v_exec, _ = coerce_tensor_for_hardware(v_pad)
@@ -687,7 +652,6 @@ def triton_dispatch(kernel_name: str, *args: Any, **kwargs: Any) -> Any:
                 "['linear_attn', 'sparse_attn', 'low_rank', 'state_update', 'gqa']"
             )
     except Exception as e:
-        # Circuit-breaker triggered: blacklist kernel and execute graceful fallback
         _RUNTIME_FALLBACK_CACHE.add(kernel_name)
         log_fallback_reason(kernel_name, f"circuit breaker triggered due to execution error: {e}")
         return _fallback_for_kernel(kernel_name, *args, **kwargs)

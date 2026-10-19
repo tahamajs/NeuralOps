@@ -1,3 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 from .testing_utils import MockConfig, DummyDistilBertAttention
 import pytest
 import torch
@@ -108,7 +115,6 @@ def test_hgrn2_layer_gates_trainable_after_copy():
     assert layer.out_proj.weight.requires_grad is False
 
 def test_hgrn2_layer_backward_nested_and_decoder():
-    # Test nested encoder (RoBERTa)
     cfg_nested = MockConfig(model_type="roberta")
     old_roberta = DummyRobertaAttention(64)
     layer_nested = HGRN2Layer(config=cfg_nested, d_model=64, old_attn=old_roberta)
@@ -120,7 +126,6 @@ def test_hgrn2_layer_backward_nested_and_decoder():
     assert layer_nested.v_lora_A.grad is not None
     assert layer_nested.out_lora_A.grad is not None
 
-    # Test decoder (GPT-2)
     cfg_dec = MockConfig(is_decoder=True, model_type="gpt2")
     old_gpt = DummyGPT2Attention(64)
     layer_dec = HGRN2Layer(config=cfg_dec, d_model=64, old_attn=old_gpt)

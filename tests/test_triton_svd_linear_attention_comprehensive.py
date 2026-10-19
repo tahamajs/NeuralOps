@@ -1,3 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 import math
 import warnings
 from types import SimpleNamespace
@@ -12,7 +19,6 @@ from neuralops.attentions.svd.triton_svd_linear_attention import (
 
 def test_triton_svd_linear_config_handling():
     """Verify safe config handling and dimension inference."""
-    # 1. config=None, explicit kwargs
     attn1 = TritonSVDLinearAttention(config=None, embed_dim=64, num_heads=4, rank=16)
     assert attn1.embed_dim == 64
     assert attn1.num_heads == 4
@@ -20,7 +26,6 @@ def test_triton_svd_linear_config_handling():
     assert attn1.rank == 16
     assert attn1.kv_dim == 64
 
-    # 2. config present
     cfg = SimpleNamespace(hidden_size=128, num_attention_heads=8, num_key_value_heads=2, is_decoder=True)
     attn2 = TritonSVDLinearAttention(config=cfg, rank=32)
     assert attn2.embed_dim == 128
@@ -37,11 +42,9 @@ def test_svd_linear_projection_identity_init():
     r = proj.rank
     assert r == 16
 
-    # Verify U has eye(r) in top-left
     expected_eye = torch.eye(r)
     assert torch.allclose(proj.U[:r, :r], expected_eye)
 
-    # Verify forward pass produces non-zero output
     x = torch.randn(2, 4, 64)
     out = proj(x)
     assert out.shape == (2, 4, 64)
@@ -79,13 +82,11 @@ def test_triton_svd_linear_bidirectional_and_causal_shapes():
     B, N, D = 2, 16, 64
     x = torch.randn(B, N, D)
 
-    # Causal
     attn_causal = TritonSVDLinearAttention(embed_dim=D, num_heads=4, rank=16, is_decoder=True)
     out_causal, _ = attn_causal(x)
     assert out_causal.shape == (B, N, D)
     assert torch.isfinite(out_causal).all()
 
-    # Bidirectional
     attn_bidi = TritonSVDLinearAttention(embed_dim=D, num_heads=4, rank=16, is_decoder=False)
     out_bidi, _ = attn_bidi(x)
     assert out_bidi.shape == (B, N, D)
@@ -142,7 +143,6 @@ def test_triton_svd_linear_weight_copy_multi_arch():
     dim = 64
     num_heads = 4
 
-    # 1. GPT-2 Conv1D style
     class MockGPT2Attn(nn.Module):
         def __init__(self):
             super().__init__()
@@ -152,15 +152,12 @@ def test_triton_svd_linear_weight_copy_multi_arch():
     gpt2_src = MockGPT2Attn()
     attn_gpt2 = TritonSVDLinearAttention(embed_dim=dim, num_heads=num_heads, rank=32, pretrained_attn=gpt2_src)
 
-    # Verify SVD factor reconstruction quality
     with torch.no_grad():
         W_q_approx = attn_gpt2.q_proj.U @ attn_gpt2.q_proj.V
         q_src, _, _ = gpt2_src.c_attn.weight.data.clone().split(dim, dim=0)
-        # Low rank rank=32 of 64 should capture substantial energy
         rel_err = torch.norm(W_q_approx - q_src) / torch.norm(q_src)
         assert rel_err < 0.85, f"SVD approximation error too high: {rel_err}"
 
-    # 2. RoBERTa style
     class MockRobertaAttn(nn.Module):
         def __init__(self):
             super().__init__()

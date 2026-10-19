@@ -1,3 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 import pytest
 import torch
 import torch.nn as nn
@@ -9,7 +16,6 @@ from neuralops.trainer.optimizers import (OPTIMIZER_REGISTRY, Muon, MuonAdamW,
 def test_zeropower_via_newtonschulz5():
     """Verify Newton-Schulz iteration produces approximately orthonormal matrices with singular values near 1."""
     torch.manual_seed(42)
-    # Square matrix
     G = torch.randn(32, 32)
     ortho = zeropower_via_newtonschulz5(G, steps=5)
     assert ortho.shape == G.shape
@@ -17,7 +23,6 @@ def test_zeropower_via_newtonschulz5():
     assert s.min().item() > 0.5
     assert s.max().item() < 1.5
 
-    # Rectangular tall matrix (m > n)
     G_tall = torch.randn(64, 16)
     ortho_tall = zeropower_via_newtonschulz5(G_tall, steps=5)
     assert ortho_tall.shape == G_tall.shape
@@ -25,7 +30,6 @@ def test_zeropower_via_newtonschulz5():
     assert s_tall.min().item() > 0.5
     assert s_tall.max().item() < 1.5
 
-    # Rectangular wide matrix (m < n)
     G_wide = torch.randn(16, 64)
     ortho_wide = zeropower_via_newtonschulz5(G_wide, steps=5)
     assert ortho_wide.shape == G_wide.shape
@@ -69,10 +73,10 @@ def test_create_muon_adamw_optimizer_split():
     class ToyModel(nn.Module):
         def __init__(self):
             super().__init__()
-            self.linear = nn.Linear(32, 16, bias=True)  # weight: 2D, bias: 1D
-            self.norm = nn.LayerNorm(16)                # weight: 1D, bias: 1D
-            self.lora_a = nn.Parameter(torch.randn(8, 32))  # 2D
-            self.lora_b = nn.Parameter(torch.randn(16, 8))  # 2D
+            self.linear = nn.Linear(32, 16, bias=True)
+            self.norm = nn.LayerNorm(16)
+            self.lora_a = nn.Parameter(torch.randn(8, 32))
+            self.lora_b = nn.Parameter(torch.randn(16, 8))
 
     model = ToyModel()
     opt = create_muon_adamw_optimizer(model, lr_muon=0.02, lr_adam=5e-5)
@@ -80,7 +84,6 @@ def test_create_muon_adamw_optimizer_split():
     assert isinstance(opt, MuonAdamW)
     assert len(opt.param_groups) == 2
 
-    # Group 0 is Muon (2D matrices: linear.weight, lora_a, lora_b)
     muon_group = opt.param_groups[0]
     assert muon_group["optimizer"] == "muon"
     assert muon_group["lr"] == 0.02
@@ -88,7 +91,6 @@ def test_create_muon_adamw_optimizer_split():
     for p in muon_group["params"]:
         assert p.ndim == 2
 
-    # Group 1 is AdamW (1D vectors: linear.bias, norm.weight, norm.bias)
     adam_group = opt.param_groups[1]
     assert adam_group["optimizer"] == "adamw"
     assert adam_group["lr"] == 5e-5

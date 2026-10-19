@@ -1,3 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 import types
 
 import pytest
@@ -35,7 +42,6 @@ class DummyAttn(nn.Module):
 
 def test_rpc_properties_and_clamping():
     cfg = make_config(hidden_size=64, num_heads=4, num_kv_heads=2)
-    # Head dim is 16. Pass rank 64, should be clamped to 16
     attn = RPCAttention(cfg, rank=64, pretrained_attn=DummyAttn(64, 4))
     assert attn.rank == 16, f"Expected rank clamped to head_dim=16, got {attn.rank}"
     assert attn.proj.shape == (4, 16, 16)
@@ -89,7 +95,6 @@ def test_rpc_lora_and_gradients():
     attn = RPCAttention(cfg, rank=8, pretrained_attn=DummyAttn(64, 4), lora_rank=8)
     attn.train()
 
-    # Base frozen, lora trainable
     assert not attn.W_q.weight.requires_grad
     assert attn.W_q.lora_A.requires_grad
     assert attn.W_q.lora_B.requires_grad

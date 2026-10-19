@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Fused Knowledge Distillation Loss
 
 Computes temperature-scaled Kullback-Leibler divergence between student and teacher logits with autograd support.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -51,8 +55,8 @@ def _fused_kd_fwd_kernel(
     stride_t_col,
     stride_loss,
     V: tl.constexpr,
-    INV_T: tl.constexpr,      # 1.0 / Temperature
-    T2: tl.constexpr,         # Temperature^2
+    INV_T: tl.constexpr,
+    T2: tl.constexpr,
     BLOCK_SIZE: tl.constexpr,
 ):
     """
@@ -64,7 +68,6 @@ def _fused_kd_fwd_kernel(
     """
     row_idx = tl.program_id(0)
 
-    # Pass 1: Find row-max for student and teacher
     max_s = -float("inf")
     max_t = -float("inf")
 
@@ -86,7 +89,6 @@ def _fused_kd_fwd_kernel(
         max_s = tl.maximum(max_s, tl.max(s_val, axis=0))
         max_t = tl.maximum(max_t, tl.max(t_val, axis=0))
 
-    # Pass 2: Accumulate sum(exp(x - max))
     sum_exp_s = 0.0
     sum_exp_t = 0.0
 
@@ -111,7 +113,6 @@ def _fused_kd_fwd_kernel(
     lse_s = max_s + tl.log(sum_exp_s)
     lse_t = max_t + tl.log(sum_exp_t)
 
-    # Pass 3: Accumulate KL divergence
     row_loss = 0.0
     for col_start in range(0, V, BLOCK_SIZE):
         col_offsets = col_start + tl.arange(0, BLOCK_SIZE)
@@ -151,8 +152,8 @@ def _fused_kd_bwd_kernel(
     stride_gs_row,
     stride_gs_col,
     V: tl.constexpr,
-    INV_T: tl.constexpr,      # 1.0 / Temperature
-    T_VAL: tl.constexpr,      # Temperature
+    INV_T: tl.constexpr,
+    T_VAL: tl.constexpr,
     BLOCK_SIZE: tl.constexpr,
 ):
     """
@@ -162,7 +163,6 @@ def _fused_kd_bwd_kernel(
     row_idx = tl.program_id(0)
     g_loss = tl.load(grad_loss_ptr + row_idx)
 
-    # Pass 1: Row max
     max_s = -float("inf")
     max_t = -float("inf")
     for col_start in range(0, V, BLOCK_SIZE):
@@ -181,7 +181,6 @@ def _fused_kd_bwd_kernel(
         max_s = tl.maximum(max_s, tl.max(s_val, axis=0))
         max_t = tl.maximum(max_t, tl.max(t_val, axis=0))
 
-    # Pass 2: Sum exp
     sum_exp_s = 0.0
     sum_exp_t = 0.0
     for col_start in range(0, V, BLOCK_SIZE):
@@ -203,7 +202,6 @@ def _fused_kd_bwd_kernel(
     lse_s = max_s + tl.log(sum_exp_s)
     lse_t = max_t + tl.log(sum_exp_t)
 
-    # Pass 3: Gradients
     scale = g_loss * T_VAL
     for col_start in range(0, V, BLOCK_SIZE):
         col_offsets = col_start + tl.arange(0, BLOCK_SIZE)
@@ -451,7 +449,6 @@ class FusedLinearKLDivergenceFunction(torch.autograd.Function):
                 total_loss += loss_c
 
                 if compute_grads:
-                    # Analytical gradient: dL / d(s_logits) = T * (softmax(s_logits/T) - p_t) * scale_norm
                     probs_s = F.softmax(s_logits_c * inv_T, dim=-1)
                     d_s_logits = probs_s
                     d_s_logits.sub_(p_t).mul_(T * scale_norm)

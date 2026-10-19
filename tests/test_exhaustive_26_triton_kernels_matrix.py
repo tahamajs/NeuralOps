@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Suite 3: Exhaustive Verification Battery for All 26 Triton Kernel Modules.
 Verifies:
@@ -76,15 +82,11 @@ from neuralops.core.triton_kernels.varlen_attention import varlen_attention_pyto
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 
-# ============================================================================
-# 3.1 & 3.2: Precision Parity and Non-Contiguous Strided Safety
-# ============================================================================
 
 
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float16])
 def test_3_1_linear_attn_strided_and_parity(dtype):
     B, H, N, D = 2, 4, 32, 32
-    # Non-contiguous stride via slicing
     q_full = torch.randn(B, H, N * 2, D, dtype=dtype, device=DEVICE)
     k_full = torch.randn(B, H, N * 2, D, dtype=dtype, device=DEVICE)
     v_full = torch.randn(B, H, N * 2, D, dtype=dtype, device=DEVICE)
@@ -214,9 +216,6 @@ def test_3_1_fused_ce_and_kd_parity(dtype):
     torch.testing.assert_close(kd_act.to(logits.dtype), kd_ref.to(logits.dtype), rtol=1e-2, atol=1e-2)
 
 
-# ============================================================================
-# 3.3: Autograd Parity & Gradient Differentiability
-# ============================================================================
 
 
 def test_3_3_autograd_gradients():
@@ -234,13 +233,9 @@ def test_3_3_autograd_gradients():
     assert v.grad is not None and torch.isfinite(v.grad).all() and v.grad.abs().sum() > 0
 
 
-# ============================================================================
-# 3.4: Variable-Length Boundaries & Zero Cross-Sample Leakage
-# ============================================================================
 
 
 def test_3_4_varlen_attention_cu_seqlens_zero_cross_leakage():
-    # Sequence 1: len=8; Sequence 2: len=16
     s1, s2 = 8, 16
     total_tokens = s1 + s2
     H, D = 2, 16
@@ -252,21 +247,16 @@ def test_3_4_varlen_attention_cu_seqlens_zero_cross_leakage():
 
     out_batched = varlen_attention_pytorch(q, k, v, cu_seqlens, cu_seqlens)
 
-    # Individual sequence execution
     q1, k1, v1 = q[:s1].transpose(0, 1).unsqueeze(0), k[:s1].transpose(0, 1).unsqueeze(0), v[:s1].transpose(0, 1).unsqueeze(0)
     q2, k2, v2 = q[s1:].transpose(0, 1).unsqueeze(0), k[s1:].transpose(0, 1).unsqueeze(0), v[s1:].transpose(0, 1).unsqueeze(0)
 
     out1_ref = F.scaled_dot_product_attention(q1, k1, v1).squeeze(0).transpose(0, 1)
     out2_ref = F.scaled_dot_product_attention(q2, k2, v2).squeeze(0).transpose(0, 1)
 
-    # Assert zero cross-sample leakage between independent sequence segments
     torch.testing.assert_close(out_batched[:s1], out1_ref, rtol=1e-2, atol=1e-2)
     torch.testing.assert_close(out_batched[s1:], out2_ref, rtol=1e-2, atol=1e-2)
 
 
-# ============================================================================
-# 3.5: State Update Idempotency and Non-Degradation
-# ============================================================================
 
 
 def test_3_5_state_update_idempotency():
@@ -287,9 +277,6 @@ def test_3_5_state_update_idempotency():
     torch.testing.assert_close(next_z1, next_z2, rtol=1e-5, atol=1e-5)
 
 
-# ============================================================================
-# 3.7: Exhaustive Verification Battery for 10 Newly Accelerated Triton Kernel Engines
-# ============================================================================
 
 
 def test_3_7_alibi_bias_triton_parity():
@@ -653,14 +640,12 @@ def test_3_9_fused_ce_ignore_index_and_chunked():
     B, T, V = 4, 32, 128
     logits = torch.randn(B * T, V, device=DEVICE, dtype=torch.float32, requires_grad=True)
     targets = torch.randint(0, V, (B * T,), device=DEVICE, dtype=torch.long)
-    # Mask 25% of tokens with ignore_index = -100
     targets[::4] = -100
 
     loss_act = fused_cross_entropy(logits, targets, ignore_index=-100)
     loss_ref = F.cross_entropy(logits, targets, ignore_index=-100)
     torch.testing.assert_close(loss_act, loss_ref, rtol=1e-4, atol=1e-4)
 
-    # Test backward gradient flow with ignore_index
     loss_act.backward()
     assert logits.grad is not None
     assert not torch.isnan(logits.grad).any()

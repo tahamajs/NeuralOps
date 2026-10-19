@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Tests for neuralops.data.augmentation module."""
 
 import pytest
@@ -20,7 +26,6 @@ class TestAugmentation:
         assert fn is random_mask_augment
 
     def test_random_mask_augment(self):
-        # Create mock dataset
         dataset = MagicMock()
         def mock_map(fn):
             example = {"input_ids": [10, 20, 30, 40, 50]}
@@ -31,5 +36,4 @@ class TestAugmentation:
         dataset.map = mock_map
         augmented = random_mask_augment(dataset, mask_prob=1.0)
         assert len(augmented) == 1
-        # All tokens should be replaced by 103 when prob is 1.0
         assert augmented[0]["input_ids"] == [103, 103, 103, 103, 103]

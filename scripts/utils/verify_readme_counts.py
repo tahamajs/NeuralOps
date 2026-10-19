@@ -1,6 +1,11 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Verify that README numbers match the actual registries and modules.
 
-Author: Taha Majlesi
 
 Run: python scripts/utils/verify_readme_counts.py
 """
@@ -13,7 +18,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
 with open("README.md") as f:
     readme = f.read()
 
-# 1. Version check
 actual_version = (
     neuralops.get_version()
     if callable(getattr(neuralops, "get_version", None))
@@ -29,7 +33,6 @@ errors = []
 if actual_version != "1.4.0":
     errors.append(f"Version mismatch: expected '1.4.0', got {actual_version}")
 
-# 2. Count verification
 actual_attn = len(ATTENTION_REGISTRY)
 actual_comp = len(COMPRESSOR_REGISTRY)
 actual_kernels = 26

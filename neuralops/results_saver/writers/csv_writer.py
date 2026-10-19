@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 CSV Result Writer
 
 Exports tabular benchmark results and summary metrics into standard CSV format.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -90,7 +94,6 @@ def save_result(
     if "timestamp" not in row or not row["timestamp"]:
         row["timestamp"] = datetime.now().isoformat()
 
-    # Format fields: round floats to 4 decimal places, None to empty string
     formatted_row: dict[str, Any] = {}
     for k, v in row.items():
         if isinstance(v, float):

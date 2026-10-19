@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Integration smoke tests verifying end-to-end injection and forward passes per model family."""
 
 import pytest
@@ -34,7 +40,6 @@ class TestIntegrationSmokePerFamily:
 
         loss = out.logits.sum()
         loss.backward()
-        # Verify gradients reached parameters
         trainable = [p for p in model.parameters() if p.requires_grad and p.grad is not None]
         assert len(trainable) > 0
 

@@ -1,12 +1,15 @@
-# -*- coding: utf-8 -*-
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Master Hardware Kernel Coverage and Numerical Parity Test Suite for All 203 Modules.
 
 Tests all 131 Attention Mechanisms and 72 Compression Engines on NVIDIA GeForce RTX 4070 GPU.
 Verifies 100% hardware kernel wiring (Native CUDA C++ Level 1 and Triton JIT Level 2),
 numerical parity against PyTorch reference (max_abs_diff < 1e-3 or cosine similarity >= 0.95),
 and finite backpropagation gradients without NaN/Inf.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -30,7 +33,6 @@ import neuralops.core.triton_kernels._types as tt
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# Extract all canonical and registered attention keys (strictly 131)
 ATTENTION_REGISTRY._load_all()
 COMPRESSOR_REGISTRY._load_all()
 
@@ -169,9 +171,6 @@ def _build_compressed_model(key: str, base_model: nn.Module):
     return model
 
 
-# ==============================================================================
-# Pytest Test Cases: Invariants & Registries
-# ==============================================================================
 
 def test_registry_canonical_counts():
     """Assert canonical count invariants: 131 attentions, 72 compressors."""
@@ -180,9 +179,6 @@ def test_registry_canonical_counts():
     print(f"\n[Count Invariant] 131 Attentions and 72 Compressors strictly verified.")
 
 
-# ==============================================================================
-# Pytest Test Cases: All 131 Attention Mechanisms Hardware & Gradients
-# ==============================================================================
 
 @pytest.mark.parametrize("attn_key", ALL_131_ATTENTION_KEYS)
 def test_attention_hardware_kernel_forward_and_gradient(attn_key: str):
@@ -203,7 +199,6 @@ def test_attention_hardware_kernel_forward_and_gradient(attn_key: str):
     assert isinstance(out, torch.Tensor), f"Attention {attn_key} produced non-Tensor output: {type(out)}"
     assert torch.isfinite(out).all(), f"Attention {attn_key} produced NaN or Inf in forward activation."
 
-    # Backward pass & gradient sanity
     loss = out.sum()
     loss.backward()
 
@@ -233,7 +228,6 @@ def test_attention_triton_hardware_parity(attn_key: str):
     torch.manual_seed(1337)
     x = torch.randn(B, T, dim, device=DEVICE, dtype=torch.float32)
 
-    # 1. Hardware Kernel Mode (Triton / CUDA)
     tt.FORCE_PYTORCH_FALLBACK = False
     with torch.no_grad():
         try:
@@ -241,7 +235,6 @@ def test_attention_triton_hardware_parity(attn_key: str):
         except Exception as e:
             pytest.skip(f"Hardware execution skipped for {attn_key}: {e}")
 
-    # 2. Reference PyTorch Fallback Mode
     tt.FORCE_PYTORCH_FALLBACK = True
     with torch.no_grad():
         try:
@@ -254,7 +247,6 @@ def test_attention_triton_hardware_parity(attn_key: str):
     assert torch.isfinite(out_hw).all(), f"NaN in hardware output for {attn_key}"
     assert torch.isfinite(out_ref).all(), f"NaN in reference output for {attn_key}"
 
-    # Parity check: max_abs_diff < 1e-3 or cosine similarity >= 0.95
     flat_hw = out_hw.float().reshape(-1)
     flat_ref = out_ref.float().reshape(-1)
     max_diff = (flat_hw - flat_ref).abs().max().item()
@@ -265,9 +257,6 @@ def test_attention_triton_hardware_parity(attn_key: str):
     )
 
 
-# ==============================================================================
-# Pytest Test Cases: All 72 Compression Engines Hardware & Gradients
-# ==============================================================================
 
 @pytest.mark.parametrize("comp_key", ALL_72_COMPRESSOR_KEYS)
 def test_compressor_hardware_wiring_forward_and_backward(comp_key: str):
@@ -294,9 +283,6 @@ def test_compressor_hardware_wiring_forward_and_backward(comp_key: str):
         assert torch.isfinite(x.grad).all(), f"Compressor {comp_key} input gradient contains NaN or Inf."
 
 
-# ==============================================================================
-# Standalone CLI Entry Point
-# ==============================================================================
 
 def run_master_203_coverage_suite():
     """Runs the full 203 module hardware coverage test suite with formatted console reporting."""
@@ -306,7 +292,6 @@ def run_master_203_coverage_suite():
     print(f"Device: {DEVICE} | PyTorch: {torch.__version__} | CUDA: {torch.version.cuda}")
     print("=" * 80)
 
-    # 1. Attentions Suite
     print(f"\n[Part 1] Testing All {len(ALL_131_ATTENTION_KEYS)} Attention Mechanisms...")
     attn_passed, attn_failed = [], []
     for idx, key in enumerate(ALL_131_ATTENTION_KEYS, start=1):
@@ -331,7 +316,6 @@ def run_master_203_coverage_suite():
             attn_failed.append((key, str(e)))
             print(f"  ❌ FAILED: {key} -> {e}")
 
-    # 2. Compressors Suite
     print(f"\n[Part 2] Testing All {len(ALL_72_COMPRESSOR_KEYS)} Compression Engines...")
     comp_passed, comp_failed = [], []
     for idx, key in enumerate(ALL_72_COMPRESSOR_KEYS, start=1):
@@ -355,7 +339,6 @@ def run_master_203_coverage_suite():
             comp_failed.append((key, str(e)))
             print(f"  ❌ FAILED: {key} -> {e}")
 
-    # 3. Final Certification
     total_passed = len(attn_passed) + len(comp_passed)
     total_failed = len(attn_failed) + len(comp_failed)
     total_modules = len(ALL_131_ATTENTION_KEYS) + len(ALL_72_COMPRESSOR_KEYS)

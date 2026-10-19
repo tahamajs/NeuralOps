@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Comprehensive test suite for neuralops.core.triton_kernels.selective_scan.
 
@@ -50,16 +56,16 @@ def reference_selective_scan_pytorch(u, delta, A, B, C, D=None, delta_softplus=T
     for b in range(B_size):
         h = torch.zeros(D_dim, N, device=u.device, dtype=torch.float32)
         for t in range(L):
-            u_t = u_f[b, t, :]       # (D,)
-            d_t = delta_f[b, t, :]   # (D,)
-            B_t = B_f[b, t, :]       # (N,)
-            C_t = C_f[b, t, :]       # (N,)
+            u_t = u_f[b, t, :]
+            d_t = delta_f[b, t, :]
+            B_t = B_f[b, t, :]
+            C_t = C_f[b, t, :]
 
-            dA = torch.exp(d_t.unsqueeze(-1) * A_f)  # (D, N)
-            dB = (d_t * u_t).unsqueeze(-1) * B_t.unsqueeze(0)  # (D, N)
+            dA = torch.exp(d_t.unsqueeze(-1) * A_f)
+            dB = (d_t * u_t).unsqueeze(-1) * B_t.unsqueeze(0)
             h = dA * h + dB
 
-            yt = (h * C_t.unsqueeze(0)).sum(dim=-1)  # (D,)
+            yt = (h * C_t.unsqueeze(0)).sum(dim=-1)
             if D_f is not None:
                 yt = yt + D_f * u_t
             y[b, t, :] = yt

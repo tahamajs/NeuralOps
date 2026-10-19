@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Dynamic Attention Replacement Engine
 
 Core graph surgery functions replacing standard attention layers with efficient alternatives in-place.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -32,7 +36,6 @@ from neuralops.core.svd_utils import randomized_svd
 
 logger = logging.getLogger(__name__)
 
-# Backward-compatibility aliases
 _FactorizedLinear = FactorizedLinear
 _randomized_svd = randomized_svd
 
@@ -151,7 +154,6 @@ def inject_replace(
 
     cfg = model_config if model_config is not None else getattr(target, "config", None)
 
-    # Whole-model traversal
     layer_list = None
     if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
         layer_list = target.distilbert.transformer.layer
@@ -191,7 +193,6 @@ def inject_replace(
                 num_injected += 1
         return target if num_injected > 0 else None
 
-    # Single-layer injection
     try:
         src = old_attn
         if src is None:

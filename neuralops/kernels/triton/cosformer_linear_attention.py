@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Cosformer Linear Attention
 
 Fuses non-negative kernel feature mapping and trigonometric positional encoding into register-level linear attention accumulation.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -69,12 +73,10 @@ def _cosformer_fwd_kernel(
     offs_d = tl.arange(0, D)
     mask_m = offs_m < L
 
-    # Load Q block and compute modulated q_cos, q_sin on the fly
     q_ptrs = q_ptr + pid_b * stride_qb + pid_h * stride_qh + offs_m[:, None] * stride_ql + offs_d[None, :] * stride_qd
     raw_q = tl.load(q_ptrs, mask=mask_m[:, None], other=0.0).to(tl.float32)
     phi_q = _elu_plus_one(raw_q)
 
-    # Positional angles theta = pi * i / (2 * L)
     theta_q = (3.141592653589793 / (2.0 * L)) * offs_m[:, None]
     cos_q = tl.cos(theta_q)
     sin_q = tl.sin(theta_q)
@@ -82,12 +84,9 @@ def _cosformer_fwd_kernel(
     q_cos = phi_q * cos_q
     q_sin = phi_q * sin_q
 
-    # Numerator accumulator: shape (BLOCK_M, D)
     num_acc = tl.zeros((BLOCK_M, D), dtype=tl.float32)
-    # Denominator accumulator: shape (BLOCK_M,)
     den_acc = tl.zeros((BLOCK_M,), dtype=tl.float32)
 
-    # Scan over KV sequence blocks
     max_n_blocks = tl.cdiv(L, BLOCK_N)
     for n_idx in range(0, max_n_blocks):
         offs_n = n_idx * BLOCK_N + tl.arange(0, BLOCK_N)
@@ -104,22 +103,17 @@ def _cosformer_fwd_kernel(
         k_cos = phi_k * tl.cos(theta_k)
         k_sin = phi_k * tl.sin(theta_k)
 
-        # Dot product in modulated space: S = q_cos @ k_cos^T + q_sin @ k_sin^T
         s_tile = tl.dot(q_cos, tl.trans(k_cos), allow_tf32=True) + tl.dot(q_sin, tl.trans(k_sin), allow_tf32=True)
 
         if CAUSAL:
-            # Mask out j > i
             causal_mask = offs_m[:, None] >= offs_n[None, :]
             s_tile = tl.where(causal_mask & mask_m[:, None] & mask_n[None, :], s_tile, 0.0)
         else:
             s_tile = tl.where(mask_m[:, None] & mask_n[None, :], s_tile, 0.0)
 
-        # Accumulate numerator = S @ V
         num_acc += tl.dot(s_tile, v_tile, allow_tf32=True)
-        # Accumulate denominator = row sums of S
         den_acc += tl.sum(s_tile, axis=1)
 
-    # Safe normalization: max(den, 1e-5)
     safe_den = tl.maximum(den_acc[:, None], 1e-5)
     out_tile = num_acc / safe_den
 
@@ -149,7 +143,6 @@ def triton_cosformer_linear_attention(
     B, H, L, D = q.shape
 
     if not q.is_cuda or D > 128:
-        # PyTorch reference
         phi_q = F.elu(q.float()) + 1.0
         phi_k = F.elu(k.float()) + 1.0
 
@@ -161,7 +154,6 @@ def triton_cosformer_linear_attention(
         k_cos = phi_k * torch.cos(theta)
         k_sin = phi_k * torch.sin(theta)
 
-        # Similarity matrix S = q_cos @ k_cos^T + q_sin @ k_sin^T
         scores = torch.matmul(q_cos, k_cos.transpose(-1, -2)) + torch.matmul(q_sin, k_sin.transpose(-1, -2))
         if is_causal:
             mask = torch.tril(torch.ones(L, L, device=q.device, dtype=torch.bool))

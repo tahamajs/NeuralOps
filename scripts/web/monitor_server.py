@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Unified NeuralOps Web Monitor & Dashboard Runner Script.
 
 Usage:
     python scripts/web/monitor_server.py --port 8080
     python scripts/web/monitor_server.py --daemon
     python scripts/web/monitor_server.py --standard-only
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -16,7 +20,6 @@ import os
 import sys
 from pathlib import Path
 
-# Add project root to sys.path
 root_dir = str(Path(__file__).resolve().parent.parent.parent)
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)

@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Tests for FlashAttention-3 FP8 attention module.
 
 Validates:
@@ -62,7 +68,6 @@ def test_auto_disable_fp8_on_non_hopper():
     """Test that requesting use_fp8=True auto-disables on non-Hopper / CPU devices."""
     cfg = MockConfig()
     attn = FlashAttention3FP8(config=cfg, use_fp8=True)
-    # Unless running on actual Hopper GPU (SM >= 9.0), use_fp8 should be False
     is_hopper = False
     if torch.cuda.is_available() and hasattr(torch.cuda, "get_device_capability"):
         try:
@@ -138,7 +143,6 @@ def test_head_mask_handling():
     cfg = MockConfig()
     attn = FlashAttention3FP8(config=cfg)
     x = torch.randn(2, 8, 64)
-    # Mask out head 0 and head 1, keep head 2 and head 3
     head_mask = torch.tensor([0.0, 0.0, 1.0, 1.0])
     out, _ = attn(x, head_mask=head_mask)
     assert out.shape == (2, 8, 64)

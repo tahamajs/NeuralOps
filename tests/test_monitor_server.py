@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Unit tests for neuralops.runners.monitor package."""
 
 import json
@@ -89,7 +95,6 @@ def test_websocket_multi_client_concurrent_stress():
     app = create_app(project_dir)
     client = TestClient(app)
 
-    # Multi-client sequential and concurrent connection checks
     clients_count = 5
     for _ in range(clients_count):
         with client.websocket_connect("/ws/telemetry") as ws:
@@ -113,17 +118,14 @@ def test_websocket_resiliency_rapid_reconnect():
     app = create_app(project_dir)
     client = TestClient(app)
 
-    # Rapid connect and immediate drop cycle
     for cycle in range(10):
         with client.websocket_connect("/ws/telemetry") as ws:
             ws.send_text("ping")
             resp = ws.receive_text()
             assert resp in ("pong",) or "telemetry_tick" in resp
     
-    # Verify all connections cleanly pruned without memory leaks
     assert len(ws_manager.active_connections) == 0
 
-    # Verify history endpoint
     resp = client.get("/api/benchmarks/history")
     assert resp.status_code == 200
     data = resp.json()

@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Variable-Length Attention
 
 Processes batched sequences of variable lengths using cumulative token offsets without padding overhead.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -130,7 +134,7 @@ def _varlen_attention_fwd(
         qs, qe = cu_seqlens_q[b].item(), cu_seqlens_q[b + 1].item()
         ks, ke = cu_seqlens_k[b].item(), cu_seqlens_k[b + 1].item()
         
-        q_b = q[qs:qe].transpose(0, 1).unsqueeze(0)  # [1, H, Nq, D]
+        q_b = q[qs:qe].transpose(0, 1).unsqueeze(0)
         k_b = k[ks:ke].transpose(0, 1).unsqueeze(0)
         v_b = v[ks:ke].transpose(0, 1).unsqueeze(0)
         

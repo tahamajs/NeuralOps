@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Fused Cross-Entropy Loss
 
 Numerically stable online softmax cross-entropy loss computation with analytical backward gradients.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -68,16 +72,11 @@ def _fused_cross_entropy_fwd_kernel(
         other=-float("inf"),
     )
 
-    # Online softmax max
     m = tl.max(logits_row, axis=0)
-    # Exponentiate shifted logits
     exp_logits = tl.exp(logits_row - m)
-    # Sum exp
     sum_exp = tl.sum(exp_logits, axis=0)
-    # Logsumexp
     log_sum_exp = m + tl.log(sum_exp)
 
-    # Target logit
     target_logit = tl.load(
         logits_ptr + row_idx * stride_logits_row + target_idx * stride_logits_col
     )
@@ -125,10 +124,8 @@ def _fused_cross_entropy_bwd_kernel(
     exp_logits = tl.exp(logits_row - m)
     sum_exp = tl.sum(exp_logits, axis=0)
 
-    # Softmax probabilities
     probs = exp_logits / sum_exp
 
-    # Gradient: (probs - indicator) * grad_loss
     is_target = col_offsets == target_idx
     target_val = tl.where(is_target, 1.0, 0.0)
     d_logits = (probs - target_val) * g_loss
@@ -328,14 +325,11 @@ class FusedLinearCrossEntropyFunction(torch.autograd.Function):
                 h_c = h_flat[c_start:c_end]
                 t_c = t_flat[c_start:c_end]
 
-                # 1. Chunked linear projection
                 logits_c = F.linear(h_c, weight, bias)
 
-                # 2. Scalar loss accumulation
                 loss_c = F.cross_entropy(logits_c, t_c, ignore_index=ignore_index, reduction="sum")
                 total_loss += loss_c
 
-                # 3. Analytical in-place gradient accumulation
                 if compute_grads:
                     probs_c = F.softmax(logits_c, dim=-1)
                     probs_c.scatter_(-1, t_c.clamp(min=0).unsqueeze(-1), -1.0, reduce="add")
@@ -410,7 +404,6 @@ class FusedLinearCrossEntropy(nn.Module):
         bias: torch.Tensor | None = None,
     ) -> torch.Tensor:
         if isinstance(targets, torch.Tensor) and targets.dtype in (torch.float16, torch.float32, torch.bfloat16) and bias is not None and bias.dtype in (torch.int32, torch.int64):
-            # Arguments passed as (hidden_states, weight, bias, targets)
             actual_bias = targets
             actual_targets = bias
         else:

@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Unit tests for weight copying, QKV slicing, and projection detection."""
 
 import pytest
@@ -20,7 +26,6 @@ class TestSliceFusedQKVWeights:
     """Verify _slice_fused_qkv_weights handles Conv1D and Linear fused QKV projections."""
 
     def test_conv1d_transposition_and_slicing(self):
-        # GPT-2 Conv1D weight: shape [in_features, 3 * out_features] -> [32, 96]
         in_dim = 32
         out_dim = 32
         weight = torch.randn(in_dim, 3 * out_dim)
@@ -31,7 +36,6 @@ class TestSliceFusedQKVWeights:
         k_w, k_b = sliced["k"]
         v_w, v_b = sliced["v"]
 
-        # Linear expects [out_features, in_features] -> [32, 32]
         assert q_w.shape == (out_dim, in_dim)
         assert k_w.shape == (out_dim, in_dim)
         assert v_w.shape == (out_dim, in_dim)
@@ -39,12 +43,10 @@ class TestSliceFusedQKVWeights:
         assert k_b.shape == (out_dim,)
         assert v_b.shape == (out_dim,)
 
-        # Exact values check
         expected_q = weight[:, :out_dim].t().contiguous()
         assert torch.allclose(q_w, expected_q, atol=1e-6)
 
     def test_standard_linear_fused_slicing(self):
-        # Standard Linear fused QKV: shape [3 * out_features, in_features] -> [96, 32]
         in_dim = 32
         out_dim = 32
         weight = torch.randn(3 * out_dim, in_dim)
@@ -106,7 +108,6 @@ class TestCopyProjectionWeights:
         src_w = torch.randn(32, 32)
         src_b = torch.randn(32)
 
-        # Must not raise AttributeError: can't set attribute
         _copy_projection_weights(mod, src_w, src_b)
 
     def test_graceful_missing_projection_fallback(self):

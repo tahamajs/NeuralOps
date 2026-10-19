@@ -1,3 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 import pytest
 import torch
 import torch.nn as nn
@@ -9,7 +16,6 @@ from neuralops.trainer.foundation_pretrainer import InfiniteContextFoundationPre
 
 def test_packed_token_stream_dataset_packing_and_checkpoint():
     """Verify document packing into fixed chunks and exact state checkpoint resumption."""
-    # Synthetic document generator: 5 documents of lengths 10, 15, 25, 30, 20
     docs = [
         list(range(1, 11)),
         list(range(11, 26)),
@@ -22,7 +28,6 @@ def test_packed_token_stream_dataset_packing_and_checkpoint():
         for d in docs:
             yield d
 
-    # Pack into chunks of seq_len = 16 with EOS=999
     dataset = PackedTokenStreamDataset(
         token_iterator_fn=doc_iter,
         seq_len=16,
@@ -33,17 +38,14 @@ def test_packed_token_stream_dataset_packing_and_checkpoint():
 
     chunks = list(dataset)
     assert len(chunks) > 0
-    # Every chunk must be strictly length 16
     for c in chunks:
         assert c["input_ids"].shape == (16,)
         assert c["labels"].shape == (16,)
         assert c["is_eos"].shape == (16,)
 
-    # Test state_dict / load_state_dict resumption
     state = dataset.state_dict()
     assert state["chunk_counter"] == len(chunks)
 
-    # Resume with fresh dataset pointing to same state
     resumed_dataset = PackedTokenStreamDataset(
         token_iterator_fn=doc_iter,
         seq_len=16,
@@ -51,7 +53,6 @@ def test_packed_token_stream_dataset_packing_and_checkpoint():
     )
     resumed_dataset.load_state_dict(state)
     resumed_chunks = list(resumed_dataset)
-    # Since we already finished all chunks, resumed should yield 0 remaining
     assert len(resumed_chunks) == 0
 
 
@@ -80,12 +81,10 @@ def test_infinite_context_foundation_pretrainer_stateful_step():
         device="cpu",
     )
 
-    # Step 0: alpha is 0.0
     assert pretrainer.get_curriculum_alpha(0) == 0.0
     assert pretrainer.get_curriculum_alpha(5) == 0.5
     assert pretrainer.get_curriculum_alpha(10) == 1.0
 
-    # Execute 3 consecutive chunk steps with persistent recurrence
     for i in range(3):
         batch = {
             "input_ids": torch.randint(0, 100, (1, 16)),
@@ -95,6 +94,5 @@ def test_infinite_context_foundation_pretrainer_stateful_step():
         loss_val = pretrainer.train_step(batch)
         assert isinstance(loss_val, float)
         assert loss_val > 0.0
-        # Persistent state should be retained
         assert pretrainer.persistent_state is not None
         assert pretrainer.persistent_state.shape == (1, 1, 32)

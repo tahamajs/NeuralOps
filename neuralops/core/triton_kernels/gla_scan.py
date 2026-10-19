@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Gated Linear Attention Recurrent Scan
 
 Computes gated linear attention recurrence with token-level data-dependent decay gates.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -129,7 +133,6 @@ def _gla_fwd_kernel(
         if HAS_MASK:
             valid = tl.load(mask_ptr + pid_b * stride_mb + pid_h * stride_mh + t * stride_ml).to(tl.float32)
 
-        # S_t = lam_t * S_{t-1} + k_t^T @ v_t
         kv_outer = k_t[:, None] * v_t[None, :]
         S_next = lam_t * S + kv_outer
         S = tl.where(valid > 0.0, S_next, S)
@@ -137,7 +140,6 @@ def _gla_fwd_kernel(
         num_t = tl.sum(q_t[:, None] * S, axis=0)
 
         if USE_NORMALIZER:
-            # Z_t = lam_t * Z_{t-1} + k_t
             Z_next = lam_t * Z + k_t
             Z = tl.where(valid > 0.0, Z_next, Z)
             denom_raw = tl.sum(q_t * Z) + 1e-4
@@ -306,7 +308,6 @@ def _gla_bwd_kernel(
         if HAS_MASK:
             valid = tl.load(mask_ptr + pid_b * stride_mb + pid_h * stride_mh + t * stride_ml).to(tl.float32)
 
-        # Load S_t and Z_t
         s_t_ptrs = (
             s_workspace_ptr
             + pid_b * stride_swb
@@ -345,7 +346,6 @@ def _gla_bwd_kernel(
         dS += q_t[:, None] * (dnum_t * valid)[None, :]
         dv_t = tl.where(valid > 0.0, tl.sum(k_t[:, None] * dS, axis=0), 0.0)
 
-        # Load S_{t-1} and Z_{t-1} for dlam_t
         dlam_t = 0.0
         if t > 0:
             s_prev_ptrs = (
@@ -774,7 +774,6 @@ def gla_scan_pytorch(
         lam_val = lambdas[:, :, t].float()
         lam_t = torch.clamp(lam_val, min=1e-4, max=1.0 - 1e-4)
 
-        # S_t = lam_t * S_{t-1} + k_t^T @ v_t
         kv = torch.matmul(k_t.unsqueeze(-1), v_t.unsqueeze(-2))
         S_next = lam_t.unsqueeze(-1).unsqueeze(-1) * S + kv
 
@@ -930,9 +929,7 @@ def kda_hla_chunk_scan_triton(
 
     from neuralops.core.triton_kernels._types import FORCE_PYTORCH_FALLBACK
     if FORCE_PYTORCH_FALLBACK:
-        # Fall straight to PyTorch chunked scan
         pass
-    # 1. Try FLA chunk_gla when available on CUDA SM >= 8.0
     elif q.is_cuda and torch.cuda.is_available() and torch.cuda.get_device_capability(q.device)[0] >= 8:
         try:
             from fla.ops.gla import chunk_gla
@@ -950,7 +947,6 @@ def kda_hla_chunk_scan_triton(
         except Exception:
             pass
 
-    # 2. Try Triton gla_scan when D <= 64
     if D <= MAX_REGISTER_DIM:
         lam = torch.exp(log_decay).clamp(1e-4, 1.0 - 1e-4)
         if lam.dim() == 4:
@@ -960,7 +956,6 @@ def kda_hla_chunk_scan_triton(
         except Exception:
             pass
 
-    # 3. Vectorized Chunked Scan with Tensor Core Matmuls (Zero Python Token Loops!)
     chunk_size = 64
     num_chunks = (L + chunk_size - 1) // chunk_size
     pad_len = (chunk_size - (L % chunk_size)) % chunk_size
@@ -980,33 +975,29 @@ def kda_hla_chunk_scan_triton(
     outs = []
 
     pos = torch.arange(chunk_size, device=q.device, dtype=torch.float32)
-    pos_diff = pos.unsqueeze(-1) - pos.unsqueeze(-2)  # [C, C]
+    pos_diff = pos.unsqueeze(-1) - pos.unsqueeze(-2)
     tril = torch.tril(torch.ones(chunk_size, chunk_size, device=q.device, dtype=torch.bool))
 
     for c in range(num_chunks):
         st = c * chunk_size
         en = (c + 1) * chunk_size
-        qc = q_p[:, :, st:en]  # [B, H, C, D]
+        qc = q_p[:, :, st:en]
         kc = k_p[:, :, st:en]
         vc = v_p[:, :, st:en]
         gc = g_p[:, :, st:en]
 
-        # Compute per-head log decay for chunk
         if gc.dim() == 4:
-            mean_decay = gc.mean(dim=-1, keepdim=True).mean(dim=2, keepdim=True)  # [B, H, 1, 1]
+            mean_decay = gc.mean(dim=-1, keepdim=True).mean(dim=2, keepdim=True)
         else:
-            mean_decay = gc.mean(dim=2, keepdim=True).unsqueeze(-1)  # [B, H, 1, 1]
+            mean_decay = gc.mean(dim=2, keepdim=True).unsqueeze(-1)
 
-        # Intra-chunk decay matrix in full FP32
         exp_arg = pos_diff.view(1, 1, chunk_size, chunk_size) * mean_decay
         decay_intra = torch.where(tril.unsqueeze(0).unsqueeze(0), torch.exp(exp_arg.clamp(min=-40.0, max=0.0)), torch.zeros_like(exp_arg))
 
-        # Intra-chunk attention
         aff_intra = torch.matmul(qc, kc.transpose(-1, -2).contiguous()) * decay_intra
         num_intra = torch.matmul(aff_intra, vc)
         den_intra = aff_intra.sum(dim=-1, keepdim=True)
 
-        # Inter-chunk attention in full FP32
         pos_decay = torch.exp(((pos + 1.0).view(1, 1, chunk_size, 1) * mean_decay).clamp(min=-40.0, max=0.0))
         num_inter = torch.matmul(qc * pos_decay, S)
         den_inter = torch.matmul(qc * pos_decay, Z)
@@ -1014,7 +1005,6 @@ def kda_hla_chunk_scan_triton(
         out_c = (num_intra + num_inter) / (den_intra + den_inter).clamp(min=1e-5)
         outs.append(out_c.to(q.dtype))
 
-        # Update running state in full FP32
         gamma_chunk = torch.exp((chunk_size * mean_decay).clamp(min=-40.0, max=0.0))
         carry_decay = torch.exp(((chunk_size - 1 - pos).view(1, 1, chunk_size, 1) * mean_decay).clamp(min=-40.0, max=0.0))
         kc_w = kc * carry_decay
@@ -1035,7 +1025,6 @@ def fused_regla_refined_gate_scan_pytorch(
     is_causal: bool = True,
 ) -> torch.Tensor:
     """Exact PyTorch fallback for ReGLA refined gated linear scan."""
-    # Convert gate to log decay (<= 0)
     log_decay = -F.softplus(gate)
     return kda_hla_chunk_scan_triton(q, k, v, log_decay)
 
@@ -1056,7 +1045,6 @@ def fused_regla_refined_gate_scan_triton(
             D = q.shape[-1]
             suitable, _ = check_triton_suitability(q, "gla_scan", head_dim=D, seq_len=q.shape[-2])
             if suitable and D <= 64 and is_causal:
-                # Convert gate to log decay (<= 0)
                 log_decay = -F.softplus(gate)
                 if log_decay.shape != q.shape[:-1]:
                     log_decay = log_decay.expand(q.shape[:-1]).contiguous()
@@ -1083,19 +1071,16 @@ def fused_chunk_svd_decay_linear_triton(
     D_v = v.shape[-1]
     compute_dtype = torch.bfloat16 if q.dtype == torch.bfloat16 else torch.float32
 
-    # Fast path: dispatch to KDA/HLA vectorized chunk scan or FLA if non-channel-wise
     if HAS_TRITON and not FORCE_PYTORCH_FALLBACK and q.is_cuda and lambda_decay.numel() == B * H * N:
         try:
             log_decay = torch.log(lambda_decay.clamp(min=1e-6, max=1.0)).view(B, H, N)
             out = kda_hla_chunk_scan_triton(q, k, v, log_decay)
-            # Dummy state for API compatibility
             S = torch.zeros(B, H, D_k, D_v, device=q.device, dtype=compute_dtype)
             Z = torch.zeros(B, H, D_k, 1, device=q.device, dtype=compute_dtype)
             return out, (S, Z)
         except Exception:
             pass
 
-    # High-throughput vectorized chunk scan fallback
     num_chunks = (N + chunk_size - 1) // chunk_size
     S_chunk = torch.zeros(B, H, D_k, D_v, device=q.device, dtype=compute_dtype)
     Z_chunk = torch.zeros(B, H, D_k, 1, device=q.device, dtype=compute_dtype)
@@ -1183,7 +1168,6 @@ def _gla_step_kernel(
     offs_d = tl.arange(0, BLOCK_D)
     mask_d = offs_d < D_size
 
-    # Load 1-token q, k, v
     q_t = tl.load(q_ptr + pid_b * stride_qb + pid_h * stride_qh + offs_d * stride_qd, mask=mask_d, other=0.0).to(tl.float32)
     k_t = tl.load(k_ptr + pid_b * stride_kb + pid_h * stride_kh + offs_d * stride_kd, mask=mask_d, other=0.0).to(tl.float32)
     v_t = tl.load(v_ptr + pid_b * stride_vb + pid_h * stride_vh + offs_d * stride_vd, mask=mask_d, other=0.0).to(tl.float32)
@@ -1191,7 +1175,6 @@ def _gla_step_kernel(
     lam_val = tl.load(lam_ptr + pid_b * stride_lamb + pid_h * stride_lamh).to(tl.float32)
     lam_t = tl.maximum(tl.minimum(lam_val, 1.0 - 1e-4), 1e-4)
 
-    # Load persistent state S (BLOCK_D x BLOCK_D) and Z (BLOCK_D)
     s_ptrs = s_ptr + pid_b * stride_sb + pid_h * stride_sh + offs_d[:, None] * stride_sd + offs_d[None, :] * stride_sn
     mask_2d = mask_d[:, None] & mask_d[None, :]
     S = tl.load(s_ptrs, mask=mask_2d, other=0.0).to(tl.float32)
@@ -1199,19 +1182,14 @@ def _gla_step_kernel(
     z_ptrs = z_ptr + pid_b * stride_zb + pid_h * stride_zh + offs_d * stride_zd
     Z = tl.load(z_ptrs, mask=mask_d, other=0.0).to(tl.float32)
 
-    # In-SRAM Recurrence:
-    # S_t = lam_t * S_{t-1} + k_t^T @ v_t
     kv_outer = k_t[:, None] * v_t[None, :]
     S_new = lam_t * S + kv_outer
 
-    # Z_t = lam_t * Z_{t-1} + k_t
     Z_new = lam_t * Z + k_t
 
-    # Write back updated states in-place!
     tl.store(s_ptrs, S_new.to(s_ptr.dtype.element_ty), mask=mask_2d)
     tl.store(z_ptrs, Z_new.to(z_ptr.dtype.element_ty), mask=mask_d)
 
-    # Compute output y_t = (q_t @ S_new) / (q_t @ Z_new + 1e-4)
     num_t = tl.sum(q_t[:, None] * S_new, axis=0)
     denom_t = tl.sum(q_t * Z_new) + 1e-4
     y_t = num_t / denom_t
@@ -1264,7 +1242,6 @@ def gla_recurrent_step_triton(
         except Exception:
             pass
 
-    # PyTorch reference step fallback
     lam = torch.clamp(lambda_t.float().unsqueeze(-1).unsqueeze(-1), min=1e-4, max=1.0 - 1e-4)
     kv = torch.matmul(k_t.unsqueeze(-1).float(), v_t.unsqueeze(-2).float())
     state_s.copy_((lam * state_s.float() + kv).to(state_s.dtype))

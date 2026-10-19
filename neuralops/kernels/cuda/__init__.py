@@ -1,7 +1,11 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 NeuralOps CUDA Hardware Operators.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -10,7 +14,6 @@ import importlib
 import sys
 from typing import Any, List, Optional
 
-# Core Dispatch, Utilities & JIT compilation bindings
 from neuralops.core.cuda_kernels._bindings import load_cuda_module, get_cuda_arch_flags
 from neuralops.core.cuda_kernels._fallback import (
     dispatch,
@@ -26,7 +29,6 @@ from neuralops.core.cuda_kernels._utils import (
     check_cuda_error,
 )
 
-# All 110 Native CUDA Kernel Modules
 from neuralops.core.cuda_kernels import (
     act_scale_gemm,
     adaptive_span,
@@ -140,9 +142,7 @@ from neuralops.core.cuda_kernels import (
     vspec,
 )
 
-# Re-export all primary operators from neuralops.core.cuda_kernels
 from neuralops.core.cuda_kernels import (
-    # Flagship 48 operators
     fused_lowrank_gated_gemm,
     fused_lowrank_gated_gemm_pytorch_ref,
     chunked_delta_gate_scan,
@@ -241,7 +241,6 @@ from neuralops.core.cuda_kernels import (
     sliding_window_pytorch_ref,
     block_sparse_attn,
     block_sparse_attn_pytorch_ref,
-    # Additional 20 ultra-optimized operators
     entmax_bisect as entmax_bisect_op,
     fused_entmax_bisect_pytorch,
     split_head_norm as split_head_norm_op,
@@ -282,7 +281,6 @@ from neuralops.core.cuda_kernels import (
     bitonic_topk_pytorch_ref,
     logcumsumexp as logcumsumexp_op,
     logcumsumexp_pytorch_ref,
-    # 20 Specialized Attention operators
     soa_attn as soa_attn_op,
     soa_attn_ref,
     nasc_attention as nasc_attention_op,
@@ -321,7 +319,6 @@ from neuralops.core.cuda_kernels import (
     cluster_attention_ref,
     routing_attention as routing_attention_op,
     routing_attention_ref,
-    # 20 Additional SSM, Recurrent & Global Attention operators
     vspec as vspec_op,
     vspec_ref,
     goldfinch_ahn as goldfinch_ahn_op,
@@ -376,7 +373,6 @@ from neuralops.core.cuda_kernels import (
     hgrn2_gated_outer,
 )
 
-# Canonical Complete Inventory of 114 Native CUDA C++ Kernels (.cu files)
 CUDA_KERNEL_CATALOG: List[str] = [
     "act_scale_gemm",
     "adaptive_span",
@@ -570,7 +566,6 @@ __all__ = [
     "check_cuda_error",
     "CUDA_KERNEL_CATALOG",
     "list_cuda_kernels",
-    # 110 Modules
     "act_scale_gemm",
     "adaptive_span",
     "aegis_gate_norm",
@@ -681,7 +676,6 @@ __all__ = [
     "upi_stuffed_mamba",
     "varlen_attention",
     "vspec",
-    # Primary Operators
     "fused_lowrank_gated_gemm",
     "fused_lowrank_gated_gemm_pytorch_ref",
     "chunked_delta_gate_scan",

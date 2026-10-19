@@ -1,7 +1,11 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 NeuralOps Models Core Modules.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -82,7 +86,6 @@ def _register_with_transformers() -> None:
 
 _register_with_transformers()
 
-# GLA HuggingFace Model & Config exports
 from neuralops.models.gla_hf_model import GLAConfig, GLAModel, GLABlock
 
 __all__ += ["GLAConfig", "GLAModel", "GLABlock"]

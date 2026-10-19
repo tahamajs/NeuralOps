@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-# Author: Taha Majlesi
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Benchmark Suite: Exact O(1) Recurrent .step() Throughput & 4 New Triton Capabilities.
 
@@ -51,13 +55,11 @@ def benchmark_step_throughput(device, models=None):
             print(f"[{name}] Skipping recurrent benchmark: no callable step() method found.")
             continue
 
-        # Warmup
         x_warm = torch.randn(1, 1, dim, device=device)
         state = None
         for _ in range(10):
             _, state = m.step(x_warm, state=state)
 
-        # Benchmark recurrent .step()
         if device.type == "cuda":
             torch.cuda.synchronize()
         t0 = time.perf_counter()
@@ -109,7 +111,6 @@ def benchmark_sequence_scaling(device, seq_lens=None):
         for T in seq_lens:
             try:
                 x = torch.randn(1, T, dim, device=device)
-                # Warmup
                 for _ in range(3):
                     _ = m(x)
                 if device.type == "cuda":
@@ -143,7 +144,6 @@ def benchmark_fp8_speedup(device):
     x_fp16 = torch.randn(M, K, device=device, dtype=torch.float16)
     w_fp16 = torch.randn(K, N, device=device, dtype=torch.float16)
 
-    # Warmup
     for _ in range(5):
         _ = torch.matmul(x_fp16, w_fp16)
     torch.cuda.synchronize()
@@ -154,7 +154,6 @@ def benchmark_fp8_speedup(device):
     torch.cuda.synchronize()
     fp16_time = (time.perf_counter() - t0) / 50.0
 
-    # FP8
     x_fp8, sx = quantize_to_fp8_dynamic(x_fp16.float())
     w_fp8, sw = quantize_to_fp8_dynamic(w_fp16.float())
 

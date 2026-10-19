@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -5,14 +12,6 @@
 
 namespace neuralops { namespace cuda {
 
-// Temporal Pattern Attention (TPA) Kernel:
-// Form: out[b, d] = \sum_{t=0}^{N-1} weights[b, t] * h_states[b, t, d]
-//
-// Hardware-level optimization:
-// 1. Grid/Block mapping: dim3 grid(ceil(D / 128), B) with 128 threads/block.
-// 2. Continuous accumulation: weights and h_states are streamed into registers.
-// 3. Loop unrolling: 4-way loop unroll over sequence length N.
-// 4. Fully coalesced loads: threadIdx.x traverses contiguous dimension D.
 template <typename scalar_t>
 __global__ void __launch_bounds__(128) tpa_fwd_kernel(
     scalar_t* __restrict__ out,
@@ -41,7 +40,7 @@ __global__ void __launch_bounds__(128) tpa_fwd_kernel(
     out[b * D + d] = from_float<scalar_t>(acc);
 }
 
-}} // namespace neuralops::cuda
+}}
 
 torch::Tensor tpa_fwd(const torch::Tensor& h_states, const torch::Tensor& weights) {
     CHECK_INPUT(h_states);

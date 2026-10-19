@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Unit tests for production-hardened ADMM Pruner with Layer-Wise Reconstruction Distillation.
 
@@ -106,7 +112,7 @@ class TestADMMPrunerDistill(unittest.TestCase):
     def test_lora_linear_and_conv1d_detection(self):
         """1. Verify LoRALinear and Conv1D detection, shape transposition, and LoRA preservation."""
         model = ToyTransformer()
-        orig_conv1d_shape = model.attn.c_attn.weight.shape  # [64, 64]
+        orig_conv1d_shape = model.attn.c_attn.weight.shape
         orig_lora_a_grad = model.attn.o_proj.lora_A.requires_grad
         orig_lora_b_grad = model.attn.o_proj.lora_B.requires_grad
 
@@ -121,15 +127,12 @@ class TestADMMPrunerDistill(unittest.TestCase):
         )
         compressed_model, stats = compressor.compress()
 
-        # Check Conv1D compressed without corrupting shape
         self.assertEqual(compressed_model.attn.c_attn.weight.shape, orig_conv1d_shape)
 
-        # Check LoRALinear wrapper preserved
         self.assertIsInstance(compressed_model.attn.o_proj, MockLoRALinear)
         self.assertTrue(compressed_model.attn.o_proj.lora_A.requires_grad)
         self.assertTrue(compressed_model.attn.o_proj.lora_B.requires_grad)
 
-        # Base layer weight must be frozen after compression
         self.assertFalse(compressed_model.attn.o_proj.base_layer.weight.requires_grad)
 
     def test_factory_with_none_config(self):
@@ -156,7 +159,6 @@ class TestADMMPrunerDistill(unittest.TestCase):
         model = ToyTransformer()
         orig_q_w = model.attn.q_proj.weight.clone()
 
-        # Set max_error unrealistically low to guarantee fallback
         compressor = ADMMPruner(
             model,
             max_error=0.01,
@@ -167,10 +169,8 @@ class TestADMMPrunerDistill(unittest.TestCase):
 
         self.assertGreater(len(compressor.fallback_layers), 0)
         self.assertIn("attn.q_proj", compressor.fallback_layers)
-        # Weights must be exactly restored
         self.assertTrue(torch.equal(model.attn.q_proj.weight, orig_q_w))
 
-        # Fallback parameters must be frozen
         for name in compressor.fallback_layers:
             mod = dict(model.named_modules())[name]
             for p in mod.parameters():
@@ -182,7 +182,6 @@ class TestADMMPrunerDistill(unittest.TestCase):
         hidden_dim = 64
         X_calib = torch.randn(32, hidden_dim)
 
-        # 4a. Run standard ADMM without distillation (lambda_distill = 0.0)
         model_no_distill = ToyTransformer(hidden_dim=hidden_dim)
         compressor_no_distill = ADMMPruner(
             model_no_distill,
@@ -196,18 +195,15 @@ class TestADMMPrunerDistill(unittest.TestCase):
         )
         comp_model_no_distill, stats_no_distill = compressor_no_distill.compress()
 
-        # Original output of q_proj
         torch.manual_seed(123)
         orig_linear = nn.Linear(hidden_dim, hidden_dim)
-        orig_linear.weight.data.copy_(model_no_distill.attn.q_proj.weight.data)  # note: q_proj was modified
+        orig_linear.weight.data.copy_(model_no_distill.attn.q_proj.weight.data)
 
-        # Instead, test single linear layer cleanly to avoid random weight discrepancies
         torch.manual_seed(999)
         W0 = torch.randn(hidden_dim, hidden_dim)
         X = torch.randn(32, hidden_dim)
         Y0 = X @ W0.t()
 
-        # Run with lambda_distill = 0.0
         torch.manual_seed(999)
         mod_a = nn.Linear(hidden_dim, hidden_dim, bias=False)
         mod_a.weight.data.copy_(W0)
@@ -224,7 +220,6 @@ class TestADMMPrunerDistill(unittest.TestCase):
         _, stats_a = comp_a.compress()
         err_a = torch.mean(((X @ mod_a.weight.data.t()) - Y0) ** 2).item()
 
-        # Run with lambda_distill = 0.5
         torch.manual_seed(999)
         mod_b = nn.Linear(hidden_dim, hidden_dim, bias=False)
         mod_b.weight.data.copy_(W0)
@@ -272,7 +267,7 @@ class TestADMMPrunerDistill(unittest.TestCase):
         """6. Verify ADMMMaskedLinear STE forwards masked weights and backward passes full gradients."""
         linear = nn.Linear(16, 16)
         mask = torch.ones(16, 16)
-        mask[0, :] = 0.0  # mask row 0
+        mask[0, :] = 0.0
 
         masked_linear = ADMMMaskedLinear.from_linear(linear, mask=mask)
         x = torch.randn(4, 16, requires_grad=True)
@@ -282,7 +277,6 @@ class TestADMMPrunerDistill(unittest.TestCase):
         loss.backward()
 
         self.assertIsNotNone(masked_linear.weight.grad)
-        # STE allows gradients even on masked coordinates
         self.assertFalse(torch.all(masked_linear.weight.grad[0, :] == 0.0))
 
 

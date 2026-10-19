@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Production-Grade Test Suite for NeuralOps Normalization, Activation, and Elementwise CUDA Kernels.
 
 Tests 19 CUDA C++ kernel modules:
@@ -80,9 +86,6 @@ def setup_cuda_env():
     torch.cuda.empty_cache()
 
 
-# ══════════════════════════════════════════════════════════════════════
-# 1. aegis_gate_norm
-# ══════════════════════════════════════════════════════════════════════
 @pytest.mark.parametrize("shape", [(2, 8, 64), (1, 16, 128)])
 @pytest.mark.parametrize("dtype", [torch.float16, torch.float32])
 def test_aegis_gate_norm(shape, dtype):
@@ -98,16 +101,12 @@ def test_aegis_gate_norm(shape, dtype):
     out_ref = m_aegis.aegis_gate_norm_pytorch_ref(b0, b1, weights)
     assert_numerical_parity(out_cuda, out_ref, dtype=dtype, name="aegis_gate_norm")
 
-    # Non-contiguous
     b0_nc = create_non_contiguous(b0)
     with force_kernel_backend("cuda"):
         out_nc = m_aegis.aegis_gate_norm(b0_nc, b1, weights)
     assert_numerical_parity(out_nc, out_ref, dtype=dtype, name="aegis_gate_norm_nc")
 
 
-# ══════════════════════════════════════════════════════════════════════
-# 2. channel_shuffle
-# ══════════════════════════════════════════════════════════════════════
 @pytest.mark.parametrize("shape", [(2, 16, 32), (4, 8, 64)])
 @pytest.mark.parametrize("dtype", [torch.float16, torch.float32])
 def test_channel_shuffle(shape, dtype):
@@ -121,9 +120,6 @@ def test_channel_shuffle(shape, dtype):
     assert_numerical_parity(out_cuda, out_ref, dtype=dtype, name="channel_shuffle")
 
 
-# ══════════════════════════════════════════════════════════════════════
-# 3. entmax_bisect
-# ══════════════════════════════════════════════════════════════════════
 @pytest.mark.parametrize("shape", [(2, 32), (4, 64)])
 def test_entmax_bisect(shape):
     """Verifies exact root-finding bisection for alpha-1.5 entmax."""
@@ -136,9 +132,6 @@ def test_entmax_bisect(shape):
     assert_numerical_parity(out_cuda, out_ref, dtype=torch.float32, name="entmax_bisect")
 
 
-# ══════════════════════════════════════════════════════════════════════
-# 4. entropy_gate
-# ══════════════════════════════════════════════════════════════════════
 @pytest.mark.parametrize("dtype", [torch.float16, torch.float32])
 def test_entropy_gate(dtype):
     """Verifies low-rank SVD gating modulated by spectral entropy."""
@@ -153,9 +146,6 @@ def test_entropy_gate(dtype):
     assert_numerical_parity(out_cuda, out_ref, dtype=dtype, name="entropy_gate")
 
 
-# ══════════════════════════════════════════════════════════════════════
-# 5. entropy_pruning
-# ══════════════════════════════════════════════════════════════════════
 @pytest.mark.parametrize("shape", [(2, 64), (4, 128)])
 def test_entropy_pruning(shape):
     """Verifies online row-level Shannon entropy reduction with broadcast warp shuffles."""
@@ -168,9 +158,6 @@ def test_entropy_pruning(shape):
     assert_numerical_parity(out_cuda.view_as(out_ref), out_ref, dtype=torch.float32, name="entropy_pruning")
 
 
-# ══════════════════════════════════════════════════════════════════════
-# 6. fast_gelu
-# ══════════════════════════════════════════════════════════════════════
 @pytest.mark.parametrize("shape", [(2, 64), (4, 256)])
 @pytest.mark.parametrize("dtype", [torch.float16, torch.float32])
 def test_fast_gelu(shape, dtype):
@@ -183,16 +170,12 @@ def test_fast_gelu(shape, dtype):
     out_ref = m_gelu.fast_gelu_pytorch_ref(x)
     assert_numerical_parity(out_cuda, out_ref, dtype=dtype, name="fast_gelu")
 
-    # Non-contiguous layout
     x_nc = create_non_contiguous(x)
     with force_kernel_backend("cuda"):
         out_nc = m_gelu.fast_gelu(x_nc)
     assert_numerical_parity(out_nc, out_ref, dtype=dtype, name="fast_gelu_nc")
 
 
-# ══════════════════════════════════════════════════════════════════════
-# 7. fused_ce
-# ══════════════════════════════════════════════════════════════════════
 @pytest.mark.parametrize("shape", [(4, 100), (8, 256)])
 def test_fused_cross_entropy(shape):
     """Verifies online fused cross entropy loss computation."""
@@ -206,15 +189,11 @@ def test_fused_cross_entropy(shape):
     out_ref = m_ce.fused_cross_entropy_pytorch_ref(logits, targets)
     assert_numerical_parity(out_cuda, out_ref, dtype=torch.float32, name="fused_cross_entropy")
 
-    # Autograd check
     grad_cuda = torch.autograd.grad(out_cuda, logits, retain_graph=True)[0]
     grad_ref = torch.autograd.grad(out_ref, logits, retain_graph=False)[0]
     assert_numerical_parity(grad_cuda, grad_ref, dtype=torch.float32, name="fused_cross_entropy_bwd")
 
 
-# ══════════════════════════════════════════════════════════════════════
-# 8. fused_dropout_add
-# ══════════════════════════════════════════════════════════════════════
 @pytest.mark.parametrize("dtype", [torch.float16, torch.float32])
 def test_fused_dropout_add(dtype):
     """Verifies fused residual addition with deterministic dropout bypass."""
@@ -228,9 +207,6 @@ def test_fused_dropout_add(dtype):
     assert_numerical_parity(out_cuda, out_ref, dtype=dtype, name="fused_dropout_add")
 
 
-# ══════════════════════════════════════════════════════════════════════
-# 9. fused_kd
-# ══════════════════════════════════════════════════════════════════════
 def test_fused_kd_loss():
     """Verifies temperature-scaled knowledge distillation loss."""
     s_logits = torch.randn(4, 32, device="cuda", dtype=torch.float32)
@@ -243,9 +219,6 @@ def test_fused_kd_loss():
     assert_numerical_parity(out_cuda, out_ref, dtype=torch.float32, name="fused_kd_loss")
 
 
-# ══════════════════════════════════════════════════════════════════════
-# 10. fused_norm_linear
-# ══════════════════════════════════════════════════════════════════════
 @pytest.mark.parametrize("dtype", [torch.float16, torch.float32])
 def test_fused_norm_linear(dtype):
     """Verifies fused RMSNorm and linear projection."""
@@ -259,9 +232,6 @@ def test_fused_norm_linear(dtype):
     assert_numerical_parity(out_cuda, out_ref, dtype=dtype, name="fused_norm_linear")
 
 
-# ══════════════════════════════════════════════════════════════════════
-# 11. fused_rope
-# ══════════════════════════════════════════════════════════════════════
 @pytest.mark.parametrize("dtype", [torch.float16, torch.float32])
 def test_fused_rotary_emb(dtype):
     """Verifies fast rotary positional embeddings."""
@@ -276,9 +246,6 @@ def test_fused_rotary_emb(dtype):
     assert_numerical_parity(out_cuda, out_ref, dtype=dtype, name="fused_rotary_emb")
 
 
-# ══════════════════════════════════════════════════════════════════════
-# 12. fwht_transform
-# ══════════════════════════════════════════════════════════════════════
 @pytest.mark.parametrize("B_dim", [32, 64, 128])
 def test_fwht_transform(B_dim):
     """Verifies Fast Walsh-Hadamard Transform in shared memory."""
@@ -291,9 +258,6 @@ def test_fwht_transform(B_dim):
     assert_numerical_parity(out_cuda, out_ref, dtype=torch.float32, name="fwht_transform")
 
 
-# ══════════════════════════════════════════════════════════════════════
-# 13. layernorm
-# ══════════════════════════════════════════════════════════════════════
 @pytest.mark.parametrize("dtype", [torch.float16, torch.float32])
 def test_layernorm(dtype):
     """Verifies fused LayerNorm forward numerical parity and memory layout invariance."""
@@ -307,16 +271,12 @@ def test_layernorm(dtype):
     out_ref = m_ln.layernorm_pytorch_ref(x, w, b)
     assert_numerical_parity(out_cuda, out_ref, dtype=dtype, name="layernorm")
 
-    # Non-contiguous layout
     x_nc = create_non_contiguous(x)
     with force_kernel_backend("cuda"):
         out_nc = m_ln.layernorm(x_nc, w, b)
     assert_numerical_parity(out_nc, out_ref, dtype=dtype, name="layernorm_nc")
 
 
-# ══════════════════════════════════════════════════════════════════════
-# 14. rms_variance_match
-# ══════════════════════════════════════════════════════════════════════
 def test_rms_variance_match():
     """Verifies variance stabilization matching between feature representations."""
     y = torch.randn(2, 64, device="cuda", dtype=torch.float32)
@@ -329,9 +289,6 @@ def test_rms_variance_match():
     assert_numerical_parity(out_cuda, out_ref, dtype=torch.float32, name="rms_variance_match")
 
 
-# ══════════════════════════════════════════════════════════════════════
-# 15. rmsnorm
-# ══════════════════════════════════════════════════════════════════════
 @pytest.mark.parametrize("dtype", [torch.float16, torch.float32])
 def test_rmsnorm(dtype):
     """Verifies fused RMSNorm forward pass."""
@@ -345,9 +302,6 @@ def test_rmsnorm(dtype):
     assert_numerical_parity(out_cuda, out_ref, dtype=dtype, name="rmsnorm")
 
 
-# ══════════════════════════════════════════════════════════════════════
-# 16. softplus
-# ══════════════════════════════════════════════════════════════════════
 @pytest.mark.parametrize("dtype", [torch.float16, torch.float32])
 def test_softplus(dtype):
     """Verifies numerically stable fused Softplus activation."""
@@ -360,9 +314,6 @@ def test_softplus(dtype):
     assert_numerical_parity(out_cuda, out_ref, dtype=dtype, name="softplus")
 
 
-# ══════════════════════════════════════════════════════════════════════
-# 17. split_head_norm
-# ══════════════════════════════════════════════════════════════════════
 def test_split_head_norm():
     """Verifies per-head independent normalization."""
     x = torch.randn(2, 8, 64, device="cuda", dtype=torch.float32)
@@ -374,9 +325,6 @@ def test_split_head_norm():
     assert_numerical_parity(out_cuda, out_ref, dtype=torch.float32, name="split_head_norm")
 
 
-# ══════════════════════════════════════════════════════════════════════
-# 18. swiglu
-# ══════════════════════════════════════════════════════════════════════
 @pytest.mark.parametrize("dtype", [torch.float16, torch.float32])
 def test_swiglu(dtype):
     """Verifies fused SwiGLU forward pass."""
@@ -389,9 +337,6 @@ def test_swiglu(dtype):
     assert_numerical_parity(out_cuda, out_ref, dtype=dtype, name="swiglu")
 
 
-# ══════════════════════════════════════════════════════════════════════
-# 19. unified_rope_offset
-# ══════════════════════════════════════════════════════════════════════
 @pytest.mark.parametrize("dtype", [torch.float16, torch.float32])
 def test_unified_rope_offset(dtype):
     """Verifies Unified RoPE rotation with sequence position offset."""

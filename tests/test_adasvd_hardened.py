@@ -1,8 +1,14 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 import math
 import sys
 from pathlib import Path
 
-# Add project Codes directory
 import pytest
 import torch
 import torch.nn as nn
@@ -39,7 +45,7 @@ class DummyLoRAModel(nn.Module):
         super().__init__()
         base = nn.Linear(in_f, out_f)
         self.query = LoRALinear(base, r=r, alpha=8)
-        self.conv = Conv1D(out_f, in_f)  # [in_f, out_f] in weight
+        self.conv = Conv1D(out_f, in_f)
         self.classifier = nn.Linear(out_f, 2)
 
     def forward(self, x):
@@ -63,17 +69,14 @@ def test_cfg_get():
 def test_factory_with_none_and_dict_config():
     """Verify adasvd_factory works with None, dict, and custom object configs."""
     model = DummyLoRAModel(32, 32, r=2)
-    # 1. With None
     m1 = adasvd_factory(model, comp_config=None)
     assert m1 is not None
 
-    # 2. With dict config
     model2 = DummyLoRAModel(32, 32, r=2)
     cfg_dict = {"adasvd_max_error": 0.85, "adasvd_min_rank": 8, "adasvd_target_attention_only": False}
     m2 = adasvd_factory(model2, comp_config=cfg_dict)
     assert m2 is not None
 
-    # 3. With explicit kwargs
     model3 = DummyLoRAModel(32, 32, r=2)
     m3 = adasvd_factory(model3, max_error=0.90, min_rank=4, target_attention_only=False)
     assert m3 is not None
@@ -82,7 +85,6 @@ def test_factory_with_none_and_dict_config():
 def test_lora_and_conv1d_detection_and_preservation():
     """Verify LoRALinear wrappers are preserved and Conv1D weights transposed correctly."""
     model = DummyLoRAModel(64, 64, r=4)
-    # Set known LoRA parameters
     model.query.lora_A.weight.data.fill_(0.7)
     model.query.lora_B.weight.data.fill_(0.7)
     orig_lora_a = model.query.lora_A.weight.clone()
@@ -90,21 +92,17 @@ def test_lora_and_conv1d_detection_and_preservation():
     comp = AdaSVDCompressor(model, rank=16, max_error=1.0, target_attention_only=False)
     comp.compress()
 
-    # Query should remain LoRALinear, with inner base_layer as SVDLinear
     assert isinstance(model.query, LoRALinear), f"Expected LoRALinear, got {type(model.query)}"
     assert isinstance(model.query.base_layer, SVDLinear), f"Expected SVDLinear in base_layer, got {type(model.query.base_layer)}"
     assert torch.equal(model.query.lora_A.weight, orig_lora_a), "LoRA weights were altered!"
 
-    # Conv layer should be replaced by SVDLinear
     assert isinstance(model.conv, SVDLinear), f"Expected Conv1D replaced by SVDLinear, got {type(model.conv)}"
 
-    # Forward pass works
     x = torch.randn(2, 64)
     out = model(x)
     assert out.shape == (2, 2)
     assert torch.isfinite(out).all()
 
-    # Check recovery params: LoRA and classifier are trainable, base factors frozen
     rec = get_recovery_params(model)
     rec_names = [n for n, p in model.named_parameters() if p.requires_grad]
     assert any("lora_A" in n for n in rec_names), "lora_A must be trainable"
@@ -123,7 +121,6 @@ def test_reconstruction_error_and_fallback():
             return self.l2(self.l1(x))
 
     model = TwoLinearModel()
-    # With max_error=0.0001, compression should fail error threshold and fall back to original
     comp = AdaSVDCompressor(model, rank=4, max_error=1e-5, fallback_to_original=True, target_attention_only=False)
     comp.compress()
 
@@ -139,7 +136,6 @@ def test_als_refinement_error_monotonicity():
     comp = AdaSVDCompressor(nn.Sequential(lin), rank=16, num_iters=10, target_attention_only=False)
     svd_layer, final_err, iters = comp.compress_linear(lin, rank=16)
 
-    # Compute baseline SVD reconstruction error directly
     W = lin.weight.data.float()
     U, S, Vt = torch.linalg.svd(W, full_matrices=False)
     r = svd_layer.rank
@@ -156,7 +152,7 @@ def test_rank_floor_and_reduction_bounds():
         def __init__(self):
             super().__init__()
             self.tiny = nn.Linear(32, 32)
-            self.wide = nn.Linear(768, 2304)  # Mimics GPT-2 c_attn
+            self.wide = nn.Linear(768, 2304)
         def forward(self, x):
             return self.tiny(x)
 
@@ -164,15 +160,10 @@ def test_rank_floor_and_reduction_bounds():
     comp = AdaSVDCompressor(model, rank=432, min_rank=16, target_attention_only=False)
     comp.compress()
 
-    # For tiny layer (32x32): param reduction requires r * (32+32) < 32*32 -> r < 16
-    # max_param_r = 0.75 * (32*32)/64 = 12
-    # So tiny rank is clamped to max_param_r
     assert comp.layer_ranks["tiny"] <= 12
     tiny_svd = model.tiny
     assert tiny_svd.rank * (32 + 32) < 32 * 32
 
-    # For wide layer (768x2304, like c_attn):
-    # max_param_r = 432, rank floor >= 288
     assert comp.layer_ranks["wide"] >= 288
     assert comp.layer_ranks["wide"] <= 432
 
@@ -183,7 +174,6 @@ def test_activation_whitening_and_weighted_als():
     in_f, out_f, r = 64, 64, 16
     lin = nn.Linear(in_f, out_f, bias=False)
 
-    # Create non-isotropic input activations X with distinct dominant directions
     X = torch.randn(200, in_f)
     X[:, :8] *= 5.0
     C_X = (X.t() @ X) / X.size(0)
@@ -194,7 +184,6 @@ def test_activation_whitening_and_weighted_als():
     assert svd_layer is not None
     assert err < 0.60
 
-    # Check that reconstructed output approximates true output on X
     y_true = lin(X)
     y_pred = svd_layer(X)
     act_err = torch.norm(y_true - y_pred, p="fro").item() / torch.norm(y_true, p="fro").item()
@@ -238,7 +227,7 @@ def test_mean_shift_absorption():
             return self.l2(self.l1(x))
 
     model = SimpleTwoLinear(64, 64)
-    X = torch.randn(256, 64) + 10.0  # Large mean offset
+    X = torch.randn(256, 64) + 10.0
     with torch.no_grad():
         Y_no_compress = model(X)
 
@@ -285,17 +274,14 @@ def test_gelu_derivative_squared():
 
     from neuralops.compression_engine.adasvd_compressor import AdaSVDCompressor
 
-    # GELU'(0) = 0.5 + 0 = 0.5, so GELU'(0)^2 = 0.25
     y = torch.tensor([0.0])
     result = AdaSVDCompressor._gelu_derivative_squared(y)
     assert abs(result.item() - 0.25) < 1e-5, f"GELU'(0)^2 should be 0.25, got {result.item()}"
 
-    # For large positive y, GELU'(y) ≈ 1, so squared ≈ 1
     y = torch.tensor([5.0])
     result = AdaSVDCompressor._gelu_derivative_squared(y)
     assert abs(result.item() - 1.0) < 0.01, f"GELU'(5)^2 should be ~1, got {result.item()}"
 
-    # For large negative y, GELU'(y) ≈ 0, so squared ≈ 0
     y = torch.tensor([-5.0])
     result = AdaSVDCompressor._gelu_derivative_squared(y)
     assert result.item() < 0.01, f"GELU'(-5)^2 should be ~0, got {result.item()}"
@@ -306,13 +292,11 @@ def test_gating_aware_d_for_ffn_lin1():
     """Test that ffn.lin1 gets gating-aware D, lin2 gets variance."""
     from neuralops.compression_engine.adasvd_compressor import AdaSVDCompressor
 
-    # We need a dummy compressor - use a tiny model
     model = torch.nn.Sequential(
-        torch.nn.Linear(64, 128),   # would be "lin1"
+        torch.nn.Linear(64, 128),
         torch.nn.GELU(),
-        torch.nn.Linear(128, 64),   # would be "lin2"
+        torch.nn.Linear(128, 64),
     )
-    # Manually test the detector
     comp = AdaSVDCompressor.__new__(AdaSVDCompressor)
     comp.gelu_layer_patterns = (
         "lin1", "intermediate", "mlp.c_fc", "dense_h_to_4h",

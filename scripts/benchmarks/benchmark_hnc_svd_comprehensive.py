@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Empirical Quantitative Benchmarking Suite for Hessian Null Space Continuation (HNC)
 SVD Compression, Subquadratic Attention Alignment, and Fused Triton Acceleration.
@@ -29,7 +34,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-# Ensure repo root is on sys.path
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
@@ -105,9 +109,6 @@ def compute_spectral_tail_energy(weights: List[torch.Tensor], rank: int) -> floa
     return total_tail_energy / max(total_full_energy, 1e-12)
 
 
-# ============================================================================
-# Benchmark 1: HNC-SVD vs Naive DirectSVD on Transformer Block
-# ============================================================================
 def run_benchmark_table_1(device: str) -> List[Dict[str, Any]]:
     """Execute run benchmark table 1 routine."""
     print("\n" + "=" * 80)
@@ -123,8 +124,6 @@ def run_benchmark_table_1(device: str) -> List[Dict[str, Any]]:
     heldout_x = torch.randn(B, T, D, device=device)
 
     for rank in ranks:
-        # Compression percentage for d_in=256, d_out=512 -> orig params = 256*512 = 131,072
-        # rank r params = r*(256 + 512) = r * 768
         orig_ff_params = 2 * (256 * 512)
         comp_ff_params = 2 * rank * (256 + 512)
         comp_pct = (1.0 - (comp_ff_params / orig_ff_params)) * 100.0
@@ -140,12 +139,10 @@ def run_benchmark_table_1(device: str) -> List[Dict[str, Any]]:
             with torch.no_grad():
                 y_orig_heldout = model_orig(heldout_x)
 
-            # Measure Initial Tail Energy before any walk
             initial_tail_ratio = compute_spectral_tail_energy(
                 [model_orig.linear1.weight, model_orig.linear2.weight], rank
             )
 
-            # Measure compression time and post-walk tail energy
             t0 = time.perf_counter()
             if use_hnc:
                 compressor = DirectSVDCompressor(
@@ -170,7 +167,6 @@ def run_benchmark_table_1(device: str) -> List[Dict[str, Any]]:
 
             comp_wall_ms = (time.perf_counter() - t0) * 1000.0
 
-            # Measure compressed output on unseen held-out inputs
             with torch.no_grad():
                 y_comp_heldout = model_comp(heldout_x)
 
@@ -183,7 +179,6 @@ def run_benchmark_table_1(device: str) -> List[Dict[str, Any]]:
             top1_match = (orig_argmax == comp_argmax).float().mean().item() * 100.0
             cos_sim = F.cosine_similarity(y_comp_heldout.flatten(), y_orig_heldout.flatten(), dim=0).item()
 
-            # Latency benchmark
             if device == "cuda":
                 torch.cuda.synchronize()
             t_fwd_start = time.perf_counter()
@@ -217,9 +212,6 @@ def run_benchmark_table_1(device: str) -> List[Dict[str, Any]]:
     return results
 
 
-# ============================================================================
-# Benchmark 2: SVDLinearAttention Full-Rank -> Low-Rank Surgical Alignment
-# ============================================================================
 def run_benchmark_table_2(device: str) -> List[Dict[str, Any]]:
     """Execute run benchmark table 2 routine."""
     print("\n" + "=" * 80)
@@ -234,11 +226,9 @@ def run_benchmark_table_2(device: str) -> List[Dict[str, Any]]:
     probe_x = torch.randn(B, T, D, device=device)
     heldout_x = torch.randn(B, T, D, device=device)
 
-    # 1. Full-Rank Anchor Attention Layer (standard nn.MultiheadAttention)
     torch.manual_seed(42)
     anchor_attn = nn.MultiheadAttention(embed_dim=D, num_heads=8, batch_first=True).to(device).eval()
 
-    # Anchor: realistic power-law decaying spectrum (sigma_i ~ 1/i^0.8) reflecting trained attention projections
     with torch.no_grad():
         for p in [anchor_attn.in_proj_weight, anchor_attn.out_proj.weight]:
             U_a, S_a, Vt_a = torch.linalg.svd(p.float(), full_matrices=False)
@@ -250,8 +240,6 @@ def run_benchmark_table_2(device: str) -> List[Dict[str, Any]]:
         out_anchor_tensor = out_anchor
 
     for rank in ranks:
-        # Projection compression ratio: 4 projections of 256x256 = 262,144 params
-        # Low-rank 4 projections of rank*(256+256) = 4 * rank * 512 params
         comp_pct = (1.0 - (4 * rank * 512) / (4 * 256 * 256)) * 100.0 if rank < 256 else 0.0
 
         for align_mode in ["Raw Truncated SVD", "HNC Aligned SVD (Ours)"]:
@@ -259,10 +247,8 @@ def run_benchmark_table_2(device: str) -> List[Dict[str, Any]]:
             attn = SVDLinearAttention(hidden_size=D, num_heads=8, rank=rank, is_decoder=False).to(device).eval()
 
             if align_mode == "Raw Truncated SVD":
-                # Raw unweighted SVD truncation from full-rank anchor
                 attn.copy_weights(anchor_attn, use_hnc=False)
             else:
-                # HNC Aligned SVD with Cholesky whitening and factor restoration
                 attn.copy_weights(anchor_attn, probe_inputs=probe_x, use_hnc=True, hnc_steps=15)
 
             with torch.no_grad():
@@ -276,11 +262,9 @@ def run_benchmark_table_2(device: str) -> List[Dict[str, Any]]:
                 torch.linalg.norm(diff) / max(torch.linalg.norm(out_anchor_tensor), torch.tensor(1e-12))
             ).item()
 
-            # Measure Training Throughput (fwd + bwd tok/s)
             attn.train()
             optimizer = torch.optim.Adam(attn.parameters(), lr=1e-4)
 
-            # Warmup
             for _ in range(5):
                 optimizer.zero_grad()
                 out = attn(probe_x)
@@ -321,9 +305,6 @@ def run_benchmark_table_2(device: str) -> List[Dict[str, Any]]:
     return results
 
 
-# ============================================================================
-# Benchmark 3: Scientific Ablations on Damping Factor mu_rel and Restoring Steps m
-# ============================================================================
 def run_benchmark_table_3(device: str) -> List[Dict[str, Any]]:
     """Execute run benchmark table 3 routine."""
     print("\n" + "=" * 80)
@@ -366,12 +347,10 @@ def run_benchmark_table_3(device: str) -> List[Dict[str, Any]]:
                     mu_rel=mu_rel,
                 )
 
-                # Scale-invariant step update
                 dw_norm = torch.norm(delta_w) + 1e-8
                 w_norm = torch.norm(w)
                 candidate_w = (w + lr * w_norm * (delta_w / dw_norm)).detach()
 
-                # Restoring steps
                 if m_restore > 0:
                     cand_param = candidate_w.clone().requires_grad_(True)
                     opt_res = torch.optim.SGD([cand_param], lr=0.08)
@@ -383,7 +362,6 @@ def run_benchmark_table_3(device: str) -> List[Dict[str, Any]]:
                         opt_res.step()
                     candidate_w = cand_param.detach()
 
-                # Evaluate function drift
                 with torch.no_grad():
                     y_cand = F.linear(probe_x, candidate_w)
                     l_cand = 0.5 * ((y_cand - y_0) ** 2).mean().item()
@@ -422,9 +400,6 @@ def run_benchmark_table_3(device: str) -> List[Dict[str, Any]]:
     return results
 
 
-# ============================================================================
-# Benchmark 4: Fused Triton Kernel Latency & Speedup on Dense Resolvents
-# ============================================================================
 def run_benchmark_table_4(device: str) -> List[Dict[str, Any]]:
     """Execute run benchmark table 4 routine."""
     print("\n" + "=" * 80)
@@ -443,8 +418,6 @@ def run_benchmark_table_4(device: str) -> List[Dict[str, Any]]:
             grad_phi = torch.randn(M, N, device=device, dtype=dtype)
             restore_grad = torch.randn(M, N, device=device, dtype=dtype)
 
-            # Generate real dense SPD covariance resolvent P_null = (I_N + 1/mu * 1/B X^T X)^{-1}
-            # (No torch.eye shortcut!)
             X_probe = torch.randn(256, N, device=device, dtype=torch.float32)
             Hx = torch.matmul(X_probe.t(), X_probe) / 256.0
             lambda_max = float(torch.linalg.eigvalsh(Hx)[-1].item())
@@ -456,7 +429,6 @@ def run_benchmark_table_4(device: str) -> List[Dict[str, Any]]:
             eta = 0.05
             alpha = 0.01
 
-            # Warmup
             for _ in range(15):
                 _ = fused_hnc_nullspace_step_pytorch(
                     w, grad_phi, inv_null_proj, eta, restore_grad=restore_grad, alpha=alpha
@@ -465,7 +437,6 @@ def run_benchmark_table_4(device: str) -> List[Dict[str, Any]]:
                     w, grad_phi, inv_null_proj, eta, restore_grad=restore_grad, alpha=alpha
                 )
 
-            # PyTorch Timing
             if device == "cuda":
                 torch.cuda.synchronize()
                 start_event_pt = torch.cuda.Event(enable_timing=True)
@@ -489,7 +460,6 @@ def run_benchmark_table_4(device: str) -> List[Dict[str, Any]]:
                     )
                 pt_us = ((time.perf_counter() - t0) / trials) * 1e6
 
-            # Triton Timing
             if device == "cuda":
                 start_event_tr = torch.cuda.Event(enable_timing=True)
                 end_event_tr = torch.cuda.Event(enable_timing=True)
@@ -530,9 +500,6 @@ def run_benchmark_table_4(device: str) -> List[Dict[str, Any]]:
     return results
 
 
-# ============================================================================
-# Benchmark 5: Synthetic Tiny Transformer LM (Vocab=1000) End-to-End Compression
-# ============================================================================
 def run_benchmark_table_5(device: str) -> List[Dict[str, Any]]:
     """Execute run benchmark table 5 routine."""
     print("\n" + "=" * 80)
@@ -549,14 +516,11 @@ def run_benchmark_table_5(device: str) -> List[Dict[str, Any]]:
     heldout_tokens = torch.randint(0, vocab_size, (B, T), device=device)
 
     for rank in ranks:
-        # Parameter counts across 3 layers (d_model=256, d_ff=512)
-        # Target linear layers: 3 * (linear1 + linear2) = 6 linear layers
-        orig_linear_params = 6 * (256 * 512)  # 786,432
+        orig_linear_params = 6 * (256 * 512)
         comp_linear_params = 6 * rank * (256 + 512)
         param_reduction_pct = (1.0 - (comp_linear_params / orig_linear_params)) * 100.0
         compression_factor = orig_linear_params / max(comp_linear_params, 1)
 
-        # Baseline uncompressed
         torch.manual_seed(500 + rank)
         lm_orig = (
             BenchmarkTransformerLM(vocab_size=vocab_size, d_model=256, nhead=8, num_layers=3, d_ff=512)
@@ -582,7 +546,6 @@ def run_benchmark_table_5(device: str) -> List[Dict[str, Any]]:
             entropy_orig = -(probs_orig * torch.log(probs_orig + 1e-12)).sum(dim=-1).mean().item()
             ppl_orig = math.exp(entropy_orig)
 
-        # 1. Naive DirectSVD Compression
         comp_naive = DirectSVDCompressor(lm_naive, rank=rank, min_rank=1, use_hnc_continuation=False)
         comp_naive.compress()
 
@@ -597,7 +560,6 @@ def run_benchmark_table_5(device: str) -> List[Dict[str, Any]]:
             ).float().mean().item() * 100.0
             cos_sim_naive = F.cosine_similarity(logits_naive.flatten(), logits_orig.flatten(), dim=0).item()
 
-        # 2. HNC-SVD Compression
         _probe_embeds = lm_orig.embed(probe_tokens)
         comp_hnc = DirectSVDCompressor(
             lm_hnc, rank=rank, min_rank=1, use_hnc_continuation=True, probe_inputs=probe_tokens
@@ -645,9 +607,6 @@ def run_benchmark_table_5(device: str) -> List[Dict[str, Any]]:
     return results
 
 
-# ============================================================================
-# Main Execution and Markdown Report Generation
-# ============================================================================
 def main() -> None:
     """Execute main routine."""
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -667,7 +626,6 @@ def main() -> None:
 
     total_time = time.time() - t_start
 
-    # Save complete JSON telemetry
     all_data = {
         "metadata": {
             "device": device,
@@ -686,7 +644,6 @@ def main() -> None:
     with open(json_path, "w", encoding="utf-8") as f:
         json.dump(all_data, f, indent=2)
 
-    # Save Markdown Report
     md_path = results_dir / "hnc_svd_comprehensive_benchmark.md"
     with open(md_path, "w", encoding="utf-8") as f:
         f.write("# 🚀 HNC-SVD Comprehensive Quantitative Benchmark Report\n\n")
@@ -695,7 +652,6 @@ def main() -> None:
         f.write(f"**Total Benchmark Suite Duration**: {total_time:.2f} seconds\n\n")
         f.write("---\n\n")
 
-        # Table 1
         f.write("## Table 1: HNC-SVD vs Naive DirectSVD Across Truncation Ranks\n\n")
         f.write(
             "| Method | Rank | Comp (%) | Initial Tail Ratio | Post-Walk Tail Ratio | Rel Error | Top-1 Match (%) | Cosine Sim | L_func Drift | Fwd Latency (ms) |\n"
@@ -710,7 +666,6 @@ def main() -> None:
             )
         f.write("\n---\n\n")
 
-        # Table 2
         f.write("## Table 2: Full-Rank (D=256) -> Low-Rank SVDLinearAttention Surgical Alignment\n\n")
         f.write(
             "| Alignment Method | Rank | Comp (%) | Cosine Sim to Full-Rank | MSE Output Drift | Relative Error | Training Tok/s |\n"
@@ -724,7 +679,6 @@ def main() -> None:
             )
         f.write("\n---\n\n")
 
-        # Table 3
         f.write("## Table 3: Damping Factor (mu_rel) and Restoring Steps (m) Ablations\n\n")
         f.write(
             "| Damping (mu_rel) | Restore Steps (m) | Initial Tail Ratio | Final Tail Ratio | Final L_func | Jacobian Drift ||W-W0||/||W0|| | Rejections |\n"
@@ -737,7 +691,6 @@ def main() -> None:
             )
         f.write("\n---\n\n")
 
-        # Table 4
         f.write("## Table 4: Fused Triton Kernel Latency & Speedup on Dense Resolvents P_null\n\n")
         f.write("| Dtype | Matrix Shape | PyTorch Latency (us) | Triton Latency (us) | Speedup | Max Abs Diff |\n")
         f.write("|:---:|:---:|:---:|:---:|:---:|:---:|\n")
@@ -748,7 +701,6 @@ def main() -> None:
             )
         f.write("\n---\n\n")
 
-        # Table 5
         f.write("## Table 5: Synthetic Tiny Transformer LM (Vocab=1000) End-to-End Compression & Perplexity\n\n")
         f.write(
             "| Rank | Param Reduction (%) | Factor | Naive RelErr | HNC RelErr | Naive Top-1 (%) | HNC Top-1 (%) | Orig PPL | Naive PPL | HNC PPL |\n"

@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Run paper benchmarks module.
-
-Author: Taha Majlesi
 """
 
-# Author: Taha Majlesi
 import logging
 import math
 import os
@@ -28,16 +30,13 @@ logger = logging.getLogger("run_paper_benchmarks")
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print(f"Running on device: {device} ({torch.cuda.get_device_name(0)})")
 
-# -------------------------------------------------------------
-# 1. Wikitext-2 Perplexity Benchmark: GPT-2 (MHA vs SVD Linear)
-# -------------------------------------------------------------
 print("\n=== 1. WIKITEXT-2 PERPLEXITY BENCHMARK ===")
 tok_gpt2 = AutoTokenizer.from_pretrained("/mnt/d/models/gpt2")
 ds_wiki = load_dataset("Salesforce/wikitext", "wikitext-2-raw-v1", split="test")
 text_data = "\n\n".join([t for t in ds_wiki["text"] if t.strip()])
 encodings = tok_gpt2(text_data, return_tensors="pt")
 
-max_eval_tokens = 10240  # 10k tokens for fast, robust evaluation
+max_eval_tokens = 10240
 seq_len = 512
 stride = 512
 
@@ -78,9 +77,6 @@ for mech in ["baseline", "svd_linear_attention", "gla_attention"]:
     }
     print(f"GPT-2 | {mech:<22} | PPL: {ppl:8.2f} | Time: {eval_time:5.2f}s | VRAM: {peak_vram:7.2f} MB")
 
-# -------------------------------------------------------------
-# 2. GLUE Benchmark Tasks: MRPC, SST-2, CoLA (RoBERTa-base)
-# -------------------------------------------------------------
 print("\n=== 2. GLUE TASKS (MRPC, SST-2, CoLA) EVALUATION ===")
 tok_roberta = AutoTokenizer.from_pretrained("/mnt/d/models/roberta-base")
 glue_tasks = ["mrpc", "sst2", "cola"]
@@ -95,7 +91,7 @@ for task in glue_tasks:
         logger.warning("Failed to load nyu-mll/glue (%s): %s, falling back to glue", task, e, exc_info=True)
         ds = load_dataset("glue", task, split="validation")
 
-    eval_samples = 200  # 200 validation items
+    eval_samples = 200
     sub_ds = ds.select(range(min(len(ds), eval_samples)))
 
     for mech in ["baseline", "svd_linear_attention"]:
@@ -129,7 +125,7 @@ for task in glue_tasks:
                 total += 1
 
         torch.cuda.synchronize()
-        lat_per_sample = (time.perf_counter() - t0) / total * 1000  # ms
+        lat_per_sample = (time.perf_counter() - t0) / total * 1000
         acc = correct / total * 100
         peak_vram = torch.cuda.max_memory_allocated() / (1024 * 1024)
         glue_results[task][mech] = {
@@ -141,9 +137,6 @@ for task in glue_tasks:
             f"RoBERTa | {task.upper():<5} | {mech:<22} | Acc: {acc:5.2f}% | Latency: {lat_per_sample:5.2f} ms | VRAM: {peak_vram:6.2f} MB"
         )
 
-# -------------------------------------------------------------
-# 3. Parameter and FLOPs Complexity Profiling
-# -------------------------------------------------------------
 print("\n=== 3. PARAMETER & FLOPs COMPLEXITY PROFILING ===")
 m_base = AutoModelForCausalLM.from_pretrained("/mnt/d/models/gpt2")
 m_svd = AutoModelForCausalLM.from_pretrained("/mnt/d/models/gpt2")
@@ -157,13 +150,9 @@ total_svd_params = sum(p.numel() for p in m_svd.parameters())
 
 print(f"Total Base Params: {total_base_params:,} | SVD Params: {total_svd_params:,}")
 
-# -------------------------------------------------------------
-# 4. Generate CSV Deliverables
-# -------------------------------------------------------------
 os.makedirs("/mnt/d/SVD_linear_Attention/docs/benchmarks", exist_ok=True)
 csv_rows = []
 
-# Wikitext-2 rows
 for mech, d in ppl_results.items():
     csv_rows.append(
         {
@@ -178,7 +167,6 @@ for mech, d in ppl_results.items():
         }
     )
 
-# GLUE rows
 for task, mechs in glue_results.items():
     for mech, d in mechs.items():
         csv_rows.append(
@@ -198,9 +186,6 @@ df = pd.DataFrame(csv_rows)
 df.to_csv("/mnt/d/SVD_linear_Attention/docs/benchmarks/paper_benchmarks_model_surgery.csv", index=False)
 print("\nExported /mnt/d/SVD_linear_Attention/docs/benchmarks/paper_benchmarks_model_surgery.csv successfully.")
 
-# -------------------------------------------------------------
-# 5. Generate Publication LaTeX Deliverable
-# -------------------------------------------------------------
 latex_content = (
     r"""% Publication Benchmark Deliverable: NeuralOps Model Surgery & Attention Replacement
 % Hardware: NVIDIA GeForce RTX 4070 Laptop GPU (8GB VRAM), CUDA 12.8, PyTorch 2.11.0+cu128

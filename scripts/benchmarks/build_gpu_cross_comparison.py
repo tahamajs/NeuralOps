@@ -1,6 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Build gpu cross comparison module.
-
-Author: Taha Majlesi
 """
 
 import json
@@ -44,7 +48,6 @@ def build_comparison():
             }
         )
 
-    # Save JSON
     with open("results/accuracy_and_ppl_gpu_cross_comparison.json", "w") as f:
         json.dump(
             {
@@ -57,7 +60,6 @@ def build_comparison():
             indent=2,
         )
 
-    # Save CSV
     with open("results/accuracy_and_ppl_gpu_cross_comparison.csv", "w") as f:
         f.write("module,taha_acc,taha_ppl,taha_lat,taha_status,tahoora_acc,tahoora_ppl,tahoora_lat,tahoora_status\n")
         for c in comparison_results:
@@ -65,7 +67,6 @@ def build_comparison():
                 f'"{c["module"]}",{c["taha_acc"]},{c["taha_ppl"]},{c["taha_lat"]},"{c["taha_status"]}",{c["tahoora_acc"]},{c["tahoora_ppl"]},{c["tahoora_lat"]},"{c["tahoora_status"]}"\n'
             )
 
-    # Save Markdown
     with open("results/accuracy_and_ppl_gpu_cross_comparison.md", "w") as f:
         f.write("# Comprehensive Multi-GPU Empirical Accuracy & Perplexity Cross-Comparison\n\n")
         f.write(

@@ -1,4 +1,9 @@
-// Author: Taha Majlesi
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
 
 #include <torch/extension.h>
 #include <cuda_runtime.h>
@@ -32,11 +37,8 @@ torch::Tensor rpca_sparse_svd_fwd(
     auto out = torch::empty({M, N}, x.options());
     if (M == 0 || N == 0) return out;
 
-    // Accelerated 2-stage GEMM pipeline:
-    // Stage 1: Z = X @ V_mat -> [M, R]
     auto Z = at::matmul(x_2d, V_mat);
 
-    // Stage 2: out = Z @ U_mat -> [M, N]
     at::matmul_out(out, Z, U_mat);
 
     const bool has_sparse = s.has_value() && s.value().defined();
@@ -49,7 +51,6 @@ torch::Tensor rpca_sparse_svd_fwd(
         } else {
             s_dense = s.value().contiguous();
         }
-        // out += X @ S.T
         out.addmm_(x_2d, s_dense.t());
     }
 

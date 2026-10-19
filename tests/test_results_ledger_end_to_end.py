@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Master End-to-End Test Suite for NeuralOps Experiment Results Ledger Subsystem.
 Verifies:
@@ -103,13 +109,11 @@ class TestResultsLedgerCRUD:
         saved = ledger.add_or_replace(rec, mode="upsert")
         assert saved.record_id == rec.record_id
 
-        # Query back
         results = ledger.query(module_name="simplex_wgqa")
         assert len(results) == 1
         assert results[0].module_name == "simplex_wgqa"
         assert results[0].metrics["accuracy"] == 88.5
 
-        # Dossier file created
         dossier_path = Path(ledger.by_module_dir) / "simplex_wgqa.json"
         assert dossier_path.exists()
         with open(dossier_path, "r", encoding="utf-8") as f:
@@ -131,7 +135,6 @@ class TestResultsLedgerCRUD:
         )
         ledger.add_or_replace(rec1)
 
-        # Add second version with mode='new_version'
         rec2 = ResultRecord(
             record_id="",
             module_name="fsvd_compressor",
@@ -146,12 +149,10 @@ class TestResultsLedgerCRUD:
         assert saved2.revision == 2
         assert saved2.status == "active"
 
-        # Default query returns only active records
         active = ledger.query(module_name="fsvd_compressor", only_active=True)
         assert len(active) == 1
         assert active[0].metrics["accuracy"] == 93.1
 
-        # Query all including superseded
         all_recs = ledger.query(module_name="fsvd_compressor", only_active=False)
         assert len(all_recs) == 2
 
@@ -167,7 +168,6 @@ class TestResultsLedgerCRUD:
         )
         ledger.add_or_replace(rec)
 
-        # Update metrics in-place
         rec_updated = ResultRecord.from_dict(rec.to_dict())
         rec_updated.metrics["latency_triton_ms"] = 3.1
         rec_updated.notes = "Re-calibrated with warm L2 cache"
@@ -191,14 +191,12 @@ class TestResultsLedgerCRUD:
         ledger.add_or_replace(rec)
         assert len(ledger.query(module_name="temp_kernel")) == 1
 
-        # Soft delete
         ledger.delete_records(module_name="temp_kernel", hard_delete=False)
         assert len(ledger.query(module_name="temp_kernel", only_active=True)) == 0
         deleted_records = ledger.query(module_name="temp_kernel", only_active=False)
         assert len(deleted_records) == 1
         assert deleted_records[0].status == "deleted"
 
-        # Hard delete
         ledger.delete_records(module_name="temp_kernel", hard_delete=True)
         assert len(ledger.query(module_name="temp_kernel", only_active=False)) == 0
 
@@ -221,11 +219,9 @@ class TestResultsLedgerQueryAndDiff:
             experimental_setup={"dataset": "sst2"}, metrics={"accuracy": 92.5}
         ))
 
-        # Filter by category
         attns = ledger.query(category="attention")
         assert len(attns) == 2
 
-        # Filter by min_accuracy
         high_acc = ledger.query(min_accuracy=92.0)
         assert len(high_acc) == 2
         names = {r.module_name for r in high_acc}
@@ -272,7 +268,6 @@ class TestVisualizationAndExport:
             ))
             records.append(r)
 
-        # ASCII plot
         plot_res = ledger.plot_results(
             records=records,
             chart_type="bar",
@@ -281,7 +276,6 @@ class TestVisualizationAndExport:
         assert "svd_rank" in plot_res["ascii"]
         assert "===" in plot_res["ascii"]
 
-        # Pure vector SVG plot
         svg_out = Path(temp_ledger_dir) / "plots" / "test_chart.svg"
         svg_res = ledger.plot_results(
             records=records,
@@ -335,7 +329,6 @@ class TestSubsystemTelemetryHooks:
 
 class TestLedgerAdminAndSync:
     def test_rebuild_sqlite_index_and_stats(self, ledger):
-        # Insert test records
         ledger.add_or_replace(ResultRecord(
             record_id="rec_1",
             module_name="mod_sync_1",
@@ -359,15 +352,12 @@ class TestLedgerAdminAndSync:
         assert "attention" in stats["by_category"]
         assert "compressor" in stats["by_category"]
 
-        # Rebuild index and verify parity
         rebuilt_count = ledger.rebuild_sqlite_index()
         assert rebuilt_count == stats["total_records"]
 
-        # Test dossier generation
         dossier_count = ledger.generate_all_dossiers()
         assert dossier_count >= 2
 
-        # Test category summary regeneration
         cat_counts = ledger.regenerate_category_summaries()
         assert "attention" in cat_counts
         assert "compressor" in cat_counts

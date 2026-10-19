@@ -1,6 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Profile autoregressive streaming module.
-
-Author: Taha Majlesi
 """
 
 import sys
@@ -16,9 +20,6 @@ from neuralops.core.cuda_kernels.paged_kv_evict.paged_kv_evict_autograd import p
 device = torch.device("cuda:0")
 print(f"Device: {torch.cuda.get_device_name(0)}")
 
-# Benchmark parameters:
-# 5,000 consecutive autoregressive decoding steps with dynamic KV-cache eviction across 4 independent CUDA streams.
-# Profile generation latency (ms/token), tokens/sec per stream and aggregate, and monitor memory fragmentation drift.
 
 num_steps = 5000
 num_streams = 4
@@ -41,7 +42,6 @@ W_out = torch.randn(D, D, device=device, dtype=torch.float16)
 W_gate = torch.randn(D, 4 * D, device=device, dtype=torch.float16)
 W_down = torch.randn(4 * D, D, device=device, dtype=torch.float16)
 
-# Pre-allocated KV caches and eviction scratch buffers per stream
 k_caches = [torch.zeros(MAX_CACHE_CAP, H, D_HEAD, device=device, dtype=torch.float16) for _ in range(num_streams)]
 v_caches = [torch.zeros(MAX_CACHE_CAP, H, D_HEAD, device=device, dtype=torch.float16) for _ in range(num_streams)]
 k_ev_buffers = [torch.zeros(EVICT_KEEP_LEN, H, D_HEAD, device=device, dtype=torch.float16) for _ in range(num_streams)]
@@ -54,14 +54,12 @@ for s_idx in range(num_streams):
 
 cur_tokens = [torch.randn(1, D, device=device, dtype=torch.float16) for _ in range(num_streams)]
 
-# Trigger eviction kernel once during warmup to load CUDA extension module into process space
 keep_idx_warmup = torch.sort(
     torch.randint(0, MAX_CACHE_CAP, (EVICT_KEEP_LEN,), device=device, dtype=torch.int64)
 ).values
 _ = paged_kv_evict(k_caches[0][:MAX_CACHE_CAP], v_caches[0][:MAX_CACHE_CAP], keep_idx_warmup)
 torch.cuda.synchronize()
 
-# Warmup 50 steps
 for _ in range(50):
     for s_idx in range(num_streams):
         with torch.cuda.stream(streams[s_idx]):
@@ -91,7 +89,6 @@ for _ in range(50):
 torch.cuda.synchronize()
 torch.cuda.reset_peak_memory_stats()
 
-# Baseline allocated memory after all modules and buffers are initialized
 baseline_allocated_mb = torch.cuda.memory_allocated() / (1024**2)
 baseline_reserved_mb = torch.cuda.memory_reserved() / (1024**2)
 print(f"Post-Warmup Baseline: Allocated = {baseline_allocated_mb:.4f} MB | Reserved = {baseline_reserved_mb:.4f} MB\n")
@@ -186,7 +183,6 @@ for step in range(1, num_steps + 1):
             }
         )
 
-# Export to CSV
 csv_path = "/mnt/d/SVD_linear_Attention/docs/benchmarks/paper_benchmarks_autoregressive_streaming.csv"
 os.makedirs(os.path.dirname(csv_path), exist_ok=True)
 fieldnames = [

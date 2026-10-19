@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Serving Artifact Exporter
 
 Prepares model artifacts, configurations, and tokenizer files for production inference servers.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -17,14 +21,12 @@ import torch.nn as nn
 
 logger = logging.getLogger("NeuralOps.Serving")
 
-# Safe vLLM detection
 try:
     import vllm
     HAS_VLLM = True
 except ImportError:
     HAS_VLLM = False
 
-# Safe TGI detection
 try:
     import text_generation_server
     HAS_TGI = True
@@ -85,7 +87,6 @@ class VLLMAdapter:
 
         from neuralops.core.triton_kernels.paged_attention import paged_attention_kernel
 
-        # Ensure tensors are shaped for paged attention kernel
         if query.dim() == 4 and query.shape[1] == 1:
             q = query.squeeze(1).transpose(1, 2)
         elif query.dim() == 3:
@@ -113,7 +114,6 @@ class VLLMAdapter:
             seq_lens = kwargs.get("seq_lens", None)
 
             if kv_cache is not None and block_tables is not None and seq_lens is not None:
-                # Dispatch through paged attention kernel
                 q = args[0] if len(args) > 0 else kwargs.get("hidden_states")
                 if q is not None and isinstance(kv_cache, (tuple, list)) and len(kv_cache) == 2:
                     k_cache, v_cache = kv_cache[0], kv_cache[1]
@@ -203,7 +203,6 @@ def export_serving_bundle(
     out_p.mkdir(parents=True, exist_ok=True)
     backend = target_backend.lower().strip()
 
-    # 1. Export model weights
     try:
         from safetensors.torch import save_file
         save_file(model.state_dict(), str(out_p / "model.safetensors"))
@@ -211,7 +210,6 @@ def export_serving_bundle(
         logger.debug("Safetensors export skipped, using pytorch bin: %s", e)
         torch.save(model.state_dict(), out_p / "pytorch_model.bin")
 
-    # 2. Extract architecture metadata
     param_count = sum(p.numel() for p in model.parameters())
     dtype_str = "float32"
     try:
@@ -219,7 +217,6 @@ def export_serving_bundle(
     except StopIteration:
         pass
 
-    # 3. Create universal serving manifest
     manifest = {
         "format_version": "1.4.0",
         "target_backend": backend,
@@ -234,7 +231,6 @@ def export_serving_bundle(
     with open(out_p / "serving_manifest.json", "w", encoding="utf-8") as f:
         json.dump(manifest, f, indent=2)
 
-    # 4. Engine-specific configuration files
     if backend == "vllm":
         vllm_cfg = {
             "model": str(out_p),

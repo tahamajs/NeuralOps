@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Shared pytest fixtures for neuralops unified test suite."""
 from __future__ import annotations
 
@@ -5,7 +11,6 @@ import os
 import sys
 from pathlib import Path
 
-# Add project root and tests dir to sys.path
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
 _TESTS_DIR = Path(__file__).resolve().parent
 
@@ -21,9 +26,6 @@ import pytest
 import torch
 
 
-# ═══════════════════════════════════════════════
-# Device fixtures
-# ═══════════════════════════════════════════════
 
 @pytest.fixture
 def device():
@@ -51,9 +53,6 @@ def dtype(request):
     return request.param
 
 
-# ═══════════════════════════════════════════════
-# Model fixtures
-# ═══════════════════════════════════════════════
 
 @pytest.fixture
 def dummy_config():
@@ -86,9 +85,6 @@ def dummy_qkv():
     )
 
 
-# ═══════════════════════════════════════════════
-# Path fixtures
-# ═══════════════════════════════════════════════
 
 @pytest.fixture
 def repo_root():
@@ -104,9 +100,6 @@ def tmp_results_dir(tmp_path):
     return d
 
 
-# ═══════════════════════════════════════════════
-# Registry fixtures
-# ═══════════════════════════════════════════════
 
 @pytest.fixture(scope="session")
 def attention_registry():
@@ -122,7 +115,6 @@ def compressor_registry():
     return COMPRESSOR_REGISTRY
 
 
-# Skip the entire module on CPU for Triton kernels
 requires_cuda = pytest.mark.skipif(
     not torch.cuda.is_available(),
     reason="Requires CUDA"

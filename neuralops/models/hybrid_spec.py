@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Hybrid Model Layer Specification
 
 Specification normalizer and parser for heterogeneous multi-layer attention and compression architectures.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -61,7 +65,6 @@ def normalize_hybrid_spec(
         return result
 
     if isinstance(spec, str):
-        # Uniform single type across all layers
         return [{"type": spec} for _ in range(num_layers)]
 
     if isinstance(spec, HybridAttentionSpec):
@@ -88,7 +91,6 @@ def normalize_hybrid_spec(
 
         layers = item.get("layers", None)
         if layers is None:
-            # Applies to all unassigned layers
             target_indices = [i for i in range(num_layers) if i not in assigned_layers]
         elif isinstance(layers, int):
             target_indices = [layers]

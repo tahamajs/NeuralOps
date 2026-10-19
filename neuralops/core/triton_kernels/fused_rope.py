@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Fused Rotary Position Embedding
 
 Applies rotary positional embeddings directly to query and key states with in-place pointer arithmetic.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -37,15 +41,12 @@ if HAS_TRITON and tl is not None:
 
         mask_n = offs_n[:, None] < N
 
-        # Load Q halves
         q1 = tl.load(Q_ptr + i_b * stride_qb + i_h * stride_qh + offs_n[:, None] * stride_qn + offs_d1[None, :] * stride_qd, mask=mask_n, other=0.0)
         q2 = tl.load(Q_ptr + i_b * stride_qb + i_h * stride_qh + offs_n[:, None] * stride_qn + offs_d2[None, :] * stride_qd, mask=mask_n, other=0.0)
 
-        # Load K halves
         k1 = tl.load(K_ptr + i_b * stride_kb + i_h * stride_kh + offs_n[:, None] * stride_kn + offs_d1[None, :] * stride_kd, mask=mask_n, other=0.0)
         k2 = tl.load(K_ptr + i_b * stride_kb + i_h * stride_kh + offs_n[:, None] * stride_kn + offs_d2[None, :] * stride_kd, mask=mask_n, other=0.0)
 
-        # Load cos, sin
         cos1 = tl.load(COS_ptr + offs_n[:, None] * stride_cos_n + offs_d1[None, :] * stride_cos_d, mask=mask_n, other=0.0)
         sin1 = tl.load(SIN_ptr + offs_n[:, None] * stride_sin_n + offs_d1[None, :] * stride_sin_d, mask=mask_n, other=0.0)
 
@@ -70,7 +71,6 @@ def _apply_rope_rotation(x: torch.Tensor, cos: torch.Tensor, sin: torch.Tensor) 
     half_d = D // 2
     x1 = x[..., :half_d]
     x2 = x[..., half_d:]
-    # Match broadcast dims
     c = cos[..., :half_d]
     s = sin[..., :half_d]
     while c.dim() < x1.dim():
@@ -170,9 +170,6 @@ def fused_rope_embedding_kernel(
 fused_rope_triton = fused_rope_embedding_kernel
 
 
-# ---------------------------------------------------------------------------
-# Fused Unified RoPE with Offset (UnifiedRoPE)
-# ---------------------------------------------------------------------------
 def fused_unified_rope_offset_pytorch(
     x: torch.Tensor,
     cos: torch.Tensor,
@@ -212,7 +209,6 @@ if HAS_TRITON and tl is not None:
         if pid >= total_tokens:
             return
 
-        # Position along sequence length for rotary frequency embedding
         pos = pid % L
 
         offs_d1 = tl.arange(0, HALF_ROTARY)
@@ -230,7 +226,6 @@ if HAS_TRITON and tl is not None:
         tl.store(OUT_ptr + pid * stride_on + offs_d1 * stride_od, rx1)
         tl.store(OUT_ptr + pid * stride_on + offs_d2 * stride_od, rx2)
 
-        # Copy unrotated pass-through tail if ROTARY_DIM < D
         if ROTARY_DIM < D:
             offs_pass = ROTARY_DIM + tl.arange(0, BLOCK_D)
             mask_pass = offs_pass < D

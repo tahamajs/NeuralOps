@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Comprehensive numerical correctness and autograd gradient tests."""
 import pytest
 import torch
@@ -28,7 +34,6 @@ def test_cross_attention_numerical_correctness():
 
 
 def test_autograd_gradcheck_flash_attention():
-    # Double precision gradcheck on tiny dimension
     q = torch.randn(1, 1, 4, 8, dtype=torch.float64, requires_grad=True)
     k = torch.randn(1, 1, 4, 8, dtype=torch.float64, requires_grad=True)
     v = torch.randn(1, 1, 4, 8, dtype=torch.float64, requires_grad=True)

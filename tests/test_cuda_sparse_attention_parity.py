@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Parity tests for Block Sparse Attention (Module 6).
 """
@@ -24,7 +30,6 @@ def test_block_sparse_attn_parity():
     k = torch.randn(B, H, N, D, device="cuda", dtype=torch.float32)
     v = torch.randn(B, H, N, D, device="cuda", dtype=torch.float32)
 
-    # 50% block sparsity pattern (diagonal + 1 block)
     block_mask = torch.eye(num_blocks, device="cuda", dtype=torch.int32)
     block_mask[0, 1] = 1
 

@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Tests for flash decoding attention."""
 import torch
 import torch.nn.functional as F
@@ -11,13 +17,11 @@ def test_flash_decoding_accuracy():
     k = torch.randn(B, H, N_kv, D)
     v = torch.randn(B, H, N_kv, D)
 
-    # Standard attention reference
     scale = 1.0 / (D ** 0.5)
     scores = torch.matmul(q, k.transpose(-2, -1)) * scale
     weights = F.softmax(scores, dim=-1)
     ref_out = torch.matmul(weights, v)
 
-    # Flash decoding with chunk_size 64
     fd_out = flash_decoding_attention(q, k, v, chunk_size=64)
 
     assert torch.allclose(ref_out, fd_out, atol=1e-5)

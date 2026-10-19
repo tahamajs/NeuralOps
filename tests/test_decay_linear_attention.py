@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Comprehensive test suite for Decay Linear Attention (decay_linear_attention.py)."""
 
 from .testing_utils import MockConfig, DummyDistilBertAttention
@@ -39,7 +45,6 @@ def test_forward_causal():
 def test_chunked_scan_numerical_equivalence():
     cfg = MockConfig(is_decoder=True)
     layer = DecayLinearAttention(config=cfg, d_model=64, num_heads=4)
-    # L = 64 tests chunking with chunk_size=32
     B, H, L, d = 2, 4, 64, 16
     q = F.elu(torch.randn(B, H, L, d)) + 1.0
     k = F.elu(torch.randn(B, H, L, d)) + 1.0

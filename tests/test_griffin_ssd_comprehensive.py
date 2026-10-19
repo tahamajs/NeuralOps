@@ -1,3 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 import pytest
 import torch
 import torch.nn as nn
@@ -76,7 +83,7 @@ def test_griffin_ssd_comp_config_and_gqa():
         def __init__(self):
             super().__init__()
             self.head_dim = 16
-            self.k_proj = nn.Linear(64, 32)  # 32 // 16 = 2 kv heads
+            self.k_proj = nn.Linear(64, 32)
             self.q_proj = nn.Linear(64, 64)
             self.v_proj = nn.Linear(64, 32)
             self.out_proj = nn.Linear(64, 64)

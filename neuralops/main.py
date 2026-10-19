@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 NeuralOps Pipeline Runner
 
 Unified CLI orchestration entry-point for training, evaluation, compression, and parameter sweeps.
-
-Author: Taha Majlesi
 """
 
 import argparse
@@ -18,7 +22,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-# Ensure UTF-8 console output on Windows to prevent UnicodeEncodeError
 try:
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -35,9 +38,6 @@ except (
 ):
     pass
 
-# ---------------------------------------------------------------------------
-# Bootstrap: add framework root to sys.path and configure HF mirror/cache
-# ---------------------------------------------------------------------------
 _HERE = Path(__file__).resolve().parent
 _CODES = _HERE.parent
 if sys.path and sys.path[0] == str(_HERE):
@@ -45,19 +45,16 @@ if sys.path and sys.path[0] == str(_HERE):
 if str(_CODES) not in sys.path:
     sys.path.insert(0, str(_CODES))
 
-# Mirror and cache defaults
-# Do not override HF_ENDPOINT or HF cache dirs if user/environment already set them
 os.environ.setdefault("HF_HUB_ETAG_TIMEOUT", "300")
 os.environ.setdefault("HF_HUB_DOWNLOAD_TIMEOUT", "120")
 os.environ.setdefault("PYTHONIOENCODING", "utf-8")
 os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
 
-# Point to local cache if present and not already configured in os.environ
 if "HF_HOME" not in os.environ:
     _potential_caches = [
-        _CODES.parent / "cache",  # <project>/cache  (local override)
-        Path.home() / ".cache" / "huggingface" / "hub",  # ~/.cache/hf/hub  (standard)
-        Path.home() / ".cache" / "huggingface",  # ~/.cache/hf
+        _CODES.parent / "cache",
+        Path.home() / ".cache" / "huggingface" / "hub",
+        Path.home() / ".cache" / "huggingface",
     ]
     for pc in _potential_caches:
         if pc.exists() and os.access(pc, os.W_OK):
@@ -66,9 +63,6 @@ if "HF_HOME" not in os.environ:
             os.environ["TRANSFORMERS_CACHE"] = str(pc)
             break
 
-# ---------------------------------------------------------------------------
-# Lazy heavy imports (torch / transformers loaded only when needed)
-# ---------------------------------------------------------------------------
 
 
 def _import_framework():
@@ -127,9 +121,6 @@ def _import_framework():
     )
 
 
-# ---------------------------------------------------------------------------
-# Logging setup
-# ---------------------------------------------------------------------------
 
 
 def setup_logger(log_dir: str, exp_name: str) -> logging.Logger:
@@ -166,9 +157,6 @@ def setup_logger(log_dir: str, exp_name: str) -> logging.Logger:
     return logging.getLogger("neuralops.main")
 
 
-# ---------------------------------------------------------------------------
-# Data helpers
-# ---------------------------------------------------------------------------
 
 
 def load_data(cfg: Any, tokenizer: Any) -> tuple[Any, int, bool]:
@@ -189,7 +177,6 @@ def load_data(cfg: Any, tokenizer: Any) -> tuple[Any, int, bool]:
         )
         dataset = raw.map(preprocess_fn, batched=True, remove_columns=raw["train"].column_names)
 
-        # Crop dataset to max_train_samples (e.g. 1000) if requested for fast benchmarking
         max_samples = getattr(cfg, "max_train_samples", None)
         if max_samples is not None and "train" in dataset:
             actual_count = min(len(dataset["train"]), int(max_samples))
@@ -204,9 +191,6 @@ def load_data(cfg: Any, tokenizer: Any) -> tuple[Any, int, bool]:
         raise RuntimeError(f"Data loading failed: {e}") from e
 
 
-# ---------------------------------------------------------------------------
-# Training pipeline
-# ---------------------------------------------------------------------------
 
 
 try:
@@ -245,7 +229,6 @@ def run_train(cfg: Any, fw: dict, logger: logging.Logger) -> dict[str, Any]:
     out_dir = Path(cfg.output_dir) / exp_name
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    # ── Tokeniser ──────────────────────────────────────────────────────────
     logger.info("Loading tokeniser: %s", cfg.model_name)
     try:
         tokenizer = fw["AutoTokenizer"].from_pretrained(cfg.model_name, use_fast=True)
@@ -254,7 +237,6 @@ def run_train(cfg: Any, fw: dict, logger: logging.Logger) -> dict[str, Any]:
             cfg.model_name, use_fast=True, local_files_only=True
         )
 
-    # ── Data ───────────────────────────────────────────────────────────────
     logger.info("Loading data for task: %s", cfg.task)
     dataset, num_labels, is_regression = load_data(cfg, tokenizer)
     logger.info(
@@ -263,7 +245,6 @@ def run_train(cfg: Any, fw: dict, logger: logging.Logger) -> dict[str, Any]:
         len(dataset.get("validation", [])),
     )
 
-    # ── Model ──────────────────────────────────────────────────────────────
     logger.info("Loading model: %s  (num_labels=%d)", cfg.model_name, num_labels)
     try:
         model = fw["AutoModelForSequenceClassification"].from_pretrained(
@@ -274,7 +255,6 @@ def run_train(cfg: Any, fw: dict, logger: logging.Logger) -> dict[str, Any]:
             cfg.model_name, num_labels=num_labels, local_files_only=True
         )
 
-    # Optional: swap attention layers
     if cfg.attn_type not in ("full", "baseline", "default", "none"):
         if cfg.attn_type in fw["ATTENTION_REGISTRY"]:
             logger.info("Replacing attention layers with: %s", cfg.attn_type)
@@ -286,13 +266,11 @@ def run_train(cfg: Any, fw: dict, logger: logging.Logger) -> dict[str, Any]:
                 fw["ATTENTION_REGISTRY"].keys(),
             )
 
-    # Full end-to-end parameter fine-tuning enabled for all attention mechanisms
 
     model.to(device)
     n_params = fw["count_parameters"](model)
     logger.info("Trainable parameters: %s", f"{n_params:,}")
 
-    # ── Training args ──────────────────────────────────────────────────────
     metric_map = {
         "cola": "matthews_correlation",
         "stsb": "pearson",
@@ -317,10 +295,10 @@ def run_train(cfg: Any, fw: dict, logger: logging.Logger) -> dict[str, Any]:
         ),
         logging_steps=50,
         eval_strategy="epoch",
-        save_strategy="no",  # STORAGE OPTIMIZATION: Do not save heavy intermediate checkpoints
+        save_strategy="no",
         load_best_model_at_end=False,
         fp16=torch.cuda.is_available(),
-        dataloader_num_workers=0,  # Windows PyTorch CUDA stability fix (prevents WinError 1455 paging error)
+        dataloader_num_workers=0,
         dataloader_pin_memory=torch.cuda.is_available(),
         remove_unused_columns=False,
         report_to="none",
@@ -351,7 +329,6 @@ def run_train(cfg: Any, fw: dict, logger: logging.Logger) -> dict[str, Any]:
         callbacks=callbacks,
     )
 
-    # ── Train ──────────────────────────────────────────────────────────────
     logger.info("=" * 60)
     logger.info("Starting training: %s", exp_name)
     t0 = time.time()
@@ -364,7 +341,6 @@ def run_train(cfg: Any, fw: dict, logger: logging.Logger) -> dict[str, Any]:
     for k, v in eval_result.items():
         logger.info("  %s: %s", k, f"{v:.4f}" if isinstance(v, float) else v)
 
-    # ── Save Results (Storage Optimized) ──────────────────────────────────
     rw = fw["ResultWriter"](out_dir)
     rw.save_config(cfg)
     rw.save_metrics(eval_result, tag="eval_final")
@@ -373,7 +349,6 @@ def run_train(cfg: Any, fw: dict, logger: logging.Logger) -> dict[str, Any]:
     rw.save_plots(trainer.state.log_history)
     rw.write_summary_md(exp_name, cfg, eval_result, elapsed)
 
-    # Storage Zero-Bloat Guarantee: Clean all weight binaries and checkpoints
     import shutil
 
     shutil.rmtree(out_dir / "checkpoints", ignore_errors=True)
@@ -397,9 +372,6 @@ def run_train(cfg: Any, fw: dict, logger: logging.Logger) -> dict[str, Any]:
     return {"eval": eval_result, "train_runtime": elapsed, "output_dir": str(out_dir)}
 
 
-# ---------------------------------------------------------------------------
-# Evaluation pipeline
-# ---------------------------------------------------------------------------
 
 
 def run_eval(cfg: Any, fw: dict, logger: logging.Logger, model_path: str) -> dict[str, Any]:
@@ -444,9 +416,6 @@ def run_eval(cfg: Any, fw: dict, logger: logging.Logger, model_path: str) -> dic
     return result
 
 
-# ---------------------------------------------------------------------------
-# Compression pipeline
-# ---------------------------------------------------------------------------
 
 
 def run_compress(cfg: Any, fw: dict, logger: logging.Logger) -> dict[str, Any]:
@@ -513,7 +482,6 @@ def run_compress(cfg: Any, fw: dict, logger: logging.Logger) -> dict[str, Any]:
     comp_mb = sum(p.numel() * p.element_size() for p in compressed_model.parameters()) / 1024**2
     ratio = orig_mb / comp_mb if comp_mb > 0 else 1.0
 
-    # Evaluate compressed model on task validation split
     eval_acc = 0.0
     eval_f1 = 0.0
     eval_loss = 0.0
@@ -567,9 +535,6 @@ def run_compress(cfg: Any, fw: dict, logger: logging.Logger) -> dict[str, Any]:
     return stats
 
 
-# ---------------------------------------------------------------------------
-# Sweep pipeline
-# ---------------------------------------------------------------------------
 
 
 def run_sweep(args: Any, fw: dict, logger: logging.Logger) -> list[dict[str, Any]]:
@@ -618,7 +583,6 @@ def run_sweep(args: Any, fw: dict, logger: logging.Logger) -> list[dict[str, Any
                 logger.error("Run %s failed: %s", run_name, e, exc_info=True)
                 all_results.append({"run_name": run_name, "error": str(e)})
 
-    # Aggregate across seeds per attn_type
     sweep_out = (
         Path(args.output_dir) / f"sweep_{args.task}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
     )
@@ -635,7 +599,6 @@ def run_sweep(args: Any, fw: dict, logger: logging.Logger) -> list[dict[str, Any
         if not good:
             summary[attn_type] = {"error": "all runs failed"}
             continue
-        # Collect numeric eval keys
         eval_keys = {
             k for r in good for k in r.get("eval", {}) if isinstance(r["eval"].get(k), float)
         }
@@ -646,13 +609,11 @@ def run_sweep(args: Any, fw: dict, logger: logging.Logger) -> list[dict[str, Any
             summary[attn_type][f"{k}_std"] = float(np.std(vals))
         summary[attn_type]["n_runs"] = len(good)
 
-    # Save sweep results
     with open(sweep_out / "all_runs.json", "w") as f:
         json.dump(all_results, f, indent=2, default=str)
     with open(sweep_out / "summary.json", "w") as f:
         json.dump(summary, f, indent=2, default=str)
 
-    # Write markdown leaderboard
     _write_sweep_markdown(sweep_out, args.task, summary, attn_types)
 
     logger.info("Sweep complete → %s", sweep_out)
@@ -667,7 +628,6 @@ def _write_sweep_markdown(out_dir: Path, task: str, summary: dict, attn_types: l
         "## Leaderboard\n",
     ]
 
-    # Find all metric keys
     all_keys = sorted(
         {k for v in summary.values() if isinstance(v, dict) for k in v if k.endswith("_mean")}
     )
@@ -687,9 +647,6 @@ def _write_sweep_markdown(out_dir: Path, task: str, summary: dict, attn_types: l
     (out_dir / "RESULTS.md").write_text("\n".join(lines))
 
 
-# ---------------------------------------------------------------------------
-# List registries
-# ---------------------------------------------------------------------------
 
 
 def run_list(fw: dict | None = None) -> None:
@@ -711,9 +668,6 @@ def run_list(fw: dict | None = None) -> None:
         print(f"  {key}")
 
 
-# ---------------------------------------------------------------------------
-# CLI argument parser
-# ---------------------------------------------------------------------------
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -726,7 +680,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = p.add_subparsers(dest="command", required=True)
 
-    # ── Shared args ────────────────────────────────────────────────────────
     shared = argparse.ArgumentParser(add_help=False)
     shared.add_argument("--model_name", default="distilbert-base-uncased")
     shared.add_argument("--attn_type", default="full")
@@ -743,7 +696,6 @@ def build_parser() -> argparse.ArgumentParser:
     shared.add_argument("--glue_base_path", default=None)
     shared.add_argument("--config", default=None, help="YAML config file")
 
-    # train
     train_p = sub.add_parser("train", parents=[shared], help="Fine-tune a model")
     train_p.add_argument("--compressor", default=None)
     train_p.add_argument("--compression_rank", type=int, default=64)
@@ -751,29 +703,22 @@ def build_parser() -> argparse.ArgumentParser:
     train_p.add_argument("--gradient_checkpointing", action="store_true")
     train_p.add_argument("--early_stopping_patience", type=int, default=None)
 
-    # eval
     eval_p = sub.add_parser("eval", parents=[shared], help="Evaluate a saved checkpoint")
     eval_p.add_argument("--model_path", required=True)
 
-    # compress
     comp_p = sub.add_parser("compress", parents=[shared], help="Compress a model")
     comp_p.add_argument("--compressor", required=True)
     comp_p.add_argument("--compression_rank", type=int, default=64)
 
-    # sweep
     sweep_p = sub.add_parser("sweep", parents=[shared], help="Grid sweep")
     sweep_p.add_argument("--attn_types", nargs="+", default=["full"])
     sweep_p.add_argument("--seeds", nargs="+", type=int, default=[42])
 
-    # list
     sub.add_parser("list", help="List all registered components")
 
     return p
 
 
-# ---------------------------------------------------------------------------
-# Main
-# ---------------------------------------------------------------------------
 
 
 def main() -> None:
@@ -785,7 +730,6 @@ def main() -> None:
         run_list()
         return
 
-    # ── Optional YAML config override ──────────────────────────────────────
     cfg_overrides: dict[str, Any] = {}
     if getattr(args, "config", None):
         import yaml
@@ -793,7 +737,6 @@ def main() -> None:
         with open(args.config) as f:
             cfg_overrides = yaml.safe_load(f) or {}
 
-    # ── Logger ─────────────────────────────────────────────────────────────
     exp_name = getattr(args, "exp_name", None) or (
         f"{getattr(args, 'attn_type', 'run')}_{getattr(args, 'task', 'task')}"
     )
@@ -804,11 +747,9 @@ def main() -> None:
     logger.info("Python %s | Platform: %s", sys.version.split()[0], platform.platform())
     logger.info("=" * 60)
 
-    # ── Framework ──────────────────────────────────────────────────────────
     logger.info("Importing framework...")
     fw = _import_framework()
 
-    # ── Build ExperimentConfig ─────────────────────────────────────────────
     if args.command != "sweep":
         cfg = fw["ExperimentConfig"]()
         for field in vars(cfg):
@@ -818,7 +759,6 @@ def main() -> None:
             if hasattr(cfg, k):
                 setattr(cfg, k, v)
 
-    # ── Dispatch ───────────────────────────────────────────────────────────
     try:
         if args.command == "train":
             result = run_train(cfg, fw, logger)

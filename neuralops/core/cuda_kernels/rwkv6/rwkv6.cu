@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -5,17 +12,6 @@
 
 namespace neuralops { namespace cuda {
 
-// RWKV-6 Time-Mix Recurrence Kernel:
-// Form: decay_{t, d} = \exp(-\exp(w_{t, d}))
-//       k\_val = \exp(k_{t, d})
-//       y_t = \sigma(r_{t, d}) \cdot (u_d \cdot k\_val \cdot v_{t, d} + s_{t-1})
-//       s_t = decay \cdot s_{t-1} + k\_val \cdot v_{t, d}
-//
-// Hardware-level optimization:
-// 1. Decoupled 2D Grid: dim3 grid(ceil(D / 128), B * H) with 128 threads/block.
-// 2. Strict FP32 intermediate accumulation in registers.
-// 3. 4-way loop unrolling for memory latency hiding.
-// 4. Eliminates threads = D anti-pattern.
 template <typename scalar_t>
 __global__ void __launch_bounds__(128) rwkv6_time_mix_fwd_kernel(
     scalar_t* __restrict__ out,
@@ -58,7 +54,7 @@ __global__ void __launch_bounds__(128) rwkv6_time_mix_fwd_kernel(
     }
 }
 
-}} // namespace neuralops::cuda
+}}
 
 torch::Tensor rwkv6_time_mix_fwd(
     const torch::Tensor& r,

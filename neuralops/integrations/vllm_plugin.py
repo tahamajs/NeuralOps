@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 vLLM Plugin Entrypoint
 
 Plugin entrypoint dynamically registering NeuralOps custom models and attention modules into vLLM.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -72,13 +76,11 @@ class NeuralOpsLinearMethod(LinearMethodBase):
         if weight is None:
             raise RuntimeError("Layer missing weight parameter in NeuralOpsLinearMethod")
 
-        # Handle FP8 execution
         if self.format.upper() == "FP8" and hasattr(torch, "float8_e4m3fn") and weight.dtype == torch.float8_e4m3fn:
             scale = getattr(layer, "weight_scale", 1.0)
             w_fp32 = weight.to(x.dtype) * scale
             out = torch.matmul(x, w_fp32.t())
         else:
-            # High-performance torch linear GEMM
             out = torch.matmul(x, weight.t().to(x.dtype))
 
         if bias is not None:

@@ -1,7 +1,11 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 NeuralOps Core Triton Kernels Hardware Operators.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -99,7 +103,6 @@ from neuralops.core.triton_kernels.fused_norm_linear import (
     fused_rmsnorm_linear,
     fused_rmsnorm_gate,
 )
-# Catalog of all Triton Kernels across NeuralOps
 TRITON_STANDALONE_KERNELS: list[str] = [
     "block_sparse_streaming_attn",
     "chunked_delta_gate_scan",
@@ -258,7 +261,6 @@ __all__ = [
     "gdn_recurrent_step_triton",
     "gla_recurrent_step_triton",
     "select_optimal_triton_config",
-    # 13 Flagship Triton Kernels
     "fused_lowrank_gemm",
     "triton_fused_lowrank_gated_gemm",
     "triton_fused_lowrank_gated_gemm_pytorch_ref",
@@ -289,7 +291,6 @@ __all__ = [
     "triton_fused_act_scale_quant_gemm_pytorch_ref",
     "triton_fused_latent_kv_cache_attention",
     "triton_fused_latent_kv_cache_attention_pytorch_ref",
-    # Flagship Hardware Kernels (v1.4.0 Extended Suite)
     "triton_differential_attention",
     "triton_differential_attention_pytorch_ref",
     "TritonDifferentialAttentionFunction",
@@ -307,7 +308,6 @@ __all__ = [
     "triton_cur_linear",
     "triton_cur_linear_pytorch_ref",
     "TritonCURLinearFunction",
-    # 10 High-Performance Production Kernels
     "flash_decoding_attention",
     "flash_decoding_stage1_kernel",
     "flash_decoding_stage2_kernel",
@@ -322,7 +322,6 @@ __all__ = [
     "fused_entropy_token_pruning_mask_triton",
     "fused_aegis_multibranch_gate_norm_triton",
     "fused_split_head_hybrid_concat_norm_triton",
-    # 27 Categorized Kernel Modules
     "block_sparse",
     "cosformer_triton_kernel",
     "cur_linear",
@@ -355,7 +354,6 @@ __all__ = [
     "op_registry",
     "_common",
     "_types",
-    # 13 Standalone Flagship Modules
     "block_sparse_streaming_attn",
     "chunked_delta_gate_scan",
     "cosformer_linear_attention",
@@ -369,13 +367,11 @@ __all__ = [
     "rpca_sparse_gemm",
     "spectral_entropy_svd_gate",
     "strided_tt",
-    # Root Bridge Modules
     "fast_linear_attention",
     "LinearAttentionTriton",
     "triton_block_sparse_attention",
 ]
 
-# Import 13 Flagship Triton Kernels
 from neuralops.core.triton_kernels.low_rank import (
     fused_lowrank_gemm,
     triton_fused_lowrank_gated_gemm,
@@ -486,7 +482,6 @@ try:
 except Exception:
     select_optimal_triton_config = None
 
-# Auto-wired package members
 from neuralops.core.triton_kernels import _common
 from neuralops.core.triton_kernels import _types
 from neuralops.core.triton_kernels import autotuner
@@ -513,7 +508,6 @@ from neuralops.core.triton_kernels import varlen_attention
 from neuralops.core.triton_kernels import hardware_profile
 from neuralops.core.triton_kernels import op_registry
 
-# Root Bridge Modules
 from neuralops.core.triton_linear_attn import fast_linear_attention, LinearAttentionTriton
 from neuralops.core.triton_sparse_attn import triton_block_sparse_attention
 

@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Module Extensibility Protocol
 
 Custom module verification protocols and dynamic contract validators ensuring interface compliance.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -20,7 +24,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
 
 logger = logging.getLogger(__name__)
 
-# Track dynamically registered custom keys to protect canonical baseline (131 / 72 / 26)
 _CUSTOM_ATTENTION_KEYS: set[str] = set()
 _CUSTOM_COMPRESSOR_KEYS: set[str] = set()
 _CUSTOM_MODULE_METADATA: dict[str, dict[str, Any]] = {}
@@ -55,7 +58,6 @@ def register_custom_attention(
     def _decorator(obj: Union[Type[nn.Module], Callable]) -> Union[Type[nn.Module], Callable]:
         key = (name or getattr(obj, "__name__", "custom_attention")).lower()
         
-        # Store metadata
         meta = {
             "family": family,
             "time_complexity": time_complexity,
@@ -72,7 +74,6 @@ def register_custom_attention(
         _CUSTOM_MODULE_METADATA[key] = meta
         _CUSTOM_ATTENTION_KEYS.add(key)
 
-        # Register in ATTENTION_REGISTRY
         ATTENTION_REGISTRY.register(
             key=key,
             supports_causal=supports_causal,
@@ -213,7 +214,6 @@ def validate_module_contract(
         "all_passed": False,
     }
 
-    # 1. Instantiation Check
     try:
         if isinstance(module_or_name, str):
             module = create_attention(module_or_name, embed_dim=embed_dim, num_heads=num_heads)
@@ -237,7 +237,6 @@ def validate_module_contract(
         results["checks"]["1_instantiation"] = {"status": "FAILED", "error": str(e)}
         return results
 
-    # 2. Forward Pass Shape Conservation
     x = torch.randn(batch_size, seq_len, embed_dim, device=target_dev, requires_grad=True)
     try:
         module.eval()
@@ -258,7 +257,6 @@ def validate_module_contract(
     except Exception as e:
         results["checks"]["2_forward_shape"] = {"status": "FAILED", "error": str(e)}
 
-    # 3. Backward Pass & Gradient Flow
     try:
         module.train()
         x_grad = torch.randn(batch_size, seq_len, embed_dim, device=target_dev, requires_grad=True)
@@ -269,7 +267,6 @@ def validate_module_contract(
         loss.backward()
 
         trainable_params = [p for p in module.parameters() if p.requires_grad]
-        # At least one trainable param has gradients and x_grad has gradient
         has_param_grads = any(p.grad is not None and not torch.isnan(p.grad).any() for p in trainable_params) if trainable_params else True
         if has_param_grads and x_grad.grad is not None and not torch.isnan(x_grad.grad).any():
             results["checks"]["3_backward_gradients"] = {
@@ -285,7 +282,6 @@ def validate_module_contract(
     except Exception as e:
         results["checks"]["3_backward_gradients"] = {"status": "FAILED", "error": str(e)}
 
-    # 4. Introspection Specification Check
     try:
         spec = inspect_architecture(mod_name)
         if spec.name and spec.family and spec.time_complexity and len(spec.constructor_params) > 0:
@@ -303,7 +299,6 @@ def validate_module_contract(
     except Exception as e:
         results["checks"]["4_introspection_metadata"] = {"status": "FAILED", "error": str(e)}
 
-    # 5. Surgical Replacement & Micro-Healing Compatibility on Toy Transformer
     class ToyBlock(nn.Module):
         def __init__(self, d: int, h: int):
             super().__init__()
@@ -317,7 +312,6 @@ def validate_module_contract(
     import copy
     toy_student = copy.deepcopy(toy_teacher)
     try:
-        # Clone or fresh instance for surgery
         if isinstance(module_or_name, str):
             surg_module = create_attention(module_or_name, embed_dim=embed_dim, num_heads=num_heads).to(device=target_dev)
         else:
@@ -338,10 +332,8 @@ def validate_module_contract(
     except Exception as e:
         results["checks"]["5_surgical_micro_healing"] = {"status": "FAILED", "error": str(e)}
 
-    # 6. Surgical Serialization Save/Load Roundtrip Parity
     tmp_dir = Path(tempfile.mkdtemp(prefix="neuralops_contract_"))
     try:
-        # Build clean surgical student without hooks to verify serialization parity
         persist_student = copy.deepcopy(toy_teacher)
         if isinstance(module_or_name, str):
             persist_mod = create_attention(module_or_name, embed_dim=embed_dim, num_heads=num_heads).to(device=target_dev)
@@ -434,7 +426,6 @@ class {camel_name}(nn.Module):
         k = self.k_proj(hidden_states).view(B, T, H, d).transpose(1, 2)
         v = self.v_proj(hidden_states).view(B, T, H, d).transpose(1, 2)
         
-        # Subquadratic linear attention recurrence
         scores = torch.matmul(F.elu(q) + 1.0, (F.elu(k) + 1.0).transpose(-1, -2))
         context = torch.matmul(scores, v)
         out = self.out_proj(context.transpose(1, 2).contiguous().view(B, T, D))
@@ -463,7 +454,6 @@ class {camel_name}:
 
     def compress(self, model: nn.Module = None) -> nn.Module:
         target = model or self.model
-        # Compression logic here
         return target
 '''
     if output_file is not None:

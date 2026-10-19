@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 HGRN2 Selective Scan
 
 Computes hierarchical gated recurrent unit state transitions with data-controlled forgetting gates.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -132,12 +136,10 @@ def _hgrn2_bwd_kernel(
     for l_rev in range(L_size):
         l = L_size - 1 - l_rev
 
-        # External gradient at timestep l
         dh_ptrs = dh_fwd_ptr + pid_b * stride_dhb + l * stride_dhl + offs_d * stride_dhd
         dh_ext = tl.load(dh_ptrs, mask=mask_d, other=0.0).to(tl.float32)
         dh_clipped = dh_clipped + dh_ext
 
-        # Undo the clip: gradient flows only through un-clipped entries
         if DO_CLIP:
             h_l_ptrs = h_workspace_ptr + pid_b * stride_hwb + l * stride_hwl + offs_d * stride_hwd
             h_l = tl.load(h_l_ptrs, mask=mask_d, other=0.0).to(tl.float32)
@@ -146,11 +148,9 @@ def _hgrn2_bwd_kernel(
         else:
             dh_raw = dh_clipped
 
-        # Load f_l
         f_ptrs = f_ptr + pid_b * stride_fb + l * stride_fl + offs_d * stride_fd
         f_l = tl.load(f_ptrs, mask=mask_d, other=0.0).to(tl.float32)
 
-        # Load h_{l-1}
         if l > 0:
             h_prev_ptrs = (
                 h_workspace_ptr + pid_b * stride_hwb + (l - 1) * stride_hwl + offs_d * stride_hwd
@@ -162,7 +162,6 @@ def _hgrn2_bwd_kernel(
         else:
             h_prev = tl.zeros((BLOCK_D,), dtype=tl.float32)
 
-        # Gradients
         df_val = dh_raw * h_prev
         div_val = dh_raw
 
@@ -171,7 +170,6 @@ def _hgrn2_bwd_kernel(
         tl.store(df_ptrs, df_val.to(df_ptr.dtype.element_ty), mask=mask_d)
         tl.store(div_ptrs, div_val.to(div_ptr.dtype.element_ty), mask=mask_d)
 
-        # Propagate adjoint to t-1
         dh_clipped = dh_raw * f_l
 
     if HAS_INIT_STATE:
@@ -440,10 +438,6 @@ def hgrn2_scan(
 
 
 
-# ==============================================================================
-# PHASE 3 / KERNEL 10: Fused Bidirectional HGRN2 Recurrent Scan Kernel
-# Target: hgrn2_attention, mamba_block, bidirectional SSM
-# ==============================================================================
 
 if HAS_TRITON and tl is not None:
     @triton.jit

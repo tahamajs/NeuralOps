@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Comprehensive Master Test Suite for All Attention Mechanisms and Compression Engines.
 Tests instantiation, mock forward pass, cross-entropy / loss computation, and gradient backpropagation.
-
-Author: Taha Majlesi
 """
 
 import os
@@ -13,7 +17,6 @@ from pathlib import Path
 _HERE = Path(__file__).resolve().parent
 _CODES = _HERE.parent.parent
 
-# Import registries
 import neuralops.attentions
 import neuralops.compression_engine
 import torch
@@ -89,7 +92,6 @@ def instantiate_attention(cls_or_func, config, mock_layer):
             lambda: cls_or_func(),
         ]
     else:
-        # Factory / injection function
         patterns = [
             lambda: cls_or_func(
                 layer=mock_layer,
@@ -153,7 +155,6 @@ def test_all_attentions():
             if layer is None or not (isinstance(layer, nn.Module) or callable(layer)):
                 layer = getattr(mock_layer, "attention", mock_layer)
 
-            # Forward pass
             x = torch.randn(2, 64, 768, requires_grad=True)
             if hasattr(layer, "forward"):
                 try:
@@ -184,7 +185,6 @@ def test_all_attentions():
             if not torch.isfinite(out).all():
                 raise ValueError(f"Output contains NaN or Inf values")
 
-            # Backward pass
             loss = out.sum()
             loss.backward()
 
@@ -237,7 +237,6 @@ def test_all_compressors():
             if not isinstance(comp_model, nn.Module):
                 comp_model = model
 
-            # Test forward on compressed model
             x = torch.randn(2, 64, 768)
             out = comp_model(x)
             if isinstance(out, (tuple, list)):

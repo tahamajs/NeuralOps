@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Empirical Benchmark Suite for WGQA Paper:
 "Weighted Grouped-Query Attention: A Cross-Architecture Study"
@@ -24,7 +30,6 @@ import json
 import logging
 from pathlib import Path
 
-# Enforce strict offline operation
 os.environ["HF_HUB_OFFLINE"] = "1"
 os.environ["TRANSFORMERS_OFFLINE"] = "1"
 os.environ["HF_DATASETS_OFFLINE"] = "1"
@@ -240,7 +245,6 @@ def run_suite():
                         f"Throughput: {metrics['throughput_tok_per_sec']} tok/s"
                     )
 
-    # 2. LoRA Rank Ablation on DistilBERT SST-2
     logger.info("--> Running LoRA Rank Ablation on DistilBERT SST-2...")
     lora_ablation_results = []
     for r in lora_ranks:
@@ -263,7 +267,6 @@ def run_suite():
         lora_ablation_results.append(abl_entry)
         logger.info(f"[ABLATION] r={r}: Acc={metrics['accuracy']}%, VRAM={metrics['peak_vram_mb']}MB")
 
-    # 3. Aggregate Table 1: Cross-Architecture
     table1 = []
     for backbone in backbones:
         for task in tasks:
@@ -283,7 +286,6 @@ def run_suite():
                 row[f"{variant}_throughput"] = round(float(np.mean(thrs)), 1)
             table1.append(row)
 
-    # 4. Aggregate Table 2: Multi-Seed Robustness
     table2 = []
     for backbone in backbones:
         for task in tasks:

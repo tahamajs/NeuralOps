@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Triton Kernel Base Types and Fallbacks
 
 Type definitions, hardware support detection, and shared interfaces for Triton JIT operators.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -17,9 +21,6 @@ import torch.nn.functional as F
 
 logger = logging.getLogger("TritonKernels")
 
-# ---------------------------------------------------------------------------
-# Triton Environment Detection
-# ---------------------------------------------------------------------------
 try:
     import triton
     import triton.language as tl
@@ -41,14 +42,10 @@ except ImportError:
     )
     tl = None
 
-# ---------------------------------------------------------------------------
-# Constants
-# ---------------------------------------------------------------------------
 SUPPORTED_HEAD_DIMS: set[int] = {32, 64, 128, 256}
 MAX_TRITON_SEQ_LEN: int = 16384
 BLOCK_SIZE: int = 64
 
-# Global runtime flag for testing and benchmarking pure PyTorch references
 FORCE_PYTORCH_FALLBACK: bool = False
 
 _WARNED_REASONS: set[str] = set()
@@ -104,7 +101,6 @@ def check_triton_suitability(
     if not tensor.is_cuda:
         return False, f"tensor is on {tensor.device}, expected CUDA"
 
-    # Hardware Capability Profile Inspection
     try:
         from neuralops.core.triton_kernels.hardware_profile import get_device_hardware_profile
 
@@ -131,7 +127,6 @@ def check_triton_suitability(
                 f"dtype {tensor.dtype} not in (float16, bfloat16); Triton kernels require fp16/bf16",
             )
 
-    # If tensor is bfloat16 but device does not support native bf16 (requires Ampere SM 8.0+)
     if tensor.dtype == torch.bfloat16:
         try:
             from neuralops.core.triton_kernels.hardware_profile import get_device_hardware_profile
@@ -154,7 +149,6 @@ def check_triton_suitability(
             f"sequence length {seq_len} exceeds max supported length {MAX_TRITON_SEQ_LEN}",
         )
 
-    # If the kernel does not support autograd backward, fallback if gradients are requested
     if not supports_backward or kernel_name in FORWARD_ONLY_KERNELS:
         if getattr(tensor, "requires_grad", False) or torch.is_grad_enabled():
             return (

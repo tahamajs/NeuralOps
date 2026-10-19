@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Layer Normalization Fix Utilities
 
 Ensures numerical stability and parameter alignment in layer normalization modules.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -63,7 +67,6 @@ class RMSNorm(nn.Module):
         input_dtype = x.dtype
         reduction_dims = tuple(range(-len(self.normalized_shape), 0))
 
-        # FIX: Explicitly cast accumulators to torch.float32 to avoid FP16 sum-of-squares overflow/underflow
         if x.is_cuda and x.dtype in (torch.float16, torch.bfloat16) and self.weight is not None and len(self.normalized_shape) == 1:
             try:
                 from neuralops.core.triton_kernels.elementwise import rmsnorm_triton
@@ -136,7 +139,6 @@ class LayerNorm(nn.Module):
         input_dtype = x.dtype
         reduction_dims = tuple(range(-len(self.normalized_shape), 0))
 
-        # FIX: Explicitly cast accumulators to torch.float32 for mean and variance to prevent FP16 variance underflow
         x_fp32 = x.float()
         mean = torch.mean(x_fp32, dim=reduction_dims, keepdim=True)
         variance = torch.mean((x_fp32 - mean) ** 2, dim=reduction_dims, keepdim=True)
@@ -154,7 +156,6 @@ class LayerNorm(nn.Module):
         )
 
 
-# Aliases for explicit usage
 SafeRMSNorm = RMSNorm
 SafeLayerNorm = LayerNorm
 FP32AccumulatorRMSNorm = RMSNorm

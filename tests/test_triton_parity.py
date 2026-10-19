@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Comprehensive numerical parity, fallback, and autograd gradient tests across all 26 Triton kernel modules.
 Tests CPU/MPS/CUDA execution across float32 and float16 precisions, verifying mathematical
@@ -295,12 +301,10 @@ def test_tri_kernel_gla_parity_and_backward():
     lambdas = torch.sigmoid(lambdas_raw).detach().requires_grad_(True)
 
     from neuralops.core.triton_kernels.gla_scan import gla_scan, gla_scan_pytorch
-    # Forward parity
     ref = gla_scan_pytorch(q.detach(), k.detach(), v.detach(), lambdas.detach())
     out = gla_scan(q, k, v, lambdas)
     torch.testing.assert_close(out, ref, rtol=1e-3, atol=1e-3)
 
-    # Backward gradient execution
     loss = out.sum()
     loss.backward()
     assert q.grad is not None and k.grad is not None and v.grad is not None and lambdas.grad is not None
@@ -322,7 +326,6 @@ def test_tri_kernel_gdn_continuity_and_backward():
     out = gdn_scan(q, k, v, beta, alpha)
     torch.testing.assert_close(out, ref, rtol=1e-3, atol=1e-3)
 
-    # Autograd backward
     out.sum().backward()
     assert q.grad is not None and k.grad is not None and v.grad is not None
 
@@ -338,7 +341,6 @@ def test_fused_linear_cross_entropy_parity_and_grad(dtype):
     bias = torch.randn(V, dtype=dtype, device=device, requires_grad=True)
     targets = torch.randint(0, V, (B, T), device=device)
 
-    # Reference
     logits_ref = F.linear(x, weight, bias)
     loss_ref = F.cross_entropy(logits_ref.view(-1, V), targets.view(-1))
     loss_ref.backward()
@@ -346,12 +348,10 @@ def test_fused_linear_cross_entropy_parity_and_grad(dtype):
     w_grad_ref = weight.grad.clone()
     b_grad_ref = bias.grad.clone()
 
-    # Reset grads
     x.grad.zero_()
     weight.grad.zero_()
     bias.grad.zero_()
 
-    # Fused module
     from neuralops.core.triton_kernels.fused_ce import FusedLinearCrossEntropy
     fused_ce = FusedLinearCrossEntropy(reduction="mean", chunk_size=4)
     loss_fused = fused_ce(x, weight, bias=bias, targets=targets)
@@ -379,7 +379,6 @@ def test_fused_linear_kl_divergence_parity_and_grad(dtype):
 
     temperature = 2.0
 
-    # Reference
     s_logits = F.linear(s_h, s_w, s_b)
     t_logits = F.linear(t_h, t_w, t_b)
     p_s = F.log_softmax(s_logits / temperature, dim=-1)
@@ -395,7 +394,6 @@ def test_fused_linear_kl_divergence_parity_and_grad(dtype):
     s_w.grad.zero_()
     s_b.grad.zero_()
 
-    # Fused module
     from neuralops.core.triton_kernels.fused_kd import FusedLinearKLDivergence
     fused_kd = FusedLinearKLDivergence(temperature=temperature, reduction="batchmean", chunk_size=4)
     loss_fused = fused_kd(

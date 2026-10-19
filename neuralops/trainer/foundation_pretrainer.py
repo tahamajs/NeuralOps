@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Foundation Pretrainer
 
 Infinite-context stateful truncated-BPTT and curriculum hybrid pretraining engine.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -47,7 +51,6 @@ class InfiniteContextFoundationPretrainer:
         self.clip_grad_norm = clip_grad_norm
 
         self.global_step: int = 0
-        # Persistent recurrent state across consecutive document chunks
         self.persistent_state: Optional[Any] = None
 
     def get_curriculum_alpha(self, step: int) -> float:
@@ -73,14 +76,11 @@ class InfiniteContextFoundationPretrainer:
             input_ids = input_ids.unsqueeze(0)
             labels = labels.unsqueeze(0)
 
-        # 1. Update curriculum alpha if model has surgery bridges
         alpha = self.get_curriculum_alpha(self.global_step)
         set_surgery_alpha(self.model, alpha)
 
-        # 2. Check for EOS reset across document boundaries
         incoming_state = self.persistent_state
         if is_eos is not None and is_eos.any():
-            # Soft reset or detachment when EOS is encountered
             if incoming_state is not None:
                 if isinstance(incoming_state, torch.Tensor):
                     incoming_state = incoming_state.detach() * 0.5
@@ -88,14 +88,12 @@ class InfiniteContextFoundationPretrainer:
                     if isinstance(incoming_state["cache"], torch.Tensor):
                         incoming_state["cache"] = incoming_state["cache"].detach() * 0.5
 
-        # 3. Model forward pass
         outputs = self.model(input_ids)
         if hasattr(outputs, "logits"):
             logits = outputs.logits
         elif isinstance(outputs, tuple):
             logits = outputs[0]
             if len(outputs) >= 3 and outputs[2] is not None:
-                # Update persistent state across chunks (detached for Truncated BPTT!)
                 if isinstance(outputs[2], torch.Tensor):
                     self.persistent_state = outputs[2].detach()
                 elif isinstance(outputs[2], (tuple, list)):
@@ -103,13 +101,11 @@ class InfiniteContextFoundationPretrainer:
         else:
             logits = outputs
 
-        # 4. Cross Entropy Loss (Shifted next-token prediction)
         shift_logits = logits[..., :-1, :].contiguous()
         shift_labels = labels[..., 1:].contiguous()
         loss_fct = nn.CrossEntropyLoss()
         loss = loss_fct(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
 
-        # 5. Backward & Optimization step
         loss.backward()
         if self.clip_grad_norm > 0:
             torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.clip_grad_norm)

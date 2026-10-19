@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -7,25 +14,10 @@
 namespace neuralops {
 namespace cuda {
 
-// Unpack 2-bit ternary code:
-// 00 -> -1.0
-// 01 ->  0.0
-// 10 -> +1.0
-// 11 ->  0.0 (reserved / zero)
 __device__ __forceinline__ float decode_ternary_fast(uint8_t code) {
     return (code == 0) ? -1.0f : ((code == 2) ? 1.0f : 0.0f);
 }
 
-// ============================================================================
-// Ada Lovelace SM 8.9 Optimized 1.58-Bit Ternary GEMM:
-// Form: y = (X @ (W_unpacked * scale)^T) + bias
-//
-// Hardware Optimizations:
-// 1. Thread block: 16 threads along N, 8 threads along M (128 threads = 4 warps).
-// 2. Vectorized 32-bit (uint32_t = 4 bytes = 16 ternary weights) loads.
-// 3. Complete branchless arithmetic for ternary accumulation.
-// 4. Coalesced global memory writes and warp scheduling.
-// ============================================================================
 
 template <typename scalar_t>
 __launch_bounds__(128)
@@ -76,7 +68,6 @@ __global__ void ternary_gemm_opt_fwd_kernel(
         }
     }
 
-    // Remainder loop
     for (int kp = num_u32 * 4; kp < K_packed; ++kp) {
         const uint8_t byte_val = W_packed[w_base + kp];
         const int k_base = x_base + (kp << 2);
@@ -100,8 +91,8 @@ __global__ void ternary_gemm_opt_fwd_kernel(
     out[m * N + n] = from_float<scalar_t>(y);
 }
 
-} // namespace cuda
-} // namespace neuralops
+}
+}
 
 torch::Tensor ternary_gemm_fwd(
     const torch::Tensor& x,

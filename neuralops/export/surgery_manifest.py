@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Surgery Manifest Exporter
 
 Generates machine-readable manifests documenting layer surgery, replacements, and parameter counts.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -216,7 +220,6 @@ def build_manifest_from_model(model: nn.Module) -> SurgeryManifest:
     else:
         manifest = SurgeryManifest()
 
-    # Scan for SVDLinear and factorized layers not yet recorded
     existing_comp_paths = {c.layer_path for c in manifest.compressions}
     for name, module in model.named_modules():
         cls_name = module.__class__.__name__
@@ -252,7 +255,6 @@ def replay_surgery_manifest(
     from neuralops.compression_engine.svd.aa_svd_compressor import SVDLinear
     from neuralops.core.utils.lora import FactorizedLinear
 
-    # 1. Replay attention transplantations
     for attn_entry in manifest.attentions:
         try:
             model = replace_attention(
@@ -269,7 +271,6 @@ def replay_surgery_manifest(
             )
             raise
 
-    # 2. Replay compression factorizations
     for comp_entry in manifest.compressions:
         path = comp_entry.layer_path
         in_f = comp_entry.in_features
@@ -310,7 +311,6 @@ def merge_for_inference(model: nn.Module, only_above_breakeven: bool = False) ->
     """
     for name, module in list(model.named_modules()):
         for child_name, child in list(module.named_children()):
-            # 1. PiSSALinear
             if hasattr(child, "merge_and_unload") and callable(child.merge_and_unload):
                 try:
                     merged = child.merge_and_unload()
@@ -319,7 +319,6 @@ def merge_for_inference(model: nn.Module, only_above_breakeven: bool = False) ->
                 except (RuntimeError, AttributeError, ValueError) as e:
                     logger.warning("Could not merge_and_unload %s: %s", child_name, e, exc_info=True)
 
-            # 2. Factorized SVD linear layers
             cls_name = child.__class__.__name__
             if "SVDLinear" in cls_name or cls_name == "FactorizedLinear":
                 d_in = getattr(child, "in_features", None)
@@ -328,9 +327,8 @@ def merge_for_inference(model: nn.Module, only_above_breakeven: bool = False) ->
                 if d_in and d_out and r:
                     breakeven = (d_in * d_out) / (d_in + d_out)
                     if only_above_breakeven and r < breakeven:
-                        continue  # Keep factorized because it saves FLOPs
+                        continue
 
-                    # Compute effective weight
                     if hasattr(child, "weight"):
                         eff_w = child.weight.data
                     elif hasattr(child, "U") and hasattr(child, "V"):

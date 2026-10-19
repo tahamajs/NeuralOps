@@ -1,3 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 import torch.nn as nn
 
 
@@ -14,7 +21,6 @@ class MockConfig:
         self.is_decoder = kwargs.get("is_decoder", False)
         self.model_type = kwargs.get("model_type", "bert")
 
-        # Hyperparams
         self.rank = kwargs.get("rank", 16)
         self.lora_rank = kwargs.get("lora_rank", 16)
         self.lora_alpha = kwargs.get("lora_alpha", 32.0)

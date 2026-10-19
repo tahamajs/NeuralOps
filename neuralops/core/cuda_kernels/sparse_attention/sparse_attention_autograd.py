@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Block-Sparse Attention Autograd Interface
 
 Hardware-accelerated CUDA C++ autograd implementation with analytical gradients and three-level fallback dispatch.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -144,7 +148,6 @@ class _BlockSparseAttnAutograd(torch.autograd.Function):
             )
             return grad_q, grad_k, grad_v, None, None, None
 
-        # Fallback to analytical PyTorch reference backward
         B, H, N, D = q.shape
         scores = torch.matmul(q.float(), k.float().transpose(-1, -2)) * scale
         if block_mask.dim() == 4:
@@ -221,7 +224,6 @@ def block_sparse_attn_bwd(
                 scale,
             )
         )
-    # PyTorch reference backward
     B, H, N, D = q.shape
     scores = torch.matmul(q.float(), k.float().transpose(-1, -2)) * scale
     if block_mask.dim() == 4:

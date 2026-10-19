@@ -1,10 +1,12 @@
-# -*- coding: utf-8 -*-
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Profile multilora serving module.
-
-Author: Taha Majlesi
 """
 
-# Author: Taha Majlesi
 import os
 import sys
 import gc
@@ -47,12 +49,10 @@ class BatchedMultiLoRAOperator(nn.Module):
         self.ranks = ranks
         self.device = torch.device(device)
 
-        # Frozen Base Weight (e.g. 1024 x 1024 in FP16)
         self.w_base = nn.Parameter(
             torch.randn(out_features, in_features, device=self.device, dtype=torch.float16), requires_grad=False
         )
 
-        # Multi-LoRA Adapters A_i [R, out_features], B_i [in_features, R]
         self.lora_A = nn.ParameterList(
             [
                 nn.Parameter(torch.randn(ranks[i], out_features, device=self.device, dtype=torch.float16) * 0.02)
@@ -96,35 +96,29 @@ def main():
     device_name = torch.cuda.get_device_name(0)
     print(f"Device: {device_name}")
 
-    # Operational Parameters
     num_adapters = 4
-    ranks = [16, 32, 16, 32]  # 4 separate low-rank adapter matrices
+    ranks = [16, 32, 16, 32]
     batch_size = 4
     seq_len = 512
     dim = 1024
 
-    # 4 independent CUDA streams for dynamic LoRA routing
     lora_streams = [torch.cuda.Stream(device=device) for _ in range(num_adapters)]
 
-    # Model instantiation
     operator = BatchedMultiLoRAOperator(
         in_features=dim, out_features=dim, num_adapters=num_adapters, ranks=ranks, device=device
     )
 
-    # 4 Separate Client Queries (each routing to adapter 0, 1, 2, 3)
     inputs = [
         torch.randn(batch_size, seq_len, dim, device=device, dtype=torch.float16, requires_grad=True)
         for _ in range(num_adapters)
     ]
 
-    # Calculate parameter and adapter memory footprint
     base_weight_bytes = operator.w_base.numel() * 2
     adapter_param_bytes = sum(p.numel() * 2 for p in operator.lora_A) + sum(p.numel() * 2 for p in operator.lora_B)
     adapter_vram_kb = round(adapter_param_bytes / 1024, 2)
     base_vram_mb = round(base_weight_bytes / (1024**2), 2)
     print(f"Base Weight VRAM: {base_vram_mb} MB | 4x LoRA Adapters VRAM: {adapter_vram_kb} KB")
 
-    # Warmup
     print("Warming up multi-LoRA execution...")
     for _ in range(25):
         outs = operator.forward_multistream(inputs, lora_streams)
@@ -138,7 +132,6 @@ def main():
         torch.cuda.synchronize()
         del outs, loss
 
-    # 1. Forward-Only Serving Latency Benchmark
     N_EVAL = 100
     torch.cuda.synchronize()
     t0_seq = time.perf_counter()
@@ -156,7 +149,6 @@ def main():
 
     fwd_speedup = round(seq_fwd_ms / par_fwd_ms, 2)
 
-    # 2. Forward + Backward Dynamic Adaptation Latency Benchmark
     torch.cuda.synchronize()
     t0_bwd_seq = time.perf_counter()
     for _ in range(N_EVAL):
@@ -187,13 +179,11 @@ def main():
 
     bwd_speedup = round(seq_bwd_ms / par_bwd_ms, 2)
 
-    # Verify numerical match
     max_diffs = [torch.max(torch.abs(outs_seq[i] - outs_par[i])).item() for i in range(num_adapters)]
     clean_match = all(d == 0.0 for d in max_diffs)
     total_nans = sum(int(torch.isnan(outs_par[i]).sum().item()) for i in range(num_adapters))
     total_infs = sum(int(torch.isinf(outs_par[i]).sum().item()) for i in range(num_adapters))
 
-    # 3. 1,000-Iteration Multi-LoRA Memory Leak & Fragmentation Audit
     print("\nRunning 1,000-iteration multi-LoRA stress test...")
     gc.collect()
     torch.cuda.empty_cache()
@@ -246,7 +236,6 @@ def main():
     print(f"Alloc Drift (100->1k):{net_drift:.4f} MB (Zero Leak: {net_drift == 0.0})")
     print(f"Final Fragmentation:  {final_frag:.2f}% (< 3.0%: {final_frag < 3.0})")
 
-    # Export to CSV
     csv_path = "/mnt/d/SVD_linear_Attention/docs/benchmarks/paper_benchmarks_multilora_serving.csv"
     os.makedirs(os.path.dirname(csv_path), exist_ok=True)
     with open(csv_path, "w", newline="") as f:
@@ -299,7 +288,6 @@ def main():
 
     print(f"Saved CSV to {csv_path}")
 
-    # Generate LaTeX Table
     latex_path = "/mnt/d/SVD_linear_Attention/docs/reports/PAPER_TABLES_MULTILORA_SERVING.tex"
     with open(latex_path, "w") as f:
         f.write("% Publication-Grade LaTeX Table: Batched Multi-LoRA Concurrent Serving\n")
@@ -343,7 +331,6 @@ def main():
 
     print(f"Saved LaTeX table to {latex_path}")
 
-    # JSON summary
     json_path = "/mnt/d/SVD_linear_Attention/results/profiling/multilora_serving_profile.json"
     summary = {
         "device": device_name,

@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Test Hugging Face Hub self-contained export roundtrip and auto_map resolution.
 """
@@ -41,11 +47,9 @@ def test_export_model_safetensors_and_automap():
         assert "AutoConfig" in c_dict["auto_map"]
         assert "AutoModel" in c_dict["auto_map"]
 
-        # Test loading via AutoModel with trust_remote_code=True
         loaded_model = AutoModel.from_pretrained(str(exported_dir), trust_remote_code=True)
         assert loaded_model is not None
 
-        # Verify output parity
         x = torch.randint(0, 1000, (1, 8))
         with torch.no_grad():
             orig_out = model(x).last_hidden_state

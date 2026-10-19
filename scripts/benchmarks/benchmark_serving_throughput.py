@@ -1,5 +1,9 @@
-# -*- coding: utf-8 -*-
-# Author: Taha Majlesi
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Continuous Serving Multi-Concurrency, TTFT, ITL, and PagedKVCache Benchmark.
 
 Measures:
@@ -72,10 +76,8 @@ class MockDecoderLayer(nn.Module):
         self.fc2 = nn.Linear(hidden_dim * 4, hidden_dim, bias=False)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # Self-attention + FFN
         """Execute forward routine."""
         q, k, v = self.q_proj(x), self.k_proj(x), self.v_proj(x)
-        # Scaled dot-product
         attn = torch.matmul(q, k.transpose(-1, -2)) * (self.head_dim**-0.5)
         attn = torch.softmax(attn, dim=-1)
         out = self.out_proj(torch.matmul(attn, v)) + x
@@ -102,7 +104,6 @@ def benchmark_serving(
     print(f"=== Serving Multi-Concurrency Benchmark (Hidden={hidden_dim}, Heads={num_heads}) ===")
     for N_req in concurrencies:
         runner.reset_vram()
-        # Measure TTFT (prefill pass)
         x_prefill = torch.randn(N_req, prefill_len, hidden_dim, device=dev, dtype=torch.float16)
 
         def prefill_step():
@@ -119,7 +120,6 @@ def benchmark_serving(
         ttft_ms = prefill_metric.latency_ms_trimmed_mean
         ttft_p99 = prefill_metric.latency_ms_max
 
-        # Measure ITL (inter-token decoding latency per step)
         x_decode = torch.randn(N_req, 1, hidden_dim, device=dev, dtype=torch.float16)
 
         def decode_step():
@@ -152,7 +152,6 @@ def benchmark_serving(
             f"  N_req={N_req:2d} | TTFT: {ttft_ms:6.2f} ms | ITL: {itl_ms:5.2f} ms | Throughput: {gen_tokens_sec:8.1f} tok/s | VRAM: {decode_metric.peak_vram_mb:5.1f} MB"
         )
 
-    # KV Cache Fragmentation & Capacity Benchmark
     print("\n=== PagedKVCache vs Contiguous Cache Memory Benchmark ===")
     cache_results = []
     block_sizes = [16, 32]
@@ -162,7 +161,6 @@ def benchmark_serving(
     for bs in block_sizes:
         num_blocks = 2048
         runner.reset_vram()
-        # Initialize PagedKVCache
         paged_cache = PagedKVCache(
             num_blocks=num_blocks,
             block_size=bs,
@@ -173,7 +171,6 @@ def benchmark_serving(
         )
         paged_vram = runner.get_allocated_vram_mb()
 
-        # Allocate 32 sequences of varied dynamic lengths
         t0 = time.perf_counter()
         active_seqs = 32
         for s in range(active_seqs):
@@ -187,7 +184,6 @@ def benchmark_serving(
             torch.cuda.synchronize()
         paged_alloc_time = (time.perf_counter() - t0) * 1000.0
 
-        # Contiguous baseline
         runner.reset_vram()
         _ = ContiguousKVCache(
             max_batch_size=active_seqs,

@@ -1,3 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 import pytest
 import shutil
 import tempfile
@@ -59,7 +66,6 @@ def test_surgery_manifest_roundtrip_zero_error():
     device = torch.device("cpu")
     model = ToyTransformer(d_model=64).to(device)
 
-    # 1. Apply Attention Surgery (cosformer)
     model = transplant_attention(
         model,
         target_attention="cosformer",
@@ -67,8 +73,6 @@ def test_surgery_manifest_roundtrip_zero_error():
         num_heads=4,
     )
 
-    # 2. Apply Heterogeneous Adaptive Rank SVD to FFN layers
-    # Layer 0 ffn1 rank = 16, Layer 1 ffn1 rank = 32
     svd_layer0 = SVDLinear(64, 128, rank=16, bias=True)
     svd_layer1 = SVDLinear(64, 128, rank=32, bias=True)
 
@@ -97,16 +101,13 @@ def test_surgery_manifest_roundtrip_zero_error():
     with torch.no_grad():
         orig_out = model(dummy_x)
 
-    # 3. Export to temporary directory
     tmp_dir = tempfile.mkdtemp(prefix="neuralops_surgery_test_")
     try:
         export_model(model, output_dir=tmp_dir, format="safetensors")
 
-        # Verify manifest json exists
         manifest_path = Path(tmp_dir) / "neuralops_surgery_config.json"
         assert manifest_path.exists(), "neuralops_surgery_config.json must be generated"
 
-        # 4. Reload into a pristine base ToyTransformer without re-running SVD
         fresh_base = ToyTransformer(d_model=64).to(device)
         reloaded_model, meta = load_exported_model(tmp_dir, base_model=fresh_base)
         reloaded_model.eval()
@@ -114,11 +115,9 @@ def test_surgery_manifest_roundtrip_zero_error():
         with torch.no_grad():
             reloaded_out = reloaded_model(dummy_x)
 
-        # 5. Verify max absolute error is precisely 0.0 (or within numerical fp32 eps)
         max_diff = (orig_out - reloaded_out).abs().max().item()
         assert max_diff < 1e-6, f"Reloaded model outputs diverged! Max diff: {max_diff}"
 
-        # Verify internal layer ranks match manifest
         assert reloaded_model.layer0_ffn1.rank == 16
         assert reloaded_model.layer1_ffn1.rank == 32
     finally:

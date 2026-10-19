@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Unit tests for Phase 3 TopologyRouter, padding sanitation, and bidirectional wrapping."""
 
 import torch
@@ -14,14 +20,12 @@ from neuralops.attentions.linear.cosformer import CosformerAttention
 
 
 def test_extract_binary_token_mask_2d_and_4d():
-    # 2D mask (B=2, T=4)
     mask_2d = torch.tensor([[1, 1, 1, 0], [1, 1, 0, 0]], dtype=torch.int64)
     keep_2d = extract_binary_token_mask(mask_2d, seq_len=4)
     assert keep_2d.shape == (2, 1, 4, 1)
     assert keep_2d[0, 0, 3, 0] == 0.0
     assert keep_2d[0, 0, 0, 0] == 1.0
 
-    # 4D additive float mask
     mask_4d = torch.tensor([[[[0.0, 0.0, 0.0, -10000.0]]]])
     keep_4d = extract_binary_token_mask(mask_4d, seq_len=4)
     assert keep_4d.shape == (1, 1, 4, 1)
@@ -36,10 +40,8 @@ def test_padding_sanitization_zeroing():
     mask = torch.tensor([[1, 1, 1, 0], [1, 1, 0, 0]], dtype=torch.int64)
 
     k_clean, v_clean = sanitize_kv_for_padding_mask(k, v, mask)
-    # Token 3 in batch 0 should be exactly 0.0
     assert torch.all(k_clean[0, :, 3, :] == 0.0)
     assert torch.all(v_clean[0, :, 3, :] == 0.0)
-    # Token 0 in batch 0 should remain 1.0
     assert torch.all(k_clean[0, :, 0, :] == 1.0)
     assert torch.all(v_clean[0, :, 0, :] == 1.0)
 

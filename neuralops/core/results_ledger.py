@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Experiment Results Ledger
 
 Versioned results ledger supporting dual storage across Git-friendly JSONL and SQLite databases.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -24,7 +28,6 @@ from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple, Union
 
 logger = logging.getLogger("neuralops.results_ledger")
 
-# Default version tag
 DEFAULT_VERSION_TAG = "v1.4.0"
 
 
@@ -79,11 +82,11 @@ class ResultRecord:
 
     record_id: str
     module_name: str
-    category: str  # attention | compressor | triton_kernel | cuda_kernel | ablation | end_to_end | system
+    category: str
     family: str
     version_tag: str = DEFAULT_VERSION_TAG
     revision: int = 1
-    status: str = "active"  # active | superseded | deleted
+    status: str = "active"
     timestamp_utc: str = field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc).isoformat())
     git_commit_sha: str = field(default_factory=get_current_git_sha)
     generation_method: Dict[str, Any] = field(default_factory=dict)
@@ -93,7 +96,6 @@ class ResultRecord:
 
     def __post_init__(self) -> None:
         if not self.record_id:
-            # Generate deterministic hash key based on identity tuple
             raw_key = f"{self.module_name}|{self.category}|{self.version_tag}|{self.revision}|{self.experimental_setup.get('backbone')}|{self.experimental_setup.get('dataset')}|{self.experimental_setup.get('rank')}|{self.experimental_setup.get('seq_len')}|{self.generation_method.get('algorithm')}"
             self.record_id = hashlib.sha256(raw_key.encode("utf-8")).hexdigest()[:16]
 
@@ -124,9 +126,7 @@ class ResultsLedger:
     def __init__(self, root_dir: Optional[Union[str, Path]] = None, results_dir: Optional[Union[str, Path]] = None):
         target = root_dir or results_dir
         if target is None:
-            # Locate results directory relative to repo root
             curr = Path(__file__).resolve()
-            # neuralops/core/results_ledger.py -> repo_root = parents[2]
             repo_root = curr.parents[2] if len(curr.parents) >= 3 else Path.cwd()
             self.root_dir = repo_root / "results"
         else:
@@ -197,7 +197,7 @@ class ResultsLedger:
     def add_or_replace(
         self,
         record: Union[ResultRecord, Dict[str, Any]],
-        mode: str = "upsert",  # upsert | replace | new_version
+        mode: str = "upsert",
     ) -> ResultRecord:
         """
         Adds, updates, or creates a new revision of a ResultRecord.
@@ -211,7 +211,6 @@ class ResultsLedger:
         conn = sqlite3.connect(str(self.sqlite_path))
         cur = conn.cursor()
 
-        # Find existing active match for identical configuration
         cur.execute(
             """
             SELECT record_id, revision, raw_json FROM results
@@ -236,11 +235,9 @@ class ResultsLedger:
         if existing:
             old_id, old_rev, _ = existing
             if mode == "new_version":
-                # Mark previous active version as superseded
                 cur.execute("UPDATE results SET status = 'superseded' WHERE record_id = ?", (old_id,))
                 rec.revision = old_rev + 1
                 rec.status = "active"
-                # Recompute record_id with new revision
                 raw_key = f"{rec.module_name}|{rec.category}|{rec.version_tag}|{rec.revision}|{rec.experimental_setup.get('backbone')}|{rec.experimental_setup.get('dataset')}|{rec.experimental_setup.get('rank')}|{rec.experimental_setup.get('seq_len')}|{rec.generation_method.get('algorithm')}"
                 rec.record_id = hashlib.sha256(raw_key.encode("utf-8")).hexdigest()[:16]
             elif mode == "replace":
@@ -248,7 +245,6 @@ class ResultsLedger:
                 rec.revision = old_rev
                 rec.status = "active"
 
-        # Insert or replace in SQLite
         raw_json_str = json.dumps(rec.to_dict(), ensure_ascii=False)
         m = rec.metrics
         s = rec.experimental_setup
@@ -295,9 +291,7 @@ class ResultsLedger:
         conn.commit()
         conn.close()
 
-        # Update per-module JSON file
         self._sync_module_dossier(rec.module_name)
-        # Update JSONL master
         self._append_to_jsonl(rec)
 
         return rec
@@ -390,7 +384,6 @@ class ResultsLedger:
         conn.commit()
         conn.close()
 
-        # Resync dossiers
         for m in affected_modules:
             self._sync_module_dossier(m)
         self.rewrite_jsonl_from_sqlite()
@@ -433,15 +426,12 @@ class ResultsLedger:
                 except Exception:
                     continue
 
-        # Sort deduplicated records chronologically
         sorted_records = sorted(dedup_records.values(), key=lambda r: r.timestamp_utc)
 
-        # Rewrite JSONL file cleanly
         with open(self.jsonl_path, "w", encoding="utf-8") as f:
             for r in sorted_records:
                 f.write(json.dumps(r.to_dict(), ensure_ascii=False) + "\n")
 
-        # Rebuild SQLite table
         conn = sqlite3.connect(str(self.sqlite_path))
         cur = conn.cursor()
         cur.execute("DROP TABLE IF EXISTS results")
@@ -546,7 +536,6 @@ class ResultsLedger:
 
         count = 0
         for mod in modules:
-            # Skip non-module utility filenames
             if mod in ("_common / _types.py", "_common____types", "_types", "_common"):
                 continue
             self._sync_module_dossier(mod)
@@ -705,7 +694,7 @@ class ResultsLedger:
     def plot_results(
         self,
         records: List[ResultRecord],
-        chart_type: str = "bar",  # bar | pareto | scaling | diff
+        chart_type: str = "bar",
         x_metric: str = "peak_vram_mb",
         y_metric: str = "accuracy",
         output_path: Optional[Union[str, Path]] = None,
@@ -721,7 +710,6 @@ class ResultsLedger:
         chart_title = title or f"NeuralOps {chart_type.upper()} Benchmark ({y_metric} vs {x_metric})"
         ascii_lines = [f"=== {chart_title} ==="]
 
-        # Extract points
         items = []
         for r in records:
             ym = r.metrics.get(y_metric, 0.0)
@@ -737,7 +725,6 @@ class ResultsLedger:
                 bar = "█" * bar_len
                 ascii_lines.append(f"{name:{max_name_len}s} │ {bar:<36s} {ym:.2f} (git:{sha[:7]})")
         else:
-            # Pareto or scaling
             items.sort(key=lambda x: x[1])
             for name, xm, ym, sha in items[:15]:
                 ascii_lines.append(f"{name:24s} │ {x_metric}={xm:.2f} │ {y_metric}={ym:.2f} (git:{sha[:7]})")
@@ -817,7 +804,7 @@ class ResultsLedger:
     def export_table(
         self,
         records: List[ResultRecord],
-        format: str = "markdown",  # markdown | latex | csv | json
+        format: str = "markdown",
         include_provenance: bool = True,
     ) -> str:
         """Exports queried records into publication-grade Markdown or LaTeX."""
@@ -875,7 +862,6 @@ class ResultsLedger:
             lines.extend(["\\bottomrule", "\\end{tabular}", "\\caption{NeuralOps Benchmark Provenance Ledger}", "\\end{table}"])
             return "\n".join(lines)
 
-        # Markdown
         col_w = [max(len(h), max((len(r[i]) for r in rows), default=0)) for i, h in enumerate(headers)]
         header_line = "| " + " | ".join(f"{h:{col_w[i]}s}" for i, h in enumerate(headers)) + " |"
         sep_line = "|:" + "-|-:".join("-" * (w - 1) for w in col_w) + ":|"
@@ -883,7 +869,6 @@ class ResultsLedger:
         return "\n".join([header_line, sep_line] + data_lines)
 
 
-# Global Singleton Ledger Instance
 _GLOBAL_LEDGER: Optional[ResultsLedger] = None
 
 

@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Production-Grade Test Suite for NeuralOps GEMM and Matrix Decomposition CUDA Kernels.
 
 Tests 20 CUDA C++ GEMM and Matrix Decomposition modules:
@@ -34,7 +40,6 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-# Ensure root is in path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 import pytest
@@ -78,7 +83,6 @@ def setup_cuda_env():
     force_kernel_backend(None)
 
 
-# 1. fused_ce
 @pytest.mark.parametrize("shape", [(16, 64), (32, 128), (4, 1024)])
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float16])
 def test_fused_ce(shape, dtype):
@@ -92,7 +96,6 @@ def test_fused_ce(shape, dtype):
     assert_numerical_parity(cuda_out, ref_out.to(cuda_out.dtype), dtype=dtype, name="fused_ce")
 
 
-# 2. logcumsumexp
 @pytest.mark.parametrize("shape", [(8, 128), (16, 256), (4, 512)])
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float16])
 def test_logcumsumexp(shape, dtype):
@@ -103,7 +106,6 @@ def test_logcumsumexp(shape, dtype):
     assert_numerical_parity(cuda_out, ref_out, dtype=dtype, name="logcumsumexp")
 
 
-# 3. lut_gemm
 @pytest.mark.parametrize("shape", [(16, 64, 32), (32, 128, 64)])
 def test_lut_gemm(shape):
     M, K, N = shape
@@ -117,7 +119,6 @@ def test_lut_gemm(shape):
     assert_numerical_parity(cuda_out, ref_out, dtype=torch.float16, name="lut_gemm")
 
 
-# 4. samba_moe
 @pytest.mark.parametrize("shape", [(16, 32), (32, 64)])
 @pytest.mark.parametrize("dtype", [torch.float16, torch.float32])
 def test_samba_moe(shape, dtype):
@@ -131,7 +132,6 @@ def test_samba_moe(shape, dtype):
     assert_numerical_parity(cuda_out, ref_out, dtype=dtype, name="samba_moe")
 
 
-# 5. kronecker_gemm
 @pytest.mark.parametrize("dims", [((4, 8), (4, 8)), ((8, 8), (8, 8))])
 def test_kronecker_gemm(dims):
     (M1, N1), (M2, N2) = dims
@@ -145,7 +145,6 @@ def test_kronecker_gemm(dims):
     assert_numerical_parity(cuda_out, ref_out, dtype=torch.float16, atol=0.01, name="kronecker_gemm")
 
 
-# 6. rotational_svd
 @pytest.mark.parametrize("shape", [(8, 32, 16, 32), (16, 32, 32, 32)])
 def test_rotational_svd(shape):
     M, K, R, N = shape
@@ -160,7 +159,6 @@ def test_rotational_svd(shape):
     assert_numerical_parity(cuda_out, ref_out, dtype=torch.float16, atol=0.01, name="rotational_svd")
 
 
-# 7. svd_prefix_scan
 @pytest.mark.parametrize("shape", [(2, 4, 16, 32), (1, 2, 32, 32)])
 def test_svd_prefix_scan(shape):
     q = torch.randn(*shape, device="cuda", dtype=torch.float16) * 0.1
@@ -173,7 +171,6 @@ def test_svd_prefix_scan(shape):
     assert_numerical_parity(cuda_out, ref_out, dtype=torch.float16, atol=0.01, name="svd_prefix_scan")
 
 
-# 8. ternary_gemm
 @pytest.mark.parametrize("shape", [(8, 32, 16), (16, 64, 32)])
 def test_ternary_gemm(shape):
     M, K, N = shape
@@ -187,7 +184,6 @@ def test_ternary_gemm(shape):
     assert_numerical_parity(cuda_out, ref_out, dtype=torch.float16, atol=0.01, name="ternary_gemm")
 
 
-# 9. block_diag_gemm
 @pytest.mark.parametrize("blocks", [(4, 16, 16), (2, 32, 32)])
 def test_block_diag_gemm(blocks):
     B_blocks, block_k, block_n = blocks
@@ -200,7 +196,6 @@ def test_block_diag_gemm(blocks):
     assert_numerical_parity(cuda_out, ref_out, dtype=torch.float16, name="block_diag_gemm")
 
 
-# 10. spectral_shrinkage
 @pytest.mark.parametrize("dim", [16, 32])
 def test_spectral_shrinkage(dim):
     xr = torch.randn(4, dim, device="cuda", dtype=torch.float32)
@@ -219,7 +214,6 @@ def test_spectral_shrinkage(dim):
         assert_numerical_parity(cuda_out, ref_out, dtype=torch.float32, name="spectral_shrinkage")
 
 
-# 11. phantom
 @pytest.mark.parametrize("shape", [(8, 32), (16, 64)])
 def test_phantom(shape):
     x = torch.randn(*shape, device="cuda", dtype=torch.float16)
@@ -231,7 +225,6 @@ def test_phantom(shape):
     assert_numerical_parity(cuda_out, ref_out, dtype=torch.float16, name="phantom")
 
 
-# 12. tt_contraction
 @pytest.mark.parametrize("dims", [((4, 4), (4, 4), 2), ((2, 2), (2, 2), 4)])
 def test_tt_contraction(dims):
     (p0, p1), (q0, q1), r = dims
@@ -244,7 +237,6 @@ def test_tt_contraction(dims):
     assert_numerical_parity(cuda_out, ref_out, dtype=torch.float32, name="tt_contraction")
 
 
-# 13. low_rank_svd
 @pytest.mark.parametrize("shape", [(8, 32, 16, 32), (16, 64, 16, 64)])
 def test_low_rank_svd(shape):
     M, K, R, N = shape
@@ -258,7 +250,6 @@ def test_low_rank_svd(shape):
     assert_numerical_parity(cuda_out, ref_out, dtype=torch.float16, name="low_rank_svd")
 
 
-# 14. hadamard_gemm
 @pytest.mark.parametrize("shape", [(8, 32, 16), (16, 64, 32)])
 def test_hadamard_gemm(shape):
     M, K, N = shape
@@ -273,7 +264,6 @@ def test_hadamard_gemm(shape):
     assert_numerical_parity(cuda_out, ref_out, dtype=torch.float16, atol=0.01, name="hadamard_gemm")
 
 
-# 15. quantized_gemm
 @pytest.mark.parametrize("shape", [(16, 32, 16), (32, 64, 32)])
 def test_quantized_gemm(shape):
     M, K, N = shape
@@ -288,7 +278,6 @@ def test_quantized_gemm(shape):
     assert_numerical_parity(cuda_out, ref_out, dtype=torch.float16, name="quantized_gemm")
 
 
-# 16. rpca_sparse_svd
 @pytest.mark.parametrize("shape", [(8, 32, 16, 32), (16, 32, 16, 32)])
 def test_rpca_sparse_svd(shape):
     M, K, R, N = shape
@@ -302,7 +291,6 @@ def test_rpca_sparse_svd(shape):
     assert_numerical_parity(cuda_out, ref_out, dtype=torch.float16, atol=0.01, name="rpca_sparse_svd")
 
 
-# 17. nasc_attention
 @pytest.mark.parametrize("shape", [(2, 4, 16, 32), (1, 2, 32, 32)])
 def test_nasc_attention(shape):
     B, H, N_seq, D = shape
@@ -317,7 +305,6 @@ def test_nasc_attention(shape):
     assert_numerical_parity(cuda_out, ref_out, dtype=torch.float16, atol=0.01, name="nasc_attention")
 
 
-# 18. nexus
 @pytest.mark.parametrize("shape", [(2, 4, 16, 32), (1, 2, 32, 32)])
 def test_nexus(shape):
     B, H, S, D = shape
@@ -331,7 +318,6 @@ def test_nexus(shape):
     assert_numerical_parity(cuda_out, ref_out, dtype=torch.float16, atol=0.01, name="nexus")
 
 
-# 19. vspec
 @pytest.mark.parametrize("shape", [(2, 16, 32), (4, 32, 32)])
 def test_vspec(shape):
     B, N_seq, D = shape
@@ -345,7 +331,6 @@ def test_vspec(shape):
     assert_numerical_parity(cuda_out, ref_out, dtype=torch.float16, name="vspec")
 
 
-# 20. goldfinch_ahn
 @pytest.mark.parametrize("shape", [(2, 4, 16, 32), (1, 2, 32, 32)])
 def test_goldfinch_ahn(shape):
     B, H, N_seq, D = shape

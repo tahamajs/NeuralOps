@@ -1,4 +1,9 @@
-# -*- coding: utf-8 -*-
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Comprehensive verification suite for NeuralOps v1.3.5 flagship subsystems.
 
 Tests:
@@ -36,9 +41,6 @@ from neuralops.models.surgical_io import (
 )
 
 
-# -----------------------------------------------------------------------------
-# 1. Roofline Profiler Tests
-# -----------------------------------------------------------------------------
 def test_roofline_specs_detection():
     """Verify hardware roofline lookup and fallback heuristics."""
     name, sm, tflops, bw = get_device_roofline_specs("cpu")
@@ -69,7 +71,6 @@ def test_profile_roofline_registered_and_composable():
     dev = "cuda:0" if torch.cuda.is_available() else "cpu"
     dtype = "float16" if torch.cuda.is_available() else "float32"
 
-    # Test registered attention
     rep1 = profile_roofline(
         module_or_name="minimal_svd",
         batch_size=1,
@@ -88,7 +89,6 @@ def test_profile_roofline_registered_and_composable():
     assert rep1.bottleneck_regime != ""
     assert isinstance(rep1.to_dict(), dict)
 
-    # Test GatedDeltaNet accurate FLOPs and 2D Log-Log chart
     rep_gdn = profile_roofline(
         module_or_name="gated_delta_net",
         batch_size=2,
@@ -112,9 +112,6 @@ def test_profile_roofline_registered_and_composable():
     assert "Ridge:" in terminal_gdn
 
 
-# -----------------------------------------------------------------------------
-# 2. Layerwise Subspace Micro-Healing Tests
-# -----------------------------------------------------------------------------
 class ToyAttentionLayer(nn.Module):
     def __init__(self, dim: int = 64):
         super().__init__()
@@ -142,7 +139,6 @@ def test_layerwise_subspace_micro_healing():
     teacher = ToyTransformer(num_layers=2, dim=64)
     student = ToyTransformer(num_layers=2, dim=64)
 
-    # Scramble student weights
     with torch.no_grad():
         for p in student.parameters():
             p.add_(torch.randn_like(p) * 0.5)
@@ -163,13 +159,9 @@ def test_layerwise_subspace_micro_healing():
     assert stats["final_cosine_sim"] >= stats["initial_cosine_sim"]
 
 
-# -----------------------------------------------------------------------------
-# 3. Surgical Checkpoint Persistence Tests
-# -----------------------------------------------------------------------------
 def test_surgical_checkpoint_roundtrip():
     """Verify lossless extraction, saving, and dynamic loading of surgical models."""
     teacher = ToyTransformer(num_layers=2, dim=64)
-    # Replace second layer with a ComposableAttention
     composable = ComposableAttention(embed_dim=64, num_heads=4)
     teacher.layers[1].self = composable
 
@@ -186,7 +178,6 @@ def test_surgical_checkpoint_roundtrip():
         save_path = save_surgical_checkpoint(teacher, temp_dir, metadata={"experiment": "test_v135"})
         assert (save_path / "surgical_manifest.json").exists()
 
-        # Instantiate fresh unmodified base model
         fresh_model = ToyTransformer(num_layers=2, dim=64)
         loaded_model, loaded_manifest = load_surgical_checkpoint(fresh_model, save_path)
 
@@ -198,21 +189,18 @@ def test_surgical_checkpoint_roundtrip():
         shutil.rmtree(temp_dir, ignore_errors=True)
 
 
-# -----------------------------------------------------------------------------
-# 4. Academic LaTeX & Pareto Exporter Tests
-# -----------------------------------------------------------------------------
 def test_pareto_frontier_computation():
     """Verify Pareto non-dominance calculation across multi-objective tradeoffs."""
     records = [
         {"name": "baseline", "latency_ms": 10.0, "speedup_x": 1.0, "ppl": 20.0},
-        {"name": "optimal_fast", "latency_ms": 2.0, "speedup_x": 5.0, "ppl": 22.0},  # Pareto optimal
-        {"name": "optimal_accurate", "latency_ms": 5.0, "speedup_x": 2.0, "ppl": 15.0},  # Pareto optimal
-        {"name": "dominated", "latency_ms": 8.0, "speedup_x": 1.2, "ppl": 25.0},  # Dominated
+        {"name": "optimal_fast", "latency_ms": 2.0, "speedup_x": 5.0, "ppl": 22.0},
+        {"name": "optimal_accurate", "latency_ms": 5.0, "speedup_x": 2.0, "ppl": 15.0},
+        {"name": "dominated", "latency_ms": 8.0, "speedup_x": 1.2, "ppl": 25.0},
     ]
     mask = compute_pareto_frontier(records)
-    assert mask[1] is True  # optimal_fast
-    assert mask[2] is True  # optimal_accurate
-    assert mask[3] is False  # dominated
+    assert mask[1] is True
+    assert mask[2] is True
+    assert mask[3] is False
 
 
 def test_export_benchmark_table_formats():
@@ -239,9 +227,6 @@ def test_export_benchmark_table_formats():
     assert "pareto_optimal" in csv_out
 
 
-# -----------------------------------------------------------------------------
-# 5. Architecture Inspector & CLI Subsystem Tests
-# -----------------------------------------------------------------------------
 def test_inspect_architecture_all_registries():
     """Verify that inspect_architecture works for 100% of 131 attentions and 72 compressors."""
     import neuralops.attentions
@@ -252,7 +237,6 @@ def test_inspect_architecture_all_registries():
     assert len(ATTENTION_REGISTRY) == 131
     assert len(COMPRESSOR_REGISTRY) == 72
 
-    # Comprehensive verification across all 131 attentions
     for key in list(ATTENTION_REGISTRY.keys()):
         spec = inspect_architecture(key, category="attention")
         assert spec.name == key
@@ -264,7 +248,6 @@ def test_inspect_architecture_all_registries():
         assert len(spec.constructor_params) > 0
         assert "pytorch_direct" in spec.quickstart_code
 
-    # Comprehensive verification across all 72 compressors
     for key in list(COMPRESSOR_REGISTRY.keys()):
         spec = inspect_architecture(key, category="compressor")
         assert spec.name == key
@@ -276,7 +259,6 @@ def test_inspect_architecture_all_registries():
         assert len(spec.constructor_params) > 0
         assert "pytorch_direct" in spec.quickstart_code
 
-    # Test exemplar rendering
     card = render_architecture_card(inspect_architecture("gated_delta_net"))
     assert "gated_delta_net" in card
     assert "── python ──" in card
@@ -288,7 +270,6 @@ def test_cli_inspect_and_ui_commands():
     import io
     import sys
 
-    # 1. Test inspect gated_delta_net
     old_stdout = sys.stdout
     sys.stdout = io.StringIO()
     try:
@@ -300,7 +281,6 @@ def test_cli_inspect_and_ui_commands():
     finally:
         sys.stdout = old_stdout
 
-    # 2. Test ui --snapshot
     sys.stdout = io.StringIO()
     try:
         ret = main(["ui", "--snapshot"])
@@ -312,9 +292,6 @@ def test_cli_inspect_and_ui_commands():
         sys.stdout = old_stdout
 
 
-# -----------------------------------------------------------------------------
-# 6. Full Cross-Module Lifecycle & Ablation Pipeline Integration Tests
-# -----------------------------------------------------------------------------
 def test_full_cross_module_lifecycle_pipeline():
     """Test full integration chain:
     Base Transformer -> Replace Attention -> Ridge Calibrate -> Micro-Heal -> Save/Load Parity.
@@ -338,7 +315,6 @@ def test_full_cross_module_lifecycle_pipeline():
 
     temp_dir = tempfile.mkdtemp()
     try:
-        # Run end-to-end surgical pipeline
         res = surgical_transplant_and_heal_pipeline(
             teacher_model=teacher,
             target_attention="minimal_svd",
@@ -353,7 +329,6 @@ def test_full_cross_module_lifecycle_pipeline():
         assert res["saved_path"] is not None
         assert Path(res["saved_path"]).exists()
 
-        # Verify round-trip load parity
         x_eval = torch.randn(2, 16, 64)
         with torch.no_grad():
             expected_out = res["model"](x_eval)

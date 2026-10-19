@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Speculative Decoding Engine
 
 Lossless self-speculative decoding algorithms to accelerate autoregressive token generation.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -46,7 +50,7 @@ class SelfSpeculativeDecoder:
         adaptive_k: bool = True,
     ) -> None:
         self.target_model = target_model
-        self.draft_model = draft_model  # If None, uses alpha=1.0 on target_model
+        self.draft_model = draft_model
         self.max_draft_k = max_draft_k
         self.min_draft_k = min_draft_k
         self.adaptive_k = adaptive_k
@@ -55,7 +59,6 @@ class SelfSpeculativeDecoder:
     def _get_logits(self, model: nn.Module, input_ids: torch.Tensor, is_draft: bool = False) -> torch.Tensor:
         """Runs model forward pass, toggling surgery alpha if single-model mode."""
         if self.draft_model is None:
-            # Single model mode
             set_surgery_alpha(model, 1.0 if is_draft else 0.0)
             
         with torch.no_grad():
@@ -98,7 +101,6 @@ class SelfSpeculativeDecoder:
             if k <= 0:
                 break
                 
-            # 1. Draft K candidate tokens autoregressively
             draft_ids = curr_ids.clone()
             draft_logits_list = []
             
@@ -114,14 +116,12 @@ class SelfSpeculativeDecoder:
                     next_token = torch.multinomial(probs, num_samples=1)
                 draft_ids = torch.cat([draft_ids, next_token], dim=-1)
                 
-            draft_tokens = draft_ids[:, curr_ids.shape[-1] :]  # (B, K)
+            draft_tokens = draft_ids[:, curr_ids.shape[-1] :]
             total_draft_tokens += k
             
-            # 2. Evaluate all K+1 candidate positions in ONE parallel target forward pass
             target_logits = self._get_logits(self.target_model, draft_ids, is_draft=False)
             total_target_passes += 1
             
-            # Verification loop
             num_accepted = 0
             curr_pos = curr_ids.shape[-1]
             
@@ -131,18 +131,15 @@ class SelfSpeculativeDecoder:
                 d_token = draft_tokens[:, i : i + 1]
                 
                 if temperature == 0.0:
-                    # Greedy Verification
                     greedy_target_token = torch.argmax(t_logits, dim=-1, keepdim=True)
                     if (d_token == greedy_target_token).all():
                         curr_ids = torch.cat([curr_ids, d_token], dim=-1)
                         num_accepted += 1
                     else:
-                        # Mismatch: emit true target greedy token and break
                         curr_ids = torch.cat([curr_ids, greedy_target_token], dim=-1)
                         num_accepted += 1
                         break
                 else:
-                    # Stochastic Rejection Sampling
                     p_target = F.softmax(t_logits / max(temperature, 1e-5), dim=-1)
                     p_draft = F.softmax(draft_logits_list[i] / max(temperature, 1e-5), dim=-1)
                     
@@ -155,7 +152,6 @@ class SelfSpeculativeDecoder:
                         curr_ids = torch.cat([curr_ids, d_token], dim=-1)
                         num_accepted += 1
                     else:
-                        # Rejection: sample from normalized residual (p_t - p_d)+
                         res_p = torch.clamp(p_target - p_draft, min=0.0)
                         res_norm = res_p.sum()
                         if res_norm > 1e-8:
@@ -167,7 +163,6 @@ class SelfSpeculativeDecoder:
                         num_accepted += 1
                         break
             else:
-                # All K tokens accepted! Emit bonus token from target at position K+1 if budget allows
                 if curr_ids.shape[-1] - prompt_len < max_new_tokens:
                     bonus_logits = target_logits[:, -1, :]
                     if temperature == 0.0:
@@ -180,12 +175,10 @@ class SelfSpeculativeDecoder:
 
             total_accepted_tokens += num_accepted
             
-            # Enforce max_new_tokens limit
             if curr_ids.shape[-1] - prompt_len >= max_new_tokens:
                 curr_ids = curr_ids[:, : prompt_len + max_new_tokens]
                 break
             
-            # Adaptive draft horizon update
             if self.adaptive_k:
                 step_acc_rate = num_accepted / (k + 1)
                 if step_acc_rate > 0.75 and self.current_k < self.max_draft_k:

@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Trainer Factory
 
 Factory interface for instantiating specialized trainers based on model and training configurations.
-
-Author: Taha Majlesi
 """
 
 from typing import Any
@@ -19,5 +23,5 @@ def get_trainer(key: str = "hf") -> Any:
     """Return a trainer class (not instance)."""
     trainer_cls = TRAINER_FACTORY_REGISTRY.get(key)
     if trainer_cls is None:
-        return HuggingFaceTrainer  # default fallback
+        return HuggingFaceTrainer
     return trainer_cls

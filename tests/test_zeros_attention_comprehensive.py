@@ -1,3 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 import types
 
 import pytest
@@ -41,22 +48,17 @@ def test_causal_shape_and_causality():
     B, L, D = 2, 8, 64
     x = torch.randn(B, L, D)
 
-    # 1. Shape check
     out, _ = attn(x)
     assert out.shape == (B, L, D), f"Expected shape {(B, L, D)}, got {out.shape}"
     assert not torch.isnan(out).any(), "Output contains NaNs"
 
-    # 2. Strict Causality check:
-    # Modifying future tokens (e.g. at index > l) must not affect output at position l
     l_probe = 3
     x_mod = x.clone()
-    # Change all tokens strictly after l_probe
     x_mod[:, l_probe + 1 :, :] = torch.randn_like(x_mod[:, l_probe + 1 :, :]) * 5.0 + 10.0
 
     out_orig, _ = attn(x)
     out_mod, _ = attn(x_mod)
 
-    # Positions 0 to l_probe must be identical within numerical precision
     diff = torch.max(torch.abs(out_orig[:, : l_probe + 1, :] - out_mod[:, : l_probe + 1, :]))
     assert diff.item() < 1e-5, f"Causality violated! Max diff at probe pos: {diff.item()}"
 
@@ -69,7 +71,7 @@ def test_bidirectional_shape_and_centering():
     B, L, D = 2, 8, 64
     x = torch.randn(B, L, D)
     mask = torch.ones(B, L)
-    mask[:, -2:] = 0  # Mask out last two tokens
+    mask[:, -2:] = 0
 
     out, _ = attn(x, attention_mask=mask)
     assert out.shape == (B, L, D), f"Expected {(B, L, D)}, got {out.shape}"
@@ -77,13 +79,11 @@ def test_bidirectional_shape_and_centering():
 
 
 def test_rope_and_even_odd_dim_safety():
-    # Test _rotate_half on both even and odd dimensions
     for d in [16, 17, 63, 64]:
         t = torch.randn(2, 4, 8, d)
         rotated = _rotate_half(t)
         assert rotated.shape == t.shape, f"Odd dim {d} failed shape preservation in _rotate_half"
 
-    # Test apply_rotary_pos_emb with odd dimension
     head_dim_odd = 15
     q = torch.randn(2, 8, 4, head_dim_odd)
     k = torch.randn(2, 8, 4, head_dim_odd)
@@ -104,16 +104,13 @@ def test_inject_with_none_old_attn_returns_none():
 
 
 def test_lora_adapter_preservation():
-    # Construct source module with LoRA adapters
     src = DummyAttn(64)
-    # Wrap q_proj with mock LoRA
     src.q_proj.lora_A = nn.Parameter(torch.randn(16, 64) * 0.5)
     src.q_proj.lora_B = nn.Parameter(torch.randn(64, 16) * 0.5)
 
     cfg = make_config(hidden_size=64, num_heads=4)
     zeros = ZeroSAttention(cfg, pretrained_attn=src)
 
-    # Check that lora weights were copied and remain trainable
     assert zeros.W_q.lora_A is not None
     assert zeros.W_q.lora_B is not None
     assert torch.allclose(zeros.W_q.lora_A, src.q_proj.lora_A)
@@ -131,22 +128,18 @@ def test_head_mask_broadcasting():
     B, L, D, H = 2, 8, 64, 4
     x = torch.randn(B, L, D)
 
-    # 1D mask [H]
     m1 = torch.ones(H)
     out1, _ = attn(x, head_mask=m1)
     assert out1.shape == (B, L, D)
 
-    # 2D mask [B, H]
     m2 = torch.ones(B, H)
     out2, _ = attn(x, head_mask=m2)
     assert out2.shape == (B, L, D)
 
-    # 3D mask [B, H, L]
     m3 = torch.ones(B, H, L)
     out3, _ = attn(x, head_mask=m3)
     assert out3.shape == (B, L, D)
 
-    # 4D mask [B, H, L, L]
     m4 = torch.ones(B, H, L, L)
     out4, _ = attn(x, head_mask=m4)
     assert out4.shape == (B, L, D)
@@ -162,7 +155,6 @@ def test_four_architectures_forward():
     x = torch.randn(2, 8, 64)
 
     for arch_name, model in models.items():
-        # Inject ZeroSAttention into the model self-attention
         old_attn = (
             getattr(model, "attention", None)
             or getattr(model, "attn", None)
@@ -177,13 +169,11 @@ def test_four_architectures_forward():
         )
         assert injected is not None, f"Injection failed for {arch_name}"
 
-        # Forward check
         out = model(x)
         assert out.shape == (2, 8, 2), f"{arch_name} output shape mismatch: {out.shape}"
         assert not torch.isnan(out).any(), f"{arch_name} output contains NaNs"
         assert not torch.isinf(out).any(), f"{arch_name} output contains Infs"
 
-        # Backward check
         loss = out.sum()
         loss.backward()
         grad_params = sum(1 for p in model.parameters() if p.grad is not None)

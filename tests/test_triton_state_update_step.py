@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Unit test for Triton & PyTorch fallback single-step recurrent update kernels."""
 import pytest
 import torch
@@ -39,7 +45,7 @@ def test_fused_recurrent_gla_step(device_str):
     q_t = torch.randn(B, H, Dk, device=device, dtype=dtype)
     k_t = torch.randn(B, H, Dk, device=device, dtype=dtype)
     v_t = torch.randn(B, H, Dv, device=device, dtype=dtype)
-    gk_t = -torch.rand(B, H, Dk, device=device, dtype=dtype)  # log decay
+    gk_t = -torch.rand(B, H, Dk, device=device, dtype=dtype)
     kv_state = torch.zeros(B, H, Dk, Dv, device=device, dtype=dtype)
 
     o_t, next_kv = fused_recurrent_gla_step(q_t, k_t, v_t, gk_t, kv_state)

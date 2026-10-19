@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -5,15 +12,6 @@
 
 namespace neuralops { namespace cuda {
 
-// Reformer LSH Attention Forward Kernel:
-// Form: Attends strictly to tokens within the same hash bucket.
-//
-// Hardware-level optimization:
-// 1. Warp-Per-Query (32 threads/query token): 100% coalesced vector loads across lane and zero register spilling.
-// 2. Intra-warp shuffle reduction (__shfl_xor_sync) for dot-product.
-// 3. Single-pass online softmax with dynamic value rescaling (FlashAttention style).
-// 4. Strict LSH hash bucket filtering: hash_buckets[b * N + j] == my_bucket.
-// 5. Strict FP32 intermediate accumulation to avoid precision overflow.
 template <typename scalar_t>
 __global__ void __launch_bounds__(128) reformer_fwd_kernel(
     scalar_t* __restrict__ out,
@@ -101,7 +99,7 @@ __global__ void __launch_bounds__(128) reformer_fwd_kernel(
     }
 }
 
-}} // namespace neuralops::cuda
+}}
 
 torch::Tensor reformer_fwd(
     const torch::Tensor& qk,

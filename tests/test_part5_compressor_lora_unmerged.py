@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Part 5 Verification: Preserving Unmerged LoRA Adapters for Compressor Recovery (RCA-5)."""
 import pytest
 import torch
@@ -10,7 +16,6 @@ def test_unmerged_lora_gradient_flow():
     lora = LoRALinear(base, r=4, alpha=8.0)
     assert not lora.merged
 
-    # Simulate compressor factorizing the base_layer
     class SVDMock(nn.Module):
         def __init__(self):
             super().__init__()

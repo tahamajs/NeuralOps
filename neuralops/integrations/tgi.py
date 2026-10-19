@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Text Generation Inference Integration
 
 Provides serving hooks and model architecture adapters for Text Generation Inference (TGI).
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -34,7 +38,6 @@ class TGIRequest:
         eos_token_id: Optional[int] = None,
     ):
         self.request_id = request_id
-        # input_ids: [L] 1D long tensor
         self.input_ids = input_ids
         self.max_new_tokens = max_new_tokens
         self.stop_sequences = stop_sequences or []
@@ -50,7 +53,6 @@ class TGIRequest:
         self.stream_queue: queue.Queue[Optional[Tuple[int, str, bool]]] = queue.Queue()
  
  
-# Alias for backwards compatibility
 TGIRequestSlot = TGIRequest
 
 
@@ -147,7 +149,6 @@ class TGIServingAdapter:
 
         self.batch_manager = TGIRequestBatch(max_batch_size=max_batch_size, max_seq_len=max_seq_len)
 
-        # Operational metrics tracking
         self._total_requests = 0
         self._total_tokens_generated = 0
         self._step_times: collections.deque[float] = collections.deque(maxlen=100)
@@ -231,7 +232,7 @@ class TGIServingAdapter:
             if not slot or slot.input_ids is None or slot.past_kv is not None or slot.finished:
                 continue
 
-            inp = slot.input_ids.unsqueeze(0).to(self.device)  # [1, L]
+            inp = slot.input_ids.unsqueeze(0).to(self.device)
             try:
                 outputs = self.model(inp, use_cache=True)
                 logits = outputs.logits[:, -1, :] if hasattr(outputs, "logits") else outputs[:, -1, :]
@@ -268,7 +269,6 @@ class TGIServingAdapter:
         step_t0 = time.time()
         new_tokens: Dict[str, int] = {}
 
-        # 1. Ensure un-prefilled requests complete prompt ingestion
         needs_prefill = [
             r_id for r_id in active_ids
             if r_id in self.batch_manager.active_slots
@@ -278,7 +278,6 @@ class TGIServingAdapter:
         if needs_prefill:
             self.prefill(needs_prefill)
 
-        # 2. Decode next token for all active, prefilled sequences
         for req_id in active_ids:
             slot = self.batch_manager.active_slots.get(req_id)
             if not slot or slot.finished:

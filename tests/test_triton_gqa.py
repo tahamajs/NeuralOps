@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Comprehensive test suite for neuralops.core.triton_kernels.gqa.
 
@@ -18,9 +24,6 @@ from neuralops.core.triton_kernels._common import HAS_TRITON, gqa_pytorch_fallba
 from neuralops.core.triton_kernels.gqa import fwd, bwd, is_supported
 
 
-# ═══════════════════════════════════════════════════
-# Test fixtures
-# ═══════════════════════════════════════════════════
 
 @pytest.fixture
 def device():
@@ -40,9 +43,6 @@ def reference_gqa_pytorch(k: torch.Tensor, v: torch.Tensor, num_kv_heads: int, n
     return k_exp, v_exp
 
 
-# ═══════════════════════════════════════════════════
-# Numerical correctness
-# ═══════════════════════════════════════════════════
 
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float16, torch.bfloat16])
 @pytest.mark.parametrize("batch", [1, 2, 4])
@@ -66,9 +66,6 @@ def test_gqa_correctness(device, dtype, batch, seq_len, num_kv_heads, num_heads,
     assert torch.allclose(v_out, v_ref, atol=1e-3, rtol=1e-3)
 
 
-# ═══════════════════════════════════════════════════
-# Edge cases & Unsupported checks
-# ═══════════════════════════════════════════════════
 
 def test_gqa_equal_heads(device):
     """When num_heads == num_kv_heads, return inputs directly without copy overhead."""
@@ -101,13 +98,9 @@ def test_gqa_unsupported_ratio_fallback(device):
     """num_heads not divisible by num_kv_heads should fallback or be handled safely."""
     k = torch.randn(2, 3, 32, 64, device=device)
     v = torch.randn(2, 3, 32, 64, device=device)
-    # 7 is not divisible by 3 -> is_supported returns False
     assert not is_supported(k, v, 3, 7)
 
 
-# ═══════════════════════════════════════════════════
-# Fallback path & Determinism
-# ═══════════════════════════════════════════════════
 
 def test_gqa_pytorch_fallback_cpu():
     """Verify PyTorch fallback works seamlessly on CPU."""
@@ -130,16 +123,12 @@ def test_gqa_deterministic(device):
     assert torch.equal(v1, v2)
 
 
-# ═══════════════════════════════════════════════════
-# Backward gradient reduction
-# ═══════════════════════════════════════════════════
 
 def test_gqa_backward_reduction(device):
     """Verify gradient reduction correctly reduces expanded gradients."""
     grad_k = torch.ones(2, 8, 16, 64, device=device)
     grad_v = torch.ones(2, 8, 16, 64, device=device)
     gk, gv = bwd(grad_k, grad_v, num_kv_heads=2, num_heads=8)
-    # Each KV head was repeated 4 times, so sum should be 4.0
     assert gk.shape == (2, 2, 16, 64)
     assert gv.shape == (2, 2, 16, 64)
     assert torch.allclose(gk, torch.full_like(gk, 4.0))

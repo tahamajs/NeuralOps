@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Custom Loop Trainer
 
 High-performance custom training loop with DDP gradient accumulation and synchronization safety.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -100,8 +104,6 @@ class CustomLoopTrainer(BaseTrainer):
         """
         Execute a single training epoch with DDP gradient accumulation synchronization optimization.
 
-        # FIX: Non-final micro-batches are wrapped in model.no_sync() or contextlib.nullcontext()
-        # to eliminate redundant all-reduce synchronization across distributed workers during gradient accumulation.
         """
         self.model.train()
         total_epoch_loss = 0.0
@@ -109,10 +111,8 @@ class CustomLoopTrainer(BaseTrainer):
         accum_steps = max(1, gradient_accumulation_steps)
 
         for step, batch in enumerate(train_loader):
-            # FIX: Determine whether this micro-batch is the final step of the accumulation window or epoch
             is_sync_step = ((step + 1) % accum_steps == 0) or (step + 1 == num_batches)
 
-            # FIX: Wrap non-final micro-batches in model.no_sync() for DDP to eliminate redundant all-reduce synchronization
             sync_context = (
                 contextlib.nullcontext()
                 if (
@@ -156,7 +156,6 @@ class CustomLoopTrainer(BaseTrainer):
                         )
                         loss = nn.functional.cross_entropy(logits, labels)
 
-                    # FIX: Scale loss by accumulation factor so gradient magnitudes match the full effective batch size
                     if accum_steps > 1:
                         loss = loss / accum_steps
 
@@ -171,7 +170,6 @@ class CustomLoopTrainer(BaseTrainer):
                 else:
                     curr_loss = 0.0
 
-                # FIX: Only unscale, clip gradients, and step optimizer when synchronized on accumulation boundary
                 if scaler is not None and scaler.is_enabled():
                     try:
                         scaler.unscale_(optimizer)

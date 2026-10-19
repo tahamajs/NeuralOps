@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 SVD-Aware HuggingFace Trainer
 
 Custom HuggingFace Trainer supporting SVD compression callbacks and attention map logging.
-
-Author: Taha Majlesi
 """
 
 import gc
@@ -207,20 +211,17 @@ def create_trainer(
     if greater_is_better is None and eval_dataset is not None:
         greater_is_better = False if "loss" in metric_for_best_model else True
 
-    # Pop GPU-specific optional args that may not exist in all transformers versions
     save_safetensors = training_args_kwargs.pop("save_safetensors", False)
     dataloader_pin_memory = training_args_kwargs.pop("dataloader_pin_memory", True)
     dataloader_num_workers = training_args_kwargs.pop("dataloader_num_workers", 0)
-    _ = training_args_kwargs.pop("remove_unused_columns", None)  # handled below
+    _ = training_args_kwargs.pop("remove_unused_columns", None)
 
-    # Precision & Linear-Time Scalability Features
     fp16 = training_args_kwargs.pop("fp16", False)
     bf16 = training_args_kwargs.pop("bf16", False)
     gradient_checkpointing = training_args_kwargs.pop("gradient_checkpointing", False)
     optim = training_args_kwargs.pop("optim", "adamw_hf")
     lr_scheduler_type = training_args_kwargs.pop("lr_scheduler_type", "linear")
 
-    # Build only the kwargs that TrainingArguments actually supports
     import inspect as _inspect
 
     _ta_params = set(_inspect.signature(TrainingArguments.__init__).parameters)
@@ -269,7 +270,6 @@ def create_trainer(
     )
 
 
-# Backward-compatible aliases
 CompressionTrainer = SVDAwareTrainer
 from neuralops.trainer.metrics import get_task_metrics as get_compute_metrics  # noqa: F401
 

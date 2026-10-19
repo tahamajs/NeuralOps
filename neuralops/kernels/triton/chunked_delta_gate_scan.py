@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Chunked Delta-Gate Recurrent Scan
 
 Computes gated delta-rule fast-weight matrix recurrence using chunked parallel scans in on-chip SRAM registers.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -62,12 +66,9 @@ def _chunked_delta_scan_kernel(
     offs_k = tl.arange(0, D_K)
     offs_v = tl.arange(0, D_V)
 
-    # Recurrent fast-weight state S in SRAM: shape (D_V, D_K)
-    # o_t = S @ q_t -> (D_V, D_K) @ (D_K,) = (D_V,)
     S_state = tl.zeros((D_V, D_K), dtype=tl.float32)
 
     for t in range(0, L):
-        # 1. Load q_t, k_t, v_t, alpha_t, beta_t
         q_ptrs = q_ptr + pid_b * stride_qb + pid_h * stride_qh + t * stride_ql + offs_k * stride_qd
         k_ptrs = k_ptr + pid_b * stride_kb + pid_h * stride_kh + t * stride_kl + offs_k * stride_kd
         v_ptrs = v_ptr + pid_b * stride_vb + pid_h * stride_vh + t * stride_vl + offs_v * stride_vd
@@ -79,21 +80,15 @@ def _chunked_delta_scan_kernel(
         alpha_val = tl.load(alpha_ptr + pid_b * stride_ab + pid_h * stride_ah + t * stride_al).to(tl.float32)
         beta_val = tl.load(beta_ptr + pid_b * stride_bb + pid_h * stride_bh + t * stride_bl).to(tl.float32)
 
-        # 2. Decay previous state: S = alpha_t * S
         S_state = alpha_val * S_state
 
-        # 3. Delta-rule correction: v_corr = v_t - (S @ k_t)
-        # S_state is (D_V, D_K), k_t is (D_K,) -> dot gives (D_V,)
         pred_v = tl.sum(S_state * k_t[None, :], axis=1)
         v_corr = v_t - pred_v
 
-        # 4. Rank-1 Householder state update: S += beta_val * (v_corr[:, None] * k_t[None, :])
         S_state = S_state + beta_val * (v_corr[:, None] * k_t[None, :])
 
-        # 5. Output projection: o_t = S_state @ q_t -> (D_V,)
         o_t = tl.sum(S_state * q_t[None, :], axis=1)
 
-        # 6. Store o_t to HBM
         o_ptrs = o_ptr + pid_b * stride_ob + pid_h * stride_oh + t * stride_ol + offs_v * stride_od
         tl.store(o_ptrs, o_t.to(q_ptr.dtype.element_ty))
 
@@ -124,7 +119,6 @@ def triton_chunked_delta_gate_scan(
     D_V = v.shape[-1]
 
     if not q.is_cuda or D_K > 64 or D_V > 64:
-        # PyTorch reference
         out = torch.empty_like(v)
         for b in range(B):
             for h in range(H):

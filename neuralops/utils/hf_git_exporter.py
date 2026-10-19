@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 HuggingFace and Git Exporter
 
 Automated exporter synchronizing benchmark runs and models to Hugging Face and Git.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -19,7 +23,7 @@ from typing import Any
 import torch
 
 LOG = logging.getLogger("HFGitExporter")
-os.environ["HF_XET_HIGH_PERFORMANCE"] = "1"  # قبل از import
+os.environ["HF_XET_HIGH_PERFORMANCE"] = "1"
 import warnings
 
 warnings.filterwarnings("ignore", category=FutureWarning, module="huggingface_hub")
@@ -57,7 +61,6 @@ def find_documentation_file(module_name: str, docs_dir: Path | None = None) -> P
             if p.exists():
                 return p
 
-    # Fallback recursive search
     for p in docs_dir.glob("**/*.md"):
         stem = p.stem.lower().replace("-", "_")
         if stem in candidates or norm in stem:
@@ -113,11 +116,9 @@ metrics:
 - f1
 ---
 
-# SVD Linear Attention: {model_name} with {module_name}
 
 This repository hosts a validated factorized/compressed checkpoint of **{model_name}** using the **{module_name}** module evaluated on **{dataset_name}**.
 
-## Evaluation Summary
 - **Accuracy**: `{acc:.2f}%`
 - **F1 Score**: `{f1}`
 - **Precision**: `{prec}`
@@ -126,7 +127,6 @@ This repository hosts a validated factorized/compressed checkpoint of **{model_n
 - **Verification Status**: `{status}`
 - **Date**: `{date_str}`
 
-## Efficiency & Compression Profile
 - **Original Parameters**: `{comp_metrics.get("total_params_before", "N/A")}`
 - **Compressed Parameters**: `{comp_metrics.get("total_params_after", "N/A")}`
 - **Compression Rate**: `{comp_rate}x`
@@ -138,12 +138,10 @@ This repository hosts a validated factorized/compressed checkpoint of **{model_n
 - **Peak VRAM**: `{vram} MB`
 - **Inference Throughput**: `{throughput} tokens/sec`
 
-## Benchmark Configuration
 ```json
 {json.dumps(cfg_clean, indent=2)}
 ```
 
-## Reproducibility
 Trained and factorized via the Unified SVD Linear Attention Framework.
 """
     return card
@@ -185,7 +183,6 @@ def update_documentation_table(
 
         row = f"| **{model_name}** | {dataset_name} | `{status}` | {base_str} | **{acc:.2f}%** | {delta_str} | {f1_str} | {comp_rate_str} | {num_compressed} | {hf_link} | {date_str} |\n"
 
-        # Check if table already exists with headers
         if "| Model | Dataset | Status |" in content:
             lines = content.splitlines()
             replaced = False
@@ -197,16 +194,13 @@ def update_documentation_table(
                 else:
                     new_lines.append(line)
             if not replaced:
-                # Find the table header and insert under it
                 header_idx = -1
                 for idx, line in enumerate(new_lines):
                     if "| Model | Dataset | Status |" in line:
                         header_idx = idx
                         break
                 if header_idx != -1:
-                    # skip header and divider line
                     insert_idx = header_idx + 2
-                    # find the end of the table
                     while insert_idx < len(new_lines) and new_lines[insert_idx].startswith("|"):
                         insert_idx += 1
                     new_lines.insert(insert_idx, row.strip())
@@ -214,7 +208,6 @@ def update_documentation_table(
                     new_lines.append(row.strip())
             content = "\n".join(new_lines)
         elif any("Empirical Benchmark Results" in line for line in content.splitlines()):
-            # Insert table right after the section header
             lines = content.splitlines()
             header_idx = -1
             for idx, line in enumerate(lines):
@@ -234,7 +227,6 @@ def update_documentation_table(
             content = "\n".join(lines)
         else:
             table_block = f"""
-## Empirical Benchmark Results
 
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
@@ -261,7 +253,6 @@ def upload_to_huggingface(
     config_dict: dict | None = None,
 ) -> str | None:
     """Upload model directory to a private Hugging Face repository."""
-    # Temporarily remove any offline switches to ensure Hugging Face Hub connectivity
     old_offline = os.environ.pop("HF_HUB_OFFLINE", None)
     old_tr_offline = os.environ.pop("TRANSFORMERS_OFFLINE", None)
     old_ds_offline = os.environ.pop("HF_DATASETS_OFFLINE", None)
@@ -272,10 +263,8 @@ def upload_to_huggingface(
 
         api = HfApi()
 
-        # 1. Ensure private repo exists
         api.create_repo(repo_id=repo_id, private=True, exist_ok=True, repo_type="model")
 
-        # 2. Write model card
         readme_path = export_dir / "README.md"
         readme_path.write_text(
             generate_model_card(
@@ -289,7 +278,6 @@ def upload_to_huggingface(
             encoding="utf-8",
         )
 
-        # 3. Prune large uncompressed binary if present to keep upload lean (~90 MB)
         bin_file = export_dir / "pytorch_model.bin"
         if bin_file.exists():
             try:
@@ -297,7 +285,6 @@ def upload_to_huggingface(
             except Exception:
                 pass
 
-        # 4. Upload to private repo (robust against CAS/XetHub network restrictions)
         acc = float(perf_metrics.get("accuracy_pct", 0.0))
         f1 = perf_metrics.get("f1_score", "N/A")
         commit_msg = f"feat: upload {module_name} on {model_name} (Acc: {acc:.2f}%, F1: {f1})"
@@ -392,10 +379,8 @@ def commit_and_push_git(
 
         subprocess.run(["git", "commit", "-m", commit_message], cwd=cwd, check=True)
 
-        # Retry push up to 5 times — handles concurrent workers racing to push
         commit_hash = None
         for attempt in range(5):
-            # Clean up any stale rebase state before pulling
             for stale in [".git/rebase-merge", ".git/rebase-apply"]:
                 stale_path = (cwd / stale) if cwd else Path(stale)
                 if stale_path.exists():

@@ -1,5 +1,9 @@
-# -*- coding: utf-8 -*-
-# Author: Taha Majlesi
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Comprehensive Empirical Hardware Speedup & Roofline Leaderboard for NeuralOps.
 Benchmarks across 3 distinct tiers on NVIDIA RTX 4070 Ada GPU:
   Tier 1: Direct Micro-Benchmark of all 26 core Triton Kernel Modules vs PyTorch references
@@ -32,7 +36,6 @@ import neuralops.core.triton_kernels as triton_types
 
 logger = logging.getLogger("run_triton_speedup_leaderboard")
 
-# Set seeds
 torch.manual_seed(42)
 if torch.cuda.is_available():
     torch.cuda.manual_seed_all(42)
@@ -45,7 +48,6 @@ def measure_ms(fn, *args, warmup: int = 10, rep: int = 25, **kwargs) -> float:
         return 1.0
 
     torch.cuda.empty_cache()
-    # Warmup
     for _ in range(warmup):
         fn(*args, **kwargs)
     torch.cuda.synchronize()
@@ -68,7 +70,6 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
 
     results: List[Dict[str, Any]] = []
 
-    # 1. selective_scan.py
     try:
         from neuralops.core.triton_kernels.selective_scan import selective_scan_fn, selective_scan_ref
 
@@ -108,7 +109,6 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
         logger.warning("Kernel execution failed: %s", e, exc_info=True)
         print(f" Error in selective_scan.py: {e}")
 
-    # 2. gdn_scan.py
     try:
         from neuralops.core.triton_kernels.gdn_scan import gdn_scan_triton, gdn_scan_pytorch
 
@@ -142,7 +142,6 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
         logger.warning("Kernel execution failed: %s", e, exc_info=True)
         print(f" Error in gdn_scan.py: {e}")
 
-    # 3. gla_scan.py
     try:
         from neuralops.core.triton_kernels.gla_scan import gla_scan_triton, gla_scan_pytorch
 
@@ -175,7 +174,6 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
         logger.warning("Kernel execution failed: %s", e, exc_info=True)
         print(f" Error in gla_scan.py: {e}")
 
-    # 4. hgrn2_scan.py
     try:
         from neuralops.core.triton_kernels.hgrn2_scan import hgrn2_scan_triton, hgrn2_scan_pytorch
 
@@ -206,7 +204,6 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
         logger.warning("Kernel execution failed: %s", e, exc_info=True)
         print(f" Error in hgrn2_scan.py: {e}")
 
-    # 5. fms_scan.py
     try:
         from neuralops.core.triton_kernels.fms_scan import fms_scan_triton, fms_scan_pytorch
 
@@ -239,7 +236,6 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
         logger.warning("Kernel execution failed: %s", e, exc_info=True)
         print(f" Error in fms_scan.py: {e}")
 
-    # 6. linear_attn.py
     try:
         from neuralops.core.triton_kernels.linear_attn import fused_svd_linear_chunk_scan_triton
 
@@ -276,7 +272,6 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
         logger.warning("Kernel execution failed: %s", e, exc_info=True)
         print(f" Error in linear_attn.py: {e}")
 
-    # 7. cosformer_triton_kernel.py
     try:
         from neuralops.core.triton_kernels.cosformer_triton_kernel import cosformer_global_triton, cosformer_pytorch_fwd
 
@@ -318,7 +313,6 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
         logger.warning("Kernel execution failed: %s", e, exc_info=True)
         print(f" Error in cosformer_triton_kernel.py: {e}")
 
-    # 8. sliding_window.py
     try:
         from neuralops.core.triton_kernels.sliding_window import sliding_window_triton, sliding_window_pytorch
 
@@ -351,7 +345,6 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
         logger.warning("Kernel execution failed: %s", e, exc_info=True)
         print(f" Error in sliding_window.py: {e}")
 
-    # 9. block_sparse.py
     try:
         from neuralops.core.triton_kernels.block_sparse import (
             fused_moba_block_router_combine_triton,
@@ -388,7 +381,6 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
         logger.warning("Kernel execution failed: %s", e, exc_info=True)
         print(f" Error in block_sparse.py: {e}")
 
-    # 10. sparse_attn.py
     try:
         from neuralops.core.triton_kernels.sparse_attn import (
             fused_lsh_hash_and_bin_triton,
@@ -430,7 +422,6 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
         logger.warning("Kernel execution failed: %s", e, exc_info=True)
         print(f" Error in sparse_attn.py: {e}")
 
-    # 11. low_rank.py
     try:
         from neuralops.core.triton_kernels.low_rank import low_rank_forward
 
@@ -466,7 +457,6 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
         logger.warning("Kernel execution failed: %s", e, exc_info=True)
         print(f" Error in low_rank.py: {e}")
 
-    # 12. elementwise.py (SwiGLU & RMSNorm)
     try:
         from neuralops.core.triton_kernels.elementwise import fused_swiglu
 
@@ -501,7 +491,6 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
         logger.warning("Kernel execution failed: %s", e, exc_info=True)
         print(f" Error in elementwise.py: {e}")
 
-    # 13. fused_ce.py
     try:
         from neuralops.core.triton_kernels.fused_ce import fused_cross_entropy, fused_cross_entropy_pytorch
 
@@ -534,7 +523,6 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
         logger.warning("Kernel execution failed: %s", e, exc_info=True)
         print(f" Error in fused_ce.py: {e}")
 
-    # 14. fused_kd.py
     try:
         from neuralops.core.triton_kernels.fused_kd import fused_kd_loss, fused_kd_loss_pytorch
 
@@ -565,7 +553,6 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
         logger.warning("Kernel execution failed: %s", e, exc_info=True)
         print(f" Error in fused_kd.py: {e}")
 
-    # 15. fused_norm_linear.py
     try:
         from neuralops.core.triton_kernels.fused_norm_linear import fused_rmsnorm_gate_triton, fused_rmsnorm_gate
 
@@ -602,7 +589,6 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
         logger.warning("Kernel execution failed: %s", e, exc_info=True)
         print(f" Error in fused_norm_linear.py: {e}")
 
-    # 16. fused_rope.py
     try:
         from neuralops.core.triton_kernels.fused_rope import (
             fused_unified_rope_offset_triton,
@@ -645,7 +631,6 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
         logger.warning("Kernel execution failed: %s", e, exc_info=True)
         print(f" Error in fused_rope.py: {e}")
 
-    # 17. gqa.py
     try:
         from neuralops.core.triton_kernels.gqa import (
             fused_weighted_gqa_online_softmax_triton,
@@ -688,7 +673,6 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
         logger.warning("Kernel execution failed: %s", e, exc_info=True)
         print(f" Error in gqa.py: {e}")
 
-    # 18. paged_attention.py
     try:
         from neuralops.core.triton_kernels.paged_attention import paged_recurrent_state_step_triton
 
@@ -740,7 +724,6 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
         logger.warning("Kernel execution failed: %s", e, exc_info=True)
         print(f" Error in paged_attention.py: {e}")
 
-    # 19. state_update.py
     try:
         from neuralops.core.triton_kernels.state_update import fused_recurrent_ssm_step
 
@@ -754,7 +737,6 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
         st_state = torch.randn(B, D_m, N_m, device=device, dtype=torch.float32)
 
         def pt_ssm_step(x, dt, a, b, c, d, s):
-            # discretization
             """Execute pt ssm step routine."""
             dA = torch.exp(dt.unsqueeze(-1) * a.unsqueeze(0))
             dB = dt.unsqueeze(-1) * b.unsqueeze(1)
@@ -787,7 +769,6 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
         logger.warning("Kernel execution failed: %s", e, exc_info=True)
         print(f" Error in state_update.py: {e}")
 
-    # 20. softplus.py
     try:
         from neuralops.core.triton_kernels.softplus import softplus_fn, _softplus_pytorch
 
@@ -817,7 +798,6 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
         logger.warning("Kernel execution failed: %s", e, exc_info=True)
         print(f" Error in softplus.py: {e}")
 
-    # 21. flash_decoding.py
     try:
         from neuralops.core.triton_kernels.flash_decoding import flash_decoding_attention, flash_decoding_pytorch
 
@@ -854,7 +834,6 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
         logger.warning("Kernel execution failed: %s", e, exc_info=True)
         print(f" Error in flash_decoding.py: {e}")
 
-    # 22. varlen_attention.py
     try:
         from neuralops.core.triton_kernels.varlen_attention import varlen_attention_triton, varlen_attention_pytorch
 
@@ -895,7 +874,6 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
         logger.warning("Kernel execution failed: %s", e, exc_info=True)
         print(f" Error in varlen_attention.py: {e}")
 
-    # 23. autotuner.py
     try:
         from neuralops.core.triton_kernels.autotuner import estimate_kernel_sram_bytes
 
@@ -919,7 +897,6 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
         logger.warning("Kernel execution failed: %s", e, exc_info=True)
         print(f" Error in autotuner.py: {e}")
 
-    # 24. hardware_profile.py
     try:
         from neuralops.core.triton_kernels.hardware_profile import get_device_hardware_profile
 
@@ -943,7 +920,6 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
         logger.warning("Kernel execution failed: %s", e, exc_info=True)
         print(f" Error in hardware_profile.py: {e}")
 
-    # 25. op_registry.py
     try:
         from neuralops.core.triton_kernels.op_registry import check_triton_suitability
 
@@ -968,7 +944,6 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
         logger.warning("Kernel execution failed: %s", e, exc_info=True)
         print(f" Error in op_registry.py: {e}")
 
-    # 26. _types.py / _common.py
     try:
         from neuralops.core.triton_kernels import pad_to_triton_power_of_2, unpad_from_triton_power_of_2
 
@@ -995,7 +970,6 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
         logger.warning("Kernel execution failed: %s", e, exc_info=True)
         print(f" Error in _common.py: {e}")
 
-    # Sort results by speedup descending
     results.sort(key=lambda x: x["speedup_x"], reverse=True)
     return results
 
@@ -1006,15 +980,12 @@ def run_tier2_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
     print(">>> RUNNING TIER 2: ATTENTION ARCHITECTURE HARDWARE ROOFLINE LEADERBOARD")
     print("=" * 70)
 
-    # Curate top flagship mechanisms across all architectural families
     target_attentions = [
-        # SSM / Mamba Family
         ("selective_ssm", "SSM / Mamba", "O(T)", "O(D·N)"),
         ("mamba_block", "SSM / Mamba", "O(T)", "O(D·N)"),
         ("griffin_ssd", "SSM / Mamba", "O(T)", "O(D·N)"),
         ("simple_ssm", "SSM / Mamba", "O(T)", "O(D·N)"),
         ("upi_stuffed_mamba", "SSM / Mamba", "O(T)", "O(D·N)"),
-        # Gated DeltaNet & Recurrent Linear Family
         ("gated_delta_net", "Gated DeltaNet", "O(T)", "O(D²)"),
         ("gated_deltanet_block", "Gated DeltaNet", "O(T)", "O(D²)"),
         ("kda_attention", "Gated DeltaNet", "O(T)", "O(D²)"),
@@ -1024,18 +995,15 @@ def run_tier2_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
         ("gated_linear_attention", "Gated Linear Attn", "O(T)", "O(D²)"),
         ("decay_linear_attention", "Linear Recurrence", "O(T)", "O(D²)"),
         ("cosformer", "Linear Attention", "O(T)", "O(T)"),
-        # SVD & Low-Rank Factorized Family
         ("minimal_svd", "SVD Low-Rank", "O(T·r)", "O(T·r)"),
         ("svd_compressed", "SVD Low-Rank", "O(T·r)", "O(T·r)"),
         ("residual_svd_attention", "SVD Low-Rank", "O(T·r)", "O(T·r)"),
         ("svd_linear_decay", "SVD Linear", "O(T·r)", "O(r²)"),
         ("rpc_attention", "Random Projection", "O(T·r)", "O(T·r)"),
-        # Sparse, Windowed & Routing Family
         ("moba_attention", "Block Sparse MoA", "O(T·B_sz)", "O(T·B_sz)"),
         ("nsa_attention", "Hierarchical Sparse", "O(T·log T)", "O(T·log T)"),
         ("sink_attention", "Streaming Sink", "O(T·W)", "O(W)"),
         ("adasplash_attention", "Adaptive Sparse", "O(T·K)", "O(T·K)"),
-        # Hybrid & Meta-Mix Family
         ("jamba", "Hybrid SSM+Attn", "O(T)", "O(D·N + W)"),
         ("hymba_transx", "Hybrid Meta-Token", "O(T)", "O(D·N + W)"),
     ]
@@ -1059,7 +1027,6 @@ def run_tier2_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
                 device=device,
             )
 
-            # Compute throughput tokens/sec
             toks_per_sec = int((report.batch_size * report.seq_len) / (report.latency_triton_ms / 1000.0))
 
             records.append(
@@ -1086,7 +1053,6 @@ def run_tier2_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
             logger.warning("Tier 2 attention roofline failed: %s", e, exc_info=True)
             print(f" Error: {e}")
 
-    # Mark Pareto frontier
     pareto_mask = neuralops.compute_pareto_frontier(records)
     for i, rec in enumerate(records):
         rec["is_pareto"] = pareto_mask[i]
@@ -1161,11 +1127,9 @@ def run_tier3_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
             print(f" Profiling {name:<24} ({method})...", end="", flush=True)
             layer = layer_fn()
 
-            # Measure fused Triton pass
             triton_types.FORCE_PYTORCH_FALLBACK = False
             t_tri = measure_ms(layer, x, warmup=5, rep=15)
 
-            # Measure un-fused PyTorch fallback pass
             triton_types.FORCE_PYTORCH_FALLBACK = True
             t_pt = measure_ms(layer, x, warmup=5, rep=15)
             triton_types.FORCE_PYTORCH_FALLBACK = False
@@ -1206,12 +1170,10 @@ def main():
             f"Device: {dev_name} ({sm_ver}) | Peak: {peak_tf} TFLOPS, {peak_bw} GB/s | Ridge: {peak_tf * 1000 / peak_bw:.1f} FLOPs/B"
         )
 
-    # Run 3 tiers
     t1_results = run_tier1_benchmarks(device)
     t2_results = run_tier2_benchmarks(device)
     t3_results = run_tier3_benchmarks(device)
 
-    # Prepare outputs
     os.makedirs("results", exist_ok=True)
     full_data = {
         "device": dev_name if device == "cuda" else "CPU",
@@ -1224,13 +1186,11 @@ def main():
         "tier3_compression_engines": t3_results,
     }
 
-    # 1. Save JSON
     json_path = "results/triton_full_leaderboard_v136.json"
     with open(json_path, "w", encoding="utf-8") as f:
         json.dump(full_data, f, indent=2)
     print(f"\n[Saved JSON]: {json_path}")
 
-    # 2. Save CSV
     csv_path = "results/triton_full_leaderboard_v136.csv"
     with open(csv_path, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
@@ -1253,7 +1213,6 @@ def main():
                 writer.writerow(list(r.values()))
     print(f"[Saved CSV]: {csv_path}")
 
-    # 3. Generate Markdown & LaTeX
     md_lines = [
         "# ⚡ NeuralOps v1.3.6 Hardware Speedup Leaderboard",
         f"**Benchmark Platform**: {dev_name} ({sm_ver}) | Peak Compute: {peak_tf} TFLOPS (FP16) | Peak Memory Bandwidth: {peak_bw} GB/s | Hardware Ridge Point: {peak_tf * 1000 / peak_bw:.1f} FLOPs/Byte\n",
@@ -1315,7 +1274,6 @@ def main():
         f.write(md_content)
     print("[Saved Markdown]: results/triton_full_leaderboard_v136.md")
 
-    # LaTeX Booktabs
     tex_lines = [
         r"% ============================================================================",
         rf"% NeuralOps v1.3.6 Hardware Benchmark Leaderboard ({dev_name})",

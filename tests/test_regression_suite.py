@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Regression tests for known bugs and fixes."""
 
 import warnings
@@ -41,7 +47,6 @@ class TestKnownBugs:
         assert callable(evaluate_single_combination_opt)
         assert TRACK_MODULES is not None
 
-        # Verify backward-compatibility shim
         from neuralops.evaluation.eval_all_models_datasets import (
             apply_module_to_model as shim_apply,
         )

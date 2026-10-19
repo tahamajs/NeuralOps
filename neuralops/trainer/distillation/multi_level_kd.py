@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Multi-Level Distillation Library
 
 Multi-level attention and logit distillation loss library supporting multiple divergence modes.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -63,7 +67,6 @@ class LogitDistillationLoss(nn.Module):
     ) -> torch.Tensor:
         tau = self.temperature
 
-        # Triton in-forward fused execution
         if self.use_fused_linear_kd and student_hidden is not None and student_w is not None and teacher_hidden is not None and teacher_w is not None:
             return fused_linear_kl_loss(student_hidden, student_w, teacher_hidden, teacher_w, temperature=tau)
 
@@ -97,18 +100,15 @@ class LogitDistillationLoss(nn.Module):
             s_prob = F.softmax(s_logits.view(-1, s_logits.size(-1)), dim=-1)
             t_prob = F.softmax(t_logits.view(-1, t_logits.size(-1)), dim=-1)
 
-            # Target class probability
             p_s = s_prob.gather(1, labels)
             p_t = t_prob.gather(1, labels)
 
-            # Binary TCKD
             tckd = F.kl_div(
                 torch.log(torch.cat([p_s, (1.0 - p_s).clamp(min=1e-7)], dim=1)),
                 torch.cat([p_t, (1.0 - p_t).clamp(min=1e-7)], dim=1),
                 reduction="batchmean",
             )
 
-            # Non-target NCKD
             mask = torch.ones_like(s_prob, dtype=torch.bool)
             mask.scatter_(1, labels, False)
             s_nt = (s_prob * mask) / (1.0 - p_s).clamp(min=1e-7)
@@ -140,7 +140,6 @@ class SpikyFeatureMap(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         h = self.proj(x)
-        # Bounded dual exponential feature map
         h_pos = torch.exp(torch.clamp(h, -5.0, 5.0))
         h_neg = torch.exp(torch.clamp(-h, -5.0, 5.0))
         return torch.cat([h_pos, h_neg], dim=-1)
@@ -167,7 +166,7 @@ class HedgehogFeatureMapKDLoss(nn.Module):
         loss = torch.tensor(0.0, device=q_teacher.device, dtype=torch.float32)
         num_chunks = max(1, N // self.chunk_size)
 
-        for c in range(min(num_chunks, 4)):  # sample up to 4 chunks to keep compute bounded
+        for c in range(min(num_chunks, 4)):
             st = c * self.chunk_size
             en = min(st + self.chunk_size, N)
 
@@ -191,18 +190,15 @@ class MiniLMValueRelationKDLoss(nn.Module):
         self.eps = eps
 
     def forward(self, v_student: torch.Tensor, v_teacher: torch.Tensor) -> torch.Tensor:
-        # Flatten heads into batch: (B*H, N, D)
         Bs, Hs, N, Ds = v_student.shape
         Bt, Ht, _, Dt = v_teacher.shape
 
         vs = v_student.view(Bs * Hs, N, Ds)
         vt = v_teacher.view(Bt * Ht, N, Dt)
 
-        # Compute Gram relation matrices (N x N)
         rel_s = F.softmax(torch.bmm(vs, vs.transpose(1, 2)) / math.sqrt(Ds), dim=-1)
         rel_t = F.softmax(torch.bmm(vt, vt.transpose(1, 2)) / math.sqrt(Dt), dim=-1)
 
-        # Mean over heads if head counts differ
         rel_s_mean = rel_s.view(Bs, Hs, N, N).mean(dim=1)
         rel_t_mean = rel_t.view(Bt, Ht, N, N).mean(dim=1)
 
@@ -239,16 +235,13 @@ class LinearCKALoss(nn.Module):
         X = x.view(-1, x.size(-1)).float()
         Y = y.view(-1, y.size(-1)).float()
 
-        # If D is very large (e.g. vocab logits V=50,257), compute CKA on sample dimension N
         if X.size(1) > X.size(0):
             X = X.t()
             Y = Y.t()
 
-        # Center columns
         X = X - X.mean(dim=0, keepdim=True)
         Y = Y - Y.mean(dim=0, keepdim=True)
 
-        # Frobenius products
         XtX = torch.matmul(X.t(), X)
         YtY = torch.matmul(Y.t(), Y)
         XtY = torch.matmul(X.t(), Y)
@@ -294,7 +287,6 @@ class SmoothMaxOverLayersCKASteeringLoss(nn.Module):
             return torch.tensor(0.0, device=student_hidden_states[0].device if student_hidden_states else "cpu")
 
         stacked = torch.stack(layer_losses)
-        # SmoothMax via Log-Sum-Exp: tau * log(sum(exp(L_l / tau)))
         smooth_max = self.temperature * torch.logsumexp(stacked / self.temperature, dim=0)
         return smooth_max
 

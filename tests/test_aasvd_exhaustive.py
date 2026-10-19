@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Exhaustive Verification Suite for AASVD (Activation-Aware SVD) Compressor.
 Validates structural factorizations, streaming covariance estimation,
@@ -30,10 +36,10 @@ class TestSVDLinearLayer:
 
     def test_svd_linear_parameter_reduction(self):
         dense = nn.Linear(512, 512, bias=False)
-        dense_params = sum(p.numel() for p in dense.parameters())  # 512 * 512 = 262144
+        dense_params = sum(p.numel() for p in dense.parameters())
         
         svd = SVDLinear(512, 512, rank=32, bias=False)
-        svd_params = sum(p.numel() for p in svd.parameters())    # 32 * (512 + 512) = 32768
+        svd_params = sum(p.numel() for p in svd.parameters())
         
         assert svd_params < dense_params
         assert svd_params == 32768

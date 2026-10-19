@@ -1,6 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Eval continuous 500token stress module.
-
-Author: Taha Majlesi
 """
 
 import gc
@@ -108,7 +112,6 @@ for name, key in architectures:
             next_t = torch.argmax(logits, dim=-1, keepdim=True)
             curr_ids = torch.cat([curr_ids, next_t], dim=-1)
 
-            # Record VRAM and throughput checkpoints every 50 tokens
             if (step + 1) % 50 == 0:
                 torch.cuda.synchronize()
                 elapsed_now = time.perf_counter() - t_start
@@ -135,7 +138,6 @@ for name, key in architectures:
     final_vram = mem_trajectory[-1]["vram_mb"]
     state_drift = final_vram - initial_vram
 
-    # Text sample
     gen_text = tokenizer.decode(curr_ids[0][input_ids.shape[1] :], skip_special_tokens=True)
 
     print_log(

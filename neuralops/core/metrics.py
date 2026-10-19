@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Core Efficiency Metrics Engine
 
 Performance metrics calculating throughput, arithmetic intensity, compression ratios, and FLOP reductions.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -88,7 +92,7 @@ def compute_dataset_metrics(
             if mean_loss > 0:
                 metrics["perplexity"] = round(float(math.exp(min(mean_loss, 20))), 4)
 
-        else:  # default: accuracy
+        else:
             metrics["accuracy_pct"] = round(float(accuracy_score(all_labels, all_preds)) * 100.0, 2)
             labels_set = set(all_labels)
             avg = "binary" if len(labels_set) <= 2 else "macro"

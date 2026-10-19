@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Master End-to-End Framework Integration Test for NeuralOps v1.4.0.
 Unifying:
@@ -52,26 +58,20 @@ def test_master_end_to_end_framework_integration():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"[Master Integration] Running on device: {device}")
 
-    # Pillar 1: Registry verification
     assert "gated_delta_net" in ATTENTION_REGISTRY, "gated_delta_net must be in ATTENTION_REGISTRY"
     assert "svd" in COMPRESSOR_REGISTRY, "svd must be in COMPRESSOR_REGISTRY"
     print("[Pillar 1] Registry check passed: ATTENTION_REGISTRY & COMPRESSOR_REGISTRY verified.")
 
-    # Instantiate model
     model = ToyTransformer(vocab_size=100, hidden_size=64, num_layers=2).to(device)
 
-    # Pillar 2: Model Surgery & Healing
-    # Replace attention or transplant custom attention
     print("[Pillar 2] Performing Model Surgery...")
     try:
-        # We use replace_attention or fallback to injecting custom attention
         model = replace_attention(model, attention_type="gated_delta_net")
         heal_replaced_model(model)
     except Exception as e:
         print(f"[Pillar 2 Note] Surgery caught exception or used alternative path: {e}")
     print("[Pillar 2] Model Surgery & Micro-Healing completed.")
 
-    # Pillar 3: Compression
     print("[Pillar 3] Running Model Compression...")
     try:
         compressed_model = compress(model, method="svd", target_sparsity=0.2)
@@ -79,31 +79,26 @@ def test_master_end_to_end_framework_integration():
         compressed_model = model
     print("[Pillar 3] Compression completed.")
 
-    # Pillar 4: 6-Pillar Distillation
     print("[Pillar 4] Verifying 6-Pillar Distillation interface...")
     dummy_dataloader = [
         (torch.randint(0, 100, (2, 16), device=device), torch.randint(0, 100, (2, 16), device=device))
     ]
     try:
-        # Test distill function or distillation loss collection
         distill(model, teacher_model=model, train_loader=dummy_dataloader, epochs=1)
     except Exception as e:
         print(f"[Pillar 4 Note] Distill executed with stub/exception: {e}")
     print("[Pillar 4] Distillation pipeline verified.")
 
-    # Pillar 5: Paged KV Cache & PagedStateTable
     print("[Pillar 5] Testing PagedKVCache and PagedStateTable...")
     kv_cache = PagedKVCache(num_blocks=16, block_size=4, num_heads=4, head_dim=16)
     kv_cache.allocate_sequence(seq_id=1)
 
-    # Test PagedStateTable for recurrent models
     state_table = PagedStateTable(num_pages=32, num_heads=4, head_dim=16, device=device)
     page_id = state_table.allocate_page()
     pages = state_table.register_sequence(seq_id=1, initial_pages=1)
     assert len(pages) >= 1
     print("[Pillar 5] Paged KV Cache & PagedStateTable verified.")
 
-    # Pillar 6: Speculative Decoding
     print("[Pillar 6] Testing SelfSpeculativeDecoder...")
     decoder = SelfSpeculativeDecoder(target_model=model, draft_model=model, max_draft_k=4)
     input_ids = torch.randint(0, 100, (1, 8), device=device)
@@ -114,7 +109,6 @@ def test_master_end_to_end_framework_integration():
         print(f"[Pillar 6 Note] Speculative generation completed or handled: {e}")
     print("[Pillar 6] Self-Speculative Decoding verified.")
 
-    # Pillar 7: Export
     print("[Pillar 7] Testing Model Export...")
     try:
         export_model(model, format="onnx", output_path="results/master_test_model.onnx")

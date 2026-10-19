@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Unified Hybrid Attention Cache
 
 Multi-family KV and recurrent state cache managing standard attention, sliding window, and recurrent layers.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -45,7 +49,6 @@ class UnifiedHybridCache:
             if isinstance(layer_state, (tuple, list)) and len(layer_state) >= 1:
                 t = layer_state[0]
                 if isinstance(t, torch.Tensor):
-                    # Check if standard KV tensor (dim=4 with shape (B, H, T, D))
                     if t.dim() == 4 and t.shape[-2] != t.shape[-1]:
                         return t.shape[-2]
             elif isinstance(layer_state, torch.Tensor):
@@ -78,7 +81,6 @@ class UnifiedHybridCache:
         if state is None:
             return self.layers[layer_idx]
 
-        # 1. Full Attention / GQA Attention
         if "full" in layer_type.lower() or "dense" in layer_type.lower() or "gqa" in layer_type.lower():
             if isinstance(state, (tuple, list)) and len(state) >= 2:
                 k, v = state[0], state[1]
@@ -90,7 +92,6 @@ class UnifiedHybridCache:
                 self.layers[layer_idx] = updated_state
                 return updated_state
 
-        # 2. Sliding Window Attention
         if "window" in layer_type.lower() or "sliding" in layer_type.lower():
             if isinstance(state, (tuple, list)) and len(state) >= 2:
                 k, v = state[0], state[1]
@@ -105,8 +106,6 @@ class UnifiedHybridCache:
                 self.layers[layer_idx] = updated_state
                 return updated_state
 
-        # 3. Recurrent / Linear / SSM Attentions (GLA, GDN, GDN2, PGDN, HGRN2, RetNet, SVD)
-        # Recurrent state is constant O(1) in sequence length!
         self.layers[layer_idx] = state
         return state
 

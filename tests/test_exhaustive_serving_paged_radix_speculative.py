@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Suite 7: Exhaustive Verification Battery for Serving, PagedStateTable, RadixCache, and Speculative Decoding.
 Expanded to 15+ parameterized tests verifying:
@@ -36,10 +42,8 @@ def test_7_1_paged_state_table_multi_beam_fork_and_cow(num_forks):
         child_p = table.fork_sequence(parent_seq_id=10, child_seq_id=cid)
         assert child_p[0] == p_id
 
-    # Reference count must equal 1 (parent) + num_forks
     assert table.ref_counts[p_id] == 1 + num_forks
 
-    # CoW on first child
     new_child_p = table.prepare_write(seq_id=child_ids[0], page_slot=0)
     assert new_child_p != p_id
     assert table.ref_counts[p_id] == num_forks
@@ -100,7 +104,6 @@ def test_7_4_radix_prefix_cache_eviction_pressure(num_prefixes):
         allocated_pages.append(page)
         cache.insert_prefix([1000 + i, 2000 + i], page)
 
-    # All inserted prefixes should match exactly
     for i in range(num_prefixes):
         matched_page, matched_len = cache.match_prefix([1000 + i, 2000 + i])
         assert matched_len == 2

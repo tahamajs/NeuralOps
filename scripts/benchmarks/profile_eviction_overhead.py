@@ -1,6 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Profile eviction overhead module.
-
-Author: Taha Majlesi
 """
 
 import sys
@@ -15,22 +19,12 @@ from neuralops.core.cuda_kernels.paged_kv_evict.paged_kv_evict_autograd import p
 device = torch.device("cuda:0")
 print(f"Device: {torch.cuda.get_device_name(0)}")
 
-# Benchmark parameters:
-# In real production LLM serving (e.g. vLLM / SGLang / NeuralOps):
-# 1. Forward step time is evaluated across the full model layer stack (e.g., 28-32 Transformer layers).
-# 2. KV cache eviction is triggered amortized periodically (e.g. every W=64 decode steps when the buffer fills)
-#    OR during prefix prefill context handoff.
-# Amortized eviction overhead per step = (T_eviction / W) / T_forward_layer_stack.
-# We measure both:
-# (a) Per-layer isolated eviction time vs full 32-layer step time.
-# (b) Amortized per-step eviction cost under a standard window W=64 (or eviction frequency).
 
-# Attention configuration
 H = 16
 D_HEAD = 64
 D = H * D_HEAD
 NUM_LAYERS = 32
-EVICTION_INTERVAL = 64  # tokens generated between compaction triggers
+EVICTION_INTERVAL = 64
 
 batch_sizes = [1, 2, 4, 8]
 seq_lengths = [2048, 4096, 8192]
@@ -68,7 +62,6 @@ for B in batch_sizes:
             k_reshaped = k_cache.view(B, L, H, D_HEAD).transpose(1, 2)
             v_reshaped = v_cache.view(B, L, H, D_HEAD).transpose(1, 2)
 
-            # Single-layer forward step
             def run_single_layer(k, v):
                 """Execute run single layer routine."""
                 attn_out = F.scaled_dot_product_attention(q_step, k, v)
@@ -78,7 +71,6 @@ for B in batch_sizes:
                 mlp_out = torch.matmul(mlp_h, W_down)
                 return mlp_out
 
-            # Measure single-layer time over 50 iters
             for _ in range(10):
                 _ = run_single_layer(k_reshaped, v_reshaped)
             torch.cuda.synchronize()
@@ -93,10 +85,8 @@ for B in batch_sizes:
             torch.cuda.synchronize()
             single_layer_ms = start_base.elapsed_time(end_base) / iters
 
-            # Full model 32-layer forward pass step time
             model_step_ms = single_layer_ms * NUM_LAYERS
 
-            # Measure isolated eviction kernel execution time
             for _ in range(10):
                 _ = paged_kv_evict(k_cache, v_cache, keep_idx)
             torch.cuda.synchronize()
@@ -110,11 +100,8 @@ for B in batch_sizes:
             torch.cuda.synchronize()
             eviction_ms = start_evict.elapsed_time(end_evict) / iters
 
-            # Amortized eviction overhead per decode step across the 32-layer stack:
-            # When compaction happens every EVICTION_INTERVAL tokens:
             amortized_eviction_per_step_ms = (eviction_ms * NUM_LAYERS) / EVICTION_INTERVAL
             overhead_pct = (amortized_eviction_per_step_ms / model_step_ms) * 100.0
-            # Note: (eviction_ms * 32 / 64) / (single_layer * 32) = (eviction_ms / 64) / single_layer
 
             peak_vram_mb = torch.cuda.max_memory_allocated() / (1024**2)
             passes_threshold = overhead_pct < 3.5
@@ -159,7 +146,6 @@ for B in batch_sizes:
                 }
             )
 
-# Save results to CSV
 csv_path = "/mnt/d/SVD_linear_Attention/docs/benchmarks/paper_benchmarks_eviction_overhead.csv"
 os.makedirs(os.path.dirname(csv_path), exist_ok=True)
 fieldnames = [

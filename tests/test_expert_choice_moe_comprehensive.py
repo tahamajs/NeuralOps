@@ -1,3 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 from .testing_utils import MockConfig, DummyDistilBertAttention
 import pytest
 import torch
@@ -43,7 +50,6 @@ def test_expert_choice_moe_init_and_forward_basic():
     assert attn.aux_loss is not None
 
 def test_expert_choice_moe_none_config():
-    # Ensure config can be None without raising AttributeError
     attn = ExpertChoiceMoEAttention(config=None, hidden_size=64, num_attention_heads=4, lora_rank=4)
     x = torch.randn(2, 8, 64)
     out, _ = attn(x)

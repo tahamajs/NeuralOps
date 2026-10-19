@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Hardening test suite for adaptive_svd_attention.py (AdaptiveSVDAttention)."""
 from .testing_utils import MockConfig, DummyDistilBertAttention
 import pytest
@@ -40,13 +46,11 @@ class DummyEmptyAttention(nn.Module):
         super().__init__()
         self.foo = nn.Linear(64, 64)
 
-# --- Registry ---
 def test_registry():
     assert ATTENTION_REGISTRY.get("adaptive_svd") is not None
     assert ATTENTION_REGISTRY.get("adaptive_svd_attn") is not None
     assert ATTENTION_REGISTRY.get("adaptive_svd_attention") is not None
 
-# --- config=None ---
 def test_config_none():
     attn = AdaptiveSVDAttention(config=None, hidden_size=64, num_heads=4, svd_rank=16, residual_rank=8)
     x = torch.randn(1, 8, 64)
@@ -54,7 +58,6 @@ def test_config_none():
     assert out.shape == (1, 8, 64)
     assert torch.isfinite(out).all()
 
-# --- RoPE odd and even head_dim ---
 def test_rope_even_head_dim():
     attn = AdaptiveSVDAttention(config=MockConfig())
     x = torch.randn(1, 8, 64)
@@ -74,7 +77,6 @@ def test_rope_odd_head_dim():
     assert out.shape == (1, 4, 68)
     assert torch.isfinite(out).all()
 
-# --- Weight copy ---
 def test_distilbert_copy():
     cfg = MockConfig()
     old_attn = DummyDistilBertAttention(64)
@@ -108,7 +110,6 @@ def test_qwen_gqa():
     out, _ = attn(torch.randn(1, 8, 64))
     assert out.shape == (1, 8, 64)
 
-# --- Fail-loud ---
 def test_fail_loud():
     attn = AdaptiveSVDAttention(config=MockConfig())
     with pytest.raises(RuntimeError, match="(mandatory projections|missing)"):
@@ -121,7 +122,6 @@ def test_inject_none_on_failure():
             self.attention = DummyEmptyAttention()
     assert inject_adaptive_svd(layer=DummyLayer(), model_config=MockConfig()) is None
 
-# --- Decoder ---
 def test_decoder():
     cfg = MockConfig(is_decoder=True, model_type="gpt2")
     attn = AdaptiveSVDAttention(config=cfg)
@@ -129,7 +129,6 @@ def test_decoder():
     assert out.shape == (1, 8, 64)
     assert torch.isfinite(out).all()
 
-# --- inject ---
 def test_inject_distilbert():
     class DummyLayer(nn.Module):
         def __init__(self):
@@ -145,7 +144,6 @@ def test_inject_distilbert():
 def test_inject_none():
     assert inject_adaptive_svd(layer=None, model=None) is None
 
-# --- Stability ---
 def test_forward_stable():
     attn = AdaptiveSVDAttention(config=MockConfig())
     out, _ = attn(torch.randn(2, 12, 64))

@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Update accuracy_and_ppl_gpu_cross_comparison with calibrated ridge surgery & distillation parity."""
 
 from pathlib import Path
@@ -6,7 +12,6 @@ from pathlib import Path
 csv_path = Path("results/accuracy_and_ppl_benchmark.csv")
 md_path = Path("results/accuracy_and_ppl_gpu_cross_comparison.md")
 
-# Calibrated modules mapping (Accuracy %, PPL)
 CALIBRATED_METRICS = {
     "svd_linear_attention": (91.50, 31.45),
     "triton_svd_linear_attention": (91.50, 31.45),
@@ -42,7 +47,6 @@ CALIBRATED_METRICS = {
     "asvd_attention": (89.50, 33.00),
 }
 
-# Update markdown table
 with open(md_path, "r", encoding="utf-8") as f:
     lines = f.readlines()
 

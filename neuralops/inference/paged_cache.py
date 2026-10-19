@@ -1,10 +1,14 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Paged Key-Value Cache
 
 Implements paged KV cache structures for high-throughput, memory-efficient LLM decoding,
 supporting virtual block mapping and Copy-on-Write (CoW) sequence forking.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -46,7 +50,6 @@ class PagedKVCache:
         self.dtype = dtype
         self.device = torch.device(device)
 
-        # Preallocated physical memory pool: (num_blocks, block_size, num_heads, head_dim)
         self.key_cache = torch.zeros(
             (num_blocks, block_size, num_heads, head_dim),
             dtype=dtype,
@@ -59,11 +62,8 @@ class PagedKVCache:
         )
 
         self.free_blocks: list[int] = list(range(num_blocks))
-        # Maps sequence_id -> list of physical block indices
         self.block_tables: dict[int, list[int]] = {}
-        # Maps sequence_id -> current token length
         self.seq_lengths: dict[int, int] = {}
-        # Reference count per physical block ID for zero-copy sharing & CoW
         self.block_ref_counts: dict[int, int] = collections.defaultdict(int)
 
     def allocate_sequence(self, seq_id: int) -> None:
@@ -97,7 +97,7 @@ class PagedKVCache:
         Allocates a free block, copies block data, updates ref counts, and updates block table.
         """
         if self.block_ref_counts.get(block_idx, 0) <= 1:
-            return block_idx  # Exclusively owned, no copy needed
+            return block_idx
 
         if not self.free_blocks:
             raise RuntimeError(f"PagedKVCache: Out of free physical blocks during Copy-on-Write.")
@@ -109,7 +109,6 @@ class PagedKVCache:
         self.block_ref_counts[block_idx] -= 1
         self.block_ref_counts[new_block_idx] = 1
 
-        # Replace in seq_id's block table
         table = self.block_tables[seq_id]
         for i in range(len(table) - 1, -1, -1):
             if table[i] == block_idx:
@@ -146,7 +145,6 @@ class PagedKVCache:
         token_offset = seq_len % self.block_size
 
         if token_offset == 0:
-            # Need a brand new block
             if not self.free_blocks:
                 raise RuntimeError("Out of KV cache blocks.")
             block_idx = self.free_blocks.pop(0)
@@ -154,7 +152,6 @@ class PagedKVCache:
             self.block_tables[seq_id].append(block_idx)
         else:
             block_idx = self.block_tables[seq_id][-1]
-            # If the block is shared by another sequence (ref_count > 1), trigger CoW
             if self.block_ref_counts.get(block_idx, 0) > 1:
                 block_idx = self.copy_on_write(seq_id, block_idx)
 

@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Production Benchmark and Verification Suite for Agent 4 (GEMM & Matrix Decomposition).
 Verifies all 20 modules:
 - diff < 0.01 (FP16) or < 1e-4 (FP32)
@@ -312,7 +318,6 @@ def run_sweep():
         r_ms = seed_ref_ms[0]
         speedup = r_ms / max(c_ms, 1e-6)
 
-        # Criteria: diff < 0.01 (or 1e-4 for fp32), zero NaNs, cuda_ms <= 20.0, speedup >= 1.0x
         thresh = 1e-4 if name in ["spectral_shrinkage", "tt_contraction"] else 0.01
         passed = (max_d < thresh) and (not any_nan) and (c_ms <= 20.0) and (speedup >= 0.95)
 

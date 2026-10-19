@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 AMP and Numerical Safety Utilities
 
 Context managers and numerical guards preventing underflow and overflow in mixed precision.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -25,7 +29,6 @@ def fp32_accumulator_context(device: Optional[torch.device] = None) -> Generator
     """
     device_type = "cuda" if (torch.cuda.is_available() and (device is None or device.type == "cuda")) else "cpu"
     
-    # Check if autocast is currently active
     was_autocast_enabled = torch.is_autocast_enabled(device_type) if hasattr(torch, "is_autocast_enabled") else False
     
     if was_autocast_enabled:
@@ -85,7 +88,6 @@ def safe_svd(
     orig_dtype = matrix.dtype
     orig_device = matrix.device
     
-    # Cast to float32 minimum (float64 if double precision requested)
     work_dtype = torch.float32 if orig_dtype in (torch.float16, torch.bfloat16, torch.float32) else torch.float64
     
     with torch.amp.autocast(device_type="cuda" if orig_device.type == "cuda" else "cpu", enabled=False):
@@ -93,12 +95,10 @@ def safe_svd(
         try:
             U, S, Vh = torch.linalg.svd(M, full_matrices=full_matrices, driver=driver)
         except RuntimeError:
-            # Fallback 1: small diagonal jitter on current device
             try:
                 jitter = 1e-6 * torch.eye(M.shape[-2], M.shape[-1], device=M.device, dtype=work_dtype)
                 U, S, Vh = torch.linalg.svd(M + jitter, full_matrices=full_matrices)
             except RuntimeError:
-                # Fallback 2: Execute robustly on CPU (protects against cuSOLVER driver bugs on SM 6.x / GTX 1060)
                 M_cpu = M.detach().to("cpu")
                 U_cpu, S_cpu, Vh_cpu = torch.linalg.svd(M_cpu, full_matrices=full_matrices)
                 U = U_cpu.to(orig_device)

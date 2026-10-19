@@ -1,3 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 import types
 
 import pytest
@@ -43,7 +50,6 @@ def test_wgqa_forward_and_head_weights():
     B, L, D = 2, 8, 64
     x = torch.randn(B, L, D)
 
-    # Check learnable importance weights exist
     assert hasattr(attn, "k_weights") and attn.k_weights.shape == (2, 1)
     assert hasattr(attn, "v_weights") and attn.v_weights.shape == (2, 1)
 
@@ -66,7 +72,6 @@ def test_causal_shape_and_causality():
     assert out.shape == (B, L, D)
     assert not torch.isnan(out).any()
 
-    # Strict causality check: mutating tokens > l_probe should not alter output at <= l_probe
     l_probe = 3
     x_mod = x.clone()
     x_mod[:, l_probe + 1 :, :] = torch.randn_like(x_mod[:, l_probe + 1 :, :]) * 5.0 + 10.0
@@ -79,7 +84,6 @@ def test_causal_shape_and_causality():
 
 
 def test_gqa_pooling():
-    # Source has 8 heads, WGQA configured for 2 KV heads
     cfg = make_config(hidden_size=64, num_heads=8, num_kv_heads=2)
     src = DummyAttn(64, 8)
     attn = WeightedGroupedQueryAttention(cfg, pretrained_attn=src)
@@ -87,9 +91,8 @@ def test_gqa_pooling():
     assert attn.num_heads == 8
     assert attn.num_kv_heads == 2
     assert attn.kv_repeat == 4
-    # Check projection out_features
-    assert attn.k_proj.out_features == 2 * (64 // 8)  # 16
-    assert attn.v_proj.out_features == 2 * (64 // 8)  # 16
+    assert attn.k_proj.out_features == 2 * (64 // 8)
+    assert attn.v_proj.out_features == 2 * (64 // 8)
 
 
 def test_rope_and_even_odd_dim_safety():
@@ -133,22 +136,18 @@ def test_head_mask_broadcasting():
     B, L, D, H = 2, 8, 64, 4
     x = torch.randn(B, L, D)
 
-    # 1D: [H]
     hm1 = torch.ones(H)
     out1, _ = attn(x, head_mask=hm1)
     assert out1.shape == (B, L, D)
 
-    # 2D: [B, H]
     hm2 = torch.ones(B, H)
     out2, _ = attn(x, head_mask=hm2)
     assert out2.shape == (B, L, D)
 
-    # 3D: [B, H, L]
     hm3 = torch.ones(B, H, L)
     out3, _ = attn(x, head_mask=hm3)
     assert out3.shape == (B, L, D)
 
-    # 4D: [B, H, L, L]
     hm4 = torch.ones(B, H, L, L)
     out4, _ = attn(x, head_mask=hm4)
     assert out4.shape == (B, L, D)
@@ -165,6 +164,5 @@ def test_inject_wgqa():
     assert res is not None
     assert isinstance(layer.attention, WeightedGroupedQueryAttention)
 
-    # When old_attn is None, should return None gracefully
     none_res = inject_wgqa(layer=layer, old_attn=None)
     assert none_res is None

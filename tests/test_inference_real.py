@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Tests for production inference engine features."""
 import torch
 import torch.nn as nn
@@ -27,7 +33,6 @@ def test_real_inference_generate_penalties():
     engine = NeuralOpsInferenceEngine(model)
     ids = torch.tensor([[1, 2, 3]])
 
-    # Top-k & repetition penalty test
     out = engine.generate(ids, max_new_tokens=8, top_k=10, repetition_penalty=1.2)
     assert out.shape == (1, 11)
 
@@ -60,8 +65,8 @@ def test_real_continuous_batcher():
     assert len(step1) == 2
     step2 = batcher.step()
     assert len(step2) == 2
-    assert r1.finished  # generated 2 tokens
+    assert r1.finished
 
     step3 = batcher.step()
-    assert len(step3) == 1  # only r2 remaining
+    assert len(step3) == 1
     assert r2.finished

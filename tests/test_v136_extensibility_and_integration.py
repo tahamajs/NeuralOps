@@ -1,4 +1,9 @@
-# -*- coding: utf-8 -*-
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Comprehensive verification suite for NeuralOps v1.3.6 Extensibility, Custom Modules & Integration.
 
 Tests:
@@ -42,7 +47,6 @@ def test_universal_registry_and_inspector_contract():
     assert len(attn_keys) == 131, f"Expected 131 attentions, found {len(attn_keys)}"
     assert len(comp_keys) == 72, f"Expected 72 compressors, found {len(comp_keys)}"
 
-    # Sample inspect 5 attentions and 5 compressors
     for k in ["gated_delta_net", "gla_attention", "minimal_svd", "cosformer", "mamba_block"]:
         spec = inspect_architecture(k, category="attention")
         assert spec.name == k
@@ -101,18 +105,15 @@ def test_custom_plugin_lifecycle_and_contract_validation():
     try:
         assert custom_attn_name in ATTENTION_REGISTRY
 
-        # 1. Inspect custom module
         spec = inspect_architecture(custom_attn_name)
         assert spec.family == "linear-scan"
         assert spec.triton_kernel_module == "custom_kernel.py :: _fwd"
         assert "SRAM register accumulator" in spec.sram_fusion_strategy
 
-        # 2. Run automated 6-point contract diagnostic check
         val_res = validate_module_contract(custom_attn_name, embed_dim=64, num_heads=4, seq_len=16)
         assert val_res["all_passed"], f"Contract validation failed: {val_res}"
         assert val_res["passed_count"] == 6
 
-        # 3. Test Roofline profiling on custom module
         report = profile_roofline(
             custom_attn_name,
             batch_size=1,
@@ -125,7 +126,6 @@ def test_custom_plugin_lifecycle_and_contract_validation():
         assert report.total_flops > 0.0
         assert report.hbm_bytes_fused > 0.0
 
-        # 4. Test surgical transplant, micro-healing, and persistence with custom module
         class HostModel(nn.Module):
             def __init__(self, d=64):
                 super().__init__()
@@ -152,7 +152,6 @@ def test_custom_plugin_lifecycle_and_contract_validation():
             assert pipeline_res["model"] is not None
             assert pipeline_res["saved_path"] is not None
 
-            # Verify reload parity
             fresh_host = HostModel(d=64)
             reloaded_model, manifest = neuralops.load_surgical_checkpoint(fresh_host, tmp_dir)
             reloaded_model.eval()
@@ -165,7 +164,6 @@ def test_custom_plugin_lifecycle_and_contract_validation():
             shutil.rmtree(tmp_dir, ignore_errors=True)
 
     finally:
-        # Cleanly unregister to protect canonical counts
         unregister_custom_module(custom_attn_name, category="attention")
         assert custom_attn_name not in ATTENTION_REGISTRY
         assert len(ATTENTION_REGISTRY) == 131
@@ -179,7 +177,6 @@ def test_custom_composable_algebraic_stage_registration():
     def custom_kernel(x: torch.Tensor) -> torch.Tensor:
         return (F.elu(x.float()) + 1.0) ** 2
 
-    # Instantiate ComposableAttention with custom kernel
     attn = neuralops.compose_attention(
         projection="dense",
         kernel_map=custom_phi_name,
@@ -193,7 +190,6 @@ def test_custom_composable_algebraic_stage_registration():
     assert out.shape == (2, 16, 64)
     assert not torch.isnan(out).any()
 
-    # Clean up registry
     from neuralops.core.composable import _CUSTOM_KERNELS
     _CUSTOM_KERNELS.pop(custom_phi_name, None)
 

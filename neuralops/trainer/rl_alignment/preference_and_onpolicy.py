@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Preference Alignment and On-Policy RL
 
 Implements SimPO, ORPO, GRPO, and dynamic routing reinforcement learning for language models.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -61,7 +65,6 @@ class ORPOLoss(nn.Module):
         rejected_logprobs: Optional[torch.Tensor] = None,
         **kwargs,
     ) -> torch.Tensor:
-        # Support flexible argument orders
         if chosen_logprobs is None and "policy_chosen_logps" in kwargs:
             chosen_logprobs = kwargs["policy_chosen_logps"]
         if rejected_logprobs is None and "policy_rejected_logps" in kwargs:
@@ -69,9 +72,7 @@ class ORPOLoss(nn.Module):
         if sft_loss is None and "sft_loss" in kwargs:
             sft_loss = kwargs["sft_loss"]
 
-        # Support positional calls: forward(chosen, rejected, sft_loss)
         if sft_loss is not None and chosen_logprobs is not None and rejected_logprobs is None and "sft_loss" in kwargs:
-            # sft_loss was passed as first arg (chosen), chosen was passed as second (rejected)
             rejected_logprobs = chosen_logprobs
             chosen_logprobs = sft_loss
             sft_loss = kwargs["sft_loss"]
@@ -82,7 +83,6 @@ class ORPOLoss(nn.Module):
         log_p_w = chosen_logprobs.sum(dim=-1)
         log_p_l = rejected_logprobs.sum(dim=-1)
 
-        # odds = p / (1 - p) -> log odds = log p - log(1 - p)
         log_odds_w = log_p_w - torch.log1p(-torch.exp(log_p_w).clamp(max=0.9999))
         log_odds_l = log_p_l - torch.log1p(-torch.exp(log_p_l).clamp(max=0.9999))
 
@@ -112,7 +112,6 @@ class DynamicRoutingAndRankRL(nn.Module):
 
     def compute_budget_penalty(self, decisions: torch.Tensor) -> torch.Tensor:
         """Quadratic penalty if active block ratio exceeds target budget ratio."""
-        # decisions: (B, num_blocks)
         active_ratio = decisions.float().mean()
         violation = F.relu(active_ratio - self.target_ratio)
         return self.dual_lambda * (violation ** 2)

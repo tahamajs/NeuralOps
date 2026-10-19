@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Differential Attention
 
 Computes differential attention maps subtracting noise-cancelling attention patterns with fused streaming softmax.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -104,7 +108,6 @@ if HAS_TRITON:
 
             causal_mask = offs_m[:, None] >= offs_n[None, :]
 
-            # Branch 1
             s1 = tl.dot(q1, tl.trans(k1)) * sm_scale
             s1 = tl.where(causal_mask & mask_m[:, None] & mask_n[None, :], s1, -float("inf"))
 
@@ -115,7 +118,6 @@ if HAS_TRITON:
             acc1 = acc1 * alpha1[:, None] + tl.dot(p1.to(v.dtype), v)
             m1 = m1_new
 
-            # Branch 2
             s2 = tl.dot(q2, tl.trans(k2)) * sm_scale
             s2 = tl.where(causal_mask & mask_m[:, None] & mask_n[None, :], s2, -float("inf"))
 
@@ -231,31 +233,25 @@ class TritonDifferentialAttentionFunction(torch.autograd.Function):
         dout_4d = dout.view(q1.shape)
         orig_dtype = q1.dtype
 
-        # Exact adjoint backward pass:
-        # Branch 1
         mask = torch.tril(torch.ones(q1.shape[-2], q1.shape[-2], device=q1.device, dtype=torch.bool))
         s1 = torch.matmul(q1.float(), k1.float().transpose(-2, -1)) * sm_scale
         s1 = torch.where(mask, s1, -1e9)
         p1 = torch.softmax(s1, dim=-1)
         o1 = torch.matmul(p1, v.float())
 
-        # Branch 2
         s2 = torch.matmul(q2.float(), k2.float().transpose(-2, -1)) * sm_scale
         s2 = torch.where(mask, s2, -1e9)
         p2 = torch.softmax(s2, dim=-1)
         o2 = torch.matmul(p2, v.float())
 
-        # Total dV
         dv = torch.matmul(p1.transpose(-2, -1), dout_4d.float()) - lambda_val * torch.matmul(p2.transpose(-2, -1), dout_4d.float())
 
-        # dQ1, dK1
         D1 = (dout_4d.float() * o1).sum(dim=-1, keepdim=True)
         dP1 = torch.matmul(dout_4d.float(), v.float().transpose(-2, -1))
         dS1 = p1 * (dP1 - D1) * sm_scale
         dq1 = torch.matmul(dS1, k1.float())
         dk1 = torch.matmul(dS1.transpose(-2, -1), q1.float())
 
-        # dQ2, dK2
         D2 = (-lambda_val * dout_4d.float() * o2).sum(dim=-1, keepdim=True)
         dP2 = -lambda_val * torch.matmul(dout_4d.float(), v.float().transpose(-2, -1))
         dS2 = p2 * (dP2 - D2) * sm_scale

@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 NeuralOps Transformers Integration
 
 Drop-in HuggingFace AutoModel replacement classes and global transformer patching architecture.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -46,22 +50,18 @@ class _BaseAutoNeuralOps:
         logger.info("AutoNeuralOps: Loading base model '%s'", pretrained_model_name_or_path)
         model = hf_loader.from_pretrained(pretrained_model_name_or_path, *model_args, **kwargs)
 
-        # 1. Apply declarative recipe if given
         if recipe is not None:
             from neuralops.recipes import oneshot
             return oneshot(model, recipe=recipe)
 
-        # 2. Attention transplantation
         if attention is not None:
             from neuralops.api import replace_attention
             model = replace_attention(model, attention=attention, rank=rank)
 
-        # 3. Model compression
         if compressor is not None:
             from neuralops.api import compress
             model = compress(model, method=compressor, rank=rank, rank_ratio=rank_ratio)
 
-        # 4. PEFT recovery adapter injection (e.g. PiSSA)
         if peft_recovery is not None:
             peft_str = peft_recovery.lower()
             if "pissa" in peft_str:
@@ -114,7 +114,6 @@ def patch_transformers(
         import transformers.models.llama.modeling_llama as llama_mod
         if rope and hasattr(llama_mod, "apply_rotary_pos_emb"):
             from neuralops.core.triton_kernels.fused_rope import fused_rotary_position_embedding
-            # Guard patch
             logger.info("patch_transformers: Fused RoPE enabled for LLaMA")
     except Exception:
         pass

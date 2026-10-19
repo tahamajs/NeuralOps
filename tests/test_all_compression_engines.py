@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Master Test Suite for All Compression Engine Modules
 Tests initialization, compression, shape preservation, and forward pass across all 70 registered compressors.
@@ -66,12 +72,10 @@ def run_single_compressor_test(name: str, device: torch.device = torch.device("c
     compressed_model = None
     ratio = 1.0
 
-    # Strategy 1: apply_module_to_model unified runner
     try:
         from neuralops.eval_all_models_datasets import apply_module_to_model
         compressed_model, ratio = apply_module_to_model(orig_model, name, "compressor", rank=16, device=device)
     except Exception as e1:
-        # Strategy 2: Direct resolution and instantiation strategies
         try:
             cls = COMPRESSOR_REGISTRY.resolve(name)
             compressor = None
@@ -126,7 +130,6 @@ def run_single_compressor_test(name: str, device: torch.device = torch.device("c
     if ratio == 1.0 and orig_params > 0 and new_params > 0:
         ratio = orig_params / new_params
 
-    # 3. Test forward pass
     try:
         compressed_model.train()
         out = compressed_model(x)
@@ -163,7 +166,6 @@ def run_single_compressor_test(name: str, device: torch.device = torch.device("c
             "backward_finite": False,
         }
 
-    # 4. Test backward pass
     try:
         compressed_model.zero_grad(set_to_none=True)
         loss = out.sum()

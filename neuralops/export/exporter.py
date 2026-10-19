@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Model Exporter
 
 Exports trained and compressed NeuralOps models into production-ready formats.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -36,7 +40,6 @@ def export_model(
     out_path.mkdir(parents=True, exist_ok=True)
     fmt = format.lower().strip()
 
-    # 0. Check for unfinalized shadow-twin teacher branch
     if kwargs.get("auto_finalize", True):
         try:
             from neuralops.api import finalize_surgery
@@ -44,7 +47,6 @@ def export_model(
         except Exception as e:
             logger.debug("finalize_surgery check skipped or failed: %s", e)
 
-    # Automatically inspect model metadata if not explicitly provided
     recorded_metadata = getattr(model, "_neuralops_metadata", None)
     if recorded_metadata:
         for entry in recorded_metadata:
@@ -62,11 +64,9 @@ def export_model(
                 if rank is None and entry_rank is not None:
                     rank = entry_rank
 
-    # Build comprehensive SurgeryManifest
     from neuralops.export.surgery_manifest import build_manifest_from_model
     manifest = build_manifest_from_model(model)
 
-    # If model has config with name_or_path, infer base_model
     base_name = model_name_or_path or getattr(model, "name_or_path", None)
     if not base_name and hasattr(model, "config") and hasattr(model.config, "_name_or_path"):
         base_name = model.config._name_or_path
@@ -88,7 +88,6 @@ def export_model(
     clean_metadata = _json_sanitize(recorded_metadata or [])
     clean_kwargs = _json_sanitize(kwargs)
 
-    # Build architecture and surgery metadata
     meta = {
         "format": fmt,
         "base_model": base_name or "unknown",
@@ -102,7 +101,6 @@ def export_model(
         "extra_kwargs": clean_kwargs,
     }
 
-    # Always persist both legacy neuralops_config.json and rich neuralops_surgery_config.json
     surgery_manifest_file = out_path / "neuralops_surgery_config.json"
     with open(surgery_manifest_file, "w", encoding="utf-8") as f:
         json.dump(manifest.to_dict(), f, indent=2)
@@ -118,17 +116,14 @@ def export_model(
             except TypeError:
                 save_file(model.state_dict(), str(out_path / "model.safetensors"), metadata={"format": "pt"})
         except ImportError:
-            # Fallback to standard PyTorch state_dict if safetensors is unavailable
             torch.save(model.state_dict(), out_path / "pytorch_model.bin")
 
-        # Save HF config if present
         if hasattr(model, "config") and hasattr(model.config, "save_pretrained"):
             try:
                 model.config.save_pretrained(str(out_path))
             except Exception as e:
                 logger.debug("Could not save HF config: %s", e)
 
-        # 3. Inject auto_map and self-contained modeling files for HuggingFace Hub trust_remote_code=True
         cfg_file = out_path / "config.json"
         if cfg_file.exists():
             try:
@@ -143,7 +138,6 @@ def export_model(
                     with open(cfg_file, "w", encoding="utf-8") as f:
                         json.dump(c_dict, f, indent=2)
 
-                # Copy self-contained modeling scripts
                 import shutil
                 import neuralops.models.configuration as conf_mod
                 import neuralops.models.modeling as model_mod
@@ -167,15 +161,12 @@ def export_model(
     elif fmt == "onnx":
         onnx_file = out_path / "model.onnx"
         if sample_input is None:
-            # Generate default dummy token input (batch_size=1, seq_len=16)
             sample_input = torch.randint(0, 1000, (1, 16), dtype=torch.long)
 
-        # Ensure model is on CPU for clean ONNX export
         cpu_model = model.to("cpu").eval()
         if sample_input.device != torch.device("cpu"):
             sample_input = sample_input.to("cpu")
 
-        # Guarantee single Tensor output for clean ONNX graph
         wrapped_model = _TensorOnlyExportWrapper(cpu_model)
         input_names = ["input_ids"] if sample_input.dtype in (torch.int32, torch.int64) else ["inputs"]
         output_names = ["logits"]
@@ -191,7 +182,6 @@ def export_model(
                 warnings.filterwarnings("ignore", category=UserWarning)
                 warnings.filterwarnings("ignore", category=FutureWarning)
                 try:
-                    # Automatically trace using deterministic fallback path
                     torch.onnx.export(
                         wrapped_model,
                         sample_input,
@@ -202,7 +192,6 @@ def export_model(
                         dynamic_axes=dynamic_axes,
                     )
                 except Exception:
-                    # Deterministic fallback to TorchScript-based graph tracing (dynamo=False)
                     torch.onnx.export(
                         wrapped_model,
                         sample_input,
@@ -250,7 +239,7 @@ def export_model(
         gguf_meta = {
             "general.architecture": base_name or "llama",
             "general.name": base_name or "neuralops-model",
-            "general.file_type": 15,  # Q4_K_M
+            "general.file_type": 15,
             "neuralops.attention_type": attention_type,
             "neuralops.compression_method": compression_method,
             "neuralops.rank": rank,
@@ -268,7 +257,6 @@ def export_model(
         with open(gguf_meta_file, "w", encoding="utf-8") as f:
             json.dump(gguf_meta, f, indent=2)
 
-        # Save weights fallback
         try:
             from safetensors.torch import save_file
             save_file(model.state_dict(), str(out_path / "model.safetensors"))
@@ -294,7 +282,6 @@ def export_model(
         with open(awq_file, "w", encoding="utf-8") as f:
             json.dump(awq_meta, f, indent=2)
 
-        # Save weights
         try:
             from safetensors.torch import save_file
             save_file(model.state_dict(), str(out_path / "model.safetensors"))
@@ -347,7 +334,6 @@ def load_exported_model(export_dir: Union[str, Path], base_model: Optional[nn.Mo
     with open(cfg_file, "r", encoding="utf-8") as f:
         meta = json.load(f)
 
-    # 1. Base model initialization
     model = base_model
     if model is None:
         base_name = meta.get("base_model")
@@ -364,7 +350,6 @@ def load_exported_model(export_dir: Union[str, Path], base_model: Optional[nn.Mo
             "cannot be loaded without an explicit base_model instance passed to load_exported_model."
         )
 
-    # 2. Check for SurgeryManifest first for exact per-layer reconstruction
     surgery_manifest_file = dir_path / "neuralops_surgery_config.json"
     if surgery_manifest_file.exists():
         from neuralops.export.surgery_manifest import SurgeryManifest, replay_surgery_manifest
@@ -376,7 +361,6 @@ def load_exported_model(export_dir: Union[str, Path], base_model: Optional[nn.Mo
         except Exception as e:
             logger.warning("Failed to replay surgery manifest, falling back to legacy replay: %s", e)
     else:
-        # Re-apply recorded operations sequentially from metadata if present
         import neuralops
         metadata_ops = meta.get("_neuralops_metadata") or meta.get("surgery_history") or []
         if metadata_ops:
@@ -389,7 +373,6 @@ def load_exported_model(export_dir: Union[str, Path], base_model: Optional[nn.Mo
                 elif op_action in ("compress", "compression") and op_type:
                     model = neuralops.compress(model, method=op_type, **op_kwargs)
         else:
-            # Fallback to single attention and compression keys
             attn_type = meta.get("attention_type")
             rank = meta.get("rank")
             if attn_type:
@@ -399,7 +382,6 @@ def load_exported_model(export_dir: Union[str, Path], base_model: Optional[nn.Mo
             if comp_method:
                 model = neuralops.compress(model, method=comp_method, rank=rank)
 
-    # 4. Load weights
     safetensors_path = dir_path / "model.safetensors"
     bin_path = dir_path / "pytorch_model.bin"
 
@@ -413,7 +395,6 @@ def load_exported_model(export_dir: Union[str, Path], base_model: Optional[nn.Mo
     elif bin_path.exists():
         state_dict = torch.load(bin_path, map_location="cpu", weights_only=True)
         model.load_state_dict(state_dict, strict=False)
-    # 5. Restore metadata onto model instance
     saved_metadata = meta.get("_neuralops_metadata") or meta.get("surgery_history") or []
     if saved_metadata:
         model._neuralops_metadata = saved_metadata
@@ -479,7 +460,6 @@ class AOTICompiledModelRunner:
         self._init_runner()
 
     def _init_runner(self) -> None:
-        # Check for pt2 package sibling if .so was requested
         load_target = self.artifact_path
         if not load_target.exists():
             pt2_sibling = load_target.with_suffix(".pt2")
@@ -493,11 +473,9 @@ class AOTICompiledModelRunner:
 
         try:
             if hasattr(torch, "_inductor"):
-                # Try loading pt2 archive with aoti_load_package
                 if load_target.suffix.lower() == ".pt2" and hasattr(torch._inductor, "aoti_load_package"):
                     self._runner = torch._inductor.aoti_load_package(str(load_target))
                     return
-                # Try loading .so with AOTIRunnerUtil or torch._export.aot_load
                 if load_target.suffix.lower() == ".so":
                     if hasattr(torch._inductor, "AOTIRunnerUtil"):
                         self._runner = torch._inductor.AOTIRunnerUtil.load(str(load_target))
@@ -552,7 +530,6 @@ def compile_to_so(
     model = model.eval().to(device)
     wrapper = _TensorOnlyExportWrapper(model).eval().to(device)
 
-    # Construct dynamic shapes dictionary if torch.export.Dim is available
     dynamic_shapes = None
     first_tensor = sample_tuple[0]
     if hasattr(torch, "export") and hasattr(torch.export, "Dim"):
@@ -574,7 +551,6 @@ def compile_to_so(
             dynamic_shapes = tuple(shapes_list)
 
 
-    # 1. Trace / Export program
     exported_program = None
     if hasattr(torch, "export") and hasattr(torch.export, "export"):
         try:
@@ -591,7 +567,6 @@ def compile_to_so(
             except Exception as e2:
                 logger.warning("torch.export.export strict=False failed (%s).", e2)
 
-    # 2. Attempt AOTInductor compilation
     compiled_success = False
     pt2_path = out_file.with_suffix(".pt2")
 
@@ -599,7 +574,6 @@ def compile_to_so(
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=DeprecationWarning)
             warnings.filterwarnings("ignore", category=UserWarning)
-            # Option A: aoti_compile_and_package (requires .pt2 target)
             if hasattr(torch._inductor, "aoti_compile_and_package"):
                 try:
                     result_path = torch._inductor.aoti_compile_and_package(
@@ -607,7 +581,6 @@ def compile_to_so(
                         package_path=str(pt2_path),
                     )
                     if Path(result_path).exists() and out_file.suffix.lower() == ".so":
-                        # Create companion .so symlink or copy if applicable
                         try:
                             import shutil
                             shutil.copyfile(result_path, str(out_file))
@@ -617,7 +590,6 @@ def compile_to_so(
                 except Exception as e:
                     logger.warning("aoti_compile_and_package failed (%s). Trying aot_compile.", e)
 
-            # Option B: aot_compile directly to .so
             if not compiled_success and hasattr(torch._inductor, "aot_compile"):
                 try:
                     so_path = torch._inductor.aot_compile(
@@ -631,7 +603,6 @@ def compile_to_so(
                 except Exception as e:
                     logger.warning("aot_compile failed (%s).", e)
 
-    # 3. Graceful Fallback if environment lacks C++ linker / AOTInductor
     fallback_mod = None
     if not compiled_success:
         logger.info("Falling back to torch.export / torch.compile artifact packaging.")

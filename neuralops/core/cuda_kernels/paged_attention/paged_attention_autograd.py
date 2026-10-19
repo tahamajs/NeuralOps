@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Paged Attention Autograd Interface
 
 Hardware-accelerated CUDA C++ autograd implementation with analytical gradients and three-level fallback dispatch.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -70,7 +74,7 @@ def paged_attention_pytorch_reference(
             physical_idx = int(block_tables[seq_idx, block_idx].item())
             if physical_idx < 0 or physical_idx >= k_cache.shape[0]:
                 continue
-            k_block = k_cache[physical_idx].permute(0, 2, 1)  # [num_kv_heads, block_size, head_dim]
+            k_block = k_cache[physical_idx].permute(0, 2, 1)
             v_block = v_cache[physical_idx].permute(0, 2, 1)
             k_blocks.append(k_block)
             v_blocks.append(v_block)
@@ -78,17 +82,15 @@ def paged_attention_pytorch_reference(
         if not k_blocks:
             continue
 
-        k_all = torch.cat(k_blocks, dim=1)[:, :ctx_len, :]  # [num_kv_heads, ctx_len, head_dim]
+        k_all = torch.cat(k_blocks, dim=1)[:, :ctx_len, :]
         v_all = torch.cat(v_blocks, dim=1)[:, :ctx_len, :]
 
-        # Repeat KV heads for GQA
         if group_size > 1:
             k_all = k_all.repeat_interleave(group_size, dim=0)
             v_all = v_all.repeat_interleave(group_size, dim=0)
 
-        q_seq = q[seq_idx].unsqueeze(1)  # [num_heads, 1, head_dim]
+        q_seq = q[seq_idx].unsqueeze(1)
 
-        # Accumulate softmax in float32 for numerical stability across fp16/bf16
         scores = torch.matmul(q_seq.float(), k_all.float().transpose(-1, -2)) * scale
         probs = F.softmax(scores, dim=-1)
         o_seq = torch.matmul(probs, v_all.float()).squeeze(1).to(q.dtype)
@@ -185,34 +187,29 @@ class _PagedAttentionAutograd(torch.autograd.Function):
             if not k_blocks:
                 continue
 
-            k_all = torch.cat(k_blocks, dim=1)[:, :ctx_len, :]  # [num_kv_heads, ctx_len, head_dim]
+            k_all = torch.cat(k_blocks, dim=1)[:, :ctx_len, :]
             v_all = torch.cat(v_blocks, dim=1)[:, :ctx_len, :]
 
             k_expanded = k_all.repeat_interleave(group_size, dim=0) if group_size > 1 else k_all
             v_expanded = v_all.repeat_interleave(group_size, dim=0) if group_size > 1 else v_all
 
-            q_seq = q[seq_idx].unsqueeze(1)  # [num_heads, 1, head_dim]
-            g_out = grad_out[seq_idx].unsqueeze(1)  # [num_heads, 1, head_dim]
+            q_seq = q[seq_idx].unsqueeze(1)
+            g_out = grad_out[seq_idx].unsqueeze(1)
 
-            # Forward attention recomputation
             scores = torch.matmul(q_seq.float(), k_expanded.float().transpose(-1, -2)) * scale
             p = F.softmax(scores, dim=-1)
 
-            # Gradients with respect to V and P
-            grad_v_exp = torch.matmul(p.transpose(-1, -2), g_out.float())  # [num_heads, ctx_len, head_dim]
-            grad_p = torch.matmul(g_out.float(), v_expanded.float().transpose(-1, -2))  # [num_heads, 1, ctx_len]
+            grad_v_exp = torch.matmul(p.transpose(-1, -2), g_out.float())
+            grad_p = torch.matmul(g_out.float(), v_expanded.float().transpose(-1, -2))
 
-            # Softmax backward
             sum_gp_p = (grad_p * p).sum(dim=-1, keepdim=True)
             grad_scores = p * (grad_p - sum_gp_p) * scale
 
-            # Gradients with respect to Q and K
-            grad_q_seq = torch.matmul(grad_scores, k_expanded.float()).squeeze(1)  # [num_heads, head_dim]
-            grad_k_exp = torch.matmul(grad_scores.transpose(-1, -2), q_seq.float())  # [num_heads, ctx_len, head_dim]
+            grad_q_seq = torch.matmul(grad_scores, k_expanded.float()).squeeze(1)
+            grad_k_exp = torch.matmul(grad_scores.transpose(-1, -2), q_seq.float())
 
             grad_q[seq_idx] = grad_q_seq.to(q.dtype)
 
-            # Reduce GQA heads
             if group_size > 1:
                 grad_k_red = grad_k_exp.view(num_kv_heads, group_size, ctx_len, head_dim).sum(dim=1)
                 grad_v_red = grad_v_exp.view(num_kv_heads, group_size, ctx_len, head_dim).sum(dim=1)
@@ -220,7 +217,6 @@ class _PagedAttentionAutograd(torch.autograd.Function):
                 grad_k_red = grad_k_exp
                 grad_v_red = grad_v_exp
 
-            # Scatter token gradients back into physical pages
             for b_idx, p_idx in enumerate(valid_phys_blocks):
                 tok_start = b_idx * block_size
                 tok_end = min(ctx_len, tok_start + block_size)
@@ -228,7 +224,7 @@ class _PagedAttentionAutograd(torch.autograd.Function):
                 if cur_len <= 0:
                     continue
 
-                gk_slice = grad_k_red[:, tok_start:tok_end, :].permute(0, 2, 1)  # [num_kv_heads, head_dim, cur_len]
+                gk_slice = grad_k_red[:, tok_start:tok_end, :].permute(0, 2, 1)
                 gv_slice = grad_v_red[:, tok_start:tok_end, :].permute(0, 2, 1)
 
                 grad_k_cache[p_idx, :, :, :cur_len] += gk_slice.to(k_cache.dtype)

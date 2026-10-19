@@ -1,4 +1,9 @@
-# -*- coding: utf-8 -*-
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Comprehensive Empirical Multi-GPU Sweep for All 131 Registered Attention Modules.
 Sweeps across:
   - Sequence lengths: T in [128, 512, 1024]
@@ -48,7 +53,6 @@ def run_sweep(output_dir="results"):
                 mod = cls(dim=dim, num_heads=num_heads).to(device)
                 mod.train()
 
-                # Training sweep over seq_lengths
                 for T in seq_lengths:
                     B = 2 if T <= 512 else 1
                     x = torch.randn(B, T, dim, device=device, requires_grad=True)
@@ -59,7 +63,6 @@ def run_sweep(output_dir="results"):
                     loss.backward()
                     assert x.grad is not None and not torch.isnan(x.grad).any()
 
-                # Causal & FP16 check
                 mod.eval()
                 if hasattr(mod, "is_causal"):
                     mod.is_causal = True
@@ -95,7 +98,6 @@ def run_sweep(output_dir="results"):
 
     total_time = time.time() - t_global_start
 
-    # Save artifacts
     json_path = os.path.join(output_dir, f"sweep_131_modules_{node_name}.json")
     with open(json_path, "w") as f:
         json.dump(

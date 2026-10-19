@@ -1,3 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 import math
 from types import SimpleNamespace
 
@@ -9,28 +16,23 @@ from neuralops.attentions.adaptive_sparse_attention import (
 
 
 def test_default_sparsity_per_family():
-    # 1. Encoder model_type (e.g., 'bert', 'roberta') defaults to 0.1
     cfg_enc = SimpleNamespace(model_type="bert", num_attention_heads=4, hidden_size=64, is_decoder=False)
     p_enc = AdaptiveSparseAttention(config=cfg_enc)
     assert p_enc.default_sparsity == pytest.approx(0.1, abs=1e-3)
     assert not p_enc.is_decoder
 
-    # 2. Decoder model_type (e.g., 'gpt2', 'qwen') defaults to 0.5
     cfg_dec = SimpleNamespace(model_type="gpt2", num_attention_heads=4, hidden_size=64, is_decoder=True)
     p_dec = AdaptiveSparseAttention(config=cfg_dec)
     assert p_dec.default_sparsity == pytest.approx(0.5, abs=1e-3)
     assert p_dec.is_decoder
 
-    # 3. Explicit sparsity_ratio passed in comp_config or kwargs overrides defaults
     comp_cfg = SimpleNamespace(adaptive_sparsity_ratio=0.35)
     p_override = AdaptiveSparseAttention(config=cfg_enc, comp_config=comp_cfg)
     assert p_override.default_sparsity == pytest.approx(0.35, abs=1e-3)
 
-    # 4. adaptive_sparse_encoder_sparsity config parameter
     p_custom_enc = AdaptiveSparseAttention(config=cfg_enc, adaptive_sparse_encoder_sparsity=0.15)
     assert p_custom_enc.default_sparsity == pytest.approx(0.15, abs=1e-3)
 
-    # Verify sparsity_logits is learnable (requires_grad=True)
     assert p_enc.sparsity_logits.requires_grad
     assert p_dec.sparsity_logits.requires_grad
 
@@ -40,7 +42,6 @@ def test_weight_copy_all_four_architectures():
     num_heads = 4
     head_dim = 16
 
-    # 1. DistilBERT style: q_lin, k_lin, v_lin, out_lin
     class MockDistilBertAttn(nn.Module):
         def __init__(self):
             super().__init__()
@@ -54,7 +55,6 @@ def test_weight_copy_all_four_architectures():
     for name, mod in [("q", d_block.q_proj), ("k", d_block.k_proj), ("v", d_block.v_proj), ("o", d_block.out_proj)]:
         assert float(torch.norm(mod.weight).item()) > 1e-4
 
-    # 2. RoBERTa style: self.query, self.key, self.value, output.dense
     class MockRobertaSelf(nn.Module):
         def __init__(self):
             super().__init__()
@@ -78,7 +78,6 @@ def test_weight_copy_all_four_architectures():
     for name, mod in [("q", r_block.q_proj), ("k", r_block.k_proj), ("v", r_block.v_proj), ("o", r_block.out_proj)]:
         assert float(torch.norm(mod.weight).item()) > 1e-4
 
-    # 3. GPT-2 style: c_attn [hidden_size, 3 * hidden_size], c_proj [hidden_size, hidden_size]
     class MockConv1D(nn.Module):
         def __init__(self, in_f, out_f):
             super().__init__()
@@ -96,7 +95,6 @@ def test_weight_copy_all_four_architectures():
     for name, mod in [("q", g_block.q_proj), ("k", g_block.k_proj), ("v", g_block.v_proj), ("o", g_block.out_proj)]:
         assert float(torch.norm(mod.weight).item()) > 1e-4
 
-    # 4. Qwen / LLaMA style: q_proj, k_proj, v_proj, o_proj with GQA (num_kv_heads=2 < num_heads=4)
     class MockQwenAttn(nn.Module):
         def __init__(self):
             super().__init__()
@@ -137,7 +135,6 @@ def test_lora_freezing():
 
 
 def test_rope_fallback_both_signatures():
-    # 1. Signature with (x, seq_len)
     class MockRotarySeqLen(nn.Module):
         def forward(self, x, seq_len=None):
             B, H, N, d = x.shape
@@ -145,7 +142,6 @@ def test_rope_fallback_both_signatures():
             sin = torch.zeros(B, 1, N, d)
             return cos, sin
 
-    # 2. Signature with (x, position_ids)
     class MockRotaryPosIds(nn.Module):
         def forward(self, x, position_ids=None):
             B, H, N, d = x.shape
@@ -168,13 +164,11 @@ def test_rope_fallback_both_signatures():
 
 
 def test_causal_mask_before_topk():
-    # In decoder mode, future tokens must receive -10000.0 before sort, meaning attention weights to future tokens are strictly zero
     p = AdaptiveSparseAttention(d_model=64, num_heads=4, is_decoder=True, is_causal=True, sparsity_ratio=0.5)
     L = 6
     x = torch.randn(1, L, 64)
     _, attn = p(x, output_attentions=True)
     assert attn is not None
-    # For any query i, key j > i must have attention weight exactly 0
     for i in range(L):
         for j in range(i + 1, L):
             assert torch.all(attn[:, :, i, j] == 0.0), f"Future position ({i}, {j}) has non-zero attention {attn[:, :, i, j]}"
@@ -184,13 +178,11 @@ def test_topk_threshold_correctness():
     sparsity = 0.5
     L = 10
     H = 4
-    # Bidirectional encoder with fixed 50% sparsity
     p = AdaptiveSparseAttention(d_model=64, num_heads=H, is_decoder=False, is_causal=False, sparsity_ratio=sparsity)
-    p.eval()  # Set eval mode to avoid dropout zeroing entries
+    p.eval()
     x = torch.randn(2, L, 64)
     _, attn = p(x, output_attentions=True)
     assert attn is not None
-    # For each row of each head, top-k entries carry dominant mass (k = 5)
     expected_k = int(round((1.0 - sparsity) * L))
     topk_mass = torch.topk(attn, expected_k, dim=-1).values.sum(dim=-1)
     assert torch.all(topk_mass > 0.65)
@@ -203,17 +195,14 @@ def test_head_mask_shapes():
     H = 4
     B = 2
 
-    # Shape [H]
     hm_1d = torch.ones(H)
     out1, _ = p(x, head_mask=hm_1d)
     assert out1.shape == (B, 8, 64)
 
-    # Shape [B, H]
     hm_2d = torch.ones(B, H)
     out2, _ = p(x, head_mask=hm_2d)
     assert out2.shape == (B, 8, 64)
 
-    # Shape [B, H, 1, 1]
     hm_4d = torch.ones(B, H, 1, 1)
     out4, _ = p(x, head_mask=hm_4d)
     assert out4.shape == (B, 8, 64)
@@ -226,13 +215,11 @@ def test_nested_encoder_bypass():
             self.query = nn.Linear(64, 64)
             self.key = nn.Linear(64, 64)
             self.value = nn.Linear(64, 64)
-            # Notice: no out_proj, no dense, no c_proj
 
     src = MockBertSelfAttention()
     p = AdaptiveSparseAttention(d_model=64, num_heads=4, pretrained_attn=src)
     assert p.is_nested_encoder is True
 
-    # Forward should return context directly without crashing
     x = torch.randn(2, 8, 64)
     out, _ = p(x)
     assert out.shape == (2, 8, 64)
@@ -244,7 +231,6 @@ def test_injection_safety():
             super().__init__()
             self.dummy = nn.Linear(64, 64)
 
-    # Layer lacks attention weights
     layer = MissingProjectionsLayer()
     res = inject_adaptive_sparse(layer=layer)
     assert res is None

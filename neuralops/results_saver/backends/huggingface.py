@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 HuggingFace Results Backend
 
 Synchronizes benchmark outcomes, metrics, and model weights to Hugging Face Hub repositories.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -60,7 +64,7 @@ def push(
         return None
 
     private: bool = hf_opts.get("private", True)
-    token: str | None = hf_opts.get("token") or None  # falls back to HF_TOKEN env var
+    token: str | None = hf_opts.get("token") or None
 
     try:
         api = HfApi(token=token)

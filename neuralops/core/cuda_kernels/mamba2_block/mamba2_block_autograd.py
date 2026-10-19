@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Mamba-2 Architecture Block Autograd Interface
 
 Hardware-accelerated CUDA C++ autograd implementation with analytical gradients and three-level fallback dispatch.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -37,31 +41,29 @@ def mamba2_block_ref(
 ) -> tuple[torch.Tensor, torch.Tensor]:
     B, D, L = u.shape
     N = B_mat.shape[1]
-    dt = torch.clamp(delta.float(), min=0.0) # [B, D, L]
-    a_val = torch.abs(A.float()) # [D]
-    dA = torch.exp(-torch.clamp(dt * a_val.unsqueeze(0).unsqueeze(-1), min=0.0)) # [B, D, L]
+    dt = torch.clamp(delta.float(), min=0.0)
+    a_val = torch.abs(A.float())
+    dA = torch.exp(-torch.clamp(dt * a_val.unsqueeze(0).unsqueeze(-1), min=0.0))
 
     h = prev_state.float().clone() if prev_state is not None else torch.zeros(B, D, N, device=u.device, dtype=torch.float32)
     ys = []
 
     for t in range(L):
-        u_t = u[:, :, t].float() # [B, D]
-        dt_t = dt[:, :, t]       # [B, D]
-        dA_t = dA[:, :, t]       # [B, D]
-        b_t = B_mat[:, :, t].float() # [B, N]
-        c_t = C_mat[:, :, t].float() # [B, N]
+        u_t = u[:, :, t].float()
+        dt_t = dt[:, :, t]
+        dA_t = dA[:, :, t]
+        b_t = B_mat[:, :, t].float()
+        c_t = C_mat[:, :, t].float()
 
-        # h: [B, D, N] = dA_t * h + dt_t * u_t (outer) b_t
         h = dA_t.unsqueeze(-1) * h + (dt_t * u_t).unsqueeze(-1) * b_t.unsqueeze(1)
         h = torch.clamp(h, -65504.0, 65504.0)
 
-        # y_t: [B, D] = (h * c_t.unsqueeze(1)).sum(-1)
         y_t = (h * c_t.unsqueeze(1)).sum(dim=-1)
         if D_val is not None:
             y_t = y_t + D_val.float().unsqueeze(0) * u_t
         ys.append(y_t.to(u.dtype))
 
-    out = torch.stack(ys, dim=-1) # [B, D, L]
+    out = torch.stack(ys, dim=-1)
     return out, h.to(u.dtype)
 
 def _mamba2_block_dispatch(

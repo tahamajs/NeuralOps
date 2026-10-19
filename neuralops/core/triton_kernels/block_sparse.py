@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Block-Sparse Attention
 
 Computes block-sparse attention patterns with butterfly sparsity routing and autograd gradient propagation.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -19,11 +23,9 @@ def butterfly_mask(N: int, block_size: int = 64, device=None) -> torch.Tensor:
     mask = torch.zeros(N, N, dtype=torch.bool, device=device)
     
     for i in range(num_blocks):
-        # Diagonal block
         start = i * block_size
         end = min(start + block_size, N)
         mask[start:end, start:end] = True
-        # Off-diagonal for butterfly
         for offset in [1, 2, 4, 8]:
             j = i ^ offset
             if j < num_blocks:
@@ -82,9 +84,6 @@ def block_sparse_attention(
     return _block_sparse_attention_fwd(q, k, v, mask)
 
 
-# ---------------------------------------------------------------------------
-# Fused MoBA Block Router Combine (MoBAAttention)
-# ---------------------------------------------------------------------------
 def fused_moba_block_router_combine_pytorch(
     Qb: torch.Tensor,
     Kb: torch.Tensor,
@@ -94,7 +93,6 @@ def fused_moba_block_router_combine_pytorch(
     is_causal: bool = False,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """Exact PyTorch reference for MoBA block score routing."""
-    # Qb, Kb, Vb: (B, H, nb, bs, d)
     Q_mean = Qb.mean(dim=3)
     K_mean = Kb.mean(dim=3)
     block_scores = torch.matmul(Q_mean.float(), K_mean.float().transpose(-2, -1).contiguous()) * scale
@@ -127,7 +125,7 @@ if HAS_TRITON and tl is not None:
         BLOCK_D: tl.constexpr,
     ):
         """In-SRAM Fused MoBA Block Score Router Kernel."""
-        pid_m = tl.program_id(0)  # block row in nb
+        pid_m = tl.program_id(0)
         pid_bh = tl.program_id(1)
         i_b = pid_bh // H
         i_h = pid_bh % H
@@ -189,10 +187,6 @@ def fused_moba_block_router_combine_triton(
     return fused_moba_block_router_combine_pytorch(Qb, Kb, Vb, scale, top_k, is_causal)
 
 
-# ==============================================================================
-# Triton Block-Sparse Streaming Attention Kernel
-# Target: nsa_attention, adaptive_sparse_attention, moba_attention, sink_attention
-# ==============================================================================
 
 from neuralops.core.triton_kernels._common import HAS_TRITON, triton, tl
 import math
@@ -464,10 +458,7 @@ def fused_dsa_sparse_attn_pytorch_ref(
 
     num_blocks = (L + block_size - 1) // block_size
 
-    # Normalize block_mask to active_block_indices [B, H, num_blocks, top_k]
     if block_mask.dtype == torch.bool:
-        # block_mask: [B, num_blocks]
-        # extract selected block indices per batch
         B_size = block_mask.shape[0]
         active_list = []
         for b in range(B_size):
@@ -541,7 +532,6 @@ def fused_dsa_sparse_attn_triton(
 
     num_blocks = (L + block_size - 1) // block_size
 
-    # Convert block_mask to active_block_indices [B, H, num_blocks, top_k]
     if block_mask.dtype == torch.bool:
         B_size = block_mask.shape[0]
         active_list = []

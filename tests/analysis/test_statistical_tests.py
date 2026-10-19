@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Tests for neuralops.analysis.comparison.statistical_tests."""
 
 import numpy as np
@@ -113,7 +119,6 @@ class TestFullAnalysis:
     """Test full multi-algorithm comparative statistical analysis pipeline."""
 
     def test_run_full_statistical_analysis(self):
-        # shape (n_datasets=5, n_algorithms=3)
         scores_matrix = np.array([
             [0.85, 0.80, 0.75],
             [0.86, 0.82, 0.77],

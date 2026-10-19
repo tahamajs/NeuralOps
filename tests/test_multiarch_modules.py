@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Small, dependency-light tests for the multi-architecture contract."""
 from types import SimpleNamespace
 
@@ -83,7 +89,6 @@ def test_alias_and_wrapper_contract():
     wrapped = wrap_for_family(m, "qwen")
     assert isinstance(wrapped, FamilyModuleWrapper)
     assert wrapped.module.q_lin is wrapped.module.q_proj
-    # A module without a native projection is not given a fabricated alias.
     plain = nn.Linear(8, 8)
     wrap_for_family(plain, "bert")
     assert not hasattr(plain, "q_lin")
@@ -102,9 +107,6 @@ def test_family_support_and_decoder_compression_targeting():
 
 
 def test_common_attention_constructors_use_config_geometry():
-    # Constructors are intentionally tested without a pretrained source. This
-    # catches hard-coded 12-head/768-dimensional projection assumptions while
-    # remaining independent of CUDA and model downloads.
     from neuralops.attentions.adaptive_sparse_attention import \
         AdaptiveSparseAttention
     from neuralops.attentions.adaptive_svd_attention import \

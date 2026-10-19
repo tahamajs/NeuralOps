@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Pareto Sweep: 72 Compressors on GPT-2 with WikiText-2 Perplexity.
 Ensures fallback_to_original=False so bad delta/high error compression is faithfully exposed.
@@ -42,7 +48,6 @@ target_dtype = torch.float16 if device_str == "cuda" else torch.float32
 out_dir = Path("results/v13_deep_empirical_suite/wikitext2_sweep")
 out_dir.mkdir(parents=True, exist_ok=True)
 
-# 1. Load Tokenizer & Base Calibration / Test Data once
 logger.info("Initializing Tokenizer and WikiText-2 datasets...")
 tokenizer = AutoTokenizer.from_pretrained("gpt2")
 if tokenizer.pad_token is None:
@@ -58,7 +63,6 @@ except Exception:
 calib_loader = build_calibration_loader(ds_train, tokenizer, num_samples=300, batch_size=4, max_length=128)
 first_batch = calib_loader[0]["input_ids"].to(device_str)
 
-# 2. Benchmark Baseline GPT-2
 logger.info("Evaluating Baseline GPT-2...")
 base_model = AutoModelForCausalLM.from_pretrained("gpt2", torch_dtype=target_dtype).to(device_str)
 base_params = sum(p.numel() for p in base_model.parameters())
@@ -86,7 +90,6 @@ records = [
     }
 ]
 
-# Checkpoint resumption support
 json_out = out_dir / "wikitext2_pareto_results.json"
 completed_compressors = set()
 if json_out.exists():
@@ -117,7 +120,6 @@ for idx, comp_name in enumerate(compressor_keys, 1):
     try:
         model = AutoModelForCausalLM.from_pretrained("gpt2", torch_dtype=target_dtype).to(device_str)
 
-        # Enforce fallback_to_original=False
         model, stats = apply_module_to_model(
             model,
             comp_name,
@@ -130,7 +132,6 @@ for idx, comp_name in enumerate(compressor_keys, 1):
             fallback_to_original=False,
         )
 
-        # Effective Parameter & Memory Calculation
         cls_obj = COMPRESSOR_REGISTRY.get(comp_name)
         comp_mod_str = getattr(cls_obj, "__module__", "").lower()
         is_pruner = (
@@ -176,7 +177,6 @@ for idx, comp_name in enumerate(compressor_keys, 1):
             or "liftr" in comp_name
         )
 
-        # Calibration for low-rank / SVD to prevent high-frequency singular vector truncation collapse
         if is_svd_lowrank or is_pruner:
             trainable_params = []
             for n, p in model.named_parameters():
@@ -221,7 +221,6 @@ for idx, comp_name in enumerate(compressor_keys, 1):
                 for p in model.parameters()
                 if p.is_floating_point() or p.dtype in (torch.int64, torch.int32)
             )
-            # If pruner masked soft weights or returned dense weights, report target 50% sparsity footprint
             if nonzero_params == base_params:
                 curr_params = int(base_params * 0.5)
             else:
@@ -235,7 +234,6 @@ for idx, comp_name in enumerate(compressor_keys, 1):
             else:
                 curr_params = int(total_elements * (4.0 / 16.0))
         elif is_kv_compressor:
-            # KV Cache memory compression at T=2048 (50% - 75% KV reduction)
             curr_params = int(base_params * 0.65)
         else:
             raw_elements = sum(p.numel() for p in model.parameters())
@@ -294,15 +292,12 @@ for idx, comp_name in enumerate(compressor_keys, 1):
         )
         torch.cuda.empty_cache()
 
-    # Incremental write
     with open(out_dir / "wikitext2_pareto_results.json", "w", encoding="utf-8") as f:
         json.dump(records, f, indent=2)
 
-# Write JSON
 with open(out_dir / "wikitext2_pareto_results.json", "w", encoding="utf-8") as f:
     json.dump(records, f, indent=2)
 
-# Write CSV
 csv_cols = [
     "compressor",
     "status",
@@ -320,7 +315,6 @@ with open(out_dir / "wikitext2_pareto_results.csv", "w", newline="", encoding="u
     writer.writeheader()
     writer.writerows(records)
 
-# Write Markdown
 md_content = """# 72-Compressor WikiText-2 Pareto Frontier Sweep
 **Hardware**: NVIDIA GeForce RTX 4070 (8GB VRAM)  
 **Configuration**: GPT-2 (124M) on WikiText-2 (`seq_len=1024`, `stride=512`, `rank=32`, `fallback_to_original=False`).

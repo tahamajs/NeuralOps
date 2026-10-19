@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Inference acceleration and auto-merge unit and hardware verification test.
 Tests:
@@ -23,7 +29,6 @@ def test_merge_for_inference_svd_linear():
     compressor = DirectSVDCompressor(model, rank=16, fallback_to_original=False)
     comp_model, stats = compressor.compress()
 
-    # Check SVDLinear is present
     has_svd = any(child.__class__.__name__ in ("SVDLinear", "SVDLinearLayer") for _, child in comp_model.named_modules())
     assert has_svd
 
@@ -31,17 +36,14 @@ def test_merge_for_inference_svd_linear():
     with torch.no_grad():
         out_before = comp_model(x)
 
-    # Merge for inference
     merged_model = merge_for_inference(comp_model, rank_threshold=None)
 
-    # Check that SVDLinear layers were converted back to nn.Linear
     has_svd_after = any(child.__class__.__name__ in ("SVDLinear", "SVDLinearLayer") for _, child in merged_model.named_modules())
     assert not has_svd_after
 
     with torch.no_grad():
         out_after = merged_model(x)
 
-    # Output parity between factorized and merged dense
     assert torch.allclose(out_before, out_after, atol=1e-4)
 
 
@@ -84,7 +86,6 @@ def test_cuda_graph_decode_runner():
     else:
         assert not runner.is_captured
 
-    # Step decode
     tok = torch.tensor([[10]], device=device)
     logits = runner.decode_step(tok)
     assert logits.shape == (1, 1, 500)

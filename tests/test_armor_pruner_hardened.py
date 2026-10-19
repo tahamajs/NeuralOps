@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Comprehensive Unit Test Suite for Production-Hardened ARMOR Pruner.
 Covers:
@@ -14,7 +20,6 @@ Covers:
 import sys
 from pathlib import Path
 
-# Add project Codes to path
 
 import pytest
 import torch
@@ -94,11 +99,9 @@ class DummyAttentionFFNModel(nn.Module):
 def test_factory_config_safety():
     """Test 1: Factory with None, empty, or dict comp_config does not crash and respects overrides."""
     model = nn.Sequential(nn.Linear(16, 16), nn.Linear(16, 8))
-    # 1.1 comp_config=None
     res = armor_pruner_factory(model, comp_config=None)
     assert res is not None
 
-    # 1.2 comp_config as dictionary with specific overrides
     model2 = nn.Sequential(nn.Linear(16, 16))
     cfg_dict = {
         "armor_rank": 8,
@@ -129,7 +132,6 @@ def test_conv1d_transposition():
     assert replaced.lora_A.shape == (4, in_dim)
     assert replaced.lora_B.shape == (out_dim, 4)
 
-    # Test forward pass shape
     dummy_input = torch.randn(2, 5, in_dim)
     out = compressed_model(dummy_input)
     assert out.shape == (2, 5, out_dim)
@@ -148,31 +150,25 @@ def test_loralinear_wrapper_preservation():
     assert isinstance(curr_wrapper, DummyLoRALinear)
     assert isinstance(curr_wrapper.base_layer, ARMORLinear)
 
-    # Outer LoRA weights zeroed and frozen to prevent double correction
     assert torch.all(curr_wrapper.lora_A == 0.0)
     assert torch.all(curr_wrapper.lora_B == 0.0)
     assert not curr_wrapper.lora_A.requires_grad
     assert not curr_wrapper.lora_B.requires_grad
 
-    # ARMORLinear inner LoRA is active and trainable
     assert curr_wrapper.base_layer.lora_A.requires_grad
     assert curr_wrapper.base_layer.lora_B.requires_grad
-    # Sparse base weight is frozen
     assert not curr_wrapper.base_layer.sparse_weight.requires_grad
 
 
 def test_fallback_behavior():
     """Test 4: Fallback triggered when error > max_error with parameter freezing."""
     model = nn.Sequential(nn.Linear(16, 16))
-    # 4.1 fallback_to_original=True with impossible max_error=1e-10
     comp = ARMORPruner(model, max_error=1e-10, fallback_to_original=True)
     comp.compress()
     assert len(comp.fallback_layers) == 1
     assert len(comp.compressed_layers) == 0
-    # Original linear retained
     assert isinstance(list(model.children())[0], nn.Linear)
 
-    # 4.2 fallback_to_original=False: layer replaced despite high error
     model2 = nn.Sequential(nn.Linear(16, 16))
     comp2 = ARMORPruner(model2, max_error=1e-10, fallback_to_original=False)
     comp2.compress()
@@ -186,11 +182,9 @@ def test_target_attention_only():
     comp = ARMORPruner(model, target_attention_only=True, rank=4, max_error=0.8)
     comp.compress()
 
-    # Attention projections should be ARMORLinear
     for k in ["q_proj", "k_proj", "v_proj", "out_proj"]:
         assert isinstance(model.attention[k], ARMORLinear), f"{k} should be ARMORLinear"
 
-    # FFN layers must remain standard nn.Linear
     for k in ["gate_proj", "up_proj", "down_proj", "lin1"]:
         assert isinstance(model.ffn[k], nn.Linear), f"{k} should remain nn.Linear"
 
@@ -198,7 +192,6 @@ def test_target_attention_only():
 def test_calibration_with_dataloader():
     """Test 6: Calibration loader iterates over all batches and aggregates activations."""
     model = nn.Sequential(nn.Linear(16, 16))
-    # Create DataLoader with 2 batches of size 3 and 4 (total 7 samples)
     data = torch.randn(7, 16)
     dataset = TensorDataset(data)
     loader = DataLoader(dataset, batch_size=4)
@@ -206,9 +199,7 @@ def test_calibration_with_dataloader():
     comp = ARMORPruner(model, calibration_loader=loader)
     act_map = comp._collect_activations()
 
-    # The layer key should be "0"
     assert "0" in act_map
-    # Total samples collected should equal total samples across batches
     assert act_map["0"].shape[0] == 16
 
 
@@ -224,7 +215,6 @@ def test_numerical_stability():
     assert not torch.isnan(replaced.lora_A).any()
     assert not torch.isnan(replaced.lora_B).any()
 
-    # Forward check with half input
     x = torch.randn(2, 16).half()
     out = model(x)
     assert not torch.isnan(out).any()
@@ -233,7 +223,6 @@ def test_numerical_stability():
 
 def test_architecture_compatibility():
     """Test 8: Compatibility across dummy models representing diverse transformer families."""
-    # 8.1 BERT/RoBERTa style
     class DummyBert(nn.Module):
         def __init__(self):
             super().__init__()
@@ -249,7 +238,6 @@ def test_architecture_compatibility():
     _, stats_bert = comp_bert.compress()
     assert stats_bert["num_compressed"] > 0
 
-    # 8.2 GPT style (Conv1D c_attn, c_proj)
     class DummyGPT(nn.Module):
         def __init__(self):
             super().__init__()
@@ -263,7 +251,6 @@ def test_architecture_compatibility():
     _, stats_gpt = comp_gpt.compress()
     assert stats_gpt["num_compressed"] == 2
 
-    # 8.3 Qwen style (q_proj, k_proj, v_proj, o_proj) with GQA asymmetric check
     class DummyQwen(nn.Module):
         def __init__(self):
             super().__init__()
@@ -276,7 +263,6 @@ def test_architecture_compatibility():
             return self.o_proj(self.q_proj(x))
 
     qwen_dummy = DummyQwen()
-    # When skip_attention_qkv=True, asymmetric q/k/v should be skipped, only o_proj compressed
     comp_qwen = ARMORPruner(qwen_dummy, target_attention_only=True, skip_attention_qkv=True, max_error=0.8)
     _, stats_qwen = comp_qwen.compress()
-    assert stats_qwen["num_compressed"] == 1  # Only o_proj
+    assert stats_qwen["num_compressed"] == 1

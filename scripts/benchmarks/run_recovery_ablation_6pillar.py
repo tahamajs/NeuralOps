@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-# Author: Taha Majlesi
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Comprehensive 6-Pillar Accuracy-Recovery & Distillation Benchmark on NVIDIA RTX 4070.
 Evaluates 6 architectures:
@@ -50,12 +54,10 @@ print(
 torch.manual_seed(42)
 cfg = GPT2Config(n_layer=4, n_embd=256, n_head=4, vocab_size=50257)
 
-# 1. Fixed Teacher Model
 teacher = GPT2LMHeadModel(cfg).to(device).eval()
 for p in teacher.parameters():
     p.requires_grad = False
 
-# Calibration / Training Inputs
 batch_size, seq_len = 4, 64
 inputs = torch.randint(0, 50257, (batch_size, seq_len), device=device)
 
@@ -133,7 +135,6 @@ for arch_key, arch_label in architectures:
     for regime_key, regime_label in regimes:
         student = build_student(arch_key)
 
-        # Zero-shot evaluation
         if regime_key == "regime_0":
             cos, kl = evaluate_metrics(student)
             vram = torch.cuda.max_memory_allocated(device) / (1024 * 1024) if torch.cuda.is_available() else 0.0
@@ -153,7 +154,6 @@ for arch_key, arch_label in architectures:
             )
             continue
 
-        # Set up training
         student.train()
         set_surgery_alpha(student, 1.0)
 
@@ -224,18 +224,15 @@ for arch_key, arch_label in architectures:
 out_dir = Path("results/v13_deep_empirical_suite/ablation_6pillar")
 out_dir.mkdir(parents=True, exist_ok=True)
 
-# 1. Save JSON
 with open(out_dir / "ablation_summary.json", "w", encoding="utf-8") as f:
     json.dump(results, f, indent=2)
 
-# 2. Save CSV
 csv_keys = ["architecture", "arch_label", "regime", "regime_label", "cosine_sim", "kl_div", "peak_vram_mb", "time_sec"]
 with open(out_dir / "ablation_summary.csv", "w", newline="", encoding="utf-8") as f:
     writer = csv.DictWriter(f, fieldnames=csv_keys)
     writer.writeheader()
     writer.writerows(results)
 
-# 3. Save Markdown
 md_content = """# 6-Pillar Accuracy-Recovery & Distillation Empirical Ablation Suite
 **Hardware**: NVIDIA GeForce RTX 4070 (8GB VRAM)  
 **Task**: Pure Student Subquadratic Surgery Recovery (`alpha=1.0`, `window_size=0`) across 6 Architectures & 6 Training Regimes (50 steps each).

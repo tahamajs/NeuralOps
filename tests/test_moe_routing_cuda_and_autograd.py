@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Comprehensive GPU tests for MoE Routing (Module 5).
 Validates autograd backward pass, 2D/3D shapes, FP16/BF16/INT64 safety,
@@ -42,7 +48,6 @@ def test_moe_routing_forward_parity(dtype, top_k, shape):
 
     out_cuda = moe_dispatch_gather(tokens, gate_logits, expert, top_k=top_k)
 
-    # Reference computation
     routing_weights, topk_indices, expert_offsets = moe_route_pytorch_ref(tokens, gate_logits, top_k=top_k)
     flat_tokens = tokens.view(-1, 64)
     total_slots = flat_tokens.shape[0] * top_k
@@ -68,7 +73,6 @@ def test_moe_routing_permuted_and_dropped_slots():
     top_k = 2
     topk_indices = torch.randint(0, 4, (num_tokens, top_k), device="cuda", dtype=torch.int64)
 
-    # Permuted offsets with some dropped slots (-1)
     total_slots = 32
     offsets = torch.full((num_tokens, top_k), -1, device="cuda", dtype=torch.int64)
     valid_slots = torch.randperm(total_slots)[:20]
@@ -77,12 +81,10 @@ def test_moe_routing_permuted_and_dropped_slots():
     mod = _get_module()
     assert mod is not None
 
-    # CUDA dispatch & gather
     disp_cuda = mod.moe_dispatch(tokens, topk_indices, offsets, total_slots)
     disp_ref = _moe_dispatch_pytorch_ref(tokens, topk_indices, offsets, total_slots)
     torch.testing.assert_close(disp_cuda, disp_ref)
 
-    # Expert dummy compute
     exp_out = disp_cuda * 1.5
     routing_weights = torch.softmax(torch.randn(num_tokens, top_k, device="cuda"), dim=-1)
 
@@ -109,12 +111,10 @@ def test_moe_routing_autograd_backward():
     mlp2.weight.data.copy_(mlp1.weight.data)
     mlp2.bias.data.copy_(mlp1.bias.data)
 
-    # CUDA forward + backward
     out1 = moe_dispatch_gather(tokens1, gate1, mlp1, top_k=top_k)
     loss1 = (out1 ** 2).sum()
     loss1.backward()
 
-    # PyTorch reference forward + backward
     topk_vals2, topk_idx2 = torch.topk(gate2, k=top_k, dim=-1)
     weights2 = F.softmax(topk_vals2.float(), dim=-1)
     disp2 = tokens2.repeat_interleave(top_k, dim=0)

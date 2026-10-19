@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Tests for neuralops.data.multi_choice module."""
 
 import json
@@ -37,7 +43,6 @@ class TestMultiChoiceDataset:
         assert "attention_mask" in item
         assert "labels" in item
         assert item["labels"].item() == 1
-        # Number of choices for sample 0 is 3
         assert item["input_ids"].shape[0] == 3
 
 

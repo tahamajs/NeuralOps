@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Direct Unit & Stress Test for NeuralOps v1.4 Paged Cache, Paged State, Radix Cache, Eviction & Speculative Decoding
 """
@@ -6,7 +12,6 @@ import sys
 import torch
 import torch.nn as nn
 
-# Mock neuralops.api so we don't trigger heavy imports
 import types
 api_mock = types.ModuleType("neuralops.api")
 api_mock.set_surgery_alpha = lambda model, alpha: None
@@ -18,7 +23,6 @@ from neuralops.models.paged_state import PagedStateTable, RadixPrefixStateCache
 
 print("=== STARTING DIRECT STRESS TESTS ===", flush=True)
 
-# 1. PagedKVCache Continuous Batching (32+ requests)
 print("1. Testing PagedKVCache (32+ requests)...", flush=True)
 cache = PagedKVCache(num_blocks=128, block_size=16, num_heads=4, head_dim=32, device="cpu")
 num_seqs = 35
@@ -35,7 +39,6 @@ for seq_id in range(num_seqs):
     cache.free_sequence(seq_id)
 print("-> PagedKVCache PASSED (Zero memory leaks, 35 concurrent sequences).", flush=True)
 
-# 2. PagedStateTable & Deep Copy-on-Write (CoW)
 print("2. Testing PagedStateTable & CoW...", flush=True)
 state_table = PagedStateTable(num_pages=64, num_heads=4, head_dim=16, state_dim=16, device="cpu")
 parent, child = 10, 20
@@ -43,11 +46,9 @@ state_table.register_sequence(parent, initial_pages=2)
 p0 = state_table.seq_page_tables[parent][0]
 state_table.page_pool[p0].fill_(123.0)
 
-# Zero-copy fork
 state_table.fork_sequence(parent, child)
 assert state_table.ref_counts[p0] == 2
 
-# CoW mutation
 writable_p = state_table.prepare_write(child, page_slot=0)
 assert writable_p != p0
 assert state_table.ref_counts[p0] == 1
@@ -61,7 +62,6 @@ state_table.free_sequence(parent)
 state_table.free_sequence(child)
 print("-> PagedStateTable & CoW PASSED.", flush=True)
 
-# 3. RadixPrefixStateCache Validation
 print("3. Testing RadixPrefixStateCache...", flush=True)
 radix_cache = RadixPrefixStateCache(state_table, max_cached_nodes=100)
 page_id = state_table.allocate_page()
@@ -71,7 +71,6 @@ assert matched_page == page_id
 assert matched_len == 3
 print("-> RadixPrefixStateCache PASSED.", flush=True)
 
-# 4. KV Page Eviction Policies (FIFO, H2O, Attention-score)
 print("4. Testing KV Page Eviction Policies (FIFO, H2O, Attention)...", flush=True)
 class EvictionTestManager:
     def __init__(self, capacity=2, policy="fifo"):
@@ -103,11 +102,10 @@ for policy in ["fifo", "h2o", "attention"]:
     mgr = EvictionTestManager(capacity=2, policy=policy)
     mgr.insert(1, score=0.2)
     mgr.insert(2, score=0.8)
-    mgr.insert(3, score=0.5) # Should trigger eviction
+    mgr.insert(3, score=0.5)
     assert len(mgr.pool) == 2
 print("-> Eviction Policies (FIFO, H2O, Attention) PASSED.", flush=True)
 
-# 5. Self-Speculative Decoding Gamma Sweep & Bit-Exact Verification
 print("5. Testing SelfSpeculativeDecoder gamma sweep (1, 2, 4, 8)...", flush=True)
 class ToyTargetModel(nn.Module):
     def __init__(self):
@@ -135,7 +133,6 @@ decoder = SelfSpeculativeDecoder(
 input_ids = torch.randint(0, 50, (1, 4))
 max_new = 16
 
-# Standard greedy baseline
 with torch.no_grad():
     ref_ids = input_ids.clone()
     for _ in range(max_new):

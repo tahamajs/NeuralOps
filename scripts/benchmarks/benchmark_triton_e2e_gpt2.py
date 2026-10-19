@@ -1,4 +1,9 @@
-# -*- coding: utf-8 -*-
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """End-to-End GPT-2 Physical Hardware Comparison: Triton vs PyTorch Fallback."""
 
 import json
@@ -19,7 +24,6 @@ def run_benchmark():
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(f"Running End-to-End GPT-2 Benchmark on: {device} ({torch.cuda.get_device_name(0)})")
 
-    # Standard GPT-2 Small configuration (12 layers, 12 heads, 768 hidden dimension, 50257 vocab)
     config = GPT2Config(
         n_embd=768,
         n_layer=12,
@@ -28,7 +32,6 @@ def run_benchmark():
     )
     base_model = GPT2LMHeadModel(config).to(device=device, dtype=torch.float16).eval()
 
-    # Transplant causal attention to fused linear attention with Triton JIT acceleration
     print("Transplanting GPT-2 causal attention with Triton PositiveKernelLinearAttention...")
     model = neuralops.replace_attention(base_model, attention="positive_kernel_linear_attention")
     model.eval()
@@ -48,20 +51,15 @@ def run_benchmark():
         x = torch.randint(0, 50257, (B, T), device=device)
 
         with torch.no_grad():
-            # ─────────────────────────────────────────────────────────────
-            # 1. Triton Enabled Run
-            # ─────────────────────────────────────────────────────────────
             tk_types.FORCE_PYTORCH_FALLBACK = False
             os.environ["FORCE_PYTORCH_FALLBACK"] = "0"
             torch.cuda.empty_cache()
             torch.cuda.reset_peak_memory_stats()
 
-            # Warmup
             for _ in range(5):
                 _ = model(x)
             torch.cuda.synchronize()
 
-            # Timing
             t0 = time.perf_counter()
             iters = 25
             for _ in range(iters):
@@ -71,20 +69,15 @@ def run_benchmark():
             peak_vram_tri_mb = torch.cuda.max_memory_allocated() / (1024.0 * 1024.0)
             tokens_per_sec_tri = (B * T) / (t_tri_ms / 1000.0)
 
-            # ─────────────────────────────────────────────────────────────
-            # 2. PyTorch Fallback Run
-            # ─────────────────────────────────────────────────────────────
             tk_types.FORCE_PYTORCH_FALLBACK = True
             os.environ["FORCE_PYTORCH_FALLBACK"] = "1"
             torch.cuda.empty_cache()
             torch.cuda.reset_peak_memory_stats()
 
-            # Warmup
             for _ in range(5):
                 _ = model(x)
             torch.cuda.synchronize()
 
-            # Timing
             t0 = time.perf_counter()
             for _ in range(iters):
                 out_pt = model(x)
@@ -93,13 +86,9 @@ def run_benchmark():
             peak_vram_pt_mb = torch.cuda.max_memory_allocated() / (1024.0 * 1024.0)
             tokens_per_sec_pt = (B * T) / (t_pt_ms / 1000.0)
 
-            # Reset flag
             tk_types.FORCE_PYTORCH_FALLBACK = False
             os.environ["FORCE_PYTORCH_FALLBACK"] = "0"
 
-            # ─────────────────────────────────────────────────────────────
-            # 3. Output Parity & Metrics Verification
-            # ─────────────────────────────────────────────────────────────
             logits_tri = out_tri.logits.float().view(-1, 50257)
             logits_pt = out_pt.logits.float().view(-1, 50257)
             cos_sim = F.cosine_similarity(logits_tri, logits_pt, dim=-1).mean().item()

@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -5,13 +12,6 @@
 
 namespace neuralops { namespace cuda {
 
-// Numerically stabilized Warp-Parallel Associative Log-Cumsum-Exp Scan:
-// Form: (m_A, s_A) \oplus (m_B, s_B) = (\max(m_A, m_B), s_A e^{m_A - m_{new}} + s_B e^{m_B - m_{new}})
-//
-// Hardware-level optimization:
-// 1. Eliminates single-thread serialization (threadIdx.x == 0).
-// 2. Intra-warp prefix scan using __shfl_up_sync.
-// 3. Strict FP32 intermediate accumulation to prevent numerical overflow and underflow.
 template <typename scalar_t>
 __global__ void __launch_bounds__(32) logcumsumexp_row_kernel(
     scalar_t* __restrict__ out,
@@ -64,7 +64,7 @@ __global__ void __launch_bounds__(32) logcumsumexp_row_kernel(
     }
 }
 
-}} // namespace neuralops::cuda
+}}
 
 torch::Tensor logcumsumexp_fwd(const torch::Tensor& x, int dim) {
     CHECK_INPUT(x);

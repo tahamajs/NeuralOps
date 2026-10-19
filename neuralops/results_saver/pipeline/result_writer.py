@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Pipeline Result Writer
 
 Writes structured benchmark results, configuration snapshots, and summary plots to disk.
-
-Author: Taha Majlesi
 """
 
 import json
@@ -31,9 +35,6 @@ class ResultWriter:
         for d in self._dirs.values():
             d.mkdir(parents=True, exist_ok=True)
 
-    # ------------------------------------------------------------------ #
-    # Config                                                               #
-    # ------------------------------------------------------------------ #
     def save_config(self, cfg: Any) -> None:
         """Serialise the ExperimentConfig (dataclass or dict) to config.json."""
         if hasattr(cfg, "to_dict"):
@@ -47,9 +48,6 @@ class ResultWriter:
         self._write_json(self.root / "config.json", data)
         logger.debug("Config saved → %s", self.root / "config.json")
 
-    # ------------------------------------------------------------------ #
-    # Metrics                                                              #
-    # ------------------------------------------------------------------ #
     def save_metrics(self, metrics: dict[str, Any], tag: str = "metrics") -> None:
         """Save a metrics dict to metrics/<tag>.json with a timestamp."""
         payload = {"timestamp": datetime.now().isoformat(), **metrics}
@@ -57,15 +55,11 @@ class ResultWriter:
         self._write_json(path, payload)
         logger.debug("Metrics[%s] saved → %s", tag, path)
 
-    # ------------------------------------------------------------------ #
-    # Training history                                                     #
-    # ------------------------------------------------------------------ #
     def save_history(self, log_history: list[dict[str, Any]]) -> None:
         """Save the full HuggingFace trainer log_history list."""
         path = self._dirs["history"] / "log_history.json"
         self._write_json(path, log_history)
 
-        # Also export as CSV for easy analysis
         csv_path = self._dirs["history"] / "log_history.csv"
         if log_history:
             keys = sorted({k for entry in log_history for k in entry})
@@ -79,9 +73,6 @@ class ResultWriter:
             except Exception as e:
                 logger.warning("Could not write CSV history: %s", e)
 
-    # ------------------------------------------------------------------ #
-    # System info                                                          #
-    # ------------------------------------------------------------------ #
     def save_system_info(
         self,
         elapsed_s: float = 0.0,
@@ -113,9 +104,6 @@ class ResultWriter:
         }
         self._write_json(self.root / "system_info.json", info)
 
-    # ------------------------------------------------------------------ #
-    # Plots                                                                #
-    # ------------------------------------------------------------------ #
     def save_plots(self, log_history: list[dict[str, Any]]) -> None:
         """Generate and save training/validation loss and metric curves."""
         try:
@@ -143,7 +131,6 @@ class ResultWriter:
                 eval_acc_steps.append(step)
                 eval_accs.append(entry["eval_accuracy"])
 
-        # Loss curve
         if train_losses:
             fig, ax = plt.subplots(figsize=(10, 5))
             ax.plot(train_steps, train_losses, label="Train Loss", linewidth=1.5)
@@ -158,7 +145,6 @@ class ResultWriter:
             plt.savefig(self._dirs["plots"] / "loss_curve.png", dpi=150)
             plt.close(fig)
 
-        # Accuracy curve
         if eval_accs:
             fig, ax = plt.subplots(figsize=(10, 5))
             ax.plot(eval_acc_steps, eval_accs, "g^-", label="Eval Accuracy", linewidth=1.5)
@@ -171,9 +157,6 @@ class ResultWriter:
             plt.savefig(self._dirs["plots"] / "metric_curve.png", dpi=150)
             plt.close(fig)
 
-    # ------------------------------------------------------------------ #
-    # Summary Markdown                                                     #
-    # ------------------------------------------------------------------ #
     def write_summary_md(
         self,
         exp_name: str,
@@ -209,9 +192,6 @@ class ResultWriter:
         ]
         (self.root / "SUMMARY.md").write_text("\n".join(lines))
 
-    # ------------------------------------------------------------------ #
-    # Internal helpers                                                     #
-    # ------------------------------------------------------------------ #
     def _write_json(self, path: Path, data: Any) -> None:
         """Write data to a JSON file with indentation."""
         with open(path, "w", encoding="utf-8") as f:

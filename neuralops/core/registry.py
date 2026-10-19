@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Central Component Registry
 
 Decorators and registry catalogs managing discovery and instantiation of attention and compression modules.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -234,7 +238,6 @@ class Registry:
             if is_alias:
                 self._aliases[k] = obj
             else:
-                # If key already exists and maps to a class, do not let a plain function overwrite it
                 if k in self._dict and isinstance(self._dict[k], type) and not isinstance(obj, type):
                     logger.debug(
                         "Registry '%s': Skipping overwrite of class %s by function %s for key '%s'",
@@ -246,7 +249,6 @@ class Registry:
                     return obj
                 self._dict[k] = obj
 
-            # Derive capabilities from explicit kwargs or attributes on the registered object
             caps = {
                 "supports_causal": getattr(
                     obj,
@@ -548,13 +550,10 @@ class Registry:
         return f"Registry({self.name!r}, {len(self)} items)"
 
 
-# ----------------------------------------------------------------------
-# Global registries – populated by their respective packages
-# ----------------------------------------------------------------------
-ATTENTION_REGISTRY = Registry("attentions")  # attention modules (Nexus, LEKA, ...)
-COMPRESSOR_REGISTRY = Registry("compressors")  # compression strategies (SVD, TT, ...)
-METHOD_REGISTRY = Registry("methods")  # training methods (LoRA, R-Drop, ...)
-AUX_REGISTRY = Registry("auxiliary")  # auxiliary modules (RoPE, SSM, token pruning, ...)
+ATTENTION_REGISTRY = Registry("attentions")
+COMPRESSOR_REGISTRY = Registry("compressors")
+METHOD_REGISTRY = Registry("methods")
+AUX_REGISTRY = Registry("auxiliary")
 
 
 def register_attention(
@@ -625,17 +624,15 @@ def list_compressors() -> list[str]:
     return COMPRESSOR_REGISTRY.keys()
 
 
-# Dynamically attach list_attention_mechanisms to neuralops top-level package if loaded
 import sys as _sys
 if "neuralops" in _sys.modules:
     setattr(_sys.modules["neuralops"], "list_attention_mechanisms", list_attention_mechanisms)
 
-# Optional registries (if needed)
-MODEL_REGISTRY = Registry("models")  # different base models
-DATASET_REGISTRY = Registry("datasets")  # GLUE, SuperGLUE, etc.
-LOSS_REGISTRY = Registry("losses")  # custom loss functions
-TRAINER_REGISTRY = Registry("trainers")  # trainer classes
-VISUALIZER_REGISTRY = Registry("visualizers")  # visualization utilities
+MODEL_REGISTRY = Registry("models")
+DATASET_REGISTRY = Registry("datasets")
+LOSS_REGISTRY = Registry("losses")
+TRAINER_REGISTRY = Registry("trainers")
+VISUALIZER_REGISTRY = Registry("visualizers")
 
 
 HELPER_SUFFIXES = (
@@ -764,7 +761,6 @@ def create_attention(
     )
     resolved_rank = rank or kwargs.pop("r", None)
 
-    # Adjust heads if dim is not divisible
     if resolved_dim is not None and resolved_heads is not None and resolved_heads > 0:
         if resolved_dim % resolved_heads != 0:
             for cand in [16, 12, 8, 4, 2, 1]:
@@ -792,7 +788,6 @@ def create_attention(
         config = BertConfig(hidden_size=resolved_dim, num_attention_heads=h)
         call_kwargs["config"] = config
 
-    # Dynamic multi-attempt constructor resolution
     init_attempts = []
     if config is not None:
         init_attempts.append(lambda: cls(config=config, **{k: v for k, v in call_kwargs.items() if k != "config"}))
@@ -853,7 +848,6 @@ def create_compressor(name: str, model: Any = None, rank: int | None = None, **k
     return cls(**call_kwargs)
 
 
-# Register HNC-SVD Compressor aliases without altering canonical 72 counts
 try:
     from neuralops.compression_engine.svd.direct_svd import DirectSVDCompressor
     COMPRESSOR_REGISTRY.register("svd", is_alias=True)(DirectSVDCompressor)

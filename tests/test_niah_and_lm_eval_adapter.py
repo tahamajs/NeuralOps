@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Tests for Needle-In-A-Haystack (NIAH) and LM Evaluation Harness Adapter.
 """
@@ -25,7 +31,6 @@ class MockTokenizer:
         self.pad_token_id = 0
 
     def encode(self, text: str, add_special_tokens: bool = False) -> list[int]:
-        # Hash each whitespace word to token id
         words = text.strip().split()
         return [abs(hash(w)) % 200 for w in words] or [1]
 
@@ -62,7 +67,6 @@ def test_niah_passkey_evaluator_and_heatmap(tmp_path: Path):
     assert len(results["accuracy_grid"][0]) == 2
     assert 0.0 <= results["mean_retrieval_accuracy"] <= 1.0
 
-    # Test plot_niah_heatmap
     plot_path = tmp_path / "test_niah.png"
     plot_niah_heatmap(results, plot_path)
     assert plot_path.exists()
@@ -83,7 +87,6 @@ def test_lm_eval_adapter_loglikelihood_and_generate():
 
     adapter = NeuralOpsLMEvalAdapter(model, tokenizer, device="cpu")
 
-    # 1. loglikelihood
     reqs = [
         ("The sky is", " blue"),
         ("Artificial intelligence is", " transformative"),
@@ -94,16 +97,13 @@ def test_lm_eval_adapter_loglikelihood_and_generate():
         assert isinstance(ll, float)
         assert isinstance(is_greedy, bool)
 
-    # 2. loglikelihood_rolling
     rolling = adapter.loglikelihood_rolling(["Hello world sentence.", "Another test text."])
     assert len(rolling) == 2
 
-    # 3. generate_until
     gen_reqs = [("Prompt:", {"max_new_tokens": 5, "until": ["\n"]})]
     gen_res = adapter.generate_until(gen_reqs)
     assert len(gen_res) == 1
     assert isinstance(gen_res[0], str)
 
-    # 4. Zero-shot benchmark helper
     scores = evaluate_zero_shot_tasks(model, tokenizer, tasks=("piqa",), device="cpu")
     assert "piqa" in scores

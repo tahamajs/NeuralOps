@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Benchmark script for FlashGQA: CUDA vs PyTorch Ref vs PyTorch SDPA
 """
@@ -20,13 +26,11 @@ def run_benchmark():
     assert callable(flash_gqa), "flash_gqa must be callable"
     assert callable(flash_gqa_pytorch_ref), "flash_gqa_pytorch_ref must be callable"
 
-    # Warmup
     for _ in range(10):
         _ = flash_gqa(q, k, v, is_causal=False)
         _ = flash_gqa_pytorch_ref(q, k, v, is_causal=False)
     torch.cuda.synchronize()
 
-    # Benchmark CUDA
     iters = 50
     start = torch.cuda.Event(enable_timing=True)
     end = torch.cuda.Event(enable_timing=True)
@@ -38,7 +42,6 @@ def run_benchmark():
     torch.cuda.synchronize()
     cuda_ms = start.elapsed_time(end) / iters
 
-    # Benchmark PyTorch Ref
     start.record()
     for _ in range(iters):
         _ = flash_gqa_pytorch_ref(q, k, v, is_causal=False)
@@ -46,7 +49,6 @@ def run_benchmark():
     torch.cuda.synchronize()
     ref_ms = start.elapsed_time(end) / iters
 
-    # Benchmark PyTorch SDPA (cuBLAS FlashAttention)
     k_rep = k.repeat_interleave(H // H_KV, dim=1)
     v_rep = v.repeat_interleave(H // H_KV, dim=1)
     for _ in range(10):

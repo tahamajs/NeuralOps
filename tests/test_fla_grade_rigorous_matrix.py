@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 FLA-Grade (Flash-Linear-Attention Grade) Rigorous Testing & Property Matrix.
 
@@ -46,9 +52,6 @@ def device():
     return torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-# =========================================================================
-# 1. MATHEMATICAL GRADIENT EQUIVALENCE (Autograd vs Reference)
-# =========================================================================
 
 class TestFLAMathematicalGradientEquivalence:
     """Verifies that analytical backward gradients match PyTorch autograd reference."""
@@ -59,14 +62,12 @@ class TestFLAMathematicalGradientEquivalence:
         B, H, L, D = 2, 2, 8, 16
         tol = 1e-3 if dtype == torch.float32 else 5e-2
 
-        # Inputs for Triton
         q1 = torch.randn(B, H, L, D, device=device, dtype=dtype, requires_grad=True)
         k1 = torch.randn(B, H, L, D, device=device, dtype=dtype, requires_grad=True)
         v1 = torch.randn(B, H, L, D, device=device, dtype=dtype, requires_grad=True)
         beta1 = torch.sigmoid(torch.randn(B, H, L, device=device, dtype=dtype)).detach().requires_grad_(True)
         alpha1 = torch.sigmoid(torch.randn(B, H, L, device=device, dtype=dtype)).detach().requires_grad_(True)
 
-        # Clone for Reference
         q2 = q1.detach().clone().requires_grad_(True)
         k2 = k1.detach().clone().requires_grad_(True)
         v2 = v1.detach().clone().requires_grad_(True)
@@ -93,7 +94,6 @@ class TestFLAMathematicalGradientEquivalence:
 
         u1 = torch.randn(B, D, L, device=device, dtype=dtype, requires_grad=True)
         delta1 = torch.randn(B, D, L, device=device, dtype=dtype, requires_grad=True)
-        # Create A1 strictly as a leaf tensor with requires_grad=True
         A1 = (-torch.rand(D, N, device=device, dtype=dtype)).detach().requires_grad_(True)
         B_mat1 = torch.randn(B, N, L, device=device, dtype=dtype, requires_grad=True)
         C1 = torch.randn(B, N, L, device=device, dtype=dtype, requires_grad=True)
@@ -118,9 +118,6 @@ class TestFLAMathematicalGradientEquivalence:
         torch.testing.assert_close(C1.grad, C2.grad, atol=tol, rtol=tol)
 
 
-# =========================================================================
-# 2. RECURRENT VS CHUNKED VS PARALLEL SCAN NUMERICAL EQUIVALENCE
-# =========================================================================
 
 class TestFLAScanEquivalence:
     """Verifies sequential step-by-step recurrence matches chunked scan exactly."""
@@ -134,7 +131,6 @@ class TestFLAScanEquivalence:
         b = torch.randn(B, L, D, device=device)
         x = torch.randn(B, L, D, device=device)
 
-        # 1. Pure sequential recurrence
         h_seq = torch.zeros(B, L, D, device=device)
         h_prev = torch.zeros(B, D, device=device)
         for t in range(L):
@@ -142,7 +138,6 @@ class TestFLAScanEquivalence:
             h_seq[:, t] = h_t
             h_prev = h_t
 
-        # 2. Chunked associative scan
         h_chunked = torch.zeros(B, L, D, device=device)
         h_chunk_prev = torch.zeros(B, D, device=device)
         num_chunks = L // chunk_size
@@ -167,29 +162,23 @@ class TestFLAScanEquivalence:
         v = torch.randn(B, H, L, D, device=device)
         gammas = 1.0 - 2.0 ** (-5.0 - torch.arange(H, device=device, dtype=torch.float32))
 
-        # PyTorch reference (sequential recurrence)
         out_rec = multi_scale_retention_pytorch_ref(q, k, v, gammas)
 
-        # Causal decay matrix computation (parallel matrix scan):
-        # M[i, j] = gammas[h]**(i - j) if i >= j else 0
         arange_L = torch.arange(L, device=device)
-        diff = arange_L.unsqueeze(1) - arange_L.unsqueeze(0)  # (L, L)
+        diff = arange_L.unsqueeze(1) - arange_L.unsqueeze(0)
         causal_mask = diff >= 0
         y_matrix = torch.zeros(B, H, L, D, device=device)
 
         for h in range(H):
             gamma = gammas[h]
             decay_matrix = torch.where(causal_mask, gamma ** diff.float(), torch.zeros_like(diff, dtype=torch.float32))
-            attn = torch.matmul(q[:, h], k[:, h].transpose(-1, -2))  # (B, L, L)
+            attn = torch.matmul(q[:, h], k[:, h].transpose(-1, -2))
             decayed_attn = attn * decay_matrix.unsqueeze(0)
             y_matrix[:, h] = torch.matmul(decayed_attn, v[:, h])
 
         torch.testing.assert_close(out_rec, y_matrix, atol=1e-4, rtol=1e-4)
 
 
-# =========================================================================
-# 3. VARIABLE-LENGTH SEQUENCE (VarLen) & CUMULATIVE LENGTHS (cu_seqlens)
-# =========================================================================
 
 class TestFLAVarLenBatching:
     """Verifies packed sequence evaluation with cu_seqlens matches individual sequences."""
@@ -274,9 +263,6 @@ class TestFLAVarLenBatching:
             torch.testing.assert_close(out_varlen, expected, atol=1e-5, rtol=1e-5)
 
 
-# =========================================================================
-# 4. CONTINUOUS STATE TRACKING / CACHED AUTOREGRESSIVE GENERATION
-# =========================================================================
 
 class TestFLAStateContinuityAndGeneration:
     """Verifies that stepping token-by-token with state cache matches full causal sequence."""
@@ -287,10 +273,8 @@ class TestFLAStateContinuityAndGeneration:
         f = torch.sigmoid(torch.randn(B, L, D, device=device))
         iv = torch.randn(B, L, D, device=device)
 
-        # Full sequence forward
         y_full, final_state = hgrn2_scan_triton(f, iv, return_final_state=True)
 
-        # Token-by-token stepping
         y_step_list = []
         state = None
         for t in range(L):
@@ -311,10 +295,8 @@ class TestFLAStateContinuityAndGeneration:
         v = torch.randn(B, H, L, D, device=device)
         lam = torch.sigmoid(torch.randn(B, H, L, device=device))
 
-        # Full forward
         y_full, s_final = gla_scan_triton(q, k, v, lam, use_normalizer=False, return_final_state=True)
 
-        # Two chunks with state carryover
         y_chunk1, s_mid = gla_scan_triton(q[:, :, :8], k[:, :, :8], v[:, :, :8], lam[:, :, :8],
                                           use_normalizer=False, return_final_state=True)
         y_chunk2, s_end = gla_scan_triton(q[:, :, 8:], k[:, :, 8:], v[:, :, 8:], lam[:, :, 8:],
@@ -325,9 +307,6 @@ class TestFLAStateContinuityAndGeneration:
         torch.testing.assert_close(s_final, s_end, atol=1e-5, rtol=1e-5)
 
 
-# =========================================================================
-# 5. MULTI-PRECISION INVARIANCE (FP32, FP16, BF16)
-# =========================================================================
 
 class TestFLAMultiPrecisionInvariance:
     """Verifies numerical fidelity and gradient propagation across precision levels."""
@@ -360,9 +339,6 @@ class TestFLAMultiPrecisionInvariance:
         assert not torch.isinf(out).any()
 
 
-# =========================================================================
-# 6. DYNAMIC CAUSAL MASKING & PADDING INVARIANCE
-# =========================================================================
 
 class TestFLADynamicMaskingAndPaddingInvariance:
     """Verifies that masked tokens produce zero output and receive zero gradient."""
@@ -376,7 +352,7 @@ class TestFLADynamicMaskingAndPaddingInvariance:
         lam = torch.sigmoid(torch.randn(B, H, L, device=device))
 
         mask = torch.ones(B, L, device=device)
-        mask[:, 10:] = 0.0  # pad tokens after position 10
+        mask[:, 10:] = 0.0
 
         out = gla_scan_triton(q, k, v, lam, mask=mask)
         assert torch.equal(out[:, :, 10:], torch.zeros_like(out[:, :, 10:]))
@@ -391,15 +367,12 @@ class TestFLADynamicMaskingAndPaddingInvariance:
         alpha = torch.sigmoid(torch.randn(B, H, L, device=device))
 
         mask = torch.ones(B, L, device=device)
-        mask[:, 8:] = 0.0  # pad tokens after position 8
+        mask[:, 8:] = 0.0
 
         out = gdn_scan_triton(q, k, v, beta, alpha, mask=mask)
         assert torch.equal(out[:, :, 8:], torch.zeros_like(out[:, :, 8:]))
 
 
-# =========================================================================
-# 7. HIGH-LEVEL ATTENTION MODULE VERIFICATION (7 Core Families)
-# =========================================================================
 
 class TestFLACoreAttentionFamilies:
     """End-to-end verification of all 7 core linear/recurrent attention families."""

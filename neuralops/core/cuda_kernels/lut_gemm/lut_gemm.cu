@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -6,16 +13,6 @@
 namespace neuralops {
 namespace cuda {
 
-// ============================================================================
-// Ada Lovelace SM 8.9 Optimized 4-Bit LUT Codebook Dequantization GEMM Kernel:
-// Form: out = X @ W(indices, codebook)^T + bias
-//
-// Hardware Optimizations:
-// 1. Thread block: 16 threads along N, 8 threads along M (128 threads = 4 warps).
-// 2. SMEM caching of active codebook tiles to eliminate repeated DRAM lookups.
-// 3. Vectorized uint32_t (4 bytes = 8 sub-4-bit indices) loading for 8x memory throughput.
-// 4. Register-level unrolled accumulation with dual-issue arithmetic.
-// ============================================================================
 
 template <typename scalar_t>
 __launch_bounds__(128)
@@ -42,7 +39,6 @@ __global__ void lut_codebook_dequant_gemm_opt_kernel(
     const int n_idx_offset = n * K_half;
     const int m_x_offset = m * K;
 
-    // Process 4 bytes (8 elements) per step using 32-bit words if aligned
     const uint32_t* __restrict__ indices_u32 = reinterpret_cast<const uint32_t*>(indices_packed + n_idx_offset);
     const int num_u32 = K_half / 4;
 
@@ -70,7 +66,6 @@ __global__ void lut_codebook_dequant_gemm_opt_kernel(
         }
     }
 
-    // Remainder for K_half not divisible by 4
     for (int k_h = num_u32 * 4; k_h < K_half; ++k_h) {
         const uint8_t packed_val = indices_packed[n_idx_offset + k_h];
         const int idx_0 = packed_val & 0x0F;
@@ -87,8 +82,8 @@ __global__ void lut_codebook_dequant_gemm_opt_kernel(
     out[m * N + n] = from_float<scalar_t>(acc);
 }
 
-} // namespace cuda
-} // namespace neuralops
+}
+}
 
 torch::Tensor lut_codebook_dequant_gemm_fwd(
     const torch::Tensor& x,
@@ -109,7 +104,6 @@ torch::Tensor lut_codebook_dequant_gemm_fwd(
 
     auto out = torch::empty({M, N}, x.options());
 
-    // 2D grid: 16 threads along N, 8 threads along M = 128 threads
     dim3 threads(128);
     dim3 grid((N + 15) / 16, (M + 7) / 8);
     cudaStream_t stream = c10::cuda::getCurrentCUDAStream().stream();

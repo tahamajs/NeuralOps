@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <cuda_runtime.h>
 #include <torch/extension.h>
 #include <c10/cuda/CUDAStream.h>
@@ -5,18 +12,14 @@
 #include <float.h>
 #include "_common.cuh"
 
-// ============================================================================
-// Block Sparse Attention Forward Kernel
-// SMEM block tiling (+8 padding), 128-bit vector loads, and block mask caching
-// ============================================================================
 template<int HEAD_DIM, int BLOCK_SIZE>
 __launch_bounds__(128, 2)
 __global__ void block_sparse_attn_warp_kernel(
-    float* __restrict__ out,               // [B, H, N, HEAD_DIM]
-    const float* __restrict__ q,           // [B, H, N, HEAD_DIM]
-    const float* __restrict__ k,           // [B, H, N, HEAD_DIM]
-    const float* __restrict__ v,           // [B, H, N, HEAD_DIM]
-    const int32_t* __restrict__ block_mask,// [num_q_blocks, num_kv_blocks]
+    float* __restrict__ out,
+    const float* __restrict__ q,
+    const float* __restrict__ k,
+    const float* __restrict__ v,
+    const int32_t* __restrict__ block_mask,
     const int B,
     const int H,
     const int N,
@@ -26,7 +29,7 @@ __global__ void block_sparse_attn_warp_kernel(
     constexpr int NUM_WARPS = 4;
     constexpr int QUERIES_PER_WARP = BLOCK_SIZE / NUM_WARPS;
     constexpr int ELEMENTS_PER_THREAD = HEAD_DIM / 32;
-    constexpr int STRIDE = HEAD_DIM + 8; // 16-byte aligned + 8-bank shift
+    constexpr int STRIDE = HEAD_DIM + 8;
 
     const int q_block_idx = blockIdx.x;
     const int h = blockIdx.y;
@@ -39,10 +42,6 @@ __global__ void block_sparse_attn_warp_kernel(
 
     if (b >= B || h >= H) return;
 
-    // Dynamic shared memory layout:
-    // K_smem: [BLOCK_SIZE][STRIDE]
-    // V_smem: [BLOCK_SIZE][STRIDE]
-    // s_active_kv: [num_kv_blocks]
     extern __shared__ char smem_raw[];
     float* K_smem = reinterpret_cast<float*>(smem_raw);
     float* V_smem = reinterpret_cast<float*>(smem_raw + BLOCK_SIZE * STRIDE * sizeof(float));
@@ -50,7 +49,6 @@ __global__ void block_sparse_attn_warp_kernel(
 
     __shared__ int s_num_active;
 
-    // Block sparse mask caching: cache active KV blocks for this query block into SMEM
     if (tid_in_block == 0) {
         int count = 0;
         const int mask_row_off = q_block_idx * num_kv_blocks;
@@ -66,7 +64,6 @@ __global__ void block_sparse_attn_warp_kernel(
     const int num_act = s_num_active;
     const int kv_head_base = b * (H * N * HEAD_DIM) + h * (N * HEAD_DIM);
 
-    // Local registers for queries assigned to this warp
     float q_local[QUERIES_PER_WARP][ELEMENTS_PER_THREAD];
     float acc[QUERIES_PER_WARP][ELEMENTS_PER_THREAD];
     float m_prev[QUERIES_PER_WARP];
@@ -93,12 +90,10 @@ __global__ void block_sparse_attn_warp_kernel(
     constexpr int VEC4_PER_TOK = HEAD_DIM / 4;
     constexpr int TOTAL_VEC4 = BLOCK_SIZE * VEC4_PER_TOK;
 
-    // Loop over cached active KV blocks
     for (int act_idx = 0; act_idx < num_act; ++act_idx) {
         const int kv_b = s_active_kv[act_idx];
         const int k_start = kv_b * BLOCK_SIZE;
 
-        // Cooperatively load active K and V into SMEM with 128-bit aligned float4 vector loads
         __syncthreads();
         for (int idx = tid_in_block; idx < TOTAL_VEC4; idx += total_threads) {
             const int tok_in_block = idx / VEC4_PER_TOK;
@@ -123,7 +118,6 @@ __global__ void block_sparse_attn_warp_kernel(
 
         const int tokens_in_block = min(BLOCK_SIZE, N - k_start);
 
-        // Process all queries in this warp against the loaded active KV block
         #pragma unroll
         for (int qi = 0; qi < QUERIES_PER_WARP; ++qi) {
             const int cur_q_idx = q_indices[qi];
@@ -156,7 +150,6 @@ __global__ void block_sparse_attn_warp_kernel(
         }
     }
 
-    // Write final normalized outputs to global memory
     #pragma unroll
     for (int qi = 0; qi < QUERIES_PER_WARP; ++qi) {
         const int cur_q_idx = q_indices[qi];
@@ -178,21 +171,17 @@ __global__ void block_sparse_attn_warp_kernel(
     }
 }
 
-// ============================================================================
-// Block Sparse Attention Backward Kernel (Analytical Adjoint with SMEM Tiling)
-// Computes exact analytical gradients for Q, K, V with 2-pass online softmax adjoints
-// ============================================================================
 template<int HEAD_DIM, int BLOCK_SIZE>
 __launch_bounds__(128, 2)
 __global__ void sparse_attention_bwd_kernel(
-    float* __restrict__ grad_q,            // [B, H, N, HEAD_DIM]
-    float* __restrict__ grad_k,            // [B, H, N, HEAD_DIM]
-    float* __restrict__ grad_v,            // [B, H, N, HEAD_DIM]
-    const float* __restrict__ grad_out,    // [B, H, N, HEAD_DIM]
-    const float* __restrict__ q,           // [B, H, N, HEAD_DIM]
-    const float* __restrict__ k,           // [B, H, N, HEAD_DIM]
-    const float* __restrict__ v,           // [B, H, N, HEAD_DIM]
-    const int32_t* __restrict__ block_mask,// [num_q_blocks, num_kv_blocks]
+    float* __restrict__ grad_q,
+    float* __restrict__ grad_k,
+    float* __restrict__ grad_v,
+    const float* __restrict__ grad_out,
+    const float* __restrict__ q,
+    const float* __restrict__ k,
+    const float* __restrict__ v,
+    const int32_t* __restrict__ block_mask,
     const int B,
     const int H,
     const int N,
@@ -202,7 +191,7 @@ __global__ void sparse_attention_bwd_kernel(
     constexpr int NUM_WARPS = 4;
     constexpr int QUERIES_PER_WARP = BLOCK_SIZE / NUM_WARPS;
     constexpr int ELEMENTS_PER_THREAD = HEAD_DIM / 32;
-    constexpr int STRIDE = HEAD_DIM + 8; // 16-byte aligned + 8-bank shift
+    constexpr int STRIDE = HEAD_DIM + 8;
 
     const int q_block_idx = blockIdx.x;
     const int h = blockIdx.y;
@@ -222,7 +211,6 @@ __global__ void sparse_attention_bwd_kernel(
 
     __shared__ int s_num_active;
 
-    // Block sparse mask caching: cache active KV blocks for this query block into SMEM
     if (tid_in_block == 0) {
         int count = 0;
         const int mask_row_off = q_block_idx * num_kv_blocks;
@@ -238,7 +226,6 @@ __global__ void sparse_attention_bwd_kernel(
     const int num_act = s_num_active;
     const int kv_head_base = b * (H * N * HEAD_DIM) + h * (N * HEAD_DIM);
 
-    // Query indices for this warp
     int q_indices[QUERIES_PER_WARP];
     float q_local[QUERIES_PER_WARP][ELEMENTS_PER_THREAD];
     float go_local[QUERIES_PER_WARP][ELEMENTS_PER_THREAD];
@@ -266,7 +253,6 @@ __global__ void sparse_attention_bwd_kernel(
     }
 
     if (num_act == 0) {
-        // No active blocks for this query block; grad_q is 0
         #pragma unroll
         for (int qi = 0; qi < QUERIES_PER_WARP; ++qi) {
             const int cur_q_idx = q_indices[qi];
@@ -284,9 +270,6 @@ __global__ void sparse_attention_bwd_kernel(
     constexpr int VEC4_PER_TOK = HEAD_DIM / 4;
     constexpr int TOTAL_VEC4 = BLOCK_SIZE * VEC4_PER_TOK;
 
-    // ========================================================================
-    // Pass 1: Forward online softmax tracking to compute m, l, and D_i
-    // ========================================================================
     for (int act_idx = 0; act_idx < num_act; ++act_idx) {
         const int kv_b = s_active_kv[act_idx];
         const int k_start = kv_b * BLOCK_SIZE;
@@ -347,7 +330,6 @@ __global__ void sparse_attention_bwd_kernel(
         }
     }
 
-    // Scalar D_i = sum_d (grad_out[i, d] * Out[i, d]) for each query
     float D_val[QUERIES_PER_WARP];
     #pragma unroll
     for (int qi = 0; qi < QUERIES_PER_WARP; ++qi) {
@@ -367,9 +349,6 @@ __global__ void sparse_attention_bwd_kernel(
         }
     }
 
-    // ========================================================================
-    // Pass 2: Softmax adjoint & gradient accumulation for Q, K, V
-    // ========================================================================
     float grad_q_acc[QUERIES_PER_WARP][ELEMENTS_PER_THREAD];
     #pragma unroll
     for (int qi = 0; qi < QUERIES_PER_WARP; ++qi) {
@@ -455,7 +434,6 @@ __global__ void sparse_attention_bwd_kernel(
         }
     }
 
-    // Write final accumulated grad_q directly to DRAM (coalesced)
     #pragma unroll
     for (int qi = 0; qi < QUERIES_PER_WARP; ++qi) {
         const int cur_q_idx = q_indices[qi];
@@ -469,9 +447,6 @@ __global__ void sparse_attention_bwd_kernel(
     }
 }
 
-// ============================================================================
-// Forward CUDA Host Dispatcher
-// ============================================================================
 void block_sparse_attn_fwd_cuda(
     torch::Tensor& out,
     const torch::Tensor& q,
@@ -499,7 +474,7 @@ void block_sparse_attn_fwd_cuda(
     }
 
     dim3 grid(num_q_blocks, H, B);
-    dim3 block(32, 4); // 4 warps = 128 threads
+    dim3 block(32, 4);
     cudaStream_t stream = c10::cuda::getCurrentCUDAStream().stream();
 
     #define LAUNCH_SPARSE_KERNEL(HEAD_DIM_VAL, BLOCK_SIZE_VAL) \
@@ -551,9 +526,6 @@ void block_sparse_attn_fwd_cuda(
     CUDA_KERNEL_LAUNCH_CHECK();
 }
 
-// ============================================================================
-// Backward CUDA Host Dispatcher
-// ============================================================================
 void block_sparse_attn_bwd_cuda(
     torch::Tensor& grad_q,
     torch::Tensor& grad_k,
@@ -587,7 +559,7 @@ void block_sparse_attn_bwd_cuda(
     }
 
     dim3 grid(num_q_blocks, H, B);
-    dim3 block(32, 4); // 4 warps = 128 threads
+    dim3 block(32, 4);
     cudaStream_t stream = c10::cuda::getCurrentCUDAStream().stream();
 
     #define LAUNCH_SPARSE_BWD_KERNEL(HEAD_DIM_VAL, BLOCK_SIZE_VAL) \

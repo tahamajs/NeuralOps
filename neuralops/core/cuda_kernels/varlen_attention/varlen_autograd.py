@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Variable-Length FlashAttention Autograd Interface
 
 Hardware-accelerated CUDA C++ autograd implementation with analytical gradients and three-level fallback dispatch.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -62,9 +66,9 @@ def varlen_attention_pytorch_ref(
         ks = cu_seqlens_k[b_idx].item()
         ke = cu_seqlens_k[b_idx + 1].item()
 
-        qb = q[qs:qe].transpose(0, 1).unsqueeze(0)  # [1, H, Lq, D]
-        kb = k[ks:ke].transpose(0, 1).unsqueeze(0)  # [1, H, Lk, D]
-        vb = v[ks:ke].transpose(0, 1).unsqueeze(0)  # [1, H, Lk, D]
+        qb = q[qs:qe].transpose(0, 1).unsqueeze(0)
+        kb = k[ks:ke].transpose(0, 1).unsqueeze(0)
+        vb = v[ks:ke].transpose(0, 1).unsqueeze(0)
 
         ob = F.scaled_dot_product_attention(qb, kb, vb, is_causal=is_causal, scale=scale)
         out[qs:qe] = ob.squeeze(0).transpose(0, 1)

@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Hardware Capability Profiler
 
 Introspection utilities caching GPU architecture capabilities, compute capability, and SRAM limits.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -38,27 +42,17 @@ class HardwareProfile:
     fp8_dtype: Any = None
 
 
-# Default architecture-based shared memory limits (in bytes)
-# Used when PyTorch device properties do not expose opt-in shared memory directly
 _ARCH_DEFAULT_SHARED_MEMORY = {
-    # Maxwell / Pascal (SM 5.x / 6.x): 48 KB per block
     (5, 0): 49152,
     (5, 2): 49152,
     (6, 0): 65536,
     (6, 1): 49152,
-    # Volta (SM 7.0): up to 96 KB opt-in (default 48 KB)
     (7, 0): 98304,
-    # Turing (SM 7.5: T4, RTX 2080): 64 KB per block
     (7, 5): 65536,
-    # Ampere datacenter (SM 8.0: A100): 163 KB (166,912 bytes opt-in)
     (8, 0): 166912,
-    # Ampere client (SM 8.6: RTX 3080/3090): 99 KB (101,376 bytes opt-in)
     (8, 6): 101376,
-    # Ada Lovelace (SM 8.9: RTX 4070/4080/4090, L40): 99 KB (101,376 bytes opt-in)
     (8, 9): 101376,
-    # Hopper (SM 9.0: H100, H200): 227 KB (232,448 bytes opt-in)
     (9, 0): 232448,
-    # Blackwell (SM 10.0 / 12.0: B200): 227 KB+
     (10, 0): 232448,
     (12, 0): 232448,
 }
@@ -81,7 +75,6 @@ def get_device_hardware_profile(device: torch.device | str | int | None = None) 
 
     device_type = device.type
 
-    # 1. Non-CUDA / CPU / MPS / XPU Branches
     if device_type == "cpu":
         return HardwareProfile(
             backend="cpu",
@@ -136,9 +129,7 @@ def get_device_hardware_profile(device: torch.device | str | int | None = None) 
             fp8_dtype=None,
         )
 
-    # 2. CUDA / ROCm Branches
     if device_type == "cuda":
-        # Check for AMD ROCm
         is_rocm = bool(hasattr(torch.version, "hip") and torch.version.hip is not None)
         backend: BackendType = "rocm" if is_rocm else "cuda"
         vendor = "amd" if is_rocm else "nvidia"
@@ -150,7 +141,6 @@ def get_device_hardware_profile(device: torch.device | str | int | None = None) 
 
         props = torch.cuda.get_device_properties(device_idx)
 
-        # Shared Memory Calculation
         shmem = getattr(props, "shared_memory_per_block_optin", None)
         if shmem is None or shmem <= 0:
             shmem = getattr(props, "shared_memory_per_block", None)
@@ -178,7 +168,6 @@ def get_device_hardware_profile(device: torch.device | str | int | None = None) 
         supports_tf32 = (not is_rocm) and (sm_major >= 8)
         warp_size = int(getattr(props, "warp_size", 64 if is_rocm else 32))
 
-        # FP8 detection
         fp8_dtype = None
         if not is_rocm and sm_major >= 8 and (sm_minor >= 9 or sm_major >= 9):
             if hasattr(torch, "float8_e4m3fn"):
@@ -202,7 +191,6 @@ def get_device_hardware_profile(device: torch.device | str | int | None = None) 
             fp8_dtype=fp8_dtype,
         )
 
-    # Fallback default
     return HardwareProfile(
         backend="cpu",
         device_name="Unknown Device",

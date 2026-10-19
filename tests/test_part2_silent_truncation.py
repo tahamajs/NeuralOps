@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Verification test for Silent Truncation TORCH_CHECK fixes (Part 2).
 Tests all 11 modules:
@@ -16,7 +22,6 @@ def check_cuda():
         pytest.skip("CUDA device required")
 
 
-# 1. longformer
 def test_longformer_silent_truncation():
     from neuralops.core.cuda_kernels.longformer.longformer_autograd import (
         _get_module,
@@ -26,7 +31,6 @@ def test_longformer_silent_truncation():
     mod = _get_module()
     B, H, N = 2, 4, 32
 
-    # Valid D <= 128
     D_valid = 64
     q = torch.randn(B, H, N, D_valid, device="cuda", dtype=torch.float32) * 0.1
     k = torch.randn(B, H, N, D_valid, device="cuda", dtype=torch.float32) * 0.1
@@ -35,7 +39,6 @@ def test_longformer_silent_truncation():
     ref_valid = longformer_ref(q, k, v, 64, 4)
     assert (out_valid - ref_valid).abs().max() < 1e-3
 
-    # Oversized D > 128
     D_over = 160
     q_over = torch.randn(B, H, N, D_over, device="cuda", dtype=torch.float32) * 0.1
     k_over = torch.randn(B, H, N, D_over, device="cuda", dtype=torch.float32) * 0.1
@@ -49,7 +52,6 @@ def test_longformer_silent_truncation():
     assert (out_fallback - ref_fallback).abs().max() < 1e-3
 
 
-# 2. mamba_svd_flash
 def test_mamba_svd_flash_silent_truncation():
     from neuralops.core.cuda_kernels.mamba_svd_flash.mamba_svd_flash_autograd import (
         _get_module,
@@ -59,7 +61,6 @@ def test_mamba_svd_flash_silent_truncation():
     mod = _get_module()
     B, N, D = 2, 32, 64
 
-    # Valid R <= 128
     R_valid = 32
     u = torch.randn(B, N, D, device="cuda", dtype=torch.float32) * 0.1
     svd_u = torch.randn(D, R_valid, device="cuda", dtype=torch.float32) * 0.1
@@ -70,7 +71,6 @@ def test_mamba_svd_flash_silent_truncation():
     ref_valid = mamba_svd_flash_ref(u, svd_u, svd_vt, decay)
     assert (out_valid - ref_valid).abs().max() < 1e-3
 
-    # Oversized R > 128
     R_over = 160
     svd_u_over = torch.randn(D, R_over, device="cuda", dtype=torch.float32) * 0.1
     svd_vt_over = torch.randn(R_over, D, device="cuda", dtype=torch.float32) * 0.1
@@ -83,7 +83,6 @@ def test_mamba_svd_flash_silent_truncation():
     assert (out_fallback - ref_fallback).abs().max() < 1e-3
 
 
-# 3. multi_scale_retention
 def test_multi_scale_retention_silent_truncation():
     from neuralops.core.cuda_kernels.multi_scale_retention.retention_autograd import (
         _get_module,
@@ -94,7 +93,6 @@ def test_multi_scale_retention_silent_truncation():
     B, H, L = 2, 4, 32
     gammas = torch.tensor([0.9, 0.8, 0.7, 0.6], device="cuda", dtype=torch.float32)
 
-    # Valid D <= 128
     D_valid = 64
     q = torch.randn(B, H, L, D_valid, device="cuda", dtype=torch.float32) * 0.1
     k = torch.randn(B, H, L, D_valid, device="cuda", dtype=torch.float32) * 0.1
@@ -104,7 +102,6 @@ def test_multi_scale_retention_silent_truncation():
     ref_valid = multi_scale_retention_pytorch_ref(q, k, v, gammas)
     assert (out_valid - ref_valid).abs().max() < 1e-3
 
-    # Oversized D > 128
     D_over = 160
     q_over = torch.randn(B, H, L, D_over, device="cuda", dtype=torch.float32) * 0.1
     k_over = torch.randn(B, H, L, D_over, device="cuda", dtype=torch.float32) * 0.1
@@ -118,7 +115,6 @@ def test_multi_scale_retention_silent_truncation():
     assert (out_fallback - ref_fallback).abs().max() < 1e-3
 
 
-# 4. nystrom_attention
 def test_nystrom_attention_silent_truncation():
     from neuralops.core.cuda_kernels.nystrom_attention.nystrom_attention_autograd import (
         _get_module,
@@ -128,7 +124,6 @@ def test_nystrom_attention_silent_truncation():
     mod = _get_module()
     B, H, N, D = 2, 4, 32, 64
 
-    # Valid M <= 64
     M_valid = 32
     q_l = torch.randn(B, H, N, M_valid, device="cuda", dtype=torch.float32) * 0.1
     k_l = torch.randn(B, H, N, M_valid, device="cuda", dtype=torch.float32) * 0.1
@@ -139,7 +134,6 @@ def test_nystrom_attention_silent_truncation():
     ref_valid = nystrom_attention_ref(q_l, k_l, v_l, p_l)
     assert (out_valid - ref_valid).abs().max() < 1e-3
 
-    # Oversized M > 64
     M_over = 80
     q_l_over = torch.randn(B, H, N, M_over, device="cuda", dtype=torch.float32) * 0.1
     k_l_over = torch.randn(B, H, N, M_over, device="cuda", dtype=torch.float32) * 0.1
@@ -154,7 +148,6 @@ def test_nystrom_attention_silent_truncation():
     assert (out_fallback - ref_fallback).abs().max() < 1e-3
 
 
-# 5. reformer
 def test_reformer_silent_truncation():
     from neuralops.core.cuda_kernels.reformer.reformer_autograd import (
         _get_module,
@@ -165,7 +158,6 @@ def test_reformer_silent_truncation():
     B, H, N = 2, 4, 32
     hb = torch.randint(0, 4, (B, N), device="cuda", dtype=torch.int32)
 
-    # Valid D <= 128
     D_valid = 64
     qk = torch.randn(B, H, N, D_valid, device="cuda", dtype=torch.float32) * 0.1
     v = torch.randn(B, H, N, D_valid, device="cuda", dtype=torch.float32) * 0.1
@@ -174,7 +166,6 @@ def test_reformer_silent_truncation():
     ref_valid = reformer_ref(qk, v, hb)
     assert (out_valid - ref_valid).abs().max() < 1e-3
 
-    # Oversized D > 128
     D_over = 160
     qk_over = torch.randn(B, H, N, D_over, device="cuda", dtype=torch.float32) * 0.1
     v_over = torch.randn(B, H, N, D_over, device="cuda", dtype=torch.float32) * 0.1
@@ -187,7 +178,6 @@ def test_reformer_silent_truncation():
     assert (out_fallback - ref_fallback).abs().max() < 1e-3
 
 
-# 6. rotational_svd
 def test_rotational_svd_silent_truncation():
     from neuralops.core.cuda_kernels.rotational_svd.rotational_svd_autograd import (
         _get_module,
@@ -199,7 +189,6 @@ def test_rotational_svd_silent_truncation():
     x = torch.randn(M, K, device="cuda", dtype=torch.float32) * 0.1
     r_in = torch.randn(K, K, device="cuda", dtype=torch.float32) * 0.1
 
-    # Valid R <= 64
     R_valid = 32
     v_r = torch.randn(R_valid, K, device="cuda", dtype=torch.float32) * 0.1
     u_r = torch.randn(N, R_valid, device="cuda", dtype=torch.float32) * 0.1
@@ -208,7 +197,6 @@ def test_rotational_svd_silent_truncation():
     ref_valid = rotational_svd_pytorch_ref(x, r_in, v_r, u_r)
     assert (out_valid - ref_valid).abs().max() < 1e-3
 
-    # Oversized R > 64
     R_over = 80
     v_r_over = torch.randn(R_over, K, device="cuda", dtype=torch.float32) * 0.1
     u_r_over = torch.randn(N, R_over, device="cuda", dtype=torch.float32) * 0.1
@@ -221,7 +209,6 @@ def test_rotational_svd_silent_truncation():
     assert (out_fallback - ref_fallback).abs().max() < 1e-3
 
 
-# 7. routing_attention
 def test_routing_attention_silent_truncation():
     from neuralops.core.cuda_kernels.routing_attention.routing_attention_autograd import (
         _get_module,
@@ -232,7 +219,6 @@ def test_routing_attention_silent_truncation():
     B, H, N = 2, 4, 32
     rw = torch.rand(B, H, N, device="cuda", dtype=torch.float32)
 
-    # Valid D <= 128
     D_valid = 64
     q = torch.randn(B, H, N, D_valid, device="cuda", dtype=torch.float32) * 0.1
     k = torch.randn(B, H, N, D_valid, device="cuda", dtype=torch.float32) * 0.1
@@ -242,7 +228,6 @@ def test_routing_attention_silent_truncation():
     ref_valid = routing_attention_ref(q, k, v, rw)
     assert (out_valid - ref_valid).abs().max() < 1e-3
 
-    # Oversized D > 128
     D_over = 160
     q_over = torch.randn(B, H, N, D_over, device="cuda", dtype=torch.float32) * 0.1
     k_over = torch.randn(B, H, N, D_over, device="cuda", dtype=torch.float32) * 0.1
@@ -256,7 +241,6 @@ def test_routing_attention_silent_truncation():
     assert (out_fallback - ref_fallback).abs().max() < 1e-3
 
 
-# 8. rpca_sparse_svd
 def test_rpca_sparse_svd_silent_truncation():
     from neuralops.core.cuda_kernels.rpca_sparse_svd.rpca_sparse_svd_autograd import (
         _get_module,
@@ -267,7 +251,6 @@ def test_rpca_sparse_svd_silent_truncation():
     M, K, N = 4, 128, 64
     x = torch.randn(M, K, device="cuda", dtype=torch.float32) * 0.1
 
-    # Valid R <= 128
     R_valid = 32
     v_r = torch.randn(K, R_valid, device="cuda", dtype=torch.float32) * 0.1
     u_r = torch.randn(R_valid, N, device="cuda", dtype=torch.float32) * 0.1
@@ -276,7 +259,6 @@ def test_rpca_sparse_svd_silent_truncation():
     ref_valid = rpca_sparse_svd_gemm_pytorch_ref(x, v_r, u_r)
     assert (out_valid - ref_valid).abs().max() < 1e-3
 
-    # Oversized R > 128
     R_over = 160
     v_r_over = torch.randn(K, R_over, device="cuda", dtype=torch.float32) * 0.1
     u_r_over = torch.randn(R_over, N, device="cuda", dtype=torch.float32) * 0.1
@@ -289,7 +271,6 @@ def test_rpca_sparse_svd_silent_truncation():
     assert (out_fallback - ref_fallback).abs().max() < 1e-3
 
 
-# 9. selective_scan
 def test_selective_scan_silent_truncation():
     from neuralops.core.cuda_kernels.selective_scan.selective_scan_autograd import (
         _get_module,
@@ -301,7 +282,6 @@ def test_selective_scan_silent_truncation():
     u = torch.randn(B_sz, D_sz, L_sz, device="cuda", dtype=torch.float32) * 0.1
     delta = torch.randn(B_sz, D_sz, L_sz, device="cuda", dtype=torch.float32) * 0.1
 
-    # Valid D_STATE <= 128
     D_state_valid = 16
     A_valid = -torch.rand(D_sz, D_state_valid, device="cuda", dtype=torch.float32)
     B_valid = torch.randn(B_sz, D_state_valid, L_sz, device="cuda", dtype=torch.float32) * 0.1
@@ -311,7 +291,6 @@ def test_selective_scan_silent_truncation():
     ref_valid, _ = selective_scan_pytorch_ref(u, delta, A_valid, B_valid, C_valid)
     assert (out_valid - ref_valid).abs().max() < 1e-3
 
-    # Oversized D_STATE > 128
     D_state_over = 160
     A_over = -torch.rand(D_sz, D_state_over, device="cuda", dtype=torch.float32)
     B_over = torch.randn(B_sz, D_state_over, L_sz, device="cuda", dtype=torch.float32) * 0.1
@@ -326,7 +305,6 @@ def test_selective_scan_silent_truncation():
     assert (out_fallback - ref_fallback).abs().max() < 1e-3
 
 
-# 10. state_update
 def test_state_update_silent_truncation():
     from neuralops.core.cuda_kernels.state_update.state_autograd import (
         _get_module,
@@ -337,7 +315,6 @@ def test_state_update_silent_truncation():
     B, H, Dv = 2, 4, 32
     v_t = torch.randn(B, H, Dv, device="cuda", dtype=torch.float32) * 0.1
 
-    # Valid Dk <= 128
     Dk_valid = 32
     q_t = (torch.randn(B, H, Dk_valid, device="cuda", dtype=torch.float32) * 0.1).abs() + 0.1
     k_t = (torch.randn(B, H, Dk_valid, device="cuda", dtype=torch.float32) * 0.1).abs() + 0.1
@@ -348,7 +325,6 @@ def test_state_update_silent_truncation():
     ref_valid, kv_ref, z_ref = recurrent_linear_step_pytorch_ref(q_t, k_t, v_t, kv, z)
     assert (out_valid - ref_valid).abs().max() < 1e-3
 
-    # Oversized Dk > 128
     Dk_over = 160
     q_over = (torch.randn(B, H, Dk_over, device="cuda", dtype=torch.float32) * 0.1).abs() + 0.1
     k_over = (torch.randn(B, H, Dk_over, device="cuda", dtype=torch.float32) * 0.1).abs() + 0.1
@@ -363,7 +339,6 @@ def test_state_update_silent_truncation():
     assert (out_fallback - ref_fallback).abs().max() < 1e-3
 
 
-# 11. tt_contraction
 def test_tt_contraction_silent_truncation():
     from neuralops.core.cuda_kernels.tt_contraction.tt_autograd import (
         _get_module,
@@ -374,7 +349,6 @@ def test_tt_contraction_silent_truncation():
     M, K, N = 4, 64, 64
     x = torch.randn(M, K, device="cuda", dtype=torch.float32) * 0.1
 
-    # Valid R <= 64
     R_valid = 32
     core0 = torch.randn(1, 8, 8, R_valid, device="cuda", dtype=torch.float32) * 0.1
     core1 = torch.randn(R_valid, 8, 8, 1, device="cuda", dtype=torch.float32) * 0.1
@@ -383,7 +357,6 @@ def test_tt_contraction_silent_truncation():
     ref_valid = tt_linear_pytorch_ref(x, core0, core1, (8, 8), (8, 8))
     assert (out_valid - ref_valid).abs().max() < 1e-3
 
-    # Oversized R > 64
     R_over = 80
     core0_over = torch.randn(1, 8, 8, R_over, device="cuda", dtype=torch.float32) * 0.1
     core1_over = torch.randn(R_over, 8, 8, 1, device="cuda", dtype=torch.float32) * 0.1

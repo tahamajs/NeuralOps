@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Master Pipeline Orchestrator
 
 Runs multi-worker benchmark suites, sweeps, and evaluations with idempotent task skipping.
-
-Author: Taha Majlesi
 """
 
 import argparse
@@ -147,10 +151,9 @@ def main():
                 failed += 1
                 print(f"[ERROR] {task} | {e}")
 
-            # Report every 10 tasks
             if completed % 10 == 0:
                 elapsed = time.time() - t_start
-                rate = completed / elapsed * 60  # tasks/min
+                rate = completed / elapsed * 60
                 eta = (len(tasks) - completed) / max(rate, 0.01)
                 print(
                     f"[PROGRESS] {completed}/{len(tasks)} | {rate:.1f} tasks/min | ETA {eta:.0f} min"

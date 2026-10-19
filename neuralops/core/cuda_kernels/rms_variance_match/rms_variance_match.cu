@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -5,17 +12,6 @@
 
 namespace neuralops { namespace cuda {
 
-// RMS Variance Match Kernel:
-// Matches the root-mean-square (RMS) energy of prediction tensor y to reference v_ref:
-// rms_y = sqrt( (1/D) * \sum y_i^2 + eps )
-// rms_v = sqrt( (1/D) * \sum v_i^2 + eps )
-// gain = clamp(rms_v / rms_y, c_min, c_max)
-// out = y * gain
-//
-// Hardware-level optimization:
-// 1. 128-bit float4 vectorized memory loads & stores.
-// 2. Cooperative warp & block reductions.
-// 3. Strict FP32 intermediate precision and rsqrtf optimization.
 template <typename scalar_t>
 __global__ void __launch_bounds__(256) rms_variance_match_vectorized_kernel(
     scalar_t* __restrict__ out,
@@ -62,7 +58,6 @@ __global__ void __launch_bounds__(256) rms_variance_match_vectorized_kernel(
         }
     }
 
-    // Remainder elements
     const int rem_start = num_vec * 4;
     for (int i = rem_start + tid; i < D; i += blockDim.x) {
         const float yv = to_float(y[base_idx + i]);
@@ -110,7 +105,7 @@ __global__ void __launch_bounds__(256) rms_variance_match_vectorized_kernel(
     }
 }
 
-}} // namespace neuralops::cuda
+}}
 
 torch::Tensor rms_variance_match_fwd(
     const torch::Tensor& y,

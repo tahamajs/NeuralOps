@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Comprehensive unit tests for NeuralOps results management system.
 
 Tests:
@@ -125,7 +131,6 @@ def test_all_formats_consistent():
         for fmt, path in saved.items():
             assert path.exists(), f"Format {fmt} file missing"
 
-        # Check content match
         js_data = json.loads(saved["json"].read_text(encoding="utf-8"))
         assert js_data["metrics"]["accuracy"] == 0.91
 
@@ -158,7 +163,6 @@ def test_deduplication_allows_retry():
         p = Path(tmp_dir) / "out.json"
         dedup.record_run(res, p)
 
-        # A failed run should allow retry
         skip, reason = dedup.should_skip(res.compute_run_key())
         assert not skip
         assert "allowing retry" in reason

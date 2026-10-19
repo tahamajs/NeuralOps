@@ -1,6 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Profile speculative concurrency module.
-
-Author: Taha Majlesi
 """
 
 import sys
@@ -15,21 +19,12 @@ from neuralops.core.cuda_kernels.speculative_verify.spec_autograd import specula
 device = torch.device("cuda:0")
 print(f"Device: {torch.cuda.get_device_name(0)}")
 
-# Benchmark parameters:
-# Speculative decoding verification concurrency (speculative_verify):
-# Speculation window sizes gamma in {2, 4, 8, 16}.
-# Evaluate concurrent stream verification across independent CUDA streams (1, 2, 4, 8 streams).
-# Under speculative decoding:
-# 1. Target model verifies gamma drafted tokens in a single parallel forward pass.
-# 2. speculative_verify kernel computes prefix match / accept mask and accepted count.
-# 3. Memory traffic savings vs sequential token verification = 1 - (1 / (1 + accepted_count)).
-# Compare parallel verification latency vs sequential autoregressive verification latency.
 
 gamma_values = [2, 4, 8, 16]
 stream_counts = [1, 2, 4, 8]
 batch_per_stream = 2
 vocab_size = 32000
-acceptance_rate_sim = 0.75  # typical draft model acceptance rate (~75%)
+acceptance_rate_sim = 0.75
 
 H = 16
 D_HEAD = 64
@@ -37,7 +32,6 @@ D = H * D_HEAD
 
 print("\n=== STARTING SPECULATIVE DECODING VERIFICATION CONCURRENCY PROFILING ===")
 
-# Model weights for target model verification pass
 W_q = torch.randn(D, D, device=device, dtype=torch.float16)
 W_k = torch.randn(D, D, device=device, dtype=torch.float16)
 W_v = torch.randn(D, D, device=device, dtype=torch.float16)
@@ -45,7 +39,6 @@ W_out = torch.randn(D, D, device=device, dtype=torch.float16)
 W_gate = torch.randn(D, 4 * D, device=device, dtype=torch.float16)
 W_down = torch.randn(4 * D, D, device=device, dtype=torch.float16)
 
-# Warmup CUDA and speculative_verify kernel
 torch.cuda.empty_cache()
 torch.cuda.reset_peak_memory_stats()
 _ = torch.randn(2000, 2000, device=device) @ torch.randn(2000, 2000, device=device)
@@ -62,16 +55,12 @@ for num_streams in stream_counts:
         torch.cuda.empty_cache()
         torch.cuda.reset_peak_memory_stats()
 
-        # Prepare inputs for each stream:
-        # Draft tokens [batch_per_stream, gamma]
-        # Target tokens [batch_per_stream, gamma]
         draft_tokens_list = []
         target_tokens_list = []
         embed_inputs = []
 
         for _ in range(num_streams):
             draft = torch.randint(0, vocab_size, (batch_per_stream, gamma), device=device, dtype=torch.int64)
-            # simulate 75% match
             mask = torch.rand(batch_per_stream, gamma, device=device) < acceptance_rate_sim
             target = draft.clone()
             target[~mask] = torch.randint(0, vocab_size, ((~mask).sum(),), device=device, dtype=torch.int64)
@@ -80,8 +69,6 @@ for num_streams in stream_counts:
             target_tokens_list.append(target)
             embed_inputs.append(torch.randn(batch_per_stream, gamma, D, device=device, dtype=torch.float16))
 
-        # 1. Parallel Speculative Verification pass:
-        # Forward pass on gamma tokens + speculative_verify kernel
         def run_parallel_verification(s_idx):
             """Execute run parallel verification routine."""
             with torch.cuda.stream(streams[s_idx]):
@@ -96,15 +83,12 @@ for num_streams in stream_counts:
                 mlp_h = F.silu(torch.matmul(proj_out, W_gate))
                 _ = torch.matmul(mlp_h, W_down)
 
-                # Speculative verification kernel
                 accept_mask, accept_count = speculative_verify(draft_tokens_list[s_idx], target_tokens_list[s_idx])
                 return accept_count
 
-        # 2. Sequential Verification baseline (gamma single-token decode passes)
         def run_sequential_verification(s_idx):
             """Execute run sequential verification routine."""
             with torch.cuda.stream(streams[s_idx]):
-                # Sequential 1 token at a time for gamma steps
                 x_single = embed_inputs[s_idx][:, :1, :]
                 for _ in range(gamma):
                     q = torch.matmul(x_single, W_q).view(batch_per_stream, 1, H, D_HEAD).transpose(1, 2)
@@ -116,14 +100,12 @@ for num_streams in stream_counts:
                     mlp_h = F.silu(torch.matmul(proj_out, W_gate))
                     _ = torch.matmul(mlp_h, W_down)
 
-        # Warmup
         for s in range(num_streams):
             _ = run_parallel_verification(s)
             run_sequential_verification(s)
         for s in range(num_streams):
             streams[s].synchronize()
 
-        # Benchmark Parallel Speculative Verification
         iters = 50
         ev_par_start = torch.cuda.Event(enable_timing=True)
         ev_par_end = torch.cuda.Event(enable_timing=True)
@@ -138,7 +120,6 @@ for num_streams in stream_counts:
         torch.cuda.synchronize()
         par_latency_ms = ev_par_start.elapsed_time(ev_par_end) / iters
 
-        # Benchmark Sequential Verification
         ev_seq_start = torch.cuda.Event(enable_timing=True)
         ev_seq_end = torch.cuda.Event(enable_timing=True)
 
@@ -152,13 +133,10 @@ for num_streams in stream_counts:
         torch.cuda.synchronize()
         seq_latency_ms = ev_seq_start.elapsed_time(ev_seq_end) / iters
 
-        # Compute speedup and effective accepted tokens
         _, counts = speculative_verify(draft_tokens_list[0], target_tokens_list[0])
         avg_accepted = float(counts.float().mean().item())
         effective_acc_rate = (avg_accepted / gamma) * 100.0
 
-        # Memory traffic savings: instead of gamma round-trips to DRAM for weights,
-        # weights are loaded once for the whole window. Memory traffic savings = (1 - 1/gamma) * 100%
         mem_traffic_savings_pct = (1.0 - (1.0 / max(avg_accepted + 1, 1.0))) * 100.0
         speedup = seq_latency_ms / par_latency_ms
 
@@ -187,7 +165,6 @@ for num_streams in stream_counts:
             }
         )
 
-# Export to CSV
 csv_path = "/mnt/d/SVD_linear_Attention/docs/benchmarks/paper_benchmarks_speculative_concurrency.csv"
 os.makedirs(os.path.dirname(csv_path), exist_ok=True)
 fieldnames = [

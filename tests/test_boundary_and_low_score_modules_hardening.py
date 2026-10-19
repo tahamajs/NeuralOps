@@ -1,4 +1,9 @@
-# -*- coding: utf-8 -*-
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Exhaustive Deep Hardening & Boundary Stress Test Suite for Low-Scoring and Boundary Modules.
 
 Targets empirical benchmark boundary modules across:
@@ -50,7 +55,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-# Ensure repo root and correct package imports
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if REPO_ROOT in sys.path:
     sys.path.remove(REPO_ROOT)
@@ -70,9 +74,6 @@ def clean_cuda_cache():
         gc.collect()
 
 
-# ==============================================================================
-# SECTION 1: POINTWISE / LAUNCH-OVERHEAD BOUNDARY KERNELS
-# ==============================================================================
 
 class TestPointwiseBoundaryKernels:
     """Tests small sequence and boundary cases for pointwise Triton kernels."""
@@ -107,7 +108,6 @@ class TestPointwiseBoundaryKernels:
         )
 
         B, D = 2, 64
-        # g is recurrent gating factor strictly in (0, 1)
         g = torch.sigmoid(torch.randn(B, L, D, device=DEVICE, dtype=torch.float32))
         v = torch.randn(B, L, D, device=DEVICE, dtype=torch.float32)
 
@@ -162,9 +162,6 @@ class TestPointwiseBoundaryKernels:
         assert diff <= 1e-4, f"Nystrom landmark pinv step mismatch: {diff}"
 
 
-# ==============================================================================
-# SECTION 2: HIGH FLOP / MEMORY INTENSIVE ATTENTION SUITE
-# ==============================================================================
 
 class TestHighFlopMemoryIntensiveAttentions:
     """Stress tests routing, sink, retention, rwkv6, and differential attentions."""
@@ -216,7 +213,6 @@ class TestHighFlopMemoryIntensiveAttentions:
         from neuralops.core.cuda_kernels import rwkv6, multi_scale_retention
 
         B, H, D = 2, 4, 64
-        # Multi-scale retention
         q = torch.randn(B, H, L, D, device=DEVICE, requires_grad=True)
         k = torch.randn(B, H, L, D, device=DEVICE, requires_grad=True)
         v = torch.randn(B, H, L, D, device=DEVICE, requires_grad=True)
@@ -228,7 +224,6 @@ class TestHighFlopMemoryIntensiveAttentions:
         assert q.grad is not None and not torch.isnan(q.grad).any()
         assert 1e-7 < q.grad.norm().item() < 1e5
 
-        # RWKV6
         r = torch.randn(B, H, L, D, device=DEVICE, requires_grad=True)
         k = torch.randn(B, H, L, D, device=DEVICE, requires_grad=True)
         v = torch.randn(B, H, L, D, device=DEVICE, requires_grad=True)
@@ -253,7 +248,6 @@ class TestHighFlopMemoryIntensiveAttentions:
         k2 = torch.randn(B, H, L, D, device=DEVICE, requires_grad=True)
         v = torch.randn(B, H, L, D, device=DEVICE, requires_grad=True)
 
-        # CUDA kernel forward and backward with float lambda
         out = differential_attention(q1, q2, k1, k2, v, 0.8)
         assert not torch.isnan(out).any()
         out.sum().backward()
@@ -261,15 +255,11 @@ class TestHighFlopMemoryIntensiveAttentions:
         assert q1.grad is not None
         assert 1e-7 < q1.grad.norm().item() < 1e5
 
-        # Triton kernel forward
         out_tri = triton_differential_attention(q1, q2, k1, k2, v)
         assert not torch.isnan(out_tri).any()
         assert out_tri.shape == (B, H, L, D)
 
 
-# ==============================================================================
-# SECTION 3: HYBRID & MULTI-BRANCH STRUCTURES
-# ==============================================================================
 
 class TestHybridMultiBranchStructures:
     """Validates Split-Head, Tri-Branch, and Jamba hybrid attention architectures."""
@@ -281,7 +271,6 @@ class TestHybridMultiBranchStructures:
 
         B, L, D = 2, 64, 64
 
-        # SplitHeadHybridAttention
         mod_split = SplitHeadHybridAttention(d_model=D, n_heads=4).to(DEVICE)
         x = torch.randn(B, L, D, device=DEVICE, requires_grad=True)
         out = mod_split(x)
@@ -291,7 +280,6 @@ class TestHybridMultiBranchStructures:
         out.sum().backward()
         assert x.grad is not None and not torch.isnan(x.grad).any()
 
-        # TriBranchHybridAttention
         cfg = SimpleNamespace(hidden_size=D, num_attention_heads=4, attention_dropout=0.0)
         mod_tri = TriBranchHybridAttention(config=cfg, hidden_size=D, num_heads=4).to(DEVICE)
         x2 = torch.randn(B, L, D, device=DEVICE, requires_grad=True)
@@ -310,7 +298,6 @@ class TestHybridMultiBranchStructures:
 
         B, L, D = 2, 64, 64
 
-        # Cosformer
         mod_cos = CosformerAttention(d_model=D, n_heads=4).to(DEVICE)
         x = torch.randn(B, L, D, device=DEVICE, requires_grad=True)
         out_cos = mod_cos(x)
@@ -320,7 +307,6 @@ class TestHybridMultiBranchStructures:
         out_cos.sum().backward()
         assert x.grad is not None
 
-        # Jamba2
         mod_jamba = Jamba2Block(d_model=D, n_heads=4).to(DEVICE)
         x_j = torch.randn(B, L, D, device=DEVICE, requires_grad=True)
         out_j = mod_jamba(x_j)
@@ -330,7 +316,6 @@ class TestHybridMultiBranchStructures:
         out_j.sum().backward()
         assert x_j.grad is not None
 
-        # JambaInfo
         mod_jinfo = JambaInfoBlock(d_model=D, n_heads=4).to(DEVICE)
         x_ji = torch.randn(B, L, D, device=DEVICE, requires_grad=True)
         out_ji = mod_jinfo(x_ji)
@@ -341,9 +326,6 @@ class TestHybridMultiBranchStructures:
         assert x_ji.grad is not None
 
 
-# ==============================================================================
-# SECTION 4: COMPRESSION ENGINES & EXTREME RANK BOUNDS
-# ==============================================================================
 
 class TestCompressionEnginesHardening:
     """Stress tests high reconstruction error & extreme rank compressors."""
@@ -365,14 +347,12 @@ class TestCompressionEnginesHardening:
         model = self.LinearProbe().to(DEVICE)
         w_orig = model.linear.weight.detach().clone()
 
-        # CR Compressor
         comp_cr = CRCompressor(rank=rank, max_error=0.99)
         compressed_cr, _ = comp_cr.compress(model)
         x = torch.randn(4, 128, device=DEVICE)
         out_cr = compressed_cr(x)
         assert not torch.isnan(out_cr).any()
 
-        # CUR Compressor
         model_cur = self.LinearProbe().to(DEVICE)
         comp_cur = CURCompressor(rank=rank, max_error=0.99)
         compressed_cur, _ = comp_cur.compress(model_cur)
@@ -425,9 +405,6 @@ class TestCompressionEnginesHardening:
         assert not torch.isnan(out_fp8).any()
 
 
-# ==============================================================================
-# SECTION 5: DYNAMIC SEQUENCE SCALING & MEMORY LEAK STRESS PROFILE
-# ==============================================================================
 
 class TestDynamicContextAndMemoryIntegrity:
     """Profiles memory stability under dynamic sequence scaling L in {128, 512, 2048}."""
@@ -438,7 +415,6 @@ class TestDynamicContextAndMemoryIntegrity:
 
         mod = SinkAttention(d_model=64, n_heads=4, window_size=64, num_sinks=4).to(DEVICE)
         
-        # Warmup
         _ = mod(torch.randn(2, 64, 64, device=DEVICE))
         torch.cuda.synchronize()
         mem_start = torch.cuda.memory_allocated(DEVICE)
@@ -453,6 +429,5 @@ class TestDynamicContextAndMemoryIntegrity:
             torch.cuda.synchronize()
 
         mem_end = torch.cuda.memory_allocated(DEVICE)
-        # Memory difference should be negligible after gc/free
         mem_diff_mb = (mem_end - mem_start) / (1024 * 1024)
         assert mem_diff_mb < 20.0, f"Potential memory leak detected: {mem_diff_mb:.2f} MB retained"

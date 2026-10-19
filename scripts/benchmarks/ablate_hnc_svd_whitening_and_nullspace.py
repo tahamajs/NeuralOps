@@ -1,6 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Ablate hnc svd whitening and nullspace module.
-
-Author: Taha Majlesi
 """
 
 import os
@@ -20,7 +24,6 @@ torch.manual_seed(seed)
 print("=== Fair 4-Way Ablation: Isolating Cholesky Whitening vs Nullspace Projection ===")
 print("Verifying identical initialization, seed, calibration data across all conditions.")
 
-# Load base model & data
 anchor = load_roberta(device)
 probe, heldout, heldout_labels, _ = get_probe_data("roberta", device)
 probe_formatted = [{"input_ids": probe[0][:32], "attention_mask": probe[1][:32]}]
@@ -34,7 +37,6 @@ ablation_results = {}
 for r in ranks:
     print(f"\n--- Evaluating Rank = {r} ---")
 
-    # 1. Standard Direct SVD (Baseline: No Whitening, No Nullspace)
     m_direct = copy.deepcopy(anchor)
     c_direct = DirectSVDCompressor(
         model=m_direct,
@@ -48,7 +50,6 @@ for r in ranks:
     c_direct.compress()
     res_direct = evaluate(m_direct, heldout, y_anchor, "roberta", device)
 
-    # 2. Whitened SVD (Cholesky Whitening, NO Nullspace Stage D)
     m_white = copy.deepcopy(anchor)
     c_white = DirectSVDCompressor(
         model=m_white,
@@ -66,7 +67,6 @@ for r in ranks:
     c_white.compress()
     res_white = evaluate(m_white, heldout, y_anchor, "roberta", device)
 
-    # 3. HNC Nullspace-Only (NO Cholesky Whitening, Stage D Nullspace Factor Restoration)
     m_nullspace = copy.deepcopy(anchor)
     c_nullspace = DirectSVDCompressor(
         model=m_nullspace,
@@ -84,7 +84,6 @@ for r in ranks:
     c_nullspace.compress()
     res_nullspace = evaluate(m_nullspace, heldout, y_anchor, "roberta", device)
 
-    # 4. Full HNC-SVD (Cholesky Whitening + Stage D Nullspace Recovery)
     m_hnc = copy.deepcopy(anchor)
     c_hnc = DirectSVDCompressor(
         model=m_hnc,
@@ -122,7 +121,6 @@ for r in ranks:
         f"{r:<6} | {d['direct_svd']:^20.4f} | {d['whitened_svd']:^26.4f} | {d['nullspace_only']:^30.4f} | {d['full_hnc_svd']:^22.4f}"
     )
 
-# Output markdown report
 out_path = Path("results/batch_validation/HNC_ABLATION_4WAY_REPORT.md")
 out_path.parent.mkdir(parents=True, exist_ok=True)
 with open(out_path, "w") as f:

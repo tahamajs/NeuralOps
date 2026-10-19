@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Fused Activation-Scaling Quantized GEMM
 
 Applies outlier suppression activation scaling directly in SRAM registers prior to quantized matrix multiplication.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -61,17 +65,13 @@ def _fused_act_scale_gemm_kernel(
         offs_k = k_idx * BLOCK_K + tl.arange(0, BLOCK_K)
         mask_k = offs_k < K
 
-        # Load X tile [BLOCK_M, BLOCK_K]
         x_ptrs = x_ptr + offs_m[:, None] * stride_xm + offs_k[None, :] * stride_xk
         x_tile = tl.load(x_ptrs, mask=mask_m[:, None] & mask_k[None, :], other=0.0)
 
-        # Load s_inv tile [BLOCK_K]
         s_inv_tile = tl.load(s_inv_ptr + offs_k, mask=mask_k, other=1.0)
 
-        # In-SRAM activation smoothing: x_smoothed = x_tile * s_inv
         x_smoothed = x_tile * s_inv_tile[None, :]
 
-        # Load W tile [BLOCK_N, BLOCK_K]
         w_ptrs = w_ptr + offs_n[:, None] * stride_wn + offs_k[None, :] * stride_wk
         w_tile = tl.load(w_ptrs, mask=mask_n[:, None] & mask_k[None, :], other=0.0)
 
@@ -111,7 +111,6 @@ def triton_fused_act_scale_quant_gemm(
     N = w.shape[0]
 
     if not x.is_cuda:
-        # PyTorch reference
         x_smooth = x_2d.float() * s_inv.view(1, -1).to(dtype=torch.float32, device=x.device)
         y = torch.matmul(x_smooth.to(x.dtype), w.t())
         if bias is not None:

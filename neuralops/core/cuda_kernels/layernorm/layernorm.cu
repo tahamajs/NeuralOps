@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -28,7 +35,6 @@ __global__ void layernorm_fwd_kernel(
     const int tid = threadIdx.x;
     const int offset = m * D;
 
-    // 1. Compute mean
     float sum = 0.0f;
     for (int d = tid; d < D; d += blockDim.x) {
         float val = to_float(x[offset + d]);
@@ -46,7 +52,6 @@ __global__ void layernorm_fwd_kernel(
     __syncthreads();
     const float mean = s_mean;
 
-    // 2. Compute variance
     float sum_sq = 0.0f;
     for (int d = tid; d < D; d += blockDim.x) {
         float val = to_float(x[offset + d]);
@@ -65,7 +70,6 @@ __global__ void layernorm_fwd_kernel(
     __syncthreads();
     const float rstd = s_rstd;
 
-    // 3. Normalize and apply affine
     for (int d = tid; d < D; d += blockDim.x) {
         float val = to_float(x[offset + d]);
         if (has_residual && residual != nullptr) {
@@ -77,8 +81,8 @@ __global__ void layernorm_fwd_kernel(
     }
 }
 
-} // namespace cuda
-} // namespace neuralops
+}
+}
 
 torch::Tensor layernorm_fwd(
     const torch::Tensor& x,

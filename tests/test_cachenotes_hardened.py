@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Unit tests for hardened CacheNotes compressor.
 Verifies:
@@ -44,17 +50,14 @@ class DummyTransformerModel(nn.Module):
 
     def __init__(self):
         super().__init__()
-        # Attention projections
         self.attn_q = nn.Linear(32, 32)
         self.attn_k = nn.Linear(32, 32)
-        self.attn_v = Conv1D(32, 32)  # Conv1D in attention
-        self.attn_out = DummyLoRALinear(nn.Linear(32, 32))  # Pre-existing LoRA in attention
+        self.attn_v = Conv1D(32, 32)
+        self.attn_out = DummyLoRALinear(nn.Linear(32, 32))
 
-        # FFN projections
         self.ffn_lin1 = nn.Linear(32, 64)
         self.ffn_lin2 = nn.Linear(64, 32)
 
-        # Classification head
         self.classifier = nn.Linear(32, 2)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -83,7 +86,6 @@ class TestCacheNotesHardened(unittest.TestCase):
         cn_layer = CacheNotesLoRALinear(in_f, out_f, weight=w, bias=b, lora_r=r, lora_alpha=1.0)
         out = cn_layer(x)
 
-        # Reference forward
         x_flat = x.reshape(-1, in_f)
         ref_base = F.linear(x_flat, w, b)
         ref_lora = F.linear(F.linear(x_flat, cn_layer.lora_A), cn_layer.lora_B) * (1.0 / r)
@@ -104,15 +106,11 @@ class TestCacheNotesHardened(unittest.TestCase):
         )
         compressed_model, stats = compressor.compress()
 
-        # Check attn_out is still the DummyLoRALinear wrapper
         self.assertIsInstance(model.attn_out, DummyLoRALinear)
-        # Check LoRA parameters are preserved and trainable
         self.assertTrue(model.attn_out.lora_A.requires_grad)
         self.assertTrue(model.attn_out.lora_B.requires_grad)
-        # Base layer weight was frozen
         self.assertFalse(model.attn_out.base_layer.weight.requires_grad)
 
-        # Check Conv1D layer was compressed
         self.assertIn("attn_v", stats["compressed_layers"])
 
     def test_03_target_attention_only_skips_ffn(self):
@@ -142,7 +140,7 @@ class TestCacheNotesHardened(unittest.TestCase):
         compressor = CacheNotesCompressor(
             model,
             keep_ratio=0.1,
-            max_error=1e-5,  # Impossible threshold forces fallback
+            max_error=1e-5,
             fallback_to_original=True,
             target_attention_only=True,
         )
@@ -161,20 +159,16 @@ class TestCacheNotesHardened(unittest.TestCase):
         kv_cache = CacheNotesKVCache(max_cache_len=8, task_type="qa", keep_ratio=0.5, num_sinks=2)
 
         B, H, D = 1, 2, 16
-        # Generate 12 tokens (exceeding max_cache_len 8)
         new_k = torch.randn(B, H, 12, D)
         new_v = torch.randn(B, H, 12, D)
 
-        # Mark sink tokens with distinct values
         new_k[:, :, :2, :] = 999.0
 
         pruned_k, pruned_v = kv_cache.update_and_compress(new_k, new_v)
 
-        # Pruned size must match max_cache_len
         self.assertEqual(pruned_k.shape[2], 8)
         self.assertEqual(pruned_v.shape[2], 8)
 
-        # The first 2 tokens must remain the sink tokens (999.0)
         self.assertTrue(torch.allclose(pruned_k[:, :, :2, :], torch.tensor(999.0)))
 
     def test_06_factory_with_none_config_and_metrics(self):
@@ -206,14 +200,12 @@ class TestCacheNotesHardened(unittest.TestCase):
             keep_ratio=0.5,
             target_attention_only=True,
         )
-        # Test generation across multiple dimensions
         for dim in [32, 64, 128, 768, 1024, 2048]:
             vec = compressor.get_importance(dim, device=torch.device("cpu"))
             self.assertEqual(vec.shape, (dim,))
             self.assertTrue(torch.isfinite(vec).all())
             self.assertTrue((vec >= 0.1).all() and (vec <= 2.0).all())
 
-        # Test training procedure
         loss = compressor.train_cpt_generator(epochs=2, lr=1e-3)
         self.assertTrue(compressor.cpt_generator_trained)
         self.assertGreater(loss, 0.0)

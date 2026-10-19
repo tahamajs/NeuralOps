@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """End-to-end integration tests for neuralops modules and pipelines."""
 from __future__ import annotations
 
@@ -41,7 +47,6 @@ def test_attention_registry_instantiation_e2e():
             out = out[0]
         assert out.shape[:2] == (B, T)
 
-    # Test full_attention with config object
     cfg = types.SimpleNamespace(hidden_size=D, num_attention_heads=4, num_heads=4, attention_dropout=0.0)
     full_cls = ATTENTION_REGISTRY.get("full_attention")
     full_layer = full_cls(cfg)

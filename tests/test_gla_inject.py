@@ -1,3 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 import torch
 from transformers import GPT2LMHeadModel
 from neuralops.attentions.linear.gla_attention import GLAttention
@@ -26,7 +33,6 @@ if __name__ == "__main__":
         out = model(input_ids)
     print(f"✅ GPT-2 + GLA forward OK: {out.logits.shape}")
 
-    # Count GLA layers
     n_gla = sum(1 for m in model.modules() if isinstance(m, GLAttention))
     print(f"   GLA layers: {n_gla}")
     print(f"   FLA enabled: {model.transformer.h[0].attn._fla_kernel is not None}")

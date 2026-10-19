@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -5,14 +12,6 @@
 
 namespace neuralops { namespace cuda {
 
-// UPI Stuffed Mamba Fusion Kernel:
-// Form: out[b, t, d] = x[b, t, d] + blend_weight * ((1/M) * \sum_{m=0}^{M-1} upi[b, m, d])
-//
-// Hardware-level optimization:
-// 1. Grid/Block mapping: dim3 grid(ceil(D / 128), B) with 128 threads/block.
-// 2. Fused reduction: Direct in-register reduction over M prompt tokens per channel d.
-// 3. Zero DRAM overhead: The scaled mean prompt is stored directly in a thread register.
-// 4. Vectorized stream-addition into x across sequence tokens t via unrolled loops.
 template <typename scalar_t>
 __global__ void __launch_bounds__(128) upi_mamba_fwd_kernel(
     scalar_t* __restrict__ out,
@@ -28,7 +27,6 @@ __global__ void __launch_bounds__(128) upi_mamba_fwd_kernel(
     const int d = blockIdx.x * blockDim.x + threadIdx.x;
     if (b >= B || d >= D) return;
 
-    // Fused reduction across M prompt tokens in register space
     float upi_sum = 0.0f;
     const int upi_base = b * M * D + d;
 
@@ -40,7 +38,6 @@ __global__ void __launch_bounds__(128) upi_mamba_fwd_kernel(
     const float upi_mean = (M > 0) ? (upi_sum / static_cast<float>(M)) : 0.0f;
     const float scaled_injection = blend_weight * upi_mean;
 
-    // Stream-addition into sequence tokens
     const int x_base = b * N * D + d;
 
     #pragma unroll 4
@@ -51,7 +48,7 @@ __global__ void __launch_bounds__(128) upi_mamba_fwd_kernel(
     }
 }
 
-}} // namespace neuralops::cuda
+}}
 
 torch::Tensor upi_mamba_fwd(
     const torch::Tensor& x,

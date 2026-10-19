@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 LUT Codebook Dequantization GEMM
 
 Dequantizes non-linear lookup-table compressed weights directly in register files before matrix multiplication.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -59,32 +63,26 @@ def _lut_codebook_dequant_gemm_kernel(
 
     acc = tl.zeros((BLOCK_M, BLOCK_N), dtype=tl.float32)
 
-    # Number of packed K blocks: each byte holds 2 indices
     num_k_blocks = tl.cdiv(K, BLOCK_K)
     for k_idx in range(0, num_k_blocks):
         offs_k_packed = (k_idx * (BLOCK_K // 2)) + tl.arange(0, BLOCK_K // 2)
         mask_k_packed = offs_k_packed < (K // 2)
 
-        # 1. Load packed 4-bit indices (N, BLOCK_K // 2)
         i_ptrs = indices_packed_ptr + offs_n[:, None] * stride_in + offs_k_packed[None, :] * stride_ik
         packed = tl.load(i_ptrs, mask=mask_n[:, None] & mask_k_packed[None, :], other=0)
 
-        # 2. Extract lower and upper 4-bit nibbles
         idx_0 = (packed & 0x0F).to(tl.int32)
         idx_1 = ((packed >> 4) & 0x0F).to(tl.int32)
 
-        # Group offset for codebook
         g_idx_0 = (2 * offs_k_packed) // group_size
         g_idx_1 = (2 * offs_k_packed + 1) // group_size
 
-        # In-SRAM / L1 codebook lookup: centroids table is 16 floats per group
         c_ptrs_0 = codebook_ptr + g_idx_0[None, :] * stride_cg + idx_0 * stride_cc
         c_ptrs_1 = codebook_ptr + g_idx_1[None, :] * stride_cg + idx_1 * stride_cc
 
         w_0 = tl.load(c_ptrs_0, mask=mask_n[:, None] & mask_k_packed[None, :], other=0.0)
         w_1 = tl.load(c_ptrs_1, mask=mask_n[:, None] & mask_k_packed[None, :], other=0.0)
 
-        # 3. Load corresponding activation columns and compute partial dot products
         offs_k_0 = 2 * offs_k_packed
         offs_k_1 = 2 * offs_k_packed + 1
 
@@ -131,21 +129,18 @@ def triton_lut_codebook_dequant_gemm(
     M, K = x_2d.shape
     N = indices_packed.shape[0]
 
-    # Ensure codebook is 2D: (num_groups, 16)
     if codebook.dim() == 1:
         codebook_2d = codebook.unsqueeze(0).expand(K // group_size, 16)
     else:
         codebook_2d = codebook
 
     if not x.is_cuda:
-        # PyTorch reference
         low = (indices_packed & 0x0F).to(torch.long)
         high = ((indices_packed >> 4) & 0x0F).to(torch.long)
         indices_unpacked = torch.empty((N, K), dtype=torch.long, device=x.device)
         indices_unpacked[:, 0::2] = low
         indices_unpacked[:, 1::2] = high
 
-        # Reconstruct full weight via gather
         w_dequant = torch.empty((N, K), dtype=x.dtype, device=x.device)
         num_groups = K // group_size
         for g in range(num_groups):

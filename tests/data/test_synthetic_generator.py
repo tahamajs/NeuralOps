@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Tests for neuralops.data.synthetic_generator module."""
 
 import pytest
@@ -46,7 +52,6 @@ class TestZipfianTokenGenerators:
         flat = tokens.flatten().tolist()
         counts = Counter(flat)
         sorted_counts = sorted(counts.values(), reverse=True)
-        # Top rank frequency is much higher than median frequency
         assert sorted_counts[0] > 3 * sorted_counts[len(sorted_counts) // 2]
 
     def test_deterministic_generation(self):

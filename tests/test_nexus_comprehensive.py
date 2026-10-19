@@ -1,3 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 from .testing_utils import MockConfig, DummyDistilBertAttention
 import pytest
 import torch
@@ -108,7 +115,6 @@ def test_nexus_multi_chunk_causal_nystrom():
     cfg = MockConfig(hidden_size=64, num_attention_heads=4, is_decoder=True, model_type="gpt2")
     ncfg = NEXUSConfig(block_size=4, top_k_blocks=2, rff_features=16)
     attn = NEXUSAttention(config=cfg, nexus_cfg=ncfg)
-    # Sequence length 32 with chunk_size 8 forces multiple chunks and inter-chunk Nyström
     x = torch.randn(2, 32, 64)
     Q = attn._reshape(attn.query(x), attn.num_heads)
     K = attn._reshape(attn.key(x), attn.num_kv_heads)
@@ -127,7 +133,6 @@ def test_nexus_multi_chunk_causal_nystrom():
 def test_nexus_ortho_loss_differentiable():
     cfg = MockConfig(hidden_size=64, num_attention_heads=4)
     attn = NEXUSAttention(config=cfg)
-    # Enable grad on query weight to verify loss is differentiable
     attn.query.weight.requires_grad = True
     loss = attn.get_ortho_loss()
     assert loss.requires_grad is True

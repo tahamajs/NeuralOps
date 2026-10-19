@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Benchmark Sweep Runner
 
 Orchestrates multi-module benchmark sweeps across models, datasets, and configurations.
-
-Author: Taha Majlesi
 """
 
 import argparse
@@ -36,7 +40,6 @@ def main():
         required=True,
         help="The key of the module to sweep (e.g. 'cur_linear').",
     )
-    # Allows passing remaining arguments to the orchestrator
     args, unknown_args = parser.parse_known_args()
 
     registry = get_registry()
@@ -48,7 +51,6 @@ def main():
 
     default_args = registry[args.module]
 
-    # Prepend unknown_args so sys.argv is manipulated correctly for run_orchestrator
     sys.argv = [sys.argv[0]] + unknown_args
 
     logger.info(f"Running sweep for {args.module} with default args: {default_args}")

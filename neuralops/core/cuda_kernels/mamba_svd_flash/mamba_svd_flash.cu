@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -5,7 +12,6 @@
 
 namespace neuralops { namespace cuda {
 
-// Highly optimized streaming CUDA kernel for factorized Mamba SVD projection
 template <typename scalar_t>
 __global__ void __launch_bounds__(128) mamba_svd_flash_fwd_kernel(
     scalar_t* __restrict__ out,
@@ -27,16 +33,14 @@ __global__ void __launch_bounds__(128) mamba_svd_flash_fwd_kernel(
     const int base_offset = (b * N + t) * D;
 
     extern __shared__ float smem[];
-    float* s_u = smem;               // size D
-    float* s_latent = smem + D;       // size R
+    float* s_u = smem;
+    float* s_latent = smem + D;
 
-    // Step 1: Collaborative coalesced load of u[b, t, :] into shared memory
     for (int d = tid; d < D; d += blockDim.x) {
         s_u[d] = to_float(u[base_offset + d]);
     }
     __syncthreads();
 
-    // Step 2: Thread-parallel projection into latent coordinates h_r = \sum_d u_d * vt_{r, d}
     for (int r = tid; r < R; r += blockDim.x) {
         float sum = 0.0f;
         const int vt_offset = r * D;
@@ -48,7 +52,6 @@ __global__ void __launch_bounds__(128) mamba_svd_flash_fwd_kernel(
     }
     __syncthreads();
 
-    // Step 3: Reconstruction out_d = (\sum_r h_r * u_{d, r}) * decay_d
     for (int d = tid; d < D; d += blockDim.x) {
         float rec = 0.0f;
         const int u_mat_offset = d * R;
@@ -61,7 +64,7 @@ __global__ void __launch_bounds__(128) mamba_svd_flash_fwd_kernel(
     }
 }
 
-}} // namespace neuralops::cuda
+}}
 
 torch::Tensor mamba_svd_flash_fwd(
     const torch::Tensor& u,

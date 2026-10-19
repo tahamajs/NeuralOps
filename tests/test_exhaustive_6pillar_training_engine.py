@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Suite 5: Exhaustive Verification Battery for the 6-Pillar Training, Distillation, and RL Engine.
 Expanded to 25+ parameterized mathematical invariant tests covering:
@@ -52,7 +58,6 @@ def test_5_1_logit_distillation_modes(mode, temp):
     assert torch.isfinite(loss).all()
     assert loss.item() >= 0.0
 
-    # Self-distillation identity check: loss(z, z) == 0
     loss_self = loss_fn(teacher_logits, teacher_logits)
     assert loss_self.item() < 1e-4 or torch.allclose(loss_self, torch.zeros_like(loss_self), atol=1e-3)
 
@@ -64,12 +69,10 @@ def test_5_1_logit_distillation_modes(mode, temp):
 def test_5_2_linear_cka_orthogonal_rotation_invariance():
     B, S, D = 2, 8, 16
     X = torch.randn(B, S, D, device=DEVICE)
-    # Generate random orthogonal rotation matrix Q in O(D)
     Q, _ = torch.linalg.qr(torch.randn(D, D, device=DEVICE))
     X_rot = torch.matmul(X, Q)
 
     cka_fn = LinearCKALoss()
-    # Mathematical Invariant: CKA between X and X @ Q must be 1.0 (loss = 1 - CKA = 0.0)
     loss = cka_fn(X, X_rot)
     assert abs(loss.item()) < 1e-4, f"CKA rotation invariance violated: loss = {loss.item()}"
 
@@ -110,11 +113,9 @@ def test_5_4_pissa_linear_exact_identity_and_merge(rank):
     out_orig = base_linear(x)
     out_pissa = pissa(x)
 
-    # Step-0 exact identity
     diff = (out_orig - out_pissa).abs().max().item()
     assert diff < 1e-4, f"PiSSA step-0 identity violation: max diff = {diff}"
 
-    # Merge and unload
     pissa.merge_and_unload()
     out_merged = pissa(x)
     diff_merged = (out_orig - out_merged).abs().max().item()
@@ -131,7 +132,6 @@ def test_5_5_orpo_preference_loss():
 
 
 def test_5_5_attention_regularizers():
-    # Gate Saturation Penalty
     gate_reg = GateSaturationPenalty(penalty_weight=0.01)
     gates = torch.tensor([0.2, 0.5, 0.8], device=DEVICE, requires_grad=True)
     loss_gate = gate_reg(gates)
@@ -139,7 +139,6 @@ def test_5_5_attention_regularizers():
     loss_gate.backward()
     assert gates.grad is not None
 
-    # Spectral Jacobian Regularizer
     spec_reg = SpectralJacobianRegularizer(max_sigma=2.0, weight=0.05)
     W = nn.Parameter(torch.randn(32, 32, device=DEVICE))
     loss_spec = spec_reg(W)
@@ -160,7 +159,6 @@ def test_5_6_riemannian_adam_stiefel_orthogonality(p):
         loss.backward()
         opt.step()
 
-        # Enforce Stiefel invariant ||U^T U - I_p||_F < 1e-2
         utu = torch.matmul(param.data.transpose(0, 1), param.data)
         eye = torch.eye(p, device=DEVICE)
         ortho_err = torch.norm(utu - eye, p="fro").item()

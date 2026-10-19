@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Dynamic Sparse Attention
 
 Selects dynamic high-scoring key-value attention blocks on-the-fly to accelerate long-sequence processing.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -267,7 +271,6 @@ class TritonDynamicSparseAttentionFunction(torch.autograd.Function):
                         p = F.softmax(scores, dim=-1)
                         o_sub = torch.matmul(p, v_sub)
 
-                        # Adjoints
                         dv_sub = torch.matmul(p.t(), dout_sub)
                         dp = torch.matmul(dout_sub, v_sub.t())
                         D_sub = (dout_sub * o_sub).sum(dim=-1, keepdim=True)
@@ -276,7 +279,6 @@ class TritonDynamicSparseAttentionFunction(torch.autograd.Function):
                         dq[b, h, q_st:q_ed] += torch.matmul(ds, k_sub)
                         dk_sub = torch.matmul(ds.t(), q_sub)
 
-                        # Scatter dk_sub and dv_sub back into active ranges
                         curr_offset = 0
                         for (kv_st, kv_ed) in ranges:
                             chunk_len = kv_ed - kv_st

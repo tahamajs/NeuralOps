@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Unit tests for Fused SVD-Linear Layer with in-SRAM RMSNorm, Autograd backward pass,
 and integration into SVDLinear and SVDLinearAttention modules.
@@ -93,12 +99,10 @@ def test_fused_svd_linear_nd_shapes() -> None:
     torch.manual_seed(42)
     layer = FusedSVDLinear(in_features=32, out_features=64, rank=16)
 
-    # 2D input: (M, K_in)
     x_2d = torch.randn(32, 32)
     out_2d = layer(x_2d)
     assert out_2d.shape == (32, 64)
 
-    # 4D input: (B, H, L, K_in)
     x_4d = torch.randn(2, 4, 8, 32)
     out_4d = layer(x_4d)
     assert out_4d.shape == (2, 4, 8, 64)
@@ -165,18 +169,15 @@ def test_fused_svd_linear_module_methods() -> None:
     """Verify FusedSVDLinear helper methods: set_low_rank_factors, get_orthogonality_loss, extra_repr."""
     layer = FusedSVDLinear(in_features=32, out_features=64, rank=16, bias=True, use_rms_norm=True)
     
-    # Test set_low_rank_factors
     new_U = torch.randn(64, 16)
     new_V = torch.randn(16, 32)
     layer.set_low_rank_factors(new_U, new_V)
     assert torch.allclose(layer.U, new_U)
     assert torch.allclose(layer.V, new_V)
 
-    # Test orthogonality loss
     ortho_loss = layer.get_orthogonality_loss()
     assert ortho_loss.ndim == 0 and ortho_loss >= 0.0
 
-    # Test extra_repr
     repr_str = layer.extra_repr()
     assert "in_features=32" in repr_str
     assert "out_features=64" in repr_str
@@ -198,7 +199,6 @@ def test_analytical_vs_reference_gradients() -> None:
     b_val = torch.randn(out_dim, dtype=torch.float64)
     eps = 1e-6
 
-    # 1. Reference PyTorch computation with autograd
     x_ref = x_val.clone().requires_grad_(True)
     V_ref = V_val.clone().requires_grad_(True)
     U_ref = U_val.clone().requires_grad_(True)
@@ -212,7 +212,6 @@ def test_analytical_vs_reference_gradients() -> None:
     loss_ref = (y_ref ** 2).sum()
     loss_ref.backward()
 
-    # 2. Fused SVD Linear analytical implementation
     x_test = x_val.clone().requires_grad_(True)
     V_test = V_val.clone().requires_grad_(True)
     U_test = U_val.clone().requires_grad_(True)
@@ -236,11 +235,8 @@ def test_svd_linear_integration() -> None:
     torch.manual_seed(42)
     in_dim, out_dim, rank = 32, 64, 16
 
-    # Standard mode
     layer_std = SVDLinear(in_dim, out_dim, rank=rank, use_fused_kernel=False)
-    # Fused mode
     layer_fused = SVDLinear(in_dim, out_dim, rank=rank, use_fused_kernel=True)
-    # Copy parameters
     layer_fused.U.data.copy_(layer_std.U.data)
     layer_fused.V.data.copy_(layer_std.V.data)
     layer_fused.bias.data.copy_(layer_std.bias.data)
@@ -262,7 +258,6 @@ def test_svd_linear_attention_integration() -> None:
         linear_attention_eps=1e-6,
     )
 
-    # 1. Exact Softmax mode with fused SVD projections
     attn_exact = SVDLinearAttention(config, rank=16, mode="exact", use_fused_kernel=True)
     x = torch.randn(2, 16, 64, requires_grad=True)
     out_exact, _ = attn_exact(x)
@@ -271,7 +266,6 @@ def test_svd_linear_attention_integration() -> None:
     loss.backward()
     assert x.grad is not None and torch.isfinite(x.grad).all()
 
-    # 2. Linear Kernel mode with fused SVD projections
     attn_linear = SVDLinearAttention(config, rank=16, mode="linear", use_fused_kernel=True)
     x2 = torch.randn(2, 16, 64, requires_grad=True)
     out_linear, _ = attn_linear(x2)

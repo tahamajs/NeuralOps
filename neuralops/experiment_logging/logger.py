@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Experiment Logger
 
 Structured multi-stream logger for recording experiment telemetry and training statistics.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -20,7 +24,6 @@ from typing import Any
 
 from .config import LoggingConfig
 
-# Active listeners registry for clean shutdown
 _ACTIVE_LISTENERS: list[QueueListener] = []
 
 
@@ -145,13 +148,11 @@ def setup_logging(config: LoggingConfig | None = None) -> logging.Logger:
     destination_handlers: list[logging.Handler] = []
 
     if cfg.log_to_console:
-        # Stream logs to stdout (typically rank 0 only or all ranks if formatted)
         ch = logging.StreamHandler(sys.stdout)
         ch.setFormatter(fmt)
         destination_handlers.append(ch)
 
     if cfg.log_to_file:
-        # FIX: Ensure each DDP rank writes to an isolated log file (rank_{LOCAL_RANK}.log)
         if cfg.rank_specific_logs:
             fname = f"rank_{rank}.log"
         else:
@@ -168,7 +169,6 @@ def setup_logging(config: LoggingConfig | None = None) -> logging.Logger:
         destination_handlers.append(fh)
 
     if cfg.use_queue_handler:
-        # FIX: Implement Python logging with QueueHandler and QueueListener for thread safety and non-blocking I/O
         log_queue: queue.Queue = queue.Queue(-1)
         queue_handler = QueueHandler(log_queue)
         root.addHandler(queue_handler)

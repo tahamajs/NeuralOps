@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 RPCA Sparse and Low-Rank SVD Autograd Interface
 
 Hardware-accelerated CUDA C++ autograd implementation with analytical gradients and three-level fallback dispatch.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -111,8 +115,6 @@ class _RPCASparseSVDGemmFunction(torch.autograd.Function):
         K = orig_shape[-1]
         x_2d = x.reshape(-1, K)
 
-        # Standardize matrix orientations:
-        # V: [R, K], U: [N, R]
         V = v_r if v_r.shape[1] == K else v_r.t()
         R = V.shape[0]
         U = u_r if u_r.shape[1] == R else u_r.t()
@@ -135,16 +137,10 @@ class _RPCASparseSVDGemmFunction(torch.autograd.Function):
         x_2d, V, U, s = ctx.saved_tensors
         dout_2d = dout.reshape(-1, ctx.out_features)
 
-        # Exact adjoint chain rule:
-        # Y = (x @ V.T) @ U.T + (x @ S.T if S else 0) + bias
-        # z = x @ V.T  [M, R]
-        # dout_2d: [M, N]
         z = torch.matmul(x_2d, V.t())
 
-        # dz = dout_2d @ U  [M, R]
         dz = torch.matmul(dout_2d, U)
 
-        # dx = dz @ V + (dout_2d @ S if S else 0)  [M, K]
         dx_2d = torch.matmul(dz, V)
         ds = None
         if ctx.has_s:

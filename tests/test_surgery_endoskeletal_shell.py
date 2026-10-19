@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Unit tests for Phase 2 UniversalAttentionBridge, warm-start weight transfer, and HF registration."""
 
 import torch
@@ -20,7 +26,6 @@ class MockLlamaBlock(nn.Module):
         self.k_proj = nn.Linear(d, d, bias=False)
         self.v_proj = nn.Linear(d, d, bias=False)
         self.o_proj = nn.Linear(d, d, bias=False)
-        # Give weights deterministic values
         nn.init.constant_(self.q_proj.weight, 1.0)
         nn.init.constant_(self.k_proj.weight, 2.0)
         nn.init.constant_(self.v_proj.weight, 3.0)
@@ -36,12 +41,9 @@ def test_warm_start_weight_transfer():
     assert len(specs) == 1
     spec = specs[0]
 
-    # Instantiate CosformerAttention
     cosformer = CosformerAttention(hidden_size=64, num_heads=4)
-    # Check weights before transfer (random / default)
     assert not torch.allclose(cosformer.q_proj.weight, torch.tensor(1.0))
 
-    # Apply transfer
     transfer_pretrained_qkv_weights(spec, cosformer)
     assert torch.allclose(cosformer.q_proj.weight, torch.tensor(1.0))
     assert torch.allclose(cosformer.k_proj.weight, torch.tensor(2.0))
@@ -66,7 +68,6 @@ def test_universal_attention_bridge_execution():
     B, T, D = 2, 8, 64
     x = torch.randn(B, T, D, requires_grad=True)
     out = bridge(x)
-    # Forward pass works and matches input tensor dimensions
     if isinstance(out, tuple):
         assert out[0].shape == (B, T, D)
         loss = out[0].sum()
@@ -74,13 +75,11 @@ def test_universal_attention_bridge_execution():
         assert out.shape == (B, T, D)
         loss = out.sum()
 
-    # Differentiable backward pass
     loss.backward()
     assert x.grad is not None
 
 
 def test_register_neuralops_with_huggingface():
-    # Calling register_neuralops_with_huggingface() executes without error
     register_neuralops_with_huggingface()
     try:
         import transformers.modeling_utils as hf_utils

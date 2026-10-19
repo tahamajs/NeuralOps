@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #pragma once
 #include <cuda_runtime.h>
 #include <torch/extension.h>
@@ -5,16 +12,13 @@
 #include <c10/cuda/CUDAException.h>
 #include "_common.cuh"
 
-// ═══════════════════════════════════════════════════════════════════════
-// MoE Dispatch Kernel: Vectorized 128-bit Token Scattering
-// ═══════════════════════════════════════════════════════════════════════
 template<typename scalar_t>
 __launch_bounds__(256)
 __global__ void moe_dispatch_kernel(
-    scalar_t* __restrict__ dispatched_tokens,     // [total_assignments, hidden_dim]
-    const scalar_t* __restrict__ tokens,          // [num_tokens, hidden_dim]
-    const int32_t* __restrict__ topk_indices,     // [num_tokens, top_k]
-    const int32_t* __restrict__ expert_offsets,   // [num_tokens, top_k] slot assignments (optional)
+    scalar_t* __restrict__ dispatched_tokens,
+    const scalar_t* __restrict__ tokens,
+    const int32_t* __restrict__ topk_indices,
+    const int32_t* __restrict__ expert_offsets,
     const int num_tokens,
     const int hidden_dim,
     const int top_k,
@@ -100,17 +104,14 @@ void moe_dispatch_cuda(
     C10_CUDA_KERNEL_LAUNCH_CHECK();
 }
 
-// ═══════════════════════════════════════════════════════════════════════
-// Bitonic MoE Router: Parallel Warp-Shuffle Top-K Selection & Softmax
-// ═══════════════════════════════════════════════════════════════════════
 template<typename scalar_t>
 __launch_bounds__(128)
 __global__ void moe_fused_dispatch_kernel(
-    scalar_t* __restrict__ dispatched_tokens, // [num_tokens * top_k, hidden_dim]
-    scalar_t* __restrict__ routing_weights,   // [num_tokens, top_k]
-    int32_t* __restrict__ topk_indices,       // [num_tokens, top_k]
-    const scalar_t* __restrict__ tokens,      // [num_tokens, hidden_dim]
-    const scalar_t* __restrict__ gate_logits, // [num_tokens, num_experts]
+    scalar_t* __restrict__ dispatched_tokens,
+    scalar_t* __restrict__ routing_weights,
+    int32_t* __restrict__ topk_indices,
+    const scalar_t* __restrict__ tokens,
+    const scalar_t* __restrict__ gate_logits,
     const int num_tokens,
     const int hidden_dim,
     const int num_experts,
@@ -121,7 +122,6 @@ __global__ void moe_fused_dispatch_kernel(
 
     if (tok_idx >= num_tokens) return;
 
-    // Bitonic Top-K selection across 32 lanes
     float val = -1e30f;
     int idx = 0;
 
@@ -131,7 +131,6 @@ __global__ void moe_fused_dispatch_kernel(
         idx = lane;
     }
 
-    // If num_experts > 32, fold subsequent experts into the 32 lanes
     for (int e = lane + 32; e < num_experts; e += 32) {
         float cand_val = neuralops::cuda::to_float(g_row[e]);
         if (cand_val > val) {
@@ -140,14 +139,13 @@ __global__ void moe_fused_dispatch_kernel(
         }
     }
 
-    // 32-element Bitonic Sorting Network in pure register shuffle space
     #pragma unroll
     for (int size = 2; size <= 32; size *= 2) {
         #pragma unroll
         for (int stride = size / 2; stride > 0; stride /= 2) {
             float other_val = __shfl_xor_sync(0xffffffff, val, stride);
             int other_idx = __shfl_xor_sync(0xffffffff, idx, stride);
-            bool dir = ((lane & size) == 0); // descending for first half
+            bool dir = ((lane & size) == 0);
             bool swap = dir ? (val < other_val) : (val > other_val);
             if (swap) {
                 val = other_val;
@@ -156,11 +154,9 @@ __global__ void moe_fused_dispatch_kernel(
         }
     }
 
-    // Lanes 0 to (top_k - 1) now hold the sorted top-k values and expert indices!
     float max_val = __shfl_sync(0xffffffff, val, 0);
     float exp_val = (lane < top_k) ? expf(val - max_val) : 0.0f;
 
-    // Warp-level sum reduction for softmax normalizer
     float sum_exp = exp_val;
     #pragma unroll
     for (int offset = 16; offset > 0; offset /= 2) {
@@ -174,7 +170,6 @@ __global__ void moe_fused_dispatch_kernel(
         topk_indices[tok_idx * top_k + lane] = idx;
     }
 
-    // Parallel vectorized 128-bit streaming copy of tokens[tok_idx] to dispatched[tok_idx * top_k + j]
     const scalar_t* __restrict__ src_tok = tokens + tok_idx * hidden_dim;
     if ((hidden_dim * sizeof(scalar_t)) % 16 == 0) {
         constexpr int VEC_SIZE = 16 / sizeof(scalar_t);
@@ -224,7 +219,7 @@ void moe_fused_dispatch_cuda(
         return;
     }
 
-    dim3 block(32, 4); // 4 warps per block = 4 tokens per block
+    dim3 block(32, 4);
     dim3 grid((num_tokens + 3) / 4);
     cudaStream_t stream = c10::cuda::getCurrentCUDAStream().stream();
 

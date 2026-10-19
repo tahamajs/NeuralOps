@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Targeted Extended Fine-Tuning Sweep for Low-Accuracy / Chance-Level Modules on RoBERTa-base (ssh gpu).
 Trains each module for 3 epochs with 400 samples on SST-2 to ensure proper gradient convergence.
@@ -13,7 +19,6 @@ from pathlib import Path
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("RobertaExtendedSweep")
 
-# Modules that scored around chance level (~0.48 - 0.50) on single-epoch/tiny-sample RoBERTa run
 LOW_ACC_ROBERTA_MODULES = [
     "dynamic_conv_attention",
     "hamming_attention",

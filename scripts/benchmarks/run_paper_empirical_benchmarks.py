@@ -1,5 +1,9 @@
-# -*- coding: utf-8 -*-
-# Author: Taha Majlesi
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Comprehensive Empirical Benchmark Suite for ICLR 2027 Submission.
 
@@ -68,7 +72,6 @@ def run_scaling_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
     H, D = 12, 64
     scaling_records = []
 
-    # Sequence Length Scaling at B=2
     B_fixed = 2
     for N in seq_lens:
         q = torch.randn(B_fixed, H, N, D, device=device, dtype=torch.float16)
@@ -76,21 +79,17 @@ def run_scaling_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
         v = torch.randn(B_fixed, H, N, D, device=device, dtype=torch.float16)
         g = torch.sigmoid(torch.randn(B_fixed, H, N, device=device, dtype=torch.float16)).clamp(1e-4, 1.0 - 1e-4)
 
-        # Baseline SDPA
         ms_sdpa, vram_sdpa = measure_peak_memory_and_latency(
             lambda _q=q, _k=k, _v=v: F.scaled_dot_product_attention(_q, _k, _v)
         )
 
-        # Chunk GLA
         ms_gla, vram_gla = measure_peak_memory_and_latency(lambda _q=q, _k=k, _v=v, _g=g: gla_scan(_q, _k, _v, _g))
 
-        # Chunk GDN
         beta = torch.sigmoid(torch.randn(B_fixed, H, N, device=device, dtype=torch.float16))
         ms_gdn, vram_gdn = measure_peak_memory_and_latency(
             lambda _q=q, _k=k, _v=v, _beta=beta, _g=g: gdn_scan(_q, _k, _v, _beta, _g)
         )
 
-        # Cosformer
         ms_cos, vram_cos = measure_peak_memory_and_latency(
             lambda _q=q, _k=k, _v=v: triton_cosformer_linear_attention(_q, _k, _v)
         )
@@ -115,7 +114,6 @@ def run_scaling_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
             f"  N={N:4d} | SDPA: {ms_sdpa:6.2f}ms ({vram_sdpa:5.1f}MB) | GLA: {ms_gla:6.2f}ms ({vram_gla:5.1f}MB, {record['gla_speedup_vs_sdpa']}x)"
         )
 
-    # Batch Size Scaling at N=1024
     N_fixed = 1024
     for B in batch_sizes:
         q = torch.randn(B, H, N_fixed, D, device=device, dtype=torch.float16)
@@ -161,7 +159,6 @@ def run_precision_parity_benchmarks(device: str = "cuda") -> List[Dict[str, Any]
 
         out_triton = gla_scan(q, k, v, g)
 
-        # PyTorch reference computed in FP32
         q_32, k_32, v_32, g_32 = q.float(), k.float(), v.float(), g.float()
         from neuralops.core.triton_kernels.gla_scan import gla_scan_pytorch
 
@@ -214,11 +211,9 @@ def run_e2e_model_surgery_benchmarks(device: str = "cuda") -> List[Dict[str, Any
     for B, N in configurations:
         x = torch.randint(0, 50257, (B, N), device=device)
 
-        # Baseline MHA
         ms_mha, vram_mha = measure_peak_memory_and_latency(lambda _x=x: base_mha(_x), warmup=3, iters=10)
         tok_mha = (B * N) / (ms_mha / 1000.0)
 
-        # Linear Attention Surgery
         ms_lin, vram_lin = measure_peak_memory_and_latency(lambda _x=x: linear_model(_x), warmup=3, iters=10)
         tok_lin = (B * N) / (ms_lin / 1000.0)
 
@@ -250,7 +245,6 @@ def ingest_records_into_ledger(scaling_records, precision_records, e2e_records, 
 
     ledger = ResultsLedger(results_dir=out_dir)
 
-    # 1. Ingest Scaling Records
     for rec in scaling_records:
         r = ResultRecord(
             record_id="",
@@ -269,7 +263,6 @@ def ingest_records_into_ledger(scaling_records, precision_records, e2e_records, 
         )
         ledger.add_or_replace(r)
 
-    # 2. Ingest E2E Surgery Records
     for rec in e2e_records:
         r = ResultRecord(
             record_id="",

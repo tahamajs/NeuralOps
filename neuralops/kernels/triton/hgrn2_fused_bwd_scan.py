@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 HGRN2 Fused Bidirectional Scan
 
 Fuses forward and reverse recurrence passes using directional pointer arithmetic without intermediate tensor reversals.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -43,9 +47,6 @@ def _hgrn2_bidirectional_scan_kernel(
 
     offs_d = tl.arange(0, D)
 
-    # 1. Forward Scan: t = 0 -> L-1
-    # We write forward states temporarily or accumulate into y
-    # To fuse without extra HBM allocation, we accumulate 0.5 * h_fwd directly into y_ptr
     h_fwd = tl.zeros([D], dtype=tl.float32)
     for t in range(0, L):
         x_ptrs = x_ptr + pid_b * stride_xb + pid_h * stride_xh + t * stride_xl + offs_d * stride_xd
@@ -54,14 +55,11 @@ def _hgrn2_bidirectional_scan_kernel(
         x_t = tl.load(x_ptrs).to(tl.float32)
         g_t = tl.load(g_ptrs).to(tl.float32)
 
-        # HGRN recurrence: h_t = g_t * h_{t-1} + (1 - g_t) * x_t
         h_fwd = g_t * h_fwd + (1.0 - g_t) * x_t
 
         y_ptrs = y_ptr + pid_b * stride_yb + pid_h * stride_yh + t * stride_yl + offs_d * stride_yd
         tl.store(y_ptrs, (0.5 * h_fwd).to(x_ptr.dtype.element_ty))
 
-    # 2. Backward Scan: t = L-1 -> 0
-    # Steps pointer backward by -stride_xl
     h_bwd = tl.zeros([D], dtype=tl.float32)
     for t_rev in range(0, L):
         t = L - 1 - t_rev
@@ -73,7 +71,6 @@ def _hgrn2_bidirectional_scan_kernel(
 
         h_bwd = g_t * h_bwd + (1.0 - g_t) * x_t
 
-        # Load forward contribution, add 0.5 * h_bwd, and store final fused result
         y_ptrs = y_ptr + pid_b * stride_yb + pid_h * stride_yh + t * stride_yl + offs_d * stride_yd
         prev_fwd = tl.load(y_ptrs).to(tl.float32)
         y_fused = prev_fwd + 0.5 * h_bwd
@@ -97,15 +94,12 @@ def triton_hgrn2_fused_bwd_scan(
     B, H, L, D = x.shape
 
     if not x.is_cuda or D > 128:
-        # PyTorch reference
-        # Forward scan
         h_fwd = torch.zeros(B, H, D, dtype=torch.float32, device=x.device)
         y_fwd = torch.empty_like(x)
         for t in range(L):
             h_fwd = g[:, :, t] * h_fwd + (1.0 - g[:, :, t]) * x[:, :, t]
             y_fwd[:, :, t] = h_fwd
 
-        # Backward scan using torch.flip
         x_rev = torch.flip(x, dims=[2])
         g_rev = torch.flip(g, dims=[2])
         h_bwd = torch.zeros(B, H, D, dtype=torch.float32, device=x.device)

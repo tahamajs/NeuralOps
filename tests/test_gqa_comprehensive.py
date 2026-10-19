@@ -1,3 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 import pytest
 import torch
 import torch.nn as nn
@@ -32,7 +39,6 @@ def test_gqa_copy_weights_and_freezing():
     assert block.query.lora_B.requires_grad
 
 def test_gqa_odd_dim_rope():
-    # Odd head dimension safety check
     q = torch.randn(2, 4, 8, 17)
     k = torch.randn(2, 2, 8, 17)
     cos = torch.randn(8, 17)

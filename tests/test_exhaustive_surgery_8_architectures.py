@@ -1,16 +1,9 @@
-# Copyright (c) 2026 NeuralOps Authors. All Rights Reserved.
+# Copyright (c) 2024-2026, Taha Majlesi
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 
 """Exhaustive Universal Model Surgery Test Suite (Suite 4).
 
@@ -230,18 +223,15 @@ def test_4_9_shadow_twin_distillation_lifecycle():
     model = BertModel(config).to(DEVICE)
     x = torch.randint(0, 100, (2, 8), device=DEVICE)
 
-    # 1. Enable surgery with shadow twin
     transplanted = transplant_attention(model, attention="cosformer", attach_sidecar=False)
     enable_shadow_twin(transplanted, stage="stage1_orientation")
 
-    # 2. Stage 1: Orientation phase
     set_surgery_stage(transplanted, "stage1_orientation")
     set_surgery_alpha(transplanted, alpha=0.5)
     transplanted(x)
     loss1 = collect_surgery_distillation_loss(transplanted)
     assert loss1 is not None and torch.isfinite(loss1).all()
 
-    # 3. Finalize and detach teacher
     final_model = finalize_surgery(transplanted)
     out_final = final_model(x)[0]
     assert out_final.shape == (2, 8, 64)

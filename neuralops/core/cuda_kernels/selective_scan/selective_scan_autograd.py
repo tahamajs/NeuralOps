@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Selective Scan (Mamba-1 S6) Autograd Interface
 
 Hardware-accelerated CUDA C++ autograd implementation with analytical gradients and three-level fallback dispatch.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -63,12 +67,10 @@ def selective_scan_pytorch_ref(
     ys = []
 
     for i in range(l):
-        u_t = u_f[:, :, i]  # [b, d]
-        delta_t = delta_f[:, :, i]  # [b, d]
+        u_t = u_f[:, :, i]
+        delta_t = delta_f[:, :, i]
 
-        # dA = exp(delta_t * A) -> [b, d, d_state]
         dA = torch.exp(torch.clamp(delta_t.unsqueeze(-1) * A_f.unsqueeze(0), -20.0, 20.0))
-        # dB = delta_t * B[:, :, i] -> [b, d, d_state]
         dB = delta_t.unsqueeze(-1) * B_f[:, :, i].unsqueeze(1)
 
         h = dA * h + dB * u_t.unsqueeze(-1)
@@ -94,7 +96,6 @@ class _SelectiveScanFunction(torch.autograd.Function):
             ctx.is_py = False
             return out, last_state
 
-        # PyTorch reference forward under autograd
         u_p = u.detach().requires_grad_(u.requires_grad)
         delta_p = delta.detach().requires_grad_(delta.requires_grad)
         A_p = A.detach().requires_grad_(A.requires_grad)

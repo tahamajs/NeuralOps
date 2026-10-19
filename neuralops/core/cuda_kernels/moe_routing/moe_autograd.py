@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Mixture of Experts Routing Autograd Interface
 
 Hardware-accelerated CUDA C++ autograd implementation with analytical gradients and three-level fallback dispatch.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -53,7 +57,6 @@ def _moe_dispatch_pytorch_ref(
     _top_k = topk_indices.shape[1]
     dispatched = torch.zeros((total_slots, hidden_dim), dtype=tokens.dtype, device=tokens.device)
 
-    # Vectorized slot assignment
     valid_mask = (expert_offsets >= 0) & (expert_offsets < total_slots)
     tok_ids = torch.arange(num_tokens, device=tokens.device).unsqueeze(1).expand_as(expert_offsets)
     flat_slots = expert_offsets[valid_mask].long()
@@ -161,11 +164,9 @@ class _MoEGatherAutograd(torch.autograd.Function):
         valid_mask = (expert_offsets >= 0) & (expert_offsets < total_slots)
         safe_offsets = torch.clamp(expert_offsets, 0, max(0, total_slots - 1))
 
-        # Vectorized routing weights gradient
-        gathered_exp = expert_outputs[safe_offsets]  # [N, top_k, D]
+        gathered_exp = expert_outputs[safe_offsets]
         grad_routing_weights = (grad_out.unsqueeze(1).float() * gathered_exp.float()).sum(dim=-1).to(routing_weights.dtype) * valid_mask
 
-        # Vectorized expert outputs gradient via scatter_add_
         weighted_grad = (grad_out.unsqueeze(1) * routing_weights.unsqueeze(-1) * valid_mask.unsqueeze(-1)).view(-1, hidden_dim)
         flat_offsets = safe_offsets.view(-1, 1).expand(-1, hidden_dim)
         grad_expert_outputs = torch.zeros_like(expert_outputs)
@@ -187,7 +188,6 @@ def moe_route_pytorch_ref(
 
     num_tokens = tokens.shape[0]
     topk_vals, topk_indices = torch.topk(gate_logits, k=top_k, dim=-1)
-    # Softmax in float32 for numerical stability across fp16/bf16
     routing_weights = F.softmax(topk_vals.float(), dim=-1).to(tokens.dtype)
 
     expert_offsets = torch.arange(num_tokens * top_k, device=tokens.device, dtype=torch.int32).view(num_tokens, top_k)
@@ -317,7 +317,6 @@ def moe_gather(
     )
 
 
-# Standard Aliases
 moe_routing = moe_dispatch_gather
 moe_routing_ref = moe_dispatch_gather_pytorch_ref
 moe_routing_pytorch_ref = moe_dispatch_gather_pytorch_ref

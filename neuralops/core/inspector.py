@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Architecture Introspection Engine
 
 Dynamic neural network graph inspector and layer specification analyzer for model surgery.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -22,19 +26,19 @@ class ArchitectureSpec:
 
     name: str
     class_name: str
-    category: str  # "attention" or "compressor"
-    family: str  # concise family tag
-    source_file: str  # relative repo path
-    time_complexity: str  # e.g. "O(T·d²)", "O(T·d·r)"
-    memory_complexity: str  # e.g. "O(d²) state (zero KV-cache)"
-    triton_kernel_module: str  # exact kernel file & @triton.jit symbol
-    sram_fusion_strategy: str  # 1-line concise hardware note
-    math_equation: str  # Unicode mathematical formulation
-    algebraic_4stage_decomposition: Dict[str, str]  # P -> φ -> M -> E mapping
-    constructor_params: List[Dict[str, str]]  # [{'param': ..., 'type': ..., 'default': ...}]
-    supported_dtypes_and_modes: Dict[str, Any]  # fp16, bf16, fp32, causal, measured_speedup
-    best_use_cases_and_tradeoffs: Dict[str, str]  # ideal_for, tradeoff
-    quickstart_code: Dict[str, str]  # pytorch_direct, surgical_transplant, composable_equivalent, cli_commands
+    category: str
+    family: str
+    source_file: str
+    time_complexity: str
+    memory_complexity: str
+    triton_kernel_module: str
+    sram_fusion_strategy: str
+    math_equation: str
+    algebraic_4stage_decomposition: Dict[str, str]
+    constructor_params: List[Dict[str, str]]
+    supported_dtypes_and_modes: Dict[str, Any]
+    best_use_cases_and_tradeoffs: Dict[str, str]
+    quickstart_code: Dict[str, str]
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert specification to dictionary representation."""
@@ -214,8 +218,6 @@ def _extract_constructor_params(obj: Any) -> List[Dict[str, str]]:
                     p_def = "None"
                 parsed.append({"param": p.name, "type": p_type, "default": p_def})
 
-            # Sort/reorder key architectural hyperparams forward:
-            # embed_dim/d_model, num_heads, rank, chunk_size, window_size
             priority_keys = ["embed_dim", "d_model", "dim", "hidden_size", "num_heads", "n_heads", "heads", "rank", "r", "chunk_size", "window_size"]
             def _sort_key(item: Dict[str, str]) -> int:
                 p_name = item["param"].lower()
@@ -284,7 +286,6 @@ def _build_4stage_decomposition(family: str) -> Dict[str, str]:
 
 def inspect_architecture(name: str, category: Optional[str] = None) -> ArchitectureSpec:
     """Inspect and return complete 14-field ArchitectureSpec for any registered module."""
-    # Ensure registries are populated
     import neuralops.attentions
     import neuralops.compression_engine
     from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
@@ -305,7 +306,6 @@ def inspect_architecture(name: str, category: Optional[str] = None) -> Architect
             is_comp = True
 
     if not is_attn and not is_comp:
-        # Check case-insensitive
         match_attn = [k for k in ATTENTION_REGISTRY if k.lower() == name.lower()]
         if match_attn and category != "compressor":
             name = match_attn[0]
@@ -328,7 +328,6 @@ def inspect_architecture(name: str, category: Optional[str] = None) -> Architect
 
     try:
         full_src = inspect.getfile(obj)
-        # Convert to relative path
         if "neuralops" in full_src:
             idx = full_src.find("neuralops")
             source_file = full_src[idx:]
@@ -339,7 +338,6 @@ def inspect_architecture(name: str, category: Optional[str] = None) -> Architect
 
     kernel_sym, sram_strat, math_eq, time_c, mem_c = _map_kernel_and_hardware(name, category, family)
     
-    # Check if module defined custom plugin metadata or class-level _neuralops_metadata_
     custom_meta = {}
     try:
         from neuralops.core.extensibility import get_custom_metadata
@@ -363,7 +361,6 @@ def inspect_architecture(name: str, category: Optional[str] = None) -> Architect
     stages = _build_4stage_decomposition(family)
     params = _extract_constructor_params(obj)
 
-    # Measured empirical speedup estimates
     speedup_map = {
         "gated_delta_net": "115.49x",
         "gla_attention": "4.52x",
@@ -483,7 +480,6 @@ def render_architecture_card(spec: ArchitectureSpec, plain: bool = False) -> str
     stage_str = " -> ".join(f"{k.split()[0]}: {v}" for k, v in spec.algebraic_4stage_decomposition.items())
     lines.append(f"stages:   {stage_str}")
 
-    # Params
     param_strs = []
     for p in spec.constructor_params[:5]:
         def_val = p.get("default", "req")
@@ -509,7 +505,6 @@ def render_architecture_card(spec: ArchitectureSpec, plain: bool = False) -> str
     lines.append("── cli ───────────────────────────────────────────────────────────────")
     lines.append(spec.quickstart_code.get("cli_commands", "").strip())
 
-    # Latest Verified Provenance from ResultsLedger
     try:
         from neuralops.core.results_ledger import get_default_ledger
         ledger = get_default_ledger()

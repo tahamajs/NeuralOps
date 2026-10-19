@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -5,7 +12,6 @@
 
 namespace neuralops { namespace cuda {
 
-// 128-bit vectorized compaction kernel for physical paged KV cache eviction
 template <typename scalar_t>
 __global__ void __launch_bounds__(256) paged_kv_compact_kernel(
     scalar_t* __restrict__ k_out,
@@ -23,7 +29,6 @@ __global__ void __launch_bounds__(256) paged_kv_compact_kernel(
     const int tid = blockIdx.x * blockDim.x + threadIdx.x;
     const int stride = blockDim.x * gridDim.x;
 
-    // Vectorized 128-bit transfer path across head dimension D
     for (int d = tid; d < D; d += stride) {
         const int out_idx = pid * D + d;
         const int in_idx = target_idx * D + d;
@@ -32,7 +37,7 @@ __global__ void __launch_bounds__(256) paged_kv_compact_kernel(
     }
 }
 
-}} // namespace neuralops::cuda
+}}
 
 std::vector<torch::Tensor> paged_kv_compact_fwd(
     const torch::Tensor& k_in,

@@ -1,5 +1,9 @@
-# -*- coding: utf-8 -*-
-# Author: Taha Majlesi
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Publication Attention Benchmark Suite.
 Compares specialized attention kernels (sparse_attention, routing_attention, cross_attention)
@@ -19,7 +23,6 @@ from pathlib import Path
 import csv
 import torch
 
-# Ensure neuralops is importable
 repo_root = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(repo_root))
 
@@ -42,7 +45,6 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 def benchmark_kernel(fwd_fn, bwd_fn, *args, warmup=10, iters=30):
     """Execute benchmark kernel routine."""
     torch.cuda.synchronize()
-    # Warmup
     for _ in range(warmup):
         out = fwd_fn(*args)
         if bwd_fn and out.requires_grad:
@@ -50,7 +52,6 @@ def benchmark_kernel(fwd_fn, bwd_fn, *args, warmup=10, iters=30):
             bwd_fn(out, grad_out)
     torch.cuda.synchronize()
 
-    # Time forward
     start_event = torch.cuda.Event(enable_timing=True)
     end_event = torch.cuda.Event(enable_timing=True)
 
@@ -61,7 +62,6 @@ def benchmark_kernel(fwd_fn, bwd_fn, *args, warmup=10, iters=30):
     torch.cuda.synchronize()
     fwd_time_ms = start_event.elapsed_time(end_event) / iters
 
-    # Time backward if applicable
     bwd_time_ms = 0.0
     if bwd_fn and out.requires_grad:
         grad_out = torch.ones_like(out)
@@ -81,7 +81,6 @@ def run_benchmarks():
     results = []
 
     configs = [
-        # (B, L, D)
         (1, 1024, 64),
         (1, 2048, 64),
         (1, 4096, 64),
@@ -99,13 +98,12 @@ def run_benchmarks():
         (4, 2048, 128),
     ]
 
-    H = 8  # Fixed 8 attention heads
+    H = 8
 
     for B, L, D in configs:
         torch.cuda.empty_cache()
         print(f"\n--- Config: B={B}, H={H}, L={L}, D={D} ---")
 
-        # 1. Sparse Attention
         block_size = 64
         q_sparse = torch.randn(B, H, L, D, device=device, dtype=torch.float16, requires_grad=True)
         k_sparse = torch.randn(B, H, L, D, device=device, dtype=torch.float16, requires_grad=True)
@@ -113,13 +111,11 @@ def run_benchmarks():
 
         num_blocks_q = L // block_size
         num_blocks_k = L // block_size
-        # Local window sparsity: band of width 3 blocks
         block_mask = torch.zeros(num_blocks_q, num_blocks_k, dtype=torch.bool, device=device)
         for bq in range(num_blocks_q):
             for bk in range(max(0, bq - 1), min(num_blocks_k, bq + 2)):
                 block_mask[bq, bk] = True
 
-        # PyTorch SDPA baseline
         def ref_sparse_fwd(q, k, v):
             """Execute ref sparse fwd routine."""
             return block_sparse_attn_pytorch_ref(q, k, v, block_mask, block_size)
@@ -132,7 +128,6 @@ def run_benchmarks():
             ref_sparse_fwd, ref_bwd, q_sparse, k_sparse, v_sparse, warmup=5, iters=15
         )
 
-        # CUDA Sparse Attention
         def cuda_sparse_fwd(q, k, v):
             """Execute cuda sparse fwd routine."""
             return block_sparse_attn(q, k, v, block_mask, block_size)
@@ -165,11 +160,9 @@ def run_benchmarks():
             f"Sparse Attn: Ref Fwd={ref_fwd_ms:.2f}ms, CUDA Fwd={cuda_fwd_ms:.2f}ms (Speedup {speedup_fwd:.2f}x), Max Diff={max_diff:.2e}"
         )
 
-        # 2. Routing Attention
         q_rout = torch.randn(B, H, L, D, device=device, dtype=torch.float16, requires_grad=True)
         k_rout = torch.randn(B, H, L, D, device=device, dtype=torch.float16, requires_grad=True)
         v_rout = torch.randn(B, H, L, D, device=device, dtype=torch.float16, requires_grad=True)
-        # Sparse route weights
         route_weights = torch.rand(B, H, L, device=device, dtype=torch.float16)
         route_weights = torch.where(route_weights > 0.5, route_weights, torch.zeros_like(route_weights))
 
@@ -212,7 +205,6 @@ def run_benchmarks():
             f"Routing Attn: Ref Fwd={ref_fwd_ms:.2f}ms, CUDA Fwd={cuda_fwd_ms:.2f}ms (Speedup {speedup_fwd:.2f}x), Max Diff={max_diff:.2e}"
         )
 
-        # 3. Cross Attention (L_q = L // 4, L_kv = L)
         L_q = max(32, L // 4)
         L_kv = L
         q_cross = torch.randn(B, H, L_q, D, device=device, dtype=torch.float16, requires_grad=True)
@@ -258,7 +250,6 @@ def run_benchmarks():
             f"Cross Attn: Ref Fwd={ref_fwd_ms:.2f}ms, CUDA Fwd={cuda_fwd_ms:.2f}ms (Speedup {speedup_fwd:.2f}x), Max Diff={max_diff:.2e}"
         )
 
-    # Export CSV
     csv_path = repo_root / "docs" / "benchmarks" / "paper_benchmarks_attention.csv"
     csv_path.parent.mkdir(parents=True, exist_ok=True)
     fieldnames = [
@@ -281,7 +272,6 @@ def run_benchmarks():
         writer.writerows(results)
     print(f"\nSaved benchmark results to {csv_path}")
 
-    # Export LaTeX
     tex_path = repo_root / "docs" / "reports" / "PAPER_TABLES_ATTENTION.tex"
     tex_path.parent.mkdir(parents=True, exist_ok=True)
     with open(tex_path, "w", encoding="utf-8") as f:

@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Subagent 6: Qwen3.5-0.8B Dedicated Test Suite (DeltaNet, GQA Attention, MoE)."""
 import pytest
 import torch
@@ -84,7 +90,7 @@ def test_qwen3_5_lora_dynamic_discovery():
     assert "qk_proj" in targets
     assert "q_proj" in targets
     assert "gate" in targets
-    assert "classifier" not in targets  # Head excluded
+    assert "classifier" not in targets
 
 def test_qwen3_5_capability_checks():
     is_compat_causal, _ = is_module_declared_compatible("adaptive_span", "qwen3_5")

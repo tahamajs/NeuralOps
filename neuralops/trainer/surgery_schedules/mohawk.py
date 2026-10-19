@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Mohawk Surgery Schedule
 
 Curriculum distillation schedule for progressive attention layer replacement and parameter grafting.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -47,7 +51,6 @@ class AttentionHomotopyScheduler:
         elif self.schedule == "cosine":
             return 0.5 * (1.0 - math.cos(math.pi * progress))
         elif self.schedule == "sigmoid":
-            # Smooth S-curve
             x = (progress - 0.5) * 10.0
             return 1.0 / (1.0 + math.exp(-x))
         return progress
@@ -108,7 +111,6 @@ class MOHAWKTrainer:
     def step_stage1_matrix_orientation(self, batch: Any, optimizer: torch.optim.Optimizer) -> float:
         """Stage 1: Orient internal kernel projection and state frequencies."""
         optimizer.zero_grad()
-        # Train student with frozen teacher supervision
         x = batch["input_ids"] if isinstance(batch, dict) else batch
         with torch.no_grad():
             t_out = self.teacher(x)

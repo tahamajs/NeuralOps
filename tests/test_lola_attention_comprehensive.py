@@ -1,3 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 from .testing_utils import MockConfig, DummyDistilBertAttention
 import pytest
 import torch
@@ -167,13 +174,11 @@ def test_lola_lowrank_cache_batch_and_heads():
     cache.update(K, V)
     k_cached, v_cached = cache.get_cached()
     assert k_cached is not None and v_cached is not None
-    # Shape must be [B*H, C, D]
     assert k_cached.shape[0] == B * H
     assert k_cached.shape[2] == D
     assert v_cached.shape[0] == B * H
     assert v_cached.shape[2] == D
 
-    # Test cache reset
     cache.reset()
     k_empty, v_empty = cache.get_cached()
     assert k_empty is None and v_empty is None
@@ -184,7 +189,6 @@ def test_lola_causal_mask_enforcement():
     x = torch.randn(2, 6, 64)
     out, weights = attn(x, output_attentions=True)
     assert weights is not None
-    # Future positions must have probability zero
     for i in range(6):
         for j in range(i + 1, 6):
             assert torch.all(weights[:, :, i, j] == 0.0)
@@ -194,13 +198,11 @@ def test_lola_4d_masks():
     attn = LoLAAttention(config=cfg, rank=16)
     x = torch.randn(2, 4, 64)
 
-    # 4D boolean mask [B, 1, N, N]
     bool_mask = torch.ones(2, 1, 4, 4, dtype=torch.bool)
-    bool_mask[:, :, :, 3] = False  # mask out last token
+    bool_mask[:, :, :, 3] = False
     out_bool, _ = attn(x, attention_mask=bool_mask)
     assert out_bool.shape == (2, 4, 64)
 
-    # 4D float additive mask
     float_mask = torch.zeros(2, 1, 4, 4, dtype=torch.float32)
     float_mask[:, :, :, 3] = -10000.0
     out_float, _ = attn(x, attention_mask=float_mask)

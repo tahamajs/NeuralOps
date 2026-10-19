@@ -1,3 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 import math
 import sys
 
@@ -97,35 +104,29 @@ def test_valid_mask_extraction():
     """_extract_valid_mask handles all dims and dtypes."""
     B, N = 2, 8
 
-    # None
     m = _extract_valid_mask(None, B, N, torch.device("cpu"))
     assert m.shape == (B, N) and m.all()
 
-    # (B, N) bool
     mask = torch.ones(B, N, dtype=torch.bool)
     mask[:, -2:] = False
     m = _extract_valid_mask(mask, B, N, torch.device("cpu"))
     assert m.shape == (B, N)
     assert m[:, -2:].sum() == 0
 
-    # (B, N) int
     mask = torch.ones(B, N, dtype=torch.long)
     mask[:, 0] = 0
     m = _extract_valid_mask(mask, B, N, torch.device("cpu"))
     assert m[:, 0].sum() == 0
 
-    # (B, N) float additive
     mask = torch.zeros(B, N)
     mask[:, -1] = -float("inf")
     m = _extract_valid_mask(mask, B, N, torch.device("cpu"))
     assert m[:, -1].sum() == 0
 
-    # (B, 1, N)
     mask = torch.ones(B, 1, N)
     m = _extract_valid_mask(mask, B, N, torch.device("cpu"))
     assert m.shape == (B, N)
 
-    # (B, H, N, N)
     mask = torch.ones(B, 4, N, N)
     m = _extract_valid_mask(mask, B, N, torch.device("cpu"))
     assert m.shape == (B, N)

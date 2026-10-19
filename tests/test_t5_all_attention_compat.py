@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Unit tests for all 27 attention replacement modules adapted for T5.
 Verifies:
@@ -38,7 +44,7 @@ def test_forward_pass_finite_and_shape(t5_base_model, module_name):
     model = replace_attention(model, module_name)
     
     input_ids = torch.randint(2, 1000, (2, 16))
-    input_ids[:, -1] = 1  # EOS
+    input_ids[:, -1] = 1
     
     with torch.no_grad():
         out = model(input_ids=input_ids)
@@ -69,7 +75,6 @@ def test_cross_attention_different_sources(t5_base_model, module_name):
     
     dec_cross = model.transformer.decoder.block[0].layer[1].EncDecAttention
     
-    # Simulate cross-attention call with different Q and KV
     B, N_q, N_kv, D = 2, 8, 16, 512
     dec_hidden = torch.randn(B, N_q, D)
     enc_hidden = torch.randn(B, N_kv, D)

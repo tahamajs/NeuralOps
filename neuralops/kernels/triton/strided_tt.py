@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Strided Tensor-Train Contraction
 
 Evaluates high-dimensional Tensor-Train matrix contractions via strided multi-index tensor products in SRAM.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -63,7 +67,6 @@ def _strided_tt_reconstruct_kernel(
     mask_n = offs_n < N
     mask_k = offs_k < K
 
-    # Compute decomposed multi-dimensional coordinates
     q0 = offs_n // q1_dim
     q1 = offs_n % q1_dim
     p0 = offs_k // p1_dim
@@ -76,8 +79,6 @@ def _strided_tt_reconstruct_kernel(
         offs_r = r_idx * BLOCK_R + tl.arange(0, BLOCK_R)
         mask_r = offs_r < R
 
-        # Pointer for core0: [p0, q0, r]
-        # Shape broadcasting: q0 is (BLOCK_N, 1, 1), p0 is (1, BLOCK_K, 1), offs_r is (1, 1, BLOCK_R)
         c0_ptrs = (
             core0_ptr
             + p0[None, :, None] * stride_c0_p
@@ -85,7 +86,6 @@ def _strided_tt_reconstruct_kernel(
             + offs_r[None, None, :] * stride_c0_r
         )
 
-        # Pointer for core1: [r, p1, q1]
         c1_ptrs = (
             core1_ptr
             + offs_r[None, None, :] * stride_c1_r
@@ -132,8 +132,7 @@ def triton_strided_tt_contraction(
     N = q0 * q1
 
     if not c0.is_cuda:
-        # Fallback PyTorch
-        res = torch.tensordot(c0, c1, dims=([-1], [0]))  # (p0, q0, p1, q1)
+        res = torch.tensordot(c0, c1, dims=([-1], [0]))
         res = res.permute(1, 3, 0, 2).contiguous()
         return res.view(N, K)
 
@@ -209,7 +208,6 @@ def triton_strided_tt_linear(
     return out.view(*orig_shape[:-1], out_features)
 
 
-# Aliases
 strided_tt = triton_strided_tt_contraction
 strided_tt_contraction = triton_strided_tt_contraction
 strided_tt_linear = triton_strided_tt_linear

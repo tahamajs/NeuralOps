@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Fused Hadamard W4A16 GEMM
 
 Performs in-SRAM Walsh-Hadamard activation transformation and register-level INT4 dequantization for accelerated Tensor Core GEMM.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -65,22 +69,15 @@ def _fused_hadamard_w4a16_gemm_kernel(
 
     num_k_blocks = tl.cdiv(K, BLOCK_K)
     for k_idx in range(0, num_k_blocks):
-        # 1. Load Packed INT4 weights: 2 nibbles per byte -> shape (BLOCK_N, BLOCK_K // 2)
-        # offs_k_packed in [0, K // 2)
         offs_k_packed = (k_idx * (BLOCK_K // 2)) + tl.arange(0, BLOCK_K // 2)
         mask_k_packed = offs_k_packed < (K // 2)
 
         w_ptrs = w_packed_ptr + offs_n[:, None] * stride_wn + offs_k_packed[None, :] * stride_wk
         w_packed = tl.load(w_ptrs, mask=mask_n[:, None] & mask_k_packed[None, :], other=0)
 
-        # 3. Unpack low nibble and high nibble in registers
-        # Low nibbles: elements at 2*i
         w_low = (w_packed & 0x0F).to(tl.float32)
-        # High nibbles: elements at 2*i + 1
         w_high = ((w_packed >> 4) & 0x0F).to(tl.float32)
 
-        # Dequantize with scales and zeros
-        # Group index for scale and zero
         g_idx_0 = (2 * offs_k_packed) // group_size
         g_idx_1 = (2 * offs_k_packed + 1) // group_size
 
@@ -97,9 +94,6 @@ def _fused_hadamard_w4a16_gemm_kernel(
         w_dequant_0 = (w_low - zero_0) * scale_0
         w_dequant_1 = (w_high - zero_1) * scale_1
 
-        # Interleave low and high into (BLOCK_N, BLOCK_K)
-        # Even columns from w_dequant_0, odd columns from w_dequant_1
-        # In Triton, we can compute partial dot products:
         x_even = tl.load(x_ptr + offs_m[:, None] * stride_xm + (2 * offs_k_packed)[None, :] * stride_xk,
                          mask=mask_m[:, None] & (2 * offs_k_packed < K)[None, :], other=0.0)
         x_odd = tl.load(x_ptr + offs_m[:, None] * stride_xm + (2 * offs_k_packed + 1)[None, :] * stride_xk,
@@ -147,8 +141,6 @@ def triton_fused_hadamard_w4a16_gemm(
     N = w_packed.shape[0]
 
     if not x.is_cuda:
-        # PyTorch reference fallback
-        # Unpack uint8 -> two int4 values
         low = (w_packed & 0x0F).to(torch.float32)
         high = ((w_packed >> 4) & 0x0F).to(torch.float32)
         w_unpacked = torch.empty((N, K), dtype=torch.float32, device=x.device)

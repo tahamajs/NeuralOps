@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Comprehensive Audit & Evaluation Suite for SVD and Low-Rank Attention Mechanisms & Compression Engines.
 
@@ -26,7 +32,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-# Ensure neuralops/ is in sys.path
 sys_path_codes = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 from neuralops.attentions.adaptive_svd_attention import (AdaptiveSVDAttention,
                                                          AdaptiveSVDLinear)
@@ -81,7 +86,7 @@ class MockTransformerModel(nn.Module):
             })
             for _ in range(num_layers)
         ])
-        self.classifier = nn.Linear(hidden_size, 2)  # Should be excluded from compression
+        self.classifier = nn.Linear(hidden_size, 2)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         for layer in self.layers:
@@ -124,9 +129,6 @@ class TestLeadSVDSpecialistAudit(unittest.TestCase):
         self.num_heads = 12
         self.config = get_dummy_config(self.hidden_size, self.num_heads, rank=64)
 
-    # =========================================================================
-    # 1. SVDLinear & SVDLinearAttention
-    # =========================================================================
     def test_svd_linear_forward_backward_and_stiefel(self):
         """Audit SVDLinear layer forward/backward, LoRA residual, and Stiefel orthogonality loss."""
         layer = SVDLinear(
@@ -143,12 +145,10 @@ class TestLeadSVDSpecialistAudit(unittest.TestCase):
         self.assertEqual(out.shape, (2, 32, 768))
         self.assertFalse(torch.isnan(out).any())
 
-        # Test Stiefel manifold loss
         ortho_loss = layer.get_orthogonality_loss()
         self.assertTrue(torch.is_tensor(ortho_loss))
         self.assertGreaterEqual(ortho_loss.item(), 0.0)
 
-        # Backward pass
         total_loss = out.sum() + ortho_loss
         total_loss.backward()
         self.assertIsNotNone(x.grad)
@@ -213,10 +213,8 @@ class TestLeadSVDSpecialistAudit(unittest.TestCase):
         attn.eval()
         x = torch.randn(1, 4, self.hidden_size)
 
-        # Full sequential forward
         out_seq, _, (S_final, Z_final) = attn(hidden_states=x, return_state=True)
 
-        # Step-by-step streaming recurrent forward
         state = None
         out_steps = []
         for t in range(4):
@@ -225,13 +223,9 @@ class TestLeadSVDSpecialistAudit(unittest.TestCase):
             out_steps.append(out_t)
 
         out_streamed = torch.cat(out_steps, dim=1)
-        # Verify numerical equivalence between full sequence recurrence and step-by-step streaming
         max_diff = torch.max(torch.abs(out_seq - out_streamed)).item()
         self.assertLess(max_diff, 1e-5, f"Streaming recurrent output diverges from sequential: max_diff={max_diff}")
 
-    # =========================================================================
-    # 2. AdaptiveSVDAttention & AdaptiveSVDLinear
-    # =========================================================================
     def test_adaptive_svd_attention_forward_backward_energy(self):
         """Audit AdaptiveSVDAttention forward/backward, cumulative energy thresholding, and residual adapter."""
         attn = AdaptiveSVDAttention(
@@ -240,7 +234,6 @@ class TestLeadSVDSpecialistAudit(unittest.TestCase):
             residual_rank=8,
             energy_threshold=0.92,
         )
-        # Test copy_weights from pretrained MHA
         mock_mha = MockMHA(self.hidden_size, self.num_heads)
         attn.copy_weights(mock_mha)
 
@@ -258,14 +251,10 @@ class TestLeadSVDSpecialistAudit(unittest.TestCase):
         self.assertIsNotNone(x.grad)
         self.assertFalse(torch.isnan(x.grad).any())
 
-        # Test energy rank selection function
         S = torch.tensor([10.0, 5.0, 3.0, 1.0, 0.5, 0.2, 0.1, 0.05])
         r = attn._compute_energy_rank(S, max_rank=8, min_rank=1)
         self.assertEqual(r, 2)
 
-    # =========================================================================
-    # 3. ASVDAttention & ASVDLinear
-    # =========================================================================
     def test_asvd_attention_forward_backward(self):
         """Audit ASVDAttention with explicit singular value vector S."""
         attn = ASVDAttention(self.config, rank=64, lora_rank=0)
@@ -283,9 +272,6 @@ class TestLeadSVDSpecialistAudit(unittest.TestCase):
         self.assertFalse(torch.isnan(x.grad).any())
         self.assertIsNotNone(attn.query.S.grad)
 
-    # =========================================================================
-    # 4. LinformerAttention
-    # =========================================================================
     def test_linformer_attention_forward_backward(self):
         """Audit LinformerAttention with sequence dimension projection matrices E and F."""
         attn = LinformerAttention(self.config, k=32, max_seq_len=128)
@@ -307,9 +293,6 @@ class TestLeadSVDSpecialistAudit(unittest.TestCase):
         self.assertIsNotNone(attn.E.grad)
         self.assertIsNotNone(attn.F.grad)
 
-    # =========================================================================
-    # 5. Res-SVD / Spectral Residual LoRA
-    # =========================================================================
     def test_res_svd_linear_and_compressor(self):
         """Audit ResSVDLinear residual tail initialization, forward/backward, and merge_weights."""
         dense = nn.Linear(128, 128)
@@ -326,7 +309,6 @@ class TestLeadSVDSpecialistAudit(unittest.TestCase):
         self.assertFalse(res_layer.base_U.requires_grad)
         self.assertTrue(res_layer.lora_A.requires_grad)
 
-        # Forward / Backward
         x = torch.randn(2, 10, 128, requires_grad=True)
         out = res_layer(x)
         self.assertEqual(out.shape, (2, 10, 128))
@@ -336,17 +318,14 @@ class TestLeadSVDSpecialistAudit(unittest.TestCase):
         self.assertIsNone(res_layer.base_U.grad)
         self.assertIsNotNone(res_layer.lora_A.grad)
 
-        # Reconstruction error norm at init
         err = res_layer.get_residual_error_norm(dense.weight.data)
         self.assertLess(err, 1.0)
 
-        # Merged weights
         merged = res_layer.merge_weights()
         self.assertIsInstance(merged, nn.Linear)
         diff = torch.norm(res_layer(x.detach()) - merged(x.detach())).item()
         self.assertLess(diff, 1e-4)
 
-        # Compressor test
         model = MockTransformerModel(hidden_size=128, num_layers=2)
         comp_model, stats = ResSVDCompressor(model, base_rank=32, residual_rank=8).compress()
         self.assertIn("trainable_parameters", stats)
@@ -354,9 +333,6 @@ class TestLeadSVDSpecialistAudit(unittest.TestCase):
         out_comp = comp_model(torch.randn(2, 8, 128))
         self.assertEqual(out_comp.shape, (2, 2))
 
-    # =========================================================================
-    # 6. AdaptiveRanksCompressor
-    # =========================================================================
     def test_adaptive_ranks_compressor_and_energy(self):
         """Audit AdaptiveRanksCompressor cumulative energy thresholding (tau=0.92) and rank floor."""
         model = MockTransformerModel(hidden_size=128, num_layers=2)
@@ -374,9 +350,6 @@ class TestLeadSVDSpecialistAudit(unittest.TestCase):
             if hasattr(module, "rank"):
                 self.assertGreaterEqual(module.rank, 16)
 
-    # =========================================================================
-    # 7. DirectSVDCompressor
-    # =========================================================================
     def test_direct_svd_compressor(self):
         """Audit DirectSVDCompressor symmetric factor allocation U sqrt(S), sqrt(S) V^T."""
         model = MockTransformerModel(hidden_size=128, num_layers=2)
@@ -387,9 +360,6 @@ class TestLeadSVDSpecialistAudit(unittest.TestCase):
         self.assertFalse(torch.isnan(out).any())
         self.assertLess(stats["compressed_parameters"], stats["original_parameters"])
 
-    # =========================================================================
-    # 8. DobiSVDCompressor & DobiSVDLinearLayer
-    # =========================================================================
     def test_dobi_svd_linear_and_compressor(self):
         """Audit Dobi-SVD differentiable spectral gating and forward/backward gradient flow."""
         dense = nn.Linear(128, 128)
@@ -408,15 +378,11 @@ class TestLeadSVDSpecialistAudit(unittest.TestCase):
         self.assertIsNotNone(dobi_layer.U.grad)
         self.assertIsNotNone(dobi_layer.V.grad)
 
-        # Full model compressor test
         model = MockTransformerModel(hidden_size=128, num_layers=2)
         comp_model, stats = DobiSVDCompressor(model, rank=32).compress()
         out_comp = comp_model(torch.randn(2, 8, 128))
         self.assertEqual(out_comp.shape, (2, 2))
 
-    # =========================================================================
-    # 9. ERCCompressor (Error-Controlled SVD)
-    # =========================================================================
     def test_erc_compressor_frobenius_error_bound(self):
         """Audit ERC-SVD bounded Frobenius reconstruction error guarantee ||W - W_r||_F / ||W||_F <= eps."""
         model = MockTransformerModel(hidden_size=128, num_layers=2)
@@ -441,9 +407,6 @@ class TestLeadSVDSpecialistAudit(unittest.TestCase):
         out = comp_model(torch.randn(2, 8, 128))
         self.assertEqual(out.shape, (2, 2))
 
-    # =========================================================================
-    # 10. EntropyBudgetCompressor
-    # =========================================================================
     def test_entropy_budget_compressor(self):
         """Audit EntropyBudgetCompressor singular entropy global budget allocation."""
         model = MockTransformerModel(hidden_size=128, num_layers=2)
@@ -456,9 +419,6 @@ class TestLeadSVDSpecialistAudit(unittest.TestCase):
         out = comp_model(torch.randn(2, 8, 128))
         self.assertEqual(out.shape, (2, 2))
 
-    # =========================================================================
-    # 11. KroneckerTTLoRALayer & KroneckerTTLoRACompressor
-    # =========================================================================
     def test_kronecker_tt_lora_forward_backward_and_adapt(self):
         """Audit KroneckerTTLoRALayer Kronecker product, Tensor-Train cores, LoRA bypass, and rank adaptation."""
         dense = nn.Linear(128, 128)
@@ -485,13 +445,11 @@ class TestLeadSVDSpecialistAudit(unittest.TestCase):
         self.assertIsNotNone(layer.lora_A.grad)
         self.assertIsNotNone(layer.lora_B.grad)
 
-        # Test TT rank adaptation
         layer.adapt_tt_ranks(delta_r=1)
         out_after_adapt = layer(x)
         self.assertEqual(out_after_adapt.shape, (2, 10, 128))
         self.assertFalse(torch.isnan(out_after_adapt).any())
 
-        # Full model compression
         model = MockTransformerModel(hidden_size=128, num_layers=2)
         compressor = KroneckerTTLoRACompressor(model, rank=8, lora_r=4)
         comp_model, stats = compressor.compress()

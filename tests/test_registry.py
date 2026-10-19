@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Unit tests for central registry, module registration, and helper module filtering."""
 
 import pytest
@@ -57,7 +63,6 @@ class TestRegistryCore:
     def test_get_evaluatable_modules_non_empty(self):
         modules = get_evaluatable_modules(include_compressors=True)
         assert len(modules) > 20
-        # No helper modules present
         for m in modules:
             assert not is_helper_module(m)
 

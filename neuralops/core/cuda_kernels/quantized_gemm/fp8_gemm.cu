@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <cuda_runtime.h>
 #include <torch/extension.h>
 #include <c10/cuda/CUDAStream.h>
@@ -21,7 +28,6 @@ void fp8_gemm_cuda(
 
     if (M <= 0 || K <= 0 || N <= 0) return;
 
-    // Accelerated cuBLAS Tensor Core matmul with high precision accumulation:
     at::matmul_out(out, A, B);
 
     float sa = (scale_a.defined() && scale_a.numel() > 0) ? scale_a.item<float>() : 1.0f;

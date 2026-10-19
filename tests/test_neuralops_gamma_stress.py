@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Comprehensive Stress Test Suite for NeuralOps v1.4 (Agent Gamma)
 - PagedKVCache and Continuous Batching (32+ request sequences)
@@ -42,7 +48,7 @@ class KVEvictionManager:
     def __init__(self, capacity: int, policy: str = "fifo"):
         self.capacity = capacity
         self.policy = policy.lower()
-        self.cache_pool: Dict[int, torch.Tensor] = {} # page_id -> tensor
+        self.cache_pool: Dict[int, torch.Tensor] = {}
         self.access_counts: Dict[int, int] = {}
         self.attention_scores: Dict[int, float] = {}
         self.fifo_queue: List[int] = []
@@ -96,7 +102,7 @@ def test_paged_kv_cache_stress():
         device=device
     )
 
-    num_sequences = 35  # > 32 concurrent requests
+    num_sequences = 35
     seq_lengths = [45 for _ in range(num_sequences)]
 
     for seq_id in range(num_sequences):

@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Tests for production LoRA merge/extraction, QLoRA, and DoRA."""
 import torch
 import torch.nn as nn
@@ -33,7 +39,6 @@ def test_qlora_real():
     x = torch.randn(4, 32)
     out = qlora(x)
     assert out.shape == (4, 16)
-    # Base weight shouldn't accumulate gradient
     out.sum().backward()
     assert qlora.base.weight.grad is None
     assert qlora.lora_A.grad is not None

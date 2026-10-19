@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Transformer Model Family Detection
 
 Model family classification and architectural metadata extraction for HuggingFace transformer backbones.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -13,10 +17,6 @@ from typing import Any
 FAMILIES = ("bert", "roberta", "gpt", "qwen", "qwen3_5", "t5", "ssm", "unknown")
 
 
-# ---------------------------------------------------------------------------
-# Canonical family sets (single source of truth)
-# ---------------------------------------------------------------------------
-# All model types that use causal attention. This is the authoritative list.
 CAUSAL_FAMILIES = frozenset(
     {
         "gpt",
@@ -33,7 +33,6 @@ CAUSAL_FAMILIES = frozenset(
     }
 )
 
-# Causal decoder families whose input uses learned absolute position embeddings.
 GPT_ABSOLUTE_POSITION_FAMILIES = frozenset(
     {
         "gpt",
@@ -45,7 +44,6 @@ GPT_ABSOLUTE_POSITION_FAMILIES = frozenset(
     }
 )
 
-# Causal decoder families using rotary position embeddings.
 ROTARY_FAMILIES = frozenset(
     {
         "qwen",
@@ -55,10 +53,8 @@ ROTARY_FAMILIES = frozenset(
     }
 )
 
-# Bidirectional encoder families (for mask_rank=2).
 BIDIRECTIONAL_FAMILIES = frozenset({"bert", "roberta"})
 
-# Family normalization aliases: map raw family names to canonical family names.
 FAMILY_ALIASES = {
     "gpt2": "gpt",
     "gpt_neo": "gpt",
@@ -95,7 +91,6 @@ def detect_family(model_or_config: Any) -> str:
     if model_type in {"t5", "mt5", "umt5", "bart", "pegasus"}:
         return "t5"
 
-    # All GPT-style causal decoders map to canonical "gpt" family.
     if model_type in {
         "gpt",
         "gpt2",
@@ -126,7 +121,6 @@ class ModelAdapter:
     def __init__(self, model_or_config: Any, family: str | None = None):
         self.source = _config(model_or_config)
         raw_family = family or detect_family(model_or_config)
-        # Normalize aliases to canonical internal family.
         self.raw_family = raw_family
         self.family = FAMILY_ALIASES.get(raw_family, raw_family)
 
@@ -174,15 +168,8 @@ class ModelAdapter:
             "o": ("out_lin", "o_proj"),
         }
 
-        # ------------------------------------------------------------------
-        # Fix MF-01/MF-02/MF-03/MF-04: Consistent causal-family handling.
-        # ------------------------------------------------------------------
-        # A family is causal if either:
-        #   (a) its canonical family is in CAUSAL_FAMILIES, OR
-        #   (b) its raw family is in CAUSAL_FAMILIES (defense in depth).
         self.causal = (self.family in CAUSAL_FAMILIES) or (raw_family in CAUSAL_FAMILIES)
 
-        # mask_rank: 4 for causal decoders, 2 for bidirectional encoders, 3 otherwise.
         if self.causal:
             self.mask_rank = 4
         elif self.family in BIDIRECTIONAL_FAMILIES:
@@ -192,8 +179,6 @@ class ModelAdapter:
 
         self.bidirectional = not self.causal
 
-        # position_embedding: rotary for modern decoders, absolute for BERT/GPT-2,
-        # relative for T5, none for unknown.
         if self.family in ROTARY_FAMILIES or raw_family in ROTARY_FAMILIES:
             self.position_embedding = "rotary"
         elif (

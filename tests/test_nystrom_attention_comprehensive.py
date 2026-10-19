@@ -1,3 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 from .testing_utils import MockConfig, DummyDistilBertAttention
 import pytest
 import torch
@@ -105,18 +112,15 @@ def test_nystrom_short_and_long_sequence():
     cfg = MockConfig(hidden_size=64, num_attention_heads=4, is_decoder=False)
     attn = NystromAttention(config=cfg, num_landmarks=16)
 
-    # Short sequence (N=32 <= 128) -> triggers dense fallback
     x_short = torch.randn(2, 32, 64)
     out_short, _ = attn(x_short)
     assert out_short.shape == (2, 32, 64)
 
-    # Long sequence (N=256 > 128) -> triggers landmark pooling + pinv
     x_long = torch.randn(2, 256, 64)
     out_long, _ = attn(x_long)
     assert out_long.shape == (2, 256, 64)
 
 def test_nystrom_backward_nested_and_decoder():
-    # RoBERTa nested encoder backward test
     cfg_roberta = MockConfig(hidden_size=64, num_attention_heads=4, is_decoder=False)
     old_roberta = DummyRobertaAttention(64)
     attn_roberta = NystromAttention(config=cfg_roberta, old_attn=old_roberta, lora_rank=8, num_landmarks=16)
@@ -125,9 +129,8 @@ def test_nystrom_backward_nested_and_decoder():
     loss = out_roberta.sum()
     loss.backward()
     assert attn_roberta.query.lora_A.grad is not None
-    assert attn_roberta.query.weight.grad is None  # Frozen base weight
+    assert attn_roberta.query.weight.grad is None
 
-    # GPT-2 decoder backward test
     cfg_gpt = MockConfig(hidden_size=64, num_attention_heads=4, is_decoder=True, model_type="gpt2")
     old_gpt = DummyGPT2Attention(64)
     attn_gpt = NystromAttention(config=cfg_gpt, old_attn=old_gpt, lora_rank=8, num_landmarks=16)

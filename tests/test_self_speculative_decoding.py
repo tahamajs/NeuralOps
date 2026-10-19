@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Tests for Lossless Self-Speculative Decoding Engine.
 """
@@ -26,7 +32,6 @@ def test_self_speculative_greedy_exact_distribution_parity():
     prompt = torch.tensor([[10, 25, 42, 99]])
     max_new = 15
 
-    # 1. Standard autoregressive greedy generation
     curr = prompt.clone()
     with torch.no_grad():
         for _ in range(max_new):
@@ -35,12 +40,11 @@ def test_self_speculative_greedy_exact_distribution_parity():
             curr = torch.cat([curr, next_t], dim=-1)
     standard_tokens = curr
 
-    # 2. Speculative decoding with small draft model
     draft_config = GPT2Config(
         vocab_size=200,
         n_positions=128,
         n_embd=64,
-        n_layer=1,  # 1 layer draft model
+        n_layer=1,
         n_head=2,
         pad_token_id=0,
     )
@@ -49,13 +53,11 @@ def test_self_speculative_greedy_exact_distribution_parity():
     decoder = SelfSpeculativeDecoder(target_model=model, draft_model=draft_model, max_draft_k=3)
     spec_tokens, stats = decoder.generate(prompt, max_new_tokens=max_new, temperature=0.0)
 
-    # Assert 100% exact bit-for-bit equivalence
     assert torch.equal(spec_tokens, standard_tokens), (
         f"Speculative mismatch: {spec_tokens} vs {standard_tokens}"
     )
     assert stats.total_tokens_generated == max_new
     assert stats.total_target_forward_passes > 0
-    # Speculative decoding should achieve >= 1 token per forward pass
     assert stats.speedup_over_standard >= 1.0
 
 

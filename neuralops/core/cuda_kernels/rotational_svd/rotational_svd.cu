@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -10,8 +17,6 @@ using namespace nvcuda;
 namespace neuralops {
 namespace cuda {
 
-// Ada Lovelace SM 8.9 WMMA GEMM: out = A @ B (with optional transpose)
-// TILE_M=16, TILE_N=16, TILE_K=16, __launch_bounds__(128, 2)
 template <typename scalar_t>
 __global__ void __launch_bounds__(128, 2) wmma_matmul_16x16_kernel(
     scalar_t* __restrict__ out,
@@ -30,7 +35,7 @@ __global__ void __launch_bounds__(128, 2) wmma_matmul_16x16_kernel(
     const int block_col = blockIdx.x * 16;
 
     if (block_row >= M || block_col >= N) return;
-    if (warp_id > 0) return; // warp 0 performs the 16x16 WMMA
+    if (warp_id > 0) return;
 
     __shared__ half s_A[16][16];
     __shared__ half s_B[16][16];
@@ -93,8 +98,8 @@ void run_wmma_gemm(
     );
 }
 
-} // namespace cuda
-} // namespace neuralops
+}
+}
 
 torch::Tensor rotational_svd_fwd(
     const torch::Tensor& x,
@@ -170,32 +175,26 @@ std::vector<torch::Tensor> rotational_svd_bwd(
     AT_DISPATCH_FLOATING_TYPES_AND2(
         at::ScalarType::Half, at::ScalarType::BFloat16,
         dout.scalar_type(), "rotational_svd_bwd_wmma", ([&] {
-            // dz = dout @ U
             neuralops::cuda::run_wmma_gemm<scalar_t>(
                 dz.data_ptr<scalar_t>(), dout_c.data_ptr<scalar_t>(), U.data_ptr<scalar_t>(),
                 M, R, N, false, false, stream
             );
-            // dx_rot = dz @ V
             neuralops::cuda::run_wmma_gemm<scalar_t>(
                 dx_rot.data_ptr<scalar_t>(), dz.data_ptr<scalar_t>(), V.data_ptr<scalar_t>(),
                 M, K, R, false, false, stream
             );
-            // dx = dx_rot @ r_in^T
             neuralops::cuda::run_wmma_gemm<scalar_t>(
                 dx.data_ptr<scalar_t>(), dx_rot.data_ptr<scalar_t>(), r_c.data_ptr<scalar_t>(),
                 M, K, K, false, true, stream
             );
-            // dr = x^T @ dx_rot
             neuralops::cuda::run_wmma_gemm<scalar_t>(
                 dr.data_ptr<scalar_t>(), x_c.data_ptr<scalar_t>(), dx_rot.data_ptr<scalar_t>(),
                 K, K, M, true, false, stream
             );
-            // dV = dz^T @ x_rot
             neuralops::cuda::run_wmma_gemm<scalar_t>(
                 dV.data_ptr<scalar_t>(), dz.data_ptr<scalar_t>(), x_rot_c.data_ptr<scalar_t>(),
                 R, K, M, true, false, stream
             );
-            // dU = dout^T @ z
             neuralops::cuda::run_wmma_gemm<scalar_t>(
                 dU.data_ptr<scalar_t>(), dout_c.data_ptr<scalar_t>(), z_c.data_ptr<scalar_t>(),
                 N, R, M, true, false, stream

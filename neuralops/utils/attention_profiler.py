@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Attention Memory Profiler
 
 Profiles peak activation memory and execution time overhead across attention mechanisms.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -36,7 +40,6 @@ class AttentionProfiler:
         """
         is_cuda = self.device.type == "cuda" and torch.cuda.is_available()
 
-        # Warmup
         for _ in range(num_warmup):
             _ = module(*args, **kwargs)
 
@@ -51,7 +54,7 @@ class AttentionProfiler:
         if is_cuda:
             torch.cuda.synchronize(self.device)
 
-        elapsed = (time.perf_counter() - start_time) / num_iters * 1000.0  # ms
+        elapsed = (time.perf_counter() - start_time) / num_iters * 1000.0
 
         peak_mem_mb = 0.0
         if is_cuda:

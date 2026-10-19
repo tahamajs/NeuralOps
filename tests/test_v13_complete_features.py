@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 End-to-End Test Suite for NeuralOps v1.3.0 Complete Features.
 Verifies:
@@ -56,7 +62,6 @@ def test_training_engine_pissa():
     x = torch.randn(2, 64)
     out_orig = layer(x)
     out_pissa = pissa(x)
-    # At initialization (step 0), PiSSA must match original layer exactly
     diff = (out_orig - out_pissa).abs().max().item()
     assert diff < 1e-4, f"PiSSA diff at step 0 too large: {diff}"
 
@@ -67,7 +72,6 @@ def test_surgery_manifest_and_merge():
     model = nn.Sequential(pissa)
 
     merged = merge_for_inference(model)
-    # Verify module is converted back to standard nn.Linear
     assert isinstance(merged[0], nn.Linear)
     x = torch.randn(2, 64)
     out_pissa = pissa(x)

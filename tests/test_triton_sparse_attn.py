@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Comprehensive test suite for neuralops.core.triton_kernels.sparse_attn.
 
@@ -20,9 +26,6 @@ from neuralops.core.triton_kernels._common import HAS_TRITON, sparse_attn_pytorc
 from neuralops.core.triton_kernels.sparse_attn import fwd, bwd, is_supported
 
 
-# ═══════════════════════════════════════════════════
-# Test fixtures
-# ═══════════════════════════════════════════════════
 
 @pytest.fixture
 def device():
@@ -45,7 +48,6 @@ def reference_sparse_attn_pytorch(q, k, v, block_mask=None, block_size=16, is_ca
             mask_expand = mask_expand.unsqueeze(0).unsqueeze(0)
         elif mask_expand.dim() == 3:
             mask_expand = mask_expand.unsqueeze(1)
-        # Upsample block mask to token resolution
         token_mask = F.interpolate(mask_expand, size=(N_q, N_k), mode="nearest")
         scores = scores.masked_fill(token_mask < 0.5, float("-inf"))
 
@@ -59,9 +61,6 @@ def reference_sparse_attn_pytorch(q, k, v, block_mask=None, block_size=16, is_ca
     return out.to(q.dtype)
 
 
-# ═══════════════════════════════════════════════════
-# Numerical correctness
-# ═══════════════════════════════════════════════════
 
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float16])
 @pytest.mark.parametrize("is_causal", [False, True])
@@ -75,7 +74,6 @@ def test_sparse_attn_correctness(device, dtype, is_causal, batch, num_heads, seq
 
     block_size = 16
     n_blocks = (seq_len + block_size - 1) // block_size
-    # Diagonal block sparsity mask
     block_mask = torch.eye(n_blocks, device=device, dtype=torch.bool)
 
     out = fwd(q, k, v, block_mask=block_mask, block_size=block_size, is_causal=is_causal)
@@ -86,9 +84,6 @@ def test_sparse_attn_correctness(device, dtype, is_causal, batch, num_heads, seq
     assert torch.allclose(out, ref, atol=tol, rtol=tol)
 
 
-# ═══════════════════════════════════════════════════
-# Edge cases & Non-power-of-2
-# ═══════════════════════════════════════════════════
 
 def test_sparse_attn_no_mask(device):
     """When block_mask is None, acts as full attention."""
@@ -110,9 +105,6 @@ def test_sparse_attn_non_power_of_2(device):
     assert torch.isfinite(out).all()
 
 
-# ═══════════════════════════════════════════════════
-# Fallback path & Determinism
-# ═══════════════════════════════════════════════════
 
 def test_sparse_attn_cpu_fallback():
     """Verify fallback executes cleanly on CPU."""
@@ -134,9 +126,6 @@ def test_sparse_attn_deterministic(device):
     assert torch.equal(out1, out2)
 
 
-# ═══════════════════════════════════════════════════
-# Gradient flow
-# ═══════════════════════════════════════════════════
 
 def test_sparse_attn_gradient(device):
     """Gradients propagate back to q, k, and v."""

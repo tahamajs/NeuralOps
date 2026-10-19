@@ -1,5 +1,9 @@
-# -*- coding: utf-8 -*-
-# Author: Taha Majlesi
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Comprehensive diagnostic script for ALL 131+ Attention Modules and 72 Compressors.
 Tests forward, causal masking, backward differentiability, and numerical stability.
@@ -9,7 +13,6 @@ Properly initializes modules with GPT2Config and standard model structure.
 import os
 import sys
 
-# Ensure offline operation so diagnostics run without network delays or hangs
 os.environ.setdefault("HF_HUB_OFFLINE", "1")
 os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
 os.environ.setdefault("HF_DATASETS_OFFLINE", "1")
@@ -24,9 +27,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print(f"=== RUNNING MODULE DIAGNOSTICS ON {device.upper()} ===")
 
-# ==============================================================================
-# PART 1: ATTENTION MODULES
-# ==============================================================================
 attn_keys = sorted(ATTENTION_REGISTRY.keys())
 print(f"\n--- Testing {len(attn_keys)} Attention Mechanisms ---")
 
@@ -51,7 +51,6 @@ for idx, name in enumerate(attn_keys):
         continue
 
     try:
-        # Robust instantiation
         mod = None
         for init_attempt in [
             lambda: cls(config=cfg),
@@ -72,7 +71,6 @@ for idx, name in enumerate(attn_keys):
         mod = mod.to(device=device, dtype=torch.float32)
         mod.train()
 
-        # a) Forward pass
         x = torch.randn(B, T, D, device=device, dtype=torch.float32, requires_grad=True)
         try:
             out = mod(x)
@@ -93,7 +91,6 @@ for idx, name in enumerate(attn_keys):
         if not torch.isfinite(out_tensor).all():
             raise AssertionError("Non-finite values (NaN / Inf) detected in forward output")
 
-        # b) Causal masking & 2D/4D mask test
         mask_2d = torch.ones(B, T, device=device, dtype=torch.bool)
         try:
             out_m = mod(x, attention_mask=mask_2d)
@@ -107,10 +104,8 @@ for idx, name in enumerate(attn_keys):
         if not torch.isfinite(out_m_tensor).all():
             raise AssertionError("Non-finite values with attention_mask")
 
-        # c) Backward pass
         loss = out_tensor.sum()
         loss.backward()
-        # d) Numerical stability
         _ = float(out_tensor.std().item())
 
         attn_passed.append(name)
@@ -124,9 +119,6 @@ if attn_failed:
         print(f"  ❌ {f_name}: {err}")
 
 
-# ==============================================================================
-# PART 2: COMPRESSION ENGINES
-# ==============================================================================
 comp_keys = sorted(COMPRESSOR_REGISTRY.keys())
 print(f"\n--- Testing {len(comp_keys)} Model Compression Engines ---")
 
@@ -158,16 +150,13 @@ for idx, name in enumerate(comp_keys):
         model = DummyContainer().to(device)
         linear_layer = model.fc1
 
-        # Check if cls is a factory function or class
         res = None
-        # Attempt 1: factory function call (returns compressed model directly)
         try:
             res = cls(model)
         except Exception:
             pass
 
         if res is None:
-            # Attempt 2: compressor instance with .compress() or other methods
             compressor = None
             for init_attempt in [
                 lambda: cls(model, rank=16),

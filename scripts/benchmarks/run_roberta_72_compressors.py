@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 RoBERTa-Base 72-Compressor Fine-Tuning Sweep on SST-2.
 Evaluates all 72 compressors on RoBERTa-base with SST-2 classification.
@@ -46,7 +52,6 @@ train_loader = make_dataloader(train_ds, batch_size=8, shuffle=True)
 eval_loader = make_dataloader(eval_ds, batch_size=16, shuffle=False)
 calib_batch = next(iter(train_loader))[0].to(device_str)
 
-# Evaluate Baseline
 logger.info("Evaluating Baseline RoBERTa-base...")
 base_model = RobertaForSequenceClassification.from_pretrained("roberta-base").to(device_str)
 base_params = sum(p.numel() for p in base_model.parameters())
@@ -145,11 +150,9 @@ for idx, comp_name in enumerate(compressor_keys, 1):
         )
     torch.cuda.empty_cache()
 
-    # Incremental write
     with open(out_dir / "results.json", "w", encoding="utf-8") as f:
         json.dump(records, f, indent=2)
 
-# Final outputs
 csv_cols = [
     "compressor",
     "status",

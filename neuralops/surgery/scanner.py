@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Universal Architecture Attention Scanner
 
 Discovers attention blocks and projection topologies across neural network architectures.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -25,9 +29,8 @@ class AttentionTargetSpec:
     parent_module: nn.Module
     attr_name: str
     target_module: nn.Module
-    pattern_type: str  # "split_4proj", "fused_qkv", "conv1d_gpt2", "native_mha", "bert_nested"
+    pattern_type: str
 
-    # Dimensional characteristics
     embed_dim: int
     num_heads: int
     num_kv_heads: int
@@ -35,12 +38,6 @@ class AttentionTargetSpec:
     is_causal: bool = False
     has_bias: bool = True
 
-    # Weight and bias accessors/extractors
-    # Returns (W_q, b_q, W_k, b_k, W_v, b_v, W_o, b_o) with canonical shapes:
-    # W_q: (num_heads * head_dim, embed_dim)
-    # W_k: (num_kv_heads * head_dim, embed_dim)
-    # W_v: (num_kv_heads * head_dim, embed_dim)
-    # W_o: (embed_dim, num_heads * head_dim)
     extracted_qkv: Optional[
         Tuple[
             torch.Tensor,
@@ -54,7 +51,6 @@ class AttentionTargetSpec:
         ]
     ] = None
 
-    # Auxiliary module hooks (e.g. for BERT where BertSelfOutput houses dense + LayerNorm + residual)
     output_dense_module: Optional[nn.Module] = None
     output_layernorm_module: Optional[nn.Module] = None
     extra_metadata: Optional[Dict[str, Any]] = None
@@ -110,7 +106,6 @@ class UniversalArchitectureScanner:
         if "Conv1D" in cls_name:
             return True
         w = getattr(module, "weight", None)
-        # Check if weight exists and has non-standard shape
         if isinstance(w, (torch.Tensor, nn.Parameter)) and hasattr(module, "nf"):
             return True
         return False
@@ -127,7 +122,6 @@ class UniversalArchitectureScanner:
             w = linear_or_conv.weight
             b = getattr(linear_or_conv, "bias", None)
             if w.ndim == 2:
-                # Transpose from (in_features, out_features) to (out_features, in_features)
                 return w.t().contiguous(), b
             return w, b
 
@@ -168,7 +162,6 @@ class UniversalArchitectureScanner:
         """Inspect a single module and match against universal patterns."""
         cls_name = module.__class__.__name__.lower()
 
-        # Find parent and attribute name
         parts = path.split(".")
         if len(parts) == 1 and parts[0] == "":
             parent = root_model
@@ -181,14 +174,11 @@ class UniversalArchitectureScanner:
             attr_name = parts[-1]
             parent = root_model.get_submodule(parent_path)
 
-        # -------------------------------------------------------------
-        # 1. Pattern D: Native torch.nn.MultiheadAttention
-        # -------------------------------------------------------------
         if isinstance(module, nn.MultiheadAttention):
             embed_dim = module.embed_dim
             num_heads = module.num_heads
             head_dim = embed_dim // num_heads
-            is_causal = getattr(module, "batch_first", False)  # generic proxy
+            is_causal = getattr(module, "batch_first", False)
 
             in_w = module.in_proj_weight
             in_b = module.in_proj_bias
@@ -213,11 +203,6 @@ class UniversalArchitectureScanner:
                 extracted_qkv=(W_q, b_q, W_k, b_k, W_v, b_v, W_o, b_o),
             )
 
-        # -------------------------------------------------------------
-        # 2. Pattern E: BERT / RoBERTa Nested Attention (BertAttention vs BertSelfAttention)
-        # CRITICAL: If module is BertAttention (contains self + output), target module.self directly
-        # so output (dense + LayerNorm + residual) is never destroyed!
-        # -------------------------------------------------------------
         if hasattr(module, "self") and hasattr(module, "output") and ("bert" in cls_name or "roberta" in cls_name):
             self_attn = getattr(module, "self")
             output_block = getattr(module, "output")
@@ -255,9 +240,6 @@ class UniversalArchitectureScanner:
                     output_layernorm_module=output_ln,
                 )
 
-        # -------------------------------------------------------------
-        # 3. Pattern C: Transposed HuggingFace Conv1D Topology (GPT-2)
-        # -------------------------------------------------------------
         if hasattr(module, "c_attn") and hasattr(module, "c_proj"):
             c_attn = getattr(module, "c_attn")
             c_proj = getattr(module, "c_proj")
@@ -265,10 +247,8 @@ class UniversalArchitectureScanner:
             W_attn, b_attn = cls._extract_weight_bias(c_attn)
             W_o, b_o = cls._extract_weight_bias(c_proj)
 
-            # W_attn shape is (3 * D, D) after transpose
             embed_dim = W_attn.shape[1]
             total_qkv_out = W_attn.shape[0]
-            # Standard GPT-2 has 3 equal chunks (Q, K, V)
             split_dim = total_qkv_out // 3
             W_q = W_attn[0:split_dim, :]
             W_k = W_attn[split_dim : 2 * split_dim, :]
@@ -299,9 +279,6 @@ class UniversalArchitectureScanner:
                 extracted_qkv=(W_q, b_q, W_k, b_k, W_v, b_v, W_o, b_o),
             )
 
-        # -------------------------------------------------------------
-        # 4. Pattern B: Fused QKV Linear Topology (ViT, Swin, DiT)
-        # -------------------------------------------------------------
         qkv_mod = getattr(module, "qkv", getattr(module, "query_key_value", None))
         proj_mod = getattr(module, "proj", getattr(module, "out_proj", getattr(module, "o_proj", None)))
 
@@ -313,8 +290,6 @@ class UniversalArchitectureScanner:
             num_heads = getattr(module, "num_heads", 12)
             total_out = W_qkv.shape[0]
 
-            # Determine head_dim and check if GQA or symmetric 3*D
-            # If total_out == 3 * embed_dim:
             if total_out % 3 == 0:
                 split_dim = total_out // 3
                 num_kv_heads = num_heads
@@ -329,7 +304,6 @@ class UniversalArchitectureScanner:
                 else:
                     b_q, b_k, b_v = None, None, None
             else:
-                # GQA fused layout: q_dim = num_heads * head_dim, kv_dim = 2 * num_kv_heads * head_dim
                 head_dim = embed_dim // num_heads
                 q_dim = num_heads * head_dim
                 rem_kv = total_out - q_dim
@@ -360,30 +334,23 @@ class UniversalArchitectureScanner:
                 extracted_qkv=(W_q, b_q, W_k, b_k, W_v, b_v, W_o, b_o),
             )
 
-        # -------------------------------------------------------------
-        # 5. Pattern A: Split 4-Projection Topology (LLaMA, Mistral, Qwen, DistilBERT, T5)
-        # -------------------------------------------------------------
         q_mod, k_mod, v_mod, o_mod = None, None, None, None
 
-        # Check LLaMA / Qwen / Mistral
         if hasattr(module, "q_proj") and hasattr(module, "k_proj") and hasattr(module, "v_proj") and hasattr(module, "o_proj"):
             q_mod = getattr(module, "q_proj")
             k_mod = getattr(module, "k_proj")
             v_mod = getattr(module, "v_proj")
             o_mod = getattr(module, "o_proj")
-        # Check DistilBERT (q_lin, k_lin, v_lin, out_lin)
         elif hasattr(module, "q_lin") and hasattr(module, "k_lin") and hasattr(module, "v_lin") and hasattr(module, "out_lin"):
             q_mod = getattr(module, "q_lin")
             k_mod = getattr(module, "k_lin")
             v_mod = getattr(module, "v_lin")
             o_mod = getattr(module, "out_lin")
-        # Check T5 (q, k, v, o)
         elif hasattr(module, "q") and hasattr(module, "k") and hasattr(module, "v") and hasattr(module, "o"):
             q_mod = getattr(module, "q")
             k_mod = getattr(module, "k")
             v_mod = getattr(module, "v")
             o_mod = getattr(module, "o")
-        # Check generic query, key, value, out_proj
         elif hasattr(module, "query") and hasattr(module, "key") and hasattr(module, "value") and hasattr(module, "out_proj"):
             q_mod = getattr(module, "query")
             k_mod = getattr(module, "key")

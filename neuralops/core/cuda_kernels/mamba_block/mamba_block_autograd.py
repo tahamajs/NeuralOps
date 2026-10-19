@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Mamba State-Space Block Autograd Interface
 
 Hardware-accelerated CUDA C++ autograd implementation with analytical gradients and three-level fallback dispatch.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -31,9 +35,9 @@ def mamba_block_ref(
     C_mat: torch.Tensor,
     prev_state: torch.Tensor,
 ) -> tuple[torch.Tensor, torch.Tensor]:
-    dt = torch.exp(delta.float()) # [B, D]
-    dA = torch.exp(dt.unsqueeze(-1) * A.float().unsqueeze(0)) # [B, D, S]
-    dB = dt.unsqueeze(-1) * B_mat.float().unsqueeze(1) # [B, D, S]
+    dt = torch.exp(delta.float())
+    dA = torch.exp(dt.unsqueeze(-1) * A.float().unsqueeze(0))
+    dB = dt.unsqueeze(-1) * B_mat.float().unsqueeze(1)
     next_state = dA * prev_state.float() + dB * u.float().unsqueeze(-1)
     out = (next_state * C_mat.float().unsqueeze(1)).sum(dim=-1)
     return out.to(u.dtype), next_state.to(prev_state.dtype)

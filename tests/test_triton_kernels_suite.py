@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Comprehensive Unit Test Suite for Shared Triton Kernels & Unified Dispatcher.
 
@@ -32,9 +38,6 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 DTYPE = torch.float16 if torch.cuda.is_available() else torch.float32
 
 
-# ---------------------------------------------------------------------------
-# 1. GQA Tests
-# ---------------------------------------------------------------------------
 def test_gqa_fwd_and_fallback():
     B, H_kv, S, D = 2, 2, 16, 32
     H_q = 8
@@ -45,15 +48,11 @@ def test_gqa_fwd_and_fallback():
     assert k_exp.shape == (B, H_q, S, D)
     assert v_exp.shape == (B, H_q, S, D)
 
-    # PyTorch fallback equivalence
     k_ref, v_ref = gqa_pytorch_fallback(k, v, num_kv_heads=H_kv, num_heads=H_q)
     assert torch.allclose(k_exp, k_ref, atol=1e-3, rtol=1e-3)
     assert torch.allclose(v_exp, v_ref, atol=1e-3, rtol=1e-3)
 
 
-# ---------------------------------------------------------------------------
-# 2. Low-Rank Projection Tests (Forward & Exact Analytical Backward)
-# ---------------------------------------------------------------------------
 def test_low_rank_fwd_and_analytical_bwd():
     B, S, D_in, R, D_out = 2, 16, 64, 16, 64
     x = torch.randn(B, S, D_in, device=DEVICE, dtype=DTYPE, requires_grad=True)
@@ -61,15 +60,12 @@ def test_low_rank_fwd_and_analytical_bwd():
     V = torch.randn(R, D_in, device=DEVICE, dtype=DTYPE, requires_grad=True)
     bias = torch.randn(D_out, device=DEVICE, dtype=DTYPE, requires_grad=True)
 
-    # Forward
     y = low_rank.fwd(x, U, V, bias=bias)
     assert y.shape == (B, S, D_out)
 
-    # Reference PyTorch
     y_ref = low_rank_pytorch_fallback(x, U, V, bias=bias)
     assert torch.allclose(y, y_ref, atol=1e-2, rtol=1e-2)
 
-    # Backward
     loss = y.sum()
     loss.backward()
 
@@ -94,9 +90,6 @@ def test_low_rank_frozen_input_autograd_safety():
     assert V.grad is not None
 
 
-# ---------------------------------------------------------------------------
-# 3. Linear Attention Tests
-# ---------------------------------------------------------------------------
 @pytest.mark.parametrize("is_causal", [True, False])
 @pytest.mark.parametrize("phi", ["elu+1", "relu", "identity"])
 def test_linear_attn_fwd_bwd(is_causal, phi):
@@ -108,7 +101,6 @@ def test_linear_attn_fwd_bwd(is_causal, phi):
     out = linear_attn.fwd(q, k, v, is_causal=is_causal, phi=phi)
     assert out.shape == (B, H, S, D)
 
-    # Test backward
     loss = out.sum()
     loss.backward()
     assert q.grad is not None
@@ -117,15 +109,11 @@ def test_linear_attn_fwd_bwd(is_causal, phi):
     assert torch.isfinite(q.grad).all()
 
 
-# ---------------------------------------------------------------------------
-# 4. Sparse Attention Tests
-# ---------------------------------------------------------------------------
 def test_sparse_attn_block_mask():
     B, H, S, D = 2, 2, 64, 32
     block_size = 16
     n_blocks = S // block_size
     block_mask = torch.ones(n_blocks, n_blocks, device=DEVICE, dtype=torch.bool)
-    # Causal lower-triangular block mask
     block_mask = torch.tril(block_mask)
 
     q = torch.randn(B, H, S, D, device=DEVICE, dtype=DTYPE, requires_grad=True)
@@ -141,9 +129,6 @@ def test_sparse_attn_block_mask():
     assert torch.isfinite(q.grad).all()
 
 
-# ---------------------------------------------------------------------------
-# 5. State Update (SSM / RWKV) Tests
-# ---------------------------------------------------------------------------
 def test_state_update_recurrence():
     B, S, D, N = 2, 16, 32, 16
     u = torch.randn(B, S, D, device=DEVICE, dtype=DTYPE, requires_grad=True)
@@ -157,16 +142,12 @@ def test_state_update_recurrence():
     assert y.shape == (B, S, D)
     assert new_state.shape == (B, D, N)
 
-    # Test backward
     loss = y.sum()
     loss.backward()
     assert u.grad is not None
     assert torch.isfinite(u.grad).all()
 
 
-# ---------------------------------------------------------------------------
-# 6. Unified triton_dispatch Dispatcher Tests
-# ---------------------------------------------------------------------------
 def test_triton_dispatch_linear_attn():
     B, H, S, D = 2, 2, 16, 32
     q = torch.randn(B, H, S, D, device=DEVICE, dtype=DTYPE)

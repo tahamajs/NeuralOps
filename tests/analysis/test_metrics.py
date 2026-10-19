@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Tests for neuralops.analysis.metrics module."""
 
 import json
@@ -16,7 +22,6 @@ class TestMetrics:
     """Test metrics computation and result aggregation."""
 
     def test_compute_metrics_classification(self):
-        # 4 samples, 2 classes
         preds = np.array([[0.8, 0.2], [0.1, 0.9], [0.7, 0.3], [0.3, 0.7]])
         labels = np.array([0, 1, 0, 1])
         res = compute_metrics(preds, labels, task="classification")

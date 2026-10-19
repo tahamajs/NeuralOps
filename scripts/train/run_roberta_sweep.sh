@@ -1,5 +1,4 @@
 #!/bin/bash
-# Author: Taha Majlesi
 set -e
 
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True

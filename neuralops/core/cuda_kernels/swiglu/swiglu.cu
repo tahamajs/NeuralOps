@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -32,14 +39,13 @@ __global__ void swiglu_fwd_kernel(
         g_val = to_float(gate[idx]);
     }
 
-    // silu(x) = x * sigmoid(x)
     const float sig = 1.0f / (1.0f + expf(-x_val));
     const float silu = x_val * sig;
     out[idx] = from_float<scalar_t>(silu * g_val);
 }
 
-} // namespace cuda
-} // namespace neuralops
+}
+}
 
 torch::Tensor swiglu_fwd(
     const torch::Tensor& x,

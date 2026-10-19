@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Unit tests for core architecture discovery, leaf extraction, and attention injection."""
 
 import pytest
@@ -65,10 +71,8 @@ class TestGetAttentionModules:
         cfg = T5Config(num_layers=2, num_decoder_layers=2, num_heads=2, d_model=32, d_kv=16, d_ff=64, vocab_size=100)
         model = T5ForConditionalGeneration(cfg)
         modules = get_attention_modules(model)
-        # 2 encoder layers (1 self each) + 2 decoder layers (1 self + 1 cross each) = 6
         assert len(modules) == 6
         names = [n for n, _ in modules]
-        # Verify self-attention and cross-attention paths
         assert any("encoder.block.0.layer.0.SelfAttention" in n for n in names)
         assert any("decoder.block.0.layer.0.SelfAttention" in n for n in names)
         assert any("decoder.block.0.layer.1.EncDecAttention" in n for n in names)
@@ -113,22 +117,18 @@ class TestInjectAttention:
         cfg = RobertaConfig(num_hidden_layers=2, num_attention_heads=2, hidden_size=32, intermediate_size=64, vocab_size=100)
         model = RobertaForSequenceClassification(cfg)
 
-        # Confirm pre-injection structure
         layer0 = model.roberta.encoder.layer[0]
         assert hasattr(layer0.attention, "output")
         assert hasattr(layer0.attention.output, "dense")
         assert hasattr(layer0.attention.output, "LayerNorm")
 
-        # Inject adaptive_svd attention
         model = inject_attention(model, "adaptive_svd", rank=8, copy_weights=True)
 
-        # Confirm post-injection outer structure intact
         layer0_post = model.roberta.encoder.layer[0]
         assert hasattr(layer0_post.attention, "output")
         assert hasattr(layer0_post.attention.output, "dense")
         assert hasattr(layer0_post.attention.output, "LayerNorm")
 
-        # Forward pass verification
         input_ids = torch.randint(0, 100, (2, 8))
         out = model(input_ids)
         assert out.logits.shape == (2, 2)

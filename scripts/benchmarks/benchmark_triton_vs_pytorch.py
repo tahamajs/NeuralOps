@@ -1,6 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Benchmark triton vs pytorch module.
-
-Author: Taha Majlesi
 """
 
 import time
@@ -39,12 +43,11 @@ def time_fn(fn, warmups=10, iters=50):
     for _ in range(iters):
         fn()
     torch.cuda.synchronize()
-    return (time.perf_counter() - t0) / iters * 1000.0  # ms
+    return (time.perf_counter() - t0) / iters * 1000.0
 
 
 results = []
 
-# --- 1. ALiBi Relative Position Distance Bias ---
 print("--- 1. ALiBi Relative Position Bias (H=16, N_q=2048, N_k=2048) ---")
 slopes = torch.linspace(0.1, 0.9, 16, device=device)
 N_q, N_k = 2048, 2048
@@ -62,7 +65,6 @@ print(f"Max Abs Diff    : {diff:.6e}")
 assert diff < 1e-5
 results.append(("ALiBi Relative Bias", t_pt, t_tri, speedup, diff))
 
-# --- 2. Selective Scan Kernel (Mamba State-Space Model) ---
 print("\n--- 2. Selective Scan Kernel (B=4, L=1024, D=64, N=16, FP16) ---")
 B, L, D, N = 4, 1024, 64, 16
 u = torch.randn(B, D, L, device=device, dtype=torch.float16)
@@ -85,16 +87,13 @@ print(f"Max Abs Diff    : {diff:.6e}")
 assert diff < 0.1
 results.append(("Selective Scan (Mamba SSM)", t_pt, t_tri, speedup, diff))
 
-# --- 3. Positive Kernel Linear Attention ---
 print("\n--- 3. Positive Kernel Linear Attention (B=4, L=512, D=256, H=8, FP16) ---")
 pk_attn = PositiveKernelLinearAttention(hidden_size=256, num_heads=8).to(device=device, dtype=torch.float16)
 x_pk = torch.randn(4, 512, 256, device=device, dtype=torch.float16)
 
-# Time Triton
 t_tri = time_fn(lambda: pk_attn(x_pk))
 out_tri, _ = pk_attn(x_pk)
 
-# Force PyTorch fallback
 orig_td = tk.triton_dispatch
 
 
@@ -116,7 +115,6 @@ print(f"Speedup         : {speedup:.2f}x")
 print(f"Max Abs Diff    : {diff:.6e}")
 results.append(("Positive Kernel Linear Attn", t_pt, t_tri, speedup, diff))
 
-# --- 4. Fast Block Sparse Attention ---
 print("\n--- 4. Fast Block Sparse Attention Kernel (B=4, H=8, N=512, D=64, FP16) ---")
 q_sp = torch.randn(4, 8, 512, 64, device=device, dtype=torch.float16)
 k_sp = torch.randn(4, 8, 512, 64, device=device, dtype=torch.float16)
@@ -137,7 +135,6 @@ print(f"Max Abs Diff    : {diff:.6e}")
 assert diff < 1e-2
 results.append(("Block Sparse Attention", t_pt, t_tri, speedup, diff))
 
-# --- 5. Fused Dynamic Conv1D ---
 print("\n--- 5. Fused Dynamic Conv1D Kernel (B=4, H=8, N=1024, D=64, K=4, FP16) ---")
 B, H, N, D, K = 4, 8, 1024, 64, 4
 v_conv = torch.randn(B, H, N + K - 1, D, device=device, dtype=torch.float16)
@@ -156,7 +153,6 @@ print(f"Max Abs Diff    : {diff:.6e}")
 assert diff < 5e-3
 results.append(("Fused Dynamic Conv1D", t_pt, t_tri, speedup, diff))
 
-# Summary table
 print("\n" + "=" * 80)
 header = f"{'Module / Kernel':<30} | {'PyTorch (ms)':<14} | {'Triton (ms)':<14} | {'Speedup':<9} | {'Max Diff':<10}"
 print(header)

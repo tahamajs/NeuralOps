@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #pragma once
 #include <cuda_runtime.h>
 #include <torch/extension.h>
@@ -9,9 +16,9 @@
 template<typename scalar_t>
 __launch_bounds__(128)
 __global__ void moe_gather_fast_kernel(
-    scalar_t* __restrict__ out_tokens,               // [num_tokens, hidden_dim]
-    const scalar_t* __restrict__ expert_outputs,     // [total_assignments, hidden_dim]
-    const scalar_t* __restrict__ routing_weights,    // [num_tokens, top_k]
+    scalar_t* __restrict__ out_tokens,
+    const scalar_t* __restrict__ expert_outputs,
+    const scalar_t* __restrict__ routing_weights,
     const int num_tokens,
     const int hidden_dim,
     const int top_k
@@ -55,10 +62,10 @@ __global__ void moe_gather_fast_kernel(
 template<typename scalar_t>
 __launch_bounds__(256)
 __global__ void moe_gather_kernel(
-    scalar_t* __restrict__ out_tokens,               // [num_tokens, hidden_dim]
-    const scalar_t* __restrict__ expert_outputs,     // [total_assignments, hidden_dim]
-    const scalar_t* __restrict__ routing_weights,    // [num_tokens, top_k]
-    const int32_t* __restrict__ expert_offsets,      // [num_tokens, top_k] slot assignments (optional)
+    scalar_t* __restrict__ out_tokens,
+    const scalar_t* __restrict__ expert_outputs,
+    const scalar_t* __restrict__ routing_weights,
+    const int32_t* __restrict__ expert_offsets,
     const int num_tokens,
     const int hidden_dim,
     const int top_k,

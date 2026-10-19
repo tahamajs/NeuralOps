@@ -1,5 +1,9 @@
-# -*- coding: utf-8 -*-
-# Author: Taha Majlesi
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Self-Speculative Decoding Benchmark across lookahead steps gamma in {1, 2, 3, 4, 6, 8}.
 
 Measures:
@@ -45,7 +49,6 @@ class SyntheticLanguageModel(nn.Module):
         self.vocab_size = vocab_size
         self.hidden_dim = hidden_dim
         self.embedding = nn.Embedding(vocab_size, hidden_dim)
-        # Draft model has fewer layers or reduced dimension for speedup
         n_layers = 1 if is_draft else num_layers
         self.layers = nn.ModuleList(
             [
@@ -80,14 +83,12 @@ def run_speculative_gamma_benchmark(
     target_model = SyntheticLanguageModel(hidden_dim=256, num_layers=4, is_draft=False).to(device=dev).eval()
     draft_model = SyntheticLanguageModel(hidden_dim=256, num_layers=1, is_draft=True).to(device=dev).eval()
 
-    # Align draft model head weights to target for realistic high acceptance
     with torch.no_grad():
         draft_model.embedding.weight.copy_(target_model.embedding.weight)
         draft_model.head.weight.copy_(target_model.head.weight)
 
     prompt = torch.randint(0, 1000, (1, 16), device=dev)
 
-    # 1. Standard autoregressive baseline
     if dev.type == "cuda":
         torch.cuda.synchronize()
     t0 = time.perf_counter()

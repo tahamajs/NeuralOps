@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -6,8 +13,6 @@
 
 namespace neuralops { namespace cuda {
 
-// Routing Attention Forward Kernel:
-// Attends strictly to tokens routed by positive routing weights route_weights[j] > 0.
 template <typename scalar_t>
 __global__ void __launch_bounds__(128, 2) routing_attn_fwd_kernel(
     scalar_t* __restrict__ out,
@@ -55,7 +60,7 @@ __global__ void __launch_bounds__(128, 2) routing_attn_fwd_kernel(
     float d_prev = 0.0f;
     float acc[MAX_E] = {0.0f};
 
-    const int tid = threadIdx.x; // 0..127
+    const int tid = threadIdx.x;
     const int total_threads = 128;
     const int tile_elements = TILE_K * D;
 
@@ -162,9 +167,6 @@ __global__ void __launch_bounds__(128, 2) routing_attn_fwd_kernel(
     }
 }
 
-// ============================================================================
-// Routing Attention Backward Kernel (Analytical Adjoint with SMEM Tiling)
-// ============================================================================
 template <typename scalar_t>
 __global__ void __launch_bounds__(128, 2) routing_attn_bwd_kernel(
     scalar_t* __restrict__ grad_q,
@@ -222,7 +224,6 @@ __global__ void __launch_bounds__(128, 2) routing_attn_bwd_kernel(
     const int total_threads = 128;
     const int tile_elements = TILE_K * D;
 
-    // Pass 1: Forward online softmax tracking
     for (int tile_start = 0; tile_start < N; tile_start += TILE_K) {
         __syncthreads();
         if (tid < TILE_K) {
@@ -314,7 +315,6 @@ __global__ void __launch_bounds__(128, 2) routing_attn_bwd_kernel(
         }
     }
 
-    // Scalar D_i = sum_d (grad_out[i, d] * Out[i, d])
     float D_val = 0.0f;
     if (i < N && d_prev > 1e-6f) {
         const float inv_d = 1.0f / d_prev;
@@ -332,7 +332,6 @@ __global__ void __launch_bounds__(128, 2) routing_attn_bwd_kernel(
         }
     }
 
-    // Pass 2: Softmax adjoints & gradient accumulation
     float grad_q_acc[MAX_E] = {0.0f};
 
     for (int tile_start = 0; tile_start < N; tile_start += TILE_K) {
@@ -448,7 +447,7 @@ __global__ void __launch_bounds__(128, 2) routing_attn_bwd_kernel(
     }
 }
 
-}} // namespace neuralops::cuda
+}}
 
 torch::Tensor routing_attn_fwd(
     const torch::Tensor& q,

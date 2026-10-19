@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Spectral Entropy SVD Dynamic Gating
 
 Applies dynamic singular value truncation and entropy-based rank gating for adaptive low-rank projections.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -60,10 +64,8 @@ def _spectral_entropy_svd_kernel(
 
     mask_m = offs_m < M
     mask_n = offs_n < N
-    # Dynamic mask: only keep ranks < effective_rank and < R_MAX
     mask_r = (offs_r < effective_rank) & (offs_r < R_MAX)
 
-    # 1. Compute Z_tile = X[offs_m, :] @ V_r^T [:, offs_r]
     z_acc = tl.zeros((BLOCK_M, BLOCK_R), dtype=tl.float32)
     num_k_blocks = tl.cdiv(K, BLOCK_K)
     for k_idx in range(0, num_k_blocks):
@@ -78,14 +80,12 @@ def _spectral_entropy_svd_kernel(
 
         z_acc += tl.dot(x_tile, v_tile, allow_tf32=True)
 
-    # 2. In-Register Spectral Weighting
     if HAS_WEIGHTS:
         w_tile = tl.load(s_weights_ptr + offs_r, mask=mask_r, other=0.0).to(tl.float32)
         z_acc = z_acc * w_tile[None, :]
 
     z_tile = z_acc.to(x_ptr.dtype.element_ty)
 
-    # 3. Up-projection: Y_tile = Z_tile @ U_r^T [offs_r, offs_n]
     u_ptrs = u_ptr + offs_r[:, None] * stride_ur + offs_n[None, :] * stride_un
     u_tile = tl.load(u_ptrs, mask=mask_r[:, None] & mask_n[None, :], other=0.0)
 
@@ -143,7 +143,6 @@ def triton_spectral_entropy_svd_gate(
     N = U_mat.shape[1]
 
     if not x.is_cuda or R_MAX > 256:
-        # PyTorch reference
         V_sub = V_mat[:, :eff_r]
         U_sub = U_mat[:eff_r, :]
         z = torch.matmul(x_2d, V_sub)
@@ -199,7 +198,6 @@ def triton_spectral_entropy_svd_gate(
     return y.view(*orig_shape[:-1], N)
 
 
-# Aliases
 spectral_entropy_svd_gate = triton_spectral_entropy_svd_gate
 
 __all__ = [

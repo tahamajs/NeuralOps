@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -9,9 +16,6 @@
 namespace neuralops {
 namespace cuda {
 
-// Recurrent GLA single step FWD:
-// s_new = alpha * s_prev + k (x) v
-// out = scale * (s_new^T q) = scale * sum_k q[k] * s_new[k, v]
 template <typename scalar_t, int MAX_DK>
 __launch_bounds__(128)
 __global__ void recurrent_gla_step_kernel(
@@ -65,7 +69,6 @@ __global__ void recurrent_gla_step_kernel(
     }
 }
 
-// Recurrent GLA single step BWD:
 template <typename scalar_t, int MAX_DK>
 __launch_bounds__(128)
 __global__ void recurrent_gla_step_bwd_kernel(
@@ -165,8 +168,8 @@ __global__ void recurrent_gla_step_bwd_kernel(
     }
 }
 
-} // namespace cuda
-} // namespace neuralops
+}
+}
 
 std::vector<torch::Tensor> recurrent_gla_step_fwd(
     const torch::Tensor& q_t,

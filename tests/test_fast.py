@@ -1,3 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 import sys
 import torch
 import torch.nn as nn
@@ -8,7 +15,6 @@ from neuralops.inference.speculative_decoding import SelfSpeculativeDecoder
 from neuralops.models.paged_state import PagedStateTable, RadixPrefixStateCache
 
 def test_fast_inference():
-    # 1. PagedKVCache 35 sequences
     cache = PagedKVCache(num_blocks=64, block_size=16, num_heads=2, head_dim=16, device="cpu")
     for s in range(35):
         cache.allocate_sequence(s)
@@ -16,7 +22,6 @@ def test_fast_inference():
     for s in range(35):
         cache.free_sequence(s)
 
-    # 2. PagedStateTable & CoW
     state_table = PagedStateTable(num_pages=32, num_heads=2, head_dim=16, state_dim=16, device="cpu")
     state_table.register_sequence(1, initial_pages=1)
     state_table.fork_sequence(1, 2)
@@ -25,14 +30,12 @@ def test_fast_inference():
     state_table.free_sequence(1)
     state_table.free_sequence(2)
 
-    # 3. Radix Cache
     radix = RadixPrefixStateCache(state_table)
     page = state_table.allocate_page()
     radix.insert_prefix([1, 2, 3], page)
     mp, ml = radix.match_prefix([1, 2, 3, 4])
     assert ml == 3
 
-    # 4. Speculative Decoding
     class ToyModel(nn.Module):
         def __init__(self):
             super().__init__()

@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Exhaustive Multi-Level Parity, Gradient & Shape Verification Suite
 for all NeuralOps CUDA C++ and Triton Hot-Path Kernels:
@@ -37,9 +43,6 @@ def check_cuda():
         pytest.skip("CUDA device required for kernel tests")
 
 
-# ═══════════════════════════════════════════════════════════════════
-# 1. SELECTIVE SCAN TESTS
-# ═══════════════════════════════════════════════════════════════════
 
 @pytest.mark.parametrize("d_state", [8, 16, 32, 64])
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float16, torch.bfloat16])
@@ -94,9 +97,6 @@ def test_selective_scan_autograd_gradients():
         assert cos_sim > 0.995, f"{name}.grad cosine similarity {cos_sim:.4f} < 0.995"
 
 
-# ═══════════════════════════════════════════════════════════════════
-# 2. SLIDING WINDOW ATTENTION TESTS
-# ═══════════════════════════════════════════════════════════════════
 
 @pytest.mark.parametrize("d", [32, 64, 128])
 @pytest.mark.parametrize("window_size", [16, 64])
@@ -141,9 +141,6 @@ def test_sliding_window_autograd_gradients():
         torch.testing.assert_close(p1.grad, p2.grad, atol=1e-2, rtol=1e-2)
 
 
-# ═══════════════════════════════════════════════════════════════════
-# 3. BLOCK-SPARSE ATTENTION TESTS
-# ═══════════════════════════════════════════════════════════════════
 
 @pytest.mark.parametrize("d", [32, 64, 128])
 @pytest.mark.parametrize("block_size", [16, 32, 64])
@@ -166,9 +163,6 @@ def test_block_sparse_forward_parity(d, block_size, dtype):
     torch.testing.assert_close(out_k, out_ref, atol=tol, rtol=tol)
 
 
-# ═══════════════════════════════════════════════════════════════════
-# 4. QUANTIZED GEMM TESTS (W4A16 & FP8)
-# ═══════════════════════════════════════════════════════════════════
 
 @pytest.mark.parametrize("shape", [(32, 128, 64), (64, 256, 128), (19, 128, 96)])
 @pytest.mark.parametrize("group_size", [32, 64, 128])

@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Universal Hardware Probing Engine
 
 Hardware topology detection and capability introspection across NVIDIA GPUs, AMD ROCm, Apple Silicon, and CPUs.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -55,7 +59,6 @@ class HardwareTopology:
     warp_size: int = 32
     num_compute_units: int = 1
 
-    # Feature flags
     supports_triton_jit: bool = False
     supports_cuda_cpp: bool = False
     supports_hip: bool = False
@@ -67,7 +70,6 @@ class HardwareTopology:
     supports_tf32: bool = False
     supports_fp8: bool = False
 
-    # Supported dtypes
     supported_dtypes: tuple[torch.dtype, ...] = field(
         default_factory=lambda: (torch.float32, torch.float16)
     )
@@ -85,7 +87,6 @@ class HardwareTopology:
         return self.backend == HardwareBackend.MPS
 
 
-# Architecture shared memory limits (bytes)
 _ARCH_SHMEM_MAP = {
     (7, 0): 98304,
     (7, 5): 65536,
@@ -104,7 +105,6 @@ def probe_hardware(device: Optional[torch.device | str | int] = None) -> Hardwar
     Intelligently probe and return the hardware topology and capabilities for any device.
     Zero-crash guarantee across NVIDIA, AMD, Apple Silicon, Intel, and CPU.
     """
-    # 1. Resolve device representation
     if device is None:
         device_str = os.environ.get("NEURALOPS_DEVICE", "auto").lower()
         if device_str != "auto":
@@ -128,7 +128,6 @@ def probe_hardware(device: Optional[torch.device | str | int] = None) -> Hardwar
 
     dev_type = target_device.type
 
-    # 2. CPU Probe
     if dev_type == "cpu":
         cpu_name = platform.processor() or platform.machine() or "CPU"
         is_arm = "arm" in platform.machine().lower() or "aarch64" in platform.machine().lower()
@@ -167,11 +166,9 @@ def probe_hardware(device: Optional[torch.device | str | int] = None) -> Hardwar
             supported_dtypes=tuple(supported_dtypes),
         )
 
-    # 3. Apple Silicon (MPS / Metal) Probe
     if dev_type == "mps":
         supports_bf16 = False
         try:
-            # Test if bfloat16 works on this MPS runtime
             t = torch.zeros(1, dtype=torch.bfloat16, device="mps")
             supports_bf16 = True
             del t
@@ -207,7 +204,6 @@ def probe_hardware(device: Optional[torch.device | str | int] = None) -> Hardwar
             supported_dtypes=tuple(supported_dtypes),
         )
 
-    # 4. Intel XPU Probe
     if dev_type == "xpu":
         dev_name = "Intel XPU / SYCL"
         if hasattr(torch, "xpu") and torch.xpu.is_available():
@@ -241,7 +237,6 @@ def probe_hardware(device: Optional[torch.device | str | int] = None) -> Hardwar
             supported_dtypes=(torch.float32, torch.float16, torch.bfloat16),
         )
 
-    # 5. NVIDIA CUDA / AMD ROCm Probe
     if dev_type == "cuda":
         is_rocm = bool(hasattr(torch.version, "hip") and torch.version.hip is not None)
         backend = HardwareBackend.ROCM if is_rocm else HardwareBackend.CUDA
@@ -257,14 +252,12 @@ def probe_hardware(device: Optional[torch.device | str | int] = None) -> Hardwar
         total_mem = getattr(props, "total_memory", 0)
         num_sm = getattr(props, "multi_processor_count", 1)
 
-        # Shared memory calculation
         shmem = getattr(props, "shared_memory_per_block_optin", None)
         if shmem is None or shmem <= 0:
             shmem = getattr(props, "shared_memory_per_block", None)
         if shmem is None or shmem <= 0:
             shmem = _ARCH_SHMEM_MAP.get((sm_major, sm_minor), 49152)
 
-        # Acceleration flags
         supports_triton_jit = is_rocm or (sm_major >= 7)
         supports_cuda_cpp = not is_rocm
         supports_hip = is_rocm
@@ -314,5 +307,4 @@ def probe_hardware(device: Optional[torch.device | str | int] = None) -> Hardwar
             supported_dtypes=tuple(supported_dtypes_list),
         )
 
-    # Fallback to CPU topology for unknown device
     return probe_hardware(torch.device("cpu"))

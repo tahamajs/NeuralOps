@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Fused Causal Linear Attention
 
 Chunked causal linear attention computation with associative prefix scans and bidirectional state reduction.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -26,10 +30,10 @@ if HAS_TRITON:
 
     @triton.jit
     def _triton_chunked_causal_linear_attn_fwd_kernel(
-        Q_ptr,  # [B*H, N, D_k]
-        K_ptr,  # [B*H, N, D_k]
-        V_ptr,  # [B*H, N, D_v]
-        Out_ptr,  # [B*H, N, D_v]
+        Q_ptr,
+        K_ptr,
+        V_ptr,
+        Out_ptr,
         stride_qbh,
         stride_qn,
         stride_qd,
@@ -47,7 +51,7 @@ if HAS_TRITON:
         D_V: tl.constexpr,
         BLOCK_CHUNK: tl.constexpr,
         EPS: tl.constexpr,
-        ACTIVATION_MODE: tl.constexpr,  # 0: ELU+1, 1: ReLU, 2: Identity
+        ACTIVATION_MODE: tl.constexpr,
     ):
         r"""
         Fused Chunked Causal Linear Attention Forward Kernel.
@@ -82,13 +86,12 @@ if HAS_TRITON:
             k_tile = tl.load(k_ptrs, mask=mask_n[:, None], other=0.0)
             v_tile = tl.load(v_ptrs, mask=mask_n[:, None], other=0.0)
 
-            # In-SRAM Non-Negative Activation
-            if ACTIVATION_MODE == 0:  # ELU + 1
+            if ACTIVATION_MODE == 0:
                 q_f = q_tile.to(tl.float32)
                 k_f = k_tile.to(tl.float32)
                 phi_q = tl.where(q_f > 0.0, q_f, tl.exp(q_f) - 1.0) + 1.0
                 phi_k = tl.where(k_f > 0.0, k_f, tl.exp(k_f) - 1.0) + 1.0
-            elif ACTIVATION_MODE == 1:  # ReLU
+            elif ACTIVATION_MODE == 1:
                 phi_q = tl.maximum(q_tile.to(tl.float32), 0.0)
                 phi_k = tl.maximum(k_tile.to(tl.float32), 0.0)
             else:
@@ -98,11 +101,9 @@ if HAS_TRITON:
             phi_k = tl.where(mask_n[:, None], phi_k, 0.0)
             v_tile = tl.where(mask_n[:, None], v_tile, 0.0)
 
-            # Inter-Chunk Projection: query @ running state
             num_inter = tl.dot(phi_q, state_S)
             denom_inter = tl.sum(phi_q * state_Z[None, :], axis=1)
 
-            # Intra-Chunk Causal Scores
             scores_intra = tl.dot(phi_q, tl.trans(phi_k))
             causal_mask = offs_chunk[:, None] >= offs_chunk[None, :]
             scores_causal = tl.where(
@@ -114,7 +115,7 @@ if HAS_TRITON:
 
             num_total = num_inter + num_intra
             denom_raw = denom_inter + denom_intra
-            if ACTIVATION_MODE == 2:  # Identity
+            if ACTIVATION_MODE == 2:
                 denom_sign = tl.where(denom_raw >= 0.0, 1.0, -1.0)
                 denom_total = tl.maximum(tl.abs(denom_raw), EPS) * denom_sign
             else:
@@ -124,16 +125,15 @@ if HAS_TRITON:
             out_ptrs = out_base + (cur_offs_n[:, None] * stride_on + offs_dv[None, :] * stride_od)
             tl.store(out_ptrs, out_tile.to(Out_ptr.dtype.element_ty), mask=mask_n[:, None])
 
-            # Update Running Recurrent State
             state_S += tl.dot(tl.trans(phi_k), v_tile.to(tl.float32))
             state_Z += tl.sum(phi_k, axis=0)
 
     @triton.jit
     def _triton_bidirectional_linear_attn_fwd_kernel(
-        Q_ptr,  # [B*H, N, D_k]
-        K_ptr,  # [B*H, N, D_k]
-        V_ptr,  # [B*H, N, D_v]
-        Out_ptr,  # [B*H, N, D_v]
+        Q_ptr,
+        K_ptr,
+        V_ptr,
+        Out_ptr,
         stride_qbh,
         stride_qn,
         stride_qd,
@@ -171,7 +171,6 @@ if HAS_TRITON:
         state_KV = tl.zeros((D_K, D_V), dtype=tl.float32)
         state_Z = tl.zeros((D_K,), dtype=tl.float32)
 
-        # Global parallel reduction of K^T V and sum(K)
         for n_start in range(0, N, BLOCK_N):
             cur_n = n_start + offs_n
             mask_n = cur_n < N
@@ -182,10 +181,10 @@ if HAS_TRITON:
             k_tile = tl.load(k_ptrs, mask=mask_n[:, None], other=0.0)
             v_tile = tl.load(v_ptrs, mask=mask_n[:, None], other=0.0)
 
-            if ACTIVATION_MODE == 0:  # ELU + 1
+            if ACTIVATION_MODE == 0:
                 k_f = k_tile.to(tl.float32)
                 phi_k = tl.where(k_f > 0.0, k_f, tl.exp(k_f) - 1.0) + 1.0
-            elif ACTIVATION_MODE == 1:  # ReLU
+            elif ACTIVATION_MODE == 1:
                 phi_k = tl.maximum(k_tile.to(tl.float32), 0.0)
             else:
                 phi_k = k_tile.to(tl.float32)
@@ -196,7 +195,6 @@ if HAS_TRITON:
             state_KV += tl.dot(tl.trans(phi_k), v_tile.to(tl.float32))
             state_Z += tl.sum(phi_k, axis=0)
 
-        # Query projection
         offs_m = tl.arange(0, BLOCK_M)
         for m_start in range(0, N, BLOCK_M):
             cur_m = m_start + offs_m
@@ -217,7 +215,7 @@ if HAS_TRITON:
 
             num = tl.dot(phi_q, state_KV)
             denom_raw = tl.sum(phi_q * state_Z[None, :], axis=1)
-            if ACTIVATION_MODE == 2:  # Identity
+            if ACTIVATION_MODE == 2:
                 denom_sign = tl.where(denom_raw >= 0.0, 1.0, -1.0)
                 denom_total = tl.maximum(tl.abs(denom_raw), EPS) * denom_sign
             else:
@@ -249,15 +247,11 @@ class _TritonLinearAttnAutogradFunction(torch.autograd.Function):
         N = q.shape[-2]
         BH = q.numel() // (N * D_k)
 
-        # Reshape to [BH, N, D]
         q_flat = q.contiguous().view(BH, N, D_k)
         k_flat = k.contiguous().view(BH, N, D_k)
         v_flat = v.contiguous().view(BH, N, D_v)
 
-        # Apply modulation if present or fallback for numerical instability
         if (cos_weight is not None and sin_weight is not None) or (phi == "identity" and q.dtype == torch.float16):
-            # When modulated or for mixed-sign phi='identity' in FP16, pass to PyTorch fallback
-            # with FP32 accumulation and autograd sanitization.
             ctx.save_for_backward(q, k, v)
             ctx.is_causal = is_causal
             ctx.phi = phi
@@ -449,9 +443,6 @@ def bwd(
     return g_q, g_k, g_v
 
 
-# ═══════════════════════════════════════════════════════════════════
-#  RALA: Fused Rank-Augmented Linear Scan & Head Interaction Kernel
-# ═══════════════════════════════════════════════════════════════════
 
 def fused_rala_augmented_scan_pytorch(
     q: torch.Tensor,
@@ -511,20 +502,16 @@ def fused_rala_augmented_scan_triton(
     suitable, _ = check_triton_suitability(q, "linear_attn", head_dim=q.shape[-1], seq_len=q.shape[-2])
     if HAS_TRITON and q.is_cuda and suitable:
         try:
-            # 1. Accelerated standard linear attention component
             lin_out = fwd(q, k, v, is_causal=is_causal, phi="identity", eps=1e-4)
-            # 2. Denominator and rank augmentation projection
             q_p = q.float()
             k_p = k.float()
             if is_causal:
-                # Causal prefix sum along sequence length for normalizer
-                z = k_p.cumsum(dim=2)  # [B, H, N, d]
+                z = k_p.cumsum(dim=2)
                 denom = (q_p * z).sum(dim=-1, keepdim=True).clamp(min=1e-4)
             else:
-                z = k_p.sum(dim=2, keepdim=True)  # [B, H, 1, d]
+                z = k_p.sum(dim=2, keepdim=True)
                 denom = (q_p * z).sum(dim=-1, keepdim=True).clamp(min=1e-4)
 
-            # Rank interaction matrix M = U @ V^T in FP32
             rank_mat = torch.einsum("hdr,her->hde", lora_U.float(), lora_V.float())
             aug_num = torch.einsum("bhnd,hde->bhne", q_p, rank_mat)
             aug_out = torch.nan_to_num(aug_num / denom, nan=0.0, posinf=1e4, neginf=-1e4).to(q.dtype)
@@ -562,9 +549,9 @@ def fused_nasc_spectral_linear_scan_pytorch(
         V_masked = v.float()
 
     if is_causal:
-        KV = phi_K.unsqueeze(-1) * V_masked.unsqueeze(-2)  # [B, H, L, F, d]
+        KV = phi_K.unsqueeze(-1) * V_masked.unsqueeze(-2)
         KV_cumsum = torch.cumsum(KV, dim=2)
-        num = torch.matmul(phi_Q.unsqueeze(-2), KV_cumsum).squeeze(-2)  # [B, H, L, d]
+        num = torch.matmul(phi_Q.unsqueeze(-2), KV_cumsum).squeeze(-2)
         Z = torch.cumsum(phi_K, dim=2)
         den = (phi_Q * Z).sum(dim=-1, keepdim=True).clamp(min=1e-6) + 1e-6
         res = (num / den).to(q.dtype)
@@ -719,7 +706,6 @@ if HAS_TRITON:
             k_tile = tl.load(k_ptrs, mask=mask_n[:, None], other=0.0)
             v_tile = tl.load(v_ptrs, mask=mask_n[:, None], other=0.0)
 
-            # ELU+1 non-negative feature map in registers
             q_f = q_tile.to(tl.float32)
             k_f = k_tile.to(tl.float32)
             phi_q = tl.where(q_f > 0.0, q_f, tl.exp(q_f) - 1.0) + 1.0
@@ -727,7 +713,6 @@ if HAS_TRITON:
             phi_k = tl.where(mask_n[:, None], phi_k, 0.0)
             v_tile = tl.where(mask_n[:, None], v_tile.to(tl.float32), 0.0)
 
-            # Load decay factors
             if HAS_DECAY:
                 dec_ptrs = decay_base + cur_offs_n * stride_dn
                 dec_tile = tl.load(dec_ptrs, mask=mask_n, other=1.0).to(tl.float32)
@@ -735,7 +720,6 @@ if HAS_TRITON:
             else:
                 dec_tile = tl.full((BLOCK_CHUNK,), 1.0, dtype=tl.float32)
 
-            # Intra-chunk causal scores
             scores_intra = tl.dot(phi_q, tl.trans(phi_k))
             causal_mask = offs_chunk[:, None] >= offs_chunk[None, :]
             scores_causal = tl.where(
@@ -745,7 +729,6 @@ if HAS_TRITON:
             num_intra = tl.dot(scores_causal, v_tile)
             denom_intra = tl.sum(scores_causal, axis=1)
 
-            # Inter-chunk projection: query @ running state
             num_inter = tl.dot(phi_q, state_S)
             denom_inter = tl.sum(phi_q * state_Z[None, :], axis=1)
 
@@ -756,10 +739,8 @@ if HAS_TRITON:
             out_ptrs = out_base + (cur_offs_n[:, None] * stride_on + offs_dv[None, :] * stride_od)
             tl.store(out_ptrs, out_tile.to(Out_ptr.dtype.element_ty), mask=mask_n[:, None])
 
-            # Recurrent state transition across chunk with decay accumulation
             chunk_decay = 1.0
             if HAS_DECAY:
-                # Approximate cumulative chunk decay product in log-space
                 chunk_log_decay = tl.sum(tl.log(dec_tile))
                 chunk_decay = tl.exp(chunk_log_decay)
 
@@ -815,17 +796,12 @@ def fused_svd_linear_chunk_scan_triton(
         except Exception:
             pass
 
-    # High-throughput vector scan fallback
     from neuralops.core.triton_kernels.gla_scan import fused_chunk_svd_decay_linear_triton
     decay_val = decay if decay is not None else torch.ones(q.shape[:-1], device=q.device, dtype=torch.float32)
     out, _ = fused_chunk_svd_decay_linear_triton(q, k, v, decay_val, chunk_size=chunk_size, eps=eps)
     return out
 
 
-# ==============================================================================
-# PHASE 3 / KERNEL 13: Triton Fused Latent KV-Cache Attention Kernel
-# Target: svd_linear_attention, mla_attention, hnc_svd KV-Cache inference
-# ==============================================================================
 
 if HAS_TRITON:
     @triton.autotune(
@@ -1101,7 +1077,6 @@ class _ZerosLinearScanFunction(torch.autograd.Function):
         q, k, v, mask_t = ctx.saved_tensors
         has_mask = ctx.has_mask
         eps = ctx.eps
-        # Differentiable analytical backward reference for exact gradient backprop
         with torch.enable_grad():
             q_ = q.detach().requires_grad_(True)
             k_ = k.detach().requires_grad_(True)
@@ -1137,7 +1112,6 @@ class _ZerosLinearScanFunction(torch.autograd.Function):
 def fused_zeros_linear_scan_triton(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, valid_mask=None, eps: float = 1e-6) -> torch.Tensor:
     """Fused Zero-Mean Causal Linear Attention Scan in Triton with zero intermediate 5D HBM allocation."""
     if not HAS_TRITON or not q.is_cuda or q.shape[-1] > 128:
-        # PyTorch reference
         B, H, L, D = q.shape
         orig_dtype = q.dtype
         has_mask = valid_mask is not None

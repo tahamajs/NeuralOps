@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Gated DeltaNet Chunked Scan
 
 Evaluates Gated DeltaNet state updates using chunked associative scans and matrix state recurrence.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -86,7 +90,6 @@ def _gdn_fwd_kernel(
     mask_d = offs_d < D_size
     mask_2d = mask_d[:, None] & mask_d[None, :]
 
-    # S in registers (BLOCK_D x BLOCK_D)
     if HAS_INIT_STATE:
         s_init_ptrs = (
             init_state_ptr
@@ -100,7 +103,6 @@ def _gdn_fwd_kernel(
         S = tl.zeros((BLOCK_D, BLOCK_D), dtype=tl.float32)
 
     for t in range(L_size):
-        # Load q, k, v
         q_t = tl.load(
             q_ptr + pid_b * stride_qb + pid_h * stride_qh + t * stride_ql + offs_d * stride_qd,
             mask=mask_d,
@@ -134,32 +136,27 @@ def _gdn_fwd_kernel(
             q_t = q_t * q_norm_inv
             k_t = k_t * k_norm_inv
 
-        # inter_v = k_t @ S -> (D,)
-        inter_v = tl.sum(k_t[:, None] * S, axis=0)  # (D,)
+        inter_v = tl.sum(k_t[:, None] * S, axis=0)
 
-        err = v_t - inter_v  # (D,)
+        err = v_t - inter_v
 
         norm_sq = tl.sum(k_t * k_t)
         denom = tl.maximum(1.0 + norm_sq, 1.0)
         step = alpha_t / denom
 
-        # Update S: S_t = beta_t * S + step * k_t^T @ err
-        outer = k_t[:, None] * err[None, :]  # (D, D)
+        outer = k_t[:, None] * err[None, :]
         S_next = beta_t * S + step * outer
         S = tl.where(valid > 0.0, S_next, S)
 
-        # y_t = q_t @ S -> (D,)
         y_val = tl.sum(q_t[:, None] * S, axis=0)
         y_t = tl.where(valid > 0.0, y_val, 0.0)
 
-        # Store y
         tl.store(
             y_ptr + pid_b * stride_yb + pid_h * stride_yh + t * stride_yl + offs_d * stride_yd,
             y_t.to(y_ptr.dtype.element_ty),
             mask=mask_d,
         )
 
-        # Optionally store S for backward (expensive: L * D * D per head)
         if STORE_S:
             s_ptrs = (
                 s_workspace_ptr
@@ -269,12 +266,9 @@ def _gdn_bwd_kernel(
     mask_d = offs_d < D_size
     mask_2d = mask_d[:, None] & mask_d[None, :]
 
-    # Adjoint state dS (D, D), initialized to 0
     dS = tl.zeros((BLOCK_D, BLOCK_D), dtype=tl.float32)
 
-    # Iterate backward
     for t in range(L_size - 1, -1, -1):
-        # Load inputs
         q_t = tl.load(
             q_ptr + pid_b * stride_qb + pid_h * stride_qh + t * stride_ql + offs_d * stride_qd,
             mask=mask_d,
@@ -313,7 +307,6 @@ def _gdn_bwd_kernel(
             q_t = q_t * q_norm_inv
             k_t = k_t * k_norm_inv
 
-        # Load S_t and S_{t-1} from workspace
         s_t_ptrs = (
             s_workspace_ptr
             + pid_b * stride_swb
@@ -322,7 +315,7 @@ def _gdn_bwd_kernel(
             + tl.arange(0, BLOCK_D)[:, None] * stride_swd
             + tl.arange(0, BLOCK_D)[None, :] * stride_swn
         )
-        S_t = tl.load(s_t_ptrs)  # (D, D)
+        S_t = tl.load(s_t_ptrs)
 
         if t > 0:
             s_prev_ptrs = (
@@ -346,23 +339,18 @@ def _gdn_bwd_kernel(
         else:
             S_prev = tl.zeros((BLOCK_D, BLOCK_D), dtype=tl.float32)
 
-        # === Adjoint update ===
         dS += q_t[:, None] * (dy_t * valid)[None, :]
 
-        # === dq_t = S_t @ dy_t ===
         dq_t = tl.where(valid > 0.0, tl.sum(S_t * dy_t[None, :], axis=1), 0.0)
 
-        # === Recompute intermediates ===
-        inter_v = tl.sum(k_t[:, None] * S_prev, axis=0)  # (D,)
-        err = v_t - inter_v  # (D,)
+        inter_v = tl.sum(k_t[:, None] * S_prev, axis=0)
+        err = v_t - inter_v
         norm_sq = tl.sum(k_t * k_t)
         denom = tl.maximum(1.0 + norm_sq, 1.0)
         step = alpha_t / denom
 
-        # === dv_t ===
         dv_t = tl.where(valid > 0.0, step * tl.sum(k_t[:, None] * dS, axis=0), 0.0)
 
-        # === dk_t ===
         dk_direct = step * tl.sum(dS * err[None, :], axis=1)
         d_inter_v = -step * tl.sum(k_t[:, None] * dS, axis=0)
         dk_from_inter_v = tl.sum(S_prev * d_inter_v[None, :], axis=1)
@@ -371,18 +359,14 @@ def _gdn_bwd_kernel(
         dk_norm = 2.0 * d_step * k_t
         dk_total = tl.where(valid > 0.0, dk_direct + dk_from_inter_v + dk_norm, 0.0)
 
-        # === dbeta_t ===
         dbeta_final = tl.where(valid > 0.0, tl.sum(dS * S_prev), 0.0)
 
-        # === dalpha_t ===
         dalpha_final = tl.where(valid > 0.0, dS_outer / denom, 0.0)
 
-        # === Compute dS_prev ===
-        kk_outer = k_t[:, None] * k_t[None, :]  # (D, D)
+        kk_outer = k_t[:, None] * k_t[None, :]
         dS_prev = beta_t * dS - step * tl.sum(kk_outer[:, :, None] * dS[None, :, :], axis=1)
         dS = tl.where(valid > 0.0, dS_prev, dS)
 
-        # Store gradients
         tl.store(
             dq_ptr + pid_b * stride_dqb + pid_h * stride_dqh + t * stride_dql + offs_d * stride_dqd,
             dq_t.to(dq_ptr.dtype.element_ty),
@@ -435,7 +419,6 @@ def _gdn_fwd_inference(
     BLOCK_D = triton.next_power_of_2(D)
     grid = (B, H)
 
-    # Workspace dummy
     dummy_ws = torch.empty((1,), device=q.device, dtype=torch.float32)
 
     has_init = initial_state is not None
@@ -751,7 +734,6 @@ def gdn_scan_pytorch(
     device = q.device
     dtype = q.dtype
 
-    # Ensure beta, alpha are broadcastable to (B, H, L)
     if beta.dim() == 4:
         beta = beta[..., 0]
     if alpha.dim() == 4:
@@ -773,23 +755,21 @@ def gdn_scan_pytorch(
     ys = []
 
     for t in range(L):
-        q_t = q[:, :, t, :].float()  # (B, H, D)
-        k_t = k[:, :, t, :].float()  # (B, H, D)
-        v_t = v[:, :, t, :].float()  # (B, H, D)
-        b_t = beta[:, :, t].float().unsqueeze(-1).unsqueeze(-1)  # (B, H, 1, 1)
-        a_t = alpha[:, :, t].float()  # (B, H)
+        q_t = q[:, :, t, :].float()
+        k_t = k[:, :, t, :].float()
+        v_t = v[:, :, t, :].float()
+        b_t = beta[:, :, t].float().unsqueeze(-1).unsqueeze(-1)
+        a_t = alpha[:, :, t].float()
 
         if normalize_qk:
             q_t = F.normalize(q_t, p=2, dim=-1, eps=1e-6)
             k_t = F.normalize(k_t, p=2, dim=-1, eps=1e-6)
 
-        # inter_v_t = k_t @ S_{t-1}
         inter_v_t = torch.matmul(k_t.unsqueeze(-2), S).squeeze(-2)
         err_t = v_t - inter_v_t
         norm_sq_t = (k_t * k_t).sum(dim=-1)
         step_t = (a_t / torch.clamp(1.0 + norm_sq_t, min=1.0)).unsqueeze(-1).unsqueeze(-1)
 
-        # S_t = beta_t * S_{t-1} + step_t * (k_t^T @ err_t)
         outer_prod = torch.matmul(k_t.unsqueeze(-1), err_t.unsqueeze(-2))
         S_next = b_t * S + step_t * outer_prod
 
@@ -910,7 +890,6 @@ def gdn_scan_triton(
     beta = beta.contiguous()
     alpha = alpha.contiguous()
 
-    # If gradients are not needed, use fast inference path without L*D*D workspace allocation
     needs_grad = torch.is_grad_enabled() and any(
         t.requires_grad for t in (q, k, v, beta, alpha, initial_state) if isinstance(t, torch.Tensor)
     )
@@ -927,7 +906,6 @@ def gdn_scan_triton(
             normalize_qk=normalize_qk,
         )
 
-    # For extremely long sequences (L > 4096), use chunk-level checkpointed scan to bound peak VRAM
     if L > 4096:
         out = _gdn_chunked_checkpoint_scan(q, k, v, beta, alpha, chunk_size=64)
         if return_final_state:
@@ -940,7 +918,6 @@ def gdn_scan_triton(
     )
 
 
-# Canonical aliases for test suites and benchmark runners
 fused_gdn_chunk_scan_triton = gdn_scan_triton
 gdn_scan = gdn_scan_triton
 
@@ -987,7 +964,6 @@ def _gdn_step_kernel(
     offs_d = tl.arange(0, BLOCK_D)
     mask_d = offs_d < D_size
 
-    # Load 1-token q, k, v
     q_t = tl.load(q_ptr + pid_b * stride_qb + pid_h * stride_qh + offs_d * stride_qd, mask=mask_d, other=0.0).to(tl.float32)
     k_t = tl.load(k_ptr + pid_b * stride_kb + pid_h * stride_kh + offs_d * stride_kd, mask=mask_d, other=0.0).to(tl.float32)
     v_t = tl.load(v_ptr + pid_b * stride_vb + pid_h * stride_vh + offs_d * stride_vd, mask=mask_d, other=0.0).to(tl.float32)
@@ -995,13 +971,10 @@ def _gdn_step_kernel(
     beta_t = tl.load(beta_ptr + pid_b * stride_bb + pid_h * stride_bh).to(tl.float32)
     alpha_t = tl.load(alpha_ptr + pid_b * stride_ab + pid_h * stride_ah).to(tl.float32)
 
-    # Load persistent state S (BLOCK_D x BLOCK_D)
     s_ptrs = s_ptr + pid_b * stride_sb + pid_h * stride_sh + offs_d[:, None] * stride_sd + offs_d[None, :] * stride_sn
     mask_2d = mask_d[:, None] & mask_d[None, :]
     S = tl.load(s_ptrs, mask=mask_2d, other=0.0).to(tl.float32)
 
-    # In-SRAM Recurrence:
-    # inter_v = sum_i k_t[i] * S[i, :]
     inter_v = tl.sum(k_t[:, None] * S, axis=0)
     err = v_t - inter_v
     norm_sq = tl.sum(k_t * k_t)
@@ -1011,10 +984,8 @@ def _gdn_step_kernel(
     outer = k_t[:, None] * err[None, :]
     S_new = beta_t * S + step * outer
 
-    # Write back updated state in-place!
     tl.store(s_ptrs, S_new.to(s_ptr.dtype.element_ty), mask=mask_2d)
 
-    # Compute output y_t = q_t @ S_new
     y_t = tl.sum(q_t[:, None] * S_new, axis=0)
     tl.store(y_ptr + pid_b * stride_yb + pid_h * stride_yh + offs_d * stride_yd, y_t.to(y_ptr.dtype.element_ty), mask=mask_d)
 
@@ -1071,7 +1042,6 @@ def gdn_recurrent_step_triton(
         except Exception:
             pass
 
-    # PyTorch reference step fallback
     inter_v = torch.matmul(k_t.unsqueeze(-2).float(), state.float()).squeeze(-2)
     err = v_t.float() - inter_v
     norm_sq = (k_t.float() * k_t.float()).sum(dim=-1)
@@ -1084,10 +1054,6 @@ def gdn_recurrent_step_triton(
     return (y.unsqueeze(2) if has_l_dim else y), state
 
 
-# ==============================================================================
-# PHASE 3 / KERNEL 7: Chunked Delta-Gate Recurrent Scan Kernel
-# Target: gated_delta_net, gla_attention, hla_attention, kda_attention
-# ==============================================================================
 
 if HAS_TRITON and tl is not None:
     @triton.jit

@@ -1,10 +1,14 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Verify 17 Accelerated Attention Mechanisms
 
 Verification script for forward, backward, gradient flow, and registry preservation
 across the 17 target attention operators.
-
-Author: Taha Majlesi
 """
 
 import sys
@@ -70,7 +74,6 @@ def test_module(name: str):
     B, L, D = 2, 64, 256
     x = torch.randn(B, L, D, device="cuda", requires_grad=True)
 
-    # Test 1: Causal Forward & Backward
     try:
         mod.zero_grad(set_to_none=True)
         if hasattr(mod, "is_decoder"):
@@ -101,7 +104,6 @@ def test_module(name: str):
         traceback.print_exc()
         return False
 
-    # Test 2: Bidirectional Forward & Backward
     try:
         x_bi = torch.randn(B, L, D, device="cuda", requires_grad=True)
         mod.zero_grad(set_to_none=True)

@@ -1,3 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 import types
 
 import pytest
@@ -116,22 +123,18 @@ def test_head_mask_broadcasting():
     B, L, D, H = 2, 8, 64, 4
     x = torch.randn(B, L, D)
 
-    # 1D: [H]
     hm1 = torch.ones(H)
     out1, _ = attn(x, head_mask=hm1)
     assert out1.shape == (B, L, D)
 
-    # 2D: [B, H]
     hm2 = torch.ones(B, H)
     out2, _ = attn(x, head_mask=hm2)
     assert out2.shape == (B, L, D)
 
-    # 3D: [B, H, L]
     hm3 = torch.ones(B, H, L)
     out3, _ = attn(x, head_mask=hm3)
     assert out3.shape == (B, L, D)
 
-    # 4D: [B, H, L, L]
     hm4 = torch.ones(B, H, L, L)
     out4, _ = attn(x, head_mask=hm4)
     assert out4.shape == (B, L, D)
@@ -148,6 +151,5 @@ def test_inject_vspec_attn():
     assert res is not None
     assert isinstance(layer.attention, VSpecAttention)
 
-    # When old_attn is None, should return None gracefully
     none_res = inject_vspec_attn(layer=layer, old_attn=None)
     assert none_res is None

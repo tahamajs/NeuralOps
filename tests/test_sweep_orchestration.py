@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Unit tests for sweep orchestration, checkpoint resolution, plateau detection, and resumption."""
 
 import csv
@@ -23,7 +29,6 @@ class TestSweepOrchestrationLogic:
             custom_ckpt = Path(tmpdir) / "custom_baseline.pt"
             custom_ckpt.write_text("mock")
 
-            # Simulate argument resolution logic from run_quality_sweep.py
             args_parent_checkpoint = str(custom_ckpt)
             out = Path(tmpdir) / "results" / "roberta_sst2_sweep"
             family = "roberta"
@@ -67,7 +72,6 @@ class TestSweepOrchestrationLogic:
                 writer.writerow({"module_name": "full", "status": "BASELINE", "accuracy_pct": 92.5})
                 writer.writerow({"module_name": "adaptive_svd", "status": "PASS", "accuracy_pct": 89.2})
 
-            # Re-read existing
             existing = set()
             with open(csv_path, "r") as f:
                 reader = csv.DictReader(f)

@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Comprehensive GPU tests for PagedAttention (Module 1).
 Validates warp-register execution, dynamic fallback kernel, FP16/BF16 & INT64 safety,
@@ -20,9 +26,8 @@ def _build_paged_tensors(num_seqs, num_heads, num_kv_heads, head_dim, block_size
     v_cache = torch.randn(num_total_blocks, num_kv_heads, head_dim, block_size, device="cuda", dtype=dtype)
 
     context_lens = torch.randint(1, max_blocks * block_size + 1, (num_seqs,), device="cuda", dtype=int_dtype)
-    context_lens[0] = 0  # Include edge case of empty sequence
+    context_lens[0] = 0
 
-    # Non-contiguous scattered block tables
     perm = torch.randperm(num_total_blocks, device="cuda", dtype=int_dtype)
     block_tables = perm[:num_seqs * max_blocks].view(num_seqs, max_blocks)
 
@@ -50,7 +55,6 @@ def test_paged_attention_standard_shapes(dtype, int_dtype, head_dim, block_size,
 
     tol = 1e-2 if dtype == torch.bfloat16 else 1e-3
     torch.testing.assert_close(out_cuda, out_ref, atol=tol, rtol=tol)
-    # Check that empty sequence at index 0 produces exact zeros
     assert torch.all(out_cuda[0] == 0.0)
 
 
@@ -83,7 +87,7 @@ def test_paged_attention_non_contiguous_views():
 
     torch.manual_seed(42)
     raw_q = torch.randn(8, 2, 64, device="cuda", dtype=torch.float32)
-    q = raw_q.transpose(0, 1)  # [2, 8, 64] non-contiguous view
+    q = raw_q.transpose(0, 1)
 
     k_cache = torch.randn(16, 2, 64, 16, device="cuda", dtype=torch.float32)
     v_cache = torch.randn(16, 2, 64, 16, device="cuda", dtype=torch.float32)
@@ -109,7 +113,6 @@ def test_paged_attention_autograd_backward():
     block_size = 16
     num_blocks = 16
 
-    # Clone identical inputs for CUDA and PyTorch Reference
     q1 = torch.randn(num_seqs, num_heads, head_dim, device="cuda", dtype=torch.float32, requires_grad=True)
     k1 = torch.randn(num_blocks, num_kv_heads, head_dim, block_size, device="cuda", dtype=torch.float32, requires_grad=True)
     v1 = torch.randn(num_blocks, num_kv_heads, head_dim, block_size, device="cuda", dtype=torch.float32, requires_grad=True)
@@ -121,12 +124,10 @@ def test_paged_attention_autograd_backward():
     block_tables = torch.tensor([[0, 2], [1, 3]], device="cuda", dtype=torch.int32)
     context_lens = torch.tensor([24, 30], device="cuda", dtype=torch.int32)
 
-    # CUDA backward
     out1 = paged_attention(q1, k1, v1, block_tables, context_lens, block_size)
     loss1 = (out1 ** 2).sum()
     loss1.backward()
 
-    # PyTorch reference backward
     out2 = paged_attention_pytorch_reference(q2, k2, v2, block_tables, context_lens, block_size)
     loss2 = (out2 ** 2).sum()
     loss2.backward()

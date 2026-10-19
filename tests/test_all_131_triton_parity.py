@@ -1,4 +1,9 @@
-# -*- coding: utf-8 -*-
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Exhaustive mathematical parity, gradient sanity, and multi-shape verification
 for all 131 canonical Attention Modules across Triton and PyTorch fallback modes.
 """
@@ -88,7 +93,6 @@ def test_all_131_triton_vs_pytorch_parity(attn_key: str):
     torch.manual_seed(42)
     x = torch.randn(B, T, dim, device=device, dtype=torch.float16)
 
-    # 1. Triton Mode
     tt.FORCE_PYTORCH_FALLBACK = False
     with torch.no_grad():
         try:
@@ -98,7 +102,6 @@ def test_all_131_triton_vs_pytorch_parity(attn_key: str):
         except Exception as e:
             pytest.skip(f"Triton forward failed for {attn_key}: {e}")
 
-    # 2. PyTorch Fallback Mode
     tt.FORCE_PYTORCH_FALLBACK = True
     with torch.no_grad():
         try:
@@ -109,11 +112,9 @@ def test_all_131_triton_vs_pytorch_parity(attn_key: str):
             pytest.skip(f"PyTorch ref forward failed for {attn_key}: {e}")
     tt.FORCE_PYTORCH_FALLBACK = False
 
-    # Check finite
     assert not torch.isnan(out_triton).any(), f"NaN in Triton output for {attn_key}"
     assert not torch.isnan(out_ref).any(), f"NaN in Ref output for {attn_key}"
 
-    # Compute cosine similarity
     ot_flat = out_triton.float().reshape(-1)
     or_flat = out_ref.float().reshape(-1)
     cos_sim = F.cosine_similarity(ot_flat.unsqueeze(0), or_flat.unsqueeze(0)).item()

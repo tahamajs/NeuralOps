@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Sliding Window Attention Autograd Interface
 
 Hardware-accelerated CUDA C++ autograd implementation with analytical gradients and three-level fallback dispatch.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -76,7 +80,6 @@ def _sliding_window_triton_fallback(
     num_sinks: int = 4,
     scale: float | None = None,
 ) -> torch.Tensor | None:
-    # Standard Triton sliding_window kernel handles window_size without attention sinks
     if num_sinks > 0:
         return None
 

@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Comprehensive test suite for neuralops.core.triton_kernels.linear_attn.
 
@@ -19,9 +25,6 @@ from neuralops.core.triton_kernels._common import HAS_TRITON, linear_attn_pytorc
 from neuralops.core.triton_kernels.linear_attn import fwd, bwd, is_supported
 
 
-# ═══════════════════════════════════════════════════
-# Test fixtures
-# ═══════════════════════════════════════════════════
 
 @pytest.fixture
 def device():
@@ -48,11 +51,10 @@ def reference_linear_attn_pytorch(q, k, v, is_causal=False, phi="elu+1", eps=1e-
     v_f = v.float()
 
     if not is_causal:
-        # KV = sum_j k_j^T v_j
-        KV = torch.matmul(k_phi.transpose(-2, -1), v_f)  # [B, H, D_k, D_v]
-        Z = k_phi.sum(dim=-2, keepdim=True)              # [B, H, 1, D_k]
-        num = torch.matmul(q_phi, KV)                    # [B, H, N, D_v]
-        denom = torch.matmul(q_phi, Z.transpose(-2, -1)) # [B, H, N, 1]
+        KV = torch.matmul(k_phi.transpose(-2, -1), v_f)
+        Z = k_phi.sum(dim=-2, keepdim=True)
+        num = torch.matmul(q_phi, KV)
+        denom = torch.matmul(q_phi, Z.transpose(-2, -1))
         if phi in ("elu+1", "relu", "softmax_free"):
             denom_safe = torch.clamp(denom, min=eps)
         else:
@@ -65,9 +67,9 @@ def reference_linear_attn_pytorch(q, k, v, is_causal=False, phi="elu+1", eps=1e-
         S = torch.zeros(B, H, D_k, D_v, device=q.device, dtype=torch.float32)
         Z = torch.zeros(B, H, D_k, device=q.device, dtype=torch.float32)
         for t in range(N):
-            q_t = q_phi[:, :, t, :]  # [B, H, D_k]
-            k_t = k_phi[:, :, t, :]  # [B, H, D_k]
-            v_t = v_f[:, :, t, :]    # [B, H, D_v]
+            q_t = q_phi[:, :, t, :]
+            k_t = k_phi[:, :, t, :]
+            v_t = v_f[:, :, t, :]
 
             S = S + torch.einsum("bhi,bhj->bhij", k_t, v_t)
             Z = Z + k_t
@@ -85,9 +87,6 @@ def reference_linear_attn_pytorch(q, k, v, is_causal=False, phi="elu+1", eps=1e-
     return out.to(q.dtype)
 
 
-# ═══════════════════════════════════════════════════
-# Numerical correctness
-# ═══════════════════════════════════════════════════
 
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float16])
 @pytest.mark.parametrize("phi", ["elu+1", "relu", "identity"])
@@ -105,10 +104,8 @@ def test_linear_attn_correctness(device, dtype, phi, is_causal, batch, num_heads
 
     if phi == "identity":
         tol = {torch.float32: 5e-2, torch.float16: 1e-1}[dtype]
-        # For unbounded signed linear attention, relative error or close correlation is evaluated
         close = torch.allclose(out, ref, atol=tol, rtol=tol)
         if not close:
-            # Check cosine similarity across tokens
             cos_sim = F.cosine_similarity(out.flatten(start_dim=2), ref.flatten(start_dim=2), dim=-1)
             assert cos_sim.min() > 0.95
     else:
@@ -116,9 +113,6 @@ def test_linear_attn_correctness(device, dtype, phi, is_causal, batch, num_heads
         assert torch.allclose(out, ref, atol=tol, rtol=tol)
 
 
-# ═══════════════════════════════════════════════════
-# Edge cases & Single token
-# ═══════════════════════════════════════════════════
 
 def test_linear_attn_single_token(device):
     """Single token sequence (seq_len = 1)."""
@@ -140,9 +134,6 @@ def test_linear_attn_non_power_of_2(device):
     assert torch.isfinite(out).all()
 
 
-# ═══════════════════════════════════════════════════
-# Fallback path & Determinism
-# ═══════════════════════════════════════════════════
 
 def test_linear_attn_cpu_fallback():
     """Verify fallback executes cleanly on CPU."""
@@ -164,9 +155,6 @@ def test_linear_attn_deterministic(device):
     assert torch.equal(out1, out2)
 
 
-# ═══════════════════════════════════════════════════
-# Gradient flow
-# ═══════════════════════════════════════════════════
 
 def test_linear_attn_gradient(device):
     """Gradients propagate back to q, k, and v."""

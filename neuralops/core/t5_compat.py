@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 T5 Architecture Compatibility Engine
 
 Relative position bias and cross-attention compatibility adapters tailored for T5 encoder-decoder models.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -88,8 +92,8 @@ def compute_t5_bias(
         num_buckets=num_buckets,
         max_distance=max_distance,
     )
-    values = relative_attention_bias(rp_bucket)  # [query_len, key_len, num_heads]
-    values = values.permute([2, 0, 1]).unsqueeze(0)  # [1, num_heads, query_len, key_len]
+    values = relative_attention_bias(rp_bucket)
+    values = values.permute([2, 0, 1]).unsqueeze(0)
     return values
 
 
@@ -160,7 +164,6 @@ class T5AttentionMixin:
         d = getattr(self, "head_dim", 64)
         device = hidden_states.device
 
-        # 1. Projections
         q_mod = getattr(self, "q_proj", getattr(self, "q", getattr(self, "query", None)))
         k_mod = getattr(self, "k_proj", getattr(self, "k", getattr(self, "key", None)))
         v_mod = getattr(self, "v_proj", getattr(self, "v", getattr(self, "value", None)))
@@ -170,7 +173,6 @@ class T5AttentionMixin:
         K = k_mod(kv_input).view(B, N_k, H, d).transpose(1, 2)
         V = v_mod(kv_input).view(B, N_k, H, d).transpose(1, 2)
 
-        # 2. Position bias handling (T5 standard: without sqrt(d) scaling)
         scores = torch.matmul(Q, K.transpose(-2, -1))
 
         if position_bias is None:
@@ -189,13 +191,11 @@ class T5AttentionMixin:
 
         scores = scores + position_bias.to(scores.dtype)
 
-        # 3. 2D mask handling if provided
         if attention_mask is not None and attention_mask.dim() == 2:
             min_val = torch.finfo(scores.dtype).min if scores.dtype.is_floating_point else -1e4
             extended_mask = attention_mask.unsqueeze(1).unsqueeze(2) == 0
             scores = scores.masked_fill(extended_mask, min_val)
 
-        # 4. FP16 safe softmax in FP32
         probs = F.softmax(scores.float(), dim=-1).to(scores.dtype)
         probs = torch.nan_to_num(probs, nan=0.0)
 
@@ -203,7 +203,6 @@ class T5AttentionMixin:
         if dropout is not None and callable(dropout):
             probs = dropout(probs)
 
-        # 5. Output projection
         context = torch.matmul(probs, V).transpose(1, 2).contiguous().view(B, N_q, -1)
         output = o_mod(context) if o_mod is not None else context
         return output, position_bias

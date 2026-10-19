@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Unit tests for production-hardened ARMOR Pruner.
 
@@ -106,7 +112,7 @@ class TestARMORHardened(unittest.TestCase):
     def test_lora_linear_and_conv1d_detection(self):
         """1. Verify LoRALinear and Conv1D detection, shape preservation, and LoRA preservation."""
         model = ToyTransformer()
-        orig_conv1d_shape = model.attn.c_attn.weight.shape  # [64, 64]
+        orig_conv1d_shape = model.attn.c_attn.weight.shape
 
         compressor = ARMORPruner(
             model,
@@ -118,18 +124,14 @@ class TestARMORHardened(unittest.TestCase):
         )
         compressed_model, stats = compressor.compress()
 
-        # Check Conv1D was replaced by ARMORLinear (or preserved shape)
         c_attn_mod = compressed_model.attn.c_attn
         self.assertTrue(isinstance(c_attn_mod, (ARMORLinear, MockConv1D)))
         self.assertEqual(c_attn_mod.out_features if hasattr(c_attn_mod, "out_features") else c_attn_mod.nf, 64)
 
-        # Check LoRALinear wrapper preserved
         self.assertIsInstance(compressed_model.attn.o_proj, MockLoRALinear)
-        # Outer LoRA weights zeroed and frozen per architectural contract
         self.assertFalse(compressed_model.attn.o_proj.lora_A.requires_grad)
         self.assertFalse(compressed_model.attn.o_proj.lora_B.requires_grad)
 
-        # Base layer inside LoRALinear should be ARMORLinear
         self.assertIsInstance(compressed_model.attn.o_proj.base_layer, ARMORLinear)
         self.assertFalse(compressed_model.attn.o_proj.base_layer.sparse_weight.requires_grad)
         self.assertTrue(compressed_model.attn.o_proj.base_layer.lora_A.requires_grad)
@@ -161,7 +163,7 @@ class TestARMORHardened(unittest.TestCase):
 
         compressor = ARMORPruner(
             model,
-            max_error=0.001,  # triggers 100% fallback
+            max_error=0.001,
             fallback_to_original=True,
             target_attention_only=True,
         )
@@ -171,7 +173,6 @@ class TestARMORHardened(unittest.TestCase):
         self.assertIn("attn.q_proj", compressor.fallback_layers)
         self.assertTrue(torch.equal(model.attn.q_proj.weight, orig_q_w))
 
-        # Fallback parameters must be frozen
         for name in compressor.fallback_layers:
             mod = dict(model.named_modules())[name]
             for p in mod.parameters():
@@ -239,7 +240,6 @@ class TestARMORHardened(unittest.TestCase):
 
         x = torch.randn(4, 16, in_dim)
 
-        # Expected calculation
         x_flat = x.reshape(-1, in_dim)
         w_eff = (linear.weight.data * mask)
         expected_sparse = F.linear(x_flat, w_eff)

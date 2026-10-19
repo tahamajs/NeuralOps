@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -5,14 +12,6 @@
 
 namespace neuralops { namespace cuda {
 
-// Spectral Mamba Hard-Threshold Frequency Gate Kernel:
-// Form: out[row, d] = x[row, d] * (fabsf(freq_coeffs[d]) > threshold ? freq_coeffs[d] : 0.0f)
-//
-// Hardware-level optimization:
-// 1. 2D Grid mapping (rows = num_tokens, cols = D): Eliminates slow 32-bit integer modulo `idx % D` completely.
-// 2. 128-bit Vectorized Memory Transactions (float4 / half8): Maximizes LSU instruction issue efficiency on Ada Lovelace.
-// 3. Shared Memory / Register caching of gated frequency coefficients across row elements.
-// 4. Branchless predicated hardware selection.
 template <typename scalar_t>
 __global__ void __launch_bounds__(256) spectral_mamba_fwd_kernel(
     scalar_t* __restrict__ out,
@@ -38,7 +37,6 @@ __global__ void __launch_bounds__(256) spectral_mamba_fwd_kernel(
     }
 }
 
-// 128-bit Vectorized FP32 path (4 floats = 16 bytes per memory transaction)
 __global__ void __launch_bounds__(256) spectral_mamba_fwd_vectorized_fp32_kernel(
     float* __restrict__ out,
     const float* __restrict__ x,
@@ -89,7 +87,7 @@ __global__ void __launch_bounds__(256) spectral_mamba_fwd_broadcast_kernel(
     out[idx] = from_float<scalar_t>(x_val * g);
 }
 
-}} // namespace neuralops::cuda
+}}
 
 torch::Tensor spectral_mamba_fwd(
     const torch::Tensor& x,
@@ -132,7 +130,6 @@ torch::Tensor spectral_mamba_fwd(
     const int rows = total / D;
     constexpr int THREADS = 256;
 
-    // Fast 128-bit vectorized path for FP32 aligned tensors
     if (x.scalar_type() == at::ScalarType::Float && (D % 4 == 0)) {
         const int D4 = D / 4;
         const int blocks_x = std::min(65535, (D4 + THREADS - 1) / THREADS);

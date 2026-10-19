@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Experiment Logging Integration
 
 Connects experiment logging backends with external tracking platforms like WandB and MLflow.
-
-Author: Taha Majlesi
 """
 
 from pathlib import Path
@@ -47,7 +51,6 @@ def auto_setup(
     metrics_path = base_dir / run_id / "logs" / "metrics.jsonl"
     tracker = MetricsTracker(str(metrics_path))
 
-    # Save config snapshot for reproducibility
     import json
 
     config_dir = base_dir / run_id / "artifacts"

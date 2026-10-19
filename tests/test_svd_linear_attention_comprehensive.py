@@ -1,3 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 import pytest
 import torch
 import torch.nn as nn
@@ -30,7 +37,6 @@ def test_svd_linear_attention_forward():
 def test_svd_linear_attention_copy_weights_and_lora():
     cfg = DummyConfig(hidden_size=64, num_heads=4, head_dim=16)
     
-    # Mock source layer like RoBERTa SelfAttention
     class MockInnerAttn(nn.Module):
         def __init__(self):
             super().__init__()
@@ -42,7 +48,6 @@ def test_svd_linear_attention_copy_weights_and_lora():
     mock_src = MockInnerAttn()
     attn = SVDLinearAttention(config=cfg, old_attn=mock_src, rank=16, freeze_svd=True, lora_rank=8)
 
-    # Check SVD weights are frozen and LoRA is trainable
     assert attn.q_proj.U.requires_grad is False
     assert attn.q_proj.V.requires_grad is False
     assert attn.q_proj.lora_A.requires_grad is True
@@ -58,7 +63,6 @@ def test_svd_linear_attention_copy_weights_and_lora():
 
 
 def test_svd_linear_attention_gpt2_conv1d():
-    # Mock Conv1D from GPT-2
     class MockConv1D(nn.Module):
         def __init__(self, nf, nx):
             super().__init__()
@@ -72,7 +76,7 @@ def test_svd_linear_attention_gpt2_conv1d():
     class MockGPT2Attn(nn.Module):
         def __init__(self):
             super().__init__()
-            self.c_attn = MockConv1D(192, 64)  # 3 * 64
+            self.c_attn = MockConv1D(192, 64)
             self.c_proj = MockConv1D(64, 64)
 
     mock_gpt2 = MockGPT2Attn()
@@ -85,7 +89,6 @@ def test_svd_linear_attention_gpt2_conv1d():
 
 
 def test_odd_dim_rope_safety():
-    # Odd dimension head_dim = 17
     B, H, N, D = 2, 4, 8, 17
     q = torch.randn(B, H, N, D)
     k = torch.randn(B, H, N, D)

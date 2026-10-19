@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Unit tests for Phase 4 ShadowTwin distillation, homotopy alpha, and finalization."""
 
 import torch
@@ -44,12 +50,10 @@ def test_shadow_twin_distillation_and_finalization():
         inherit_weights=True,
     )
 
-    # Enable shadow twin & patch forward
     enable_shadow_twin(bridge, stage="stage2_block_cloning")
     patch_bridge_for_shadow_twin(bridge)
     assert bridge.teacher_branch is not None
 
-    # Forward with shadow twin active
     B, T, D = 2, 8, 64
     x = torch.randn(B, T, D, requires_grad=True)
 
@@ -58,15 +62,12 @@ def test_shadow_twin_distillation_and_finalization():
     assert loss is not None
     assert loss.item() > 0.0
 
-    # Backprop through distillation loss
     loss.backward()
     assert x.grad is not None
 
-    # Test homotopy alpha change
     set_surgery_alpha(bridge, alpha=0.5)
     assert bridge.alpha == 0.5
 
-    # Test finalization
     finalize_surgery(bridge)
     assert bridge.teacher_branch is None
     assert bridge.alpha == 1.0

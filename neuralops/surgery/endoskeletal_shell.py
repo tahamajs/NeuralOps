@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Endoskeletal Surgery Shell
 
 Executes warm-start weight transfers and registers attention mechanisms with HuggingFace.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -21,9 +25,6 @@ from neuralops.surgery.scanner import AttentionTargetSpec
 logger = logging.getLogger("NeuralOps.Surgery.EndoskeletalShell")
 
 
-# ==============================================================================
-# 1. HuggingFace ALL_ATTENTION_FUNCTIONS Registration
-# ==============================================================================
 
 def register_neuralops_with_huggingface() -> None:
     """
@@ -52,18 +53,14 @@ def register_neuralops_with_huggingface() -> None:
             is_causal: Optional[bool] = None,
             **kwargs: Any,
         ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
-            # query: (B, H_q, T, D_h)
-            # key, value: (B, H_kv, T, D_h)
             B, H_q, T, D_h = query.shape
             H_kv = key.shape[1]
 
-            # Broadcast GQA if H_q != H_kv
             if H_q != H_kv:
                 repeat_factor = H_q // H_kv
                 key = torch.repeat_interleave(key, repeat_factor, dim=1)
                 value = torch.repeat_interleave(value, repeat_factor, dim=1)
 
-            # Route through NeuralOps kernel or registered class
             attn_cls = ATTENTION_REGISTRY.get(attn_name)
             if hasattr(module, "_neuralops_submodule") and module._neuralops_submodule is not None:
                 core_sub = module._neuralops_submodule
@@ -80,12 +77,10 @@ def register_neuralops_with_huggingface() -> None:
                 core_sub = None
 
             if core_sub is not None:
-                # Transpose back to (B, T, H*D) or pass Q, K, V
                 q_flat = query.transpose(1, 2).contiguous().view(B, T, H_q * D_h)
                 out, _ = core_sub(q_flat, attention_mask=attention_mask, is_causal=is_causal, **kwargs)
                 out = out.view(B, T, H_q, D_h)
             else:
-                # Fallback to standard PyTorch SDPA
                 assert callable(F.scaled_dot_product_attention), "F.scaled_dot_product_attention is not callable"
                 out = F.scaled_dot_product_attention(
                     query, key, value, attn_mask=attention_mask, is_causal=bool(is_causal)
@@ -96,7 +91,6 @@ def register_neuralops_with_huggingface() -> None:
 
         return _hf_neuralops_attention
 
-    # Register each attention mechanism
     for name in ATTENTION_REGISTRY.keys():
         hf_key = f"neuralops_{name}"
         if hf_key not in all_attn_fn:
@@ -106,16 +100,12 @@ def register_neuralops_with_huggingface() -> None:
         all_attn_fn["neuralops"] = _make_hf_attention_callable("cosformer")
 
 
-# Auto-register upon importing endoskeletal_shell
 try:
     register_neuralops_with_huggingface()
 except (RuntimeError, AttributeError, ValueError) as e:
     logger.debug("Auto-registration with HuggingFace skipped: %s", e)
 
 
-# ==============================================================================
-# 2. Sidecar Gate & Short-Convolution Branch
-# ==============================================================================
 
 class SidecarGateBranch(nn.Module):
     """
@@ -141,21 +131,17 @@ class SidecarGateBranch(nn.Module):
         self.gate_proj = nn.Linear(d_model, num_heads, bias=True)
 
         with torch.no_grad():
-            # Identity-like conv init
             self.conv1d.weight.zero_()
             self.conv1d.weight[:, :, -1] = 1.0
             if self.conv1d.bias is not None:
                 self.conv1d.bias.zero_()
-            # Long-term retention init
             nn.init.constant_(self.gate_proj.bias, 2.5)
 
     def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
-        # x: (B, T, D)
         B, T, D = x.shape
         if x.is_cuda and x.dtype in (torch.float16, torch.bfloat16):
             try:
                 from neuralops.core.triton_kernels.elementwise import dynconv1d_fwd_triton
-                # conv1d weight: (D, 1, K)
                 w = self.conv1d.weight.squeeze(1)
                 b = self.conv1d.bias
                 x_conv = dynconv1d_fwd_triton(x, w, b)
@@ -168,9 +154,6 @@ class SidecarGateBranch(nn.Module):
         return x_conv, gates
 
 
-# ==============================================================================
-# 3. Warm-Start Weight Extractor & Transfer
-# ==============================================================================
 
 def transfer_pretrained_qkv_weights(
     spec: AttentionTargetSpec,
@@ -186,7 +169,6 @@ def transfer_pretrained_qkv_weights(
 
     W_q, b_q, W_k, b_k, W_v, b_v, W_o, b_o = spec.extracted_qkv
 
-    # Identify projection attributes on target new_module
     target_q = getattr(new_module, "q_proj", getattr(new_module, "query", getattr(new_module, "q", None)))
     target_k = getattr(new_module, "k_proj", getattr(new_module, "key", getattr(new_module, "k", None)))
     target_v = getattr(new_module, "v_proj", getattr(new_module, "value", getattr(new_module, "v", None)))
@@ -204,7 +186,6 @@ def transfer_pretrained_qkv_weights(
             if tgt_w.shape == W.shape:
                 tgt_w.copy_(W.to(device=tgt_w.device, dtype=tgt_w.dtype))
             elif tgt_w.ndim == 2 and W.ndim == 2:
-                # Handle head expansion or GQA repeat
                 min_out = min(tgt_w.shape[0], W.shape[0])
                 min_in = min(tgt_w.shape[1], W.shape[1])
                 tgt_w[:min_out, :min_in].copy_(W[:min_out, :min_in].to(device=tgt_w.device, dtype=tgt_w.dtype))
@@ -223,9 +204,6 @@ def transfer_pretrained_qkv_weights(
     _copy_param(target_o, W_o, b_o)
 
 
-# ==============================================================================
-# 4. Universal Attention Bridge
-# ==============================================================================
 
 class UniversalAttentionBridge(nn.Module):
     """
@@ -249,27 +227,22 @@ class UniversalAttentionBridge(nn.Module):
         self.embed_dim = spec.embed_dim
         self.num_heads = spec.num_heads
 
-        # Extract argument signature of original forward
         self._orig_sig = inspect.signature(orig_module.forward)
 
-        # Warm start weight transfer
         if inherit_weights:
             transfer_pretrained_qkv_weights(spec, self.new_attention)
 
-        # Optional sidecar gate branch for recurrent/linear attention
         self.sidecar = (
             SidecarGateBranch(d_model=self.embed_dim, num_heads=self.num_heads)
             if attach_sidecar
             else None
         )
 
-        # Teacher / shadow twin placeholder
         self.teacher_branch: Optional[nn.Module] = None
         self.alpha: float = 1.0
         self.stage: str = "stage3_end_to_end"
 
     def forward(self, *args: Any, **kwargs: Any) -> Any:
-        # Extract primary hidden states from args or kwargs
         if len(args) > 0:
             hidden_states = args[0]
             rest_args = args[1:]
@@ -283,15 +256,12 @@ class UniversalAttentionBridge(nn.Module):
         if hidden_states is None:
             raise ValueError(f"Could not extract hidden states from forward call {args}, {kwargs}")
 
-        # Apply sidecar short-conv if present
         if self.sidecar is not None:
             hidden_states, _ = self.sidecar(hidden_states)
 
         assert callable(self.new_attention), f"{type(self).__name__}.new_attention is not callable"
-        # Forward through new attention mechanism
         attn_out = self.new_attention(hidden_states, *rest_args, **kwargs)
 
-        # Unpack attention output
         if isinstance(attn_out, tuple):
             core_tensor = attn_out[0]
             extra_outputs = attn_out[1:]
@@ -299,15 +269,12 @@ class UniversalAttentionBridge(nn.Module):
             core_tensor = attn_out
             extra_outputs = ()
 
-        # Pattern-specific return packaging
         if self.pattern_type == "bert_nested":
-            # In BertSelfAttention, the return is (context_layer,) or (context_layer, attention_probs)
             if kwargs.get("output_attentions", False):
                 return (core_tensor, None)
             return (core_tensor,)
 
         if self.pattern_type == "conv1d_gpt2":
-            # GPT2Attention returns (attn_output, present) or (attn_output, present, attentions)
             output_attentions = kwargs.get("output_attentions", False)
             present = extra_outputs[0] if len(extra_outputs) > 0 else None
             ret = [core_tensor, present]
@@ -316,12 +283,9 @@ class UniversalAttentionBridge(nn.Module):
             return tuple(ret)
 
         if self.pattern_type == "split_4proj":
-            # Modern causal decoders (Llama, Mistral, Qwen) expect (attn_output, attn_weights) or (attn_output, attn_weights, past_key_value)
-            # When caller expects 2 elements: (attn_output, attn_weights)
             attn_weights = extra_outputs[0] if len(extra_outputs) > 0 else None
             return (core_tensor, attn_weights)
 
-        # Standard HuggingFace tuple preservation
         if len(extra_outputs) > 0:
             return (core_tensor, *extra_outputs)
 

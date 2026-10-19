@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Definitive Master Verification Suite for NeuralOps:
 1. All 131 Attention Mechanisms (forward, backward, causal, bidirectional, multi-dim D={64, 128, 256}).
@@ -27,9 +33,6 @@ from neuralops.trainer.rl_alignment.preference_and_onpolicy import (
 from neuralops.trainer.ttt.test_time_trainer import TTTLinearAttentionLayer
 
 
-# =========================================================================
-# 1. ATTENTION TEST SUITE: ALL 131 ATTENTIONS
-# =========================================================================
 
 @pytest.mark.parametrize("dim", [64, 128, 256])
 def test_all_131_attentions_multi_dim_forward_and_backward(dim):
@@ -75,9 +78,6 @@ def test_all_131_attentions_factory_dispatch():
             assert out_t.shape == (1, 16, 128), f"Factory attention {name} produced unexpected shape {out_t.shape}"
 
 
-# =========================================================================
-# 2. COMPRESSION ENGINES: ALL 72 COMPRESSORS
-# =========================================================================
 
 def test_all_72_compressors_fallback_false_on_gpt2():
     """Verify all 72 registered compressors compress GPT-2 layers with fallback_to_original=False without crashing."""
@@ -123,16 +123,12 @@ def test_all_72_compressors_fallback_false_on_gpt2():
             pytest.fail(f"Forward pass after {comp_name} compression failed: {e}")
 
 
-# =========================================================================
-# 3. 6-PILLAR DISTILLATION & POST-TRAINING ENGINE
-# =========================================================================
 
 def test_distillation_losses_numerical_soundness():
     """Verify LogitDistillationLoss, BlockwiseOperatorCloningLoss, and LinearCKALoss compute valid gradients."""
     student_logits = torch.randn(2, 16, 64, requires_grad=True)
     teacher_logits = torch.randn(2, 16, 64)
 
-    # 1. Forward KL Logit Distillation
     logit_kd = LogitDistillationLoss(mode="forward_kl", temperature=2.0)
     loss_kd = logit_kd(student_logits, teacher_logits)
     assert loss_kd.item() >= 0.0
@@ -140,7 +136,6 @@ def test_distillation_losses_numerical_soundness():
     assert student_logits.grad is not None
     student_logits.grad.zero_()
 
-    # 2. Blockwise Operator Cloning Loss (LoLCATs Attention Transfer)
     block_clone = BlockwiseOperatorCloningLoss(lambda_cos=0.5, lambda_norm=0.1)
     loss_clone = block_clone(student_logits, teacher_logits)
     assert loss_clone.item() >= 0.0
@@ -148,7 +143,6 @@ def test_distillation_losses_numerical_soundness():
     assert student_logits.grad is not None
     student_logits.grad.zero_()
 
-    # 3. Linear CKA Loss
     cka_loss_fn = LinearCKALoss()
     loss_cka = cka_loss_fn(student_logits, teacher_logits)
     assert loss_cka.item() >= 0.0
@@ -161,7 +155,6 @@ def test_rl_alignment_losses_simpo_orpo():
     chosen_lp = torch.tensor([[-2.5, -1.8, -1.2]], requires_grad=True)
     rejected_lp = torch.tensor([[-3.8, -4.2, -3.1]], requires_grad=True)
 
-    # 1. SimPO (Reference-Free Preference Optimization)
     simpo = SimPOLoss(beta=2.0, gamma=0.5)
     l_simpo = simpo(chosen_lp, rejected_lp)
     assert l_simpo.item() > 0.0
@@ -169,7 +162,6 @@ def test_rl_alignment_losses_simpo_orpo():
     assert chosen_lp.grad is not None
     chosen_lp.grad.zero_()
 
-    # 2. ORPO (Odds Ratio Preference Optimization)
     sft_loss = torch.tensor(1.5, requires_grad=True)
     orpo = ORPOLoss(lambda_orpo=0.1)
     l_orpo = orpo(sft_loss, chosen_lp, rejected_lp)
@@ -178,7 +170,6 @@ def test_rl_alignment_losses_simpo_orpo():
     sft_lp_grad = sft_loss.grad
     assert sft_lp_grad is not None
 
-    # 3. Dynamic Routing & Rank Controller
     router = DynamicRoutingAndRankRL(num_ranks_or_blocks=4, target_budget_ratio=0.5)
     logits = torch.randn(2, 4, requires_grad=True)
     decisions = router.sample_routing(logits, tau=1.0, hard=True)

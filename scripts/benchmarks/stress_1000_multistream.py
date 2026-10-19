@@ -1,6 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Stress 1000 multistream module.
-
-Author: Taha Majlesi
 """
 
 import os
@@ -35,19 +39,15 @@ def main():
     total_mem_gb = torch.cuda.get_device_properties(0).total_memory / (1024**3)
     print(f"Target GPU: {device_name} ({total_mem_gb:.2f} GB VRAM)")
 
-    # 3 Independent CUDA Streams
-    stream1 = torch.cuda.Stream(device=device)  # FlashAttention
-    stream2 = torch.cuda.Stream(device=device)  # SSM Recurrent Scan
-    stream3 = torch.cuda.Stream(device=device)  # Low-Rank SVD GEMM
+    stream1 = torch.cuda.Stream(device=device)
+    stream2 = torch.cuda.Stream(device=device)
+    stream3 = torch.cuda.Stream(device=device)
 
-    # Workload Tensors
-    # Stream 1: FlashAttention / Flash GQA
     B1, H1, S1, D1 = 4, 8, 1024, 64
     q = torch.randn(B1, H1, S1, D1, device=device, dtype=torch.float16)
     k = torch.randn(B1, H1, S1, D1, device=device, dtype=torch.float16)
     v = torch.randn(B1, H1, S1, D1, device=device, dtype=torch.float16)
 
-    # Stream 2: Selective SSM Scan
     B2, D2, L2, N2 = 4, 64, 1024, 16
     u = torch.randn(B2, D2, L2, device=device, dtype=torch.float32)
     delta = F.softplus(torch.randn(B2, D2, L2, device=device, dtype=torch.float32) - 4.0)
@@ -55,19 +55,17 @@ def main():
     B_param = torch.randn(B2, N2, L2, device=device, dtype=torch.float32) * 0.1
     C_param = torch.randn(B2, N2, L2, device=device, dtype=torch.float32) * 0.1
 
-    # Stream 3: Low-Rank SVD GEMM
     M3, K3, R3 = 4096, 768, 64
     X = torch.randn(M3, K3, device=device, dtype=torch.float16)
     V_r = torch.randn(R3, K3, device=device, dtype=torch.float16)
     U_r = torch.randn(K3, R3, device=device, dtype=torch.float16)
     alpha = torch.randn(R3, device=device, dtype=torch.float16)
 
-    # Background Heavy Memory Load Allocation: 4.5 GB of allocated VRAM tensors to simulate heavy LLM residency
     print("Allocating heavy background memory load (4.5 GB)...")
     background_tensors = []
-    num_chunks = 9  # 9 * 512 MB = 4608 MB (~4.5 GB)
+    num_chunks = 9
     for _ in range(num_chunks):
-        background_tensors.append(torch.empty(256 * 1024 * 512, dtype=torch.float32, device=device))  # 512 MB chunk
+        background_tensors.append(torch.empty(256 * 1024 * 512, dtype=torch.float32, device=device))
 
     torch.cuda.synchronize()
     bg_mem = get_cuda_mem()
@@ -75,7 +73,6 @@ def main():
         f"Background load active: Allocated = {bg_mem['allocated_mb']:.2f} MB, Reserved = {bg_mem['reserved_mb']:.2f} MB"
     )
 
-    # Warmup under heavy load
     print("Warming up concurrent kernels under load...")
     for _ in range(25):
         with torch.cuda.stream(stream1):
@@ -111,7 +108,6 @@ def main():
 
         torch.cuda.synchronize()
 
-        # Check for NaNs/Infs periodically
         if it % 100 == 0:
             nan_cnt = (
                 int(torch.isnan(p1).sum().item())
@@ -160,7 +156,6 @@ def main():
     print(f"Total NaNs Detected:   {total_nans}")
     print(f"Total Infs Detected:   {total_infs}")
 
-    # Release background memory
     del background_tensors
     gc.collect()
     torch.cuda.empty_cache()

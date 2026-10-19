@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Tests for neuralops.data.glue_loader module."""
 
 import pytest
@@ -46,7 +52,6 @@ class TestGlueLocalLoader:
 
     @patch("datasets.load_from_disk")
     def test_load_from_disk_if_exists(self, mock_load_from_disk, tmp_path, monkeypatch):
-        # Patch GLUE_LOCAL_DIR to point to tmp_path
         task_dir = tmp_path / "sst2"
         task_dir.mkdir()
         monkeypatch.setattr("neuralops.data.glue_loader.GLUE_LOCAL_DIR", tmp_path)

@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Unit tests for BenchmarkDatasetRegistry and load_benchmark_dataset.
 Tests offline synthetic fallback, registered benchmarks, and data formats.
 """
@@ -113,7 +119,6 @@ class TestBenchmarkRegistryExtended:
         assert len(glue_names) > 0
 
     def test_load_unregistered_fallback(self):
-        # Unregistered dataset safely falls back to synthetic generator
         res = load_benchmark_dataset("nonexistent_dataset_xyz", use_synthetic=True, max_samples=3, return_dataloader=False)
         assert len(res) == 3
         assert "text" in res[0]

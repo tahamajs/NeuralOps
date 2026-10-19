@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 State Space Model State Update
 
 Computes recurrent state updates for SSM and RWKV architectures with fused hidden state propagation.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -66,13 +70,11 @@ if HAS_TRITON:
 
         offs_n = tl.arange(0, N_SZ)
 
-        # Load A for this channel: [N_SZ]
         a_ptrs = A_ptr + d_id * stride_ad + offs_n * stride_an
         a_vec = tl.load(a_ptrs)
 
         d_val = tl.load(D_ptr + d_id) if HAS_D else 0.0
 
-        # Load or initialize state vector h \in [N_SZ]
         if HAS_INIT_STATE:
             s_in_ptrs = State_in_ptr + b_id * stride_sb + d_id * stride_sd + offs_n * stride_sn
             h = tl.load(s_in_ptrs).to(tl.float32)
@@ -80,7 +82,6 @@ if HAS_TRITON:
             h = tl.zeros((N_SZ,), dtype=tl.float32)
 
         for t in range(0, L_SZ):
-            # Load inputs at step t
             u_val = tl.load(U_ptr + b_id * stride_ub + t * stride_ul + d_id * stride_ud).to(
                 tl.float32
             )
@@ -93,21 +94,16 @@ if HAS_TRITON:
             b_vec = tl.load(b_ptrs).to(tl.float32)
             c_vec = tl.load(c_ptrs).to(tl.float32)
 
-            # Discretize: dA = exp(delta * A), dB = delta * B
             dA = tl.exp(delta_val * a_vec)
             dB = delta_val * b_vec
 
-            # Update state: h = h * dA + u * dB
             h = h * dA + u_val * dB
 
-            # Output: y = sum(h * C) + D * u
             y_val = tl.sum(h * c_vec) + (d_val * u_val if HAS_D else 0.0)
 
-            # Store output
             y_ptr = Out_ptr + b_id * stride_yb + t * stride_yl + d_id * stride_yd
             tl.store(y_ptr, y_val.to(Out_ptr.dtype.element_ty))
 
-        # Store final state
         s_out_ptrs = State_out_ptr + b_id * stride_sb + d_id * stride_sd + offs_n * stride_sn
         tl.store(s_out_ptrs, h.to(State_out_ptr.dtype.element_ty))
 
@@ -128,7 +124,6 @@ class _TritonStateUpdateAutogradFunction(torch.autograd.Function):
         B_sz, L_sz, D_sz = u.shape
         N_sz = A.shape[-1]
 
-        # Clamp N_sz to nearest power of 2 for Triton compile: 16, 32, 64
         if N_sz not in (8, 16, 32, 64):
             return state_update_pytorch_fallback(u, delta, A, B, C, D=D, state=state, eps=eps)
 
@@ -143,7 +138,6 @@ class _TritonStateUpdateAutogradFunction(torch.autograd.Function):
             state.contiguous() if has_init else torch.empty((1,), dtype=u.dtype, device=u.device)
         )
 
-        # Delta stride handling
         delta_c = (
             delta.expand(B_sz, L_sz, D_sz).contiguous()
             if delta.dim() == 2 or delta.shape[-1] != D_sz
@@ -302,9 +296,6 @@ def bwd(
     return grads
 
 
-# ===========================================================================
-# Hardware-Adaptive Single-Step Recurrent Kernels (SM >= 7.0 & CPU/Fallback)
-# ===========================================================================
 
 if HAS_TRITON:
     @triton.jit
@@ -336,7 +327,6 @@ if HAS_TRITON:
         kv_ptrs = KV_ptr + pid_b * stride_kvb + pid_h * stride_kvh + offs_k[:, None] * stride_kvk + offs_v[None, :] * stride_kvv
         kv = tl.load(kv_ptrs).to(tl.float32)
 
-        # S_t = S_{t-1} + k_t \otimes v_t
         kv_new = kv + k[:, None] * v[None, :]
         tl.store(kv_ptrs, kv_new.to(KV_ptr.dtype.element_ty))
 
@@ -345,8 +335,6 @@ if HAS_TRITON:
         z_new = z + k
         tl.store(z_ptrs, z_new.to(Z_ptr.dtype.element_ty))
 
-        # o_t = S_t^T q_t / (<q_t, z_t> + eps)
-        # S_t has shape [Dk, Dv] -> q_t [Dk] @ S_t [Dk, Dv] -> [Dv]
         num = tl.sum(q[:, None] * kv_new, axis=0)
         denom = tl.sum(q * z_new) + eps
         out = num / denom
@@ -379,7 +367,7 @@ if HAS_TRITON:
 
         if IS_VECTOR_GATE:
             gk = tl.load(Gk_ptr + pid_b * stride_gkb + pid_h * stride_gkh + offs_k * stride_gkd).to(tl.float32)
-            decay = tl.exp(gk)  # [Dk]
+            decay = tl.exp(gk)
         else:
             g = tl.load(Gk_ptr + pid_b * stride_gkb + pid_h * stride_gkh).to(tl.float32)
             decay = tl.exp(g)
@@ -387,7 +375,6 @@ if HAS_TRITON:
         kv_ptrs = KV_ptr + pid_b * stride_kvb + pid_h * stride_kvh + offs_k[:, None] * stride_kvk + offs_v[None, :] * stride_kvv
         kv = tl.load(kv_ptrs).to(tl.float32)
 
-        # S_t = decay * S_{t-1} + k_t \otimes v_t
         if IS_VECTOR_GATE:
             kv_new = decay[:, None] * kv + k[:, None] * v[None, :]
         else:
@@ -436,8 +423,6 @@ def fused_recurrent_linear_step(
         )
         return out, kv_state, z_state
 
-    # Exact PyTorch Vectorized Fallback
-    # S_t = S_{t-1} + k_t^T @ v_t
     kv_state = kv_state + torch.einsum("bhk,bhv->bhkv", k_t.float(), v_t.float()).to(kv_state.dtype)
     z_state = z_state + k_t
     num = torch.einsum("bhk,bhkv->bhv", q_t.float(), kv_state.float())
@@ -486,10 +471,9 @@ def fused_recurrent_gla_step(
         )
         return out, kv_state
 
-    # Exact PyTorch Fallback
     decay = torch.exp(gk_t.float()) if gk_t.dtype in (torch.float32, torch.float16, torch.bfloat16) else gk_t.float()
     if is_vec:
-        decay = decay.unsqueeze(-1)  # [B, H, Dk, 1]
+        decay = decay.unsqueeze(-1)
     else:
         decay = decay.view(B, H, 1, 1)
 
@@ -531,7 +515,6 @@ def fused_recurrent_gdn_step(
     elif beta.dim() == 3:
         beta = beta.unsqueeze(-1)
 
-    # v_pred: [B, H, Dv] = sum_k S_{t-1}[k, v] * k_t[k]
     s_float = kv_state.float()
     v_pred = torch.einsum("bhk,bhkv->bhv", k_t.float(), s_float)
     delta_v = v_t.float() - v_pred
@@ -560,13 +543,13 @@ def fused_recurrent_hgrn2_step(
 
     f = f_t.float()
     if f.dim() == 3 and f.shape[-1] == Dk:
-        f = f.unsqueeze(-1)  # [B, H, Dk, 1]
+        f = f.unsqueeze(-1)
     elif f.dim() == 2:
         f = f.view(B, H, 1, 1)
 
     s_float = kv_state.float()
-    k_gated = (1.0 - f) * k_t.float().unsqueeze(-1)  # [B, H, Dk, 1]
-    update = k_gated * v_t.float().unsqueeze(-2)      # [B, H, Dk, Dv]
+    k_gated = (1.0 - f) * k_t.float().unsqueeze(-1)
+    update = k_gated * v_t.float().unsqueeze(-2)
 
     s_new = f * s_float + update
     kv_state = s_new.to(kv_state.dtype)
@@ -588,13 +571,11 @@ def causal_conv1d_step(
     if x_t.dim() == 3:
         x_t = x_t.squeeze(1)
 
-    # conv_weight: [D_inner, 1, K] or [D_inner, K]
     w = conv_weight.squeeze(1) if conv_weight.dim() == 3 else conv_weight
     _K = w.shape[-1]
 
-    # Shift state: [B, D_inner, K-1]
-    state_seq = torch.cat([conv_state, x_t.unsqueeze(-1)], dim=-1)  # [B, D_inner, K]
-    next_state = state_seq[:, :, 1:]                               # [B, D_inner, K-1]
+    state_seq = torch.cat([conv_state, x_t.unsqueeze(-1)], dim=-1)
+    next_state = state_seq[:, :, 1:]
 
     out = (state_seq * w.unsqueeze(0)).sum(dim=-1)
     if conv_bias is not None:
@@ -620,17 +601,14 @@ def fused_recurrent_ssm_step(
     if dt_t.dim() == 3:
         dt_t = dt_t.squeeze(1)
 
-    # A: [D_inner, D_state] or [D_inner]
-    # dt_t: [B, D_inner]
     dt = dt_t.float()
     if A.dim() == 2:
-        dA = torch.exp(dt.unsqueeze(-1) * A.float().unsqueeze(0))  # [B, D_inner, D_state]
+        dA = torch.exp(dt.unsqueeze(-1) * A.float().unsqueeze(0))
     else:
         dA = torch.exp(dt * A.float()).unsqueeze(-1)
 
-    # B_t: [B, D_state] or [B, G, D_state]
     if B_t.dim() == 2:
-        dB = dt.unsqueeze(-1) * B_t.float().unsqueeze(1)  # [B, D_inner, D_state]
+        dB = dt.unsqueeze(-1) * B_t.float().unsqueeze(1)
     else:
         dB = dt.unsqueeze(-1) * B_t.float()
 
@@ -638,7 +616,7 @@ def fused_recurrent_ssm_step(
     ssm_state = h_new.to(ssm_state.dtype)
 
     if C_t.dim() == 2:
-        y = (h_new * C_t.float().unsqueeze(1)).sum(dim=-1)  # [B, D_inner]
+        y = (h_new * C_t.float().unsqueeze(1)).sum(dim=-1)
     else:
         y = (h_new * C_t.float()).sum(dim=-1)
 

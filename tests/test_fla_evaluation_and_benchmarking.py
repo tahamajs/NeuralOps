@@ -1,4 +1,9 @@
-# -*- coding: utf-8 -*-
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 test_fla_evaluation_and_benchmarking.py
 =======================================
@@ -52,9 +57,6 @@ def tiny_causal_lm(device):
     return model.to(device)
 
 
-# ============================================================================
-# 1. EVALUATION: Perplexity & Positional NLL (evaluation.ppl)
-# ============================================================================
 
 def test_ppl_evaluator_synthetic_model(tiny_causal_lm, device):
     """Test PerplexityEvaluator with synthetic model and generated 1D tokens."""
@@ -66,7 +68,6 @@ def test_ppl_evaluator_synthetic_model(tiny_causal_lm, device):
         dtype=torch.float32,
     )
     
-    # Generate 1D synthetic token stream with length >= block_size + 1
     tokens = torch.randint(0, 256, (256,), dtype=torch.long)
     results = evaluator.evaluate_tokens(tokens)
 
@@ -78,9 +79,6 @@ def test_ppl_evaluator_synthetic_model(tiny_causal_lm, device):
     assert not math.isnan(results["perplexity"])
 
 
-# ============================================================================
-# 2. EVALUATION: LM-Eval Harness Integration (evaluation.harness)
-# ============================================================================
 
 def test_harness_model_wrapper(tiny_causal_lm, device):
     """Test NeuralOpsLMWrapper initialization and properties."""
@@ -95,9 +93,6 @@ def test_harness_model_wrapper(tiny_causal_lm, device):
     assert wrapper.max_length == 128
 
 
-# ============================================================================
-# 3. BENCHMARKS: Token Generation (neuralops.benchmarks.generation)
-# ============================================================================
 
 def test_generation_benchmark_synthetic(tiny_causal_lm, device):
     """Test GenerationBenchmark for TTFT, per-token latency, and throughput."""
@@ -121,9 +116,6 @@ def test_generation_benchmark_synthetic(tiny_causal_lm, device):
     assert res["throughput_tokens_per_s"] >= 0.0
 
 
-# ============================================================================
-# 4. BENCHMARKS: Training Throughput & VRAM (neuralops.benchmarks.training_throughput)
-# ============================================================================
 
 def test_training_throughput_profiler_synthetic(tiny_causal_lm, device):
     """Test TrainingThroughputProfiler for forward+backward step timing and VRAM."""
@@ -145,16 +137,12 @@ def test_training_throughput_profiler_synthetic(tiny_causal_lm, device):
     assert res["tokens_per_second"] > 0.0
 
 
-# ============================================================================
-# 5. BENCHMARKS: Microbenchmarking Ops Runner (neuralops.benchmarks.ops_runner)
-# ============================================================================
 
 def test_ops_runner_registry_and_worker(device):
     """Test OP_REGISTRY and run_benchmark_worker execution."""
     assert len(OP_REGISTRY) > 0
     assert "fused_rmsnorm" in OP_REGISTRY or "fused_ce" in OP_REGISTRY
 
-    # Test run_benchmark_worker on fused_rmsnorm forward
     target_op = "fused_rmsnorm" if "fused_rmsnorm" in OP_REGISTRY else list(OP_REGISTRY.keys())[0]
     dev_str = "cuda" if "cuda" in device else "cpu"
     res = run_benchmark_worker(
@@ -171,28 +159,22 @@ def test_ops_runner_registry_and_worker(device):
     )
     assert "latency_ms" in res or "median_ms" in res or len(res) > 0
 
-    # Test format_table utility
     results_list = [res] if isinstance(res, dict) else [{"op": target_op, "latency_ms": 0.015}]
     tbl = format_table(results_list)
     assert target_op in tbl or "latency" in tbl.lower() or len(tbl) > 0
 
 
-# ============================================================================
-# 6. BENCHMARKS: Visualization Tools (neuralops.benchmarks.visualize)
-# ============================================================================
 
 def test_visualize_functions(tmp_path):
     """Test visualize plotting functions with dummy metrics."""
     out_img = str(tmp_path / "test_plot.png")
 
-    # 1. Positional perplexity plot
     pos_data = {
         "gpt2_baseline": {0: 15.2, 128: 14.8, 256: 14.5},
         "svd_linear_attn": {0: 15.5, 128: 14.9, 256: 14.3},
     }
     plot_positional_perplexity(pos_data, output_path=out_img)
 
-    # 2. Scaling comparison plot
     scaling_data = {
         "Standard": [(512, 10.0), (1024, 25.0), (2048, 80.0)],
         "SVD": [(512, 5.0), (1024, 10.0), (2048, 20.0)],

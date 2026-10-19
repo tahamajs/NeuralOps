@@ -1,5 +1,9 @@
-# -*- coding: utf-8 -*-
-# Author: Taha Majlesi
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Comprehensive Pareto & Recovery Benchmark across all 72 compression engines.
 
 Sweeps across all 72 compression engines on simulated transformer weight layers:
@@ -156,7 +160,6 @@ def run_compression_pareto_benchmark(
                     orig_y = base_layer(probe_x)
                     orig_norm = torch.norm(orig_y).item()
 
-                # Timing compression execution
                 runner.reset_vram()
                 if dev.type == "cuda":
                     torch.cuda.synchronize(dev)
@@ -171,17 +174,14 @@ def run_compression_pareto_benchmark(
 
                 comp_layer = comp_layer.to(device=dev, dtype=torch.float32).eval()
 
-                # Reconstruction error
                 with torch.no_grad():
                     comp_y = comp_layer(probe_x)
                     frobenius_err = (torch.norm(comp_y - orig_y) / max(orig_norm, 1e-8)).item()
 
-                # Parameter count & compression ratio
                 orig_params = sum(p.numel() for p in base_layer.parameters())
                 comp_params = sum(p.numel() for p in comp_layer.parameters())
                 comp_ratio = orig_params / max(comp_params, 1)
 
-                # Decompression / inference forward latency
                 def _make_forward(target_layer, target_x):
                     """Execute make forward routine."""
 
@@ -245,7 +245,7 @@ def run_compression_pareto_benchmark(
         table.add_column("Time (ms)", justify="right")
         table.add_column("Status", justify="center")
 
-        for r in results_by_compressor[:20]:  # preview top 20
+        for r in results_by_compressor[:20]:
             s = r["shapes"].get("attention_proj_4096", {})
             table.add_row(
                 r["name"],

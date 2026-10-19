@@ -1,4 +1,9 @@
-# -*- coding: utf-8 -*-
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Full-Sweep Benchmark and Verification of ALL 108 Native CUDA C++ Modules.
 
 Directly tests the compiled CUDA C++ extension (_get_module().<entry_point>)
@@ -73,7 +78,6 @@ def generate_args_for_sig(sig, param_annotations, device, dtype, B=4, H=8, N=512
     kwargs = {}
     for param_name, param in sig.parameters.items():
         if param.default is not inspect.Parameter.empty:
-            # Has default, only provide if tensor
             anno = str(param.annotation)
             if "Tensor" not in anno or "Optional" in anno:
                 continue
@@ -81,7 +85,6 @@ def generate_args_for_sig(sig, param_annotations, device, dtype, B=4, H=8, N=512
         p_name = param_name.lower()
         anno = str(param.annotation)
 
-        # Dimension / Shape heuristics
         if any(k in p_name for k in ["q1", "k1", "q2", "k2"]):
             args.append(torch.randn(B, H, N, D, device=device, dtype=dtype))
         elif p_name in ["q", "k", "v", "query", "key", "value"]:
@@ -188,14 +191,12 @@ def main():
             continue
         assert callable(fn), f"Dynamically loaded kernel '{entry_name}' in {mod_name} must be callable"
 
-        # Look for ref function
         ref_fn = getattr(py_mod, f"{entry_name}_ref", None) or getattr(py_mod, f"{mod_name}_ref", None)
         if ref_fn is None:
             refs = [getattr(py_mod, k) for k in dir(py_mod) if k.endswith("_ref") and callable(getattr(py_mod, k))]
             if refs:
                 ref_fn = refs[0]
 
-        # Force compile CUDA module
         try:
             if hasattr(py_mod, "get_module"):
                 _c_mod = py_mod.get_module()
@@ -210,11 +211,9 @@ def main():
             failed += 1
             continue
 
-        # Build test inputs
         try:
             sig = inspect.signature(fn)
             args, kwargs = generate_args_for_sig(sig, vars(py_mod), device, dtype)
-            # Test direct call through wrapper (or direct C++ if available)
             out = fn(*args, **kwargs)
             cuda_ms = time_callable(lambda: fn(*args, **kwargs), warmup=3, iters=10)
 

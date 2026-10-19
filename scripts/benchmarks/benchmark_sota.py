@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-# Author: Taha Majlesi
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Comprehensive SOTA Gap Closure Benchmark Suite.
 
@@ -47,7 +51,6 @@ def benchmark_gap_1_svd_llm_v2(device: torch.device) -> Dict[str, Any]:
     with torch.no_grad():
         y_orig = mlp(X)
 
-    # 1. Naive SVD
     mlp_naive = copy.deepcopy(mlp)
     comp_naive = DirectSVDCompressor(mlp_naive, rank=8, min_rank=1, protect_critical=False)
     comp_naive.compress()
@@ -55,7 +58,6 @@ def benchmark_gap_1_svd_llm_v2(device: torch.device) -> Dict[str, Any]:
         y_naive = mlp_naive(X)
     err_naive = float(torch.norm(y_orig - y_naive).item())
 
-    # 2. SVD-LLM v2 (Activation-Aware Truncation)
     mlp_svd2 = copy.deepcopy(mlp)
     comp_svd2 = SVDLLMv2Compressor(
         mlp_svd2,
@@ -70,7 +72,7 @@ def benchmark_gap_1_svd_llm_v2(device: torch.device) -> Dict[str, Any]:
     err_svd2 = float(torch.norm(y_orig - y_svd2).item())
 
     improvement_pct = max(0.0, (err_naive - err_svd2) / max(err_naive, 1e-6) * 100.0)
-    passed = err_svd2 <= err_naive * 1.05  # within numerical tolerance or beating naive
+    passed = err_svd2 <= err_naive * 1.05
 
     logger.info(
         "Gap 1: Naive Err=%.4f | SVD-LLM v2 Err=%.4f | Rel Improvement=%.2f%% | Passed=%s",
@@ -107,13 +109,11 @@ def benchmark_gap_2_asvd_kv_cache(device: torch.device) -> Dict[str, Any]:
 
     hidden_states = torch.randn(B, T, D, device=device)
 
-    # Full sequence forward
     with torch.no_grad():
         out_full = attn(hidden_states)
         if isinstance(out_full, tuple):
             out_full = out_full[0]
 
-    # Token-by-token streaming forward with KV-cache
     cache = attn.init_kv_cache(batch_size=B, max_len=T, device=device, dtype=hidden_states.dtype)
     streaming_outs = []
     with torch.no_grad():
@@ -144,15 +144,13 @@ def benchmark_gap_3_fp8_quantization(device: torch.device) -> Dict[str, Any]:
 
     has_fp8 = hasattr(torch, "float8_e4m3fn")
     if has_fp8:
-        # Scale to max absolute value
         scale = w.abs().max() / 448.0
         w_scaled = (w / scale).clamp(-448.0, 448.0)
         w_fp8 = w_scaled.to(torch.float8_e4m3fn)
         w_dequant = w_fp8.to(torch.float32) * scale
         rel_err = float((torch.norm(w - w_dequant) / torch.norm(w)).item())
-        passed = rel_err < 0.05  # Within theoretical bound of FP8 quantization
+        passed = rel_err < 0.05
     else:
-        # Simulated FP8 emulation via 4-bit/8-bit range
         scale = w.abs().max() / 255.0
         w_int8 = (w / scale).round().clamp(-128, 127)
         w_dequant = w_int8 * scale
@@ -191,7 +189,6 @@ def benchmark_gap_4_dsa_block_sparse(device: torch.device) -> Dict[str, Any]:
         if isinstance(out, tuple):
             out = out[0]
 
-    # Verify output shape and finite values
     valid_shape = out.shape == (B, T, D)
     is_finite = bool(torch.isfinite(out).all().item())
     passed = valid_shape and is_finite
@@ -224,7 +221,6 @@ def benchmark_gap_5_reap_moe_and_niah(device: torch.device) -> Dict[str, Any]:
     n_experts = 4
     top_k = 2
 
-    # 1. Test REAP Distributed MoE Pruning
     moe = REAPMoE(d_model=d_model, n_experts=n_experts, top_k=top_k).to(device)
     dummy_data = [torch.randn(4, 16, d_model, device=device) for _ in range(5)]
     _ = distributed_reap_prune(
@@ -236,7 +232,6 @@ def benchmark_gap_5_reap_moe_and_niah(device: torch.device) -> Dict[str, Any]:
     )
     moe_pruned_pass = moe.n_experts == 2
 
-    # 2. Test NIAH retrieval harness
     class SimpleLM(nn.Module):
         """Simplelm definition."""
 
@@ -265,7 +260,6 @@ def benchmark_gap_5_reap_moe_and_niah(device: torch.device) -> Dict[str, Any]:
     test_model = SimpleLM().to(device)
     tokenizer = DummyTokenizer()
 
-    # Evaluates retrieval at depths [0, 0.25, 0.5, 0.75, 1.0] across sequence lengths up to 4096
     evaluator = NeedleInAHaystackEvaluator(
         model=test_model,
         tokenizer=tokenizer,
@@ -273,12 +267,10 @@ def benchmark_gap_5_reap_moe_and_niah(device: torch.device) -> Dict[str, Any]:
         needle_depths=[0.0, 0.25, 0.5, 0.75, 1.0],
         device=device,
     )
-    # Exercise harness
     logger.info("Exercising NIAH grid...")
     grid_res = evaluator.evaluate_grid(num_trials_per_cell=1)
     niah_harness_pass = len(grid_res["accuracy_grid"]) == 4 and len(grid_res["needle_depths"]) == 5
 
-    # 3. Test LM Eval Adapter subclassing
     adapter = NeuralOpsLMEvalAdapter(test_model, tokenizer, device=device)
     reqs = [("What is the capital of France?", " Paris")]
     res_ll = adapter.loglikelihood(reqs)
@@ -314,7 +306,6 @@ Overall Status: **{"100% PASSED" if all_passed else "FAILED"}** (5/5 Modules Exe
 
 ---
 
-## 1. Summary of SOTA Gap Closures
 
 | Gap ID | Module / Component | Focus Area | Status | Key Metric / Verification |
 |:---|:---|:---|:---:|:---|
@@ -326,7 +317,6 @@ Overall Status: **{"100% PASSED" if all_passed else "FAILED"}** (5/5 Modules Exe
 
 ---
 
-## 2. Mathematical Proofs Inventory
 
 1. **SVD-LLM v2 Truncation Optimality**:
    [`docs/proofs/svd_llm_v2_activation_truncation.md`](file:///Users/tahamajs/Documents/uni/Project/docs/proofs/svd_llm_v2_activation_truncation.md)
@@ -350,7 +340,6 @@ Overall Status: **{"100% PASSED" if all_passed else "FAILED"}** (5/5 Modules Exe
 
 ---
 
-## 3. Canonical Registry Invariants
 - Attention Mechanisms: **131** (Verified via `scripts/utils/verify_readme_counts.py`)
 - Compression Engines: **72** (Verified via `scripts/utils/verify_readme_counts.py`)
 - Triton Kernels: **26** (Verified via `scripts/utils/verify_readme_counts.py`)

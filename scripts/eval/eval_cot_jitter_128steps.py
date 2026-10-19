@@ -1,6 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Eval cot jitter 128steps module.
-
-Author: Taha Majlesi
 """
 
 import gc
@@ -24,7 +28,6 @@ model_path = "/mnt/d/models/gpt2"
 tokenizer = AutoTokenizer.from_pretrained(model_path)
 tokenizer.pad_token = tokenizer.eos_token
 
-# Inductive Chain-of-Thought reasoning prompt
 reasoning_prompt = (
     "Question: Let a sequence be defined by S_0 = 1, and for all k >= 1, S_k = 3 * S_{k-1} + 2. "
     "Derive the step-by-step reasoning chain for S_1, S_2, S_3, S_4, and establish the general closed form: "
@@ -58,12 +61,10 @@ for name, key in architectures:
         replace_attention(m, attention_key=key)
     m = m.to(device).eval()
 
-    # Warmup
     with torch.no_grad():
         _ = m(input_ids)
     torch.cuda.synchronize()
 
-    # 128 consecutive generation steps with per-token latency profiling
     step_latencies_ms = []
     curr_ids = input_ids.clone()
 
@@ -83,7 +84,6 @@ for name, key in architectures:
     t_total_elapsed = time.perf_counter() - t_start_total
     peak_vram_mb = torch.cuda.max_memory_allocated() / (1024**2)
 
-    # Calculate jitter percentiles
     lat_arr = np.array(step_latencies_ms)
     p50 = float(np.percentile(lat_arr, 50))
     p90 = float(np.percentile(lat_arr, 90))
@@ -93,7 +93,6 @@ for name, key in architectures:
     std_lat = float(np.std(lat_arr))
     throughput_tok_s = TOTAL_GEN_STEPS / t_total_elapsed
 
-    # Decode text
     generated_text = tokenizer.decode(curr_ids[0][input_ids.shape[1] :], skip_special_tokens=True)
     has_nan = torch.isnan(out.logits).any().item()
     has_inf = torch.isinf(out.logits).any().item()

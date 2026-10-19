@@ -1,6 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Run 10 seed stress test module.
-
-Author: Taha Majlesi
 """
 
 import torch
@@ -32,14 +36,12 @@ for seed_idx, seed in enumerate(seeds, 1):
                 m = AutoModelForCausalLM.from_pretrained(model_path, config=cfg, ignore_mismatched_sizes=True).cuda()
                 m = replace_attention(m, attention_key=mech)
 
-                # 1. Forward check with random prompt tokens
                 inp = torch.randint(0, 1000, (1, 64), device="cuda")
                 out = m(inp)
                 if not torch.isfinite(out.logits).all():
                     print(f"[FAIL] Seed {seed} {model_name} {mech} Forward produced NaNs/Infs!")
                     all_passed = False
 
-                # 2. Backward check
                 m.train()
                 out_train = m(inp, labels=inp)
                 out_train.loss.backward()
@@ -52,7 +54,6 @@ for seed_idx, seed in enumerate(seeds, 1):
                     print(f"[FAIL] Seed {seed} {model_name} {mech} Backward produced non-finite gradients!")
                     all_passed = False
 
-                # 3. 128-step continuous generation check
                 m.eval()
                 curr_ids = inp.clone()
                 with torch.no_grad():
@@ -73,13 +74,11 @@ for seed_idx, seed in enumerate(seeds, 1):
                 inp = torch.randint(0, 1000, (2, 128), device="cuda")
                 lbl = torch.randint(0, 2, (2,), device="cuda")
 
-                # Forward
                 out = m(inp, labels=lbl)
                 if not (torch.isfinite(out.logits).all() and torch.isfinite(out.loss).all()):
                     print(f"[FAIL] Seed {seed} {model_name} {mech} Forward produced NaNs/Infs!")
                     all_passed = False
 
-                # Backward
                 m.train()
                 m.zero_grad()
                 out.loss.backward()

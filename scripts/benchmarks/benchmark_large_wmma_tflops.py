@@ -1,6 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Benchmark large wmma tflops module.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -51,7 +55,6 @@ def run_large_wmma_benchmarks():
     print(header)
     print("=" * 110)
 
-    # 1. Quantized FP8 GEMM (SM 8.9 Tensor Core Accelerated)
     for M, K, N in shapes:
         for dtype in [torch.float16, torch.bfloat16]:
             x = torch.randn(M, K, device="cuda", dtype=dtype)
@@ -90,7 +93,6 @@ def run_large_wmma_benchmarks():
                 }
             )
 
-    # 2. Ternary GEMM (1.58-bit packed weights)
     for M, K, N in shapes:
         for dtype in [torch.float16, torch.bfloat16]:
             x = torch.randn(M, K, device="cuda", dtype=dtype) * 0.1
@@ -128,7 +130,6 @@ def run_large_wmma_benchmarks():
                 }
             )
 
-    # 3. LUT Codebook Dequantization GEMM
     for M, K, N in shapes:
         for dtype in [torch.float16, torch.bfloat16]:
             x = torch.randn(M, K, device="cuda", dtype=dtype) * 0.1
@@ -166,8 +167,6 @@ def run_large_wmma_benchmarks():
                 }
             )
 
-    # 4. Low-Rank SVD Gated GEMM (x @ V_r.t() @ U_r.t())
-    # x: [M, K], V_r: [R, K] -> z: [M, R], U_r: [N, R] -> y: [M, N]
     for M, K, N in shapes:
         R = 64
         for dtype in [torch.float16, torch.bfloat16]:
@@ -184,7 +183,6 @@ def run_large_wmma_benchmarks():
             with force_kernel_backend("cuda"):
                 lat_ms = bench_fn(lambda: m_lowrank.fused_lowrank_gated_gemm(x, v_r, u_r))
 
-            # Low-rank FLOPs: 2*M*K*R + 2*M*R*N
             flops = 2.0 * M * K * R + 2.0 * M * R * N
             tflops = (flops / (lat_ms * 1e-3)) / 1e12
 

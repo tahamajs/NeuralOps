@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Unit tests for strict parameter freezing on hybrid recurrent attention modules
 and trainable parameter count thresholds.
@@ -55,12 +61,9 @@ class TestHybridFreeze(unittest.TestCase):
 
     def test_oom_warning_on_large_params(self):
         """Simulate a model with > 5M trainable parameters and verify safety reduction."""
-        # Create modules with large linear layers so total trainable params exceeds 5,000,000
-        # 10 layers * (4096*64 + 4096*64) = 10 * 524,288 = 5,242,880 params
         layers = [LoRALinear(4096, 4096, lora_rank=64, freeze_base=False) for _ in range(10)]
         model = nn.Sequential(*layers)
         params = get_recovery_params(model)
-        # Verify that lora_rank was automatically reduced to 8
         for m in model.modules():
             if hasattr(m, "lora_rank") and isinstance(m, LoRALinear):
                 self.assertLessEqual(m.lora_rank, 8)

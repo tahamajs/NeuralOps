@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <cuda_runtime.h>
 #include <torch/extension.h>
 #include <c10/cuda/CUDAStream.h>
@@ -9,10 +16,10 @@
 template<int HEAD_DIM, int BLOCK_M>
 __launch_bounds__(128)
 __global__ void sliding_window_attn_warp_kernel(
-    float* __restrict__ out,      // [B, H, N, HEAD_DIM]
-    const float* __restrict__ q,  // [B, H, N, HEAD_DIM]
-    const float* __restrict__ k,  // [B, H, N, HEAD_DIM]
-    const float* __restrict__ v,  // [B, H, N, HEAD_DIM]
+    float* __restrict__ out,
+    const float* __restrict__ q,
+    const float* __restrict__ k,
+    const float* __restrict__ v,
     const int B,
     const int H,
     const int N,
@@ -67,7 +74,6 @@ __global__ void sliding_window_attn_warp_kernel(
         const int win_start = max(sink_end, cur_q_idx - window_size + 1);
         const int win_end = cur_q_idx + 1;
 
-        // Helper lambda or macro to process range [start, end)
         auto process_range = [&](int start_pos, int end_pos) {
             for (int k_pos = start_pos; k_pos < end_pos; ++k_pos) {
                 const int k_off = kv_head_base + k_pos * HEAD_DIM;
@@ -96,18 +102,15 @@ __global__ void sliding_window_attn_warp_kernel(
             }
         };
 
-        // 1. Initial Attention Sinks
         if (sink_end > 0) {
             process_range(0, sink_end);
         }
 
-        // 2. Sliding Window (disjoint from sinks)
         if (win_start < win_end) {
             process_range(win_start, win_end);
         }
     }
 
-    // Write final normalized outputs to global memory
     #pragma unroll
     for (int qi = 0; qi < QUERIES_PER_WARP; ++qi) {
         const int cur_q_idx = q_indices[qi];
@@ -171,7 +174,6 @@ __global__ void sliding_window_attn_generic_kernel(
         float m_prev = -FLT_MAX;
         float l_prev = 0.0f;
 
-        // In generic kernel, compute reduction per active token
         auto process_range = [&](int start_pos, int end_pos) {
             for (int k_pos = start_pos; k_pos < end_pos; ++k_pos) {
                 const int k_off = kv_head_base + k_pos * D;
@@ -232,7 +234,7 @@ void sliding_window_attn_fwd_cuda(
 
     constexpr int BLOCK_M = 16;
     dim3 grid((N + BLOCK_M - 1) / BLOCK_M, H, B);
-    dim3 block(32, 4); // 4 warps = 128 threads
+    dim3 block(32, 4);
     cudaStream_t stream = c10::cuda::getCurrentCUDAStream().stream();
 
     if (D == 32) {

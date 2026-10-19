@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """End-to-end integration and regression tests."""
 import pytest
 import torch
@@ -21,11 +27,9 @@ def test_full_pipeline_injection_and_inference():
             return self.head(h)
 
     model = MiniTransformer()
-    # Inject attention
     injected = inject_attention(model, attention_type="full_attention")
     assert injected is not None
 
-    # Run inference engine
     engine = NeuralOpsInferenceEngine(injected)
     ids = torch.tensor([[1, 2, 3]])
     out = engine.generate(ids, max_new_tokens=4)

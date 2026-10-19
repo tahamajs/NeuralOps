@@ -1,3 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 import pytest
 import torch
 import torch.nn as nn
@@ -52,7 +59,7 @@ def test_hamming_whole_model_injection():
 def test_hamming_odd_dim_rope():
     attn = HammingAttention(hidden_size=64, num_heads=4)
     x = torch.randn(2, 8, 64)
-    cos = torch.randn(8, 15)  # odd rotary dim
+    cos = torch.randn(8, 15)
     sin = torch.randn(8, 15)
     out, _ = attn(x, position_embeddings=(cos, sin))
     assert out.shape == (2, 8, 64)

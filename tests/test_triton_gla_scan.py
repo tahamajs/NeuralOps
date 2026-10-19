@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Comprehensive test suite for neuralops.core.triton_kernels.gla_scan.
 
@@ -48,10 +54,10 @@ def reference_gla_scan_pytorch(q, k, v, lambdas):
             S = torch.zeros(D, D, device=q.device, dtype=torch.float32)
             Z = torch.zeros(D, device=q.device, dtype=torch.float32)
             for t in range(L):
-                qt = q_f[b, h, t]          # (D,)
-                kt = k_f[b, h, t]          # (D,)
-                vt = v_f[b, h, t]          # (D,)
-                lt = lam_f[b, h, t]        # scalar
+                qt = q_f[b, h, t]
+                kt = k_f[b, h, t]
+                vt = v_f[b, h, t]
+                lt = lam_f[b, h, t]
 
                 S = lt * S + torch.outer(kt, vt)
                 Z = lt * Z + kt

@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Inference Serving Adapters
 
 Integrates NeuralOps models and attention layers with vLLM and Text Generation Inference (TGI).
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -15,14 +19,12 @@ import torch.nn as nn
 
 logger = logging.getLogger("NeuralOps.ServingIntegrations")
 
-# Safe vLLM detection
 try:
     import vllm
     HAS_VLLM = True
 except ImportError:
     HAS_VLLM = False
 
-# Safe TGI detection
 try:
     import text_generation_server
     HAS_TGI = True
@@ -107,7 +109,6 @@ class SGLangRadixLinearCacheAdapter:
 
     def __init__(self, max_cached_nodes: int = 4096) -> None:
         self.max_cached_nodes = max_cached_nodes
-        # Prefix tree node storage: token_tuple -> dict(state=Tensor, ref_count=int, last_accessed=int)
         self.tree: dict[tuple[int, ...], dict[str, Any]] = {}
         self.access_counter = 0
 
@@ -165,7 +166,6 @@ class SGLangRadixLinearCacheAdapter:
             for prefix, node in self.tree.items()
             if node["ref_count"] == 0
         ]
-        # Sort by oldest access
         unlocked.sort(key=lambda x: x[1])
 
         for prefix, _ in unlocked[:num_nodes]:
@@ -333,7 +333,6 @@ def create_openai_serving_app(
     return app
 
 
-# Export unified names
 VLLMAdapter = VLLMAttentionAdapter
 TGIAdapter = TGIAttentionAdapter
 

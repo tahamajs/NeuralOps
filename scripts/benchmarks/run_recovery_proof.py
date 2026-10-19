@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Live GPU Accuracy-Recovery Proof Benchmark on NVIDIA GeForce RTX 4070.
 Compares:
@@ -27,19 +33,16 @@ print(
 torch.manual_seed(42)
 cfg = GPT2Config(n_layer=4, n_embd=256, n_head=4, vocab_size=50257)
 
-# 1. Teacher Model
 teacher = GPT2LMHeadModel(cfg).to(device).eval()
 for p in teacher.parameters():
     p.requires_grad = False
 
-# Synthesize calibration/training inputs
 inputs = torch.randint(0, 50257, (8, 64), device=device)
 
 with torch.no_grad():
     t_out = teacher(inputs)
     t_logits = t_out.logits
 
-# 2. Condition A: Zero-Shot Pure Subquadratic Transplant (Cosformer, window_size=0, fusion_scale=1.0)
 student_zero = GPT2LMHeadModel(cfg).to(device)
 student_zero.load_state_dict(teacher.state_dict())
 replace_attention(student_zero, attention="cosformer", copy_weights=True, window_size=0)
@@ -62,7 +65,6 @@ with torch.no_grad():
 
 print(f"Condition 1 (Zero-Shot Post-Surgery, alpha=1.0): Cosine Sim={zero_cos:.4f}, KL Div={zero_kl:.4f}")
 
-# 3. Condition B: Naive Cross-Entropy Fine-Tuning
 student_naive = GPT2LMHeadModel(cfg).to(device)
 student_naive.load_state_dict(teacher.state_dict())
 replace_attention(student_naive, attention="cosformer", copy_weights=True, window_size=0)
@@ -80,7 +82,6 @@ if torch.cuda.is_available():
 for step in range(50):
     opt_naive.zero_grad()
     out = student_naive(inputs)
-    # Naive hard target cross-entropy
     loss = F.cross_entropy(out.logits.view(-1, 50257), inputs.view(-1))
     loss.backward()
     opt_naive.step()
@@ -106,7 +107,6 @@ print(
     f"Condition 2 (Naive Fine-Tuning 50 steps, alpha=1.0): Cosine Sim={naive_cos:.4f}, KL Div={naive_kl:.4f}, Time={t_naive:.2f}s, VRAM={vram_naive:.1f}MB"
 )
 
-# 4. Condition C: 6-Pillar MOHAWK + PiSSA + DKD Engine
 student_mohawk = GPT2LMHeadModel(cfg).to(device)
 student_mohawk.load_state_dict(teacher.state_dict())
 replace_attention(student_mohawk, attention="cosformer", copy_weights=True, window_size=0)
@@ -114,7 +114,6 @@ for m in student_mohawk.modules():
     if hasattr(m, "fusion_scale"):
         m.fusion_scale.data.fill_(1.0)
 set_surgery_alpha(student_mohawk, 1.0)
-# Inject PiSSA low-rank principal components
 inject_pissa_adapters(student_mohawk, rank=16)
 student_mohawk.train()
 
@@ -129,7 +128,6 @@ if torch.cuda.is_available():
 for step in range(50):
     opt_mohawk.zero_grad()
     out = student_mohawk(inputs)
-    # Multi-level DKD distillation loss + CKA
     loss = dkd_loss_fn(out.logits, t_logits) + 0.1 * cka_loss_fn(out.logits, t_logits)
     loss.backward()
     opt_mohawk.step()

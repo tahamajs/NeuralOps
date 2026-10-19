@@ -1,3 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 import os
 import tempfile
 from pathlib import Path
@@ -44,14 +51,12 @@ def test_compile_to_so_basic_and_runner():
         )
 
         assert isinstance(runner, AOTICompiledModelRunner)
-        # Verify execution on sample input
         out = runner(sample_input)
         ref = model(sample_input)
         assert out.shape == ref.shape
         diff = (out - ref).abs().max().item()
         assert diff < 1e-4, f"AOT output difference too large: {diff}"
 
-        # Verify dynamic sequence length evaluation
         for s in [8, 24, 32]:
             var_input = torch.randn(2, s, 32)
             var_out = runner(var_input)

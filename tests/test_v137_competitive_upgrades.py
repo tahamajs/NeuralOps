@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Test suite for NeuralOps v1.3.7 Competitive Dominance Upgrades:
   1. Triton Backward Kernels Parity & Memory Efficiency (low_rank, gdn_scan, gla_scan)
@@ -20,15 +26,11 @@ from neuralops.models.surgical_io import save_surgical_checkpoint, load_surgical
 from neuralops.core._attention_surgery import heal_replaced_model, calibrate_attention_subspace
 
 
-# ==============================================================================
-# TEST 1: Triton Backward Kernel Parity & Gradient Verification
-# ==============================================================================
 
 def test_triton_backward_kernels_parity():
     """Verify exact numerical gradient parity for low_rank, gdn_scan, and gla_scan."""
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    # 1. low_rank.py: fused_down_up_gemm_bias_triton vs PyTorch
     from neuralops.core.triton_kernels.low_rank import fused_down_up_gemm_bias_triton
 
     M, Din, R, Dout = 64, 128, 32, 128
@@ -42,12 +44,10 @@ def test_triton_backward_kernels_parity():
     w_up_tri = w_up_pt.detach().clone().requires_grad_(True)
     bias_tri = bias_pt.detach().clone().requires_grad_(True)
 
-    # PyTorch reference forward & backward
     out_pt = torch.matmul(torch.matmul(x_pt, w_down_pt), w_up_pt.t()) + bias_pt
     grad_target = torch.randn_like(out_pt)
     out_pt.backward(grad_target)
 
-    # Fused Triton forward & backward
     out_tri = fused_down_up_gemm_bias_triton(x_tri, w_down_tri, w_up_tri, bias=bias_tri)
     out_tri.backward(grad_target)
 
@@ -57,7 +57,6 @@ def test_triton_backward_kernels_parity():
     assert torch.allclose(w_up_pt.grad, w_up_tri.grad, atol=1e-3, rtol=1e-3), "dw_up gradient mismatch"
     assert torch.allclose(bias_pt.grad, bias_tri.grad, atol=1e-3, rtol=1e-3), "dbias gradient mismatch"
 
-    # 2. gdn_scan.py: gdn_scan_triton vs gdn_scan_pytorch backward
     from neuralops.core.triton_kernels.gdn_scan import gdn_scan_triton, gdn_scan_pytorch
     B, H, L, D = 2, 4, 32, 32
     q = torch.randn(B, H, L, D, device=device, dtype=torch.float32, requires_grad=True)
@@ -86,9 +85,6 @@ def test_triton_backward_kernels_parity():
         assert torch.allclose(v_ref.grad, v.grad, atol=1e-3, rtol=1e-3), "GDN dv mismatch"
 
 
-# ==============================================================================
-# TEST 2: O(1) Recurrent State Cache & Step Decoding Verification
-# ==============================================================================
 
 def test_o1_recurrent_state_cache_decoding():
     """Verify that NeuralOpsStateCache memory remains 100% constant across 100 decoding steps."""
@@ -99,11 +95,9 @@ def test_o1_recurrent_state_cache_decoding():
     attn = neuralops.create_attention("gated_delta_net", embed_dim=H * D, num_heads=H)
     attn.to(device=device, dtype=torch.float16)
 
-    # Prefill pass (T=64)
     prefill_x = torch.randn(B, 64, H * D, device=device, dtype=torch.float16)
     _ = attn(prefill_x)
 
-    # Decode step 1
     token_1 = torch.randn(B, 1, H * D, device=device, dtype=torch.float16)
     state_dummy = torch.zeros((B, H, D, D), device=device, dtype=torch.float16)
     cache.update_recurrent_state(layer_idx=0, new_state=state_dummy)
@@ -111,30 +105,22 @@ def test_o1_recurrent_state_cache_decoding():
     initial_bytes = cache.memory_bytes()
     assert initial_bytes > 0, "Cache memory must be allocated"
 
-    # Decode 100 tokens sequentially
     for step_idx in range(100):
         new_token = torch.randn(B, 1, H * D, device=device, dtype=torch.float16)
-        # Update dummy state in-place
         state_dummy.add_(0.01)
         cache.update_recurrent_state(layer_idx=0, new_state=state_dummy)
 
     final_bytes = cache.memory_bytes()
     assert initial_bytes == final_bytes, f"Memory must be strictly O(1) constant! {initial_bytes} vs {final_bytes}"
 
-    # Verify benchmark utility
     bench = benchmark_autoregressive_decoding(seq_lens=(512, 2048, 8192), batch_size=1, embed_dim=H * D, num_heads=H)
     assert len(bench["results"]) == 3
-    # Memory reduction ratio must increase with sequence length
     assert bench["results"][-1]["memory_reduction_ratio"] > bench["results"][0]["memory_reduction_ratio"]
 
 
-# ==============================================================================
-# TEST 3: Hardware-Calibrated Autotune & Roofline Analysis
-# ==============================================================================
 
 def test_hardware_calibrated_autotune_and_roofline():
     """Verify zero-overhead hardware autotuning and roofline profiler metrics."""
-    # Test tile configuration selection
     cfg_small = select_optimal_triton_config("gemm", M=64, N=128, K=128)
     assert cfg_small["BLOCK_M"] in (32, 64)
     assert cfg_small["num_warps"] in (2, 4)
@@ -142,7 +128,6 @@ def test_hardware_calibrated_autotune_and_roofline():
     cfg_large = select_optimal_triton_config("gemm", M=2048, N=768, K=768)
     assert cfg_large["BLOCK_M"] in (64, 128)
 
-    # Test Roofline report on gated_delta_net
     report = neuralops.profile_roofline(
         module_or_name="gated_delta_net",
         batch_size=2,
@@ -155,9 +140,6 @@ def test_hardware_calibrated_autotune_and_roofline():
     assert report.bottleneck_regime is not None
 
 
-# ==============================================================================
-# TEST 4: Modern GQA Architecture Model Surgery, Micro-Healing & Checkpoint I/O
-# ==============================================================================
 
 class MockGQASelfAttention(nn.Module):
     """Grouped-Query Attention submodule (H_Q=8, H_KV=2)."""
@@ -180,7 +162,6 @@ class MockGQASelfAttention(nn.Module):
         k = self.k_proj(hidden_states).view(B, T, self.num_kv_heads, self.head_dim).transpose(1, 2)
         v = self.v_proj(hidden_states).view(B, T, self.num_kv_heads, self.head_dim).transpose(1, 2)
 
-        # Expand KV heads to match Q heads
         g = self.num_heads // self.num_kv_heads
         k = k.repeat_interleave(g, dim=1)
         v = v.repeat_interleave(g, dim=1)
@@ -238,14 +219,12 @@ def test_modern_gqa_model_surgery_and_healing_roundtrip(tmp_path):
     with torch.no_grad():
         orig_out = model(x)
 
-    # 1. Surgical replacement with GQA subspace adaptation
     transplanted = neuralops.replace_attention(model, attention="gated_delta_net")
     with torch.no_grad():
         transplanted_out = transplanted(x)
 
     assert transplanted_out.shape == orig_out.shape, "Transplanted output shape mismatch"
 
-    # 2. Layerwise Micro-Healing
     healing_stats = heal_replaced_model(
         teacher_model=model,
         student_model=transplanted,
@@ -260,7 +239,6 @@ def test_modern_gqa_model_surgery_and_healing_roundtrip(tmp_path):
     with torch.no_grad():
         healed_out = transplanted(x)
 
-    # 3. Save and reload surgical checkpoint
     save_dir = tmp_path / "gqa_healed_model"
     save_surgical_checkpoint(transplanted, str(save_dir))
 

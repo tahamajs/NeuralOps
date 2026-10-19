@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -7,8 +14,6 @@
 namespace neuralops {
 namespace cuda {
 
-// 128-bit Vectorized Softplus Forward Kernel:
-// y = (1 / beta) * log1p(exp(beta * x)) if beta * x <= threshold else x
 template <typename scalar_t>
 __launch_bounds__(256)
 __global__ void softplus_fwd_vectorized_kernel(
@@ -60,8 +65,6 @@ __global__ void softplus_fwd_vectorized_kernel(
     }
 }
 
-// 128-bit Vectorized Softplus Backward Kernel:
-// dx = dout * sigmoid(beta * x) = dout / (1 + exp(-beta * x)) if beta * x <= threshold else dout
 template <typename scalar_t>
 __launch_bounds__(256)
 __global__ void softplus_bwd_vectorized_kernel(
@@ -116,8 +119,8 @@ __global__ void softplus_bwd_vectorized_kernel(
     }
 }
 
-} // namespace cuda
-} // namespace neuralops
+}
+}
 
 torch::Tensor softplus_fwd(
     const torch::Tensor& x,

@@ -1,3 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 from .testing_utils import MockConfig, DummyDistilBertAttention
 import pytest
 import torch
@@ -42,7 +49,6 @@ def test_bam_umoe_init_and_forward_basic():
     assert attn.aux_loss is not None
 
 def test_bam_umoe_none_config():
-    # Production requirement: config can be None
     attn = BAMUMoEBlock(config=None, hidden_size=64, num_heads=4, lora_rank=4)
     x = torch.randn(2, 8, 64)
     out, _ = attn(x)
@@ -52,10 +58,8 @@ def test_bam_umoe_distilbert_weight_copy():
     cfg = MockConfig()
     old_attn = DummyDistilBertAttention(64)
     attn = BAMUMoEBlock(config=cfg, old_attn=old_attn, lora_rank=8, svd_rank=64)
-    # Check weight preservation
     assert torch.allclose(attn.q_lin.weight, old_attn.q_lin.weight, atol=1e-4)
     assert torch.allclose(attn.out_lin.weight, old_attn.out_lin.weight, atol=1e-4)
-    # Check base weights frozen, lora trainable
     assert not attn.q_lin.weight.requires_grad
     assert attn.q_lin.lora_A.requires_grad
     assert attn.q_lin.lora_B.requires_grad

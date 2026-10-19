@@ -1,6 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Eval reasoning and cot scaling module.
-
-Author: Taha Majlesi
 """
 
 import gc
@@ -58,7 +62,6 @@ def build_model(attention_type=None, max_pos=4096):
     return model.to(device).eval()
 
 
-# Multi-step reasoning evaluation prompt (Mathematical Chain-of-Thought)
 reasoning_prompt = (
     "Problem: In a sequence of reasoning steps, let x_0 = 3. At each step t >= 1, x_t = 2 * x_{t-1} + 1. "
     "Compute x_1, x_2, x_3, x_4, and verify the deductive formula. "
@@ -69,7 +72,6 @@ reasoning_prompt = (
     "Step 5: Therefore,"
 )
 
-# Benchmark 1: Context Lengths Sweep over L in [128, 512, 1024, 2048]
 CONTEXT_LENGTHS = [128, 512, 1024, 2048]
 mechanisms = [
     ("GPT-2 Baseline (MHA)", None),
@@ -91,10 +93,8 @@ for name, key in mechanisms:
         torch.cuda.empty_cache()
         torch.cuda.reset_peak_memory_stats()
 
-        # Test input sequence
         inp = torch.randint(100, 1000, (1, L), device=device)
 
-        # Warmup
         with torch.no_grad():
             _ = model(inp[:, : min(64, L)])
         torch.cuda.synchronize()
@@ -110,7 +110,6 @@ for name, key in mechanisms:
         nan_count = torch.isnan(out.logits).sum().item()
         inf_count = torch.isinf(out.logits).sum().item()
 
-        # Loss & Perplexity on synthetic validation segment
         loss_val = None
         ppl_val = None
         with torch.no_grad():
@@ -136,7 +135,6 @@ for name, key in mechanisms:
     print_log(f"=== Step 2: Autoregressive CoT Generation & KV State Retention over 64 Steps for [{name}] ===")
     prompt_ids = tokenizer(reasoning_prompt, return_tensors="pt").input_ids.to(device)
 
-    # 64-step unrolling
     curr_ids = prompt_ids.clone()
     gen_tokens = 64
     mems = []
@@ -155,7 +153,6 @@ for name, key in mechanisms:
     gen_throughput = gen_tokens / t_gen_total
     mem_drift = mems[-1] - mems[0]
 
-    # Verify outputs
     out_text = tokenizer.decode(curr_ids[0][prompt_ids.shape[1] :], skip_special_tokens=True)
     all_nan = torch.isnan(out.logits).any().item()
     all_inf = torch.isinf(out.logits).any().item()

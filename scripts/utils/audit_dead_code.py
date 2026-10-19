@@ -1,6 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Comprehensive AST, Triton JIT & CUDA C++ Dead-Code Auditor for NeuralOps.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -39,7 +43,6 @@ def audit_repository(root: Path) -> int:
             print(f"[SYNTAX ERROR] {path}: {exc}")
             continue
 
-        # 1. Detect duplicate/shadowed function or class definitions in the same scope (F811)
         for node in ast.walk(tree):
             if isinstance(node, (ast.Module, ast.ClassDef)):
                 seen: dict[str, int] = {}
@@ -54,7 +57,6 @@ def audit_repository(root: Path) -> int:
                             )
                         seen[stmt.name] = stmt.lineno
 
-        # 2. Detect unreachable statements after return / raise / break / continue
         for node in ast.walk(tree):
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
                 for sub in ast.walk(node):
@@ -68,7 +70,6 @@ def audit_repository(root: Path) -> int:
                                 )
                                 break
 
-        # 3. Detect unlaunched @triton.jit kernels & unused _private helper functions
         for node in tree.body:
             if isinstance(node, ast.FunctionDef):
                 decs = [ast.unparse(d) for d in node.decorator_list]
@@ -87,13 +88,11 @@ def audit_repository(root: Path) -> int:
                             f"{path}:{node.lineno} -> Private helper '{node.name}' is never referenced"
                         )
 
-        # 4. Detect multi-line commented-out code blocks & agent chatter
         lines = src.splitlines()
         for i, line in enumerate(lines, start=1):
             if re.search(r"#\s*(Fixed by Agent|Subagent|Phase \d+ fix|TODO:\s*remove|DEAD CODE)", line, re.IGNORECASE):
                 commented_code_blocks.append(f"{path}:{i} -> Agent chatter comment: {line.strip()[:80]}")
 
-    # 5. Detect unlaunched CUDA __global__ kernels in .cu files
     cu_pattern = re.compile(r"__global__\s+(?:void\s+)?(?:__launch_bounds__\([^)]*\)\s+)?(?:void\s+)?([a-zA-Z0-9_]+)\s*\(")
     for cu_path in cu_files:
         cu_src = cu_path.read_text(encoding="utf-8", errors="ignore")

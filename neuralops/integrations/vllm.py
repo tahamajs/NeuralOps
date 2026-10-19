@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Native vLLM Integration Plugin
 
 Registers custom attention backends, kernels, and model architectures within vLLM.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -80,22 +84,18 @@ class NeuralOpsvLLMImpl:
         is_prompt = getattr(attn_metadata, "is_prompt", False) or (query.dim() == 3 and query.shape[1] > 1)
 
         if is_prompt:
-            # Prefill path
             B, T, H, D = query.shape if query.dim() == 4 else (query.shape[0], query.shape[1], self.num_heads, self.head_size)
             q = query.view(B, T, self.num_heads, self.head_size).transpose(1, 2)
             k = key.view(B, T, self.num_kv_heads, self.head_size).transpose(1, 2)
             v = value.view(B, T, self.num_kv_heads, self.head_size).transpose(1, 2)
             
-            # Linear attention prefill: Q (K^T V)
             scores = torch.matmul(q, k.transpose(-2, -1)) * self.scale
-            # Apply causal mask
             mask = torch.triu(torch.full((T, T), float("-inf"), device=query.device), diagonal=1)
             scores = scores + mask
             weights = torch.softmax(scores, dim=-1)
             out = torch.matmul(weights, v)
             return out.transpose(1, 2).contiguous().view(B, T, -1)
 
-        # Decode path (T=1 token per sequence, continuous batching)
         B = query.shape[0]
         q_dec = query.view(B, self.num_heads, self.head_size)
         k_dec = key.view(B, self.num_kv_heads, self.head_size)
@@ -108,9 +108,7 @@ class NeuralOpsvLLMImpl:
             block_tables = torch.zeros((B, 1), dtype=torch.int32, device=query.device)
 
         if kv_cache is not None:
-            # Update paged recurrent state pool in-place
             if kv_cache.dim() == 4 and kv_cache.shape[-1] == self.head_size and kv_cache.shape[-2] == self.head_size:
-                # Page pool [TotalPages, H, D, D]
                 out_dec = paged_recurrent_state_step_triton(
                     q_t=q_dec,
                     k_t=k_dec,
@@ -121,7 +119,6 @@ class NeuralOpsvLLMImpl:
                 )
                 return out_dec.view(B, 1, -1)
 
-            # Standard KV cache fallback [num_blocks, block_size, H, D]
             if kv_cache.dim() >= 4:
                 context_lens = getattr(attn_metadata, "context_lens", torch.ones(B, dtype=torch.int32, device=query.device))
                 out_dec = paged_attention_kernel(
@@ -134,7 +131,6 @@ class NeuralOpsvLLMImpl:
                 )
                 return out_dec.view(B, 1, -1)
 
-        # Direct stateless fallback
         out = (q_dec * (k_dec * v_dec)).view(B, 1, -1)
         return out
 

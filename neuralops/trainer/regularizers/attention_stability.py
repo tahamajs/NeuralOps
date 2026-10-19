@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Attention Stability Regularizers
 
 Regularizers including learnable sinks, entropy stabilization, and spectral Jacobian bounds.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -47,7 +51,6 @@ class GateSaturationPenalty(nn.Module):
         self.weight = penalty_weight
 
     def forward(self, gate_activations: torch.Tensor) -> torch.Tensor:
-        # Penalize -log(g * (1 - g))
         g = gate_activations.clamp(min=1e-5, max=1.0 - 1e-5)
         barrier = -torch.log(g * (1.0 - g)).mean()
         return self.weight * barrier
@@ -63,11 +66,9 @@ class SpectralJacobianRegularizer(nn.Module):
 
     def forward(self, weight_matrix: torch.Tensor) -> torch.Tensor:
         w = weight_matrix.float()
-        # Random vector for power iteration
         v = torch.randn(w.size(1), 1, device=w.device, dtype=torch.float32)
         v = v / v.norm(p=2).clamp(min=1e-8)
 
-        # 2 steps power iteration
         u = torch.matmul(w, v)
         u = u / u.norm(p=2).clamp(min=1e-8)
         v = torch.matmul(w.t(), u)

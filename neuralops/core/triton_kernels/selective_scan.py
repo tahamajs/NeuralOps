@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Selective State Space Scan
 
 Selective scan kernel for Mamba-1 architectures evaluating continuous-time discretized state recurrence.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -23,7 +27,7 @@ def _selective_scan_fwd_kernel(
     C_ptr,
     D_ptr,
     out_ptr,
-    h_workspace_ptr,  # NEW: (B, D, L, N) — full h_t trajectory
+    h_workspace_ptr,
     stride_ub,
     stride_ul,
     stride_ud,
@@ -61,11 +65,11 @@ def _selective_scan_fwd_kernel(
     n_offsets = tl.arange(0, N_STATE)
 
     A_ptrs = A_ptr + pid_d * stride_ad + n_offsets * stride_an
-    a_val = tl.load(A_ptrs).to(tl.float32)  # ← cast اضافه شد
+    a_val = tl.load(A_ptrs).to(tl.float32)
 
     d_val = 0.0
     if HAS_D:
-        d_val = tl.load(D_ptr + pid_d).to(tl.float32)  # ← cast اضافه شد
+        d_val = tl.load(D_ptr + pid_d).to(tl.float32)
 
     h_state = tl.zeros((N_STATE,), dtype=tl.float32)
 
@@ -88,7 +92,6 @@ def _selective_scan_fwd_kernel(
         input_term = delta_val * u_val * b_val
         h_state = decay * h_state + input_term
 
-        # === NEW: save h_t to workspace for backward ===
         h_ptrs = (
             h_workspace_ptr
             + pid_b * stride_hb
@@ -119,7 +122,7 @@ def _selective_scan_bwd_kernel(
     dB_ptr,
     dC_ptr,
     dD_ptr,
-    h_workspace_ptr,  # NEW: read h_t and h_{t-1} from here
+    h_workspace_ptr,
     stride_ub,
     stride_ul,
     stride_ud,
@@ -170,7 +173,6 @@ def _selective_scan_bwd_kernel(
     for l_rev in range(L_size):
         l = L_size - 1 - l_rev
 
-        # --- Load inputs at timestep l ---
         u_p = u_ptr + pid_b * stride_ub + l * stride_ul + pid_d * stride_ud
         u_val = tl.load(u_p).to(tl.float32)
 
@@ -184,7 +186,6 @@ def _selective_scan_bwd_kernel(
         B_ptrs = B_ptr + pid_b * stride_bb + l * stride_bl + n_offsets * stride_bn
         b_val = tl.load(B_ptrs).to(tl.float32)
 
-        # --- Load h_t and h_{t-1} from workspace ---
         h_t_ptrs = (
             h_workspace_ptr
             + pid_b * stride_hb
@@ -206,35 +207,27 @@ def _selective_scan_bwd_kernel(
         else:
             h_prev = tl.zeros((N_STATE,), dtype=tl.float32)
 
-        # --- Load dy_t ---
         dy_p = dy_ptr + pid_b * stride_ob + l * stride_ol + pid_d * stride_od
         dy_val = tl.load(dy_p).to(tl.float32)
 
-        # === Adjoint update: dh_t += dy_t * C_t ===
         dh_state = dh_state + dy_val * c_val
 
-        # === dC_t = dy_t * h_t ===
         dC_p = dC_ptr + pid_b * stride_cb + l * stride_cl + n_offsets * stride_cn
         tl.atomic_add(dC_p, (dy_val * h_t).to(dC_ptr.dtype.element_ty))
 
-        # === dB_t = dh_t * delta_t * u_t ===
         dB_val = dh_state * delta_val * u_val
         dB_p = dB_ptr + pid_b * stride_bb + l * stride_bl + n_offsets * stride_bn
         tl.atomic_add(dB_p, dB_val.to(dB_ptr.dtype.element_ty))
 
-        # === du_t = dy_t * D + delta_t * sum_N(dh_t * B_t) ===
         du_val = dy_val * d_val + tl.sum(dh_state * delta_val * b_val)
         du_p = du_ptr + pid_b * stride_ub + l * stride_ul + pid_d * stride_ud
         tl.store(du_p, du_val)
 
-        # === decay and ddecay ===
         decay = tl.exp(delta_val * a_val)
-        ddecay = dh_state * h_prev  # dL/ddecay_t = adh_t * h_{t-1}
+        ddecay = dh_state * h_prev
 
-        # === dA accumulation (vector N) — atomic at end ===
         acc_dA += ddecay * decay * delta_val
 
-        # === ddelta = u * sum(dh*B) + sum(ddecay*decay*A) ===
         ddelta_val = u_val * tl.sum(dh_state * b_val) + tl.sum(ddecay * decay * a_val)
         if DELTA_SOFTPLUS:
             sig = tl.sigmoid(raw_delta)
@@ -243,14 +236,11 @@ def _selective_scan_bwd_kernel(
         ddelta_p = ddelta_ptr + pid_b * stride_deltab + l * stride_deltal + pid_d * stride_deltad
         tl.store(ddelta_p, ddelta_val)
 
-        # === dD accumulation ===
         if HAS_D:
             acc_dD += dy_val * u_val
 
-        # === Propagate adjoint to previous timestep ===
         dh_state = dh_state * decay
 
-    # === One atomic_add per program for dA (shared across batch) ===
     dA_p = dA_ptr + pid_d * stride_ad + n_offsets * stride_an
     tl.atomic_add(dA_p, acc_dA.to(dA_ptr.dtype.element_ty))
 
@@ -262,12 +252,12 @@ class TritonSelectiveScanFunction(torch.autograd.Function):
     @staticmethod
     def forward(
         ctx,
-        u: torch.Tensor,  # (B, L, D)
-        delta: torch.Tensor,  # (B, L, D)
-        A: torch.Tensor,  # (D, N)
-        B: torch.Tensor,  # (B, L, N)
-        C: torch.Tensor,  # (B, L, N)
-        D: torch.Tensor | None = None,  # (D,)
+        u: torch.Tensor,
+        delta: torch.Tensor,
+        A: torch.Tensor,
+        B: torch.Tensor,
+        C: torch.Tensor,
+        D: torch.Tensor | None = None,
         delta_softplus: bool = True,
     ) -> torch.Tensor:
         B_size, L_size, D_dim = u.shape
@@ -283,7 +273,6 @@ class TritonSelectiveScanFunction(torch.autograd.Function):
 
         out = torch.empty_like(u)
 
-        # Workspace for full h_t trajectory: (B, D, L, N), fp32
         h_workspace = torch.empty(
             B_size,
             D_dim,
@@ -347,10 +336,8 @@ class TritonSelectiveScanFunction(torch.autograd.Function):
 
         du = torch.empty_like(u)
         ddelta = torch.empty_like(delta)
-        # dA and dD must be fp32 because we use atomic_add (fp16 atomics not
-        # universally supported). Cast back to source dtype at the end.
         dA = torch.zeros_like(A, dtype=torch.float32)
-        dB = torch.zeros_like(B)  # atomic_add نیاز به شروع از صفر داره
+        dB = torch.zeros_like(B)
         dC = torch.zeros_like(C)
         dD = torch.zeros_like(D, dtype=torch.float32) if D is not None else None
 
@@ -428,12 +415,11 @@ def selective_scan_ref(
     """
     is_bdl = False
     if u.dim() == 3 and B.dim() == 3 and u.shape[1] == A.shape[0] and B.shape[1] == A.shape[1]:
-        # Layout is (B, D, L) and (B, N, L)
         is_bdl = True
-        u = u.permute(0, 2, 1)  # -> (B, L, D)
+        u = u.permute(0, 2, 1)
         delta = delta.permute(0, 2, 1)
-        B = B.permute(0, 2, 1)  # -> (B, L, N)
-        C = C.permute(0, 2, 1)  # -> (B, L, N)
+        B = B.permute(0, 2, 1)
+        C = C.permute(0, 2, 1)
 
     B_size, L_size, D_dim = u.shape
     N_state = A.shape[1]
@@ -443,26 +429,21 @@ def selective_scan_ref(
     if delta_softplus:
         delta = torch.nn.functional.softplus(delta)
 
-    # Discretization
-    # delta: (B, L, D), A: (D, N) -> delta_A: (B, L, D, N)
     delta_A = torch.exp(delta.unsqueeze(-1) * A.unsqueeze(0).unsqueeze(0))
-    # delta: (B, L, D), u: (B, L, D), B: (B, L, N) -> delta_B_u: (B, L, D, N)
     delta_B_u = (delta * u).unsqueeze(-1) * B.unsqueeze(2)
 
-    # Sequential scan over L
     h = torch.zeros(B_size, D_dim, N_state, device=device, dtype=torch.float32)
     ys = []
     for l in range(L_size):
         h = delta_A[:, l] * h + delta_B_u[:, l]
-        # y_t = sum_N(h_t * C_t): C[:, l]: (B, N) -> (B, 1, N)
-        y_l = (h * C[:, l].unsqueeze(1)).sum(dim=-1)  # (B, D)
+        y_l = (h * C[:, l].unsqueeze(1)).sum(dim=-1)
         if D is not None:
             y_l = y_l + u[:, l] * D
         ys.append(y_l)
 
-    y = torch.stack(ys, dim=1).to(dtype)  # (B, L, D)
+    y = torch.stack(ys, dim=1).to(dtype)
     if is_bdl:
-        y = y.permute(0, 2, 1)  # -> (B, D, L)
+        y = y.permute(0, 2, 1)
     return y
 
 
@@ -512,10 +493,8 @@ def fused_jamba_hybrid_ssm_attn_gate_pytorch(
     """Exact PyTorch fallback for Jamba hybrid SSM-Attention blending."""
     alpha = torch.sigmoid(alpha_raw.to(attn_out.dtype))
     if alpha.dim() == 1 and attn_out.dim() == 4:
-        # Per-head alpha (H,) for (B, H, L, d)
         alpha = alpha.view(1, -1, 1, 1)
     elif alpha.dim() == 1 and attn_out.dim() == 3:
-        # Per-head alpha (H,) for (B, L, H*d)
         H = alpha.shape[0]
         B, L, all_head_size = attn_out.shape
         d = all_head_size // H
@@ -581,7 +560,6 @@ if HAS_TRITON and tl is not None:
         alpha = tl.sigmoid(alpha_raw)
         d_attn = dout * (1.0 - alpha)
         d_ssm = dout * alpha
-        # d_alpha_raw = dout * (ssm_val - attn_val) * alpha * (1 - alpha)
         d_alpha = dout * (ssm_val - attn_val) * (alpha * (1.0 - alpha))
 
         tl.store(GradAttn_ptr + offs, d_attn.to(GradAttn_ptr.dtype.element_ty), mask=mask)
@@ -653,7 +631,6 @@ if HAS_TRITON and tl is not None:
                 HAS_MOE=ctx.has_moe,
                 BLOCK_SIZE=BLOCK_SIZE,
             )
-            # Reduce grad_alpha_exp to ctx.orig_alpha_shape
             if grad_alpha_exp.shape != ctx.orig_alpha_shape:
                 if ctx.orig_alpha_shape == torch.Size([]) or len(ctx.orig_alpha_shape) == 0:
                     grad_alpha = grad_alpha_exp.sum()
@@ -668,10 +645,8 @@ if HAS_TRITON and tl is not None:
                     else:
                         grad_alpha = grad_alpha_exp.sum()
                 else:
-                    # General broadcast reduction
                     dims_to_sum = []
                     target_shape = list(ctx.orig_alpha_shape)
-                    # Align trailing dimensions
                     diff = grad_alpha_exp.dim() - len(target_shape)
                     if diff > 0:
                         dims_to_sum.extend(range(diff))
@@ -744,7 +719,7 @@ def fused_rglru_ssd_scan_pytorch(
     v_c = v_f.view(B, H, n_chunks, chunk_size, d)
 
     t_idx = torch.arange(chunk_size, device=q.device, dtype=torch.float32)
-    dt = t_idx.unsqueeze(1) - t_idx.unsqueeze(0)  # (chunk_size, chunk_size)
+    dt = t_idx.unsqueeze(1) - t_idx.unsqueeze(0)
     causal_mask = dt >= 0
     log_decay_5d = log_decay.view(1, H, 1, 1, 1)
     diff_5d = dt.view(1, 1, 1, chunk_size, chunk_size)
@@ -752,14 +727,14 @@ def fused_rglru_ssd_scan_pytorch(
     decay_intra = decay_intra * causal_mask.view(1, 1, 1, chunk_size, chunk_size).float()
 
     scores_intra = torch.matmul(q_c, k_c.transpose(-1, -2)) * decay_intra
-    y_intra = torch.matmul(scores_intra, v_c)  # (B, H, n_chunks, chunk_size, d)
+    y_intra = torch.matmul(scores_intra, v_c)
 
     decay_in_chunk = torch.exp(
         ((chunk_size - 1 - t_idx).view(1, 1, 1, chunk_size, 1) * log_decay_5d).clamp(min=-40.0, max=0.0)
-    )  # (1, H, 1, chunk_size, 1)
+    )
 
     k_weighted = k_c * decay_in_chunk
-    kv_contrib = torch.matmul(k_weighted.transpose(-1, -2), v_c)  # (B, H, n_chunks, d, d)
+    kv_contrib = torch.matmul(k_weighted.transpose(-1, -2), v_c)
 
     chunk_decay = torch.exp((log_decay.view(1, H, 1, 1) * chunk_size).clamp(min=-40.0, max=0.0))
 

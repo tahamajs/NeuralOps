@@ -1,3 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 import pytest
 import torch
 import torch.nn as nn
@@ -63,7 +70,6 @@ def test_dobi_layer_backward_gradients():
 
 def test_dobi_compressor_target_attention_only():
     model = DummyAttentionModel(d=64)
-    # Initialize weights with low-rank structure so SVD reconstruction error is low
     with torch.no_grad():
         for mod in (model.query, model.key, model.value, model.out_proj):
             a = torch.randn(64, 8)
@@ -72,12 +78,10 @@ def test_dobi_compressor_target_attention_only():
 
     compressor = DobiSVDCompressor(model, rank=16, target_attention_only=True)
     compressed_model, stats = compressor.compress()
-    # Attention projections should be compressed
     assert isinstance(compressed_model.query, DobiSVDLinearLayer)
     assert isinstance(compressed_model.key, DobiSVDLinearLayer)
     assert isinstance(compressed_model.value, DobiSVDLinearLayer)
     assert isinstance(compressed_model.out_proj, DobiSVDLinearLayer)
-    # FFN and classifier should NOT be compressed
     assert not isinstance(compressed_model.ffn, DobiSVDLinearLayer)
     assert not isinstance(compressed_model.classifier, DobiSVDLinearLayer)
 
@@ -85,7 +89,6 @@ def test_dobi_compressor_target_attention_only():
 def test_dobi_compressor_rank_cap_128():
     linear = nn.Linear(512, 512)
     compressor = DobiSVDCompressor(linear, rank=300)
-    # Target rank was requested as 300, but max_r must cap it at 128
     r = compressor._determine_rank(512, 512, 300)
     assert r <= 128
 
@@ -102,7 +105,6 @@ def test_dobi_compress_conv1d():
 
     model = ModelWithConv1D()
     with torch.no_grad():
-        # Low rank Conv1D weights: rank 8
         a1 = torch.randn(64, 8)
         b1 = torch.randn(8, 192)
         model.c_attn.weight.copy_(torch.matmul(a1, b1))
@@ -121,7 +123,6 @@ def test_dobi_compress_conv1d():
 
 def test_dobi_fallback_on_high_error():
     model = DummyAttentionModel(d=64)
-    # With full rank random weights and max_error=0.01, it must fall back to original
     compressor = DobiSVDCompressor(model, rank=4, max_error=0.01, fallback_to_original=True)
     compressed_model, stats = compressor.compress()
     assert not isinstance(compressed_model.query, DobiSVDLinearLayer)

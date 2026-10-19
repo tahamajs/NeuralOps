@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Unit tests for neuralops.utils.compat package."""
 
 import pytest
@@ -23,12 +29,10 @@ from neuralops.utils.compat import (
 
 
 def test_repeat_kv():
-    # [B, Hkv, L, D] -> [B, H, L, D]
     x = torch.randn(2, 4, 8, 16)
     out = repeat_kv(x, n_rep=2)
     assert out.shape == (2, 8, 8, 16)
 
-    # n_rep = 1 should be identity
     out_ident = repeat_kv(x, n_rep=1)
     assert out_ident is x
 
@@ -63,7 +67,6 @@ def test_should_compress():
 
 def test_dynamic_compression_rank():
     assert get_dynamic_compression_rank(1024, 1024, model_or_family="gpt2", default_rank=16) == 16
-    # Qwen3.5: target = min(1024, 1024) // 4 = 256
     assert get_dynamic_compression_rank(1024, 1024, model_or_family="qwen3_5") == 256
 
 
@@ -78,7 +81,6 @@ def test_install_projection_aliases():
 
     mod = DummyAttention()
     install_projection_aliases(mod)
-    # CANONICAL_PROJECTION_ALIASES maps query <-> q_proj, key <-> k_proj, etc.
     assert hasattr(mod, "query")
     assert mod.query is mod.q_proj
     assert hasattr(mod, "key")

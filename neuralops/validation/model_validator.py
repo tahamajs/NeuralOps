@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Model Architecture Validator
 
 Validates model architecture construction, layer integrity, and forward pass execution.
-
-Author: Taha Majlesi
 """
 
 import torch
@@ -45,7 +49,6 @@ class ModelValidator:
 
         try:
             self.model.train()
-            # Try classification label shape (B,) first, fallback to token-level (B, L)
             try:
                 labels = torch.zeros(self.input_shape[0], dtype=torch.long, device=self.device)
                 out = self.model(dummy, labels=labels)

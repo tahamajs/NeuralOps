@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Recurrent State Cache Infrastructure
 
 O(1) persistent state cache engine supporting autoregressive recurrent and linear attention decoding.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -87,7 +91,6 @@ class NeuralOpsStateCache:
         total_tokens = k_cat.shape[-2]
         max_len = sink_tokens + max_window
         if total_tokens > max_len:
-            # Preserve first sink_tokens, keep most recent max_window
             k_sink = k_cat[..., :sink_tokens, :]
             v_sink = v_cat[..., :sink_tokens, :]
             k_recent = k_cat[..., -max_window:, :]
@@ -129,7 +132,6 @@ class NeuralOpsStateCache:
         self.window_kv_states.clear()
         self.seen_tokens = 0
 
-    # HuggingFace Cache duck-typing interface
     def get_seq_length(self, layer_idx: Optional[int] = 0) -> int:
         return self.seen_tokens
 
@@ -156,17 +158,13 @@ def benchmark_autoregressive_decoding(
     dtype_bytes = 2 if dtype in (torch.float16, torch.bfloat16) else 4
 
     records = []
-    # NeuralOps recurrent state is fixed shape: [B, H, d, d]
     recurrent_state_bytes = batch_size * num_heads * head_dim * head_dim * dtype_bytes
     recurrent_mb = float(recurrent_state_bytes / (1024 * 1024))
 
     for T in seq_lens:
-        # Standard KV-Cache stores K and V: 2 * B * H * T * d
         standard_kv_bytes = 2 * batch_size * num_heads * T * head_dim * dtype_bytes
         standard_kv_mb = float(standard_kv_bytes / (1024 * 1024))
 
-        # Latency estimation: standard softmax memory bandwidth bottleneck grows with T
-        # NeuralOps state update is constant O(1) FLOPs and DRAM traffic
         std_latency_ms = round(0.04 + 0.08 * (T / 2048.0), 3)
         neuralops_latency_ms = round(0.02, 3)
 

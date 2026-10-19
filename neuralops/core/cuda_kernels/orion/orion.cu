@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -5,13 +12,6 @@
 
 namespace neuralops { namespace cuda {
 
-// Orion Gaussian Attention Kernel:
-// Projects features with Gaussian radial basis kernel and causal recurrence:
-// \phi(k_t) = \exp(-0.5 \cdot \text{temp} \cdot k_t^2)
-// s_t = s_{t-1} + \phi(k_t) \cdot v_t
-// y_t = \exp(-0.5 \cdot \text{temp} \cdot q_t^2) \cdot s_t
-// Thread mapping: 2D Grid over (ceil(D / 128), B * H) with 128 threads per block.
-// Eliminates the hardcoded threads = D, blocks = B * H anti-pattern.
 template <typename scalar_t>
 __global__ void __launch_bounds__(128) orion_fwd_kernel(
     scalar_t* __restrict__ out,
@@ -46,7 +46,7 @@ __global__ void __launch_bounds__(128) orion_fwd_kernel(
     }
 }
 
-}} // namespace neuralops::cuda
+}}
 
 torch::Tensor orion_fwd(
     const torch::Tensor& q,

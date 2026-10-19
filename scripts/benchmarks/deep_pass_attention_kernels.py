@@ -1,6 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Deep pass attention kernels module.
-
-Author: Taha Majlesi
 """
 
 import sys
@@ -83,7 +87,6 @@ def run_deep_pass():
             mod = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(mod)
 
-            # Generate inputs & callables
             cuda_fn = None
             ref_fn = None
             if name == "flash_gqa":
@@ -300,7 +303,6 @@ def run_deep_pass():
             if cuda_fn is None or ref_fn is None:
                 continue
 
-            # Test numerical parity & finite check
             out_cuda = cuda_fn()
             out_ref = ref_fn()
 

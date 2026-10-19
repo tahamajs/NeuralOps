@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Rigorous Micro-Benchmarking Suite for the 13 Flagship Triton GPU Kernels.
 Executed natively on NVIDIA GeForce RTX 4070 Laptop GPU (Ada Lovelace SM 8.9, 8GB VRAM).
@@ -68,7 +74,6 @@ def benchmark_fn(
     torch.cuda.empty_cache()
     torch.cuda.reset_peak_memory_stats()
 
-    # Warmup
     for _ in range(warmup):
         _ = fn()
     torch.cuda.synchronize()
@@ -113,9 +118,6 @@ def main():
 
     results: List[Dict[str, Any]] = []
 
-    # -----------------------------------------------------------------------
-    # Kernel 1: Fused Low-Rank Gated GEMM
-    # -----------------------------------------------------------------------
     print("\n[Kernel 1/13] triton_fused_lowrank_gated_gemm")
     M, K, r, N = 1024, 2048, 32, 2048
     x1 = torch.randn(M, K, device=device, dtype=torch.float16)
@@ -150,9 +152,6 @@ def main():
         }
     )
 
-    # -----------------------------------------------------------------------
-    # Kernel 2: Fused Low-Rank + Sparse GEMM (RPCA)
-    # -----------------------------------------------------------------------
     print("\n[Kernel 2/13] triton_fused_lowrank_sparse_gemm")
     M, K, r, N = 1024, 2048, 32, 2048
     x2 = torch.randn(M, K, device=device, dtype=torch.float16)
@@ -190,9 +189,6 @@ def main():
         }
     )
 
-    # -----------------------------------------------------------------------
-    # Kernel 3: Strided TT Linear Projection
-    # -----------------------------------------------------------------------
     print("\n[Kernel 3/13] triton_strided_tt_linear")
     p_dims = [32, 64]
     q_dims = [32, 64]
@@ -229,9 +225,6 @@ def main():
         }
     )
 
-    # -----------------------------------------------------------------------
-    # Kernel 4: Fused Hadamard W4A16 GEMM
-    # -----------------------------------------------------------------------
     print("\n[Kernel 4/13] triton_fused_hadamard_w4a16_gemm")
     M, K, N = 128, 512, 512
     group_size = 32
@@ -267,9 +260,6 @@ def main():
         }
     )
 
-    # -----------------------------------------------------------------------
-    # Kernel 5: In-Register LUT Codebook Dequantization GEMM
-    # -----------------------------------------------------------------------
     print("\n[Kernel 5/13] triton_lut_codebook_dequant_gemm")
     M, K, N = 128, 512, 512
     group_size = 64
@@ -304,9 +294,6 @@ def main():
         }
     )
 
-    # -----------------------------------------------------------------------
-    # Kernel 6: Fused Kronecker Matmul
-    # -----------------------------------------------------------------------
     print("\n[Kernel 6/13] triton_fused_kronecker_matmul")
     M1, N1 = 32, 32
     M2, N2 = 64, 64
@@ -342,9 +329,6 @@ def main():
         }
     )
 
-    # -----------------------------------------------------------------------
-    # Kernel 7: Chunked Delta-Gate Recurrent Scan
-    # -----------------------------------------------------------------------
     print("\n[Kernel 7/13] triton_chunked_delta_gate_scan")
     B, H, L, D_K, D_V = 2, 8, 128, 32, 32
     q7 = torch.randn(B, H, L, D_K, device=device, dtype=torch.float32)
@@ -379,9 +363,6 @@ def main():
         }
     )
 
-    # -----------------------------------------------------------------------
-    # Kernel 8: Cosformer Linear Attention
-    # -----------------------------------------------------------------------
     print("\n[Kernel 8/13] triton_cosformer_linear_attention")
     B, H, L, D = 2, 8, 256, 64
     q8 = torch.randn(B, H, L, D, device=device, dtype=torch.float16)
@@ -414,9 +395,6 @@ def main():
         }
     )
 
-    # -----------------------------------------------------------------------
-    # Kernel 9: Block-Sparse Streaming Attention
-    # -----------------------------------------------------------------------
     print("\n[Kernel 9/13] triton_block_sparse_streaming_attn")
     B, H, L, D = 2, 4, 256, 64
     block_size = 32
@@ -453,9 +431,6 @@ def main():
         }
     )
 
-    # -----------------------------------------------------------------------
-    # Kernel 10: Fused Bidirectional HGRN2 Scan
-    # -----------------------------------------------------------------------
     print("\n[Kernel 10/13] triton_hgrn2_fused_bwd_scan")
     B, H, L, D = 2, 8, 128, 64
     x10 = torch.randn(B, H, L, D, device=device, dtype=torch.float32)
@@ -487,9 +462,6 @@ def main():
         }
     )
 
-    # -----------------------------------------------------------------------
-    # Kernel 11: Spectral Entropy SVD Gate
-    # -----------------------------------------------------------------------
     print("\n[Kernel 11/13] triton_spectral_entropy_svd_gate")
     M, K, R_MAX, N = 1024, 2048, 32, 2048
     eff_r = 16
@@ -527,9 +499,6 @@ def main():
         }
     )
 
-    # -----------------------------------------------------------------------
-    # Kernel 12: Fused Activation-Scaling Quantized GEMM
-    # -----------------------------------------------------------------------
     print("\n[Kernel 12/13] triton_fused_act_scale_quant_gemm")
     M, K, N = 128, 768, 768
     x12 = torch.randn(M, K, device=device, dtype=torch.float16)
@@ -563,9 +532,6 @@ def main():
         }
     )
 
-    # -----------------------------------------------------------------------
-    # Kernel 13: Fused Latent KV-Cache Attention
-    # -----------------------------------------------------------------------
     print("\n[Kernel 13/13] triton_fused_latent_kv_cache_attention")
     B, H, L_Q, L_KV, R, D_K, D_V = 2, 8, 64, 256, 32, 64, 64
     q13 = torch.randn(B, H, L_Q, D_K, device=device, dtype=torch.float16)
@@ -599,9 +565,6 @@ def main():
         }
     )
 
-    # -----------------------------------------------------------------------
-    # Save Results
-    # -----------------------------------------------------------------------
     os.makedirs("results", exist_ok=True)
     json_path = "results/triton_13_flagship_kernels_benchmark.json"
     with open(json_path, "w") as f:

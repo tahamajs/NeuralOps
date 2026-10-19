@@ -1,6 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Eval speculative sweep k1 k8 module.
-
-Author: Taha Majlesi
 """
 
 import time
@@ -20,7 +24,6 @@ def print_log(msg):
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print_log(f"Speculative Decoding Empirical Benchmark on: {torch.cuda.get_device_name(0)}")
 
-# Verify the native CUDA speculative verification kernel
 d_mock = torch.tensor([[1, 2, 3, 4]], device=device)
 t_mock = torch.tensor([[1, 2, 5, 4]], device=device)
 mask, accepted_cnt = speculative_verify(d_mock, t_mock)
@@ -30,7 +33,6 @@ model_path = "/mnt/d/models/gpt2"
 tokenizer = AutoTokenizer.from_pretrained(model_path)
 tokenizer.pad_token = tokenizer.eos_token
 
-# Prompts spanning mathematical reasoning, algorithm induction, logic deduction, systems text
 prompts = [
     (
         "Reasoning_Induction",
@@ -90,7 +92,6 @@ def standard_autoregressive_greedy(model, input_ids, max_new_tokens=32):
     return curr_ids, elapsed, tok_s
 
 
-# Horizon budget K in [1, 2, 3, 4, 5, 6, 7, 8]
 K_VALUES = list(range(1, 9))
 MAX_NEW_TOKENS = 32
 
@@ -102,7 +103,6 @@ for p_name, prompt_text in prompts:
     input_ids = tokenizer(prompt_text, return_tensors="pt").input_ids.to(device)
     print_log(f"\nEvaluating Prompt: [{p_name}] (len={input_ids.shape[1]})")
 
-    # 1. Standard Autoregressive Baseline
     target_tokens, target_time, target_tok_s = standard_autoregressive_greedy(
         target_model, input_ids, max_new_tokens=MAX_NEW_TOKENS
     )
@@ -119,10 +119,8 @@ for p_name, prompt_text in prompts:
             torch.cuda.synchronize()
             t_spec_elapsed = time.perf_counter() - t_spec_start
 
-            # Exact 100% Bit-Exact Match verification
             exact_match = torch.equal(spec_tokens, target_tokens)
 
-            # Wall-clock latency reduction ratio
             wall_clock_speedup = target_time / t_spec_elapsed
 
             record = {

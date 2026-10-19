@@ -1,6 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Profile pareto frontier module.
-
-Author: Taha Majlesi
 """
 
 import sys
@@ -17,10 +21,8 @@ from neuralops.core.cuda_kernels.selective_scan.selective_scan_autograd import s
 device = torch.device("cuda:0")
 print(f"Device: {torch.cuda.get_device_name(0)}")
 
-# Budgets M in {1GB, 2GB, 4GB}
 results = []
 
-# Warmup CUDA
 torch.cuda.empty_cache()
 torch.cuda.reset_peak_memory_stats()
 _ = torch.randn(1000, 1000, device=device) @ torch.randn(1000, 1000, device=device)
@@ -29,7 +31,6 @@ torch.cuda.synchronize()
 print("\n=== STARTING PARETO FRONTIER PROFILING ===")
 
 configurations = [
-    # (name, policy_type, param)
     ("Standard Dense Attention", "dense", 1.0),
     ("Paged KV Evict (Retention=50%)", "paged_kv_evict", 0.50),
     ("Paged KV Evict (Retention=25%)", "paged_kv_evict", 0.25),
@@ -42,11 +43,10 @@ H = 16
 D_HEAD = 64
 D = H * D_HEAD
 
-# Targets to evaluate throughput vs effective capacity under memory limits
 budget_configs = [
-    (1024, 2, 4096),  # 1GB budget: B=2, L=4096 (8,192 tokens)
-    (2048, 4, 4096),  # 2GB budget: B=4, L=4096 (16,384 tokens)
-    (4096, 4, 8192),  # 4GB budget: B=4, L=8192 (32,768 tokens)
+    (1024, 2, 4096),
+    (2048, 4, 4096),
+    (4096, 4, 8192),
 ]
 
 for budget_mb, B, L in budget_configs:
@@ -57,7 +57,6 @@ for budget_mb, B, L in budget_configs:
         torch.cuda.empty_cache()
         torch.cuda.reset_peak_memory_stats()
 
-        # Dense attention OOMs at B=4, L=8192
         if policy_type == "dense" and L > 4096:
             print(f"Skipping {name} at L={L} (OOM limit exceeded)")
             results.append(
@@ -104,8 +103,6 @@ for budget_mb, B, L in budget_configs:
                 eff_cap = 100.0
 
             elif policy_type == "paged_kv_evict":
-                # k_in and v_in are [L_total, H, D_HEAD], where L_total = B * L tokens
-                # keep_indices: 1D tensor of int64 of length int(total_tokens * param)
                 keep_len = int(total_tokens * param)
                 k_pool = torch.randn(total_tokens, H, D_HEAD, device=device, dtype=torch.float16)
                 v_pool = torch.randn(total_tokens, H, D_HEAD, device=device, dtype=torch.float16)
@@ -113,7 +110,6 @@ for budget_mb, B, L in budget_configs:
                     torch.randint(0, total_tokens, (keep_len,), device=device, dtype=torch.int64)
                 ).values
 
-                # Warmup
                 for _ in range(5):
                     k_ev, v_ev = paged_kv_evict(k_pool, v_pool, keep_idx)
                 torch.cuda.synchronize()
@@ -141,13 +137,9 @@ for budget_mb, B, L in budget_configs:
                 k = torch.randn(B, H, L, D_HEAD, device=device, dtype=torch.float16)
                 v = torch.randn(B, H, L, D_HEAD, device=device, dtype=torch.float16)
 
-                # block_mask is 2D [num_blocks, num_blocks]
-                # Sparsity param: fraction of blocks masked out (e.g. 0.50 or 0.75)
-                # Keep fraction = 1 - param
                 density = 1.0 - param
                 mask_prob = torch.rand(num_blocks, num_blocks, device=device)
                 block_mask = (mask_prob < density).to(torch.int32)
-                # Ensure diagonal is active for causal self-attention
                 block_mask = block_mask | torch.eye(num_blocks, device=device, dtype=torch.int32)
 
                 for _ in range(5):
@@ -238,7 +230,6 @@ for budget_mb, B, L in budget_configs:
                 }
             )
 
-# Save results to CSV
 csv_path = "/mnt/d/SVD_linear_Attention/docs/benchmarks/paper_benchmarks_pareto_frontier.csv"
 os.makedirs(os.path.dirname(csv_path), exist_ok=True)
 fieldnames = [

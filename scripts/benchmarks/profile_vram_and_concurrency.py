@@ -1,6 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Profile vram and concurrency module.
-
-Author: Taha Majlesi
 """
 
 import os
@@ -49,7 +53,6 @@ def run_stress_test(name, module_fn, num_iters=1000, batch_size=4, seq_len=256, 
     module = module_fn().to(device)
     module.train()
 
-    # Warmup
     for _ in range(warmup):
         x = torch.randn(batch_size, seq_len, dim, device=device, requires_grad=True)
         out = module(x)
@@ -139,7 +142,6 @@ def run_multistream_test():
 
     gla = GLAttention(hidden_size=D, num_heads=12, head_dim=64).to(device)
 
-    # Warmup
     for _ in range(10):
         with torch.cuda.stream(stream_attn):
             _out_attn = gla(x_attn)[0]
@@ -151,7 +153,6 @@ def run_multistream_test():
 
     num_rounds = 200
 
-    # Sequential
     torch.cuda.synchronize()
     t_seq_0 = time.time()
     for _ in range(num_rounds):
@@ -160,7 +161,6 @@ def run_multistream_test():
     torch.cuda.synchronize()
     t_seq = time.time() - t_seq_0
 
-    # Multi-stream concurrent execution
     torch.cuda.synchronize()
     t_par_0 = time.time()
     for _ in range(num_rounds):

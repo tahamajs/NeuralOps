@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Surgical Model IO and Checkpointing
 
 Model state serialization and weight conversion routines for seamless HuggingFace checkpoint interoperability.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -34,7 +38,6 @@ def extract_surgical_manifest(model: nn.Module) -> Dict[str, Any]:
         "submodules": {},
     }
 
-    # Set of known compressor linear class names
     known_compressed_linears = {
         "SVDLinear",
         "FactorizedLinear",
@@ -70,11 +73,9 @@ def extract_surgical_manifest(model: nn.Module) -> Dict[str, Any]:
             continue
         cls_name = sub.__class__.__name__
 
-        # Skip submodules that belong inside an already-cataloged attention block
         if any(name.startswith(p + ".") for p in cataloged_attn_names):
             continue
 
-        # Check if Attention module (AttentionWrapper, ComposableAttention, or registered attention)
         is_attention = (
             cls_name in ("AttentionWrapper", "ComposableAttention", "ReplaceAttention", "UniversalAttentionWrapper")
             or getattr(sub, "is_custom_attention", False)
@@ -90,12 +91,10 @@ def extract_surgical_manifest(model: nn.Module) -> Dict[str, Any]:
 
         if is_attention:
             cataloged_attn_names.append(name)
-            # If sub is a wrapper, inspect its inner attention module
             is_wrapper = hasattr(sub, "_wrapped_attention") and getattr(sub, "_wrapped_attention") is not None
             effective_sub = sub._wrapped_attention if is_wrapper else sub
             eff_cls_name = effective_sub.__class__.__name__
 
-            # Resolve registered key if available
             target_key = getattr(effective_sub, "target_attention", None)
             if not target_key:
                 for reg_k, reg_cls in ATTENTION_REGISTRY.items():
@@ -105,7 +104,6 @@ def extract_surgical_manifest(model: nn.Module) -> Dict[str, Any]:
             if not target_key:
                 target_key = eff_cls_name.lower()
 
-            # Determine embed_dim, num_heads, rank accurately
             embed_dim = getattr(effective_sub, "embed_dim", getattr(effective_sub, "hidden_size", None))
             if embed_dim is None:
                 for p in effective_sub.parameters():
@@ -189,23 +187,19 @@ def save_surgical_checkpoint(
         json.dump(manifest, f, indent=2)
 
     state_dict = model.state_dict()
-    # Filter out transient source_attn proxies that were attached only for weight transplantation
     clean_state_dict = {
         k: v for k, v in state_dict.items() if ".source_attn." not in k
     }
 
-    # Try saving with safetensors if available
     saved_safetensors = False
     try:
         from safetensors.torch import save_file
-        # Clone tensors to ensure contiguous unshared storage
         clean_state = {k: v.contiguous().clone() for k, v in clean_state_dict.items()}
         save_file(clean_state, str(path / "model.safetensors"))
         saved_safetensors = True
     except (ImportError, RuntimeError, OSError) as e_st:
         logger.debug("Safetensors save skipped: %s", e_st)
 
-    # Always write standard PyTorch checkpoint as reliable companion
     torch.save(clean_state_dict, str(path / "surgical_model_state.pt"))
     logger.info("Saved surgical checkpoint with %d modified submodules to %s", len(manifest["submodules"]), path)
     return path
@@ -229,7 +223,6 @@ def load_surgical_checkpoint(
     submodules_info = manifest.get("submodules", {})
     from neuralops.core.model_utils import replace_module
 
-    # Infer base_model device if map_location is not explicitly passed
     target_device = map_location
     if target_device is None:
         try:
@@ -237,13 +230,11 @@ def load_surgical_checkpoint(
         except (StopIteration, RuntimeError):
             target_device = torch.device("cpu")
 
-    # 1. Reconstruct all modified submodules
     for module_path, info in submodules_info.items():
         category = info.get("category")
         cls_name = info.get("class_name")
         import_path = info.get("module_import_path")
 
-        # Import class dynamically or resolve from ATTENTION_REGISTRY
         try:
             mod = importlib.import_module(import_path)
             cls = getattr(mod, cls_name)
@@ -331,7 +322,6 @@ def load_surgical_checkpoint(
             rank = info.get("rank", 32)
             has_b = info.get("has_bias", True)
 
-            # Reconstruct factorized linear
             try:
                 new_sub = cls(in_features=in_f, out_features=out_f, rank=rank, bias=has_b)
             except (TypeError, ValueError, AttributeError):
@@ -345,7 +335,6 @@ def load_surgical_checkpoint(
                 new_sub = new_sub.to(target_device)
             replace_module(base_model, module_path, new_sub)
 
-    # 2. Load Weights into reconstructed model
     pt_file = path / "surgical_model_state.pt"
     st_file = path / "model.safetensors"
 

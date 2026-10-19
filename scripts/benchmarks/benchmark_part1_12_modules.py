@@ -1,5 +1,9 @@
-# -*- coding: utf-8 -*-
-# Author: Taha Majlesi
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Benchmark and Correctness Verification Suite for Part 1 (12 Modules) on NVIDIA RTX 4070 GPU.
 Measures:
@@ -96,7 +100,6 @@ def main():
     dtype = torch.float16
     results = []
 
-    # 1. alibi_attention
     B, H, L, D = 2, 8, 256, 64
     q1 = torch.randn(B, H, L, D, device=device, dtype=dtype) * 0.1
     k1 = torch.randn(B, H, L, D, device=device, dtype=dtype) * 0.1
@@ -110,7 +113,6 @@ def main():
         )
     )
 
-    # 2. cluster_attention
     B, H, N, D, K_clust = 2, 8, 256, 64, 32
     q2 = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
     c2 = torch.randn(B, H, K_clust, D, device=device, dtype=dtype) * 0.1
@@ -124,7 +126,6 @@ def main():
         )
     )
 
-    # 3. cross_attention
     B, H, L_q, L_kv, D = 2, 8, 256, 256, 64
     q3 = torch.randn(B, H, L_q, D, device=device, dtype=dtype) * 0.1
     k3 = torch.randn(B, H, L_kv, D, device=device, dtype=dtype) * 0.1
@@ -137,7 +138,6 @@ def main():
         )
     )
 
-    # 4. differential_attention
     B, H, N, D = 2, 8, 256, 64
     q4_1 = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
     k4_1 = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
@@ -152,7 +152,6 @@ def main():
         )
     )
 
-    # 5. dynamic_conv1d
     B, D_conv, L_conv, K_conv = 4, 64, 512, 8
     x5 = torch.randn(B, D_conv, L_conv, device=device, dtype=dtype) * 0.1
     w5 = torch.randn(D_conv, K_conv, device=device, dtype=dtype) * 0.1
@@ -164,7 +163,6 @@ def main():
         )
     )
 
-    # 6. entropy_gate
     B, M, K_dim, N_dim, R = 4, 128, 128, 128, 32
     x6 = torch.randn(B, M, K_dim, device=device, dtype=dtype) * 0.1
     V6 = torch.randn(K_dim, R, device=device, dtype=dtype) * 0.1
@@ -178,7 +176,6 @@ def main():
         )
     )
 
-    # 7. flash_decoding
     B, H, N_q, N_kv, D = 4, 8, 1, 1024, 128
     q7 = torch.randn(B, H, N_q, D, device=device, dtype=dtype) * 0.1
     k7 = torch.randn(B, H, N_kv, D, device=device, dtype=dtype) * 0.1
@@ -191,7 +188,6 @@ def main():
         )
     )
 
-    # 8. fms_scan
     B, H, L, D = 2, 8, 256, 64
     decay8 = torch.full((H,), 0.95, device=device, dtype=torch.float32)
     q8 = torch.randn(B, H, L, D, device=device, dtype=dtype) * 0.1
@@ -205,7 +201,6 @@ def main():
         )
     )
 
-    # 9. gla_scan
     B, H, L, D = 2, 8, 256, 64
     q9 = torch.randn(B, H, L, D, device=device, dtype=dtype) * 0.1
     k9 = torch.randn(B, H, L, D, device=device, dtype=dtype) * 0.1
@@ -218,7 +213,6 @@ def main():
         )
     )
 
-    # 10. latent_kv_attn
     B, H, L_Q, L_KV, D_K, D_V, R = 2, 8, 128, 256, 64, 64, 32
     q10 = torch.randn(B, H, L_Q, D_K, device=device, dtype=dtype) * 0.1
     c10 = torch.randn(B, L_KV, R, device=device, dtype=dtype) * 0.1
@@ -232,7 +226,6 @@ def main():
         )
     )
 
-    # 11. linformer_attention
     B, H, N, D, K_proj_len = 2, 8, 256, 64, 32
     q11 = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
     kp11 = torch.randn(B, H, K_proj_len, D, device=device, dtype=dtype) * 0.1
@@ -245,7 +238,6 @@ def main():
         )
     )
 
-    # 12. local_attention
     B, H, N, D = 2, 8, 256, 64
     q12 = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
     k12 = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1

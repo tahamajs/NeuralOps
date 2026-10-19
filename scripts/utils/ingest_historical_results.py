@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Historical Result Ingestion Routine for NeuralOps ResultsLedger.
 Extracts benchmark metrics across:
@@ -17,8 +23,6 @@ Extracts benchmark metrics across:
 - results/SEQLEN_SCALING_MASTER.csv
 - results/master_benchmark_summary.csv
 - results/pareto_table.csv
-
-Author: Taha Majlesi
 """
 
 import csv
@@ -27,7 +31,6 @@ import sys
 import glob
 from pathlib import Path
 
-# Ensure neuralops is importable
 repo_root = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(repo_root))
 
@@ -56,7 +59,6 @@ def clean_metrics(m: dict) -> dict:
             cleaned[k] = val
         except (ValueError, TypeError):
             pass
-    # Drop all-zero metrics if that is all that exists
     if cleaned and all(val == 0.0 for val in cleaned.values()):
         return {}
     return cleaned
@@ -68,7 +70,6 @@ def run_ingestion():
     print(f"[+] Initialized ledger at: {ledger.root_dir}")
     total_ingested = 0
 
-    # 1. Ingest triton_all_131_attentions_benchmark.json
     f131 = repo_root / "results" / "triton_all_131_attentions_benchmark.json"
     if f131.exists():
         sha, ts = get_file_git_provenance(f131, repo_root)
@@ -108,7 +109,6 @@ def run_ingestion():
             ledger.add_or_replace(rec, mode="upsert")
             total_ingested += 1
 
-    # 2. Ingest triton_all_72_compressors_benchmark.json
     f72 = repo_root / "results" / "triton_all_72_compressors_benchmark.json"
     if f72.exists():
         sha, ts = get_file_git_provenance(f72, repo_root)
@@ -147,7 +147,6 @@ def run_ingestion():
             ledger.add_or_replace(rec, mode="upsert")
             total_ingested += 1
 
-    # 3. Ingest triton_13_flagship_kernels_benchmark.json
     f13 = repo_root / "results" / "triton_13_flagship_kernels_benchmark.json"
     if f13.exists():
         sha, ts = get_file_git_provenance(f13, repo_root)
@@ -193,7 +192,6 @@ def run_ingestion():
             ledger.add_or_replace(rec, mode="upsert")
             total_ingested += 1
 
-    # 4. Ingest benchmark_3level_cuda_triton_pytorch.json
     f3level = repo_root / "results" / "benchmark_3level_cuda_triton_pytorch.json"
     if f3level.exists():
         sha, ts = get_file_git_provenance(f3level, repo_root)
@@ -236,7 +234,6 @@ def run_ingestion():
             ledger.add_or_replace(rec, mode="upsert")
             total_ingested += 1
 
-    # 5. Ingest hnc_svd_comprehensive_benchmark.json
     fhnc = repo_root / "results" / "hnc_svd_comprehensive_benchmark.json"
     if fhnc.exists():
         sha, ts = get_file_git_provenance(fhnc, repo_root)
@@ -287,7 +284,6 @@ def run_ingestion():
                     ledger.add_or_replace(rec, mode="upsert")
                     total_ingested += 1
 
-    # 6. Ingest roberta_glue_compression_results.json
     froberta = repo_root / "results" / "roberta_glue_compression_results.json"
     if froberta.exists():
         sha, ts = get_file_git_provenance(froberta, repo_root)
@@ -333,7 +329,6 @@ def run_ingestion():
             ledger.add_or_replace(rec, mode="upsert")
             total_ingested += 1
 
-    # 7. Ingest competitive_comparison_v137.json
     fcomp = repo_root / "results" / "competitive_comparison_v137.json"
     if fcomp.exists():
         sha, ts = get_file_git_provenance(fcomp, repo_root)
@@ -380,7 +375,6 @@ def run_ingestion():
             ledger.add_or_replace(rec, mode="upsert")
             total_ingested += 1
 
-    # 8. Ingest accuracy_and_ppl_benchmark_all131.json
     facc = repo_root / "results" / "accuracy_and_ppl_benchmark_all131.json"
     if facc.exists():
         sha, ts = get_file_git_provenance(facc, repo_root)
@@ -425,7 +419,6 @@ def run_ingestion():
             ledger.add_or_replace(rec, mode="upsert")
             total_ingested += 1
 
-    # 9. Ingest triton_full_leaderboard_v136.json
     flead = repo_root / "results" / "triton_full_leaderboard_v136.json"
     if flead.exists():
         sha, ts = get_file_git_provenance(flead, repo_root)
@@ -477,7 +470,6 @@ def run_ingestion():
                 ledger.add_or_replace(rec, mode="upsert")
                 total_ingested += 1
 
-    # 10. Ingest all 01_unified_runs 4models_summary.json files
     unified_summaries = sorted(glob.glob(str(repo_root / "results" / "01_unified_runs" / "*" / "4models_summary.json")))
     for us_path_str in unified_summaries:
         us_path = Path(us_path_str)
@@ -529,7 +521,6 @@ def run_ingestion():
         except Exception:
             pass
 
-    # 11. Ingest master_aggregated_results.csv
     fcsv = repo_root / "results" / "master_aggregated_results.csv"
     if fcsv.exists():
         sha, ts = get_file_git_provenance(fcsv, repo_root)
@@ -590,7 +581,6 @@ def run_ingestion():
                 ledger.add_or_replace(rec, mode="upsert")
                 total_ingested += 1
 
-    # 12. Ingest results/results.jsonl (KD Fine-tuning runs)
     fres_jsonl = repo_root / "results" / "results.jsonl"
     if fres_jsonl.exists():
         sha, ts = get_file_git_provenance(fres_jsonl, repo_root)
@@ -641,7 +631,6 @@ def run_ingestion():
                 except Exception:
                     pass
 
-    # 13. Ingest all summary_record.json files across results/
     summary_records = sorted(glob.glob(str(repo_root / "results" / "**" / "summary_record.json"), recursive=True))
     for sr_str in summary_records:
         sr_path = Path(sr_str)
@@ -692,7 +681,6 @@ def run_ingestion():
         except Exception:
             pass
 
-    # 14. Ingest results/SEQLEN_SCALING_MASTER.csv
     fseq = repo_root / "results" / "SEQLEN_SCALING_MASTER.csv"
     if fseq.exists():
         sha, ts = get_file_git_provenance(fseq, repo_root)
@@ -736,7 +724,6 @@ def run_ingestion():
                 ledger.add_or_replace(rec, mode="upsert")
                 total_ingested += 1
 
-    # 15. Ingest results/master_benchmark_summary.csv
     fmbs = repo_root / "results" / "master_benchmark_summary.csv"
     if fmbs.exists():
         sha, ts = get_file_git_provenance(fmbs, repo_root)
@@ -782,7 +769,6 @@ def run_ingestion():
                 ledger.add_or_replace(rec, mode="upsert")
                 total_ingested += 1
 
-    # 16. Ingest results/v13_deep_empirical_suite/roberta_72_compressors/results.json
     f_rob72 = repo_root / "results" / "v13_deep_empirical_suite" / "roberta_72_compressors" / "results.json"
     if f_rob72.exists():
         sha, ts = get_file_git_provenance(f_rob72, repo_root)
@@ -830,7 +816,6 @@ def run_ingestion():
             ledger.add_or_replace(rec, mode="upsert")
             total_ingested += 1
 
-    # 17. Ingest results/v13_deep_empirical_suite/ablation_6pillar/ablation_summary.json
     f_abl6 = repo_root / "results" / "v13_deep_empirical_suite" / "ablation_6pillar" / "ablation_summary.json"
     if f_abl6.exists():
         sha, ts = get_file_git_provenance(f_abl6, repo_root)
@@ -879,23 +864,19 @@ def run_ingestion():
 
     print(f"[✓] Initial ingestion complete. Total records ingested: {total_ingested}")
 
-    # Rebuild SQLite index and guarantee 100% 1:1 parity with deduplication
     print("[+] Rebuilding SQLite index and deduplicating master_ledger.jsonl...")
     dedup_count = ledger.rebuild_sqlite_index()
     print(f"[✓] Rebuilt SQLite index! Total unique records: {dedup_count}")
 
-    # Synchronize all dossiers
     print("[+] Generating and synchronizing all module dossiers...")
     dossier_count = ledger.generate_all_dossiers()
     print(f"[✓] Successfully generated {dossier_count} module dossiers!")
 
-    # Regenerate Category Summaries without truncation
     print("[+] Regenerating category markdown summaries...")
     cat_counts = ledger.regenerate_category_summaries()
     for cat, c in cat_counts.items():
         print(f"  -> {cat}: {c} records")
 
-    # Generate Default SVG Plots
     print("[+] Generating standard vector plots in results/plots/...")
     triton_recs = ledger.query(category="triton_kernel", limit=15)
     if triton_recs:

@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Unit tests for AdaptiveSpanAttention module.
 Verifies all 8 core properties:
@@ -39,7 +45,6 @@ def test_2_span_regularization_loss_positive():
     assert isinstance(loss, torch.Tensor), "Expected torch.Tensor loss"
     assert loss.dim() == 0, f"Expected scalar loss, got dim {loss.dim()}"
     assert loss.item() > 0.0, f"Expected strictly positive loss, got {loss.item()}"
-    # At logits=4.0, normalized span ~ 0.982, lambda=0.01 -> ~ 0.00982
     expected = 0.01 * torch.sigmoid(attn.span_logits).mean().item()
     assert abs(loss.item() - expected) < 1e-4, f"Expected {expected:.5f}, got {loss.item():.5f}"
     print(f"[PASS] Test 2: Span regularization loss is strictly positive ({loss.item():.5f})")
@@ -52,13 +57,11 @@ def test_3_multi_module_span_loss_aggregation():
             super().__init__()
             self.layer0 = AdaptiveSpanAttention(hidden_size=128, num_heads=2, max_span=32)
             self.layer1 = AdaptiveSpanAttention(hidden_size=128, num_heads=2, max_span=32)
-            # Set layer0 logits to 0.0 (sigmoid = 0.5) and layer1 to 4.0 (~0.982)
             self.layer0.span_logits.data.fill_(0.0)
             self.layer1.span_logits.data.fill_(4.0)
 
     model = ToyModel()
     total_loss = get_total_span_loss(model, lambda_span=0.02)
-    # Expected: 0.02 * (0.5 + sigmoid(4.0)) / 2 = 0.01 * (0.5 + 0.98201) = 0.01482
     exp_0 = 0.02 * 0.5
     exp_1 = 0.02 * torch.sigmoid(torch.tensor(4.0)).item()
     expected = (exp_0 + exp_1) / 2.0
@@ -82,17 +85,14 @@ def test_5_softmax_nan_safety_all_masked():
     attn = AdaptiveSpanAttention(hidden_size=128, num_heads=4, max_span=32)
     B, N, D = 2, 8, 128
     x = torch.randn(B, N, D)
-    # Mask out the last token completely for all queries
     mask = torch.zeros(B, 1, N, N)
-    mask[:, :, :, -1] = -10000.0  # Entire key position -1 is masked out
-    # Also mask an entire row (e.g. query row 0 has all keys masked)
+    mask[:, :, :, -1] = -10000.0
     mask[0, 0, 0, :] = -10000.0
 
     out, attn_weights = attn(x, attention_mask=mask, output_attentions=True)
     assert torch.isfinite(out).all(), "Output has NaNs when rows/keys are fully masked"
     if attn_weights is not None:
         assert torch.isfinite(attn_weights).all(), "Attn weights have NaNs when fully masked"
-        # The fully masked row should have zero attention weights
         assert (attn_weights[0, :, 0, :] == 0.0).all(), "Fully masked query row should have 0 attention"
     print("[PASS] Test 5: Softmax NaN safety on all-masked rows verified")
 
@@ -109,7 +109,6 @@ def test_6_gradient_flow_to_span_logits():
 
     assert attn.span_logits.grad is not None, "span_logits received no gradient"
     assert (attn.span_logits.grad != 0.0).all(), f"span_logits grad is zero: {attn.span_logits.grad}"
-    # Span regularization penalizes large spans, so its gradient contribution should be positive
     assert (attn.span_logits.grad > 0.0).any(), "Gradient should push span_logits to shrink"
     print(f"[PASS] Test 6: Gradient flow to span_logits verified (grads: {attn.span_logits.grad.tolist()})")
 

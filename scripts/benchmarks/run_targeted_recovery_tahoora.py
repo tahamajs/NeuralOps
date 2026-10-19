@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Run targeted recovery tahoora module.
-
-Author: Taha Majlesi
 """
 
 import sys
@@ -12,9 +16,7 @@ from pathlib import Path
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
 
-# Target all modules that scored <= 0.45 or had high initial distortion
 TARGET_MODULES = [
-    # Attentions with poor initial accuracy or divergence
     "block_transformer_hiba",
     "kda_attention",
     "aegis_hybrid",
@@ -33,7 +35,6 @@ TARGET_MODULES = [
     "chela_slay",
     "rpc_attention",
     "griffin_ssd",
-    # Compressors with poor initial accuracy or severe distortion
     "rpca_compressor",
     "enlighten_compressor",
     "grecodec_compressor",

@@ -1,3 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 import types
 
 import pytest
@@ -124,14 +131,12 @@ def test_token_compressed_masks():
     B, L, D = 2, 12, 64
     x = torch.randn(B, L, D)
 
-    # 2D mask
     mask_2d = torch.ones(B, L)
     mask_2d[:, -3:] = 0
     out_2d, _ = attn(x, attention_mask=mask_2d)
     assert out_2d.shape == (B, L, D)
     assert not torch.isnan(out_2d).any()
 
-    # 4D mask
     mask_4d = torch.zeros(B, 1, L, L)
     mask_4d[:, :, :, -3:] = -10000.0
     out_4d, _ = attn(x, attention_mask=mask_4d)
@@ -144,7 +149,6 @@ def test_token_compressed_lora_and_gradients():
     attn = TokenCompressedAttention(cfg, pretrained_attn=DummyAttn(64, 4), lora_rank=8)
     attn.train()
 
-    # Base frozen, lora trainable
     assert not attn.q_lin.weight.requires_grad
     assert attn.q_lin.lora_A.requires_grad
     assert attn.q_lin.lora_B.requires_grad
@@ -160,7 +164,6 @@ def test_token_compressed_lora_and_gradients():
 
 
 def test_token_compressed_config_none_safety():
-    # Must not raise AttributeError when config=None
     attn = TokenCompressedAttention(config=None, hidden_size=64, num_heads=4, lora_rank=8, lora_alpha=16.0)
     assert attn.dim == 64
     assert attn.num_heads == 4
@@ -189,20 +192,16 @@ def test_token_compressed_roberta_nested_copy():
     assert torch.allclose(attn.q_lin.weight, layer.self.query.weight)
     assert torch.allclose(attn.k_lin.weight, layer.self.key.weight)
 
-    # In forward, nested encoder bypasses out_lin
     x = torch.randn(2, 8, 64)
     out, _ = attn(x)
     assert out.shape == (2, 8, 64)
 
 
 def test_token_compressed_gpt2_conv1d_and_lora_wrapper():
-    # Conv1D layout test
     gpt2_attn = DummyGPT2Attn(64, 4)
-    # Simulate Conv1D weight [in_features, out_features]
     gpt2_attn.c_attn.weight.data = torch.randn(64, 192)
     gpt2_attn.c_proj.weight.data = torch.randn(64, 64)
 
-    # Wrap c_attn in a dummy LoRALinear having base_layer
     class LoRAWrapper(nn.Module):
         def __init__(self, base):
             super().__init__()
@@ -220,7 +219,6 @@ def test_token_compressed_gpt2_conv1d_and_lora_wrapper():
 
     attn = TokenCompressedAttention(config=None, pretrained_attn=wrapped_attn, hidden_size=64, num_heads=4, lora_rank=4)
     assert attn.is_decoder
-    # Verify proper transposed slice
     expected_q = gpt2_attn.c_attn.weight.data.t()[:64, :]
     assert torch.allclose(attn.q_lin.weight, expected_q)
 
@@ -232,7 +230,6 @@ def test_token_compressed_rotary_fallback():
     attn = TokenCompressedAttention(config=None, pretrained_attn=src, hidden_size=64, num_heads=4)
     assert attn.rotary_emb is not None
 
-    # Forward without position_embeddings triggers self.rotary_emb
     x = torch.randn(2, 8, 64)
     out, _ = attn(x)
     assert out.shape == (2, 8, 64)
@@ -240,7 +237,6 @@ def test_token_compressed_rotary_fallback():
 
 
 def test_token_compressed_frobenius_check():
-    # If source weight is zero, RuntimeError must be raised
     src = DummyAttn(64, 4)
     src.q_proj.weight.data.zero_()
 
@@ -264,7 +260,6 @@ def test_token_compressed_inject_safe():
     assert injected.lora_rank == 8
     assert injected.lora_alpha == 16.0
 
-    # Test failure: zeroed weight returns None without replacing layer.attention
     bad_layer = DummyLayer(64, 4)
     bad_layer.attention.q_proj.weight.data.zero_()
     orig_attn = bad_layer.attention

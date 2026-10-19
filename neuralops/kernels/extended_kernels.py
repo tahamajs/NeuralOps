@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Extended Accelerated Kernels
 
 Production hardware-accelerated kernels with unified three-level fallback across CUDA C++, Triton JIT, and PyTorch reference backends.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -27,9 +31,6 @@ except ImportError:
     HAS_TRITON = False
 
 
-# ==============================================================================
-# 1. Fused SwiGLU Kernel
-# ==============================================================================
 def swiglu_pytorch_ref(x: torch.Tensor, w_gate: torch.Tensor, w_up: torch.Tensor) -> torch.Tensor:
     gate = F.silu(F.linear(x, w_gate))
     up = F.linear(x, w_up)
@@ -44,16 +45,13 @@ if HAS_TRITON:
         pid = tl.program_id(0)
         offsets = pid * BLOCK_SIZE + tl.arange(0, BLOCK_SIZE)
         mask = offsets < n_elements
-        # elementwise silu(a) * b on paired chunk
         a = tl.load(x_ptr + offsets * 2, mask=mask, other=0.0)
         b = tl.load(x_ptr + offsets * 2 + 1, mask=mask, other=0.0)
-        # silu = a * sigmoid(a)
         sig = 1.0 / (1.0 + tl.exp(-a))
         out = (a * sig) * b
         tl.store(y_ptr + offsets, out, mask=mask)
 
 def swiglu_triton(x: torch.Tensor, w_gate: torch.Tensor, w_up: torch.Tensor) -> torch.Tensor:
-    # Compute projections and fuse activation
     gate = F.linear(x, w_gate)
     up = F.linear(x, w_up)
     return F.silu(gate) * up
@@ -68,9 +66,6 @@ def fused_swiglu(x: torch.Tensor, w_gate: torch.Tensor, w_up: torch.Tensor) -> t
     )
 
 
-# ==============================================================================
-# 2. Fused RMSNorm Kernel
-# ==============================================================================
 def rmsnorm_pytorch_ref(x: torch.Tensor, weight: torch.Tensor, eps: float = 1e-6) -> torch.Tensor:
     variance = x.pow(2).mean(-1, keepdim=True)
     return x * torch.rsqrt(variance + eps) * weight
@@ -117,9 +112,6 @@ def fused_rmsnorm(x: torch.Tensor, weight: torch.Tensor, eps: float = 1e-6) -> t
     )
 
 
-# ==============================================================================
-# 3. Fused Rotary Position Embedding (RoPE)
-# ==============================================================================
 def rotate_half(x: torch.Tensor) -> torch.Tensor:
     x1 = x[..., : x.shape[-1] // 2]
     x2 = x[..., x.shape[-1] // 2 :]
@@ -138,11 +130,7 @@ def fused_rotary_emb(x: torch.Tensor, cos: torch.Tensor, sin: torch.Tensor) -> t
     )
 
 
-# ==============================================================================
-# 4. Fused ALiBi Attention Bias
-# ==============================================================================
 def alibi_pytorch_ref(scores: torch.Tensor, num_heads: int) -> torch.Tensor:
-    # scores: [B, H, T, T]
     B, H, T, _ = scores.shape
     def get_slopes(n: int) -> list[float]:
         def get_slopes_power_of_2(n_p2: int) -> list[float]:
@@ -168,9 +156,6 @@ def fused_alibi_attention(scores: torch.Tensor, num_heads: int) -> torch.Tensor:
     )
 
 
-# ==============================================================================
-# 5. Fused Sink-Token Streaming Attention
-# ==============================================================================
 def sink_attention_pytorch_ref(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, num_sinks: int = 4, window_size: int = 64) -> torch.Tensor:
     B, H, T, D = q.shape
     scale = 1.0 / math.sqrt(D)
@@ -179,11 +164,9 @@ def sink_attention_pytorch_ref(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor
     mask = torch.ones(T, T, device=q.device, dtype=torch.bool)
     causal_mask = torch.tril(mask)
     
-    # Allow sink tokens: col < num_sinks
     sink_mask = torch.zeros(T, T, device=q.device, dtype=torch.bool)
     sink_mask[:, :min(num_sinks, T)] = True
     
-    # Allow local window
     band_mask = torch.triu(causal_mask, diagonal=-window_size)
     combined_mask = (band_mask | sink_mask) & causal_mask
     
@@ -199,11 +182,7 @@ def fused_sink_token_attention(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor
     )
 
 
-# ==============================================================================
-# 6. Fused Exponential Decay Scan
-# ==============================================================================
 def decay_scan_pytorch_ref(k: torch.Tensor, v: torch.Tensor, decay: float = 0.9) -> torch.Tensor:
-    # k: [B, T, Dk], v: [B, T, Dv]
     B, T, Dk = k.shape
     Dv = v.shape[-1]
     out = torch.zeros(B, T, Dv, device=k.device, dtype=k.dtype)
@@ -221,11 +200,7 @@ def fused_decay_scan(k: torch.Tensor, v: torch.Tensor, decay: float = 0.9) -> to
     )
 
 
-# ==============================================================================
-# 7. Fast Walsh-Hadamard Transform (FWHT)
-# ==============================================================================
 def hadamard_pytorch_ref(x: torch.Tensor) -> torch.Tensor:
-    # Fast Walsh-Hadamard transform over last dimension
     N = x.shape[-1]
     assert (N & (N - 1)) == 0, "Last dimension must be a power of 2"
     h = 1
@@ -248,11 +223,7 @@ def fused_hadamard_transform(x: torch.Tensor) -> torch.Tensor:
     )
 
 
-# ==============================================================================
-# 8. Vectorized INT4 Dequantization Kernel
-# ==============================================================================
 def int4_dequant_pytorch_ref(packed_w: torch.Tensor, scale: torch.Tensor, zero: torch.Tensor) -> torch.Tensor:
-    # packed_w: [K, N // 2] uint8
     low = (packed_w & 0x0F).to(scale.dtype)
     high = ((packed_w >> 4) & 0x0F).to(scale.dtype)
     unpacked = torch.stack([low, high], dim=-1).view(packed_w.shape[0], -1)
@@ -266,11 +237,7 @@ def fused_int4_dequant(packed_w: torch.Tensor, scale: torch.Tensor, zero: torch.
     )
 
 
-# ==============================================================================
-# 9. Scaled FP8 GEMM Kernel
-# ==============================================================================
 def fp8_e4m3_gemm_pytorch_ref(a: torch.Tensor, b: torch.Tensor, scale_a: float = 1.0, scale_b: float = 1.0) -> torch.Tensor:
-    # Simulate / execute scaled FP8 GEMM
     a_f = a.float() * scale_a
     b_f = b.float() * scale_b
     return torch.matmul(a_f, b_f).to(a.dtype if a.dtype.is_floating_point else torch.float32)
@@ -283,11 +250,7 @@ def fused_fp8_e4m3_gemm(a: torch.Tensor, b: torch.Tensor, scale_a: float = 1.0, 
     )
 
 
-# ==============================================================================
-# 10. Discrete Cosine Transform (DCT-II) Spectral Projection
-# ==============================================================================
 def dct_spectral_pytorch_ref(x: torch.Tensor) -> torch.Tensor:
-    # 1D Type-II DCT along last dimension
     N = x.shape[-1]
     k = torch.arange(N, device=x.device, dtype=torch.float32).unsqueeze(0)
     n = torch.arange(N, device=x.device, dtype=torch.float32).unsqueeze(1)
@@ -305,11 +268,7 @@ def fused_spectral_dct(x: torch.Tensor) -> torch.Tensor:
     )
 
 
-# ==============================================================================
-# 11. Chunked Segmented Cumsum
-# ==============================================================================
 def chunked_cumsum_pytorch_ref(x: torch.Tensor, chunk_size: int = 64) -> torch.Tensor:
-    # x: [B, T, D]
     B, T, D = x.shape
     pad_len = (chunk_size - (T % chunk_size)) % chunk_size
     if pad_len > 0:
@@ -330,11 +289,7 @@ def fused_chunked_cumsum(x: torch.Tensor, chunk_size: int = 64) -> torch.Tensor:
     )
 
 
-# ==============================================================================
-# 12. Linear CKA Representation Alignment Kernel
-# ==============================================================================
 def cka_alignment_pytorch_ref(x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
-    # x, y: [N, D]
     x_c = x - x.mean(dim=0, keepdim=True)
     y_c = y - y.mean(dim=0, keepdim=True)
     xy_sim = (x_c.t() @ y_c).pow(2).sum()
@@ -351,9 +306,6 @@ def fused_cka_alignment(x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
     )
 
 
-# ==============================================================================
-# 13. MOHAWK Homotopy Interpolation Kernel
-# ==============================================================================
 def mohawk_homotopy_pytorch_ref(w0: torch.Tensor, w_target: torch.Tensor, step: int, max_steps: int) -> torch.Tensor:
     progress = min(max(step / max(max_steps, 1), 0.0), 1.0)
     lam = 0.5 * (1.0 - math.cos(math.pi * progress))
@@ -367,11 +319,7 @@ def fused_mohawk_homotopy(w0: torch.Tensor, w_target: torch.Tensor, step: int, m
     )
 
 
-# ==============================================================================
-# 14. Hessian Null Space Projection Kernel
-# ==============================================================================
 def nullspace_project_pytorch_ref(delta: torch.Tensor, v_topk: torch.Tensor) -> torch.Tensor:
-    # delta: [D], v_topk: [D, K] orthonormal dominant eigenvectors
     proj = v_topk @ (v_topk.t() @ delta)
     return delta - proj
 
@@ -383,11 +331,7 @@ def fused_nullspace_project(delta: torch.Tensor, v_topk: torch.Tensor) -> torch.
     )
 
 
-# ==============================================================================
-# 15. Householder Reflection Transformation Kernel
-# ==============================================================================
 def householder_reflect_pytorch_ref(x: torch.Tensor, v: torch.Tensor) -> torch.Tensor:
-    # x: [B, D], v: [D]
     norm_v_sq = (v * v).sum() + 1e-8
     v_norm = v / torch.sqrt(norm_v_sq)
     dot = torch.matmul(x, v_norm).unsqueeze(-1)
@@ -401,11 +345,7 @@ def fused_householder_reflect(x: torch.Tensor, v: torch.Tensor) -> torch.Tensor:
     )
 
 
-# ==============================================================================
-# 16. Euclidean Simplex Projection Kernel
-# ==============================================================================
 def simplex_project_pytorch_ref(y: torch.Tensor) -> torch.Tensor:
-    # Projects each row of y onto probability simplex {w >= 0, sum(w) = 1}
     orig_shape = y.shape
     y_2d = y.view(-1, orig_shape[-1])
     N, D = y_2d.shape
@@ -427,11 +367,7 @@ def fused_simplex_project(y: torch.Tensor) -> torch.Tensor:
     )
 
 
-# ==============================================================================
-# 17. Fused Top-K Gating Kernel
-# ==============================================================================
 def topk_gating_pytorch_ref(logits: torch.Tensor, top_k: int = 2) -> Tuple[torch.Tensor, torch.Tensor]:
-    # logits: [B, num_experts]
     vals, idx = torch.topk(logits, k=top_k, dim=-1)
     weights = F.softmax(vals.float(), dim=-1).to(logits.dtype)
     return weights, idx
@@ -444,11 +380,7 @@ def fused_topk_gating(logits: torch.Tensor, top_k: int = 2) -> Tuple[torch.Tenso
     )
 
 
-# ==============================================================================
-# 18. Fused Label-Smoothed Cross-Entropy Kernel
-# ==============================================================================
 def label_smoothing_ce_pytorch_ref(logits: torch.Tensor, targets: torch.Tensor, smoothing: float = 0.1) -> torch.Tensor:
-    # logits: [N, C], targets: [N]
     return F.cross_entropy(logits, targets, label_smoothing=smoothing)
 
 def fused_label_smoothing_ce(logits: torch.Tensor, targets: torch.Tensor, smoothing: float = 0.1) -> torch.Tensor:
@@ -459,9 +391,6 @@ def fused_label_smoothing_ce(logits: torch.Tensor, targets: torch.Tensor, smooth
     )
 
 
-# ==============================================================================
-# 19. Temperature-Scaled KL Divergence Distillation Kernel
-# ==============================================================================
 def kl_distill_pytorch_ref(student_logits: torch.Tensor, teacher_logits: torch.Tensor, tau: float = 2.0) -> torch.Tensor:
     p_s = F.log_softmax(student_logits / tau, dim=-1)
     p_t = F.softmax(teacher_logits / tau, dim=-1)
@@ -475,11 +404,7 @@ def fused_kl_divergence(student_logits: torch.Tensor, teacher_logits: torch.Tens
     )
 
 
-# ==============================================================================
-# 20. Fused Low-Rank SVD with Residual Addition Kernel
-# ==============================================================================
 def lowrank_residual_pytorch_ref(x: torch.Tensor, u: torch.Tensor, v: torch.Tensor, x_res: torch.Tensor) -> torch.Tensor:
-    # x: [B, T, Din], u: [Din, R], v: [R, Dout], x_res: [B, T, Dout]
     low_rank_out = torch.matmul(torch.matmul(x, u), v)
     return low_rank_out + x_res
 

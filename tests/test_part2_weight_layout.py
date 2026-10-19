@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Part 2 Verification: Shape-Based Weight Layout Detection (RCA-2)."""
 import pytest
 import torch
@@ -12,7 +18,6 @@ def set_seed():
     torch.manual_seed(42)
 
 def test_conv1d_transposed_slicing():
-    # [in_dim, 3*out_dim] -> [64, 192]
     w = torch.randn(64, 192)
     b = torch.randn(192)
     sliced = _slice_fused_qkv_weights(w, b, num_heads=4)
@@ -22,7 +27,6 @@ def test_conv1d_transposed_slicing():
     assert torch.allclose(q_w, w[:, :64].t(), atol=1e-6)
 
 def test_linear_fused_slicing():
-    # [3*out_dim, in_dim] -> [192, 64]
     w = torch.randn(192, 64)
     b = torch.randn(192)
     sliced = _slice_fused_qkv_weights(w, b, num_heads=4)
