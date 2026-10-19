@@ -3,7 +3,7 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile.gpu
-    image: neuralops:v1.4.0-gpu
+    image: neuralops:v1.4.2-gpu
     container_name: neuralops-gpu-runtime
     ipc: host
     ulimits:
