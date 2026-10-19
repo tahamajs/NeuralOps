@@ -13,6 +13,8 @@ Selective scan kernel for Mamba-1 architectures evaluating continuous-time discr
 
 from __future__ import annotations
 
+from typing import Any
+
 import torch
 
 from neuralops.core.triton_kernels._common import HAS_TRITON, tl, triton
@@ -252,15 +254,15 @@ def _selective_scan_bwd_kernel(
 class TritonSelectiveScanFunction(torch.autograd.Function):
     @staticmethod
     def forward(
-        ctx,
-        u: torch.Tensor,
-        delta: torch.Tensor,
-        A: torch.Tensor,
-        B: torch.Tensor,
-        C: torch.Tensor,
-        D: torch.Tensor | None = None,
-        delta_softplus: bool = True,
-    ) -> torch.Tensor:
+        ctx: Any,
+        u: Any,
+        delta: Any,
+        A: Any,
+        B: Any,
+        C: Any,
+        D: Any = None,
+        delta_softplus: Any = True,
+    ) -> Any:
         B_size, L_size, D_dim = u.shape
         N_state = A.shape[1]
 
@@ -328,7 +330,7 @@ class TritonSelectiveScanFunction(torch.autograd.Function):
         return out
 
     @staticmethod
-    def backward(ctx, dout: torch.Tensor):
+    def backward(ctx: Any, dout: Any) -> tuple[Any, ...]:
         u, delta, A, B, C, D, h_workspace = ctx.saved_tensors
         B_size, L_size, D_dim = u.shape
         N_state = A.shape[1]
@@ -572,7 +574,7 @@ if HAS_TRITON and tl is not None:
 
     class _FusedJambaGateAutograd(torch.autograd.Function):
         @staticmethod
-        def forward(ctx, attn_out, ssm_out, alpha_raw, moe_out):
+        def forward(ctx: Any, attn_out: Any, ssm_out: Any, alpha_raw: Any, moe_out: Any) -> Any:
             total_elements = attn_out.numel()
             has_moe = moe_out is not None and moe_out.is_cuda
 
@@ -609,7 +611,7 @@ if HAS_TRITON and tl is not None:
             return out
 
         @staticmethod
-        def backward(ctx, dout):
+        def backward(ctx: Any, dout: Any) -> tuple[Any, ...]:
             attn_out, ssm_out, alpha_expanded = ctx.saved_tensors
             total_elements = attn_out.numel()
             grad_attn = torch.empty_like(attn_out)
