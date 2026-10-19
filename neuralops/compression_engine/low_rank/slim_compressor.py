@@ -56,8 +56,11 @@ class SLiMCompressor(BaseCompressor):
         fallback_to_original: bool = True,
         target_modules: list[str] | None = None,
         **kwargs: Any,
-    ) -> None:
         super().__init__(model, name="slim", **kwargs)
+        self.model: nn.Module = self.model
+        self._original_params: int = getattr(self, "_original_params", 0)
+        self._compressed_params: int | None = None
+        self.stats: dict[str, Any] = getattr(self, "stats", {})
         cfg = kwargs.get("comp_config", kwargs.get("cfg"))
         if cfg is not None:
             bits = _cfg_get(cfg, "slim_bits", _cfg_get(cfg, "bits", bits))

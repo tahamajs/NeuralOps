@@ -62,8 +62,11 @@ class SDRMCompressor(BaseCompressor):
         device: str | torch.device | None = None,
         cfg: Any | None = None,
         **kwargs: Any,
-    ) -> None:
         super().__init__(model, name="sdrm", **kwargs)
+        self.model: nn.Module = self.model
+        self._original_params: int = getattr(self, "_original_params", 0)
+        self._compressed_params: int | None = None
+        self.stats: dict[str, Any] = getattr(self, "stats", {})
         cfg_obj = cfg or kwargs.get("comp_config")
 
         self.total_param_ratio = max(

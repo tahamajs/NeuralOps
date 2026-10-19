@@ -441,7 +441,10 @@ class CacheNotesCompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="cachenotes", **kwargs)
+        self.model: nn.Module = self.model
+        self._original_params: int = getattr(self, "_original_params", 0)
         self._compressed_params: int | None = None
+        self.stats: dict[str, Any] = getattr(self, "stats", {})
         cfg = kwargs.get("comp_config", kwargs.get("cfg"))
 
         task_type = str(_cfg_get(cfg, "cachenotes_task", _cfg_get(cfg, "task_type", task_type)))

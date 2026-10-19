@@ -108,6 +108,11 @@ class RotationalSliceGPTINT4Linear(nn.Module):
         self.register_buffer("Q_P_r", Q_P_r)
         self.register_buffer("W_indices", W_indices)
         self.register_buffer("W_centroids", W_centroids)
+        self.in_features: int = int(Q_P_r.shape[0])
+        self.out_features: int = int(W_indices.shape[0])
+        self.rank: int = int(Q_P_r.shape[1])
+        self._compressed_params: int | None = None
+        self.rel_error: float = 0.0
 
         if bias is not None:
             self.bias = nn.Parameter(
@@ -115,6 +120,11 @@ class RotationalSliceGPTINT4Linear(nn.Module):
             )
         else:
             self.register_parameter("bias", None)
+
+    def __iter__(self):
+        yield self
+        yield getattr(self, "rel_error", 0.0)
+        yield self.rank
 
     def _dequantize_W(self) -> torch.Tensor:
         if self.W_centroids.ndim == 2:

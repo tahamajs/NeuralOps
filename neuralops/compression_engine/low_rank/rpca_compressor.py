@@ -135,8 +135,11 @@ class RPCACompressor(BaseCompressor):
         device: str | torch.device | None = None,
         cfg: Any | None = None,
         **kwargs: Any,
-    ) -> None:
         super().__init__(model, name="rpca", **kwargs)
+        self.model: nn.Module = self.model
+        self._original_params: int = getattr(self, "_original_params", 0)
+        self._compressed_params: int | None = None
+        self.stats: dict[str, Any] = getattr(self, "stats", {})
         cfg_obj = cfg or kwargs.get("comp_config")
 
         self.rank = int(rank or _cfg_get(cfg_obj, "rpca_rank", _cfg_get(cfg_obj, "rank", 64)))

@@ -172,7 +172,7 @@ class OptimizedHybridAttention(BaseAttention):
             self.copy_weights(source_attn)
 
     @staticmethod
-    def _detect_hidden_size(config, src, kwargs):
+    def _detect_hidden_size(config: Any, src: Any, kwargs: Any) -> int:
         for k in ("hidden_size", "d_model", "n_embd", "dim"):
             v = kwargs.get(k)
             if isinstance(v, int) and v > 0:
@@ -194,7 +194,7 @@ class OptimizedHybridAttention(BaseAttention):
         return 768
 
     @staticmethod
-    def _detect_num_heads(config, src, kwargs, hidden_size):
+    def _detect_num_heads(config: Any, src: Any, kwargs: Any, hidden_size: int) -> int:
         for k in ("num_heads", "num_attention_heads", "n_heads", "n_head"):
             v = kwargs.get(k)
             if isinstance(v, int) and v > 0:
@@ -212,7 +212,7 @@ class OptimizedHybridAttention(BaseAttention):
         return max(1, hidden_size // 64)
 
     @staticmethod
-    def _detect_num_kv_heads(config, src, kwargs, num_heads):
+    def _detect_num_kv_heads(config: Any, src: Any, kwargs: Any, num_heads: int) -> int:
         for k in ("num_key_value_heads", "num_kv_heads"):
             v = kwargs.get(k)
             if isinstance(v, int) and v > 0:

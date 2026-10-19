@@ -105,7 +105,7 @@ class LinformerAttention(BaseAttention):
         )
         self.is_causal = self.is_decoder
         self.is_nested_encoder = False
-        self.rotary_emb: nn.Module | Callable[..., Any] | None = None
+        self.rotary_emb: Any = None
 
         self.lora_rank = int(
             (getattr(config, "lora_rank", None) if config else None)

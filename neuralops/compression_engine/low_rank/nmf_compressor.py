@@ -323,10 +323,11 @@ class NMFCompressor(BaseCompressor):
         max_error: float = 0.70,
         fallback_to_original: bool = True,
         **kwargs: Any,
-    ) -> None:
         super().__init__(model if model is not None else nn.Identity(), name="nmf", **kwargs)
+        self.model: nn.Module = self.model
+        self._original_params: int = getattr(self, "_original_params", 0)
         self._compressed_params: int | None = None
-        self.stats: dict[str, Any] = {}
+        self.stats: dict[str, Any] = getattr(self, "stats", {})
         conf = cfg or kwargs.get("comp_config")
 
         self.rank = int(rank or _cfg_get(conf, "nmf_rank", _cfg_get(conf, "rank", 64)))

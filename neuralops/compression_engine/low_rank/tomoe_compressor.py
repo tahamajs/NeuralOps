@@ -421,8 +421,11 @@ class ToMoECompressor(BaseCompressor):
         target_attention_only: bool = False,
         target_modules: list[str] | None = None,
         **kwargs: Any,
-    ):
         super().__init__(model, name="tomoe", **kwargs)
+        self.model: nn.Module = self.model
+        self._original_params: int = getattr(self, "_original_params", 0)
+        self._compressed_params: int | None = None
+        self.stats: dict[str, Any] = getattr(self, "stats", {})
         cfg = kwargs.pop("comp_config", kwargs.pop("cfg", None))
         if cfg is not None:
             num_experts = _cfg_get(

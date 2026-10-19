@@ -13,9 +13,9 @@ Helper functions extracting architecture parameters, head dimensions, and layer 
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Callable
 
-__all__ = ["_cfg_get"]
+__all__ = ["_cfg_get", "_get_cfg"]
 
 
 def _cfg_get(config_or_key: Any, key_or_default: Any = None, default: Any = None) -> Any:
@@ -35,3 +35,6 @@ def _cfg_get(config_or_key: Any, key_or_default: Any = None, default: Any = None
     if isinstance(config, dict):
         return config.get(key, default)
     return getattr(config, key, default)
+
+
+_get_cfg: Callable[..., Any] = _cfg_get

@@ -299,12 +299,12 @@ class AdaptiveSparseAttention(BaseAttention):
         )
         self.dropout = nn.Dropout(dropout_p)
         self.source_attn = None
-        self.rotary_emb = (
+        self.rotary_emb: Any = (
             getattr(source_attn, "rotary_emb", None) if source_attn is not None else None
         )
 
         self.has_relative_attention_bias: bool = False
-        self.relative_attention_bias: nn.Embedding | None = None
+        self.relative_attention_bias: Any = None
         if config is not None:
             self.relative_attention_num_buckets: int = getattr(
                 config, "relative_attention_num_buckets", 32

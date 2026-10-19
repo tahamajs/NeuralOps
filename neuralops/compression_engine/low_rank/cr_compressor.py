@@ -231,9 +231,11 @@ class CRCompressor(BaseCompressor):
         cfg: Any | None = None,
         target_layers: list[str] | None = None,
         **kwargs: Any,
-    ) -> None:
         super().__init__(model if model is not None else nn.Identity(), name="cr", **kwargs)
+        self.model: nn.Module = self.model
+        self._original_params: int = getattr(self, "_original_params", 0)
         self._compressed_params: int | None = None
+        self.stats: dict[str, Any] = getattr(self, "stats", {})
         c_rank = _cfg_get(cfg, "cr_rank", _cfg_get(cfg, "rank", rank))
         c_max_error = _cfg_get(cfg, "cr_max_error", _cfg_get(cfg, "max_error", max_error))
         c_fallback = _cfg_get(cfg, "fallback_to_original", fallback_to_original)
