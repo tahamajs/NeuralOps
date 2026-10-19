@@ -2,8 +2,8 @@
 FROM nvidia/cuda:12.8.0-devel-ubuntu22.04
 
 LABEL maintainer="tahamajs <tahamajs@gmail.com>"
-LABEL description="NeuralOps v1.4.0 GPU Execution & Reproducibility Environment"
-LABEL version="1.4.0"
+LABEL description="NeuralOps v1.4.2 GPU Execution & Reproducibility Environment"
+LABEL version="1.4.2"
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONUNBUFFERED=1

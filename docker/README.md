@@ -1,6 +1,6 @@
 # 🐳 NeuralOps Containerized GPU Environment
 
-This directory provides containerized, isolated, and bit-exact reproducible execution environments for the **NeuralOps v1.4.0** ecosystem.
+This directory provides containerized, isolated, and bit-exact reproducible execution environments for the **NeuralOps v1.4.2** ecosystem.
 
 Using Docker with the NVIDIA Container Toolkit guarantees:
 - Identical CUDA 12.8 toolchain and driver bindings.
