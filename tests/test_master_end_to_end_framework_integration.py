@@ -6,7 +6,7 @@
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
-Master End-to-End Framework Integration Test for NeuralOps v1.4.0.
+Master End-to-End Framework Integration Test for NeuralOps v1.4.1.
 Unifying:
   1. Registry (ATTENTION_REGISTRY, COMPRESSOR_REGISTRY)
   2. Model Surgery (replace_attention, micro-healing)
