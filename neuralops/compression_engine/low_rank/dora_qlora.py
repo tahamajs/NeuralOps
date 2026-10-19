@@ -99,7 +99,7 @@ class QLoRALinear(nn.Module):
         self.base.scales.requires_grad = False
 
         self.lora_A = nn.Parameter(torch.randn(rank, in_features) * 0.01)
-        self.lora_B = nn.Parameter(torch.randn(out_features, rank) * 1e-4)
+        self.lora_B = nn.Parameter(torch.zeros(out_features, rank))
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         base_out = self.base(x)
@@ -133,7 +133,7 @@ class DoRALinear(nn.Module):
 
         self.magnitude = nn.Parameter(self.base.weight.norm(dim=1, keepdim=True).clone())
         self.lora_A = nn.Parameter(torch.randn(rank, in_features) * 0.01)
-        self.lora_B = nn.Parameter(torch.randn(out_features, rank) * 1e-4)
+        self.lora_B = nn.Parameter(torch.zeros(out_features, rank))
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         if x.is_cuda and not self.training:

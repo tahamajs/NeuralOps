@@ -19,7 +19,7 @@ from collections.abc import Iterable
 
 import torch
 import torch.nn as nn
-from torch.nn.init import kaiming_uniform_, normal_, zeros_
+from torch.nn.init import kaiming_uniform_, zeros_
 
 logger = logging.getLogger(__name__)
 
@@ -71,10 +71,10 @@ class LoRALinear(nn.Module):
             self.lora_dropout = nn.Identity()
 
     def reset_parameters(self) -> None:
-        """Initialize lora_A with Kaiming uniform and lora_B with zeros."""
+        """Initialize ``A`` randomly and ``B`` to zero for identity startup."""
         if self.r > 0 and self.lora_A is not None and self.lora_B is not None:
             kaiming_uniform_(self.lora_A.weight, a=math.sqrt(5))
-            normal_(self.lora_B.weight, mean=0.0, std=1e-4)
+            zeros_(self.lora_B.weight)
 
     @property
     def weight(self) -> torch.Tensor:

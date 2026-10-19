@@ -6,9 +6,9 @@
 
 ### **Unified Subquadratic Attention and Deep Model Compression Platform**
 
-> **125 live attention mechanisms (131 public names including 6 deprecated aliases) · 72 compression engines · 114 native CUDA C++ kernels (108 audited) · 26 categorized Triton kernel modules (62 unified operators) · 27 master Jupyter notebooks**
+> **131 registered attention mechanisms · 72 compression engines · 113 CUDA kernel packages (229 `.cu`/`.cpp` sources) · 32 Triton Python modules (62 registered unified operators) · 27 master Jupyter notebooks**
 
-> **Registry count contract:** `list_attentions()` reports 125 live attention mechanisms. The historical count of 131 refers to those live mechanisms plus 6 deprecated compatibility aliases.
+> **Registry count contract:** the current remote registry reports 131 attention mechanisms and 72 compression engines. Hardware source counts are reported separately.
 
 [![PyPI version](https://badge.fury.io/py/neuralops.svg)](https://pypi.org/project/neuralops/)
 [![PyPI Downloads](https://img.shields.io/pypi/dm/neuralops.svg)](https://pypi.org/project/neuralops/)
@@ -39,14 +39,14 @@
 │                                   NEURALOPS AT A GLANCE                                │
 ├───────────────────────────────┬───────────────────────────────┬────────────────────────┤
 │  ⚡ ATTENTION REGISTRY        │  📦 COMPRESSION ENGINES       │  🚀 TRITON & CUDA      │
-│  • 131 Canonical Mechanisms   │  • 72 Factorization Engines   │  • 26 Triton Modules   │
+│  • 131 Registered Mechanisms  │  • 72 Factorization Engines   │  • 32 Triton Modules   │
 │  • 8 Mathematical Families    │  • SVD, RPCA, Tensor-Train    │  • 62 Unified JIT Ops  │
-│  • Linear, SSM, Gated, Hybrid │  • FP8, INT4, Dynamic Pruning │  • 114 Native CUDA C++ │
+│  • Linear, SSM, Gated, Hybrid │  • FP8, INT4, Dynamic Pruning │  • 113 CUDA Packages   │
 ├───────────────────────────────┼───────────────────────────────┼────────────────────────┤
 │  🏎️ BENCHMARK ACCELERATION    │  💾 MEMORY OPTIMIZATION       │  🎯 PRODUCTION SERVING │
-│  • Up to 136.9x Speedup       │  • 77.5% VRAM Reduction       │  • Continuous Batching │
+│  • Historical speedup records │  • Historical memory records  │  • Serving components  │
 │  • Double-Precision Autograd  │  • Variable-Length Packing    │  • Speculative Decode  │
-│  • 100% Deterministic Parity  │  • cu_seqlens Zero-Waste      │  • 7.59x Throughput    │
+│  • Current sweep: 55/203      │  • Results require recheck    │  • Not release-certified │
 └───────────────────────────────┴───────────────────────────────┴────────────────────────┘
 ```
 
@@ -80,10 +80,17 @@ neuralops train \
 
 ### 🛡️ Hardware Validation & Physical Ada Lovelace Certification Banner
 
-> [!IMPORTANT]
-> **100% Physical Hardware Certification**: NeuralOps v1.4.0 has been empirically benchmarked, certified, and stress-tested on dedicated **NVIDIA GeForce RTX 4070 Laptop GPU** hardware (**Ada Lovelace SM 8.9**, 36 SMs, 8GB GDDR6 VRAM, Subsystem ID `10de:2860`) executing under **PyTorch 2.11.0+cu128**, **NVIDIA Driver 595.99.02**, **CUDA 12.8**, and **OpenAI Triton 3.6.0+**.
-> 
-> Across the entire release ecosystem, **203 out of 203 modules passed with 100% operational certification** (131/131 Attention Mechanisms, 72/72 Compression Engines, 114 Native CUDA C++ Kernels across 110 packages [108 audited], 26 Categorized Triton Kernel Modules housing 62 Unified JIT Operators across 4 tiers). See the exhaustive forensic report: [`docs/reports/GPU_ALL_MODULES_CAPABILITIES_REPORT.md`](docs/reports/GPU_ALL_MODULES_CAPABILITIES_REPORT.md).
+> [!WARNING]
+> **Current release verification is incomplete.** The remote RTX 4070 environment reports 131 attention and 72 compressor registry entries, but the current dynamic benchmark checkpoint contains **55/203 rows: 7 PASS_FAST, 39 PASS_SLOW, 4 PASS_HIGH_DIFF, 4 FAIL_CORRECTNESS, and 1 TIMEOUT**. The historical reports below are not evidence of a completed current release gate.
+
+#### Current evidence boundary
+
+- The live registry counts are 131 attention mechanisms and 72 compression engines.
+- The current sweep checkpoint is 55/203 rows; the remaining 148 modules are unverified.
+- The current source audit found 113 CUDA package directories containing 229 `.cu`/`.cpp` files and 32 Triton Python modules; the CLI metadata reports 62 unified Triton operators.
+- Native benchmark modules for the requested roofline, quantization, MoE, serving, RoPE, sampling, SSM, ragged, and autotuning categories are not present in this checkout, so those categories are not certified here.
+- Historical benchmark tables and performance figures below are archival until regenerated from the current source tree; the live checkpoint is expected to change while the sweep runs. They must not be interpreted as current release certification.
+
 
 ---
 
@@ -95,12 +102,12 @@ Standard self-attention suffers from an intrinsic quadratic time and memory bott
 - **131 Canonical Attention Mechanisms**: Linear, Gated Recurrent, State-Space Models (Mamba/RWKV), SVD Low-Rank, Sparse/Windowed, and Hybrids.
 - **72 Compression Engines**: Activation-aware SVD, Tensor-Train, Fisher-Weighted factorizations, FP8/INT4 quantization, and structured pruning.
 - **Universal Multi-Hardware Support (Like FLA & PyTorch)**: Seamless execution across NVIDIA CUDA (SM 7.0–12.0), AMD ROCm (HIP/CDNA), Apple Silicon MPS (Metal Performance Shaders), Intel XPU, and Generic CPU (AVX-512/ARM NEON) with 3-tier zero-crash fallback routing.
-- **114 Native CUDA C++ Kernels**: Custom NVCC warp-shuffle primitives, tensor core MMA intrinsics, shared memory caching, and register tiling across 110 modular packages (with 108 forensically audited).
-- **26 Categorized Triton Modules (62 Unified JIT Operators)**: Standalone flagship kernels, categorized core recurrent/attention operators, and fused extended kernels achieving up to **136.9x speedup** (`hgrn2_scan`) over unoptimized reference paths.
+- **113 CUDA Kernel Packages (229 source files)**: The current checkout contains 113 package directories and 229 `.cu`/`.cpp` files; the complete package-level audit remains incomplete.
+- **32 Triton Python Modules (62 registered operators)**: The registry reports 62 unified Triton operators; this is not a completed performance certification of every source module.
 - **Strict 3-Level Fallback Dispatch**: Level 1 (CUDA C++ SM $\ge$ 7.0 / ROCm HIP) $\to$ Level 2 (OpenAI Triton JIT) $\to$ Level 3 (Pure Vectorized PyTorch / CPU / Apple Metal).
-- **High-Throughput Production Serving**: PagedKVCache with Copy-on-Write (77.5% VRAM savings), dynamic eviction (87.5% savings), and Self-Speculative Decoding (**7.59x throughput speedup** at 1,422 tokens/sec).
+- **Production Serving Components**: Paged-cache and speculative-decoding implementations exist, but the historical 77.5% / 87.5% / 7.59x figures are not verified by the current benchmark checkpoint.
 - **Master 27-Jupyter-Notebook Suite**: Exhaustive interactive walkthroughs from zero-shot surgery, 3-level fallback, and roofline modeling to 32k long-context extrapolation, spectral Hessian diagnostics, distributed ring parallelism, and production serving.
-- **Real-Time Telemetry & Web Dashboard**: FastAPI/Uvicorn streaming server with interactive Roofline charts, WebGL manifold visualizer, and SQLite telemetry.
+- **Telemetry and visualization assets**: dashboard and visualizer assets exist, but their release-gate execution is not part of the current 47-row sweep.
 
 ---
 
@@ -117,11 +124,11 @@ Standard self-attention suffers from an intrinsic quadratic time and memory bott
 | **WSD Learning Rate Scheduler** | Standard cosine | **Warmup-Stable-Decay (`wsd`)** | Configurable decay ratio maintaining late-training stability |
 | **Complete Production CLI** | Minimal stubs | **Full Subcommand Suite** | `train`, `eval`, `compress`, `serve`, `test`, `list`, `info`, `doctor` |
 | **Next-Gen Optimizers** | Standard AdamW | **Lion + AdamW + Schedulers** | Native Lion optimizer with 50% memory state savings |
-| **Physical Hardware Certification** | Synthetic / Emulated | **RTX 4070 (Ada Lovelace SM 8.9)** | 100% physically certified on CUDA 12.8 + PyTorch 2.11 |
-| **All 26 Triton JIT Kernel Modules** | Partial / 5 Boundary Kernels | **Up to $136.9\times$ Speedup** | Up to 136.9x faster (`hgrn2_scan`), 123.9x (`gla_scan`), 122.5x (`gdn_scan`) |
+| **Physical Hardware Certification** | Synthetic / Emulated | **RTX 4070 (Ada Lovelace SM 8.9)** | Historical hardware records; current release gate incomplete |
+| **Triton JIT Kernel Modules** | Partial / source audit | Historical speedup records | Historical figures require regeneration from the current checkout |
 | **Autograd Gradcheck Precision** | Single-precision test | **$\text{double}$ (FP64) Jacobian Match** | 95.0% exact analytical match ($\epsilon=10^{-5}$) across 40 modules |
 | **Master Jupyter Notebooks Suite** | Basic skeletons | **27 Exhaustive Thematic Notebooks** | 20–45 rich cells each, executed in-place on GPU with 0 errors |
-| **Production Serving Engine** | Contiguous KV Cache | **PagedKVCache + Self-Speculative** | 77.5% VRAM savings + 7.59x speculative throughput speedup |
+| **Production Serving Engine** | Contiguous KV Cache | **PagedKVCache + Self-Speculative** | Components exist; current savings and throughput are unverified |
 | **Repository Hygiene & Isolation** | Tracked local reports | **Clean Git Workspace** | Non-core folders ignored via `.gitignore`, zero untracked artifacts |
 
 ---

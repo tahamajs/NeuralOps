@@ -38,13 +38,15 @@ class DoRALinear(nn.Module):
             linear.bias.requires_grad = False
         self.r = r
         if r > 0:
-            self.m = nn.Parameter(torch.ones(linear.out_features))
+            self.m = nn.Parameter(linear.weight.norm(p=2, dim=1, keepdim=True).squeeze(1))
             self.lora_A = nn.Linear(linear.in_features, r, bias=False)
             self.lora_B = nn.Linear(r, linear.out_features, bias=False)
             kaiming_uniform_(self.lora_A.weight, a=math.sqrt(5))
             zeros_(self.lora_B.weight)
             self.scaling = alpha / r
-            self.dropout = nn.Dropout(dropout)
+            # DoRA normalizes the complete effective weight. Input dropout
+            # would invalidate that weight decomposition.
+            self.dropout = nn.Identity()
         else:
             self.m = nn.Parameter(torch.ones(linear.out_features))
             self.lora_A = self.lora_B = None
@@ -53,14 +55,13 @@ class DoRALinear(nn.Module):
 
     def forward(self, x) -> Any:
         """Forward pass — compute module output from inputs."""
-        base_out = self.linear(x)
-        if self.r > 0:
-            lora = self.lora_B(self.lora_A(self.dropout(x))) * self.scaling
-            weight_norm = self.linear.weight.norm(p=2, dim=1, keepdim=True)
-            direction = self.linear.weight / (weight_norm + 1e-8)
-            delta = self.m.unsqueeze(1) * direction + lora
-            return F.linear(x, delta, self.linear.bias)
-        return base_out
+        if self.r <= 0:
+            return self.linear(x)
+        delta = self.lora_B.weight @ self.lora_A.weight
+        effective_weight = self.linear.weight + (self.scaling * delta)
+        direction = effective_weight / effective_weight.norm(p=2, dim=1, keepdim=True).clamp_min(1e-8)
+        effective_weight = self.m.unsqueeze(1) * direction
+        return F.linear(x, effective_weight, self.linear.bias)
 
 
 class DisLoRALinear(nn.Module):
