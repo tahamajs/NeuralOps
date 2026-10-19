@@ -15,11 +15,15 @@ from __future__ import annotations
 from neuralops.benchmarks.eval_bridge import (
     BenchmarkEvalResult,
     BenchmarkEvaluator,
-    create_evaluator,
+    evaluate_model,
+    get_eval_bridge,
+    run_comprehensive_benchmark,
 )
 
 __all__ = [
     "BenchmarkEvaluator",
     "BenchmarkEvalResult",
-    "create_evaluator",
+    "evaluate_model",
+    "get_eval_bridge",
+    "run_comprehensive_benchmark",
 ]
