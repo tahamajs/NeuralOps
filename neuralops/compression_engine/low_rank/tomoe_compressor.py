@@ -421,6 +421,7 @@ class ToMoECompressor(BaseCompressor):
         target_attention_only: bool = False,
         target_modules: list[str] | None = None,
         **kwargs: Any,
+    ) -> None:
         super().__init__(model, name="tomoe", **kwargs)
         self.model: nn.Module = self.model
         self._original_params: int = getattr(self, "_original_params", 0)

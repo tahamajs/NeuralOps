@@ -288,6 +288,7 @@ class CURCompressor(BaseCompressor):
         exclude_names: list[str] | None = None,
         cfg: Any | None = None,
         **kwargs: Any,
+    ) -> None:
         super().__init__(model if model is not None else nn.Identity(), name="cur", **kwargs)
         self.model: nn.Module = self.model
         self._original_params: int = getattr(self, "_original_params", 0)
