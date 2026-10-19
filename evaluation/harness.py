@@ -4,6 +4,8 @@ lm-evaluation-harness integration and CLI evaluation runner for NeuralOps models
 Supports evaluating standard zero-shot tasks (wikitext, lambada, piqa, hellaswag,
 winogrande, arc_easy, arc_challenge, boolq, sciq, copa, openbookqa) natively.
 Registers 'neuralops' and 'fla' model wrappers into lm_eval.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -20,7 +22,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from transformers import AutoConfig, AutoModelForCausalLM, AutoTokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer
 
 # Framework paths
 HERE = Path(__file__).resolve().parent
@@ -30,7 +32,6 @@ for p in [str(CODES), str(ROOT)]:
     if p not in sys.path:
         sys.path.insert(0, p)
 
-from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
 from evaluation.eval_patcher import apply_module_to_model
 
 logger = logging.getLogger("evaluation.harness")

@@ -1,4 +1,8 @@
-"""NeuralOps Monitoring, Telemetry, and Web Dashboard Suite."""
+"""
+NeuralOps Monitoring, Telemetry, and Web Dashboard Suite.
+
+Author: Taha Majlesi
+"""
 
 from __future__ import annotations
 

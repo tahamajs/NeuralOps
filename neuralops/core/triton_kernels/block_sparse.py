@@ -190,7 +190,7 @@ def fused_moba_block_router_combine_triton(
 
 
 # ==============================================================================
-# PHASE 3 / KERNEL 9: Triton Block-Sparse Streaming Attention Kernel
+# Triton Block-Sparse Streaming Attention Kernel
 # Target: nsa_attention, adaptive_sparse_attention, moba_attention, sink_attention
 # ==============================================================================
 

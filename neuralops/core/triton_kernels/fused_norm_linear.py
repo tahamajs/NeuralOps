@@ -257,7 +257,7 @@ def fused_rmsnorm_gate_triton(
 
 
 # ==============================================================================
-# PHASE 2 / KERNEL 4: Fused Hadamard W4A16 GEMM with In-Register Dequantization
+# Fused Hadamard W4A16 GEMM with In-Register Dequantization
 # Target: rotational_slicegpt_int4, quarot, hadamard_incoherent_svd
 # ==============================================================================
 
