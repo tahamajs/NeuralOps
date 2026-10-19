@@ -120,7 +120,8 @@ def benchmark_torch_compile(
 
     for idx, attn_name in enumerate(attn_keys, 1):
         cls = ATTENTION_REGISTRY.get(attn_name)
-        mod_rec = {
+        per_seq_len: dict[str, dict[str, Any]] = {}
+        mod_rec: dict[str, Any] = {
             "name": attn_name,
             "status": "PASS",
             "compile_status": "FULLY_COMPILED",
@@ -132,7 +133,7 @@ def benchmark_torch_compile(
             "compiled_latency_ms": 0.0,
             "speedup": 1.0,
             "max_discrepancy": 0.0,
-            "per_seq_len": {}
+            "per_seq_len": per_seq_len,
         }
 
         try:
@@ -185,7 +186,7 @@ def benchmark_torch_compile(
 
             disc128 = (out128_compiled - out128_eager).abs().max().item()
 
-            mod_rec["per_seq_len"]["128"] = {
+            per_seq_len["128"] = {
                 "graphs": graphs_128,
                 "recompilations": 0,
                 "has_nan": torch.isnan(out128_compiled).any().item(),
@@ -206,7 +207,7 @@ def benchmark_torch_compile(
             graphs_256 = dynamo.utils.counters["stats"].get("unique_graphs", 1)
             recomp_256 = max(0, graphs_256 - graphs_128)
 
-            mod_rec["per_seq_len"]["256"] = {
+            per_seq_len["256"] = {
                 "graphs": graphs_256,
                 "recompilations": recomp_256,
                 "has_nan": torch.isnan(out256_compiled).any().item(),
@@ -226,7 +227,7 @@ def benchmark_torch_compile(
             graphs_512 = dynamo.utils.counters["stats"].get("unique_graphs", 1)
             recomp_512 = max(0, graphs_512 - graphs_256)
 
-            mod_rec["per_seq_len"]["512"] = {
+            per_seq_len["512"] = {
                 "graphs": graphs_512,
                 "recompilations": recomp_512,
                 "has_nan": torch.isnan(out512_compiled).any().item(),

@@ -178,7 +178,7 @@ def run_benchmark():
                     "peak_vram_mb": round(peak_vram, 1),
                     "compression_time_s": round(comp_dur, 2),
                 }
-                results["experiments"].append(record)
+                experiments.append(record)
                 logger.info(
                     "  -> Acc: %.2f%% (Anchor=%.2f%%) | Cos: %.4f | Lat: %.2f ms | CompTime: %.2fs",
                     acc,
@@ -210,7 +210,7 @@ def run_benchmark():
 | Target Depth | Rank ($r$) | Method | Accuracy (↑) | Acc Retention (%) | Cosine Sim to Anchor | Param Reduction (%) | Latency (ms) | Peak VRAM (MB) |
 |:---|:---:|:---|:---:|:---:|:---:|:---:|:---:|:---:|
 """
-    for exp in results["experiments"]:
+    for exp in experiments:
         is_hnc = "HNC" in exp["method"]
         m_str = f"**{exp['method']}**" if is_hnc else exp["method"]
         acc_str = f"**{exp['accuracy']:.2f}%**" if is_hnc else f"{exp['accuracy']:.2f}%"
