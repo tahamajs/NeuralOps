@@ -584,7 +584,7 @@ class AASVDCompressor(BaseCompressor):
                     torch.norm(W - best_Ur @ best_Vr, p="fro").item() / max(W_norm, 1e-12)
                 )
             else:
-                r_floor = max(1, min(r, max_allowed_rank, len(S)))
+                r_floor = int(max(1, min(int(r), int(max_allowed_rank), len(S))))
                 r_ceiling = max_allowed_rank
                 cand_ranks = self._build_strs_candidates(r_floor, r_ceiling)
                 cand_ranks = [c for c in cand_ranks if c <= len(S)]
