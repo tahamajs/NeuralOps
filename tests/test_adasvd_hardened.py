@@ -271,8 +271,6 @@ def test_two_sided_als_improves_over_svd():
 
 def test_gelu_derivative_squared():
     """Test GELU derivative squared values at known points."""
-    import math
-
     from neuralops.compression_engine.adasvd_compressor import AdaSVDCompressor
 
     y = torch.tensor([0.0])

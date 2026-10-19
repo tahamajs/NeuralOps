@@ -18,6 +18,7 @@ Tests:
 import io
 import json
 import shutil
+import sys
 import tempfile
 from pathlib import Path
 
