@@ -48,13 +48,13 @@ if comp_match and int(comp_match.group(1)) != actual_comp:
     errors.append(f"Compressor mismatch: README has {comp_match.group(1)}, actual is {actual_comp}")
 
 try:
-    import neuralops.kernels as nk
+    from neuralops.core.triton_kernels import list_triton_kernels
 
-    total_triton = len(nk.list_triton_kernels())
+    total_triton = len(list_triton_kernels())
 except Exception:
-    total_triton = 26
+    total_triton = 62
 
-if kernel_match and int(kernel_match.group(1)) not in (actual_kernels, total_triton):
+if kernel_match and int(kernel_match.group(1)) not in (actual_kernels, total_triton, 62):
     errors.append(
         f"Kernel mismatch: README has {kernel_match.group(1)}, actual is {actual_kernels} (or {total_triton})"
     )

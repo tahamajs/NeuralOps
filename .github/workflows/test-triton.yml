@@ -6,14 +6,14 @@ concurrency:
 
 on:
   push:
-    branches: [main, ablation]
+    branches: [main]
     paths-ignore:
       - '**.md'
       - 'docs/**'
       - 'paper/**'
       - 'results/**'
   pull_request:
-    branches: [main, ablation]
+    branches: [main]
     paths-ignore:
       - '**.md'
       - 'docs/**'
