@@ -20,6 +20,11 @@ from typing import Any, List, Optional
 from neuralops.benchmarks.discovery import CATALOG_PATH
 
 try:
+    from neuralops import __version__
+except (ImportError, AttributeError):
+    __version__ = "1.4.3"
+
+try:
     from rich.console import Console
     from rich.table import Table
     from rich.panel import Panel
@@ -129,13 +134,13 @@ def print_banner() -> None:
     """Prints the styled NeuralOps CLI banner."""
     if not HAS_RICH or console is None:
         print("================================================================")
-        print("                   NeuralOps CLI (v1.4.2)                       ")
+        print(f"                   NeuralOps CLI (v{__version__})                       ")
         print("     High-Performance Attention Zoo, SVD Compression & Triton   ")
         print("================================================================")
         return
 
     banner_text = Text(BANNER_ART, style="bold cyan")
-    tagline = Text("NeuralOps v1.4.2 — High-Performance Attention Zoo, SVD Compression & Fused Triton Kernels\n", style="bold white")
+    tagline = Text(f"NeuralOps v{__version__} — High-Performance Attention Zoo, SVD Compression & Fused Triton Kernels\n", style="bold white")
     tagline.append("https://github.com/tahamajs/SVD_linear_Attention", style="dim underline blue")
 
     panel = Panel(

@@ -34,6 +34,11 @@ except ImportError:
 
 logger = logging.getLogger("NeuralOps.CLI.List")
 
+try:
+    from neuralops import __version__
+except (ImportError, AttributeError):
+    __version__ = "1.4.3"
+
 CATALOG_PATH = os.path.join(
     os.path.dirname(os.path.dirname(__file__)), "benchmarks", "static_catalog.json"
 )
@@ -260,7 +265,7 @@ def cmd_list(args: Any) -> int:
                 "compression_engines": 72,
                 "triton_kernel_modules": 26,
                 "cuda_kernel_implementations": 114,
-                "version": "1.4.2",
+                "version": __version__,
             }
         }
         if req_type in ("attention", "all"):
@@ -338,12 +343,12 @@ def cmd_list(args: Any) -> int:
         console.print(
             "[bold white]Canonical Inventory:[/] [bold green]131 Attention Mechanisms[/] | "
             "[bold yellow]72 Compression Engines[/] | [bold cyan]26 Triton Kernel Modules[/] | "
-            "[bold magenta]114 CUDA Kernel Implementations[/] | [dim]v1.4.2[/]\n"
+            f"[bold magenta]114 CUDA Kernel Implementations[/] | [dim]v{__version__}[/]\n"
         )
     else:
         print("=========================================================================================")
         print("NEURALOPS OPERATOR REGISTRY")
-        print("Canonical Inventory: 131 Attentions | 72 Compressors | 26 Triton | 114 CUDA | v1.4.2")
+        print(f"Canonical Inventory: 131 Attentions | 72 Compressors | 26 Triton | 114 CUDA | v{__version__}")
         print("=========================================================================================")
         if show_attn:
             print(f"\n--- ATTENTION MECHANISMS ({len(attn_records)} matching) ---")
