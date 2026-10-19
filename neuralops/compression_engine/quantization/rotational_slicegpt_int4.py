@@ -327,7 +327,7 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
     def compress_matrix(
         self,
         W: torch.Tensor,
-        X: torch.Tensor,
+        X: torch.Tensor | None = None,
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, float]:
         """
         Returns:
@@ -340,6 +340,16 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
         r = self.rank if self.rank is not None else int(D_in * self.r_ratio)
         r = int(max(1, min(int(r), int(D_in))))
         device = W.device
+
+        if X is None:
+            dev_str = device.type if isinstance(device, torch.device) else str(device)
+            dev_gen = dev_str if dev_str in ("cpu", "cuda") else "cpu"
+            gen_x = torch.Generator(device=dev_gen).manual_seed(self.seed + D_in)
+            X = torch.randn(D_in, 32, device=device, generator=gen_x)
+        elif X.dim() == 3:
+            X = X.reshape(-1, D_in).T
+        elif X.dim() == 2 and X.shape[0] != D_in:
+            X = X.T
 
         Q = self.get_orthogonal_matrix(D_in, device)
         W_fp32 = W.detach().float()
@@ -409,13 +419,25 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
 
     compress_tensor = compress_matrix
 
-    def compress(self, *args: Any, **kwargs: Any) -> Any:
-        if (
-            len(args) >= 2
-            and isinstance(args[0], torch.Tensor)
-            and isinstance(args[1], torch.Tensor)
+    def compress(
+        self,
+        model: nn.Module | torch.Tensor | None = None,
+        *args: Any,
+        **kwargs: Any,
+    ) -> Any:
+        if model is not None and isinstance(model, nn.Module):
+            self.model = model
+            self._original_params = self._count_params(self.model)
+        elif (
+            (model is not None and isinstance(model, torch.Tensor))
+            or (len(args) >= 1 and isinstance(args[0], torch.Tensor))
         ):
-            return self.compress_matrix(args[0], args[1])
+            W = model if isinstance(model, torch.Tensor) else args[0]
+            X = args[0] if (len(args) >= 1 and isinstance(model, torch.Tensor)) else (args[1] if len(args) >= 2 else None)
+            return self.compress_matrix(W, X)
+        elif len(args) >= 1 and isinstance(args[0], nn.Module):
+            self.model = args[0]
+            self._original_params = self._count_params(self.model)
 
         activations_map = self._collect_layer_activations()
         compressed_layers_count = 0
