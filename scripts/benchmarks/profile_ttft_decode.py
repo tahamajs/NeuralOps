@@ -88,6 +88,7 @@ for num_streams in concurrency_levels:
         ttft_start = torch.cuda.Event(enable_timing=True)
         ttft_end = torch.cuda.Event(enable_timing=True)
 
+        torch.cuda.synchronize()
         ttft_start.record()
         for _ in range(iters_prefill):
             for s_idx in range(num_streams):
@@ -131,6 +132,7 @@ for num_streams in concurrency_levels:
         dec_start = torch.cuda.Event(enable_timing=True)
         dec_end = torch.cuda.Event(enable_timing=True)
 
+        torch.cuda.synchronize()
         dec_start.record()
         for _ in range(iters_decode):
             for s_idx in range(num_streams):
