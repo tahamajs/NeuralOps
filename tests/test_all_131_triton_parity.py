@@ -6,7 +6,7 @@
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Exhaustive mathematical parity, gradient sanity, and multi-shape verification
-for all 131 canonical Attention Modules across Triton and PyTorch fallback modes.
+for all 125 live Attention Modules across Triton and PyTorch fallback modes.
 """
 
 from __future__ import annotations
@@ -22,7 +22,7 @@ from neuralops.attentions import ATTENTION_REGISTRY
 import neuralops.core.triton_kernels._types as tt
 
 
-ALL_131_ATTENTION_KEYS = sorted(list(ATTENTION_REGISTRY.keys()))
+ALL_LIVE_ATTENTION_KEYS = sorted(list(ATTENTION_REGISTRY.keys()))
 
 
 def _instantiate_module(key: str, dim: int = 128, num_heads: int = 4):
@@ -45,15 +45,15 @@ def _instantiate_module(key: str, dim: int = 128, num_heads: int = 4):
 
 
 def test_registry_count_invariant():
-    """Assert exactly 131 canonical attentions are registered."""
-    assert len(ALL_131_ATTENTION_KEYS) == 131, (
-        f"Expected exactly 131 attention keys, found {len(ALL_131_ATTENTION_KEYS)}"
+    """Assert exactly 125 live attentions are registered."""
+    assert len(ALL_LIVE_ATTENTION_KEYS) == 125, (
+        f"Expected exactly 125 live attention keys, found {len(ALL_LIVE_ATTENTION_KEYS)}"
     )
 
 
-@pytest.mark.parametrize("attn_key", ALL_131_ATTENTION_KEYS)
+@pytest.mark.parametrize("attn_key", ALL_LIVE_ATTENTION_KEYS)
 def test_all_131_fwd_finite(attn_key: str):
-    """Verifies that every single module in the 131-module registry produces finite outputs."""
+    """Verify every live attention module produces finite outputs."""
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     dim, num_heads = 128, 4
     try:
@@ -76,7 +76,7 @@ def test_all_131_fwd_finite(attn_key: str):
             pytest.fail(f"Module {attn_key} failed during forward pass: {e}")
 
 
-@pytest.mark.parametrize("attn_key", ALL_131_ATTENTION_KEYS)
+@pytest.mark.parametrize("attn_key", ALL_LIVE_ATTENTION_KEYS)
 def test_all_131_triton_vs_pytorch_parity(attn_key: str):
     """Verifies that running in Triton mode vs FORCE_PYTORCH_FALLBACK yields parity."""
     if not torch.cuda.is_available():

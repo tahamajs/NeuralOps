@@ -795,6 +795,19 @@ def kvtc_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) -> An
 kvtc_compressor_factory = kvtc_factory
 pca_quant_factory = kvtc_factory
 
+# Deprecated public spellings remain aliases, not canonical compressor entries.
+# Keeping them in the alias table preserves compatibility without changing the
+# published count of 72 canonical compression engines.
+for _alias, _target in {
+    "kvtc": KVTCCompressor,
+    "kvtc_quantizer": KVTCCompressor,
+    "kvtc_factory": kvtc_factory,
+    "pca_quant": KVTCCompressor,
+    "pca_quant_compressor": KVTCCompressor,
+    "pca_quant_factory": kvtc_factory,
+}.items():
+    COMPRESSOR_REGISTRY.register(_alias, is_alias=True)(_target)
+
 __all__ = [
     "KVTCQuantizedLoRALinear",
     "KVTCCompressor",

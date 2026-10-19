@@ -304,4 +304,8 @@ neuralops/data/*.parquet
 *.sqlite3
 *.db
 
+# Generated documentation website artifacts
+site/
+dashboard.html
+index.md
 

@@ -160,7 +160,7 @@ def test_neuralops_imports():
     for fn in api_functions:
         assert callable(fn), f"Public API {fn.__name__} is not callable"
 
-    assert len(ATTENTION_REGISTRY) == 131, f"Expected 131 registered attentions, got {len(ATTENTION_REGISTRY)}"
+    assert len(list_attentions()) == 125, f"Expected 125 live attentions, got {len(list_attentions())}"
     assert len(COMPRESSOR_REGISTRY) == 72, f"Expected 72 registered compressors, got {len(COMPRESSOR_REGISTRY)}"
 
     attns = list_attentions()
@@ -285,9 +285,9 @@ CANONICAL_TRITON_KERNEL_FILES: list[str] = [
 
 
 def test_canonical_counts():
-    """Assert len(ATTENTION_REGISTRY) == 131 and len(COMPRESSOR_REGISTRY) == 72."""
-    assert len(ATTENTION_REGISTRY) == 131, (
-        f"Expected exactly 131 attention mechanisms, got {len(ATTENTION_REGISTRY)}"
+    """Assert 125 live attentions and 72 canonical compressors."""
+    assert len(list_attentions()) == 125, (
+        f"Expected exactly 125 live attention mechanisms, got {len(list_attentions())}"
     )
     assert len(COMPRESSOR_REGISTRY) == 72, (
         f"Expected exactly 72 compression engines, got {len(COMPRESSOR_REGISTRY)}"

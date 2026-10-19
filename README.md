@@ -6,7 +6,9 @@
 
 ### **Unified Subquadratic Attention and Deep Model Compression Platform**
 
-> **131 canonical attention mechanisms · 72 compression engines · 114 native CUDA C++ kernels (108 audited) · 26 categorized Triton kernel modules (62 unified operators) · 27 master Jupyter notebooks**
+> **125 live attention mechanisms (131 public names including 6 deprecated aliases) · 72 compression engines · 114 native CUDA C++ kernels (108 audited) · 26 categorized Triton kernel modules (62 unified operators) · 27 master Jupyter notebooks**
+
+> **Registry count contract:** `list_attentions()` reports 125 live attention mechanisms. The historical count of 131 refers to those live mechanisms plus 6 deprecated compatibility aliases.
 
 [![PyPI version](https://badge.fury.io/py/neuralops.svg)](https://pypi.org/project/neuralops/)
 [![PyPI Downloads](https://img.shields.io/pypi/dm/neuralops.svg)](https://pypi.org/project/neuralops/)
@@ -465,18 +467,18 @@ responses = adapter.continuous_batching_generate(
 
 ---
 
-## 5. Exhaustive GPU Capabilities Audit (131 Attention + 72 Compression)
+## 5. Exhaustive GPU Capabilities Audit (125 Live Attention + 72 Compression)
 
 Every module in NeuralOps v1.4.0 has undergone rigorous forensic validation on physical hardware (**NVIDIA GeForce RTX 4070 Laptop GPU**, SM 8.9, 8GB VRAM) under **PyTorch 2.11.0+cu128 & CUDA 12.8**:
 
 | Registry Ecosystem Category | Total Registered | Validated & Functional | Failures / Skips | Hardware Certification Rate |
 | :--- | :---: | :---: | :---: | :---: |
-| **Attention Mechanisms (`ATTENTION_REGISTRY`)** | **131** | **131** | 0 | **100.0% PASS** |
+| **Live Attention Mechanisms (`list_attentions()`)** | **125** | **125** | 0 | **100.0% PASS** |
 | **Compression Engines (`COMPRESSOR_REGISTRY`)** | **72** | **72** | 0 | **100.0% PASS** |
 | **Combined NeuralOps Ecosystem** | **203** | **203** | **0** | **100.0% PASS** |
 
 > [!NOTE]
-> **Registry Module Scope Footnote**: The 203 registered modules comprise exactly 131 attention mechanisms (`ATTENTION_REGISTRY`) and 72 compression engines (`COMPRESSOR_REGISTRY`). Native CUDA C++ kernels (114 modules across 110 packages) and Triton JIT hardware kernels (26 categorized modules housing 62 unified operators) serve as hardware execution accelerators and dispatch backends rather than standalone registry modules.
+> **Registry Module Scope Footnote**: The live public registry comprises exactly 125 attention mechanisms (`list_attentions()`) and 72 compression engines. Six deprecated attention aliases remain available for compatibility, so historical documentation may refer to 131 attention names. Native CUDA C++ kernels (114 modules across 110 packages) and Triton JIT hardware kernels (26 categorized modules housing 62 unified operators) serve as hardware execution accelerators and dispatch backends rather than standalone registry modules.
 
 ### Verified Architectural Capabilities Summary
 
@@ -1749,4 +1751,3 @@ NeuralOps is continuously developed and maintained with contributions from resea
 👉 **[https://github.com/tahamajs/NeuralOps/graphs/contributors](https://github.com/tahamajs/NeuralOps/graphs/contributors)**
 
 We thank the open-source community and the creators of Hugging Face Transformers, OpenAI Triton, FlashAttention, Mamba, and vLLM for pioneering subquadratic architectures, hardware-aware execution kernels, and high-throughput LLM serving systems.
-
