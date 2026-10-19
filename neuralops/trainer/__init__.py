@@ -20,6 +20,7 @@ from .callbacks import (
 from .custom_loop_trainer import CustomLoopTrainer
 
 from .hf_trainer import HuggingFaceTrainer
+from .neuralops_trainer import NeuralOpsTrainer
 from .hyperopt import (
     HyperparameterOptimizer,
     PrunedHyperparameterOptimizer,
@@ -81,6 +82,7 @@ __all__ = [
     "save_training_history",
     "plot_training_curves",
     "HuggingFaceTrainer",
+    "NeuralOpsTrainer",
     "CustomLoopTrainer",
     "InfiniteContextFoundationPretrainer",
     "OPTIMIZER_REGISTRY",

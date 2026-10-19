@@ -103,6 +103,28 @@ neuralops train \
 - `PASS_HIGH_DIFF` is a visible numerical status, not a pass-rate adjustment: these attention rows remain finite but exceed the normal `1e-3` comparison budget under FP16 execution. The correctness gate records the measured drift (up to `0.25`) and does not silently relabel it as exact parity.
 
 
+### Training Integration: Hugging Face Trainer + LoRA/KD
+
+NeuralOps exposes NeuralOpsTrainer as a standard Hugging Face Trainer subclass. It accepts normal TrainingArguments and adds opt-in LoRA injection plus teacher/student logit distillation:
+
+```python
+from neuralops.trainer import NeuralOpsTrainer
+
+trainer = NeuralOpsTrainer(
+    model=model,
+    args=training_args,
+    train_dataset=sst2_train,
+    eval_dataset=sst2_eval,
+    lora=True,
+    lora_rank=8,
+    kd_loss=True,
+    teacher_model=teacher_model,
+)
+trainer.train()
+```
+
+The executable example is notebooks/01_quickstart_surgery_and_healing.ipynb, which runs attention surgery, LoRA, KD, one training step, and inference on a tiny SST-2-shaped dataset.
+
 ---
 
 ### Why NeuralOps v1.4.0?
