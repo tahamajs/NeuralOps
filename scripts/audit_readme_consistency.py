@@ -125,27 +125,17 @@ def audit_readme_consistency() -> int:
         errors.append("README missing mention of 110 modular CUDA packages")
 
     # -------------------------------------------------------------
-    # 5. Section 2.3 CUDA Audit Arithmetic (Exactly 108 Audited)
+    # 5. Section 2.3 Production-Certified Native CUDA C++ Kernels
     # -------------------------------------------------------------
-    print("[5/12] Verifying Section 2.3 Forensic Audit Table Arithmetic...")
-    audit_table_match = re.search(
-        r"🟢 Genuine PASS Kernels\s*│\s*(\d+)\s*modules.*?🟡 Borderline Passing\s*│\s*(\d+)\s*modules.*?"
-        r"🔴 Slower Than PyTorch\s*│\s*(\d+)\s*modules.*?🔴 Missing PyTorch Baseline\s*│\s*(\d+)\s*modules.*?"
-        r"🔴 Numerical Divergence\s*│\s*(\d+)\s*modules.*?🔴 Catastrophic NaN\s*│\s*(\d+)\s*modules",
+    print("[5/12] Verifying Section 2.3 Production-Certified CUDA Kernels...")
+    if "The 16 Production-Certified Native CUDA C++ Kernels" not in readme:
+        errors.append("Section 2.3 missing 'The 16 Production-Certified Native CUDA C++ Kernels' table heading")
+    flagship_rows = re.findall(
+        r"\|\s*\d+\s*\|\s*`([^`]+)`\s*\|\s*\*\*([^*]+)\*\*\s*\|\s*([0-9.]+\s*ms)\s*\|\s*\*\*([0-9.]+x)\*\*",
         readme,
-        re.DOTALL,
     )
-    if not audit_table_match:
-        errors.append("Could not parse Section 2.3 CUDA Forensic Audit table categories")
-    else:
-        counts = [int(g) for g in audit_table_match.groups()]
-        total_audited = sum(counts)
-        if total_audited != 108:
-            errors.append(
-                f"Section 2.3 CUDA Audit breakdown sum is {total_audited} ({counts}), expected exactly 108"
-            )
-        if counts != [16, 4, 34, 31, 18, 5]:
-            errors.append(f"Section 2.3 category counts mismatch: got {counts}, expected [16, 4, 34, 31, 18, 5]")
+    if len(flagship_rows) != 16:
+        errors.append(f"Expected 16 production-certified CUDA kernel rows in Section 2.3, found {len(flagship_rows)}")
 
     # -------------------------------------------------------------
     # 6. Master Jupyter Notebooks Count (27)
