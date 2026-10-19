@@ -8,7 +8,6 @@ Author: Taha Majlesi
 
 import math
 import torch
-from typing import Any
 
 try:
     import triton
@@ -292,6 +291,38 @@ def _cosformer_bwd_kernel(
     tl.atomic_add(dq_sin_ptrs, dq_sin_acc, mask=mask_n[:, None] & mask_d[None, :])
 
 
+def cosformer_triton_bwd(
+    q_cos: torch.Tensor,
+    q_sin: torch.Tensor,
+    k_cos: torch.Tensor,
+    k_sin: torch.Tensor,
+    v: torch.Tensor,
+    do: torch.Tensor,
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    """Launch analytic cosformer backward Triton kernel."""
+    B, H, N, D = q_cos.shape
+    dq_cos = torch.zeros_like(q_cos)
+    dq_sin = torch.zeros_like(q_sin)
+    dk_cos = torch.zeros_like(k_cos)
+    dk_sin = torch.zeros_like(k_sin)
+    dv = torch.zeros_like(v)
+    BLOCK_N = 64
+    BLOCK_D = D
+    grid = (B * H, triton.cdiv(N, BLOCK_N))
+    _cosformer_bwd_kernel[grid](
+        q_cos, q_sin, k_cos, k_sin, v, do,
+        dq_cos, dq_sin, dk_cos, dk_sin, dv,
+        q_cos.stride(0), q_cos.stride(1), q_cos.stride(2), q_cos.stride(3),
+        k_cos.stride(0), k_cos.stride(1), k_cos.stride(2), k_cos.stride(3),
+        v.stride(0), v.stride(1), v.stride(2), v.stride(3),
+        do.stride(0), do.stride(1), do.stride(2), do.stride(3),
+        B, H, N, D=D,
+        BLOCK_N=BLOCK_N,
+        BLOCK_D=BLOCK_D,
+    )
+    return dq_cos, dq_sin, dk_cos, dk_sin, dv
+
+
 class _CosformerAutograd(torch.autograd.Function):
     @staticmethod
     def forward(ctx, q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, is_causal: bool, eps: float):
@@ -559,6 +590,7 @@ def triton_cosformer_linear_attention(
 __all__ = [
     "cosformer_global_triton",
     "cosformer_triton_fwd",
+    "cosformer_triton_bwd",
     "cosformer_pytorch_fwd",
     "triton_cosformer_linear_attention",
     "triton_cosformer_linear_attention_pytorch_ref",

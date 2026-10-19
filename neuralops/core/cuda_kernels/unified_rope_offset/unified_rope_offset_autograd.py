@@ -8,9 +8,7 @@ Author: Taha Majlesi
 
 from __future__ import annotations
 from pathlib import Path
-from typing import Optional
 import torch
-import torch.nn.functional as F
 
 from neuralops.core.cuda_kernels._bindings import load_cuda_module
 from neuralops.core.cuda_kernels._fallback import dispatch
@@ -33,7 +31,7 @@ def _get_module():
         )
     return _MODULE
 
-from neuralops.core.triton_kernels.fused_rope import fused_unified_rope_offset_pytorch, fused_unified_rope_offset_triton
+from neuralops.core.triton_kernels.fused_rope import fused_unified_rope_offset_pytorch
 
 def unified_rope_offset_pytorch_ref(x: torch.Tensor, cos: torch.Tensor, sin: torch.Tensor, rotary_dim: int, offset: int = 0) -> torch.Tensor:
     N = x.shape[2]

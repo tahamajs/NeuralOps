@@ -15,21 +15,6 @@ import triton
 import triton.language as tl
 
 
-@triton.jit
-def _fwht_butterfly_step(x, offs_d, BLOCK_D: tl.constexpr):
-    """In-register fast Walsh-Hadamard butterfly stage for power-of-2 dimensions."""
-    val = x
-    h = 1
-    while h < BLOCK_D:
-        partner_sign = tl.where((offs_d & h) == 0, 1.0, -1.0)
-        # In-register butterfly step using power-of-2 parity
-        val = val + partner_sign * val
-        h = h * 2
-    norm = 1.0 / tl.sqrt(tl.cast(BLOCK_D, tl.float32))
-    return val * norm
-
-
-
 @triton.autotune(
     configs=[
         triton.Config({"BLOCK_M": 32, "BLOCK_N": 64, "BLOCK_K": 64}, num_stages=3, num_warps=4),

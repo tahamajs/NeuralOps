@@ -1,43 +1,10 @@
+// Author: Taha Majlesi
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
 #include <c10/util/Optional.h>
 #include "_common.cuh"
-
-namespace neuralops {
-namespace cuda {
-
-template <typename scalar_t>
-__global__ void __launch_bounds__(256) sparse_add_kernel(
-    scalar_t* __restrict__ out,
-    const scalar_t* __restrict__ X,
-    const scalar_t* __restrict__ S,
-    const int M,
-    const int K,
-    const int N
-) {
-    const int n = blockIdx.x * blockDim.x + threadIdx.x;
-    const int m = blockIdx.y * blockDim.y + threadIdx.y;
-    if (m >= M || n >= N) return;
-
-    const scalar_t* __restrict__ x_row = X + m * K;
-    const scalar_t* __restrict__ s_row = S + n * K;
-    float sp_acc = 0.0f;
-    #pragma unroll 4
-    for (int k = 0; k < K; ++k) {
-        const float s_val = to_float(s_row[k]);
-        if (s_val != 0.0f) {
-            sp_acc += to_float(x_row[k]) * s_val;
-        }
-    }
-    if (sp_acc != 0.0f) {
-        float cur = to_float(out[m * N + n]);
-        out[m * N + n] = from_float<scalar_t>(cur + sp_acc);
-    }
-}
-
-} // namespace cuda
-} // namespace neuralops
 
 torch::Tensor rpca_sparse_svd_fwd(
     const torch::Tensor& x,
@@ -57,6 +24,7 @@ torch::Tensor rpca_sparse_svd_fwd(
 
     torch::Tensor V_mat = (v_r.size(0) == K) ? v_r.contiguous() : v_r.t().contiguous();
     const int R = V_mat.size(1);
+    TORCH_CHECK(R <= 128, "rpca_sparse_svd_fwd: R=", R, " > 128 not supported");
 
     torch::Tensor U_mat = (u_r.size(0) == R) ? u_r.contiguous() : u_r.t().contiguous();
     const int N = U_mat.size(1);
