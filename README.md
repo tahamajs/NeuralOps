@@ -20,7 +20,59 @@
 [![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-neuralops-yellow)](https://huggingface.co/tahamajs/distilbert-svd-attention)
 [![Contributors](https://img.shields.io/github/contributors/tahamajs/NeuralOps?color=blue)](https://github.com/tahamajs/NeuralOps/graphs/contributors)
 
+<p align="center">
+  <a href="#-30-second-quickstart"><b>⚡ Quickstart</b></a> •
+  <a href="#-roofline-acceleration-leaderboard-rtx-4070-sm-89"><b>🏎️ Benchmarks</b></a> •
+  <a href="#1-master-27-jupyter-notebooks-suite-00-to-25--paper-empirical-master"><b>📓 27 Master Notebooks</b></a> •
+  <a href="#13-attention-zoo-131-canonical-modules"><b>🧬 131 Attentions</b></a> •
+  <a href="#14-compression-engines-72-canonical-methods"><b>📦 72 Compressors</b></a> •
+  <a href="#4-production-serving--speculative-decoding-engine"><b>🚀 Serving</b></a> •
+  <a href="#65-command-line-interface-cli-guide"><b>💻 CLI</b></a>
+</p>
+
 </div>
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│                                   NEURALOPS AT A GLANCE                                │
+├───────────────────────────────┬───────────────────────────────┬────────────────────────┤
+│  ⚡ ATTENTION REGISTRY        │  📦 COMPRESSION ENGINES       │  🚀 TRITON & CUDA      │
+│  • 131 Canonical Mechanisms   │  • 72 Factorization Engines   │  • 26 Triton Modules   │
+│  • 8 Mathematical Families    │  • SVD, RPCA, Tensor-Train    │  • 62 Unified JIT Ops  │
+│  • Linear, SSM, Gated, Hybrid │  • FP8, INT4, Dynamic Pruning │  • 114 Native CUDA C++ │
+├───────────────────────────────┼───────────────────────────────┼────────────────────────┤
+│  🏎️ BENCHMARK ACCELERATION    │  💾 MEMORY OPTIMIZATION       │  🎯 PRODUCTION SERVING │
+│  • Up to 157.9x Speedup       │  • 77.5% VRAM Reduction       │  • Continuous Batching │
+│  • Double-Precision Autograd  │  • Variable-Length Packing    │  • Speculative Decode  │
+│  • 100% Deterministic Parity  │  • cu_seqlens Zero-Waste      │  • 7.59x Throughput    │
+└───────────────────────────────┴───────────────────────────────┴────────────────────────┘
+```
+
+### ⚡ 30-Second Quickstart
+
+```python
+# 1. Install NeuralOps
+pip install neuralops
+
+# 2. In-place Subquadratic Attention Surgery (Swap O(T²) with O(T) Linear Attention)
+import neuralops, transformers
+model = transformers.AutoModelForCausalLM.from_pretrained("gpt2")
+model = neuralops.replace_attention(model, method="gated_delta_net", rank=64)
+
+# 3. Model Compression (65% parameter reduction with closed-form Ridge alignment)
+model = neuralops.compress(model, method="hadamard_incoherent_svd", rank=32)
+```
+
+```bash
+# 4. Multi-Corpus Pretraining & Varlen Packing (Zero padding token waste)
+neuralops train \
+  --model gpt2 \
+  --dataset HuggingFaceFW/fineweb-edu,opencsg/Fineweb-Edu-Chinese-V2 \
+  --varlen \
+  --seq-len 4096 \
+  --lr-scheduler wsd \
+  --optimizer lion
+```
 
 ---
 
@@ -547,16 +599,18 @@ NeuralOps installs canonical binary commands (`neuralops`, `nops`, `nops-cli`, a
 ├────────────────────┬───────────────────────────────────────────────────┤
 │ Command            │ Primary Functional Operation                      │
 ├────────────────────┼───────────────────────────────────────────────────┤
+│ neuralops list     │ Interactive catalog (131 Attentions, 72 Comp)     │
+│ neuralops test     │ Fast diagnostic test suite (health, kernels, surg)│
+│ neuralops train    │ Multi-corpus training, varlen packing, WSD & Lion │
+│ neuralops eval     │ Perplexity, token throughput & latency evaluation │
+│ neuralops serve    │ High-throughput serving (PagedKVCache, Speculative)│
+│ neuralops compress │ Deep low-rank SVD, Hadamard & W4A16 compression   │
+│ neuralops surgery  │ In-place subquadratic attention transplantation   │
 │ neuralops doctor   │ Deep environment & SM 8.9 hardware verification   │
 │ neuralops verify   │ Validates canonical invariant registry counts     │
 │ neuralops run      │ Benchmark single or multi-module matrix sweeps    │
 │ neuralops roofline │ Arithmetic intensity & DRAM saturation profiling  │
-│ neuralops surgery  │ In-place subquadratic attention transplantation   │
-│ neuralops compress │ Deep low-rank SVD, Hadamard & W4A16 compression   │
-│ neuralops train    │ Unified DRY training, LoRA, and distillation      │
-│ neuralops eval     │ Perplexity, latency & multi-metric evaluation     │
 │ neuralops export   │ Production artifact export (Safetensors / ONNX)   │
-│ neuralops serve    │ High-throughput REST / WebSocket inference server │
 │ neuralops search   │ AutoSVD Fisher information rank allocator         │
 │ neuralops niah     │ Needle-In-A-Haystack long-context passkey test    │
 │ neuralops ui       │ Interactive two-pane UNIX terminal inspector      │
@@ -572,31 +626,46 @@ neuralops doctor
 # 2. Verify Canonical Invariant Counts (131 Attentions, 72 Compressors, 26 Triton Modules / 62 Unified Operators)
 neuralops verify
 
-# 3. Benchmark Attention & Compressor Modules (Isolated sweeps with CUDA Event timing)
-neuralops run --all-attn --device cuda
-neuralops run --module gated_delta_net --seq-len 4096 --device cuda --mixed-precision bf16
-neuralops benchmark --all-comp --model gpt2 --output-dir results/compression_sweeps
+# 3. Explore Complete Registry (Filter by mathematical family, hardware backend, or JSON output)
+neuralops list --type attention --backend triton
+neuralops list --type compressor --family svd
+neuralops list --json
 
-# 4. Interactive Hardware Roofline Analysis (FLOPs/byte & memory bandwidth saturation)
-neuralops roofline --module gated_delta_net --device cuda --seq-len 4096 --latex
+# 4. Fast Diagnostic Test Suite (Health gates, kernel capabilities, surgery verification)
+neuralops test --all
+neuralops test --health --kernels
 
-# 5. Fast Model Surgery & Transplantation CLI (with Closed-Form Ridge & Micro-Healing)
+# 5. Multi-Dataset Streaming, Variable-Length Packing & WSD Scheduling
+neuralops train \
+  --model gpt2 \
+  --dataset HuggingFaceFW/fineweb-edu,opencsg/Fineweb-Edu-Chinese-V2 \
+  --varlen \
+  --seq-len 4096 \
+  --context-len 4096 \
+  --batch-size 4 \
+  --optimizer lion \
+  --lr 1e-4 \
+  --lr-scheduler wsd \
+  --decay-ratio 0.2
+
+# 6. Multi-Metric Evaluation (Perplexity, Token Throughput, Latency, Peak VRAM)
+neuralops eval --model gpt2 --dataset wikitext --batch-size 16 --seq-len 512 --json
+
+# 7. High-Throughput Serving Engine with PagedKVCache & Speculative Decoding
+neuralops serve --model gpt2 --port 8000 --engine continuous_batcher --max-batch-size 16
+
+# 8. Deep Compression CLI (Fisher-Weighted SVD, Hadamard Incoherent, W4A16, INT4)
+neuralops compress --model gpt2 --compressor fwsvd_compressor --rank 32 --save-dir ./compressed_gpt2
+neuralops compress --model roberta-base --compressor svd_truncated --rank 32
+
+# 9. Fast Model Surgery & Transplantation CLI (with Closed-Form Ridge & Micro-Healing)
 neuralops surgery --model distilbert-base-uncased --attention cosformer --rank 64 --heal --heal-steps 25
 neuralops transplant --model gpt2 --attention svd_linear_attention --rank 32 --calibrate
 
-# 6. Deep Compression CLI (Fisher-Weighted SVD, Hadamard Incoherent, W4A16, INT4)
-neuralops compress --model gpt2 --method fwsvd_compressor --rank 32 --save-dir ./compressed_gpt2
-neuralops compress --model roberta-base --method rotational_slicegpt_int4 --save-dir ./slicegpt_roberta
+# 10. Interactive Hardware Roofline Analysis (FLOPs/byte & memory bandwidth saturation)
+neuralops roofline --module gated_delta_net --device cuda --seq-len 4096 --latex
 
-# 7. Unified Training & Knowledge Distillation (LoRA, DDP, and 6-Pillar KD)
-neuralops train --model distilbert-base-uncased --dataset sst2 --epochs 3 --lr 2e-5 --batch-size 32
-neuralops train --config configs/distill_sst2.yaml --training-type kd --kd-teacher distilbert-base-uncased
-
-# 8. Multi-Metric Evaluation (Accuracy, F1, Perplexity, and Micro-Latency)
-neuralops evaluate --model ./checkpoints/healed_gdn_gpt2 --dataset sst2 --device cuda
-neuralops eval --model ./compressed_gpt2 --dataset wikitext --seq-len 2048
-
-# 9. Production Model Export (Safetensors, ONNX Runtime, TorchScript)
+# 11. Production Model Export (Safetensors, ONNX Runtime, TorchScript)
 neuralops export --model gpt2 --attn cosformer --rank 64 --format safetensors --output-dir exported_gpt2
 neuralops export --model distilbert-base-uncased --comp direct_svd --rank 32 --format onnx
 
