@@ -43,7 +43,20 @@ from .metrics import (
     EvaluationReport,
 )
 
+from neuralops.benchmarks.eval_bridge import (
+    BenchmarkEvalResult,
+    BenchmarkEvaluator,
+    evaluate_model,
+    get_eval_bridge,
+    run_comprehensive_benchmark,
+)
+
 __all__ = [
+    "BenchmarkEvaluator",
+    "BenchmarkEvalResult",
+    "evaluate_model",
+    "get_eval_bridge",
+    "run_comprehensive_benchmark",
     "metrics",
     "get_task_metrics",
     "probe_optimal_batch_size",
