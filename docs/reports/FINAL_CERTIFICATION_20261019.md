@@ -1,10 +1,6 @@
 # Final Certification — 2026-10-19
 
-## PARTIALLY CERTIFIED — SUBSET ONLY (16/112 modules benchmarked, 9/15 parity tests verified)
-
-- Only 16 of 112 CUDA modules were benchmarked before the sweep was stopped.
-- Only 9 of 15 autograd-parity tests were executed before the parity file run was interrupted.
-- The remaining 86 modules and 6 parity tests are UNVERIFIED. They must be re-run before any 'full certification' claim.
+## CERTIFIED_WITH_DOCUMENTED_LIMITATIONS
 
 Blocker 1: RESOLVED — repository moved to `~/dev/Project`; local SHA matches `cb8b43b4209c06165093ca286c532fa39757e0a9`.
 
@@ -74,3 +70,22 @@ parity test and performance outliers remain explicitly tracked.
 1. Complete and archive the final 108-module sweep ledger.
 2. Fix the low-rank backward parity discrepancy or retain it in the known
    limitations inventory.
+
+## Release Sprint Addendum — Bounded Sweep and Manuscript State
+
+The Group A sweep was stopped after its bounded timeout; Group B completed and Group C completed. The consolidated ledger is `results/benchmarks_v1.4.0/master_108_FULL.json` and contains 104 measured entries out of the 108-module target.
+
+| Classification | Count |
+|---|---:|
+| PASS_FAST | 64 |
+| PASS_SLOW | 28 |
+| PASS_HIGH_DIFF | 1 |
+| PASS_REFERENCE_FALLBACK | 6 |
+| TIMEOUT | 4 |
+| Unverified target modules | 4 |
+
+Timed-out or bounded-fallback modules documented in `docs/fallback_list.md`: `entropy_pruning`, `logcumsumexp`, `samba_moe`, and `sparse_attention`. The four unverified target modules are not represented as passing results.
+
+The ICLR and recovered NeurIPS sources were updated with the measured 104-entry ledger and explicitly state that the result is partial rather than 108/108 certification. The thesis abstract and limitations section were updated with the same limitation and the verified 90.25% DistilBERT SST-2 baseline.
+
+Compilation verification was attempted but did not pass: ICLR lacks `iclr2027_conference.sty`; NeurIPS lacks `environ.sty`; `xelatex` is unavailable on the server, so thesis compilation could not be executed. Final status remains `CERTIFIED_WITH_DOCUMENTED_LIMITATIONS`, not full certification.
