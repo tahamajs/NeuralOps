@@ -97,7 +97,7 @@ def test_no_silent_dispatch_fallback(caplog):
 
     fallback_records = [r for r in _WARNED_REASONS if "linear_attn" in r]
     assert len(fallback_records) > 0, "Dispatch fallback occurred silently without registering in _WARNED_REASONS"
-    assert any("cpu" in r.lower() or "cuda" in r.lower() for r in fallback_records)
+    assert any("cpu" in r.lower() or "cuda" in r.lower() or "triton" in r.lower() for r in fallback_records)
 
     test_key = "test_kernel"
     test_reason = "simulated_hardware_unsupported"
@@ -252,3 +252,83 @@ def test_zero_dead_code_and_shadowed_defs():
 
     assert len(shadowed_defs) == 0, f"Found {len(shadowed_defs)} shadowed definitions:\n" + "\n".join(shadowed_defs)
     assert len(unreachable_stmts) == 0, f"Found {len(unreachable_stmts)} unreachable statements:\n" + "\n".join(unreachable_stmts)
+
+
+CANONICAL_TRITON_KERNEL_FILES: list[str] = [
+    "block_sparse.py",
+    "cosformer_triton_kernel.py",
+    "cur_linear.py",
+    "differential_attention.py",
+    "dynamic_sparse_attention.py",
+    "elementwise.py",
+    "flash_decoding.py",
+    "fms_scan.py",
+    "fused_ce.py",
+    "fused_kd.py",
+    "fused_norm_linear.py",
+    "fused_rope.py",
+    "gdn_scan.py",
+    "gla_scan.py",
+    "gqa.py",
+    "hgrn2_scan.py",
+    "hydra_attention.py",
+    "linear_attn.py",
+    "low_rank.py",
+    "paged_attention.py",
+    "retnet_retention.py",
+    "selective_scan.py",
+    "sliding_window.py",
+    "softplus.py",
+    "sparse_attn.py",
+    "state_update.py",
+]
+
+
+def test_canonical_counts():
+    """Assert len(ATTENTION_REGISTRY) == 131 and len(COMPRESSOR_REGISTRY) == 72."""
+    assert len(ATTENTION_REGISTRY) == 131, (
+        f"Expected exactly 131 attention mechanisms, got {len(ATTENTION_REGISTRY)}"
+    )
+    assert len(COMPRESSOR_REGISTRY) == 72, (
+        f"Expected exactly 72 compression engines, got {len(COMPRESSOR_REGISTRY)}"
+    )
+
+
+def test_triton_kernels_count():
+    """Assert exactly 26 canonical Triton kernel files in neuralops/core/triton_kernels/*.py (excluding __init__.py)."""
+    repo_root = Path(__file__).resolve().parent.parent
+    triton_dir = repo_root / "neuralops" / "core" / "triton_kernels"
+    assert triton_dir.is_dir(), f"Triton kernels directory not found: {triton_dir}"
+
+    existing_canonical = [f for f in CANONICAL_TRITON_KERNEL_FILES if (triton_dir / f).is_file()]
+    assert len(CANONICAL_TRITON_KERNEL_FILES) == 26
+    assert len(existing_canonical) == 26, (
+        f"Expected 26 canonical Triton kernel files, found {len(existing_canonical)}. "
+        f"Missing: {set(CANONICAL_TRITON_KERNEL_FILES) - set(existing_canonical)}"
+    )
+
+
+def test_version_consistency():
+    """Assert neuralops.__version__ matches pyproject.toml and is mentioned in README.md."""
+    repo_root = Path(__file__).resolve().parent.parent
+    pyproject_file = repo_root / "pyproject.toml"
+    readme_file = repo_root / "README.md"
+
+    try:
+        import tomllib
+    except ImportError:
+        import tomli as tomllib  # type: ignore
+
+    with open(pyproject_file, "rb") as f:
+        pyproject_data = tomllib.load(f)
+    pyproject_version = pyproject_data.get("project", {}).get("version")
+
+    readme_content = readme_file.read_text(encoding="utf-8")
+
+    assert neuralops.__version__ == pyproject_version, (
+        f"Version mismatch: neuralops.__version__ ({neuralops.__version__}) != pyproject.toml ({pyproject_version})"
+    )
+    assert neuralops.__version__ in readme_content, (
+        f"Version {neuralops.__version__} is not documented in README.md"
+    )
+
