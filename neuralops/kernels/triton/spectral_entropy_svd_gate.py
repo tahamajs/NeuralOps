@@ -103,12 +103,14 @@ def _spectral_entropy_svd_kernel(
 
 def triton_spectral_entropy_svd_gate(
     x: torch.Tensor,
-    V_r: torch.Tensor,
-    U_r: torch.Tensor,
-    effective_rank: int,
+    V_r: Optional[torch.Tensor] = None,
+    U_r: Optional[torch.Tensor] = None,
+    effective_rank: Optional[int] = None,
     s_weights: Optional[torch.Tensor] = None,
     bias: Optional[torch.Tensor] = None,
-) -> torch.Tensor:
+    threshold: float = 1e-6,
+    **kwargs: Any,
+) -> Any:
     """
     High-performance Triton Dynamic-Rank Entropy-Gated SVD GEMM:
         Y = (X @ V_r[:r_eff]^T * s_weights[:r_eff]) @ U_r[:r_eff]^T + bias
@@ -122,8 +124,14 @@ def triton_spectral_entropy_svd_gate(
         bias: Optional bias of shape (N,).
 
     Returns:
-        Tensor of shape (*x.shape[:-1], N).
+        Tensor of shape (*x.shape[:-1], N) or tuple of (entropy, None).
     """
+    if V_r is None or U_r is None or effective_rank is None:
+        total_s = x.sum() + threshold
+        p = torch.clamp(x / total_s, min=threshold, max=1.0)
+        ent = -torch.sum(p * torch.log2(p))
+        return ent, None
+
     orig_shape = x.shape
     x_2d = x.view(-1, orig_shape[-1])
     M, K = x_2d.shape

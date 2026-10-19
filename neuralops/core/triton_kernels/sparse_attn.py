@@ -258,14 +258,14 @@ class _TritonSparseAttnAutogradFunction(torch.autograd.Function):
     @staticmethod
     def forward(
         ctx: Any,
-        q: torch.Tensor,
-        k: torch.Tensor,
-        v: torch.Tensor,
-        block_mask: torch.Tensor | None,
-        block_size: int,
-        is_causal: bool,
-        eps: float,
-    ) -> torch.Tensor:
+        q: Any,
+        k: Any,
+        v: Any,
+        block_mask: Any,
+        block_size: Any,
+        is_causal: Any,
+        eps: Any,
+    ) -> Any:
         orig_shape = q.shape
         D = q.shape[-1]
         N_Q = q.shape[-2]
@@ -329,7 +329,7 @@ class _TritonSparseAttnAutogradFunction(torch.autograd.Function):
         return out.view(*orig_shape)
 
     @staticmethod
-    def backward(ctx: Any, grad_out: torch.Tensor) -> tuple[torch.Tensor | None, ...]:
+    def backward(ctx: Any, grad_out: Any) -> tuple[Any, ...]:
         q, k, v, block_mask = ctx.saved_tensors
         block_size = ctx.block_size
         is_causal = ctx.is_causal

@@ -16,6 +16,8 @@ import math
 import torch
 import torch.nn.functional as F
 
+from typing import Any
+
 from neuralops.core.triton_kernels._common import HAS_TRITON, triton, tl
 
 __all__ = ["sliding_window_attention_kernel", "sliding_window_triton", "sliding_window_attention", "sliding_window_pytorch"]
@@ -197,7 +199,7 @@ if HAS_TRITON and tl is not None:
 
 class _SlidingWindowAutograd(torch.autograd.Function):
     @staticmethod
-    def forward(ctx, q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, window_size: int, is_causal: bool = True):
+    def forward(ctx: Any, q: Any, k: Any, v: Any, window_size: Any, is_causal: Any = True) -> Any:
         ctx.window_size = window_size
         ctx.is_causal = is_causal
         ctx.save_for_backward(q, k, v)
@@ -227,7 +229,7 @@ class _SlidingWindowAutograd(torch.autograd.Function):
 
 
     @staticmethod
-    def backward(ctx, grad_output: torch.Tensor):
+    def backward(ctx: Any, grad_output: Any) -> tuple[Any, ...]:
         q, k, v = ctx.saved_tensors
         window_size = ctx.window_size
         is_causal = getattr(ctx, "is_causal", True)

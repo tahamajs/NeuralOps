@@ -149,6 +149,7 @@ class HashedLinear(nn.Module):
 
         self._cached_weight: torch.Tensor | None = None
         self._cached_versions: tuple[int, ...] = ()
+        self._compressed_params: int | None = None
 
     def _current_versions(self) -> tuple[int, ...]:
         vs = (getattr(self.weight_table, "_version", 0),)
@@ -409,6 +410,7 @@ class HashedNetCompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model if model is not None else nn.Identity(), name="hashed_net", **kwargs)
+        self._compressed_params: int | None = None
         conf = cfg or kwargs.get("comp_config")
         self.cfg = conf
 

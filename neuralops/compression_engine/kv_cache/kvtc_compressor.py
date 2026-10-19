@@ -331,6 +331,7 @@ class KVTCCompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="kvtc", **kwargs)
+        self._compressed_params: int | None = None
         cfg = kwargs.get("comp_config", kwargs.get("cfg", getattr(model, "config", None)))
         self.cfg = cfg
         self.bits = int(_cfg_get(cfg, "kvtc_bits", _cfg_get(cfg, "bits", bits)))
