@@ -67,7 +67,8 @@ def test_master_end_to_end_framework_integration():
     print("[Pillar 2] Performing Model Surgery...")
     try:
         model = replace_attention(model, attention_type="gated_delta_net")
-        heal_replaced_model(model)
+        calib_inputs = torch.randint(0, 100, (2, 16), device=device)
+        heal_replaced_model(teacher_model=model, student_model=model, calibration_inputs=calib_inputs)
     except Exception as e:
         print(f"[Pillar 2 Note] Surgery caught exception or used alternative path: {e}")
     print("[Pillar 2] Model Surgery & Micro-Healing completed.")
@@ -84,7 +85,7 @@ def test_master_end_to_end_framework_integration():
         (torch.randint(0, 100, (2, 16), device=device), torch.randint(0, 100, (2, 16), device=device))
     ]
     try:
-        distill(model, teacher_model=model, train_loader=dummy_dataloader, epochs=1)
+        distill(student=model, teacher=model, dataset=dummy_dataloader, epochs=1)
     except Exception as e:
         print(f"[Pillar 4 Note] Distill executed with stub/exception: {e}")
     print("[Pillar 4] Distillation pipeline verified.")
@@ -111,7 +112,7 @@ def test_master_end_to_end_framework_integration():
 
     print("[Pillar 7] Testing Model Export...")
     try:
-        export_model(model, format="onnx", output_path="results/master_test_model.onnx")
+        export_model(model, output_dir="results/master_test_model.onnx", format="onnx")
     except Exception as e:
         print(f"[Pillar 7 Note] Export handled: {e}")
     print("[Pillar 7] Model Export verified.")
