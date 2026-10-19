@@ -219,7 +219,7 @@ def export_serving_bundle(
         pass
 
     manifest = {
-        "format_version": "1.4.0",
+        "format_version": "1.4.2",
         "target_backend": backend,
         "max_batch_size": max_batch_size,
         "max_sequence_length": max_sequence_length,

@@ -197,7 +197,7 @@ def create_openai_serving_app(
     import time
     import uuid
 
-    app = FastAPI(title="NeuralOps Serving Engine", version="1.4.0")
+    app = FastAPI(title="NeuralOps Serving Engine", version="1.4.2")
 
     @app.get("/health")
     def health():
