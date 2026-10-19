@@ -1648,7 +1648,7 @@ All benchmark tables published in this document are generated from committed, ti
 | 72 Compression Engines Sweep | [`results/triton_all_72_compressors_benchmark.json`](results/triton_all_72_compressors_benchmark.json) | NVIDIA RTX 4070 SM 8.9 | Oct 2026 |
 | GPT-2 End-to-End Speedup | [`results/triton_e2e_gpt2_benchmark.json`](results/triton_e2e_gpt2_benchmark.json) | NVIDIA RTX 4070 SM 8.9 | Oct 2026 |
 | SST-2 Knowledge Distillation | [`results/sst2_kd_v2/sst2_kd_benchmark_v2.csv`](results/sst2_kd_v2/sst2_kd_benchmark_v2.csv) | NVIDIA RTX 4070 SM 8.9 | Oct 2026 |
-| Comprehensive Release Report | [`docs/reports/V1_4_2_RELEASE_REPORT.md`](docs/reports/V1_4_2_RELEASE_REPORT.md) | NVIDIA RTX 4070 SM 8.9 | Oct 2026 |
+| Comprehensive Release Report | [`docs/reports/V1_4_3_RELEASE_REPORT.md`](docs/reports/V1_4_3_RELEASE_REPORT.md) | NVIDIA RTX 4070 SM 8.9 | Oct 2026 |
 
 ---
 
@@ -1671,7 +1671,7 @@ NeuralOps integrates directly with the Hugging Face Hub:
 
 The `neuralops` package is verified against strict packaging standards prior to every release:
 
-- [x] **Package Distribution**: Published on PyPI as [`neuralops v1.4.2`](https://pypi.org/project/neuralops/).
+- [x] **Package Distribution**: Published on PyPI as [`neuralops v1.4.3`](https://pypi.org/project/neuralops/).
 - [x] **Metadata Linter**: `twine check dist/*` passes with 0 warnings, 0 errors.
 - [x] **Wheel Hygiene**: Pure Python + Triton wheel (`neuralops-py3-none-any.whl`, size ~1.2 MB). Scratch files, test logs, and raw checkpoint weights are excluded via `pyproject.toml`.
 - [x] **Source Distribution**: Complete source archive includes all source files, C++/CUDA headers, LICENSE, and documentation.
@@ -1683,7 +1683,8 @@ The `neuralops` package is verified against strict packaging standards prior to 
 
 | NeuralOps Version | Python Versions | PyTorch Versions | Triton Versions | CUDA Versions | Supported OS |
 | :---: | :---: | :---: | :---: | :---: | :--- |
-| **v1.4.2** (Current) | `3.10`, `3.11`, `3.12`, `3.14` | `2.1.0` – `2.11.0+` | `3.0.0` – `3.6.0+` | `11.8`, `12.1`–`12.8`, `13.0`–`13.2` | Linux (Ubuntu, Debian, RHEL), macOS 13+, Windows 10/11 (WSL2) |
+| **v1.4.3** (Current) | `3.10`, `3.11`, `3.12`, `3.14` | `2.1.0` – `2.11.0+` | `3.0.0` – `3.6.0+` | `11.8`, `12.1`–`12.8`, `13.0`–`13.2` | Linux (Ubuntu, Debian, RHEL), macOS 13+, Windows 10/11 (WSL2) |
+| **v1.4.2** | `3.10`, `3.11`, `3.12`, `3.14` | `2.1.0` – `2.11.0+` | `3.0.0` – `3.6.0+` | `11.8`, `12.1`–`12.8`, `13.0`–`13.2` | Linux (Ubuntu, Debian, RHEL), macOS 13+, Windows 10/11 (WSL2) |
 | **v1.3.7** | `3.10`, `3.11`, `3.12`, `3.14` | `2.1.0` – `2.6.0+` | `3.0.0` – `3.6.0+` | `11.8`, `12.1`–`12.8`, `13.0`–`13.2` | Linux, macOS 13+, Windows 10/11 |
 | **v1.3.0** | `3.9`, `3.10`, `3.11` | `2.0.0` – `2.2.0` | `2.1.0` – `2.2.0` | `11.7`, `11.8`, `12.0` | Linux, macOS 12+ |
 
@@ -1736,7 +1737,7 @@ If you use NeuralOps, its subquadratic attention kernels, or model compression e
   year = {2026},
   publisher = {GitHub},
   howpublished = {\url{https://github.com/tahamajs/NeuralOps}},
-  version = {1.4.2}
+  version = {1.4.3}
 }
 ```
 
