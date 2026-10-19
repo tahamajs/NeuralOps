@@ -1059,7 +1059,7 @@ To recover validation accuracy lost during post-surgery singular value truncatio
 
 ```mermaid
 flowchart TD
-    subgraph SixPillars [Unified 6-Pillar Distillation Pipeline - 29,047 tokens/sec]
+    subgraph SixPillars ["Unified 6-Pillar Distillation Pipeline - 29,047 tokens/sec"]
         P1["Pillar 1: Logit KL & Decoupled Distillation<br>Forward/Reverse KL, DKD, Top-K Temperature Scaling"]
         P2["Pillar 2: SmoothMax Layerwise CKA<br>Orthogonal-Invariant Cross-Layer Geometric Similarity"]
         P3["Pillar 3: Attention Map & Value-Relation Gram<br>Hedgehog Chunked Map & MiniLM Gram Matrices"]
@@ -1069,7 +1069,7 @@ flowchart TD
     end
     Teacher["Pre-Trained Quadratic Teacher<br>(BERT / GPT-2 / LLaMA)"] --> SixPillars
     Student["Surgically Transmuted Student<br>(Cosformer / GDN / SVD-Linear)"] --> SixPillars
-    SixPillars --> Schedule["Mohawk Cosine Annealing Multi-Stage Controller<br>alpha(t) Representation -> Probability Focus"]
+    SixPillars --> Schedule["Mohawk Cosine Annealing Multi-Stage Controller<br>alpha(t) Representation to Probability Focus"]
     Schedule --> StudentLoss["Lossless Recovery (> 99.2% Parity Retained)"]
 ```
 
