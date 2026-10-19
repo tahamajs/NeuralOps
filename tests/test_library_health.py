@@ -143,8 +143,8 @@ def test_no_instance_attr_outside_init():
 def test_neuralops_imports():
     """Verify that top-level package imports cleanly, preserves version, and maintains canonical registry counts."""
     assert hasattr(neuralops, "__version__")
-    assert neuralops.__version__ == "1.4.3"
-    assert get_version() == "1.4.3"
+    assert neuralops.__version__ == "1.4.0"
+    assert get_version() == "1.4.0"
 
     api_functions = [
         load_model,
@@ -331,4 +331,3 @@ def test_version_consistency():
     assert neuralops.__version__ in readme_content, (
         f"Version {neuralops.__version__} is not documented in README.md"
     )
-

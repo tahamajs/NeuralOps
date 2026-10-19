@@ -455,6 +455,11 @@ def generate_args(mod_name, sig, device, dtype, B=4, H=8, N=512, D=64):
         C_mat = torch.randn(B, S_dim, N, device=device, dtype=dtype) * 0.1
         D_val = torch.randn(D, device=device, dtype=dtype) * 0.1
         return [u, delta, A, B_mat, C_mat, D_val], {{}}
+    elif mod_name == "speculative_verify":
+        draft = torch.randint(0, 32000, (B, N), device=device, dtype=torch.int64)
+        target = draft.clone()
+        target[:, N // 2 :] = torch.randint(0, 32000, (B, N - N // 2), device=device, dtype=torch.int64)
+        return [draft, target], {{}}
     elif mod_name == "liquid_attention":
         x = torch.randn(B, N, D, device=device, dtype=dtype) * 0.1
         delta = torch.randn(B, N, D, device=device, dtype=dtype) * 0.1
