@@ -31,7 +31,7 @@ else:
     info_version = str(info_obj)
 
 errors = []
-if actual_version != "1.4.1":
+if actual_version != "1.4.2":
     errors.append(f"Version mismatch: expected '1.4.0', got {actual_version}")
 
 actual_attn = len(ATTENTION_REGISTRY)
