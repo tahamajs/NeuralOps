@@ -278,7 +278,6 @@ def test_scan_kernels_execution():
     B, H, L, D = 2, 4, 16, 32
     device = "cuda" if (torch.cuda.is_available() and HAS_TRITON) else "cpu"
 
-    from neuralops.core.triton_kernels.gdn_scan import gdn_scan
     q = torch.randn(B, H, L, D, device=device, dtype=torch.float32)
     k = F.normalize(torch.randn(B, H, L, D, device=device, dtype=torch.float32), dim=-1)
     v = torch.randn(B, H, L, D, device=device, dtype=torch.float32)
@@ -287,7 +286,6 @@ def test_scan_kernels_execution():
     out_gdn = gdn_scan(q, k, v, beta, alpha)
     assert out_gdn.shape == q.shape
 
-    from neuralops.core.triton_kernels.hgrn2_scan import hgrn2_scan
     f = torch.randn(B, L, D, device=device, dtype=torch.float32)
     iv = torch.randn(B, L, D, device=device, dtype=torch.float32)
     out_hgrn2 = hgrn2_scan(f, iv, res_clip=1.0)
@@ -305,7 +303,6 @@ def test_tri_kernel_gla_parity_and_backward():
     lambdas_raw = torch.randn(B, H, L, device=device, dtype=torch.float32)
     lambdas = torch.sigmoid(lambdas_raw).detach().requires_grad_(True)
 
-    from neuralops.core.triton_kernels.gla_scan import gla_scan, gla_scan_pytorch
     ref = gla_scan_pytorch(q.detach(), k.detach(), v.detach(), lambdas.detach())
     out = gla_scan(q, k, v, lambdas)
     torch.testing.assert_close(out, ref, rtol=1e-3, atol=1e-3)
@@ -326,7 +323,6 @@ def test_tri_kernel_gdn_continuity_and_backward():
     beta = torch.sigmoid(torch.randn(B, H, L, device=device, dtype=torch.float32, requires_grad=True))
     alpha = torch.sigmoid(torch.randn(B, H, L, device=device, dtype=torch.float32, requires_grad=True))
 
-    from neuralops.core.triton_kernels.gdn_scan import gdn_scan, gdn_scan_pytorch
     ref = gdn_scan_pytorch(q.detach(), k.detach(), v.detach(), beta.detach(), alpha.detach())
     out = gdn_scan(q, k, v, beta, alpha)
     torch.testing.assert_close(out, ref, rtol=1e-3, atol=1e-3)

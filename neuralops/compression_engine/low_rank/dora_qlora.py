@@ -102,11 +102,6 @@ class QLoRALinear(nn.Module):
         self.lora_B = nn.Parameter(torch.randn(out_features, rank) * 1e-4)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        if x.is_cuda and not self.training:
-            try:
-                from neuralops.core.triton_kernels.low_rank import fused_down_up_gemm_bias_triton, fused_w4a16_gemm_triton
-            except Exception:
-                pass
         base_out = self.base(x)
         try:
             from neuralops.core.triton_kernels.low_rank import fused_down_up_gemm_bias_triton

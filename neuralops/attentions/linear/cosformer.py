@@ -30,7 +30,6 @@ import torch.nn.functional as F
 
 from neuralops.core.base import BaseAttention
 from neuralops.core.registry import ATTENTION_REGISTRY
-from neuralops.core.utils.rope import _rotate_half
 
 try:
     from neuralops.core.triton_kernels import triton_dispatch

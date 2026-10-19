@@ -12,7 +12,6 @@ Hybrid attention architecture interleaving selective state space models with ful
 """
 
 from __future__ import annotations
-from neuralops.core.common import _read_past_kv
 from neuralops.core.common import _unpack_weight_bias
 
 from neuralops.core.attention_utils import (
