@@ -236,7 +236,7 @@ def save_lm_eval_results(
 
 
 def main() -> None:
-    """CLI entrypoint for NeuralOps zero-shot LM evaluation."""
+    """CLI entrypoint for NeuralOps zero-shot LM neuralops.evaluation."""
     parser = argparse.ArgumentParser(description="NeuralOps LM-Eval Adapter Runner")
     parser.add_argument("--model", type=str, default="gpt2", help="Model name or path")
     parser.add_argument("--module-name", type=str, default=None, help="NeuralOps module name to inject")
@@ -255,7 +255,7 @@ def main() -> None:
             sys.path.insert(0, p)
 
     from transformers import AutoModelForCausalLM, AutoTokenizer
-    from evaluation.eval_patcher import apply_module_to_model
+    from neuralops.evaluation.eval_patcher import apply_module_to_model
 
     logger.info("Loading model and tokenizer: %s", args.model)
     tokenizer = AutoTokenizer.from_pretrained(args.model, trust_remote_code=True)

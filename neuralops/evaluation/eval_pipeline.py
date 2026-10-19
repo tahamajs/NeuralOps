@@ -34,16 +34,16 @@ from scipy.stats import pearsonr, spearmanr
 from sklearn.metrics import accuracy_score, f1_score, matthews_corrcoef
 from torch.profiler import ProfilerActivity, profile
 
-from evaluation.eval_data import (
+from neuralops.evaluation.eval_data import (
     _PREPARED_DATASET_CACHE,
     build_calibration_loader,
     get_dataset_batch,
 )
-from evaluation.eval_patcher import (
+from neuralops.evaluation.eval_patcher import (
     apply_module_to_model,
     get_base_model_cached,
 )
-from evaluation.eval_types import (
+from neuralops.evaluation.eval_types import (
     ACTIVATION_AWARE_MODULES,
     BenchmarkResult,
     COMPUTE_OPTIMIZERS,
@@ -52,7 +52,7 @@ from evaluation.eval_types import (
     LM_DATASETS,
     MODEL_TOKENIZER_MAPPING,
 )
-from evaluation.eval_utils import _extract_logits_and_loss, _filter_batch
+from neuralops.evaluation.eval_utils import _extract_logits_and_loss, _filter_batch
 
 logger = logging.getLogger("EvalEngine")
 
@@ -71,7 +71,7 @@ def probe_optimal_batch_size(
     """Probes GPU memory to dynamically compute the largest power-of-two batch size fitting VRAM.
 
     Args:
-        model: Model under evaluation.
+        model: Model under neuralops.evaluation.
         model_family: Model family name for tokenizer resolution.
         dataset: Target dataset name.
         seq_len: Sequence length dimension.

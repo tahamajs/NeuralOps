@@ -54,7 +54,7 @@ def parse_args() -> BenchmarkConfig:
         "--post_kd_samples",
         type=int,
         default=872,
-        help="Validation sample count for post-KD evaluation.",
+        help="Validation sample count for post-KD neuralops.evaluation.",
     )
     parser.add_argument(
         "--batch_size",

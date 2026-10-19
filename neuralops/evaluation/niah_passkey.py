@@ -261,7 +261,7 @@ def main() -> None:
             sys.path.insert(0, p)
 
     from transformers import AutoModelForCausalLM, AutoTokenizer
-    from evaluation.eval_patcher import apply_module_to_model
+    from neuralops.evaluation.eval_patcher import apply_module_to_model
 
     logger.info("Loading model and tokenizer: %s", args.model)
     tokenizer = AutoTokenizer.from_pretrained(args.model, trust_remote_code=True)

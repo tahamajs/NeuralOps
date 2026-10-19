@@ -65,7 +65,7 @@ if str(REPO_ROOT) not in sys.path:
 from neuralops.utils.replace_attention import replace_attention
 
 try:
-    from evaluation.metrics import (
+    from neuralops.evaluation.metrics import (
         compute_numerical_deviation,
         compute_perplexity_from_loss,
         compute_representation_similarity,

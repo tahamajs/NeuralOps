@@ -23,7 +23,7 @@ from __future__ import annotations
 import logging
 import torch
 
-from evaluation.eval_types import (
+from neuralops.evaluation.eval_types import (
     ACTIVATION_AWARE_MODULES,
     BenchmarkResult,
     COMPUTE_OPTIMIZERS,
@@ -35,32 +35,32 @@ from evaluation.eval_types import (
     TRACK_MODULES,
 )
 
-from evaluation.eval_utils import (
+from neuralops.evaluation.eval_utils import (
     DEFAULT_MAX_CACHE_SIZE,
     _evict_if_needed,
     _extract_logits_and_loss,
     _filter_batch,
 )
 
-from evaluation.eval_data import (
+from neuralops.evaluation.eval_data import (
     _generate_synthetic_batch,
     build_calibration_loader,
     get_dataset_batch,
 )
 
-from evaluation.eval_patcher import (
+from neuralops.evaluation.eval_patcher import (
     apply_module_to_model,
     build_model_instance,
     get_base_model_cached,
 )
 
-from evaluation.eval_reporter import (
+from neuralops.evaluation.eval_reporter import (
     format_summary,
     log_result_summary,
     save_benchmark_artifacts,
 )
 
-from evaluation.eval_pipeline import (
+from neuralops.evaluation.eval_pipeline import (
     evaluate_single_combination,
     evaluate_single_combination_opt,
     probe_optimal_batch_size,

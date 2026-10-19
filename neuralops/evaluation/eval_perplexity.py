@@ -46,7 +46,7 @@ for p in [str(CODES), str(ROOT)]:
         sys.path.insert(0, p)
 
 from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
-from evaluation.eval_all_models_datasets import apply_module_to_model
+from neuralops.evaluation.eval_all_models_datasets import apply_module_to_model
 
 logger = logging.getLogger("EvalModulePPL")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")

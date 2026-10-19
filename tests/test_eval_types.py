@@ -8,7 +8,7 @@
 """Tests for eval_types module."""
 
 import math
-from evaluation.eval_types import (
+from neuralops.evaluation.eval_types import (
     BenchmarkResult,
     TRACK_MODULES,
     MODEL_TOKENIZER_MAPPING,

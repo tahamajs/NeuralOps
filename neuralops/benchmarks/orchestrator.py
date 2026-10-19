@@ -58,7 +58,7 @@ class BenchmarkOrchestrator:
         """Run the FLA-style correctness-gated operation registry.
 
         This entry point is intentionally separate from model/dataset
-        evaluation.  It prevents the legacy evaluation runner from silently
+        neuralops.evaluation.  It prevents the legacy evaluation runner from silently
         treating a kernel microbenchmark as a model experiment.
         """
         from neuralops.benchmarks.ops_runner import run_registered_ops

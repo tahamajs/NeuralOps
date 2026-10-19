@@ -34,9 +34,9 @@ for p in [str(CODES), str(ROOT)]:
     if p not in sys.path:
         sys.path.insert(0, p)
 
-from evaluation.eval_patcher import apply_module_to_model
+from neuralops.evaluation.eval_patcher import apply_module_to_model
 
-logger = logging.getLogger("evaluation.harness")
+logger = logging.getLogger("neuralops.evaluation.harness")
 
 try:
     import lm_eval

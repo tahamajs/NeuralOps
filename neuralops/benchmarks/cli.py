@@ -805,11 +805,11 @@ def handle_generate(args: argparse.Namespace) -> int:
 def handle_niah(args: argparse.Namespace) -> int:
     """Runs Needle-In-A-Haystack retrieval evaluation and produces a 2D passkey heatmap."""
     try:
-        from evaluation.niah_passkey import NeedleInAHaystackEvaluator, plot_niah_heatmap
+        from neuralops.evaluation.niah_passkey import NeedleInAHaystackEvaluator, plot_niah_heatmap
     except ImportError:
         from neuralops.evaluation.niah_passkey import NeedleInAHaystackEvaluator, plot_niah_heatmap
 
-    print(f"Loading model '{args.model}' for Needle-In-A-Haystack Passkey evaluation...")
+    print(f"Loading model '{args.model}' for Needle-In-A-Haystack Passkey neuralops.evaluation...")
     from transformers import AutoTokenizer, AutoModelForCausalLM
     tokenizer = AutoTokenizer.from_pretrained(args.model)
     device = "cuda" if torch.cuda.is_available() else "cpu"

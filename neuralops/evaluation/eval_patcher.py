@@ -5,7 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""Model patching and module injection framework for NeuralOps evaluation.
+"""Model patching and module injection framework for NeuralOps neuralops.evaluation.
 
 Handles base transformer model instantiations (BERT, RoBERTa, GPT-2, T5, Qwen),
 state-dict caching, and module injection into target model graphs (attention replacement,
@@ -37,7 +37,7 @@ from transformers import (
 from neuralops.core.attention_utils import inject_attention
 from neuralops.core.base import BaseAttention
 from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
-from evaluation.eval_types import DEPRECATED_MODULES
+from neuralops.evaluation.eval_types import DEPRECATED_MODULES
 from neuralops.utils.replace_attention import UniversalAttentionWrapper
 
 logger = logging.getLogger("EvalEngine")

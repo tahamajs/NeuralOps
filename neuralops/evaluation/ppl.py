@@ -35,9 +35,9 @@ for p in [str(CODES), str(ROOT)]:
     if p not in sys.path:
         sys.path.insert(0, p)
 
-from evaluation.eval_patcher import apply_module_to_model
+from neuralops.evaluation.eval_patcher import apply_module_to_model
 
-logger = logging.getLogger("evaluation.ppl")
+logger = logging.getLogger("neuralops.evaluation.ppl")
 
 
 class PerplexityEvaluator:
@@ -138,7 +138,7 @@ class PerplexityEvaluator:
             encoded = encoded[:max_tokens]
 
         tokens_tensor = torch.tensor(encoded, dtype=torch.long)
-        logger.info(f"Loaded {len(tokens_tensor):,} tokens for evaluation.")
+        logger.info(f"Loaded {len(tokens_tensor):,} tokens for neuralops.evaluation.")
         return tokens_tensor
 
     def evaluate_tokens(

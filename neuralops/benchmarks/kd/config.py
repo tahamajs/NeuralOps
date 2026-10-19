@@ -35,7 +35,7 @@ class BenchmarkConfig:
     pre_kd_samples : int, default=200
         Number of validation samples to evaluate before KD training.
     post_kd_samples : int, default=872
-        Number of validation samples to evaluate for final evaluation.
+        Number of validation samples to evaluate for final neuralops.evaluation.
     batch_size : int, default=4
         Training per-device micro-batch size.
     grad_accum_steps : int, default=4

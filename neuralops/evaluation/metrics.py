@@ -73,13 +73,13 @@ def compute_token_perplexity(
     max_length: Optional[int] = None,
     device: Optional[Union[str, torch.device]] = None,
 ) -> Dict[str, float]:
-    """Computes token-level perplexity with sliding-window or full-sequence evaluation.
+    """Computes token-level perplexity with sliding-window or full-sequence neuralops.evaluation.
 
     Args:
         model: Autoregressive causal language model.
         input_ids: Tensor of shape (batch_size, seq_len) or (1, total_tokens).
         attention_mask: Optional attention mask tensor.
-        stride: Window stride for long-sequence evaluation.
+        stride: Window stride for long-sequence neuralops.evaluation.
         max_length: Max context length per evaluation window.
         device: Device to place tensors on.
 

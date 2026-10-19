@@ -187,7 +187,7 @@ class ClassificationAdapter:
             self.model_meta.num_params_after = params_after
 
     def run(self) -> Dict[str, Any]:
-        """Execute setup, module injection, training (if applicable), and evaluation."""
+        """Execute setup, module injection, training (if applicable), and neuralops.evaluation."""
         self.setup()
         self.apply_module()
 

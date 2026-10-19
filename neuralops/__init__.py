@@ -12,28 +12,11 @@ NeuralOps Core Modules.
 from __future__ import annotations
 
 import importlib
-import importlib.util
 import sys
-from pathlib import Path
-
 
 def _load_evaluation_package() -> Any:
-    """Load the repository-level evaluation package, avoiding bridge shadowing."""
-    loaded = sys.modules.get("evaluation")
-    if loaded is not None and hasattr(loaded, "__path__"):
-        return loaded
-    if loaded is not None:
-        sys.modules.pop("evaluation", None)
-    package_dir = Path(__file__).resolve().parent.parent / "evaluation"
-    spec = importlib.util.spec_from_file_location(
-        "evaluation", package_dir / "__init__.py", submodule_search_locations=[str(package_dir)]
-    )
-    if spec is None or spec.loader is None:
-        raise ModuleNotFoundError("repository evaluation package is unavailable")
-    module = importlib.util.module_from_spec(spec)
-    sys.modules["evaluation"] = module
-    spec.loader.exec_module(module)
-    return module
+    """Load the canonical framework evaluation package."""
+    return importlib.import_module("neuralops.evaluation")
 from typing import Any, TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -90,8 +73,6 @@ if TYPE_CHECKING:
 __version__ = "1.4.0"
 
 import importlib.machinery
-import importlib.util
-
 from importlib.abc import MetaPathFinder
 
 
@@ -210,12 +191,11 @@ class _ModuleAliasFinder(MetaPathFinder):
         "neuralops.launch_parallel_sweep": "neuralops.benchmarks.launch_parallel_sweep",
         "neuralops.run_all_modules_scheduler": "neuralops.benchmarks.run_all_modules_scheduler",
         "neuralops.kd_quick_test": "neuralops.benchmarks.kd_quick_test",
-        "neuralops.evaluation": "evaluation",
-        "neuralops.eval_all_models_datasets": "evaluation.eval_all_models_datasets",
-        "neuralops.eval_perplexity": "evaluation.eval_perplexity",
-        "neuralops.full_mnli_validation": "evaluation.full_mnli_validation",
-        "neuralops.run_lm_eval_harness": "evaluation.run_lm_eval_harness",
-        "neuralops.run_baseline_comparison": "evaluation.run_baseline_comparison",
+        "neuralops.eval_all_models_datasets": "neuralops.evaluation.eval_all_models_datasets",
+        "neuralops.eval_perplexity": "neuralops.evaluation.eval_perplexity",
+        "neuralops.full_mnli_validation": "neuralops.evaluation.full_mnli_validation",
+        "neuralops.run_lm_eval_harness": "neuralops.evaluation.run_lm_eval_harness",
+        "neuralops.run_baseline_comparison": "neuralops.evaluation.run_baseline_comparison",
         "neuralops.train_lra": "neuralops.trainer.train_lra",
         "neuralops.generate_all_modules_analysis": "neuralops.analysis.generate_all_modules_analysis",
         "neuralops.core.triton_kernels.block_sparse_streaming_attn": "neuralops.kernels.triton.block_sparse_streaming_attn",
@@ -267,14 +247,6 @@ class _ModuleAliasFinder(MetaPathFinder):
         self, fullname: str, path: Any, target: Any = None
     ) -> Any | None:
         """Execute find_spec operation."""
-        if fullname.startswith("neuralops.evaluation."):
-            canonical = "evaluation." + fullname[len("neuralops.evaluation.") :]
-            try:
-                mod = importlib.import_module(canonical)
-                sys.modules[fullname] = mod
-                return getattr(mod, "__spec__", None)
-            except Exception:
-                pass
         if fullname.startswith("neuralops.kernels.cuda."):
             sub = fullname[len("neuralops.kernels.cuda.") :]
             canonical = f"neuralops.core.cuda_kernels.{sub}"
@@ -330,8 +302,8 @@ _patch_pascal_svd_if_needed()
 
 
 _LAZY_EXPORTS = {
-    "ABTestResult": ("evaluation.ab_testing", "ABTestResult"),
-    "ABTester": ("evaluation.ab_testing", "ABTester"),
+    "ABTestResult": ("neuralops.evaluation.ab_testing", "ABTestResult"),
+    "ABTester": ("neuralops.evaluation.ab_testing", "ABTester"),
     "ATTENTION_REGISTRY": ("neuralops.core.registry", "ATTENTION_REGISTRY"),
     "BaseAttention": ("neuralops.core.base", "BaseAttention"),
     "BaseCompressor": ("neuralops.core.base", "BaseCompressor"),
@@ -370,17 +342,17 @@ _LAZY_EXPORTS = {
     "COMPRESSOR_REGISTRY": ("neuralops.core.registry", "COMPRESSOR_REGISTRY"),
     "CompressionPipeline": ("neuralops.core.compression_pipeline", "CompressionPipeline"),
     "CustomLoopTrainer": ("neuralops.trainer.custom_loop_trainer", "CustomLoopTrainer"),
-    "FairnessEvaluator": ("evaluation.fairness", "FairnessEvaluator"),
-    "FairnessReport": ("evaluation.fairness", "FairnessReport"),
+    "FairnessEvaluator": ("neuralops.evaluation.fairness", "FairnessEvaluator"),
+    "FairnessReport": ("neuralops.evaluation.fairness", "FairnessReport"),
     "HuggingFaceTrainer": ("neuralops.trainer.hf_trainer", "HuggingFaceTrainer"),
-    "LabelQualityDetector": ("evaluation.label_quality", "LabelQualityDetector"),
-    "LabelQualityReport": ("evaluation.label_quality", "LabelQualityReport"),
+    "LabelQualityDetector": ("neuralops.evaluation.label_quality", "LabelQualityDetector"),
+    "LabelQualityReport": ("neuralops.evaluation.label_quality", "LabelQualityReport"),
     "MultiModeBenchmarkRunner": ("neuralops.benchmarks.harness", "MultiModeBenchmarkRunner"),
     "ResultWriter": ("neuralops.results_saver.pipeline.result_writer", "ResultWriter"),
     "ResultsSaver": ("neuralops.results_saver", "ResultsSaver"),
-    "RetrainDecision": ("evaluation.retraining", "RetrainDecision"),
-    "RetrainPolicy": ("evaluation.retraining", "RetrainPolicy"),
-    "RetrainingOrchestrator": ("evaluation.retraining", "RetrainingOrchestrator"),
+    "RetrainDecision": ("neuralops.evaluation.retraining", "RetrainDecision"),
+    "RetrainPolicy": ("neuralops.evaluation.retraining", "RetrainPolicy"),
+    "RetrainingOrchestrator": ("neuralops.evaluation.retraining", "RetrainingOrchestrator"),
     "Trainer": ("neuralops.trainer", "Trainer"),
     "TrainerRegistry": ("neuralops.trainer.registry", "TrainerRegistry"),
     "UnifiedTransformerConfig": ("neuralops.core.model_wrapper", "UnifiedTransformerConfig"),
@@ -466,10 +438,10 @@ _API_EXPORTS = {
     "PagedStateTable": "neuralops.models.paged_state",
     "ATTENTION_REGISTRY": "neuralops.core.registry",
     "COMPRESSOR_REGISTRY": "neuralops.core.registry",
-    "NeedleInAHaystackEvaluator": "evaluation.niah_passkey",
-    "plot_niah_heatmap": "evaluation.niah_passkey",
-    "NeuralOpsLMEvalAdapter": "evaluation.lm_eval_adapter",
-    "evaluate_zero_shot_tasks": "evaluation.lm_eval_adapter",
+    "NeedleInAHaystackEvaluator": "neuralops.evaluation.niah_passkey",
+    "plot_niah_heatmap": "neuralops.evaluation.niah_passkey",
+    "NeuralOpsLMEvalAdapter": "neuralops.evaluation.lm_eval_adapter",
+    "evaluate_zero_shot_tasks": "neuralops.evaluation.lm_eval_adapter",
 }
 
 _SUBPACKAGES = {
@@ -689,15 +661,6 @@ def __getattr__(name: str) -> Any:
         return classes
 
     if name in _API_EXPORTS:
-        # Import the optional top-level evaluation package before loading the
-        # API module.  The repository also contains ``neuralops/evaluation.py``;
-        # preloading the package prevents that compatibility module from being
-        # registered under the top-level ``evaluation`` name by alias imports.
-        if "evaluation" not in sys.modules:
-            try:
-                _load_evaluation_package()
-            except ImportError:
-                pass
         mod_name = _API_EXPORTS[name]
         mod = importlib.import_module(mod_name)
         val = getattr(mod, name)
@@ -706,16 +669,6 @@ def __getattr__(name: str) -> Any:
 
     if name in _LAZY_EXPORTS:
         module_path, attr_name = _LAZY_EXPORTS[name]
-        if module_path.startswith("evaluation."):
-            # A compatibility module at ``neuralops/evaluation.py`` can be
-            # installed under the bare ``evaluation`` name by the editable
-            # package finder.  Public evaluation exports require the actual
-            # top-level package so its submodules remain importable.
-            loaded_evaluation = sys.modules.get("evaluation")
-            if loaded_evaluation is not None and not hasattr(loaded_evaluation, "__path__"):
-                sys.modules.pop("evaluation", None)
-            if "evaluation" not in sys.modules:
-                _load_evaluation_package()
         module = importlib.import_module(module_path)
         val = getattr(module, attr_name)
         globals()[name] = val
@@ -723,7 +676,7 @@ def __getattr__(name: str) -> Any:
 
     if name == "evaluation":
         try:
-            evaluation_package = _load_evaluation_package()
+            evaluation_package = importlib.import_module("neuralops.evaluation")
             globals()[name] = evaluation_package
             return evaluation_package
         except ImportError:

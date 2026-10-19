@@ -9,8 +9,8 @@
 test_fla_evaluation_and_benchmarking.py
 =======================================
 Comprehensive Verification Suite for FLA Evaluation & Benchmarking Tools in NeuralOps:
-1. evaluation.harness (NeuralOpsLMWrapper, HAS_LM_EVAL, run_evaluation)
-2. evaluation.ppl (PerplexityEvaluator)
+1. neuralops.evaluation.harness (NeuralOpsLMWrapper, HAS_LM_EVAL, run_evaluation)
+2. neuralops.evaluation.ppl (PerplexityEvaluator)
 3. neuralops.benchmarks.generation (GenerationBenchmark)
 4. neuralops.benchmarks.training_throughput (TrainingThroughputProfiler)
 5. neuralops.benchmarks.ops_runner (OP_REGISTRY, run_benchmark_worker, format_table)
@@ -26,8 +26,8 @@ import pytest
 import torch
 import torch.nn as nn
 from transformers import AutoConfig, AutoModelForCausalLM
-from evaluation.harness import NeuralOpsLMWrapper, HAS_LM_EVAL, run_evaluation
-from evaluation.ppl import PerplexityEvaluator
+from neuralops.evaluation.harness import NeuralOpsLMWrapper, HAS_LM_EVAL, run_evaluation
+from neuralops.evaluation.ppl import PerplexityEvaluator
 from neuralops.benchmarks.generation import GenerationBenchmark
 from neuralops.benchmarks.training_throughput import TrainingThroughputProfiler
 from neuralops.benchmarks.ops_runner import OP_REGISTRY, run_benchmark_worker, format_table

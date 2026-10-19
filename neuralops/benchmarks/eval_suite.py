@@ -42,7 +42,7 @@ class LMEvalAdapter:
 
 
 class RULERBenchmark:
-    """Needle-In-A-Haystack (NIAH) long-context retrieval evaluation."""
+    """Needle-In-A-Haystack (NIAH) long-context retrieval neuralops.evaluation."""
 
     def __init__(self, context_lengths: list[int] | None = None) -> None:
         self.context_lengths = context_lengths or [1024, 2048, 4096]

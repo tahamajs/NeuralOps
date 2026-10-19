@@ -388,7 +388,7 @@ def probe_optimal_batch_size(*args: Any, **kwargs: Any) -> Any:
     when evaluation extras are not installed, while source checkouts and full
     installations still use the canonical evaluation implementation.
     """
-    from evaluation.eval_pipeline import probe_optimal_batch_size as _probe
+    from neuralops.evaluation.eval_pipeline import probe_optimal_batch_size as _probe
 
     return _probe(*args, **kwargs)
 
@@ -765,7 +765,7 @@ def evaluate(
         Dictionary containing evaluation metrics (accuracy, latency, memory, etc.).
     """
     try:
-        from evaluation.eval_all_models_datasets import evaluate_single_combination_opt
+        from neuralops.evaluation.eval_all_models_datasets import evaluate_single_combination_opt
     except ImportError:
         from neuralops.evaluation.eval_all_models_datasets import evaluate_single_combination_opt
     dev = device or ("cuda" if torch.cuda.is_available() else "cpu")

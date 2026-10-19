@@ -59,7 +59,7 @@ __all__ = [
 
 from neuralops.benchmarks.core import arguments
 from neuralops.benchmarks.core import data_loader
-from neuralops.benchmarks.core import evaluation
+from neuralops.benchmarks.core import neuralops.evaluation
 from neuralops.benchmarks.core import kd
 from neuralops.benchmarks.core import model_loader
 from neuralops.benchmarks.core import stats

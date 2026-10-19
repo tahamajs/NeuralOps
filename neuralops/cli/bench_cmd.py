@@ -96,7 +96,7 @@ def cmd_bench(args):
                     entry = {"module": mod_name, "type": mod_type, "status": status, "error": err, "elapsed_s": round(time.time() - start_t, 2)}
                 else:
                     try:
-                        from evaluation.eval_pipeline import evaluate_single_combination_opt
+                        from neuralops.evaluation.eval_pipeline import evaluate_single_combination_opt
                     except ImportError:
                         from neuralops.evaluation.eval_pipeline import evaluate_single_combination_opt
                     dev = torch.device(device)
@@ -161,7 +161,7 @@ def cmd_bench(args):
         return subprocess.call(cmd)
     else:
         try:
-            from evaluation.eval_pipeline import evaluate_single_combination_opt
+            from neuralops.evaluation.eval_pipeline import evaluate_single_combination_opt
         except ImportError:
             from neuralops.evaluation.eval_pipeline import evaluate_single_combination_opt
         dev = torch.device(device)

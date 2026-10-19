@@ -1097,8 +1097,8 @@ Demonstrating live evaluation pipelining using the `evaluation` module harnesses
 """),
         # Cell 22: Code demonstrating evaluation pipeline
         create_code_cell(r"""# Cell 12: Evaluation Pipeline Verification
-import evaluation
-print(f"Evaluation Module Harness Loaded: {evaluation.__file__}")
+import neuralops.evaluation
+print(f"Evaluation Module Harness Loaded: {neuralops.evaluation.__file__}")
 print(f"Available Evaluators: {dir(evaluation)[:8]}")
 """),
         # Cell 23: Hardware Efficiency Quotient

@@ -1018,10 +1018,10 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # Canonical NeuralOps evaluation imports
-import evaluation
-from evaluation.niah import NeedleInAHaystackEvaluator
-from evaluation.metrics import compute_linear_cka, compute_representation_similarity
-from evaluation.lm_eval_adapter import NeuralOpsLMEvalAdapter
+import neuralops.evaluation
+from neuralops.evaluation.niah import NeedleInAHaystackEvaluator
+from neuralops.evaluation.metrics import compute_linear_cka, compute_representation_similarity
+from neuralops.evaluation.lm_eval_adapter import NeuralOpsLMEvalAdapter
 
 plots_dir = Path("results/plots")
 plots_dir.mkdir(parents=True, exist_ok=True)

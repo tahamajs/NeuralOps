@@ -19,12 +19,12 @@ from typing import Any
 import torch
 from torch.utils.data import DataLoader
 
-from evaluation.eval_types import (
+from neuralops.evaluation.eval_types import (
     GLUE_DATASETS,
     LM_DATASETS,
     MODEL_TOKENIZER_MAPPING,
 )
-from evaluation.eval_utils import _evict_if_needed
+from neuralops.evaluation.eval_utils import _evict_if_needed
 
 logger = logging.getLogger("EvalEngine")
 

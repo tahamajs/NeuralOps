@@ -397,7 +397,7 @@ class BenchmarkEvaluator:
                 logger.info(f"Injected attention '{self.attention_type}' (rank={r}) into model.")
             except Exception as e_attn:
                 try:
-                    from evaluation.eval_patcher import apply_module_to_model
+                    from neuralops.evaluation.eval_patcher import apply_module_to_model
 
                     model, _ = apply_module_to_model(
                         model,
@@ -409,7 +409,7 @@ class BenchmarkEvaluator:
 
         if self.compression_type and self.compression_type.lower() not in ("none", "null"):
             try:
-                from evaluation.eval_patcher import apply_module_to_model
+                from neuralops.evaluation.eval_patcher import apply_module_to_model
 
                 model, _ = apply_module_to_model(
                     model,
@@ -586,7 +586,7 @@ class BenchmarkEvaluator:
         # Attempt 2: eval_data batch
         if not batches:
             try:
-                from evaluation.eval_data import get_dataset_batch
+                from neuralops.evaluation.eval_data import get_dataset_batch
 
                 for _ in range(max(1, max_samples // b)):
                     b_data = get_dataset_batch(
@@ -716,7 +716,7 @@ class BenchmarkEvaluator:
 
         batches: List[Dict[str, torch.Tensor]] = []
         try:
-            from evaluation.eval_data import get_dataset_batch
+            from neuralops.evaluation.eval_data import get_dataset_batch
 
             for _ in range(max(1, max_samples // b)):
                 b_data = get_dataset_batch(
@@ -775,7 +775,7 @@ class BenchmarkEvaluator:
         mcc = 0.0
         if all_preds and all_labels and len(all_preds) == len(all_labels):
             try:
-                from evaluation.metrics import compute_accuracy, compute_f1, compute_matthews_corrcoef
+                from neuralops.evaluation.metrics import compute_accuracy, compute_f1, compute_matthews_corrcoef
 
                 acc = float(compute_accuracy(all_preds, all_labels)) * 100.0
                 macro_f1 = float(compute_f1(all_preds, all_labels, average="macro"))
@@ -829,7 +829,7 @@ class BenchmarkEvaluator:
         depth_scores: Dict[str, float] = {}
 
         try:
-            from evaluation.niah import NeedleInAHaystackEvaluator
+            from neuralops.evaluation.niah import NeedleInAHaystackEvaluator
 
             niah_eval = NeedleInAHaystackEvaluator(
                 model=model,
@@ -1015,10 +1015,10 @@ class BenchmarkEvaluator:
         rank: Optional[int] = 64,
         **kwargs: Any,
     ) -> BenchmarkEvalResult:
-        """Connect directly to evaluation.eval_pipeline.evaluate_single_combination_opt."""
+        """Connect directly to neuralops.evaluation.eval_pipeline.evaluate_single_combination_opt."""
         mod = module_name or self.attention_type or "svd_linear_attention"
         try:
-            from evaluation.eval_pipeline import evaluate_single_combination_opt
+            from neuralops.evaluation.eval_pipeline import evaluate_single_combination_opt
 
             r_val = int(rank) if rank is not None else 64
             res = evaluate_single_combination_opt(

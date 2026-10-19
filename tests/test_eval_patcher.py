@@ -8,7 +8,7 @@
 """Tests for eval_patcher module."""
 
 import torch
-from evaluation.eval_patcher import (
+from neuralops.evaluation.eval_patcher import (
     build_model_instance,
     get_base_model_cached,
     apply_module_to_model,

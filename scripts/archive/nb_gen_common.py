@@ -109,7 +109,7 @@ os.chdir(repo_root)
 import torch
 import neuralops
 from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
-import evaluation
+import neuralops.evaluation
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt

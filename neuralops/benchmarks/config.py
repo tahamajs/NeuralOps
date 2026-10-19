@@ -161,7 +161,7 @@ class SeqLenScalingConfig(BenchmarkRunConfig):
 
 @dataclass
 class RulerConfig(BenchmarkRunConfig):
-    """Configuration for long-context RULER / Needle-in-a-Haystack evaluation."""
+    """Configuration for long-context RULER / Needle-in-a-Haystack neuralops.evaluation."""
 
     modules: list[str] = field(default_factory=list)
     context_lengths: list[int] = field(default_factory=lambda: [1024, 2048, 4096, 8192])

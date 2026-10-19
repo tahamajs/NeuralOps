@@ -42,7 +42,7 @@ from neuralops.benchmarks.kd.reporter import KDReporter
 from neuralops.core.architecture import get_attention_modules
 from neuralops.core.registry import ATTENTION_REGISTRY
 try:
-    from evaluation.eval_patcher import apply_module_to_model
+    from neuralops.evaluation.eval_patcher import apply_module_to_model
 except ImportError:
     from neuralops.evaluation.eval_patcher import apply_module_to_model
 
@@ -318,7 +318,7 @@ class KDRunner:
         val_pre_loader : DataLoader
             Validation loader for screening during KD.
         val_full_loader : DataLoader
-            Validation loader for final evaluation.
+            Validation loader for final neuralops.evaluation.
         dataset_name : str
             Dataset name string.
 

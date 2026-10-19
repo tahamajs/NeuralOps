@@ -38,7 +38,7 @@ class TestKnownBugs:
 
     def test_eval_file_split_preserves_api(self):
         """Regression: eval file split must preserve public API."""
-        from evaluation.eval_all_models_datasets import (
+        from neuralops.evaluation.eval_all_models_datasets import (
             TRACK_MODULES,
             apply_module_to_model,
             evaluate_single_combination_opt,

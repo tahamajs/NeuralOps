@@ -9,7 +9,7 @@
 
 import torch
 import torch.nn as nn
-from evaluation.eval_utils import (
+from neuralops.evaluation.eval_utils import (
     _filter_batch,
     _extract_logits_and_loss,
     _evict_if_needed,

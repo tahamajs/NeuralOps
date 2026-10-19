@@ -209,7 +209,7 @@ def _run_eval_suite(quiet: bool = False) -> Tuple[bool, List[Tuple[str, str, str
 
         # 1. Verify Bridge Exports
         try:
-            from evaluation import BenchmarkEvaluator as EvalEvaluator
+            from neuralops.evaluation import BenchmarkEvaluator as EvalEvaluator
             assert BenchmarkEvaluator is EvalEvaluator, "Evaluation bridge export identity mismatch"
         except ImportError:
             pass
