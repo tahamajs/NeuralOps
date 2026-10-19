@@ -59,7 +59,7 @@ pip install neuralops
 # 2. In-place Subquadratic Attention Surgery (Swap O(T²) with O(T) Linear Attention)
 import neuralops, transformers
 model = transformers.AutoModelForCausalLM.from_pretrained("gpt2")
-model = neuralops.replace_attention(model, method="gated_delta_net", rank=64)
+model = neuralops.replace_attention(model, "gated_delta_net", rank=64)
 
 # 3. Model Compression (65% parameter reduction with closed-form Ridge alignment)
 model = neuralops.compress(model, method="hadamard_incoherent_svd", rank=32)
@@ -67,7 +67,8 @@ model = neuralops.compress(model, method="hadamard_incoherent_svd", rank=32)
 
 **Notebook-first tutorials (executed on the remote GPU):**
 
-- [Surgery + LoRA/KD training](notebooks/01_quickstart_surgery_and_healing.ipynb)
+- [Attention surgery + LoRA/KD hybrid workflow](notebooks/01_attention_surgery_and_lora.ipynb)
+- [Surgery + LoRA/KD training walkthrough](notebooks/01_quickstart_surgery_and_healing.ipynb)
 - [3-level benchmarking + torch.compile + ONNX export](notebooks/04_end_to_end_3level_benchmarking.ipynb)
 - [SVD compression + paged serving](notebooks/07_master_all_72_compression_engines_quant_and_svd.ipynb)
 

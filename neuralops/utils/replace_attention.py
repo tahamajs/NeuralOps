@@ -222,8 +222,8 @@ class UniversalAttentionWrapper(nn.Module):
                     except (ImportError, AttributeError, TypeError):
                         present = ()
                 return (hidden, attn_weights, present)
-            if present is not None and kwargs.get("use_cache", False):
-                return (hidden, attn_weights, present)
+            # Transformers 5.x decoder layers unpack exactly two values from
+            # self-attention. Cache state is owned by the caller's Cache API.
             return (hidden, attn_weights)
 
         if output_attentions:

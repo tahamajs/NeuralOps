@@ -54,6 +54,10 @@ def replace_attention(
         The model with attention layers replaced in-place.
     """
     target_mod = kwargs.pop("target_module", None)
+    inject_lora = bool(kwargs.pop("inject_lora", False))
+    lora_rank = int(kwargs.pop("lora_rank", rank or 8))
+    lora_alpha = float(kwargs.pop("lora_alpha", 2.0 * lora_rank))
+    lora_dropout = float(kwargs.pop("lora_dropout", 0.0))
     if isinstance(target_mod, str) and not attention:
         attention = target_mod
         target_mod = None
@@ -97,13 +101,39 @@ def replace_attention(
         norm_spec = normalize_hybrid_spec(hybrid_spec)
         call_kwargs["hybrid_spec"] = norm_spec
 
-    out_model = inject_attention(
-        model=model,
-        attention_type=attn_name,
-        rank=rank,
-        copy_weights=copy_weights,
-        **call_kwargs,
-    )
+    try:
+        out_model = inject_attention(
+            model=model,
+            attention_type=attn_name,
+            rank=rank,
+            copy_weights=copy_weights,
+            **call_kwargs,
+        )
+    except (RuntimeError, TypeError, ValueError) as exc:
+        raise ValueError(
+            f"Could not replace attention with '{attn_name}' for "
+            f"{model.__class__.__name__}: {exc}"
+        ) from exc
+
+    lora_layers = 0
+    if inject_lora:
+        from neuralops.utils.lora import apply_lora
+        out_model, lora_layers = apply_lora(
+            out_model,
+            r=lora_rank,
+            alpha=lora_alpha,
+            dropout=lora_dropout,
+        )
+        # Some NeuralOps attention implementations already own LoRA
+        # projections.  apply_lora freezes the model before traversal, so
+        # explicitly restore trainability for every adapter parameter.
+        for name, parameter in out_model.named_parameters():
+            if "lora_" in name.lower():
+                parameter.requires_grad = True
+        lora_layers = max(
+            lora_layers,
+            sum(1 for module in out_model.modules() if module.__class__.__name__ == "LoRALinear"),
+        )
 
     meta_entry: Dict[str, Any] = {
         "op": "replace",
@@ -112,6 +142,9 @@ def replace_attention(
             "rank": rank,
             "copy_weights": copy_weights,
             "layers": layers,
+            "inject_lora": inject_lora,
+            "lora_rank": lora_rank if inject_lora else None,
+            "lora_layers": lora_layers,
             **kwargs,
         },
     }
@@ -131,6 +164,11 @@ def replace_attention(
         if not hasattr(out_model.config, "neuralops_history") or out_model.config.neuralops_history is None:
             out_model.config.neuralops_history = []
         out_model.config.neuralops_history.append(meta_entry)
+        # HF reserves _attn_implementation for its dispatcher. Keep it valid
+        # while exposing the actual NeuralOps implementation explicitly.
+        out_model.config.neuralops_attention = attn_name
+        if hasattr(out_model.config, "_attn_implementation"):
+            out_model.config._attn_implementation = "eager"
 
     return out_model
 
