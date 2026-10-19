@@ -279,8 +279,8 @@ def benchmark_torch_compile(
             t_compiled = (time.perf_counter() - t0) / 10 * 1000
 
             speedup = max(1.0, round(t_eager / max(t_compiled, 1e-5), 2))
-            has_nan = mod_rec["per_seq_len"]["128"]["has_nan"] or mod_rec["per_seq_len"]["256"]["has_nan"] or mod_rec["per_seq_len"]["512"]["has_nan"]
-            has_inf = mod_rec["per_seq_len"]["128"]["has_inf"] or mod_rec["per_seq_len"]["256"]["has_inf"] or mod_rec["per_seq_len"]["512"]["has_inf"]
+            has_nan = bool(per_seq_len.get("128", {}).get("has_nan", False) or per_seq_len.get("256", {}).get("has_nan", False) or per_seq_len.get("512", {}).get("has_nan", False))
+            has_inf = bool(per_seq_len.get("128", {}).get("has_inf", False) or per_seq_len.get("256", {}).get("has_inf", False) or per_seq_len.get("512", {}).get("has_inf", False))
 
             mod_rec["eager_latency_ms"] = round(t_eager, 3)
             mod_rec["compiled_latency_ms"] = round(t_compiled, 3)
@@ -352,7 +352,7 @@ def benchmark_torch_compile(
     print(f"JSON Written to: {json_path}")
     print(f"Canonical Modules Evaluated: {len(attn_keys)}")
     print(f"Total Recompilations: {total_recompilations}")
-    print(f"Average Speedup: {results['summary']['average_speedup']}x")
+    print(f"Average Speedup: {summary_dict.get('average_speedup', 1.0)}x")
     print("=" * 80)
 
 
