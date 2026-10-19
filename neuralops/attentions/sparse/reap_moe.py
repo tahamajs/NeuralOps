@@ -241,14 +241,17 @@ class REAPMoEAttention(BaseAttention):
             comp_config = getattr(config, "compression_config", None)
         self.comp_config = comp_config
 
-        h_size = (
-            kwargs.get("hidden_size")
-            or getattr(config, "hidden_size", None)
-            or getattr(config, "d_model", None)
-            or getattr(config, "embed_dim", None)
-            or getattr(config, "dim", None)
-            or getattr(config, "hidden_dim", None)
-        )
+        def _config_value(name: str) -> Any | None:
+            if isinstance(config, dict):
+                return config.get(name)
+            return getattr(config, name, None)
+
+        h_size = kwargs.get("hidden_size")
+        if h_size is None:
+            for field in ("hidden_size", "d_model", "embed_dim", "n_embd", "model_dim", "dim", "hidden_dim"):
+                h_size = _config_value(field)
+                if h_size is not None:
+                    break
         if h_size is None and pretrained_attn is not None:
             for cand in ("q_lin", "query", "q_proj", "c_attn"):
                 mod = getattr(pretrained_attn, cand, None)
@@ -262,6 +265,7 @@ class REAPMoEAttention(BaseAttention):
                         break
         if h_size is None:
             h_size = 768
+            logger.warning("REAPMoEAttention could not infer hidden_size; using fallback 768")
 
         self.dim = int(h_size)
         self.num_heads = (
