@@ -38,4 +38,3 @@ class LinearAttentionTriton:
 
 
 __all__ = ["fast_linear_attention", "LinearAttentionTriton", "HAS_TRITON"]
-

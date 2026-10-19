@@ -166,7 +166,6 @@ def fused_rope_embedding_kernel(
     return fused_rope_embedding(q, k, cos, sin)
 
 
-
 fused_rope_triton = fused_rope_embedding_kernel
 
 

@@ -24,7 +24,6 @@ from neuralops.core.triton_kernels._common import HAS_TRITON
 from neuralops.core.triton_kernels.softplus import softplus
 
 
-
 @pytest.fixture
 def device():
     if torch.cuda.is_available():
@@ -35,7 +34,6 @@ def device():
 def reference_softplus_pytorch(x: torch.Tensor, beta: float = 1.0, threshold: float = 20.0) -> torch.Tensor:
     """Pure PyTorch reference implementation matching exact math."""
     return F.softplus(x, beta=beta, threshold=threshold)
-
 
 
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float16, torch.bfloat16])
@@ -54,7 +52,6 @@ def test_softplus_correctness(device, dtype, shape):
     else:
         out_func = reference_softplus_pytorch(x)
         assert torch.allclose(out_func, out_ref, atol=1e-2, rtol=1e-2)
-
 
 
 def test_softplus_extreme_positive(device):
@@ -97,14 +94,12 @@ def test_softplus_non_power_of_2(device):
     assert torch.isfinite(out).all()
 
 
-
 def test_softplus_deterministic(device):
     """Identical input yields identical output."""
     x = torch.randn(2, 32, 64, device=device)
     out1 = reference_softplus_pytorch(x)
     out2 = reference_softplus_pytorch(x)
     assert torch.equal(out1, out2)
-
 
 
 def test_softplus_gradient(device):
@@ -117,7 +112,6 @@ def test_softplus_gradient(device):
 
     expected_grad = torch.sigmoid(x.detach())
     assert torch.allclose(x.grad, expected_grad, atol=1e-5)
-
 
 
 def test_softplus_jit_compilation():

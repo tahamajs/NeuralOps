@@ -82,4 +82,3 @@ def compress_model(
 
 
 __all__ = ["CompressionPipeline", "compress_model"]
-

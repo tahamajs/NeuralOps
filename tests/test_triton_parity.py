@@ -433,4 +433,3 @@ def test_fused_rmsnorm_gate_parity_and_grad(activation):
     assert torch.isfinite(x.grad).all()
     assert torch.isfinite(gate.grad).all()
     assert torch.isfinite(norm_w.grad).all()
-

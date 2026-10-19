@@ -258,7 +258,6 @@ def apply_compressor(
     return model
 
 
-
 inject_attention_module = apply_attention_module
 apply_compression = apply_compressor
 
@@ -272,4 +271,3 @@ __all__ = [
     "apply_compressor",
     "apply_compression",
 ]
-

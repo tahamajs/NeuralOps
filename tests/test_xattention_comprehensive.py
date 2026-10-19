@@ -177,7 +177,7 @@ def test_forward_never_returns_none():
     cfg = make_config(hidden_size=64, num_heads=4)
     attn = XAttention(cfg, pretrained_attn=DummyAttn(64))
     attn.eval()
-    
+
     class BrokenRotary(nn.Module):
         def forward(self, *args, **kwargs):
             raise RuntimeError("Forced RoPE failure for resilience testing")
@@ -291,5 +291,3 @@ def test_qwen_and_distilbert_architectures():
     out_qw, _ = qwen_xattn(x_qw, position_embeddings=(cos, sin))
     assert out_qw.shape == (2, 16, 64)
     assert not torch.isnan(out_qw).any()
-
-

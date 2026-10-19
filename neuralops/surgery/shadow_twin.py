@@ -24,7 +24,6 @@ from neuralops.surgery.endoskeletal_shell import UniversalAttentionBridge
 logger = logging.getLogger("NeuralOps.Surgery.ShadowTwin")
 
 
-
 def compute_operator_cloning_loss(
     teacher_out: torch.Tensor,
     student_out: torch.Tensor,
@@ -54,7 +53,6 @@ def compute_linear_cka_loss(
     denom = torch.sqrt(dot_xx * dot_yy) + eps
     cka = dot_xy / denom
     return 1.0 - cka.clamp(min=0.0, max=1.0)
-
 
 
 def enable_shadow_twin(
@@ -158,7 +156,6 @@ def finalize_surgery(model: nn.Module) -> nn.Module:
 
     logger.info(f"Finalized surgery across {count} UniversalAttentionBridge modules.")
     return model
-
 
 
 def patch_bridge_for_shadow_twin(bridge: UniversalAttentionBridge) -> None:

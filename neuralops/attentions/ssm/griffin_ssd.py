@@ -292,13 +292,13 @@ class GriffinSSDBlock(BaseAttention):
     ) -> torch.Tensor:
         """
         Chunked parallel scan for causal SSD.
-        
+
         Mathematical equivalence:
             y_t = q_t @ state_t
             state_t = decay * state_{t-1} + k_t^T @ v_t
-        
+
         Chunked decomposition:
-            y_t = q_t @ state_{chunk_start} * decay^(t - chunk_start) 
+            y_t = q_t @ state_{chunk_start} * decay^(t - chunk_start)
                 + sum_{j=chunk_start}^{t} decay^(t-j) * (q_t @ k_j^T) @ v_j
         """
         B, H, L, d = q.shape

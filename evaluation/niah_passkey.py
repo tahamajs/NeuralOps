@@ -195,7 +195,7 @@ def plot_niah_heatmap(
     plt.tight_layout()
     p = Path(save_path)
     p.parent.mkdir(parents=True, exist_ok=True)
-    
+
     plt.savefig(p, bbox_inches="tight")
     if p.suffix == ".png":
         plt.savefig(p.with_suffix(".pdf"), bbox_inches="tight")

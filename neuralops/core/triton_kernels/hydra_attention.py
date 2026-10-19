@@ -165,8 +165,10 @@ if HAS_TRITON:
             mask=mask_l[:, None],
         )
 else:
-    def _hydra_fwd_kernel(*args, **kwargs): pass
-    def _hydra_bwd_kernel(*args, **kwargs): pass
+    def _hydra_fwd_kernel(*args, **kwargs):
+        pass
+    def _hydra_bwd_kernel(*args, **kwargs):
+        pass
 
 
 def triton_hydra_attention_pytorch_ref(

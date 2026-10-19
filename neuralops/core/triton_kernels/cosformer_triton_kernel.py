@@ -41,7 +41,7 @@ def _cosformer_global_fwd_kernel(
     BLOCK_N: tl.constexpr,
     BLOCK_D: tl.constexpr,
 ):
-    pid_bh = tl.program_id(0) 
+    pid_bh = tl.program_id(0)
     pid_n = tl.program_id(1)
 
     b = pid_bh // H
@@ -395,7 +395,6 @@ def cosformer_triton_fwd(
 ) -> torch.Tensor:
     """Dispatches cosformer forward pass with full autograd backward support."""
     return _CosformerAutograd.apply(q, k, v, is_causal, eps)
-
 
 
 if HAS_TRITON and hasattr(tl, "constexpr"):

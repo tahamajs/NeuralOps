@@ -241,7 +241,6 @@ def test_kernel_11_spectral_entropy_svd_gate(device):
     assert torch.allclose(out_ref, out_tri, atol=8e-2, rtol=2e-2)
 
 
-
 def test_kernel_12_fused_act_scale_quant_gemm(device):
     torch.manual_seed(42)
     M, K, N = 32, 128, 64

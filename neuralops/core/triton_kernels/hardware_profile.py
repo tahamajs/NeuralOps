@@ -205,4 +205,3 @@ def get_device_hardware_profile(device: torch.device | str | int | None = None) 
         vendor="unknown",
         fp8_dtype=None,
     )
-

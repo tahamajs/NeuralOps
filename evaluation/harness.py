@@ -79,9 +79,9 @@ class NeuralOpsLMWrapper(BaseLM):
     ) -> None:
         """Execute init routine."""
         super().__init__()
-        
+
         self._device = torch.device(device if (torch.cuda.is_available() and device != "cpu") else "cpu")
-        
+
         if isinstance(dtype, str):
             dtype_map = {
                 "float16": torch.float16,
@@ -215,7 +215,7 @@ class NeuralOpsLMWrapper(BaseLM):
                 logits = self.model(inp).logits[0]
                 shift_logits = logits[:-1, :]
                 shift_targets = inp[0, 1:]
-                
+
                 cont_logits = shift_logits[ctx_len - 1:]
                 cont_targets = shift_targets[ctx_len - 1:]
 

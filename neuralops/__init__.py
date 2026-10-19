@@ -541,7 +541,6 @@ def create_compressor(name: str, model: Any = None, rank: int | None = None, **k
     return cls(**call_kwargs)
 
 
-
 __all__ = [
     "__version__",
     "load_model",
@@ -650,6 +649,3 @@ def __getattr__(name: str) -> Any:
 def __dir__() -> list[str]:
     """Execute __dir__ operation."""
     return sorted(list(globals().keys()) + __all__ + list(_SUBPACKAGES))
-
-
-

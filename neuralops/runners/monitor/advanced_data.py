@@ -139,7 +139,7 @@ def get_paged_kv_cache_state(num_blocks: int = 64, block_size: int = 16) -> Dict
         104: [16, 17, 18],
         105: [20, 21],
     }
-    
+
     blocks = []
     allocated_count = 0
     seq_lookup = {}
@@ -155,7 +155,7 @@ def get_paged_kv_cache_state(num_blocks: int = 64, block_size: int = 16) -> Dict
             tok_count = block_size if b_idx not in [9, 10, 15, 18, 21] else 7
         else:
             tok_count = 0
-            
+
         blocks.append({
             "block_id": b_idx,
             "seq_id": sid,

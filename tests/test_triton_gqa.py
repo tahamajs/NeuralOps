@@ -24,7 +24,6 @@ from neuralops.core.triton_kernels._common import HAS_TRITON, gqa_pytorch_fallba
 from neuralops.core.triton_kernels.gqa import fwd, bwd, is_supported
 
 
-
 @pytest.fixture
 def device():
     if torch.cuda.is_available():
@@ -41,7 +40,6 @@ def reference_gqa_pytorch(k: torch.Tensor, v: torch.Tensor, num_kv_heads: int, n
     k_exp = k[:, :, None, :, :].expand(B, H_kv, n_rep, N, D).reshape(B, num_heads, N, D).contiguous()
     v_exp = v[:, :, None, :, :].expand(B, H_kv, n_rep, N, D).reshape(B, num_heads, N, D).contiguous()
     return k_exp, v_exp
-
 
 
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float16, torch.bfloat16])
@@ -64,7 +62,6 @@ def test_gqa_correctness(device, dtype, batch, seq_len, num_kv_heads, num_heads,
     assert v_out.shape == (batch, num_heads, seq_len, head_dim)
     assert torch.allclose(k_out, k_ref, atol=1e-3, rtol=1e-3)
     assert torch.allclose(v_out, v_ref, atol=1e-3, rtol=1e-3)
-
 
 
 def test_gqa_equal_heads(device):
@@ -101,7 +98,6 @@ def test_gqa_unsupported_ratio_fallback(device):
     assert not is_supported(k, v, 3, 7)
 
 
-
 def test_gqa_pytorch_fallback_cpu():
     """Verify PyTorch fallback works seamlessly on CPU."""
     k = torch.randn(2, 2, 32, 64, device="cpu")
@@ -121,7 +117,6 @@ def test_gqa_deterministic(device):
     k2, v2 = fwd(k, v, 2, 8)
     assert torch.equal(k1, k2)
     assert torch.equal(v1, v2)
-
 
 
 def test_gqa_backward_reduction(device):

@@ -77,7 +77,7 @@ class TestAstroHardened(unittest.TestCase):
         """Verify allocate_fisher_bits matches target_avg_bits within 1/N tolerance."""
         N = 100
         importance = torch.rand(N) * 10.0
-        
+
         bits_6 = allocate_fisher_bits(importance, target_avg_bits=6.0, min_bits=2, max_bits=8)
         self.assertEqual(bits_6.shape, (N,))
         self.assertTrue((bits_6 >= 2).all() and (bits_6 <= 8).all())
@@ -95,7 +95,7 @@ class TestAstroHardened(unittest.TestCase):
         """Verify heterogeneous per-channel quantization produces correct shapes and finite numbers."""
         W = torch.randn(8, 16)
         channel_bits = torch.tensor([2, 3, 4, 5, 6, 7, 8, 4])
-        
+
         W_q_sym = quantize_dequantize_tensor(
             W, per_channel=True, per_channel_bits=channel_bits, symmetric=True
         )

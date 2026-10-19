@@ -48,7 +48,6 @@ from neuralops.trainer.utils import clip_grad_norm_factorized
 from torch.utils.data import DataLoader
 
 
-
 class CompactBertSelfAttention(nn.Module):
     """BERT / RoBERTa self-attention layer with separate Q, K, V projections."""
 
@@ -192,8 +191,6 @@ class CompactGPT2ForCausalLM(nn.Module):
             )
 
         return {"logits": logits, "loss": loss if loss is not None else torch.tensor(0.0)}
-
-
 
 
 class TestModelsAndDatasetsMatrix:

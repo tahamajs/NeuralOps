@@ -437,8 +437,6 @@ def hgrn2_scan(
     )
 
 
-
-
 if HAS_TRITON and tl is not None:
     @triton.jit
     def _hgrn2_bidirectional_scan_kernel(
@@ -567,4 +565,3 @@ __all__ = [
     'triton_hgrn2_fused_bwd_scan',
     'triton_hgrn2_fused_bwd_scan_pytorch_ref',
 ]
-

@@ -101,7 +101,6 @@ class DummyStandardTransformer(nn.Module):
         self.classifier = nn.Linear(hidden_size, 2)
 
 
-
 def test_qwen3_5_architecture_aware_layer_filtering():
     """Verify should_compress_linear correctly protects sensitive layers on Qwen3.5 while allowing FFN."""
     model = DummyQwen35Model()
@@ -147,7 +146,6 @@ def test_compressors_skip_qwen3_5_sensitive_layers():
     assert not isinstance(model.layers[0].mlp.down_proj, nn.Linear) or hasattr(model.layers[0].mlp.down_proj, "U")
 
 
-
 def test_dynamic_rank_selection():
     """Verify dynamic rank computes min(256, max(128, min(in_f, out_f) // 4)) for Qwen3.5."""
     rank_qwen = get_dynamic_compression_rank(1024, 3584, model_or_family="qwen3_5", default_rank=16)
@@ -161,7 +159,6 @@ def test_dynamic_rank_selection():
 
     rank_override = get_dynamic_compression_rank(1024, 3584, model_or_family="qwen3_5", comp_config={"qwen3_5_rank": 64})
     assert rank_override == 64
-
 
 
 def test_get_recovery_params():
@@ -182,7 +179,6 @@ def test_get_recovery_params():
     assert not any("mlp.up_proj.weight" in n for n in trainable_names)
 
 
-
 def test_lora_preservation_and_gradient_flow():
     """Verify that LoRA adapters on frozen backbones receive non-zero gradients after compressor injection."""
     model = DummyQwen35Model(hidden_size=64, ffn_dim=128, num_layers=1)
@@ -200,7 +196,6 @@ def test_lora_preservation_and_gradient_flow():
     assert len(lora_grads) > 0
     assert any(g.abs().sum() > 0 for g in lora_grads)
     assert all(torch.isfinite(g).all() for g in lora_grads)
-
 
 
 def test_qwen3_5_capabilities_and_compatibility():

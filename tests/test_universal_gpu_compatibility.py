@@ -70,7 +70,6 @@ def test_sram_autotuner_budget_pruning():
     assert has_safe
 
 
-
     bytes_est = estimate_kernel_sram_bytes(block_m=64, block_n=64, head_dim=128, dtype_bytes=2, num_stages=2)
     assert bytes_est > 0
 
@@ -262,4 +261,3 @@ def test_all_26_kernel_modules():
     from neuralops.core.triton_kernels.softplus import softplus_fn
     out_sp = softplus_fn(q)
     assert out_sp.shape == q.shape
-

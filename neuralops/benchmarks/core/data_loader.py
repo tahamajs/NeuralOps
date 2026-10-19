@@ -59,7 +59,7 @@ def get_dataset_metadata(
     name_clean = name.lower().replace("glue_", "")
     info = GLUE_TASKS.get(name_clean, {"num_labels": 2, "task": "classification"})
     total_samples = len(dataset) if hasattr(dataset, "__len__") else 0
-    
+
     expected_eval = num_eval
     if expected_eval is None and name_clean in GLUE_VALIDATION_SIZES:
         expected_eval = GLUE_VALIDATION_SIZES[name_clean]
@@ -73,7 +73,6 @@ def get_dataset_metadata(
         num_train=num_train if num_train is not None else total_samples,
         num_eval=expected_eval,
     )
-
 
 
 def load_dataset_by_name(
@@ -203,4 +202,3 @@ __all__ = [
     "load_wikitext_dataset",
     "make_dataloader",
 ]
-

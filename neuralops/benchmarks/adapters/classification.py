@@ -197,7 +197,7 @@ class ClassificationAdapter:
         if not self.eval_only and self.epochs > 0 and training_type != "none":
             train_t_start = time.perf_counter()
             from neuralops.benchmarks.core.training import train_with_training_type
-            
+
             teacher_model = None
             if training_type in ("kd", "distillation"):
                 teacher_name = self.extra_kwargs.get("kd_teacher", self.model_name)

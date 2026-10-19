@@ -94,7 +94,6 @@ def device():
     return "cuda:0"
 
 
-
 @pytest.mark.parametrize("dtype", [torch.float16, torch.float32])
 def test_cuda_low_rank_svd_forward_parity(device, dtype):
     """Test CUDA fused_lowrank_gated_gemm vs PyTorch reference across dtypes."""
@@ -272,7 +271,6 @@ def test_triton_cur_linear_forward_parity(device, dtype):
     assert cos_sim >= 0.995, f"CUR cos_sim {cos_sim} < 0.995"
 
 
-
 def test_cuda_low_rank_svd_autograd_backward(device):
     """Autograd backward gradient parity for low_rank_svd."""
     torch.manual_seed(42)
@@ -372,7 +370,6 @@ def test_triton_cur_linear_autograd_backward(device):
     assert dx_diff < 1e-4, f"CUR dx_diff={dx_diff:.4e}"
 
 
-
 @pytest.mark.parametrize("L", [127, 255, 513])
 @pytest.mark.parametrize("D", [32, 64, 128])
 def test_boundary_non_power_of_two_kernels(device, L, D):
@@ -423,7 +420,6 @@ def test_boundary_extreme_prompt_context_8k(device):
     assert not torch.isinf(out).any()
 
 
-
 @pytest.mark.parametrize("scale", [1e-4, 1e-2, 1.0, 1e2, 1e4])
 def test_dynamic_range_zero_nan_inf_invariance(device, scale):
     """Stress test kernels under extreme dynamic magnitude shifts."""
@@ -446,13 +442,12 @@ def test_dynamic_range_zero_nan_inf_invariance(device, scale):
     assert not torch.isinf(out_swiglu).any(), f"Inf in swiglu at scale {scale}"
 
 
-
 def test_async_multi_stream_concurrency_stress(device):
     """Stress test concurrent execution across 4 independent CUDA streams with CUDA events."""
     num_streams = 4
     streams = [torch.cuda.Stream(device=device) for _ in range(num_streams)]
     events = [torch.cuda.Event(enable_timing=True) for _ in range(num_streams)]
-    
+
     results = [None] * num_streams
     torch.manual_seed(42)
 
@@ -470,7 +465,7 @@ def test_async_multi_stream_concurrency_stress(device):
                 out = fused_lowrank_gated_gemm(x, V, U, alpha=alpha, bias=bias)
             else:
                 out = triton_cur_linear(x, V, torch.eye(R, device=device), U, bias=bias)
-            
+
             w = torch.ones(N, device=device)
             normed = rmsnorm(out, w)
             results[i] = normed
@@ -485,4 +480,3 @@ def test_async_multi_stream_concurrency_stress(device):
         assert not torch.isnan(res).any(), f"NaN detected on stream {i}"
         assert not torch.isinf(res).any(), f"Inf detected on stream {i}"
         assert res.shape == (64, 64)
-

@@ -42,14 +42,14 @@ def test_forward_pass_finite_and_shape(t5_base_model, module_name):
     import copy
     model = copy.deepcopy(t5_base_model)
     model = replace_attention(model, module_name)
-    
+
     input_ids = torch.randint(2, 1000, (2, 16))
     input_ids[:, -1] = 1
-    
+
     with torch.no_grad():
         out = model(input_ids=input_ids)
         logits = out.logits
-        
+
     assert logits.shape == (2, 2), f'{module_name}: expected shape (2, 2), got {logits.shape}'
     assert torch.isfinite(logits).all().item(), f'{module_name}: logits contain NaN or Inf!'
 
@@ -60,7 +60,7 @@ def test_relative_position_bias_applied(t5_base_model, module_name):
     import copy
     model = copy.deepcopy(t5_base_model)
     model = replace_attention(model, module_name)
-    
+
     enc_layer0 = model.transformer.encoder.block[0].layer[0].SelfAttention
     assert hasattr(enc_layer0, 'relative_attention_bias') or hasattr(enc_layer0.inner, 'relative_attention_bias')
     assert getattr(enc_layer0, 'has_relative_attention_bias', False) or getattr(enc_layer0.inner, 'has_relative_attention_bias', False)
@@ -72,19 +72,19 @@ def test_cross_attention_different_sources(t5_base_model, module_name):
     import copy
     model = copy.deepcopy(t5_base_model)
     model = replace_attention(model, module_name)
-    
+
     dec_cross = model.transformer.decoder.block[0].layer[1].EncDecAttention
-    
+
     B, N_q, N_kv, D = 2, 8, 16, 512
     dec_hidden = torch.randn(B, N_q, D)
     enc_hidden = torch.randn(B, N_kv, D)
-    
+
     with torch.no_grad():
         res1 = dec_cross(dec_hidden, key_value_states=enc_hidden)
         res2 = dec_cross(dec_hidden, key_value_states=enc_hidden + 1.0)
         out1 = res1[0] if isinstance(res1, tuple) else res1
         out2 = res2[0] if isinstance(res2, tuple) else res2
-        
+
     assert out1.shape == dec_hidden.shape
     assert not torch.allclose(out1, out2, atol=1e-5), 'Cross-attention output must depend on encoder hidden states!'
 
@@ -96,12 +96,12 @@ def test_fp16_numerical_stability(t5_base_model, module_name):
     model = copy.deepcopy(t5_base_model)
     model = replace_attention(model, module_name)
     model = model.half()
-    
+
     input_ids = torch.randint(2, 1000, (2, 16))
     input_ids[:, -1] = 1
-    
+
     with torch.no_grad():
         out = model(input_ids=input_ids)
         logits = out.logits
-        
+
     assert torch.isfinite(logits).all().item(), f'{module_name} in FP16 produced NaN/Inf!'

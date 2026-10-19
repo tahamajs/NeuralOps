@@ -86,12 +86,12 @@ def test_energy_thresholding_math():
     d = 768
     i_indices = torch.arange(1, d + 1, dtype=torch.float32)
     s_vals = 1.0 / (i_indices ** 0.7)
-    
+
     total_energy = (s_vals ** 2).sum().item()
     cum_energy = torch.cumsum(s_vals ** 2, dim=0) / total_energy
     idx = torch.where(cum_energy >= tau)[0]
     expected_r = int(idx[0].item()) + 1
-    
+
     actual_ratio = (s_vals[:expected_r] ** 2).sum().item() / total_energy
     print(f"Energy threshold tau = {tau}")
     print(f"Total dimensions d = {d}, Calculated rank r = {expected_r}")
@@ -106,20 +106,20 @@ def test_symmetric_sqrt_sigma():
     torch.manual_seed(42)
     W = torch.randn(768, 768, dtype=torch.float32)
     U, S, Vt = torch.linalg.svd(W, full_matrices=False)
-    
+
     tau = 0.92
     s_sq = S ** 2
     cum_e = torch.cumsum(s_sq, dim=0) / s_sq.sum()
     r = int(torch.where(cum_e >= tau)[0][0].item()) + 1
-    
+
     sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
     U_r = U[:, :r] * sqrt_S.unsqueeze(0)
     V_r = sqrt_S.unsqueeze(1) * Vt[:r, :]
-    
+
     W_approx = torch.matmul(U_r, V_r)
-    
+
     W_direct = torch.matmul(U[:, :r] * S[:r].unsqueeze(0), Vt[:r, :])
-    
+
     diff = torch.norm(W_approx - W_direct).item()
     norm_direct = torch.norm(W_direct).item()
     rel_diff = diff / max(1e-12, norm_direct)
@@ -140,9 +140,9 @@ def test_adaptive_svd_attention_fp32_fp16():
         residual_rank=8,
         energy_threshold=0.92,
     )
-    
+
     mock_src = MockMHAModule(hidden_size=768)
-    
+
     for dtype, dtype_name in [(torch.float32, "FP32"), (torch.float16, "FP16")]:
         print(f"\n  Testing AdaptiveSVDAttention in {dtype_name}...")
         model = AdaptiveSVDAttention(
@@ -150,67 +150,67 @@ def test_adaptive_svd_attention_fp32_fp16():
             pretrained_attn=mock_src,
             energy_threshold=0.92,
         ).to(dtype=dtype)
-        
+
         x = torch.randn(2, 128, 768, dtype=dtype, requires_grad=True)
         mask = torch.ones(2, 128, dtype=dtype)
         mask[:, 100:] = 0
-        
+
         out, attn_weights = model(x, attention_mask=mask, output_attentions=True)
-        
+
         assert out.shape == (2, 128, 768), f"Output shape mismatch: {out.shape}"
         assert not torch.isnan(out).any(), f"NaN detected in {dtype_name} forward output"
         assert not torch.isinf(out).any(), f"Inf detected in {dtype_name} forward output"
         assert attn_weights is not None
         assert attn_weights.shape == (2, 12, 128, 128)
-        
+
         loss = out.sum()
         loss.backward()
-        
+
         assert x.grad is not None, f"Input gradient is None in {dtype_name}"
         assert not torch.isnan(x.grad).any(), f"NaN in input gradient for {dtype_name}"
         assert not torch.isinf(x.grad).any(), f"Inf in input gradient for {dtype_name}"
-        
+
         assert model.query.A.grad is not None, "query.A grad is None"
         assert model.query.B.grad is not None, "query.B grad is None"
         assert not torch.isnan(model.query.A.grad).any(), "NaN in query.A grad"
-        
+
         print(f"  ✓ {dtype_name} forward & backward pass successful. Output norm: {out.norm().item():.4f}")
 
 
 def test_adaptive_ranks_compressor_fp32_fp16():
     """Test AdaptiveRanksCompressor on mock transformer model in FP32 and FP16."""
     print("\n--- Test 4: AdaptiveRanksCompressor Forward & Backward (FP32 & FP16) ---")
-    
+
     for dtype, dtype_name in [(torch.float32, "FP32"), (torch.float16, "FP16")]:
         print(f"\n  Testing AdaptiveRanksCompressor in {dtype_name}...")
         orig_model = MockTransformerModel(hidden_size=768, num_heads=12, intermediate_size=3072).to(dtype=dtype)
         orig_params = sum(p.numel() for p in orig_model.parameters())
-        
+
         compressor = AdaptiveRanksCompressor(
             orig_model,
             energy_threshold=0.92,
             min_rank=16,
         )
         comp_model, stats = compressor.compress()
-        
+
         comp_params = sum(p.numel() for p in comp_model.parameters())
         print(f"  Original params: {orig_params:,}, Compressed params: {comp_params:,}, Ratio: {stats['compression_ratio']:.2f}x")
         assert comp_params < orig_params, "Compression did not reduce parameter count"
-        
+
         x = torch.randn(2, 128, 768, dtype=dtype, requires_grad=True)
         out = comp_model(x)
-        
+
         assert out.shape == (2, 128, 768), f"Output shape mismatch: {out.shape}"
         assert not torch.isnan(out).any(), f"NaN detected in {dtype_name} compressed output"
         assert not torch.isinf(out).any(), f"Inf detected in {dtype_name} compressed output"
-        
+
         loss = out.sum()
         loss.backward()
-        
+
         assert x.grad is not None, f"x.grad is None in {dtype_name}"
         assert not torch.isnan(x.grad).any(), f"NaN in x.grad for {dtype_name}"
         assert not torch.isinf(x.grad).any(), f"Inf in x.grad for {dtype_name}"
-        
+
         print(f"  ✓ {dtype_name} compressed model forward & backward successful. Output norm: {out.norm().item():.4f}")
 
 

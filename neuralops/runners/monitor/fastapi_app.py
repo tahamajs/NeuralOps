@@ -205,7 +205,7 @@ def create_app(
 
         return StreamingResponse(event_generator(), media_type="text/event-stream")
 
-    
+
     @app.get("/api/benchmarks/history", tags=["Telemetry"])
     async def get_benchmarks_history() -> Dict[str, Any]:
         """Serve historical GPU utilization, temperature, power, and throughput curves."""

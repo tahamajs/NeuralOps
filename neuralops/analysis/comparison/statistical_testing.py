@@ -23,7 +23,6 @@ from scipy.stats import friedmanchisquare, norm, studentized_range, wilcoxon
 logger = logging.getLogger(__name__)
 
 
-
 def compute_ranks(scores_matrix: np.ndarray) -> np.ndarray:
     """
     Compute average ranks per column (algorithm) across rows (datasets).
@@ -60,8 +59,6 @@ def compute_aligned_ranks(scores_matrix: np.ndarray) -> np.ndarray:
     flat_ranks = stats.rankdata(flat, method="average")
     aligned_ranks = flat_ranks.reshape(n_rows, n_cols)
     return aligned_ranks
-
-
 
 
 def friedman_test(scores_matrix: np.ndarray) -> dict[str, float]:
@@ -154,8 +151,6 @@ def quade_test(scores_matrix: np.ndarray) -> dict[str, float]:
         "p_value": float(p_value),
         "significant": bool(p_value < 0.05),
     }
-
-
 
 
 def critical_difference(k: int, N: int, alpha: float = 0.05) -> float:
@@ -336,8 +331,6 @@ def bergmann_hommel_posthoc(
     return pd.DataFrame(adj_matrix)
 
 
-
-
 def wilcoxon_signed_rank_test(scores_a: np.ndarray, scores_b: np.ndarray) -> dict[str, Any]:
     """
     Wilcoxon signed-rank test – the recommended test for comparing
@@ -406,8 +399,6 @@ def mcnemar_test(y_true: np.ndarray, pred_a: np.ndarray, pred_b: np.ndarray) -> 
         "n01_A_wrong_B_right": int(n01),
         "n10_A_right_B_wrong": int(n10),
     }
-
-
 
 
 def cohens_d(a: np.ndarray, b: np.ndarray, paired: bool = True) -> dict[str, float]:
@@ -519,8 +510,6 @@ def glass_rank_biserial(a: np.ndarray, b: np.ndarray) -> dict[str, float]:
     return {"glass_rank_biserial": round(r_rb, 4)}
 
 
-
-
 def bayesian_correlated_ttest(
     x: np.ndarray,
     y: np.ndarray,
@@ -617,8 +606,6 @@ def bayesian_signed_rank_test(
         "n": int(n),
         "n_nonzero": int(n_nonzero),
     }
-
-
 
 
 def run_full_statistical_analysis(

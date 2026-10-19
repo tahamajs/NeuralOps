@@ -123,7 +123,7 @@ def test_websocket_resiliency_rapid_reconnect():
             ws.send_text("ping")
             resp = ws.receive_text()
             assert resp in ("pong",) or "telemetry_tick" in resp
-    
+
     assert len(ws_manager.active_connections) == 0
 
     resp = client.get("/api/benchmarks/history")

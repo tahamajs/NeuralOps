@@ -302,10 +302,8 @@ def sliding_window_attention_kernel(
     return out
 
 
-
 sliding_window_triton = sliding_window_attention_kernel
 sliding_window_attention = sliding_window_attention_kernel
-
 
 
 if HAS_TRITON:
@@ -419,7 +417,6 @@ def fused_sink_rolling_cache_triton(
         return k_out, v_out, pos_out
     except Exception:
         return fused_sink_rolling_cache_pytorch(k, v, positions, W, S)
-
 
 
 def fused_token_importance_topk_pytorch(
@@ -766,5 +763,3 @@ __all__ = [
     "fused_sink_sliding_window_linear_hybrid_pytorch",
     "fused_tri_branch_hybrid_attention_triton",
 ]
-
-

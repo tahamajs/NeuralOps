@@ -237,7 +237,6 @@ def fused_mqa_bias_scale_triton(
         return fused_mqa_bias_scale_pytorch(scores, scale, is_causal=is_causal, past_len=past_len)
 
 
-
 def fused_asymmetric_cross_attention_pytorch(
     q: torch.Tensor,
     k: torch.Tensor,

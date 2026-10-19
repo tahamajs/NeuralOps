@@ -1438,7 +1438,7 @@ class SVDLinearAttention(BaseAttention):
         max_rank: int = 64,
     ) -> torch.Tensor:
         """Streaming token-by-token forward pass with latent circular buffer KV cache.
-        
+
         Computes compressed latent C_t = x_t @ V_r^T, records into circular buffer,
         and decompresses K, V via U_r @ C_t in attention computation.
         """

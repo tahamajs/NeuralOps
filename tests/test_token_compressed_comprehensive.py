@@ -267,4 +267,3 @@ def test_token_compressed_inject_safe():
     result = inject_token_compressed_attn(bad_layer, model_config=cfg, comp_config=comp_cfg, old_attn=bad_layer.attention)
     assert result is None
     assert bad_layer.attention is orig_attn
-

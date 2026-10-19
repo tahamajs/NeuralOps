@@ -350,4 +350,3 @@ __all__ = [
     "generate_all_paper_plots",
     "PaperPlotGenerator",
 ]
-

@@ -14,11 +14,11 @@ def test_varlen_attention_shapes():
     cu_seqlens = torch.tensor([0, 10, 30], dtype=torch.int32)
     H, D = 4, 32
     total_tokens = 30
-    
+
     q = torch.randn(total_tokens, H, D)
     k = torch.randn(total_tokens, H, D)
     v = torch.randn(total_tokens, H, D)
-    
+
     out = varlen_attention_pytorch(
         q=q,
         k=k,

@@ -337,18 +337,26 @@ class UnifiedRoPE(BaseAttention):
             if w_q is None or w_k is None or w_v is None or w_o is None:
                 try:
                     adapter = UniversalAdapter()
-                    if w_q is None: w_q, b_q = adapter.get_weight_bias(src, "q")
-                    if w_k is None: w_k, b_k = adapter.get_weight_bias(src, "k")
-                    if w_v is None: w_v, b_v = adapter.get_weight_bias(src, "v")
-                    if w_o is None: w_o, b_o = adapter.get_weight_bias(src, "o")
+                    if w_q is None:
+                        w_q, b_q = adapter.get_weight_bias(src, "q")
+                    if w_k is None:
+                        w_k, b_k = adapter.get_weight_bias(src, "k")
+                    if w_v is None:
+                        w_v, b_v = adapter.get_weight_bias(src, "v")
+                    if w_o is None:
+                        w_o, b_o = adapter.get_weight_bias(src, "o")
                 except Exception as e:
                     logger.debug("UniversalAdapter fallback failed: %s", e)
 
             missing = []
-            if w_q is None: missing.append("Q")
-            if w_k is None: missing.append("K")
-            if w_v is None: missing.append("V")
-            if w_o is None and not self.is_nested_encoder: missing.append("Out")
+            if w_q is None:
+                missing.append("Q")
+            if w_k is None:
+                missing.append("K")
+            if w_v is None:
+                missing.append("V")
+            if w_o is None and not self.is_nested_encoder:
+                missing.append("Out")
             if missing:
                 raise RuntimeError(
                     f"UnifiedRoPE: Failed to extract weights: {', '.join(missing)} from {type(old_attn)}"

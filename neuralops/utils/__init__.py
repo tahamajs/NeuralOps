@@ -140,4 +140,3 @@ from neuralops.utils import results_saver
 from neuralops.utils import seed
 
 from neuralops.utils.replace_attention import replace_attention
-

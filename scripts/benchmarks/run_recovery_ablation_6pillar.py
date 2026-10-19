@@ -234,7 +234,7 @@ with open(out_dir / "ablation_summary.csv", "w", newline="", encoding="utf-8") a
     writer.writerows(results)
 
 md_content = """# 6-Pillar Accuracy-Recovery & Distillation Empirical Ablation Suite
-**Hardware**: NVIDIA GeForce RTX 4070 (8GB VRAM)  
+**Hardware**: NVIDIA GeForce RTX 4070 (8GB VRAM)
 **Task**: Pure Student Subquadratic Surgery Recovery (`alpha=1.0`, `window_size=0`) across 6 Architectures & 6 Training Regimes (50 steps each).
 
 | Architecture | Training Regime | Cosine Sim to Teacher (↑) | KL Div to Teacher (↓) | Peak VRAM (MB) | Time (s) |

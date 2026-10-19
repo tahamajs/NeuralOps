@@ -141,7 +141,7 @@ def alibi_pytorch_ref(scores: torch.Tensor, num_heads: int) -> torch.Tensor:
             return get_slopes_power_of_2(n)
         closest_power_of_2 = 2 ** math.floor(math.log2(n))
         return get_slopes_power_of_2(closest_power_of_2) + get_slopes(2 * closest_power_of_2)[0::2][:n - closest_power_of_2]
-    
+
     slopes = torch.tensor(get_slopes(H), device=scores.device, dtype=scores.dtype).view(1, H, 1, 1)
     pos = torch.arange(T, device=scores.device, dtype=scores.dtype)
     rel_pos = pos.unsqueeze(0) - pos.unsqueeze(1)
@@ -160,16 +160,16 @@ def sink_attention_pytorch_ref(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor
     B, H, T, D = q.shape
     scale = 1.0 / math.sqrt(D)
     scores = torch.matmul(q, k.transpose(-2, -1)) * scale
-    
+
     mask = torch.ones(T, T, device=q.device, dtype=torch.bool)
     causal_mask = torch.tril(mask)
-    
+
     sink_mask = torch.zeros(T, T, device=q.device, dtype=torch.bool)
     sink_mask[:, :min(num_sinks, T)] = True
-    
+
     band_mask = torch.triu(causal_mask, diagonal=-window_size)
     combined_mask = (band_mask | sink_mask) & causal_mask
-    
+
     scores = scores.masked_fill(~combined_mask, -1e4)
     probs = F.softmax(scores, dim=-1)
     return torch.matmul(probs, v)

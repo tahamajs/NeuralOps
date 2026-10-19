@@ -82,4 +82,3 @@ class TTTLinearAttentionLayer(BaseAttention):
 
 
 __all__ = ["TTTLinearAttentionLayer"]
-

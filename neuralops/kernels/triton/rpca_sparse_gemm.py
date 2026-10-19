@@ -104,7 +104,7 @@ def _fused_rpca_gemm_kernel(
                     col = tl.load(col_ptr + idx)
                     val = tl.load(val_ptr + idx)
                     x_vals = tl.load(x_ptr + offs_m * stride_xm + col * stride_xk, mask=mask_m, other=0.0)
-                    
+
                     y_acc = y_acc + tl.where(
                         (tl.arange(0, BLOCK_N) == i)[None, :],
                         (x_vals * val).to(tl.float32)[:, None],

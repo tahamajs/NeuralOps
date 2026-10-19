@@ -168,7 +168,7 @@ def test_fused_svd_linear_gradcheck_no_rms_norm() -> None:
 def test_fused_svd_linear_module_methods() -> None:
     """Verify FusedSVDLinear helper methods: set_low_rank_factors, get_orthogonality_loss, extra_repr."""
     layer = FusedSVDLinear(in_features=32, out_features=64, rank=16, bias=True, use_rms_norm=True)
-    
+
     new_U = torch.randn(64, 16)
     new_V = torch.randn(16, 32)
     layer.set_low_rank_factors(new_U, new_V)

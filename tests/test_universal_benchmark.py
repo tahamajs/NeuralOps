@@ -169,4 +169,3 @@ def test_train_with_training_types() -> None:
     )
     assert res_kd["training_type"] == "kd"
     assert res_kd["status"] == "success"
-

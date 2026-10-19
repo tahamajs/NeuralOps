@@ -26,8 +26,6 @@ from neuralops.utils.qwen_compat import QwenIncompatibleError
 logger = logging.getLogger(__name__)
 
 
-
-
 def init_output_scale(module: nn.Module, name: str = "output_scale") -> None:
     """Register output_scale learnable parameter if not already present.
 

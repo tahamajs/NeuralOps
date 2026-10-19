@@ -159,8 +159,6 @@ def probe_optimal_batch_size(
         torch.cuda.empty_cache()
 
 
-
-
 def _setup_eval_environment(
     model_family: str,
     dataset: str,

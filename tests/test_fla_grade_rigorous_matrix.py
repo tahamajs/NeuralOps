@@ -52,7 +52,6 @@ def device():
     return torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-
 class TestFLAMathematicalGradientEquivalence:
     """Verifies that analytical backward gradients match PyTorch autograd reference."""
 
@@ -118,7 +117,6 @@ class TestFLAMathematicalGradientEquivalence:
         torch.testing.assert_close(C1.grad, C2.grad, atol=tol, rtol=tol)
 
 
-
 class TestFLAScanEquivalence:
     """Verifies sequential step-by-step recurrence matches chunked scan exactly."""
 
@@ -177,7 +175,6 @@ class TestFLAScanEquivalence:
             y_matrix[:, h] = torch.matmul(decayed_attn, v[:, h])
 
         torch.testing.assert_close(out_rec, y_matrix, atol=1e-4, rtol=1e-4)
-
 
 
 class TestFLAVarLenBatching:
@@ -263,7 +260,6 @@ class TestFLAVarLenBatching:
             torch.testing.assert_close(out_varlen, expected, atol=1e-5, rtol=1e-5)
 
 
-
 class TestFLAStateContinuityAndGeneration:
     """Verifies that stepping token-by-token with state cache matches full causal sequence."""
 
@@ -307,7 +303,6 @@ class TestFLAStateContinuityAndGeneration:
         torch.testing.assert_close(s_final, s_end, atol=1e-5, rtol=1e-5)
 
 
-
 class TestFLAMultiPrecisionInvariance:
     """Verifies numerical fidelity and gradient propagation across precision levels."""
 
@@ -337,7 +332,6 @@ class TestFLAMultiPrecisionInvariance:
         assert out.dtype == dtype
         assert not torch.isnan(out).any()
         assert not torch.isinf(out).any()
-
 
 
 class TestFLADynamicMaskingAndPaddingInvariance:
@@ -371,7 +365,6 @@ class TestFLADynamicMaskingAndPaddingInvariance:
 
         out = gdn_scan_triton(q, k, v, beta, alpha, mask=mask)
         assert torch.equal(out[:, :, 8:], torch.zeros_like(out[:, :, 8:]))
-
 
 
 class TestFLACoreAttentionFamilies:

@@ -73,7 +73,7 @@ def compute_token_perplexity(
     device: Optional[Union[str, torch.device]] = None,
 ) -> Dict[str, float]:
     """Computes token-level perplexity with sliding-window or full-sequence evaluation.
-    
+
     Args:
         model: Autoregressive causal language model.
         input_ids: Tensor of shape (batch_size, seq_len) or (1, total_tokens).
@@ -81,7 +81,7 @@ def compute_token_perplexity(
         stride: Window stride for long-sequence evaluation.
         max_length: Max context length per evaluation window.
         device: Device to place tensors on.
-        
+
     Returns:
         Dictionary containing 'perplexity', 'cross_entropy_loss', and 'total_evaluated_tokens'.
     """
@@ -174,12 +174,12 @@ def compute_linear_cka(
     eps: float = 1e-8,
 ) -> float:
     """Computes Centered Kernel Alignment (Linear CKA) between two feature matrices.
-    
+
     Args:
         X: First hidden representation tensor [N, D_1] or [B, L, D_1].
         Y: Second hidden representation tensor [N, D_2] or [B, L, D_2].
         eps: Small numerical stabilizer.
-        
+
     Returns:
         Scalar CKA value in [0, 1].
     """
@@ -224,7 +224,7 @@ def compute_representation_similarity(
     student_hidden: torch.Tensor,
 ) -> Dict[str, float]:
     """Computes multidimensional representation similarity metrics between teacher and student.
-    
+
     Includes:
       - Centered Kernel Alignment (CKA)
       - Mean Cosine Similarity
@@ -260,7 +260,7 @@ def compute_numerical_deviation(
     eps: float = 1e-12,
 ) -> Dict[str, float]:
     """Computes exact numerical deviation between original and modified/compressed outputs.
-    
+
     Metrics:
       - Cosine Similarity across sequence/batch dimensions
       - Maximum Absolute Error (L_inf norm)
@@ -339,7 +339,7 @@ def measure_latency_and_throughput(
     device: Optional[Union[str, torch.device]] = None,
 ) -> Dict[str, float]:
     """Measures precise execution latency percentiles and real-time throughput.
-    
+
     Returns:
       - Latency P50, P90, P99, Mean (in ms)
       - Throughput in tokens/sec and samples/sec

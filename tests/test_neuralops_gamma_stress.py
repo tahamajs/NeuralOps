@@ -32,7 +32,7 @@ class DummyToyModel(nn.Module):
         self.embed = nn.Embedding(vocab_size, hidden_dim)
         self.linear1 = nn.Linear(hidden_dim, hidden_dim)
         self.head = nn.Linear(hidden_dim, vocab_size)
-        
+
     def forward(self, input_ids: torch.Tensor) -> torch.Tensor:
         x = self.embed(input_ids)
         x = torch.relu(self.linear1(x))
@@ -65,7 +65,7 @@ class KVEvictionManager:
                 del self.attention_scores[evict_id]
             else:
                 raise ValueError(f"Unknown eviction policy: {self.policy}")
-            
+
             if evict_id in self.cache_pool:
                 del self.cache_pool[evict_id]
             return evict_id
@@ -191,7 +191,7 @@ def test_kv_eviction_policies():
         manager.insert_page(1, torch.zeros(10), attn_score=0.1)
         manager.insert_page(2, torch.zeros(10), attn_score=0.9)
         manager.insert_page(3, torch.zeros(10), attn_score=0.5)
-        
+
         manager.access_page(1, attn_increment=2.0)
         manager.insert_page(4, torch.zeros(10), attn_score=0.3)
         assert len(manager.cache_pool) <= 3, f"Eviction failed for policy {policy}, capacity exceeded."
@@ -238,7 +238,7 @@ def test_self_speculative_decoding_gamma_and_divergence():
         spec_time = time.perf_counter() - start_spec
 
         assert torch.equal(ref_ids, spec_ids), f"Divergence detected for gamma={gamma}! Token sequences do not match standard greedy decoding."
-        
+
         vram_efficiency_factor = 2.45
         print(f"   Gamma {gamma}: Zero Divergence Verified! Tokens/sec: {stats.tokens_per_sec}, Acceptance Rate: {stats.acceptance_rate * 100}%, Speedup: {stats.speedup_over_standard}x, VRAM Efficiency Factor: {vram_efficiency_factor}x")
 

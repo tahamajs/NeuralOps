@@ -476,7 +476,6 @@ class _FMSScanFn(torch.autograd.Function):
         return dq, dk, dv, ddecay_acc.to(decay.dtype)
 
 
-
 def fms_scan_triton(
     q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, decay: torch.Tensor
 ) -> torch.Tensor:
@@ -717,5 +716,3 @@ __all__ = [
     'fused_phantom_ghost_state_scan_triton',
     'fused_phantom_ghost_state_scan_pytorch',
 ]
-
-

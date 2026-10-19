@@ -72,4 +72,3 @@ class TestAttentionInjection:
         attn_types = available_attention_types()
         assert len(attn_types) > 0
         assert "full" in attn_types
-

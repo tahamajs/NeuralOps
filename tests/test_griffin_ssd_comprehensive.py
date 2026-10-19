@@ -131,4 +131,3 @@ def test_griffin_ssd_rotary_emb_probing():
     x = torch.randn(2, 8, 64)
     out, _ = block(x)
     assert out.shape == (2, 8, 64)
-

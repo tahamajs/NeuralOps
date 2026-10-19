@@ -105,7 +105,7 @@ class TestAttentionTrainingEngine:
         l2 = nn.Linear(32, 32).cuda()
         wrapper = AlphaBlendingAttentionWrapper(l1, l2)
         x = torch.randn(2, 4, 32, device="cuda")
-        
+
         wrapper.set_alpha(0.0)
         assert torch.allclose(wrapper(x), l1(x))
         wrapper.set_alpha(1.0)

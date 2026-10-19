@@ -361,4 +361,3 @@ class TestLedgerAdminAndSync:
         cat_counts = ledger.regenerate_category_summaries()
         assert "attention" in cat_counts
         assert "compressor" in cat_counts
-

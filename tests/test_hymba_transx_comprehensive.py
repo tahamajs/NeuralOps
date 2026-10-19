@@ -172,4 +172,3 @@ def test_hymba_transx_safe_diff_attn_no_nan():
     x = torch.randn(2, 4, 64)
     out, _ = attn(x)
     assert torch.isfinite(out).all(), "Output contains NaN/Inf after safe diff_attn fix"
-

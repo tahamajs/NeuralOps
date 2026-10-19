@@ -97,7 +97,7 @@ def test_jamba_fallback_on_copy_weights_failure():
             super().__init__()
             self.attention = nn.Module()
             self.attention.hidden_size = -1
-    
+
     layer = BrokenLayer()
     res = inject_jamba(layer=layer)
     assert res is None
@@ -180,7 +180,6 @@ def test_jamba_injection_all_4_architectures():
     res_q = inject_jamba(model=q_model, lora_rank=8)
     assert res_q is not None
     assert isinstance(q_model.model.layers[0].self_attn, Jamba2Block)
-
 
 
 def test_jamba_checkpointing_env_flag(monkeypatch):
@@ -294,4 +293,3 @@ def test_jamba_scale_parameter_dtype_device():
     block = Jamba2Block(d_model=64, n_heads=4, pretrained_attn=old)
     assert block.lora_mamba_scale.dtype == old.q_proj.weight.dtype
     assert block.lora_moe_scale.dtype == old.q_proj.weight.dtype
-

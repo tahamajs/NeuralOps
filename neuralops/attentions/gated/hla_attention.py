@@ -225,25 +225,35 @@ class HLAAttention(BaseAttention):
         return self.lora_output_scale
 
     @property
-    def query(self): return self.q_proj
+    def query(self):
+        return self.q_proj
     @property
-    def key(self): return self.k_proj
+    def key(self):
+        return self.k_proj
     @property
-    def value(self): return self.v_proj
+    def value(self):
+        return self.v_proj
     @property
-    def q_lin(self): return self.q_proj
+    def q_lin(self):
+        return self.q_proj
     @property
-    def k_lin(self): return self.k_proj
+    def k_lin(self):
+        return self.k_proj
     @property
-    def v_lin(self): return self.v_proj
+    def v_lin(self):
+        return self.v_proj
     @property
-    def out_lin(self): return self.out_proj
+    def out_lin(self):
+        return self.out_proj
     @property
-    def dense(self): return self.out_proj
+    def dense(self):
+        return self.out_proj
     @property
-    def c_proj(self): return self.out_proj
+    def c_proj(self):
+        return self.out_proj
     @property
-    def o_proj(self): return self.out_proj
+    def o_proj(self):
+        return self.out_proj
 
     def copy_weights(self, old_attn: Any) -> None:
         """

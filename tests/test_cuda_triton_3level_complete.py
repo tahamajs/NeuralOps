@@ -602,7 +602,6 @@ def test_fused_cross_entropy_parity(device):
     assert torch.allclose(g_cuda, g_py, atol=1e-4, rtol=1e-4), "Fused CE backward d_logits mismatch"
 
 
-
 def test_rpca_sparse_svd_parity(device):
     if device == "cpu":
         pytest.skip("CUDA device required")

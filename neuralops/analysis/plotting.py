@@ -33,8 +33,6 @@ def set_style() -> None:
     sns.set_context("paper", font_scale=1.2)
 
 
-
-
 def plot_loss_curve(history, metrics, config, output_dir, opts) -> Any:
     """Plot loss curve."""
     steps = [h.get("step", i) for i, h in enumerate(history) if "loss" in h]
@@ -284,8 +282,6 @@ def plot_attention_heatmap(history, metrics, config, output_dir, opts) -> Any:
     fig.savefig(path, dpi=150, bbox_inches="tight")
     plt.close()
     return [str(path)]
-
-
 
 
 def create_comprehensive_plots(

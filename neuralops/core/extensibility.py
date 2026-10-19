@@ -57,7 +57,7 @@ def register_custom_attention(
     """
     def _decorator(obj: Union[Type[nn.Module], Callable]) -> Union[Type[nn.Module], Callable]:
         key = (name or getattr(obj, "__name__", "custom_attention")).lower()
-        
+
         meta = {
             "family": family,
             "time_complexity": time_complexity,
@@ -112,7 +112,7 @@ def register_custom_compressor(
     """Decorator or direct function to register a custom compression engine."""
     def _decorator(obj: Union[Type[Any], Callable]) -> Union[Type[Any], Callable]:
         key = (name or getattr(obj, "__name__", "custom_compressor")).lower()
-        
+
         meta = {
             "family": family,
             "time_complexity": time_complexity,
@@ -244,7 +244,7 @@ def validate_module_contract(
             out = module(x)
             if isinstance(out, tuple):
                 out = out[0]
-        
+
         expected_shape = (batch_size, seq_len, embed_dim)
         if tuple(out.shape) == expected_shape and not torch.isnan(out).any():
             results["checks"]["2_forward_shape"] = {"status": "PASSED", "output_shape": list(out.shape)}
@@ -412,7 +412,7 @@ class {camel_name}(nn.Module):
         self.num_heads = num_heads
         self.head_dim = embed_dim // num_heads
         self.scale = 1.0 / math.sqrt(self.head_dim)
-        
+
         self.q_proj = nn.Linear(embed_dim, embed_dim, bias=False)
         self.k_proj = nn.Linear(embed_dim, embed_dim, bias=False)
         self.v_proj = nn.Linear(embed_dim, embed_dim, bias=False)
@@ -421,11 +421,11 @@ class {camel_name}(nn.Module):
     def forward(self, hidden_states: torch.Tensor, *args, **kwargs) -> torch.Tensor:
         B, T, D = hidden_states.shape
         H, d = self.num_heads, self.head_dim
-        
+
         q = self.q_proj(hidden_states).view(B, T, H, d).transpose(1, 2) * self.scale
         k = self.k_proj(hidden_states).view(B, T, H, d).transpose(1, 2)
         v = self.v_proj(hidden_states).view(B, T, H, d).transpose(1, 2)
-        
+
         scores = torch.matmul(F.elu(q) + 1.0, (F.elu(k) + 1.0).transpose(-1, -2))
         context = torch.matmul(scores, v)
         out = self.out_proj(context.transpose(1, 2).contiguous().view(B, T, D))

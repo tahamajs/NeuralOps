@@ -457,7 +457,8 @@ class CURCompressor(BaseCompressor):
                             p.requires_grad = True
                 else:
                     new_module = new_layer
-                    if name == "": self.model = new_module
+                    if name == "":
+                        self.model = new_module
                     else: replace_module(self.model, name, new_module)
 
                 self.compressed_layers.append(name)

@@ -231,4 +231,3 @@ __all__ = [
     "measure_latency_and_throughput",
     "measure_peak_memory_mb",
 ]
-

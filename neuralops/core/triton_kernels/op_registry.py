@@ -35,7 +35,6 @@ logger = logging.getLogger("NeuralOps.OpRegistry")
 _HAS_TORCH_LIBRARY_CUSTOM_OP = hasattr(torch.library, "custom_op") and hasattr(torch.library, "register_fake")
 
 
-
 if _HAS_TORCH_LIBRARY_CUSTOM_OP:
     try:
         @torch.library.custom_op("neuralops::linear_attn", mutates_args=())
@@ -333,7 +332,6 @@ if _HAS_TORCH_LIBRARY_CUSTOM_OP:
         _CUSTOM_OPS_REGISTERED = False
 else:
     _CUSTOM_OPS_REGISTERED = False
-
 
 
 def compilable_linear_attn(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, **kwargs: Any) -> torch.Tensor:

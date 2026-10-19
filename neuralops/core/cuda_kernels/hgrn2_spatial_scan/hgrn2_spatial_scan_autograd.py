@@ -52,7 +52,7 @@ def hgrn2_spatial_scan_pytorch_ref(*args, **kwargs) -> torch.Tensor:
 
     if gate.dim() == 3:
         gate = gate.unsqueeze(-1).expand_as(x)
-    
+
     B, H, N, D = x.shape
     out = torch.empty_like(x)
     sig_g = torch.sigmoid(gate)

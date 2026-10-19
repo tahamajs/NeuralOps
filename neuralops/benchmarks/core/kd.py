@@ -173,7 +173,7 @@ def kd_train_step(
                     teacher_outputs = _call_model(teacher)
                 t_logits = teacher_outputs.logits
             student_outputs = _call_model(student)
-            
+
             s_head = getattr(student, "lm_head", None)
             t_head = getattr(teacher, "lm_head", None)
             if (
@@ -249,7 +249,6 @@ def kd_train_step(
         optimizer.step()
 
     return float(loss.item())
-
 
 
 def build_teacher_cache(

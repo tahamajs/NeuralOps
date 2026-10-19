@@ -125,7 +125,7 @@ def test_triton_cosformer_weight_copy_multi_arch():
             super().__init__()
             self.c_attn = nn.Linear(dim, 3 * dim)
             self.c_proj = nn.Linear(dim, dim)
-    
+
     gpt2_src = MockGPT2Attn()
     cos_gpt2 = TritonCosformerAttention(embed_dim=dim, num_heads=num_heads, pretrained_attn=gpt2_src)
 

@@ -57,12 +57,12 @@ def _rwkv6_dispatch(r: torch.Tensor, k: torch.Tensor, v: torch.Tensor, w: torch.
     w_in = w.unsqueeze(1) if orig_3d else w
     B, H, N, D = r_in.shape
     u_in = u.reshape(H, D).contiguous() if u.numel() == H * D else u.reshape(-1)[:D].repeat(H, 1).contiguous()
-    
+
     def cuda_fn(r_t, k_t, v_t, w_t, u_t):
         mod = _get_module()
         res = mod.rwkv6_time_mix_fwd(r_t.contiguous(), k_t.contiguous(), v_t.contiguous(), w_t.contiguous(), u_t.contiguous())
         return res
-        
+
     res = dispatch(cuda_fn, rwkv6_ref, rwkv6_ref, r_in, k=k_in, v=v_in, w=w_in, u=u_in, kernel_name="rwkv6")
     return res.squeeze(1) if orig_3d and res.dim() == 4 else res
 

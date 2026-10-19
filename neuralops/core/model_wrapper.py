@@ -189,6 +189,4 @@ class UnifiedTransformerModel(nn.Module, PyTorchModelHubMixin):
             return cls(base)
 
 
-
-
 AutoModel.register(UnifiedTransformerConfig, UnifiedTransformerModel)

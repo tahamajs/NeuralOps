@@ -33,7 +33,6 @@ from neuralops.trainer.rl_alignment.preference_and_onpolicy import (
 from neuralops.trainer.ttt.test_time_trainer import TTTLinearAttentionLayer
 
 
-
 @pytest.mark.parametrize("dim", [64, 128, 256])
 def test_all_131_attentions_multi_dim_forward_and_backward(dim):
     """Verify all 131 attention classes support direct instantiation cls(dim, num_heads) and compute clean gradients."""
@@ -78,7 +77,6 @@ def test_all_131_attentions_factory_dispatch():
             assert out_t.shape == (1, 16, 128), f"Factory attention {name} produced unexpected shape {out_t.shape}"
 
 
-
 def test_all_72_compressors_fallback_false_on_gpt2():
     """Verify all 72 registered compressors compress GPT-2 layers with fallback_to_original=False without crashing."""
     comp_names = list(COMPRESSOR_REGISTRY.keys())
@@ -121,7 +119,6 @@ def test_all_72_compressors_fallback_false_on_gpt2():
             assert not torch.isnan(out).any(), f"Compressor {comp_name} generated NaN activations"
         except Exception as e:
             pytest.fail(f"Forward pass after {comp_name} compression failed: {e}")
-
 
 
 def test_distillation_losses_numerical_soundness():

@@ -69,7 +69,6 @@ if HAS_TRITON and tl is not None:
         tl.store(DX_ptr + offs, dx_f.to(DX_ptr.dtype.element_ty), mask=mask)
 
 
-
 class _SoftplusAutograd(torch.autograd.Function):
     @staticmethod
     def forward(ctx, x: torch.Tensor, beta: float, threshold: float):

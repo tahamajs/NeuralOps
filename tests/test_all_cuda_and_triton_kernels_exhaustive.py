@@ -43,7 +43,6 @@ def check_cuda():
         pytest.skip("CUDA device required for kernel tests")
 
 
-
 @pytest.mark.parametrize("d_state", [8, 16, 32, 64])
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float16, torch.bfloat16])
 def test_selective_scan_shapes_and_dtypes(d_state, dtype):
@@ -97,7 +96,6 @@ def test_selective_scan_autograd_gradients():
         assert cos_sim > 0.995, f"{name}.grad cosine similarity {cos_sim:.4f} < 0.995"
 
 
-
 @pytest.mark.parametrize("d", [32, 64, 128])
 @pytest.mark.parametrize("window_size", [16, 64])
 @pytest.mark.parametrize("num_sinks", [0, 4])
@@ -141,7 +139,6 @@ def test_sliding_window_autograd_gradients():
         torch.testing.assert_close(p1.grad, p2.grad, atol=1e-2, rtol=1e-2)
 
 
-
 @pytest.mark.parametrize("d", [32, 64, 128])
 @pytest.mark.parametrize("block_size", [16, 32, 64])
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float16, torch.bfloat16])
@@ -161,7 +158,6 @@ def test_block_sparse_forward_parity(d, block_size, dtype):
 
     tol = 1e-3 if dtype == torch.float32 else (5e-2 if dtype == torch.bfloat16 else 1e-2)
     torch.testing.assert_close(out_k, out_ref, atol=tol, rtol=tol)
-
 
 
 @pytest.mark.parametrize("shape", [(32, 128, 64), (64, 256, 128), (19, 128, 96)])

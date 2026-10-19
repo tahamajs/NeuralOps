@@ -101,7 +101,7 @@ class ToyClassifierModel(nn.Module):
             x = layer(x, attention_mask=attention_mask)
         cls_rep = x[:, 0, :]
         logits = self.classifier(cls_rep)
-        
+
         class Output:
             def __init__(self, logits, hidden_states):
                 self.logits = logits
@@ -167,7 +167,7 @@ class TestFullFrameworkEndToEnd(unittest.TestCase):
     def test_03_universal_adapter_weight_extraction(self) -> None:
         """Verify UniversalAdapter extracts Q, K, V, and Output projections from diverse blocks."""
         block = ToyEncoderBlock(hidden_size=64, num_heads=4)
-        
+
         q_w, q_b = UniversalAdapter.get_weight_bias(block, "q")
         k_w, k_b = UniversalAdapter.get_weight_bias(block, "k")
         v_w, v_b = UniversalAdapter.get_weight_bias(block, "v")
@@ -212,15 +212,15 @@ class TestFullFrameworkEndToEnd(unittest.TestCase):
         class DummyConfig:
             num_attention_heads = 4
             hidden_size = 64
-        
+
         model = ToyClassifierModel(hidden_size=64, num_layers=2)
         model.config = DummyConfig()
-        
+
         dummy_input = torch.randint(0, 100, (2, 16))
-    
+
         out_before = model(dummy_input)
         self.assertEqual(out_before.logits.shape, (2, 2))
-    
+
         model_injected = replace_attention(model, attention_key="svd_linear_attn", rank=16)
         out_after = model_injected(dummy_input)
         self.assertEqual(out_after.logits.shape, (2, 2))
@@ -254,11 +254,11 @@ class TestFullFrameworkEndToEnd(unittest.TestCase):
         model = ToyClassifierModel(hidden_size=64, num_layers=2)
         profiler = ModelProfiler(model)
         profiler.start_profiling()
-        
+
         dummy_input = torch.randint(0, 100, (2, 16))
         _ = model(dummy_input)
         profiler.stop_profiling()
-        
+
         report = profiler.get_report()
         self.assertIsInstance(report, dict)
 

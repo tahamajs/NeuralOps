@@ -435,23 +435,32 @@ class NEXUSAttention(BaseAttention):
             self.to(target_dtype)
 
     @property
-    def q_proj(self): return self.query
+    def q_proj(self):
+        return self.query
     @property
-    def k_proj(self): return self.key
+    def k_proj(self):
+        return self.key
     @property
-    def v_proj(self): return self.value
+    def v_proj(self):
+        return self.value
     @property
-    def q_lin(self): return self.query
+    def q_lin(self):
+        return self.query
     @property
-    def k_lin(self): return self.key
+    def k_lin(self):
+        return self.key
     @property
-    def v_lin(self): return self.value
+    def v_lin(self):
+        return self.value
     @property
-    def out_lin(self): return self.out_proj
+    def out_lin(self):
+        return self.out_proj
     @property
-    def dense(self): return self.out_proj
+    def dense(self):
+        return self.out_proj
     @property
-    def o_proj(self): return self.out_proj
+    def o_proj(self):
+        return self.out_proj
 
     def _reshape(self, x: torch.Tensor, n_heads: int | None = None) -> torch.Tensor:
         B, N, _ = x.shape

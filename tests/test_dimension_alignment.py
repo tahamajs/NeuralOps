@@ -50,11 +50,11 @@ def test_all_131_attentions_direct_dim_256():
     from neuralops.core.registry import ATTENTION_REGISTRY
     names = list(ATTENTION_REGISTRY.keys())
     assert len(names) >= 131, f"Expected >= 131 registered attentions, got {len(names)}"
-    
+
     for name in names:
         cls = ATTENTION_REGISTRY.get(name)
         assert cls is not None, f"Could not retrieve attention class {name}"
-        
+
         try:
             inst_direct = cls(dim=256, num_heads=4)
         except Exception as e:
@@ -81,7 +81,3 @@ def test_all_131_attentions_direct_dim_256():
                 assert out_tensor.shape == (2, 16, 256), f"Shape mismatch in create_attention {name}: expected (2, 16, 256), got {out_tensor.shape}"
         except Exception as e:
             pytest.fail(f"create_attention forward failed for {name}: {e}")
-
-
-
-

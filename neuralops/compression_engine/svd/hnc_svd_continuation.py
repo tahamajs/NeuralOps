@@ -448,7 +448,7 @@ class HessianNullSpaceSVDContinuation:
         eps: float = 1e-5,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """Compute optimal activation-aware whitened low-rank factors (SVD-LLM v2).
-        
+
         Given activations X [N, d_in] and weight matrix W [d_out, d_in],
         computes empirical covariance H_X = X^T X / N and its Cholesky factor L:
             L L^T = H_X + eps * I

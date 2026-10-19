@@ -551,4 +551,3 @@ __all__ = [
     "ERCSVDCompressor",
     "erc_factory",
 ]
-

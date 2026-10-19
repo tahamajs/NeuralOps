@@ -63,7 +63,6 @@ def test_triton_or_pytorch_fallback_execution():
     assert not torch.isnan(y).any()
 
 
-
 def test_public_api_completeness():
     """Verify all top-level public API functions exist and are callable."""
     expected_exports = [

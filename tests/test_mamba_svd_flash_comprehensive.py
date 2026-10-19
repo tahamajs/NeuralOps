@@ -97,7 +97,7 @@ def test_mamba_svd_flash_fallback_on_copy_weights_failure():
             super().__init__()
             self.attention = nn.Linear(64, 64)
             self.attention.weight.data.zero_()
-    
+
     layer = BrokenLayer()
     res = inject_mamba_svd_flash(layer=layer)
     assert res is None

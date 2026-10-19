@@ -44,8 +44,10 @@ def verify_module(name, run_cuda, run_ref, tensors_cuda, tensors_ref, tol=0.01):
     for tc, tr in zip(tensors_cuda, tensors_ref):
         if tc.requires_grad:
             assert tc.grad is not None, "tc.grad is None!"
-            if torch.isnan(tc.grad).any().item(): has_nan = True
-            if torch.isinf(tc.grad).any().item(): has_inf = True
+            if torch.isnan(tc.grad).any().item():
+                has_nan = True
+            if torch.isinf(tc.grad).any().item():
+                has_inf = True
             diff = (tc.grad.float() - tr.grad.float()).abs().max().item()
             grad_diffs.append(diff)
     max_bwd_diff = max(grad_diffs) if grad_diffs else 0.0

@@ -60,7 +60,7 @@ class SelfSpeculativeDecoder:
         """Runs model forward pass, toggling surgery alpha if single-model mode."""
         if self.draft_model is None:
             set_surgery_alpha(model, 1.0 if is_draft else 0.0)
-            
+
         with torch.no_grad():
             outputs = model(input_ids)
             if hasattr(outputs, "logits"):
@@ -89,23 +89,23 @@ class SelfSpeculativeDecoder:
         device = input_ids.device
         curr_ids = input_ids.clone()
         prompt_len = curr_ids.shape[-1]
-        
+
         total_target_passes = 0
         total_accepted_tokens = 0
         total_draft_tokens = 0
-        
+
         while curr_ids.shape[-1] - prompt_len < max_new_tokens:
             k = self.current_k
             remaining = max_new_tokens - (curr_ids.shape[-1] - prompt_len)
             k = min(k, remaining)
             if k <= 0:
                 break
-                
+
             draft_ids = curr_ids.clone()
             draft_logits_list = []
-            
+
             draft_mod = self.draft_model if self.draft_model is not None else self.target_model
-            
+
             for _ in range(k):
                 d_logits = self._get_logits(draft_mod, draft_ids, is_draft=True)[:, -1, :]
                 draft_logits_list.append(d_logits)
@@ -115,21 +115,21 @@ class SelfSpeculativeDecoder:
                     probs = F.softmax(d_logits / max(temperature, 1e-5), dim=-1)
                     next_token = torch.multinomial(probs, num_samples=1)
                 draft_ids = torch.cat([draft_ids, next_token], dim=-1)
-                
+
             draft_tokens = draft_ids[:, curr_ids.shape[-1] :]
             total_draft_tokens += k
-            
+
             target_logits = self._get_logits(self.target_model, draft_ids, is_draft=False)
             total_target_passes += 1
-            
+
             num_accepted = 0
             curr_pos = curr_ids.shape[-1]
-            
+
             for i in range(k):
                 pos_idx = curr_pos - 1 + i
                 t_logits = target_logits[:, pos_idx, :]
                 d_token = draft_tokens[:, i : i + 1]
-                
+
                 if temperature == 0.0:
                     greedy_target_token = torch.argmax(t_logits, dim=-1, keepdim=True)
                     if (d_token == greedy_target_token).all():
@@ -142,11 +142,11 @@ class SelfSpeculativeDecoder:
                 else:
                     p_target = F.softmax(t_logits / max(temperature, 1e-5), dim=-1)
                     p_draft = F.softmax(draft_logits_list[i] / max(temperature, 1e-5), dim=-1)
-                    
+
                     token_val = d_token.item()
                     p_t = p_target[0, token_val].item()
                     p_d = p_draft[0, token_val].item()
-                    
+
                     r = torch.rand(1, device=device).item()
                     if r < min(1.0, p_t / max(p_d, 1e-8)):
                         curr_ids = torch.cat([curr_ids, d_token], dim=-1)
@@ -174,18 +174,18 @@ class SelfSpeculativeDecoder:
                     num_accepted += 1
 
             total_accepted_tokens += num_accepted
-            
+
             if curr_ids.shape[-1] - prompt_len >= max_new_tokens:
                 curr_ids = curr_ids[:, : prompt_len + max_new_tokens]
                 break
-            
+
             if self.adaptive_k:
                 step_acc_rate = num_accepted / (k + 1)
                 if step_acc_rate > 0.75 and self.current_k < self.max_draft_k:
                     self.current_k += 1
                 elif step_acc_rate < 0.40 and self.current_k > self.min_draft_k:
                     self.current_k -= 1
-                    
+
             if eos_token_id is not None and (curr_ids[:, -1] == eos_token_id).any():
                 break
 
@@ -256,4 +256,3 @@ def gamma_sweep_harness(
 
 
 __all__ = ["SpeculativeDecodeStats", "SelfSpeculativeDecoder", "gamma_sweep_harness"]
-

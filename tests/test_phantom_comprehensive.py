@@ -111,7 +111,6 @@ def test_phantom_inject_safe():
     assert out.shape == (2, 8, 64)
 
 
-
 def test_phantom_decoder_kv_cache_and_tuple_layout():
     """Verify autoregressive KV-caching and decoder return format."""
     cfg = MockConfig(is_decoder=True, model_type="gpt2")
@@ -175,7 +174,7 @@ def test_phantom_cur_fallback_device_dtype():
     """Verify CUR fallback initializes on exact device and dtype."""
     from neuralops.attentions.phantom import FactorisedLinear_CUR
     linear = FactorisedLinear_CUR(in_features=64, out_features=64, cur_rank=8)
-    
+
     bad_weight = torch.full((64, 64), float('nan'))
     bias = torch.randn(64)
     linear.copy_cur(bad_weight, bias=bias)
@@ -184,4 +183,3 @@ def test_phantom_cur_fallback_device_dtype():
     assert torch.isfinite(linear.down.weight).all()
     assert torch.isfinite(linear.up.weight).all()
     assert torch.isfinite(linear.up.bias).all()
-

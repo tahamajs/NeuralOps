@@ -221,31 +221,44 @@ class BlockTransformerHIBA(BaseAttention):
             self.copy_weights(source_attn)
 
     @property
-    def q_proj(self): return self.W_q
+    def q_proj(self):
+        return self.W_q
     @property
-    def k_proj(self): return self.W_k
+    def k_proj(self):
+        return self.W_k
     @property
-    def v_proj(self): return self.W_v
+    def v_proj(self):
+        return self.W_v
     @property
-    def o_proj(self): return self.out_proj
+    def o_proj(self):
+        return self.out_proj
     @property
-    def q_lin(self): return self.W_q
+    def q_lin(self):
+        return self.W_q
     @property
-    def k_lin(self): return self.W_k
+    def k_lin(self):
+        return self.W_k
     @property
-    def v_lin(self): return self.W_v
+    def v_lin(self):
+        return self.W_v
     @property
-    def out_lin(self): return self.out_proj
+    def out_lin(self):
+        return self.out_proj
     @property
-    def query(self): return self.W_q
+    def query(self):
+        return self.W_q
     @property
-    def key(self): return self.W_k
+    def key(self):
+        return self.W_k
     @property
-    def value(self): return self.W_v
+    def value(self):
+        return self.W_v
     @property
-    def dense(self): return self.out_proj
+    def dense(self):
+        return self.out_proj
     @property
-    def c_proj(self): return self.out_proj
+    def c_proj(self):
+        return self.out_proj
 
     def copy_weights(self, pretrained_attn: nn.Module) -> None:
         if pretrained_attn is None:
@@ -890,7 +903,7 @@ class BlockTransformerHIBA(BaseAttention):
             else:
                 final_out = out
 
-        return final_out.to(hidden_states.dtype), return_attn 
+        return final_out.to(hidden_states.dtype), return_attn
 
 def inject_block_transformer_hiba(
     layer: Any = None,

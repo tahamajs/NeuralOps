@@ -104,7 +104,8 @@ if HAS_TRITON:
             mask=mask_m[:, None] & mask_n[None, :],
         )
 else:
-    def _gemm_bias_kernel(*args, **kwargs): pass
+    def _gemm_bias_kernel(*args, **kwargs):
+        pass
 
 
 def triton_cur_linear_pytorch_ref(

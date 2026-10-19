@@ -337,7 +337,7 @@ def inspect_architecture(name: str, category: Optional[str] = None) -> Architect
         source_file = f"neuralops/{category}s/{name}.py"
 
     kernel_sym, sram_strat, math_eq, time_c, mem_c = _map_kernel_and_hardware(name, category, family)
-    
+
     custom_meta = {}
     try:
         from neuralops.core.extensibility import get_custom_metadata

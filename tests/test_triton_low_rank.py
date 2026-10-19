@@ -23,7 +23,6 @@ from neuralops.core.triton_kernels._common import HAS_TRITON, low_rank_pytorch_f
 from neuralops.core.triton_kernels.low_rank import fwd, bwd, is_supported
 
 
-
 @pytest.fixture
 def device():
     if torch.cuda.is_available():
@@ -37,13 +36,12 @@ def reference_low_rank_pytorch(x: torch.Tensor, U: torch.Tensor, V: torch.Tensor
     V_mat = V.t() if V.shape[-1] == D_in else V
     Rank = V_mat.shape[1]
     U_mat = U.t() if U.shape[-1] == Rank else U
-    
+
     z = torch.matmul(x, V_mat)
     y = torch.matmul(z, U_mat)
     if bias is not None:
         y = y + bias
     return y
-
 
 
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float16, torch.bfloat16])
@@ -68,7 +66,6 @@ def test_low_rank_correctness(device, dtype, has_bias, batch, seq_len, in_dim, r
     assert torch.allclose(out, ref, atol=tol, rtol=tol)
 
 
-
 def test_low_rank_single_token(device):
     """Single token sequence."""
     x = torch.randn(1, 1, 64, device=device)
@@ -89,7 +86,6 @@ def test_low_rank_non_power_of_2(device):
     assert torch.isfinite(out).all()
 
 
-
 def test_low_rank_cpu_fallback():
     """Verify fallback executes cleanly on CPU."""
     x = torch.randn(2, 32, 64, device="cpu")
@@ -108,7 +104,6 @@ def test_low_rank_deterministic(device):
     out1 = fwd(x, U, V)
     out2 = fwd(x, U, V)
     assert torch.equal(out1, out2)
-
 
 
 def test_low_rank_backward_gradients(device):

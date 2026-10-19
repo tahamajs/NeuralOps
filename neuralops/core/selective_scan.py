@@ -31,8 +31,6 @@ except ImportError:
     _mamba_scan_fn = None
 
 
-
-
 def _auto_chunk_size(
     D_dim: int,
     N: int,
@@ -56,8 +54,6 @@ def _auto_chunk_size(
     c = int(math.isqrt(max_c2))
     c = max(min_chunk, min(c, default))
     return c
-
-
 
 
 def selective_scan_chunked(
@@ -192,8 +188,6 @@ def selective_scan_chunked(
         y = y * F.silu(z.float())
 
     return y.to(dtype)
-
-
 
 
 def selective_scan(

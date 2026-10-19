@@ -25,7 +25,6 @@ from neuralops.surgery.scanner import AttentionTargetSpec
 logger = logging.getLogger("NeuralOps.Surgery.EndoskeletalShell")
 
 
-
 def register_neuralops_with_huggingface() -> None:
     """
     Registers all 131 NeuralOps attention mechanisms into HuggingFace's
@@ -106,7 +105,6 @@ except (RuntimeError, AttributeError, ValueError) as e:
     logger.debug("Auto-registration with HuggingFace skipped: %s", e)
 
 
-
 class SidecarGateBranch(nn.Module):
     """
     Lightweight data-dependent gating and depthwise causal 1D convolution
@@ -152,7 +150,6 @@ class SidecarGateBranch(nn.Module):
             x_conv = self.conv1d(x.transpose(1, 2))[:, :, :T].transpose(1, 2).contiguous()
         gates = torch.sigmoid(self.gate_proj(x))
         return x_conv, gates
-
 
 
 def transfer_pretrained_qkv_weights(
@@ -202,7 +199,6 @@ def transfer_pretrained_qkv_weights(
     _copy_param(target_k, W_k, b_k)
     _copy_param(target_v, W_v, b_v)
     _copy_param(target_o, W_o, b_o)
-
 
 
 class UniversalAttentionBridge(nn.Module):

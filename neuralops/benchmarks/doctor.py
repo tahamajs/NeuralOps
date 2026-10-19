@@ -33,7 +33,7 @@ except ImportError:
 def cmd_doctor() -> int:
     import neuralops
     ver = getattr(neuralops, "__version__", "1.4.0")
-    
+
     rows = []
     all_ok = True
 
@@ -105,7 +105,7 @@ def cmd_doctor() -> int:
             importlib.import_module(f"neuralops.{sub}")
         except Exception as e:
             failed_sub.append(f"{sub} ({e})")
-    
+
     if not failed_sub:
         rows.append(("Subpackage Health", f"All {len(subpackages)} subpackages healthy", "pass", "Package integrity"))
     else:

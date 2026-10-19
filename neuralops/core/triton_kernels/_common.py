@@ -61,8 +61,6 @@ from neuralops.core.triton_kernels.hardware_profile import get_device_hardware_p
 _RUNTIME_FALLBACK_CACHE: set[str] = set()
 
 
-
-
 def pad_to_triton_power_of_2(*tensors: torch.Tensor, min_dim: int = 16) -> tuple[tuple[torch.Tensor, ...], int]:
     """
     Ensure the last dimension (head_dim) of each tensor is a power of 2 >= min_dim.
@@ -104,8 +102,6 @@ pad_head_dim_for_triton = pad_to_triton_power_of_2
 unpad_head_dim = unpad_from_triton_power_of_2
 
 
-
-
 def coerce_tensor_for_hardware(t: torch.Tensor) -> tuple[torch.Tensor, torch.dtype]:
     """
     Ensure tensor dtype is compatible with device architecture.
@@ -142,8 +138,6 @@ def should_use_triton(
     if not suitable and reason:
         log_fallback_reason(kernel_name, reason)
     return suitable
-
-
 
 
 def linear_attn_pytorch_fallback(
@@ -508,8 +502,6 @@ def gqa_pytorch_fallback(
     return k_exp, v_exp
 
 
-
-
 def triton_dispatch(kernel_name: str, *args: Any, **kwargs: Any) -> Any:
     """
     Unified router that executes high-performance Triton kernels when supported,
@@ -709,4 +701,3 @@ __all__ = [
     "Autotuner",
     "autotune_kernel",
 ]
-

@@ -296,7 +296,6 @@ def bwd(
     return grads
 
 
-
 if HAS_TRITON:
     @triton.jit
     def _triton_recurrent_linear_step_kernel(
