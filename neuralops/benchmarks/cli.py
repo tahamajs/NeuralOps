@@ -66,7 +66,7 @@ def generate_completion_script(shell: str) -> str:
         "search", "compress", "generate", "niah", "benchmark-fused", "transplant",
         "surgery", "compose", "roofline", "recommend", "calibrate", "inspect",
         "ui", "validate", "scaffold", "results", "ledger", "train", "eval",
-        "evaluate", "serve", "monitor", "distill", "export"
+        "evaluate", "serve", "monitor", "distill", "export", "test"
     ]
     cmds_str = " ".join(commands)
     if shell == "bash":

@@ -16,6 +16,11 @@ Before marking a PR as ready for review or merging, every item in this checklist
 ```markdown
 ### NeuralOps Pull Request Quality Gate Checklist
 - [ ] **Scope and Atomicity**: PR implements exactly one cohesive architectural improvement, kernel optimization, or bug fix. Unrelated changes or refactors are separated.
+- [ ] **Git Commit Attribution Law**: All commits use strictly `--author="taha <tahamaj4@gmail.com>"`. No assistant or tool branding.
+- [ ] **Standard MIT Header & Banned Personal Docstrings**: Every source file starts with the standard MIT license header referencing contributors (`https://github.com/tahamajs/NeuralOps/graphs/contributors`). Inline `"""Author: Taha Majlesi` docstrings are strictly banned.
+- [ ] **Untracked Non-Core Directories Law**: `audit/`, `docs/`, `results/`, `academic/`, `paper/`, `thesis_final/`, `logs/`, `scratch/`, and `grading.log` must be in `.gitignore` and never committed to Git.
+- [ ] **Zero Local macOS Python Execution**: Never execute Python or PyTest on local macOS host due to typing extensions and CUDA limitations; use POSIX/AST tools locally or remote Linux GPU servers.
+- [ ] **Canonical Invariant Verification**: Exactly 131 attention mechanisms, 72 compression engines, 26 Triton kernel modules, and 114 native CUDA C++ kernels.
 - [ ] **Numerical Correctness**: All unit, operator, and matrix tests pass across applicable sequence lengths, head dimensions, and dtypes (FP16, BF16, FP32).
 - [ ] **Autograd Gradient Sanity**: Custom forward kernels include analytical or bridged backward paths passing finite difference checks (`torch.autograd.gradcheck` with `atol=1e-3, eps=1e-5`).
 - [ ] **Cross-Backend Parity**: Native CUDA C++, Triton JIT, and PyTorch reference outputs match with Cosine Similarity $\ge 0.95$ and absolute difference within tolerance.
