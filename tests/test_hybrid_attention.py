@@ -12,10 +12,18 @@ import sys
 import torch
 import torch.nn as nn
 
-
-from neuralops.attentions.hybrid_attention import (HybridAttention,
-                                                   WeightedEnsembleAttention,
-                                                   _extract_valid_mask)
+try:
+    from neuralops.attentions.hybrid.hybrid_attention import (
+        HybridAttention,
+        WeightedEnsembleAttention,
+        _extract_valid_mask,
+    )
+except ImportError:
+    from neuralops.attentions.hybrid_attention import (
+        HybridAttention,
+        WeightedEnsembleAttention,
+        _extract_valid_mask,
+    )
 
 
 def test_basic_construction():

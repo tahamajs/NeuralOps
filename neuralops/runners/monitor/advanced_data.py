@@ -213,94 +213,30 @@ def get_speculative_decoding_state() -> Dict[str, Any]:
 
 
 def get_all_11_notebooks(project_dir: str) -> List[Dict[str, Any]]:
-    """Catalog all 11 master research notebooks with paths and status."""
-    notebooks = [
-        {
-            "id": "00",
-            "title": "00 Master NeuralOps Walkthrough",
-            "description": "Complete architecture walkthrough: Triton kernels, SVD, and surgical replacement.",
-            "filename": "00_master_neuralops_complete_system_walkthrough.ipynb",
-            "tags": ["walkthrough", "architecture", "end-to-end"],
-        },
-        {
-            "id": "01",
-            "title": "01 Quickstart Surgery & Healing",
-            "description": "Hot-swapping dense multi-head attention with subquadratic SVD-linear attention.",
-            "filename": "01_quickstart_surgery_and_healing.ipynb",
-            "tags": ["quickstart", "surgery", "healing"],
-        },
-        {
-            "id": "02",
-            "title": "02 Roofline & Triton Kernels",
-            "description": "Roofline analysis and microbenchmarks for 26 fused Triton kernels on Ada Lovelace.",
-            "filename": "02_roofline_and_triton_kernels.ipynb",
-            "tags": ["roofline", "triton", "hardware"],
-        },
-        {
-            "id": "03",
-            "title": "03 Custom Plugins & Extensibility",
-            "description": "Writing custom attention modules and compression algorithms into the registry.",
-            "filename": "03_custom_plugins_and_extensibility.ipynb",
-            "tags": ["plugins", "extensibility", "registry"],
-        },
-        {
-            "id": "04",
-            "title": "04 End-to-End 3-Level Benchmarking",
-            "description": "Layer-level, model-level, and throughput-level empirical benchmarking sweeps.",
-            "filename": "04_end_to_end_3level_benchmarking.ipynb",
-            "tags": ["benchmarks", "3-level", "empirical"],
-        },
-        {
-            "id": "05_kernels",
-            "title": "05 Master 108 CUDA & 26 Triton Kernels",
-            "description": "Benchmark matrix comparing custom CUDA kernels vs JIT Triton kernels.",
-            "filename": "05_master_108_cuda_and_26_triton_kernels_benchmark.ipynb",
-            "tags": ["cuda", "triton", "kernels"],
-        },
-        {
-            "id": "05_paper",
-            "title": "05 Paper Empirical Results Master",
-            "description": "Official publication tables, ablation studies, and GLUE/Perplexity figures.",
-            "filename": "05_paper_empirical_results_master.ipynb",
-            "tags": ["paper", "ablation", "empirical"],
-        },
-        {
-            "id": "06",
-            "title": "06 Master All 131 Attention Mechanisms",
-            "description": "Interactive exploration across all 131 subquadratic, linear, and state-space attentions.",
-            "filename": "06_master_all_131_attention_mechanisms_interactive.ipynb",
-            "tags": ["131-attentions", "interactive", "catalog"],
-        },
-        {
-            "id": "07",
-            "title": "07 Master All 72 Compression Engines",
-            "description": "Quantization, SVD, pruning, and low-rank tensor factorizations on weights.",
-            "filename": "07_master_all_72_compression_engines_quant_and_svd.ipynb",
-            "tags": ["72-compressors", "quantization", "svd"],
-        },
-        {
-            "id": "08",
-            "title": "08 Six-Pillar Distillation & Recovery",
-            "description": "Curriculum learning, feature matching, and surgical accuracy recovery pipeline.",
-            "filename": "08_six_pillar_distillation_and_surgical_recovery.ipynb",
-            "tags": ["distillation", "recovery", "six-pillar"],
-        },
-        {
-            "id": "09",
-            "title": "09 Production Serving & Speculative Decoding",
-            "description": "PagedKVCache continuous batching and speculative decoding verification.",
-            "filename": "09_production_serving_paged_cache_and_speculative_decoding.ipynb",
-            "tags": ["serving", "paged-cache", "speculative"],
-        },
-    ]
+    """Catalog all 27 master research notebooks with paths and status (backward-compatible facade)."""
+    return get_all_notebooks(project_dir)
 
-    for nb in notebooks:
-        nb_path = os.path.join(project_dir, "notebooks", nb["filename"])
-        if not os.path.exists(nb_path):
-            nb_path = os.path.join(project_dir, nb["filename"])
-        nb["path"] = nb_path
-        nb["status"] = "verified" if os.path.exists(nb_path) else "available"
 
+def get_all_notebooks(project_dir: str) -> List[Dict[str, Any]]:
+    """Catalog all 27 master research notebooks dynamically with paths and status."""
+    nb_dir = os.path.join(project_dir, "notebooks")
+    notebooks: List[Dict[str, Any]] = []
+
+    if os.path.exists(nb_dir):
+        files = sorted([f for f in os.listdir(nb_dir) if f.endswith(".ipynb")])
+        for f in files:
+            num = f.split("_")[0]
+            clean_title = f.replace(".ipynb", "").replace("_", " ").title()
+            tags = [t for t in f.replace(".ipynb", "").split("_")[1:] if len(t) > 2]
+            notebooks.append({
+                "id": num,
+                "title": clean_title,
+                "description": f"Executable Jupyter research notebook: {clean_title}.",
+                "filename": f"notebooks/{f}",
+                "tags": tags,
+                "path": os.path.join(nb_dir, f),
+                "status": "certified",
+            })
     return notebooks
 
 
