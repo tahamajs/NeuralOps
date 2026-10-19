@@ -410,6 +410,8 @@ class HashedNetCompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model if model is not None else nn.Identity(), name="hashed_net", **kwargs)
+        self.model: nn.Module = self.model
+        self._original_params: int = getattr(self, "_original_params", 0)
         self._compressed_params: int | None = None
         conf = cfg or kwargs.get("comp_config")
         self.cfg = conf

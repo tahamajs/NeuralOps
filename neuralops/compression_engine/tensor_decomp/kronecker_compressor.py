@@ -93,6 +93,14 @@ class KroneckerLinear(nn.Module):
             and (self.m1 > 1 or self.out_features <= 3)
         )
 
+        self.A: nn.Parameter | None = None
+        self.B: nn.Parameter | None = None
+        self.rank: int | None = rank
+        self.U: nn.Parameter | None = None
+        self.V: nn.Parameter | None = None
+        self.bias: nn.Parameter | None = None
+        self._cached_weight: torch.Tensor | None = None
+
         requires_grad = not (self.lora_r > 0)
         self._init_base_parameters(
             bias=bias,
@@ -544,6 +552,9 @@ class KroneckerCompressor(BaseCompressor):
             name="kronecker",
             **kwargs,
         )
+        self.model: nn.Module = self.model
+        self._original_params: int = getattr(self, "_original_params", 0)
+        self._compressed_params: int | None = None
         conf = cfg or kwargs.get("comp_config")
 
         rank = _cfg_get(conf, "kronecker_rank", _cfg_get(conf, "rank", rank))

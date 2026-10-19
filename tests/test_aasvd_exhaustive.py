@@ -67,7 +67,8 @@ class TestSVDLinearLayer:
 
 class TestAASVDCompressorEndToEnd:
     def test_compress_distilbert_unweighted(self):
-        cfg = DistilBertConfig(dim=128, n_heads=4, n_layers=2, num_labels=2)
+        cfg = DistilBertConfig(dim=128, n_heads=4, n_layers=2)
+        cfg.num_labels = 2
         model = DistilBertForSequenceClassification(cfg)
         compressor = AASVDCompressor(model, rank=16)
         comp_model, stats = compressor.compress()
@@ -80,7 +81,8 @@ class TestAASVDCompressorEndToEnd:
     def test_compress_qwen_decoder(self):
         cfg = Qwen2Config(hidden_size=128, intermediate_size=256, num_hidden_layers=2,
                           num_attention_heads=4, num_key_value_heads=2,
-                          num_labels=2, pad_token_id=0)
+                          pad_token_id=0)
+        cfg.num_labels = 2
         model = Qwen2ForSequenceClassification(cfg)
         compressor = AASVDCompressor(model, rank=16)
         comp_model, stats = compressor.compress()

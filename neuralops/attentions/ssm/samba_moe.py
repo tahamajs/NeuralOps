@@ -200,16 +200,19 @@ class SambaMoEBlock(BaseAttention):
 
         self.norm = nn.LayerNorm(self.d_model)
         self.aux_loss: torch.Tensor = torch.tensor(0.0)
+        self._is_nested_encoder: bool = False
+        self.is_nested_encoder: bool = False
 
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
 
     @property
     def is_nested_encoder(self) -> bool:
-        return getattr(self.swa_mamba, "is_nested_encoder", False)
+        return getattr(self.swa_mamba, "is_nested_encoder", getattr(self, "_is_nested_encoder", False))
 
     @is_nested_encoder.setter
     def is_nested_encoder(self, val: bool) -> None:
+        self._is_nested_encoder = val
         if hasattr(self, "swa_mamba"):
             self.swa_mamba.is_nested_encoder = val
 

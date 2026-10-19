@@ -33,11 +33,11 @@ class MockTransformerModel(nn.Module):
             dim=hidden_dim,
             n_heads=12,
             n_layers=2,
-            num_attention_heads=12,
-            hidden_size=hidden_dim,
             vocab_size=30522,
             max_position_embeddings=512,
         )
+        self.config.num_attention_heads = 12
+        self.config.hidden_size = hidden_dim
         self.embedding = nn.Embedding(100, hidden_dim)
         self.linear1 = nn.Linear(hidden_dim, hidden_dim)
         self.linear2 = nn.Linear(hidden_dim, hidden_dim)
@@ -140,10 +140,10 @@ def test_all_attentions():
         hidden_dim=768,
         dim=768,
         n_heads=12,
-        num_attention_heads=12,
-        hidden_size=768,
         max_position_embeddings=512,
     )
+    config.num_attention_heads = 12
+    config.hidden_size = 768
 
     for attn_name in all_attns:
         try:

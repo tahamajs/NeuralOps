@@ -153,6 +153,7 @@ class ALiBiAttention(BaseAttention):
             )
 
         self.is_nested_encoder: bool = False
+        self._alibi_cache: dict[tuple[int, int, int, bool, str], torch.Tensor] = {}
         self.layer_idx: int = int(layer_idx or kwargs.get("layer_idx", 0))
 
         self.lora_rank = int(kwargs.get("lora_rank", _cfg_get(config, "lora_rank", lora_rank)))
