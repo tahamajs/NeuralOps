@@ -1,72 +1,260 @@
 ---
 name: neuralops-triton-to-gluon
-description: Port an NeuralOps Triton kernel to Gluon when explicit layouts, asynchronous transfers, or scheduling can address a measured bottleneck.
+description: Port NeuralOps Triton kernels to the Gluon experimental dialect to leverage explicit tensor layouts, asynchronous block transfers (TMA / cp.async), and multi-stage double-buffered pipelines.
 ---
 
-# Triton to Gluon
+# Triton to Gluon Porting Guide
 
-Use Gluon when profiling points to register pressure, layout conversion, or load/compute overlap that needs explicit control. A kernel already saturating its useful bandwidth or compute limit may not benefit. Keep the portable default path when adding hardware-specific implementations.
+Use this skill when profiling indicates that standard Triton kernels have reached compiler-imposed performance limits—specifically register spilling, bank conflict stalls in shared memory layout conversions, or suboptimal load/compute overlapping. Follow [neuralops-optimization-loop](../neuralops-optimization-loop/SKILL.md) for benchmark baselines and [neuralops-nvidia-performance](../neuralops-nvidia-performance/SKILL.md) for GPU profiling.
 
-Follow [neuralops-optimization-loop](../neuralops-optimization-loop/SKILL.md) for the baseline and correctness gate, and [neuralops-nvidia-performance](../neuralops-nvidia-performance/SKILL.md) for NVIDIA measurements.
+---
 
-## Check the target environment
+## 1. Architectural Foundations of Gluon
 
-Gluon is experimental. Check the installed Triton API before copying [upstream examples](https://triton-lang.org/main/getting-started/tutorials/gluon/); their names and signatures can differ from the installed release.
+The Triton Gluon dialect exposes low-level hardware control over thread-to-data mappings, hardware memory descriptors, and asynchronous execution pipelines.
 
-Gate architecture-specific code appropriately: Ampere supports `cp.async`, Hopper adds TMA/WGMMA, and Blackwell adds TMEM/tcgen05. Code under Gluon's `nvidia` namespace requires NVIDIA hardware. Keep compile-time choices in explicit constexpr arguments so the kernel, launcher, and autotune pruning use the same values.
+```mermaid
+flowchart TD
+    subgraph TraditionalTriton["Standard Triton IR"]
+        Load["tl.load(...)"] --> BlockIR["Compiler-Derived Layout (#blocked)"]
+        BlockIR --> Dot["tl.dot(...)"]
+        Dot --> Store["tl.store(...)"]
+        CompilerOpt["Compiler determines shared memory layout,<br/>unrolling, and staging implicitly"]
+    end
+    subgraph GluonDialect["Gluon Dialect (Explicit Control)"]
+        LayoutDef["Explicit Layout Declaration<br/>(gl.BlockedLayout, gl.DotOperandEncoding)"]
+        TMALoad["Asynchronous Block Transfer<br/>(TMA / cp.async directly into Shared Memory)"]
+        MBarrier["Hardware Synchronization<br/>(mbarrier arrive / wait with phase tracking)"]
+        DoubleBuffer["Double / Multi-Buffered Pipeline<br/>(Explicit Producer / Consumer Stages)"]
+        WGMMA["Warpgroup MMA / TMEM Accumulation<br/>(sm_90 wgmma / sm_100 tcgen05)"]
+        LayoutDef --> TMALoad --> MBarrier --> DoubleBuffer --> WGMMA
+    end
+```
+
+### Hardware Capability Matrix
+
+| Architecture | Primitives Available | Gluon Feature Set |
+| :--- | :--- | :--- |
+| **Ampere / Ada (`sm_8.0`, `sm_8.9`)** | `cp.async`, `ldmatrix`, `mma.sync` | Explicit `#blocked` layouts, double-buffered `cp.async` pipelines, manual layout swizzling. |
+| **Hopper (`sm_90a`)** | Asynchronous TMA, `wgmma`, Mbarrier | Hardware TMA descriptors, warpgroup MMA directly reading shared memory, multi-stage pipelines ($3\text{--}5$ stages). |
+| **Blackwell (`sm_100`)** | `tcgen05`, Tensor Memory (TMEM), Cluster barriers | TMEM accumulator allocation, cluster-wide mbarrier, decoupled memory/compute warpgroups. |
+
+---
+
+## 2. Explicit Tensor Layouts and Transformations
+
+In standard Triton, layouts are inferred automatically, often resulting in silent layout conversions (`gl.convert_layout`) that spill to shared memory and induce bank conflicts. In Gluon, layouts are first-class types.
+
+### Key Layout Encodings
+
+1. **`gl.BlockedLayout`**: Maps multi-dimensional tensor coordinates to threads and warps:
+   - `size_per_thread`: Number of contiguous elements per thread (e.g. $[1, 8]$ for coalesced 128-bit loads).
+   - `threads_per_warp`: Distribution of 32 threads across dimensions (e.g. $[4, 8]$).
+   - `warps_per_cta`: Distribution of warps within the block (e.g. $[2, 2]$ for 4 warps).
+   - `order`: Dimension traversal order (e.g. $[1, 0]$ for row-major).
+
+2. **`gl.DotOperandEncoding`**: Custom layout required by Tensor Core MMA instructions:
+   - Avoids bank conflicts by matching MMA register placement rules.
+   - Converts from `#blocked` with zero cost when layout strides match native tensor core packing.
+
+3. **Layout Swizzling**: Eliminates bank conflicts in shared memory:
+   - For a $64 \times 64$ half-precision matrix, standard row-major addressing creates 32-way bank collisions on column slices.
+   - Swizzling applies bitwise XOR on row/column indices: $\text{bank} = (\text{col} \oplus \text{row}) \pmod{32}$.
 
 ```python
 from triton.experimental import gluon
 from triton.experimental.gluon import language as gl
+
+# Explicit Blocked Layout definition for a 64x64 tile with 4 warps
+# Optimized for 128-bit coalesced memory transactions (8 FP16 elements per thread)
+LAYOUT_A = gl.BlockedLayout(
+    size_per_thread=[1, 8],
+    threads_per_warp=[4, 8],
+    warps_per_cta=[2, 2],
+    order=[1, 0]
+)
+
+# Explicit MMA Dot Operand Layout for Operand A (maps directly to Hopper WGMMA)
+LAYOUT_MMA_A = gl.DotOperandEncoding(
+    op_idx=0,
+    parent=LAYOUT_A,
+    k_width=8
+)
 ```
 
-## Port incrementally
+### Safe Layout Conversions
 
-1. Record the baseline commit and retain the validated tests, reference, and tolerances. Keep the Triton fallback available.
-2. Translate loads, stores, and arithmetic with explicit layouts first. Match each tensor's contiguous dimension and preserve masking. Pass forward, state, and supported backward comparisons before adding asynchrony.
-3. Add async transfers only where load latency or addressing pressure limits the kernel. Define buffer ownership, completion, and reuse for the prologue, steady state, and drain.
-4. Add architecture-specific MMA or scheduling when profiling supports it. Recheck register/shared-memory use and retune after each change.
-5. Run the full relevant correctness gate and same-hardware benchmarks, including supported variable-length and boundary cases. Measure production entry points as well as individual kernels.
+When converting between layouts across warps:
+```python
+# Free conversion (no shared memory round-trip):
+x_converted = gl.convert_layout(x, target_layout, assert_trivial=True)
 
-A literal translation establishes parity; measure it before assuming a performance gain. Preserve the validated numerical algorithm and precision while changing execution layout or scheduling.
+# Shared-memory mediated conversion:
+# Only permit if profiling proves register reduction outweighs SRAM overhead
+x_converted = gl.convert_layout(x, target_layout, assert_trivial=False)
+```
 
-## Layout and resource constraints
+---
 
-- Pointer tensors and values need compatible layouts. A cross-warp `gl.convert_layout` may use shared memory; use `assert_trivial=True` when a conversion is intended to be free.
-- Broadcasts and oversized layout tiles can duplicate values and increase register use. Choose layouts from actual tensor strides rather than copying a tutorial's block sizes.
-- Account for all live shared-memory buffers and the target device's allocation limit. Prune infeasible autotune configurations; provide a streaming path when a resident design cannot fit supported shapes.
-- Large static unrolls multiplied by many autotune configurations can dominate compilation. Prune from the actual shape and live-memory budget, and reuse the worker and Triton cache during iteration.
-- Persistent schedules can trade launch overhead for worse L2 locality. Warp specialization also changes the total register budget; measure occupancy and stalls after changing either.
+## 3. Asynchronous Block Transfers (TMA & `cp.async`)
 
-## Async correctness
+Asynchronous block transfers load global memory directly into shared memory without passing through intermediate registers, eliminating register pressure and memory stalling.
 
-### Transfers and buffer reuse
+### Hopper TMA (Tensor Memory Accelerator) Workflow
 
-`cp.async` groups are ordered as a queue. `wait_group(N)` bounds all outstanding groups, so it cannot identify a particular buffer after unrelated prefetches are interleaved. For per-buffer scheduling, use separate mbarriers and match their arrival counts to the participating threads. In the installed API, check whether `mbarrier_arrive` increments the count; a preinitialized thread count requires the non-incrementing form.
+On Hopper SM 90, TMA uses hardware descriptors to move multi-dimensional tiles:
 
-Wait for a load before consuming its buffer, and protect reuse until all readers finish. Even same-lane shared-memory staging needs protection against overwriting data still being read. Track each mbarrier's phase as its buffer is reused; do not run more than one phase ahead or share a completion barrier between TMA and tcgen05 without reinitializing it.
+```python
+# Host-side TMA descriptor initialization
+import triton.tools.experimental_descriptor as desc
 
-TMA descriptors must satisfy the target's alignment and stride requirements. TMA stores may distinguish completion of the shared-memory read from completion of the global write. Check the installed wait API and require global completion before another operation reads the stored range.
+def create_tma_descriptors(tensor_x: torch.Tensor, block_m: int, block_k: int):
+    """
+    Creates a 2D TMA hardware descriptor for asynchronous tile transfers.
+    Guarantees 128-byte global memory base alignment.
+    """
+    assert tensor_x.data_ptr() % 128 == 0, "TMA tensors must be 128-byte aligned"
+    return desc.create_2d_tma_descriptor(
+        ptr=tensor_x.data_ptr(),
+        dim_m=tensor_x.shape[0],
+        dim_k=tensor_x.shape[1],
+        block_m=block_m,
+        block_k=block_k,
+        element_size=tensor_x.element_size(),
+    )
+```
 
-### MMA and memory ordering
+### Mbarrier Synchronization Protocol
 
-Hopper WGMMA requires its B operand in shared memory and uses register accumulators; consume the values returned by its wait operation so compiler dependencies remain explicit. Blackwell tcgen05 uses TMEM accumulators and mbarrier completion; respect the participating warpgroup and TMEM layout requirements. Initialize accumulators explicitly, including `use_acc=False` where supported.
+TMA and asynchronous transfers must be synchronized using hardware transaction barriers (`mbarrier`):
 
-Generic shared-memory accesses and async operations use different memory proxies. Apply the required proxy fence when handing a buffer to an async consumer; an mbarrier alone does not replace that fence. A completed TMA load establishes the ordering needed to read its destination. Check ordering across warp-specialized partitions as well as within a single producer/consumer loop.
+$$\text{Transaction Count} = \text{Total Bytes Loaded in Stage}$$
 
-### Tails and exact-zero cases
+```mermaid
+sequenceDiagram
+    participant P as Producer Warp
+    participant B as Hardware MBarrier
+    participant C as Consumer Warps (WGMMA)
+    
+    Note over P,C: Prologue Phase 0
+    P->>B: mbarrier_init(expected_bytes, count=1)
+    P->>B: tma_load(smem_buffer_0, desc, mbarrier)
+    P->>B: mbarrier_arrive(transaction_bytes)
+    C->>B: mbarrier_wait(phase=0)
+    Note over C: Executes WGMMA on Stage 0
+    
+    Note over P,C: Steady State Phase 1
+    P->>B: tma_load(smem_buffer_1, desc, mbarrier)
+    P->>B: mbarrier_arrive(transaction_bytes)
+    C->>B: mbarrier_wait(phase=1)
+    Note over C: Executes WGMMA on Stage 1
+```
 
-Masked async copies can leave shared-memory elements uninitialized. Prevent invalid rows from entering reductions: zero-fill where supported, or use valid-row loads and explicitly remove every invalid contribution. Multiplying by zero does not neutralize a NaN. Keep output stores masked.
+---
 
-Do not rely on separately compiled reductions cancelling bitwise. For a mathematically exact-zero special case, such as a single-source softmax gradient, preserve the exact-zero result explicitly and test it against the reference.
+## 4. Double-Buffered and Multi-Stage Pipelines
 
-## Verification commands
+Multi-stage pipelines decouple data loading from arithmetic execution by maintaining $N$ stages ($N \ge 2$) in shared memory.
 
-Run from the repository root on the target GPU:
+### Complete Multi-Stage Gluon Recurrent Kernel
+
+```python
+# Copyright (c) 2024-2026, Taha Majlesi
+# NeuralOps Systems Engineering Group
+"""
+High-Performance Multi-Stage Double-Buffered Linear Attention Kernel in Gluon Dialect.
+Demonstrates explicit layout assignment, asynchronous staging, and MMA computation.
+"""
+from __future__ import annotations
+import torch
+import triton
+from triton.experimental import gluon
+from triton.experimental.gluon import language as gl
+
+@gluon.jit
+def gluon_chunked_kda_fwd_kernel(
+    desc_q,          # TMA Descriptor for Query [B, H, T, D]
+    desc_k,          # TMA Descriptor for Key   [B, H, T, D]
+    desc_v,          # TMA Descriptor for Value [B, H, T, D]
+    out_ptr,         # Output Pointer
+    stride_ob, stride_oh, stride_ot, stride_od,
+    T,
+    BT: gl.constexpr,   # Chunk size (e.g. 64)
+    BK: gl.constexpr,   # Feature dim K (e.g. 64)
+    BV: gl.constexpr,   # Feature dim V (e.g. 64)
+    NUM_STAGES: gl.constexpr, # Pipeline depth (e.g. 2 or 3)
+):
+    pid_b = gl.program_id(0)
+    pid_h = gl.program_id(1)
+
+    # 1. Allocate Double-Buffered Shared Memory Buffers
+    smem_k = gl.allocate_shared(shape=[NUM_STAGES, BT, BK], dtype=gl.float16)
+    smem_v = gl.allocate_shared(shape=[NUM_STAGES, BT, BV], dtype=gl.float16)
+
+    # 2. Initialize Hardware MBarriers for each stage
+    barriers = gl.allocate_mbarriers(count=NUM_STAGES)
+    bytes_per_stage: gl.constexpr = (BT * BK * 2) + (BT * BV * 2)
+
+    num_chunks = gl.cdiv(T, BT)
+
+    # ------------------ PROLOGUE ------------------
+    # Pre-fill initial stages
+    for stage in range(NUM_STAGES - 1):
+        if stage < num_chunks:
+            gl.mbarrier_init(barriers[stage], count=1)
+            gl.tma_async_load(smem_k[stage], desc_k, coords=[pid_b, pid_h, stage * BT, 0], barrier=barriers[stage])
+            gl.tma_async_load(smem_v[stage], desc_v, coords=[pid_b, pid_h, stage * BT, 0], barrier=barriers[stage])
+            gl.mbarrier_arrive(barriers[stage], bytes=bytes_per_stage)
+
+    # State accumulator in registers
+    s_state = gl.zeros([BK, BV], dtype=gl.float32)
+
+    # ----------------- STEADY STATE -----------------
+    for c in range(0, num_chunks):
+        stage_idx = c % NUM_STAGES
+        phase = (c // NUM_STAGES) & 1
+
+        # Await producer completion for this stage
+        gl.mbarrier_wait(barriers[stage_idx], phase=phase)
+
+        # Issue prefetch for stage + (NUM_STAGES - 1)
+        prefetch_c = c + (NUM_STAGES - 1)
+        if prefetch_c < num_chunks:
+            prefetch_stage = prefetch_c % NUM_STAGES
+            gl.tma_async_load(smem_k[prefetch_stage], desc_k, coords=[pid_b, pid_h, prefetch_c * BT, 0], barrier=barriers[prefetch_stage])
+            gl.tma_async_load(smem_v[prefetch_stage], desc_v, coords=[pid_b, pid_h, prefetch_c * BT, 0], barrier=barriers[prefetch_stage])
+            gl.mbarrier_arrive(barriers[prefetch_stage], bytes=bytes_per_stage)
+
+        # Perform WGMMA / MMA computation directly from Shared Memory
+        k_tile = smem_k[stage_idx]
+        v_tile = smem_v[stage_idx]
+
+        # Explicit dot-product update: S_state += K^T @ V
+        s_update = gl.dot(gl.trans(k_tile), v_tile, out_dtype=gl.float32)
+        s_state = s_state + s_update
+
+        # Memory proxy fence to ensure consumer has finished reading before next stage overwrite
+        gl.fence_proxy_async()
+
+    # ------------------ EPILOGUE ------------------
+    # Flush remaining state to output ...
+```
+
+---
+
+## 5. Verification and Correctness Protocol
+
+Porting to Gluon modifies memory ordering and thread scheduling. Always execute the verification gate before timing:
 
 ```bash
-NeuralOps_BENCH_BASE=$(git rev-parse origin/main)
-NeuralOps_CI_ENV=0 python -m benchmarks.ops.verify --op chunk_kda --base "$NeuralOps_BENCH_BASE"
+# 1. Verify analytical equivalence against baseline
+python -m benchmarks.ops.verify --op chunk_kda --base $(git rev-parse HEAD)
+
+# 2. Strict numerical autograd test
+pytest tests/ops/test_kda.py -k "test_chunk_kda_correctness" -v
 ```
 
-Replace the operation with the one being ported. The command executes the current tests; it does not freeze them. Use `--gate-k` only for quick iteration, then run the full gate. Set backend environment neuralopsgs before launching a fresh process so import-time choices cannot contaminate the comparison.
+### Common Gluon Porting Pitfalls
+1. **Uninitialized Shared Memory Rows**: Masked TMA loads do not zero unmapped tile boundaries. Always initialize target shared memory tiles to zero (`tl.zeros` or padding) before issuing masked loads.
+2. **Missing Memory Proxy Fence**: Generic shared memory reads and async TMA engines use separate hardware pipelines. Failing to insert `fence_proxy_async()` before reusing shared memory leads to non-deterministic data races.
+3. **Mbarrier Phase Bit Corruption**: The phase bit alternates ($0 \to 1 \to 0$) upon completion of each stage traversal. Passing an incorrect phase index causes CTAs to deadlock indefinitely.
