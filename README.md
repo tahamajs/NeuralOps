@@ -1595,6 +1595,9 @@ Every table and figure in this repository is reproducible from scratch on physic
 
 ### Benchmark Execution Commands
 
+The framework-native implementation is the single source of truth under `neuralops.benchmarks`; the legacy `scripts/benchmarks` drivers have been removed. Evaluation modules likewise live under `neuralops.evaluation`.
+
+
 To reproduce the physical GPU benchmarks exactly as certified, execute on the remote GPU server (`taha@192.168.1.100` within `/mnt/d/SVD_Project`) using the production environment:
 
 ```bash
@@ -1602,22 +1605,22 @@ To reproduce the physical GPU benchmarks exactly as certified, execute on the re
 REMOTE_PYTHON="/mnt/d/venv/bin/python3"
 
 # 1. Run full 26 Triton kernel microbenchmark suite
-$REMOTE_PYTHON scripts/benchmarks/benchmark_all_26_kernels.py
+$REMOTE_PYTHON -m neuralops.benchmarks --category triton --dynamic
 
 # 2. Run end-to-end 131 attention mechanisms evaluation
-$REMOTE_PYTHON scripts/benchmarks/benchmark_all_131_attentions.py
+$REMOTE_PYTHON -m neuralops.benchmarks --category attention --dynamic
 
 # 3. Run 72 compression engines evaluation
-$REMOTE_PYTHON scripts/benchmarks/benchmark_all_72_compressors.py
+$REMOTE_PYTHON -m neuralops.benchmarks --category compressor --dynamic
 
 # 4. Run SOTA gap closure validation suite
-$REMOTE_PYTHON scripts/benchmarks/benchmark_sota.py
+$REMOTE_PYTHON -m neuralops.benchmarks --category all --dynamic
 
 # 5. Run 3-level execution hierarchy benchmark (CUDA vs Triton vs PyTorch)
-$REMOTE_PYTHON scripts/benchmarks/benchmark_3level_cuda_triton_pytorch.py
+$REMOTE_PYTHON -m neuralops.benchmarks --category all --dynamic
 
 # 6. Run isolated benchmark sweep across all 108 native CUDA C++ kernels
-$REMOTE_PYTHON scripts/benchmarks/benchmark_all_108_cuda_isolated.py --classify-strict
+$REMOTE_PYTHON -m neuralops.benchmarks --category cuda --dynamic
 ```
 
 ---
