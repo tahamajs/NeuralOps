@@ -45,9 +45,6 @@ Inside the container:
 ```bash
 # Verify environment and CUDA device
 python3 -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}, Device: {torch.cuda.get_device_name(0)}')"
-
-# Run canonical invariant count check (131 attention, 72 compression, 26 Triton kernels)
-python3 scripts/utils/verify_readme_counts.py
 ```
 
 ---

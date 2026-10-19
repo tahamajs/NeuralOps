@@ -338,11 +338,9 @@ Overall Status: **{"100% PASSED" if all_passed else "FAILED"}** (5/5 Modules Exe
    [`docs/proofs/reap_distributed_moe_pruning.md`](file:///Users/tahamajs/Documents/uni/Project/docs/proofs/reap_distributed_moe_pruning.md)
    *Proves all-reducing router activation statistics across distributed ranks yields an unbiased estimator of global expert importance and minimizes representation drift.*
 
----
-
-- Attention Mechanisms: **131** (Verified via `scripts/utils/verify_readme_counts.py`)
-- Compression Engines: **72** (Verified via `scripts/utils/verify_readme_counts.py`)
-- Triton Kernels: **26** (Verified via `scripts/utils/verify_readme_counts.py`)
+- Attention Mechanisms: **131**
+- Compression Engines: **72**
+- Triton Kernels: **26**
 """
     with open(REPORT_PATH, "w") as f:
         f.write(content)

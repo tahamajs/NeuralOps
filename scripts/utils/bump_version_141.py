@@ -36,9 +36,6 @@ def main() -> None:
     # 2. neuralops/__init__.py
     bump_file(ROOT / "neuralops" / "__init__.py", '__version__ = "1.4.0"', '__version__ = "1.4.1"')
 
-    # 3. scripts/utils/verify_readme_counts.py
-    bump_file(ROOT / "scripts" / "utils" / "verify_readme_counts.py", '"1.4.0"', '"1.4.1"')
-
     # 4. scripts/utils/publish_pypi_direct.sh
     bump_file(ROOT / "scripts" / "utils" / "publish_pypi_direct.sh", "1.4.0", "1.4.1")
 
