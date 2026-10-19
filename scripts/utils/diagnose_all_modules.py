@@ -46,7 +46,7 @@ cfg = GPT2Config(
 )
 
 for idx, name in enumerate(attn_keys):
-    cls = ATTENTION_REGISTRY.get(name)
+    cls: Any = ATTENTION_REGISTRY.get(name)
     if cls is None:
         attn_failed.append((name, "Could not resolve from ATTENTION_REGISTRY"))
         continue
@@ -56,6 +56,7 @@ for idx, name in enumerate(attn_keys):
         for init_attempt in [
             lambda: cls(config=cfg),
             lambda: cls(hidden_size=D, num_heads=H),
+            lambda: cls(dim=D, num_heads=H),
             lambda: cls(d_model=D, n_heads=H),
             lambda: cls(cfg),
             lambda: cls(),
@@ -78,8 +79,11 @@ for idx, name in enumerate(attn_keys):
         except TypeError:
             try:
                 out = mod(hidden_states=x)
-            except Exception:
-                out = mod(x, x, x)
+            except TypeError:
+                try:
+                    out = mod(query=x, key=x, value=x)
+                except Exception:
+                    out = mod(x, x, x)
 
         if isinstance(out, (tuple, list)):
             out_tensor = out[0]
@@ -95,6 +99,11 @@ for idx, name in enumerate(attn_keys):
         mask_2d = torch.ones(B, T, device=device, dtype=torch.bool)
         try:
             out_m = mod(x, attention_mask=mask_2d)
+        except TypeError:
+            try:
+                out_m = mod(x, mask=mask_2d)
+            except Exception:
+                out_m = out_tensor
         except Exception:
             out_m = out_tensor
 
