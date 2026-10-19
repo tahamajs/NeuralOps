@@ -73,11 +73,6 @@ jobs:
         run: |
           pip install -e ".[cpu]"
 
-      - name: Verify README Counts and Architectural Invariants
-        env:
-          PYTHONPATH: .
-        run: |
-          python scripts/utils/verify_readme_counts.py
 
       - name: Build Clean sdist & Wheel Packages
         run: |

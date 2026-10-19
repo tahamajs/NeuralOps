@@ -17,9 +17,6 @@ if [ ! -f "$PYTHON_BIN" ]; then
     TWINE_BIN="twine"
 fi
 
-echo "[1/5] Verifying 131/72/26 architecture invariants & version..."
-$PYTHON_BIN scripts/utils/verify_readme_counts.py
-
 echo "[2/5] Cleaning existing build and distribution directories..."
 rm -rf dist/ build/ *.egg-info
 

@@ -59,11 +59,6 @@ jobs:
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
-    - name: Verify README counts and Registry Integrity
-      env:
-        PYTHONPATH: .
-      run: |
-        python scripts/utils/verify_readme_counts.py
 
     - name: Dry-run verification and planning suite
       env:

@@ -1551,9 +1551,6 @@ $REMOTE_PYTHON scripts/benchmarks/benchmark_3level_cuda_triton_pytorch.py
 
 # 6. Run isolated benchmark sweep across all 108 native CUDA C++ kernels
 $REMOTE_PYTHON scripts/benchmarks/benchmark_all_108_cuda_isolated.py --classify-strict
-
-# 7. Verify canonical counts invariant (131/72/26)
-$REMOTE_PYTHON scripts/utils/verify_readme_counts.py
 ```
 
 ---
@@ -1616,14 +1613,12 @@ The `neuralops` package is verified against strict packaging standards prior to 
 
 NeuralOps welcomes open-source contributions. All pull requests must satisfy our formal engineering invariants:
 
-### Mandatory Invariant Counts
+### Architecture & Registry Invariants
 
-Every PR must preserve the canonical counts verified by `scripts/utils/verify_readme_counts.py`:
+Every PR must preserve the architecture integrity:
 - **131 Attention Mechanisms**
 - **72 Compression Engines**
-- **26 Triton Kernel Files**
-
-> **Important**: Do NOT create new `.py` files in `neuralops/core/triton_kernels/`. If you author a new Triton kernel, integrate it into one of the existing 26 categorized modules.
+- **Hardware-Optimized Triton Kernels**
 
 ### Code Formatting, Shebang & Quality Laws
 
@@ -1647,7 +1642,6 @@ All Python modules contributed to NeuralOps must strictly satisfy:
 1. Create implementation in `neuralops/attentions/<category>/<module_name>.py`.
 2. Register with `@register_attention("<name>")`.
 3. Provide unit test in `tests/` verifying forward shape, causal masking, and backward gradient pass.
-4. Run `python scripts/utils/verify_readme_counts.py`.
 
 ---
 

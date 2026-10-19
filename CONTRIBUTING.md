@@ -75,7 +75,6 @@ All attention mechanisms inherit from standard PyTorch `nn.Module` and are regis
    ```
 
 4. **Add module export in `neuralops/attentions/__init__.py`**.
-5. **Verify count consistency**: Run `python scripts/utils/verify_readme_counts.py`.
 
 ---
 
@@ -125,6 +124,5 @@ Before submitting a Pull Request, ensure that:
 - [ ] Code is formatted and passes linting: `ruff check neuralops tests`
 - [ ] Full test suite passes: `pytest tests/ -v`
 - [ ] In-package tests pass: `pytest neuralops/tests/analysis/ neuralops/tests/config/ neuralops/tests/data/ neuralops/tests/models/`
-- [ ] Registry counts match: `python scripts/utils/verify_readme_counts.py`
 - [ ] No hardcoded local paths (`/home/user`, `D:/`, etc.) exist in the code.
 - [ ] Working tree is clean and commits follow conventional commit standards (`feat:`, `fix:`, `docs:`, `chore:`).

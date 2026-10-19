@@ -45,8 +45,6 @@ NeuralOps enforces strict mathematical and architectural invariants certified ac
 - **62 Triton hardware kernels** (`neuralops.list_triton_kernels()`)
 - **114 native CUDA C++ kernels** (`neuralops.list_cuda_kernels()`)
 
-All numbers are verified continuously via `scripts/utils/verify_readme_counts.py`.
-
 ---
 
 ## ⚡ 3-Level Fallback Dispatch Hierarchy
@@ -107,7 +105,4 @@ cache = PagedKVCache(num_blocks=1024, block_size=16, num_heads=12, head_dim=64)
 ```bash
 # Editable developer installation
 pip install -e .
-
-# Verify registry invariants
-python scripts/utils/verify_readme_counts.py
 ```
