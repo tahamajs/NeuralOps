@@ -84,15 +84,22 @@ def _attention_inputs(spec: dict[str, Any]) -> tuple[tuple[Any, ...], dict[str, 
     ),), {}
 
 
-def _attention_operation(name: str, *, force_pytorch: bool) -> Operation:
+def _attention_operation(
+    name: str,
+    *,
+    force_pytorch: bool,
+    state: dict[str, Any] | None = None,
+) -> Operation:
     """Build an apples-to-apples invocation of one attention module."""
-    state: dict[str, Any] = {}
+    state = state if state is not None else {}
 
     def invoke(x: Any) -> Any:
         import torch
         from neuralops.core.registry import create_attention
         from neuralops.core.cuda_kernels import _fallback as fallback
 
+        # Seed before construction so both paths share deterministic weights.
+        torch.manual_seed(42)
         module = state.get("module")
         if module is None:
             module = create_attention(name, embed_dim=x.shape[-1], num_heads=12)
@@ -102,7 +109,6 @@ def _attention_operation(name: str, *, force_pytorch: bool) -> Operation:
         previous = fallback.FORCE_PYTORCH_FALLBACK
         fallback.FORCE_PYTORCH_FALLBACK = force_pytorch
         try:
-            torch.manual_seed(42)
             return module(x)
         finally:
             fallback.FORCE_PYTORCH_FALLBACK = previous
@@ -164,12 +170,13 @@ def _register_registry_modules() -> dict[str, OpConfig]:
         "heads": 12, "dtype": "float16", "device": "cuda",
     }
     for name in ATTENTION_REGISTRY.keys():
+        attention_state: dict[str, Any] = {}
         result[f"attention:{name}"] = OpConfig(
             name=name,
             category="attention",
-            func=_attention_operation(name, force_pytorch=False),
+            func=_attention_operation(name, force_pytorch=False, state=attention_state),
             tensor_specs=attention_specs,
-            ref_func=_attention_operation(name, force_pytorch=True),
+            ref_func=_attention_operation(name, force_pytorch=True, state=attention_state),
             input_factory=_attention_inputs,
             unavailable_reason=None,
         )
