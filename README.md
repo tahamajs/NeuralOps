@@ -89,6 +89,7 @@ neuralops train \
 - The fresh sweep is the only release-gate source. Historical failures remain in the archived ledger for diagnosis and are not merged into the new run.
 - The current source audit found 113 CUDA package directories containing 229 `.cu`/`.cpp` files and 32 Triton Python modules; the CLI metadata reports 62 unified Triton operators.
 - Native benchmark modules for roofline, quantization, MoE, serving, RoPE, sampling, SSM, ragged, and autotuning are implemented under `neuralops/benchmarks/`; their smoke checks pass, but they are separate from the 203-module release gate.
+- The release benchmark surface covers 11 families: kernel, module, training, generation, roofline, quantization, MoE, serving, RoPE/sampling, SSM/ragged, and autotuning. Perplexity is part of the generation/evaluation family.
 - Historical benchmark tables and performance figures below are archival until regenerated from the current source tree; the live checkpoint is expected to change while the sweep runs. They must not be interpreted as current release certification.
 - `PASS_HIGH_DIFF` is a visible numerical status, not a pass-rate adjustment: these attention rows remain finite but exceed the normal `1e-3` comparison budget under FP16 execution. The correctness gate records the measured drift (up to `0.25`) and does not silently relabel it as exact parity.
 
