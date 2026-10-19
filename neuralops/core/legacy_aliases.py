@@ -72,6 +72,8 @@ ATTENTION_FILE_MAP: dict[str, str] = {
     "delta_product_attention": "gated.flagship_fla",
     "deltaproduct": "gated.flagship_fla",
     "path_attention": "gated.flagship_fla",
+    "weighted_ensemble": "hybrid.hybrid_attention",
+    "smart_weighted_ensemble": "hybrid.hybrid_attention",
 }
 
 COMPRESSOR_FILE_MAP: dict[str, str] = {
