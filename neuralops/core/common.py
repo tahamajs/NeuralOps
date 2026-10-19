@@ -755,24 +755,6 @@ def _read_past_kv(past_key_value: Any, layer_idx: int = 0) -> tuple[torch.Tensor
     past_len = k.shape[-2] if (k is not None and hasattr(k, "shape") and k.dim() >= 2) else 0
     return k, v, past_len
 
-    if hasattr(past_key_value, "key_cache") and hasattr(past_key_value, "value_cache"):
-        keys = past_key_value.key_cache
-        vals = past_key_value.value_cache
-        if len(keys) == 0:
-            return None, None
-        idx = min(layer_idx, len(keys) - 1)
-        k, v = keys[idx], vals[idx]
-        if isinstance(k, torch.Tensor) and isinstance(v, torch.Tensor):
-            return k, v
-        return None, None
-
-    if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 2:
-        k, v = past_key_value[0], past_key_value[1]
-        if isinstance(k, torch.Tensor) and isinstance(v, torch.Tensor):
-            return k, v
-
-    return None, None
-
 
 class FactorizedLoRALinear(nn.Module):
     """Linear layer decomposed into low-rank SVD projections with additive LoRA adapter."""

@@ -280,10 +280,6 @@ def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def _get_family_slug(family: str) -> str:
-    return family if family else "unknown"
-
-
 def _get_git_sha() -> str:
     try:
         out = (
@@ -704,38 +700,6 @@ def _make_grad_scaler(enabled: bool, device_type: str = "cuda"):
                 def step(self, opt): opt.step()
                 def update(self): pass
             return _DummyScaler()
-def _propagate_module_flags_to_config(
-    model: torch.nn.Module,
-    args: argparse.Namespace,
-    module_name: str,
-    extra_keys: tuple[str, ...] = (
-        "max_error", "target_attention_only", "rank", "force_rank",
-        "lora_rank", "lora_alpha", "sparsity", "use_fisher",
-        "recalibrate_ln", "n_calib", "strict_rank",
-    ),
-) -> None:
-    """
-    Propagate module-specific CLI flags to model.config.
-
-    For each arg like `adasvd_max_error`, sets:
-        model.config.adasvd_max_error = value
-        model.config.max_error = value  (stripped prefix)
-
-    This replaces ~800 lines of repetitive if-statements.
-    """
-    if not hasattr(model, "config") or model.config is None:
-        return
-
-    prefix = module_name + "_"
-    for attr_name, attr_val in vars(args).items():
-        if attr_val is None:
-            continue
-        if attr_name.startswith(prefix):
-            setattr(model.config, attr_name, attr_val)
-            stripped = attr_name[len(prefix):]
-            setattr(model.config, stripped, attr_val)
-        elif attr_name in extra_keys:
-            setattr(model.config, attr_name, attr_val)
 # ============================================================================
 # Metrics export
 # ============================================================================
@@ -4581,10 +4545,6 @@ def run_single_module_main(args) -> dict:
                         pass
                 _tmp.rename(path)
             continue
-        # if name in existing:
-        #     LOG.info(">>> Skipping already PASSED module [%d/%d]: %s (PASS, %.2f%%)",
-        #              n, len(names), name, float(summary_dict[name].get("accuracy_pct", 0.0)))
-        #     continue
 
         LOG.info(
             ">>> STARTING MODULE [%d/%d]: %s (recovery_steps=%d, batch_size=%d, optimizer=%s)",
@@ -5664,12 +5624,6 @@ def main():
         pending_names = [n for n in names if n not in existing]
     else:
         pending_names = [n for n in names if n not in existing and n not in BLOCKED_MODULES]
-
-    # for n in names:
-    #     if n in existing:
-    #         print(f">>> Skipping {n} (already PASS)")
-    #     elif n in BLOCKED_MODULES and len(names) > 10:
-    #         print(f">>> Skipping BLOCKED {n}")
 
     workers = max(1, getattr(args, "parallel", 1))
     from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY

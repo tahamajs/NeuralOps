@@ -3,12 +3,13 @@ CI Health Gate & Library Static/Dynamic Invariant Verification Tests.
 
 Author: Taha Majlesi
 
-Contains the 5 critical health gate tests:
+Contains the 6 critical health gate tests:
   1. test_no_unbound_locals()
   2. test_no_silent_dispatch_fallback()
   3. test_no_instance_attr_outside_init()
   4. test_neuralops_imports()
   5. test_replace_attention_end_to_end()
+  6. test_zero_dead_code_and_shadowed_defs()
 """
 
 from __future__ import annotations
@@ -212,3 +213,59 @@ def test_replace_attention_end_to_end():
     assert hasattr(output, "last_hidden_state")
     assert output.last_hidden_state.shape == (2, 16, 64)
     assert not torch.isnan(output.last_hidden_state).any()
+
+
+def test_zero_dead_code_and_shadowed_defs():
+    """Verify zero shadowed definitions and zero unreachable statements across the repository via AST auditing."""
+    repo_root = Path(__file__).resolve().parent.parent
+    py_files = sorted(
+        p
+        for p in repo_root.rglob("*.py")
+        if not any(
+            part in p.parts
+            for part in (".git", "__pycache__", "build", "dist", ".venv", "venv", "archive", "_archive")
+        )
+    )
+    assert len(py_files) > 100, f"Expected >100 Python source files, got {len(py_files)}"
+
+    shadowed_defs: list[str] = []
+    unreachable_stmts: list[str] = []
+
+    for path in py_files:
+        src = path.read_text(encoding="utf-8", errors="ignore")
+        try:
+            tree = ast.parse(src, filename=str(path))
+        except SyntaxError as exc:
+            pytest.fail(f"Syntax error parsing {path}: {exc}")
+
+        # 1. Detect duplicate/shadowed function or class definitions in the same scope (F811)
+        for node in ast.walk(tree):
+            if isinstance(node, (ast.Module, ast.ClassDef)):
+                seen: dict[str, int] = {}
+                for stmt in node.body:
+                    if isinstance(stmt, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+                        decs = [ast.unparse(d) for d in getattr(stmt, "decorator_list", [])]
+                        if any("overload" in d or "setter" in d or "deleter" in d for d in decs):
+                            continue
+                        if stmt.name in seen:
+                            shadowed_defs.append(
+                                f"{path.relative_to(repo_root)}:{stmt.lineno} -> '{stmt.name}' shadows definition at line {seen[stmt.name]}"
+                            )
+                        seen[stmt.name] = stmt.lineno
+
+        # 2. Detect unreachable statements after return / raise / break / continue
+        for node in ast.walk(tree):
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                for sub in ast.walk(node):
+                    body = getattr(sub, "body", None)
+                    if isinstance(body, list):
+                        for idx, stmt in enumerate(body[:-1]):
+                            if isinstance(stmt, (ast.Return, ast.Raise, ast.Break, ast.Continue)):
+                                nxt = body[idx + 1]
+                                unreachable_stmts.append(
+                                    f"{path.relative_to(repo_root)}:{nxt.lineno} -> Unreachable statement in '{node.name}' after {type(stmt).__name__}"
+                                )
+                                break
+
+    assert len(shadowed_defs) == 0, f"Found {len(shadowed_defs)} shadowed definitions:\n" + "\n".join(shadowed_defs)
+    assert len(unreachable_stmts) == 0, f"Found {len(unreachable_stmts)} unreachable statements:\n" + "\n".join(unreachable_stmts)

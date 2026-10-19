@@ -1,5 +1,7 @@
 """Verify that README numbers match the actual registries and modules.
 
+Author: Taha Majlesi
+
 Run: python scripts/utils/verify_readme_counts.py
 """
 

@@ -100,26 +100,6 @@ def _cp_decompose_qk(
     return A_out, B_out, final_err
 
 
-def _cp_reconstruction_error(
-    W: torch.Tensor,
-    A: torch.Tensor,
-    B: torch.Tensor,
-    num_heads: int,
-    rank_a: int,
-    rank_b: int,
-) -> float:
-    """Compute relative Frobenius error of W ≈ A ⊗ B."""
-    H = num_heads
-    head_dim = rank_a * rank_b
-    in_dim = W.shape[1]
-    A_r = A.float().view(H, rank_a, in_dim)
-    B_r = B.float().view(H, rank_b, in_dim)
-    W_hat = torch.einsum("hak,hbk->habk", A_r, B_r).reshape(H * head_dim, in_dim)
-    num = torch.norm(W.float() - W_hat).item()
-    den = torch.norm(W.float()).clamp_min(1e-12).item()
-    return num / den
-
-
 def _svd_factorize(
     W: torch.Tensor, target_rank: int
 ) -> tuple[torch.Tensor, torch.Tensor]:

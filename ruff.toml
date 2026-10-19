@@ -17,7 +17,18 @@ exclude = [
 
 # [tool.ruff.lint]
 [lint]
-select = ["E", "F", "B", "F401", "F841", "B006", "B008"]
+select = [
+    "E",
+    "F",
+    "B",
+    "PIE",
+    "F401",
+    "F841",
+    "F811",
+    "PIE790",
+    "B006",
+    "B008",
+]
 ignore = [
     "N803",
     "N806",  # B, H, N, D for tensor dims (ML standard)
@@ -31,12 +42,14 @@ ignore = [
     "D107",
     "D205",
     "D400",
-    "B006",  # mutable default — only flag, do not auto-remove
     "E402",  # module level import not at top of file (sys.path manipulation in scripts)
     "E741",  # ambiguous variable name
     "B023",  # function definition does not bind loop variable
     "E731",  # do not assign a lambda expression, use a def
     "B007",  # loop control variable not used within loop body
     "B905",  # zip() without explicit strict= parameter
+]
+unfixable = [
+    "B006",  # mutable default — flag error, do not auto-remove
 ]
 
