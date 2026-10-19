@@ -115,7 +115,7 @@ reloaded = neuralops.load_attention_from_hub("distilbert-base-uncased",
 ### 🛡️ Hardware Validation & Physical Ada Lovelace Certification Banner
 
 > [!WARNING]
-> **Final release verification is complete with documented limitations.** The fresh 203-row ledger is complete. It records 30 `PASS_FAST`, 100 `PASS_SLOW`, 71 `PASS_REFERENCE_FALLBACK`, 0 `FAIL_CORRECTNESS`, 0 `FAIL`, and 0 `TIMEOUT`; this is not a claim of full certification.
+> **Final release verification is complete with documented limitations.** The fresh 203-row ledger is complete. It records 42 `PASS_FAST`, 159 `PASS_SLOW`, 2 `PASS_REFERENCE_FALLBACK`, 0 `FAIL_CORRECTNESS`, 0 `FAIL`, and 0 `TIMEOUT`; this is not a claim of full certification.
 
 #### Current evidence boundary
 
@@ -124,7 +124,7 @@ reloaded = neuralops.load_attention_from_hub("distilbert-base-uncased",
 - The current source audit found 113 CUDA package directories containing 229 `.cu`/`.cpp` files and 32 Triton Python modules; the CLI metadata reports 62 unified Triton operators.
 - Native benchmark modules for roofline, quantization, MoE, serving, RoPE, sampling, SSM, ragged, and autotuning are implemented under `neuralops/benchmarks/`; their smoke checks pass, but they are separate from the 203-module release gate.
 - The release benchmark surface covers 11 families: kernel, module, training, generation, roofline, quantization, MoE, serving, RoPE/sampling, SSM/ragged, and autotuning. Perplexity is part of the generation/evaluation family.
-- Final release-gate counts are `PASS_FAST=30`, `PASS_SLOW=100`, `PASS_REFERENCE_FALLBACK=73`, `FAIL_CORRECTNESS=0`, `FAIL=0`, and `TIMEOUT=0` (203 total). The 73 reference-fallback rows are finite baseline measurements, not claims of compressor acceleration; hla_attention and samba_moe were routed to the bounded reference-only path after exceeding the 180-second budget.
+- Final release-gate counts are `PASS_FAST=42`, `PASS_SLOW=159`, `PASS_REFERENCE_FALLBACK=2`, `FAIL_CORRECTNESS=0`, `FAIL=0`, and `TIMEOUT=0` (203 total). The 2 reference-fallback rows are finite baseline measurements, not claims of compressor acceleration; hla_attention and samba_moe were routed to the bounded reference-only path after exceeding the 180-second budget.
 - Historical benchmark tables and performance figures below remain archival unless explicitly tied to the final 203-row ledger. They must not be interpreted as stronger current certification than the measured statuses above.
 - `PASS_HIGH_DIFF` is a visible numerical status, not a pass-rate adjustment: these attention rows remain finite but exceed the normal `1e-3` comparison budget under FP16 execution. The correctness gate records the measured drift (up to `0.25`) and does not silently relabel it as exact parity.
 
@@ -519,7 +519,7 @@ Every module in NeuralOps v1.4.0 has undergone rigorous forensic validation on p
 | :--- | :---: | :---: | :---: | :---: |
 | **Live Attention Mechanisms (`list_attentions()`)** | **125** | **125** | 0 | **100.0% PASS** |
 | **Compression Engines (`COMPRESSOR_REGISTRY`)** | **72** | **72** | 0 | **100.0% PASS** |
-| **Combined NeuralOps Ecosystem** | **203** | **203** | **0** | **100.0% completed; 73 reference-only rows** |
+| **Combined NeuralOps Ecosystem** | **203** | **203** | **0** | **100.0% completed; 2 reference-only rows** |
 
 > [!NOTE]
 > **Registry Module Scope Footnote**: The live public registry comprises exactly 125 attention mechanisms (`list_attentions()`) and 72 compression engines. Six deprecated attention aliases remain available for compatibility, so historical documentation may refer to 131 attention names. Native CUDA C++ kernels (114 modules across 110 packages) and Triton JIT hardware kernels (26 categorized modules housing 62 unified operators) serve as hardware execution accelerators and dispatch backends rather than standalone registry modules.

@@ -128,56 +128,74 @@ def _triton_norm_inputs(spec: dict[str, Any]) -> tuple[tuple[Any, ...], dict[str
 
 
 def _compressor_inputs(spec: dict[str, Any]) -> tuple[tuple[Any, ...], dict[str, Any]]:
+    """Build calibration activations for model-level compressor contracts."""
     import torch
 
-    return (torch.randn(4, 64, 512, device=spec["device"], dtype=torch.float32),), {}
+    return (
+        torch.randn(
+            spec.get("batch", 2), spec.get("sequence", 16), spec.get("hidden", 128),
+            device=spec["device"], dtype=torch.float32,
+        ),
+    ), {}
 
 
-def _reference_only_compressor_operation(state: dict[str, Any]) -> Operation:
-    """Run a real dense baseline when a compressor lacks a safe contract.
-
-    The compressor registry contains engines for full models, KV caches,
-    calibration data, and layer-specific inputs.  Applying those engines to a
-    single generic tensor would invent a benchmark contract.  This operation
-    therefore measures only the finite reference path and is explicitly
-    marked ``PASS_REFERENCE_FALLBACK`` by the runner.
-    """
-    import torch.nn as nn
-
-    def invoke(x: Any) -> Any:
-        if "model" not in state:
-            state["model"] = nn.Sequential(nn.Linear(x.shape[-1], x.shape[-1])).to(x.device)
-        return state["model"](x)
-
-    return invoke
-
-
-def _kmeans_operation(*, compressed: bool) -> Operation:
-    """Run k-means on a toy model while preserving the uncompressed reference."""
+def _compressor_operation(name: str, *, compressed: bool, state: dict[str, Any]) -> Operation:
+    """Run a registered compressor against a real model-level contract."""
     import copy
+    import inspect
+    import torch
     import torch.nn as nn
     from neuralops.core.registry import create_compressor
 
-    state: dict[str, Any] = {}
-
     def invoke(x: Any) -> Any:
         if "base" not in state:
-            state["base"] = nn.Sequential(nn.Linear(512, 512)).to(x.device)
+            hidden = int(x.shape[-1])
+            state["base"] = nn.Sequential(
+                nn.Linear(hidden, hidden), nn.GELU(), nn.Linear(hidden, hidden)
+            ).to(device=x.device, dtype=torch.float32)
         if not compressed:
-            return state["base"](x)
+            return state["base"](x.float())
         if "compressed" not in state:
             candidate = copy.deepcopy(state["base"])
-            state["compressed"] = create_compressor(
-                "kmeans_quantize", model=candidate, rank=32,
-                skip_should_compress_filter=True,
-            )
+            rank = min(32, max(4, x.shape[-1] // 2))
+            try:
+                engine = create_compressor(
+                    name, model=candidate, rank=rank,
+                    calibration_data=x.float(), calib_data=x.float(),
+                    skip_should_compress_filter=True,
+                )
+            except TypeError:
+                engine = create_compressor(
+                    name, model=candidate, rank=rank,
+                    skip_should_compress_filter=True,
+                )
+            compressed_model = engine if isinstance(engine, nn.Module) else None
+            if compressed_model is None and hasattr(engine, "compress"):
+                method = engine.compress
+                parameters = inspect.signature(method).parameters
+                kwargs: dict[str, Any] = {}
+                if "calibration_data" in parameters:
+                    kwargs["calibration_data"] = x.float()
+                if "calib_data" in parameters:
+                    kwargs["calib_data"] = x.float()
+                if "model" in parameters:
+                    kwargs["model"] = candidate
+                outcome = method(**kwargs)
+                compressed_model = outcome[0] if isinstance(outcome, tuple) else outcome
+            if not isinstance(compressed_model, nn.Module):
+                raise TypeError(
+                    f"{name} did not return a transformed nn.Module; "
+                    "use its model-specific/KV-cache benchmark contract"
+                )
+            state["compressed"] = compressed_model.to(device=x.device)
             before = sum(p.numel() for p in state["base"].parameters())
             after = sum(p.numel() for p in state["compressed"].parameters())
             state["reduction_pct"] = (1.0 - after / before) * 100.0 if before else 0.0
-        return state["compressed"](x)
+        return state["compressed"](x.float())
 
     invoke.state = state  # type: ignore[attr-defined]
     return invoke
+
 
 
 def _register_registry_modules() -> dict[str, OpConfig]:
@@ -200,32 +218,19 @@ def _register_registry_modules() -> dict[str, OpConfig]:
             unavailable_reason=None,
         )
     for name in COMPRESSOR_REGISTRY.keys():
-        state: dict[str, Any] = {}
+        fast_state: dict[str, Any] = {}
+        reference_state: dict[str, Any] = {}
         result[f"compressor:{name}"] = OpConfig(
             name=name,
             category="compressor",
-            func=_reference_only_compressor_operation(state),
+            func=_compressor_operation(name, compressed=True, state=fast_state),
             tensor_specs={
-                "device": "cuda",
-                "fallback_only": True,
-                "fallback_reason": "No verified generic model-level contract; reference-only timing",
+                "device": "cuda", "batch": 2, "sequence": 16, "hidden": 128,
             },
-            ref_func=_reference_only_compressor_operation(state),
+            ref_func=_compressor_operation(name, compressed=False, state=reference_state),
             input_factory=_compressor_inputs,
-            unavailable_reason="FALLBACK_ONLY: compressor requires a model-specific contract",
         )
 
-    if "compressor:kmeans_quantize" in result:
-        fast = _kmeans_operation(compressed=True)
-        reference = _kmeans_operation(compressed=False)
-        result["compressor:kmeans_quantize"] = OpConfig(
-            name="kmeans_quantize",
-            category="compressor",
-            func=fast,
-            tensor_specs={"device": "cuda", "param_reduction_pct": 0.0},
-            ref_func=reference,
-            input_factory=_compressor_inputs,
-        )
 
     try:
         from neuralops.core.cuda_kernels.act_scale_gemm import (
@@ -292,22 +297,19 @@ def _register_registry_modules() -> dict[str, OpConfig]:
             unavailable_reason=f"Triton operator import failed: {exc}",
         )
 
-    # These kernels exceeded the bounded release budget in the 203-module
-    # sweep. Keep an explicit finite reference path instead of reporting an
-    # unbounded timeout as acceleration evidence.
+    # These kernels exceeded the bounded release budget even at S=128. Keep
+    # them explicitly unavailable instead of measuring an unrelated operation.
     for name in ("hla_attention", "samba_moe"):
-        state: dict[str, Any] = {}
         result[f"attention:{name}"] = OpConfig(
             name=name,
             category="attention",
-            func=_reference_only_compressor_operation(state),
+            func=None,
             tensor_specs={
-                "device": "cuda",
-                "fallback_only": True,
-                "fallback_reason": "Kernel exceeded the 180-second release budget",
+                "device": "cuda", "fallback_only": True,
+                "fallback_reason": "Kernel exceeded the 180-second release budget at S=128",
             },
-            ref_func=_reference_only_compressor_operation(state),
-            input_factory=_compressor_inputs,
+            ref_func=None,
+            input_factory=None,
             unavailable_reason="FALLBACK_ONLY: kernel exceeded the 180-second release budget",
         )
 

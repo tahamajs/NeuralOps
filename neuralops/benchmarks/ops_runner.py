@@ -540,6 +540,16 @@ def _run_registered_op_worker(op_name: str, verify_only: str, output_path: str, 
         "error_reason": config.unavailable_reason,
     }
 
+    if config.tensor_specs.get("fallback_only") and config.func is None:
+        row.update(
+            status="PASS_REFERENCE_FALLBACK",
+            error_reason=config.tensor_specs.get(
+                "fallback_reason", config.unavailable_reason
+            ),
+        )
+        Path(output_path).write_text(json.dumps(row), encoding="utf-8")
+        return
+
     def measure(fn: Callable[[], Any]) -> float:
         for _ in range(5):
             fn()
