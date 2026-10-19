@@ -94,17 +94,23 @@ class _FusedLowRankGatedGemmFunction(torch.autograd.Function):
         x, V, U, a_arg = ctx.saved_tensors
         dout = dout.contiguous()
 
-        dz = torch.matmul(dout, U)
+        # Accumulate FP16/BF16 gradients in FP32 to match the reference.
+        dout_f = dout.float()
+        U_f = U.float()
+        V_f = V.float()
+        x_f = x.float()
+        dz = torch.matmul(dout_f, U_f)
         sig = None
         if ctx.has_alpha:
-            sig = torch.sigmoid(a_arg)
+            sig = torch.sigmoid(a_arg.float())
             if sig.dim() < dz.dim():
-                sig = sig.unsqueeze(1)
+                # Broadcast gates over all leading batch/sequence dimensions.
+                sig = sig.reshape(*sig.shape[:-1], *([1] * (dz.dim() - sig.dim())), sig.shape[-1])
             dz_gated = dz * sig
         else:
             dz_gated = dz
 
-        dX = torch.matmul(dz_gated, V) if ctx.needs_input_grad[0] else None
+        dX = torch.matmul(dz_gated, V_f).to(x.dtype) if ctx.needs_input_grad[0] else None
 
         dV = None
         dU = None
@@ -112,7 +118,7 @@ class _FusedLowRankGatedGemmFunction(torch.autograd.Function):
         dbias = None
 
         if ctx.needs_input_grad[1] or ctx.needs_input_grad[2] or (ctx.has_alpha and ctx.needs_input_grad[3]):
-            z = torch.matmul(x, V.t())
+            z = torch.matmul(x_f, V_f.t())
             z_gated = z * sig if ctx.has_alpha else z
 
             dout_2d = dout.reshape(-1, dout.size(-1))
@@ -121,7 +127,7 @@ class _FusedLowRankGatedGemmFunction(torch.autograd.Function):
             x_2d = x.reshape(-1, x.size(-1))
 
             if ctx.needs_input_grad[2]:
-                dU = torch.matmul(dout_2d.t(), z_gated_2d)
+                dU = torch.matmul(dout_f.reshape(-1, dout_f.size(-1)).t(), z_gated_2d).to(U.dtype)
 
             if ctx.has_alpha and ctx.needs_input_grad[3]:
                 dalpha_full = dz * z * sig * (1.0 - sig)
@@ -131,11 +137,11 @@ class _FusedLowRankGatedGemmFunction(torch.autograd.Function):
                     dalpha = dalpha_full.sum(dim=0)
 
             if ctx.needs_input_grad[1]:
-                dV = torch.matmul(dz_gated_2d.t(), x_2d)
+                dV = torch.matmul(dz_gated_2d.t(), x_2d.float()).to(V.dtype)
 
         if ctx.has_bias and ctx.needs_input_grad[4]:
             dims = list(range(dout.dim() - 1))
-            dbias = dout.sum(dim=dims)
+            dbias = dout_f.sum(dim=dims).to(dout.dtype)
 
         return dX, dV, dU, dalpha, dbias
 
