@@ -4,9 +4,9 @@ This document outlines the architectural roadmap, development milestones, and re
 
 ---
 
-## Current Release: v1.4.2 (October 2026) — Complete Consolidation
+## Current Release: v1.4.3 (October 2026) — Complete Consolidation
 
-The v1.4.2 release completes the fundamental consolidation of all subquadratic attention kernels, model compression algorithms, serving runtimes, and training engines:
+The v1.4.3 release completes the fundamental consolidation of all subquadratic attention kernels, model compression algorithms, serving runtimes, and training engines:
 
 - **131 Attention Mechanisms** verified across 8 taxonomic families.
 - **72 Model Compression Engines** spanning SVD, pruning, quantization, and KV-cache compression.
@@ -14,6 +14,7 @@ The v1.4.2 release completes the fundamental consolidation of all subquadratic a
 - **114 Native CUDA C++ Extensions** targeting Ada Lovelace (SM 8.9), Hopper (SM 90), and Blackwell (SM 100).
 - **Flame-Style Multi-Dataset Streaming** (`--training.dataset`) & **Varlen Packing** (`cu_seqlens`).
 - **Warmup-Stable-Decay (WSD)** Learning Rate Scheduler.
+- **Production CLI Suite**: full `train`, `eval`, `compress`, `serve`, `test`, `list`, `info`, and `doctor` commands.
 - **19-Function Canonical Top-Level API** (`neuralops`).
 - **Full `torch.compile` Compatibility** with custom op Meta/FakeTensor registrations.
 - **Serving Adapters** for vLLM and TGI runtimes (`VLLMAdapter`, `TGIAdapter`, `PagedKVCache`).
@@ -21,7 +22,7 @@ The v1.4.2 release completes the fundamental consolidation of all subquadratic a
 - **Advanced Manifold Optimizers**: `Muon` (Newton-Schulz orthogonalization), `Lion`, `RiemannianStiefelOptimizer`, and `RiemannianAdam`.
 - **Parametric Numerical Parity**: Validated cross-platform CPU/MPS/CUDA execution with zero skipped tests.
 
-| Milestone Metric | v1.3.0 Baseline | v1.4.2 Delivered | Status |
+| Milestone Metric | v1.3.0 Baseline | v1.4.3 Delivered | Status |
 | :--- | :--- | :--- | :--- |
 | Canonical Attentions | 131 | 131 | **Verified 100%** |
 | Compression Engines | 72 | 72 | **Verified 100%** |
