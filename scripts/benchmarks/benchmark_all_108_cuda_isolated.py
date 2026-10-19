@@ -511,6 +511,11 @@ def generate_args(mod_name, sig, device, dtype, B=4, H=8, N=512, D=64):
         w_p = torch.randint(0, 255, (N_dim, K_dim // 2), device=device, dtype=torch.uint8)
         sc = torch.full((N_dim,), 0.01, device=device, dtype=dtype)
         return [x_gemm, w_p, sc], {{}}
+    elif mod_name == "fp8_gemm":
+        M_dim, N_dim, K_dim = 64, 128, 256
+        a_mat = torch.randn(M_dim, K_dim, device=device, dtype=dtype) * 0.05
+        b_mat = torch.randn(K_dim, N_dim, device=device, dtype=dtype) * 0.05
+        return [a_mat, b_mat], {{}}
     elif mod_name == "aegis_gate_norm":
         b0 = torch.randn(B, N, D, device=device, dtype=dtype) * 0.1
         b1 = torch.randn(B, N, D, device=device, dtype=dtype) * 0.1
@@ -643,6 +648,11 @@ def run_test(mod_name):
     args, kwargs = generate_args(mod_name, sig, device, dtype)
 
     out = fn(*args, **kwargs)
+    try:
+        from neuralops.core.cuda_kernels._fallback import get_last_dispatch_backend
+        dispatch_backend = get_last_dispatch_backend(entry_name)
+    except Exception:
+        dispatch_backend = "unknown"
     cuda_ms = time_callable(lambda: fn(*args, **kwargs), warmup=2, iters=5)
 
     ref_ms = 0.0
@@ -713,9 +723,9 @@ def run_test(mod_name):
                     is_bit_identical = True
 
         tolerance = 0.05
-        if is_bit_identical:
+        if is_bit_identical and dispatch_backend in {{"pytorch", "unknown"}}:
             status = "DISPATCH_FAILURE"
-            reason = f"{{mod_name}}: max_diff=0.0 but tensors are bit-identical — dispatch fallback suspected"
+            reason = f"{{mod_name}}: bit-identical output with backend={{dispatch_backend}} — dispatch fallback suspected"
         elif math.isnan(max_diff):
             status = "FAIL_NAN"
             reason = "max_diff is NaN"

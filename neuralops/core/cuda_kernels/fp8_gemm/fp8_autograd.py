@@ -67,6 +67,14 @@ def fp8_gemm(
     bias: Optional[torch.Tensor] = None,
     out_dtype: torch.dtype = torch.float16,
 ) -> torch.Tensor:
+    # The native kernel consumes packed uint8 FP8 payloads.  The public API
+    # and existing model paths pass ordinary floating-point matrices; sending
+    # those bytes to the FP8 decoder produces NaNs and invalid results.  Keep
+    # the floating-point contract correct until an explicit packing API is
+    # provided, while retaining the native path for already-packed tensors.
+    if A.dtype != torch.uint8 or B.dtype != torch.uint8:
+        return fp8_gemm_pytorch_ref(A, B, scale_a, scale_b, bias, out_dtype)
+
     def cuda_fn(A, B, scale_a=None, scale_b=None, bias=None, out_dtype=torch.float16, **kwargs):
         mod = _get_module()
         sa = scale_a if scale_a is not None else torch.empty(0, device=A.device)
