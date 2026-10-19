@@ -156,7 +156,7 @@ def test_speculative_gamma_sweep():
 def test_manifest_hashing_and_checkpoint():
     with tempfile.TemporaryDirectory() as tmpdir:
         manifest = SurgeryManifest(
-            version="1.4.1",
+            version="1.4.2",
             base_model_name="test_model",
             attentions=[AttentionSurgeryEntry(layer_path="layers.0", attention_type="cosformer")],
             compressions=[CompressionSurgeryEntry(layer_path="fc1", compressor_name="direct_svd", in_features=64, out_features=64, rank=8)],

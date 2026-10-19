@@ -6,7 +6,7 @@
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
-Comprehensive Unit Tests & Benchmarks for Extended Triton JIT Flagship Hardware Kernels (v1.4.1).
+Comprehensive Unit Tests & Benchmarks for Extended Triton JIT Flagship Hardware Kernels (v1.4.2).
 Hardware Target: SM 8.9 (NVIDIA Ada Lovelace RTX 4070 Laptop GPU, 8GB VRAM).
 Tests:
   1. Differential Attention (triton_differential_attention) forward & autograd backward
