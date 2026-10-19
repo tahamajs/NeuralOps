@@ -206,6 +206,7 @@ class COMPOTCompressor(BaseCompressor):
         target_attention_only: bool = False,
         target_layers: list[str] | None = None,
         **kwargs: Any,
+    ) -> None:
         super().__init__(model if model is not None else nn.Identity(), name="compot", **kwargs)
         self.model: nn.Module = self.model
         self._original_params: int = getattr(self, "_original_params", 0)
