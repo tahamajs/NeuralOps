@@ -773,7 +773,7 @@ class FactorizedLoRALinear(nn.Module):
         super().__init__()
         self.in_features = int(in_features)
         self.out_features = int(out_features)
-        self.rank = max(1, min(int(rank), self.in_features, self.out_features))
+        self.rank = int(max(1, min(int(rank), self.in_features, self.out_features)))
         self.svd_rank = self.rank
         self.lora_rank = int(lora_rank) if lora_rank > 0 else 0
         self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
