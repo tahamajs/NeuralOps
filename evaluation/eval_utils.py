@@ -2,6 +2,8 @@
 
 These functions provide low-level manipulation of PyTorch batches and model outputs
 across standard Transformer model families.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

@@ -1,4 +1,7 @@
-"""Module providing ab_testing implementations for NeuralOps."""
+"""Module providing ab_testing implementations for NeuralOps.
+
+Author: Taha Majlesi
+"""
 
 from dataclasses import dataclass
 

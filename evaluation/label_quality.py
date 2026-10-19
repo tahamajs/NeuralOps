@@ -3,6 +3,8 @@ Label quality detection – inspired by Cleanlab, the industry standard for
 data‑centric AI.  Finds label errors, outliers, and near‑duplicates.
 
 Reference: https://github.com/cleanlab/cleanlab
+
+Author: Taha Majlesi
 """
 
 from dataclasses import dataclass, field

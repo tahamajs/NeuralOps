@@ -6,6 +6,8 @@ GPU memory tracking, peak allocation measurement, and activation footprint analy
 Author: Taha Majlesi
 """
 
+from __future__ import annotations
+
 import gc
 import logging
 
@@ -88,3 +90,7 @@ class GPUMemoryGuard:
 
     def __exit__(self, exc_type, _exc_val, _exc_tb):
         cleanup_gpu_memory(force=True)
+
+
+__all__ = ["cleanup_gpu_memory", "get_gpu_memory_stats", "GPUMemoryGuard"]
+

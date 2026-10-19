@@ -48,24 +48,17 @@ def fused_attention_backward(
         causal_mask = torch.triu(torch.full((N_q, N_k), float("-inf"), device=q.device), diagonal=1)
         scores = scores + causal_mask
 
-    # P = softmax(scores)
     p = torch.softmax(scores, dim=-1)
 
-    # dV = P^T @ dO
     grad_v = torch.matmul(p.transpose(-2, -1), grad_out)
 
-    # dP = dO @ V^T
     grad_p = torch.matmul(grad_out, v.transpose(-2, -1))
 
-    # dS = P * (dP - sum(dP * P))
-    # Note: sum(dP * P) = sum(dO @ V^T * P) = sum(dO * (P @ V)) = sum(dO * out)
     di = (grad_out * out).sum(dim=-1, keepdim=True)
     grad_s = p * (grad_p - di) * softmax_scale
 
-    # dQ = dS @ K
     grad_q = torch.matmul(grad_s, k)
 
-    # dK = dS^T @ Q
     grad_k = torch.matmul(grad_s.transpose(-2, -1), q)
 
     return grad_q, grad_k, grad_v

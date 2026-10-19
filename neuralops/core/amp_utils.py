@@ -6,6 +6,8 @@ Hardware-aware mixed precision helpers detecting GPU capability and managing opt
 Author: Taha Majlesi
 """
 
+from __future__ import annotations
+
 from contextlib import nullcontext
 import logging
 import torch
@@ -83,3 +85,7 @@ def setup_tf32():
     if cfg["use_tf32"]:
         torch.backends.cuda.matmul.allow_tf32 = True
         torch.backends.cudnn.allow_tf32 = True
+
+
+__all__ = ["detect_amp_config", "maybe_half", "amp_context", "grad_scaler", "setup_tf32"]
+

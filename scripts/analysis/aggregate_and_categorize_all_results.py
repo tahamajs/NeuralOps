@@ -15,6 +15,8 @@ Categorizes all 203 canonical modules (131 Attentions + 72 Compressors) into 5 d
   Tier 3: REQUIRES_KD_OR_HNC_RECOVERY
   Tier 4: PARAMETER_INFLATION_OR_NO_COMPRESSION
   Tier 5: UNDERPERFORMING_OR_BUGGY_NEEDS_FIX
+
+Author: Taha Majlesi
 """
 
 import json

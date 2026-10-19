@@ -2,11 +2,18 @@
 Standardized Drop-In Adapter for EleutherAI lm-evaluation-harness.
 Allows evaluating NeuralOps compressed and surgically modified models on
 standardized benchmarks (MMLU, HellaSwag, ARC, PIQA, WinoGrande).
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations
 
+import argparse
+import csv
+import json
 import logging
+import sys
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
@@ -18,7 +25,6 @@ logger = logging.getLogger(__name__)
 # Graceful fallback if lm_eval is not installed
 try:
     import lm_eval.api.model
-    from lm_eval.api.instance import Instance
     BaseLM = lm_eval.api.model.LM
     HAS_LM_EVAL = True
 except (ImportError, AttributeError, ModuleNotFoundError):
@@ -28,7 +34,6 @@ except (ImportError, AttributeError, ModuleNotFoundError):
     except (ImportError, AttributeError, ModuleNotFoundError):
         class BaseLM:
             """Fallback BaseLM if lm-evaluation-harness is not installed."""
-            pass
         HAS_LM_EVAL = False
 
 
@@ -182,8 +187,118 @@ def evaluate_zero_shot_tasks(
     return scores
 
 
+def save_lm_eval_results(
+    results: Dict[str, Any],
+    json_path: Optional[Union[str, Path]] = None,
+    csv_path: Optional[Union[str, Path]] = None,
+) -> None:
+    """Save evaluation scores to structured JSON and CSV formats."""
+    if json_path:
+        out_j = Path(json_path)
+        out_j.parent.mkdir(parents=True, exist_ok=True)
+        with open(out_j, "w", encoding="utf-8") as f:
+            json.dump(results, f, indent=2, default=str)
+        logger.info("Saved zero-shot results JSON to %s", out_j)
+
+    if csv_path:
+        out_c = Path(csv_path)
+        out_c.parent.mkdir(parents=True, exist_ok=True)
+        rows: List[Dict[str, Any]] = []
+        model_name = str(results.get("model", "unknown"))
+        module_name = str(results.get("module_name", "none"))
+        module_type = str(results.get("module_type", "attention"))
+        scores = results.get("scores", {})
+        if isinstance(scores, dict):
+            for task, score in scores.items():
+                rows.append({
+                    "model": model_name,
+                    "module_name": module_name,
+                    "module_type": module_type,
+                    "task": task,
+                    "accuracy": score,
+                })
+        else:
+            rows.append({
+                "model": model_name,
+                "module_name": module_name,
+                "module_type": module_type,
+                "scores": str(scores),
+            })
+        if rows:
+            fieldnames = list(rows[0].keys())
+            with open(out_c, "w", encoding="utf-8", newline="") as f:
+                writer = csv.DictWriter(f, fieldnames=fieldnames)
+                writer.writeheader()
+                writer.writerows(rows)
+            logger.info("Saved zero-shot results CSV to %s", out_c)
+
+
+def main() -> None:
+    """CLI entrypoint for NeuralOps zero-shot LM evaluation."""
+    parser = argparse.ArgumentParser(description="NeuralOps LM-Eval Adapter Runner")
+    parser.add_argument("--model", type=str, default="gpt2", help="Model name or path")
+    parser.add_argument("--module-name", type=str, default=None, help="NeuralOps module name to inject")
+    parser.add_argument("--module-type", type=str, default="attention", choices=["attention", "compressor"])
+    parser.add_argument("--tasks", nargs="+", default=["piqa", "arc_easy", "winogrande"], help="Target tasks")
+    parser.add_argument("--max-samples", type=int, default=100, help="Max evaluation samples")
+    parser.add_argument("--device", type=str, default="cuda" if torch.cuda.is_available() else "cpu")
+    parser.add_argument("--output", type=str, default=None, help="Output JSON path (or CSV if ending with .csv)")
+    parser.add_argument("--output-csv", type=str, default=None, help="Output CSV path")
+    args = parser.parse_args()
+
+    # Framework paths
+    here = Path(__file__).resolve().parent
+    codes = here.parent
+    for p in [str(codes), str(codes.parent)]:
+        if p not in sys.path:
+            sys.path.insert(0, p)
+
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+    from evaluation.eval_patcher import apply_module_to_model
+
+    logger.info("Loading model and tokenizer: %s", args.model)
+    tokenizer = AutoTokenizer.from_pretrained(args.model, trust_remote_code=True)
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
+    model = AutoModelForCausalLM.from_pretrained(args.model, trust_remote_code=True)
+
+    if args.module_name and args.module_name.lower() not in ["none", "null", "baseline"]:
+        logger.info("Applying %s module: %s", args.module_type, args.module_name)
+        model, _ = apply_module_to_model(
+            model,
+            module_name=args.module_name,
+            module_type=args.module_type,
+        )
+
+    scores = evaluate_zero_shot_tasks(
+        model=model,
+        tokenizer=tokenizer,
+        tasks=tuple(args.tasks),
+        max_samples=args.max_samples,
+        device=args.device,
+    )
+    result_data = {
+        "model": args.model,
+        "module_name": args.module_name or "none",
+        "module_type": args.module_type,
+        "scores": scores,
+    }
+
+    effective_json = args.output if (args.output and not args.output.endswith(".csv")) else None
+    effective_csv = args.output_csv or (args.output if (args.output and args.output.endswith(".csv")) else None)
+    save_lm_eval_results(result_data, json_path=effective_json, csv_path=effective_csv)
+
+    print(json.dumps(result_data, indent=2))
+
+
 __all__ = [
     "NeuralOpsLMEvalAdapter",
     "evaluate_zero_shot_tasks",
+    "save_lm_eval_results",
     "HAS_LM_EVAL",
+    "main",
 ]
+
+
+if __name__ == "__main__":
+    main()

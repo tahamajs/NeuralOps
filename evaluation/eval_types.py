@@ -2,6 +2,8 @@
 
 Provides the BenchmarkResult dataclass and configuration maps for model families,
 tracks, optimizer classifications, and dataset categories.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

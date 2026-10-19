@@ -6,6 +6,8 @@ Relative position bias and cross-attention compatibility adapters tailored for T
 Author: Taha Majlesi
 """
 
+from __future__ import annotations
+
 import math
 from typing import Any
 

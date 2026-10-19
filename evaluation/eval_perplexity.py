@@ -14,6 +14,8 @@ Production-hardened to produce results strictly comparable to run_gpt2_sweep.py:
   9. Standard python logging replacing raw print()
   10. Saves per-window NLLs to JSON for downstream variance analysis
   11. Robust CPU fallback reducing seq_len if CUDA OOM occurs
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

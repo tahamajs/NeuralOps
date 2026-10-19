@@ -3,14 +3,20 @@ Needle In A Haystack (NIAH) and Passkey Long-Context Retrieval Benchmark.
 Evaluates exact-match retrieval accuracy and target token loss across
 variable context lengths (up to 4096) and needle insertion depths ([0, 0.25, 0.5, 0.75, 1.0]).
 Target: retrieval accuracy > 90% at length 2048.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations
 
+import argparse
+import csv
+import json
 import logging
 import random
+import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Union
 
 import matplotlib
 matplotlib.use("Agg")
@@ -215,7 +221,120 @@ def plot_niah_heatmap(
     logger.info("Saved NIAH heatmaps to %s", p)
 
 
+def save_niah_results(
+    results: Dict[str, Any],
+    json_path: Optional[Union[str, Path]] = None,
+    csv_path: Optional[Union[str, Path]] = None,
+) -> None:
+    """Save NIAH evaluation results to structured JSON and CSV formats."""
+    if json_path:
+        out_j = Path(json_path)
+        out_j.parent.mkdir(parents=True, exist_ok=True)
+        with open(out_j, "w", encoding="utf-8") as f:
+            json.dump(results, f, indent=2, default=str)
+        logger.info("Saved NIAH results JSON to %s", out_j)
+
+    if csv_path:
+        out_c = Path(csv_path)
+        out_c.parent.mkdir(parents=True, exist_ok=True)
+        records = results.get("records", [])
+        if records:
+            fieldnames = ["context_length", "depth", "passkey", "prediction", "correct"]
+            with open(out_c, "w", encoding="utf-8", newline="") as f:
+                writer = csv.DictWriter(f, fieldnames=fieldnames)
+                writer.writeheader()
+                for rec in records:
+                    writer.writerow({k: rec.get(k, "") for k in fieldnames})
+            logger.info("Saved NIAH results CSV to %s", out_c)
+        else:
+            # Fallback summary row
+            with open(out_c, "w", encoding="utf-8", newline="") as f:
+                writer = csv.DictWriter(
+                    f,
+                    fieldnames=["mean_retrieval_accuracy", "accuracy_at_2048"],
+                )
+                writer.writeheader()
+                writer.writerow({
+                    "mean_retrieval_accuracy": results.get("mean_retrieval_accuracy", 0.0),
+                    "accuracy_at_2048": results.get("accuracy_at_2048", ""),
+                })
+            logger.info("Saved NIAH summary CSV to %s", out_c)
+
+
+def main() -> None:
+    """CLI entrypoint for Needle In A Haystack (NIAH) benchmark."""
+    parser = argparse.ArgumentParser(description="Needle In A Haystack (NIAH) Evaluator")
+    parser.add_argument("--model", type=str, default="gpt2", help="Model name or path")
+    parser.add_argument("--module-name", type=str, default=None, help="NeuralOps attention or compressor name")
+    parser.add_argument("--module-type", type=str, default="attention", choices=["attention", "compressor"])
+    parser.add_argument("--context-lengths", nargs="+", type=int, default=[512, 1024, 2048, 4096])
+    parser.add_argument("--needle-depths", nargs="+", type=float, default=[0.0, 0.25, 0.5, 0.75, 1.0])
+    parser.add_argument("--passkey-digits", type=int, default=5, help="Number of digits in passkey")
+    parser.add_argument("--trials", type=int, default=1, help="Number of trials per grid cell")
+    parser.add_argument("--device", type=str, default="cuda" if torch.cuda.is_available() else "cpu")
+    parser.add_argument("--output", type=str, default=None, help="Output JSON path (or CSV if ending with .csv)")
+    parser.add_argument("--output-csv", type=str, default=None, help="Output CSV path")
+    parser.add_argument("--plot-path", type=str, default=None, help="Path to save heatmap figure (e.g. results/niah.png)")
+    args = parser.parse_args()
+
+    # Framework paths
+    here = Path(__file__).resolve().parent
+    codes = here.parent
+    for p in [str(codes), str(codes.parent)]:
+        if p not in sys.path:
+            sys.path.insert(0, p)
+
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+    from evaluation.eval_patcher import apply_module_to_model
+
+    logger.info("Loading model and tokenizer: %s", args.model)
+    tokenizer = AutoTokenizer.from_pretrained(args.model, trust_remote_code=True)
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
+    model = AutoModelForCausalLM.from_pretrained(args.model, trust_remote_code=True)
+
+    if args.module_name and args.module_name.lower() not in ["none", "null", "baseline"]:
+        logger.info("Applying %s module: %s", args.module_type, args.module_name)
+        model, _ = apply_module_to_model(
+            model,
+            module_name=args.module_name,
+            module_type=args.module_type,
+        )
+
+    evaluator = NeedleInAHaystackEvaluator(
+        model=model,
+        tokenizer=tokenizer,
+        context_lengths=args.context_lengths,
+        needle_depths=args.needle_depths,
+        passkey_digits=args.passkey_digits,
+        device=args.device,
+    )
+
+    results = evaluator.evaluate(num_trials_per_cell=args.trials)
+    results["model"] = args.model
+    results["module_name"] = args.module_name or "none"
+    results["module_type"] = args.module_type
+
+    if args.plot_path:
+        title = f"NIAH: {args.module_name or args.model}"
+        plot_niah_heatmap(results, args.plot_path, title=title)
+
+    effective_json = args.output if (args.output and not args.output.endswith(".csv")) else None
+    effective_csv = args.output_csv or (args.output if (args.output and args.output.endswith(".csv")) else None)
+    save_niah_results(results, json_path=effective_json, csv_path=effective_csv)
+
+    print(f"Mean Retrieval Accuracy: {results['mean_retrieval_accuracy'] * 100:.2f}%")
+    if results.get("accuracy_at_2048") is not None:
+        print(f"Accuracy at Context 2048: {results['accuracy_at_2048'] * 100:.2f}%")
+
+
 __all__ = [
     "NeedleInAHaystackEvaluator",
     "plot_niah_heatmap",
+    "save_niah_results",
+    "main",
 ]
+
+
+if __name__ == "__main__":
+    main()

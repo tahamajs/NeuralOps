@@ -5,6 +5,8 @@ Supports 15+ group‑fairness metrics and 6 bias mitigation strategies.
 References:
   - AIF360: https://aif360.res.ibm.com
   - Fairlearn: https://fairlearn.org
+
+Author: Taha Majlesi
 """
 
 from dataclasses import dataclass, field

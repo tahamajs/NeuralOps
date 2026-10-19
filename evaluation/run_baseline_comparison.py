@@ -18,6 +18,8 @@ Datasets evaluated:
 Usage:
     python run_baseline_comparison.py --dry_run
     python run_baseline_comparison.py --rank 64
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

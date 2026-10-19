@@ -6,6 +6,8 @@ Unified wrapper standardizing custom attention configurations and model serializ
 Author: Taha Majlesi
 """
 
+from __future__ import annotations
+
 from typing import Any
 
 import torch.nn as nn

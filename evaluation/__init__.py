@@ -1,4 +1,7 @@
-"""Evaluation module for model performance, fairness, robustness, label quality, and A/B testing."""
+"""Evaluation module for model performance, fairness, robustness, label quality, and A/B testing.
+
+Author: Taha Majlesi
+"""
 
 from neuralops.trainer import metrics
 from neuralops.trainer.metrics import get_task_metrics

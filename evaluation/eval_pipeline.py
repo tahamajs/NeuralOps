@@ -3,6 +3,8 @@
 Implements adaptive batch probing, multi-phase combination evaluation
 (environment setup, baseline scoring, compression injection, evaluation, artifact assembly),
 and convenience sweeps.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

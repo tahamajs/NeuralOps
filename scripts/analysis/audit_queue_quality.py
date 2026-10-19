@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Deep forensic telemetry analysis of full_queue_all_modules/results.jsonl."""
+"""Deep forensic telemetry analysis of full_queue_all_modules/results.jsonl.
+
+Author: Taha Majlesi
+"""
 
 import json
 import sys

@@ -2,6 +2,8 @@
 
 Handles tokenized caching, real GLUE/LM dataset batch retrieval, synthetic data fallbacks,
 and real calibration DataLoaders for activation-aware model compression.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

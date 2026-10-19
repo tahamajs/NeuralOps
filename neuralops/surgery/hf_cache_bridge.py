@@ -18,6 +18,7 @@ logger = logging.getLogger("NeuralOps.Surgery.HFCacheBridge")
 try:
     from transformers.cache_utils import Cache, DynamicCache
     _HF_CACHE_BASE = DynamicCache
+
 except Exception:
     class Cache:
         pass

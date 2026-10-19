@@ -10,6 +10,8 @@ Evaluates GPT-2 downstream reasoning and QA capabilities across standard benchma
   - GSM8K: Multi-step mathematical reasoning
 
 Integrates with the framework module registry and apply_module_to_model.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

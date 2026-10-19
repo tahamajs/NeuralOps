@@ -583,7 +583,6 @@ def apply_mean_bias_correction(student: nn.Module, probe: Any, model_name: str, 
     Closed-form activation mean bias correction:
     Trained classification and generation heads are strictly preserved and never mutated.
     """
-    pass
 
 
 def setup_trainable_parameters_for_kd(student: nn.Module) -> List[nn.Parameter]:

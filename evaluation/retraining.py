@@ -3,6 +3,8 @@ Automated retraining pipeline – triggers retraining based on drift, performanc
 degradation, time schedule, or data volume thresholds.
 
 Inspired by: Vertex AI Model Monitoring, Azure ML pipelines, ClearML, and AutoDrift.
+
+Author: Taha Majlesi
 """
 
 import logging

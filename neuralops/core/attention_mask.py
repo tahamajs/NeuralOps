@@ -6,6 +6,8 @@ Universal masking utilities handling causal, 2D binary, 3D broadcast, and 4D ext
 Author: Taha Majlesi
 """
 
+from __future__ import annotations
+
 import torch
 
 
