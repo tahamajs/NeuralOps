@@ -9,6 +9,7 @@
 """
 
 import gc
+import os
 import time
 import json
 import numpy as np
@@ -25,7 +26,7 @@ def print_log(msg):
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print_log(f"Token Latency Jitter & 128-step CoT Suite running on: {torch.cuda.get_device_name(0)}")
 
-model_path = "/mnt/d/models/gpt2"
+model_path = os.environ.get("NEURALOPS_MODEL_PATH", "gpt2")
 tokenizer = AutoTokenizer.from_pretrained(model_path)
 tokenizer.pad_token = tokenizer.eos_token
 
@@ -122,7 +123,7 @@ for name, key in architectures:
     torch.cuda.empty_cache()
     gc.collect()
 
-out_file = "/mnt/d/SVD_linear_Attention/cot_jitter_128steps_results.json"
+out_file = os.path.join(os.environ.get("NEURALOPS_OUTPUT_DIR", "."), "cot_jitter_128steps_results.json")
 with open(out_file, "w") as f:
     json.dump(results, f, indent=2)
 

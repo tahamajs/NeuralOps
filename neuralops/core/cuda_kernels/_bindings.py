@@ -39,10 +39,11 @@ logger = logging.getLogger(__name__)
 
 _candidate_cache = os.environ.get("NEURALOPS_CUDA_CACHE")
 if not _candidate_cache:
-    if os.path.exists("/mnt/d/torch_extensions"):
-        _candidate_cache = "/mnt/d/torch_extensions"
-    elif os.path.exists("/mnt/d/cache/torch_extensions"):
-        _candidate_cache = "/mnt/d/cache/torch_extensions"
+    configured_cache = os.environ.get("NEURALOPS_TORCH_EXTENSIONS_CACHE")
+    if configured_cache and os.path.exists(configured_cache):
+        _candidate_cache = configured_cache
+    elif os.path.exists(os.path.join(os.getcwd(), ".torch_extensions")):
+        _candidate_cache = os.path.join(os.getcwd(), ".torch_extensions")
     else:
         _candidate_cache = os.path.expanduser("~/.cache/torch_extensions")
 

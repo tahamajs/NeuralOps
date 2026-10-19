@@ -9,6 +9,7 @@
 """
 
 import gc
+import os
 import time
 import json
 import torch
@@ -24,7 +25,7 @@ def print_log(msg):
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print_log(f"GSM8K-style Multi-Step Arithmetic & 256-token Numerical Stability on: {torch.cuda.get_device_name(0)}")
 
-model_path = "/mnt/d/models/gpt2"
+model_path = os.environ.get("NEURALOPS_MODEL_PATH", "gpt2")
 tokenizer = AutoTokenizer.from_pretrained(model_path)
 tokenizer.pad_token = tokenizer.eos_token
 
@@ -189,7 +190,7 @@ for p_data in gsm8k_prompts:
         torch.cuda.empty_cache()
         gc.collect()
 
-out_file = "/mnt/d/SVD_linear_Attention/gsm8k_256step_reasoning_results.json"
+out_file = os.path.join(os.environ.get("NEURALOPS_OUTPUT_DIR", "."), "gsm8k_256step_reasoning_results.json")
 with open(out_file, "w") as f:
     json.dump(evaluation_matrix, f, indent=2)
 

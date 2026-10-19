@@ -20,11 +20,7 @@ import pandas as pd
 
 
 def harvest():
-    root = (
-        Path("D:/SVD_Project")
-        if Path("D:/SVD_Project").exists()
-        else Path(__file__).resolve().parent.parent
-    )
+    root = Path(os.environ.get("NEURALOPS_WORKSPACE", Path.cwd()))
     results_dir = root / "results"
     summary_files = glob.glob(os.path.join(str(results_dir), "**", "*summary*.csv"), recursive=True)
     print(f"Found {len(summary_files)} summary files.")

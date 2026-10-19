@@ -235,6 +235,16 @@ class BaseCompressor:
         self.hnc_res: Any = None
         self._merged: bool = False
         self._unmerged_B: torch.Tensor | None = None
+        # Every compressor exposes a machine-readable post-check result.  The
+        # initial state is deliberately explicit so callers never have to
+        # scrape warning logs to determine whether validation ran.
+        self.compression_report: dict[str, Any] = {
+            "status": "initialized",
+            "dtype_match": None,
+            "shape_match": None,
+            "collision_detected": False,
+            "notes": [],
+        }
 
     def __call__(self, *args, **kwargs) -> Any:
         """Allow compressor instance to act as a callable model forward wrapper."""
@@ -265,6 +275,33 @@ class BaseCompressor:
             "compression_ratio": compressed / orig if orig > 0 else 1.0,
             "reduction_percentage": ((orig - compressed) / orig * 100 if orig > 0 else 0.0),
         }
+
+    def get_compression_report(self) -> dict[str, Any]:
+        """Return the structured post-compression validation report."""
+        report = dict(self.compression_report)
+        report["notes"] = list(report.get("notes", []))
+        return report
+
+    def record_compression_check(
+        self,
+        *,
+        status: str,
+        dtype_match: bool | None = None,
+        shape_match: bool | None = None,
+        collision_detected: bool = False,
+        note: str | None = None,
+    ) -> None:
+        """Update the public validation report without emitting ad-hoc output."""
+        self.compression_report.update(
+            {
+                "status": status,
+                "dtype_match": dtype_match,
+                "shape_match": shape_match,
+                "collision_detected": collision_detected,
+            }
+        )
+        if note:
+            self.compression_report.setdefault("notes", []).append(note)
 
     def summary(self) -> str:
         """Summary."""

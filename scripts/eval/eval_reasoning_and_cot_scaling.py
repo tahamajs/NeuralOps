@@ -9,6 +9,7 @@
 """
 
 import gc
+import os
 import time
 import math
 import json
@@ -25,7 +26,7 @@ def print_log(msg):
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print_log(f"Reasoning & Long-Context Evaluation Suite running on: {torch.cuda.get_device_name(0)}")
 
-model_path = "/mnt/d/models/gpt2"
+model_path = os.environ.get("NEURALOPS_MODEL_PATH", "gpt2")
 tokenizer = AutoTokenizer.from_pretrained(model_path)
 tokenizer.pad_token = tokenizer.eos_token
 
@@ -179,7 +180,7 @@ for name, key in mechanisms:
     torch.cuda.empty_cache()
     gc.collect()
 
-out_path = "/mnt/d/SVD_linear_Attention/reasoning_evaluation_full_metrics.json"
+out_path = os.path.join(os.environ.get("NEURALOPS_OUTPUT_DIR", "."), "reasoning_evaluation_full_metrics.json")
 with open(out_path, "w") as f:
     json.dump(benchmark_report, f, indent=2)
 

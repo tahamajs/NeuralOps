@@ -9,6 +9,7 @@
 """
 
 import gc
+import os
 import time
 import json
 import torch
@@ -24,7 +25,7 @@ def print_log(msg):
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print_log(f"Continuous Long-Context 500-Token Trajectory & O(1) State Certifier on: {torch.cuda.get_device_name(0)}")
 
-model_path = "/mnt/d/models/gpt2"
+model_path = os.environ.get("NEURALOPS_MODEL_PATH", "gpt2")
 tokenizer = AutoTokenizer.from_pretrained(model_path)
 tokenizer.pad_token = tokenizer.eos_token
 
@@ -165,7 +166,7 @@ for name, key in architectures:
     torch.cuda.empty_cache()
     gc.collect()
 
-out_path = "/mnt/d/SVD_linear_Attention/continuous_500token_stress_results.json"
+out_path = os.path.join(os.environ.get("NEURALOPS_OUTPUT_DIR", "."), "continuous_500token_stress_results.json")
 with open(out_path, "w") as f:
     json.dump(stress_results, f, indent=2)
 

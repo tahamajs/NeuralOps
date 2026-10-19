@@ -47,6 +47,7 @@ import argparse
 import json
 import logging
 import math
+import os
 import sys
 import time
 from pathlib import Path
@@ -255,7 +256,7 @@ def evaluate_model_pipeline(
 def main():
     """Execute main routine."""
     parser = argparse.ArgumentParser(description="Master Comprehensive Evaluation Suite")
-    parser.add_argument("--model-path", type=str, default="/mnt/d/models/gpt2")
+    parser.add_argument("--model-path", type=str, default=os.environ.get("NEURALOPS_MODEL_PATH", "gpt2"))
     parser.add_argument("--output-json", type=str, default="results/master_comprehensive_evaluation_matrix.json")
     parser.add_argument("--output-md", type=str, default="results/master_comprehensive_evaluation_matrix.md")
     parser.add_argument("--device", type=str, default="cuda:0" if torch.cuda.is_available() else "cpu")

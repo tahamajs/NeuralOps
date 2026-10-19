@@ -9,6 +9,7 @@
 """
 
 import time
+import os
 import json
 import torch
 from transformers import AutoTokenizer, GPT2LMHeadModel, GPT2Config
@@ -30,7 +31,7 @@ t_mock = torch.tensor([[1, 2, 5, 4]], device=device)
 mask, accepted_cnt = speculative_verify(d_mock, t_mock)
 print_log(f"Native CUDA speculative_verify kernel check: mask={mask.tolist()}, accepted_cnt={accepted_cnt.item()}")
 
-model_path = "/mnt/d/models/gpt2"
+model_path = os.environ.get("NEURALOPS_MODEL_PATH", "gpt2")
 tokenizer = AutoTokenizer.from_pretrained(model_path)
 tokenizer.pad_token = tokenizer.eos_token
 
@@ -146,7 +147,7 @@ for p_name, prompt_text in prompts:
                 f"Speedup={wall_clock_speedup:.2f}x, ExactMatch={exact_match}"
             )
 
-out_file = "/mnt/d/SVD_linear_Attention/speculative_benchmark_k1_k8_results.json"
+out_file = os.path.join(os.environ.get("NEURALOPS_OUTPUT_DIR", "."), "speculative_benchmark_k1_k8_results.json")
 with open(out_file, "w") as f:
     json.dump(benchmark_matrix, f, indent=2)
 

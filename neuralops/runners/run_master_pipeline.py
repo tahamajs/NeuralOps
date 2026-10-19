@@ -13,13 +13,14 @@ Runs multi-worker benchmark suites, sweeps, and evaluations with idempotent task
 
 import argparse
 import csv
+import os
 import subprocess
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
-WORKSPACE = Path("/d/SVD_Project") if sys.platform != "win32" else Path("D:/SVD_Project")
+WORKSPACE = Path(os.environ.get("NEURALOPS_WORKSPACE", Path.cwd()))
 
 
 def run_task(task: dict) -> dict:

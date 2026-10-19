@@ -9,6 +9,7 @@
 """
 
 import gc
+import os
 import time
 import json
 import threading
@@ -26,7 +27,7 @@ def print_log(msg):
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print_log(f"Concurrent Generation & Background KV Offloading Benchmark on: {torch.cuda.get_device_name(0)}")
 
-model_path = "/mnt/d/models/gpt2"
+model_path = os.environ.get("NEURALOPS_MODEL_PATH", "gpt2")
 tokenizer = AutoTokenizer.from_pretrained(model_path)
 tokenizer.pad_token = tokenizer.eos_token
 
@@ -175,7 +176,7 @@ for mode in concurrency_modes:
         torch.cuda.empty_cache()
         gc.collect()
 
-out_file = "/mnt/d/SVD_linear_Attention/concurrent_offloading_jitter_results.json"
+out_file = os.path.join(os.environ.get("NEURALOPS_OUTPUT_DIR", "."), "concurrent_offloading_jitter_results.json")
 with open(out_file, "w") as f:
     json.dump(benchmark_matrix, f, indent=2)
 
