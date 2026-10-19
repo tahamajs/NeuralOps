@@ -34,7 +34,7 @@ OPTIMIZER_REGISTRY = Registry("optimizer")
 def create_lion(
     params: Any,
     lr: float = 1e-4,
-    betas: Tuple[float, float] = (0.9, 0.99),
+    betas: tuple[float, float] = (0.9, 0.99),
     weight_decay: float = 0.01,
     **kwargs: Any,
 ) -> Lion:
