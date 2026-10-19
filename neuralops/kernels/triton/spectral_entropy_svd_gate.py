@@ -13,7 +13,7 @@ Applies dynamic singular value truncation and entropy-based rank gating for adap
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import Any, Optional
 
 import torch
 import triton
