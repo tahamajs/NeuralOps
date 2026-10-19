@@ -314,7 +314,7 @@ def _apply_attention_module(
             logger.debug("Injector %s failed: %s", custom_injector, e)
 
     if module_name in ATTENTION_REGISTRY:
-        inject_attention(model, module_name, rank=rank, copy_weights=True, **kwargs)
+        model = inject_attention(model, module_name, rank=rank, copy_weights=True, **kwargs)
     else:
         mod = importlib.import_module(f"neuralops.attentions.{module_name}")
         target_cls: Any = None
@@ -343,8 +343,9 @@ def _apply_attention_module(
                             h = getattr(cfg, "hidden_size", 128)
                             nh = getattr(cfg, "num_attention_heads", 4)
                             new_inner = target_cls(h, nh)
-                    wrapped = UniversalAttentionWrapper(new_inner)
-                    sub.self = wrapped
+                    if isinstance(new_inner, nn.Module):
+                        wrapped = UniversalAttentionWrapper(new_inner)
+                        sub.self = wrapped
 
     return model
 

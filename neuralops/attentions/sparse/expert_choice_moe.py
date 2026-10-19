@@ -54,6 +54,7 @@ class ExpertChoiceMoE(nn.Module):
         self.capacity_factor = capacity_factor
         self.noise_std = noise_std
         self.aux_loss: torch.Tensor = torch.tensor(0.0)
+        self._dynamic_router: nn.Module | None = None
 
         self.router_ln = nn.LayerNorm(self.d_model)
         self.router = nn.Linear(d_model, n_experts, bias=False)

@@ -20,7 +20,7 @@ from neuralops.core.attention_utils import (
 
 import logging
 import math
-from typing import Any
+from typing import Any, Callable
 
 import torch
 import torch.nn as nn
@@ -105,6 +105,7 @@ class LinformerAttention(BaseAttention):
         )
         self.is_causal = self.is_decoder
         self.is_nested_encoder = False
+        self.rotary_emb: nn.Module | Callable[..., Any] | None = None
 
         self.lora_rank = int(
             (getattr(config, "lora_rank", None) if config else None)

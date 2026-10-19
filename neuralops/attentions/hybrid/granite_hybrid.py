@@ -443,6 +443,7 @@ class GraniteHybridBlock(BaseAttention):
 
         self.is_nested_encoder: bool = False
         self.layer_idx: int = int(kwargs.get("layer_idx", 0))
+        self._last_moe_aux_loss: torch.Tensor | float = 0.0
 
         self.rotary_emb = getattr(src_attn, "rotary_emb", None) if src_attn is not None else None
         self.comp_config = comp_config

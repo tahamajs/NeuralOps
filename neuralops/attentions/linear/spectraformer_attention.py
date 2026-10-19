@@ -173,6 +173,7 @@ class SpectraformerAttention(BaseAttention):
         self.key = self.k_proj
         self.value = self.v_proj
 
+        self.R: torch.Tensor | nn.Parameter | None = None
         torch.manual_seed(42)
         H = torch.randn(self.head_dim, self.rank)
         if self.head_dim <= self.rank:

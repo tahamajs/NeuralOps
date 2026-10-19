@@ -216,6 +216,7 @@ class ProxSparsePruner(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="proxsparse", **kwargs)
+        self._compressed_params: int | None = None
         cfg_obj = cfg or kwargs.get("comp_config")
 
         self.sparsity = max(

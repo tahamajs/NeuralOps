@@ -134,18 +134,16 @@ def run_track(
                 )
             except Exception as e:
                 logger.exception("Run crashed for %s: %s", module_name, e)
-                    crashed_r = BenchmarkResult(
-                        track=track,
-                        module_name=module_name,
-                        module_type=module_type,
-                        model_family=model_family,
-                        dataset=dataset,
-                        status="crashed",
-                        error_message=str(e),
-                    )
-                    results.append(crashed_r)
-                except Exception:
-                    pass
+                crashed_r = BenchmarkResult(
+                    track=track,
+                    module_name=module_name,
+                    module_type=module_type,
+                    model_family=model_family,
+                    dataset=dataset,
+                    status="crashed",
+                    error_message=str(e),
+                )
+                results.append(crashed_r)
 
     return results
 

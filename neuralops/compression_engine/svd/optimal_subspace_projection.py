@@ -227,6 +227,7 @@ class OptimalSubspaceProjectionCompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="optimal_subspace_projection", **kwargs)
+        self._compressed_params: int | None = None
         cfg = kwargs.get("comp_config", kwargs.get("cfg"))
 
         if cfg is not None:

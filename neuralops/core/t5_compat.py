@@ -14,7 +14,7 @@ Relative position bias and cross-attention compatibility adapters tailored for T
 from __future__ import annotations
 
 import math
-from typing import Any
+from typing import Any, Callable
 
 import torch
 import torch.nn as nn
@@ -103,6 +103,15 @@ class T5AttentionMixin:
     Mixin providing full T5 encoder-decoder cross-attention and relative position bias
     handling for any attention class.
     """
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.is_t5: bool = False
+        self.has_relative_attention_bias: bool = False
+        self.relative_attention_bias: nn.Module | Callable[..., Any] | None = None
+        self.relative_attention_num_buckets: int = 32
+        self.relative_attention_max_distance: int = 128
+        self.is_decoder: bool = False
 
     def init_t5_support(self, config: Any) -> None:
         """Initialize T5 attributes on module."""

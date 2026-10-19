@@ -62,7 +62,7 @@ def compute_aligned_ranks(scores_matrix: np.ndarray) -> np.ndarray:
     return aligned_ranks
 
 
-def friedman_test(scores_matrix: np.ndarray) -> dict[str, float]:
+def friedman_test(scores_matrix: np.ndarray) -> dict[str, Any]:
     """
     Friedman test – the classic omnibus test for comparing k algorithms
     over N datasets.  H0: all algorithms perform equivalently.
@@ -88,7 +88,7 @@ def friedman_test(scores_matrix: np.ndarray) -> dict[str, float]:
     }
 
 
-def friedman_aligned_ranks_test(scores_matrix: np.ndarray) -> dict[str, float]:
+def friedman_aligned_ranks_test(scores_matrix: np.ndarray) -> dict[str, Any]:
     """
     Friedman Aligned Ranks test – more powerful than the standard Friedman test.
 
@@ -116,7 +116,7 @@ def friedman_aligned_ranks_test(scores_matrix: np.ndarray) -> dict[str, float]:
     }
 
 
-def quade_test(scores_matrix: np.ndarray) -> dict[str, float]:
+def quade_test(scores_matrix: np.ndarray) -> dict[str, Any]:
     """
     Quade test – weighted ranking test that gives more weight to datasets
     where larger differences between algorithms exist.

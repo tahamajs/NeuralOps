@@ -373,18 +373,18 @@ class AdaptiveRanksCompressor(BaseCompressor):
         """
         thresh = threshold if threshold is not None else self.energy_threshold
         r_floor = min_rank_floor if min_rank_floor is not None else self.min_rank
-        r_floor = max(1, min(int(r_floor), max_rank))
+        r_floor = int(max(1, min(int(r_floor), int(max_rank))))
         s_squared = S**2
         total_energy = s_squared.sum()
         if total_energy <= 1e-12:
             return r_floor
 
         if getattr(self, "target_rank", None) is not None:
-            return max(1, min(self.target_rank, max_rank))
+            return int(max(1, min(int(self.target_rank), int(max_rank))))
         cum_energy = torch.cumsum(s_squared, dim=0) / total_energy
         idx = torch.where(cum_energy >= thresh)[0]
         r = int(idx[0].item()) + 1 if len(idx) > 0 else max_rank
-        return max(1, min(max(r, r_floor), max_rank))
+        return int(max(1, min(max(int(r), int(r_floor)), int(max_rank))))
 
     def _collect_activation_covariances(self) -> dict[str, torch.Tensor]:
         """Collect empirical input activation covariances across target nn.Linear / Conv1D modules."""

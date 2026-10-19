@@ -109,6 +109,7 @@ class REAPMoE(nn.Module):
         self.top_k = min(top_k, n_experts)
         self.noise_std = noise_std
 
+        self._aux_loss: torch.Tensor | float = 0.0
         self.register_buffer("_aux_loss", torch.tensor(0.0), persistent=False)
 
         self.router_ln = nn.LayerNorm(self.d_model, **factory_kwargs)
@@ -389,6 +390,7 @@ class REAPMoEAttention(BaseAttention):
         )
         self.dropout = nn.Dropout(dropout_p)
 
+        self._aux_loss: torch.Tensor | float = 0.0
         self.register_buffer("_attn_aux_loss", torch.tensor(0.0), persistent=False)
 
         if source_attn is not None:

@@ -281,6 +281,8 @@ class ROASTCompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="roast", **kwargs)
+        self._compressed_params: int | None = None
+        self.stats: dict[str, Any] = {}
         cfg_obj = cfg or kwargs.get("comp_config")
 
         self.n_buckets = max(
