@@ -309,3 +309,20 @@ site/
 dashboard.html
 index.md
 
+# Release-sprint manuscript and raw benchmark artifacts
+paper/
+thesis_final/
+*.pdf
+*.tex
+*.aux
+*.bbl
+*.blg
+*.toc
+*.out
+*.synctex.gz
+results/benchmarks_v1.4.0/
+*.json
+!package.json
+*.csv
+scratch/
+tmp/
