@@ -124,7 +124,6 @@ def test_samba_moe_decoder_return_signature_and_kv():
 
 def test_samba_moe_minimal_fallback_aux_loss():
     """Verify functional load-balancing auxiliary loss in MinimalMoEFallback."""
-    from neuralops.attentions.ssm.samba_moe import MinimalMoEFallback
     moe = MinimalMoEFallback(d_model=64, n_experts=4)
     x = torch.randn(2, 8, 64, requires_grad=True)
     out, weights = moe(x)
