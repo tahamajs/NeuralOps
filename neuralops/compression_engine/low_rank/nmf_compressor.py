@@ -325,6 +325,8 @@ class NMFCompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model if model is not None else nn.Identity(), name="nmf", **kwargs)
+        self._compressed_params: int | None = None
+        self.stats: dict[str, Any] = {}
         conf = cfg or kwargs.get("comp_config")
 
         self.rank = int(rank or _cfg_get(conf, "nmf_rank", _cfg_get(conf, "rank", 64)))

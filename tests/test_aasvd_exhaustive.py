@@ -79,7 +79,7 @@ class TestAASVDCompressorEndToEnd:
 
     def test_compress_qwen_decoder(self):
         cfg = Qwen2Config(hidden_size=128, intermediate_size=256, num_hidden_layers=2,
-                          num_attention_heads=4, num_key_value_heads=2, head_dim=32,
+                          num_attention_heads=4, num_key_value_heads=2,
                           num_labels=2, pad_token_id=0)
         model = Qwen2ForSequenceClassification(cfg)
         compressor = AASVDCompressor(model, rank=16)
