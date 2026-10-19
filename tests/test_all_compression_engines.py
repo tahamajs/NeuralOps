@@ -73,7 +73,10 @@ def run_single_compressor_test(name: str, device: torch.device = torch.device("c
     ratio = 1.0
 
     try:
-        from neuralops.eval_all_models_datasets import apply_module_to_model
+        try:
+            from evaluation.eval_all_models_datasets import apply_module_to_model
+        except ImportError:
+            from neuralops.eval_all_models_datasets import apply_module_to_model
         compressed_model, ratio = apply_module_to_model(orig_model, name, "compressor", rank=16, device=device)
     except Exception as e1:
         try:

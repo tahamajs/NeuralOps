@@ -255,13 +255,13 @@ NeuralOps implements a production-grade compilation and execution engine featuri
 
 ```mermaid
 flowchart TD
-    In[Tensor Operation Input] --> Dispatcher{3-Level Dispatch Table}
+    In["Tensor Operation Input"] --> Dispatcher{"3-Level Dispatch Table"}
     Dispatcher -- "CUDA SM >= 7.0 & NVCC Available" --> L1["Level 1: Native CUDA C++ (NVCC)<br>• Warp shuffles (__shfl_xor_sync)<br>• Tensor Core MMA Intrinsics<br>• Shared memory cache & register tiling"]
     Dispatcher -- "CUDA / ROCm & Triton JIT Enabled" --> L2["Level 2: OpenAI Triton JIT<br>• Dynamic autotuned block sizes<br>• Fused SRAM residency<br>• High arithmetic intensity"]
     Dispatcher -- "MPS / CPU / Fallback Requested" --> L3["Level 3: Pure PyTorch Reference<br>• Vectorized einsum / bmm<br>• Apple Metal (MPS) support<br>• AVX-512 / ARM Neon portability"]
     L1 -. "Runtime Exception" .-> L2
     L2 -. "Fallback Triggered" .-> L3
-    L1 --> Out[Result Tensor + Telemetry Record]
+    L1 --> Out["Result Tensor + Telemetry Record"]
     L2 --> Out
     L3 --> Out
 ```
@@ -891,45 +891,45 @@ print(f"Inference output logits shape: {outputs.logits.shape}")
 
 ```mermaid
 flowchart TD
-    subgraph Layer1 [1. Ingestion & Plugin Interface]
-        HF[Pretrained Hugging Face Backbone / Custom Model]
-        Ext[Custom Plugin Extensibility API register_custom_attention]
+    subgraph Layer1 ["1. Ingestion & Plugin Interface"]
+        HF["Pretrained Hugging Face Backbone / Custom Model"]
+        Ext["Custom Plugin Extensibility API register_custom_attention"]
     end
 
-    subgraph Layer2 [2. Unified Canonical Registries]
-        AttnZoo[131 Canonical Attention Modules ATTENTION_REGISTRY]
-        CompEngines[72 Model Compression Engines COMPRESSOR_REGISTRY]
-        Composer[4-Stage Algebraic Composer P -> phi -> M -> E]
+    subgraph Layer2 ["2. Unified Canonical Registries"]
+        AttnZoo["131 Canonical Attention Modules ATTENTION_REGISTRY"]
+        CompEngines["72 Model Compression Engines COMPRESSOR_REGISTRY"]
+        Composer["4-Stage Algebraic Composer (P -> phi -> M -> E)"]
     end
 
-    subgraph Layer3 [3. In-Place Surgery & Subspace Recovery]
-        Surgery[In-Place Surgery replace_attention / compress]
-        Ridge[Instantaneous Closed-Form Ridge Alignment]
-        MicroHeal[Layerwise Gradient Micro-Healing heal_replaced_model]
+    subgraph Layer3 ["3. In-Place Surgery & Subspace Recovery"]
+        Surgery["In-Place Surgery replace_attention / compress"]
+        Ridge["Instantaneous Closed-Form Ridge Alignment"]
+        MicroHeal["Layerwise Gradient Micro-Healing heal_replaced_model"]
     end
 
-    subgraph Layer4 [4. Execution & Hardware Dispatch]
-        BackendCheck{Hardware Backend Detection}
-        CUDACPP[114 Native CUDA C++ Kernels (108 Audited) NVCC SM >= 7.0]
-        Triton[26 Categorized Triton Modules (62 Unified Operators) SM 6.1 - SM 9.0+]
-        Fallback[Vectorized Native PyTorch Fallbacks Apple MPS / CPU]
+    subgraph Layer4 ["4. Execution & Hardware Dispatch"]
+        BackendCheck{"Hardware Backend Detection"}
+        CUDACPP["114 Native CUDA C++ Kernels (NVCC SM >= 7.0)"]
+        Triton["26 Categorized Triton Modules (62 Unified Operators)"]
+        Fallback["Vectorized Native PyTorch Fallbacks (Apple MPS / CPU)"]
     end
 
-    subgraph Layer5 [5. High-Throughput Serving & Inference Engine]
-        PagedState[PagedStateTable Dynamic Radix Prefix CoW]
-        SpecDecode[Lossless SelfSpeculativeDecoder Draft-K=4]
-        CUDAGraph[CUDAGraphDecodeRunner Static Trace]
+    subgraph Layer5 ["5. High-Throughput Serving & Inference Engine"]
+        PagedState["PagedStateTable Dynamic Radix Prefix CoW"]
+        SpecDecode["Lossless SelfSpeculativeDecoder Draft-K=4"]
+        CUDAGraph["CUDAGraphDecodeRunner Static Trace"]
     end
 
-    subgraph Layer6 [6. Telemetry & Hardware Profiling]
-        Roofline[Hardware Roofline Profiler profile_roofline]
-        TUI[Minimalist Two-Pane UNIX TUI & Inspector neuralops ui / inspect]
-        WebMon[FastAPI Real-Time Telemetry Monitor & Dashboard]
+    subgraph Layer6 ["6. Telemetry & Hardware Profiling"]
+        Roofline["Hardware Roofline Profiler profile_roofline"]
+        TUI["Minimalist Two-Pane UNIX TUI & Inspector"]
+        WebMon["FastAPI Real-Time Telemetry Monitor & Dashboard"]
     end
 
-    subgraph Layer7 [7. Academic Export & Lossless Persistence]
-        SurgIO[Lossless Surgical Checkpoint IO save_surgical_checkpoint]
-        LaTeX[Academic LaTeX booktabs & Pareto Frontier Exporter]
+    subgraph Layer7 ["7. Academic Export & Lossless Persistence"]
+        SurgIO["Lossless Surgical Checkpoint IO save_surgical_checkpoint"]
+        LaTeX["Academic LaTeX booktabs & Pareto Frontier Exporter"]
     end
 
     HF --> Surgery
@@ -942,9 +942,9 @@ flowchart TD
     Composer --> Ridge
     Ridge --> MicroHeal
     MicroHeal --> BackendCheck
-    BackendCheck -- Level 1: CUDA C++ SM >= 7.0 --> CUDACPP
-    BackendCheck -- Level 2: NVIDIA CUDA / AMD ROCm --> Triton
-    BackendCheck -- Level 3: Apple MPS / CPU --> Fallback
+    BackendCheck -- "Level 1: CUDA C++ SM >= 7.0" --> CUDACPP
+    BackendCheck -- "Level 2: NVIDIA CUDA / AMD ROCm" --> Triton
+    BackendCheck -- "Level 3: Apple MPS / CPU" --> Fallback
     CUDACPP --> PagedState
     Triton --> PagedState
     Fallback --> PagedState

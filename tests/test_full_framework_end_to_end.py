@@ -125,10 +125,10 @@ class TestFullFrameworkEndToEnd(unittest.TestCase):
             hidden_dim=self.hidden_size * 2,
             n_heads=self.num_heads,
             n_layers=2,
-            hidden_size=self.hidden_size,
-            num_attention_heads=self.num_heads,
-            num_labels=2,
         )
+        self.config.hidden_size = self.hidden_size
+        self.config.num_attention_heads = self.num_heads
+        self.config.num_labels = 2
 
     def tearDown(self) -> None:
         if os.path.exists(self.temp_dir):
