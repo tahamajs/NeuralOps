@@ -1,6 +1,10 @@
 # NeuralOps Fallback Registry & Known Bottlenecks Ledger
 
 This ledger documents operations in NeuralOps that are currently forced to alternative dispatch implementations (Triton JIT or PyTorch SDPA) due to known kernel bottlenecks, algorithmic constraints, or hardware architectural limits.
+## Reference-only fallback policy
+
+The 73 `PASS_REFERENCE_FALLBACK` rows in the release ledger are deliberate engineering decisions, not hidden failures. A correctness-gated operation is routed to the optimized PyTorch reference when its native CUDA/Triton path lacks a verified model-level contract, exceeds the release time budget, or presents an unsafe memory profile. The ledger preserves that distinction so fallback stability is never misrepresented as hardware acceleration.
+
 
 ---
 

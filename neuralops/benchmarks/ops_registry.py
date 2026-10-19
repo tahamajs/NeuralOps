@@ -292,6 +292,25 @@ def _register_registry_modules() -> dict[str, OpConfig]:
             unavailable_reason=f"Triton operator import failed: {exc}",
         )
 
+    # These kernels exceeded the bounded release budget in the 203-module
+    # sweep. Keep an explicit finite reference path instead of reporting an
+    # unbounded timeout as acceleration evidence.
+    for name in ("hla_attention", "samba_moe"):
+        state: dict[str, Any] = {}
+        result[f"attention:{name}"] = OpConfig(
+            name=name,
+            category="attention",
+            func=_reference_only_compressor_operation(state),
+            tensor_specs={
+                "device": "cuda",
+                "fallback_only": True,
+                "fallback_reason": "Kernel exceeded the 180-second release budget",
+            },
+            ref_func=_reference_only_compressor_operation(state),
+            input_factory=_compressor_inputs,
+            unavailable_reason="FALLBACK_ONLY: kernel exceeded the 180-second release budget",
+        )
+
     return result
 
 
