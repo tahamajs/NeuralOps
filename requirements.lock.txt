@@ -170,7 +170,7 @@ scikit-learn==1.9.1
 scipy==1.18.1
 seaborn==0.13.2
 SecretStorage==3.5.0
-setuptools==78.1.0
+setuptools==84.0.0
 shellingham==1.5.4
 six==1.17.0
 soupsieve==3.0.3
