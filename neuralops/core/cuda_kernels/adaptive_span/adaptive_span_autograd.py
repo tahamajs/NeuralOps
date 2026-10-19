@@ -46,7 +46,13 @@ adaptive_span_ref = fused_adaptive_span_penalty_pytorch
 def adaptive_span(spans: torch.Tensor, q_pos: torch.Tensor, k_pos: torch.Tensor, ramp_size: float, is_causal: bool = True) -> torch.Tensor:
     def cuda_fn(spans, q_pos, k_pos, ramp_size, is_causal=True, **kwargs):
         mod = _get_module()
-        return mod.adaptive_span_penalty_fwd(spans, q_pos, k_pos, float(ramp_size), bool(is_causal))
+        return mod.adaptive_span_penalty_fwd(
+            spans.contiguous(),
+            q_pos.contiguous(),
+            k_pos.contiguous(),
+            float(ramp_size),
+            bool(is_causal),
+        )
     return dispatch(
         cuda_fn,
         fused_adaptive_span_penalty_triton,
