@@ -182,7 +182,7 @@ Changelog = "https://github.com/tahamajs/NeuralOps/blob/main/CHANGELOG.md"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["neuralops*", "evaluation*"]
+include = ["neuralops*"]
 exclude = [
     "tests*",
     "benchmarks*",

@@ -7,13 +7,10 @@
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Root CLI entrypoint for benchmark_all_108_cuda_isolated.
 
-Delegates directly to scripts.benchmarks.benchmark_all_108_cuda_isolated.
+Delegates to the framework-native neuralops.benchmarks CLI.
 """
 
-from pathlib import Path
-import runpy
-
-_script = Path(__file__).resolve().parent.parent / "scripts" / "benchmarks" / "benchmark_all_108_cuda_isolated.py"
+from neuralops.benchmarks.cli import main
 
 if __name__ == "__main__":
-    runpy.run_path(str(_script), run_name="__main__")
+    main()
