@@ -165,18 +165,18 @@ def audit_readme_consistency() -> int:
         gla_speedup = bench_map.get("gla_scan")
         gdn_speedup = bench_map.get("gdn_scan")
 
-        if hgrn2_speedup != 157.9:
-            errors.append(f"Benchmark JSON hgrn2_scan speedup changed: {hgrn2_speedup} (expected 157.9)")
-        if gla_speedup != 142.82:
-            errors.append(f"Benchmark JSON gla_scan speedup changed: {gla_speedup} (expected 142.82)")
-        if gdn_speedup != 137.69:
-            errors.append(f"Benchmark JSON gdn_scan speedup changed: {gdn_speedup} (expected 137.69)")
+        if hgrn2_speedup != 136.89:
+            errors.append(f"Benchmark JSON hgrn2_scan speedup changed: {hgrn2_speedup} (expected 136.89)")
+        if gla_speedup != 123.88:
+            errors.append(f"Benchmark JSON gla_scan speedup changed: {gla_speedup} (expected 123.88)")
+        if gdn_speedup != 122.46:
+            errors.append(f"Benchmark JSON gdn_scan speedup changed: {gdn_speedup} (expected 122.46)")
 
-        # Verify README references 157.9x as peak speedup
-        if "157.9x" not in readme:
-            errors.append("README does not reference authoritative peak speedup of 157.9x (hgrn2_scan)")
+        # Verify README references 136.9x as peak speedup
+        if "136.9x" not in readme:
+            errors.append("README does not reference authoritative peak speedup of 136.9x (hgrn2_scan)")
 
-        # Verify outdated 179.1x or 161.2x claims are eliminated
+        # Verify outdated speedup claims are eliminated
         if "179.1x" in readme:
             errors.append("README still contains outdated/unaligned 179.1x speedup claim")
         if "161.2x" in readme:
