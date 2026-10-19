@@ -396,7 +396,9 @@ def run_registered_ops(
     from neuralops.benchmarks.ops_registry import list_ops
 
     names = [m.strip() for m in modules.split(",") if m.strip()] if isinstance(modules, str) else modules
-    selected = names or list_ops(category)
+    # Registry discovery must be a set-like operation.  A stale registry or
+    # merged checkpoint must never schedule the same operation twice.
+    selected = list(dict.fromkeys(names or list_ops(category)))
     target = Path(output)
     target.parent.mkdir(parents=True, exist_ok=True)
     results: list[dict[str, Any]] = []
@@ -404,7 +406,17 @@ def run_registered_ops(
         try:
             previous = json.loads(target.read_text(encoding="utf-8"))
             if isinstance(previous, list):
-                results = [row for row in previous if isinstance(row, dict)]
+                # Keep the first row for each module so an old duplicated
+                # checkpoint cannot inflate the release total on resume.
+                seen: set[str] = set()
+                for row in previous:
+                    if not isinstance(row, dict):
+                        continue
+                    module = str(row.get("module", ""))
+                    if not module or module in seen:
+                        continue
+                    seen.add(module)
+                    results.append(row)
         except (OSError, json.JSONDecodeError) as exc:
             logger.warning("Ignoring unreadable checkpoint %s: %s", target, exc)
     completed = {str(row.get("module")) for row in results}

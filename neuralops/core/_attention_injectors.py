@@ -413,6 +413,13 @@ def _wrap_and_replace_layer(
     family: str,
 ) -> None:
     """Wrap new attention in UniversalAttentionWrapper and perform dynamic module swap."""
+    # Keep device/dtype placement correct even when an attention constructor
+    # creates auxiliary parameters (for example LoRA factors) after the
+    # initial transplant step.  The wrapper must never introduce CPU weights
+    # into a model that is already on CUDA or another accelerator.
+    old_param = next(old_attn.parameters(), None)
+    if old_param is not None:
+        new_attn.to(device=old_param.device, dtype=old_param.dtype)
     return_tuple = (
         "self_attn" in layer_name.lower()
         or "attention" in layer_name.lower()

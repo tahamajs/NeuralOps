@@ -25,9 +25,13 @@ model.  Attention drift above the normal numerical budget is reported as
 `PASS_HIGH_DIFF` rather than being hidden.
 
 The extended roofline, quantization, MoE, serving, RoPE, sampling, SSM,
-ragged-sequence, and autotuning modules requested for a future release are not
-present in this checkout. They are intentionally not advertised as available
-benchmark categories until implemented and verified.
+ragged-sequence, and autotuning modules are available as explicit CLI
+categories. They are smoke-tested independently and are not silently folded
+into the 203-operation registry sweep.
+
+Tracking is disabled by default to keep benchmark latency measurements free of
+filesystem and network I/O. Pass `--track` for local tracking, or choose an
+explicit backend with `--tracker wandb|mlflow|tensorboard`.
 
 Examples:
 

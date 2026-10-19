@@ -161,6 +161,11 @@ def _build_parser() -> argparse.ArgumentParser:
     run_p.add_argument("--max-eval-samples", type=int, default=None, help="Limit eval set to N samples.")
     run_p.add_argument("--grad-accum-steps", type=int, default=1, help="Gradient accumulation steps")
     run_p.add_argument("--tracker", choices=["none", "wandb", "mlflow", "tensorboard", "all"], default="none", help="Experiment tracking backend")
+    run_p.add_argument(
+        "--track",
+        action="store_true",
+        help="Enable local metric tracking for this run; tracking is disabled by default",
+    )
     run_p.add_argument("--project-name", type=str, default="neuralops", help="MLOps project/experiment name")
     run_p.add_argument("--run-name", type=str, default=None, help="MLOps run name")
     run_p.add_argument("--log-interval", type=int, default=10, help="Logging step interval")
@@ -666,7 +671,7 @@ def handle_run(args: argparse.Namespace) -> None:
         max_samples=args.max_samples,
         max_eval_samples=args.max_eval_samples,
         grad_accum_steps=args.grad_accum_steps,
-        tracker=args.tracker,
+        tracker=(args.tracker if args.tracker != "none" else ("local" if args.track else "none")),
         project_name=args.project_name,
         run_name=args.run_name,
         log_interval=args.log_interval,
