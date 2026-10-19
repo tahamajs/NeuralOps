@@ -251,6 +251,7 @@ class OATSCompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="oats", **kwargs)
+        self._compressed_params: int | None = None
         cfg = kwargs.get("comp_config", kwargs.get("cfg"))
         if cfg is not None:
             sparsity = _cfg_get(cfg, "oats_sparsity", _cfg_get(cfg, "sparsity", sparsity))
