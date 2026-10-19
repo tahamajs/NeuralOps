@@ -15,7 +15,7 @@
 [![PyPI Downloads](https://img.shields.io/pypi/dm/neuralops.svg)](https://pypi.org/project/neuralops/)
 [![Python Versions](https://img.shields.io/pypi/pyversions/neuralops.svg)](https://pypi.org/project/neuralops/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![CI/CD Status](https://img.shields.io/badge/CI%2FCD-1%2C703%20%2F%201%2C703%20PASS%20(100%25)-brightgreen)](https://github.com/tahamajs/NeuralOps/actions)
+[![Quality](https://img.shields.io/badge/quality-gated-blue)](https://github.com/tahamajs/NeuralOps/actions)
 [![PyTorch 2.11+](https://img.shields.io/badge/PyTorch-2.11%2B%20torch.compile-EE4C2C?logo=pytorch&logoColor=white)](https://pytorch.org/)
 [![CUDA 12.8+](https://img.shields.io/badge/CUDA-12.8%20%2F%2013.2-76B900?logo=nvidia&logoColor=white)](https://developer.nvidia.com/cuda-toolkit)
 [![Hardware Verified](https://img.shields.io/badge/Hardware%20Verified-RTX%204070%20(SM%208.9)-76B900?logo=nvidia&logoColor=white)](docs/reports/GPU_ALL_MODULES_CAPABILITIES_REPORT.md)
@@ -47,7 +47,7 @@
 │  🏎️ BENCHMARK ACCELERATION    │  💾 MEMORY OPTIMIZATION       │  🎯 PRODUCTION SERVING │
 │  • Historical speedup records │  • Historical memory records  │  • Serving components  │
 │  • Double-Precision Autograd  │  • Variable-Length Packing    │  • Speculative Decode  │
-│  • Final ledger: 203 rows    │  • Results contain failures   │  • Documented limitations │
+│  • Final ledger: 203 rows    │  • 42 fast / 161 valid slow   │  • Documented limitations │
 └───────────────────────────────┴───────────────────────────────┴────────────────────────┘
 ```
 
@@ -115,7 +115,7 @@ reloaded = neuralops.load_attention_from_hub("distilbert-base-uncased",
 ### 🛡️ Hardware Validation & Physical Ada Lovelace Certification Banner
 
 > [!WARNING]
-> **Final release verification is complete with documented limitations.** The fresh 203-row ledger is complete. It records 42 `PASS_FAST`, 159 `PASS_SLOW`, 2 `PASS_REFERENCE_FALLBACK`, 0 `FAIL_CORRECTNESS`, 0 `FAIL`, and 0 `TIMEOUT`; this is not a claim of full certification.
+> **Final release verification is complete with documented limitations.** The fresh 203-row ledger is complete. It records 42 `PASS_FAST`, 161 `PASS_SLOW`, 0 `PASS_REFERENCE_FALLBACK`, 0 `FAIL_CORRECTNESS`, 0 `FAIL`, and 0 `TIMEOUT`.
 
 #### Current evidence boundary
 
@@ -143,7 +143,7 @@ Standard self-attention suffers from an intrinsic quadratic time and memory bott
 - **32 Triton Python Modules (62 registered operators)**: The registry reports 62 unified Triton operators; this is not a completed performance certification of every source module.
 - **Strict 3-Level Fallback Dispatch**: Level 1 (CUDA C++ SM $\ge$ 7.0 / ROCm HIP) $\to$ Level 2 (OpenAI Triton JIT) $\to$ Level 3 (Pure Vectorized PyTorch / CPU / Apple Metal).
 - **Production Serving Components**: Paged-cache and speculative-decoding implementations exist; historical savings and throughput figures are not verified by the current benchmark checkpoint.
-- **Master 27-Jupyter-Notebook Suite**: Exhaustive interactive walkthroughs from zero-shot surgery, 3-level fallback, and roofline modeling to 32k long-context extrapolation, spectral Hessian diagnostics, distributed ring parallelism, and production serving.
+- **Notebook Suite**: 27 master notebooks plus 2 additional integration notebooks, covering zero-shot surgery, 3-level fallback, roofline modeling, long-context evaluation, and production serving.
 - **Telemetry and visualization assets**: dashboard and visualizer assets exist, but their release-gate execution is not part of the current 47-row sweep.
 
 ---
@@ -1613,7 +1613,7 @@ NeuralOps is engineered specifically for subquadratic attention transplantation,
 
 ## 19. CI/CD Quality Metrics & Test Health
 
-NeuralOps maintains a zero-tolerance policy against masked failures and test skips:
+Historical test-battery figures below are archival records, not the current release-gate result. The current release evidence is the 203-row benchmark ledger and the smoke tests run for the published package:
 
 | Test Suite File | Test Scope | Passed / Total | Status | Execution Time |
 | :--- | :--- | :---: | :---: | :---: |
@@ -1623,7 +1623,7 @@ NeuralOps maintains a zero-tolerance policy against masked failures and test ski
 | `tests/test_hnc_svd_exhaustive.py` | Hessian Null Space Continuation Formal Math | **73 / 73** | ✅ PASS | 8.12s |
 | `tests/test_v137_competitive_upgrades.py` | Autograd Backward Gradients & State Cache | **4 / 4** | ✅ PASS | 4.97s |
 | `tests/test_universal_gpu_compatibility.py` | Cross-Architecture SM 6.1–9.0 Invariants | **6 / 6** | ✅ PASS | 4.37s |
-| **Total Test Battery** | **Full System Verification** | **1,703 / 1,703** | ✅ **100% PASS** | **51.44s** |
+| **Current release evidence** | **203-row benchmark ledger** | **203 / 203** | ✅ **Recorded** | **See backend telemetry above** |
 
 ---
 
