@@ -33,7 +33,7 @@ except ImportError:
 
 def cmd_doctor() -> int:
     import neuralops
-    ver = getattr(neuralops, "__version__", "1.4.2")
+    ver = getattr(neuralops, "__version__", "1.4.3")
 
     rows = []
     all_ok = True

@@ -5,6 +5,16 @@ All notable changes to the **NeuralOps** library (`SVD_linear_Attention`) will b
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.3] - 2026-10-19
+
+### Multi-Dataset Ingestion, Varlen Document Packing & Production CLI
+- **Multi-Dataset Streaming**: Implemented `MultiDatasetLoader` and `parse_dataset_spec` in `neuralops.data.multidataset`, supporting comma-separated dataset specs, per-dataset configurations, weighted/round-robin interleaving, and synthetic offline fallbacks.
+- **Variable-Length Document Packing**: Implemented `PackedDataset` and `pack_sequences` in `neuralops.data.packing`, concatenating variable-length documents with zero padding and returning cumulative sequence boundaries (`cu_seqlens`) required by subquadratic attention kernels.
+- **Warmup-Stable-Decay (WSD) LR Scheduler**: Added `WSDScheduler` to `neuralops.trainer.schedulers` with `--lr_scheduler.decay_type wsd` and configurable `decay_ratio`.
+- **Full Production CLI Suite**: Completed implementations of `train`, `eval`, `compress`, `serve`, `test`, `list`, `info`, and `doctor` commands in `neuralops.cli`, featuring native **Lion** optimizer, structured JSON export, and Rich terminal status tables.
+- **Visual Overhaul & Navigation**: Added interactive navigation pills, "NeuralOps At A Glance" executive matrix card, 30-second quickstart, and comprehensive CLI quick reference table in `README.md`.
+- **Repository Hygiene**: Configured `.gitignore` for non-core analysis and build folders (`audit/`, `docs/`, `results/`, `academic/`, `paper/`, `thesis_final/`, `logs/`, `scratch/`), purging tracked indices while preserving local assets.
+
 ---
 
 ## [1.4.2] - 2026-10-19

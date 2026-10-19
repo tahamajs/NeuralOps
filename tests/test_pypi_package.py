@@ -8,7 +8,7 @@
 """
 PyPI Package Clean Virtual Environment Installation & Version Verification Test.
 
-Validates that neuralops==1.4.2 installs cleanly and imports without runtime errors
+Validates that neuralops==1.4.3 installs cleanly and imports without runtime errors
 in an isolated Python virtual environment.
 """
 
@@ -22,7 +22,7 @@ import pytest
 
 
 def test_pip_install_and_import():
-    """Verify clean venv pip install and import of neuralops==1.4.2 with version assertion."""
+    """Verify clean venv pip install and import of neuralops==1.4.3 with version assertion."""
     repo_root = Path(__file__).resolve().parent.parent
 
     with tempfile.TemporaryDirectory() as tmp_dir:
@@ -37,8 +37,8 @@ def test_pip_install_and_import():
 
         venv_python = str(venv_path / "bin" / "python")
 
-        # 2. Attempt install of neuralops==1.4.2 from PyPI or local build fallback
-        install_cmd = [venv_python, "-m", "pip", "install", "neuralops==1.4.2", "--no-deps"]
+        # 2. Attempt install of neuralops==1.4.3 from PyPI or local build fallback
+        install_cmd = [venv_python, "-m", "pip", "install", "neuralops==1.4.3", "--no-deps"]
         res_install = subprocess.run(
             install_cmd,
             capture_output=True,
@@ -61,7 +61,7 @@ def test_pip_install_and_import():
         verify_cmd = [
             venv_python,
             "-c",
-            "import neuralops; assert neuralops.__version__ == '1.4.2', f'Bad version {neuralops.__version__}'; print(neuralops.__version__)",
+            "import neuralops; assert neuralops.__version__ == '1.4.3', f'Bad version {neuralops.__version__}'; print(neuralops.__version__)",
         ]
         res_verify = subprocess.run(
             verify_cmd,
@@ -71,4 +71,4 @@ def test_pip_install_and_import():
         assert res_verify.returncode == 0, (
             f"Verification script failed inside isolated venv: {res_verify.stderr}"
         )
-        assert res_verify.stdout.strip() == "1.4.2"
+        assert res_verify.stdout.strip() == "1.4.3"

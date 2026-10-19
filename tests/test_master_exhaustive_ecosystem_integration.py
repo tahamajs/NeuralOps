@@ -6,7 +6,7 @@
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
-Master Exhaustive Ecosystem Integration Test Suite for NeuralOps v1.4.2.
+Master Exhaustive Ecosystem Integration Test Suite for NeuralOps v1.4.3.
 
 Validates the full 7-pillar lifecycle across all modules working together simultaneously:
   Stage 1: Dynamic Module Inspection & Architecture Discovery (UniversalArchitectureScanner).
