@@ -261,7 +261,7 @@ Standard self-attention suffers from an intrinsic quadratic time and memory bott
 
 ## 1. Notebook Workflows
 
-NeuralOps v1.5.0 includes the notebook workflows present in [`notebooks/`](notebooks/). Notebook count and execution status are reported separately from the 203-row benchmark gate; no notebook is treated as benchmark evidence unless its result is explicitly recorded:
+NeuralOps v1.5.0 retains the complete **27-notebook master suite** (00–25 plus the paper empirical master) and includes 2 additional integration notebooks, for 29 notebook files currently present in [`notebooks/`](notebooks/). Notebook count and execution status are reported separately from the 203-row benchmark gate; no notebook is treated as benchmark evidence unless its result is explicitly recorded:
 
 | # | Notebook File | Cells | Core Focus & Methodology | Primary Deliverables & Key Outputs |
 | :-: | :--- | :---: | :--- | :--- |
