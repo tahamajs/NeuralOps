@@ -41,27 +41,22 @@ class BaseTracker(ABC):
     @abstractmethod
     def log_metric(self, name: str, value: float, step: int | None = None) -> None:
         """Log metric."""
-        pass
 
     @abstractmethod
     def log_params(self, params: dict[str, Any]) -> None:
         """Log params."""
-        pass
 
     @abstractmethod
     def log_artifact(self, local_path: str) -> None:
         """Log artifact."""
-        pass
 
     @abstractmethod
     def finalize(self, result: dict[str, Any] | None = None) -> None:
         """Finalize."""
-        pass
 
     @abstractmethod
     def close(self) -> None:
         """Close."""
-        pass
 
 
 class LocalTracker(BaseTracker):
@@ -114,7 +109,6 @@ class LocalTracker(BaseTracker):
 
     def close(self) -> None:
         """Close."""
-        pass
 
 
 class TensorBoardTracker(BaseTracker):

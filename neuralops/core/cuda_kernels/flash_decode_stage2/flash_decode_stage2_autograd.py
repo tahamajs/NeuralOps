@@ -48,7 +48,7 @@ def flash_decode_stage2_triton_ref(mid_out, mid_lse):
 def flash_decode_stage2(mid_out: torch.Tensor, mid_lse: torch.Tensor) -> torch.Tensor:
     def cuda_fn(*args, **kwargs):
         mod = _get_module()
-        fn = getattr(mod, "flash_decode_stage2_fwd")
+        fn = mod.flash_decode_stage2_fwd
         return fn(*args, **kwargs)
     return dispatch(
         cuda_fn,

@@ -302,12 +302,12 @@ def test_gating_aware_d_for_ffn_lin1():
         "up_proj", "gate_proj", "fc1", "w1",
     )
 
-    assert comp._is_followed_by_gelu("ffn.lin1") == True
-    assert comp._is_followed_by_gelu("ffn.lin2") == False
-    assert comp._is_followed_by_gelu("attention.q_lin") == False
-    assert comp._is_followed_by_gelu("intermediate.dense") == True
-    assert comp._is_followed_by_gelu("gate_proj") == True
-    assert comp._is_followed_by_gelu("down_proj") == False
+    assert comp._is_followed_by_gelu("ffn.lin1")
+    assert not comp._is_followed_by_gelu("ffn.lin2")
+    assert not comp._is_followed_by_gelu("attention.q_lin")
+    assert comp._is_followed_by_gelu("intermediate.dense")
+    assert comp._is_followed_by_gelu("gate_proj")
+    assert not comp._is_followed_by_gelu("down_proj")
     print("[PASS] test_gating_aware_d_for_ffn_lin1 passed")
 
 

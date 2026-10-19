@@ -123,17 +123,17 @@ class KDReporter:
         self._atomic_write_json(json_path, all_results)
 
         lines = [
-            f"# Knowledge Distillation (KD) Benchmark Final Report",
-            f"",
+            "# Knowledge Distillation (KD) Benchmark Final Report",
+            "",
             f"- **Task**: `{self.config.task}`",
             f"- **Teacher**: `{self.config.teacher}`",
             f"- **Total Modules**: {len(all_results)}",
             f"- **Timestamp**: {time.strftime('%Y-%m-%d %H:%M:%S UTC', time.gmtime())}",
-            f"",
-            f"## Module Results Summary",
-            f"",
-            f"| Module | Status | Pre-KD Acc (%) | Best KD Acc (%) | Post-KD (Full) | Delta (%) | Duration (s) |",
-            f"| :--- | :--- | :---: | :---: | :---: | :---: | :---: |",
+            "",
+            "## Module Results Summary",
+            "",
+            "| Module | Status | Pre-KD Acc (%) | Best KD Acc (%) | Post-KD (Full) | Delta (%) | Duration (s) |",
+            "| :--- | :--- | :---: | :---: | :---: | :---: | :---: |",
         ]
 
         def sort_key(r: Dict[str, Any]) -> float:

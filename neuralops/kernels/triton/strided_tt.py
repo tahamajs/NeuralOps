@@ -76,7 +76,7 @@ def _strided_tt_reconstruct_kernel(
     acc = tl.zeros((BLOCK_N, BLOCK_K), dtype=tl.float32)
 
     num_r_blocks = tl.cdiv(R, BLOCK_R)
-    for r_idx in range(0, num_r_blocks):
+    for r_idx in range(num_r_blocks):
         offs_r = r_idx * BLOCK_R + tl.arange(0, BLOCK_R)
         mask_r = offs_r < R
 

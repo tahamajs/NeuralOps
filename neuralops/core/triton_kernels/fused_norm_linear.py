@@ -298,7 +298,7 @@ if HAS_TRITON and tl is not None:
         acc = tl.zeros((BLOCK_M, BLOCK_N), dtype=tl.float32)
 
         num_k_blocks = tl.cdiv(K, BLOCK_K)
-        for k_idx in range(0, num_k_blocks):
+        for k_idx in range(num_k_blocks):
             offs_k_packed = (k_idx * (BLOCK_K // 2)) + tl.arange(0, BLOCK_K // 2)
             mask_k_packed = offs_k_packed < (K // 2)
 
@@ -482,7 +482,7 @@ if HAS_TRITON and tl is not None:
         acc = tl.zeros((BLOCK_M, BLOCK_N), dtype=tl.float32)
 
         num_k_blocks = tl.cdiv(K, BLOCK_K)
-        for k_idx in range(0, num_k_blocks):
+        for k_idx in range(num_k_blocks):
             offs_k_packed = (k_idx * (BLOCK_K // 2)) + tl.arange(0, BLOCK_K // 2)
             mask_k_packed = offs_k_packed < (K // 2)
 
@@ -659,7 +659,7 @@ if HAS_TRITON and tl is not None:
         acc = tl.zeros((BLOCK_M, BLOCK_N), dtype=tl.float32)
 
         num_k_blocks = tl.cdiv(K, BLOCK_K)
-        for k_idx in range(0, num_k_blocks):
+        for k_idx in range(num_k_blocks):
             offs_k = k_idx * BLOCK_K + tl.arange(0, BLOCK_K)
             mask_k = offs_k < K
 

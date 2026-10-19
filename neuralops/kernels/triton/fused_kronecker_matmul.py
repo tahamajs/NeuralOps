@@ -64,7 +64,7 @@ def _fused_kronecker_gemm_kernel(
     a_tile = tl.load(a_ptr + offs_m1[:, None] * stride_a_m + offs_n1[None, :] * stride_a_n)
     b_tile = tl.load(b_ptr + offs_m2[:, None] * stride_b_m + offs_n2[None, :] * stride_b_n)
 
-    for m_idx in range(0, BLOCK_M):
+    for m_idx in range(BLOCK_M):
         curr_m = pid_m * BLOCK_M + m_idx
         if curr_m < M:
             flat_offs_k = offs_n1[:, None] * N2 + offs_n2[None, :]

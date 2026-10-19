@@ -33,8 +33,8 @@ class MockLoRALinear(nn.Module):
         self.base_layer = base_layer
         self.r = r
         self.scaling = alpha / r
-        in_f = getattr(base_layer, "in_features", getattr(base_layer, "weight").shape[0])
-        out_f = getattr(base_layer, "out_features", getattr(base_layer, "weight").shape[1])
+        in_f = getattr(base_layer, "in_features", base_layer.weight.shape[0])
+        out_f = getattr(base_layer, "out_features", base_layer.weight.shape[1])
         self.lora_A = nn.Parameter(torch.randn(r, in_f) * 0.1)
         self.lora_B = nn.Parameter(torch.zeros(out_f, r))
 

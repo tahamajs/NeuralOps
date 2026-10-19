@@ -25,12 +25,12 @@ def cmd_bench(args):
     rank = getattr(args, "rank", 32)
     device = getattr(args, "device", "cuda")
 
-    print(f"==================================================")
-    print(f"NeuralOps Benchmark Runner")
+    print("==================================================")
+    print("NeuralOps Benchmark Runner")
     print(f"Target:   {target}")
     print(f"Mode:     {mode}")
     print(f"Model:    {model} | Dataset: {dataset} | Rank: {rank} | Device: {device}")
-    print(f"==================================================")
+    print("==================================================")
 
     from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
     import neuralops.attentions
@@ -58,10 +58,10 @@ def cmd_bench(args):
         os.makedirs(output_dir, exist_ok=True)
 
     if len(targets) > 1:
-        print(f"==================================================")
+        print("==================================================")
         print(f"NeuralOps Batch Sweep Runner: {len(targets)} modules queued")
         print(f"Mode: {mode} | Model: {model} | Dataset: {dataset} | Device: {device}")
-        print(f"==================================================")
+        print("==================================================")
 
         import json
         import time

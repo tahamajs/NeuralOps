@@ -626,7 +626,7 @@ def list_compressors() -> list[str]:
 
 import sys as _sys
 if "neuralops" in _sys.modules:
-    setattr(_sys.modules["neuralops"], "list_attention_mechanisms", list_attention_mechanisms)
+    _sys.modules["neuralops"].list_attention_mechanisms = list_attention_mechanisms
 
 MODEL_REGISTRY = Registry("models")
 DATASET_REGISTRY = Registry("datasets")

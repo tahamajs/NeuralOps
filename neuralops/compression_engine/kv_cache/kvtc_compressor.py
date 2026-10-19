@@ -663,8 +663,8 @@ class KVTCCompressor(BaseCompressor):
                 if not test_passed:
                     in_dim = 64
                     for m in self.model.modules():
-                        if hasattr(m, "in_features") and isinstance(getattr(m, "in_features"), int):
-                            in_dim = getattr(m, "in_features")
+                        if hasattr(m, "in_features") and isinstance(m.in_features, int):
+                            in_dim = m.in_features
                             break
                     target_dtype = p0.dtype if p0 is not None and p0.is_floating_point() else torch.float32
                     dummy_x = torch.randn(1, 8, in_dim, device=dev, dtype=target_dtype)

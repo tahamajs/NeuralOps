@@ -10,7 +10,8 @@ import json
 import warnings
 import pytest
 from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
-import neuralops.attentions, neuralops.compression_engine
+import neuralops.attentions
+import neuralops.compression_engine
 
 
 @pytest.fixture(scope="module")

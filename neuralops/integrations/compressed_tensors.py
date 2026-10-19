@@ -86,7 +86,7 @@ class CompressedTensorsExporter:
         if hasattr(compressor_or_model, "get_quantization_config"):
             quant_config = compressor_or_model.get_quantization_config()
         elif hasattr(compressor_or_model, "quantization_config"):
-            quant_config = getattr(compressor_or_model, "quantization_config")
+            quant_config = compressor_or_model.quantization_config
         else:
             quant_config = {
                 "quant_method": "compressed-tensors",

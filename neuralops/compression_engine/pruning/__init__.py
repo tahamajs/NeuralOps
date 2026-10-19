@@ -14,7 +14,7 @@ import importlib
 __all__ = []
 
 try:
-    _m = importlib.import_module(f".admm_compressor", __package__)
+    _m = importlib.import_module(".admm_compressor", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -26,7 +26,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".admm_pruner", __package__)
+    _m = importlib.import_module(".admm_pruner", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -38,7 +38,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".armor_pruner", __package__)
+    _m = importlib.import_module(".armor_pruner", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -50,7 +50,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".ast_pruner", __package__)
+    _m = importlib.import_module(".ast_pruner", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -62,7 +62,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".bonsai_pruner", __package__)
+    _m = importlib.import_module(".bonsai_pruner", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -74,7 +74,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".flap", __package__)
+    _m = importlib.import_module(".flap", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -86,7 +86,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".mamba_shedder", __package__)
+    _m = importlib.import_module(".mamba_shedder", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -98,7 +98,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".proxsparse", __package__)
+    _m = importlib.import_module(".proxsparse", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -110,7 +110,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".sparsegpt", __package__)
+    _m = importlib.import_module(".sparsegpt", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)

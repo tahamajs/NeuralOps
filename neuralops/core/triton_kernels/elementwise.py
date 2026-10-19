@@ -565,7 +565,7 @@ if HAS_TRITON:
 
         acc = tl.zeros([BLOCK_D], dtype=tl.float32)
 
-        for k in range(0, K):
+        for k in range(K):
             w_offset = b * stride_wb + h * stride_wh + pid_n * stride_wn + k * stride_wk
             weight = tl.load(w_ptr + w_offset)
 
@@ -609,7 +609,7 @@ if HAS_TRITON:
         dout_off = b * stride_dob + h * stride_doh + pid_n * stride_don + offs_d * stride_dod
         dout_val = tl.load(dout_ptr + dout_off, mask=mask_d, other=0.0).to(tl.float32)
 
-        for k in range(0, K):
+        for k in range(K):
             v_off = b * stride_vb + h * stride_vh + (pid_n + k) * stride_vt + offs_d * stride_vd
             v_val = tl.load(v_ptr + v_off, mask=mask_d, other=0.0).to(tl.float32)
             dw_val = tl.sum(dout_val * v_val)

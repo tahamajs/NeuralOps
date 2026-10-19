@@ -82,7 +82,7 @@ if HAS_TRITON:
 
         n_k_blocks = (N_K + BLOCK_SIZE - 1) // BLOCK_SIZE
 
-        for k_blk_idx in range(0, n_k_blocks):
+        for k_blk_idx in range(n_k_blocks):
             process_block = True
             if IS_CAUSAL:
                 process_block = process_block and (k_blk_idx <= q_blk_idx)
@@ -182,7 +182,7 @@ if HAS_TRITON and tl is not None:
         l_prev = tl.zeros((BLOCK_SIZE,), dtype=tl.float32)
         n_k_blocks = (N_K + BLOCK_SIZE - 1) // BLOCK_SIZE
 
-        for k_blk_idx in range(0, n_k_blocks):
+        for k_blk_idx in range(n_k_blocks):
             process_block = True
             if IS_CAUSAL:
                 process_block = process_block and (k_blk_idx <= q_blk_idx)
@@ -214,7 +214,7 @@ if HAS_TRITON and tl is not None:
         denom = l_prev[:, None] + 1e-6
         dq_acc = tl.zeros((BLOCK_SIZE, D), dtype=tl.float32)
 
-        for k_blk_idx in range(0, n_k_blocks):
+        for k_blk_idx in range(n_k_blocks):
             process_block = True
             if IS_CAUSAL:
                 process_block = process_block and (k_blk_idx <= q_blk_idx)

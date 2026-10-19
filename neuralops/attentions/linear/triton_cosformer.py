@@ -91,7 +91,7 @@ if HAS_TRITON:
 
         angle_factor = 3.141592653589793 / (2.0 * float(MAX_LENGTH))
 
-        for c_idx in range(0, num_chunks):
+        for c_idx in range(num_chunks):
             start_n = c_idx * BLOCK_CHUNK
             cur_offs_n = start_n + offs_chunk
             mask_n = cur_offs_n < N

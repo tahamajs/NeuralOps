@@ -469,7 +469,7 @@ if HAS_TRITON and tl is not None:
         offs_d = tl.arange(0, D)
 
         h_fwd = tl.zeros([D], dtype=tl.float32)
-        for t in range(0, L):
+        for t in range(L):
             x_ptrs = x_ptr + pid_b * stride_xb + pid_h * stride_xh + t * stride_xl + offs_d * stride_xd
             g_ptrs = g_ptr + pid_b * stride_gb + pid_h * stride_gh + t * stride_gl + offs_d * stride_gd
 
@@ -482,7 +482,7 @@ if HAS_TRITON and tl is not None:
             tl.store(y_ptrs, (0.5 * h_fwd).to(x_ptr.dtype.element_ty))
 
         h_bwd = tl.zeros([D], dtype=tl.float32)
-        for t_rev in range(0, L):
+        for t_rev in range(L):
             t = L - 1 - t_rev
             x_ptrs = x_ptr + pid_b * stride_xb + pid_h * stride_xh + t * stride_xl + offs_d * stride_xd
             g_ptrs = g_ptr + pid_b * stride_gb + pid_h * stride_gh + t * stride_gl + offs_d * stride_gd

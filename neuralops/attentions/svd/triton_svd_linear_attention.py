@@ -91,7 +91,7 @@ if HAS_TRITON:
         state_S = tl.zeros((D_K, D_V), dtype=tl.float32)
         state_Z = tl.zeros((D_K,), dtype=tl.float32)
 
-        for c_idx in range(0, num_chunks):
+        for c_idx in range(num_chunks):
             start_n = c_idx * BLOCK_CHUNK
             cur_offs_n = start_n + offs_chunk
             mask_n = cur_offs_n < N

@@ -54,7 +54,7 @@ def bitonic_topk_triton_ref(x: torch.Tensor, K: int) -> torch.Tensor:
 def _fwd_dispatch(x: torch.Tensor, K: int) -> torch.Tensor:
     def cuda_fn(*args, **kwargs):
         mod = _get_module()
-        fn = getattr(mod, "bitonic_topk_indices_fwd")
+        fn = mod.bitonic_topk_indices_fwd
         return fn(*args, **kwargs)
 
     return dispatch(

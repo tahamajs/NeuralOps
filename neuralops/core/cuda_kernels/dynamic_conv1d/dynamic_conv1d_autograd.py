@@ -56,7 +56,7 @@ dynamic_conv1d_ref = dynamic_conv1d_pytorch_ref
 def dynamic_conv1d(v: torch.Tensor, weights: torch.Tensor, bias: Optional[torch.Tensor] = None) -> torch.Tensor:
     def cuda_fn(*args, **kwargs):
         mod = _get_module()
-        fn = getattr(mod, "dynamic_conv1d_fwd")
+        fn = mod.dynamic_conv1d_fwd
         return fn(*args, **kwargs)
     if weights.shape[-1] > 16 or (v.dim() == 4 and v.shape[-1] > 128):
         cuda_fn = None

@@ -14,7 +14,7 @@ import importlib
 __all__ = []
 
 try:
-    _m = importlib.import_module(f".full_attention", __package__)
+    _m = importlib.import_module(".full_attention", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -26,7 +26,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".zeros_attention", __package__)
+    _m = importlib.import_module(".zeros_attention", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)

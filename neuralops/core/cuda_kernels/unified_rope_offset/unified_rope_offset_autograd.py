@@ -51,7 +51,7 @@ def unified_rope_offset(x: torch.Tensor, cos: torch.Tensor, sin: torch.Tensor, r
         f"cos table length {cos.shape[0]} < N + offset = {x.shape[2] + offset}"
     def cuda_fn(x, cos, sin, rotary_dim, offset=0):
         mod = _get_module()
-        fn = getattr(mod, "unified_rope_offset_fwd")
+        fn = mod.unified_rope_offset_fwd
         return fn(x.contiguous(), cos.contiguous(), sin.contiguous(), rotary_dim, offset)
     return dispatch(
         cuda_fn,

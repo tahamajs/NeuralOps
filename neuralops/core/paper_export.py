@@ -289,7 +289,7 @@ def export_benchmark_table(
 
         lines.extend([
             r"\bottomrule",
-            rf"\end{{tabular}}",
+            r"\end{tabular}",
             rf"\caption{{{caption} $^\star$ marks Pareto-optimal operating points. Bold indicates best, underline second best.}}",
             rf"\label{{{label}}}",
             r"\end{table}",

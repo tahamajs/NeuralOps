@@ -123,7 +123,6 @@ from neuralops.utils import compat
 from neuralops.utils import architecture
 from neuralops.utils import attention_profiler
 from neuralops.utils import checkpoint
-from neuralops.utils import compat
 from neuralops.utils import config
 from neuralops.utils import device
 from neuralops.utils import helpers

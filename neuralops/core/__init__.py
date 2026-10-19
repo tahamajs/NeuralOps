@@ -148,4 +148,3 @@ from neuralops.core import svd_utils
 from neuralops.core import t5_compat
 from neuralops.core import triton_linear_attn
 from neuralops.core import triton_sparse_attn
-from neuralops.core import utils

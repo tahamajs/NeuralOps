@@ -14,7 +14,7 @@ import importlib
 __all__ = []
 
 try:
-    _m = importlib.import_module(f".flat_llm", __package__)
+    _m = importlib.import_module(".flat_llm", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -26,7 +26,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".hashed_net_compressor", __package__)
+    _m = importlib.import_module(".hashed_net_compressor", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -38,7 +38,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".liftr", __package__)
+    _m = importlib.import_module(".liftr", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -50,7 +50,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".lillama_compressor", __package__)
+    _m = importlib.import_module(".lillama_compressor", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -62,7 +62,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".roast_hashed_linear", __package__)
+    _m = importlib.import_module(".roast_hashed_linear", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)

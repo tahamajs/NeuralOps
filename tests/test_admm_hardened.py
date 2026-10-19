@@ -207,7 +207,7 @@ class TestADMMHardened(unittest.TestCase):
             target_attention_only=True,
         )
         compressed_model, stats = compressor.compress()
-        setattr(compressed_model, "compression_stats", stats)
+        compressed_model.compression_stats = stats
 
         for name in compressor.fallback_layers:
             mod = dict(compressed_model.named_modules())[name]

@@ -65,4 +65,3 @@ from neuralops.core.utils import lora
 from neuralops.core.utils import masks
 from neuralops.core.utils import rope
 
-from neuralops.core.utils import general

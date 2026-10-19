@@ -253,7 +253,7 @@ class A3Compressor(BaseCompressor):
         for _idx, _arg in enumerate(sys.argv):
             if _arg in ("--a3_use_cholesky", "--use_cholesky") and _idx + 1 < len(sys.argv):
                 cli_cholesky = sys.argv[_idx + 1].lower() in ("true", "1", "yes")
-            elif _arg.startswith("--a3_use_cholesky=") or _arg.startswith("--use_cholesky="):
+            elif _arg.startswith(("--a3_use_cholesky=", "--use_cholesky=")):
                 cli_cholesky = _arg.split("=")[1].lower() in ("true", "1", "yes")
             elif _arg in (
                 "--a3_use_energy_weighting",
@@ -262,9 +262,7 @@ class A3Compressor(BaseCompressor):
                 "--use_fisher",
             ) and _idx + 1 < len(sys.argv):
                 cli_energy = sys.argv[_idx + 1].lower() in ("true", "1", "yes")
-            elif _arg.startswith("--a3_use_energy_weighting=") or _arg.startswith(
-                "--a3_use_fisher="
-            ):
+            elif _arg.startswith(("--a3_use_energy_weighting=", "--a3_use_fisher=")):
                 cli_energy = _arg.split("=")[1].lower() in ("true", "1", "yes")
             elif _arg in ("--rank", "--a3_rank") and _idx + 1 < len(sys.argv):
                 try:

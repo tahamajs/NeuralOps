@@ -75,7 +75,7 @@ def _fused_rpca_gemm_kernel(
 
     z_acc = tl.zeros((BLOCK_M, BLOCK_R), dtype=tl.float32)
     num_k_blocks = tl.cdiv(K, BLOCK_K)
-    for k_idx in range(0, num_k_blocks):
+    for k_idx in range(num_k_blocks):
         offs_k = k_idx * BLOCK_K + tl.arange(0, BLOCK_K)
         mask_k = offs_k < K
 
@@ -95,7 +95,7 @@ def _fused_rpca_gemm_kernel(
     y_acc = tl.dot(z_tile, u_tile, allow_tf32=True)
 
     if HAS_SPARSE:
-        for i in range(0, BLOCK_N):
+        for i in range(BLOCK_N):
             curr_n = pid_n * BLOCK_N + i
             if curr_n < N:
                 row_start = tl.load(crow_ptr + curr_n)

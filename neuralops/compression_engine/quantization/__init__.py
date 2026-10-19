@@ -14,7 +14,7 @@ import importlib
 __all__ = []
 
 try:
-    _m = importlib.import_module(f".astro_quantizer", __package__)
+    _m = importlib.import_module(".astro_quantizer", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -26,7 +26,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".coopq_quantizer", __package__)
+    _m = importlib.import_module(".coopq_quantizer", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -38,7 +38,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".faq_quantizer", __package__)
+    _m = importlib.import_module(".faq_quantizer", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -50,7 +50,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".huffman_coder", __package__)
+    _m = importlib.import_module(".huffman_coder", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -62,7 +62,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".kmeans_quantize", __package__)
+    _m = importlib.import_module(".kmeans_quantize", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -74,7 +74,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".rotational_slicegpt_int4", __package__)
+    _m = importlib.import_module(".rotational_slicegpt_int4", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -86,7 +86,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".slicegpt", __package__)
+    _m = importlib.import_module(".slicegpt", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -98,7 +98,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".slicegpt_pca", __package__)
+    _m = importlib.import_module(".slicegpt_pca", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)

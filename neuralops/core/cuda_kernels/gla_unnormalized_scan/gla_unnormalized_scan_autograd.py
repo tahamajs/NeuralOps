@@ -63,7 +63,7 @@ def gla_unnormalized_scan_triton_ref(q: torch.Tensor, k: torch.Tensor, v: torch.
 def _gla_unnormalized_scan_dispatch(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, decay: torch.Tensor) -> torch.Tensor:
     def cuda_fn(*args, **kwargs):
         mod = _get_module()
-        fn = getattr(mod, "gla_unnormalized_scan_fwd")
+        fn = mod.gla_unnormalized_scan_fwd
         return fn(*args, **kwargs)
     return dispatch(
         cuda_fn,

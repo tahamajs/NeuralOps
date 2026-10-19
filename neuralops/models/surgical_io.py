@@ -92,7 +92,7 @@ def extract_surgical_manifest(model: nn.Module) -> Dict[str, Any]:
 
         if is_attention:
             cataloged_attn_names.append(name)
-            is_wrapper = hasattr(sub, "_wrapped_attention") and getattr(sub, "_wrapped_attention") is not None
+            is_wrapper = hasattr(sub, "_wrapped_attention") and sub._wrapped_attention is not None
             effective_sub = sub._wrapped_attention if is_wrapper else sub
             eff_cls_name = effective_sub.__class__.__name__
 

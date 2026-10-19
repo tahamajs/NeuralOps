@@ -141,7 +141,7 @@ class TestTrack2Modules(unittest.TestCase):
     def test_svd_mamba(self):
         import importlib
         mod = importlib.import_module("neuralops.attentions.SVD-Mamba")
-        SVDMamba = getattr(mod, "SVDMamba")
+        SVDMamba = mod.SVDMamba
         m = SVDMamba(d_model=768, config=self.config)
         self._test_module_lifecycle(m, "SVDMamba")
 

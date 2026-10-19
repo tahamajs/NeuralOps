@@ -74,7 +74,7 @@ class GLAttention(BaseAttention):
             if num_heads is None:
                 num_heads = getattr(config, "num_attention_heads", getattr(config, "num_heads", getattr(config, "n_head", None)))
             if head_dim is None and hasattr(config, "head_dim"):
-                head_dim = getattr(config, "head_dim")
+                head_dim = config.head_dim
 
         if hidden_size is None:
             hidden_size = kwargs.get("dim", 768)

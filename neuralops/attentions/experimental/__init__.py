@@ -14,7 +14,7 @@ import importlib
 __all__ = []
 
 try:
-    _m = importlib.import_module(f".template_attention", __package__)
+    _m = importlib.import_module(".template_attention", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)

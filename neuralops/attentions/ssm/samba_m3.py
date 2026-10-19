@@ -96,7 +96,7 @@ class SpectralMamba(nn.Module):
 
     def step(self, x: torch.Tensor, state: Any | None = None, **kwargs: Any) -> tuple[torch.Tensor, Any]:
         """Autoregressive step for SpectralMamba."""
-        if hasattr(self.mamba, "step") and callable(getattr(self.mamba, "step")):
+        if hasattr(self.mamba, "step") and callable(self.mamba.step):
             out, next_state = self.mamba.step(x, state=state, **kwargs)
         else:
             out, next_state = self.forward(x, **kwargs)

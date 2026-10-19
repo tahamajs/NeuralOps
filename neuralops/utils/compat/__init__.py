@@ -65,6 +65,3 @@ from neuralops.utils.compat import aliases
 from neuralops.utils.compat import architectures
 from neuralops.utils.compat import param_recovery
 
-from neuralops.utils.compat import aliases
-from neuralops.utils.compat import architectures
-from neuralops.utils.compat import param_recovery

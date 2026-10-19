@@ -163,7 +163,6 @@ def _selective_scan_forward_dispatch(
         triton_fn = _triton_wrapper
     except (RuntimeError, MemoryError, AssertionError, ValueError, ImportError, AttributeError) as exc:
         logger.warning("Failed to initialize Triton implementation for selective_scan: %s", exc, exc_info=True)
-        pass
 
     return dispatch(
         cuda_fn if (mod is not None and A.shape[1] <= 128) else None,

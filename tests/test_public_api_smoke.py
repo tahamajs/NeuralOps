@@ -30,7 +30,7 @@ def test_all_public_exports_resolve() -> None:
 def test_lazy_export_targets_resolve() -> None:
     """All lazy export maps must point to importable attributes."""
     failures: list[str] = []
-    maps = [getattr(neuralops, "_LAZY_EXPORTS"), getattr(neuralops, "_API_EXPORTS")]
+    maps = [neuralops._LAZY_EXPORTS, neuralops._API_EXPORTS]
     for export_map in maps:
         for name, target in export_map.items():
             module_name, attribute_name = target if isinstance(target, tuple) else (target, name)

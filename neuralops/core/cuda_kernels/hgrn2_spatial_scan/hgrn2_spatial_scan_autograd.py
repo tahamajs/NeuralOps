@@ -70,7 +70,7 @@ def hgrn2_spatial_scan_pytorch_ref(*args, **kwargs) -> torch.Tensor:
 def _hgrn2_spatial_scan_dispatch(*args, **kwargs) -> torch.Tensor:
     def cuda_fn(*call_args, **call_kwargs):
         mod = _get_module()
-        fn = getattr(mod, "hgrn2_spatial_scan_fwd")
+        fn = mod.hgrn2_spatial_scan_fwd
         if len(call_args) == 4:
             q, k, v, g = call_args
             x = (k * v).contiguous()

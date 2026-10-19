@@ -514,9 +514,9 @@ def apply_backbone_surgery_hooks(
         leaf = name.split(".")[-1].lower()
         if leaf in ("self_attn", "attention", "attn"):
             if not hasattr(module, "supports_gqa"):
-                setattr(module, "supports_gqa", True)
+                module.supports_gqa = True
             if not hasattr(module, "supports_rope"):
-                setattr(module, "supports_rope", True)
+                module.supports_rope = True
 
 
 class SubspaceAnchorWrapper(nn.Module):

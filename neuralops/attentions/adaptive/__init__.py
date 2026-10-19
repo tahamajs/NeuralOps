@@ -14,7 +14,7 @@ import importlib
 __all__ = []
 
 try:
-    _m = importlib.import_module(f".adaptive_span_attention", __package__)
+    _m = importlib.import_module(".adaptive_span_attention", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -26,7 +26,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".block_transformer_hiba", __package__)
+    _m = importlib.import_module(".block_transformer_hiba", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -38,7 +38,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".eat", __package__)
+    _m = importlib.import_module(".eat", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -50,7 +50,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".infini_attention", __package__)
+    _m = importlib.import_module(".infini_attention", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -62,7 +62,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".lola_attention", __package__)
+    _m = importlib.import_module(".lola_attention", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -74,7 +74,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".progressive_token_pruning", __package__)
+    _m = importlib.import_module(".progressive_token_pruning", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -86,7 +86,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".span_expanded_attention", __package__)
+    _m = importlib.import_module(".span_expanded_attention", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -98,7 +98,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".squeezing_heads_distill", __package__)
+    _m = importlib.import_module(".squeezing_heads_distill", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -110,7 +110,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".token_compressed_attention", __package__)
+    _m = importlib.import_module(".token_compressed_attention", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -122,7 +122,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".sink_attention", __package__)
+    _m = importlib.import_module(".sink_attention", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)

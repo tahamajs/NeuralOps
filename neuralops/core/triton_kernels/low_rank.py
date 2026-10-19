@@ -2109,7 +2109,7 @@ def _fused_lowrank_gated_gemm_1d_kernel(
     z_acc = tl.zeros((BLOCK_M, BLOCK_R), dtype=tl.float32)
 
     num_k_blocks = tl.cdiv(K, BLOCK_K)
-    for k_idx in range(0, num_k_blocks):
+    for k_idx in range(num_k_blocks):
         offs_k = k_idx * BLOCK_K + tl.arange(0, BLOCK_K)
         mask_k = offs_k < K
 
@@ -2131,7 +2131,7 @@ def _fused_lowrank_gated_gemm_1d_kernel(
 
 
     num_n_blocks = tl.cdiv(N, BLOCK_N)
-    for n_idx in range(0, num_n_blocks):
+    for n_idx in range(num_n_blocks):
         offs_n = n_idx * BLOCK_N + tl.arange(0, BLOCK_N)
         mask_n = offs_n < N
 
@@ -2328,7 +2328,7 @@ def _fused_rpca_gemm_kernel(
 
     z_acc = tl.zeros((BLOCK_M, BLOCK_R), dtype=tl.float32)
     num_k_blocks = tl.cdiv(K, BLOCK_K)
-    for k_idx in range(0, num_k_blocks):
+    for k_idx in range(num_k_blocks):
         offs_k = k_idx * BLOCK_K + tl.arange(0, BLOCK_K)
         mask_k = offs_k < K
 
@@ -2348,7 +2348,7 @@ def _fused_rpca_gemm_kernel(
     y_acc = tl.dot(z_tile, u_tile, allow_tf32=True)
 
     if HAS_SPARSE:
-        for i in range(0, BLOCK_N):
+        for i in range(BLOCK_N):
             curr_n = pid_n * BLOCK_N + i
             if curr_n < N:
                 row_start = tl.load(crow_ptr + curr_n)
@@ -2571,7 +2571,7 @@ def _strided_tt_reconstruct_kernel(
     acc = tl.zeros((BLOCK_N, BLOCK_K), dtype=tl.float32)
 
     num_r_blocks = tl.cdiv(R, BLOCK_R)
-    for r_idx in range(0, num_r_blocks):
+    for r_idx in range(num_r_blocks):
         offs_r = r_idx * BLOCK_R + tl.arange(0, BLOCK_R)
         mask_r = offs_r < R
 
@@ -2731,7 +2731,7 @@ def _fused_kronecker_gemm_kernel(
     a_tile = tl.load(a_ptr + offs_m1[:, None] * stride_a_m + offs_n1[None, :] * stride_a_n)
     b_tile = tl.load(b_ptr + offs_m2[:, None] * stride_b_m + offs_n2[None, :] * stride_b_n)
 
-    for m_idx in range(0, BLOCK_M):
+    for m_idx in range(BLOCK_M):
         curr_m = pid_m * BLOCK_M + m_idx
         if curr_m < M:
             flat_offs_k = offs_n1[:, None] * N2 + offs_n2[None, :]

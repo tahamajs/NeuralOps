@@ -126,12 +126,12 @@ def _set_global_fallback(flag: bool) -> None:
         if name.startswith("neuralops.") and mod is not None:
             if hasattr(mod, "FORCE_PYTORCH_FALLBACK"):
                 try:
-                    setattr(mod, "FORCE_PYTORCH_FALLBACK", flag)
+                    mod.FORCE_PYTORCH_FALLBACK = flag
                 except Exception:
                     pass
             if hasattr(mod, "HAS_TRITON_GDN"):
                 try:
-                    setattr(mod, "HAS_TRITON_GDN", not flag)
+                    mod.HAS_TRITON_GDN = not flag
                 except Exception:
                     pass
 
@@ -191,7 +191,7 @@ def estimate_module_flops_and_bytes(
 
     name_lower = module.__class__.__name__.lower()
     if hasattr(module, "target_attention"):
-        name_lower += " " + str(getattr(module, "target_attention")).lower()
+        name_lower += " " + str(module.target_attention).lower()
 
     is_quadratic = any(k in name_lower for k in ("softmax", "full", "mha", "exact", "standard"))
     is_sliding = "window" in name_lower or "sliding" in name_lower
@@ -382,7 +382,7 @@ def profile_roofline(
                     import sys
                     _fla_ops = sys.modules.get("fla.ops")
                     if _fla_ops is not None:
-                        setattr(_fla_ops, "chunk_gdn", _saved_fla_chunk)
+                        _fla_ops.chunk_gdn = _saved_fla_chunk
                 except Exception:
                     pass
 
@@ -488,7 +488,7 @@ def render_roofline_terminal(report: RooflineReport) -> str:
     lines = []
     w = 78
     lines.append("=" * w)
-    lines.append(f"  🏛️ NEURALOPS HARDWARE ROOFLINE & ARITHMETIC INTENSITY REPORT")
+    lines.append("  🏛️ NEURALOPS HARDWARE ROOFLINE & ARITHMETIC INTENSITY REPORT")
     lines.append("=" * w)
     lines.append(f"  Module:          {report.module_name:<28} Precision:   {report.precision}")
     lines.append(f"  Device:          {report.device_name} ({report.sm_version})")

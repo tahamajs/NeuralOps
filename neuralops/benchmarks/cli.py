@@ -474,7 +474,7 @@ def handle_plan(args: argparse.Namespace) -> None:
             console.print("[bold yellow]⚠️  Grid size exceeds 500 runs. Use --yes to confirm execution.[/]")
     else:
         print("═════════════════════════════════════════════════════")
-        print(f"Benchmark Plan Summary:")
+        print("Benchmark Plan Summary:")
         print(f"  Modules:  {mod_count}")
         print(f"  Models:   {models_count}")
         print(f"  Datasets: {datasets_count}")
@@ -1108,8 +1108,8 @@ def _dispatch(args: argparse.Namespace) -> int:
         print("  RECOMMENDED NEURALOPS ARCHITECTURE RECIPE:")
         print(f"  • Attention:   {rec_attn}")
         print(f"  • Compressor:  {rec_comp}")
-        print(f"  • Expected Speedup: 3.8x - 12.5x vs SDPA quadratic attention")
-        print(f"  • Expected VRAM Reduction: ~65% memory reduction")
+        print("  • Expected Speedup: 3.8x - 12.5x vs SDPA quadratic attention")
+        print("  • Expected VRAM Reduction: ~65% memory reduction")
         print("═══════════════════════════════════════════════════════════════════")
         return 0
     elif args.subcommand == "calibrate":

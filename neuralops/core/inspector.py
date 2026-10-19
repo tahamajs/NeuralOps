@@ -345,7 +345,7 @@ def inspect_architecture(name: str, category: Optional[str] = None) -> Architect
         custom_meta = get_custom_metadata(name)
     except Exception:
         pass
-    if not custom_meta and hasattr(obj, "_neuralops_metadata_") and callable(getattr(obj, "_neuralops_metadata_")):
+    if not custom_meta and hasattr(obj, "_neuralops_metadata_") and callable(obj._neuralops_metadata_):
         try:
             custom_meta = obj._neuralops_metadata_()
         except Exception:
@@ -423,15 +423,15 @@ def inspect_architecture(name: str, category: Optional[str] = None) -> Architect
         "pytorch_direct": pytorch_code,
         "surgical_transplant": transplant_code,
         "composable_equivalent": (
-            f"import neuralops\n"
-            f"attn = neuralops.compose_attention(\n"
-            f"    projection='svd(rank=64)',\n"
-            f"    kernel_map='elu+1',\n"
-            f"    mask='causal',\n"
-            f"    engine='chunked_scan',\n"
-            f"    embed_dim=768,\n"
-            f"    num_heads=12,\n"
-            f")"
+            "import neuralops\n"
+            "attn = neuralops.compose_attention(\n"
+            "    projection='svd(rank=64)',\n"
+            "    kernel_map='elu+1',\n"
+            "    mask='causal',\n"
+            "    engine='chunked_scan',\n"
+            "    embed_dim=768,\n"
+            "    num_heads=12,\n"
+            ")"
         ),
         "cli_commands": (
             f"$ neuralops roofline --module {name} --seq-len 4096\n"

@@ -167,18 +167,14 @@ class AdaptiveRanksCompressor(BaseCompressor):
                 "--adaptive_ranks_use_jg_svd",
             ) and _idx + 1 < len(sys.argv):
                 cli_use_jg_svd = sys.argv[_idx + 1].lower() in ("true", "1", "yes")
-            elif _arg.startswith("--use_jg_svd=") or _arg.startswith(
-                "--adaptive_ranks_use_jg_svd="
-            ):
+            elif _arg.startswith(("--use_jg_svd=", "--adaptive_ranks_use_jg_svd=")):
                 cli_use_jg_svd = _arg.split("=")[1].lower() in ("true", "1", "yes")
             elif _arg in (
                 "--use_cholesky_jg",
                 "--adaptive_ranks_use_cholesky_jg",
             ) and _idx + 1 < len(sys.argv):
                 cli_use_cholesky_jg = sys.argv[_idx + 1].lower() in ("true", "1", "yes")
-            elif _arg.startswith("--use_cholesky_jg=") or _arg.startswith(
-                "--adaptive_ranks_use_cholesky_jg="
-            ):
+            elif _arg.startswith(("--use_cholesky_jg=", "--adaptive_ranks_use_cholesky_jg=")):
                 cli_use_cholesky_jg = _arg.split("=")[1].lower() in ("true", "1", "yes")
 
         if cfg is not None:

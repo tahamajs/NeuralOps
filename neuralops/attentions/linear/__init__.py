@@ -14,7 +14,7 @@ import importlib
 __all__ = []
 
 try:
-    _m = importlib.import_module(f".chela_slay", __package__)
+    _m = importlib.import_module(".chela_slay", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -26,7 +26,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".cosformer", __package__)
+    _m = importlib.import_module(".cosformer", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -38,7 +38,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".galerkin_attention", __package__)
+    _m = importlib.import_module(".galerkin_attention", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -50,7 +50,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".linformer_attention", __package__)
+    _m = importlib.import_module(".linformer_attention", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -62,7 +62,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".nasc_attention", __package__)
+    _m = importlib.import_module(".nasc_attention", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -74,7 +74,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".nystrom_attention", __package__)
+    _m = importlib.import_module(".nystrom_attention", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -86,7 +86,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".performer_attention", __package__)
+    _m = importlib.import_module(".performer_attention", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -98,7 +98,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".primal_attention", __package__)
+    _m = importlib.import_module(".primal_attention", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -110,7 +110,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".rala_attention", __package__)
+    _m = importlib.import_module(".rala_attention", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -122,7 +122,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".rpc_attention", __package__)
+    _m = importlib.import_module(".rpc_attention", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -134,7 +134,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".spectra_v2", __package__)
+    _m = importlib.import_module(".spectra_v2", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -146,7 +146,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".spectraformer_attention", __package__)
+    _m = importlib.import_module(".spectraformer_attention", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -158,7 +158,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".spectron", __package__)
+    _m = importlib.import_module(".spectron", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -170,7 +170,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".tlinformer_attention", __package__)
+    _m = importlib.import_module(".tlinformer_attention", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -182,7 +182,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".tpa_attention", __package__)
+    _m = importlib.import_module(".tpa_attention", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -194,7 +194,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".triton_cosformer", __package__)
+    _m = importlib.import_module(".triton_cosformer", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)

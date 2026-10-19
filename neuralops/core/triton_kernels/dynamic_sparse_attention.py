@@ -84,7 +84,7 @@ if HAS_TRITON:
         l_i = tl.zeros([BLOCK_M], dtype=tl.float32)
         acc = tl.zeros([BLOCK_M, D], dtype=tl.float32)
 
-        for k_idx in range(0, K_ACTIVE):
+        for k_idx in range(K_ACTIVE):
             target_block = tl.load(act_base + k_idx * stride_ab_k)
 
             if target_block >= 0:

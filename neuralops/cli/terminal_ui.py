@@ -337,7 +337,7 @@ def run_interactive_ui(inspect_target: Optional[str] = None, snapshot: bool = Fa
         visible_modules = all_modules[start_idx : start_idx + total_rows]
 
         print("=" * w)
-        print(f"  🏛️ NEURALOPS MINIMALIST TWO-PANE ARCHITECTURE EXPLORER")
+        print("  🏛️ NEURALOPS MINIMALIST TWO-PANE ARCHITECTURE EXPLORER")
         print(f"  Hardware Node: {dev_name}  │  131 Attentions · 72 Compressors · Unified Triton & CUDA Kernels")
         print("=" * w)
         print(f"  {'REGISTRY EXPLORER':<{left_pane_width}} │ {'14-FIELD ARCHITECTURE SPECIFICATION SHEET':<{right_pane_width}}")

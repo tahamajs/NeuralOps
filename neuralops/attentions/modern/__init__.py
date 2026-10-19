@@ -14,7 +14,7 @@ import importlib
 __all__ = []
 
 try:
-    _m = importlib.import_module(f".gqa_attention", __package__)
+    _m = importlib.import_module(".gqa_attention", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -26,7 +26,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".mla_attention", __package__)
+    _m = importlib.import_module(".mla_attention", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -38,7 +38,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".nha_attention", __package__)
+    _m = importlib.import_module(".nha_attention", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -50,7 +50,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".qcqa_attention", __package__)
+    _m = importlib.import_module(".qcqa_attention", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -62,7 +62,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".vig_attention", __package__)
+    _m = importlib.import_module(".vig_attention", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -74,7 +74,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".wgqa_attention", __package__)
+    _m = importlib.import_module(".wgqa_attention", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -85,7 +85,7 @@ try:
 except Exception:
     pass
 try:
-    _m = importlib.import_module(f".dynamic_conv_attention", __package__)
+    _m = importlib.import_module(".dynamic_conv_attention", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -96,7 +96,7 @@ try:
 except Exception:
     pass
 try:
-    _m = importlib.import_module(f".sliding_window", __package__)
+    _m = importlib.import_module(".sliding_window", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -108,7 +108,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".cross_attention", __package__)
+    _m = importlib.import_module(".cross_attention", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -120,7 +120,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".mqa", __package__)
+    _m = importlib.import_module(".mqa", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -132,7 +132,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".alibi", __package__)
+    _m = importlib.import_module(".alibi", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)

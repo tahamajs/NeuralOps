@@ -21,7 +21,7 @@ class ModelValidator:
         self.errors = []
 
     def validate(self):
-        print(f"\n=== Validating model ===")
+        print("\n=== Validating model ===")
         try:
             self.model = self.model.to(self.device)
             print(f"  ✅ Moved to {self.device}")

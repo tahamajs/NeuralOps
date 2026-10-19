@@ -74,7 +74,7 @@ if HAS_TRITON:
         state_S = tl.zeros((D_K, D_V), dtype=tl.float32)
         state_Z = tl.zeros((D_K,), dtype=tl.float32)
 
-        for c_idx in range(0, num_chunks):
+        for c_idx in range(num_chunks):
             start_n = c_idx * BLOCK_CHUNK
             cur_offs_n = start_n + offs_chunk
             mask_n = cur_offs_n < N
@@ -693,7 +693,7 @@ if HAS_TRITON:
         state_S = tl.zeros((D_K, D_V), dtype=tl.float32)
         state_Z = tl.zeros((D_K,), dtype=tl.float32)
 
-        for c_idx in range(0, num_chunks):
+        for c_idx in range(num_chunks):
             start_n = c_idx * BLOCK_CHUNK
             cur_offs_n = start_n + offs_chunk
             mask_n = cur_offs_n < N
@@ -864,7 +864,7 @@ if HAS_TRITON:
         acc_latent = tl.zeros([BLOCK_M, R], dtype=tl.float32)
 
         num_n_blocks = tl.cdiv(L_KV, BLOCK_N)
-        for n_idx in range(0, num_n_blocks):
+        for n_idx in range(num_n_blocks):
             offs_n = n_idx * BLOCK_N + tl.arange(0, BLOCK_N)
             mask_n = offs_n < L_KV
 

@@ -226,7 +226,7 @@ def _chela_slay_causal_linear_fwd_kernel(
 
     num_chunks = (L + BLOCK_C - 1) // BLOCK_C
 
-    for c in range(0, num_chunks):
+    for c in range(num_chunks):
         start_l = c * BLOCK_C
         cur_offs_l = start_l + offs_c
         mask_l = cur_offs_l < L

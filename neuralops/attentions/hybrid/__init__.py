@@ -14,7 +14,7 @@ import importlib
 __all__ = []
 
 try:
-    _m = importlib.import_module(f".fusion_attn", __package__)
+    _m = importlib.import_module(".fusion_attn", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -26,7 +26,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".gated_hybrid_kernel_attention", __package__)
+    _m = importlib.import_module(".gated_hybrid_kernel_attention", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -38,7 +38,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".granite_hybrid", __package__)
+    _m = importlib.import_module(".granite_hybrid", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -50,7 +50,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".halo_regla", __package__)
+    _m = importlib.import_module(".halo_regla", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -62,7 +62,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".hybrid_attention", __package__)
+    _m = importlib.import_module(".hybrid_attention", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -74,7 +74,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".hybrid_local_kernel_attention", __package__)
+    _m = importlib.import_module(".hybrid_local_kernel_attention", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -86,7 +86,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".landmark_local_attention", __package__)
+    _m = importlib.import_module(".landmark_local_attention", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -98,7 +98,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".mixattention_moska", __package__)
+    _m = importlib.import_module(".mixattention_moska", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -110,7 +110,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".optimized_hybrid_attention", __package__)
+    _m = importlib.import_module(".optimized_hybrid_attention", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -122,7 +122,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".positive_kernel_linear_attention", __package__)
+    _m = importlib.import_module(".positive_kernel_linear_attention", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -134,7 +134,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".refined_landmark_attention", __package__)
+    _m = importlib.import_module(".refined_landmark_attention", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -146,7 +146,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".regla_attention", __package__)
+    _m = importlib.import_module(".regla_attention", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -158,7 +158,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".spectron_fp8_attention", __package__)
+    _m = importlib.import_module(".spectron_fp8_attention", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -170,7 +170,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".split_head_hybrid_attention", __package__)
+    _m = importlib.import_module(".split_head_hybrid_attention", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -182,7 +182,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".tri_branch_hybrid_attention", __package__)
+    _m = importlib.import_module(".tri_branch_hybrid_attention", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)

@@ -479,7 +479,6 @@ class SpectraV2Attention(BaseAttention):
 
             except Exception as e:
                 logger.debug("SDPA path failed or fell back: %s", e)
-                pass
 
         scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
 

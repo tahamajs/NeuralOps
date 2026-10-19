@@ -83,7 +83,7 @@ def _latent_kv_cache_attn_kernel(
     acc_latent = tl.zeros([BLOCK_M, R], dtype=tl.float32)
 
     num_n_blocks = tl.cdiv(L_KV, BLOCK_N)
-    for n_idx in range(0, num_n_blocks):
+    for n_idx in range(num_n_blocks):
         offs_n = n_idx * BLOCK_N + tl.arange(0, BLOCK_N)
         mask_n = offs_n < L_KV
 

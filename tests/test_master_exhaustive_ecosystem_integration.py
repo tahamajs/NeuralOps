@@ -195,7 +195,7 @@ class TestMasterExhaustiveEcosystemIntegration:
 
         l_op = op_cloning_loss(s_out.logits, t_out.logits)
         assert torch.isfinite(l_op)
-        print(f"[Stage 4 Passed] 6-Pillar Distillation alignment objectives computed cleanly.")
+        print("[Stage 4 Passed] 6-Pillar Distillation alignment objectives computed cleanly.")
 
         kv_cache = PagedKVCache(
             num_blocks=16,
@@ -234,7 +234,7 @@ class TestMasterExhaustiveEcosystemIntegration:
         matched_page, matched_len = radix_cache.match_prefix([10, 20, 30, 40])
         assert matched_len == 3
         assert matched_page == p_id
-        print(f"[Stage 5 Passed] Paged KV Cache, PagedStateTable CoW & Radix Prefix matching verified.")
+        print("[Stage 5 Passed] Paged KV Cache, PagedStateTable CoW & Radix Prefix matching verified.")
 
         spec_decoder = SelfSpeculativeDecoder(
             target_model=teacher_model,
@@ -254,7 +254,7 @@ class TestMasterExhaustiveEcosystemIntegration:
                 nxt = torch.argmax(tgt_l, dim=-1, keepdim=True)
                 curr = torch.cat([curr, nxt], dim=-1)
         assert torch.equal(gen_tokens, curr), "Speculative decoding diverged from exact greedy target!"
-        print(f"[Stage 6 Passed] Self-speculative decoding passed with 0 token divergence.")
+        print("[Stage 6 Passed] Self-speculative decoding passed with 0 token divergence.")
 
         with tempfile.TemporaryDirectory() as tmp_dir:
             save_path = Path(tmp_dir) / "ecosystem_export"
@@ -282,7 +282,7 @@ class TestMasterExhaustiveEcosystemIntegration:
 
         exit_code = cmd_doctor()
         assert exit_code == 0, f"neuralops doctor failed with exit code {exit_code}"
-        print(f"[Stage 8 Passed] NeuralOps doctor reported operational status.")
+        print("[Stage 8 Passed] NeuralOps doctor reported operational status.")
 
     def test_bidirectional_encoder_lifecycle_bert(self, execution_device):
         """Validates bidirectional encoder lifecycle (BertModel) through all 7 pillars."""

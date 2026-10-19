@@ -45,9 +45,9 @@ __version__ = "1.4.3"
 
 if "neuralops" in sys.modules:
     _top = sys.modules["neuralops"]
-    setattr(_top, "list_attention_mechanisms", list_attention_mechanisms)
-    setattr(_top, "register_attention", register_attention)
-    setattr(_top, "register_compressor", register_compressor)
+    _top.list_attention_mechanisms = list_attention_mechanisms
+    _top.register_attention = register_attention
+    _top.register_compressor = register_compressor
 
 __all__ = [
     "ATTENTION_REGISTRY",

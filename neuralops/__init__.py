@@ -92,7 +92,6 @@ __version__ = "1.4.0"
 import importlib.machinery
 import importlib.util
 
-import sys
 from importlib.abc import MetaPathFinder
 
 
@@ -107,7 +106,6 @@ class _AliasLoader:
 
     def exec_module(self, module: Any) -> None:
         """Execute exec_module operation."""
-        pass
 
 
 class _ModuleAliasFinder(MetaPathFinder):

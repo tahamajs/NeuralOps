@@ -205,8 +205,8 @@ class UniversalArchitectureScanner:
             )
 
         if hasattr(module, "self") and hasattr(module, "output") and ("bert" in cls_name or "roberta" in cls_name):
-            self_attn = getattr(module, "self")
-            output_block = getattr(module, "output")
+            self_attn = module.self
+            output_block = module.output
             output_dense = getattr(output_block, "dense", None)
             output_ln = getattr(output_block, "LayerNorm", getattr(output_block, "layer_norm", None))
 
@@ -242,8 +242,8 @@ class UniversalArchitectureScanner:
                 )
 
         if hasattr(module, "c_attn") and hasattr(module, "c_proj"):
-            c_attn = getattr(module, "c_attn")
-            c_proj = getattr(module, "c_proj")
+            c_attn = module.c_attn
+            c_proj = module.c_proj
 
             W_attn, b_attn = cls._extract_weight_bias(c_attn)
             W_o, b_o = cls._extract_weight_bias(c_proj)
@@ -338,25 +338,25 @@ class UniversalArchitectureScanner:
         q_mod, k_mod, v_mod, o_mod = None, None, None, None
 
         if hasattr(module, "q_proj") and hasattr(module, "k_proj") and hasattr(module, "v_proj") and hasattr(module, "o_proj"):
-            q_mod = getattr(module, "q_proj")
-            k_mod = getattr(module, "k_proj")
-            v_mod = getattr(module, "v_proj")
-            o_mod = getattr(module, "o_proj")
+            q_mod = module.q_proj
+            k_mod = module.k_proj
+            v_mod = module.v_proj
+            o_mod = module.o_proj
         elif hasattr(module, "q_lin") and hasattr(module, "k_lin") and hasattr(module, "v_lin") and hasattr(module, "out_lin"):
-            q_mod = getattr(module, "q_lin")
-            k_mod = getattr(module, "k_lin")
-            v_mod = getattr(module, "v_lin")
-            o_mod = getattr(module, "out_lin")
+            q_mod = module.q_lin
+            k_mod = module.k_lin
+            v_mod = module.v_lin
+            o_mod = module.out_lin
         elif hasattr(module, "q") and hasattr(module, "k") and hasattr(module, "v") and hasattr(module, "o"):
-            q_mod = getattr(module, "q")
-            k_mod = getattr(module, "k")
-            v_mod = getattr(module, "v")
-            o_mod = getattr(module, "o")
+            q_mod = module.q
+            k_mod = module.k
+            v_mod = module.v
+            o_mod = module.o
         elif hasattr(module, "query") and hasattr(module, "key") and hasattr(module, "value") and hasattr(module, "out_proj"):
-            q_mod = getattr(module, "query")
-            k_mod = getattr(module, "key")
-            v_mod = getattr(module, "value")
-            o_mod = getattr(module, "out_proj")
+            q_mod = module.query
+            k_mod = module.key
+            v_mod = module.value
+            o_mod = module.out_proj
 
         if q_mod is not None and k_mod is not None and v_mod is not None and o_mod is not None:
             W_q, b_q = cls._extract_weight_bias(q_mod)

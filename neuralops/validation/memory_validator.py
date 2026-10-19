@@ -35,7 +35,7 @@ class MemoryTracker:
             total = torch.cuda.get_device_properties(0).total_memory / 1e9
             print(f'  Peak VRAM: {self.peak:.2f} GB / {total:.2f} GB ({self.peak/total*100:.1f}%)')
         else:
-            print(f'  Peak VRAM: N/A (CPU mode)')
+            print('  Peak VRAM: N/A (CPU mode)')
 
     def check_ok(self, threshold=0.9):
         if not torch.cuda.is_available():

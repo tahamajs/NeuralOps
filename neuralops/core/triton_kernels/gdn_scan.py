@@ -1101,7 +1101,7 @@ if HAS_TRITON and tl is not None:
 
         S_state = tl.zeros((D_V, D_K), dtype=tl.float32)
 
-        for t in range(0, L):
+        for t in range(L):
             q_ptrs = q_ptr + pid_b * stride_qb + pid_h * stride_qh + t * stride_ql + offs_k * stride_qd
             k_ptrs = k_ptr + pid_b * stride_kb + pid_h * stride_kh + t * stride_kl + offs_k * stride_kd
             v_ptrs = v_ptr + pid_b * stride_vb + pid_h * stride_vh + t * stride_vl + offs_v * stride_vd

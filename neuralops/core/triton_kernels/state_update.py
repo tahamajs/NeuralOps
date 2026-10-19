@@ -82,7 +82,7 @@ if HAS_TRITON:
         else:
             h = tl.zeros((N_SZ,), dtype=tl.float32)
 
-        for t in range(0, L_SZ):
+        for t in range(L_SZ):
             u_val = tl.load(U_ptr + b_id * stride_ub + t * stride_ul + d_id * stride_ud).to(
                 tl.float32
             )

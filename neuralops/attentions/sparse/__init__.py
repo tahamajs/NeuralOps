@@ -14,7 +14,7 @@ import importlib
 __all__ = []
 
 try:
-    _m = importlib.import_module(f".adaptive_sparse_attention", __package__)
+    _m = importlib.import_module(".adaptive_sparse_attention", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -26,7 +26,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".bam_umoe", __package__)
+    _m = importlib.import_module(".bam_umoe", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -38,7 +38,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".cluster_attention", __package__)
+    _m = importlib.import_module(".cluster_attention", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -50,7 +50,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".expert_choice_moe", __package__)
+    _m = importlib.import_module(".expert_choice_moe", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -62,7 +62,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".hamming_attention", __package__)
+    _m = importlib.import_module(".hamming_attention", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -74,7 +74,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".lsh_attention", __package__)
+    _m = importlib.import_module(".lsh_attention", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -86,7 +86,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".moba_attention", __package__)
+    _m = importlib.import_module(".moba_attention", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -98,7 +98,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".moe_deltakv_paged", __package__)
+    _m = importlib.import_module(".moe_deltakv_paged", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -110,7 +110,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".nsa_attention", __package__)
+    _m = importlib.import_module(".nsa_attention", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -122,7 +122,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".padre_attention", __package__)
+    _m = importlib.import_module(".padre_attention", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -134,7 +134,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".reap_moe", __package__)
+    _m = importlib.import_module(".reap_moe", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
@@ -146,7 +146,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".routing_attention", __package__)
+    _m = importlib.import_module(".routing_attention", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)

@@ -112,7 +112,7 @@ def calibrate_expert_activations(
                 else:
                     inp = batch
 
-                if hasattr(model, "__call__"):
+                if callable(model):
                     if isinstance(inp, torch.Tensor):
                         model(inp)
                     elif isinstance(batch, dict):

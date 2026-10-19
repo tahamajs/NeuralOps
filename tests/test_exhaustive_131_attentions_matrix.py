@@ -225,7 +225,7 @@ def test_1_8_autoregressive_step_operational_check(attn_name):
     device = "cuda"
     mod = _instantiate_attn(attn_name, dim=64, num_heads=2, device=device)
 
-    if not hasattr(mod, "step") or not callable(getattr(mod, "step")):
+    if not hasattr(mod, "step") or not callable(mod.step):
         pytest.skip(f"{attn_name} does not implement .step()")
 
     B, T, D = 1, 4, 64

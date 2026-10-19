@@ -176,7 +176,7 @@ def test_registry_canonical_counts():
     """Assert canonical count invariants: 131 attentions, 72 compressors."""
     assert len(ALL_131_ATTENTION_KEYS) >= 131, f"Expected 131 attentions, found {len(ALL_131_ATTENTION_KEYS)}"
     assert len(ALL_72_COMPRESSOR_KEYS) >= 72, f"Expected 72 compressors, found {len(ALL_72_COMPRESSOR_KEYS)}"
-    print(f"\n[Count Invariant] 131 Attentions and 72 Compressors strictly verified.")
+    print("\n[Count Invariant] 131 Attentions and 72 Compressors strictly verified.")
 
 
 @pytest.mark.parametrize("attn_key", ALL_131_ATTENTION_KEYS)
@@ -341,7 +341,7 @@ def run_master_203_coverage_suite():
     total_modules = len(ALL_131_ATTENTION_KEYS) + len(ALL_72_COMPRESSOR_KEYS)
 
     print("\n" + "=" * 80)
-    print(f"🏆 MASTER 203-MODULE HARDWARE KERNEL COVERAGE CERTIFICATION")
+    print("🏆 MASTER 203-MODULE HARDWARE KERNEL COVERAGE CERTIFICATION")
     print(f"  • Attention Mechanisms:  {len(attn_passed)}/{len(ALL_131_ATTENTION_KEYS)} PASS (100%)")
     print(f"  • Compression Engines:   {len(comp_passed)}/{len(ALL_72_COMPRESSOR_KEYS)} PASS (100%)")
     print(f"  • Total Modules Tested:  {total_passed}/{total_modules} PASS ({total_passed / total_modules * 100:.1f}%)")

@@ -89,7 +89,7 @@ def _cosformer_fwd_kernel(
     den_acc = tl.zeros((BLOCK_M,), dtype=tl.float32)
 
     max_n_blocks = tl.cdiv(L, BLOCK_N)
-    for n_idx in range(0, max_n_blocks):
+    for n_idx in range(max_n_blocks):
         offs_n = n_idx * BLOCK_N + tl.arange(0, BLOCK_N)
         mask_n = offs_n < L
 

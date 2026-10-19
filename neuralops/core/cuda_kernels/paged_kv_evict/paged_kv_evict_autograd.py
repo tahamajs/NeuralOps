@@ -49,7 +49,7 @@ paged_kv_evict_ref = paged_kv_compact_pytorch_ref
 def paged_kv_evict(k_in: torch.Tensor, v_in: torch.Tensor, keep_indices: torch.Tensor) -> torch.Tensor:
     def cuda_fn(*args, **kwargs):
         mod = _get_module()
-        fn = getattr(mod, "paged_kv_compact_fwd")
+        fn = mod.paged_kv_compact_fwd
         return fn(*args, **kwargs)
     return dispatch(
         cuda_fn,

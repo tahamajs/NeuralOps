@@ -180,7 +180,7 @@ def test_all_attentions():
                 raise ValueError(f"Output must be Tensor, got {type(out)}")
 
             if not torch.isfinite(out).all():
-                raise ValueError(f"Output contains NaN or Inf values")
+                raise ValueError("Output contains NaN or Inf values")
 
             loss = out.sum()
             loss.backward()
@@ -240,7 +240,7 @@ def test_all_compressors():
                 out = out[0]
 
             if not torch.isfinite(out).all():
-                raise ValueError(f"Compressed model output contains NaN or Inf")
+                raise ValueError("Compressed model output contains NaN or Inf")
 
             passed.append(comp_name)
             print(f"  [PASS] {comp_name:<38} | Out Shape: {tuple(out.shape)}")

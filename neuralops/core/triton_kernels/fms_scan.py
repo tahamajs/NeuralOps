@@ -637,7 +637,7 @@ if HAS_TRITON and tl is not None:
 
         h = tl.zeros((BLOCK_D,), dtype=tl.float32)
 
-        for t in range(0, L):
+        for t in range(L):
             g = tl.load(g_ptr + pid_b * stride_gb + t * stride_gl + offs_d * stride_gd, mask=mask_d, other=0.0).to(tl.float32)
             v = tl.load(v_ptr + pid_b * stride_vb + t * stride_vl + offs_d * stride_vd, mask=mask_d, other=0.0).to(tl.float32)
             h = (1.0 - g) * h + g * v

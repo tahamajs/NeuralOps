@@ -70,7 +70,7 @@ def _is_non_lora_trainable(n_low: str) -> bool:
     )
     if any(tag in n_low for tag in svd_proj_tags):
         return True
-    if not (n_low.endswith(".weight") or n_low.endswith(".bias")) and any(
+    if not (n_low.endswith((".weight", ".bias"))) and any(
         tag in n_low for tag in ("attention.", "self_attn.", ".attn.")
     ):
         return True
@@ -129,7 +129,7 @@ def _is_candidate_trainable_param(
         if n_low.endswith(".output_gate") or ".inner.e" in n_low or ".inner.f" in n_low:
             return True
         if (".inner." in n_low or "._wrapped_attention." in n_low) and not (
-            n_low.endswith(".weight") or n_low.endswith(".bias")
+            n_low.endswith((".weight", ".bias"))
         ):
             return True
         if any(tag in n_low for tag in (".delta_mem.", ".beta_gate.", ".forget_gate.", ".input_gate.", ".output_proj.", ".mem_proj.")):

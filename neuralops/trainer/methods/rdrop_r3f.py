@@ -141,8 +141,8 @@ class MethodTrainer(Trainer):
 def apply_rdrop(model, config) -> None:
     """Configures the model or training arguments for R-Drop consistency regularization."""
     alpha = getattr(config, "rdrop_alpha", 0.7)
-    setattr(model, "_neuralops_rdrop_enabled", True)
-    setattr(model, "_neuralops_rdrop_alpha", alpha)
+    model._neuralops_rdrop_enabled = True
+    model._neuralops_rdrop_alpha = alpha
     logger.info("Configured model with R-Drop consistency regularization (alpha=%.2f)", alpha)
 
 
@@ -150,6 +150,6 @@ def apply_rdrop(model, config) -> None:
 def apply_r3f(model, config) -> None:
     """Configures the model or training arguments for R3F representation fine-tuning."""
     epsilon = getattr(config, "r3f_epsilon", 1e-5)
-    setattr(model, "_neuralops_r3f_enabled", True)
-    setattr(model, "_neuralops_r3f_epsilon", epsilon)
+    model._neuralops_r3f_enabled = True
+    model._neuralops_r3f_epsilon = epsilon
     logger.info("Configured model with R3F representation perturbation (epsilon=%.2e)", epsilon)

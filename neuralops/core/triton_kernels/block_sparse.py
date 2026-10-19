@@ -255,7 +255,7 @@ if HAS_TRITON and tl is not None:
 
         q_block_id = pid_m * BLOCK_M // BLOCK_SIZE
 
-        for active_idx in range(0, K_ACTIVE):
+        for active_idx in range(K_ACTIVE):
             active_block_ptr = (
                 active_blocks_ptr
                 + pid_b * stride_ab_b

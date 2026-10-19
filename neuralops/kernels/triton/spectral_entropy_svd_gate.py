@@ -69,7 +69,7 @@ def _spectral_entropy_svd_kernel(
 
     z_acc = tl.zeros((BLOCK_M, BLOCK_R), dtype=tl.float32)
     num_k_blocks = tl.cdiv(K, BLOCK_K)
-    for k_idx in range(0, num_k_blocks):
+    for k_idx in range(num_k_blocks):
         offs_k = k_idx * BLOCK_K + tl.arange(0, BLOCK_K)
         mask_k = offs_k < K
 

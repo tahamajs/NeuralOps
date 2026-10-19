@@ -101,7 +101,7 @@ class PagedKVCache:
             return block_idx
 
         if not self.free_blocks:
-            raise RuntimeError(f"PagedKVCache: Out of free physical blocks during Copy-on-Write.")
+            raise RuntimeError("PagedKVCache: Out of free physical blocks during Copy-on-Write.")
 
         new_block_idx = self.free_blocks.pop(0)
         self.key_cache[new_block_idx].copy_(self.key_cache[block_idx])

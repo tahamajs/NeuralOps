@@ -47,7 +47,7 @@ def favor_plus_triton_ref(proj, diag_sq, norm_factor):
 def favor_plus(proj: torch.Tensor, diag_sq: torch.Tensor, norm_factor: float) -> torch.Tensor:
     def cuda_fn(*args, **kwargs):
         mod = _get_module()
-        fn = getattr(mod, "favor_plus_act_fwd")
+        fn = mod.favor_plus_act_fwd
         return fn(*args, **kwargs)
     return dispatch(
         cuda_fn,

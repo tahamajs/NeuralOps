@@ -33,7 +33,7 @@ def test_svdlinear_get_weight():
     """Test 2: SVDLinear has get_weight() method and not weight property."""
     linear = SVDLinear(in_features=32, out_features=64, rank=16, bias=True)
     assert not hasattr(linear.__class__, "weight") or not isinstance(
-        getattr(linear.__class__, "weight"), property
+        linear.__class__.weight, property
     ), "SVDLinear must not define @property def weight"
     assert hasattr(linear, "get_weight") and callable(linear.get_weight)
     W = linear.get_weight()

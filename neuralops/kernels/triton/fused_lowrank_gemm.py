@@ -74,7 +74,7 @@ def _fused_lowrank_gated_gemm_1d_kernel(
     z_acc = tl.zeros((BLOCK_M, BLOCK_R), dtype=tl.float32)
 
     num_k_blocks = tl.cdiv(K, BLOCK_K)
-    for k_idx in range(0, num_k_blocks):
+    for k_idx in range(num_k_blocks):
         offs_k = k_idx * BLOCK_K + tl.arange(0, BLOCK_K)
         mask_k = offs_k < K
 
@@ -95,7 +95,7 @@ def _fused_lowrank_gated_gemm_1d_kernel(
     z_tile = z_acc.to(x_ptr.dtype.element_ty)
 
     num_n_blocks = tl.cdiv(N, BLOCK_N)
-    for n_idx in range(0, num_n_blocks):
+    for n_idx in range(num_n_blocks):
         offs_n = n_idx * BLOCK_N + tl.arange(0, BLOCK_N)
         mask_n = offs_n < N
 
@@ -165,7 +165,7 @@ def _fused_lowrank_gated_gemm_2d_kernel(
 
     z_acc = tl.zeros((BLOCK_M, BLOCK_R), dtype=tl.float32)
     num_k_blocks = tl.cdiv(K, BLOCK_K)
-    for k_idx in range(0, num_k_blocks):
+    for k_idx in range(num_k_blocks):
         offs_k = k_idx * BLOCK_K + tl.arange(0, BLOCK_K)
         mask_k = offs_k < K
 

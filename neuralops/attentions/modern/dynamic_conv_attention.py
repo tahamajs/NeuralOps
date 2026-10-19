@@ -592,7 +592,7 @@ def inject_dynamic_conv(
             if hasattr(m, "inner") and isinstance(m.inner, DynamicConvAttention):
                 return True
             if hasattr(m, "_wrapped_attention"):
-                wrapped = getattr(m, "_wrapped_attention")
+                wrapped = m._wrapped_attention
                 if wrapped is not None and not isinstance(wrapped, type):
                     return True
             return False

@@ -59,9 +59,9 @@ def inspect_module_capabilities(
     if "supports_causal" in mod_overrides:
         causal = mod_overrides["supports_causal"]
     elif hasattr(cls, "supports_causal"):
-        causal = bool(getattr(cls, "supports_causal"))
+        causal = bool(cls.supports_causal)
     elif hasattr(cls, "is_causal"):
-        causal = bool(getattr(cls, "is_causal"))
+        causal = bool(cls.is_causal)
     elif "causal" in sig or "is_causal" in sig:
         causal = True
     else:
@@ -70,7 +70,7 @@ def inspect_module_capabilities(
     if "supports_gqa" in mod_overrides:
         gqa = mod_overrides["supports_gqa"]
     elif hasattr(cls, "supports_gqa"):
-        gqa = bool(getattr(cls, "supports_gqa"))
+        gqa = bool(cls.supports_gqa)
     elif "num_kv_heads" in sig or "gqa" in sig:
         gqa = True
     else:
@@ -79,7 +79,7 @@ def inspect_module_capabilities(
     if "supports_rope" in mod_overrides:
         rope = mod_overrides["supports_rope"]
     elif hasattr(cls, "supports_rope"):
-        rope = bool(getattr(cls, "supports_rope"))
+        rope = bool(cls.supports_rope)
     elif "rope" in sig or "rotary" in sig or "position_embeddings" in sig:
         rope = True
     else:
@@ -88,7 +88,7 @@ def inspect_module_capabilities(
     if "requires_cuda" in mod_overrides:
         cuda = mod_overrides["requires_cuda"]
     elif hasattr(cls, "requires_cuda"):
-        cuda = bool(getattr(cls, "requires_cuda"))
+        cuda = bool(cls.requires_cuda)
     else:
         cuda = False
 

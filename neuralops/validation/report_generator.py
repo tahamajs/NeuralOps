@@ -11,7 +11,8 @@ Validation Report Generator
 Generates structured markdown and JSON summary reports from validation suites.
 """
 
-import json, os
+import json
+import os
 from datetime import datetime
 
 class ReportGenerator:

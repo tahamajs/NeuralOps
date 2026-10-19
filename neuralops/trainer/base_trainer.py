@@ -21,12 +21,10 @@ class BaseTrainer(ABC):
     @abstractmethod
     def train(self) -> dict[str, Any]:
         """Fit the model on the provided dataset."""
-        pass
 
     @abstractmethod
     def evaluate(self) -> dict[str, Any]:
         """Run evaluate and return results."""
-        pass
 
 
 class Trainer(BaseTrainer):
