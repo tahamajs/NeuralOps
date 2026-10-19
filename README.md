@@ -1654,14 +1654,27 @@ All benchmark tables published in this document are generated from committed, ti
 
 ## 23. Hugging Face Model Zoo Audit
 
-NeuralOps integrates directly with the Hugging Face Hub:
+NeuralOps integrates directly with the Hugging Face Hub under the [Hooshaai](https://huggingface.co/Hooshaai) organization and author checkpoints:
 
-| Repository / Model ID | Base Backbone | Replaced Attention | Compression Method | Parameters | Download Link |
+| Repository / Model ID | Base Backbone | Replaced Attention / Engine | Compression / Sparsity Method | Parameters | Download & Model Card |
 | :--- | :--- | :--- | :--- | :---: | :--- |
-| `neuralops/gpt2-medium-fwsvd-rank64` | `gpt2-medium` | `svd_linear_attention` | Fisher-Weighted SVD (`rank=64`) | 214M | [🤗 Model Card](docs/model_cards/gpt2-medium-fwsvd-rank64.md) |
-| `neuralops/roberta-base-fwsvd-rank32` | `roberta-base` | `svd_linear_attention` | Fisher-Weighted SVD (`rank=32`) | 82M | [🤗 Model Card](docs/model_cards/roberta-base-fwsvd-rank32.md) |
-| `neuralops/distilbert-base-fwsvd-rank64` | `distilbert-base-uncased` | `svd_linear_attention` | Fisher-Weighted SVD (`rank=64`) | 48M | [🤗 Model Card](docs/model_cards/distilbert-base-fwsvd-rank64.md) |
+| `Hooshaai/distilbert-base-fwsvd-rank64` | `distilbert-base-uncased` | `svd_linear_attention` | Fisher-Weighted SVD (`rank=64`) | 48.2M | [🤗 Model Card](docs/model_cards/distilbert-base-fwsvd-rank64.md) |
+| `Hooshaai/gpt2-medium-fwsvd-rank64` | `gpt2-medium` | `svd_linear_attention` | Fisher-Weighted SVD (`rank=64`) | 214M | [🤗 Model Card](docs/model_cards/gpt2-medium-fwsvd-rank64.md) |
+| `Hooshaai/roberta-base-fwsvd-rank32` | `roberta-base` | `svd_linear_attention` | Fisher-Weighted SVD (`rank=32`) | 82M | [🤗 Model Card](docs/model_cards/roberta-base-fwsvd-rank32.md) |
+| `Hooshaai/distilbert-sst2-cosformer` | `distilbert-base-uncased` | `cosformer` | Cosine Reweighting Linear Scan | 66.4M | [🤗 Model Card](docs/model_cards/distilbert-sst2-cosformer.md) |
+| `Hooshaai/distilbert-sst2-adaptive-span` | `distilbert-base-uncased` | `adaptive_span_attention` | Dynamic Head Receptive Gating | 66.4M | [🤗 Model Card](docs/model_cards/distilbert-sst2-adaptive-span.md) |
+| `Hooshaai/distilbert-sst2-cluster-attention` | `distilbert-base-uncased` | `cluster_attention` | Batch Lloyd's K-Means ($K=16$) | 66.4M | [🤗 Model Card](docs/model_cards/distilbert-sst2-cluster-attention.md) |
+| `Hooshaai/distilbert-sst2-griffin-ssd` | `distilbert-base-uncased` | `griffin_ssd` | Hybrid Sliding-Window ($W=64$) + SSD | 66.4M | [🤗 Model Card](docs/model_cards/distilbert-sst2-griffin-ssd.md) |
+| `Hooshaai/distilbert-sst2-hymba-transx` | `distilbert-base-uncased` | `hymba_transx` | Differential Attention + SSM | 66.4M | [🤗 Model Card](docs/model_cards/distilbert-sst2-hymba-transx.md) |
+| `Hooshaai/distilbert-sst2-rpc` | `distilbert-base-uncased` | `rpc_attention` | Random Subspace Sketch ($d_p=32$) | 66.4M | [🤗 Model Card](docs/model_cards/distilbert-sst2-rpc.md) |
+| `Hooshaai/distilbert-sst2-adasplash` | `distilbert-base-uncased` | `adasplash_attention` | Tsallis 1.5-Entmax (42% exact zeros) | 67.5M | [🤗 Model Card](docs/model_cards/distilbert-sst2-adasplash.md) |
+| `Hooshaai/distilbert-agnews-full-mla` | `distilbert-base-uncased` | `mla_attention` | Low-Rank Latent KV Bottleneck ($d_c=128$) | 62.8M | [🤗 Model Card](docs/model_cards/distilbert-agnews-full-mla.md) |
+| `Hooshaai/distilbert-mnli-full-adasplash` | `distilbert-base-uncased` | `adasplash_attention` | Tsallis 1.5-Entmax on multi-premise | 67.5M | [🤗 Model Card](docs/model_cards/distilbert-mnli-full-adasplash.md) |
+| `Hooshaai/roberta-base-adasplash` | `roberta-base` | `adasplash_attention` | Tsallis 1.5-Entmax (40% exact zeros) | 125.8M | [🤗 Model Card](docs/model_cards/roberta-base-adasplash.md) |
+| `Hooshaai/gpt2-adasplash-attention` | `gpt2` | `adasplash_attention` | Causal Splash ($W=32$) + 1.5-Entmax | 125.6M | [🤗 Model Card](docs/model_cards/gpt2-adasplash-attention.md) |
 | `tahamajs/distilbert-svd-attention` | `distilbert-base-uncased` | `svd_linear_attention` | Direct SVD (`rank=64`) | 54.2M | [🤗 Model Card](https://huggingface.co/tahamajs/distilbert-svd-attention) |
+
+The complete directory and export synchronization utility for the Hooshaai organization is available in [`docs/model_cards/`](docs/model_cards/README.md) and [`scripts/utils/sync_hooshaai_model_cards.py`](scripts/utils/sync_hooshaai_model_cards.py).
 
 > **Transparency Note**: Storing checkpoints for all 131 attention mechanisms across 8 backbones requires over 450 GB of storage. Rather than hosting redundant static weights, NeuralOps provides **zero-shot in-place surgery** (`neuralops.replace_attention(model, "mamba_block")`) which transplants any of the 131 architectures into standard Hugging Face weights in milliseconds locally.
 
