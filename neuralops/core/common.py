@@ -138,7 +138,7 @@ class LoRALinear(nn.Module):
 
     def __init__(
         self,
-        base_or_in_features: nn.Module | int,
+        base_or_in_features: nn.Module | int | None = None,
         out_features: int | None = None,
         bias: bool = True,
         lora_rank: int = 16,
@@ -149,8 +149,15 @@ class LoRALinear(nn.Module):
         merge_weights: bool = False,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
+        in_features: int | None = None,
+        **kwargs: Any,
     ) -> None:
         super().__init__()
+        if base_or_in_features is None:
+            if in_features is not None:
+                base_or_in_features = in_features
+            else:
+                base_or_in_features = 0
         effective_r = r if r is not None else lora_rank
         self.lora_rank = effective_r
         self.r = effective_r

@@ -124,6 +124,7 @@ class ENLightenCompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="enlighten", **kwargs)
+        self._compressed_params: int | None = None
         cfg = cfg or kwargs.get("comp_config")
         self.cfg = cfg
 

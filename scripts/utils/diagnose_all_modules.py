@@ -151,7 +151,7 @@ class DummyContainer(nn.Module):
 
 
 for idx, name in enumerate(comp_keys):
-    cls = COMPRESSOR_REGISTRY.get(name)
+    cls: Any = COMPRESSOR_REGISTRY.get(name)
     if cls is None:
         comp_failed.append((name, "Could not resolve from COMPRESSOR_REGISTRY"))
         continue
@@ -185,11 +185,20 @@ for idx, name in enumerate(comp_keys):
                 raise RuntimeError(f"Could not instantiate compressor {name}")
 
             if hasattr(compressor, "compress"):
-                res = compressor.compress()
+                try:
+                    res = compressor.compress()
+                except TypeError:
+                    try:
+                        res = compressor.compress(model)
+                    except TypeError:
+                        res = compressor.compress(linear_layer)
             elif hasattr(compressor, "fit_transform"):
                 res = compressor.fit_transform(linear_layer.weight.data)
             elif hasattr(compressor, "apply"):
-                res = compressor.apply(model)
+                try:
+                    res = compressor.apply(model)
+                except TypeError:
+                    res = compressor.apply(linear_layer)
             else:
                 res = model
 

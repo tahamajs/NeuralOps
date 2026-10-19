@@ -233,15 +233,15 @@ class _TritonLinearAttnAutogradFunction(torch.autograd.Function):
     @staticmethod
     def forward(
         ctx: Any,
-        q: torch.Tensor,
-        k: torch.Tensor,
-        v: torch.Tensor,
-        is_causal: bool,
-        phi: str,
-        eps: float,
-        cos_weight: torch.Tensor | None,
-        sin_weight: torch.Tensor | None,
-    ) -> torch.Tensor:
+        q: Any,
+        k: Any,
+        v: Any,
+        is_causal: Any,
+        phi: Any,
+        eps: Any,
+        cos_weight: Any,
+        sin_weight: Any,
+    ) -> Any:
         orig_shape = q.shape
         D_k = q.shape[-1]
         D_v = v.shape[-1]
@@ -345,7 +345,7 @@ class _TritonLinearAttnAutogradFunction(torch.autograd.Function):
         return out.view(*orig_shape[:-1], D_v)
 
     @staticmethod
-    def backward(ctx: Any, grad_out: torch.Tensor) -> tuple[torch.Tensor | None, ...]:
+    def backward(ctx: Any, grad_out: Any) -> tuple[Any, ...]:
         q, k, v = ctx.saved_tensors
         q_req = q.detach().requires_grad_(True)
         k_req = k.detach().requires_grad_(True)
@@ -1044,7 +1044,7 @@ if HAS_TRITON and tl is not None:
 
 class _ZerosLinearScanFunction(torch.autograd.Function):
     @staticmethod
-    def forward(ctx, q, k, v, valid_mask=None, eps=1e-6):
+    def forward(ctx: Any, q: Any, k: Any, v: Any, valid_mask: Any = None, eps: Any = 1e-6) -> Any:
         B, H, L, D = q.shape
         out = torch.empty_like(q)
         has_mask = valid_mask is not None
@@ -1072,7 +1072,7 @@ class _ZerosLinearScanFunction(torch.autograd.Function):
         return out
 
     @staticmethod
-    def backward(ctx, dout):
+    def backward(ctx: Any, dout: Any) -> tuple[Any, ...]:
         q, k, v, mask_t = ctx.saved_tensors
         has_mask = ctx.has_mask
         eps = ctx.eps
