@@ -453,7 +453,8 @@ def generate_args(mod_name, sig, device, dtype, B=4, H=8, N=512, D=64):
         A = torch.randn(D, device=device, dtype=dtype) * 0.1
         B_mat = torch.randn(B, S_dim, N, device=device, dtype=dtype) * 0.1
         C_mat = torch.randn(B, S_dim, N, device=device, dtype=dtype) * 0.1
-        return [u, delta, A, B_mat, C_mat], {{}}
+        D_val = torch.randn(D, device=device, dtype=dtype) * 0.1
+        return [u, delta, A, B_mat, C_mat, D_val], {{}}
     elif mod_name == "liquid_attention":
         x = torch.randn(B, N, D, device=device, dtype=dtype) * 0.1
         delta = torch.randn(B, N, D, device=device, dtype=dtype) * 0.1
