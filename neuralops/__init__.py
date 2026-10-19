@@ -686,6 +686,16 @@ def __getattr__(name: str) -> Any:
 
     if name in _LAZY_EXPORTS:
         module_path, attr_name = _LAZY_EXPORTS[name]
+        if module_path.startswith("evaluation."):
+            # A compatibility module at ``neuralops/evaluation.py`` can be
+            # installed under the bare ``evaluation`` name by the editable
+            # package finder.  Public evaluation exports require the actual
+            # top-level package so its submodules remain importable.
+            loaded_evaluation = sys.modules.get("evaluation")
+            if loaded_evaluation is not None and not hasattr(loaded_evaluation, "__path__"):
+                sys.modules.pop("evaluation", None)
+            if "evaluation" not in sys.modules:
+                importlib.import_module("evaluation")
         module = importlib.import_module(module_path)
         val = getattr(module, attr_name)
         globals()[name] = val
