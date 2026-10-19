@@ -132,6 +132,7 @@ class NASCAttention(BaseAttention):
             )
 
         self.is_nested_encoder: bool = False
+        self._logged_once: bool = False
 
         self.q_proj = LoRALinear(
             self.hidden_size,

@@ -350,11 +350,12 @@ class BenchmarkEvaluator:
             try:
                 from neuralops.benchmarks.models.loader import load_universal_model
 
-                model_inst, _, _ = load_universal_model(
-                    model_name=self.raw_model,
+                loaded_tuple = load_universal_model(
+                    model_name=str(self.raw_model),
                     device=str(self.device),
                     dtype=self.dtype_str,
                 )
+                model_inst = loaded_tuple[0]
                 loaded = True
             except Exception as e_univ:
                 logger.debug("Universal loader skipped: %s", e_univ)
@@ -365,7 +366,7 @@ class BenchmarkEvaluator:
                     from transformers import AutoModelForCausalLM
 
                     model_inst = AutoModelForCausalLM.from_pretrained(
-                        self.raw_model,
+                        str(self.raw_model),
                         torch_dtype=self.dtype,
                         trust_remote_code=True,
                     )
@@ -1019,20 +1020,21 @@ class BenchmarkEvaluator:
         try:
             from evaluation.eval_pipeline import evaluate_single_combination_opt
 
+            r_val = int(rank) if rank is not None else 64
             res = evaluate_single_combination_opt(
                 track=track,
                 module_name=mod,
                 module_type=module_type,
                 model_family=model_family,
                 dataset=dataset,
-                rank=rank,
+                rank=r_val,
                 device=self.device,
                 **kwargs,
             )
             d = res.to_dict() if hasattr(res, "to_dict") else dict(res)
             return BenchmarkEvalResult(
                 task_type="combination_evaluation",
-                model_name=model_family,
+                model_name=self.model_name or model_family,
                 model_family=model_family,
                 attention_type=mod if module_type == "attention" else None,
                 compression_type=mod if module_type == "compressor" else None,

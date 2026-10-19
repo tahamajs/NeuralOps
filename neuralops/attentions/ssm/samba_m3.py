@@ -204,6 +204,7 @@ class SAMBAM3Block(nn.Module):
         self.is_decoder: bool = bool(is_dec)
         self.is_causal: bool = self.is_decoder
         self.is_nested_encoder: bool = False
+        self._active_is_decoder: bool = False
 
         self.q_lin = LoRALinear(
             self.d_model,

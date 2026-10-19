@@ -12,7 +12,58 @@ NeuralOps Core Modules.
 from __future__ import annotations
 
 import importlib
-from typing import Any
+from typing import Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from neuralops.api import (
+        AutoNeuralOpsForCausalLM,
+        AutoNeuralOpsForSequenceClassification,
+        AutoNeuralOpsModel,
+        available_backends,
+        benchmark,
+        benchmark_all,
+        collect_surgery_distillation_loss,
+        compare,
+        compare_attentions_ablation,
+        compile_to_so,
+        compress,
+        distill,
+        evaluate,
+        export_model,
+        finalize_surgery,
+        get_attention_class,
+        get_compressor_class,
+        get_version,
+        has_triton,
+        info,
+        list_attentions,
+        list_compressors,
+        list_families,
+        load_exported_model,
+        load_model,
+        merge_for_inference,
+        oneshot,
+        patch_transformers,
+        push_to_hub,
+        recommend,
+        replace_attention,
+        set_surgery_alpha,
+        set_surgery_stage,
+        summary,
+        surgical_transplant_and_heal_pipeline,
+        train,
+        transplant_attention,
+        validate,
+    )
+    from neuralops.core.exceptions import (
+        BackendError,
+        ConfigError,
+        NeuralOpsError,
+        NumericalError,
+        WeightCopyError,
+    )
+    from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
+    from neuralops.kernels import list_cuda_kernels, list_triton_kernels
 
 __version__ = "1.4.3"
 

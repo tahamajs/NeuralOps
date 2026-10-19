@@ -13,6 +13,7 @@ Properly initializes modules with GPT2Config and standard model structure.
 
 import os
 import sys
+from typing import Any
 
 os.environ.setdefault("HF_HUB_OFFLINE", "1")
 os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
@@ -145,7 +146,7 @@ class DummyContainer(nn.Module):
         self.fc1 = nn.Linear(64, 64)
         self.fc2 = nn.Linear(64, 64)
 
-    def forward(self, x):
+    def forward(self, x, *args: Any, **kwargs: Any):
         """Execute forward routine."""
         return self.fc2(self.fc1(x))
 

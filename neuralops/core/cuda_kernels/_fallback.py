@@ -140,12 +140,13 @@ def _pack_for_autograd(args: tuple, kwargs: dict):
 
 
 def dispatch(
-    cuda_fn: Callable[..., Any] | None,
-    triton_fn: Callable[..., Any] | None,
-    pytorch_fn: Callable[..., Any],
+    cuda_fn: Any,
+    triton_fn: Any,
+    pytorch_ref: Any = None,
     *args: Any,
     kernel_name: str = "unknown",
     allow_none: bool = False,
+    pytorch_fn: Any = None,
     **kwargs: Any,
 ) -> Any:
     """
@@ -158,6 +159,9 @@ def dispatch(
     3. If 'auto':
        Level 1 -> Level 2 -> Level 3.
     """
+    if pytorch_ref is None and pytorch_fn is not None:
+        pytorch_ref = pytorch_fn
+    pytorch_fn = pytorch_ref
     if kernel_name != "unknown" and _is_first_tensor_cpu(*args, **kwargs):
         _DISPATCH_STATS["pytorch"] += 1
         _LAST_DISPATCH_BACKEND[kernel_name] = "pytorch"

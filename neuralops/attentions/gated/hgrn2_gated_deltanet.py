@@ -143,6 +143,7 @@ class HGRN2GatedDeltaNet(BaseAttention):
             if (config is None or getattr(config, "_is_synthetic", False)) and old_attn is None:
                 is_dec = True
             self.is_decoder = bool(is_dec)
+        self.is_causal: bool = False
 
         self.lora_rank: int = int(
             _cfg_get(comp_config, "lora_rank", kwargs.get("lora_rank", lora_rank))

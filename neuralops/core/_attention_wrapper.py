@@ -96,6 +96,7 @@ class ReplaceAttention(BaseAttention):
             self.is_decoder = bool(_cfg_get(config, "is_decoder", False))
 
         self.is_nested_encoder: bool = False
+        self._first_copy_done: bool = False
 
         self.rank = int(rank) if rank and rank > 0 else 0
 
