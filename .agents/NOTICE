@@ -1,0 +1,9 @@
+NeuralOps Agent Workspace Notice
+================================
+
+Certain agent skills and operational workflows in this workspace were adapted 
+from open-source Triton and linear attention engineering practices, including 
+work inspired by the Flash-Linear-Attention community (licensed under Apache 2.0 / MIT).
+
+All agent skills in this repository are maintained under NeuralOps and adhere 
+to the neuralops-* naming convention with MIT license attribution.
