@@ -214,7 +214,7 @@ def cmd_eval(args: Any) -> int:
             table.add_row("Token Throughput", f"{throughput_tokens_sec:,.2f}", "tokens / sec")
             table.add_row("Token Latency", f"{latency_ms_per_token:.4f}", "ms / token")
             table.add_row("Peak VRAM Allocated", f"{peak_vram_mb:.2f}", "MB")
-            if evaluated_tokens_for_acc > 0:
+            if eval_result.accuracy_pct is not None:
                 table.add_row("Next-Token Accuracy", f"{accuracy_pct:.2f}%", "percentage")
             table.add_row("Total Evaluated Tokens", f"{total_tokens:,}", "tokens")
             table.add_row("Evaluation Duration", f"{elapsed_time:.3f}", "seconds")
@@ -227,7 +227,7 @@ def cmd_eval(args: Any) -> int:
             print(f"  Latency:                 {latency_ms_per_token:.4f} ms/token")
             print(f"  Peak VRAM:               {peak_vram_mb:.2f} MB")
             print(f"  Loss:                    {avg_loss:.4f}")
-            if evaluated_tokens_for_acc > 0:
+            if eval_result.accuracy_pct is not None:
                 print(f"  Accuracy:                {accuracy_pct:.2f}%")
             print(f"  Total Tokens:            {total_tokens:,} in {elapsed_time:.2f}s")
             print("-----------------------------------------------------------------")
