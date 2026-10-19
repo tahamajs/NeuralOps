@@ -23,6 +23,10 @@ from neuralops.core.triton_kernels import (
     gdn_scan_triton,
     gla_scan,
     gla_scan_triton,
+)
+from neuralops.core.triton_kernels.gdn_scan import gdn_scan_pytorch
+from neuralops.core.triton_kernels.gla_scan import gla_scan_pytorch
+from neuralops.core.triton_kernels import (
     gqa,
     gqa_pytorch_fallback,
     hgrn2_scan,
