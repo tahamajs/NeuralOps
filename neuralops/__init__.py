@@ -24,7 +24,7 @@ if TYPE_CHECKING:
         benchmark_all,
         collect_surgery_distillation_loss,
         compare,
-        compare_attentions_ablation,
+        compare_attentions_ablation,  # noqa: F401
         compile_to_so,
         compress,
         distill,
@@ -50,7 +50,7 @@ if TYPE_CHECKING:
         set_surgery_alpha,
         set_surgery_stage,
         summary,
-        surgical_transplant_and_heal_pipeline,
+        surgical_transplant_and_heal_pipeline,  # noqa: F401
         train,
         transplant_attention,
         validate,
@@ -62,8 +62,8 @@ if TYPE_CHECKING:
         NumericalError,
         WeightCopyError,
     )
-    from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
-    from neuralops.kernels import list_cuda_kernels, list_triton_kernels
+    from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY  # noqa: F401
+    from neuralops.kernels import list_cuda_kernels, list_triton_kernels  # noqa: F401
 
 __version__ = "1.4.0"
 

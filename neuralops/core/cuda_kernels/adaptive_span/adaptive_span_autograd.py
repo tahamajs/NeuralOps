@@ -13,9 +13,7 @@ Hardware-accelerated CUDA C++ autograd implementation with analytical gradients 
 
 from __future__ import annotations
 from pathlib import Path
-from typing import Optional
 import torch
-import torch.nn.functional as F
 
 from neuralops.core.cuda_kernels._bindings import load_cuda_module
 from neuralops.core.cuda_kernels._fallback import dispatch

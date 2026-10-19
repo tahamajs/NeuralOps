@@ -599,8 +599,6 @@ class SpectraformerAttention(BaseAttention):
 
         B, N, _ = x.shape
         device = x.device
-        dtype = x.dtype
-
         if state is None:
             state = {}
         step_idx = state.get("step_idx", 0)

@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import logging
 from abc import abstractmethod
-from typing import Any, Callable
+from typing import Any
 
 import torch
 import torch.nn as nn

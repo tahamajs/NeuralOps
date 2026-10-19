@@ -10,15 +10,12 @@ Comprehensive Master Test Suite for All Attention Mechanisms and Compression Eng
 Tests instantiation, mock forward pass, cross-entropy / loss computation, and gradient backpropagation.
 """
 
-import os
-import sys
 from pathlib import Path
 
 _HERE = Path(__file__).resolve().parent
 _CODES = _HERE.parent.parent
 
-import neuralops.attentions
-import neuralops.compression_engine
+import neuralops.attentions  # noqa: F401  # Register attention modules.
 import torch
 import torch.nn as nn
 from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY

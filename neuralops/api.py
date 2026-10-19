@@ -63,8 +63,7 @@ def replace_attention(
 
     if target_mod is not None:
         from neuralops.core.model_utils import replace_module
-        from neuralops.core.architecture import detect_architecture, get_attention_modules
-        arch = detect_architecture(model)
+        from neuralops.core.architecture import get_attention_modules
         modules_list = list(get_attention_modules(model))
         for layer_i, (name, old_attn) in enumerate(modules_list):
             if layers is not None and layer_i not in layers:
@@ -591,7 +590,7 @@ def surgical_transplant_and_heal_pipeline(
       4. Optional save_surgical_checkpoint serialization
     """
     import copy
-    from neuralops.core._attention_surgery import calibrate_attention_subspace, heal_replaced_model
+    from neuralops.core._attention_surgery import heal_replaced_model
 
     if student_base_model is None:
         student = copy.deepcopy(teacher_model)
