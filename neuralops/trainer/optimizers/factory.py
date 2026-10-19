@@ -18,6 +18,7 @@ from typing import Any
 import torch.optim as optim
 
 from neuralops.core.registry import Registry
+from neuralops.trainer.optimizers.lion import Lion, create_lion_optimizer
 from neuralops.trainer.optimizers.muon import (
     Muon,
     create_muon_adamw_optimizer,
@@ -27,6 +28,19 @@ from neuralops.trainer.optimizers.riemannian import (
 )
 
 OPTIMIZER_REGISTRY = Registry("optimizer")
+
+
+@OPTIMIZER_REGISTRY.register("lion")
+def create_lion(
+    params: Any,
+    lr: float = 1e-4,
+    betas: Tuple[float, float] = (0.9, 0.99),
+    weight_decay: float = 0.01,
+    **kwargs: Any,
+) -> Lion:
+    """Build and return Lion optimizer."""
+    return create_lion_optimizer(params, lr=lr, betas=betas, weight_decay=weight_decay, **kwargs)
+
 
 
 @OPTIMIZER_REGISTRY.register("muon")
@@ -137,6 +151,7 @@ def create_lars(params: Any, lr: float = 1e-3, weight_decay: float = 0.0, **kwar
 
 __all__ = [
     "OPTIMIZER_REGISTRY",
+    "create_lion",
     "create_muon",
     "create_muon_adamw_reg",
     "create_riemannian_stiefel",

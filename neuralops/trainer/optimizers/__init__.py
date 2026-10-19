@@ -18,11 +18,16 @@ from neuralops.trainer.optimizers.factory import (
     create_adamw,
     create_lamb,
     create_lars,
+    create_lion,
     create_muon,
     create_muon_adamw_reg,
     create_ranger,
     create_riemannian_stiefel,
     create_sgd,
+)
+from neuralops.trainer.optimizers.lion import (
+    Lion,
+    create_lion_optimizer,
 )
 from neuralops.trainer.optimizers.muon import (
     Muon,
@@ -51,6 +56,9 @@ __all__ = [
     "project_stiefel_gradient",
     "stiefel_qr_retraction",
     "is_stiefel_parameter",
+    "Lion",
+    "create_lion",
+    "create_lion_optimizer",
     "create_muon",
     "create_muon_adamw_reg",
     "create_riemannian_stiefel",
