@@ -133,16 +133,16 @@ def _varlen_attention_fwd(
     for b in range(B):
         qs, qe = cu_seqlens_q[b].item(), cu_seqlens_q[b + 1].item()
         ks, ke = cu_seqlens_k[b].item(), cu_seqlens_k[b + 1].item()
-        
+
         q_b = q[qs:qe].transpose(0, 1).unsqueeze(0)
         k_b = k[ks:ke].transpose(0, 1).unsqueeze(0)
         v_b = v[ks:ke].transpose(0, 1).unsqueeze(0)
-        
+
         out_b = F.scaled_dot_product_attention(
             q_b, k_b, v_b, is_causal=causal,
         )
         outputs.append(out_b.squeeze(0).transpose(0, 1))
-    
+
     return torch.cat(outputs, dim=0)
 
 

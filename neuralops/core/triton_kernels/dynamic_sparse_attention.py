@@ -108,7 +108,8 @@ if HAS_TRITON:
         out = acc / tl.maximum(l_i[:, None], 1e-6)
         tl.store(out_base + offs_m[:, None] * stride_om + offs_d[None, :] * stride_od, out.to(Q_ptr.dtype.element_ty), mask=mask_m[:, None])
 else:
-    def _dynamic_sparse_attn_fwd_kernel(*args, **kwargs): pass
+    def _dynamic_sparse_attn_fwd_kernel(*args, **kwargs):
+        pass
 
 
 def triton_dynamic_sparse_attention_pytorch_ref(

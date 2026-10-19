@@ -51,10 +51,10 @@ class TestThreadSafeRankLogging(unittest.TestCase):
 
         expected_log = os.path.join(self.temp_dir, "rank_3.log")
         self.assertTrue(os.path.exists(expected_log))
-        
+
         with open(expected_log, "r") as f:
             lines = [json.loads(line) for line in f if line.strip()]
-        
+
         self.assertTrue(any("Message from Rank 3" in item["message"] for item in lines))
         self.assertEqual(lines[0]["rank"], 3)
 
@@ -82,10 +82,10 @@ class TestThreadSafeRankLogging(unittest.TestCase):
 
         expected_log = os.path.join(self.temp_dir, "rank_0.log")
         self.assertTrue(os.path.exists(expected_log))
-        
+
         with open(expected_log, "r") as f:
             lines = [json.loads(line) for line in f if line.strip()]
-        
+
         worker_messages = [item for item in lines if "Worker" in item.get("message", "")]
         self.assertEqual(len(worker_messages), 200)
 

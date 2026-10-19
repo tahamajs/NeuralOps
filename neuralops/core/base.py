@@ -103,7 +103,7 @@ class BaseAttention(nn.Module):
         **kwargs: Any,
     ) -> tuple[torch.Tensor, Any]:
         """Step-by-step autoregressive generation token forward.
-        
+
         Args:
             x: Input token representation [B, 1, D] or [B, D].
             state: Recurrent hidden state dictionary or KV-cache.
@@ -142,7 +142,6 @@ class BaseAttention(nn.Module):
             return out, state
 
         return out, next_cache
-
 
 
     def copy_weights(self, old_attn: Any) -> None:

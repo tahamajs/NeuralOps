@@ -54,8 +54,6 @@ def test_dx_apis_smoke():
     assert comp["cosine_similarity"] > 0.99
 
 
-
-
 def test_training_engine_pissa():
     layer = nn.Linear(64, 64)
     pissa = PiSSALinear(layer, rank=8)
@@ -96,7 +94,6 @@ def test_cuda_graph_runner():
     next_tok = torch.tensor([[5]], device=device)
     logits = runner.decode_step(next_tok)
     assert logits.shape == (1, 1, 100)
-
 
 
 def test_paper_plot_generator():

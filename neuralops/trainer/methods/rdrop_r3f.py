@@ -152,4 +152,3 @@ def apply_r3f(model, config) -> None:
     setattr(model, "_neuralops_r3f_enabled", True)
     setattr(model, "_neuralops_r3f_epsilon", epsilon)
     logger.info("Configured model with R3F representation perturbation (epsilon=%.2e)", epsilon)
-

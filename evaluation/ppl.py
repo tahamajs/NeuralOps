@@ -132,7 +132,7 @@ class PerplexityEvaluator:
 
         text_col = "text" if "text" in ds.column_names else ds.column_names[0]
         text_data = "\n\n".join([t for t in ds[text_col] if t and t.strip()])
-        
+
         encoded = self.tokenizer.encode(text_data, add_special_tokens=False)
         if max_tokens and len(encoded) > max_tokens:
             encoded = encoded[:max_tokens]
@@ -184,12 +184,12 @@ class PerplexityEvaluator:
                 with torch.no_grad():
                     logits = self.model(inp_b).logits
                     loss = loss_fn(logits.transpose(1, 2), tgt_b)
-                    
+
                     loss_sum = loss.sum(dim=0).cpu().to(torch.float64)
                     b_size = inp_b.size(0)
                     pos_losses[:loss_sum.size(0)] += loss_sum
                     pos_counts[:loss_sum.size(0)] += b_size
-                    
+
                     for b_i in range(b_size):
                         block_nlls.append(float(loss[b_i].mean().item()))
 

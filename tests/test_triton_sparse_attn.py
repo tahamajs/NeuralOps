@@ -26,7 +26,6 @@ from neuralops.core.triton_kernels._common import HAS_TRITON, sparse_attn_pytorc
 from neuralops.core.triton_kernels.sparse_attn import fwd, bwd, is_supported
 
 
-
 @pytest.fixture
 def device():
     if torch.cuda.is_available():
@@ -61,7 +60,6 @@ def reference_sparse_attn_pytorch(q, k, v, block_mask=None, block_size=16, is_ca
     return out.to(q.dtype)
 
 
-
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float16])
 @pytest.mark.parametrize("is_causal", [False, True])
 @pytest.mark.parametrize("batch,num_heads", [(1, 2), (2, 4)])
@@ -84,7 +82,6 @@ def test_sparse_attn_correctness(device, dtype, is_causal, batch, num_heads, seq
     assert torch.allclose(out, ref, atol=tol, rtol=tol)
 
 
-
 def test_sparse_attn_no_mask(device):
     """When block_mask is None, acts as full attention."""
     q = torch.randn(1, 2, 16, 32, device=device)
@@ -105,7 +102,6 @@ def test_sparse_attn_non_power_of_2(device):
     assert torch.isfinite(out).all()
 
 
-
 def test_sparse_attn_cpu_fallback():
     """Verify fallback executes cleanly on CPU."""
     q = torch.randn(2, 2, 16, 32, device="cpu")
@@ -124,7 +120,6 @@ def test_sparse_attn_deterministic(device):
     out1 = fwd(q, k, v)
     out2 = fwd(q, k, v)
     assert torch.equal(out1, out2)
-
 
 
 def test_sparse_attn_gradient(device):

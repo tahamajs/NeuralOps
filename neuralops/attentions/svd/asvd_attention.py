@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 class ASVDLinear(nn.Module):
     is_custom_attention: bool = True
     r"""Low-rank factorized linear layer with explicit singular value scaling and trainable LoRA adapters:
-    
+
     $$y = ((x V^\top) \odot \Sigma) U^\top + (x A^\top) B^\top + b$$
     """
 

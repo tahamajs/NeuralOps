@@ -171,13 +171,11 @@ def _build_compressed_model(key: str, base_model: nn.Module):
     return model
 
 
-
 def test_registry_canonical_counts():
     """Assert canonical count invariants: 131 attentions, 72 compressors."""
     assert len(ALL_131_ATTENTION_KEYS) >= 131, f"Expected 131 attentions, found {len(ALL_131_ATTENTION_KEYS)}"
     assert len(ALL_72_COMPRESSOR_KEYS) >= 72, f"Expected 72 compressors, found {len(ALL_72_COMPRESSOR_KEYS)}"
     print(f"\n[Count Invariant] 131 Attentions and 72 Compressors strictly verified.")
-
 
 
 @pytest.mark.parametrize("attn_key", ALL_131_ATTENTION_KEYS)
@@ -257,7 +255,6 @@ def test_attention_triton_hardware_parity(attn_key: str):
     )
 
 
-
 @pytest.mark.parametrize("comp_key", ALL_72_COMPRESSOR_KEYS)
 def test_compressor_hardware_wiring_forward_and_backward(comp_key: str):
     """Verify compression application on GPU, forward pass, and gradient backpropagation."""
@@ -281,7 +278,6 @@ def test_compressor_hardware_wiring_forward_and_backward(comp_key: str):
 
     if x.grad is not None:
         assert torch.isfinite(x.grad).all(), f"Compressor {comp_key} input gradient contains NaN or Inf."
-
 
 
 def run_master_203_coverage_suite():

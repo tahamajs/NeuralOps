@@ -32,7 +32,6 @@ class SimulatedTPGroup:
         return self.world_size
 
 
-
 class _CopyToModelParallelRegion(torch.autograd.Function):
     """Pass-through on forward; All-Reduce on backward."""
 
@@ -72,7 +71,6 @@ def copy_to_model_parallel_region(input: torch.Tensor, group: Any = None) -> tor
 
 def reduce_from_model_parallel_region(input: torch.Tensor, group: Any = None) -> torch.Tensor:
     return _ReduceFromModelParallelRegion.apply(input, group)
-
 
 
 class RankParallelSVDLinear(nn.Module):
@@ -300,7 +298,6 @@ class RowParallelLinear(nn.Module):
         if self.bias is not None:
             output_ = output_ + self.bias
         return output_
-
 
 
 class TensorParallelRecurrentAttention(nn.Module):

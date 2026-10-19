@@ -144,4 +144,3 @@ __all__ = [
     "save_result_json",
     "append_result_jsonl",
 ]
-

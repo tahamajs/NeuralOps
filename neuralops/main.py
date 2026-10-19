@@ -64,7 +64,6 @@ if "HF_HOME" not in os.environ:
             break
 
 
-
 def _import_framework():
     """Import and return all framework components needed for the pipeline."""
     import torch
@@ -121,8 +120,6 @@ def _import_framework():
     )
 
 
-
-
 def setup_logger(log_dir: str, exp_name: str) -> logging.Logger:
     """Configure root logger to write to console + rotating file."""
     import logging
@@ -157,8 +154,6 @@ def setup_logger(log_dir: str, exp_name: str) -> logging.Logger:
     return logging.getLogger("neuralops.main")
 
 
-
-
 def load_data(cfg: Any, tokenizer: Any) -> tuple[Any, int, bool]:
     """Load, tokenise, and return a HuggingFace DatasetDict."""
     try:
@@ -189,8 +184,6 @@ def load_data(cfg: Any, tokenizer: Any) -> tuple[Any, int, bool]:
         return dataset, num_labels, is_regression
     except Exception as e:
         raise RuntimeError(f"Data loading failed: {e}") from e
-
-
 
 
 try:
@@ -372,8 +365,6 @@ def run_train(cfg: Any, fw: dict, logger: logging.Logger) -> dict[str, Any]:
     return {"eval": eval_result, "train_runtime": elapsed, "output_dir": str(out_dir)}
 
 
-
-
 def run_eval(cfg: Any, fw: dict, logger: logging.Logger, model_path: str) -> dict[str, Any]:
     """Load a saved checkpoint and evaluate it on the validation split."""
     fw["set_seed"](cfg.seed)
@@ -414,8 +405,6 @@ def run_eval(cfg: Any, fw: dict, logger: logging.Logger, model_path: str) -> dic
     rw.save_metrics(result, tag="standalone_eval")
     rw.write_summary_md(exp_name, cfg, result, elapsed_s=0.0)
     return result
-
-
 
 
 def run_compress(cfg: Any, fw: dict, logger: logging.Logger) -> dict[str, Any]:
@@ -535,8 +524,6 @@ def run_compress(cfg: Any, fw: dict, logger: logging.Logger) -> dict[str, Any]:
     return stats
 
 
-
-
 def run_sweep(args: Any, fw: dict, logger: logging.Logger) -> list[dict[str, Any]]:
     """Run a grid sweep: attn_types × seeds, save aggregated results."""
     import numpy as np
@@ -647,8 +634,6 @@ def _write_sweep_markdown(out_dir: Path, task: str, summary: dict, attn_types: l
     (out_dir / "RESULTS.md").write_text("\n".join(lines))
 
 
-
-
 def run_list(fw: dict | None = None) -> None:
     """Print all registered components grouped by track."""
     from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
@@ -666,8 +651,6 @@ def run_list(fw: dict | None = None) -> None:
     print(f"\n=== COMPRESSION ENGINES ({len(COMPRESSOR_REGISTRY)} total) ===")
     for key in sorted(COMPRESSOR_REGISTRY.keys()):
         print(f"  {key}")
-
-
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -717,8 +700,6 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser("list", help="List all registered components")
 
     return p
-
-
 
 
 def main() -> None:

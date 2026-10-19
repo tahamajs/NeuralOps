@@ -26,7 +26,6 @@ from neuralops.models.surgical_io import save_surgical_checkpoint, load_surgical
 from neuralops.core._attention_surgery import heal_replaced_model, calibrate_attention_subspace
 
 
-
 def test_triton_backward_kernels_parity():
     """Verify exact numerical gradient parity for low_rank, gdn_scan, and gla_scan."""
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -85,7 +84,6 @@ def test_triton_backward_kernels_parity():
         assert torch.allclose(v_ref.grad, v.grad, atol=1e-3, rtol=1e-3), "GDN dv mismatch"
 
 
-
 def test_o1_recurrent_state_cache_decoding():
     """Verify that NeuralOpsStateCache memory remains 100% constant across 100 decoding steps."""
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -118,7 +116,6 @@ def test_o1_recurrent_state_cache_decoding():
     assert bench["results"][-1]["memory_reduction_ratio"] > bench["results"][0]["memory_reduction_ratio"]
 
 
-
 def test_hardware_calibrated_autotune_and_roofline():
     """Verify zero-overhead hardware autotuning and roofline profiler metrics."""
     cfg_small = select_optimal_triton_config("gemm", M=64, N=128, K=128)
@@ -138,7 +135,6 @@ def test_hardware_calibrated_autotune_and_roofline():
     assert report.total_flops > 0.0
     assert report.speedup_x > 0.0
     assert report.bottleneck_regime is not None
-
 
 
 class MockGQASelfAttention(nn.Module):

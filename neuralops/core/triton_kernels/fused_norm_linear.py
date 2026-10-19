@@ -87,7 +87,7 @@ class _FusedRMSNormGateFunction(torch.autograd.Function):
     def forward(ctx, x: torch.Tensor, gate: torch.Tensor, norm_weight: torch.Tensor, eps: float, activation: str):
         ctx.eps = eps
         ctx.activation = activation
-        
+
         var = (x.float() ** 2).mean(dim=-1, keepdim=True)
         rstd = torch.rsqrt(var + eps)
         x_norm = (x.float() * rstd).to(x.dtype) * norm_weight
@@ -105,7 +105,7 @@ class _FusedRMSNormGateFunction(torch.autograd.Function):
     def backward(ctx, grad_output: torch.Tensor):
         x, gate, norm_weight, rstd = ctx.saved_tensors
         D = x.shape[-1]
-        
+
         if ctx.activation == "silu":
             sig = torch.sigmoid(gate.float())
             gate_act = (gate.float() * sig).to(gate.dtype)
@@ -116,7 +116,7 @@ class _FusedRMSNormGateFunction(torch.autograd.Function):
             d_gate_act = (sig * (1.0 - sig)).to(gate.dtype)
 
         d_x_norm = grad_output * gate_act
-        
+
         _var = (x.float() ** 2).mean(dim=-1, keepdim=True)
         x_norm_raw = (x.float() * rstd)
         x_norm = (x_norm_raw * norm_weight).to(x.dtype)
@@ -245,7 +245,6 @@ def fused_rmsnorm_gate_triton(
         except Exception:
             pass
     return fused_rmsnorm_gate(x, gate, norm_weight, eps=eps, activation=activation)
-
 
 
 if HAS_TRITON and tl is not None:
@@ -437,7 +436,6 @@ def triton_fused_hadamard_w4a16_gemm(
     return y.view(*orig_shape[:-1], N)
 
 
-
 if HAS_TRITON and tl is not None:
     @triton.autotune(
         configs=[
@@ -618,7 +616,6 @@ def triton_lut_codebook_dequant_gemm(
     return y.view(*orig_shape[:-1], N)
 
 
-
 if HAS_TRITON and tl is not None:
     @triton.autotune(
         configs=[
@@ -789,4 +786,3 @@ __all__ = [
     "triton_fused_act_scale_quant_gemm",
     "triton_fused_act_scale_quant_gemm_pytorch_ref",
 ]
-

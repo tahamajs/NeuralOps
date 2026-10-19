@@ -182,37 +182,53 @@ class WeightedGroupedQueryAttention(BaseAttention):
             self.copy_weights(src_attn)
 
     @property
-    def W_q(self): return self.q_proj
+    def W_q(self):
+        return self.q_proj
     @property
-    def W_k(self): return self.k_proj
+    def W_k(self):
+        return self.k_proj
     @property
-    def W_v(self): return self.v_proj
+    def W_v(self):
+        return self.v_proj
     @property
-    def out(self): return self.out_proj
+    def out(self):
+        return self.out_proj
     @property
-    def query(self): return self.q_proj
+    def query(self):
+        return self.q_proj
     @property
-    def key(self): return self.k_proj
+    def key(self):
+        return self.k_proj
     @property
-    def value(self): return self.v_proj
+    def value(self):
+        return self.v_proj
     @property
-    def q_lin(self): return self.q_proj
+    def q_lin(self):
+        return self.q_proj
     @property
-    def k_lin(self): return self.k_proj
+    def k_lin(self):
+        return self.k_proj
     @property
-    def v_lin(self): return self.v_proj
+    def v_lin(self):
+        return self.v_proj
     @property
-    def out_lin(self): return self.out_proj
+    def out_lin(self):
+        return self.out_proj
     @property
-    def dense(self): return self.out_proj
+    def dense(self):
+        return self.out_proj
     @property
-    def o_proj(self): return self.out_proj
+    def o_proj(self):
+        return self.out_proj
     @property
-    def c_proj(self): return self.out_proj
+    def c_proj(self):
+        return self.out_proj
     @property
-    def k_weights(self): return self.lora_k_weights
+    def k_weights(self):
+        return self.lora_k_weights
     @property
-    def v_weights(self): return self.lora_v_weights
+    def v_weights(self):
+        return self.lora_v_weights
 
     _read_past_kv = staticmethod(_read_past_kv)
 
@@ -302,9 +318,12 @@ class WeightedGroupedQueryAttention(BaseAttention):
             extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None
         ):
             s = src.self
-            if hasattr(s, "query"): extracted["q"] = (s.query.weight.data, getattr(s.query, "bias", None))
-            if hasattr(s, "key"):   extracted["k"] = (s.key.weight.data, getattr(s.key, "bias", None))
-            if hasattr(s, "value"): extracted["v"] = (s.value.weight.data, getattr(s.value, "bias", None))
+            if hasattr(s, "query"):
+                extracted["q"] = (s.query.weight.data, getattr(s.query, "bias", None))
+            if hasattr(s, "key"):
+                extracted["k"] = (s.key.weight.data, getattr(s.key, "bias", None))
+            if hasattr(s, "value"):
+                extracted["v"] = (s.value.weight.data, getattr(s.value, "bias", None))
 
         if hasattr(src, "output") and hasattr(src.output, "dense") and extracted["o"][0] is None:
             d = src.output.dense

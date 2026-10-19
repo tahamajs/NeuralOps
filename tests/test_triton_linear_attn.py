@@ -25,7 +25,6 @@ from neuralops.core.triton_kernels._common import HAS_TRITON, linear_attn_pytorc
 from neuralops.core.triton_kernels.linear_attn import fwd, bwd, is_supported
 
 
-
 @pytest.fixture
 def device():
     if torch.cuda.is_available():
@@ -87,7 +86,6 @@ def reference_linear_attn_pytorch(q, k, v, is_causal=False, phi="elu+1", eps=1e-
     return out.to(q.dtype)
 
 
-
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float16])
 @pytest.mark.parametrize("phi", ["elu+1", "relu", "identity"])
 @pytest.mark.parametrize("is_causal", [True, False])
@@ -113,7 +111,6 @@ def test_linear_attn_correctness(device, dtype, phi, is_causal, batch, num_heads
         assert torch.allclose(out, ref, atol=tol, rtol=tol)
 
 
-
 def test_linear_attn_single_token(device):
     """Single token sequence (seq_len = 1)."""
     q = torch.randn(1, 2, 1, 32, device=device)
@@ -134,7 +131,6 @@ def test_linear_attn_non_power_of_2(device):
     assert torch.isfinite(out).all()
 
 
-
 def test_linear_attn_cpu_fallback():
     """Verify fallback executes cleanly on CPU."""
     q = torch.randn(2, 2, 16, 32, device="cpu")
@@ -153,7 +149,6 @@ def test_linear_attn_deterministic(device):
     out1 = fwd(q, k, v)
     out2 = fwd(q, k, v)
     assert torch.equal(out1, out2)
-
 
 
 def test_linear_attn_gradient(device):

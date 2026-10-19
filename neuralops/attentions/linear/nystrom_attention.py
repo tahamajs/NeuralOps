@@ -227,25 +227,35 @@ class NystromAttention(BaseAttention):
             self.copy_weights(source_attn)
 
     @property
-    def q_proj(self): return self.query
+    def q_proj(self):
+        return self.query
     @property
-    def k_proj(self): return self.key
+    def k_proj(self):
+        return self.key
     @property
-    def v_proj(self): return self.value
+    def v_proj(self):
+        return self.value
     @property
-    def q_lin(self): return self.query
+    def q_lin(self):
+        return self.query
     @property
-    def k_lin(self): return self.key
+    def k_lin(self):
+        return self.key
     @property
-    def v_lin(self): return self.value
+    def v_lin(self):
+        return self.value
     @property
-    def out_lin(self): return self.out_proj
+    def out_lin(self):
+        return self.out_proj
     @property
-    def dense(self): return self.out_proj
+    def dense(self):
+        return self.out_proj
     @property
-    def o_proj(self): return self.out_proj
+    def o_proj(self):
+        return self.out_proj
     @property
-    def c_proj(self): return self.out_proj
+    def c_proj(self):
+        return self.out_proj
 
     def copy_weights(self, src: Any) -> None:
         if src is None:

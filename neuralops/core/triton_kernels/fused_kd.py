@@ -43,7 +43,6 @@ def _jit_guard(fn):
     return fn
 
 
-
 @_jit_guard
 def _fused_kd_fwd_kernel(
     student_ptr,

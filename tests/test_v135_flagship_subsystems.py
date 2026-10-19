@@ -369,5 +369,3 @@ def test_ablation_and_pareto_export_pipeline():
     assert ablation_res["table"] is not None
     assert r"\begin{table}" in ablation_res["table"]
     assert r"\toprule" in ablation_res["table"]
-
-

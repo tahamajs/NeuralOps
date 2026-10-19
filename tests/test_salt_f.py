@@ -42,12 +42,12 @@ def test_fisher_weighted_svd():
     W = torch.randn(64, 64)
     F = torch.ones(64)
     F[10:20] = 100.0
-    
-    layer_fisher = SALTLinear(64, 64, rank=16, 
+
+    layer_fisher = SALTLinear(64, 64, rank=16,
                               original_weight=W, fisher_diag=F)
-    layer_plain = SALTLinear(64, 64, rank=16, 
+    layer_plain = SALTLinear(64, 64, rank=16,
                              original_weight=W, fisher_diag=None)
-    
+
     diff = (layer_fisher.U - layer_plain.U).abs().mean()
     assert diff > 0.01, "Fisher should change U"
     print(f"[OK] test_fisher_weighted_svd (diff={diff:.4f})")
@@ -57,12 +57,12 @@ def test_attention_aware_gamma_init():
     """Gamma init from sensitivity changes the values."""
     W = torch.randn(64, 64)
     layer = SALTLinear(64, 64, rank=16, original_weight=W)
-    
+
     assert (layer.gamma == 1.0).all()
-    
+
     sens = torch.tensor([1.0] * 8 + [10.0] * 8)
     layer.init_gamma_from_sensitivity(sens)
-    
+
     assert layer.gamma[8:].mean() > layer.gamma[:8].mean()
     print("[OK] test_attention_aware_gamma_init")
 
@@ -73,7 +73,7 @@ def test_per_projection_adaptive_rank():
         num_attention_heads = 4
         hidden_size = 64
         head_dim = 16
-    
+
     attn = SALTAttention(config=FakeConfig(), rank=16)
     ranks = attn.proj_ranks
     assert all(r > 0 for r in ranks.values())
@@ -84,12 +84,12 @@ def test_merge_to_linear():
     """Merged linear produces the same output."""
     W = torch.randn(64, 64)
     layer = SALTLinear(64, 64, rank=16, original_weight=W)
-    
+
     x = torch.randn(2, 8, 64)
     out_before = layer(x)
     merged = layer.merge_to_linear()
     out_after = merged(x)
-    
+
     err = (out_before - out_after).norm() / (out_before.norm() + 1e-8)
     assert err < 1e-5, f"Merge error too high: {err}"
     print(f"[OK] test_merge_to_linear (err={err:.2e})")
@@ -103,7 +103,7 @@ def test_merge_model():
             self.q = SALTLinear(32, 32, rank=8)
         def forward(self, x):
             return self.q(x)
-    
+
     model = TestModel()
     merged = merge_model_salt(model)
     assert isinstance(merged.q, nn.Linear), \

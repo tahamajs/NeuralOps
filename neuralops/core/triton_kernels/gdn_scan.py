@@ -709,7 +709,6 @@ class _GatedDeltaNetScanFn(torch.autograd.Function):
         return dq, dk, dv, dbeta, dalpha, d_init, None, None, None
 
 
-
 def gdn_scan_pytorch(
     q: torch.Tensor,
     k: torch.Tensor,
@@ -1054,7 +1053,6 @@ def gdn_recurrent_step_triton(
     return (y.unsqueeze(2) if has_l_dim else y), state
 
 
-
 if HAS_TRITON and tl is not None:
     @triton.jit
     def _chunked_delta_scan_kernel(
@@ -1225,6 +1223,3 @@ __all__ = [
     'triton_chunked_delta_gate_scan',
     'triton_chunked_delta_gate_scan_pytorch_ref',
 ]
-
-
-

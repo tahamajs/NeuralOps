@@ -155,7 +155,6 @@ def _make_universal_attention_class(target_cls: type) -> type:
     return UniversalAttentionWrapper
 
 
-
 class Registry:
     """A named dictionary that maps string keys to classes or factory functions with capability metadata."""
 
@@ -861,6 +860,3 @@ try:
     COMPRESSOR_REGISTRY.register("svd_llm", is_alias=True)(SVDLLMCompressor)
 except Exception as _e_svd_llm:
     logger.debug("Failed registering svd_llm alias: %s", _e_svd_llm)
-
-
-

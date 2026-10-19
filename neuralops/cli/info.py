@@ -19,8 +19,8 @@ def cmd_info():
     from neuralops.core.registry import (
         ATTENTION_REGISTRY, COMPRESSOR_REGISTRY,
     )
-    import neuralops.attentions  # noqa: F401
-    import neuralops.compression_engine  # noqa: F401
+    import neuralops.attentions
+    import neuralops.compression_engine
 
     print("neuralops")
     print("=" * 60)

@@ -99,4 +99,3 @@ def fused_rope_embedding(
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """Applies Rotary Position Embedding (RoPE) fast path."""
     return apply_rotary_pos_emb(q, k, cos, sin)
-

@@ -118,4 +118,3 @@ def get_loss_function(name: str, **kwargs) -> nn.Module:
     if cls is None:
         raise KeyError(f"Loss function '{name}' not found in LOSS_REGISTRY. Available: {list(LOSS_REGISTRY.keys())}")
     return cls(**kwargs)
-

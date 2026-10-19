@@ -19,7 +19,7 @@ def test_attentions():
     L = 128
     D = 768
     num_heads = 12
-    
+
     class Config:
         hidden_size = D
         num_attention_heads = num_heads
@@ -28,14 +28,14 @@ def test_attentions():
         is_causal = True
 
     config = Config()
-    
+
     names = [
         "bam_umoe", "moe_deltakv_paged", "compressed_mha", "mixattention_moska",
         "wgqa", "gqa", "oha", "block_transformer_hiba", "progressive_token_pruning",
         "nasc_attention", "nha_attention", "token_compressed_attention",
         "reap_moe", "samba_moe", "expert_choice_moe"
     ]
-    
+
     for name in names:
         try:
             cls = ATTENTION_REGISTRY.get(name)
@@ -49,14 +49,14 @@ def test_attentions():
             if out.shape != (B, L, D):
                 print(f"[{name}] FAILED shape: {out.shape}")
                 continue
-            
+
             loss = out.mean()
             loss.backward()
-            
+
             if x.grad is None or torch.isnan(x.grad).any():
                 print(f"[{name}] FAILED gradient")
                 continue
-                
+
             print(f"[{name}] PASSED")
         except Exception as e:
             print(f"[{name}] ERROR: {e}")

@@ -95,7 +95,6 @@ def test_samba_moe_inject():
     assert inject_samba_moe(empty_layer, model_config=cfg, old_attn=None) is None
 
 
-
 def test_samba_moe_decoder_return_signature_and_kv():
     """Verify return signature and past_state propagation for decoders and encoders."""
     cfg = make_config(hidden_size=64, num_heads=4, num_kv_heads=2, is_decoder=True, model_type="gpt2")
@@ -142,4 +141,3 @@ def test_samba_moe_norm_dtype_consistency():
     x = torch.randn(2, 4, 64, dtype=torch.float32)
     out, _ = block(x)
     assert out.dtype == torch.float32
-

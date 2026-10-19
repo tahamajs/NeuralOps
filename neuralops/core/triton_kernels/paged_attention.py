@@ -176,7 +176,6 @@ def paged_attention_kernel(
     return paged_attention_pytorch(q, k_cache, v_cache, block_tables, seq_lens, block_size=block_size)
 
 
-
 if HAS_TRITON and tl is not None:
     @triton.jit
     def _paged_recurrent_state_step_kernel(
@@ -237,7 +236,7 @@ def paged_recurrent_state_step_pytorch(
     decay: float = 1.0,
 ) -> torch.Tensor:
     """PyTorch reference update for paged recurrent state pool.
-    
+
     Args:
         q_t: [B, H, D]
         k_t: [B, H, D]
@@ -386,5 +385,3 @@ from neuralops.core.triton_kernels.linear_attn import (
     triton_fused_latent_kv_cache_attention,
     triton_fused_latent_kv_cache_attention_pytorch_ref,
 )
-
-

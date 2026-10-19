@@ -89,7 +89,7 @@ def test_base_attention_step_contract():
 def test_unified_hybrid_cache_multi_family():
     """Verify UnifiedHybridCache manages dense KV layers and recurrent states simultaneously."""
     cache = UnifiedHybridCache(num_layers=3)
-    
+
     k0 = torch.randn(2, 4, 16, 32)
     v0 = torch.randn(2, 4, 16, 32)
     state0 = cache.update_layer(0, (k0, v0), layer_type="full")
@@ -130,7 +130,7 @@ def test_distributed_and_fsdp_policies():
 
     policy = get_neuralops_fsdp_policy()
     assert callable(policy)
-    
+
     model = nn.Sequential(
         DummyLinearAttention(dim=32, num_heads=2),
         nn.Linear(32, 10),

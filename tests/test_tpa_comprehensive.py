@@ -270,5 +270,3 @@ def test_tpa_gradient_checkpointing_toggle():
     loss2.backward()
     assert x2.grad is not None
     assert not torch.isnan(x2.grad).any()
-
-

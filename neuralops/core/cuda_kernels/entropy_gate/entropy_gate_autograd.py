@@ -113,7 +113,6 @@ def spectral_entropy_svd_gate(
         cuda_fn = None
 
 
-
     return dispatch(
         cuda_fn,
         triton_fn,

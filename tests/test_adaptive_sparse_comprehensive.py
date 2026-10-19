@@ -100,7 +100,7 @@ def test_adaptive_sparse_fallback_on_copy_weights_failure():
             super().__init__()
             self.attention = nn.Linear(64, 64)
             self.attention.weight.data.zero_()
-    
+
     layer = BrokenLayer()
     res = inject_adaptive_sparse(layer=layer)
     assert res is None

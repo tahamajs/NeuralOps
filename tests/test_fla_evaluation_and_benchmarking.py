@@ -57,7 +57,6 @@ def tiny_causal_lm(device):
     return model.to(device)
 
 
-
 def test_ppl_evaluator_synthetic_model(tiny_causal_lm, device):
     """Test PerplexityEvaluator with synthetic model and generated 1D tokens."""
     evaluator = PerplexityEvaluator(
@@ -67,7 +66,7 @@ def test_ppl_evaluator_synthetic_model(tiny_causal_lm, device):
         device=device,
         dtype=torch.float32,
     )
-    
+
     tokens = torch.randint(0, 256, (256,), dtype=torch.long)
     results = evaluator.evaluate_tokens(tokens)
 
@@ -77,7 +76,6 @@ def test_ppl_evaluator_synthetic_model(tiny_causal_lm, device):
     assert results["total_tokens"] > 0
     assert results["perplexity"] > 0.0
     assert not math.isnan(results["perplexity"])
-
 
 
 def test_harness_model_wrapper(tiny_causal_lm, device):
@@ -91,7 +89,6 @@ def test_harness_model_wrapper(tiny_causal_lm, device):
     assert wrapper.model is not None
     assert str(wrapper.device).startswith(device.split(":")[0])
     assert wrapper.max_length == 128
-
 
 
 def test_generation_benchmark_synthetic(tiny_causal_lm, device):
@@ -116,7 +113,6 @@ def test_generation_benchmark_synthetic(tiny_causal_lm, device):
     assert res["throughput_tokens_per_s"] >= 0.0
 
 
-
 def test_training_throughput_profiler_synthetic(tiny_causal_lm, device):
     """Test TrainingThroughputProfiler for forward+backward step timing and VRAM."""
     profiler = TrainingThroughputProfiler(
@@ -135,7 +131,6 @@ def test_training_throughput_profiler_synthetic(tiny_causal_lm, device):
     assert "peak_vram_mb" in res
     assert res["step_latency_ms"] > 0.0
     assert res["tokens_per_second"] > 0.0
-
 
 
 def test_ops_runner_registry_and_worker(device):
@@ -164,7 +159,6 @@ def test_ops_runner_registry_and_worker(device):
     assert target_op in tbl or "latency" in tbl.lower() or len(tbl) > 0
 
 
-
 def test_visualize_functions(tmp_path):
     """Test visualize plotting functions with dummy metrics."""
     out_img = str(tmp_path / "test_plot.png")
@@ -181,4 +175,3 @@ def test_visualize_functions(tmp_path):
     }
     out_img2 = str(tmp_path / "test_scaling.png")
     plot_scaling_comparison(scaling_data, output_path=out_img2)
-

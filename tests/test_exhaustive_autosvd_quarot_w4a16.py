@@ -99,5 +99,3 @@ def test_6_4_pack_unpack_int4_roundtrip(in_features, out_features, group_size):
     unpacked = unpack_int4_weights(packed, scales, zeros, group_size=group_size, out_dtype=torch.float16)
     assert unpacked.shape == weight_fp.shape
     assert not torch.isnan(unpacked).any()
-
-

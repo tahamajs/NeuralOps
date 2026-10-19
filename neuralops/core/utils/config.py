@@ -19,7 +19,7 @@ __all__ = ["_cfg_get"]
 
 def _cfg_get(config_or_key: Any, key_or_default: Any = None, default: Any = None) -> Any:
     """Safely extract a configuration attribute.
-    
+
     Supports both signatures:
       1. Standard: _cfg_get(config, key, default=None)
       2. Key-first / single-arg: _cfg_get(key, default=None) -> returns default

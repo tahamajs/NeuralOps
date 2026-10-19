@@ -70,7 +70,7 @@ class PaperParetoBenchmarkSuite:
 
         for seq_len in seq_lengths:
             x = torch.randn(1, seq_len, self.d_model, device=self.device, dtype=self.dtype)
-            
+
             with torch.no_grad():
                 for _ in range(warmup):
                     _ = module(x)

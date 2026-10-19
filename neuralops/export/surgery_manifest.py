@@ -157,7 +157,6 @@ class SurgeryManifest:
             json.dump(self.to_dict(), f, indent=2)
 
 
-
 def record_attention_surgery(
     model: nn.Module,
     layer_path: str,
@@ -359,4 +358,3 @@ __all__ = [
     "replay_surgery_manifest",
     "merge_for_inference",
 ]
-

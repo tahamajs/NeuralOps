@@ -210,5 +210,3 @@ def test_upi_mamba_is_selective():
 
     assert not torch.allclose(B_t1[0, 5], B_t2[0, 5]), "B_t must be input-dependent"
     assert not torch.allclose(C_t1[0, 5], C_t2[0, 5]), "C_t must be input-dependent"
-
-

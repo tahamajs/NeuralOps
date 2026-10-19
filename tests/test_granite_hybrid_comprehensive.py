@@ -95,4 +95,3 @@ def test_granite_hybrid_3d_mask():
     mask = torch.zeros(2, 8, 8)
     out, _ = block(x, attention_mask=mask)
     assert out.shape == (2, 8, 64)
-

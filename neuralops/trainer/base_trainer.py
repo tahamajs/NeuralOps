@@ -73,4 +73,3 @@ class Trainer(BaseTrainer):
         if self._delegate is not None:
             return self._delegate.evaluate()
         return {"status": "evaluated", "model": self.model}
-

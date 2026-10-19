@@ -82,8 +82,6 @@ from neuralops.core.triton_kernels.varlen_attention import varlen_attention_pyto
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 
-
-
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float16])
 def test_3_1_linear_attn_strided_and_parity(dtype):
     B, H, N, D = 2, 4, 32, 32
@@ -216,8 +214,6 @@ def test_3_1_fused_ce_and_kd_parity(dtype):
     torch.testing.assert_close(kd_act.to(logits.dtype), kd_ref.to(logits.dtype), rtol=1e-2, atol=1e-2)
 
 
-
-
 def test_3_3_autograd_gradients():
     B, H, N, D = 2, 2, 16, 16
     q = torch.randn(B, H, N, D, device=DEVICE, requires_grad=True)
@@ -231,8 +227,6 @@ def test_3_3_autograd_gradients():
     assert q.grad is not None and torch.isfinite(q.grad).all() and q.grad.abs().sum() > 0
     assert k.grad is not None and torch.isfinite(k.grad).all() and k.grad.abs().sum() > 0
     assert v.grad is not None and torch.isfinite(v.grad).all() and v.grad.abs().sum() > 0
-
-
 
 
 def test_3_4_varlen_attention_cu_seqlens_zero_cross_leakage():
@@ -257,8 +251,6 @@ def test_3_4_varlen_attention_cu_seqlens_zero_cross_leakage():
     torch.testing.assert_close(out_batched[s1:], out2_ref, rtol=1e-2, atol=1e-2)
 
 
-
-
 def test_3_5_state_update_idempotency():
     from neuralops.core.triton_kernels.state_update import fused_recurrent_linear_step
 
@@ -275,8 +267,6 @@ def test_3_5_state_update_idempotency():
     torch.testing.assert_close(out1, out2, rtol=1e-5, atol=1e-5)
     torch.testing.assert_close(next_kv1, next_kv2, rtol=1e-5, atol=1e-5)
     torch.testing.assert_close(next_z1, next_z2, rtol=1e-5, atol=1e-5)
-
-
 
 
 def test_3_7_alibi_bias_triton_parity():
@@ -1029,8 +1019,3 @@ def test_3_33_salt_singular_mod_gemm_parity():
     out_tri = fused_salt_singular_mod_gemm_triton(x, U, S, V, gamma, beta, bias)
     out_ref = fused_salt_singular_mod_gemm_pytorch(x, U, S, V, gamma, beta, bias)
     torch.testing.assert_close(out_tri, out_ref, rtol=1e-4, atol=1e-4)
-
-
-
-
-

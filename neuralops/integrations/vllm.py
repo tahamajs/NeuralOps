@@ -88,7 +88,7 @@ class NeuralOpsvLLMImpl:
             q = query.view(B, T, self.num_heads, self.head_size).transpose(1, 2)
             k = key.view(B, T, self.num_kv_heads, self.head_size).transpose(1, 2)
             v = value.view(B, T, self.num_kv_heads, self.head_size).transpose(1, 2)
-            
+
             scores = torch.matmul(q, k.transpose(-2, -1)) * self.scale
             mask = torch.triu(torch.full((T, T), float("-inf"), device=query.device), diagonal=1)
             scores = scores + mask

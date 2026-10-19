@@ -109,4 +109,3 @@ class LayerDistillScheduler:
         progress = (step - self.warmup_steps) / max(1, self.total_steps - self.warmup_steps)
         progress = min(1.0, max(0.0, progress))
         return self.max_weight * (1.0 - progress) + self.final_weight * progress
-

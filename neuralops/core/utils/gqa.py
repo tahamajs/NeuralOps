@@ -19,7 +19,7 @@ __all__ = ["repeat_kv"]
 
 def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
     """Expand key/value heads for Grouped Query Attention (GQA).
-    
+
     hidden_states: (batch, num_key_value_heads, seqlen, head_dim)
     n_rep: number of repetitions
     """

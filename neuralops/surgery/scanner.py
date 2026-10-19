@@ -59,7 +59,7 @@ class AttentionTargetSpec:
 class Conv1DLinearAdapter(nn.Module):
     """
     Adapter converting HuggingFace transformers Conv1D to standard nn.Linear semantics.
-    
+
     In HuggingFace GPT-2:
         weight shape is (in_features, out_features)
         bias shape is (out_features,)

@@ -197,10 +197,10 @@ def run_benchmark():
 
     md_content = f"""# 🧪 RoBERTa-Base Downstream GLUE SST-2 Compression Benchmark
 
-**Hardware**: {results["hardware"]}  
-**Model**: `{model_name}` (125M parameters)  
-**Task**: GLUE SST-2 Sentiment Classification (Full Validation Set, $N = 872$)  
-**Baseline RoBERTa Accuracy**: **{base_acc:.2f}%** | Baseline Latency: **{base_lat_ms:.2f} ms/batch**  
+**Hardware**: {results["hardware"]}
+**Model**: `{model_name}` (125M parameters)
+**Task**: GLUE SST-2 Sentiment Classification (Full Validation Set, $N = 872$)
+**Baseline RoBERTa Accuracy**: **{base_acc:.2f}%** | Baseline Latency: **{base_lat_ms:.2f} ms/batch**
 
 ---
 

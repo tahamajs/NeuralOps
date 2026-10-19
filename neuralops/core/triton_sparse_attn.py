@@ -41,4 +41,3 @@ def triton_block_sparse_attention(
 
 
 __all__ = ["triton_block_sparse_attention", "HAS_TRITON"]
-

@@ -85,7 +85,6 @@ class SmallAnchorMLP(nn.Module):
         return self.fc2(F.gelu(self.fc1(x)))
 
 
-
 class Conv1DBlock(nn.Module):
     def __init__(self, in_channels: int = 16, hidden: int = 32, out_channels: int = 8):
         super().__init__()
@@ -467,7 +466,6 @@ def test_group12_full_logit_preservation_vs_scalar_loss():
 
     assert probe_match >= 0.85, f"Expected probe_match >= 0.85, got {probe_match}"
     assert heldout_match >= 0.75, f"Expected heldout_match >= 0.75, got {heldout_match}"
-
 
 
 def test_group13_sgd_stability_of_hnc_steered_endpoints():

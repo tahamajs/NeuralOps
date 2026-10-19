@@ -45,7 +45,7 @@ class TestTrack2Modules(unittest.TestCase):
         """Standard lifecycle test: forward, backward, masking, variable lengths."""
         module_instance.eval()
         x = torch.randn(B, L, D, requires_grad=True)
-        
+
         out, _ = module_instance(x)
         if isinstance(out, tuple):
             out = out[0]

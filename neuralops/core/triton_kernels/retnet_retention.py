@@ -106,7 +106,8 @@ if HAS_TRITON:
 
         tl.store(out_base + offs_m[:, None] * stride_om + offs_d[None, :] * stride_od, acc.to(Q_ptr.dtype.element_ty), mask=mask_m[:, None])
 else:
-    def _retnet_fwd_kernel(*args, **kwargs): pass
+    def _retnet_fwd_kernel(*args, **kwargs):
+        pass
 
 
 def triton_multi_scale_retention_pytorch_ref(

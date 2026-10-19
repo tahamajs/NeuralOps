@@ -108,4 +108,3 @@ def test_7_4_radix_prefix_cache_eviction_pressure(num_prefixes):
         matched_page, matched_len = cache.match_prefix([1000 + i, 2000 + i])
         assert matched_len == 2
         assert matched_page == allocated_pages[i]
-

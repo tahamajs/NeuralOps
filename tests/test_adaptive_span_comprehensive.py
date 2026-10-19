@@ -95,7 +95,7 @@ def test_adaptive_span_fallback_on_copy_weights_failure():
             super().__init__()
             self.attention = nn.Linear(64, 64)
             self.attention.weight.data.zero_()
-    
+
     layer = BrokenLayer()
     res = inject_adaptive_span(layer=layer)
     assert res is None
@@ -200,7 +200,7 @@ def test_lora_linear_canonical_contract():
     assert not layer.weight.requires_grad
     assert layer.lora_A.requires_grad
     assert layer.lora_B.requires_grad
-    
+
     x = torch.randn(2, 32)
     out = layer(x)
     assert out.shape == (2, 32)
@@ -326,5 +326,3 @@ def test_adaptive_span_zero_span_stability():
     assert attn is not None
     assert not torch.isnan(attn).any()
     assert not torch.isinf(attn).any()
-
-

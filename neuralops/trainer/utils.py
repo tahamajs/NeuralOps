@@ -400,8 +400,6 @@ def benchmark_model(
     }
 
 
-
-
 def compute_metrics(
     eval_pred: tuple[np.ndarray, np.ndarray], task: str = "classification"
 ) -> dict[str, float]:

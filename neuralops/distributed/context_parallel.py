@@ -60,7 +60,6 @@ def compute_chunk_prefix_scan(
     return out, S
 
 
-
 class _ContextParallelScanFunction(torch.autograd.Function):
     """
     Exact 3-Stage Parallel-Prefix Scan across W Context Parallel ranks.
@@ -154,7 +153,6 @@ class ContextParallelRecurrentScan:
     @staticmethod
     def apply(q_chunks, k_chunks, v_chunks, g_chunks=None, scale=None):
         return context_parallel_recurrent_scan(q_chunks, k_chunks, v_chunks, g_chunks, scale)
-
 
 
 class ContextParallelLinearAttention(nn.Module):
@@ -276,4 +274,3 @@ __all__ = [
     "ring_attention_chunk_exchange",
     "RingLinearAttention",
 ]
-

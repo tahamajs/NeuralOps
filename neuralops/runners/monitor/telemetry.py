@@ -35,14 +35,14 @@ def query_hardware_gpu() -> Optional[Dict[str, Any]]:
             total_mb = torch.cuda.get_device_properties(dev_idx).total_memory / (1024 ** 2)
             alloc_mb = torch.cuda.memory_allocated(dev_idx) / (1024 ** 2)
             reserved_mb = torch.cuda.memory_reserved(dev_idx) / (1024 ** 2)
-            
+
             smi_path = shutil.which("nvidia-smi")
             gpu_util = 0.0
             power_w = 0.0
             temp_c = 0.0
             clock_mhz = 0.0
             mem_used_smi = alloc_mb
-            
+
             if smi_path:
                 try:
                     res = subprocess.run(

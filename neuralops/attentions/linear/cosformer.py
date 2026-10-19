@@ -184,24 +184,33 @@ class CosformerAttention(BaseAttention):
             self.copy_weights(source_attn)
 
     @property
-    def query(self): return self.q_proj
+    def query(self):
+        return self.q_proj
     @property
-    def key(self): return self.k_proj
+    def key(self):
+        return self.k_proj
     @property
-    def value(self): return self.v_proj
+    def value(self):
+        return self.v_proj
     @property
-    def dense(self): return self.out_proj
+    def dense(self):
+        return self.out_proj
     @property
-    def q_lin(self): return self.q_proj
+    def q_lin(self):
+        return self.q_proj
     @property
-    def k_lin(self): return self.k_proj
+    def k_lin(self):
+        return self.k_proj
     @property
-    def v_lin(self): return self.v_proj
+    def v_lin(self):
+        return self.v_proj
     @property
-    def out_lin(self): return self.out_proj
+    def out_lin(self):
+        return self.out_proj
 
     def copy_weights(self, src):
-        if src is None: return
+        if src is None:
+            return
 
         if hasattr(src, "rotary_emb"):
             self.rotary_emb = src.rotary_emb
@@ -220,7 +229,8 @@ class CosformerAttention(BaseAttention):
 
         if hasattr(src, "c_attn") and src.c_attn is not None:
             c_w = src.c_attn.weight.data.clone()
-            if hasattr(src.c_attn, "nf") or c_w.shape[0] < c_w.shape[1]: c_w = c_w.t().contiguous()
+            if hasattr(src.c_attn, "nf") or c_w.shape[0] < c_w.shape[1]:
+                c_w = c_w.t().contiguous()
             sz = c_w.size(0) // 3
             c_b = src.c_attn.bias.data.clone() if src.c_attn.bias is not None else None
             extracted["q"] = (c_w[:sz, :], c_b[:sz] if c_b is not None else None)
@@ -228,7 +238,8 @@ class CosformerAttention(BaseAttention):
             extracted["v"] = (c_w[2*sz:, :], c_b[2*sz:] if c_b is not None else None)
             if hasattr(src, "c_proj"):
                 o_w = src.c_proj.weight.data.clone()
-                if hasattr(src.c_proj, "nf") or o_w.shape[0] < o_w.shape[1]: o_w = o_w.t().contiguous()
+                if hasattr(src.c_proj, "nf") or o_w.shape[0] < o_w.shape[1]:
+                    o_w = o_w.t().contiguous()
                 o_b = src.c_proj.bias.data.clone() if src.c_proj.bias is not None else None
                 extracted["o"] = (o_w, o_b)
         elif hasattr(src, "self") and hasattr(src.self, "query"):
@@ -261,14 +272,16 @@ class CosformerAttention(BaseAttention):
         if missing:
             raise RuntimeError(f"CosformerAttention.copy_weights: missing {missing} from {src.__class__.__name__}")
 
-        target_map = {"q": self.q_proj, "k": self.k_proj, 
+        target_map = {"q": self.q_proj, "k": self.k_proj,
                       "v": [self.v_proj, self.v_proj_attn], "o": self.out_proj}
 
         with torch.no_grad():
             for proj_key, targets in target_map.items():
                 w, b = extracted[proj_key]
-                if w is None: continue
-                if w.ndim != 2: w = w.reshape(w.size(0), -1)
+                if w is None:
+                    continue
+                if w.ndim != 2:
+                    w = w.reshape(w.size(0), -1)
 
                 targets_list = targets if isinstance(targets, list) else [targets]
                 for target_mod in targets_list:
@@ -657,12 +670,14 @@ class CosformerAttention(BaseAttention):
 def inject_cosformer(layer=None, model=None, model_config=None, comp_config=None,
                      layer_idx=0, total_layers=12, old_attn=None, **kwargs):
     depth = _get_inject_depth()
-    if depth >= _MAX_DEPTH: return None
+    if depth >= _MAX_DEPTH:
+        return None
     _set_inject_depth(depth + 1)
 
     try:
         target = layer if layer is not None else model
-        if target is None: return None
+        if target is None:
+            return None
 
         _BLOCK_PATHS = (
             ("transformer", "h"),

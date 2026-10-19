@@ -39,7 +39,6 @@ from sklearn.metrics import (
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 
-
 def wilson_ci(n_correct: int, n_total: int, z: float = 1.96):
     """Wilson score 95% CI for a proportion."""
     p = n_correct / max(n_total, 1)
@@ -137,8 +136,6 @@ def eval_on_dataset(model, tokenizer, val_ds, seq_len: int, batch_size: int, dev
         "collapse_flag": collapse_flag,
         "elapsed_s": round(elapsed, 2),
     }
-
-
 
 
 def main():

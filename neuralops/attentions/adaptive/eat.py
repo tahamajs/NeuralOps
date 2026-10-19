@@ -305,25 +305,35 @@ class EATBlock(BaseAttention):
             self.copy_weights(source_attn)
 
     @property
-    def query(self): return self.q_lin
+    def query(self):
+        return self.q_lin
     @property
-    def key(self): return self.k_lin
+    def key(self):
+        return self.k_lin
     @property
-    def value(self): return self.v_lin
+    def value(self):
+        return self.v_lin
     @property
-    def dense(self): return self.out_lin
+    def dense(self):
+        return self.out_lin
     @property
-    def o_proj(self): return self.out_lin
+    def o_proj(self):
+        return self.out_lin
     @property
-    def out_proj(self): return self.out_lin
+    def out_proj(self):
+        return self.out_lin
     @property
-    def q_proj(self): return self.q_lin
+    def q_proj(self):
+        return self.q_lin
     @property
-    def k_proj(self): return self.k_lin
+    def k_proj(self):
+        return self.k_lin
     @property
-    def v_proj(self): return self.v_lin
+    def v_proj(self):
+        return self.v_lin
     @property
-    def c_proj(self): return self.out_lin
+    def c_proj(self):
+        return self.out_lin
 
     def copy_weights(self, pretrained_attn: nn.Module) -> None:
         if pretrained_attn is None:
@@ -773,7 +783,7 @@ class EATBlock(BaseAttention):
         else:
             outputs = (out, None)
 
-        return outputs 
+        return outputs
 
 def inject_eat(
     layer: Any = None,

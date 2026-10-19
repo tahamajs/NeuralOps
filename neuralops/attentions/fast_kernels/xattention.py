@@ -288,25 +288,35 @@ class XAttention(BaseAttention):
         return self.v_proj
 
     @property
-    def W_q(self): return self.q_proj
+    def W_q(self):
+        return self.q_proj
     @property
-    def W_k(self): return self.k_proj
+    def W_k(self):
+        return self.k_proj
     @property
-    def W_v(self): return self.v_proj
+    def W_v(self):
+        return self.v_proj
     @property
-    def q_lin(self): return self.q_proj
+    def q_lin(self):
+        return self.q_proj
     @property
-    def k_lin(self): return self.k_proj
+    def k_lin(self):
+        return self.k_proj
     @property
-    def v_lin(self): return self.v_proj
+    def v_lin(self):
+        return self.v_proj
     @property
-    def out_lin(self): return self.out_proj
+    def out_lin(self):
+        return self.out_proj
     @property
-    def dense(self): return self.out_proj
+    def dense(self):
+        return self.out_proj
     @property
-    def o_proj(self): return self.out_proj
+    def o_proj(self):
+        return self.out_proj
     @property
-    def c_proj(self): return self.out_proj
+    def c_proj(self):
+        return self.out_proj
 
     def copy_weights(self, src: Any) -> None:
         """Extract Q/K/V/O weights across multiple architectures."""

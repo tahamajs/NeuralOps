@@ -97,7 +97,7 @@ def test_manifest_and_torch_dataset():
     from neuralops.data.benchmark_datasets.manifest import BenchmarkDatasetRegistry
     from neuralops.data.benchmark_datasets.loaders import BenchmarkTorchDataset
     from neuralops.data.benchmark_datasets.synthetic import _generate_synthetic_wikitext
-    
+
     info = BenchmarkDatasetRegistry.get("wikitext2")
     assert info is not None
     assert info.category == "language_modeling"

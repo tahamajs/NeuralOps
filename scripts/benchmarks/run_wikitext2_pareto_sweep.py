@@ -316,7 +316,7 @@ with open(out_dir / "wikitext2_pareto_results.csv", "w", newline="", encoding="u
     writer.writerows(records)
 
 md_content = """# 72-Compressor WikiText-2 Pareto Frontier Sweep
-**Hardware**: NVIDIA GeForce RTX 4070 (8GB VRAM)  
+**Hardware**: NVIDIA GeForce RTX 4070 (8GB VRAM)
 **Configuration**: GPT-2 (124M) on WikiText-2 (`seq_len=1024`, `stride=512`, `rank=32`, `fallback_to_original=False`).
 
 | Compressor | Status | Perplexity (PPL ↓) | Param Reduction (%) | Compression Ratio | Peak VRAM (MB) | Latency (ms/tok) | Throughput (tok/s) |

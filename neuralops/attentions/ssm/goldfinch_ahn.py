@@ -287,31 +287,44 @@ class GoldFinchAHNBlock(BaseAttention):
             self.copy_weights(source_attn)
 
     @property
-    def query(self): return self.W_q
+    def query(self):
+        return self.W_q
     @property
-    def key(self): return self.W_k
+    def key(self):
+        return self.W_k
     @property
-    def value(self): return self.W_v
+    def value(self):
+        return self.W_v
     @property
-    def q_proj(self): return self.W_q
+    def q_proj(self):
+        return self.W_q
     @property
-    def k_proj(self): return self.W_k
+    def k_proj(self):
+        return self.W_k
     @property
-    def v_proj(self): return self.W_v
+    def v_proj(self):
+        return self.W_v
     @property
-    def q_lin(self): return self.W_q
+    def q_lin(self):
+        return self.W_q
     @property
-    def k_lin(self): return self.W_k
+    def k_lin(self):
+        return self.W_k
     @property
-    def v_lin(self): return self.W_v
+    def v_lin(self):
+        return self.W_v
     @property
-    def out_lin(self): return self.out_proj
+    def out_lin(self):
+        return self.out_proj
     @property
-    def dense(self): return self.out_proj
+    def dense(self):
+        return self.out_proj
     @property
-    def o_proj(self): return self.out_proj
+    def o_proj(self):
+        return self.out_proj
     @property
-    def c_proj(self): return self.out_proj
+    def c_proj(self):
+        return self.out_proj
 
     def freeze_base_weights(self):
         for m in (self.W_q, self.W_k, self.W_v, self.out_proj):

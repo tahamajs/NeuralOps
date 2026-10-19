@@ -52,4 +52,3 @@ def test_fast_inference():
     decoder = SelfSpeculativeDecoder(target_model=model, max_draft_k=4, adaptive_k=False)
     ids, stats = decoder.generate(torch.randint(0, 20, (1, 2)), max_new_tokens=4, temperature=0.0)
     assert ids is not None
-

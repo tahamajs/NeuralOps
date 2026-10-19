@@ -17,7 +17,6 @@ import torch
 import torch.nn.functional as F
 
 
-
 from neuralops.core.triton_kernels._common import tl, triton
 
 MAX_REGISTER_DIM = 64
@@ -1029,7 +1028,6 @@ def fused_regla_refined_gate_scan_pytorch(
     return kda_hla_chunk_scan_triton(q, k, v, log_decay)
 
 
-
 def fused_regla_refined_gate_scan_triton(
     q: torch.Tensor,
     k: torch.Tensor,
@@ -1271,6 +1269,3 @@ __all__ = [
     'triton_chunked_delta_gate_scan',
     'triton_chunked_delta_gate_scan_pytorch_ref',
 ]
-
-
-

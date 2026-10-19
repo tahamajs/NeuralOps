@@ -93,7 +93,7 @@ def test_gated_delta_net_fallback_on_copy_weights_failure():
             super().__init__()
             self.attention = nn.Linear(64, 64)
             self.attention.weight.data.zero_()
-    
+
     layer = BrokenLayer()
     res = inject_gated_delta_net(layer=layer)
 

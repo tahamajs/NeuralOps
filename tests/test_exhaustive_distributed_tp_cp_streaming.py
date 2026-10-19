@@ -118,5 +118,3 @@ def test_8_4_context_parallel_recurrent_scan_prefix(num_heads, seq_len):
     assert out.shape == (B, H, T, D)
     assert final_state.shape == (B, H, D, D)
     assert not torch.isnan(out).any()
-
-

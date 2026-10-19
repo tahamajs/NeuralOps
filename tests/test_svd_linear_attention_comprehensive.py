@@ -36,7 +36,7 @@ def test_svd_linear_attention_forward():
 
 def test_svd_linear_attention_copy_weights_and_lora():
     cfg = DummyConfig(hidden_size=64, num_heads=4, head_dim=16)
-    
+
     class MockInnerAttn(nn.Module):
         def __init__(self):
             super().__init__()

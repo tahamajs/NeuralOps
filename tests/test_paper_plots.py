@@ -69,4 +69,3 @@ def test_paper_plot_generator_class():
         for p in plots:
             assert p.exists()
             assert p.stat().st_size > 0
-

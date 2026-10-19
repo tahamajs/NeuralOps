@@ -522,7 +522,6 @@ def handle_verify(args: argparse.Namespace) -> None:
         print(f"  CUDA Kernels:     {cuda_count} unified native kernels")
 
 
-
 def handle_results(args: argparse.Namespace) -> None:
     runner = Runner(output_dir=args.output_dir)
     df = runner.summary()
@@ -1014,7 +1013,6 @@ def handle_serve(args: argparse.Namespace) -> int:
     return cmd_serve(args)
 
 
-
 def _dispatch(args: argparse.Namespace) -> int:
     if args.subcommand == "ui":
         from neuralops.cli.terminal_ui import run_interactive_ui
@@ -1363,4 +1361,3 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
-

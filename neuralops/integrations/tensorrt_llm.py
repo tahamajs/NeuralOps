@@ -41,7 +41,6 @@ except (ImportError, Exception):
     HAS_TRT_LLM = False
 
 
-
 class TRTPluginSpec:
     """Represents a compiled or dynamic TensorRT IPluginV2DynamicExt definition."""
 
@@ -99,7 +98,6 @@ class TRTPluginSpec:
             return None
         fc = self.to_trt_plugin_field_collection()
         return creator.create_plugin(self.name, fc)
-
 
 
 class TensorRTLLMPluginBuilder:
@@ -519,7 +517,6 @@ set_target_properties(neuralops_trt_plugins PROPERTIES
     def get_runtime_runner(self, engine_path: Union[str, Path]) -> "TensorRTRuntimeRunner":
         """Instantiates high-throughput TensorRT execution runner from serialized engine."""
         return TensorRTRuntimeRunner(engine_path=engine_path)
-
 
 
 class TensorRTRuntimeRunner:

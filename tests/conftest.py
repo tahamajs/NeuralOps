@@ -26,7 +26,6 @@ import pytest
 import torch
 
 
-
 @pytest.fixture
 def device():
     """Return available device (cuda > mps > cpu)."""
@@ -51,7 +50,6 @@ def dtype(request):
         if not torch.cuda.is_bf16_supported():
             pytest.skip("bfloat16 not supported on this GPU")
     return request.param
-
 
 
 @pytest.fixture
@@ -85,7 +83,6 @@ def dummy_qkv():
     )
 
 
-
 @pytest.fixture
 def repo_root():
     """Absolute path to repository root."""
@@ -98,7 +95,6 @@ def tmp_results_dir(tmp_path):
     d = tmp_path / "results"
     d.mkdir(parents=True, exist_ok=True)
     return d
-
 
 
 @pytest.fixture(scope="session")

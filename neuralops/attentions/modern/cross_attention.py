@@ -175,19 +175,26 @@ class CrossAttention(BaseAttention):
             self.copy_weights(src_attn)
 
     @property
-    def q_lin(self): return self.q_proj
+    def q_lin(self):
+        return self.q_proj
     @property
-    def k_lin(self): return self.k_proj
+    def k_lin(self):
+        return self.k_proj
     @property
-    def v_lin(self): return self.v_proj
+    def v_lin(self):
+        return self.v_proj
     @property
-    def out_lin(self): return self.out_proj
+    def out_lin(self):
+        return self.out_proj
     @property
-    def dense(self): return self.out_proj
+    def dense(self):
+        return self.out_proj
     @property
-    def o_proj(self): return self.out_proj
+    def o_proj(self):
+        return self.out_proj
     @property
-    def c_proj(self): return self.out_proj
+    def c_proj(self):
+        return self.out_proj
 
     def copy_weights(self, src: Any) -> None:
         """Copy Q/K/V/O weights from any source attention architecture."""
@@ -238,9 +245,12 @@ class CrossAttention(BaseAttention):
 
         if hasattr(src, "self") and any(extracted[k][0] is None for k in ("q", "k", "v")):
             s = src.self
-            if hasattr(s, "query"): extracted["q"] = (s.query.weight.data, getattr(s.query, "bias", None))
-            if hasattr(s, "key"):   extracted["k"] = (s.key.weight.data, getattr(s.key, "bias", None))
-            if hasattr(s, "value"): extracted["v"] = (s.value.weight.data, getattr(s.value, "bias", None))
+            if hasattr(s, "query"):
+                extracted["q"] = (s.query.weight.data, getattr(s.query, "bias", None))
+            if hasattr(s, "key"):
+                extracted["k"] = (s.key.weight.data, getattr(s.key, "bias", None))
+            if hasattr(s, "value"):
+                extracted["v"] = (s.value.weight.data, getattr(s.value, "bias", None))
 
         if hasattr(src, "q") and hasattr(src.q, "weight") and extracted["q"][0] is None:
             extracted["q"] = (src.q.weight.data, getattr(src.q, "bias", None))

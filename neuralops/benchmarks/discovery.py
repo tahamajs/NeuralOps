@@ -160,7 +160,7 @@ def discover_all_modules() -> list[ModuleMetadata]:
 
 def discover_modules(key_by: str = "name") -> dict[str, ModuleMetadata]:
     """Discover all registered modules and return a mapping to ModuleMetadata.
-    
+
     Args:
         key_by: 'name' returns module names with collision preservation for dual-registered keys
                 (e.g. 'compressor:svd_linear' for the compressor and 'svd_linear' for attention),
@@ -193,4 +193,3 @@ __all__ = [
     "discover_all_modules",
     "discover_modules",
 ]
-

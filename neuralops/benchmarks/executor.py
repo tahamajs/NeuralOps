@@ -134,7 +134,6 @@ def _select_adapter(
         )
 
 
-
 def execute_single(
     module: str,
     model: str = "distilbert-base-uncased",

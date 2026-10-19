@@ -26,7 +26,6 @@ __all__ = [
 ]
 
 
-
 _FLOAT_DTYPES = (torch.float16, torch.bfloat16, torch.float32)
 
 _SWIGLU_BLOCK = 1024
@@ -52,8 +51,6 @@ def _cuda_ok(*tensors: torch.Tensor) -> bool:
     return True
 
 
-
-
 if HAS_TRITON and tl is not None:
 
     @triton.jit
@@ -74,7 +71,6 @@ if HAS_TRITON and tl is not None:
         out = (silu * x.to(tl.float32)).to(OUT.dtype.element_ty)
 
         tl.store(OUT + offs, out, mask=mask)
-
 
 
 def fused_swiglu(x: torch.Tensor, gate: torch.Tensor) -> torch.Tensor:
@@ -100,7 +96,6 @@ def fused_swiglu(x: torch.Tensor, gate: torch.Tensor) -> torch.Tensor:
     return F.silu(gate) * x
 
 
-
 def fast_gelu(x: torch.Tensor) -> torch.Tensor:
     """Tanh-approximated GELU.
 
@@ -109,7 +104,6 @@ def fast_gelu(x: torch.Tensor) -> torch.Tensor:
     memory-bound and PyTorch already emits a single fused kernel for it.
     """
     return F.gelu(x, approximate="tanh")
-
 
 
 if HAS_TRITON and tl is not None:
@@ -191,7 +185,6 @@ def fused_rmsnorm(
     if has_weight:
         y = y * weight
     return y.reshape(orig_shape)
-
 
 
 if HAS_TRITON:
@@ -340,18 +333,17 @@ def fused_rms_variance_match_triton(
     return y * gain
 
 
-
 def _pytorch_fwht_butterfly(x: torch.Tensor) -> torch.Tensor:
     """Vectorized in-place butterfly stages for Walsh-Hadamard Transform."""
     orig_shape = x.shape
     dim = orig_shape[-1]
-    
+
     if dim & (dim - 1) != 0:
         next_pow2 = 1 << (dim - 1).bit_length()
         x_pad = torch.nn.functional.pad(x, (0, next_pow2 - dim))
         res = _pytorch_fwht_butterfly(x_pad)
         return res[..., :dim]
-        
+
     x_flat = x.reshape(-1, dim).float().clone()
     h = 1
     while h < dim:
@@ -361,7 +353,7 @@ def _pytorch_fwht_butterfly(x: torch.Tensor) -> torch.Tensor:
             x_flat[:, i : i + h] = u + v
             x_flat[:, i + h : i + 2 * h] = u - v
         h *= 2
-        
+
     x_flat /= (dim ** 0.5)
     return x_flat.view(orig_shape).to(x.dtype)
 
@@ -387,7 +379,7 @@ if HAS_TRITON and tl is not None:
         val = tl.load(x_ptrs).to(tl.float32)
 
         norm = 1.0 / tl.sqrt(tl.cast(BLOCK_D, tl.float32))
-        
+
         h = 1
         while h < BLOCK_D:
             partner = offs_d ^ h
@@ -409,7 +401,7 @@ def fast_hadamard_transform(x: torch.Tensor, block_size: int = 128) -> torch.Ten
     """
     orig_shape = x.shape
     d = orig_shape[-1]
-    
+
     b = min(block_size, 1 << (d.bit_length() - 1))
     if b < 2:
         return x
@@ -425,7 +417,6 @@ def fast_hadamard_transform(x: torch.Tensor, block_size: int = 128) -> torch.Ten
         x_pad = torch.nn.functional.pad(x, (0, pad_len))
         y_pad = fast_hadamard_transform(x_pad, block_size=b)
         return y_pad[..., :d].contiguous()
-
 
 
 if HAS_TRITON:
@@ -535,7 +526,6 @@ def fused_alibi_bias_triton(
         return out
     except Exception:
         return fused_alibi_bias_pytorch(slopes, N_q, N_k, past_len=past_len, is_causal=is_causal)
-
 
 
 if HAS_TRITON:
@@ -729,7 +719,6 @@ def fused_dynamic_conv1d_triton(
         return fused_dynamic_conv1d_pytorch(v_full, dyn_w)
 
 
-
 if HAS_TRITON:
     @triton.jit
     def _fused_adaptive_span_kernel(
@@ -861,7 +850,6 @@ def fused_adaptive_span_penalty_triton(
         return penalty
     except Exception:
         return fused_adaptive_span_penalty_pytorch(spans, q_pos, k_pos, ramp_size, is_causal=is_causal)
-
 
 
 def fused_favor_plus_feature_map_pytorch(
@@ -1371,7 +1359,6 @@ def fused_entmax_bisect_triton(
         except Exception:
             pass
     return fused_entmax_bisect_pytorch(scores, alpha=alpha, valid_mask=valid_mask, dim=dim, n_iter=n_iter)
-
 
 
 fused_fast_gelu = fast_gelu

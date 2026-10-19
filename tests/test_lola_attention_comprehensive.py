@@ -240,4 +240,3 @@ def test_lola_nested_encoder_injection():
     llama_layer = DummyLlamaLayer()
     injected_llama = inject_lola_attention(llama_layer, model_config=MockConfig(), old_attn=llama_layer.self_attn)
     assert injected_llama.is_nested_encoder is False
-

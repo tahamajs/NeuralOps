@@ -443,7 +443,6 @@ def bwd(
     return g_q, g_k, g_v
 
 
-
 def fused_rala_augmented_scan_pytorch(
     q: torch.Tensor,
     k: torch.Tensor,
@@ -802,7 +801,6 @@ def fused_svd_linear_chunk_scan_triton(
     return out
 
 
-
 if HAS_TRITON:
     @triton.autotune(
         configs=[
@@ -1082,27 +1080,27 @@ class _ZerosLinearScanFunction(torch.autograd.Function):
             k_ = k.detach().requires_grad_(True)
             v_ = v.detach().requires_grad_(True)
             B, H, L, D = q_.shape
-            
+
             mask_val = mask_t.unsqueeze(1).unsqueeze(-1) if has_mask else 1.0
             k_v = k_ * mask_val
             v_v = v_ * mask_val
-            
+
             counts = torch.cumsum(mask_t, dim=-1).clamp(min=1.0).unsqueeze(1).unsqueeze(-1) if has_mask else torch.arange(1, L + 1, device=q.device).view(1, 1, -1, 1).float()
             k_cumsum = torch.cumsum(k_v, dim=2)
             k_mean = k_cumsum / counts
             k_centered = k_v - k_mean
-            
+
             q_hat = F.relu(q_) + eps
             k_hat = (F.relu(k_centered) + eps) * (mask_val if has_mask else 1.0)
-            
+
             S = torch.cumsum(k_hat.unsqueeze(-1) * v_v.unsqueeze(-2), dim=2)
             Z = torch.cumsum(k_hat, dim=2)
-            
+
             num = torch.einsum("bhld,bhlde->bhle", q_hat, S)
             den = (q_hat * Z).sum(dim=-1, keepdim=True).clamp(min=max(eps, 1e-6))
             out_ = num / den
             out_.backward(dout)
-            
+
             dq = q_.grad
             dk = k_.grad
             dv = v_.grad
@@ -1172,7 +1170,3 @@ __all__ = [
     "triton_fused_latent_kv_cache_attention_pytorch_ref",
     "fused_zeros_linear_scan_triton",
 ]
-
-
-
-

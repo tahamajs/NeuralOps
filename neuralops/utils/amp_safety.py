@@ -28,9 +28,9 @@ def fp32_accumulator_context(device: Optional[torch.device] = None) -> Generator
     SVD decompositions) execute entirely in FP32 with 32-bit registers.
     """
     device_type = "cuda" if (torch.cuda.is_available() and (device is None or device.type == "cuda")) else "cpu"
-    
+
     was_autocast_enabled = torch.is_autocast_enabled(device_type) if hasattr(torch, "is_autocast_enabled") else False
-    
+
     if was_autocast_enabled:
         with torch.amp.autocast(device_type=device_type, enabled=False):
             yield
@@ -87,9 +87,9 @@ def safe_svd(
     """
     orig_dtype = matrix.dtype
     orig_device = matrix.device
-    
+
     work_dtype = torch.float32 if orig_dtype in (torch.float16, torch.bfloat16, torch.float32) else torch.float64
-    
+
     with torch.amp.autocast(device_type="cuda" if orig_device.type == "cuda" else "cpu", enabled=False):
         M = matrix.to(dtype=work_dtype)
         try:

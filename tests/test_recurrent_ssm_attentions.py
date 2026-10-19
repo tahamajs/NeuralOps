@@ -57,7 +57,7 @@ class TestRecurrentSSMAttentions(unittest.TestCase):
     def _test_module_lifecycle(self, key: str) -> None:
         self.assertIn(key, ATTENTION_REGISTRY, f"Key '{key}' not in ATTENTION_REGISTRY!")
         cls = ATTENTION_REGISTRY.get(key)
-        
+
         try:
             mod = cls(config=self.config)
         except TypeError:

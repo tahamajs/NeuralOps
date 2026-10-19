@@ -79,4 +79,3 @@ class TestCachedTensorDataset:
                 seq_len=64,
                 cache_dir=tmp_path,
             )
-

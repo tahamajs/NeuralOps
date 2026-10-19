@@ -74,7 +74,7 @@ class TestOptimizerFactories:
         opt = create_adamw(model.parameters(), lr=0.1)
         x = torch.randn(8, 4)
         y = torch.randn(8, 1)
-        
+
         loss1 = ((model(x) - y) ** 2).mean()
         loss1.backward()
         opt.step()

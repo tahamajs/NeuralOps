@@ -130,4 +130,3 @@ def test_cosformer_rope_fallback_probing():
     x = torch.randn(2, 8, 64)
     out, _ = attn(x)
     assert out.shape == (2, 8, 64)
-

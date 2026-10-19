@@ -26,7 +26,6 @@ from neuralops.export.exporter import export_model as _export_model, load_model 
 logger = logging.getLogger("NeuralOps.API")
 
 
-
 def replace_attention(
     model: nn.Module,
     attention: Optional[str] = None,
@@ -207,7 +206,6 @@ def compress(
     return out_model
 
 
-
 def transplant_attention(
     model: nn.Module,
     attention: Optional[str] = None,
@@ -252,7 +250,6 @@ def finalize_surgery(model: nn.Module) -> nn.Module:
     """Sever teacher branches and permanently finalize student attention transplantation."""
     from neuralops.surgery.shadow_twin import finalize_surgery as _finalize
     return _finalize(model)
-
 
 
 def export_model(
@@ -354,7 +351,6 @@ def compile_to_so(
         max_seq_len=max_seq_len,
         device=device,
     )
-
 
 
 def _ensure_registries_loaded() -> None:
@@ -497,7 +493,6 @@ def scaffold_module(name: str, category: str = "attention", family: str = "linea
     return _scaff(name, category=category, family=family, output_file=output_file)
 
 
-
 def compare_attentions_ablation(
     attention_names: Sequence[str],
     batch_size: int = 2,
@@ -614,8 +609,10 @@ def surgical_transplant_and_heal_pipeline(
                 inp = calibration_inputs if not isinstance(calibration_inputs, (list, tuple)) else calibration_inputs[0]
                 y_t = teacher_model(inp) if not isinstance(inp, dict) else teacher_model(**inp)
                 y_s = student(inp) if not isinstance(inp, dict) else student(**inp)
-                if isinstance(y_t, tuple): y_t = y_t[0]
-                if isinstance(y_s, tuple): y_s = y_s[0]
+                if isinstance(y_t, tuple):
+                    y_t = y_t[0]
+                if isinstance(y_s, tuple):
+                    y_s = y_s[0]
                 mse_raw = F.mse_loss(y_s.float(), y_t.float()).item()
                 cos_raw = F.cosine_similarity(y_s.float().flatten(), y_t.float().flatten(), dim=0).item()
                 initial_metrics = {"mse_raw": mse_raw, "cos_sim_raw": cos_raw}
@@ -860,7 +857,6 @@ def benchmark_all(
     return runner.run()
 
 
-
 def get_version() -> str:
     """Return the current NeuralOps release version."""
     import neuralops
@@ -927,7 +923,6 @@ def info() -> Dict[str, Any]:
         "pytorch_version": torch.__version__,
         "cuda_available": torch.cuda.is_available(),
     }
-
 
 
 __all__ = [

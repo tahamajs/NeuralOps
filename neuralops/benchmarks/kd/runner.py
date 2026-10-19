@@ -186,7 +186,7 @@ class KDRunner:
             subtask = task_spec.split(":", 1)[1]
             ds = load_dataset("glue", subtask)
             dataset_name = f"glue_{subtask}"
-            
+
             cols = ds["train"].column_names
             if "sentence" in cols:
                 def tokenize_batch(examples: Dict[str, List[Any]]) -> Dict[str, Any]:

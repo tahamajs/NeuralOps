@@ -39,7 +39,6 @@ class GenerationRequest:
     past_kv: Any = None
 
 
-
 class NeuralOpsInferenceEngine:
     """Full-featured greedy/top-k/top-p/repetition-penalty generation runtime."""
 

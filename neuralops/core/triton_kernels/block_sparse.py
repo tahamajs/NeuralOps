@@ -21,7 +21,7 @@ def butterfly_mask(N: int, block_size: int = 64, device=None) -> torch.Tensor:
     """Generate butterfly block-sparse mask."""
     num_blocks = (N + block_size - 1) // block_size
     mask = torch.zeros(N, N, dtype=torch.bool, device=device)
-    
+
     for i in range(num_blocks):
         start = i * block_size
         end = min(start + block_size, N)
@@ -31,7 +31,7 @@ def butterfly_mask(N: int, block_size: int = 64, device=None) -> torch.Tensor:
             if j < num_blocks:
                 js, je = j * block_size, min((j + 1) * block_size, N)
                 mask[start:end, js:je] = True
-    
+
     return mask
 
 
@@ -77,7 +77,7 @@ def block_sparse_attention(
     N = q.shape[-2]
     if mask is None:
         mask = butterfly_mask(N, block_size, q.device)
-    
+
 
     if torch.is_grad_enabled() or q.requires_grad or k.requires_grad or v.requires_grad:
         return _BlockSparseAutograd.apply(q, k, v, mask)
@@ -185,7 +185,6 @@ def fused_moba_block_router_combine_triton(
         except Exception:
             pass
     return fused_moba_block_router_combine_pytorch(Qb, Kb, Vb, scale, top_k, is_causal)
-
 
 
 from neuralops.core.triton_kernels._common import HAS_TRITON, triton, tl
@@ -573,4 +572,3 @@ __all__ = [
     "fused_dsa_sparse_attn_triton",
     "fused_dsa_sparse_attn_pytorch_ref",
 ]
-

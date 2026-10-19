@@ -33,8 +33,10 @@ from neuralops.core.utils.rope import _rotate_half
 def fp8_cast_simulate(x: torch.Tensor, format: str = "e4m3", per_channel: bool = False, use_ste: bool | None = None) -> torch.Tensor:
     if os.environ.get("AEGIS_DISABLE_FP8", "0") == "1":
         return x
-    if not isinstance(x, torch.Tensor) or not x.is_floating_point(): return x
-    if use_ste is None: use_ste = x.requires_grad and torch.is_grad_enabled()
+    if not isinstance(x, torch.Tensor) or not x.is_floating_point():
+        return x
+    if use_ste is None:
+        use_ste = x.requires_grad and torch.is_grad_enabled()
     orig_dtype = x.dtype
 
     if x.is_cuda and hasattr(torch, "float8_e4m3fn") and format.lower() in ("e4m3", "float8_e4m3fn"):
@@ -72,7 +74,8 @@ def fp8_cast_simulate(x: torch.Tensor, format: str = "e4m3", per_channel: bool =
         rounded = torch.round(abs_x / factor) * factor
         x_dequant = ((torch.sign(x_scaled) * rounded).clamp(min=-max_val, max=max_val) / scale.float().clamp(min=1e-8)).to(orig_dtype)
 
-    if use_ste: return x + (x_dequant - x).detach()
+    if use_ste:
+        return x + (x_dequant - x).detach()
     return x_dequant
 
 

@@ -289,25 +289,35 @@ class SVDProjectionAttention(BaseAttention):
                 pass
 
     @property
-    def query(self): return self.q_proj
+    def query(self):
+        return self.q_proj
     @property
-    def key(self): return self.k_proj
+    def key(self):
+        return self.k_proj
     @property
-    def value(self): return self.v_proj
+    def value(self):
+        return self.v_proj
     @property
-    def q_lin(self): return self.q_proj
+    def q_lin(self):
+        return self.q_proj
     @property
-    def k_lin(self): return self.k_proj
+    def k_lin(self):
+        return self.k_proj
     @property
-    def v_lin(self): return self.v_proj
+    def v_lin(self):
+        return self.v_proj
     @property
-    def out_lin(self): return self.out_proj
+    def out_lin(self):
+        return self.out_proj
     @property
-    def dense(self): return self.out_proj
+    def dense(self):
+        return self.out_proj
     @property
-    def c_proj(self): return self.out_proj
+    def c_proj(self):
+        return self.out_proj
     @property
-    def o_proj(self): return self.out_proj
+    def o_proj(self):
+        return self.out_proj
 
     def _decompose_and_set(
         self,
@@ -423,9 +433,12 @@ class SVDProjectionAttention(BaseAttention):
                     logger.debug("UniversalAdapter fallback failed: %s", e)
 
             missing = []
-            if w_q is None: missing.append("query/q_proj")
-            if w_k is None: missing.append("key/k_proj")
-            if w_v is None: missing.append("value/v_proj")
+            if w_q is None:
+                missing.append("query/q_proj")
+            if w_k is None:
+                missing.append("key/k_proj")
+            if w_v is None:
+                missing.append("value/v_proj")
             if missing:
                 logger.warning(f"Failed to extract required projections: {missing}")
                 return

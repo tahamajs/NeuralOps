@@ -31,7 +31,7 @@ def assert_numerical_parity(
     name: str = "kernel",
 ) -> None:
     """Verifies numerical parity between CUDA kernel and PyTorch reference implementation.
-    
+
     Operating Law #3:
     - FP16 numerical parity requires max_diff < 0.01
     - FP32 numerical parity requires max_diff < 1e-4

@@ -414,7 +414,6 @@ def _svd_factorize_weights(
                 )
 
 
-
 def adapt_decoder_attention_forward(
     module: nn.Module,
     *args: Any,
@@ -547,7 +546,7 @@ def calibrate_surgically_replaced_model(
 ) -> nn.Module:
     """
     Closed-Form Layerwise Ridge Output Calibration & Convex Subspace Anchoring.
-    
+
     Aligns transplanted attention operators (linear attention, SVD, SSM, kernels)
     with the pretrained convex-combination feature subspace of the original attention layer:
         W_align = (Z^T Z + lambda * I)^{-1} Z^T Y_orig
@@ -1012,4 +1011,3 @@ __all__ = [
     "calibrate_attention_subspace",
     "heal_replaced_model",
 ]
-

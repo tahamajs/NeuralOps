@@ -161,5 +161,3 @@ def copy_blocks_cow(
     return _copy_blocks_cow_dispatch(
         dst_k, dst_v, src_k, src_v, block_mapping, block_size, num_heads, head_dim
     )
-
-

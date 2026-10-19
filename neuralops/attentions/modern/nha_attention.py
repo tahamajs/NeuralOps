@@ -367,7 +367,7 @@ class NativeHybridAttention(BaseAttention):
                         [valid_mask, torch.ones(B, pad, device=device, dtype=torch.bool)],
                         dim=1,
                     )
-            pad_mask = ~valid_mask.unsqueeze(1).unsqueeze(2)  
+            pad_mask = ~valid_mask.unsqueeze(1).unsqueeze(2)
             attn_mask.masked_fill_(pad_mask, -1e4)
 
         if output_attentions:

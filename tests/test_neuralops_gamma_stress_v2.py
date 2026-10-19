@@ -41,14 +41,14 @@ def test_2_paged_state_and_cow():
     child = 2
     state_table.register_sequence(parent, initial_pages=1)
     state_table.page_pool[state_table.seq_page_tables[parent][0]].fill_(5.0)
-    
+
     state_table.fork_sequence(parent, child)
     p_cow = state_table.prepare_write(child, page_slot=0)
     state_table.page_pool[p_cow].fill_(10.0)
-    
+
     assert torch.allclose(state_table.page_pool[state_table.seq_page_tables[parent][0]], torch.tensor(5.0))
     assert torch.allclose(state_table.page_pool[p_cow], torch.tensor(10.0))
-    
+
     state_table.free_sequence(parent)
     state_table.free_sequence(child)
     print("[Test 2] PASSED", flush=True)
@@ -90,7 +90,7 @@ def test_4_speculative_decoding():
     model.eval()
     decoder = SelfSpeculativeDecoder(target_model=model, max_draft_k=4, adaptive_k=False)
     input_ids = torch.randint(0, 100, (1, 4))
-    
+
     for gamma in [1, 2, 4]:
         decoder.max_draft_k = gamma
         decoder.current_k = gamma

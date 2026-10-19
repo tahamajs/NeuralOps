@@ -132,7 +132,6 @@ def test_samba_m3_inject():
     assert inject_samba_m3(empty_layer, model_config=cfg, old_attn=None) is None
 
 
-
 def test_samba_m3_decoder_return_tuple_layout():
     """Verify decoder return layout for output_attentions True and False."""
     cfg = make_config(hidden_size=64, num_heads=4, num_kv_heads=2, is_decoder=True, model_type="gpt2")
@@ -196,7 +195,7 @@ def test_samba_m3_spectral_mamba_2d_and_3d():
     """Verify SpectralMamba handles both 2D and 3D shapes without broadcasting issues."""
     from neuralops.attentions.samba_m3 import SpectralMamba
     sm = SpectralMamba(d_model=64)
-    
+
     x_2d = torch.randn(2, 64)
     out_2d, _ = sm(x_2d)
     assert out_2d.shape == (2, 64)
@@ -204,4 +203,3 @@ def test_samba_m3_spectral_mamba_2d_and_3d():
     x_3d = torch.randn(2, 8, 64)
     out_3d, _ = sm(x_3d)
     assert out_3d.shape == (2, 8, 64)
-

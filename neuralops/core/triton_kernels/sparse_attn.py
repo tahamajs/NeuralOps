@@ -428,7 +428,6 @@ def is_supported(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, **kwargs: An
     return suitable
 
 
-
 def fwd(
     q: torch.Tensor,
     k: torch.Tensor,
@@ -482,7 +481,6 @@ def bwd(
         )
         g_q, g_k, g_v = torch.autograd.grad(out, [q_req, k_req, v_req], grad_out)
     return g_q, g_k, g_v
-
 
 
 if HAS_TRITON:
@@ -581,7 +579,6 @@ def fused_topk_sparse_route_and_combine_triton(
     stacked = torch.stack(branch_list, dim=-1)
     w = router_weights.unsqueeze(-2)
     return (stacked * w).sum(dim=-1).to(b0.dtype)
-
 
 
 if HAS_TRITON:
@@ -940,7 +937,7 @@ def fused_bam_unified_qkv_moe_pytorch(
     act_k = min(top_k, weights.shape[-1])
     topk_vals, topk_ind = torch.topk(weights, act_k, dim=-1)
     norm_w = topk_vals / topk_vals.sum(dim=-1, keepdim=True).clamp(min=1e-8)
-    
+
     out = torch.zeros_like(expert_outputs[0])
     for i in range(act_k):
         expert_idx = topk_ind[..., i]
@@ -1002,5 +999,3 @@ from neuralops.core.triton_kernels.block_sparse import (
     triton_block_sparse_streaming_attn,
     triton_block_sparse_streaming_attn_pytorch_ref,
 )
-
-

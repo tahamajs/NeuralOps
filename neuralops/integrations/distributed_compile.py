@@ -23,7 +23,6 @@ __all__ = [
 ]
 
 
-
 def get_deepspeed_config(
     stage: int = 2,
     offload_optimizer: bool = False,
@@ -50,7 +49,7 @@ def get_neuralops_fsdp_policy(min_num_params: int = int(1e5)):
         from torch.distributed.fsdp.wrap import size_based_auto_wrap_policy, transformer_auto_wrap_policy
         from neuralops.core.base import BaseAttention
         from neuralops.trainer.peft_recovery.svd_adapters import PiSSALinear, DoRALinear
-        
+
         def custom_policy(module: nn.Module, recurse: bool, nonwrapped_numel: int) -> bool:
             if isinstance(module, (BaseAttention, PiSSALinear, DoRALinear)):
                 return True
@@ -69,7 +68,6 @@ def apply_fsdp_wrapping(model: nn.Module, auto_wrap_policy: Any = None) -> nn.Mo
         return FSDP(model, auto_wrap_policy=policy)
     except Exception:
         return model
-
 
 
 def compile_attention_module(

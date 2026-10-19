@@ -752,7 +752,6 @@ def fused_rglru_ssd_scan_pytorch(
     return torch.nan_to_num(y, nan=0.0, posinf=0.0, neginf=0.0).to(target_dtype)
 
 
-
 def fused_rglru_ssd_scan_triton(
     q: torch.Tensor,
     k: torch.Tensor,
@@ -793,5 +792,3 @@ __all__ = [
     'hgrn2_scan_triton',
     'gdn_scan_triton',
 ]
-
-

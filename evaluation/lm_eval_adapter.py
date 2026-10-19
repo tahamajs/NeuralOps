@@ -89,29 +89,29 @@ class NeuralOpsLMEvalAdapter(BaseLM):
         for context, continuation in requests:
             ctx_ids = self.tokenizer.encode(context, add_special_tokens=False)
             cont_ids = self.tokenizer.encode(continuation, add_special_tokens=False)
-            
+
             full_ids = ctx_ids + cont_ids
             input_tensor = torch.tensor([full_ids], device=self.device)
-            
+
             with torch.no_grad():
                 outputs = self.model(input_tensor)
                 logits = outputs.logits if hasattr(outputs, "logits") else (outputs[0] if isinstance(outputs, (tuple, list)) else outputs)
                 if logits.dim() == 2:
                     logits = logits.unsqueeze(0)
-                
+
             cont_len = len(cont_ids)
             target_logits = logits[0, len(ctx_ids) - 1 : -1, :]
             target_labels = torch.tensor(cont_ids, device=self.device)
-            
+
             log_probs = F.log_softmax(target_logits, dim=-1)
             selected_log_probs = log_probs.gather(dim=-1, index=target_labels.unsqueeze(-1)).squeeze(-1)
-            
+
             total_ll = float(selected_log_probs.sum().item())
             greedy_pred = target_logits.argmax(dim=-1)
             is_greedy = bool((greedy_pred == target_labels).all().item())
-            
+
             results.append((total_ll, is_greedy))
-            
+
         return results
 
     def loglikelihood_rolling(self, requests: List[str]) -> List[float]:
@@ -140,7 +140,7 @@ class NeuralOpsLMEvalAdapter(BaseLM):
         for prompt, gen_kwargs in requests:
             until = gen_kwargs.get("until", ["\n"])
             max_new = gen_kwargs.get("max_new_tokens", 32)
-            
+
             inp = torch.tensor([self.tokenizer.encode(prompt, add_special_tokens=False)], device=self.device)
             curr = inp
             with torch.no_grad():

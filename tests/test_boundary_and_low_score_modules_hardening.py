@@ -74,7 +74,6 @@ def clean_cuda_cache():
         gc.collect()
 
 
-
 class TestPointwiseBoundaryKernels:
     """Tests small sequence and boundary cases for pointwise Triton kernels."""
 
@@ -160,7 +159,6 @@ class TestPointwiseBoundaryKernels:
         assert not torch.isinf(out_triton).any()
         diff = (out_triton - out_pt).abs().max().item()
         assert diff <= 1e-4, f"Nystrom landmark pinv step mismatch: {diff}"
-
 
 
 class TestHighFlopMemoryIntensiveAttentions:
@@ -260,7 +258,6 @@ class TestHighFlopMemoryIntensiveAttentions:
         assert out_tri.shape == (B, H, L, D)
 
 
-
 class TestHybridMultiBranchStructures:
     """Validates Split-Head, Tri-Branch, and Jamba hybrid attention architectures."""
 
@@ -324,7 +321,6 @@ class TestHybridMultiBranchStructures:
         assert not torch.isnan(out_ji).any()
         out_ji.sum().backward()
         assert x_ji.grad is not None
-
 
 
 class TestCompressionEnginesHardening:
@@ -405,7 +401,6 @@ class TestCompressionEnginesHardening:
         assert not torch.isnan(out_fp8).any()
 
 
-
 class TestDynamicContextAndMemoryIntegrity:
     """Profiles memory stability under dynamic sequence scaling L in {128, 512, 2048}."""
 
@@ -414,7 +409,7 @@ class TestDynamicContextAndMemoryIntegrity:
         from neuralops.attentions.adaptive.sink_attention import SinkAttention
 
         mod = SinkAttention(d_model=64, n_heads=4, window_size=64, num_sinks=4).to(DEVICE)
-        
+
         _ = mod(torch.randn(2, 64, 64, device=DEVICE))
         torch.cuda.synchronize()
         mem_start = torch.cuda.memory_allocated(DEVICE)

@@ -37,10 +37,10 @@ class TestSVDLinearLayer:
     def test_svd_linear_parameter_reduction(self):
         dense = nn.Linear(512, 512, bias=False)
         dense_params = sum(p.numel() for p in dense.parameters())
-        
+
         svd = SVDLinear(512, 512, rank=32, bias=False)
         svd_params = sum(p.numel() for p in svd.parameters())
-        
+
         assert svd_params < dense_params
         assert svd_params == 32768
         assert dense_params == 262144
@@ -70,7 +70,7 @@ class TestAASVDCompressorEndToEnd:
         model = DistilBertForSequenceClassification(cfg)
         compressor = AASVDCompressor(model, rank=16)
         comp_model, stats = compressor.compress()
-        
+
         x = torch.randint(0, 1000, (2, 8))
         out = comp_model(x).logits
         assert out.shape == (2, 2)

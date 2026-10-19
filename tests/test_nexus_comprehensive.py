@@ -138,4 +138,3 @@ def test_nexus_ortho_loss_differentiable():
     assert loss.requires_grad is True
     loss.backward()
     assert attn.query.weight.grad is not None
-

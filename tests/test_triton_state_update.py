@@ -23,7 +23,6 @@ from neuralops.core.triton_kernels._common import HAS_TRITON, state_update_pytor
 from neuralops.core.triton_kernels.state_update import fwd, is_supported
 
 
-
 @pytest.fixture
 def device():
     if torch.cuda.is_available():
@@ -35,7 +34,7 @@ def reference_ssm_recurrence_pytorch(u, delta, A, B, C, D=None, initial_state=No
     """Pure PyTorch reference implementation of continuous SSM recurrence."""
     B_sz, L_sz, D_sz = u.shape
     N_sz = A.shape[-1]
-    
+
     if initial_state is not None:
         state = initial_state.clone()
     else:
@@ -68,7 +67,6 @@ def reference_ssm_recurrence_pytorch(u, delta, A, B, C, D=None, initial_state=No
     return y.to(u.dtype), state.to(u.dtype)
 
 
-
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float16])
 @pytest.mark.parametrize("batch", [1, 2])
 @pytest.mark.parametrize("seq_len", [8, 32])
@@ -92,7 +90,6 @@ def test_state_update_correctness(device, dtype, batch, seq_len, d_dim, n_dim):
     assert torch.allclose(next_state, state_ref, atol=1e-2, rtol=1e-2)
 
 
-
 def test_state_carryover(device):
     """Running step 1 then step 2 with state carry-over matches full sequence."""
     B, L, D_sz, N_sz = 2, 16, 16, 8
@@ -110,7 +107,6 @@ def test_state_carryover(device):
     assert torch.allclose(y_full[:, :8], y_part1, atol=1e-4)
     assert torch.allclose(y_full[:, 8:], y_part2, atol=1e-4)
     assert torch.allclose(state_full, state_end, atol=1e-4)
-
 
 
 def test_state_update_cpu_fallback():

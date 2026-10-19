@@ -34,7 +34,7 @@ def test_module(module_name):
                 module = module_class(hidden_size=D)
             except TypeError:
                 module = module_class()
-        
+
         x = torch.randn(2, 8, D)
         out, _ = module(x)
         assert out.shape == (2, 8, D)

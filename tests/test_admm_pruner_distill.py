@@ -26,7 +26,6 @@ import torch
 import torch.nn as nn
 
 
-
 from neuralops.compression_engine.admm_pruner import (ADMMMaskedLinear,
                                                       ADMMPruner,
                                                       admm_pruner_factory)

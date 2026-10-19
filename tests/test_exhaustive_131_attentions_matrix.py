@@ -42,7 +42,7 @@ def _instantiate_attn(attn_name: str, dim: int, num_heads: int, device: str = "c
 def test_1_1_multi_signature_instantiation(attn_name):
     """Test 1.1: Instantiation via class, factory, and config across non-standard dimensions."""
     cls = ATTENTION_REGISTRY.get(attn_name)
-    
+
     m1 = cls(dim=128, num_heads=4)
     assert m1 is not None
 
@@ -64,7 +64,7 @@ def test_1_2_prime_and_boundary_sequence_lengths(attn_name):
     """Test 1.2: Verify ugly, odd, and prime sequence lengths (T=1, 7, 13, 65, 129)."""
     device = "cuda"
     mod = _instantiate_attn(attn_name, dim=64, num_heads=2, device=device)
-    
+
     for T in [1, 7, 13, 65]:
         x = torch.randn(2, T, 64, device=device)
         try:
@@ -243,7 +243,7 @@ def test_1_8_autoregressive_step_operational_check(attn_name):
             assert y_t.shape == (B, 1, D), f"{attn_name}.step() returned shape {y_t.shape}, expected (1, 1, 64)"
             assert not torch.isnan(y_t).any(), f"{attn_name}.step() produced NaN at step {t}"
             step_outputs.append(y_t)
-        
+
         y_concat = torch.cat(step_outputs, dim=1)
         assert y_concat.shape == (B, T, D)
     except NotImplementedError:

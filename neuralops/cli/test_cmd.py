@@ -19,4 +19,3 @@ def cmd_test():
         [sys.executable, "-m", "pytest", "tests/test_all_attention_modules.py",
          "tests/test_all_compressor_modules.py", "-q"]
     )
-

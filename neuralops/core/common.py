@@ -32,8 +32,6 @@ except Exception:
 logger = logging.getLogger(__name__)
 
 
-
-
 def _cfg_get(config: Any, key: str, default: Any = None) -> Any:
     """
     Safely retrieves a configuration attribute from a dict, object, or None.
@@ -45,8 +43,6 @@ def _cfg_get(config: Any, key: str, default: Any = None) -> Any:
         return config.get(key, default)
     val = getattr(config, key, None)
     return val if val is not None else default
-
-
 
 
 def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
@@ -130,7 +126,6 @@ def _apply_rope(
     q_embed = (q * cos) + (rotate_half(q) * sin)
     k_embed = (k * cos) + (rotate_half(k) * sin)
     return q_embed.type_as(q), k_embed.type_as(k)
-
 
 
 class LoRALinear(nn.Module):
@@ -311,7 +306,7 @@ class LoRALinear(nn.Module):
                 mod.bias.data.copy_(layer.bias.data)
         return mod
 
-    
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         if self.is_wrapper:
             res = self.base_layer(x)
@@ -927,5 +922,3 @@ __all__ = [
     "_find_layer_list",
     "_infer_d_model",
 ]
-
-

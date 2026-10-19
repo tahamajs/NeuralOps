@@ -30,4 +30,3 @@ def save_config(config: dict[str, Any], path: str) -> None:
 
 
 __all__ = ["load_config", "save_config"]
-

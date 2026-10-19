@@ -172,7 +172,7 @@ with open(out_dir / "results.csv", "w", newline="", encoding="utf-8") as f:
     writer.writerows(records)
 
 md_content = """# 72-Compressor RoBERTa-Base SST-2 Fine-Tuning Sweep
-**Hardware**: NVIDIA GeForce RTX 4070 (8GB VRAM)  
+**Hardware**: NVIDIA GeForce RTX 4070 (8GB VRAM)
 **Configuration**: RoBERTa-base on SST-2 (`rank=32`, `fallback_to_original=False`).
 
 | Compressor | Status | Accuracy (↑) | F1 Score (↑) | Loss (↓) | Param Reduction (%) | Compression Ratio | Peak VRAM (MB) | Duration (s) |

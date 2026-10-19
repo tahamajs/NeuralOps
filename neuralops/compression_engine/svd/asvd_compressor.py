@@ -41,7 +41,7 @@ class ASVDCompressor(AASVDCompressor):
         r_kv: Optional[int] = None,
     ) -> Dict[str, Any]:
         """Compress attention layer W_k and W_v, registering hooks to store compressed latent C = X @ V_r^T.
-        
+
         Proof: Show ||K - K_r||_F <= eps for r >= 0.5 * d_k.
         On forward, decompress via U_r @ C in the attention kernel.
         """

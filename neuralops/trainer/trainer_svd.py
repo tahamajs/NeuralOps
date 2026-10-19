@@ -144,5 +144,3 @@ def benchmark_model(model: nn.Module, data_loader: DataLoader, device: torch.dev
         "peak_memory_mb": memory_after,
         "throughput": len(data_loader.dataset) / total_time if total_time > 0 else 0,
     }
-
-
