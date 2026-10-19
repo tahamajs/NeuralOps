@@ -613,7 +613,6 @@ def run_test(mod_name):
     fn = getattr(py_mod, entry_name, None)
     if fn is None or not callable(fn):
         return {{"status": "NO_ENTRYPOINT", "entry": entry_name}}
-    assert callable(fn), f"Dynamically loaded kernel '{entry_name}' in {mod_name} must be callable"
 
     if hasattr(py_mod, "_get_module"):
         py_mod._get_module()
