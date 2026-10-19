@@ -358,3 +358,37 @@ NEURALOPS_STRICT_CUDA=1 pytest tests/cuda_kernels/ -v
 # Force Level 3 PyTorch fallback across the entire session to verify reference baseline
 FORCE_PYTORCH_FALLBACK=1 pytest tests/test_all_131_triton_parity.py -v
 ```
+
+---
+
+## 6. Multi-Dataset Streaming, Varlen Packing & WSD Correctness Protocol
+
+When training or fine-tuning models using NeuralOps data and scheduling pipelines, correctness must be validated across 3 key subsystems:
+
+### 6.1 Multi-Dataset Streaming Verification
+- **Comma-Separated Parsing**: Verify that `MultiDatasetLoader` parses single, multi-dataset, and subset strings cleanly:
+  ```python
+  from neuralops.data.multidataset import parse_dataset_spec
+  datasets, subsets = parse_dataset_spec("HuggingFaceFW/fineweb-edu,opencsg/Fineweb-Edu-Chinese-V2")
+  assert len(datasets) == 2
+  ```
+- **Round-Robin and Weighted Interleaving**: Ensure tokens from all specified corpora are yielded without starvation or race conditions.
+- **Offline / Synthetic Fallback**: In environments without internet access or when Hugging Face is unreachable, verify that `MultiDatasetLoader` seamlessly activates synthetic data generation without crashing.
+
+### 6.2 Variable-Length Document Packing (`cu_seqlens`)
+- **Zero-Padding Alignment**: Verify that documents are packed end-to-end to fill the fixed sequence length `seq_len` without padding waste:
+  ```python
+  from neuralops.data.packing import pack_sequences
+  packed = pack_sequences(docs, seq_len=4096, context_len=1024)
+  assert packed[0]["cu_seqlens"][-1] == 4096
+  ```
+- **Causal Boundary Non-Leakage**: Tokens from Document $A$ must NEVER attend to tokens from Document $B$ in packed sequences. Kernels taking `cu_seqlens` (e.g. FlashAttention-2 varlen, GLA varlen) must segment the causal mask at each cumulative boundary:
+  $$M_{i,j} = \begin{cases} 0 & \text{if } i \ge j \text{ and } \operatorname{doc}(i) = \operatorname{doc}(j) \\ -\infty & \text{otherwise} \end{cases}$$
+
+### 6.3 Warmup-Stable-Decay (WSD) Scheduler Verification
+- **Phase 1: Warmup** ($t < T_{\text{warmup}}$): $\eta(t) = \eta_{\min} + \frac{t}{T_{\text{warmup}}}(\eta_{\max} - \eta_{\min})$
+- **Phase 2: Stable** ($T_{\text{warmup}} \le t < T_{\text{decay}}$): $\eta(t) = \eta_{\max}$
+- **Phase 3: Decay** ($t \ge T_{\text{decay}}$): Cosine or linear decay down to $\eta_{\min}$:
+  $$\eta(t) = \eta_{\min} + \frac{1}{2}(\eta_{\max} - \eta_{\min})\left(1 + \cos\left(\pi \frac{t - T_{\text{decay}}}{T_{\text{total}} - T_{\text{decay}}}\right)\right)$$
+- Validate that step transitions are strictly monotonic and numerically continuous ($\lim_{t \to T^-} \eta(t) = \lim_{t \to T^+} \eta(t)$).
+
