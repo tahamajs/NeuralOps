@@ -19,6 +19,7 @@ __pycache__/
 # Distribution / Packaging
 dist/
 build/
+
 eggs/
 .eggs/
 *.egg-info/
@@ -273,7 +274,9 @@ results/**/*.err
 *.bundle
 
 # Non-code, docs, & academic directories completely ignored
-docs/
+docs/**/*.*
+results/**/*.*
+
 !docs/ROADMAP.md
 academic/
 paper/
