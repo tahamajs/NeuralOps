@@ -280,8 +280,6 @@ results/**/*.err
 # ============================================================
 # Non-Core, Docs, Results, Academic & Local Artifacts (Strictly Ignored)
 # ============================================================
-docs/
-docs/**
 audit/
 audit/**
 results/

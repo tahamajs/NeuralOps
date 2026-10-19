@@ -13,7 +13,7 @@
 namespace neuralops { namespace cuda {
 
 template <typename scalar_t>
-__global__ void __launch_bounds__(128) nasc_fwd_kernel(
+__global__ void __launch_bounds__(256) nasc_fwd_kernel(
     scalar_t* __restrict__ out,
     const scalar_t* __restrict__ q,
     const scalar_t* __restrict__ k,
@@ -73,7 +73,7 @@ torch::Tensor nasc_fwd(
     auto out = torch::empty_like(q);
     if (B == 0 || H == 0 || N == 0 || D == 0) return out;
 
-    constexpr int THREADS = 128;
+    constexpr int THREADS = 256;
     const int blocks_x = (D + THREADS - 1) / THREADS;
     dim3 grid(blocks_x, B * H);
 

@@ -13,7 +13,7 @@
 namespace neuralops { namespace cuda {
 
 template <typename scalar_t>
-__global__ void __launch_bounds__(128) nystrom_attn_fwd_kernel(
+__global__ void __launch_bounds__(256) nystrom_attn_fwd_kernel(
     scalar_t* __restrict__ out,
     const scalar_t* __restrict__ q_l,
     const scalar_t* __restrict__ k_l,
@@ -38,8 +38,10 @@ __global__ void __launch_bounds__(128) nystrom_attn_fwd_kernel(
     float T[64];
     const int bound_m = (M < 64) ? M : 64;
 
+    #pragma unroll 4
     for (int m2 = 0; m2 < bound_m; ++m2) {
         float acc = 0.0f;
+        #pragma unroll 4
         for (int m1 = 0; m1 < bound_m; ++m1) {
             const float q_val = to_float(q_l[q_offset + m1]);
             const float p_val = to_float(pinv[pinv_offset + m1 * M + m2]);
@@ -51,6 +53,7 @@ __global__ void __launch_bounds__(128) nystrom_attn_fwd_kernel(
     const int out_offset = bh * (N * D) + i * D;
     for (int d = 0; d < D; ++d) {
         float val_acc = 0.0f;
+        #pragma unroll 4
         for (int m2 = 0; m2 < bound_m; ++m2) {
             val_acc = fmaf(T[m2], to_float(v_l[v_offset + m2 * D + d]), val_acc);
         }
@@ -81,7 +84,7 @@ torch::Tensor nystrom_attn_fwd(
     auto out = torch::empty({B, H, N, D}, q_landmarks.options());
     if (B == 0 || H == 0 || N == 0 || D == 0 || M == 0) return out;
 
-    constexpr int THREADS = 128;
+    constexpr int THREADS = 256;
     const int blocks_x = (N + THREADS - 1) / THREADS;
     dim3 grid(blocks_x, B * H);
 

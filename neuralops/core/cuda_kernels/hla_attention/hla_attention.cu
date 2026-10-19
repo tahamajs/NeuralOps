@@ -74,6 +74,9 @@ __global__ void hla_attention_fwd_kernel(
             s_v[tid] = to_float(v[offset + tid]);
             s_z[tid] = gamma * s_z[tid] + s_k[tid];
         }
+        // Every thread reads the complete k/v vectors below.  Without this
+        // barrier, threads can consume partially initialized shared memory.
+        __syncthreads();
 
         for (int idx = tid; idx < D * D; idx += num_threads) {
             int r = idx / D;

@@ -109,6 +109,9 @@ def _attention_operation(
         previous = fallback.FORCE_PYTORCH_FALLBACK
         fallback.FORCE_PYTORCH_FALLBACK = force_pytorch
         try:
+            if not force_pytorch and name in {"hla_attention", "samba_moe"}:
+                with fallback.force_kernel_backend("cuda"):
+                    return module(x)
             return module(x)
         finally:
             fallback.FORCE_PYTORCH_FALLBACK = previous
@@ -297,20 +300,20 @@ def _register_registry_modules() -> dict[str, OpConfig]:
             unavailable_reason=f"Triton operator import failed: {exc}",
         )
 
-    # These kernels exceeded the bounded release budget even at S=128. Keep
-    # them explicitly unavailable instead of measuring an unrelated operation.
+    # These two attention modules are benchmarked with the reduced S=128
+    # contract while their native CUDA paths are repaired and validated.
     for name in ("hla_attention", "samba_moe"):
+        state: dict[str, Any] = {}
         result[f"attention:{name}"] = OpConfig(
             name=name,
             category="attention",
-            func=None,
+            func=_attention_operation(name, force_pytorch=False, state=state),
             tensor_specs={
-                "device": "cuda", "fallback_only": True,
-                "fallback_reason": "Kernel exceeded the 180-second release budget at S=128",
+                "batch": 4, "sequence": 128, "hidden": 768,
+                "heads": 12, "dtype": "float16", "device": "cuda",
             },
-            ref_func=None,
-            input_factory=None,
-            unavailable_reason="FALLBACK_ONLY: kernel exceeded the 180-second release budget",
+            ref_func=_attention_operation(name, force_pytorch=True, state=state),
+            input_factory=_attention_inputs,
         )
 
     return result

@@ -14,7 +14,7 @@ namespace neuralops {
 namespace cuda {
 
 template <typename scalar_t>
-__launch_bounds__(128)
+__launch_bounds__(256)
 __global__ void fused_norm_linear_fwd_vectorized_kernel(
     scalar_t* __restrict__ out,
     scalar_t* __restrict__ x_hat_out,
@@ -134,7 +134,7 @@ __global__ void fused_norm_linear_fwd_vectorized_kernel(
 }
 
 template <typename scalar_t>
-__launch_bounds__(128)
+__launch_bounds__(256)
 __global__ void fused_norm_linear_bwd_dx_vectorized_kernel(
     scalar_t* __restrict__ dx,
     const scalar_t* __restrict__ dout,
@@ -243,7 +243,7 @@ std::vector<torch::Tensor> fused_norm_linear_fwd(
         return {out.reshape(out_shape), x_hat.reshape(orig_shape)};
     }
 
-    const int threads = 128;
+    const int threads = 256;
     const size_t shared_mem = K * sizeof(float);
     auto stream = c10::cuda::getCurrentCUDAStream();
 
@@ -291,7 +291,7 @@ torch::Tensor fused_norm_linear_bwd_dx(
 
     auto dx = torch::empty_like(x_2d);
 
-    const int threads = 128;
+    const int threads = 256;
     const size_t shared_mem = K * sizeof(float);
     auto stream = c10::cuda::getCurrentCUDAStream();
     auto weight_c = weight.contiguous();

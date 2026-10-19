@@ -50,8 +50,12 @@ def samba_moe_ref(
 def _fwd_dispatch(expert_out1, expert_out2, routing_weights):
     def cuda_fn(expert_out1, expert_out2, routing_weights):
         mod = _get_module()
+        # The CUDA kernel dispatches on the expert dtype and reads routing
+        # weights as that same scalar type.  Router softmax commonly emits
+        # FP32 while expert activations are FP16/BF16, so cast explicitly.
+        weights = routing_weights.to(dtype=expert_out1.dtype)
         return mod.samba_moe_combine_fwd(
-            expert_out1.contiguous(), expert_out2.contiguous(), routing_weights.contiguous()
+            expert_out1.contiguous(), expert_out2.contiguous(), weights.contiguous()
         )
 
     return dispatch(
