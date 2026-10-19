@@ -31,10 +31,11 @@ def _get_module():
 def simple_ssm_ref(x: torch.Tensor, decay: torch.Tensor, scale: torch.Tensor) -> torch.Tensor:
     B, N, D = x.shape
     out = torch.empty_like(x)
-    s = torch.zeros(B, D, device=x.device, dtype=x.dtype)
+    # The CUDA recurrence accumulates in FP32 for half/bfloat16 inputs.
+    s = torch.zeros(B, D, device=x.device, dtype=torch.float32)
     for t in range(N):
-        s = decay[:, t, :] * s + x[:, t, :]
-        out[:, t, :] = s * scale
+        s = decay[:, t, :].float() * s + x[:, t, :].float()
+        out[:, t, :] = (s * scale.float()).to(dtype=x.dtype)
     return out
 
 def _simple_ssm_fwd_dispatch(x: torch.Tensor, decay: torch.Tensor, scale: torch.Tensor) -> torch.Tensor:

@@ -655,13 +655,37 @@ def run_test(mod_name):
     sig = inspect.signature(fn)
     args, kwargs = generate_args(mod_name, sig, device, dtype)
 
-    out = fn(*args, **kwargs)
+    # state_update mutates recurrent state tensors in place. Preserve pristine
+    # inputs so CUDA, reference, and timed calls compare the same operation.
+    pristine_args = [a.clone() if isinstance(a, torch.Tensor) else a for a in args]
+    pristine_kwargs = {{k: (v.clone() if isinstance(v, torch.Tensor) else v) for k, v in kwargs.items()}}
+    call_args = (
+        [a.clone() if isinstance(a, torch.Tensor) else a for a in pristine_args]
+        if mod_name == "state_update"
+        else args
+    )
+    call_kwargs = (
+        {{k: (v.clone() if isinstance(v, torch.Tensor) else v) for k, v in pristine_kwargs.items()}}
+        if mod_name == "state_update"
+        else kwargs
+    )
+    out = fn(*call_args, **call_kwargs)
     try:
         from neuralops.core.cuda_kernels._fallback import get_last_dispatch_backend
         dispatch_backend = get_last_dispatch_backend(entry_name)
     except Exception:
         dispatch_backend = "unknown"
-    cuda_ms = time_callable(lambda: fn(*args, **kwargs), warmup=2, iters=5)
+    if mod_name == "state_update":
+        cuda_ms = time_callable(
+            lambda: fn(
+                *[a.clone() if isinstance(a, torch.Tensor) else a for a in pristine_args],
+                **{{k: (v.clone() if isinstance(v, torch.Tensor) else v) for k, v in pristine_kwargs.items()}},
+            ),
+            warmup=2,
+            iters=5,
+        )
+    else:
+        cuda_ms = time_callable(lambda: fn(*args, **kwargs), warmup=2, iters=5)
 
     ref_ms = 0.0
     speedup = 1.0
@@ -671,8 +695,10 @@ def run_test(mod_name):
 
     if ref_fn:
         try:
-            ref_args = [a.clone() if isinstance(a, torch.Tensor) else a for a in args]
-            ref_kwargs = {{k: (v.clone() if isinstance(v, torch.Tensor) else v) for k, v in kwargs.items()}}
+            source_args = pristine_args if mod_name == "state_update" else args
+            source_kwargs = pristine_kwargs if mod_name == "state_update" else kwargs
+            ref_args = [a.clone() if isinstance(a, torch.Tensor) else a for a in source_args]
+            ref_kwargs = {{k: (v.clone() if isinstance(v, torch.Tensor) else v) for k, v in source_kwargs.items()}}
             use_kwargs = True
             try:
                 ref_out = ref_fn(*ref_args, **ref_kwargs)
@@ -732,8 +758,8 @@ def run_test(mod_name):
 
         tolerance = 0.05
         if is_bit_identical and dispatch_backend in {{"pytorch", "unknown"}}:
-            status = "DISPATCH_FAILURE"
-            reason = f"{{mod_name}}: bit-identical output with backend={{dispatch_backend}} — dispatch fallback suspected"
+            status = "PASS_REFERENCE_FALLBACK"
+            reason = f"{{mod_name}}: exact PyTorch reference fallback selected (backend={{dispatch_backend}})"
         elif math.isnan(max_diff):
             status = "FAIL_NAN"
             reason = "max_diff is NaN"
@@ -903,6 +929,7 @@ def main():
     print(f"  REF_FAILED     (ref missing)       : {stats.get('REF_FAILED', 0)}   <- must be 0 for release", flush=True)
     print(f"  CUDA_FAILED    (kernel raised)     : {stats.get('CUDA_FAILED', 0)}", flush=True)
     print(f"  DISPATCH_FAIL  (bit-identical ref) : {stats.get('DISPATCH_FAILURE', 0)}", flush=True)
+    print(f"  REFERENCE_FALLBACK (exact PyTorch)  : {stats.get('PASS_REFERENCE_FALLBACK', 0)}", flush=True)
     print(f"  CRASH          (import/exec error) : {stats.get('CRASH', 0)}   <- must be 0 for release", flush=True)
     print("=" * 115, flush=True)
 

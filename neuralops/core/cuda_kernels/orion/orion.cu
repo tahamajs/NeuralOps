@@ -31,18 +31,20 @@ __global__ void __launch_bounds__(128) orion_fwd_kernel(
     if (d >= D) return;
 
     const int head_offset = bh * (N * D);
-    float s = 0.0f;
+    // Keep the recurrent kernel in double precision so long sequences do not
+    // accumulate expf/reduction error beyond the FP16/BF16 output budget.
+    double s = 0.0;
 
     for (int t = 0; t < N; ++t) {
         const int idx = head_offset + t * D + d;
         const float k_val = to_float(k[idx]);
         const float v_val = to_float(v[idx]);
-        const float phi_k = expf(-0.5f * (k_val * k_val) * temp);
-        s += phi_k * v_val;
+        const double phi_k = exp(-0.5 * static_cast<double>(k_val) * k_val * temp);
+        s += phi_k * static_cast<double>(v_val);
 
         const float q_val = to_float(q[idx]);
-        const float phi_q = expf(-0.5f * (q_val * q_val) * temp);
-        out[idx] = from_float<scalar_t>(phi_q * s);
+        const double phi_q = exp(-0.5 * static_cast<double>(q_val) * q_val * temp);
+        out[idx] = from_float<scalar_t>(static_cast<float>(phi_q * s));
     }
 }
 

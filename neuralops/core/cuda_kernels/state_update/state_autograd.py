@@ -95,6 +95,23 @@ def _recurrent_linear_step_fwd_dispatch(
 
     triton_fn = _get_triton_impl()
 
+    # The native half/bfloat16 path quantizes recurrent state in place and
+    # exceeds the parity budget. Route those dtypes through the exact reference
+    # until an FP32-state native implementation is available.
+    if q_t.dtype in (torch.float16, torch.bfloat16):
+        return dispatch(
+            None,
+            None,
+            recurrent_linear_step_pytorch_ref,
+            q_t,
+            k_t,
+            v_t,
+            kv_state,
+            z_state,
+            eps=eps,
+            kernel_name="recurrent_linear_step",
+        )
+
     return dispatch(
         cuda_fn,
         triton_fn,

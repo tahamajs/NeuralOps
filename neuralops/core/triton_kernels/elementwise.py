@@ -1065,13 +1065,15 @@ def fused_aegis_multibranch_gate_norm_pytorch(
     """Exact PyTorch fallback for Aegis multi-branch RMSNorm + router combination."""
     M = len(branches)
     weights = F.softmax(gate_logits.float() / max(tau, 1e-4), dim=-1)
-    out = torch.zeros_like(branches[0])
+    # Match the native kernel contract: combine branches in FP32 and cast once
+    # after the weighted sum, avoiding an intermediate low-precision roundtrip.
+    out = torch.zeros_like(branches[0], dtype=torch.float32)
     for m in range(M):
         bm = branches[m].float()
         rms = torch.rsqrt(bm.pow(2).mean(dim=-1, keepdim=True) + eps)
         normed_bm = bm * rms
-        out = out + (normed_bm * weights[..., m:m+1]).to(branches[0].dtype)
-    return out
+        out = out + normed_bm * weights[..., m:m+1]
+    return out.to(dtype=branches[0].dtype)
 
 
 if HAS_TRITON and tl is not None:
