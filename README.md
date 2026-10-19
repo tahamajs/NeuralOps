@@ -6,7 +6,7 @@
 
 ### **Unified Subquadratic Attention and Deep Model Compression Platform**
 
-> **131 registered attention mechanisms · 72 compression engines · 113 CUDA kernel packages (229 `.cu`/`.cpp` sources) · 32 Triton Python modules (62 registered unified operators) · 27 master Jupyter notebooks**
+> **131 registered attention mechanisms · 72 compression engines · 113 CUDA kernel packages (229 `.cu`/`.cpp` sources) · 32 Triton Python modules (62 registered unified operators) · 29 notebooks present in the checkout**
 
 > **Registry count contract:** the current remote registry reports 131 attention mechanisms and 72 compression engines. Hardware source counts are reported separately.
 
@@ -124,14 +124,14 @@ reloaded = neuralops.load_attention_from_hub("distilbert-base-uncased",
 - The current source audit found 113 CUDA package directories containing 229 `.cu`/`.cpp` files and 32 Triton Python modules; the CLI metadata reports 62 unified Triton operators.
 - Native benchmark modules for roofline, quantization, MoE, serving, RoPE, sampling, SSM, ragged, and autotuning are implemented under `neuralops/benchmarks/`; their smoke checks pass, but they are separate from the 203-module release gate.
 - The release benchmark surface covers 11 families: kernel, module, training, generation, roofline, quantization, MoE, serving, RoPE/sampling, SSM/ragged, and autotuning. Perplexity is part of the generation/evaluation family.
-- Final release-gate counts are `PASS_FAST=42`, `PASS_SLOW=159`, `PASS_REFERENCE_FALLBACK=2`, `FAIL_CORRECTNESS=0`, `FAIL=0`, and `TIMEOUT=0` (203 total). The 2 reference-fallback rows are finite baseline measurements, not claims of compressor acceleration; hla_attention and samba_moe were routed to the bounded reference-only path after exceeding the 180-second budget.
+- Final release-gate counts are `PASS_FAST=42`, `PASS_SLOW=161`, `PASS_REFERENCE_FALLBACK=0`, `FAIL_CORRECTNESS=0`, `FAIL=0`, and `TIMEOUT=0` (203 total). These counts come directly from the latest 203-row ledger.
 - Historical benchmark tables and performance figures below remain archival unless explicitly tied to the final 203-row ledger. They must not be interpreted as stronger current certification than the measured statuses above.
 - `PASS_HIGH_DIFF` is a visible numerical status, not a pass-rate adjustment: these attention rows remain finite but exceed the normal `1e-3` comparison budget under FP16 execution. The correctness gate records the measured drift (up to `0.25`) and does not silently relabel it as exact parity.
 
 
 ---
 
-### Why NeuralOps v1.4.0?
+### Why NeuralOps v1.5.0?
 
 Standard self-attention suffers from an intrinsic quadratic time and memory bottleneck ($\mathcal{O}(T^2)$), rendering long-context inference and large language model deployment severely memory-bound. While hundreds of attention variants and compression algorithms have been proposed in academic literature, their implementations remain fragmented across abandoned repositories, incompatible CUDA forks, and inconsistent APIs.
 
@@ -142,7 +142,7 @@ Standard self-attention suffers from an intrinsic quadratic time and memory bott
 - **113 CUDA Kernel Packages (229 source files)**: The current checkout contains 113 package directories and 229 `.cu`/`.cpp` files; the complete package-level audit remains incomplete.
 - **32 Triton Python Modules (62 registered operators)**: The registry reports 62 unified Triton operators; this is not a completed performance certification of every source module.
 - **Strict 3-Level Fallback Dispatch**: Level 1 (CUDA C++ SM $\ge$ 7.0 / ROCm HIP) $\to$ Level 2 (OpenAI Triton JIT) $\to$ Level 3 (Pure Vectorized PyTorch / CPU / Apple Metal).
-- **Production Serving Components**: Paged-cache and speculative-decoding implementations exist, but the historical 77.5% / 87.5% / 7.59x figures are not verified by the current benchmark checkpoint.
+- **Production Serving Components**: Paged-cache and speculative-decoding implementations exist; historical savings and throughput figures are not verified by the current benchmark checkpoint.
 - **Master 27-Jupyter-Notebook Suite**: Exhaustive interactive walkthroughs from zero-shot surgery, 3-level fallback, and roofline modeling to 32k long-context extrapolation, spectral Hessian diagnostics, distributed ring parallelism, and production serving.
 - **Telemetry and visualization assets**: dashboard and visualizer assets exist, but their release-gate execution is not part of the current 47-row sweep.
 
@@ -154,7 +154,7 @@ Standard self-attention suffers from an intrinsic quadratic time and memory bott
 > NeuralOps v1.5.0 adds the FLA-style 11-category benchmark surface, unified attention and training APIs, corrected LoRA/DoRA initialization paths, and executed end-to-end workflows. The multi-dataset, packing, WSD, and production CLI work from v1.4.x remains included.
 
 ### 🌟 Release Highlights at a Glance
-| Feature / Subsystem | v1.3.x Baseline | **v1.4.0 Production Release** | Impact & Metrics |
+| Feature / Subsystem | v1.3.x Baseline | **v1.5.0 Production Release** | Impact & Metrics |
 | :--- | :--- | :--- | :--- |
 | **Multi-Dataset Streaming** | Single dataset only | **Multi-Corpus Interleaving** | Comma-separated HF datasets, weighted round-robin streaming |
 | **Varlen Document Packing** | Padded batches | **Zero-Padding `PackedDataset`** | 3.3x effective token throughput via `cu_seqlens` offsets |
@@ -206,8 +206,8 @@ Standard self-attention suffers from an intrinsic quadratic time and memory bott
 
 5. **Production Serving with PagedKVCache & Speculative Decoding**:
    - Non-contiguous page table allocation with zero-copy sequence forking (Copy-on-Write).
-   - Dynamic token eviction policies (Attention-Sink, Streaming-LLM, H2O, Heavy-Hitter) reducing serving footprint by up to **87.5%**.
-   - `SelfSpeculativeDecoder`: multi-candidate verification engine achieving **7.59x speedup** (1,422 tokens/s) with **0 sequence divergence**.
+   - Dynamic token eviction policies (Attention-Sink, Streaming-LLM, H2O, Heavy-Hitter) are available for workload-specific measurement.
+   - `SelfSpeculativeDecoder`: multi-candidate verification is implemented; throughput and divergence require a dedicated serving run.
 
 6. **Web Telemetry Dashboard & 3D Latent Manifold Visualizer**:
    - Direct NVML hardware telemetry (GPU utilization %, VRAM, temperature, power draw).
@@ -226,10 +226,10 @@ Standard self-attention suffers from an intrinsic quadratic time and memory bott
 
 ## 📖 Table of Contents
 
-0. [What's New in v1.4.0 (Multi-Dataset Streaming, Varlen Packing & Production CLI)](#-whats-new-in-v143-multi-dataset-streaming-varlen-packing--production-cli)
+0. [What's New in v1.5.0 (Unified Benchmarks, APIs & Verified Workflows)](#-whats-new-in-v15-unified-benchmarks-apis--verified-workflows)
 
-1. [Master 27-Jupyter-Notebook Suite (00 to 25 + Paper Empirical Master)](#1-master-27-jupyter-notebook-suite-00-to-25--paper-empirical-master)
-2. [114 Native CUDA C++ Kernels (108 Audited) & 3-Level Fallback Dispatch](#2-114-native-cuda-c-kernels-108-audited--3-level-fallback-dispatch)
+1. [Notebook Workflows](#1-notebook-workflows)
+2. [CUDA Kernel Packages & 3-Level Fallback Dispatch](#2-cuda-kernel-packages--3-level-fallback-dispatch)
 3. [26 Categorized Triton Kernel Modules (62 Unified JIT Operators) & Roofline Acceleration Leaderboard](#3-26-categorized-triton-kernel-modules-62-unified-jit-operators--roofline-acceleration-leaderboard)
 4. [Production Serving & Speculative Decoding Engine](#4-production-serving-speculative-decoding-engine)
 5. [Exhaustive GPU Capabilities Audit (131 Attention + 72 Compression)](#5-exhaustive-gpu-capabilities-audit-131-attention-72-compression)
@@ -259,9 +259,9 @@ Standard self-attention suffers from an intrinsic quadratic time and memory bott
 
 ---
 
-## 1. Master 27-Jupyter-Notebook Suite (00 to 25 + Paper Empirical Master)
+## 1. Notebook Workflows
 
-NeuralOps v1.4.0 includes a dedicated, publication-grade suite of **27 master interactive Jupyter notebooks** in [`notebooks/`](notebooks/). Each notebook is fully executable, self-contained, documented with LaTeX equations, and validated on physical hardware:
+NeuralOps v1.5.0 includes the notebook workflows present in [`notebooks/`](notebooks/). Notebook count and execution status are reported separately from the 203-row benchmark gate; no notebook is treated as benchmark evidence unless its result is explicitly recorded:
 
 | # | Notebook File | Cells | Core Focus & Methodology | Primary Deliverables & Key Outputs |
 | :-: | :--- | :---: | :--- | :--- |
@@ -275,7 +275,7 @@ NeuralOps v1.4.0 includes a dedicated, publication-grade suite of **27 master in
 | **06** | [`06_master_all_131_attention_mechanisms_interactive.ipynb`](notebooks/06_master_all_131_attention_mechanisms_interactive.ipynb) | 45 | **Master Attention Zoo Interactive Showcase**<br>Interactive deep-dive across all 131 canonical subquadratic attention mechanisms. | • Architectural categorization across 8 distinct families<br>• FP16 / BF16 / FP32 precision & backward autograd check<br>• Constant-memory autoregressive state cache demonstration |
 | **07** | [`07_master_all_72_compression_engines_quant_and_svd.ipynb`](notebooks/07_master_all_72_compression_engines_quant_and_svd.ipynb) | 45 | **Master 72 Compression Engines Suite**<br>Comprehensive evaluation of SVD, Tensor-Train, quantization (FP8, INT4, KMeans), and dynamic pruning. | • Parameter reduction profiling (up to 256x via KMeans)<br>• Reconstruction Frobenius error quantification<br>• Activation-aware SVD (ASVD, SVD-LLM v2, Fisher SVD) |
 | **08** | [`08_six_pillar_distillation_and_surgical_recovery.ipynb`](notebooks/08_six_pillar_distillation_and_surgical_recovery.ipynb) | 45 | **6-Pillar Distillation & Surgical Recovery**<br>Mathematical deep dive and execution of the 6-pillar distillation and subspace recovery framework. | • Logit KL, SmoothMax CKA, and Attention Matrix matching<br>• Mohawk multi-stage cosine annealing schedule<br>• Hessian Null Space Continuation (HNC) mathematical proof |
-| **09** | [`09_production_serving_paged_cache_and_speculative_decoding.ipynb`](notebooks/09_production_serving_paged_cache_and_speculative_decoding.ipynb) | 45 | **Production Serving & Speculative Decoding**<br>Production inference engine: PagedKVCache, Copy-on-Write branching, and self-speculative decoding. | • Virtual memory block-paged KV allocation (77.5% VRAM saved)<br>• KV cache eviction: FIFO vs. Heavy-Hitter (H2O) vs. Attention<br>• Self-Speculative Decoding: **7.59x speedup** (1,422 tokens/s) |
+| **09** | [`09_production_serving_paged_cache_and_speculative_decoding.ipynb`](notebooks/09_production_serving_paged_cache_and_speculative_decoding.ipynb) | 45 | **Production Serving & Speculative Decoding**<br>Serving components and workload-specific measurement workflow. | • Virtual memory block-paged KV allocation<br>• KV cache eviction: FIFO vs. Heavy-Hitter (H2O) vs. Attention<br>• Self-speculative decoding measurement workflow |
 | **10** | [`10_long_context_extrapolation_32k.ipynb`](notebooks/10_long_context_extrapolation_32k.ipynb) | 25 | **Long-Context Extrapolation (512 to 32k)**<br>Benchmarks context length expansion from $T=512$ up to $32,768$ tokens. | • $O(T)$ linear vs $O(T^2)$ quadratic memory saturation curves<br>• Peak VRAM footprints across 8 attention families<br>• Sequence extrapolation loss stability and perplexity drift |
 | **11** | [`11_cuda_vs_triton_vs_pytorch_matrix.ipynb`](notebooks/11_cuda_vs_triton_vs_pytorch_matrix.ipynb) | 25 | **CUDA vs. Triton vs. PyTorch 3-Tier Matrix**<br>Full 3-level latency and throughput comparison across 18 flagship kernels. | • Head-to-head microbenchmarks on RTX 4070 (Ada Lovelace)<br>• Speedup distribution histograms and dispatch overhead breakdown<br>• Empirical crossover thresholds where Triton matches/beats CUDA C++ |
 | **12** | [`12_svd_whitening_spectral_allocation.ipynb`](notebooks/12_svd_whitening_spectral_allocation.ipynb) | 25 | **SVD Whitening & Spectral Rank Allocation**<br>Side-by-side empirical comparison of advanced SVD variants. | • ASVD, AdaSVD, FWSVD, SVD-LLM v2, and HNC-SVD side-by-side<br>• Frobenius reconstruction error vs parameter budget<br>• Singular value decay spectra and Fisher information sensitivity |
@@ -295,9 +295,9 @@ NeuralOps v1.4.0 includes a dedicated, publication-grade suite of **27 master in
 
 ---
 
-## 2. 114 Native CUDA C++ Kernels (108 Audited) & 3-Level Fallback Dispatch
+## 2. CUDA Kernel Packages & 3-Level Fallback Dispatch
 
-NeuralOps implements a production-grade compilation and execution engine featuring **114 native CUDA C++ kernel files** across 110 modular packages located in `neuralops/core/cuda_kernels/` and `neuralops/kernels/cuda/`. Every kernel is engineered for high hardware occupancy, register efficiency, and minimal memory traffic.
+NeuralOps includes **113 CUDA kernel package directories** containing 229 `.cu`/`.cpp` source files. These are available to the Level-1 dispatcher when their contracts and compiled extensions are compatible; source presence is not treated as a performance certification.
 
 ```mermaid
 flowchart TD
@@ -436,13 +436,13 @@ Measured on physical **NVIDIA GeForce RTX 4070 Laptop GPU** (Ada Lovelace SM 8.9
 
 ## 4. Production Serving & Speculative Decoding Engine
 
-NeuralOps v1.4.0 introduces a high-throughput, memory-efficient serving runtime engineered for modern LLM deployment workloads:
+NeuralOps v1.5.0 includes serving components for modern LLM deployment workloads. Their implementation is available, but historical savings and throughput figures are not part of the current 203-row release-gate evidence:
 
 ### 4.1 PagedKVCache: Non-Contiguous Virtual Memory Paging
 Traditional inference servers allocate contiguous memory buffers sized for maximum context length ($T_{\max} = 8192$), causing **60% to 80% memory fragmentation**. NeuralOps `PagedKVCache` resolves this via OS-inspired virtual memory paging:
 - **Zero Memory Fragmentation**: Physical GPU memory is divided into fixed-size blocks (e.g. 16 tokens/block) dynamically mapped into virtual sequence tables.
-- **Copy-on-Write (CoW) Forking**: Beam search, parallel speculative paths, and multi-turn shared system prompts share physical pages via reference counting, achieving **77.5% VRAM savings**.
-- **Post-Eviction Compaction**: Under extreme context memory pressure, intelligent eviction policies (FIFO, H2O Heavy-Hitter, Attention-Ranked) discard uninformative tokens and compact physical blocks, achieving **87.5% total VRAM savings**.
+- **Copy-on-Write (CoW) Forking**: Beam search, parallel speculative paths, and multi-turn shared system prompts can share physical pages via reference counting; savings are workload-dependent.
+- **Post-Eviction Compaction**: FIFO, H2O Heavy-Hitter, and attention-ranked eviction components are available; their savings require workload-specific measurement.
 
 ```
 Contiguous Pre-Allocation: [Token 1-64][ Unused Reserved Memory (75% Wasted) ] ──> OOM!
@@ -454,8 +454,7 @@ Paged Virtual Memory:     [Block 0] ──> Physical Page #42 (Shared System Pro
 ### 4.2 Self-Speculative Decoding Engine
 NeuralOps incorporates an integrated self-speculative decoding engine. A lightweight draft head proposes $\gamma$ speculative candidate tokens, which the full subquadratic backbone verifies in parallel in a single forward pass:
 - **Optimal Lookahead ($\gamma = 4$)**: Demonstrates the optimal mathematical tradeoff between acceptance rate ($\alpha \approx 0.82$) and verification overhead.
-- **7.59x Throughput Speedup**: Accelerates decoding from **187.5 tokens/sec** (pure autoregressive baseline) to **1,422 tokens/sec** on RTX 4070 SM 8.9.
-- **100% Bitwise Parity**: Rejection sampling guarantees mathematically exact equivalence to the target distribution with zero degradation in perplexity or accuracy.
+- **Speculative decoding**: The implementation is available, but no current release-gate measurement is used to claim a fixed speedup, token rate, or universal parity guarantee.
 
 ### 4.3 Serving Adapters (vLLM, SGLang, TGI)
 
@@ -511,18 +510,18 @@ responses = adapter.continuous_batching_generate(
 
 ---
 
-## 5. Exhaustive GPU Capabilities Audit (125 Live Attention + 72 Compression)
+## 5. Registry and Hardware Scope (131 Attention + 72 Compression)
 
-Every module in NeuralOps v1.4.0 has undergone rigorous forensic validation on physical hardware (**NVIDIA GeForce RTX 4070 Laptop GPU**, SM 8.9, 8GB VRAM) under **PyTorch 2.11.0+cu128 & CUDA 12.8**:
+The registries contain 131 attention mechanisms and 72 compression engines. The release-gate sweep evaluated 203 logical rows on an NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9, 8GB VRAM) under the configured PyTorch/CUDA environment:
 
 | Registry Ecosystem Category | Total Registered | Validated & Functional | Failures / Skips | Hardware Certification Rate |
 | :--- | :---: | :---: | :---: | :---: |
-| **Live Attention Mechanisms (`list_attentions()`)** | **125** | **125** | 0 | **100.0% PASS** |
+| **Attention Mechanisms (`ATTENTION_REGISTRY`)** | **131** | **131** | 0 | **Registry count** |
 | **Compression Engines (`COMPRESSOR_REGISTRY`)** | **72** | **72** | 0 | **100.0% PASS** |
-| **Combined NeuralOps Ecosystem** | **203** | **203** | **0** | **100.0% completed; 2 reference-only rows** |
+| **Combined NeuralOps Ecosystem** | **203** | **203** | **0** | **203 benchmark rows** |
 
 > [!NOTE]
-> **Registry Module Scope Footnote**: The live public registry comprises exactly 125 attention mechanisms (`list_attentions()`) and 72 compression engines. Six deprecated attention aliases remain available for compatibility, so historical documentation may refer to 131 attention names. Native CUDA C++ kernels (114 modules across 110 packages) and Triton JIT hardware kernels (26 categorized modules housing 62 unified operators) serve as hardware execution accelerators and dispatch backends rather than standalone registry modules.
+> **Registry Module Scope**: `ATTENTION_REGISTRY` contains 131 attention mechanisms and `COMPRESSOR_REGISTRY` contains 72 compression engines. Native CUDA and Triton source modules are dispatch backends, not additional registry rows.
 
 ### Verified Architectural Capabilities Summary
 
@@ -979,7 +978,7 @@ flowchart TD
 
     subgraph Layer4 ["4. Execution & Hardware Dispatch"]
         BackendCheck{"Hardware Backend Detection"}
-        CUDACPP["114 Native CUDA C++ Kernels (NVCC SM >= 7.0)"]
+        CUDACPP["113 CUDA Package Directories (NVCC when available)"]
         Triton["26 Categorized Triton Modules (62 Unified Operators)"]
         Fallback["Vectorized Native PyTorch Fallbacks (Apple MPS / CPU)"]
     end
@@ -1030,7 +1029,7 @@ flowchart TD
 
 ## 9. Web Dashboard, Real-Time Monitoring & Roofline Visualizer
 
-NeuralOps v1.4.0 bundles an integrated, production-grade Web Monitor and Telemetry Studio powered by FastAPI, Uvicorn, Server-Sent Events (SSE), and interactive Three.js WebGL:
+NeuralOps v1.5.0 bundles an integrated Web Monitor and Telemetry Studio powered by FastAPI, Uvicorn, Server-Sent Events (SSE), and interactive Three.js WebGL:
 
 ```text
 ┌────────────────────────────────────────────────────────────────────────┐
@@ -1416,7 +1415,7 @@ NeuralOps unifies 72 post-training model compression engines across **7 distinct
    - Fuses sub-4-bit integer weights with FP16 activation scaling:
      $$\hat{W} = s \cdot (W_{\text{int4}} - z), \quad Y = \text{GEMM}(X, \hat{W})$$
 7. **Virtual Page KV-Cache Eviction (H2O, FIFO, Attention-Ranked)**:
-   - Dynamically identifies heavy-hitter tokens and evicts low-importance KV blocks, reducing inference cache memory by up to 87.5%.
+   - Dynamically identifies heavy-hitter tokens and evicts low-importance KV blocks; memory reduction is workload-dependent.
 
 ### Complete 72-Engine Forensic Hardware Audit Table
 
@@ -1508,7 +1507,7 @@ import neuralops
 
 # Discover all registered hardware acceleration kernels
 triton_kernels = neuralops.list_triton_kernels()  # 62 Triton hardware kernels
-cuda_kernels   = neuralops.list_cuda_kernels()    # 114 Native CUDA C++ kernels
+cuda_kernels   = neuralops.list_cuda_kernels()    # Registered CUDA dispatch entries
 
 print(f"Loaded {len(triton_kernels)} Triton kernels and {len(cuda_kernels)} CUDA kernels.")
 ```
@@ -1604,7 +1603,7 @@ NeuralOps is engineered specifically for subquadratic attention transplantation,
 
 1. **Unactivated Gaussian Singularity in Recurrent Linear Attention**:
    - *Failure Mode*: If raw, zero-mean Gaussian inputs ($\mathbb{E}[x] = 0$) are fed into recurrent linear attention (`gla_scan.py`) without a non-negative feature map, the denominator $q_t Z_t + 10^{-4}$ can cross zero, causing output explosion.
-   - *Fix / Mitigation*: Always apply the canonical non-negative feature map $q, k \leftarrow \text{ELU}(x) + 1.0 > 0$. In v1.4.0, `gla_scan.py` includes hardware denominator safeguarding (`tl.maximum(denom, 1e-4)`).
+   - *Fix / Mitigation*: Always apply the canonical non-negative feature map $q, k \leftarrow \text{ELU}(x) + 1.0 > 0$. In v1.5.0, `gla_scan.py` includes hardware denominator safeguarding (`tl.maximum(denom, 1e-4)`).
 2. **Bidirectional Recurrence in Causal Models**:
    - Bidirectional recurrent scans (`0.5 * (y_fwd + y_bwd)`) are valid only for encoder backbones (BERT, RoBERTa). Calling bidirectional scans on causal decoders (GPT-2, LLaMA) violates autoregressive causality. NeuralOps automatically enforces `reverse=False` whenever `is_decoder=True`.
 3. **Small Batch GEMM Launch Overhead**:
