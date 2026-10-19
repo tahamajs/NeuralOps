@@ -93,7 +93,8 @@ def run_benchmark():
         "Baseline RoBERTa: Accuracy=%.2f%% | Latency=%.2f ms/batch | VRAM=%.1f MB", base_acc, base_lat_ms, base_vram
     )
 
-    results = {
+    experiments: list[dict[str, Any]] = []
+    results: dict[str, Any] = {
         "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU 8GB (Ada Lovelace, SM 8.9)",
         "model": model_name,
         "dataset": "GLUE SST-2 (validation, N=872)",
@@ -103,7 +104,7 @@ def run_benchmark():
             "latency_ms": round(base_lat_ms, 2),
             "peak_vram_mb": round(base_vram, 1),
         },
-        "experiments": [],
+        "experiments": experiments,
     }
 
     depth_configs = [
