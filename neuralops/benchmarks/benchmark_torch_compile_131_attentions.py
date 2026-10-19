@@ -94,7 +94,9 @@ def benchmark_torch_compile(
     print(f"Auditing {len(attn_keys)} Canonical Attention Mechanisms", flush=True)
     print(f"Sequence lengths: {seq_lens} | Batch: {BATCH_SIZE} | Dim: {DIM} | Heads: {NUM_HEADS} | Repeat: {repeat}", flush=True)
 
-    results = {
+    modules_dict: dict[str, Any] = {}
+    summary_dict: dict[str, Any] = {}
+    results: dict[str, Any] = {
         "device": str(device),
         "gpu_name": gpu_name,
         "cuda_version": torch.version.cuda if torch.cuda.is_available() else "N/A",
@@ -104,13 +106,13 @@ def benchmark_torch_compile(
         "seq_lens": seq_lens,
         "total_canonical_modules": len(attn_keys),
         "total_deprecated_aliases": len(DEPRECATED_ALIASES),
-        "modules": {},
-        "summary": {}
+        "modules": modules_dict,
+        "summary": summary_dict,
     }
 
     all_passed = True
     total_recompilations = 0
-    records_for_csv = []
+    records_for_csv: list[dict[str, Any]] = []
 
     print("\n" + "=" * 135, flush=True)
     print(f"| {'Module':<32} | {'Status':<16} | {'Reliability':<14} | {'CUDA (ms)':<10} | {'PyTorch (ms)':<12} | {'Speedup':<9} | {'Recompiles':<10} | {'Zero-NaN':<8} |", flush=True)
@@ -297,7 +299,7 @@ def benchmark_torch_compile(
             mod_rec["error"] = str(e)
             all_passed = False
 
-        results["modules"][attn_name] = mod_rec
+        modules_dict[attn_name] = mod_rec
         stat = mod_rec["compile_status"]
         rel = mod_rec["reliability"]
         c_ms = f"{mod_rec['compiled_latency_ms']:.2f}ms"
@@ -322,15 +324,16 @@ def benchmark_torch_compile(
 
     print("=" * 135)
 
-    results["summary"] = {
+    summary_dict.update({
         "all_passed": all_passed,
         "total_canonical_modules": len(attn_keys),
         "total_recompilations": total_recompilations,
         "zero_recompilations_guaranteed": (total_recompilations == 0),
-        "zero_nan_guaranteed": all(m["zero_nan"] for m in results["modules"].values()),
-        "zero_inf_guaranteed": all(m["zero_inf"] for m in results["modules"].values()),
-        "average_speedup": round(sum(m["speedup"] for m in results["modules"].values()) / max(len(attn_keys), 1), 2)
-    }
+        "zero_nan_guaranteed": all(m["zero_nan"] for m in modules_dict.values()),
+        "zero_inf_guaranteed": all(m["zero_inf"] for m in modules_dict.values()),
+        "average_speedup": round(sum(m["speedup"] for m in modules_dict.values()) / max(len(attn_keys), 1), 2)
+    })
+    results["summary"] = summary_dict
 
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     with open(output_path, "w", newline="", encoding="utf-8") as f:

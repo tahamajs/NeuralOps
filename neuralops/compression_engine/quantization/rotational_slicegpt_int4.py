@@ -318,7 +318,7 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
         self,
         W: torch.Tensor,
         X: torch.Tensor,
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, float, torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, float]:
         """
         Returns:
             W_quant_indices:  (D_out, r) int8
@@ -328,7 +328,7 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
         """
         D_out, D_in = W.shape
         r = self.rank if self.rank is not None else int(D_in * self.r_ratio)
-        r = max(1, min(r, D_in))
+        r = int(max(1, min(int(r), int(D_in))))
         device = W.device
 
         Q = self.get_orthogonal_matrix(D_in, device)
@@ -420,7 +420,7 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
                 continue
 
             base_mod = getattr(module, "base_layer", module)
-            raw_w = base_mod.weight.data
+            raw_w: Any = base_mod.weight.data
             cls_name = base_mod.__class__.__name__.lower()
             is_conv1d = "conv1d" in cls_name or hasattr(base_mod, "nf")
             device = raw_w.device
@@ -625,7 +625,7 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
         X: torch.Tensor | None = None,
     ) -> RotationalSliceGPTINT4Linear:
         """Convenience wrapper for compressing a single nn.Linear."""
-        W = linear_layer.weight.data.float()
+        W: Any = linear_layer.weight.data.float()
         device = W.device
         if X is None:
             X = torch.randn(W.shape[1], 128, device=device)
