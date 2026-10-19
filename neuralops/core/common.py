@@ -298,7 +298,7 @@ class LoRALinear(nn.Module):
             raise TypeError(f"from_linear expects nn.Linear, got {type(layer).__name__}")
 
         mod = cls(
-            in_features=layer.in_features,
+            base_or_in_features=layer.in_features,
             out_features=layer.out_features,
             bias=(layer.bias is not None),
             lora_rank=lora_rank,

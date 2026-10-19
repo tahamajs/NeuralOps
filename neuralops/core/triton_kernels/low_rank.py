@@ -209,12 +209,12 @@ class _TritonLowRankAutogradFunction(torch.autograd.Function):
     @staticmethod
     def forward(
         ctx: Any,
-        x: torch.Tensor,
-        U: torch.Tensor,
-        V: torch.Tensor,
-        bias: torch.Tensor | None,
-        S: torch.Tensor | None = None,
-    ) -> torch.Tensor:
+        x: Any,
+        U: Any,
+        V: Any,
+        bias: Any,
+        S: Any = None,
+    ) -> Any:
         orig_shape = x.shape
         D_in = orig_shape[-1]
         x_2d = x.contiguous().view(-1, D_in)
@@ -286,7 +286,7 @@ class _TritonLowRankAutogradFunction(torch.autograd.Function):
         return y.view(*orig_shape[:-1], D_out)
 
     @staticmethod
-    def backward(ctx: Any, grad_out: torch.Tensor) -> tuple[torch.Tensor | None, ...]:
+    def backward(ctx: Any, grad_out: Any) -> tuple[Any, ...]:
         x, U, V, bias, S = ctx.saved_tensors
         orig_shape = x.shape
         D_in = orig_shape[-1]
