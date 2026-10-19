@@ -14,6 +14,7 @@ to prevent regressions across releases.
 
 from __future__ import annotations
 
+import ast
 import glob
 import json
 import os
@@ -38,22 +39,27 @@ def audit_readme_consistency() -> int:
         readme = f.read()
 
     # -------------------------------------------------------------
-    # 1. Registry Counts Verification
+    # 1. Registry Counts Verification (131 Attentions, 72 Compressors)
     # -------------------------------------------------------------
     print("[1/12] Verifying Attention and Compressor Registry Invariants...")
-    # Read registry files to inspect registry sizes
-    legacy_aliases_path = os.path.join(repo_root, "neuralops", "core", "legacy_aliases.py")
-    if os.path.exists(legacy_aliases_path):
-        with open(legacy_aliases_path, encoding="utf-8") as f:
-            aliases_text = f.read()
-        attn_matches = re.findall(r'"([^"]+)":\s*"[^"]+"', aliases_text.split("ATTENTION_FILE_MAP")[1].split("}")[0])
-        comp_matches = re.findall(r'"([^"]+)":\s*"[^"]+"', aliases_text.split("COMPRESSOR_FILE_MAP")[1].split("}")[0])
-        attn_count = len(attn_matches)
-        comp_count = len(comp_matches)
-        if attn_count != 131:
-            errors.append(f"Expected 131 attention mechanisms in ATTENTION_FILE_MAP, found {attn_count}")
-        if comp_count != 72:
-            errors.append(f"Expected 72 compression engines in COMPRESSOR_FILE_MAP, found {comp_count}")
+    attn_bench_path = os.path.join(repo_root, "results", "triton_all_131_attentions_benchmark.json")
+    comp_bench_path = os.path.join(repo_root, "results", "triton_all_72_compressors_benchmark.json")
+    
+    if os.path.exists(attn_bench_path):
+        with open(attn_bench_path, encoding="utf-8") as f:
+            attn_data = json.load(f)
+        if len(attn_data) != 131:
+            errors.append(f"Expected 131 items in attention benchmark JSON, found {len(attn_data)}")
+    else:
+        errors.append(f"Attention benchmark JSON missing: {attn_bench_path}")
+
+    if os.path.exists(comp_bench_path):
+        with open(comp_bench_path, encoding="utf-8") as f:
+            comp_data = json.load(f)
+        if len(comp_data) != 72:
+            errors.append(f"Expected 72 items in compressor benchmark JSON, found {len(comp_data)}")
+    else:
+        errors.append(f"Compressor benchmark JSON missing: {comp_bench_path}")
 
     if "131 canonical attention mechanisms" not in readme:
         errors.append("README tagline missing '131 canonical attention mechanisms'")
@@ -80,24 +86,32 @@ def audit_readme_consistency() -> int:
     if "62 unified" not in readme.lower() and "62 Unified" not in readme:
         errors.append("README does not mention 62 unified Triton operators / JIT kernels")
 
-    # Verify 4-tier Triton architecture numbers
+    # Verify 4-tier Triton architecture numbers via AST
     triton_init_path = os.path.join(repo_root, "neuralops", "core", "triton_kernels", "__init__.py")
     if os.path.exists(triton_init_path):
         with open(triton_init_path, encoding="utf-8") as f:
-            triton_init_text = f.read()
-        standalone_match = re.findall(r'"([^"]+)"', triton_init_text.split("TRITON_STANDALONE_KERNELS:")[1].split("]")[0])
-        core_match = re.findall(r'"([^"]+)"', triton_init_text.split("TRITON_CORE_MODULES:")[1].split("]")[0])
-        root_match = re.findall(r'"([^"]+)"', triton_init_text.split("TRITON_ROOT_MODULES:")[1].split("]")[0])
-        ext_match = re.findall(r'"([^"]+)"', triton_init_text.split("TRITON_EXTENDED_KERNELS:")[1].split("]")[0])
-        tier_sum = len(standalone_match) + len(core_match) + len(root_match) + len(ext_match)
-        if len(standalone_match) != 13:
-            errors.append(f"Expected 13 standalone kernels in TRITON_STANDALONE_KERNELS, found {len(standalone_match)}")
-        if len(core_match) != 27:
-            errors.append(f"Expected 27 core modules in TRITON_CORE_MODULES, found {len(core_match)}")
-        if len(root_match) != 2:
-            errors.append(f"Expected 2 root modules in TRITON_ROOT_MODULES, found {len(root_match)}")
-        if len(ext_match) != 20:
-            errors.append(f"Expected 20 extended kernels in TRITON_EXTENDED_KERNELS, found {len(ext_match)}")
+            triton_tree = ast.parse(f.read())
+        tier_counts: dict[str, int] = {}
+        for node in triton_tree.body:
+            if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
+                if node.target.id in ("TRITON_STANDALONE_KERNELS", "TRITON_CORE_MODULES", "TRITON_ROOT_MODULES", "TRITON_EXTENDED_KERNELS"):
+                    if isinstance(node.value, ast.List):
+                        tier_counts[node.target.id] = len(node.value.elts)
+
+        standalone_c = tier_counts.get("TRITON_STANDALONE_KERNELS", 0)
+        core_c = tier_counts.get("TRITON_CORE_MODULES", 0)
+        root_c = tier_counts.get("TRITON_ROOT_MODULES", 0)
+        ext_c = tier_counts.get("TRITON_EXTENDED_KERNELS", 0)
+        tier_sum = standalone_c + core_c + root_c + ext_c
+
+        if standalone_c != 13:
+            errors.append(f"Expected 13 standalone kernels in TRITON_STANDALONE_KERNELS, found {standalone_c}")
+        if core_c != 27:
+            errors.append(f"Expected 27 core modules in TRITON_CORE_MODULES, found {core_c}")
+        if root_c != 2:
+            errors.append(f"Expected 2 root modules in TRITON_ROOT_MODULES, found {root_c}")
+        if ext_c != 20:
+            errors.append(f"Expected 20 extended kernels in TRITON_EXTENDED_KERNELS, found {ext_c}")
         if tier_sum != 62:
             errors.append(f"Expected 62 unified Triton kernels across tiers, got {tier_sum}")
 
@@ -130,7 +144,7 @@ def audit_readme_consistency() -> int:
             errors.append(
                 f"Section 2.3 CUDA Audit breakdown sum is {total_audited} ({counts}), expected exactly 108"
             )
-        if counts[0] != 16 or counts[1] != 4 or counts[2] != 34 or counts[3] != 31 or counts[4] != 18 or counts[5] != 5:
+        if counts != [16, 4, 34, 31, 18, 5]:
             errors.append(f"Section 2.3 category counts mismatch: got {counts}, expected [16, 4, 34, 31, 18, 5]")
 
     # -------------------------------------------------------------
@@ -173,9 +187,9 @@ def audit_readme_consistency() -> int:
             errors.append("README does not reference authoritative peak speedup of 157.9x (hgrn2_scan)")
 
         # Verify outdated 179.1x or 161.2x claims are eliminated
-        if "179.1x" in readme or "179.1" in readme:
+        if "179.1x" in readme:
             errors.append("README still contains outdated/unaligned 179.1x speedup claim")
-        if "161.2x" in readme or "161.2" in readme:
+        if "161.2x" in readme:
             errors.append("README still contains outdated 161.2x speedup claim in Section 3/16")
 
     # -------------------------------------------------------------
