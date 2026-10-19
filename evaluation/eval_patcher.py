@@ -414,9 +414,11 @@ def _apply_compressor_module(
         except ImportError as e:
             logger.warning("Could not import compressor '%s': %s", module_name, e)
 
-    comp_cls = COMPRESSOR_REGISTRY.get(module_name)
+    comp_cls: Any = COMPRESSOR_REGISTRY.get(module_name)
     if comp_cls is None:
         raise RuntimeError(f"Compressor '{module_name}' not in COMPRESSOR_REGISTRY")
+    if not callable(comp_cls):
+        raise RuntimeError(f"Compressor '{module_name}' is not callable")
 
     tok = (
         tokenizer
@@ -567,7 +569,7 @@ def apply_module_to_model(
                 module_type = "attention"
 
     if module_type == "attention":
-        model = _apply_attention_module(model, module_name, rank, device)
+        model = _apply_attention_module(model, module_name, rank, device, **kwargs)
     elif module_type == "compressor":
         model = _apply_compressor_module(
             model, module_name, rank, calibration_data, calibration_loader, tokenizer, **kwargs

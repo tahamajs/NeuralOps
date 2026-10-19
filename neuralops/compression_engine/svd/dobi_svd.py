@@ -196,6 +196,7 @@ class DobiSVDCompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="dobi", **kwargs)
+        self._compressed_params: int | None = None
         cfg_obj = cfg if cfg is not None else kwargs.get("comp_config")
         self.cfg = cfg_obj
 

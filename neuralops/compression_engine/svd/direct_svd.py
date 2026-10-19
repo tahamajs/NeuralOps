@@ -99,6 +99,9 @@ class DirectSVDCompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="direct_svd", **kwargs)
+        self.hnc_res: Any = None
+        self._compressed_params: int | None = None
+        self.stats: dict[str, Any] = {}
         cfg_obj = cfg if cfg is not None else kwargs.get("comp_config")
         self.cfg = cfg_obj
         self.use_triton = bool(use_triton or _cfg_get(cfg_obj, "use_triton", True))
@@ -741,6 +744,9 @@ class SVDLLMv2Compressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="svd_llm_v2", **kwargs)
+        self.hnc_res: Any = None
+        self._compressed_params: int | None = None
+        self.stats: dict[str, Any] = {}
         self.target_rank = target_rank or rank
         self.truncate_activations = truncate_activations
         self.hnc = None
