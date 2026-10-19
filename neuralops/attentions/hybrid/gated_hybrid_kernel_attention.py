@@ -508,7 +508,7 @@ class GatedHybridKernelAttention(BaseAttention):
             self.copy_weights(pretrained_attn)
 
     @staticmethod
-    def _detect_decoder(config, is_decoder, old_attn):
+    def _detect_decoder(config: Any, is_decoder: bool | None, old_attn: Any) -> bool:
         if is_decoder is not None:
             return bool(is_decoder)
         if config is not None:

@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any
+from typing import Any, Callable
 import os
 
 import torch
@@ -44,6 +44,9 @@ def _cfg_get(config: Any, key: str, default: Any = None) -> Any:
         return config.get(key, default)
     val = getattr(config, key, None)
     return val if val is not None else default
+
+
+_get_cfg: Callable[..., Any] = _cfg_get
 
 
 def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
@@ -909,6 +912,7 @@ def _infer_d_model(
 
 __all__ = [
     "_cfg_get",
+    "_get_cfg",
     "repeat_kv",
     "_detect_decoder",
     "_apply_rope",

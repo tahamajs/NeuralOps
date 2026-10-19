@@ -288,9 +288,11 @@ class CURCompressor(BaseCompressor):
         exclude_names: list[str] | None = None,
         cfg: Any | None = None,
         **kwargs: Any,
-    ) -> None:
         super().__init__(model if model is not None else nn.Identity(), name="cur", **kwargs)
+        self.model: nn.Module = self.model
+        self._original_params: int = getattr(self, "_original_params", 0)
         self._compressed_params: int | None = None
+        self.stats: dict[str, Any] = getattr(self, "stats", {})
 
         self.rank = int(_cfg_get(cfg, "cur_rank", _cfg_get(cfg, "rank", rank)))
         self.min_rank = int(_cfg_get(cfg, "cur_min_rank", _cfg_get(cfg, "min_rank", min_rank)))

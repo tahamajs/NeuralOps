@@ -106,8 +106,11 @@ class LowRankCompressor(BaseCompressor):
         fallback_to_original: bool = False,
         target_modules: list[str] | None = None,
         **kwargs: Any,
-    ) -> None:
         super().__init__(model, name="soka", **kwargs)
+        self.model: nn.Module = self.model
+        self._original_params: int = getattr(self, "_original_params", 0)
+        self._compressed_params: int | None = None
+        self.stats: dict[str, Any] = getattr(self, "stats", {})
         cfg = kwargs.get("comp_config", kwargs.get("cfg"))
         if cfg is not None:
             rank = _cfg_get(cfg, "soka_rank", _cfg_get(cfg, "rank", rank))

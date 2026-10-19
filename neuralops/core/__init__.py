@@ -68,6 +68,7 @@ _MODULE_MAP: dict[str, str] = {
     "human_readable_time": "utils",
     "set_seed": "utils",
     "_cfg_get": "common",
+    "_get_cfg": "common",
     "repeat_kv": "common",
     "_detect_decoder": "common",
     "_apply_rope": "common",

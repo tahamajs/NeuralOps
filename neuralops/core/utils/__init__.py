@@ -19,7 +19,7 @@ from neuralops.core.utils.rope import (
 )
 from neuralops.core.utils.gqa import repeat_kv
 from neuralops.core.utils.lora import LoRALinear, FactorizedLinear
-from neuralops.core.utils.config import _cfg_get
+from neuralops.core.utils.config import _cfg_get, _get_cfg
 from neuralops.core.utils.masks import safe_mask_value, _safe_mask_value
 from neuralops.core.utils.general import (
     get_device,
@@ -43,6 +43,7 @@ __all__ = [
     "LoRALinear",
     "FactorizedLinear",
     "_cfg_get",
+    "_get_cfg",
     "safe_mask_value",
     "_safe_mask_value",
     "get_device",

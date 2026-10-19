@@ -721,7 +721,6 @@ def handle_compress(args: argparse.Namespace) -> int:
 
 def handle_generate(args: argparse.Namespace) -> int:
     """Runs autoregressive text generation with self-speculative draft-and-verify decoding."""
-    import time
     from transformers import AutoModelForCausalLM, AutoTokenizer
     from neuralops.inference.speculative_decoding import SelfSpeculativeDecoder
 
@@ -806,7 +805,6 @@ def handle_niah(args: argparse.Namespace) -> int:
 
 def handle_benchmark_fused(args: argparse.Namespace) -> int:
     """Benchmarks fused @triton.jit kernels against PyTorch eager baselines."""
-    import time
     import torch
     print(f"Benchmarking Fused Triton Kernels (kernel={args.kernel}, B={args.batch_size}, L={args.seq_len}, D={args.dim})...")
     device = "cuda" if torch.cuda.is_available() else "cpu"

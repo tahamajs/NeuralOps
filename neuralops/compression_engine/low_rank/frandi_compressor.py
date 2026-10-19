@@ -371,8 +371,11 @@ class FRanDICompressor(BaseCompressor):
         target_layers: list[str] | None = None,
         num_calibration_batches: int = 16,
         **kwargs: Any,
-    ) -> None:
         super().__init__(model if model is not None else nn.Identity(), name="frandi", **kwargs)
+        self.model: nn.Module = self.model
+        self._original_params: int = getattr(self, "_original_params", 0)
+        self._compressed_params: int | None = None
+        self.stats: dict[str, Any] = getattr(self, "stats", {})
         cfg = cfg or kwargs.get("comp_config")
         self.cfg = cfg
 
