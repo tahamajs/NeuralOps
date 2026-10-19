@@ -142,8 +142,8 @@ def test_no_instance_attr_outside_init():
 def test_neuralops_imports():
     """Verify that top-level package imports cleanly, preserves version, and maintains canonical registry counts."""
     assert hasattr(neuralops, "__version__")
-    assert neuralops.__version__ == "1.4.0"
-    assert get_version() == "1.4.0"
+    assert neuralops.__version__ == "1.4.1"
+    assert get_version() == "1.4.1"
 
     api_functions = [
         load_model,
