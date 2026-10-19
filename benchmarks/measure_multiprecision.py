@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# Author: Taha Majlesi
 """Root CLI entrypoint for measure_multiprecision.
 
 Delegates directly to canonical neuralops.benchmarks.measure_multiprecision.

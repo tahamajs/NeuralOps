@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# Author: Taha Majlesi
 """Root CLI entrypoint for multi_seed_stress_test_131_72.
 
 Delegates directly to canonical neuralops.benchmarks.multi_seed_stress_test_131_72.

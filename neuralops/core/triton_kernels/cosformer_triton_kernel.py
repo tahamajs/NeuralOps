@@ -371,7 +371,7 @@ def cosformer_triton_fwd(
 
 
 # ==============================================================================
-# PHASE 3 / KERNEL 8: Fused Cosformer Linear Attention Kernel
+# Fused Cosformer Linear Attention Kernel
 # Target: cosformer, chela_slay, performer, decay_linear_attention
 # ==============================================================================
 

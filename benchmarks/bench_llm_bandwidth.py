@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# Author: Taha Majlesi
 """Root CLI entrypoint for bench_llm_bandwidth.
 
 Delegates directly to canonical neuralops.benchmarks.bench_llm_bandwidth.

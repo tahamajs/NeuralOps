@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# Author: Taha Majlesi
 """Root CLI entrypoint for benchmark_torch_compile_131_attentions.
 
 Delegates directly to canonical neuralops.benchmarks.benchmark_torch_compile_131_attentions.
