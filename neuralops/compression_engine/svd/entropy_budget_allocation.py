@@ -303,19 +303,19 @@ class EntropyBudgetCompressor(BaseCompressor):
             target_mod = getattr(module, "base_layer", module)
             cls_name = target_mod.__class__.__name__.lower()
             is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
-            raw_w = target_mod.weight.data
+            raw_w: Any = target_mod.weight.data
 
             if is_conv1d:
                 in_f, out_f = raw_w.shape[0], raw_w.shape[1]
-                W = raw_w.t().contiguous().float()
+                W: torch.Tensor = raw_w.t().contiguous().float()
             else:
                 out_f, in_f = raw_w.shape[0], raw_w.shape[1]
-                W = raw_w.float()
+                W: torch.Tensor = raw_w.float()
 
             orig_layer_params = out_f * in_f
             total_orig_params += orig_layer_params
             max_r = min(out_f, in_f)
-            r_floor = max(1, min(self.rank if self.rank is not None else 16, max_r))
+            r_floor = int(max(1, min(int(self.rank if self.rank is not None else 16), int(max_r))))
 
             cov_inv_sqrt = None
             if name in covs and covs[name].shape == (in_f, in_f):
@@ -352,7 +352,9 @@ class EntropyBudgetCompressor(BaseCompressor):
             if S.is_cuda:
                 try:
                     from neuralops.core.triton_kernels.low_rank import triton_spectral_entropy_svd_gate
-                    entropy_t, _ = triton_spectral_entropy_svd_gate(S, threshold=self.eps)
+                    entropy_t, _ = triton_spectral_entropy_svd_gate(
+                        S, V_r=None, U_r=None, effective_rank=None, threshold=self.eps
+                    )
                     entropy = max(float(entropy_t.item()), 1e-4)
                 except Exception:
                     total_s = S.sum() + self.eps
@@ -372,7 +374,7 @@ class EntropyBudgetCompressor(BaseCompressor):
 
         if self.rank is not None:
             allocated_ranks = {
-                name: max(1, min(self.rank, layer_decomp_info[name][4]))
+                name: int(max(1, min(int(self.rank), int(layer_decomp_info[name][4]))))
                 for name, _ in target_layers
             }
         else:
@@ -399,7 +401,7 @@ class EntropyBudgetCompressor(BaseCompressor):
             orig_layer_params = out_f * in_f
             device = target_mod.weight.device
             dtype = target_mod.weight.dtype
-            r = max(1, min(r, max_r))
+            r = int(max(1, min(int(r), int(max_r))))
 
             sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
             U_r = U[:, :r] * sqrt_S.unsqueeze(0)

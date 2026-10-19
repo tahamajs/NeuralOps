@@ -44,7 +44,8 @@ torch.cuda.synchronize()
 results = []
 
 for num_streams in concurrency_levels:
-    streams = [torch.cuda.Stream() for _ in range(num_streams)]
+    prefill_streams = [torch.cuda.Stream() for _ in range(num_streams)]
+    decode_streams = [torch.cuda.Stream() for _ in range(num_streams)]
     print(f"\n--- Concurrency Level: {num_streams} Active Streams ---")
 
     for L_prefix in prefix_lengths:
@@ -62,7 +63,7 @@ for num_streams in concurrency_levels:
 
         def run_prefill(s_idx):
             """Execute run prefill routine."""
-            with torch.cuda.stream(streams[s_idx]):
+            with torch.cuda.stream(prefill_streams[s_idx]):
                 x = prompt_tensors[s_idx]
                 q = torch.matmul(x, W_q).view(1, L_prefix, H, D_HEAD).transpose(1, 2)
                 k = torch.matmul(x, W_k).view(1, L_prefix, H, D_HEAD).transpose(1, 2)
@@ -81,7 +82,7 @@ for num_streams in concurrency_levels:
         for s_idx in range(num_streams):
             run_prefill(s_idx)
         for s_idx in range(num_streams):
-            streams[s_idx].synchronize()
+            prefill_streams[s_idx].synchronize()
 
         iters_prefill = 20
         ttft_start = torch.cuda.Event(enable_timing=True)
@@ -92,7 +93,7 @@ for num_streams in concurrency_levels:
             for s_idx in range(num_streams):
                 run_prefill(s_idx)
             for s_idx in range(num_streams):
-                streams[s_idx].synchronize()
+                prefill_streams[s_idx].synchronize()
         ttft_end.record()
         torch.cuda.synchronize()
 
@@ -102,7 +103,7 @@ for num_streams in concurrency_levels:
 
         def run_decode_step(s_idx):
             """Execute run decode step routine."""
-            with torch.cuda.stream(streams[s_idx]):
+            with torch.cuda.stream(decode_streams[s_idx]):
                 tok = decode_tokens[s_idx]
                 q_step = torch.matmul(tok, W_q).view(1, 1, H, D_HEAD).transpose(1, 2)
                 k_step = torch.matmul(tok, W_k).view(H, D_HEAD)
@@ -124,7 +125,7 @@ for num_streams in concurrency_levels:
         for s_idx in range(num_streams):
             run_decode_step(s_idx)
         for s_idx in range(num_streams):
-            streams[s_idx].synchronize()
+            decode_streams[s_idx].synchronize()
 
         iters_decode = 50
         dec_start = torch.cuda.Event(enable_timing=True)
@@ -135,7 +136,7 @@ for num_streams in concurrency_levels:
             for s_idx in range(num_streams):
                 run_decode_step(s_idx)
             for s_idx in range(num_streams):
-                streams[s_idx].synchronize()
+                decode_streams[s_idx].synchronize()
         dec_end.record()
         torch.cuda.synchronize()
 

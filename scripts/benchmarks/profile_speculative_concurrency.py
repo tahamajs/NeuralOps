@@ -49,7 +49,8 @@ torch.cuda.synchronize()
 results = []
 
 for num_streams in stream_counts:
-    streams = [torch.cuda.Stream() for _ in range(num_streams)]
+    par_streams = [torch.cuda.Stream() for _ in range(num_streams)]
+    seq_streams = [torch.cuda.Stream() for _ in range(num_streams)]
     print(f"\n--- Concurrency Level: {num_streams} Active Streams ---")
 
     for gamma in gamma_values:
@@ -64,7 +65,7 @@ for num_streams in stream_counts:
             draft = torch.randint(0, vocab_size, (batch_per_stream, gamma), device=device, dtype=torch.int64)
             mask = torch.rand(batch_per_stream, gamma, device=device) < acceptance_rate_sim
             target = draft.clone()
-            target[~mask] = torch.randint(0, vocab_size, ((~mask).sum(),), device=device, dtype=torch.int64)
+            target[~mask] = torch.randint(0, vocab_size, (int((~mask).sum().item()),), device=device, dtype=torch.int64)
 
             draft_tokens_list.append(draft)
             target_tokens_list.append(target)
@@ -72,7 +73,7 @@ for num_streams in stream_counts:
 
         def run_parallel_verification(s_idx):
             """Execute run parallel verification routine."""
-            with torch.cuda.stream(streams[s_idx]):
+            with torch.cuda.stream(par_streams[s_idx]):
                 x = embed_inputs[s_idx]
                 q = torch.matmul(x, W_q).view(batch_per_stream, gamma, H, D_HEAD).transpose(1, 2)
                 k = torch.matmul(x, W_k).view(batch_per_stream, gamma, H, D_HEAD).transpose(1, 2)
@@ -89,7 +90,7 @@ for num_streams in stream_counts:
 
         def run_sequential_verification(s_idx):
             """Execute run sequential verification routine."""
-            with torch.cuda.stream(streams[s_idx]):
+            with torch.cuda.stream(seq_streams[s_idx]):
                 x_single = embed_inputs[s_idx][:, :1, :]
                 for _ in range(gamma):
                     q = torch.matmul(x_single, W_q).view(batch_per_stream, 1, H, D_HEAD).transpose(1, 2)
@@ -105,7 +106,8 @@ for num_streams in stream_counts:
             _ = run_parallel_verification(s)
             run_sequential_verification(s)
         for s in range(num_streams):
-            streams[s].synchronize()
+            par_streams[s].synchronize()
+            seq_streams[s].synchronize()
 
         iters = 50
         ev_par_start = torch.cuda.Event(enable_timing=True)
@@ -116,7 +118,7 @@ for num_streams in stream_counts:
             for s in range(num_streams):
                 _ = run_parallel_verification(s)
             for s in range(num_streams):
-                streams[s].synchronize()
+                par_streams[s].synchronize()
         ev_par_end.record()
         torch.cuda.synchronize()
         par_latency_ms = ev_par_start.elapsed_time(ev_par_end) / iters
@@ -129,7 +131,7 @@ for num_streams in stream_counts:
             for s in range(num_streams):
                 run_sequential_verification(s)
             for s in range(num_streams):
-                streams[s].synchronize()
+                seq_streams[s].synchronize()
         ev_seq_end.record()
         torch.cuda.synchronize()
         seq_latency_ms = ev_seq_start.elapsed_time(ev_seq_end) / iters
