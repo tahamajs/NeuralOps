@@ -1,73 +1,36 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
   <defs>
-    <!-- Background Gradient -->
-    <linearGradient id="logoBgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0b0f19" />
-      <stop offset="50%" stop-color="#111827" />
-      <stop offset="100%" stop-color="#030712" />
+    <linearGradient id="logoBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#090d16" />
+      <stop offset="100%" stop-color="#03060b" />
     </linearGradient>
 
-    <!-- Logo Line Gradient -->
-    <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#00f2fe" />
-      <stop offset="50%" stop-color="#38bdf8" />
-      <stop offset="100%" stop-color="#8b5cf6" />
+    <linearGradient id="glowStroke" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#818cf8" />
     </linearGradient>
-
-    <linearGradient id="glowGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.8" />
-      <stop offset="100%" stop-color="#8b5cf6" stop-opacity="0.8" />
-    </linearGradient>
-
-    <!-- Filters -->
-    <filter id="logoGlow" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="8" result="blur" />
-      <feComposite in="SourceGraphic" in2="blur" operator="over" />
-    </filter>
   </defs>
 
-  <!-- Background Base with Rounded Corners -->
-  <rect width="512" height="512" rx="128" fill="url(#logoBgGrad)" />
-  <rect width="504" height="504" x="4" y="4" rx="124" fill="none" stroke="#1e293b" stroke-width="2" />
+  <!-- Clean Minimal Frame -->
+  <rect width="512" height="512" rx="112" fill="url(#logoBg)" />
+  <rect width="504" height="504" x="4" y="4" rx="108" fill="none" stroke="#1e293b" stroke-width="1.5" />
 
-  <!-- Outer Cyber Hexagon -->
-  <polygon points="256,76 412,166 412,346 256,436 100,346 100,166" fill="none" stroke="url(#logoGrad)" stroke-width="8" filter="url(#logoGlow)" stroke-linejoin="round" />
+  <!-- Geometric Hexagon -->
+  <polygon points="256,110 382,183 382,329 256,402 130,329 130,183" fill="none" stroke="url(#glowStroke)" stroke-width="6" stroke-linejoin="round" />
 
-  <!-- Inner Interconnected Neural Topology (Subquadratic & Low-Rank Manifold) -->
-  <g stroke="url(#logoGrad)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
-    <!-- Center to Hex Vertices -->
-    <line x1="256" y1="256" x2="256" y2="126" />
-    <line x1="256" y1="256" x2="368" y2="191" />
-    <line x1="256" y1="256" x2="368" y2="321" />
-    <line x1="256" y1="256" x2="256" y2="386" />
-    <line x1="256" y1="256" x2="144" y2="321" />
-    <line x1="256" y1="256" x2="144" y2="191" />
-
-    <!-- Sub-network connections -->
-    <line x1="256" y1="126" x2="368" y2="191" opacity="0.6" stroke-width="3" />
-    <line x1="368" y1="191" x2="368" y2="321" opacity="0.6" stroke-width="3" />
-    <line x1="368" y1="321" x2="256" y2="386" opacity="0.6" stroke-width="3" />
-    <line x1="256" y1="386" x2="144" y2="321" opacity="0.6" stroke-width="3" />
-    <line x1="144" y1="321" x2="144" y2="191" opacity="0.6" stroke-width="3" />
-    <line x1="144" y1="191" x2="256" y2="126" opacity="0.6" stroke-width="3" />
+  <!-- Precision Internal Node Links -->
+  <g stroke="url(#glowStroke)" stroke-width="4" stroke-linecap="round">
+    <line x1="256" y1="256" x2="256" y2="110" />
+    <line x1="256" y1="256" x2="382" y2="329" />
+    <line x1="256" y1="256" x2="130" y2="329" />
   </g>
 
-  <!-- Glowing Nodes -->
-  <circle cx="256" cy="256" r="16" fill="#00f2fe" filter="url(#logoGlow)" />
-  <circle cx="256" cy="256" r="8" fill="#ffffff" />
-
-  <circle cx="256" cy="126" r="10" fill="#38bdf8" />
-  <circle cx="368" cy="191" r="10" fill="#38bdf8" />
-  <circle cx="368" cy="321" r="10" fill="#8b5cf6" />
-  <circle cx="256" cy="386" r="10" fill="#8b5cf6" />
-  <circle cx="144" cy="321" r="10" fill="#8b5cf6" />
-  <circle cx="144" cy="191" r="10" fill="#38bdf8" />
-
-  <!-- Corner Accent Pulses -->
-  <circle cx="412" cy="166" r="5" fill="#38bdf8" />
-  <circle cx="412" cy="346" r="5" fill="#8b5cf6" />
-  <circle cx="256" cy="436" r="5" fill="#8b5cf6" />
-  <circle cx="100" cy="346" r="5" fill="#8b5cf6" />
-  <circle cx="100" cy="166" r="5" fill="#38bdf8" />
-  <circle cx="256" cy="76" r="5" fill="#38bdf8" />
+  <!-- Minimal Focal Node -->
+  <circle cx="256" cy="256" r="14" fill="#38bdf8" />
+  <circle cx="256" cy="110" r="7" fill="#38bdf8" />
+  <circle cx="382" cy="183" r="5" fill="#818cf8" />
+  <circle cx="382" cy="329" r="7" fill="#818cf8" />
+  <circle cx="256" cy="402" r="5" fill="#818cf8" />
+  <circle cx="130" cy="329" r="7" fill="#818cf8" />
+  <circle cx="130" cy="183" r="5" fill="#38bdf8" />
 </svg>

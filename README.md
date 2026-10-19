@@ -2,13 +2,9 @@
 
 <img src="assets/banner.svg" alt="NeuralOps Banner" width="100%" />
 
-<br/><br/>
-
-<img src="assets/logo.svg" alt="NeuralOps Logo" width="120px" />
-
 # 🧬 NeuralOps v1.4.2
 
-### **Unified Platform for Subquadratic Attention and Deep Model Compression**
+### **Unified Subquadratic Attention and Deep Model Compression Platform**
 
 > **131 canonical attention mechanisms · 72 compression engines · 114 native CUDA C++ kernels · 62 Triton hardware kernels · 27 master Jupyter notebooks**
 
