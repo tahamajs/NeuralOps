@@ -365,7 +365,7 @@ def compilable_low_rank(x: torch.Tensor, U: torch.Tensor, V: torch.Tensor, bias:
     return triton_dispatch("low_rank", x, U, V, bias=bias, **kwargs)
 
 
-def register_custom_op_meta_shape(op_name: str, fake_fn: Callable) -> bool:
+def register_custom_op_meta_shape(op_name: str, fake_fn: Callable[..., Any]) -> bool:
     """Register custom fake/meta implementation for torch.compile shape propagation."""
     if hasattr(torch.library, "register_fake"):
         try:

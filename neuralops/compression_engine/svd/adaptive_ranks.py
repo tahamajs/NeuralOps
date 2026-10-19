@@ -152,6 +152,7 @@ class AdaptiveRanksCompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="adaptive_ranks", **kwargs)
+        self._compressed_params: int | None = None
         cfg = kwargs.get("comp_config", kwargs.get("cfg"))
         if cfg is None and hasattr(model, "config") and model.config is not None:
             cfg = model.config

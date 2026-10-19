@@ -441,6 +441,7 @@ class CacheNotesCompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="cachenotes", **kwargs)
+        self._compressed_params: int | None = None
         cfg = kwargs.get("comp_config", kwargs.get("cfg"))
 
         task_type = str(_cfg_get(cfg, "cachenotes_task", _cfg_get(cfg, "task_type", task_type)))

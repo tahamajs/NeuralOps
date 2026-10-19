@@ -62,6 +62,7 @@ class CURMoECompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model if model is not None else nn.Identity(), name="cur_moe", **kwargs)
+        self._compressed_params: int | None = None
         c_rank = _cfg_get(cfg, "cur_moe_rank", _cfg_get(cfg, "rank", rank))
         c_min_rank = _cfg_get(cfg, "cur_min_rank", _cfg_get(cfg, "min_rank", min_rank))
         c_method = _cfg_get(cfg, "cur_moe_method", _cfg_get(cfg, "method", method))

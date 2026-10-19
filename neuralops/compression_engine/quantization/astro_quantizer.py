@@ -327,6 +327,8 @@ class AstroQuantizer(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="astro", **kwargs)
+        self._compressed_params: int | None = None
+        self.stats: dict[str, Any] = {}
         cfg = kwargs.get("comp_config", kwargs.get("cfg"))
 
         bits = int(_cfg_get(cfg, "astro_bits", _cfg_get(cfg, "bits", bits)))

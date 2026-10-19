@@ -104,6 +104,8 @@ class ASTPrunedLoRALinear(nn.Module):
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
+        self._merged: bool = False
+        self._compressed_params: int | None = None
 
     @classmethod
     def from_linear(
@@ -228,6 +230,8 @@ class ASTPruner(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="ast_pruner", **kwargs)
+        self._merged: bool = False
+        self._compressed_params: int | None = None
         conf = cfg or kwargs.get("comp_config")
         if conf is not None:
             block_size = _cfg_get(conf, "ast_block_size", _cfg_get(conf, "block_size", block_size))

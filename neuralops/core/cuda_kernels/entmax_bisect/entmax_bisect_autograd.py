@@ -59,7 +59,7 @@ def _fwd_dispatch(scores, n_iter=15):
         fused_entmax_bisect_pytorch,
         scores,
         n_iter=n_iter,
-        kernel_name=entmax_bisect,
+        kernel_name="entmax_bisect",
     )
 
 

@@ -48,7 +48,7 @@ def _fwd_dispatch(x, gate, threshold=0.5):
         mod = _get_module()
         return mod.phantom_fwd(x.contiguous(), gate.contiguous(), float(threshold))
 
-    return dispatch(cuda_fn, phantom_ref, phantom_ref, x, gate, threshold=threshold, kernel_name=phantom)
+    return dispatch(cuda_fn, phantom_ref, phantom_ref, x, gate, threshold=threshold, kernel_name="phantom")
 
 
 class _PhantomFunction(torch.autograd.Function):

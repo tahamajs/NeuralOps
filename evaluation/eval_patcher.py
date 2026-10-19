@@ -231,6 +231,7 @@ def _apply_attention_module(
     module_name: str,
     rank: int,
     device: torch.device,
+    **kwargs: Any,
 ) -> nn.Module:
     """Inject attention module using custom injector or standard inject_attention.
 
@@ -239,6 +240,7 @@ def _apply_attention_module(
         module_name: Name of attention module in ATTENTION_REGISTRY.
         rank: Rank parameter for low-rank / linear attention variants.
         device: PyTorch device.
+        **kwargs: Optional extra arguments forwarded to injectors.
 
     Returns:
         Patched model instance.
@@ -250,7 +252,7 @@ def _apply_attention_module(
             logger.warning("Could not import attention '%s': %s", module_name, e)
 
     resolved_mod = ATTENTION_REGISTRY.get(module_name)
-    custom_injector = None
+    custom_injector: Any = None
     if (
         resolved_mod is not None
         and callable(resolved_mod)
@@ -263,12 +265,21 @@ def _apply_attention_module(
             or ATTENTION_REGISTRY.get(f"{module_name}_inject")
             or ATTENTION_REGISTRY.get(f"inject_{module_name}_attention")
         )
-        if cand is not None and not isinstance(cand, type):
+        if cand is not None and callable(cand) and not isinstance(cand, type):
             custom_injector = cand
 
     if custom_injector is not None and callable(custom_injector) and not isinstance(custom_injector, type):
         try:
-            res = custom_injector(model=model, rank=rank, copy_weights=True)
+            try:
+                res = custom_injector(model=model, rank=rank, copy_weights=True, **kwargs)
+            except TypeError:
+                try:
+                    res = custom_injector(model=model, rank=rank, **kwargs)
+                except TypeError:
+                    try:
+                        res = custom_injector(model=model, **kwargs)
+                    except TypeError:
+                        res = custom_injector(model)
             is_single_layer = isinstance(res, (BaseAttention, nn.Linear)) or (
                 "Attention" in type(res).__name__
                 and not any(
@@ -303,10 +314,10 @@ def _apply_attention_module(
             logger.debug("Injector %s failed: %s", custom_injector, e)
 
     if module_name in ATTENTION_REGISTRY:
-        inject_attention(model, module_name, rank=rank, copy_weights=True)
+        inject_attention(model, module_name, rank=rank, copy_weights=True, **kwargs)
     else:
         mod = importlib.import_module(f"neuralops.attentions.{module_name}")
-        target_cls = None
+        target_cls: Any = None
         for attr in dir(mod):
             obj = getattr(mod, attr)
             if (
@@ -322,9 +333,18 @@ def _apply_attention_module(
         cfg = getattr(model, "config", None)
         for name, sub in list(model.named_modules()):
             if "attention" in name.lower() and hasattr(sub, "self"):
-                new_inner = target_cls(cfg)
-                wrapped = UniversalAttentionWrapper(new_inner)
-                sub.self = wrapped
+                if target_cls is not None and callable(target_cls):
+                    try:
+                        new_inner = target_cls(cfg)
+                    except TypeError:
+                        try:
+                            new_inner = target_cls()
+                        except TypeError:
+                            h = getattr(cfg, "hidden_size", 128)
+                            nh = getattr(cfg, "num_attention_heads", 4)
+                            new_inner = target_cls(h, nh)
+                    wrapped = UniversalAttentionWrapper(new_inner)
+                    sub.self = wrapped
 
     return model
 

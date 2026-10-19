@@ -81,7 +81,7 @@ def _fwd_dispatch(x, s_inv, w, bias):
         s_inv,
         w,
         bias=bias,
-        kernel_name=act_scale_quant_gemm,
+        kernel_name="act_scale_quant_gemm",
     )
 
 
