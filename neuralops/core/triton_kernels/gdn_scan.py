@@ -505,17 +505,17 @@ def _gdn_fwd_inference(
 class _GatedDeltaNetScanFn(torch.autograd.Function):
     @staticmethod
     def forward(
-        ctx,
-        q,
-        k,
-        v,
-        beta,
-        alpha,
-        initial_state=None,
-        mask=None,
-        return_final_state=False,
-        normalize_qk=False,
-    ):
+        ctx: Any,
+        q: Any,
+        k: Any,
+        v: Any,
+        beta: Any,
+        alpha: Any,
+        initial_state: Any = None,
+        mask: Any = None,
+        return_final_state: Any = False,
+        normalize_qk: Any = False,
+    ) -> Any:
         B, H, L, D = q.shape
         assert D <= MAX_REGISTER_DIM, f"head_dim {D} > {MAX_REGISTER_DIM}"
 
@@ -615,7 +615,7 @@ class _GatedDeltaNetScanFn(torch.autograd.Function):
         return y
 
     @staticmethod
-    def backward(ctx, *grad_outputs):
+    def backward(ctx: Any, *grad_outputs: Any) -> tuple[Any, ...]:
         dy = grad_outputs[0].contiguous()
         q, k, v, beta, alpha, s_workspace, init_state, mask_t = ctx.saved_tensors
         B, H, L, D = q.shape

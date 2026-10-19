@@ -15,6 +15,8 @@ from __future__ import annotations
 
 import torch
 
+from typing import Any
+
 from neuralops.core.triton_kernels._common import HAS_TRITON, tl, triton
 
 
@@ -234,7 +236,7 @@ def _hgrn2_fwd_inference(f, iv, res_clip=None, initial_state=None, return_final_
 
 class _HGRN2ScanFn(torch.autograd.Function):
     @staticmethod
-    def forward(ctx, f, iv, res_clip, initial_state=None, return_final_state=False):
+    def forward(ctx: Any, f: Any, iv: Any, res_clip: Any, initial_state: Any = None, return_final_state: Any = False) -> Any:
         B, L, D = f.shape
         out = torch.empty_like(iv)
         h_workspace = torch.empty((B, L, D), device=f.device, dtype=torch.float32)
@@ -297,7 +299,7 @@ class _HGRN2ScanFn(torch.autograd.Function):
         return out
 
     @staticmethod
-    def backward(ctx, *grad_outputs):
+    def backward(ctx: Any, *grad_outputs: Any) -> tuple[Any, ...]:
         d_out = grad_outputs[0].contiguous()
         f, h_workspace, init_state = ctx.saved_tensors
         B, L, D = f.shape
