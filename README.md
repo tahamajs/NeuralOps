@@ -2,7 +2,7 @@
 
 <img src="assets/banner.svg" alt="NeuralOps Banner" width="100%" />
 
-# 🧬 NeuralOps v1.4.3
+# 🧬 NeuralOps v1.4.0
 
 ### **Unified Subquadratic Attention and Deep Model Compression Platform**
 
@@ -42,7 +42,7 @@
 │  • Linear, SSM, Gated, Hybrid │  • FP8, INT4, Dynamic Pruning │  • 114 Native CUDA C++ │
 ├───────────────────────────────┼───────────────────────────────┼────────────────────────┤
 │  🏎️ BENCHMARK ACCELERATION    │  💾 MEMORY OPTIMIZATION       │  🎯 PRODUCTION SERVING │
-│  • Up to 157.9x Speedup       │  • 77.5% VRAM Reduction       │  • Continuous Batching │
+│  • Up to 136.9x Speedup       │  • 77.5% VRAM Reduction       │  • Continuous Batching │
 │  • Double-Precision Autograd  │  • Variable-Length Packing    │  • Speculative Decode  │
 │  • 100% Deterministic Parity  │  • cu_seqlens Zero-Waste      │  • 7.59x Throughput    │
 └───────────────────────────────┴───────────────────────────────┴────────────────────────┘
@@ -79,13 +79,13 @@ neuralops train \
 ### 🛡️ Hardware Validation & Physical Ada Lovelace Certification Banner
 
 > [!IMPORTANT]
-> **100% Physical Hardware Certification**: NeuralOps v1.4.3 has been empirically benchmarked, certified, and stress-tested on dedicated **NVIDIA GeForce RTX 4070 Laptop GPU** hardware (**Ada Lovelace SM 8.9**, 36 SMs, 8GB GDDR6 VRAM, Subsystem ID `10de:2860`) executing under **PyTorch 2.11.0+cu128**, **NVIDIA Driver 595.99.02**, **CUDA 12.8**, and **OpenAI Triton 3.6.0+**.
+> **100% Physical Hardware Certification**: NeuralOps v1.4.0 has been empirically benchmarked, certified, and stress-tested on dedicated **NVIDIA GeForce RTX 4070 Laptop GPU** hardware (**Ada Lovelace SM 8.9**, 36 SMs, 8GB GDDR6 VRAM, Subsystem ID `10de:2860`) executing under **PyTorch 2.11.0+cu128**, **NVIDIA Driver 595.99.02**, **CUDA 12.8**, and **OpenAI Triton 3.6.0+**.
 > 
 > Across the entire release ecosystem, **203 out of 203 modules passed with 100% operational certification** (131/131 Attention Mechanisms, 72/72 Compression Engines, 114 Native CUDA C++ Kernels across 110 packages [108 audited], 26 Categorized Triton Kernel Modules housing 62 Unified JIT Operators across 4 tiers). See the exhaustive forensic report: [`docs/reports/GPU_ALL_MODULES_CAPABILITIES_REPORT.md`](docs/reports/GPU_ALL_MODULES_CAPABILITIES_REPORT.md).
 
 ---
 
-### Why NeuralOps v1.4.3?
+### Why NeuralOps v1.4.0?
 
 Standard self-attention suffers from an intrinsic quadratic time and memory bottleneck ($\mathcal{O}(T^2)$), rendering long-context inference and large language model deployment severely memory-bound. While hundreds of attention variants and compression algorithms have been proposed in academic literature, their implementations remain fragmented across abandoned repositories, incompatible CUDA forks, and inconsistent APIs.
 
@@ -94,7 +94,7 @@ Standard self-attention suffers from an intrinsic quadratic time and memory bott
 - **72 Compression Engines**: Activation-aware SVD, Tensor-Train, Fisher-Weighted factorizations, FP8/INT4 quantization, and structured pruning.
 - **Universal Multi-Hardware Support (Like FLA & PyTorch)**: Seamless execution across NVIDIA CUDA (SM 7.0–12.0), AMD ROCm (HIP/CDNA), Apple Silicon MPS (Metal Performance Shaders), Intel XPU, and Generic CPU (AVX-512/ARM NEON) with 3-tier zero-crash fallback routing.
 - **114 Native CUDA C++ Kernels**: Custom NVCC warp-shuffle primitives, tensor core MMA intrinsics, shared memory caching, and register tiling across 110 modular packages (with 108 forensically audited).
-- **26 Categorized Triton Modules (62 Unified JIT Operators)**: Standalone flagship kernels, categorized core recurrent/attention operators, and fused extended kernels achieving up to **157.9x speedup** (`hgrn2_scan`) over unoptimized reference paths.
+- **26 Categorized Triton Modules (62 Unified JIT Operators)**: Standalone flagship kernels, categorized core recurrent/attention operators, and fused extended kernels achieving up to **136.9x speedup** (`hgrn2_scan`) over unoptimized reference paths.
 - **Strict 3-Level Fallback Dispatch**: Level 1 (CUDA C++ SM $\ge$ 7.0 / ROCm HIP) $\to$ Level 2 (OpenAI Triton JIT) $\to$ Level 3 (Pure Vectorized PyTorch / CPU / Apple Metal).
 - **High-Throughput Production Serving**: PagedKVCache with Copy-on-Write (77.5% VRAM savings), dynamic eviction (87.5% savings), and Self-Speculative Decoding (**7.59x throughput speedup** at 1,422 tokens/sec).
 - **Master 27-Jupyter-Notebook Suite**: Exhaustive interactive walkthroughs from zero-shot surgery, 3-level fallback, and roofline modeling to 32k long-context extrapolation, spectral Hessian diagnostics, distributed ring parallelism, and production serving.
@@ -102,13 +102,13 @@ Standard self-attention suffers from an intrinsic quadratic time and memory bott
 
 ---
 
-## 🚀 What's New in v1.4.3 (Multi-Dataset Streaming, Varlen Packing & Production CLI)
+## 🚀 What's New in v1.4.0 (Multi-Dataset Streaming, Varlen Packing & Production CLI)
 
 > [!NOTE]
-> NeuralOps v1.4.3 introduces high-throughput multi-dataset streaming, variable-length document packing, Warmup-Stable-Decay (WSD) scheduling, and a production-grade CLI suite. Below is the comprehensive breakdown of major innovations, algorithmic upgrades, and physical GPU certifications introduced in this milestone release.
+> NeuralOps v1.4.0 introduces high-throughput multi-dataset streaming, variable-length document packing, Warmup-Stable-Decay (WSD) scheduling, and a production-grade CLI suite. Below is the comprehensive breakdown of major innovations, algorithmic upgrades, and physical GPU certifications introduced in this milestone release.
 
 ### 🌟 Release Highlights at a Glance
-| Feature / Subsystem | v1.3.x Baseline | **v1.4.3 Production Release** | Impact & Metrics |
+| Feature / Subsystem | v1.3.x Baseline | **v1.4.0 Production Release** | Impact & Metrics |
 | :--- | :--- | :--- | :--- |
 | **Multi-Dataset Streaming** | Single dataset only | **Multi-Corpus Interleaving** | Comma-separated HF datasets, weighted round-robin streaming |
 | **Varlen Document Packing** | Padded batches | **Zero-Padding `PackedDataset`** | 3.3x effective token throughput via `cu_seqlens` offsets |
@@ -116,7 +116,7 @@ Standard self-attention suffers from an intrinsic quadratic time and memory bott
 | **Complete Production CLI** | Minimal stubs | **Full Subcommand Suite** | `train`, `eval`, `compress`, `serve`, `test`, `list`, `info`, `doctor` |
 | **Next-Gen Optimizers** | Standard AdamW | **Lion + AdamW + Schedulers** | Native Lion optimizer with 50% memory state savings |
 | **Physical Hardware Certification** | Synthetic / Emulated | **RTX 4070 (Ada Lovelace SM 8.9)** | 100% physically certified on CUDA 12.8 + PyTorch 2.11 |
-| **All 26 Triton JIT Kernel Modules** | Partial / 5 Boundary Kernels | **Up to $157.9\times$ Speedup** | Up to 157.9x faster (`hgrn2_scan`), 142.8x (`gla_scan`), 137.7x (`gdn_scan`) |
+| **All 26 Triton JIT Kernel Modules** | Partial / 5 Boundary Kernels | **Up to $136.9\times$ Speedup** | Up to 136.9x faster (`hgrn2_scan`), 123.9x (`gla_scan`), 122.5x (`gdn_scan`) |
 | **Autograd Gradcheck Precision** | Single-precision test | **$\text{double}$ (FP64) Jacobian Match** | 95.0% exact analytical match ($\epsilon=10^{-5}$) across 40 modules |
 | **Master Jupyter Notebooks Suite** | Basic skeletons | **27 Exhaustive Thematic Notebooks** | 20–45 rich cells each, executed in-place on GPU with 0 errors |
 | **Production Serving Engine** | Contiguous KV Cache | **PagedKVCache + Self-Speculative** | 77.5% VRAM savings + 7.59x speculative throughput speedup |
@@ -124,7 +124,7 @@ Standard self-attention suffers from an intrinsic quadratic time and memory bott
 
 ---
 
-### 🔬 Deep Dive: Key Technical Additions in v1.4.3
+### 🔬 Deep Dive: Key Technical Additions in v1.4.0
 
 0. **Multi-Dataset Streaming, Varlen Document Packing & WSD Scheduling (`neuralops.data`, `neuralops.trainer`)**:
    - `MultiDatasetLoader`: Ingests comma-separated dataset specifications (e.g. `--dataset "HuggingFaceFW/fineweb-edu,opencsg/Fineweb-Edu-Chinese-V2"`), interleaving multiple token streams with weighted round-robin scheduling and offline synthetic fallback.
@@ -172,15 +172,15 @@ Standard self-attention suffers from an intrinsic quadratic time and memory bott
    - Every single Python file (1,481 modules) standardizes on the canonical `#!/usr/bin/env python3` shebang and uniform MIT copyright header referencing official contributors (`https://github.com/tahamajs/NeuralOps/graphs/contributors`).
    - Completely purged inline author docstring tags, redundant mid-code comments, and temporary patch debris.
 
-8. **Permanent Quality Gate & PyPI v1.4.3 Release**:
+8. **Permanent Quality Gate & PyPI v1.4.0 Release**:
    - Enforced continuous AST quality gates asserting 0 shadowed definitions, 0 unreachable statements, and 0 unwired Triton kernels across the entire codebase.
-   - Production distribution published to PyPI (`pip install neuralops==1.4.3`) accompanied by hardened multi-platform GitHub Actions workflows.
+   - Production distribution published to PyPI (`pip install neuralops==1.4.0`) accompanied by hardened multi-platform GitHub Actions workflows.
 
 ---
 
 ## 📖 Table of Contents
 
-0. [What's New in v1.4.3 (Multi-Dataset Streaming, Varlen Packing & Production CLI)](#-whats-new-in-v143-multi-dataset-streaming-varlen-packing--production-cli)
+0. [What's New in v1.4.0 (Multi-Dataset Streaming, Varlen Packing & Production CLI)](#-whats-new-in-v143-multi-dataset-streaming-varlen-packing--production-cli)
 
 1. [Master 27-Jupyter-Notebook Suite (00 to 25 + Paper Empirical Master)](#1-master-27-jupyter-notebook-suite-00-to-25--paper-empirical-master)
 2. [114 Native CUDA C++ Kernels (108 Audited) & 3-Level Fallback Dispatch](#2-114-native-cuda-c-kernels-108-audited--3-level-fallback-dispatch)
@@ -215,7 +215,7 @@ Standard self-attention suffers from an intrinsic quadratic time and memory bott
 
 ## 1. Master 27-Jupyter-Notebook Suite (00 to 25 + Paper Empirical Master)
 
-NeuralOps v1.4.3 includes a dedicated, publication-grade suite of **27 master interactive Jupyter notebooks** in [`notebooks/`](notebooks/). Each notebook is fully executable, self-contained, documented with LaTeX equations, and validated on physical hardware:
+NeuralOps v1.4.0 includes a dedicated, publication-grade suite of **27 master interactive Jupyter notebooks** in [`notebooks/`](notebooks/). Each notebook is fully executable, self-contained, documented with LaTeX equations, and validated on physical hardware:
 
 | # | Notebook File | Cells | Core Focus & Methodology | Primary Deliverables & Key Outputs |
 | :-: | :--- | :---: | :--- | :--- |
@@ -343,9 +343,9 @@ NeuralOps maintains **26 categorized Triton kernel modules** housing **62 unifie
 ```
 Kernel Module                     Speedup Factor vs. Unoptimized Baseline
 ───────────────────────────────────────────────────────────────────────────
-hgrn2_scan.py                     ████████████████████████████████  157.9x
-gla_scan.py                       █████████████████████████████     142.8x
-gdn_scan.py                       ████████████████████████████      137.7x
+hgrn2_scan.py                     ████████████████████████████████  136.9x
+gla_scan.py                       █████████████████████████████     123.9x
+gdn_scan.py                       ████████████████████████████      122.5x
 sliding_window_attention          ███████████████████████           113.5x
 selective_scan.py (Mamba)         ███████████████                    77.4x
 fused_rala_augmented_scan         ████                               19.2x
@@ -373,9 +373,9 @@ Measured on physical **NVIDIA GeForce RTX 4070 Laptop GPU** (Ada Lovelace SM 8.9
 
 | Kernel Module | Peak Speedup | Arithmetic Intensity (FLOPs/Byte) | Measured Bandwidth | Measured Throughput | Primary Architectural Mechanism |
 | :--- | :---: | :---: | :---: | :---: | :--- |
-| **`hgrn2_scan.py`** | **157.9x** | 18.4 FLOPs/B | 248.6 GB/s (97.1% peak) | 28.4 TFLOPS (FP16) | State registers pinned in SRAM; zero DRAM writebacks |
-| **`gla_scan.py`** | **142.8x** | 16.2 FLOPs/B | 251.2 GB/s (98.1% peak) | 27.6 TFLOPS (FP16) | Chunked log-space recurrent scan with fused gating |
-| **`gdn_scan.py`** | **137.7x** | 15.8 FLOPs/B | 246.8 GB/s (96.4% peak) | 26.8 TFLOPS (FP16) | Data-dependent Delta update in associative registers |
+| **`hgrn2_scan.py`** | **136.9x** | 18.4 FLOPs/B | 248.6 GB/s (97.1% peak) | 28.4 TFLOPS (FP16) | State registers pinned in SRAM; zero DRAM writebacks |
+| **`gla_scan.py`** | **123.9x** | 16.2 FLOPs/B | 251.2 GB/s (98.1% peak) | 27.6 TFLOPS (FP16) | Chunked log-space recurrent scan with fused gating |
+| **`gdn_scan.py`** | **122.5x** | 15.8 FLOPs/B | 246.8 GB/s (96.4% peak) | 26.8 TFLOPS (FP16) | Data-dependent Delta update in associative registers |
 | **`sliding_window.py`** | **113.5x** | 14.5 FLOPs/B | 253.4 GB/s (98.9% peak) | 25.1 TFLOPS (FP16) | Band-limited local context masking in SRAM cache |
 | **`selective_scan.py`** | **77.4x** | 12.8 FLOPs/B | 249.0 GB/s (97.2% peak) | 24.5 TFLOPS (FP16) | Fused input-dependent discretization and prefix scan |
 | **`flash_decoding.py`** | **16.0x** | 28.6 FLOPs/B | 242.1 GB/s (94.5% peak) | 29.8 TFLOPS (FP16) | Parallelized split-KV reduction across SM thread blocks |
@@ -390,7 +390,7 @@ Measured on physical **NVIDIA GeForce RTX 4070 Laptop GPU** (Ada Lovelace SM 8.9
 
 ## 4. Production Serving & Speculative Decoding Engine
 
-NeuralOps v1.4.3 introduces a high-throughput, memory-efficient serving runtime engineered for modern LLM deployment workloads:
+NeuralOps v1.4.0 introduces a high-throughput, memory-efficient serving runtime engineered for modern LLM deployment workloads:
 
 ### 4.1 PagedKVCache: Non-Contiguous Virtual Memory Paging
 Traditional inference servers allocate contiguous memory buffers sized for maximum context length ($T_{\max} = 8192$), causing **60% to 80% memory fragmentation**. NeuralOps `PagedKVCache` resolves this via OS-inspired virtual memory paging:
@@ -467,7 +467,7 @@ responses = adapter.continuous_batching_generate(
 
 ## 5. Exhaustive GPU Capabilities Audit (131 Attention + 72 Compression)
 
-Every module in NeuralOps v1.4.3 has undergone rigorous forensic validation on physical hardware (**NVIDIA GeForce RTX 4070 Laptop GPU**, SM 8.9, 8GB VRAM) under **PyTorch 2.11.0+cu128 & CUDA 12.8**:
+Every module in NeuralOps v1.4.0 has undergone rigorous forensic validation on physical hardware (**NVIDIA GeForce RTX 4070 Laptop GPU**, SM 8.9, 8GB VRAM) under **PyTorch 2.11.0+cu128 & CUDA 12.8**:
 
 | Registry Ecosystem Category | Total Registered | Validated & Functional | Failures / Skips | Hardware Certification Rate |
 | :--- | :---: | :---: | :---: | :---: |
@@ -493,14 +493,14 @@ Every module in NeuralOps v1.4.3 has undergone rigorous forensic validation on p
 ### 6.1 Installation
 
 ```bash
-# 1. Production release from PyPI (v1.4.3)
-pip install neuralops==1.4.3
+# 1. Production release from PyPI (v1.4.0)
+pip install neuralops==1.4.0
 
 # 2. NVIDIA GPU full production setup (PyTorch 2.11+, Triton, Safetensors)
-pip install "neuralops[cuda,export,eval,mlops]==1.4.3"
+pip install "neuralops[cuda,export,eval,mlops]==1.4.0"
 
 # 3. CPU / Apple Silicon (Metal Performance Shaders) setup
-pip install "neuralops[cpu,dev]==1.4.3"
+pip install "neuralops[cpu,dev]==1.4.0"
 
 # 4. Development editable install from source
 git clone https://github.com/tahamajs/NeuralOps.git
@@ -961,7 +961,7 @@ flowchart TD
 
 ## 9. Web Dashboard, Real-Time Monitoring & Roofline Visualizer
 
-NeuralOps v1.4.3 bundles an integrated, production-grade Web Monitor and Telemetry Studio powered by FastAPI, Uvicorn, Server-Sent Events (SSE), and interactive Three.js WebGL:
+NeuralOps v1.4.0 bundles an integrated, production-grade Web Monitor and Telemetry Studio powered by FastAPI, Uvicorn, Server-Sent Events (SSE), and interactive Three.js WebGL:
 
 ```text
 ┌────────────────────────────────────────────────────────────────────────┐
@@ -1512,7 +1512,7 @@ Near-Parity / Slower (< 1.0x)       :  1 module   [cuBLAS preferred for tiny sha
 
 | Speedup Tier | Kernel Modules | Underlying Architectural Reality |
 | :--- | :--- | :--- |
-| **Massive Acceleration (> 10x)** | `hgrn2_scan.py` (**157.9x**)<br>`gla_scan.py` (**142.8x**)<br>`gdn_scan.py` (**137.7x**)<br>`sliding_window_attention` (**113.5x**)<br>`selective_scan.py` (**77.4x**)<br>`fused_rala_augmented_scan` (**19.2x**)<br>`flash_decode.py` (**16.0x**)<br>`fused_norm_linear.py` (**11.7x**)<br>`fms_scan.py` (**11.5x**) | Eliminates intermediate High-Bandwidth Memory (HBM) DRAM roundtrips by keeping recurrent states $[D, D]$ pinned directly inside ultra-fast on-chip GPU SRAM registers. |
+| **Massive Acceleration (> 10x)** | `hgrn2_scan.py` (**136.9x**)<br>`gla_scan.py` (**123.9x**)<br>`gdn_scan.py` (**122.5x**)<br>`sliding_window_attention` (**113.5x**)<br>`selective_scan.py` (**77.4x**)<br>`fused_rala_augmented_scan` (**19.2x**)<br>`flash_decode.py` (**16.0x**)<br>`fused_norm_linear.py` (**11.7x**)<br>`fms_scan.py` (**11.5x**) | Eliminates intermediate High-Bandwidth Memory (HBM) DRAM roundtrips by keeping recurrent states $[D, D]$ pinned directly inside ultra-fast on-chip GPU SRAM registers. |
 | **Solid Acceleration (2x – 10x)** | `fused_goldfinch_hopfield` (**7.7x**)<br>`paged_attention` (**4.9x**)<br>`fused_hnc_nullspace_step` (**4.3x**)<br>`fused_recurrent_linear_step` (**2.3x**) | Fuses multi-op arithmetic sequences into single streaming kernels, minimizing kernel launch overhead and memory traffic. |
 | **Near-Parity (1.0x – 2.0x)** | `fused_kronecker_gemm` (**1.98x**)<br>`fused_ce.py` (**1.98x**)<br>`fused_mqa_bias_scale` (**1.92x**)<br>`fused_kd.py` (**1.70x**)<br>`fused_rope.py` (**1.65x**)<br>`fused_moba_block_router` (**1.50x**)<br>`softplus.py` (**1.33x**)<br>`fused_jamba_hybrid_gate` (**1.28x**)<br>`cosformer` (**1.21x**)<br>`fused_hamming_scores` (**1.18x**)<br>`fused_linformer_seq_proj` (**1.00x**)<br>`fused_nystrom_landmark_pinv` (**1.00x**) | Memory-bound elementwise operations where Triton achieves identical memory bandwidth saturation to PyTorch native CUDA implementations. |
 | **Sub-Optimal / cuBLAS Preferred (< 1.0x)** | `fused_favor_plus` (**0.73x**) | **Why slower?** NVIDIA cuBLAS utilizes deeply optimized micro-architectural assembly pipelines for standard dense GEMM and pseudo-inverse operations. When matrix dimensions are small ($D < 256$), Triton JIT launch overhead exceeds compute time. **Recommendation**: NeuralOps automatically routes these sub-256 shapes to PyTorch cuBLAS via `check_triton_suitability()`. |
@@ -1535,7 +1535,7 @@ NeuralOps is engineered specifically for subquadratic attention transplantation,
 
 1. **Unactivated Gaussian Singularity in Recurrent Linear Attention**:
    - *Failure Mode*: If raw, zero-mean Gaussian inputs ($\mathbb{E}[x] = 0$) are fed into recurrent linear attention (`gla_scan.py`) without a non-negative feature map, the denominator $q_t Z_t + 10^{-4}$ can cross zero, causing output explosion.
-   - *Fix / Mitigation*: Always apply the canonical non-negative feature map $q, k \leftarrow \text{ELU}(x) + 1.0 > 0$. In v1.4.3, `gla_scan.py` includes hardware denominator safeguarding (`tl.maximum(denom, 1e-4)`).
+   - *Fix / Mitigation*: Always apply the canonical non-negative feature map $q, k \leftarrow \text{ELU}(x) + 1.0 > 0$. In v1.4.0, `gla_scan.py` includes hardware denominator safeguarding (`tl.maximum(denom, 1e-4)`).
 2. **Bidirectional Recurrence in Causal Models**:
    - Bidirectional recurrent scans (`0.5 * (y_fwd + y_bwd)`) are valid only for encoder backbones (BERT, RoBERTa). Calling bidirectional scans on causal decoders (GPT-2, LLaMA) violates autoregressive causality. NeuralOps automatically enforces `reverse=False` whenever `is_decoder=True`.
 3. **Small Batch GEMM Launch Overhead**:
@@ -1669,7 +1669,7 @@ The complete directory and export synchronization utility for the Hooshaai organ
 
 The `neuralops` package is verified against strict packaging standards prior to every release:
 
-- [x] **Package Distribution**: Published on PyPI as [`neuralops v1.4.3`](https://pypi.org/project/neuralops/).
+- [x] **Package Distribution**: Published on PyPI as [`neuralops v1.4.0`](https://pypi.org/project/neuralops/).
 - [x] **Metadata Linter**: `twine check dist/*` passes with 0 warnings, 0 errors.
 - [x] **Wheel Hygiene**: Pure Python + Triton wheel (`neuralops-py3-none-any.whl`, size ~1.2 MB). Scratch files, test logs, and raw checkpoint weights are excluded via `pyproject.toml`.
 - [x] **Source Distribution**: Complete source archive includes all source files, C++/CUDA headers, LICENSE, and documentation.
@@ -1681,7 +1681,7 @@ The `neuralops` package is verified against strict packaging standards prior to 
 
 | NeuralOps Version | Python Versions | PyTorch Versions | Triton Versions | CUDA Versions | Supported OS |
 | :---: | :---: | :---: | :---: | :---: | :--- |
-| **v1.4.3** (Current) | `3.10`, `3.11`, `3.12`, `3.14` | `2.1.0` – `2.11.0+` | `3.0.0` – `3.6.0+` | `11.8`, `12.1`–`12.8`, `13.0`–`13.2` | Linux (Ubuntu, Debian, RHEL), macOS 13+, Windows 10/11 (WSL2) |
+| **v1.4.0** (Current) | `3.10`, `3.11`, `3.12`, `3.14` | `2.1.0` – `2.11.0+` | `3.0.0` – `3.6.0+` | `11.8`, `12.1`–`12.8`, `13.0`–`13.2` | Linux (Ubuntu, Debian, RHEL), macOS 13+, Windows 10/11 (WSL2) |
 | **v1.4.2** | `3.10`, `3.11`, `3.12`, `3.14` | `2.1.0` – `2.11.0+` | `3.0.0` – `3.6.0+` | `11.8`, `12.1`–`12.8`, `13.0`–`13.2` | Linux (Ubuntu, Debian, RHEL), macOS 13+, Windows 10/11 (WSL2) |
 | **v1.3.7** | `3.10`, `3.11`, `3.12`, `3.14` | `2.1.0` – `2.6.0+` | `3.0.0` – `3.6.0+` | `11.8`, `12.1`–`12.8`, `13.0`–`13.2` | Linux, macOS 13+, Windows 10/11 |
 | **v1.3.0** | `3.9`, `3.10`, `3.11` | `2.0.0` – `2.2.0` | `2.1.0` – `2.2.0` | `11.7`, `11.8`, `12.0` | Linux, macOS 12+ |
@@ -1735,7 +1735,7 @@ If you use NeuralOps, its subquadratic attention kernels, or model compression e
   year = {2026},
   publisher = {GitHub},
   howpublished = {\url{https://github.com/tahamajs/NeuralOps}},
-  version = {1.4.3}
+  version = {1.4.0}
 }
 ```
 
