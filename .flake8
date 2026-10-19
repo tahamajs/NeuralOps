@@ -1,4 +1,3 @@
-# Author: Taha Majlesi
 [flake8]
 # Flake8 configuration for NeuralOps
 max-line-length = 120
