@@ -64,6 +64,12 @@ def build_test_parser(subparser: Optional[argparse.ArgumentParser] = None) -> ar
         help="Run attention surgery, layer transplant, and alpha blending verification",
     )
     parser.add_argument(
+        "--eval",
+        dest="eval_suite",
+        action="store_true",
+        help="Run unified evaluation and benchmarking bridge diagnostic suite",
+    )
+    parser.add_argument(
         "-q",
         "--quiet",
         action="store_true",
@@ -193,12 +199,53 @@ def _run_surgery_suite(quiet: bool = False) -> Tuple[bool, List[Tuple[str, str, 
     return all_ok, results
 
 
+def _run_eval_suite(quiet: bool = False) -> Tuple[bool, List[Tuple[str, str, str]]]:
+    """Verify evaluation and benchmarking unification bridge."""
+    results: List[Tuple[str, str, str]] = []
+    all_ok = True
+
+    try:
+        from neuralops.benchmarks.eval_bridge import BenchmarkEvaluator, BenchmarkEvalResult
+        from evaluation import BenchmarkEvaluator as EvalEvaluator
+
+        # 1. Verify Bridge Exports
+        assert BenchmarkEvaluator is EvalEvaluator, "Evaluation bridge export identity mismatch"
+        results.append(("Evaluation Bridge Export", "BenchmarkEvaluator unified across evaluation & benchmarks", "PASS"))
+
+        # 2. Verify Result Dataclass
+        res = BenchmarkEvalResult(
+            model_name="test_model",
+            attention_type="svd_linear_attention",
+            compression_type="asvd",
+            rank=32,
+            throughput_tokens_per_sec=12500.0,
+            latency_ms_mean=2.45,
+            peak_vram_mb=128.5,
+            loss=1.85,
+            perplexity=6.36,
+            accuracy_pct=88.5,
+        )
+        assert res.model_name == "test_model"
+        assert res.throughput_tokens_per_sec == 12500.0
+        results.append(("Telemetry Result Schema", "BenchmarkEvalResult schema validated with hardware & task metrics", "PASS"))
+
+        # 3. Verify Evaluator Harness
+        evaluator = BenchmarkEvaluator(model="gpt2", batch_size=2, seq_len=32, device="cpu")
+        results.append(("BenchmarkEvaluator Init", "Evaluator initialized with CPU fallback model", "PASS"))
+
+    except Exception as e:
+        results.append(("Evaluation Bridge Suite", str(e), "FAIL"))
+        all_ok = False
+
+    return all_ok, results
+
+
 def cmd_test(args: Any = None) -> int:
     """Execute diagnostic test runners."""
     if isinstance(args, dict):
         args_ns = argparse.Namespace(**args)
     elif args is None:
-        args_ns = argparse.Namespace(all=True, health=False, kernels=False, surgery=False, quiet=False)
+        args_ns = argparse.Namespace(all=True, health=False, kernels=False, surgery=False, eval_suite=False, quiet=False)
     else:
         args_ns = args
 
@@ -206,23 +253,25 @@ def cmd_test(args: Any = None) -> int:
     run_health = getattr(args_ns, "health", False)
     run_kernels = getattr(args_ns, "kernels", False)
     run_surgery = getattr(args_ns, "surgery", False)
+    run_eval = getattr(args_ns, "eval_suite", False) or getattr(args_ns, "eval", False)
     quiet = getattr(args_ns, "quiet", False)
 
     # If no specific suite is selected, default to running all suites
-    if not (run_health or run_kernels or run_surgery):
+    if not (run_health or run_kernels or run_surgery or run_eval):
         run_all = True
 
     if run_all:
         run_health = True
         run_kernels = True
         run_surgery = True
+        run_eval = True
 
     if not quiet:
         if HAS_RICH and console is not None:
             console.print(Panel(
                 "[bold cyan]NeuralOps Fast Diagnostic Test Suite[/bold cyan]\n"
                 "[dim]Validating system readiness, 131 attention mechanisms, 72 compression engines,\n"
-                "26 Triton kernels, 114 CUDA kernel implementations, and surgery runtime.[/dim]",
+                "26 Triton kernels, 114 CUDA kernel implementations, surgery runtime, and unified evaluation bridge.[/dim]",
                 title="[bold cyan]NeuralOps Diagnostic Engine[/bold cyan]",
                 border_style="cyan",
             ))
@@ -255,6 +304,14 @@ def cmd_test(args: Any = None) -> int:
         if not quiet:
             print("[*] Running Attention Surgery & Transplant Suite...")
         passed, res = _run_surgery_suite(quiet=quiet)
+        collected_results.extend(res)
+        if not passed:
+            all_passed = False
+
+    if run_eval:
+        if not quiet:
+            print("[*] Running Evaluation & Benchmarking Bridge Suite...")
+        passed, res = _run_eval_suite(quiet=quiet)
         collected_results.extend(res)
         if not passed:
             all_passed = False

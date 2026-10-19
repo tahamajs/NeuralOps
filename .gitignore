@@ -142,6 +142,10 @@ models/
 **/models/
 !neuralops/models/
 !neuralops/models/**
+!benchmarks/models/
+!benchmarks/models/**
+!neuralops/benchmarks/models/
+!neuralops/benchmarks/models/**
 datasets/
 **/datasets/
 !datasets/.gitkeep
