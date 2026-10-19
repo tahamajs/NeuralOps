@@ -345,6 +345,9 @@ _LAZY_EXPORTS = {
     "FairnessEvaluator": ("neuralops.evaluation.fairness", "FairnessEvaluator"),
     "FairnessReport": ("neuralops.evaluation.fairness", "FairnessReport"),
     "HuggingFaceTrainer": ("neuralops.trainer.hf_trainer", "HuggingFaceTrainer"),
+    "NeuralOpsTrainer": ("neuralops.trainer.neuralops_trainer", "NeuralOpsTrainer"),
+    "save_attention_only": ("neuralops.utils.hub_integration", "save_attention_only"),
+    "load_attention_from_hub": ("neuralops.utils.hub_integration", "load_attention_from_hub"),
     "LabelQualityDetector": ("neuralops.evaluation.label_quality", "LabelQualityDetector"),
     "LabelQualityReport": ("neuralops.evaluation.label_quality", "LabelQualityReport"),
     "MultiModeBenchmarkRunner": ("neuralops.benchmarks.harness", "MultiModeBenchmarkRunner"),
@@ -371,9 +374,6 @@ _LAZY_EXPORTS = {
 
 _API_EXPORTS = {
     "load_model": "neuralops.api",
-    "load_hf_model": "neuralops.api",
-    "quick_benchmark": "neuralops.api",
-    "NeuralOpsTrainer": "neuralops.trainer.neuralops_trainer",
     "replace_attention": "neuralops.api",
     "transplant_attention": "neuralops.api",
     "compress": "neuralops.api",

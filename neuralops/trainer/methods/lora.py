@@ -127,6 +127,16 @@ def _apply_adapters(model, r, alpha, dropout, method_type="lora", **kwargs) -> N
         "dense",
         "intermediate.dense",
         "output.dense",
+        "q_lin",
+        "k_lin",
+        "v_lin",
+        "out_lin",
+        "q_proj",
+        "k_proj",
+        "v_proj",
+        "o_proj",
+        "c_attn",
+        "c_proj",
     ]
     for name, module in list(model.named_modules()):
         if not isinstance(module, nn.Linear):

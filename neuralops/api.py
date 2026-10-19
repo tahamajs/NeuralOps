@@ -23,6 +23,7 @@ import torch.nn.functional as F
 from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
 from neuralops.core.attention_utils import inject_attention
 from neuralops.export.exporter import export_model as _export_model, load_model as _load_model, load_exported_model
+from neuralops.utils.hub_integration import load_attention_from_hub, save_attention_only
 
 logger = logging.getLogger("NeuralOps.API")
 
@@ -54,10 +55,6 @@ def replace_attention(
         The model with attention layers replaced in-place.
     """
     target_mod = kwargs.pop("target_module", None)
-    inject_lora = bool(kwargs.pop("inject_lora", False))
-    lora_rank = int(kwargs.pop("lora_rank", rank or 8))
-    lora_alpha = float(kwargs.pop("lora_alpha", 2.0 * lora_rank))
-    lora_dropout = float(kwargs.pop("lora_dropout", 0.0))
     if isinstance(target_mod, str) and not attention:
         attention = target_mod
         target_mod = None
@@ -101,39 +98,13 @@ def replace_attention(
         norm_spec = normalize_hybrid_spec(hybrid_spec)
         call_kwargs["hybrid_spec"] = norm_spec
 
-    try:
-        out_model = inject_attention(
-            model=model,
-            attention_type=attn_name,
-            rank=rank,
-            copy_weights=copy_weights,
-            **call_kwargs,
-        )
-    except (RuntimeError, TypeError, ValueError) as exc:
-        raise ValueError(
-            f"Could not replace attention with '{attn_name}' for "
-            f"{model.__class__.__name__}: {exc}"
-        ) from exc
-
-    lora_layers = 0
-    if inject_lora:
-        from neuralops.utils.lora import apply_lora
-        out_model, lora_layers = apply_lora(
-            out_model,
-            r=lora_rank,
-            alpha=lora_alpha,
-            dropout=lora_dropout,
-        )
-        # Some NeuralOps attention implementations already own LoRA
-        # projections.  apply_lora freezes the model before traversal, so
-        # explicitly restore trainability for every adapter parameter.
-        for name, parameter in out_model.named_parameters():
-            if "lora_" in name.lower():
-                parameter.requires_grad = True
-        lora_layers = max(
-            lora_layers,
-            sum(1 for module in out_model.modules() if module.__class__.__name__ == "LoRALinear"),
-        )
+    out_model = inject_attention(
+        model=model,
+        attention_type=attn_name,
+        rank=rank,
+        copy_weights=copy_weights,
+        **call_kwargs,
+    )
 
     meta_entry: Dict[str, Any] = {
         "op": "replace",
@@ -142,9 +113,6 @@ def replace_attention(
             "rank": rank,
             "copy_weights": copy_weights,
             "layers": layers,
-            "inject_lora": inject_lora,
-            "lora_rank": lora_rank if inject_lora else None,
-            "lora_layers": lora_layers,
             **kwargs,
         },
     }
@@ -164,13 +132,9 @@ def replace_attention(
         if not hasattr(out_model.config, "neuralops_history") or out_model.config.neuralops_history is None:
             out_model.config.neuralops_history = []
         out_model.config.neuralops_history.append(meta_entry)
-        # HF reserves _attn_implementation for its dispatcher. Keep it valid
-        # while exposing the actual NeuralOps implementation explicitly.
-        out_model.config.neuralops_attention = attn_name
-        if hasattr(out_model.config, "_attn_implementation"):
-            out_model.config._attn_implementation = "eager"
 
-    return out_model
+    from neuralops.utils.hub_integration import attach_attention_methods
+    return attach_attention_methods(out_model)
 
 
 def compress(
@@ -365,71 +329,6 @@ def load_model(
         The reconstructed neuralops model.
     """
     return _load_model(export_dir=export_dir, base_model=base_model)
-
-
-def load_hf_model(model_name_or_path: str, **kwargs: Any) -> nn.Module:
-    """Load a Hugging Face model lazily without making Transformers a core dependency."""
-    from transformers import AutoModel
-    return AutoModel.from_pretrained(model_name_or_path, **kwargs)
-
-
-def quick_benchmark(
-    model: nn.Module,
-    task: str = "sst2",
-    device: Optional[str] = None,
-    batch_size: int = 2,
-    seq_len: int = 16,
-    iterations: int = 5,
-) -> Any:
-    """Run a small deterministic forward benchmark and return a notebook-friendly table."""
-    import time
-    target = torch.device(device or ("cuda" if torch.cuda.is_available() else "cpu"))
-    model = model.to(target).eval()
-    vocab_size = int(getattr(getattr(model, "config", None), "vocab_size", 30522))
-    inputs = torch.randint(0, max(2, vocab_size), (batch_size, seq_len), device=target)
-    with torch.no_grad():
-        for _ in range(2):
-            try:
-                model(input_ids=inputs)
-            except TypeError:
-                model(inputs)
-        if target.type == "cuda":
-            torch.cuda.synchronize(target)
-        start = time.perf_counter()
-        for _ in range(iterations):
-            try:
-                output = model(input_ids=inputs)
-            except TypeError:
-                output = model(inputs)
-        if target.type == "cuda":
-            torch.cuda.synchronize(target)
-        latency_ms = (time.perf_counter() - start) * 1000.0 / max(1, iterations)
-    row = {"task": task, "device": str(target), "latency_ms": latency_ms, "finite": bool(_first_tensor(output).isfinite().all())}
-    try:
-        import pandas as pd
-        table = pd.DataFrame([row])
-        print(table.to_string(index=False))
-        return table
-    except ImportError:
-        print(row)
-        return [row]
-
-
-def _first_tensor(output: Any) -> torch.Tensor:
-    """Extract the first tensor from common HF output containers."""
-    if isinstance(output, torch.Tensor):
-        return output
-    if hasattr(output, "logits") and isinstance(output.logits, torch.Tensor):
-        return output.logits
-    if isinstance(output, (tuple, list)):
-        for item in output:
-            if isinstance(item, torch.Tensor):
-                return item
-    if isinstance(output, dict):
-        for item in output.values():
-            if isinstance(item, torch.Tensor):
-                return item
-    raise TypeError(f"Model output does not contain a tensor: {type(output)!r}")
 
 
 def compile_to_so(
@@ -1088,6 +987,8 @@ __all__ = [
     "AutoNeuralOpsForCausalLM",
     "AutoNeuralOpsForSequenceClassification",
     "merge_for_inference",
+    "save_attention_only",
+    "load_attention_from_hub",
 ]
 
 from neuralops.core.state_cache import NeuralOpsStateCache, benchmark_autoregressive_decoding

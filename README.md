@@ -76,6 +76,39 @@ neuralops train \
   --optimizer lion
 ```
 
+### Unified Training API
+
+`NeuralOpsTrainer` is the single Hugging Face-compatible entry point for standard fine-tuning, LoRA, PiSSA, DoRA, knowledge distillation, and hybrid LoRA+KD training. It freezes the base model for PEFT modes, keeps optimizer state focused on trainable adapters, and works on CPU when CUDA is unavailable:
+
+```python
+from neuralops.trainer import NeuralOpsTrainer
+
+trainer = NeuralOpsTrainer(model=model, args=training_args, train_dataset=train_dataset)
+lora_trainer = NeuralOpsTrainer(model=model, args=training_args, train_dataset=train_dataset,
+                                 peft_method="lora", lora_r=8)
+kd_trainer = NeuralOpsTrainer(model=student, args=training_args, train_dataset=train_dataset,
+                              teacher_model=teacher)
+hybrid_trainer = NeuralOpsTrainer(model=student, args=training_args,
+                                   train_dataset=train_dataset, peft_method="lora",
+                                   lora_r=8, teacher_model=teacher)
+trainer.train()
+```
+
+For PEFT runs, `save_model()` writes only the selective attention/adapter checkpoint (`attention_weights.safetensors` plus `config.json`); it does not duplicate the base model. Use `neuralops.load_attention_from_hub(base_model_name, repo_id)` to reconstruct the base model and apply the saved surgery.
+
+### Saving and Sharing Attention Weights
+
+After attention surgery, save only the NeuralOps attention and adapter tensors:
+
+```python
+model = neuralops.replace_attention(model, "cosformer", inject_lora=True, lora_rank=8)
+model.save_attention_only("./my_cosformer_weights")
+model.save_attention_only("./my_cosformer_weights", push_to_hub=True,
+                          repo_id="your-account/cosformer-adapter")
+reloaded = neuralops.load_attention_from_hub("distilbert-base-uncased",
+                                             "./my_cosformer_weights")
+```
+
 ---
 
 ### 🛡️ Hardware Validation & Physical Ada Lovelace Certification Banner

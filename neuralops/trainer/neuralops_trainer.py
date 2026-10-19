@@ -18,17 +18,32 @@ from neuralops.utils.lora import apply_lora
 
 class NeuralOpsTrainer(SVDAwareTrainer):
     """Standard Hugging Face Trainer with opt-in NeuralOps training features."""
-    def __init__(self, *args: Any, kd_loss: bool = False, teacher_model: Any | None = None, lora: bool = False, lora_rank: int = 8, lora_alpha: float | None = None, lora_dropout: float = 0.0, kd_temperature: float = 2.0, kd_weight: float = 0.5, **kwargs: Any) -> None:
+    def __init__(self, *args: Any, kd_loss: bool = False, teacher_model: Any | None = None, lora: bool = False, peft_method: str | None = None, lora_rank: int = 8, lora_r: int | None = None, lora_alpha: float | None = None, lora_dropout: float = 0.0, kd_temperature: float = 2.0, kd_weight: float = 0.5, **kwargs: Any) -> None:
         model = kwargs.get('model')
         if model is None and args:
             model = args[0]
-        self.kd_enabled = bool(kd_loss)
+        self.peft_method = (peft_method or ("lora" if lora else None))
+        if self.peft_method is not None:
+            self.peft_method = self.peft_method.lower()
+            if self.peft_method not in {"lora", "pissa", "dora"}:
+                raise ValueError("peft_method must be one of: lora, pissa, dora")
+        lora_rank = int(lora_r or lora_rank)
+        self.kd_enabled = bool(kd_loss or teacher_model is not None)
         self.kd_weight = float(kd_weight)
         self.kd_objective = LogitDistillationLoss(mode='forward_kl', temperature=kd_temperature)
-        if lora and model is not None:
-            model, _ = apply_lora(model, r=int(lora_rank), alpha=float(lora_alpha or 2 * lora_rank), dropout=float(lora_dropout))
+        if self.peft_method and model is not None:
+            for parameter in model.parameters():
+                parameter.requires_grad = False
+            if self.peft_method == "lora":
+                model, _ = apply_lora(model, r=lora_rank, alpha=float(lora_alpha or 2 * lora_rank), dropout=float(lora_dropout))
+            elif self.peft_method == "pissa":
+                from neuralops.trainer.peft_recovery.svd_adapters import inject_pissa_adapters
+                inject_pissa_adapters(model, rank=lora_rank)
+            else:
+                from neuralops.trainer.methods.lora import _apply_adapters
+                _apply_adapters(model, lora_rank, float(lora_alpha or 2 * lora_rank), float(lora_dropout), "dora")
             for name, parameter in model.named_parameters():
-                if 'lora_' in name.lower():
+                if any(token in name.lower() for token in ('lora_', 'magnitude', 'weight_residual')) or name.lower().endswith('.m'):
                     parameter.requires_grad = True
             if 'model' in kwargs:
                 kwargs['model'] = model
@@ -42,6 +57,16 @@ class NeuralOpsTrainer(SVDAwareTrainer):
         else:
             self.teacher_model = None
         super().__init__(*args, **kwargs)
+
+    def save_model(self, output_dir: str | None = None, _internal_call: bool = False) -> None:
+        """Save only PEFT/attention tensors when parameter-efficient training is active."""
+        if self.peft_method:
+            from neuralops.utils.hub_integration import save_attention_only
+
+            target = output_dir or self.args.output_dir
+            save_attention_only(self.model, target)
+            return
+        super().save_model(output_dir=output_dir, _internal_call=_internal_call)
 
     def compute_loss(self, model: Any, inputs: dict[str, Any], return_outputs: bool = False, num_items_in_batch: int | None = None) -> Any:
         """Combine supervised cross entropy with optional teacher logit KL."""
