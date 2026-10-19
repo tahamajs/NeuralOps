@@ -1013,16 +1013,18 @@ neuralops serve --host 0.0.0.0 --port 8080
 
 To maintain engineering transparency and forensic integrity, NeuralOps categorizes all third-party framework integrations by their true operational status against the actual codebase:
 
-| Framework | Type | Upstream | CI/CD | Production | Verified Path | Notes |
+| Framework | Type | Optional dependency | Import / smoke status | Production claim | Verified Path | Notes |
 |:---|:---|:---:|:---:|:---:|:---|:---|
-| **HuggingFace Transformers** | Native Plugin | N/A | ✅ | ✅ **Production Ready** | `neuralops/integrations/hf_automodel.py`, `neuralops/core/_attention_injectors.py` | Bit-exact roundtrip, dynamic AutoConfig |
-| **ONNX Runtime** | Compat Layer | N/A | ✅ | ✅ **Production Ready** | `neuralops/export/exporter.py` | dynamo=False fallback for control flow |
-| **vLLM** | Wrapper Adapter | ⚠️ No PR | ✅ | 🟡 **Experimental** | `neuralops/integrations/vllm.py`, `neuralops/models/paged_state.py` | PagedStateTable + CoW |
-| **TGI** | Wrapper Adapter | ⚠️ No PR | ✅ | 🟡 **Experimental** | `neuralops/integrations/tgi.py` | Continuous batching + streaming |
-| **SGLang** | Compat Layer | ⚠️ No PR | ✅ | 🟡 **Experimental** | `neuralops/integrations/sglang.py` | Radix tree prefix cache |
-| **TensorRT-LLM** | Scaffold | ❌ None | ✅ (import) | ❌ **Roadmap v2.0** | `neuralops/integrations/tensorrt_llm.py` | See `docs/roadmap/TENSORRT_LLM_PLAN.md` |
+| **HuggingFace Transformers** | Native Plugin | ✅ installed | ✅ **Tiny-config GPU smoke** | Scoped; checkpoint-dependent | `neuralops/integrations/hf_automodel.py`, `neuralops/core/_attention_injectors.py` | Cosformer injection produced finite DistilBERT-shaped output; pretrained checkpoint was not cached on the audit host |
+| **ONNX Runtime / ONNX export** | Compat Layer | ✅ onnx | ✅ **Tiny graph validated** | Export path verified; custom-op coverage varies | `neuralops/export/exporter.py` | `onnx.checker.check_model` passed for a tiny integer-input model |
+| **vLLM** | Wrapper Adapter | ❌ not installed | ✅ **Import + mock** | Experimental / optional dependency | `neuralops/integrations/vllm.py`, `neuralops/models/paged_state.py` | Adapter import is safe without vLLM; PagedStateTable CoW mock passed |
+| **TGI** | Wrapper Adapter | ❌ not installed | ✅ **Batching mock** | Experimental / optional dependency | `neuralops/integrations/tgi.py` | Request admission and queued-batch promotion passed without the server package |
+| **SGLang** | Compat Layer | ❌ not installed | ✅ **Radix-cache mock** | Experimental / optional dependency | `neuralops/integrations/sglang.py` | Prefix insertion and longest-prefix lookup passed on CPU tensors |
+| **TensorRT-LLM** | Scaffold | ❌ not installed | ✅ **Import only** | ❌ **Roadmap v2.0** | `neuralops/integrations/tensorrt_llm.py` | SDK-dependent execution was not claimed |
 
 ---
+
+**Integration audit (2026-10-19, remote GPU):** tiny local DistilBERT + Cosformer injection, ONNX graph export/checking, SGLang radix caching, TGI request batching, vLLM adapter import/PagedStateTable copy-on-write, and full-graph `torch.compile` completed successfully. The audit host did not have the pretrained DistilBERT checkpoint, vLLM, TGI, SGLang, or TensorRT-LLM SDK installed; those paths remain optional-dependency/adapter validations rather than claims of upstream-server certification.
 
 ## 11. Hardware Limitations & VRAM Matrix
 
