@@ -50,9 +50,15 @@ class DataConfig:
 class ProductionDataCollator:
     """Production-grade data collator supporting dynamic padding to multiples."""
 
-    def __init__(self, pad_token_id: int = 0, pad_to_multiple_of: int | None = 8) -> None:
+    def __init__(
+        self,
+        pad_token_id: int = 0,
+        pad_to_multiple_of: int | None = 8,
+        label_pad_token_id: int = -100,
+    ) -> None:
         self.pad_token_id = pad_token_id
         self.pad_to_multiple_of = pad_to_multiple_of or 1
+        self.label_pad_token_id = label_pad_token_id
 
     def __call__(self, features: list[dict[str, Any]]) -> dict[str, torch.Tensor]:
         if not features:
@@ -82,7 +88,13 @@ class ProductionDataCollator:
             mask = to_list(f.get("attention_mask", [1] * len(ids)))
             batch_attention_mask.append(mask + [0] * pad_len)
             if "labels" in f:
-                batch_labels.append(f["labels"])
+                lbl = f["labels"]
+                if isinstance(lbl, (list, tuple, torch.Tensor)):
+                    lbl_list = to_list(lbl)
+                    l_pad = max_len - len(lbl_list)
+                    batch_labels.append(lbl_list + [self.label_pad_token_id] * l_pad)
+                else:
+                    batch_labels.append(lbl)
 
         batch = {
             "input_ids": torch.tensor(batch_input_ids, dtype=torch.long),
@@ -92,7 +104,7 @@ class ProductionDataCollator:
             if isinstance(batch_labels[0], (int, float)):
                 batch["labels"] = torch.tensor(batch_labels)
             else:
-                batch["labels"] = torch.tensor(batch_labels)
+                batch["labels"] = torch.tensor(batch_labels, dtype=torch.long)
 
         return batch
 

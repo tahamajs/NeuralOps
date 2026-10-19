@@ -193,6 +193,7 @@ class MLoRQLoRALinear(nn.Module):
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
+        self._compressed_params: int | None = None
 
     def _dequantize(self, dtype: torch.dtype, device: torch.device):
         U = _dequantize_packed(self.U_packed, self.bits, self.U_scale, self.U_shape, device, dtype)
