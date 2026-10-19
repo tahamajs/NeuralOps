@@ -36,7 +36,7 @@ from neuralops.core.registry import (
     list_compressors,
 )
 
-__version__ = "1.3.7"
+__version__ = "1.4.0"
 
 if "neuralops" in sys.modules:
     _top = sys.modules["neuralops"]

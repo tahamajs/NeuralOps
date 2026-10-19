@@ -29,7 +29,7 @@ def extract_surgical_manifest(model: nn.Module) -> Dict[str, Any]:
       - Module class, registration key, constructor parameters, and parameter shapes
     """
     manifest: Dict[str, Any] = {
-        "neuralops_version": "1.3.7",
+        "neuralops_version": "1.4.0",
         "model_class": model.__class__.__name__,
         "submodules": {},
     }

@@ -1,3 +1,4 @@
+<!-- Author: Taha Majlesi -->
 # NeuralOps Strategic Roadmap
 
 This document outlines the architectural roadmap, development milestones, and release strategy for **NeuralOps** (`SVD_linear_Attention`).

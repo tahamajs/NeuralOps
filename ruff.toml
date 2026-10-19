@@ -9,6 +9,9 @@ exclude = [
     "docs/",
     "notebooks/*.ipynb",
     ".git/",
+    ".venv/",
+    "build/",
+    "dist/",
     "*.egg-info",
 ]
 

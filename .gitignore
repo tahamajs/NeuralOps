@@ -1,5 +1,6 @@
+# Author: Taha Majlesi
 # ============================================================
-# Python & Bytecode
+# Python & Bytecode / Compiled Extensions
 # ============================================================
 __pycache__/
 */__pycache__/
@@ -9,6 +10,11 @@ __pycache__/
 *.pyo
 *.pyc
 *.pyd
+*.so
+*.o
+*.dylib
+*.dll
+*.a
 .Python
 
 # Distribution / Packaging
@@ -99,6 +105,9 @@ desktop.ini
 # Logs & Runtime Outputs
 # ============================================================
 *.log
+*.err
+results/**/*.err
+**/*.err
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -229,13 +238,35 @@ MasterHttpRelayVPN-python_testing/
 # ============================================================
 # Absolute Overrides: Never Track Bytecode, Cache, Non-Code, or Large Artifacts
 # ============================================================
+**/.DS_Store
+.DS_Store
 **/__pycache__/
 __pycache__/
 *.py[cod]
 *.pyc
 *.pyo
 *$py.class
+*.so
+*.o
+*.dylib
+*.dll
+*.a
 *.log
+*.err
+results/**/*.err
+**/*.err
+.pytest_cache/
+**/.pytest_cache/
+.ruff_cache/
+**/.ruff_cache/
+.mypy_cache/
+**/.mypy_cache/
+.ipynb_checkpoints/
+**/.ipynb_checkpoints/
+*.aux
+*.out
+*.synctex.gz
+*.synctex(busy)
 *.jsonl
 *.pdf
 *.tar.gz
@@ -244,6 +275,7 @@ __pycache__/
 
 # Non-code, docs, & academic directories completely ignored
 docs/
+!docs/ROADMAP.md
 academic/
 paper/
 thesis_final/

@@ -1,6 +1,6 @@
 # NeuralOps CUDA C++ Hot-Path Subsystem
 
-This package provides native, production-grade CUDA C++ implementations of hot-path operations for NeuralOps (SVD_linear_Attention v1.3.7+).
+This package provides native, production-grade CUDA C++ implementations of hot-path operations for NeuralOps (SVD_linear_Attention v1.4.0+).
 
 ## Architecture
 
