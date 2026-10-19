@@ -110,14 +110,8 @@ for idx, name in enumerate(attn_keys):
         # c) Backward pass
         loss = out_tensor.sum()
         loss.backward()
-        if x.grad is None or not torch.isfinite(x.grad).all():
-            # Some modules or frozen modules might need input gradient check
-            pass
-
         # d) Numerical stability
-        std_val = float(out_tensor.std().item())
-        if not (1e-6 < std_val < 1000.0):
-            pass
+        _ = float(out_tensor.std().item())
 
         attn_passed.append(name)
     except Exception as exc:

@@ -6,6 +6,8 @@ Lightweight YAML and dictionary configuration loader for core execution settings
 Author: Taha Majlesi
 """
 
+from __future__ import annotations
+
 from typing import Any
 
 import yaml
@@ -21,3 +23,7 @@ def save_config(config: dict[str, Any], path: str) -> None:
     """Persist config to disk."""
     with open(path, "w") as f:
         yaml.safe_dump(config, f)
+
+
+__all__ = ["load_config", "save_config"]
+

@@ -17,6 +17,8 @@ Extracts benchmark metrics across:
 - results/SEQLEN_SCALING_MASTER.csv
 - results/master_benchmark_summary.csv
 - results/pareto_table.csv
+
+Author: Taha Majlesi
 """
 
 import csv

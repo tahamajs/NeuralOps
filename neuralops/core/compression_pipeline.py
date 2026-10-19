@@ -6,6 +6,8 @@ Multi-stage compression coordinator executing SVD factorization, structural prun
 Author: Taha Majlesi
 """
 
+from __future__ import annotations
+
 import logging
 from typing import Any
 
@@ -73,3 +75,7 @@ def compress_model(
     """Convenience function to compress a model with a configuration dict."""
     pipeline = CompressionPipeline(model, config, tokenizer)
     return pipeline.run()
+
+
+__all__ = ["CompressionPipeline", "compress_model"]
+

@@ -3,6 +3,8 @@
 Handles base transformer model instantiations (BERT, RoBERTa, GPT-2, T5, Qwen),
 state-dict caching, and module injection into target model graphs (attention replacement,
 compressor dispatch, KV-cache tuning, and custom injectors).
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

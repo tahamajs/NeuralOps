@@ -11,11 +11,10 @@ Author: Taha Majlesi
 from __future__ import annotations
 
 import argparse
+import csv
 import json
 import logging
-import os
 import sys
-import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -41,8 +40,6 @@ try:
     import lm_eval
     import lm_eval.api.model
     import lm_eval.api.registry
-    from lm_eval.api.instance import Instance
-    from lm_eval import evaluator
     BaseLM = lm_eval.api.model.LM
     register_model = lm_eval.api.registry.register_model
     HAS_LM_EVAL = True
@@ -54,7 +51,6 @@ except (ImportError, AttributeError, ModuleNotFoundError):
     except (ImportError, AttributeError, ModuleNotFoundError):
         class BaseLM:
             """Baselm definition."""
-            pass
         register_model = lambda *names: lambda cls: cls
         HAS_LM_EVAL = False
 
@@ -312,6 +308,51 @@ class NeuralOpsLMWrapper(BaseLM):
         return results
 
 
+def save_evaluation_results(
+    results: Dict[str, Any],
+    json_path: Optional[Union[str, Path]] = None,
+    csv_path: Optional[Union[str, Path]] = None,
+) -> None:
+    """Save structured evaluation results to JSON and/or CSV files."""
+    if json_path:
+        out_j = Path(json_path)
+        out_j.parent.mkdir(parents=True, exist_ok=True)
+        with open(out_j, "w", encoding="utf-8") as f:
+            json.dump(results, f, indent=2, default=str)
+        logger.info("Saved evaluation JSON to %s", out_j)
+
+    if csv_path:
+        out_c = Path(csv_path)
+        out_c.parent.mkdir(parents=True, exist_ok=True)
+        rows: List[Dict[str, Any]] = []
+        task_results = results.get("results", {})
+        if isinstance(task_results, dict) and task_results:
+            for task_name, task_metrics in task_results.items():
+                if isinstance(task_metrics, dict):
+                    row: Dict[str, Any] = {
+                        "model": results.get("model", results.get("model_name", "")),
+                        "module_name": results.get("module", results.get("module_name", "")),
+                        "module_type": results.get("module_type", ""),
+                        "task": task_name,
+                    }
+                    for k, v in task_metrics.items():
+                        if isinstance(v, (int, float, str, bool)):
+                            row[k] = v
+                    rows.append(row)
+        if not rows:
+            flat_row = {k: v for k, v in results.items() if isinstance(v, (int, float, str, bool))}
+            if flat_row:
+                rows.append(flat_row)
+
+        if rows:
+            fieldnames = list(dict.fromkeys([k for r in rows for k in r.keys()]))
+            with open(out_c, "w", encoding="utf-8", newline="") as f:
+                writer = csv.DictWriter(f, fieldnames=fieldnames)
+                writer.writeheader()
+                writer.writerows(rows)
+            logger.info("Saved evaluation CSV to %s", out_c)
+
+
 def run_evaluation(
     model: Union[str, nn.Module] = "gpt2",
     module_name: Optional[str] = None,
@@ -323,6 +364,7 @@ def run_evaluation(
     limit: Optional[int] = None,
     device: str = "cuda",
     output_path: Optional[str] = None,
+    output_csv_path: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     Run zero-shot evaluation on lm-eval tasks using NeuralOpsLMWrapper.
@@ -339,27 +381,38 @@ def run_evaluation(
 
     if not HAS_LM_EVAL:
         logger.warning("lm_eval not installed. Returning dry-run evaluation stub.")
-        return {"model": str(model), "module": module_name, "tasks": tasks, "status": "lm_eval_not_installed"}
+        eval_results: Dict[str, Any] = {
+            "model": str(model),
+            "module_name": module_name or "none",
+            "module_type": module_type,
+            "tasks": tasks,
+            "status": "lm_eval_not_installed",
+        }
+    else:
+        try:
+            from lm_eval import simple_evaluate
+            eval_results = simple_evaluate(
+                model=lm,
+                tasks=tasks,
+                num_fewshot=num_fewshot,
+                batch_size=batch_size,
+                limit=limit,
+            )
+            eval_results["module_name"] = module_name or "none"
+            eval_results["module_type"] = module_type
+        except Exception as e:
+            logger.error("Error executing lm_eval simple_evaluate: %s", e)
+            eval_results = {
+                "error": str(e),
+                "tasks": tasks,
+                "module_name": module_name or "none",
+                "module_type": module_type,
+            }
 
-    try:
-        from lm_eval import simple_evaluate
-        eval_results = simple_evaluate(
-            model=lm,
-            tasks=tasks,
-            num_fewshot=num_fewshot,
-            batch_size=batch_size,
-            limit=limit,
-        )
-    except Exception as e:
-        logger.error(f"Error executing lm_eval simple_evaluate: {e}")
-        eval_results = {"error": str(e), "tasks": tasks}
-
-    if output_path:
-        out_p = Path(output_path)
-        out_p.parent.mkdir(parents=True, exist_ok=True)
-        with open(out_p, "w", encoding="utf-8") as f:
-            json.dump(eval_results, f, indent=2, default=str)
-        logger.info(f"Saved evaluation results to {output_path}")
+    # Handle structured outputs
+    effective_json = output_path if (output_path and not output_path.endswith(".csv")) else None
+    effective_csv = output_csv_path or (output_path if (output_path and output_path.endswith(".csv")) else None)
+    save_evaluation_results(eval_results, json_path=effective_json, csv_path=effective_csv)
 
     return eval_results
 
@@ -376,7 +429,8 @@ def main() -> None:
     parser.add_argument("--max-length", type=int, default=2048, help="Max sequence length")
     parser.add_argument("--limit", type=int, default=None, help="Limit number of evaluation examples per task")
     parser.add_argument("--device", type=str, default="cuda" if torch.cuda.is_available() else "cpu")
-    parser.add_argument("--output", type=str, default=None, help="Path to save output JSON")
+    parser.add_argument("--output", type=str, default=None, help="Path to save output JSON (or CSV if ending with .csv)")
+    parser.add_argument("--output-csv", type=str, default=None, help="Path to save output CSV summary")
     args = parser.parse_args()
 
     results = run_evaluation(
@@ -390,6 +444,7 @@ def main() -> None:
         limit=args.limit,
         device=args.device,
         output_path=args.output,
+        output_csv_path=args.output_csv,
     )
     print(json.dumps(results, indent=2, default=str))
 

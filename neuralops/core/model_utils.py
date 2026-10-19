@@ -6,6 +6,8 @@ Model loading, parameter freezing, weight inspection, and buffer verification he
 Author: Taha Majlesi
 """
 
+from __future__ import annotations
+
 from contextlib import contextmanager
 from typing import Any
 

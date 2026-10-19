@@ -2,6 +2,8 @@
 """Interactive Hardware Roofline Visualizer for NeuralOps.
 
 Generates standalone interactive HTML Plotly roofline charts for empirical Triton kernels.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

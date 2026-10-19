@@ -10,6 +10,8 @@ Usage (from project root):
         --sweep_csv results/02_glue_sweeps/distilbert/distilbert_mnli_full_mnli_sweep/summary.csv \
         --dataset_dir neuralops/data/glue_data/mnli \
         --out results/02_glue_sweeps/distilbert/distilbert_mnli_full_mnli_sweep/full_mnli_validation.csv
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

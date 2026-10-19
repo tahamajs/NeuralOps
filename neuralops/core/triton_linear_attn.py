@@ -6,6 +6,8 @@ Backward-compatibility bridge exposing Triton-accelerated causal linear attentio
 Author: Taha Majlesi
 """
 
+from __future__ import annotations
+
 from typing import Any
 import torch
 

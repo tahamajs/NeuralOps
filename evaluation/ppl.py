@@ -5,19 +5,20 @@ Modeled after FlashLinearAttention / Long-Context LM evaluation protocols.
 Supports evaluating fixed-length contexts (block_size, bucket_size, batch_size),
 tracking position-wise NLL buckets across the context window, and streaming
 evaluations on PG19, Wikitext, or custom datasets.
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations
 
 import argparse
-import gc
 import json
 import logging
 import math
 import sys
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Union
 
 import torch
 import torch.nn as nn
@@ -31,7 +32,6 @@ for p in [str(CODES), str(ROOT)]:
     if p not in sys.path:
         sys.path.insert(0, p)
 
-from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
 from evaluation.eval_patcher import apply_module_to_model
 
 logger = logging.getLogger("evaluation.ppl")

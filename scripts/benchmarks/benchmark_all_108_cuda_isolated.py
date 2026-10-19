@@ -534,8 +534,8 @@ def generate_args(mod_name, sig, device, dtype, B=4, H=8, N=512, D=64):
     for param_name, param in sig.parameters.items():
         if param.default is not inspect.Parameter.empty:
             anno = str(param.annotation)
-            if "Tensor" in anno and "Optional" not in anno: pass
-            else: continue
+            if "Tensor" not in anno or "Optional" in anno:
+                continue
 
         p_name = param_name.lower()
         anno = str(param.annotation)

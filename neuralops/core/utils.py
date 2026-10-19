@@ -6,4 +6,7 @@ Namespace redirect routing module imports to the centralized neuralops.core.util
 Author: Taha Majlesi
 """
 
-from neuralops.core.utils import *
+from __future__ import annotations
+
+from neuralops.core.utils import *  # noqa: F403
+

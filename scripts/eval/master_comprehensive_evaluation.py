@@ -33,6 +33,8 @@ Evaluates across:
 Outputs:
   - results/master_comprehensive_evaluation_matrix.json
   - results/master_comprehensive_evaluation_matrix.md
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

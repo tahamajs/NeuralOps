@@ -96,7 +96,6 @@ class BenchmarkConfig:
 @dataclass
 class BenchmarkRunConfig(BenchmarkConfig):
     """Base benchmark run configuration (alias for BenchmarkConfig)."""
-    pass
 
 
 @dataclass

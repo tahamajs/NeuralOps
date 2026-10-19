@@ -6,6 +6,8 @@ Unifies evaluation across:
   - Representation Geometry & Alignment: Centered Kernel Alignment (Linear CKA, Kernel CKA)
   - Numerical Fidelity: Cosine Similarity, Max Absolute Deviation (L_inf), L2 Error, Relative Frobenius Norm
   - Hardware & Performance Profiling: Peak GPU VRAM (allocated/reserved), Throughput (tokens/s, samples/s), Latency percentiles (P50, P90, P99)
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

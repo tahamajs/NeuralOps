@@ -1,3 +1,6 @@
+// BigBird Attention CUDA Kernel
+// Author: Taha Majlesi
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -5,15 +8,7 @@
 
 namespace neuralops { namespace cuda {
 
-// BigBird Sparse Attention Forward Kernel:
-// Form: Attends to global tokens, sliding local window tokens, and pseudo-random tokens.
-//
-// Hardware-level optimization:
-// 1. Warp-Per-Query (32 threads/query token): 100% coalesced vector loads across lane and zero register spilling.
-// 2. Intra-warp shuffle reduction (__shfl_xor_sync) for dot-product.
-// 3. Single-pass online softmax with dynamic value rescaling (FlashAttention style).
-// 4. Strict FP32 intermediate accumulation to avoid precision overflow.
-template <typename scalar_t>
+    template <typename scalar_t>
 __global__ void __launch_bounds__(128) bigbird_fwd_kernel(
     scalar_t* __restrict__ out,
     const scalar_t* __restrict__ q,

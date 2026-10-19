@@ -5,6 +5,8 @@ Usage:
     python scripts/web/monitor_server.py --port 8080
     python scripts/web/monitor_server.py --daemon
     python scripts/web/monitor_server.py --standard-only
+
+Author: Taha Majlesi
 """
 
 from __future__ import annotations

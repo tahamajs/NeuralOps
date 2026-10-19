@@ -75,9 +75,7 @@ def generate_args_for_sig(sig, param_annotations, device, dtype, B=4, H=8, N=512
         if param.default is not inspect.Parameter.empty:
             # Has default, only provide if tensor
             anno = str(param.annotation)
-            if "Tensor" in anno and "Optional" not in anno:
-                pass
-            else:
+            if "Tensor" not in anno or "Optional" in anno:
                 continue
 
         p_name = param_name.lower()

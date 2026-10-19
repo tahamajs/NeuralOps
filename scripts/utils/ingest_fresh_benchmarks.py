@@ -14,6 +14,8 @@ Updates:
 - results/MASTER_RESULTS_MATRIX.csv
 - Module dossiers in results/by_module/
 - Category summaries in results/by_category/
+
+Author: Taha Majlesi
 """
 
 import csv
