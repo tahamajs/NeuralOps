@@ -62,6 +62,7 @@ class SDRMCompressor(BaseCompressor):
         device: str | torch.device | None = None,
         cfg: Any | None = None,
         **kwargs: Any,
+    ) -> None:
         super().__init__(model, name="sdrm", **kwargs)
         self.model: nn.Module = self.model
         self._original_params: int = getattr(self, "_original_params", 0)

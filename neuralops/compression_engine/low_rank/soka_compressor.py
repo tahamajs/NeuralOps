@@ -106,6 +106,7 @@ class LowRankCompressor(BaseCompressor):
         fallback_to_original: bool = False,
         target_modules: list[str] | None = None,
         **kwargs: Any,
+    ) -> None:
         super().__init__(model, name="soka", **kwargs)
         self.model: nn.Module = self.model
         self._original_params: int = getattr(self, "_original_params", 0)

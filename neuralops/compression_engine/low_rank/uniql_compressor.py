@@ -179,6 +179,7 @@ class UniQLCompressor(BaseCompressor):
         target_attention_only: bool = False,
         quantize_bias: bool = False,
         **kwargs: Any,
+    ) -> None:
         super().__init__(model, name="uniql", **kwargs)
         self.model: nn.Module = self.model
         self._original_params: int = getattr(self, "_original_params", 0)
