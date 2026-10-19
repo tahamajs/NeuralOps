@@ -208,6 +208,7 @@ class COMPOTCompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model if model is not None else nn.Identity(), name="compot", **kwargs)
+        self._compressed_params: int | None = None
         conf = cfg or kwargs.get("comp_config")
         if conf is not None:
             rank = getattr(conf, "compot_rank", getattr(conf, "rank", rank))

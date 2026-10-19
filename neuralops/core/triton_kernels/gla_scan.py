@@ -18,6 +18,8 @@ import torch
 import torch.nn.functional as F
 
 
+from typing import Any
+
 from neuralops.core.triton_kernels._common import tl, triton
 
 MAX_REGISTER_DIM = 64
@@ -421,16 +423,16 @@ def _gla_bwd_kernel(
 class _GLAScanFn(torch.autograd.Function):
     @staticmethod
     def forward(
-        ctx,
-        q,
-        k,
-        v,
-        lambdas,
-        initial_state=None,
-        mask=None,
-        return_final_state=False,
-        use_normalizer=True,
-    ):
+        ctx: Any,
+        q: Any,
+        k: Any,
+        v: Any,
+        lambdas: Any,
+        initial_state: Any = None,
+        mask: Any = None,
+        return_final_state: Any = False,
+        use_normalizer: Any = True,
+    ) -> Any:
         B, H, L, D = q.shape
         assert D <= MAX_REGISTER_DIM, f"GLA head_dim {D} > {MAX_REGISTER_DIM}"
 
@@ -541,7 +543,7 @@ class _GLAScanFn(torch.autograd.Function):
         return y
 
     @staticmethod
-    def backward(ctx, *grad_outputs):
+    def backward(ctx: Any, *grad_outputs: Any) -> tuple[Any, ...]:
         dy = grad_outputs[0].contiguous()
         q, k, v, lambdas, s_workspace, z_workspace, init_state, mask_t = ctx.saved_tensors
         B, H, L, D = q.shape

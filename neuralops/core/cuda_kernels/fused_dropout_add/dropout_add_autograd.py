@@ -85,7 +85,7 @@ def _fwd_dispatch(x, residual, p, training, seed):
         p=p,
         training=training,
         seed=seed,
-        kernel_name=fused_dropout_add,
+        kernel_name="fused_dropout_add",
     )
 
 

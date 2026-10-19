@@ -108,6 +108,7 @@ class BonsaiPrunedLoRALinear(nn.Module):
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
+        self._compressed_params: int | None = None
 
     @property
     def effective_weight(self) -> torch.Tensor:
@@ -243,6 +244,7 @@ class BonsaiPruner(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="bonsai", **kwargs)
+        self._compressed_params: int | None = None
         conf = cfg or kwargs.get("comp_config")
         if conf is not None:
             sparsity = _cfg_get(conf, "sparsity", _cfg_get(conf, "bonsai_sparsity", sparsity))

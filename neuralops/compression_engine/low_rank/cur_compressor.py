@@ -290,6 +290,7 @@ class CURCompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model if model is not None else nn.Identity(), name="cur", **kwargs)
+        self._compressed_params: int | None = None
 
         self.rank = int(_cfg_get(cfg, "cur_rank", _cfg_get(cfg, "rank", rank)))
         self.min_rank = int(_cfg_get(cfg, "cur_min_rank", _cfg_get(cfg, "min_rank", min_rank)))

@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import logging
 from abc import abstractmethod
-from typing import Any
+from typing import Any, Callable
 
 import torch
 import torch.nn as nn
@@ -66,6 +66,11 @@ class BaseAttention(nn.Module):
                 self.hidden_size // self.num_heads if self.num_heads > 0 else 64,
             ),
         )
+        self.rotary_emb: nn.Module | Callable[..., Any] | None = None
+        self.is_causal: bool = False
+        self.is_decoder: bool = False
+        self.has_relative_attention_bias: bool = False
+        self.relative_attention_bias: nn.Module | Callable[..., Any] | None = None
 
     @property
     def device(self) -> torch.device:
@@ -222,6 +227,11 @@ class BaseCompressor:
         self.kwargs = kwargs
         self._compressed_once: bool = False
         self._original_params = self._count_params(model)
+        self._compressed_params: int | None = None
+        self.stats: dict[str, Any] = {}
+        self._calibration_cache: Any = None
+        self.hnc_res: Any = None
+        self._merged: bool = False
 
     def __call__(self, *args, **kwargs) -> Any:
         """Allow compressor instance to act as a callable model forward wrapper."""

@@ -352,6 +352,7 @@ class CoMeCompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="come", **kwargs)
+        self._compressed_params: int | None = None
         conf = kwargs.get("comp_config", kwargs.get("cfg"))
 
         rank = _cfg_get(conf, "rank", _cfg_get(conf, "come_rank", rank))

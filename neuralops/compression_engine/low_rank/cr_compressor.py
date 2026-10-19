@@ -233,6 +233,7 @@ class CRCompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model if model is not None else nn.Identity(), name="cr", **kwargs)
+        self._compressed_params: int | None = None
         c_rank = _cfg_get(cfg, "cr_rank", _cfg_get(cfg, "rank", rank))
         c_max_error = _cfg_get(cfg, "cr_max_error", _cfg_get(cfg, "max_error", max_error))
         c_fallback = _cfg_get(cfg, "fallback_to_original", fallback_to_original)

@@ -17,6 +17,8 @@ import math
 import torch
 import torch.nn.functional as F
 
+from typing import Any
+
 from neuralops.core.triton_kernels._common import tl, triton
 
 MAX_REGISTER_DIM = 64
@@ -341,7 +343,7 @@ def _fms_bwd_kernel(
 
 class _FMSScanFn(torch.autograd.Function):
     @staticmethod
-    def forward(ctx, q, k, v, decay):
+    def forward(ctx: Any, q: Any, k: Any, v: Any, decay: Any) -> Any:
         B, H, L, D = q.shape
         assert D <= MAX_REGISTER_DIM, f"head_dim {D} > {MAX_REGISTER_DIM}"
 
@@ -403,7 +405,7 @@ class _FMSScanFn(torch.autograd.Function):
         return y
 
     @staticmethod
-    def backward(ctx, dy):
+    def backward(ctx: Any, dy: Any) -> tuple[Any, ...]:
         q, k, v, decay, s_workspace, z_workspace = ctx.saved_tensors
         B, H, L, D = q.shape
 

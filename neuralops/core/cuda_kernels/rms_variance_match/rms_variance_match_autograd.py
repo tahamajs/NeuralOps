@@ -73,7 +73,7 @@ def _fwd_dispatch(y, v_ref, clamp_min=0.25, clamp_max=4.0):
         v_ref,
         clamp_min=clamp_min,
         clamp_max=clamp_max,
-        kernel_name=rms_variance_match,
+        kernel_name="rms_variance_match",
     )
 
 

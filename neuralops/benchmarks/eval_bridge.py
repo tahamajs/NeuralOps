@@ -350,8 +350,8 @@ class BenchmarkEvaluator:
             try:
                 from neuralops.benchmarks.models.loader import load_universal_model
 
-                model_inst, _ = load_universal_model(
-                    model_name_or_path=self.raw_model,
+                model_inst, _, _ = load_universal_model(
+                    model_name=self.raw_model,
                     device=str(self.device),
                     dtype=self.dtype_str,
                 )
