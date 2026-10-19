@@ -136,10 +136,8 @@ def test_gdn_delta_rule_correctness():
 def test_hgrn2_spatial_scan_correctness():
     B, H, L, D = 2, 2, 8, 16
     q = torch.randn(B, H, L, D)
-    k = torch.randn(B, H, L, D)
-    v = torch.randn(B, H, L, D)
     g = -torch.relu(torch.randn(B, H, L))
-    out = ck.hgrn2_spatial_scan(q, k, v, g)
+    out = ck.hgrn2_spatial_scan(q, g)
     assert out.shape == q.shape
 
 def test_gla_unnormalized_scan_correctness():
