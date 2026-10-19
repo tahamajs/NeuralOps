@@ -1,10 +1,16 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 /*
  * Hadamard Linear Attention (HLA) CUDA C++ Kernel
  *
  * Hardware-accelerated causal linear attention with per-head exponential decay
  * and normalizer vector.
  *
- * Author: Taha Majlesi
  */
 
 #include <torch/extension.h>
@@ -45,7 +51,6 @@ __global__ void hla_attention_fwd_kernel(
     __shared__ float s_v[MAX_D];
     __shared__ float s_q[MAX_D];
 
-    // Initialize recurrent state
     for (int idx = tid; idx < D * D; idx += num_threads) {
         int r = idx / D;
         int c = idx % D;
@@ -70,7 +75,6 @@ __global__ void hla_attention_fwd_kernel(
             s_z[tid] = gamma * s_z[tid] + s_k[tid];
         }
 
-        // Update state S = gamma * S + k^T * v
         for (int idx = tid; idx < D * D; idx += num_threads) {
             int r = idx / D;
             int c = idx % D;
@@ -78,7 +82,6 @@ __global__ void hla_attention_fwd_kernel(
         }
         __syncthreads();
 
-        // Compute denominator = q @ z
         float local_denom = 0.0f;
         for (int i = tid; i < D; i += num_threads) {
             local_denom += s_q[i] * s_z[i];
@@ -91,7 +94,6 @@ __global__ void hla_attention_fwd_kernel(
         __syncthreads();
         const float denom = s_denom;
 
-        // Compute out = (q @ S) / denom
         for (int col = tid; col < D; col += num_threads) {
             float num = 0.0f;
             for (int r = 0; r < D; ++r) {
@@ -103,8 +105,8 @@ __global__ void hla_attention_fwd_kernel(
     }
 }
 
-} // namespace cuda
-} // namespace neuralops
+}
+}
 
 torch::Tensor hla_attention_fwd(
     const torch::Tensor& q,
@@ -129,7 +131,7 @@ torch::Tensor hla_attention_fwd(
     auto decay_f = decay.contiguous().to(torch::kFloat32);
     int d_sb = 0, d_sh = 0, d_sl = 0;
     if (decay_f.dim() == 4) {
-        decay_f = decay_f.squeeze(-1); // (B, H, L) or (1, H, 1)
+        decay_f = decay_f.squeeze(-1);
     }
     if (decay_f.dim() == 3) {
         d_sb = (decay_f.size(0) > 1) ? decay_f.stride(0) : 0;

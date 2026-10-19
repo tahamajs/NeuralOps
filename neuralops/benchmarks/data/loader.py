@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Universal Dataset Loader supporting ANY Hugging Face dataset, local files, and streaming
 
 Implements loader functionality for NeuralOps.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -22,7 +26,6 @@ from neuralops.benchmarks.results.schema import DatasetMetadata
 
 LOG = logging.getLogger(__name__)
 
-# Registry for custom dataset format loaders
 DATASET_LOADER_REGISTRY: Dict[str, Type["DatasetLoader"]] = {}
 
 
@@ -92,19 +95,16 @@ def auto_detect_columns(column_names: List[str]) -> Tuple[str, Optional[str], Op
     pair_col: Optional[str] = None
     label_col: Optional[str] = None
 
-    # Detect text column
     for c in ("text", "sentence", "review", "prompt", "input", "document", "question"):
         if c in cols:
             text_col = c
             break
 
-    # Detect second text column for pair tasks
     for c in ("sentence2", "hypothesis", "context"):
         if c in cols:
             pair_col = c
             break
 
-    # Detect label column
     for c in ("label", "labels", "target", "sentiment", "score", "answer"):
         if c in cols:
             label_col = c
@@ -138,7 +138,6 @@ def load_universal_dataset(
     labels: Optional[List[Any]] = None
     num_labels = 2
 
-    # 1. Local File Loading
     if is_local_file:
         suffix = p.suffix.lower().replace(".", "")
         if suffix in DATASET_LOADER_REGISTRY:
@@ -158,7 +157,6 @@ def load_universal_dataset(
             texts2 = [str(x) for x in df[c_pair].tolist()]
         if l_col and l_col in df.columns:
             raw_labels = df[l_col].tolist()
-            # If string categories, convert to unique int IDs
             if raw_labels and isinstance(raw_labels[0], str):
                 unique_cats = sorted(list(set(raw_labels)))
                 cat_to_id = {c: i for i, c in enumerate(unique_cats)}
@@ -168,7 +166,6 @@ def load_universal_dataset(
                 labels = [int(x) for x in raw_labels]
                 num_labels = max(labels) + 1 if labels else 2
 
-    # 2. Hugging Face Hub Dataset Loading
     else:
         from datasets import load_dataset
         ds_name = dataset_name_or_path
@@ -176,7 +173,6 @@ def load_universal_dataset(
         if language:
             hf_kwargs["language"] = language
 
-        # Handle subsets like glue/sst2 or wikitext
         if "/" in ds_name and not ds_name.startswith("tatsu-lab"):
             parts = ds_name.split("/", 1)
             raw_ds = load_dataset(parts[0], parts[1], split=split, streaming=streaming, **hf_kwargs)
@@ -185,7 +181,6 @@ def load_universal_dataset(
         else:
             raw_ds = load_dataset(ds_name, split=split, streaming=streaming, **hf_kwargs)
 
-        # Handle streaming slice
         if streaming and max_samples:
             raw_ds = raw_ds.take(max_samples)
 
@@ -221,7 +216,6 @@ def load_universal_dataset(
                 labels = [int(x) for x in labels_list]
                 num_labels = max(labels) + 1 if labels else 2
 
-    # 3. Tokenize into TensorDataset
     if texts2 is not None:
         enc = tokenizer(
             texts,
@@ -244,7 +238,6 @@ def load_universal_dataset(
     if labels is not None and len(labels) == len(texts):
         tensors.append(torch.tensor(labels, dtype=torch.long))
     else:
-        # Default labels to input_ids for autoregressive tasks
         tensors.append(enc["input_ids"])
 
     if "token_type_ids" in enc:

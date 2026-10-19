@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Universal Task Adapters supporting all 14 Hugging Face task types
 
 Implements adapter functionality for NeuralOps.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -107,7 +111,6 @@ class TaskAdapter:
         )
         self.model_meta = inspect_model_metadata(self.model, self.config, self.model_name)
 
-        # Ingest datasets
         train_ds, _ = load_universal_dataset(
             dataset_name_or_path=self.dataset_name,
             tokenizer=self.tokenizer,
@@ -177,7 +180,7 @@ class TaskAdapter:
 
             total_loss += loss.item()
             steps += 1
-            if steps >= 200:  # Bound steps for fast sweeps
+            if steps >= 200:
                 break
         return total_loss / max(steps, 1)
 

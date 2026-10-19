@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Dataset loading, batch formatting, and DataLoader creation for benchmarks
 
 Implements data loader functionality for NeuralOps.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -56,7 +60,6 @@ def get_dataset_metadata(
     info = GLUE_TASKS.get(name_clean, {"num_labels": 2, "task": "classification"})
     total_samples = len(dataset) if hasattr(dataset, "__len__") else 0
     
-    # Resolve eval size: explicit > GLUE standard validation size > total_samples
     expected_eval = num_eval
     if expected_eval is None and name_clean in GLUE_VALIDATION_SIZES:
         expected_eval = GLUE_VALIDATION_SIZES[name_clean]
@@ -85,10 +88,8 @@ def load_dataset_by_name(
     Supports GLUE tasks and language modeling (Wikitext).
     """
     import os
-    # Prefer local cached dataset files and suppress internet warning if HF cache exists
     hf_cache_dir = os.environ.get("HF_DATASETS_CACHE") or os.path.expanduser("~/.cache/huggingface/datasets")
     if os.path.isdir(hf_cache_dir):
-        # We allow datasets library to check cache first without verbose network timeout spam
         os.environ.setdefault("HF_HUB_DISABLE_SYMLINKS_WARNING", "1")
 
     if max_samples is None:
@@ -99,7 +100,6 @@ def load_dataset_by_name(
     name_clean = name.lower().replace("glue_", "")
     from datasets import load_dataset
 
-    # 1. GLUE Classification
     if name_clean in GLUE_TASKS:
         cfg = GLUE_TASKS[name_clean]
         try:
@@ -138,7 +138,6 @@ def load_dataset_by_name(
             tensors.append(enc["token_type_ids"])
         return TensorDataset(*tensors)
 
-    # 2. Wikitext Language Modeling
     if "wikitext" in name_clean:
         subset = "wikitext-2-raw-v1" if "wikitext2" in name_clean or "wikitext-2" in name_clean else "wikitext-103-raw-v1"
         split_name = "test" if split in ("val", "validation", "test") else split
@@ -171,7 +170,6 @@ def make_dataloader(
     is computing. pin_memory=True enables DMA transfers.
     """
     if num_workers is None:
-        # Use 0 by default to prevent forkserver / subprocess circular module import issues with Python 3.14
         num_workers = int(os.environ.get("NEURALOPS_DATALOADER_WORKERS", "0"))
 
     return DataLoader(

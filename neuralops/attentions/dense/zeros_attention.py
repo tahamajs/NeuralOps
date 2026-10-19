@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Zero Attention Baseline
 
 Identity baseline module producing zeroed attention output for ablation and structural testing.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -581,7 +585,6 @@ def inject_zeros_attention(
         return target if num_injected > 0 else None
 
     layer = target
-
     """
     Injection hook for ZeroSAttention.
     Replaces self-attention with Zero-Mean Linear Attention.

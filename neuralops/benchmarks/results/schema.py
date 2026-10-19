@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Canonical schema and comprehensive metadata structures for NeuralOps benchmark results
 
 Supports self-contained, publication-ready run artifacts with detailed environmental, hardware, training trajectory, metrics, reproducibility, and artifact tracking.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -113,12 +117,12 @@ class RunMetadata:
 class ModuleMetadata:
     """Metadata describing candidate attention or compression module."""
     name: str = "baseline"
-    type: str = "baseline"  # Backward-compatible alias for module_type
+    type: str = "baseline"
     class_name: str = "BaselineModule"
     file_path: str = ""
-    module_type: str = "baseline"  # "attention" | "compressor" | "baseline"
+    module_type: str = "baseline"
     family: str = "dense"
-    registry: str = "none"  # "attention" | "compressor" | "none"
+    registry: str = "none"
     supports_causal: bool = True
     supports_gqa: bool = True
     supports_rope: bool = False
@@ -169,7 +173,7 @@ class DatasetMetadata:
     padding_side: str = "right"
     cache_path: str = ""
     hash: str = ""
-    task: str = "classification"  # Backward compatibility alias
+    task: str = "classification"
 
 
 @dataclass
@@ -302,41 +306,29 @@ class BenchmarkResult:
 
     Complies with 15 required sections while preserving backward compatibility.
     """
-    # 1. run_metadata
     run_metadata: RunMetadata = field(default_factory=RunMetadata)
 
-    # 2. module
     module: Dict[str, Any] = field(default_factory=dict)
 
-    # 3. model
     model: Dict[str, Any] = field(default_factory=dict)
 
-    # 4. dataset
     dataset: Dict[str, Any] = field(default_factory=dict)
 
-    # 5. config
     config: Dict[str, Any] = field(default_factory=dict)
 
-    # 6. environment
     environment: EnvironmentMetadata = field(default_factory=EnvironmentMetadata.capture)
 
-    # 7. hardware_usage
     hardware_usage: HardwareUsage = field(default_factory=HardwareUsage)
 
-    # 8. training_history
     training_history: Dict[str, Any] = field(default_factory=dict)
 
-    # 9. metrics
     metrics: Dict[str, Any] = field(default_factory=dict)
 
-    # 10. baseline_comparison
     baseline_comparison: BaselineComparison = field(default_factory=BaselineComparison)
 
-    # 11. resources
     resources: Dict[str, Any] = field(default_factory=dict)
 
-    # 12. status
-    status: str = "success"  # "success" | "failed" | "skipped" | "timed_out"
+    status: str = "success"
     error: Optional[str] = None
     traceback: Optional[str] = None
     warnings: List[str] = field(default_factory=list)
@@ -345,24 +337,19 @@ class BenchmarkResult:
     retry_count: int = 0
     max_retries: int = 2
 
-    # 13. reproducibility
     reproducibility: ReproducibilityInfo = field(default_factory=ReproducibilityInfo)
 
-    # 14. artifacts
     artifacts: ArtifactPaths = field(default_factory=ArtifactPaths)
 
-    # 15. push_info
     push_info: PushInfo = field(default_factory=PushInfo)
 
-    # First-class training regime & configuration blocks
-    training_type: str = "finetune"  # "finetune" | "kd" | "recovery" | "lora" | "none"
+    training_type: str = "finetune"
     kd_config: Dict[str, Any] = field(default_factory=dict)
     recovery_config: Dict[str, Any] = field(default_factory=dict)
     baseline_metrics: Dict[str, Any] = field(default_factory=dict)
     delta_metrics: Dict[str, Any] = field(default_factory=dict)
     checksum: str = ""
 
-    # Flat backward-compatibility fields expected by legacy consumers
     run_id: str = ""
     run_name: str = ""
     timestamp_start: str = ""
@@ -417,7 +404,6 @@ class BenchmarkResult:
         ds = self.dataset.get("name", "none")
         rk = self.config.get("rank", 0)
 
-        # Normalize config fields for hashing
         clean_cfg = {
             k: v for k, v in self.config.items()
             if k not in {"output_dir", "run_id", "session_id"}
@@ -467,7 +453,6 @@ class BenchmarkResult:
         push_dict = data_copy.pop("push_info", {})
         push_info = PushInfo(**{k: v for k, v in push_dict.items() if k in PushInfo.__dataclass_fields__}) if isinstance(push_dict, dict) and push_dict else PushInfo()
 
-        # Build dataclass instance
         res = cls(
             run_metadata=run_metadata,
             module=data_copy.get("module", {}),

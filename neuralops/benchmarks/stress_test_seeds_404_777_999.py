@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Multi-Seed Autograd and Backward-Pass Stress Test across Seeds 404, 777, 999
 
 Tests gradient fidelity, backward passes, and NaN/Inf robustness across cross_attention, tt_contraction, block_diag_gemm, and samba_moe CUDA kernels.
-
-Author: Taha Majlesi
 """
 
 import argparse
@@ -51,7 +55,6 @@ def run_backward_stress_test(
         if device.type == "cuda":
             torch.cuda.manual_seed_all(seed)
 
-        # 1. cross_attention
         try:
             B, H, Sq, Skv, D = 2, 4, 32, 48, 64
             q_cuda = torch.randn(B, H, Sq, D, device=device, dtype=torch.float32, requires_grad=True)
@@ -98,7 +101,6 @@ def run_backward_stress_test(
                 "status": f"FAIL ({exc})",
             })
 
-        # 2. tt_contraction
         try:
             p_dims = (4, 4)
             q_dims = (8, 8)
@@ -143,7 +145,6 @@ def run_backward_stress_test(
                 "status": f"FAIL ({exc})",
             })
 
-        # 3. block_diag_gemm
         try:
             x_cuda = torch.randn(4, 64, device=device, dtype=torch.float32, requires_grad=True)
             w_cuda = torch.randn(4, 16, 16, device=device, dtype=torch.float32, requires_grad=True)
@@ -186,7 +187,6 @@ def run_backward_stress_test(
                 "status": f"FAIL ({exc})",
             })
 
-        # 4. samba_moe
         try:
             e1_cuda = torch.randn(4, 32, 64, device=device, dtype=torch.float32, requires_grad=True)
             e2_cuda = torch.randn(4, 32, 64, device=device, dtype=torch.float32, requires_grad=True)
@@ -232,7 +232,6 @@ def run_backward_stress_test(
                 "status": f"FAIL ({exc})",
             })
 
-    # Output CSV
     if output_csv:
         csv_path = Path(output_csv)
         csv_path.parent.mkdir(parents=True, exist_ok=True)
@@ -243,7 +242,6 @@ def run_backward_stress_test(
                 writer.writerow(r)
         print(f"\nSaved CSV to: {csv_path}")
 
-    # Output JSON
     if output_json:
         json_path = Path(output_json)
         json_path.parent.mkdir(parents=True, exist_ok=True)

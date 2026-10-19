@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Multi-format saver (JSON, JSONL, CSV, Markdown, Parquet) for benchmark results
 
 Implements saver functionality for NeuralOps.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -52,7 +56,6 @@ def compute_result_path(result: BenchmarkResult, base_dir: Path | str = "results
     mod_name = result.module.get("name", "baseline") if isinstance(result.module, dict) else str(result.module)
     mod_type = result.module.get("type", "attention") if isinstance(result.module, dict) else "attention"
     mdl_name = result.model.get("name", "distilbert-base-uncased") if isinstance(result.model, dict) else str(result.model)
-    # Sanitize model name if it contains slashes (e.g. meta-llama/Llama-3.2-1B)
     mdl_safe = mdl_name.replace("/", "_")
     ds_name = result.dataset.get("name", "sst2") if isinstance(result.dataset, dict) else str(result.dataset)
     rk = result.config.get("rank", 0) if isinstance(result.config, dict) else 0
@@ -179,7 +182,6 @@ def save_markdown_summary(result: BenchmarkResult, md_path: Path | str) -> Path:
 - **Timestamp**: {result.timestamp_start}
 - **Git Commit**: `{result.git_commit[:10]}` (dirty={result.git_dirty})
 
-## Architecture & Configuration
 | Field | Value |
 |---|---|
 | **Module** | `{mod_name}` |
@@ -189,7 +191,6 @@ def save_markdown_summary(result: BenchmarkResult, md_path: Path | str) -> Path:
 | **Training Type** | `{getattr(result, 'training_type', 'finetune')}` |
 | **Batch Size** | `{result.config.get('batch_size', 32)}` |
 
-## Primary Metrics
 | Metric | Value |
 |---|---|
 | **Pre-KD Perplexity** | {pre_ppl_str} |
@@ -202,7 +203,6 @@ def save_markdown_summary(result: BenchmarkResult, md_path: Path | str) -> Path:
 | **Duration (s)** | {dur}s |
 | **Peak VRAM** | {vram} MB |
 
-## Reproduction Command
 ```bash
 {result.reproducibility.reproduction_command or f'python -m neuralops.benchmarks run --module {mod_name} --model {mdl_name} --dataset {ds_name} --rank {rk}'}
 ```
@@ -286,7 +286,6 @@ def save_all_formats(
     except Exception as e:
         LOG.warning("Failed to update parquet index: %s", e)
 
-    # Record saved paths into result artifact metadata
     result.artifacts.json_file = str(json_path.relative_to(out_dir) if json_path.is_relative_to(out_dir) else json_path)
 
     return {

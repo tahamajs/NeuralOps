@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Training Throughput and VRAM Peak Profiler for NeuralOps & FLA Models
 
 Profiles forward+backward training step execution time, tokens-per-second, TFLOPS estimation, and peak allocated VRAM.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -56,7 +60,6 @@ class TrainingThroughputProfiler:
         if torch.cuda.is_available():
             torch.cuda.reset_peak_memory_stats(self.device)
 
-        # Warmup
         for _ in range(warmup_steps):
             optimizer.zero_grad(set_to_none=True)
             inputs = torch.randint(0, vocab_size, (batch_size, seq_len), device=self.device)

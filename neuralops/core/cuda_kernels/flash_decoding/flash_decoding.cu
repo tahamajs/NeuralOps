@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -7,8 +14,6 @@
 namespace neuralops {
 namespace cuda {
 
-// Flash Decoding Attention forward: Q: [B, H, N_q, D], K: [B, H, N_kv, D], V: [B, H, N_kv, D]
-// Online softmax accumulation per query token
 template <typename scalar_t, int MAX_D>
 __launch_bounds__(128)
 __global__ void flash_decoding_fwd_kernel(
@@ -32,7 +37,6 @@ __global__ void flash_decoding_fwd_kernel(
     const int h = rem / N_q;
     const int i = rem % N_q;
 
-    // Load Q vector into registers
     float q_reg[MAX_D];
     const int q_offset = b * (H * N_q * D) + h * (N_q * D) + i * D;
     #pragma unroll
@@ -40,7 +44,6 @@ __global__ void flash_decoding_fwd_kernel(
         q_reg[d] = (d < D) ? to_float(Q[q_offset + d]) : 0.0f;
     }
 
-    // Online softmax state
     float max_s = -1e38f;
     float sum_exp = 0.0f;
     float o_acc[MAX_D];
@@ -82,8 +85,8 @@ __global__ void flash_decoding_fwd_kernel(
     }
 }
 
-} // namespace cuda
-} // namespace neuralops
+}
+}
 
 torch::Tensor flash_decoding_attention_fwd(
     const torch::Tensor& q,

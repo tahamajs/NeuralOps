@@ -1,10 +1,14 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Needle In A Haystack (NIAH) and Passkey Long-Context Retrieval Benchmark.
 Evaluates exact-match retrieval accuracy and target token loss across
 variable context lengths (up to 4096) and needle insertion depths ([0, 0.25, 0.5, 0.75, 1.0]).
 Target: retrieval accuracy > 90% at length 2048.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -28,7 +32,6 @@ import torch.nn as nn
 logger = logging.getLogger(__name__)
 
 
-# Default haystack distractor text template
 HAYSTACK_PARAGRAPHS = [
     "The city of Geneva is situated on the shores of Lake Geneva at the foot of the Alps.",
     "Quantum computing uses the principles of superposition and entanglement to perform complex operations.",
@@ -61,7 +64,6 @@ class NeedleInAHaystackEvaluator:
         """Execute init routine."""
         self.model = model
         self.tokenizer = tokenizer
-        # Evaluates retrieval at depths [0, 0.25, 0.5, 0.75, 1.0] across sequence lengths up to 4096
         self.context_lengths = context_lengths or [512, 1024, 2048, 4096]
         self.needle_depths = needle_depths or [0.0, 0.25, 0.5, 0.75, 1.0]
         self.passkey_digits = passkey_digits
@@ -99,7 +101,6 @@ class NeedleInAHaystackEvaluator:
                     needle_tokens = self.tokenizer.encode(needle_text, add_special_tokens=False)
                     q_tokens = self.tokenizer.encode(prompt_question, add_special_tokens=False)
 
-                    # Build haystack to fill desired context length
                     target_haystack_len = max(ctx_len - len(needle_tokens) - len(q_tokens), 32)
                     haystack_tokens = []
                     p_idx = 0
@@ -110,7 +111,6 @@ class NeedleInAHaystackEvaluator:
                         p_idx += 1
                     haystack_tokens = haystack_tokens[:target_haystack_len]
 
-                    # Insert needle at specified depth ratio
                     insert_idx = int(len(haystack_tokens) * depth)
                     full_tokens = (
                         haystack_tokens[:insert_idx]
@@ -118,7 +118,6 @@ class NeedleInAHaystackEvaluator:
                         + haystack_tokens[insert_idx:]
                         + q_tokens
                     )
-                    # Ensure context length does not exceed position embeddings if configured
                     max_pos = getattr(getattr(self.model, "config", None), "max_position_embeddings", 4096)
                     if max_pos is not None:
                         max_allowed = max_pos - (self.passkey_digits + 4)
@@ -127,7 +126,6 @@ class NeedleInAHaystackEvaluator:
 
                     input_ids = torch.tensor([full_tokens], device=self.device)
 
-                    # Generate next tokens to check answer
                     with torch.no_grad():
                         out = input_ids
                         for _ in range(self.passkey_digits + 2):
@@ -156,7 +154,6 @@ class NeedleInAHaystackEvaluator:
                 grid_accuracy[i, j] = acc
                 logger.info("Context %d, Depth %.2f: Acc=%.2f%%", ctx_len, depth, acc * 100)
 
-        # Accuracy at 2048
         acc_2048 = None
         if 2048 in self.context_lengths:
             idx_2048 = self.context_lengths.index(2048)
@@ -183,7 +180,7 @@ def plot_niah_heatmap(
     """
     ctx_lengths = niah_results["context_lengths"]
     depths = niah_results["needle_depths"]
-    acc_grid = np.array(niah_results["accuracy_grid"]) * 100.0  # Percentage
+    acc_grid = np.array(niah_results["accuracy_grid"]) * 100.0
 
     fig, ax = plt.subplots(figsize=(7, 5), dpi=300)
     cax = ax.imshow(acc_grid, cmap="YlGnBu", vmin=0, vmax=100, aspect="auto")
@@ -197,7 +194,6 @@ def plot_niah_heatmap(
     ax.set_ylabel("Context Length (Tokens)", fontsize=11, fontweight="bold")
     ax.set_title(title, fontsize=12, fontweight="bold", pad=12)
 
-    # Annotate cell values
     for i in range(len(ctx_lengths)):
         for j in range(len(depths)):
             val = acc_grid[i, j]
@@ -211,9 +207,7 @@ def plot_niah_heatmap(
     p = Path(save_path)
     p.parent.mkdir(parents=True, exist_ok=True)
     
-    # Save in primary format
     plt.savefig(p, bbox_inches="tight")
-    # Also save PDF and SVG if primary is PNG
     if p.suffix == ".png":
         plt.savefig(p.with_suffix(".pdf"), bbox_inches="tight")
         plt.savefig(p.with_suffix(".svg"), bbox_inches="tight")
@@ -247,7 +241,6 @@ def save_niah_results(
                     writer.writerow({k: rec.get(k, "") for k in fieldnames})
             logger.info("Saved NIAH results CSV to %s", out_c)
         else:
-            # Fallback summary row
             with open(out_c, "w", encoding="utf-8", newline="") as f:
                 writer = csv.DictWriter(
                     f,
@@ -277,7 +270,6 @@ def main() -> None:
     parser.add_argument("--plot-path", type=str, default=None, help="Path to save heatmap figure (e.g. results/niah.png)")
     args = parser.parse_args()
 
-    # Framework paths
     here = Path(__file__).resolve().parent
     codes = here.parent
     for p in [str(codes), str(codes.parent)]:

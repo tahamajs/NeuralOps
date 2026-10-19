@@ -1,4 +1,3 @@
-<!-- Author: Taha Majlesi -->
 # Final Repository Hygiene, Configuration Hardening & Quality Gate Certificate
 
 **Target Release:** NeuralOps v1.4.0 (Ada Lovelace Production Release)  

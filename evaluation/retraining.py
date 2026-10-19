@@ -1,10 +1,14 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Automated retraining pipeline – triggers retraining based on drift, performance
 degradation, time schedule, or data volume thresholds.
 
 Inspired by: Vertex AI Model Monitoring, Azure ML pipelines, ClearML, and AutoDrift.
-
-Author: Taha Majlesi
 """
 
 import logging
@@ -35,23 +39,18 @@ class RetrainPolicy:
 
     trigger_types: list[TriggerType] = field(default_factory=lambda: [TriggerType.DRIFT])
 
-    # Drift trigger
     drift_threshold: float = 0.3
     drift_methods: list[str] = field(default_factory=lambda: ["ks", "psi"])
 
-    # Performance trigger
     min_accuracy: float = 0.85
     max_accuracy_degradation: float = 0.05
 
-    # Schedule trigger
-    schedule_cron: str | None = None  # "0 2 * * 1" for every Monday 2 AM
+    schedule_cron: str | None = None
     max_days_since_last_train: int = 30
 
-    # Data volume trigger
     min_new_samples: int = 1000
     max_new_samples: int = 100_000
 
-    # Retraining behaviour
     require_better_model: bool = True
     min_improvement: float = 0.01
     max_retrains_per_day: int = 3
@@ -67,7 +66,7 @@ class RetrainDecision:
     should_retrain: bool
     reason: str
     trigger_type: TriggerType | None = None
-    urgency: str = "low"  # "low", "medium", "high", "critical"
+    urgency: str = "low"
     details: dict[str, Any] = field(default_factory=dict)
 
 
@@ -105,7 +104,6 @@ class RetrainingOrchestrator:
     ) -> RetrainDecision:
         """Evaluate all configured triggers and return a retraining decision."""
 
-        # Reset daily counter if it's a new day
         today = datetime.now().strftime("%Y-%m-%d")
         if today != self._last_retrain_date:
             self._retrain_count_today = 0
@@ -118,7 +116,6 @@ class RetrainingOrchestrator:
                 details={"retrains_today": self._retrain_count_today},
             )
 
-        # 1. Manual trigger
         if manual_request and TriggerType.MANUAL in self.policy.trigger_types:
             return RetrainDecision(
                 should_retrain=True,
@@ -127,7 +124,6 @@ class RetrainingOrchestrator:
                 urgency="high",
             )
 
-        # 2. Performance degradation
         if (
             TriggerType.PERFORMANCE in self.policy.trigger_types
             and current_metrics
@@ -137,19 +133,16 @@ class RetrainingOrchestrator:
             if decision.should_retrain:
                 return decision
 
-        # 3. Drift trigger
         if TriggerType.DRIFT in self.policy.trigger_types and drift_report:
             decision = self._check_drift(drift_report)
             if decision.should_retrain:
                 return decision
 
-        # 4. Data volume trigger
         if TriggerType.DATA_VOLUME in self.policy.trigger_types:
             decision = self._check_data_volume(new_data_count)
             if decision.should_retrain:
                 return decision
 
-        # 5. Schedule trigger
         if TriggerType.SCHEDULE in self.policy.trigger_types:
             decision = self._check_schedule(days_since_last_train)
             if decision.should_retrain:

@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -5,15 +12,6 @@
 
 namespace neuralops { namespace cuda {
 
-// Entropy Row Reduction Kernel:
-// Form: p_i = exp(scores_i - max(scores)) / \sum exp(scores_j - max(scores))
-//       H = -\sum p_i \log(p_i)
-//
-// Hardware-level optimization:
-// 1. Thread Mapping: 1 block per row, cooperative warp-level / block-level reductions.
-// 2. Warp Shuffles: Utilizes block_reduce_max and block_reduce_sum without serial atomic collisions.
-// 3. Online Numerical Stability: Subtracts row max before computing exponentials.
-// 4. Output: Single scalar entropy written per row in a single global transaction.
 template <typename scalar_t>
 __global__ void __launch_bounds__(256) entropy_row_kernel(
     scalar_t* __restrict__ out,
@@ -27,7 +25,6 @@ __global__ void __launch_bounds__(256) entropy_row_kernel(
     const int tid = threadIdx.x;
     const int row_offset = r * L;
 
-    // Pass 1: Find Row Maximum
     float local_max = -1e30f;
     for (int i = tid; i < L; i += blockDim.x) {
         const float v = to_float(scores[row_offset + i]);
@@ -35,7 +32,6 @@ __global__ void __launch_bounds__(256) entropy_row_kernel(
     }
     const float m = block_reduce_max(local_max);
 
-    // Pass 2: Compute Softmax Denominator
     float local_sum = 0.0f;
     for (int i = tid; i < L; i += blockDim.x) {
         local_sum += expf(to_float(scores[row_offset + i]) - m);
@@ -43,7 +39,6 @@ __global__ void __launch_bounds__(256) entropy_row_kernel(
     const float total_sum = block_reduce_sum(local_sum);
     const float inv_denom = 1.0f / fmaxf(total_sum, 1e-12f);
 
-    // Pass 3: Accumulate Entropy -p * log(p)
     float local_ent = 0.0f;
     for (int i = tid; i < L; i += blockDim.x) {
         const float p = expf(to_float(scores[row_offset + i]) - m) * inv_denom;
@@ -58,7 +53,7 @@ __global__ void __launch_bounds__(256) entropy_row_kernel(
     }
 }
 
-}} // namespace neuralops::cuda
+}}
 
 torch::Tensor entropy_row_reduction_fwd(const torch::Tensor& scores) {
     CHECK_INPUT(scores);

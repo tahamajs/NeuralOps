@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 SLiM: Structured Low-Rank Integrated Matrix Compressor
 
 Fuses uniform integer quantization, 2:4 structured sparsity, and SVD residual error correction into a single composite compression pipeline.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations

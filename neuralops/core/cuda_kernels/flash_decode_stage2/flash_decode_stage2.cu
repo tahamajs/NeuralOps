@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -5,13 +12,6 @@
 
 namespace neuralops { namespace cuda {
 
-// Flash Decoding Stage 2 Reduction Kernel:
-// Form: out[b, h, 1, d] = \sum_c \frac{\exp(mid\_lse[b, h, c] - global\_lse)}{\sum_k \exp(mid\_lse[b, h, k] - global\_lse)} \cdot mid\_out[b, h, c, d]
-//
-// Hardware-level optimization:
-// 1. Warp/Block LogSumExp reduction across chunks: Replaces atomic float serialization.
-// 2. Strict FP32 intermediate accumulation: Rescales partial attention chunks without precision loss.
-// 3. Coalesced output stores: Thread index threadIdx.x writes along dimension D.
 template <typename scalar_t>
 __global__ void __launch_bounds__(256) flash_decode_stage2_kernel(
     scalar_t* __restrict__ out,
@@ -48,7 +48,6 @@ __global__ void __launch_bounds__(256) flash_decode_stage2_kernel(
     const float global_max_lse = s_global_max_lse;
     const float inv_denom = s_inv_denom;
 
-    // Step 3: Weighted sum over chunks for each feature dimension d
     const int out_base = pid_bh * D;
     const int mid_base = pid_bh * (num_chunks * D);
 
@@ -63,7 +62,7 @@ __global__ void __launch_bounds__(256) flash_decode_stage2_kernel(
     }
 }
 
-}} // namespace neuralops::cuda
+}}
 
 torch::Tensor flash_decode_stage2_fwd(
     const torch::Tensor& mid_out,

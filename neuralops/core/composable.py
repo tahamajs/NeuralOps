@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Composable Meta-Attention Framework
 
 Modular meta-attention architecture enabling dynamic chaining of projections, positional encodings, and kernels.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -22,7 +26,6 @@ import torch.nn.functional as F
 from neuralops.core.attention_utils import apply_rotary_pos_emb
 from neuralops.core.triton_kernels import triton_dispatch
 
-# Registries for the 4 algebraic stages (P, phi, M, E)
 _CUSTOM_PROJECTIONS: dict[str, Any] = {}
 _CUSTOM_KERNELS: dict[str, Any] = {}
 _CUSTOM_MASKS: dict[str, Any] = {}
@@ -112,7 +115,6 @@ class ComposableAttention(nn.Module):
         self.engine = engine.lower()
         self.scale = 1.0 / math.sqrt(self.head_dim)
 
-        # 1. Projections: Dense, LowRankSVD, Conv1D
         if "svd" in self.projection_type:
             rank_match = re.search(r"rank=(\d+)", self.projection_type)
             self.rank = int(rank_match.group(1)) if rank_match else 64
@@ -148,7 +150,6 @@ class ComposableAttention(nn.Module):
         self.out_proj = nn.Linear(embed_dim, embed_dim, bias=bias)
         self.dropout = nn.Dropout(dropout) if dropout > 0.0 else nn.Identity()
 
-        # 2. Positional Bias: ALiBi slopes setup
         if "alibi" in self.positional_type:
             def _get_slopes(n: int) -> list[float]:
                 def get_slopes_power_of_2(n_p2: int) -> list[float]:
@@ -164,19 +165,16 @@ class ComposableAttention(nn.Module):
         else:
             self.alibi_slopes = None
 
-        # 3. Sparsity & Mask parsing
         sw_match = re.search(r"sliding_window\((\d+)\)", self.mask_type)
         self.window_size = int(sw_match.group(1)) if sw_match else (128 if "sliding_window" in self.mask_type else 0)
         sink_match = re.search(r"sink\((\d+)\)", self.mask_type)
         self.sink_tokens = int(sink_match.group(1)) if sink_match else (4 if "sink" in self.mask_type else 0)
 
-        # 4. Delta Rule state setup if engine="delta_rule"
         if "delta_rule" in self.engine or "gdn" in self.engine:
             self.beta = nn.Parameter(torch.zeros(num_heads))
 
     def _project_qkv(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         if self.conv1d is not None:
-            # Conv1D input: [B, D, L]
             B, L, D = x.shape
             x_conv = self.conv1d(x.transpose(1, 2))[:, :, :L].transpose(1, 2)
             q = self.q_proj(x_conv)
@@ -216,7 +214,6 @@ class ComposableAttention(nn.Module):
         elif "elu" in self.kernel_map_type:
             return F.elu(t.float()) + 1.0
         elif "cosformer" in self.kernel_map_type or "cos" in self.kernel_map_type:
-            # Cosformer mapping: ReLU(x) * cos(pi * i / 2M)
             t_relu = F.relu(t.float())
             L = t.shape[-2]
             pos = torch.arange(L, device=t.device, dtype=torch.float32).view(1, 1, L, 1)
@@ -239,19 +236,16 @@ class ComposableAttention(nn.Module):
         k = k.view(B, N, H, d).transpose(1, 2).contiguous()
         v = v.view(B, N, H, d).transpose(1, 2).contiguous()
 
-        # Apply Positional Bias (e.g. RoPE)
         q, k = self._apply_positional(q, k)
 
         is_causal = "causal" in self.mask_type or self.window_size > 0 or "chunked_scan" in self.engine
 
-        # Apply Kernel Mapping (e.g., custom plugin kernel, ELU+1, Cosformer)
         if self.kernel_map_type in _CUSTOM_KERNELS or self.kernel_map_type in ("elu", "elu+1", "cosformer", "cos"):
             q_k = self._apply_kernel(q)
             k_k = self._apply_kernel(k)
         else:
             q_k, k_k = q, k
 
-        # Check for registered custom execution engine
         if self.engine in _CUSTOM_ENGINES:
             custom_engine = _CUSTOM_ENGINES[self.engine]
             try:
@@ -261,7 +255,6 @@ class ComposableAttention(nn.Module):
             except Exception as e_engine:
                 logger.debug("Custom engine '%s' raised exception: %s. Falling back.", self.engine, e_engine)
 
-        # Execution Engine 1: Chunked Recurrent Scan
         if "chunked_scan" in self.engine or "recurrent" in self.engine:
             if q.is_cuda:
                 try:
@@ -273,7 +266,6 @@ class ComposableAttention(nn.Module):
                 except Exception:
                     pass
 
-        # Execution Engine 2: Delta Rule (Gated Delta Net)
         if "delta_rule" in self.engine or "gdn" in self.engine:
             if q.is_cuda:
                 try:
@@ -285,7 +277,6 @@ class ComposableAttention(nn.Module):
                 except Exception:
                     pass
 
-        # Execution Engine 3: Sliding Window & Sink Attention
         if "sliding_window" in self.mask_type and q.is_cuda and self.sink_tokens == 0:
             try:
                 from neuralops.core.triton_kernels.sliding_window import sliding_window_triton
@@ -295,18 +286,15 @@ class ComposableAttention(nn.Module):
             except Exception:
                 pass
 
-        # Execution Engine 4: Quadratic SDPA with ALiBi, Sliding Window & Attention Sink Masking
         scores = torch.matmul(q, k.transpose(-2, -1).contiguous()) * self.scale
 
         if self.alibi_slopes is not None:
-            # ALiBi: bias[i, j] = -|i - j| * slope
             pos = torch.arange(N, device=q.device, dtype=torch.float32)
             dist = (pos.unsqueeze(-1) - pos.unsqueeze(-2)).abs()
             alibi_bias = -dist.view(1, 1, N, N) * self.alibi_slopes
             scores = scores + alibi_bias
 
         if is_causal or self.window_size > 0 or self.sink_tokens > 0:
-            # Construct composite causal + sliding window + sink mask
             pos_i = torch.arange(N, device=q.device).unsqueeze(-1)
             pos_j = torch.arange(N, device=q.device).unsqueeze(0)
             diff = pos_i - pos_j

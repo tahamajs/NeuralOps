@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 High-level query API for querying, filtering, and comparing benchmark results
 
 Implements index functionality for NeuralOps.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -179,7 +183,6 @@ class ResultsIndex:
                 if best_run:
                     matched.append(best_run)
             else:
-                # Include any run if success not found
                 any_runs = self.find(module=mod, model=model, dataset=dataset)
                 if any_runs:
                     matched.append(any_runs[-1])

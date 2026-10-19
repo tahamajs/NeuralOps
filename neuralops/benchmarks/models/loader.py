@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Universal Hugging Face Model Loader and Architecture Adapters
 
 Supports loading ANY model from Hugging Face Hub or local path with.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -32,7 +36,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
 
 LOG = logging.getLogger(__name__)
 
-# Registry for custom model architecture adapters
 MODEL_ADAPTER_REGISTRY: Dict[str, Type["ModelAdapter"]] = {}
 
 
@@ -192,7 +195,6 @@ def load_universal_model(
         "bfloat16": torch.bfloat16 if hasattr(torch, "bfloat16") else torch.float32,
     }.get(dtype or "float32", torch.float32)
 
-    # 1. Load Tokenizer
     tok_name = tokenizer_name or model_name
     LOG.info("Loading tokenizer from: '%s'...", tok_name)
     tokenizer = AutoTokenizer.from_pretrained(
@@ -203,7 +205,6 @@ def load_universal_model(
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token or tokenizer.bos_token or "[PAD]"
 
-    # 2. Load Config
     LOG.info("Loading config for '%s'...", model_name)
     config = AutoConfig.from_pretrained(
         model_name,
@@ -213,7 +214,6 @@ def load_universal_model(
     if num_labels is not None:
         config.num_labels = num_labels
 
-    # 3. Determine Candidate Model Classes based on Task and Config
     task_lower = task.lower()
     is_seq2seq = getattr(config, "is_encoder_decoder", False)
 
@@ -230,7 +230,6 @@ def load_universal_model(
     elif "classif" in task_lower or "regress" in task_lower:
         candidate_classes.append((AutoModelForSequenceClassification, {}))
 
-    # Universal fallbacks
     candidate_classes.extend([
         (AutoModelForSequenceClassification, {}),
         (AutoModelForCausalLM, {}),
@@ -262,7 +261,6 @@ def load_universal_model(
     if model is None:
         raise RuntimeError(f"Failed to instantiate model '{model_name}'. Last error: {last_err}")
 
-    # Move to target device
     try:
         model = model.to(target_device)
     except torch.cuda.OutOfMemoryError as oom:

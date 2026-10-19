@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Execution engine and distillation orchestrator for knowledge distillation benchmarking
 
 This module provides the :class:`KDRunner` class, which manages data loaders, evaluations, optimizer loops, crash-safe state persistence, and module iteration.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -68,7 +72,6 @@ class KDRunner:
         self.state_file = Path(config.output_dir) / ".state.json"
         self.interrupted = False
 
-        # Setup graceful signal handler for Ctrl+C
         signal.signal(signal.SIGINT, self._handle_interrupt)
 
         self.state: Dict[str, Any] = self._load_or_init_state()
@@ -114,13 +117,11 @@ class KDRunner:
                     )
                 else:
                     logger.info("Resuming benchmark from state file: %s", self.state_file)
-                    # If in_progress was left non-empty due to crash, clear it so it gets retried
                     loaded["in_progress"] = None
                     return loaded
             except Exception as e:
                 logger.warning("Failed to load existing state (%s), starting fresh.", e)
 
-        # Initialize fresh state
         initial_state = {
             "completed": [],
             "in_progress": None,
@@ -186,7 +187,6 @@ class KDRunner:
             ds = load_dataset("glue", subtask)
             dataset_name = f"glue_{subtask}"
             
-            # Detect text column keys
             cols = ds["train"].column_names
             if "sentence" in cols:
                 def tokenize_batch(examples: Dict[str, List[Any]]) -> Dict[str, Any]:
@@ -346,7 +346,6 @@ class KDRunner:
         optimizer: Optional[AdamW] = None
 
         try:
-            # 1. Load clean student and inject module
             student = AutoModelForSequenceClassification.from_pretrained(
                 self.config.teacher
             )
@@ -355,7 +354,6 @@ class KDRunner:
             )
             student = student.to(self.device)
 
-            # 2. Fast screening pre-KD evaluation
             pre_acc = self.evaluate(student, val_pre_loader)
             result["pre_kd_acc"] = round(pre_acc * 100, 2)
 
@@ -364,7 +362,6 @@ class KDRunner:
                 result["duration_s"] = round(time.time() - t_start, 1)
                 return result
 
-            # 3. Freeze base parameters, unfreeze attention modules
             for p in student.parameters():
                 p.requires_grad = False
 
@@ -378,7 +375,6 @@ class KDRunner:
                     p.requires_grad = True
                 trainable = [p for p in student.parameters() if p.requires_grad]
 
-            # Record parameter stats
             total_params = sum(p.numel() for p in student.parameters())
             trainable_params = sum(p.numel() for p in trainable)
             result["total_params_m"] = round(total_params / 1e6, 3)
@@ -393,7 +389,6 @@ class KDRunner:
             optimizer = AdamW(trainable, lr=self.config.kd_lr, weight_decay=0.01)
             scaler = GradScaler("cuda", enabled=(self.config.use_fp16 and self.device == "cuda"))
 
-            # 4. KD training with best checkpoint tracking
             student.train()
             best_acc = pre_acc
             best_state: Optional[Dict[str, torch.Tensor]] = None
@@ -463,7 +458,6 @@ class KDRunner:
             result["final_loss"] = final_loss_val
             result["eval_history"] = eval_history
 
-            # 5. Evaluate best checkpoint on full validation set
             if best_state is not None:
                 student.load_state_dict({k: v.to(self.device) for k, v in best_state.items()})
 
@@ -509,7 +503,6 @@ class KDRunner:
         tokenizer = AutoTokenizer.from_pretrained(self.config.teacher)
         train_loader, val_pre_loader, val_full_loader, dataset_name = self.load_data(tokenizer)
 
-        # Load teacher once in evaluation mode
         logger.info("Loading teacher model: %s", self.config.teacher)
         teacher = AutoModelForSequenceClassification.from_pretrained(
             self.config.teacher
@@ -517,7 +510,6 @@ class KDRunner:
         for p in teacher.parameters():
             p.requires_grad = False
 
-        # Determine module candidate list
         all_modules = sorted(ATTENTION_REGISTRY.keys())
         if self.config.module_whitelist:
             modules = [m for m in all_modules if m in self.config.module_whitelist]
@@ -532,7 +524,6 @@ class KDRunner:
                 logger.info("Stopping runner due to interrupt signal.")
                 break
 
-            # Check resume state
             if module_name in self.state["completed"]:
                 logger.info(
                     "[%d/%d] Skipping '%s' (already completed in previous run)",
@@ -546,7 +537,6 @@ class KDRunner:
             logger.info("[%d/%d] BENCHMARKING: %s", i, len(modules), module_name)
             logger.info("=" * 65)
 
-            # Atomic state: mark in-progress
             self.state["in_progress"] = module_name
             self._atomic_save_state(self.state)
 
@@ -560,10 +550,8 @@ class KDRunner:
             )
             all_results.append(result)
 
-            # Record run to CSV and per-run JSON
             self.reporter.record_run(result)
 
-            # Atomic state: move from in-progress to completed if not interrupted
             if result.get("status") != "INTERRUPTED":
                 self.state["completed"].append(module_name)
                 self.state["in_progress"] = None
@@ -573,7 +561,6 @@ class KDRunner:
                 self._atomic_save_state(self.state)
                 break
 
-        # Generate final reports
         self.reporter.generate_final_report(all_results)
         self._cleanup_gpu(teacher)
         logger.info("Benchmark finished. Results stored in: %s", self.config.output_dir)

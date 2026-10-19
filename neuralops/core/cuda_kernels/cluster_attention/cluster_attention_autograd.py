@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Cluster Attention Autograd Interface
 
 Hardware-accelerated CUDA C++ autograd implementation with analytical gradients and three-level fallback dispatch.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -24,10 +28,8 @@ def _get_module():
     return _MODULE
 
 def cluster_attention_ref(q: torch.Tensor, cluster_centroids: torch.Tensor, v: torch.Tensor, cluster_indices: torch.Tensor) -> torch.Tensor:
-    # If v has shape of centroids [B, H, K, D], use SDPA directly
     if v.shape == cluster_centroids.shape:
         return F.scaled_dot_product_attention(q, cluster_centroids, v)
-    # If v has sequence length N, gather centroids corresponding to cluster_indices or use centroids directly
     return F.scaled_dot_product_attention(q, cluster_centroids, cluster_centroids)
 
 

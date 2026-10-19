@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -5,11 +12,6 @@
 
 namespace neuralops { namespace cuda {
 
-// Aegis Gate Norm 2-Branch Forward:
-// Computes softmax routing weights (w0, w1) from router logits,
-// applies RMSNorm independently to branch 0 and branch 1:
-// out = w0 * rmsnorm(b0) + w1 * rmsnorm(b1)
-// Employs 128-bit float4 vectorized memory loads & stores and cooperative block reductions.
 template <typename scalar_t>
 __global__ void __launch_bounds__(512) aegis_gate_norm_2b_vectorized_kernel(
     scalar_t* __restrict__ out,
@@ -115,7 +117,7 @@ __global__ void __launch_bounds__(512) aegis_gate_norm_2b_vectorized_kernel(
     }
 }
 
-}} // namespace neuralops::cuda
+}}
 
 torch::Tensor aegis_gate_norm_2branch_fwd(
     const torch::Tensor& b0,

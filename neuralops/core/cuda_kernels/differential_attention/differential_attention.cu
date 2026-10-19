@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -6,11 +13,6 @@
 
 namespace neuralops { namespace cuda {
 
-// ============================================================================
-// Differential Attention Forward Kernel
-// Form: A_1 = \text{Softmax}(Q_1 K_1^T / \sqrt{D}), \quad A_2 = \text{Softmax}(Q_2 K_2^T / \sqrt{D})
-//       out_i = (A_1 - \lambda A_2) V
-// ============================================================================
 template <typename scalar_t>
 __global__ void __launch_bounds__(128, 2) diff_attn_fwd_kernel(
     scalar_t* __restrict__ out,
@@ -36,7 +38,6 @@ __global__ void __launch_bounds__(128, 2) diff_attn_fwd_kernel(
     const int qi_offset = base_offset + i * D;
     const float scale = rsqrtf(static_cast<float>(D));
 
-    // Register cache for query vectors (up to D=128)
     constexpr int MAX_E = 4;
     float q1_reg[MAX_E];
     float q2_reg[MAX_E];
@@ -54,24 +55,22 @@ __global__ void __launch_bounds__(128, 2) diff_attn_fwd_kernel(
     }
 
     constexpr int TILE_K = 16;
-    constexpr int D_PAD = 128 + 8; // +8 elements eliminates bank conflicts & ensures 16-byte alignment
+    constexpr int D_PAD = 128 + 8;
     __shared__ float s_k1[TILE_K][D_PAD];
     __shared__ float s_k2[TILE_K][D_PAD];
     __shared__ float s_v[TILE_K][D_PAD];
 
-    // Single-pass FlashAttention: fused online softmax rescaling and value accumulation
     float m1 = -1e30f, d1 = 0.0f;
     float m2 = -1e30f, d2 = 0.0f;
     float acc1[MAX_E] = {0.0f};
     float acc2[MAX_E] = {0.0f};
 
-    const int tid = threadIdx.x; // 0..127
+    const int tid = threadIdx.x;
     const int max_block_i = blockIdx.x * 4 + 3;
 
     for (int tile_start = 0; tile_start < N && tile_start <= max_block_i; tile_start += TILE_K) {
         __syncthreads();
 
-        // 128-bit aligned vector DRAM loads
         if (sizeof(scalar_t) == 2 && (D % 8 == 0)) {
             const int uint4_per_tok = D / 8;
             const int total_uint4 = TILE_K * uint4_per_tok;
@@ -164,7 +163,6 @@ __global__ void __launch_bounds__(128, 2) diff_attn_fwd_kernel(
         }
         __syncthreads();
 
-        // Warp computes against SMEM tile
         if (i < N && tile_start <= i) {
             const int max_t = min(TILE_K - 1, i - tile_start);
             for (int t = 0; t <= max_t; ++t) {
@@ -180,28 +178,24 @@ __global__ void __launch_bounds__(128, 2) diff_attn_fwd_kernel(
                     }
                 }
 
-                // Warp reduction across 32 lanes
                 #pragma unroll
                 for (int offset = 16; offset > 0; offset /= 2) {
                     dot1_local += __shfl_xor_sync(0xffffffff, dot1_local, offset);
                     dot2_local += __shfl_xor_sync(0xffffffff, dot2_local, offset);
                 }
 
-                // Online softmax 1 update
                 const float m1_new = fmaxf(m1, dot1_local);
                 const float alpha1 = expf(m1 - m1_new);
                 const float p1 = expf(dot1_local - m1_new);
                 d1 = d1 * alpha1 + p1;
                 m1 = m1_new;
 
-                // Online softmax 2 update
                 const float m2_new = fmaxf(m2, dot2_local);
                 const float alpha2 = expf(m2 - m2_new);
                 const float p2 = expf(dot2_local - m2_new);
                 d2 = d2 * alpha2 + p2;
                 m2 = m2_new;
 
-                // Scale prior accumulations by alpha and add current p * v
                 #pragma unroll
                 for (int e = 0; e < MAX_E; ++e) {
                     const int d = lane + e * 32;
@@ -230,9 +224,6 @@ __global__ void __launch_bounds__(128, 2) diff_attn_fwd_kernel(
     }
 }
 
-// ============================================================================
-// Differential Attention Backward Kernel (Analytical Adjoint with SMEM Tiling)
-// ============================================================================
 template <typename scalar_t>
 __global__ void __launch_bounds__(128, 2) diff_attn_bwd_kernel(
     scalar_t* __restrict__ grad_q1,
@@ -288,7 +279,6 @@ __global__ void __launch_bounds__(128, 2) diff_attn_bwd_kernel(
     __shared__ float s_k2[TILE_K][D_PAD];
     __shared__ float s_v[TILE_K][D_PAD];
 
-    // Pass 1: Forward online softmax tracking
     float m1 = -1e30f, d1 = 0.0f;
     float m2 = -1e30f, d2 = 0.0f;
     float acc1[MAX_E] = {0.0f};
@@ -399,7 +389,6 @@ __global__ void __launch_bounds__(128, 2) diff_attn_bwd_kernel(
         }
     }
 
-    // Scalar D1 = sum_d (grad_out[i, d] * Out1[i, d]), D2 = -lambda * sum_d (grad_out[i, d] * Out2[i, d])
     float D1_val = 0.0f;
     float D2_val = 0.0f;
     if (i < N) {
@@ -422,7 +411,6 @@ __global__ void __launch_bounds__(128, 2) diff_attn_bwd_kernel(
         }
     }
 
-    // Pass 2: Softmax adjoints & gradient accumulation
     float grad_q1_acc[MAX_E] = {0.0f};
     float grad_q2_acc[MAX_E] = {0.0f};
 
@@ -490,7 +478,7 @@ __global__ void __launch_bounds__(128, 2) diff_attn_bwd_kernel(
             for (int t = 0; t <= max_t; ++t) {
                 float dot1_local = 0.0f;
                 float dot2_local = 0.0f;
-                float dA_local = 0.0f; // grad_out[i] . v[j]
+                float dA_local = 0.0f;
 
                 #pragma unroll
                 for (int e = 0; e < MAX_E; ++e) {
@@ -555,7 +543,7 @@ __global__ void __launch_bounds__(128, 2) diff_attn_bwd_kernel(
     }
 }
 
-}} // namespace neuralops::cuda
+}}
 
 torch::Tensor diff_attn_fwd(
     const torch::Tensor& q1,
@@ -586,7 +574,7 @@ torch::Tensor diff_attn_fwd(
     auto out = torch::empty_like(q1);
     if (B == 0 || H == 0 || N == 0 || D == 0) return out;
 
-    constexpr int THREADS = 128; // 4 warps per block -> 4 queries per block
+    constexpr int THREADS = 128;
     constexpr int WARPS_PER_BLOCK = THREADS / 32;
     const int blocks_x = (N + WARPS_PER_BLOCK - 1) / WARPS_PER_BLOCK;
     dim3 grid(blocks_x, B * H);

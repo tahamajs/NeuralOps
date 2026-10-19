@@ -1,7 +1,11 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 NeuralOps Config Core Modules.
-
-Author: Taha Majlesi
 """
 
 from .config import (
@@ -48,7 +52,6 @@ __all__ = [
     "load_config",
 ]
 
-# Auto-wired package members
 from neuralops.config import compression_config
 from neuralops.config import config
 from neuralops.config import data_config

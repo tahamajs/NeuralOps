@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -6,7 +13,6 @@
 
 namespace neuralops { namespace cuda {
 
-// Warp-level Bitonic Sort Network for 32 threads using __shfl_xor_sync
 __device__ __forceinline__ void warp_bitonic_sort_32(float &val, int &idx) {
     const unsigned int lane = threadIdx.x & 31;
     #pragma unroll
@@ -15,7 +21,7 @@ __device__ __forceinline__ void warp_bitonic_sort_32(float &val, int &idx) {
         for (int j = k >> 1; j > 0; j >>= 1) {
             float other_val = __shfl_xor_sync(0xffffffff, val, j);
             int other_idx = __shfl_xor_sync(0xffffffff, idx, j);
-            bool dir = ((lane & k) == 0); // descending for upper block
+            bool dir = ((lane & k) == 0);
             bool is_lower = ((lane & j) == 0);
             bool swap = is_lower ? (dir ? (val < other_val) : (val > other_val))
                                  : (dir ? (val > other_val) : (val < other_val));
@@ -27,7 +33,6 @@ __device__ __forceinline__ void warp_bitonic_sort_32(float &val, int &idx) {
     }
 }
 
-// Warp-per-row kernel for small K <= 32 and arbitrary N <= 2048 using __shfl_xor_sync
 template <typename scalar_t>
 __global__ void __launch_bounds__(256) bitonic_topk_warp_kernel(
     int64_t* __restrict__ out_indices,
@@ -42,22 +47,17 @@ __global__ void __launch_bounds__(256) bitonic_topk_warp_kernel(
     const int lane = threadIdx.x & 31;
     const int row_offset = global_warp_id * N;
 
-    // Load initial 32 elements into registers
     float my_val = (lane < N) ? to_float(x[row_offset + lane]) : -FLT_MAX;
     int my_idx = lane;
 
-    // Initial warp-level bitonic sort
     warp_bitonic_sort_32(my_val, my_idx);
 
-    // Stream remaining chunks of 32 elements in registers
     for (int chunk_start = 32; chunk_start < N; chunk_start += 32) {
         int next_idx = chunk_start + lane;
         float next_val = (next_idx < N) ? to_float(x[row_offset + next_idx]) : -FLT_MAX;
 
-        // Sort candidate chunk
         warp_bitonic_sort_32(next_val, next_idx);
 
-        // Exchange between top of candidate chunk and bottom of accumulator chunk
         const float cand_val = __shfl_sync(0xffffffff, next_val, 31 - lane);
         const int cand_idx = __shfl_sync(0xffffffff, next_idx, 31 - lane);
 
@@ -66,17 +66,14 @@ __global__ void __launch_bounds__(256) bitonic_topk_warp_kernel(
             my_idx = cand_idx;
         }
 
-        // Re-sort accumulator to maintain descending order
         warp_bitonic_sort_32(my_val, my_idx);
     }
 
-    // Direct register write to output
     if (lane < K) {
         out_indices[global_warp_id * K + lane] = static_cast<int64_t>(my_idx);
     }
 }
 
-// Shared-memory block kernel for larger K > 32
 template <typename scalar_t>
 __global__ void __launch_bounds__(512) bitonic_topk_block_kernel(
     int64_t* __restrict__ out_indices,
@@ -98,7 +95,6 @@ __global__ void __launch_bounds__(512) bitonic_topk_block_kernel(
     const int rem_start = num_vec * 4;
     const int row_offset = r * N;
 
-    // 128-bit vectorized float4 loading into shared memory
     for (int v = tid; v < num_vec; v += blockDim.x) {
         const int i = v * 4;
         s_indices[i + 0] = i + 0;
@@ -120,7 +116,6 @@ __global__ void __launch_bounds__(512) bitonic_topk_block_kernel(
         }
     }
 
-    // Remainder and sentinel padding with -FLT_MAX
     for (int i = rem_start + tid; i < pad_N; i += blockDim.x) {
         s_indices[i] = i;
         s_values[i] = (i < N) ? to_float(x[row_offset + i]) : -FLT_MAX;
@@ -129,7 +124,6 @@ __global__ void __launch_bounds__(512) bitonic_topk_block_kernel(
 
     const int total_pairs = pad_N >> 1;
 
-    // Disjoint Bitonic Sorting Network in Shared Memory
     for (int k = 2; k <= pad_N; k <<= 1) {
         for (int j = k >> 1; j > 0; j >>= 1) {
             for (int pair_idx = tid; pair_idx < total_pairs; pair_idx += blockDim.x) {
@@ -154,13 +148,12 @@ __global__ void __launch_bounds__(512) bitonic_topk_block_kernel(
         }
     }
 
-    // Write top K indices to output tensor
     for (int k = tid; k < K; k += blockDim.x) {
         out_indices[r * K + k] = static_cast<int64_t>(s_indices[k]);
     }
 }
 
-}} // namespace neuralops::cuda
+}}
 
 torch::Tensor bitonic_topk_indices_fwd(const torch::Tensor& x, int K) {
     CHECK_INPUT(x);
@@ -169,7 +162,6 @@ torch::Tensor bitonic_topk_indices_fwd(const torch::Tensor& x, int K) {
     auto out = torch::empty({rows, K}, x.options().dtype(torch::kInt64));
     if (rows == 0 || N == 0 || K == 0) return out;
 
-    // For large N > 2048, dispatch to hardware Radix Select
     if (N > 2048) {
         auto topk_res = at::topk(x, K, -1, true, true);
         return std::get<1>(topk_res);
@@ -178,7 +170,6 @@ torch::Tensor bitonic_topk_indices_fwd(const torch::Tensor& x, int K) {
     auto stream = c10::cuda::getCurrentCUDAStream();
     auto x_c = x.contiguous();
 
-    // Fast path: Warp-level __shfl_xor_sync bitonic network for small K <= 32
     if (K <= 32) {
         constexpr int WARPS_PER_BLOCK = 4;
         constexpr int THREADS = WARPS_PER_BLOCK * 32;
@@ -200,7 +191,6 @@ torch::Tensor bitonic_topk_indices_fwd(const torch::Tensor& x, int K) {
         return out;
     }
 
-    // Block-level bitonic sorting network for K > 32
     int pad_N = 1;
     while (pad_N < N) {
         pad_N <<= 1;

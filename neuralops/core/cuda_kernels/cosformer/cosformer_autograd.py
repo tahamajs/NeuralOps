@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Cosformer Linear Attention Autograd Interface
 
 Hardware-accelerated CUDA C++ autograd implementation with analytical gradients and three-level fallback dispatch.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -62,7 +66,6 @@ def cosformer_linear_attention_pytorch_ref(
     k_sin = phi_k * torch.sin(theta)
 
     if not is_causal:
-        # Non-causal dual-GEMM: O(L * D^2) instead of O(L^2 * D)
         v_f = v.float()
         kv_cos = torch.matmul(k_cos.transpose(-1, -2), v_f)
         kv_sin = torch.matmul(k_sin.transpose(-1, -2), v_f)
@@ -76,7 +79,6 @@ def cosformer_linear_attention_pytorch_ref(
         ).clamp_min(1e-5)
         return (num / denom).to(q.dtype)
     else:
-        # Causal linear attention with cuBLAS matmul
         scores = torch.matmul(q_cos, k_cos.transpose(-1, -2)) + torch.matmul(
             q_sin, k_sin.transpose(-1, -2)
         )
@@ -116,9 +118,6 @@ def cosformer_linear_attention(
     if D > 128:
         cuda_fn = None
 
-    # In 'auto' mode, because the scalar per-position CUDA kernel exhibits ~0.13x speedup,
-    # route cleanly to optimized PyTorch linear attention (speedup >= 1.0x).
-    # When explicitly forced via force_kernel_backend("cuda"), cuda_fn executes as expected.
     if getattr(_fallback, "_FORCED_BACKEND", "auto") != "cuda":
         cuda_fn = None
 

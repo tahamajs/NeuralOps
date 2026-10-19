@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Baseline Comparison Runner: Benchmarks key literature baselines against Proposed method.
 
@@ -18,8 +24,6 @@ Datasets evaluated:
 Usage:
     python run_baseline_comparison.py --dry_run
     python run_baseline_comparison.py --rank 64
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -43,7 +47,6 @@ sys.path[:0] = [str(CODES), str(ROOT)]
 from datasets import load_dataset, load_from_disk
 
 try:
-    # noinspection deprecation
     from neuralops.benchmarks.run_quality_sweep import evaluate_comprehensive, prepare_eval_batches
 except ImportError:
     evaluate_comprehensive = None
@@ -184,7 +187,6 @@ def main():
             res_file = ds_dir / f"{b_name}.json"
 
             try:
-                # Load fresh model
                 model = AutoModelForSequenceClassification.from_pretrained(model_path)
                 if args.fp16 and device.type == "cuda":
                     model.half()
@@ -201,7 +203,6 @@ def main():
                 comp_rate = round(p_before / max(1, p_after), 4)
                 comp_pct = round(100.0 * (1.0 - p_after / max(1, p_before)), 2)
 
-                # Real evaluation via evaluate_comprehensive
                 tok = AutoTokenizer.from_pretrained(model_path)
                 ds_path = cfg.get("dataset_dir")
                 if ds_path and Path(ds_path).exists():

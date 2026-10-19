@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Dynamic Range Stress Test across extreme numerical scales (1e-4 to 1e4)
 
 Evaluates numerical stability, min/max values, frobenius norms, and NaN/Inf robustness under extreme dynamic ranges across flagship kernels (GLA Scan, Block Sparse, Rotational SVD, Samba MoE).
-
-Author: Taha Majlesi
 """
 
 import argparse
@@ -94,13 +98,11 @@ def run_dynamic_range_benchmark(
                 else:
                     raise ValueError(f"Unknown kernel name: {k_name}")
 
-                # Warmup
                 for _ in range(warmup):
                     _ = fn()
                 if device.type == "cuda":
                     torch.cuda.synchronize()
 
-                # Timing
                 t0 = time.perf_counter()
                 for _ in range(repeat):
                     out = fn()
@@ -147,7 +149,6 @@ def run_dynamic_range_benchmark(
                     "status": f"FAIL ({exc})",
                 })
 
-    # Save CSV
     if output_csv:
         csv_path = Path(output_csv)
         csv_path.parent.mkdir(parents=True, exist_ok=True)
@@ -160,7 +161,6 @@ def run_dynamic_range_benchmark(
                 writer.writerow(r)
         print(f"\nSaved CSV to: {csv_path}")
 
-    # Save JSON
     if output_json:
         json_path = Path(output_json)
         json_path.parent.mkdir(parents=True, exist_ok=True)
@@ -168,7 +168,6 @@ def run_dynamic_range_benchmark(
             json.dump(results, f, indent=2)
         print(f"Saved JSON to: {json_path}")
 
-    # Save LaTeX Table
     if output_tex:
         tex_path = Path(output_tex)
         tex_path.parent.mkdir(parents=True, exist_ok=True)

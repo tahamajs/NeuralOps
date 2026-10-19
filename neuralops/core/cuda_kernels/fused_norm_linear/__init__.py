@@ -1,7 +1,11 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Fused Normalization Linear Projection Hardware Operators.
-
-Author: Taha Majlesi
 """
 
 from neuralops.core.cuda_kernels.fused_norm_linear.norm_linear_autograd import (
@@ -13,5 +17,3 @@ __all__ = [
     "fused_norm_linear",
     "fused_norm_linear_pytorch_ref",
 ]
-# Note: CUDA kernel is EXPERIMENTAL and 240x slower than PyTorch.
-# Do not re-enable in dispatch until the kernel is rewritten with proper tiling.

@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Flash-Decoding Attention Autograd Interface
 
 Hardware-accelerated CUDA C++ autograd implementation with analytical gradients and three-level fallback dispatch.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -81,10 +85,6 @@ def flash_decoding_attention(
     if q.shape[-1] > 256:
         cuda_fn = None
 
-    # The custom CUDA kernel assigns one thread per query token without Split-KV or warp cooperation,
-    # causing severe GPU underutilization and ~0.15x speedup (< 1.0x).
-    # In 'auto' mode, route to Triton split-KV or PyTorch SDPA fallback (speedup >= 1.0x, diff < 1e-4).
-    # When explicitly forced via force_kernel_backend("cuda"), execute cuda_fn for strict parity tests.
     if getattr(_fallback, "_FORCED_BACKEND", "auto") != "cuda":
         cuda_fn = None
 

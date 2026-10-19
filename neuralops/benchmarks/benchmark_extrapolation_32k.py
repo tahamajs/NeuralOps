@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Long-Horizon Sequence Extrapolation and KV-State Scaling Benchmark (up to 32,768 tokens)
 
 Evaluates latency, peak memory, KV-state complexity, and numerical drift across Standard Softmax Attention, Chunk GLA, Gated DeltaNet, and SVD Linear Attention.
-
-Author: Taha Majlesi
 """
 
 import argparse
@@ -77,7 +81,6 @@ def run_extrapolation_benchmark(
     for L in seq_lens:
         print(f"\n================ Sequence Length L = {L} ================")
 
-        # Base inputs
         q = (torch.randn(B, H, L, D, device=device, dtype=dtype) / (D ** 0.5)).contiguous()
         k = (torch.randn(B, H, L, D, device=device, dtype=dtype) / (D ** 0.5)).contiguous()
         v = (torch.randn(B, H, L, D, device=device, dtype=dtype) * 0.1).contiguous()
@@ -88,7 +91,6 @@ def run_extrapolation_benchmark(
         svd_model = SVDLinearAttention(embed_dim=embed_dim, num_heads=H, rank=rank).to(device=device, dtype=dtype)
         x_svd = torch.randn(B, L, embed_dim, device=device, dtype=dtype)
 
-        # Theoretical recurrent KV-state memory in bytes
         elem_bytes = q.element_size()
         kv_mem_bytes_quad = 2 * (B * H * L * D * elem_bytes)
         kv_mem_bytes_recurrent = B * H * D * D * elem_bytes
@@ -143,14 +145,12 @@ def run_extrapolation_benchmark(
                     except Exception:
                         drift = 0.0
 
-            # Warmup
             try:
                 for _ in range(warmup):
                     _ = fn()
                 if device.type == "cuda":
                     torch.cuda.synchronize()
 
-                # Timing
                 iters = max(1, repeat if L <= 16384 else (repeat // 2))
                 t0 = time.perf_counter()
                 for _ in range(iters):
@@ -190,7 +190,6 @@ def run_extrapolation_benchmark(
                     "zero_nan": False,
                 })
 
-    # Export CSV
     if output_csv:
         csv_path = Path(output_csv)
         csv_path.parent.mkdir(parents=True, exist_ok=True)
@@ -203,7 +202,6 @@ def run_extrapolation_benchmark(
                 writer.writerow(r)
         print(f"\nSaved CSV to: {csv_path}")
 
-    # Export JSON
     if output_json:
         json_path = Path(output_json)
         json_path.parent.mkdir(parents=True, exist_ok=True)
@@ -211,7 +209,6 @@ def run_extrapolation_benchmark(
             json.dump(results, f, indent=2)
         print(f"Saved JSON to: {json_path}")
 
-    # Export LaTeX Table
     if output_tex:
         tex_path = Path(output_tex)
         tex_path.parent.mkdir(parents=True, exist_ok=True)

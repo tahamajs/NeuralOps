@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 High-Performance Positional and Block Perplexity Evaluator.
 Modeled after FlashLinearAttention / Long-Context LM evaluation protocols.
 Supports evaluating fixed-length contexts (block_size, bucket_size, batch_size),
 tracking position-wise NLL buckets across the context window, and streaming
 evaluations on PG19, Wikitext, or custom datasets.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -24,7 +28,6 @@ import torch
 import torch.nn as nn
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-# Framework paths
 HERE = Path(__file__).resolve().parent
 CODES = HERE.parent
 ROOT = CODES.parent
@@ -76,7 +79,6 @@ class PerplexityEvaluator:
         else:
             self.dtype = dtype
 
-        # Model Loading
         if isinstance(model, str):
             self.model_name = model
             self.model = AutoModelForCausalLM.from_pretrained(
@@ -101,7 +103,6 @@ class PerplexityEvaluator:
         self.model.to(self.device)
         self.model.eval()
 
-        # Tokenizer
         if tokenizer is None:
             tok_path = model if isinstance(model, str) else "gpt2"
             self.tokenizer = AutoTokenizer.from_pretrained(tok_path, trust_remote_code=True)
@@ -156,8 +157,6 @@ class PerplexityEvaluator:
         if total_tokens < self.block_size + 1:
             raise ValueError(f"Tokens length ({total_tokens}) must be >= block_size + 1 ({self.block_size + 1})")
 
-        # Position-wise loss accumulator
-        # Each position i in [0, block_size - 1] predicts token i + 1
         pos_losses = torch.zeros(self.block_size, dtype=torch.float64, device="cpu")
         pos_counts = torch.zeros(self.block_size, dtype=torch.int64, device="cpu")
 
@@ -183,23 +182,20 @@ class PerplexityEvaluator:
                 tgt_b = torch.stack(batch_targets, dim=0).to(self.device)
 
                 with torch.no_grad():
-                    logits = self.model(inp_b).logits  # [B, L, V]
-                    loss = loss_fn(logits.transpose(1, 2), tgt_b)  # [B, L]
+                    logits = self.model(inp_b).logits
+                    loss = loss_fn(logits.transpose(1, 2), tgt_b)
                     
-                    # Accumulate positional loss
-                    loss_sum = loss.sum(dim=0).cpu().to(torch.float64)  # [L]
+                    loss_sum = loss.sum(dim=0).cpu().to(torch.float64)
                     b_size = inp_b.size(0)
                     pos_losses[:loss_sum.size(0)] += loss_sum
                     pos_counts[:loss_sum.size(0)] += b_size
                     
-                    # Batch block nlls
                     for b_i in range(b_size):
                         block_nlls.append(float(loss[b_i].mean().item()))
 
                 batch_inputs.clear()
                 batch_targets.clear()
 
-        # Remainder batch
         if batch_inputs:
             inp_b = torch.stack(batch_inputs, dim=0).to(self.device)
             tgt_b = torch.stack(batch_targets, dim=0).to(self.device)
@@ -228,7 +224,6 @@ class PerplexityEvaluator:
         avg_nll = total_nll / max(1, total_eval_tokens)
         ppl = math.exp(min(avg_nll, 100.0))
 
-        # Position-wise bucket aggregation
         positional_nll = (pos_losses / pos_counts.clamp(min=1)).tolist()
         bucket_nlls: List[float] = []
         for b_idx in range(self.num_buckets):

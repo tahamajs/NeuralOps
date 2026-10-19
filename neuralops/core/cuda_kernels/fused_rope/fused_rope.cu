@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -6,12 +13,6 @@
 namespace neuralops {
 namespace cuda {
 
-// Fused RoPE Forward Kernel
-// x: [B, H, N, D], cos: [N, D/2] or [1, 1, N, D/2], sin: [N, D/2] or [1, 1, N, D/2]
-// out: [B, H, N, D]
-// x1 = x[..., :D/2], x2 = x[..., D/2:]
-// out[..., :D/2] = x1 * cos - x2 * sin
-// out[..., D/2:] = x2 * cos + x1 * sin
 template <typename scalar_t>
 __launch_bounds__(128)
 __global__ void fused_rope_fwd_kernel(
@@ -71,7 +72,6 @@ __global__ void fused_rope_fwd_kernel(
     out[o2_idx] = from_float<scalar_t>(o2);
 }
 
-// Backward Kernel (adjoint rotation: inverse rotation has -s instead of s)
 template <typename scalar_t>
 __launch_bounds__(128)
 __global__ void fused_rope_bwd_kernel(
@@ -121,7 +121,6 @@ __global__ void fused_rope_bwd_kernel(
     const float c = to_float(cos[c_idx]);
     const float s = to_float(sin[s_idx]);
 
-    // Reverse rotation: [do1 * c + do2 * s, do2 * c - do1 * s]
     const float dx1 = do1 * c + do2 * s;
     const float dx2 = do2 * c - do1 * s;
 
@@ -132,8 +131,8 @@ __global__ void fused_rope_bwd_kernel(
     dx[dx2_idx] = from_float<scalar_t>(dx2);
 }
 
-} // namespace cuda
-} // namespace neuralops
+}
+}
 
 torch::Tensor fused_rope_fwd(
     const torch::Tensor& x,
@@ -155,7 +154,6 @@ torch::Tensor fused_rope_fwd(
     const int threads = (half_d <= 32) ? 32 : ((half_d <= 64) ? 64 : 128);
     cudaStream_t stream = c10::cuda::getCurrentCUDAStream().stream();
 
-    // Broadcast strides for cos and sin
     auto cos_b = cos.expand_as(x.narrow(3, 0, half_d));
     auto sin_b = sin.expand_as(x.narrow(3, 0, half_d));
 

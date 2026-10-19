@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Experiment Configuration
 
 Master configuration schema orchestrating complete benchmark, training, and evaluation pipelines.
-
-Author: Taha Majlesi
 """
 
 from dataclasses import dataclass, field
@@ -13,7 +17,7 @@ from dataclasses import dataclass, field
 class DatasetConfig:
     name: str
     path: str
-    task_type: str  # "mc" or "single"
+    task_type: str
     num_choices: int = 0
     num_labels: int = 2
 
@@ -33,16 +37,15 @@ class ExperimentConfig:
     seed: int = 42
     gradient_accumulation_steps: int = 1
 
-    # Advanced Training & Linear-Time Scalability Options
-    optimizer_type: str = "adamw"  # Options: adamw, sgd, adafactor
-    lr_scheduler_type: str = "linear"  # Options: linear, cosine, cosine_with_restarts
+    optimizer_type: str = "adamw"
+    lr_scheduler_type: str = "linear"
     warmup_steps: int = 0
     weight_decay: float = 0.01
-    mixed_precision: str = "no"  # Options: no, fp16, bf16
+    mixed_precision: str = "no"
     gradient_checkpointing: bool = (
-        False  # Useful for extremely long sequences / linear time tracking
+        False
     )
-    max_grad_norm: float = 1.0  # Gradient clipping threshold
+    max_grad_norm: float = 1.0
 
     save_checkpoint_interval: int = 10
     output_dir: str = "./results"

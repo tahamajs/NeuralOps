@@ -1,10 +1,14 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Label quality detection – inspired by Cleanlab, the industry standard for
 data‑centric AI.  Finds label errors, outliers, and near‑duplicates.
 
 Reference: https://github.com/cleanlab/cleanlab
-
-Author: Taha Majlesi
 """
 
 from dataclasses import dataclass, field
@@ -25,8 +29,8 @@ class LabelQualityReport:
     n_label_issues: int
     issue_rate: float
     label_issue_indices: np.ndarray
-    label_quality_scores: np.ndarray  # per‑sample confidence (0 = bad, 1 = perfect)
-    suggested_labels: np.ndarray | None = None  # what cleanlab thinks the label should be
+    label_quality_scores: np.ndarray
+    suggested_labels: np.ndarray | None = None
     per_class_issues: dict[int, int] = field(default_factory=dict)
     outlier_indices: np.ndarray = field(default_factory=lambda: np.array([]))
     near_duplicate_pairs: list[tuple[int, int]] = field(default_factory=list)
@@ -50,7 +54,6 @@ class LabelQualityDetector:
         self.threshold = threshold
         self.seed = seed
 
-    # ── Main API ────────────────────────────────────────────────────
     def analyze(
         self,
         labels: np.ndarray,
@@ -68,29 +71,23 @@ class LabelQualityDetector:
         n_samples, n_classes = pred_probs.shape
         np.random.seed(self.seed)
 
-        # 1. Compute confident joint (estimate of noise matrix)
         cj = self._compute_confident_joint(labels, pred_probs)
 
-        # 2. Find label issues
         label_issues_mask, quality_scores, suggested = self._find_label_issues(
             labels, pred_probs, cj
         )
 
-        # 3. Per‑class breakdown
         per_class = {}
         for k in range(n_classes):
             mask_k = labels == k
             per_class[k] = int(np.sum(label_issues_mask[mask_k]))
 
-        # 4. Outlier detection (using prediction entropy)
         entropy = -np.sum(pred_probs * np.log(pred_probs + 1e-10), axis=1)
         outlier_thresh = np.percentile(entropy, 95)
         outlier_indices = np.where(entropy > outlier_thresh)[0]
 
-        # 5. Near‑duplicate detection (using prediction cosine similarity)
         near_dupes = self._find_near_duplicates(pred_probs)
 
-        # 6. Overall quality score
         overall = 1.0 - np.mean(label_issues_mask)
 
         return LabelQualityReport(
@@ -106,7 +103,6 @@ class LabelQualityDetector:
             overall_quality_score=round(overall, 4),
         )
 
-    # ── Confident Joint (core algorithm) ────────────────────────────
     def _compute_confident_joint(self, labels: np.ndarray, pred_probs: np.ndarray) -> np.ndarray:
         """
         Estimate the joint distribution of noisy labels and true labels.
@@ -115,7 +111,6 @@ class LabelQualityDetector:
         n_samples, n_classes = pred_probs.shape
         pred_classes = np.argmax(pred_probs, axis=1)
 
-        # Average threshold for each class: t_k = mean prob of class k when k is predicted
         thresholds = np.zeros(n_classes)
         for k in range(n_classes):
             mask = pred_classes == k
@@ -124,7 +119,6 @@ class LabelQualityDetector:
             else:
                 thresholds[k] = 0.5
 
-        # Confident joint: count how many times (given_label = i, true_label = j)
         cj = np.zeros((n_classes, n_classes), dtype=np.float64)
         for i in range(n_samples):
             true_label_guess = np.argmax(pred_probs[i])
@@ -132,11 +126,9 @@ class LabelQualityDetector:
             if pred_probs[i, true_label_guess] >= thresholds[true_label_guess]:
                 cj[given_label, true_label_guess] += 1
 
-        # Normalise to probabilities
         cj = cj / max(cj.sum(), 1.0)
         return cj
 
-    # ── Label Issue Detection ───────────────────────────────────────
     def _find_label_issues(
         self, labels: np.ndarray, pred_probs: np.ndarray, cj: np.ndarray
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray | None]:
@@ -145,11 +137,9 @@ class LabelQualityDetector:
         """
         n_samples, n_classes = pred_probs.shape
 
-        # For each sample, the label quality score = 1 - P(mislabeled)
         self_confidence = pred_probs[np.arange(n_samples), labels]
         quality_scores = self_confidence
 
-        # A sample is a label issue if self‑confidence is below the class threshold
         thresholds = np.zeros(n_classes)
         for k in range(n_classes):
             mask = labels == k
@@ -163,13 +153,11 @@ class LabelQualityDetector:
             mask_k = labels == k
             issue_mask[mask_k] = self_confidence[mask_k] < (thresholds[k] * (1 - self.threshold))
 
-        # Suggested labels: what the model predicts instead
         suggested = np.argmax(pred_probs, axis=1)
-        suggested[~issue_mask] = labels[~issue_mask]  # keep original if not an issue
+        suggested[~issue_mask] = labels[~issue_mask]
 
         return issue_mask, quality_scores, suggested
 
-    # ── Near‑Duplicate Detection ────────────────────────────────────
     def _find_near_duplicates(
         self, pred_probs: np.ndarray, threshold: float = 0.95
     ) -> list[tuple[int, int]]:
@@ -178,7 +166,6 @@ class LabelQualityDetector:
 
         n = pred_probs.shape[0]
         if n > 5000:
-            # Subsample for performance
             indices = np.random.choice(n, min(5000, n), replace=False)
             subset = pred_probs[indices]
             sim = cosine_similarity(subset)
@@ -186,7 +173,6 @@ class LabelQualityDetector:
             sim = cosine_similarity(pred_probs)
         np.fill_diagonal(sim, 0)
         pairs = np.argwhere(sim > threshold)
-        # De‑duplicate symmetric pairs
         seen = set()
         result = []
         for i, j in pairs:
@@ -195,7 +181,6 @@ class LabelQualityDetector:
                 seen.add((i, j))
         return result
 
-    # ── Summary helpers ─────────────────────────────────────────────
     def summary(self, report: LabelQualityReport) -> dict[str, Any]:
         """Summary."""
         return {

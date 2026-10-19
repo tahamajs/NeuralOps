@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Attention Layer Wrapper
 
 Polymorphic container wrapping custom attention kernels with standardized PyTorch module interfaces.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -26,7 +30,6 @@ from neuralops.core.svd_utils import randomized_svd
 
 logger = logging.getLogger(__name__)
 
-# Backward-compatibility aliases
 _FactorizedLinear = FactorizedLinear
 _randomized_svd = randomized_svd
 _get_valid_mask = get_token_valid_mask
@@ -62,7 +65,6 @@ class ReplaceAttention(BaseAttention):
         except TypeError:
             super().__init__(config)
 
-        # RE-13: guard num_heads
         self.hidden_size = int(
             hidden_size or _cfg_get(config, "hidden_size", _cfg_get(config, "d_model", 768))
         )
@@ -77,7 +79,6 @@ class ReplaceAttention(BaseAttention):
         self.head_dim = max(1, self.hidden_size // self.num_heads)
         self.all_head_size = self.num_heads * self.head_dim
 
-        # GQA support (Fix 1)
         self.num_kv_heads = int(
             _cfg_get(
                 config,
@@ -95,7 +96,6 @@ class ReplaceAttention(BaseAttention):
 
         self.is_nested_encoder: bool = False
 
-        # RE-07: optional low-rank
         self.rank = int(rank) if rank and rank > 0 else 0
 
         if self.rank > 0:
@@ -128,7 +128,6 @@ class ReplaceAttention(BaseAttention):
         if old_attn is not None:
             self.copy_weights(old_attn)
 
-    # Aliases (RE-12)
     @property
     def query(self) -> nn.Module:
         """Alias for query projection layer.
@@ -219,9 +218,6 @@ class ReplaceAttention(BaseAttention):
         """
         return self.out_proj
 
-    # ------------------------------------------------------------------
-    # RE-14 / RE-22: shape-checked weight copy
-    # ------------------------------------------------------------------
     def _copy_into(
         self,
         target_proj: nn.Module,
@@ -236,7 +232,6 @@ class ReplaceAttention(BaseAttention):
             if isinstance(target_proj, _FactorizedLinear):
                 try:
                     W = w.detach().float()
-                    # Warn on shape mismatch
                     if W.shape[0] != target_out or W.shape[1] != target_in:
                         logger.warning(
                             "Shape mismatch in copy_into: source %s, target (%d, %d). "
@@ -263,7 +258,6 @@ class ReplaceAttention(BaseAttention):
                 except Exception as e:
                     logger.error("SVD init failed: %s", e)
             else:
-                # Raise on shape mismatch
                 if w.shape != target_proj.weight.shape:
                     raise ValueError(
                         f"Weight shape mismatch: source {tuple(w.shape)} != "
@@ -287,20 +281,18 @@ class ReplaceAttention(BaseAttention):
         src = getattr(old_attn, "base_layer", old_attn)
         w_q = b_q = w_k = b_k = w_v = b_v = w_o = b_o = None
 
-        # Pattern 1: GPT-2 Conv1D / Linear fused
         if hasattr(src, "c_attn") and hasattr(src, "c_proj"):
             c_attn = src.c_attn
             c_proj = src.c_proj
             w_all = c_attn.weight.data
             b_all = c_attn.bias.data if c_attn.bias is not None else None
 
-            # RE-22: handle GQA-aware chunking.
             hidden = w_all.shape[0] if w_all.shape[0] < w_all.shape[1] else w_all.shape[1]
             if w_all.shape[0] == 3 * hidden or w_all.shape[1] == 3 * hidden:
-                if w_all.shape[1] == 3 * hidden:  # Conv1D (in, 3*out)
+                if w_all.shape[1] == 3 * hidden:
                     chunks = w_all.chunk(3, dim=1)
                     w_q, w_k, w_v = [c.t().contiguous() for c in chunks]
-                else:  # Linear (3*out, in)
+                else:
                     chunks = w_all.chunk(3, dim=0)
                     w_q, w_k, w_v = chunks[0], chunks[1], chunks[2]
                 if b_all is not None:
@@ -313,7 +305,6 @@ class ReplaceAttention(BaseAttention):
                 w_o = w_proj
             b_o = c_proj.bias.data if c_proj.bias is not None else None
 
-        # Pattern 2: BERT / RoBERTa nested
         elif hasattr(src, "self") and hasattr(src.self, "query"):
             s = src.self
             w_q = s.query.weight.data
@@ -327,7 +318,6 @@ class ReplaceAttention(BaseAttention):
                 b_o = src.output.dense.bias.data if src.output.dense.bias is not None else None
             self.is_nested_encoder = True
 
-        # Pattern 3: Flat query/key/value
         elif hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value"):
             w_q = src.query.weight.data
             b_q = src.query.bias.data if src.query.bias is not None else None
@@ -343,7 +333,6 @@ class ReplaceAttention(BaseAttention):
                         b_o = proj.bias.data if getattr(proj, "bias", None) is not None else None
                     break
 
-        # Pattern 4: DistilBERT
         elif hasattr(src, "q_lin") and hasattr(src, "k_lin") and hasattr(src, "v_lin"):
             w_q = src.q_lin.weight.data
             b_q = src.q_lin.bias.data if src.q_lin.bias is not None else None
@@ -355,7 +344,6 @@ class ReplaceAttention(BaseAttention):
                 w_o = src.out_lin.weight.data
                 b_o = src.out_lin.bias.data if src.out_lin.bias is not None else None
 
-        # Pattern 5: Qwen / LLaMA
         elif hasattr(src, "q_proj") and hasattr(src, "k_proj") and hasattr(src, "v_proj"):
             w_q = src.q_proj.weight.data
             b_q = src.q_proj.bias.data if getattr(src.q_proj, "bias", None) is not None else None
@@ -369,7 +357,6 @@ class ReplaceAttention(BaseAttention):
                     src.o_proj.bias.data if getattr(src.o_proj, "bias", None) is not None else None
                 )
 
-        # Fallback: UniversalAdapter
         if w_q is None or w_k is None or w_v is None:
             try:
                 adapter = UniversalAdapter()
@@ -407,9 +394,6 @@ class ReplaceAttention(BaseAttention):
         if not self.is_nested_encoder:
             self._copy_into(self.out_proj, w_o, b_o, self.hidden_size, self.all_head_size)
 
-    # ------------------------------------------------------------------
-    # Forward
-    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor | None = None,
@@ -451,7 +435,6 @@ class ReplaceAttention(BaseAttention):
             .contiguous()
         )
 
-        # Add repeat_kv for GQA:
         if self.num_kv_heads < self.num_heads:
             repeat = self.num_heads // self.num_kv_heads
             K = K.repeat_interleave(repeat, dim=1)
@@ -468,7 +451,6 @@ class ReplaceAttention(BaseAttention):
             elif attention_mask.dim() == 4:
                 attn_mask_sdpa = attention_mask.to(Q.dtype)
 
-        # SDPA does not support returning attention weights or arbitrary head_mask
         if not output_attentions and head_mask is None:
             try:
                 q_sdpa = maybe_half(Q)
@@ -526,7 +508,7 @@ class ReplaceAttention(BaseAttention):
             elif head_mask.dim() == 2:
                 head_mask = head_mask.unsqueeze(-1).unsqueeze(-1)
             elif head_mask.dim() == 3:
-                head_mask = head_mask.unsqueeze(2)  # (B, H, 1, N) for broadcasting
+                head_mask = head_mask.unsqueeze(2)
             probs = probs * head_mask
 
         context = torch.matmul(probs, V)
@@ -545,7 +527,6 @@ class ReplaceAttention(BaseAttention):
         return out, (probs if output_attentions else None)
 
 
-# Backward-compatible alias
 Replace = ReplaceAttention
 
 __all__ = [

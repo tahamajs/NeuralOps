@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -5,14 +12,6 @@
 
 namespace neuralops { namespace cuda {
 
-// Causal Linear Attention with Exponential Decay:
-// Form: s_t = \gamma_d \cdot s_{t-1} + k_{t, d} \cdot v_{t, d}
-//       y_t = q_{t, d} \cdot s_t
-//
-// Hardware-level optimization:
-// 1. Decoupled 2D Grid: dim3 grid(ceil(D / 128), B * H) with 128 threads/block.
-// 2. Strict FP32 intermediate recurrence in registers to avoid underflow/overflow.
-// 3. Eliminates threads = D anti-pattern; supports arbitrary feature dimensions D.
 template <typename scalar_t>
 __global__ void __launch_bounds__(128) decay_linear_fwd_kernel(
     scalar_t* __restrict__ out,
@@ -49,7 +48,7 @@ __global__ void __launch_bounds__(128) decay_linear_fwd_kernel(
     }
 }
 
-}} // namespace neuralops::cuda
+}}
 
 torch::Tensor decay_linear_fwd(
     const torch::Tensor& q,

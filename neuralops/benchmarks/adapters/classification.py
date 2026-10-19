@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Classification task adapter for neuralops benchmark suite
 
 Implements classification functionality for NeuralOps.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -86,10 +90,8 @@ class ClassificationAdapter:
         """Load datasets, tokenizers, and base model with classification head."""
         torch.manual_seed(self.seed)
 
-        # 1. Determine number of labels for dataset
         num_labels = get_num_labels(self.dataset_name)
 
-        # 2. Load model and tokenizer with sequence classification head
         self.model, self.tokenizer, model_cfg = load_model_and_tokenizer(
             self.model_name,
             device=self.device,
@@ -100,7 +102,6 @@ class ClassificationAdapter:
         )
         self.model_meta = get_model_metadata(self.model, model_cfg)
 
-        # 3. Tokenize datasets
         max_train_samples = getattr(self, "max_samples", None) or self.extra_kwargs.get("max_samples")
         max_eval_samples = self.extra_kwargs.get("max_eval_samples")
 
@@ -111,7 +112,6 @@ class ClassificationAdapter:
             split="train",
             max_samples=max_train_samples,
         )
-        # Determine eval split
         eval_split = "validation"
         try:
             tokenized_eval = load_dataset_by_name(
@@ -173,7 +173,6 @@ class ClassificationAdapter:
         else:
             raise ValueError(f"Unknown module type: {self.module_type}")
 
-        # Update params in metadata
         params_after = count_parameters(self.model)
         if self.module_type == "compressor" and params_after >= params_before:
             logger.warning(
@@ -231,21 +230,18 @@ class ClassificationAdapter:
                 del teacher_model
 
 
-        # Baseline evaluation
         eval_metrics = evaluate_classification(
             model=self.model,
             eval_loader=self.eval_loader,
             device=self.device,
         )
 
-        # Latency and throughput
         latency_stats = measure_latency_and_throughput(
             model=self.model,
             dataloader=self.eval_loader,
             device=self.device,
         )
 
-        # Memory measurement
         peak_mem = measure_peak_memory_mb(self.device)
 
         return {

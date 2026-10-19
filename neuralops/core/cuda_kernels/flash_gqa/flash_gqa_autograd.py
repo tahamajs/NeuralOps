@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Flash Grouped Query Attention Autograd Interface
 
 Hardware-accelerated CUDA C++ autograd implementation with analytical gradients and three-level fallback dispatch.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -84,8 +88,6 @@ def _flash_gqa_triton_fallback(
     is_causal: bool = False,
     scale: float | None = None,
 ) -> torch.Tensor | None:
-    # Triton online-softmax kernel requires power-of-2 head dimensions (32, 64, 128)
-    # and equal sequence lengths
     if q.shape[-1] not in (32, 64, 128) or q.shape[2] != k.shape[2]:
         return None
 
@@ -154,7 +156,6 @@ class _FlashGQAAutograd(torch.autograd.Function):
         k_exp = k.repeat_interleave(group_size, dim=1) if group_size > 1 else k
         v_exp = v.repeat_interleave(group_size, dim=1) if group_size > 1 else v
 
-        # Recompute attention probabilities
         scores = torch.matmul(q.float(), k_exp.float().transpose(-1, -2)) * scale
         if is_causal:
             q_idx = torch.arange(N_Q, device=q.device).unsqueeze(1)

@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -8,8 +15,6 @@
 namespace neuralops {
 namespace cuda {
 
-// Causal Depthwise 1D Conv: x: [B, D, L], weight: [D, Kw], bias: [D] (optional)
-// Optimized with register-cached filter weights and hardware FMA accumulation.
 template <typename scalar_t>
 __launch_bounds__(256)
 __global__ void causal_conv1d_fwd_vectorized_kernel(
@@ -55,8 +60,8 @@ __global__ void causal_conv1d_fwd_vectorized_kernel(
     }
 }
 
-} // namespace cuda
-} // namespace neuralops
+}
+}
 
 torch::Tensor causal_conv1d_fwd(
     const torch::Tensor& x,

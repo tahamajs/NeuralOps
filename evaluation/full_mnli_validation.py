@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 full_mnli_validation.py
 -----------------------
@@ -10,8 +16,6 @@ Usage (from project root):
         --sweep_csv results/02_glue_sweeps/distilbert/distilbert_mnli_full_mnli_sweep/summary.csv \
         --dataset_dir neuralops/data/glue_data/mnli \
         --out results/02_glue_sweeps/distilbert/distilbert_mnli_full_mnli_sweep/full_mnli_validation.csv
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -34,9 +38,6 @@ from sklearn.metrics import (
 )
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
-# --------------------------------------------------------------------------- #
-#  Helpers                                                                    #
-# --------------------------------------------------------------------------- #
 
 
 def wilson_ci(n_correct: int, n_total: int, z: float = 1.96):
@@ -69,7 +70,6 @@ def eval_on_dataset(model, tokenizer, val_ds, seq_len: int, batch_size: int, dev
     total_tokens = 0
     t0 = time.monotonic()
 
-    # Use 'premise'+'hypothesis' for MNLI, 'sentence' for SST-2
     if "premise" in val_ds.column_names:
         texts = [f"{r['premise']} [SEP] {r['hypothesis']}" for r in val_ds]
     elif "sentence1" in val_ds.column_names:
@@ -139,9 +139,6 @@ def eval_on_dataset(model, tokenizer, val_ds, seq_len: int, batch_size: int, dev
     }
 
 
-# --------------------------------------------------------------------------- #
-#  Main                                                                       #
-# --------------------------------------------------------------------------- #
 
 
 def main():
@@ -169,7 +166,6 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Device: {device}")
 
-    # Load full MNLI val split
     if args.full_mnli_dir and Path(args.full_mnli_dir).exists():
         ds = load_from_disk(args.full_mnli_dir)
     else:
@@ -179,7 +175,6 @@ def main():
     val_full = ds["validation"] if "validation" in ds else ds
     print(f"Full validation split: N = {len(val_full)}")
 
-    # Compute threshold for full split
     label_counts = Counter(val_full["label"])
     N = len(val_full)
     majority = max(label_counts.values()) / N
@@ -191,7 +186,6 @@ def main():
     )
     print(f"Label distribution: {dict(label_counts)}")
 
-    # Read sweep CSV — select PASS modules with acc >= min_acc_filter
     sweep_rows = []
     with open(args.sweep_csv, newline="", encoding="utf-8") as f:
         for r in csv.DictReader(f):
@@ -204,7 +198,6 @@ def main():
         f"Modules to re-evaluate: {len(sweep_rows)} (acc >= {args.min_acc_filter}% and PASS status)"
     )
 
-    # Load tokenizer and base model (used to load saved state_dicts)
     tokenizer = AutoTokenizer.from_pretrained(args.model)
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token = tokenizer.eos_token
@@ -216,7 +209,6 @@ def main():
         local_status = r.get("status", "")
         print(f"\n[{i}/{len(sweep_rows)}] Evaluating {mod} (local acc={local_acc:.1f}%)...")
 
-        # Load base model fresh for each module
         try:
             model = AutoModelForSequenceClassification.from_pretrained(args.model, num_labels=3)
         except Exception as e:
@@ -242,7 +234,6 @@ def main():
             )
             continue
 
-        # Load saved module checkpoint if it exists
         checkpoint_path = (
             Path(args.sweep_csv).parent / f"distilbert_mnli_full_{mod}_full_metrics.json"
         )
@@ -250,7 +241,6 @@ def main():
             try:
                 with open(checkpoint_path) as jf:
                     json.load(jf)
-                # The metrics JSON contains performance, not weights. Use it as ref only.
             except Exception:
                 pass
 
@@ -321,7 +311,6 @@ def main():
         del model
         torch.cuda.empty_cache()
 
-    # Write results
     out_path = Path(args.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     fieldnames = list(results[0].keys()) if results else []
@@ -332,7 +321,6 @@ def main():
 
     print(f"\nWrote {len(results)} rows to {out_path}")
 
-    # Summary
     pass_full = [r for r in results if r.get("passes_full_threshold") is True]
     fail_full = [r for r in results if r.get("passes_full_threshold") is False]
     print(f"\nSummary on full MNLI (N={len(val_full)}, threshold={threshold_full}%):")

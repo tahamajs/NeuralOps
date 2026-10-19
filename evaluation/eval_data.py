@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Evaluation data loading, batch generation, and calibration loader builder.
 
 Handles tokenized caching, real GLUE/LM dataset batch retrieval, synthetic data fallbacks,
 and real calibration DataLoaders for activation-aware model compression.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -23,7 +27,6 @@ from evaluation.eval_utils import _evict_if_needed
 
 logger = logging.getLogger("EvalEngine")
 
-# Caches for tokenized evaluation batches and loaded huggingface datasets
 _TOKENIZED_BATCH_CACHE: dict[tuple[str, str, int, int, str], dict[str, torch.Tensor]] = {}
 _PREPARED_DATASET_CACHE: dict[tuple[str, str, int], Any] = {}
 

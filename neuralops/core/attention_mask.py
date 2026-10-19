@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Attention Mask Handlers
 
 Universal masking utilities handling causal, 2D binary, 3D broadcast, and 4D extended additive masks.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -39,30 +43,21 @@ def apply_attention_mask(
     dtype = scores.dtype
     device = scores.device
 
-    # Ensure mask is on the same device
     mask = attention_mask.to(device=device)
 
-    # Case 1: 2D binary / boolean mask [B, N_k]
     if mask.dim() == 2:
         if mask.dtype == torch.bool:
-            # True = keep, False = mask
             additive = torch.zeros_like(mask, dtype=dtype)
             additive = additive.masked_fill(~mask, mask_value)
         elif torch.is_floating_point(mask):
-            # Check if it's already negative additive or 0/1 binary
             if (mask < 0).any():
-                # Already additive
                 additive = mask.to(dtype=dtype)
             else:
-                # 1.0 = keep, 0.0 = mask
                 additive = (1.0 - mask.to(dtype=dtype)) * mask_value
         else:
-            # Integer binary mask (1=keep, 0=mask)
             additive = (1.0 - mask.to(dtype=dtype)) * mask_value
-        # Broadcast to [B, 1, 1, N_k]
         return scores + additive.unsqueeze(1).unsqueeze(2)
 
-    # Case 2: 3D mask [B, 1, N_k] or [B, N_q, N_k]
     elif mask.dim() == 3:
         if mask.dtype == torch.bool:
             additive = torch.zeros_like(mask, dtype=dtype)
@@ -74,21 +69,17 @@ def apply_attention_mask(
             additive = (1.0 - mask.to(dtype=dtype)) * mask_value
             return scores + additive.unsqueeze(1)
 
-    # Case 3: 4D mask [B, 1, 1, N_k] or [B, 1, N_q, N_k] or [B, H, N_q, N_k]
     elif mask.dim() == 4:
         if mask.dtype == torch.bool:
             additive = torch.zeros_like(mask, dtype=dtype)
             additive = additive.masked_fill(~mask, mask_value)
             return scores + additive
         elif torch.is_floating_point(mask):
-            # HuggingFace extended attention mask already contains 0.0 for unmasked and -10000.0 for masked
             if (mask < 0).any():
                 return scores + mask.to(dtype=dtype)
             else:
-                # 4D binary mask
                 return scores + (1.0 - mask.to(dtype=dtype)) * mask_value
         else:
-            # 4D integer mask
             return scores + (1.0 - mask.to(dtype=dtype)) * mask_value
 
     return scores
@@ -120,11 +111,10 @@ def get_token_valid_mask(
         if mask.dtype == torch.bool:
             return mask
         elif torch.is_floating_point(mask) and (mask < 0).any():
-            return mask >= -1.0  # unmasked is ~0.0
+            return mask >= -1.0
         else:
             return mask > 0.5
     elif mask.dim() == 4:
-        # [B, 1, 1, N] or [B, 1, N, N]
         if mask.size(2) == 1:
             last_dim_mask = mask[:, 0, 0, :]
             if last_dim_mask.dtype == torch.bool:
@@ -134,7 +124,6 @@ def get_token_valid_mask(
             else:
                 return last_dim_mask > 0.5
         elif mask.size(2) == seq_len:
-            # Check if mask last dim matches seq_len
             if mask.size(-1) == seq_len:
                 if mask.dtype == torch.bool:
                     return mask.any(dim=2)[:, 0, :]
@@ -143,8 +132,6 @@ def get_token_valid_mask(
                 else:
                     return (mask > 0.5).any(dim=2)[:, 0, :]
             else:
-                # Cross-attention mask [B, 1, N_q, N_kv] where N_q != N_kv
-                # Queries that attend to at least one valid KV token are valid
                 if mask.dtype == torch.bool:
                     return mask.any(dim=-1)[:, 0, :]
                 elif torch.is_floating_point(mask) and (mask < 0).any():

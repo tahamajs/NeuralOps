@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Entmax Bisection Autograd Interface
 
 Hardware-accelerated CUDA C++ autograd implementation with analytical gradients and three-level fallback dispatch.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -62,7 +66,6 @@ def entmax15_backward_cuda(dout: torch.Tensor, p: torch.Tensor) -> torch.Tensor:
     mod = _get_module()
     if mod is not None and hasattr(mod, "entmax15_bwd"):
         return mod.entmax15_bwd(dout.contiguous(), p.contiguous())
-    # PyTorch reference fallback
     p_f = p.float()
     dout_f = dout.float()
     sp = torch.sqrt(torch.clamp(p_f, min=0.0))

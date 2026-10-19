@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Progressive Token Pruning (PTP)
 
 Learnable progressive token pruning module with guaranteed prefix retention and causal mask safety.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations

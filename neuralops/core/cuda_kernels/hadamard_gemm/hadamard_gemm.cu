@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -7,9 +14,6 @@
 namespace neuralops {
 namespace cuda {
 
-// Fast 128-bit vectorized dequantization kernel:
-// Unpacks 32 weights (16 bytes = uint4) per thread directly into registers,
-// applies per-group scale and zero point, and stores 128-bit chunks to w_dequant.
 template <typename scalar_t>
 __global__ void __launch_bounds__(256) dequant_w4a16_vectorized_kernel(
     scalar_t* __restrict__ w_dequant,
@@ -48,8 +52,8 @@ __global__ void __launch_bounds__(256) dequant_w4a16_vectorized_kernel(
     }
 }
 
-} // namespace cuda
-} // namespace neuralops
+}
+}
 
 torch::Tensor hadamard_w4a16_gemm_fwd(
     const torch::Tensor& x,

@@ -1,6 +1,11 @@
-// BigBird Attention CUDA Kernel
-// Author: Taha Majlesi
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
 
+// BigBird Attention CUDA Kernel
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -100,7 +105,7 @@ __global__ void __launch_bounds__(128) bigbird_fwd_kernel(
     }
 }
 
-}} // namespace neuralops::cuda
+}}
 
 torch::Tensor bigbird_fwd(
     const torch::Tensor& q,

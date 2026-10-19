@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Adaptive Enhanced Global-Local Integrated Sparse Attention
 
 Partitions attention heads across local dense, global sparse, and linear low-rank operations.
-
-Author: Taha Majlesi
 """
 
 from neuralops.core.common import temperature_softmax

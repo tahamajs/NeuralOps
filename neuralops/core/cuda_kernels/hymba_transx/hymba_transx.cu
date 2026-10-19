@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -5,14 +12,6 @@
 
 namespace neuralops { namespace cuda {
 
-// Hymba TransX Kernel:
-// Averages cross-attention metadata tokens across length M and applies a sigmoid-gated
-// cross-modal residual projection into sequence x:
-// meta_mean_d = (1/M) * \sum_{m=0}^{M-1} meta[b, m, d]
-// gate_{b, t, d} = sigmoid(cross_gate[b, t, d])
-// out[b, t, d] = x[b, t, d] + gate_{b, t, d} * meta_mean_d
-// Thread mapping: 2D Grid over (ceil(D / 128), B) with 128 threads per block.
-// Eliminates the hardcoded threads = D, blocks = B anti-pattern.
 template <typename scalar_t>
 __global__ void __launch_bounds__(128) hymba_transx_fwd_kernel(
     scalar_t* __restrict__ out,
@@ -43,7 +42,7 @@ __global__ void __launch_bounds__(128) hymba_transx_fwd_kernel(
     }
 }
 
-}} // namespace neuralops::cuda
+}}
 
 torch::Tensor hymba_transx_fwd(
     const torch::Tensor& x,

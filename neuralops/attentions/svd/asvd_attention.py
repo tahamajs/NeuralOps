@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 ASVD: Activation-Aware Singular Value Decomposition Attention
 
 Activation-aware singular value decomposition attention preserving sensitive projection outlier channels.
-
-Author: Taha Majlesi
 """
 
 from neuralops.core.attention_utils import (
@@ -913,7 +917,6 @@ def inject_asvd(
 
     layer = target
     config = cfg
-
     """Universal injection factory for ASVDAttention with pre-flight extraction validation."""
     target_model = model or kwargs.get("model")
     if target_model is not None and any(

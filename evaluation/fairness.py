@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Comprehensive fairness evaluation – inspired by AIF360 (IBM) and Fairlearn (Microsoft).
 Supports 15+ group‑fairness metrics and 6 bias mitigation strategies.
@@ -5,8 +11,6 @@ Supports 15+ group‑fairness metrics and 6 bias mitigation strategies.
 References:
   - AIF360: https://aif360.res.ibm.com
   - Fairlearn: https://fairlearn.org
-
-Author: Taha Majlesi
 """
 
 from dataclasses import dataclass, field
@@ -24,10 +28,10 @@ FAIRNESS_MITIGATION_REGISTRY = Registry("fairness_mitigations")
 class FairnessReport:
     """Complete fairness analysis for a model."""
 
-    metrics: dict[str, dict[str, float]]  # metric_name → {group: value}
+    metrics: dict[str, dict[str, float]]
     group_sizes: dict[str, int]
-    disparities: dict[str, float]  # max disparity per metric
-    overall_score: float  # 1.0 = perfectly fair, 0.0 = maximally unfair
+    disparities: dict[str, float]
+    overall_score: float
     worst_off_group: str
     best_off_group: str
     is_fair: bool
@@ -48,7 +52,6 @@ class FairnessEvaluator:
         """Execute init routine."""
         self.threshold = threshold
 
-    # ── Main API ────────────────────────────────────────────────────
     def evaluate(
         self,
         predictions: np.ndarray,
@@ -80,14 +83,12 @@ class FairnessEvaluator:
         all_group_sizes: dict[str, int] = {}
         disparities: dict[str, float] = {}
 
-        # Determine which groups exist (union across all attributes)
         for attr_name, attr_values in groups.items():
             unique_vals = np.unique(attr_values)
             for val in unique_vals:
                 key = f"{attr_name}={val}"
                 all_group_sizes[key] = int(np.sum(attr_values == val))
 
-        # Compute each metric
         for metric in metrics:
             result = self._compute_metric(predictions, labels, groups, metric, favorable_label)
             all_metric_results[metric] = result
@@ -95,17 +96,14 @@ class FairnessEvaluator:
                 values = list(result.values())
                 disparities[metric] = max(values) - min(values)
 
-        # Overall fairness score
         all_disps = list(disparities.values())
         overall = 1.0 - np.mean(all_disps) if all_disps else 1.0
         is_fair = max(all_disps) <= self.threshold if all_disps else True
 
-        # Best / worst
         avg_by_group = self._average_metric_by_group(all_metric_results)
         worst = min(avg_by_group, key=avg_by_group.get) if avg_by_group else "N/A"
         best = max(avg_by_group, key=avg_by_group.get) if avg_by_group else "N/A"
 
-        # Suggestions
         suggestions = []
         if not is_fair:
             suggestions = self._generate_suggestions(all_metric_results, self.threshold)
@@ -122,7 +120,6 @@ class FairnessEvaluator:
             mitigation_suggestions=suggestions,
         )
 
-    # ── Individual metric computers ─────────────────────────────────
     def _compute_metric(self, preds, labels, groups, metric, favorable) -> dict[str, float]:
         """Route to the correct metric function."""
         methods = {
@@ -221,7 +218,6 @@ class FairnessEvaluator:
             return {"statistical_parity_difference": max(vals) - min(vals)}
         return {"statistical_parity_difference": 0.0}
 
-    # ── Helpers ─────────────────────────────────────────────────────
     def _average_metric_by_group(
         self, all_metrics: dict[str, dict[str, float]]
     ) -> dict[str, float]:
@@ -237,7 +233,6 @@ class FairnessEvaluator:
     ) -> list[str]:
         """generate suggestions."""
         suggestions = []
-        # Check demographic parity
         dp = metrics.get("demographic_parity", {})
         if dp:
             vals = list(dp.values())
@@ -246,7 +241,6 @@ class FairnessEvaluator:
                     "Consider applying a post‑processing calibration method "
                     "(e.g. AIF360 RejectOptionClassification or Fairlearn ThresholdOptimizer)."
                 )
-        # Check equalized odds
         eo = metrics.get("equalized_odds", {})
         if eo and max(eo.values()) - min(eo.values()) > threshold:
             suggestions.append(

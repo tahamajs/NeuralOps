@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Zero-shot multiple-choice and reasoning evaluation adapter
 
 Implements zeroshot functionality for NeuralOps.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -94,7 +98,6 @@ class ZeroShotAdapter:
             num_eval=self.num_samples or 100,
         )
 
-        # Build prompt samples (cached from datasets or generated for evaluation)
         self.samples = self._load_samples()
 
     def _load_samples(self) -> list[dict[str, Any]]:
@@ -135,7 +138,6 @@ class ZeroShotAdapter:
         except Exception as e:
             LOG.warning("Falling back to local zero-shot sample format: %s", e)
 
-        # Fallback dummy sample structure when offline
         return [
             {
                 "prompt": f"Evaluation prompt {i}: Which is the best answer?",
@@ -188,10 +190,8 @@ class ZeroShotAdapter:
             outputs = self.model(**enc_full)
             logits = outputs.logits
 
-        # Log-softmax over vocabulary
         log_probs = torch.log_softmax(logits, dim=-1)
 
-        # Sum logprobs of tokens belonging to choice
         total_logprob = 0.0
         for i in range(prompt_len, input_ids.shape[1]):
             token_id = input_ids[0, i]

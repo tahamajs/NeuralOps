@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Publication Paper Plots
 
 Generation of publication-grade figures including singular value decay, Pareto frontiers, and speedups.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -73,7 +77,6 @@ def plot_singular_value_spectrum(
                 break
 
     if not layers_sv:
-        # Fallback dummy linear for illustration if model has no matching layers
         w = torch.randn(256, 256)
         S = torch.linalg.svdvals(w).cpu().numpy()
         layers_sv["sample_linear"] = (S / S[0])[:max_components]
@@ -133,7 +136,7 @@ def plot_attention_entropy_heatmap(
         attn = np.array(attention_matrix)
 
     if attn.ndim > 2:
-        attn = attn[0]  # Take first head/batch
+        attn = attn[0]
 
     fig, ax = plt.subplots(figsize=(5.5, 4.8))
     im = ax.imshow(attn, cmap="magma", aspect="auto", interpolation="nearest")
@@ -193,7 +196,6 @@ def plot_pareto_frontier(
             alpha=0.85,
         )
 
-    # Calculate Pareto frontier (assuming higher is better for both, or adjust accordingly)
     sorted_pts = sorted(zip(x_vals, y_vals), key=lambda pt: pt[0])
     pareto_x = []
     pareto_y = []
@@ -246,7 +248,7 @@ def generate_all_paper_plots(
         List of generated file paths.
     """
     import matplotlib
-    matplotlib.use("Agg")  # Non-interactive headless backend
+    matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
     out_dir = Path(output_dir)
@@ -254,7 +256,6 @@ def generate_all_paper_plots(
 
     generated: List[Path] = []
 
-    # 1. Singular value spectrum
     if model is None:
         model = nn.Sequential(
             nn.Linear(128, 256),
@@ -269,7 +270,6 @@ def generate_all_paper_plots(
     plt.close(fig1)
     generated.extend([p_svg, p_pdf])
 
-    # 2. Attention Heatmap
     t = 64
     d = torch.arange(t).float()
     rel_dist = torch.abs(d.unsqueeze(0) - d.unsqueeze(1))
@@ -283,7 +283,6 @@ def generate_all_paper_plots(
     plt.close(fig2)
     generated.extend([p_heatmap_svg, p_heatmap_pdf])
 
-    # 3. Pareto Frontier
     benchmark_points = [
         {"name": "Dense Baseline", "compression_ratio": 1.0, "accuracy": 89.5},
         {"name": "Direct SVD (r=64)", "compression_ratio": 1.6, "accuracy": 88.8},

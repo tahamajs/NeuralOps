@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Multi-Seed Cross-Validation & Statistical Variance Stress Test (131 Attentions x 72 Compressors)
 
 Implements multi seed stress test 131 72 functionality for NeuralOps.
-
-Author: Taha Majlesi
 """
 
 import argparse
@@ -339,7 +343,6 @@ def run_stress_test(
         "speedups_ge_1_0x_certified": True,
     }
 
-    # Save JSON
     if output_json:
         out_p = Path(output_json)
         out_p.parent.mkdir(parents=True, exist_ok=True)
@@ -347,7 +350,6 @@ def run_stress_test(
             json.dump(audit_results, f, indent=2)
         print(f"\nJSON results written to: {out_p}")
 
-    # Save CSV
     if output_csv:
         csv_p = Path(output_csv)
         csv_p.parent.mkdir(parents=True, exist_ok=True)

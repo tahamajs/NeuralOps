@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 NeuralOps Base Module Contracts
 
 Abstract base classes and interface specifications for attention modules and model compressors.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -110,7 +114,6 @@ class BaseAttention(nn.Module):
         if is_2d:
             x = x.unsqueeze(1)
 
-        # Handle past state: could be Tensor, tuple, or dict
         if isinstance(state, dict):
             past_cache = state.get("cache", None)
             step_idx = state.get("step_idx", 0)
@@ -118,7 +121,6 @@ class BaseAttention(nn.Module):
             past_cache = state
             step_idx = 0
 
-        # Standard fallback: execute forward with use_cache=True and past_key_values
         res = self.forward(x, past_key_values=past_cache, use_cache=True, **kwargs)
 
         next_cache = past_cache
@@ -193,7 +195,6 @@ class BaseAttention(nn.Module):
                             if b_o is not None and getattr(mod, "bias", None) is not None:
                                 mod.bias.copy_(b_o)
 
-                # Handle fused in_proj
                 if hasattr(self, "in_proj") and hasattr(self.in_proj, "weight"):
                     if self.in_proj.weight.shape == torch.Size([dim * 2, dim]):
                         self.in_proj.weight[:dim].copy_(w_v[:dim])

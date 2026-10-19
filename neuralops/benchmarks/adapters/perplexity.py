@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Perplexity / Language Modeling task adapter for neuralops benchmark suite
 
 Implements perplexity functionality for NeuralOps.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -86,7 +90,6 @@ class PerplexityAdapter:
         )
         self.model_meta = get_model_metadata(self.model, model_cfg)
 
-        # Load validation / test split
         eval_split = "validation"
         try:
             tokenized_eval = load_dataset_by_name(
@@ -143,7 +146,6 @@ class PerplexityAdapter:
         self.setup()
         self.apply_module()
 
-        # Evaluate perplexity
         eval_metrics = evaluate_perplexity(
             model=self.model,
             eval_loader=self.eval_loader,
@@ -151,14 +153,12 @@ class PerplexityAdapter:
             stride=self.stride,
         )
 
-        # Measure latency and throughput
         latency_stats = measure_latency_and_throughput(
             model=self.model,
             dataloader=self.eval_loader,
             device=self.device,
         )
 
-        # Memory measurement
         peak_mem = measure_peak_memory_mb(self.device)
 
         return {

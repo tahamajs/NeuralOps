@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -5,15 +12,6 @@
 
 namespace neuralops { namespace cuda {
 
-// Multi-Head Hydra Bidirectional Attention Kernel:
-// Form: global\_kv_d = \frac{1}{N} \sum_{t=0}^{N-1} k_{t, d} \cdot v_{t, d}
-//       out_{t, d} = q_{t, d} \cdot global\_kv_d
-//
-// Hardware-level optimization:
-// 1. Decoupled 2D Grid: dim3 grid(ceil(D / 128), B * H) with 128 threads/block.
-// 2. Strict FP32 intermediate accumulation in registers.
-// 3. 4-way loop unrolling for memory latency hiding.
-// 4. Eliminates threads = D anti-pattern.
 template <typename scalar_t>
 __global__ void __launch_bounds__(128) hydra_fwd_kernel(
     scalar_t* __restrict__ out,
@@ -33,7 +31,6 @@ __global__ void __launch_bounds__(128) hydra_fwd_kernel(
 
     const int head_offset = bh * (N * D) + d;
 
-    // Pass 1: Global KV mean
     float kv_sum = 0.0f;
     #pragma unroll 4
     for (int t = 0; t < N; ++t) {
@@ -45,7 +42,6 @@ __global__ void __launch_bounds__(128) hydra_fwd_kernel(
     const float norm = (N > 0) ? (1.0f / static_cast<float>(N)) : 0.0f;
     const float global_kv = kv_sum * norm;
 
-    // Pass 2: Query modulation
     #pragma unroll 4
     for (int t = 0; t < N; ++t) {
         const int idx = head_offset + t * D;
@@ -54,7 +50,7 @@ __global__ void __launch_bounds__(128) hydra_fwd_kernel(
     }
 }
 
-}} // namespace neuralops::cuda
+}}
 
 torch::Tensor hydra_fwd(
     const torch::Tensor& q,

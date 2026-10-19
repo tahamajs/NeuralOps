@@ -1,5 +1,9 @@
-# -*- coding: utf-8 -*-
-# Author: Taha Majlesi
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Evaluation harness and unified entry point for NeuralOps benchmark suite.
 
 This module is a clean re-export hub providing backward compatibility across all existing
@@ -129,7 +133,6 @@ def run_track(
                 )
             except Exception as e:
                 logger.exception("Run crashed for %s: %s", module_name, e)
-                # ساخت یک آبجکت نتیجه شکست‌خورده استاندارد برای جلوگیری از گم شدن ماژول در گزارش نهایی
                 try:
                     crashed_r = BenchmarkResult(
                         run_id=f"{track}_{module_name}_{model_family}",

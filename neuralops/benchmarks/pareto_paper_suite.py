@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Pareto Paper Benchmark Suite
 
 Empirically measures throughput, latency, memory, and retrieval capability across linear attention mechanisms and compression engines.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -25,8 +29,8 @@ logger = logging.getLogger("NeuralOps.Benchmarks.Pareto")
 @dataclass
 class ParetoBenchmarkResult:
     method_name: str
-    category: str  # "Full Attention", "Linear Attention", "Compression"
-    prefill_latency_ms: Dict[int, float]  # seq_len -> latency (ms)
+    category: str
+    prefill_latency_ms: Dict[int, float]
     decode_tokens_per_sec: float
     peak_vram_mb: float
     passkey_recall_pct: float
@@ -67,14 +71,12 @@ class PaperParetoBenchmarkSuite:
         for seq_len in seq_lengths:
             x = torch.randn(1, seq_len, self.d_model, device=self.device, dtype=self.dtype)
             
-            # Warmup
             with torch.no_grad():
                 for _ in range(warmup):
                     _ = module(x)
             if self.device.type == "cuda":
                 torch.cuda.synchronize()
 
-            # Measure
             t0 = time.perf_counter()
             with torch.no_grad():
                 for _ in range(repetitions):
@@ -156,7 +158,6 @@ class PaperParetoBenchmarkSuite:
             if isinstance(out, tuple):
                 out = out[0]
 
-        # Calculate signal retention at final token
         final_token = out[:, -1, :]
         similarity = torch.cosine_similarity(final_token, needle.squeeze(1), dim=-1).item()
         recall = max(0.0, min(100.0, (similarity + 1.0) / 2.0 * 100.0))

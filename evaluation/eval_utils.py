@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Evaluation utility helpers for batch filtering, logit/loss extraction, and cache eviction.
 
 These functions provide low-level manipulation of PyTorch batches and model outputs
 across standard Transformer model families.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -15,7 +19,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-# Default maximum entries per internal cache
 DEFAULT_MAX_CACHE_SIZE: int = 16
 
 

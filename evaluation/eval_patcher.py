@@ -1,10 +1,14 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Model patching and module injection framework for NeuralOps evaluation.
 
 Handles base transformer model instantiations (BERT, RoBERTa, GPT-2, T5, Qwen),
 state-dict caching, and module injection into target model graphs (attention replacement,
 compressor dispatch, KV-cache tuning, and custom injectors).
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -37,7 +41,6 @@ from neuralops.utils.replace_attention import UniversalAttentionWrapper
 
 logger = logging.getLogger("EvalEngine")
 
-# Cache storing (state_dict_cpu, config) for clean base model instantiation
 _BASE_MODEL_TEMPLATE_CACHE: dict[
     tuple[str, int, int, int, int, str],
     tuple[dict[str, torch.Tensor], Any],
@@ -427,10 +430,8 @@ def _apply_compressor_module(
     if calibration_data is not None:
         c_kwargs["calibration_data"] = calibration_data
 
-    # Merge explicit caller kwargs
     c_kwargs.update(kwargs)
 
-    # Strategy 1: instantiate with model
     candidate = None
     for init_fn in [
         lambda: comp_cls(model, rank=rank, tokenizer=tok, **c_kwargs),
@@ -463,7 +464,6 @@ def _apply_compressor_module(
             if res_mod is not None and isinstance(res_mod, nn.Module):
                 model = res_mod
     else:
-        # Strategy 2: instantiate without model
         candidate = None
         for init_fn in [
             lambda: comp_cls(rank=rank, tokenizer=tok, **c_kwargs),

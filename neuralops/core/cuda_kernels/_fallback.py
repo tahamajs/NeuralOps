@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Three-Level Kernel Fallback Dispatcher
 
 Runtime dispatcher managing three-level fallback across native CUDA, Triton JIT, and PyTorch reference implementations.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -16,11 +20,9 @@ import torch
 
 logger = logging.getLogger(__name__)
 
-# Active forced backend: "auto", "cuda", "triton", "pytorch"
 _FORCED_BACKEND: str = "auto"
 FORCE_PYTORCH_FALLBACK: bool = False
 
-# Last dispatch tracking
 _LAST_DISPATCH_BACKEND: dict[str, str] = {}
 _LAST_DISPATCH_ERROR: dict[str, str] = {}
 
@@ -30,7 +32,6 @@ def get_last_dispatch_backend(kernel_name: str) -> str:
 def get_last_dispatch_error(kernel_name: str) -> str:
     return _LAST_DISPATCH_ERROR.get(kernel_name, '')
 
-# Dispatch telemetry stats
 _DISPATCH_STATS: dict[str, int] = {
     "cuda": 0,
     "triton": 0,
@@ -156,7 +157,6 @@ def dispatch(
     3. If 'auto':
        Level 1 -> Level 2 -> Level 3.
     """
-    # CPU fast-path: Pure PyTorch Reference immediately for real kernels when CPU tensor is given
     if kernel_name != "unknown" and _is_first_tensor_cpu(*args, **kwargs):
         _DISPATCH_STATS["pytorch"] += 1
         _LAST_DISPATCH_BACKEND[kernel_name] = "pytorch"
@@ -164,7 +164,6 @@ def dispatch(
 
     forced = _FORCED_BACKEND
 
-    # Forced Level 3
     if FORCE_PYTORCH_FALLBACK or forced == "pytorch":
         _DISPATCH_STATS["pytorch"] += 1
         _LAST_DISPATCH_BACKEND[kernel_name] = "pytorch"
@@ -205,7 +204,6 @@ def dispatch(
                 _DISPATCH_STATS["triton_failures"] += 1
                 raise RuntimeError(f"[{kernel_name}] Backend forced to 'triton', but execution failed: {e}") from e
 
-        # AUTO mode with autograd:
         if cuda_fn is not None:
             try:
                 res = _AutogradBridge.apply(cuda_fn, pytorch_fn, reconstruct, *tensor_list)
@@ -232,7 +230,6 @@ def dispatch(
         _LAST_DISPATCH_BACKEND[kernel_name] = "pytorch"
         return pytorch_fn(*args, **kwargs)
 
-    # Forced Level 1
     if forced == "cuda":
         if cuda_fn is None:
             _DISPATCH_STATS["cuda_failures"] += 1
@@ -247,7 +244,6 @@ def dispatch(
             _DISPATCH_STATS["cuda_failures"] += 1
             raise RuntimeError(f"[{kernel_name}] Backend forced to 'cuda', but execution failed: {e}") from e
 
-    # Forced Level 2
     if forced == "triton":
         if triton_fn is None:
             _DISPATCH_STATS["triton_failures"] += 1
@@ -268,7 +264,6 @@ def dispatch(
     if debug_dispatch:
         print(f"[dispatch] {kernel_name}: cuda={'yes' if cuda_fn else 'no'} triton={'yes' if triton_fn else 'no'} pytorch=yes", file=sys.stderr)
 
-    # AUTO: Level 1 -> Level 2 -> Level 3
     if cuda_fn is not None:
         try:
             res = cuda_fn(*args, **kwargs)

@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -5,7 +12,6 @@
 
 namespace neuralops { namespace cuda {
 
-// Dynamic relative position span penalty and ramp masking
 template <typename scalar_t>
 __global__ void __launch_bounds__(256) adaptive_span_kernel(
     scalar_t* __restrict__ out,
@@ -29,7 +35,6 @@ __global__ void __launch_bounds__(256) adaptive_span_kernel(
     const float dist = fabsf(static_cast<float>(q_idx - k_idx));
     const float diff = current_span - dist;
 
-    // Linear soft ramp penalty in register space
     const float penalty = fminf(1.0f, fmaxf(0.0f, diff / fmaxf(ramp_size, 1e-4f)));
     const int offset = (b * H + h) * N * N + q_idx * N + k_idx;
     const float score = to_float(scores[offset]);
@@ -37,7 +42,7 @@ __global__ void __launch_bounds__(256) adaptive_span_kernel(
     out[offset] = from_float<scalar_t>(score * penalty);
 }
 
-}} // namespace neuralops::cuda
+}}
 
 torch::Tensor adaptive_span_fwd(
     const torch::Tensor& scores,
@@ -119,7 +124,7 @@ __global__ void __launch_bounds__(256) adaptive_span_penalty_kernel(
     out[out_idx] = mask_val;
 }
 
-}} // namespace neuralops::cuda
+}}
 
 torch::Tensor adaptive_span_penalty_fwd(
     const torch::Tensor& spans,

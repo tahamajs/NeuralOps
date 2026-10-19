@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Structured dual-format logging for neuralops benchmarks
 
 Implements logging functionality for NeuralOps.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -72,7 +76,6 @@ def setup_run_logger(
     logger.setLevel(logging.DEBUG)
     logger.handlers.clear()
 
-    # 1. Console Handler (stdout)
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setLevel(logging.INFO)
     console_formatter = logging.Formatter(
@@ -82,7 +85,6 @@ def setup_run_logger(
     console_handler.setFormatter(console_formatter)
     logger.addHandler(console_handler)
 
-    # 2. Text File Handler (.log)
     file_handler = logging.FileHandler(log_path, encoding="utf-8")
     file_handler.setLevel(logging.DEBUG)
     file_formatter = logging.Formatter(
@@ -92,7 +94,6 @@ def setup_run_logger(
     file_handler.setFormatter(file_formatter)
     logger.addHandler(file_handler)
 
-    # 3. JSONL Handler (.jsonl)
     jsonl_handler = JSONLHandler(jsonl_path, run_id=run_id, module_name=module_name)
     jsonl_handler.setLevel(logging.DEBUG)
     logger.addHandler(jsonl_handler)

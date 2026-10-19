@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Fused Knowledge Distillation Loss Autograd Interface
 
 Hardware-accelerated CUDA C++ autograd implementation with analytical gradients and three-level fallback dispatch.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -60,7 +64,6 @@ def fused_kd_loss_pytorch_ref(
     elif reduction == "sum":
         return F.kl_div(p_s, p_t, reduction="sum") * (temperature * temperature)
     else:
-        # "mean"
         return F.kl_div(p_s, p_t, reduction="mean") * (temperature * temperature)
 
 

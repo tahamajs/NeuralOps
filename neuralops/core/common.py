@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Shared Core Constants and Utilities
 
 Common typing aliases, numerical epsilon constants, and shared tensor validation primitives.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -28,9 +32,6 @@ except Exception:
 logger = logging.getLogger(__name__)
 
 
-# ==============================================================================
-# 1. Configuration Helper
-# ==============================================================================
 
 
 def _cfg_get(config: Any, key: str, default: Any = None) -> Any:
@@ -114,7 +115,6 @@ def _apply_rope(
     Applies Rotary Position Embedding (RoPE) to Query and Key tensors.
     """
     if cos.dim() == 2 and q.dim() == 4:
-        # (N, D) → (1, 1, N, D) to broadcast against (B, H, N, D)
         cos = cos.unsqueeze(0).unsqueeze(0)
         sin = sin.unsqueeze(0).unsqueeze(0)
     elif cos.dim() < q.dim():
@@ -168,12 +168,11 @@ class LoRALinear(nn.Module):
         factory_kwargs = {"device": device, "dtype": dtype}
 
         if isinstance(base_or_in_features, nn.Module):
-            # Wrapper mode
             self.base_layer = base_or_in_features
             in_feat = getattr(self.base_layer, "in_features", None)
             out_feat = getattr(self.base_layer, "out_features", None)
             if in_feat is None and hasattr(self.base_layer, "weight"):
-                if hasattr(self.base_layer, "nf"):  # Conv1D
+                if hasattr(self.base_layer, "nf"):
                     in_feat, out_feat = (
                         self.base_layer.weight.shape[0],
                         self.base_layer.weight.shape[1],
@@ -187,7 +186,6 @@ class LoRALinear(nn.Module):
             self.out_features = out_feat
             self.is_wrapper = True
         else:
-            # Standalone mode
             self.is_wrapper = False
             self.in_features = int(base_or_in_features)
             self.out_features = int(
@@ -468,13 +466,11 @@ class FactorizedLinear(nn.Module):
         )
 
         with torch.no_grad():
-            # Truncated SVD: W ≈ U_r S_r Vh_r, then split S into two halves
-            # so lin1 = S_r^{1/2} Vh_r and lin2 = U_r S_r^{1/2}.
             U, S, Vh = torch.linalg.svd(w.float(), full_matrices=False)
             r = min(mod.rank, len(S))
             sqrt_s = torch.diag(torch.sqrt(S[:r]))
-            w1 = (sqrt_s @ Vh[:r, :]).to(dtype=w.dtype)   # (r, in_f)
-            w2 = (U[:, :r] @ sqrt_s).to(dtype=w.dtype)    # (out_f, r)
+            w1 = (sqrt_s @ Vh[:r, :]).to(dtype=w.dtype)
+            w2 = (U[:, :r] @ sqrt_s).to(dtype=w.dtype)
 
             mod.lin1.weight.data.copy_(w1)
             mod.lin2.weight.data.copy_(w2)
@@ -625,7 +621,6 @@ class ResSVDLinear(nn.Module):
         )
         with torch.no_grad():
             if factorize_base:
-                # Truncated SVD decomposition of base
                 U, S, Vh = torch.linalg.svd(w.float(), full_matrices=False)
                 r = min(mod.base_rank, len(S))
                 sqrt_s = torch.diag(torch.sqrt(S[:r]))

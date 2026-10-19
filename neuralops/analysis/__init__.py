@@ -1,7 +1,11 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 NeuralOps Analysis Core Modules.
-
-Author: Taha Majlesi
 """
 
 from .layerwise_analyzer import LayerwiseAnalyzer, estimate_intrinsic_dimension
@@ -84,7 +88,6 @@ __all__ = [
     "statistical_tests",
 ]
 
-# Statistical testing suite
 from .comparison import (  # noqa: E402
     bayesian_correlated_ttest,
     bayesian_signed_rank_test,
@@ -113,7 +116,6 @@ __all__ += [
     "run_full_statistical_analysis",
 ]
 
-# Auto-wired package members
 from neuralops.analysis import comparison
 from neuralops.analysis import module_analysis
 from neuralops.analysis import generate_all_modules_analysis

@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -5,14 +12,6 @@
 
 namespace neuralops { namespace cuda {
 
-// Dynamic 1D Causal Convolution with Shared Memory Window Tiling:
-// Form: out[b, d, t] = bias[d] + \sum_{k=0}^{K-1} weight[d, k] * x[b, d, t - (K - 1 - k)]
-//
-// Hardware-level optimization:
-// 1. Decoupled 2D Grid: dim3 grid(ceil(L / 128), B * D) with 128 threads/block.
-// 2. Shared Memory Sliding Window: Caches the chunk of input x in SRAM to minimize global DRAM reads.
-// 3. Register-based Weight Caching: Weights weight[d, 0..K-1] are loaded into thread registers.
-// 4. Strict FP32 intermediate accumulation with optional fused bias.
 template <typename scalar_t, int BLOCK_L = 128, int MAX_K = 16>
 __global__ void __launch_bounds__(128) dynamic_conv1d_fwd_kernel(
     scalar_t* __restrict__ out,
@@ -34,7 +33,6 @@ __global__ void __launch_bounds__(128) dynamic_conv1d_fwd_kernel(
     const int t_base = blockIdx.x * BLOCK_L;
     const int t = t_base + tid;
 
-    // Cache dynamic weights into registers
     float w_reg[MAX_K];
     #pragma unroll
     for (int k = 0; k < MAX_K; ++k) {
@@ -43,20 +41,16 @@ __global__ void __launch_bounds__(128) dynamic_conv1d_fwd_kernel(
 
     const float bias_val = (has_bias && bias != nullptr) ? to_float(bias[d]) : 0.0f;
 
-    // Shared Memory buffer with halo of size (K - 1)
-    extern __shared__ float s_window[]; // size: BLOCK_L + K - 1
+    extern __shared__ float s_window[];
     const int halo = K - 1;
 
-    // Collaborative load of sequence data into shared memory
     const int x_row_offset = b * D * L + d * L;
 
-    // Load halo (preceding tokens)
     for (int idx = tid; idx < halo; idx += blockDim.x) {
         const int in_t = t_base - halo + idx;
         s_window[idx] = (in_t >= 0 && in_t < L) ? to_float(x[x_row_offset + in_t]) : 0.0f;
     }
 
-    // Load main block
     for (int idx = tid; idx < BLOCK_L; idx += blockDim.x) {
         const int in_t = t_base + idx;
         s_window[halo + idx] = (in_t < L) ? to_float(x[x_row_offset + in_t]) : 0.0f;
@@ -65,12 +59,10 @@ __global__ void __launch_bounds__(128) dynamic_conv1d_fwd_kernel(
 
     if (t >= L) return;
 
-    // Compute convolution strictly out of Shared Memory
     float acc = bias_val;
     #pragma unroll
     for (int k = 0; k < MAX_K; ++k) {
         if (k < K) {
-            // Window index corresponding to: t - (K - 1 - k)
             const int smem_idx = tid + k;
             acc = fmaf(s_window[smem_idx], w_reg[k], acc);
         }
@@ -107,7 +99,7 @@ __global__ void __launch_bounds__(128) dynamic_conv1d_4d_fwd_kernel(
     out[out_off] = from_float<scalar_t>(acc);
 }
 
-}} // namespace neuralops::cuda
+}}
 
 torch::Tensor dynamic_conv1d_fwd(
     const torch::Tensor& x,

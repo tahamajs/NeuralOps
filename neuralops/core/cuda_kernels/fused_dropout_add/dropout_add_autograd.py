@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Fused Dropout Residual Addition Autograd Interface
 
 Hardware-accelerated CUDA C++ autograd implementation with analytical gradients and three-level fallback dispatch.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -95,8 +99,6 @@ class _FusedDropoutAddFunction(torch.autograd.Function):
         seed: int,
     ) -> torch.Tensor:
         if training and p > 0.0:
-            # Generate mask deterministically or via PyTorch generator
-            # Keeping mask ensures exact adjoint backprop without discrepancy
             gen = torch.Generator(device=x.device).manual_seed(seed)
             mask = (torch.rand(x.shape, device=x.device, generator=gen) > p).to(x.dtype)
             scale = 1.0 / (1.0 - p)
@@ -149,7 +151,7 @@ def fused_dropout_add(
     operations at very small workloads.
     """
     if seed is None:
-        seed = random.randint(0, 2**31 - 1)  # ~1 µs, no CUDA sync
+        seed = random.randint(0, 2**31 - 1)
 
     needs_grad = torch.is_grad_enabled() and any(
         t.requires_grad for t in (x, residual) if isinstance(t, torch.Tensor)

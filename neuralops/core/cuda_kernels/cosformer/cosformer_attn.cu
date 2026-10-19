@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -11,8 +18,6 @@ __device__ __forceinline__ float elu_plus_one(float x) {
     return (x > 0.0f) ? (x + 1.0f) : expf(x);
 }
 
-// Cosformer Attention Forward Kernel
-// q, k, v: [B, H, L, D] -> out: [B, H, L, D]
 template <typename scalar_t, int MAX_D>
 __launch_bounds__(128)
 __global__ void cosformer_fwd_kernel(
@@ -28,7 +33,7 @@ __global__ void cosformer_fwd_kernel(
 ) {
     const int b = blockIdx.x;
     const int h = blockIdx.y;
-    const int m = blockIdx.z; // query position m \in [0, L-1]
+    const int m = blockIdx.z;
 
     if (b >= B || h >= H || m >= L) return;
 
@@ -38,15 +43,12 @@ __global__ void cosformer_fwd_kernel(
     const int base_bh = (b * H + h) * L;
     const int q_offset = (base_bh + m) * D;
 
-    // Load and transform query m for this thread's dimension
     const float raw_q = active ? to_float(q[q_offset + tid]) : 0.0f;
     const float phi_q = active ? elu_plus_one(raw_q) : 0.0f;
     const float theta_m = (3.141592653589793f / (2.0f * (float)L)) * (float)m;
     const float cos_qm = phi_q * cosf(theta_m);
     const float sin_qm = phi_q * sinf(theta_m);
 
-    // Each block of threads collaborates to accumulate output for query m
-    // Shared memory for score reduction
     __shared__ float s_q_cos[MAX_D];
     __shared__ float s_q_sin[MAX_D];
     if (tid < MAX_D) {
@@ -57,7 +59,6 @@ __global__ void cosformer_fwd_kernel(
 
     const int k_end = is_causal ? (m + 1) : L;
 
-    // We accumulate numerator (vector of size D) and denominator (scalar)
     float acc_out = 0.0f;
     float denom = 0.0f;
 
@@ -69,9 +70,7 @@ __global__ void cosformer_fwd_kernel(
         const float cos_kn = phi_k * cosf(theta_n);
         const float sin_kn = phi_k * sinf(theta_n);
 
-        // Dot product between q_cos & k_cos, and q_sin & k_sin across D
         float partial_dot = active ? (s_q_cos[tid] * cos_kn + s_q_sin[tid] * sin_kn) : 0.0f;
-        // Warp/block reduction of partial_dot
         __shared__ float s_score;
         float score = block_reduce_sum(partial_dot);
         if (tid == 0) {
@@ -93,8 +92,8 @@ __global__ void cosformer_fwd_kernel(
     }
 }
 
-} // namespace cuda
-} // namespace neuralops
+}
+}
 
 torch::Tensor cosformer_linear_attention_fwd(
     const torch::Tensor& q,

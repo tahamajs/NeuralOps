@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Unified CLI for neuralops benchmarking suite
 
 Implements cli functionality for NeuralOps.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -21,7 +25,6 @@ from neuralops import __version__
 from neuralops.benchmarks.discovery import discover_all_modules
 from neuralops.benchmarks.api import Runner
 
-# Rich terminal output support
 try:
     from rich.console import Console
     from rich.table import Table
@@ -108,10 +111,8 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--install-completion", choices=["bash", "zsh", "fish"], default=None, help="Generate shell auto-completion script")
     subparsers = parser.add_subparsers(dest="subcommand", help="Subcommand to run")
 
-    # 1. run / benchmark
     run_p = subparsers.add_parser("run", aliases=["benchmark"], help="Run benchmark(s)")
     run_p.add_argument("--module", type=str, default=None, help="Single module name")
-    # Module selection shortcuts
     grp_run = run_p.add_argument_group("Module selection shortcuts")
     grp_run.add_argument("--all-attn", "--all-attention", dest="all_attn", action="store_true", help="Run every registered attention module")
     grp_run.add_argument("--all-comp", "--all-compressors", dest="all_comp", action="store_true", help="Run every registered compressor module")
@@ -142,7 +143,6 @@ def _build_parser() -> argparse.ArgumentParser:
     run_p.add_argument("--parallel", type=int, default=1, help="Parallel worker count")
     run_p.add_argument("--output-dir", type=str, default="results", help="Directory to store outputs")
     run_p.add_argument("--timeout-s", type=int, default=1800, help="Timeout in seconds")
-    # Universal engine & training type flags
     run_p.add_argument("--training-type", type=str, default="finetune", choices=["finetune", "kd", "recovery", "lora", "none"], help="Training regime: finetune, kd, recovery, lora, or none")
     run_p.add_argument("--kd-teacher", type=str, default=None, help="Teacher model name for knowledge distillation")
     run_p.add_argument("--kd-temperature", type=float, default=2.0, help="Softmax temperature for KD")
@@ -151,7 +151,6 @@ def _build_parser() -> argparse.ArgumentParser:
     run_p.add_argument("--max-samples", type=int, default=None, help="Limit training set to N samples. Default: full dataset. Use 5000 for fast sweeps on slow GPUs.")
     run_p.add_argument("--max-eval-samples", type=int, default=None, help="Limit eval set to N samples.")
     run_p.add_argument("--grad-accum-steps", type=int, default=1, help="Gradient accumulation steps")
-    # MLOps & Distributed Training
     run_p.add_argument("--tracker", choices=["none", "wandb", "mlflow", "tensorboard", "all"], default="none", help="Experiment tracking backend")
     run_p.add_argument("--project-name", type=str, default="neuralops", help="MLOps project/experiment name")
     run_p.add_argument("--run-name", type=str, default=None, help="MLOps run name")
@@ -166,7 +165,6 @@ def _build_parser() -> argparse.ArgumentParser:
     run_p.add_argument("--id-column", type=str, default=None, help="Custom column name for sample IDs")
     run_p.add_argument("--preprocess-script", type=str, default=None, help="Path to custom preprocessing python script")
     run_p.add_argument("--config", type=str, default=None, help="Path to YAML benchmark configuration file")
-    # Results management flags
     run_p.add_argument("--auto-commit", action="store_true", help="Auto-commit benchmark results to git")
     run_p.add_argument("--no-auto-commit", action="store_true", help="Disable git auto-commit")
     run_p.add_argument("--commit-interval", type=int, default=1, help="Interval of runs between git commits")
@@ -174,16 +172,13 @@ def _build_parser() -> argparse.ArgumentParser:
     run_p.add_argument("--no-deduplicate", action="store_true", help="Disable run deduplication check")
     run_p.add_argument("--force-rerun", action="store_true", help="Force rerun even if identical run exists")
 
-    # 2. resume
     res_p = subparsers.add_parser("resume", help="Resume interrupted sweep")
     res_p.add_argument("--output-dir", type=str, default="results", help="Output directory of interrupted run")
     res_p.add_argument("--run-id", type=str, default=None, help="Run ID to resume")
 
-    # 3. plan
     plan_p = subparsers.add_parser("plan", help="Dry-run and estimate execution grid")
     plan_p.add_argument("--module", type=str, default=None)
     plan_p.add_argument("--modules", type=str, default=None)
-    # Module selection shortcuts
     grp_plan = plan_p.add_argument_group("Module selection shortcuts")
     grp_plan.add_argument("--all-attn", "--all-attention", dest="all_attn", action="store_true", help="Run every registered attention module")
     grp_plan.add_argument("--all-comp", "--all-compressors", dest="all_comp", action="store_true", help="Run every registered compressor module")
@@ -207,15 +202,12 @@ def _build_parser() -> argparse.ArgumentParser:
     plan_p.add_argument("--ranks", type=str, default=None)
     plan_p.add_argument("--yes", action="store_true", help="Confirm execution without prompt")
 
-    # 4. list
     list_p = subparsers.add_parser("list", help="List registered modules with capability filters")
     list_p.add_argument("--type", choices=["attention", "compressor", "all"], default="all")
     list_p.add_argument("--supports", choices=["causal", "gqa", "rope", "cuda"], default=None)
 
-    # 5. verify
     subparsers.add_parser("verify", help="Check system hardware and package requirements")
 
-    # 7. export
     exp_p = subparsers.add_parser("export", help="Export model to production artifact format")
     exp_p.add_argument("--model", type=str, required=True, help="Base model identifier or path")
     exp_p.add_argument("--attn", "--attention", dest="attn", type=str, default=None, help="Attention mechanism to inject")
@@ -224,13 +216,10 @@ def _build_parser() -> argparse.ArgumentParser:
     exp_p.add_argument("--format", choices=["safetensors", "onnx", "torchscript"], default="safetensors", help="Export format")
     exp_p.add_argument("--output-dir", type=str, default="exported_model", help="Directory for exported artifacts")
 
-    # 8. doctor
     subparsers.add_parser("doctor", help="Run comprehensive diagnostics on environment and registrations")
 
-    # 9. info
     subparsers.add_parser("info", help="Print system, GPU, and registry summary information")
 
-    # 10. search
     search_p = subparsers.add_parser("search", help="Automated Fisher-information & Pareto rank allocation search (AutoSVD)")
     search_p.add_argument("--model", type=str, required=True, help="Base model identifier or path")
     search_p.add_argument("--target-param-ratio", type=float, default=0.5, help="Target compression parameter ratio (e.g. 0.5 for 50 percent)")
@@ -239,14 +228,12 @@ def _build_parser() -> argparse.ArgumentParser:
     search_p.add_argument("--output-json", type=str, default=None, help="Optional output JSON path for allocated ranks")
     search_p.add_argument("--save-compressed", type=str, default=None, help="Directory to save the compressed model")
 
-    # 11. compress
     comp_p = subparsers.add_parser("compress", help="Compress a model using SVD, W4A16, Hadamard, or any registered compressor")
     comp_p.add_argument("--model", type=str, required=True, help="Base model name or path (e.g. gpt2, roberta-base)")
     comp_p.add_argument("--method", "--engine", dest="method", type=str, default="hadamard_incoherent_svd", help="Compression engine name")
     comp_p.add_argument("--rank", type=int, default=32, help="Target rank for low-rank SVD compression")
     comp_p.add_argument("--save-dir", "--output-dir", dest="save_dir", type=str, default=None, help="Directory to save compressed weights")
 
-    # 12. generate
     gen_p = subparsers.add_parser("generate", help="Run accelerated generation with draft-and-verify self-speculative decoding")
     gen_p.add_argument("--model", type=str, required=True, help="Target model identifier or path")
     gen_p.add_argument("--prompt", type=str, default="NeuralOps is a cutting-edge deep learning systems library that", help="Input prompt text")
@@ -255,21 +242,18 @@ def _build_parser() -> argparse.ArgumentParser:
     gen_p.add_argument("--draft-k", type=int, default=4, help="Draft tokens per step")
     gen_p.add_argument("--temperature", type=float, default=0.0, help="Sampling temperature (0.0 for greedy)")
 
-    # 13. niah
     niah_p = subparsers.add_parser("niah", help="Run Needle-In-A-Haystack passkey retrieval benchmark and generate 2D heatmap")
     niah_p.add_argument("--model", type=str, required=True, help="Model identifier or path")
     niah_p.add_argument("--context-lengths", type=str, default="256,512,1024,2048", help="Comma-separated sequence lengths")
     niah_p.add_argument("--needle-depths", type=str, default="0.1,0.3,0.5,0.7,0.9", help="Comma-separated needle depths (0.0 to 1.0)")
     niah_p.add_argument("--output-plot", type=str, default="paper/figures/fig_niah_passkey_heatmap.png", help="Path to save 2D heatmap")
 
-    # 14. benchmark-fused
     fuse_p = subparsers.add_parser("benchmark-fused", help="Benchmark fused Triton kernels (W4A16, RoPE, State-Update, Loss)")
     fuse_p.add_argument("--kernel", choices=["w4a16", "rope", "state_update", "loss", "all"], default="all", help="Target kernel to benchmark")
     fuse_p.add_argument("--batch-size", type=int, default=4, help="Batch size")
     fuse_p.add_argument("--seq-len", type=int, default=128, help="Sequence length")
     fuse_p.add_argument("--dim", type=int, default=768, help="Hidden dimension")
 
-    # 15. transplant / surgery
     trans_p = subparsers.add_parser("transplant", aliases=["surgery"], help="1-line surgical attention replacement + closed-form Ridge calibration + micro-healing")
     trans_p.add_argument("--model", type=str, required=True, help="HuggingFace model identifier or local path")
     trans_p.add_argument("--attention", type=str, required=True, help="Target attention mechanism (e.g. svd_linear_attention, gla_attention)")
@@ -282,7 +266,6 @@ def _build_parser() -> argparse.ArgumentParser:
     trans_p.add_argument("--output-dir", type=str, default="models/transplanted", help="Output directory to save model")
     trans_p.add_argument("--save-dir", type=str, default=None, help="Directory to save surgical checkpoint via save_surgical_checkpoint")
 
-    # 16. compose
     comp_p = subparsers.add_parser("compose", help="Declaratively build custom attention via ComposableAttention")
     comp_p.add_argument("--projection", type=str, default="dense", help="Projection type (dense, svd(rank=r), conv1d(k))")
     comp_p.add_argument("--positional", type=str, default="none", help="Positional encoding (none, rope, alibi)")
@@ -292,7 +275,6 @@ def _build_parser() -> argparse.ArgumentParser:
     comp_p.add_argument("--embed-dim", type=int, default=768, help="Hidden dimension")
     comp_p.add_argument("--num-heads", type=int, default=12, help="Number of heads")
 
-    # 17. roofline
     roof_p = subparsers.add_parser("roofline", help="Hardware Roofline & Arithmetic Intensity Analyzer for compiled Triton kernels")
     roof_p.add_argument("--module", type=str, default="gated_delta_net", help="Registered attention mechanism or ComposableAttention expression")
     roof_p.add_argument("--batch-size", type=int, default=2, help="Batch size")
@@ -304,43 +286,36 @@ def _build_parser() -> argparse.ArgumentParser:
     roof_p.add_argument("--json", action="store_true", help="Output raw JSON metrics")
     roof_p.add_argument("--latex", action="store_true", help="Print publication-ready LaTeX booktabs table snippet")
 
-    # 18. recommend
     rec_p = subparsers.add_parser("recommend", help="Hardware-aware advisor recommending optimal attention & compression recipes")
     rec_p.add_argument("--vram-gb", type=float, default=8.0, help="Available GPU VRAM in GB")
     rec_p.add_argument("--context-len", type=int, default=4096, help="Target sequence context length")
     rec_p.add_argument("--task", type=str, default="causal_lm", choices=["causal_lm", "encoder", "hybrid"], help="Target model task")
 
-    # 18. calibrate
     cal_p = subparsers.add_parser("calibrate", help="Closed-form layerwise Ridge/subspace output alignment for surgical models")
     cal_p.add_argument("--model", type=str, required=True, help="Path to surgically modified model")
     cal_p.add_argument("--reference-model", type=str, default=None, help="Original unmodified teacher model")
     cal_p.add_argument("--dataset", type=str, default="wikitext", help="Calibration dataset")
     cal_p.add_argument("--samples", type=int, default=128, help="Number of calibration tokens/samples")
 
-    # 19. inspect
     inspect_p = subparsers.add_parser("inspect", help="UNIX-style architectural specification sheet for any registered module")
     inspect_p.add_argument("name", type=str, help="Registered module name (attention or compressor)")
     inspect_p.add_argument("--json", action="store_true", help="Output full 14-field specification in JSON format")
     inspect_p.add_argument("--code-only", action="store_true", help="Print only ready-to-copy Python quickstart snippets")
     inspect_p.add_argument("--roofline", action="store_true", help="Run live empirical Roofline benchmark and append results")
 
-    # 20. ui
     ui_p = subparsers.add_parser("ui", help="Launch interactive Terminal User Interface (TUI mode)")
     ui_p.add_argument("--inspect", type=str, default=None, help="Inspect specific module directly in flat UI preview")
     ui_p.add_argument("--snapshot", action="store_true", help="Print non-interactive snapshot of explorer and exit (CI-friendly)")
 
-    # 21. validate
     val_p = subparsers.add_parser("validate", help="Run automated 6-point contract diagnostics on any built-in or custom module")
     val_p.add_argument("name", type=str, help="Module identifier to validate against framework contracts")
 
-    # 22. scaffold
     scaff_p = subparsers.add_parser("scaffold", help="Generate production-ready boilerplate for new custom attention or compressor")
     scaff_p.add_argument("name", type=str, help="Name for the new module")
     scaff_p.add_argument("--category", choices=["attention", "compressor"], default="attention", help="Module category")
     scaff_p.add_argument("--family", type=str, default="linear-scan", help="Mathematical family tag")
     scaff_p.add_argument("--output", type=str, default=None, help="Output python file destination")
 
-    # 23. results & ledger
     res_p = subparsers.add_parser("results", aliases=["ledger"], help="Query, version, plot, and manage experiment results ledger")
     res_p.add_argument("--module", type=str, default=None, help="Filter by module name")
     res_p.add_argument("--category", type=str, default=None, help="Filter by category (attention, compressor, triton_kernel, cuda_kernel, ablation)")
@@ -370,7 +345,6 @@ def _build_parser() -> argparse.ArgumentParser:
     res_p.add_argument("--hard", action="store_true", help="Physically purge records (hard delete)")
     res_p.add_argument("--sync", action="store_true", help="Rebuild SQLite and per-module dossiers from JSONL")
 
-    # 24. train
     train_p = subparsers.add_parser("train", help="Fine-tune or train a model with custom attention / compression")
     train_p.add_argument("--config", type=str, default=None, help="Path to YAML training configuration file")
     train_p.add_argument("--model", type=str, default="distilbert-base-uncased", help="Target model identifier or path")
@@ -380,7 +354,6 @@ def _build_parser() -> argparse.ArgumentParser:
     train_p.add_argument("--lr", type=float, default=2e-5, help="Learning rate")
     train_p.add_argument("--output-dir", type=str, default="results/trained", help="Directory to save checkpoints")
 
-    # 25. eval / evaluate
     eval_p = subparsers.add_parser("eval", aliases=["evaluate"], help="Evaluate model accuracy, latency, and perplexity")
     eval_p.add_argument("--model", type=str, required=True, help="Model checkpoint path or HF identifier to evaluate")
     eval_p.add_argument("--dataset", type=str, default="sst2", help="Target evaluation dataset")
@@ -388,7 +361,6 @@ def _build_parser() -> argparse.ArgumentParser:
     eval_p.add_argument("--seq-len", type=int, default=128, help="Max sequence length")
     eval_p.add_argument("--device", type=str, default="cuda", help="Hardware device (cuda/mps/cpu)")
 
-    # 26. serve
     serve_p = subparsers.add_parser("serve", help="Launch NeuralOps high-throughput serving engine (continuous batching & PagedKVCache)")
     serve_p.add_argument("--host", type=str, default="0.0.0.0", help="Host interface to bind")
     serve_p.add_argument("--port", type=int, default=8000, help="Port to listen on")
@@ -397,12 +369,10 @@ def _build_parser() -> argparse.ArgumentParser:
     serve_p.add_argument("--max-batch-size", type=int, default=16, help="Maximum in-flight batch size")
     serve_p.add_argument("--block-size", type=int, default=16, help="Paged cache token block size")
 
-    # 27. monitor
     mon_p = subparsers.add_parser("monitor", help="Launch NeuralOps real-time telemetry, benchmark studio, and web dashboard")
     mon_p.add_argument("--host", type=str, default="0.0.0.0", help="Host interface to bind")
     mon_p.add_argument("--port", type=int, default=8080, help="Port to listen on")
 
-    # 28. distill
     dist_p = subparsers.add_parser("distill", help="Execute 6-pillar multi-level attention & logit knowledge distillation")
     dist_p.add_argument("--teacher", type=str, required=True, help="Teacher model identifier or checkpoint path")
     dist_p.add_argument("--student", type=str, required=True, help="Student model identifier or checkpoint path")
@@ -473,7 +443,7 @@ def handle_plan(args: argparse.Namespace) -> None:
     ranks_count = len(args.ranks.split(",")) if args.ranks else 1
 
     total_runs = mod_count * models_count * datasets_count * ranks_count
-    est_seconds = total_runs * 180  # Assume ~3 mins per run average on 1 GPU
+    est_seconds = total_runs * 180
     est_hours = est_seconds / 3600.0
 
     if HAS_RICH and console is not None:
@@ -862,12 +832,10 @@ def handle_benchmark_fused(args: argparse.Namespace) -> int:
     if device != "cuda":
         print("[-] Fused Triton benchmarks require a CUDA GPU. PyTorch fallbacks will be used.")
 
-    # 1. W4A16 Benchmark
     if args.kernel in ("w4a16", "all"):
         from neuralops.core.triton_kernels.low_rank import BitPackedW4A16Linear
         w4 = BitPackedW4A16Linear(args.dim, args.dim, group_size=64, bias=False).to(device)
         x = torch.randn(args.batch_size, args.seq_len, args.dim, device=device, dtype=torch.float16)
-        # Warmup
         for _ in range(5):
             _ = w4(x)
         if device == "cuda":
@@ -881,7 +849,6 @@ def handle_benchmark_fused(args: argparse.Namespace) -> int:
         dur = (time.time() - t0) / iters * 1000
         print(f"  [W4A16 Dequant-GEMM]:  {dur:.2f} ms / forward pass")
 
-    # 2. State-Update Benchmark
     if args.kernel in ("state_update", "all"):
         from neuralops.core.triton_kernels.state_update import fused_recurrent_linear_step
         kv_s = torch.zeros(args.batch_size, 4, 32, 32, device=device)
@@ -980,7 +947,6 @@ def handle_distill(args: argparse.Namespace) -> int:
 
     optimizer = torch.optim.AdamW(student.parameters(), lr=args.lr)
 
-    # Fast demonstration / step execution with synthetic or small loader
     print(f"[*] Running distillation optimization ({args.divergence})...")
     dummy_input = torch.randint(0, 1000, (args.batch_size, 128), device=device)
     dummy_labels = torch.randint(0, 2, (args.batch_size,), device=device)
@@ -1235,7 +1201,6 @@ def _dispatch(args: argparse.Namespace) -> int:
 
         ledger = get_default_ledger()
 
-        # Handle Dossier
         if getattr(args, "dossier", None):
             dossier = ledger.get_module_dossier(args.dossier)
             if not dossier:
@@ -1244,20 +1209,17 @@ def _dispatch(args: argparse.Namespace) -> int:
             print(json.dumps(dossier, indent=2, ensure_ascii=False))
             return 0
 
-        # Handle Diff
         if getattr(args, "diff", None):
             diff_res = ledger.compare_versions(args.diff, rev_a=args.rev_a, rev_b=args.rev_b)
             print(json.dumps(diff_res, indent=2, ensure_ascii=False))
             return 0
 
-        # Handle Sync
         if getattr(args, "sync", False):
             print("[+] Syncing Results Ledger...")
             ledger.rewrite_jsonl_from_sqlite()
             print("[✓] Master ledger rewritten and synchronized.")
             return 0
 
-        # Handle Delete
         if getattr(args, "delete", False):
             rec_ids = [args.id] if args.id else None
             count = ledger.delete_records(
@@ -1271,7 +1233,6 @@ def _dispatch(args: argparse.Namespace) -> int:
             print(f"[✓] Successfully {mode_str} {count} record(s).")
             return 0
 
-        # Handle Add
         if getattr(args, "add", False):
             if not args.module:
                 print("[-] --module is required when using --add.")
@@ -1298,7 +1259,6 @@ def _dispatch(args: argparse.Namespace) -> int:
             print(f"[✓] Record stored: {rec.record_id} (Rev {rec.revision}, Status: {rec.status})")
             return 0
 
-        # Query & Plot / Export
         records = ledger.query(
             module_name=args.module,
             category=args.category,
@@ -1345,7 +1305,6 @@ def _dispatch(args: argparse.Namespace) -> int:
 def main(argv: list[str] | None = None) -> int:
     parser = _build_parser()
 
-    # If no arguments provided or --help, show the rich menu
     raw_args = sys.argv[1:] if argv is None else argv
     if not raw_args or raw_args == ["-h"] or raw_args == ["--help"]:
         try:
@@ -1388,7 +1347,6 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 1
     except Exception as e:
-        # Check for CUDA OOM dynamically without requiring torch upfront
         err_type = type(e).__name__
         err_msg = str(e)
         if "OutOfMemoryError" in err_type or "CUDA out of memory" in err_msg:

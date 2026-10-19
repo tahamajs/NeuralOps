@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Types, data structures, and constants for the NeuralOps evaluation engine.
 
 Provides the BenchmarkResult dataclass and configuration maps for model families,
 tracks, optimizer classifications, and dataset categories.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -13,9 +17,6 @@ import time
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
-# =============================================================================
-# Constants & Model/Dataset Mappings
-# =============================================================================
 
 MODEL_TOKENIZER_MAPPING: dict[str, str] = {
     "bert": "bert-base-uncased",
@@ -139,15 +140,10 @@ KV_CACHE_OPTIMIZERS: set[str] = {
 }
 
 DEPRECATED_MODULES: set[str] = {
-    # "eat",
-    # "eat_attention",
-    # "granite_hybrid",
-    # jamba_info: removed from deprecated list (bugs fixed 2026-10-09)
     "tpa",
     "tpa_attention",
     "tp_attention",
     "lillama_compressor",
-    # "mamba_svd_flash",
     "aatc_xkv_compressor",
     "hybridkv_compressor",
 }
@@ -165,7 +161,6 @@ TRACK_MODULES: dict[str, dict[str, list[str]]] = {
             "svd_projection_attention",
             "svd_llm_v2_attention",
             "factorised_matrix_state",
-            # "mamba_svd_flash",
             "minimal_svd",
             "minimal_svd_v2",
         ],
@@ -302,9 +297,6 @@ TRACK_MODULES: dict[str, dict[str, list[str]]] = {
 }
 
 
-# =============================================================================
-# BenchmarkResult Schema
-# =============================================================================
 
 
 @dataclass
@@ -319,28 +311,24 @@ class BenchmarkResult:
     status: str
     error_message: str | None = None
 
-    # Latency & Throughput
     forward_latency_ms: float = 0.0
     backward_latency_ms: float = 0.0
     total_step_latency_ms: float = 0.0
     throughput_samples_per_sec: float = 0.0
     speedup_vs_baseline: float = 1.0
 
-    # Memory & Parameters
     param_count: int = 0
     trainable_param_count: int = 0
     compression_ratio: float = 1.0
     peak_memory_mb: float = 0.0
     memory_savings_pct: float = 0.0
 
-    # Accuracy & Loss
     loss: float = 0.0
     accuracy_pct: float = 0.0
     f1_score: float = 0.0
     perplexity: float = 0.0
     grad_norm: float = 0.0
 
-    # Advanced metrics
     mcc: float = 0.0
     pearson: float = 0.0
     spearman: float = 0.0
@@ -354,7 +342,6 @@ class BenchmarkResult:
     mean_seed_acc: float | None = None
     std_seed_acc: float | None = None
 
-    # Diagnostics
     calibration_used: bool = False
     calibration_source: str | None = None
     num_compressed_layers: int = 0

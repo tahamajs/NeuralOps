@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 ViG Attention: Vision GNN 2D Grid Linear Attention
 
 Vision GNN-inspired 2D grid linear attention capturing spatial neighbourhood graph representations.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations

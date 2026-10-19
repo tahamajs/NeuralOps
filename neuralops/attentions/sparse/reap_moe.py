@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 REAP-MoE: Robust Expert Allocation and Pruning MoE Attention
 
 Robust expert allocation and pruning module for parameter-efficient mixture-of-experts attention.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -186,7 +190,6 @@ class REAPMoE(nn.Module):
         if x.is_cuda and self.n_experts == 2 and self.top_k == 2:
             try:
                 from neuralops.core.cuda_kernels.samba_moe import samba_moe
-                # Softmax weights over the 2 experts for samba_moe
                 w = F.softmax(scores.float(), dim=-1).to(target_dtype)
                 out = samba_moe(experts_stack[:, :, 0], experts_stack[:, :, 1], w)
                 return out.to(target_dtype), aux_loss

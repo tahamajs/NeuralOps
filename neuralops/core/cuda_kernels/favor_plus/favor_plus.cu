@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -5,7 +12,6 @@
 
 namespace neuralops { namespace cuda {
 
-// Numerically stabilized exponential FAVOR+ feature activation mapping
 template <typename scalar_t>
 __global__ void __launch_bounds__(256) favor_plus_kernel(
     scalar_t* __restrict__ out,
@@ -26,14 +32,13 @@ __global__ void __launch_bounds__(256) favor_plus_kernel(
         const int idx = pid * F_dim + i;
         const float p = to_float(proj[idx]);
         const float diff = p - d_sq;
-        // Bounded exponent range to avoid saturation and catastrophic cancellation
         const float diff_clamped = fmaxf(-20.0f, fminf(8.0f, diff));
         const float phi = expf(diff_clamped) * norm_factor;
         out[idx] = from_float<scalar_t>(phi);
     }
 }
 
-}} // namespace neuralops::cuda
+}}
 
 torch::Tensor favor_plus_act_fwd(
     const torch::Tensor& proj,

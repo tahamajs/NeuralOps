@@ -1,9 +1,15 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 /*
 Hybrid Local Kernel Attention CUDA Kernel
 
 Hardware-accelerated CUDA C++ sliding-window local attention forward implementation with online softmax.
 
-Author: Taha Majlesi
 */
 
 #include <torch/extension.h>
@@ -13,10 +19,6 @@ Author: Taha Majlesi
 
 namespace neuralops { namespace cuda {
 
-// Hybrid Local Window Attention Forward Kernel:
-// Computes local attention within sliding window radius = window_size // 2.
-// Supports both causal (is_causal = true) and bidirectional local attention.
-// Warp-per-query parallelization with registers and shuffle reduction.
 template <typename scalar_t>
 __global__ void __launch_bounds__(128) hybrid_local_attn_fwd_kernel(
     scalar_t* __restrict__ out,
@@ -45,7 +47,7 @@ __global__ void __launch_bounds__(128) hybrid_local_attn_fwd_kernel(
     const int qi_offset = base_offset + i * D;
     const float scale = rsqrtf(static_cast<float>(D));
 
-    constexpr int MAX_E = 8; // Support up to D = 256
+    constexpr int MAX_E = 8;
     float q_reg[MAX_E];
 
     #pragma unroll
@@ -105,8 +107,6 @@ __global__ void __launch_bounds__(128) hybrid_local_attn_fwd_kernel(
     }
 }
 
-// Two-branch Gate Blending Kernel:
-// out = alpha * branch0 + (1 - alpha) * branch1
 template <typename scalar_t>
 __global__ void __launch_bounds__(256) hybrid_two_branch_blend_kernel(
     scalar_t* __restrict__ out,
@@ -126,8 +126,6 @@ __global__ void __launch_bounds__(256) hybrid_two_branch_blend_kernel(
     out[idx] = from_float<scalar_t>(a * v0 + (1.0f - a) * v1);
 }
 
-// Three-branch Gate Blending Kernel:
-// out = a0 * b0 + a1 * b1 + a2 * b2
 template <typename scalar_t>
 __global__ void __launch_bounds__(256) hybrid_three_branch_blend_kernel(
     scalar_t* __restrict__ out,
@@ -151,7 +149,7 @@ __global__ void __launch_bounds__(256) hybrid_three_branch_blend_kernel(
     out[idx] = from_float<scalar_t>(a0 * v0 + a1 * v1 + a2 * v2);
 }
 
-}} // namespace neuralops::cuda
+}}
 
 torch::Tensor hybrid_local_attn_fwd(
     const torch::Tensor& q,

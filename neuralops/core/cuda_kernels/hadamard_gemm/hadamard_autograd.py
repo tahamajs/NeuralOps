@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Hadamard W4A16 Quantized GEMM Autograd Interface
 
 Hardware-accelerated CUDA C++ autograd implementation with analytical gradients and three-level fallback dispatch.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -131,7 +135,6 @@ class _HadamardW4A16GemmFunction(torch.autograd.Function):
         K = ctx.in_features
         group_size = ctx.group_size
 
-        # Unpack and dequantize W for exact adjoint backpropagation
         low = (w_packed & 0x0F).to(torch.int32)
         high = ((w_packed >> 4) & 0x0F).to(torch.int32)
         w_unpacked = torch.empty((ctx.out_features, K), dtype=torch.int32, device=w_packed.device)
@@ -143,7 +146,6 @@ class _HadamardW4A16GemmFunction(torch.autograd.Function):
         zeros_expanded = zeros.repeat_interleave(group_size, dim=1)[:, :K].to(ctx.x_dtype)
         w_dequant = (w_unpacked.to(ctx.x_dtype) - zeros_expanded) * scales_expanded
 
-        # Adjoint gradient: dx_2d = dout_2d @ w_dequant
         dx_2d = torch.matmul(dout_2d, w_dequant)
 
         if ctx.apply_hadamard:

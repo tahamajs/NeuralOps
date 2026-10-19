@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 CUDA Graph Execution Engine
 
 CUDA Graph runner capturing and replaying static-shape execution graphs for latency-critical inference.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -29,7 +33,6 @@ class CUDAGraphRunner:
             return
 
         device = sample_inputs[0].device
-        # Warmup on side stream
         s = torch.cuda.Stream(device=device)
         s.wait_stream(torch.cuda.current_stream(device=device))
         with torch.cuda.stream(s):
@@ -37,7 +40,6 @@ class CUDAGraphRunner:
                 _ = self.fn(*sample_inputs)
         torch.cuda.current_stream(device=device).wait_stream(s)
 
-        # Static buffers
         self.static_inputs = [x.clone() for x in sample_inputs]
         self.graph = torch.cuda.CUDAGraph()
 
@@ -49,7 +51,6 @@ class CUDAGraphRunner:
         if self.graph is None or not torch.cuda.is_available():
             return self.fn(*inputs)
 
-        # Copy inputs into static memory
         for static_in, dynamic_in in zip(self.static_inputs, inputs):
             static_in.copy_(dynamic_in)
 

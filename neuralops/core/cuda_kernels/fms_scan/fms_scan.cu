@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -7,7 +14,6 @@
 namespace neuralops {
 namespace cuda {
 
-// Fused Factorised Matrix State (FMS) Recurrent Scan Kernel
 template <typename scalar_t, int MAX_D>
 __launch_bounds__(128)
 __global__ void fms_scan_fwd_kernel(
@@ -29,7 +35,6 @@ __global__ void fms_scan_fwd_kernel(
     const float d_val = decay[h];
     const int j = threadIdx.x;
 
-    // Each thread j holds column j of state S
     float S_col[MAX_D];
     #pragma unroll
     for (int i = 0; i < MAX_D; ++i) {
@@ -65,8 +70,6 @@ __global__ void fms_scan_fwd_kernel(
         }
         __syncthreads();
 
-        // 1. Recurrent update S_col[i] = d_val * S_col[i] + s_k[i] * v_j
-        // and compute numerator: num = sum_i s_q[i] * S_col[i]
         float num = 0.0f;
         #pragma unroll
         for (int i = 0; i < D && i < MAX_D; ++i) {
@@ -74,7 +77,6 @@ __global__ void fms_scan_fwd_kernel(
             num += s_q[i] * S_col[i];
         }
 
-        // 2. Thread 0 updates Z and calculates inverse denominator
         if (j == 0) {
             float den = 0.0f;
             #pragma unroll
@@ -94,8 +96,8 @@ __global__ void fms_scan_fwd_kernel(
     }
 }
 
-} // namespace cuda
-} // namespace neuralops
+}
+}
 
 torch::Tensor fms_scan_fwd(
     const torch::Tensor& q,

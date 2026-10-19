@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Layer-Wise Model Analyzer
 
 Per-layer singular value energy decomposition and attention entropy profiler for deep networks.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -32,11 +36,9 @@ class StreamingLayerAccumulator:
     sum_outlier_count_6sigma: int = 0
     total_elements: int = 0
 
-    # Online moments for kurtosis and variance
     sum_m2: float = 0.0
     sum_m4: float = 0.0
 
-    # Covariance sketch for effective rank (subsampled rank estimation)
     cov_matrix: np.ndarray | None = None
     cov_samples: int = 0
 
@@ -45,11 +47,9 @@ class StreamingLayerAccumulator:
         Dynamically updates moments from an incoming activation batch [B, S, D] or [N, D]
         and releases tensor references.
         """
-        # FIX: Compute outlier and spectral metrics dynamically per layer and immediately free activations
         with torch.no_grad():
             act_f32 = act_tensor.detach().float()
 
-            # Flatten to [N, D]
             if act_f32.ndim == 3:
                 b, s, d = act_f32.shape
                 flat_act = act_f32.reshape(-1, d)
@@ -64,7 +64,6 @@ class StreamingLayerAccumulator:
             if n_tokens == 0:
                 return
 
-            # 1. Update running mean representation vector (CPU numpy)
             batch_mean = flat_act.mean(dim=0).cpu().numpy()
             if self.running_mean_vector is None:
                 self.running_mean_vector = batch_mean.copy()
@@ -73,11 +72,9 @@ class StreamingLayerAccumulator:
                     self.total_tokens / (self.total_tokens + n_tokens)
                 ) + batch_mean * (n_tokens / (self.total_tokens + n_tokens))
 
-            # 2. Update Peak Outlier Magnitude
             batch_max = float(flat_act.abs().max().item())
             self.max_activation = max(self.max_activation, batch_max)
 
-            # 3. Update Outlier Ratio & Kurtosis Moments
             act_cpu = flat_act.cpu().numpy()
             global_elem = act_cpu.size
             self.total_elements += global_elem
@@ -94,7 +91,6 @@ class StreamingLayerAccumulator:
             outliers = np.sum(np.abs(centered) > (6.0 * std))
             self.sum_outlier_count_6sigma += int(outliers)
 
-            # 4. Running Subsampled Covariance for Effective Rank
             sub_n = min(n_tokens, 256)
             sub_act = act_cpu[:sub_n] - batch_mean
             batch_cov = (sub_act.T @ sub_act) / max(1, sub_n)
@@ -177,7 +173,6 @@ class LayerwiseAnalyzer:
         target_layers = []
         for name, module in self.model.named_modules():
             name_lower = name.lower()
-            # Match standard transformer layer patterns
             if any(
                 pattern in name_lower
                 for pattern in [
@@ -191,12 +186,10 @@ class LayerwiseAnalyzer:
                     "transformer.blocks.",
                 ]
             ):
-                # Filter to only the top-level block (e.g. layers.0, not layers.0.attention)
                 parts = name.split(".")
                 if parts[-1].isdigit():
                     target_layers.append((name, module))
 
-        # Fallback: if no digit-indexed layers found, look for any layer module
         if not target_layers:
             for name, module in self.model.named_modules():
                 if "layer" in name.lower() and isinstance(module, (nn.ModuleList, nn.Sequential)):
@@ -217,12 +210,9 @@ class LayerwiseAnalyzer:
 
             def make_hook(idx: int):
                 def hook_fn(mod: nn.Module, inputs: Any, output: Any) -> None:
-                    # Extract tensor
                     tensor = output[0] if isinstance(output, tuple) else output
                     if isinstance(tensor, torch.Tensor):
-                        # FIX: Update streaming accumulator dynamically and release activation immediately
                         self.layer_accumulators[idx].update(tensor)
-                        # Explicitly release references
                         del tensor
 
                 return hook_fn
@@ -267,7 +257,6 @@ class LayerwiseAnalyzer:
                 with torch.no_grad():
                     self.model(**inputs)
 
-                # Cleanup batch inputs
                 del inputs, encoded
                 if torch.cuda.is_available():
                     torch.cuda.empty_cache()
@@ -286,7 +275,6 @@ class LayerwiseAnalyzer:
                 "intrinsic_dimensions": [],
             }
 
-        # Extract per-layer mean vectors
         mean_vectors = [
             (
                 acc.running_mean_vector
@@ -296,7 +284,6 @@ class LayerwiseAnalyzer:
             for acc in self.layer_accumulators
         ]
 
-        # Compute cosine similarity between adjacent layers
         similarities = []
         for i in range(num_layers - 1):
             v1, v2 = mean_vectors[i], mean_vectors[i + 1]
@@ -313,7 +300,6 @@ class LayerwiseAnalyzer:
         outlier_ratios = [acc.compute_outlier_ratio() for acc in self.layer_accumulators]
         kurtosis_scores = [acc.compute_kurtosis() for acc in self.layer_accumulators]
 
-        # Estimate intrinsic dimension using mean vectors
         np.stack(mean_vectors) if num_layers > 1 else np.zeros((1, 128))
         intrinsic_dims = [
             estimate_intrinsic_dimension(
@@ -361,7 +347,6 @@ def estimate_intrinsic_dimension(hidden_states: np.ndarray, k: int = 5) -> float
         if not valid.any():
             return float(D)
 
-        # Maximum likelihood estimation of intrinsic dimension
         log_ratios = np.log(kth_dists[valid] / (kth_dists[valid][:, None] + 1e-12))
         id_estimate = -1.0 / (np.mean(log_ratios) + 1e-12)
         return float(max(1.0, min(float(D), abs(id_estimate))))

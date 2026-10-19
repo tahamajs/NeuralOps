@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Unified Operator Benchmark Runner for NeuralOps and FLA Kernels
 
 Modeled after benchmarks/ops/run.py paradigm.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -26,7 +30,6 @@ import triton.testing
 
 logger = logging.getLogger("neuralops.benchmarks.ops_runner")
 
-# Registered operator benchmark functions
 OP_REGISTRY: Dict[str, Callable] = {}
 
 

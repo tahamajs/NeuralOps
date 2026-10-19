@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 KMeans Quantizer: Codebook-Based Clustering Quantization
 
 Groups model weights into cluster centroids using k-means optimization with straight-through estimator support for backpropagation.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations

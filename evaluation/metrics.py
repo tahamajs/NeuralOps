@@ -1,3 +1,9 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Comprehensive Production-Grade Evaluation Metrics Suite for NeuralOps.
 
 Unifies evaluation across:
@@ -6,8 +12,6 @@ Unifies evaluation across:
   - Representation Geometry & Alignment: Centered Kernel Alignment (Linear CKA, Kernel CKA)
   - Numerical Fidelity: Cosine Similarity, Max Absolute Deviation (L_inf), L2 Error, Relative Frobenius Norm
   - Hardware & Performance Profiling: Peak GPU VRAM (allocated/reserved), Throughput (tokens/s, samples/s), Latency percentiles (P50, P90, P99)
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -33,7 +37,6 @@ from neuralops.trainer.metrics import (
 )
 
 __all__ = [
-    # Forwarded legacy metrics
     "compute_accuracy",
     "compute_f1",
     "compute_matthews_corrcoef",
@@ -41,17 +44,12 @@ __all__ = [
     "compute_precision_recall",
     "compute_regression_metrics",
     "get_task_metrics",
-    # Language Modeling Metrics
     "compute_perplexity_from_loss",
     "compute_token_perplexity",
-    # Classification Metrics
     "compute_top_k_accuracy",
-    # Representation & Alignment Metrics
     "compute_linear_cka",
     "compute_representation_similarity",
-    # Numerical Deviation Metrics
     "compute_numerical_deviation",
-    # Hardware Profiling Metrics
     "measure_peak_vram_mb",
     "measure_latency_and_throughput",
     "EvaluationReport",
@@ -110,14 +108,14 @@ def compute_token_perplexity(
         for i in range(0, total_tokens, stride):
             begin_loc = max(i + stride - max_length, 0)
             end_loc = min(i + stride, total_tokens)
-            trg_len = end_loc - i  # Number of new target tokens in window
+            trg_len = end_loc - i
 
             if trg_len <= 0:
                 continue
 
             window_input_ids = input_ids[:, begin_loc:end_loc]
             target_ids = window_input_ids.clone()
-            target_ids[:, :-trg_len] = -100  # Mask out context tokens
+            target_ids[:, :-trg_len] = -100
 
             window_mask = None
             if attention_mask is not None:
@@ -193,27 +191,22 @@ def compute_linear_cka(
 
         assert X.size(0) == Y.size(0), f"Sample dimension mismatch: X={X.size(0)} vs Y={Y.size(0)}"
 
-        # Compute on CPU / float32 for maximum numerical stability
         X = X.detach().to(torch.float32)
         Y = Y.detach().to(torch.float32)
 
-        # Center columns
         X = X - X.mean(dim=0, keepdim=True)
         Y = Y - Y.mean(dim=0, keepdim=True)
 
-        # In case N is smaller than D (or vice-versa), compute efficiently
         N, D1 = X.shape
         _, D2 = Y.shape
 
         if N < min(D1, D2):
-            # Gram matrix formulation
             K = torch.matmul(X, X.t())
             L = torch.matmul(Y, Y.t())
             hsic_xy = (K * L).sum()
             hsic_xx = (K * K).sum()
             hsic_yy = (L * L).sum()
         else:
-            # Cross-covariance formulation
             XtX = torch.matmul(X.t(), X)
             YtY = torch.matmul(Y.t(), Y)
             XtY = torch.matmul(X.t(), Y)
@@ -250,7 +243,6 @@ def compute_representation_similarity(
 
         cka = compute_linear_cka(t_flat, s_flat)
 
-        # Cosine similarity (if feature dimension matches)
         if t_flat.size(-1) == s_flat.size(-1):
             cos_sim = float(F.cosine_similarity(t_flat, s_flat, dim=-1).mean().item())
         else:
@@ -280,7 +272,6 @@ def compute_numerical_deviation(
         o = orig_output.detach().to(torch.float32)
         m = mod_output.detach().to(torch.float32)
 
-        # Flatten all except final dimension for cosine similarity
         o_vec = o.reshape(-1, o.size(-1))
         m_vec = m.reshape(-1, m.size(-1))
 
@@ -363,14 +354,12 @@ def measure_latency_and_throughput(
     batch_size, seq_len = input_ids.shape
     total_tokens_per_step = batch_size * seq_len
 
-    # Warmup
     with torch.no_grad():
         for _ in range(warmup_steps):
             _ = model(input_ids)
             if device.type == "cuda":
                 torch.cuda.synchronize(device)
 
-    # Benchmark timings
     step_times_ms: List[float] = []
     with torch.no_grad():
         for _ in range(benchmark_steps):
@@ -389,7 +378,6 @@ def measure_latency_and_throughput(
     p99 = float(np.percentile(arr, 99))
     mean_ms = float(np.mean(arr))
 
-    # Throughput
     tokens_per_sec = float((total_tokens_per_step / (mean_ms / 1000.0)) if mean_ms > 0 else 0.0)
     samples_per_sec = float((batch_size / (mean_ms / 1000.0)) if mean_ms > 0 else 0.0)
 

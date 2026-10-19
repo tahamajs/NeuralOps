@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Parameter-Efficient Adapters
 
 Low-rank adapter layers and residual bottleneck modules for efficient fine-tuning.
-
-Author: Taha Majlesi
 """
 
 from typing import Any
@@ -52,7 +56,6 @@ class UniversalAdapter:
             """Unwrap LoRALinear / merged adapter layers to their base_layer."""
             if mod is None:
                 return mod
-            # LoRALinear stores the original frozen layer as base_layer
             if hasattr(mod, "base_layer") and hasattr(mod.base_layer, "weight"):
                 return mod.base_layer
             return mod
@@ -68,20 +71,16 @@ class UniversalAdapter:
             import torch.nn as nn
 
             w = mod.weight
-            # Must be either an nn.Parameter or a plain Tensor (Conv1D)
             if not (isinstance(w, nn.Parameter) or isinstance(w, torch.Tensor)):
                 return None
             w = w.data if hasattr(w, "data") else w
-            # Projections must strictly be 2D weight matrices (excludes 1D norms, 3D convolutions, etc.)
             if w.ndim != 2:
                 return None
-            # Conv1D stores weights transposed: [in_features, out_features]
             is_conv1d = (mod.__class__.__name__ == "Conv1D") or hasattr(mod, "nf")
             if is_conv1d or (w.shape[0] < w.shape[1]):
                 w = w.t().contiguous()
             bias = getattr(mod, "bias", None)
             bias = bias.data if (bias is not None and hasattr(bias, "data")) else bias
-            # Qwen3.5 Gated Q: query is fused with gate (dim 0 has 2 * num_heads * head_dim)
             if proj == "q" and (
                 hasattr(old_attn, "q_norm")
                 or old_attn.__class__.__name__ == "Qwen3_5Attention"
@@ -105,14 +104,12 @@ class UniversalAdapter:
                         )
             return w, bias
 
-        # 1. Search in target (old_attn.self or old_attn)
         for name in candidate_names:
             if hasattr(target, name):
                 result = _extract(getattr(target, name))
                 if result is not None:
                     return result
 
-        # 2. Search in old_attn.output (BERT / RoBERTa output projection 'o')
         if proj == "o" and hasattr(old_attn, "output"):
             out_mod = old_attn.output
             if hasattr(out_mod, "dense"):
@@ -123,14 +120,12 @@ class UniversalAdapter:
             if result is not None:
                 return result
 
-        # 3. Search directly in old_attn (catches cases where there's no .self sub-module)
         for name in candidate_names:
             if hasattr(old_attn, name):
                 result = _extract(getattr(old_attn, name))
                 if result is not None:
                     return result
 
-        # 4. Fallback for Fused GPT-2 c_attn (must precede positional fallback)
         if proj in ("q", "k", "v") and hasattr(old_attn, "c_attn"):
             fused_result = _extract(old_attn.c_attn)
             if fused_result is not None:
@@ -146,7 +141,6 @@ class UniversalAdapter:
                 elif proj == "v":
                     return w[2 * split_w :, :], (b[2 * split_b :] if b is not None else None)
 
-        # 4b. Fallback for Qwen3.5 / fused in_proj_qkv
         if proj in ("q", "k", "v") and hasattr(old_attn, "in_proj_qkv"):
             fused_result = _extract(old_attn.in_proj_qkv)
             if fused_result is not None:
@@ -165,7 +159,6 @@ class UniversalAdapter:
                         b[q_dim + k_dim : q_dim + k_dim + v_dim] if b is not None else None
                     )
 
-        # 4c. PyTorch nn.MultiheadAttention in_proj_weight / separate proj_weight
         for obj in (target, old_attn):
             if (
                 proj in ("q", "k", "v")
@@ -201,8 +194,6 @@ class UniversalAdapter:
                     b = b.data if (b is not None and hasattr(b, "data")) else b
                     return w.clone(), (b.clone() if b is not None else None)
 
-        # 5. Positional fallback: scan all Linear children of target in declaration order.
-        #    Only valid if at least 3 children exist (the typical pattern for BERT/RoBERTa variants).
         ordered_proj_map = {"q": 0, "k": 1, "v": 2}
         if proj in ordered_proj_map:
             children_with_weight = [
@@ -213,11 +204,6 @@ class UniversalAdapter:
                 if idx < len(children_with_weight):
                     return _extract(children_with_weight[idx][1])
 
-        # 6. Fallback for 'o' projection when replacing leaf self-attention without local out_proj
-        # (e.g. RoBERTa/BERT RobertaSelfAttention where output.dense resides in the parent container).
-        # Returning an Identity matrix ensures:
-        #   (a) custom modules don't crash during weight copying, and
-        #   (b) context passes through transparently to parent.output.dense without double projection!
         if proj == "o":
             for mod in target.modules():
                 if (
@@ -245,7 +231,6 @@ class UniversalAdapter:
         return getattr(config, "num_key_value_heads", getattr(config, "num_attention_heads", 12))
 
 
-# Backward compatibility aliases
 DistilBertAdapter = UniversalAdapter
 BertAdapter = UniversalAdapter
 LlamaAdapter = UniversalAdapter

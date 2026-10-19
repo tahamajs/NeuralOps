@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -5,9 +12,6 @@
 
 namespace neuralops { namespace cuda {
 
-// Entmax15 (alpha=1.5) Bisection Root Finding Kernel:
-// Form: p_i = [ (x_i - \tau) / 2 ]_+^2
-// Root condition: \sum_i p_i = 1.0
 template <typename scalar_t>
 __global__ void __launch_bounds__(256) entmax15_shared_kernel(
     scalar_t* __restrict__ out,
@@ -27,7 +31,6 @@ __global__ void __launch_bounds__(256) entmax15_shared_kernel(
     const int num_vec = N / 4;
     float local_max = -1e30f;
 
-    // Vectorized load into shared memory and local max computation
     for (int i = tid; i < num_vec; i += blockDim.x) {
         if constexpr (std::is_same_v<scalar_t, float>) {
             const float4 in4 = *reinterpret_cast<const float4*>(scores + row_offset + i * 4);
@@ -60,7 +63,6 @@ __global__ void __launch_bounds__(256) entmax15_shared_kernel(
     const int wid = tid >> 5;
     const int num_warps = (blockDim.x + 31) >> 5;
 
-    // Fast block reduction for initial maximum
     float wmax = warp_reduce_max(local_max);
     if (lane == 0) s_warp_scratch[wid] = wmax;
     __syncthreads();
@@ -70,11 +72,9 @@ __global__ void __launch_bounds__(256) entmax15_shared_kernel(
     __syncthreads();
     m = s_warp_scratch[0];
 
-    // Initial bounds for bisection
     float low = m - 2.0f;
     float high = m;
 
-    // Warp/Block Coordinated Bisection using shared memory
     #pragma unroll 5
     for (int it = 0; it < n_iter; ++it) {
         const float mid = 0.5f * (low + high);
@@ -114,7 +114,6 @@ __global__ void __launch_bounds__(256) entmax15_shared_kernel(
         __syncthreads();
     }
 
-    // Final normalization
     const float final_tau = 0.5f * (low + high);
     float final_sum = 0.0f;
     for (int i = tid; i < num_vec; i += blockDim.x) {
@@ -172,8 +171,6 @@ __global__ void __launch_bounds__(256) entmax15_shared_kernel(
     }
 }
 
-// Analytical Entmax15 (alpha=1.5) Backward Kernel:
-// JVP: ds_i = sqrt(p_i) * (dout_i - sum_{k in S}(dout_k * sqrt(p_k)) / sum_{k in S}(sqrt(p_k)))
 template <typename scalar_t>
 __global__ void __launch_bounds__(256) entmax15_bwd_kernel(
     scalar_t* __restrict__ dscores,
@@ -205,7 +202,6 @@ __global__ void __launch_bounds__(256) entmax15_bwd_kernel(
         }
     }
 
-    // Cooperative warp shuffle reduction
     #pragma unroll
     for (int mask = 16; mask > 0; mask >>= 1) {
         local_sum_sp += __shfl_down_sync(0xffffffff, local_sum_sp, mask);
@@ -238,7 +234,6 @@ __global__ void __launch_bounds__(256) entmax15_bwd_kernel(
 
     const float ratio = s_ratio;
 
-    // Second pass: compute exact dscore directly in registers
     for (int i = tid; i < N; i += blockDim.x) {
         const float p_val = to_float(p[row_offset + i]);
         float ds = 0.0f;
@@ -251,7 +246,7 @@ __global__ void __launch_bounds__(256) entmax15_bwd_kernel(
     }
 }
 
-}} // namespace neuralops::cuda
+}}
 
 torch::Tensor entmax15_fwd(const torch::Tensor& scores, int n_iter) {
     CHECK_INPUT(scores);

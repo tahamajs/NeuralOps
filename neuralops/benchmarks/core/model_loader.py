@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Model loading, metadata inspection, and attention/compression surgery for benchmarks
 
 Implements model loader functionality for NeuralOps.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -121,7 +125,6 @@ def load_model_and_tokenizer(
     if num_labels is not None:
         config.num_labels = num_labels
 
-    # Ensure model config has a valid pad_token_id matching tokenizer (required by GPT-2 classification)
     if getattr(config, "pad_token_id", None) is None and tokenizer.pad_token_id is not None:
         config.pad_token_id = tokenizer.pad_token_id
 
@@ -225,7 +228,6 @@ def apply_compressor(
     LOG.info("Applying compressor: '%s' (rank=%d)...", module_name, rank)
     compressor_cls = COMPRESSOR_REGISTRY[module_name]
 
-    # Handle constructor signatures: some take (model, rank=...), some take (rank=...)
     compressor = None
     try:
         compressor = compressor_cls(model=model, rank=rank, **kwargs)
@@ -243,7 +245,6 @@ def apply_compressor(
         if calibration_loader is not None and "dataloader" in compressor.compress.__code__.co_varnames:
             comp_kwargs["dataloader"] = calibration_loader
 
-        # Check if compress expects model argument
         if "model" in compressor.compress.__code__.co_varnames:
             res = compressor.compress(model, **comp_kwargs)
         else:
@@ -258,7 +259,6 @@ def apply_compressor(
 
 
 
-# Backward compatibility aliases
 inject_attention_module = apply_attention_module
 apply_compression = apply_compressor
 

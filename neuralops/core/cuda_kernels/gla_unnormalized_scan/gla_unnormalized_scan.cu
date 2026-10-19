@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -5,8 +12,6 @@
 
 namespace neuralops { namespace cuda {
 
-// Unnormalized Gated Linear Attention state accumulation without denominator division
-// Handles both g as [B, H, N, D] (g_has_D = true) and g as [B, H, N] (g_has_D = false)
 template <typename scalar_t, bool G_HAS_D>
 __global__ void __launch_bounds__(256) gla_unnorm_scan_kernel_vec4(
     scalar_t* __restrict__ out,
@@ -74,7 +79,6 @@ __global__ void __launch_bounds__(256) gla_unnorm_scan_kernel_vec4(
     }
 }
 
-// Fallback scalar kernel for arbitrary D
 template <typename scalar_t, bool G_HAS_D>
 __global__ void __launch_bounds__(256) gla_unnorm_scan_kernel_scalar(
     scalar_t* __restrict__ out,
@@ -110,7 +114,7 @@ __global__ void __launch_bounds__(256) gla_unnorm_scan_kernel_scalar(
     }
 }
 
-}} // namespace neuralops::cuda
+}}
 
 torch::Tensor gla_unnormalized_scan_fwd(
     const torch::Tensor& q,

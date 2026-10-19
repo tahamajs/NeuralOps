@@ -1,7 +1,11 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 NeuralOps Compression Engines.
-
-Author: Taha Majlesi
 """
 
 import importlib
@@ -54,7 +58,6 @@ class _LegacyCompLoader(Loader):
     def create_module(self, _spec):
         if self.fullname in sys.modules:
             return sys.modules[self.fullname]
-        # Pre-assign module in sys.modules to break any re-entrant circular import
         alias_mod = types.ModuleType(self.fullname)
         sys.modules[self.fullname] = alias_mod
         try:

@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Dobi-SVD: Differentiable SVD with Learnable Spectral Gating
 
 Employs differentiable singular value gating functions to dynamically prune low-energy spectral modes during training.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations

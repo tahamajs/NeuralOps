@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Auto-discovery and capability detection for all 232 modules
 
 Implements discovery functionality for NeuralOps.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -51,7 +55,6 @@ def inspect_module_capabilities(
 
     sig = str(inspect.signature(cls.__init__)) if hasattr(cls, "__init__") else ""
 
-    # Causal
     if "supports_causal" in mod_overrides:
         causal = mod_overrides["supports_causal"]
     elif hasattr(cls, "supports_causal"):
@@ -63,7 +66,6 @@ def inspect_module_capabilities(
     else:
         causal = (module_type == "compressor")
 
-    # GQA
     if "supports_gqa" in mod_overrides:
         gqa = mod_overrides["supports_gqa"]
     elif hasattr(cls, "supports_gqa"):
@@ -73,7 +75,6 @@ def inspect_module_capabilities(
     else:
         gqa = False
 
-    # RoPE
     if "supports_rope" in mod_overrides:
         rope = mod_overrides["supports_rope"]
     elif hasattr(cls, "supports_rope"):
@@ -83,7 +84,6 @@ def inspect_module_capabilities(
     else:
         rope = False
 
-    # CUDA
     if "requires_cuda" in mod_overrides:
         cuda = mod_overrides["requires_cuda"]
     elif hasattr(cls, "requires_cuda"):
@@ -91,10 +91,8 @@ def inspect_module_capabilities(
     else:
         cuda = False
 
-    # Timeout
     timeout_s = mod_overrides.get("timeout_s", 1800)
 
-    # Family deduction from module name
     parts = name.split("_")
     family = parts[0] if parts else "unknown"
 
@@ -115,7 +113,6 @@ CATALOG_PATH = Path(__file__).parent / "static_catalog.json"
 
 def discover_all_modules() -> list[ModuleMetadata]:
     """Discover and return capabilities for all registered modules (131 attentions + 72 compressors = 203)."""
-    # Fast path: use cached static catalog to avoid importing torch and heavy attention registries
     if CATALOG_PATH.exists():
         try:
             with open(CATALOG_PATH, "r", encoding="utf-8") as fp:
@@ -178,13 +175,9 @@ def discover_modules(key_by: str = "name") -> dict[str, ModuleMetadata]:
         elif key_by in ("unique_key", "category_name"):
             mapping[f"{m.type}:{m.name}"] = m
         else:
-            # Default 'name' mode: If collision detected (e.g. svd_linear in both attention and compressor),
-            # preserve attention as 'svd_linear' and register compressor as both 'svd_linear_compressor'
-            # and 'compressor:svd_linear' so all 203 modules remain reachable and distinct.
             if m.name in mapping:
                 existing = mapping[m.name]
                 if existing.type != m.type:
-                    # Disambiguate
                     mapping[f"{existing.type}:{existing.name}"] = existing
                     mapping[f"{m.type}:{m.name}"] = m
                     mapping[f"{m.name}_{m.type}"] = m

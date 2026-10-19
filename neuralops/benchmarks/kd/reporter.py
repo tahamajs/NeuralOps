@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Result reporting, streaming CSV persistence, and Markdown generation
 
 This module provides the :class:`KDReporter` class to stream benchmark results safely to disk using atomic file writing techniques, preventing corruption in case.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -96,11 +100,9 @@ class KDReporter:
         dataset_name = result.get("dataset", "default")
         result.setdefault("timestamp", time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()))
 
-        # 1. Write per-run atomic JSON
         run_file = self.runs_dir / f"{dataset_name}__{module_name}.json"
         self._atomic_write_json(run_file, result)
 
-        # 2. Append to streaming CSV
         row = {k: result.get(k, "") for k in self.CSV_FIELDS}
         with open(self.csv_path, mode="a", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=self.CSV_FIELDS)
@@ -117,10 +119,8 @@ class KDReporter:
         json_path = self.output_dir / "kd_benchmark_final.json"
         md_path = self.output_dir / "kd_benchmark_final.md"
 
-        # Save complete JSON
         self._atomic_write_json(json_path, all_results)
 
-        # Build Markdown table and summary
         lines = [
             f"# Knowledge Distillation (KD) Benchmark Final Report",
             f"",
@@ -135,7 +135,6 @@ class KDReporter:
             f"| :--- | :--- | :---: | :---: | :---: | :---: | :---: |",
         ]
 
-        # Sort: successfully improved/evaluated first, descending by final accuracy
         def sort_key(r: Dict[str, Any]) -> float:
             val = r.get("final_kd_acc")
             return float(val) if val is not None and val != "" else -1.0

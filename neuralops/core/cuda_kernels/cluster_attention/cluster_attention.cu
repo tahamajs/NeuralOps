@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -5,17 +12,6 @@
 
 namespace neuralops { namespace cuda {
 
-// Single-Pass Warp-Per-Query Flash Cluster Attention Forward Kernel with Cooperative SMEM Tiling:
-// Form: S_{i, c} = \frac{1}{\sqrt{D}} \sum_{d=0}^{D-1} Q_{i, d} \cdot \text{Centroid}_{c, d}
-//       w_{i, c} = \text{Softmax}_c(S_{i, c})
-//       out_{i, d} = \sum_{c=0}^{K-1} w_{i, c} \cdot V_{c, d}
-//
-// Hardware-level optimization:
-// 1. Cooperative SMEM Tiling: Centroids and Values loaded into shared memory in TILE_K blocks.
-// 2. SMEM Bank Conflict Elimination: __shared__ float s_c[TILE_K][D_PAD], s_v[TILE_K][D_PAD] with +8 element padding.
-// 3. 128-bit Vectorized DRAM Loads: uint4 aligned memory transactions for half/bfloat16, float4 for float32.
-// 4. Warp-Per-Query (4 warps = 128 threads/block): launch bounds (128, 2) with zero register spilling.
-// 5. Dynamic online softmax rescaling with strict FP32 precision.
 template <typename scalar_t>
 __global__ void __launch_bounds__(128, 2) cluster_attn_fwd_kernel(
     scalar_t* __restrict__ out,
@@ -40,7 +36,6 @@ __global__ void __launch_bounds__(128, 2) cluster_attn_fwd_kernel(
     const int c_base_offset = bh * (K * D);
     const float scale = rsqrtf(static_cast<float>(D));
 
-    // Register cache for query vectors (up to D=128)
     constexpr int MAX_E = 4;
     float q_reg[MAX_E];
 
@@ -55,21 +50,19 @@ __global__ void __launch_bounds__(128, 2) cluster_attn_fwd_kernel(
     }
 
     constexpr int TILE_K = 16;
-    constexpr int D_PAD = 128 + 8; // +8 elements eliminates bank conflicts & ensures 16-byte alignment
+    constexpr int D_PAD = 128 + 8;
     __shared__ float s_c[TILE_K][D_PAD];
     __shared__ float s_v[TILE_K][D_PAD];
 
-    // Single-pass FlashAttention across K centroids
     float m_prev = -1e30f;
     float d_prev = 0.0f;
     float acc[MAX_E] = {0.0f};
 
-    const int tid = threadIdx.x; // 0..127
+    const int tid = threadIdx.x;
 
     for (int tile_start = 0; tile_start < K; tile_start += TILE_K) {
         __syncthreads();
 
-        // 128-bit aligned vector DRAM loads
         if (sizeof(scalar_t) == 2 && (D % 8 == 0)) {
             const int uint4_per_tok = D / 8;
             const int total_uint4 = TILE_K * uint4_per_tok;
@@ -161,20 +154,17 @@ __global__ void __launch_bounds__(128, 2) cluster_attn_fwd_kernel(
                     }
                 }
 
-                // Warp reduction across 32 lanes
                 #pragma unroll
                 for (int offset = 16; offset > 0; offset /= 2) {
                     dot_local += __shfl_xor_sync(0xffffffff, dot_local, offset);
                 }
 
-                // Online softmax update
                 const float m_curr = fmaxf(m_prev, dot_local);
                 const float alpha = expf(m_prev - m_curr);
                 const float p = expf(dot_local - m_curr);
                 d_prev = d_prev * alpha + p;
                 m_prev = m_curr;
 
-                // Rescale prior accumulation and add current p * v
                 #pragma unroll
                 for (int e = 0; e < MAX_E; ++e) {
                     const int d = lane + e * 32;
@@ -199,7 +189,7 @@ __global__ void __launch_bounds__(128, 2) cluster_attn_fwd_kernel(
     }
 }
 
-}} // namespace neuralops::cuda
+}}
 
 torch::Tensor cluster_attn_fwd(
     const torch::Tensor& q,
@@ -225,7 +215,7 @@ torch::Tensor cluster_attn_fwd(
     auto out = torch::empty_like(q);
     if (B == 0 || H == 0 || N == 0 || D == 0 || K == 0) return out;
 
-    constexpr int THREADS = 128; // 4 warps per block -> 4 queries per block
+    constexpr int THREADS = 128;
     constexpr int WARPS_PER_BLOCK = THREADS / 32;
     const int blocks_x = (N + WARPS_PER_BLOCK - 1) / WARPS_PER_BLOCK;
     dim3 grid(blocks_x, B * H);

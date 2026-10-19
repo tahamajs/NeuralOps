@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Attention Module Helpers
 
 Internal utility functions supporting dynamic head reshaping, scaling, and dimension validation.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -24,7 +28,6 @@ from neuralops.core.svd_utils import randomized_svd
 
 logger = logging.getLogger(__name__)
 
-# Backward-compatibility alias
 _get_valid_mask = get_token_valid_mask
 
 

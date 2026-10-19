@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -6,16 +13,6 @@
 namespace neuralops {
 namespace cuda {
 
-// Bidirectional HGRN2 Recurrent Scan Kernel with full feature dimension tiling:
-// Form: Forward pass:  h_fwd[t] = g[t] * h_fwd[t-1] + (1 - g[t]) * x[t]
-//       Backward pass: h_bwd[t] = g[t] * h_bwd[t+1] + (1 - g[t]) * x[t]
-//       Output:        out[t]   = 0.5 * (h_fwd[t] + h_bwd[t])
-//
-// Hardware-level optimization:
-// 1. Grid/Block mapping: dim3 grid(ceil(D / 128), B * H) with 128 threads/block.
-// 2. Fixes silent data corruption bug when D > 128: arbitrary D is supported!
-// 3. Strict FP32 intermediate register states.
-// 4. Memory latency hiding via loop unrolling.
 template <typename scalar_t>
 __global__ void __launch_bounds__(128) hgrn2_bidirectional_scan_kernel(
     scalar_t* __restrict__ out,
@@ -34,7 +31,6 @@ __global__ void __launch_bounds__(128) hgrn2_bidirectional_scan_kernel(
 
     const int base_bh = bh * (L * D) + d;
 
-    // Pass 1: Forward scan
     float h_fwd = 0.0f;
     #pragma unroll 4
     for (int t = 0; t < L; ++t) {
@@ -46,7 +42,6 @@ __global__ void __launch_bounds__(128) hgrn2_bidirectional_scan_kernel(
         out[idx] = from_float<scalar_t>(h_fwd);
     }
 
-    // Pass 2: Backward scan and fusion
     float h_bwd = 0.0f;
     #pragma unroll 4
     for (int t = L - 1; t >= 0; --t) {
@@ -61,8 +56,8 @@ __global__ void __launch_bounds__(128) hgrn2_bidirectional_scan_kernel(
     }
 }
 
-} // namespace cuda
-} // namespace neuralops
+}
+}
 
 torch::Tensor hgrn2_bidirectional_scan_fwd(
     const torch::Tensor& x,

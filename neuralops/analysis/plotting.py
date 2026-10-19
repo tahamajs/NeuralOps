@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Visualization and Plotting Suite
 
 Matplotlib and Seaborn plotting routines visualizing training trajectories, loss landscapes, and trade-offs.
-
-Author: Taha Majlesi
 """
 
 import json
@@ -17,7 +21,6 @@ import pandas as pd
 import seaborn as sns
 from scipy.ndimage import uniform_filter1d
 
-# Default style
 plt.style.use("seaborn-v0_8-darkgrid")
 sns.set_palette("husl")
 sns.set_context("paper", font_scale=1.2)
@@ -30,7 +33,6 @@ def set_style() -> None:
     sns.set_context("paper", font_scale=1.2)
 
 
-# ---------- Individual plot functions ----------
 
 
 def plot_loss_curve(history, metrics, config, output_dir, opts) -> Any:
@@ -275,7 +277,6 @@ def plot_attention_heatmap(history, metrics, config, output_dir, opts) -> Any:
     tokens = attn_data.get("tokens", None)
     layer = attn_data.get("layer", 0)
     head = attn_data.get("head", 0)
-    # Simple heatmap
     fig, ax = plt.subplots(figsize=(10, 8))
     sns.heatmap(matrix, cmap="viridis", xticklabels=tokens, yticklabels=tokens, ax=ax)
     ax.set_title(f"Attention Heatmap – Layer {layer} Head {head}")
@@ -285,7 +286,6 @@ def plot_attention_heatmap(history, metrics, config, output_dir, opts) -> Any:
     return [str(path)]
 
 
-# ---------- Comprehensive plots ----------
 
 
 def create_comprehensive_plots(
@@ -300,7 +300,6 @@ def create_comprehensive_plots(
         fontsize=16,
         fontweight="bold",
     )
-    # 1. Accuracy vs Rank by model
     ax = axes[0, 0]
     for model in df["model"].unique():
         sub = df[df["model"] == model].groupby("rank")["accuracy"].mean().reset_index()
@@ -308,7 +307,6 @@ def create_comprehensive_plots(
     ax.set_title("Accuracy vs Rank (by Model)")
     ax.legend()
     ax.grid(True, alpha=0.3)
-    # 2. Accuracy vs Rank by task
     ax = axes[0, 1]
     for task in df["task"].unique():
         sub = df[df["task"] == task].groupby("rank")["accuracy"].mean().reset_index()
@@ -316,7 +314,6 @@ def create_comprehensive_plots(
     ax.set_title("Accuracy vs Rank (by Task)")
     ax.legend()
     ax.grid(True, alpha=0.3)
-    # 3. Speedup factor
     ax = axes[0, 2]
     if "speedup_factor" in df.columns:
         for model in df["model"].unique():
@@ -334,7 +331,6 @@ def create_comprehensive_plots(
             va="center",
             transform=ax.transAxes,
         )
-    # 4. Parameter reduction
     ax = axes[1, 0]
     if "param_reduction" in df.columns:
         pd_data = df.groupby(["model", "rank"])["param_reduction"].mean().reset_index()
@@ -356,7 +352,6 @@ def create_comprehensive_plots(
             va="center",
             transform=ax.transAxes,
         )
-    # 5. Accuracy drop distribution
     ax = axes[1, 1]
     if "accuracy_drop" in df.columns:
         drops = df["accuracy_drop"].dropna()
@@ -374,7 +369,6 @@ def create_comprehensive_plots(
             va="center",
             transform=ax.transAxes,
         )
-    # 6. Memory reduction
     ax = axes[1, 2]
     if "memory_reduction" in df.columns:
         mem = df.groupby("rank")["memory_reduction"].mean().reset_index()
@@ -395,7 +389,6 @@ def create_comprehensive_plots(
             va="center",
             transform=ax.transAxes,
         )
-    # 7. Accuracy by task type
     ax = axes[2, 0]
     if "task_type" in df.columns:
         for tt in df["task_type"].unique():
@@ -406,7 +399,6 @@ def create_comprehensive_plots(
         ax.grid(True, alpha=0.3)
     else:
         ax.text(0.5, 0.5, "No task type", ha="center", va="center", transform=ax.transAxes)
-    # 8. Compression ratio heatmap
     ax = axes[2, 1]
     if "compression_ratio" in df.columns:
         pivot = df.pivot_table(
@@ -421,7 +413,6 @@ def create_comprehensive_plots(
         ax.set_title("Compression Ratio Heatmap")
     else:
         ax.text(0.5, 0.5, "No comp ratio", ha="center", va="center", transform=ax.transAxes)
-    # 9. Best config per dataset
     ax = axes[2, 2]
     best = []
     for task in df["task"].unique():

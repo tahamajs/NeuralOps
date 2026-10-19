@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Sweep Publication Artifacts Generator
 
 Pipeline compiling sweep results into publication-ready tables, figures, and statistical summaries.
-
-Author: Taha Majlesi
 """
 
 import argparse
@@ -22,7 +26,6 @@ import pandas as pd
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("generate_sweep_artifacts")
 
-# Styling constants for publication-grade figures (matching NeurIPS / ICML / ICLR aesthetics)
 plt.rcParams.update(
     {
         "font.family": "sans-serif",
@@ -62,7 +65,6 @@ def classify_module(name: str, path: str = "") -> tuple[str, str]:
     if name_lower == "full":
         return "Attention", "Full Attention Baseline"
 
-    # Compressor checks
     is_compressor = any(
         kw in name_lower
         for kw in [
@@ -100,7 +102,6 @@ def classify_module(name: str, path: str = "") -> tuple[str, str]:
         else:
             return "Compressor", "SVD Factorization Compressor"
 
-    # Attention checks
     if any(k in name_lower for k in ["mamba", "ssm", "s4", "s5", "h3", "rwkv", "retnet", "hyena"]):
         return "Attention", "State-Space Model (SSM)"
     elif any(
@@ -137,10 +138,8 @@ def load_and_enrich_summary(summary_csv: Path) -> pd.DataFrame:
     if df.empty:
         return df
 
-    # Standardize column names
     df.columns = [c.strip() for c in df.columns]
 
-    # Ensure standard columns
     for col in ["module_name", "status", "accuracy_pct", "elapsed_s", "error", "path"]:
         if col not in df.columns:
             df[col] = "" if col in ["module_name", "status", "error", "path"] else 0.0
@@ -148,14 +147,12 @@ def load_and_enrich_summary(summary_csv: Path) -> pd.DataFrame:
     df["accuracy_pct"] = pd.to_numeric(df["accuracy_pct"], errors="coerce").fillna(0.0)
     df["elapsed_s"] = pd.to_numeric(df["elapsed_s"], errors="coerce").fillna(0.0)
 
-    # Classifications
     classifications = [
         classify_module(row["module_name"], str(row.get("path", ""))) for _, row in df.iterrows()
     ]
     df["module_type"] = [c[0] for c in classifications]
     df["subfamily"] = [c[1] for c in classifications]
 
-    # Baseline comparison (if full attention is present)
     full_baseline = df[df["module_name"] == "full"]
     baseline_acc = (
         float(full_baseline["accuracy_pct"].iloc[0]) if not full_baseline.empty else 90.14
@@ -189,7 +186,6 @@ def plot_fig1_top_modules(df: pd.DataFrame, out_dir: Path, top_n: int = 25):
         height=0.68,
     )
 
-    # Baseline line
     ax.axvline(
         baseline_acc,
         color="#d95f02",
@@ -198,7 +194,6 @@ def plot_fig1_top_modules(df: pd.DataFrame, out_dir: Path, top_n: int = 25):
         label=f"Full Attention Baseline ({baseline_acc:.2f}%)",
     )
 
-    # Add value labels
     for bar in bars:
         w = bar.get_width()
         ax.text(
@@ -219,7 +214,6 @@ def plot_fig1_top_modules(df: pd.DataFrame, out_dir: Path, top_n: int = 25):
         pad=12,
     )
 
-    # Custom legend for families present
     handles, labels = ax.get_legend_handles_labels()
     present_families = subset["subfamily"].unique()
     for fam in present_families:
@@ -252,7 +246,6 @@ def plot_fig2_accuracy_vs_runtime(df: pd.DataFrame, out_dir: Path):
 
     fig, ax = plt.subplots(figsize=(8.5, 6), tight_layout=True)
 
-    # Separate by type
     attns = passing[passing["module_type"] == "Attention"]
     comps = passing[passing["module_type"] == "Compressor"]
 
@@ -280,7 +273,6 @@ def plot_fig2_accuracy_vs_runtime(df: pd.DataFrame, out_dir: Path):
             label="Compressors",
         )
 
-    # Annotate top performers
     top_performers = passing.nlargest(6, "accuracy_pct")
     for _, row in top_performers.iterrows():
         ax.annotate(
@@ -298,7 +290,6 @@ def plot_fig2_accuracy_vs_runtime(df: pd.DataFrame, out_dir: Path):
             ),
         )
 
-    # Compute and plot Pareto frontier (maximizing accuracy, minimizing time)
     sorted_df = passing.sort_values(by=["elapsed_s", "accuracy_pct"], ascending=[True, False])
     pareto_points = []
     max_acc = -1.0
@@ -457,7 +448,6 @@ def generate_latex_tables(df: pd.DataFrame, out_file: Path):
         "% ==============================================================================\n",
     ]
 
-    # Table 1: Top Attention Mechanisms
     top_attns = passing[passing["module_type"] == "Attention"].head(10)
     if not top_attns.empty:
         latex_lines.extend(
@@ -487,7 +477,6 @@ def generate_latex_tables(df: pd.DataFrame, out_file: Path):
             ]
         )
 
-    # Table 2: Top Compressors
     top_comps = passing[passing["module_type"] == "Compressor"].head(10)
     if not top_comps.empty:
         latex_lines.extend(
@@ -641,21 +630,17 @@ def main():
 
         logger.info("Loaded %d records from %s", len(df), summary_csv)
 
-        # Save enriched dataframe to JSON
         json_path = results_dir / "comprehensive_results.json"
         df.to_json(json_path, orient="records", indent=2)
 
-        # Generate figures
         plot_fig1_top_modules(df, figures_dir)
         plot_fig2_accuracy_vs_runtime(df, figures_dir)
         plot_fig3_status_breakdown(df, figures_dir)
         plot_fig4_category_performance(df, figures_dir)
 
-        # Generate LaTeX tables
         tex_path = results_dir / "paper_tables.tex"
         generate_latex_tables(df, tex_path)
 
-        # Generate Markdown report
         md_path = results_dir / "comprehensive_report.md"
         generate_markdown_report(df, md_path, results_dir)
 

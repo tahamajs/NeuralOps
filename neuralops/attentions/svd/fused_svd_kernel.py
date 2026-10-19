@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Fused SVD-Linear Kernel Layer
 
 Fused SRAM-resident dual-projection kernel layer executing low-rank factorized linear transformations.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -402,7 +406,6 @@ class FusedSVDLinear(nn.Module):
 
     def get_orthogonality_loss(self) -> torch.Tensor:
         """
-        # RESEARCH FIX: Computes Stiefel manifold penalty to prevent singular subspace collapse.
         """
         u_gram = torch.matmul(self.U.T, self.U)
         v_gram = torch.matmul(self.V, self.V.T)

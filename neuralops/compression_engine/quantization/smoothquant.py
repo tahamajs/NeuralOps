@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 SmoothQuant: Accurate 8-Bit Weight and Activation Quantization
 
 Smooths activation outliers by mathematically migrating scale difficulty from activations to weights via per-channel scaling factors.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
