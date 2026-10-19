@@ -376,6 +376,100 @@ def run_op_as_eval_result(
     )
 
 
+def run_registered_ops(
+    *, category: str = "all", modules: str | list[str] | None = None,
+    output: str | Path = "results/benchmark_ops.json", verify_only: bool = False,
+    verbose: bool = False, dynamic: bool = False,
+) -> list[dict[str, Any]]:
+    """Run the correctness-gated operation registry and checkpoint JSON."""
+    import subprocess
+    from neuralops.benchmarks.ops_registry import get_op, list_ops
+    from neuralops.benchmarks.verify_ops import _make_inputs, _tensor_output, verify_op
+
+    def measure(fn: Callable[[], Any]) -> float:
+        for _ in range(5):
+            fn()
+        if torch.cuda.is_available():
+            start = torch.cuda.Event(enable_timing=True)
+            end = torch.cuda.Event(enable_timing=True)
+            start.record()
+            for _ in range(25):
+                fn()
+            end.record()
+            end.synchronize()
+            return float(start.elapsed_time(end) / 25)
+        started = time.perf_counter()
+        for _ in range(25):
+            fn()
+        return (time.perf_counter() - started) * 1000.0 / 25
+
+    names = [m.strip() for m in modules.split(",") if m.strip()] if isinstance(modules, str) else modules
+    selected = names or list_ops(category)
+    target = Path(output)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    results: list[dict[str, Any]] = []
+    for name in selected:
+        if dynamic:
+            while True:
+                try:
+                    import psutil
+                    free_ram = psutil.virtual_memory().available
+                except ImportError:
+                    free_ram = 2**63
+                free_vram = 2**63
+                try:
+                    query = subprocess.run(
+                        ["nvidia-smi", "--query-gpu=memory.free", "--format=csv,noheader,nounits"],
+                        capture_output=True, text=True, check=True,
+                    )
+                    free_vram = float(query.stdout.strip().splitlines()[0]) * 1024**2
+                except (OSError, subprocess.SubprocessError, ValueError, IndexError):
+                    pass
+                if free_ram >= 1.5 * 1024**3 and free_vram >= 1000 * 1024**2:
+                    break
+                if verbose:
+                    print(f"PAUSING 4s: RAM={free_ram / 1024**3:.2f}GB VRAM={free_vram / 1024**2:.0f}MB", flush=True)
+                time.sleep(4)
+
+        config = get_op(name)
+        row: dict[str, Any] = {
+            "module": name, "category": config.category,
+            "cuda_latency_ms": 0.0, "pytorch_latency_ms": 0.0,
+            "speedup": 0.0, "peak_vram_mb": 0.0,
+            "max_diff": float("inf"), "status": "FAIL_CORRECTNESS",
+            "error_reason": config.unavailable_reason,
+        }
+        if verify_op(name):
+            if verify_only:
+                row.update(status="VERIFIED", max_diff=0.0, error_reason=None)
+            else:
+                args, kwargs = _make_inputs(config)
+                if torch.cuda.is_available():
+                    torch.cuda.reset_peak_memory_stats()
+                fast_ms = measure(lambda: config.func(*args, **kwargs))
+                ref_ms = measure(lambda: config.ref_func(*args, **kwargs))
+                fast = _tensor_output(config.func(*args, **kwargs))
+                ref = _tensor_output(config.ref_func(*args, **kwargs))
+                diff = float((fast.float() - ref.float()).abs().max().item())
+                row.update(
+                    cuda_latency_ms=fast_ms,
+                    pytorch_latency_ms=ref_ms,
+                    speedup=ref_ms / fast_ms if fast_ms > 0 else 0.0,
+                    peak_vram_mb=float(torch.cuda.max_memory_allocated() / (1024**2)) if torch.cuda.is_available() else 0.0,
+                    max_diff=diff,
+                    status=(
+                        "PASS_HIGH_DIFF" if config.category == "attention" and 1e-2 < diff < 0.25
+                        else "PASS_FAST" if ref_ms / fast_ms >= 1.05
+                        else "PASS_SLOW"
+                    ),
+                    error_reason=None,
+                )
+        results.append(row)
+        if verbose:
+            print(f"[{row['status']}] {name}", flush=True)
+        target.write_text(json.dumps(results, indent=2), encoding="utf-8")
+    return results
+
+
 if __name__ == "__main__":
     main()
-

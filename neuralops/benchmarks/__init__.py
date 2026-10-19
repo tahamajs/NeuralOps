@@ -54,6 +54,13 @@ __all__ = [
     "stress_test_seeds_100_200_300",
     "stress_test_seeds_404_777_999",
     "benchmark_torch_compile_131_attentions",
+    "UnifiedBenchmarkResult",
+    "discover_unified_modules",
+    "run_unified_sweep",
+    "OpConfig",
+    "OPS_REGISTRY",
+    "verify_op",
+    "DynamicBenchmarkOrchestrator",
 ]
 
 _LAZY_BENCHMARK_SYMBOLS: dict[str, tuple[str, str]] = {
@@ -84,6 +91,13 @@ _LAZY_BENCHMARK_SYMBOLS: dict[str, tuple[str, str]] = {
     "BenchmarkRunner": ("neuralops.benchmarks.harness", "BenchmarkRunner"),
     "BenchmarkMetric": ("neuralops.benchmarks.harness", "BenchmarkMetric"),
     "HardwareProfile": ("neuralops.benchmarks.harness", "HardwareProfile"),
+    "UnifiedBenchmarkResult": ("neuralops.benchmarks.unified", "BenchmarkResult"),
+    "discover_unified_modules": ("neuralops.benchmarks.unified", "discover_modules"),
+    "run_unified_sweep": ("neuralops.benchmarks.unified", "run_sweep"),
+    "OpConfig": ("neuralops.benchmarks.ops_registry", "OpConfig"),
+    "OPS_REGISTRY": ("neuralops.benchmarks.ops_registry", "OPS_REGISTRY"),
+    "verify_op": ("neuralops.benchmarks.verify_ops", "verify_op"),
+    "DynamicBenchmarkOrchestrator": ("neuralops.benchmarks.orchestrator", "BenchmarkOrchestrator"),
 }
 
 

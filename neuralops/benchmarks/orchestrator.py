@@ -45,6 +45,33 @@ LOG = logging.getLogger(__name__)
 class BenchmarkOrchestrator:
     """Manages sequential/parallel benchmark runs, resumability, and state tracking."""
 
+    def run_registered_ops(
+        self,
+        *,
+        category: str = "all",
+        modules: str | list[str] | None = None,
+        output: str | Path = "results/benchmark_ops.json",
+        verify_only: bool = False,
+        verbose: bool = False,
+        dynamic: bool = False,
+    ) -> list[dict[str, Any]]:
+        """Run the FLA-style correctness-gated operation registry.
+
+        This entry point is intentionally separate from model/dataset
+        evaluation.  It prevents the legacy evaluation runner from silently
+        treating a kernel microbenchmark as a model experiment.
+        """
+        from neuralops.benchmarks.ops_runner import run_registered_ops
+
+        return run_registered_ops(
+            category=category,
+            modules=modules,
+            output=output,
+            verify_only=verify_only,
+            verbose=verbose,
+            dynamic=dynamic,
+        )
+
     def __init__(
         self,
         config: BenchmarkConfig | None = None,
