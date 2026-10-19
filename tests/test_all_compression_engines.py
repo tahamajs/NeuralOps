@@ -7,7 +7,7 @@
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Master Test Suite for All Compression Engine Modules
-Tests initialization, compression, shape preservation, and forward pass across all 70 registered compressors.
+Tests initialization, compression, shape preservation, and forward pass across all 72 registered compressors.
 """
 import os
 import sys
