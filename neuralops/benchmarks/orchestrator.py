@@ -482,8 +482,8 @@ class BenchmarkOrchestrator:
 
     def run_with_eval_bridge(
         self,
-        tasks: Optional[List[str]] = None,
-    ) -> List[Any]:
+        tasks: list[str] | None = None,
+    ) -> list[Any]:
         """Execute sweep across configured modules using the unified BenchmarkEvaluator bridge."""
         from neuralops.benchmarks.eval_bridge import BenchmarkEvaluator
 
