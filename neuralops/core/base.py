@@ -66,11 +66,12 @@ class BaseAttention(nn.Module):
                 self.hidden_size // self.num_heads if self.num_heads > 0 else 64,
             ),
         )
-        self.rotary_emb: nn.Module | Callable[..., Any] | None = None
+        self.rotary_emb: Any = None
+        self.rope: Any = None
         self.is_causal: bool = False
         self.is_decoder: bool = False
         self.has_relative_attention_bias: bool = False
-        self.relative_attention_bias: nn.Module | Callable[..., Any] | None = None
+        self.relative_attention_bias: Any = None
 
     @property
     def device(self) -> torch.device:
