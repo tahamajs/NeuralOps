@@ -106,6 +106,7 @@ def sync_cards(
     export_dir: Path | None = None,
     hub_org: str = "Hooshaai",
     check_only: bool = False,
+    push_to_hub: bool = False,
 ) -> int:
     """Audit and optionally export model cards."""
     card_files = sorted(
@@ -156,6 +157,43 @@ def sync_cards(
 
         print(f"\nSuccessfully prepared {len(valid_cards)} Hugging Face Hub repositories.")
 
+    if push_to_hub and not check_only:
+        try:
+            from huggingface_hub import HfApi
+            api = HfApi()
+            print(f"\nPushing {len(valid_cards)} validated model cards directly to Hugging Face Hub (org: {hub_org})...")
+            for card, model_name in valid_cards:
+                primary_repo = f"{hub_org}/{model_name}"
+                try:
+                    api.create_repo(repo_id=primary_repo, repo_type="model", exist_ok=True)
+                    api.upload_file(
+                        path_or_fileobj=str(card),
+                        path_in_repo="README.md",
+                        repo_id=primary_repo,
+                        commit_message=f"docs: publish verified NeuralOps model card for {model_name}",
+                    )
+                    print(f"  [✓] Pushed to https://huggingface.co/{primary_repo}")
+                except Exception as exc:
+                    print(f"  [!] Failed pushing to {primary_repo}: {exc}")
+
+                alt_repo = f"{hub_org}/svd-linear-attention-{model_name}"
+                try:
+                    api.repo_info(repo_id=alt_repo)
+                    api.upload_file(
+                        path_or_fileobj=str(card),
+                        path_in_repo="README.md",
+                        repo_id=alt_repo,
+                        commit_message=f"docs: sync verified NeuralOps model card for {model_name}",
+                    )
+                    print(f"  [✓] Synced to https://huggingface.co/{alt_repo}")
+                except Exception:
+                    pass
+
+            print(f"\nSuccessfully published all {len(valid_cards)} model cards to Hugging Face Hub!")
+        except ImportError:
+            print("Error: huggingface_hub package is required for --push-to-hub.")
+            return 1
+
     print("=" * 72)
     return 0
 
@@ -182,6 +220,11 @@ def main() -> int:
         help="Target directory to export Hugging Face Hub ready repositories.",
     )
     parser.add_argument(
+        "--push-to-hub",
+        action="store_true",
+        help="Directly upload validated model card README.md files to Hugging Face Hub.",
+    )
+    parser.add_argument(
         "--hub-org",
         type=str,
         default="Hooshaai",
@@ -194,6 +237,7 @@ def main() -> int:
         export_dir=args.export_dir,
         hub_org=args.hub_org,
         check_only=args.check,
+        push_to_hub=args.push_to_hub,
     )
 
 
