@@ -122,6 +122,7 @@ class FRanDILinear(nn.Module):
 
         self._cached_weight: torch.Tensor | None = None
         self._cached_version: int = -1
+        self._unmerged_B: torch.Tensor | None = None
 
     def _current_version(self) -> int:
         v = 0
@@ -419,6 +420,7 @@ class FRanDICompressor(BaseCompressor):
         self.skipped_layers: list[str] = []
         self.layer_errors: dict[str, float] = {}
         self._compressed_params: int = 0
+        self._unmerged_B: torch.Tensor | None = None
 
     def _is_gqa_asymmetric(self, name: str, module: nn.Module) -> bool:
         cfg = getattr(self.model, "config", None)

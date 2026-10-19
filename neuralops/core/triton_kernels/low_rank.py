@@ -1875,14 +1875,14 @@ def fused_hnc_nullspace_step_pytorch(
 class _FusedHNCNullSpaceStepFn(torch.autograd.Function):
     @staticmethod
     def forward(
-        ctx,
-        w: torch.Tensor,
-        grad_phi: torch.Tensor,
-        inv_null_proj: torch.Tensor,
-        eta: float,
-        restore_grad: torch.Tensor | None = None,
-        alpha: float = 0.0,
-    ) -> torch.Tensor:
+        ctx: Any,
+        w: Any,
+        grad_phi: Any,
+        inv_null_proj: Any,
+        eta: Any,
+        restore_grad: Any = None,
+        alpha: Any = 0.0,
+    ) -> Any:
         ctx.save_for_backward(inv_null_proj)
         ctx.eta = eta
         ctx.alpha = alpha
@@ -1937,7 +1937,7 @@ class _FusedHNCNullSpaceStepFn(torch.autograd.Function):
         return out
 
     @staticmethod
-    def backward(ctx, grad_output: torch.Tensor):
+    def backward(ctx: Any, grad_output: Any) -> tuple[Any, ...]:
         (inv_null_proj,) = ctx.saved_tensors
         grad_w = grad_output.clone()
         grad_grad_phi = ctx.eta * torch.matmul(grad_output.float(), inv_null_proj.t().float()).to(grad_output.dtype)
