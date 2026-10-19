@@ -45,7 +45,7 @@ jobs:
 
     - name: Lint with ruff
       run: |
-        ruff check --exit-zero neuralops tests
+        ruff check neuralops tests
 
     - name: Run unit & parity tests with coverage
       run: |

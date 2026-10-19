@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "neuralops"
-version = "1.4.3"
+version = "1.4.0"
 description = "A Production-Grade Framework for Subquadratic Attention, Model Compression, and Hardware-Aware Transformer Optimization"
 
 readme = "README.md"
@@ -182,11 +182,10 @@ Changelog = "https://github.com/tahamajs/NeuralOps/blob/main/CHANGELOG.md"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["neuralops*"]
+include = ["neuralops*", "evaluation*"]
 exclude = [
     "tests*",
     "benchmarks*",
-    "evaluation*",
     "eval*",
     "results*",
     "paper*",
@@ -218,7 +217,6 @@ neuralops = [
 "*" = [
     "tests*",
     "benchmarks*",
-    "evaluation*",
     "eval*",
     "results*",
     "paper*",
@@ -241,4 +239,3 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
-
