@@ -446,6 +446,7 @@ class DynamicEntropySVDCompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="dynamic_entropy_svd", **kwargs)
+        self.stats: dict[str, Any] = {}
         cfg_obj = cfg if cfg is not None else kwargs.get("comp_config")
         self.cfg = cfg_obj
 
