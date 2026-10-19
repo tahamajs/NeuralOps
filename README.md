@@ -6,7 +6,7 @@
 
 ### **Unified Platform for Subquadratic Attention and Deep Model Compression**
 
-> **131 canonical attention mechanisms · 72 compression engines · 114 native CUDA C++ kernels · 62 Triton hardware kernels · 11 master Jupyter notebooks**
+> **131 canonical attention mechanisms · 72 compression engines · 114 native CUDA C++ kernels · 62 Triton hardware kernels · 27 master Jupyter notebooks**
 
 [![PyPI version](https://badge.fury.io/py/neuralops.svg)](https://pypi.org/project/neuralops/)
 [![PyPI Downloads](https://img.shields.io/pypi/dm/neuralops.svg)](https://pypi.org/project/neuralops/)
@@ -44,7 +44,7 @@ Standard self-attention suffers from an intrinsic quadratic time and memory bott
 - **62 Production Triton Hardware Kernels**: Standalone flagship kernels, categorized core recurrent/attention operators, and fused extended kernels achieving up to **179.1x speedup** over unoptimized reference paths.
 - **Strict 3-Level Fallback Dispatch**: Level 1 (CUDA C++ SM $\ge$ 7.0 / ROCm HIP) $\to$ Level 2 (OpenAI Triton JIT) $\to$ Level 3 (Pure Vectorized PyTorch / CPU / Apple Metal).
 - **High-Throughput Production Serving**: PagedKVCache with Copy-on-Write (77.5% VRAM savings), dynamic eviction (87.5% savings), and Self-Speculative Decoding (**7.59x throughput speedup** at 1,422 tokens/sec).
-- **Master 11-Jupyter-Notebook Suite**: Exhaustive interactive walkthroughs from zero-shot surgery to roofline modeling and production serving.
+- **Master 27-Jupyter-Notebook Suite**: Exhaustive interactive walkthroughs from zero-shot surgery, 3-level fallback, and roofline modeling to 32k long-context extrapolation, spectral Hessian diagnostics, distributed ring parallelism, and production serving.
 - **Real-Time Telemetry & Web Dashboard**: FastAPI/Uvicorn streaming server with interactive Roofline charts, WebGL manifold visualizer, and SQLite telemetry.
 
 ---
@@ -60,7 +60,7 @@ Standard self-attention suffers from an intrinsic quadratic time and memory bott
 | **Physical Hardware Certification** | Synthetic / Emulated | **RTX 4070 (Ada Lovelace SM 8.9)** | 100% physically certified on CUDA 12.8 + PyTorch 2.11 |
 | **All 26 Triton JIT Kernels** | Partial / 5 Boundary Kernels | **100% $\ge 1.0\times$ to $179.1\times$ Speedup** | Up to 179.1x faster (`gla_scan`), 134.2x (`hgrn2_scan`) |
 | **Autograd Gradcheck Precision** | Single-precision test | **$\text{double}$ (FP64) Jacobian Match** | 95.0% exact analytical match ($\epsilon=10^{-5}$) across 40 modules |
-| **Master Jupyter Notebooks Suite** | Basic skeletons | **11 Exhaustive Thematic Notebooks** | 20–25+ rich cells each, executed in-place on GPU with 0 errors |
+| **Master Jupyter Notebooks Suite** | Basic skeletons | **27 Exhaustive Thematic Notebooks** | 20–45 rich cells each, executed in-place on GPU with 0 errors |
 | **Unified Training & HF Loader** | Disparate custom loops | **100% DRY `neuralops.training`** | Universal streaming HF dataset loader + Dynamic Tokenizer |
 | **Modern Optimizers & 6-Pillar KD** | Standard AdamW | **Lion, SophiaG, AdaFactor, 8-bit** | 29,047 tokens/s distillation throughput on RTX 4070 |
 | **Production Serving Engine** | Contiguous KV Cache | **PagedKVCache + Self-Speculative** | 77.5% VRAM savings + 7.59x speculative throughput speedup |
@@ -80,14 +80,12 @@ Standard self-attention suffers from an intrinsic quadratic time and memory bott
    - Implemented strict double-precision (`torch.float64`) analytical vs numerical finite-difference Jacobian verification (`torch.autograd.gradcheck`).
    - Certified across 25 attention architectures and 15 compression engines with 100% zero-divergence backpropagation.
 
-3. **11 Thematic Master Jupyter Notebooks**:
-   - Every notebook has been expanded into a dedicated, self-contained reference suite (20–25+ cells each):
-     * `05_master_108_cuda_and_26_triton_kernels_benchmark.ipynb`: Complete benchmarks for all 108 CUDA C++ and 26 Triton kernels with roofline curves.
-     * `06_master_all_131_attention_mechanisms_interactive.ipynb`: Interactive encyclopedia covering all 12 attention families with $O(N)$ vs $O(N^2)$ scaling.
-     * `07_master_all_72_compression_engines_quant_and_svd.ipynb`: Pareto trade-offs (compression ratio vs Frobenius error) across all 72 compression paradigms.
-     * `08_six_pillar_distillation_and_surgical_recovery.ipynb`: Step-by-step student model distillation with CKA heatmaps and loss breakdown.
-     * `09_production_serving_paged_cache_and_speculative_decoding.ipynb`: Concurrent continuous batching, Copy-on-Write page forking, and speculative decoding.
-   - 100% executed in-place on remote GPU via `nbconvert` with **0 runtime errors**.
+3. **27 Thematic Master Jupyter Notebooks (`notebooks/00` to `25` + Paper Empirical Master)**:
+   - Every notebook has been authored and expanded into an exhaustive, publication-grade reference suite (20–45 rich cells each) with embedded LaTeX formulations, verified numerical code, and publication figures:
+     * `00`–`09`: End-to-end system walkthrough, rapid model surgery, roofline saturation, plugin extensibility, 3-level dispatch, isolated CUDA/Triton benchmarks, interactive attention zoo (131 modules), compression engines (72 methods), 6-pillar distillation, and paged KV serving.
+     * `10`–`19`: 32k long-context scaling, 3-tier CUDA vs Triton vs PyTorch speedup matrix, SVD spectral rank allocation, quantization Pareto frontiers (FP8/INT4/K-Means), structured pruning (Wanda/SparseGPT/FLAP), downstream GLUE/LRA evaluation, Ada Lovelace SM occupancy, speculative decoding sweeps ($K=1\dots8$), cross-seed variance (7 seeds), and automated LaTeX/vector graphic generation.
+     * `20`–`25`: Production serving integrations (vLLM/SGLang/TRT-LLM), model export pipelines (ONNX/SafeTensors/surgery manifest), distributed tensor & ring context parallelism, spectral Hessian eigenspectrum diagnostics, advanced optimizers (Muon/Stiefel Riemannian Adam/TTT), and long-context NIAH / CKA similarity evaluation.
+   - 100% executed in-place on remote RTX 4070 GPU via `nbconvert` with **0 runtime errors**.
 
 4. **100% DRY Training, Universal Datasets & Advanced Optimizers**:
    - Consolidated training infrastructure into `neuralops.training`.
@@ -110,7 +108,7 @@ Standard self-attention suffers from an intrinsic quadratic time and memory bott
 
 0. [What's New in v1.4.0 (Ada Lovelace Production Release)](#-whats-new-in-v140-ada-lovelace-production-release)
 
-1. [Master 11-Jupyter-Notebook Suite (00 to 09 + Paper Master)](#1-master-11-jupyter-notebook-suite-00-to-09-paper-master)
+1. [Master 27-Jupyter-Notebook Suite (00 to 25 + Paper Empirical Master)](#1-master-27-jupyter-notebook-suite-00-to-25--paper-empirical-master)
 2. [114 Native CUDA C++ Kernels & 3-Level Fallback Dispatch](#2-114-native-cuda-c-kernels-3-level-fallback-dispatch)
 3. [62 Triton Hardware Kernels & Roofline Acceleration Leaderboard](#3-62-triton-hardware-kernels-roofline-acceleration-leaderboard)
 4. [Production Serving & Speculative Decoding Engine](#4-production-serving-speculative-decoding-engine)
