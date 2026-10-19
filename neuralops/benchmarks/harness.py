@@ -199,6 +199,11 @@ class BenchmarkRunner:
             )
 
 
+# Backward-compatible public name retained for callers that select the
+# multi-mode benchmark through the top-level NeuralOps API.
+MultiModeBenchmarkRunner = BenchmarkRunner
+
+
 def save_benchmark_json(data: Any, out_path: Union[str, Path]) -> Path:
     """Save benchmark results to structured JSON with atomic write."""
     path = Path(out_path)

@@ -65,7 +65,7 @@ if TYPE_CHECKING:
     from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
     from neuralops.kernels import list_cuda_kernels, list_triton_kernels
 
-__version__ = "1.4.3"
+__version__ = "1.4.0"
 
 import importlib.machinery
 import importlib.util
@@ -355,7 +355,7 @@ _LAZY_EXPORTS = {
     "HuggingFaceTrainer": ("neuralops.trainer.hf_trainer", "HuggingFaceTrainer"),
     "LabelQualityDetector": ("evaluation.label_quality", "LabelQualityDetector"),
     "LabelQualityReport": ("evaluation.label_quality", "LabelQualityReport"),
-    "MultiModeBenchmarkRunner": ("neuralops.benchmarks.multi_mode_benchmark", "MultiModeBenchmarkRunner"),
+    "MultiModeBenchmarkRunner": ("neuralops.benchmarks.harness", "MultiModeBenchmarkRunner"),
     "ResultWriter": ("neuralops.results_saver.pipeline.result_writer", "ResultWriter"),
     "ResultsSaver": ("neuralops.results_saver", "ResultsSaver"),
     "RetrainDecision": ("evaluation.retraining", "RetrainDecision"),
@@ -427,7 +427,7 @@ _API_EXPORTS = {
     "StiefelOptimizer": "neuralops.trainer.optimizers",
     "RiemannianAdam": "neuralops.trainer.optimizers",
     "HybridAttentionSpec": "neuralops.models.hybrid_spec",
-    "probe_optimal_batch_size": "evaluation.eval_pipeline",
+    "probe_optimal_batch_size": "neuralops.api",
     "NeuralOpsError": "neuralops.core.exceptions",
     "ConfigError": "neuralops.core.exceptions",
     "WeightCopyError": "neuralops.core.exceptions",
@@ -669,6 +669,15 @@ def __getattr__(name: str) -> Any:
         return classes
 
     if name in _API_EXPORTS:
+        # Import the optional top-level evaluation package before loading the
+        # API module.  The repository also contains ``neuralops/evaluation.py``;
+        # preloading the package prevents that compatibility module from being
+        # registered under the top-level ``evaluation`` name by alias imports.
+        if "evaluation" not in sys.modules:
+            try:
+                importlib.import_module("evaluation")
+            except ImportError:
+                pass
         mod_name = _API_EXPORTS[name]
         mod = importlib.import_module(mod_name)
         val = getattr(mod, name)

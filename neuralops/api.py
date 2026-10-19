@@ -382,6 +382,18 @@ def list_compressors() -> List[str]:
     return sorted(list(COMPRESSOR_REGISTRY.keys()))
 
 
+def probe_optimal_batch_size(*args: Any, **kwargs: Any) -> Any:
+    """Lazily invoke the optional evaluation batch-size probe.
+
+    Keeping the import inside the call makes the public NeuralOps API importable
+    when evaluation extras are not installed, while source checkouts and full
+    installations still use the canonical evaluation implementation.
+    """
+    from evaluation.eval_pipeline import probe_optimal_batch_size as _probe
+
+    return _probe(*args, **kwargs)
+
+
 def get_attention_class(name: str) -> Type[Any]:
     """Retrieve the class or constructor for a registered attention module.
 

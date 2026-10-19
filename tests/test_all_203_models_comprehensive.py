@@ -195,7 +195,7 @@ def test_all_attentions():
             print(f"  [FAIL] {attn_name:<38} | Error: {e}")
 
     print(f"\nAttentions Result: {len(passed)} Passed, {len(failed)} Failed / Total: {len(all_attns)}")
-    return passed, failed
+    assert not failed, f"Attention failures: {failed}"
 
 
 def test_all_compressors():
@@ -252,15 +252,12 @@ def test_all_compressors():
             print(f"  [FAIL] {comp_name:<38} | Error: {e}")
 
     print(f"\nCompressors Result: {len(passed)} Passed, {len(failed)} Failed / Total: {len(all_comps)}")
-    return passed, failed
+    assert not failed, f"Compressor failures: {failed}"
 
 
 if __name__ == "__main__":
-    attn_p, attn_f = test_all_attentions()
-    comp_p, comp_f = test_all_compressors()
-
-    total_passed = len(attn_p) + len(comp_p)
-    total_failed = len(attn_f) + len(comp_f)
+    test_all_attentions()
+    test_all_compressors()
     print("\n" + "=" * 65)
-    print(f"  OVERALL MASTER VERIFICATION: {total_passed} PASSED | {total_failed} FAILED")
+    print("  OVERALL MASTER VERIFICATION: all assertions passed")
     print("=" * 65)

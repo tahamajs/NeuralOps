@@ -70,6 +70,7 @@ class BaseAttention(nn.Module):
         self.rope: Any = None
         self.is_causal: bool = False
         self.is_decoder: bool = False
+        self._unmerged_B: torch.Tensor | None = None
         self.has_relative_attention_bias: bool = False
         self.relative_attention_bias: Any = None
 
@@ -233,6 +234,7 @@ class BaseCompressor:
         self._calibration_cache: Any = None
         self.hnc_res: Any = None
         self._merged: bool = False
+        self._unmerged_B: torch.Tensor | None = None
 
     def __call__(self, *args, **kwargs) -> Any:
         """Allow compressor instance to act as a callable model forward wrapper."""
@@ -278,3 +280,12 @@ class BaseCompressor:
             f"Reduction:            {s['reduction_percentage']:.2f}%\n"
             f"========================================\n"
         )
+
+    def merge(self) -> nn.Module:
+        """Finalize compression when a subclass has no mergeable adapter state."""
+        self._merged = True
+        return self.model
+
+    def merge_and_unload(self) -> nn.Module:
+        """Merge adapter state and return the compressed model."""
+        return self.merge()

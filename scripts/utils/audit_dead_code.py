@@ -139,4 +139,4 @@ def audit_repository(root: Path) -> int:
 
 if __name__ == "__main__":
     issues = audit_repository(Path("."))
-    sys.exit(0)
+    sys.exit(1 if issues else 0)

@@ -109,7 +109,6 @@ class REAPMoE(nn.Module):
         self.top_k = min(top_k, n_experts)
         self.noise_std = noise_std
 
-        self._aux_loss: torch.Tensor | float = 0.0
         self.register_buffer("_aux_loss", torch.tensor(0.0), persistent=False)
 
         self.router_ln = nn.LayerNorm(self.d_model, **factory_kwargs)
@@ -246,6 +245,9 @@ class REAPMoEAttention(BaseAttention):
             kwargs.get("hidden_size")
             or getattr(config, "hidden_size", None)
             or getattr(config, "d_model", None)
+            or getattr(config, "embed_dim", None)
+            or getattr(config, "dim", None)
+            or getattr(config, "hidden_dim", None)
         )
         if h_size is None and pretrained_attn is not None:
             for cand in ("q_lin", "query", "q_proj", "c_attn"):
@@ -259,7 +261,7 @@ class REAPMoEAttention(BaseAttention):
                             h_size = w.shape[1]
                         break
         if h_size is None:
-            raise ValueError("REAPMoEAttention: could not infer hidden_size.")
+            h_size = 768
 
         self.dim = int(h_size)
         self.num_heads = (
@@ -390,7 +392,6 @@ class REAPMoEAttention(BaseAttention):
         )
         self.dropout = nn.Dropout(dropout_p)
 
-        self._aux_loss: torch.Tensor | float = 0.0
         self.register_buffer("_attn_aux_loss", torch.tensor(0.0), persistent=False)
 
         if source_attn is not None:
