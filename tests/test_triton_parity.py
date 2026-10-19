@@ -15,22 +15,14 @@ import pytest
 import torch
 import torch.nn.functional as F
 
-from neuralops.core.triton_kernels import (
-    HAS_TRITON,
-    fms_scan,
-    fms_scan_triton,
-    gdn_scan,
-    gdn_scan_triton,
-    gla_scan,
-    gla_scan_triton,
-)
-from neuralops.core.triton_kernels.gdn_scan import gdn_scan_pytorch
-from neuralops.core.triton_kernels.gla_scan import gla_scan_pytorch
+from neuralops.core.triton_kernels import HAS_TRITON
+from neuralops.core.triton_kernels.fms_scan import fms_scan, fms_scan_triton
+from neuralops.core.triton_kernels.gdn_scan import gdn_scan, gdn_scan_triton, gdn_scan_pytorch
+from neuralops.core.triton_kernels.gla_scan import gla_scan, gla_scan_triton, gla_scan_pytorch
+from neuralops.core.triton_kernels.hgrn2_scan import hgrn2_scan, hgrn2_scan_triton
 from neuralops.core.triton_kernels import (
     gqa,
     gqa_pytorch_fallback,
-    hgrn2_scan,
-    hgrn2_scan_triton,
     linear_attn,
     linear_attn_pytorch_fallback,
     low_rank,
