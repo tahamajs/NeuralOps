@@ -24,11 +24,12 @@ from neuralops.benchmarks.ops_registry import get_op
 LOG = logging.getLogger(__name__)
 
 
-def _make_inputs(config: Any) -> tuple[tuple[Any, ...], dict[str, Any]]:
+def _make_inputs(config: Any, device: str | None = None) -> tuple[tuple[Any, ...], dict[str, Any]]:
     if config.input_factory is None:
         raise RuntimeError(config.unavailable_reason or "No input contract")
     specs = dict(config.tensor_specs)
-    specs["device"] = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    requested = device or ("cuda" if torch.cuda.is_available() else "cpu")
+    specs["device"] = torch.device(requested if requested == "cpu" or torch.cuda.is_available() else "cpu")
     if specs.get("dtype") == "float16" and specs["device"].type == "cpu":
         specs["dtype"] = torch.float32
     else:
@@ -46,14 +47,14 @@ def _tensor_output(value: Any) -> torch.Tensor:
     raise TypeError(f"Operation returned no tensor output: {type(value).__name__}")
 
 
-def verify_op(op_name: str, *, atol: float = 1e-3, rtol: float = 1e-3) -> bool:
+def verify_op(op_name: str, *, atol: float = 1e-3, rtol: float = 1e-3, device: str | None = None) -> bool:
     """Run an operation's reference comparison before any timing."""
     config = get_op(op_name)
     if config.func is None or config.ref_func is None:
         LOG.error("FAIL_CORRECTNESS %s: %s", op_name, config.unavailable_reason)
         return False
     try:
-        args, kwargs = _make_inputs(config)
+        args, kwargs = _make_inputs(config, device=device)
         if config.category == "attention":
             atol = max(atol, 1e-2)
             rtol = max(rtol, 1e-2)

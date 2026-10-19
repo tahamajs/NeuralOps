@@ -379,36 +379,41 @@ def run_op_as_eval_result(
 def run_registered_ops(
     *, category: str = "all", modules: str | list[str] | None = None,
     output: str | Path = "results/benchmark_ops.json", verify_only: bool = False,
-    verbose: bool = False, dynamic: bool = False,
+    verbose: bool = False, dynamic: bool = False, timeout_s: float = 180.0,
+    device: str | None = None,
 ) -> list[dict[str, Any]]:
-    """Run the correctness-gated operation registry and checkpoint JSON."""
-    import subprocess
-    from neuralops.benchmarks.ops_registry import get_op, list_ops
-    from neuralops.benchmarks.verify_ops import _make_inputs, _tensor_output, verify_op
+    """Run registered operations in killable subprocesses with checkpointing.
 
-    def measure(fn: Callable[[], Any]) -> float:
-        for _ in range(5):
-            fn()
-        if torch.cuda.is_available():
-            start = torch.cuda.Event(enable_timing=True)
-            end = torch.cuda.Event(enable_timing=True)
-            start.record()
-            for _ in range(25):
-                fn()
-            end.record()
-            end.synchronize()
-            return float(start.elapsed_time(end) / 25)
-        started = time.perf_counter()
-        for _ in range(25):
-            fn()
-        return (time.perf_counter() - started) * 1000.0 / 25
+    A benchmark operation may enter a native extension or a CUDA launch that
+    does not return control to the parent Python process.  Running each
+    operation in a child process makes the timeout enforceable: the parent can
+    terminate the child and persist a ``TIMEOUT`` row without losing earlier
+    results.  Existing rows in ``output`` are treated as completed work, which
+    makes rerunning the same command a safe resume operation.
+    """
+    import os
+    import tempfile
+    from neuralops.benchmarks.ops_registry import list_ops
 
     names = [m.strip() for m in modules.split(",") if m.strip()] if isinstance(modules, str) else modules
     selected = names or list_ops(category)
     target = Path(output)
     target.parent.mkdir(parents=True, exist_ok=True)
     results: list[dict[str, Any]] = []
+    if target.exists():
+        try:
+            previous = json.loads(target.read_text(encoding="utf-8"))
+            if isinstance(previous, list):
+                results = [row for row in previous if isinstance(row, dict)]
+        except (OSError, json.JSONDecodeError) as exc:
+            logger.warning("Ignoring unreadable checkpoint %s: %s", target, exc)
+    completed = {str(row.get("module")) for row in results}
+
     for name in selected:
+        if name in completed:
+            if verbose:
+                print(f"[RESUME] {name}", flush=True)
+            continue
         if dynamic:
             while True:
                 try:
@@ -430,45 +435,141 @@ def run_registered_ops(
                 if verbose:
                     print(f"PAUSING 4s: RAM={free_ram / 1024**3:.2f}GB VRAM={free_vram / 1024**2:.0f}MB", flush=True)
                 time.sleep(4)
-
-        config = get_op(name)
-        row: dict[str, Any] = {
-            "module": name, "category": config.category,
-            "cuda_latency_ms": 0.0, "pytorch_latency_ms": 0.0,
-            "speedup": 0.0, "peak_vram_mb": 0.0,
-            "max_diff": float("inf"), "status": "FAIL_CORRECTNESS",
-            "error_reason": config.unavailable_reason,
-        }
-        if verify_op(name):
-            if verify_only:
-                row.update(status="VERIFIED", max_diff=0.0, error_reason=None)
+        worker_fd, worker_name = tempfile.mkstemp(
+            prefix="neuralops_bench_", suffix=".json", dir=target.parent
+        )
+        os.close(worker_fd)
+        worker_path = Path(worker_name)
+        worker_code = (
+            "import sys; "
+            "from neuralops.benchmarks.ops_runner import _run_registered_op_worker; "
+            "_run_registered_op_worker(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])"
+        )
+        proc = subprocess.Popen(
+                [sys.executable, "-c", worker_code, name, str(verify_only), str(worker_path), device or ""],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        started_at = time.monotonic()
+        try:
+            _, stderr = proc.communicate(timeout=max(1.0, timeout_s))
+            if proc.returncode != 0:
+                row = {
+                    "module": name,
+                    "category": "unknown",
+                    "cuda_latency_ms": 0.0,
+                    "pytorch_latency_ms": 0.0,
+                    "speedup": 0.0,
+                    "peak_vram_mb": 0.0,
+                    "max_diff": float("inf"),
+                    "status": "FAIL",
+                    "error_reason": stderr[-2000:] if stderr else f"worker exit {proc.returncode}",
+                }
             else:
-                args, kwargs = _make_inputs(config)
-                if torch.cuda.is_available():
-                    torch.cuda.reset_peak_memory_stats()
-                fast_ms = measure(lambda: config.func(*args, **kwargs))
-                ref_ms = measure(lambda: config.ref_func(*args, **kwargs))
-                fast = _tensor_output(config.func(*args, **kwargs))
-                ref = _tensor_output(config.ref_func(*args, **kwargs))
-                diff = float((fast.float() - ref.float()).abs().max().item())
-                row.update(
-                    cuda_latency_ms=fast_ms,
-                    pytorch_latency_ms=ref_ms,
-                    speedup=ref_ms / fast_ms if fast_ms > 0 else 0.0,
-                    peak_vram_mb=float(torch.cuda.max_memory_allocated() / (1024**2)) if torch.cuda.is_available() else 0.0,
-                    max_diff=diff,
-                    status=(
-                        "PASS_HIGH_DIFF" if config.category == "attention" and 1e-2 < diff < 0.25
-                        else "PASS_FAST" if ref_ms / fast_ms >= 1.05
-                        else "PASS_SLOW"
-                    ),
-                    error_reason=None,
-                )
+                row = json.loads(worker_path.read_text(encoding="utf-8"))
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            _, stderr = proc.communicate(timeout=10)
+            row = {
+                "module": name,
+                "category": "unknown",
+                "cuda_latency_ms": 0.0,
+                "pytorch_latency_ms": 0.0,
+                "speedup": 0.0,
+                "peak_vram_mb": 0.0,
+                "max_diff": float("inf"),
+                "status": "TIMEOUT",
+                "error_reason": f"worker exceeded {timeout_s:.0f}s and was killed",
+            }
+            logger.warning("TIMEOUT %s after %.1fs", name, time.monotonic() - started_at)
+        except (OSError, json.JSONDecodeError) as exc:
+            row = {
+                "module": name,
+                "category": "unknown",
+                "cuda_latency_ms": 0.0,
+                "pytorch_latency_ms": 0.0,
+                "speedup": 0.0,
+                "peak_vram_mb": 0.0,
+                "max_diff": float("inf"),
+                "status": "FAIL",
+                "error_reason": str(exc),
+            }
+        finally:
+            worker_path.unlink(missing_ok=True)
         results.append(row)
+        completed.add(name)
         if verbose:
             print(f"[{row['status']}] {name}", flush=True)
         target.write_text(json.dumps(results, indent=2), encoding="utf-8")
     return results
+
+
+def _run_registered_op_worker(op_name: str, verify_only: str, output_path: str, device: str = "") -> None:
+    """Execute one registered operation and write a JSON row for the parent."""
+    from neuralops.benchmarks.ops_registry import get_op
+    from neuralops.benchmarks.verify_ops import _make_inputs, _tensor_output, verify_op
+
+    config = get_op(op_name)
+    row: dict[str, Any] = {
+        "module": op_name,
+        "category": config.category,
+        "cuda_latency_ms": 0.0,
+        "pytorch_latency_ms": 0.0,
+        "speedup": 0.0,
+        "peak_vram_mb": 0.0,
+        "max_diff": float("inf"),
+        "status": "FAIL_CORRECTNESS",
+        "error_reason": config.unavailable_reason,
+    }
+
+    def measure(fn: Callable[[], Any]) -> float:
+        for _ in range(5):
+            fn()
+        if torch.cuda.is_available():
+            start = torch.cuda.Event(enable_timing=True)
+            end = torch.cuda.Event(enable_timing=True)
+            start.record()
+            for _ in range(25):
+                fn()
+            end.record()
+            end.synchronize()
+            return float(start.elapsed_time(end) / 25)
+        started = time.perf_counter()
+        for _ in range(25):
+            fn()
+        return (time.perf_counter() - started) * 1000.0 / 25
+
+    requested_device = device or None
+    if verify_op(op_name, device=requested_device):
+        if verify_only.lower() == "true":
+            row.update(status="VERIFIED", max_diff=0.0, error_reason=None)
+        else:
+            args, kwargs = _make_inputs(config, requested_device)
+            if torch.cuda.is_available():
+                torch.cuda.reset_peak_memory_stats()
+            fast_ms = measure(lambda: config.func(*args, **kwargs))
+            ref_ms = measure(lambda: config.ref_func(*args, **kwargs))
+            fast = _tensor_output(config.func(*args, **kwargs))
+            ref = _tensor_output(config.ref_func(*args, **kwargs))
+            diff = float((fast.float() - ref.float()).abs().max().item())
+            ratio = ref_ms / fast_ms if fast_ms > 0 else 0.0
+            row.update(
+                cuda_latency_ms=fast_ms,
+                pytorch_latency_ms=ref_ms,
+                speedup=ratio,
+                peak_vram_mb=(
+                    float(torch.cuda.max_memory_allocated() / (1024**2))
+                    if torch.cuda.is_available() else 0.0
+                ),
+                max_diff=diff,
+                status=(
+                    "PASS_HIGH_DIFF" if config.category == "attention" and 1e-2 < diff < 0.25
+                    else "PASS_FAST" if ratio >= 1.05 else "PASS_SLOW"
+                ),
+                error_reason=None,
+            )
+    Path(output_path).write_text(json.dumps(row), encoding="utf-8")
 
 
 if __name__ == "__main__":

@@ -54,6 +54,8 @@ class BenchmarkOrchestrator:
         verify_only: bool = False,
         verbose: bool = False,
         dynamic: bool = False,
+        timeout_s: float = 180.0,
+        device: str | None = None,
     ) -> list[dict[str, Any]]:
         """Run the FLA-style correctness-gated operation registry.
 
@@ -70,6 +72,8 @@ class BenchmarkOrchestrator:
             verify_only=verify_only,
             verbose=verbose,
             dynamic=dynamic,
+            timeout_s=timeout_s,
+            device=device,
         )
 
     def __init__(

@@ -19,6 +19,11 @@ they are not incorrectly compared with `allclose` against the uncompressed
 model.  Attention drift above the normal numerical budget is reported as
 `PASS_HIGH_DIFF` rather than being hidden.
 
+The extended roofline, quantization, MoE, serving, RoPE, sampling, SSM,
+ragged-sequence, and autotuning modules requested for a future release are not
+present in this checkout. They are intentionally not advertised as available
+benchmark categories until implemented and verified.
+
 Examples:
 
 ```bash

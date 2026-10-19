@@ -117,7 +117,7 @@ def _build_parser() -> argparse.ArgumentParser:
     run_p.add_argument("--verbose", action="store_true", help="Print each operation gate and timing result")
     run_p.add_argument("--module", type=str, default=None, help="Single module name")
     run_p.add_argument("--modules", type=str, default=None, help="Comma-separated operation keys, e.g. cuda:act_scale_gemm")
-    run_p.add_argument("--category", choices=["attention", "compressor", "cuda", "triton", "all"], default=None, help="Correctness-gated operation category")
+    run_p.add_argument("--category", choices=["attention", "compressor", "cuda", "triton", "roofline", "quantization", "moe", "all"], default=None, help="Benchmark category")
     run_p.add_argument("--dynamic", action="store_true", help="Enable resource-aware operation scheduling")
     run_p.add_argument("--parallel-workers", type=int, default=1, help="Maximum operation workers")
     run_p.add_argument("--output", type=str, default=None, help="JSON output path for correctness-gated operations")
@@ -569,6 +569,9 @@ def handle_results(args: argparse.Namespace) -> None:
 
 def handle_run(args: argparse.Namespace) -> None:
     requested_modules = getattr(args, "modules", None)
+    if getattr(args, "device", None) == "cpu":
+        # Worker subprocesses inherit this and cannot initialize CUDA.
+        os.environ["CUDA_VISIBLE_DEVICES"] = ""
     is_operation_request = (
         getattr(args, "category", None) is not None
         or getattr(args, "verify_only", False)
@@ -576,9 +579,24 @@ def handle_run(args: argparse.Namespace) -> None:
         or getattr(args, "output", None) is not None
     )
     if is_operation_request:
+        category = getattr(args, "category", None) or "all"
+        if category in {"roofline", "quantization", "moe"}:
+            import json
+            from neuralops.benchmarks import moe, quantization, roofline
+
+            runners = {"roofline": roofline.run_benchmark, "quantization": quantization.run_benchmark, "moe": moe.run_benchmark}
+            result = runners[category](device=getattr(args, "device", "cuda"))
+            output = getattr(args, "output", None)
+            if output:
+                Path(output).write_text(json.dumps(result, indent=2), encoding="utf-8")
+            print(json.dumps(result, indent=2))
+            return
+        if isinstance(requested_modules, str) and category in {"attention", "compressor", "cuda", "triton"}:
+            names = [item.strip() for item in requested_modules.split(",") if item.strip()]
+            prefix = f"{category}:"
+            requested_modules = ",".join(item if ":" in item else prefix + item for item in names)
         from neuralops.benchmarks.orchestrator import BenchmarkOrchestrator
 
-        category = getattr(args, "category", None) or "all"
         output = getattr(args, "output", None) or "results/benchmark_ops.json"
         orchestrator = BenchmarkOrchestrator(
             output_dir=Path(output).parent,
@@ -593,6 +611,7 @@ def handle_run(args: argparse.Namespace) -> None:
             verify_only=getattr(args, "verify_only", False),
             verbose=getattr(args, "verbose", False),
             dynamic=getattr(args, "dynamic", False),
+            device=getattr(args, "device", None),
         )
         if any(row["status"] == "FAIL_CORRECTNESS" for row in results):
             raise RuntimeError("Correctness gate failed; timing was not accepted for every requested operation")
