@@ -102,8 +102,8 @@ class FairnessEvaluator:
         is_fair = max(all_disps) <= self.threshold if all_disps else True
 
         avg_by_group = self._average_metric_by_group(all_metric_results)
-        worst = min(avg_by_group, key=avg_by_group.get) if avg_by_group else "N/A"
-        best = max(avg_by_group, key=avg_by_group.get) if avg_by_group else "N/A"
+        worst = min(avg_by_group, key=lambda k: avg_by_group[k]) if avg_by_group else "N/A"
+        best = max(avg_by_group, key=lambda k: avg_by_group[k]) if avg_by_group else "N/A"
 
         suggestions = []
         if not is_fair:
@@ -121,7 +121,7 @@ class FairnessEvaluator:
             mitigation_suggestions=suggestions,
         )
 
-    def _compute_metric(self, preds, labels, groups, metric, favorable) -> dict[str, float]:
+    def _compute_metric(self, preds, labels, groups, metric, favorable) -> dict[str, Any]:
         """Route to the correct metric function."""
         methods = {
             "demographic_parity": self._demographic_parity,
@@ -139,7 +139,7 @@ class FairnessEvaluator:
             return {}
         return fn(preds, labels, groups, favorable)
 
-    def _demographic_parity(self, preds, labels, groups, favorable) -> Any:
+    def _demographic_parity(self, preds, labels, groups, favorable) -> dict[str, Any]:
         """Selection rate parity: P(Ŷ=1|A=a) should be equal for all groups."""
         result = {}
         for attr, vals in groups.items():
@@ -148,7 +148,7 @@ class FairnessEvaluator:
                 result[f"{attr}={val}"] = np.mean(preds[mask] == favorable)
         return result
 
-    def _equalized_odds(self, preds, labels, groups, favorable) -> Any:
+    def _equalized_odds(self, preds, labels, groups, favorable) -> dict[str, Any]:
         """TPR and FPR should be equal across groups. We report TPR."""
         result = {}
         for attr, vals in groups.items():
@@ -161,11 +161,11 @@ class FairnessEvaluator:
                     result[f"{attr}={val}"] = 0.0
         return result
 
-    def _equal_opportunity(self, preds, labels, groups, favorable) -> Any:
+    def _equal_opportunity(self, preds, labels, groups, favorable) -> dict[str, Any]:
         """TPR equality (a stricter form of equalized odds)."""
         return self._equalized_odds(preds, labels, groups, favorable)
 
-    def _predictive_parity(self, preds, labels, groups, favorable) -> Any:
+    def _predictive_parity(self, preds, labels, groups, favorable) -> dict[str, Any]:
         """PPV equality: P(Y=1|Ŷ=1,A=a) equal across groups."""
         result = {}
         for attr, vals in groups.items():
@@ -178,7 +178,7 @@ class FairnessEvaluator:
                     result[f"{attr}={val}"] = 0.0
         return result
 
-    def _treatment_equality(self, preds, labels, groups, favorable) -> Any:
+    def _treatment_equality(self, preds, labels, groups, favorable) -> dict[str, Any]:
         """Ratio of FN to FP should be equal."""
         result = {}
         for attr, vals in groups.items():
@@ -189,7 +189,7 @@ class FairnessEvaluator:
                 result[f"{attr}={val}"] = fn / max(fp, 1)
         return result
 
-    def _overall_accuracy_equality(self, preds, labels, groups, favorable) -> Any:
+    def _overall_accuracy_equality(self, preds, labels, groups, favorable) -> dict[str, Any]:
         """Accuracy equality across groups."""
         result = {}
         for attr, vals in groups.items():
@@ -198,11 +198,11 @@ class FairnessEvaluator:
                 result[f"{attr}={val}"] = np.mean(preds[mask] == labels[mask])
         return result
 
-    def _conditional_demographic_parity(self, preds, labels, groups, favorable) -> Any:
+    def _conditional_demographic_parity(self, preds, labels, groups, favorable) -> dict[str, Any]:
         """Demographic parity conditioned on a legitimate feature (proxy)."""
         return self._demographic_parity(preds, labels, groups, favorable)
 
-    def _disparate_impact(self, preds, labels, groups, favorable) -> Any:
+    def _disparate_impact(self, preds, labels, groups, favorable) -> dict[str, Any]:
         """Ratio of selection rates between unprivileged and privileged groups."""
         result = self._demographic_parity(preds, labels, groups, favorable)
         if len(result) >= 2:
@@ -211,7 +211,7 @@ class FairnessEvaluator:
             return {"disparate_impact_ratio": ratio}
         return {"disparate_impact_ratio": 1.0}
 
-    def _statistical_parity_diff(self, preds, labels, groups, favorable) -> Any:
+    def _statistical_parity_diff(self, preds, labels, groups, favorable) -> dict[str, Any]:
         """Max difference in selection rates."""
         result = self._demographic_parity(preds, labels, groups, favorable)
         if result:
