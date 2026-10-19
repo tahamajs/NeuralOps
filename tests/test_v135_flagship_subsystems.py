@@ -269,8 +269,6 @@ def test_inspect_architecture_all_registries():
 def test_cli_inspect_and_ui_commands():
     """Verify CLI commands (inspect, ui snapshot, results)."""
     from neuralops.benchmarks.cli import main
-    import io
-    import sys
 
     old_stdout = sys.stdout
     sys.stdout = io.StringIO()
