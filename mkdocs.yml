@@ -44,7 +44,11 @@ markdown_extensions:
   - admonition
   - codehilite:
       guess_lang: false
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.tabbed:
       alternate_style: true
   - pymdownx.details
@@ -58,6 +62,11 @@ exclude_docs: |
 nav:
   - Home: index.md
   - Quickstart: QUICKSTART.md
+  - Visualizer & Dashboards:
+      - Architecture & Telemetry Dashboard: dashboard.html
+      - 3D Attention Lab & Atlas: visualizer/index.html
+      - 3D Latent Manifold Geometry: visualizer/latent_manifold.html
+      - Ada Roofline Interactive: roofline_interactive.html
   - API Reference:
       - Attentions: api/attentions.md
       - Compression: api/compression.md

@@ -93,7 +93,7 @@ def create_app(
     app = FastAPI(
         title="NeuralOps Research Platform & Telemetry Monitor",
         description="Production-grade real-time monitoring suite for subquadratic attention mechanisms and SVD compression.",
-        version="3.6.0",
+        version="1.4.3",
         docs_url="/api/docs",
         redoc_url="/api/redoc",
         openapi_url="/api/openapi.json",
