@@ -137,7 +137,7 @@ Standard self-attention suffers from an intrinsic quadratic time and memory bott
 12. [6-Pillar Distillation & Mathematical Foundations](#12-6-pillar-distillation-mathematical-foundations)
 13. [Attention Zoo (131 Canonical Modules)](#13-attention-zoo-131-canonical-modules)
 14. [Compression Engines (72 Canonical Methods)](#14-compression-engines-72-canonical-methods)
-15. [Triton Hardware Kernels (62 Unified Kernels)](#15-triton-hardware-kernels-62-unified-kernels)
+15. [Triton Hardware Kernels (26 Categorized Modules / 62 Unified Operators)](#15-triton-hardware-kernels-26-categorized-modules--62-unified-operators)
 16. [Honest Performance Claims & Fused Kernel Spectrum](#16-honest-performance-claims-fused-kernel-spectrum)
 17. [When NOT to Use NeuralOps](#17-when-not-to-use-neuralops)
 18. [Known Limitations & Failure Modes](#18-known-limitations-failure-modes)
@@ -1365,9 +1365,9 @@ NeuralOps unifies 72 post-training model compression engines across **7 distinct
 
 ---
 
-## 15. Triton Hardware Kernels (62 Unified Kernels)
+## 15. Triton Hardware Kernels (26 Categorized Modules / 62 Unified Operators)
 
-NeuralOps maintains a unified, production-grade suite of **62 hardware-accelerated OpenAI Triton kernels** spanning four complementary architectural tiers. Every kernel features zero-graph-break `torch.library.custom_op` / autograd dispatch and FakeTensor abstract shape registrations:
+NeuralOps maintains a unified, production-grade suite of **26 categorized Triton kernel modules** housing **62 unified Triton operators / JIT kernels** across four complementary architectural tiers. Every kernel features zero-graph-break `torch.library.custom_op` / autograd dispatch and FakeTensor abstract shape registrations:
 
 ```python
 import neuralops
@@ -1435,22 +1435,22 @@ print(f"Loaded {len(triton_kernels)} Triton kernels and {len(cuda_kernels)} CUDA
 
 ## 16. Honest Performance Claims & Fused Kernel Spectrum
 
-Not all Triton kernels outperform PyTorch cuBLAS across every tensor shape. Below is the honest empirical breakdown of our **26 Triton kernel modules** on NVIDIA RTX 4070 SM 8.9:
+Not all Triton kernels outperform PyTorch cuBLAS across every tensor shape. Below is the honest empirical breakdown of our **26 categorized Triton kernel modules** from `results/triton_all_26_kernels_benchmark.json` on NVIDIA RTX 4070 SM 8.9:
 
 ```text
-High-Speedup Kernels (> 2.0x)      : 12 modules  [Recurrent scans, fused attention, state updates]
-Moderate-Speedup Kernels (1.0x-2.0x):  9 modules  [RoPE, elementwise activations, gating]
-Near-Parity / Slower (< 1.0x)       :  5 modules  [Small GEMMs, tiny block routers, pinv]
+High-Speedup Kernels (> 2.0x)      : 13 modules  [Recurrent scans, fused attention, state updates]
+Moderate-Speedup Kernels (1.0x-2.0x): 12 modules  [RoPE, elementwise activations, gating]
+Near-Parity / Slower (< 1.0x)       :  1 module   [cuBLAS preferred for tiny shapes: fused_favor_plus]
 ```
 
 ### Empirical Spectrum Breakdown
 
 | Speedup Tier | Kernel Modules | Underlying Architectural Reality |
 | :--- | :--- | :--- |
-| **Massive Acceleration (> 10x)** | `hgrn2_scan.py` (**161.2x**)<br>`gla_scan.py` (**142.3x**)<br>`gdn_scan.py` (**130.9x**)<br>`sliding_window.py` (**116.4x**)<br>`block_sparse.py` (**126.3x**)<br>`selective_scan.py` (**41.7x**)<br>`flash_decoding.py` (**32.5x**)<br>`gqa.py` (**23.4x**) | Eliminates intermediate High-Bandwidth Memory (HBM) DRAM roundtrips by keeping recurrent states $[D, D]$ pinned directly inside ultra-fast on-chip GPU SRAM registers. |
-| **Solid Acceleration (2x – 10x)** | `fms_scan.py` (**8.9x**)<br>`fused_kd.py` (**8.2x**)<br>`fused_rope.py` (**3.2x**)<br>`fused_norm_linear.py` (**3.8x**)<br>`fused_ce.py` (**3.8x**)<br>`cosformer_triton_kernel.py` (**4.5x**)<br>`low_rank.py` (**3.0x**) | Fuses multi-op arithmetic sequences into single streaming kernels, minimizing kernel launch overhead and memory traffic. |
-| **Near-Parity (0.95x – 1.9x)** | `elementwise.py` (**1.5x**)<br>`paged_attention.py` (**1.2x**)<br>`linear_attn.py` (**5.1x**)<br>`state_update.py` (**3.1x**) | Memory-bound elementwise operations where Triton achieves identical memory bandwidth saturation to PyTorch native CUDA implementations. |
-| **Sub-Optimal / cuBLAS Preferred (< 0.95x)** | `fused_nystrom_landmark_pinv` (**0.52x**)<br>`moba_block_router` (**0.86x**)<br>`softplus.py` (**0.86x**) | **Why slower?** NVIDIA cuBLAS utilizes deeply optimized micro-architectural assembly pipelines for standard dense GEMM and pseudo-inverse operations. When matrix dimensions are small ($D < 256$), Triton JIT launch overhead exceeds compute time. **Recommendation**: NeuralOps automatically routes these sub-256 shapes to PyTorch cuBLAS via `check_triton_suitability()`. |
+| **Massive Acceleration (> 10x)** | `hgrn2_scan.py` (**157.9x**)<br>`gla_scan.py` (**142.8x**)<br>`gdn_scan.py` (**137.7x**)<br>`sliding_window_attention` (**113.5x**)<br>`selective_scan.py` (**77.4x**)<br>`fused_rala_augmented_scan` (**19.2x**)<br>`flash_decode.py` (**16.0x**)<br>`fused_norm_linear.py` (**11.7x**)<br>`fms_scan.py` (**11.5x**) | Eliminates intermediate High-Bandwidth Memory (HBM) DRAM roundtrips by keeping recurrent states $[D, D]$ pinned directly inside ultra-fast on-chip GPU SRAM registers. |
+| **Solid Acceleration (2x – 10x)** | `fused_goldfinch_hopfield` (**7.7x**)<br>`paged_attention` (**4.9x**)<br>`fused_hnc_nullspace_step` (**4.3x**)<br>`fused_recurrent_linear_step` (**2.3x**) | Fuses multi-op arithmetic sequences into single streaming kernels, minimizing kernel launch overhead and memory traffic. |
+| **Near-Parity (1.0x – 2.0x)** | `fused_kronecker_gemm` (**1.98x**)<br>`fused_ce.py` (**1.98x**)<br>`fused_mqa_bias_scale` (**1.92x**)<br>`fused_kd.py` (**1.70x**)<br>`fused_rope.py` (**1.65x**)<br>`fused_moba_block_router` (**1.50x**)<br>`softplus.py` (**1.33x**)<br>`fused_jamba_hybrid_gate` (**1.28x**)<br>`cosformer` (**1.21x**)<br>`fused_hamming_scores` (**1.18x**)<br>`fused_linformer_seq_proj` (**1.00x**)<br>`fused_nystrom_landmark_pinv` (**1.00x**) | Memory-bound elementwise operations where Triton achieves identical memory bandwidth saturation to PyTorch native CUDA implementations. |
+| **Sub-Optimal / cuBLAS Preferred (< 1.0x)** | `fused_favor_plus` (**0.73x**) | **Why slower?** NVIDIA cuBLAS utilizes deeply optimized micro-architectural assembly pipelines for standard dense GEMM and pseudo-inverse operations. When matrix dimensions are small ($D < 256$), Triton JIT launch overhead exceeds compute time. **Recommendation**: NeuralOps automatically routes these sub-256 shapes to PyTorch cuBLAS via `check_triton_suitability()`. |
 
 ---
 
@@ -1523,12 +1523,12 @@ Every table and figure in this repository is reproducible from scratch on physic
 - **GPU**: NVIDIA GeForce RTX 4070 Laptop GPU (Ada Lovelace, 36 SMs, 8GB GDDR6, Subsystem ID: `10de:2860`).
 - **Host OS**: Linux 6.6.137+ / Ubuntu 22.04 LTS.
 - **Driver & CUDA**: NVIDIA Driver `595.99.02`, CUDA `12.8` / `13.2`, PyTorch `2.11.0+cu128`, OpenAI Triton `3.6.0`.
-- **Primary Worktree**: `/mnt/d/NeuralOps`
+- **Primary Worktree**: `/mnt/d/SVD_Project`
 - **Reproducibility Seed**: `torch.manual_seed(42)`
 
 ### Benchmark Execution Commands
 
-To reproduce the physical GPU benchmarks exactly as certified, execute on the remote GPU server (`taha@192.168.1.100` within `/mnt/d/NeuralOps`) using the production environment:
+To reproduce the physical GPU benchmarks exactly as certified, execute on the remote GPU server (`taha@192.168.1.100` within `/mnt/d/SVD_Project`) using the production environment:
 
 ```bash
 # Environment interpreter
@@ -1568,7 +1568,7 @@ All benchmark tables published in this document are generated from committed, ti
 | 72 Compression Engines Sweep | [`results/triton_all_72_compressors_benchmark.json`](results/triton_all_72_compressors_benchmark.json) | NVIDIA RTX 4070 SM 8.9 | Oct 2026 |
 | GPT-2 End-to-End Speedup | [`results/triton_e2e_gpt2_benchmark.json`](results/triton_e2e_gpt2_benchmark.json) | NVIDIA RTX 4070 SM 8.9 | Oct 2026 |
 | SST-2 Knowledge Distillation | [`results/sst2_kd_v2/sst2_kd_benchmark_v2.csv`](results/sst2_kd_v2/sst2_kd_benchmark_v2.csv) | NVIDIA RTX 4070 SM 8.9 | Oct 2026 |
-| Comprehensive Release Report | [`docs/reports/V1_4_0_RELEASE_REPORT.md`](docs/reports/V1_4_0_RELEASE_REPORT.md) | NVIDIA RTX 4070 SM 8.9 | Oct 2026 |
+| Comprehensive Release Report | [`docs/reports/V1_4_2_RELEASE_REPORT.md`](docs/reports/V1_4_2_RELEASE_REPORT.md) | NVIDIA RTX 4070 SM 8.9 | Oct 2026 |
 
 ---
 
