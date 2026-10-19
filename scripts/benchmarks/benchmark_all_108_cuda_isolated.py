@@ -519,7 +519,9 @@ def generate_args(mod_name, sig, device, dtype, B=4, H=8, N=512, D=64):
     elif mod_name == "aegis_gate_norm":
         b0 = torch.randn(B, N, D, device=device, dtype=dtype) * 0.1
         b1 = torch.randn(B, N, D, device=device, dtype=dtype) * 0.1
-        weights = torch.softmax(torch.randn(B, N, 2, device=device, dtype=dtype), dim=-1)
+        # The kernel and reference both interpret this tensor as gate logits;
+        # pre-softmaxing here would make the CUDA path apply softmax twice.
+        weights = torch.randn(B, N, 2, device=device, dtype=dtype)
         return [b0, b1, weights], {{"eps": 1e-5}}
     elif mod_name == "gdn_delta_rule":
         N_delta = 64
