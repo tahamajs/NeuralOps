@@ -12,6 +12,28 @@ NeuralOps Core Modules.
 from __future__ import annotations
 
 import importlib
+import importlib.util
+import sys
+from pathlib import Path
+
+
+def _load_evaluation_package() -> Any:
+    """Load the repository-level evaluation package, avoiding bridge shadowing."""
+    loaded = sys.modules.get("evaluation")
+    if loaded is not None and hasattr(loaded, "__path__"):
+        return loaded
+    if loaded is not None:
+        sys.modules.pop("evaluation", None)
+    package_dir = Path(__file__).resolve().parent.parent / "evaluation"
+    spec = importlib.util.spec_from_file_location(
+        "evaluation", package_dir / "__init__.py", submodule_search_locations=[str(package_dir)]
+    )
+    if spec is None or spec.loader is None:
+        raise ModuleNotFoundError("repository evaluation package is unavailable")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules["evaluation"] = module
+    spec.loader.exec_module(module)
+    return module
 from typing import Any, TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -675,7 +697,7 @@ def __getattr__(name: str) -> Any:
         # registered under the top-level ``evaluation`` name by alias imports.
         if "evaluation" not in sys.modules:
             try:
-                importlib.import_module("evaluation")
+                _load_evaluation_package()
             except ImportError:
                 pass
         mod_name = _API_EXPORTS[name]
@@ -695,7 +717,7 @@ def __getattr__(name: str) -> Any:
             if loaded_evaluation is not None and not hasattr(loaded_evaluation, "__path__"):
                 sys.modules.pop("evaluation", None)
             if "evaluation" not in sys.modules:
-                importlib.import_module("evaluation")
+                _load_evaluation_package()
         module = importlib.import_module(module_path)
         val = getattr(module, attr_name)
         globals()[name] = val
@@ -703,9 +725,9 @@ def __getattr__(name: str) -> Any:
 
     if name == "evaluation":
         try:
-            import evaluation
-            globals()[name] = evaluation
-            return evaluation
+            evaluation_package = _load_evaluation_package()
+            globals()[name] = evaluation_package
+            return evaluation_package
         except ImportError:
             pass
 
