@@ -46,7 +46,7 @@
 │  🏎️ BENCHMARK ACCELERATION    │  💾 MEMORY OPTIMIZATION       │  🎯 PRODUCTION SERVING │
 │  • Historical speedup records │  • Historical memory records  │  • Serving components  │
 │  • Double-Precision Autograd  │  • Variable-Length Packing    │  • Speculative Decode  │
-│  • Current sweep: 55/203      │  • Results require recheck    │  • Not release-certified │
+│  • Current ledger: 204 rows  │  • Results contain failures   │  • Not release-certified │
 └───────────────────────────────┴───────────────────────────────┴────────────────────────┘
 ```
 
@@ -81,15 +81,16 @@ neuralops train \
 ### 🛡️ Hardware Validation & Physical Ada Lovelace Certification Banner
 
 > [!WARNING]
-> **Current release verification is incomplete.** The remote RTX 4070 environment reports 131 attention and 72 compressor registry entries, but the current dynamic benchmark checkpoint contains **55/203 rows: 7 PASS_FAST, 39 PASS_SLOW, 4 PASS_HIGH_DIFF, 4 FAIL_CORRECTNESS, and 1 TIMEOUT**. The historical reports below are not evidence of a completed current release gate.
+> **Current release verification is in progress.** The previous inconsistent 204-row ledger is archived as `master_203_OLD_CORRUPTED.json`. A fresh 203-module sweep is running from an empty checkpoint; its first checkpoint contains 3 rows. No certification claim is made until the fresh sweep completes.
 
 #### Current evidence boundary
 
 - The live registry counts are 131 attention mechanisms and 72 compression engines.
-- The current sweep checkpoint is 55/203 rows; the remaining 148 modules are unverified.
+- The fresh sweep is the only release-gate source. Historical failures remain in the archived ledger for diagnosis and are not merged into the new run.
 - The current source audit found 113 CUDA package directories containing 229 `.cu`/`.cpp` files and 32 Triton Python modules; the CLI metadata reports 62 unified Triton operators.
 - Native benchmark modules for the requested roofline, quantization, MoE, serving, RoPE, sampling, SSM, ragged, and autotuning categories are not present in this checkout, so those categories are not certified here.
 - Historical benchmark tables and performance figures below are archival until regenerated from the current source tree; the live checkpoint is expected to change while the sweep runs. They must not be interpreted as current release certification.
+- `PASS_HIGH_DIFF` is a visible numerical status, not a pass-rate adjustment: these attention rows remain finite but exceed the normal `1e-3` comparison budget under FP16 execution. The correctness gate records the measured drift (up to `0.25`) and does not silently relabel it as exact parity.
 
 
 ---

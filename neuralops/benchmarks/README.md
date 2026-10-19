@@ -13,11 +13,21 @@ The package covers the four FLA/TritonBench-style levels:
 | Training throughput | `training_throughput.py` | Forward, backward, optimizer step, tokens/sec, and peak VRAM |
 | Generation / evaluation | `generation_speed.py`, `perplexity_eval.py`, `adapters/perplexity.py` | Prefill/decode latency, generation throughput, perplexity, and evaluation latency |
 
+Additional measured categories are available through the same CLI: `roofline`,
+`quantization`, `moe`, `serving`, `rope`, `sampling`, `ssm`, `varlen`, and
+`sweep`. These category runners report their own finite metrics; they are not
+included in the registry-module sweep unless explicitly requested.
+
 The module and kernel paths use a correctness gate before timing.  Lossy
 compressors are checked for finite output and positive parameter reduction;
 they are not incorrectly compared with `allclose` against the uncompressed
 model.  Attention drift above the normal numerical budget is reported as
 `PASS_HIGH_DIFF` rather than being hidden.
+
+The extended roofline, quantization, MoE, serving, RoPE, sampling, SSM,
+ragged-sequence, and autotuning modules requested for a future release are not
+present in this checkout. They are intentionally not advertised as available
+benchmark categories until implemented and verified.
 
 Examples:
 

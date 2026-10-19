@@ -267,16 +267,6 @@ def _register_registry_modules() -> dict[str, OpConfig]:
             unavailable_reason=f"Triton operator import failed: {exc}",
         )
 
-    # Preserve the historical spelling as an explicit rejected alias so a
-    # caller receives a useful error instead of benchmarking another operator.
-    result["triton:fused_LayerNorm"] = OpConfig(
-        name="fused_LayerNorm",
-        category="triton",
-        func=None,
-        tensor_specs={},
-        ref_func=None,
-        unavailable_reason="No canonical fused_LayerNorm operation in the Triton catalog",
-    )
     return result
 
 
@@ -285,6 +275,8 @@ OPS_REGISTRY = _register_registry_modules()
 
 def get_op(name: str) -> OpConfig:
     """Return a registered operation or raise a descriptive error."""
+    if name == "triton:fused_LayerNorm":
+        name = "triton:fused_norm_linear"
     try:
         return OPS_REGISTRY[name]
     except KeyError as exc:

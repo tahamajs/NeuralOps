@@ -14,6 +14,7 @@ Launches the telemetry dashboard and live benchmark monitoring web server.
 from __future__ import annotations
 
 import os
+import argparse
 from pathlib import Path
 
 from neuralops.runners.monitor import (
@@ -50,7 +51,10 @@ ComprehensiveStudioHandler.is_local_gpu = IS_LOCAL_GPU
 
 def main() -> None:
     """CLI entry point."""
-    run_server(PORT)
+    parser = argparse.ArgumentParser(description="Run the NeuralOps telemetry monitor server.")
+    parser.add_argument("--port", type=int, default=PORT, help="HTTP port to bind")
+    args = parser.parse_args()
+    run_server(args.port)
 
 
 if __name__ == "__main__":
