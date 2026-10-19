@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # Copyright (c) 2024-2026, Taha Majlesi
 #
 # This source code is licensed under the MIT license found in the
@@ -10,7 +11,6 @@ Notebook Generators for 16 and 17:
 16_roofline_ada_rtx4070_saturation.ipynb
 17_speculative_paged_kv_throughput.ipynb
 
-Author: Taha Majlesi
 """
 
 from nb_gen_common import (

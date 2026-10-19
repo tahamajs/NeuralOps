@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # Copyright (c) 2024-2026, Taha Majlesi
 #
 # This source code is licensed under the MIT license found in the
@@ -10,7 +11,6 @@ Notebook Generators for 18 and 19:
 18_cross_seed_statistical_variance.ipynb
 19_publication_figures_latex_generator.ipynb
 
-Author: Taha Majlesi
 """
 
 from nb_gen_common import (

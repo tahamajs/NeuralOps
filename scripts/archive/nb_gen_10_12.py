@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # Copyright (c) 2024-2026, Taha Majlesi
 #
 # This source code is licensed under the MIT license found in the
@@ -11,7 +12,6 @@ Notebook Generators for 10, 11, and 12:
 11_cuda_vs_triton_vs_pytorch_matrix.ipynb
 12_svd_whitening_spectral_allocation.ipynb
 
-Author: Taha Majlesi
 """
 
 from nb_gen_common import (

@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # Copyright (c) 2024-2026, Taha Majlesi
 #
 # This source code is licensed under the MIT license found in the
@@ -11,7 +12,6 @@ Notebook Generators for 13, 14, and 15:
 14_structured_pruning_token_shedding.ipynb
 15_downstream_glue_lra_evaluation.ipynb
 
-Author: Taha Majlesi
 """
 
 from nb_gen_common import (

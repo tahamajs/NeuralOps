@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # Copyright (c) 2024-2026, Taha Majlesi
 #
 # This source code is licensed under the MIT license found in the
@@ -6,7 +7,6 @@
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Update report module.
 
-Author: Taha Majlesi
 """
 
 report_path = "/mnt/d/SVD_crossval/docs/reports/CROSS_VALIDATION_REGRESSION_REPORT.md"

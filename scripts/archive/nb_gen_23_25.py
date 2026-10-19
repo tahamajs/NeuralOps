@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # Copyright (c) 2024-2026, Taha Majlesi
 #
 # This source code is licensed under the MIT license found in the
@@ -11,7 +12,6 @@ Notebook Generators for 23, 24, and 25:
 24_advanced_optimizers_muon_stiefel_and_ttt_training.ipynb
 25_long_context_niah_cka_similarity_and_eval_harness.ipynb
 
-Author: Taha Majlesi
 """
 
 import sys

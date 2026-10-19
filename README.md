@@ -438,13 +438,16 @@ Every module in NeuralOps v1.4.1 has undergone rigorous forensic validation on p
 ### 6.1 Installation
 
 ```bash
-# 1. Core installation with Triton & Hugging Face support
-pip install neuralops
+# 1. Production release from PyPI (v1.4.1)
+pip install neuralops==1.4.1
 
 # 2. NVIDIA GPU full production setup (PyTorch 2.11+, Triton, Safetensors)
-pip install "neuralops[cuda,export,eval,mlops]"
+pip install "neuralops[cuda,export,eval,mlops]==1.4.1"
 
-# 3. Development editable install from source
+# 3. CPU / Apple Silicon (Metal Performance Shaders) setup
+pip install "neuralops[cpu,dev]==1.4.1"
+
+# 4. Development editable install from source
 git clone https://github.com/tahamajs/NeuralOps.git
 cd NeuralOps
 pip install -e ".[dev,cuda]"
@@ -1614,6 +1617,23 @@ Every PR must preserve the canonical counts verified by `scripts/utils/verify_re
 - **26 Triton Kernel Files**
 
 > **Important**: Do NOT create new `.py` files in `neuralops/core/triton_kernels/`. If you author a new Triton kernel, integrate it into one of the existing 26 categorized modules.
+
+### Code Formatting, Shebang & Quality Laws
+
+All Python modules contributed to NeuralOps must strictly satisfy:
+1. **Canonical Shebang**: Line 1 must be `#!/usr/bin/env python3`.
+2. **Official Copyright Header**: Lines 2–7 must contain:
+   ```python
+   # Copyright (c) 2024-2026, Taha Majlesi
+   #
+   # This source code is licensed under the MIT license found in the
+   # LICENSE file in the root directory of this source tree.
+   # For a list of all contributors, visit:
+   #   https://github.com/tahamajs/NeuralOps/graphs/contributors
+   ```
+3. **Zero Dead Code & Shadowed Definitions**: Run `python scripts/utils/audit_dead_code.py` to ensure 0 shadowed definitions, 0 unreachable statements, 0 unlaunched kernels, and 0 unused private helpers.
+4. **Zero Mid-Code Comments**: All explanatory code must be in structured module/function docstrings or markdown notebooks, not conversational inline comments.
+5. **Uniform 4-Space Indentation**: Strict PEP 8 formatting without single-line statement blocks or trailing whitespace.
 
 ### Adding a New Attention Mechanism
 
