@@ -192,8 +192,8 @@ class _TritonStateUpdateAutogradFunction(torch.autograd.Function):
 
     @staticmethod
     def backward(
-        ctx: Any, grad_y: torch.Tensor, grad_state: torch.Tensor
-    ) -> tuple[torch.Tensor | None, ...]:
+        ctx: Any, grad_y: Any, grad_state: Any
+    ) -> tuple[Any, ...]:
         u, delta, A, B, C, D, state = ctx.saved_tensors
         u_req = u.detach().requires_grad_(True)
         delta_req = delta.detach().requires_grad_(True)
