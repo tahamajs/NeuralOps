@@ -14,7 +14,7 @@ multi-architecture compression, and gradient backpropagation.
 import pytest
 import torch
 import torch.nn as nn
-from neuralops.compression_engine.aa_svd_compressor import (
+from neuralops.compression_engine.svd.aa_svd_compressor import (
     DEFAULT_CALIBRATION_CORPUS, AASVDCompressor, SVDLinear, aasvd_factory)
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 from transformers import (AutoTokenizer, DistilBertConfig,

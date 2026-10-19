@@ -248,6 +248,7 @@ class MoDeGPTCompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="modegpt", **kwargs)
+        self._compressed_params: int | None = None
         cfg = kwargs.get("comp_config", kwargs.get("cfg"))
         if cfg is not None:
             rank = _cfg_get(cfg, "modegpt_rank", _cfg_get(cfg, "rank", rank))
