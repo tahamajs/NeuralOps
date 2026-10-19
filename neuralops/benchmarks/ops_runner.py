@@ -333,5 +333,49 @@ def main() -> None:
         print(f"Results saved to {args.output}")
 
 
+def run_op_as_eval_result(
+    op_name: str,
+    B: int = 2,
+    T: int = 1024,
+    H: int = 8,
+    D: int = 64,
+    mode: str = "fwd",
+    dtype: str = "float16",
+    device: str = "cuda",
+) -> Any:
+    """Run an operator benchmark and convert output into a standardized BenchmarkEvalResult."""
+    from neuralops.benchmarks.eval_bridge import BenchmarkEvalResult
+
+    raw = run_op_in_subprocess(op_name, B, T, H, D, mode, dtype, device)
+    status = "FAIL" if "error" in raw else "PASS"
+    err = raw.get("error")
+    lat = raw.get("latency_ms", 0.0)
+    tflops = raw.get("tflops", 0.0)
+
+    total_tokens = B * T
+    throughput = (total_tokens / (lat / 1000.0)) if lat > 0 else 0.0
+
+    return BenchmarkEvalResult(
+        task_type=f"op_{mode}",
+        status=status,
+        error_message=err,
+        model_name=f"operator_{op_name}",
+        attention_type=op_name,
+        device=device,
+        dtype=dtype,
+        batch_size=B,
+        seq_len=T,
+        total_tokens=total_tokens,
+        latency_ms_mean=lat,
+        latency_ms_min=raw.get("min_ms", 0.0),
+        latency_ms_max=raw.get("max_ms", 0.0),
+        latency_ms_per_token=lat / max(1, T),
+        throughput_tokens_per_sec=throughput,
+        achieved_tflops=tflops,
+        extra_metrics=raw,
+    )
+
+
 if __name__ == "__main__":
     main()
+

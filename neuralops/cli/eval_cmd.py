@@ -24,10 +24,6 @@ import time
 from typing import Any, Dict, List, Optional
 
 import torch
-import torch.nn as nn
-from torch.utils.data import DataLoader
-
-from neuralops.data.multidataset import MultiDatasetLoader
 
 try:
     from rich.console import Console
@@ -121,67 +117,6 @@ def build_eval_parser(subparser: Optional[argparse.ArgumentParser] = None) -> ar
     return parser
 
 
-def _load_eval_model(model_name_or_path: str, device: str) -> nn.Module:
-    """Load model architecture or construct lightweight fallback model."""
-    try:
-        from transformers import AutoModelForCausalLM
-
-        model = AutoModelForCausalLM.from_pretrained(model_name_or_path)
-        model.to(device)
-        return model
-    except Exception as e:
-        logger.debug("AutoModelForCausalLM loading failed for '%s': %s", model_name_or_path, e)
-
-    try:
-        from transformers import AutoModelForSequenceClassification
-
-        model = AutoModelForSequenceClassification.from_pretrained(model_name_or_path)
-        model.to(device)
-        return model
-    except Exception as e:
-        logger.debug("AutoModelForSequenceClassification loading failed for '%s': %s", model_name_or_path, e)
-
-    try:
-        from transformers import AutoModel
-
-        model = AutoModel.from_pretrained(model_name_or_path)
-        model.to(device)
-        return model
-    except Exception as e:
-        logger.debug("AutoModel loading failed: %s", e)
-
-    # Lightweight fallback model for test/simulation
-    class _FallbackEvalModel(nn.Module):
-        def __init__(self, vocab_size: int = 32000, hidden_dim: int = 512) -> None:
-            super().__init__()
-            self.embed = nn.Embedding(vocab_size, hidden_dim)
-            self.linear = nn.Linear(hidden_dim, hidden_dim)
-            self.head = nn.Linear(hidden_dim, vocab_size, bias=False)
-
-        def forward(self, input_ids: torch.Tensor, labels: Optional[torch.Tensor] = None, **kwargs: Any) -> Any:
-            x = self.embed(input_ids)
-            x = self.linear(x)
-            logits = self.head(x)
-            loss = None
-            if labels is not None:
-                shift_logits = logits[..., :-1, :].contiguous()
-                shift_labels = labels[..., 1:].contiguous()
-                loss = nn.functional.cross_entropy(
-                    shift_logits.view(-1, shift_logits.size(-1)),
-                    shift_labels.view(-1),
-                    ignore_index=-100,
-                )
-            class Output:
-                def __init__(self, loss_val: Optional[torch.Tensor], logits_val: torch.Tensor) -> None:
-                    self.loss = loss_val
-                    self.logits = logits_val
-            return Output(loss, logits)
-
-    model = _FallbackEvalModel()
-    model.to(device)
-    return model
-
-
 def cmd_eval(args: Any) -> int:
     """Execute model evaluation across perplexity, throughput, latency, and memory."""
     if isinstance(args, dict):
@@ -195,7 +130,7 @@ def cmd_eval(args: Any) -> int:
     split = getattr(args_ns, "split", "validation")
     batch_size = getattr(args_ns, "batch_size", 16)
     max_samples = getattr(args_ns, "max_samples", 100)
-    device_arg = getattr(args_ns, "device", None)
+    metrics_arg = getattr(args_ns, "metrics", "perplexity,throughput,latency,peak_vram")
     output_json = getattr(args_ns, "output_json", False) or getattr(args_ns, "json", False)
     output_file = getattr(args_ns, "output_file", None)
 
@@ -207,11 +142,11 @@ def cmd_eval(args: Any) -> int:
     if not output_json:
         if HAS_RICH and console is not None:
             console.print(Panel(
-                f"[bold cyan]NeuralOps Evaluation Runner[/bold cyan]\n"
+                f"[bold cyan]NeuralOps Unified Evaluation Runner[/bold cyan]\n"
                 f"[bold white]Model:[/]     [yellow]{model_id}[/]\n"
                 f"[bold white]Dataset:[/]   [green]{dataset}[/] ({dataset_name or 'default'}, {split})\n"
-                f"[bold white]Batch Size:[/] {batch_size}  [bold white]| Samples:[/] {max_samples}  [bold white]| Device:[/] [magenta]{device.upper()}[/]",
-                title="[bold cyan]NeuralOps Evaluation Suite[/bold cyan]",
+                f"[bold white]Batch Size:[/] {batch_size}  [bold white]| Samples:[/] {max_samples}  [bold white]| Device:[/] [magenta]{str(device).upper()}[/]",
+                title="[bold cyan]NeuralOps Evaluation & Benchmark Suite[/bold cyan]",
                 border_style="cyan",
             ))
         else:
@@ -219,115 +154,49 @@ def cmd_eval(args: Any) -> int:
             print(f"NeuralOps Model Evaluation: {model_id} on {dataset} ({device})")
             print("=================================================================")
 
-    # 1. Load model
-    model = _load_eval_model(model_id, device=device)
-    model.eval()
+    from neuralops.benchmarks.eval_bridge import BenchmarkEvaluator, BenchmarkEvalResult
 
-    # 2. Load dataset stream
-    loader = MultiDatasetLoader(
-        dataset_names=dataset,
-        subsets=dataset_name,
-        split=split,
-        streaming=True,
+    evaluator = BenchmarkEvaluator(
+        model=model_id,
+        batch_size=batch_size,
+        seq_len=seq_len,
+        device=device,
     )
-    dataloader = DataLoader(loader, batch_size=batch_size)
 
-    # 3. Track metrics
-    total_loss = 0.0
-    total_batches = 0
-    total_tokens = 0
-    samples_evaluated = 0
-    correct_tokens = 0
-    evaluated_tokens_for_acc = 0
+    metrics_list = [m.strip().lower() for m in metrics_arg.split(",") if m.strip()]
+    eval_result: BenchmarkEvalResult = evaluator.run_evaluation(
+        dataset=dataset,
+        subset=dataset_name,
+        split=split,
+        max_samples=max_samples,
+        metrics=metrics_list,
+    )
 
-    if device == "cuda" and torch.cuda.is_available():
-        torch.cuda.reset_peak_memory_stats()
-        torch.cuda.synchronize()
-
-    start_time = time.perf_counter()
-
-    with torch.no_grad():
-        for batch in dataloader:
-            if isinstance(batch, dict):
-                input_ids = batch.get("input_ids")
-                labels = batch.get("labels", input_ids)
-            else:
-                input_ids = batch
-                labels = batch
-
-            if input_ids is None:
-                continue
-
-            if isinstance(input_ids, torch.Tensor):
-                input_ids = input_ids.to(device)
-            else:
-                input_ids = torch.tensor(input_ids, dtype=torch.long, device=device)
-
-            if isinstance(labels, torch.Tensor):
-                labels = labels.to(device)
-            else:
-                labels = torch.tensor(labels, dtype=torch.long, device=device)
-
-            num_tokens = input_ids.numel()
-            total_tokens += num_tokens
-            samples_evaluated += input_ids.shape[0]
-
-            outputs = model(input_ids=input_ids, labels=labels)
-            loss = getattr(outputs, "loss", None)
-            logits = getattr(outputs, "logits", outputs if isinstance(outputs, torch.Tensor) else None)
-
-            if loss is None and logits is not None:
-                shift_logits = logits[..., :-1, :].contiguous()
-                shift_labels = labels[..., 1:].contiguous()
-                loss = nn.functional.cross_entropy(
-                    shift_logits.view(-1, shift_logits.size(-1)),
-                    shift_labels.view(-1),
-                    ignore_index=-100,
-                )
-
-            if loss is not None:
-                total_loss += loss.item()
-                total_batches += 1
-
-            if logits is not None and labels is not None:
-                preds = torch.argmax(logits, dim=-1)
-                valid_mask = labels != -100
-                correct = (preds == labels) & valid_mask
-                correct_tokens += int(correct.sum().item())
-                evaluated_tokens_for_acc += int(valid_mask.sum().item())
-
-            if max_samples is not None and samples_evaluated >= max_samples:
-                break
-
-    if device == "cuda" and torch.cuda.is_available():
-        torch.cuda.synchronize()
-        peak_vram_mb = torch.cuda.max_memory_allocated() / (1024.0 * 1024.0)
-    else:
-        peak_vram_mb = 0.0
-
-    elapsed_time = max(1e-5, time.perf_counter() - start_time)
-
-    avg_loss = total_loss / max(1, total_batches) if total_batches > 0 else 0.0
-    perplexity = math.exp(min(avg_loss, 80.0))
-    throughput_tokens_sec = total_tokens / elapsed_time
-    latency_ms_per_token = (elapsed_time * 1000.0) / max(1, total_tokens)
-    accuracy_pct = (correct_tokens / max(1, evaluated_tokens_for_acc)) * 100.0 if evaluated_tokens_for_acc > 0 else 0.0
-
-    results_data: Dict[str, Any] = {
+    results_data: Dict[str, Any] = eval_result.to_dict()
+    results_data.update({
         "model": model_id,
         "dataset": dataset,
         "split": split,
-        "samples_evaluated": samples_evaluated,
-        "total_tokens": total_tokens,
-        "elapsed_seconds": round(elapsed_time, 4),
-        "loss": round(avg_loss, 4),
-        "perplexity": round(perplexity, 4),
-        "throughput_tokens_per_sec": round(throughput_tokens_sec, 2),
-        "latency_ms_per_token": round(latency_ms_per_token, 4),
-        "peak_vram_mb": round(peak_vram_mb, 2),
-        "accuracy_pct": round(accuracy_pct, 2),
-        "device": device,
-    }
+        "samples_evaluated": eval_result.samples_evaluated,
+        "total_tokens": eval_result.total_tokens,
+        "elapsed_seconds": eval_result.duration_seconds,
+        "loss": eval_result.loss,
+        "perplexity": eval_result.perplexity,
+        "throughput_tokens_per_sec": eval_result.throughput_tokens_per_sec,
+        "latency_ms_per_token": eval_result.latency_ms_per_token,
+        "peak_vram_mb": eval_result.peak_vram_mb,
+        "accuracy_pct": eval_result.accuracy_pct,
+        "device": str(evaluator.device),
+    })
+
+    avg_loss = eval_result.loss or 0.0
+    perplexity = eval_result.perplexity or 0.0
+    throughput_tokens_sec = eval_result.throughput_tokens_per_sec
+    latency_ms_per_token = eval_result.latency_ms_per_token
+    peak_vram_mb = eval_result.peak_vram_mb
+    accuracy_pct = eval_result.accuracy_pct or 0.0
+    total_tokens = eval_result.total_tokens
+    elapsed_time = eval_result.duration_seconds
 
     if output_json:
         print(json.dumps(results_data, indent=2))

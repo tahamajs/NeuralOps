@@ -483,4 +483,32 @@ def execute_single(
             torch.cuda.empty_cache()
 
 
-__all__ = ["execute_single"]
+def execute_single_eval_bridge(
+    module: str,
+    module_type: str = "attention",
+    model: str = "gpt2",
+    dataset: str = "wikitext",
+    rank: int | None = 64,
+    device: str = "cuda",
+    dtype: str = "float16",
+    batch_size: int = 16,
+    max_length: int = 512,
+    **kwargs: Any,
+) -> Any:
+    """Execute single benchmark run directly via the unified BenchmarkEvaluator bridge."""
+    from neuralops.benchmarks.eval_bridge import BenchmarkEvaluator
+
+    evaluator = BenchmarkEvaluator(
+        model=model,
+        attention_type=module if module_type == "attention" else None,
+        compression_type=module if module_type == "compressor" else None,
+        rank=rank,
+        device=device,
+        dtype=dtype,
+        batch_size=batch_size,
+        seq_len=max_length,
+    )
+    return evaluator.run_evaluation(dataset=dataset, **kwargs)
+
+
+__all__ = ["execute_single", "execute_single_eval_bridge"]

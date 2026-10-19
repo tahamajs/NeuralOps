@@ -399,10 +399,11 @@ def _build_parser() -> argparse.ArgumentParser:
     serve_p.add_argument("--kv-cache-pages", "--block-size", "--kv-page-size", dest="block_size", type=int, default=16, help="Paged cache token block size")
 
     test_p = subparsers.add_parser("test", help="Run fast diagnostic test suites, kernel verification, and attention surgery integrity")
-    test_p.add_argument("--all", action="store_true", help="Execute all diagnostic suites (health, kernels, surgery)")
+    test_p.add_argument("--all", action="store_true", help="Execute all diagnostic suites (health, kernels, surgery, eval)")
     test_p.add_argument("--health", action="store_true", help="Run environment and registry health checks")
     test_p.add_argument("--kernels", action="store_true", help="Run Triton and CUDA kernel capability checks")
     test_p.add_argument("--surgery", action="store_true", help="Run attention surgery diagnostics")
+    test_p.add_argument("--eval", dest="eval_suite", action="store_true", help="Run unified evaluation and benchmarking bridge diagnostics")
     test_p.add_argument("-q", "--quiet", action="store_true", help="Quiet mode reporting")
 
     mon_p = subparsers.add_parser("monitor", help="Launch NeuralOps real-time telemetry, benchmark studio, and web dashboard")

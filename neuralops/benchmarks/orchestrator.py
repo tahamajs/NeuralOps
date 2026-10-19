@@ -480,5 +480,33 @@ class BenchmarkOrchestrator:
 
         return pd.DataFrame(rows)
 
+    def run_with_eval_bridge(
+        self,
+        tasks: Optional[List[str]] = None,
+    ) -> List[Any]:
+        """Execute sweep across configured modules using the unified BenchmarkEvaluator bridge."""
+        from neuralops.benchmarks.eval_bridge import BenchmarkEvaluator
+
+        results = []
+        for mod in self.modules:
+            mod_name = mod.name if hasattr(mod, "name") else str(mod)
+            mod_type = getattr(mod, "type", "attention")
+            for model_name in self.models:
+                for dataset_name in self.datasets:
+                    for rank in self.ranks:
+                        evaluator = BenchmarkEvaluator(
+                            model=model_name,
+                            attention_type=mod_name if mod_type == "attention" else None,
+                            compression_type=mod_name if mod_type == "compressor" else None,
+                            rank=rank,
+                            device=self.config.device,
+                            dtype=self.config.dtype,
+                            batch_size=self.config.batch_size,
+                            seq_len=self.config.max_length,
+                        )
+                        res = evaluator.run_evaluation(dataset=dataset_name)
+                        results.append(res)
+        return results
+
 
 __all__ = ["BenchmarkOrchestrator"]
