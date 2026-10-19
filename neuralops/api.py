@@ -329,6 +329,71 @@ def load_model(
     return _load_model(export_dir=export_dir, base_model=base_model)
 
 
+def load_hf_model(model_name_or_path: str, **kwargs: Any) -> nn.Module:
+    """Load a Hugging Face model lazily without making Transformers a core dependency."""
+    from transformers import AutoModel
+    return AutoModel.from_pretrained(model_name_or_path, **kwargs)
+
+
+def quick_benchmark(
+    model: nn.Module,
+    task: str = "sst2",
+    device: Optional[str] = None,
+    batch_size: int = 2,
+    seq_len: int = 16,
+    iterations: int = 5,
+) -> Any:
+    """Run a small deterministic forward benchmark and return a notebook-friendly table."""
+    import time
+    target = torch.device(device or ("cuda" if torch.cuda.is_available() else "cpu"))
+    model = model.to(target).eval()
+    vocab_size = int(getattr(getattr(model, "config", None), "vocab_size", 30522))
+    inputs = torch.randint(0, max(2, vocab_size), (batch_size, seq_len), device=target)
+    with torch.no_grad():
+        for _ in range(2):
+            try:
+                model(input_ids=inputs)
+            except TypeError:
+                model(inputs)
+        if target.type == "cuda":
+            torch.cuda.synchronize(target)
+        start = time.perf_counter()
+        for _ in range(iterations):
+            try:
+                output = model(input_ids=inputs)
+            except TypeError:
+                output = model(inputs)
+        if target.type == "cuda":
+            torch.cuda.synchronize(target)
+        latency_ms = (time.perf_counter() - start) * 1000.0 / max(1, iterations)
+    row = {"task": task, "device": str(target), "latency_ms": latency_ms, "finite": bool(_first_tensor(output).isfinite().all())}
+    try:
+        import pandas as pd
+        table = pd.DataFrame([row])
+        print(table.to_string(index=False))
+        return table
+    except ImportError:
+        print(row)
+        return [row]
+
+
+def _first_tensor(output: Any) -> torch.Tensor:
+    """Extract the first tensor from common HF output containers."""
+    if isinstance(output, torch.Tensor):
+        return output
+    if hasattr(output, "logits") and isinstance(output.logits, torch.Tensor):
+        return output.logits
+    if isinstance(output, (tuple, list)):
+        for item in output:
+            if isinstance(item, torch.Tensor):
+                return item
+    if isinstance(output, dict):
+        for item in output.values():
+            if isinstance(item, torch.Tensor):
+                return item
+    raise TypeError(f"Model output does not contain a tensor: {type(output)!r}")
+
+
 def compile_to_so(
     model: nn.Module,
     sample_inputs: Union[torch.Tensor, Tuple[torch.Tensor, ...]],

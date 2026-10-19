@@ -65,6 +65,14 @@ model = neuralops.replace_attention(model, method="gated_delta_net", rank=64)
 model = neuralops.compress(model, method="hadamard_incoherent_svd", rank=32)
 ```
 
+**Notebook-first tutorials (executed on the remote GPU):**
+
+- [Surgery + LoRA/KD training](notebooks/01_quickstart_surgery_and_healing.ipynb)
+- [3-level benchmarking + torch.compile + ONNX export](notebooks/04_end_to_end_3level_benchmarking.ipynb)
+- [SVD compression + paged serving](notebooks/07_master_all_72_compression_engines_quant_and_svd.ipynb)
+
+Heavy integrations such as vLLM, SGLang, TGI, ONNX, and TensorRT-LLM are optional and are imported only when their specific features are used; the core import neuralops path does not require them.
+
 ```bash
 # 4. Multi-Corpus Pretraining & Varlen Packing (Zero padding token waste)
 neuralops train \

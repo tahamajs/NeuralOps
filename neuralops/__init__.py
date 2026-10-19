@@ -371,6 +371,8 @@ _LAZY_EXPORTS = {
 
 _API_EXPORTS = {
     "load_model": "neuralops.api",
+    "load_hf_model": "neuralops.api",
+    "quick_benchmark": "neuralops.api",
     "replace_attention": "neuralops.api",
     "transplant_attention": "neuralops.api",
     "compress": "neuralops.api",
