@@ -231,6 +231,7 @@ class CRCompressor(BaseCompressor):
         cfg: Any | None = None,
         target_layers: list[str] | None = None,
         **kwargs: Any,
+    ) -> None:
         super().__init__(model if model is not None else nn.Identity(), name="cr", **kwargs)
         self.model: nn.Module = self.model
         self._original_params: int = getattr(self, "_original_params", 0)
