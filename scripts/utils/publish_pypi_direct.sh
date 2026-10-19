@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# NeuralOps Direct PyPI Release Script (v1.4.2)
+# NeuralOps Direct PyPI Release Script (v1.4.3)
 # ==============================================================================
 set -euo pipefail
 
 echo "======================================================================"
-echo "  🚀 NEURALOPS PYPI DIRECT RELEASE SCRIPT (v1.4.2)"
+echo "  🚀 NEURALOPS PYPI DIRECT RELEASE SCRIPT (v1.4.3)"
 echo "======================================================================"
 
 PYTHON_BIN="/mnt/d/venv/bin/python3"
@@ -36,5 +36,5 @@ fi
 $TWINE_BIN upload --skip-existing dist/*
 
 echo "======================================================================"
-echo "  ✅ NEURALOPS v1.4.2 SUCCESSFULLY UPLOADED TO PYPI!"
+echo "  ✅ NEURALOPS v1.4.3 SUCCESSFULLY UPLOADED TO PYPI!"
 echo "======================================================================"

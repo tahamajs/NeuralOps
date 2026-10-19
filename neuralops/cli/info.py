@@ -38,7 +38,7 @@ except ImportError:
 
 def cmd_info(args: Any = None) -> int:
     """Display comprehensive hardware, framework, and NeuralOps component status."""
-    ver = getattr(neuralops, "__version__", "1.4.2")
+    ver = getattr(neuralops, "__version__", "1.4.3")
 
     cuda_avail = torch.cuda.is_available()
     device_count = torch.cuda.device_count() if cuda_avail else 0

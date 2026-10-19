@@ -69,8 +69,8 @@ CANONICAL_TRITON_KERNELS: list[str] = [
 def test_import_neuralops():
     """Verify neuralops library imports, exposes public APIs, versioning, and canonical registries."""
     assert hasattr(neuralops, "__version__")
-    assert neuralops.__version__ == "1.4.2"
-    assert get_version() == "1.4.2"
+    assert neuralops.__version__ == "1.4.3"
+    assert get_version() == "1.4.3"
 
     public_callables = [load_model, replace_attention, compress, export_model]
     for fn in public_callables:

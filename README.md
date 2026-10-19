@@ -2,7 +2,7 @@
 
 <img src="assets/banner.svg" alt="NeuralOps Banner" width="100%" />
 
-# 🧬 NeuralOps v1.4.2
+# 🧬 NeuralOps v1.4.3
 
 ### **Unified Subquadratic Attention and Deep Model Compression Platform**
 

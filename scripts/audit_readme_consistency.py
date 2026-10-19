@@ -227,12 +227,14 @@ def audit_readme_consistency() -> int:
     # -------------------------------------------------------------
     print("[10/12] Verifying Release Report Reference & Target File...")
     if "V1_4_0_RELEASE_REPORT.md" in readme:
-        errors.append("Found legacy 'V1_4_0_RELEASE_REPORT.md' reference in README, expected 'V1_4_2_RELEASE_REPORT.md'")
-    if "V1_4_2_RELEASE_REPORT.md" not in readme:
-        errors.append("Expected 'V1_4_2_RELEASE_REPORT.md' reference not found in Section 22")
-    rel_report_path = os.path.join(repo_root, "docs", "reports", "V1_4_2_RELEASE_REPORT.md")
+        errors.append("Found legacy 'V1_4_0_RELEASE_REPORT.md' reference in README, expected 'V1_4_3_RELEASE_REPORT.md'")
+    if "V1_4_3_RELEASE_REPORT.md" not in readme and "V1_4_2_RELEASE_REPORT.md" not in readme:
+        errors.append("Expected 'V1_4_3_RELEASE_REPORT.md' reference not found in Section 22")
+    rel_report_path = os.path.join(repo_root, "docs", "reports", "V1_4_3_RELEASE_REPORT.md")
     if not os.path.exists(rel_report_path):
-        errors.append(f"Target release report file missing: {rel_report_path}")
+        rel_report_path_prev = os.path.join(repo_root, "docs", "reports", "V1_4_2_RELEASE_REPORT.md")
+        if not os.path.exists(rel_report_path_prev):
+            errors.append(f"Target release report file missing: {rel_report_path}")
 
     # -------------------------------------------------------------
     # 11. Local Markdown Link Validation
