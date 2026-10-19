@@ -13,11 +13,14 @@ Model publishing, versioning, and weight serialization utilities for the Hugging
 
 from __future__ import annotations
 
+import logging
 import os
 import re
 from pathlib import Path
 from typing import Any
 import torch
+
+logger = logging.getLogger(__name__)
 
 
 __all__ = [
