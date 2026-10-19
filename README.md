@@ -482,7 +482,7 @@ responses = adapter.continuous_batching_generate(
 
 ## 5. Exhaustive GPU Capabilities Audit (131 Attention + 72 Compression)
 
-Every module in NeuralOps v1.4.2 has undergone rigorous forensic validation on physical hardware (**NVIDIA GeForce RTX 4070 Laptop GPU**, SM 8.9, 8GB VRAM) under **PyTorch 2.11.0+cu128 & CUDA 12.8**:
+Every module in NeuralOps v1.4.3 has undergone rigorous forensic validation on physical hardware (**NVIDIA GeForce RTX 4070 Laptop GPU**, SM 8.9, 8GB VRAM) under **PyTorch 2.11.0+cu128 & CUDA 12.8**:
 
 | Registry Ecosystem Category | Total Registered | Validated & Functional | Failures / Skips | Hardware Certification Rate |
 | :--- | :---: | :---: | :---: | :---: |
@@ -508,14 +508,14 @@ Every module in NeuralOps v1.4.2 has undergone rigorous forensic validation on p
 ### 6.1 Installation
 
 ```bash
-# 1. Production release from PyPI (v1.4.2)
-pip install neuralops==1.4.2
+# 1. Production release from PyPI (v1.4.3)
+pip install neuralops==1.4.3
 
 # 2. NVIDIA GPU full production setup (PyTorch 2.11+, Triton, Safetensors)
-pip install "neuralops[cuda,export,eval,mlops]==1.4.2"
+pip install "neuralops[cuda,export,eval,mlops]==1.4.3"
 
 # 3. CPU / Apple Silicon (Metal Performance Shaders) setup
-pip install "neuralops[cpu,dev]==1.4.2"
+pip install "neuralops[cpu,dev]==1.4.3"
 
 # 4. Development editable install from source
 git clone https://github.com/tahamajs/NeuralOps.git
@@ -976,7 +976,7 @@ flowchart TD
 
 ## 9. Web Dashboard, Real-Time Monitoring & Roofline Visualizer
 
-NeuralOps v1.4.2 bundles an integrated, production-grade Web Monitor and Telemetry Studio powered by FastAPI, Uvicorn, Server-Sent Events (SSE), and interactive Three.js WebGL:
+NeuralOps v1.4.3 bundles an integrated, production-grade Web Monitor and Telemetry Studio powered by FastAPI, Uvicorn, Server-Sent Events (SSE), and interactive Three.js WebGL:
 
 ```text
 ┌────────────────────────────────────────────────────────────────────────┐
@@ -1550,7 +1550,7 @@ NeuralOps is engineered specifically for subquadratic attention transplantation,
 
 1. **Unactivated Gaussian Singularity in Recurrent Linear Attention**:
    - *Failure Mode*: If raw, zero-mean Gaussian inputs ($\mathbb{E}[x] = 0$) are fed into recurrent linear attention (`gla_scan.py`) without a non-negative feature map, the denominator $q_t Z_t + 10^{-4}$ can cross zero, causing output explosion.
-   - *Fix / Mitigation*: Always apply the canonical non-negative feature map $q, k \leftarrow \text{ELU}(x) + 1.0 > 0$. In v1.4.2, `gla_scan.py` includes hardware denominator safeguarding (`tl.maximum(denom, 1e-4)`).
+   - *Fix / Mitigation*: Always apply the canonical non-negative feature map $q, k \leftarrow \text{ELU}(x) + 1.0 > 0$. In v1.4.3, `gla_scan.py` includes hardware denominator safeguarding (`tl.maximum(denom, 1e-4)`).
 2. **Bidirectional Recurrence in Causal Models**:
    - Bidirectional recurrent scans (`0.5 * (y_fwd + y_bwd)`) are valid only for encoder backbones (BERT, RoBERTa). Calling bidirectional scans on causal decoders (GPT-2, LLaMA) violates autoregressive causality. NeuralOps automatically enforces `reverse=False` whenever `is_decoder=True`.
 3. **Small Batch GEMM Launch Overhead**:
