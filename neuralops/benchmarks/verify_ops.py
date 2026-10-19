@@ -77,7 +77,7 @@ def verify_op(op_name: str, *, atol: float = 1e-3, rtol: float = 1e-3) -> bool:
             if diff > 1e-2:
                 LOG.warning("PASS_HIGH_DIFF %s: finite FP16 attention drift max_diff=%g", op_name, diff)
             return True
-        if not torch.allclose(fast, reference, atol=atol, rtol=rtol):
+        if not torch.allclose(fast.float(), reference.float(), atol=atol, rtol=rtol):
             LOG.error("FAIL_CORRECTNESS %s: max_diff=%g", op_name, diff)
             return False
         return True

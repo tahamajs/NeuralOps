@@ -20,6 +20,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import torch
 import torch.nn as nn
 from transformers import AutoModelForCausalLM
+from types import SimpleNamespace
 
 
 class TrainingThroughputProfiler:
@@ -105,3 +106,41 @@ class TrainingThroughputProfiler:
             "tokens_per_second": round(tokens_per_sec, 2),
             "peak_vram_mb": round(peak_vram_mb, 2),
         }
+
+
+class TinyCausalLM(nn.Module):
+    """Small self-contained causal model for infrastructure smoke benchmarks."""
+
+    def __init__(self, vocab_size: int = 256, hidden_size: int = 128) -> None:
+        super().__init__()
+        self.config = SimpleNamespace(vocab_size=vocab_size)
+        self.embedding = nn.Embedding(vocab_size, hidden_size)
+        self.rnn = nn.GRU(hidden_size, hidden_size, batch_first=True)
+        self.lm_head = nn.Linear(hidden_size, vocab_size)
+
+    def forward(self, input_ids: torch.Tensor, labels: torch.Tensor | None = None, **_: Any) -> Any:
+        hidden, _ = self.rnn(self.embedding(input_ids))
+        logits = self.lm_head(hidden)
+        loss = None
+        if labels is not None:
+            loss = torch.nn.functional.cross_entropy(logits.reshape(-1, logits.shape[-1]), labels.reshape(-1))
+        return SimpleNamespace(logits=logits, loss=loss)
+
+
+if __name__ == "__main__":
+    import argparse
+    import json
+
+    parser = argparse.ArgumentParser(description="Run a real forward/backward throughput benchmark")
+    parser.add_argument("--batch-size", type=int, default=2)
+    parser.add_argument("--seq-len", type=int, default=64)
+    parser.add_argument("--steps", type=int, default=3)
+    parser.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
+    args = parser.parse_args()
+    profiler = TrainingThroughputProfiler(
+        model=TinyCausalLM(), device=args.device,
+        dtype=torch.float16 if args.device.startswith("cuda") else torch.float32,
+    )
+    print(json.dumps(profiler.profile_training_step(
+        batch_size=args.batch_size, seq_len=args.seq_len, num_steps=args.steps,
+    ), indent=2))

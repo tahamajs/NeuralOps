@@ -2,6 +2,32 @@
 
 This package serves as the **Single Source of Truth** for all NeuralOps benchmarking routines, kernel profiling, compile-time audits, and cross-seed statistical stress tests.
 
+## Benchmark levels
+
+The package covers the four FLA/TritonBench-style levels:
+
+| Level | Entry points | Coverage |
+|---|---|---|
+| Kernel-level | `ops_registry.py`, `ops_runner.py`, `kernel_benchmark.py` | Correctness-gated CUDA/Triton operators with CUDA-event timings |
+| Module-level | `ops_registry.py` | Registered attention/compressor operations plus `causal_conv1d`, `rmsnorm`, `swiglu`, and fused cross-entropy |
+| Training throughput | `training_throughput.py` | Forward, backward, optimizer step, tokens/sec, and peak VRAM |
+| Generation / evaluation | `generation_speed.py`, `perplexity_eval.py`, `adapters/perplexity.py` | Prefill/decode latency, generation throughput, perplexity, and evaluation latency |
+
+The module and kernel paths use a correctness gate before timing.  Lossy
+compressors are checked for finite output and positive parameter reduction;
+they are not incorrectly compared with `allclose` against the uncompressed
+model.  Attention drift above the normal numerical budget is reported as
+`PASS_HIGH_DIFF` rather than being hidden.
+
+Examples:
+
+```bash
+python -m neuralops.benchmarks run --category all --dynamic \
+  --output results/benchmark_ops.json
+python -m neuralops.benchmarks.generation_speed --model gpt2 --gen-len 32
+python -m neuralops.benchmarks.perplexity_eval --model gpt2 --dataset wikitext2
+```
+
 ## Package Architecture
 
 ```

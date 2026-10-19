@@ -48,6 +48,33 @@ def _act_scale_inputs(spec: dict[str, Any]) -> tuple[tuple[Any, ...], dict[str, 
     return (x, s_inv, weight), {}
 
 
+def _kernel_inputs(name: str) -> TensorFactory:
+    """Return an input factory using the archived CUDA harness contracts."""
+    def factory(spec: dict[str, Any]) -> tuple[tuple[Any, ...], dict[str, Any]]:
+        import torch
+
+        device, dtype = spec["device"], spec["dtype"]
+        if name == "causal_conv1d":
+            return (
+                torch.randn(4, 64, 512, device=device, dtype=dtype) * 0.1,
+                torch.randn(64, 4, device=device, dtype=dtype) * 0.1,
+            ), {}
+        if name == "rmsnorm":
+            return (
+                torch.randn(32, 512, device=device, dtype=dtype) * 0.1,
+                torch.randn(512, device=device, dtype=dtype) * 0.1,
+            ), {}
+        if name == "swiglu":
+            return (torch.randn(32, 512, device=device, dtype=dtype) * 0.1,), {}
+        if name == "fused_cross_entropy":
+            return (
+                torch.randn(2048, 1024, device=device, dtype=dtype) * 0.1,
+                torch.randint(0, 1024, (2048,), device=device, dtype=torch.long),
+            ), {}
+        raise KeyError(name)
+    return factory
+
+
 def _attention_inputs(spec: dict[str, Any]) -> tuple[tuple[Any, ...], dict[str, Any]]:
     import torch
 
@@ -187,6 +214,31 @@ def _register_registry_modules() -> dict[str, OpConfig]:
             tensor_specs={}, ref_func=None,
             unavailable_reason=f"CUDA operator import failed: {exc}",
         )
+
+    cuda_specs = {"device": "cuda", "dtype": "float16"}
+    try:
+        from neuralops.core.cuda_kernels import (
+            causal_conv1d, causal_conv1d_pytorch_ref,
+            rmsnorm, rmsnorm_pytorch_ref,
+            swiglu, swiglu_pytorch_ref,
+            fused_cross_entropy, fused_cross_entropy_pytorch_ref,
+        )
+        for name, fast, ref in (
+            ("causal_conv1d", causal_conv1d, causal_conv1d_pytorch_ref),
+            ("rmsnorm", rmsnorm, rmsnorm_pytorch_ref),
+            ("swiglu", swiglu, swiglu_pytorch_ref),
+            ("fused_cross_entropy", fused_cross_entropy, fused_cross_entropy_pytorch_ref),
+        ):
+            result[f"cuda:{name}"] = OpConfig(
+                name=name, category="cuda", func=fast, tensor_specs=cuda_specs,
+                ref_func=ref, input_factory=_kernel_inputs(name),
+            )
+    except Exception as exc:
+        for name in ("causal_conv1d", "rmsnorm", "swiglu", "fused_cross_entropy"):
+            result[f"cuda:{name}"] = OpConfig(
+                name=name, category="cuda", func=None, tensor_specs={}, ref_func=None,
+                unavailable_reason=f"Kernel import failed: {exc}",
+            )
 
     try:
         from neuralops.core.triton_kernels import fused_norm_linear, fused_norm_linear_pytorch
