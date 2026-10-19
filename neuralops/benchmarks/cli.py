@@ -617,6 +617,7 @@ def handle_run(args: argparse.Namespace) -> None:
             verbose=getattr(args, "verbose", False),
             dynamic=getattr(args, "dynamic", False),
             device=getattr(args, "device", None),
+            parallel_workers=getattr(args, "parallel_workers", 4),
         )
         if any(row["status"] == "FAIL_CORRECTNESS" for row in results):
             raise RuntimeError("Correctness gate failed; timing was not accepted for every requested operation")

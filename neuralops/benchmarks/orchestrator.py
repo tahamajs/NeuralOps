@@ -56,6 +56,7 @@ class BenchmarkOrchestrator:
         dynamic: bool = False,
         timeout_s: float = 180.0,
         device: str | None = None,
+        parallel_workers: int = 6,
     ) -> list[dict[str, Any]]:
         """Run the FLA-style correctness-gated operation registry.
 
@@ -74,6 +75,7 @@ class BenchmarkOrchestrator:
             dynamic=dynamic,
             timeout_s=timeout_s,
             device=device,
+            parallel_workers=parallel_workers,
         )
 
     def __init__(

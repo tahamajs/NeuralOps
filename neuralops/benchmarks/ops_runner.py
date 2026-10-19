@@ -380,7 +380,7 @@ def run_registered_ops(
     *, category: str = "all", modules: str | list[str] | None = None,
     output: str | Path = "results/benchmark_ops.json", verify_only: bool = False,
     verbose: bool = False, dynamic: bool = False, timeout_s: float = 180.0,
-    device: str | None = None,
+    device: str | None = None, parallel_workers: int = 6,
 ) -> list[dict[str, Any]]:
     """Run registered operations in killable subprocesses with checkpointing.
 
@@ -421,99 +421,104 @@ def run_registered_ops(
             logger.warning("Ignoring unreadable checkpoint %s: %s", target, exc)
     completed = {str(row.get("module")) for row in results}
 
+    queue = [name for name in selected if name not in completed]
     for name in selected:
-        if name in completed:
-            if verbose:
-                print(f"[RESUME] {name}", flush=True)
-            continue
-        if dynamic:
-            while True:
-                try:
-                    import psutil
-                    free_ram = psutil.virtual_memory().available
-                except ImportError:
-                    free_ram = 2**63
-                free_vram = 2**63
-                try:
-                    query = subprocess.run(
-                        ["nvidia-smi", "--query-gpu=memory.free", "--format=csv,noheader,nounits"],
-                        capture_output=True, text=True, check=True,
-                    )
-                    free_vram = float(query.stdout.strip().splitlines()[0]) * 1024**2
-                except (OSError, subprocess.SubprocessError, ValueError, IndexError):
-                    pass
-                if free_ram >= 1.5 * 1024**3 and free_vram >= 1000 * 1024**2:
-                    break
-                if verbose:
-                    print(f"PAUSING 4s: RAM={free_ram / 1024**3:.2f}GB VRAM={free_vram / 1024**2:.0f}MB", flush=True)
-                time.sleep(4)
-        worker_fd, worker_name = tempfile.mkstemp(
-            prefix="neuralops_bench_", suffix=".json", dir=target.parent
-        )
-        os.close(worker_fd)
-        worker_path = Path(worker_name)
-        worker_code = (
-            "import sys; "
-            "from neuralops.benchmarks.ops_runner import _run_registered_op_worker; "
-            "_run_registered_op_worker(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])"
-        )
-        proc = subprocess.Popen(
-                [sys.executable, "-c", worker_code, name, str(verify_only), str(worker_path), device or ""],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.PIPE,
-            text=True,
-        )
-        started_at = time.monotonic()
+        if name in completed and verbose:
+            print(f"[RESUME] {name}", flush=True)
+
+    worker_code = (
+        "import sys; "
+        "from neuralops.benchmarks.ops_runner import _run_registered_op_worker; "
+        "_run_registered_op_worker(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])"
+    )
+    active: list[dict[str, Any]] = []
+    max_workers = max(1, min(int(parallel_workers), 6)) if dynamic else 1
+
+    def resource_state() -> tuple[int, float]:
         try:
-            _, stderr = proc.communicate(timeout=max(1.0, timeout_s))
-            if proc.returncode != 0:
-                row = {
-                    "module": name,
-                    "category": "unknown",
-                    "cuda_latency_ms": 0.0,
-                    "pytorch_latency_ms": 0.0,
-                    "speedup": 0.0,
-                    "peak_vram_mb": 0.0,
-                    "max_diff": float("inf"),
-                    "status": "FAIL",
-                    "error_reason": stderr[-2000:] if stderr else f"worker exit {proc.returncode}",
-                }
-            else:
-                row = json.loads(worker_path.read_text(encoding="utf-8"))
-        except subprocess.TimeoutExpired:
+            import psutil
+            ram = float(psutil.virtual_memory().available)
+        except ImportError:
+            ram = float("inf")
+        vram = float("inf")
+        try:
+            query = subprocess.run(
+                ["nvidia-smi", "--query-gpu=memory.free", "--format=csv,noheader,nounits"],
+                capture_output=True, text=True, check=True,
+            )
+            vram = float(query.stdout.strip().splitlines()[0]) * 1024**2
+        except (OSError, subprocess.SubprocessError, ValueError, IndexError):
+            pass
+        return int(ram), vram
+
+    def failure_row(name: str, status: str, reason: str) -> dict[str, Any]:
+        return {
+            "module": name, "category": "unknown", "cuda_latency_ms": 0.0,
+            "pytorch_latency_ms": 0.0, "speedup": 0.0, "peak_vram_mb": 0.0,
+            "max_diff": float("inf"), "status": status, "error_reason": reason,
+        }
+
+    def collect(item: dict[str, Any], timed_out: bool = False) -> None:
+        proc = item["proc"]
+        name = item["name"]
+        path = item["path"]
+        if timed_out:
             proc.kill()
-            _, stderr = proc.communicate(timeout=10)
-            row = {
-                "module": name,
-                "category": "unknown",
-                "cuda_latency_ms": 0.0,
-                "pytorch_latency_ms": 0.0,
-                "speedup": 0.0,
-                "peak_vram_mb": 0.0,
-                "max_diff": float("inf"),
-                "status": "TIMEOUT",
-                "error_reason": f"worker exceeded {timeout_s:.0f}s and was killed",
-            }
-            logger.warning("TIMEOUT %s after %.1fs", name, time.monotonic() - started_at)
-        except (OSError, json.JSONDecodeError) as exc:
-            row = {
-                "module": name,
-                "category": "unknown",
-                "cuda_latency_ms": 0.0,
-                "pytorch_latency_ms": 0.0,
-                "speedup": 0.0,
-                "peak_vram_mb": 0.0,
-                "max_diff": float("inf"),
-                "status": "FAIL",
-                "error_reason": str(exc),
-            }
-        finally:
-            worker_path.unlink(missing_ok=True)
+        _, stderr = proc.communicate()
+        if timed_out:
+            row = failure_row(name, "TIMEOUT", f"worker exceeded {timeout_s:.0f}s and was killed")
+            logger.warning("TIMEOUT %s after %.1fs", name, time.monotonic() - item["started"])
+        elif proc.returncode != 0:
+            row = failure_row(name, "FAIL", stderr[-2000:] if stderr else f"worker exit {proc.returncode}")
+        else:
+            try:
+                row = json.loads(path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError) as exc:
+                row = failure_row(name, "FAIL", str(exc))
+        path.unlink(missing_ok=True)
         results.append(row)
         completed.add(name)
-        if verbose:
-            print(f"[{row['status']}] {name}", flush=True)
         target.write_text(json.dumps(results, indent=2), encoding="utf-8")
+        if verbose:
+            print(f"[{row['status']}] {name} | active={len(active)}", flush=True)
+
+    while queue or active:
+        for item in list(active):
+            proc = item["proc"]
+            if proc.poll() is not None:
+                active.remove(item)
+                collect(item)
+            elif time.monotonic() - item["started"] > timeout_s:
+                active.remove(item)
+                collect(item, timed_out=True)
+
+        free_ram, free_vram = resource_state()
+        while queue and len(active) < max_workers:
+            if dynamic and (free_ram < 2 * 1024**3 or free_vram < 1500 * 1024**2):
+                if verbose:
+                    print(
+                        f"PAUSING 0.1s: RAM={free_ram / 1024**3:.2f}GB "
+                        f"VRAM={free_vram / 1024**2:.0f}MB Active={len(active)}",
+                        flush=True,
+                    )
+                break
+            name = queue.pop(0)
+            worker_fd, worker_name = tempfile.mkstemp(
+                prefix="neuralops_bench_", suffix=".json", dir=target.parent
+            )
+            os.close(worker_fd)
+            worker_path = Path(worker_name)
+            proc = subprocess.Popen(
+                [sys.executable, "-c", worker_code, name, str(verify_only), str(worker_path), device or ""],
+                stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True,
+            )
+            active.append({"name": name, "proc": proc, "path": worker_path, "started": time.monotonic()})
+            if verbose:
+                print(f"STARTED {name} | active={len(active)}/{max_workers}", flush=True)
+            # Refresh admission data before attempting to start another child.
+            free_ram, free_vram = resource_state()
+        if active or queue:
+            time.sleep(0.1)
     return results
 
 
@@ -566,6 +571,7 @@ def _run_registered_op_worker(op_name: str, verify_only: str, output_path: str, 
             ref = _tensor_output(config.ref_func(*args, **kwargs))
             diff = float((fast.float() - ref.float()).abs().max().item())
             ratio = ref_ms / fast_ms if fast_ms > 0 else 0.0
+            fallback_only = bool(config.tensor_specs.get("fallback_only"))
             row.update(
                 cuda_latency_ms=fast_ms,
                 pytorch_latency_ms=ref_ms,
@@ -576,10 +582,11 @@ def _run_registered_op_worker(op_name: str, verify_only: str, output_path: str, 
                 ),
                 max_diff=diff,
                 status=(
-                    "PASS_HIGH_DIFF" if config.category == "attention" and 1e-2 < diff < 0.25
+                    "PASS_REFERENCE_FALLBACK" if fallback_only
+                    else "PASS_HIGH_DIFF" if config.category == "attention" and 1e-2 < diff < 0.25
                     else "PASS_FAST" if ratio >= 1.05 else "PASS_SLOW"
                 ),
-                error_reason=None,
+                error_reason=(config.tensor_specs.get("fallback_reason") if fallback_only else None),
             )
     Path(output_path).write_text(json.dumps(row), encoding="utf-8")
 

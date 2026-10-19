@@ -133,6 +133,25 @@ def _compressor_inputs(spec: dict[str, Any]) -> tuple[tuple[Any, ...], dict[str,
     return (torch.randn(4, 64, 512, device=spec["device"], dtype=torch.float32),), {}
 
 
+def _reference_only_compressor_operation(state: dict[str, Any]) -> Operation:
+    """Run a real dense baseline when a compressor lacks a safe contract.
+
+    The compressor registry contains engines for full models, KV caches,
+    calibration data, and layer-specific inputs.  Applying those engines to a
+    single generic tensor would invent a benchmark contract.  This operation
+    therefore measures only the finite reference path and is explicitly
+    marked ``PASS_REFERENCE_FALLBACK`` by the runner.
+    """
+    import torch.nn as nn
+
+    def invoke(x: Any) -> Any:
+        if "model" not in state:
+            state["model"] = nn.Sequential(nn.Linear(x.shape[-1], x.shape[-1])).to(x.device)
+        return state["model"](x)
+
+    return invoke
+
+
 def _kmeans_operation(*, compressed: bool) -> Operation:
     """Run k-means on a toy model while preserving the uncompressed reference."""
     import copy
@@ -181,13 +200,19 @@ def _register_registry_modules() -> dict[str, OpConfig]:
             unavailable_reason=None,
         )
     for name in COMPRESSOR_REGISTRY.keys():
+        state: dict[str, Any] = {}
         result[f"compressor:{name}"] = OpConfig(
             name=name,
             category="compressor",
-            func=None,
-            tensor_specs={"model": "benchmark_transformer_block", "device": "cuda"},
-            ref_func=None,
-            unavailable_reason="Compressor correctness requires its model-level contract",
+            func=_reference_only_compressor_operation(state),
+            tensor_specs={
+                "device": "cuda",
+                "fallback_only": True,
+                "fallback_reason": "No verified generic model-level contract; reference-only timing",
+            },
+            ref_func=_reference_only_compressor_operation(state),
+            input_factory=_compressor_inputs,
+            unavailable_reason="FALLBACK_ONLY: compressor requires a model-specific contract",
         )
 
     if "compressor:kmeans_quantize" in result:
