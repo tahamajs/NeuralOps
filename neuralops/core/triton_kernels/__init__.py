@@ -512,9 +512,6 @@ from neuralops.core.triton_kernels import cur_linear
 from neuralops.core.triton_kernels import varlen_attention
 from neuralops.core.triton_kernels import hardware_profile
 from neuralops.core.triton_kernels import op_registry
-from neuralops.core.triton_kernels import fused_ce as fused_ce_module
-from neuralops.core.triton_kernels import fused_kd as fused_kd_module
-from neuralops.core.triton_kernels import fused_norm_linear as fused_norm_linear_module
 
 # Root Bridge Modules
 from neuralops.core.triton_linear_attn import fast_linear_attention, LinearAttentionTriton

@@ -7,7 +7,7 @@ Author: Taha Majlesi
 """
 
 import logging
-from typing import Any, Callable, Dict, Optional, Tuple
+from typing import Any, Callable, Optional, Tuple
 import torch
 import torch.nn.functional as F
 
@@ -25,7 +25,6 @@ from neuralops.core.triton_kernels._types import (
     SUPPORTED_HEAD_DIMS,
     check_triton_suitability,
 )
-from neuralops.core.triton_kernels.autotuner import Autotuner, autotune_kernel
 
 logger = logging.getLogger("NeuralOps.OpRegistry")
 

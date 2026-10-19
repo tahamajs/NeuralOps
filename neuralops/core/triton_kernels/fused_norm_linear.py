@@ -312,12 +312,6 @@ if HAS_TRITON and tl is not None:
 
         num_k_blocks = tl.cdiv(K, BLOCK_K)
         for k_idx in range(0, num_k_blocks):
-            offs_k = k_idx * BLOCK_K + tl.arange(0, BLOCK_K)
-            mask_k = offs_k < K
-
-            x_ptrs = x_ptr + offs_m[:, None] * stride_xm + offs_k[None, :] * stride_xk
-            x_tile = tl.load(x_ptrs, mask=mask_m[:, None] & mask_k[None, :], other=0.0)
-
             offs_k_packed = (k_idx * (BLOCK_K // 2)) + tl.arange(0, BLOCK_K // 2)
             mask_k_packed = offs_k_packed < (K // 2)
 

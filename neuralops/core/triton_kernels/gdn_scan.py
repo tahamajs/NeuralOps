@@ -812,26 +812,6 @@ def gdn_scan_pytorch(
         return out, S.to(dtype)
     return out
 
-
-
-def _delta_chunk_forward_boundary(S, q_c, k_c, v_c, beta_c, alpha_c):
-    """Fast unrolled chunk step to compute chunk end boundary state."""
-    C = q_c.shape[2]
-    curr = S
-    for t in range(C):
-        kt = k_c[:, :, t : t + 1, :].float()
-        vt = v_c[:, :, t : t + 1, :].float()
-        bt = beta_c[:, :, t : t + 1].unsqueeze(-1).float()
-        at = alpha_c[:, :, t : t + 1].unsqueeze(-1).float()
-
-        inter_v = torch.matmul(kt, curr)
-        err = vt - inter_v
-        norm_k_sq = (kt * kt).sum(dim=-1, keepdim=True)
-        step = at / (1.0 + norm_k_sq).clamp_min(1.0)
-        curr = bt * curr + step * torch.matmul(kt.transpose(-1, -2), err)
-    return curr
-
-
 def _gdn_chunked_checkpoint_scan(q, k, v, beta, alpha, chunk_size=64):
     """
     Chunk-level gradient checkpointing for Gated DeltaNet scan.
