@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Neural Architecture Introspection
 
 Structural inspection utilities analyzing transformer layer topologies, blocks, and attention dimensions.
-
-Author: Taha Majlesi
 """
 
 import logging
@@ -43,13 +47,10 @@ def detect_architecture(model: nn.Module) -> str:
 
 def get_transformer_layers(model: nn.Module) -> list[nn.Module]:
     """Return a flat list of transformer blocks."""
-    # Llama / Gemma / Phi / Mistral / Falcon
     if hasattr(model, "model") and hasattr(model.model, "layers"):
         return list(model.model.layers)
-    # GPT‑2 / OPT / GPT‑J
     if hasattr(model, "transformer") and hasattr(model.transformer, "h"):
         return list(model.transformer.h)
-    # BERT / RoBERTa / DistilBert / ALBERT
     if hasattr(model, "encoder") and hasattr(model.encoder, "layer"):
         return list(model.encoder.layer)
     if hasattr(model, "bert") and hasattr(model.bert, "encoder"):
@@ -58,7 +59,6 @@ def get_transformer_layers(model: nn.Module) -> list[nn.Module]:
         return list(model.roberta.encoder.layer)
     if hasattr(model, "distilbert") and hasattr(model.distilbert, "transformer"):
         return list(model.distilbert.transformer.layer)
-    # T5 encoder / decoder
     if hasattr(model, "encoder") and hasattr(model.encoder, "block"):
         return list(model.encoder.block)
     if hasattr(model, "decoder") and hasattr(model.decoder, "block"):
@@ -93,7 +93,6 @@ def get_attention_modules(model: nn.Module) -> list[tuple[str, nn.Module]]:
         if is_output_submodule:
             continue
 
-        # Heuristic 1: Module class name indicates attention or linear-recurrent block
         if any(
             x in class_name
             for x in [
@@ -110,7 +109,6 @@ def get_attention_modules(model: nn.Module) -> list[tuple[str, nn.Module]]:
             seen_names.add(name)
             continue
 
-        # Heuristic 2: Attribute-based detection (modules holding projections)
         if (
             hasattr(module, "q_proj")
             or hasattr(module, "k_proj")
@@ -119,14 +117,10 @@ def get_attention_modules(model: nn.Module) -> list[tuple[str, nn.Module]]:
             or hasattr(module, "c_attn")
             or hasattr(module, "qk_proj")
         ):
-            # Avoid leaf nn.Linear layers that might happen to match attributes
             if not isinstance(module, (nn.Linear, nn.LayerNorm, nn.Dropout, nn.Embedding)):
                 raw_candidates.append((name, module))
                 seen_names.add(name)
 
-    # Apply strict path-prefix deduplication:
-    # If module A's path is a strict prefix of module B's path (e.g. A="...attention", B="...attention.self"),
-    # A is an outer container holding B. We keep only the deepest/leaf modules (B) and drop A.
     all_cand_names = [name for name, _ in raw_candidates]
     leaf_modules: list[tuple[str, nn.Module]] = []
 
@@ -135,7 +129,6 @@ def get_attention_modules(model: nn.Module) -> list[tuple[str, nn.Module]]:
         if not is_parent:
             leaf_modules.append((name, module))
 
-    # Expected count sanity validation based on model configuration
     cfg = getattr(model, "config", None)
     if cfg is not None:
         enc_layers = getattr(

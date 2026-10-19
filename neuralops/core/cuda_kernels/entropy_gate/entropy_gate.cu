@@ -1,12 +1,16 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
 #include <c10/util/Optional.h>
 #include "_common.cuh"
 
-// Fused Spectral Entropy SVD Dynamic Gate Forward:
-// Dispatched via hardware Tensor-Core cuBLAS GEMM for SM 8.9 (RTX 4070) with 128-bit vectorization.
-// X: [..., K], V: [R_MAX, K] or [K, R_MAX], U: [eff_r, N] or [N, eff_r], s_weights: [eff_r], bias: [N]
 torch::Tensor spectral_entropy_svd_gate_fwd(
     const torch::Tensor& x,
     const torch::Tensor& v_r,
@@ -36,15 +40,14 @@ torch::Tensor spectral_entropy_svd_gate_fwd(
     }
     const int64_t N = U.size(1);
 
-    auto V_sub = V.slice(0, 0, eff_r); // [eff_r, K]
-    auto U_sub = U.slice(0, 0, eff_r); // [eff_r, N]
+    auto V_sub = V.slice(0, 0, eff_r);
+    auto U_sub = U.slice(0, 0, eff_r);
 
     auto orig_dtype = x.scalar_type();
     auto x_f32 = (orig_dtype != torch::kFloat32) ? x_2d.to(torch::kFloat32) : x_2d;
     auto V_f32 = (orig_dtype != torch::kFloat32) ? V_sub.to(torch::kFloat32) : V_sub;
     auto U_f32 = (orig_dtype != torch::kFloat32) ? U_sub.to(torch::kFloat32) : U_sub;
 
-    // Fast cuBLAS GEMM with FP32 accumulation: z = X @ V_sub.T -> [M, eff_r]
     auto z = at::matmul(x_f32, V_f32.t());
 
     if (s_weights.has_value() && s_weights.value().defined()) {
@@ -52,7 +55,6 @@ torch::Tensor spectral_entropy_svd_gate_fwd(
         z = z * sw;
     }
 
-    // Fast cuBLAS GEMM with FP32 accumulation: y = z @ U_sub -> [M, N]
     auto y = at::matmul(z, U_f32);
 
     if (bias.has_value() && bias.value().defined()) {

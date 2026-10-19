@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Benchmark Record Parsers
 
 Parsers and schema normalizers converting raw benchmark outputs into unified analysis records.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -30,7 +34,6 @@ def load_all_csv_records() -> Dict[str, Dict[str, List[Dict[str, Any]]]]:
     all_csvs += glob.glob(str(PROJECT_ROOT / "results/*.csv"))
     all_csvs = sorted(list(set(all_csvs)))
 
-    # Map: lower_name -> dict(dataset -> list of rows)
     data: Dict[str, Dict[str, List[Dict[str, Any]]]] = defaultdict(lambda: defaultdict(list))
 
     for p in all_csvs:
@@ -101,7 +104,6 @@ def resolve_code_path(mod_name: str) -> Path:
         if c.exists():
             return c
 
-    # Check inside paper folder for python file
     p_files = glob.glob(str(PAPERS_DIR / mod_name / "*.py"))
     p_files = [f for f in p_files if not Path(f).name.startswith(("build", "apply_vars", "test"))]
     if p_files:

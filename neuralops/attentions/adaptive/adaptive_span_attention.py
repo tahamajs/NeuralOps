@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Adaptive Span Attention
 
 Dynamically adjusts per-head attention context spans to optimize memory and long-range dependencies.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations

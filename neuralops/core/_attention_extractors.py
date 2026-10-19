@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Attention Feature Extractors
 
 Extractors for retrieving Q, K, V projections and attention matrices from arbitrary transformer layers.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -36,7 +40,6 @@ def _resolve_class_name(inject_fn: Any, model_type: str = "") -> str:
     name = getattr(inject_fn, "__name__", "")
     if name in INJECT_TO_CLASS_MAP:
         return INJECT_TO_CLASS_MAP[name]
-    # Fallback: strip 'inject_' and append '_class'
     if name.startswith("inject_"):
         candidate = name[len("inject_") :] + "_class"
         if ATTENTION_REGISTRY.get(candidate) is not None:
@@ -71,7 +74,6 @@ def _infer_hidden_size(old_attn: nn.Module, attn_attr: str = "", model_type: str
             if model_type == "gpt2" or obj.__class__.__name__ == "Conv1D":
                 return int(w.shape[0])
             return int(w.shape[1])
-    # Also try nested attention.self.query
     if hasattr(old_attn, "self") and hasattr(old_attn.self, "query"):
         return int(old_attn.self.query.in_features)
     raise ValueError(
@@ -85,14 +87,12 @@ def _infer_num_heads(old_attn: nn.Module, attn_attr: str = "", model_type: str =
         val = getattr(old_attn, attr, None)
         if isinstance(val, int) and val > 0:
             return val
-    # Check config attached to old_attn
     cfg = getattr(old_attn, "config", None)
     if cfg is not None:
         for attr in ("num_attention_heads", "num_heads", "n_heads"):
             val = getattr(cfg, attr, None)
             if isinstance(val, int) and val > 0:
                 return val
-    # Infer from q_proj and head_dim (Qwen, LLaMA)
     if hasattr(old_attn, "q_proj") and hasattr(old_attn, "head_dim"):
         q_proj = old_attn.q_proj
         if hasattr(q_proj, "out_features") and old_attn.head_dim > 0:

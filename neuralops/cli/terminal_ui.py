@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 CLI Terminal UI
 
 Provides rich terminal dashboards, progress bars, and formatted tables for CLI tools.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -93,7 +97,6 @@ HELP_TOPICS = {
     "quickstart": """# NeuralOps Quickstart Guide
 NeuralOps is a modular, high-performance library for Subquadratic Attention and Deep SVD Compression.
 
-### Basic Workflow
 1. **Explore Modules**: `neuralops list --type attention --supports causal`
 2. **Compress a Model**: `neuralops compress --model gpt2 --method hadamard_incoherent_svd --rank 32`
 3. **Run Speculative Generation**: `neuralops generate --model gpt2 --prompt "NeuralOps is" --draft-k 4`
@@ -171,7 +174,6 @@ def print_hf_style_help() -> None:
         console.print(table)
         console.print()
 
-    # Examples & hints footer
     examples = (
         "[bold green]$[/bold green] neuralops compress --model gpt2 --method hadamard_incoherent_svd --rank 32\n"
         "[bold green]$[/bold green] neuralops generate --model gpt2 --prompt 'NeuralOps accelerates' --draft-k 4\n"
@@ -303,7 +305,6 @@ def run_interactive_ui(inspect_target: Optional[str] = None, snapshot: bool = Fa
     """Minimalist, flat UNIX-style terminal inspector and interactive control center."""
     from neuralops.core.inspector import inspect_architecture, render_architecture_card
 
-    # Snapshot Mode (Flat, high-density two-pane rendering to stdout for CI/terminal logs)
     if snapshot:
         import torch
         dev_name = torch.cuda.get_device_name(0) if torch.cuda.is_available() else "CPU Host"
@@ -316,13 +317,11 @@ def run_interactive_ui(inspect_target: Optional[str] = None, snapshot: bool = Fa
             print(f"[-] Could not inspect '{target}': {e}")
             return
 
-        # Collect compact module list for the left pane
         from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
         all_attns = list(ATTENTION_REGISTRY.keys())
         all_comps = list(COMPRESSOR_REGISTRY.keys())
         all_modules = all_attns + all_comps
 
-        # Center target in left pane
         target_idx = all_modules.index(target) if target in all_modules else 0
         left_pane_width = 34
         right_pane_width = 80
@@ -339,7 +338,6 @@ def run_interactive_ui(inspect_target: Optional[str] = None, snapshot: bool = Fa
         print("─" * (left_pane_width + 2) + "┼─" + "─" * right_pane_width)
 
         for row_idx in range(total_rows):
-            # Left pane entry
             if row_idx < len(visible_modules):
                 m_name = visible_modules[row_idx]
                 prefix = "> " if m_name == target else "  "
@@ -349,7 +347,6 @@ def run_interactive_ui(inspect_target: Optional[str] = None, snapshot: bool = Fa
                 left_entry = ""
             left_str = f"  {left_entry:<{left_pane_width}}"
 
-            # Right pane line
             right_entry = card_lines[row_idx] if row_idx < len(card_lines) else ""
             right_str = right_entry[:right_pane_width]
 
@@ -358,7 +355,6 @@ def run_interactive_ui(inspect_target: Optional[str] = None, snapshot: bool = Fa
         print("=" * w)
         return
 
-    # Direct Module Inspection Mode without snapshot (prints standalone spec sheet for piping)
     if inspect_target:
         try:
             spec = inspect_architecture(inspect_target)
@@ -409,7 +405,6 @@ def run_interactive_ui(inspect_target: Optional[str] = None, snapshot: bool = Fa
             table.add_column("GQA", justify="center")
             table.add_column("RoPE", justify="center")
 
-            # Load fast from static catalog if available
             import json
             attns = []
             if CATALOG_PATH.exists():

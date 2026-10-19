@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Configuration Loader
 
 Hierarchical configuration parser supporting YAML specifications, CLI overrides, and validation.
-
-Author: Taha Majlesi
 """
 
 import argparse
@@ -60,5 +64,4 @@ def load_config(
     if cli_args:
         cfg_dict = merge_cli_args(cfg_dict, cli_args)
 
-    # Convert the flat dict to nested Config using the top‑level Config dataclass
     return _dict_to_dataclass(Config, cfg_dict)

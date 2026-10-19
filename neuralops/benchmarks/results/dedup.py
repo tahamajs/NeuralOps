@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Intelligent run deduplication and O(1) index management
 
 Implements dedup functionality for NeuralOps.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -63,7 +67,6 @@ class Deduplicator:
         if status != "success":
             return False, f"previous run failed ({status}), allowing retry"
 
-        # Check timestamp age
         ts_str = entry.get("timestamp")
         if ts_str and self.rerun_after_days > 0:
             try:

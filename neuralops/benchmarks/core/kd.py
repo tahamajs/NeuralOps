@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Knowledge Distillation (KD) loss functions, training step, and cache utilities
 
 Implements kd functionality for NeuralOps.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -56,8 +60,6 @@ class KDLoss(nn.Module):
         from neuralops.core.triton_kernels.fused_ce import fused_linear_cross_entropy
         from neuralops.core.triton_kernels.fused_kd import fused_linear_kl_divergence
 
-        # If hidden states and head weights are provided, execute fused linear KD & CE directly
-        # preventing multi-gigabyte logits materialization in HBM!
         if (
             self.use_fused_linear
             and student_hidden is not None
@@ -87,13 +89,11 @@ class KDLoss(nn.Module):
                 return self.alpha * task_loss + (1.0 - self.alpha) * distill_loss
             return distill_loss
 
-        # Standard logits fallback path
         if student_logits is None or teacher_logits is None:
             raise ValueError(
                 "Either (student_logits, teacher_logits) or (student_hidden, student_weight, teacher_hidden, teacher_weight) must be provided."
             )
 
-        # Numerical stabilization for SSM/Recurrent activations in FP16/AMP
         student_logits_stable = torch.nan_to_num(student_logits.float(), nan=0.0, posinf=50.0, neginf=-50.0)
         teacher_logits_stable = torch.nan_to_num(teacher_logits.float(), nan=0.0, posinf=50.0, neginf=-50.0)
 
@@ -174,7 +174,6 @@ def kd_train_step(
                 t_logits = teacher_outputs.logits
             student_outputs = _call_model(student)
             
-            # Check if models support extracting final hidden states and lm_head weight for fused loss
             s_head = getattr(student, "lm_head", None)
             t_head = getattr(teacher, "lm_head", None)
             if (

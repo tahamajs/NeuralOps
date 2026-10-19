@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Automatic Mixed Precision Utilities
 
 Hardware-aware mixed precision helpers detecting GPU capability and managing optimal precision contexts.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -58,11 +62,11 @@ def maybe_half(x: torch.Tensor) -> torch.Tensor:
     cap = torch.cuda.get_device_capability(0)
     major = cap[0]
     if major >= 8:
-        return x  # Ada/Ampere → let autocast handle bf16
+        return x
     elif major >= 7:
         return x.half() if x.dtype == torch.float32 else x
     else:
-        return x  # Pascal → keep FP32
+        return x
 
 
 def amp_context(device_type: str = "cuda"):

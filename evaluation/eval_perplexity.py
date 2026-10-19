@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Evaluate Module Perplexity (WikiText-2) on GPT-2.
 
@@ -14,8 +20,6 @@ Production-hardened to produce results strictly comparable to run_gpt2_sweep.py:
   9. Standard python logging replacing raw print()
   10. Saves per-window NLLs to JSON for downstream variance analysis
   11. Robust CPU fallback reducing seq_len if CUDA OOM occurs
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -34,7 +38,6 @@ import torch.nn as nn
 from datasets import load_dataset
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-# Framework paths
 HERE = Path(__file__).resolve().parent
 CODES = HERE.parent
 ROOT = CODES.parent
@@ -240,7 +243,6 @@ def evaluate_module_ppl(
 
     total_params_before = sum(p.numel() for p in model.parameters())
 
-    # Load datasets
     try:
         ds_test = load_dataset("Salesforce/wikitext", dataset_name, split=split)
     except Exception:
@@ -254,14 +256,12 @@ def evaluate_module_ppl(
     is_baseline = module_name.lower() in ("none", "baseline", "full")
 
     if not is_baseline:
-        # Build calibration loader
         logger.info("Building calibration dataset for %s...", module_name)
         calib_loader = build_calibration_loader(
             ds_train, tokenizer, num_samples=500, batch_size=4, max_length=128
         )
         first_batch = calib_loader[0]["input_ids"].to(device_str)
 
-        # Explicit registry lookup
         if module_name in ATTENTION_REGISTRY:
             mod_type = "attention"
         elif module_name in COMPRESSOR_REGISTRY:

@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -7,10 +14,6 @@
 namespace neuralops {
 namespace cuda {
 
-// Fast constant memory LUT for branchless single-cycle FP4 E2M1 decoding
-// Format: sign (1b), exp (2b), mant (1b)
-// Indices 0..7: [0, 0.5, 1.0, 1.5, 2.0, 3.0, 4.0, 6.0]
-// Indices 8..15: [-0, -0.5, -1.0, -1.5, -2.0, -3.0, -4.0, -6.0]
 __device__ __constant__ float c_fp4_lut[16] = {
     0.0f, 0.5f, 1.0f, 1.5f, 2.0f, 3.0f, 4.0f, 6.0f,
     -0.0f, -0.5f, -1.0f, -1.5f, -2.0f, -3.0f, -4.0f, -6.0f
@@ -20,9 +23,6 @@ __device__ __forceinline__ float decode_fp4_fast(const uint8_t nibble) {
     return c_fp4_lut[nibble & 0x0F];
 }
 
-// 2D Block-Tiled FP4 GEMM Kernel:
-// BLOCK_M = 16, BLOCK_N = 32, BLOCK_K = 32 (16 bytes packed)
-// Cooperatively loads X into __shared__ s_X via 128-bit float4 loads.
 template <typename scalar_t>
 __global__ void __launch_bounds__(256) fp4_gemm_fwd_kernel(
     scalar_t* __restrict__ out,
@@ -61,7 +61,6 @@ __global__ void __launch_bounds__(256) fp4_gemm_fwd_kernel(
     for (int t = 0; t < num_k_tiles; ++t) {
         const int k_start = t * BK;
 
-        // 256 threads load 512 elements into s_X (2 elements per thread)
         const int load_idx0 = tid;
         const int load_idx1 = tid + 256;
 
@@ -83,7 +82,6 @@ __global__ void __launch_bounds__(256) fp4_gemm_fwd_kernel(
 
         __syncthreads();
 
-        // Each column evaluates 16 packed bytes (32 weights)
         if (col < N) {
             #pragma unroll 8
             for (int kp = 0; kp < BK / 2; ++kp) {
@@ -201,8 +199,8 @@ __global__ void __launch_bounds__(256) fp4_gemm_bwd_scales_bias_kernel(
     }
 }
 
-} // namespace cuda
-} // namespace neuralops
+}
+}
 
 
 torch::Tensor fp4_gemm_fwd(

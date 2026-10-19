@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -5,17 +12,6 @@
 
 namespace neuralops { namespace cuda {
 
-// Goldfinch AHN (Associative Hopfield Network) Kernel:
-// Form: pred_t = k_t \cdot s_{t-1}
-//       err_t = v_t - pred_t
-//       s_t = s_{t-1} + \beta_t \cdot k_t \cdot err_t
-//       out_t = q_t \cdot s_t
-//
-// Hardware-level optimization:
-// 1. Decoupled 2D Grid: dim3 grid(ceil(D / 128), B * H) with 128 threads/block.
-// 2. Strict FP32 intermediate register accumulation.
-// 3. Loop unrolling: 4-way unroll over sequence length N.
-// 4. Eliminates threads = D anti-pattern.
 template <typename scalar_t>
 __global__ void __launch_bounds__(128) goldfinch_ahn_fwd_kernel(
     scalar_t* __restrict__ out,
@@ -54,7 +50,7 @@ __global__ void __launch_bounds__(128) goldfinch_ahn_fwd_kernel(
     }
 }
 
-}} // namespace neuralops::cuda
+}}
 
 torch::Tensor goldfinch_ahn_fwd(
     const torch::Tensor& q,

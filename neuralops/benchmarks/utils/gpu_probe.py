@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 gpu_live_probe.py
 
 Executed on the GPU server to return real-time GPU telemetry, active running process, live training loss trajectory, and log streams in JSON format.
-
-Author: Taha Majlesi
 """
 
 import argparse

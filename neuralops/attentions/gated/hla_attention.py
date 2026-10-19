@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Hadamard Linear Attention (HLA)
 
 Hadamard linear attention utilizing element-wise kernel factorizations for linear-time self-attention.
-
-Author: Taha Majlesi
 """
 
 from neuralops.core.attention_utils import (
@@ -501,7 +505,6 @@ class HLAAttention(BaseAttention):
             y = y_num / y_den
             return y.to(q.dtype), (S_curr, Z_curr)
 
-        # ---- Accelerated 3-Tier Hardware Dispatch (CUDA C++ -> Triton JIT -> PyTorch Ref) ----
         if initial_state is None and q.is_cuda and not reverse:
             try:
                 from neuralops.core.cuda_kernels.hla_attention import hla_attention

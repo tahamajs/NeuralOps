@@ -1,7 +1,6 @@
 #!/bin/bash
 # Full 232-module benchmark. Run on GPU server only.
 #
-# Author: Taha Majlesi
 set -e
 
 OUT_DIR="results/full_232_$(date +%Y%m%d_%H%M%S)"

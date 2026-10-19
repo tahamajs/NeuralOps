@@ -1,5 +1,9 @@
-# -*- coding: utf-8 -*-
-# Author: Taha Majlesi
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Evaluation artifact generation and summary reporting.
 
 Handles persistence of benchmark run artifacts (result.json, run directory metadata),
@@ -91,7 +95,6 @@ def save_benchmark_artifacts(
             json.dumps(full_result_json, indent=2), encoding="utf-8"
         )
 
-        # Append to consolidated summary.csv and summary.md
         summary_dir = base_dir
         summary_dir.mkdir(parents=True, exist_ok=True)
         csv_file = summary_dir / "summary.csv"
@@ -153,7 +156,6 @@ def save_benchmark_artifacts(
                     with open(md_file, "a", encoding="utf-8") as f:
                         f.write(md_line)
         except ImportError:
-            # Fallback if filelock is absent
             if not csv_file.exists():
                 csv_file.write_text(csv_header + row, encoding="utf-8")
             else:

@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Attention Adaptation Utilities
 
 Centralized helpers for attention module instantiation, tensor transformation, and weight adaptation.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -207,7 +211,6 @@ def apply_rotary_pos_emb(
         cos_q = cos[..., :L, :]
         sin_q = sin[..., :L, :]
     else:
-        # If cos/sin is shorter than sequence length L, repeat/pad to L
         repeats = (L + S - 1) // S
         cos_q = cos.repeat(1, 1, repeats, 1)[..., :L, :]
         sin_q = sin.repeat(1, 1, repeats, 1)[..., :L, :]

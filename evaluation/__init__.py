@@ -1,6 +1,10 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Evaluation module for model performance, fairness, robustness, label quality, and A/B testing.
-
-Author: Taha Majlesi
 """
 
 from neuralops.trainer import metrics
@@ -69,7 +73,6 @@ __all__ = [
     "EvaluationReport",
 ]
 
-# Auto-wired package members
 from evaluation import ab_testing
 from evaluation import eval_all_models_datasets
 from evaluation import eval_data

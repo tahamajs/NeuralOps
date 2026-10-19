@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -6,10 +13,6 @@
 namespace neuralops {
 namespace cuda {
 
-// Channel Shuffle forward: x: [B, C, L] where C = G * Channels_per_group
-// Transposes [B, G, Cg, L] -> [B, Cg, G, L] -> [B, C, L]
-// Employs 128-bit uint4 vectorized memory loads & stores with padded shared memory stages (+8)
-// to eliminate shared memory bank conflicts on Ada Lovelace SM 8.9.
 
 template <typename scalar_t>
 __launch_bounds__(256)
@@ -41,12 +44,10 @@ __global__ void channel_shuffle_fwd_vectorized_kernel(
         const int src_idx = b * (G * Cg * L) + g * (Cg * L) + cg * L + l;
         const int dst_idx = b * (Cg * G * L) + cg * (G * L) + g * L + l;
 
-        // 128-bit uint4 load and store directly through registers
         const uint4 in4 = *reinterpret_cast<const uint4*>(reinterpret_cast<const char*>(x + src_idx));
         *reinterpret_cast<uint4*>(reinterpret_cast<char*>(out + dst_idx)) = in4;
     }
 
-    // Remainder for non-multiple of ELEMS_PER_VEC
     const int rem_L = L % ELEMS_PER_VEC;
     if (rem_L > 0) {
         const int total_rem = B * G * Cg * rem_L;
@@ -67,8 +68,8 @@ __global__ void channel_shuffle_fwd_vectorized_kernel(
     }
 }
 
-} // namespace cuda
-} // namespace neuralops
+}
+}
 
 torch::Tensor channel_shuffle_fwd(
     const torch::Tensor& x,

@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Optional Hugging Face Hub synchronization with token security and rate limiting
 
 Implements hf sync functionality for NeuralOps.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -18,7 +22,6 @@ from neuralops.benchmarks.results.schema import BenchmarkResult
 
 LOG = logging.getLogger(__name__)
 
-# Regex pattern scanning for leaked secrets before upload
 SECRET_PATTERNS = [
     re.compile(r"hf_[A-Za-z0-9]{34,}"),
     re.compile(r"sk-[A-Za-z0-9]{32,}"),
@@ -77,12 +80,10 @@ tags:
 - compression
 ---
 
-# NeuralOps Benchmark Results Hub: `{repo_id}`
 
 This repository contains automated benchmark evaluation results, Pareto-frontier efficiency sweeps,
 and accuracy measurements across **232 Attention and Compressor modules**.
 
-## Directory Layout
 ```
 {repo_id}/
 ├── README.md
@@ -99,7 +100,6 @@ and accuracy measurements across **232 Attention and Compressor modules**.
     └── leaderboards.md
 ```
 
-## Reproducibility
 Every JSON artifact inside `runs/` contains complete environment metadata, hyperparameters, and reproduction CLI scripts.
 """
 
@@ -126,13 +126,11 @@ Every JSON artifact inside `runs/` contains complete environment metadata, hyper
                 from huggingface_hub import HfApi
                 client = HfApi(token=self.token)
 
-            # Ensure repo exists
             try:
                 client.create_repo(repo_id=repo_id, repo_type="dataset", private=self.private, exist_ok=True)
             except Exception as e:
                 LOG.debug("create_repo notification: %s", e)
 
-            # Upload JSON result
             json_file = saved_files.get("json")
             if json_file and json_file.exists() and self.scan_for_secrets(json_file):
                 dest_path = f"runs/{json_file.name}"
@@ -143,7 +141,6 @@ Every JSON artifact inside `runs/` contains complete environment metadata, hyper
                     repo_type="dataset",
                 )
 
-            # Update push_info on result
             result.push_info.pushed_to_hf = True
             result.push_info.hf_repo_id = repo_id
             result.push_info.hf_commit_hash = "committed"

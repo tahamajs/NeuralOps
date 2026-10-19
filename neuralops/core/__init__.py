@@ -1,7 +1,11 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 NeuralOps Core Core Modules.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -12,7 +16,6 @@ from typing import Any
 
 logger = logging.getLogger(__name__)
 
-# Map symbol names to their module filename within framework.core
 _MODULE_MAP: dict[str, str] = {
     "ADAPTER_MAP": "adapters",
     "get_adapter": "adapters",
@@ -97,7 +100,6 @@ def __getattr__(name: str) -> Any:
         except Exception as e:
             logger.error("Failed to lazily load %s from neuralops.core.%s: %s", name, mod_name, e)
             raise
-    # Submodule lookup fallback
     try:
         module = importlib.import_module(f"neuralops.core.{name}")
         globals()[name] = module
@@ -109,7 +111,6 @@ def __getattr__(name: str) -> Any:
 
 __all__ = list(_MODULE_MAP.keys())
 
-# Auto-wired package members
 from neuralops.core import autograd
 from neuralops.core import triton_kernels
 from neuralops.core import utils

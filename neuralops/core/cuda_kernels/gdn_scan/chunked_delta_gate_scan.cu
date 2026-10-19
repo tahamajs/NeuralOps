@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -6,11 +13,6 @@
 namespace neuralops {
 namespace cuda {
 
-// Chunked Delta-Gate Recurrent Scan Kernel
-// q: [B, H, L, D_K], k: [B, H, L, D_K], v: [B, H, L, D_V]
-// alpha: [B, H, L], beta: [B, H, L]
-// out: [B, H, L, D_V]
-// Recurrence: S = alpha_t * S; pred_v = S @ k_t; v_corr = v_t - pred_v; S += beta_t * outer(v_corr, k_t); y_t = S @ q_t
 template <typename scalar_t, int MAX_DK, int MAX_DV>
 __launch_bounds__(64)
 __global__ void chunked_delta_gate_scan_fwd_kernel(
@@ -33,13 +35,11 @@ __global__ void chunked_delta_gate_scan_fwd_kernel(
     const int tid = threadIdx.x;
     const int num_threads = blockDim.x;
 
-    // Allocate shared memory state matrix S of shape [MAX_DV, MAX_DK] and token buffers
     __shared__ float s_state[MAX_DV][MAX_DK];
     __shared__ float s_k[MAX_DK];
     __shared__ float s_q[MAX_DK];
     __shared__ float s_v[MAX_DV];
 
-    // Initialize state to zero
     for (int idx = tid; idx < D_V * D_K; idx += num_threads) {
         int r = idx / D_K;
         int c = idx % D_K;
@@ -47,7 +47,6 @@ __global__ void chunked_delta_gate_scan_fwd_kernel(
     }
     __syncthreads();
 
-    // Loop over sequence length L
     for (int t = 0; t < L; ++t) {
         const int bh_offset = (b * H + h) * L + t;
         const float a_t = to_float(alpha[bh_offset]);
@@ -65,7 +64,6 @@ __global__ void chunked_delta_gate_scan_fwd_kernel(
         }
         __syncthreads();
 
-        // Step 1: scale S by alpha_t
         for (int idx = tid; idx < D_V * D_K; idx += num_threads) {
             int r = idx / D_K;
             int c = idx % D_K;
@@ -73,7 +71,6 @@ __global__ void chunked_delta_gate_scan_fwd_kernel(
         }
         __syncthreads();
 
-        // Step 2: compute pred_v = S @ k_t for each row r in D_V
         for (int r = tid; r < D_V; r += num_threads) {
             float pred = 0.0f;
             for (int c = 0; c < D_K; ++c) {
@@ -83,14 +80,12 @@ __global__ void chunked_delta_gate_scan_fwd_kernel(
             float v_corr = v_val - pred;
             const float b_corr = b_t * v_corr;
 
-            // Step 3: update row r of S: S[r, c] += b_t * v_corr * k_t[c]
             for (int c = 0; c < D_K; ++c) {
                 s_state[r][c] += b_corr * s_k[c];
             }
         }
         __syncthreads();
 
-        // Step 4: compute out_t = S @ q_t for each row r in D_V
         for (int r = tid; r < D_V; r += num_threads) {
             float y_val = 0.0f;
             for (int c = 0; c < D_K; ++c) {
@@ -102,8 +97,8 @@ __global__ void chunked_delta_gate_scan_fwd_kernel(
     }
 }
 
-} // namespace cuda
-} // namespace neuralops
+}
+}
 
 torch::Tensor chunked_delta_gate_scan_fwd(
     const torch::Tensor& q,

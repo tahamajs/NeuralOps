@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -6,9 +13,6 @@
 namespace neuralops {
 namespace cuda {
 
-// Fused LayerNorm + Linear Forward Kernel
-// x: [M, K], weight: [N, K], bias: [N] (optional) -> out: [M, N]
-// Optimized with 128-bit float4 vectorized statistics computation and hardware FMA accumulation.
 template <typename scalar_t>
 __launch_bounds__(128)
 __global__ void fused_norm_linear_fwd_vectorized_kernel(
@@ -32,7 +36,6 @@ __global__ void fused_norm_linear_fwd_vectorized_kernel(
     const int rem_start_K = num_vec_K * 4;
     const int row_base = m * K;
 
-    // Step 1: Compute mean across K with float4 vectorization
     float sum_x = 0.0f;
     for (int vk = tid; vk < num_vec_K; vk += num_threads) {
         const int k = vk * 4;
@@ -57,7 +60,6 @@ __global__ void fused_norm_linear_fwd_vectorized_kernel(
     __syncthreads();
     const float mean = s_mean;
 
-    // Step 2: Compute variance across K with float4 vectorization
     float sum_sq = 0.0f;
     for (int vk = tid; vk < num_vec_K; vk += num_threads) {
         const int k = vk * 4;
@@ -93,7 +95,6 @@ __global__ void fused_norm_linear_fwd_vectorized_kernel(
 
     extern __shared__ float s_x_hat[];
 
-    // Step 3: Compute x_hat and store in shared memory
     for (int k = tid; k < K; k += num_threads) {
         const float x_norm = (to_float(x[row_base + k]) - mean) * rstd;
         s_x_hat[k] = x_norm;
@@ -103,7 +104,6 @@ __global__ void fused_norm_linear_fwd_vectorized_kernel(
     }
     __syncthreads();
 
-    // Step 4: Compute out[m, n] = x_hat @ weight.T + bias
     const int num_vec_K_inner = K / 4;
     const int rem_start_K_inner = num_vec_K_inner * 4;
 
@@ -133,7 +133,6 @@ __global__ void fused_norm_linear_fwd_vectorized_kernel(
     }
 }
 
-// Backward Kernel for dX: dX = LayerNormBackward(dout @ weight)
 template <typename scalar_t>
 __launch_bounds__(128)
 __global__ void fused_norm_linear_bwd_dx_vectorized_kernel(
@@ -152,7 +151,6 @@ __global__ void fused_norm_linear_bwd_dx_vectorized_kernel(
     const int tid = threadIdx.x;
     const int num_threads = blockDim.x;
 
-    // Mean and rstd of x[m, :]
     float sum_x = 0.0f;
     for (int k = tid; k < K; k += num_threads) {
         sum_x += to_float(x[m * K + k]);
@@ -176,7 +174,6 @@ __global__ void fused_norm_linear_bwd_dx_vectorized_kernel(
 
     extern __shared__ float s_dy[];
 
-    // dy[k] = sum_n dout[m, n] * weight[n, k]
     for (int k = tid; k < K; k += num_threads) {
         float acc = 0.0f;
         for (int n = 0; n < N; ++n) {
@@ -186,7 +183,6 @@ __global__ void fused_norm_linear_bwd_dx_vectorized_kernel(
     }
     __syncthreads();
 
-    // Standard LayerNorm backward
     float sum_dy = 0.0f;
     float sum_dy_xhat = 0.0f;
     for (int k = tid; k < K; k += num_threads) {
@@ -215,8 +211,8 @@ __global__ void fused_norm_linear_bwd_dx_vectorized_kernel(
     }
 }
 
-} // namespace cuda
-} // namespace neuralops
+}
+}
 
 std::vector<torch::Tensor> fused_norm_linear_fwd(
     const torch::Tensor& x,

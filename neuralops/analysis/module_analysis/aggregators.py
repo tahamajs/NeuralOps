@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Module Metric Aggregators
 
 Aggregators and categorizers summarizing benchmark metrics, speedup distributions, and memory footprints.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -29,7 +33,6 @@ def get_all_module_rows(
     if mod_name in ALIASES:
         lookup_keys.extend([a.lower() for a in ALIASES[mod_name]])
 
-    # Strip common suffixes
     for suffix in ["_compressor", "_attention", "_pruner", "_quantizer"]:
         if mod_name.lower().endswith(suffix):
             lookup_keys.append(mod_name.lower()[: -len(suffix)])

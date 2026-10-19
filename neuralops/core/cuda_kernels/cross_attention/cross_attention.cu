@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -8,10 +15,6 @@
 namespace neuralops {
 namespace cuda {
 
-// ============================================================================
-// Single-Pass Warp-Per-Query Cross-Attention Forward Kernel
-// Grid: dim3 grid(blocks_x, B * H) ensures zero inter-batch/head tile contamination
-// ============================================================================
 template <typename scalar_t>
 __global__ void __launch_bounds__(128, 2) cross_attention_fwd_kernel(
     scalar_t* __restrict__ out,
@@ -52,7 +55,7 @@ __global__ void __launch_bounds__(128, 2) cross_attention_fwd_kernel(
     float sum_exp = 0.0f;
     float acc[MAX_E] = {0.0f};
 
-    const int tid = threadIdx.x; // 0..127
+    const int tid = threadIdx.x;
     const int total_threads = 128;
     const int tile_elements = TILE_K * D;
 
@@ -152,10 +155,6 @@ __global__ void __launch_bounds__(128, 2) cross_attention_fwd_kernel(
     }
 }
 
-// ============================================================================
-// Cross-Attention Backward Kernel (Analytical Adjoint with SMEM Tiling)
-// Computes exact analytical gradients for Q, K, V across differing L_q and L_kv
-// ============================================================================
 template <typename scalar_t>
 __global__ void __launch_bounds__(128, 2) cross_attention_bwd_kernel(
     scalar_t* __restrict__ grad_q,
@@ -211,7 +210,6 @@ __global__ void __launch_bounds__(128, 2) cross_attention_bwd_kernel(
     const int total_threads = 128;
     const int tile_elements = TILE_K * D;
 
-    // Pass 1: Forward online softmax tracking
     for (int tile_start = 0; tile_start < L_kv; tile_start += TILE_K) {
         __syncthreads();
         if (sizeof(scalar_t) == 2 && (D % 8 == 0)) {
@@ -295,7 +293,6 @@ __global__ void __launch_bounds__(128, 2) cross_attention_bwd_kernel(
         }
     }
 
-    // Scalar D_i = sum_d (grad_out[i, d] * Out[i, d])
     float D_val = 0.0f;
     if (i < L_q && sum_exp > 1e-6f) {
         const float inv_sum = 1.0f / sum_exp;
@@ -313,7 +310,6 @@ __global__ void __launch_bounds__(128, 2) cross_attention_bwd_kernel(
         }
     }
 
-    // Pass 2: Softmax adjoints & gradient accumulation
     float grad_q_acc[MAX_E] = {0.0f};
 
     for (int tile_start = 0; tile_start < L_kv; tile_start += TILE_K) {
@@ -422,8 +418,8 @@ __global__ void __launch_bounds__(128, 2) cross_attention_bwd_kernel(
     }
 }
 
-} // namespace cuda
-} // namespace neuralops
+}
+}
 
 torch::Tensor cross_attention_fwd(
     const torch::Tensor& q,

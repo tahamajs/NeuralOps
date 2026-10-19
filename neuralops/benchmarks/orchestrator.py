@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Orchestrator for managing single and multi-module benchmark sweeps
 
 Implements orchestrator functionality for NeuralOps.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -86,7 +90,6 @@ class BenchmarkOrchestrator:
         self.fail_delta = kwargs.get("fail_delta", False)
         self.errors_only = kwargs.get("errors_only", False)
 
-        # Resolve modules list
         self.modules = self._resolve_modules(modules)
         self.models = [models] if isinstance(models, str) else list(models)
         self.datasets = [datasets] if isinstance(datasets, str) else list(datasets)
@@ -97,7 +100,6 @@ class BenchmarkOrchestrator:
 
         self._state: dict[str, Any] = self._load_state()
 
-        # Initialize results management system
         self.deduplicator = Deduplicator(
             output_dir=self.output_dir,
             rerun_after_days=getattr(self.config, "rerun_after_days", 30),
@@ -114,7 +116,6 @@ class BenchmarkOrchestrator:
         self.summarizer = SummaryGenerator(output_dir=self.output_dir)
 
     def _resolve_modules(self, mods: str | list[str] | None = None) -> list[str]:
-        # Handle explicit kwargs passed to BenchmarkOrchestrator
         if getattr(self, "all_delta", False) or getattr(self, "delta", False):
             return self._get_family("delta")
         if getattr(self, "all_gated", False) or getattr(self, "gated", False):
@@ -274,7 +275,6 @@ class BenchmarkOrchestrator:
         self._state["status"] = "running"
         self._save_state()
 
-        # Register graceful termination handlers to save state on SIGINT / SIGTERM
         def _handle_interrupt(signum: int, frame: Any) -> None:
             LOG.warning("Received signal %s, saving benchmark state before exit...", signum)
             self._state["status"] = "interrupted"
@@ -288,7 +288,6 @@ class BenchmarkOrchestrator:
             if hasattr(signal, "SIGTERM"):
                 prev_sigterm = signal.signal(signal.SIGTERM, _handle_interrupt)
         except (ValueError, AttributeError):
-            # Not in main thread or platform does not support signal modification
             pass
 
         completed_set = set(tuple(x) for x in self._state.get("completed", []))
@@ -310,7 +309,6 @@ class BenchmarkOrchestrator:
                     LOG.info("Skipping completed task: %s", task_key)
                     continue
 
-                # Intelligent deduplication check
                 dedup_key = f"{mod}__{mdl}__{ds}__rank{rk}"
                 if getattr(self.config, "deduplicate", True):
                     should_skip, reason = self.deduplicator.should_skip(
@@ -321,7 +319,6 @@ class BenchmarkOrchestrator:
                         LOG.info("Deduplication: Skipping run %s (%s)", dedup_key, reason)
                         continue
 
-                # Execute run
                 kwargs_to_pass = {
                     k: v
                     for k, v in self.extra_kwargs.items()
@@ -372,27 +369,21 @@ class BenchmarkOrchestrator:
                     **kwargs_to_pass,
                 )
 
-                # Persist across all 5 formats (JSON, JSONL, CSV, Markdown, Parquet)
                 saved_paths = save_all_formats(res, output_dir=self.output_dir)
 
-                # Record in deduplication index
                 self.deduplicator.record_run(res, saved_paths["json"])
 
-                # Trigger Git commit if configured
                 self.git_committer.register_run(res, saved_paths)
 
-                # Push to Hugging Face Hub if configured
                 if self.hf_pusher.is_enabled():
                     self.hf_pusher.push_result(res, saved_paths)
 
-                # Regenerate rolling summaries periodically
                 if getattr(self.config, "regenerate_summaries_every", 1) > 0:
                     try:
                         self.summarizer.generate_all()
                     except Exception as e:
                         LOG.debug("Summary generation notice: %s", e)
 
-                # Update state
                 if res.status == "success":
                     self._state["completed"].append(list(task_key))
                 elif res.status == "skipped":
@@ -407,7 +398,6 @@ class BenchmarkOrchestrator:
             self._save_state()
         finally:
             progress_bar.close()
-            # Restore previous signal handlers
             try:
                 if prev_sigint is not None:
                     signal.signal(signal.SIGINT, prev_sigint)

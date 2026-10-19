@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Optimal Subspace Projection SVD Compressor
 
 Projects weight matrices onto optimal activation-aligned subspaces using randomized SVD with optional residual LoRA adaptation.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations

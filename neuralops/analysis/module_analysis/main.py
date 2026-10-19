@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Module Analysis Orchestrator
 
 Main CLI pipeline executing unified 217-module analysis and generating cross-architecture reports.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -54,14 +58,12 @@ def run_all_modules_analysis(
     print("GENERATING COMPREHENSIVE 217-MODULE ANALYSIS")
     print("=" * 70)
 
-    # 1. Load registries
     try:
         from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
     except Exception as e:
         print(f"Warning importing framework registries: {e}")
         ATTENTION_REGISTRY, COMPRESSOR_REGISTRY = {}, {}
 
-    # Build entity to registered names mapping
     reg_names_by_file: Dict[Path, List[str]] = defaultdict(list)
     reg_names_by_lower: Dict[str, List[str]] = defaultdict(list)
 
@@ -76,11 +78,9 @@ def run_all_modules_analysis(
             if fpath:
                 reg_names_by_file[Path(fpath).resolve()].append(k)
 
-    # 2. Load CSV data
     print("Loading CSV benchmark records...")
     csv_data = load_all_csv_records()
 
-    # 3. Load verification json
     verif_file = PROJECT_ROOT / "paper/_verification_results.json"
     verif_by_name: Dict[str, Dict[str, Any]] = {}
     if verif_file.exists():
@@ -88,7 +88,6 @@ def run_all_modules_analysis(
             verif_data = json.load(f)
         verif_by_name = {r["name"]: r for r in verif_data.get("results", [])}
 
-    # 4. Enumerate 217 paper directories
     paper_dirs = sorted(
         [
             d.name

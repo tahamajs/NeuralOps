@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Unified High-Precision Benchmark Base Harness for NeuralOps
 
 Implements harness functionality for NeuralOps.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -25,11 +29,11 @@ import torch
 class HardwareProfile:
     """Hardware specification constants for RTX 4070 Laptop / Ampere / Ada Lovelace."""
     name: str = "NVIDIA GeForce RTX 4070 Laptop GPU"
-    peak_bandwidth_gb_s: float = 264.0  # GB/s
-    peak_fp16_tflops: float = 79.0     # Dense FP16 Tensor Core TFLOPs/s
-    peak_bf16_tflops: float = 79.0     # Dense BF16 Tensor Core TFLOPs/s
-    peak_fp32_tflops: float = 20.0     # Dense FP32 CUDA Core TFLOPs/s
-    vram_total_mb: float = 8188.0      # MB
+    peak_bandwidth_gb_s: float = 264.0
+    peak_fp16_tflops: float = 79.0
+    peak_bf16_tflops: float = 79.0
+    peak_fp32_tflops: float = 20.0
+    vram_total_mb: float = 8188.0
 
 
 @dataclass
@@ -115,7 +119,6 @@ class BenchmarkRunner:
         self.reset_vram()
 
         try:
-            # Warmup
             for _ in range(w_iters):
                 fn()
 
@@ -123,7 +126,6 @@ class BenchmarkRunner:
                 torch.cuda.synchronize(self.device)
                 self.reset_vram()
 
-                # Precise CUDA Event timing
                 start_events = [torch.cuda.Event(enable_timing=True) for _ in range(b_iters)]
                 end_events = [torch.cuda.Event(enable_timing=True) for _ in range(b_iters)]
 
@@ -133,7 +135,7 @@ class BenchmarkRunner:
                     end_events[i].record()
 
                 torch.cuda.synchronize(self.device)
-                latencies = [s.elapsed_time(e) for s, e in zip(start_events, end_events)]  # in ms
+                latencies = [s.elapsed_time(e) for s, e in zip(start_events, end_events)]
             else:
                 latencies = []
                 for _ in range(b_iters):
@@ -149,7 +151,6 @@ class BenchmarkRunner:
             min_lat = float(np.min(lat_arr))
             max_lat = float(np.max(lat_arr))
 
-            # Trimmed mean (drop 10% highest and lowest)
             if len(lat_arr) >= 5:
                 k = max(1, int(len(lat_arr) * 0.1))
                 sorted_lats = np.sort(lat_arr)
@@ -160,12 +161,10 @@ class BenchmarkRunner:
             peak_vram = self.get_peak_vram_mb()
             alloc_vram = self.get_allocated_vram_mb()
 
-            # Throughput
             total_tokens = batch_size * seq_len
             throughput_tokens = (total_tokens / (trimmed_lat / 1000.0)) if trimmed_lat > 0 else 0.0
             throughput_samples = (batch_size / (trimmed_lat / 1000.0)) if trimmed_lat > 0 else 0.0
 
-            # TFLOPs/s & Bandwidth
             latency_s = trimmed_lat / 1000.0
             tflops_s = (total_flops / (latency_s * 1e12)) if (total_flops > 0 and latency_s > 0) else 0.0
             bandwidth_gb_s = (total_bytes / (latency_s * 1e9)) if (total_bytes > 0 and latency_s > 0) else 0.0

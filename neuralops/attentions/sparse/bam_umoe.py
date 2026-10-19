@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 BAM-UMoE: Unified Mixture of Experts Attention Block
 
 Unified mixture-of-experts attention block combining low-rank factorization with expert routing.
-
-Author: Taha Majlesi
 """
 
 from neuralops.core.attention_utils import (
@@ -780,7 +784,6 @@ class BAMUMoEBlock(BaseAttention):
         scale = 1.0 / math.sqrt(self.head_dim)
         eff_mask = encoder_attention_mask if is_cross else attention_mask
 
-        # Fast path: SDPA hardware acceleration
         if not output_attentions and head_mask is None and (eff_mask is None or eff_mask.dim() == 2):
             is_causal = self.is_decoder and not is_cross
             attn_mask = None

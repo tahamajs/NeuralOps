@@ -2,7 +2,6 @@
 # GPU smoke test for benchmark interface.
 # Run this on the GPU server only.
 #
-# Author: Taha Majlesi
 set -e
 
 OUT_BASE="${1:-results/smoke_$(date +%Y%m%d_%H%M%S)}"

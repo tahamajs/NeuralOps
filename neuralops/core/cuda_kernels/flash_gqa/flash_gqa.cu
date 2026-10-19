@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <cuda_runtime.h>
 #include <torch/extension.h>
 #include <c10/cuda/CUDAStream.h>
@@ -8,10 +15,10 @@
 template<typename scalar_t, int HEAD_DIM, int TILE_Q, int BLOCK_N>
 __launch_bounds__(128)
 __global__ void flash_gqa_kernel(
-    scalar_t* __restrict__ out,         // [B, H, N_Q, HEAD_DIM]
-    const scalar_t* __restrict__ q,     // [B, H, N_Q, HEAD_DIM]
-    const scalar_t* __restrict__ k,     // [B, H_KV, N_KV, HEAD_DIM]
-    const scalar_t* __restrict__ v,     // [B, H_KV, N_KV, HEAD_DIM]
+    scalar_t* __restrict__ out,
+    const scalar_t* __restrict__ q,
+    const scalar_t* __restrict__ k,
+    const scalar_t* __restrict__ v,
     const int B,
     const int H,
     const int H_KV,
@@ -30,7 +37,6 @@ __global__ void flash_gqa_kernel(
     const int total_threads = blockDim.x * blockDim.y;
     const int cur_q_idx = q_tile_idx * TILE_Q + tid;
 
-    // 16-byte aligned Shared memory for K and V tiles (+1 float4 padding to eliminate bank conflicts)
     __shared__ float4 K_smem[BLOCK_N][NUM_VECS + 1];
     __shared__ float4 V_smem[BLOCK_N][NUM_VECS + 1];
 
@@ -74,7 +80,6 @@ __global__ void flash_gqa_kernel(
             break;
         }
 
-        // Cooperative load of K and V into 128-bit shared memory
         __syncthreads();
         #pragma unroll
         for (int idx = tid; idx < TOTAL_VECS_PER_TILE; idx += total_threads) {
@@ -134,7 +139,6 @@ __global__ void flash_gqa_kernel(
             }
         }
 
-        // Tile-level online softmax
         if (m_tile > -1e29f) {
             const float m_new = fmaxf(m_prev, m_tile);
             const float alpha = (m_prev == -1e30f) ? 0.0f : expf(m_prev - m_new);
@@ -167,7 +171,6 @@ __global__ void flash_gqa_kernel(
         }
     }
 
-    // Write final normalized result
     if (cur_q_idx < N_Q) {
         const int out_base = b * (H * N_Q * HEAD_DIM) + h * (N_Q * HEAD_DIM) + cur_q_idx * HEAD_DIM;
         const float inv_l = (l_prev > 0.0f) ? (1.0f / l_prev) : 0.0f;

@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 FLAP: Fluctuation-Based Adaptive Structured Pruner
 
 Evaluates feature map fluctuation metrics across calibration sequences to remove redundant attention heads and intermediate MLP neurons.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations

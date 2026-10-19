@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 High-Performance Token Generation Benchmark for NeuralOps & FLA Models
 
 Measures Time-to-First-Token (TTFT), inter-token generation latency (ms/token), and total generation throughput (tokens/second) across prompt lengths and generation budgets.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -56,7 +60,6 @@ class GenerationBenchmark:
         vocab_size = getattr(getattr(self.model, "config", None), "vocab_size", 1000)
         input_ids = torch.randint(0, vocab_size, (batch_size, prompt_len), device=self.device)
 
-        # Warmup
         for _ in range(warmup_runs):
             _ = self.model.generate(
                 input_ids,
@@ -75,14 +78,12 @@ class GenerationBenchmark:
                 torch.cuda.synchronize()
             t0 = time.perf_counter()
 
-            # Measure TTFT (prefill pass)
             out = self.model(input_ids, use_cache=use_cache)
             if torch.cuda.is_available():
                 torch.cuda.synchronize()
             ttft = (time.perf_counter() - t0) * 1000.0
             ttft_list.append(ttft)
 
-            # Measure autoregressive decode pass
             t_gen_start = time.perf_counter()
             gen_out = self.model.generate(
                 input_ids,

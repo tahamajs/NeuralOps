@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Comprehensive 26 Triton Hardware Kernels Benchmarking Sweep for NeuralOps
 
 Benchmarks 26 Triton hardware kernels against PyTorch references under realistic dimensions (B=4, H=8, N=512, D=64) on NVIDIA Ada Lovelace / CUDA GPUs.
-
-Author: Taha Majlesi
 """
 
 import argparse
@@ -41,7 +45,6 @@ def benchmark_single_kernel(
         gc.collect()
         torch.cuda.empty_cache()
 
-    # Parity and NaN / Inf check
     try:
         out_tri = triton_fn(*args, **kwargs)
         out_pt = pytorch_fn(*args, **kwargs)
@@ -73,13 +76,11 @@ def benchmark_single_kernel(
             "status": f"ERROR: {exc}",
         }
 
-    # Warmup Triton
     for _ in range(warmup):
         _ = triton_fn(*args, **kwargs)
     if is_cuda:
         torch.cuda.synchronize()
 
-    # Benchmark Triton
     if is_cuda:
         start_evt_t = torch.cuda.Event(enable_timing=True)
         end_evt_t = torch.cuda.Event(enable_timing=True)
@@ -102,13 +103,11 @@ def benchmark_single_kernel(
         triton_gpu_ms = (t1 - t0) / reps * 1000.0
         launch_overhead_ms = 0.0
 
-    # Warmup PyTorch
     for _ in range(warmup):
         _ = pytorch_fn(*args, **kwargs)
     if is_cuda:
         torch.cuda.synchronize()
 
-    # Benchmark PyTorch
     if is_cuda:
         start_evt_p = torch.cuda.Event(enable_timing=True)
         end_evt_p = torch.cuda.Event(enable_timing=True)
@@ -187,10 +186,8 @@ def run_all_26_comprehensive(
     def should_run(kname):
         return (selected_kernels is None) or (kname in selected_kernels)
 
-    # Standard dimensions
     B, H, N, D = 4, 8, 512, 64
 
-    # 1. HNC Nullspace Step (low_rank)
     if should_run("fused_hnc_nullspace_step"):
         from neuralops.core.triton_kernels.low_rank import (
             fused_hnc_nullspace_step_triton,
@@ -205,7 +202,6 @@ def run_all_26_comprehensive(
             w1, g1, r1, 0.05, warmup=warmup, reps=repeat, device=device,
         ))
 
-    # 2. Linformer Sequence Projection (low_rank)
     if should_run("fused_linformer_seq_proj"):
         from neuralops.core.triton_kernels.low_rank import (
             fused_linformer_seq_proj_triton,
@@ -219,7 +215,6 @@ def run_all_26_comprehensive(
             proj_lin, x_lin, warmup=warmup, reps=repeat, device=device,
         ))
 
-    # 3. Kronecker Batched GEMM (low_rank)
     if should_run("fused_kronecker_gemm"):
         from neuralops.core.triton_kernels.low_rank import (
             fused_kronecker_batched_gemm_triton,
@@ -234,7 +229,6 @@ def run_all_26_comprehensive(
             x_kron, A_kron, B_kron, warmup=warmup, reps=repeat, device=device,
         ))
 
-    # 4. Nystrom Landmark Pinv (low_rank)
     if should_run("fused_nystrom_landmark_pinv"):
         from neuralops.core.triton_kernels.low_rank import (
             fused_nystrom_landmark_pinv_step_triton,
@@ -251,7 +245,6 @@ def run_all_26_comprehensive(
             F1, F2_pinv, F3, V_nys, warmup=warmup, reps=repeat, device=device,
         ))
 
-    # 5. Sliding Window Attention (sliding_window)
     if should_run("sliding_window_attention"):
         from neuralops.core.triton_kernels.sliding_window import (
             sliding_window_attention,
@@ -266,7 +259,6 @@ def run_all_26_comprehensive(
             q_sw, k_sw, v_sw, 128, warmup=warmup, reps=repeat, device=device,
         ))
 
-    # 6. Gated Linear Attention Scan (gla_scan)
     if should_run("gla_scan"):
         from neuralops.core.triton_kernels.gla_scan import gla_scan, gla_scan_pytorch
         q_gla = F.elu(torch.randn(B, H, N, D, device=device, dtype=dtype)) + 1.0
@@ -279,7 +271,6 @@ def run_all_26_comprehensive(
             q_gla, k_gla, v_gla, g_gla, warmup=warmup, reps=repeat, device=device,
         ))
 
-    # 7. Gated DeltaNet Scan (gdn_scan)
     if should_run("gdn_scan"):
         from neuralops.core.triton_kernels.gdn_scan import gdn_scan, gdn_scan_pytorch
         q_gdn = torch.randn(B, H, N, D, device=device, dtype=dtype)
@@ -293,7 +284,6 @@ def run_all_26_comprehensive(
             q_gdn, k_gdn, v_gdn, beta_gdn, alpha_gdn, warmup=warmup, reps=repeat, device=device,
         ))
 
-    # 8. HGRN2 Scan (hgrn2_scan)
     if should_run("hgrn2_scan"):
         from neuralops.core.triton_kernels.hgrn2_scan import hgrn2_scan, hgrn2_scan_pytorch
         f_hgrn = torch.sigmoid(torch.randn(B, N, 256, device=device, dtype=dtype))
@@ -305,7 +295,6 @@ def run_all_26_comprehensive(
             f_hgrn, iv_hgrn, warmup=warmup, reps=repeat, device=device,
         ))
 
-    # 9. Fused Softplus (softplus)
     if should_run("softplus"):
         from neuralops.core.triton_kernels.softplus import softplus_fwd, softplus_pytorch
         num_elem = 4194304
@@ -316,7 +305,6 @@ def run_all_26_comprehensive(
             x_sp, warmup=warmup, reps=repeat, device=device,
         ))
 
-    # 10. Fused RMSNorm Gate (fused_norm_linear)
     if should_run("fused_norm_linear"):
         from neuralops.core.triton_kernels.fused_norm_linear import (
             fused_rmsnorm_gate_triton,
@@ -332,7 +320,6 @@ def run_all_26_comprehensive(
             x_fnl, g_fnl, w_fnl, warmup=warmup, reps=repeat, device=device,
         ))
 
-    # 11. Cosformer Linear Attention (cosformer_triton_kernel)
     if should_run("cosformer"):
         from neuralops.core.triton_kernels.cosformer_triton_kernel import (
             cosformer_triton_fwd,
@@ -351,7 +338,6 @@ def run_all_26_comprehensive(
             q_cos_act, k_cos_act, v_cos.float(), warmup=warmup, reps=repeat, device=device,
         ))
 
-    # 12. Fused Cross-Entropy (fused_ce)
     if should_run("fused_ce"):
         from neuralops.core.triton_kernels.fused_ce import (
             fused_cross_entropy,
@@ -366,7 +352,6 @@ def run_all_26_comprehensive(
             logits_ce, targets_ce, warmup=warmup, reps=repeat, device=device,
         ))
 
-    # 13. Fused KL Divergence / KD Loss (fused_kd)
     if should_run("fused_kd"):
         from neuralops.core.triton_kernels.fused_kd import (
             fused_kd_loss,
@@ -381,7 +366,6 @@ def run_all_26_comprehensive(
             s_logits, t_logits, 2.0, warmup=warmup, reps=repeat, device=device,
         ))
 
-    # 14. Selective Scan (selective_scan)
     if should_run("selective_scan"):
         from neuralops.core.triton_kernels.selective_scan import (
             selective_scan_fn,
@@ -398,7 +382,6 @@ def run_all_26_comprehensive(
             u_ssm, delta_ssm, A_ssm, B_ssm, C_ssm, warmup=warmup, reps=repeat, device=device,
         ))
 
-    # 15. Factorized Matrix State Scan (fms_scan)
     if should_run("fms_scan"):
         from neuralops.core.triton_kernels.fms_scan import fms_scan, fms_scan_pytorch
         q_fms = torch.randn(B, H, N, D, device=device, dtype=dtype)
@@ -411,7 +394,6 @@ def run_all_26_comprehensive(
             q_fms, k_fms, v_fms, decay_fms, warmup=warmup, reps=repeat, device=device,
         ))
 
-    # 16. Paged Attention (paged_attention)
     if should_run("paged_attention"):
         from neuralops.core.triton_kernels.paged_attention import (
             paged_attention_kernel,
@@ -430,7 +412,6 @@ def run_all_26_comprehensive(
             warmup=warmup, reps=repeat, device=device,
         ))
 
-    # 17. Fused MQA Bias & Scaling (gqa)
     if should_run("fused_mqa_bias_scale"):
         from neuralops.core.triton_kernels.gqa import (
             fused_mqa_bias_scale_triton,
@@ -443,7 +424,6 @@ def run_all_26_comprehensive(
             scores_gqa, 0.25, is_causal=True, past_len=4, warmup=warmup, reps=repeat, device=device,
         ))
 
-    # 18. Fused Hamming Bit Scores (sparse_attn)
     if should_run("fused_hamming_scores"):
         from neuralops.core.triton_kernels.sparse_attn import (
             fused_hamming_scores_triton,
@@ -460,7 +440,6 @@ def run_all_26_comprehensive(
             Q_ham, K_ham, lora_q, lora_k, temp, warmup=warmup, reps=repeat, device=device,
         ))
 
-    # 19. Fused FAVOR+ Feature Map (elementwise)
     if should_run("fused_favor_plus"):
         from neuralops.core.triton_kernels.elementwise import (
             fused_favor_plus_feature_map_triton,
@@ -475,7 +454,6 @@ def run_all_26_comprehensive(
             warmup=warmup, reps=repeat, device=device,
         ))
 
-    # 20. Fused RoPE JIT (fused_rope)
     if should_run("fused_rope"):
         from neuralops.core.triton_kernels.fused_rope import fused_rope_fwd_kernel, apply_rope_rotation
         q_r = torch.randn(B, H, N, D, device=device, dtype=dtype)
@@ -507,7 +485,6 @@ def run_all_26_comprehensive(
             q_r, k_r, cos_r, sin_r, warmup=warmup, reps=repeat, device=device,
         ))
 
-    # 21. MoBA Block Router (block_sparse)
     if should_run("fused_moba_block_router"):
         from neuralops.core.triton_kernels.block_sparse import (
             fused_moba_block_router_combine_triton,
@@ -523,7 +500,6 @@ def run_all_26_comprehensive(
             Qb_moba, Kb_moba, Vb_moba, warmup=warmup, reps=repeat, device=device,
         ))
 
-    # 22. Linear Attn RALA Augmented Scan (linear_attn)
     if should_run("fused_rala_augmented_scan"):
         from neuralops.core.triton_kernels.linear_attn import (
             fused_rala_augmented_scan_triton,
@@ -541,7 +517,6 @@ def run_all_26_comprehensive(
             q_rala, k_rala, v_rala, lora_U, lora_V, warmup=warmup, reps=repeat, device=device,
         ))
 
-    # 23. Recurrent Linear Step (state_update)
     if should_run("fused_recurrent_linear_step"):
         from neuralops.core.triton_kernels.state_update import fused_recurrent_linear_step
         q_rec = torch.randn(2, 4, 64, device=device, dtype=dtype)
@@ -564,7 +539,6 @@ def run_all_26_comprehensive(
             q_rec, k_rec, v_rec, kv_state_rec, z_state_rec, warmup=warmup, reps=repeat, device=device,
         ))
 
-    # 24. Jamba Hybrid Gating (selective_scan)
     if should_run("fused_jamba_hybrid_gate"):
         from neuralops.core.triton_kernels.selective_scan import (
             fused_jamba_hybrid_ssm_attn_gate_triton,
@@ -579,7 +553,6 @@ def run_all_26_comprehensive(
             attn_out_j, ssm_out_j, alpha_j, warmup=warmup, reps=repeat, device=device,
         ))
 
-    # 25. Goldfinch Hopfield Lookup (fms_scan)
     if should_run("fused_goldfinch_hopfield"):
         from neuralops.core.triton_kernels.fms_scan import (
             fused_goldfinch_hopfield_lookup_triton,
@@ -593,7 +566,6 @@ def run_all_26_comprehensive(
             g_gf, v_gf, chunk_size=16, warmup=warmup, reps=repeat, device=device,
         ))
 
-    # 26. Flash Decoding Attention (flash_decoding)
     if should_run("flash_decode"):
         from neuralops.core.triton_kernels.flash_decoding import (
             flash_decode_kernel,
@@ -608,7 +580,6 @@ def run_all_26_comprehensive(
             q_fd, k_fd, v_fd, chunk_size=64, warmup=warmup, reps=repeat, device=device,
         ))
 
-    # Save to JSON
     if output_json:
         out_p = Path(output_json)
         out_p.parent.mkdir(parents=True, exist_ok=True)
@@ -616,7 +587,6 @@ def run_all_26_comprehensive(
             json.dump(results, f, indent=2)
         print(f"\n[OK] Successfully saved {len(results)} kernel benchmarks to {out_p}")
 
-    # Save to CSV
     if output_csv:
         csv_p = Path(output_csv)
         csv_p.parent.mkdir(parents=True, exist_ok=True)
@@ -631,7 +601,6 @@ def run_all_26_comprehensive(
                 writer.writerow(r)
         print(f"[OK] Successfully saved {len(results)} kernel benchmarks to {csv_p}")
 
-    # Generate Markdown Report
     if report_md:
         rep_p = Path(report_md)
         rep_p.parent.mkdir(parents=True, exist_ok=True)

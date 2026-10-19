@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -7,8 +14,6 @@
 namespace neuralops {
 namespace cuda {
 
-// Fused Knowledge Distillation Loss Forward:
-// Computes KL(softmax(T/tau) || softmax(S/tau)) * tau^2 per row
 template <typename scalar_t>
 __launch_bounds__(128)
 __global__ void fused_kd_loss_kernel(
@@ -25,7 +30,6 @@ __global__ void fused_kd_loss_kernel(
 
     const int offset = m * V;
 
-    // 1. Compute max of student and teacher
     float max_s = -1e38f;
     float max_t = -1e38f;
     for (int v = 0; v < V; ++v) {
@@ -35,7 +39,6 @@ __global__ void fused_kd_loss_kernel(
         if (t_val > max_t) max_t = t_val;
     }
 
-    // 2. Compute sum of exponentials
     float sum_s = 0.0f;
     float sum_t = 0.0f;
     for (int v = 0; v < V; ++v) {
@@ -48,7 +51,6 @@ __global__ void fused_kd_loss_kernel(
     const float log_sum_s = max_s + logf(sum_s);
     const float log_sum_t = max_t + logf(sum_t);
 
-    // 3. Accumulate KL = sum_v p_t[v] * (log p_t[v] - log p_s[v]) * tau^2
     float kl_acc = 0.0f;
     const float tau_sq = temperature * temperature;
     for (int v = 0; v < V; ++v) {
@@ -65,8 +67,8 @@ __global__ void fused_kd_loss_kernel(
     loss_per_row[m] = kl_acc * tau_sq;
 }
 
-} // namespace cuda
-} // namespace neuralops
+}
+}
 
 torch::Tensor fused_kd_loss_fwd(
     const torch::Tensor& student_logits,
@@ -118,7 +120,6 @@ torch::Tensor fused_kd_loss_fwd(
         const int64_t batch_size = orig_shape[0] > 0 ? orig_shape[0] : 1;
         return (loss_per_row.sum() / batch_size).to(student_logits.dtype());
     } else {
-        // "mean"
         return (loss_per_row.sum() / (static_cast<int64_t>(M) * V)).to(student_logits.dtype());
     }
 }

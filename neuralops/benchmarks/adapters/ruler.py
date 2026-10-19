@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 RULER / Needle-in-a-Haystack long-context benchmark adapter
 
 Implements ruler functionality for NeuralOps.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -120,7 +124,6 @@ class RulerAdapter:
         needle = f" The special magic passcode is {secret_number}. Remember this passcode."
         haystack_filler = " The grass is green. The sky is blue. Numbers and facts surround us every day."
 
-        # Estimate repetitions to reach desired context token length
         tokens_per_filler = max(len(self.tokenizer(haystack_filler).input_ids), 1) if self.tokenizer else 15
         needed_fillers = max(self.context_length // tokens_per_filler, 20)
 

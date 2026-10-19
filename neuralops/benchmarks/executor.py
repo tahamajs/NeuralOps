@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Single run executor for the neuralops benchmark suite
 
 Implements executor functionality for NeuralOps.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -112,7 +116,6 @@ def _select_adapter(
             **kwargs,
         )
     else:
-        # Default task is sequence classification (GLUE tasks)
         return ClassificationAdapter(
             module_name=module_name,
             module_type=module_type,
@@ -187,7 +190,6 @@ def execute_single(
         if module and str(module).lower() not in ("none", "baseline", "full", "dense"):
             logger.warning("Compression applied but no recovery training.")
 
-    # 1. Inspect module metadata from discovery (or handle baseline)
     is_baseline = module is None or str(module).lower() in ("none", "baseline", "full", "dense")
 
     if is_baseline:
@@ -242,7 +244,6 @@ def execute_single(
         effective_timeout = timeout_s if timeout_s is not None else mod_info.timeout_s
 
 
-    # Pre-run Health Checks
     if not is_baseline:
         all_modules = discover_modules()
         if module_name not in all_modules:
@@ -266,7 +267,6 @@ def execute_single(
                 timed_out=False,
             )
 
-    # Distributed backend checking via accelerate
     dist_backend = (kwargs.get("distributed_backend") or kwargs.get("distributed") or "none").lower()
     if dist_backend in ("accelerate", "ddp", "fsdp", "deepspeed"):
         try:
@@ -297,7 +297,6 @@ def execute_single(
             timed_out=False,
         )
 
-    # Free VRAM check if using CUDA
     if target_device.startswith("cuda") and torch.cuda.is_available():
         try:
             import gc
@@ -313,7 +312,6 @@ def execute_single(
         except Exception as e:
             run_logger.debug("Could not query GPU memory: %s", e)
 
-    # 2. Select and execute Adapter with timeout enforcement
     adapter = None
     tracker_instance = None
     tracker_type = kwargs.get("tracker", "none")
@@ -367,7 +365,6 @@ def execute_single(
         worker_thread.join(timeout=effective_timeout)
 
         if worker_thread.is_alive():
-            # Hard timeout occurred - attempt adapter cleanup and VRAM reclaim
             if adapter is not None:
                 try:
                     adapter.cleanup()
@@ -426,7 +423,6 @@ def execute_single(
             run_id, duration_s, train_duration_s, eval_metrics
         )
 
-        # MLOps Telemetry & Logging
         if tracker_instance is not None:
             try:
                 log_payload = {**eval_metrics, **resources_dict}

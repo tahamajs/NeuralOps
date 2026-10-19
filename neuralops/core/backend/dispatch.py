@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Backend Dispatch Engine
 
 Multi-tier execution dispatcher routing kernel requests across Native CUDA, Triton JIT, and PyTorch fallbacks.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -155,7 +159,6 @@ def dispatch(op_name: str, *args: Any, backend: Optional[str] = None, **kwargs: 
             from neuralops.core.fused import fused_linear_cross_entropy
             return fused_linear_cross_entropy(*args, **kwargs)
         except Exception:
-            # Fallback pure PyTorch linear cross entropy
             logits = torch.matmul(args[0], args[1].t()) if len(args) >= 2 else kwargs.get("logits")
             target = args[2] if len(args) >= 3 else kwargs.get("target")
             return torch.nn.functional.cross_entropy(logits.view(-1, logits.size(-1)), target.view(-1))

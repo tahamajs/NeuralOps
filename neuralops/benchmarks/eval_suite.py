@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Evaluation framework extensions
 
 LM-Eval adapter, RULER NIAH benchmark, and CustomEvaluationSuite.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -29,7 +33,6 @@ class LMEvalAdapter:
         """Computes log-likelihood of continuation given context."""
         results = []
         for context, continuation in requests:
-            # Simulated dummy log-likelihood calculation
             n_tokens = len(continuation.split())
             logprob = -1.5 * max(n_tokens, 1)
             is_greedy = True
@@ -73,7 +76,6 @@ class CustomEvaluationSuite:
             out = self.model(sample_input)
             if hasattr(out, "logits"):
                 out = out.logits
-            # Measure loss/perplexity proxy
             pseudo_loss = float(torch.var(out).item())
 
         num_params = sum(p.numel() for p in self.model.parameters())

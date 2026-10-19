@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -5,13 +12,6 @@
 
 namespace neuralops { namespace cuda {
 
-// GDN Delta Rule Forward Recurrence Kernel:
-// Updates associative state matrix S via delta learning rule:
-// s_{old} = S_{t-1} k_t
-// delta_v = v_t - s_{old}
-// S_t = S_{t-1} + \beta_t (k_t \otimes delta_v)
-// y_t = q_t S_t
-// Thread mapping: 1 block per head sequence (B * H), cooperative thread mapping over D x D.
 template <typename scalar_t>
 __global__ void __launch_bounds__(256) gdn_delta_rule_kernel(
     scalar_t* __restrict__ out,
@@ -28,7 +28,7 @@ __global__ void __launch_bounds__(256) gdn_delta_rule_kernel(
     if (pid_bh >= B * H) return;
 
     const int tid = threadIdx.x;
-    extern __shared__ float s_matrix[]; // [D, D]
+    extern __shared__ float s_matrix[];
 
     for (int i = tid; i < D * D; i += blockDim.x) {
         s_matrix[i] = 0.0f;
@@ -41,7 +41,6 @@ __global__ void __launch_bounds__(256) gdn_delta_rule_kernel(
         const float b = to_float(beta[pid_bh * L + t]);
         const int tok_offset = head_offset + t * D;
 
-        // Step 1: Compute s_old and state delta update for each dimension d2
         for (int d2 = tid; d2 < D; d2 += blockDim.x) {
             float s_old = 0.0f;
             for (int d1 = 0; d1 < D; ++d1) {
@@ -55,7 +54,6 @@ __global__ void __launch_bounds__(256) gdn_delta_rule_kernel(
         }
         __syncthreads();
 
-        // Step 2: Query retrieval y = q * S
         for (int d2 = tid; d2 < D; d2 += blockDim.x) {
             float acc = 0.0f;
             for (int d1 = 0; d1 < D; ++d1) {
@@ -67,7 +65,7 @@ __global__ void __launch_bounds__(256) gdn_delta_rule_kernel(
     }
 }
 
-}} // namespace neuralops::cuda
+}}
 
 torch::Tensor gdn_delta_rule_fwd(
     const torch::Tensor& q,

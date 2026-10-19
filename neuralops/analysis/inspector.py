@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Architecture Introspection and Profiling
 
 Module introspection tools analyzing parameter allocations, FLOPs, and activation memory profiles.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -21,7 +25,6 @@ def summary(model: nn.Module) -> Dict[str, Any]:
     trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     weight_mem_mb = sum(p.numel() * p.element_size() for p in model.parameters()) / (1024 * 1024)
 
-    # Count replaced modules
     replaced_attns = 0
     compressed_linears = 0
     for _, m in model.named_modules():
@@ -35,7 +38,7 @@ def summary(model: nn.Module) -> Dict[str, Any]:
         "trainable_parameters": trainable_params,
         "param_reduction_pct": 0.0,
         "weight_memory_mb": round(weight_mem_mb, 2),
-        "state_cache_at_4096_mb": round(12 * 64 * 64 * 4 * 2 / (1024 * 1024), 2),  # Fixed O(1) state memory
+        "state_cache_at_4096_mb": round(12 * 64 * 64 * 4 * 2 / (1024 * 1024), 2),
         "replaced_attentions": replaced_attns,
         "compressed_linears": compressed_linears,
     }

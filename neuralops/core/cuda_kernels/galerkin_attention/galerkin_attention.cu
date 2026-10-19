@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -5,15 +12,6 @@
 
 namespace neuralops { namespace cuda {
 
-// Galerkin Attention Integral Approximation Kernel:
-// Form: G = \sum_{t=0}^{N-1} (k_t \cdot v_t) \cdot h_{\text{step}}
-//       out_t = q_t \cdot G
-//
-// Hardware-level optimization:
-// 1. Decoupled 2D Grid: dim3 grid(ceil(D / 128), B * H) with 128 threads/block.
-// 2. Strict FP32 intermediate accumulation in registers.
-// 3. Loop unrolling: 4-way unroll over sequence length N.
-// 4. Eliminates threads = D anti-pattern; supports arbitrary feature dimensions D.
 template <typename scalar_t>
 __global__ void __launch_bounds__(128) galerkin_fwd_kernel(
     scalar_t* __restrict__ out,
@@ -34,7 +32,6 @@ __global__ void __launch_bounds__(128) galerkin_fwd_kernel(
 
     const int head_offset = bh * (N * D) + d;
 
-    // Pass 1: Integral accumulation
     float g = 0.0f;
     #pragma unroll 4
     for (int t = 0; t < N; ++t) {
@@ -44,7 +41,6 @@ __global__ void __launch_bounds__(128) galerkin_fwd_kernel(
         g = fmaf(k_val * v_val, h_step, g);
     }
 
-    // Pass 2: Projection onto Queries
     #pragma unroll 4
     for (int t = 0; t < N; ++t) {
         const int idx = head_offset + t * D;
@@ -53,7 +49,7 @@ __global__ void __launch_bounds__(128) galerkin_fwd_kernel(
     }
 }
 
-}} // namespace neuralops::cuda
+}}
 
 torch::Tensor galerkin_fwd(
     const torch::Tensor& q,

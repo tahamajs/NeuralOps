@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Evaluation metrics computation and hardware profiling for benchmarks
 
 Implements evaluation functionality for NeuralOps.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -75,7 +79,6 @@ def evaluate_classification(
     acc = correct / max(total, 1)
     avg_loss = total_loss / max(num_batches, 1)
 
-    # Simple f1 calculation for binary classification
     tp = sum(1 for p, y in zip(all_preds, all_labels) if p == 1 and y == 1)
     fp = sum(1 for p, y in zip(all_preds, all_labels) if p == 1 and y == 0)
     fn = sum(1 for p, y in zip(all_preds, all_labels) if p == 0 and y == 1)
@@ -110,7 +113,6 @@ def evaluate_perplexity(
             input_ids = batch[0].to(device)
             attention_mask = batch[1].to(device)
 
-            # Causal LM standard target
             labels = input_ids.clone()
             outputs = model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
             loss = outputs.loss
@@ -155,7 +157,6 @@ def measure_resources(
         torch.cuda.reset_peak_memory_stats(device)
         torch.cuda.synchronize(device)
 
-    # Warmup
     with torch.no_grad():
         for _ in range(warmup_iters):
             _ = model(input_ids=input_ids, attention_mask=attention_mask)

@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Statistical Hypothesis Testing
 
 Non-parametric and paired statistical significance tests for benchmark model comparisons and ablations.
-
-Author: Taha Majlesi
 """
 
 import logging
@@ -18,9 +22,6 @@ from scipy.stats import friedmanchisquare, norm, studentized_range, wilcoxon
 
 logger = logging.getLogger(__name__)
 
-# ═════════════════════════════════════════════════════════════════════
-# 1. RANKING HELPERS
-# ═════════════════════════════════════════════════════════════════════
 
 
 def compute_ranks(scores_matrix: np.ndarray) -> np.ndarray:
@@ -38,8 +39,7 @@ def compute_ranks(scores_matrix: np.ndarray) -> np.ndarray:
     ranks = np.zeros(n_cols)
     for i in range(n_rows):
         row = scores_matrix[i]
-        # Use average ranking for ties
-        row_ranks = stats.rankdata(-row, method="average")  # negate so highest=rank 1
+        row_ranks = stats.rankdata(-row, method="average")
         ranks += row_ranks
     return ranks / n_rows
 
@@ -54,21 +54,14 @@ def compute_aligned_ranks(scores_matrix: np.ndarray) -> np.ndarray:
     Reference: Hodges & Lehmann (1962)
     """
     n_rows, n_cols = scores_matrix.shape
-    # Compute mean performance per dataset
     row_means = np.mean(scores_matrix, axis=1, keepdims=True)
-    # Subtract row mean (align)
     aligned = scores_matrix - row_means
-    # Rank all aligned values together
     flat = aligned.flatten()
     flat_ranks = stats.rankdata(flat, method="average")
-    # Reshape back
     aligned_ranks = flat_ranks.reshape(n_rows, n_cols)
     return aligned_ranks
 
 
-# ═════════════════════════════════════════════════════════════════════
-# 2. OMNIBUS TESTS (multiple algorithms, multiple datasets)
-# ═════════════════════════════════════════════════════════════════════
 
 
 def friedman_test(scores_matrix: np.ndarray) -> dict[str, float]:
@@ -79,13 +72,11 @@ def friedman_test(scores_matrix: np.ndarray) -> dict[str, float]:
     n, k = scores_matrix.shape
     chi2_stat, p_value = friedmanchisquare(*[scores_matrix[:, j] for j in range(k)])
 
-    # Iman-Davenport correction (recommended over plain Friedman)
     iman_davenport = (
         ((n - 1) * chi2_stat) / (n * (k - 1) - chi2_stat) if chi2_stat < n * (k - 1) else np.inf
     )
     p_iman = 1 - f_dist.cdf(iman_davenport, k - 1, (k - 1) * (n - 1))
 
-    # Average ranks
     avg_ranks = compute_ranks(scores_matrix)
 
     return {
@@ -108,12 +99,9 @@ def friedman_aligned_ranks_test(scores_matrix: np.ndarray) -> dict[str, float]:
     n, k = scores_matrix.shape
     aligned_ranks = compute_aligned_ranks(scores_matrix)
 
-    # Sum of aligned ranks per algorithm
     R_j = np.sum(aligned_ranks, axis=0)
     total = n * k
-    # Expected rank sum under H0
     expected = k * n * (total + 1) / (2 * k)
-    # Test statistic
     T = ((k - 1) * np.sum((R_j - expected) ** 2)) / (
         np.sum((aligned_ranks.flatten() - (total + 1) / 2) ** 2)
     )
@@ -139,15 +127,11 @@ def quade_test(scores_matrix: np.ndarray) -> dict[str, float]:
     """
     n, k = scores_matrix.shape
 
-    # Step 1: Compute range per dataset (row)
     row_ranges = np.max(scores_matrix, axis=1) - np.min(scores_matrix, axis=1)
-    # Handle zero-range rows
     row_ranges[row_ranges == 0] = 1e-10
 
-    # Step 2: Rank the ranges
     range_ranks = stats.rankdata(row_ranges, method="average")
 
-    # Step 3: Compute ranks within each row, then weight by range rank
     Q = np.zeros(k)
     S = np.zeros(k)
     row_ranks_matrix = np.zeros_like(scores_matrix)
@@ -159,10 +143,8 @@ def quade_test(scores_matrix: np.ndarray) -> dict[str, float]:
             Q[j] += weighted
     S = np.sum(Q**2)
 
-    # Step 4: Total sum of squares
     A = np.sum((row_ranks_matrix - (k + 1) / 2) ** 2 * range_ranks[:, np.newaxis] ** 2)
 
-    # Step 5: Test statistic
     F_quade = ((n - 1) * S) / (A - S) if A > S else np.inf
     p_value = 1 - f_dist.cdf(F_quade, k - 1, (k - 1) * (n - 1))
 
@@ -174,9 +156,6 @@ def quade_test(scores_matrix: np.ndarray) -> dict[str, float]:
     }
 
 
-# ═════════════════════════════════════════════════════════════════════
-# 3. POST-HOC PROCEDURES
-# ═════════════════════════════════════════════════════════════════════
 
 
 def critical_difference(k: int, N: int, alpha: float = 0.05) -> float:
@@ -203,7 +182,6 @@ def nemenyi_posthoc(avg_ranks: np.ndarray, n_datasets: int, alpha: float = 0.05)
     """
     k = len(avg_ranks)
     cd = critical_difference(k, n_datasets, alpha)
-    # Normalised difference matrix: |rank_i - rank_j| / CD
     diff_matrix = np.zeros((k, k))
     for i in range(k):
         for j in range(k):
@@ -251,7 +229,7 @@ def hochberg_correction(p_values: list[float] | np.ndarray) -> np.ndarray:
     """
     p = np.array(p_values, dtype=float)
     m = len(p)
-    order = np.argsort(p)[::-1]  # descending
+    order = np.argsort(p)[::-1]
     adjusted = np.ones(m)
     for i, idx in enumerate(order):
         adjusted[idx] = min(p[idx] * (i + 1), 1.0)
@@ -327,35 +305,27 @@ def bergmann_hommel_posthoc(
     k = len(avg_ranks) if k is None else k
     N = n_datasets
 
-    # Standard error of rank difference
     se = np.sqrt(k * (k + 1) / (6 * N))
 
-    # Compute all pairwise z-statistics
     z_matrix = np.zeros((k, k))
     for i in range(k):
         for j in range(k):
             if i != j:
                 z_matrix[i, j] = abs(avg_ranks[i] - avg_ranks[j]) / se
 
-    # Standard normal two-tailed p-values
     p_matrix = 2 * (1 - norm.cdf(z_matrix))
 
-    # Bergmann-Hommel dynamic correction
-    # Number of simultaneous hypotheses
     M = k * (k - 1) // 2
-    # Sorted p-values
     all_p = []
     for i in range(k):
         for j in range(i + 1, k):
             all_p.append(p_matrix[i, j])
     all_p = np.sort(all_p)
 
-    # Adjusted p-values (step‑up)
     adjusted_list = np.zeros(len(all_p))
     for idx in range(len(all_p)):
         adjusted_list[idx] = min(all_p[idx] * M / (idx + 1), 1.0)
 
-    # Reconstruct matrix
     adj_matrix = np.ones((k, k))
     idx = 0
     for i in range(k):
@@ -366,9 +336,6 @@ def bergmann_hommel_posthoc(
     return pd.DataFrame(adj_matrix)
 
 
-# ═════════════════════════════════════════════════════════════════════
-# 4. PAIRWISE TESTS (two algorithms)
-# ═════════════════════════════════════════════════════════════════════
 
 
 def wilcoxon_signed_rank_test(scores_a: np.ndarray, scores_b: np.ndarray) -> dict[str, Any]:
@@ -380,7 +347,6 @@ def wilcoxon_signed_rank_test(scores_a: np.ndarray, scores_b: np.ndarray) -> dic
         scores_a, scores_b, zero_method="wilcox", alternative="two-sided", method="auto"
     )
     n = len(scores_a)
-    # Classification of effect (Demšar 2006 heuristic)
     z = (statistic - n * (n + 1) / 4) / np.sqrt(n * (n + 1) * (2 * n + 1) / 24)
     return {
         "method": "Wilcoxon signed-rank",
@@ -423,14 +389,12 @@ def mcnemar_test(y_true: np.ndarray, pred_a: np.ndarray, pred_b: np.ndarray) -> 
     correct_a = pred_a == y_true
     correct_b = pred_b == y_true
 
-    # Count discordant pairs
-    n01 = np.sum((correct_a == 0) & (correct_b == 1))  # B wins, A loses
-    n10 = np.sum((correct_a == 1) & (correct_b == 0))  # A wins, B loses
+    n01 = np.sum((correct_a == 0) & (correct_b == 1))
+    n10 = np.sum((correct_a == 1) & (correct_b == 0))
 
     if n01 + n10 == 0:
         return {"statistic": 0.0, "p_value": 1.0, "significant": False}
 
-    # Continuity correction
     chi2 = (abs(n01 - n10) - 1) ** 2 / (n01 + n10) if n01 + n10 > 0 else 0
     p_value = 1 - chi2_dist.cdf(chi2, 1)
 
@@ -444,9 +408,6 @@ def mcnemar_test(y_true: np.ndarray, pred_a: np.ndarray, pred_b: np.ndarray) -> 
     }
 
 
-# ═════════════════════════════════════════════════════════════════════
-# 5. EFFECT SIZES
-# ═════════════════════════════════════════════════════════════════════
 
 
 def cohens_d(a: np.ndarray, b: np.ndarray, paired: bool = True) -> dict[str, float]:
@@ -457,14 +418,11 @@ def cohens_d(a: np.ndarray, b: np.ndarray, paired: bool = True) -> dict[str, flo
     """
     diff = np.mean(a) - np.mean(b)
     if paired:
-        # Use standard deviation of differences
         sd = np.std(a - b, ddof=1)
     else:
-        # Pooled standard deviation
         n1, n2 = len(a), len(b)
         sd = np.sqrt(((n1 - 1) * np.var(a, ddof=1) + (n2 - 1) * np.var(b, ddof=1)) / (n1 + n2 - 2))
     d = diff / sd if sd > 0 else 0.0
-    # Interpretation: small=0.2, medium=0.5, large=0.8
     magnitude = (
         "negligible"
         if abs(d) < 0.2
@@ -481,7 +439,6 @@ def hedges_g(a: np.ndarray, b: np.ndarray, paired: bool = True) -> dict[str, flo
     """
     d = cohens_d(a, b, paired)["cohens_d"]
     n = len(a) + len(b) if not paired else len(a)
-    # Correction factor
     J = 1 - 3 / (4 * (n - 1) - 1) if n > 2 else 1.0
     g = d * J
     magnitude = (
@@ -508,7 +465,6 @@ def cliffs_delta(a: np.ndarray, b: np.ndarray) -> dict[str, float]:
         gt += np.sum(ai > b)
         lt += np.sum(ai < b)
     delta = (gt - lt) / (n_a * n_b) if n_a * n_b > 0 else 0.0
-    # Interpretation: |delta| < 0.147 = negligible, < 0.33 = small, < 0.474 = medium, ≥ 0.474 = large
     d_abs = abs(delta)
     magnitude = (
         "negligible"
@@ -537,7 +493,6 @@ def vargha_delaney_a12(a: np.ndarray, b: np.ndarray) -> dict[str, float]:
         gt += np.sum(ai > b)
         eq += np.sum(ai == b)
     a12 = (gt + 0.5 * eq) / (n_a * n_b) if n_a * n_b > 0 else 0.5
-    # Normalise so that >= 0.5 (A is better if A12 > 0.5)
     if a12 < 0.5:
         a12 = 1 - a12
     magnitude = (
@@ -564,9 +519,6 @@ def glass_rank_biserial(a: np.ndarray, b: np.ndarray) -> dict[str, float]:
     return {"glass_rank_biserial": round(r_rb, 4)}
 
 
-# ═════════════════════════════════════════════════════════════════════
-# 6. BAYESIAN TESTS (Benavoli et al. 2017)
-# ═════════════════════════════════════════════════════════════════════
 
 
 def bayesian_correlated_ttest(
@@ -593,14 +545,10 @@ def bayesian_correlated_ttest(
     n = len(diffs)
     mean_diff = np.mean(diffs)
 
-    # Standard error corrected for correlation in CV (Nadeau & Bengio, 2003)
     var_diff = np.var(diffs, ddof=1)
-    # For k-fold CV, the correction factor depends on the number of folds.
-    # A common approximation for 10‑fold CV is n_test / n_train ≈ 1/9.
-    correction = 1.0 / runs  # simplified for runs
+    correction = 1.0 / runs
     se = np.sqrt(var_diff / n * (1 / correction))
 
-    # Posterior sampling (non‑informative prior)
     posterior = np.random.normal(mean_diff, se, nsamples)
 
     p_left = np.mean(posterior < -rope)
@@ -637,30 +585,22 @@ def bayesian_signed_rank_test(
     diffs = x - y
     n = len(diffs)
 
-    # Exclude zeros for rank computation
     nonzero = diffs[diffs != 0]
     n_nonzero = len(nonzero)
     if n_nonzero == 0:
         return {"p_left": 0.0, "p_rope": 1.0, "p_right": 0.0, "winner": "tie"}
 
-    # Signed rank sum (Wilcoxon style)
     abs_diffs = np.abs(nonzero)
     ranks = stats.rankdata(abs_diffs)
     np.sum(ranks[nonzero > 0])
 
-    # Dirichlet posterior for the probability that a positive difference occurs
-    # Using the method from Benavoli et al.
-    # Prior: symmetric Dirichlet
-    alpha = np.ones(2)  # uniform prior
-    # Counts
+    alpha = np.ones(2)
     n_pos = np.sum(diffs > 0)
     n_neg = np.sum(diffs < 0)
 
-    # Posterior samples
     posterior = np.random.dirichlet(alpha + np.array([n_pos, n_neg]), nsamples)
-    theta = posterior[:, 0]  # P(X > Y)
+    theta = posterior[:, 0]
 
-    # Probabilities
     p_left = np.mean(theta < 0.5 - rope)
     p_rope = np.mean((theta >= 0.5 - rope) & (theta <= 0.5 + rope))
     p_right = np.mean(theta > 0.5 + rope)
@@ -679,9 +619,6 @@ def bayesian_signed_rank_test(
     }
 
 
-# ═════════════════════════════════════════════════════════════════════
-# 7. CONVENIENCE WRAPPER (multi‑comparison)
-# ═════════════════════════════════════════════════════════════════════
 
 
 def run_full_statistical_analysis(
@@ -713,7 +650,6 @@ def run_full_statistical_analysis(
     if algorithm_names is None:
         algorithm_names = [f"Algorithm {i + 1}" for i in range(k)]
 
-    # Omnibus tests
     friedman = friedman_test(scores_matrix)
     friedman_aligned = friedman_aligned_ranks_test(scores_matrix)
     quade = quade_test(scores_matrix)

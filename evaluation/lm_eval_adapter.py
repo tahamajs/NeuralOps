@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Standardized Drop-In Adapter for EleutherAI lm-evaluation-harness.
 Allows evaluating NeuralOps compressed and surgically modified models on
 standardized benchmarks (MMLU, HellaSwag, ARC, PIQA, WinoGrande).
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -22,7 +26,6 @@ import torch.nn.functional as F
 
 logger = logging.getLogger(__name__)
 
-# Graceful fallback if lm_eval is not installed
 try:
     import lm_eval.api.model
     BaseLM = lm_eval.api.model.LM
@@ -96,7 +99,6 @@ class NeuralOpsLMEvalAdapter(BaseLM):
                 if logits.dim() == 2:
                     logits = logits.unsqueeze(0)
                 
-            # Logits for predicting continuation start from len(ctx_ids) - 1
             cont_len = len(cont_ids)
             target_logits = logits[0, len(ctx_ids) - 1 : -1, :]
             target_labels = torch.tensor(cont_ids, device=self.device)
@@ -172,7 +174,6 @@ def evaluate_zero_shot_tasks(
     scores = {}
 
     for task in tasks:
-        # Standard synthetic multi-choice prompt format
         prompts = [
             ("Question: Which object is lighter? Answer:", " feather"),
             ("Question: Can birds fly? Answer:", " yes"),
@@ -246,7 +247,6 @@ def main() -> None:
     parser.add_argument("--output-csv", type=str, default=None, help="Output CSV path")
     args = parser.parse_args()
 
-    # Framework paths
     here = Path(__file__).resolve().parent
     codes = here.parent
     for p in [str(codes), str(codes.parent)]:

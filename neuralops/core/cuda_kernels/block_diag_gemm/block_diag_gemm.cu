@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -7,10 +14,6 @@
 namespace neuralops {
 namespace cuda {
 
-// Production 2D Block-Tiled Block-Diagonal GEMM:
-// X: [M, G, Kg], Weights: [G, Ng, Kg], Bias: [G, Ng] (optional)
-// Out: [M, G, Ng]
-// Fully parallelized across tokens M, groups G, and output channels Ng.
 template <typename scalar_t>
 __launch_bounds__(256)
 __global__ void block_diag_gemm_2d_fwd_kernel(
@@ -43,8 +46,8 @@ __global__ void block_diag_gemm_2d_fwd_kernel(
     out[out_base + n] = from_float<scalar_t>(acc);
 }
 
-} // namespace cuda
-} // namespace neuralops
+}
+}
 
 torch::Tensor block_diag_gemm_fwd(
     const torch::Tensor& x,

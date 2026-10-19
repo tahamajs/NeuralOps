@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -8,7 +15,6 @@
 namespace neuralops {
 namespace cuda {
 
-// GLA Scan: S_t = alpha_t * S_{t-1} + k_t * v_t^T, y_t = q_t * S_t
 template <typename scalar_t, int MAX_D>
 __launch_bounds__(128)
 __global__ void gla_scan_fwd_kernel(
@@ -27,7 +33,7 @@ __global__ void gla_scan_fwd_kernel(
     const int bh = blockIdx.y;
     if (bh >= B * H) return;
 
-    const int j = threadIdx.x; // column index
+    const int j = threadIdx.x;
 
     float S_col[MAX_D];
     #pragma unroll
@@ -70,8 +76,8 @@ __global__ void gla_scan_fwd_kernel(
     }
 }
 
-} // namespace cuda
-} // namespace neuralops
+}
+}
 
 torch::Tensor gla_scan_fwd(
     const torch::Tensor& q,

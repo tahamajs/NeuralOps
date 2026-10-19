@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Reproduction shell script and Dockerfile generation utilities
 
 Implements reproduce functionality for NeuralOps.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -50,11 +54,6 @@ def generate_reproduction_script(result: BenchmarkResult, target_script_path: Pa
 
     env = result.environment
     script_content = f"""#!/usr/bin/env bash
-# ==============================================================================
-# NeuralOps Automated Reproduction Script
-# Run ID: {result.run_id}
-# Module: {result.module.get('name')} | Model: {result.model.get('name')}
-# ==============================================================================
 set -euo pipefail
 
 echo "=========================================================="
@@ -73,7 +72,6 @@ echo "✓ Reproduction run completed successfully!"
 """
     p.write_text(script_content, encoding="utf-8")
     try:
-        # Make executable
         st = os.stat(p)
         os.chmod(p, st.st_mode | stat.S_IEXEC)
     except Exception:

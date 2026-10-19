@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -33,7 +40,6 @@ __global__ void fused_ce_fwd_kernel(
     float local_max = -1e30f;
     float local_sum = 0.0f;
 
-    // 128-bit vectorized loading if aligned and size allows
     constexpr int VEC = (sizeof(scalar_t) == 2) ? 8 : ((sizeof(scalar_t) == 4) ? 4 : 1);
     const int num_vec = V / VEC;
     using vec_t = typename std::conditional<(sizeof(scalar_t) == 2), uint4,
@@ -54,7 +60,6 @@ __global__ void fused_ce_fwd_kernel(
         }
     }
 
-    // Remainder
     for (int v = num_vec * VEC + tid; v < V; v += num_threads) {
         const float val = to_float(logits[row * V + v]);
         const float new_max = fmaxf(local_max, val);
@@ -62,7 +67,6 @@ __global__ void fused_ce_fwd_kernel(
         local_max = new_max;
     }
 
-    // Warp reduction
     #pragma unroll
     for (int mask = 16; mask > 0; mask >>= 1) {
         const float other_max = __shfl_xor_sync(0xffffffff, local_max, mask);
@@ -234,8 +238,8 @@ __global__ void fused_ce_bwd_kernel(
     }
 }
 
-} // namespace cuda
-} // namespace neuralops
+}
+}
 
 torch::Tensor fused_ce_fwd(
     const torch::Tensor& logits,

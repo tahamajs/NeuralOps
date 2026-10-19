@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 CLI Benchmark Command
 
 Implements the command-line interface for running attention and kernel benchmarks.
-
-Author: Taha Majlesi
 """
 
 import argparse
@@ -28,8 +32,8 @@ def cmd_bench(args):
     print(f"==================================================")
 
     from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
-    import neuralops.attentions  # ensure registered
-    import neuralops.compression_engine  # ensure registered
+    import neuralops.attentions
+    import neuralops.compression_engine
 
     all_attn = getattr(args, "all_attention", False) or getattr(args, "all", False)
     all_comp = getattr(args, "all_compressors", False) or getattr(args, "all", False)
@@ -135,7 +139,6 @@ def cmd_bench(args):
         print(f"\nSweep Finished: {passes}/{len(targets)} passed, {failures} failed.")
         return 0 if failures == 0 else 1
 
-    # Single target evaluation
     mod_name, mod_type = targets[0]
     if mode == "kd":
         cmd = [

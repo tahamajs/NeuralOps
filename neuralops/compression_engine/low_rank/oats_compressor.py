@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 OATS: Outlier-Aware Low-Rank and Saliency Pruning Compressor
 
 Separates salient outlier channels from normal weights, applying low-rank SVD to bulk weights while preserving high-magnitude paths.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations

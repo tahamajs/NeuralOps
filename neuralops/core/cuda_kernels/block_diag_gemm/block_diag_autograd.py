@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Block-Diagonal GEMM Autograd Interface
 
 Hardware-accelerated CUDA C++ autograd implementation with analytical gradients and three-level fallback dispatch.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -46,7 +50,6 @@ def block_diag_matmul_pytorch_ref(
     orig_shape = x.shape
     G, Ng, Kg = weights.shape
     x_3d = x.reshape(-1, G, Kg)
-    # [M, G, 1, Kg] @ [1, G, Kg, Ng] -> [M, G, 1, Ng]
     y = torch.einsum("mgk,gnk->mgn", x_3d, weights)
     if bias is not None:
         y = y + bias.unsqueeze(0)

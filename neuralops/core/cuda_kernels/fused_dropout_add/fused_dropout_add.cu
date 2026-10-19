@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -6,7 +13,6 @@
 namespace neuralops {
 namespace cuda {
 
-// Philox-4x32-10 PRNG directly evaluated in device registers
 __device__ __forceinline__ void philox4x32_10(
     uint32_t counter[4],
     uint32_t key[2],
@@ -44,14 +50,13 @@ __device__ __forceinline__ void philox4x32_10(
         k1 += W1;
     }
 
-    constexpr float factor = 2.3283064365386963e-10f; // 1.0 / 2^32
+    constexpr float factor = 2.3283064365386963e-10f;
     out[0] = static_cast<float>(c0) * factor;
     out[1] = static_cast<float>(c1) * factor;
     out[2] = static_cast<float>(c2) * factor;
     out[3] = static_cast<float>(c3) * factor;
 }
 
-// 128-bit float4 vectorized fused dropout + residual add kernel using on-chip Philox PRNG
 template <typename scalar_t>
 __launch_bounds__(256)
 __global__ void fused_dropout_add_vectorized_kernel(
@@ -118,7 +123,6 @@ __global__ void fused_dropout_add_vectorized_kernel(
         }
     }
 
-    // Remainder loop
     const int rem_start = num_vec * 4;
     for (int idx = rem_start + tid; idx < total_elements; idx += stride) {
         const float x_val = to_float(x[idx]);
@@ -139,8 +143,8 @@ __global__ void fused_dropout_add_vectorized_kernel(
     }
 }
 
-} // namespace cuda
-} // namespace neuralops
+}
+}
 
 torch::Tensor fused_dropout_add_fwd(
     const torch::Tensor& x,

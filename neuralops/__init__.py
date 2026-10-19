@@ -1,7 +1,11 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 NeuralOps Core Modules.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -14,7 +18,6 @@ __version__ = "1.4.0"
 import importlib.machinery
 import importlib.util
 
-# Transparent Import Hook for Cleaned Submodule Aliases
 import sys
 from importlib.abc import MetaPathFinder
 
@@ -35,7 +38,6 @@ class _AliasLoader:
 
 class _ModuleAliasFinder(MetaPathFinder):
     _ALIASES = {
-        # Attentions
         "neuralops.attentions.gqa": "neuralops.attentions.gqa_attention",
         "neuralops.attentions.galerkin": "neuralops.attentions.galerkin_attention",
         "neuralops.attentions.galerkin_inject": "neuralops.attentions.galerkin_attention",
@@ -88,7 +90,6 @@ class _ModuleAliasFinder(MetaPathFinder):
         "neuralops.attentions.selective_scan": "neuralops.core.selective_scan",
         "neuralops.attentions.ssm_scan": "neuralops.core.selective_scan",
         "neuralops.attentions.legacy_ensemble": "neuralops.core.legacy_ensemble",
-        # Compressors
         "neuralops.compression_engine.aasvd": "neuralops.compression_engine.aa_svd_compressor",
         "neuralops.compression_engine.adasvd": "neuralops.compression_engine.adasvd_compressor",
         "neuralops.compression_engine.cur_moe": "neuralops.compression_engine.cur_moe_compressor",
@@ -122,7 +123,6 @@ class _ModuleAliasFinder(MetaPathFinder):
         "neuralops.compression_engine.hashed_linear": "neuralops.compression_engine.hashed_net_compressor",
         "neuralops.compression_engine.come": "neuralops.compression_engine.come_compressor",
         "neuralops.compression_engine.rala_compressor": "neuralops.attentions.rala_attention",
-        # Reorganized Benchmarks & Sweepers
         "neuralops.run_quality_sweep": "neuralops.benchmarks.run_quality_sweep",
         "neuralops.run_rank_sweeper": "neuralops.benchmarks.run_rank_sweeper",
         "neuralops.run_all_benchmarks": "neuralops.benchmarks.run_all_benchmarks",
@@ -138,17 +138,14 @@ class _ModuleAliasFinder(MetaPathFinder):
         "neuralops.launch_parallel_sweep": "neuralops.benchmarks.launch_parallel_sweep",
         "neuralops.run_all_modules_scheduler": "neuralops.benchmarks.run_all_modules_scheduler",
         "neuralops.kd_quick_test": "neuralops.benchmarks.kd_quick_test",
-        # Reorganized Evaluation & Verification
         "neuralops.evaluation": "evaluation",
         "neuralops.eval_all_models_datasets": "evaluation.eval_all_models_datasets",
         "neuralops.eval_perplexity": "evaluation.eval_perplexity",
         "neuralops.full_mnli_validation": "evaluation.full_mnli_validation",
         "neuralops.run_lm_eval_harness": "evaluation.run_lm_eval_harness",
         "neuralops.run_baseline_comparison": "evaluation.run_baseline_comparison",
-        # Reorganized Trainer & Analysis
         "neuralops.train_lra": "neuralops.trainer.train_lra",
         "neuralops.generate_all_modules_analysis": "neuralops.analysis.generate_all_modules_analysis",
-        # Triton Kernels Bidirectional Submodule Aliases
         "neuralops.core.triton_kernels.block_sparse_streaming_attn": "neuralops.kernels.triton.block_sparse_streaming_attn",
         "neuralops.core.triton_kernels.chunked_delta_gate_scan": "neuralops.kernels.triton.chunked_delta_gate_scan",
         "neuralops.core.triton_kernels.cosformer_linear_attention": "neuralops.kernels.triton.cosformer_linear_attention",
@@ -229,7 +226,6 @@ class _ModuleAliasFinder(MetaPathFinder):
 if not any(isinstance(finder, _ModuleAliasFinder) for finder in sys.meta_path):
     sys.meta_path.insert(0, _ModuleAliasFinder())
 
-# Configure PyTorch CUDA Linear Algebra Backend Robustness on Pascal / legacy architectures lazily
 def _patch_pascal_svd_if_needed():
     if "torch" in sys.modules:
         try:
@@ -261,7 +257,6 @@ def _patch_pascal_svd_if_needed():
 _patch_pascal_svd_if_needed()
 
 
-# Symbol to (module_path, attr_name) mapping for fast, lazy resolution
 _LAZY_EXPORTS = {
     "ABTestResult": ("evaluation.ab_testing", "ABTestResult"),
     "ABTester": ("evaluation.ab_testing", "ABTester"),
@@ -330,7 +325,6 @@ _LAZY_EXPORTS = {
     "triton_dispatch": ("neuralops.core.triton_kernels", "triton_dispatch"),
 }
 
-# Direct User-Facing Functional API and Subpackage Exports via PEP 562 Lazy Loading
 _API_EXPORTS = {
     "load_model": "neuralops.api",
     "replace_attention": "neuralops.api",
@@ -373,7 +367,6 @@ _API_EXPORTS = {
     "AutoNeuralOpsForCausalLM": "neuralops.api",
     "AutoNeuralOpsForSequenceClassification": "neuralops.api",
     "merge_for_inference": "neuralops.api",
-    # Specific attention and optimizer classes
     "GLAttention": "neuralops.attentions.linear.gla_attention",
     "CosformerAttention": "neuralops.attentions.linear.cosformer",
     "SVDLinearAttention": "neuralops.attentions.svd.svd_linear_attention",
@@ -388,7 +381,6 @@ _API_EXPORTS = {
     "WeightCopyError": "neuralops.core.exceptions",
     "BackendError": "neuralops.core.exceptions",
     "NumericalError": "neuralops.core.exceptions",
-    # Hardware Quantization & Incoherent Rotations
     "BitPackedW4A16Linear": "neuralops.core.triton_kernels.low_rank",
     "BitPackedLowRankSVDLinear": "neuralops.core.triton_kernels.low_rank",
     "pack_int4_weights": "neuralops.core.triton_kernels.low_rank",
@@ -396,7 +388,6 @@ _API_EXPORTS = {
     "fused_w4a16_gemm_triton": "neuralops.core.triton_kernels.low_rank",
     "fast_hadamard_transform": "neuralops.core.triton_kernels.elementwise",
     "HadamardIncoherentSVDCompressor": "neuralops.compression_engine.svd.hadamard_incoherent_svd",
-    # Self-Speculative Decoding & Evaluation & Paged State/Cache
     "SelfSpeculativeDecoder": "neuralops.inference.speculative_decoding",
     "SpeculativeDecodeStats": "neuralops.inference.speculative_decoding",
     "PagedKVCache": "neuralops.inference.paged_cache",
@@ -409,7 +400,6 @@ _API_EXPORTS = {
     "evaluate_zero_shot_tasks": "evaluation.lm_eval_adapter",
 }
 
-# Subpackages made available lazily
 _SUBPACKAGES = {
     "analysis", "attentions", "benchmarks", "cli", "compression_engine",
     "config", "core", "distributed", "experiment_logging",
@@ -464,7 +454,6 @@ def create_attention(
     )
     resolved_rank = rank or kwargs.pop("r", None)
 
-    # Re-inject normalized names into kwargs
     call_kwargs = dict(kwargs)
     if resolved_dim is not None:
         call_kwargs["dim"] = resolved_dim
@@ -488,7 +477,6 @@ def create_attention(
         config._is_synthetic = True
         call_kwargs["config"] = config
 
-    # Dynamic multi-attempt constructor resolution
     init_attempts = []
     if config is not None:
         init_attempts.append(lambda: cls(config=config, **{k: v for k, v in call_kwargs.items() if k != "config"}))
@@ -527,7 +515,6 @@ def create_compressor(name: str, model: Any = None, rank: int | None = None, **k
     if resolved_rank is not None:
         call_kwargs["rank"] = resolved_rank
 
-    # Many compressors expect (model, ...) as first positional or keyword arg
     if model is not None:
         call_kwargs["model"] = model
 
@@ -537,7 +524,6 @@ def create_compressor(name: str, model: Any = None, rank: int | None = None, **k
     if model is not None:
         attempts.append(lambda: cls(model, **{k: v for k, v in call_kwargs.items() if k != "model"}))
     else:
-        # If no model was passed but the compressor requires one, supply a lightweight dummy host
         import torch.nn as nn
         dummy_host = nn.Sequential(nn.Linear(64, 64))
         attempts.append(lambda: cls(model=dummy_host, **call_kwargs))

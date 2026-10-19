@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Torch Compile Benchmark for Attention Modules
 
 Empirically benchmarks compilation speed, memory, and runtime throughput across all attention modules.
-
-Author: Taha Majlesi
 """
 
 import os
@@ -17,7 +21,6 @@ import torch
 import torch.nn as nn
 import torch._dynamo as dynamo
 
-# Configure Dynamo for zero-recompile execution
 dynamo.config.capture_scalar_outputs = True
 dynamo.config.allow_unspec_int_on_nn_module = True
 
@@ -58,7 +61,6 @@ def get_is_decoder(model_name: str) -> bool:
         return True
     if model_name in BIDIRECTIONAL_MODELS:
         return False
-    # Default to causal for general autoregressive benchmark
     return True
 
 
@@ -80,7 +82,6 @@ def benchmark_torch_compile(
     gpu_name = torch.cuda.get_device_name(0) if torch.cuda.is_available() and device.startswith("cuda") else "CPU"
     print(f"Executing Inductor torch.compile(mode='reduce-overhead', dynamic=True) on {device} ({gpu_name})", flush=True)
 
-    # Strict adherence to canonical attention mechanisms (excluding deprecated aliases)
     raw_keys = sorted(ATTENTION_REGISTRY.keys())
     attn_keys = [k for k in raw_keys if k not in DEPRECATED_ALIASES]
     if filter_modules:
@@ -137,7 +138,6 @@ def benchmark_torch_compile(
 
             dtype = get_benchmark_dtype(attn_name, cls) if device == "cuda" else torch.float32
 
-            # Instantiate module with causal safety awareness
             inst_kwargs = {"dim": DIM, "num_heads": NUM_HEADS, "is_decoder": True}
             try:
                 mod = cls(**inst_kwargs).to(device)
@@ -157,10 +157,8 @@ def benchmark_torch_compile(
                     pass
             mod.eval()
 
-            # Compile with reduce-overhead & dynamic=True
             compiled_mod = torch.compile(mod, mode="reduce-overhead", dynamic=True)
 
-            # 1. Warmup and initial dynamic compilation at L=128
             x128 = torch.randn(BATCH_SIZE, 128, DIM, device=device, dtype=dtype)
             t0 = time.perf_counter()
             if hasattr(torch.compiler, "cudagraph_mark_step_begin"):
@@ -176,7 +174,6 @@ def benchmark_torch_compile(
             graphs_128 = dynamo.utils.counters["stats"].get("unique_graphs", 1)
             graph_breaks = dynamo.utils.counters["stats"].get("graph_break", 0)
 
-            # Eager baseline for L=128
             with torch.no_grad():
                 out128_eager = mod(x128)
             if isinstance(out128_eager, tuple):
@@ -192,7 +189,6 @@ def benchmark_torch_compile(
                 "discrepancy": round(disc128, 8)
             }
 
-            # 2. Forward pass at L=256 (Should reuse dynamic graph)
             x256 = torch.randn(BATCH_SIZE, 256, DIM, device=device, dtype=dtype)
             if hasattr(torch.compiler, "cudagraph_mark_step_begin"):
                 torch.compiler.cudagraph_mark_step_begin()
@@ -213,7 +209,6 @@ def benchmark_torch_compile(
                 "has_inf": torch.isinf(out256_compiled).any().item()
             }
 
-            # 3. Forward pass at L=512 (Should reuse dynamic graph)
             x512 = torch.randn(BATCH_SIZE, 512, DIM, device=device, dtype=dtype)
             if hasattr(torch.compiler, "cudagraph_mark_step_begin"):
                 torch.compiler.cudagraph_mark_step_begin()
@@ -238,7 +233,6 @@ def benchmark_torch_compile(
             mod_rec["recompilations"] = total_mod_recomp
             total_recompilations += total_mod_recomp
 
-            # Strict Compile Validation
             if graphs_512 >= 8:
                 mod_rec["compile_status"] = "RECOMPILE_LIMIT"
                 mod_rec["reliability"] = "UNRELIABLE"
@@ -249,7 +243,6 @@ def benchmark_torch_compile(
                 mod_rec["compile_status"] = "FULLY_COMPILED"
                 mod_rec["reliability"] = "RELIABLE"
 
-            # Timing benchmark at L=256
             for _ in range(3):
                 with torch.no_grad():
                     _ = mod(x256)
@@ -337,14 +330,12 @@ def benchmark_torch_compile(
         "average_speedup": round(sum(m["speedup"] for m in results["modules"].values()) / max(len(attn_keys), 1), 2)
     }
 
-    # Save CSV
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     with open(output_path, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=["Module", "Status", "Reliability", "CUDA (ms)", "PyTorch (ms)", "Speedup", "Recompiles", "Zero_NaN", "Zero_Inf"])
         writer.writeheader()
         writer.writerows(records_for_csv)
 
-    # Save JSON
     json_path = output_path.replace(".csv", ".json")
     with open(json_path, "w", encoding="utf-8") as f:
         json.dump(results, f, indent=2)

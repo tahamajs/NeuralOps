@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Multi-Precision Numerical Cross-Validation and Throughput Benchmark
 
 Evaluates FP32, FP16, BF16, FP8 (E4M3, E5M2) trade-offs across flagship kernels: GLA Scan, Differential Attention, Block-Sparse Attention, Rotational SVD, and FP8 GEMM.
-
-Author: Taha Majlesi
 """
 
 import argparse
@@ -64,14 +68,12 @@ def measure_benchmark(
     if device.type == "cuda":
         torch.cuda.manual_seed_all(42)
 
-    # Dimensions
     B, H, N, D = 4, 8, 512, 64
     r_dim = 16
     M_gemm, K_gemm, N_gemm = 512, 512, 512
 
     results_table = []
 
-    # 1. Reference FP32 tensors
     gla_q_ref = torch.randn(B, H, N, D, device=device, dtype=torch.float32) / (D ** 0.5)
     gla_k_ref = torch.randn(B, H, N, D, device=device, dtype=torch.float32) / (D ** 0.5)
     gla_v_ref = torch.randn(B, H, N, D, device=device, dtype=torch.float32) * 0.1
@@ -100,7 +102,6 @@ def measure_benchmark(
     gemm_sa = torch.tensor([1.0], device=device, dtype=torch.float32)
     gemm_sb = torch.tensor([1.0], device=device, dtype=torch.float32)
 
-    # Reference Outputs in FP32
     with torch.no_grad():
         y_gla_ref = gla_scan(gla_q_ref, gla_k_ref, gla_v_ref, lambdas=gla_l_ref)
         if isinstance(y_gla_ref, tuple):
@@ -111,7 +112,6 @@ def measure_benchmark(
         y_rot_ref = rotational_svd(rot_x_ref, rot_rin_ref, rot_vr_ref, rot_ur_ref)
         y_gemm_ref = torch.matmul(gemm_a_ref, gemm_b_ref)
 
-    # Theoretical FLOPs
     flops_gla = 4 * B * H * N * D * D
     flops_diff = 4 * B * H * N * N * D
     flops_sparse = 2 * (1.0 / num_blocks) * 2 * B * H * N * N * D
@@ -205,13 +205,11 @@ def measure_benchmark(
                         b = gemm_b_ref.to(torch.float8_e5m2)
                         fn = lambda: gemm_mod.fp8_gemm_fwd(a, b, gemm_sa, gemm_sb, None, torch.float16)
 
-                # Warmup
                 for _ in range(warmup):
                     _ = fn()
                 if device.type == "cuda":
                     torch.cuda.synchronize()
 
-                # Timing
                 t0 = time.perf_counter()
                 for _ in range(repeat):
                     out = fn()
@@ -254,7 +252,6 @@ def measure_benchmark(
                     "zero_nan": False,
                 })
 
-    # Save CSV
     if output_csv:
         csv_path = Path(output_csv)
         csv_path.parent.mkdir(parents=True, exist_ok=True)
@@ -265,7 +262,6 @@ def measure_benchmark(
                 writer.writerow(r)
         print(f"\nSaved CSV to: {csv_path}")
 
-    # Save JSON
     if output_json:
         json_path = Path(output_json)
         json_path.parent.mkdir(parents=True, exist_ok=True)
@@ -273,7 +269,6 @@ def measure_benchmark(
             json.dump(results_table, f, indent=2)
         print(f"Saved JSON to: {json_path}")
 
-    # Generate LaTeX Table
     if output_tex:
         tex_path = Path(output_tex)
         tex_path.parent.mkdir(parents=True, exist_ok=True)

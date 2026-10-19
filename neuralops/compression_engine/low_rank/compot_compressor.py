@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 COMPOT: Compressed Orthogonal Dictionary Learning Compressor
 
 Factorizes linear weight matrices into orthogonal dictionary bases and sparse code coefficients for efficient matrix multiplication.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations

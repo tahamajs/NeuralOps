@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 lm-evaluation-harness integration and CLI evaluation runner for NeuralOps models.
 Supports evaluating standard zero-shot tasks (wikitext, lambada, piqa, hellaswag,
 winogrande, arc_easy, arc_challenge, boolq, sciq, copa, openbookqa) natively.
 Registers 'neuralops' and 'fla' model wrappers into lm_eval.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -23,7 +27,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-# Framework paths
 HERE = Path(__file__).resolve().parent
 CODES = HERE.parent
 ROOT = CODES.parent
@@ -35,7 +38,6 @@ from evaluation.eval_patcher import apply_module_to_model
 
 logger = logging.getLogger("evaluation.harness")
 
-# Graceful detection of lm-eval
 try:
     import lm_eval
     import lm_eval.api.model
@@ -93,7 +95,6 @@ class NeuralOpsLMWrapper(BaseLM):
         else:
             self._dtype = dtype
 
-        # Model initialization
         if isinstance(pretrained, str):
             self.model_name_or_path = pretrained
             self.model = AutoModelForCausalLM.from_pretrained(
@@ -105,7 +106,6 @@ class NeuralOpsLMWrapper(BaseLM):
             self.model = pretrained
             self.model_name_or_path = getattr(pretrained, "name_or_path", "neuralops_model")
 
-        # Apply NeuralOps attention or compression module if specified
         self.module_name = module_name
         self.module_type = module_type
         if module_name and module_name.lower() not in ["none", "null", "baseline"]:
@@ -119,7 +119,6 @@ class NeuralOpsLMWrapper(BaseLM):
         self.model.to(self._device)
         self.model.eval()
 
-        # Tokenizer setup
         if tokenizer is None:
             if isinstance(pretrained, str):
                 self.tokenizer = AutoTokenizer.from_pretrained(
@@ -213,11 +212,10 @@ class NeuralOpsLMWrapper(BaseLM):
 
             inp = torch.tensor([full_tokens], dtype=torch.long, device=self.device)
             with torch.no_grad():
-                logits = self.model(inp).logits[0]  # [seq_len, vocab_size]
+                logits = self.model(inp).logits[0]
                 shift_logits = logits[:-1, :]
                 shift_targets = inp[0, 1:]
                 
-                # Slicing target continuation tokens
                 cont_logits = shift_logits[ctx_len - 1:]
                 cont_targets = shift_targets[ctx_len - 1:]
 
@@ -409,7 +407,6 @@ def run_evaluation(
                 "module_type": module_type,
             }
 
-    # Handle structured outputs
     effective_json = output_path if (output_path and not output_path.endswith(".csv")) else None
     effective_csv = output_csv_path or (output_path if (output_path and output_path.endswith(".csv")) else None)
     save_evaluation_results(eval_results, json_path=effective_json, csv_path=effective_csv)

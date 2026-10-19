@@ -1,4 +1,3 @@
-<!-- Author: Taha Majlesi -->
 <div align="center">
 
 <img src="assets/banner.svg" alt="NeuralOps Banner" width="100%" />

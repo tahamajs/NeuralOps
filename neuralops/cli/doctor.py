@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 CLI Doctor Command
 
 Inspects local hardware, CUDA toolchains, drivers, and dependencies for environment readiness.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -33,7 +37,6 @@ def cmd_doctor() -> int:
     rows = []
     all_ok = True
 
-    # 1. PyTorch & CUDA Detection
     try:
         import torch
         cuda_avail = torch.cuda.is_available()
@@ -49,7 +52,6 @@ def cmd_doctor() -> int:
         rows.append(("PyTorch", "Not installed", "fail", "Core runtime"))
         all_ok = False
 
-    # 2. Triton Detection & Cache Inspection
     try:
         import triton
         triton_cache = os.environ.get("TRITON_CACHE_DIR", str(Path.home() / ".triton" / "cache"))
@@ -57,7 +59,6 @@ def cmd_doctor() -> int:
     except ImportError:
         rows.append(("Triton JIT", "Not installed (PyTorch fallbacks active)", "warn", "Kernel compiler"))
 
-    # 3. Disk & Git Lock Hygiene
     try:
         repo_root = Path.cwd()
         git_lock = repo_root / ".git" / "index.lock"
@@ -74,7 +75,6 @@ def cmd_doctor() -> int:
     except Exception as e:
         rows.append(("Disk / Git", f"Check error: {e}", "warn", "Filesystem"))
 
-    # 4. Registry Integrity
     try:
         import neuralops.attentions  # noqa: F401
         import neuralops.compression_engine  # noqa: F401
@@ -87,7 +87,6 @@ def cmd_doctor() -> int:
         rows.append(("Registry Integrity", f"Failed to load: {e}", "fail", "Registry"))
         all_ok = False
 
-    # 5. Subpackage Import Health
     subpackages = [
         "core",
         "attentions",
@@ -113,7 +112,6 @@ def cmd_doctor() -> int:
         rows.append(("Subpackage Health", f"Errors in: {', '.join(failed_sub)}", "fail", "Package integrity"))
         all_ok = False
 
-    # Render output
     if HAS_RICH and console is not None:
         table = Table(title=f"NeuralOps Production Diagnostics (v{ver})", header_style="bold cyan")
         table.add_column("Status", justify="center", width=8)

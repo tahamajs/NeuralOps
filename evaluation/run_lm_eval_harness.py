@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 # Requires: pip install lm-eval
 """
 LM Evaluation Harness Runner for Injected Attention and Compression Modules.
@@ -10,8 +17,6 @@ Evaluates GPT-2 downstream reasoning and QA capabilities across standard benchma
   - GSM8K: Multi-step mathematical reasoning
 
 Integrates with the framework module registry and apply_module_to_model.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -25,9 +30,6 @@ import time
 from pathlib import Path
 from typing import Any
 
-# ---------------------------------------------------------------------------
-# Path Setup
-# ---------------------------------------------------------------------------
 HERE = Path(__file__).resolve().parent
 CODES = HERE.parent
 ROOT = CODES.parent
@@ -35,9 +37,6 @@ for p in [str(CODES), str(ROOT)]:
     if p not in sys.path:
         sys.path.insert(0, p)
 
-# ---------------------------------------------------------------------------
-# Lazy ML imports (imported in main to allow --help without heavy dependencies)
-# ---------------------------------------------------------------------------
 torch = None
 AutoModelForCausalLM = None
 AutoTokenizer = None
@@ -48,9 +47,6 @@ HFLM = None
 simple_evaluate = None
 _HAS_LM_EVAL = False
 
-# ---------------------------------------------------------------------------
-# Logging
-# ---------------------------------------------------------------------------
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
@@ -145,14 +141,11 @@ def extract_task_metrics(
         for raw_k, val in task_dict.items():
             if not isinstance(val, (int, float)):
                 continue
-            # lm_eval metric keys frequently have commas, e.g., 'acc,none'
             clean_k = raw_k.split(",")[0].strip()
-            # Prioritize standard metric families
             if any(term in clean_k for term in ["acc", "exact_match", "f1", "em", "norm"]):
                 metrics[clean_k] = round(float(val), 4)
 
         if not metrics:
-            # Fallback: record all scalar numbers if standard patterns were not matched
             for raw_k, val in task_dict.items():
                 if isinstance(val, (int, float)):
                     clean_k = raw_k.split(",")[0].strip()

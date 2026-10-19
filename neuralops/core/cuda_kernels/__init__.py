@@ -1,7 +1,11 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 NeuralOps Core CUDA Kernels Hardware Operators.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -19,7 +23,6 @@ from neuralops.core.cuda_kernels._utils import (
     check_cuda_error,
 )
 
-# 48 Native CUDA C++ Packages
 from neuralops.core.cuda_kernels.low_rank_svd import (
     fused_lowrank_gated_gemm,
     fused_lowrank_gated_gemm_pytorch_ref,
@@ -299,7 +302,6 @@ from neuralops.core.cuda_kernels.logcumsumexp import (
     logcumsumexp_pytorch_ref,
 )
 
-# 20 Specialized Attention Modules CUDA Kernels
 
 from neuralops.core.cuda_kernels.soa_attn import (
     soa_attn,
@@ -378,7 +380,6 @@ from neuralops.core.cuda_kernels.routing_attention import (
     routing_attention_ref,
 )
 
-# 20 Additional SSM, Recurrent & Global Attention CUDA Kernels
 from neuralops.core.cuda_kernels.vspec import (
     vspec,
     vspec_ref,
@@ -497,7 +498,6 @@ def hgrn2_gated_outer(*args, **kwargs):
     return HGRN2GatedOuterBlock(*args, **kwargs)
 
 
-# Canonical Complete Inventory of 114 Native CUDA C++ Kernels (.cu files)
 CUDA_KERNEL_CATALOG: list[str] = [
     "act_scale_gemm",
     "adaptive_span",
@@ -690,7 +690,6 @@ __all__ = [
     "check_cuda_error",
     "CUDA_KERNEL_CATALOG",
     "list_cuda_kernels",
-    # 48 Flagship CUDA C++ Operators
     "fused_lowrank_gated_gemm",
     "fused_lowrank_gated_gemm_pytorch_ref",
     "chunked_delta_gate_scan",
@@ -771,7 +770,6 @@ __all__ = [
     "speculative_verify_pytorch_ref",
     "alibi_attention",
     "alibi_attention_pytorch_ref",
-    # Additional Native CUDA Operators
     "flash_gqa",
     "flash_gqa_pytorch_ref",
     "moe_dispatch_gather",
@@ -790,7 +788,6 @@ __all__ = [
     "sliding_window_pytorch_ref",
     "block_sparse_attn",
     "block_sparse_attn_pytorch_ref",
-    # 20 Additional Ultra-Optimized CUDA Kernels
     "entmax_bisect",
     "fused_entmax_bisect_pytorch",
     "split_head_norm",
@@ -831,7 +828,6 @@ __all__ = [
     "bitonic_topk_pytorch_ref",
     "logcumsumexp",
     "logcumsumexp_pytorch_ref",
-    # 20 Specialized Attention Modules CUDA Kernels
     "soa_attn",
     "soa_attn_ref",
     "nasc_attention",
@@ -870,7 +866,6 @@ __all__ = [
     "cluster_attention_ref",
     "routing_attention",
     "routing_attention_ref",
-    # 20 Additional SSM, Recurrent & Global Attention CUDA Kernels
     "vspec",
     "vspec_ref",
     "goldfinch_ahn",

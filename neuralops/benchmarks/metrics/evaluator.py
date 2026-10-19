@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Comprehensive metric evaluation functions across classification, QA, summarization, LM, etc
 
 Implements evaluator functionality for NeuralOps.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -58,7 +62,6 @@ class RegressionMetrics(Metric):
 @register_metric("language_modeling")
 class LanguageModelingMetrics(Metric):
     def compute(self, preds: Any, targets: Any) -> Dict[str, float]:
-        # preds can be average cross-entropy loss
         loss = float(preds) if isinstance(preds, (int, float)) else 1.0
         ppl = float(math.exp(min(loss, 20.0)))
         return {"loss": loss, "perplexity": ppl}
@@ -67,7 +70,6 @@ class LanguageModelingMetrics(Metric):
 @register_metric("question_answering")
 class QuestionAnsweringMetrics(Metric):
     def compute(self, preds: Any, targets: Any) -> Dict[str, float]:
-        # Basic exact match calculation
         matches = sum(1 for p, t in zip(preds, targets) if str(p).strip().lower() == str(t).strip().lower())
         total = max(len(preds), 1)
         em = matches / total
@@ -77,7 +79,6 @@ class QuestionAnsweringMetrics(Metric):
 @register_metric("summarization")
 class SummarizationMetrics(Metric):
     def compute(self, preds: Any, targets: Any) -> Dict[str, float]:
-        # Approximate word overlap ROUGE-1 / BLEU
         matches = 0
         total_tokens = 0
         for p, t in zip(preds, targets):

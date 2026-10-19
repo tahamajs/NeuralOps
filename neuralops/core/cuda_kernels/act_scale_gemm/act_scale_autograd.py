@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Activation-Scaled Quantized GEMM Autograd Interface
 
 Hardware-accelerated CUDA C++ autograd implementation with analytical gradients and three-level fallback dispatch.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -109,31 +113,22 @@ class _ActScaleQuantGemmFunction(torch.autograd.Function):
         x_2d, s_inv, w = ctx.saved_tensors
         dout_2d = dout.reshape(-1, ctx.out_features)
 
-        # Exact analytical adjoint gradients:
-        # Y = (x_2d * s_inv) @ w.T + bias
-        # x_smooth = x_2d * s_inv
-        # dout_2d: [M, N]
         s_inv_row = s_inv.view(1, -1)
         x_smooth = x_2d * s_inv_row
 
-        # dx_smooth = dout_2d @ w  [M, K]
         dx_smooth = torch.matmul(dout_2d, w)
 
-        # dx = dx_smooth * s_inv
         dx_2d = dx_smooth * s_inv_row
         dx = dx_2d.reshape(ctx.orig_shape)
 
-        # ds_inv = sum(dx_smooth * x_2d, dim=0)  [K]
         ds_inv = None
         if ctx.needs_input_grad[1]:
             ds_inv = (dx_smooth * x_2d).sum(dim=0).to(s_inv.dtype)
 
-        # dw = dout_2d.T @ x_smooth  [N, K]
         dw = None
         if ctx.needs_input_grad[2]:
             dw = torch.matmul(dout_2d.t(), x_smooth)
 
-        # dbias = dout_2d.sum(dim=0)  [N]
         dbias = None
         if ctx.has_bias and ctx.needs_input_grad[3]:
             dbias = dout_2d.sum(dim=0)

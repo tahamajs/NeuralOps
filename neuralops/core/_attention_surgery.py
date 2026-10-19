@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Attention Graph Surgery
 
 AST and module-tree manipulation routines performing in-place surgery on neural network layers.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -20,7 +24,6 @@ import torch.nn.functional as F
 
 logger = logging.getLogger(__name__)
 
-# Canonical projection search patterns
 PROJ_REGEX_PATTERNS: dict[str, list[re.Pattern]] = {
     "q": [
         re.compile(r"^q_proj$", re.I),
@@ -56,7 +59,6 @@ PROJ_REGEX_PATTERNS: dict[str, list[re.Pattern]] = {
     ],
 }
 
-# Regex matcher for unified multi-head projection layers (Falcon, StarCoder, GPT-2, GPT-NeoX, LLaMA-fused)
 FUSED_QKV_REGEX: re.Pattern = re.compile(
     r"^(qkv_proj|query_key_value|c_attn|qkv|Wqkv|W_qkv|in_proj|fused_qkv|qkv_linear)$",
     re.I,
@@ -86,7 +88,6 @@ def compute_reconstruction_error(src_weight: torch.Tensor, target_mod: nn.Module
             W_s = W_s.t() if (W_s.ndim == 2 and W_s.size(0) > W_s.size(1)) else W_s
 
         W_t = None
-        # Case 1: Reconstructed property or leaf parameter
         p_weight = getattr(target_mod, "weight", None)
         if isinstance(p_weight, nn.Parameter):
             W_t = p_weight.detach().cpu().float()
@@ -137,7 +138,6 @@ def _slice_fused_qkv_weights(
             or hasattr(base_mod, "nf")
         )
     elif fused_weight.ndim == 2 and fused_weight.size(0) < fused_weight.size(1):
-        # Shape-based Conv1D orientation: [in_dim, total_out_dim] where total_out_dim > in_dim (e.g. 2304 > 768)
         is_conv1d = True
 
     if is_conv1d and fused_weight.ndim == 2 and fused_weight.size(0) < fused_weight.size(1):
@@ -146,7 +146,6 @@ def _slice_fused_qkv_weights(
     total_out_dim = fused_weight.size(0)
 
     if num_kv_heads is None or num_kv_heads == num_heads:
-        # Standard MHA: 3 equal partitions
         split_size = total_out_dim // 3
         q_w = fused_weight[:split_size, :]
         k_w = fused_weight[split_size : 2 * split_size, :]
@@ -156,7 +155,6 @@ def _slice_fused_qkv_weights(
         k_b = fused_bias[split_size : 2 * split_size] if fused_bias is not None else None
         v_b = fused_bias[2 * split_size :] if fused_bias is not None else None
     else:
-        # Grouped-Query Attention (GQA) fused layout
         h_dim = head_dim or (total_out_dim // (num_heads + 2 * num_kv_heads))
         q_dim = num_heads * h_dim
         kv_dim = num_kv_heads * h_dim
@@ -176,7 +174,6 @@ def _slice_fused_qkv_weights(
     }
 
 
-# Public functional alias for fused QKV slicing
 slice_fused_qkv = _slice_fused_qkv_weights
 
 
@@ -193,7 +190,6 @@ def _copy_projection_weights(
     if target_mod is None or src_weight is None:
         return
 
-    # 1. Standard nn.Linear or single weight module target (where .weight is an actual leaf Parameter)
     target_weight_param = getattr(target_mod, "weight", None)
     if isinstance(target_weight_param, nn.Parameter):
         with torch.no_grad():
@@ -245,7 +241,6 @@ def _copy_projection_weights(
                     nn.init.zeros_(target_mod.bias)
         return
 
-    # 2. Low-rank / Factorized Module (down/up, down_proj/up_proj, U/V, or setter methods)
     down_mod = getattr(target_mod, "down", getattr(target_mod, "down_proj", None))
     up_mod = getattr(target_mod, "up", getattr(target_mod, "up_proj", None))
     is_low_rank = (
@@ -374,7 +369,6 @@ def _copy_projection_weights(
         return
 
 
-# Public functional alias for setting low-rank projection weights
 split_and_set_qkv_weights = _copy_projection_weights
 
 
@@ -420,9 +414,6 @@ def _svd_factorize_weights(
                 )
 
 
-# ===========================================================================
-# RoPE & GQA Backbone Surgery Hooks (LLaMA, Mistral, Qwen2)
-# ===========================================================================
 
 def adapt_decoder_attention_forward(
     module: nn.Module,
@@ -435,7 +426,6 @@ def adapt_decoder_attention_forward(
     Handles `position_embeddings`, `position_ids`, `past_key_value`, and standardizes
     return tuples to `(attn_output, attn_weights, past_key_value)` preventing unpacking crashes.
     """
-    # 1. Extract inputs
     hidden_states = args[0] if len(args) > 0 else kwargs.pop("hidden_states", kwargs.pop("query", None))
     attention_mask = args[1] if len(args) > 1 else kwargs.pop("attention_mask", kwargs.pop("mask", None))
 
@@ -445,7 +435,6 @@ def adapt_decoder_attention_forward(
     output_attentions = kwargs.pop("output_attentions", False)
     use_cache = kwargs.pop("use_cache", False)
 
-    # 2. Forward dispatch to injected module
     out = None
     call_attempts = [
         lambda: module(
@@ -490,14 +479,12 @@ def adapt_decoder_attention_forward(
             raise last_err
         raise RuntimeError(f"Failed to execute forward on injected module {type(module).__name__}")
 
-    # 3. Format return tuple strictly as (attn_output, attn_weights, past_key_value)
     if isinstance(out, tuple):
         attn_out = out[0]
         if len(out) >= 3:
             attn_weights = out[1]
             past_kv = out[2]
         elif len(out) == 2:
-            # If module returned (out, present/weights)
             attn_weights = out[1] if output_attentions else None
             past_kv = out[1] if not output_attentions else None
         else:
@@ -526,7 +513,6 @@ def apply_backbone_surgery_hooks(
     for name, module in model.named_modules():
         leaf = name.split(".")[-1].lower()
         if leaf in ("self_attn", "attention", "attn"):
-            # Ensure module has supports_gqa and supports_rope attributes if not set
             if not hasattr(module, "supports_gqa"):
                 setattr(module, "supports_gqa", True)
             if not hasattr(module, "supports_rope"):
@@ -574,13 +560,11 @@ def calibrate_surgically_replaced_model(
     device = next(surg_model.parameters()).device
     dtype = next(surg_model.parameters()).dtype
 
-    # Format inputs
     if isinstance(sample_inputs, dict):
         batch = {k: v.to(device) for k, v in sample_inputs.items()}
     else:
         batch = sample_inputs.to(device)
 
-    # 1. Identify attention module pairs (only leaf attention mechanisms)
     def _collect_attention_modules(m: nn.Module) -> dict[str, nn.Module]:
         attns = {}
         for name, sub in m.named_modules():
@@ -608,7 +592,6 @@ def calibrate_surgically_replaced_model(
     if not pairs:
         return surg_model
 
-    # 2. Capture layer outputs using forward hooks
     orig_outs: dict[int, torch.Tensor] = {}
     surg_outs: dict[int, torch.Tensor] = {}
     hooks = []
@@ -643,12 +626,11 @@ def calibrate_surgically_replaced_model(
     for h in hooks:
         h.remove()
 
-    # 3. Solve Closed-Form Ridge Alignment per layer
     for idx, (orig_mod, surg_mod) in enumerate(pairs):
         if idx not in orig_outs or idx not in surg_outs:
             continue
-        Y_orig = orig_outs[idx]  # (B, T, D)
-        Z = surg_outs[idx]       # (B, T, D)
+        Y_orig = orig_outs[idx]
+        Z = surg_outs[idx]
 
         if Y_orig.shape != Z.shape:
             continue
@@ -657,20 +639,18 @@ def calibrate_surgically_replaced_model(
         Y_flat = Y_orig.reshape(-1, D)
         Z_flat = Z.reshape(-1, D)
 
-        # Center statistics
         mu_Y = Y_flat.mean(dim=0, keepdim=True)
         mu_Z = Z_flat.mean(dim=0, keepdim=True)
         Z_c = Z_flat - mu_Z
         Y_c = Y_flat - mu_Y
 
-        # Solve (Z_c^T Z_c + lambda * I) W = Z_c^T Y_c
         reg = ridge_lambda * torch.eye(D, device=Z_flat.device, dtype=torch.float32)
         ZT_Z = torch.matmul(Z_c.t(), Z_c) + reg
         ZT_Y = torch.matmul(Z_c.t(), Y_c)
 
         try:
-            W_align = torch.linalg.solve(ZT_Z, ZT_Y)  # (D, D)
-            b_align = (mu_Y - torch.matmul(mu_Z, W_align)).squeeze(0)  # (D,)
+            W_align = torch.linalg.solve(ZT_Z, ZT_Y)
+            b_align = (mu_Y - torch.matmul(mu_Z, W_align)).squeeze(0)
         except Exception:
             continue
 
@@ -685,13 +665,11 @@ def calibrate_surgically_replaced_model(
                     out_proj = child
                     break
                 elif hasattr(child, "up") and isinstance(child.up, nn.Linear):
-                    # FactorizedLinear / SVDLinear
                     out_proj = child.up
                     break
 
         if out_proj is not None and out_proj.weight.shape[0] == D:
             W_cur = out_proj.weight.data.float()
-            # W_align is (D, D), out_proj.weight is (out_features=D, in_features)
             W_new = (1.0 - blend_alpha) * W_cur + blend_alpha * torch.matmul(W_align.t(), W_cur)
             out_proj.weight.data.copy_(W_new.to(dtype=out_proj.weight.dtype, device=out_proj.weight.device))
             if getattr(out_proj, "bias", None) is not None:
@@ -710,7 +688,6 @@ def calibrate_surgically_replaced_model(
                     return (1.0 - blend_alpha) * out + blend_alpha * (torch.matmul(out.float(), W_hook.float()) + b_hook.float()).to(out.dtype)
             surg_mod.register_forward_hook(_affine_forward_hook)
 
-    # 4. Optionally attach Convex Subspace Anchoring between orig_mod and surg_mod
     if attach_convex_anchor:
         if hasattr(orig_model, "roberta") and hasattr(surg_model, "roberta"):
             for mb, ms in zip(orig_model.roberta.encoder.layer, surg_model.roberta.encoder.layer):
@@ -765,7 +742,6 @@ def heal_replaced_model(
     teacher_model.eval()
     student_model.eval()
 
-    # Step 1: Analytical Warm-Start via Closed-Form Ridge if requested
     if also_ridge_init:
         try:
             calibrate_attention_subspace(
@@ -778,7 +754,6 @@ def heal_replaced_model(
         except Exception as e_ridge:
             logger.debug("Ridge warm-start skipped or failed: %s", e_ridge)
 
-    # Format inputs into a clean list of batch inputs
     batches = []
     if isinstance(calibration_inputs, dict):
         batches.append({k: v.to(target_dev) for k, v in calibration_inputs.items()})
@@ -791,13 +766,11 @@ def heal_replaced_model(
             elif isinstance(item, torch.Tensor):
                 batches.append(item.to(target_dev))
 
-    # Helper forward execution
     def _run_forward(m: nn.Module, b: Any) -> Any:
         if isinstance(b, dict):
             return m(**b)
         return m(b)
 
-    # Step 2: Identify leaf attention modules
     def _collect_attention_modules(m: nn.Module) -> dict[str, nn.Module]:
         attns = {}
         for name, sub in m.named_modules():
@@ -830,7 +803,6 @@ def heal_replaced_model(
             "per_layer": {},
         }
 
-    # Cache teacher inputs and outputs across all batches
     cached_inputs: Dict[str, list[torch.Tensor]] = {name: [] for name, _, _ in layer_pairs}
     cached_targets: Dict[str, list[torch.Tensor]] = {name: [] for name, _, _ in layer_pairs}
     hooks = []
@@ -857,7 +829,6 @@ def heal_replaced_model(
     for h in hooks:
         h.remove()
 
-    # Step 3: Freeze whole student backbone
     for p in student_model.parameters():
         p.requires_grad = False
 
@@ -876,14 +847,12 @@ def heal_replaced_model(
         H_in = in_list[0].to(target_dev)
         Y_tgt = tgt_list[0].to(target_dev)
 
-        # Unfreeze only this module's parameters
         trainable_params = [p for p in s_mod.parameters() if p.numel() > 0]
         if not trainable_params:
             continue
         for p in trainable_params:
             p.requires_grad = True
 
-        # Initial metrics calculation
         with torch.no_grad():
             s_mod.eval()
             try:
@@ -905,7 +874,6 @@ def heal_replaced_model(
                 dim=-1,
             ).mean().item()
 
-        # Optimizer and Scheduler
         optimizer = torch.optim.AdamW(trainable_params, lr=lr, weight_decay=weight_decay)
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=max(1, steps))
 
@@ -948,11 +916,9 @@ def heal_replaced_model(
                 best_loss = cur_loss_val
                 best_state = {k: v.clone() for k, v in s_mod.state_dict().items()}
 
-        # Restore best finite parameters
         s_mod.load_state_dict(best_state)
         s_mod.eval()
 
-        # Compute final evaluation metrics
         with torch.no_grad():
             try:
                 pred_final = s_mod(H_in.to(p.dtype))

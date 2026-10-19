@@ -1,10 +1,14 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Evaluation pipeline and benchmark orchestration for NeuralOps.
 
 Implements adaptive batch probing, multi-phase combination evaluation
 (environment setup, baseline scoring, compression injection, evaluation, artifact assembly),
 and convenience sweeps.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -155,9 +159,6 @@ def probe_optimal_batch_size(
         torch.cuda.empty_cache()
 
 
-# -----------------------------------------------------------------------------
-# Internal sub-phases of evaluate_single_combination_opt
-# -----------------------------------------------------------------------------
 
 
 def _setup_eval_environment(
@@ -658,7 +659,6 @@ def _finalize_benchmark_result(
     """Phase 5: Validate metric status and write comprehensive disk artifacts."""
     is_lm = dataset.lower() in LM_DATASETS
 
-    # FIX-10 validation rules
     if result.status == "PASS":
         for name in ("accuracy_pct", "loss", "perplexity", "f1_score", "fidelity_score", "grad_norm"):
             v = getattr(result, name, None)
@@ -685,7 +685,6 @@ def _finalize_benchmark_result(
             result.status = "FAIL"
             result.error_message = "Accuracy is 0.0; validation likely failed."
 
-    # Write traceable artifacts
     try:
         run_dir = Path(results_dir) / model_family / dataset / module_name / f"rank_{rank}"
         try:
@@ -819,7 +818,6 @@ def _run_single_trial(
     """Execute a single evaluation attempt for the combination."""
     is_lm = dataset.lower() in LM_DATASETS
 
-    # 1. Setup environment & base model
     env = _setup_eval_environment(model_family, dataset, seq_len, device)
     model = env["model"]
     num_labels = env["num_labels"]
@@ -827,7 +825,6 @@ def _run_single_trial(
     t_model_load = env["t_model_load"]
     is_cuda = env["is_cuda"]
 
-    # 2. Compression & calibration phase
     (
         model,
         comp_ratio,
@@ -850,7 +847,6 @@ def _run_single_trial(
     )
     params_before = sum(p.numel() for p in model.parameters())
 
-    # 3. Dynamic batch probing
     if retry_count == 0 and is_cuda:
         current_batch_size = probe_optimal_batch_size(
             model=model,
@@ -878,7 +874,6 @@ def _run_single_trial(
         filtered_batch["labels"][:, :-1] = ids[:, 1:]
         filtered_batch["labels"][:, -1] = -100
 
-    # 4. Latency & resource benchmark
     bench = _benchmark_runtime_latency(
         model,
         filtered_batch,
@@ -892,7 +887,6 @@ def _run_single_trial(
         seq_len,
     )
 
-    # 5. Full evaluation on validation set
     eval_metrics = _evaluate_model_accuracy(
         model,
         model_family,

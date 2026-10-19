@@ -1,3 +1,10 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
@@ -5,9 +12,6 @@
 
 namespace neuralops { namespace cuda {
 
-// Fast Walsh-Hadamard Transform (FWHT) in shared memory:
-// Computes H_N @ x via log2(N) butterfly stages.
-// Optimized with in-place shared-memory butterfly reduction and 128-bit float4 vectorized memory transactions.
 template <typename scalar_t>
 __global__ void __launch_bounds__(256) fwht_vectorized_kernel(
     scalar_t* __restrict__ out,
@@ -24,7 +28,6 @@ __global__ void __launch_bounds__(256) fwht_vectorized_kernel(
     const int tid = threadIdx.x;
     const int num_vec = B_dim / 4;
 
-    // Load with 128-bit float4 when possible
     for (int i = tid; i < num_vec; i += blockDim.x) {
         if constexpr (std::is_same_v<scalar_t, float>) {
             const float4 in4 = *reinterpret_cast<const float4*>(x + row * B_dim + i * 4);
@@ -45,7 +48,6 @@ __global__ void __launch_bounds__(256) fwht_vectorized_kernel(
     }
     __syncthreads();
 
-    // Fast Walsh-Hadamard Butterfly Stages
     const int half_dim = B_dim >> 1;
     for (int len = 1; len < B_dim; len <<= 1) {
         for (int idx = tid; idx < half_dim; idx += blockDim.x) {
@@ -65,7 +67,6 @@ __global__ void __launch_bounds__(256) fwht_vectorized_kernel(
 
     const float norm = 1.0f / sqrtf(static_cast<float>(B_dim));
 
-    // Write back with 128-bit float4 and orthonormal normalization
     for (int i = tid; i < num_vec; i += blockDim.x) {
         if constexpr (std::is_same_v<scalar_t, float>) {
             float4 out4;
@@ -87,7 +88,7 @@ __global__ void __launch_bounds__(256) fwht_vectorized_kernel(
 
 }
 
-}} // namespace neuralops::cuda
+}}
 
 torch::Tensor fwht_fwd(const torch::Tensor& x, int B_dim) {
     CHECK_INPUT(x);

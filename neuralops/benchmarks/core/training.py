@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Training and recovery fine-tuning loops for benchmark models
 
 Implements training functionality for NeuralOps.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -45,9 +49,6 @@ def finetune_classification(
         from neuralops.trainer.optimizers.factory import create_riemannian_stiefel
         optimizer = create_riemannian_stiefel(model, lr=lr)
     else:
-        # Differential learning rates:
-        # Newly injected attention modules, adapters, and classification heads require higher learning rates
-        # (e.g. 10x or min 3e-4) to calibrate and align, while the pretrained backbone requires conservative updates (lr).
         classifier_and_adapter_params = []
         backbone_params = []
         lr_adapter = max(lr * 10.0, 3e-4)
@@ -76,7 +77,6 @@ def finetune_classification(
         trainable_params = [p for group in param_groups for p in group["params"]]
         optimizer = AdamW(param_groups, foreach=False)
 
-    # Distributed backend wrapping via accelerate
     dist_backend = (distributed_backend or "none").lower()
     if dist_backend in ("ddp", "fsdp", "deepspeed"):
         try:
@@ -87,7 +87,6 @@ def finetune_classification(
         except Exception as e:
             LOG.warning("Distributed backend '%s' requested but Accelerate initialization failed: %s. Using local device.", dist_backend, e)
 
-    # Mixed precision setup
     use_cuda = str(device).startswith("cuda") and torch.cuda.is_available()
     mp_type = (mixed_precision or "no").lower()
     amp_enabled = mp_type in ("fp16", "bf16") and use_cuda
@@ -200,9 +199,6 @@ def train_kd(
 
     kd_loss_fn = KDLoss(temperature=temperature, alpha=alpha)
 
-    # Differential learning rates:
-    # Injected attention modules, adapters, and classification heads require calibrated learning rates
-    # (e.g. 2x backbone or 1e-4) to align with teacher distributions without destabilizing recurrent states.
     classifier_and_adapter_params = []
     backbone_params = []
     lr_adapter = max(lr * 2.0, 1e-4)
@@ -236,7 +232,6 @@ def train_kd(
     amp_dtype = torch.bfloat16 if mp_type == "bf16" else torch.float16
     scaler = torch.amp.GradScaler("cuda", enabled=(mp_type == "fp16" and use_cuda))
 
-    # Pre-cache teacher outputs for all batches to eliminate redundant teacher forward passes across epochs!
     teacher_logits_cache = []
     if teacher is not None:
         teacher.eval()
@@ -390,7 +385,6 @@ def train_with_training_type(
         )
 
     else:
-        # Standard full or fine-tuning
         return finetune_classification(
             model=model,
             train_loader=train_loader,

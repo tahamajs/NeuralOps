@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Multi-Seed Cross-Validation & Statistical Variance Stress Test for Seeds 100, 200, 300
 
 Implements stress test seeds 100 200 300 functionality for NeuralOps.
-
-Author: Taha Majlesi
 """
 
 import argparse

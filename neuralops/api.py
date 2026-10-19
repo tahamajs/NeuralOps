@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 NeuralOps Public Clean API
 
 Unified public interface enabling drop-in attention replacement, model compression, benchmarking, and export.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -22,9 +26,6 @@ from neuralops.export.exporter import export_model as _export_model, load_model 
 logger = logging.getLogger("NeuralOps.API")
 
 
-# =====================================================================
-# 1. Model / Surgery / Export Operations
-# =====================================================================
 
 def replace_attention(
     model: nn.Module,
@@ -52,7 +53,6 @@ def replace_attention(
     Returns:
         The model with attention layers replaced in-place.
     """
-    # Allow passing target_module or attention as an instantiated nn.Module or string alias
     target_mod = kwargs.pop("target_module", None)
     if isinstance(target_mod, str) and not attention:
         attention = target_mod
@@ -106,7 +106,6 @@ def replace_attention(
         **call_kwargs,
     )
 
-    # Attach surgery metadata onto model instance
     meta_entry: Dict[str, Any] = {
         "op": "replace",
         "type": attn_name,
@@ -174,7 +173,6 @@ def compress(
 
     out_model = compress_model(model=model, config=config)
 
-    # Attach compression metadata onto model instance
     meta_entry: Dict[str, Any] = {
         "op": "compress",
         "type": method,
@@ -193,8 +191,6 @@ def compress(
             out_model.config.neuralops_history = []
         out_model.config.neuralops_history.append(meta_entry)
 
-    # Enable transparent tuple unpacking: model_c, stats = compress(...)
-    # while preserving full nn.Module functionality if used as model = compress(...)
     orig_cls = out_model.__class__
     if not getattr(orig_cls, "_supports_compress_unpack", False):
         class _CompressibleModelProxy(orig_cls):
@@ -211,9 +207,6 @@ def compress(
     return out_model
 
 
-# =====================================================================
-# Model Surgery & Transplantation Aliases & Functions
-# =====================================================================
 
 def transplant_attention(
     model: nn.Module,
@@ -364,8 +357,6 @@ def compile_to_so(
 
 
 
-# =====================================================================
-# 2. Discovery Operations
 def _ensure_registries_loaded() -> None:
     """Ensure all subpackages registering attentions and compressors are imported."""
     try:
@@ -442,7 +433,6 @@ def list_families() -> Dict[str, List[str]]:
         group_key = f"compression_{subfam}"
         families.setdefault(group_key, []).append(name)
 
-    # Sort modules within each family
     for k in families:
         families[k] = sorted(families[k])
 
@@ -600,14 +590,12 @@ def surgical_transplant_and_heal_pipeline(
     else:
         student = student_base_model
 
-    # Detect dimension from teacher model or calibration inputs if not passed
     call_kwargs = dict(kwargs)
     if "embed_dim" not in call_kwargs and "d_model" not in call_kwargs and "hidden_size" not in call_kwargs and "dim" not in call_kwargs:
         t_dim = getattr(teacher_model, "dim", getattr(teacher_model, "hidden_size", getattr(teacher_model, "d_model", None)))
         if t_dim is None and hasattr(teacher_model, "config"):
             t_dim = getattr(teacher_model.config, "hidden_size", getattr(teacher_model.config, "d_model", None))
         if t_dim is None:
-            # Check calibration inputs shape: (B, T, D)
             if calibration_inputs is not None and isinstance(calibration_inputs, torch.Tensor) and calibration_inputs.ndim >= 2:
                 t_dim = calibration_inputs.shape[-1]
             elif isinstance(calibration_inputs, (list, tuple)) and len(calibration_inputs) > 0 and isinstance(calibration_inputs[0], torch.Tensor):
@@ -615,10 +603,8 @@ def surgical_transplant_and_heal_pipeline(
         if t_dim is not None:
             call_kwargs["embed_dim"] = t_dim
 
-    # 1. Raw Surgical Replacement
     student = replace_attention(student, attention=target_attention, **call_kwargs)
 
-    # Measure raw student error if inputs provided
     initial_metrics: Dict[str, float] = {}
     if calibration_inputs is not None:
         try:
@@ -636,7 +622,6 @@ def surgical_transplant_and_heal_pipeline(
         except (RuntimeError, ValueError, TypeError, AttributeError) as e_metric:
             logger.debug("Raw metric check skipped: %s", e_metric)
 
-    # 2. Closed-Form Ridge Alignment & 3. Micro-Healing
     heal_stats: Dict[str, Any] = {}
     if calibration_inputs is not None:
         heal_stats = heal_replaced_model(
@@ -648,7 +633,6 @@ def surgical_transplant_and_heal_pipeline(
             also_ridge_init=True,
         )
 
-    # 4. Optional Persistence
     saved_path = None
     if save_dir is not None:
         from neuralops.models.surgical_io import save_surgical_checkpoint
@@ -664,8 +648,6 @@ def surgical_transplant_and_heal_pipeline(
         "heal_stats": heal_stats,
         "saved_path": str(saved_path) if saved_path is not None else None,
     }
-# 3. Runners (Train / Distill / Evaluate / Benchmark)
-# =====================================================================
 
 def train(
     model: nn.Module,
@@ -878,9 +860,6 @@ def benchmark_all(
     return runner.run()
 
 
-# =====================================================================
-# 4. Utilities & Diagnostics
-# =====================================================================
 
 def get_version() -> str:
     """Return the current NeuralOps release version."""
@@ -952,7 +931,6 @@ def info() -> Dict[str, Any]:
 
 
 __all__ = [
-    # Model/Export
     "load_model",
     "replace_attention",
     "transplant_attention",
@@ -960,12 +938,10 @@ __all__ = [
     "export_model",
     "push_to_hub",
     "load_exported_model",
-    # Surgery operations
     "collect_surgery_distillation_loss",
     "set_surgery_alpha",
     "set_surgery_stage",
     "finalize_surgery",
-    # Discovery & Factories
     "list_attentions",
     "list_compressors",
     "get_attention_class",
@@ -978,26 +954,21 @@ __all__ = [
     "unregister_custom_module",
     "validate_module_contract",
     "scaffold_module",
-    # Workflows & Pipelines
     "compare_attentions_ablation",
     "surgical_transplant_and_heal_pipeline",
-    # Runners
     "train",
     "distill",
     "evaluate",
     "benchmark",
     "benchmark_all",
-    # Utils
     "info",
     "available_backends",
     "has_triton",
     "validate",
     "get_version",
-    # State Cache & Decoding
     "NeuralOpsStateCache",
     "benchmark_autoregressive_decoding",
     "select_optimal_triton_config",
-    # DX Ergonomics
     "oneshot",
     "recommend",
     "summary",

@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Causal 1D Convolution Autograd Interface
 
 Hardware-accelerated CUDA C++ autograd implementation with analytical gradients and three-level fallback dispatch.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -48,15 +52,13 @@ def causal_conv1d_pytorch_ref(
     B, D, L = x.shape
     if weight.dim() == 2:
         Kw = weight.shape[1]
-        w = weight.unsqueeze(1)  # [D, 1, Kw]
+        w = weight.unsqueeze(1)
     elif weight.dim() == 3:
         Kw = weight.shape[-1]
-        w = weight  # [D, 1, Kw]
+        w = weight
     else:
         raise ValueError(f"weight must be 2D or 3D, got shape {weight.shape}")
-    # Causal padding on left
     x_pad = F.pad(x, (Kw - 1, 0))
-    # Depthwise conv1d
     out = F.conv1d(x_pad, w, bias=bias, groups=D)
     if silu_activation:
         out = F.silu(out)

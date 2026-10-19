@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Automated Git commit integration for benchmark results
 
 Implements git sync functionality for NeuralOps.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -97,13 +101,11 @@ class GitCommitter:
         if len(self._pending_results) < self.commit_interval:
             return None
 
-        # Build paths to stage (Result JSON, Markdown summary, indexes)
         paths_to_stage = []
         for fmt, p in saved_files.items():
             if fmt != "log" and p.exists():
                 paths_to_stage.append(str(p))
 
-        # Always include rolling index files if present
         for idx in ("results.jsonl", "results.csv", "results.parquet", "run_index.json"):
             ip = self.output_dir / idx
             if ip.exists():
@@ -119,11 +121,9 @@ class GitCommitter:
             return "dry_run"
 
         try:
-            # Stage files
             cmd_add = ["git", "add", "--"] + list(set(paths_to_stage))
             subprocess.run(cmd_add, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-            # Commit
             cmd_commit = ["git", "commit", "-m", commit_msg]
             commit_res = subprocess.run(cmd_commit, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
             LOG.info("Auto-committed benchmark results: %s", commit_res.stdout.splitlines()[0] if commit_res.stdout else "committed")

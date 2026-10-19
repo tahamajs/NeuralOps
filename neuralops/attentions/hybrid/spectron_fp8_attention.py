@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Aegis-Spectron-FP8 Hybrid Attention
 
 Three-branch hybrid attention featuring local windows, low-rank linear pathways, and FP8 quantized execution.
-
-Author: Taha Majlesi
 """
 
 from neuralops.core.common import FactorizedLinear

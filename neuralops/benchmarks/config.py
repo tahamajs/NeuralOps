@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Benchmark configuration dataclasses for neuralops
 
 Implements config functionality for NeuralOps.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -38,7 +42,7 @@ class BenchmarkConfig:
     dry_run: bool = False
     timeout_s: int = 1800
     task: Optional[str] = None
-    training_type: str = "finetune"  # finetune, kd, recovery, lora, none
+    training_type: str = "finetune"
     kd_teacher: Optional[str] = None
     kd_temperature: float = 2.0
     kd_alpha: float = 0.5
@@ -46,13 +50,12 @@ class BenchmarkConfig:
     max_samples: Optional[int] = None
     max_eval_samples: Optional[int] = None
     grad_accum_steps: int = 1
-    # MLOps & Distributed Training
-    tracker: str = "none"  # none, wandb, mlflow, tensorboard, all
+    tracker: str = "none"
     project_name: str = "neuralops"
     run_name: Optional[str] = None
     log_interval: int = 10
-    distributed_backend: str = "none"  # none, ddp, fsdp, deepspeed
-    mixed_precision: str = "no"  # no, fp16, bf16
+    distributed_backend: str = "none"
+    mixed_precision: str = "no"
     trust_remote_code: bool = True
     hf_token: Optional[str] = None
     language: Optional[str] = None
@@ -60,7 +63,6 @@ class BenchmarkConfig:
     label_column: Optional[str] = None
     id_column: Optional[str] = None
     preprocess_script: Optional[str] = None
-    # Results management settings
     auto_commit: bool = False
     commit_interval: int = 1
     push_to_hf: Optional[str] = None

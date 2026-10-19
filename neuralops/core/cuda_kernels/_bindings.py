@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 CUDA C++ JIT Module Loader
 
 Dynamic compilation loader with caching and device capability validation for native CUDA C++ kernels.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -32,7 +36,6 @@ if os.path.exists("/usr/local/cuda"):
 
 logger = logging.getLogger(__name__)
 
-# Persistent cache directory with write-access verification
 _candidate_cache = os.environ.get("NEURALOPS_CUDA_CACHE")
 if not _candidate_cache:
     if os.path.exists("/mnt/d/torch_extensions"):

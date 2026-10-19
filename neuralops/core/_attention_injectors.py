@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Attention Module Injector Engine
 
 Dynamic replacement routines grafting custom attention mechanisms into pretrained transformer architectures.
-
-Author: Taha Majlesi
 """
 
 from __future__ import annotations
@@ -62,7 +66,6 @@ def _prepare_layer_config(
         if hd:
             head_dim = hd
 
-    # Allow kwargs overrides (e.g. embed_dim, num_heads) if provided
     override_dim = kwargs.get("embed_dim", kwargs.get("dim", kwargs.get("d_model", kwargs.get("hidden_size", None))))
     override_heads = kwargs.get("num_heads", kwargs.get("n_heads", kwargs.get("num_attention_heads", None)))
     if override_dim is not None:
@@ -81,7 +84,6 @@ def _prepare_layer_config(
                     hidden_size = child.weight.shape[1]
                 break
         if hidden_size is None:
-            # Check direct parameters on old_attn
             for _, p in old_attn.named_parameters():
                 if p.ndim == 2:
                     hidden_size = p.shape[1]
@@ -99,7 +101,6 @@ def _prepare_layer_config(
         if head_dim is None and hidden_size is not None and num_heads is not None:
             head_dim = getattr(old_attn, "head_dim", hidden_size // max(1, num_heads))
 
-    # Ensure config exists or construct minimal namespace config
     if config is None:
         is_decoder_family_bool = bool(
             is_dec or family in ("gpt", "gpt2", "qwen", "qwen3_5", "llama", "mistral")
@@ -127,7 +128,6 @@ def _prepare_layer_config(
             config.is_decoder = True
             config.is_causal = True
 
-    # Ensure old_attn has canonical projection attributes for custom modules inspecting pretrained_attn
     for proj_key, alias_list in [
         ("q", ["query", "q_proj", "q_lin", "Wq", "wq", "q"]),
         ("k", ["key", "k_proj", "k_lin", "Wk", "wk", "k"]),
@@ -221,7 +221,6 @@ def _instantiate_attention_layer(
     if new_attn is None:
         raise RuntimeError(f"Could not instantiate attention class {attn_class.__name__}")
 
-    # Check GQA geometry preservation
     is_gqa = (
         family_adapter is not None
         and family in ("qwen", "qwen3_5")
@@ -281,7 +280,6 @@ def _transplant_weights(
         if hasattr(new_attn, "is_decoder"):
             new_attn.is_decoder = True
 
-    # Branch 1: Custom copy_weights hook
     if hasattr(new_attn, "copy_weights") and callable(new_attn.copy_weights):
         try:
             new_attn.copy_weights(old_attn)
@@ -295,7 +293,6 @@ def _transplant_weights(
         except Exception as e:
             logger.warning("Unexpected error in custom copy_weights: %s", e)
 
-    # Branch 2: Fused QKV projection module
     fused_mod = None
     for child_name, child_mod in old_attn.named_children():
         if FUSED_QKV_REGEX.match(child_name) and hasattr(child_mod, "weight"):
@@ -333,7 +330,6 @@ def _transplant_weights(
                     _copy_projection_weights(lin1, w, None)
                     _svd_factorize_weights(w, b, lin1, lin2)
 
-        # Output projection
         try:
             src_w_o, src_b_o = adapter.get_weight_bias(old_attn, "o") if adapter else (None, None)
             target_o = _find_submodule_by_regex(new_attn, PROJ_REGEX_PATTERNS["o"])
@@ -348,7 +344,6 @@ def _transplant_weights(
             logger.debug("Could not copy output projection: %s", e)
         return
 
-    # Branch 3: Standard decoupled Q, K, V, O projections
     for proj_key in ["q", "k", "v", "o"]:
         src_weight, src_bias = None, None
         if adapter is not None:
@@ -362,7 +357,6 @@ def _transplant_weights(
             if src_weight is not None:
                 _copy_projection_weights(target_proj, src_weight, src_bias)
             elif proj_key == "o":
-                # Encoder self-attention without internal out_proj -> initialize to identity
                 with torch.no_grad():
                     if hasattr(target_proj, "weight") and target_proj.weight.ndim == 2:
                         if target_proj.weight.shape[0] == target_proj.weight.shape[1]:

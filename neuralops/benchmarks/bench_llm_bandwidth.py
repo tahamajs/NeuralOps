@@ -1,9 +1,13 @@
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Memory Bandwidth, Cache Saturation, and Latency Benchmark for Core CUDA Kernels
 
 Evaluates memory bandwidth, L2-cache residency, and DRAM saturation across realistic LLM training configurations on NVIDIA GeForce RTX 4070 / Ada Lovelace.
-
-Author: Taha Majlesi
 """
 
 import argparse
@@ -16,7 +20,7 @@ import torch
 import torch.nn.functional as F
 
 DEFAULT_PEAK_BW_GBPS = 256.0
-DEFAULT_L2_CACHE_BYTES = 32 * 1024 * 1024  # 32 MB RTX 4070 Ada Lovelace
+DEFAULT_L2_CACHE_BYTES = 32 * 1024 * 1024
 
 DEFAULT_CONFIGS = [
     (4, 512, 2048),
@@ -58,11 +62,10 @@ def compute_bandwidth_stats(
             "saturation_pct": float("nan"),
             "regime": "N/A",
         }
-    achieved_bw = bytes_transferred / (time_ms * 1e-3)  # bytes/sec
+    achieved_bw = bytes_transferred / (time_ms * 1e-3)
     achieved_bw_gbps = achieved_bw / 1e9
 
     if bytes_transferred < 0.9 * L2_cache_size_bytes:
-        # Workload is L2-resident; DRAM saturation is not bottlenecked by HBM
         return {
             "achieved_bw_gbps": achieved_bw_gbps,
             "saturation_pct": float("nan"),
@@ -147,7 +150,6 @@ def run_bandwidth_benchmark(
     l2_cache_bytes = int(l2_cache_mb * 1024 * 1024)
     dram_peak_bytes = peak_bw_gbps * 1e9
 
-    # Lazy import of CUDA kernel modules
     from neuralops.core.cuda_kernels.fused_dropout_add.dropout_add_autograd import (
         _get_module as get_fda,
         fused_dropout_add_pytorch_ref,
@@ -181,7 +183,6 @@ def run_bandwidth_benchmark(
     for B, S, H in configs:
         N = B * S
 
-        # 1. fused_dropout_add
         x = torch.randn(N, H, device=device, dtype=dtype)
         res = torch.randn(N, H, device=device, dtype=dtype)
         elem_bytes = x.element_size()
@@ -204,7 +205,6 @@ def run_bandwidth_benchmark(
             "regime": stats_fda["regime"],
         })
 
-        # 2. rms_variance_match
         y = torch.randn(N, H, device=device, dtype=dtype)
         v = torch.randn(N, H, device=device, dtype=dtype)
         bytes_rvm = 3 * N * H * elem_bytes
@@ -225,7 +225,6 @@ def run_bandwidth_benchmark(
             "regime": stats_rvm["regime"],
         })
 
-        # 3. aegis_gate_norm
         b0 = torch.randn(N, H, device=device, dtype=dtype)
         b1 = torch.randn(N, H, device=device, dtype=dtype)
         w_gate = torch.randn(N, 2, device=device, dtype=torch.float32)
@@ -247,7 +246,6 @@ def run_bandwidth_benchmark(
             "regime": stats_agn["regime"],
         })
 
-        # 4. fused_norm_linear
         w_lin = torch.randn(H, H, device=device, dtype=dtype)
         bytes_fnl = (2 * N * H + H * H) * elem_bytes
         empty_b = torch.empty(0, device=device, dtype=dtype)
@@ -296,7 +294,6 @@ def run_bandwidth_benchmark(
         print(f"| {k:20} | {cfg:18} | {c_ms:8.4f}ms | {p_ms:10.4f}ms | {spd_str:>14} | {bw:15.2f} GB/s | {sat_str:>18} | {reg:12} |")
     print("=" * 140)
 
-    # Save to CSV
     if output_csv:
         os.makedirs(os.path.dirname(os.path.abspath(output_csv)), exist_ok=True)
         with open(output_csv, "w", newline="", encoding="utf-8") as f:
@@ -316,7 +313,6 @@ def run_bandwidth_benchmark(
                 ])
         print(f"\nSaved benchmark CSV results to {output_csv}")
 
-    # Save to JSON
     if output_json:
         os.makedirs(os.path.dirname(os.path.abspath(output_json)), exist_ok=True)
         json_data = []
