@@ -36,7 +36,7 @@ einops==0.8.2
 executing==2.3.0
 fastapi==0.143.3
 fastjsonschema==2.22.2
-filelock==3.32.3
+filelock==4.1.0
 fla-core==0.5.2
 flake8==7.4.1
 flash-linear-attention==0.5.2
