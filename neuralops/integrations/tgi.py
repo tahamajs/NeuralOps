@@ -418,7 +418,7 @@ class TGIServingAdapter:
                 "Install with: pip install fastapi uvicorn"
             )
 
-        app = FastAPI(title="NeuralOps TGI Serving Adapter", version="1.3.7")
+        app = FastAPI(title="NeuralOps TGI Serving Adapter", version="1.4.0")
 
         @app.get("/health")
         def health() -> Dict[str, str]:

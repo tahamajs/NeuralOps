@@ -25,7 +25,7 @@ from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple, Union
 logger = logging.getLogger("neuralops.results_ledger")
 
 # Default version tag
-DEFAULT_VERSION_TAG = "v1.3.7"
+DEFAULT_VERSION_TAG = "v1.4.0"
 
 
 def get_current_git_sha(repo_root: Optional[Path] = None) -> str:

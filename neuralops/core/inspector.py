@@ -519,7 +519,7 @@ def render_architecture_card(spec: ArchitectureSpec, plain: bool = False) -> str
             lines.append("")
             lines.append("── latest verified results (ledger) ──────────────────────────────────")
             lines.append(f"method:     {rec.get('generation_method', {}).get('algorithm', 'Verified Benchmark')}")
-            lines.append(f"provenance: ver {rec.get('version_tag', 'v1.3.7')} (rev {rec.get('revision', 1)}) │ commit {rec.get('git_commit_sha', 'HEAD')[:8]} │ {rec.get('timestamp_utc', '')[:10]}")
+            lines.append(f"provenance: ver {rec.get('version_tag', 'v1.4.0')} (rev {rec.get('revision', 1)}) │ commit {rec.get('git_commit_sha', 'HEAD')[:8]} │ {rec.get('timestamp_utc', '')[:10]}")
             m_items = [f"{k}: {v}" for k, v in list(rec.get("metrics", {}).items())[:5]]
             if m_items:
                 lines.append(f"metrics:    {' │ '.join(m_items)}")
