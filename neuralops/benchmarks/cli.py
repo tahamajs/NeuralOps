@@ -204,8 +204,11 @@ def _build_parser() -> argparse.ArgumentParser:
     plan_p.add_argument("--yes", action="store_true", help="Confirm execution without prompt")
 
     list_p = subparsers.add_parser("list", help="List registered modules with capability filters")
-    list_p.add_argument("--type", choices=["attention", "compressor", "all"], default="all")
+    list_p.add_argument("--type", choices=["attention", "compressor", "kernels", "all"], default="all")
+    list_p.add_argument("--family", type=str, default=None, help="Filter mechanisms by mathematical family")
+    list_p.add_argument("--backend", choices=["cuda", "triton", "pytorch", "all"], default="all", help="Filter by backend support")
     list_p.add_argument("--supports", choices=["causal", "gqa", "rope", "cuda"], default=None)
+    list_p.add_argument("--json", action="store_true", help="Output catalog as formatted JSON")
 
     subparsers.add_parser("verify", help="Check system hardware and package requirements")
 
@@ -231,9 +234,12 @@ def _build_parser() -> argparse.ArgumentParser:
 
     comp_p = subparsers.add_parser("compress", help="Compress a model using SVD, W4A16, Hadamard, or any registered compressor")
     comp_p.add_argument("--model", type=str, required=True, help="Base model name or path (e.g. gpt2, roberta-base)")
-    comp_p.add_argument("--method", "--engine", dest="method", type=str, default="hadamard_incoherent_svd", help="Compression engine name")
-    comp_p.add_argument("--rank", type=int, default=32, help="Target rank for low-rank SVD compression")
-    comp_p.add_argument("--save-dir", "--output-dir", dest="save_dir", type=str, default=None, help="Directory to save compressed weights")
+    comp_p.add_argument("--compressor", "--method", "--engine", dest="compressor", type=str, default="svd_truncated", help="Target compressor from the 72 registered engines")
+    comp_p.add_argument("--rank", "--target-rank", dest="rank", type=int, default=32, help="Target rank for low-rank SVD compression")
+    comp_p.add_argument("--target-ratio", "--ratio", dest="target_ratio", type=float, default=None, help="Target compression ratio")
+    comp_p.add_argument("--save-dir", "--output-dir", dest="output_dir", type=str, default=None, help="Directory to save compressed weights")
+    comp_p.add_argument("--device", type=str, default=None, help="Hardware device (cuda/mps/cpu)")
+    comp_p.add_argument("--json", action="store_true", help="Output compression metrics as JSON")
 
     gen_p = subparsers.add_parser("generate", help="Run accelerated generation with draft-and-verify self-speculative decoding")
     gen_p.add_argument("--model", type=str, required=True, help="Target model identifier or path")
@@ -348,27 +354,56 @@ def _build_parser() -> argparse.ArgumentParser:
 
     train_p = subparsers.add_parser("train", help="Fine-tune or train a model with custom attention / compression")
     train_p.add_argument("--config", type=str, default=None, help="Path to YAML training configuration file")
-    train_p.add_argument("--model", type=str, default="distilbert-base-uncased", help="Target model identifier or path")
-    train_p.add_argument("--dataset", type=str, default="sst2", help="Target training dataset")
-    train_p.add_argument("--epochs", type=int, default=3, help="Fine-tuning epochs")
-    train_p.add_argument("--batch-size", type=int, default=32, help="Batch size per device")
-    train_p.add_argument("--lr", type=float, default=2e-5, help="Learning rate")
-    train_p.add_argument("--output-dir", type=str, default="results/trained", help="Directory to save checkpoints")
+    train_p.add_argument("--model", type=str, default="gpt2", help="Target model identifier or path")
+    train_p.add_argument("--dataset", type=str, default="wikitext", help="Target training dataset or comma-separated datasets")
+    train_p.add_argument("--dataset-name", "--subset", dest="dataset_name", type=str, default=None, help="Dataset subset")
+    train_p.add_argument("--split", type=str, default="train", help="Dataset split (default: train)")
+    train_p.add_argument("--varlen", action="store_true", help="Enable variable-length document packing")
+    train_p.add_argument("--seq-len", type=int, default=4096, help="Packed sequence length (default: 4096)")
+    train_p.add_argument("--context-len", type=int, default=4096, help="Maximum document context length")
+    train_p.add_argument("--batch-size", type=int, default=4, help="Batch size per device")
+    train_p.add_argument("--gradient-accumulation-steps", "--grad-accum", dest="gradient_accumulation_steps", type=int, default=1, help="Accumulation steps")
+    train_p.add_argument("--lr", type=float, default=1e-4, help="Learning rate (default: 1e-4)")
+    train_p.add_argument("--lr-scheduler", choices=["wsd", "cosine", "linear"], default="wsd", help="Learning rate schedule policy")
+    train_p.add_argument("--decay-ratio", type=float, default=0.2, help="Decay ratio for WSD scheduler")
+    train_p.add_argument("--warmup-steps", type=int, default=100, help="Warmup steps")
+    train_p.add_argument("--lr-min", type=float, default=1e-6, help="Minimum learning rate")
+    train_p.add_argument("--optimizer", choices=["adamw", "lion", "muon", "sgd"], default="adamw", help="Optimizer formulation")
+    train_p.add_argument("--epochs", type=int, default=1, help="Training epochs")
+    train_p.add_argument("--steps", "--max-steps", dest="steps", type=int, default=None, help="Max optimization steps")
+    train_p.add_argument("--save-dir", "--output-dir", dest="save_dir", type=str, default="results/trained", help="Directory to save checkpoints")
+    train_p.add_argument("--checkpoint-interval", type=int, default=500, help="Checkpoint interval")
+    train_p.add_argument("--eval-steps", type=int, default=250, help="Evaluation frequency steps")
+    train_p.add_argument("--compile", action="store_true", help="Compile model using torch.compile()")
 
     eval_p = subparsers.add_parser("eval", aliases=["evaluate"], help="Evaluate model accuracy, latency, and perplexity")
     eval_p.add_argument("--model", type=str, required=True, help="Model checkpoint path or HF identifier to evaluate")
-    eval_p.add_argument("--dataset", type=str, default="sst2", help="Target evaluation dataset")
-    eval_p.add_argument("--batch-size", type=int, default=32, help="Evaluation batch size")
-    eval_p.add_argument("--seq-len", type=int, default=128, help="Max sequence length")
-    eval_p.add_argument("--device", type=str, default="cuda", help="Hardware device (cuda/mps/cpu)")
+    eval_p.add_argument("--dataset", type=str, default="wikitext", help="Target evaluation dataset")
+    eval_p.add_argument("--dataset-name", "--subset", dest="dataset_name", type=str, default=None, help="Dataset subset")
+    eval_p.add_argument("--split", type=str, default="validation", help="Dataset split (default: validation)")
+    eval_p.add_argument("--batch-size", type=int, default=16, help="Evaluation batch size")
+    eval_p.add_argument("--seq-len", type=int, default=512, help="Max sequence length")
+    eval_p.add_argument("--max-samples", type=int, default=100, help="Max samples to evaluate")
+    eval_p.add_argument("--device", type=str, default=None, help="Hardware device (cuda/mps/cpu)")
+    eval_p.add_argument("--metrics", type=str, default="perplexity,throughput,latency,peak_vram", help="Comma-separated metrics")
+    eval_p.add_argument("--json", "--output-json", dest="output_json", action="store_true", help="Output JSON results")
+    eval_p.add_argument("--output-file", type=str, default=None, help="Destination JSON results file")
 
     serve_p = subparsers.add_parser("serve", help="Launch NeuralOps high-throughput serving engine (continuous batching & PagedKVCache)")
     serve_p.add_argument("--host", type=str, default="0.0.0.0", help="Host interface to bind")
     serve_p.add_argument("--port", type=int, default=8000, help="Port to listen on")
-    serve_p.add_argument("--model", type=str, default=None, help="Pre-loaded model identifier or local checkpoint path")
+    serve_p.add_argument("--model", type=str, default="gpt2", help="Pre-loaded model identifier or local checkpoint path")
+    serve_p.add_argument("--draft-model", "--speculative-draft", dest="draft_model", type=str, default=None, help="Draft model for speculative decoding")
     serve_p.add_argument("--engine", choices=["continuous_batcher", "fastapi", "paged_kv"], default="continuous_batcher", help="Serving engine runtime")
     serve_p.add_argument("--max-batch-size", type=int, default=16, help="Maximum in-flight batch size")
-    serve_p.add_argument("--block-size", type=int, default=16, help="Paged cache token block size")
+    serve_p.add_argument("--kv-cache-pages", "--block-size", "--kv-page-size", dest="block_size", type=int, default=16, help="Paged cache token block size")
+
+    test_p = subparsers.add_parser("test", help="Run fast diagnostic test suites, kernel verification, and attention surgery integrity")
+    test_p.add_argument("--all", action="store_true", help="Execute all diagnostic suites (health, kernels, surgery)")
+    test_p.add_argument("--health", action="store_true", help="Run environment and registry health checks")
+    test_p.add_argument("--kernels", action="store_true", help="Run Triton and CUDA kernel capability checks")
+    test_p.add_argument("--surgery", action="store_true", help="Run attention surgery diagnostics")
+    test_p.add_argument("-q", "--quiet", action="store_true", help="Quiet mode reporting")
 
     mon_p = subparsers.add_parser("monitor", help="Launch NeuralOps real-time telemetry, benchmark studio, and web dashboard")
     mon_p.add_argument("--host", type=str, default="0.0.0.0", help="Host interface to bind")
@@ -389,35 +424,11 @@ def _build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def handle_list(args: argparse.Namespace) -> None:
-    modules = discover_all_modules()
-    if args.type in ("attention", "compressor"):
-        modules = [m for m in modules if m.type == args.type]
+def handle_list(args: argparse.Namespace) -> int:
+    """Lists registered attention mechanisms and compression engines."""
+    from neuralops.cli.list_cmd import cmd_list
+    return cmd_list(args)
 
-    if args.supports:
-        flag = f"supports_{args.supports}" if args.supports != "cuda" else "requires_cuda"
-        modules = [m for m in modules if getattr(m, flag, False)]
-
-    if HAS_RICH and console is not None:
-        table = Table(title=f"NeuralOps Registry: {len(modules)} Modules", header_style="bold magenta")
-        table.add_column("Type", style="cyan", width=12)
-        table.add_column("Name", style="bold green", min_width=32)
-        table.add_column("Causal", justify="center", width=8)
-        table.add_column("GQA", justify="center", width=8)
-        table.add_column("RoPE", justify="center", width=8)
-        table.add_column("CUDA Req", justify="center", width=10)
-
-        for m in modules:
-            causal_s = "✓" if m.supports_causal else "-"
-            gqa_s = "✓" if m.supports_gqa else "-"
-            rope_s = "✓" if m.supports_rope else "-"
-            cuda_s = "[yellow]Yes[/]" if m.requires_cuda else "[dim]No[/]"
-            table.add_row(m.type, m.name, causal_s, gqa_s, rope_s, cuda_s)
-        console.print(table)
-    else:
-        print(f"Discovered {len(modules)} matching modules:")
-        for m in modules:
-            print(f"  [{m.type:10s}] {m.name:36s} (causal={m.supports_causal}, gqa={m.supports_gqa}, rope={m.supports_rope}, cuda={m.requires_cuda})")
 
 
 def handle_plan(args: argparse.Namespace) -> None:
@@ -702,40 +713,9 @@ def handle_search(args: argparse.Namespace) -> int:
 
 def handle_compress(args: argparse.Namespace) -> int:
     """Executes model compression via the requested engine."""
-    from transformers import AutoModel
-    from neuralops.eval_all_models_datasets import apply_module_to_model
+    from neuralops.cli.compress_cmd import cmd_compress
+    return cmd_compress(args)
 
-    print(f"Loading base model '{args.model}' for compression...")
-    model = AutoModel.from_pretrained(args.model)
-    orig_params = sum(p.numel() for p in model.parameters())
-
-    print(f"Applying compression engine '{args.method}' (rank={args.rank})...")
-    model, stats = apply_module_to_model(
-        model,
-        args.method,
-        module_type="compressor",
-        rank=args.rank,
-        device=model.device,
-        fallback_to_original=False,
-    )
-    new_params = sum(p.numel() for p in model.parameters())
-    ratio = orig_params / max(1, new_params)
-    savings = 100.0 * (1.0 - new_params / max(1, orig_params))
-
-    print("\n═════════════════════════════════════════════════════")
-    print(f"Compression Complete: {args.method} on {args.model}")
-    print(f"  Original Parameters:   {orig_params:,}")
-    print(f"  Compressed Parameters: {new_params:,}")
-    print(f"  Compression Ratio:     {ratio:.2f}x")
-    print(f"  Parameter Reduction:   {savings:.1f}%")
-    print("═════════════════════════════════════════════════════\n")
-
-    if args.save_dir:
-        import os
-        os.makedirs(args.save_dir, exist_ok=True)
-        model.save_pretrained(args.save_dir)
-        print(f"[+] Compressed model artifacts saved to '{args.save_dir}'")
-    return 0
 
 
 def handle_generate(args: argparse.Namespace) -> int:
@@ -980,38 +960,15 @@ def handle_distill(args: argparse.Namespace) -> int:
 
 def handle_serve(args: argparse.Namespace) -> int:
     """Dispatches API inference server or ContinuousBatcher engine."""
-    engine_choice = getattr(args, "engine", "continuous_batcher")
-    host = getattr(args, "host", "0.0.0.0")
-    port = getattr(args, "port", 8000)
-
-    if engine_choice in ("continuous_batcher", "paged_kv") and getattr(args, "model", None):
-        import torch
-        from transformers import AutoModelForCausalLM
-        from neuralops.inference.engine import ContinuousBatcher
-        from neuralops.inference.paged_cache import PagedKVCache
-
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-        if HAS_RICH and console is not None:
-            console.print(Panel(
-                f"[bold green]NeuralOps High-Throughput Serving Engine[/bold green]\n"
-                f"[bold white]Runtime:[/]   [cyan]{engine_choice.upper()}[/]\n"
-                f"[bold white]Model:[/]     [yellow]{args.model}[/]\n"
-                f"[bold white]Device:[/]    [green]{device}[/]\n"
-                f"[bold white]Max Batch:[/] {args.max_batch_size}  [bold white]| Block Size:[/] {args.block_size}",
-                title="[bold green]Serving Runtime[/bold green]",
-                border_style="green"
-            ))
-        else:
-            print(f"[*] Starting NeuralOps Serving Engine ({engine_choice}) with model '{args.model}' on {device}")
-
-        print(f"[*] Initializing {engine_choice} runtime...")
-        cache = PagedKVCache(num_blocks=256, block_size=args.block_size, num_heads=12, head_dim=64, device=device)
-        print(f"[✓] Allocated PagedKVCache (256 blocks x {args.block_size} tokens).")
-        batcher = ContinuousBatcher(max_batch_size=args.max_batch_size)
-        print(f"[✓] ContinuousBatcher initialized and ready for streaming decode.")
-
     from neuralops.cli.serve_cmd import cmd_serve
     return cmd_serve(args)
+
+
+def handle_test(args: argparse.Namespace) -> int:
+    """Dispatches fast diagnostic test suites."""
+    from neuralops.cli.test_cmd import cmd_test
+    return cmd_test(args)
+
 
 
 def _dispatch(args: argparse.Namespace) -> int:
@@ -1170,6 +1127,8 @@ def _dispatch(args: argparse.Namespace) -> int:
         return handle_eval(args)
     elif args.subcommand in ("serve",):
         return handle_serve(args)
+    elif args.subcommand in ("test",):
+        return handle_test(args)
     elif args.subcommand == "doctor":
         from neuralops.cli.doctor import cmd_doctor
         return cmd_doctor()

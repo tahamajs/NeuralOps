@@ -273,20 +273,31 @@ results/**/*.err
 *.zip
 *.bundle
 
-# Non-code, docs, & academic directories completely ignored
-docs/**/*.*
-results/**/*.*
-
-!docs/ROADMAP.md
-academic/
-paper/
-thesis_final/
-results/
-logs/
+# ============================================================
+# Non-Core, Docs, Results, Academic & Local Artifacts (Strictly Ignored)
+# ============================================================
+docs/
+docs/**
 audit/
+audit/**
+results/
+results/**
+academic/
+academic/**
+paper/
+paper/**
+thesis_final/
+thesis_final/**
+logs/
+logs/**
 scratch/
+scratch/**
 grading.log
 neuralops/data/cache/
 neuralops/data/*.parquet
 *.arrow
+*.sqlite
+*.sqlite3
+*.db
+
 
