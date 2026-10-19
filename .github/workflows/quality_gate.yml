@@ -1,0 +1,88 @@
+name: Quality Gate & Ecosystem Hygiene
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'paper/**'
+      - 'results/**'
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'paper/**'
+      - 'results/**'
+  workflow_dispatch:
+
+jobs:
+  hygiene-and-invariants:
+    name: AST Audit & Invariants Gate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Codebase
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: 'pip'
+
+      - name: Install Build & Lint Dependencies
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          pip install build twine ruff pytest
+
+      - name: Run AST Dead-Code & Kernel Audit (Zero Issues Gate)
+        run: |
+          python scripts/utils/audit_dead_code.py
+
+      - name: Verify Shebang & Contributor Headers
+        run: |
+          python3 -c "
+          import os, sys
+          missing_shebang = []
+          missing_header = []
+          for root, dirs, files in os.walk('.'):
+              if any(p in root for p in ['.git', '.venv', 'build', 'dist', '__pycache__']):
+                  continue
+              for f in files:
+                  if f.endswith('.py'):
+                      p = os.path.join(root, f)
+                      with open(p, 'r', encoding='utf-8', errors='ignore') as fp:
+                          head = fp.read(800)
+                      if not head.startswith('#!/usr/bin/env python3'):
+                          missing_shebang.append(p)
+                      if 'https://github.com/tahamajs/NeuralOps/graphs/contributors' not in head:
+                          missing_header.append(p)
+          if missing_shebang or missing_header:
+              print(f'Missing shebang in {len(missing_shebang)} files, missing header in {len(missing_header)} files')
+              sys.exit(1)
+          print('All Python modules satisfy canonical shebang & contributor header laws!')
+          "
+
+      - name: Install NeuralOps in CPU Mode
+        run: |
+          pip install -e ".[cpu]"
+
+      - name: Verify README Counts and Architectural Invariants
+        env:
+          PYTHONPATH: .
+        run: |
+          python scripts/utils/verify_readme_counts.py
+
+      - name: Build Clean sdist & Wheel Packages
+        run: |
+          python -m build
+
+      - name: Validate Packaging Metadata with Twine
+        run: |
+          twine check dist/*
