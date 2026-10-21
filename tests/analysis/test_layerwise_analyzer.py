@@ -8,6 +8,7 @@
 """Tests for neuralops.analysis.layerwise_analyzer module."""
 
 import pytest
+import numpy as np
 import torch
 import torch.nn as nn
 from unittest.mock import MagicMock
@@ -40,6 +41,14 @@ class TestStreamingLayerAccumulator:
         assert acc.total_batches == 3
         assert acc.total_tokens == 48
 
+    def test_covariance_merge_includes_between_batch_mean_shift(self):
+        acc = StreamingLayerAccumulator()
+        acc.update(torch.tensor([[0.0, 0.0], [2.0, 0.0]]))
+        acc.update(torch.tensor([[10.0, 0.0], [12.0, 0.0]]))
+
+        expected = np.cov(np.array([[0.0, 0.0], [2.0, 0.0], [10.0, 0.0], [12.0, 0.0]]).T, bias=True)
+        assert np.allclose(acc.cov_matrix, expected)
+
 
 class TestLayerwiseAnalyzer:
     """Test LayerwiseAnalyzer hook registration and model analysis."""
@@ -58,3 +67,11 @@ class TestLayerwiseAnalyzer:
         id_est = estimate_intrinsic_dimension(X)
         assert isinstance(id_est, (int, float))
         assert id_est >= 1.0
+
+    def test_intrinsic_dimension_recovers_low_dimensional_line(self):
+        samples = torch.arange(64, dtype=torch.float32).reshape(-1, 1).numpy()
+        assert estimate_intrinsic_dimension(samples, k=5) < 2.0
+
+    def test_intrinsic_dimension_rejects_invalid_neighbor_count(self):
+        with pytest.raises(ValueError, match="at least 2"):
+            estimate_intrinsic_dimension(np.ones((8, 2)), k=1)

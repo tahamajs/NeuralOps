@@ -14,7 +14,7 @@ Routes attention topologies and sanitizes masks for causal, bidirectional, and c
 from __future__ import annotations
 
 import logging
-from typing import Any, Callable, Dict, Optional, Tuple, Union
+from typing import Any, Optional, Tuple
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -44,32 +44,45 @@ def extract_binary_token_mask(
     if device is not None and mask.device != device:
         mask = mask.to(device=device)
 
-    if mask.ndim == 4:
-        if mask.min() < -1.0:
-            keep_mask = (mask > -100.0).to(dtype=dtype)
-        else:
-            keep_mask = (mask > 0.5).to(dtype=dtype)
+    def _keep_values(value: torch.Tensor) -> torch.Tensor:
+        if value.dtype == torch.bool:
+            return value
+        if torch.is_floating_point(value):
+            # HuggingFace uses both binary 0/1 masks and additive masks whose
+            # blocked positions are negative (often -inf or -1e4).
+            if bool(torch.any(value < 0)):
+                return value > -100.0
+        return value > 0.5
 
-        if keep_mask.shape[-2] == keep_mask.shape[-1] and keep_mask.shape[-1] == seq_len:
-            keep_mask = keep_mask[:, :, -1:, :].transpose(-1, -2)
-        elif keep_mask.shape[-1] == seq_len:
-            keep_mask = keep_mask.view(mask.shape[0], 1, seq_len, 1)
-        return keep_mask
+    def _collapse_key_axis(allowed: torch.Tensor) -> torch.Tensor:
+        # Attention masks can vary by query and head. A key is padding only
+        # when no query/head can attend to it; this preserves padding
+        # suppression without treating a causal triangle as token padding.
+        if allowed.ndim == 4:
+            allowed = allowed.any(dim=-2).any(dim=1)
+        elif allowed.ndim == 3:
+            allowed = allowed.any(dim=-2)
+        if allowed.ndim == 2:
+            return allowed.unsqueeze(1).unsqueeze(-1).to(dtype=dtype)
+        return allowed
+
+    if mask.ndim == 4:
+        if mask.shape[-1] != seq_len:
+            return None
+        return _collapse_key_axis(_keep_values(mask))
 
     if mask.ndim == 2:
-        if mask.dtype in (torch.int64, torch.int32, torch.bool):
-            keep_mask = (mask > 0).to(dtype=dtype)
-        else:
-            keep_mask = (mask > -100.0).to(dtype=dtype)
-        return keep_mask.unsqueeze(1).unsqueeze(-1)
+        if mask.shape[-1] != seq_len:
+            return None
+        return _keep_values(mask).to(dtype=dtype).unsqueeze(1).unsqueeze(-1)
 
     if mask.ndim == 3:
-        if mask.shape[1] == 1 and mask.shape[2] == seq_len:
-            keep_mask = (mask > 0 if mask.dtype != torch.float32 else mask > -100.0).to(dtype=dtype)
-            return keep_mask.unsqueeze(-1)
-        if mask.shape[2] == 1 and mask.shape[1] == seq_len:
-            keep_mask = (mask > 0 if mask.dtype != torch.float32 else mask > -100.0).to(dtype=dtype)
-            return keep_mask.unsqueeze(1)
+        if mask.shape[-1] != seq_len:
+            return None
+        if mask.shape[1] == 1:
+            return _keep_values(mask).to(dtype=dtype).unsqueeze(-1)
+        if mask.shape[-2] == seq_len:
+            return _collapse_key_axis(_keep_values(mask))
 
     return None
 
@@ -88,7 +101,12 @@ def sanitize_kv_for_padding_mask(
     if attention_mask is None:
         return k, v
 
-    seq_len = k.shape[-2] if k.ndim >= 3 else k.shape[1]
+    if k.shape != v.shape:
+        raise ValueError(f"Key/value shape mismatch: {tuple(k.shape)} != {tuple(v.shape)}")
+    if k.ndim not in (3, 4):
+        raise ValueError(f"Expected key/value tensors with rank 3 or 4, got rank {k.ndim}")
+
+    seq_len = k.shape[-2]
     keep_mask = extract_binary_token_mask(
         attention_mask, seq_len=seq_len, device=k.device, dtype=k.dtype
     )
@@ -96,15 +114,13 @@ def sanitize_kv_for_padding_mask(
         return k, v
 
     if k.ndim == 4:
-        k_sanitized = k * keep_mask
-        v_sanitized = v * keep_mask
-    elif k.ndim == 3:
-        mask_3d = keep_mask.squeeze(1)
-        k_sanitized = k * mask_3d
-        v_sanitized = v * mask_3d
+        mask_shape = (k.shape[0], 1, k.shape[-2], 1)
     else:
-        k_sanitized = k
-        v_sanitized = v
+        mask_shape = (k.shape[0], k.shape[-2], 1)
+        keep_mask = keep_mask.squeeze(1)
+    keep_mask = keep_mask.reshape(mask_shape)
+    k_sanitized = k * keep_mask
+    v_sanitized = v * keep_mask
 
     return k_sanitized, v_sanitized
 
@@ -147,7 +163,10 @@ class BiDirectionalScanWrapper(nn.Module):
         x_flipped = torch.flip(hidden_states, dims=[1])
         kwargs_flipped = dict(kwargs)
         if attention_mask is not None and attention_mask.ndim in (2, 3, 4):
-            kwargs_flipped["attention_mask"] = torch.flip(attention_mask, dims=[-1])
+            mask_dims = [-1]
+            if attention_mask.ndim >= 3 and attention_mask.shape[-2] == T:
+                mask_dims.append(-2)
+            kwargs_flipped["attention_mask"] = torch.flip(attention_mask, dims=mask_dims)
 
         out_bwd = self.core_attention(x_flipped, *args, **kwargs_flipped)
         core_bwd = out_bwd[0] if isinstance(out_bwd, tuple) else out_bwd
@@ -168,13 +187,16 @@ class BiDirectionalScanWrapper(nn.Module):
 class AsymmetricCrossAttentionRouter(nn.Module):
     """
     Handles cross-attention where Query length T_q differs from Key/Value length T_kv.
-    Uses length-decoupled associative linear attention or falls back cleanly to PyTorch SDPA.
+    Uses PyTorch SDPA for unequal query and key/value lengths while preserving
+    the supplied padding or pairwise attention mask.
     """
 
     def __init__(self, d_model: int, num_heads: int) -> None:
         super().__init__()
         self.d_model = d_model
         self.num_heads = num_heads
+        if num_heads <= 0 or d_model % num_heads:
+            raise ValueError(f"d_model={d_model} must be divisible by positive num_heads={num_heads}")
         self.head_dim = d_model // num_heads
 
         self.q_proj = nn.Linear(d_model, d_model, bias=False)
@@ -193,6 +215,14 @@ class AsymmetricCrossAttentionRouter(nn.Module):
             encoder_hidden_states = hidden_states
 
         B, T_q, D = hidden_states.shape
+        if D != self.d_model or encoder_hidden_states.ndim != 3:
+            raise ValueError(
+                "Cross-attention expects query and encoder states shaped "
+                f"(batch, sequence, {self.d_model}); got query={tuple(hidden_states.shape)}, "
+                f"encoder={tuple(encoder_hidden_states.shape)}"
+            )
+        if encoder_hidden_states.shape[0] != B or encoder_hidden_states.shape[-1] != self.d_model:
+            raise ValueError("Query and encoder states must share batch and feature dimensions")
         T_kv = encoder_hidden_states.shape[1]
         H, D_h = self.num_heads, self.head_dim
 
@@ -200,9 +230,41 @@ class AsymmetricCrossAttentionRouter(nn.Module):
         k = self.k_proj(encoder_hidden_states).view(B, T_kv, H, D_h).transpose(1, 2)
         v = self.v_proj(encoder_hidden_states).view(B, T_kv, H, D_h).transpose(1, 2)
 
-        k, v = sanitize_kv_for_padding_mask(k, v, attention_mask)
+        sdpa_mask = attention_mask
+        if sdpa_mask is not None:
+            sdpa_mask = sdpa_mask.to(device=q.device)
+            if sdpa_mask.ndim == 2:
+                if sdpa_mask.shape != (B, T_kv):
+                    raise ValueError(
+                        f"2D cross-attention mask must have shape {(B, T_kv)}, "
+                        f"got {tuple(sdpa_mask.shape)}"
+                    )
+                if sdpa_mask.dtype != torch.bool and not torch.is_floating_point(sdpa_mask):
+                    sdpa_mask = sdpa_mask > 0
+                elif torch.is_floating_point(sdpa_mask) and bool(torch.any(sdpa_mask < 0)):
+                    sdpa_mask = sdpa_mask[:, None, None, :]
+                else:
+                    sdpa_mask = sdpa_mask > 0.5
+                if sdpa_mask.ndim == 2:
+                    sdpa_mask = sdpa_mask[:, None, None, :]
+            elif sdpa_mask.ndim == 3:
+                if sdpa_mask.shape[0] != B or sdpa_mask.shape[-1] != T_kv:
+                    raise ValueError("3D cross-attention mask must match batch and key/value length")
+                sdpa_mask = sdpa_mask.unsqueeze(1)
+                if torch.is_floating_point(sdpa_mask) and not bool(torch.any(sdpa_mask < 0)):
+                    sdpa_mask = sdpa_mask > 0.5
+            elif sdpa_mask.ndim == 4:
+                if sdpa_mask.shape[0] != B or sdpa_mask.shape[-1] != T_kv:
+                    raise ValueError("4D cross-attention mask must match batch and key/value length")
+                if sdpa_mask.shape[-2] not in (1, T_q):
+                    raise ValueError("4D cross-attention mask query dimension must be 1 or query length")
+                if torch.is_floating_point(sdpa_mask) and not bool(torch.any(sdpa_mask < 0)):
+                    sdpa_mask = sdpa_mask > 0.5
+            else:
+                raise ValueError(f"Unsupported cross-attention mask rank: {sdpa_mask.ndim}")
 
-        out = F.scaled_dot_product_attention(q, k, v, attn_mask=None, is_causal=False)
+        is_causal = bool(kwargs.get("is_causal", False)) and sdpa_mask is None
+        out = F.scaled_dot_product_attention(q, k, v, attn_mask=sdpa_mask, is_causal=is_causal)
         out = out.transpose(1, 2).contiguous().view(B, T_q, D)
         return self.out_proj(out), None
 

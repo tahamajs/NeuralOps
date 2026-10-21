@@ -139,13 +139,20 @@ def load_and_enrich_summary(summary_csv: Path) -> pd.DataFrame:
         return df
 
     df.columns = [c.strip() for c in df.columns]
-
-    for col in ["module_name", "status", "accuracy_pct", "elapsed_s", "error", "path"]:
+    required = {"module_name", "status", "accuracy_pct"}
+    missing = sorted(required.difference(df.columns))
+    if missing:
+        raise ValueError(
+            f"Summary file is missing required result columns: {', '.join(missing)}"
+        )
+    for col in ("error", "path"):
         if col not in df.columns:
-            df[col] = "" if col in ["module_name", "status", "error", "path"] else 0.0
+            df[col] = ""
+    if "elapsed_s" not in df.columns:
+        df["elapsed_s"] = np.nan
 
-    df["accuracy_pct"] = pd.to_numeric(df["accuracy_pct"], errors="coerce").fillna(0.0)
-    df["elapsed_s"] = pd.to_numeric(df["elapsed_s"], errors="coerce").fillna(0.0)
+    df["accuracy_pct"] = pd.to_numeric(df["accuracy_pct"], errors="coerce")
+    df["elapsed_s"] = pd.to_numeric(df["elapsed_s"], errors="coerce")
 
     classifications = [
         classify_module(row["module_name"], str(row.get("path", ""))) for _, row in df.iterrows()
@@ -155,11 +162,17 @@ def load_and_enrich_summary(summary_csv: Path) -> pd.DataFrame:
 
     full_baseline = df[df["module_name"] == "full"]
     baseline_acc = (
-        float(full_baseline["accuracy_pct"].iloc[0]) if not full_baseline.empty else 90.14
+        float(full_baseline["accuracy_pct"].iloc[0])
+        if not full_baseline.empty
+        else np.nan
     )
     df["baseline_acc"] = baseline_acc
     df["delta_acc"] = df["accuracy_pct"] - baseline_acc
-    df["retention_pct"] = (df["accuracy_pct"] / baseline_acc) * 100.0
+    df["retention_pct"] = (
+        (df["accuracy_pct"] / baseline_acc) * 100.0
+        if np.isfinite(baseline_acc) and baseline_acc != 0
+        else np.nan
+    )
 
     return df
 
@@ -172,7 +185,7 @@ def plot_fig1_top_modules(df: pd.DataFrame, out_dir: Path, top_n: int = 25):
         return
 
     subset = passing.tail(top_n)
-    baseline_acc = subset["baseline_acc"].iloc[0] if "baseline_acc" in subset else 90.14
+    baseline_acc = subset["baseline_acc"].iloc[0] if "baseline_acc" in subset else np.nan
 
     fig, ax = plt.subplots(figsize=(10, max(6, len(subset) * 0.32)), tight_layout=True)
 
@@ -186,13 +199,14 @@ def plot_fig1_top_modules(df: pd.DataFrame, out_dir: Path, top_n: int = 25):
         height=0.68,
     )
 
-    ax.axvline(
-        baseline_acc,
-        color="#d95f02",
-        linestyle="--",
-        linewidth=1.5,
-        label=f"Full Attention Baseline ({baseline_acc:.2f}%)",
-    )
+    if pd.notna(baseline_acc):
+        ax.axvline(
+            baseline_acc,
+            color="#d95f02",
+            linestyle="--",
+            linewidth=1.5,
+            label=f"Full Attention Baseline ({baseline_acc:.2f}%)",
+        )
 
     for bar in bars:
         w = bar.get_width()
@@ -207,12 +221,13 @@ def plot_fig1_top_modules(df: pd.DataFrame, out_dir: Path, top_n: int = 25):
         )
 
     ax.set_xlim(0, 100)
-    ax.set_xlabel("SST-2 Validation Accuracy (%)", fontweight="bold")
-    ax.set_title(
-        f"Top {len(subset)} Evaluated Modules on Qwen3.5 (SST-2)",
-        fontweight="bold",
-        pad=12,
+    dataset_name = (
+        str(df["dataset"].dropna().iloc[0])
+        if "dataset" in df and df["dataset"].notna().any()
+        else "evaluation dataset"
     )
+    ax.set_xlabel(f"Validation Accuracy — {dataset_name} (%)", fontweight="bold")
+    ax.set_title(f"Top {len(subset)} Passing Evaluated Modules", fontweight="bold", pad=12)
 
     handles, labels = ax.get_legend_handles_labels()
     present_families = subset["subfamily"].unique()
@@ -311,7 +326,7 @@ def plot_fig2_accuracy_vs_runtime(df: pd.DataFrame, out_dir: Path):
         )
 
     ax.set_xlabel("Elapsed Time (s)", fontweight="bold")
-    ax.set_ylabel("SST-2 Accuracy (%)", fontweight="bold")
+    ax.set_ylabel("Accuracy (%)", fontweight="bold")
     ax.set_title(
         "Accuracy vs. Evaluation & Recovery Time (Pareto Efficiency)",
         fontweight="bold",
@@ -426,7 +441,7 @@ def plot_fig4_category_performance(df: pd.DataFrame, out_dir: Path):
         )
 
     ax.set_xlim(0, 105)
-    ax.set_xlabel("Mean SST-2 Accuracy (%) ± Std Dev", fontweight="bold")
+    ax.set_xlabel("Mean Accuracy (%) ± Std Dev", fontweight="bold")
     ax.set_title("Performance Aggregated by Architectural Sub-Family", fontweight="bold", pad=12)
 
     out_png = out_dir / "fig4_category_performance.png"
@@ -455,7 +470,7 @@ def generate_latex_tables(df: pd.DataFrame, out_file: Path):
                 r"\begin{table}[htbp]",
                 r"\centering",
                 r"\small",
-                r"\caption{Top Performing Attention Mechanisms on Qwen3.5 (SST-2 Task)}",
+                r"\caption{Top Performing Attention Mechanisms in the Supplied Evaluation}",
                 r"\label{tab:top_attentions}",
                 r"\begin{tabular}{llccc}",
                 r"\toprule",
@@ -484,7 +499,7 @@ def generate_latex_tables(df: pd.DataFrame, out_file: Path):
                 r"\begin{table}[htbp]",
                 r"\centering",
                 r"\small",
-                r"\caption{Top Performing Compression Engines on Qwen3.5 (SST-2 Task)}",
+                r"\caption{Top Performing Compression Engines in the Supplied Evaluation}",
                 r"\label{tab:top_compressors}",
                 r"\begin{tabular}{llccc}",
                 r"\toprule",
@@ -522,7 +537,9 @@ def generate_markdown_report(df: pd.DataFrame, out_file: Path, output_dir: Path)
 
     full_baseline = df[df["module_name"] == "full"]
     baseline_acc = (
-        float(full_baseline["accuracy_pct"].iloc[0]) if not full_baseline.empty else 90.14
+        float(full_baseline["accuracy_pct"].iloc[0])
+        if not full_baseline.empty
+        else np.nan
     )
 
     top_attns = (
@@ -537,22 +554,22 @@ def generate_markdown_report(df: pd.DataFrame, out_file: Path, output_dir: Path)
     )
 
     lines = [
-        "# Comprehensive Qwen3.5 Attention & Compressor Evaluation Report",
+        "# Attention & Compressor Evaluation Report",
         f"**Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}  ",
         f"**Output Directory:** `{output_dir.resolve()}`  ",
-        "**Model Backbone:** Qwen3.5-0.8B (`qwen3_5` dual GQA / DeltaNet architecture)  ",
-        "**Dataset:** SST-2 | **Batch Size:** 64 | **Recovery Steps:** 50 (AdamW)  \n",
+        f"**Model Backbone:** {df['model_name'].dropna().iloc[0] if 'model_name' in df and df['model_name'].notna().any() else 'Not recorded in input'}  ",
+        f"**Dataset:** {df['dataset'].dropna().iloc[0] if 'dataset' in df and df['dataset'].notna().any() else 'Not recorded in input'}  \n",
         "---",
         "## 1. Executive Summary",
         f"- **Total Modules Evaluated:** {total_eval}",
         f"- **Pass Rate:** {num_pass}/{total_eval} ({(num_pass / max(1, total_eval)) * 100:.1f}%)",
-        f"- **Architectural Incompatibility (Qwen GQA/DeltaNet):** {num_incompat}",
+        f"- **Reported Architectural Incompatibilities:** {num_incompat}",
         f"- **CUDA Out-of-Memory (OOM):** {num_oom}",
         f"- **Execution / Dtype Failures:** {num_fail}",
-        f"- **Full Attention Baseline Accuracy:** **{baseline_acc:.2f}%**\n",
+        f"- **Full Attention Baseline Accuracy:** **{baseline_acc:.2f}%**\n" if np.isfinite(baseline_acc) else "- **Full Attention Baseline Accuracy:** Not present in the input records.\n",
         "---",
         "## 2. Top-10 Attention Replacements",
-        "| Rank | Module | Sub-Family | SST-2 Accuracy (%) | Delta vs Baseline | Latency (s) |",
+        "| Rank | Module | Sub-Family | Accuracy (%) | Delta vs Baseline | Latency (s) |",
         "|:---:|:---|:---|:---:|:---:|:---:|",
     ]
 
@@ -565,7 +582,7 @@ def generate_markdown_report(df: pd.DataFrame, out_file: Path, output_dir: Path)
         [
             "\n---",
             "## 3. Top-10 Compression Engines",
-            "| Rank | Module | Sub-Family | SST-2 Accuracy (%) | Retention (%) | Latency (s) |",
+            "| Rank | Module | Sub-Family | Accuracy (%) | Retention (%) | Latency (s) |",
             "|:---:|:---|:---|:---:|:---:|:---:|",
         ]
     )

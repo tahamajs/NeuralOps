@@ -271,30 +271,70 @@ if not any(isinstance(finder, _ModuleAliasFinder) for finder in sys.meta_path):
     sys.meta_path.insert(0, _ModuleAliasFinder())
 
 def _patch_pascal_svd_if_needed():
+    """Install a lazy SVD compatibility shim without probing CUDA at import time."""
     if "torch" in sys.modules:
         try:
             import torch
-            if torch.cuda.is_available():
-                cap = torch.cuda.get_device_capability()
-                if cap < (7, 0) and not getattr(torch.linalg, "_pascal_patched", False):
-                    _orig_torch_linalg_svd = torch.linalg.svd
-                    def _safe_pascal_linalg_svd(A, full_matrices=True, *, driver=None, out=None):
-                        if isinstance(A, torch.Tensor) and A.is_cuda:
-                            dev = A.device
-                            A_cpu = A.detach().cpu().float()
-                            U_cpu, S_cpu, Vh_cpu = _orig_torch_linalg_svd(A_cpu, full_matrices=full_matrices)
-                            U = U_cpu.to(device=dev, dtype=A.dtype if A.dtype != torch.float16 else torch.float32)
-                            S = S_cpu.to(device=dev, dtype=A.dtype if A.dtype != torch.float16 else torch.float32)
-                            Vh = Vh_cpu.to(device=dev, dtype=A.dtype if A.dtype != torch.float16 else torch.float32)
-                            if out is not None:
-                                out[0].copy_(U)
-                                out[1].copy_(S)
-                                out[2].copy_(Vh)
-                                return out
-                            return (U, S, Vh)
-                        return _orig_torch_linalg_svd(A, full_matrices=full_matrices, driver=driver, out=out)
-                    torch.linalg.svd = _safe_pascal_linalg_svd
-                    torch.linalg._pascal_patched = True
+
+            if getattr(torch.linalg, "_pascal_patched", False):
+                return
+
+            original_svd = torch.linalg.svd
+            capability_cache: dict[int, tuple[int, int]] = {}
+
+            def _safe_pascal_linalg_svd(
+                matrix: Any,
+                full_matrices: bool = True,
+                *,
+                driver: str | None = None,
+                out: Any = None,
+            ) -> Any:
+                """Use CPU SVD only for CUDA devices whose capability requires it."""
+                if isinstance(matrix, torch.Tensor) and matrix.is_cuda:
+                    device_index = matrix.device.index or 0
+                    capability = capability_cache.get(device_index)
+                    if capability is None:
+                        try:
+                            capability = torch.cuda.get_device_capability(matrix.device)
+                        except Exception:
+                            return original_svd(
+                                matrix,
+                                full_matrices=full_matrices,
+                                driver=driver,
+                                out=out,
+                            )
+                        capability_cache[device_index] = capability
+
+                    if capability < (7, 0):
+                        device = matrix.device
+                        cpu_matrix = matrix.detach().cpu().float()
+                        u_cpu, s_cpu, vh_cpu = original_svd(
+                            cpu_matrix, full_matrices=full_matrices
+                        )
+                        result_dtype = (
+                            matrix.dtype
+                            if matrix.dtype != torch.float16
+                            else torch.float32
+                        )
+                        u = u_cpu.to(device=device, dtype=result_dtype)
+                        s = s_cpu.to(device=device, dtype=result_dtype)
+                        vh = vh_cpu.to(device=device, dtype=result_dtype)
+                        if out is not None:
+                            out[0].copy_(u)
+                            out[1].copy_(s)
+                            out[2].copy_(vh)
+                            return out
+                        return u, s, vh
+
+                return original_svd(
+                    matrix,
+                    full_matrices=full_matrices,
+                    driver=driver,
+                    out=out,
+                )
+
+            torch.linalg.svd = _safe_pascal_linalg_svd
+            torch.linalg._pascal_patched = True
         except Exception:
             pass
 

@@ -23,18 +23,37 @@ def compute_metrics(
     predictions: np.ndarray, labels: np.ndarray, task: str = "classification"
 ) -> dict[str, float]:
     """Compute and return metrics."""
+    predictions = np.asarray(predictions)
+    labels = np.asarray(labels)
+    if predictions.size == 0 or labels.size == 0:
+        raise ValueError("predictions and labels must be non-empty")
+    if task not in ("classification", "regression", "stsb"):
+        raise ValueError(f"Unsupported task type: {task}")
+
     from scipy.stats import pearsonr, spearmanr
     from sklearn.metrics import accuracy_score, f1_score, matthews_corrcoef
 
     metrics = {}
     if task in ("regression", "stsb"):
-        pred_flat = np.squeeze(predictions)
-        labels_flat = np.squeeze(labels)
+        pred_flat = predictions.reshape(-1)
+        labels_flat = labels.reshape(-1)
+        if pred_flat.shape != labels_flat.shape:
+            raise ValueError(
+                "regression predictions and labels must contain the same number "
+                f"of values, got {pred_flat.size} and {labels_flat.size}"
+            )
+        if pred_flat.size < 2:
+            raise ValueError("regression metrics require at least two observations")
         metrics["pearson"] = pearsonr(pred_flat, labels_flat)[0]
         metrics["spearman"] = spearmanr(pred_flat, labels_flat)[0]
         metrics["pearson_spearman"] = (metrics["pearson"] + metrics["spearman"]) / 2
     else:
         preds = np.argmax(predictions, axis=-1) if predictions.ndim > 1 else predictions
+        if preds.shape != labels.shape:
+            raise ValueError(
+                "classification predictions and labels must have the same shape, "
+                f"got {preds.shape} and {labels.shape}"
+            )
         metrics["accuracy"] = accuracy_score(labels, preds)
         metrics["f1_macro"] = f1_score(labels, preds, average="macro", zero_division=0)
         metrics["f1_weighted"] = f1_score(labels, preds, average="weighted", zero_division=0)
@@ -48,12 +67,17 @@ def aggregate_results(results_list: list[dict[str, Any]]) -> dict[str, Any]:
     if not results_list:
         return {}
     aggregated = {}
-    for key in results_list[0].keys():
+    keys = dict.fromkeys(key for result in results_list for key in result)
+    for key in keys:
         values = [r[key] for r in results_list if key in r and r[key] is not None]
         if values:
-            aggregated[f"{key}_mean"] = np.mean(values)
-            aggregated[f"{key}_std"] = np.std(values)
-            aggregated[f"{key}_values"] = values
+            try:
+                numeric_values = np.asarray(values, dtype=float)
+            except (TypeError, ValueError):
+                continue
+            aggregated[f"{key}_mean"] = np.mean(numeric_values)
+            aggregated[f"{key}_std"] = np.std(numeric_values)
+            aggregated[f"{key}_values"] = numeric_values.tolist()
     return aggregated
 
 
@@ -63,7 +87,9 @@ class MetricsTracker:
     def __init__(self, filepath: str) -> None:
         self.filepath = filepath
         self.records: list[dict[str, Any]] = []
-        os.makedirs(os.path.dirname(filepath), exist_ok=True)
+        parent = os.path.dirname(filepath)
+        if parent:
+            os.makedirs(parent, exist_ok=True)
 
     def log(self, metrics: dict[str, Any], step: int | None = None, flush: bool = False) -> None:
         """Log."""

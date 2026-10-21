@@ -49,6 +49,15 @@ class TestMetrics:
         assert agg["loss_mean"] == pytest.approx(0.4)
         assert len(agg["accuracy_values"]) == 2
 
+    def test_aggregate_results_includes_late_keys(self):
+        agg = aggregate_results([{"accuracy": 0.8}, {"loss": 0.3}])
+        assert agg["accuracy_mean"] == pytest.approx(0.8)
+        assert agg["loss_mean"] == pytest.approx(0.3)
+
+    def test_compute_metrics_rejects_mismatched_shapes(self):
+        with pytest.raises(ValueError, match="same shape"):
+            compute_metrics(np.array([0, 1]), np.array([0]), task="classification")
+
 
 class TestMetricsTracker:
     """Test step metric logging and serialization via JSON lines."""
@@ -64,3 +73,11 @@ class TestMetricsTracker:
         df = tracker.to_dataframe()
         assert len(df) == 2
         assert list(df["step"]) == [1, 2]
+
+    def test_tracker_supports_filename_without_parent_directory(
+        self, tmp_path, monkeypatch
+    ):
+        monkeypatch.chdir(tmp_path)
+        tracker = MetricsTracker("metrics.jsonl")
+        tracker.log({"loss": 0.25}, flush=True)
+        assert Path("metrics.jsonl").exists()

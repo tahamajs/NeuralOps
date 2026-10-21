@@ -14,7 +14,7 @@ Bridges NeuralOps recurrent and hybrid state caches with HuggingFace DynamicCach
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, Iterator, List, Optional, Tuple
 import torch
 
 logger = logging.getLogger("NeuralOps.Surgery.HFCacheBridge")
@@ -41,21 +41,38 @@ class NeuralOpsHybridHFCache(_HF_CACHE_BASE):
     def __init__(self) -> None:
         if _HF_CACHE_BASE is not object and hasattr(super(), "__init__"):
             super().__init__()
-        self.key_cache: List[torch.Tensor] = []
-        self.value_cache: List[torch.Tensor] = []
+        # Transformers 4.x exposes these lists directly, while newer releases
+        # store per-layer objects in ``layers``. Keep a compatibility view for
+        # tuple-style callers without replacing the base cache's own lists.
+        if not hasattr(self, "key_cache"):
+            self.key_cache: List[torch.Tensor] = []
+        if not hasattr(self, "value_cache"):
+            self.value_cache: List[torch.Tensor] = []
         self.recurrent_state_cache: Dict[int, Any] = {}
         self.sliding_window_cache: Dict[int, Tuple[torch.Tensor, torch.Tensor]] = {}
         self._seen_tokens: int = 0
 
     def get_seq_length(self, layer_idx: Optional[int] = 0) -> int:
-        """Returns the number of tokens processed so far."""
+        """Return a layer's cached length, or the processed-token count for recurrent layers."""
+        if layer_idx is not None and 0 <= layer_idx < len(self.key_cache):
+            key_states = self.key_cache[layer_idx]
+            if key_states.numel() > 0:
+                return int(key_states.shape[-2])
         return self._seen_tokens
 
     def get_max_length(self) -> Optional[int]:
         return None
 
+    def get_max_cache_shape(self, layer_idx: int = 0) -> int:
+        """Return the unbounded capacity used by Transformers cache APIs."""
+        return -1
+
     def get_usable_length(self, new_seq_len: int, layer_idx: Optional[int] = 0) -> int:
-        return self._seen_tokens
+        return self.get_seq_length(layer_idx)
+
+    def get_mask_sizes(self, query_length: int, layer_idx: int = 0) -> Tuple[int, int]:
+        """Return full-attention mask length and zero offset for dynamic KV layers."""
+        return self.get_seq_length(layer_idx) + query_length, 0
 
     def update(
         self,
@@ -65,40 +82,234 @@ class NeuralOpsHybridHFCache(_HF_CACHE_BASE):
         cache_kwargs: Optional[Dict[str, Any]] = None,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """Updates standard KV cache for full-attention layers."""
-        while len(self.key_cache) <= layer_idx:
-            self.key_cache.append(torch.empty(0))
-            self.value_cache.append(torch.empty(0))
-
-        if self.key_cache[layer_idx].numel() == 0:
-            self.key_cache[layer_idx] = key_states
-            self.value_cache[layer_idx] = value_states
+        seen_before_update = self._seen_tokens
+        if _HF_CACHE_BASE is not object:
+            updated_key, updated_value = super().update(
+                key_states,
+                value_states,
+                layer_idx,
+                cache_kwargs=cache_kwargs,
+            )
         else:
-            self.key_cache[layer_idx] = torch.cat([self.key_cache[layer_idx], key_states], dim=-2)
-            self.value_cache[layer_idx] = torch.cat([self.value_cache[layer_idx], value_states], dim=-2)
+            # The fallback cache is used when Transformers is not installed.
+            while len(self.key_cache) <= layer_idx:
+                self.key_cache.append(torch.empty(0, device=key_states.device))
+                self.value_cache.append(torch.empty(0, device=value_states.device))
+            if self.key_cache[layer_idx].numel() == 0:
+                updated_key, updated_value = key_states, value_states
+            else:
+                updated_key = torch.cat([self.key_cache[layer_idx], key_states], dim=-2)
+                updated_value = torch.cat([self.value_cache[layer_idx], value_states], dim=-2)
+            self.key_cache[layer_idx] = updated_key
+            self.value_cache[layer_idx] = updated_value
+
+        while len(self.key_cache) <= layer_idx:
+            self.key_cache.append(torch.empty(0, device=key_states.device))
+            self.value_cache.append(torch.empty(0, device=value_states.device))
+        self.key_cache[layer_idx] = updated_key
+        self.value_cache[layer_idx] = updated_value
 
         if layer_idx == 0:
-            self._seen_tokens += key_states.shape[-2]
+            # Older DynamicCache versions update this same counter inside
+            # super().update(); assigning from the pre-update value avoids a
+            # double increment across Transformers versions.
+            self._seen_tokens = seen_before_update + key_states.shape[-2]
 
-        return self.key_cache[layer_idx], self.value_cache[layer_idx]
+        return updated_key, updated_value
 
     def update_recurrent_state(self, layer_idx: int, state: Any, num_tokens: int = 1) -> Any:
         """Stores constant O(1) recurrent states (GLA, GDN, RetNet, etc.)."""
+        if num_tokens < 0:
+            raise ValueError("num_tokens must be non-negative")
         self.recurrent_state_cache[layer_idx] = state
         if layer_idx == 0:
             self._seen_tokens += num_tokens
         return state
 
+    def update_sliding_window_cache(
+        self,
+        layer_idx: int,
+        key_states: torch.Tensor,
+        value_states: torch.Tensor,
+        window_size: int,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Append KV states and retain only the newest ``window_size`` tokens."""
+        if window_size <= 0:
+            raise ValueError("window_size must be positive")
+        if key_states.shape != value_states.shape or key_states.ndim < 3:
+            raise ValueError("Sliding-window key/value states must have matching rank-3+ shapes")
+        previous = self.sliding_window_cache.get(layer_idx)
+        if previous is None:
+            full_key, full_value = key_states, value_states
+        else:
+            old_key, old_value = previous
+            full_key = torch.cat((old_key, key_states), dim=-2)
+            full_value = torch.cat((old_value, value_states), dim=-2)
+        cached = (full_key[..., -window_size:, :], full_value[..., -window_size:, :])
+        self.sliding_window_cache[layer_idx] = cached
+        if layer_idx == 0:
+            self._seen_tokens += key_states.shape[-2]
+        return cached
+
     def get_recurrent_state(self, layer_idx: int) -> Optional[Any]:
         return self.recurrent_state_cache.get(layer_idx, None)
 
+    @staticmethod
+    def _map_batch_state(state: Any, transform: Any) -> Any:
+        if isinstance(state, torch.Tensor) and state.ndim > 0:
+            return transform(state)
+        if isinstance(state, tuple):
+            return tuple(NeuralOpsHybridHFCache._map_batch_state(item, transform) for item in state)
+        if isinstance(state, list):
+            return [NeuralOpsHybridHFCache._map_batch_state(item, transform) for item in state]
+        if isinstance(state, dict):
+            return {key: NeuralOpsHybridHFCache._map_batch_state(value, transform) for key, value in state.items()}
+        return state
+
+    def reorder_cache(self, beam_idx: torch.LongTensor) -> None:
+        """Reorder KV and recurrent states together for beam-search selection."""
+        for index, (key, value) in enumerate(zip(self.key_cache, self.value_cache)):
+            if key.numel() == 0:
+                continue
+            self.key_cache[index] = key.index_select(0, beam_idx.to(key.device))
+            self.value_cache[index] = value.index_select(0, beam_idx.to(value.device))
+        self.recurrent_state_cache = {
+            index: self._map_batch_state(
+                state, lambda tensor: tensor.index_select(0, beam_idx.to(tensor.device))
+            )
+            for index, state in self.recurrent_state_cache.items()
+        }
+        self.sliding_window_cache = {
+            index: (
+                key.index_select(0, beam_idx.to(key.device)),
+                value.index_select(0, beam_idx.to(value.device)),
+            )
+            for index, (key, value) in self.sliding_window_cache.items()
+        }
+        self._sync_base_layers()
+
+    def batch_repeat_interleave(self, repeats: int) -> None:
+        """Repeat every batch-indexed KV and recurrent state for beam expansion."""
+        if repeats < 1:
+            raise ValueError("repeats must be at least one")
+        for index, (key, value) in enumerate(zip(self.key_cache, self.value_cache)):
+            if key.numel() == 0:
+                continue
+            self.key_cache[index] = key.repeat_interleave(repeats, dim=0)
+            self.value_cache[index] = value.repeat_interleave(repeats, dim=0)
+        self.recurrent_state_cache = {
+            index: self._map_batch_state(state, lambda tensor: tensor.repeat_interleave(repeats, dim=0))
+            for index, state in self.recurrent_state_cache.items()
+        }
+        self.sliding_window_cache = {
+            index: (
+                key.repeat_interleave(repeats, dim=0),
+                value.repeat_interleave(repeats, dim=0),
+            )
+            for index, (key, value) in self.sliding_window_cache.items()
+        }
+        self._sync_base_layers()
+
+    def batch_select_indices(self, indices: torch.Tensor) -> None:
+        """Select batch rows consistently across KV tensors and recurrent states."""
+        for index, (key, value) in enumerate(zip(self.key_cache, self.value_cache)):
+            if key.numel() == 0:
+                continue
+            self.key_cache[index] = key.index_select(0, indices.to(key.device))
+            self.value_cache[index] = value.index_select(0, indices.to(value.device))
+        self.recurrent_state_cache = {
+            index: self._map_batch_state(
+                state, lambda tensor: tensor.index_select(0, indices.to(tensor.device))
+            )
+            for index, state in self.recurrent_state_cache.items()
+        }
+        self.sliding_window_cache = {
+            index: (
+                key.index_select(0, indices.to(key.device)),
+                value.index_select(0, indices.to(value.device)),
+            )
+            for index, (key, value) in self.sliding_window_cache.items()
+        }
+        self._sync_base_layers()
+
+    def crop(self, max_length: int) -> None:
+        """Crop full-attention caches; refuse when recurrent states cannot be rewound."""
+        if self.recurrent_state_cache or self.sliding_window_cache:
+            raise RuntimeError("Cannot crop recurrent or sliding-window state without a saved state checkpoint")
+        target_length = max_length if max_length >= 0 else max(0, self._seen_tokens + max_length)
+        for index, (key, value) in enumerate(zip(self.key_cache, self.value_cache)):
+            if key.numel() > 0:
+                self.key_cache[index] = key[..., :target_length, :]
+                self.value_cache[index] = value[..., :target_length, :]
+        self._seen_tokens = min(self._seen_tokens, target_length)
+        self._sync_base_layers()
+
+    def reset(self) -> None:
+        """Clear all attention and recurrent states for a new generation request."""
+        self.key_cache.clear()
+        self.value_cache.clear()
+        self.recurrent_state_cache.clear()
+        self.sliding_window_cache.clear()
+        self._seen_tokens = 0
+        if hasattr(self, "layers"):
+            self.layers.clear()
+
+    def _sync_base_layers(self) -> None:
+        """Keep Transformers' layer-backed cache view in sync when present."""
+        for index, layer in enumerate(getattr(self, "layers", [])):
+            if index >= len(self.key_cache) or self.key_cache[index].numel() == 0:
+                continue
+            if hasattr(layer, "keys"):
+                layer.keys = self.key_cache[index]
+                layer.values = self.value_cache[index]
+                layer.is_initialized = True
+
     def __getitem__(self, layer_idx: int) -> Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]:
         """Index access returning (key, value) tuple for layer_idx, compatible with legacy tuple caches."""
-        if layer_idx < len(self.key_cache):
-            return self.key_cache[layer_idx], self.value_cache[layer_idx]
+        if layer_idx < 0:
+            layer_idx += len(self)
+        if 0 <= layer_idx < len(self.key_cache):
+            key_states = self.key_cache[layer_idx]
+            value_states = self.value_cache[layer_idx]
+            if key_states.numel() > 0:
+                return key_states, value_states
+        if layer_idx in self.sliding_window_cache:
+            return self.sliding_window_cache[layer_idx]
         return None, None
 
     def __len__(self) -> int:
-        return max(len(self.key_cache), len(self.recurrent_state_cache))
+        return max(
+            len(self.key_cache),
+            len(self.recurrent_state_cache),
+            len(self.sliding_window_cache),
+        )
+
+    def __iter__(self) -> Iterator[Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]]:
+        """Iterate by layer using the legacy ``(key, value)`` view."""
+        for layer_idx in range(len(self)):
+            yield self[layer_idx]
+
+    def to_legacy_cache(
+        self,
+    ) -> Tuple[Tuple[Optional[torch.Tensor], Optional[torch.Tensor]], ...]:
+        """Return the conventional tuple cache for legacy model implementations."""
+        return tuple(
+            self[index]
+            for index in range(len(self))
+        )
+
+    @classmethod
+    def from_legacy_cache(
+        cls,
+        past_key_values: Optional[Tuple[Tuple[torch.Tensor, torch.Tensor], ...]] = None,
+    ) -> NeuralOpsHybridHFCache:
+        """Construct a compatible cache from a legacy tuple of key/value tensors."""
+        cache = cls()
+        if past_key_values is not None:
+            for layer_idx, (key_states, value_states, *_) in enumerate(past_key_values):
+                if key_states is not None and value_states is not None:
+                    cache.update(key_states, value_states, layer_idx)
+        return cache
 
 
 def wrap_model_for_generation(model: torch.nn.Module) -> torch.nn.Module:
@@ -106,7 +317,11 @@ def wrap_model_for_generation(model: torch.nn.Module) -> torch.nn.Module:
     Wraps model's prepare_inputs_for_generation or injects NeuralOpsHybridHFCache
     whenever model.generate() is called.
     """
-    if hasattr(model, "generate") and hasattr(model, "prepare_inputs_for_generation"):
+    if (
+        hasattr(model, "generate")
+        and hasattr(model, "prepare_inputs_for_generation")
+        and not getattr(model, "_neuralops_hf_cache_bridge", False)
+    ):
         orig_prep = model.prepare_inputs_for_generation
 
         def _patched_prep(input_ids: torch.Tensor, **kwargs: Any) -> Dict[str, Any]:
@@ -117,6 +332,7 @@ def wrap_model_for_generation(model: torch.nn.Module) -> torch.nn.Module:
             return model_inputs
 
         model.prepare_inputs_for_generation = _patched_prep
+        model._neuralops_hf_cache_bridge = True
 
     return model
 

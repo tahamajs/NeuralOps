@@ -138,7 +138,9 @@ def finalize_surgery(model: nn.Module) -> nn.Module:
     and runs garbage collection to yield a clean standalone student model.
     """
     count = 0
-    for m in model.modules():
+    # The teacher branch is registered as a child module. Iterate over a stable
+    # snapshot so removing those children cannot invalidate Module.modules().
+    for m in list(model.modules()):
         if isinstance(m, UniversalAttentionBridge):
             if m.teacher_branch is not None:
                 del m.teacher_branch
@@ -182,9 +184,9 @@ def patch_bridge_for_shadow_twin(bridge: UniversalAttentionBridge) -> None:
             loss_clone = compute_operator_cloning_loss(teacher_core, student_core)
             loss_cka = compute_linear_cka_loss(teacher_core, student_core)
             bridge._last_twin_loss = loss_clone + 0.05 * loss_cka
-        elif not torch.is_grad_enabled():
-            pass
         else:
+            # Do not expose a training loss from an earlier forward during
+            # evaluation, inference, or the end-to-end student stage.
             bridge._last_twin_loss = None
 
         alpha = getattr(bridge, "alpha", 1.0)

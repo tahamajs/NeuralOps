@@ -178,15 +178,32 @@ class UniversalArchitectureScanner:
         if isinstance(module, nn.MultiheadAttention):
             embed_dim = module.embed_dim
             num_heads = module.num_heads
+            if num_heads <= 0 or embed_dim % num_heads:
+                raise ValueError(
+                    f"Invalid nn.MultiheadAttention dimensions at {path!r}: "
+                    f"embed_dim={embed_dim}, num_heads={num_heads}"
+                )
             head_dim = embed_dim // num_heads
-            is_causal = getattr(module, "batch_first", False)
+            # ``batch_first`` describes tensor layout, not causal masking.
+            # PyTorch MHA receives causality per forward call, so the scanner
+            # must not infer it from the module configuration.
+            is_causal = False
 
-            in_w = module.in_proj_weight
             in_b = module.in_proj_bias
             out_proj = module.out_proj
-
-            W_q, W_k, W_v = in_w.chunk(3, dim=0)
-            b_q, b_k, b_v = in_b.chunk(3, dim=0) if in_b is not None else (None, None, None)
+            if module.in_proj_weight is not None:
+                W_q, W_k, W_v = module.in_proj_weight.chunk(3, dim=0)
+                b_q, b_k, b_v = in_b.chunk(3, dim=0) if in_b is not None else (None, None, None)
+            else:
+                W_q, W_k, W_v = (
+                    module.q_proj_weight,
+                    module.k_proj_weight,
+                    module.v_proj_weight,
+                )
+                if in_b is not None:
+                    b_q, b_k, b_v = in_b.chunk(3, dim=0)
+                else:
+                    b_q, b_k, b_v = None, None, None
             W_o, b_o = out_proj.weight, out_proj.bias
 
             return AttentionTargetSpec(
@@ -263,6 +280,11 @@ class UniversalArchitectureScanner:
                 b_q, b_k, b_v = None, None, None
 
             num_heads = getattr(module, "num_heads", getattr(module, "n_head", 12))
+            if num_heads <= 0 or split_dim % num_heads:
+                raise ValueError(
+                    f"Invalid fused QKV dimensions at {path!r}: "
+                    f"qkv_width={total_qkv_out}, num_heads={num_heads}"
+                )
             head_dim = split_dim // num_heads
 
             return AttentionTargetSpec(
@@ -291,6 +313,9 @@ class UniversalArchitectureScanner:
             num_heads = getattr(module, "num_heads", 12)
             total_out = W_qkv.shape[0]
 
+            if num_heads <= 0:
+                raise ValueError(f"Invalid attention head count at {path!r}: {num_heads}")
+
             if total_out % 3 == 0:
                 split_dim = total_out // 3
                 num_kv_heads = num_heads
@@ -308,7 +333,16 @@ class UniversalArchitectureScanner:
                 head_dim = embed_dim // num_heads
                 q_dim = num_heads * head_dim
                 rem_kv = total_out - q_dim
+                if rem_kv <= 0 or rem_kv % 2:
+                    raise ValueError(
+                        f"Cannot split fused QKV projection at {path!r}: "
+                        f"projection width {total_out} is incompatible with {num_heads} query heads"
+                    )
                 kv_dim = rem_kv // 2
+                if kv_dim % head_dim:
+                    raise ValueError(
+                        f"Fused KV width at {path!r} is not divisible by head_dim={head_dim}"
+                    )
                 num_kv_heads = kv_dim // head_dim
                 W_q = W_qkv[0:q_dim, :]
                 W_k = W_qkv[q_dim : q_dim + kv_dim, :]
@@ -366,7 +400,14 @@ class UniversalArchitectureScanner:
 
             embed_dim = W_q.shape[1]
             num_heads = getattr(module, "num_heads", getattr(module, "n_heads", getattr(module, "num_attention_heads", 12)))
+            if num_heads <= 0:
+                raise ValueError(f"Invalid attention head count at {path!r}: {num_heads}")
             head_dim = getattr(module, "head_dim", W_q.shape[0] // num_heads)
+            if head_dim <= 0 or W_q.shape[0] % head_dim or W_k.shape[0] % head_dim:
+                raise ValueError(
+                    f"Incompatible projection dimensions at {path!r}: "
+                    f"q_width={W_q.shape[0]}, k_width={W_k.shape[0]}, head_dim={head_dim}"
+                )
             num_kv_heads = getattr(module, "num_key_value_heads", getattr(module, "num_kv_heads", W_k.shape[0] // head_dim))
             is_causal = getattr(module, "is_causal", True if "llama" in cls_name or "qwen" in cls_name else False)
 

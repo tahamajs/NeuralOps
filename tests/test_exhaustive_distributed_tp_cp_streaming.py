@@ -5,19 +5,14 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Suite 8: Exhaustive Verification Battery for Distributed Tensor Parallelism, Context Parallelism, and Streaming.
-Expanded to 15+ parameterized tests verifying:
-  8.1 RankParallelSVDLinear, RowParallelSVDLinear, ColumnParallelSVDLinear forward/backward parity across world sizes.
-  8.2 ContextParallelRecurrentScan chunk prefix scan.
-  8.3 PackedTokenStreamDataset chunk streaming and state_dict checkpoint determinism.
-"""
+"""Checks local TP factor reconstruction, context scans, and token-stream behavior."""
 
 from __future__ import annotations
 
 import pytest
 import torch
 import torch.nn as nn
+import torch.distributed as dist
 
 from neuralops.distributed.tensor_parallel import (
     RankParallelSVDLinear,
@@ -83,7 +78,9 @@ def test_8_2_streaming_dataset(seq_len):
 
 @pytest.mark.parametrize("tp_size", [2, 4])
 @pytest.mark.parametrize("d_in,d_out", [(32, 64), (64, 32)])
-def test_8_3_row_and_column_parallel_svd_linear_parity(tp_size, d_in, d_out):
+def test_8_3_parallel_svd_requires_collectives_for_row_reduction(
+    tp_size, d_in, d_out, monkeypatch
+):
     B, T = 2, 8
     x = torch.randn(B, T, d_in, device=DEVICE)
     col_layers = [
@@ -100,10 +97,9 @@ def test_8_3_row_and_column_parallel_svd_linear_parity(tp_size, d_in, d_out):
         RowParallelSVDLinear(d_in, d_out, rank=8, tp_size=tp_size, tp_rank=r, bias=False).to(DEVICE)
         for r in range(tp_size)
     ]
-    row_outs = [row_layers[r](x[:, :, r * chunk_in : (r + 1) * chunk_in]) for r in range(tp_size)]
-    combined_row = sum(row_outs)
-    assert combined_row.shape == (B, T, d_out)
-    assert not torch.isnan(combined_row).any()
+    monkeypatch.setattr(dist, "is_initialized", lambda: False)
+    with pytest.raises(RuntimeError, match="initialized"):
+        row_layers[0](x[:, :, :chunk_in])
 
 
 @pytest.mark.parametrize("num_heads", [2, 4])

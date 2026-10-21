@@ -485,15 +485,14 @@ def vargha_delaney_a12(a: np.ndarray, b: np.ndarray) -> dict[str, float]:
         gt += np.sum(ai > b)
         eq += np.sum(ai == b)
     a12 = (gt + 0.5 * eq) / (n_a * n_b) if n_a * n_b > 0 else 0.5
-    if a12 < 0.5:
-        a12 = 1 - a12
+    effect_strength = max(a12, 1 - a12)
     magnitude = (
         "negligible"
-        if a12 < 0.56
+        if effect_strength < 0.56
         else "small"
-        if a12 < 0.64
+        if effect_strength < 0.64
         else "medium"
-        if a12 < 0.71
+        if effect_strength < 0.71
         else "large"
     )
     return {"vargha_delaney_A12": round(a12, 4), "magnitude": magnitude}

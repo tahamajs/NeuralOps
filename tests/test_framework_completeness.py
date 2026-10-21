@@ -123,7 +123,7 @@ def test_serving_adapters():
     assert len(batch) == 16
 
 
-def test_distributed_and_fsdp_policies():
+def test_distributed_and_fsdp_policies(monkeypatch):
     """Verify DeepSpeed and FSDP integration helpers."""
     ds_cfg = get_deepspeed_config(stage=3, offload_optimizer=True, fp16=True)
     assert ds_cfg["zero_optimization"]["stage"] == 3
@@ -136,8 +136,9 @@ def test_distributed_and_fsdp_policies():
         DummyLinearAttention(dim=32, num_heads=2),
         nn.Linear(32, 10),
     )
-    wrapped = apply_fsdp_wrapping(model)
-    assert wrapped is not None
+    monkeypatch.setattr(torch.distributed, "is_initialized", lambda: False)
+    with pytest.raises(RuntimeError, match="initialized"):
+        apply_fsdp_wrapping(model)
 
 
 def test_compilable_custom_ops():

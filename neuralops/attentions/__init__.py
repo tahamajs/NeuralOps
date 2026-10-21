@@ -100,6 +100,8 @@ from importlib.util import spec_from_loader
 import types
 
 def _get_target_module(leaf):
+    if leaf == 'replace':
+        return importlib.import_module("neuralops.core.replace_attention")
     if leaf in _RENAMED_MODULES:
         rel_path, class_map = _RENAMED_MODULES[leaf]
         target_fullname = f"{__package__}.{rel_path}"
@@ -112,16 +114,21 @@ def _get_target_module(leaf):
         for old_k, target_k in class_map.items():
             if hasattr(real_mod, target_k):
                 setattr(alias_mod, old_k, getattr(real_mod, target_k))
-        return alias_mod
+        target_mod = alias_mod
     elif leaf in _LEGACY_MAP:
         rel_path = _LEGACY_MAP[leaf]
         target_fullname = f"{__package__}.{rel_path}"
         if target_fullname in sys.modules:
-            return sys.modules[target_fullname]
-        return importlib.import_module(f".{rel_path}", __package__)
-    elif leaf == 'replace':
-        return importlib.import_module("neuralops.core.replace_attention")
-    return None
+            target_mod = sys.modules[target_fullname]
+        else:
+            target_mod = importlib.import_module(f".{rel_path}", __package__)
+    else:
+        return None
+    if target_mod is not None and not hasattr(target_mod, "_rotate_half"):
+        from neuralops.core.utils.rope import _rotate_half
+
+        setattr(target_mod, "_rotate_half", _rotate_half)
+    return target_mod
 
 class _LegacyAttnLoader(Loader):
     def __init__(self, leaf, fullname):

@@ -8,6 +8,7 @@
 """Tests for real ecosystem integrations (patch_model_attention, vLLM, DeepSpeed, FSDP)."""
 import torch
 import torch.nn as nn
+import pytest
 from neuralops.integrations.hf_automodel import patch_model_attention
 from neuralops.integrations.serving import VLLMAttentionAdapter
 from neuralops.integrations.distributed_compile import get_deepspeed_config, apply_fsdp_wrapping
@@ -30,7 +31,7 @@ def test_patch_model_attention_real():
     assert not isinstance(patched.layer.self_attn, nn.Linear)
 
 
-def test_vllm_and_deepspeed_fsdp_working():
+def test_vllm_and_deepspeed_fsdp_working(monkeypatch):
     adapter = VLLMAttentionAdapter(attention_type="paged_attention", head_dim=64, num_heads=8)
     meta = adapter.format_metadata([[0, 1], [2, 3]], [32, 64])
     assert meta["max_context_len"] == 64
@@ -40,5 +41,6 @@ def test_vllm_and_deepspeed_fsdp_working():
     assert ds["zero_optimization"]["offload_optimizer"]["device"] == "cpu"
 
     model = nn.Linear(16, 16)
-    wrapped = apply_fsdp_wrapping(model)
-    assert isinstance(wrapped, nn.Module)
+    monkeypatch.setattr(torch.distributed, "is_initialized", lambda: False)
+    with pytest.raises(RuntimeError, match="initialized"):
+        apply_fsdp_wrapping(model)

@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import torch
 
-__all__ = ["repeat_kv"]
+__all__ = ["repeat_kv", "repeat_kv_optimized"]
 
 
 def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
@@ -29,3 +29,6 @@ def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
     b, num_kv_heads, slen, head_dim = hidden_states.shape
     hidden_states = hidden_states[:, :, None, :, :].expand(b, num_kv_heads, n_rep, slen, head_dim)
     return hidden_states.reshape(b, num_kv_heads * n_rep, slen, head_dim)
+
+
+repeat_kv_optimized = repeat_kv

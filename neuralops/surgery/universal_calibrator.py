@@ -14,11 +14,9 @@ Streaming activation calibrator computing Gram and Hessian statistics across com
 from __future__ import annotations
 
 import logging
-from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 import torch
 import torch.nn as nn
-
-from neuralops.core.registry import COMPRESSOR_REGISTRY
 
 logger = logging.getLogger("NeuralOps.Surgery.Calibrator")
 
@@ -39,6 +37,8 @@ class UniversalActivationCalibrator:
         self.model = model
         self.target_classes = target_classes
         self.exclude_keywords = exclude_keywords
+        if damping < 0:
+            raise ValueError("damping must be non-negative")
         self.damping = damping
 
         self.hessian_dict: Dict[str, torch.Tensor] = {}
@@ -117,39 +117,57 @@ class UniversalActivationCalibrator:
         Runs streaming calibration loop over calibration data and computes
         regularized inverse Hessians and whitening projections.
         """
+        if num_batches is not None and num_batches < 0:
+            raise ValueError("num_batches must be non-negative or None")
+
         self.attach_hooks()
-        was_training = self.model.training
+        training_states = [(module, module.training) for module in self.model.modules()]
         self.model.eval()
 
-        batch_idx = 0
-        with torch.no_grad():
-            if isinstance(calibration_data, torch.Tensor):
-                self.model(calibration_data)
-            else:
-                for batch in calibration_data:
-                    if num_batches is not None and batch_idx >= num_batches:
-                        break
-                    if isinstance(batch, dict):
+        try:
+            batch_idx = 0
+            with torch.no_grad():
+                if isinstance(calibration_data, torch.Tensor):
+                    try:
                         device = next(self.model.parameters()).device
-                        batch_device = {
-                            k: v.to(device) if isinstance(v, torch.Tensor) else v
-                            for k, v in batch.items()
-                        }
-                        self.model(**batch_device)
-                    elif isinstance(batch, (tuple, list)):
+                    except StopIteration:
+                        device = calibration_data.device
+                    self.model(calibration_data.to(device))
+                else:
+                    try:
                         device = next(self.model.parameters()).device
-                        batch_device = [
-                            x.to(device) if isinstance(x, torch.Tensor) else x
-                            for x in batch
-                        ]
-                        self.model(*batch_device)
-                    elif isinstance(batch, torch.Tensor):
-                        self.model(batch)
-                    batch_idx += 1
+                    except StopIteration:
+                        device = torch.device("cpu")
 
-        self.remove_hooks()
-        if was_training:
-            self.model.train()
+                    for batch in calibration_data:
+                        if num_batches is not None and batch_idx >= num_batches:
+                            break
+                        if isinstance(batch, dict):
+                            batch_device = {
+                                key: value.to(device) if isinstance(value, torch.Tensor) else value
+                                for key, value in batch.items()
+                            }
+                            self.model(**batch_device)
+                        elif isinstance(batch, (tuple, list)):
+                            batch_device = [
+                                value.to(device) if isinstance(value, torch.Tensor) else value
+                                for value in batch
+                            ]
+                            self.model(*batch_device)
+                        elif isinstance(batch, torch.Tensor):
+                            self.model(batch.to(device))
+                        else:
+                            raise TypeError(
+                                "Calibration batches must be tensors, tuples/lists, or mappings; "
+                                f"received {type(batch).__name__}"
+                            )
+                        batch_idx += 1
+        finally:
+            self.remove_hooks()
+            # Restore each module's exact prior mode; Module.train() recursively
+            # overwrites child states and would lose deliberately mixed modes.
+            for module, was_training in training_states:
+                module.training = was_training
 
         results: Dict[str, Dict[str, torch.Tensor]] = {}
         for name, gram in self.hessian_dict.items():

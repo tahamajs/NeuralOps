@@ -7,12 +7,16 @@
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 
 import torch
+import pytest
 import torch.nn.functional as F
 from neuralops.core.cuda_kernels import (
     mamba_block, mamba_svd_flash, spectral_mamba, svd_prefix_scan,
     gdn_scan, gdn_delta_rule, orion, selective_ssm, selective_scan,
     paged_recurrent_step, state_update
 )
+
+if not torch.cuda.is_available():
+    pytest.skip("CUDA is required for the forward/backward kernel audit", allow_module_level=True)
 
 device = "cuda"
 torch.manual_seed(42)

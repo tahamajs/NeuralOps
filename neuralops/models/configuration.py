@@ -66,6 +66,40 @@ class NeuralOpsConfig(PretrainedConfig):
         **kwargs: Any,
     ) -> None:
         """Initialize NeuralOpsConfig with full architectural parameters."""
+        if hidden_size <= 0:
+            raise ValueError(f"hidden_size must be positive, got {hidden_size}")
+        if vocab_size <= 0:
+            raise ValueError(f"vocab_size must be positive, got {vocab_size}")
+        if num_hidden_layers <= 0:
+            raise ValueError(
+                f"num_hidden_layers must be positive, got {num_hidden_layers}"
+            )
+        if num_attention_heads <= 0:
+            raise ValueError(
+                f"num_attention_heads must be positive, got {num_attention_heads}"
+            )
+        if num_key_value_heads is not None and num_key_value_heads <= 0:
+            raise ValueError(
+                "num_key_value_heads must be positive when provided, "
+                f"got {num_key_value_heads}"
+            )
+        if head_dim is None and hidden_size % num_attention_heads != 0:
+            raise ValueError(
+                "hidden_size must be divisible by num_attention_heads when "
+                "head_dim is not provided"
+            )
+        if head_dim is not None and head_dim <= 0:
+            raise ValueError(f"head_dim must be positive, got {head_dim}")
+        if intermediate_size is not None and intermediate_size <= 0:
+            raise ValueError(
+                f"intermediate_size must be positive, got {intermediate_size}"
+            )
+        if max_position_embeddings <= 0:
+            raise ValueError(
+                "max_position_embeddings must be positive, "
+                f"got {max_position_embeddings}"
+            )
+
         self.is_decoder = is_decoder
         self.is_causal = is_causal
         self.vocab_size = vocab_size
@@ -118,8 +152,13 @@ class NeuralOpsConfig(PretrainedConfig):
             raise ValueError(f"num_hidden_layers must be positive, got {self.num_hidden_layers}")
         if self.num_attention_heads <= 0:
             raise ValueError(f"num_attention_heads must be positive, got {self.num_attention_heads}")
-        if self.hidden_size % self.num_attention_heads != 0 and self.head_dim is None:
-            raise ValueError("hidden_size must be divisible by num_attention_heads when head_dim is None")
+        if self.head_dim <= 0:
+            raise ValueError(f"head_dim must be positive, got {self.head_dim}")
+        if self.num_key_value_heads <= 0:
+            raise ValueError(
+                "num_key_value_heads must be positive, "
+                f"got {self.num_key_value_heads}"
+            )
         if self.num_attention_heads % self.num_key_value_heads != 0:
             raise ValueError("num_attention_heads must be divisible by num_key_value_heads for GQA")
 

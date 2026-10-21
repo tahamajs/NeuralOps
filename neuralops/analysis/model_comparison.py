@@ -37,12 +37,18 @@ class ModelComparison:
                 dfs.append(df)
         if dfs:
             self.df_all = pd.concat(dfs, ignore_index=True)
+        else:
+            self.df_all = pd.DataFrame()
         return self.df_all
 
     def generate_all_plots(self) -> None:
         """Generate all plots."""
         if self.df_all is None:
             self.load_all_results()
+        if self.df_all.empty:
+            raise ValueError(
+                "No performance.csv records were found in the configured results directories."
+            )
         plots_dir = self.output_dir / "plots"
         create_comprehensive_plots(self.df_all, str(plots_dir))
         plot_tradeoff(self.df_all, str(plots_dir))

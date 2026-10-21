@@ -28,10 +28,13 @@ logger = logging.getLogger("NeuralOps.Surgery.EndoskeletalShell")
 
 def register_neuralops_with_huggingface() -> None:
     """
-    Registers all 131 NeuralOps attention mechanisms into HuggingFace's
-    `transformers.modeling_utils.ALL_ATTENTION_FUNCTIONS`.
-    Enables zero-surgery usage:
-        AutoModelForCausalLM.from_pretrained("...", attn_implementation="neuralops_cosformer")
+    Registers named adapters in HuggingFace's attention-function registry.
+
+    The adapter uses an explicitly attached ``module._neuralops_submodule``
+    when present; otherwise it preserves the model's behavior with PyTorch
+    SDPA. Registration alone does not transplant or initialize a NeuralOps
+    attention module, because the HuggingFace hook receives projected Q/K/V
+    tensors while most NeuralOps modules own those projections themselves.
     """
     try:
         import transformers.modeling_utils as hf_utils
@@ -61,24 +64,50 @@ def register_neuralops_with_huggingface() -> None:
                 key = torch.repeat_interleave(key, repeat_factor, dim=1)
                 value = torch.repeat_interleave(value, repeat_factor, dim=1)
 
-            attn_cls = ATTENTION_REGISTRY.get(attn_name)
             if hasattr(module, "_neuralops_submodule") and module._neuralops_submodule is not None:
                 core_sub = module._neuralops_submodule
-            elif attn_cls is not None:
-                if not hasattr(module, "_neuralops_submodule_cache"):
-                    module._neuralops_submodule_cache = {}
-                if attn_name not in module._neuralops_submodule_cache:
-                    hidden_size = H_q * D_h
-                    module._neuralops_submodule_cache[attn_name] = attn_cls(
-                        hidden_size=hidden_size, num_heads=H_q, head_dim=D_h
-                    ).to(device=query.device, dtype=query.dtype)
-                core_sub = module._neuralops_submodule_cache[attn_name]
             else:
+                # Attention implementations registered in NeuralOps generally
+                # own Q/K/V projections. Transformers' attention-function API
+                # supplies already-projected Q/K/V, so constructing one here
+                # would silently add random, uncheckpointed parameters. Until a
+                # module is explicitly attached by the caller, preserve model
+                # semantics with the reference SDPA path.
                 core_sub = None
 
             if core_sub is not None:
-                q_flat = query.transpose(1, 2).contiguous().view(B, T, H_q * D_h)
-                out, _ = core_sub(q_flat, attention_mask=attention_mask, is_causal=is_causal, **kwargs)
+                if callable(getattr(core_sub, "forward_qkv", None)):
+                    out = core_sub.forward_qkv(
+                        query,
+                        key,
+                        value,
+                        attention_mask=attention_mask,
+                        is_causal=is_causal,
+                        **kwargs,
+                    )
+                    if isinstance(out, tuple):
+                        out = out[0]
+                else:
+                    q_flat = query.transpose(1, 2).contiguous().view(B, T, H_q * D_h)
+                    result = core_sub(
+                        q_flat,
+                        attention_mask=attention_mask,
+                        is_causal=is_causal,
+                        **kwargs,
+                    )
+                    out = result[0] if isinstance(result, (tuple, list)) else result
+                if out.ndim == 4:
+                    if out.shape == (B, H_q, T, D_h):
+                        out = out.transpose(1, 2)
+                    elif out.shape != (B, T, H_q, D_h):
+                        raise ValueError(
+                            f"NeuralOps attention returned incompatible shape {tuple(out.shape)}"
+                        )
+                    out = out.contiguous()
+                elif out.shape != (B, T, H_q * D_h):
+                    raise ValueError(
+                        f"NeuralOps attention returned incompatible shape {tuple(out.shape)}"
+                    )
                 out = out.view(B, T, H_q, D_h)
             else:
                 assert callable(F.scaled_dot_product_attention), "F.scaled_dot_product_attention is not callable"
@@ -163,43 +192,107 @@ def transfer_pretrained_qkv_weights(
     instantiated NeuralOps attention module without random re-initialization.
     """
     if spec.extracted_qkv is None:
+        if strict:
+            raise ValueError(f"No pretrained Q/K/V/O projections were extracted for {spec.module_path!r}")
         return
 
     W_q, b_q, W_k, b_k, W_v, b_v, W_o, b_o = spec.extracted_qkv
 
-    target_q = getattr(new_module, "q_proj", getattr(new_module, "query", getattr(new_module, "q", None)))
-    target_k = getattr(new_module, "k_proj", getattr(new_module, "key", getattr(new_module, "k", None)))
-    target_v = getattr(new_module, "v_proj", getattr(new_module, "value", getattr(new_module, "v", None)))
+    target_q = getattr(
+        new_module, "q_proj", getattr(new_module, "query", getattr(new_module, "q", None))
+    )
+    target_k = getattr(
+        new_module, "k_proj", getattr(new_module, "key", getattr(new_module, "k", None))
+    )
+    target_v = getattr(
+        new_module, "v_proj", getattr(new_module, "value", getattr(new_module, "v", None))
+    )
     target_o = getattr(
         new_module,
         "out_proj",
-        getattr(new_module, "o_proj", getattr(new_module, "proj", getattr(new_module, "dense", None))),
+        getattr(
+            new_module,
+            "o_proj",
+            getattr(
+                new_module,
+                "proj",
+                getattr(new_module, "dense", getattr(new_module, "c_proj", getattr(new_module, "out_lin", None))),
+            ),
+        ),
     )
 
-    def _copy_param(target_linear: Any, W: torch.Tensor, b: Optional[torch.Tensor]) -> None:
+    missing: list[str] = []
+
+    def _copy_param(name: str, target_linear: Any, W: torch.Tensor, b: Optional[torch.Tensor]) -> None:
         if target_linear is None or not hasattr(target_linear, "weight"):
+            missing.append(name)
             return
         with torch.no_grad():
             tgt_w = target_linear.weight
             if tgt_w.shape == W.shape:
                 tgt_w.copy_(W.to(device=tgt_w.device, dtype=tgt_w.dtype))
+            elif tgt_w.ndim == 2 and W.ndim == 2 and tgt_w.t().shape == W.shape:
+                tgt_w.copy_(W.t().to(device=tgt_w.device, dtype=tgt_w.dtype))
             elif tgt_w.ndim == 2 and W.ndim == 2:
-                min_out = min(tgt_w.shape[0], W.shape[0])
-                min_in = min(tgt_w.shape[1], W.shape[1])
-                tgt_w[:min_out, :min_in].copy_(W[:min_out, :min_in].to(device=tgt_w.device, dtype=tgt_w.dtype))
+                if strict:
+                    raise ValueError(
+                        f"Projection {name} shape mismatch for {spec.module_path!r}: "
+                        f"target={tuple(tgt_w.shape)}, source={tuple(W.shape)}"
+                    )
+                if getattr(target_linear, "nf", None) == tgt_w.shape[1]:
+                    min_in = min(tgt_w.shape[0], W.shape[1])
+                    min_out = min(tgt_w.shape[1], W.shape[0])
+                    tgt_w[:min_in, :min_out].copy_(
+                        W[:min_out, :min_in].t().to(device=tgt_w.device, dtype=tgt_w.dtype)
+                    )
+                else:
+                    min_out = min(tgt_w.shape[0], W.shape[0])
+                    min_in = min(tgt_w.shape[1], W.shape[1])
+                    tgt_w[:min_out, :min_in].copy_(
+                        W[:min_out, :min_in].to(device=tgt_w.device, dtype=tgt_w.dtype)
+                    )
+                logger.warning(
+                    "Copied overlapping weights for %s at %s: source %s, target %s",
+                    name,
+                    spec.module_path,
+                    tuple(W.shape),
+                    tuple(tgt_w.shape),
+                )
+            else:
+                raise ValueError(
+                    f"Unsupported projection shape for {name} at {spec.module_path!r}: "
+                    f"target={tuple(tgt_w.shape)}, source={tuple(W.shape)}"
+                )
 
-            if b is not None and getattr(target_linear, "bias", None) is not None:
-                tgt_b = target_linear.bias
+            target_bias = getattr(target_linear, "bias", None)
+            if b is not None and target_bias is not None:
+                tgt_b = target_bias
                 if tgt_b.shape == b.shape:
                     tgt_b.copy_(b.to(device=tgt_b.device, dtype=tgt_b.dtype))
                 else:
+                    if strict:
+                        raise ValueError(
+                            f"Bias shape mismatch for {name} at {spec.module_path!r}: "
+                            f"target={tuple(tgt_b.shape)}, source={tuple(b.shape)}"
+                        )
                     min_b = min(tgt_b.shape[0], b.shape[0])
                     tgt_b[:min_b].copy_(b[:min_b].to(device=tgt_b.device, dtype=tgt_b.dtype))
+            elif b is None and target_bias is not None:
+                target_bias.zero_()
+            elif strict and b is not None and target_bias is None:
+                raise ValueError(f"Target projection {name} has no bias but source projection does")
 
-    _copy_param(target_q, W_q, b_q)
-    _copy_param(target_k, W_k, b_k)
-    _copy_param(target_v, W_v, b_v)
-    _copy_param(target_o, W_o, b_o)
+    _copy_param("query", target_q, W_q, b_q)
+    _copy_param("key", target_k, W_k, b_k)
+    _copy_param("value", target_v, W_v, b_v)
+    _copy_param("output", target_o, W_o, b_o)
+    if strict and missing:
+        raise ValueError(
+            f"Target attention module is missing projection(s) {', '.join(missing)} "
+            f"required to inherit weights from {spec.module_path!r}"
+        )
+    if missing:
+        logger.debug("Skipped unavailable projections for %s: %s", spec.module_path, ", ".join(missing))
 
 
 class UniversalAttentionBridge(nn.Module):

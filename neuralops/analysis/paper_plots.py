@@ -78,9 +78,23 @@ def plot_singular_value_spectrum(
                 break
 
     if not layers_sv:
-        w = torch.randn(256, 256)
-        S = torch.linalg.svdvals(w).cpu().numpy()
-        layers_sv["sample_linear"] = (S / S[0])[:max_components]
+        ax.text(
+            0.5,
+            0.5,
+            "No eligible linear projections found",
+            ha="center",
+            va="center",
+            transform=ax.transAxes,
+        )
+        ax.set_axis_off()
+        ax.set_title("Layer-wise Singular Energy Spectrum Decay")
+        plt.tight_layout()
+        if save_path:
+            out_p = Path(save_path)
+            out_p.parent.mkdir(parents=True, exist_ok=True)
+            fig.savefig(out_p)
+            logger.info("Saved empty Singular Value Spectrum plot to %s", out_p)
+        return fig
 
     try:
         import matplotlib
@@ -181,6 +195,26 @@ def plot_pareto_frontier(
 
     fig, ax = plt.subplots(figsize=(6.5, 4.5))
 
+    if not points:
+        ax.text(
+            0.5,
+            0.5,
+            "No benchmark records supplied; no empirical frontier to plot",
+            ha="center",
+            va="center",
+            transform=ax.transAxes,
+            wrap=True,
+        )
+        ax.set_axis_off()
+        ax.set_title(title)
+        plt.tight_layout()
+        if save_path:
+            out_p = Path(save_path)
+            out_p.parent.mkdir(parents=True, exist_ok=True)
+            fig.savefig(out_p)
+            logger.info("Saved empty Pareto plot to %s", out_p)
+        return fig
+
     x_vals = [p[x_metric] for p in points]
     y_vals = [p[y_metric] for p in points]
     labels = [p.get("name", p.get("method", f"Model {i}")) for i, p in enumerate(points)]
@@ -237,6 +271,7 @@ def plot_pareto_frontier(
 def generate_all_paper_plots(
     model: Optional[nn.Module] = None,
     output_dir: Union[str, Path] = "results/plots",
+    benchmark_points: Optional[List[Dict[str, Any]]] = None,
 ) -> List[Path]:
     """
     Generates a full set of publication-grade figures in PDF and SVG formats.
@@ -244,6 +279,9 @@ def generate_all_paper_plots(
     Args:
         model: Optional model for spectrum analysis. If None, instantiates a lightweight reference model.
         output_dir: Directory where figures will be saved.
+        benchmark_points: Empirical records for the Pareto plot. Each record must
+            contain the requested x/y metric fields; omitted records produce an
+            explicitly empty plot rather than synthetic benchmark values.
 
     Returns:
         List of generated file paths.
@@ -280,22 +318,15 @@ def generate_all_paper_plots(
     p_heatmap_svg = out_dir / "figure_attention_entropy.svg"
     p_heatmap_pdf = out_dir / "figure_attention_entropy.pdf"
     fig2 = plot_attention_entropy_heatmap(dummy_attn, save_path=p_heatmap_svg)
+    fig2.axes[0].set_title("Synthetic illustrative attention pattern (not empirical)")
+    fig2.savefig(p_heatmap_svg)
     fig2.savefig(p_heatmap_pdf)
     plt.close(fig2)
     generated.extend([p_heatmap_svg, p_heatmap_pdf])
 
-    benchmark_points = [
-        {"name": "Dense Baseline", "compression_ratio": 1.0, "accuracy": 89.5},
-        {"name": "Direct SVD (r=64)", "compression_ratio": 1.6, "accuracy": 88.8},
-        {"name": "Direct SVD (r=32)", "compression_ratio": 2.4, "accuracy": 87.2},
-        {"name": "PiSSA + GLA", "compression_ratio": 2.8, "accuracy": 89.1},
-        {"name": "MOHAWK + Cosformer", "compression_ratio": 3.4, "accuracy": 88.5},
-        {"name": "4-bit AWQ + GLA", "compression_ratio": 4.1, "accuracy": 88.2},
-    ]
-
     p_pareto_svg = out_dir / "figure_pareto_frontier.svg"
     p_pareto_pdf = out_dir / "figure_pareto_frontier.pdf"
-    fig3 = plot_pareto_frontier(benchmark_points, save_path=p_pareto_svg)
+    fig3 = plot_pareto_frontier(benchmark_points or [], save_path=p_pareto_svg)
     fig3.savefig(p_pareto_pdf)
     plt.close(fig3)
     generated.extend([p_pareto_svg, p_pareto_pdf])
@@ -310,8 +341,16 @@ class PaperPlotGenerator:
     def __init__(self, output_dir: Union[str, Path] = "results/plots"):
         self.output_dir = Path(output_dir)
 
-    def generate_all(self, model: Optional[nn.Module] = None) -> List[Path]:
-        return generate_all_paper_plots(model=model, output_dir=self.output_dir)
+    def generate_all(
+        self,
+        model: Optional[nn.Module] = None,
+        benchmark_points: Optional[List[Dict[str, Any]]] = None,
+    ) -> List[Path]:
+        return generate_all_paper_plots(
+            model=model,
+            output_dir=self.output_dir,
+            benchmark_points=benchmark_points,
+        )
 
     def plot_singular_spectrum(self, model: nn.Module, filename: str = "figure_singular_spectrum") -> Tuple[Path, Path]:
         import matplotlib.pyplot as plt

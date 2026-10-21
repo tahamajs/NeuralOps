@@ -79,13 +79,18 @@ def test_serving_adapters():
     assert app.title == "NeuralOps Serving Engine"
 
 
-def test_distributed_and_compile():
+def test_distributed_and_compile(monkeypatch):
     ds_cfg = get_deepspeed_config(stage=3)
     assert ds_cfg["zero_optimization"]["stage"] == 3
+    with pytest.raises(ValueError, match="stage"):
+        get_deepspeed_config(stage=4)
+    with pytest.raises(ValueError, match="optimizer offload"):
+        get_deepspeed_config(stage=0, offload_optimizer=True)
 
     lin = nn.Linear(8, 8)
-    fsdp_mod = apply_fsdp_wrapping(lin)
-    assert isinstance(fsdp_mod, nn.Module)
+    monkeypatch.setattr(torch.distributed, "is_initialized", lambda: False)
+    with pytest.raises(RuntimeError, match="initialized"):
+        apply_fsdp_wrapping(lin)
 
     comp_mod = compile_attention_module(lin)
     assert isinstance(comp_mod, nn.Module)
@@ -102,12 +107,16 @@ def test_tensor_parallel_linear():
     assert out_row.shape == (2, 4, 16)
 
 
-def test_context_parallel_ring():
+def test_context_parallel_ring(monkeypatch):
     k = torch.randn(2, 4, 8, 16)
     v = torch.randn(2, 4, 8, 16)
     next_k, next_v = ring_attention_chunk_exchange(k, v, rank=0, world_size=1)
     assert torch.equal(k, next_k)
     assert torch.equal(v, next_v)
+
+    monkeypatch.setattr(torch.distributed, "is_initialized", lambda: False)
+    with pytest.raises(RuntimeError, match="initialized"):
+        ring_attention_chunk_exchange(k, v, rank=0, world_size=2)
 
     ring_attn = RingLinearAttention(embed_dim=32, num_heads=2, ring_size=1)
     x = torch.randn(2, 8, 32)

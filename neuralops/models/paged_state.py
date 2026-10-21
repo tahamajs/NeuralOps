@@ -38,6 +38,15 @@ class PagedStateTable:
         dtype: torch.dtype = torch.float32,
         device: Union[str, torch.device] = "cuda",
     ):
+        dimensions = {
+            "num_pages": num_pages,
+            "num_heads": num_heads,
+            "head_dim": head_dim,
+            "state_dim": state_dim if state_dim is not None else head_dim,
+        }
+        for name, value in dimensions.items():
+            if value <= 0:
+                raise ValueError(f"{name} must be positive, got {value}")
         self.num_pages = num_pages
         self.num_heads = num_heads
         self.head_dim = head_dim
@@ -75,9 +84,18 @@ class PagedStateTable:
 
     def register_sequence(self, seq_id: int, initial_pages: int = 1) -> List[int]:
         """Registers a new sequence with allocated physical pages."""
+        if initial_pages < 0:
+            raise ValueError(f"initial_pages must be non-negative, got {initial_pages}")
         if seq_id in self.seq_page_tables:
             self.free_sequence(seq_id)
-        pages = [self.allocate_page() for _ in range(initial_pages)]
+        pages = []
+        try:
+            for _ in range(initial_pages):
+                pages.append(self.allocate_page())
+        except Exception:
+            for page_id in pages:
+                self.free_page(page_id)
+            raise
         self.seq_page_tables[seq_id] = pages
         return pages
 
@@ -95,6 +113,10 @@ class PagedStateTable:
         """
         if parent_seq_id not in self.seq_page_tables:
             raise KeyError(f"Parent sequence {parent_seq_id} not registered")
+        if child_seq_id == parent_seq_id:
+            raise ValueError("A sequence cannot be forked onto itself")
+        if child_seq_id in self.seq_page_tables:
+            self.free_sequence(child_seq_id)
         parent_pages = self.seq_page_tables[parent_seq_id]
         for p in parent_pages:
             self.ref_counts[p] += 1
@@ -118,11 +140,20 @@ class PagedStateTable:
 
     def get_block_table_tensor(self, seq_ids: List[int], max_pages: int = 4) -> torch.Tensor:
         """Builds a 2D tensor [B, max_pages] of physical page indices for kernel execution."""
+        if max_pages <= 0:
+            raise ValueError(f"max_pages must be positive, got {max_pages}")
         B = len(seq_ids)
         table = torch.zeros((B, max_pages), dtype=torch.int32, device=self.device)
         for i, s_id in enumerate(seq_ids):
-            allocated = self.seq_page_tables.get(s_id, [])
-            for j, p_id in enumerate(allocated[:max_pages]):
+            if s_id not in self.seq_page_tables:
+                raise KeyError(f"Sequence {s_id} is not registered")
+            allocated = self.seq_page_tables[s_id]
+            if len(allocated) > max_pages:
+                raise ValueError(
+                    f"Sequence {s_id} owns {len(allocated)} pages, exceeding "
+                    f"max_pages={max_pages}"
+                )
+            for j, p_id in enumerate(allocated):
                 table[i, j] = p_id
         return table
 
@@ -177,6 +208,8 @@ class RadixPrefixStateCache:
 
     def insert_prefix(self, tokens: List[int], physical_page: int) -> None:
         """Inserts a prefix state checkpoint into the Radix tree."""
+        if physical_page not in self.paged_table.ref_counts:
+            raise KeyError(f"Physical page {physical_page} is not allocated")
         curr = self.root
         for tok in tokens:
             if tok not in curr.children:
@@ -184,7 +217,11 @@ class RadixPrefixStateCache:
                 self.total_nodes += 1
             curr = curr.children[tok]
 
-        if curr.physical_page is not None and curr.physical_page != physical_page:
+        if curr.physical_page == physical_page:
+            self._access_counter += 1.0
+            curr.last_access_time = self._access_counter
+            return
+        if curr.physical_page is not None:
             self.paged_table.free_page(curr.physical_page)
 
         curr.physical_page = physical_page

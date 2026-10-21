@@ -9,18 +9,17 @@
 import pytest
 import torch
 import torch.nn as nn
+import torch.distributed as dist
 
 from neuralops.distributed.tensor_parallel import (
-    SimulatedTPGroup,
     RankParallelSVDLinear,
+    RowParallelLinear,
     RowParallelSVDLinear,
-    ColumnParallelSVDLinear,
     TensorParallelRecurrentAttention,
 )
 from neuralops.distributed.context_parallel import (
     compute_chunk_prefix_scan,
     ContextParallelRecurrentScan,
-    ContextParallelLinearAttention,
 )
 
 
@@ -58,37 +57,43 @@ def test_rank_parallel_svd_linear_math_and_gradient_parity():
     assert torch.allclose(x_tp.grad, dense_x_grad, atol=1e-5)
 
 
-def test_row_parallel_svd_bottleneck_communication():
-    """Verify RowParallelSVDLinear reduces in compressed rank-r space."""
+def test_row_parallel_svd_requires_real_process_group(monkeypatch):
+    """A multi-rank row-parallel layer must not return a local partial result."""
     torch.manual_seed(42)
-    B, T, d_in, d_out, r = 2, 4, 32, 64, 4
-    x = torch.randn(B, T, d_in)
-    x_local_0 = x[:, :, :16]
-    x_local_1 = x[:, :, 16:]
-
+    B, T, d_in, r = 2, 4, 32, 4
     layer_0 = RowParallelSVDLinear(d_in, d_out, rank=r, tp_size=2, tp_rank=0, bias=False)
-    layer_1 = RowParallelSVDLinear(d_in, d_out, rank=r, tp_size=2, tp_rank=1, bias=False)
-
-    with torch.no_grad():
-        layer_1.u_proj.weight.copy_(layer_0.u_proj.weight)
-
-    b0 = layer_0.v_proj(x_local_0)
-    b1 = layer_1.v_proj(x_local_1)
-    bottleneck = b0 + b1
-    out_0 = layer_0.u_proj(bottleneck)
-    out_1 = layer_1.u_proj(bottleneck)
-    assert torch.allclose(out_0, out_1, atol=1e-5)
-    assert out_0.shape == (B, T, d_out)
+    monkeypatch.setattr(dist, "is_initialized", lambda: False)
+    with pytest.raises(RuntimeError, match="initialized"):
+        layer_0(torch.randn(B, T, d_in // 2))
 
 
-def test_tensor_parallel_recurrent_attention():
-    """Verify TensorParallelRecurrentAttention sharding across heads."""
+def test_tensor_parallel_recurrent_attention_requires_real_process_group(monkeypatch):
+    """The recurrent TP layer must reject execution without its collectives."""
     B, T, d_model, heads = 2, 8, 32, 4
     x = torch.randn(B, T, d_model)
-    layer = TensorParallelRecurrentAttention(embed_dim=d_model, num_heads=heads, tp_size=2, tp_rank=0)
-    out, state = layer(x)
-    assert out.shape == (B, T, d_model)
-    assert state.shape == (B, 2, 8, 8)
+    layer = TensorParallelRecurrentAttention(
+        embed_dim=d_model, num_heads=heads, tp_size=2, tp_rank=0
+    )
+    monkeypatch.setattr(dist, "is_initialized", lambda: False)
+    with pytest.raises(RuntimeError, match="initialized"):
+        layer(x)
+
+
+def test_row_parallel_linear_rejects_uninitialized_collective(monkeypatch):
+    layer = RowParallelLinear(
+        in_features=16, out_features=8, tp_size=2, tp_rank=0, input_is_parallel=True
+    )
+    monkeypatch.setattr(dist, "is_initialized", lambda: False)
+    with pytest.raises(RuntimeError, match="initialized"):
+        layer(torch.randn(2, 4, 8))
+
+
+def test_context_parallel_scan_rejects_mismatched_chunk_lists():
+    q = [torch.randn(1, 2, 4, 8)]
+    k = [torch.randn(1, 2, 4, 8), torch.randn(1, 2, 4, 8)]
+    v = [torch.randn(1, 2, 4, 8)]
+    with pytest.raises(ValueError, match="same nonzero length"):
+        ContextParallelRecurrentScan.apply(q, k, v)
 
 
 def test_context_parallel_recurrent_scan_exact_parity():

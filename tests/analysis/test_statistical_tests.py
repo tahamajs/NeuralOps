@@ -21,6 +21,7 @@ from neuralops.analysis.comparison import (
     mcnemar_test,
     run_full_statistical_analysis,
     sign_test,
+    vargha_delaney_a12,
     wilcoxon_signed_rank_test,
 )
 
@@ -94,6 +95,13 @@ class TestHypothesisTests:
         result = mcnemar_test(y_true, pred_a, pred_b)
         assert "chi2" in result
         assert "p_value" in result
+
+    def test_vargha_delaney_preserves_effect_direction(self):
+        a_better = vargha_delaney_a12(np.array([3, 4, 5]), np.array([0, 1, 2]))
+        b_better = vargha_delaney_a12(np.array([0, 1, 2]), np.array([3, 4, 5]))
+        assert a_better["vargha_delaney_A12"] == 1.0
+        assert b_better["vargha_delaney_A12"] == 0.0
+        assert a_better["magnitude"] == b_better["magnitude"] == "large"
 
 
 class TestBayesianTests:

@@ -53,6 +53,39 @@ def test_paged_state_zero_copy_fork_and_cow():
     assert float(table.page_pool[new_child_p, 0, 0, 0].item()) == 42.0
 
 
+def test_forking_over_existing_child_releases_its_previous_pages():
+    table = PagedStateTable(num_pages=4, num_heads=1, head_dim=2, device="cpu")
+    parent_pages = table.register_sequence(1)
+    old_child_pages = table.register_sequence(2)
+
+    table.fork_sequence(1, 2)
+
+    assert len(table.free_pages) == 3
+    assert table.ref_counts[parent_pages[0]] == 2
+    assert old_child_pages[0] in table.free_pages
+
+
+def test_page_table_does_not_silently_truncate_or_accept_unknown_sequences():
+    table = PagedStateTable(num_pages=4, num_heads=1, head_dim=2, device="cpu")
+    table.register_sequence(1, initial_pages=2)
+
+    with pytest.raises(ValueError, match="exceeding max_pages"):
+        table.get_block_table_tensor([1], max_pages=1)
+    with pytest.raises(KeyError, match="not registered"):
+        table.get_block_table_tensor([99])
+
+
+def test_radix_cache_reinserting_same_page_does_not_leak_reference():
+    table = PagedStateTable(num_pages=2, num_heads=1, head_dim=2, device="cpu")
+    page = table.allocate_page()
+    cache = RadixPrefixStateCache(table)
+
+    cache.insert_prefix([1, 2], page)
+    cache.insert_prefix([1, 2], page)
+
+    assert table.ref_counts[page] == 2
+
+
 def test_radix_prefix_state_cache():
     """Verify prefix matching and associative state caching."""
     device = "cuda" if torch.cuda.is_available() else "cpu"

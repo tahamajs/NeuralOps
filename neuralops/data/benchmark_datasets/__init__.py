@@ -7,10 +7,12 @@
 
 from .manifest import BenchmarkDatasetInfo, BenchmarkDatasetRegistry
 from .loaders import BenchmarkTorchDataset, load_benchmark_dataset
+from .synthetic import get_synthetic_benchmark_sample
 
 __all__ = [
     "BenchmarkDatasetInfo",
     "BenchmarkDatasetRegistry",
     "BenchmarkTorchDataset",
     "load_benchmark_dataset",
+    "get_synthetic_benchmark_sample",
 ]

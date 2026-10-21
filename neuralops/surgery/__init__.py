@@ -49,6 +49,22 @@ from neuralops.surgery.universal_calibrator import (
     compress_model_universal,
     transplant_and_compress,
 )
+from neuralops.surgery.param_recovery import get_recovery_params
+from neuralops.surgery.surgery_manifest import (
+    AttentionSurgeryEntry,
+    CompressionSurgeryEntry,
+    SurgeryManifest,
+    build_manifest_from_model,
+    merge_for_inference,
+    record_attention_surgery,
+    record_compression_surgery,
+    replay_surgery_manifest,
+)
+from neuralops.surgery.surgical_io import (
+    extract_surgical_manifest,
+    load_surgical_checkpoint,
+    save_surgical_checkpoint,
+)
 
 from neuralops.api import (
     replace_attention,
@@ -80,6 +96,18 @@ __all__ = [
     "UniversalActivationCalibrator",
     "compress_model_universal",
     "transplant_and_compress",
+    "get_recovery_params",
+    "SurgeryManifest",
+    "AttentionSurgeryEntry",
+    "CompressionSurgeryEntry",
+    "record_attention_surgery",
+    "record_compression_surgery",
+    "build_manifest_from_model",
+    "replay_surgery_manifest",
+    "merge_for_inference",
+    "extract_surgical_manifest",
+    "save_surgical_checkpoint",
+    "load_surgical_checkpoint",
     "replace_attention",
     "transplant_attention",
 ]

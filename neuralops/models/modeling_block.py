@@ -61,8 +61,11 @@ class NeuralOpsBlock(nn.Module):
         except TypeError:
             try:
                 self.self_attn = attn_cls(**attn_kwargs)
-            except TypeError:
-                self.self_attn = attn_cls()
+            except TypeError as kwargs_error:
+                raise TypeError(
+                    f"Could not construct attention '{attn_type}' for layer "
+                    f"{layer_idx} with either (config, **kwargs) or **kwargs"
+                ) from kwargs_error
 
         self.mlp = build_mlp(
             config.mlp_type,
@@ -74,15 +77,19 @@ class NeuralOpsBlock(nn.Module):
         comp_spec = config.get_layer_compression_spec(layer_idx)
         if comp_spec is not None:
             comp_type = comp_spec["type"]
-            if comp_type in COMPRESSOR_REGISTRY:
-                comp_cls = COMPRESSOR_REGISTRY[comp_type]
-                comp_kwargs = {k: v for k, v in comp_spec.items() if k != "type"}
-                try:
-                    compressor = comp_cls(self.self_attn, **comp_kwargs)
-                    self.self_attn = compressor.compress()
-                except (RuntimeError, TypeError, ValueError, AttributeError) as e:
-                    logger.error("Failed to apply compressor %s on layer %d: %s", comp_type, layer_idx, e, exc_info=True)
-                    raise
+            if comp_type not in COMPRESSOR_REGISTRY:
+                raise KeyError(
+                    f"Compression engine '{comp_type}' is not registered "
+                    f"for layer {layer_idx}."
+                )
+            comp_cls = COMPRESSOR_REGISTRY[comp_type]
+            comp_kwargs = {k: v for k, v in comp_spec.items() if k != "type"}
+            try:
+                compressor = comp_cls(self.self_attn, **comp_kwargs)
+                self.self_attn = compressor.compress()
+            except (RuntimeError, TypeError, ValueError, AttributeError) as e:
+                logger.error("Failed to apply compressor %s on layer %d: %s", comp_type, layer_idx, e, exc_info=True)
+                raise
 
     def forward(
         self,

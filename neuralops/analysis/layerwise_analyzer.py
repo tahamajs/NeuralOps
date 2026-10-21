@@ -42,6 +42,8 @@ class StreamingLayerAccumulator:
 
     cov_matrix: np.ndarray | None = None
     cov_samples: int = 0
+    cov_mean: np.ndarray | None = None
+    cov_m2: np.ndarray | None = None
 
     def update(self, act_tensor: torch.Tensor) -> None:
         """
@@ -93,17 +95,23 @@ class StreamingLayerAccumulator:
             self.sum_outlier_count_6sigma += int(outliers)
 
             sub_n = min(n_tokens, 256)
-            sub_act = act_cpu[:sub_n] - batch_mean
-            batch_cov = (sub_act.T @ sub_act) / max(1, sub_n)
-            if self.cov_matrix is None:
-                self.cov_matrix = batch_cov
+            sub_act = act_cpu[:sub_n]
+            sub_mean = sub_act.mean(axis=0)
+            centered = sub_act - sub_mean
+            batch_m2 = centered.T @ centered
+            if self.cov_mean is None:
+                self.cov_mean = sub_mean
+                self.cov_m2 = batch_m2
                 self.cov_samples = sub_n
             else:
                 total_s = self.cov_samples + sub_n
-                self.cov_matrix = self.cov_matrix * (self.cov_samples / total_s) + batch_cov * (
-                    sub_n / total_s
+                delta = sub_mean - self.cov_mean
+                self.cov_m2 += batch_m2 + np.outer(delta, delta) * (
+                    self.cov_samples * sub_n / total_s
                 )
+                self.cov_mean += delta * (sub_n / total_s)
                 self.cov_samples = total_s
+            self.cov_matrix = self.cov_m2 / self.cov_samples
 
             self.total_tokens += n_tokens
             self.total_batches += 1
@@ -332,9 +340,18 @@ def estimate_intrinsic_dimension(hidden_states: np.ndarray, k: int = 5) -> float
         float: Estimated intrinsic dimension between 1.0 and D.
     """
     hidden_states = np.asarray(hidden_states, dtype=np.float64)
+    if k < 2:
+        raise ValueError(f"k must be at least 2, got {k}")
     if hidden_states.ndim == 1:
         return 1.0
+    if hidden_states.ndim != 2:
+        raise ValueError(
+            "hidden_states must have shape [samples, features], "
+            f"got {hidden_states.shape}"
+        )
     N, D = hidden_states.shape
+    if N == 0 or D == 0:
+        return 0.0
     if k + 1 > N:
         return float(min(N, D))
 
@@ -343,13 +360,19 @@ def estimate_intrinsic_dimension(hidden_states: np.ndarray, k: int = 5) -> float
     try:
         dists = squareform(pdist(hidden_states))
         np.fill_diagonal(dists, np.inf)
-        kth_dists = np.sort(dists, axis=1)[:, k - 1]
-        valid = kth_dists > 1e-10
+        nearest = np.sort(dists, axis=1)[:, 1 : k + 1]
+        kth_dists = nearest[:, -1]
+        valid = (kth_dists > 1e-10) & np.all(nearest > 1e-10, axis=1)
         if not valid.any():
             return float(D)
 
-        log_ratios = np.log(kth_dists[valid] / (kth_dists[valid][:, None] + 1e-12))
-        id_estimate = -1.0 / (np.mean(log_ratios) + 1e-12)
+        log_ratios = np.log(
+            kth_dists[valid, None] / nearest[valid, :-1]
+        )
+        mean_log_ratio_sum = float(np.mean(np.sum(log_ratios, axis=1)))
+        if not np.isfinite(mean_log_ratio_sum) or mean_log_ratio_sum <= 0:
+            return float(D)
+        id_estimate = (k - 1) / mean_log_ratio_sum
         return float(max(1.0, min(float(D), abs(id_estimate))))
-    except Exception:
+    except (ValueError, FloatingPointError, np.linalg.LinAlgError):
         return float(min(N, D))
