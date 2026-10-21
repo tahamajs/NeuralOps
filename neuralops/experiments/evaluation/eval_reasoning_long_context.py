@@ -21,6 +21,9 @@ def main() -> None:
     from transformers import AutoTokenizer, GPT2LMHeadModel
     from neuralops.utils.replace_attention import replace_attention
 
+    if not torch.cuda.is_available():
+        raise RuntimeError("This long-context experiment requires a CUDA-capable device.")
+
 
     def print_log(msg):
         """Execute print log routine."""
@@ -40,6 +43,8 @@ def main() -> None:
         base = GPT2LMHeadModel.from_pretrained(model_path)
         config = base.config
         config.max_position_embeddings = 4096
+        config.n_positions = 4096
+        config.n_ctx = 4096
         model = GPT2LMHeadModel(config)
 
         model.transformer.wte.load_state_dict(base.transformer.wte.state_dict())
@@ -145,8 +150,8 @@ def main() -> None:
         return scaling_stats
 
 
-    def eval_o1_cache_state(attention_key=None, steps=32):
-        """Execute eval o1 cache state routine."""
+    def eval_generation_memory_growth(attention_key=None, steps=32):
+        """Measure allocated memory while recomputing the full prefix per step."""
         torch.cuda.empty_cache()
         model = get_adapted_model(attention_key)
 
@@ -199,12 +204,13 @@ def main() -> None:
         scaling = eval_long_context_scaling(key, [512, 1024, 2048, 4096])
         print_log(f"{name} Scaling: {scaling}")
 
-        print_log(f"Evaluating O(1) cache memory and CoT coherence for {name}...")
-        o1_cot = eval_o1_cache_state(key, steps=32)
-        print_log(f"{name} CoT: {o1_cot['generated_cot']}")
-        print_log(f"{name} Memory Drift over 32 steps: {o1_cot['memory_drift_mb']} MB")
+        print_log(f"Evaluating full-prefix generation and memory growth for {name}...")
+        generation = eval_generation_memory_growth(key, steps=32)
+        print_log(f"{name} generated sample: {generation['generated_cot']}")
+        print_log(f"{name} allocated-memory drift over 32 steps: {generation['memory_drift_mb']} MB")
 
-        final_report_data[name] = {"loss": loss, "perplexity": ppl, "scaling": scaling, "generation": o1_cot}
+        generation["decode_mode"] = "full_prefix_no_kv_cache"
+        final_report_data[name] = {"loss": loss, "perplexity": ppl, "scaling": scaling, "generation": generation}
 
     result_path = os.path.join(os.environ.get("NEURALOPS_OUTPUT_DIR", "."), "reasoning_long_context_benchmark_results.json")
     with open(result_path, "w") as f:

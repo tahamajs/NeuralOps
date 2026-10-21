@@ -48,7 +48,6 @@ import json
 import logging
 import math
 import os
-import sys
 import time
 from pathlib import Path
 from typing import Any, Dict
@@ -58,30 +57,16 @@ import torch.nn as nn
 import torch.nn.functional as F
 from transformers import AutoTokenizer, GPT2LMHeadModel
 
-REPO_ROOT = Path(__file__).resolve().parent.parent.parent
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
-
 from neuralops.utils.replace_attention import replace_attention
 
-try:
-    from neuralops.evaluation.metrics import (
-        compute_numerical_deviation,
-        compute_perplexity_from_loss,
-        compute_representation_similarity,
-        compute_top_k_accuracy,
-        measure_latency_and_throughput,
-        measure_peak_vram_mb,
-    )
-except ImportError:
-    from neuralops.evaluation.metrics import (
-        compute_numerical_deviation,
-        compute_perplexity_from_loss,
-        compute_representation_similarity,
-        compute_top_k_accuracy,
-        measure_latency_and_throughput,
-        measure_peak_vram_mb,
-    )
+from neuralops.evaluation.metrics import (
+    compute_numerical_deviation,
+    compute_perplexity_from_loss,
+    compute_representation_similarity,
+    compute_top_k_accuracy,
+    measure_latency_and_throughput,
+    measure_peak_vram_mb,
+)
 from neuralops.compression_engine.svd.aa_svd_compressor import AASVDCompressor
 from neuralops.compression_engine.svd.adasvd_compressor import AdaSVDCompressor
 from neuralops.compression_engine.low_rank.svd_llm_compressor import (
@@ -105,6 +90,8 @@ def build_extended_gpt2(model_path: str, max_positions: int = 4096, device: str 
     base = GPT2LMHeadModel.from_pretrained(model_path)
     config = base.config
     config.max_position_embeddings = max_positions
+    config.n_positions = max_positions
+    config.n_ctx = max_positions
     model = GPT2LMHeadModel(config)
 
     model.transformer.wte.load_state_dict(base.transformer.wte.state_dict())
@@ -257,8 +244,17 @@ def main():
     """Execute main routine."""
     parser = argparse.ArgumentParser(description="Master Comprehensive Evaluation Suite")
     parser.add_argument("--model-path", type=str, default=os.environ.get("NEURALOPS_MODEL_PATH", "gpt2"))
-    parser.add_argument("--output-json", type=str, default="results/master_comprehensive_evaluation_matrix.json")
-    parser.add_argument("--output-md", type=str, default="results/master_comprehensive_evaluation_matrix.md")
+    output_dir = os.environ.get("NEURALOPS_OUTPUT_DIR", "results/evaluation")
+    parser.add_argument(
+        "--output-json",
+        type=str,
+        default=os.path.join(output_dir, "master_comprehensive_evaluation_matrix.json"),
+    )
+    parser.add_argument(
+        "--output-md",
+        type=str,
+        default=os.path.join(output_dir, "master_comprehensive_evaluation_matrix.md"),
+    )
     parser.add_argument("--device", type=str, default="cuda:0" if torch.cuda.is_available() else "cpu")
     parser.add_argument("--context-lengths", nargs="+", type=int, default=[512, 1024, 2048, 4096])
     args = parser.parse_args()
@@ -462,7 +458,7 @@ def main():
 
     with open(out_json_path, "w", encoding="utf-8") as f:
         json.dump(master_payload, f, indent=2)
-    logger.info(f"Successfully saved certified JSON artifact to: {out_json_path}")
+    logger.info(f"Saved evaluation results to: {out_json_path}")
 
     md_content = generate_markdown_report(master_payload)
     out_md_path = Path(args.output_md)
@@ -516,11 +512,12 @@ def generate_markdown_report(payload: Dict[str, Any]) -> str:
     lines.extend(
         [
             "",
-            "## 3. High-Fidelity Representation Analysis & Observations",
-            "- **Linear Attention & Gated DeltaNet**: Exhibit sub-quadratic memory footprint at $L=4096$, sustaining stable hidden feature representation alignment ($CKA > 0.95$).",
-            "- **Mamba / State-Space Models**: Retain near-constant per-token latency scaling into deep context regimes.",
-            "- **SVD-LLM & AA-SVD**: Show minimal spectral distortion on activation-whitened subspaces with near-lossless Perplexity preservation.",
-            "- **W4A16 & FP8 Quantization**: Achieve peak execution throughput and substantial memory headroom on Ada Lovelace architecture with minimal absolute deviation.",
+            "## 3. Run Summary and Interpretation",
+            f"- Configurations recorded: `{len(results)}`.",
+            f"- Successful configurations: `{sum(r.get('status') == 'SUCCESS' for r in results)}`.",
+            f"- Error configurations: `{sum(r.get('status') == 'ERROR' for r in results)}`.",
+            "- Inputs are repeated synthetic calibration text; results should not be interpreted as corpus-level generalization.",
+            "- Compare latency and memory only for rows measured on the same device, context length, and software environment.",
             "",
         ]
     )

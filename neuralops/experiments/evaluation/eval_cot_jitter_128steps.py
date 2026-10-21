@@ -21,6 +21,9 @@ def main() -> None:
     from transformers import GPT2LMHeadModel, AutoTokenizer
     from neuralops.utils.replace_attention import replace_attention
 
+    if not torch.cuda.is_available():
+        raise RuntimeError("This token-latency experiment requires a CUDA-capable device.")
+
 
     def print_log(msg):
         """Execute print log routine."""

@@ -22,6 +22,9 @@ def main() -> None:
     from neuralops.inference.speculative_decoding import SelfSpeculativeDecoder
     from neuralops.utils.replace_attention import replace_attention
 
+    if not torch.cuda.is_available():
+        raise RuntimeError("This speculative decoding benchmark requires CUDA.")
+
 
     def print_log(msg):
         """Execute print log routine."""

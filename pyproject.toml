@@ -168,6 +168,7 @@ neuralops = "neuralops.benchmarks.cli:main"
 neuralops-cli = "neuralops.benchmarks.cli:main"
 nops = "neuralops.benchmarks.cli:main"
 nops-cli = "neuralops.benchmarks.cli:main"
+neuralops-eval = "neuralops.experiments.evaluation.cli:main"
 
 [project.entry-points."vllm.general_plugins"]
 neuralops_vllm = "neuralops.integrations.vllm:register_neuralops_vllm_plugin"
@@ -194,8 +195,6 @@ exclude = [
     "academic*",
     "neuralops.tests*",
     "neuralops.benchmarks*",
-    "neuralops.evaluation*",
-    "neuralops.eval*",
     "neuralops._archive*",
     "neuralops.core._archive*",
     "neuralops.attentions._legacy*",

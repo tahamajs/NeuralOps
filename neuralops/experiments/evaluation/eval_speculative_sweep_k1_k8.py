@@ -21,6 +21,9 @@ def main() -> None:
     from neuralops.core.cuda_kernels import speculative_verify
     from neuralops.utils.replace_attention import replace_attention
 
+    if not torch.cuda.is_available():
+        raise RuntimeError("This speculative decoding sweep requires CUDA.")
+
 
     def print_log(msg):
         """Execute print log routine."""

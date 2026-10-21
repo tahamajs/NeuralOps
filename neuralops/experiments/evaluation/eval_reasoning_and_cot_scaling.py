@@ -21,6 +21,9 @@ def main() -> None:
     from transformers import GPT2LMHeadModel, AutoTokenizer
     from neuralops.utils.replace_attention import replace_attention
 
+    if not torch.cuda.is_available():
+        raise RuntimeError("This reasoning and scaling experiment requires CUDA.")
+
 
     def print_log(msg):
         """Execute print log routine."""
@@ -40,6 +43,8 @@ def main() -> None:
         base = GPT2LMHeadModel.from_pretrained(model_path)
         config = base.config
         config.max_position_embeddings = max_pos
+        config.n_positions = max_pos
+        config.n_ctx = max_pos
         model = GPT2LMHeadModel(config)
 
         model.transformer.wte.load_state_dict(base.transformer.wte.state_dict())

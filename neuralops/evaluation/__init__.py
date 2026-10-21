@@ -5,101 +5,92 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""Evaluation module for model performance, fairness, robustness, label quality, and A/B testing.
-"""
+"""Evaluation APIs loaded on demand to keep package imports lightweight."""
 
-from neuralops.trainer import metrics
-from neuralops.trainer.metrics import get_task_metrics
-from .eval_pipeline import probe_optimal_batch_size
+from __future__ import annotations
 
-from .ab_testing import ABTester, ABTestResult
-from .fairness import FairnessEvaluator, FairnessReport
-from .label_quality import LabelQualityDetector, LabelQualityReport
-from .retraining import (
-    RetrainDecision,
-    RetrainingOrchestrator,
-    RetrainPolicy,
-    TriggerType,
-)
+from importlib import import_module
+from typing import Any
 
-try:
-    from .robustness import RobustnessReport, TextAdversarialTester
-except ImportError:
-    RobustnessReport = None  # type: ignore
-    TextAdversarialTester = None  # type: ignore
+_EXPORTS = {
+    "BenchmarkEvaluator": ("neuralops.benchmarks.eval_bridge", "BenchmarkEvaluator"),
+    "BenchmarkEvalResult": ("neuralops.benchmarks.eval_bridge", "BenchmarkEvalResult"),
+    "evaluate_model": ("neuralops.benchmarks.eval_bridge", "evaluate_model"),
+    "get_eval_bridge": ("neuralops.benchmarks.eval_bridge", "get_eval_bridge"),
+    "run_comprehensive_benchmark": ("neuralops.benchmarks.eval_bridge", "run_comprehensive_benchmark"),
+    "metrics": ("neuralops.trainer.metrics", None),
+    "get_task_metrics": ("neuralops.trainer.metrics", "get_task_metrics"),
+    "probe_optimal_batch_size": ("neuralops.evaluation.eval_pipeline", "probe_optimal_batch_size"),
+    "ABTester": ("neuralops.evaluation.ab_testing", "ABTester"),
+    "ABTestResult": ("neuralops.evaluation.ab_testing", "ABTestResult"),
+    "FairnessEvaluator": ("neuralops.evaluation.fairness", "FairnessEvaluator"),
+    "FairnessReport": ("neuralops.evaluation.fairness", "FairnessReport"),
+    "LabelQualityDetector": ("neuralops.evaluation.label_quality", "LabelQualityDetector"),
+    "LabelQualityReport": ("neuralops.evaluation.label_quality", "LabelQualityReport"),
+    "RetrainDecision": ("neuralops.evaluation.retraining", "RetrainDecision"),
+    "RetrainPolicy": ("neuralops.evaluation.retraining", "RetrainPolicy"),
+    "RetrainingOrchestrator": ("neuralops.evaluation.retraining", "RetrainingOrchestrator"),
+    "TriggerType": ("neuralops.evaluation.retraining", "TriggerType"),
+    "NeedleInAHaystackEvaluator": ("neuralops.evaluation.niah", "NeedleInAHaystackEvaluator"),
+    "plot_niah_heatmap": ("neuralops.evaluation.niah", "plot_niah_heatmap"),
+    "NeuralOpsLMEvalAdapter": ("neuralops.evaluation.lm_eval_adapter", "NeuralOpsLMEvalAdapter"),
+    "evaluate_zero_shot_tasks": ("neuralops.evaluation.lm_eval_adapter", "evaluate_zero_shot_tasks"),
+    "compute_perplexity_from_loss": ("neuralops.evaluation.metrics", "compute_perplexity_from_loss"),
+    "compute_token_perplexity": ("neuralops.evaluation.metrics", "compute_token_perplexity"),
+    "compute_top_k_accuracy": ("neuralops.evaluation.metrics", "compute_top_k_accuracy"),
+    "compute_linear_cka": ("neuralops.evaluation.metrics", "compute_linear_cka"),
+    "compute_representation_similarity": (
+        "neuralops.evaluation.metrics",
+        "compute_representation_similarity",
+    ),
+    "compute_numerical_deviation": ("neuralops.evaluation.metrics", "compute_numerical_deviation"),
+    "measure_peak_vram_mb": ("neuralops.evaluation.metrics", "measure_peak_vram_mb"),
+    "measure_latency_and_throughput": (
+        "neuralops.evaluation.metrics",
+        "measure_latency_and_throughput",
+    ),
+    "EvaluationReport": ("neuralops.evaluation.metrics", "EvaluationReport"),
+}
 
-from .niah import NeedleInAHaystackEvaluator, plot_niah_heatmap
-from .lm_eval_adapter import NeuralOpsLMEvalAdapter, evaluate_zero_shot_tasks
+_MODULE_EXPORTS = {
+    name: f"neuralops.evaluation.{name}"
+    for name in (
+        "ab_testing",
+        "eval_all_models_datasets",
+        "eval_data",
+        "eval_patcher",
+        "eval_perplexity",
+        "eval_pipeline",
+        "eval_reporter",
+        "eval_types",
+        "eval_utils",
+        "fairness",
+        "full_mnli_validation",
+        "label_quality",
+        "retraining",
+        "run_baseline_comparison",
+        "run_lm_eval_harness",
+    )
+}
 
-from .metrics import (
-    compute_perplexity_from_loss,
-    compute_token_perplexity,
-    compute_top_k_accuracy,
-    compute_linear_cka,
-    compute_representation_similarity,
-    compute_numerical_deviation,
-    measure_peak_vram_mb,
-    measure_latency_and_throughput,
-    EvaluationReport,
-)
+__all__ = [*_EXPORTS, *_MODULE_EXPORTS, "RobustnessReport", "TextAdversarialTester"]
 
-from neuralops.benchmarks.eval_bridge import (
-    BenchmarkEvalResult,
-    BenchmarkEvaluator,
-    evaluate_model,
-    get_eval_bridge,
-    run_comprehensive_benchmark,
-)
 
-__all__ = [
-    "BenchmarkEvaluator",
-    "BenchmarkEvalResult",
-    "evaluate_model",
-    "get_eval_bridge",
-    "run_comprehensive_benchmark",
-    "metrics",
-    "get_task_metrics",
-    "probe_optimal_batch_size",
-    "ABTester",
-    "ABTestResult",
-    "FairnessEvaluator",
-    "FairnessReport",
-    "LabelQualityDetector",
-    "LabelQualityReport",
-    "RetrainDecision",
-    "RetrainPolicy",
-    "RetrainingOrchestrator",
-    "TriggerType",
-    "RobustnessReport",
-    "TextAdversarialTester",
-    "NeedleInAHaystackEvaluator",
-    "plot_niah_heatmap",
-    "NeuralOpsLMEvalAdapter",
-    "evaluate_zero_shot_tasks",
-    "compute_perplexity_from_loss",
-    "compute_token_perplexity",
-    "compute_top_k_accuracy",
-    "compute_linear_cka",
-    "compute_representation_similarity",
-    "compute_numerical_deviation",
-    "measure_peak_vram_mb",
-    "measure_latency_and_throughput",
-    "EvaluationReport",
-]
+def __getattr__(name: str) -> Any:
+    """Load a public evaluation symbol only when a caller requests it."""
+    if name in _EXPORTS:
+        module_name, attribute = _EXPORTS[name]
+        module = import_module(module_name)
+        value = module if attribute is None else getattr(module, attribute)
+    elif name in _MODULE_EXPORTS:
+        value = import_module(_MODULE_EXPORTS[name])
+    elif name in {"RobustnessReport", "TextAdversarialTester"}:
+        try:
+            value = getattr(import_module("neuralops.evaluation.robustness"), name)
+        except ImportError:
+            value = None
+    else:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
-from neuralops.evaluation import ab_testing
-from neuralops.evaluation import eval_all_models_datasets
-from neuralops.evaluation import eval_data
-from neuralops.evaluation import eval_patcher
-from neuralops.evaluation import eval_perplexity
-from neuralops.evaluation import eval_pipeline
-from neuralops.evaluation import eval_reporter
-from neuralops.evaluation import eval_types
-from neuralops.evaluation import eval_utils
-from neuralops.evaluation import fairness
-from neuralops.evaluation import full_mnli_validation
-from neuralops.evaluation import label_quality
-from neuralops.evaluation import metrics
-from neuralops.evaluation import retraining
-from neuralops.evaluation import run_baseline_comparison
-from neuralops.evaluation import run_lm_eval_harness
+    globals()[name] = value
+    return value

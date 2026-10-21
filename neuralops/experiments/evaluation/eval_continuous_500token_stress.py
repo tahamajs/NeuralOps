@@ -20,6 +20,9 @@ def main() -> None:
     from transformers import GPT2LMHeadModel, AutoTokenizer
     from neuralops.utils.replace_attention import replace_attention
 
+    if not torch.cuda.is_available():
+        raise RuntimeError("This long-context stress experiment requires a CUDA-capable device.")
+
 
     def print_log(msg):
         """Execute print log routine."""
@@ -27,7 +30,7 @@ def main() -> None:
 
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    print_log(f"Continuous Long-Context 500-Token Trajectory & O(1) State Certifier on: {torch.cuda.get_device_name(0)}")
+    print_log(f"Full-Prefix 500-Token Long-Context Stress on: {torch.cuda.get_device_name(0)}")
 
     model_path = os.environ.get("NEURALOPS_MODEL_PATH", "gpt2")
     tokenizer = AutoTokenizer.from_pretrained(model_path)
@@ -39,6 +42,8 @@ def main() -> None:
         base = GPT2LMHeadModel.from_pretrained(model_path)
         config = base.config
         config.max_position_embeddings = max_pos
+        config.n_positions = max_pos
+        config.n_ctx = max_pos
         model = GPT2LMHeadModel(config)
 
         model.transformer.wte.load_state_dict(base.transformer.wte.state_dict())
@@ -160,7 +165,8 @@ def main() -> None:
             "initial_vram_mb": initial_vram,
             "final_vram_mb": final_vram,
             "vram_drift_mb": round(state_drift, 2),
-            "is_strict_o1": state_drift < 60.0,
+                "memory_drift_below_60mb": state_drift < 60.0,
+                "decode_mode": "full_prefix_no_kv_cache",
             "zero_nan_inf": not nan_occurred and not inf_occurred,
             "trajectory_checkpoints": mem_trajectory,
             "text_sample": gen_text[:200],

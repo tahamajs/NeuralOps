@@ -5,7 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""Eval gsm8k reasoning 256steps module.
+"""Synthetic arithmetic continuation stress test; not a GSM8K evaluation.
 """
 
 
@@ -20,6 +20,9 @@ def main() -> None:
     from transformers import GPT2LMHeadModel, AutoTokenizer
     from neuralops.utils.replace_attention import replace_attention
 
+    if not torch.cuda.is_available():
+        raise RuntimeError("This arithmetic continuation stress experiment requires CUDA.")
+
 
     def print_log(msg):
         """Execute print log routine."""
@@ -27,15 +30,15 @@ def main() -> None:
 
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    print_log(f"GSM8K-style Multi-Step Arithmetic & 256-token Numerical Stability on: {torch.cuda.get_device_name(0)}")
+    print_log(f"Synthetic arithmetic continuation stress on: {torch.cuda.get_device_name(0)}")
 
     model_path = os.environ.get("NEURALOPS_MODEL_PATH", "gpt2")
     tokenizer = AutoTokenizer.from_pretrained(model_path)
     tokenizer.pad_token = tokenizer.eos_token
 
-    gsm8k_prompts = [
+    arithmetic_prompts = [
         {
-            "id": "gsm8k_01",
+            "id": "synthetic_arithmetic_01",
             "topic": "Compound Interest & Budgeting",
             "prompt": (
                 "Question: A warehouse starts with 450 crates of supplies. In month 1, they receive 120 new crates and ship out 85 crates. "
@@ -50,7 +53,7 @@ def main() -> None:
             "target_number": "315",
         },
         {
-            "id": "gsm8k_02",
+            "id": "synthetic_arithmetic_02",
             "topic": "Multi-Step Geometric Progression",
             "prompt": (
                 "Question: A bacteria culture starts with 16 cells and doubles every 3 hours. How many cells will be present after 15 hours? "
@@ -65,7 +68,7 @@ def main() -> None:
             "target_number": "512",
         },
         {
-            "id": "gsm8k_03",
+            "id": "synthetic_arithmetic_03",
             "topic": "Linear Recurrence Sequence",
             "prompt": (
                 "Question: Consider a sequence defined by u_0 = 5 and u_n = 2 * u_{n-1} - 3 for n >= 1. Compute u_1, u_2, u_3, u_4: "
@@ -78,7 +81,7 @@ def main() -> None:
             "target_number": "67",
         },
         {
-            "id": "gsm8k_04",
+            "id": "synthetic_arithmetic_04",
             "topic": "Rate & Work Proportion",
             "prompt": (
                 "Question: Machine A produces 40 parts per hour, while Machine B produces 60 parts per hour. "
@@ -104,9 +107,9 @@ def main() -> None:
 
     evaluation_matrix = []
 
-    print_log("=== Step 1: Evaluating Multi-Step Arithmetic Reasoning up to 256 Tokens ===")
+    print_log("=== Synthetic Arithmetic Continuation Stress: up to 256 generated tokens ===")
 
-    for p_data in gsm8k_prompts:
+    for p_data in arithmetic_prompts:
         p_id = p_data["id"]
         p_topic = p_data["topic"]
         p_text = p_data["prompt"]
@@ -159,19 +162,20 @@ def main() -> None:
             gen_text = tokenizer.decode(gen_tokens, skip_special_tokens=True).strip()
             first_emitted_token = tokenizer.decode(gen_tokens[:2], skip_special_tokens=True).strip()
 
-            is_exact_number = p_target in first_emitted_token or p_target in gen_text[:20]
+            continuation_contains_target = p_target in first_emitted_token or p_target in gen_text[:20]
 
             zero_drift = (not nan_detected) and (not inf_detected)
 
             print_log(
                 f"[{name}] -> Speed: {tok_s:5.1f} tok/s | Elapsed: {elapsed_s:5.2f}s | "
                 f"Zero Drift: {zero_drift} (NaNs={nan_detected}, Infs={inf_detected}) | "
-                f"First Output: '{first_emitted_token}' | Matches Target ({p_target}): {is_exact_number}"
+                f"First Output: '{first_emitted_token}' | Target substring present: {continuation_contains_target}"
             )
             print_log(f"VRAM Checkpoints (64, 128, 192, 256 tokens): {mem_checkpoints}")
 
             record = {
                 "problem_id": p_id,
+                "evaluation_protocol": "synthetic arithmetic continuation; not GSM8K accuracy",
                 "topic": p_topic,
                 "architecture": name,
                 "prompt_length": input_ids.shape[1],
@@ -185,7 +189,7 @@ def main() -> None:
                 "inf_detected": inf_detected,
                 "first_emitted_token": first_emitted_token,
                 "target_number": p_target,
-                "target_match": is_exact_number,
+                "continuation_contains_target_substring": continuation_contains_target,
                 "output_preview": gen_text[:120],
             }
             evaluation_matrix.append(record)
@@ -194,11 +198,13 @@ def main() -> None:
             torch.cuda.empty_cache()
             gc.collect()
 
-    out_file = os.path.join(os.environ.get("NEURALOPS_OUTPUT_DIR", "."), "gsm8k_256step_reasoning_results.json")
+    out_file = os.path.join(
+        os.environ.get("NEURALOPS_OUTPUT_DIR", "."), "arithmetic_continuation_256step_results.json"
+    )
     with open(out_file, "w") as f:
         json.dump(evaluation_matrix, f, indent=2)
 
-    print_log(f"All GSM8K 256-step evaluations completed! Written to {out_file}")
+    print_log(f"Synthetic arithmetic continuation run completed. Results written to {out_file}")
 
 
 
