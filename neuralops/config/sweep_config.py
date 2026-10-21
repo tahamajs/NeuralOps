@@ -36,6 +36,7 @@ class AttentionSweepConfig:
     task: str = "sst2"
     num_labels: int = 2
     max_len: int = 128
+    attn_type: str = "full"
     epochs: int = 2
     batch_size: int = 16
     lr: float = 2e-5
@@ -50,44 +51,3 @@ class AttentionSweepConfig:
     attn_types: list[str] = field(default_factory=lambda: ["full"])
     output_dir: str = "./results/sweeps"
     log_dir: str = "./logs"
-
-
-@dataclass
-class QualitySweepConfig:
-    """Architecture-specific quality sweep settings, separate from generic sweeps."""
-
-    model: str
-    family: str
-    dataset: str
-    seq_len: int = 128
-    batch_size: int = 8
-    micro_batch_size: int = 8
-    recovery_steps: int = 10
-    timeout: int = 120
-    optimizer: str = "adamw"
-    precision: str = "fp16"
-    seed: int = 42
-    weight_decay: float = 0.01
-    muon_lr: float = 0.02
-    adam_lr: float = 2e-4
-    finetune_steps: int = 50
-    finetune_mode: str = "lora"
-    output_dir: str = "./results"
-    slow_module_timeouts: dict[str, int] = field(default_factory=dict)
-    skip_modules: list[str] = field(default_factory=list)
-
-
-@dataclass
-class AblationStageConfig:
-    """One named stage in the research ablation pipeline."""
-
-    name: str
-    modules: list[str]
-    description: str = ""
-
-
-@dataclass
-class AblationPipelineConfig:
-    """Ordered pipeline of module configurations used in ablation studies."""
-
-    stages: list[AblationStageConfig] = field(default_factory=list)

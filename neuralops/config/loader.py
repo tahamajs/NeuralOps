@@ -10,7 +10,6 @@
 from __future__ import annotations
 
 import argparse
-import csv
 import copy
 import types
 from collections.abc import Mapping, Sequence
@@ -22,8 +21,7 @@ import yaml
 
 from .config import Config
 from .experiment_config import ExperimentConfig
-from .policy_config import BlocklistEntry
-from .sweep_config import AblationPipelineConfig, AttentionSweepConfig, QualitySweepConfig
+from .sweep_config import AttentionSweepConfig
 
 T = TypeVar("T")
 
@@ -175,43 +173,10 @@ def load_attention_sweep_config(yaml_path: str | Path) -> AttentionSweepConfig:
     return _load_typed_config(AttentionSweepConfig, yaml_path, None)
 
 
-def load_quality_sweep_config(yaml_path: str | Path) -> QualitySweepConfig:
-    """Load and validate architecture-specific quality sweep settings."""
-    return _load_typed_config(QualitySweepConfig, yaml_path, None)
-
-
-def load_ablation_pipeline(yaml_path: str | Path) -> AblationPipelineConfig:
-    """Load an ordered ablation pipeline and its typed stage records."""
-    return _load_typed_config(AblationPipelineConfig, yaml_path, None)
-
-
-def load_blocklist(path: str | Path) -> dict[str, BlocklistEntry]:
-    """Read a CSV-formatted benchmark policy list with line-aware errors."""
-    entries: dict[str, BlocklistEntry] = {}
-    with Path(path).open(encoding="utf-8", newline="") as stream:
-        for line_number, line in enumerate(stream, start=1):
-            if not line.strip() or line.lstrip().startswith("#"):
-                continue
-            try:
-                row = next(csv.reader([line], skipinitialspace=True))
-            except csv.Error as exc:
-                raise ValueError(f"Invalid blocklist CSV at {path}:{line_number}: {exc}") from exc
-            if len(row) != 3 or not all(value.strip() for value in row):
-                raise ValueError(f"Expected module, reason code, and justification at {path}:{line_number}")
-            name, reason_code, justification = (value.strip() for value in row)
-            if name in entries:
-                raise ValueError(f"Duplicate blocklist module {name!r} at {path}:{line_number}")
-            entries[name] = BlocklistEntry(name, reason_code, justification)
-    return entries
-
-
 __all__ = [
     "load_yaml",
     "merge_cli_args",
     "load_config",
     "load_experiment_config",
     "load_attention_sweep_config",
-    "load_quality_sweep_config",
-    "load_ablation_pipeline",
-    "load_blocklist",
 ]

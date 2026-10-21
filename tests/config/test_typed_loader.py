@@ -15,18 +15,13 @@ from pathlib import Path
 import pytest
 
 from neuralops.config import (
-    AblationPipelineConfig,
     AttentionSweepConfig,
     Config,
     DatasetConfig,
     ExperimentConfig,
-    QualitySweepConfig,
-    load_ablation_pipeline,
     load_attention_sweep_config,
-    load_blocklist,
     load_config,
     load_experiment_config,
-    load_quality_sweep_config,
 )
 from neuralops.config.loader import _dict_to_dataclass
 
@@ -79,29 +74,11 @@ def test_attention_sweep_preset_has_typed_lists() -> None:
     assert "cluster_attention" in config.attn_types
 
 
-def test_qwen_quality_preset_has_typed_policy_fields() -> None:
-    config = load_quality_sweep_config(CONFIG_DIR / "qwen3_5.yaml")
+def test_attention_sweep_accepts_default_flat_cli_preset() -> None:
+    config = load_attention_sweep_config(CONFIG_DIR / "default.yaml")
 
-    assert isinstance(config, QualitySweepConfig)
-    assert config.slow_module_timeouts["grecodec"] == 600
-    assert "mamba" in config.skip_modules
-
-
-def test_ablation_stages_are_typed_and_ordered() -> None:
-    config = load_ablation_pipeline(CONFIG_DIR / "ablation_pipeline.yaml")
-
-    assert isinstance(config, AblationPipelineConfig)
-    assert len(config.stages) == 5
-    assert config.stages[0].name == "stage1_naive_svd"
-    assert config.stages[0].modules == ["naive_svd"]
-
-
-def test_blocklist_csv_quotes_and_reasons_are_parsed() -> None:
-    entries = load_blocklist(CONFIG_DIR / "blocklist.txt")
-
-    assert "mamba" in entries
-    assert entries["mamba"].reason_code == "ARCHITECTURAL_INCOMPATIBLE"
-    assert "bidirectional" in entries["mamba"].justification
+    assert config.attn_type == "full"
+    assert config.num_labels == 2
 
 
 def test_experiment_cli_schema_and_nested_root_config_are_distinct() -> None:
