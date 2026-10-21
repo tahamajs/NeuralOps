@@ -10,6 +10,7 @@ Hybrid Attention Mechanisms.
 """
 
 import importlib
+import logging
 
 __all__ = []
 
@@ -22,8 +23,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".gated_hybrid_kernel_attention", __package__)
@@ -34,8 +35,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".granite_hybrid", __package__)
@@ -46,8 +47,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".halo_regla", __package__)
@@ -58,8 +59,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".hybrid_attention", __package__)
@@ -70,8 +71,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".hybrid_local_kernel_attention", __package__)
@@ -82,8 +83,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".landmark_local_attention", __package__)
@@ -94,8 +95,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".mixattention_moska", __package__)
@@ -106,8 +107,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".optimized_hybrid_attention", __package__)
@@ -118,8 +119,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".positive_kernel_linear_attention", __package__)
@@ -130,8 +131,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".refined_landmark_attention", __package__)
@@ -142,8 +143,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".regla_attention", __package__)
@@ -154,8 +155,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".spectron_fp8_attention", __package__)
@@ -166,8 +167,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".split_head_hybrid_attention", __package__)
@@ -178,8 +179,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".tri_branch_hybrid_attention", __package__)
@@ -190,8 +191,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 from neuralops.attentions.hybrid import fusion_attn
 from neuralops.attentions.hybrid import gated_hybrid_kernel_attention

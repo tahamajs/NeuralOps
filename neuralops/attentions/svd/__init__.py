@@ -10,6 +10,7 @@ SVD Factorized Attention Mechanisms.
 """
 
 import importlib
+import logging
 
 __all__ = []
 
@@ -22,8 +23,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".asvd_attention", __package__)
@@ -34,8 +35,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".compressed_attention", __package__)
@@ -46,8 +47,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".compressed_mha_attention", __package__)
@@ -58,8 +59,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".factorised_matrix_state", __package__)
@@ -70,8 +71,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".fused_svd_kernel", __package__)
@@ -82,8 +83,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".lora_attention", __package__)
@@ -94,8 +95,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".minimal_nova", __package__)
@@ -106,8 +107,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".minimal_svd", __package__)
@@ -118,8 +119,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".naive_svd", __package__)
@@ -130,8 +131,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".projection_factorized_attn", __package__)
@@ -142,8 +143,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".residual_svd_attention", __package__)
@@ -154,8 +155,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".salt_attention", __package__)
@@ -166,8 +167,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".svd_attention", __package__)
@@ -178,8 +179,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".svd_compressed", __package__)
@@ -190,8 +191,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".svd_linear_attention", __package__)
@@ -202,8 +203,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".svd_linear_decay", __package__)
@@ -214,8 +215,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".svd_llm_v2_attention", __package__)
@@ -226,8 +227,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".svd_mamba", __package__)
@@ -238,8 +239,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".svd_projection_attention", __package__)
@@ -250,8 +251,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".triton_svd_linear_attention", __package__)
@@ -262,8 +263,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 from neuralops.attentions.svd import adaptive_svd_attention
 from neuralops.attentions.svd import asvd_attention

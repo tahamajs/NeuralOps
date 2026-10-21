@@ -14,6 +14,7 @@ Decorators and registry catalogs managing discovery and instantiation of attenti
 from __future__ import annotations
 
 import builtins
+import importlib
 import logging
 from collections.abc import Callable
 from typing import Any
@@ -471,9 +472,8 @@ class Registry:
             return
         if self.name == "compressors":
             try:
-                import importlib
-
-                for subpackage in ("experimental", "kv_cache", "low_rank", "pruning", "quantization", "svd", "tensor_decomp"):
+                package = importlib.import_module("neuralops.compression_engine")
+                for subpackage in package._SUBPACKAGES:
                     importlib.import_module(f"neuralops.compression_engine.{subpackage}")
                 self._loaded = True
             except Exception as e:
@@ -484,9 +484,8 @@ class Registry:
                 logger.warning("Error loading compression_engine: %s", e)
         elif self.name == "attentions":
             try:
-                import importlib
-
-                for subpackage in ("adaptive", "dense", "experimental", "fast_kernels", "gated", "hybrid", "linear", "modern", "sparse", "ssm", "svd"):
+                package = importlib.import_module("neuralops.attentions")
+                for subpackage in package._SUBPACKAGES:
                     importlib.import_module(f"neuralops.attentions.{subpackage}")
                 try:
                     import neuralops.trainer.ttt.test_time_trainer  # noqa: F401

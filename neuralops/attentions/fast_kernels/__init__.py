@@ -10,6 +10,7 @@ Fast Kernels Attention Mechanisms.
 """
 
 import importlib
+import logging
 
 __all__ = []
 
@@ -22,8 +23,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".flash_attention3", __package__)
@@ -34,8 +35,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".flash_attention3_fp8", __package__)
@@ -46,8 +47,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".soa_attn", __package__)
@@ -58,8 +59,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".xattention", __package__)
@@ -70,8 +71,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 from neuralops.attentions.fast_kernels import adasplash_attention
 from neuralops.attentions.fast_kernels import flash_attention3

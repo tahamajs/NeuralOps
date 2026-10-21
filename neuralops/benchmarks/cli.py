@@ -17,6 +17,7 @@ import os
 os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
 
 import argparse
+import math
 import platform
 from pathlib import Path
 import sys
@@ -271,17 +272,17 @@ def _build_parser() -> argparse.ArgumentParser:
     fuse_p.add_argument("--seq-len", type=int, default=128, help="Sequence length")
     fuse_p.add_argument("--dim", type=int, default=768, help="Hidden dimension")
 
-    trans_p = subparsers.add_parser("transplant", aliases=["surgery"], help="1-line surgical attention replacement + closed-form Ridge calibration + micro-healing")
+    trans_p = subparsers.add_parser("transplant", aliases=["surgery"], help="Replace attention, optionally calibrate/heal, and save a surgical checkpoint")
     trans_p.add_argument("--model", type=str, required=True, help="HuggingFace model identifier or local path")
     trans_p.add_argument("--attention", type=str, required=True, help="Target attention mechanism (e.g. svd_linear_attention, gla_attention)")
     trans_p.add_argument("--rank", type=int, default=64, help="Low-rank bottleneck dimension")
-    trans_p.add_argument("--calibrate", action="store_true", default=True, help="Run closed-form layerwise Ridge alignment")
+    trans_p.add_argument("--calibrate", action="store_true", help="Run layerwise Ridge alignment (requires --calibration-text)")
     trans_p.add_argument("--heal", action="store_true", default=False, help="Run fast layerwise gradient micro-healing after replacement")
     trans_p.add_argument("--heal-steps", type=int, default=25, help="Number of micro-healing iterations per layer")
     trans_p.add_argument("--heal-lr", type=float, default=2e-3, help="Learning rate for layerwise micro-healing")
-    trans_p.add_argument("--dataset", type=str, default="wikitext", help="Calibration dataset")
-    trans_p.add_argument("--output-dir", type=str, default="models/transplanted", help="Output directory to save model")
-    trans_p.add_argument("--save-dir", type=str, default=None, help="Directory to save surgical checkpoint via save_surgical_checkpoint")
+    trans_p.add_argument("--reference-model", type=str, default=None, help="Optional teacher checkpoint; defaults to a copy of --model")
+    trans_p.add_argument("--calibration-text", type=str, default=None, help="Text used to create real tokenizer inputs for calibration/healing")
+    trans_p.add_argument("--output-dir", "--save-dir", dest="output_dir", type=str, default="models/transplanted", help="Directory for the surgical model and manifest")
 
     comp_p = subparsers.add_parser("compose", help="Declaratively build custom attention via ComposableAttention")
     comp_p.add_argument("--projection", type=str, default="dense", help="Projection type (dense, svd(rank=r), conv1d(k))")
@@ -308,11 +309,12 @@ def _build_parser() -> argparse.ArgumentParser:
     rec_p.add_argument("--context-len", type=int, default=4096, help="Target sequence context length")
     rec_p.add_argument("--task", type=str, default="causal_lm", choices=["causal_lm", "encoder", "hybrid"], help="Target model task")
 
-    cal_p = subparsers.add_parser("calibrate", help="Closed-form layerwise Ridge/subspace output alignment for surgical models")
-    cal_p.add_argument("--model", type=str, required=True, help="Path to surgically modified model")
-    cal_p.add_argument("--reference-model", type=str, default=None, help="Original unmodified teacher model")
-    cal_p.add_argument("--dataset", type=str, default="wikitext", help="Calibration dataset")
-    cal_p.add_argument("--samples", type=int, default=128, help="Number of calibration tokens/samples")
+    cal_p = subparsers.add_parser("calibrate", help="Calibrate a surgically modified model against a reference model")
+    cal_p.add_argument("--model", type=str, required=True, help="Base Hugging Face model used to reconstruct the surgical checkpoint")
+    cal_p.add_argument("--surgical-checkpoint", type=str, required=True, help="Directory created by `neuralops transplant`")
+    cal_p.add_argument("--reference-model", type=str, default=None, help="Teacher checkpoint (defaults to --model)")
+    cal_p.add_argument("--calibration-text", type=str, required=True, help="Representative text used to produce aligned teacher/student inputs")
+    cal_p.add_argument("--output-dir", type=str, default="models/calibrated", help="Directory for the calibrated checkpoint")
 
     inspect_p = subparsers.add_parser("inspect", help="UNIX-style architectural specification sheet for any registered module")
     inspect_p.add_argument("name", type=str, help="Registered module name (attention or compressor)")
@@ -1084,37 +1086,69 @@ def _dispatch(args: argparse.Namespace) -> int:
         runner = Runner(output_dir=args.output_dir, resume=True)
         runner.resume()
     elif args.subcommand == "transplant":
+        import copy
         import torch
-        from neuralops import transplant_attention, load_model
+        from transformers import AutoModel, AutoTokenizer
+        from neuralops import transplant_attention
+
+        if not isinstance(args.rank, int) or isinstance(args.rank, bool) or args.rank < 1:
+            raise ValueError("--rank must be a positive integer")
+        if (args.calibrate or args.heal) and not args.calibration_text:
+            raise ValueError("--calibrate and --heal require --calibration-text so real model inputs are used.")
+        if args.heal and (
+            not isinstance(args.heal_steps, int)
+            or isinstance(args.heal_steps, bool)
+            or args.heal_steps < 1
+            or not math.isfinite(args.heal_lr)
+            or args.heal_lr <= 0
+        ):
+            raise ValueError("--heal-steps and --heal-lr must be positive finite values")
+
+        device = "cuda" if torch.cuda.is_available() else ("mps" if torch.backends.mps.is_available() else "cpu")
         print(f"[+] Loading model '{args.model}' for attention transplantation...")
-        model = load_model(args.model)
+        model = AutoModel.from_pretrained(args.model).to(device)
+        teacher = None
+        tokenizer = AutoTokenizer.from_pretrained(args.reference_model or args.model)
+        calibration_inputs = None
+        if args.calibrate or args.heal:
+            if args.reference_model:
+                teacher = AutoModel.from_pretrained(args.reference_model).to(device).eval()
+            else:
+                teacher = copy.deepcopy(model).eval()
+            encoded = tokenizer(args.calibration_text, return_tensors="pt")
+            calibration_inputs = {
+                key: value.to(device)
+                for key, value in encoded.items()
+                if isinstance(value, torch.Tensor)
+            }
         print(f"[+] Transplanting attention '{args.attention}' (rank={args.rank}, calibrate={args.calibrate})...")
         transplanted = transplant_attention(model, args.attention, rank=args.rank)
+
+        if args.calibrate:
+            from neuralops.core._attention_surgery import calibrate_attention_subspace
+
+            transplanted = calibrate_attention_subspace(teacher, transplanted, calibration_inputs)
 
         if getattr(args, "heal", False):
             print(f"[+] Running layerwise subspace micro-healing (steps={args.heal_steps}, lr={args.heal_lr})...")
             from neuralops.core._attention_surgery import heal_replaced_model
-            from neuralops.data.synthetic_generator import generate_synthetic_data
-            dev = next(transplanted.parameters()).device
-            dummy_inputs = torch.randint(0, 1000, (2, 64), device=dev)
+
             heal_stats = heal_replaced_model(
-                teacher_model=model,
+                teacher_model=teacher,
                 student_model=transplanted,
-                calibration_inputs=dummy_inputs,
+                calibration_inputs=calibration_inputs,
                 steps=args.heal_steps,
                 lr=args.heal_lr,
                 also_ridge_init=True,
             )
             print(f"[✓] Micro-healing completed: Initial MSE={heal_stats['initial_mse']:.4f} -> Final MSE={heal_stats['final_mse']:.4f}")
 
-        save_p = getattr(args, "save_dir", None)
-        if save_p:
-            from neuralops.models.surgical_io import save_surgical_checkpoint
-            print(f"[+] Saving surgical model checkpoint to '{save_p}'...")
-            save_surgical_checkpoint(transplanted, save_p)
-            print(f"[✓] Saved surgical manifest and weights to '{save_p}'.")
+        from neuralops.models.surgical_io import save_surgical_checkpoint
 
-        print(f"[✓] Transplantation complete. Saving to '{args.output_dir}'...")
+        print(f"[+] Saving surgical model checkpoint to '{args.output_dir}'...")
+        save_surgical_checkpoint(transplanted, args.output_dir)
+        tokenizer.save_pretrained(args.output_dir)
+        print(f"[✓] Transplantation complete. Surgical checkpoint saved to '{args.output_dir}'.")
         return 0
     elif args.subcommand == "roofline":
         from neuralops.core.roofline import profile_roofline, render_roofline_terminal
@@ -1168,17 +1202,37 @@ def _dispatch(args: argparse.Namespace) -> int:
         print("  RECOMMENDED NEURALOPS ARCHITECTURE RECIPE:")
         print(f"  • Attention:   {rec_attn}")
         print(f"  • Compressor:  {rec_comp}")
-        print("  • Expected Speedup: 3.8x - 12.5x vs SDPA quadratic attention")
-        print("  • Expected VRAM Reduction: ~65% memory reduction")
+        print("  • Treat this as a candidate configuration, not a measured speed or memory guarantee.")
+        print("  • Benchmark on the target model, shapes, dtype, and hardware before selecting it.")
         print("═══════════════════════════════════════════════════════════════════")
         return 0
     elif args.subcommand == "calibrate":
-        print(f"[+] Running closed-form layerwise Ridge calibration on '{args.model}' (samples={args.samples})...")
-        from neuralops.core._attention_surgery import calibrate_surgical_model
-        from neuralops import load_model
-        model = load_model(args.model)
-        calibrated = calibrate_surgical_model(model, num_samples=args.samples)
-        print("[✓] Layerwise Ridge calibration completed successfully.")
+        import torch
+        from transformers import AutoModel, AutoTokenizer
+        from neuralops.core._attention_surgery import calibrate_attention_subspace
+
+        device = "cuda" if torch.cuda.is_available() else ("mps" if torch.backends.mps.is_available() else "cpu")
+        reference_id = args.reference_model or args.model
+        teacher = AutoModel.from_pretrained(reference_id).to(device).eval()
+        student_base = AutoModel.from_pretrained(args.model).to(device).eval()
+        from neuralops.models.surgical_io import load_surgical_checkpoint, save_surgical_checkpoint
+
+        student, _manifest = load_surgical_checkpoint(
+            student_base,
+            args.surgical_checkpoint,
+            map_location=device,
+        )
+        tokenizer = AutoTokenizer.from_pretrained(reference_id)
+        inputs = tokenizer(args.calibration_text, return_tensors="pt")
+        inputs = {key: value.to(device) for key, value in inputs.items() if isinstance(value, torch.Tensor)}
+        calibrated = calibrate_attention_subspace(teacher, student, inputs)
+        save_surgical_checkpoint(
+            calibrated,
+            args.output_dir,
+            metadata={"calibration_reference": reference_id},
+        )
+        tokenizer.save_pretrained(args.output_dir)
+        print(f"[✓] Ridge calibration used the supplied text; checkpoint saved to {args.output_dir!r}.")
         return 0
     elif args.subcommand in ("train",):
         return handle_train(args)

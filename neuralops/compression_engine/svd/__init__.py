@@ -10,6 +10,7 @@ Singular Value Decomposition (SVD) Compression Engines.
 """
 
 import importlib
+import logging
 
 __all__ = []
 
@@ -22,8 +23,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".adaptive_ranks", __package__)
@@ -34,8 +35,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".adasvd_compressor", __package__)
@@ -46,8 +47,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".direct_svd", __package__)
@@ -58,8 +59,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".dobi_svd", __package__)
@@ -70,8 +71,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".dynamic_rank", __package__)
@@ -82,8 +83,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".entropy_budget_allocation", __package__)
@@ -94,8 +95,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".erc_svd", __package__)
@@ -106,8 +107,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".fwsvd_compressor", __package__)
@@ -118,8 +119,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".gfws_d_compressor", __package__)
@@ -130,8 +131,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".hybrid_svd_layer", __package__)
@@ -142,8 +143,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".optimal_subspace_projection", __package__)
@@ -154,8 +155,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".residual_svd_compressor", __package__)
@@ -166,8 +167,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".saes_svd_v2", __package__)
@@ -178,8 +179,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".subspace_projection", __package__)
@@ -190,8 +191,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".svd_linear", __package__)
@@ -202,8 +203,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".swift_svd", __package__)
@@ -214,8 +215,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".swift_svd_act", __package__)
@@ -226,8 +227,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 from neuralops.compression_engine.svd import aa_svd_compressor
 from neuralops.compression_engine.svd import adaptive_ranks

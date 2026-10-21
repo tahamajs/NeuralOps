@@ -10,6 +10,7 @@ Gated Attention Mechanisms.
 """
 
 import importlib
+import logging
 
 __all__ = []
 
@@ -22,8 +23,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".gated_delta_net", __package__)
@@ -34,8 +35,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".gated_deltanet_block", __package__)
@@ -46,8 +47,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".decay_linear_attention", __package__)
@@ -58,8 +59,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".hgrn2_gated_deltanet", __package__)
@@ -70,8 +71,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".hgrn2_gated_layer", __package__)
@@ -82,8 +83,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".hgrn2_gated_outer", __package__)
@@ -94,8 +95,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".hla_attention", __package__)
@@ -106,8 +107,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".kda_attention", __package__)
@@ -118,8 +119,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 try:
     _m = importlib.import_module(".flagship_fla", __package__)
@@ -130,8 +131,8 @@ try:
                 globals()[_attr] = _val
                 if _attr not in __all__:
                     __all__.append(_attr)
-except Exception:
-    pass
+except ImportError as exc:
+    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
 
 from neuralops.attentions.gated import decay_linear_attention
 from neuralops.attentions.gated import gated_delta_net

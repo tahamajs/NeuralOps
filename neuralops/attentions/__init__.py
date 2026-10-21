@@ -178,3 +178,8 @@ def __getattr__(name):
             globals()[name] = value
             return value
     raise AttributeError(f"module '{__name__}' has no attribute {name!r}")
+
+
+def __dir__():
+    """Expose lazy family and legacy module names to interactive tooling."""
+    return sorted(set(globals()) | set(_SUBPACKAGES) | set(_LEGACY_MAP) | set(_RENAMED_MODULES) | {"replace"})

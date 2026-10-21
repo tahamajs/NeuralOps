@@ -192,8 +192,6 @@ def cmd_compress(args: Any) -> int:
             print(f"Rank: {rank} | Rank Fraction: {target_ratio} | Device: {device}")
             print("=================================================================")
 
-    start_time = time.perf_counter()
-
     # 1. Load base model
     if not output_json:
         print(f"[*] Loading model '{model_id}' on {device}...")
@@ -209,6 +207,7 @@ def cmd_compress(args: Any) -> int:
     if target_ratio is not None:
         compress_kwargs["rank_ratio"] = target_ratio
 
+    start_time = time.perf_counter()
     try:
         compressed_model = neuralops.compress(
             model=model,
@@ -237,18 +236,18 @@ def cmd_compress(args: Any) -> int:
 
     # Singular value truncation error / spectral norm residual
     stats = getattr(compressed_model, "_compression_stats", {})
+    if not isinstance(stats, dict):
+        stats = {}
     trunc_error = stats.get("truncation_error", stats.get("avg_reconstruction_error"))
 
     # 3. Save compressed model
     os.makedirs(output_dir, exist_ok=True)
+    serialization_format = "state_dict"
+    if callable(getattr(compressed_model, "save_pretrained", None)):
+        compressed_model.save_pretrained(output_dir)
+        serialization_format = "huggingface_pretrained+state_dict"
     model_save_path = os.path.join(output_dir, "compressed_model.pt")
     torch.save(compressed_model.state_dict(), model_save_path)
-
-    if hasattr(compressed_model, "save_pretrained"):
-        try:
-            compressed_model.save_pretrained(output_dir)
-        except Exception:
-            pass
 
     manifest: Dict[str, Any] = {
         "model": model_id,
@@ -260,9 +259,13 @@ def cmd_compress(args: Any) -> int:
         "compression_ratio": round(param_ratio, 2),
         "parameter_savings_percent": round(param_savings_pct, 2),
         "reconstruction_error": round(float(trunc_error), 6) if trunc_error is not None else None,
+        "compressed_layer_count": stats.get("compressed_layer_count"),
+        "fallback_layer_count": stats.get("fallback_layer_count"),
+        "skipped_layer_count": stats.get("skipped_layer_count"),
         "original_size_mb": round(orig_bytes / (1024 * 1024), 2),
         "compressed_size_mb": round(comp_bytes / (1024 * 1024), 2),
         "compression_time_seconds": round(elapsed, 3),
+        "serialization_format": serialization_format,
         "output_dir": output_dir,
     }
 

@@ -123,3 +123,26 @@ def test_serve_parser_rejects_unimplemented_engines() -> None:
     assert args.model == "gpt2"
     assert args.port == 8123
     assert args.engine == "fastapi"
+
+
+def test_cli_compression_default_is_a_registered_engine() -> None:
+    from neuralops.benchmarks.cli import _build_parser
+
+    args = _build_parser().parse_args(["compress", "--model", "fixture-model"])
+    assert args.compressor == "direct_svd"
+
+
+def test_lazy_legacy_module_aliases_resolve() -> None:
+    import importlib
+
+    attention = importlib.import_module("neuralops.attentions.cosformer")
+    compressor = importlib.import_module("neuralops.compression_engine.direct_svd")
+    assert hasattr(attention, "CosformerAttention")
+    assert hasattr(compressor, "DirectSVDCompressor")
+
+
+def test_attention_and_compressor_registries_match_project_inventory() -> None:
+    from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
+
+    assert len(ATTENTION_REGISTRY.keys()) == 131
+    assert len(COMPRESSOR_REGISTRY.keys()) == 72
