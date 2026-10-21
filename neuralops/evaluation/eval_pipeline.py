@@ -19,10 +19,12 @@ import gc
 import json
 import logging
 import math
+import random
 import sys
 import tempfile
 import time
 import traceback
+from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from typing import Any
 
@@ -84,8 +86,11 @@ def probe_optimal_batch_size(
     Returns:
         Optimal integer batch size (power of 2).
     """
+    if max_batch_cap < min_batch_floor or min_batch_floor < 1:
+        raise ValueError("max_batch_cap must be >= min_batch_floor >= 1")
+
     if device.type != "cuda":
-        return 64
+        return min(max_batch_cap, max(min_batch_floor, 64))
 
     torch.cuda.synchronize(device)
     gc.collect()
@@ -153,8 +158,9 @@ def probe_optimal_batch_size(
         )
         return max(min_batch_floor, min(selected_b, max_batch_cap))
     except Exception as e:
-        logger.warning("Batch probe failed (%s), defaulting to 64", e)
-        return 64
+        fallback_batch = min(max_batch_cap, max(min_batch_floor, 64))
+        logger.warning("Batch probe failed (%s), defaulting to %d", e, fallback_batch)
+        return fallback_batch
     finally:
         gc.collect()
         torch.cuda.empty_cache()
@@ -171,7 +177,14 @@ def _setup_eval_environment(
     if is_cuda:
         torch.cuda.empty_cache()
 
-    num_labels = 1 if dataset.lower() == "stsb" else 2
+    is_lm = dataset.lower() in LM_DATASETS
+    family = model_family.lower()
+    lm_model_families = {"gpt2", "t5", "qwen", "qwen2", "qwen3.5", "qwen3_5"}
+    if is_lm and family not in lm_model_families:
+        raise ValueError(
+            f"Language-model evaluation is not supported for model family '{model_family}'."
+        )
+    num_labels = 0 if is_lm else (1 if dataset.lower() == "stsb" else 2)
     mem_phases: dict[str, dict[str, float]] = {}
 
     if is_cuda:
@@ -444,6 +457,7 @@ def _evaluate_model_accuracy(
     device: torch.device,
     mem_phases: dict[str, dict[str, float]],
     run_log_lines: list[str],
+    allow_synthetic: bool = False,
 ) -> dict[str, Any]:
     """Phase 4: Evaluate accuracy, perplexity, and cosine fidelity against clean baseline."""
     model.eval()
@@ -474,6 +488,24 @@ def _evaluate_model_accuracy(
         tok_name = MODEL_TOKENIZER_MAPPING.get(model_family.lower(), "bert-base-uncased")
         dataset_cache_key = (dataset.lower(), tok_name, seq_len)
 
+        data_source = "prepared_dataset"
+        fallback_batch = None
+        if dataset_cache_key not in _PREPARED_DATASET_CACHE:
+            fallback_batch = get_dataset_batch(
+                dataset,
+                model_family,
+                batch_size=current_batch_size,
+                seq_len=seq_len,
+                num_labels=num_labels,
+                device=device,
+                allow_synthetic=allow_synthetic,
+            )
+            data_source = (
+                "prepared_dataset"
+                if dataset_cache_key in _PREPARED_DATASET_CACHE
+                else "single_batch_fallback"
+            )
+
         if dataset_cache_key in _PREPARED_DATASET_CACHE:
             val_tokenized = _PREPARED_DATASET_CACHE[dataset_cache_key]
             loader = torch.utils.data.DataLoader(
@@ -482,93 +514,103 @@ def _evaluate_model_accuracy(
                 shuffle=False,
                 pin_memory=is_cuda,
             )
-            autocast_ctx = torch.amp.autocast("cuda") if is_cuda else contextlib.nullcontext()
+        else:
+            loader = [fallback_batch]
+        autocast_ctx = torch.amp.autocast("cuda") if is_cuda else contextlib.nullcontext()
 
-            with torch.no_grad():
-                for val_batch in loader:
-                    inputs = {
-                        ("labels" if k == "label" else k): (
-                            v.to(device, non_blocking=True) if isinstance(v, torch.Tensor) else v
+        with torch.no_grad():
+            for val_batch in loader:
+                inputs = {
+                    ("labels" if k == "label" else k): (
+                        v.to(device, non_blocking=True) if isinstance(v, torch.Tensor) else v
+                    )
+                    for k, v in val_batch.items()
+                }
+                filtered_inputs = _filter_batch(inputs, model_family, model)
+                filtered_base_inputs = _filter_batch(inputs, model_family, baseline_model)
+
+                if is_lm:
+                    ids = filtered_inputs["input_ids"]
+                    filtered_inputs["labels"] = ids.clone()
+                    if model_family.lower() == "t5":
+                        filtered_base_inputs["labels"] = filtered_inputs["labels"]
+
+                with autocast_ctx:
+                    out = model(**filtered_inputs)
+                    base_out = baseline_model(**filtered_base_inputs)
+
+                logits, _ = _extract_logits_and_loss(
+                    out,
+                    num_labels=num_labels,
+                    labels=filtered_inputs.get("labels"),
+                    is_lm=is_lm,
+                )
+                base_logits, _ = _extract_logits_and_loss(
+                    base_out,
+                    num_labels=num_labels,
+                    labels=filtered_inputs.get("labels"),
+                    is_lm=is_lm,
+                )
+
+                if is_lm and out.loss is not None:
+                    target_labels = filtered_inputs.get("labels")
+                    if target_labels is not None:
+                        scored_labels = (
+                            target_labels
+                            if model_family.lower() == "t5"
+                            else target_labels[:, 1:]
                         )
-                        for k, v in val_batch.items()
-                    }
-                    filtered_inputs = _filter_batch(inputs, model_family, model)
-                    filtered_base_inputs = _filter_batch(inputs, model_family, baseline_model)
+                        n_targets = int((scored_labels != -100).sum().item())
+                        lm_nll_sum += float(out.loss.detach().item()) * n_targets
+                        lm_token_count += n_targets
 
-                    if is_lm:
-                        ids = filtered_inputs["input_ids"]
-                        filtered_inputs["labels"] = ids.clone()
-                        filtered_inputs["labels"][:, :-1] = ids[:, 1:]
-                        filtered_inputs["labels"][:, -1] = -100
+                if (
+                    logits is not None
+                    and base_logits is not None
+                    and logits.dim() == base_logits.dim()
+                    and logits.shape == base_logits.shape
+                ):
+                    if logits.dim() == 1:
+                        sim = F.cosine_similarity(
+                            base_logits.unsqueeze(0), logits.unsqueeze(0), dim=-1
+                        ).mean().item()
+                    else:
+                        sim = F.cosine_similarity(base_logits, logits, dim=-1).mean().item()
+                    sum_cosine_sim += float(sim)
+                    batches_for_fidelity += 1
 
-                    with autocast_ctx:
-                        out = model(**filtered_inputs)
-                        base_out = baseline_model(**filtered_base_inputs)
+                    if len(baseline_logits_samples) < 8:
+                        b_count = min(8 - len(baseline_logits_samples), logits.shape[0])
+                        for b_i in range(b_count):
+                            b_flat = base_logits[b_i].detach().cpu().float().reshape(-1)[:10].tolist()
+                            c_flat = logits[b_i].detach().cpu().float().reshape(-1)[:10].tolist()
+                            baseline_logits_samples.append([round(x, 4) for x in b_flat])
+                            compressed_logits_samples.append([round(x, 4) for x in c_flat])
+                            s_cos = F.cosine_similarity(
+                                base_logits[b_i : b_i + 1].detach().float().reshape(1, -1),
+                                logits[b_i : b_i + 1].detach().float().reshape(1, -1),
+                                dim=-1,
+                            ).item()
+                            sample_cosines.append(round(float(s_cos), 4))
 
-                    logits, _ = _extract_logits_and_loss(
-                        out,
-                        num_labels=num_labels,
-                        labels=filtered_inputs.get("labels"),
-                        is_lm=is_lm,
-                    )
-                    base_logits, _ = _extract_logits_and_loss(
-                        base_out,
-                        num_labels=num_labels,
-                        labels=filtered_inputs.get("labels"),
-                        is_lm=is_lm,
-                    )
-
-                    if is_lm and out.loss is not None:
-                        target_labels = filtered_inputs.get("labels")
-                        if target_labels is not None:
-                            n_targets = int((target_labels != -100).sum().item())
-                            lm_nll_sum += float(out.loss.detach().item()) * max(1, n_targets)
-                            lm_token_count += max(1, n_targets)
-
-                    if (
-                        logits is not None
-                        and base_logits is not None
-                        and logits.dim() == base_logits.dim()
-                        and logits.shape == base_logits.shape
-                    ):
-                        if logits.dim() == 1:
-                            sim = F.cosine_similarity(
-                                base_logits.unsqueeze(0), logits.unsqueeze(0), dim=-1
-                            ).mean().item()
-                        else:
-                            sim = F.cosine_similarity(base_logits, logits, dim=-1).mean().item()
-                        sum_cosine_sim += float(sim)
-                        batches_for_fidelity += 1
-
-                        if len(baseline_logits_samples) < 8:
-                            b_count = min(8 - len(baseline_logits_samples), logits.shape[0])
-                            for b_i in range(b_count):
-                                b_flat = base_logits[b_i].detach().cpu().float().reshape(-1)[:10].tolist()
-                                c_flat = logits[b_i].detach().cpu().float().reshape(-1)[:10].tolist()
-                                baseline_logits_samples.append([round(x, 4) for x in b_flat])
-                                compressed_logits_samples.append([round(x, 4) for x in c_flat])
-                                s_cos = F.cosine_similarity(
-                                    base_logits[b_i : b_i + 1].detach().float().reshape(1, -1),
-                                    logits[b_i : b_i + 1].detach().float().reshape(1, -1),
-                                    dim=-1,
-                                ).item()
-                                sample_cosines.append(round(float(s_cos), 4))
-
-                    if (not is_lm) and logits is not None and inputs.get("labels") is not None:
-                        if dataset.lower() == "stsb":
-                            preds = logits.squeeze()
-                        else:
-                            preds = torch.argmax(logits, dim=-1)
-                        all_preds.extend(preds.cpu().numpy().tolist())
-                        all_labels.extend(inputs["labels"].cpu().numpy().tolist())
+                if (not is_lm) and logits is not None and inputs.get("labels") is not None:
+                    if dataset.lower() == "stsb":
+                        preds = logits.squeeze()
+                    else:
+                        preds = torch.argmax(logits, dim=-1)
+                    all_preds.extend(preds.cpu().numpy().tolist())
+                    all_labels.extend(inputs["labels"].cpu().numpy().tolist())
 
     except Exception as eval_e:
         logger.warning("Validation loop failed: %s", eval_e)
+        raise RuntimeError(f"Validation failed for dataset '{dataset}': {eval_e}") from eval_e
 
     perplexity = 0.0
     if is_lm and lm_token_count > 0:
         mean_nll = lm_nll_sum / lm_token_count
         perplexity = round(float(math.exp(min(mean_nll, 100.0))), 4)
+    elif is_lm:
+        raise RuntimeError(f"Validation produced no language-model tokens for '{dataset}'.")
 
     accuracy_pct = 0.0
     f1 = 0.0
@@ -581,13 +623,13 @@ def _evaluate_model_accuracy(
             try:
                 p_val, _ = pearsonr(all_labels, all_preds)
                 pearson = round(float(p_val), 4) if math.isfinite(p_val) else None
-            except Exception:
-                pass
+            except Exception as metric_error:
+                raise RuntimeError("Failed to compute STS-B Pearson correlation.") from metric_error
             try:
                 s_val, _ = spearmanr(all_labels, all_preds)
                 spearman = round(float(s_val), 4) if math.isfinite(s_val) else None
-            except Exception:
-                pass
+            except Exception as metric_error:
+                raise RuntimeError("Failed to compute STS-B Spearman correlation.") from metric_error
         elif dataset.lower() == "cola":
             mcc = round(float(matthews_corrcoef(all_labels, all_preds)), 4)
             accuracy_pct = round(float(accuracy_score(all_labels, all_preds)) * 100.0, 2)
@@ -596,8 +638,11 @@ def _evaluate_model_accuracy(
             avg = "binary" if (len(set(all_labels)) <= 2 and num_labels <= 2) else "macro"
             try:
                 f1 = round(float(f1_score(all_labels, all_preds, average=avg, zero_division=0)), 4)
-            except Exception:
-                pass
+            except Exception as metric_error:
+                raise RuntimeError(f"Failed to compute F1 for dataset '{dataset}'.") from metric_error
+
+    if not is_lm and not all_labels:
+        raise RuntimeError(f"Validation produced no labeled examples for '{dataset}'.")
 
     fidelity_score = round(sum_cosine_sim / batches_for_fidelity, 4) if batches_for_fidelity > 0 else 0.0
     t_eval = time.time() - t_eval_0
@@ -617,6 +662,7 @@ def _evaluate_model_accuracy(
         "pearson": pearson,
         "spearman": spearman,
         "fidelity_score": fidelity_score,
+        "evaluation_data_source": data_source,
         "t_eval": t_eval,
         "baseline_logits_samples": baseline_logits_samples,
         "compressed_logits_samples": compressed_logits_samples,
@@ -654,6 +700,7 @@ def _finalize_benchmark_result(
     exc_type: str | None,
     retry_count: int,
     success: bool,
+    seed: int = 42,
 ) -> BenchmarkResult:
     """Phase 5: Validate metric status and write comprehensive disk artifacts."""
     is_lm = dataset.lower() in LM_DATASETS
@@ -680,10 +727,6 @@ def _finalize_benchmark_result(
             result.status = "PASS_NO_COMPRESSION"
             result.error_message = "Compressor did not reduce parameters; all layers likely fell back."
 
-        if result.status == "PASS" and not is_lm and result.accuracy_pct == 0.0:
-            result.status = "FAIL"
-            result.error_message = "Accuracy is 0.0; validation likely failed."
-
     try:
         run_dir = Path(results_dir) / model_family / dataset / module_name / f"rank_{rank}"
         try:
@@ -707,9 +750,13 @@ def _finalize_benchmark_result(
         elif result.error_message:
             (run_dir / "traceback.txt").write_text(f"Error: {result.error_message}\n", encoding="utf-8")
 
+        try:
+            transformers_version = version("transformers")
+        except PackageNotFoundError:
+            transformers_version = None
         env_dict = {
             "torch_version": torch.__version__,
-            "transformers_version": "5.5.0",
+            "transformers_version": transformers_version,
             "cuda_version": torch.version.cuda if torch.cuda.is_available() else None,
             "python_version": sys.version.split()[0],
             "os": sys.platform,
@@ -727,6 +774,8 @@ def _finalize_benchmark_result(
             "num_warmup": num_warmup,
             "num_steps": num_steps,
             "allow_synthetic": allow_synthetic,
+            "model_initialization": "random_config",
+            "seed": seed,
             "device": str(device),
         }
         (run_dir / "config.json").write_text(json.dumps(cfg_dict, indent=2), encoding="utf-8")
@@ -770,7 +819,16 @@ def _finalize_benchmark_result(
         )
 
         (run_dir / "seed.json").write_text(
-            json.dumps({"random": 42, "numpy": 42, "torch": 42, "cuda": 42}, indent=2),
+            json.dumps(
+                {
+                    "random": seed,
+                    "numpy": seed,
+                    "torch": seed,
+                    "cuda": seed,
+                    "synthetic_data": 42,
+                },
+                indent=2,
+            ),
             encoding="utf-8",
         )
 
@@ -898,6 +956,7 @@ def _run_single_trial(
         device,
         mem_phases,
         run_log_lines,
+        allow_synthetic=allow_synthetic,
     )
     params_after = sum(p.numel() for p in model.parameters())
 
@@ -933,6 +992,7 @@ def evaluate_single_combination_opt(
     results_dir: str = "./results/gpu_server",
     allow_synthetic: bool = False,
     skip_deprecated: bool = True,
+    seed: int = 42,
 ) -> BenchmarkResult:
     """Clean multi-phase orchestrator for single (module, model, dataset) combinations."""
     result = BenchmarkResult(
@@ -942,6 +1002,7 @@ def evaluate_single_combination_opt(
         model_family=model_family,
         dataset=dataset,
         status="RUNNING",
+        model_initialization="random_config",
     )
 
     t_run_start = time.time()
@@ -952,8 +1013,13 @@ def evaluate_single_combination_opt(
     mem_phases: dict[str, dict[str, float]] = {}
     run_log_lines: list[str] = [
         f"Command: evaluate_single_combination(module={module_name}, model={model_family}, dataset={dataset}, rank={rank})",
-        f"Environment: python={sys.version.split()[0]} torch={torch.__version__}",
+        f"Environment: python={sys.version.split()[0]} torch={torch.__version__} seed={seed}",
     ]
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
     exc_traceback: str | None = None
     exc_type: str | None = None
     comp_stats: dict[str, Any] = {}
@@ -1023,6 +1089,7 @@ def evaluate_single_combination_opt(
             result.pearson = em["pearson"]
             result.spearman = em["spearman"]
             result.fidelity_score = em["fidelity_score"]
+            result.evaluation_data_source = em["evaluation_data_source"]
             t_eval = em["t_eval"]
             baseline_logits_samples = em["baseline_logits_samples"]
             compressed_logits_samples = em["compressed_logits_samples"]
@@ -1090,6 +1157,7 @@ def evaluate_single_combination_opt(
         exc_type,
         retry_count,
         success,
+        seed=seed,
     )
 
 

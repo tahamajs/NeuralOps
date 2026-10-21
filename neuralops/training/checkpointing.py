@@ -5,11 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Training Checkpointing Module
-
-Provides crash-safe model checkpoint saving, state resumption, and artifact management.
-"""
+"""Selective activation checkpointing utilities for reducing training memory."""
 
 import torch
 import torch.nn as nn
@@ -27,9 +23,26 @@ class SelectiveCheckpointModule(nn.Module):
         self.min_seqlen_threshold = min_seqlen_threshold
 
     def forward(self, *args, **kwargs):
-        seqlen = 0
-        if len(args) > 0 and hasattr(args[0], "shape") and args[0].dim() >= 2:
-            seqlen = args[0].shape[1]
+        input_tensor = next(
+            (value for value in (*args, *kwargs.values()) if isinstance(value, torch.Tensor) and value.dim() >= 2),
+            None,
+        )
+        seqlen = input_tensor.shape[1] if input_tensor is not None else 0
         if seqlen >= self.min_seqlen_threshold:
-            return checkpoint(self.module, *args, use_reentrant=False, **kwargs)
+            tensor_kwargs = {
+                name: value for name, value in kwargs.items() if isinstance(value, torch.Tensor)
+            }
+            static_kwargs = {
+                name: value for name, value in kwargs.items() if name not in tensor_kwargs
+            }
+            tensor_values = tuple(tensor_kwargs.values())
+
+            def run_module(*checkpoint_args):
+                positional_args = checkpoint_args[: len(args)]
+                kwarg_values = checkpoint_args[len(args) :]
+                recompute_kwargs = dict(static_kwargs)
+                recompute_kwargs.update(zip(tensor_kwargs, kwarg_values, strict=True))
+                return self.module(*positional_args, **recompute_kwargs)
+
+            return checkpoint(run_module, *args, *tensor_values, use_reentrant=False)
         return self.module(*args, **kwargs)

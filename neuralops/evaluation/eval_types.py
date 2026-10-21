@@ -343,6 +343,8 @@ class BenchmarkResult:
 
     calibration_used: bool = False
     calibration_source: str | None = None
+    evaluation_data_source: str | None = None
+    model_initialization: str | None = None
     num_compressed_layers: int = 0
     num_fallback_layers: int = 0
     avg_reconstruction_error: float | None = None

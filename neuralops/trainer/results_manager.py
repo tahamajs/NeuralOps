@@ -201,8 +201,12 @@ class ResultsManager:
                 metrics=m_dict,
                 notes=f"Auto-logged from ResultsManager: {self.experiment_name}",
             )
-        except Exception:
-            pass
+        except Exception as exc:
+            self.logger.warning(
+                "Could not record run summary in the experiment ledger: %s",
+                exc,
+                exc_info=True,
+            )
 
     def wrap_trainer(self, trainer) -> Any:
         """Add standard callbacks and metrics logging to a Hugging Face Trainer."""
@@ -215,10 +219,12 @@ class ResultsManager:
 
         original_log = trainer.log
 
-        def custom_log(logs) -> None:
+        def custom_log(logs, *args, **kwargs) -> None:
             """Custom log."""
-            original_log(logs)
-            self.log_metrics(logs)
+            original_log(logs, *args, **kwargs)
+            state = getattr(trainer, "state", None)
+            step = getattr(state, "global_step", None)
+            self.log_metrics(logs, step=step)
 
         trainer.log = custom_log
         return trainer

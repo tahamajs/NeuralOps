@@ -65,10 +65,10 @@ class Trainer(BaseTrainer):
         """Fit the model on the provided dataset."""
         if self._delegate is not None:
             return self._delegate.train()
-        return {"status": "trained", "model": self.model, "config": self.config}
+        raise RuntimeError("Cannot train without a configured train_dataset.")
 
     def evaluate(self) -> dict[str, Any]:
         """Run evaluation on the model."""
         if self._delegate is not None:
             return self._delegate.evaluate()
-        return {"status": "evaluated", "model": self.model}
+        raise RuntimeError("Cannot evaluate without a configured eval_dataset and trainer.")

@@ -35,6 +35,8 @@ class LayerAttentionDistillLoss(nn.Module):
         self.weight = weight
         self.loss_type = loss_type.lower()
         self.normalize = normalize
+        if self.loss_type not in {"mse", "smooth_l1", "cosine", "kl", "kd"}:
+            raise ValueError(f"Unsupported attention distillation loss: {loss_type}")
 
     def forward(
         self,
@@ -49,15 +51,26 @@ class LayerAttentionDistillLoss(nn.Module):
         Returns:
             Scalar loss tensor.
         """
-        if not student_attn_outputs or not teacher_attn_outputs:
-            return torch.tensor(0.0, requires_grad=True)
+        if (
+            not student_attn_outputs
+            or not teacher_attn_outputs
+            or len(student_attn_outputs) != len(teacher_attn_outputs)
+        ):
+            raise ValueError(
+                "Student and teacher outputs must contain the same non-zero number of layers."
+            )
 
-        total_loss = torch.tensor(0.0, device=student_attn_outputs[0].device)
-        num_layers = min(len(student_attn_outputs), len(teacher_attn_outputs))
+        total_loss = student_attn_outputs[0].new_zeros(())
+        num_layers = len(student_attn_outputs)
 
         for l in range(num_layers):
             s_out = student_attn_outputs[l]
             t_out = teacher_attn_outputs[l]
+            if s_out.shape != t_out.shape:
+                raise ValueError(
+                    f"Student and teacher outputs at layer {l} must have matching shapes; "
+                    f"got {tuple(s_out.shape)} and {tuple(t_out.shape)}."
+                )
 
             if self.normalize:
                 s_out = F.normalize(s_out, p=2, dim=-1)
@@ -77,9 +90,6 @@ class LayerAttentionDistillLoss(nn.Module):
                     s_log = F.log_softmax(s_out, dim=-1)
                     t_prob = F.softmax(t_out, dim=-1)
                     layer_loss = F.kl_div(s_log, t_prob, reduction="batchmean")
-            else:
-                layer_loss = F.mse_loss(s_out, t_out)
-
             total_loss = total_loss + layer_loss
 
         return self.weight * (total_loss / max(num_layers, 1))

@@ -31,6 +31,7 @@ from transformers import (
     RobertaConfig,
     RobertaForSequenceClassification,
     T5Config,
+    T5ForConditionalGeneration,
     T5EncoderModel,
 )
 
@@ -58,7 +59,7 @@ def build_model_instance(
     seq_len: int = 32,
     device: torch.device | None = None,
 ) -> tuple[nn.Module, Any]:
-    """Instantiate a baseline Transformer model and its configuration on the requested device.
+    """Instantiate a randomly initialized, reduced-size Transformer and its configuration.
 
     Args:
         model_family: Target architecture ('bert', 'roberta', 't5', 'gpt2', 'distilbert', 'qwen').
@@ -116,7 +117,7 @@ def build_model_instance(
             num_decoder_layers=num_layers,
             num_heads=num_heads,
         )
-        model = T5EncoderModel(cfg)
+        model = T5EncoderModel(cfg) if num_labels > 0 else T5ForConditionalGeneration(cfg)
     elif family == "gpt2":
         cfg = GPT2Config(
             vocab_size=vocab_size,
@@ -142,7 +143,7 @@ def build_model_instance(
         )
         model = DistilBertForSequenceClassification(cfg)
     elif family in ("qwen", "qwen2", "qwen3.5", "qwen3_5"):
-        from transformers import Qwen2Config, Qwen2ForSequenceClassification
+        from transformers import Qwen2Config, Qwen2ForCausalLM, Qwen2ForSequenceClassification
 
         kv_heads = max(1, num_heads // 2)
         cfg = Qwen2Config(
@@ -157,7 +158,11 @@ def build_model_instance(
             max_position_embeddings=512,
             pad_token_id=0,
         )
-        model = Qwen2ForSequenceClassification(cfg)
+        model = (
+            Qwen2ForSequenceClassification(cfg)
+            if num_labels > 0
+            else Qwen2ForCausalLM(cfg)
+        )
     else:
         raise ValueError(f"Unsupported model family: {model_family}")
 

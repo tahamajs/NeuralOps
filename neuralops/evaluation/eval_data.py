@@ -54,8 +54,13 @@ def _generate_synthetic_batch(
         Dictionary mapping input names ('input_ids', 'attention_mask', 'labels') to tensors.
     """
     ds = dataset_name.lower()
-    torch.manual_seed(42)
-    input_ids = torch.randint(100, max(101, vocab_size - 100), (batch_size, seq_len), device=device)
+    generator = torch.Generator(device="cpu").manual_seed(42)
+    input_ids = torch.randint(
+        100,
+        max(101, vocab_size - 100),
+        (batch_size, seq_len),
+        generator=generator,
+    ).to(device)
     attention_mask = torch.ones((batch_size, seq_len), dtype=torch.long, device=device)
 
     is_lm = ds in LM_DATASETS
@@ -67,7 +72,13 @@ def _generate_synthetic_batch(
         labels[:, :-1] = input_ids[:, 1:]
         labels[:, -1] = -100
     else:
-        labels = torch.randint(0, num_labels, (batch_size,), dtype=torch.long, device=device)
+        labels = torch.randint(
+            0,
+            num_labels,
+            (batch_size,),
+            dtype=torch.long,
+            generator=generator,
+        ).to(device)
 
     return {
         "input_ids": input_ids,

@@ -75,6 +75,7 @@ class LocalTracker(BaseTracker):
         )
         self.params_file = os.path.join(self.log_dir, f"{experiment_name}_{timestamp}_params.json")
         self.metrics = []
+        self.params: dict[str, Any] = {}
 
     def log_metric(self, name: str, value: float, step: int | None = None) -> None:
         """Log metric."""
@@ -90,8 +91,9 @@ class LocalTracker(BaseTracker):
 
     def log_params(self, params: dict[str, Any]) -> None:
         """Log params."""
+        self.params.update(params)
         with open(self.params_file, "w") as f:
-            json.dump(params, f, indent=2)
+            json.dump(self.params, f, indent=2)
 
     def log_artifact(self, local_path: str) -> None:
         """Log artifact."""
