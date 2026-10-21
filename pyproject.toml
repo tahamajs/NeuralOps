@@ -106,6 +106,12 @@ eval = [
     "lm-eval>=0.4.0",
 ]
 
+# Standalone model-backed evaluation experiments
+evaluation-experiments = [
+    "transformers>=4.40.0",
+    "numpy>=1.24.0",
+]
+
 # Benchmarking
 benchmark = [
     "matplotlib",
@@ -168,7 +174,7 @@ neuralops = "neuralops.benchmarks.cli:main"
 neuralops-cli = "neuralops.benchmarks.cli:main"
 nops = "neuralops.benchmarks.cli:main"
 nops-cli = "neuralops.benchmarks.cli:main"
-neuralops-eval = "neuralops.experiments.evaluation.cli:main"
+neuralops-eval = "neuralops.evaluation.standalone.cli:main"
 
 [project.entry-points."vllm.general_plugins"]
 neuralops_vllm = "neuralops.integrations.vllm:register_neuralops_vllm_plugin"

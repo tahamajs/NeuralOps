@@ -40,7 +40,7 @@ def main() -> None:
     arithmetic_prompts = [
         {
             "id": "synthetic_arithmetic_01",
-            "topic": "Compound Interest & Budgeting",
+            "topic": "Sequential Inventory Accounting",
             "prompt": (
                 "A warehouse starts with 450 crates. During month 1 it receives 120 and ships 85. "
                 "During month 2 it receives 150 and ships 110. During month 3 it sells 40 percent "

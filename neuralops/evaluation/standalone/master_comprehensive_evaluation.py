@@ -259,7 +259,12 @@ def main():
     parser.add_argument("--context-lengths", nargs="+", type=int, default=[512, 1024, 2048, 4096])
     args = parser.parse_args()
 
+    if not args.context_lengths or any(length <= 0 for length in args.context_lengths):
+        parser.error("--context-lengths must contain positive integers")
+
     device = torch.device(args.device)
+    if device.type == "cuda" and not torch.cuda.is_available():
+        parser.error(f"CUDA device {device} was requested, but CUDA is unavailable")
     logger.info(
         f"Initialized Master Evaluation Harness on {device} ({torch.cuda.get_device_name(device) if device.type == 'cuda' else 'CPU'})"
     )
@@ -452,6 +457,7 @@ def main():
             "device_name": torch.cuda.get_device_name(device) if device.type == "cuda" else "CPU",
             "cuda_version": torch.version.cuda if torch.cuda.is_available() else None,
         },
+        "evaluation_input": "repeated synthetic calibration text; not an external evaluation corpus",
         "total_evaluations": len(results_matrix),
         "results": results_matrix,
     }
@@ -462,6 +468,7 @@ def main():
 
     md_content = generate_markdown_report(master_payload)
     out_md_path = Path(args.output_md)
+    out_md_path.parent.mkdir(parents=True, exist_ok=True)
     with open(out_md_path, "w", encoding="utf-8") as f:
         f.write(md_content)
     logger.info(f"Successfully saved publication-ready Markdown report to: {out_md_path}")

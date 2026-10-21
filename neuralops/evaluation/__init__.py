@@ -18,7 +18,7 @@ _EXPORTS = {
     "evaluate_model": ("neuralops.benchmarks.eval_bridge", "evaluate_model"),
     "get_eval_bridge": ("neuralops.benchmarks.eval_bridge", "get_eval_bridge"),
     "run_comprehensive_benchmark": ("neuralops.benchmarks.eval_bridge", "run_comprehensive_benchmark"),
-    "metrics": ("neuralops.trainer.metrics", None),
+    "metrics": ("neuralops.evaluation.metrics", None),
     "get_task_metrics": ("neuralops.trainer.metrics", "get_task_metrics"),
     "probe_optimal_batch_size": ("neuralops.evaluation.eval_pipeline", "probe_optimal_batch_size"),
     "ABTester": ("neuralops.evaluation.ab_testing", "ABTester"),
