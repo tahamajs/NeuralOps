@@ -87,44 +87,30 @@ class _BaseAutoNeuralOps:
             hf_loader = cls._HF_CLASS
 
         logger.info("AutoNeuralOps: Loading base model '%s'", pretrained_model_name_or_path)
-        if hf_loader is not None:
-            try:
-                model = hf_loader.from_pretrained(pretrained_model_name_or_path, *model_args, **kwargs)
-            except Exception as e:
-                logger.debug("HF loader exception (%s), falling back to toy transformer fallback.", e)
-                model = nn.Sequential(nn.Linear(64, 64))
-        else:
-            model = nn.Sequential(nn.Linear(64, 64))
+        if hf_loader is None:
+            raise ImportError(
+                "Transformers is required to load a pretrained model. Install it with "
+                "`pip install transformers`; NeuralOps will not substitute random weights."
+            )
+        model = hf_loader.from_pretrained(pretrained_model_name_or_path, *model_args, **kwargs)
 
         if recipe is not None:
-            try:
-                from neuralops.recipes import oneshot
-                return oneshot(model, recipe=recipe)
-            except Exception as e:
-                logger.debug("oneshot recipe failed or not found: %s", e)
+            from neuralops.recipes import oneshot
+            model = oneshot(model, recipe=recipe)
 
         if attn_to_use is not None:
-            try:
-                from neuralops.api import replace_attention
-                model = replace_attention(model, attention=attn_to_use, rank=rank)
-            except Exception:
-                model = patch_model_attention(model, attention_type=attn_to_use, rank=rank)
+            from neuralops.api import replace_attention
+            model = replace_attention(model, attention=attn_to_use, rank=rank)
 
         if compressor is not None:
-            try:
-                from neuralops.api import compress
-                model = compress(model, method=compressor, rank=rank, rank_ratio=rank_ratio)
-            except Exception as e:
-                logger.debug("compress failed: %s", e)
+            from neuralops.api import compress
+            model = compress(model, method=compressor, rank=rank, rank_ratio=rank_ratio)
 
         if peft_recovery is not None:
             peft_str = peft_recovery.lower()
             if "pissa" in peft_str:
-                try:
-                    from neuralops.trainer.peft_recovery.svd_adapters import inject_pissa_adapters
-                    inject_pissa_adapters(model, rank=rank or 16)
-                except Exception as e:
-                    logger.debug("inject_pissa_adapters exception: %s", e)
+                from neuralops.trainer.peft_recovery.svd_adapters import inject_pissa_adapters
+                inject_pissa_adapters(model, rank=rank or 16)
 
         return model
 

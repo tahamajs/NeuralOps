@@ -200,9 +200,24 @@ def export_serving_bundle(
     Exports a validated, deployment-ready serving bundle for production engines (vLLM, TGI, SGLang, TRT-LLM).
     Generates serving_manifest.json, weights (model.safetensors), and target-engine metadata.
     """
+    backend = target_backend.lower().strip()
+    backend_aliases = {
+        "vllm": "vllm",
+        "tgi": "tgi",
+        "sglang": "sglang",
+        "tensorrt_llm": "tensorrt_llm",
+        "trt_llm": "tensorrt_llm",
+        "trt": "tensorrt_llm",
+    }
+    if backend not in backend_aliases:
+        supported = ", ".join(sorted(backend_aliases))
+        raise ValueError(f"Unsupported serving backend {target_backend!r}. Choose one of: {supported}.")
+    backend = backend_aliases[backend]
+    if max_batch_size <= 0 or max_sequence_length <= 0:
+        raise ValueError("max_batch_size and max_sequence_length must be positive integers.")
+
     out_p = Path(output_dir)
     out_p.mkdir(parents=True, exist_ok=True)
-    backend = target_backend.lower().strip()
 
     try:
         from safetensors.torch import save_file

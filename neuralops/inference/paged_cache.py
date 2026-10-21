@@ -44,6 +44,14 @@ class PagedKVCache:
         dtype: torch.dtype = torch.float32,
         device: str | torch.device = "cpu",
     ) -> None:
+        for name, value in (
+            ("num_blocks", num_blocks),
+            ("block_size", block_size),
+            ("num_heads", num_heads),
+            ("head_dim", head_dim),
+        ):
+            if not isinstance(value, int) or isinstance(value, bool) or value <= 0:
+                raise ValueError(f"{name} must be a positive integer, got {value!r}.")
         self.num_blocks = num_blocks
         self.block_size = block_size
         self.num_heads = num_heads
@@ -82,7 +90,7 @@ class PagedKVCache:
         if parent_seq_id not in self.block_tables:
             raise KeyError(f"Parent sequence {parent_seq_id} not registered.")
         if child_seq_id in self.block_tables:
-            self.free_sequence(child_seq_id)
+            raise ValueError(f"Child sequence {child_seq_id} already exists.")
 
         parent_blocks = self.block_tables[parent_seq_id]
         for b in parent_blocks:
@@ -97,7 +105,14 @@ class PagedKVCache:
         Executes Copy-on-Write for a shared physical block.
         Allocates a free block, copies block data, updates ref counts, and updates block table.
         """
-        if self.block_ref_counts.get(block_idx, 0) <= 1:
+        if seq_id not in self.block_tables:
+            raise KeyError(f"Sequence {seq_id} not registered.")
+        if block_idx not in self.block_tables[seq_id]:
+            raise ValueError(f"Block {block_idx} is not mapped by sequence {seq_id}.")
+        ref_count = self.block_ref_counts.get(block_idx, 0)
+        if ref_count <= 0:
+            raise RuntimeError(f"Block {block_idx} has no live references.")
+        if ref_count == 1:
             return block_idx
 
         if not self.free_blocks:
@@ -128,7 +143,7 @@ class PagedKVCache:
                         del self.block_ref_counts[b]
                         self.free_blocks.append(b)
                 else:
-                    self.free_blocks.append(b)
+                    raise RuntimeError(f"Block {b} is mapped but has no reference count.")
             del self.block_tables[seq_id]
             del self.seq_lengths[seq_id]
 
@@ -139,6 +154,12 @@ class PagedKVCache:
         value: torch.Tensor,
     ) -> None:
         """Appends a single token key and value to sequence's cache, honoring Copy-on-Write."""
+        expected_shape = (self.num_heads, self.head_dim)
+        if tuple(key.shape) != expected_shape or tuple(value.shape) != expected_shape:
+            raise ValueError(
+                f"key and value must both have shape {expected_shape}; "
+                f"got {tuple(key.shape)} and {tuple(value.shape)}."
+            )
         if seq_id not in self.block_tables:
             self.allocate_sequence(seq_id)
 

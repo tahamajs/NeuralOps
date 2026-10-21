@@ -12,7 +12,7 @@ Tracks metrics in memory and serializes run histories to JSON format.
 """
 
 import json
-import os
+from pathlib import Path
 from typing import Any
 
 
@@ -23,28 +23,33 @@ class MetricsTracker:
         self.save_path = save_path
         self.records: list[dict[str, Any]] = []
 
-    def log(self, metrics: dict[str, Any], step: int = None) -> None:
-        """Log."""
+    def log(self, metrics: dict[str, Any], step: int | None = None) -> None:
+        """Append one metric record to the in-memory run history."""
         entry = dict(metrics)
         if step is not None:
             entry["step"] = step
         self.records.append(entry)
 
     def to_dataframe(self) -> Any:
-        """To dataframe."""
+        """Return the collected records as a pandas DataFrame."""
         import pandas as pd
 
         return pd.DataFrame(self.records)
 
     def save(self, path: str | None = None) -> None:
-        """Save."""
+        """Write records as JSON Lines for ``.jsonl`` paths, otherwise JSON."""
         p = path or self.save_path
         if p:
-            os.makedirs(os.path.dirname(p), exist_ok=True)
-            with open(p, "w") as f:
-                json.dump(self.records, f, indent=2)
+            output_path = Path(p)
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            with output_path.open("w", encoding="utf-8") as output_file:
+                if output_path.suffix.lower() == ".jsonl":
+                    for record in self.records:
+                        output_file.write(json.dumps(record, default=str) + "\n")
+                else:
+                    json.dump(self.records, output_file, indent=2, ensure_ascii=False, default=str)
 
     def flush(self) -> None:
-        """Flush."""
+        """Persist the in-memory history when a save path was configured."""
         if self.save_path:
             self.save(self.save_path)
