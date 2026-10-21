@@ -5,51 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Tensor Decomposition Compression Engines.
-"""
+"""Tensor-decomposition compressors with lazy implementation exports."""
 
-import importlib
-import logging
+from neuralops._lazy_family import install_lazy_family
 
-__all__ = []
-
-try:
-    _m = importlib.import_module(".kronecker_compressor", __package__)
-    for _attr in dir(_m):
-        if not _attr.startswith("_"):
-            _val = getattr(_m, _attr)
-            if isinstance(_val, type):
-                globals()[_attr] = _val
-                if _attr not in __all__:
-                    __all__.append(_attr)
-except ImportError as exc:
-    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
-
-try:
-    _m = importlib.import_module(".kronecker_tt_lora", __package__)
-    for _attr in dir(_m):
-        if not _attr.startswith("_"):
-            _val = getattr(_m, _attr)
-            if isinstance(_val, type):
-                globals()[_attr] = _val
-                if _attr not in __all__:
-                    __all__.append(_attr)
-except ImportError as exc:
-    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
-
-try:
-    _m = importlib.import_module(".tt_compressor", __package__)
-    for _attr in dir(_m):
-        if not _attr.startswith("_"):
-            _val = getattr(_m, _attr)
-            if isinstance(_val, type):
-                globals()[_attr] = _val
-                if _attr not in __all__:
-                    __all__.append(_attr)
-except ImportError as exc:
-    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
-
-from neuralops.compression_engine.tensor_decomp import kronecker_compressor
-from neuralops.compression_engine.tensor_decomp import kronecker_tt_lora
-from neuralops.compression_engine.tensor_decomp import tt_compressor
+__all__ = install_lazy_family(globals())

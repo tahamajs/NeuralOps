@@ -5,77 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Experimental Compression Engines.
-"""
+"""Experimental compressors with lazy implementation exports."""
 
-import importlib
-import logging
+from neuralops._lazy_family import install_lazy_family
 
-__all__ = []
-
-try:
-    _m = importlib.import_module(".flat_llm", __package__)
-    for _attr in dir(_m):
-        if not _attr.startswith("_"):
-            _val = getattr(_m, _attr)
-            if isinstance(_val, type):
-                globals()[_attr] = _val
-                if _attr not in __all__:
-                    __all__.append(_attr)
-except ImportError as exc:
-    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
-
-try:
-    _m = importlib.import_module(".hashed_net_compressor", __package__)
-    for _attr in dir(_m):
-        if not _attr.startswith("_"):
-            _val = getattr(_m, _attr)
-            if isinstance(_val, type):
-                globals()[_attr] = _val
-                if _attr not in __all__:
-                    __all__.append(_attr)
-except ImportError as exc:
-    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
-
-try:
-    _m = importlib.import_module(".liftr", __package__)
-    for _attr in dir(_m):
-        if not _attr.startswith("_"):
-            _val = getattr(_m, _attr)
-            if isinstance(_val, type):
-                globals()[_attr] = _val
-                if _attr not in __all__:
-                    __all__.append(_attr)
-except ImportError as exc:
-    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
-
-try:
-    _m = importlib.import_module(".lillama_compressor", __package__)
-    for _attr in dir(_m):
-        if not _attr.startswith("_"):
-            _val = getattr(_m, _attr)
-            if isinstance(_val, type):
-                globals()[_attr] = _val
-                if _attr not in __all__:
-                    __all__.append(_attr)
-except ImportError as exc:
-    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
-
-try:
-    _m = importlib.import_module(".roast_hashed_linear", __package__)
-    for _attr in dir(_m):
-        if not _attr.startswith("_"):
-            _val = getattr(_m, _attr)
-            if isinstance(_val, type):
-                globals()[_attr] = _val
-                if _attr not in __all__:
-                    __all__.append(_attr)
-except ImportError as exc:
-    logging.getLogger(__name__).debug("Optional family module unavailable: %s", exc)
-
-from neuralops.compression_engine.experimental import flat_llm
-from neuralops.compression_engine.experimental import hashed_net_compressor
-from neuralops.compression_engine.experimental import liftr
-from neuralops.compression_engine.experimental import lillama_compressor
-from neuralops.compression_engine.experimental import roast_hashed_linear
+__all__ = install_lazy_family(globals())
