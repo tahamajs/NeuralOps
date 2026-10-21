@@ -324,3 +324,4 @@ results/benchmarks_v1.4.0/
 *.csv
 scratch/
 tmp/
+AGENTS.md

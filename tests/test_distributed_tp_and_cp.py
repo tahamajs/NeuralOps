@@ -60,7 +60,7 @@ def test_rank_parallel_svd_linear_math_and_gradient_parity():
 def test_row_parallel_svd_requires_real_process_group(monkeypatch):
     """A multi-rank row-parallel layer must not return a local partial result."""
     torch.manual_seed(42)
-    B, T, d_in, r = 2, 4, 32, 4
+    B, T, d_in, d_out, r = 2, 4, 32, 64, 4
     layer_0 = RowParallelSVDLinear(d_in, d_out, rank=r, tp_size=2, tp_rank=0, bias=False)
     monkeypatch.setattr(dist, "is_initialized", lambda: False)
     with pytest.raises(RuntimeError, match="initialized"):
