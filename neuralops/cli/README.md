@@ -1,13 +1,13 @@
 # NeuralOps Command-Line Interface (CLI) Suite
 
-Production-grade command-line interface for the NeuralOps deep learning and high-throughput attention optimization framework (v1.4.2).
+Command-line interface for the NeuralOps deep learning and attention optimization framework (v1.5.0).
 
 ## Canonical Inventory
 - **Attention Mechanisms:** 131 registered modules across 11 mathematical families
 - **Compression Engines:** 72 registered algorithms across 7 mathematical families
 - **Triton Kernel Modules:** 26 specialized JIT-compiled kernel operators
 - **CUDA Kernel Implementations:** 114 accelerated C++/CUDA kernel implementations
-- **Framework Version:** 1.4.2
+- **Framework Version:** 1.5.0
 
 ---
 
@@ -78,42 +78,40 @@ neuralops eval --model gpt2 --dataset sst2 --metrics perplexity,throughput,laten
 Compress model weights via Singular Value Decomposition (SVD), low-rank factorization, quantization, and structured pruning.
 
 ```bash
-# Truncated SVD compression to target rank
-neuralops compress --model gpt2 --compressor svd_truncated --rank 32 --output-dir results/compressed_gpt2
+# Direct SVD compression to a target rank
+neuralops compress --model gpt2 --compressor direct_svd --rank 32 --output-dir results/compressed_gpt2
 
-# Compression to target parameter ratio
-neuralops compress --model gpt2 --compressor hadamard_incoherent_svd --target-ratio 0.5 --output-dir results/compressed_hadamard
+# Select a rank fraction for the direct-SVD family
+neuralops compress --model gpt2 --compressor direct_svd --target-ratio 0.5 --output-dir results/compressed_svd
 ```
 
 **Key Arguments:**
 - `--model`: Base model identifier or path.
-- `--compressor`: Target algorithm from the 72 registered compressors (e.g. `svd_truncated`, `rpca_sparse`, `tensor_train`, `w4a16`).
+- `--compressor`: Registered algorithm (for example, `direct_svd`, `rpca_compressor`, or `tt_compressor`).
 - `--rank`: Target rank for low-rank factorization.
-- `--target-ratio`: Target parameter ratio (e.g. 0.5 for 50% parameter reduction).
+- `--target-ratio`: Rank fraction for `direct_svd` and its aliases; it does not guarantee the same model-wide parameter reduction. Other compressors reject this option rather than silently ignoring it.
 - `--output-dir`: Output directory for compressed weights and manifest.
 - `--json`: Output compression metrics as JSON.
 
 ---
 
 ### 4. `neuralops serve`
-Launch high-throughput continuous batching inference server with PagedKVCache and self-speculative draft decoding.
+Launch a basic OpenAI-compatible HTTP API backed by a pretrained Hugging Face causal language model. This command uses ordinary `generate()` calls; continuous batching, PagedKVCache, and speculative decoding are not wired into this CLI server.
 
 ```bash
-# Continuous batching server
-neuralops serve --model gpt2 --host 0.0.0.0 --port 8000 --max-batch-size 32
-
-# Speculative draft decoding
-neuralops serve --model gpt2 --draft-model distilgpt2 --host 0.0.0.0 --port 8000 --kv-cache-pages 32
+# Start the HTTP server
+neuralops serve --model gpt2 --host 127.0.0.1 --port 8000
 ```
 
 **Key Arguments:**
 - `--model`: Primary model identifier or local checkpoint path.
 - `--host`: Network interface to bind (default: `0.0.0.0`).
 - `--port`: Network port to listen on (default: `8000`).
-- `--draft-model` / `--speculative-draft`: Draft model for speculative draft-and-verify generation.
-- `--max-batch-size`: Maximum concurrent in-flight sequences.
-- `--kv-cache-pages`: Page/block allocation size for PagedKVCache.
-- `--engine`: Serving engine (`continuous_batcher`, `fastapi`, `paged_kv`).
+- `--engine`: Currently implemented engine: `fastapi`.
+
+The serving adapter requires FastAPI, Uvicorn, and Transformers. Use vLLM or another dedicated serving engine when continuous batching or production scheduling is required.
+
+Install the optional server dependencies with `pip install 'neuralops[serving]'`.
 
 ---
 

@@ -471,7 +471,10 @@ class Registry:
             return
         if self.name == "compressors":
             try:
-                import neuralops.compression_engine  # noqa: F401
+                import importlib
+
+                for subpackage in ("experimental", "kv_cache", "low_rank", "pruning", "quantization", "svd", "tensor_decomp"):
+                    importlib.import_module(f"neuralops.compression_engine.{subpackage}")
                 self._loaded = True
             except Exception as e:
                 import os
@@ -481,7 +484,10 @@ class Registry:
                 logger.warning("Error loading compression_engine: %s", e)
         elif self.name == "attentions":
             try:
-                import neuralops.attentions  # noqa: F401
+                import importlib
+
+                for subpackage in ("adaptive", "dense", "experimental", "fast_kernels", "gated", "hybrid", "linear", "modern", "sparse", "ssm", "svd"):
+                    importlib.import_module(f"neuralops.attentions.{subpackage}")
                 try:
                     import neuralops.trainer.ttt.test_time_trainer  # noqa: F401
                 except Exception:

@@ -22,10 +22,7 @@ from pathlib import Path
 import sys
 import time
 
-import torch
 from neuralops import __version__
-from neuralops.benchmarks.discovery import discover_all_modules
-from neuralops.benchmarks.api import Runner
 
 try:
     from rich.console import Console
@@ -245,11 +242,11 @@ def _build_parser() -> argparse.ArgumentParser:
     search_p.add_argument("--output-json", type=str, default=None, help="Optional output JSON path for allocated ranks")
     search_p.add_argument("--save-compressed", type=str, default=None, help="Directory to save the compressed model")
 
-    comp_p = subparsers.add_parser("compress", help="Compress a model using SVD, W4A16, Hadamard, or any registered compressor")
+    comp_p = subparsers.add_parser("compress", help="Compress a model using a registered compression engine")
     comp_p.add_argument("--model", type=str, required=True, help="Base model name or path (e.g. gpt2, roberta-base)")
-    comp_p.add_argument("--compressor", "--method", "--engine", dest="compressor", type=str, default="svd_truncated", help="Target compressor from the 72 registered engines")
+    comp_p.add_argument("--compressor", "--method", "--engine", dest="compressor", type=str, default="direct_svd", help="Target compressor from the registered engines (default: direct_svd)")
     comp_p.add_argument("--rank", "--target-rank", dest="rank", type=int, default=32, help="Target rank for low-rank SVD compression")
-    comp_p.add_argument("--target-ratio", "--ratio", dest="target_ratio", type=float, default=None, help="Target compression ratio")
+    comp_p.add_argument("--target-ratio", "--ratio", dest="target_ratio", type=float, default=None, help="Direct-SVD rank fraction (not a guaranteed model-wide parameter ratio)")
     comp_p.add_argument("--save-dir", "--output-dir", dest="output_dir", type=str, default=None, help="Directory to save compressed weights")
     comp_p.add_argument("--device", type=str, default=None, help="Hardware device (cuda/mps/cpu)")
     comp_p.add_argument("--json", action="store_true", help="Output compression metrics as JSON")
@@ -268,8 +265,8 @@ def _build_parser() -> argparse.ArgumentParser:
     niah_p.add_argument("--needle-depths", type=str, default="0.1,0.3,0.5,0.7,0.9", help="Comma-separated needle depths (0.0 to 1.0)")
     niah_p.add_argument("--output-plot", type=str, default="paper/figures/fig_niah_passkey_heatmap.png", help="Path to save 2D heatmap")
 
-    fuse_p = subparsers.add_parser("benchmark-fused", help="Benchmark fused Triton kernels (W4A16, RoPE, State-Update, Loss)")
-    fuse_p.add_argument("--kernel", choices=["w4a16", "rope", "state_update", "loss", "all"], default="all", help="Target kernel to benchmark")
+    fuse_p = subparsers.add_parser("benchmark-fused", help="Benchmark fused W4A16 and recurrent-state Triton kernels")
+    fuse_p.add_argument("--kernel", choices=["w4a16", "state_update", "all"], default="all", help="Implemented fused kernel benchmark")
     fuse_p.add_argument("--batch-size", type=int, default=4, help="Batch size")
     fuse_p.add_argument("--seq-len", type=int, default=128, help="Sequence length")
     fuse_p.add_argument("--dim", type=int, default=768, help="Hidden dimension")
@@ -402,14 +399,9 @@ def _build_parser() -> argparse.ArgumentParser:
     eval_p.add_argument("--json", "--output-json", dest="output_json", action="store_true", help="Output JSON results")
     eval_p.add_argument("--output-file", type=str, default=None, help="Destination JSON results file")
 
-    serve_p = subparsers.add_parser("serve", help="Launch NeuralOps high-throughput serving engine (continuous batching & PagedKVCache)")
-    serve_p.add_argument("--host", type=str, default="0.0.0.0", help="Host interface to bind")
-    serve_p.add_argument("--port", type=int, default=8000, help="Port to listen on")
-    serve_p.add_argument("--model", type=str, default="gpt2", help="Pre-loaded model identifier or local checkpoint path")
-    serve_p.add_argument("--draft-model", "--speculative-draft", dest="draft_model", type=str, default=None, help="Draft model for speculative decoding")
-    serve_p.add_argument("--engine", choices=["continuous_batcher", "fastapi", "paged_kv"], default="continuous_batcher", help="Serving engine runtime")
-    serve_p.add_argument("--max-batch-size", type=int, default=16, help="Maximum in-flight batch size")
-    serve_p.add_argument("--kv-cache-pages", "--block-size", "--kv-page-size", dest="block_size", type=int, default=16, help="Paged cache token block size")
+    from neuralops.cli.serve_cmd import build_serve_parser
+
+    serve_p = build_serve_parser(subparsers.add_parser("serve"))
 
     test_p = subparsers.add_parser("test", help="Run fast diagnostic test suites, kernel verification, and attention surgery integrity")
     test_p.add_argument("--all", action="store_true", help="Execute all diagnostic suites (health, kernels, surgery, eval)")
@@ -549,6 +541,8 @@ def handle_verify(args: argparse.Namespace) -> None:
 
 
 def handle_results(args: argparse.Namespace) -> None:
+    from neuralops.benchmarks.api import Runner
+
     runner = Runner(output_dir=args.output_dir)
     df = runner.summary()
     if df.empty:
@@ -636,6 +630,8 @@ def handle_run(args: argparse.Namespace) -> None:
     ranks = [int(r.strip()) for r in args.ranks.split(",")] if args.ranks else args.rank
     models = [m.strip() for m in args.models.split(",")] if args.models else args.model
     datasets = [d.strip() for d in args.datasets.split(",")] if args.datasets else args.dataset
+
+    from neuralops.benchmarks.api import Runner
 
     runner = Runner(
         modules=mods,
@@ -784,6 +780,8 @@ def handle_compress(args: argparse.Namespace) -> int:
 
 def handle_generate(args: argparse.Namespace) -> int:
     """Runs autoregressive text generation with self-speculative draft-and-verify decoding."""
+    import torch
+    import time
     from transformers import AutoModelForCausalLM, AutoTokenizer
     from neuralops.inference.speculative_decoding import SelfSpeculativeDecoder
 
@@ -829,15 +827,13 @@ def handle_generate(args: argparse.Namespace) -> int:
 
 def handle_niah(args: argparse.Namespace) -> int:
     """Runs Needle-In-A-Haystack retrieval evaluation and produces a 2D passkey heatmap."""
-    try:
-        from neuralops.evaluation.niah_passkey import NeedleInAHaystackEvaluator, plot_niah_heatmap
-    except ImportError:
-        from neuralops.evaluation.niah_passkey import NeedleInAHaystackEvaluator, plot_niah_heatmap
+    from neuralops.evaluation.niah_passkey import NeedleInAHaystackEvaluator, plot_niah_heatmap
 
     print(f"Loading model '{args.model}' for Needle-In-A-Haystack Passkey neuralops.evaluation...")
+    import torch
     from transformers import AutoTokenizer, AutoModelForCausalLM
     tokenizer = AutoTokenizer.from_pretrained(args.model)
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    device = "cuda" if torch.cuda.is_available() else ("mps" if torch.backends.mps.is_available() else "cpu")
     model = AutoModelForCausalLM.from_pretrained(args.model).to(device)
 
     ctx_lengths = [int(x.strip()) for x in args.context_lengths.split(",")]
@@ -872,7 +868,7 @@ def handle_benchmark_fused(args: argparse.Namespace) -> int:
     print(f"Benchmarking Fused Triton Kernels (kernel={args.kernel}, B={args.batch_size}, L={args.seq_len}, D={args.dim})...")
     device = "cuda" if torch.cuda.is_available() else "cpu"
     if device != "cuda":
-        print("[-] Fused Triton benchmarks require a CUDA GPU. PyTorch fallbacks will be used.")
+        raise RuntimeError("Fused Triton timing requires a CUDA GPU; no CPU fallback timing is reported.")
 
     if args.kernel in ("w4a16", "all"):
         from neuralops.core.triton_kernels.low_rank import BitPackedW4A16Linear
@@ -1088,6 +1084,7 @@ def _dispatch(args: argparse.Namespace) -> int:
         runner = Runner(output_dir=args.output_dir, resume=True)
         runner.resume()
     elif args.subcommand == "transplant":
+        import torch
         from neuralops import transplant_attention, load_model
         print(f"[+] Loading model '{args.model}' for attention transplantation...")
         model = load_model(args.model)

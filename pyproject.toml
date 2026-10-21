@@ -70,6 +70,12 @@ eval = [
     "lm-eval>=0.4.0",
 ]
 
+serving = [
+    "transformers>=4.40.0",
+    "fastapi>=0.110.0",
+    "uvicorn[standard]>=0.27.0",
+]
+
 evaluation-experiments = [
     "transformers>=4.40.0",
     "numpy>=1.24.0",

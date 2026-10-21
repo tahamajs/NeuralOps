@@ -10,12 +10,9 @@ NeuralOps Compression Engines.
 """
 
 import importlib
-import logging
 import sys
 
 from neuralops.core.registry import COMPRESSOR_REGISTRY
-
-logger = logging.getLogger(__name__)
 
 __all__ = ["COMPRESSOR_REGISTRY"]
 
@@ -63,12 +60,13 @@ class _LegacyCompLoader(Loader):
         sys.modules[self.fullname] = alias_mod
         try:
             target_mod = _get_target_module(self.leaf)
-            if target_mod is not None:
-                alias_mod.__dict__.update(target_mod.__dict__)
-                sys.modules[self.fullname] = target_mod
-                return target_mod
         except Exception:
-            pass
+            sys.modules.pop(self.fullname, None)
+            raise
+        if target_mod is not None:
+            alias_mod.__dict__.update(target_mod.__dict__)
+            sys.modules[self.fullname] = target_mod
+            return target_mod
         return alias_mod
     def exec_module(self, module):
         pass
@@ -83,39 +81,22 @@ class _LegacyCompFinder(MetaPathFinder):
 
 sys.meta_path.insert(0, _LegacyCompFinder())
 
-for _old in list(_LEGACY_MAP.keys()) + list(_RENAMED_MODULES.keys()):
-    try:
-        _mod = _get_target_module(_old)
-        if _mod is not None:
-            sys.modules[f"{__name__}.{_old}"] = _mod
-    except Exception as _e:
-        logger.debug(f"Initial legacy mapping deferred for {_old}: {_e}")
-
 def __getattr__(name):
+    if name.startswith("_"):
+        raise AttributeError(f"module '{__name__}' has no attribute {name!r}")
+    if name in _SUBPACKAGES:
+        module = importlib.import_module(f".{name}", __package__)
+        globals()[name] = module
+        return module
     if name in _LEGACY_MAP or name in _RENAMED_MODULES:
         mod = _get_target_module(name)
         if mod is not None:
             globals()[name] = mod
             return mod
-    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
-
-for _sub in _SUBPACKAGES:
-    try:
-        _submod = importlib.import_module(f".{_sub}", __package__)
-        for _attr in dir(_submod):
-            if not _attr.startswith("_"):
-                _val = getattr(_submod, _attr)
-                if isinstance(_val, type):
-                    globals()[_attr] = _val
-                    if _attr not in __all__:
-                        __all__.append(_attr)
-    except Exception as _e:
-        logger.debug(f"Failed importing subpackage {_sub}: {_e}")
-
-from neuralops.compression_engine import experimental
-from neuralops.compression_engine import kv_cache
-from neuralops.compression_engine import low_rank
-from neuralops.compression_engine import pruning
-from neuralops.compression_engine import quantization
-from neuralops.compression_engine import svd
-from neuralops.compression_engine import tensor_decomp
+    for subpackage in _SUBPACKAGES:
+        module = importlib.import_module(f".{subpackage}", __package__)
+        if hasattr(module, name):
+            value = getattr(module, name)
+            globals()[name] = value
+            return value
+    raise AttributeError(f"module '{__name__}' has no attribute {name!r}")
