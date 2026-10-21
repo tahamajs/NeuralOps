@@ -1,43 +1,75 @@
 include LICENSE
 include README.md
 include CHANGELOG.md
-include pyproject.toml
-include neuralops/core/deprecated_aliases.json
+include CONTRIBUTING.md
+include CITATION.cff
+include SECURITY.md
+include CODE_OF_CONDUCT.md
+include ROADMAP.md
+include requirements.txt
+include requirements.lock.txt
+include pytest.ini
+
 include neuralops/py.typed
+include neuralops/core/deprecated_aliases.json
+recursive-include neuralops *.md
 
 recursive-include neuralops *.pyi
+
 recursive-include neuralops *.cu
 recursive-include neuralops *.cuh
 recursive-include neuralops *.cpp
 recursive-include neuralops *.h
+
 recursive-include neuralops *.json
 
-recursive-exclude neuralops/data/glue_data *
-recursive-exclude neuralops/tests *
-recursive-exclude neuralops/benchmarks *
-recursive-exclude neuralops/evaluation *
-recursive-exclude neuralops/_archive *
-recursive-exclude neuralops/core/_archive *
-recursive-exclude neuralops/attentions/_legacy *
-recursive-exclude neuralops/compression_engine/_legacy *
-recursive-exclude tests *
-recursive-exclude benchmarks *
-recursive-exclude evaluation *
-recursive-exclude scripts *
-recursive-exclude results *
-recursive-exclude paper *
-recursive-exclude thesis_final *
-recursive-exclude docs *
-recursive-exclude academic *
+prune tests
+prune benchmarks
+prune evaluation
+prune scripts
+prune results
+prune paper
+prune thesis_final
+prune docs
+prune academic
+prune logs
+prune _archive
+prune neuralops/_archive
+prune neuralops/core/_archive
+prune neuralops/attentions/_legacy
+prune neuralops/compression_engine/_legacy
+prune neuralops/data/glue_data
 
-global-exclude *.arrow
-global-exclude *.parquet
-global-exclude *.h5
+prune build
+prune dist
+prune .pytest_cache
+prune .ruff_cache
+prune .mypy_cache
+prune .nox
+prune .tox
+prune htmlcov
+
 global-exclude *.pyc
 global-exclude *.pyo
+global-exclude *.pyd
 global-exclude __pycache__
+global-exclude *.so
+global-exclude *.dylib
+global-exclude *.dll
 global-exclude *.bak
 global-exclude *.err
 global-exclude *.log
 global-exclude .DS_Store
 global-exclude *.swp
+global-exclude *.tmp
+
+global-exclude *.arrow
+global-exclude *.parquet
+global-exclude *.h5
+global-exclude *.pt
+global-exclude *.pth
+global-exclude *.safetensors
+global-exclude *.bin
+global-exclude *.onnx
+global-exclude *.gguf
+global-exclude *.trt
