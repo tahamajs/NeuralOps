@@ -14,9 +14,6 @@ from __future__ import annotations
 import importlib
 import sys
 
-def _load_evaluation_package() -> Any:
-    """Load the canonical framework evaluation package."""
-    return importlib.import_module("neuralops.evaluation")
 from typing import Any, TYPE_CHECKING
 
 if TYPE_CHECKING:

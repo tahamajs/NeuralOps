@@ -1,49 +1,61 @@
 [flake8]
-# Flake8 configuration for NeuralOps
 max-line-length = 120
-max-complexity = 18
+max-complexity = 15
 show-source = True
 statistics = True
 count = True
 
-# Ignore rules compatible with Black/Ruff code formatting & PyTorch/Triton idioms:
-# E203: Whitespace before ':' (conflicts with Black slicing)
-# E402: Module level import not at top of file (needed for dynamic backend/env setup)
-# E501: Line too long (handled by Black / soft limit)
-# E731: Do not assign a lambda expression, use a def
-# W503: Line break occurred before a binary operator (PEP 8 recommends this now)
-# W504: Line break occurred after a binary operator
+# E203: conflicts with Black slicing
+# E402: needed for dynamic backend/env setup
+# E731: lambda assignment (style choice)
+# E501 is NOT ignored — max-line-length enforces it at 120
+# W503/W504: already in flake8 defaults; listed here for clarity
 extend-ignore =
     E203,
     E402,
-    E501,
     E731,
     W503,
     W504
 
-# Excluded directories and patterns:
-exclude =
-    .git,
+# Use extend-exclude to keep flake8's defaults (.git, __pycache__, .tox, .eggs, *.egg)
+extend-exclude =
     .github,
     .trunk,
     .venv,
     venv,
-    __pycache__,
+    .nox,
+    .pytest_cache,
+    .mypy_cache,
+    .ruff_cache,
+    .hypothesis,
+    .ipynb_checkpoints,
     build,
     dist,
     *.egg-info,
+    htmlcov,
+    .coverage,
+    node_modules,
     _archive,
+    _proposed,
     results,
     thesis_final,
     academic,
     paper,
     docs,
-    logs
+    logs,
+    site,
+    _build
 
-# Per-file specific ignores:
+# Per-file ignores:
+#   __init__.py: re-exports appear unused
+#   tests: broad patterns for E501/F401/F841
+#   benchmarks: same
+#   Note: fnmatch '*' does NOT cross '/', so subdirectories need explicit patterns
 per-file-ignores =
-    # __init__.py modules expose public APIs that may appear unused
     __init__.py: F401, F403
-    # Tests frequently use fixtures, broad assertions, and temporary tensors
+    conftest.py: F401
     tests/*: E501, F401, F841
+    tests/*/*: E501, F401, F841
+    tests/*/*/*: E501, F401, F841
     benchmarks/*: E501, F401, F841
+    benchmarks/*/*: E501, F401, F841

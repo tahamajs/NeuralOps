@@ -127,7 +127,7 @@ def _get_target_module(leaf):
     if target_mod is not None and not hasattr(target_mod, "_rotate_half"):
         from neuralops.core.utils.rope import _rotate_half
 
-        setattr(target_mod, "_rotate_half", _rotate_half)
+        target_mod._rotate_half = _rotate_half
     return target_mod
 
 class _LegacyAttnLoader(Loader):
