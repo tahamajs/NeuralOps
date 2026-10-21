@@ -15,6 +15,8 @@ from __future__ import annotations
 
 import json
 import logging
+import os
+import tempfile
 import warnings
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
@@ -38,8 +40,26 @@ def export_model(
 ) -> Path:
     """Export a NeuralOps-modified or compressed model to a production artifact format."""
     out_path = Path(output_dir)
-    out_path.mkdir(parents=True, exist_ok=True)
     fmt = format.lower().strip()
+    recorded_metadata = getattr(model, "_neuralops_metadata", None)
+
+    if fmt in ("gguf", "ggml"):
+        exported_attention = attention_type
+        if exported_attention is None:
+            for entry in recorded_metadata or []:
+                if (entry.get("op") or entry.get("action")) in ("replace", "replace_attention"):
+                    exported_attention = (
+                        entry.get("type") or entry.get("attention_type") or "unknown attention"
+                    )
+                    break
+        exported_attention = exported_attention or "unknown attention"
+        raise NotImplementedError(
+            f"GGUF export is not implemented for attention '{exported_attention}'; "
+            "the current exporter cannot produce a GGUF container. "
+            "Workaround: export as 'safetensors' and use a compatible external GGUF converter."
+        )
+
+    out_path.mkdir(parents=True, exist_ok=True)
 
     if kwargs.get("auto_finalize", True):
         try:
@@ -48,7 +68,6 @@ def export_model(
         except Exception as e:
             logger.debug("finalize_surgery check skipped or failed: %s", e)
 
-    recorded_metadata = getattr(model, "_neuralops_metadata", None)
     if recorded_metadata:
         for entry in recorded_metadata:
             op_action = entry.get("op") or entry.get("action")
@@ -161,6 +180,10 @@ def export_model(
 
     elif fmt == "onnx":
         onnx_file = out_path / "model.onnx"
+        with tempfile.NamedTemporaryFile(
+            prefix=".neuralops-onnx-", suffix=".onnx", dir=out_path, delete=False
+        ) as temp_file:
+            temp_onnx_file = Path(temp_file.name)
         if sample_input is None:
             sample_input = torch.randint(0, 1000, (1, 16), dtype=torch.long)
 
@@ -186,27 +209,52 @@ def export_model(
                     torch.onnx.export(
                         wrapped_model,
                         sample_input,
-                        str(onnx_file),
+                        str(temp_onnx_file),
                         opset_version=opset_version,
                         input_names=input_names,
                         output_names=output_names,
                         dynamic_axes=dynamic_axes,
                     )
-                except Exception:
-                    torch.onnx.export(
-                        wrapped_model,
-                        sample_input,
-                        str(onnx_file),
-                        opset_version=opset_version,
-                        input_names=input_names,
-                        output_names=output_names,
-                        dynamic_axes=dynamic_axes,
-                        dynamo=False,
-                    )
-        except (Exception, BaseException) as e:
-            logger.warning("ONNX conversion not supported for custom ops: %s. Writing metadata and marker stub.", e)
-            with open(onnx_file, "w") as f:
-                f.write(f"# ONNX export fallback marker: {e}\n")
+                except Exception as exporter_error:
+                    try:
+                        torch.onnx.export(
+                            wrapped_model,
+                            sample_input,
+                            str(temp_onnx_file),
+                            opset_version=opset_version,
+                            input_names=input_names,
+                            output_names=output_names,
+                            dynamic_axes=dynamic_axes,
+                            dynamo=False,
+                        )
+                    except Exception as legacy_error:
+                        temp_onnx_file.unlink(missing_ok=True)
+                        exported_attention = attention_type or "unknown attention"
+                        raise RuntimeError(
+                            f"ONNX export failed for attention '{exported_attention}': "
+                            f"default exporter error: {exporter_error}; dynamo=False fallback error: {legacy_error}. "
+                            "Workaround: export as 'safetensors' and load through the NeuralOps model path."
+                        ) from legacy_error
+        except RuntimeError:
+            temp_onnx_file.unlink(missing_ok=True)
+            raise
+        except Exception as export_error:
+            temp_onnx_file.unlink(missing_ok=True)
+            exported_attention = attention_type or "unknown attention"
+            raise RuntimeError(
+                f"ONNX export failed for attention '{exported_attention}': {export_error}. "
+                "Workaround: export as 'safetensors' and load through the NeuralOps model path."
+            ) from export_error
+
+        try:
+            os.replace(temp_onnx_file, onnx_file)
+        except OSError as publish_error:
+            temp_onnx_file.unlink(missing_ok=True)
+            exported_attention = attention_type or "unknown attention"
+            raise RuntimeError(
+                f"ONNX export succeeded but could not publish the artifact for attention '{exported_attention}': "
+                f"{publish_error}. Workaround: export to a writable local directory."
+            ) from publish_error
 
         with open(out_path / "neuralops_config.json", "w", encoding="utf-8") as f:
             json.dump(meta, f, indent=2)
@@ -234,41 +282,6 @@ def export_model(
 
         logger.info("Exported model to TorchScript: %s", ts_file)
         return ts_file
-
-    elif fmt in ("gguf", "ggml"):
-        gguf_meta_file = out_path / "gguf_metadata.json"
-        gguf_meta = {
-            "general.architecture": base_name or "llama",
-            "general.name": base_name or "neuralops-model",
-            "general.file_type": 15,
-            "neuralops.attention_type": attention_type,
-            "neuralops.compression_method": compression_method,
-            "neuralops.rank": rank,
-            "quantization.bits": kwargs.get("bits", 4),
-            "quantization.group_size": kwargs.get("group_size", 32),
-            "tensors": {
-                name: {
-                    "shape": list(p.shape),
-                    "dtype": str(p.dtype),
-                    "numel": p.numel(),
-                }
-                for name, p in model.named_parameters()
-            },
-        }
-        with open(gguf_meta_file, "w", encoding="utf-8") as f:
-            json.dump(gguf_meta, f, indent=2)
-
-        try:
-            from safetensors.torch import save_file
-            save_file(model.state_dict(), str(out_path / "model.safetensors"))
-        except Exception:
-            torch.save(model.state_dict(), out_path / "model.bin")
-
-        with open(out_path / "neuralops_config.json", "w", encoding="utf-8") as f:
-            json.dump(meta, f, indent=2)
-
-        logger.info("Exported model to GGUF metadata bundle: %s", out_path)
-        return out_path
 
     elif fmt == "awq":
         awq_file = out_path / "quant_config.json"

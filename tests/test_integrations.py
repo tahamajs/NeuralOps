@@ -185,5 +185,29 @@ def test_export_serving_bundle_and_metadata():
         assert (awq_dir / "quant_config.json").exists()
 
         gguf_dir = Path(tmpdir) / "gguf_bundle"
-        export_model(model, output_dir=gguf_dir, format="gguf")
-        assert (gguf_dir / "gguf_metadata.json").exists()
+        with pytest.raises(NotImplementedError, match="GGUF export is not implemented"):
+            export_model(model, output_dir=gguf_dir, format="gguf")
+        assert not gguf_dir.exists()
+
+
+def test_onnx_export_failure_does_not_leave_a_fake_artifact(tmp_path: Path, monkeypatch):
+    model = nn.Sequential(nn.Linear(4, 4)).eval()
+
+    def fail_export(*args, **kwargs):
+        raise ValueError("test exporter failure")
+
+    monkeypatch.setattr(torch.onnx, "export", fail_export)
+
+    with pytest.raises(RuntimeError, match="cosformer") as exc_info:
+        export_model(
+            model,
+            output_dir=tmp_path / "onnx_failure",
+            format="onnx",
+            attention_type="cosformer",
+            sample_input=torch.randn(1, 4),
+        )
+
+    failed_dir = tmp_path / "onnx_failure"
+    assert "test exporter failure" in str(exc_info.value)
+    assert not (failed_dir / "model.onnx").exists()
+    assert not list(failed_dir.glob(".neuralops-onnx-*.onnx"))
