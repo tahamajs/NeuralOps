@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from neuralops.kernels.triton import (
+from . import (
     block_sparse_streaming_attn,
     chunked_delta_gate_scan,
     cosformer_linear_attention,
@@ -28,25 +28,25 @@ from neuralops.kernels.triton import (
     strided_tt,
 )
 
-from neuralops.kernels.triton.fused_lowrank_gemm import (
+from .fused_lowrank_gemm import (
     triton_fused_lowrank_gated_gemm,
     fused_lowrank_gemm,
 )
-from neuralops.kernels.triton.rpca_sparse_gemm import triton_fused_lowrank_sparse_gemm
-from neuralops.kernels.triton.strided_tt import (
+from .rpca_sparse_gemm import triton_fused_lowrank_sparse_gemm
+from .strided_tt import (
     triton_strided_tt_contraction,
     triton_strided_tt_linear,
 )
-from neuralops.kernels.triton.fused_hadamard_w4a16_gemm import triton_fused_hadamard_w4a16_gemm
-from neuralops.kernels.triton.lut_codebook_dequant_gemm import triton_lut_codebook_dequant_gemm
-from neuralops.kernels.triton.fused_kronecker_matmul import triton_fused_kronecker_matmul
-from neuralops.kernels.triton.chunked_delta_gate_scan import triton_chunked_delta_gate_scan
-from neuralops.kernels.triton.cosformer_linear_attention import triton_cosformer_linear_attention
-from neuralops.kernels.triton.block_sparse_streaming_attn import triton_block_sparse_streaming_attn
-from neuralops.kernels.triton.hgrn2_fused_bwd_scan import triton_hgrn2_fused_bwd_scan
-from neuralops.kernels.triton.spectral_entropy_svd_gate import triton_spectral_entropy_svd_gate
-from neuralops.kernels.triton.fused_act_scale_quant_gemm import triton_fused_act_scale_quant_gemm
-from neuralops.kernels.triton.fused_latent_kv_cache_attention import (
+from .fused_hadamard_w4a16_gemm import triton_fused_hadamard_w4a16_gemm
+from .lut_codebook_dequant_gemm import triton_lut_codebook_dequant_gemm
+from .fused_kronecker_matmul import triton_fused_kronecker_matmul
+from .chunked_delta_gate_scan import triton_chunked_delta_gate_scan
+from .cosformer_linear_attention import triton_cosformer_linear_attention
+from .block_sparse_streaming_attn import triton_block_sparse_streaming_attn
+from .hgrn2_fused_bwd_scan import triton_hgrn2_fused_bwd_scan
+from .spectral_entropy_svd_gate import triton_spectral_entropy_svd_gate
+from .fused_act_scale_quant_gemm import triton_fused_act_scale_quant_gemm
+from .fused_latent_kv_cache_attention import (
     triton_fused_latent_kv_cache_attention,
 )
 
@@ -242,12 +242,7 @@ __all__ = [
 
 
 def __getattr__(name: str) -> Any:
-    """Dynamically resolve attributes from neuralops.core.triton_kernels."""
-    import neuralops.core.triton_kernels as ctk
-    if hasattr(ctk, name):
-        val = getattr(ctk, name)
-        globals()[name] = val
-        return val
+    """Raise for names not implemented or re-exported by this package."""
     raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
 
 

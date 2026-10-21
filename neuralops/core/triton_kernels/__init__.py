@@ -509,17 +509,15 @@ from neuralops.core.triton_sparse_attn import triton_block_sparse_attention
 
 
 def __getattr__(name: str) -> Any:
-    """Dynamically resolve flagship standalone modules from neuralops.kernels.triton."""
+    """Resolve specialized Triton operators from the canonical standalone package."""
     try:
-        import neuralops.kernels.triton as nkt
+        from neuralops.core.triton_kernels import standalone
 
-        if hasattr(nkt, name):
-            val = getattr(nkt, name)
-            globals()[name] = val
-            return val
+        val = getattr(standalone, name)
+        globals()[name] = val
+        return val
     except Exception:
-        pass
-    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
+        raise AttributeError(f"module '{__name__}' has no attribute '{name}'") from None
 
 
 def __dir__() -> list[str]:
