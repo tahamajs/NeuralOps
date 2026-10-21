@@ -8,8 +8,8 @@ Thank you for your interest in contributing to **NeuralOps**! We welcome contrib
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/tahamajs/SVD_linear_Attention.git
-   cd SVD_linear_Attention
+   git clone https://github.com/tahamajs/NeuralOps.git
+   cd NeuralOps
    ```
 
 2. **Create and activate a virtual environment**:
