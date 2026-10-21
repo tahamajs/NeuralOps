@@ -14,6 +14,7 @@ def main() -> None:
 
     import gc
     import os
+    import re
     import time
     import json
     import torch
@@ -41,14 +42,9 @@ def main() -> None:
             "id": "synthetic_arithmetic_01",
             "topic": "Compound Interest & Budgeting",
             "prompt": (
-                "Question: A warehouse starts with 450 crates of supplies. In month 1, they receive 120 new crates and ship out 85 crates. "
-                "In month 2, they receive 150 crates and ship out 110 crates. In month 3, they sell 40% of the remaining crates. "
-                "How many crates remain in the warehouse at the end of month 3? "
-                "Step 1: Calculate the crates after month 1: 450 + 120 - 85 = 485. "
-                "Step 2: Calculate the crates after month 2: 485 + 150 - 110 = 525. "
-                "Step 3: Calculate 40% of 525: 0.40 * 525 = 210 crates sold. "
-                "Step 4: Subtract the sold crates: 525 - 210 = 315. "
-                "Therefore, the final answer is"
+                "A warehouse starts with 450 crates. During month 1 it receives 120 and ships 85. "
+                "During month 2 it receives 150 and ships 110. During month 3 it sells 40 percent "
+                "of its remaining crates. How many crates remain after month 3? Give the final number."
             ),
             "target_number": "315",
         },
@@ -56,14 +52,8 @@ def main() -> None:
             "id": "synthetic_arithmetic_02",
             "topic": "Multi-Step Geometric Progression",
             "prompt": (
-                "Question: A bacteria culture starts with 16 cells and doubles every 3 hours. How many cells will be present after 15 hours? "
-                "Step 1: Determine the number of doubling periods: 15 / 3 = 5 periods. "
-                "Step 2: Period 1: 16 * 2 = 32. "
-                "Step 3: Period 2: 32 * 2 = 64. "
-                "Step 4: Period 3: 64 * 2 = 128. "
-                "Step 5: Period 4: 128 * 2 = 256. "
-                "Step 6: Period 5: 256 * 2 = 512. "
-                "Therefore, the final number of cells is"
+                "A bacteria culture starts with 16 cells and doubles every 3 hours. "
+                "How many cells will be present after 15 hours? Give the final number."
             ),
             "target_number": "512",
         },
@@ -71,12 +61,8 @@ def main() -> None:
             "id": "synthetic_arithmetic_03",
             "topic": "Linear Recurrence Sequence",
             "prompt": (
-                "Question: Consider a sequence defined by u_0 = 5 and u_n = 2 * u_{n-1} - 3 for n >= 1. Compute u_1, u_2, u_3, u_4: "
-                "Step 1: u_1 = 2 * 5 - 3 = 7. "
-                "Step 2: u_2 = 2 * 7 - 3 = 11. "
-                "Step 3: u_3 = 2 * 11 - 3 = 19. "
-                "Step 4: u_4 = 2 * 19 - 3 = 35. "
-                "Therefore, u_5 is computed as 2 * 35 - 3 ="
+                "A sequence is defined by u_0 = 5 and u_n = 2u_(n-1) - 3 for n >= 1. "
+                "What is u_5? Give the final number."
             ),
             "target_number": "67",
         },
@@ -84,14 +70,9 @@ def main() -> None:
             "id": "synthetic_arithmetic_04",
             "topic": "Rate & Work Proportion",
             "prompt": (
-                "Question: Machine A produces 40 parts per hour, while Machine B produces 60 parts per hour. "
-                "Together they operate for 4 hours, and then Machine A runs alone for another 3 hours. "
-                "How many total parts were produced? "
-                "Step 1: Combined production rate: 40 + 60 = 100 parts/hour. "
-                "Step 2: Production in first 4 hours: 100 * 4 = 400 parts. "
-                "Step 3: Production by Machine A alone: 40 * 3 = 120 parts. "
-                "Step 4: Total parts produced: 400 + 120 = 520. "
-                "Therefore, the total output is"
+                "Machine A produces 40 parts per hour and Machine B produces 60 parts per hour. "
+                "They work together for 4 hours, after which Machine A works alone for 3 hours. "
+                "How many parts are produced in total? Give the final number."
             ),
             "target_number": "520",
         },
@@ -162,14 +143,14 @@ def main() -> None:
             gen_text = tokenizer.decode(gen_tokens, skip_special_tokens=True).strip()
             first_emitted_token = tokenizer.decode(gen_tokens[:2], skip_special_tokens=True).strip()
 
-            continuation_contains_target = p_target in first_emitted_token or p_target in gen_text[:20]
+            exact_target_found = re.search(rf"(?<!\d){re.escape(p_target)}(?!\d)", gen_text) is not None
 
             zero_drift = (not nan_detected) and (not inf_detected)
 
             print_log(
                 f"[{name}] -> Speed: {tok_s:5.1f} tok/s | Elapsed: {elapsed_s:5.2f}s | "
                 f"Zero Drift: {zero_drift} (NaNs={nan_detected}, Infs={inf_detected}) | "
-                f"First Output: '{first_emitted_token}' | Target substring present: {continuation_contains_target}"
+                f"First Output: '{first_emitted_token}' | Exact target appears in output: {exact_target_found}"
             )
             print_log(f"VRAM Checkpoints (64, 128, 192, 256 tokens): {mem_checkpoints}")
 
@@ -189,7 +170,7 @@ def main() -> None:
                 "inf_detected": inf_detected,
                 "first_emitted_token": first_emitted_token,
                 "target_number": p_target,
-                "continuation_contains_target_substring": continuation_contains_target,
+                "exact_target_found_in_generated_text": exact_target_found,
                 "output_preview": gen_text[:120],
             }
             evaluation_matrix.append(record)

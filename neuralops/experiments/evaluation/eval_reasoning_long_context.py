@@ -136,7 +136,7 @@ def main() -> None:
                     "latency_ms": round(t_ms, 2),
                     "peak_mem_mb": round(peak_mb, 2),
                     "nan_or_inf": has_nan or has_inf,
-                    "status": "PASS",
+                    "status": "PASS" if not (has_nan or has_inf) else "NUMERICAL_FAILURE",
                 }
             except torch.cuda.OutOfMemoryError:
                 scaling_stats[L] = {"status": "OOM"}

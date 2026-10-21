@@ -110,16 +110,17 @@ def main() -> None:
                 nans = torch.isnan(out.logits).sum().item()
                 infs = torch.isinf(out.logits).sum().item()
 
+                status = "PASS" if nans == 0 and infs == 0 else "NUMERICAL_FAILURE"
                 scaling_data[L] = {
                     "latency_ms": round(latency_ms, 2),
                     "peak_vram_mb": round(peak_vram_mb, 2),
                     "nans": nans,
                     "infs": infs,
-                    "status": "PASS" if (nans == 0 and infs == 0) else "FAIL",
+                    "status": status,
                 }
                 print_log(
                     f"L={L:5d} | Latency: {latency_ms:7.2f} ms | Peak VRAM: {peak_vram_mb:8.2f} MB | "
-                    f"NaNs: {nans} | Infs: {infs} | Status: PASS"
+                    f"NaNs: {nans} | Infs: {infs} | Status: {status}"
                 )
             except torch.cuda.OutOfMemoryError:
                 print_log(f"L={L:5d} | Out of Memory (OOM)!")
