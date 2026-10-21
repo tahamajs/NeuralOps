@@ -36,6 +36,11 @@ logger = logging.getLogger("NeuralOps.OpRegistry")
 _HAS_TORCH_LIBRARY_CUSTOM_OP = hasattr(torch.library, "custom_op") and hasattr(torch.library, "register_fake")
 
 
+def _attention_output_meta(q: torch.Tensor, v: torch.Tensor) -> torch.Tensor:
+    """Construct attention output metadata from query axes and value width."""
+    return q.new_empty((*q.shape[:-1], v.shape[-1]))
+
+
 if _HAS_TORCH_LIBRARY_CUSTOM_OP:
     try:
         @torch.library.custom_op("neuralops::linear_attn", mutates_args=())
@@ -52,7 +57,7 @@ if _HAS_TORCH_LIBRARY_CUSTOM_OP:
 
         @_op_sparse_attn.register_fake
         def _op_sparse_attn_fake(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor) -> torch.Tensor:
-            return torch.empty_like(q)
+            return _attention_output_meta(q, v)
 
         @torch.library.custom_op("neuralops::low_rank", mutates_args=())
         def _op_low_rank(x: torch.Tensor, U: torch.Tensor, V: torch.Tensor) -> torch.Tensor:
@@ -92,9 +97,15 @@ if _HAS_TORCH_LIBRARY_CUSTOM_OP:
 
         @_op_gqa.register_fake
         def _op_gqa_fake(k: torch.Tensor, v: torch.Tensor, num_kv_heads: int, num_heads: int) -> Tuple[torch.Tensor, torch.Tensor]:
+            if num_kv_heads <= 0 or num_heads <= 0 or num_heads % num_kv_heads:
+                raise ValueError("num_heads must be divisible by num_kv_heads")
+            if k.ndim < 3 or v.ndim < 3 or k.shape[:-1] != v.shape[:-1]:
+                raise ValueError("GQA key and value tensors must have matching batch/sequence/head axes")
+            if k.shape[-3] != num_kv_heads:
+                raise ValueError("KV tensor head dimension does not match num_kv_heads")
             ratio = num_heads // num_kv_heads
-            k_out = k.repeat_interleave(ratio, dim=1) if k.dim() >= 3 and k.shape[1] == num_kv_heads else k
-            v_out = v.repeat_interleave(ratio, dim=1) if v.dim() >= 3 and v.shape[1] == num_kv_heads else v
+            k_out = k.repeat_interleave(ratio, dim=-3)
+            v_out = v.repeat_interleave(ratio, dim=-3)
             return k_out, v_out
 
         @torch.library.custom_op("neuralops::gdn_scan", mutates_args=())
@@ -240,7 +251,7 @@ if _HAS_TORCH_LIBRARY_CUSTOM_OP:
 
         @_op_sliding_window_attn.register_fake
         def _op_sliding_window_attn_fake(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, window_size: int = 256) -> torch.Tensor:
-            return torch.empty_like(q)
+            return _attention_output_meta(q, v)
 
         @torch.library.custom_op("neuralops::block_sparse_attn", mutates_args=())
         def _op_block_sparse_attn(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
@@ -249,7 +260,7 @@ if _HAS_TORCH_LIBRARY_CUSTOM_OP:
 
         @_op_block_sparse_attn.register_fake
         def _op_block_sparse_attn_fake(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
-            return torch.empty_like(q)
+            return _attention_output_meta(q, v)
 
         @torch.library.custom_op("neuralops::varlen_attn", mutates_args=())
         def _op_varlen_attn(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, cu_seqlens_q: torch.Tensor, cu_seqlens_k: torch.Tensor, causal: bool = False) -> torch.Tensor:
@@ -258,7 +269,7 @@ if _HAS_TORCH_LIBRARY_CUSTOM_OP:
 
         @_op_varlen_attn.register_fake
         def _op_varlen_attn_fake(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, cu_seqlens_q: torch.Tensor, cu_seqlens_k: torch.Tensor, causal: bool = False) -> torch.Tensor:
-            return torch.empty_like(q)
+            return _attention_output_meta(q, v)
 
         @torch.library.custom_op("neuralops::fused_rope", mutates_args=())
         def _op_fused_rope(q: torch.Tensor, k: torch.Tensor, cos: torch.Tensor, sin: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
@@ -316,7 +327,7 @@ if _HAS_TORCH_LIBRARY_CUSTOM_OP:
 
         @_op_paged_attn.register_fake
         def _op_paged_attn_fake(q: torch.Tensor, k_cache: torch.Tensor, v_cache: torch.Tensor, block_tables: torch.Tensor, seq_lens: torch.Tensor, block_size: int = 16) -> torch.Tensor:
-            return torch.empty_like(q)
+            return _attention_output_meta(q, v_cache)
 
         @torch.library.custom_op("neuralops::paged_recurrent_state_step", mutates_args=())
         def _op_paged_recurrent_state_step(q_t: torch.Tensor, k_t: torch.Tensor, v_t: torch.Tensor, page_pool: torch.Tensor, block_tables: torch.Tensor, page_slot: int = 0, decay: float = 1.0) -> torch.Tensor:
@@ -325,7 +336,7 @@ if _HAS_TORCH_LIBRARY_CUSTOM_OP:
 
         @_op_paged_recurrent_state_step.register_fake
         def _op_paged_recurrent_state_step_fake(q_t: torch.Tensor, k_t: torch.Tensor, v_t: torch.Tensor, page_pool: torch.Tensor, block_tables: torch.Tensor, page_slot: int = 0, decay: float = 1.0) -> torch.Tensor:
-            return torch.empty_like(q_t)
+            return _attention_output_meta(q_t, v_t)
 
         _CUSTOM_OPS_REGISTERED = True
     except (RuntimeError, ValueError, AttributeError) as exc:

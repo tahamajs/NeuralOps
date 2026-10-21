@@ -720,7 +720,7 @@ def calibrate_attention_subspace(
     )
 
 
-def heal_replaced_model(
+def _heal_replaced_model_impl(
     teacher_model: nn.Module,
     student_model: nn.Module,
     calibration_inputs: Union[torch.Tensor, Sequence[torch.Tensor], Dict[str, torch.Tensor]],
@@ -994,6 +994,38 @@ def heal_replaced_model(
             pass
 
     return out_stats
+
+
+def heal_replaced_model(
+    teacher_model: nn.Module,
+    student_model: nn.Module,
+    calibration_inputs: Union[torch.Tensor, Sequence[torch.Tensor], Dict[str, torch.Tensor]],
+    steps: int = 30,
+    lr: float = 2e-3,
+    weight_decay: float = 1e-4,
+    cosine_weight: float = 0.5,
+    also_ridge_init: bool = True,
+    device: Optional[Union[str, torch.device]] = None,
+    log_to_ledger: bool = True,
+) -> Dict[str, Any]:
+    """Heal surgically replaced layers while restoring each parameter's trainability."""
+    requires_grad = {parameter: parameter.requires_grad for parameter in student_model.parameters()}
+    try:
+        return _heal_replaced_model_impl(
+            teacher_model=teacher_model,
+            student_model=student_model,
+            calibration_inputs=calibration_inputs,
+            steps=steps,
+            lr=lr,
+            weight_decay=weight_decay,
+            cosine_weight=cosine_weight,
+            also_ridge_init=also_ridge_init,
+            device=device,
+            log_to_ledger=log_to_ledger,
+        )
+    finally:
+        for parameter, was_trainable in requires_grad.items():
+            parameter.requires_grad_(was_trainable)
 
 
 __all__ = [

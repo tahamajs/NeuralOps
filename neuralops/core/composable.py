@@ -111,7 +111,8 @@ class ComposableAttention(nn.Module):
         self.head_dim = embed_dim // num_heads
         self.projection_type = projection.lower()
         self.positional_type = positional.lower()
-        self.kernel_map_type = kernel_map.lower()
+        self.kernel_map_fn = kernel_map if callable(kernel_map) else None
+        self.kernel_map_type = "callable" if self.kernel_map_fn is not None else kernel_map.lower()
         self.mask_type = mask.lower()
         self.engine = engine.lower()
         self.scale = 1.0 / math.sqrt(self.head_dim)
@@ -209,11 +210,15 @@ class ComposableAttention(nn.Module):
         return q, k
 
     def _apply_kernel(self, t: torch.Tensor) -> torch.Tensor:
+        if self.kernel_map_fn is not None:
+            return self.kernel_map_fn(t)
         if self.kernel_map_type in _CUSTOM_KERNELS:
             custom_fn = _CUSTOM_KERNELS[self.kernel_map_type]
             return custom_fn(t)
         elif "elu" in self.kernel_map_type:
             return F.elu(t.float()) + 1.0
+        elif self.kernel_map_type == "relu":
+            return F.relu(t)
         elif "cosformer" in self.kernel_map_type or "cos" in self.kernel_map_type:
             t_relu = F.relu(t.float())
             L = t.shape[-2]
@@ -241,7 +246,11 @@ class ComposableAttention(nn.Module):
 
         is_causal = "causal" in self.mask_type or self.window_size > 0 or "chunked_scan" in self.engine
 
-        if self.kernel_map_type in _CUSTOM_KERNELS or self.kernel_map_type in ("elu", "elu+1", "cosformer", "cos"):
+        if (
+            self.kernel_map_fn is not None
+            or self.kernel_map_type in _CUSTOM_KERNELS
+            or self.kernel_map_type in ("elu", "elu+1", "relu", "cosformer", "cos")
+        ):
             q_k = self._apply_kernel(q)
             k_k = self._apply_kernel(k)
         else:
@@ -281,13 +290,13 @@ class ComposableAttention(nn.Module):
         if "sliding_window" in self.mask_type and q.is_cuda and self.sink_tokens == 0:
             try:
                 from neuralops.core.triton_kernels.sliding_window import sliding_window_triton
-                context = sliding_window_triton(q, k, v, window_size=self.window_size)
+                context = sliding_window_triton(q_k, k_k, v, window_size=self.window_size)
                 out = self.out_proj(context.transpose(1, 2).contiguous().view(B, N, D))
                 return out
             except Exception:
                 pass
 
-        scores = torch.matmul(q, k.transpose(-2, -1).contiguous()) * self.scale
+        scores = torch.matmul(q_k, k_k.transpose(-2, -1).contiguous()) * self.scale
 
         if self.alibi_slopes is not None:
             pos = torch.arange(N, device=q.device, dtype=torch.float32)
@@ -374,7 +383,7 @@ class ComposableAttention(nn.Module):
 def compose_attention(
     projection: str = "dense",
     positional: str = "none",
-    kernel_map: str = "softmax",
+    kernel_map: str | Callable[[torch.Tensor], torch.Tensor] = "softmax",
     mask: str = "causal",
     engine: str = "sdpa",
     embed_dim: int = 768,

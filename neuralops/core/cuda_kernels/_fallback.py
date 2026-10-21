@@ -14,6 +14,7 @@ Runtime dispatcher managing three-level fallback across native CUDA, Triton JIT,
 from __future__ import annotations
 
 import contextlib
+import contextvars
 import logging
 from typing import Any, Callable, Generator
 
@@ -21,7 +22,9 @@ import torch
 
 logger = logging.getLogger(__name__)
 
-_FORCED_BACKEND: str = "auto"
+_FORCED_BACKEND: contextvars.ContextVar[str] = contextvars.ContextVar(
+    "neuralops_forced_backend", default="auto"
+)
 FORCE_PYTORCH_FALLBACK: bool = False
 
 _LAST_DISPATCH_BACKEND: dict[str, str] = {}
@@ -48,14 +51,13 @@ def force_kernel_backend(backend: str) -> Generator[None, None, None]:
     Context manager to force kernel execution backend.
     Supported backends: 'auto', 'cuda', 'triton', 'pytorch'.
     """
-    global _FORCED_BACKEND
-    prev = _FORCED_BACKEND
-    assert backend in ("auto", "cuda", "triton", "pytorch"), f"Unknown backend: {backend}"
-    _FORCED_BACKEND = backend
+    if backend not in ("auto", "cuda", "triton", "pytorch"):
+        raise ValueError(f"Unknown backend: {backend}")
+    token = _FORCED_BACKEND.set(backend)
     try:
         yield
     finally:
-        _FORCED_BACKEND = prev
+        _FORCED_BACKEND.reset(token)
 
 
 def get_dispatch_stats() -> dict[str, int]:
@@ -98,14 +100,35 @@ class _AutogradBridge(torch.autograd.Function):
         return out
 
     @staticmethod
-    def backward(ctx, grad_output):
+    def backward(ctx, *grad_outputs):
         saved = ctx.saved_tensors
         with torch.enable_grad():
             detached = [t.detach().requires_grad_(t.requires_grad) for t in saved]
             args, kwargs = ctx.reconstruct(detached)
             ref_out = ctx.bwd_ref_fn(*args, **kwargs)
             req_tensors = [t for t in detached if t.requires_grad]
-            grads = torch.autograd.grad(ref_out, req_tensors, grad_output, allow_unused=True)
+
+            ref_outputs = list(ref_out) if isinstance(ref_out, (tuple, list)) else [ref_out]
+            if len(ref_outputs) != len(grad_outputs):
+                raise RuntimeError(
+                    "Autograd reference output count does not match the accelerated forward output count "
+                    f"({len(ref_outputs)} != {len(grad_outputs)})."
+                )
+
+            active_outputs = [
+                (output, grad)
+                for output, grad in zip(ref_outputs, grad_outputs)
+                if isinstance(output, torch.Tensor) and output.requires_grad and grad is not None
+            ]
+            if req_tensors and active_outputs:
+                grads = torch.autograd.grad(
+                    tuple(output for output, _ in active_outputs),
+                    req_tensors,
+                    tuple(grad for _, grad in active_outputs),
+                    allow_unused=True,
+                )
+            else:
+                grads = (None,) * len(req_tensors)
 
         grad_iter = iter(grads)
         tensor_grads = tuple(next(grad_iter) if t.requires_grad else None for t in detached)
@@ -162,12 +185,17 @@ def dispatch(
     if pytorch_ref is None and pytorch_fn is not None:
         pytorch_ref = pytorch_fn
     pytorch_fn = pytorch_ref
-    if kernel_name != "unknown" and _is_first_tensor_cpu(*args, **kwargs):
+    forced = _FORCED_BACKEND.get()
+
+    if (
+        not FORCE_PYTORCH_FALLBACK
+        and forced == "auto"
+        and kernel_name != "unknown"
+        and _is_first_tensor_cpu(*args, **kwargs)
+    ):
         _DISPATCH_STATS["pytorch"] += 1
         _LAST_DISPATCH_BACKEND[kernel_name] = "pytorch"
         return pytorch_fn(*args, **kwargs)
-
-    forced = _FORCED_BACKEND
 
     if FORCE_PYTORCH_FALLBACK or forced == "pytorch":
         _DISPATCH_STATS["pytorch"] += 1
@@ -191,6 +219,7 @@ def dispatch(
                     _DISPATCH_STATS["cuda"] += 1
                     _LAST_DISPATCH_BACKEND[kernel_name] = "cuda"
                     return res
+                raise RuntimeError("implementation returned None")
             except Exception as e:
                 _DISPATCH_STATS["cuda_failures"] += 1
                 raise RuntimeError(f"[{kernel_name}] Backend forced to 'cuda', but execution failed: {e}") from e
@@ -205,6 +234,7 @@ def dispatch(
                     _DISPATCH_STATS["triton"] += 1
                     _LAST_DISPATCH_BACKEND[kernel_name] = "triton"
                     return res
+                raise RuntimeError("implementation returned None")
             except Exception as e:
                 _DISPATCH_STATS["triton_failures"] += 1
                 raise RuntimeError(f"[{kernel_name}] Backend forced to 'triton', but execution failed: {e}") from e
@@ -245,6 +275,7 @@ def dispatch(
                 _DISPATCH_STATS["cuda"] += 1
                 _LAST_DISPATCH_BACKEND[kernel_name] = "cuda"
                 return res
+            raise RuntimeError("implementation returned None")
         except Exception as e:
             _DISPATCH_STATS["cuda_failures"] += 1
             raise RuntimeError(f"[{kernel_name}] Backend forced to 'cuda', but execution failed: {e}") from e
@@ -259,6 +290,7 @@ def dispatch(
                 _DISPATCH_STATS["triton"] += 1
                 _LAST_DISPATCH_BACKEND[kernel_name] = "triton"
                 return res
+            raise RuntimeError("implementation returned None")
         except Exception as e:
             _DISPATCH_STATS["triton_failures"] += 1
             raise RuntimeError(f"[{kernel_name}] Backend forced to 'triton', but execution failed: {e}") from e

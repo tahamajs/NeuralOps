@@ -24,6 +24,7 @@ import torch.nn.functional as F
 from neuralops.core.adapters import UniversalAdapter
 from neuralops.core.amp_utils import maybe_half
 from neuralops.core.attention_mask import get_token_valid_mask
+from neuralops.core.attention_utils import apply_rotary_pos_emb
 from neuralops.core.base import BaseAttention
 from neuralops.core.common import FactorizedLinear, _cfg_get
 from neuralops.core.registry import ATTENTION_REGISTRY
@@ -436,6 +437,23 @@ class ReplaceAttention(BaseAttention):
             .transpose(1, 2)
             .contiguous()
         )
+
+        if position_embeddings is not None:
+            if (
+                not isinstance(position_embeddings, (tuple, list))
+                or len(position_embeddings) != 2
+                or not all(isinstance(value, torch.Tensor) for value in position_embeddings)
+            ):
+                raise ValueError("position_embeddings must be a (cos, sin) tensor pair")
+            cos, sin = position_embeddings
+            Q, K = apply_rotary_pos_emb(
+                Q,
+                K,
+                cos,
+                sin,
+                position_ids=kwargs.get("position_ids"),
+                past_len=int(kwargs.get("past_len", 0)),
+            )
 
         if self.num_kv_heads < self.num_heads:
             repeat = self.num_heads // self.num_kv_heads
