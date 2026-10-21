@@ -25,6 +25,25 @@ class DatasetConfig:
 
 @dataclass
 class ExperimentConfig:
+    # CLI fields used by neuralops.main and the flat default/sweep presets.
+    model_name: str = "distilbert-base-uncased"
+    task: str = "sst2"
+    dataset_name: str | None = None
+    num_labels: int = 2
+    max_len: int = 128
+    attn_type: str = "full"
+    compressor: str | None = None
+    compression_rank: int = 64
+    lr: float = 2e-5
+    grad_accum: int = 1
+    glue_base_path: str | None = None
+    exp_name: str | None = None
+    max_grad_norm: float = 1.0
+    gradient_checkpointing: bool = False
+    attn_types: list[str] = field(default_factory=lambda: ["full"])
+    seeds: list[int] = field(default_factory=lambda: [42])
+
+    # Multi-model, multi-dataset experiment fields.
     base_models: dict[str, str] = field(default_factory=lambda: {"bert": "bert-base-uncased"})
     svd_ranks: list[int] = field(default_factory=lambda: [8, 16, 32])
     datasets: list[DatasetConfig] = field(default_factory=list)
@@ -43,10 +62,6 @@ class ExperimentConfig:
     warmup_steps: int = 0
     weight_decay: float = 0.01
     mixed_precision: str = "no"
-    gradient_checkpointing: bool = (
-        False
-    )
-    max_grad_norm: float = 1.0
 
     save_checkpoint_interval: int = 10
     output_dir: str = "./results"

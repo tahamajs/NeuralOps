@@ -713,10 +713,36 @@ def main() -> None:
 
     cfg_overrides: dict[str, Any] = {}
     if getattr(args, "config", None):
-        import yaml
+        from neuralops.config.loader import (
+            load_attention_sweep_config,
+            load_experiment_config,
+            load_yaml,
+        )
 
-        with open(args.config) as f:
-            cfg_overrides = yaml.safe_load(f) or {}
+        cfg_overrides = load_yaml(args.config)
+        if args.command == "sweep":
+            load_attention_sweep_config(args.config)
+        else:
+            load_experiment_config(args.config)
+
+    if args.command == "sweep":
+        for field in (
+            "model_name",
+            "task",
+            "max_len",
+            "epochs",
+            "batch_size",
+            "lr",
+            "grad_accum",
+            "seed",
+            "output_dir",
+            "log_dir",
+            "attn_types",
+            "seeds",
+            "glue_base_path",
+        ):
+            if field in cfg_overrides:
+                setattr(args, field, cfg_overrides[field])
 
     exp_name = getattr(args, "exp_name", None) or (
         f"{getattr(args, 'attn_type', 'run')}_{getattr(args, 'task', 'task')}"

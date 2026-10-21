@@ -1,5 +1,6 @@
 # Blocklist for modules that violate the non-expansion guarantee or are hardware/architecture incompatible.
 # Format: <module_name>,<REASON_CODE>,"<Detailed justification / empirical failure reason>"
+# This is a general benchmark policy; architecture-specific runs may have a narrower skip list.
 # Lines starting with # are comments.
 
 # Category A — REJECTED_EXPANSION (Parameter count growth; violates non-expansion constraint)

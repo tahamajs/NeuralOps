@@ -1,5 +1,7 @@
 # ─────────────────────────────────────────────────────────────────
 # Qwen3.5-0.8B Dedicated Quality Sweep Configuration
+# Load with neuralops.config.load_quality_sweep_config; skip_modules is scoped
+# to this causal Qwen run, not a replacement for the general benchmark blocklist.
 # ─────────────────────────────────────────────────────────────────
 
 # Model & Architecture
