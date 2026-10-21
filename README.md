@@ -60,8 +60,8 @@ The dispatch hierarchy is intentionally conservative: a source file is not count
 ### ⚡ 30-Second Quickstart
 
 ```python
-# 1. Install NeuralOps
-pip install neuralops
+# 1. Install NeuralOps with the CPU runtime (or choose another extra below)
+pip install "neuralops[cpu]"
 
 # 2. In-place Subquadratic Attention Surgery (Swap O(T²) with O(T) Linear Attention)
 import neuralops, transformers
@@ -226,7 +226,7 @@ Standard self-attention suffers from an intrinsic quadratic time and memory bott
 
 8. **Permanent Quality Gate & PyPI v1.5.0 Release**:
    - Enforced continuous AST quality gates asserting 0 shadowed definitions, 0 unreachable statements, and 0 unwired Triton kernels across the entire codebase.
-   - Production distribution published to PyPI (`pip install neuralops==1.5.0`) accompanied by hardened multi-platform GitHub Actions workflows.
+   - Production distribution published to PyPI (`pip install "neuralops[cpu]==1.5.0"`) accompanied by hardened multi-platform GitHub Actions workflows.
 
 ---
 
@@ -543,21 +543,43 @@ The registries contain 131 attention mechanisms and 72 compression engines. The 
 
 ### 6.1 Installation
 
+The base `neuralops` package does not install PyTorch. Choose a runtime extra for
+the target machine; each runtime extra includes the shared core dependencies.
+For a custom CUDA or ROCm PyTorch wheel, install that wheel first using the
+official PyTorch selector, then install NeuralOps with the matching extra.
+
 ```bash
-# 1. Production release from PyPI (v1.5.0)
-pip install neuralops==1.5.0
+# CPU runtime
+pip install "neuralops[cpu]"
 
-# 2. NVIDIA GPU full production setup (PyTorch 2.11+, Triton, Safetensors)
-pip install "neuralops[cuda,export,eval,mlops]==1.5.0"
+# NVIDIA CUDA runtime (Triton is included on Linux)
+pip install "neuralops[cuda]"
 
-# 3. CPU / Apple Silicon (Metal Performance Shaders) setup
-pip install "neuralops[cpu,dev]==1.5.0"
+# Apple Silicon / MPS runtime
+pip install "neuralops[mps]"
 
-# 4. Development editable install from source
+# AMD ROCm runtime
+pip install "neuralops[rocm]"
+
+# Optional production features
+pip install "neuralops[cuda,export,eval,mlops]"
+
+# Development editable install
 git clone https://github.com/tahamajs/NeuralOps.git
 cd NeuralOps
-pip install -e ".[dev,cuda]"
+pip install -e ".[cpu,dev]"
 ```
+
+If a hardware-specific PyTorch build is already installed, install the core
+dependencies without asking pip to choose another PyTorch wheel:
+
+```bash
+pip install "neuralops[core]"
+```
+
+Installing plain `neuralops` is also supported for package metadata and
+PyTorch-free inspection. Accessing model, attention, compression, or training
+APIs without PyTorch raises an actionable error that names the runtime extras.
 
 ### 6.2 Executed Notebook Quickstart
 

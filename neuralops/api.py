@@ -16,9 +16,16 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
+try:
+    import torch
+    import torch.nn as nn
+    import torch.nn.functional as F
+except ModuleNotFoundError as exc:
+    if exc.name == "torch" or (exc.name and exc.name.startswith("torch.")):
+        from neuralops import _torch_install_error
+
+        raise _torch_install_error("neuralops.api", exc) from exc
+    raise
 
 from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
 from neuralops.core.attention_utils import inject_attention

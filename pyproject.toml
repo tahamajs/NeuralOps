@@ -37,7 +37,6 @@ classifiers = [
 
 dependencies = [
     "packaging>=23.0",
-    "torch>=2.2.0",
 ]
 
 [project.optional-dependencies]

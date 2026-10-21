@@ -12,6 +12,7 @@ NeuralOps Core Modules.
 from __future__ import annotations
 
 import importlib
+import importlib.util
 import sys
 
 from typing import Any, TYPE_CHECKING
@@ -68,6 +69,35 @@ if TYPE_CHECKING:
     from neuralops.kernels import list_cuda_kernels, list_triton_kernels  # noqa: F401
 
 __version__ = "1.5.0"
+
+_TORCH_FREE_SYMBOLS = frozenset({"__version__", "__doc__", "__all__"})
+try:
+    _TORCH_AVAILABLE = importlib.util.find_spec("torch") is not None
+except (ImportError, ValueError):
+    _TORCH_AVAILABLE = False
+
+
+def _torch_install_error(feature: str, cause: ImportError | None = None) -> ImportError:
+    """Build an actionable error for features that require PyTorch."""
+    message = (
+        f"NeuralOps requires PyTorch for {feature}, but torch is not installed.\n\n"
+        "Install the extra that matches your hardware:\n"
+        '  pip install "neuralops[cpu]"    # CPU-only\n'
+        '  pip install "neuralops[cuda]"   # NVIDIA GPU\n'
+        '  pip install "neuralops[mps]"    # Apple Silicon\n'
+        '  pip install "neuralops[rocm]"   # AMD GPU\n\n'
+        "Alternatively, install a PyTorch build selected for your hardware, then install "
+        '"neuralops[core]".'
+    )
+    if cause is not None:
+        message += f"\n\nUnderlying import error: {cause}"
+    return ImportError(message)
+
+
+def _require_torch(feature: str = "this feature") -> None:
+    """Raise a clear installation error when PyTorch is absent."""
+    if not _TORCH_AVAILABLE:
+        raise _torch_install_error(feature)
 
 import importlib.machinery
 from importlib.abc import MetaPathFinder
@@ -705,6 +735,18 @@ __all__ = [
 
 def __getattr__(name: str) -> Any:
     """PEP 562 dynamic lazy loader."""
+    if (
+        name not in _TORCH_FREE_SYMBOLS
+        and (
+            name in __all__
+            or name in _API_EXPORTS
+            or name in _LAZY_EXPORTS
+            or name in _SUBPACKAGES
+            or name in {"ATTENTION_REGISTRY", "ALL_ATTENTION_CLASSES", "evaluation"}
+        )
+    ):
+        _require_torch(f"neuralops.{name}")
+
     if name == "ATTENTION_REGISTRY":
         from neuralops.core.registry import ATTENTION_REGISTRY as reg
         globals()[name] = reg
@@ -718,14 +760,24 @@ def __getattr__(name: str) -> Any:
 
     if name in _API_EXPORTS:
         mod_name = _API_EXPORTS[name]
-        mod = importlib.import_module(mod_name)
+        try:
+            mod = importlib.import_module(mod_name)
+        except ModuleNotFoundError as exc:
+            if exc.name == "torch" or (exc.name and exc.name.startswith("torch.")):
+                raise _torch_install_error(f"neuralops.{name}", exc) from exc
+            raise
         val = getattr(mod, name)
         globals()[name] = val
         return val
 
     if name in _LAZY_EXPORTS:
         module_path, attr_name = _LAZY_EXPORTS[name]
-        module = importlib.import_module(module_path)
+        try:
+            module = importlib.import_module(module_path)
+        except ModuleNotFoundError as exc:
+            if exc.name == "torch" or (exc.name and exc.name.startswith("torch.")):
+                raise _torch_install_error(f"neuralops.{name}", exc) from exc
+            raise
         val = getattr(module, attr_name)
         globals()[name] = val
         return val

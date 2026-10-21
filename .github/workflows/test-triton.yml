@@ -41,9 +41,10 @@ jobs:
 
       - name: Install project dependencies
         run: |
+          pip install -e ".[cpu,dev]"
           pip install \
             transformers datasets scikit-learn scipy pandas numpy \
-            tqdm matplotlib PyYAML pyarrow accelerate tabulate pytest
+            tqdm matplotlib PyYAML pyarrow accelerate tabulate pytest "triton>=2.3.0"
 
       - name: Run Triton Test Suite (Fallbacks & Logic)
         env:
