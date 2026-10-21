@@ -8,16 +8,17 @@
 """Unit tests for neuralops.core modules, base classes, registries, and adapters."""
 from __future__ import annotations
 
-import pytest
 import torch
 import torch.nn as nn
 
 from neuralops.core.base import BaseAttention, BaseCompressor
 from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
-from neuralops.core.adapters import get_adapter, BertAdapter, DistilBertAdapter, LlamaAdapter
+from neuralops.core.adapters import get_adapter
 from neuralops.core.utils.gqa import repeat_kv
 from neuralops.core.attention_utils import safe_softmax, softcap
 from neuralops.core.model_utils import count_parameters
+from neuralops.attentions.base import BaseAttention as PublicBaseAttention
+from neuralops.compression_engine.base import BaseCompressor as PublicBaseCompressor
 import neuralops.attentions  # noqa: F401 - populate ATTENTION_REGISTRY
 import neuralops.compression_engine  # noqa: F401 - populate COMPRESSOR_REGISTRY
 
@@ -47,6 +48,17 @@ def test_base_compressor_instantiation():
     comp = DummyCompressor(model)
     compressed = comp.compress(model)
     assert compressed is model
+
+
+def test_family_base_facades_export_only_their_contract():
+    """Keep attention and compressor base imports explicit and non-overlapping."""
+    import neuralops.attentions.base as attention_base
+    import neuralops.compression_engine.base as compression_base
+
+    assert PublicBaseAttention is BaseAttention
+    assert PublicBaseCompressor is BaseCompressor
+    assert attention_base.__all__ == ["BaseAttention"]
+    assert compression_base.__all__ == ["BaseCompressor"]
 
 
 def test_registry_get_set():

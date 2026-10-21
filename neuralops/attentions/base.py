@@ -5,15 +5,10 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Attentions Base Module Facade
-
-Direct interface to BaseAttention and BaseCompressor module contracts.
-"""
+"""Public facade for the shared attention base contract."""
 
 from __future__ import annotations
 
-from neuralops.core.base import *  # noqa: F403
-import neuralops.core.base as _mod
+from neuralops.core.base import BaseAttention
 
-__all__ = [name for name in dir(_mod) if not name.startswith("_")]
+__all__ = ["BaseAttention"]
