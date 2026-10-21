@@ -59,6 +59,19 @@ def export_model(
             "Workaround: export as 'safetensors' and use a compatible external GGUF converter."
         )
 
+    if fmt == "awq":
+        raise NotImplementedError(
+            "AWQ export is not implemented: writing a quantization config beside dense weights "
+            "does not quantize a model. Quantize the model with a supported AWQ tool first."
+        )
+
+    supported_formats = {"safetensors", "onnx", "torchscript", "pt2", "torch_export", "aoti"}
+    if fmt not in supported_formats:
+        choices = "safetensors, onnx, torchscript, awq, pt2"
+        raise ValueError(f"Unsupported export format {format!r}. Choose from: {choices}.")
+    if fmt in {"torch_export", "aoti"}:
+        fmt = "pt2"
+
     out_path.mkdir(parents=True, exist_ok=True)
 
     if kwargs.get("auto_finalize", True):
@@ -282,31 +295,6 @@ def export_model(
 
         logger.info("Exported model to TorchScript: %s", ts_file)
         return ts_file
-
-    elif fmt == "awq":
-        awq_file = out_path / "quant_config.json"
-        awq_meta = {
-            "quant_method": "awq",
-            "zero_point": True,
-            "q_group_size": kwargs.get("group_size", 128),
-            "w_bit": kwargs.get("bits", 4),
-            "version": "GEMM",
-            "modules_to_not_convert": ["lm_head", "embed_tokens"],
-        }
-        with open(awq_file, "w", encoding="utf-8") as f:
-            json.dump(awq_meta, f, indent=2)
-
-        try:
-            from safetensors.torch import save_file
-            save_file(model.state_dict(), str(out_path / "model.safetensors"))
-        except Exception:
-            torch.save(model.state_dict(), out_path / "model.bin")
-
-        with open(out_path / "neuralops_config.json", "w", encoding="utf-8") as f:
-            json.dump(meta, f, indent=2)
-
-        logger.info("Exported model to AWQ metadata bundle: %s", out_path)
-        return out_path
 
     elif fmt in ("pt2", "torch_export", "aoti"):
         pt2_target = out_path / "model.pt2"

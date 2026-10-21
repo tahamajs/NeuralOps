@@ -7,18 +7,13 @@
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Tests for ecosystem and integration modules."""
 import tempfile
+import sys
 from pathlib import Path
 import pytest
 import torch
 import torch.nn as nn
 
-from neuralops.integrations.hf_automodel import (
-    AutoNeuralOpsModel,
-    AutoNeuralOpsForCausalLM,
-    AutoNeuralOpsForSequenceClassification,
-    register_hf_automodel,
-    patch_model_attention,
-)
+from neuralops.integrations.hf_automodel import _BaseAutoNeuralOps
 from neuralops.integrations.serving import (
     VLLMAttentionAdapter,
     TGIAttentionAdapter,
@@ -48,22 +43,25 @@ from neuralops.export.surgery_manifest import (
     CompressionSurgeryEntry,
 )
 from neuralops.export.serving import (
+    VLLMAdapter as ExportVLLMAdapter,
     export_serving_bundle,
     validate_serving_metadata,
 )
 from neuralops.export.exporter import export_model
+from neuralops.integrations.compressed_tensors import CompressedTensorsExporter
 
 
-def test_hf_automodel():
-    assert isinstance(register_hf_automodel(), bool)
-    mod1 = AutoNeuralOpsModel.from_pretrained("dummy_model", attention_type="full_attention")
-    assert isinstance(mod1, nn.Module)
+def test_hf_loader_propagates_checkpoint_errors_instead_of_substituting_random_model():
+    class BrokenLoader:
+        @staticmethod
+        def from_pretrained(*args, **kwargs):
+            raise OSError("checkpoint unavailable")
 
-    mod2 = AutoNeuralOpsForCausalLM.from_pretrained("dummy_model", attention="full_attention")
-    assert isinstance(mod2, nn.Module)
+    class TestAutoModel(_BaseAutoNeuralOps):
+        _HF_CLASS = BrokenLoader
 
-    mod3 = AutoNeuralOpsForSequenceClassification.from_pretrained("dummy_model")
-    assert isinstance(mod3, nn.Module)
+    with pytest.raises(OSError, match="checkpoint unavailable"):
+        TestAutoModel.from_pretrained("missing-checkpoint")
 
 
 def test_serving_adapters():
@@ -188,15 +186,76 @@ def test_export_serving_bundle_and_metadata():
         bundle_path = export_serving_bundle(model, output_dir=tmpdir, target_backend="vllm")
         is_valid, msg = validate_serving_metadata(bundle_path)
         assert is_valid is True, msg
+        assert "unverified" in msg
 
         awq_dir = Path(tmpdir) / "awq_bundle"
-        export_model(model, output_dir=awq_dir, format="awq")
-        assert (awq_dir / "quant_config.json").exists()
+        with pytest.raises(NotImplementedError, match="does not quantize a model"):
+            export_model(model, output_dir=awq_dir, format="awq")
+        assert not awq_dir.exists()
 
         gguf_dir = Path(tmpdir) / "gguf_bundle"
         with pytest.raises(NotImplementedError, match="GGUF export is not implemented"):
             export_model(model, output_dir=gguf_dir, format="gguf")
         assert not gguf_dir.exists()
+
+
+def test_export_serving_bundle_rejects_unknown_backend_before_writing(tmp_path):
+    model = nn.Linear(4, 4)
+    target = tmp_path / "unsupported"
+    with pytest.raises(ValueError, match="Unsupported serving backend"):
+        export_serving_bundle(model, output_dir=target, target_backend="made_up")
+    assert not target.exists()
+
+
+def test_export_serving_bundle_does_not_claim_to_quantize(tmp_path):
+    target = tmp_path / "unquantized"
+    with pytest.raises(NotImplementedError, match="does not quantize"):
+        export_serving_bundle(nn.Linear(4, 4), output_dir=target, quantization="int4")
+    assert not target.exists()
+
+
+def test_export_model_rejects_unknown_format_before_writing(tmp_path):
+    target = tmp_path / "unsupported-format"
+    with pytest.raises(ValueError, match="Unsupported export format"):
+        export_model(nn.Linear(4, 4), output_dir=target, format="made_up")
+    assert not target.exists()
+
+
+def test_compressed_tensors_exporter_rejects_dense_weights_without_quant_metadata(tmp_path):
+    target = tmp_path / "false-quantized-export"
+    with pytest.raises(ValueError, match="will not label ordinary dense weights"):
+        CompressedTensorsExporter().export(nn.Linear(4, 4), str(target))
+    assert not target.exists()
+
+
+def test_paged_attention_rejects_unsupported_query_layout_before_backend_import():
+    with pytest.raises(ValueError, match="query must have shape"):
+        ExportVLLMAdapter.paged_attention_forward(
+            torch.zeros(2, 3, 4, 5, 6),
+            torch.zeros(2, 16, 4, 6),
+            torch.zeros(2, 16, 4, 6),
+            torch.zeros(1, 2, dtype=torch.int32),
+            torch.tensor([16]),
+        )
+
+
+def test_generic_paged_cache_wrapper_fails_closed():
+    with pytest.raises(NotImplementedError, match="cannot infer projected Q/K/V"):
+        ExportVLLMAdapter.wrap_forward_for_paged_kv(nn.Identity())
+
+
+def test_vllm_backend_registration_requires_the_real_registry(monkeypatch):
+    import neuralops.export.serving as serving_module
+
+    class Backend:
+        @staticmethod
+        def get_name():
+            return "NEURALOPS_TEST"
+
+    monkeypatch.setattr(serving_module, "HAS_VLLM", True)
+    monkeypatch.setitem(sys.modules, "vllm.attention.backends.registry", None)
+    with pytest.raises(RuntimeError, match="registry API"):
+        serving_module.VLLMAdapter.register_attention_backend("NEURALOPS_TEST", Backend)
 
 
 def test_onnx_export_failure_does_not_leave_a_fake_artifact(tmp_path: Path, monkeypatch):

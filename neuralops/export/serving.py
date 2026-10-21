@@ -50,16 +50,25 @@ class VLLMAdapter:
             raise RuntimeError(
                 "vLLM is not installed. Please install neuralops[serving] or run: pip install vllm"
             )
+        get_name = getattr(backend_cls, "get_name", None)
+        if not callable(get_name) or get_name() != name:
+            raise ValueError("backend_cls.get_name() must return the requested registry name")
         try:
-            logger.info(
-                "vLLM detected (%s). Registering backend %s",
-                getattr(vllm, "__version__", "unknown"),
-                name,
-            )
-            return True
-        except (RuntimeError, ValueError, AttributeError) as e:
-            logger.error("Failed to register backend %s into vLLM: %s", name, e, exc_info=True)
-            return False
+            from vllm.attention.backends.abstract import AttentionBackend
+            from vllm.attention.backends.registry import register_backend
+        except ImportError as exc:
+            raise RuntimeError(
+                "This vLLM installation does not expose the 0.6.x attention backend registry API."
+            ) from exc
+        if not isinstance(backend_cls, type) or not issubclass(backend_cls, AttentionBackend):
+            raise TypeError("backend_cls must subclass vLLM's AttentionBackend")
+        register_backend(backend_cls)
+        logger.info(
+            "Registered vLLM attention backend %s with vLLM %s",
+            name,
+            getattr(vllm, "__version__", "unknown"),
+        )
+        return True
 
     @staticmethod
     def paged_attention_forward(
@@ -75,7 +84,7 @@ class VLLMAdapter:
         Execute paged attention forward pass over block_tables and KV-cache blocks.
 
         Args:
-            query: Query tensor [num_seqs, num_heads, head_dim] or [batch, seq_len, num_heads, head_dim].
+            query: Query tensor [num_seqs, num_heads, head_dim] or [num_seqs, 1, num_heads, head_dim].
             key_cache: Key block memory pool [num_blocks, block_size, num_heads, head_dim].
             value_cache: Value block memory pool [num_blocks, block_size, num_heads, head_dim].
             block_tables: Block table mapping logical blocks to physical blocks [num_seqs, max_blocks].
@@ -86,14 +95,16 @@ class VLLMAdapter:
         if not HAS_VLLM:
             logger.debug("vLLM not installed; using NeuralOps native paged_attention_kernel fallback.")
 
-        from neuralops.core.triton_kernels.paged_attention import paged_attention_kernel
-
         if query.dim() == 4 and query.shape[1] == 1:
-            q = query.squeeze(1).transpose(1, 2)
+            q = query.squeeze(1)
         elif query.dim() == 3:
             q = query
         else:
-            q = query
+            raise ValueError("query must have shape [batch, heads, head_dim] or [batch, 1, heads, head_dim]")
+        if not isinstance(block_size, int) or isinstance(block_size, bool) or block_size <= 0:
+            raise ValueError("block_size must be a positive integer")
+
+        from neuralops.core.triton_kernels.paged_attention import paged_attention_kernel
 
         return paged_attention_kernel(
             q=q,
@@ -106,32 +117,11 @@ class VLLMAdapter:
 
     @staticmethod
     def wrap_forward_for_paged_kv(module: nn.Module) -> nn.Module:
-        """Wrap custom attention module to handle vLLM paged KV cache tables."""
-        orig_forward = module.forward
-
-        def paged_forward(*args: Any, **kwargs: Any) -> Any:
-            kv_cache = kwargs.get("kv_cache", None)
-            block_tables = kwargs.get("block_tables", None)
-            seq_lens = kwargs.get("seq_lens", None)
-
-            if kv_cache is not None and block_tables is not None and seq_lens is not None:
-                q = args[0] if len(args) > 0 else kwargs.get("hidden_states")
-                if q is not None and isinstance(kv_cache, (tuple, list)) and len(kv_cache) == 2:
-                    k_cache, v_cache = kv_cache[0], kv_cache[1]
-                    block_size = kwargs.get("block_size", 16)
-                    return VLLMAdapter.paged_attention_forward(
-                        query=q,
-                        key_cache=k_cache,
-                        value_cache=v_cache,
-                        block_tables=block_tables,
-                        seq_lens=seq_lens,
-                        block_size=block_size,
-                    )
-
-            return orig_forward(*args, **kwargs)
-
-        module.forward = paged_forward
-        return module
+        """Reject generic wrapping because hidden states are not projected Q/K/V tensors."""
+        raise NotImplementedError(
+            "Generic paged-KV wrapping is unsafe: this adapter cannot infer projected Q/K/V "
+            "tensors or vLLM's cache-write lifecycle from an arbitrary module forward signature."
+        )
 
 
 class TGIAdapter:
@@ -145,6 +135,8 @@ class TGIAdapter:
     @staticmethod
     def prepare_batch(batch_inputs: List[Any], max_batch_size: int = 32) -> List[Any]:
         """Truncates or batches inputs to match TGI runtime batch boundaries."""
+        if not isinstance(max_batch_size, int) or isinstance(max_batch_size, bool) or max_batch_size <= 0:
+            raise ValueError("max_batch_size must be a positive integer")
         return batch_inputs[:max_batch_size]
 
     @staticmethod
@@ -154,12 +146,14 @@ class TGIAdapter:
         max_batch_size: int = 32,
         max_sequence_length: int = 4096,
     ) -> nn.Module:
+        """Set inference mode and optionally write TGI deployment metadata.
+
+        This helper does not implement TGI runtime hooks or certify that the
+        exported model is loadable by a particular TGI version.
         """
-        Prepares a NeuralOps model for TGI container runtime:
-        1. Sets model to eval mode and freezes parameters.
-        2. Configures prefill and decode runtime hooks.
-        3. Exports tgi_config.json if output_dir is specified.
-        """
+        for name, value in (("max_batch_size", max_batch_size), ("max_sequence_length", max_sequence_length)):
+            if not isinstance(value, int) or isinstance(value, bool) or value <= 0:
+                raise ValueError(f"{name} must be a positive integer")
         model.eval()
         for param in model.parameters():
             param.requires_grad = False
@@ -197,8 +191,10 @@ def export_serving_bundle(
     **kwargs: Any,
 ) -> Path:
     """
-    Exports a validated, deployment-ready serving bundle for production engines (vLLM, TGI, SGLang, TRT-LLM).
-    Generates serving_manifest.json, weights (model.safetensors), and target-engine metadata.
+    Export model weights and engine-specific configuration metadata.
+
+    The generated directory is a serialization bundle, not proof that the target
+    serving engine can load or execute the model.
     """
     backend = target_backend.lower().strip()
     backend_aliases = {
@@ -213,8 +209,14 @@ def export_serving_bundle(
         supported = ", ".join(sorted(backend_aliases))
         raise ValueError(f"Unsupported serving backend {target_backend!r}. Choose one of: {supported}.")
     backend = backend_aliases[backend]
-    if max_batch_size <= 0 or max_sequence_length <= 0:
-        raise ValueError("max_batch_size and max_sequence_length must be positive integers.")
+    for name, value in (("max_batch_size", max_batch_size), ("max_sequence_length", max_sequence_length)):
+        if not isinstance(value, int) or isinstance(value, bool) or value <= 0:
+            raise ValueError(f"{name} must be a positive integer, got {value!r}.")
+    if quantization is not None:
+        raise NotImplementedError(
+            "export_serving_bundle serializes weights and metadata but does not quantize them; "
+            "quantize the model with a supported backend before exporting."
+        )
 
     out_p = Path(output_dir)
     out_p.mkdir(parents=True, exist_ok=True)
@@ -292,7 +294,7 @@ def export_serving_bundle(
 
 
 def validate_serving_metadata(bundle_dir: Union[str, Path]) -> tuple[bool, str]:
-    """Validates that a serving bundle directory contains required artifacts and manifests."""
+    """Check bundle structure without claiming target-engine compatibility."""
     p = Path(bundle_dir)
     if not p.is_dir():
         return False, f"Directory does not exist: {p}"
@@ -314,7 +316,7 @@ def validate_serving_metadata(bundle_dir: Union[str, Path]) -> tuple[bool, str]:
     if not has_weights:
         return False, "Missing weights (model.safetensors or pytorch_model.bin)"
 
-    return True, "Valid serving bundle"
+    return True, "Structurally valid serialization bundle; target-engine loading is unverified"
 
 
 __all__ = [

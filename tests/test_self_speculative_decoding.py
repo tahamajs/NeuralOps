@@ -14,7 +14,7 @@ import torch
 import torch.nn as nn
 from transformers import GPT2Config, GPT2LMHeadModel
 
-from neuralops.inference.speculative_decoding import SelfSpeculativeDecoder
+from neuralops.inference.speculative_decoding import SelfSpeculativeDecoder, _sampling_probs
 
 
 def test_self_speculative_greedy_exact_distribution_parity():
@@ -82,3 +82,16 @@ def test_self_speculative_stochastic_sampling():
     assert out_tokens.shape == (1, 13)
     assert stats.total_tokens_generated == 10
     assert not torch.isnan(out_tokens.float()).any()
+
+
+def test_sampling_filters_apply_to_draft_and_target_distribution():
+    probabilities = _sampling_probs(torch.tensor([[4.0, 3.0, 2.0, 1.0]]), 1.0, top_k=2, top_p=1.0)
+    assert torch.count_nonzero(probabilities).item() == 2
+    assert torch.allclose(probabilities.sum(dim=-1), torch.ones(1))
+
+
+def test_self_speculative_decoder_rejects_multi_sequence_sampling_input():
+    model = nn.Linear(4, 4)
+    decoder = SelfSpeculativeDecoder(model, draft_model=model, max_draft_k=2)
+    with pytest.raises(ValueError, match="requires input_ids shaped"):
+        decoder.generate(torch.tensor([[1, 2], [3, 4]]), max_new_tokens=1)

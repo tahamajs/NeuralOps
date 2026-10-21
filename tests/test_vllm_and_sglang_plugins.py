@@ -35,51 +35,14 @@ def test_vllm_backend_and_metadata_interface():
     assert shape == (32, 4, 64, 64)
 
 
-def test_vllm_impl_prefill_and_decode_step():
+def test_vllm_impl_fails_closed_until_scheduler_and_cache_contract_are_implemented():
     impl = NeuralOpsvLLMImpl(num_heads=2, head_size=16, scale=1.0 / 4.0)
-
-    B, T, H, D = 2, 8, 2, 16
-    q = torch.randn(B, T, H * D)
-    k = torch.randn(B, T, H * D)
-    v = torch.randn(B, T, H * D)
-
-    meta_prefill = NeuralOpsvLLMMetadata(
-        num_prefill_tokens=B * T,
-        num_decode_tokens=0,
-        seq_ids=[0, 1],
-        page_table=torch.zeros((B, 4), dtype=torch.int32),
-        slot_mapping=torch.zeros((B, T), dtype=torch.int32),
-        context_lens=torch.tensor([T, T], dtype=torch.int32),
-        is_prompt=True,
-    )
-    out_prefill = impl.forward(q, k, v, kv_cache=None, attn_metadata=meta_prefill)
-    assert out_prefill.shape == (B, T, H * D)
-
-    total_pages = 8
-    paged_state_pool = torch.zeros((total_pages, H, D, D))
-    block_tables = torch.tensor([[1], [3]], dtype=torch.int32)
-
-    q_dec = torch.randn(B, 1, H * D)
-    k_dec = torch.randn(B, 1, H * D)
-    v_dec = torch.randn(B, 1, H * D)
-
-    meta_decode = NeuralOpsvLLMMetadata(
-        num_prefill_tokens=0,
-        num_decode_tokens=B,
-        seq_ids=[0, 1],
-        page_table=block_tables,
-        slot_mapping=torch.zeros((B, 1), dtype=torch.int32),
-        context_lens=torch.tensor([T + 1, T + 1], dtype=torch.int32),
-        is_prompt=False,
-    )
-
-    out_dec = impl.forward(q_dec, k_dec, v_dec, kv_cache=paged_state_pool, attn_metadata=meta_decode)
-    assert out_dec.shape == (B, 1, H * D)
-    assert paged_state_pool[1].abs().sum() > 0
-    assert paged_state_pool[3].abs().sum() > 0
+    q = torch.randn(1, 1, 32)
+    with pytest.raises(NotImplementedError, match="paged-cache write"):
+        impl.forward(q, q, q, kv_cache=None, attn_metadata=None)
 
 
-def test_vllm_model_wrapper_and_plugin_registration():
+def test_vllm_model_wrapper_does_not_initialize_random_checkpoint_weights():
     class DummyConfig:
         hidden_size = 32
         d_model = 32
@@ -87,15 +50,10 @@ def test_vllm_model_wrapper_and_plugin_registration():
         num_attention_heads = 2
         num_hidden_layers = 1
 
-    model = NeuralOpsForCausalLMvLLM(DummyConfig())
-    input_ids = torch.randint(0, 100, (2, 8))
-    hidden = model(input_ids)
-    assert hidden.shape == (2, 8, 32)
-    logits = model.compute_logits(hidden)
-    assert logits.shape == (2, 8, 100)
+    with pytest.raises(NotImplementedError, match="random weights"):
+        NeuralOpsForCausalLMvLLM(DummyConfig())
 
-    res = register_neuralops_vllm_plugin()
-    assert isinstance(res, bool)
+    assert register_neuralops_vllm_plugin() is False
 
 
 def test_sglang_radix_linear_cache_adapter():
@@ -125,3 +83,19 @@ def test_sglang_radix_linear_cache_adapter():
     cache.dec_lock_ref(tokens_a)
     cache.evict(1)
     assert tuple(tokens_a) not in cache.tree
+
+
+def test_sglang_prefix_cache_does_not_evict_on_update_and_rejects_all_locked_overflow():
+    cache = SGLangRadixLinearCacheAdapter(max_cached_nodes=1)
+    cache.cache_unfinished_req([1, 2], "state-a")
+    cache.cache_finished_req([1, 2], "updated-state")
+
+    assert cache.tree[(1, 2)]["state"] == "updated-state"
+    with pytest.raises(RuntimeError, match="all entries are locked"):
+        cache.cache_finished_req([3, 4], "state-b")
+    assert list(cache.tree) == [(1, 2)]
+
+
+def test_sglang_prefix_cache_validates_capacity():
+    with pytest.raises(ValueError, match="positive integer"):
+        SGLangRadixLinearCacheAdapter(max_cached_nodes=0)

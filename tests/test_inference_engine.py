@@ -8,6 +8,7 @@
 """Tests for Phase 6 Inference engine features."""
 import torch
 import torch.nn as nn
+import pytest
 from neuralops.inference.engine import (
     NeuralOpsInferenceEngine,
     stream_generate,
@@ -69,3 +70,57 @@ def test_continuous_batcher():
     assert len(res) == 2
     assert res[0]["id"] == "req1"
     assert res[1]["id"] == "req2"
+
+
+def test_generation_does_not_retry_after_model_internal_type_error():
+    class BrokenModel(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.calls = 0
+
+        def forward(self, input_ids):
+            self.calls += 1
+            raise TypeError("internal model error")
+
+    model = BrokenModel()
+    with torch.no_grad(), pytest.raises(TypeError, match="internal model error"):
+        NeuralOpsInferenceEngine(model).generate(torch.tensor([[1]]), max_new_tokens=1, use_cache=True)
+    assert model.calls == 1
+
+
+def test_generation_samples_when_temperature_is_positive_without_filters(monkeypatch):
+    calls = []
+    original_multinomial = torch.multinomial
+
+    def record_multinomial(*args, **kwargs):
+        calls.append(True)
+        return original_multinomial(*args, **kwargs)
+
+    monkeypatch.setattr(torch, "multinomial", record_multinomial)
+    model = DummyLLM()
+    NeuralOpsInferenceEngine(model).generate(torch.tensor([[1]]), max_new_tokens=1, temperature=0.7)
+    assert calls
+
+
+def test_continuous_batcher_selects_last_unpadded_position():
+    class PositionModel(nn.Module):
+        def forward(self, input_ids, attention_mask=None):
+            batch_size, seq_len = input_ids.shape
+            logits = torch.zeros(batch_size, seq_len, 16, device=input_ids.device)
+            logits.scatter_(2, ((input_ids + 1) % 16).unsqueeze(-1), 1.0)
+            return logits
+
+    batcher = ContinuousBatcher(max_batch_size=2, max_seq_len=8)
+    batcher.add_request("short", torch.tensor([[1]]), max_new_tokens=1)
+    batcher.add_request("long", torch.tensor([[3, 4]]), max_new_tokens=1)
+
+    results = batcher.step(PositionModel())
+
+    assert [result["token"] for result in results] == [2, 5]
+
+
+def test_continuous_batcher_rejects_duplicate_request_ids():
+    batcher = ContinuousBatcher(max_seq_len=8)
+    batcher.add_request("same", torch.tensor([[1]]), max_new_tokens=1)
+    with pytest.raises(ValueError, match="already queued"):
+        batcher.add_request("same", torch.tensor([[2]]), max_new_tokens=1)

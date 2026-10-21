@@ -5,10 +5,10 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Compressed Tensors Exporter
+"""Serialize quantized tensors and explicit model/quantization metadata.
 
-Exports compressed weights compatible with vLLM, HuggingFace, and downstream serving engines.
+The exporter does not quantize weights or guarantee that a downstream engine
+can load the emitted artifacts.
 """
 
 from __future__ import annotations
@@ -31,21 +31,21 @@ except ImportError:
 class CompressedTensorsExporter:
     """Exports quantized neuralops compressors / models into compressed-tensors format for vLLM."""
 
-    def __init__(self) -> None:
-        pass
-
-    def export(self, compressor_or_model: Any, path: str) -> dict[str, str]:
+    def export(
+        self,
+        compressor_or_model: Any,
+        path: str,
+        quantization_config: Optional[dict[str, Any]] = None,
+        model_config: Optional[dict[str, Any]] = None,
+    ) -> dict[str, str]:
         """
-        Export model weights and quantization configs.
+        Serialize model weights and quantization configs.
         Produces:
           - model.safetensors
           - quantization_config.json
           - config.json
-        Compatible with `vllm.LLM(model=path)`
+        Engine compatibility depends on the supplied model and quantization schemas.
         """
-        os.makedirs(path, exist_ok=True)
-        artifacts: dict[str, str] = {}
-
         tensors: dict[str, torch.Tensor] = {}
         if hasattr(compressor_or_model, "compress_to_tensors"):
             tensors = compressor_or_model.compress_to_tensors()
@@ -64,7 +64,39 @@ class CompressedTensorsExporter:
         else:
             raise TypeError(f"Unsupported compressor_or_model type: {type(compressor_or_model)}")
 
-        serialized_tensors = {k: v.contiguous() for k, v in tensors.items()}
+        if not isinstance(tensors, dict) or not tensors:
+            raise ValueError("The exporter requires a non-empty tensor state dictionary.")
+        if any(not isinstance(name, str) or not isinstance(value, torch.Tensor) for name, value in tensors.items()):
+            raise TypeError("Compressed tensor state must map string names to torch.Tensor values.")
+
+        quant_config = quantization_config
+        if quant_config is None and hasattr(compressor_or_model, "get_quantization_config"):
+            quant_config = compressor_or_model.get_quantization_config()
+        if quant_config is None:
+            quant_config = getattr(compressor_or_model, "quantization_config", None)
+        if not isinstance(quant_config, dict) or not quant_config:
+            raise ValueError(
+                "A real non-empty quantization_config is required; the exporter will not label "
+                "ordinary dense weights as compressed tensors."
+            )
+
+        model_obj = getattr(compressor_or_model, "model", compressor_or_model)
+        hf_config = model_config
+        if hf_config is None and hasattr(model_obj, "config") and model_obj.config is not None:
+            config = model_obj.config
+            if hasattr(config, "to_dict"):
+                hf_config = config.to_dict()
+            elif isinstance(config, dict):
+                hf_config = dict(config)
+        if not isinstance(hf_config, dict) or not hf_config:
+            raise ValueError(
+                "A Hugging Face model config is required; pass model_config explicitly for state-dict inputs."
+            )
+        hf_config = dict(hf_config)
+
+        os.makedirs(path, exist_ok=True)
+        artifacts: dict[str, str] = {}
+        serialized_tensors = {k: v.detach().contiguous() for k, v in tensors.items()}
 
         safetensors_path = os.path.join(path, "model.safetensors")
         if HAS_SAFETENSORS:
@@ -82,53 +114,10 @@ class CompressedTensorsExporter:
             torch.save(serialized_tensors, pt_path)
             artifacts["model.pt"] = pt_path
 
-        quant_config: dict[str, Any] = {}
-        if hasattr(compressor_or_model, "get_quantization_config"):
-            quant_config = compressor_or_model.get_quantization_config()
-        elif hasattr(compressor_or_model, "quantization_config"):
-            quant_config = compressor_or_model.quantization_config
-        else:
-            quant_config = {
-                "quant_method": "compressed-tensors",
-                "format": "W4A16",
-                "config_groups": {
-                    "group_0": {
-                        "weights": {
-                            "num_bits": 4,
-                            "type": "int",
-                            "symmetric": True,
-                            "strategy": "channel",
-                        },
-                        "targets": ["Linear"],
-                    }
-                },
-            }
-
         quant_config_path = os.path.join(path, "quantization_config.json")
         with open(quant_config_path, "w", encoding="utf-8") as f:
             json.dump(quant_config, f, indent=2)
         artifacts["quantization_config.json"] = quant_config_path
-
-        hf_config: dict[str, Any] = {}
-        model_obj = getattr(compressor_or_model, "model", compressor_or_model)
-        if hasattr(model_obj, "config") and model_obj.config is not None:
-            c = model_obj.config
-            if hasattr(c, "to_dict"):
-                hf_config = c.to_dict()
-            elif isinstance(c, dict):
-                hf_config = dict(c)
-            else:
-                hf_config = {k: getattr(c, k) for k in dir(c) if not k.startswith("_") and not callable(getattr(c, k))}
-        else:
-            hf_config = {
-                "architectures": ["NeuralOpsForCausalLM"],
-                "model_type": "neuralops",
-                "hidden_size": 768,
-                "num_attention_heads": 12,
-                "num_hidden_layers": 2,
-                "vocab_size": 50257,
-                "torch_dtype": "float16",
-            }
 
         hf_config["quantization_config"] = quant_config
 

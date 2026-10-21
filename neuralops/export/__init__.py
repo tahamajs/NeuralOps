@@ -5,40 +5,41 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-NeuralOps Export Subpackage.
-"""
+"""Lazy public exports for model serialization and deployment bundles."""
 
-from neuralops.export.exporter import (
-    export_model,
-    load_exported_model,
-    load_model,
-    compile_to_so,
-    AOTICompiledModelRunner,
-)
-from neuralops.export.serving import (
-    VLLMAdapter,
-    TGIAdapter,
-    export_serving_bundle,
-    validate_serving_metadata,
-)
-from neuralops.export.surgery_manifest import (
-    SurgeryManifest,
-    replay_surgery_manifest,
-    merge_for_inference,
-)
+from importlib import import_module
 
-__all__ = [
-    "export_model",
-    "load_exported_model",
-    "load_model",
-    "compile_to_so",
-    "AOTICompiledModelRunner",
-    "VLLMAdapter",
-    "TGIAdapter",
-    "export_serving_bundle",
-    "validate_serving_metadata",
-    "SurgeryManifest",
-    "replay_surgery_manifest",
-    "merge_for_inference",
-]
+_EXPORTS = {
+    "export_model": ("exporter", "export_model"),
+    "load_exported_model": ("exporter", "load_exported_model"),
+    "load_model": ("exporter", "load_model"),
+    "compile_to_so": ("exporter", "compile_to_so"),
+    "AOTICompiledModelRunner": ("exporter", "AOTICompiledModelRunner"),
+    "VLLMAdapter": ("serving", "VLLMAdapter"),
+    "TGIAdapter": ("serving", "TGIAdapter"),
+    "export_serving_bundle": ("serving", "export_serving_bundle"),
+    "validate_serving_metadata": ("serving", "validate_serving_metadata"),
+    "SurgeryManifest": ("surgery_manifest", "SurgeryManifest"),
+    "replay_surgery_manifest": ("surgery_manifest", "replay_surgery_manifest"),
+    "merge_for_inference": ("surgery_manifest", "merge_for_inference"),
+}
+_MODULES = {"exporter", "serving", "surgery_manifest"}
+
+__all__ = [*_EXPORTS, *_MODULES]
+
+
+def __getattr__(name: str):
+    """Import export implementation modules only when a public symbol is used."""
+    if name in _EXPORTS:
+        module_name, attribute = _EXPORTS[name]
+        value = getattr(import_module(f"{__name__}.{module_name}"), attribute)
+    elif name in _MODULES:
+        value = import_module(f"{__name__}.{name}")
+    else:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    globals()[name] = value
+    return value
+
+
+def __dir__() -> list[str]:
+    return sorted(set(globals()) | set(__all__))

@@ -13,15 +13,9 @@ Provides compatibility wrappers, attention layer patching, and model loaders for
 
 from __future__ import annotations
 
-import logging
 from typing import Any, Dict, List, Optional, Union
 import torch
 import torch.nn as nn
-
-from neuralops.core.attention_utils import inject_attention
-from neuralops.core.registry import ATTENTION_REGISTRY
-
-logger = logging.getLogger("NeuralOps.HFAutoModel")
 
 __all__ = [
     "AutoNeuralOpsModel",
@@ -34,24 +28,10 @@ __all__ = [
 
 
 def patch_model_attention(model: nn.Module, attention_type: str = "full_attention", **kwargs: Any) -> nn.Module:
-    """Traverses model named_modules and replaces attention submodules (self_attn, attention) with the specified type."""
-    cls = ATTENTION_REGISTRY.resolve(attention_type)
-    for name, module in list(model.named_modules()):
-        for child_name, child in list(module.named_children()):
-            if any(k in child_name.lower() for k in ["self_attn", "attention", "attn"]):
-                dim = getattr(child, "embed_dim", getattr(child, "hidden_size", 64))
-                try:
-                    new_attn = cls(config=None, pretrained_attn=child, **kwargs)
-                except Exception:
-                    try:
-                        new_attn = cls(embed_dim=dim, **kwargs)
-                    except Exception:
-                        try:
-                            new_attn = cls(**kwargs)
-                        except Exception:
-                            continue
-                setattr(module, child_name, new_attn)
-    return model
+    """Replace detected attention modules through the architecture-aware surgery API."""
+    from neuralops.api import replace_attention
+
+    return replace_attention(model, attention=attention_type, **kwargs)
 
 
 class _BaseAutoNeuralOps:
@@ -81,12 +61,11 @@ class _BaseAutoNeuralOps:
             try:
                 from transformers import AutoModel
                 hf_loader = AutoModel
-            except Exception:
+            except ImportError:
                 hf_loader = None
         else:
             hf_loader = cls._HF_CLASS
 
-        logger.info("AutoNeuralOps: Loading base model '%s'", pretrained_model_name_or_path)
         if hf_loader is None:
             raise ImportError(
                 "Transformers is required to load a pretrained model. Install it with "
@@ -131,7 +110,7 @@ class AutoNeuralOpsModel(_BaseAutoNeuralOps):
         try:
             from transformers import AutoModel
             cls._HF_CLASS = AutoModel
-        except Exception:
+        except ImportError:
             cls._HF_CLASS = None
         attn = attention or attention_type
         return super().from_pretrained(
@@ -159,7 +138,7 @@ class AutoNeuralOpsForCausalLM(_BaseAutoNeuralOps):
         try:
             from transformers import AutoModelForCausalLM
             cls._HF_CLASS = AutoModelForCausalLM
-        except Exception:
+        except ImportError:
             cls._HF_CLASS = None
         attn = attention or attention_type
         return super().from_pretrained(
@@ -187,7 +166,7 @@ class AutoNeuralOpsForSequenceClassification(_BaseAutoNeuralOps):
         try:
             from transformers import AutoModelForSequenceClassification
             cls._HF_CLASS = AutoModelForSequenceClassification
-        except Exception:
+        except ImportError:
             cls._HF_CLASS = None
         attn = attention or attention_type
         return super().from_pretrained(
@@ -205,14 +184,11 @@ def register_hf_automodel() -> bool:
         from transformers import AutoConfig, AutoModel, AutoModelForCausalLM
         from neuralops.models.configuration import NeuralOpsConfig
         from neuralops.models.modeling import NeuralOpsModel, NeuralOpsForCausalLM
-        try:
-            AutoConfig.register("neuralops", NeuralOpsConfig)
-            AutoModel.register(NeuralOpsConfig, NeuralOpsModel)
-            AutoModelForCausalLM.register(NeuralOpsConfig, NeuralOpsForCausalLM)
-        except Exception:
-            pass
+        AutoConfig.register("neuralops", NeuralOpsConfig, exist_ok=True)
+        AutoModel.register(NeuralOpsConfig, NeuralOpsModel, exist_ok=True)
+        AutoModelForCausalLM.register(NeuralOpsConfig, NeuralOpsForCausalLM, exist_ok=True)
         return True
-    except (ImportError, Exception):
+    except ImportError:
         return False
 
 
@@ -224,16 +200,8 @@ def patch_transformers(
     swiglu: bool = True,
     fused_linear_ce: bool = True,
 ) -> None:
-    """
-    1-line global integration into HuggingFace Trainer, TRL, LLaMA-Factory, or Axolotl.
-    Monkey-patches standard HuggingFace modeling layers with high-performance Triton kernels.
-    """
-    try:
-        import transformers.models.llama.modeling_llama as llama_mod
-        if rope and hasattr(llama_mod, "apply_rotary_pos_emb"):
-            from neuralops.core.triton_kernels.fused_rope import fused_rotary_position_embedding
-            logger.info("patch_transformers: Fused RoPE enabled for LLaMA")
-    except Exception:
-        pass
-
-    logger.info("patch_transformers: NeuralOps kernels patched into Transformers.")
+    """Reserved compatibility entry point; global Transformers patching is unsupported."""
+    raise NotImplementedError(
+        "Global Transformers monkey-patching is not implemented. Apply model surgery "
+        "explicitly with replace_attention(model, attention=...) instead."
+    )

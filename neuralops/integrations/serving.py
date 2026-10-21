@@ -14,12 +14,10 @@ Integrates NeuralOps models and attention layers with vLLM and Text Generation I
 from __future__ import annotations
 
 import json
-import logging
+import math
 from typing import Any, List, Optional
 import torch
 import torch.nn as nn
-
-logger = logging.getLogger("NeuralOps.ServingIntegrations")
 
 try:
     import vllm
@@ -47,13 +45,18 @@ class VLLMAttentionAdapter:
         """Check if vLLM package is available."""
         return HAS_VLLM
 
-    def register(self) -> bool:
-        """Register adapter into vLLM attention backends."""
+    def register(self, backend_cls: type) -> bool:
+        """Register a concrete vLLM AttentionBackend implementation."""
         if not HAS_VLLM:
             raise RuntimeError(
                 "vLLM is not installed. Please install neuralops[serving] or run: pip install vllm"
             )
-        return True
+        backend_name = getattr(backend_cls, "get_name", lambda: None)()
+        if not backend_name:
+            raise ValueError("backend_cls must implement get_name() from vLLM's AttentionBackend contract")
+        from neuralops.export.serving import VLLMAdapter
+
+        return VLLMAdapter.register_attention_backend(backend_name, backend_cls)
 
     def format_metadata(self, block_tables: List[List[int]], context_lens: List[int]) -> dict[str, Any]:
         """Formats sequence metadata into vLLM engine-compatible structures."""
@@ -73,8 +76,10 @@ class VLLMAttentionAdapter:
         block_size: int = 16,
     ) -> torch.Tensor:
         """Execute paged attention forward pass over block_tables and KV-cache blocks."""
-        if not HAS_VLLM:
-            logger.debug("vLLM not installed; using NeuralOps native paged_attention_kernel.")
+        if query.ndim != 3:
+            raise ValueError("query must have shape [batch, heads, head_dim]")
+        if not isinstance(block_size, int) or isinstance(block_size, bool) or block_size <= 0:
+            raise ValueError("block_size must be a positive integer")
 
         from neuralops.core.triton_kernels.paged_attention import paged_attention_kernel
         return paged_attention_kernel(
@@ -110,12 +115,14 @@ class SGLangRadixLinearCacheAdapter:
     """
 
     def __init__(self, max_cached_nodes: int = 4096) -> None:
+        if not isinstance(max_cached_nodes, int) or isinstance(max_cached_nodes, bool) or max_cached_nodes <= 0:
+            raise ValueError("max_cached_nodes must be a positive integer")
         self.max_cached_nodes = max_cached_nodes
         self.tree: dict[tuple[int, ...], dict[str, Any]] = {}
         self.access_counter = 0
 
     def match_prefix(self, token_ids: list[int] | tuple[int, ...]) -> tuple[int, Optional[Any]]:
-        """Finds the longest cached prefix state in O(L) time."""
+        """Find the longest cached prefix using tuple-key lookups (O(L²) slicing work)."""
         token_tuple = tuple(token_ids)
         best_match_len = 0
         best_state = None
@@ -131,13 +138,15 @@ class SGLangRadixLinearCacheAdapter:
 
     def cache_finished_req(self, token_ids: list[int] | tuple[int, ...], final_state: Any) -> None:
         """Caches state of a completed sequence, evicting cold unlocked nodes if capacity is reached."""
-        self._ensure_capacity()
         prefix = tuple(token_ids)
         self.access_counter += 1
         if prefix in self.tree:
             self.tree[prefix]["state"] = final_state
             self.tree[prefix]["last_accessed"] = self.access_counter
         else:
+            self._ensure_capacity()
+            if len(self.tree) >= self.max_cached_nodes:
+                raise RuntimeError("Prefix cache is full and all entries are locked")
             self.tree[prefix] = {
                 "state": final_state,
                 "ref_count": 0,
@@ -162,6 +171,8 @@ class SGLangRadixLinearCacheAdapter:
 
     def evict(self, num_nodes: int = 1) -> int:
         """Evicts unreferenced nodes according to LRU policy."""
+        if not isinstance(num_nodes, int) or isinstance(num_nodes, bool) or num_nodes < 0:
+            raise ValueError("num_nodes must be a non-negative integer")
         evicted = 0
         unlocked = [
             (prefix, node["last_accessed"])
@@ -185,10 +196,14 @@ def create_openai_serving_app(
     tokenizer: Any = None,
     model_name: str = "neuralops-default",
 ) -> Any:
-    """Creates a high-performance OpenAI-compatible FastAPI serving application."""
+    """Create an OpenAI-shaped API backed by the supplied model and tokenizer.
+
+    This lightweight adapter performs ordinary Hugging Face ``generate`` calls;
+    it does not implement continuous batching or vLLM's streaming scheduler.
+    """
     try:
         from fastapi import FastAPI, Request, HTTPException
-        from fastapi.responses import JSONResponse, StreamingResponse
+        from fastapi.responses import StreamingResponse
     except ImportError:
         raise ImportError(
             "FastAPI is required for OpenAI-compatible serving. "
@@ -202,7 +217,8 @@ def create_openai_serving_app(
 
     @app.get("/health")
     def health():
-        return {"status": "ok", "backend": "neuralops"}
+        ready = model is not None and tokenizer is not None
+        return {"status": "ok" if ready else "not_ready", "ready": ready, "backend": "neuralops"}
 
     @app.get("/v1/models")
     def list_models():
@@ -220,34 +236,31 @@ def create_openai_serving_app(
 
     @app.post("/v1/completions")
     async def create_completion(request: Request):
+        from starlette.concurrency import run_in_threadpool
+
         body = await request.json()
+        if not isinstance(body, dict):
+            raise HTTPException(status_code=400, detail="request body must be a JSON object")
         prompt = body.get("prompt", "")
-        max_tokens = int(body.get("max_tokens", 16))
-        temperature = float(body.get("temperature", 1.0))
-        stream = bool(body.get("stream", False))
+        max_tokens, temperature, stream = _read_generation_options(body)
+        _validate_generation_request(model, tokenizer, prompt, max_tokens, temperature)
+        generated_text, prompt_tokens, completion_tokens = await run_in_threadpool(
+            _generate_text, model, tokenizer, prompt, max_tokens, temperature
+        )
 
         req_id = f"cmpl-{uuid.uuid4().hex[:12]}"
         created = int(time.time())
 
         if stream:
             async def event_generator():
-                words = prompt.split() if isinstance(prompt, str) else ["token"]
-                for i in range(max_tokens):
-                    chunk = {
-                        "id": req_id,
-                        "object": "text_completion",
-                        "created": created,
-                        "model": model_name,
-                        "choices": [
-                            {
-                                "text": f" {i}",
-                                "index": 0,
-                                "logprobs": None,
-                                "finish_reason": None if i < max_tokens - 1 else "stop",
-                            }
-                        ],
-                    }
-                    yield f"data: {json.dumps(chunk)}\n\n"
+                chunk = {
+                    "id": req_id,
+                    "object": "text_completion",
+                    "created": created,
+                    "model": model_name,
+                    "choices": [{"text": generated_text, "index": 0, "logprobs": None, "finish_reason": "stop"}],
+                }
+                yield f"data: {json.dumps(chunk)}\n\n"
                 yield "data: [DONE]\n\n"
 
             return StreamingResponse(event_generator(), media_type="text/event-stream")
@@ -259,53 +272,51 @@ def create_openai_serving_app(
             "model": model_name,
             "choices": [
                 {
-                    "text": f" Generated completion for: {str(prompt)[:30]}...",
+                    "text": generated_text,
                     "index": 0,
                     "logprobs": None,
                     "finish_reason": "stop",
                 }
             ],
             "usage": {
-                "prompt_tokens": len(str(prompt).split()),
-                "completion_tokens": max_tokens,
-                "total_tokens": len(str(prompt).split()) + max_tokens,
+                "prompt_tokens": prompt_tokens,
+                "completion_tokens": completion_tokens,
+                "total_tokens": prompt_tokens + completion_tokens,
             },
         }
 
     @app.post("/v1/chat/completions")
     async def create_chat_completion(request: Request):
+        from starlette.concurrency import run_in_threadpool
+
         body = await request.json()
+        if not isinstance(body, dict):
+            raise HTTPException(status_code=400, detail="request body must be a JSON object")
         messages = body.get("messages", [])
-        max_tokens = int(body.get("max_tokens", 16))
-        temperature = float(body.get("temperature", 1.0))
-        stream = bool(body.get("stream", False))
+        max_tokens, temperature, stream = _read_generation_options(body)
+        if not isinstance(messages, list) or not messages:
+            raise HTTPException(status_code=400, detail="messages must be a non-empty list")
+        if any(not isinstance(message, dict) or not isinstance(message.get("role"), str) for message in messages):
+            raise HTTPException(status_code=400, detail="each message must contain a string role")
 
         req_id = f"chatcmpl-{uuid.uuid4().hex[:12]}"
         created = int(time.time())
-
-        user_content = ""
-        for m in reversed(messages):
-            if m.get("role") == "user":
-                user_content = m.get("content", "")
-                break
+        prompt = _format_chat_prompt(tokenizer, messages)
+        _validate_generation_request(model, tokenizer, prompt, max_tokens, temperature)
+        generated_text, prompt_tokens, completion_tokens = await run_in_threadpool(
+            _generate_text, model, tokenizer, prompt, max_tokens, temperature
+        )
 
         if stream:
             async def event_generator():
-                for i in range(max_tokens):
-                    chunk = {
-                        "id": req_id,
-                        "object": "chat.completion.chunk",
-                        "created": created,
-                        "model": model_name,
-                        "choices": [
-                            {
-                                "index": 0,
-                                "delta": {"content": f" token_{i}"} if i > 0 else {"role": "assistant", "content": "Hello"},
-                                "finish_reason": None if i < max_tokens - 1 else "stop",
-                            }
-                        ],
-                    }
-                    yield f"data: {json.dumps(chunk)}\n\n"
+                chunk = {
+                    "id": req_id,
+                    "object": "chat.completion.chunk",
+                    "created": created,
+                    "model": model_name,
+                    "choices": [{"index": 0, "delta": {"role": "assistant", "content": generated_text}, "finish_reason": "stop"}],
+                }
+                yield f"data: {json.dumps(chunk)}\n\n"
                 yield "data: [DONE]\n\n"
 
             return StreamingResponse(event_generator(), media_type="text/event-stream")
@@ -320,19 +331,104 @@ def create_openai_serving_app(
                     "index": 0,
                     "message": {
                         "role": "assistant",
-                        "content": f"Processed: {user_content[:40]}",
+                        "content": generated_text,
                     },
                     "finish_reason": "stop",
                 }
             ],
             "usage": {
-                "prompt_tokens": len(user_content.split()),
-                "completion_tokens": max_tokens,
-                "total_tokens": len(user_content.split()) + max_tokens,
+                "prompt_tokens": prompt_tokens,
+                "completion_tokens": completion_tokens,
+                "total_tokens": prompt_tokens + completion_tokens,
             },
         }
 
     return app
+
+
+def _read_generation_options(body: dict[str, Any]) -> tuple[int, float, bool]:
+    """Parse OpenAI-style generation options and return HTTP 400 on malformed values."""
+    from fastapi import HTTPException
+
+    try:
+        max_tokens = int(body.get("max_tokens", 16))
+        temperature = float(body.get("temperature", 1.0))
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail="max_tokens and temperature must be numeric") from exc
+    stream = body.get("stream", False)
+    if not isinstance(stream, bool):
+        raise HTTPException(status_code=400, detail="stream must be a boolean")
+    return max_tokens, temperature, stream
+
+
+def _validate_generation_request(
+    model: nn.Module | None,
+    tokenizer: Any,
+    prompt: Any,
+    max_tokens: int,
+    temperature: float,
+) -> None:
+    """Reject invalid or unserviceable generation requests before model execution."""
+    from fastapi import HTTPException
+
+    if model is None or tokenizer is None:
+        raise HTTPException(status_code=503, detail="A model and tokenizer must be loaded to serve requests")
+    if not isinstance(prompt, str):
+        raise HTTPException(status_code=400, detail="prompt must be a string")
+    if max_tokens <= 0:
+        raise HTTPException(status_code=400, detail="max_tokens must be positive")
+    if not math.isfinite(temperature) or temperature < 0:
+        raise HTTPException(status_code=400, detail="temperature must be a finite, non-negative number")
+
+
+def _format_chat_prompt(tokenizer: Any, messages: list[dict[str, Any]]) -> str:
+    """Render chat messages with the tokenizer's template or a plain role-tagged prompt."""
+    if any(not isinstance(message.get("content", ""), str) for message in messages):
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=400, detail="message content must be a string")
+    if callable(getattr(tokenizer, "apply_chat_template", None)):
+        return tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+    return "\n".join(f"{message['role']}: {message.get('content', '')}" for message in messages) + "\nassistant:"
+
+
+def _generate_text(
+    model: nn.Module | None,
+    tokenizer: Any,
+    prompt: str,
+    max_tokens: int,
+    temperature: float,
+) -> tuple[str, int, int]:
+    """Run one causal generation request and return decoded text and token counts."""
+    from fastapi import HTTPException
+
+    if model is None or tokenizer is None:
+        raise HTTPException(status_code=503, detail="A model and tokenizer must be loaded to serve requests")
+    encoded = tokenizer(prompt, return_tensors="pt")
+    input_ids = encoded.get("input_ids")
+    if not isinstance(input_ids, torch.Tensor) or input_ids.ndim != 2:
+        raise RuntimeError("Tokenizer must return input_ids with shape [batch, sequence]")
+    try:
+        device = next(model.parameters()).device
+    except StopIteration:
+        device = input_ids.device
+    except AttributeError:
+        device = input_ids.device
+    encoded = {key: value.to(device) if isinstance(value, torch.Tensor) else value for key, value in encoded.items()}
+    generation_kwargs: dict[str, Any] = {"max_new_tokens": max_tokens, "do_sample": temperature > 0}
+    if temperature > 0:
+        generation_kwargs["temperature"] = temperature
+    model.eval()
+    with torch.inference_mode():
+        sequences = model.generate(**encoded, **generation_kwargs)
+    if hasattr(sequences, "sequences"):
+        sequences = sequences.sequences
+    if not isinstance(sequences, torch.Tensor) or sequences.ndim != 2:
+        raise RuntimeError("Model.generate must return token IDs with shape [batch, sequence]")
+    generated = sequences[0, input_ids.shape[1]:]
+    text = tokenizer.decode(generated, skip_special_tokens=True)
+    prompt_count = int(encoded.get("attention_mask", torch.ones_like(input_ids)).sum().item())
+    return text, prompt_count, int(generated.numel())
 
 
 VLLMAdapter = VLLMAttentionAdapter

@@ -63,6 +63,17 @@ def test_tgi_single_request_blocking():
     assert len(completions[0]) > 0
 
 
+def test_tgi_prefill_counts_toward_max_new_tokens():
+    config = GPT2Config(vocab_size=100, n_positions=64, n_embd=32, n_layer=1, n_head=2)
+    model = GPT2LMHeadModel(config).eval()
+    adapter = TGIServingAdapter(model=model, tokenizer=None, max_batch_size=2, device="cpu")
+
+    adapter.continuous_batching_generate([[10, 20]], max_new_tokens=1)
+
+    assert adapter.stats()["total_tokens_generated"] == 1
+    assert adapter.stats()["completed_requests"] == 1
+
+
 def test_tgi_batch_of_4_requests():
     """Submit 4 prompts of varying lengths; verify all 4 generate full completions."""
     config = GPT2Config(vocab_size=100, n_positions=64, n_embd=32, n_layer=1, n_head=2)
@@ -230,6 +241,26 @@ def test_tensorrt_llm_build_raises_not_implemented():
         builder.build_plugin()
     assert "TensorRT-LLM plugin compilation is planned for NeuralOps v2.0.0" in str(exc_info.value)
     assert "TENSORRT_LLM_PLAN.md" in str(exc_info.value)
+
+
+def test_tensorrt_engine_export_does_not_write_placeholder_artifacts(tmp_path, monkeypatch):
+    import neuralops.integrations.tensorrt_llm as trt_module
+
+    monkeypatch.setattr(trt_module, "HAS_TRT", False)
+    output_path = tmp_path / "model.engine"
+    with pytest.raises(NotImplementedError, match="no engine or placeholder artifact"):
+        TensorRTLLMPluginBuilder(model=None).export_engine(output_path)
+    assert not output_path.exists()
+    assert not output_path.with_suffix(".json").exists()
+
+
+def test_tensorrt_runtime_does_not_return_random_logits_without_sdk():
+    import neuralops.integrations.tensorrt_llm as trt_module
+
+    if trt_module.HAS_TRT:
+        pytest.skip("TensorRT SDK is present; native engine fixtures are required")
+    with pytest.raises(ImportError, match="TensorRT is required"):
+        trt_module.TensorRTRuntimeRunner("missing.engine")
 
 
 def test_tensorrt_llm_is_available_false_on_this_system():

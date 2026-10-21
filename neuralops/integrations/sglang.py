@@ -229,8 +229,10 @@ class SGLangRadixAdapter:
                 full_kv = getattr(outputs, "past_key_values", cached_kv)
                 logits = outputs.logits[:, -1, :] if hasattr(outputs, "logits") else outputs[:, -1, :]
             elif matched_len == len(tokens) and cached_kv is not None:
-                full_kv = cached_kv
-                outputs = self.model(inp[:, -1:], past_key_values=cached_kv, use_cache=True)
+                # The cache already includes every prompt token, but does not retain
+                # the final-token logits needed for the next decode step.
+                outputs = self.model(inp, use_cache=True)
+                full_kv = getattr(outputs, "past_key_values", None)
                 logits = outputs.logits[:, -1, :] if hasattr(outputs, "logits") else outputs[:, -1, :]
             else:
                 outputs = self.model(inp, use_cache=True)

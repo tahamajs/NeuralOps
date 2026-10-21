@@ -14,7 +14,10 @@ Provides serving hooks and model architecture adapters for Text Generation Infer
 from __future__ import annotations
 
 import collections
+import inspect
+import json
 import logging
+import math
 import queue
 import time
 from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
@@ -38,6 +41,18 @@ class TGIRequest:
         top_k: int = 50,
         eos_token_id: Optional[int] = None,
     ):
+        if not isinstance(request_id, str) or not request_id:
+            raise ValueError("request_id must be a non-empty string")
+        if not isinstance(input_ids, torch.Tensor) or input_ids.ndim != 1 or input_ids.numel() == 0:
+            raise ValueError("input_ids must be a non-empty 1D tensor")
+        if not isinstance(max_new_tokens, int) or isinstance(max_new_tokens, bool) or max_new_tokens <= 0:
+            raise ValueError("max_new_tokens must be a positive integer")
+        if not math.isfinite(temperature) or temperature < 0:
+            raise ValueError("temperature must be finite and non-negative")
+        if not isinstance(top_k, int) or isinstance(top_k, bool) or top_k < 0:
+            raise ValueError("top_k must be a non-negative integer")
+        if stop_sequences is not None and any(not isinstance(stop, str) for stop in stop_sequences):
+            raise TypeError("stop_sequences must contain strings")
         self.request_id = request_id
         self.input_ids = input_ids
         self.max_new_tokens = max_new_tokens
@@ -58,9 +73,14 @@ TGIRequestSlot = TGIRequest
 
 
 class TGIRequestBatch:
-    """Manages a dynamic pool of active and queued requests under continuous batching."""
+    """Manages active and queued requests for the lightweight TGI-style adapter."""
 
     def __init__(self, max_batch_size: int = 32, max_seq_len: int = 2048):
+        if any(
+            not isinstance(value, int) or isinstance(value, bool) or value <= 0
+            for value in (max_batch_size, max_seq_len)
+        ):
+            raise ValueError("max_batch_size and max_seq_len must be positive integers")
         self.max_batch_size = max_batch_size
         self.max_seq_len = max_seq_len
         self.active_slots: Dict[str, TGIRequest] = {}
@@ -68,6 +88,12 @@ class TGIRequestBatch:
         self.completed_slots: Dict[str, TGIRequest] = {}
 
     def add(self, request: TGIRequest) -> None:
+        if request.request_id in self.active_slots or request.request_id in self.completed_slots:
+            raise ValueError(f"request_id {request.request_id!r} has already been used")
+        if any(queued.request_id == request.request_id for queued in self.queued_slots):
+            raise ValueError(f"request_id {request.request_id!r} is already queued")
+        if request.input_ids.numel() + request.max_new_tokens > self.max_seq_len:
+            raise ValueError("prompt plus max_new_tokens exceeds max_seq_len")
         if len(self.active_slots) < self.max_batch_size:
             self.active_slots[request.request_id] = request
         else:
@@ -123,13 +149,10 @@ class TGIStreamingIterator:
 
 
 class TGIServingAdapter:
-    """
-    Continuous batching and streaming generation engine compatible with TGI servers.
+    """Lightweight model-backed generation adapter with request queues and token iterators.
 
-    Features:
-    - True iteration-level continuous batching: new requests are admitted every decode step.
-    - Isolated per-request KV cache states avoiding cross-sequence contamination.
-    - Synchronous blocking batch completion and asynchronous streaming token iterators.
+    It is not the Hugging Face TGI runtime and currently decodes active requests
+    sequentially rather than through a fused continuous batch.
     """
 
     def __init__(
@@ -141,12 +164,17 @@ class TGIServingAdapter:
         device: Union[str, torch.device] = "cuda",
         eos_token_id: Optional[int] = None,
     ):
+        if any(
+            not isinstance(value, int) or isinstance(value, bool) or value <= 0
+            for value in (max_batch_size, max_seq_len)
+        ):
+            raise ValueError("max_batch_size and max_seq_len must be positive integers")
         self.device = torch.device(device if (device != "cuda" or torch.cuda.is_available()) else "cpu")
         self.model = model.to(self.device).eval()
         self.tokenizer = tokenizer
         self.max_batch_size = max_batch_size
         self.max_seq_len = max_seq_len
-        self.eos_token_id = eos_token_id or getattr(tokenizer, "eos_token_id", None)
+        self.eos_token_id = eos_token_id if eos_token_id is not None else getattr(tokenizer, "eos_token_id", None)
 
         self.batch_manager = TGIRequestBatch(max_batch_size=max_batch_size, max_seq_len=max_seq_len)
 
@@ -234,14 +262,9 @@ class TGIServingAdapter:
                 continue
 
             inp = slot.input_ids.unsqueeze(0).to(self.device)
-            try:
-                outputs = self.model(inp, use_cache=True)
-                logits = outputs.logits[:, -1, :] if hasattr(outputs, "logits") else outputs[:, -1, :]
-                pkv = getattr(outputs, "past_key_values", None)
-            except TypeError:
-                outputs = self.model(inp)
-                logits = outputs.logits[:, -1, :] if hasattr(outputs, "logits") else outputs[:, -1, :]
-                pkv = None
+            outputs = _call_model(self.model, inp, use_cache=True)
+            logits = outputs.logits[:, -1, :] if hasattr(outputs, "logits") else outputs[:, -1, :]
+            pkv = getattr(outputs, "past_key_values", None)
 
             slot.past_kv = pkv
             next_tok = self._sample_token(logits, slot.temperature, slot.top_k)
@@ -249,10 +272,11 @@ class TGIServingAdapter:
             self._total_tokens_generated += 1
             text_piece = self._decode_token(next_tok)
 
+            is_max = len(slot.generated_ids) >= slot.max_new_tokens
             is_stop = self.check_stop(slot, next_tok)
-            if is_stop:
+            if is_max or is_stop:
                 slot.finished = True
-                slot.finish_reason = "stop"
+                slot.finish_reason = "max_tokens" if is_max else "stop"
                 slot.stream_queue.put((next_tok, text_piece, True))
                 slot.stream_queue.put(None)
             else:
@@ -279,7 +303,15 @@ class TGIServingAdapter:
         if needs_prefill:
             self.prefill(needs_prefill)
 
+        prefetched_ids = set(needs_prefill)
+        for req_id in needs_prefill:
+            slot = self.batch_manager.active_slots.get(req_id)
+            if slot is not None and slot.generated_ids:
+                new_tokens[req_id] = slot.generated_ids[-1]
+
         for req_id in active_ids:
+            if req_id in prefetched_ids:
+                continue
             slot = self.batch_manager.active_slots.get(req_id)
             if not slot or slot.finished:
                 continue
@@ -288,7 +320,7 @@ class TGIServingAdapter:
             inp = torch.tensor([[last_tok]], dtype=torch.long, device=self.device)
 
             if slot.past_kv is not None:
-                outputs = self.model(inp, past_key_values=slot.past_kv, use_cache=True)
+                outputs = _call_model(self.model, inp, past_key_values=slot.past_kv, use_cache=True)
                 logits = outputs.logits[:, -1, :] if hasattr(outputs, "logits") else outputs[:, -1, :]
                 slot.past_kv = getattr(outputs, "past_key_values", None)
             else:
@@ -403,7 +435,7 @@ class TGIServingAdapter:
 
     def standalone_server_hook(self) -> Any:
         """
-        Returns a FastAPI application instance exposing TGI-compatible endpoints:
+        Returns a minimal FastAPI adapter exposing TGI-style endpoints:
         - GET  /health
         - GET  /info
         - POST /generate
@@ -431,8 +463,14 @@ class TGIServingAdapter:
         @app.post("/generate")
         async def generate(request: Request) -> Dict[str, Any]:
             data = await request.json()
+            if not isinstance(data, dict):
+                from fastapi import HTTPException
+                raise HTTPException(status_code=400, detail="request body must be a JSON object")
             prompt = data.get("inputs", "")
             params = data.get("parameters", {})
+            if not isinstance(params, dict):
+                from fastapi import HTTPException
+                raise HTTPException(status_code=400, detail="parameters must be a JSON object")
             max_new = params.get("max_new_tokens", 16)
             completions = self.continuous_batching_generate([prompt], max_new_tokens=max_new)
             return {"generated_text": completions[0]}
@@ -440,17 +478,38 @@ class TGIServingAdapter:
         @app.post("/generate_stream")
         async def generate_stream(request: Request) -> StreamingResponse:
             data = await request.json()
+            if not isinstance(data, dict):
+                from fastapi import HTTPException
+                raise HTTPException(status_code=400, detail="request body must be a JSON object")
             prompt = data.get("inputs", "")
             params = data.get("parameters", {})
+            if not isinstance(params, dict):
+                from fastapi import HTTPException
+                raise HTTPException(status_code=400, detail="parameters must be a JSON object")
             max_new = params.get("max_new_tokens", 16)
 
             def event_generator():
                 for tok, text in self.streaming_generate(prompt, max_new_tokens=max_new):
-                    yield f"data: {{\"token\": {tok}, \"text\": \"{text}\"}}\n\n"
+                    yield f"data: {json.dumps({'token': tok, 'text': text})}\n\n"
 
             return StreamingResponse(event_generator(), media_type="text/event-stream")
 
         return app
+
+
+def _call_model(model: nn.Module, input_ids: torch.Tensor, **optional_kwargs: Any) -> Any:
+    """Pass only supported model kwargs without catching errors raised inside forward."""
+    try:
+        signature = inspect.signature(model.forward)
+    except (TypeError, ValueError):
+        return model(input_ids)
+    accepts_kwargs = any(parameter.kind is inspect.Parameter.VAR_KEYWORD for parameter in signature.parameters.values())
+    accepted = {
+        name: value
+        for name, value in optional_kwargs.items()
+        if accepts_kwargs or name in signature.parameters
+    }
+    return model(input_ids, **accepted)
 
 
 __all__ = [

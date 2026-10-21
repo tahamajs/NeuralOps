@@ -5,42 +5,43 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-NeuralOps Inference Subpackage.
-"""
+"""Lazy public exports for autoregressive inference utilities."""
 
 from __future__ import annotations
 
-from neuralops.inference.paged_cache import PagedKVCache, PagedStateTable
-from neuralops.inference.engine import (
-    NeuralOpsInferenceEngine,
-    stream_generate,
-    speculative_generate,
-    beam_search_generate,
-    ContinuousBatcher,
-)
+from importlib import import_module
 
-from neuralops.inference.speculative_decoding import (
-    SelfSpeculativeDecoder,
-    SpeculativeDecodeStats,
-    gamma_sweep_harness,
-)
-from neuralops.models.cuda_graph import CUDAGraphDecodeRunner
+_EXPORTS = {
+    "PagedKVCache": ("paged_cache", "PagedKVCache"),
+    "PagedStateTable": ("paged_cache", "PagedStateTable"),
+    "NeuralOpsInferenceEngine": ("engine", "NeuralOpsInferenceEngine"),
+    "stream_generate": ("engine", "stream_generate"),
+    "speculative_generate": ("engine", "speculative_generate"),
+    "beam_search_generate": ("engine", "beam_search_generate"),
+    "ContinuousBatcher": ("engine", "ContinuousBatcher"),
+    "SelfSpeculativeDecoder": ("speculative_decoding", "SelfSpeculativeDecoder"),
+    "SpeculativeDecodeStats": ("speculative_decoding", "SpeculativeDecodeStats"),
+    "gamma_sweep_harness": ("speculative_decoding", "gamma_sweep_harness"),
+    "CUDAGraphDecodeRunner": ("neuralops.models.cuda_graph", "CUDAGraphDecodeRunner"),
+}
+_MODULES = {"engine", "paged_cache", "speculative_decoding"}
 
-__all__ = [
-    "PagedKVCache",
-    "PagedStateTable",
-    "NeuralOpsInferenceEngine",
-    "stream_generate",
-    "speculative_generate",
-    "beam_search_generate",
-    "ContinuousBatcher",
-    "SelfSpeculativeDecoder",
-    "SpeculativeDecodeStats",
-    "gamma_sweep_harness",
-    "CUDAGraphDecodeRunner",
-]
+__all__ = [*_EXPORTS, *_MODULES]
 
-from neuralops.inference import engine
-from neuralops.inference import paged_cache
-from neuralops.inference import speculative_decoding
+
+def __getattr__(name: str):
+    """Load decoding and CUDA-graph components only when requested."""
+    if name in _EXPORTS:
+        module_name, attribute = _EXPORTS[name]
+        target = module_name if module_name.startswith("neuralops.") else f"{__name__}.{module_name}"
+        value = getattr(import_module(target), attribute)
+    elif name in _MODULES:
+        value = import_module(f"{__name__}.{name}")
+    else:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    globals()[name] = value
+    return value
+
+
+def __dir__() -> list[str]:
+    return sorted(set(globals()) | set(__all__))

@@ -5,32 +5,39 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-NeuralOps Experiment Logging Subpackage.
-"""
+"""Lazy public exports for experiment logging."""
 
-from neuralops.trainer.results_manager import ResultsManager
+from importlib import import_module
 
-from .callbacks import LoggingCallback
-from .config import LoggingConfig
-from .integration import auto_setup
-from .logger import get_logger, get_rank, setup_logging, shutdown_logging
-from .tracker import MetricsTracker
+_EXPORTS = {
+    "LoggingConfig": ("config", "LoggingConfig"),
+    "setup_logging": ("logger", "setup_logging"),
+    "shutdown_logging": ("logger", "shutdown_logging"),
+    "get_logger": ("logger", "get_logger"),
+    "get_rank": ("logger", "get_rank"),
+    "MetricsTracker": ("tracker", "MetricsTracker"),
+    "LoggingCallback": ("callbacks", "LoggingCallback"),
+    "auto_setup": ("integration", "auto_setup"),
+    "ResultsManager": ("neuralops.trainer.results_manager", "ResultsManager"),
+}
+_MODULES = {"callbacks", "config", "integration", "logger", "tracker"}
 
-__all__ = [
-    "LoggingConfig",
-    "setup_logging",
-    "shutdown_logging",
-    "get_logger",
-    "get_rank",
-    "MetricsTracker",
-    "LoggingCallback",
-    "auto_setup",
-    "ResultsManager",
-]
+__all__ = [*_EXPORTS, *_MODULES]
 
-from neuralops.experiment_logging import callbacks
-from neuralops.experiment_logging import config
-from neuralops.experiment_logging import integration
-from neuralops.experiment_logging import logger
-from neuralops.experiment_logging import tracker
+
+def __getattr__(name: str):
+    """Load optional tracking dependencies only when their APIs are requested."""
+    if name in _EXPORTS:
+        module_name, attribute = _EXPORTS[name]
+        target = module_name if module_name.startswith("neuralops.") else f"{__name__}.{module_name}"
+        value = getattr(import_module(target), attribute)
+    elif name in _MODULES:
+        value = import_module(f"{__name__}.{name}")
+    else:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    globals()[name] = value
+    return value
+
+
+def __dir__() -> list[str]:
+    return sorted(set(globals()) | set(__all__))

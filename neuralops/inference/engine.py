@@ -12,6 +12,8 @@ High-throughput inference engine supporting sampling, beam search, and continuou
 """
 
 from __future__ import annotations
+import inspect
+import math
 from typing import Generator, Any
 from dataclasses import dataclass, field
 import torch
@@ -58,18 +60,31 @@ class NeuralOpsInferenceEngine:
         use_cache: bool = False,
     ) -> torch.Tensor:
         """Autoregressive generation with top-k, top-p, and repetition penalties."""
+        if input_ids.ndim != 2 or input_ids.shape[1] == 0:
+            raise ValueError("input_ids must have shape [batch, non-empty sequence]")
+        if not isinstance(max_new_tokens, int) or isinstance(max_new_tokens, bool) or max_new_tokens < 0:
+            raise ValueError("max_new_tokens must be a non-negative integer")
+        if not math.isfinite(temperature) or temperature < 0:
+            raise ValueError("temperature must be finite and non-negative")
+        if top_p is not None and not 0.0 < top_p <= 1.0:
+            raise ValueError("top_p must be in (0, 1]")
+        if top_k is not None and (not isinstance(top_k, int) or isinstance(top_k, bool) or top_k < 0):
+            raise ValueError("top_k must be a non-negative integer or None")
+        if repetition_penalty <= 0 or not math.isfinite(repetition_penalty):
+            raise ValueError("repetition_penalty must be finite and positive")
         curr = input_ids.clone()
         past_kv = None
 
         for _ in range(max_new_tokens):
             inp = curr if (past_kv is None or not use_cache) else curr[:, -1:]
-            try:
-                outputs = self.model(inp, past_key_values=past_kv, use_cache=use_cache)
-                past_kv = getattr(outputs, "past_key_values", None)
-                logits = outputs.logits if hasattr(outputs, "logits") else outputs
-            except TypeError:
-                outputs = self.model(curr)
-                logits = outputs.logits if hasattr(outputs, "logits") else outputs
+            outputs = _call_model(
+                self.model,
+                inp,
+                past_key_values=past_kv,
+                use_cache=use_cache,
+            )
+            past_kv = getattr(outputs, "past_key_values", None)
+            logits = outputs.logits if hasattr(outputs, "logits") else outputs
 
             next_token_logits = logits[:, -1, :].clone() / max(temperature, 1e-5)
 
@@ -96,7 +111,7 @@ class NeuralOpsInferenceEngine:
                     next_token_logits[b, indices_to_remove] = float("-inf")
 
             probs = F.softmax(next_token_logits, dim=-1)
-            if temperature > 0.0 and (top_k is not None or top_p is not None):
+            if temperature > 0.0:
                 next_token = torch.multinomial(probs, num_samples=1)
             else:
                 next_token = torch.argmax(next_token_logits, dim=-1, keepdim=True)
@@ -112,6 +127,10 @@ def stream_generate(
     max_new_tokens: int = 16,
 ) -> Generator[int, None, None]:
     """Yields generated tokens one-by-one."""
+    if input_ids.ndim != 2 or input_ids.shape[0] != 1:
+        raise ValueError("stream_generate currently supports exactly one sequence")
+    if not isinstance(max_new_tokens, int) or isinstance(max_new_tokens, bool) or max_new_tokens < 0:
+        raise ValueError("max_new_tokens must be a non-negative integer")
     curr = input_ids.clone()
     for _ in range(max_new_tokens):
         with torch.no_grad():
@@ -131,9 +150,13 @@ def speculative_generate(
     K: int = 3,
     gamma: int | None = None,
 ) -> torch.Tensor:
+    """Greedy speculative decoding; sampling-distribution preservation is not provided."""
     if gamma is not None:
         K = gamma
-    """Real speculative decoding with acceptance/rejection sampling."""
+    if not isinstance(K, int) or isinstance(K, bool) or K <= 0:
+        raise ValueError("K must be a positive integer")
+    if not isinstance(max_new_tokens, int) or isinstance(max_new_tokens, bool) or max_new_tokens < 0:
+        raise ValueError("max_new_tokens must be a non-negative integer")
     curr = input_ids.clone()
     while curr.shape[1] - input_ids.shape[1] < max_new_tokens:
         draft_ids = curr.clone()
@@ -216,6 +239,11 @@ class ContinuousBatcher:
     """Continuous dynamic batch scheduler admitting requests on the fly."""
 
     def __init__(self, model: nn.Module | None = None, max_batch_size: int = 8, max_seq_len: int = 2048) -> None:
+        if any(
+            not isinstance(value, int) or isinstance(value, bool) or value <= 0
+            for value in (max_batch_size, max_seq_len)
+        ):
+            raise ValueError("max_batch_size and max_seq_len must be positive integers")
         self.model = model
         self.max_batch_size = max_batch_size
         self.max_seq_len = max_seq_len
@@ -224,22 +252,47 @@ class ContinuousBatcher:
 
     def add_request(self, *args: Any, **kwargs: Any) -> None:
         if len(args) == 2 and isinstance(args[0], str) and isinstance(args[1], torch.Tensor):
-            req = GenerationRequest(request_id=args[0], input_ids=args[1])
+            req = GenerationRequest(
+                request_id=args[0], input_ids=args[1], max_new_tokens=kwargs.get("max_new_tokens", 16)
+            )
         elif len(args) == 1 and isinstance(args[0], tuple):
-            req = GenerationRequest(request_id=args[0][0], input_ids=args[0][1])
+            req = GenerationRequest(
+                request_id=args[0][0],
+                input_ids=args[0][1],
+                max_new_tokens=kwargs.get("max_new_tokens", 16),
+            )
         elif len(args) == 1 and isinstance(args[0], GenerationRequest):
             req = args[0]
         elif "req_id" in kwargs:
-            req = GenerationRequest(request_id=kwargs["req_id"], input_ids=kwargs["input_ids"])
+            req = GenerationRequest(
+                request_id=kwargs["req_id"],
+                input_ids=kwargs["input_ids"],
+                max_new_tokens=kwargs.get("max_new_tokens", 16),
+            )
         else:
-            req = args[0]
+            raise TypeError("add_request expects (request_id, input_ids), a request tuple, or GenerationRequest")
+        if not isinstance(req.request_id, str) or not req.request_id:
+            raise ValueError("request_id must be a non-empty string")
+        if not isinstance(req.input_ids, torch.Tensor):
+            raise TypeError("input_ids must be a torch.Tensor")
+        if req.input_ids.ndim != 2 or req.input_ids.shape[0] != 1 or req.input_ids.shape[1] == 0:
+            raise ValueError("input_ids must have shape [1, sequence_length] with a non-empty sequence")
+        if req.input_ids.dtype not in (torch.int8, torch.int16, torch.int32, torch.int64, torch.uint8):
+            raise ValueError("input_ids must use an integer dtype")
+        if not isinstance(req.max_new_tokens, int) or isinstance(req.max_new_tokens, bool) or req.max_new_tokens <= 0:
+            raise ValueError("max_new_tokens must be a positive integer")
+        if req.input_ids.shape[1] + req.max_new_tokens > self.max_seq_len:
+            raise ValueError("prompt plus max_new_tokens exceeds max_seq_len")
+        if any(existing.request_id == req.request_id for existing in self.pending + self.active):
+            raise ValueError(f"request_id {req.request_id!r} is already queued")
         self.pending.append(req)
 
     @torch.no_grad()
     def step(self, model: nn.Module | None = None) -> list[dict[str, Any]]:
         if model is not None:
             self.model = model
-        """Executes a single step of batch decode across active requests."""
+        if self.model is None:
+            raise RuntimeError("ContinuousBatcher requires a model before step()")
         while len(self.active) < self.max_batch_size and self.pending:
             self.active.append(self.pending.pop(0))
 
@@ -255,16 +308,14 @@ class ContinuousBatcher:
             padded[i, :l] = r.input_ids[0]
             mask[i, :l] = 1
 
-        try:
-            out = self.model(padded, attention_mask=mask)
-        except TypeError:
-            out = self.model(padded)
+        out = _call_model(self.model, padded, attention_mask=mask)
 
         logits = out.logits if hasattr(out, "logits") else out
         step_results = []
 
         for i, r in enumerate(self.active):
-            tok = int(logits[i, -1, :].argmax().item())
+            last_prompt_position = r.input_ids.shape[1] - 1
+            tok = int(logits[i, last_prompt_position, :].argmax().item())
             tok_tensor = torch.tensor([[tok]], device=r.input_ids.device)
             r.input_ids = torch.cat([r.input_ids, tok_tensor], dim=1)
             r.generated.append(tok)
@@ -274,3 +325,21 @@ class ContinuousBatcher:
 
         self.active = [r for r in self.active if not r.finished]
         return step_results
+
+
+def _call_model(model: nn.Module, input_ids: torch.Tensor, **optional_kwargs: Any) -> Any:
+    """Pass only supported optional arguments without masking model-internal errors."""
+    try:
+        signature = inspect.signature(model.forward)
+    except (TypeError, ValueError):
+        return model(input_ids)
+    accepts_kwargs = any(
+        parameter.kind is inspect.Parameter.VAR_KEYWORD
+        for parameter in signature.parameters.values()
+    )
+    accepted = {
+        name: value
+        for name, value in optional_kwargs.items()
+        if accepts_kwargs or name in signature.parameters
+    }
+    return model(input_ids, **accepted)

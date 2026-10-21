@@ -14,6 +14,7 @@ Lossless self-speculative decoding algorithms to accelerate autoregressive token
 from __future__ import annotations
 
 import time
+import math
 from dataclasses import dataclass
 from typing import Any, Callable, Optional, Tuple, Union
 
@@ -22,6 +23,24 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.api import set_surgery_alpha
+
+
+def _sampling_probs(logits: torch.Tensor, temperature: float, top_k: int, top_p: float) -> torch.Tensor:
+    """Apply the same temperature and truncation policy to draft and target logits."""
+    filtered = logits / temperature
+    if top_k > 0:
+        k = min(top_k, filtered.shape[-1])
+        threshold = torch.topk(filtered, k, dim=-1).values[..., -1, None]
+        filtered = filtered.masked_fill(filtered < threshold, float("-inf"))
+    if top_p < 1.0:
+        sorted_logits, sorted_indices = torch.sort(filtered, descending=True, dim=-1)
+        cumulative = F.softmax(sorted_logits, dim=-1).cumsum(dim=-1)
+        remove = cumulative > top_p
+        remove[..., 1:] = remove[..., :-1].clone()
+        remove[..., 0] = False
+        remove_mask = torch.zeros_like(remove).scatter(-1, sorted_indices, remove)
+        filtered = filtered.masked_fill(remove_mask, float("-inf"))
+    return F.softmax(filtered, dim=-1)
 
 
 @dataclass
@@ -50,6 +69,12 @@ class SelfSpeculativeDecoder:
         min_draft_k: int = 1,
         adaptive_k: bool = True,
     ) -> None:
+        if not isinstance(max_draft_k, int) or isinstance(max_draft_k, bool) or max_draft_k <= 0:
+            raise ValueError("max_draft_k must be a positive integer")
+        if not isinstance(min_draft_k, int) or isinstance(min_draft_k, bool) or min_draft_k <= 0:
+            raise ValueError("min_draft_k must be a positive integer")
+        if min_draft_k > max_draft_k:
+            raise ValueError("min_draft_k cannot exceed max_draft_k")
         self.target_model = target_model
         self.draft_model = draft_model
         self.max_draft_k = max_draft_k
@@ -87,6 +112,16 @@ class SelfSpeculativeDecoder:
         Matches exact greedy or stochastic distribution of target_model.
         """
         start_time = time.perf_counter()
+        if input_ids.ndim != 2 or input_ids.shape[0] != 1 or input_ids.shape[1] == 0:
+            raise ValueError("SelfSpeculativeDecoder currently requires input_ids shaped [1, non-empty sequence]")
+        if not isinstance(max_new_tokens, int) or isinstance(max_new_tokens, bool) or max_new_tokens < 0:
+            raise ValueError("max_new_tokens must be a non-negative integer")
+        if not math.isfinite(temperature) or temperature < 0:
+            raise ValueError("temperature must be finite and non-negative")
+        if not isinstance(top_k, int) or isinstance(top_k, bool) or top_k < 0:
+            raise ValueError("top_k must be a non-negative integer")
+        if not math.isfinite(top_p) or not 0.0 < top_p <= 1.0:
+            raise ValueError("top_p must be in (0, 1]")
         device = input_ids.device
         curr_ids = input_ids.clone()
         prompt_len = curr_ids.shape[-1]
@@ -103,17 +138,17 @@ class SelfSpeculativeDecoder:
                 break
 
             draft_ids = curr_ids.clone()
-            draft_logits_list = []
+            draft_probs_list = []
 
             draft_mod = self.draft_model if self.draft_model is not None else self.target_model
 
             for _ in range(k):
                 d_logits = self._get_logits(draft_mod, draft_ids, is_draft=True)[:, -1, :]
-                draft_logits_list.append(d_logits)
                 if temperature == 0.0:
                     next_token = torch.argmax(d_logits, dim=-1, keepdim=True)
                 else:
-                    probs = F.softmax(d_logits / max(temperature, 1e-5), dim=-1)
+                    probs = _sampling_probs(d_logits, temperature, top_k, top_p)
+                    draft_probs_list.append(probs)
                     next_token = torch.multinomial(probs, num_samples=1)
                 draft_ids = torch.cat([draft_ids, next_token], dim=-1)
 
@@ -123,7 +158,7 @@ class SelfSpeculativeDecoder:
             target_logits = self._get_logits(self.target_model, draft_ids, is_draft=False)
             total_target_passes += 1
 
-            num_accepted = 0
+            accepted_draft_tokens = 0
             curr_pos = curr_ids.shape[-1]
 
             for i in range(k):
@@ -135,14 +170,13 @@ class SelfSpeculativeDecoder:
                     greedy_target_token = torch.argmax(t_logits, dim=-1, keepdim=True)
                     if (d_token == greedy_target_token).all():
                         curr_ids = torch.cat([curr_ids, d_token], dim=-1)
-                        num_accepted += 1
+                        accepted_draft_tokens += 1
                     else:
                         curr_ids = torch.cat([curr_ids, greedy_target_token], dim=-1)
-                        num_accepted += 1
                         break
                 else:
-                    p_target = F.softmax(t_logits / max(temperature, 1e-5), dim=-1)
-                    p_draft = F.softmax(draft_logits_list[i] / max(temperature, 1e-5), dim=-1)
+                    p_target = _sampling_probs(t_logits, temperature, top_k, top_p)
+                    p_draft = draft_probs_list[i]
 
                     token_val = d_token.item()
                     p_t = p_target[0, token_val].item()
@@ -151,7 +185,7 @@ class SelfSpeculativeDecoder:
                     r = torch.rand(1, device=device).item()
                     if r < min(1.0, p_t / max(p_d, 1e-8)):
                         curr_ids = torch.cat([curr_ids, d_token], dim=-1)
-                        num_accepted += 1
+                        accepted_draft_tokens += 1
                     else:
                         res_p = torch.clamp(p_target - p_draft, min=0.0)
                         res_norm = res_p.sum()
@@ -161,7 +195,6 @@ class SelfSpeculativeDecoder:
                             res_p = p_target
                         res_token = torch.multinomial(res_p, num_samples=1)
                         curr_ids = torch.cat([curr_ids, res_token], dim=-1)
-                        num_accepted += 1
                         break
             else:
                 if curr_ids.shape[-1] - prompt_len < max_new_tokens:
@@ -169,19 +202,18 @@ class SelfSpeculativeDecoder:
                     if temperature == 0.0:
                         bonus_token = torch.argmax(bonus_logits, dim=-1, keepdim=True)
                     else:
-                        bonus_probs = F.softmax(bonus_logits / max(temperature, 1e-5), dim=-1)
+                        bonus_probs = _sampling_probs(bonus_logits, temperature, top_k, top_p)
                         bonus_token = torch.multinomial(bonus_probs, num_samples=1)
                     curr_ids = torch.cat([curr_ids, bonus_token], dim=-1)
-                    num_accepted += 1
 
-            total_accepted_tokens += num_accepted
+            total_accepted_tokens += accepted_draft_tokens
 
             if curr_ids.shape[-1] - prompt_len >= max_new_tokens:
                 curr_ids = curr_ids[:, : prompt_len + max_new_tokens]
                 break
 
             if self.adaptive_k:
-                step_acc_rate = num_accepted / (k + 1)
+                step_acc_rate = accepted_draft_tokens / k
                 if step_acc_rate > 0.75 and self.current_k < self.max_draft_k:
                     self.current_k += 1
                 elif step_acc_rate < 0.40 and self.current_k > self.min_draft_k:
@@ -199,7 +231,7 @@ class SelfSpeculativeDecoder:
         stats = SpeculativeDecodeStats(
             total_tokens_generated=gen_tokens,
             total_target_forward_passes=total_target_passes,
-            mean_accepted_tokens_per_step=round(gen_tokens / max(total_target_passes, 1), 2),
+            mean_accepted_tokens_per_step=round(total_accepted_tokens / max(total_target_passes, 1), 2),
             acceptance_rate=round(acc_rate, 4),
             elapsed_time_s=round(elapsed, 4),
             tokens_per_sec=round(tokens_sec, 2),

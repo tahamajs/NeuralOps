@@ -13,7 +13,6 @@ Builds TensorRT network definitions and plugin adapters for accelerated GPU serv
 
 from __future__ import annotations
 
-import collections
 import json
 import logging
 import os
@@ -28,7 +27,7 @@ logger = logging.getLogger("NeuralOps.TensorRTLLM")
 try:
     import tensorrt as trt
     HAS_TRT = True
-except (ImportError, Exception):
+except ImportError:
     trt = None
     HAS_TRT = False
 
@@ -37,7 +36,7 @@ try:
     from tensorrt_llm.builder import Builder
     from tensorrt_llm.network import net_guard
     HAS_TRT_LLM = True
-except (ImportError, Exception):
+except ImportError:
     tensorrt_llm = None
     HAS_TRT_LLM = False
 
@@ -173,7 +172,10 @@ class TensorRTLLMPluginBuilder:
                 "See docs/roadmap/TENSORRT_LLM_PLAN.md for the implementation roadmap.\n"
                 "Current workarounds: use vLLM or HF serving adapters instead."
             )
-        return self.generate_cpp_plugin_source(*args, **kwargs)
+        raise NotImplementedError(
+            "This method does not compile plugins. Use generate_cpp_plugin_source() to emit source files, "
+            "then compile and validate them with the target TensorRT SDK."
+        )
 
     def generate_cpp_plugin_source(self, target_dir: Optional[Union[str, Path]] = None) -> Dict[str, str]:
         """
@@ -411,46 +413,11 @@ set_target_properties(neuralops_trt_plugins PROPERTIES
         network: Any,
         input_shape: Tuple[int, int] = (1, 16),
     ) -> Any:
-        """
-        Translates a PyTorch NeuralOps model into an NVIDIA TensorRT INetworkDefinition graph.
-        Inserts native TensorRT operations and custom NeuralOps plugins.
-        """
-        if not HAS_TRT:
-            raise RuntimeError("NVIDIA TensorRT is not installed in this environment.")
-
-        input_ids = network.add_input(
-            name="input_ids",
-            dtype=trt.DataType.INT32,
-            shape=(-1, -1),
+        """Reject graph construction until a checkpoint-aware model importer exists."""
+        raise NotImplementedError(
+            "NeuralOps-to-TensorRT graph translation is not implemented. The previous generic "
+            "projection walk did not preserve token embeddings, residual paths, norms, or logits."
         )
-
-        curr_tensor = input_ids
-
-        if self.model is not None:
-            for name, module in self.model.named_modules():
-                mod_name = module.__class__.__name__
-
-                if "SVDLinear" in mod_name or hasattr(module, "linear_u"):
-                    u_weight = module.linear_u.weight.detach().cpu().numpy()
-                    v_weight = module.linear_v.weight.detach().cpu().numpy()
-
-                    u_const = network.add_constant(u_weight.shape, trt.Weights(u_weight)).get_output(0)
-                    v_const = network.add_constant(v_weight.shape, trt.Weights(v_weight)).get_output(0)
-
-                    mm1 = network.add_matrix_multiply(
-                        curr_tensor, trt.MatrixOperation.NONE,
-                        u_const, trt.MatrixOperation.TRANSPOSE,
-                    ).get_output(0)
-
-                    mm2 = network.add_matrix_multiply(
-                        mm1, trt.MatrixOperation.NONE,
-                        v_const, trt.MatrixOperation.TRANSPOSE,
-                    ).get_output(0)
-                    curr_tensor = mm2
-
-        network.mark_output(curr_tensor)
-        curr_tensor.name = "logits"
-        return network
 
     def export_engine(
         self,
@@ -458,62 +425,16 @@ set_target_properties(neuralops_trt_plugins PROPERTIES
         max_batch_size: Optional[int] = None,
         max_seq_len: Optional[int] = None,
     ) -> Path:
-        """
-        Builds, optimizes, and serializes a fully optimized TensorRT engine (.engine).
-        """
-        out_file = Path(output_path)
-        out_file.parent.mkdir(parents=True, exist_ok=True)
-
+        """Build and serialize a TensorRT engine when a verified graph importer is available."""
         if not HAS_TRT:
-            manifest = {
-                "format": "tensorrt_llm_engine_spec",
-                "model_architecture": self.model.__class__.__name__ if self.model else "NeuralOpsModel",
-                "precision": self.precision,
-                "max_batch_size": max_batch_size or self.max_batch_size,
-                "max_input_len": self.max_input_len,
-                "max_output_len": self.max_output_len,
-                "plugins": {k: v.fields for k, v in self.plugins.items()},
-                "engine_status": "COMPILED_MANIFEST",
-                "engine_file": str(out_file),
-            }
-            manifest_file = out_file.with_suffix(".json")
-            with open(manifest_file, "w", encoding="utf-8") as f:
-                json.dump(manifest, f, indent=2)
+            raise NotImplementedError("TensorRT is not installed; no engine or placeholder artifact was written.")
 
-            self.generate_cpp_plugin_source(out_file.parent / "csrc")
+        if not HAS_TRT_LLM:
+            raise NotImplementedError("TensorRT-LLM is not installed; NeuralOps engine integration is unavailable.")
 
-            with open(out_file, "wb") as f:
-                f.write(b"NEURALOPS_TRT_ENGINE_V1")
-                f.write(json.dumps(manifest).encode("utf-8"))
-
-            logger.info("Generated TensorRT-LLM engine manifest and C++ plugins at %s", out_file)
-            return out_file
-
-        TRT_LOGGER = trt.Logger(trt.Logger.INFO)
-        builder = trt.Builder(TRT_LOGGER)
-        network = builder.create_network(1 << int(trt.NetworkDefinitionCreationFlag.EXPLICIT_BATCH))
-        config = builder.create_builder_config()
-
-        if self.precision == "float16" and builder.platform_has_fast_fp16:
-            config.set_flag(trt.BuilderFlag.FP16)
-        elif self.precision == "bfloat16" and builder.platform_has_fast_bf16:
-            config.set_flag(trt.BuilderFlag.BF16)
-
-        profile = builder.create_optimization_profile()
-        profile.set_shape("input_ids", (1, 1), (2, 128), (self.max_batch_size, self.max_input_len))
-        config.add_optimization_profile(profile)
-
-        self.build_network_definition(builder, network)
-
-        plan = builder.build_serialized_network(network, config)
-        if plan is None:
-            raise RuntimeError("TensorRT failed to build serialized network engine.")
-
-        with open(out_file, "wb") as f:
-            f.write(plan)
-
-        logger.info("Successfully compiled native TensorRT engine to: %s", out_file)
-        return out_file
+        raise NotImplementedError(
+            "Engine serialization is blocked until checkpoint-aware TensorRT graph construction is implemented."
+        )
 
     def get_runtime_runner(self, engine_path: Union[str, Path]) -> "TensorRTRuntimeRunner":
         """Instantiates high-throughput TensorRT execution runner from serialized engine."""
@@ -521,9 +442,7 @@ set_target_properties(neuralops_trt_plugins PROPERTIES
 
 
 class TensorRTRuntimeRunner:
-    """
-    Direct C++ runtime runner executing serialized TensorRT engines with zero Python overhead.
-    """
+    """Load a native TensorRT engine; execution remains unavailable until binding is implemented."""
 
     def __init__(self, engine_path: Union[str, Path]):
         self.engine_path = Path(engine_path)
@@ -531,36 +450,29 @@ class TensorRTRuntimeRunner:
         self.context: Optional[Any] = None
         self.is_manifest = False
 
-        if HAS_TRT and self.engine_path.exists():
-            try:
-                TRT_LOGGER = trt.Logger(trt.Logger.WARNING)
-                with open(self.engine_path, "rb") as f, trt.Runtime(TRT_LOGGER) as runtime:
-                    data = f.read()
-                    if data.startswith(b"NEURALOPS_TRT_ENGINE_V1"):
-                        self.is_manifest = True
-                    else:
-                        self.engine = runtime.deserialize_cuda_engine(data)
-                        if self.engine is not None:
-                            self.context = self.engine.create_execution_context()
-            except Exception as e:
-                logger.debug("Failed to deserialize native TRT engine: %s", e)
-                self.is_manifest = True
-        else:
-            self.is_manifest = True
+        if not HAS_TRT:
+            raise ImportError("TensorRT is required to load a TensorRT engine.")
+        if not self.engine_path.is_file():
+            raise FileNotFoundError(f"TensorRT engine does not exist: {self.engine_path}")
+        TRT_LOGGER = trt.Logger(trt.Logger.WARNING)
+        with open(self.engine_path, "rb") as engine_file:
+            engine_data = engine_file.read()
+        if engine_data.startswith(b"NEURALOPS_TRT_ENGINE_V1"):
+            raise ValueError("The file is a legacy NeuralOps placeholder, not a TensorRT engine.")
+        self.runtime = trt.Runtime(TRT_LOGGER)
+        self.engine = self.runtime.deserialize_cuda_engine(engine_data)
+        if self.engine is None:
+            raise RuntimeError(f"TensorRT could not deserialize engine: {self.engine_path}")
+        self.context = self.engine.create_execution_context()
+        if self.context is None:
+            raise RuntimeError(f"TensorRT could not create an execution context: {self.engine_path}")
 
     def forward(self, input_ids: torch.Tensor) -> torch.Tensor:
         """Executes forward inference through the TensorRT execution context."""
-        if not HAS_TRT or self.context is None or self.is_manifest:
-            B, S = input_ids.shape
-            return torch.randn(B, S, 100, dtype=torch.float32, device=input_ids.device)
-
-        bindings = [input_ids.data_ptr()]
-        out = torch.empty((input_ids.shape[0], input_ids.shape[1], 100), dtype=torch.float32, device=input_ids.device)
-        bindings.append(out.data_ptr())
-
-        self.context.set_input_shape("input_ids", tuple(input_ids.shape))
-        self.context.execute_v2(bindings)
-        return out
+        raise NotImplementedError(
+            "TensorRT execution binding is not implemented for NeuralOps models; "
+            "the runner will not return fabricated logits."
+        )
 
 
 __all__ = [

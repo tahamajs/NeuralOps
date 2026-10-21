@@ -15,16 +15,12 @@ supporting virtual block mapping and Copy-on-Write (CoW) sequence forking.
 from __future__ import annotations
 
 import collections
-import logging
-from typing import Any, Dict, List, Optional, Tuple, Union
 import torch
 
 try:
     from neuralops.models.paged_state import PagedStateTable
 except ImportError:
     PagedStateTable = None
-
-logger = logging.getLogger("NeuralOps.PagedKVCache")
 
 __all__ = ["PagedKVCache", "PagedStateTable"]
 
@@ -136,14 +132,15 @@ class PagedKVCache:
     def free_sequence(self, seq_id: int) -> None:
         """Free physical blocks associated with a sequence according to ref counts."""
         if seq_id in self.block_tables:
-            for b in self.block_tables[seq_id]:
-                if b in self.block_ref_counts:
-                    self.block_ref_counts[b] -= 1
-                    if self.block_ref_counts[b] <= 0:
-                        del self.block_ref_counts[b]
-                        self.free_blocks.append(b)
-                else:
-                    raise RuntimeError(f"Block {b} is mapped but has no reference count.")
+            blocks = self.block_tables[seq_id]
+            missing_refs = [block for block in blocks if self.block_ref_counts.get(block, 0) <= 0]
+            if missing_refs:
+                raise RuntimeError(f"Mapped blocks have no live reference counts: {missing_refs}.")
+            for block in blocks:
+                self.block_ref_counts[block] -= 1
+                if self.block_ref_counts[block] == 0:
+                    del self.block_ref_counts[block]
+                    self.free_blocks.append(block)
             del self.block_tables[seq_id]
             del self.seq_lengths[seq_id]
 
@@ -160,6 +157,8 @@ class PagedKVCache:
                 f"key and value must both have shape {expected_shape}; "
                 f"got {tuple(key.shape)} and {tuple(value.shape)}."
             )
+        if seq_id not in self.block_tables and not self.free_blocks:
+            raise RuntimeError("Out of KV cache blocks.")
         if seq_id not in self.block_tables:
             self.allocate_sequence(seq_id)
 
