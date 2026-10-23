@@ -5,13 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Liquid Time-Constant Attention Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.liquid_attention."""
 
-from neuralops.core.cuda_kernels.liquid_attention.liquid_attention_autograd import (
-    liquid_attention,
-    liquid_attention_ref,
-)
+from __future__ import annotations
 
-__all__ = [liquid_attention, liquid_attention_ref]
+from neuralops.ops.cuda.liquid_attention import *  # noqa: F401, F403

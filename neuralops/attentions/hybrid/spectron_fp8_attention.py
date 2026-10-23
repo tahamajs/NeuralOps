@@ -5,7 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""Backward compatibility shim for neuralops.layers.hybrid.spectron_fp8_attention."""
+"""Backward-compatibility shim for neuralops.layers.hybrid.spectron_fp8_attention."""
 
 from __future__ import annotations
 

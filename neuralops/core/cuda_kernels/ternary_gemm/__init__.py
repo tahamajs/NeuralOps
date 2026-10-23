@@ -5,16 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-1.58-Bit Ternary GEMM Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.ternary_gemm."""
 
-from neuralops.core.cuda_kernels.ternary_gemm.ternary_autograd import (
-    ternary_gemm,
-    ternary_gemm_pytorch_ref,
-)
+from __future__ import annotations
 
-__all__ = [
-    "ternary_gemm",
-    "ternary_gemm_pytorch_ref",
-]
+from neuralops.ops.cuda.ternary_gemm import *  # noqa: F401, F403

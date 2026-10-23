@@ -1,0 +1,747 @@
+#!/usr/bin/env python3
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
+"""
+Flagship Fast Linear Attention (FLA)
+
+Fast linear attention combining causal cumulative summation with hardware-efficient hardware kernel backends.
+"""
+
+from __future__ import annotations
+
+from typing import Any
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+from neuralops.core.base import BaseAttention
+from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.attention_utils import apply_rotary_pos_emb, LoRALinear
+from neuralops.core.common import _cfg_get, repeat_kv
+from neuralops.ops.triton.fused_norm_linear import fused_rmsnorm_gate
+
+
+def gdn2_recurrent_step(
+    S: torch.Tensor,
+    q_t: torch.Tensor,
+    k_t: torch.Tensor,
+    v_t: torch.Tensor,
+    alpha_t: torch.Tensor,
+    beta_erase_t: torch.Tensor,
+    beta_write_t: torch.Tensor,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """
+    Decoupled Erase & Write Recurrence step for GDN2:
+        decay_gate = alpha_t (or retention scalar)
+        erase_proj = beta_erase_t * (k_t @ S)
+        S_erased   = alpha_t * (S - k_t^T @ erase_proj)
+        S_new      = S_erased + beta_write_t * (k_t^T @ v_t)
+        y_t        = q_t @ S_new
+    Shapes:
+        S: (B, H, d_k, d_v)
+        q_t, k_t: (B, H, 1, d_k)
+        v_t: (B, H, 1, d_v)
+        alpha_t, beta_erase_t, beta_write_t: (B, H, 1, 1)
+    """
+    kt_norm = F.normalize(k_t, p=2, dim=-1, eps=1e-6)
+
+    inter_mem = torch.matmul(kt_norm, S)
+    erase_term = beta_erase_t * torch.matmul(kt_norm.transpose(-1, -2), inter_mem)
+    S_decayed = alpha_t * (S - erase_term)
+
+    write_term = beta_write_t * torch.matmul(kt_norm.transpose(-1, -2), v_t)
+    S_next = S_decayed + write_term
+
+    qt_norm = F.normalize(q_t, p=2, dim=-1, eps=1e-6)
+    y_t = torch.matmul(qt_norm, S_next)
+    return y_t, S_next
+
+
+def gdn2_chunk_scan(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    v: torch.Tensor,
+    alpha: torch.Tensor,
+    beta_erase: torch.Tensor,
+    beta_write: torch.Tensor,
+    initial_state: torch.Tensor | None = None,
+    chunk_size: int = 64,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """
+    Chunk-wise parallel forward execution for GDN2 with gradient checkpointing.
+    Processes sequence in chunks of size 64 to avoid recording L separate autograd nodes on tape.
+    """
+    B, H, L, d_k = q.shape
+    d_v = v.shape[-1]
+    device = q.device
+    dtype = q.dtype
+
+    if initial_state is None:
+        S = torch.zeros((B, H, d_k, d_v), device=device, dtype=torch.float32)
+    else:
+        S = initial_state.to(device=device, dtype=torch.float32)
+
+    if L <= 64 or not torch.is_grad_enabled():
+        outs = []
+        for t in range(L):
+            qt = q[:, :, t : t + 1].float()
+            kt = k[:, :, t : t + 1].float()
+            vt = v[:, :, t : t + 1].float()
+            at = alpha[:, :, t : t + 1, None].float()
+            be = beta_erase[:, :, t : t + 1, None].float()
+            bw = beta_write[:, :, t : t + 1, None].float()
+
+            yt, S = gdn2_recurrent_step(S, qt, kt, vt, at, be, bw)
+            outs.append(yt.to(dtype))
+        return torch.cat(outs, dim=2), S.to(dtype)
+
+    num_chunks = (L + chunk_size - 1) // chunk_size
+    pad_len = (chunk_size - (L % chunk_size)) % chunk_size
+
+    if pad_len > 0:
+        q_p = F.pad(q, (0, 0, 0, pad_len))
+        k_p = F.pad(k, (0, 0, 0, pad_len))
+        v_p = F.pad(v, (0, 0, 0, pad_len))
+        alpha_p = F.pad(alpha, (0, pad_len), value=1.0)
+        be_p = F.pad(beta_erase, (0, pad_len), value=0.0)
+        bw_p = F.pad(beta_write, (0, pad_len), value=0.0)
+    else:
+        q_p, k_p, v_p, alpha_p, be_p, bw_p = q, k, v, alpha, beta_erase, beta_write
+
+    def _run_chunk(s_in, qc, kc, vc, ac, bec, bwc):
+        curr = s_in
+        c_outs = []
+        for t in range(qc.shape[2]):
+            yt, curr = gdn2_recurrent_step(
+                curr,
+                qc[:, :, t : t + 1].float(),
+                kc[:, :, t : t + 1].float(),
+                vc[:, :, t : t + 1].float(),
+                ac[:, :, t : t + 1, None].float(),
+                bec[:, :, t : t + 1, None].float(),
+                bwc[:, :, t : t + 1, None].float(),
+            )
+            c_outs.append(yt)
+        return torch.cat(c_outs, dim=2), curr
+
+    outs = []
+    for c in range(num_chunks):
+        st = c * chunk_size
+        en = (c + 1) * chunk_size
+        qc = q_p[:, :, st:en]
+        kc = k_p[:, :, st:en]
+        vc = v_p[:, :, st:en]
+        ac = alpha_p[:, :, st:en]
+        bec = be_p[:, :, st:en]
+        bwc = bw_p[:, :, st:en]
+
+        yc, S = torch.utils.checkpoint.checkpoint(
+            _run_chunk, S, qc, kc, vc, ac, bec, bwc, use_reentrant=False
+        )
+        outs.append(yc.to(dtype))
+
+    y = torch.cat(outs, dim=2)
+    if pad_len > 0:
+        y = y[:, :, :L, :]
+    return y, S.to(dtype)
+
+
+@ATTENTION_REGISTRY.register("gdn2_attention", is_alias=True)
+@ATTENTION_REGISTRY.register("gdn2", is_alias=True)
+class GDN2Attention(BaseAttention):
+    """
+    Gated DeltaNet 2 Attention with Decoupled Erase & Write Linear Recurrence.
+    Formulation:
+        S_t = S_{t-1} * alpha_t * (I - beta_erase_t * k_t k_t^T) + beta_write_t * k_t v_t^T
+    """
+    supports_causal: bool = True
+    supports_gqa: bool = True
+
+    def __init__(
+        self,
+        config: Any = None,
+        rank: int | None = None,
+        hidden_size: int = 768,
+        num_heads: int = 12,
+        num_kv_heads: int | None = None,
+        head_dim: int | None = None,
+        chunk_size: int = 64,
+        **kwargs: Any,
+    ):
+        super().__init__(config, rank)
+        self.d_model = _cfg_get(config, "hidden_size", hidden_size)
+        self.num_heads = _cfg_get(config, "num_attention_heads", num_heads)
+        self.num_kv_heads = _cfg_get(config, "num_key_value_heads", num_kv_heads or self.num_heads)
+        self.head_dim = _cfg_get(config, "head_dim", head_dim or (self.d_model // self.num_heads))
+        self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
+        self.chunk_size = chunk_size
+
+        self.q_proj = nn.Linear(self.d_model, self.num_heads * self.head_dim, bias=False)
+        self.k_proj = nn.Linear(self.d_model, self.num_kv_heads * self.head_dim, bias=False)
+        self.v_proj = nn.Linear(self.d_model, self.num_kv_heads * self.head_dim, bias=False)
+        self.z_proj = nn.Linear(self.d_model, self.num_heads * self.head_dim, bias=False)
+        self.out_proj = nn.Linear(self.num_heads * self.head_dim, self.d_model, bias=False)
+
+        self.alpha_proj = nn.Linear(self.d_model, self.num_heads, bias=True)
+        self.erase_proj = nn.Linear(self.d_model, self.num_heads, bias=True)
+        self.write_proj = nn.Linear(self.d_model, self.num_heads, bias=True)
+        self.norm_weight = nn.Parameter(torch.ones(self.num_heads * self.head_dim))
+
+        with torch.no_grad():
+            nn.init.constant_(self.alpha_proj.bias, 2.0)
+            nn.init.constant_(self.erase_proj.bias, 0.0)
+            nn.init.constant_(self.write_proj.bias, 1.0)
+
+    def forward(
+        self,
+        hidden_states: torch.Tensor,
+        attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        use_cache: bool = False,
+        **kwargs: Any,
+    ) -> tuple[torch.Tensor, Any | None]:
+        B, L, _ = hidden_states.shape
+        H, D = self.num_heads, self.head_dim
+
+        q = self.q_proj(hidden_states).view(B, L, H, D).transpose(1, 2)
+        k = self.k_proj(hidden_states).view(B, L, self.num_kv_heads, D).transpose(1, 2)
+        v = self.v_proj(hidden_states).view(B, L, self.num_kv_heads, D).transpose(1, 2)
+        z = self.z_proj(hidden_states)
+
+        if self.kv_repeat > 1:
+            k = repeat_kv(k, self.kv_repeat)
+            v = repeat_kv(v, self.kv_repeat)
+
+        alpha = torch.sigmoid(self.alpha_proj(hidden_states)).transpose(1, 2)
+        beta_erase = torch.sigmoid(self.erase_proj(hidden_states)).transpose(1, 2)
+        beta_write = torch.sigmoid(self.write_proj(hidden_states)).transpose(1, 2)
+
+        init_state = None
+        if past_key_value is not None:
+            if isinstance(past_key_value, (tuple, list)) and len(past_key_value) > 0:
+                init_state = past_key_value[0]
+            elif isinstance(past_key_value, torch.Tensor):
+                init_state = past_key_value
+
+        if init_state is None and D <= 64 and q.is_cuda and not use_cache:
+            try:
+                from fla.ops.gdn2 import chunk_gdn2
+                q_fl = q.transpose(1, 2).contiguous()
+                k_fl = k.transpose(1, 2).contiguous()
+                v_fl = v.transpose(1, 2).contiguous()
+                g_fl = torch.log(alpha.float().clamp(min=1e-4, max=1.0)).transpose(1, 2).unsqueeze(-1).expand(-1, -1, -1, D).to(q.dtype).contiguous()
+                b_fl = beta_erase.transpose(1, 2).unsqueeze(-1).expand(-1, -1, -1, D).to(q.dtype).contiguous()
+                w_fl = beta_write.transpose(1, 2).unsqueeze(-1).expand(-1, -1, -1, D).to(q.dtype).contiguous()
+                res = chunk_gdn2(q_fl, k_fl, v_fl, g_fl, b_fl, w_fl)
+                y_fl = res[0] if isinstance(res, tuple) else res
+                y = y_fl.contiguous().view(B, L, H * D)
+                y_gated = fused_rmsnorm_gate(y, z, self.norm_weight, eps=1e-5, activation="silu")
+                return self.out_proj(y_gated), None
+            except Exception:
+                pass
+
+        y, next_state = gdn2_chunk_scan(
+            q, k, v, alpha, beta_erase, beta_write,
+            initial_state=init_state,
+            chunk_size=self.chunk_size,
+        )
+
+        y = y.transpose(1, 2).contiguous().view(B, L, H * D)
+        y_gated = fused_rmsnorm_gate(y, z, self.norm_weight, eps=1e-5, activation="silu")
+        out = self.out_proj(y_gated)
+
+        present_kv = (next_state,) if use_cache else None
+        return out, present_kv
+
+    def step(
+        self,
+        x: torch.Tensor,
+        state: dict[str, Any] | None = None,
+        **kwargs: Any,
+    ) -> tuple[torch.Tensor, dict[str, Any]]:
+        """Exact O(1) single-step autoregressive recurrent update for GDN2Attention."""
+        is_2d = (x.dim() == 2)
+        if is_2d:
+            x = x.unsqueeze(1)
+
+        B, L, _ = x.shape
+        H, D = self.num_heads, self.head_dim
+        device = x.device
+        dtype = x.dtype
+
+        if state is None:
+            state = {}
+        step_idx = state.get("step_idx", 0)
+
+        q = self.q_proj(x).view(B, 1, H, D).transpose(1, 2)
+        k = self.k_proj(x).view(B, 1, self.num_kv_heads, D).transpose(1, 2)
+        v = self.v_proj(x).view(B, 1, self.num_kv_heads, D).transpose(1, 2)
+        z = self.z_proj(x)
+
+        if self.kv_repeat > 1:
+            k = repeat_kv(k, self.kv_repeat)
+            v = repeat_kv(v, self.kv_repeat)
+
+        alpha = torch.sigmoid(self.alpha_proj(x)).transpose(1, 2).unsqueeze(-1)
+        beta_erase = torch.sigmoid(self.erase_proj(x)).transpose(1, 2).unsqueeze(-1)
+        beta_write = torch.sigmoid(self.write_proj(x)).transpose(1, 2).unsqueeze(-1)
+
+        if "kv_state" not in state or state["kv_state"] is None:
+            state["kv_state"] = torch.zeros((B, H, D, D), device=device, dtype=torch.float32)
+
+        S = state["kv_state"]
+        y_t, next_S = gdn2_recurrent_step(S, q.float(), k.float(), v.float(), alpha.float(), beta_erase.float(), beta_write.float())
+        state["kv_state"] = next_S
+        state["step_idx"] = step_idx + 1
+
+        y = y_t.transpose(1, 2).contiguous().view(B, 1, H * D)
+        y_gated = fused_rmsnorm_gate(y.to(dtype), z, self.norm_weight, eps=1e-5, activation="silu")
+        out = self.out_proj(y_gated)
+
+        if is_2d:
+            out = out.squeeze(1)
+
+        return out, state
+
+
+def householder_reflection(
+    v: torch.Tensor,
+    u: torch.Tensor,
+    beta: torch.Tensor,
+) -> torch.Tensor:
+    """
+    Applies Householder orthogonal transformation:
+        H = I - 2 * beta * (u u^T) / (||u||^2 + eps)
+        H @ v = v - 2 * beta * u * (u^T @ v) / (||u||^2 + eps)
+    Preserves exact isometry and norm stability across deep recurrent steps.
+    """
+    u_norm_sq = (u * u).sum(dim=-1, keepdim=True) + 1e-6
+    dot_uv = (v * u).sum(dim=-1, keepdim=True)
+    reflect = 2.0 * beta * dot_uv * (u / u_norm_sq)
+    return v - reflect
+
+
+@ATTENTION_REGISTRY.register("delta_product_attention", is_alias=True)
+@ATTENTION_REGISTRY.register("delta_product", is_alias=True)
+@ATTENTION_REGISTRY.register("deltaproduct", is_alias=True)
+@ATTENTION_REGISTRY.register("path_attention", is_alias=True)
+class DeltaProductAttention(BaseAttention):
+    """
+    Householder Product & PaTH Attention for NeuralOps.
+    Tracks state via sequence-accumulated Householder orthogonal reflections, ensuring
+    strict isometry, bounded spectrum, and norm preservation along sequence dimensions.
+    """
+    supports_causal: bool = True
+    supports_gqa: bool = True
+
+    def __init__(
+        self,
+        config: Any = None,
+        rank: int | None = None,
+        hidden_size: int = 768,
+        num_heads: int = 12,
+        head_dim: int | None = None,
+        **kwargs: Any,
+    ):
+        super().__init__(config, rank)
+        self.d_model = _cfg_get(config, "hidden_size", hidden_size)
+        self.num_heads = _cfg_get(config, "num_attention_heads", num_heads)
+        self.head_dim = _cfg_get(config, "head_dim", head_dim or (self.d_model // self.num_heads))
+
+        self.q_proj = nn.Linear(self.d_model, self.num_heads * self.head_dim, bias=False)
+        self.k_proj = nn.Linear(self.d_model, self.num_heads * self.head_dim, bias=False)
+        self.v_proj = nn.Linear(self.d_model, self.num_heads * self.head_dim, bias=False)
+        self.u_proj = nn.Linear(self.d_model, self.num_heads * self.head_dim, bias=False)
+        self.beta_proj = nn.Linear(self.d_model, self.num_heads, bias=True)
+        self.out_proj = nn.Linear(self.num_heads * self.head_dim, self.d_model, bias=False)
+
+    def forward(
+        self,
+        hidden_states: torch.Tensor,
+        attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        use_cache: bool = False,
+        **kwargs: Any,
+    ) -> tuple[torch.Tensor, Any | None]:
+        B, L, _ = hidden_states.shape
+        H, D = self.num_heads, self.head_dim
+
+        q = self.q_proj(hidden_states).view(B, L, H, D).transpose(1, 2)
+        k = self.k_proj(hidden_states).view(B, L, H, D).transpose(1, 2)
+        v = self.v_proj(hidden_states).view(B, L, H, D).transpose(1, 2)
+        u = self.u_proj(hidden_states).view(B, L, H, D).transpose(1, 2)
+        beta_raw = torch.sigmoid(self.beta_proj(hidden_states))
+
+        init_state = None
+        if past_key_value is not None:
+            if isinstance(past_key_value, (tuple, list)) and len(past_key_value) > 0:
+                init_state = past_key_value[0]
+            elif isinstance(past_key_value, torch.Tensor):
+                init_state = past_key_value
+
+        if init_state is None and D <= 64 and q.is_cuda and not use_cache:
+            try:
+                from fla.ops import parallel_path_attn
+                q_fl = q.transpose(1, 2).contiguous()
+                k_fl = k.transpose(1, 2).contiguous()
+                v_fl = v.transpose(1, 2).contiguous()
+                u_fl = u.transpose(1, 2).contiguous().float()
+                beta_fl = beta_raw.float().contiguous()
+                res = parallel_path_attn(q_fl, k_fl, v_fl, u_fl, beta_fl)
+                y_fl = res[0] if isinstance(res, tuple) else res
+                y = y_fl.contiguous().view(B, L, H * D)
+                return self.out_proj(y), None
+            except Exception:
+                pass
+
+        beta = beta_raw.transpose(1, 2).unsqueeze(-1)
+        S = (
+            torch.zeros((B, H, D, D), device=q.device, dtype=torch.float32)
+            if init_state is None
+            else init_state.to(device=q.device, dtype=torch.float32)
+        )
+
+        def _run_delta_product_chunk(s_in, qc, kc, vc, uc, bc):
+            curr = s_in
+            c_outs = []
+            for t in range(qc.shape[2]):
+                qt = qc[:, :, t : t + 1].float()
+                kt = kc[:, :, t : t + 1].float()
+                vt = vc[:, :, t : t + 1].float()
+                ut = uc[:, :, t : t + 1].float()
+                bt = bc[:, :, t : t + 1].float()
+
+                u_norm_sq = (ut * ut).sum(dim=-1, keepdim=True) + 1e-6
+                u_S = torch.matmul(ut, curr)
+                refl = (2.0 * bt / u_norm_sq) * torch.matmul(ut.transpose(-1, -2), u_S)
+                S_reflected = curr - refl
+                curr = S_reflected + torch.matmul(kt.transpose(-1, -2), vt)
+                yt = torch.matmul(qt, curr)
+                c_outs.append(yt.to(qc.dtype))
+            return torch.cat(c_outs, dim=2), curr
+
+        chunk_size = 64
+        if L <= 64 or not torch.is_grad_enabled():
+            _, present_state = _run_delta_product_chunk(S, q, k, v, u, beta)
+            y, present_state = _run_delta_product_chunk(S, q, k, v, u, beta)
+        else:
+            num_chunks = (L + chunk_size - 1) // chunk_size
+            pad_len = (chunk_size - (L % chunk_size)) % chunk_size
+            if pad_len > 0:
+                q_p = F.pad(q, (0, 0, 0, pad_len))
+                k_p = F.pad(k, (0, 0, 0, pad_len))
+                v_p = F.pad(v, (0, 0, 0, pad_len))
+                u_p = F.pad(u, (0, 0, 0, pad_len))
+                b_p = F.pad(beta, (0, 0, 0, pad_len), value=0.0)
+            else:
+                q_p, k_p, v_p, u_p, b_p = q, k, v, u, beta
+
+            outs = []
+            curr = S
+            for c in range(num_chunks):
+                st = c * chunk_size
+                en = (c + 1) * chunk_size
+                qc = q_p[:, :, st:en]
+                kc = k_p[:, :, st:en]
+                vc = v_p[:, :, st:en]
+                uc = u_p[:, :, st:en]
+                bc = b_p[:, :, st:en]
+
+                yc, curr = torch.utils.checkpoint.checkpoint(
+                    _run_delta_product_chunk, curr, qc, kc, vc, uc, bc, use_reentrant=False
+                )
+                outs.append(yc)
+
+            y = torch.cat(outs, dim=2)
+            if pad_len > 0:
+                y = y[:, :, :L, :]
+            present_state = curr
+
+        y = y.transpose(1, 2).contiguous().view(B, L, H * D)
+        out = self.out_proj(y)
+        present_kv = (present_state.to(q.dtype),) if use_cache else None
+        return out, present_kv
+
+    def step(
+        self,
+        x: torch.Tensor,
+        state: dict[str, Any] | None = None,
+        **kwargs: Any,
+    ) -> tuple[torch.Tensor, dict[str, Any]]:
+        """Exact O(1) single-step autoregressive recurrent update for DeltaProductAttention."""
+        is_2d = (x.dim() == 2)
+        if is_2d:
+            x = x.unsqueeze(1)
+
+        B, L, _ = x.shape
+        H, D = self.num_heads, self.head_dim
+        device = x.device
+        dtype = x.dtype
+
+        if state is None:
+            state = {}
+        step_idx = state.get("step_idx", 0)
+
+        q = self.q_proj(x).view(B, 1, H, D).transpose(1, 2)
+        k = self.k_proj(x).view(B, 1, self.num_kv_heads, D).transpose(1, 2)
+        v = self.v_proj(x).view(B, 1, self.num_kv_heads, D).transpose(1, 2)
+        u = self.u_proj(x).view(B, 1, H, D).transpose(1, 2)
+        beta = torch.sigmoid(self.beta_proj(x)).transpose(1, 2).unsqueeze(-1)
+
+        if self.kv_repeat > 1:
+            k = repeat_kv(k, self.kv_repeat)
+            v = repeat_kv(v, self.kv_repeat)
+
+        if "kv_state" not in state or state["kv_state"] is None:
+            state["kv_state"] = torch.zeros((B, H, D, D), device=device, dtype=torch.float32)
+
+        curr = state["kv_state"].float()
+        qt = q.float()
+        kt = k.float()
+        vt = v.float()
+        ut = u.float()
+        bt = beta.float()
+
+        u_norm_sq = (ut * ut).sum(dim=-1, keepdim=True) + 1e-6
+        u_S = torch.matmul(ut, curr)
+        refl = (2.0 * bt / u_norm_sq) * torch.matmul(ut.transpose(-1, -2), u_S)
+        S_reflected = curr - refl
+        next_S = S_reflected + torch.matmul(kt.transpose(-1, -2), vt)
+        yt = torch.matmul(qt, next_S)
+
+        state["kv_state"] = next_S
+        state["step_idx"] = step_idx + 1
+
+        y = yt.transpose(1, 2).contiguous().view(B, 1, H * D)
+        out = self.out_proj(y.to(dtype))
+
+        if is_2d:
+            out = out.squeeze(1)
+
+        return out, state
+
+
+@ATTENTION_REGISTRY.register("preconditioned_gdn_attention", is_alias=True)
+@ATTENTION_REGISTRY.register("preconditioned_gdn", is_alias=True)
+@ATTENTION_REGISTRY.register("pgdn_attention", is_alias=True)
+@ATTENTION_REGISTRY.register("pgdn", is_alias=True)
+class PreconditionedGDNAttention(BaseAttention):
+    """
+    Curvature-Aware Preconditioned Gated DeltaNet.
+    Applies empirical covariance / diagonal curvature preconditioning:
+        P_t = (diag(s_t) + lambda * I)^{-1/2}
+        k_tilde_t = P_t @ k_t
+        S_t = alpha_t * S_{t-1}(I - beta_t * k_tilde_t k_tilde_t^T) + beta_t * k_tilde_t v_t^T
+    Directly aligns with NeuralOps Whitened Covariance Preconditioner.
+    """
+    supports_causal: bool = True
+    supports_gqa: bool = True
+
+    def __init__(
+        self,
+        config: Any = None,
+        rank: int | None = None,
+        hidden_size: int = 768,
+        num_heads: int = 12,
+        head_dim: int | None = None,
+        preconditioner_damping: float = 1e-4,
+        **kwargs: Any,
+    ):
+        super().__init__(config, rank)
+        self.d_model = _cfg_get(config, "hidden_size", hidden_size)
+        self.num_heads = _cfg_get(config, "num_attention_heads", num_heads)
+        self.head_dim = _cfg_get(config, "head_dim", head_dim or (self.d_model // self.num_heads))
+        self.damping = preconditioner_damping
+
+        self.q_proj = nn.Linear(self.d_model, self.num_heads * self.head_dim, bias=False)
+        self.k_proj = nn.Linear(self.d_model, self.num_heads * self.head_dim, bias=False)
+        self.v_proj = nn.Linear(self.d_model, self.num_heads * self.head_dim, bias=False)
+        self.beta_proj = nn.Linear(self.d_model, self.num_heads, bias=True)
+        self.alpha_proj = nn.Linear(self.d_model, self.num_heads, bias=True)
+        self.curvature_diag = nn.Parameter(torch.ones(self.num_heads, self.head_dim))
+        self.out_proj = nn.Linear(self.num_heads * self.head_dim, self.d_model, bias=False)
+
+    def forward(
+        self,
+        hidden_states: torch.Tensor,
+        attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        use_cache: bool = False,
+        **kwargs: Any,
+    ) -> tuple[torch.Tensor, Any | None]:
+        B, L, _ = hidden_states.shape
+        H, D = self.num_heads, self.head_dim
+
+        q = self.q_proj(hidden_states).view(B, L, H, D).transpose(1, 2)
+        k = self.k_proj(hidden_states).view(B, L, H, D).transpose(1, 2)
+        v = self.v_proj(hidden_states).view(B, L, H, D).transpose(1, 2)
+
+        p_scale = torch.rsqrt(F.softplus(self.curvature_diag) + self.damping).view(1, H, 1, D)
+        k_preconditioned = k * p_scale
+
+        alpha = torch.sigmoid(self.alpha_proj(hidden_states)).transpose(1, 2)
+        beta = torch.sigmoid(self.beta_proj(hidden_states)).transpose(1, 2)
+
+        init_state = None
+        if past_key_value is not None:
+            if isinstance(past_key_value, (tuple, list)) and len(past_key_value) > 0:
+                init_state = past_key_value[0]
+            elif isinstance(past_key_value, torch.Tensor):
+                init_state = past_key_value
+
+        if init_state is None and D <= 64 and q.is_cuda and not use_cache:
+            try:
+                from fla.ops import chunk_gdn
+                q_fl = q.transpose(1, 2).contiguous()
+                k_fl = k_preconditioned.transpose(1, 2).contiguous()
+                v_fl = v.transpose(1, 2).contiguous()
+                log_g = torch.log(beta.clamp(min=1e-4, max=1.0)).transpose(1, 2).to(q.dtype).contiguous()
+                step_beta = alpha.transpose(1, 2).to(q.dtype).contiguous()
+                res = chunk_gdn(q_fl, k_fl, v_fl, log_g, step_beta)
+                y_fl = res[0] if isinstance(res, tuple) else res
+                y = y_fl.contiguous().view(B, L, H * D)
+                out = self.out_proj(y)
+                return out, None
+            except Exception:
+                pass
+
+        def _run_pgdn_chunk(s_in, qc, kc, vc, ac, bc):
+            curr = s_in
+            c_outs = []
+            for t in range(qc.shape[2]):
+                qt = qc[:, :, t : t + 1].float()
+                kt = kc[:, :, t : t + 1].float()
+                vt = vc[:, :, t : t + 1].float()
+                at = ac[:, :, t : t + 1, None].float()
+                bt = bc[:, :, t : t + 1, None].float()
+
+                inter_v = torch.matmul(kt, curr)
+                err = vt - inter_v
+                curr = at * curr + bt * torch.matmul(kt.transpose(-1, -2), err)
+                yt = torch.matmul(qt, curr)
+                c_outs.append(yt.to(qc.dtype))
+            return torch.cat(c_outs, dim=2), curr
+
+        S = (
+            torch.zeros((B, H, D, D), device=q.device, dtype=torch.float32)
+            if init_state is None
+            else init_state.to(device=q.device, dtype=torch.float32)
+        )
+
+        chunk_size = 64
+        if L <= 64 or not torch.is_grad_enabled():
+            y, present_state = _run_pgdn_chunk(S, q, k_preconditioned, v, alpha, beta)
+        else:
+            num_chunks = (L + chunk_size - 1) // chunk_size
+            pad_len = (chunk_size - (L % chunk_size)) % chunk_size
+            if pad_len > 0:
+                q_p = F.pad(q, (0, 0, 0, pad_len))
+                k_p = F.pad(k_preconditioned, (0, 0, 0, pad_len))
+                v_p = F.pad(v, (0, 0, 0, pad_len))
+                a_p = F.pad(alpha, (0, pad_len), value=1.0)
+                b_p = F.pad(beta, (0, pad_len), value=0.0)
+            else:
+                q_p, k_p, v_p, a_p, b_p = q, k_preconditioned, v, alpha, beta
+
+            outs = []
+            curr = S
+            for c in range(num_chunks):
+                st = c * chunk_size
+                en = (c + 1) * chunk_size
+                qc = q_p[:, :, st:en]
+                kc = k_p[:, :, st:en]
+                vc = v_p[:, :, st:en]
+                ac = a_p[:, :, st:en]
+                bc = b_p[:, :, st:en]
+
+                yc, curr = torch.utils.checkpoint.checkpoint(
+                    _run_pgdn_chunk, curr, qc, kc, vc, ac, bc, use_reentrant=False
+                )
+                outs.append(yc)
+
+            y = torch.cat(outs, dim=2)
+            if pad_len > 0:
+                y = y[:, :, :L, :]
+            present_state = curr
+
+        y = y.transpose(1, 2).contiguous().view(B, L, H * D)
+        out = self.out_proj(y)
+        present_kv = (present_state.to(q.dtype),) if use_cache else None
+        return out, present_kv
+
+    def step(
+        self,
+        x: torch.Tensor,
+        state: dict[str, Any] | None = None,
+        **kwargs: Any,
+    ) -> tuple[torch.Tensor, dict[str, Any]]:
+        """Exact O(1) single-step autoregressive recurrent update for PreconditionedGDNAttention."""
+        is_2d = (x.dim() == 2)
+        if is_2d:
+            x = x.unsqueeze(1)
+
+        B, L, _ = x.shape
+        H, D = self.num_heads, self.head_dim
+        device = x.device
+        dtype = x.dtype
+
+        if state is None:
+            state = {}
+        step_idx = state.get("step_idx", 0)
+
+        q = self.q_proj(x).view(B, 1, H, D).transpose(1, 2)
+        k = self.k_proj(x).view(B, 1, self.num_kv_heads, D).transpose(1, 2)
+        v = self.v_proj(x).view(B, 1, self.num_kv_heads, D).transpose(1, 2)
+
+        if self.kv_repeat > 1:
+            k = repeat_kv(k, self.kv_repeat)
+            v = repeat_kv(v, self.kv_repeat)
+
+        alpha = torch.sigmoid(self.alpha_proj(x)).transpose(1, 2).unsqueeze(-1)
+        beta = torch.sigmoid(self.beta_proj(x)).transpose(1, 2).unsqueeze(-1)
+
+        if "curvature_state" not in state or state["curvature_state"] is None:
+            state["curvature_state"] = torch.zeros((B, H, 1, D), device=device, dtype=torch.float32)
+
+        curv = state["curvature_state"]
+        rho = 0.95
+        k_f = k.float()
+        curv = rho * curv + (1.0 - rho) * (k_f * k_f)
+        state["curvature_state"] = curv
+
+        p_scale = torch.rsqrt(curv + self.lambda_diag)
+        k_prec = k_f * p_scale
+
+        if "kv_state" not in state or state["kv_state"] is None:
+            state["kv_state"] = torch.zeros((B, H, D, D), device=device, dtype=torch.float32)
+
+        curr = state["kv_state"].float()
+        inter_v = torch.matmul(k_prec, curr)
+        err = v.float() - inter_v
+        next_S = alpha.float() * curr + beta.float() * torch.matmul(k_prec.transpose(-1, -2), err)
+        yt = torch.matmul(q.float(), next_S)
+
+        state["kv_state"] = next_S
+        state["step_idx"] = step_idx + 1
+
+        y = yt.transpose(1, 2).contiguous().view(B, 1, H * D)
+        out = self.out_proj(y.to(dtype))
+
+        if is_2d:
+            out = out.squeeze(1)
+
+        return out, state
+
+
+__all__ = [
+    "GDN2Attention",
+    "gdn2_recurrent_step",
+    "gdn2_chunk_scan",
+    "DeltaProductAttention",
+    "householder_reflection",
+    "PreconditionedGDNAttention",
+]

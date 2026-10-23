@@ -5,20 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""Linear attention layers."""
+"""linear attention family with lazy implementation exports."""
 
-from __future__ import annotations
+from neuralops._lazy_family import install_lazy_family
 
-from typing import Any
-import neuralops.attentions.linear as _linear
-
-
-def __getattr__(name: str) -> Any:
-    return getattr(_linear, name)
-
-
-def __dir__() -> list[str]:
-    return list(_linear.__all__)
-
-
-__all__ = list(_linear.__all__)
+__all__ = install_lazy_family(globals())

@@ -5,13 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-HGRN2 Spatial Scan Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.hgrn2_spatial_scan."""
 
-from neuralops.core.cuda_kernels.hgrn2_spatial_scan.hgrn2_spatial_scan_autograd import (
-    hgrn2_spatial_scan,
-    hgrn2_spatial_scan_pytorch_ref,
-)
+from __future__ import annotations
 
-__all__ = ["hgrn2_spatial_scan", "hgrn2_spatial_scan_pytorch_ref"]
+from neuralops.ops.cuda.hgrn2_spatial_scan import *  # noqa: F401, F403

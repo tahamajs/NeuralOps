@@ -5,16 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Causal 1D Convolution Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.causal_conv1d."""
 
-from neuralops.core.cuda_kernels.causal_conv1d.conv1d_autograd import (
-    causal_conv1d,
-    causal_conv1d_pytorch_ref,
-)
+from __future__ import annotations
 
-__all__ = [
-    "causal_conv1d",
-    "causal_conv1d_pytorch_ref",
-]
+from neuralops.ops.cuda.causal_conv1d import *  # noqa: F401, F403

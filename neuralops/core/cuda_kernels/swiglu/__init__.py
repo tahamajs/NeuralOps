@@ -5,16 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Fused SwiGLU Activation Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.swiglu."""
 
-from neuralops.core.cuda_kernels.swiglu.swiglu_autograd import (
-    swiglu,
-    swiglu_pytorch_ref,
-)
+from __future__ import annotations
 
-__all__ = [
-    "swiglu",
-    "swiglu_pytorch_ref",
-]
+from neuralops.ops.cuda.swiglu import *  # noqa: F401, F403

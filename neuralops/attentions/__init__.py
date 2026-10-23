@@ -5,18 +5,28 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-NeuralOps Attentions Package.
-"""
+"""Backward compatibility shim for neuralops.attentions -> neuralops.layers."""
+
+from __future__ import annotations
 
 import importlib
 import sys
+import types
+from importlib.abc import Loader, MetaPathFinder
+from importlib.util import spec_from_loader
+from typing import Any
 
-from neuralops.core.registry import ATTENTION_REGISTRY
+import neuralops.layers as _layers
+from neuralops.core.registry import ATTENTION_REGISTRY, get_attention, list_attentions
 
-__all__ = ["ATTENTION_REGISTRY"]
+ATTENTION_REGISTRY = ATTENTION_REGISTRY
+get_attention = get_attention
+list_attentions = list_attentions
 
-_SUBPACKAGES = ['adaptive', 'dense', 'experimental', 'fast_kernels', 'gated', 'hybrid', 'linear', 'modern', 'sparse', 'ssm', 'svd']
+_SUBPACKAGES = [
+    "adaptive", "dense", "experimental", "fast_kernels", "gated",
+    "hybrid", "linear", "modern", "sparse", "ssm", "svd"
+]
 
 _LEGACY_MAP = {
     'lola_attention': 'adaptive.lola_attention', 'eat': 'adaptive.eat', 'progressive_token_pruning': 'adaptive.progressive_token_pruning',
@@ -92,60 +102,35 @@ _RENAMED_MODULES = {
     'res_svd': ('svd.residual_svd_attention', {'ResSVDAttention': 'ResidualSVDAttention', 'inject_res_svd': 'inject_residual_svd_attention'}),
 }
 
-from importlib.abc import MetaPathFinder, Loader
-from importlib.util import spec_from_loader
-import types
-
-def _get_target_module(leaf):
+def _get_target_module(leaf: str):
     if leaf == 'replace':
         return importlib.import_module("neuralops.core.replace_attention")
     if leaf in _RENAMED_MODULES:
         rel_path, class_map = _RENAMED_MODULES[leaf]
-        target_fullname = f"{__package__}.{rel_path}"
-        if target_fullname in sys.modules:
-            real_mod = sys.modules[target_fullname]
-        else:
-            real_mod = importlib.import_module(f".{rel_path}", __package__)
+        target_mod = importlib.import_module(f"neuralops.layers.{rel_path}")
         alias_mod = types.ModuleType(f"{__name__}.{leaf}")
-        alias_mod.__dict__.update(real_mod.__dict__)
+        alias_mod.__dict__.update(target_mod.__dict__)
         for old_k, target_k in class_map.items():
-            if hasattr(real_mod, target_k):
-                setattr(alias_mod, old_k, getattr(real_mod, target_k))
-        target_mod = alias_mod
-    elif leaf in _LEGACY_MAP:
+            if hasattr(target_mod, target_k):
+                setattr(alias_mod, old_k, getattr(target_mod, target_k))
+        return alias_mod
+    if leaf in _LEGACY_MAP:
         rel_path = _LEGACY_MAP[leaf]
-        target_fullname = f"{__package__}.{rel_path}"
-        if target_fullname in sys.modules:
-            target_mod = sys.modules[target_fullname]
-        else:
-            target_mod = importlib.import_module(f".{rel_path}", __package__)
-    else:
-        return None
-    if target_mod is not None and not hasattr(target_mod, "_rotate_half"):
-        from neuralops.core.utils.rope import _rotate_half
-
-        target_mod._rotate_half = _rotate_half
-    return target_mod
+        return importlib.import_module(f"neuralops.layers.{rel_path}")
+    return None
 
 class _LegacyAttnLoader(Loader):
-    def __init__(self, leaf, fullname):
+    def __init__(self, leaf: str, fullname: str):
         self.leaf = leaf
         self.fullname = fullname
     def create_module(self, _spec):
-        if self.fullname in sys.modules:
-            return sys.modules[self.fullname]
-        alias_mod = types.ModuleType(self.fullname)
-        sys.modules[self.fullname] = alias_mod
-        try:
-            target_mod = _get_target_module(self.leaf)
-        except Exception:
-            sys.modules.pop(self.fullname, None)
-            raise
+        target_mod = _get_target_module(self.leaf)
         if target_mod is not None:
-            alias_mod.__dict__.update(target_mod.__dict__)
             sys.modules[self.fullname] = target_mod
             return target_mod
-        return alias_mod
+        mod = types.ModuleType(self.fullname)
+        sys.modules[self.fullname] = mod
+        return mod
     def exec_module(self, module):
         pass
 
@@ -159,7 +144,8 @@ class _LegacyAttnFinder(MetaPathFinder):
 
 sys.meta_path.insert(0, _LegacyAttnFinder())
 
-def __getattr__(name):
+
+def __getattr__(name: str) -> Any:
     if name.startswith("_"):
         raise AttributeError(f"module '{__name__}' has no attribute {name!r}")
     if name in _SUBPACKAGES:
@@ -171,15 +157,15 @@ def __getattr__(name):
         if mod is not None:
             globals()[name] = mod
             return mod
-    for subpackage in _SUBPACKAGES:
-        module = importlib.import_module(f".{subpackage}", __package__)
-        if hasattr(module, name):
-            value = getattr(module, name)
-            globals()[name] = value
-            return value
+    if hasattr(_layers, name):
+        val = getattr(_layers, name)
+        globals()[name] = val
+        return val
     raise AttributeError(f"module '{__name__}' has no attribute {name!r}")
 
 
-def __dir__():
-    """Expose lazy family and legacy module names to interactive tooling."""
-    return sorted(set(globals()) | set(_SUBPACKAGES) | set(_LEGACY_MAP) | set(_RENAMED_MODULES) | {"replace"})
+def __dir__() -> list[str]:
+    return list(_layers.__dir__())
+
+
+__all__ = sorted(list(set(["ATTENTION_REGISTRY", "get_attention", "list_attentions"] + [k for k in dir(_layers) if not k.startswith("_")])))

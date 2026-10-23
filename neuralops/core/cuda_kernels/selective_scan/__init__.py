@@ -5,13 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Selective Scan (Mamba-1 S6) Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.selective_scan."""
 
-from neuralops.core.cuda_kernels.selective_scan.selective_scan_autograd import (
-    selective_scan,
-    selective_scan_pytorch_ref,
-)
+from __future__ import annotations
 
-__all__ = ["selective_scan", "selective_scan_pytorch_ref"]
+from neuralops.ops.cuda.selective_scan import *  # noqa: F401, F403

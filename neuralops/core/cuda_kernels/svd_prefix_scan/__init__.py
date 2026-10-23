@@ -5,13 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-SVD Prefix Scan Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.svd_prefix_scan."""
 
-from neuralops.core.cuda_kernels.svd_prefix_scan.svd_prefix_scan_autograd import (
-    svd_prefix_scan,
-    svd_prefix_scan_pytorch_ref,
-)
+from __future__ import annotations
 
-__all__ = ["svd_prefix_scan", "svd_prefix_scan_pytorch_ref"]
+from neuralops.ops.cuda.svd_prefix_scan import *  # noqa: F401, F403

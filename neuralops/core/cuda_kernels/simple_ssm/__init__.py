@@ -5,8 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Simple State Space Model Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.simple_ssm."""
 
-from .simple_ssm_autograd import *
+from __future__ import annotations
+
+from neuralops.ops.cuda.simple_ssm import *  # noqa: F401, F403

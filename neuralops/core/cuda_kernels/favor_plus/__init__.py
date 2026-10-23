@@ -5,13 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-FAVOR+ Random Feature Attention Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.favor_plus."""
 
-from neuralops.core.cuda_kernels.favor_plus.favor_plus_autograd import (
-    favor_plus,
-    favor_plus_pytorch_ref,
-)
+from __future__ import annotations
 
-__all__ = ["favor_plus", "favor_plus_pytorch_ref"]
+from neuralops.ops.cuda.favor_plus import *  # noqa: F401, F403

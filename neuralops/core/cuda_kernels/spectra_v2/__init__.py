@@ -5,8 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Spectra-v2 Attention Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.spectra_v2."""
 
-from .spectra_v2_autograd import *
+from __future__ import annotations
+
+from neuralops.ops.cuda.spectra_v2 import *  # noqa: F401, F403

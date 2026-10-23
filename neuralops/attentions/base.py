@@ -5,10 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""Public facade for the shared attention base contract."""
+"""Backward-compatibility shim for neuralops.layers.base."""
 
 from __future__ import annotations
 
-from neuralops.core.base import BaseAttention
-
-__all__ = ["BaseAttention"]
+from neuralops.layers.base import *  # noqa: F401, F403

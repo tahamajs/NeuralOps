@@ -21,8 +21,8 @@ import torch.nn as nn
 logger = logging.getLogger(__name__)
 
 from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
-import neuralops.attentions  # noqa: F401
-import neuralops.compression_engine  # noqa: F401
+import neuralops.layers  # noqa: F401
+import neuralops.compression  # noqa: F401
 
 from neuralops.models.configuration import NeuralOpsConfig
 from neuralops.models.modeling_norm import build_norm_layer

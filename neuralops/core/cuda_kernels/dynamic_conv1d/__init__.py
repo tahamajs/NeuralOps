@@ -5,14 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Dynamic 1D Convolution Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.dynamic_conv1d."""
 
-from neuralops.core.cuda_kernels.dynamic_conv1d.dynamic_conv1d_autograd import (
-    dynamic_conv1d,
-    dynamic_conv1d_pytorch_ref,
-    fused_dynamic_conv1d_pytorch,
-)
+from __future__ import annotations
 
-__all__ = ["dynamic_conv1d", "dynamic_conv1d_pytorch_ref", "fused_dynamic_conv1d_pytorch"]
+from neuralops.ops.cuda.dynamic_conv1d import *  # noqa: F401, F403

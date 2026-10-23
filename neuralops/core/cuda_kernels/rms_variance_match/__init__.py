@@ -5,18 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-RMS Variance Match Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.rms_variance_match."""
 
-from neuralops.core.cuda_kernels.rms_variance_match.rms_variance_match_autograd import (
-    rms_variance_match,
-    rms_variance_match_pytorch_ref,
-    fused_rms_variance_match_triton,
-)
+from __future__ import annotations
 
-__all__ = [
-    rms_variance_match,
-    rms_variance_match_pytorch_ref,
-    fused_rms_variance_match_triton,
-]
+from neuralops.ops.cuda.rms_variance_match import *  # noqa: F401, F403

@@ -5,14 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Block-Sparse Attention Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.sparse_attention."""
 
-from neuralops.core.cuda_kernels.sparse_attention.sparse_attention_autograd import (
-    block_sparse_attn,
-    block_sparse_attn_pytorch_ref,
-    block_sparse_attn_bwd,
-)
+from __future__ import annotations
 
-__all__ = ["block_sparse_attn", "block_sparse_attn_pytorch_ref", "block_sparse_attn_bwd"]
+from neuralops.ops.cuda.sparse_attention import *  # noqa: F401, F403

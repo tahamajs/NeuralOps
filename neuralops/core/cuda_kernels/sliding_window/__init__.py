@@ -5,13 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Sliding Window Attention Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.sliding_window."""
 
-from neuralops.core.cuda_kernels.sliding_window.sliding_autograd import (
-    sliding_window_attn,
-    sliding_window_pytorch_ref,
-)
+from __future__ import annotations
 
-__all__ = ["sliding_window_attn", "sliding_window_pytorch_ref"]
+from neuralops.ops.cuda.sliding_window import *  # noqa: F401, F403

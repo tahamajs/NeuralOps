@@ -5,16 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-RPCA Sparse and Low-Rank SVD Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.rpca_sparse_svd."""
 
-from neuralops.core.cuda_kernels.rpca_sparse_svd.rpca_sparse_svd_autograd import (
-    rpca_sparse_svd_gemm,
-    rpca_sparse_svd_gemm_pytorch_ref,
-)
+from __future__ import annotations
 
-__all__ = [
-    "rpca_sparse_svd_gemm",
-    "rpca_sparse_svd_gemm_pytorch_ref",
-]
+from neuralops.ops.cuda.rpca_sparse_svd import *  # noqa: F401, F403

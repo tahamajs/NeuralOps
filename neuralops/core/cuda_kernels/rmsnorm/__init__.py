@@ -5,16 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Fused RMSNorm Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.rmsnorm."""
 
-from neuralops.core.cuda_kernels.rmsnorm.rmsnorm_autograd import (
-    rmsnorm,
-    rmsnorm_pytorch_ref,
-)
+from __future__ import annotations
 
-__all__ = [
-    "rmsnorm",
-    "rmsnorm_pytorch_ref",
-]
+from neuralops.ops.cuda.rmsnorm import *  # noqa: F401, F403

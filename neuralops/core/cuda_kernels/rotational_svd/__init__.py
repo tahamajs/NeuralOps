@@ -5,16 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Rotational Low-Rank SVD Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.rotational_svd."""
 
-from neuralops.core.cuda_kernels.rotational_svd.rotational_svd_autograd import (
-    rotational_svd,
-    rotational_svd_pytorch_ref,
-)
+from __future__ import annotations
 
-__all__ = [
-    "rotational_svd",
-    "rotational_svd_pytorch_ref",
-]
+from neuralops.ops.cuda.rotational_svd import *  # noqa: F401, F403

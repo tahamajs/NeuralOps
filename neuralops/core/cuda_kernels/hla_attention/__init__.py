@@ -5,10 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Hadamard Linear Attention (HLA) Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.hla_attention."""
 
-from .hla_attention_autograd import hla_attention, hla_attention_ref
+from __future__ import annotations
 
-__all__ = ["hla_attention", "hla_attention_ref"]
+from neuralops.ops.cuda.hla_attention import *  # noqa: F401, F403

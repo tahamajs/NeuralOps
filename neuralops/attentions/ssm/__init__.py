@@ -5,8 +5,13 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""State-space and recurrent attention family with lazy exports."""
+"""Backward compatibility shim for neuralops.layers.ssm."""
 
-from neuralops._lazy_family import install_lazy_family
+from __future__ import annotations
 
-__all__ = install_lazy_family(globals())
+from typing import Any
+import neuralops.layers.ssm as _mod
+
+__getattr__ = _mod.__getattr__
+__dir__ = _mod.__dir__
+__all__ = list(_mod.__all__)

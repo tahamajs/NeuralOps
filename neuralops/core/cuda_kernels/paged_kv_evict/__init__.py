@@ -5,13 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Paged KV Cache Eviction Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.paged_kv_evict."""
 
-from neuralops.core.cuda_kernels.paged_kv_evict.paged_kv_evict_autograd import (
-    paged_kv_evict,
-    paged_kv_compact_pytorch_ref,
-)
+from __future__ import annotations
 
-__all__ = ["paged_kv_evict", "paged_kv_compact_pytorch_ref"]
+from neuralops.ops.cuda.paged_kv_evict import *  # noqa: F401, F403

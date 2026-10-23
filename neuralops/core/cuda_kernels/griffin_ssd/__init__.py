@@ -5,8 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Griffin SSD Recurrent Operator Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.griffin_ssd."""
 
-from .griffin_ssd_autograd import *
+from __future__ import annotations
+
+from neuralops.ops.cuda.griffin_ssd import *  # noqa: F401, F403

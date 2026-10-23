@@ -5,16 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Speculative Verification Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.speculative_verify."""
 
-from neuralops.core.cuda_kernels.speculative_verify.spec_autograd import (
-    speculative_verify,
-    speculative_verify_pytorch_ref,
-)
+from __future__ import annotations
 
-__all__ = [
-    "speculative_verify",
-    "speculative_verify_pytorch_ref",
-]
+from neuralops.ops.cuda.speculative_verify import *  # noqa: F401, F403

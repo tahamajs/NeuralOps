@@ -5,8 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Goldfinch AHN Recurrent Attention Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.goldfinch_ahn."""
 
-from .goldfinch_ahn_autograd import *
+from __future__ import annotations
+
+from neuralops.ops.cuda.goldfinch_ahn import *  # noqa: F401, F403

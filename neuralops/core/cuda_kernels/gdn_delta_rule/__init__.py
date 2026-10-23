@@ -5,13 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-GDN Delta Rule Recurrent Scan Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.gdn_delta_rule."""
 
-from neuralops.core.cuda_kernels.gdn_delta_rule.gdn_delta_rule_autograd import (
-    gdn_delta_rule,
-    gdn_delta_rule_pytorch_ref,
-)
+from __future__ import annotations
 
-__all__ = ["gdn_delta_rule", "gdn_delta_rule_pytorch_ref"]
+from neuralops.ops.cuda.gdn_delta_rule import *  # noqa: F401, F403

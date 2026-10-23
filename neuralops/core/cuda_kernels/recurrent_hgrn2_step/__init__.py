@@ -5,16 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Recurrent HGRN2 Step Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.recurrent_hgrn2_step."""
 
-from neuralops.core.cuda_kernels.recurrent_hgrn2_step.hgrn2_step_autograd import (
-    recurrent_hgrn2_step,
-    recurrent_hgrn2_step_pytorch_ref,
-)
+from __future__ import annotations
 
-__all__ = [
-    "recurrent_hgrn2_step",
-    "recurrent_hgrn2_step_pytorch_ref",
-]
+from neuralops.ops.cuda.recurrent_hgrn2_step import *  # noqa: F401, F403

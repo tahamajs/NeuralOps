@@ -5,20 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""svd attention layers."""
+"""svd attention family with lazy implementation exports."""
 
-from __future__ import annotations
+from neuralops._lazy_family import install_lazy_family
 
-from typing import Any
-import neuralops.attentions.svd as _fam_mod
-
-
-def __getattr__(name: str) -> Any:
-    return getattr(_fam_mod, name)
-
-
-def __dir__() -> list[str]:
-    return list(_fam_mod.__all__)
-
-
-__all__ = list(_fam_mod.__all__)
+__all__ = install_lazy_family(globals())

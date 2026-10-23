@@ -5,16 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-ALiBi Attention Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.alibi_attention."""
 
-from neuralops.core.cuda_kernels.alibi_attention.alibi_autograd import (
-    alibi_attention,
-    alibi_attention_pytorch_ref,
-)
+from __future__ import annotations
 
-__all__ = [
-    "alibi_attention",
-    "alibi_attention_pytorch_ref",
-]
+from neuralops.ops.cuda.alibi_attention import *  # noqa: F401, F403

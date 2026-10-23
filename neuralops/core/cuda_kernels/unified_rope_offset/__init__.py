@@ -5,14 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Unified RoPE Offset Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.unified_rope_offset."""
 
-from neuralops.core.cuda_kernels.unified_rope_offset.unified_rope_offset_autograd import (
-    unified_rope_offset,
-    unified_rope_offset_pytorch_ref,
-    fused_unified_rope_offset_pytorch,
-)
+from __future__ import annotations
 
-__all__ = ["unified_rope_offset", "unified_rope_offset_pytorch_ref", "fused_unified_rope_offset_pytorch"]
+from neuralops.ops.cuda.unified_rope_offset import *  # noqa: F401, F403

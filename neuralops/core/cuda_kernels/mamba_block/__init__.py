@@ -5,8 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Mamba State-Space Block Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.mamba_block."""
 
-from .mamba_block_autograd import *
+from __future__ import annotations
+
+from neuralops.ops.cuda.mamba_block import *  # noqa: F401, F403
