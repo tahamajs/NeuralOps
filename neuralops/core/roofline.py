@@ -280,12 +280,14 @@ def profile_roofline(
             if cls is not None:
                 try:
                     module = cls(embed_dim=embed_dim, num_heads=num_heads, **module_kwargs)
-                except Exception:
+                except Exception as exc1:
+                    logger.debug("Failed initializing %s with embed_dim/num_heads: %s; trying BertConfig", module_name, exc1)
                     try:
                         from transformers import BertConfig
                         cfg = BertConfig(hidden_size=embed_dim, num_attention_heads=num_heads)
                         module = cls(config=cfg, **module_kwargs)
-                    except Exception:
+                    except Exception as exc2:
+                        logger.debug("Failed initializing %s with BertConfig: %s; trying kwargs only", module_name, exc2)
                         module = cls(**module_kwargs)
             else:
                 from neuralops.core.composable import ComposableAttention
@@ -303,10 +305,12 @@ def profile_roofline(
     def _run_forward(m: nn.Module, inp: torch.Tensor) -> torch.Tensor:
         try:
             out = m(inp)
-        except TypeError:
+        except TypeError as exc1:
+            logger.debug("Forward failed with single input: %s; trying hidden_states", exc1)
             try:
                 out = m(hidden_states=inp)
-            except TypeError:
+            except TypeError as exc2:
+                logger.debug("Forward failed with hidden_states: %s; trying 3-arg forward", exc2)
                 out = m(inp, inp, inp)
         return out[0] if isinstance(out, tuple) else out
 
