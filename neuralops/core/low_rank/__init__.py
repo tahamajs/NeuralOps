@@ -6,13 +6,12 @@
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
-Canonical `neuralops.attention` subpackage.
-Re-exports the Attention registry, BaseAttention, and all 8 architecture families.
+Low-Rank Linear Transformation Core Module.
 """
 
 from __future__ import annotations
 
-from neuralops.core.base import BaseAttention
-from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.low_rank.factorized import FactorisedLinear, FactorizedLinear
+from neuralops.core.low_rank.svd_linear import SVDLinear
 
-__all__ = ["ATTENTION_REGISTRY", "BaseAttention"]
+__all__ = ["SVDLinear", "FactorizedLinear", "FactorisedLinear"]
