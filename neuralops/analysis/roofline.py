@@ -454,14 +454,14 @@ def profile_roofline(
 
     if log_to_ledger:
         try:
-            from neuralops.core.results_ledger import log_experiment_result
+            from neuralops.analysis.results_ledger import log_experiment_result
             log_experiment_result(
                 module_name=module_name,
                 category="triton_kernel" if any(k in module_name.lower() for k in ("triton", "kernel", "scan")) else "attention",
                 family="hardware-roofline",
                 generation_method={
                     "algorithm": "Hardware Roofline Dual-Path CUDA Event Profiler",
-                    "source_component": "neuralops.core.roofline.profile_roofline",
+                    "source_component": "neuralops.analysis.roofline.profile_roofline",
                 },
                 experimental_setup={
                     "batch_size": batch_size,
