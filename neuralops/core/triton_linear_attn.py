@@ -16,8 +16,8 @@ from __future__ import annotations
 from typing import Any
 import torch
 
-from neuralops.core.triton_kernels.linear_attn import fwd as _linear_attn_fwd
-from neuralops.core.triton_kernels._common import HAS_TRITON
+from neuralops.ops.triton.linear_attn import fwd as _linear_attn_fwd
+from neuralops.ops.triton._common import HAS_TRITON
 
 
 def fast_linear_attention(
