@@ -127,3 +127,15 @@ from neuralops.analysis import model_comparison
 from neuralops.analysis import plotting
 from neuralops.analysis import report_generator
 from neuralops.analysis import utils
+
+from neuralops.analysis import paper_export
+from neuralops.analysis import results_ledger
+from neuralops.analysis import roofline
+from neuralops.analysis import inspector
+
+__all__ += [
+    "paper_export",
+    "results_ledger",
+    "roofline",
+    "inspector",
+]
