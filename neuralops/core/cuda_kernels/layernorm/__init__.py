@@ -5,16 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Fused LayerNorm Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.layernorm."""
 
-from neuralops.core.cuda_kernels.layernorm.layernorm_autograd import (
-    layernorm,
-    layernorm_pytorch_ref,
-)
+from __future__ import annotations
 
-__all__ = [
-    "layernorm",
-    "layernorm_pytorch_ref",
-]
+from neuralops.ops.cuda.layernorm import *  # noqa: F401, F403

@@ -5,13 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Flash Grouped Query Attention Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.flash_gqa."""
 
-from neuralops.core.cuda_kernels.flash_gqa.flash_gqa_autograd import (
-    flash_gqa,
-    flash_gqa_pytorch_ref,
-)
+from __future__ import annotations
 
-__all__ = ["flash_gqa", "flash_gqa_pytorch_ref"]
+from neuralops.ops.cuda.flash_gqa import *  # noqa: F401, F403

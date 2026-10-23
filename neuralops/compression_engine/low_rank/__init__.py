@@ -5,8 +5,13 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""Low-rank compression family with lazy implementation exports."""
+"""Backward compatibility shim for neuralops.compression.low_rank."""
 
-from neuralops._lazy_family import install_lazy_family
+from __future__ import annotations
 
-__all__ = install_lazy_family(globals())
+from typing import Any
+import neuralops.compression.low_rank as _mod
+
+__getattr__ = _mod.__getattr__
+__dir__ = _mod.__dir__
+__all__ = list(_mod.__all__)

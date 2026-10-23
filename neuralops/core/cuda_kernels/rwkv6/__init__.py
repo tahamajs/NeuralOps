@@ -5,8 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-RWKV-6 Time-Mixing Recurrence Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.rwkv6."""
 
-from .rwkv6_autograd import *
+from __future__ import annotations
+
+from neuralops.ops.cuda.rwkv6 import *  # noqa: F401, F403

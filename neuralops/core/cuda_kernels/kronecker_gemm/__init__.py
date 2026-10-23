@@ -5,16 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Fused Kronecker GEMM Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.kronecker_gemm."""
 
-from neuralops.core.cuda_kernels.kronecker_gemm.kronecker_autograd import (
-    kronecker_matmul,
-    kronecker_matmul_pytorch_ref,
-)
+from __future__ import annotations
 
-__all__ = [
-    "kronecker_matmul",
-    "kronecker_matmul_pytorch_ref",
-]
+from neuralops.ops.cuda.kronecker_gemm import *  # noqa: F401, F403

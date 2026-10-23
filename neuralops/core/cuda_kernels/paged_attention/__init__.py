@@ -5,13 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Paged Attention Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.paged_attention."""
 
-from neuralops.core.cuda_kernels.paged_attention.paged_attention_autograd import (
-    paged_attention,
-    paged_attention_pytorch_reference,
-)
+from __future__ import annotations
 
-__all__ = ["paged_attention", "paged_attention_pytorch_reference"]
+from neuralops.ops.cuda.paged_attention import *  # noqa: F401, F403

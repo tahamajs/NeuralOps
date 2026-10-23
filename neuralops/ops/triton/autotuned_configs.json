@@ -1,0 +1,194 @@
+{
+  "fused_hnc_nullspace_step": {
+    "BLOCK_M": 64,
+    "BLOCK_N": 64,
+    "num_warps": 4,
+    "num_stages": 3,
+    "speedup_target": "> 4.0x",
+    "description": "Fused HNC nullspace step with in-SRAM register projection"
+  },
+  "fused_linformer_seq_proj": {
+    "BLOCK_M": 64,
+    "BLOCK_N": 64,
+    "num_warps": 4,
+    "num_stages": 2,
+    "speedup_target": "> 1.1x",
+    "description": "Batched low-rank sequence projection bypassing broadcast expansion"
+  },
+  "fused_kronecker_gemm": {
+    "BLOCK_M": 32,
+    "BLOCK_N": 32,
+    "num_warps": 4,
+    "num_stages": 2,
+    "speedup_target": "> 1.8x",
+    "description": "Single-pass Kronecker factored projection contraction"
+  },
+  "fused_nystrom_landmark_pinv": {
+    "BLOCK_M": 32,
+    "BLOCK_N": 32,
+    "num_warps": 4,
+    "num_stages": 2,
+    "speedup_target": "> 1.5x",
+    "description": "Vectorized batched landmark projection chain"
+  },
+  "sliding_window_attention": {
+    "BLOCK_M": 64,
+    "BLOCK_N": 64,
+    "num_warps": 4,
+    "num_stages": 3,
+    "speedup_target": "> 100x",
+    "description": "Band-diagonal sliding window attention avoiding O(N^2) materialization"
+  },
+  "gla_scan": {
+    "BLOCK_CHUNK": 64,
+    "num_warps": 4,
+    "num_stages": 2,
+    "speedup_target": "> 50x",
+    "description": "Chunked gated linear attention parallel scan in SRAM registers"
+  },
+  "gdn_scan": {
+    "BLOCK_CHUNK": 64,
+    "num_warps": 4,
+    "num_stages": 2,
+    "speedup_target": "> 100x",
+    "description": "Gated DeltaNet associative memory update"
+  },
+  "hgrn2_scan": {
+    "BLOCK_CHUNK": 64,
+    "num_warps": 4,
+    "num_stages": 2,
+    "speedup_target": "> 100x",
+    "description": "HGRN-2 forget-gate linear recurrence scan"
+  },
+  "softplus": {
+    "BLOCK_SIZE": 1024,
+    "num_warps": 4,
+    "num_stages": 2,
+    "speedup_target": "> 1.3x",
+    "description": "Vectorized 1024-element softplus activation"
+  },
+  "fused_norm_linear": {
+    "BLOCK_D": 2048,
+    "num_warps": 8,
+    "num_stages": 3,
+    "speedup_target": "> 10.0x",
+    "description": "Fused RMSNorm + SiLU gating in registers before projection"
+  },
+  "cosformer": {
+    "BLOCK_M": 128,
+    "BLOCK_D": 64,
+    "num_warps": 4,
+    "num_stages": 3,
+    "speedup_target": "> 1.2x",
+    "description": "Linear O(N D^2) cosine prefix accumulation"
+  },
+  "fused_ce": {
+    "BLOCK_V": 4096,
+    "num_warps": 8,
+    "num_stages": 3,
+    "speedup_target": "> 1.9x",
+    "description": "Single-pass online softmax across arbitrary vocabulary lengths"
+  },
+  "fused_kd": {
+    "BLOCK_V": 2048,
+    "num_warps": 4,
+    "num_stages": 2,
+    "speedup_target": "> 1.5x",
+    "description": "Fused temperature-scaled KL divergence loss"
+  },
+  "selective_scan": {
+    "BLOCK_CHUNK": 64,
+    "num_warps": 4,
+    "num_stages": 2,
+    "speedup_target": "> 50x",
+    "description": "Mamba continuous SSM state-space scan in GPU SRAM"
+  },
+  "fms_scan": {
+    "BLOCK_CHUNK": 64,
+    "num_warps": 4,
+    "num_stages": 2,
+    "speedup_target": "> 10x",
+    "description": "Factorized Matrix State recurrent associative scan"
+  },
+  "paged_attention": {
+    "BLOCK_SIZE": 16,
+    "num_warps": 4,
+    "num_stages": 2,
+    "speedup_target": "> 2.0x",
+    "description": "Paged KV-cache block table lookup"
+  },
+  "fused_mqa_bias_scale": {
+    "BLOCK_Q": 32,
+    "BLOCK_K": 256,
+    "num_warps": 4,
+    "num_stages": 2,
+    "speedup_target": "> 2.5x",
+    "description": "Fused MQA score scaling and causal masking"
+  },
+  "fused_hamming_scores": {
+    "BLOCK_M": 32,
+    "BLOCK_N": 32,
+    "num_warps": 4,
+    "num_stages": 2,
+    "speedup_target": "> 1.2x",
+    "description": "Fused Hamming bit score distance calculation"
+  },
+  "fused_favor_plus": {
+    "BLOCK_SIZE": 1024,
+    "num_warps": 4,
+    "num_stages": 2,
+    "speedup_target": "> 1.4x",
+    "description": "Vectorized exponential random projection feature map"
+  },
+  "fused_rope": {
+    "BLOCK_M": 32,
+    "num_warps": 4,
+    "num_stages": 2,
+    "speedup_target": "> 2.5x",
+    "description": "Rotary position embedding rotation in registers"
+  },
+  "fused_moba_block_router": {
+    "BLOCK_M": 16,
+    "BLOCK_N": 16,
+    "num_warps": 4,
+    "num_stages": 2,
+    "speedup_target": "> 1.5x",
+    "description": "MoBA sparse block router combine"
+  },
+  "fused_rala_augmented_scan": {
+    "BLOCK_CHUNK": 64,
+    "num_warps": 4,
+    "num_stages": 2,
+    "speedup_target": "> 15.0x",
+    "description": "Rank-augmented linear attention prefix scan"
+  },
+  "fused_recurrent_linear_step": {
+    "BLOCK_D": 64,
+    "num_warps": 4,
+    "num_stages": 2,
+    "speedup_target": "> 2.0x",
+    "description": "O(1) recurrent linear decode step"
+  },
+  "fused_jamba_hybrid_gate": {
+    "BLOCK_M": 64,
+    "BLOCK_N": 64,
+    "num_warps": 4,
+    "num_stages": 2,
+    "speedup_target": "> 1.4x",
+    "description": "Hybrid SSM-Attention gating"
+  },
+  "fused_goldfinch_hopfield": {
+    "BLOCK_D": 128,
+    "num_warps": 4,
+    "num_stages": 2,
+    "speedup_target": "> 7.0x",
+    "description": "Hopfield associative memory recurrent lookup"
+  },
+  "flash_decode": {
+    "CHUNK_SIZE": 64,
+    "num_warps": 4,
+    "num_stages": 2,
+    "speedup_target": "> 15.0x",
+    "description": "Split-KV flash decode attention"
+  }
+}

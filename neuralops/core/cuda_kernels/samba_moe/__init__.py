@@ -5,8 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Samba MoE Combine Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.samba_moe."""
 
-from .samba_moe_autograd import *
+from __future__ import annotations
+
+from neuralops.ops.cuda.samba_moe import *  # noqa: F401, F403

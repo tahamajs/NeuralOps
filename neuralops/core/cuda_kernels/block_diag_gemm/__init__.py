@@ -5,16 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Block-Diagonal GEMM Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.block_diag_gemm."""
 
-from neuralops.core.cuda_kernels.block_diag_gemm.block_diag_autograd import (
-    block_diag_matmul,
-    block_diag_matmul_pytorch_ref,
-)
+from __future__ import annotations
 
-__all__ = [
-    "block_diag_matmul",
-    "block_diag_matmul_pytorch_ref",
-]
+from neuralops.ops.cuda.block_diag_gemm import *  # noqa: F401, F403

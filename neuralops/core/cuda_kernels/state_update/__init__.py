@@ -5,21 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-State Space Model Update Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.state_update."""
 
-from neuralops.core.cuda_kernels.state_update.state_autograd import (
-    recurrent_linear_step,
-    recurrent_linear_step_pytorch_ref,
-)
+from __future__ import annotations
 
-state_update = recurrent_linear_step
-state_update_pytorch_ref = recurrent_linear_step_pytorch_ref
-
-__all__ = [
-    "recurrent_linear_step",
-    "recurrent_linear_step_pytorch_ref",
-    "state_update",
-    "state_update_pytorch_ref",
-]
+from neuralops.ops.cuda.state_update import *  # noqa: F401, F403

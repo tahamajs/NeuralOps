@@ -5,16 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Hadamard W4A16 Quantized GEMM Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.hadamard_gemm."""
 
-from neuralops.core.cuda_kernels.hadamard_gemm.hadamard_autograd import (
-    hadamard_w4a16_gemm,
-    hadamard_w4a16_gemm_pytorch_ref,
-)
+from __future__ import annotations
 
-__all__ = [
-    "hadamard_w4a16_gemm",
-    "hadamard_w4a16_gemm_pytorch_ref",
-]
+from neuralops.ops.cuda.hadamard_gemm import *  # noqa: F401, F403

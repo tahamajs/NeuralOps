@@ -5,13 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Entropy Pruning Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.entropy_pruning."""
 
-from neuralops.core.cuda_kernels.entropy_pruning.entropy_pruning_autograd import (
-    entropy_pruning,
-    entropy_pruning_pytorch_ref,
-)
+from __future__ import annotations
 
-__all__ = ["entropy_pruning", "entropy_pruning_pytorch_ref"]
+from neuralops.ops.cuda.entropy_pruning import *  # noqa: F401, F403

@@ -5,20 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Paged Recurrent Step Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.paged_recurrent_step."""
 
-from neuralops.core.cuda_kernels.paged_recurrent_step.paged_recurrent_step_autograd import (
-    paged_recurrent_step,
-    paged_recurrent_step_pytorch_ref,
-    paged_recurrent_step_ref,
-    paged_recurrent_state_step_pytorch,
-)
+from __future__ import annotations
 
-__all__ = [
-    "paged_recurrent_step",
-    "paged_recurrent_step_pytorch_ref",
-    "paged_recurrent_step_ref",
-    "paged_recurrent_state_step_pytorch",
-]
+from neuralops.ops.cuda.paged_recurrent_step import *  # noqa: F401, F403

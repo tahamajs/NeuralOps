@@ -5,34 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Mixture of Experts Routing Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.moe_routing."""
 
-from neuralops.core.cuda_kernels.moe_routing.moe_autograd import (
-    moe_dispatch_gather,
-    moe_dispatch,
-    moe_gather,
-    moe_routing,
-    moe_routing_ref,
-    moe_routing_pytorch_ref,
-    moe_dispatch_gather_ref,
-    moe_dispatch_gather_pytorch_ref,
-    moe_route_pytorch_ref,
-    _moe_dispatch_pytorch_ref,
-    _moe_gather_pytorch_ref,
-)
+from __future__ import annotations
 
-__all__ = [
-    "moe_dispatch_gather",
-    "moe_dispatch",
-    "moe_gather",
-    "moe_routing",
-    "moe_routing_ref",
-    "moe_routing_pytorch_ref",
-    "moe_dispatch_gather_ref",
-    "moe_dispatch_gather_pytorch_ref",
-    "moe_route_pytorch_ref",
-    "_moe_dispatch_pytorch_ref",
-    "_moe_gather_pytorch_ref",
-]
+from neuralops.ops.cuda.moe_routing import *  # noqa: F401, F403

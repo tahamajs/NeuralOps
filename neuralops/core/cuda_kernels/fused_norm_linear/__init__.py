@@ -5,16 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Fused Normalization Linear Projection Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.fused_norm_linear."""
 
-from neuralops.core.cuda_kernels.fused_norm_linear.norm_linear_autograd import (
-    fused_norm_linear,
-    fused_norm_linear_pytorch_ref,
-)
+from __future__ import annotations
 
-__all__ = [
-    "fused_norm_linear",
-    "fused_norm_linear_pytorch_ref",
-]
+from neuralops.ops.cuda.fused_norm_linear import *  # noqa: F401, F403

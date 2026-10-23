@@ -5,16 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Fused Knowledge Distillation Loss Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.fused_kd."""
 
-from neuralops.core.cuda_kernels.fused_kd.kd_autograd import (
-    fused_kd_loss,
-    fused_kd_loss_pytorch_ref,
-)
+from __future__ import annotations
 
-__all__ = [
-    "fused_kd_loss",
-    "fused_kd_loss_pytorch_ref",
-]
+from neuralops.ops.cuda.fused_kd import *  # noqa: F401, F403

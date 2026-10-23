@@ -49,7 +49,7 @@ class NeuralOpsSwiGLU(nn.Module):
         up = self.up_proj(x)
         if x.is_cuda and x.dtype in (torch.float16, torch.bfloat16) and hasattr(self, "act_fn") and getattr(self.act_fn, "__name__", "") == "silu":
             try:
-                from neuralops.core.triton_kernels.elementwise import swiglu_triton
+                from neuralops.ops.triton.elementwise import swiglu_triton
                 act = swiglu_triton(gate, up)
                 return self.down_proj(act)
             except (RuntimeError, ImportError, TypeError, ValueError, AttributeError) as e:

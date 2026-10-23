@@ -5,8 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Hymba TransX Fused Operator Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.hymba_transx."""
 
-from .hymba_transx_autograd import *
+from __future__ import annotations
+
+from neuralops.ops.cuda.hymba_transx import *  # noqa: F401, F403

@@ -5,16 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Channel Shuffle Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.channel_shuffle."""
 
-from neuralops.core.cuda_kernels.channel_shuffle.shuffle_autograd import (
-    channel_shuffle,
-    channel_shuffle_pytorch_ref,
-)
+from __future__ import annotations
 
-__all__ = [
-    "channel_shuffle",
-    "channel_shuffle_pytorch_ref",
-]
+from neuralops.ops.cuda.channel_shuffle import *  # noqa: F401, F403

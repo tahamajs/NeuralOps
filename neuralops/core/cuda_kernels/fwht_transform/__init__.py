@@ -5,14 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Fast Walsh-Hadamard Transform Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.fwht_transform."""
 
-from neuralops.core.cuda_kernels.fwht_transform.fwht_transform_autograd import (
-    fwht_transform,
-    fwht_transform_pytorch_ref,
-    fast_hadamard_transform,
-)
+from __future__ import annotations
 
-__all__ = ["fwht_transform", "fwht_transform_pytorch_ref", "fast_hadamard_transform"]
+from neuralops.ops.cuda.fwht_transform import *  # noqa: F401, F403

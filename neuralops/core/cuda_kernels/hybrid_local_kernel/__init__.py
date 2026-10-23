@@ -5,24 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Hybrid Local Kernel Attention Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.hybrid_local_kernel."""
 
-from neuralops.core.cuda_kernels.hybrid_local_kernel.hybrid_local_kernel_autograd import (
-    hybrid_local_attn,
-    hybrid_local_attn_ref,
-    hybrid_two_branch_blend,
-    hybrid_two_branch_blend_ref,
-    hybrid_three_branch_blend,
-    hybrid_three_branch_blend_ref,
-)
+from __future__ import annotations
 
-__all__ = [
-    "hybrid_local_attn",
-    "hybrid_local_attn_ref",
-    "hybrid_two_branch_blend",
-    "hybrid_two_branch_blend_ref",
-    "hybrid_three_branch_blend",
-    "hybrid_three_branch_blend_ref",
-]
+from neuralops.ops.cuda.hybrid_local_kernel import *  # noqa: F401, F403

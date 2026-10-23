@@ -5,10 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-AWQ Compressor Forwarding Module
+"""Backward-compatibility shim for neuralops.compression.quantization.awq_real."""
 
-Canonical forwarding interface providing backward-compatible access to the core Activation-Aware Weight Quantization implementation.
-"""
+from __future__ import annotations
 
-from neuralops.compression_engine.quantization.awq import *
+from neuralops.compression.quantization.awq_real import *  # noqa: F401, F403
