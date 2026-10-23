@@ -126,3 +126,17 @@ requires_fp16_cuda = pytest.mark.skipif(
 def pytest_configure(config):
     config.addinivalue_line("markers", "requires_cuda: skip if no CUDA")
     config.addinivalue_line("markers", "requires_fp16_cuda: skip if no fp16 CUDA")
+    config.addinivalue_line("markers", "gpu: requires CUDA-capable GPU")
+
+
+def pytest_collection_modifyitems(config, items):
+    cuda_available = torch.cuda.is_available()
+    skip_cuda = pytest.mark.skip(reason="CUDA device is not available on this host")
+    for item in items:
+        item_path = str(item.fspath)
+        if "/cuda_kernels/" in item_path or "/triton_kernels/" in item_path:
+            item.add_marker(pytest.mark.gpu)
+            if not cuda_available:
+                item.add_marker(skip_cuda)
+        elif "gpu" in item.keywords and not cuda_available:
+            item.add_marker(skip_cuda)
