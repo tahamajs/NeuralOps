@@ -1,5 +1,32 @@
 # ============================================================
-# Python & Bytecode / Compiled Extensions
+# Non-Code & Research Artifact Directories (Strictly Ignored)
+# ============================================================
+docs/
+docs/**
+audit/
+audit/**
+paper/
+paper/**
+thesis_final/
+thesis_final/**
+academic/
+academic/**
+results/
+results/**
+logs/
+logs/**
+site/
+site/**
+_archive/
+_archive/**
+_proposed/
+_proposed/**
+scratch/
+scratch/**
+grading.log
+
+# ============================================================
+# Python Bytecode & Compiled Extensions
 # ============================================================
 __pycache__/
 */__pycache__/
@@ -14,15 +41,14 @@ __pycache__/
 *.dylib
 *.dll
 *.a
-.Python
 
-# Distribution / Packaging
-dist/
+# ============================================================
+# Distribution & Build Packaging
+# ============================================================
 build/
-
-eggs/
-.eggs/
+dist/
 *.egg-info/
+.eggs/
 *.egg
 develop-eggs/
 downloads/
@@ -32,7 +58,9 @@ var/
 wheels/
 .installed.cfg
 
+# ============================================================
 # Virtual Environments
+# ============================================================
 venv/
 .venv/
 env/
@@ -42,23 +70,26 @@ soa_env/
 ENV/
 
 # ============================================================
-# Testing, Coverage & Type Checking
+# Testing, Coverage & Type Checking Caches
 # ============================================================
 .pytest_cache/
+**/.pytest_cache/
 htmlcov/
 .coverage
 .coverage.*
 coverage.xml
 .mypy_cache/
+**/.mypy_cache/
 .ruff_cache/
+**/.ruff_cache/
 .trunk/
 
 # ============================================================
 # Jupyter Notebooks & Caches
 # ============================================================
 .ipynb_checkpoints/
+**/.ipynb_checkpoints/
 *.ipynb
-!notebooks/*.ipynb
 cache/
 **/cache/
 .cache/
@@ -82,45 +113,23 @@ desktop.ini
 *~
 *.code-workspace
 
-# Temporary & Backup files
+# ============================================================
+# Temporary, Log & Backup Files
+# ============================================================
+*.log
+*.tmp
+*.temp
 *.bak
 *.backup
 *.old
-*.tmp
-*.temp
 *.patch
-
-# ============================================================
-# Environment Variables & Secrets
-# ============================================================
-.env
-.env.*
-!.env.example
-*.secret
-*.key
-*.pem
-.git-credentials
-
-# ============================================================
-# Logs & Runtime Outputs
-# ============================================================
-*.log
 *.err
-results/**/*.err
 **/*.err
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-sweep_forever.log
-paper_artifacts_forever.log
-sweep_service.log
-results/*.log
-*/**/*.log
 celerybeat-schedule
 celerybeat.pid
 
 # ============================================================
-# Heavy Model Checkpoints, Weights & Datasets
+# Heavy Model Weights, Checkpoints & Datasets
 # ============================================================
 *.pt
 *.pth
@@ -137,13 +146,10 @@ celerybeat.pid
 *.zip
 *.rar
 *.bundle
-
 models/
 **/models/
 !neuralops/models/
 !neuralops/models/**
-!benchmarks/models/
-!benchmarks/models/**
 !neuralops/benchmarks/models/
 !neuralops/benchmarks/models/**
 datasets/
@@ -164,60 +170,28 @@ test_experiments/
 test_results/
 **/test_results/
 
-# Specific temp run folders
-**/smart_adaptive_final_model/
-**/temp_finetune/
-**/models_cache/
-kaggle_deploy_temp/
-results_kaggle_gpu/
-archive_cleanup_*/
-temp_modules_docs/
+# ============================================================
+# Whitelisted Governance, Config, Provenance & Docs Files
+# ============================================================
+!README.md
+!CHANGELOG.md
+!CONTRIBUTING.md
+!SECURITY.md
+!CODE_OF_CONDUCT.md
+!ROADMAP.md
+!AGENTS.md
+!pyproject.toml
+!pytest.ini
+!setup.py
+!LICENSE
+!CITATION.cff
 
-# ============================================================
-# Node.js, Frontend & Django Subsystems
-# ============================================================
-node_modules/
-.next/
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
-media/
-staticfiles/
+# Whitelisted tracked provenance docs
+!docs/fallback_list.md
+!docs/reports/FINAL_CERTIFICATION_20261019.md
+!docs/roadmap/TENSORRT_LLM_PLAN.md
 
-Codes/MasterHttpRelayVPN/
-Codes/django_api/
-Codes/frontend/
-Codes/neuralops-agent/
-MasterHttpRelayVPN-python_testing/
-
-# ============================================================
-# LaTeX Build Artifacts
-# ============================================================
-*.aux
-*.lof
-*.lot
-*.flg
-*.out
-*.toc
-*.fmt
-*.fot
-*.cb
-*.cb2
-*.bbl
-*.blg
-*.brf
-*.run.xml
-*.fdb_latexmk
-*.fls
-*.synctex.gz
-*.synctex(busy)
-*.xdv
-*.dvi
-*.ps
-
-# ============================================================
-# Explicit Inclusions: Always Track Source, Docs, CI & Governance
-# ============================================================
+# Whitelisted source, tests, scripts
 !.github/
 !.github/**
 !neuralops/
@@ -229,101 +203,16 @@ MasterHttpRelayVPN-python_testing/
 !neuralops/**/*.typed
 !tests/
 !tests/**/*.py
-!README.md
-!CHANGELOG.md
-!CONTRIBUTING.md
-!SECURITY.md
-!CODE_OF_CONDUCT.md
-!ROADMAP.md
-!pyproject.toml
-!pytest.ini
-!setup.py
+!scripts/
+!scripts/**/*.py
+!scripts/**/*.sh
 
-# ============================================================
-# Absolute Overrides: Never Track Bytecode, Cache, Non-Code, or Large Artifacts
-# ============================================================
-**/.DS_Store
-.DS_Store
+# Final absolute overrides
 **/__pycache__/
 __pycache__/
 *.py[cod]
 *.pyc
 *.pyo
-*$py.class
 *.so
-*.o
-*.dylib
-*.dll
-*.a
-*.log
-*.err
-results/**/*.err
-**/*.err
-.pytest_cache/
-**/.pytest_cache/
-.ruff_cache/
-**/.ruff_cache/
-.mypy_cache/
-**/.mypy_cache/
-.ipynb_checkpoints/
-**/.ipynb_checkpoints/
-*.aux
-*.out
-*.synctex.gz
-*.synctex(busy)
-*.jsonl
-*.pdf
-*.tar.gz
-*.zip
-*.bundle
-
-# ============================================================
-# Non-Core, Docs, Results, Academic & Local Artifacts (Strictly Ignored)
-# ============================================================
-audit/
-audit/**
-docs/
-docs/**
-results/
-results/**
-academic/
-academic/**
-paper/
-paper/**
-thesis_final/
-thesis_final/**
-logs/
-logs/**
-scratch/
-scratch/**
-grading.log
-neuralops/data/cache/
-neuralops/data/*.parquet
-*.arrow
-*.sqlite
-*.sqlite3
-*.db
-
-# Generated documentation website artifacts
-site/
-dashboard.html
-index.md
-
-# Release-sprint manuscript and raw benchmark artifacts
-paper/
-thesis_final/
-*.pdf
-*.tex
-*.aux
-*.bbl
-*.blg
-*.toc
-*.out
-*.synctex.gz
-results/benchmarks_v1.4.0/
-*.json
-!package.json
-*.csv
-scratch/
-tmp/
-AGENTS.md
+.DS_Store
+**/.DS_Store
