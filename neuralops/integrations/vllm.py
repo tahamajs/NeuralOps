@@ -14,10 +14,13 @@ Registers custom attention backends, kernels, and model architectures within vLL
 from __future__ import annotations
 
 import logging
+import warnings
 from dataclasses import dataclass
 from typing import Any, Optional
 import torch
 import torch.nn as nn
+
+from neuralops.core.errors import IntegrationNotImplementedError
 
 logger = logging.getLogger("NeuralOps.vLLM")
 
@@ -72,9 +75,10 @@ class NeuralOpsvLLMImpl:
         **kwargs: Any,
     ) -> torch.Tensor:
         """Fail closed until vLLM cache writes and metadata are implemented."""
-        raise NotImplementedError(
+        raise IntegrationNotImplementedError(
             "NeuralOps vLLM attention execution is not yet compatible with vLLM's "
-            "paged-cache write and scheduler metadata contract; no approximate output is returned."
+            "paged-cache write and scheduler metadata contract; no approximate output is returned. "
+            "See docs/roadmap/VLLM_PLAN.md for details."
         )
 
 
@@ -109,9 +113,10 @@ class NeuralOpsForCausalLMvLLM(nn.Module):
 
     def __init__(self, config: Any, **kwargs: Any) -> None:
         super().__init__()
-        raise NotImplementedError(
+        raise IntegrationNotImplementedError(
             "This placeholder cannot reconstruct a checkpoint and must not initialize random weights. "
-            "Load the base model with Transformers and export it using neuralops.export instead."
+            "Load the base model with Transformers and export it using neuralops.export instead. "
+            "See docs/roadmap/VLLM_PLAN.md for details."
         )
 
     def forward(
@@ -122,18 +127,33 @@ class NeuralOpsForCausalLMvLLM(nn.Module):
         attn_metadata: Any = None,
         **kwargs: Any,
     ) -> torch.Tensor:
-        raise NotImplementedError("Checkpoint-backed vLLM model execution is not implemented.")
+        raise IntegrationNotImplementedError(
+            "Checkpoint-backed vLLM model execution is not implemented. "
+            "See docs/roadmap/VLLM_PLAN.md for details."
+        )
 
     def compute_logits(self, hidden_states: torch.Tensor, sampling_metadata: Any = None) -> torch.Tensor:
-        raise NotImplementedError("Checkpoint-backed vLLM model execution is not implemented.")
+        raise IntegrationNotImplementedError(
+            "Checkpoint-backed vLLM model execution is not implemented. "
+            "See docs/roadmap/VLLM_PLAN.md for details."
+        )
 
     def load_weights(self, weights: Any) -> None:
         """Reject vLLM weight loading until checkpoint key mapping is implemented."""
-        raise NotImplementedError("vLLM checkpoint weight mapping is not implemented.")
+        raise IntegrationNotImplementedError(
+            "vLLM checkpoint weight mapping is not implemented. "
+            "See docs/roadmap/VLLM_PLAN.md for details."
+        )
 
 
 def register_neuralops_vllm_plugin() -> bool:
     """Report whether the optional vLLM integration is safe to register."""
+    warnings.warn(
+        "vLLM integration is experimental/stub in v1.6.0 and deferred to v2.0. "
+        "See docs/roadmap/VLLM_PLAN.md for details.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     if not HAS_VLLM:
         logger.debug("vLLM is not installed; plugin registration skipped.")
         return False
@@ -142,3 +162,13 @@ def register_neuralops_vllm_plugin() -> bool:
         "and checkpoint mapping have not passed compatibility verification."
     )
     return False
+
+
+__all__ = [
+    "NeuralOpsvLLMMetadata",
+    "NeuralOpsvLLMImpl",
+    "NeuralOpsvLLMAttentionBackend",
+    "NeuralOpsForCausalLMvLLM",
+    "register_neuralops_vllm_plugin",
+    "HAS_VLLM",
+]

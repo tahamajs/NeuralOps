@@ -1100,12 +1100,14 @@ To maintain engineering transparency and forensic integrity, NeuralOps categoriz
 
 | Framework | Type | Upstream | CI/CD | Production | Verified Path | Notes |
 |:---|:---|:---:|:---:|:---:|:---|:---|
-| **HuggingFace Transformers** | Native Plugin | N/A | ✅ | ✅ **Production Ready** | `neuralops/integrations/hf_automodel.py`, `neuralops/core/_attention_injectors.py` | Bit-exact roundtrip, dynamic AutoConfig |
-| **ONNX Runtime** | Compat Layer | N/A | ✅ | ✅ **Production Ready** | `neuralops/export/exporter.py` | Validated export (`pip install neuralops[export]`) |
-| **vLLM** | Adapter Scaffold | ⚠️ No PR | ⚠️ Stub | ❌ **Roadmap v2.0** | `neuralops/integrations/vllm.py`, `neuralops/models/paged_state.py` | PagedStateTable model; integration stub (requires GPU runner) |
-| **TGI** | Request Simulator | ⚠️ No PR | ⚠️ Sim | ❌ **Roadmap v2.0** | `neuralops/integrations/tgi.py` | Request batcher & streaming simulator |
-| **SGLang** | Radix Cache | ⚠️ No PR | ⚠️ Internal | ❌ **Roadmap v2.0** | `neuralops/integrations/sglang.py` | Standalone Radix prefix trie; native runtime hooks in v2.0 |
-| **TensorRT-LLM** | Scaffold | ❌ None | ⚠️ Stub | ❌ **Roadmap v2.0** | `neuralops/integrations/tensorrt_llm.py` | Explicit stubs; see `docs/roadmap/TENSORRT_LLM_PLAN.md` |
+| **HuggingFace Transformers** | Native Plugin | N/A | ✅ | ✅ **Supported** | `neuralops/integrations/hf_automodel.py`, `neuralops/core/_attention_injectors.py` | Supported (verified, CPU & GPU) |
+| **Safetensors** | Model Weights | N/A | ✅ | ✅ **Supported** | `neuralops/export/exporter.py` | Supported (built-in) |
+| **ONNX Runtime** | Compat Layer | N/A | ✅ | ✅ **Supported** | `neuralops/export/exporter.py` | Supported (requires neuralops[export]) |
+| **vLLM** | Adapter Scaffold | ⚠️ No PR | ⚠️ Stub | ❌ **Roadmap v2.0** | `neuralops/integrations/vllm.py` | Roadmap v2.0 (requires GPU) |
+| **SGLang** | Radix Cache | ⚠️ No PR | ⚠️ Stub | ❌ **Roadmap v2.0** | `neuralops/integrations/sglang.py` | Roadmap v2.0 (requires GPU) |
+| **TensorRT-LLM** | Scaffold | ❌ None | ⚠️ Stub | ❌ **Roadmap v2.0** | `neuralops/integrations/tensorrt_llm.py` | Roadmap v2.0 (requires GPU and TensorRT SDK) |
+| **TGI** | Request Simulator | ⚠️ No PR | ⚠️ Stub | ❌ **Roadmap v2.0** | `neuralops/integrations/tgi.py` | Roadmap v2.0 (requires GPU) |
+| **GGUF** | Quantized Export | ❌ None | ❌ None | ❌ **Not Implemented** | N/A | Not implemented |
 
 ---
 
