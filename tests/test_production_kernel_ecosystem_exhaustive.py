@@ -29,6 +29,9 @@ import pytest
 import torch
 import torch.nn.functional as F
 
+if not torch.cuda.is_available():
+    pytest.skip("CUDA is required for production kernel ecosystem tests", allow_module_level=True)
+
 from neuralops.core.cuda_kernels import force_kernel_backend
 
 from neuralops.core.cuda_kernels.low_rank_svd import fused_lowrank_gated_gemm, fused_lowrank_gated_gemm_pytorch_ref
