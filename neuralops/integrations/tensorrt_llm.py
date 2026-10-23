@@ -22,6 +22,8 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import torch
 import torch.nn as nn
 
+from neuralops.core.errors import IntegrationNotImplementedError
+
 logger = logging.getLogger("NeuralOps.TensorRTLLM")
 
 try:
@@ -166,17 +168,18 @@ class TensorRTLLMPluginBuilder:
     def build_plugin(self, *args: Any, **kwargs: Any) -> Any:
         """
         Compile custom NeuralOps attention C++ plugin for TensorRT-LLM.
-        Raises informative NotImplementedError detailing v2.0.0 roadmap status when TensorRT toolchain is unavailable.
+        Raises informative IntegrationNotImplementedError detailing v2.0.0 roadmap status when TensorRT toolchain is unavailable.
         """
         if not HAS_TRT:
-            raise NotImplementedError(
+            raise IntegrationNotImplementedError(
                 "TensorRT-LLM plugin compilation is planned for NeuralOps v2.0.0.\n"
                 "See docs/roadmap/TENSORRT_LLM_PLAN.md for the implementation roadmap.\n"
                 "Current workarounds: use vLLM or HF serving adapters instead."
             )
-        raise NotImplementedError(
+        raise IntegrationNotImplementedError(
             "This method does not compile plugins. Use generate_cpp_plugin_source() to emit source files, "
-            "then compile and validate them with the target TensorRT SDK."
+            "then compile and validate them with the target TensorRT SDK. "
+            "See docs/roadmap/TENSORRT_LLM_PLAN.md for details."
         )
 
     def generate_cpp_plugin_source(self, target_dir: Optional[Union[str, Path]] = None) -> Dict[str, str]:
@@ -416,9 +419,10 @@ set_target_properties(neuralops_trt_plugins PROPERTIES
         input_shape: Tuple[int, int] = (1, 16),
     ) -> Any:
         """Reject graph construction until a checkpoint-aware model importer exists."""
-        raise NotImplementedError(
+        raise IntegrationNotImplementedError(
             "NeuralOps-to-TensorRT graph translation is not implemented. The previous generic "
-            "projection walk did not preserve token embeddings, residual paths, norms, or logits."
+            "projection walk did not preserve token embeddings, residual paths, norms, or logits. "
+            "See docs/roadmap/TENSORRT_LLM_PLAN.md for details."
         )
 
     def export_engine(
@@ -429,18 +433,28 @@ set_target_properties(neuralops_trt_plugins PROPERTIES
     ) -> Path:
         """Build and serialize a TensorRT engine when a verified graph importer is available."""
         if not HAS_TRT:
-            raise NotImplementedError("TensorRT is not installed; no engine or placeholder artifact was written.")
+            raise IntegrationNotImplementedError(
+                "TensorRT is not installed; no engine or placeholder artifact was written. "
+                "See docs/roadmap/TENSORRT_LLM_PLAN.md for details."
+            )
 
         if not HAS_TRT_LLM:
-            raise NotImplementedError("TensorRT-LLM is not installed; NeuralOps engine integration is unavailable.")
+            raise IntegrationNotImplementedError(
+                "TensorRT-LLM is not installed; NeuralOps engine integration is unavailable. "
+                "See docs/roadmap/TENSORRT_LLM_PLAN.md for details."
+            )
 
-        raise NotImplementedError(
-            "Engine serialization is blocked until checkpoint-aware TensorRT graph construction is implemented."
+        raise IntegrationNotImplementedError(
+            "Engine serialization is blocked until checkpoint-aware TensorRT graph construction is implemented. "
+            "See docs/roadmap/TENSORRT_LLM_PLAN.md for details."
         )
 
     def get_runtime_runner(self, engine_path: Union[str, Path]) -> "TensorRTRuntimeRunner":
         """Instantiates high-throughput TensorRT execution runner from serialized engine."""
-        return TensorRTRuntimeRunner(engine_path=engine_path)
+        raise IntegrationNotImplementedError(
+            "TensorRT runtime runner is not implemented in NeuralOps v1.6.0 and is deferred to v2.0. "
+            "See docs/roadmap/TENSORRT_LLM_PLAN.md for details."
+        )
 
 
 class TensorRTRuntimeRunner:
@@ -471,9 +485,10 @@ class TensorRTRuntimeRunner:
 
     def forward(self, input_ids: torch.Tensor) -> torch.Tensor:
         """Executes forward inference through the TensorRT execution context."""
-        raise NotImplementedError(
+        raise IntegrationNotImplementedError(
             "TensorRT execution binding is not implemented for NeuralOps models; "
-            "the runner will not return fabricated logits."
+            "the runner will not return fabricated logits. "
+            "See docs/roadmap/TENSORRT_LLM_PLAN.md for details."
         )
 
 
