@@ -282,6 +282,8 @@ results/**/*.err
 # ============================================================
 audit/
 audit/**
+docs/
+docs/**
 results/
 results/**
 academic/
