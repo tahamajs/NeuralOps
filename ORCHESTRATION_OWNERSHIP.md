@@ -94,9 +94,28 @@ No agent may edit files outside its declared ownership boundary.
 
 ---
 
-## Wave 3 — Structural Consolidation (2 Concurrent Agents)
+## Wave 3 — Structural Consolidation & Phase 2 Completion
 
-### Agent G — Analysis Module Relocation
+### Agent A2 — Phase 2 Completion Architect (Wave 3a — Blocking)
+- **Branch**: `agent/a2-wave3-phase2-completion`
+- **Audit IDs**: P002, P003, P004, P005
+- **Owned Files**:
+  - `neuralops/attentions/` -> `neuralops/layers/` (physical migration via `git mv`)
+  - `neuralops/core/cuda_kernels/` -> `neuralops/ops/cuda/` (physical migration)
+  - `neuralops/core/triton_kernels/` -> `neuralops/ops/triton/` (physical migration)
+  - `neuralops/compression_engine/` -> `neuralops/compression/` (physical migration)
+  - Shims: `neuralops/backward_compat/{attentions,cuda_kernels,triton_kernels,compression_engine}.py`, legacy directory shims
+  - Internal import callsite rewrites to new paths
+  - `tests/test_phase2_migration.py`
+- **Gate**:
+  - `pytest tests/test_phase2_migration.py -v` (8 tests pass)
+  - `pytest tests/test_cuda_kernels_lazy.py tests/test_lazy_architecture.py -v` (16 tests pass)
+  - `python3 -c "from neuralops import replace_attention, compress; print('OK')"`
+  - `git ls-files neuralops/attentions/ | wc -l` (<20)
+  - `git ls-files neuralops/layers/ | wc -l` (>=130)
+  - `time python3 -c "import neuralops"` (<100ms)
+
+### Agent G — Analysis Module Relocation (Wave 3b — Parallel with A2)
 - **Branch**: `agent/g-wave3-analysis-relocation`
 - **Audit IDs**: P015, P045, P046, P047
 - **Owned Files**:
@@ -112,7 +131,7 @@ No agent may edit files outside its declared ownership boundary.
   - `from neuralops.analysis import paper_export, results_ledger, roofline, inspector` works
   - `from neuralops import paper_export, profile_roofline` works
 
-### Agent H — Duplicate Consolidation
+### Agent H — Duplicate Consolidation (Wave 3c — After A2 Merge)
 - **Branch**: `agent/h-wave3-duplicate-consolidation`
 - **Audit IDs**: P014, P016, P017, P025, P026, P027, P028, P029, P033, P034, P035, P049
 - **Owned Files**:
@@ -128,6 +147,23 @@ No agent may edit files outside its declared ownership boundary.
 
 ---
 
-## Wave 4 — Verification and Release (Orchestrator)
-- Phase 9: Eleven-category exhaustive verification suite
-- Phase 10: `RELEASE_SIGNOFF_v1.6.0.md`, `CHANGELOG.md`, `git tag v1.6.0`
+## Wave 4 — Verification and Release
+
+### Agent I — Pre-Release Verification Lead (Wave 4a)
+- **Branch**: `agent/i-wave4-verification`
+- **Audit IDs**: Verification of P001-P054
+- **Owned Files**:
+  - `RELEASE_SIGNOFF_v1.6.0.md` (read-only across codebase)
+- **Gate**:
+  - All eleven Phase 9 verification categories pass with raw evidence
+
+### Agent J — Release Manager (Wave 4b)
+- **Branch**: `agent/j-wave4-release`
+- **Owned Files**:
+  - `CHANGELOG.md`
+  - `pyproject.toml` (version)
+  - `neuralops/__init__.py` (version)
+  - `CITATION.cff`
+  - Git tag `v1.6.0`
+- **Gate**:
+  - Version parity, clean tag, push to origin

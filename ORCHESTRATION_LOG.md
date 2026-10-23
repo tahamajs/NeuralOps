@@ -112,6 +112,24 @@
 - In Phase 2, `neuralops/layers/`, `neuralops/ops/`, and `neuralops/compression/` were established as the new Tier 1-3 architecture.
 - `neuralops/attentions/` and `neuralops/core/cuda_kernels/` physically remained on disk with lazy shims to prevent breaking callers.
 - The 1,617 grep matches across `neuralops/` and `tests/` represent internal callsites that still reference `neuralops.attentions`, `neuralops.core.cuda_kernels`, and `neuralops.core.triton_kernels`.
-- Wave 3 (Agent H — Duplicate Consolidation) is explicitly scheduled to migrate these 1,617 internal imports to `neuralops/layers/`, `neuralops/ops/cuda/`, and `neuralops/ops/triton/` and clean up the legacy directories.
+- Wave 3a (Agent A2 — Phase 2 Completion Architect) is formally scheduled to physically migrate these implementation files to `neuralops/layers/`, `neuralops/ops/cuda/`, `neuralops/ops/triton/`, and `neuralops/compression/`, leaving backward-compatibility shims and updating internal imports.
+
+---
+
+## Wave 3 Execution Log
+
+### Strategic Decisions
+1. **Decision on Phase 2 Completeness**: Option A adopted. Agent A2 spawned as Wave 3a (Blocking Architect) to physically migrate all real implementation files from `attentions/` to `layers/`, `core/cuda_kernels/` to `ops/cuda/`, `core/triton_kernels/` to `ops/triton/`, `compression_engine/` to `compression/`, leave backward shims in old paths, and rewrite imports.
+2. **Decision on Agent F**: Verified completed and cleanly merged into `refactor/v1.6.0-cpu-stability` at commit `f9ff2de81e` (commit `3571e3d757`). All 15 surgery suites pass.
+3. **Decision on Agent C's spectron_fp8_attention.py**: Merged in `c5970cb160` (commit `04fa32df46`). `neuralops/layers/hybrid/spectron_fp8_attention.py` is established as canonical clean implementation, with backward-compat shim in `neuralops/attentions/hybrid/`. Agent A2 respects this canonical placement.
+
+### Subagent Activity & Polling
+- **2026-10-23T21:08:40+03:30 [SPAWN -> Agent G]**: Spawned Agent G (Analysis Relocation Specialist) on worktree `subagent-Analysis-Relocation-Specialist-self-29bc9006`, branch `agent/g-wave3-analysis-relocation`.
+- **2026-10-23T21:12:57+03:30 [SPAWN -> Agent A2]**: Spawned Agent A2 (Phase 2 Completion Architect) on worktree `subagent-Phase-2-Completion-Architect-self-e9519b49`, branch `agent/a2-wave3-phase2-completion`.
+- **2026-10-23T21:13:09+03:30 [STATUS_CHECK -> Agent G]**: Sent status poll.
+  - **Reply [2026-10-23T21:13:18+03:30]**: Branch `agent/g-wave3-analysis-relocation`. Clean diff. Ownership confirmed. Next: `git mv` 4 relocated files. Blockers: None.
+- **2026-10-23T21:13:13+03:30 [STATUS_CHECK -> Agent A2]**: Sent status poll.
+  - **Reply [2026-10-23T21:13:44+03:30]**: Branch `agent/a2-wave3-phase2-completion` checked out from `b9daaa3c49`. Ownership confirmed. Next: Directory inventory scan. Blockers: None.
+
 
 
