@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import os
+import random
 import sys
 from pathlib import Path
 
@@ -25,6 +26,27 @@ if "numpy" in sys.modules:
 
 import pytest
 import torch
+
+try:
+    import triton
+    _TRITON_AVAILABLE = True
+except (ImportError, ModuleNotFoundError):
+    _TRITON_AVAILABLE = False
+
+
+@pytest.fixture(autouse=True)
+def _reset_torch_seed():
+    """Reset random seed before each test to ensure determinism."""
+    random.seed(42)
+    torch.manual_seed(42)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(42)
+    try:
+        import numpy as np
+        np.random.seed(42)
+    except ImportError:
+        pass
+    yield
 
 
 @pytest.fixture
@@ -85,6 +107,50 @@ def dummy_qkv():
 
 
 @pytest.fixture
+def tiny_gpt2():
+    """Lightweight GPT2 model for testing."""
+    try:
+        from transformers import GPT2Config, GPT2LMHeadModel
+        config = GPT2Config(
+            n_layer=2,
+            n_head=2,
+            n_embd=64,
+            vocab_size=256,
+            n_positions=512,
+        )
+        return GPT2LMHeadModel(config)
+    except Exception:
+        class TinyGPT2Dummy(torch.nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.config = type("Config", (), {
+                    "hidden_size": 64,
+                    "num_attention_heads": 2,
+                    "num_hidden_layers": 2,
+                    "vocab_size": 256,
+                    "n_positions": 512,
+                    "model_type": "gpt2",
+                })()
+                self.transformer = torch.nn.ModuleDict({
+                    "wte": torch.nn.Embedding(256, 64),
+                    "wpe": torch.nn.Embedding(512, 64),
+                    "h": torch.nn.ModuleList([
+                        torch.nn.Linear(64, 64) for _ in range(2)
+                    ]),
+                })
+                self.lm_head = torch.nn.Linear(64, 256, bias=False)
+
+            def forward(self, input_ids, **kwargs):
+                x = self.transformer["wte"](input_ids)
+                for layer in self.transformer["h"]:
+                    x = layer(x)
+                logits = self.lm_head(x)
+                return type("Output", (), {"logits": logits, "loss": torch.tensor(0.0)})()
+
+        return TinyGPT2Dummy()
+
+
+@pytest.fixture
 def repo_root():
     """Absolute path to repository root."""
     return _PROJECT_ROOT
@@ -114,29 +180,50 @@ def compressor_registry():
 
 requires_cuda = pytest.mark.skipif(
     not torch.cuda.is_available(),
-    reason="Requires CUDA"
+    reason="Requires CUDA",
 )
 
 requires_fp16_cuda = pytest.mark.skipif(
     not (torch.cuda.is_available() and torch.cuda.is_bf16_supported()),
-    reason="Requires CUDA with fp16/bf16 support"
+    reason="Requires CUDA with fp16/bf16 support",
 )
 
 
 def pytest_configure(config):
+    config.addinivalue_line("markers", "gpu: requires CUDA-capable GPU")
+    config.addinivalue_line("markers", "triton: requires Triton compiler/kernels")
+    config.addinivalue_line("markers", "slow: marks test as slow-running")
+    config.addinivalue_line("markers", "integration: marks test as an integration test")
+    config.addinivalue_line("markers", "smoke: smoke test subset")
+    config.addinivalue_line("markers", "performance: performance benchmark tests")
+    config.addinivalue_line("markers", "regression: regression tests")
     config.addinivalue_line("markers", "requires_cuda: skip if no CUDA")
     config.addinivalue_line("markers", "requires_fp16_cuda: skip if no fp16 CUDA")
-    config.addinivalue_line("markers", "gpu: requires CUDA-capable GPU")
 
 
+@pytest.hookimpl(tryfirst=True)
 def pytest_collection_modifyitems(config, items):
     cuda_available = torch.cuda.is_available()
-    skip_cuda = pytest.mark.skip(reason="CUDA device is not available on this host")
+    skip_cuda = pytest.mark.skip(reason="CUDA device not available")
+    skip_triton = pytest.mark.skip(reason="Triton compiler not available")
+
     for item in items:
-        item_path = str(item.fspath)
-        if "/cuda_kernels/" in item_path or "/triton_kernels/" in item_path:
+        item_path = str(item.fspath).lower()
+        item_name = item.name.lower()
+        if "cuda" in item_path or "cuda" in item.keywords or "cuda" in item_name:
             item.add_marker(pytest.mark.gpu)
-            if not cuda_available:
+        if "triton" in item_path or "triton" in item.keywords or "triton" in item_name:
+            item.add_marker(pytest.mark.triton)
+            item.add_marker(pytest.mark.gpu)
+
+        if not cuda_available:
+            if "gpu" in item.keywords or any(item.iter_markers("gpu")):
                 item.add_marker(skip_cuda)
-        elif "gpu" in item.keywords and not cuda_available:
-            item.add_marker(skip_cuda)
+            if "requires_cuda" in item.keywords or any(item.iter_markers("requires_cuda")):
+                item.add_marker(skip_cuda)
+            if "requires_fp16_cuda" in item.keywords or any(item.iter_markers("requires_fp16_cuda")):
+                item.add_marker(skip_cuda)
+
+        if not _TRITON_AVAILABLE:
+            if "triton" in item.keywords or any(item.iter_markers("triton")):
+                item.add_marker(skip_triton)

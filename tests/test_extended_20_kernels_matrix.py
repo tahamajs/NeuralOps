@@ -15,6 +15,11 @@ import pytest
 import torch
 import torch.nn.functional as F
 
+try:
+    import triton
+except (ImportError, ModuleNotFoundError):
+    pytest.skip("triton not available", allow_module_level=True)
+
 from neuralops.core.cuda_kernels._fallback import force_kernel_backend
 from neuralops.kernels.extended_kernels import (
     fused_swiglu,

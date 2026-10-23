@@ -24,6 +24,11 @@ from __future__ import annotations
 import math
 import pytest
 import torch
+
+try:
+    import triton
+except (ImportError, ModuleNotFoundError):
+    pytest.skip("triton not available", allow_module_level=True)
 import torch.nn as nn
 from transformers import AutoConfig, AutoModelForCausalLM
 from neuralops.evaluation.harness import NeuralOpsLMWrapper, HAS_LM_EVAL, run_evaluation
