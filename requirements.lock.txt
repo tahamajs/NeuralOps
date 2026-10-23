@@ -133,7 +133,7 @@ pexpect==4.9.0
 pillow==12.3.0
 platformdirs==4.13.3
 plotly==7.1.0
-pluggy==1.6.0
+pluggy==1.7.0
 prompt_toolkit==3.0.53
 propcache==0.5.4
 protobuf==7.36.2
