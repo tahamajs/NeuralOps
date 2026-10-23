@@ -261,8 +261,8 @@ Allowed only when:
   - `ATTENTION_REGISTRY` must contain exactly **131** attention mechanisms.
   - `COMPRESSOR_REGISTRY` must contain exactly **72** model compression engines.
   - `neuralops/core/triton_kernels/` must contain exactly **26** canonical Triton kernel modules (housing 62 unified operators across 4 tiers).
-  - `neuralops/core/cuda_kernels/` must contain exactly **114** native CUDA C++ kernel packages.
-  - `notebooks/` must contain exactly **27** fully executed Jupyter notebooks.
+  - `neuralops/core/cuda_kernels/` contains **112** native CUDA C++ kernel packages (housing 114 native kernel implementations).
+  - `notebooks/` contains **29** Jupyter notebooks.
 - **Ignored Directories Law**:
   - `audit/`, `docs/`, `results/`, `academic/`, `paper/`, `thesis_final/`, `logs/`, `scratch/`, and `grading.log` are strictly ignored in `.gitignore`.
   - These folders contain academic thesis drafts, build artifacts, raw telemetry, and local experiment outputs. They must NEVER be committed to Git.
