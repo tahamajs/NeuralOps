@@ -34,7 +34,7 @@ class NeuralOpsRMSNorm(nn.Module):
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor:
         if hidden_states.is_cuda and hidden_states.dtype in (torch.float16, torch.bfloat16):
             try:
-                from neuralops.core.triton_kernels.elementwise import rmsnorm_triton
+                from neuralops.ops.triton.elementwise import rmsnorm_triton
                 return rmsnorm_triton(hidden_states, self.weight, self.variance_epsilon)
             except (RuntimeError, ImportError) as e:
                 logger.debug("rmsnorm_triton failed: %s, falling back to PyTorch reference", e)

@@ -1,0 +1,753 @@
+#!/usr/bin/env python3
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
+"""
+Progressive Token Pruning (PTP)
+
+Learnable progressive token pruning module with guaranteed prefix retention and causal mask safety.
+"""
+
+from __future__ import annotations
+from neuralops.core.common import _find_layer_list
+
+import logging
+import math
+from typing import Any
+
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+from neuralops.core.attention_mask import get_token_valid_mask
+from neuralops.core.attention_utils import (
+    LoRALinear,
+    apply_rotary_pos_emb,
+)
+from neuralops.core.base import BaseAttention
+from neuralops.core.utils.gqa import repeat_kv
+from neuralops.core.registry import ATTENTION_REGISTRY
+
+logger = logging.getLogger(__name__)
+
+
+class SharedTokenScorer(nn.Module):
+    """
+    Token scorer shared across layers.
+
+    ⚠️  WARNING (FIX-07)  ⚠️
+    Sharing a scorer across ALL layers causes GRADIENT INTERFERENCE: layer 1
+    (character/grammar features) and layer 24 (abstract/semantic features)
+    have very different feature distributions. A single MLP cannot absorb
+    both, and accuracy typically degrades.
+
+    Use ONLY when:
+      - you have extremely tight parameter budgets
+      - you have empirically validated that sharing does not hurt accuracy
+      - you accept potential accuracy loss
+
+    Default behaviour: per-layer scorer (share_scorer=False).
+    """
+
+    def __init__(self, dim: int, hidden: int = 64) -> None:
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(dim, hidden),
+            nn.GELU(),
+            nn.Linear(hidden, 1),
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return torch.sigmoid(self.net(x)).squeeze(-1)
+
+
+@ATTENTION_REGISTRY.register("progressive_token_pruning")
+class ProgressiveTokenPruning(BaseAttention):
+    """
+    Progressive Token Pruning attention (PTP v2).
+
+    Forward:
+      1. Score each token (per-layer score_network; shared scorer optional).
+      2. Force-keep the first token ([CLS]/BOS) if it is valid.
+      3. Choose k = ceil(L · keep_ratio) tokens:
+           - Encoder (bidirectional): top-k by score.
+           - Decoder (causal): first token + last (k-1) tokens
+             → CAUSAL-SAFE (no future leakage, no key loss at step 0).
+      4. Compute attention over the reduced set of keys/values.
+      5. If no pruning occurred (k == L) and no cache, use SDPA fast-path.
+      6. Return the original (B, L, D) shape.
+    """
+
+    is_custom_attention: bool = True
+
+    def __init__(
+        self,
+        config: Any | None = None,
+        d_model: int | None = None,
+        keep_ratio: float = 0.8,
+        rank: int | None = 64,
+        pretrained_attn: nn.Module | None = None,
+        old_attn: nn.Module | None = None,
+        shared_scorer: SharedTokenScorer | None = None,
+        **kwargs: Any,
+    ) -> None:
+        if rank is None:
+            rank = 64
+        super().__init__(config, rank)
+        self.config = config
+        comp_config = getattr(config, "compression_config", None)
+
+        self.d_model = int(
+            getattr(config, "hidden_size", None) or d_model
+            or kwargs.get("hidden_size") or 768
+        )
+        self.dim = self.d_model
+        self.num_heads = int(
+            getattr(config, "num_attention_heads", kwargs.get("num_attention_heads", 12))
+        )
+        self.num_kv_heads = int(
+            getattr(
+                config, "num_key_value_heads",
+                kwargs.get("num_key_value_heads", self.num_heads),
+            )
+        )
+        self.head_dim = int(
+            getattr(
+                config, "head_dim",
+                kwargs.get("head_dim", self.dim // max(1, self.num_heads)),
+            )
+        )
+        self.all_head_size = self.num_heads * self.head_dim
+        self.all_kv_head_size = self.num_kv_heads * self.head_dim
+        self.keep_ratio = float(
+            getattr(comp_config, "keep_ratio", kwargs.get("keep_ratio", keep_ratio))
+        )
+
+        is_dec = getattr(config, "is_decoder", kwargs.get("is_decoder", False))
+        if kwargs.get("is_causal", False):
+            is_dec = True
+        self.is_decoder = bool(is_dec)
+        self.is_causal = bool(is_dec)
+        self.is_nested_encoder = False
+
+        self.lora_rank = int(
+            getattr(config, "lora_rank",
+                    getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16)))
+            if config else 16
+        )
+        self.lora_alpha = float(
+            getattr(config, "lora_alpha",
+                    getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)))
+            if config else 32.0
+        )
+        self.freeze_base = self.lora_rank > 0
+        self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
+        self.supports_gqa = True
+
+        self.q_lin = LoRALinear(
+            self.dim, self.all_head_size, bias=True,
+            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.k_lin = LoRALinear(
+            self.dim, self.all_kv_head_size, bias=True,
+            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.v_lin = LoRALinear(
+            self.dim, self.all_kv_head_size, bias=True,
+            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.out_lin = LoRALinear(
+            self.all_head_size, self.dim, bias=True,
+            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+
+        self.q_proj = self.q_lin
+        self.k_proj = self.k_lin
+        self.v_proj = self.v_lin
+        self.out_proj = self.out_lin
+        self.query = self.q_lin
+        self.key = self.k_lin
+        self.value = self.v_lin
+        self.dense = self.out_lin
+        self.c_proj = self.out_lin
+        self.o_proj = self.out_lin
+
+        if shared_scorer is not None:
+            logger.warning(
+                "PTP: shared_scorer is used. This may cause gradient "
+                "interference across layers and reduce accuracy. "
+                "Prefer per-layer scorers unless you've validated sharing."
+            )
+            self.score_network = shared_scorer
+            self._uses_shared_scorer = True
+        else:
+            self.score_network = SharedTokenScorer(self.dim, hidden=64)
+            self._uses_shared_scorer = False
+
+        dropout_p = (
+            getattr(config, "dropout",
+                    getattr(config, "attention_probs_dropout_prob", 0.1))
+            if config else 0.1
+        )
+        self.dropout = nn.Dropout(dropout_p)
+
+        src = (
+            pretrained_attn
+            if pretrained_attn is not None
+            else (old_attn if old_attn is not None else kwargs.get("source_attn"))
+        )
+        if src is not None:
+            self.copy_weights(src)
+
+    @property
+    def gate(self):
+        return None
+
+    @property
+    def random_proj(self):
+        return None
+
+    def copy_weights(self, src: Any) -> None:
+        if src is None:
+            return
+
+        cls_name = src.__class__.__name__
+        has_out_lin = (
+            hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
+        )
+        is_nested = False
+        if (
+            (
+                hasattr(src, "self") and hasattr(src.self, "query")
+                and hasattr(src, "output") and hasattr(src.output, "dense")
+            )
+            or (
+                cls_name in (
+                    "BertSelfAttention", "RobertaSelfAttention",
+                    "XLMRobertaSelfAttention", "ElectraSelfAttention",
+                    "DebertaSelfAttention",
+                )
+                or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
+            )
+            and not has_out_lin
+        ):
+            is_nested = True
+        self.is_nested_encoder = bool(is_nested)
+
+        extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
+            "q": (None, None), "k": (None, None),
+            "v": (None, None), "o": (None, None),
+        }
+
+        if hasattr(src, "c_attn") and src.c_attn is not None:
+            c_attn_mod = src.c_attn
+            base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
+            c_w = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None))
+            if c_w is not None:
+                c_w = c_w.data.clone()
+                is_conv = (
+                    c_attn_mod.__class__.__name__ == "Conv1D"
+                    or base_c.__class__.__name__ == "Conv1D"
+                    or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1])
+                )
+                if is_conv:
+                    c_w = c_w.t().contiguous()
+                split = c_w.size(0) // 3
+                bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
+                c_b = bias_mod.data.clone() if bias_mod is not None else None
+                extracted["q"] = (c_w[:split, :], c_b[:split] if c_b is not None else None)
+                extracted["k"] = (
+                    c_w[split:2*split, :],
+                    c_b[split:2*split] if c_b is not None else None,
+                )
+                extracted["v"] = (
+                    c_w[2*split:, :],
+                    c_b[2*split:] if c_b is not None else None,
+                )
+
+            if hasattr(src, "c_proj") and src.c_proj is not None:
+                c_proj_mod = src.c_proj
+                base_o = getattr(c_proj_mod, "base_layer", c_proj_mod)
+                o_w = getattr(base_o, "weight", getattr(c_proj_mod, "weight", None))
+                if o_w is not None:
+                    o_w = o_w.data.clone()
+                    is_conv_o = (
+                        c_proj_mod.__class__.__name__ == "Conv1D"
+                        or base_o.__class__.__name__ == "Conv1D"
+                        or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1])
+                    )
+                    if is_conv_o:
+                        o_w = o_w.t().contiguous()
+                    bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
+                    extracted["o"] = (
+                        o_w, bias_o.data.clone() if bias_o is not None else None
+                    )
+
+        elif hasattr(src, "self") and hasattr(src.self, "query"):
+            s = src.self
+            for key, sub in (("q", "query"), ("k", "key"), ("v", "value")):
+                mod = getattr(s, sub, None)
+                if mod is not None and hasattr(mod, "weight"):
+                    extracted[key] = (
+                        mod.weight.data.clone(),
+                        mod.bias.data.clone() if mod.bias is not None else None,
+                    )
+            if hasattr(src, "output") and hasattr(src.output, "dense"):
+                out_mod = src.output.dense
+                extracted["o"] = (
+                    out_mod.weight.data.clone(),
+                    out_mod.bias.data.clone() if out_mod.bias is not None else None,
+                )
+
+        else:
+            candidates = {
+                "q": ("q_lin", "q_proj", "query"),
+                "k": ("k_lin", "k_proj", "key"),
+                "v": ("v_lin", "v_proj", "value"),
+                "o": ("out_lin", "out_proj", "dense", "o_proj"),
+            }
+            for key, names in candidates.items():
+                for n in names:
+                    if hasattr(src, n):
+                        mod = getattr(src, n)
+                        if mod is not None and hasattr(mod, "weight"):
+                            extracted[key] = (
+                                mod.weight.data.clone(),
+                                mod.bias.data.clone() if mod.bias is not None else None,
+                            )
+                            break
+
+        missing = [
+            k for k, (w, _) in extracted.items()
+            if w is None and (k != "o" or not self.is_nested_encoder)
+        ]
+        if missing:
+            try:
+                from neuralops.core.adapters import UniversalAdapter
+                adapter = UniversalAdapter()
+                for k in missing:
+                    w, b = adapter.get_weight_bias(src, k)
+                    if w is not None:
+                        extracted[k] = (w.clone(), b.clone() if b is not None else None)
+            except Exception as e:
+                logger.debug("UniversalAdapter fallback failed: %s", e)
+
+        missing_after = [
+            k for k, (w, _) in extracted.items()
+            if w is None and (k != "o" or not self.is_nested_encoder)
+        ]
+        if missing_after:
+            raise RuntimeError(
+                f"ProgressiveTokenPruning copy_weights failed: missing "
+                f"mandatory projections {missing_after} from {src.__class__.__name__}."
+            )
+
+        target_map = {
+            "q": self.q_lin, "k": self.k_lin,
+            "v": self.v_lin, "o": self.out_lin,
+        }
+
+        with torch.no_grad():
+            for key, target_mod in target_map.items():
+                w, b = extracted[key]
+                if w is None:
+                    if key == "o" and self.is_nested_encoder:
+                        nn.init.eye_(target_mod.weight)
+                        if target_mod.bias is not None:
+                            nn.init.zeros_(target_mod.bias)
+                    continue
+
+                if w.shape == target_mod.weight.shape:
+                    target_mod.weight.copy_(w)
+                elif w.t().contiguous().shape == target_mod.weight.shape:
+                    target_mod.weight.copy_(w.t().contiguous())
+                elif (w.shape[0] < target_mod.weight.shape[0]
+                      and target_mod.weight.shape[0] % w.shape[0] == 0):
+                    repeats = target_mod.weight.shape[0] // w.shape[0]
+                    target_mod.weight.copy_(w.repeat(repeats, 1))
+                else:
+                    min_0 = min(target_mod.weight.shape[0], w.shape[0])
+                    min_1 = min(target_mod.weight.shape[1], w.shape[1])
+                    target_mod.weight.zero_()
+                    target_mod.weight[:min_0, :min_1].copy_(w[:min_0, :min_1])
+
+                if b is not None and target_mod.bias is not None:
+                    if b.shape == target_mod.bias.shape:
+                        target_mod.bias.copy_(b)
+                    else:
+                        min_b = min(target_mod.bias.shape[0], b.shape[0])
+                        target_mod.bias.zero_()
+                        target_mod.bias[:min_b].copy_(b[:min_b])
+                elif target_mod.bias is not None:
+                    nn.init.zeros_(target_mod.bias)
+
+                fnorm = float(torch.linalg.norm(target_mod.weight.float()).item())
+                if fnorm < 1e-4:
+                    logger.warning(
+                        "PTP: '%s' weight has near-zero norm (%.2e).", key, fnorm
+                    )
+
+        if self.freeze_base:
+            for m in (self.q_lin, self.k_lin, self.v_lin, self.out_lin):
+                m.freeze_base_weights()
+
+    def _select_causal_indices(
+        self, L: int, k_tokens: int, B: int, device: torch.device
+    ) -> torch.Tensor:
+        """
+        Causal-safe selection: keep first token + last (k_tokens - 1) tokens.
+
+        This preserves:
+          - The [CLS]/BOS token (often semantically important).
+          - The local context window (most relevant for next-token prediction).
+
+        It also avoids future-token leakage.
+        """
+        if k_tokens >= L:
+            return torch.arange(L, device=device).unsqueeze(0).expand(B, -1)
+
+        first = torch.zeros(B, 1, dtype=torch.long, device=device)
+        last_start = L - (k_tokens - 1)
+        last = torch.arange(last_start, L, device=device).unsqueeze(0).expand(B, -1)
+        idx = torch.cat([first, last], dim=-1)
+        return idx
+
+    def forward(
+        self,
+        hidden_states: torch.Tensor,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
+        layer_idx: int = 0,
+        *args: Any,
+        **kwargs: Any,
+    ):
+        if encoder_hidden_states is not None:
+            raise NotImplementedError("PTP does not support cross-attention.")
+
+        x = hidden_states
+        B, L, D = x.shape
+        device = x.device
+
+        valid_mask = get_token_valid_mask(attention_mask, B, L, device)
+
+        past_k = past_v = None
+        past_len = 0
+        cache_obj = None
+        if past_key_value is not None:
+            if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 2:
+                past_k, past_v = past_key_value[0], past_key_value[1]
+                if past_k is not None:
+                    past_len = past_k.shape[-2]
+            elif hasattr(past_key_value, "key_cache") and past_key_value.key_cache:
+                idx = min(layer_idx, len(past_key_value.key_cache) - 1)
+                past_k = past_key_value.key_cache[idx]
+                past_v = past_key_value.value_cache[idx]
+                past_len = past_k.shape[-2]
+                cache_obj = past_key_value
+
+        k_tokens = max(1, min(L, int(math.ceil(L * self.keep_ratio))))
+
+        if self.is_decoder:
+            top_indices = self._select_causal_indices(L, k_tokens, B, device)
+        else:
+            from neuralops.ops.triton.elementwise import fused_entropy_token_pruning_mask_triton
+
+            scores = self.score_network(x)
+            scores = scores.masked_fill(~valid_mask, -1e4)
+            first_valid = valid_mask[:, 0]
+            if first_valid.any():
+                cls_scores = scores[:, 0].masked_fill(first_valid, 1e4)
+                scores = torch.cat([cls_scores.unsqueeze(1), scores[:, 1:]], dim=1)
+            prune_mask, _ = fused_entropy_token_pruning_mask_triton(scores, keep_ratio=self.keep_ratio)
+            _, top_indices = torch.topk(scores, k_tokens, dim=-1)
+            top_indices, _ = torch.sort(top_indices, dim=-1)
+
+        q = self.q_lin(x).view(B, L, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
+        k_new = self.k_lin(x).view(B, L, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
+        v_new = self.v_lin(x).view(B, L, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
+
+        if position_embeddings is None:
+            position_embeddings = kwargs.get("position_embeddings")
+        if position_embeddings is not None:
+            cos, sin = position_embeddings
+            q, k_new = apply_rotary_pos_emb(q, k_new, cos, sin, past_len=past_len)
+
+        no_pruning = (k_tokens >= L) or (self.keep_ratio >= 1.0)
+        if no_pruning and past_k is None and not output_attentions:
+            k_full = k_new
+            v_full = v_new
+            if self.num_heads != self.num_kv_heads:
+                k_full = repeat_kv(k_full, self.kv_repeat)
+                v_full = repeat_kv(v_full, self.kv_repeat)
+
+            if self.is_decoder:
+                attn_out = F.scaled_dot_product_attention(
+                    q, k_full, v_full,
+                    is_causal=True,
+                    dropout_p=self.dropout.p if self.training else 0.0,
+                )
+            else:
+                attn_bias = None
+                if attention_mask is not None:
+                    attn_bias = torch.zeros(B, 1, L, L, device=device, dtype=q.dtype)
+                    attn_bias = attn_bias.masked_fill(
+                        ~valid_mask.unsqueeze(1).unsqueeze(2), float("-inf")
+                    )
+                attn_out = F.scaled_dot_product_attention(
+                    q, k_full, v_full,
+                    attn_mask=attn_bias,
+                    dropout_p=self.dropout.p if self.training else 0.0,
+                )
+
+            attn_out = (
+                attn_out.permute(0, 2, 1, 3).contiguous()
+                .view(B, L, self.all_head_size)
+            )
+            attn_out = torch.nan_to_num(attn_out, nan=0.0, posinf=1e4, neginf=-1e4)
+
+            if cache_obj is not None:
+                cache_obj.update(k_new, v_new, layer_idx)
+            elif past_key_value is not None and isinstance(past_key_value, (tuple, list)):
+                pass
+
+            use_cache_flag = kwargs.get("use_cache", False) or (past_key_value is not None)
+            if use_cache_flag:
+                if self.is_nested_encoder:
+                    return (attn_out, None, None)
+                out = self.out_lin(attn_out)
+                return (out, None, None)
+            else:
+                if self.is_nested_encoder:
+                    return (attn_out, None)
+                out = self.out_lin(attn_out)
+                return (out, None)
+
+        top_idx_exp = (
+            top_indices.unsqueeze(1).unsqueeze(-1)
+            .expand(-1, self.num_kv_heads, -1, self.head_dim)
+        )
+        k_pruned = torch.gather(k_new, 2, top_idx_exp)
+        v_pruned = torch.gather(v_new, 2, top_idx_exp)
+
+        if past_k is not None and past_v is not None:
+            k_all = torch.cat([past_k, k_pruned], dim=-2)
+            v_all = torch.cat([past_v, v_pruned], dim=-2)
+
+            past_positions = torch.arange(past_len, device=device).view(1, 1, -1)
+            past_positions = past_positions.expand(B, 1, -1)
+            current_positions = top_indices + past_len
+            k_positions = torch.cat(
+                [past_positions, current_positions.unsqueeze(1)], dim=-1
+            )
+        else:
+            k_all = k_pruned
+            v_all = v_pruned
+            k_positions = top_indices.unsqueeze(1)
+
+        if self.num_heads != self.num_kv_heads:
+            k_all = repeat_kv(k_all, self.kv_repeat)
+            v_all = repeat_kv(v_all, self.kv_repeat)
+
+        scale = 1.0 / math.sqrt(self.head_dim)
+        attn_scores = torch.matmul(
+            q.float(), k_all.float().transpose(-2, -1).contiguous()
+        ) * scale
+
+        if self.is_decoder:
+            q_pos = (past_len + torch.arange(L, device=device)).view(1, 1, L, 1)
+            causal = k_positions.unsqueeze(2) > q_pos
+            attn_scores = attn_scores.masked_fill(causal, -1e4)
+
+        current_valid = torch.gather(valid_mask, 1, top_indices)
+        if past_k is not None:
+            all_valid = torch.cat(
+                [
+                    torch.ones(B, past_len, device=device, dtype=torch.bool),
+                    current_valid,
+                ],
+                dim=1,
+            )
+        else:
+            all_valid = current_valid
+        attn_scores = attn_scores.masked_fill(
+            ~all_valid.unsqueeze(1).unsqueeze(2), -1e4
+        )
+
+        probs = F.softmax(attn_scores, dim=-1).to(x.dtype)
+        probs = torch.nan_to_num(probs, nan=0.0)
+        probs = self.dropout(probs)
+
+        if head_mask is not None:
+            if head_mask.dim() == 1 and head_mask.size(0) == self.num_heads:
+                probs = probs * head_mask.view(1, self.num_heads, 1, 1).to(probs.dtype)
+            elif head_mask.dim() == 2 and head_mask.size(1) == self.num_heads:
+                probs = probs * head_mask.view(
+                    head_mask.size(0), self.num_heads, 1, 1
+                ).to(probs.dtype)
+            elif head_mask.dim() == 4:
+                probs = probs * head_mask.to(probs.dtype)
+
+        attn_out = (
+            torch.matmul(probs, v_all)
+            .permute(0, 2, 1, 3)
+            .contiguous()
+            .view(B, L, self.all_head_size)
+        )
+        attn_out = torch.nan_to_num(attn_out, nan=0.0, posinf=1e4, neginf=-1e4)
+
+        updated_cache = None
+        if cache_obj is not None:
+            cache_obj.update(k_new, v_new, layer_idx)
+            updated_cache = cache_obj
+        elif isinstance(past_key_value, (tuple, list)) and past_key_value:
+            new_k = torch.cat([past_k, k_new], dim=-2) if past_k is not None else k_new
+            new_v = torch.cat([past_v, v_new], dim=-2) if past_v is not None else v_new
+            updated_cache = (new_k, new_v)
+
+        attn_weights = probs if output_attentions else None
+
+        use_cache = kwargs.get("use_cache", False) or (past_key_value is not None)
+
+        if use_cache:
+            if output_attentions:
+                if self.is_nested_encoder:
+                    return (attn_out, updated_cache, attn_weights)
+                out = self.out_lin(attn_out)
+                return (out, updated_cache, attn_weights)
+            if self.is_nested_encoder:
+                return (attn_out, updated_cache, None)
+            out = self.out_lin(attn_out)
+            return (out, updated_cache, None)
+        else:
+            if self.is_nested_encoder:
+                return (attn_out, attn_weights)
+            out = self.out_lin(attn_out)
+            return (out, attn_weights)
+
+
+def inject_progressive_token_pruning(
+    layer: Any = None,
+    model: Any = None,
+    model_config: Any = None,
+    comp_config: Any = None,
+    layer_idx: int = 0,
+    total_layers: int = 12,
+    old_attn: nn.Module | None = None,
+    target_layer_idx: int | None = None,
+    shared_scorer: SharedTokenScorer | None = None,
+    **kwargs: Any,
+):
+    target = layer if layer is not None else model
+    if target is None:
+        target = kwargs.get("model", kwargs.get("layer"))
+    if target is None:
+        return None
+
+    cfg = model_config if model_config is not None else getattr(target, "config", None)
+
+    if layer is None and model is not None:
+        found = _find_layer_list(model)
+        if found is None:
+            logger.warning("PTP: could not locate transformer layer list.")
+            return None
+        parent, attr, layer_list = found
+        num_injected = 0
+        tot = len(layer_list)
+
+        share = kwargs.get("share_scorer", False)
+        if share and shared_scorer is None:
+            dim = (
+                getattr(getattr(model, "config", None), "hidden_size", None)
+                or kwargs.get("hidden_size", 768)
+            )
+            shared_scorer = SharedTokenScorer(int(dim), hidden=64)
+            logger.warning(
+                "PTP: share_scorer=True — using a single shared scorer across "
+                "all layers. This may hurt accuracy due to gradient interference."
+            )
+
+        for idx, lyr in enumerate(layer_list):
+            if target_layer_idx is not None and idx != target_layer_idx:
+                continue
+            res = inject_progressive_token_pruning(
+                layer=lyr,
+                model_config=cfg,
+                comp_config=comp_config,
+                layer_idx=idx,
+                total_layers=tot,
+                shared_scorer=shared_scorer,
+                **{k: v for k, v in kwargs.items() if k != "share_scorer"},
+            )
+            if res is not None:
+                num_injected += 1
+        return model if num_injected > 0 else None
+
+    try:
+        src_attn = old_attn
+        if src_attn is None:
+            for attr in ("attention", "self_attn", "attn", "self"):
+                if hasattr(target, attr):
+                    cand = getattr(target, attr)
+                    if isinstance(cand, nn.Module) and cand is not target:
+                        src_attn = getattr(cand, "self", cand)
+                        break
+        if src_attn is None:
+            src_attn = target
+
+        if isinstance(src_attn, ProgressiveTokenPruning):
+            return None
+
+        new_attn = ProgressiveTokenPruning(
+            config=cfg or getattr(src_attn, "config", None),
+            pretrained_attn=src_attn if src_attn is not target else None,
+            shared_scorer=shared_scorer,
+            **kwargs,
+        )
+
+        if hasattr(target, "attention"):
+            if hasattr(target.attention, "self"):
+                target.attention.self = new_attn
+                new_attn.is_nested_encoder = True
+            else:
+                target.attention = new_attn
+            return new_attn
+        if hasattr(target, "self_attn"):
+            target.self_attn = new_attn
+            return new_attn
+        if hasattr(target, "attn"):
+            target.attn = new_attn
+            return new_attn
+        if hasattr(target, "self"):
+            target.self = new_attn
+            new_attn.is_nested_encoder = True
+            return new_attn
+        return None
+    except Exception as e:
+        logger.exception("PTP injection failed: %s", e)
+        return None
+
+
+inject_ptp = inject_progressive_token_pruning
+inject_progressive_token_pruning_attention = inject_progressive_token_pruning
+
+
+__all__ = [
+    "ProgressiveTokenPruning",
+    "SharedTokenScorer",
+    "inject_progressive_token_pruning",
+    "inject_ptp",
+]

@@ -5,16 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Fused Softplus Activation Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.softplus."""
 
-from neuralops.core.cuda_kernels.softplus.softplus_autograd import (
-    fused_softplus,
-    fused_softplus_pytorch_ref,
-)
+from __future__ import annotations
 
-__all__ = [
-    "fused_softplus",
-    "fused_softplus_pytorch_ref",
-]
+from neuralops.ops.cuda.softplus import *  # noqa: F401, F403

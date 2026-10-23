@@ -5,16 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Low-Rank SVD Gated GEMM Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.low_rank_svd."""
 
-from neuralops.core.cuda_kernels.low_rank_svd.lowrank_autograd import (
-    fused_lowrank_gated_gemm,
-    fused_lowrank_gated_gemm_pytorch_ref,
-)
+from __future__ import annotations
 
-__all__ = [
-    "fused_lowrank_gated_gemm",
-    "fused_lowrank_gated_gemm_pytorch_ref",
-]
+from neuralops.ops.cuda.low_rank_svd import *  # noqa: F401, F403

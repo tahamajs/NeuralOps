@@ -5,13 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Aegis Gated Normalization Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.aegis_gate_norm."""
 
-from neuralops.core.cuda_kernels.aegis_gate_norm.aegis_gate_norm_autograd import (
-    aegis_gate_norm,
-    aegis_gate_norm_pytorch_ref,
-)
+from __future__ import annotations
 
-__all__ = ["aegis_gate_norm", "aegis_gate_norm_pytorch_ref"]
+from neuralops.ops.cuda.aegis_gate_norm import *  # noqa: F401, F403

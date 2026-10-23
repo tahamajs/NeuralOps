@@ -5,18 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Cross Attention Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.cross_attention."""
 
-from neuralops.core.cuda_kernels.cross_attention.cross_attn_autograd import (
-    cross_attention,
-    cross_attention_pytorch_ref,
-    cross_attention_bwd,
-)
+from __future__ import annotations
 
-__all__ = [
-    "cross_attention",
-    "cross_attention_pytorch_ref",
-    "cross_attention_bwd",
-]
+from neuralops.ops.cuda.cross_attention import *  # noqa: F401, F403

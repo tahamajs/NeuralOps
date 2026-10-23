@@ -5,16 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Activation-Scaled Quantized GEMM Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.act_scale_gemm."""
 
-from neuralops.core.cuda_kernels.act_scale_gemm.act_scale_autograd import (
-    act_scale_quant_gemm,
-    act_scale_quant_gemm_pytorch_ref,
-)
+from __future__ import annotations
 
-__all__ = [
-    "act_scale_quant_gemm",
-    "act_scale_quant_gemm_pytorch_ref",
-]
+from neuralops.ops.cuda.act_scale_gemm import *  # noqa: F401, F403

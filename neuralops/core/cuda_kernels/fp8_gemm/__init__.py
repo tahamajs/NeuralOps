@@ -5,16 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-FP8 Quantized GEMM Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.fp8_gemm."""
 
-from neuralops.core.cuda_kernels.fp8_gemm.fp8_autograd import (
-    fp8_gemm,
-    fp8_gemm_pytorch_ref,
-)
+from __future__ import annotations
 
-__all__ = [
-    "fp8_gemm",
-    "fp8_gemm_pytorch_ref",
-]
+from neuralops.ops.cuda.fp8_gemm import *  # noqa: F401, F403

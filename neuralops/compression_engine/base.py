@@ -5,10 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""Public facade for the shared compressor base contract."""
+"""Backward-compatibility shim for neuralops.compression.base."""
 
 from __future__ import annotations
 
-from neuralops.core.base import BaseCompressor
-
-__all__ = ["BaseCompressor"]
+from neuralops.compression.base import *  # noqa: F401, F403

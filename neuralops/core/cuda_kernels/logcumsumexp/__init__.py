@@ -5,13 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Log-CumSum-Exp Prefix Scan Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.logcumsumexp."""
 
-from neuralops.core.cuda_kernels.logcumsumexp.logcumsumexp_autograd import (
-    logcumsumexp,
-    logcumsumexp_pytorch_ref,
-)
+from __future__ import annotations
 
-__all__ = ["logcumsumexp", "logcumsumexp_pytorch_ref"]
+from neuralops.ops.cuda.logcumsumexp import *  # noqa: F401, F403

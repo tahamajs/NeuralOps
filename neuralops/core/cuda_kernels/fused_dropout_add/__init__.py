@@ -5,16 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Fused Dropout Residual Addition Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.fused_dropout_add."""
 
-from neuralops.core.cuda_kernels.fused_dropout_add.dropout_add_autograd import (
-    fused_dropout_add,
-    fused_dropout_add_pytorch_ref,
-)
+from __future__ import annotations
 
-__all__ = [
-    "fused_dropout_add",
-    "fused_dropout_add_pytorch_ref",
-]
+from neuralops.ops.cuda.fused_dropout_add import *  # noqa: F401, F403

@@ -5,8 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Fast Attention Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.fast_attention."""
 
-from .fast_attention_autograd import *
+from __future__ import annotations
+
+from neuralops.ops.cuda.fast_attention import *  # noqa: F401, F403

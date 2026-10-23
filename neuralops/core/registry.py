@@ -334,19 +334,19 @@ class Registry:
         if self.name == "compressors":
             canonical = _COMPRESSOR_FILE_MAP.get(k, k)
             try:
-                import neuralops.compression_engine as _ce
+                import neuralops.compression as _ce
 
                 _ = getattr(_ce, key, None)
                 if k not in self._dict and k not in self._aliases:
                     import importlib
 
                     try:
-                        importlib.import_module(f"neuralops.compression_engine.{canonical}")
+                        importlib.import_module(f"neuralops.compression.{canonical}")
                     except (ImportError, ModuleNotFoundError):
                         bare = canonical.split(".")[-1]
                         for subpkg in ('svd', 'quantization', 'pruning', 'low_rank', 'tensor_decomp', 'kv_cache', 'experimental'):
                             try:
-                                importlib.import_module(f"neuralops.compression_engine.{subpkg}.{bare}")
+                                importlib.import_module(f"neuralops.compression.{subpkg}.{bare}")
                                 break
                             except (ImportError, ModuleNotFoundError):
                                 continue
@@ -367,19 +367,19 @@ class Registry:
                 return
             canonical = _ATTENTION_FILE_MAP.get(k, k)
             try:
-                import neuralops.attentions as _att
+                import neuralops.layers as _att
 
                 _ = getattr(_att, key, None)
                 if k not in self._dict and k not in self._aliases:
                     import importlib
 
                     try:
-                        importlib.import_module(f"neuralops.attentions.{canonical}")
+                        importlib.import_module(f"neuralops.layers.{canonical}")
                     except (ImportError, ModuleNotFoundError):
                         bare = canonical.split(".")[-1]
                         for subpkg in ('modern', 'svd', 'adaptive', 'gated', 'linear', 'sparse', 'ssm', 'hybrid', 'dense', 'fast_kernels', 'experimental'):
                             try:
-                                importlib.import_module(f"neuralops.attentions.{subpkg}.{bare}")
+                                importlib.import_module(f"neuralops.layers.{subpkg}.{bare}")
                                 break
                             except (ImportError, ModuleNotFoundError):
                                 continue
@@ -472,21 +472,21 @@ class Registry:
             return
         if self.name == "compressors":
             try:
-                package = importlib.import_module("neuralops.compression_engine")
+                package = importlib.import_module("neuralops.compression")
                 for subpackage in package._SUBPACKAGES:
-                    importlib.import_module(f"neuralops.compression_engine.{subpackage}")
+                    importlib.import_module(f"neuralops.compression.{subpackage}")
                 self._loaded = True
             except Exception as e:
                 import os
 
                 if os.environ.get("SVD_DEBUG") == "1":
                     raise
-                logger.warning("Error loading compression_engine: %s", e)
+                logger.warning("Error loading compression: %s", e)
         elif self.name == "attentions":
             try:
-                package = importlib.import_module("neuralops.attentions")
+                package = importlib.import_module("neuralops.layers")
                 for subpackage in package._SUBPACKAGES:
-                    importlib.import_module(f"neuralops.attentions.{subpackage}")
+                    importlib.import_module(f"neuralops.layers.{subpackage}")
                 try:
                     import neuralops.trainer.ttt.test_time_trainer  # noqa: F401
                 except Exception:
@@ -497,7 +497,7 @@ class Registry:
 
                 if os.environ.get("SVD_DEBUG") == "1":
                     raise
-                logger.warning("Error loading attentions: %s", e)
+                logger.warning("Error loading layers: %s", e)
 
     def keys(self) -> builtins.list[str]:
         """Return a list of all registered keys (canonical only)."""

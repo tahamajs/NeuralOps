@@ -18,7 +18,7 @@ import torch.nn as nn
 from transformers import PretrainedConfig, PreTrainedModel, GenerationMixin
 from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
 
-from neuralops.attentions.linear.gla_attention import GLAttention
+from neuralops.layers.linear.gla_attention import GLAttention
 
 
 class GLAConfig(PretrainedConfig):

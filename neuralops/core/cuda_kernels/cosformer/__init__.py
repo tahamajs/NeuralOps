@@ -5,16 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Cosformer Linear Attention Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.cosformer."""
 
-from neuralops.core.cuda_kernels.cosformer.cosformer_autograd import (
-    cosformer_linear_attention,
-    cosformer_linear_attention_pytorch_ref,
-)
+from __future__ import annotations
 
-__all__ = [
-    "cosformer_linear_attention",
-    "cosformer_linear_attention_pytorch_ref",
-]
+from neuralops.ops.cuda.cosformer import *  # noqa: F401, F403

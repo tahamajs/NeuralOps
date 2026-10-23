@@ -5,13 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Mamba-2 Architecture Block Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.mamba2_block."""
 
-from neuralops.core.cuda_kernels.mamba2_block.mamba2_block_autograd import (
-    mamba2_block,
-    mamba2_block_ref,
-)
+from __future__ import annotations
 
-__all__ = [mamba2_block, mamba2_block_ref]
+from neuralops.ops.cuda.mamba2_block import *  # noqa: F401, F403

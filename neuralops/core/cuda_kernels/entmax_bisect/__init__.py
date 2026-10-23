@@ -5,14 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Entmax Bisection Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.entmax_bisect."""
 
-from neuralops.core.cuda_kernels.entmax_bisect.entmax_bisect_autograd import (
-    entmax_bisect,
-    fused_entmax_bisect_pytorch,
-    entmax_bisect_pytorch_ref,
-)
+from __future__ import annotations
 
-__all__ = [entmax_bisect, fused_entmax_bisect_pytorch, entmax_bisect_pytorch_ref]
+from neuralops.ops.cuda.entmax_bisect import *  # noqa: F401, F403

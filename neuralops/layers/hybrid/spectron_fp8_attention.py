@@ -172,7 +172,7 @@ def _local_window_attention(
 
     if Q.is_cuda and (token_valid is None or bool(token_valid.all())) and past_len == 0 and N == N_k and d <= 256 and (not training or dropout_p == 0.0):
         try:
-            from neuralops.core.cuda_kernels.hybrid_local_kernel import hybrid_local_attn
+            from neuralops.ops.cuda.hybrid_local_kernel import hybrid_local_attn
             return hybrid_local_attn(Q, K, V, radius=radius, is_causal=is_decoder), None
         except Exception as exc:
             logger.warning("CUDA hybrid_local_attn failed (%s); falling back to PyTorch implementation", exc)
@@ -999,7 +999,7 @@ class SpectronFP8Attention(BaseAttention):
         target_dt = hidden_states.dtype
         if out_loc.is_cuda:
             try:
-                from neuralops.core.cuda_kernels.hybrid_local_kernel import hybrid_three_branch_blend
+                from neuralops.ops.cuda.hybrid_local_kernel import hybrid_three_branch_blend
                 alpha_h = alpha.unsqueeze(1).expand(B, self.num_heads, N, 3).contiguous()
                 fused = hybrid_three_branch_blend(
                     out_loc.to(target_dt),
@@ -1049,7 +1049,7 @@ class SpectronFP8Attention(BaseAttention):
         **kwargs: Any,
     ) -> tuple[torch.Tensor, dict[str, Any]]:
         """Exact O(1) single-step autoregressive recurrent update for SpectronFP8Attention."""
-        from neuralops.core.triton_kernels.state_update import fused_recurrent_linear_step
+        from neuralops.ops.triton.state_update import fused_recurrent_linear_step
 
         is_2d = (x.dim() == 2)
         if is_2d:

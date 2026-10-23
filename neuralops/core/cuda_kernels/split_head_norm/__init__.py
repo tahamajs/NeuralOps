@@ -5,13 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Split-Head Normalization Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.split_head_norm."""
 
-from neuralops.core.cuda_kernels.split_head_norm.split_head_norm_autograd import (
-    split_head_norm,
-    split_head_norm_pytorch_ref,
-)
+from __future__ import annotations
 
-__all__ = ["split_head_norm", "split_head_norm_pytorch_ref"]
+from neuralops.ops.cuda.split_head_norm import *  # noqa: F401, F403

@@ -5,16 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Causal Linear Attention Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.linear_attention."""
 
-from neuralops.core.cuda_kernels.linear_attention.linear_attn_autograd import (
-    linear_attention,
-    linear_attention_pytorch_ref,
-)
+from __future__ import annotations
 
-__all__ = [
-    "linear_attention",
-    "linear_attention_pytorch_ref",
-]
+from neuralops.ops.cuda.linear_attention import *  # noqa: F401, F403

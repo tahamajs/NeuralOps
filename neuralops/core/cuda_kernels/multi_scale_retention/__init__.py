@@ -5,13 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Multi-Scale Retention Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.multi_scale_retention."""
 
-from .multi_scale_retention_autograd import (
-    multi_scale_retention,
-    multi_scale_retention_pytorch_ref,
-)
+from __future__ import annotations
 
-__all__ = ["multi_scale_retention", "multi_scale_retention_pytorch_ref"]
+from neuralops.ops.cuda.multi_scale_retention import *  # noqa: F401, F403

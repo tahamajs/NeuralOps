@@ -1,0 +1,107 @@
+#!/usr/bin/env python3
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
+"""
+Naive SVD Attention Baseline
+
+Uncalibrated baseline singular value decomposition attention for empirical compression benchmarking.
+"""
+
+from __future__ import annotations
+
+import logging
+from typing import Any
+
+import torch.nn as nn
+
+from neuralops.layers.minimal_svd import MinimalSVDAttention
+from neuralops.core.registry import ATTENTION_REGISTRY
+
+logger = logging.getLogger(__name__)
+
+
+@ATTENTION_REGISTRY.register("naive_svd", supports_causal=True, supports_gqa=True)
+class NaiveSVDAttention(MinimalSVDAttention):
+    r"""
+    Naive truncated SVD baseline attention module.
+    Inherits production-hardened multi-architecture routing from MinimalSVDAttention
+    with uncalibrated plain truncated SVD initialization and no recovery adapters.
+    """
+
+    is_custom_attention: bool = True
+    supports_causal: bool = True
+    supports_gqa: bool = True
+
+    def __init__(
+        self,
+        config: Any | None = None,
+        model_config: Any | None = None,
+        energy: float = 1.0,
+        dropout: float = 0.1,
+        pretrained_attn: nn.Module | None = None,
+        rank: int | None = None,
+        lora_rank: int = 0,
+        lora_alpha: float = 1.0,
+        is_decoder: bool | None = None,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(
+            config=config,
+            model_config=model_config,
+            energy=energy,
+            dropout=dropout,
+            pretrained_attn=pretrained_attn,
+            rank=rank,
+            lora_rank=0,
+            lora_alpha=1.0,
+            is_decoder=is_decoder,
+            **kwargs,
+        )
+
+
+def inject_naive_svd(
+    layer: nn.Module,
+    comp_config: Any = None,
+    old_attn: nn.Module | None = None,
+    model_config: Any | None = None,
+) -> nn.Module | None:
+    """Factory hook to instantiate and inject NaiveSVDAttention into transformer layers."""
+    rank = getattr(comp_config, "rank", 64) if comp_config else 64
+    new_attn = NaiveSVDAttention(
+        model_config=model_config,
+        rank=rank,
+        energy=1.0,
+        dropout=getattr(comp_config, "dropout", 0.1) if comp_config else 0.1,
+    )
+    src_attn = (
+        old_attn
+        if old_attn is not None
+        else getattr(layer, "attention", getattr(layer, "self", None))
+    )
+    if src_attn is not None:
+        try:
+            new_attn.copy_weights(src_attn)
+        except Exception as e:
+            logger.error("copy_weights failed for naive_svd: %s", e)
+            return None
+        p = next(src_attn.parameters(), None)
+        if p is not None:
+            new_attn.to(device=p.device, dtype=p.dtype)
+
+    if hasattr(layer, "attention"):
+        if hasattr(layer.attention, "self"):
+            layer.attention.self = new_attn
+            new_attn.is_nested_encoder = True
+        else:
+            layer.attention = new_attn
+            new_attn.is_nested_encoder = False
+    elif hasattr(layer, "self"):
+        layer.self = new_attn
+        new_attn.is_nested_encoder = True
+    else:
+        new_attn.is_nested_encoder = False
+    return new_attn

@@ -5,16 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Gated Linear Attention Scan Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.gla_scan."""
 
-from neuralops.core.cuda_kernels.gla_scan.gla_autograd import (
-    gla_scan,
-    gla_scan_pytorch_ref,
-)
+from __future__ import annotations
 
-__all__ = [
-    "gla_scan",
-    "gla_scan_pytorch_ref",
-]
+from neuralops.ops.cuda.gla_scan import *  # noqa: F401, F403

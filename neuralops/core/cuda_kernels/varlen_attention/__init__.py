@@ -5,16 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Variable-Length FlashAttention Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.varlen_attention."""
 
-from neuralops.core.cuda_kernels.varlen_attention.varlen_autograd import (
-    varlen_attention,
-    varlen_attention_pytorch_ref,
-)
+from __future__ import annotations
 
-__all__ = [
-    "varlen_attention",
-    "varlen_attention_pytorch_ref",
-]
+from neuralops.ops.cuda.varlen_attention import *  # noqa: F401, F403

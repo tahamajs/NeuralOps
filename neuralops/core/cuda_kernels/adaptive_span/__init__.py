@@ -5,13 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Adaptive Span Attention Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.adaptive_span."""
 
-from neuralops.core.cuda_kernels.adaptive_span.adaptive_span_autograd import (
-    adaptive_span,
-    fused_adaptive_span_penalty_pytorch,
-)
+from __future__ import annotations
 
-__all__ = ["adaptive_span", "fused_adaptive_span_penalty_pytorch"]
+from neuralops.ops.cuda.adaptive_span import *  # noqa: F401, F403

@@ -5,16 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Fast GELU Activation Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.fast_gelu."""
 
-from neuralops.core.cuda_kernels.fast_gelu.fast_gelu_autograd import (
-    fast_gelu,
-    fast_gelu_pytorch_ref,
-)
+from __future__ import annotations
 
-__all__ = [
-    "fast_gelu",
-    "fast_gelu_pytorch_ref",
-]
+from neuralops.ops.cuda.fast_gelu import *  # noqa: F401, F403

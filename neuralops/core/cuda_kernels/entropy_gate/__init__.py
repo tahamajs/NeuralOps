@@ -5,16 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Spectral Entropy Dynamic Gate Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.entropy_gate."""
 
-from neuralops.core.cuda_kernels.entropy_gate.entropy_gate_autograd import (
-    spectral_entropy_svd_gate,
-    spectral_entropy_svd_gate_pytorch_ref,
-)
+from __future__ import annotations
 
-__all__ = [
-    "spectral_entropy_svd_gate",
-    "spectral_entropy_svd_gate_pytorch_ref",
-]
+from neuralops.ops.cuda.entropy_gate import *  # noqa: F401, F403

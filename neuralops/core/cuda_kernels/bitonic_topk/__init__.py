@@ -5,13 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Bitonic Top-K Selection Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.bitonic_topk."""
 
-from neuralops.core.cuda_kernels.bitonic_topk.bitonic_topk_autograd import (
-    bitonic_topk,
-    bitonic_topk_pytorch_ref,
-)
+from __future__ import annotations
 
-__all__ = ["bitonic_topk", "bitonic_topk_pytorch_ref"]
+from neuralops.ops.cuda.bitonic_topk import *  # noqa: F401, F403

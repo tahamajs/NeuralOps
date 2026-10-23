@@ -5,13 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-GLA Unnormalized Recurrent Scan Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.gla_unnormalized_scan."""
 
-from neuralops.core.cuda_kernels.gla_unnormalized_scan.gla_unnormalized_scan_autograd import (
-    gla_unnormalized_scan,
-    gla_unnormalized_scan_pytorch_ref,
-)
+from __future__ import annotations
 
-__all__ = ["gla_unnormalized_scan", "gla_unnormalized_scan_pytorch_ref"]
+from neuralops.ops.cuda.gla_unnormalized_scan import *  # noqa: F401, F403

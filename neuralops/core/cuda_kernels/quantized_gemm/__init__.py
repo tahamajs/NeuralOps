@@ -5,20 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Quantized GEMM Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.quantized_gemm."""
 
-from neuralops.core.cuda_kernels.quantized_gemm.quant_autograd import (
-    w4a16_gemm,
-    w4a16_gemm_pytorch_ref,
-    fp8_gemm,
-    fp8_gemm_pytorch_ref,
-)
+from __future__ import annotations
 
-__all__ = [
-    "w4a16_gemm",
-    "w4a16_gemm_pytorch_ref",
-    "fp8_gemm",
-    "fp8_gemm_pytorch_ref",
-]
+from neuralops.ops.cuda.quantized_gemm import *  # noqa: F401, F403

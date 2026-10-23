@@ -5,20 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Tensor-Train Strided Contraction Hardware Operators.
-"""
+"""Backward compatibility shim for neuralops.ops.cuda.tt_contraction."""
 
-from neuralops.core.cuda_kernels.tt_contraction.tt_autograd import (
-    tt_contraction,
-    tt_contraction_pytorch_ref,
-    tt_linear,
-    tt_linear_pytorch_ref,
-)
+from __future__ import annotations
 
-__all__ = [
-    "tt_contraction",
-    "tt_contraction_pytorch_ref",
-    "tt_linear",
-    "tt_linear_pytorch_ref",
-]
+from neuralops.ops.cuda.tt_contraction import *  # noqa: F401, F403
