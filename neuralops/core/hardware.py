@@ -135,7 +135,8 @@ def probe_hardware(device: Optional[torch.device | str | int] = None) -> Hardwar
         vendor = HardwareVendor.ARM if is_arm else HardwareVendor.GENERIC_CPU
         try:
             num_cores = os.cpu_count() or 1
-        except Exception:
+        except Exception as exc:
+            logger.debug("Failed querying os.cpu_count(): %s; defaulting to 1", exc)
             num_cores = 1
 
         supported_dtypes = [torch.float32, torch.float64, torch.int32, torch.int64, torch.bool]
@@ -173,7 +174,8 @@ def probe_hardware(device: Optional[torch.device | str | int] = None) -> Hardwar
             t = torch.zeros(1, dtype=torch.bfloat16, device="mps")
             supports_bf16 = True
             del t
-        except Exception:
+        except Exception as exc:
+            logger.debug("MPS bfloat16 check failed: %s; bfloat16 not supported", exc)
             supports_bf16 = False
 
         supported_dtypes = [torch.float32, torch.float16, torch.int32, torch.int64, torch.bool]

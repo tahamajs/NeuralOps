@@ -148,7 +148,8 @@ def export_model(
                 save_model(model, str(out_path / "model.safetensors"), metadata={"format": "pt"})
             except TypeError:
                 save_file(model.state_dict(), str(out_path / "model.safetensors"), metadata={"format": "pt"})
-        except ImportError:
+        except ImportError as imp_err:
+            logger.debug("safetensors not available (%s); falling back to pytorch_model.bin", imp_err)
             torch.save(model.state_dict(), out_path / "pytorch_model.bin")
 
         if hasattr(model, "config") and hasattr(model.config, "save_pretrained"):
@@ -269,6 +270,21 @@ def export_model(
                 f"{publish_error}. Workaround: export to a writable local directory."
             ) from publish_error
 
+        try:
+            import onnxruntime as ort
+            try:
+                _ = ort.InferenceSession(str(onnx_file))
+            except Exception as verif_err:
+                raise RuntimeError(
+                    f"ONNX export verification failed for {onnx_file}: {verif_err}"
+                ) from verif_err
+        except ImportError as imp_err:
+            logger.warning(
+                "onnxruntime is not installed; skipping ONNX runtime verification of %s: %s",
+                onnx_file,
+                imp_err,
+            )
+
         with open(out_path / "neuralops_config.json", "w", encoding="utf-8") as f:
             json.dump(meta, f, indent=2)
 
@@ -286,7 +302,8 @@ def export_model(
         try:
             traced = torch.jit.trace(cpu_model, sample_input, strict=False)
             traced.save(str(ts_file))
-        except Exception:
+        except Exception as exc:
+            logger.warning("torch.jit.trace failed (%s); attempting torch.jit.script fallback", exc)
             scripted = torch.jit.script(cpu_model)
             scripted.save(str(ts_file))
 
@@ -585,8 +602,8 @@ def compile_to_so(
                         try:
                             import shutil
                             shutil.copyfile(result_path, str(out_file))
-                        except Exception:
-                            pass
+                        except Exception as exc:
+                            logger.debug("Failed copying AOTI result file %s to %s: %s", result_path, out_file, exc)
                     compiled_success = True
                 except Exception as e:
                     logger.warning("aoti_compile_and_package failed (%s). Trying aot_compile.", e)
