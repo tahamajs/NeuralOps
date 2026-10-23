@@ -112,27 +112,53 @@ class UniversalActivationCalibrator:
         self,
         calibration_data: Union[torch.utils.data.DataLoader, List[Any], torch.Tensor],
         num_batches: Optional[int] = None,
+        compute_gradients: bool = False,
+        loss_fn: Optional[Callable[[Any], torch.Tensor]] = None,
     ) -> Dict[str, Dict[str, torch.Tensor]]:
         """
         Runs streaming calibration loop over calibration data and computes
         regularized inverse Hessians and whitening projections.
+
+        If compute_gradients is True, autograd is enabled and loss.backward()
+        is executed outside torch.no_grad() contexts (P040).
         """
         if num_batches is not None and num_batches < 0:
             raise ValueError("num_batches must be non-negative or None")
 
         self.attach_hooks()
         training_states = [(module, module.training) for module in self.model.modules()]
+        grad_states = [(param, param.requires_grad) for param in self.model.parameters()]
+        if compute_gradients:
+            for param in self.model.parameters():
+                param.requires_grad = True
+
         self.model.eval()
 
         try:
             batch_idx = 0
-            with torch.no_grad():
+            ctx = torch.enable_grad if compute_gradients else torch.no_grad
+            with ctx():
                 if isinstance(calibration_data, torch.Tensor):
                     try:
                         device = next(self.model.parameters()).device
                     except StopIteration:
                         device = calibration_data.device
-                    self.model(calibration_data.to(device))
+                    out = self.model(calibration_data.to(device))
+                    if compute_gradients:
+                        loss = (
+                            loss_fn(out)
+                            if loss_fn is not None
+                            else (
+                                out.float().pow(2).mean()
+                                if isinstance(out, torch.Tensor)
+                                else (
+                                    out[0].float().pow(2).mean()
+                                    if isinstance(out, (tuple, list)) and len(out) > 0 and isinstance(out[0], torch.Tensor)
+                                    else torch.tensor(0.0, requires_grad=True)
+                                )
+                            )
+                        )
+                        loss.backward()
                 else:
                     try:
                         device = next(self.model.parameters()).device
@@ -142,28 +168,52 @@ class UniversalActivationCalibrator:
                     for batch in calibration_data:
                         if num_batches is not None and batch_idx >= num_batches:
                             break
+                        if compute_gradients:
+                            self.model.zero_grad(set_to_none=True)
+
                         if isinstance(batch, dict):
                             batch_device = {
                                 key: value.to(device) if isinstance(value, torch.Tensor) else value
                                 for key, value in batch.items()
                             }
-                            self.model(**batch_device)
+                            out = self.model(**batch_device)
                         elif isinstance(batch, (tuple, list)):
                             batch_device = [
                                 value.to(device) if isinstance(value, torch.Tensor) else value
                                 for value in batch
                             ]
-                            self.model(*batch_device)
+                            out = self.model(*batch_device)
                         elif isinstance(batch, torch.Tensor):
-                            self.model(batch.to(device))
+                            out = self.model(batch.to(device))
                         else:
                             raise TypeError(
                                 "Calibration batches must be tensors, tuples/lists, or mappings; "
                                 f"received {type(batch).__name__}"
                             )
+
+                        if compute_gradients:
+                            loss = (
+                                loss_fn(out)
+                                if loss_fn is not None
+                                else (
+                                    out.float().pow(2).mean()
+                                    if isinstance(out, torch.Tensor)
+                                    else (
+                                        out[0].float().pow(2).mean()
+                                        if isinstance(out, (tuple, list)) and len(out) > 0 and isinstance(out[0], torch.Tensor)
+                                        else torch.tensor(0.0, requires_grad=True)
+                                    )
+                                )
+                            )
+                            loss.backward()
+
                         batch_idx += 1
         finally:
             self.remove_hooks()
+            if compute_gradients:
+                self.model.zero_grad(set_to_none=True)
+                for param, was_req in grad_states:
+                    param.requires_grad = was_req
             # Restore each module's exact prior mode; Module.train() recursively
             # overwrites child states and would lose deliberately mixed modes.
             for module, was_training in training_states:
