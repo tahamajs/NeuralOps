@@ -36,9 +36,11 @@ try:
     from tensorrt_llm.builder import Builder
     from tensorrt_llm.network import net_guard
     HAS_TRT_LLM = True
+    HAS_TENSORRT_LLM = True
 except ImportError:
     tensorrt_llm = None
     HAS_TRT_LLM = False
+    HAS_TENSORRT_LLM = False
 
 
 class TRTPluginSpec:
@@ -481,4 +483,5 @@ __all__ = [
     "TensorRTRuntimeRunner",
     "HAS_TRT",
     "HAS_TRT_LLM",
+    "HAS_TENSORRT_LLM",
 ]

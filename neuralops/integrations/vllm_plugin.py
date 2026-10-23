@@ -22,8 +22,10 @@ logger = logging.getLogger("NeuralOps.vLLMPlugin")
 try:
     import vllm
     from vllm.model_executor.layers.linear import LinearMethodBase
+    HAS_VLLM = True
     HAS_VLLM_LINEAR = True
 except (ImportError, Exception):
+    HAS_VLLM = False
     HAS_VLLM_LINEAR = False
     LinearMethodBase = object
 
