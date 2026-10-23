@@ -342,7 +342,7 @@ def cmd_list(args: Any) -> int:
 
         console.print(
             "[bold white]Canonical Inventory:[/] [bold green]131 Attention Mechanisms[/] | "
-            "[bold yellow]72 Compression Engines[/] | [bold cyan]26 Triton Kernel Modules[/] | "
+            "[bold yellow]72 Compression Engines[/] | [bold cyan]26 Modules (62 Unified Operators)[/] | "
             f"[bold magenta]114 CUDA Kernel Implementations[/] | [dim]v{__version__}[/]\n"
         )
     else:

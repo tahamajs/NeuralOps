@@ -18,8 +18,7 @@ from typing import Any, Optional, Tuple
 
 import torch
 import torch.nn.functional as F
-import triton
-import triton.language as tl
+from neuralops.ops.triton._base import triton, tl, HAS_TRITON
 
 
 @triton.autotune(

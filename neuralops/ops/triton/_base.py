@@ -24,6 +24,17 @@ try:
     HAS_TRITON = True
 except ImportError:
     HAS_TRITON = False
+
+    class _MockConfig:
+        def __init__(self, *args, **kwargs):
+            self.kwargs = kwargs.get("kwargs", {})
+            self.num_stages = kwargs.get("num_stages", 1)
+            self.num_warps = kwargs.get("num_warps", 4)
+
+    class _MockLanguage:
+        def __getattr__(self, name: str) -> Any:
+            return lambda *args, **kwargs: None
+
     triton = type(
         "triton",
         (),
@@ -31,11 +42,12 @@ except ImportError:
             "jit": lambda f: f,
             "heuristics": lambda *a, **kw: lambda f: f,
             "autotune": lambda *a, **kw: lambda f: f,
+            "Config": _MockConfig,
             "cdiv": lambda a, b: (a + b - 1) // b,
             "next_power_of_2": lambda n: 1 << (n - 1).bit_length() if n > 0 else 1,
         },
     )
-    tl = None
+    tl = _MockLanguage()
 
 from neuralops.ops.triton._types import (
     BLOCK_SIZE,

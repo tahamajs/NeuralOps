@@ -16,8 +16,7 @@ from __future__ import annotations
 from typing import Optional
 
 import torch
-import triton
-import triton.language as tl
+from neuralops.ops.triton._base import triton, tl, HAS_TRITON
 
 
 @triton.autotune(

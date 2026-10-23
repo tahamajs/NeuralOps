@@ -17,8 +17,7 @@ from typing import Optional, Tuple, Union
 import warnings
 
 import torch
-import triton
-import triton.language as tl
+from neuralops.ops.triton._base import triton, tl, HAS_TRITON
 
 
 @triton.autotune(

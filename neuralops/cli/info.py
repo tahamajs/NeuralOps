@@ -113,7 +113,7 @@ def cmd_info(args: Any = None) -> int:
 
         cat_table.add_row("Attention Mechanisms", "131 modules", "11 mathematical families (Dense, Linear, GQA, SSM, TTT, SVD)")
         cat_table.add_row("Compression Engines", "72 engines", "7 algorithmic families (SVD, Quantization, Pruning, KV-Cache)")
-        cat_table.add_row("Triton Kernel Modules", "26 modules", "Specialized JIT fusions for causal chunk & scan operators")
+        cat_table.add_row("Triton Kernel Modules", "26 modules (62 unified operators)", "Specialized JIT fusions (128 JIT kernels across 4 tiers)")
         cat_table.add_row("CUDA Kernel Implementations", "114 operators", "Accelerated C++/CUDA kernels for extreme throughput")
         console.print(cat_table)
 
@@ -134,7 +134,7 @@ def cmd_info(args: Any = None) -> int:
         print("CANONICAL COMPONENT INVENTORY:")
         print("  • Attention Mechanisms:          131 modules across 11 families")
         print("  • Compression Engines:           72 engines across 7 families")
-        print("  • Triton Kernel Modules:         26 specialized JIT kernels")
+        print("  • Triton Kernel Modules:         26 modules (62 unified operators, 128 JIT kernels)")
         print("  • CUDA Kernel Implementations:   114 accelerated C++/CUDA operators")
         print("=================================================================\n")
 
