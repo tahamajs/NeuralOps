@@ -104,6 +104,7 @@ from neuralops.ops.triton.fused_norm_linear import (
     fused_rmsnorm_linear,
     fused_rmsnorm_gate,
 )
+fused_rmsnorm_gate_triton = fused_rmsnorm_gate
 TRITON_STANDALONE_KERNELS: list[str] = [
     "block_sparse_streaming_attn",
     "chunked_delta_gate_scan",

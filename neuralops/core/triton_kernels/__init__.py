@@ -10,14 +10,14 @@
 from __future__ import annotations
 
 from typing import Any
-import neuralops.ops.triton as _ops_triton
-from neuralops.ops.triton import *  # noqa: F401, F403
-from neuralops.ops.triton import TRITON_KERNEL_CATALOG, list_triton_kernels, __all__
+import sys
 
 
 def __getattr__(name: str) -> Any:
+    import neuralops.ops.triton as _ops_triton
     return getattr(_ops_triton, name)
 
 
 def __dir__() -> list[str]:
+    import neuralops.ops.triton as _ops_triton
     return list(_ops_triton.__dir__())
