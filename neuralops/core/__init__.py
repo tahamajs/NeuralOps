@@ -87,6 +87,12 @@ _MODULE_MAP: dict[str, str] = {
     "is_cuda_available": "device",
     "is_rocm_available": "device",
     "is_xpu_available": "device",
+    "NeuralOpsError": "errors",
+    "MissingDependencyError": "errors",
+    "IncompatibleArchitectureError": "errors",
+    "KernelDispatchError": "errors",
+    "CalibrationError": "errors",
+    "torch_install_error": "errors",
 }
 
 

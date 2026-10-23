@@ -76,22 +76,7 @@ try:
 except (ImportError, ValueError):
     _TORCH_AVAILABLE = False
 
-
-def _torch_install_error(feature: str, cause: ImportError | None = None) -> ImportError:
-    """Build an actionable error for features that require PyTorch."""
-    message = (
-        f"NeuralOps requires PyTorch for {feature}, but torch is not installed.\n\n"
-        "Install the extra that matches your hardware:\n"
-        '  pip install "neuralops[cpu]"    # CPU-only\n'
-        '  pip install "neuralops[cuda]"   # NVIDIA GPU\n'
-        '  pip install "neuralops[mps]"    # Apple Silicon\n'
-        '  pip install "neuralops[rocm]"   # AMD GPU\n\n'
-        "Alternatively, install a PyTorch build selected for your hardware, then install "
-        '"neuralops[core]".'
-    )
-    if cause is not None:
-        message += f"\n\nUnderlying import error: {cause}"
-    return ImportError(message)
+from neuralops.core.errors import torch_install_error as _torch_install_error
 
 
 def _require_torch(feature: str = "this feature") -> None:

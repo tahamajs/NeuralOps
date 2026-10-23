@@ -22,9 +22,9 @@ try:
     import torch.nn.functional as F
 except ModuleNotFoundError as exc:
     if exc.name == "torch" or (exc.name and exc.name.startswith("torch.")):
-        from neuralops import _torch_install_error
+        from neuralops.core.errors import torch_install_error
 
-        raise _torch_install_error("neuralops.api", exc) from exc
+        raise torch_install_error("neuralops.api", exc) from exc
     raise
 
 from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
