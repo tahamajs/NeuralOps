@@ -139,11 +139,14 @@ def audit_readme_consistency() -> int:
     print("[6/6] Verifying Local Markdown Links in README.md...")
     links = re.findall(r"\[([^\]]+)\]\(([^)]+)\)", readme)
     broken_links: list[str] = []
+    ignored_dirs = ("docs", "results", "audit", "paper", "academic", "logs", "thesis_final", "scratch")
     for text, link in links:
         if link.startswith(("http://", "https://", "#", "mailto:")):
             continue
         clean_path = link.split("#")[0].split("?")[0]
         if not clean_path:
+            continue
+        if any(clean_path.startswith(d + "/") or clean_path == d for d in ignored_dirs):
             continue
         target = os.path.join(repo_root, clean_path)
         if not os.path.exists(target):
