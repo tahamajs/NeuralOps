@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "neuralops"
-dynamic = ["version"]
+version = "1.6.0"
 description = "A Production-Grade Framework for Subquadratic Attention, Model Compression, and Hardware-Aware Transformer Optimization"
 readme = {file = "README.md", content-type = "text/markdown"}
 requires-python = ">=3.10"
@@ -37,6 +37,10 @@ classifiers = [
 
 dependencies = [
     "packaging>=23.0",
+    "rich>=13.0",
+    "psutil>=5.9",
+    "scikit-learn>=1.3",
+    "huggingface-hub>=0.20",
 ]
 
 [project.optional-dependencies]
@@ -52,7 +56,10 @@ core = [
     "scipy>=1.11.0",
     "numpy>=1.24.0",
     "packaging>=23.0",
-    "huggingface_hub>=0.20.0",
+    "rich>=13.0",
+    "psutil>=5.9",
+    "scikit-learn>=1.3",
+    "huggingface-hub>=0.20",
 ]
 
 cuda = [
@@ -125,6 +132,38 @@ docs = [
     "pdoc3>=0.10.0",
 ]
 
+flash_attn = [
+    "flash_attn; sys_platform == 'linux'",
+]
+
+mamba = [
+    "mamba_ssm; sys_platform == 'linux'",
+]
+
+unsloth = [
+    "unsloth; sys_platform == 'linux'",
+]
+
+fla = [
+    "fla; sys_platform == 'linux'",
+]
+
+trl = [
+    "trl",
+]
+
+optuna = [
+    "optuna",
+]
+
+vllm = [
+    "vllm",
+]
+
+tensorrt_llm = [
+    "tensorrt_llm",
+]
+
 all = [
     "neuralops[cuda,mlops,export,eval,benchmark,docs]",
 ]
@@ -145,9 +184,6 @@ Repository = "https://github.com/tahamajs/NeuralOps"
 Issues = "https://github.com/tahamajs/NeuralOps/issues"
 Documentation = "https://github.com/tahamajs/NeuralOps#readme"
 Changelog = "https://github.com/tahamajs/NeuralOps/blob/main/CHANGELOG.md"
-
-[tool.setuptools.dynamic]
-version = {attr = "neuralops.__version__"}
 
 [tool.setuptools.packages.find]
 where = ["."]
