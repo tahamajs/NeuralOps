@@ -15,10 +15,13 @@ from __future__ import annotations
 
 import inspect
 import json
+import logging
 import os
 import re
 from dataclasses import asdict, dataclass
 from typing import Any, Dict, List, Optional, Sequence, Union
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -231,13 +234,9 @@ def _extract_constructor_params(obj: Any) -> List[Dict[str, str]]:
 
             parsed.sort(key=_sort_key)
             return parsed
-    except Exception:
-        pass
-    return [
-        {"param": "embed_dim", "type": "int", "default": "768"},
-        {"param": "num_heads", "type": "int", "default": "12"},
-        {"param": "rank", "type": "int", "default": "64"},
-    ]
+    except Exception as exc:
+        logger.warning("Failed to extract constructor parameters for %s: %s", getattr(obj, "__name__", obj), exc)
+    return []
 
 
 def _build_4stage_decomposition(family: str) -> Dict[str, str]:
@@ -343,13 +342,13 @@ def inspect_architecture(name: str, category: Optional[str] = None) -> Architect
     try:
         from neuralops.core.extensibility import get_custom_metadata
         custom_meta = get_custom_metadata(name)
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.debug("No custom metadata found for %s: %s", name, exc)
     if not custom_meta and hasattr(obj, "_neuralops_metadata_") and callable(obj._neuralops_metadata_):
         try:
             custom_meta = obj._neuralops_metadata_()
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.debug("Failed calling _neuralops_metadata_ on %s: %s", name, exc)
 
     if custom_meta:
         family = custom_meta.get("family", family)
@@ -519,8 +518,8 @@ def render_architecture_card(spec: ArchitectureSpec, plain: bool = False) -> str
             m_items = [f"{k}: {v}" for k, v in list(rec.get("metrics", {}).items())[:5]]
             if m_items:
                 lines.append(f"metrics:    {' │ '.join(m_items)}")
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.debug("Failed formatting inspector metrics: %s", exc)
 
     return "\n".join(lines)
 

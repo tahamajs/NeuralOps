@@ -210,8 +210,8 @@ def probe_hardware(device: Optional[torch.device | str | int] = None) -> Hardwar
         if hasattr(torch, "xpu") and torch.xpu.is_available():
             try:
                 dev_name = torch.xpu.get_device_name(target_device)
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.debug("Failed querying XPU device name: %s", exc)
 
         return HardwareTopology(
             vendor=HardwareVendor.INTEL,

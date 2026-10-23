@@ -14,6 +14,7 @@ Empirical arithmetic intensity and memory bandwidth analyzer benchmarking theore
 from __future__ import annotations
 
 import gc
+import logging
 import math
 import time
 from dataclasses import asdict, dataclass
@@ -21,6 +22,8 @@ from typing import Any, Dict, Optional, Sequence, Tuple, Union
 
 import torch
 import torch.nn as nn
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -127,13 +130,13 @@ def _set_global_fallback(flag: bool) -> None:
             if hasattr(mod, "FORCE_PYTORCH_FALLBACK"):
                 try:
                     mod.FORCE_PYTORCH_FALLBACK = flag
-                except Exception:
-                    pass
+                except Exception as exc:
+                    logger.debug("Could not set FORCE_PYTORCH_FALLBACK on module %s: %s", name, exc)
             if hasattr(mod, "HAS_TRITON_GDN"):
                 try:
                     mod.HAS_TRITON_GDN = not flag
-                except Exception:
-                    pass
+                except Exception as exc:
+                    logger.debug("Could not set HAS_TRITON_GDN on module %s: %s", name, exc)
 
 
 def estimate_module_flops_and_bytes(
@@ -348,8 +351,8 @@ def profile_roofline(
             if _fla_ops is not None and hasattr(_fla_ops, "chunk_gdn"):
                 _saved_fla_chunk = _fla_ops.chunk_gdn
                 delattr(_fla_ops, "chunk_gdn")
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.debug("Could not detach fla.ops.chunk_gdn: %s", exc)
 
         py_warmup = min(2, warmup)
         py_rep = min(3, rep)
@@ -383,8 +386,8 @@ def profile_roofline(
                     _fla_ops = sys.modules.get("fla.ops")
                     if _fla_ops is not None:
                         _fla_ops.chunk_gdn = _saved_fla_chunk
-                except Exception:
-                    pass
+                except Exception as exc:
+                    logger.debug("Could not restore fla.ops.chunk_gdn: %s", exc)
 
     finally:
         _set_global_fallback(False)
@@ -477,8 +480,8 @@ def profile_roofline(
                 },
                 notes=f"Bottleneck regime: {regime}",
             )
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.warning("Failed to record experiment result to ledger for %s: %s", module_name, exc)
 
     return rep_obj
 

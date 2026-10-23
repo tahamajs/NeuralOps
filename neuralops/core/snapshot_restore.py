@@ -14,11 +14,14 @@ Exact bit-identical state preservation and restoration engine for in-memory atte
 from __future__ import annotations
 
 import gc
+import logging
 
 import torch
 import torch.nn as nn
 
 from neuralops.core.model_utils import replace_module
+
+logger = logging.getLogger(__name__)
 
 
 class ModelStateSnapshot:
@@ -47,8 +50,8 @@ class ModelStateSnapshot:
         for path, original_sub in self.original_submodules.items():
             try:
                 replace_module(self.model, path, original_sub)
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.warning("Failed restoring snapshot module at path %s: %s", path, exc)
 
         device = next(self.model.parameters()).device
         restored_state = {k: v.to(device) for k, v in self.clean_state_dict.items()}
@@ -60,8 +63,8 @@ class ModelStateSnapshot:
             if hasattr(self.model, attr):
                 try:
                     delattr(self.model, attr)
-                except Exception:
-                    pass
+                except Exception as exc:
+                    logger.debug("Failed deleting snapshot attribute %s: %s", attr, exc)
 
         for m in self.model.modules():
             if hasattr(m, "merged"):

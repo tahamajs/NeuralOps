@@ -273,8 +273,8 @@ class ComposableAttention(nn.Module):
                     context = kda_hla_chunk_scan_triton(q_k.float(), k_k.float(), v.float(), log_dec).to(hidden_states.dtype)
                     out = self.out_proj(context.transpose(1, 2).contiguous().view(B, N, D))
                     return out
-                except Exception:
-                    pass
+                except Exception as exc:
+                    logger.warning("Triton chunked_scan kernel execution failed, falling back: %s", exc)
 
         if "delta_rule" in self.engine or "gdn" in self.engine:
             if q.is_cuda:
@@ -284,8 +284,8 @@ class ComposableAttention(nn.Module):
                     context = gdn_scan_triton(q_k.to(torch.float16), k_k.to(torch.float16), v.to(torch.float16), beta.to(torch.float16))
                     out = self.out_proj(context.transpose(1, 2).contiguous().view(B, N, D))
                     return out
-                except Exception:
-                    pass
+                except Exception as exc:
+                    logger.warning("Triton gdn_scan kernel execution failed, falling back: %s", exc)
 
         if "sliding_window" in self.mask_type and q.is_cuda and self.sink_tokens == 0:
             try:
@@ -293,8 +293,8 @@ class ComposableAttention(nn.Module):
                 context = sliding_window_triton(q_k, k_k, v, window_size=self.window_size)
                 out = self.out_proj(context.transpose(1, 2).contiguous().view(B, N, D))
                 return out
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.warning("Triton sliding_window kernel execution failed, falling back: %s", exc)
 
         scores = torch.matmul(q_k, k_k.transpose(-2, -1).contiguous()) * self.scale
 
