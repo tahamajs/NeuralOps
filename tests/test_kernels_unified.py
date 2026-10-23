@@ -17,6 +17,13 @@ Validates:
 """
 
 import pytest
+import torch
+
+try:
+    import triton
+except (ImportError, ModuleNotFoundError):
+    pytest.skip("triton not available", allow_module_level=True)
+
 import neuralops
 import neuralops.kernels as nk
 

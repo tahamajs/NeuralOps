@@ -40,6 +40,10 @@ from __future__ import annotations
 
 import pytest
 import torch
+
+if not torch.cuda.is_available():
+    pytest.skip("CUDA device not available", allow_module_level=True)
+
 import torch.nn.functional as F
 
 from neuralops.core.cuda_kernels import force_kernel_backend

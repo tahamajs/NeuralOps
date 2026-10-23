@@ -34,6 +34,10 @@ Verifies:
 import time
 import pytest
 import torch
+
+if not torch.cuda.is_available():
+    pytest.skip("CUDA device not available", allow_module_level=True)
+
 import torch.nn.functional as F
 
 from neuralops.core.cuda_kernels.low_rank_svd import fused_lowrank_gated_gemm, fused_lowrank_gated_gemm_pytorch_ref

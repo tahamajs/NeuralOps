@@ -14,6 +14,10 @@ zero NaNs/Infs, contiguous & multi-shape layouts.
 
 import pytest
 import torch
+
+if not torch.cuda.is_available():
+    pytest.skip("CUDA device not available", allow_module_level=True)
+
 import neuralops.core.cuda_kernels as k
 
 @pytest.fixture(autouse=True)
