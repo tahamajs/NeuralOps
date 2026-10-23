@@ -101,6 +101,19 @@ def test_factorized_linear_british_alias():
     assert FactorisedLinear is FactorizedLinear
 
 
+def test_config_single():
+    """Verify Config and DummyConfig can be imported from neuralops.core.config."""
+    from neuralops.core.config import Config, DummyConfig
+
+    cfg = Config(hidden_size=128)
+    assert cfg.hidden_size == 128
+
+    dummy = DummyConfig(hidden_size=64, num_heads=4)
+    assert dummy.hidden_size == 64
+    assert dummy.num_heads == 4
+    assert dummy.head_dim == 16
+
+
 def test_compute_flops_estimate_single():
     """Verify exactly 1 def _compute_flops_estimate definition exists across neuralops/."""
     repo_root = Path(__file__).resolve().parent.parent
