@@ -51,14 +51,40 @@
 
 ---
 
-## Wave 2 — Parallel Execution (Agents B, C, D, E, F)
-- **Status**: ACTIVE_POLLING
-- **Agents Launched**:
-  - Agent B: `a8303b71` (Test Infrastructure) -> branch `agent/b-wave2-test-infra`
-  - Agent C: `7d9a4c47` (Silent Failure Cleanup) -> branch `agent/c-wave2-silent-failures`
-  - Agent D: `b55aab50` (Packaging & Dependencies) -> branch `agent/d-wave2-version-deps`
-  - Agent E: `3bcc5f3d` (Integration Honesty) -> branch `agent/e-wave2-integrations`
-  - Agent F: `03bef584` (Surgery Bug Fixes) -> branch `agent/f-wave2-surgery`
+## Wave 2 — Parallel Execution & Sequential Integration Gate
+- **Status**: PASSED
+- **Merge Sequence**: Agent B → Agent C → Agent D → Agent E → Agent F
+
+### Agent Merge Log
+1. **Agent B (`agent/b-wave2-test-infra`)**:
+   - Commits: `48edd48db7`, `f795a86268`
+   - Merged in commit: `a3a10b8e0c`
+   - Gate Verification: `pytest tests/ -m "not gpu and not triton" --co -q` collected 2,982 tests with 0 collection errors and 0 SIGABRT.
+2. **Agent C (`agent/c-wave2-silent-failures`)**:
+   - Commit: `04fa32df46`
+   - Merged in commit: `c5970cb160`
+   - Gate Verification: `pytest tests/test_silent_failures.py -v` (5/5 passed), `grep -rn "except Exception:\s*$" neuralops/ | grep -A1 "^\s*pass"` returned 0 occurrences.
+3. **Agent D (`agent/d-wave2-version-deps`)**:
+   - Commit: `5e65425000`
+   - Merged in commit: `8b39b82c6f`
+   - Gate Verification: Version `1.6.0` matches across `pyproject.toml`, `CITATION.cff`, `neuralops/__init__.py`. Undeclared dependencies (`rich`, `psutil`, `sklearn`, `huggingface_hub`) and optional extras verified.
+4. **Agent E (`agent/e-wave2-integrations`)**:
+   - Commit: `be7afb3d10`
+   - Merged in commit: `4065e2aba6`
+   - Gate Verification: Stubs raise `IntegrationNotImplementedError`, `radix_prefix_cache` and `serving/request_batcher` functional, README integration table updated. Applied entrypoint removal commit `b1f8b43964` (`grep -c "vllm.general_plugins" pyproject.toml -> 0`).
+5. **Agent F (`agent/f-wave2-surgery`)**:
+   - Commit: `3571e3d757`
+   - Merged in commit: `f9ff2de81e`
+   - Gate Verification: Backward pass outside `torch.no_grad()`, recursive `nn.Sequential` traversal. `pytest tests/surgery/test_*.py -v` passed (7/7 passed).
+
+---
+
+## Wave 3 — Structural Consolidation
+- **Status**: READY_TO_SPAWN
+- **Agents**:
+  - Agent G (Analysis Module Relocation)
+  - Agent H (Duplicate Consolidation)
+
 
 ### Active Polling & Status Log
 - **2026-10-23T20:43:41+03:30 [STATUS_CHECK -> Agent B]**: Sent poll for branch, diff, ownership, next command, blockers.
