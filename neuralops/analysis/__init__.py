@@ -9,6 +9,7 @@
 NeuralOps Analysis Core Modules.
 """
 
+from .flops_utils import _compute_flops_estimate
 from .layerwise_analyzer import LayerwiseAnalyzer, estimate_intrinsic_dimension
 from .metrics import MetricsTracker, aggregate_results, compute_metrics
 from .model_comparison import ModelComparison, quick_compare
@@ -75,6 +76,7 @@ __all__ = [
     "MetricsTracker",
     "compute_metrics",
     "aggregate_results",
+    "_compute_flops_estimate",
     "LayerwiseAnalyzer",
     "estimate_intrinsic_dimension",
     "ModelComparison",

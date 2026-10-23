@@ -35,53 +35,7 @@ from neuralops.core.utils.gqa import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
 
 
-class SVDLinear(nn.Module):
-    is_custom_attention: bool = True
-
-    def __init__(
-        self,
-        in_features: int,
-        out_features: int,
-        rank: int | None = None,
-        device: torch.device | None = None,
-        dtype: torch.dtype | None = None,
-        freeze: bool = False,
-    ):
-        super().__init__()
-        factory_kwargs = {"device": device, "dtype": dtype}
-        self.in_features = in_features
-        self.out_features = out_features
-        self.rank = rank or max(1, min(in_features, out_features) // 4)
-
-        self.U = nn.Parameter(torch.randn((out_features, self.rank), **factory_kwargs) * 0.02)
-        self.S = nn.Parameter(torch.ones(self.rank, **factory_kwargs))
-        self.V = nn.Parameter(torch.randn((in_features, self.rank), **factory_kwargs) * 0.02)
-        self.bias = nn.Parameter(torch.zeros(out_features, **factory_kwargs))
-
-        if freeze:
-            self.U.requires_grad = False
-            self.S.requires_grad = False
-            self.V.requires_grad = False
-            self.bias.requires_grad = False
-
-    @property
-    def weight(self) -> torch.Tensor:
-        return (self.U * self.S.unsqueeze(0)) @ self.V.t().contiguous()
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        target_dtype = x.dtype
-        V = self.V.to(target_dtype) if self.V.dtype != target_dtype else self.V
-        S = self.S.to(target_dtype) if self.S.dtype != target_dtype else self.S
-        U = self.U.to(target_dtype) if self.U.dtype != target_dtype else self.U
-        b = (
-            self.bias.to(target_dtype)
-            if (self.bias is not None and self.bias.dtype != target_dtype)
-            else self.bias
-        )
-        out = (x @ V) * S @ U.t().contiguous()
-        if b is not None:
-            out = out + b
-        return out.to(target_dtype)
+from neuralops.core.low_rank.svd_linear import SVDLinear
 
 
 class REAPMoE(nn.Module):

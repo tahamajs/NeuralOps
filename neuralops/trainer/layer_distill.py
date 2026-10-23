@@ -1,0 +1,122 @@
+#!/usr/bin/env python3
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
+"""
+Layer-Wise Distillation Trainer
+
+Performs progressive layer-by-layer attention and hidden-state knowledge distillation.
+"""
+
+from __future__ import annotations
+
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from typing import Dict, List, Optional, Tuple
+
+
+class LayerAttentionDistillLoss(nn.Module):
+    """
+    Computes Mean Squared Error (MSE) and optional cosine similarity loss
+    between intermediate teacher attention outputs and student attention outputs.
+    """
+
+    def __init__(
+        self,
+        weight: float = 1.0,
+        loss_type: str = "mse",
+        normalize: bool = False,
+    ):
+        super().__init__()
+        self.weight = weight
+        self.loss_type = loss_type.lower()
+        self.normalize = normalize
+        if self.loss_type not in {"mse", "smooth_l1", "cosine", "kl", "kd"}:
+            raise ValueError(f"Unsupported attention distillation loss: {loss_type}")
+
+    def forward(
+        self,
+        student_attn_outputs: List[torch.Tensor] | Tuple[torch.Tensor, ...],
+        teacher_attn_outputs: List[torch.Tensor] | Tuple[torch.Tensor, ...],
+    ) -> torch.Tensor:
+        """
+        Args:
+            student_attn_outputs: List of [B, N, D] tensors from student attention layers.
+            teacher_attn_outputs: List of [B, N, D] tensors from teacher attention layers.
+
+        Returns:
+            Scalar loss tensor.
+        """
+        if (
+            not student_attn_outputs
+            or not teacher_attn_outputs
+            or len(student_attn_outputs) != len(teacher_attn_outputs)
+        ):
+            raise ValueError(
+                "Student and teacher outputs must contain the same non-zero number of layers."
+            )
+
+        total_loss = student_attn_outputs[0].new_zeros(())
+        num_layers = len(student_attn_outputs)
+
+        for l in range(num_layers):
+            s_out = student_attn_outputs[l]
+            t_out = teacher_attn_outputs[l]
+            if s_out.shape != t_out.shape:
+                raise ValueError(
+                    f"Student and teacher outputs at layer {l} must have matching shapes; "
+                    f"got {tuple(s_out.shape)} and {tuple(t_out.shape)}."
+                )
+
+            if self.normalize:
+                s_out = F.normalize(s_out, p=2, dim=-1)
+                t_out = F.normalize(t_out, p=2, dim=-1)
+
+            if self.loss_type == "mse":
+                layer_loss = F.mse_loss(s_out, t_out)
+            elif self.loss_type == "smooth_l1":
+                layer_loss = F.smooth_l1_loss(s_out, t_out)
+            elif self.loss_type == "cosine":
+                layer_loss = 1.0 - F.cosine_similarity(s_out, t_out, dim=-1).mean()
+            elif self.loss_type in ("kl", "kd"):
+                try:
+                    from neuralops.core.triton_kernels.fused_kd import fused_kd_loss
+                    layer_loss = fused_kd_loss(s_out, t_out, temperature=1.0)
+                except Exception:
+                    s_log = F.log_softmax(s_out, dim=-1)
+                    t_prob = F.softmax(t_out, dim=-1)
+                    layer_loss = F.kl_div(s_log, t_prob, reduction="batchmean")
+            total_loss = total_loss + layer_loss
+
+        return self.weight * (total_loss / max(num_layers, 1))
+
+
+class LayerDistillScheduler:
+    """
+    Schedules the auxiliary loss weight over training.
+    Stage 1 (0 - warmup_steps): weight = max_weight
+    Stage 2 (warmup_steps - end): weight = max_weight * (1 - progress) + final_weight * progress
+    """
+
+    def __init__(
+        self,
+        warmup_steps: int = 2000,
+        total_steps: int = 10000,
+        max_weight: float = 0.5,
+        final_weight: float = 0.0,
+    ):
+        self.warmup_steps = warmup_steps
+        self.total_steps = total_steps
+        self.max_weight = max_weight
+        self.final_weight = final_weight
+
+    def get_weight(self, step: int) -> float:
+        if step < self.warmup_steps:
+            return self.max_weight
+        progress = (step - self.warmup_steps) / max(1, self.total_steps - self.warmup_steps)
+        progress = min(1.0, max(0.0, progress))
+        return self.max_weight * (1.0 - progress) + self.final_weight * progress
