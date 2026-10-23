@@ -175,9 +175,6 @@ nops = "neuralops.benchmarks.cli:main"
 nops-cli = "neuralops.benchmarks.cli:main"
 neuralops-eval = "neuralops.evaluation.standalone.cli:main"
 
-[project.entry-points."vllm.general_plugins"]
-neuralops_vllm = "neuralops.integrations.vllm:register_neuralops_vllm_plugin"
-
 [project.urls]
 Homepage = "https://github.com/tahamajs/NeuralOps"
 Repository = "https://github.com/tahamajs/NeuralOps"
