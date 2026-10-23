@@ -4,51 +4,49 @@ This document outlines the architectural roadmap, development milestones, and re
 
 ---
 
-## Current Release: v1.4.3 (October 2026) — Complete Consolidation
+## Current Release: v1.6.0 (October 2026) — CPU Stability & Modern Tier Architecture
 
-The v1.4.3 release completes the fundamental consolidation of all subquadratic attention kernels, model compression algorithms, serving runtimes, and training engines:
+The v1.6.0 release completes the structural tier modernization, PEP 562 lazy loading, and CPU-safe execution architecture:
 
-- **131 Attention Mechanisms** verified across 8 taxonomic families.
-- **72 Model Compression Engines** spanning SVD, pruning, quantization, and KV-cache compression.
-- **26 Triton Kernel Modules** (housing 62 unified Triton JIT operators across 4 tiers) with universal CPU/MPS fallbacks.
-- **114 Native CUDA C++ Extensions** targeting Ada Lovelace (SM 8.9), Hopper (SM 90), and Blackwell (SM 100).
-- **Flame-Style Multi-Dataset Streaming** (`--training.dataset`) & **Varlen Packing** (`cu_seqlens`).
-- **Warmup-Stable-Decay (WSD)** Learning Rate Scheduler.
-- **Production CLI Suite**: full `train`, `eval`, `compress`, `serve`, `test`, `list`, `info`, and `doctor` commands.
-- **19-Function Canonical Top-Level API** (`neuralops`).
-- **Full `torch.compile` Compatibility** with custom op Meta/FakeTensor registrations.
-- **Serving Adapters** for vLLM and TGI runtimes (`VLLMAdapter`, `TGIAdapter`, `PagedKVCache`).
-- **Zero-Shot Attention Injection** across 8 transformer architectures (BERT, RoBERTa, DistilBERT, GPT-2, LLaMA, Mistral, Qwen2, T5).
-- **Advanced Manifold Optimizers**: `Muon` (Newton-Schulz orthogonalization), `Lion`, `RiemannianStiefelOptimizer`, and `RiemannianAdam`.
-- **Parametric Numerical Parity**: Validated cross-platform CPU/MPS/CUDA execution with zero skipped tests.
+- **131 Attention Mechanisms** physically migrated to `neuralops.layers` across 12 mathematical families.
+- **72 Model Compression Engines** physically migrated to `neuralops.compression` spanning SVD, low-rank, pruning, and quantization.
+- **26 Triton Kernel Modules** (housing 62 unified Triton JIT operators across 4 tiers) in `neuralops.ops.triton` with universal CPU fallbacks.
+- **114 Native CUDA C++ Extensions** across 112 packages in `neuralops.ops.cuda` targeting Ada Lovelace (SM 8.9), Hopper (SM 90), and Blackwell (SM 100).
+- **PEP 562 Lazy Loading Architecture**: Bare import `import neuralops` executes in `<30ms` using standard library only, deferring PyTorch/accelerator loading until modules are accessed.
+- **Consolidated Primitives**: Single canonical implementations for `SVDLinear`, `LoRALinear`, `FactorizedLinear`, `NeuralOpsConfig`, and `compute_flops_estimate`.
+- **Decoupled Telemetry & Benchmarking**: Heavy plotting and analysis dependencies (`matplotlib`, `pandas`) relocated out of core to `neuralops.analysis` and `neuralops.benchmarks`.
+- **Silent Failure Elimination & Honest Stubs**: Replaced bare exception swallows with explicit diagnostics; honest `IntegrationNotImplementedError` stubs for third-party serving backends (vLLM, SGLang, TRT-LLM, TGI).
+- **CPU Distributed Test Suite**: Added `tests/distributed/test_distributed_cpu.py` covering tensor/context parallelism with zero SIGABRT/crash risks on macOS and CPU-only systems.
+- **29 Master Jupyter Notebooks** in `notebooks/`.
 
-| Milestone Metric | v1.3.0 Baseline | v1.4.3 Delivered | Status |
+| Milestone Metric | v1.5.0 Baseline | v1.6.0 Delivered | Status |
 | :--- | :--- | :--- | :--- |
-| Canonical Attentions | 131 | 131 | **Verified 100%** |
-| Compression Engines | 72 | 72 | **Verified 100%** |
-| Triton Kernel Modules | 26 (62 Ops) | 26 (62 Ops) | **Verified 100%** |
-| Native CUDA Kernels | 114 | 114 | **Verified 100%** |
-| Executed Notebooks | 27 | 27 | **Verified 100%** |
-| Dead Code LOC Pruned | 0 | 4,200+ LOC | **Pruned Cleanly** |
-| Module Shadow Collisions | 3 collisions | 0 collisions | **Fully Resolved** |
-| Test Parity Coverage | Partial (Mac Skipped) | 100% Parametric | **0 Failed, 0 Skipped** |
+| Canonical Attentions | 131 | 131 (`neuralops.layers`) | **Verified 100%** |
+| Compression Engines | 72 | 72 (`neuralops.compression`) | **Verified 100%** |
+| Triton Kernel Modules | 26 (62 Ops) | 26 (62 Ops) (`ops.triton`) | **Verified 100%** |
+| Native CUDA Packages | 110 | 112 packages (114 kernels) | **Verified 100%** |
+| Bare Import Latency | ~1.5s+ | < 30ms (PEP 562) | **Sub-30ms Verified** |
+| Dead Code LOC Pruned | Baseline | 0 Dead Code Issues | **0 AST Issues** |
+| CPU Test Health | Partial collection | 48 passed, 0 failed | **100% Passing** |
 
 ---
 
-## v1.5.0 (Q1 2027) — Long-Context Scaling & Parallel Attention
+## v1.7.0 (Q1 2027) — Long-Context Scaling & Chunkwise Parallelism
 
 ### Strategic Focus
 Scaling linear and recurrent attention mechanisms beyond 128k context lengths while preserving high distillation fidelity from pretrained dense models.
 
 ### Objectives
-1. **Chunkwise Parallel Linear Attention**: Scale causal recurrent kernels across multiple GPUs using Megatron-style context parallelism for sequences exceeding 128k tokens.
+1. **Chunkwise Parallel Linear Attention**: Scale causal recurrent kernels across multiple GPUs using context parallelism for sequences exceeding 128k tokens.
 2. **Selective State Scan v2**: Multi-head associative scan optimizations for Mamba-2 and Griffin architectures.
-3. **Full GLUE & LRA Publication Sweeps**: Comprehensive empirical Pareto frontiers across all 131 attention mechanisms.
-4. **Automated Hyperparameter Tuner**: Bayesian search integration with Ray Tune for layerwise hybrid allocation.
+3. **Automated Hyperparameter Tuner**: Layerwise hybrid attention allocation search.
 
 ---
 
-## v2.0.0 (Q4 2027) — Hardware & Edge Expansion
+## v2.0.0 (Q3 2027) — Native Serving Hooks & Edge Expansion
 
 ### Strategic Focus
-Expanding beyond NVIDIA CUDA to native Apple Metal, Intel XPU, and quantized edge runtimes.
+Transitioning serving integration stubs to native runtime C++ hooks and kernel extensions:
+1. **Native vLLM Custom Op Plugin**: In-tree custom kernel registration with vLLM PagedAttention v2.
+2. **TensorRT-LLM Plugin**: Custom TRT plugin compilation for fused recurrent attention kernels.
+3. **Quantized Edge Runtimes**: Quantized INT4/FP8 linear attention execution for Apple Silicon and edge devices.

@@ -186,11 +186,6 @@ test_results/
 !LICENSE
 !CITATION.cff
 
-# Whitelisted tracked provenance docs
-!docs/fallback_list.md
-!docs/reports/FINAL_CERTIFICATION_20261019.md
-!docs/roadmap/TENSORRT_LLM_PLAN.md
-
 # Whitelisted source, tests, scripts
 !.github/
 !.github/**

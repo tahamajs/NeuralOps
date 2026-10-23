@@ -1,16 +1,14 @@
-# Triton kernel layout
+# Triton Kernel Subsystem (`neuralops.ops.triton`)
 
-`neuralops.core.triton_kernels` is the canonical namespace for NeuralOps
-Triton operators. Implementations are grouped by responsibility:
+`neuralops.ops.triton` is the canonical namespace for NeuralOps Triton operators (26 modules housing 62 unified operators across 4 tiers).
 
-- Files directly in this directory contain shared dispatch, type, registry,
-  profiling, and general-purpose attention/state operators.
-- `standalone/` contains self-contained fused operators that have their own
-  launch configuration and PyTorch reference implementation.
-- `neuralops.kernels.triton` is a compatibility facade. New internal imports
-  should use `neuralops.core.triton_kernels` or its `standalone` subpackage.
+## Layout & Architecture
+- Root files in this directory contain shared dispatch, autotuning, op registry, and general-purpose attention/state operators.
+- `standalone/` contains 13 self-contained flagship fused operators with CPU fallback imports.
+- `neuralops.core.triton_kernels` is fully maintained as a backward-compatibility shim.
 
-The facade preserves the existing public exports and dotted legacy imports;
-it does not own kernel implementations. This keeps kernel code, dispatch
-contracts, and reference operators under one architectural root without
-forcing unrelated operators into one source file.
+## 4-Tier Structure
+1. **Tier 1 (Standalone Flagship Kernels - 13 modules)**: Self-contained fused operators (e.g. `cosformer_linear_attention`, `fused_hadamard_w4a16_gemm`).
+2. **Tier 2 (Core Categorized Modules - 27 files)**: Canonical scan and state updates (`gdn_scan`, `gla_scan`, `hgrn2_scan`, `selective_scan`, etc.).
+3. **Tier 3 (Root Bridges - 2 modules)**: Compatibility adapters.
+4. **Tier 4 (Extended Fused Kernels - 20 operators)**: Fused SwiGLU, RMSNorm, RoPE, ALiBi, Attention Sink, etc.
