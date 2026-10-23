@@ -2,7 +2,7 @@
 
 <img src="assets/banner.svg" alt="NeuralOps Banner" width="100%" />
 
-# 🧬 NeuralOps v1.5.0
+# 🧬 NeuralOps v1.6.0
 
 ### **A correctness-gated platform for attention surgery, compression, and hardware-aware benchmarking**
 
@@ -11,7 +11,7 @@
 > **Registry count contract:** the current remote registry reports 131 attention mechanisms and 72 compression engines. Hardware source counts are reported separately.
 
 [![PyPI version](https://badge.fury.io/py/neuralops.svg)](https://pypi.org/project/neuralops/)
-[![Release](https://img.shields.io/badge/release-v1.5.0-blue.svg)](https://github.com/tahamajs/NeuralOps/releases/tag/v1.5.0)
+[![Release](https://img.shields.io/badge/release-v1.6.0-blue.svg)](https://github.com/tahamajs/NeuralOps/releases/tag/v1.6.0)
 [![PyPI Downloads](https://img.shields.io/pypi/dm/neuralops.svg)](https://pypi.org/project/neuralops/)
 [![Python Versions](https://img.shields.io/pypi/pyversions/neuralops.svg)](https://pypi.org/project/neuralops/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
