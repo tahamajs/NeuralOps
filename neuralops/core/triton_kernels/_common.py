@@ -22,32 +22,10 @@ import torch.nn.functional as F
 
 logger = logging.getLogger("TritonKernels")
 
-try:
-    import triton
-    import triton.language as tl
-
-    HAS_TRITON = True
-except ImportError:
-    HAS_TRITON = False
-    triton = type(
-        "triton",
-        (),
-        {
-            "jit": lambda f: f,
-            "heuristics": lambda *a, **kw: lambda f: f,
-            "autotune": lambda *a, **kw: lambda f: f,
-            "cdiv": lambda a, b: (a + b - 1) // b,
-            "next_power_of_2": lambda n: 1 << (n - 1).bit_length() if n > 0 else 1,
-        },
-    )
-    tl = None
-
-try:
-    import neuralops.core.triton_kernels.op_registry  # noqa: F401
-except Exception:
-    pass
-
-from neuralops.core.triton_kernels._types import (
+from neuralops.core.triton_kernels._base import (
+    HAS_TRITON,
+    triton,
+    tl,
     BLOCK_SIZE,
     MAX_TRITON_SEQ_LEN,
     SUPPORTED_HEAD_DIMS,

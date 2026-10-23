@@ -68,7 +68,7 @@ if TYPE_CHECKING:
     from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY  # noqa: F401
     from neuralops.kernels import list_cuda_kernels, list_triton_kernels  # noqa: F401
 
-__version__ = "1.5.0"
+__version__ = "1.6.0"
 
 _TORCH_FREE_SYMBOLS = frozenset({"__version__", "__doc__", "__all__"})
 try:
@@ -438,11 +438,25 @@ _LAZY_EXPORTS = {
     "triton_dispatch": ("neuralops.core.triton_kernels", "triton_dispatch"),
 }
 
+def replace_attention(*args: Any, **kwargs: Any) -> Any:
+    """Surgically replace attention mechanisms in a model (requires PyTorch)."""
+    from neuralops._optional import _require_torch
+    _require_torch("replace_attention")
+    from neuralops.api import replace_attention as _impl
+    return _impl(*args, **kwargs)
+
+
+def compress(*args: Any, **kwargs: Any) -> Any:
+    """Compress a neural network model (requires PyTorch)."""
+    from neuralops._optional import _require_torch
+    _require_torch("compress")
+    from neuralops.api import compress as _impl
+    return _impl(*args, **kwargs)
+
+
 _API_EXPORTS = {
     "load_model": "neuralops.api",
-    "replace_attention": "neuralops.api",
     "transplant_attention": "neuralops.api",
-    "compress": "neuralops.api",
     "export_model": "neuralops.api",
     "compile_to_so": "neuralops.api",
     "push_to_hub": "neuralops.api",

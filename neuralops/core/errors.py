@@ -20,6 +20,30 @@ class MissingDependencyError(ImportError, NeuralOpsError):
     """Raised when an optional dependency required by a feature is not installed."""
 
 
+class TorchNotInstalledError(MissingDependencyError):
+    """Raised when PyTorch is required but not installed."""
+
+
+class TritonNotInstalledError(MissingDependencyError):
+    """Raised when OpenAI Triton is required but not installed."""
+
+
+class AttentionNotRegisteredError(KeyError, NeuralOpsError):
+    """Raised when an requested attention type is not found in ATTENTION_REGISTRY."""
+
+
+class CompressorNotRegisteredError(KeyError, NeuralOpsError):
+    """Raised when a requested compressor type is not found in COMPRESSOR_REGISTRY."""
+
+
+class KernelNotAvailableError(RuntimeError, NeuralOpsError):
+    """Raised when a native hardware kernel is requested but not available."""
+
+
+class IntegrationNotImplementedError(NotImplementedError, NeuralOpsError):
+    """Raised when a framework integration stub is invoked but not implemented."""
+
+
 class IncompatibleArchitectureError(ValueError, NeuralOpsError):
     """Raised when a model architecture is incompatible with the requested operation."""
 

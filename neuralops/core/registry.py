@@ -853,16 +853,29 @@ def create_compressor(name: str, model: Any = None, rank: int | None = None, **k
     return cls(**call_kwargs)
 
 
-try:
-    from neuralops.compression_engine.svd.direct_svd import DirectSVDCompressor
-    COMPRESSOR_REGISTRY.register("svd", is_alias=True)(DirectSVDCompressor)
-    COMPRESSOR_REGISTRY.register("hnc_svd", is_alias=True)(DirectSVDCompressor)
-    COMPRESSOR_REGISTRY.register("hnc_svd_compressor", is_alias=True)(DirectSVDCompressor)
-except Exception as _e_hnc:
-    logger.debug("Failed registering hnc_svd aliases: %s", _e_hnc)
+def get_attention(name: str) -> type:
+    """Retrieve an attention class by registered name."""
+    cls = ATTENTION_REGISTRY.get(name)
+    if cls is None:
+        from neuralops.core.errors import AttentionNotRegisteredError
+        raise AttentionNotRegisteredError(f"Attention '{name}' not found in ATTENTION_REGISTRY.")
+    return cls
 
-try:
-    from neuralops.compression_engine.low_rank.svd_llm_compressor import SVDLLMCompressor
-    COMPRESSOR_REGISTRY.register("svd_llm", is_alias=True)(SVDLLMCompressor)
-except Exception as _e_svd_llm:
-    logger.debug("Failed registering svd_llm alias: %s", _e_svd_llm)
+
+def get_compressor(name: str) -> type:
+    """Retrieve a compressor class by registered name."""
+    cls = COMPRESSOR_REGISTRY.get(name)
+    if cls is None:
+        from neuralops.core.errors import CompressorNotRegisteredError
+        raise CompressorNotRegisteredError(f"Compressor '{name}' not found in COMPRESSOR_REGISTRY.")
+    return cls
+
+
+def list_attentions() -> list[str]:
+    """List all registered attention names."""
+    return sorted(list(ATTENTION_REGISTRY.keys()))
+
+
+def list_compressors() -> list[str]:
+    """List all registered compressor names."""
+    return sorted(list(COMPRESSOR_REGISTRY.keys()))

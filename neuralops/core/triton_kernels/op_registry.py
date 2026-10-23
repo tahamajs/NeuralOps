@@ -24,7 +24,7 @@ from neuralops.core.triton_kernels._common import (
     gqa_pytorch_fallback,
     triton_dispatch,
 )
-from neuralops.core.triton_kernels._types import (
+from neuralops.core.triton_kernels._base import (
     BLOCK_SIZE,
     MAX_TRITON_SEQ_LEN,
     SUPPORTED_HEAD_DIMS,
