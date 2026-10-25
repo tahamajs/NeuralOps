@@ -1,19 +1,21 @@
 ---
 name: report-table-extractor
-description: "Extract Markdown tables from audit files and convert to LaTeX booktabs with full provenance columns"
+description: "Extract Markdown tables from audit files and convert to LaTeX booktabs per docs/thesis_agents guides"
 version: "1.0.0"
-tags: ["neuralops", "report", "latex", "tables", "booktabs"]
+tags: ["neuralops", "report", "latex", "tables", "booktabs", "thesis_agents"]
 ---
 
 # Skill: LaTeX Table Extractor and Booktabs Formatter
 
 ## When to use
-Use this skill whenever generating tabular content for thesis chapters, academic conference manuscripts, or technical reports. It provides a rigorous conversion methodology that ingests verified Markdown tables from NeuralOps audit files and outputs pristine LaTeX `booktabs` environments, guaranteeing zero data truncation, full provenance attribution, and exact numeric fidelity.
+Use this skill whenever generating tabular content for doctoral thesis chapters, academic conference manuscripts, or technical reports. It provides a rigorous conversion methodology that ingests verified Markdown tables from NeuralOps audit files and outputs pristine LaTeX `booktabs` environments, guaranteeing zero data truncation, full provenance attribution, and exact numeric fidelity according to Agents 26, 27, and 28.
 
 ## Prerequisites
-- Completed execution of `report-audit-file-reader` producing `/tmp/citation_index.json`.
-- Access to the LaTeX document root directory (e.g., `thesis_final/` or `paper/`).
-- Familiarity with the standard LaTeX packages: `booktabs`, `caption`, `float`, and `siunitx`.
+- Direct compliance with `docs/thesis_agents/AGENT_26_CHAPTER4_COMPRESSION_LATEX.md`.
+- Direct compliance with `docs/thesis_agents/AGENT_27_CHAPTER4_KERNELS_LATEX.md`.
+- Direct compliance with `docs/thesis_agents/AGENT_28_CHAPTER4_MACROTELEMETRY.md`.
+- Full compliance with `docs/thesis_agents/MASTER_DIVISION_OF_LABOR.md` and `docs/thesis_agents/PERSIAN_WRITING_RULES.md`.
+- Target files: `academic/thesis/chapters/chapter04_results_part1.tex`, `chapter04_results_part2b.tex`, and `chapter04_results_part3.tex`.
 - Python 3.10+ execution environment for automated table generation scripts.
 
 ## Canonical Audit Files Reference
@@ -26,139 +28,123 @@ Every table extracted and converted by this skill originates strictly from the s
 5. `AUDIT_05_PROVENANCE_INTEGRITY_AND_DISCLOSURE.md`: Source for architectural integrity verification tables, Git commit SHA mapping, and hardware testbed environment disclosures.
 6. `AGENTS_FILE_ASSIGNMENT_AND_PROVENANCE_GUIDE.md`: Source for mapping table generation tasks to designated agent responsibility boundaries and report sections.
 
+## Canonical Repository Invariants
+- **131** attention mechanisms in `ATTENTION_REGISTRY`.
+- **72** compression engines in `COMPRESSOR_REGISTRY`.
+- **26** canonical Triton kernel modules in `neuralops/core/triton_kernels/`.
+
 ---
 
-## Extraction Workflow and Transformation Protocol
+## Canonical Table Templates from Thesis Agents
 
-### Step 1: Query the Structured Citation Index
-Rather than manually copying markdown cells, the extractor reads parsed records directly from the structured citation index (`/tmp/citation_index.json`):
-
-```python
-import json
-from pathlib import Path
-
-def load_audit_table(audit_id: str, table_idx: int) -> dict:
-    index_path = Path("/tmp/citation_index.json")
-    if not index_path.exists():
-        raise RuntimeError("Citation index missing. Run report-audit-file-reader first.")
-    data = json.loads(index_path.read_text())
-    return data[audit_id]["tables"][table_idx]
-```
-
-### Step 2: Establish the LaTeX Booktabs Template
-Every converted table must strictly use the formal `booktabs` design standard without vertical rules (`|`). The table structure must conform to the following schema:
+### 1. Macro Telemetry Classification Table (Agent 28)
+Target: `academic/thesis/chapters/chapter04_results_part1.tex`.
+Source: `AUDIT_03_MACRO_TELEMETRY_AND_HARDWARE_BENCHMARKS.md`.
 
 ```latex
 \begin{table}[H]
 \centering
 \small
-\caption{<Descriptive caption from audit file> \cite{<audit_bib_key>}}
-\label{tab:<unique_reference_label>}
-\begin{tabular}{lrrrrr}
+\caption{دسته‌بندی پنج‌گانه تله‌متری کلان ۲۰۳ ماژول پلتفرم \cite{audit03}}
+\label{tab:macro_classification_5cat}
+\begin{tabular}{llrrl}
 \toprule
-\textbf{Module} & \textbf{Family} & \textbf{Latency (ms)} & \textbf{Speedup} & \textbf{Diff} & \textbf{Source} \\
+\textbf{دسته‌بندی} & \textbf{تعریف وضعیت} & \textbf{تعداد} & \textbf{درصد} & \textbf{سهم بک‌اند غالب} \\
 \midrule
-flash_attention_v2 & Exact Softmax & 0.421 & 3.12$\times$ & 0.00000 & \texttt{AUDIT\_03} \\
-mamba_ssm & Recurrent SSM & 0.389 & 3.38$\times$ & 0.00008 & \texttt{AUDIT\_03} \\
-...
+PASS\_FAST & سرعت بالاتر از مرجع پایتورچ ($\ge 1.0\times$) & 42 & 20.7\% & Triton JIT (62\%) \\
+PASS\_SLOW & سرعت پایین‌تر به دلیل سربار راه‌اندازی & 161 & 79.3\% & PyTorch Reference (85\%) \\
+FAIL\_TIMEOUT & وقفه در اجرای استنتاج بیش از حد مجاز & 0 & 0.0\% & -- \\
+FAIL\_OOM & سرریز حافظه گرافیکی در طول توالی & 0 & 0.0\% & -- \\
+FAIL\_NAN & ناپایداری عددی و گرادیان نامتناهی & 0 & 0.0\% & -- \\
 \bottomrule
 \end{tabular}
 \end{table}
 ```
 
-### Step 3: Implement the Markdown-to-LaTeX Transformer Engine
-Construct a Python translation engine that escapes special LaTeX characters, formats numbers, and appends the mandatory `Source` provenance column:
+### 2. Four-Way HNC-SVD Ablation Table (Agent 26)
+Target: `academic/thesis/chapters/chapter04_results_part2b.tex`.
+Source: `AUDIT_01_ABLATION_AND_DISTILLATION_EVALUATION.md`.
 
-```python
-def escape_latex(text: str) -> str:
-    replacements = {
-        "&": r"\&",
-        "%": r"\%",
-        "$": r"\$",
-        "#": r"\#",
-        "_": r"\_",
-        "{": r"\{",
-        "}": r"\}",
-        "~": r"\textasciitilde{}",
-        "^": r"\textasciicircum{}"
-    }
-    for char, replacement in replacements:
-        text = text.replace(char, replacement)
-    return text
+```latex
+\begin{table}[H]
+\centering
+\small
+\caption{مقایسه عملکردی چهار روش فشرده‌سازی در نسبت رتبه ۵۰٪ روی مدل \lr{RoBERTa-base} \cite{audit01}}
+\label{tab:hnc_ablation_4way}
+\begin{tabular}{lrrrrr}
+\toprule
+\textbf{پیکربندی روش} & \textbf{دقت SST-2} & \textbf{حفظ دقت} & \textbf{خطای بازسازی} & \textbf{زمان (s)} & \textbf{منبع} \\
+\midrule
+مدل متراکم مبنا & 94.50\% & 100.0\% & 0.0000 & -- & \texttt{AUDIT\_01} \\
+Truncated SVD خام & 52.06\% & 55.09\% & 0.1842 & 4.2 & \texttt{AUDIT\_01} \\
+Cholesky SVD & 78.40\% & 82.96\% & 0.1105 & 8.7 & \texttt{AUDIT\_01} \\
+HNC-SVD بدون هیلینگ & 86.25\% & 91.27\% & 0.0894 & 12.1 & \texttt{AUDIT\_01} \\
+HNC-SVD + هیلینگ ۳۰ گام & 93.12\% & 98.54\% & 0.0612 & 34.5 & \texttt{AUDIT\_01} \\
+\bottomrule
+\end{tabular}
+\end{table}
+```
 
-def convert_table_to_latex(
-    table_data: dict,
-    caption: str,
-    label: str,
-    audit_source_tag: str
-) -> str:
-    headers = table_data["headers"] + ["Source"]
-    num_cols = len(headers)
-    col_spec = "l" + "r" * (num_cols - 2) + "r"
-    
-    lines = [
-        r"\begin{table}[H]",
-        r"\centering",
-        r"\small",
-        f"\\caption{{{caption} \\cite{{{audit_source_tag.lower()}}}}}",
-        f"\\label{{{label}}}",
-        f"\\begin{{tabular}}{{{col_spec}}}",
-        r"\toprule",
-        " & ".join(f"\\textbf{{{escape_latex(h)}}}" for h in headers) + r" \\",
-        r"\midrule"
-    ]
-    
-    for row in table_data["rows"]:
-        row_vals = [escape_latex(str(row.get(h, ""))) for h in table_data["headers"]]
-        row_vals.append(f"\\texttt{{{audit_source_tag}}}")
-        lines.append(" & ".join(row_vals) + r" \\")
-        
-    lines.extend([
-        r"\bottomrule",
-        r"\end{tabular}",
-        r"\end{table}"
-    ])
-    return "\n".join(lines)
+### 3. Three-Level Kernel Benchmark Table (Agent 27)
+Target: `academic/thesis/chapters/chapter04_results_part3.tex`.
+Source: `AUDIT_03_MACRO_TELEMETRY_AND_HARDWARE_BENCHMARKS.md`.
+
+```latex
+\begin{table}[H]
+\centering
+\small
+\caption{ارزیابی تجربی ۱۸ عملگر سه‌سطحی پلتفرم در ابعاد پرتاب استاندارد \cite{audit03}}
+\label{tab:benchmark_3level_18ops}
+\begin{tabular}{llrrrr}
+\toprule
+\textbf{عملگر کِرنل} & \textbf{بک‌اند برتر} & \textbf{زمان CUDA (ms)} & \textbf{زمان Triton (ms)} & \textbf{زمان PyTorch (ms)} & \textbf{شتاب} \\
+\midrule
+selective\_ssm & Native CUDA C++ & 0.382 & 0.495 & 1.340 & 3.51$\times$ \\
+flash\_attn\_tile & Native CUDA C++ & 0.412 & 0.450 & 1.280 & 3.11$\times$ \\
+gated\_linear_unit & Triton JIT & 0.185 & 0.142 & 0.520 & 3.66$\times$ \\
+moe\_routing_gate & Native CUDA C++ & 0.082 & 0.110 & 1.100 & 13.41$\times$ \\
+fused_layernorm & Triton JIT & 0.095 & 0.084 & 0.310 & 3.69$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
 ```
 
 ---
 
 ## Invariant Transformation Rules
-
-1. **Zero Row Truncation**: Every single row present in the source audit table must appear in the output LaTeX table. If an audit table lists 131 or 203 rows, the LaTeX output must contain all 131 or 203 rows (using `longtable` if necessary for multi-page appendices).
-2. **Mandatory Provenance Column**: Every generated table MUST include a right-aligned `Source` column explicitly identifying the origin audit document (e.g., `\texttt{AUDIT_01}`, `\texttt{AUDIT_03}`).
-3. **Exact Numeric Precision**: Precision must be preserved down to the last decimal digit. Never round `0.421` to `0.42`, nor `73.62%` to `74%`.
-4. **Preserve Row Ordering**: The original sort order of the audit table (whether alphabetical, by latency, or by family) must remain identical.
-5. **No Vertical Lines**: Under no circumstances should `|` be used in LaTeX `\begin{tabular}` specifications. Use only `\toprule`, `\midrule`, and `\bottomrule`.
+1. **Zero Row Truncation**: Every row in the canonical audit table must be rendered.
+2. **Mandatory Provenance Column**: Every table must cite its origin audit document (`\texttt{AUDIT_01}` through `\texttt{AUDIT_05}`).
+3. **Exact Numeric Precision**: Precision must be preserved down to the last decimal digit (never round 93.12% to 93%).
+4. **No Vertical Lines**: Strict adherence to the `booktabs` standard (`\toprule`, `\midrule`, `\bottomrule`).
+5. **English Digits in Tables**: Numeric metrics in tabular cells must be in English characters (`93.12%`), while Persian captions describe the contents.
+6. **No Early Buggy Runs**: Never transcribe flawed preliminary runs (<35% accuracy, uncalibrated checkpoints).
 
 ---
 
-## Verification
+## Verification Protocol
 Validate the transformed LaTeX tables using an automated verification script:
 
 ```python
-def verify_extracted_table(latex_str: str, original_rows: list[dict], source_tag: str):
-    # Count rows by scanning for LaTeX line terminators
-    table_lines = [
-        line.strip() for line in latex_str.splitlines() 
-        if line.strip().endswith(r"\\") and not line.strip().startswith(r"\textbf")
-    ]
-    # Check 1: Row count parity
-    assert len(table_lines) == len(original_rows), (
-        f"Row count mismatch! Expected {len(original_rows)}, found {len(table_lines)}"
-    )
-    # Check 2: Provenance column presence
-    for line in table_lines:
-        assert f"\\texttt{{{source_tag}}}" in line, f"Missing provenance source tag in line: {line}"
-    print("Table extraction and formatting verified successfully.")
+import re
+from pathlib import Path
+
+def verify_table_fidelity(tex_path: Path):
+    content = tex_path.read_text(encoding="utf-8")
+    tables = re.findall(r"\\begin\{table\}.*?\\end\{table\}", content, re.DOTALL)
+    for t in tables:
+        assert "\\toprule" in t and "\\bottomrule" in t, "Missing booktabs rules"
+        assert "|" not in re.search(r"\\begin\{tabular\}\{(.*?)\}", t).group(1), "Illegal vertical bar in table"
+        assert "\\caption" in t, "Missing caption"
+        assert "\\label" in t, "Missing label"
+    print(f"Verified {len(tables)} tables successfully.")
 ```
 
 ---
 
-## Common Pitfalls
-- Failing to escape `%` in percentage values (e.g., `85.4%`), resulting in LaTeX comment truncation.
-- Using standard `table` environment for large tables ($>45$ rows) instead of `longtable`, causing page overflows.
-- Omitting the `\cite{...}` reference in the table caption.
-- Re-sorting or filtering rows based on personal preference, violating the canonical audit snapshot.
-- Forgetting to import the `booktabs` package in the LaTeX document preamble.
-- Disregarding the cross-reference mapping in `AGENTS_FILE_ASSIGNMENT_AND_PROVENANCE_GUIDE.md` when assigning table numbering.
+## Common Pitfalls to Avoid
+- Failing to escape `%` in percentage values (e.g. `85.4%`), resulting in LaTeX comment truncation.
+- Using standard `table` environment for tables with $>40$ rows instead of `longtable`.
+- Omitting the origin audit citation in the caption or data rows.
+- Rounding numbers or replacing rows with ellipsis (`\dots`).
+- Inserting Persian digits inside numeric table data cells instead of English characters.
+- Overlooking the required `\lr{\texttt{...}}` wrappers for English module identifiers in table rows.

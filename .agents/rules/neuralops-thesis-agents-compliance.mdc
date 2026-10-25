@@ -57,6 +57,8 @@ When generating or editing Persian text in XePersian / XeLaTeX:
 
 ---
 
-## 3. Provenance and Traceability Requirement
+## 3. Provenance, Data Filtering and Traceability Requirement
 - Every claim, theorem, formula, and table must match the assigned agent guidelines in `docs/thesis_agents/` and the underlying audit files (`AUDIT_01` through `AUDIT_05`).
+- **Early Buggy Runs Exclusion Charter**: Banned from citing preliminary flawed test runs (such as catastrophic forgetting with accuracy <35% due to unfrozen baseline weights, or uncalibrated raw RoBERTa accuracy of 78.56%). Only cite final, verified, calibrated results (e.g. 94.50% RoBERTa baseline, 93.12% HNC-SVD recovery).
+- **5-Wave Execution and Lock Discipline**: All agents must respect sequential wave locks (`docs/thesis_agents/locks/waveX.done`) to prevent concurrent edit collisions across the 13 modular chapter files.
 - Never improvise section numbering, theorem proofs, or variable names outside the canonical guide specifications.

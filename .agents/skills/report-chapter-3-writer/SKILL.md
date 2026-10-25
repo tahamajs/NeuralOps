@@ -1,19 +1,23 @@
 ---
 name: report-chapter-3-writer
-description: "Write Chapter 3 (Methodology) using AUDIT_01, AUDIT_02, and AUDIT_05 as formal evidence"
+description: "Write Chapter 3 (Methodology) using AUDIT_01, AUDIT_02, AUDIT_05, and docs/thesis_agents guides"
 version: "1.0.0"
-tags: ["neuralops", "report", "chapter-3", "methodology", "theorems", "architecture"]
+tags: ["neuralops", "report", "chapter-3", "methodology", "theorems", "architecture", "thesis_agents"]
 ---
 
 # Skill: Chapter 3 (Methodology) Formal Formulation and System Architecture
 
 ## When to use
-Use this skill when drafting, verifying, or typesetting Chapter 3 (Methodology and System Architecture) of technical reports or doctoral dissertations. It dictates the methodology for specifying the 7-layer NeuralOps software stack, the 3-level kernel fallback dispatch contract, the 4-stage surgical transplant protocol, all 10 formal mathematical theorems with complete LaTeX proofs, and forensic reproducibility guarantees.
+Use this skill when drafting, verifying, or typesetting Chapter 3 (Methodology and System Architecture) of the doctoral dissertation (`academic/thesis/chapters/chapter03_methodology_part1.tex`, `part2.tex`, `part3a.tex`, and `part3b.tex`). It dictates the methodology for specifying the 7-layer NeuralOps software architecture, the 3-level kernel fallback dispatch contract, the 4-stage surgical transplant protocol, all 10 formal mathematical theorems with complete proofs, and experimental quality gates according to Agents 07 through 11.
 
 ## Prerequisites
-- Completed execution of `report-table-extractor` producing LaTeX conversions of methodology tables.
-- Access to raw theorem formulations in `docs/` and `docs/thesis_agents/`.
-- Configured 3-level provenance citation mechanics via `report-provenance-citation`.
+- Direct compliance with `docs/thesis_agents/AGENT_07_CHAPTER_3_ARCHITECTURE_SURGERY.md`.
+- Direct compliance with `docs/thesis_agents/AGENT_08_CHAPTER_3_DISPATCH_CORRECTNESS.md`.
+- Direct compliance with `docs/thesis_agents/AGENT_09_CHAPTER_3_EXPERIMENTAL_SETUP.md`.
+- Direct compliance with `docs/thesis_agents/AGENT_10_CHAPTER_3_THEOREMS_1_TO_5.md`.
+- Direct compliance with `docs/thesis_agents/AGENT_11_CHAPTER_3_THEOREMS_6_TO_10.md`.
+- Full compliance with `docs/thesis_agents/MASTER_DIVISION_OF_LABOR.md` and `docs/thesis_agents/PERSIAN_WRITING_RULES.md`.
+- Target files: `academic/thesis/chapters/chapter03_methodology_part1.tex`, `chapter03_methodology_part2.tex`, `chapter03_methodology_part3a.tex`, and `chapter03_methodology_part3b.tex`.
 
 ## Canonical Audit Files Reference
 Chapter 3 derives its theoretical formulations, software architecture layers, and proof derivations directly from the six canonical audit documents:
@@ -23,142 +27,125 @@ Chapter 3 derives its theoretical formulations, software architecture layers, an
 3. `AUDIT_03_MACRO_TELEMETRY_AND_HARDWARE_BENCHMARKS.md`: Sourced in Section 3.2 and 3.4 for 3-level kernel fallback timing and Theorems 4 and 5 covering roofline saturation and memory bandwidth limits.
 4. `AUDIT_04_SEQLEN_SCALING_AND_KV_CACHE_MEM.md`: Sourced in Section 3.2 for kernel dispatch caching and state cache memory contracts.
 5. `AUDIT_05_PROVENANCE_INTEGRITY_AND_DISCLOSURE.md`: Sourced in Section 3.1 and 3.5 for the 7-layer architectural decomposition, testbed disclosures, and forensic Git commit hashes.
-6. `AGENTS_FILE_ASSIGNMENT_AND_PROVENANCE_GUIDE.md`: Sourced for mapping Chapter 3 writing responsibilities to Agent 03 and coordinating formal proof sections.
+6. `AGENTS_FILE_ASSIGNMENT_AND_PROVENANCE_GUIDE.md`: Sourced for mapping Chapter 3 writing responsibilities across Agents 07 to 11 and coordinating formal proof sections.
+
+## Canonical Repository Invariants
+- **131** attention mechanisms in `ATTENTION_REGISTRY`.
+- **72** compression engines in `COMPRESSOR_REGISTRY`.
+- **26** canonical Triton kernel modules in `neuralops/core/triton_kernels/`.
 
 ---
 
 ## Detailed Section-by-Section Drafting Architecture
 
-### Section 3.1 — The 7-Layer NeuralOps Architectural Stack
-Source: `AUDIT_05_PROVENANCE_INTEGRITY_AND_DISCLOSURE.md` (Section 2).
-Document the 7 decoupled architectural tiers that constitute the NeuralOps framework:
-1. **Application & CLI Tier**: User-facing entrypoints (`neuralops serve`, `neuralops compress`).
-2. **Model Surgery & Transplant Engine**: In-place attention module replacement (`replace_attention`).
-3. **Compression & Quantization Zoo**: 72 unified compression engines.
-4. **Attention Zoo Substrate**: 131 registered attention architectures.
-5. **Multi-Tier Dispatch Router**: Zero-overhead `@lru_cache` dynamic fallback selector.
-6. **Hardware Kernel Execution Tier**: Native CUDA C++, Triton JIT, and PyTorch reference backends.
-7. **Empirical Telemetry & Results Ledger**: SQLite and JSONL tracking subsystem.
+### Section 3.1 — Platform Architecture & In-Place Surgery (Agent 07)
+Target: `academic/thesis/chapters/chapter03_methodology_part1.tex` (`sec:platform_architecture`, `sec:surgical_protocol`).
+- **7-Layer Decoupled Architecture**: Detail L1 (Telemetry) through L7 (Application/CLI). Explain PEP 562 dynamic lazy loading (`__getattr__`) to prevent startup latency penalties across 203 modules.
+- **4-Stage Surgical Protocol**:
+  1. *Stage 1 (Architecture Inspection)*: Recursive traversal of module graph, tensor dimension extraction, and hook attachment.
+  2. *Stage 2 (Closed-Form Ridge Calibration)*:
+     $$\min_{\mathbf{W}_p} \|\mathbf{X}\mathbf{W}_{\text{orig}} - \mathbf{X}\mathbf{W}_p\|_F^2 + \lambda \|\mathbf{W}_p\|_F^2 \implies \mathbf{W}_p^* = (\mathbf{X}^\top \mathbf{X} + \lambda \mathbf{I})^{-1} \mathbf{X}^\top (\mathbf{X}\mathbf{W}_{\text{orig}})$$
+  3. *Stage 3 (Zero-Shot In-Place Transplant)*: Dynamic submodule replacement via PyTorch `setattr()`, preserving forward hooks and state dictionaries.
+  4. *Stage 4 (Distillation Healing)*: 30 optimization steps using `heal_replaced_model()` with composite loss function.
+
+### Section 3.2 — Multi-Tier Kernel Dispatch & Sanity Gates (Agent 08)
+Target: `academic/thesis/chapters/chapter03_methodology_part2.tex` (`sec:dispatch_stack`, `sec:numerical_gates`).
+- **3-Level Fallback Hierarchy**:
+  - *Level 1 (Native CUDA C++ / HIP)*: Hand-tuned custom kernels compiled via `torch.utils.cpp_extension` for SM 8.9.
+  - *Level 2 (Triton JIT)*: Autotuned Triton kernels supporting FP16, BF16, and FP32 with block tiling.
+  - *Level 3 (Vectorized PyTorch Reference)*: Universal fallback for CPU, testing, and debugging.
+- **Zero-Overhead Dispatch Mechanism**: Cached routing using `@functools.lru_cache(maxsize=128)` achieving dispatch latency under $1.5\mu\text{s}$.
+- **Numerical Sanity Gate**: Strict numerical tolerance requirements:
+  $$\max_{i,j} |y_{ij}^{\text{kernel}} - y_{ij}^{\text{ref}}| < 10^{-2}\text{ (FP16/BF16)}, \quad < 10^{-4}\text{ (FP32)}$$
+  Finite difference autograd gradient checks must satisfy $\text{atol} = 10^{-3}, \epsilon = 10^{-5}$.
+
+### Section 3.3 — Experimental Setup, Models & Quality Gate (Agent 09)
+Target: `academic/thesis/chapters/chapter03_methodology_part2.tex` (`sec:experimental_setup`, `sec:quality_gates`).
+- **Hardware Testbed**: NVIDIA GeForce RTX 4070 (SM 8.9 Ada Lovelace, 5888 CUDA cores, 12 GB GDDR6 @ 504 GB/s, PCIe 4.0 x16).
+- **Target Architectures**: DistilBERT-base-uncased (66M), RoBERTa-base (125M), GPT-2-small (124M).
+- **Evaluation Tasks**: GLUE Benchmark (SST-2, MNLI, QQP, MRPC, QNLI) and WikiText-2 / PTB language modeling.
+- **Strict 56% Accuracy Gate**: A transplanted module must achieve $\ge 56.0\%$ on SST-2 to be classified as viable (PASS). Scores below 56% indicate catastrophic structural collapse.
+
+### Section 3.4 — Theorems 1 to 5 (Agent 10)
+Target: `academic/thesis/chapters/chapter03_methodology_part3a.tex` (`sec:theorems_1_to_5`).
+Include full formal statements and complete LaTeX `proof` environments for:
+- **Theorem 1 (Cholesky Activation Whitening Optimality)**:
+  Optimal rank-$r$ weight factor recovery minimizing expected output reconstruction error $\mathbb{E}_{\mathbf{x} \sim \mathcal{D}}[\|\mathbf{W}\mathbf{x} - \widehat{\mathbf{W}}\mathbf{x}\|_2^2]$ under $\boldsymbol{\Sigma} = \mathbf{L}\mathbf{L}^\top$.
+- **Theorem 2 (Streaming ASVD Covariance Accumulation Error Bounds)**:
+  Cumulative covariance discrepancy under chunked streaming accumulation $\boldsymbol{\Sigma}^{(k)} = \alpha \boldsymbol{\Sigma}^{(k-1)} + (1-\alpha) \mathbf{X}_k^\top \mathbf{X}_k / B$, proving bounded spectral norm perturbation $\|\boldsymbol{\Sigma} - \boldsymbol{\Sigma}^{(K)}\|_2 \le \mathcal{O}(e^{-\gamma K})$.
+- **Theorem 3 (FP8 Quantization Noise Bounds Under Low-Rank Projections)**:
+  Analytical signal-to-quantization-noise ratio (SQNR) preserving dynamic range under E4M3 vs E5M2 formats for low-rank factored factors $\mathbf{U}_r \boldsymbol{\Sigma}_r$ and $\mathbf{V}_r^\top \mathbf{L}^{-1}$.
+- **Theorem 4 (Dynamic Sparsity Allocation (DSA) Attention Alignment)**:
+  Theoretical convergence guarantee that thresholded dynamic attention masks $\mathbf{M}_{\text{sparse}} = \mathbb{I}(|\mathbf{S}| > \tau)$ retain $\ge (1 - \epsilon)$ of total attention mass under sub-exponential tail assumptions.
+- **Theorem 5 (REAP Unbiased Gradient Estimator in Attention Surgery)**:
+  Proof that the Relative Error Approximation Protocol (REAP) gradient estimator satisfies $\mathbb{E}[\nabla_{\mathbf{W}_p} \mathcal{L}_{\text{REAP}}] = \nabla_{\mathbf{W}_p} \mathbb{E}[\mathcal{L}]$, guaranteeing unbiased stochastic optimization during healing.
+
+### Section 3.5 — Theorems 6 to 10 (Agent 11)
+Target: `academic/thesis/chapters/chapter03_methodology_part3b.tex` (`sec:theorems_6_to_10`).
+Include full formal statements and complete LaTeX `proof` environments for:
+- **Theorem 6 (Rank Collapse in Extreme Attention Linearization)**:
+  Proof that naive first-order Taylor expansion of softmax attention causes rank collapse where $\operatorname{rank}(\operatorname{Attn}(Q, K, V)) \le \min(d, r_Q, r_K)$, yielding degenerative sequence representations when $r < d/4$.
+- **Theorem 7 (Softmax Simplex Preservation Under Taylor Expansions)**:
+  Necessary and sufficient constraints on normalization factors to preserve probability simplex non-negativity and row-sum unity $\sum_j \mathbf{A}_{ij} = 1$ in kernelized linear attention.
+- **Theorem 8 (HNC-SVD Optimality and Energy Concentration)**:
+  Proof that Hierarchical Nullspace Calibration (HNC) concentrates $> 92\%$ of spectral residual energy into the orthogonal complement of the uncalibrated weight subspace.
+- **Theorem 9 (Householder Reflector Stability for Non-Square Projections)**:
+  Proof that Householder orthonormal basis transformations $\mathbf{H} = \mathbf{I} - 2\mathbf{v}\mathbf{v}^\top$ remain numerically stable with condition number $\kappa(\mathbf{H}) = 1.0$ under arbitrary low-rank dimension reductions.
+- **Theorem 10 (6-Pillar Distillation Contraction Mapping and Convergence Rate)**:
+  Proof that the composite 6-pillar knowledge distillation loss forms a strongly convex contraction operator with convergence rate $\|\mathbf{W}^{(t)} - \mathbf{W}^*\|_F \le \rho^t \|\mathbf{W}^{(0)} - \mathbf{W}^*\|_F$ where $\rho = \max_i |1 - \eta \lambda_i(H)| < 1$.
+
+---
+
+## Persian Typography and XePersian Rules
+Per `docs/thesis_agents/PERSIAN_WRITING_RULES.md`:
+1. **No `\lr{}` in Math**: Write `\min_{\mathbf{W}_p}`, not `\min_{\lr{W}_p}`.
+2. **No `\lr{}` around `\item`**: Correct: `\item \lr{PyTorch Reference}`.
+3. **Mandatory ZWNJ (نیم‌فاصله)**: Use `U+200C` in technical terms (e.g. «پشتهٔ گسیل»، «عملگرهای»، «مقداردهی اولیه»).
+4. **Digit Format**: Persian digits (۱۳۱، ۷۲، ۵۶٪) in narrative Persian text, English digits (56.0%, 1.2 us) in tables and math.
+5. **Data Filter**: Do not cite flawed preliminary runs (<35% accuracy, uncalibrated checkpoints).
+
+---
+
+## LaTeX Integration Example
 
 ```latex
-\begin{table}[H]
-\centering
-\small
-\caption{The 7-Layer Architectural Stack of the NeuralOps Runtime \cite{audit05}}
-\label{tab:7layer_stack}
-\begin{tabular}{clll}
-\toprule
-\textbf{Layer} & \textbf{Subsystem Name} & \textbf{Primary Public Interface} & \textbf{Source} \\
-\midrule
-L7 & Application \& CLI & \texttt{neuralops.cli} & \texttt{AUDIT\_05} \\
-L6 & Surgery \& Healing & \texttt{neuralops.replace\_attention()} & \texttt{AUDIT\_05} \\
-L5 & Compression Zoo & \texttt{neuralops.compressors} (72 engines) & \texttt{AUDIT\_05} \\
-L4 & Attention Zoo & \texttt{neuralops.attention} (131 models) & \texttt{AUDIT\_05} \\
-L3 & Multi-Tier Dispatch & \texttt{neuralops.core.dispatch} & \texttt{AUDIT\_05} \\
-L2 & Kernel Execution Tier & CUDA C++ / Triton / PyTorch & \texttt{AUDIT\_05} \\
-L1 & Empirical Telemetry & \texttt{master\_ledger.sqlite} & \texttt{AUDIT\_05} \\
-\bottomrule
-\end{tabular}
-\end{table}
-```
-
-### Section 3.2 — The 3-Level Fallback Dispatch Contract
-Source: `AUDIT_03_MACRO_TELEMETRY_AND_HARDWARE_BENCHMARKS.md` (Section 3).
-Detail the zero-overhead dispatch routing hierarchy:
-- **Level 1 (Native CUDA C++ / HIP)**: Peak hardware throughput via specialized compilation.
-- **Level 2 (Triton JIT)**: Autotuned JIT kernels parameterized for FP16, BF16, and FP32.
-- **Level 3 (Vectorized PyTorch)**: Guaranteed functional fallback for CPU and debugging.
-- **Table 3.2**: Forward dispatch latency overhead and fallback resolution timings across tiers:
-
-```latex
-\begin{table}[H]
-\centering
-\small
-\caption{Three-Level Dispatch Fallback Latency and Resolution Overhead \cite{audit03}}
-\label{tab:dispatch_timings}
-\begin{tabular}{llrrr}
-\toprule
-\textbf{Tier} & \textbf{Backend Engine} & \textbf{Dispatch Overhead ($\mu$s)} & \textbf{Latency (ms)} & \textbf{Source} \\
-\midrule
-Level 1 & Native CUDA C++ (SM 8.9) & 1.2 & 0.421 & \texttt{AUDIT\_03} \\
-Level 2 & Triton JIT Kernel & 1.8 & 0.485 & \texttt{AUDIT\_03} \\
-Level 3 & Vectorized PyTorch Reference & 2.1 & 1.312 & \texttt{AUDIT\_03} \\
-\bottomrule
-\end{tabular}
-\end{table}
-```
-
-### Section 3.3 — The 4-Stage Attention Surgery Protocol
-Source: `AUDIT_01_ABLATION_AND_DISTILLATION_EVALUATION.md` (Section 3).
-Formulate the four surgical phases required for in-place attention replacement:
-1. **Phase 1: Architecture Inspection & State Isolation**: Traverse module graph and unbind weights.
-2. **Phase 2: Closed-Form Ridge Calibration**:
-   $$\min_{W_p} \|X W_{\text{orig}} - X W_p\|_F^2 + \lambda \|W_p\|_F^2 \implies W_p^* = (X^\top X + \lambda I)^{-1} X^\top (X W_{\text{orig}})$$
-3. **Phase 3: Zero-Shot Transplant**: Hot-swap submodule without altering surrounding transformer layers.
-4. **Phase 4: Distillation Healing**: Run 30 optimization steps using `heal_replaced_model()`.
-- **Table 3.3**: Pre- and post-calibration reconstruction errors across regularization parameters $\lambda \in [10^{-4}, 1.0]$.
-
-### Section 3.4 — The 10 Formal Theorems with Complete Proofs
-Present all 10 canonical mathematical theorems derived across the audit files. Every theorem must provide a formal mathematical statement, a step-by-step analytical proof, and an empirical verification cross-reference:
-
-```latex
-\begin{theorem}[Low-Rank Frobenius Bound \cite{audit02}]
-Let $W \in \mathbb{R}^{m \times n}$ have singular value decomposition $W = U \Sigma V^\top$ with singular values $\sigma_1 \ge \sigma_2 \ge \dots \ge \sigma_d \ge 0$. For any rank $r < d$, the truncated factor representation $W_r = U_r \Sigma_r V_r^\top$ satisfies:
-\[
-\|W - W_r\|_F = \sqrt{\sum_{i=r+1}^d \sigma_i^2}
-\]
+\begin{theorem}[بهینگی سفیدسازی کوواریانس چولسکی \cite{audit02}]
+\label{thm:cholesky_optimality}
+فرض کنید $\mathbf{X} \in \mathbb{R}^{T \times d}$ ماتریس فعال‌سازی کالیبراسیون با کوواریانس $\boldsymbol{\Sigma} = \mathbf{X}^\top \mathbf{X} / T = \mathbf{L}\mathbf{L}^\top$ باشد. برای هر ماتریس تقریب کم‌مرتبه $\widehat{\mathbf{W}} = \mathbf{A}\mathbf{B}$ با رتبه $r \le k$، خطای بازسازی وزنی زیر نرم فربنیوس حداقل می‌شود اگر و تنها اگر فاکتورها از طریق تجزیه مقادیر منفرد ماتریس سفیدشده $\widetilde{\mathbf{W}} = \mathbf{W}\mathbf{L}$ حاصل شوند:
+\begin{equation}
+\min_{\operatorname{rank}(\widehat{\mathbf{W}}) \le r} \mathbb{E}_{\mathbf{x} \sim \mathcal{D}}\left[ \|\mathbf{W}\mathbf{x} - \widehat{\mathbf{W}}\mathbf{x}\|_2^2 \right] = \sum_{i=r+1}^d \sigma_i^2(\mathbf{W}\mathbf{L})
+\end{equation}
 \end{theorem}
 \begin{proof}
-By unitary invariance of the Frobenius norm, $\|W - W_r\|_F^2 = \|U(\Sigma - \Sigma_r)V^\top\|_F^2 = \|\Sigma - \Sigma_r\|_F^2 = \sum_{i=r+1}^d \sigma_i^2$. Taking the square root yields the exact result.
-\end{proof}
-
-\begin{theorem}[Distillation Healing Convergence \cite{audit01}]
-Let $\mathcal{L}_{\text{distill}}(W)$ be the convex quadratic objective defined in Stage 4 of the surgical protocol. Under learning rate $\eta \le \frac{1}{\lambda_{\max}(X^\top X + \lambda I)}$, 30 steps of gradient descent guarantee:
-\[
-\|\widehat{W}^{(30)} - W_p^*\|_F \le \left(1 - \eta \lambda_{\min}\right)^{30} \|\widehat{W}^{(0)} - W_p^*\|_F
-\]
-\end{theorem}
-\begin{proof}
-By the spectral decomposition of the Hessian matrix $H = X^\top X + \lambda I$, the error contraction follows the standard convergence bounds for L-smooth and strongly convex objectives. Expanding the recursion yields the geometric rate.
+با تعریف نرم القایی، $\mathbb{E}[\|\mathbf{W}\mathbf{x} - \widehat{\mathbf{W}}\mathbf{x}\|_2^2] = \operatorname{tr}((\mathbf{W} - \widehat{\mathbf{W}})\boldsymbol{\Sigma}(\mathbf{W} - \widehat{\mathbf{W}})^\top) = \|(\mathbf{W} - \widehat{\mathbf{W}})\mathbf{L}\|_F^2$. با تغییر متغیر $\widetilde{\mathbf{W}} = \mathbf{W}\mathbf{L}$ و $\widetilde{\mathbf{M}} = \widehat{\mathbf{W}}\mathbf{L}$، مسئله به حداقل‌سازی $\|\widetilde{\mathbf{W}} - \widetilde{\mathbf{M}}\|_F^2$ با قید $\operatorname{rank}(\widetilde{\mathbf{M}}) \le r$ تبدیل می‌شود. بر اساس قضیه اکرت-یانگ-میرسکی، جواب بهینه از تجزیه مقادیر منفرد بریده‌شده $\widetilde{\mathbf{W}}$ به دست می‌آید. بنابراین $\widehat{\mathbf{W}}^* = \mathbf{U}_r \boldsymbol{\Sigma}_r \mathbf{V}_r^\top \mathbf{L}^{-1}$ بهینه‌ساز یکتا است.
 \end{proof}
 ```
 
-- **Theorems 1–3**: Low-rank error bounds, Cholesky whitening optimality, and HNC-SVD condition preservation (`AUDIT_02`).
-- **Theorems 4–5**: Roofline arithmetic intensity limits and GDDR6 bus traffic saturation (`AUDIT_03`).
-- **Theorems 6–9**: Kernel invariant gradients, finite difference stability, and multi-head rank bounds (`AUDIT_01`, `AUDIT_03`).
-- **Theorem 10**: Distillation healing contraction rate (`AUDIT_01`).
+---
 
-### Section 3.5 — Forensic Reproducibility and Git Provenance
-Source: `AUDIT_05_PROVENANCE_INTEGRITY_AND_DISCLOSURE.md` (Section 3).
-- **Table 3.4**: Master commit SHA verification table listing all core subsystems, commits, and timestamps.
+## Verification Protocol
+1. Confirm all 4 Chapter 3 files exist and are populated:
+   - `academic/thesis/chapters/chapter03_methodology_part1.tex`
+   - `academic/thesis/chapters/chapter03_methodology_part2.tex`
+   - `academic/thesis/chapters/chapter03_methodology_part3a.tex`
+   - `academic/thesis/chapters/chapter03_methodology_part3b.tex`
+2. Verify all 10 theorems contain explicit formal statements and complete proof blocks:
+   ```bash
+   grep -c "\\begin{theorem}" academic/thesis/chapters/chapter03_methodology_part*.tex
+   grep -c "\\begin{proof}" academic/thesis/chapters/chapter03_methodology_part*.tex
+   ```
+3. Verify that the 3-level fallback hierarchy is documented with Level 1 (CUDA C++), Level 2 (Triton JIT), and Level 3 (Vectorized PyTorch).
+4. Verify that the closed-form Ridge regression solution is accurately stated with the $\lambda \mathbf{I}$ regularizer.
+5. Check that all mathematical symbols conform to AMS-LaTeX and do not contain `\lr{}` tags inside math environments.
+6. Verify that all 10 theorems cite their respective empirical provenance documents (`AUDIT_01`, `AUDIT_02`, `AUDIT_03`).
 
 ---
 
-## Strict Drafting Rules
-
-1. **All 10 Theorems Mandatory**: Omitting any theorem from 1 through 10 is strictly forbidden. Every theorem must feature a complete LaTeX `\begin{proof} ... \end{proof}` block.
-2. **Zero Fabricated Mathematics**: Authors are strictly prohibited from inventing theorems or proof steps not documented in `AUDIT_01`, `AUDIT_02`, or `AUDIT_03`.
-3. **Mandatory Audit 05 Citations**: Every software architecture and reproducibility claim must cite `AUDIT_05`.
-
----
-
-## Verification
-Validate Chapter 3 source code (`chapter3.tex`):
-
-```bash
-# Verify presence of all 10 theorems
-for i in $(seq 1 10); do
-    grep -q "Theorem $i" thesis_final/chapters/chapter3.tex || echo "MISSING: Theorem $i"
-done
-
-# Verify proof blocks count
-PROOFS=$(grep -c "\\begin{proof}" thesis_final/chapters/chapter3.tex)
-[ "$PROOFS" -ge 10 ] && echo "PASS: All 10 proofs present" || echo "FAIL: Missing proofs ($PROOFS/10)"
-```
-
----
-
-## Common Pitfalls
-- Truncating proofs with phrases like "the proof is trivial" or "left as an exercise".
-- Omitting regularizer parameter $\lambda$ in the closed-form Ridge calibration equation.
-- Neglecting to reference `AGENTS_FILE_ASSIGNMENT_AND_PROVENANCE_GUIDE.md` when coordinating proof review.
+## Common Pitfalls to Avoid
+- Omitting proof blocks for any of the 10 formal theorems.
+- Using `\lr{}` within mathematical formulations or theorem statements.
+- Neglecting to mention the 56% accuracy threshold quality gate.
+- Documenting only 2 levels of kernel fallback instead of the canonical 3-level contract.
+- Ignoring PEP 562 dynamic lazy loading when discussing module import architecture.
+- Using informal phrases such as "proof is omitted" or "left as an exercise to the reader".
+- Overlooking the condition number preservation proof in Householder transformations.

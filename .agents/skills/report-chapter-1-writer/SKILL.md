@@ -1,167 +1,153 @@
 ---
 name: report-chapter-1-writer
-description: "Write Chapter 1 (Introduction) using AUDIT_03 and AUDIT_04 as primary evidence sources"
+description: "Write Chapter 1 (Introduction) using AUDIT_03, AUDIT_04, and docs/thesis_agents guides"
 version: "1.0.0"
-tags: ["neuralops", "report", "chapter-1", "introduction", "writing"]
+tags: ["neuralops", "report", "chapter-1", "introduction", "writing", "thesis_agents"]
 ---
 
 # Skill: Chapter 1 (Introduction) Authoring and Empirical Framing
 
 ## When to use
-Use this skill when composing, revising, or validating Chapter 1 (Introduction) of doctoral dissertations, technical monographs, or comprehensive system evaluation reports for NeuralOps. It guides the author through drafting the memory wall problem statement, research questions, motivation, and contributions using rigorous empirical evidence.
+Use this skill when composing, revising, or validating Chapter 1 (Introduction and General Overview) of the doctoral dissertation (`academic/thesis/810101504_main.tex` or `thesis_final/810101504_main.tex`). It enforces strict compliance with the agent guidelines in `docs/thesis_agents/` and the Persian writing rules in `docs/thesis_agents/PERSIAN_WRITING_RULES.md`.
 
 ## Prerequisites
-- Completed execution of `report-audit-file-reader` producing `/tmp/citation_index.json`.
-- Generated sequence scaling figure (`figures/seqlen_scaling_loglog.pdf`) via `report-figure-generator`.
-- Configured 3-level citation traceability via `report-provenance-citation`.
-- LaTeX compilation harness configured in `thesis_final/` or `paper/`.
+- Direct compliance with `docs/thesis_agents/AGENT_01_CHAPTER_1_FOUNDATIONS.md`.
+- Direct compliance with `docs/thesis_agents/AGENT_02_CHAPTER_1_RQS_CONTRIBUTIONS.md`.
+- Compliance with `docs/thesis_agents/MASTER_DIVISION_OF_LABOR.md` and `docs/thesis_agents/PERSIAN_WRITING_RULES.md`.
+- Target files: `academic/thesis/810101504_main.tex` (lines 238–500) or `thesis_final/chapters/chapter1.tex`.
+- Remote GPU access: `ssh taha@192.168.1.100` (RTX 4070 SM 8.9) with `/mnt/d/venv/bin/python3`.
+- Read access to `results/registry/master_ledger.jsonl`.
 
 ## Canonical Audit Files Reference
-Chapter 1 relies primarily on `AUDIT_03` and `AUDIT_04`, while synthesizing overarching context from all six canonical documents:
+Chapter 1 relies on empirical data across all six canonical audit files:
 
-1. `AUDIT_01_ABLATION_AND_DISTILLATION_EVALUATION.md`: Sourced in Section 1.3 for RoBERTa-base SST-2 recovery metrics ($52.06\% \rightarrow 73.62\%$ accuracy jump under HNC-SVD distillation).
-2. `AUDIT_02_SVD_LOWRANK_AND_RANK_SWEEPS.md`: Sourced in Section 1.3 for singular value tail energy preservation data ($21.85\%$ improvement over naive truncation).
-3. `AUDIT_03_MACRO_TELEMETRY_AND_HARDWARE_BENCHMARKS.md`: Sourced in Section 1.1 and 1.2 for the Williams hardware roofline model (183.1 FLOP/Byte) and the unified 203-module evaluation matrix.
-4. `AUDIT_04_SEQLEN_SCALING_AND_KV_CACHE_MEM.md`: Sourced in Section 1.1 for quadratic memory exhaustion evidence ($T=8192$ OOM boundary at 2.4 GB) and linear crossover thresholds.
+1. `AUDIT_01_ABLATION_AND_DISTILLATION_EVALUATION.md`: Sourced in Section 1.3 for RoBERTa-base recovery metrics ($52.06\% \rightarrow 73.62\%$).
+2. `AUDIT_02_SVD_LOWRANK_AND_RANK_SWEEPS.md`: Sourced in Section 1.3 for singular value tail energy preservation ($+21.85\%$).
+3. `AUDIT_03_MACRO_TELEMETRY_AND_HARDWARE_BENCHMARKS.md`: Sourced in Section 1.1 and 1.2 for the Williams hardware roofline model (183.1 FLOP/Byte) and 203-module telemetry.
+4. `AUDIT_04_SEQLEN_SCALING_AND_KV_CACHE_MEM.md`: Sourced in Section 1.1 for quadratic memory exhaustion ($T=8192$ OOM cliff at 2.4 GB) and linear crossover thresholds.
 5. `AUDIT_05_PROVENANCE_INTEGRITY_AND_DISCLOSURE.md`: Sourced in Section 1.5 for the six core system achievements and reproducible testbed environment disclosures.
-6. `AGENTS_FILE_ASSIGNMENT_AND_PROVENANCE_GUIDE.md`: Sourced for mapping Chapter 1 drafting tasks to Agent 01 roles and tracking evidence provenance boundaries.
+6. `AGENTS_FILE_ASSIGNMENT_AND_PROVENANCE_GUIDE.md`: Sourced for mapping Chapter 1 drafting tasks to Agent 01 and Agent 02 roles and tracking line-number boundaries.
+
+## Canonical Repository Invariants
+Maintain canonical repository counts:
+- **131** attention mechanisms in `ATTENTION_REGISTRY`.
+- **72** compression engines in `COMPRESSOR_REGISTRY`.
+- **26** canonical Triton kernel modules in `neuralops/core/triton_kernels/`.
 
 ---
 
 ## Detailed Section-by-Section Drafting Architecture
 
 ### Section 1.1 — The Memory Wall and Attention Bottleneck
-Open immediately with concrete hardware telemetry from `AUDIT_04_SEQLEN_SCALING_AND_KV_CACHE_MEM.md` (Table 1) rather than abstract commentary:
-- Frame the quadratic growth of standard softmax attention $\mathcal{O}(N^2)$ versus linear token budgets $\mathcal{O}(N)$.
-- Quote the exact memory cliff: at sequence length $T=8192$, uncompressed attention allocates $>2.4\text{ GB}$ per layer, precipitating out-of-memory (OOM) faults on standard 12 GB accelerators.
-- Integrate the Williams Roofline model from `AUDIT_03_MACRO_TELEMETRY_AND_HARDWARE_BENCHMARKS.md` (Section "Hardware Roofline"), demonstrating that attention operations on SM 8.9 are bound by memory bandwidth ($255.8\text{ GB/s}$) rather than raw tensor core compute.
-- Include Figure 1.1: `\includegraphics{figures/seqlen_scaling_loglog.pdf}` demonstrating the linear-softmax crossover at $N \approx 2048$.
+Guided by `docs/thesis_agents/AGENT_01_CHAPTER_1_FOUNDATIONS.md`:
+- Open with dynamic memory footprint challenges rather than abstract AI generalities.
+- Present the total activation memory formula:
+  $$M_{\text{act}} = B \cdot L \cdot N \cdot D \cdot \left( 2 + \frac{H \cdot N}{D} \right) \times \text{BytesPerElement}$$
+- Show that for $N \in \{512, 1024, 2048, 4096, 8192\}$, memory escalates until uncompressed attention allocates $>2.4\text{ GB}$ per layer at $T=8192$ on RTX 4070 (12 GB GDDR6X), causing instant CUDA OOM faults (`AUDIT_04` Table 1).
+- Integrate the Williams Roofline model from `AUDIT_03`, proving that standard attention arithmetic intensity saturates at $183.1\text{ FLOP/Byte}$ and operates firmly in the memory-bandwidth-bound regime ($255.8\text{ GB/s}$).
+- Include Figure 1.1 (`fig_fla_scaling.pdf` or `seqlen_scaling_loglog.pdf`) demonstrating linear-softmax crossover at $N \approx 2048$.
 
 ```latex
-% Canonical opening snippet for Section 1.1
-Modern autoregressive Transformer inference encounters a fundamental scalability 
-barrier governed by the memory hierarchy of modern accelerator hardware \cite{audit04}. 
-As context windows expand to long-sequence regimes, standard softmax attention exhibits 
-quadratic complexity $\mathcal{O}(N^2)$ in both computational FLOPs and activation storage. 
-Empirical profiling on NVIDIA Ada Lovelace architecture reveals that at sequence length 
-$T=8192$, uncompressed self-attention allocates in excess of $2.4\text{ GB}$ of activation 
-footprint per transformer layer \cite{audit04} (Table 1), inducing catastrophic out-of-memory 
-faults. Furthermore, arithmetic intensity profiling indicates that attention execution 
-saturates memory bus bandwidth at $183.1\text{ FLOP/Byte}$ \cite{audit03}, firmly operating 
-within the memory-bandwidth-bound regime of the Williams Roofline model.
+% Canonical opening snippet for Section 1.1 conforming to AGENT_01
+محدودیت اصلی در استنتاج و آموزش مدل‌های زبانی بزرگ، ناشی از مقیاس‌بندی غیرخطی مصرف حافظه است \cite{audit04}. 
+در الگوریتم‌های توجه استاندارد \lr{Softmax}، ردپای فعال‌سازی‌ها \lr{(Activation Footprint)} با طول دنباله 
+رابطهٔ درجه دو $\mathcal{O}(N^2)$ دارد. تله‌متری تجربی ثبت‌شده در جدول ۱ از مأخذ \cite{audit04} نشان می‌دهد 
+که در طول توالی $T=8192$، لایه‌های توجه بدون فشرده‌سازی بیش از ۲٫۴ گیگابایت حافظهٔ پویا اشغال می‌کنند 
+که در کارت‌های گرافیکی با حافظهٔ ۱۲ گیگابایت نظیر \lr{RTX 4070}، بلافاصله منجر به خطای سرریز حافظه 
+\lr{(CUDA OOM)} می‌گردد. همچنین تحلیل شدت محاسباتی بر اساس مدل سقف کارایی ویلیامز \cite{audit03} 
+اثبات می‌کند که این عملگر در نقطهٔ $183.1\text{ FLOP/Byte}$ اشباع شده و در ناحیهٔ محدود به پهنای باند حافظه 
+\lr{(Memory-Bound)} گرفتار می‌ماند.
 ```
 
 ### Section 1.2 — Problem Statement: Architectural Fragmentation
-Cite the macro evaluation from `AUDIT_03_MACRO_TELEMETRY_AND_HARDWARE_BENCHMARKS.md`:
-- Address the "203 modules without a unified framework" paradox: the literature features 131 distinct attention mechanisms and 72 compression schemes, yet practitioners are hindered by fragmented APIs, disparate tensor layouts, and unverified kernel backends.
-- Highlight the lack of systematic cross-backend parity checks (CUDA C++, Triton JIT, and vectorized PyTorch).
-
-```latex
-% Canonical snippet for Section 1.2
-While the literature offers diverse mathematical reformulations to mitigate attention 
-inefficiency, the deep learning community suffers from severe architectural fragmentation. 
-Our repository audit identifies 131 distinct attention variants and 72 post-training compression 
-engines published across disparate codebases \cite{audit03}. Despite this apparent diversity, 
-no standardized substrate exists to evaluate cross-backend numerical parity, leaving 
-practitioners unable to reliably benchmark CUDA C++, Triton JIT, and PyTorch implementations 
-under uniform memory and precision constraints.
-```
+Guided by `docs/thesis_agents/AGENT_01_CHAPTER_1_FOUNDATIONS.md`:
+- Address the "203 modules without a unified framework" paradox: 131 attentions and 72 compressors exist across fragmented codebases with divergent APIs and unverified kernel backends (`AUDIT_03`).
+- Define distribution drift (رانش توزیع) and activation subspace collapse following uncalibrated post-training surgery.
 
 ### Section 1.3 — Research Motivation: Principled Low-Rank Factorization
-Demonstrate that naive post-training rank reduction causes catastrophic forgetting:
-- Cite `AUDIT_01_ABLATION_AND_DISTILLATION_EVALUATION.md` (Table 5): naive truncated SVD reduces RoBERTa-base SST-2 downstream accuracy from $90.14\%$ to $52.06\%$.
-- Contrast with Hierarchical Nuclear-Conditioned SVD (HNC-SVD), which restores accuracy to $73.62\%$ through ridge calibration and distillation healing.
-- Cite `AUDIT_02_SVD_LOWRANK_AND_RANK_SWEEPS.md`: HNC-SVD achieves a $21.85\%$ improvement in spectral tail energy preservation compared to naive Eckart-Young-Mirsky truncation.
+Guided by `docs/thesis_agents/AGENT_01_CHAPTER_1_FOUNDATIONS.md`:
+- Contrast naive Eckart-Young-Mirsky truncated SVD ($52.06\%$ accuracy on RoBERTa-base SST-2 in `AUDIT_01`) with HNC-SVD ($73.62\%$ accuracy) and tail energy retention ($+21.85\%$ in `AUDIT_02`).
 
 ### Section 1.4 — Research Questions (RQ1 through RQ8)
-Every research question must be grounded in explicit empirical tables across the audit series:
-- **RQ1 (Kernel Acceleration)**: Can multi-tier dispatch yield $>1.0\times$ speedups across all 203 modules? (Mapped to `AUDIT_03` Table 1).
-- **RQ2 (Linear Crossover)**: At what token horizon do linear kernels surpass FlashAttention-2? (Mapped to `AUDIT_04` Table 1).
-- **RQ3 (Rank Compression Bounds)**: What singular value retention ratio preserves $>95\%$ downstream GLUE performance? (Mapped to `AUDIT_02` Table 2).
-- **RQ4 (Distillation Synergy)**: Does a 6-pillar distillation objective outperform standalone logit KL divergence? (Mapped to `AUDIT_01` Table 3).
-- **RQ5 (Memory Cache Footprint)**: Can stateful recurrent caches achieve constant $\mathcal{O}(1)$ memory scaling? (Mapped to `AUDIT_04` Table 2).
-- **RQ6 (In-Place Surgery)**: Can attention mechanisms be transplanted without retraining the model backbone? (Mapped to `AUDIT_01` Table 4).
-- **RQ7 (Hardware Roofline Saturation)**: How close do unified kernels approach the 183.1 FLOP/Byte arithmetic boundary? (Mapped to `AUDIT_03` Section 6).
-- **RQ8 (Forensic Reproducibility)**: Can all 2,432 empirical benchmark runs be deterministically reproduced? (Mapped to `AUDIT_05` Table 1).
+Guided by `docs/thesis_agents/AGENT_02_CHAPTER_1_RQS_CONTRIBUTIONS.md`:
+- Explicitly state RQ1 through RQ8 mapped to specific audit evidence tables:
+  - RQ1 (Multi-Tier Acceleration) $\rightarrow$ `AUDIT_03` Table 1.
+  - RQ2 (Linear Attention Crossover) $\rightarrow$ `AUDIT_04` Table 1.
+  - RQ3 (Rank Compression Bounds) $\rightarrow$ `AUDIT_02` Table 2.
+  - RQ4 (Distillation Synergy) $\rightarrow$ `AUDIT_01` Table 3.
+  - RQ5 (Memory Cache Footprint) $\rightarrow$ `AUDIT_04` Table 2.
+  - RQ6 (In-Place Surgery) $\rightarrow$ `AUDIT_01` Table 4.
+  - RQ7 (Roofline Saturation) $\rightarrow$ `AUDIT_03` Section 6.
+  - RQ8 (Forensic Traceability) $\rightarrow$ `AUDIT_05` Table 1.
 
 ```latex
-% Research Questions Mapping Table Snippet
 \begin{table}[H]
 \centering
 \small
-\caption{Research Questions and Supporting Empirical Audits \cite{agents_guide}}
-\label{tab:rq_audit_map}
+\caption{نگاشت سؤالات اصلی پژوهش به مأخذ ممیزی داده‌ها \cite{agents_guide}}
+\label{tab:ch1_rq_audit_map}
 \begin{tabular}{lll}
 \toprule
-\textbf{Research Question} & \textbf{Empirical Target} & \textbf{Source Audit} \\
+\textbf{سؤال پژوهش} & \textbf{هدف ارزیابی تجربی} & \textbf{مأخذ ممیزی} \\
 \midrule
-RQ1: Kernel Acceleration & $\ge 1.0\times$ speedup across 203 modules & \texttt{AUDIT\_03} \\
-RQ2: Linear Crossover & Crossover at $N \approx 2048$ & \texttt{AUDIT\_04} \\
-RQ3: Compression Bounds & Spectral retention $\ge 95\%$ & \texttt{AUDIT\_02} \\
-RQ4: Distillation Synergy & 6-pillar loss vs logit KL & \texttt{AUDIT\_01} \\
-RQ5: Memory Cache Footprint & $\mathcal{O}(1)$ state cache footprint & \texttt{AUDIT\_04} \\
-RQ6: In-Place Surgery & Zero-retraining transplant & \texttt{AUDIT\_01} \\
-RQ7: Roofline Saturation & $183.1\text{ FLOP/Byte}$ bound & \texttt{AUDIT\_03} \\
-RQ8: Forensic Reproducibility & 2,432 logged benchmark runs & \texttt{AUDIT\_05} \\
+RQ1: شتاب گسیل سه‌سطحی & دستیابی به شتاب $\ge 1.0\times$ در ۲۰۳ ماژول & \texttt{AUDIT\_03} \\
+RQ2: آستانه عطف خطی & تعیین نقطه تقاطع در $N \approx 2048$ توکن & \texttt{AUDIT\_04} \\
+RQ3: بقای انرژی طیفی & حفظ انرژی بالای ۹۵٪ در نسبت رتبه ۰٫۵ & \texttt{AUDIT\_02} \\
+RQ4: هم‌افزایی تقطیر ۶ ستون & برتری نسبت به واگرایی تکی \lr{KL} & \texttt{AUDIT\_01} \\
+RQ5: مقیاس بافر حالت & اثبات حافظه ثابت $\mathcal{O}(1)$ در مدل‌های بازگشتی & \texttt{AUDIT\_04} \\
+RQ6: جراحی بدون آموزش مجدد & پیوند درجا با حفظ شباهت کسینوسی بالای ۰٫۹۸ & \texttt{AUDIT\_01} \\
+RQ7: اشباع سقف کارایی & دستیابی به سقف پهنای باند ۲۵۵٫۸ گیگابایت بر ثانیه & \texttt{AUDIT\_03} \\
+RQ8: بازتولیدپذیری جرم‌شناختی & ثبت ۲٬۴۳۲ اجرای تجربی با برچسب هش گیت & \texttt{AUDIT\_05} \\
 \bottomrule
 \end{tabular}
 \end{table}
 ```
 
 ### Section 1.5 — Summary of Key Contributions
-Formulate the six canonical achievements established in `AUDIT_05_PROVENANCE_INTEGRITY_AND_DISCLOSURE.md`:
-1. **Unified Attention Zoo**: Canonical registration and benchmarking of 131 attention operators.
-2. **Comprehensive Compression Engine**: Standardized suite of 72 post-training compression engines.
-3. **Multi-Tier Kernel Dispatch**: 3-level fallback architecture (CUDA C++, Triton JIT, PyTorch Reference).
-4. **HNC-SVD Factorization**: Closed-form Ridge calibration and 30-step distillation healing.
-5. **Master Results Ledger**: SQLite and JSONL tracking across 2,432 forensic benchmark trials.
-6. **Empirical Thesis Artifacts**: Fully automated, reproducible LaTeX generation pipeline.
+Guided by `docs/thesis_agents/AGENT_02_CHAPTER_1_RQS_CONTRIBUTIONS.md`:
+- Detail the 6 canonical architectural achievements from `AUDIT_05` Section 1.
 
 ---
 
-## Strict Drafting Rules
+## Persian Writing & XePersian Discipline (`PERSIAN_WRITING_RULES.md`)
 
-1. **Mandatory Opening Data Citation**: Paragraph 1 of Section 1.1 must cite specific numerical metrics from `AUDIT_04` or `AUDIT_03`. General narrative openings without numbers are banned.
-2. **Dense Evidence Ratio**: Each of the 5 subsections must reference at least 3 distinct audit tables.
-3. **Mandatory Figure Inclusion**: Chapter 1 must embed at least one publication plot generated via `report-figure-generator`.
-4. **Explicit Traceability Tags**: All citations must follow the formatting defined in `report-provenance-citation`.
+When drafting Chapter 1 in Persian XePersian, adhere to this strict compliance checklist:
+- **`\lr{...}` Macro Constraints**:
+  - Use for: `\lr{PyTorch}`, `\lr{CUDA}`, `\lr{Triton}`, `\lr{NeuralOps}`, `\lr{HNC-SVD}`, `\lr{SST-2}`.
+  - FORBIDDEN inside math mode (`\begin{equation}`, `$ ... $`).
+  - FORBIDDEN enclosing `\item`. Never write `\lr{\item ...}`.
+- **نیم‌فاصله (ZWNJ `U+200C`)**:
+  - Mandatory in: `مدل‌های`, `کِرنل‌های`, `لایه‌ای`, `بهینه‌سازی`, `پیش‌رو`, `بازگشتی`.
+- **Persian Digits & Percentage**:
+  - In Persian narrative text: **۱۳۱ مکانیزم توجه**, **۷۲ موتور فشرده‌سازی**.
+  - In Persian sentences: use `٪`, never `%`.
+- **Formal Academic Tone**:
+  - Use standard Persian terminology approved by Tehran University (جراحی مدل, تقطیر دانش, دیوار حافظه).
 
 ---
 
-## Automated Verification Protocol
-
-Run the following verification script to validate Chapter 1 source code:
-
-```python
-import re
-from pathlib import Path
-
-def verify_chapter1_integrity(chapter_path: Path):
-    text = chapter_path.read_text()
-    
-    # Check 1: Audit citations density
-    citations = re.findall(r"\\cite\{audit0[1-5]\}", text)
-    assert len(citations) >= 15, f"Insufficient audit citations: found {len(citations)}, required >= 15"
-    
-    # Check 2: All 8 research questions present
-    for i in range(1, 9):
-        assert f"RQ{i}" in text, f"Missing Research Question RQ{i}"
-        
-    # Check 3: Figure reference present
-    assert r"\includegraphics" in text and "seqlen_scaling" in text, "Missing sequence scaling figure"
-    
-    # Check 4: Memory cliff numbers verified
-    assert "8192" in text and "2.4" in text, "Missing canonical memory cliff numbers (T=8192, 2.4 GB)"
-    print("Chapter 1 verification passed with full compliance.")
-
-if __name__ == "__main__":
-    verify_chapter1_integrity(Path("thesis_final/chapters/chapter1.tex"))
-```
+## Verification
+1. **Thesis Agent Adherence**:
+   ```bash
+   grep -q "sec:intro_story" academic/thesis/810101504_main.tex && echo "PASS: Section labels match AGENT_01"
+   ```
+2. **Audit Citations**:
+   ```bash
+   grep -c "AUDIT_0" academic/thesis/810101504_main.tex
+   # Must be >= 15 across Chapter 1
+   ```
+3. **XeLaTeX Build**:
+   ```bash
+   cd academic/thesis && xelatex -interaction=nonstopmode 810101504_main.tex
+   # Must produce 0 fatal errors
+   ```
 
 ---
 
 ## Common Pitfalls
-- Opening Section 1.1 with generic AI platitudes ("In recent years, deep learning has revolutionized...") instead of hard memory numbers ($T=8192$, $2.4\text{ GB}$).
-- Quoting accuracy or latency figures that diverge by even $0.01\%$ from `AUDIT_01` or `AUDIT_03`.
-- Stating research questions without explicit mappings to audit verification tables.
-- Forgetting to mention the role allocation documented in `AGENTS_FILE_ASSIGNMENT_AND_PROVENANCE_GUIDE.md`.
+- Ignoring `AGENT_01_CHAPTER_1_FOUNDATIONS.md` and using generic text without activation memory formulas.
+- Ignoring research question mappings defined in `AGENT_02_CHAPTER_1_RQS_CONTRIBUTIONS.md`.
+- Misusing `\lr{...}` inside LaTeX math environments, causing fatal compilation errors.
+- Joining Persian compound words without ZWNJ (`مدلهای` instead of `مدل‌های`).
+- Rounding exact telemetry metrics (e.g., altering `73.62%` to `74%`).
+- Omitting provenance citation keys defined in `AGENTS_FILE_ASSIGNMENT_AND_PROVENANCE_GUIDE.md`.

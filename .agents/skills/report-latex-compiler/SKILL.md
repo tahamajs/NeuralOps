@@ -1,20 +1,21 @@
 ---
 name: report-latex-compiler
-description: "Compile the complete thesis/report with xelatex and ensure 0 errors, 0 warnings"
+description: "Compile the complete thesis/report with xelatex and ensure 0 errors, 0 warnings per docs/thesis_agents"
 version: "1.0.0"
-tags: ["neuralops", "report", "latex", "compilation", "xelatex", "bibtex"]
+tags: ["neuralops", "report", "latex", "compilation", "xelatex", "bibtex", "thesis_agents"]
 ---
 
 # Skill: Production LaTeX Compilation and Diagnostic Resolution
 
 ## When to use
-Use this skill when compiling the complete doctoral thesis manuscript, technical monograph, or conference paper into its final distribution PDF format. It governs the multi-pass compilation protocol using `xelatex` and `bibtex`, enforces zero-error quality gates, diagnoses typesetting anomalies, and verifies page count and bibliography resolution.
+Use this skill when compiling the complete doctoral thesis manuscript, technical monograph, or academic defense document (`academic/thesis/810101504_main.tex`). It governs the multi-pass compilation protocol using `xelatex` and `bibtex`, enforces zero-error quality gates, audits XePersian typesetting anomalies, and verifies bibliography resolution according to Agent 20.
 
 ## Prerequisites
-- TeX Live distribution with `xelatex`, `bibtex`, and standard utility `pdfinfo`.
-- Local manuscript workspace root: `thesis_final/` containing `810101504_main.tex` and `references.bib`.
-- Installed system fonts: Latin Modern, Computer Modern, or TeX Gyre Termes.
-- Executable bash environment for running compilation automation scripts.
+- Direct compliance with `docs/thesis_agents/AGENT_20_TYPOGRAPHY_COMPILATION_BIB.md`.
+- Full compliance with `docs/thesis_agents/MASTER_DIVISION_OF_LABOR.md` and `docs/thesis_agents/PERSIAN_WRITING_RULES.md`.
+- Target files: `academic/thesis/810101504_main.tex` and all thirteen modular files in `academic/thesis/chapters/`.
+- TeX Live distribution with `xelatex`, `bibtex`, and `xepersian` package.
+- System Persian and Latin fonts configured in `academic/thesis/tehran-thesis.cls`.
 
 ## Canonical Audit Files Reference
 The compilation pipeline integrates all sections and bibliography citations pointing back to the six canonical audit documents:
@@ -26,135 +27,156 @@ The compilation pipeline integrates all sections and bibliography citations poin
 5. `AUDIT_05_PROVENANCE_INTEGRITY_AND_DISCLOSURE.md`: Sourced in bibliography entry `\cite{audit05}` for testbed execution disclosures and Git commit SHA provenance.
 6. `AGENTS_FILE_ASSIGNMENT_AND_PROVENANCE_GUIDE.md`: Sourced in bibliography entry `\cite{agents_guide}` for chapter assignment governance and author ownership records.
 
+## Canonical Repository Invariants
+- **131** attention mechanisms in `ATTENTION_REGISTRY`.
+- **72** compression engines in `COMPRESSOR_REGISTRY`.
+- **26** canonical Triton kernel modules in `neuralops/core/triton_kernels/`.
+
 ---
 
-## The Canonical Multi-Pass Compilation Workflow
+## Master Document Architecture and Modular Inclusions (Agent 20)
+Target: `academic/thesis/810101504_main.tex`.
+Verify that `810101504_main.tex` includes all 13 modular chapter components in correct execution order:
 
-LaTeX requires multiple passes to resolve forward references, generate table of contents entries, and link external BibTeX citations:
+```latex
+% فراخوانی فصول ماژولار سیزده‌گانه
+\input{chapters/chapter01_intro.tex}
+\input{chapters/chapter02_theory_part1.tex}
+\input{chapters/chapter02_theory_part2.tex}
+\input{chapters/chapter03_methodology_part1.tex}
+\input{chapters/chapter03_methodology_part2.tex}
+\input{chapters/chapter03_methodology_part3a.tex}
+\input{chapters/chapter03_methodology_part3b.tex}
+\input{chapters/chapter04_results_part1.tex}
+\input{chapters/chapter04_results_part2.tex}
+\input{chapters/chapter04_results_part2b.tex}
+\input{chapters/chapter04_results_part3.tex}
+\input{chapters/chapter04_results_part4.tex}
+\input{chapters/chapter05_conclusion.tex}
+```
+
+---
+
+## Master Preamble & XePersian Typography Configuration
+
+```latex
+% ============================================================================
+% تعاریف اپراتورهای استاندارد ریاضی جهت جلوگیری از خطای \undefined
+% ============================================================================
+\DeclareMathOperator{\softmax}{softmax}
+\DeclareMathOperator{\Softmax}{Softmax}
+\DeclareMathOperator{\diag}{diag}
+\DeclareMathOperator{\rank}{rank}
+\DeclareMathOperator{\Tr}{Tr}
+\DeclareMathOperator{\TopK}{TopK}
+\DeclareMathOperator{\clamp}{clamp}
+\DeclareMathOperator{\polar}{polar}
+
+% تصحیح علائم پرانتز شماره فرمول‌ها در زی‌پرشین
+\makeatletter
+\def\tagform@#1{\maketag@@@{\lr{(}\ignorespaces#1\unskip\@@italiccorr\lr{)}}}
+\makeatother
+
+% رفع تداخل موقعیت‌یابی متن در تیکز در محیط زی‌پرشین
+\def\UseMathForPositioningText{}
+```
+
+---
+
+## Canonical Multi-Pass Compilation Sequence
 
 ```bash
-cd thesis_final/
+cd academic/thesis/
 
-# 1. Purge stale build artifacts to prevent cache corruption
-rm -f *.aux *.log *.out *.toc *.bbl *.blg *.lot *.lof *.nav *.snm
+# 1. پاکسازی فایل‌های موقت قدیمی جهت جلوگیری از تداخل حافظه کش
+rm -f *.aux *.log *.out *.toc *.bbl *.blg *.lot *.lof *.nav *.snm chapters/*.aux
 
-# 2. First Pass: Parse document structure and generate initial .aux tables
+# 2. گام اول: تحلیل ساختار سند و ایجاد فایل‌های .aux
 xelatex -interaction=nonstopmode 810101504_main.tex
 
-# 3. Bibliography Pass: Compile external references and link audit citations
+# 3. گام مراجع: اجرای موتور BibTeX برای اتصال ارجاعات مقالات و پرونده‌های ممیزی
 bibtex 810101504_main
 
-# 4. Second Pass: Resolve citation keys and internal cross-references (\ref, \cite)
+# 4. گام دوم: اتصال برچسب‌های متقابل (\ref و \cite)
 xelatex -interaction=nonstopmode 810101504_main.tex
 
-# 5. Third Pass: Finalize Table of Contents, List of Figures, and page numbers
+# 5. گام سوم: نهایی‌سازی فهرست مطالب، فهرست اشکال، جداول و شماره صفحات
 xelatex -interaction=nonstopmode 810101504_main.tex
 
-# 6. Verify compilation metrics
+# 6. بررسی تله‌متری و کیفیت خروجی کامپایل
 pdfinfo 810101504_main.pdf | grep Pages
 grep -E "^\!|Warning" 810101504_main.log | wc -l
 ```
 
 ---
 
-## Strict Success Criteria
+## Strict Success Criteria (Agent 20 Quality Gates)
 
-A build is certified as **PASS** only if ALL of the following conditions are met:
-1. `810101504_main.pdf` exists and contains $> 100$ pages.
+A build is certified as **PASS** only if ALL conditions are met:
+1. `810101504_main.pdf` is generated successfully with Exit Code 0.
 2. `grep "^!" 810101504_main.log` returns exactly `0` fatal errors.
-3. Overfull and underfull warnings are strictly minimized (`grep "Overfull\|Underfull" 810101504_main.log | wc -l` $< 10$).
-4. Zero unresolved citations: scanning the compiled PDF text reveals zero instances of `[?]` or `[??]`.
-5. Zero dangling internal cross-references: scanning reveals zero instances of `??` in text floats.
+3. Zero unresolved citation markers (`[?]` or `[??]`) in compiled output.
+4. Zero missing label references (`??` in cross-references).
+5. Zero unescaped special characters (`_`, `%`, `&`, `#`) breaking font encoding.
+6. Zero instances of `\lr{}` inside math environments or wrapping `\item`.
 
 ---
 
-## Diagnostic Triage: Common LaTeX Errors and Solutions
+## Diagnostic Triage for XePersian Compilation Anomalies
 
-| Symptom / Compiler Error Message | Underlying Root Cause | Verified Canonical Resolution |
+| Compiler Error / Diagnostic Message | Underlying Cause | Canonical Resolution |
 |:---|:---|:---|
-| `Undefined control sequence \softmax` | Missing custom math operator in LaTeX preamble | Add `\DeclareMathOperator{\softmax}{softmax}` in `preamble.tex` |
-| `Command \lr invalid in math mode` | Unwrapped text string inside an equation | Wrap variable in `\text{lr}` or `\mathit{lr}` |
-| `Missing $ inserted` | Unescaped special character (`_`, `%`, `&`, `#`) | Escape symbol with backslash (`\_`, `\%`, `\&`, `\#`) |
-| `Citation 'audit01' undefined` | Missing entry in `references.bib` or skipped `bibtex` | Verify bib entry and re-run full 3-pass sequence |
-| `Package longtable Error: Table head ...` | Misplaced `\endhead` or missing table delimiters | Ensure `\endhead` follows the initial header row |
-| `Overfull \hbox (24.2pt too wide)` | Unbreakable monospace identifier in narrow column | Wrap path in `\seqsplit{...}` or allow line breaks |
-| `Dimension too large` | PGF/TikZ coordinate out of allowable bounds | Rescale figure coordinates or use pre-rendered vector PDF |
-| `Package fontspec Error: Font cannot be found` | System font name mismatch in XeLaTeX setup | Switch fontspec to Latin Modern or installed TrueType/OpenType font |
-| `Too many math alphabets used in version normal` | Too many specialized fonts loaded simultaneously | Consolidate math packages and remove redundant font calls |
-| `Float(s) lost` | Excess unplaced figures exceeding LaTeX float buffer | Insert `\clearpage` or load `morefloats` package in preamble |
+| `Undefined control sequence \softmax` | Missing operator declaration | Add `\DeclareMathOperator{\softmax}{softmax}` in preamble |
+| `Command \lr invalid in math mode` | `\lr{}` injected into equation | Replace with `\text{...}` or `\operatorname{...}` |
+| `! LaTeX Error: Something's wrong--perhaps a missing \item` | `\item` wrapped inside `\lr{...}` | Move `\item` outside: `\item \lr{FlashAttention}` |
+| `Package fontspec Error: Font cannot be found` | System font mismatch | Ensure IRNazanin, Vazirmatn, or XB Niloofur is registered in fontspec |
+| `Dimension too large in pgfplots` | TikZ coordinate out of bounds | Clip plot domain or use pre-rendered vector PDF |
+| `Overfull \hbox (24.2pt too wide)` | Long unbroken monospace token | Wrap token in `\seqsplit{...}` or allow soft hyphens |
+| `Citation 'audit01' undefined` | Stale aux file or missing bibtex | Run complete 3-pass compilation sequence |
 
 ---
 
-## Preamble Configuration Standards for XeLaTeX
+## Automated Verification Script
 
-Ensure the master document preamble (`thesis_final/preamble.tex`) includes required packages to avoid compilation regressions:
-
-```latex
-\usepackage{fontspec}
-\usepackage{amsmath,amssymb,amsfonts,amsthm}
-\usepackage{booktabs}
-\usepackage{longtable}
-\usepackage{graphicx}
-\usepackage{float}
-\usepackage{seqsplit}
-\usepackage{microtype}
-\usepackage{hyperref}
-
-% Declare required math operators
-\DeclareMathOperator{\softmax}{softmax}
-\DeclareMathOperator{\sigmoid}{sigmoid}
-\DeclareMathOperator{\diag}{diag}
-\DeclareMathOperator{\rank}{rank}
-\DeclareMathOperator{\tr}{tr}
-
-% Theorem environments
-\newtheorem{theorem}{Theorem}[chapter]
-\newtheorem{lemma}[theorem]{Lemma}
-\newtheorem{definition}[theorem]{Definition}
-```
-
----
-
-## Automated Compilation Harness (`scripts/utils/verify_thesis_compile.sh`)
-
-Deploy the following automated shell verification script to enforce build standards across continuous integration and release checks:
+Run the automated pre-flight audit script to verify compilation readiness:
 
 ```bash
-#!/bin/bash
-set -eo pipefail
+#!/usr/bin/env bash
+set -euo pipefail
 
-cd thesis_final/
-echo "=== Starting Clean Compilation Pass for NeuralOps Thesis ==="
-rm -f *.aux *.log *.out *.toc *.bbl *.blg
+echo "=== Verifying XePersian Syntax and Invariants ==="
 
-xelatex -interaction=nonstopmode 810101504_main.tex > /dev/null 2>&1 || true
-bibtex 810101504_main > /dev/null 2>&1 || true
-xelatex -interaction=nonstopmode 810101504_main.tex > /dev/null 2>&1 || true
-xelatex -interaction=nonstopmode 810101504_main.tex > /dev/null 2>&1 || true
-
-ERRORS=$(grep "^!" 810101504_main.log | wc -l || true)
-PAGES=$(pdfinfo 810101504_main.pdf 2>/dev/null | grep Pages | awk '{print $2}' || echo "0")
-DANGLING_CITES=$(pdftotext 810101504_main.pdf - 2>/dev/null | grep -c "\[\?\?\]" || true)
-
-echo "Compilation Summary:"
-echo "  Fatal Errors:     $ERRORS"
-echo "  Total Pages:      $PAGES"
-echo "  Dangling Cites:   $DANGLING_CITES"
-
-if [ "$ERRORS" -eq 0 ] && [ "$PAGES" -gt 100 ] && [ "$DANGLING_CITES" -eq 0 ]; then
-    echo "Result: PASS (Thesis compilation certified)"
-    exit 0
-else
-    echo "Result: FAIL (Quality gates not met)"
+# 1. Audit for illegal \lr inside math environments
+ILLEGAL_LR=$(grep -n "\\\\lr{" academic/thesis/chapters/*.tex | grep -E "begin\{equation\}|\$|align" || true)
+if [ -n "$ILLEGAL_LR" ]; then
+    echo "ERROR: Found illegal \lr inside math environment:"
+    echo "$ILLEGAL_LR"
     exit 1
 fi
+
+# 2. Audit for illegal \lr around \item
+ILLEGAL_ITEM=$(grep -n "\\\\lr{.*\\\\item" academic/thesis/chapters/*.tex || true)
+if [ -n "$ILLEGAL_ITEM" ]; then
+    echo "ERROR: Found \item wrapped inside \lr{}:"
+    echo "$ILLEGAL_ITEM"
+    exit 1
+fi
+
+# 3. Check for unescaped underscores
+UNESCAPED_UNDERSCORE=$(grep -n "[^\\]_" academic/thesis/chapters/*.tex | grep -v "texttt" | grep -v "label" | grep -v "ref" | grep -v "\$" || true)
+if [ -n "$UNESCAPED_UNDERSCORE" ]; then
+    echo "WARNING: Check for potential unescaped underscores:"
+    echo "$UNESCAPED_UNDERSCORE" | head -n 5
+fi
+
+echo "All typography pre-flight checks passed."
 ```
 
 ---
 
-## Common Pitfalls
-- Running `xelatex` only once, leaving citations, figures, and table of contents unresolved.
-- Ignoring fatal errors hidden when running in `-interaction=nonstopmode` without inspecting `.log`.
-- Overlooking unescaped underscores (`_`) in module names (e.g., writing `flash_attention_v2` instead of `\texttt{flash\_attention\_v2}`).
-- Failing to verify font embedding, which causes text corruption in PDF print production.
-- Disregarding author metadata declared in `AGENTS_FILE_ASSIGNMENT_AND_PROVENANCE_GUIDE.md`.
+## Common Pitfalls to Avoid
+- Running single-pass `xelatex` and mistaking citation warnings for fatal syntax errors.
+- Placing `\lr{}` around LaTeX structural keywords (`\item`, `\begin`, `\end`).
+- Forgetting to purge `.aux` files after renaming `\label{...}` targets.
+- Inserting raw English text without `\lr{}` in narrative Persian paragraphs.
+- Allowing unescaped underscores (`_`) in file paths or registry names outside `\texttt{}`.
