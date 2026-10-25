@@ -1,0 +1,10 @@
+---
+trigger: pre_commit
+---
+# Pre-Commit Hook
+
+Before every commit:
+1. Run `python3 scripts/utils/verify_readme_counts.py`
+2. If output is not `131 / 72 / 26` → BLOCK the commit
+3. Run `ruff check neuralops/ scripts/ tests/` → must have 0 errors
+4. Run `mypy neuralops/core/` → must have 0 errors
