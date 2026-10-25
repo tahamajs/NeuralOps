@@ -1,0 +1,23 @@
+---
+description: Mandatory 5-condition quality gate and numerical tolerances for kernel verification.
+trigger: always_on
+globs: ["**/*"]
+---
+
+# NeuralOps Kernel Quality Standard
+
+## Kernel PASS Conditions
+
+A kernel is PASS only if ALL 5 conditions are met:
+
+1. `ref_ms >= 0.01` (real PyTorch baseline)
+2. `speedup >= 1.0x` (faster than PyTorch)
+3. `max_diff < 0.01` (FP16) or `< 1e-4` (FP32)
+4. `cuda_ms <= 20.0` (production latency)
+5. `not math.isnan(max_diff)`
+
+## Strict Prohibitions
+
+- **FORBIDDEN to weaken these thresholds**: Never relax numerical diff, speedup, or latency criteria to pass audits.
+- **FORBIDDEN to use Python loops in `_pytorch_ref` functions**: PyTorch baselines must be vectorized PyTorch operations representing real-world reference performance.
+- **FORBIDDEN to use `torch.eye(N)` as `inv_null_proj` in benchmarks**: Benchmarks must supply realistic projection matrices rather than identity dummy tensors.
