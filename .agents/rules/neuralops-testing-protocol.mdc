@@ -1,0 +1,22 @@
+---
+description: Mandatory test execution order, verification output evidence, and prohibition of skip masks.
+trigger: always_on
+globs: ["**/*"]
+---
+
+# NeuralOps Testing & Verification Protocol
+
+## Mandatory Test Execution Order
+
+Tests must be executed strictly in the following sequence on the remote test runner:
+
+1. `pytest tests/test_exhaustive_131_attentions_matrix.py -v` (1044 tests)
+2. `pytest tests/test_exhaustive_72_compressors_matrix.py -v` (504 tests)
+3. `pytest tests/test_exhaustive_26_triton_kernels_matrix.py -v` (68 tests)
+4. `pytest tests/test_hnc_svd_exhaustive.py -v` (74 tests)
+5. `pytest tests/ -q --ignore=tests/benchmarks` (full suite)
+
+## Verification Reporting Standards
+
+- **FORBIDDEN to claim "all tests pass" without raw output**: Unsubstantiated claims of success are strictly prohibited; raw execution logs must be presented.
+- **FORBIDDEN to use `pytest.skip()` or `pytest.xfail()` to hide failures**: All test suites must resolve cleanly without artificial skips masking underlying defects.
