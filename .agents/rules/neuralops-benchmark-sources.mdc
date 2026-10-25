@@ -1,0 +1,22 @@
+---
+description: Mandatory experiment ledger logging and prohibition of hardcoded paper table values.
+trigger: always_on
+globs: ["**/*"]
+---
+
+# NeuralOps Empirical Benchmark Data Ingestion & Ledger Sources
+
+## Benchmark Logging Requirement
+
+Every benchmark run **MUST** invoke `log_experiment_result()` from `neuralops.core.results_ledger`.
+
+Each ledger entry must rigorously record:
+- **`module_name`**, **`category`**, **`family`**
+- **`generation_method`** (`algorithm`, `source_script`, `source_artifact`)
+- **`experimental_setup`** (`hardware`, `dtype`, `batch_size`, `seq_len`)
+- **`metrics`** (`latency_ms`, `speedup`, `diff`, `accuracy`, `ppl`)
+
+## Paper Table Rules
+
+- **FORBIDDEN to hardcode results in `.tex` files**: No manual data entry or hardcoded numbers in LaTeX tables.
+- **All paper tables MUST be auto-generated from `master_ledger.sqlite` via `scripts/benchmarks/generate_all_paper_tables.py`**: Ensures reproducible and audit-traceable publications.
