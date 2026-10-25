@@ -1,0 +1,62 @@
+---
+description: Mandatory compliance with docs/thesis_agents specifications, agent guides, and Persian writing rules.
+trigger: always_on
+globs: ["**/*"]
+---
+
+# NeuralOps Thesis Agents Compliance and Writing Standards
+
+## 1. Absolute Compliance with `docs/thesis_agents/`
+Any AI coding agent or skill that authors, edits, refactors, audits, or verifies the thesis manuscript (`academic/thesis/810101504_main.tex` or `thesis_final/810101504_main.tex`), academic papers, or technical reports **MUST strictly read and obey** the dedicated agent guide files in `docs/thesis_agents/`:
+
+1. **`MASTER_DIVISION_OF_LABOR.md`**: Master division of labor, chapter boundaries, line-number ranges, and University of Tehran thesis standards.
+2. **`AGENTS_FILE_ASSIGNMENT_AND_PROVENANCE_GUIDE.md`**: Granular file assignments, audit source linkages, and output artifacts.
+3. **`PERSIAN_WRITING_RULES.md`**: Official XePersian academic writing rules, typography constraints, and macro conventions.
+4. **Agent-Specific Task Guides (`AGENT_01_*.md` through `AGENT_30_*.md`)**:
+   - `AGENT_01_CHAPTER_1_FOUNDATIONS.md`: Motivation, memory explosion formulas, memory wall, and KV cache saturation.
+   - `AGENT_02_CHAPTER_1_RQS_CONTRIBUTIONS.md`: Research questions (RQ1–RQ8), core hypotheses, and 6 canonical contributions.
+   - `AGENT_03_CHAPTER_2_SDPA_ROOFLINE.md`: Classic attention, FlashAttention tiling, and Williams Roofline modeling (183.1 FLOP/Byte).
+   - `AGENT_04_CHAPTER_2_SVD_CHOLESKY.md`: SVD theory, Eckart-Young-Mirsky theorem, and Cholesky covariance whitening.
+   - `AGENT_05_CHAPTER_2_ATTENTION_TAXONOMY.md`: Comprehensive classification of all 131 attention mechanisms across 7 families.
+   - `AGENT_06_CHAPTER_2_COMPRESSION_PARADIGMS.md`: Comprehensive classification of all 72 compression engines across 5 paradigms.
+   - `AGENT_07_CHAPTER_3_ARCHITECTURE_SURGERY.md`: The 7-layer stack, module isolation, and the 4-stage surgical transplant protocol.
+   - `AGENT_08_CHAPTER_3_DISPATCH_CORRECTNESS.md`: The 3-tier fallback dispatch contract (CUDA C++ $\rightarrow$ Triton JIT $\rightarrow$ PyTorch Reference).
+   - `AGENT_09_CHAPTER_3_EXPERIMENTAL_SETUP.md`: Hardware testbed (RTX 4070 SM 8.9), dataset ingestion, and quality gates.
+   - `AGENT_10_CHAPTER_3_THEOREMS_1_TO_5.md`: Formal analytical statements and proofs for Theorems 1 through 5.
+   - `AGENT_11_CHAPTER_3_THEOREMS_6_TO_10.md`: Formal analytical statements and proofs for Theorems 6 through 10.
+   - `AGENT_12_CHAPTER_4_MACRO_TELEMETRY.md`: Macro 203-module screening, Pareto frontiers, and speedup distributions.
+   - `AGENT_13_CHAPTER_4_ATTENTION_EVALUATION.md`: Empirical benchmark analysis across all 131 attention mechanisms.
+   - `AGENT_14_CHAPTER_4_COMPRESSION_DISTILLATION.md`: 5-stage ablation evaluation and 6-pillar distillation regimes (0–5).
+   - `AGENT_15_CHAPTER_4_KERNELS_SCALING.md`: Sequence length scaling ($N \in [128, 8192]$) and linear crossover dynamics.
+   - `AGENT_16_HARDWARE_FORENSICS_SAFETY.md`: The 6 deep hardware forensics case studies, root causes, and safety verifications.
+   - `AGENT_17_CHAPTER_5_SYNTHESIS_ANSWERS.md`: Empirical resolution and synthesis of research questions RQ1 through RQ8.
+   - `AGENT_18_CHAPTER_5_VALIDITY_ROADMAP.md`: The 7 threats to validity, code mitigations, and strategic engineering roadmap.
+   - `AGENT_19_APPENDICES_CATALOG_203.md`: Unabridged 203-module catalogs, 108 CUDA C++ kernel tables, and complete proofs.
+   - `AGENT_20_TYPOGRAPHY_COMPILATION_BIB.md`: XePersian gatekeeper, clean XeLaTeX compilation, and bibliography integrity.
+   - `AGENT_21_AUDIT01` to `AGENT_25_AUDIT05`: Audit file enrichment and forensic data synchronization.
+   - `AGENT_26_CHAPTER4_COMPRESSION_LATEX` to `AGENT_30_CHAPTER4_PRACTICAL_GUIDE`: LaTeX chapter tables, publication figures, and practical implementation guides.
+
+---
+
+## 2. Inviolable Persian Writing & XePersian Rules (`PERSIAN_WRITING_RULES.md`)
+
+When generating or editing Persian text in XePersian / XeLaTeX:
+
+1. **The `\lr{...}` Macro Contract**:
+   - **MUST USE** for: English framework/tool names (`\lr{PyTorch}`, `\lr{CUDA}`, `\lr{Triton}`, `\lr{NeuralOps}`), algorithm identifiers (`\lr{HNC-SVD}`, `\lr{SVD-LLM}`), English acronyms (`\lr{SST-2}`, `\lr{GLUE}`), and code variables in prose (`\lr{batch\_size}`).
+   - **STRICTLY FORBIDDEN** inside math mode: Never write `\text{\lr{Attention}}` or `\lr{Softmax}` in an equation or `\begin{equation}`. Use `\operatorname{Attention}` or `\operatorname{softmax}`.
+   - **STRICTLY FORBIDDEN** enclosing `\item`: Never wrap `\lr{\item ...}`. Always place `\lr{...}` inside the item text.
+2. **Zero-Width Non-Joiner (ZWNJ / نیم‌فاصله)**:
+   - Mandatory use of ZWNJ (`U+200C`) for plural suffixes and compound terms (`مدل‌های`, `کِرنل‌های`, `لایه‌ای`, `بهینه‌سازی`, `پیش‌رو`). Never join words into `مدلهای` or `بهینهسازی`.
+3. **Persian Digits & Percentage**:
+   - In narrative Persian text, use Persian numbers (**۱۳۱ مکانیزم توجه**, **۷۲ موتور فشرده‌سازی**).
+   - In tables, code blocks, formulas, and English text, use standard Latin/Arabic digits (`131`, `72`).
+   - Use the Persian percent symbol `٪` in Persian sentences, never English `%`.
+4. **Academic Terminology**:
+   - Use established Persian academic terms (جراحی مدل for model surgery, تقطیر دانش for knowledge distillation, سقف کارایی for roofline model, ردپای فعال‌سازی for activation footprint).
+
+---
+
+## 3. Provenance and Traceability Requirement
+- Every claim, theorem, formula, and table must match the assigned agent guidelines in `docs/thesis_agents/` and the underlying audit files (`AUDIT_01` through `AUDIT_05`).
+- Never improvise section numbering, theorem proofs, or variable names outside the canonical guide specifications.
