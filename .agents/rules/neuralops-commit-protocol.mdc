@@ -1,0 +1,25 @@
+---
+description: Standardized commit message format, verification checks, and remote worktree synchronization.
+trigger: always_on
+globs: ["**/*"]
+---
+
+# NeuralOps Git Commit & Synchronization Protocol
+
+## Commit Message Format
+
+Commit messages must strictly follow the conventional format:
+`<type>(<scope>): <description>`
+
+- **Types**: `feat`, `fix`, `perf`, `docs`, `test`, `refactor`, `chore`
+- **Scope**: `cuda`, `triton`, `attn`, `comp`, `surgery`, `ledger`, `benchmark`, `paper`
+- **Example**: `fix(cuda): eliminate NaN in selective_ssm via clamped exponent`
+
+## Pre-Commit and Post-Commit Requirements
+
+- **MUST run `verify_readme_counts.py` before commit**: Ensure canonical invariant counts match repository state.
+- **MUST push to `origin/main` after commit**: Keep remote central repository updated.
+- **MUST sync GPU worktrees**:
+  ```bash
+  ssh taha@192.168.1.100 "cd /mnt/d/SVD_Project && git fetch && git reset --hard origin/main"
+  ```
