@@ -59,15 +59,19 @@ Validates that every converted LaTeX table contains the exact number of rows pre
 - Unified Telemetry Table: Exactly 203 module rows.
 - CUDA Execution Table: Exactly 108 native kernel rows.
 
-### Check 3: Figure File Existence and Integrity
-Parses all `\includegraphics{figures/<filename>}` calls within the manuscript and verifies that each target file exists in `academic/thesis/figures/` and has non-zero size.
+### Check 3: Figure File Existence, Integration and Coverage
+Parses all `\includegraphics{...}` calls within the manuscript and verifies that:
+1. Every target file exists in `academic/thesis/figures/` or `academic/thesis/img/` and has non-zero size.
+2. The manuscript integrates the full suite of **25+ publication-grade figures** (including rooflines, Pareto curves, 3-level speedups, rank knee-point sweeps, and family architecture diagrams).
+3. Every figure is referenced by label in the body text (`شکل~\ref{fig:...}`) and followed by at least two paragraphs of deep mechanistic explanation.
 
-### Check 4: XePersian Syntax & Typography Compliance
-Per `docs/thesis_agents/PERSIAN_WRITING_RULES.md`:
-1. Zero instances of `\lr{}` inside mathematical environments (`equation`, `align`, `$ ... $`).
-2. Zero instances of `\lr{}` enclosing `\item`.
-3. Proper use of ZWNJ (نیم‌فاصله `U+200C`) in compound Persian words.
-4. English digits in tables and equations; Persian digits in narrative Persian text.
+### Check 4: XePersian Syntax & Table Digit Compliance
+Per `docs/thesis_agents/PERSIAN_WRITING_RULES.md` and user directives:
+1. **Zero Persian Digits in Table Cells**: All table cells containing numbers, percentages, speedup ratios, latencies, ranks, and dimensions MUST strictly use English digits in math mode `$ ... $` (e.g. `$94.50\%$`, `$1.74\times$`, `$0.0089\text{ ms}$`, `$r=32$`). Persian digits `[۰-۹]` in table cells are strictly prohibited to eliminate XePersian decimal point inversion and sign flipping.
+2. **Zero instances of `\lr{}` inside mathematical environments** (`equation`, `align`, `$ ... $`).
+3. **Zero instances of `\lr{}` enclosing `\item`**.
+4. **Proper use of ZWNJ (نیم‌فاصله `U+200C`)** in compound Persian words.
+5. **Persian digits in narrative Persian text** (e.g. فصل ۴، جدول ۱-۲); English math mode digits in tables, metrics, and equations.
 
 ### Check 5: Exclusion of Early Buggy Runs
 Asserts that no preliminary uncalibrated benchmark results (such as accuracy drops below 35% from unfrozen weights or 78.56% on raw RoBERTa checkpoints) are cited as valid system outcomes in the main thesis text.
@@ -77,6 +81,12 @@ Validates that repository registries remain untouched and perfectly synchronized
 - Exactly 131 attention mechanisms in `ATTENTION_REGISTRY`.
 - Exactly 72 compression engines in `COMPRESSOR_REGISTRY`.
 - Exactly 26 canonical modules in `neuralops/core/triton_kernels/`.
+
+### Check 7: Deep Mechanistic Reasoning and Physical Root Cause Analysis
+Verifies that no empirical table or figure exists as an unanalyzed data dump. Every result MUST be accompanied by substantive physical, algebraic, and microarchitectural explanations (e.g. SRAM vs DRAM rooflines, L2 cache overflow and thrashing, register pressure, condition numbers $\kappa(\mathbf{S}_X)$, Stiefel manifold retractions, and Cholesky whitening).
+
+### Check 8: Table Geometry and Zero Overfull \hbox Gate
+Verifies that wide tables (including Table 4.17 `tab:svd_rank_sweep_table`) utilize `\begin{tabularx}{\textwidth}{@{} ... X @{}}` with `\small` or `\footnotesize`, tuned `\tabcolsep`, and balanced `X` columns to guarantee zero margin overflow (`Zero Overfull \hbox`). Squeezing text into narrow fixed columns is strictly prohibited.
 
 ---
 

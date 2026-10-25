@@ -67,6 +67,17 @@ def export_publication_figure(fig, base_path: str):
 ### 3. Accessible Color Palettes
 Use ColorBrewer or Colorblind-safe palettes (e.g., `tab10`, `Set2`, or `viridis`). Never use indistinguishable red-green pairings for comparative baselines.
 
+### 4. Mandatory Mechanistic Reasoning and Descriptive Accompanying Text
+Never treat visualizations as standalone graphics. When embedding any scientific figure in the manuscript:
+- The figure MUST be referenced directly (`شکل~\ref{fig:...}`).
+- It MUST be accompanied by at least two to three substantive paragraphs of deep physical, algebraic, and microarchitectural explanation:
+  - *Hardware root cause*: DRAM memory bus bandwidth saturation, SRAM capacity limits, warp execution stalls, register spilling, and L2 cache overflows (e.g., Chunk GLA 48 MB footprint overflowing the 36 MB L2 cache on Ada Lovelace).
+  - *Mathematical foundations*: Singular value energy decay rates, condition number explosion ($\kappa \gg 10^5$), Stiefel manifold Riemannian retraction geometry, and Cholesky whitening pullback.
+  - *Ablation attribution*: Explicit causal linkage to the 6 pillars of surgical distillation and the 10 formal theorems.
+
+### 5. English Digits and Labels in All Visuals
+All axis numbers, coordinates, legend labels, and data points inside figures and accompanying LaTeX tables MUST use English digits in math mode `$ ... $`. Persian digits in table cells are strictly prohibited to avoid XePersian punctuation and decimal flipping.
+
 ---
 
 ## Verification

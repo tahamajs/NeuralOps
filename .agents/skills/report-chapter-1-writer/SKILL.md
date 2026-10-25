@@ -86,22 +86,32 @@ Guided by `docs/thesis_agents/AGENT_02_CHAPTER_1_RQS_CONTRIBUTIONS.md`:
 \small
 \caption{نگاشت سؤالات اصلی پژوهش به مأخذ ممیزی داده‌ها \cite{agents_guide}}
 \label{tab:ch1_rq_audit_map}
-\begin{tabular}{lll}
+\begin{tabularx}{\textwidth}{@{} l X l @{}}
 \toprule
 \textbf{سؤال پژوهش} & \textbf{هدف ارزیابی تجربی} & \textbf{مأخذ ممیزی} \\
 \midrule
-RQ1: شتاب گسیل سه‌سطحی & دستیابی به شتاب $\ge 1.0\times$ در ۲۰۳ ماژول & \texttt{AUDIT\_03} \\
-RQ2: آستانه عطف خطی & تعیین نقطه تقاطع در $N \approx 2048$ توکن & \texttt{AUDIT\_04} \\
-RQ3: بقای انرژی طیفی & حفظ انرژی بالای ۹۵٪ در نسبت رتبه ۰٫۵ & \texttt{AUDIT\_02} \\
-RQ4: هم‌افزایی تقطیر ۶ ستون & برتری نسبت به واگرایی تکی \lr{KL} & \texttt{AUDIT\_01} \\
-RQ5: مقیاس بافر حالت & اثبات حافظه ثابت $\mathcal{O}(1)$ در مدل‌های بازگشتی & \texttt{AUDIT\_04} \\
-RQ6: جراحی بدون آموزش مجدد & پیوند درجا با حفظ شباهت کسینوسی بالای ۰٫۹۸ & \texttt{AUDIT\_01} \\
-RQ7: اشباع سقف کارایی & دستیابی به سقف پهنای باند ۲۵۵٫۸ گیگابایت بر ثانیه & \texttt{AUDIT\_03} \\
-RQ8: بازتولیدپذیری جرم‌شناختی & ثبت ۲٬۴۳۲ اجرای تجربی با برچسب هش گیت & \texttt{AUDIT\_05} \\
+\lr{RQ1}: شتاب گسیل سه‌سطحی & دستیابی به شتاب $\ge 1.0\times$ در $203$ ماژول & \texttt{AUDIT\_03} \\
+\lr{RQ2}: آستانه عطف خطی & تعیین نقطه تقاطع در $N \approx 2048$ توکن & \texttt{AUDIT\_04} \\
+\lr{RQ3}: بقای انرژی طیفی & حفظ انرژی بالای $95\%$ در نسبت رتبه $0.5$ & \texttt{AUDIT\_02} \\
+\lr{RQ4}: هم‌افزایی تقطیر ۶ ستون & برتری نسبت به واگرایی تکی \lr{KL} & \texttt{AUDIT\_01} \\
+\lr{RQ5}: مقیاس بافر حالت & اثبات حافظه ثابت $\mathcal{O}(1)$ در مدل‌های بازگشتی & \texttt{AUDIT\_04} \\
+\lr{RQ6}: جراحی بدون آموزش مجدد & پیوند درجا با حفظ شباهت کسینوسی بالای $0.98$ & \texttt{AUDIT\_01} \\
+\lr{RQ7}: اشباع سقف کارایی & دستیابی به سقف پهنای باند $255.8\text{ GB/s}$ & \texttt{AUDIT\_03} \\
+\lr{RQ8}: بازتولیدپذیری جرم‌شناختی & ثبت $2432$ اجرای تجربی با برچسب هش گیت & \texttt{AUDIT\_05} \\
 \bottomrule
-\end{tabular}
+\end{tabularx}
 \end{table}
 ```
+
+### Mandatory Visual Analytics & Mechanistic Reasoning Mandate
+Every figure and table MUST be accompanied by at least two to three substantive paragraphs of deep physical, algebraic, and architectural reasoning:
+- **Root-Cause Hardware Analysis**: Detail microarchitectural stalls, SRAM capacity limits (e.g. 128 KB per SM), DRAM bandwidth bounds (e.g. 504 GB/s on RTX 4070), register spills, warp divergence, and L2 cache thrashing.
+- **Mathematical Invariant Explanations**: Detail condition number explosion ($\kappa(\mathbf{S}_X) \gg 10^5$), Stiefel manifold curvature, rank collapse dynamics, Fisher information pullback, and discrete recovery derivative $\Delta(r)$.
+- **Empirical Failure & Success Autopsies**: Explain exactly WHY an algorithm succeeded or failed at the hardware level, never merely reporting numbers without causal explanation.
+
+### Strict Table Formatting Standards (English Math-Mode Digits & Zero Overflow)
+- **Mandatory English Digits**: All digits, percentages, speedups, and dimensions in every table MUST be in English math mode `$ ... $` (e.g. `$94.50\%$`, `$1.74\times$`, `$0.0089\text{ ms}$`, `$34.80\%$`, `$r=32$`). Persian digits in table cells are strictly prohibited to prevent XePersian decimal point flipping and reversed negative signs.
+- **Widen Layout & Prevent Overflows**: Use `\begin{tabularx}{\textwidth}{@{} ... X @{}}` with `\small` or `\footnotesize`, adjust `\tabcolsep` (e.g. `4pt` or `4.5pt`), and use `\arraystretch{1.2}` to ensure tables never exceed the text margins (`Zero Overfull \hbox`).
 
 ### Section 1.5 — Summary of Key Contributions
 Guided by `docs/thesis_agents/AGENT_02_CHAPTER_1_RQS_CONTRIBUTIONS.md`:

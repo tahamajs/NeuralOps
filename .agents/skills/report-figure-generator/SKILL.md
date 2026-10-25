@@ -35,20 +35,48 @@ Figures must reflect canonical counts:
 
 ---
 
-## The 10 Mandatory Publication Figures (`AGENT_29_FIGURE_GENERATOR.md`)
+## Mandatory Visual Analytics & 25+ Publication Figures Standard
 
-According to `docs/thesis_agents/AGENT_29_FIGURE_GENERATOR.md`, the pipeline must output these 10 publication figures to `academic/thesis/figures/`:
+Per user directives and `docs/thesis_agents/COMPREHENSIVE_POLISH_AND_EXPANSION_SPECIFICATION.md`, the manuscript must incorporate **25+ publication-grade visual artifacts** across `academic/thesis/figures/` and `academic/thesis/img/`. Every figure float MUST be accompanied by at least two substantive paragraphs of deep mechanistic reasoning (microarchitectural bottlenecks, cache thrashing, register pressure, condition numbers, and Stiefel manifold geometry).
 
+### The Primary Vector Figures (`academic/thesis/figures/`):
 1. **Surgical Recovery Pipeline (`fig_ablation_pipeline_5step.pdf`)**: 5-step ablation bar chart ($90.25\% \rightarrow 51.30\% \rightarrow 78.40\% \rightarrow 84.60\% \rightarrow 86.80\% \rightarrow 89.40\%$).
 2. **HNC-SVD 4-Way Factorial Ablation (`fig_hnc_4way_ablation.pdf`)**: Grouped bar chart (4 rank groups $\times$ 4 methods) from `results/batch_validation/HNC_ABLATION_4WAY_REPORT.md`.
 3. **6-Pillar Recovery Cosine Similarity Heatmap (`fig_6pillar_heatmap.pdf`)**: $6 \times 6$ matrix showing cross-layer transfer fidelity.
-4. **FLA Scaling — Latency vs Sequence Length (`fig_fla_scaling.pdf`)**: Log-log scaling across $N \in [512, 16384]$ showing crossover at $N \approx 2048$.
-5. **Attention Family Radar Comparison (`fig_family_radar.pdf`)**: 7 families $\times$ 5 metrics normalized comparison.
-6. **203-Module Speedup Distribution (`fig_speedup_histogram.pdf`)**: Speedup histogram over PyTorch baselines.
-7. **Compression Pareto Frontier (`fig_pareto_compressor.pdf`)**: Latency vs accuracy trade-off surface.
-8. **Memory Scaling Trajectory (`fig_memory_scaling.pdf`)**: Sequence length $N$ vs peak VRAM allocation.
-9. **Singular Value Spectral Decay (`fig_spectral_decay.pdf`)**: SVD decay curves across factorized layers.
-10. **Williams Hardware Roofline (`fig_roofline_hardware.pdf`)**: Operational roofline on RTX 4070 SM 8.9.
+4. **Multi-Pillar Waterfall Chart (`fig_6pillar_ablation.pdf`)**: Step-by-step restoration trajectory across the 6 surgical pillars.
+5. **FLA Scaling — Latency vs Sequence Length (`fig_fla_scaling.pdf`)**: Log-log scaling across $N \in [512, 16384]$ showing crossover at $N \approx 2048$.
+6. **Head-to-Head Long-Context Scaling (`fig_fla_scaling_headtohead.pdf`)**: Sequence scaling extended up to $131\text{k}$ tokens.
+7. **Attention Family Radar Comparison (`fig_family_radar.pdf`)**: 7 families $\times$ 5 metrics normalized comparison.
+8. **203-Module Speedup Distribution (`fig_speedup_histogram.pdf`)**: Speedup histogram over PyTorch baselines.
+9. **Compression Pareto Frontier (`fig_pareto_compressor.pdf`)**: Latency vs accuracy trade-off surface.
+10. **3-Way Multi-Objective Pareto Frontier (`fig_pareto_accuracy_latency_vram.pdf`)**: 3D trade-off between Accuracy, Latency, and Peak VRAM.
+11. **WikiText-2 Perplexity Pareto Frontier (`fig_wikitext2_pareto_frontier.pdf`)**: PPL vs compression ratio on language modeling benchmarks.
+12. **Memory Scaling Trajectory (`fig_memory_scaling.pdf`)**: Sequence length $N$ vs peak VRAM allocation.
+13. **Singular Value Spectral Decay (`fig_spectral_decay.pdf`)**: SVD decay curves across factorized layers.
+14. **SVD Rank Sensitivity & Knee-Point Curve (`fig_rank_sweep_adasvd.pdf`)**: SST-2 accuracy vs rank $r \in [4, 128]$ validating the $r=32$ knee-point alongside Table 4.17.
+15. **Williams Hardware Roofline (`fig_roofline_hardware.pdf`)**: Operational roofline on RTX 4070 SM 8.9 (183.1 FLOP/Byte boundary).
+16. **3-Level Zero-Overhead Dispatch Hierarchy (`fig_3level_speedups_all18.pdf`)**: Level 1 (CUDA), Level 2 (Triton), and Level 3 (PyTorch) speedups across 18 benchmarked kernels.
+
+### Architectural Diagrams & Spectrograms (`academic/thesis/img/`):
+17. **Adaptive Span Attention (`img/AdaptiveSpanAttention.jpeg`)**: Dynamic recurrence windowing architecture.
+18. **Native Sparse Attention (`img/nsa_attention.jpeg`)**: Hierarchical block sparsity routing.
+19. **CHELA-SLAY Attention (`img/CHELA-SLAY.jpeg`)**: High-throughput linear recurrence design.
+20. **BAM-UMoE Architecture (`img/BAM-UMoE.jpeg`)**: Mixture of Experts attention integration.
+21. **Grouped Query Attention (`img/gqa_attn_new.png`)**: Key-Value head sharing geometry.
+22. **Jamba Hybrid Architecture (`img/jamba_info_arch.jpg`)**: Interleaved Transformer-Mamba structural blueprint.
+23. **Hymba TransX Architecture (`img/hymba_transx_arch.jpg`)**: Multi-head associative memory fusion.
+24. **Linformer Projection Architecture (`img/linformer.jpeg`)**: Low-rank spatial projection mechanism.
+25. **SVD Outlier Spectrum (`img/fig13_svd_spectrum.png`)**: Kurtosis and heavy-tail singular value distributions.
+26. **3D Linear Attention Geometry (`img/svd_linear_attention_3d.jpg`)**: Orthogonal phasor dynamics under RoPE rotations.
+
+### Mandatory Deep Mechanistic Reasoning Protocol
+Agents must NEVER insert figures as standalone decoration. Every single visual element MUST be bound to at least two substantive paragraphs answering:
+- **Microarchitectural Bottlenecks**: Explain memory bus saturation, L2 cache overflows (e.g. Chunk GLA 48 MB footprint overflowing 36 MB L2 cache), warp stalls, and register pressure.
+- **Mathematical Foundations**: Link observations to singular value decay rates $\sigma_i$, condition numbers $\kappa(\mathbf{S}_X)$, Stiefel manifold Riemannian retraction, and Cholesky whitening pullback.
+- **Theoretical Grounding**: Explicitly cite and correlate with the formal theorems and empirical audit data.
+
+### Mandatory English Digits in All Captions & Tables
+All axis numbers, coordinates, legend labels, and metrics in figures and tables MUST be in English. Table cells must strictly use English math mode `$ ... $`.
 
 ---
 

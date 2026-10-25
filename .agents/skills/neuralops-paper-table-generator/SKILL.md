@@ -32,6 +32,9 @@ Trigger before every academic paper or thesis submission to compile publication 
    ```bash
    grep -rnE "(TODO|TBD|\?\?\?)" paper/tables/*.tex || echo "All tables verified clean"
    ```
+   - **Mandatory English Math-Mode Digits**: All digits, percentages, speedups, and dimensions in tables MUST be formatted in English math mode `$ ... $` (e.g. `$94.50\%$`, `$1.74\times$`, `$0.0089\text{ ms}$`, `$34.80\%$`, `$r=32$`). Persian digits in table cells are strictly prohibited to avoid XePersian decimal point and sign flipping.
+   - **Zero Margin Overflow**: Tables must never exceed text margins (`Zero Overfull \hbox`). Use `\begin{tabularx}{\textwidth}{@{} ... X @{}}` with `\small` or `\footnotesize`, adjust `\tabcolsep` (e.g. `4pt` or `4.5pt`), and use `\arraystretch{1.2}`. Word squeezing in narrow columns is strictly prohibited.
+   - **Accompanying Mechanistic Reasoning**: Every table must be accompanied by at least two substantive paragraphs of deep physical, algebraic, and microarchitectural explanation (hardware bottlenecks, condition numbers, tensor core efficiency, cache behavior).
 4. **Compile Paper Manuscript**:
    Run `pdflatex` twice for reference convergence:
    ```bash

@@ -58,6 +58,10 @@ Structure empirical sections using the standard ML conference format:
 
 ### Step 3: Format LaTeX Tables and Figures
 Embed converted booktabs tables and dual-format PDF figures:
+- **Mandatory English Math-Mode Digits in Tables**: Every numerical cell, percentage, speedup factor, and dimension MUST be formatted in English math mode `$ ... $` (e.g. `$94.50\%$`, `$1.74\times$`, `$0.0089\text{ ms}$`, `$34.80\%$`, `$r=32$`). Zero Persian digits are allowed in table cells to prevent XePersian layout corruptions.
+- **Zero Margin Overflow**: Tables must never exceed text margins (`Zero Overfull \hbox`). Use `\begin{tabularx}{\textwidth}{@{} ... X @{}}` with `\small` or `\footnotesize`, adjust `\tabcolsep` (e.g. `4pt` or `4.5pt`), and use `\arraystretch{1.2}`. Word squeezing in narrow columns is strictly prohibited.
+- **Deep Mechanistic Reasoning**: Every table and figure float MUST be accompanied by at least two to three substantive paragraphs explaining microarchitectural causes (SRAM/DRAM bandwidth, warp occupancy, register pressure, cache thrashing) and mathematical foundations (condition numbers, singular value decay, Stiefel retractions).
+
 ```latex
 \begin{table}[H]
 \centering

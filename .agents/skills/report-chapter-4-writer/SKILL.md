@@ -59,7 +59,7 @@ Guided by `docs/thesis_agents/AGENT_13_CHAPTER_4_ATTENTION_EVALUATION.md`:
 Guided by `docs/thesis_agents/AGENT_14_CHAPTER_4_COMPRESSION_DISTILLATION.md` and `AGENT_26`:
 - Detail the multi-stage compression ablation study and distillation recovery progression:
 - **Table 4.3**: 5-stage architectural ablation table (Baseline, SVD Truncation, Whitening, Ridge Calibration, Distillation Healing).
-- **Table 4.4**: Systematic evaluation across KD Regimes 0 through 5:
+- **Table 4.4**: Systematic evaluation across KD Regimes 0 through 5 (All numbers MUST be English math-mode digits):
 
 ```latex
 \begin{table}[H]
@@ -71,12 +71,12 @@ Guided by `docs/thesis_agents/AGENT_14_CHAPTER_4_COMPRESSION_DISTILLATION.md` an
 \toprule
 \textbf{رژیم تقطیر} & \textbf{ستون‌های فعال تابع زیان} & \textbf{دقت (٪)} & \textbf{\lr{PPL}} & \textbf{بقای کارایی} & \textbf{مأخذ} \\
 \midrule
-رژیم ۰ & برش ساده بدون وزن‌دهی & ۵۲٫۰۶ & ۲۸٫۴ & ۵۷٫۸٪ & \texttt{AUDIT\_01} \\
-رژیم ۱ & واگرایی \lr{KL} لاجیت‌ها & ۶۱٫۴۲ & ۲۲٫۱ & ۶۸٫۱٪ & \texttt{AUDIT\_01} \\
-رژیم ۲ & + خطای میانگین مربعات ویژگی‌ها & ۶۶٫۸۵ & ۱۸٫۷ & ۷۴٫۲٪ & \texttt{AUDIT\_01} \\
-رژیم ۳ & + شباهت کسینوسی نقشه‌های توجه & ۶۹٫۹۰ & ۱۶٫۵ & ۷۷٫۵٪ & \texttt{AUDIT\_01} \\
-رژیم ۴ & + زیان طیفی مقادیر تکین $\mathcal{L}_{\sigma}$ & ۷۱٫۸۴ & ۱۵٫۲ & ۷۹٫۷٪ & \texttt{AUDIT\_01} \\
-رژیم ۵ & + تراز کوواریانس و تباینی & ۷۳٫۶۲ & ۱۴٫۱ & ۸۱٫۷٪ & \texttt{AUDIT\_01} \\
+رژیم ۰ & برش ساده بدون وزن‌دهی & $52.06\%$ & $28.4$ & $57.8\%$ & \texttt{AUDIT\_01} \\
+رژیم ۱ & واگرایی \lr{KL} لاجیت‌ها & $61.42\%$ & $22.1$ & $68.1\%$ & \texttt{AUDIT\_01} \\
+رژیم ۲ & + خطای میانگین مربعات ویژگی‌ها & $66.85\%$ & $18.7$ & $74.2\%$ & \texttt{AUDIT\_01} \\
+رژیم ۳ & + شباهت کسینوسی نقشه‌های توجه & $69.90\%$ & $16.5$ & $77.5\%$ & \texttt{AUDIT\_01} \\
+رژیم ۴ & + زیان طیفی مقادیر تکین $\mathcal{L}_{\sigma}$ & $71.84\%$ & $15.2$ & $79.7\%$ & \texttt{AUDIT\_01} \\
+رژیم ۵ & + تراز کوواریانس و تباینی & $73.62\%$ & $14.1$ & $81.7\%$ & \texttt{AUDIT\_01} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -87,6 +87,17 @@ Guided by `docs/thesis_agents/AGENT_14_CHAPTER_4_COMPRESSION_DISTILLATION.md` an
   - Figure 4.4: KD regime comparative bar chart (`fig_ablation_pipeline_5step.pdf`).
   - Figure 4.5: RoBERTa compression rank decay curve (`fig_hnc_4way_ablation.pdf`).
   - Figure 4.6: Distillation transfer fidelity heatmap (`fig_6pillar_heatmap.pdf`).
+
+### Mandatory Visual Analytics & Mechanistic Reasoning Mandate
+Every figure and table MUST be accompanied by at least two to three substantive paragraphs of deep physical, algebraic, and architectural reasoning:
+- **Root-Cause Hardware Analysis**: Detail microarchitectural stalls, SRAM capacity limits (e.g. 128 KB per SM), DRAM bandwidth bounds (e.g. 504 GB/s on RTX 4070), register spills, warp divergence, and L2 cache thrashing (e.g. Chunk GLA 48 MB footprint overflowing the 36 MB hardware cache).
+- **Mathematical Invariant Explanations**: Detail condition number explosion ($\kappa(\mathbf{S}_X) \gg 10^5$), Stiefel manifold curvature, rank collapse dynamics, Fisher information pullback, and discrete recovery derivative $\Delta(r)$.
+- **Empirical Failure & Success Autopsies**: Explain exactly WHY an algorithm succeeded or failed at the hardware level, never merely reporting numbers without causal explanation.
+
+### Strict Table Formatting Standards (English Math-Mode Digits & Zero Overflow)
+- **Mandatory English Digits**: All digits, percentages, speedups, and dimensions in every table MUST be in English math mode `$ ... $` (e.g. `$94.50\%$`, `$1.74\times$`, `$0.0089\text{ ms}$`, `$34.80\%$`, `$r=32$`). Persian digits in table cells are strictly prohibited to prevent XePersian decimal point flipping and reversed negative signs.
+- **Widen Layout & Prevent Overflows**: Use `\begin{tabularx}{\textwidth}{@{} ... X @{}}` with `\small` or `\footnotesize`, adjust `\tabcolsep` (e.g. `4pt` or `4.5pt`), and use `\arraystretch{1.2}` to ensure tables never exceed the text margins (`Zero Overfull \hbox`).
+- **Beautification**: Use clean `booktabs` rules (`\toprule`, `\midrule`, `\bottomrule`) with centered numerical columns and left-aligned text descriptions.
 
 ### Section 4.4 — Kernel Sequence Length Scaling Dynamics
 Guided by `docs/thesis_agents/AGENT_15_CHAPTER_4_KERNELS_SCALING.md` and `AGENT_27`:

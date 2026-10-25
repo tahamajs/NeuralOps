@@ -40,7 +40,7 @@ The appendices serve as the exhaustive reference ledger for the manuscript, draw
 Target: `academic/thesis/chapter_all_modules_appendix.tex` (`app:all_131_attentions`).
 - Compile every single registered attention operator into a multi-page LaTeX `longtable`.
 - **Table A.1**: Must contain exactly 131 rows without omissions. Every row must present:
-  1. Persian row number (۱ تا ۱۳۱).
+  1. Row index in English math mode (`$1$` to `$131$`).
   2. Canonical Module Name wrapped in `\lr{\texttt{...}}`.
   3. Architectural Family (Exact Softmax, Recurrent SSM, Linear, Low-Rank, Sparse, Differential, Hybrid).
   4. Time Complexity in standard math mode ($\mathcal{O}(N^2 d)$ or $\mathcal{O}(N d)$).
@@ -70,26 +70,32 @@ Target: `academic/thesis/chapter_all_modules_appendix.tex` (`app:all_131_attenti
 \bottomrule
 \endlastfoot
 
-۱  & \lr{\texttt{flash\_attention\_3}} & \lr{Fused}    & $\mathcal{O}(N^2 d)$   & $\mathcal{O}(N d)$ & \lr{PASS\_FAST} & \lr{Native CUDA} \\
-۲  & \lr{\texttt{cosformer}}          & \lr{Linear}   & $\mathcal{O}(N d^2)$   & $\mathcal{O}(N d)$ & \lr{PASS\_FAST} & \lr{Triton JIT} \\
-۳  & \lr{\texttt{gated\_delta\_net}}   & \lr{SSM}      & $\mathcal{O}(N d)$     & $\mathcal{O}(N d)$ & \lr{PASS\_FAST} & \lr{Triton JIT} \\
-۴  & \lr{\texttt{native\_sparse\_attn}}& \lr{Sparse}   & $\mathcal{O}(N \sqrt{N})$ & $\mathcal{O}(N k)$ & \lr{PASS\_FAST} & \lr{Native CUDA} \\
-۵  & \lr{\texttt{deepseek\_mla}}       & \lr{Low-Rank} & $\mathcal{O}(N r d)$   & $\mathcal{O}(N r)$ & \lr{PASS\_SLOW} & \lr{PyTorch} \\
+$1$  & \lr{\texttt{flash\_attention\_3}} & \lr{Fused}    & $\mathcal{O}(N^2 d)$   & $\mathcal{O}(N d)$ & \lr{PASS\_FAST} & \lr{Native CUDA} \\
+$2$  & \lr{\texttt{cosformer}}          & \lr{Linear}   & $\mathcal{O}(N d^2)$   & $\mathcal{O}(N d)$ & \lr{PASS\_FAST} & \lr{Triton JIT} \\
+$3$  & \lr{\texttt{gated\_delta\_net}}   & \lr{SSM}      & $\mathcal{O}(N d)$     & $\mathcal{O}(N d)$ & \lr{PASS\_FAST} & \lr{Triton JIT} \\
+$4$  & \lr{\texttt{native\_sparse\_attn}}& \lr{Sparse}   & $\mathcal{O}(N \sqrt{N})$ & $\mathcal{O}(N k)$ & \lr{PASS\_FAST} & \lr{Native CUDA} \\
+$5$  & \lr{\texttt{deepseek\_mla}}       & \lr{Low-Rank} & $\mathcal{O}(N r d)$   & $\mathcal{O}(N r)$ & \lr{PASS\_SLOW} & \lr{PyTorch} \\
 % ... تمام ۱۳۱ ردیف باید درج گردند
 \end{longtable}
 ```
+
+### Strict Quality Standards: Digits, Overflows & Monographs
+1. **Mandatory English Math-Mode Digits**: Every number, index, latency, speedup, accuracy, and VRAM quantity across all appendix tables MUST be written in English digits in math mode `$ ... $` (e.g. `$1$`, `$131$`, `$94.50\%$`, `$1.74\times$`, `$0.0089\text{ ms}$`).
+2. **Zero Overfull \hbox**: Wide tables must use `\begin{tabularx}{\textwidth}{@{} ... X @{}}` with `\small` or `\footnotesize` and `\tabcolsep` tuning to eliminate text wrapping failures and margin overflows.
+3. **Attention & Compressor Monographs**: Half-page structured analytical monographs for archetypal modules covering exact formulations, asymptotic complexities, KV-cache scaling footprints, SRAM/DRAM suitability, and empirical ablation profiles.
+4. **Deep Mechanistic Reasoning**: Extensive physical and microarchitectural analysis explaining the root causes behind runtime behaviors.
 
 ### Appendix B — The Master 72-Model Compressor Catalog (Agent 19)
 Target: `academic/thesis/chapter_all_modules_appendix.tex` (`app:all_72_compressors`).
 - Compile all 72 registered post-training model compression engines.
 - **Table B.1**: Must contain exactly 72 rows without truncation. Every row must detail:
-  1. Persian row number (۱ تا ۷۲).
+  1. Row index in English math mode (`$1$` to `$72$`).
   2. Engine Identifier in `\lr{\texttt{...}}`.
   3. Compression Paradigm (Low-Rank, Pruning, Quantization, Distillation, Hybrid).
-  4. Compression Factor ($2.00\times$, $4.00\times$, $8.00\times$).
-  5. Post-transplant relative weight reconstruction error ($\|\mathbf{W} - \widehat{\mathbf{W}}\|_F$).
-  6. Calibration time in seconds.
-  7. Downstream SST-2 recovery accuracy (excluding raw uncalibrated runs).
+  4. Compression Factor in English math mode ($2.00\times$, $4.00\times$, $8.00\times$).
+  5. Post-transplant relative weight reconstruction error in English math mode ($\|\mathbf{W} - \widehat{\mathbf{W}}\|_F$, e.g. `$0.0421$`).
+  6. Calibration time in seconds in English math mode (e.g. `$45.2\text{ s}$`).
+  7. Downstream SST-2 recovery accuracy in English math mode (e.g. `$89.40\%$`).
 
 ```latex
 \chapter{پیوست ب: کاتالوگ جامع ۷۲ موتور فشرده‌سازی مدل}

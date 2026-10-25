@@ -122,8 +122,10 @@ Typeset all proofs with complete step-by-step mathematical reasoning. Never stat
 ### Step 4: Verification and Quality Gate Inspection
 1. Confirm zero fatal errors under XeLaTeX compilation (`grep "^!" 810101504_main.log | wc -l` $= 0$).
 2. Confirm zero instances of unresolved citations (`[?]`) or missing references (`??`).
-3. Verify that all 10 figures exist as valid PDF files in `academic/thesis/figures/`.
-4. Ensure full compliance with the 30-agent responsibility matrix.
+3. Verify that all 25+ publication-grade vector figures exist as valid PDF/PNG files in `academic/thesis/figures/` and `academic/thesis/img/` and are fully embedded in the text.
+4. Ensure all tables strictly format numbers, percentages, speedups, and dimensions in English math mode `$ ... $` (e.g. `$94.50\%$`, `$1.74\times$`, `$34.80\%$`, `$0.0089$`) and use `tabularx` with `\small` / `\footnotesize` to guarantee zero `Overfull \hbox`.
+5. Ensure every table and figure is accompanied by at least two substantive paragraphs of deep mechanistic reasoning and physical/algebraic explanation.
+6. Ensure full compliance with the 30-agent responsibility matrix and attention monograph standards.
 
 Run this pre-commit thesis validation script:
 ```bash
@@ -140,12 +142,56 @@ grep -n "\\\\lr{" academic/thesis/chapters/*.tex | grep -E "begin\{equation\}|\$
     exit 1
 } || echo "PASS: Math environments clean."
 
-# Check 3: Check all 13 chapter subfiles
+# Check 3: Check all chapter subfiles
 for f in academic/thesis/chapters/*.tex; do
     [ -s "$f" ] || { echo "ERROR: Empty file $f"; exit 1; }
 done
-echo "PASS: All 13 chapter subfiles present and non-empty."
+echo "PASS: All chapter subfiles present and non-empty."
+
+# Check 4: Check for bare numbers in tables
+python3 -c "
+import re, glob
+for path in glob.glob('academic/thesis/chapters/*.tex') + glob.glob('academic/thesis/*.tex'):
+    with open(path) as f: content = f.read()
+    # Check tabular environments for unescaped bare digits
+    tables = re.findall(r'\\\\begin\{tabular.*?}(.*?)\\\\end\{tabular.*?}', content, re.DOTALL)
+    for i, t in enumerate(tables):
+        persian_digits = re.findall(r'[۰-۹]', t)
+        if len(persian_digits) > 5:
+            print(f'WARNING: {path} table {i} contains {len(persian_digits)} Persian digits. Convert to English math mode $...$!')
+"
 ```
+
+---
+
+## Strict Visualization, Mechanistic Reasoning & Table Formatting Standards
+
+### 1. High-Density Publication Visualizations (Minimum 25+ Figures)
+Agents must actively integrate publication-grade charts from `academic/thesis/figures/` and `academic/thesis/img/`:
+- **Chapter 1**: 5-step surgery pipeline (`fig_ablation_pipeline_5step.pdf`), memory wall $O(N^2)$ growth curves.
+- **Chapter 2**: Williams Roofline model on RTX 4070 SM 8.9 (`fig_roofline_hardware.pdf`), SVD singular value decay and outlier kurtosis (`img/fig13_svd_spectrum.png`), RoPE phasor rotation geometry (`img/svd_linear_attention_3d.jpg`).
+- **Chapter 3**: 7-layer architecture stack, 4-stage surgery pipeline, 3-level zero-overhead dispatch hierarchy (`fig_3level_speedups_all18.pdf`), Stiefel manifold Riemannian retraction geometry.
+- **Chapter 4**: SVD rank knee-point curve with Table 4.17 (`fig_rank_sweep_adasvd.pdf`), WikiText-2 Perplexity Pareto Frontier (`fig_wikitext2_pareto_frontier.pdf`), 5D Family Radar chart (`fig_family_radar.pdf`), 3-way Pareto Frontier (`fig_pareto_accuracy_latency_vram.pdf`), 36-cell ablation heatmap (`fig_6pillar_heatmap.pdf`), Multi-Pillar Waterfall chart (`fig_6pillar_ablation.pdf`), sequence scaling up to 131k tokens (`fig_fla_scaling_headtohead.pdf`).
+- **Chapter 5**: Chunk GLA L2 cache thrashing vs dynamic chunking autopsy, RQ1-RQ8 multi-radar synthesis.
+- **Appendices**: Architecture diagrams for all 7 attention families (`img/AdaptiveSpanAttention.jpeg`, `img/nsa_attention.jpeg`, `img/CHELA-SLAY.jpeg`, `img/BAM-UMoE.jpeg`, `img/gqa_attn_new.png`, `img/jamba_info_arch.jpg`, `img/hymba_transx_arch.jpg`, `img/linformer.jpeg`).
+
+### 2. Deep Mechanistic Reasoning Mandate
+Never present figures or tables as isolated empirical outputs. Every table and figure MUST be accompanied by at least two detailed paragraphs answering:
+- **Root Cause & Physics**: What microarchitectural stalls (DRAM bandwidth bound, SRAM capacity, register pressure, cache thrashing) or mathematical invariants (Eckart-Young-Mirsky failure, condition number explosion $\kappa \gg 10^5$, Stiefel orthogonality) govern this behavior?
+- **Theoretical Linkage**: Connect the empirical numbers directly to the 10 formal theorems and 27 lemmas in Chapter 3.
+- **Engineering Implications**: What concrete design choices, ridge points, or fallback decisions arise from this result?
+
+### 3. Strict Table Formatting Contract (English Digits & No Margin Overflows)
+- **Mandatory English Digits**: Every number, percentage, ratio, and dimension inside any LaTeX table MUST be written in English digits in math mode `$ ... $` (e.g. `$94.50\%$`, `$93.12\%$`, `$1.74\times$`, `$0.0089\text{ ms}$`, `$34.80\%$`).
+- **No Margin Overflow**: Wide tables must use `\begin{tabularx}{\textwidth}{@{} ... X @{}}` with `\small` or `\footnotesize`, `\setlength{\tabcolsep}{...}`, and `\renewcommand{\arraystretch}{1.2}`. Word squeezing in narrow columns is strictly prohibited.
+
+### 4. Attention Mechanisms Monograph Mandate
+In Chapter 2 and Appendix A, all 131 attention mechanisms across the 7 families must be systematically covered, with deep half-page architectural monographs for key archetypes detailing:
+- Exact mathematical formulation ($\mathbf{Q}, \mathbf{K}, \mathbf{V}$ transformations and attention score calculation).
+- Asymptotic time and memory complexity ($\mathcal{O}(N^2)$ vs $\mathcal{O}(N \cdot d)$ vs $\mathcal{O}(N)$).
+- KV-cache footprint scaling across sequence lengths $N \in [512, 131072]$.
+- Microarchitectural suitability: SRAM-bound vs DRAM-bound vs L2-cache resident.
+- Empirical classification accuracy on SST-2 and perplexity on WikiText-2.
 
 ---
 

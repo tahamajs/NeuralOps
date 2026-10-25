@@ -90,6 +90,17 @@ Target: `academic/thesis/chapters/chapter02_theory_part2.tex` (`sec:compression_
   5. **Hybrid Low-Rank Quantization (6 engines)**: Q-SVD, SpinQuant Factorization, Low-Rank Plus Sparse (L+S) Decomposition.
 - **Table 2.3**: Full 72-row compression engine taxonomy table with formal compression ratios and calibration requirements.
 
+### Mandatory Visual Analytics & Mechanistic Reasoning Mandate
+Every figure and table MUST be accompanied by at least two to three substantive paragraphs of deep physical, algebraic, and architectural reasoning:
+- **Root-Cause Hardware Analysis**: Detail microarchitectural stalls, SRAM capacity limits (e.g. 128 KB per SM), DRAM bandwidth bounds (e.g. 504 GB/s on RTX 4070), register spills, warp divergence, and L2 cache thrashing.
+- **Mathematical Invariant Explanations**: Detail condition number explosion ($\kappa(\mathbf{S}_X) \gg 10^5$), Stiefel manifold curvature, rank collapse dynamics, Fisher information pullback, and discrete recovery derivative $\Delta(r)$.
+- **Empirical Failure & Success Autopsies**: Explain exactly WHY an algorithm succeeded or failed at the hardware level, never merely reporting numbers without causal explanation.
+
+### Strict Table Formatting Standards (English Math-Mode Digits & Zero Overflow)
+- **Mandatory English Digits**: All digits, percentages, speedups, and dimensions in every table MUST be in English math mode `$ ... $` (e.g. `$94.50\%$`, `$1.74\times$`, `$0.0089\text{ ms}$`, `$34.80\%$`, `$r=32$`). Persian digits in table cells are strictly prohibited to prevent XePersian decimal point flipping and reversed negative signs.
+- **Widen Layout & Prevent Overflows**: Use `\begin{tabularx}{\textwidth}{@{} ... X @{}}` with `\small` or `\footnotesize`, adjust `\tabcolsep` (e.g. `4pt` or `4.5pt`), and use `\arraystretch{1.2}` to ensure tables never exceed the text margins (`Zero Overfull \hbox`).
+- **Attention Mechanisms Monograph**: Systematically present formulations, asymptotic complexities ($\mathcal{O}(N^2)$ vs $\mathcal{O}(N)$), KV-cache footprint scaling, SRAM/DRAM suitability, and empirical ablation behavior for all 7 families.
+
 ---
 
 ## Persian Typography and XePersian Rules

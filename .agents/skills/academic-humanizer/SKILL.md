@@ -46,11 +46,18 @@ LLMs frequently overuse compound balanced parallelism. Break these into clear, d
 - *AI Formulation*: "Not only does HNC-SVD achieve significant parameter reduction, but it also preserves downstream task accuracy."
 - *Humanized Version*: "HNC-SVD reduces model parameters by $2.0\times$ while maintaining $73.62\%$ accuracy on RoBERTa-base SST-2 \cite{audit01}."
 
-### 3. Absolute Protection of Numerical Precision
+### 3. Absolute Protection of Numerical Precision and English Table Digits
 Never allow stylistic smoothing to round or blur exact metrics:
 - Retain exact decimal precision: `73.62%` (never round to `73.6%` or `74%`).
 - Retain exact timing measurements: `0.421 ms` (never round to `0.4 ms`).
 - Retain exact speedup factors: `3.12x` (never approximate as `over 3x`).
+- **Mandatory English Math-Mode Digits in Tables**: In all tables refined by this skill, numbers, percentages, speedups, and dimensions MUST strictly use English math mode `$ ... $` (e.g. `$94.50\%$`, `$1.74\times$`, `$0.0089\text{ ms}$`). Persian digits in table cells are strictly prohibited to prevent XePersian sign and decimal flipping.
+
+### 4. Deep Mechanistic Expansion (Anti-Summarization Mandate)
+Humanizing does NOT mean shortening or writing shallow summaries. The user demands comprehensive depth, rigorous scientific argumentation, and detailed prose:
+- Never reduce a technical description to a high-level sentence.
+- Provide deep physical, algebraic, and microarchitectural explanations (cache hierarchy, memory bandwidth bounds, register pressure, condition numbers, Stiefel manifold Riemannian retractions).
+- Accompany every table and figure with at least two to three substantive paragraphs of deep causal reasoning.
 
 ---
 

@@ -47,9 +47,18 @@ Strip away colloquial conversational filler and generic buzzwords:
 - Banned: "It is crucial to note that", "delve into", "testament to", "game-changing".
 - Preferred: "Empirical telemetry indicates", "Table 4.1 details", "As demonstrated in \cite{audit01}".
 
-### 3. Rigorous Notation and Unit Typesetting
+### 3. Rigorous Notation, Unit Typesetting, and Table English Digits
 - Use standard math mode for symbols and italicized dimensions: $N \in [128, 8192]$, $B=16$, $d=64$.
 - Use explicit non-breaking thin spaces between numbers and SI units: `2.4\,\text{GB}`, `0.421\,\text{ms}`, `255.8\,\text{GB/s}`.
+- **Mandatory English Math-Mode Digits in Tables**: All digits, percentages, speedups, and dimensions in tables MUST be formatted in English math mode `$ ... $` (e.g. `$94.50\%$`, `$1.74\times$`, `$0.0089\text{ ms}$`, `$34.80\%$`, `$r=32$`). Persian digits in table cells are strictly prohibited to prevent decimal point inversion and sign flipping in XePersian.
+- **Zero Table Overflow & Widen Layout**: Ensure tables fit within page margins (`Zero Overfull \hbox`) by using `tabularx` with `X` columns, `\small` or `\footnotesize`, and adjusted `\tabcolsep`.
+
+### 4. Mandatory Visual Analytics & Deep Mechanistic Reasoning
+- **Dense Scientific Figures**: Manuscripts must feature high-density visual analytics (Pareto frontiers, rooflines, scaling plots, speedup histograms, radar charts, loss/perplexity landscapes, memory allocation heatmaps) from `academic/thesis/figures/` and `academic/thesis/img/`.
+- **Deep Mechanistic Reasoning**: Every figure and table MUST be accompanied by at least two to three substantive paragraphs of deep physical, algebraic, and microarchitectural reasoning:
+  - *Hardware physics*: SRAM/DRAM bandwidth, register pressure (e.g. 80 registers/thread reducing warp occupancy in FP8), cache thrashing (Chunk GLA 48 MB footprint overflowing 36 MB L2 cache), memory bus transaction coalescing.
+  - *Mathematical geometry*: Stiefel manifold Riemannian retraction, condition number explosion ($\kappa(\mathbf{S}_X) \gg 10^5$), Cholesky whitening pullback, discrete recovery derivative $\Delta(r)$, rank collapse bounds.
+  - *Causal attribution*: Never state raw empirical numbers without explaining the underlying physical and mathematical causes.
 
 ---
 

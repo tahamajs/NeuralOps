@@ -33,6 +33,14 @@ Audits must enforce canonical counts:
 
 ---
 
+## Strict Audit Gates: Visuals, Tables & Mechanistic Reasoning
+1. **Mandatory English Math-Mode Digits in Tables**: Every numeric entry, percentage, speedup ratio, parameter count, and dimension in all tables MUST be in English math mode `$ ... $` (e.g. `$94.50\%$`, `$1.74\times$`, `$0.0089\text{ ms}$`, `$34.80\%$`, `$r=32$`). Zero Persian digits are permitted in table cells.
+2. **Zero Margin Overflow**: Tables must fit within text margins (`Zero Overfull \hbox`). Validate use of `tabularx` with `X` columns, `\small` or `\footnotesize`, and adjusted `\tabcolsep`.
+3. **High-Density Visual Analytics**: Audits must ensure inclusion of publication-grade charts from `academic/thesis/figures/` (Pareto frontiers, rooflines, scaling plots, heatmaps, radars).
+4. **Deep Mechanistic Reasoning**: Every figure and table MUST be accompanied by at least two to three substantive paragraphs of deep physical, algebraic, and microarchitectural reasoning (SRAM/DRAM bandwidth, register pressure, cache thrashing, Stiefel manifold curvature, condition numbers).
+
+---
+
 ## Numerical Verification Engine
 
 Run the following automated claim auditor across the manuscript:

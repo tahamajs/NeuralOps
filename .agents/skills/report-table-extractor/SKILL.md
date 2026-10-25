@@ -116,8 +116,10 @@ fused_layernorm & Triton JIT & 0.095 & 0.084 & 0.310 & 3.69$\times$ \\
 2. **Mandatory Provenance Column**: Every table must cite its origin audit document (`\texttt{AUDIT_01}` through `\texttt{AUDIT_05}`).
 3. **Exact Numeric Precision**: Precision must be preserved down to the last decimal digit (never round 93.12% to 93%).
 4. **No Vertical Lines**: Strict adherence to the `booktabs` standard (`\toprule`, `\midrule`, `\bottomrule`).
-5. **English Digits in Tables**: Numeric metrics in tabular cells must be in English characters (`93.12%`), while Persian captions describe the contents.
-6. **No Early Buggy Runs**: Never transcribe flawed preliminary runs (<35% accuracy, uncalibrated checkpoints).
+5. **Mandatory English Math-Mode Digits**: Numeric metrics in tabular cells must be in English digits in math mode `$ ... $` (e.g. `$93.12\%$`, `$1.74\times$`, `$0.0089\text{ ms}$`, `$34.80\%$`, `$r=32$`), while Persian captions describe the contents. Persian digits in table cells are strictly prohibited to avoid XePersian decimal point and sign flipping.
+6. **Zero Margin Overflow**: Tables must never exceed text margins (`Zero Overfull \hbox`). Use `\begin{tabularx}{\textwidth}{@{} ... X @{}}` with `\small` or `\footnotesize`, adjust `\tabcolsep` (e.g. `4pt` or `4.5pt`), and use `\arraystretch{1.2}`. Word squeezing in narrow columns is strictly prohibited.
+7. **Accompanying Mechanistic Reasoning**: Every table must be accompanied by at least two substantive paragraphs of deep physical, algebraic, and microarchitectural explanation (hardware bottlenecks, condition numbers, tensor core efficiency, cache behavior).
+8. **No Early Buggy Runs**: Never transcribe flawed preliminary runs (<35% accuracy, uncalibrated checkpoints).
 
 ---
 

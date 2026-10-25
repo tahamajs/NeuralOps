@@ -69,6 +69,13 @@ def plot_roofline(output_path: str):
     plt.savefig(f"{output_path}.pdf", format="pdf")
     plt.savefig(f"{output_path}.png", format="png", dpi=300)
     plt.close()
+
+### 3. Mandatory Mechanistic Reasoning and Text Accompanying Roofline Visuals
+Every roofline figure embedded in the thesis (such as `fig_roofline_hardware.pdf`) MUST be accompanied by at least two substantive analytical paragraphs answering:
+- **Bandwidth Saturation & Memory Wall**: Why all 131 attention mechanisms operate strictly below the $I_{\text{knee}} = 276.0\text{ FLOP/Byte}$ balance boundary and remain DRAM/GDDR6 bandwidth bound.
+- **Microarchitectural Bottlenecks**: Analysis of memory transaction coalescing, tensor core utilization, and why low-rank approximations increase compute-to-memory ratios without breaking hardware ceilings.
+- **Table Standards**: Any accompanying operational bounds table must strictly format numbers in English math mode `$ ... $` (e.g. `$255.8\text{ GB/s}$`, `$70.6\text{ TFLOP/s}$`, `$183.1\text{ FLOP/Byte}$`). Persian digits in table cells are strictly prohibited.
+    plt.close()
 ```
 
 ---
