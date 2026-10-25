@@ -1,0 +1,14 @@
+---
+description: Mandatory documentation build validation and snippet verification before commit.
+trigger: always_on
+globs: ["**/*"]
+---
+
+# NeuralOps Documentation Verification Standards
+
+## Verification Rules
+
+- **After every code change, run: `mkdocs build --strict` (must be 0 warnings)**: Ensures documentation site builds cleanly without dangling links or broken references.
+- **After every doc change, extract and run Python snippets in `docs/`**: Guarantee all tutorial code blocks and import statements are executable and valid.
+- **FORBIDDEN to leave broken code snippets in `.md` files**: All markdown documentation code examples must remain functional and accurate.
+- **MUST verify canonical counts in README before final commit**: Verify that README lists exactly 131 attentions, 72 compressors, and 26 Triton kernel modules.
