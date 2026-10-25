@@ -1,0 +1,14 @@
+---
+trigger: post_commit
+---
+# Post-Commit Hook
+
+After every commit:
+1. Get commit SHA: `git rev-parse HEAD`
+2. Push to origin: `git push origin main`
+3. Sync worktrees:
+   ```bash
+   ssh taha@192.168.1.100 "cd /mnt/d/SVD_Project && git fetch origin && git reset --hard origin/main"
+   ssh taha@192.168.1.100 "cd /mnt/d/SVD_linear_Attention && git fetch origin && git reset --hard origin/main"
+   ```
+4. Verify all 3 worktrees have same SHA
