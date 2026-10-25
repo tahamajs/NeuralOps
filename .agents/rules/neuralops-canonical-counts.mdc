@@ -1,0 +1,16 @@
+---
+description: Enforce exact canonical counts across attention registry, compressor registry, and triton kernels.
+trigger: always_on
+globs: ["**/*"]
+---
+
+# NeuralOps Canonical Counts Invariant
+
+## Strict Invariant Rules
+
+- **MUST keep 131 attentions in `ATTENTION_REGISTRY`**: Under no circumstances should the total count of registered attention mechanisms deviate from exactly 131.
+- **MUST keep 72 compressors in `COMPRESSOR_REGISTRY`**: Under no circumstances should the total count of registered compression engines deviate from exactly 72.
+- **MUST keep 26 .py files in `neuralops/core/triton_kernels/`**: The Triton kernel directory must maintain exactly 26 canonical module files housing the unified operators.
+- **MUST run `python3 scripts/utils/verify_readme_counts.py` before every commit**: Validate that all documentation and registry counts remain strictly synchronized.
+- **FORBIDDEN to add/remove registry entries without explicit user approval**: Any change affecting the 131/72 invariant requires prior user authorization.
+- **FORBIDDEN to create new files in `neuralops/core/triton_kernels/`**: All kernel operators must integrate into the 26 established canonical files.
