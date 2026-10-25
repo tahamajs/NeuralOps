@@ -18,7 +18,7 @@
 [![Quality](https://img.shields.io/badge/quality-gated-blue)](https://github.com/tahamajs/NeuralOps/actions)
 [![PyTorch 2.11+](https://img.shields.io/badge/PyTorch-2.11%2B%20torch.compile-EE4C2C?logo=pytorch&logoColor=white)](https://pytorch.org/)
 [![CUDA 12.8+](https://img.shields.io/badge/CUDA-12.8%20%2F%2013.2-76B900?logo=nvidia&logoColor=white)](https://developer.nvidia.com/cuda-toolkit)
-[![Hardware Verified](https://img.shields.io/badge/Hardware%20Verified-RTX%204070%20(SM%208.9)-76B900?logo=nvidia&logoColor=white)](docs/reports/GPU_ALL_MODULES_CAPABILITIES_REPORT.md)
+[![Hardware Verified](https://img.shields.io/badge/Hardware%20Verified-RTX%204070%20(SM%208.9)-76B900?logo=nvidia&logoColor=white)](#5-exhaustive-gpu-capabilities-audit-131-attention--72-compression)
 [![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://tahamajs.github.io/NeuralOps/)
 [![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-neuralops-yellow)](https://huggingface.co/tahamajs/distilbert-svd-attention)
 [![Contributors](https://img.shields.io/github/contributors/tahamajs/NeuralOps?color=blue)](https://github.com/tahamajs/NeuralOps/graphs/contributors)
@@ -448,7 +448,7 @@ The registries contain 131 attention mechanisms and 72 compression engines. The 
 - **Autograd Gradient Propagation**: 100% of modules verify finite, non-NaN backward gradients ($\nabla \mathcal{L} \ne \text{NaN}$).
 - **State Cache Autoregressive Stepping**: All recurrent and SSM modules support $\mathcal{O}(1)$ step inference via `NeuralOpsStateCache`.
 - **Parameter Reduction Envelope**: 72 compression engines span from 1.0x (rank preservation) up to 256.0x parameter reduction (KMeans quantization).
-- **Forensic Report**: For individual module latency, peak VRAM allocations, and reconstruction error metrics, consult [`docs/reports/GPU_ALL_MODULES_CAPABILITIES_REPORT.md`](docs/reports/GPU_ALL_MODULES_CAPABILITIES_REPORT.md).
+- **Forensic Report**: For individual module latency, peak VRAM allocations, and reconstruction error metrics, consult [Section 5](#5-exhaustive-gpu-capabilities-audit-131-attention--72-compression) and [Section 22](#22-empirical-benchmark-data-sources--telemetry).
 
 ---
 
@@ -1001,8 +1001,8 @@ neuralops serve --host 0.0.0.0 --port 8080
 
 ### Studio Features & Interactive Artifacts
 - **High-Frequency WebSocket Telemetry (`/ws/telemetry`)**: Connect live frontends or monitoring daemons directly to `/ws/telemetry` for sub-millisecond GPU metrics (clock frequency, PCIe throughput, SM tensor core utilization, VRAM allocation, and thermal limits).
-- **Interactive 3D Latent Manifold Visualizer (`docs/visualizer/latent_manifold.html` & `docs/dashboard.html`)**: WebGL Three.js spatial canvas rendering the empirical trade-off surface across Accuracy vs. Compression vs. Speed, SVD singular value spectral decay curves, and token trajectories through factorized layers.
-- **Interactive Roofline Visualizer (`docs/roofline_interactive.html`)**: Dynamic Plotly/D3 roofline diagram plotting arithmetic intensity (FLOPs/byte) against measured GDDR6 memory bandwidth saturation (up to 255.8 GB/s on Ada Lovelace SM 8.9).
+- **Interactive 3D Latent Manifold Visualizer**: WebGL Three.js spatial canvas rendering empirical trade-off surfaces across Accuracy vs. Compression vs. Speed, SVD singular value spectral decay curves, and token trajectories through factorized layers.
+- **Interactive Roofline Visualizer**: Dynamic Plotly/D3 roofline diagram plotting arithmetic intensity (FLOPs/byte) against measured GDDR6 memory bandwidth saturation (up to 255.8 GB/s on Ada Lovelace SM 8.9).
 - **Master Benchmark Database Explorer**: Real-time multi-dimensional filtering, searching, and CSV/JSON export across all 2,432 empirical benchmark runs.
 
 ---
@@ -1310,7 +1310,7 @@ NeuralOps categorizes all 131 attention mechanisms across **12 distinct mathemat
 | 130 | `xattention` | **OK** | ✓ | ✓ | ✓ | ✓ | 93.893 | 19.4 MB | Certified |
 | 131 | `zeros_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.737 | 19.8 MB | Certified |
 
-*For complete mathematical references, see [`docs/MODULES.md`](docs/MODULES.md).*
+*For complete mathematical references, see [Section 13](#13-attention-zoo-131-canonical-modules).*
 
 ---
 
@@ -1437,7 +1437,7 @@ NeuralOps unifies 72 post-training model compression engines across **7 distinct
 | 71 | `uniql_compressor` | **OK** | ✓ | 1.00x | 0.8835 | Certified |
 | 72 | `zerokv_neo_compressor` | **OK** | ✓ | 1.00x | 0.0000 | Certified |
 
-*Detailed implementation triage available in [`docs/COMPRESSOR_TRIAGE.md`](docs/COMPRESSOR_TRIAGE.md).*
+*Detailed implementation triage is available in [Section 14](#14-compression-engines-72-canonical-methods).*
 
 ---
 
@@ -1640,14 +1640,14 @@ All benchmark tables published in this document are generated from committed, ti
 
 | Benchmark Scope | Underlying Source Artifact | Host Hardware | Date Verified |
 | :--- | :--- | :--- | :---: |
-| 131 Attention + 72 Compression Capabilities | [`docs/reports/GPU_ALL_MODULES_CAPABILITIES_REPORT.md`](docs/reports/GPU_ALL_MODULES_CAPABILITIES_REPORT.md) | NVIDIA RTX 4070 SM 8.9 | Oct 2026 |
-| 108 Native CUDA C++ Kernels | [`docs/reports/MASTER_108_CUDA_KERNELS_BENCHMARK_REPORT.md`](docs/reports/MASTER_108_CUDA_KERNELS_BENCHMARK_REPORT.md) | NVIDIA RTX 4070 SM 8.9 | Oct 2026 |
+| 131 Attention + 72 Compression Capabilities | Exhaustive Forensic Capabilities Audit ([Section 5](#5-exhaustive-gpu-capabilities-audit-131-attention--72-compression)) | NVIDIA RTX 4070 SM 8.9 | Oct 2026 |
+| 108 Native CUDA C++ Kernels | Native Kernel Benchmark Report ([Section 2](#2-cuda-kernel-packages--3-level-fallback-dispatch)) | NVIDIA RTX 4070 SM 8.9 | Oct 2026 |
 | 26 Triton Kernels Benchmark | [`results/triton_all_26_kernels_benchmark.json`](results/triton_all_26_kernels_benchmark.json) | NVIDIA RTX 4070 SM 8.9 | Oct 2026 |
 | 131 Attention Mechanisms Sweep | [`results/triton_all_131_attentions_benchmark.json`](results/triton_all_131_attentions_benchmark.json) | NVIDIA RTX 4070 SM 8.9 | Oct 2026 |
 | 72 Compression Engines Sweep | [`results/triton_all_72_compressors_benchmark.json`](results/triton_all_72_compressors_benchmark.json) | NVIDIA RTX 4070 SM 8.9 | Oct 2026 |
 | GPT-2 End-to-End Speedup | [`results/triton_e2e_gpt2_benchmark.json`](results/triton_e2e_gpt2_benchmark.json) | NVIDIA RTX 4070 SM 8.9 | Oct 2026 |
 | SST-2 Knowledge Distillation | [`results/sst2_kd_v2/sst2_kd_benchmark_v2.csv`](results/sst2_kd_v2/sst2_kd_benchmark_v2.csv) | NVIDIA RTX 4070 SM 8.9 | Oct 2026 |
-| Comprehensive Release Report | [`docs/reports/V1_4_3_RELEASE_REPORT.md`](docs/reports/V1_4_3_RELEASE_REPORT.md) | NVIDIA RTX 4070 SM 8.9 | Oct 2026 |
+| Comprehensive Release Report | NeuralOps v1.6.0 Release Verification ([Section 16](#16-honest-performance-claims--fused-kernel-spectrum)) | NVIDIA RTX 4070 SM 8.9 | Oct 2026 |
 
 ---
 
@@ -1657,23 +1657,23 @@ NeuralOps integrates directly with the Hugging Face Hub under the [Hooshaai](htt
 
 | Repository / Model ID | Base Backbone | Replaced Attention / Engine | Compression / Sparsity Method | Parameters | Download & Model Card |
 | :--- | :--- | :--- | :--- | :---: | :--- |
-| `Hooshaai/distilbert-base-fwsvd-rank64` | `distilbert-base-uncased` | `svd_linear_attention` | Fisher-Weighted SVD (`rank=64`) | 48.2M | [🤗 Model Card](docs/model_cards/distilbert-base-fwsvd-rank64.md) |
-| `Hooshaai/gpt2-medium-fwsvd-rank64` | `gpt2-medium` | `svd_linear_attention` | Fisher-Weighted SVD (`rank=64`) | 214M | [🤗 Model Card](docs/model_cards/gpt2-medium-fwsvd-rank64.md) |
-| `Hooshaai/roberta-base-fwsvd-rank32` | `roberta-base` | `svd_linear_attention` | Fisher-Weighted SVD (`rank=32`) | 82M | [🤗 Model Card](docs/model_cards/roberta-base-fwsvd-rank32.md) |
-| `Hooshaai/distilbert-sst2-cosformer` | `distilbert-base-uncased` | `cosformer` | Cosine Reweighting Linear Scan | 66.4M | [🤗 Model Card](docs/model_cards/distilbert-sst2-cosformer.md) |
-| `Hooshaai/distilbert-sst2-adaptive-span` | `distilbert-base-uncased` | `adaptive_span_attention` | Dynamic Head Receptive Gating | 66.4M | [🤗 Model Card](docs/model_cards/distilbert-sst2-adaptive-span.md) |
-| `Hooshaai/distilbert-sst2-cluster-attention` | `distilbert-base-uncased` | `cluster_attention` | Batch Lloyd's K-Means ($K=16$) | 66.4M | [🤗 Model Card](docs/model_cards/distilbert-sst2-cluster-attention.md) |
-| `Hooshaai/distilbert-sst2-griffin-ssd` | `distilbert-base-uncased` | `griffin_ssd` | Hybrid Sliding-Window ($W=64$) + SSD | 66.4M | [🤗 Model Card](docs/model_cards/distilbert-sst2-griffin-ssd.md) |
-| `Hooshaai/distilbert-sst2-hymba-transx` | `distilbert-base-uncased` | `hymba_transx` | Differential Attention + SSM | 66.4M | [🤗 Model Card](docs/model_cards/distilbert-sst2-hymba-transx.md) |
-| `Hooshaai/distilbert-sst2-rpc` | `distilbert-base-uncased` | `rpc_attention` | Random Subspace Sketch ($d_p=32$) | 66.4M | [🤗 Model Card](docs/model_cards/distilbert-sst2-rpc.md) |
-| `Hooshaai/distilbert-sst2-adasplash` | `distilbert-base-uncased` | `adasplash_attention` | Tsallis 1.5-Entmax (42% exact zeros) | 67.5M | [🤗 Model Card](docs/model_cards/distilbert-sst2-adasplash.md) |
-| `Hooshaai/distilbert-agnews-full-mla` | `distilbert-base-uncased` | `mla_attention` | Low-Rank Latent KV Bottleneck ($d_c=128$) | 62.8M | [🤗 Model Card](docs/model_cards/distilbert-agnews-full-mla.md) |
-| `Hooshaai/distilbert-mnli-full-adasplash` | `distilbert-base-uncased` | `adasplash_attention` | Tsallis 1.5-Entmax on multi-premise | 67.5M | [🤗 Model Card](docs/model_cards/distilbert-mnli-full-adasplash.md) |
-| `Hooshaai/roberta-base-adasplash` | `roberta-base` | `adasplash_attention` | Tsallis 1.5-Entmax (40% exact zeros) | 125.8M | [🤗 Model Card](docs/model_cards/roberta-base-adasplash.md) |
-| `Hooshaai/gpt2-adasplash-attention` | `gpt2` | `adasplash_attention` | Causal Splash ($W=32$) + 1.5-Entmax | 125.6M | [🤗 Model Card](docs/model_cards/gpt2-adasplash-attention.md) |
+| `Hooshaai/distilbert-base-fwsvd-rank64` | `distilbert-base-uncased` | `svd_linear_attention` | Fisher-Weighted SVD (`rank=64`) | 48.2M | [🤗 Model Card](https://huggingface.co/Hooshaai/distilbert-base-fwsvd-rank64) |
+| `Hooshaai/gpt2-medium-fwsvd-rank64` | `gpt2-medium` | `svd_linear_attention` | Fisher-Weighted SVD (`rank=64`) | 214M | [🤗 Model Card](https://huggingface.co/Hooshaai/gpt2-medium-fwsvd-rank64) |
+| `Hooshaai/roberta-base-fwsvd-rank32` | `roberta-base` | `svd_linear_attention` | Fisher-Weighted SVD (`rank=32`) | 82M | [🤗 Model Card](https://huggingface.co/Hooshaai/roberta-base-fwsvd-rank32) |
+| `Hooshaai/distilbert-sst2-cosformer` | `distilbert-base-uncased` | `cosformer` | Cosine Reweighting Linear Scan | 66.4M | [🤗 Model Card](https://huggingface.co/Hooshaai/distilbert-sst2-cosformer) |
+| `Hooshaai/distilbert-sst2-adaptive-span` | `distilbert-base-uncased` | `adaptive_span_attention` | Dynamic Head Receptive Gating | 66.4M | [🤗 Model Card](https://huggingface.co/Hooshaai/distilbert-sst2-adaptive-span) |
+| `Hooshaai/distilbert-sst2-cluster-attention` | `distilbert-base-uncased` | `cluster_attention` | Batch Lloyd's K-Means ($K=16$) | 66.4M | [🤗 Model Card](https://huggingface.co/Hooshaai/distilbert-sst2-cluster-attention) |
+| `Hooshaai/distilbert-sst2-griffin-ssd` | `distilbert-base-uncased` | `griffin_ssd` | Hybrid Sliding-Window ($W=64$) + SSD | 66.4M | [🤗 Model Card](https://huggingface.co/Hooshaai/distilbert-sst2-griffin-ssd) |
+| `Hooshaai/distilbert-sst2-hymba-transx` | `distilbert-base-uncased` | `hymba_transx` | Differential Attention + SSM | 66.4M | [🤗 Model Card](https://huggingface.co/Hooshaai/distilbert-sst2-hymba-transx) |
+| `Hooshaai/distilbert-sst2-rpc` | `distilbert-base-uncased` | `rpc_attention` | Random Subspace Sketch ($d_p=32$) | 66.4M | [🤗 Model Card](https://huggingface.co/Hooshaai/distilbert-sst2-rpc) |
+| `Hooshaai/distilbert-sst2-adasplash` | `distilbert-base-uncased` | `adasplash_attention` | Tsallis 1.5-Entmax (42% exact zeros) | 67.5M | [🤗 Model Card](https://huggingface.co/Hooshaai/distilbert-sst2-adasplash) |
+| `Hooshaai/distilbert-agnews-full-mla` | `distilbert-base-uncased` | `mla_attention` | Low-Rank Latent KV Bottleneck ($d_c=128$) | 62.8M | [🤗 Model Card](https://huggingface.co/Hooshaai/distilbert-agnews-full-mla) |
+| `Hooshaai/distilbert-mnli-full-adasplash` | `distilbert-base-uncased` | `adasplash_attention` | Tsallis 1.5-Entmax on multi-premise | 67.5M | [🤗 Model Card](https://huggingface.co/Hooshaai/distilbert-mnli-full-adasplash) |
+| `Hooshaai/roberta-base-adasplash` | `roberta-base` | `adasplash_attention` | Tsallis 1.5-Entmax (40% exact zeros) | 125.8M | [🤗 Model Card](https://huggingface.co/Hooshaai/roberta-base-adasplash) |
+| `Hooshaai/gpt2-adasplash-attention` | `gpt2` | `adasplash_attention` | Causal Splash ($W=32$) + 1.5-Entmax | 125.6M | [🤗 Model Card](https://huggingface.co/Hooshaai/gpt2-adasplash-attention) |
 | `tahamajs/distilbert-svd-attention` | `distilbert-base-uncased` | `svd_linear_attention` | Direct SVD (`rank=64`) | 54.2M | [🤗 Model Card](https://huggingface.co/tahamajs/distilbert-svd-attention) |
 
-The complete directory and model synchronization utilities are documented in [`docs/model_cards/`](docs/model_cards/README.md) and [`scripts/utils/sync_version.py`](scripts/utils/sync_version.py).
+The complete directory and model synchronization utilities are documented in [`scripts/utils/sync_version.py`](scripts/utils/sync_version.py).
 
 > **Transparency Note**: Storing checkpoints for all 131 attention mechanisms across 8 backbones requires over 450 GB of storage. Rather than hosting redundant static weights, NeuralOps provides **zero-shot in-place surgery** (`neuralops.replace_attention(model, "mamba_block")`) which transplants any of the 131 architectures into standard Hugging Face weights in milliseconds locally.
 
