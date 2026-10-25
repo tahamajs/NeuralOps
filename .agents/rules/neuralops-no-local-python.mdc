@@ -1,0 +1,20 @@
+---
+description: Absolute ban on running python locally on macOS; all execution must run on remote GPU.
+trigger: always_on
+globs: ["**/*"]
+---
+
+# NeuralOps Remote Execution Standard (No Local Python)
+
+## Execution Environment Policies
+
+- **ABSOLUTE BAN on running python, python3, pytest, jupyter on local macOS**: Local macOS Python 3.14 lacks required CUDA driver hooks, accelerator extensions, and custom kernel environments.
+- **All Python execution via: `ssh taha@192.168.1.100` (RTX 4070, SM 8.9)**: All tests, benchmarks, gradchecks, and dynamic scripts must execute on the designated GPU host.
+- **Worktrees**:
+  - `/mnt/d/SVD_Project` (primary)
+  - `/mnt/d/SVD_linear_Attention` (secondary)
+- **Python path**: `/mnt/d/venv/bin/python3`
+- **Before running**:
+  ```bash
+  cd /mnt/d/SVD_Project && git fetch origin && git reset --hard origin/main
+  ```
