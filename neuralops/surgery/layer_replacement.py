@@ -6,10 +6,32 @@
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
-Layer Replacement Surgery Engine
+Layer Replacement Surgery Engine & In-Place Module Grafting
 
-Provides recursive module traversal and surgical replacement of attention layers
-nested inside nn.Sequential, nn.ModuleList, or custom container modules (P053).
+Architectural Role (NeuralOps v1.6.0):
+This module drives the in-place structural surgery engine for foundation transformer models,
+allowing arbitrary pretrained HuggingFace backbones (LLaMA, Mistral, GPT-2, Gemma, BERT)
+to be converted from quadratic attention to linear, state-space, or hybrid attention
+without breaking existing parameter graphs.
+
+Key Engineering Standards & Invariants:
+1. Recursive AST Module Traversal:
+   Recursively inspects model topology across standard attributes, nn.Sequential,
+   nn.ModuleList, and nn.ModuleDict containers, accurately targeting attention leaves
+   (self_attn, attn, attention) while skipping already-transplanted child nodes.
+
+2. In-Place Module Substitution & State Preservation:
+   Substitutes target attention layers in place while preserving tensor devices, precision
+   dtypes (FP16, BF16, FP32), and parameter tracking. Shadow twins and forward hooks
+   capture activation dynamics without modifying user training scripts.
+
+3. Projection Reconciliation & Shape Identity:
+   Coordinates with topology_router.py to handle fused QKV projections (qkv_proj),
+   Grouped-Query Attention (GQA) head expansions, and rotary position embeddings (RoPE/ALiBi),
+   strictly enforcing the dimensional invariant (B, T, D) -> (B, T, D).
+
+4. Deterministic Reversibility:
+   Produces structured surgery records enabling clean module recovery via revert_surgery().
 """
 
 from __future__ import annotations

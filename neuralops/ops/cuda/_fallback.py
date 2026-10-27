@@ -6,9 +6,26 @@
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
-Three-Level Kernel Fallback Dispatcher
+Three-Level Kernel Fallback Dispatcher & Telemetry Engine
 
-Runtime dispatcher managing three-level fallback across native CUDA, Triton JIT, and PyTorch reference implementations.
+Architectural Contract (NeuralOps v1.6.0):
+1. Level 1 (Native CUDA C++ / HIP): Compiled high-throughput extension leveraging hardware
+   warp primitives (__shfl_sync), Tensor Core MMA, and register budgeting (<= 48 regs).
+2. Level 2 (Triton JIT): Autotuned JIT kernel compiled to PTX for FP16/BF16/FP32, avoiding
+   host driver roundtrips and providing portable accelerator execution.
+3. Level 3 (Vectorized PyTorch Reference): Pure PyTorch oracle implementation ensuring exact
+   numerical execution across arbitrary CPU, MPS, and headless CI runner environments.
+
+Zero Silent Fallback Law (AGENTS.md Section 7):
+Every degradation from Level 1 to Level 2, or from Level 2 to Level 3, MUST emit a structured
+logger.warning with the failing operator name and underlying exception. In addition,
+global telemetry counters (_DISPATCH_STATS) and per-kernel execution state
+(_LAST_DISPATCH_BACKEND, _LAST_DISPATCH_ERROR) are updated synchronously.
+
+Environment Overrides:
+- NEURALOPS_STRICT_CUDA=1: Disables fallback; immediately raises on Level 1 failure.
+- FORCE_PYTORCH_FALLBACK=1: Globally forces Level 3 execution for baseline calibration sweeps.
+- NEURALOPS_DEBUG_DISPATCH=1: Emits real-time branch routing traces to sys.stderr.
 """
 
 from __future__ import annotations
@@ -16,6 +33,8 @@ from __future__ import annotations
 import contextlib
 import contextvars
 import logging
+import os
+import sys
 from typing import Any, Callable, Generator
 
 import torch
@@ -248,7 +267,10 @@ def dispatch(
                     return res
             except Exception as e:
                 _DISPATCH_STATS["cuda_failures"] += 1
-                logger.debug(f"[{kernel_name}] CUDA C++ autograd path failed: {e}. Falling back.")
+                logger.warning(f"[{kernel_name}] CUDA C++ autograd path failed: {e}. Falling back to Triton / PyTorch.")
+                _LAST_DISPATCH_ERROR[kernel_name] = str(e)
+                if os.environ.get("NEURALOPS_STRICT_CUDA") == "1":
+                    raise
 
         if triton_fn is not None:
             try:
@@ -259,7 +281,7 @@ def dispatch(
                     return res
             except Exception as e:
                 _DISPATCH_STATS["triton_failures"] += 1
-                logger.debug(f"[{kernel_name}] Triton autograd path failed: {e}. Falling back.")
+                logger.warning(f"[{kernel_name}] Triton autograd path failed: {e}. Falling back to PyTorch.")
 
         _DISPATCH_STATS["pytorch"] += 1
         _LAST_DISPATCH_BACKEND[kernel_name] = "pytorch"
@@ -295,8 +317,6 @@ def dispatch(
             _DISPATCH_STATS["triton_failures"] += 1
             raise RuntimeError(f"[{kernel_name}] Backend forced to 'triton', but execution failed: {e}") from e
 
-    import os
-    import sys
     debug_dispatch = os.environ.get("NEURALOPS_DEBUG_DISPATCH") == "1"
     if debug_dispatch:
         print(f"[dispatch] {kernel_name}: cuda={'yes' if cuda_fn else 'no'} triton={'yes' if triton_fn else 'no'} pytorch=yes", file=sys.stderr)
@@ -314,7 +334,7 @@ def dispatch(
             _DISPATCH_STATS["cuda_failures"] += 1
             if debug_dispatch:
                 print(f"[dispatch] {kernel_name}: CUDA failed with {type(e).__name__}: {e}", file=sys.stderr)
-            logger.debug(f"[{kernel_name}] CUDA C++ path failed: {e}. Falling back to Triton / PyTorch.")
+            logger.warning(f"[{kernel_name}] CUDA C++ path failed: {e}. Falling back to Triton / PyTorch.")
             _LAST_DISPATCH_ERROR[kernel_name] = str(e)
             if os.environ.get("NEURALOPS_STRICT_CUDA") == "1":
                 raise
@@ -332,7 +352,7 @@ def dispatch(
             _DISPATCH_STATS["triton_failures"] += 1
             if debug_dispatch:
                 print(f"[dispatch] {kernel_name}: TRITON failed with {type(e).__name__}: {e}", file=sys.stderr)
-            logger.debug(f"[{kernel_name}] Triton path failed: {e}. Falling back to PyTorch.")
+            logger.warning(f"[{kernel_name}] Triton path failed: {e}. Falling back to PyTorch.")
 
     _DISPATCH_STATS["pytorch"] += 1
     _LAST_DISPATCH_BACKEND[kernel_name] = "pytorch"

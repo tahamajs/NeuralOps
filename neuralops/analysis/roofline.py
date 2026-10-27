@@ -6,9 +6,34 @@
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
-Hardware Roofline Model Analyzer
+Hardware Roofline Model Analyzer & Operational Arithmetic Intensity Engine
 
-Empirical arithmetic intensity and memory bandwidth analyzer benchmarking theoretical vs attained FLOP/s.
+Architectural Role (NeuralOps v1.6.0):
+This module evaluates kernel performance against physical hardware boundaries, calculating
+operational arithmetic intensity and placing operators along empirical Roofline curves:
+
+Mathematical & Physical Formulations:
+1. Operational Arithmetic Intensity:
+   I = FLOPs / Memory_Traffic_Bytes [FLOPs/Byte].
+   - Standard Softmax Attention: 4 B H T^2 d + 8 B T D^2 FLOPs.
+   - Linear Recurrent Attention (GDN, GLA, DeltaNet): 4 B H T d^2 + 8 B T D^2 FLOPs.
+
+2. Hardware Ceilings (NVIDIA GeForce RTX 4070 SM 8.9 Ada Lovelace):
+   - Peak FP16 Compute: P_peak = 46.2 TFLOPs/s (dense); up to 186.5 TFLOPs/s (Tensor Core).
+   - Peak DRAM Memory Bandwidth: B_peak = 504.2 GB/s (192-bit GDDR6X bus).
+   - Hardware Inflection Ridge Point:
+     I* = P_peak / B_peak = 46.2e12 / 504.2e9 approx 91.6 FLOPs/Byte.
+
+3. Attained Throughput Regime Classification:
+   P(I) = min(P_peak, I * B_peak).
+   - I < 0.85 * I*: Memory-Bandwidth Bound (DRAM throughput limited).
+   - I >= 0.85 * I*: Compute-Bound (Tensor Core saturated).
+   - Fused SRAM Tiling: Bypasses DRAM roundtrips for intermediate attention scores,
+     boosting operational intensity past the memory wall.
+
+4. Microsecond Instrumentation:
+   Timing is executed via asynchronous torch.cuda.Event pairs with warm-up stabilization
+   and CUDA stream synchronization, recording 10% trimmed means (mu_10%) and variance sigma/mu < 0.05.
 """
 
 from __future__ import annotations

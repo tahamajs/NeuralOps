@@ -6,9 +6,31 @@
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
-Surgery Manifest Exporter
+Surgery Manifest Exporter & Provenance Ledger
 
-Generates machine-readable manifests documenting layer surgery, replacements, and parameter counts.
+Architectural Role (NeuralOps v1.6.0):
+This module defines the cryptographic provenance and architectural serialization contracts
+governing model surgery, attention transplants, and compression factorizations:
+
+Key Architectural Guarantees:
+1. Complete Structural State Encapsulation:
+   SurgeryManifest captures every modified layer path across both attention transplants
+   (AttentionSurgeryEntry: attention_type, hyperparameters, sidecars, learnable sinks, PEFT rank)
+   and compression factorizations (CompressionSurgeryEntry: compressor_name, rank, bit-width,
+   group size, bias, wrapper class).
+
+2. Cryptographic Integrity:
+   compute_sha256() computes a deterministic SHA-256 digest over canonical sorted JSON.
+   Checkpoints embed _manifest_sha256 to ensure zero parameter tampering or silent drift.
+
+3. Deterministic Replayability:
+   replay_surgery_manifest() reconstructs exact factorized architectures and transplanted
+   attention modules purely from manifest metadata, eliminating redundant matrix factorizations
+   or re-calibration sweeps during production deployments.
+
+4. Multi-Format Hub Serialization:
+   Integrates directly with HuggingFace Hub (save_pretrained / from_pretrained),
+   SafeTensors, and SQLite master ledgers.
 """
 
 from __future__ import annotations

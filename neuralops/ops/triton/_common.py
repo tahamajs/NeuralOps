@@ -6,9 +6,34 @@
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
-Common Triton Kernel Utilities
+Common Triton Kernel Utilities & Compiler Infrastructure
 
-Shared helper routines, input validation, and PyTorch reference fallbacks for Triton kernel implementations.
+Architectural Role (NeuralOps v1.6.0):
+This module defines the shared runtime infrastructure, hardware gating, and compiler
+heuristics governing the 26 canonical Triton kernel modules (housing 62 unified operators)
+in neuralops/ops/triton/ and neuralops/core/triton_kernels/.
+
+Key Engineering Standards & Invariants:
+1. Strict Mainline Block Pointer Prohibition (AGENTS.md Section 7):
+   Mainline Triton kernels strictly avoid tl.make_block_ptr and tl.advance to guarantee
+   multi-backend portability across diverse compiler builds (exemption applies only to
+   the Huawei Ascend NPU backend). All kernels employ standard 1D/2D pointer arithmetic
+   with explicit boundary masking.
+
+2. Numerical Budget & FP32 Accumulation Guard:
+   Custom forward and backward kernels must compute or accumulate in FP32 (tl.float32)
+   whenever inputs are FP16 or BF16 to safeguard against underflow and catastrophic
+   cancellation during reduction loops.
+
+3. Autotuning Heuristics:
+   Grid configurations (@triton.autotune) explore power-of-two block sizes (BLOCK_M,
+   BLOCK_N, BLOCK_K in {32, 64, 128, 256}), warp counts (num_warps in {2, 4, 8}),
+   and pipeline stages (num_stages in {2, 3, 4}) optimized for SM 8.9 Ada Lovelace
+   and SM 90 Hopper tensor cores.
+
+4. Graceful Fallback & Circuit Breakers:
+   Maintains _RUNTIME_FALLBACK_CACHE to avoid repetitive runtime compilation failures
+   by permanently routing failed operators to their pure-PyTorch reference counterparts.
 """
 
 from __future__ import annotations

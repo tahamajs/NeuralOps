@@ -5,9 +5,28 @@
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
-Multi-Level Distillation Library
+Multi-Level Knowledge Distillation & 6-Pillar Healing Engine
 
-Multi-level attention and logit distillation loss library supporting multiple divergence modes.
+Architectural Role (NeuralOps v1.6.0):
+This library provides the multi-objective distillation and rapid healing loss suite used to
+restore baseline representation fidelity within 50 to 250 micro-tuning steps post-surgery:
+
+The 6-Pillar Distillation Formulation:
+1. Logit Divergence (L_KD): Multi-mode logit matching (forward KL, reverse KL, Jensen-Shannon,
+   decoupled TCKD/NCKD, and top-k sparse KL), accelerated via fused Triton kernels.
+2. Centered Kernel Alignment (L_CKA): Exact rotation-invariant linear CKA similarity
+   between student and teacher hidden states with SmoothMax steering across deep layers.
+3. Attention Distribution Parity (L_Attn): Chunked attention map KL divergence (B_T=64)
+   and MiniLM self-attention Gram matrix alignment across heterogeneous head counts.
+4. Angular Directional Alignment (L_Cos): Cosine embedding and L2 feature norm matching.
+5. Stiefel Manifold Orthogonality (L_Stiefel): Riemannian tangent space projections guaranteeing
+   unitary constraint ||W^T W - I||_F < 1e-4 throughout adapter optimization.
+6. Entropy & Dynamic Stability (L_Entropy): Log-barrier penalties preventing gate saturation
+   and learnable attention sinks absorbing unbounded attention scores.
+
+Frozen Teacher Backbone Invariant:
+All distillation trainers strictly enforce teacher.eval(), requires_grad=False, and
+torch.no_grad() contexts, guaranteeing zero gradient leakage and minimal VRAM footprint.
 """
 
 from __future__ import annotations

@@ -6,9 +6,30 @@
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
-CUDA C++ JIT Module Loader
+CUDA C++ JIT Module Loader & Hardware Compiler Infrastructure
 
-Dynamic compilation loader with caching and device capability validation for native CUDA C++ kernels.
+Architectural Role (NeuralOps v1.6.0):
+This module manages runtime just-in-time (JIT) compilation and execution of the 112 native
+CUDA C++ kernel packages (housing 114 native implementations) in neuralops/ops/cuda/.
+
+Design & Engineering Guarantees:
+1. Dynamic Extension Compilation:
+   Compiles native .cu CUDA kernels and C++ pybind11 bindings via torch.utils.cpp_extension.load_inline,
+   eliminating premature ahead-of-time (AOT) build times during development.
+
+2. Content-Addressed SHA-256 Compilation Cache:
+   Computes a deterministic SHA-256 hash across CUDA sources, C++ headers, nvcc flags, and
+   include paths. Pre-compiled .so binaries are cached into ~/.cache/torch_extensions/
+   (or NEURALOPS_CUDA_CACHE), achieving near-instantaneous load times on repeat runs.
+
+3. Architecture-Targeted NVCC Optimization:
+   Detects target GPU compute capability dynamically via get_cuda_arch_flags(), injecting
+   hardware-specific flags (-gencode=arch=compute_89,code=sm_89 for Ada Lovelace, sm_90 for Hopper)
+   alongside fast-math and __launch_bounds__ register budget constraints.
+
+4. Negative Caching & Fallback Integration:
+   Maintains _FAILED_MODULES set to permanently record failed compilations, allowing the 3-level
+   fallback dispatcher (_fallback.py) to immediately route future calls to Triton JIT or PyTorch.
 """
 
 from __future__ import annotations

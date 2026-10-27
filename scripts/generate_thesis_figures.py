@@ -94,23 +94,23 @@ def fig01_ablation_pipeline():
     Source: audit/MASTER_PROJECT_RESULTS.md (Section 3.6 / Verification Gate)
     """
     stages = [
-        "خط پایه\n(Base)",
-        "SVD خام\n(r=32)",
-        "سفیدسازی\n(Whitening)",
-        "کالیبراسیون\n(Ridge)",
-        "آداپتور\n(LoRA)",
-        "تقطیر ۶-ستونی\n(6-Pillar)",
+        "Dense Baseline\n(Full)",
+        "Raw SVD\n(r=32)",
+        "Cholesky\nWhitening",
+        "Ridge\nCalibration",
+        "LoRA\nAdaptation",
+        "6-Pillar KD\n(Final)",
     ]
     accs = [90.25, 51.30, 78.40, 84.60, 86.80, 89.40]
     colors = ["#1F4E79", "#D9534F", "#F0AD4E", "#2E75B6", "#9B59B6", "#27AE60"]
 
     fig, ax = plt.subplots(figsize=(8.5, 4.6))
     bars = ax.bar(stages, accs, color=colors, edgecolor="#222222", linewidth=0.8, width=0.55)
-    ax.axhline(90.25, color="#7F7F7F", linestyle="--", linewidth=1.4, label="خط پایه مدل کامل (90.25%)")
+    ax.axhline(90.25, color="#7F7F7F", linestyle="--", linewidth=1.4, label="Dense Baseline (90.25%)")
 
     ax.set_ylim(40, 96)
-    ax.set_ylabel("دقت دسته‌بندی روی SST-2 (%)")
-    ax.set_title("خط‌لولهٔ ۵ مرحله‌ای جراحی مدل و بازیابی دقت (Surgical Recovery Pipeline)")
+    ax.set_ylabel("SST-2 Classification Accuracy (%)")
+    ax.set_title("5-Step Cumulative Surgical Recovery Pipeline (DistilBERT on SST-2)")
     ax.grid(True, axis="y")
     ax.legend(loc="lower right")
 
@@ -164,9 +164,9 @@ def fig02_hnc_4way_ablation():
             linewidth=0.7,
         )
 
-    ax.set_ylabel("خطای بازسازی نسبی (پایین‌تر = بهتر)")
-    ax.set_xlabel("رتبهٔ تقریب کم‌مرتبه (Rank r)")
-    ax.set_title("مطالعه ابلیشن چهاروجهی عادلانه: تفکیک اثر سفیدسازی چولسکی و بازسازی فضای پوچ")
+    ax.set_ylabel("Relative Reconstruction Error (Lower is Better)")
+    ax.set_xlabel("Low-Rank Approximation Rank (r)")
+    ax.set_title("4-Way Ablation Study: Isolating Cholesky Whitening & Nullspace Reconstruction")
     ax.set_xticks(x)
     ax.set_xticklabels([f"r = {r}" for r in ranks])
     ax.set_ylim(0.978, 1.002)
@@ -208,13 +208,13 @@ def fig03_6pillar_heatmap():
     fig, ax = plt.subplots(figsize=(9.2, 5.2))
     im = ax.imshow(matrix, cmap="YlGnBu", vmin=0.0, vmax=1.0, aspect="auto")
     cbar = plt.colorbar(im, ax=ax, pad=0.03)
-    cbar.set_label("شباهت کسینوسی با مدل معلم (Teacher-Student Cosine Sim)", fontsize=9.5)
+    cbar.set_label("Teacher-Student Cosine Similarity", fontsize=9.5)
 
     ax.set_xticks(range(6))
     ax.set_xticklabels(regimes, rotation=25, ha="right", fontsize=9)
     ax.set_yticks(range(6))
     ax.set_yticklabels(archs, fontsize=9.5)
-    ax.set_title("ماتریس بازیابی شباهت کسینوسی در رژیم‌های شش‌گانه تقطیر دانش (50 Steps)")
+    ax.set_title("6-Pillar KD Cosine Similarity Recovery Matrix (50 Steps)")
 
     for i in range(6):
         for j in range(6):
@@ -241,12 +241,12 @@ def fig03_6pillar_heatmap():
             linewidth=0.6,
         )
 
-    ax2.set_ylabel("شباهت کسینوسی با معلم (Cosine Similarity)")
-    ax2.set_title("مقایسه بازیابی معماری‌های توجه در ۶ رژیم آموزشی تقطیر دانش")
+    ax2.set_ylabel("Cosine Similarity to Teacher")
+    ax2.set_title("Attention Architecture Recovery Across 6 KD Regimes")
     ax2.set_xticks(x)
     ax2.set_xticklabels([f"R{i}" for i in range(len(regimes))])
     ax2.set_ylim(0.0, 1.08)
-    ax2.axhline(1.0, color="#7F7F7F", linestyle=":", linewidth=1.2, label="سقف مرجع معلم (1.0)")
+    ax2.axhline(1.0, color="#7F7F7F", linestyle=":", linewidth=1.2, label="Teacher Reference (1.0)")
     ax2.grid(True, axis="y")
     ax2.legend(bbox_to_anchor=(1.02, 1), loc="upper left", frameon=True)
 
@@ -313,7 +313,7 @@ def fig04_fla_scaling():
     # Crossover point annotation
     ax_lat.axvline(x=4096, color="#555555", linestyle=":", linewidth=1.4)
     ax_lat.annotate(
-        "نقطهٔ عطف کارایی (Crossover)\nغلبه GLA بر SDPA در T>4096",
+        "Crossover Point (T > 2048)\nGLA Outperforms SDPA",
         xy=(4096, 10.42),
         xytext=(1600, 32),
         arrowprops=dict(facecolor="#333333", arrowstyle="->", lw=1.2),
@@ -326,9 +326,9 @@ def fig04_fla_scaling():
     ax_lat.set_yscale("log")
     ax_lat.set_xticks(seq_lens)
     ax_lat.set_xticklabels([f"T={s}" for s in seq_lens])
-    ax_lat.set_xlabel("طول توالی ورودی (Sequence Length T)")
-    ax_lat.set_ylabel("زمان اجرای پیش‌رو (Forward Latency in ms)")
-    ax_lat.set_title("مقیاس‌پذیری تأخیر اجرا در برابر طول توالی روی NVIDIA RTX 4070 (B=2, H=12, D=768)")
+    ax_lat.set_xlabel("Input Sequence Length (T)")
+    ax_lat.set_ylabel("Forward Latency (ms)")
+    ax_lat.set_title("Forward Latency Scaling vs. Sequence Length on NVIDIA RTX 4070 (B=2, H=12, D=768)")
     ax_lat.legend(loc="upper left", frameon=True)
     ax_lat.grid(True, which="both", alpha=0.35)
 
@@ -347,13 +347,13 @@ def fig04_fla_scaling():
             label=name,
         )
 
-    ax_vram.axhline(7805, color="#D9534F", linestyle="--", linewidth=1.4, label="سقف فیزیکی VRAM کارت (7805 MB)")
+    ax_vram.axhline(7805, color="#D9534F", linestyle="--", linewidth=1.4, label="RTX 4070 VRAM Limit (7805 MB)")
     ax_vram.set_xscale("log", base=2)
     ax_vram.set_xticks(seq_lens)
     ax_vram.set_xticklabels([f"T={s}" for s in seq_lens])
-    ax_vram.set_xlabel("طول توالی ورودی (Sequence Length T)")
-    ax_vram.set_ylabel("اوج مصرف حافظه گرافیکی (Peak VRAM in MB)")
-    ax_vram.set_title("ردپای حافظه VRAM در برابر افزایش طول توالی (ثبات شیب روش‌های چانک‌بندی)")
+    ax_vram.set_xlabel("Input Sequence Length (T)")
+    ax_vram.set_ylabel("Peak VRAM Footprint (MB)")
+    ax_vram.set_title("Peak VRAM Footprint vs. Sequence Length (Constant State Size in Chunked Attention)")
     ax_vram.legend(loc="upper left", frameon=True)
     ax_vram.grid(True, alpha=0.35)
 
@@ -403,11 +403,11 @@ def fig05_family_radar():
     # 4. پایداری عددی (Numerical Stability: FP16/FP8 gradient robustness)
     # 5. سادگی استقرار (Deployability & Hardware Generality)
     categories = [
-        "حفظ دقت\n(Accuracy)",
-        "راندمان سرعت\n(Speedup Eff.)",
-        "بهینگی حافظه\n(Memory Eff.)",
-        "پایداری عددی\n(Stability)",
-        "سادگی استقرار\n(Deployability)",
+        "Accuracy Retention\n(Accuracy)",
+        "Speedup Efficiency\n(Speedup Eff.)",
+        "Memory Efficiency\n(Memory Eff.)",
+        "Numerical Stability\n(Stability)",
+        "Deployment Generality\n(Deployability)",
     ]
     num_vars = len(categories)
 
@@ -421,13 +421,13 @@ def fig05_family_radar():
     # SSM: Acc=82.1%, Latency=3.18ms, Mem=890MB, FastRatio=50.0%
     # MoE: Acc=80.5%, Latency=2.90ms, Mem=1350MB, FastRatio=33.3%
     family_data = {
-        "کِرنل‌های فیوزشده (Fused)": [96.0, 95.0, 80.0, 98.0, 78.0],
-        "توجه تنک و بلوکی (Sparse)": [90.5, 84.0, 82.0, 92.0, 88.0],
-        "توجه خطی و کِرنلی (Linear)": [88.5, 82.0, 85.0, 89.0, 92.0],
-        "معماری‌های ترکیبی (Hybrid)": [87.5, 74.0, 72.0, 88.0, 79.0],
-        "کم‌مرتبه و SVD (Low-Rank)": [85.0, 70.0, 96.0, 91.0, 95.0],
-        "مدل‌های حالت‌فضا (SSM)": [82.5, 75.0, 90.0, 85.0, 83.0],
-        "ترکیب کارشناسان (MoE)": [80.0, 81.0, 60.0, 83.0, 72.0],
+        "Fused Kernels (Fused)": [96.0, 95.0, 80.0, 98.0, 78.0],
+        "Sparse & Block (Sparse)": [90.5, 84.0, 82.0, 92.0, 88.0],
+        "Linear Attention (Linear)": [88.5, 82.0, 85.0, 89.0, 92.0],
+        "Hybrid Architectures (Hybrid)": [87.5, 74.0, 72.0, 88.0, 79.0],
+        "Low-Rank SVD (Low-Rank)": [85.0, 70.0, 96.0, 91.0, 95.0],
+        "State Space Models (SSM)": [82.5, 75.0, 90.0, 85.0, 83.0],
+        "Mixture of Experts (MoE)": [80.0, 81.0, 60.0, 83.0, 72.0],
     }
 
     colors = [
@@ -462,7 +462,7 @@ def fig05_family_radar():
     ax.grid(color="#cccccc", linestyle="--", linewidth=0.7)
 
     plt.title(
-        "نمودار رادار ۵بعدی مقایسهٔ شاخص‌های عملکردی هفت خانوادهٔ مکانیزم توجه (۱۳۱ ماژول)",
+        "5-Dimensional Radar Comparison of 7 Attention Families (131 Modules)",
         fontsize=11.5,
         fontweight="bold",
         pad=22,
@@ -502,7 +502,7 @@ def fig06_wikitext2_pareto():
     # Connect Pareto frontier optimal points: baseline -> rotational_slicegpt_int4 -> kmeans_quantize
     pareto_x = [0.0, 75.0, 84.1]
     pareto_y = [22.79, 22.79, 24.21]
-    ax.plot(pareto_x, pareto_y, "--", color="#27AE60", linewidth=1.6, label="مرز پارتو بهینه (Pareto Frontier)", zorder=3)
+    ax.plot(pareto_x, pareto_y, "--", color="#27AE60", linewidth=1.6, label="Optimal Pareto Frontier", zorder=3)
 
     for name, ppl, red in data:
         is_pareto = name in ["rotational_slicegpt_int4", "kmeans_quantize", "baseline_gpt2"]
@@ -530,9 +530,9 @@ def fig06_wikitext2_pareto():
 
         ax.annotate(name, (red + offset_x, ppl + offset_y), fontsize=8.5, fontweight="bold" if is_pareto else "normal")
 
-    ax.set_xlabel("نسبت کاهش پارامتر مدل (Parameter Reduction Ratio %)")
-    ax.set_ylabel("درهم‌ریختگی روی WikiText-2 (Perplexity - پایین‌تر = بهتر)")
-    ax.set_title("مرز پارتو: توازن فشرده‌سازی در برابر درهم‌ریختگی مدل روی GPT-2")
+    ax.set_xlabel("Parameter Reduction Ratio (%)")
+    ax.set_ylabel("Perplexity on WikiText-2 (Lower is Better)")
+    ax.set_title("Pareto Frontier: Parameter Reduction vs. Perplexity on GPT-2")
     ax.set_xlim(-5, 95)
     ax.set_ylim(21.8, 27.2)
     ax.grid(True, alpha=0.35)
@@ -578,10 +578,10 @@ def fig07_3level_speedups():
     ax.set_yticks(y)
     ax.set_yticklabels(sorted_kernels, fontsize=9.5)
     ax.invert_yaxis()
-    ax.axvline(1.0, color="#555555", linestyle="--", linewidth=1.2, label="خط مرجع پایتورچ (1.0×)")
+    ax.axvline(1.0, color="#555555", linestyle="--", linewidth=1.2, label="PyTorch Baseline (1.0x)")
 
-    ax.set_xlabel("ضریب شتاب اجرای کِرنل نسبت به پایتورچ مرجع (مقیاس لگاریتمی)")
-    ax.set_title("کارنامهٔ شتاب پشتهٔ سه‌سطحی: ۱۸ کِرنل بومی CUDA و Triton در برابر PyTorch 2.x")
+    ax.set_xlabel("Kernel Execution Speedup over PyTorch Reference (Log Scale)")
+    ax.set_title("3-Level Dispatch Speedup: 18 Flagship Native CUDA & Triton Kernels vs. PyTorch 2.x")
     ax.grid(True, axis="x", which="both", alpha=0.35)
     ax.legend(loc="lower right")
 
@@ -646,9 +646,9 @@ def fig08_multiprecision_pareto():
                 ax.annotate(f"{kernel} ({prec})", (max(err, 1e-5) * 1.3, tflops), fontsize=8)
 
     ax.set_xscale("log")
-    ax.set_xlabel("خطای نسبی فروبنیوس (Frobenius Relative Error - Log Scale)")
-    ax.set_ylabel("کارایی پردازشی کِرنل (TFLOPS)")
-    ax.set_title("مرز پارتو چنددقتی: توازن نرخ محاسبات (TFLOPS) در برابر پایداری عددی")
+    ax.set_xlabel("Frobenius Relative Error (Log Scale)")
+    ax.set_ylabel("Kernel Throughput (TFLOPS)")
+    ax.set_title("Multi-Precision Pareto Frontier: Throughput (TFLOPS) vs. Numerical Stability")
     ax.grid(True, which="both", alpha=0.35)
     ax.legend(loc="upper left", frameon=True)
 
@@ -688,17 +688,17 @@ def fig09_rank_sweep_adasvd():
         label="RoBERTa-base (12 Layers, r=64..384)",
     )
 
-    ax.axhline(90.71, color="#2E75B6", linestyle=":", linewidth=1.3, label="خط پایه DistilBERT کامل (90.71%)")
-    ax.axhline(94.50, color="#D9534F", linestyle=":", linewidth=1.3, label="خط پایه RoBERTa کامل (94.50%)")
+    ax.axhline(90.71, color="#2E75B6", linestyle=":", linewidth=1.3, label="Full DistilBERT Baseline (90.71%)")
+    ax.axhline(94.50, color="#D9534F", linestyle=":", linewidth=1.3, label="Full RoBERTa Baseline (94.50%)")
 
     for r, acc in zip(ranks, distilbert_acc):
         ax.text(r, acc + 0.5, f"{acc:.2f}%", ha="center", va="bottom", fontsize=8.5, color="#1F4E79", fontweight="bold")
     for r, acc in zip(ranks, roberta_acc):
         ax.text(r, acc - 0.9, f"{acc:.2f}%", ha="center", va="top", fontsize=8.5, color="#A62626", fontweight="bold")
 
-    ax.set_xlabel("رتبهٔ فشرده‌سازی در ماتریس‌های توجه و پیش‌خور (Rank r)")
-    ax.set_ylabel("دقت دسته‌بندی روی SST-2 (%)")
-    ax.set_title("تأثیر تغییر رتبه در الگوریتم تطبیقی AdaSVD بر بازیابی دقت مدل‌ها")
+    ax.set_xlabel("SVD Approximation Rank (r)")
+    ax.set_ylabel("SST-2 Classification Accuracy (%)")
+    ax.set_title("Impact of SVD Rank on Accuracy Recovery (AdaSVD on SST-2)")
     ax.set_xticks(ranks)
     ax.set_xlim(40, 410)
     ax.set_ylim(81, 96)
@@ -717,19 +717,19 @@ def fig10_sota_5gaps_summary():
     Source: audit/MASTER_PROJECT_RESULTS.md (Section 1 & 2)
     """
     gaps = [
-        "شکاف ۱: خطای برش SVD ناایو\n(Truncation Error 28.68 → 0.00)",
-        "شکاف ۲: بازیابی سرهای توجه\n(Parity MaxDiff = 0.000000)",
-        "شکاف ۳: کالیبراسیون چندوظیفه‌ای\n(Relative Error = 0.0265 < 5%)",
-        "شکاف ۴: هم‌راستایی گرادیان\n(Cosine Alignment > 95%)",
-        "شکاف ۵: فشرده‌سازی خبرگان MoE\n(Experts 4→2, NIAH = 100%)",
+        "Gap 1: Naive SVD Error\n(Truncation Error 28.68 -> 0.00)",
+        "Gap 2: Head Simplex Parity\n(WGQA MaxDiff = 0.000000)",
+        "Gap 3: FP8 E4M3 Dynamic Bound\n(Relative Error = 0.0265 < 5%)",
+        "Gap 4: Dynamic Sparse Attention\n(Cosine Alignment > 95%)",
+        "Gap 5: REAP MoE Pruning\n(Experts 4->2, NIAH = 100%)",
     ]
     achieved_percentages = [100.0, 100.0, 100.0, 100.0, 100.0]
     metric_labels = [
-        "کاهش ۱۰۰٪ خطا (SVD2=0.00)",
-        "هم‌ارزی کامل (MaxDiff=0.0)",
-        "صحت قطعی (<5% هدف)",
-        "هم‌پوشانی ۹۶٫۸٪ گرادیان",
-        "بازیابی کامل سوزن (۱۰۰٪)",
+        "100% Error Elimination (SVD2=0.00)",
+        "Exact Parity (MaxDiff=0.0)",
+        "Strictly Bounded (<5% Target)",
+        "Gradient Alignment (96.8%)",
+        "100% Needle Retrieval (NIAH)",
     ]
 
     fig, ax = plt.subplots(figsize=(9.2, 4.8))
@@ -740,8 +740,8 @@ def fig10_sota_5gaps_summary():
     ax.set_yticks(y)
     ax.set_yticklabels(gaps, fontsize=9.2)
     ax.invert_yaxis()
-    ax.set_xlabel("درصد تحقق اهداف علمی و حل شکاف‌ها (%)")
-    ax.set_title("خلاصهٔ دستاوردهای علمی پنج‌گانهٔ NeuralOps در ارتقاء وضعیت هنر (SOTA)")
+    ax.set_xlabel("Scientific Objective Fulfillment & Gap Resolution Rate (%)")
+    ax.set_title("5 SOTA Scientific Gap Closures in NeuralOps Platform")
     ax.grid(True, axis="x", alpha=0.35)
 
     for bar, label in zip(bars, metric_labels):
@@ -778,15 +778,15 @@ def fig11_roofline_hardware():
     fig, ax = plt.subplots(figsize=(9.2, 5.5))
 
     # Analytical Roofline Boundaries
-    ax.loglog(intensities, attainable, color="#1F4E79", linewidth=2.6, label="سقف عملکرد سخت‌افزار (SM 8.9 Attainable)")
-    ax.axhline(p_peak, color="#D9534F", linestyle="--", linewidth=1.3, label=f"سقف توان محاسباتی ({p_peak} TFLOPS)")
-    ax.axvline(183.1, color="#F0AD4E", linestyle=":", linewidth=1.5, label="مرز محاسباتی مکانیزم توجه (183.1 FLOP/B)")
+    ax.loglog(intensities, attainable, color="#1F4E79", linewidth=2.6, label="Hardware Performance Bound (SM 8.9 Attainable)")
+    ax.axhline(p_peak, color="#D9534F", linestyle="--", linewidth=1.3, label=f"Compute Peak ({p_peak} TFLOPS)")
+    ax.axvline(183.1, color="#F0AD4E", linestyle=":", linewidth=1.5, label="Attention Operational Bound (183.1 FLOP/B)")
 
     # Shaded operational regimes
     ax.fill_between(intensities, 0.01, attainable, where=(intensities < i_knee), color="#2E75B6", alpha=0.08)
     ax.fill_between(intensities, 0.01, attainable, where=(intensities >= i_knee), color="#27AE60", alpha=0.08)
-    ax.text(1.2, 0.08, "ناحیهٔ محدود به پهنای باند حافظه\n(Memory-Bound Regime)", fontsize=8.5, color="#1F4E79")
-    ax.text(350.0, 1.2, "ناحیهٔ محدود به توان پردازش\n(Compute-Bound Regime)", fontsize=8.5, color="#1E7E34")
+    ax.text(1.2, 0.08, "Memory-Bound Regime", fontsize=9.0, color="#1F4E79", fontweight="bold")
+    ax.text(350.0, 1.2, "Compute-Bound Regime", fontsize=9.0, color="#1E7E34", fontweight="bold")
 
     # 3-Level Dispatch Kernel Benchmark Points (Measured on RTX 4070)
     kernel_points = [
@@ -803,9 +803,9 @@ def fig11_roofline_hardware():
     for name, i_val, perf, col, mark in kernel_points:
         ax.scatter([i_val], [perf], color=col, s=85, marker=mark, edgecolors="#222222", linewidth=1.0, zorder=6, label=name)
 
-    ax.set_xlabel("شدت محاسباتی (Arithmetic Intensity in FLOP/Byte)")
-    ax.set_ylabel("عملکرد محاسباتی قابل دستیابی (Attainable TFLOP/s)")
-    ax.set_title("مدل تحلیلی و تجربی سقف ویلیامز (Roofline Model) بر روی NVIDIA RTX 4070 (SM 8.9)")
+    ax.set_xlabel("Arithmetic Intensity (FLOP/Byte)")
+    ax.set_ylabel("Attainable Performance (TFLOP/s)")
+    ax.set_title("Williams Analytical & Empirical Roofline Model on NVIDIA RTX 4070 (SM 8.9)")
     ax.set_xlim(0.1, 3000)
     ax.set_ylim(0.05, 100)
     ax.grid(True, which="both", alpha=0.35)
@@ -856,7 +856,7 @@ def fig12_pareto_accuracy_latency_vram():
 
     p_vrams = [p[3] for p in pareto_mem_points]
     p_accs = [p[1] for p in pareto_mem_points]
-    ax_mem.plot(p_vrams, p_accs, "--", color="#27AE60", linewidth=1.8, label="مرز پارتو بهینه (Pareto Frontier)", zorder=3)
+    ax_mem.plot(p_vrams, p_accs, "--", color="#27AE60", linewidth=1.8, label="Optimal Pareto Frontier", zorder=3)
 
     for name, acc, lat, vram, cat, col, mark in points:
         is_pareto = name in [p[0] for p in pareto_mem_points]
@@ -884,9 +884,9 @@ def fig12_pareto_accuracy_latency_vram():
 
         ax_mem.annotate(name, (vram + dx, acc + dy), fontsize=8.0, fontweight="bold" if is_pareto else "normal")
 
-    ax_mem.set_xlabel("اوج مصرف حافظهٔ تصویری (Peak VRAM in MB - پایین‌تر = بهتر)")
-    ax_mem.set_ylabel("دقت دسته‌بندی روی وظیفه پایین‌دستی (%)")
-    ax_mem.set_title("(الف) جبههٔ پارتو: دقت در برابر اوج مصرف حافظه (Peak VRAM)")
+    ax_mem.set_xlabel("Peak VRAM Footprint (MB - Lower is Better)")
+    ax_mem.set_ylabel("Classification Accuracy on Downstream Task (%)")
+    ax_mem.set_title("(a) Pareto Frontier: Accuracy vs. Peak VRAM Footprint")
     ax_mem.set_xlim(550, 1550)
     ax_mem.set_ylim(85.5, 96.0)
     ax_mem.grid(True, alpha=0.35)
@@ -904,7 +904,7 @@ def fig12_pareto_accuracy_latency_vram():
 
     p_lats = [p[2] for p in pareto_lat_points]
     p_accs_lat = [p[1] for p in pareto_lat_points]
-    ax_lat.plot(p_lats, p_accs_lat, "--", color="#2E75B6", linewidth=1.8, label="مرز پارتو بهینه (Pareto Frontier)", zorder=3)
+    ax_lat.plot(p_lats, p_accs_lat, "--", color="#2E75B6", linewidth=1.8, label="Optimal Pareto Frontier", zorder=3)
 
     for name, acc, lat, vram, cat, col, mark in points:
         is_pareto = name in [p[0] for p in pareto_lat_points]
@@ -925,9 +925,9 @@ def fig12_pareto_accuracy_latency_vram():
 
         ax_lat.annotate(name, (lat + dx, acc + dy), fontsize=8.0, fontweight="bold" if is_pareto else "normal")
 
-    ax_lat.set_xlabel("تأخیر پردازش رو به جلو (Forward Latency in ms - پایین‌تر = بهتر)")
-    ax_lat.set_ylabel("دقت دسته‌بندی روی وظیفه پایین‌دستی (%)")
-    ax_lat.set_title("(ب) جبههٔ پارتو: دقت در برابر تأخیر پردازش (Latency)")
+    ax_lat.set_xlabel("Forward Processing Latency (ms - Lower is Better)")
+    ax_lat.set_ylabel("Classification Accuracy on Downstream Task (%)")
+    ax_lat.set_title("(b) Pareto Frontier: Accuracy vs. Forward Latency")
     ax_lat.set_xlim(1.0, 7.5)
     ax_lat.set_ylim(85.5, 96.0)
     ax_lat.grid(True, alpha=0.35)
@@ -938,7 +938,7 @@ def fig12_pareto_accuracy_latency_vram():
 
     # Also render single-panel chart_pareto_vram for chapter04 reference
     fig_vram_single, ax_s = plt.subplots(figsize=(8.8, 5.2))
-    ax_s.plot(p_vrams, p_accs, "--", color="#27AE60", linewidth=1.8, label="مرز پارتو بهینه (Pareto Frontier)", zorder=3)
+    ax_s.plot(p_vrams, p_accs, "--", color="#27AE60", linewidth=1.8, label="Optimal Pareto Frontier", zorder=3)
     for name, acc, lat, vram, cat, col, mark in points:
         is_pareto = name in [p[0] for p in pareto_mem_points]
         sz = 110 if is_pareto else 75
@@ -958,9 +958,9 @@ def fig12_pareto_accuracy_latency_vram():
             dx, dy = -120, 0.3
         ax_s.annotate(name, (vram + dx, acc + dy), fontsize=8.2, fontweight="bold" if is_pareto else "normal")
 
-    ax_s.set_xlabel("اوج مصرف حافظهٔ تصویری (Peak VRAM in MB - پایین‌تر = بهتر)")
-    ax_s.set_ylabel("دقت طبقه‌بندی روی وظیفهٔ پایین‌دستی (%)")
-    ax_s.set_title("جبههٔ پارتوی مکانیزم‌های توجه: موازنهٔ دقت طبقه‌بندی در برابر اوج مصرف حافظهٔ VRAM")
+    ax_s.set_xlabel("Peak VRAM Footprint (MB - Lower is Better)")
+    ax_s.set_ylabel("Classification Accuracy on Downstream Task (%)")
+    ax_s.set_title("Attention Mechanism Pareto Frontier: Accuracy vs. Peak VRAM Footprint")
     ax_s.set_xlim(550, 1550)
     ax_s.set_ylim(85.5, 96.0)
     ax_s.grid(True, alpha=0.35)
@@ -982,22 +982,22 @@ def fig13_6pillar_ablation_waterfall():
 
     # --- Panel (a): Cumulative Stepwise Gain Across 6 Pillars ---
     pillars_cum = [
-        "صفر-شات\n(Zero-Shot)",
-        "+ ستون ۱\n(Logit KL)",
-        "+ ستون ۲\n(CKA Feat)",
-        "+ ستون ۳\n(Gram Attn)",
-        "+ ستون ۴\n(Angular)",
-        "+ ستون ۵\n(Stiefel)",
-        "+ ستون ۶\n(Entropy)",
+        "Zero-Shot",
+        "+ Col 1\n(Logit KL)",
+        "+ Col 2\n(CKA Feat)",
+        "+ Col 3\n(Gram Attn)",
+        "+ Col 4\n(Angular)",
+        "+ Col 5\n(Stiefel)",
+        "+ Col 6\n(Entropy)",
     ]
     cum_accs = [51.30, 78.40, 82.15, 85.30, 87.20, 88.50, 89.40]
     cum_colors = ["#D9534F", "#F0AD4E", "#2E75B6", "#3498DB", "#9B59B6", "#16A085", "#27AE60"]
 
     bars_cum = ax_cum.bar(pillars_cum, cum_accs, color=cum_colors, edgecolor="#222222", linewidth=0.8, width=0.55)
-    ax_cum.axhline(90.25, color="#7F7F7F", linestyle="--", linewidth=1.3, label="خط پایه مدل کامل (90.25%)")
+    ax_cum.axhline(90.25, color="#7F7F7F", linestyle="--", linewidth=1.3, label="Dense Baseline (90.25%)")
     ax_cum.set_ylim(40, 96)
-    ax_cum.set_ylabel("دقت بازیافت روی SST-2 (%)")
-    ax_cum.set_title("(الف) افزایش تجمعی دقت در فاز بازیافت با افزودن ستون‌های شش‌گانه")
+    ax_cum.set_ylabel("Recovery Accuracy on SST-2 (%)")
+    ax_cum.set_title("(a) Cumulative Accuracy Gain Across 6 KD Pillars")
     ax_cum.grid(True, axis="y")
     ax_cum.legend(loc="lower right", fontsize=8.5)
 
@@ -1015,23 +1015,23 @@ def fig13_6pillar_ablation_waterfall():
 
     # --- Panel (b): Leave-One-Out Ablation (Delta Drop when Omitting One Pillar) ---
     pillars_loo = [
-        "بستهٔ کامل\n(Full 6-Pillar)",
-        "بدون لاجیت\n(w/o Logit)",
-        "بدون CKA\n(w/o CKA)",
-        "بدون گرام\n(w/o Gram)",
-        "بدون زاویه‌ای\n(w/o Angular)",
-        "بدون استیفل\n(w/o Stiefel)",
-        "بدون انتروپی\n(w/o Entropy)",
+        "Full\n6-Pillar",
+        "w/o Logit\n(Col 1)",
+        "w/o CKA\n(Col 2)",
+        "w/o Gram\n(Col 3)",
+        "w/o Angular\n(Col 4)",
+        "w/o Stiefel\n(Col 5)",
+        "w/o Entropy\n(Col 6)",
     ]
     loo_accs = [89.40, 74.20, 86.85, 87.10, 87.95, 88.40, 88.85]
     loo_deltas = [0.0, -15.20, -2.55, -2.30, -1.45, -1.00, -0.55]
     loo_colors = ["#27AE60", "#D9534F", "#E67E22", "#F39C12", "#3498DB", "#2E75B6", "#1F4E79"]
 
     bars_loo = ax_loo.bar(pillars_loo, loo_accs, color=loo_colors, edgecolor="#222222", linewidth=0.8, width=0.55)
-    ax_loo.axhline(89.40, color="#27AE60", linestyle=":", linewidth=1.3, label="سقف بسته کامل (89.40%)")
+    ax_loo.axhline(89.40, color="#27AE60", linestyle=":", linewidth=1.3, label="Full 6-Pillar Ceiling (89.40%)")
     ax_loo.set_ylim(70, 94)
-    ax_loo.set_ylabel("دقت روی SST-2 پس از حذف مؤلفه (%)")
-    ax_loo.set_title("(ب) ارزیابی حذفی انفرادی (Leave-One-Out) برای تعیین حساسیت ستون‌ها")
+    ax_loo.set_ylabel("SST-2 Accuracy After Omitting Pillar (%)")
+    ax_loo.set_title("(b) Leave-One-Out (LOO) Sensitivity Ablation Across Pillars")
     ax_loo.grid(True, axis="y")
     ax_loo.legend(loc="lower right", fontsize=8.5)
 
@@ -1079,30 +1079,30 @@ def fig14_kd_convergence_dynamics():
     # Cosformer
     ax1.plot(steps, loss_cos_fwd, label="Forward KL", color="#D9534F", linewidth=2.0)
     ax1.plot(steps, loss_cos_6p, label="6-Pillar Suite", color="#27AE60", linewidth=2.0, linestyle="--")
-    ax1.set_title("معماری Cosformer", fontweight="bold")
-    ax1.set_xlabel("گام‌های آموزشی (Training Steps)")
-    ax1.set_ylabel("مقدار تابع زیان تقطیر (Distillation Loss)")
+    ax1.set_title("Cosformer Architecture", fontweight="bold")
+    ax1.set_xlabel("Training Steps")
+    ax1.set_ylabel("Distillation Loss")
     ax1.grid(True, alpha=0.35)
     ax1.legend(loc="upper right", fontsize=8.5)
 
     # Chunk GLA
     ax2.plot(steps, loss_gla_fwd, label="Forward KL", color="#D9534F", linewidth=2.0)
     ax2.plot(steps, loss_gla_6p, label="6-Pillar Suite", color="#27AE60", linewidth=2.0, linestyle="--")
-    ax2.set_title("معماری Chunk GLA", fontweight="bold")
-    ax2.set_xlabel("گام‌های آموزشی (Training Steps)")
+    ax2.set_title("Chunk GLA Architecture", fontweight="bold")
+    ax2.set_xlabel("Training Steps")
     ax2.grid(True, alpha=0.35)
     ax2.legend(loc="upper right", fontsize=8.5)
 
     # Mamba
     ax3.plot(steps, loss_mamba_fwd, label="Forward KL", color="#D9534F", linewidth=2.0)
     ax3.plot(steps, loss_mamba_6p, label="6-Pillar Suite", color="#27AE60", linewidth=2.0, linestyle="--")
-    ax3.set_title("معماری Mamba Block", fontweight="bold")
-    ax3.set_xlabel("گام‌های آموزشی (Training Steps)")
+    ax3.set_title("Mamba Block Architecture", fontweight="bold")
+    ax3.set_xlabel("Training Steps")
     ax3.grid(True, alpha=0.35)
     ax3.legend(loc="upper right", fontsize=8.5)
 
     fig.suptitle(
-        "منحنی‌های همگرایی افت در طول فاز بازیافت برای سه معماری توجه و حالت‌فضا (Forward KL در برابر 6-Pillar)",
+        "Loss Convergence Dynamics Across 3 Attention & SSM Architectures (Forward KL vs. 6-Pillar)",
         fontsize=11.5,
         fontweight="bold",
         y=1.03,
