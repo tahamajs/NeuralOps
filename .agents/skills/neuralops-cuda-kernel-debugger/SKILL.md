@@ -12,14 +12,11 @@ tags: ["neuralops", "cuda", "debugger", "numerics"]
 Trigger when a CUDA kernel produces NaN, Inf, or numerical difference `max_diff > 1e-3` compared to reference.
 
 ## Prerequisites
-- SSH access to `taha@192.168.1.100`
-- `/mnt/d/venv/bin/python3`
 
 ## Steps
 1. **Reproduce on GPU**:
    Run isolated numerical sanity check on remote GPU host:
    ```bash
-   ssh taha@192.168.1.100 "cd /mnt/d/SVD_Project && /mnt/d/venv/bin/python3 tests/benchmarks/test_kernel_numerics.py --kernel <kernel_name>"
    ```
 2. **Check 8 Common CUDA Bugs**:
    - FP16/BF16 intermediate accumulation overflow (ensure FP32 accumulation).
@@ -37,7 +34,6 @@ Trigger when a CUDA kernel produces NaN, Inf, or numerical difference `max_diff 
 
 ## Verification
 - Re-run isolated test on remote GPU:
-  `ssh taha@192.168.1.100 "cd /mnt/d/SVD_Project && /mnt/d/venv/bin/python3 -c 'import torch; from neuralops.core.cuda_kernels import <kernel>; ...'"`
 - Confirm `max_diff < 1e-3` and zero NaNs/Infs.
 
 ## Common pitfalls

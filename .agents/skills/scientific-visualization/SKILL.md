@@ -12,7 +12,6 @@ Use this skill when developing, refactoring, or reviewing scientific charts, Par
 
 ## Prerequisites
 - Manuscript environment: `thesis_final/810101504_main.tex`.
-- Remote GPU host: `ssh taha@192.168.1.100` (RTX 4070 SM 8.9).
 - Master results ledger: `results/registry/master_ledger.jsonl`.
 - Python 3.10+ with `matplotlib`, `seaborn`, `numpy`, and `scipy`.
 

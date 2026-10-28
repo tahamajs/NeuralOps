@@ -12,7 +12,6 @@ Use this skill before merging PRs or finalizing manuscript builds to audit every
 
 ## Prerequisites
 - Manuscript file: `thesis_final/810101504_main.tex`.
-- Remote GPU host: `ssh taha@192.168.1.100` (RTX 4070 SM 8.9).
 - Master results ledger: `results/registry/master_ledger.jsonl`.
 - Python 3.10+ execution environment.
 

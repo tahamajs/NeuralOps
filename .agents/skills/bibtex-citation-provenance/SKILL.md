@@ -13,7 +13,6 @@ Use this skill when managing the manuscript bibliography (`thesis_final/referenc
 ## Prerequisites
 - Bibliography file: `thesis_final/references.bib`.
 - Manuscript file: `thesis_final/810101504_main.tex`.
-- Remote GPU host: `ssh taha@192.168.1.100` (RTX 4070 SM 8.9).
 - Master results ledger: `results/registry/master_ledger.jsonl`.
 
 ## Canonical Audit Files Reference

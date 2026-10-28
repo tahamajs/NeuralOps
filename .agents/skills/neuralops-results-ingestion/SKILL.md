@@ -12,8 +12,6 @@ tags: ["neuralops", "ledger", "results", "ingestion", "benchmarks"]
 Trigger when recording new empirical benchmark results from kernel sweeps, compression runs, or latency evaluations into the persistent ledger.
 
 ## Prerequisites
-- SSH access to `taha@192.168.1.100`
-- `/mnt/d/venv/bin/python3`
 
 ## Steps
 1. **Parse Benchmark Output**:

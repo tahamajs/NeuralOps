@@ -12,14 +12,11 @@ tags: ["neuralops", "benchmark", "auditor", "triage"]
 Trigger when executing repository-wide audits across 108 CUDA C++ kernels or 26 Triton kernel modules.
 
 ## Prerequisites
-- SSH access to `taha@192.168.1.100`
-- `/mnt/d/venv/bin/python3`
 
 ## Steps
 1. **Run Isolated Benchmark Audit**:
    Execute the strict classifier on remote GPU:
    ```bash
-   ssh taha@192.168.1.100 "cd /mnt/d/SVD_Project && /mnt/d/venv/bin/python3 scripts/benchmarks/benchmark_all_108_cuda_isolated.py --classify-strict"
    ```
 2. **Classify Kernel Outputs**:
    Categorize every operator into one of 6 strict states:

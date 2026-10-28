@@ -12,8 +12,6 @@ tags: ["neuralops", "surgery", "svd", "calibration", "healing"]
 Trigger when performing in-place replacement of standard transformer attention layers with low-rank or linear SVD-factorized counterparts.
 
 ## Prerequisites
-- SSH access to `taha@192.168.1.100`
-- `/mnt/d/venv/bin/python3`
 
 ## Steps
 1. **Verify Surgery Compatibility**:

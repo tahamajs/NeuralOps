@@ -12,14 +12,12 @@ tags: ["neuralops", "ncu", "profiling", "cuda", "performance"]
 Trigger when optimizing a slow or memory-bound CUDA C++ or Triton kernel to achieve speedup over baseline.
 
 ## Prerequisites
-- SSH access to `taha@192.168.1.100`
 - NVIDIA Nsight Compute CLI (`ncu`) installed on GPU host
 
 ## Steps
 1. **Profile Kernel via Nsight Compute**:
    Collect comprehensive hardware metric counters on remote GPU:
    ```bash
-   ssh taha@192.168.1.100 "cd /mnt/d/SVD_Project && ncu --set full --kernel-name <name> /mnt/d/venv/bin/python3 tests/benchmarks/profile_target_kernel.py"
    ```
 2. **Analyze Bottleneck Metrics**:
    - `achieved_occupancy`: Check active warps per SM vs theoretical maximum.

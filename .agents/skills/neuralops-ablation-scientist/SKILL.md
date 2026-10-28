@@ -12,8 +12,6 @@ tags: ["neuralops", "ablation", "distillation", "experimentation"]
 Trigger when executing systematic ablation experiments across knowledge distillation regimes and architectural variants.
 
 ## Prerequisites
-- SSH access to `taha@192.168.1.100`
-- `/mnt/d/venv/bin/python3`
 
 ## Steps
 1. **Design 6-Pillar KD Ablation Matrix**:

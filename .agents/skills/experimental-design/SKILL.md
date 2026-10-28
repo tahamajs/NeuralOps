@@ -12,7 +12,6 @@ Use this skill when designing rigorous ablation studies, low-rank parameter swee
 
 ## Prerequisites
 - Manuscript context: `thesis_final/810101504_main.tex`.
-- Remote GPU host: `ssh taha@192.168.1.100` (RTX 4070 SM 8.9) with Python path `/mnt/d/venv/bin/python3`.
 - Master results ledger: `results/registry/master_ledger.jsonl`.
 
 ## Canonical Audit Files Reference

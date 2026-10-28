@@ -12,7 +12,6 @@ Use this skill when polishing dense academic sections of the doctoral thesis or 
 
 ## Prerequisites
 - Manuscript source: `thesis_final/810101504_main.tex`.
-- Remote GPU verification host: `ssh taha@192.168.1.100` (RTX 4070 SM 8.9).
 - Master results ledger: `results/registry/master_ledger.jsonl`.
 
 ## Canonical Audit Files Reference

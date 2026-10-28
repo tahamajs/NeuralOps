@@ -12,7 +12,6 @@ Use this skill when encountering build failures, missing font errors, table form
 
 ## Prerequisites
 - Manuscript workspace: `thesis_final/` containing `810101504_main.tex` and `references.bib`.
-- Remote GPU host: `ssh taha@192.168.1.100` (RTX 4070 SM 8.9).
 - Master results ledger: `results/registry/master_ledger.jsonl`.
 - System tools: `xelatex`, `bibtex`, `pdfinfo`, `grep`, `sed`.
 

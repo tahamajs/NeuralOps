@@ -12,7 +12,6 @@ tags: ["neuralops", "vllm", "sglang", "deployment", "hnc_svd", "serving"]
 Trigger when packaging, compressing, and serving factorized transformer models via vLLM or SGLang high-throughput inference runtimes.
 
 ## Prerequisites
-- SSH access to `taha@192.168.1.100`
 - Remote environment with `vllm` and `compressed-tensors` installed
 
 ## Steps

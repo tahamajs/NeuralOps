@@ -12,8 +12,6 @@ tags: ["neuralops", "integration", "dispatch", "surgery", "pipeline"]
 Trigger when wiring new kernel dispatch tiers or validating end-to-end integration flows across surgery, training, and ledger logging.
 
 ## Prerequisites
-- SSH access to `taha@192.168.1.100`
-- `/mnt/d/venv/bin/python3`
 
 ## Steps
 1. **Verify 3-Level Dispatch Fallback Hierarchy**:

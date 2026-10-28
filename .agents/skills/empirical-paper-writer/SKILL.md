@@ -12,7 +12,6 @@ Use this skill when drafting empirical machine learning sections (Experimental S
 
 ## Prerequisites
 - Manuscript template: `thesis_final/810101504_main.tex` (or conference format in `paper/`).
-- Remote GPU access: `ssh taha@192.168.1.100` (RTX 4070, SM 8.9) with Python path `/mnt/d/venv/bin/python3`.
 - Read access to `results/registry/master_ledger.jsonl` and master SQLite database `results/master_ledger.sqlite`.
 
 ## Canonical Audit Files Reference
@@ -103,5 +102,4 @@ Execute the automated empirical verification gates:
 
 ## Common Pitfalls
 - Quoting round or approximate numbers instead of the exact precision in `results/registry/master_ledger.jsonl`.
-- Running benchmarks locally on macOS rather than the remote GPU host (`192.168.1.100`).
 - Omitting the origin audit citation tag in table captions.

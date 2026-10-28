@@ -12,20 +12,16 @@ tags: ["neuralops", "paper", "latex", "tables", "benchmarks"]
 Trigger before every academic paper or thesis submission to compile publication tables from empirical records.
 
 ## Prerequisites
-- SSH access to `taha@192.168.1.100`
-- `/mnt/d/venv/bin/python3`
 - LaTeX environment with `pdflatex`
 
 ## Steps
 1. **Query Master Benchmark Database**:
    Verify SQLite records exist for all 131 attention mechanisms, 72 compression engines, 26 Triton kernel modules, and 108 CUDA packages:
    ```bash
-   ssh taha@192.168.1.100 "cd /mnt/d/SVD_Project && /mnt/d/venv/bin/python3 -c 'import sqlite3; conn = sqlite3.connect(\"results/master_ledger.sqlite\"); print(conn.execute(\"SELECT count(*) FROM runs\").fetchone())'"
    ```
 2. **Execute Table Generation Script**:
    Generate LaTeX table fragments:
    ```bash
-   ssh taha@192.168.1.100 "cd /mnt/d/SVD_Project && /mnt/d/venv/bin/python3 scripts/benchmarks/generate_all_paper_tables.py"
    ```
 3. **Verify LaTeX Table Files**:
    Ensure all 16 generated `.tex` files contain verified numbers and zero `TODO`, `TBD`, or placeholder values:
