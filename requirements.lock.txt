@@ -24,7 +24,7 @@ contourpy==1.4.0
 coverage==7.16.2
 cryptography==50.0.2
 cuda-bindings==12.9.7
-cuda-pathfinder==1.6.0
+cuda-pathfinder==1.8.3
 cuda-toolkit==12.8.1
 cycler==0.12.1
 datasets==5.1.0
