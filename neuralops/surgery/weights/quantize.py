@@ -40,7 +40,8 @@ def quantize_int4(
 ) -> Any:
     """Quantize linear weights to 4-bit representation using AWQ or GPTQ.
 
-    Fails-closed if external quantization dependencies (AutoAWQ, GPTQModel) are not installed.
+    Requires CUDA GPU and activation calibration data. Fails-closed if external
+    quantization dependencies (AutoAWQ, GPTQModel) are not installed or if running on CPU.
     """
     method_normalized = method.lower()
     if method_normalized not in ("awq", "gptq"):

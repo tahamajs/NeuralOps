@@ -75,11 +75,36 @@ def _shrink_swiglu_mlp(mlp: nn.Module, ratio: float) -> nn.Module:
 
 
 def _shrink_gelu_mlp(mlp: nn.Module, ratio: float) -> nn.Module:
-    """Shrink intermediate dimension for 2-layer GELU MLP (c_fc/c_proj or fc1/fc2)."""
-    fc1 = getattr(mlp, "c_fc", getattr(mlp, "fc1", getattr(mlp, "linear1", None)))
-    fc2 = getattr(mlp, "c_proj", getattr(mlp, "fc2", getattr(mlp, "linear2", None)))
+    """Shrink intermediate dimension for 2-layer GELU MLP (c_fc/c_proj, fc1/fc2, lin1/lin2)."""
+    fc1 = getattr(mlp, "c_fc", getattr(mlp, "fc1", getattr(mlp, "linear1", getattr(mlp, "lin1", None))))
+    fc2 = getattr(mlp, "c_proj", getattr(mlp, "fc2", getattr(mlp, "linear2", getattr(mlp, "lin2", None))))
 
-    if fc1 is None or fc2 is None or not isinstance(fc1, nn.Linear) or not isinstance(fc2, nn.Linear):
+    if fc1 is None or fc2 is None:
+        return mlp
+
+    # Check for HuggingFace Conv1D (used in GPT-2)
+    if hasattr(fc1, "nx") and hasattr(fc1, "nf") and hasattr(fc2, "nx") and hasattr(fc2, "nf"):
+        curr_inter = fc1.nf
+        target_inter = max(16, int(curr_inter * ratio))
+        if target_inter >= curr_inter:
+            return mlp
+
+        new_fc1 = type(fc1)(target_inter, fc1.nx)
+        new_fc1.weight.data.copy_(fc1.weight.data[:, :target_inter])
+        if fc1.bias is not None and new_fc1.bias is not None:
+            new_fc1.bias.data.copy_(fc1.bias.data[:target_inter])
+
+        new_fc2 = type(fc2)(fc2.nf, target_inter)
+        new_fc2.weight.data.copy_(fc2.weight.data[:target_inter, :])
+        if fc2.bias is not None and new_fc2.bias is not None:
+            new_fc2.bias.data.copy_(fc2.bias.data)
+
+        if hasattr(mlp, "c_fc"):
+            mlp.c_fc = new_fc1
+            mlp.c_proj = new_fc2
+        return mlp
+
+    if not isinstance(fc1, nn.Linear) or not isinstance(fc2, nn.Linear):
         return mlp
 
     curr_inter = fc1.out_features
@@ -97,6 +122,9 @@ def _shrink_gelu_mlp(mlp: nn.Module, ratio: float) -> nn.Module:
     elif hasattr(mlp, "linear1"):
         mlp.linear1 = _shrink_linear_out(fc1, target_inter)
         mlp.linear2 = _shrink_linear_in(fc2, target_inter)
+    elif hasattr(mlp, "lin1"):
+        mlp.lin1 = _shrink_linear_out(fc1, target_inter)
+        mlp.lin2 = _shrink_linear_in(fc2, target_inter)
 
     return mlp
 
@@ -150,7 +178,7 @@ def shrink_mlp(
                 _shrink_swiglu_mlp(module, ratio)
                 shrunk_count += 1
             # Check for GELU / 2-layer
-            elif hasattr(module, "c_fc") or hasattr(module, "fc1") or hasattr(module, "linear1"):
+            elif hasattr(module, "c_fc") or hasattr(module, "fc1") or hasattr(module, "linear1") or hasattr(module, "lin1"):
                 _shrink_gelu_mlp(module, ratio)
                 shrunk_count += 1
 

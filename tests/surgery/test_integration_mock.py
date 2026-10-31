@@ -6,7 +6,10 @@
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
-End-to-end integration test applying multi-stage surgery recipe to a transformer model.
+End-to-end integration test applying multi-stage surgery recipe to a mock transformer model.
+
+Note: This test uses a lightweight mock architecture for fast hermetic CI testing
+without requiring downloading external weights from HuggingFace Hub.
 """
 
 import torch

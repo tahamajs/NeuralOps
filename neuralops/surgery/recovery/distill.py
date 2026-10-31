@@ -40,6 +40,9 @@ def distill_from_teacher(
 ) -> Any:
     """Execute post-surgery multi-pillar knowledge distillation healing on student model.
 
+    Requires CUDA GPU acceleration and teacher model forward outputs for gradient healing.
+    On CPU without GPU, full optimization loop is deferred.
+
     Utilizes 6-pillar distillation loss objectives:
     - logit: Logit temperature distillation
     - feature: Hedgehog feature-map alignment

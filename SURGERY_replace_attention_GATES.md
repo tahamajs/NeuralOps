@@ -1,26 +1,39 @@
 # SURGERY_replace_attention_GATES.md
 
+**Status**: `CPU-VERIFIED` (Gates 1, 2, 3, 5, 6 pass; Gate 4 = no public HF model weights, Gate 7 = no external user)
+
 ## Gate 1: Works on ≥ 2 Model Families
-- **Model Families**: `llama` (Llama-3.1, Llama-3.2), `qwen` (Qwen-2.5), `gpt2`
-- **Verification**: Verified via `test_replace_attention.py` and `UniversalArchitectureScanner`.
+- **Status**: PASSED (CPU-VERIFIED)
+- **Model Families Tested**:
+  - Real `gpt2` (124M causal decoder, `GPT2LMHeadModel`)
+  - Real `distilbert-base-uncased` (66M encoder, `DistilBertModel`)
+- **Evidence**: `tests/surgery/test_replace_attention_real.py::test_replace_attention_gpt2_forward` and `test_replace_attention_distilbert_encoder`.
 
 ## Gate 2: Works on ≥ 2 Model Sizes
-- **Model Sizes**: Small (Mock 32-dim/64-dim, 1B), Base (8B).
-- **Verification**: Unit tests execute on multiple dimension configurations.
+- **Status**: PASSED (CPU-VERIFIED)
+- **Model Sizes Tested**: 66M (`distilbert`) and 124M (`gpt2`), plus multi-head mock configurations.
+- **Evidence**: Parameter shapes match across 66M and 124M architectures.
 
 ## Gate 3: Reproducible Benchmark
-- **Script**: `scripts/benchmarks/benchmark_vllm_backend.py` / `scripts/benchmarks/reproduce.sh`
-- **Metric**: Measured perplexity and throughput.
+- **Status**: PASSED (CPU-VERIFIED)
+- **Measured CPU Telemetry (from `test_replace_attention_real.py`)**:
+  - Baseline Forward Pass: 34.20ms
+  - Surgery Injection Time: 296.22ms
+  - Post-Surgery Forward Pass: 54.33ms
+  - Output Magnitude Ratio: 0.857
+  - Autoregressive Generation (10 tokens): 336.17ms
+  - Multiple Mechanisms Verified on CPU: `chunk_gla` (296ms), `cosformer` (652ms), `decay_linear_attention` (640ms)
 
 ## Gate 4: Model Card on HF Hub
-- **Hub Repository**: `https://huggingface.co/Hooshaai/neuralops-surgery-llama3-gla`
+- **Status**: PENDING (No public weights published for replaced checkpoint)
 
 ## Gate 5: Recipe in neuralops-recipes Dataset
-- **Recipe**: `examples/recipes/gpt2-fast.yaml` and `https://huggingface.co/datasets/Hooshaai/neuralops-recipes`
+- **Status**: PASSED
+- **Recipe**: `examples/recipes/gpt2-fast.yaml`
 
 ## Gate 6: Docs with End-to-End Example
-- **Documentation**: `docs/surgery/pipeline.md` and `docs/surgery/registry.md`
+- **Status**: PASSED
+- **Documentation**: `docs/surgery/pipeline.md`
 
 ## Gate 7: External User Verification
-- **External User**: Community preview testing in progress (`_experimental=False` for core attention replacement).
-- **Classification**: **STABLE**
+- **Status**: PENDING (No external community verification logged yet)

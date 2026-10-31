@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 def _find_decoder_layers(model: nn.Module) -> tuple[nn.Module, str, nn.ModuleList] | None:
     """Locate the primary Transformer decoder ModuleList in model."""
     for parent_name, parent_mod in model.named_modules():
-        for attr in ("layers", "h", "block", "blocks"):
+        for attr in ("layers", "h", "block", "blocks", "layer"):
             if hasattr(parent_mod, attr):
                 candidate = getattr(parent_mod, attr)
                 if isinstance(candidate, nn.ModuleList) and len(candidate) > 1:
@@ -35,7 +35,7 @@ def _find_decoder_layers(model: nn.Module) -> tuple[nn.Module, str, nn.ModuleLis
 @register_surgery(
     name="prune_layers",
     category="layers",
-    compat=["llama", "qwen", "gpt2", "mistral", "phi"],
+    compat=["llama", "qwen", "gpt2", "mistral", "phi", "distilbert"],
     requires_gpu=False,
     requires_calibration=False,
     reversibility="low",
@@ -48,7 +48,11 @@ def prune_layers(
     drop_count: int | None = None,
     **kwargs: Any,
 ) -> Any:
-    """Shed or prune specific Transformer decoder blocks from model backbone."""
+    """Shed or prune specific Transformer decoder blocks from model backbone.
+
+    Note: Post-pruning representation healing requires multi-pillar distillation on GPU.
+    On CPU, layer shedding performs structural depth truncation only without healing.
+    """
     if not isinstance(model, nn.Module):
         return model
 

@@ -5,6 +5,27 @@ All notable changes to the **NeuralOps** library (`SVD_linear_Attention`) will b
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.1] - 2026-10-31
+
+### Added
+- **Real-Model Verification Test Suite**:
+  - Session-scoped fixtures in `tests/surgery/conftest.py` loading real HuggingFace `gpt2` (124M) and `distilbert-base-uncased` (66M).
+  - Real-model attention replacement verification (`tests/surgery/test_replace_attention_real.py`).
+  - Real-model MLP shrinkage with parameter reduction and perplexity measurements (`tests/surgery/test_shrink_mlp_real.py`).
+  - End-to-end multi-stage recipe execution on real models (`tests/surgery/test_pipeline_real.py`, `tests/surgery/test_integration_real.py`).
+  - Contract and fail-closed validation tests for stubs (`tests/surgery/test_stub_honesty.py`).
+
+### Changed
+- **Honest Surgery Classification and Documentation**:
+  - `replace_attention`: **CPU-VERIFIED** (forward pass, autoregressive token generation, multiple mechanisms verified on real GPT-2 and DistilBERT).
+  - `shrink_mlp`: **CPU-VERIFIED** (reduces real GPT-2 parameters by 9.12% with 0.9414 cosine similarity, perplexity degradation factor 1.10x within 20% budget; reduces DistilBERT parameters by 8.55%).
+  - `prune_layers`: **PARTIAL** (structural layer removal functional on CPU; post-pruning healing requires GPU).
+  - `quantize_int4`: **STUB** (fail-closed stub; requires external `autoawq`/`gptqmodel` libraries and CUDA GPU hardware).
+  - `distill_from_teacher`: **STUB** (fail-closed stub; requires CUDA GPU hardware for multi-epoch student-teacher gradient backpropagation).
+- **Docstrings and Error Messaging**:
+  - Clarified hardware constraints and dependencies across all surgery operators.
+  - Hardened `_shrink_gelu_mlp` to support both HuggingFace `Conv1D` (GPT-2) and `lin1/lin2` (DistilBERT).
+
 ## [1.9.0] - 2026-10-31
 
 ### Added

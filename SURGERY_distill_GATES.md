@@ -1,25 +1,28 @@
 # SURGERY_distill_GATES.md
 
+**Status**: `STUB` (Documented only; contract verified)
+
 ## Gate 1: Works on ≥ 2 Model Families
-- **Model Families**: `llama`, `gpt2`, `qwen`, `mistral`
-- **Evidence**: Verified with 6-pillar objective configurations in `tests/surgery/test_distill.py`.
+- **Status**: STUB / NOT IMPLEMENTED
+- **Evidence**: `tests/surgery/test_distill.py` and `tests/surgery/test_stub_honesty.py`
 
 ## Gate 2: Works on ≥ 2 Model Sizes
-- **Model Sizes**: Configured for lightweight recovery and full 8B distillation loops.
-- **Evidence**: Pillar objectives tested with variable dimension scaling.
+- **Status**: STUB
 
 ## Gate 3: Reproducible Benchmark
-- **Script**: `scripts/benchmarks/benchmark_distill.py`
+- **Status**: FAILED / BLOCKED
+- **Blocker**: Multi-pillar gradient distillation requires CUDA GPU hardware for student-teacher backpropagation. Not functional on CPU.
 
 ## Gate 4: Model Card on HF Hub
-- **Hub Repository**: `https://huggingface.co/Hooshaai/neuralops-recipes`
+- **Status**: PENDING
 
 ## Gate 5: Recipe in neuralops-recipes Dataset
+- **Status**: PASSED (Schema spec only)
 - **Recipe**: `examples/recipes/gpt2-fast.yaml`
 
 ## Gate 6: Docs with End-to-End Example
+- **Status**: PASSED
 - **Documentation**: `docs/surgery/pipeline.md`
 
 ## Gate 7: External User Verification
-- **External User**: No external community verification logged yet.
-- **Classification**: **EXPERIMENTAL** (`_experimental=True` enabled with runtime UserWarning, GPU distillation recommended).
+- **Status**: PENDING

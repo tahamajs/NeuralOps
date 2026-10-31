@@ -7,6 +7,11 @@
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Tests for distill_from_teacher surgery recovery operator.
+
+Note on Scope:
+This file verifies surgery metadata registration, operator contract attributes, and
+interface callable invocation. It does NOT test actual multi-epoch GPU gradient descent
+or loss backpropagation (which requires CUDA GPU hardware).
 """
 
 import pytest
