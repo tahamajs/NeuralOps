@@ -216,6 +216,8 @@ def cmd_compress(args: Any) -> int:
     compress_kwargs: Dict[str, Any] = {}
     if target_ratio is not None:
         compress_kwargs["rank_ratio"] = target_ratio
+    if dataset is not None:
+        compress_kwargs["dataset"] = dataset
 
     start_time = time.perf_counter()
     try:
