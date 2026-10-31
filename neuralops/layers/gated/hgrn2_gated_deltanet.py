@@ -22,8 +22,8 @@ from typing import Any
 import torch
 import torch.nn as nn
 
-from neuralops.layers.gated_delta_net import GatedDeltaNet
-from neuralops.layers.hgrn2_gated_layer import HGRN2Layer
+from neuralops.layers.gated.gated_delta_net import GatedDeltaNet
+from neuralops.layers.gated.hgrn2_gated_layer import HGRN2Layer
 from neuralops.core.base import BaseAttention
 from neuralops.core.registry import ATTENTION_REGISTRY
 

@@ -20,7 +20,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from neuralops.layers.gated_delta_net import GatedDeltaNet
+from neuralops.layers.gated.gated_delta_net import GatedDeltaNet
 from neuralops.core.adapters import UniversalAdapter
 from neuralops.core.base import BaseAttention
 from neuralops.core.registry import ATTENTION_REGISTRY

@@ -18,7 +18,7 @@ from typing import Any
 
 import torch.nn as nn
 
-from neuralops.layers.minimal_svd import MinimalSVDAttention
+from neuralops.layers.svd.minimal_svd import MinimalSVDAttention
 from neuralops.core.registry import ATTENTION_REGISTRY
 
 logger = logging.getLogger(__name__)
