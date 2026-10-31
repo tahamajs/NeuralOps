@@ -4,7 +4,9 @@ This document outlines the architectural roadmap, development milestones, and re
 
 ---
 
-## Current Release: v1.8.1 (October 2026) — Fail-Closed Extensibility & Reality-Hardening
+## Current Release: v1.9.0 (October 2026) — Surgery Framework Foundation
+
+NeuralOps v1.9.0 ships 5 surgery operators (2 stable, 3 experimental) under `neuralops.surgery`, including attention replacement and MLP shrinkage, alongside fail-closed stubs for INT4 quantization and distillation.
 
 The v1.8.1 release consolidates ecosystem stability following the v1.7.0 partial delivery (36.7% across 6 work packages) and v1.8.0 Flash Linear Attention (`fla`) integration:
 

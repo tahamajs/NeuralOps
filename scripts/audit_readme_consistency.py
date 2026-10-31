@@ -32,7 +32,7 @@ def audit_readme_consistency() -> int:
     errors: list[str] = []
 
     print("=" * 70)
-    print("NeuralOps v1.6.0 Invariants & README Consistency Audit")
+    print("NeuralOps Invariants & README Consistency Audit")
     print("=" * 70)
 
     if not os.path.exists(readme_path):
@@ -50,6 +50,18 @@ def audit_readme_consistency() -> int:
         errors.append("README missing canonical 131 attention mechanisms count")
     if "72" not in readme or "compress" not in readme.lower():
         errors.append("README missing canonical 72 compression engines count")
+
+    # Verify live runtime registry invariants
+    try:
+        import neuralops
+        actual_attn = len(neuralops.ATTENTION_REGISTRY)
+        if actual_attn != 131:
+            errors.append(f"Live ATTENTION_REGISTRY count {actual_attn} != 131")
+        actual_comp = len(neuralops.COMPRESSOR_REGISTRY)
+        if actual_comp != 72:
+            errors.append(f"Live COMPRESSOR_REGISTRY count {actual_comp} != 72")
+    except Exception as e:
+        errors.append(f"Failed to import live registries: {e}")
 
     # Verify physical file migration counts
     layers_dir = os.path.join(repo_root, "neuralops", "layers")
