@@ -125,7 +125,7 @@ def test_public_symbol_exposure() -> None:
     assert export is neuralops.export
     assert compress is neuralops.compress
     assert replace_attention is neuralops.replace_attention
-    assert neuralops.pipeline is not None
+    assert pipeline is neuralops.pipeline
 
 
 def test_transplant_alias_identity_and_delegation() -> None:
@@ -384,7 +384,7 @@ def test_cli_architecture_mismatch_diagnostics(monkeypatch: pytest.MonkeyPatch) 
 
 def test_pipeline_text_generation_ergonomics() -> None:
     """Verify that neuralops.pipeline instantiates and executes text-generation."""
-    toy = ToyModel(num_layers=1, dim=16)
+    toy = ToyCausalLM(vocab_size=100, dim=16)
 
     class MockTokenizer:
         def __call__(self, text, return_tensors="pt", **kwargs):
@@ -402,6 +402,54 @@ def test_pipeline_text_generation_ergonomics() -> None:
     assert len(out) == 1
     assert "generated_text" in out[0]
     assert "Hello NeuralOps" in out[0]["generated_text"]
+
+
+def test_pipeline_exposure_and_callable() -> None:
+    """Verify that neuralops.pipeline is exposed in __all__, importable, and callable."""
+    assert "pipeline" in neuralops.__all__, "pipeline is missing from neuralops.__all__"
+    assert hasattr(neuralops, "pipeline"), "neuralops has no attribute 'pipeline'"
+    assert callable(neuralops.pipeline), "neuralops.pipeline is not callable"
+    assert pipeline is neuralops.pipeline
+
+
+def test_pipeline_text_generation_end_to_end() -> None:
+    """Verify neuralops.pipeline text-generation task with model and tokenizer."""
+    mock_model = MagicMock()
+    mock_model.generate.return_value = torch.tensor([[101, 2054, 2003, 102]])
+
+    mock_tokenizer = MagicMock()
+    mock_tokenizer.return_value = {"input_ids": torch.tensor([[101, 2054]])}
+    mock_tokenizer.batch_decode.return_value = ["What is"]
+
+    # 1. Pipeline creation
+    pipe = pipeline("text-generation", model=mock_model, tokenizer=mock_tokenizer)
+    assert pipe.task == "text-generation"
+    assert callable(pipe)
+
+    # 2. Execution with single prompt
+    output = pipe("What is")
+    assert isinstance(output, list)
+    assert len(output) == 1
+    assert "generated_text" in output[0]
+    assert output[0]["generated_text"] == "What is"
+
+    # 3. Execution with multiple prompts
+    mock_tokenizer.batch_decode.return_value = ["What is", "How to"]
+    batch_out = pipe(["Prompt 1", "Prompt 2"])
+    assert isinstance(batch_out, list)
+    assert len(batch_out) == 2
+    assert batch_out[0][0]["generated_text"] == "What is"
+    assert batch_out[1][0]["generated_text"] == "How to"
+
+    # 4. Immediate execution via kwargs prompt
+    mock_tokenizer.batch_decode.return_value = ["Immediate generation"]
+    direct_out = pipeline("text-generation", model=mock_model, tokenizer=mock_tokenizer, prompt="Test prompt")
+    assert isinstance(direct_out, list)
+    assert direct_out[0]["generated_text"] == "Immediate generation"
+
+    # 5. Unsupported task rejection
+    with pytest.raises(ValueError, match="Unsupported pipeline task"):
+        pipeline("image-segmentation", model=mock_model)
 
 
 if __name__ == "__main__":
