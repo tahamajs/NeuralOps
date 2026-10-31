@@ -6,12 +6,13 @@
 
 ### **A correctness-gated platform for attention surgery, compression, and hardware-aware benchmarking**
 
-> **131 registered attention mechanisms · 72 compression engines · 113 CUDA kernel packages (229 `.cu`/`.cpp` sources) · 32 Triton Python modules (62 registered unified operators) · 29 notebooks present in the checkout**
+> **131 registered attention mechanisms · 72 compression engines · 112 CUDA kernel packages (114 native implementations) · 26 Triton kernel modules (62 registered unified operators) · 29 notebooks present in the checkout**
 
 > **Registry count contract:** the current remote registry reports 131 attention mechanisms and 72 compression engines. Hardware source counts are reported separately.
 
-[![PyPI version](https://badge.fury.io/py/neuralops.svg)](https://pypi.org/project/neuralops/)
+[![PyPI version](https://img.shields.io/pypi/v/neuralops.svg?color=blue&label=pypi%20neuralops)](https://pypi.org/project/neuralops/)
 [![Release](https://img.shields.io/badge/release-v1.7.0-blue.svg)](https://github.com/tahamajs/NeuralOps/releases/tag/v1.7.0)
+[![PyPI Provenance](https://img.shields.io/badge/provenance-Sigstore%20SLSA-green.svg)](https://pypi.org/project/neuralops/)
 [![PyPI Downloads](https://img.shields.io/pypi/dm/neuralops.svg)](https://pypi.org/project/neuralops/)
 [![Python Versions](https://img.shields.io/pypi/pyversions/neuralops.svg)](https://pypi.org/project/neuralops/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -20,16 +21,21 @@
 [![CUDA 12.8+](https://img.shields.io/badge/CUDA-12.8%20%2F%2013.2-76B900?logo=nvidia&logoColor=white)](https://developer.nvidia.com/cuda-toolkit)
 [![Hardware Verified](https://img.shields.io/badge/Hardware%20Verified-RTX%204070%20(SM%208.9)-76B900?logo=nvidia&logoColor=white)](#5-exhaustive-gpu-capabilities-audit-131-attention--72-compression)
 [![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://tahamajs.github.io/NeuralOps/)
-[![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-neuralops-yellow)](https://huggingface.co/tahamajs/distilbert-svd-attention)
+[![Hugging Face Org](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Hooshaai%20(14%20Models)-ffcc00)](https://huggingface.co/Hooshaai)
+[![Benchmark Ledger](https://img.shields.io/badge/%F0%9F%A4%97%20Benchmark%20Ledger-Hooshaai%2Fneuralops--results-orange)](https://huggingface.co/datasets/Hooshaai/neuralops-results)
+[![3D Visualizer Space](https://img.shields.io/badge/%F0%9F%8C%90%203D%20Space-Atlas%20%26%20Visualizer-indigo)](https://huggingface.co/spaces/Hooshaai/3d-neural-architecture-visualizer)
+[![Academic Monograph](https://img.shields.io/badge/Monograph-317%20Pages%20%7C%20205%20MB-red)](https://github.com/tahamajs/NeuralOps/releases/tag/academic-monographs)
 [![Contributors](https://img.shields.io/github/contributors/tahamajs/NeuralOps?color=blue)](https://github.com/tahamajs/NeuralOps/graphs/contributors)
 
 <p align="center">
   <a href="#-30-second-quickstart"><b>⚡ Quickstart</b></a> ·
-  <a href="#-release-at-a-glance"><b>📊 Evidence</b></a> ·
+  <a href="#-high-level-inference-pipeline"><b>🚀 Pipeline</b></a> ·
+  <a href="#-academic-monographs-thesis--defense-slides"><b>🎓 Monograph & Thesis</b></a> ·
+  <a href="#-interactive-3d-spaces--hugging-face-ecosystem"><b>🌌 3D Space</b></a> ·
   <a href="#1-notebook-workflows"><b>📓 Notebooks</b></a> ·
   <a href="#13-attention-zoo-131-canonical-modules"><b>🧬 Attention Zoo</b></a> ·
   <a href="#14-compression-engines-72-canonical-methods"><b>📦 Compressors</b></a> ·
-  <a href="#4-production-serving--speculative-decoding-engine"><b>🚀 Serving</b></a>
+  <a href="#23-hugging-face-model-zoo-audit"><b>🤗 Model Zoo</b></a>
 </p>
 
 </div>
@@ -40,9 +46,10 @@
 | --- | --- |
 | **Attention registry** | 131 mechanisms across dense, linear, gated, SSM, sparse, and hybrid families |
 | **Compression registry** | 72 engines covering SVD, quantization, pruning, and tensor decompositions |
-| **Hardware source inventory** | 113 CUDA package directories, 229 `.cu`/`.cpp` files, 32 Triton modules, 62 registered Triton operators |
+| **Hardware source inventory** | 112 CUDA package directories, 114 native implementations, 26 Triton modules, 62 registered Triton operators |
 | **Final benchmark ledger** | 203 logical rows: 42 `PASS_FAST`, 161 `PASS_SLOW`, 0 fallback, 0 timeout |
-| **Notebook suite** | 27 master notebooks plus 2 integration notebooks present in the checkout |
+| **Notebook suite** | 27 master notebooks plus 2 integration notebooks present in the checkout (29 total) |
+| **Academic publications** | Master's Thesis (317 pages, 205 MB), Defense Slides (50 slides, 172 MB), 3 conference papers |
 
 ```mermaid
 flowchart LR
@@ -60,20 +67,25 @@ The dispatch hierarchy is intentionally conservative: a source file is not count
 ### ⚡ 30-Second Quickstart
 
 ```python
-# 1. Install NeuralOps with the CPU runtime (or choose another extra below)
-pip install "neuralops[cpu]"
+# 1. Install NeuralOps from PyPI
+pip install neuralops
 
-# 2. In-place Subquadratic Attention Surgery (Swap O(T²) with O(T) Linear Attention)
-import neuralops, transformers
+# 2. High-Level Ergonomic Pipeline (One-line Hugging Face-compatible inference)
+import neuralops
+generator = neuralops.pipeline("text-generation", model="gpt2", device="cuda")
+print(generator("Subquadratic sequence modeling achieves", max_new_tokens=40))
+
+# 3. In-place Subquadratic Attention Surgery (Transplant O(T²) with O(T) Linear Attention)
+import transformers
 model = transformers.AutoModelForCausalLM.from_pretrained("gpt2")
-model = neuralops.replace_attention(model, method="gated_delta_net", rank=64)
+model = neuralops.transplant(model, method="gated_delta_net", rank=64)
 
-# 3. Model Compression (65% parameter reduction with closed-form Ridge alignment)
+# 4. Model Compression (65% parameter reduction with closed-form Ridge alignment)
 model = neuralops.compress(model, method="hadamard_incoherent_svd", rank=32)
 ```
 
 ```bash
-# 4. Multi-Corpus Pretraining & Varlen Packing (Zero padding token waste)
+# 5. Multi-Corpus Pretraining & Varlen Packing (Zero padding token waste)
 neuralops train \
   --model gpt2 \
   --dataset HuggingFaceFW/fineweb-edu,opencsg/Fineweb-Edu-Chinese-V2 \
@@ -81,6 +93,19 @@ neuralops train \
   --seq-len 4096 \
   --lr-scheduler wsd \
   --optimizer lion
+```
+
+### 🚀 High-Level Inference Pipeline
+
+NeuralOps v1.7.0 provides unified, Hugging Face-style inference pipelines that automatically handle tokenization, device staging, kv-cache routing, and autoregressive generation across subquadratic models:
+
+```python
+import neuralops
+
+# Text generation with automatic device and attention routing
+pipe = neuralops.pipeline("text-generation", model="gpt2", device="cuda")
+result = pipe("Deep learning hardware acceleration requires", max_new_tokens=50, temperature=0.7)
+print(result)
 ```
 
 ### Unified Training API
@@ -130,23 +155,25 @@ reloaded = neuralops.load_attention_from_hub("distilbert-base-uncased",
 
 ## 🚀 Key Capabilities in v1.7.0
 
-NeuralOps v1.7.0 introduces a modernized 3-tier module architecture, PEP 562 lazy loading, and CPU-safe verification:
+NeuralOps v1.7.0 delivers ergonomics, zero-overhead dispatch caching, multi-batch healing, and full provenance:
 
 | Capability | Architecture Scope | Technical Implementation |
 | :--- | :--- | :--- |
-| **Tier Restructuring** | `neuralops.layers`, `neuralops.compression`, `neuralops.ops` | Physical relocation with transparent backward-compatibility shims |
-| **Lazy Loading** | Core & Top-Level Facades | PEP 562 `__getattr__` routing; bare import runs in <30ms |
-| **Consolidated Primitives** | Low-rank & PEFT core | Single canonical definitions for `SVDLinear`, `LoRALinear`, `FactorizedLinear` |
-| **Decoupled Telemetry** | `neuralops.analysis`, `neuralops.benchmarks` | Core decoupled from heavy external dependencies (`matplotlib`, `pandas`) |
-| **Robust Testing** | `tests/distributed/`, `tests/test_code_quality.py` | CPU-safe context/tensor parallel tests; zero unhandled exception swallowing |
-| **Honest Integration Stubs** | `neuralops.integrations` | Clear roadmap stubs raising `IntegrationNotImplementedError` |
+| **High-Level Ergonomics** | `neuralops.pipeline`, Top-level Facades | HuggingFace-style `pipeline("text-generation")` and direct aliases `transplant`, `compress`, `export` |
+| **Zero-Overhead Dispatch** | `UniversalAttentionWrapper` | Pre-resolves & caches dynamic forward dispatch mode (`_cached_dispatch_mode`), achieving $\mathcal{O}(1)$ overhead per token |
+| **Stateful Cache Bridge** | `HFCacheBridge` & Recurrent Layers | Preserves 4D recurrent state matrices `(B, H, Dk, Dv)` across sequence cropping and legacy conversions |
+| **Multi-Batch Calibration Healing**| `universal_calibrator` | Cycles through all cached calibration batches (`step % len(in_list)`) with non-finite loss diagnostic guards |
+| **Silent Failure Eradication** | `neuralops.ops.triton.low_rank` | Replaced bare exception swallowing with structured logger warnings and fallback telemetry |
+| **PyPI Trusted Publishing** | `.github/workflows/publish_pypi_oidc.yml` | OpenID Connect (OIDC) tokenless release with dual Sigstore PEP 740 and SLSA build attestations |
+| **Dedicated Academic Hub** | `releases/tag/academic-monographs` | Standalone download hub for 317-page Master's Thesis, 50-slide defense presentation, and papers |
 
 ---
 
 ## 📖 Table of Contents
 
-0. [Key Capabilities in v1.7.0](#-key-capabilities-in-v160)
-
+0. [Key Capabilities in v1.7.0](#-key-capabilities-in-v170)
+* [Academic Monographs, Master's Thesis & Conference Papers](#-academic-monographs-thesis--defense-slides)
+* [Interactive 3D Spaces & Hugging Face Ecosystem](#-interactive-3d-spaces--hugging-face-ecosystem)
 1. [Notebook Workflows](#1-notebook-workflows)
 2. [CUDA Kernel Packages & 3-Level Fallback Dispatch](#2-cuda-kernel-packages--3-level-fallback-dispatch)
 3. [26 Categorized Triton Kernel Modules (62 Unified JIT Operators) & Roofline Acceleration Leaderboard](#3-26-categorized-triton-kernel-modules-62-unified-jit-operators--roofline-acceleration-leaderboard)
@@ -175,6 +202,33 @@ NeuralOps v1.7.0 introduces a modernized 3-tier module architecture, PEP 562 laz
 26. [How to Contribute & Engineering Standards](#26-how-to-contribute-engineering-standards)
 27. [Citation & License](#27-citation--license)
 28. [Contributors & Community](#28-contributors--community)
+
+---
+
+## 🎓 Academic Monographs, Thesis & Defense Slides
+
+NeuralOps is developed at the **Department of Computer Engineering, College of Engineering, University of Tehran**.  
+All comprehensive scientific monographs, formal mathematical derivations, and physical silicon benchmark logs are permanently archived in the dedicated [Academic Monographs Release Hub](https://github.com/tahamajs/NeuralOps/releases/tag/academic-monographs) to maintain a lightweight software repository:
+
+| Document / Monograph | Focus & Scope | Format & Size | Direct Release Download |
+| :--- | :--- | :---: | :---: |
+| **Master's Thesis Monograph** | Complete 317-page university monograph detailing subquadratic operator design, in-place neural attention surgery, 6-pillar knowledge distillation, and SM 8.9 microarchitectures. | PDF (205.37 MB) | [📥 Download Thesis PDF](https://github.com/tahamajs/NeuralOps/releases/download/academic-monographs/NeuralOps_Master_Thesis_810101504.pdf) |
+| **Oral Defense Slide Deck** | 50 presentation slides with high-resolution vector diagrams, hardware roofline trajectories, and SVD eigenspectrum decay plots. | PDF (172.13 MB) | [📥 Download Defense Slides](https://github.com/tahamajs/NeuralOps/releases/download/academic-monographs/NeuralOps_Thesis_Defense_Slides_810101504.pdf) |
+| **NeurIPS 2026 Paper** | Subquadratic Attention Surgery via Closed-Form Ridge Subspace Realignment. | PDF (64.31 MB) | [📥 Download NeurIPS Paper](https://github.com/tahamajs/NeuralOps/releases/download/academic-monographs/NeuralOps_NeurIPS2026_Paper.pdf) |
+| **ICLR 2027 Paper** | Subquadratic Sequence Modeling: A Unified Survey & Benchmark of 131 Operators. | PDF (64.31 MB) | [📥 Download ICLR Paper](https://github.com/tahamajs/NeuralOps/releases/download/academic-monographs/NeuralOps_ICLR2027_Paper.pdf) |
+| **MLSys 2027 Paper** | Zero-Overhead Kernel Dispatch & Hardware Roofline Analysis on Modern Silicon. | PDF (68.29 MB) | [📥 Download MLSys Paper](https://github.com/tahamajs/NeuralOps/releases/download/academic-monographs/NeuralOps_MLSys2027_Paper.pdf) |
+
+---
+
+## 🌌 Interactive 3D Spaces & Hugging Face Ecosystem
+
+NeuralOps powers the official **[Hooshaai](https://huggingface.co/Hooshaai)** research laboratory on Hugging Face:
+
+- **[🌌 3D Neural Architecture Visualizer Space](https://huggingface.co/spaces/Hooshaai/3d-neural-architecture-visualizer)**: Zero-dependency WebGL Three.js spatial canvas rendering 3D computational graphs, token lifecycle physics, and empirical trade-off surfaces across all 203 unified modules (131 attention mechanisms + 72 compressors).
+  * Direct Standalone App: [https://hooshaai-3d-neural-architecture-visualizer.hf.space](https://hooshaai-3d-neural-architecture-visualizer.hf.space)
+- **[⚡ Hooshaai General Space & Documentation Hub](https://huggingface.co/spaces/Hooshaai/README)**: Complete architecture atlas, model cards, and interactive execution primers.
+- **[📊 Master Benchmark Ledger Dataset (`Hooshaai/neuralops-results`)](https://huggingface.co/datasets/Hooshaai/neuralops-results)**: Complete Parquet, CSV, and SQLite benchmark ledgers certified on physical silicon (NVIDIA RTX 4070 SM 8.9).
+- **[🤗 Published Model Zoo (14 Official Checkpoints)](https://huggingface.co/Hooshaai)**: Pre-trained and post-surgery models including DistilBERT FWSVD, GPT-2 Medium FWSVD, RoBERTa FWSVD, Cosformer, Adaptive Span, Cluster Attention, Griffin SSD, Hymba TransX, RPC, and AdaSplash.
 
 ---
 
@@ -1683,11 +1737,12 @@ The complete directory and model synchronization utilities are documented in [`s
 
 The `neuralops` package is verified against strict packaging standards prior to every release:
 
-   - [x] **Package Distribution**: Published on PyPI as [`neuralops v1.7.0`](https://pypi.org/project/neuralops/).
+- [x] **Package Distribution**: Published on PyPI as [`neuralops v1.7.0`](https://pypi.org/project/neuralops/).
+- [x] **Trusted Publishing & Provenance**: Automated publish workflow using GitHub Actions OIDC (`actions/attest-build-provenance@v2` + `pypa/gh-action-pypi-publish@release/v1`) with cryptographic PEP 740 Sigstore provenance attestations.
 - [x] **Metadata Linter**: `twine check dist/*` passes with 0 warnings, 0 errors.
-- [x] **Wheel Hygiene**: Pure Python + Triton wheel (`neuralops-py3-none-any.whl`, size ~1.2 MB). Scratch files, test logs, and raw checkpoint weights are excluded via `pyproject.toml`.
-- [x] **Source Distribution**: Complete source archive includes all source files, C++/CUDA headers, LICENSE, and documentation.
-- [x] **Git Provenance**: Release commit tagged matching origin `main`.
+- [x] **Wheel Hygiene**: Pure Python + Triton wheel (`neuralops-1.7.0-py3-none-any.whl`, size ~3.2 MB). Scratch files, test logs, and raw checkpoint weights are excluded via `pyproject.toml`.
+- [x] **Source Distribution**: Complete source archive includes all source files, C++/CUDA headers, LICENSE, and documentation (`neuralops-1.7.0.tar.gz`).
+- [x] **Git Provenance**: Release commit tagged matching origin `main` (`v1.7.0`).
 
 ---
 
@@ -1696,9 +1751,9 @@ The `neuralops` package is verified against strict packaging standards prior to 
 | NeuralOps Version | Python Versions | PyTorch Versions | Triton Versions | CUDA Versions | Supported OS |
 | :---: | :---: | :---: | :---: | :---: | :--- |
 | **v1.7.0** (Current) | `3.10`, `3.11`, `3.12`, `3.14` | `2.1.0` – `2.11.0+` | `3.0.0` – `3.6.0+` | `11.8`, `12.1`–`12.8`, `13.0`–`13.2` | Linux (Ubuntu, Debian, RHEL), macOS 13+, Windows 10/11 (WSL2) |
-| **v1.7.0** | `3.10`, `3.11`, `3.12`, `3.14` | `2.1.0` – `2.11.0+` | `3.0.0` – `3.6.0+` | `11.8`, `12.1`–`12.8`, `13.0`–`13.2` | Linux (Ubuntu, Debian, RHEL), macOS 13+, Windows 10/11 (WSL2) |
-| **v1.7.0** | `3.10`, `3.11`, `3.12`, `3.14` | `2.1.0` – `2.6.0+` | `3.0.0` – `3.6.0+` | `11.8`, `12.1`–`12.8`, `13.0`–`13.2` | Linux, macOS 13+, Windows 10/11 |
-| **v1.7.0** | `3.9`, `3.10`, `3.11` | `2.0.0` – `2.2.0` | `2.1.0` – `2.2.0` | `11.7`, `11.8`, `12.0` | Linux, macOS 12+ |
+| **v1.6.0** | `3.10`, `3.11`, `3.12`, `3.14` | `2.1.0` – `2.11.0+` | `3.0.0` – `3.6.0+` | `11.8`, `12.1`–`12.8`, `13.0`–`13.2` | Linux (Ubuntu, Debian, RHEL), macOS 13+, Windows 10/11 (WSL2) |
+| **v1.5.0** | `3.10`, `3.11`, `3.12`, `3.14` | `2.1.0` – `2.6.0+` | `3.0.0` – `3.6.0+` | `11.8`, `12.1`–`12.8`, `13.0`–`13.2` | Linux, macOS 13+, Windows 10/11 |
+| **v1.4.0** | `3.9`, `3.10`, `3.11` | `2.0.0` – `2.2.0` | `2.1.0` – `2.2.0` | `11.7`, `11.8`, `12.0` | Linux, macOS 12+ |
 
 ---
 
@@ -1749,7 +1804,7 @@ If you use NeuralOps, its subquadratic attention kernels, or model compression e
   year = {2026},
   publisher = {GitHub},
   howpublished = {\url{https://github.com/tahamajs/NeuralOps}},
-  version = {1.4.0}
+  version = {1.7.0}
 }
 ```
 
