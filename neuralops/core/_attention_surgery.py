@@ -883,27 +883,40 @@ def _heal_replaced_model_impl(
         s_mod.train()
         for step in range(steps):
             optimizer.zero_grad()
+            batch_idx = step % len(in_list)
+            H_in_step = in_list[batch_idx].to(target_dev)
+            Y_tgt_step = tgt_list[batch_idx % len(tgt_list)].to(target_dev)
+            denom_mse_step = float(torch.norm(Y_tgt_step, p="fro").item() ** 2 + 1e-6)
+
             try:
-                pred = s_mod(H_in.to(p.dtype))
+                pred = s_mod(H_in_step.to(p.dtype))
             except Exception:
                 try:
-                    pred = s_mod(hidden_states=H_in.to(p.dtype))
+                    pred = s_mod(hidden_states=H_in_step.to(p.dtype))
                 except Exception:
-                    pred = s_mod(H_in.to(p.dtype), H_in.to(p.dtype), H_in.to(p.dtype))
+                    pred = s_mod(H_in_step.to(p.dtype), H_in_step.to(p.dtype), H_in_step.to(p.dtype))
 
             pred_val = pred[0] if isinstance(pred, tuple) else pred
             pred_f = pred_val.float()
 
-            loss_fro = torch.norm(pred_f - Y_tgt, p="fro") ** 2 / denom_mse
+            loss_fro = torch.norm(pred_f - Y_tgt_step, p="fro") ** 2 / denom_mse_step
             loss_cos = 1.0 - F.cosine_similarity(
-                pred_f.reshape(-1, Y_tgt.shape[-1]),
-                Y_tgt.reshape(-1, Y_tgt.shape[-1]),
+                pred_f.reshape(-1, Y_tgt_step.shape[-1]),
+                Y_tgt_step.reshape(-1, Y_tgt_step.shape[-1]),
                 dim=-1,
             ).mean()
 
             loss = loss_fro + cosine_weight * loss_cos
 
             if torch.isnan(loss) or torch.isinf(loss):
+                logger.warning(
+                    "Non-finite loss (%s) encountered during micro-healing at layer '%s', step %d/%d (batch %d); halting optimization early.",
+                    loss.item(),
+                    layer_name,
+                    step + 1,
+                    steps,
+                    batch_idx,
+                )
                 break
 
             loss.backward()

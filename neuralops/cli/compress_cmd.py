@@ -82,10 +82,19 @@ def build_compress_parser(subparser: Optional[argparse.ArgumentParser] = None) -
     parser.add_argument(
         "--output-dir",
         "--save-dir",
+        "--output",
         dest="output_dir",
         type=str,
         default="results/compressed",
         help="Destination directory to save compressed model checkpoint and manifests",
+    )
+    parser.add_argument(
+        "--dataset",
+        "--calibration-dataset",
+        dest="dataset",
+        type=str,
+        default=None,
+        help="Optional dataset or calibration data for data-dependent compression",
     )
     parser.add_argument(
         "--device",
@@ -149,6 +158,7 @@ def cmd_compress(args: Any) -> int:
     rank = getattr(args_ns, "rank", 32)
     target_ratio = getattr(args_ns, "target_ratio", None)
     output_dir = getattr(args_ns, "output_dir", None) or getattr(args_ns, "save_dir", "results/compressed")
+    dataset = getattr(args_ns, "dataset", None) or getattr(args_ns, "calibration_dataset", None)
     device_arg = getattr(args_ns, "device", None)
     output_json = getattr(args_ns, "json", False)
 

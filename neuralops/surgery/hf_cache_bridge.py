@@ -36,6 +36,8 @@ class NeuralOpsHybridHFCache(_HF_CACHE_BASE):
     HuggingFace compliant generation cache supporting heterogeneous layers.
     Guarantees get_seq_length(), get_max_length(), and get_usable_length()
     track true sequence lengths so RoPE position_ids and cache_position match exactly.
+    Properly handles both standard 4D KV tensors (B, H, L, D) and 4D linear recurrent
+    state matrices (B, H, Dk, Dv) without crashing or slicing incompatibilities during generation.
     """
 
     def __init__(self) -> None:
@@ -50,14 +52,41 @@ class NeuralOpsHybridHFCache(_HF_CACHE_BASE):
             self.value_cache: List[torch.Tensor] = []
         self.recurrent_state_cache: Dict[int, Any] = {}
         self.sliding_window_cache: Dict[int, Tuple[torch.Tensor, torch.Tensor]] = {}
+        self._recurrent_layers: set[int] = set()
         self._seen_tokens: int = 0
+
+    def is_recurrent_layer(self, layer_idx: int) -> bool:
+        """Return True if the specified layer index holds recurrent state."""
+        return layer_idx in self.recurrent_state_cache or layer_idx in self._recurrent_layers
+
+    def mark_recurrent_layer(self, layer_idx: int) -> None:
+        """Explicitly register a layer index as using linear recurrent state semantics."""
+        self._recurrent_layers.add(layer_idx)
+
+    def _is_recurrent_tensor(self, tensor: torch.Tensor, layer_idx: Optional[int] = None) -> bool:
+        """Determine whether a tensor is a 4D recurrent state matrix (B, H, Dk, Dv)."""
+        if layer_idx is not None and self.is_recurrent_layer(layer_idx):
+            return True
+        if not isinstance(tensor, torch.Tensor) or tensor.ndim != 4:
+            return False
+        # Recurrent state matrices (B, H, Dk, Dv) have head dimensions (typically Dk == Dv >= 8)
+        # and do not change sequence length during decoding.
+        if tensor.shape[-2] == tensor.shape[-1] and tensor.shape[-2] >= 8:
+            if self._seen_tokens > 0 and tensor.shape[-2] != self._seen_tokens:
+                return True
+        return False
 
     def get_seq_length(self, layer_idx: Optional[int] = 0) -> int:
         """Return a layer's cached length, or the processed-token count for recurrent layers."""
-        if layer_idx is not None and 0 <= layer_idx < len(self.key_cache):
-            key_states = self.key_cache[layer_idx]
-            if key_states.numel() > 0:
-                return int(key_states.shape[-2])
+        if layer_idx is not None:
+            if self.is_recurrent_layer(layer_idx):
+                return self._seen_tokens
+            if 0 <= layer_idx < len(self.key_cache):
+                key_states = self.key_cache[layer_idx]
+                if key_states.numel() > 0:
+                    if self._is_recurrent_tensor(key_states, layer_idx):
+                        return self._seen_tokens
+                    return int(key_states.shape[-2])
         return self._seen_tokens
 
     def get_max_length(self) -> Optional[int]:
@@ -77,16 +106,72 @@ class NeuralOpsHybridHFCache(_HF_CACHE_BASE):
     def update(
         self,
         key_states: torch.Tensor,
-        value_states: torch.Tensor,
-        layer_idx: int,
+        value_states: Optional[torch.Tensor] = None,
+        layer_idx: int = 0,
         cache_kwargs: Optional[Dict[str, Any]] = None,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
-        """Updates standard KV cache for full-attention layers."""
+        """
+        Updates cache for full-attention KV layers or constant O(1) linear recurrent layers.
+        Properly distinguishes 4D KV tensors (B, H, L, D) from 4D recurrent state matrices (B, H, Dk, Dv).
+        """
         seen_before_update = self._seen_tokens
+
+        # Check if this update represents a recurrent state matrix
+        is_recurrent = (
+            self.is_recurrent_layer(layer_idx)
+            or (cache_kwargs is not None and (
+                cache_kwargs.get("is_recurrent", False)
+                or cache_kwargs.get("recurrent", False)
+                or cache_kwargs.get("layer_type") in ("recurrent", "linear", "linear_attn", "gla", "retnet", "rwkv")
+            ))
+            or value_states is None
+            or (value_states is key_states and key_states.ndim == 4)
+        )
+
+        if not is_recurrent and key_states.ndim == 4:
+            if layer_idx < len(self.key_cache) and self.key_cache[layer_idx].numel() > 0:
+                cached = self.key_cache[layer_idx]
+                if cached.ndim == 4 and cached.shape == key_states.shape and key_states.shape[-2] > 1:
+                    is_recurrent = True
+            elif key_states.shape[-2] == key_states.shape[-1] and key_states.shape[-2] >= 8 and seen_before_update > 0 and key_states.shape[-2] != 1:
+                is_recurrent = True
+
+        effective_val = value_states if value_states is not None else key_states
+
+        if is_recurrent:
+            self._recurrent_layers.add(layer_idx)
+            self.recurrent_state_cache[layer_idx] = key_states
+
+            while len(self.key_cache) <= layer_idx:
+                self.key_cache.append(torch.empty(0, device=key_states.device))
+                self.value_cache.append(torch.empty(0, device=effective_val.device))
+
+            # Store recurrent state matrix without concatenating along dim=-2
+            self.key_cache[layer_idx] = key_states
+            self.value_cache[layer_idx] = effective_val
+
+            num_tokens = 1
+            if cache_kwargs is not None:
+                if "num_tokens" in cache_kwargs:
+                    num_tokens = int(cache_kwargs["num_tokens"])
+                elif "cache_position" in cache_kwargs:
+                    cp = cache_kwargs["cache_position"]
+                    if isinstance(cp, torch.Tensor):
+                        num_tokens = int(cp.numel())
+            elif seen_before_update == 0:
+                num_tokens = 1
+
+            if layer_idx == 0:
+                self._seen_tokens = seen_before_update + num_tokens
+
+            self._sync_base_layers()
+            return key_states, effective_val
+
+        # Standard KV Cache (B, H, L, D)
         if _HF_CACHE_BASE is not object:
             updated_key, updated_value = super().update(
                 key_states,
-                value_states,
+                effective_val,
                 layer_idx,
                 cache_kwargs=cache_kwargs,
             )
@@ -94,37 +179,67 @@ class NeuralOpsHybridHFCache(_HF_CACHE_BASE):
             # The fallback cache is used when Transformers is not installed.
             while len(self.key_cache) <= layer_idx:
                 self.key_cache.append(torch.empty(0, device=key_states.device))
-                self.value_cache.append(torch.empty(0, device=value_states.device))
+                self.value_cache.append(torch.empty(0, device=effective_val.device))
             if self.key_cache[layer_idx].numel() == 0:
-                updated_key, updated_value = key_states, value_states
+                updated_key, updated_value = key_states, effective_val
             else:
                 updated_key = torch.cat([self.key_cache[layer_idx], key_states], dim=-2)
-                updated_value = torch.cat([self.value_cache[layer_idx], value_states], dim=-2)
+                updated_value = torch.cat([self.value_cache[layer_idx], effective_val], dim=-2)
             self.key_cache[layer_idx] = updated_key
             self.value_cache[layer_idx] = updated_value
 
         while len(self.key_cache) <= layer_idx:
             self.key_cache.append(torch.empty(0, device=key_states.device))
-            self.value_cache.append(torch.empty(0, device=value_states.device))
+            self.value_cache.append(torch.empty(0, device=effective_val.device))
         self.key_cache[layer_idx] = updated_key
         self.value_cache[layer_idx] = updated_value
 
         if layer_idx == 0:
-            # Older DynamicCache versions update this same counter inside
-            # super().update(); assigning from the pre-update value avoids a
-            # double increment across Transformers versions.
             self._seen_tokens = seen_before_update + key_states.shape[-2]
 
         self._sync_base_layers()
         return updated_key, updated_value
 
-    def update_recurrent_state(self, layer_idx: int, state: Any, num_tokens: int = 1) -> Any:
-        """Stores constant O(1) recurrent states (GLA, GDN, RetNet, etc.)."""
+    def update_recurrent_state(
+        self,
+        arg1: Any,
+        arg2: Any = None,
+        num_tokens: int = 1,
+        **kwargs: Any,
+    ) -> Any:
+        """
+        Stores constant O(1) recurrent states (GLA, GDN, RetNet, etc.).
+        Supports both (layer_idx, state) and HuggingFace Cache (recurrent_states, layer_idx) signatures.
+        """
+        if isinstance(arg1, int):
+            layer_idx = arg1
+            state = arg2
+        elif isinstance(arg2, int):
+            state = arg1
+            layer_idx = arg2
+        else:
+            raise ValueError(
+                f"One of the first two arguments must be an integer layer_idx, got {type(arg1)} and {type(arg2)}"
+            )
+
+        num_tokens = kwargs.get("num_tokens", num_tokens)
         if num_tokens < 0:
             raise ValueError("num_tokens must be non-negative")
+
+        self._recurrent_layers.add(layer_idx)
         self.recurrent_state_cache[layer_idx] = state
+
+        if isinstance(state, torch.Tensor):
+            while len(self.key_cache) <= layer_idx:
+                self.key_cache.append(torch.empty(0, device=state.device))
+                self.value_cache.append(torch.empty(0, device=state.device))
+            self.key_cache[layer_idx] = state
+            self.value_cache[layer_idx] = state
+
         if layer_idx == 0:
             self._seen_tokens += num_tokens
+
+        self._sync_base_layers()
         return state
 
     def update_sliding_window_cache(
@@ -153,7 +268,11 @@ class NeuralOpsHybridHFCache(_HF_CACHE_BASE):
         return cached
 
     def get_recurrent_state(self, layer_idx: int) -> Optional[Any]:
-        return self.recurrent_state_cache.get(layer_idx, None)
+        if layer_idx in self.recurrent_state_cache:
+            return self.recurrent_state_cache[layer_idx]
+        if layer_idx < len(self.key_cache) and self.is_recurrent_layer(layer_idx):
+            return self.key_cache[layer_idx]
+        return None
 
     @staticmethod
     def _map_batch_state(state: Any, transform: Any) -> Any:

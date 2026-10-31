@@ -18,6 +18,7 @@ Tests:
 
 from __future__ import annotations
 
+import logging
 import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -36,6 +37,7 @@ from neuralops import (
     transplant,
     transplant_attention,
 )
+from neuralops.core._attention_surgery import heal_replaced_model
 
 
 class DummyAttention(nn.Module):
@@ -211,6 +213,49 @@ def test_compress_symbol_callable() -> None:
         res = compress(model=dummy_model, method="svd", ratio=0.5)
         mock_compress.assert_called_once_with(model=dummy_model, method="svd", ratio=0.5)
         assert res is dummy_model
+
+
+def test_heal_replaced_model_multi_batch_cycling() -> None:
+    """Verify that heal_replaced_model cycles through multiple batches without starvation."""
+    teacher = ToyModel(num_layers=1, dim=16)
+    student = ToyModel(num_layers=1, dim=16)
+
+    batches = [torch.randn(2, 4, 16) for _ in range(3)]
+    result = heal_replaced_model(
+        teacher,
+        student,
+        batches,
+        steps=6,
+        also_ridge_init=False,
+        log_to_ledger=False,
+    )
+    assert result["num_healed_layers"] == 1
+    assert "initial_mse" in result
+    assert "final_mse" in result
+
+
+def test_heal_replaced_model_nan_loss_warning(caplog: pytest.LogCaptureFixture) -> None:
+    """Verify that a structured logger.warning is emitted when non-finite loss is encountered."""
+    teacher = ToyModel(num_layers=1, dim=16)
+    student = ToyModel(num_layers=1, dim=16)
+
+    # Initialize student parameters to NaN to trigger non-finite loss immediately
+    with torch.no_grad():
+        for p in student.parameters():
+            p.fill_(float("nan"))
+
+    with caplog.at_level(logging.WARNING):
+        result = heal_replaced_model(
+            teacher,
+            student,
+            torch.randn(2, 4, 16),
+            steps=3,
+            also_ridge_init=False,
+            log_to_ledger=False,
+        )
+
+    assert result["num_healed_layers"] == 1
+    assert any("Non-finite loss" in record.message for record in caplog.records)
 
 
 if __name__ == "__main__":

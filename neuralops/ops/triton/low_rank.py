@@ -602,8 +602,8 @@ def fp8_tensorcore_matmul_triton(
                 BLOCK_M=BLOCK_M, BLOCK_N=BLOCK_N, BLOCK_K=BLOCK_K,
             )
             return c
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("_fp8_matmul_kernel failed (%s); falling back to PyTorch dequantized matmul.", e)
 
     a_deq = a_fp8.float() * (scale_a[:, None] if scale_a.dim() == 1 else scale_a)
     if scale_b.shape[0] == K:
@@ -801,8 +801,8 @@ def fused_w4a16_gemm_triton(
             if bias is not None:
                 out += bias
             return out.view(*orig_shape[:-1], N)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("_w4a16_gemm_kernel failed (%s); falling back to PyTorch unpacked matmul.", e)
 
     w_rec = unpack_int4_weights(packed, scales, zeros, group_size=group_size, out_dtype=x_2d.dtype)[:, :K]
     out = torch.matmul(x_2d, w_rec.t())
@@ -1125,7 +1125,8 @@ def fused_nystrom_landmark_pinv_step_triton(
         step2 = torch.matmul(F2_pinv, step1)
         context = torch.matmul(F1, step2)
         return torch.nan_to_num(context, nan=0.0)
-    except Exception:
+    except Exception as e:
+        logger.warning("fused_nystrom_landmark_pinv_step_triton failed (%s); falling back to PyTorch reference.", e)
         return fused_nystrom_landmark_pinv_step_pytorch(F1, F2_pinv, F3, V)
 
 
@@ -1164,7 +1165,8 @@ def fused_rpc_sketch_attention_triton(
         k_sketched = torch.einsum("bhld,hdr->bhlr", k.contiguous(), proj_k.contiguous())
         scores = torch.matmul(q_sketched, k_sketched.transpose(-2, -1).contiguous()) * sketch_scale
         return scores
-    except Exception:
+    except Exception as e:
+        logger.warning("fused_rpc_sketch_attention_triton failed (%s); falling back to PyTorch reference.", e)
         return fused_rpc_sketch_attention_pytorch(q, k, proj_q, proj_k, sketch_scale)
 
 
@@ -1187,7 +1189,8 @@ def fused_primal_dual_landmark_triton(
         return fused_primal_dual_landmark_pytorch(F1, X, F3)
     try:
         return torch.matmul(F1.contiguous(), torch.matmul(X.contiguous(), F3.contiguous()))
-    except Exception:
+    except Exception as e:
+        logger.warning("fused_primal_dual_landmark_triton failed (%s); falling back to PyTorch reference.", e)
         return fused_primal_dual_landmark_pytorch(F1, X, F3)
 
 
@@ -1222,7 +1225,8 @@ def fused_svd_mamba_proj_triton(
         if bias is not None:
             out = out + bias
         return out
-    except Exception:
+    except Exception as e:
+        logger.warning("fused_svd_mamba_proj_triton failed (%s); falling back to PyTorch reference.", e)
         return fused_svd_mamba_proj_pytorch(x, V, S, U, bias)
 
 
@@ -1254,8 +1258,8 @@ def fused_lola_3way_decomposition_triton(
     if HAS_TRITON and x.is_cuda:
         try:
             return fused_lola_3way_decomposition_pytorch(x, U, S, V, bias)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("fused_lola_3way_decomposition_triton failed (%s); falling back to PyTorch reference.", e)
     return fused_lola_3way_decomposition_pytorch(x, U, S, V, bias)
 
 
