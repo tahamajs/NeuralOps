@@ -127,13 +127,13 @@ class _AutogradBridge(torch.autograd.Function):
     @staticmethod
     def forward(ctx, fwd_fn, bwd_ref_fn, reconstruct, *tensors):
         if _should_checkpoint():
-            import torch.utils.checkpoint
+            from torch.utils.checkpoint import checkpoint
 
             def _custom_fwd(*t):
                 a, kw = reconstruct(t)
                 return fwd_fn(*a, **kw)
 
-            out = torch.utils.checkpoint.checkpoint(_custom_fwd, *tensors, use_reentrant=False)
+            out = checkpoint(_custom_fwd, *tensors, use_reentrant=False)
         else:
             with torch.no_grad():
                 args, kwargs = reconstruct(tensors)
