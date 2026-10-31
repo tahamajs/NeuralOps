@@ -3340,7 +3340,7 @@ def direct_svd_compress(
     if (
         HAS_TRITON
         and W.is_cuda
-        and check_triton_suitability(W)
+        and check_triton_suitability(W, "direct_svd")
         and _direct_svd_reconstruct_kernel is not None
     ):
         out = torch.empty((M, N), device=W.device, dtype=torch.float32)
@@ -3494,7 +3494,7 @@ def asvd_compress(
     if (
         HAS_TRITON
         and W.is_cuda
-        and check_triton_suitability(W)
+        and check_triton_suitability(W, "asvd")
         and _asvd_reconstruct_kernel is not None
     ):
         out = torch.empty((M, N), device=W.device, dtype=torch.float32)
@@ -3659,7 +3659,7 @@ def fwsvd_compress(
     if (
         HAS_TRITON
         and W.is_cuda
-        and check_triton_suitability(W)
+        and check_triton_suitability(W, "fwsvd")
         and _fwsvd_reconstruct_kernel is not None
     ):
         out = torch.empty((M, N), device=W.device, dtype=torch.float32)
@@ -3797,7 +3797,7 @@ def hnc_svd_compress(
     if (
         HAS_TRITON
         and W.is_cuda
-        and check_triton_suitability(W)
+        and check_triton_suitability(W, "hnc_svd")
         and _hnc_svd_reconstruct_kernel is not None
     ):
         out = torch.empty((M, N), device=W.device, dtype=torch.float32)
