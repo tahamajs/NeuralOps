@@ -2280,6 +2280,7 @@ __all__ = [
     'triton_spectral_entropy_svd_gate_pytorch_ref',
     'direct_svd_compress',
     'asvd_compress',
+    'fwsvd_compress',
 ]
 
 
@@ -3520,5 +3521,169 @@ def asvd_compress(
 
     logger.warning("asvd_compress: Triton unavailable or unsuitable, using PyTorch fallback.")
     return (W_recon_pre * row_gain.unsqueeze(-1)).to(dtype=W.dtype)
+
+
+if HAS_TRITON and tl is not None:
+    @triton.autotune(
+        configs=[
+            triton.Config({"BLOCK_M": 32, "BLOCK_N": 32, "BLOCK_K": 16}, num_stages=2, num_warps=2),
+            triton.Config({"BLOCK_M": 64, "BLOCK_N": 32, "BLOCK_K": 32}, num_stages=3, num_warps=4),
+            triton.Config({"BLOCK_M": 64, "BLOCK_N": 64, "BLOCK_K": 32}, num_stages=3, num_warps=4),
+        ],
+        key=["M", "N", "K"],
+    )
+    @triton.jit
+    def _fwsvd_reconstruct_kernel(
+        U_ptr,
+        V_ptr,
+        Out_ptr,
+        M,
+        N,
+        K,
+        stride_um,
+        stride_uk,
+        stride_vk,
+        stride_vn,
+        stride_om,
+        stride_on,
+        BLOCK_M: tl.constexpr,
+        BLOCK_N: tl.constexpr,
+        BLOCK_K: tl.constexpr,
+    ):
+        pid_m = tl.program_id(0)
+        pid_n = tl.program_id(1)
+
+        offs_m = pid_m * BLOCK_M + tl.arange(0, BLOCK_M)
+        offs_n = pid_n * BLOCK_N + tl.arange(0, BLOCK_N)
+        offs_k = tl.arange(0, BLOCK_K)
+
+        u_ptrs = U_ptr + (offs_m[:, None] * stride_um + offs_k[None, :] * stride_uk)
+        v_ptrs = V_ptr + (offs_k[:, None] * stride_vk + offs_n[None, :] * stride_vn)
+
+        accumulator = tl.zeros((BLOCK_M, BLOCK_N), dtype=tl.float32)
+
+        for k in range(tl.cdiv(K, BLOCK_K)):
+            k_mask = (k * BLOCK_K + offs_k) < K
+            u = tl.load(u_ptrs, mask=(offs_m[:, None] < M) & k_mask[None, :], other=0.0)
+            v = tl.load(v_ptrs, mask=k_mask[:, None] & (offs_n[None, :] < N), other=0.0)
+            accumulator += tl.dot(u, v)
+
+            u_ptrs += BLOCK_K * stride_uk
+            v_ptrs += BLOCK_K * stride_vk
+
+        out_ptrs = Out_ptr + (offs_m[:, None] * stride_om + offs_n[None, :] * stride_on)
+        out_mask = (offs_m[:, None] < M) & (offs_n[None, :] < N)
+        tl.store(out_ptrs, accumulator, mask=out_mask)
+else:
+    _fwsvd_reconstruct_kernel = None
+
+
+def fwsvd_compress(
+    W: torch.Tensor,
+    fisher_diag: Optional[torch.Tensor] = None,
+    fisher_matrix: Optional[torch.Tensor] = None,
+    rank: int = 32,
+    damping: float = 1e-4,
+    max_error: float = 1.0,
+) -> torch.Tensor:
+    """Fisher-Weighted Singular Value Decomposition (FWSVD) projection.
+
+    Preconditions weight matrix W by empirical Fisher Information curvature
+    before SVD factorization, applies inverse Fisher transformation to V_r,
+    and reconstructs low-rank approximation via Triton kernel.
+
+    Args:
+        W: 2D weight tensor of shape (M, N)
+        fisher_diag: Diagonal empirical Fisher vector of shape (N,)
+        fisher_matrix: Full empirical Fisher matrix of shape (N, N)
+        rank: Target compression rank
+        damping: Tikhonov damping coefficient
+        max_error: Error tolerance threshold (reference compatibility)
+
+    Returns:
+        Reconstructed weight tensor matching W.shape and W.dtype
+    """
+    if W.ndim != 2:
+        raise ValueError(f"fwsvd_compress requires a 2D weight matrix, got shape {W.shape}")
+
+    M, N = W.shape
+    r = max(1, min(rank, min(M, N) - 1)) if min(M, N) > 1 else 1
+    W_fp32 = W.float()
+
+    F_mat = fisher_matrix
+    if F_mat is None and fisher_diag is not None and fisher_diag.ndim == 2:
+        F_mat = fisher_diag
+
+    if F_mat is not None and F_mat.shape == (N, N):
+        F_dev = F_mat.to(device=W.device, dtype=torch.float32)
+        F_sym = 0.5 * (F_dev + F_dev.t())
+        tr_F = torch.trace(F_sym).item()
+        damp_val = max(1e-7, float(damping * tr_F / max(1, N)))
+        F_damped = F_sym + damp_val * torch.eye(N, device=F_dev.device, dtype=torch.float32)
+
+        try:
+            eigvals, eigvecs = torch.linalg.eigh(F_damped)
+            eigvals_clamped = torch.clamp(eigvals, min=damp_val)
+            sqrt_eig = torch.sqrt(eigvals_clamped)
+            inv_sqrt_eig = 1.0 / sqrt_eig
+            F_sqrt = eigvecs @ torch.diag(sqrt_eig) @ eigvecs.t()
+            F_inv_sqrt = eigvecs @ torch.diag(inv_sqrt_eig) @ eigvecs.t()
+
+            W_weighted = torch.matmul(W_fp32, F_sqrt)
+            U, S, Vt = torch.linalg.svd(W_weighted, full_matrices=False)
+            sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+            U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).contiguous()
+            V_r = torch.matmul(sqrt_S.unsqueeze(1) * Vt[:r, :], F_inv_sqrt).contiguous()
+        except Exception as e:
+            logger.debug("fwsvd_compress: full Fisher whitening failed (%s), fallback unweighted", e)
+            U, S, Vt = torch.linalg.svd(W_fp32, full_matrices=False)
+            sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+            U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).contiguous()
+            V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]).contiguous()
+    elif fisher_diag is not None and fisher_diag.shape == (N,):
+        f_clamped = fisher_diag.to(device=W.device, dtype=torch.float32).clamp(min=1e-8)
+        sqrt_f = torch.sqrt(f_clamped)
+        inv_sqrt_f = 1.0 / sqrt_f
+        W_weighted = W_fp32 * sqrt_f.unsqueeze(0)
+        U, S, Vt = torch.linalg.svd(W_weighted, full_matrices=False)
+        sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+        U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).contiguous()
+        V_r = ((sqrt_S.unsqueeze(1) * Vt[:r, :]) * inv_sqrt_f.unsqueeze(0)).contiguous()
+    else:
+        U, S, Vt = torch.linalg.svd(W_fp32, full_matrices=False)
+        sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+        U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).contiguous()
+        V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]).contiguous()
+
+    if (
+        HAS_TRITON
+        and W.is_cuda
+        and check_triton_suitability(W)
+        and _fwsvd_reconstruct_kernel is not None
+    ):
+        out = torch.empty((M, N), device=W.device, dtype=torch.float32)
+        grid = lambda META: (
+            triton.cdiv(M, META["BLOCK_M"]),
+            triton.cdiv(N, META["BLOCK_N"]),
+        )
+        _fwsvd_reconstruct_kernel[grid](
+            U_r,
+            V_r,
+            out,
+            M,
+            N,
+            r,
+            U_r.stride(0),
+            U_r.stride(1),
+            V_r.stride(0),
+            V_r.stride(1),
+            out.stride(0),
+            out.stride(1),
+        )
+        return out.to(dtype=W.dtype)
+
+    logger.warning("fwsvd_compress: Triton unavailable or unsuitable, using PyTorch fallback.")
+    return torch.matmul(U_r, V_r).to(dtype=W.dtype)
+
 
 
