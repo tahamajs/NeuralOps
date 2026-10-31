@@ -2279,7 +2279,9 @@ __all__ = [
     'triton_spectral_entropy_svd_gate',
     'triton_spectral_entropy_svd_gate_pytorch_ref',
     'direct_svd_compress',
+    'direct_svd_compress_pytorch',
     'asvd_compress',
+    'asvd_compress_pytorch',
     'fwsvd_compress',
     'hnc_svd_compress',
 ]
@@ -3369,6 +3371,35 @@ def direct_svd_compress(
     return (W_recon_pre * scale).to(dtype=W.dtype)
 
 
+def direct_svd_compress_pytorch(
+    W: torch.Tensor,
+    rank: int = 32,
+    max_error: float = 0.35,
+) -> torch.Tensor:
+    """Pure PyTorch reference implementation of direct SVD compression."""
+    if W.ndim != 2:
+        raise ValueError(f"direct_svd_compress_pytorch requires a 2D weight matrix, got shape {W.shape}")
+
+    M, N = W.shape
+    r = max(1, min(rank, min(M, N) - 1)) if min(M, N) > 1 else 1
+
+    W_fp32 = W.float()
+    norm_w = torch.norm(W_fp32, p="fro").item()
+
+    U, S, Vt = torch.linalg.svd(W_fp32, full_matrices=False)
+    sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+    U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).contiguous()
+    V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]).contiguous()
+
+    W_recon_pre = torch.matmul(U_r, V_r)
+    recon_norm = torch.norm(W_recon_pre, p="fro").item()
+    scale = 1.0
+    if recon_norm > 1e-12 and norm_w > 1e-12:
+        scale = norm_w / recon_norm
+
+    return (W_recon_pre * scale).to(dtype=W.dtype)
+
+
 if HAS_TRITON and tl is not None:
     @triton.autotune(
         configs=[
@@ -3521,6 +3552,54 @@ def asvd_compress(
         return out.to(dtype=W.dtype)
 
     logger.warning("asvd_compress: Triton unavailable or unsuitable, using PyTorch fallback.")
+    return (W_recon_pre * row_gain.unsqueeze(-1)).to(dtype=W.dtype)
+
+
+def asvd_compress_pytorch(
+    W: torch.Tensor,
+    cov: Optional[torch.Tensor] = None,
+    rank: int = 32,
+    max_error: float = 0.35,
+) -> torch.Tensor:
+    """Pure PyTorch reference implementation of ASVD compression."""
+    if W.ndim != 2:
+        raise ValueError(f"asvd_compress_pytorch requires a 2D weight matrix, got shape {W.shape}")
+
+    M, N = W.shape
+    r = max(1, min(rank, min(M, N) - 1)) if min(M, N) > 1 else 1
+    W_fp32 = W.float()
+
+    cov_sqrt = cov_inv_sqrt = None
+    if cov is not None and cov.shape == (N, N):
+        try:
+            cov_fp32 = cov.to(W.device, torch.float32)
+            cov_sym = 0.5 * (cov_fp32 + cov_fp32.T)
+            trace_val = torch.trace(cov_sym).clamp(min=1e-8)
+            damping = 0.05 * (trace_val / float(N))
+            cov_damped = cov_sym + damping * torch.eye(N, device=cov_sym.device, dtype=torch.float32)
+            eigvals, eigvecs = torch.linalg.eigh(cov_damped)
+            eps = 1e-5 * torch.max(eigvals).clamp(min=1e-12) + 1e-7
+            eigvals_reg = eigvals.clamp(min=eps)
+            cov_sqrt = eigvecs @ torch.diag(torch.sqrt(eigvals_reg)) @ eigvecs.T
+            cov_inv_sqrt = eigvecs @ torch.diag(1.0 / torch.sqrt(eigvals_reg)) @ eigvecs.T
+        except Exception as e:
+            logger.debug("asvd_compress_pytorch: covariance sqrt failed: %s", e)
+            cov_sqrt, cov_inv_sqrt = None, None
+
+    W_weighted = torch.matmul(W_fp32, cov_sqrt) if cov_sqrt is not None else W_fp32
+    U, S, Vt = torch.linalg.svd(W_weighted, full_matrices=False)
+    selected_r = min(r, len(S))
+    sqrt_S = torch.sqrt(torch.clamp(S[:selected_r], min=1e-12))
+    U_r = (U[:, :selected_r] * sqrt_S.unsqueeze(0)).contiguous()
+    V_r = (sqrt_S.unsqueeze(1) * Vt[:selected_r, :]).contiguous()
+    if cov_inv_sqrt is not None:
+        V_r = torch.matmul(V_r, cov_inv_sqrt).contiguous()
+
+    # Row-wise norm rebalancing
+    W_recon_pre = torch.matmul(U_r, V_r)
+    orig_row_norms = torch.norm(W_fp32, dim=-1, keepdim=True)
+    comp_row_norms = torch.norm(W_recon_pre, dim=-1, keepdim=True).clamp_min(1e-6)
+    row_gain = (orig_row_norms / comp_row_norms).clamp(0.2, 5.0).squeeze(-1).contiguous()
     return (W_recon_pre * row_gain.unsqueeze(-1)).to(dtype=W.dtype)
 
 
