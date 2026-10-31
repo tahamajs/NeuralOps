@@ -77,7 +77,48 @@ from neuralops.surgery.healing import (
     heal_replaced_model,
 )
 
+from neuralops.surgery.registry import (
+    SURGERY_REGISTRY,
+    SurgeryMetadata,
+    get_surgery,
+    get_surgeries_for_model,
+    list_surgeries,
+    register_surgery,
+)
+from neuralops.surgery.pipeline import (
+    ApplyReport,
+    SurgeryOp,
+    SurgeryRecipe,
+)
+from neuralops.surgery.validation import (
+    CheckResult,
+    ValidationReport,
+    validate_before_surgery,
+)
+from neuralops.surgery.recipe import (
+    load_recipe,
+    save_recipe,
+    save_recipe_to_hub,
+    validate_recipe_schema,
+)
+
 __all__ = [
+    "SURGERY_REGISTRY",
+    "SurgeryMetadata",
+    "register_surgery",
+    "list_surgeries",
+    "get_surgery",
+    "get_surgeries_for_model",
+    "SurgeryOp",
+    "SurgeryRecipe",
+    "ApplyReport",
+    "CheckResult",
+    "ValidationReport",
+    "validate_before_surgery",
+    "load_recipe",
+    "save_recipe",
+    "save_recipe_to_hub",
+    "validate_recipe_schema",
     "AttentionTargetSpec",
     "Conv1DLinearAdapter",
     "UniversalArchitectureScanner",
