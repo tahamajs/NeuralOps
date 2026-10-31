@@ -187,4 +187,6 @@ def admm_pruner_compress(
     return out.to(dtype=W.dtype)
 
 
-__all__ = ["admm_pruner_compress", "_admm_pytorch"]
+admm_pruner_compress_pytorch = _admm_pytorch
+
+__all__ = ["admm_pruner_compress", "admm_pruner_compress_pytorch", "_admm_pytorch"]

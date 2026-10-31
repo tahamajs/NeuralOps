@@ -199,4 +199,6 @@ def sparsegpt_compress(
     return out.to(dtype=W.dtype)
 
 
-__all__ = ["sparsegpt_compress", "_sparsegpt_pytorch"]
+sparsegpt_compress_pytorch = _sparsegpt_pytorch
+
+__all__ = ["sparsegpt_compress", "sparsegpt_compress_pytorch", "_sparsegpt_pytorch"]
