@@ -2281,6 +2281,7 @@ __all__ = [
     'direct_svd_compress',
     'asvd_compress',
     'fwsvd_compress',
+    'hnc_svd_compress',
 ]
 
 
@@ -3684,6 +3685,145 @@ def fwsvd_compress(
 
     logger.warning("fwsvd_compress: Triton unavailable or unsuitable, using PyTorch fallback.")
     return torch.matmul(U_r, V_r).to(dtype=W.dtype)
+
+
+if HAS_TRITON and tl is not None:
+    @triton.autotune(
+        configs=[
+            triton.Config({"BLOCK_M": 32, "BLOCK_N": 32, "BLOCK_K": 16}, num_stages=2, num_warps=2),
+            triton.Config({"BLOCK_M": 64, "BLOCK_N": 32, "BLOCK_K": 32}, num_stages=3, num_warps=4),
+            triton.Config({"BLOCK_M": 64, "BLOCK_N": 64, "BLOCK_K": 32}, num_stages=3, num_warps=4),
+        ],
+        key=["M", "N", "K"],
+    )
+    @triton.jit
+    def _hnc_svd_reconstruct_kernel(
+        A_ptr,
+        B_ptr,
+        Out_ptr,
+        M,
+        N,
+        K,
+        stride_am,
+        stride_ak,
+        stride_bk,
+        stride_bn,
+        stride_om,
+        stride_on,
+        BLOCK_M: tl.constexpr,
+        BLOCK_N: tl.constexpr,
+        BLOCK_K: tl.constexpr,
+    ):
+        pid_m = tl.program_id(0)
+        pid_n = tl.program_id(1)
+
+        offs_m = pid_m * BLOCK_M + tl.arange(0, BLOCK_M)
+        offs_n = pid_n * BLOCK_N + tl.arange(0, BLOCK_N)
+        offs_k = tl.arange(0, BLOCK_K)
+
+        a_ptrs = A_ptr + (offs_m[:, None] * stride_am + offs_k[None, :] * stride_ak)
+        b_ptrs = B_ptr + (offs_k[:, None] * stride_bk + offs_n[None, :] * stride_bn)
+
+        accumulator = tl.zeros((BLOCK_M, BLOCK_N), dtype=tl.float32)
+
+        for k in range(tl.cdiv(K, BLOCK_K)):
+            k_mask = (k * BLOCK_K + offs_k) < K
+            a = tl.load(a_ptrs, mask=(offs_m[:, None] < M) & k_mask[None, :], other=0.0)
+            b = tl.load(b_ptrs, mask=k_mask[:, None] & (offs_n[None, :] < N), other=0.0)
+            accumulator += tl.dot(a, b)
+
+            a_ptrs += BLOCK_K * stride_ak
+            b_ptrs += BLOCK_K * stride_bk
+
+        out_ptrs = Out_ptr + (offs_m[:, None] * stride_om + offs_n[None, :] * stride_on)
+        out_mask = (offs_m[:, None] < M) & (offs_n[None, :] < N)
+        tl.store(out_ptrs, accumulator, mask=out_mask)
+else:
+    _hnc_svd_reconstruct_kernel = None
+
+
+def hnc_svd_compress(
+    W: torch.Tensor,
+    cov: Optional[torch.Tensor] = None,
+    rank: int = 32,
+    max_error: float = 0.35,
+) -> torch.Tensor:
+    """Hierarchical Newton-Correction SVD (HNC-SVD) projection.
+
+    Executes Cholesky-whitened SVD truncation on weight matrix W preconditioned
+    by input activation covariance H_x, solving the triangular pullback for factor B_r
+    and evaluating low-rank reconstruction via Triton kernel.
+
+    Args:
+        W: 2D weight tensor of shape (M, N)
+        cov: Optional empirical activation covariance H_x of shape (N, N)
+        rank: Target compression rank
+        max_error: Error tolerance threshold (reference compatibility)
+
+    Returns:
+        Reconstructed weight tensor matching W.shape and W.dtype
+    """
+    if W.ndim != 2:
+        raise ValueError(f"hnc_svd_compress requires a 2D weight matrix, got shape {W.shape}")
+
+    M, N = W.shape
+    r = max(1, min(rank, min(M, N) - 1)) if min(M, N) > 1 else 1
+    W_fp32 = W.float()
+
+    if cov is not None and cov.shape == (N, N):
+        Hx = cov.to(device=W.device, dtype=torch.float32)
+        try:
+            reg = 1e-3 * (torch.trace(Hx) / float(N)).item() + 1e-6
+            Sx = Hx + reg * torch.eye(N, device=W.device, dtype=torch.float32)
+            L = torch.linalg.cholesky(Sx)
+            W_whitened = torch.matmul(W_fp32, L)
+            U, S, Vh = torch.linalg.svd(W_whitened, full_matrices=False)
+            U_r = U[:, :r] * torch.sqrt(S[:r]).unsqueeze(0)
+            V_unwhitened = torch.linalg.solve_triangular(
+                L.t(), (torch.sqrt(S[:r]).unsqueeze(1) * Vh[:r, :]).t(), upper=True
+            ).t()
+            A_r = U_r.contiguous()
+            B_r = V_unwhitened.contiguous()
+        except Exception as e:
+            logger.debug("hnc_svd_compress: Cholesky whitening failed (%s), fallback unwhitened", e)
+            U, S, Vh = torch.linalg.svd(W_fp32, full_matrices=False)
+            A_r = (U[:, :r] * torch.sqrt(S[:r]).unsqueeze(0)).contiguous()
+            B_r = (torch.sqrt(S[:r]).unsqueeze(1) * Vh[:r, :]).contiguous()
+    else:
+        U, S, Vh = torch.linalg.svd(W_fp32, full_matrices=False)
+        A_r = (U[:, :r] * torch.sqrt(S[:r]).unsqueeze(0)).contiguous()
+        B_r = (torch.sqrt(S[:r]).unsqueeze(1) * Vh[:r, :]).contiguous()
+
+    if (
+        HAS_TRITON
+        and W.is_cuda
+        and check_triton_suitability(W)
+        and _hnc_svd_reconstruct_kernel is not None
+    ):
+        out = torch.empty((M, N), device=W.device, dtype=torch.float32)
+        grid = lambda META: (
+            triton.cdiv(M, META["BLOCK_M"]),
+            triton.cdiv(N, META["BLOCK_N"]),
+        )
+        _hnc_svd_reconstruct_kernel[grid](
+            A_r,
+            B_r,
+            out,
+            M,
+            N,
+            r,
+            A_r.stride(0),
+            A_r.stride(1),
+            B_r.stride(0),
+            B_r.stride(1),
+            out.stride(0),
+            out.stride(1),
+        )
+        return out.to(dtype=W.dtype)
+
+    logger.warning("hnc_svd_compress: Triton unavailable or unsuitable, using PyTorch fallback.")
+    return torch.matmul(A_r, B_r).to(dtype=W.dtype)
+
 
 
 
