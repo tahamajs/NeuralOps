@@ -113,6 +113,8 @@ nav:
       - vLLM PagedState RFC: upstream/VLLM_RFC.md
       - TGI Continuous Batching RFC: upstream/TGI_RFC.md
       - SGLang RadixAttention RFC: upstream/SGLANG_RFC.md
+  - Academic & Theses:
+      - Manuscripts & PDFs: academic_monographs.md
   - Reports:
       - Production Readiness: reports/NEURALOPS_V137_FINAL_PRODUCTION_READINESS_REPORT.md
       - Gaps & Incompletion: reports/PROJECT_INCOMPLETION_AND_GAPS_REPORT.md
