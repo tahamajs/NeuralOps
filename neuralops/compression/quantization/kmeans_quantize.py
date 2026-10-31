@@ -756,6 +756,7 @@ class KMeansCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("kmeans_quantize")
+@COMPRESSOR_REGISTRY.register("kmeans_quantizer", is_alias=True)
 def kmeans_factory(
     model: Any,
     comp_config: Any = None,

@@ -250,6 +250,8 @@ class FusedQKVSVDLinear(nn.Module):
 
 
 @COMPRESSOR_REGISTRY.register("adasvd_compressor")
+@COMPRESSOR_REGISTRY.register("adasvd", is_alias=True)
+@COMPRESSOR_REGISTRY.register("adasvd_factory", is_alias=True)
 class AdaSVDCompressor(BaseCompressor):
     """AdaSVDCompressor neural operator.
 
@@ -724,6 +726,31 @@ class AdaSVDCompressor(BaseCompressor):
                     logger.debug("AdaSVD calibration batch skipped: %s", e)
                     continue
 
+    @staticmethod
+    def _regularize_covariance_spectrum(
+        C_X: torch.Tensor, damping_factor: float = 1e-4
+    ) -> torch.Tensor:
+        """
+        Regularize eigenvalue spectrum of empirical covariance matrix C_X:
+        1. Symmetrize C_X = 0.5 * (C_X + C_X.t()).
+        2. Compute trace and adaptive Tikhonov damping lambda >= damping_factor * tr(C_X) / d.
+        3. Eigendecomposition with floor on minimum eigenvalue to guarantee positive-definiteness
+           and well-conditioned matrix inversion during whitening and ALS optimization.
+        """
+        d = C_X.shape[0]
+        C_sym = 0.5 * (C_X + C_X.t())
+        tr = torch.trace(C_sym).item()
+        eps = max(1e-8, float(damping_factor * tr / max(1, d)))
+        try:
+            eigvals, eigvecs = torch.linalg.eigh(C_sym)
+            max_eig = torch.max(eigvals).item()
+            floor_val = max(eps, 1e-6 * max(max_eig, 0.0), 1e-8)
+            eigvals_reg = torch.clamp(eigvals, min=floor_val)
+            C_reg = eigvecs @ torch.diag(eigvals_reg) @ eigvecs.t()
+            return 0.5 * (C_reg + C_reg.t())
+        except Exception:
+            return C_sym + eps * torch.eye(d, device=C_sym.device, dtype=C_sym.dtype)
+
     def _init_whitened_svd(
         self,
         W: torch.Tensor,
@@ -736,23 +763,26 @@ class AdaSVDCompressor(BaseCompressor):
 
         if C_X is not None and C_X.shape == (d_in, d_in):
             C_dev = C_X.to(device=device, dtype=torch.float32)
-            eps = max(1e-8, float(1e-6 * torch.trace(C_dev).item() / max(1, d_in)))
-            eye = torch.eye(d_in, device=device, dtype=torch.float32)
+            C_reg = self._regularize_covariance_spectrum(C_dev)
             S_white = None
             try:
-                S_white = torch.linalg.cholesky(C_dev + eps * eye)
+                S_white = torch.linalg.cholesky(C_reg)
             except Exception:
-                for exp in (-5, -4, -3, -2, -1):
-                    try:
-                        reg = 10**exp * (torch.trace(C_dev).item() / max(1, d_in))
-                        S_white = torch.linalg.cholesky(C_dev + reg * eye)
-                        break
-                    except Exception:
-                        continue
+                try:
+                    eigvals, eigvecs = torch.linalg.eigh(C_reg)
+                    eigvals_clamped = torch.clamp(eigvals, min=1e-8)
+                    S_white = eigvecs @ torch.diag(torch.sqrt(eigvals_clamped))
+                except Exception:
+                    S_white = None
 
             if S_white is not None:
                 try:
-                    S_inv = torch.linalg.inv(S_white)
+                    try:
+                        S_inv = torch.linalg.pinv(S_white)
+                    except Exception:
+                        S_inv = torch.linalg.inv(
+                            S_white + 1e-6 * torch.eye(d_in, device=device, dtype=S_white.dtype)
+                        )
                     W_white = W.float() @ S_white
                     U, S, Vt = torch.linalg.svd(W_white, full_matrices=False)
                     Vt = Vt @ S_inv
@@ -782,11 +812,12 @@ class AdaSVDCompressor(BaseCompressor):
         device = W.device
         dtype = W.dtype
 
-        A, B = self._init_whitened_svd(W, r, C_X)
+        # Regularize covariance spectrum for numerical conditioning in ALS
+        E = self._regularize_covariance_spectrum(C_X.float().to(device))
+        A, B = self._init_whitened_svd(W, r, E)
         A = A.float()
         B = B.float()
 
-        E = C_X.float().to(device)
         D = torch.diag(torch.clamp(D_var.float().to(device), min=1e-6))
         WE = W.float() @ E
         DW = D @ W.float()
@@ -811,33 +842,50 @@ class AdaSVDCompressor(BaseCompressor):
         actual_iters = 0
 
         for _ in range(num_iters):
+            # Update A: min_A || (W - A B) E^{1/2} ||_F^2 => A = WE B^T (B E B^T)^{-1}
             BEBt = B @ E @ B.t()
-            eps_B = max(1e-9, float(1e-6 * BEBt.trace().item() / max(1, r)))
+            BEBt = 0.5 * (BEBt + BEBt.t())
+            tr_B = BEBt.trace().item()
+            eps_B = max(1e-8, float(1e-4 * tr_B / max(1, r)))
+            eye_r = torch.eye(r, device=device, dtype=BEBt.dtype)
             try:
-                A_new = (
-                    WE
-                    @ B.t()
-                    @ torch.linalg.inv(BEBt + eps_B * torch.eye(r, device=device, dtype=BEBt.dtype))
-                )
+                A_new = WE @ B.t() @ torch.linalg.pinv(BEBt + eps_B * eye_r)
             except Exception:
+                try:
+                    A_new = torch.linalg.solve(BEBt + eps_B * eye_r, (WE @ B.t()).t()).t()
+                except Exception:
+                    break
+
+            if not torch.isfinite(A_new).all():
                 break
 
+            # Update B: min_B || D^{1/2} (W - A B) E^{1/2} ||_F^2
             AtDA = A_new.t() @ D @ A_new
-            eps_A = max(1e-9, float(1e-6 * AtDA.trace().item() / max(1, r)))
+            AtDA = 0.5 * (AtDA + AtDA.t())
+            tr_A = AtDA.trace().item()
+            eps_A = max(1e-8, float(1e-4 * tr_A / max(1, r)))
             try:
-                B_new = (
-                    torch.linalg.inv(AtDA + eps_A * torch.eye(r, device=device, dtype=AtDA.dtype))
-                    @ A_new.t()
-                    @ DW
-                )
+                B_new = torch.linalg.pinv(AtDA + eps_A * eye_r) @ A_new.t() @ DW
             except Exception:
-                break
+                try:
+                    B_new = torch.linalg.solve(AtDA + eps_A * eye_r, A_new.t() @ DW)
+                except Exception:
+                    break
 
-            if not torch.isfinite(A_new).all() or not torch.isfinite(B_new).all():
+            if not torch.isfinite(B_new).all():
                 break
 
             actual_iters += 1
             err = _err(A_new @ B_new)
+
+            # Safeguard against divergence or NaN/inf errors
+            if not math.isfinite(err) or err > max(5.0, best_err * 2.0):
+                logger.debug(
+                    "AdaSVD ALS numerical divergence avoided (err=%.4f vs best_err=%.4f); halting.",
+                    err,
+                    best_err,
+                )
+                break
 
             if err < best_err - 1e-6:
                 best_A, best_B = A_new.clone(), B_new.clone()
@@ -999,8 +1047,9 @@ class AdaSVDCompressor(BaseCompressor):
             X = X.to(device=device, dtype=torch.float32)
             X_centered = (X - mu_x) if mu_x is not None else X
             C_X = (X_centered.t() @ X_centered) / max(1, X_centered.shape[0])
+            C_X = self._regularize_covariance_spectrum(C_X)
         elif covariance is not None and covariance.shape == (in_f, in_f):
-            C_X = covariance.to(device=device, dtype=torch.float32)
+            C_X = self._regularize_covariance_spectrum(covariance.to(device=device, dtype=torch.float32))
 
         D_var = out_variance if out_variance is not None else self.layer_out_vars.get(name, None)
 

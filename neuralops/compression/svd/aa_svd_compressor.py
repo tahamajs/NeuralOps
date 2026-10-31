@@ -78,6 +78,8 @@ from neuralops.core.low_rank.svd_linear import SVDLinear
 
 
 @COMPRESSOR_REGISTRY.register("aa_svd_compressor")
+@COMPRESSOR_REGISTRY.register("aasvd", is_alias=True)
+@COMPRESSOR_REGISTRY.register("aa_svd", is_alias=True)
 class AASVDCompressor(BaseCompressor):
     """AASVDCompressor neural operator.
 

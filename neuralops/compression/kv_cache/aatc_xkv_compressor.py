@@ -688,6 +688,10 @@ def _joint_svd_shared_basis(
 
 
 @COMPRESSOR_REGISTRY.register("aatc_xkv_compressor")
+@COMPRESSOR_REGISTRY.register("aatc_xkv", is_alias=True)
+@COMPRESSOR_REGISTRY.register("aatc", is_alias=True)
+@COMPRESSOR_REGISTRY.register("cross_layer_kv_compressor", is_alias=True)
+@COMPRESSOR_REGISTRY.register("aatc_cache", is_alias=True)
 class AATC_XKVCompressor(BaseCompressor):
     """AATC_XKVCompressor neural operator.
 

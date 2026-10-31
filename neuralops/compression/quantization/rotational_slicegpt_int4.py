@@ -167,6 +167,7 @@ class RotationalSliceGPTINT4Linear(nn.Module):
 
 
 @COMPRESSOR_REGISTRY.register("rotational_slicegpt_int4")
+@COMPRESSOR_REGISTRY.register("svd_quantizer", is_alias=True)
 class RotationalSliceGPTINT4Compressor(BaseCompressor):
     """
     Rotational-SliceGPT-INT4 hybrid compression engine.

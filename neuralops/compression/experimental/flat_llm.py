@@ -129,6 +129,7 @@ class PrunedChannelLinear(nn.Module):
 
 
 @COMPRESSOR_REGISTRY.register("flat_llm")
+@COMPRESSOR_REGISTRY.register("flat_llm_compressor", is_alias=True)
 class FLATLLMCompressor(BaseCompressor):
     """
     FLAT-LLM compressor: Activation-aware output-channel pruning.

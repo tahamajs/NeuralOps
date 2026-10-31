@@ -34,7 +34,11 @@ Key Architectural Guarantees:
 from __future__ import annotations
 
 import collections
+import logging
+from typing import Any
 import torch
+
+logger = logging.getLogger("NeuralOps.PagedKVCache")
 
 try:
     from neuralops.models.paged_state import PagedStateTable
@@ -210,9 +214,170 @@ class PagedKVCache:
             return empty, empty
 
         blocks = self.block_tables[seq_id]
-        k_blocks = [self.key_cache[b] for b in blocks]
-        v_blocks = [self.value_cache[b] for b in blocks]
+        if len(blocks) == 1:
+            b = blocks[0]
+            return self.key_cache[b, :seq_len], self.value_cache[b, :seq_len]
 
-        k_all = torch.cat(k_blocks, dim=0)[:seq_len]
-        v_all = torch.cat(v_blocks, dim=0)[:seq_len]
+        # Check if physical block allocations are contiguous to return direct zero-copy views
+        if all(blocks[i] == blocks[0] + i for i in range(1, len(blocks))):
+            start = blocks[0]
+            end = start + len(blocks)
+            k_view = self.key_cache[start:end].view(-1, self.num_heads, self.head_dim)[:seq_len]
+            v_view = self.value_cache[start:end].view(-1, self.num_heads, self.head_dim)[:seq_len]
+            return k_view, v_view
+
+        # Non-contiguous scattered blocks: index_select avoids intermediate Python list and torch.cat allocations
+        idx = torch.as_tensor(blocks, device=self.device, dtype=torch.long)
+        k_all = self.key_cache.index_select(0, idx).view(-1, self.num_heads, self.head_dim)[:seq_len]
+        v_all = self.value_cache.index_select(0, idx).view(-1, self.num_heads, self.head_dim)[:seq_len]
         return k_all, v_all
+
+    def get_kv_blocks(self, seq_id: int) -> tuple[torch.Tensor, torch.Tensor]:
+        """Returns physical page block views for kernel consumption without materializing full sequence."""
+        if seq_id not in self.block_tables:
+            raise KeyError(f"Sequence {seq_id} not found.")
+        blocks = self.block_tables[seq_id]
+        idx = torch.as_tensor(blocks, device=self.device, dtype=torch.long)
+        return self.key_cache.index_select(0, idx), self.value_cache.index_select(0, idx)
+
+    def get_fragmentation_stats(self) -> dict[str, Any]:
+        """
+        Computes physical memory fragmentation and utilization telemetry.
+
+        Returns:
+            Dictionary containing:
+            - total_blocks: Total capacity in physical blocks.
+            - allocated_blocks: Count of unique physical blocks actively referenced.
+            - free_blocks: Count of free physical blocks in the allocation pool.
+            - block_utilization: Ratio of allocated physical blocks to total blocks (0.0 to 1.0).
+            - total_tokens: Total tokens stored across all active sequences.
+            - token_capacity: Maximum tokens that could fit into allocated blocks.
+            - internal_fragmentation_ratio: Waste inside allocated tail blocks (1 - tokens/capacity).
+            - external_fragmentation_ratio: Ratio of non-contiguous physical block transitions.
+        """
+        total_blocks = self.num_blocks
+        allocated_blocks = len(self.block_ref_counts)
+        free_blocks = len(self.free_blocks)
+        block_utilization = (allocated_blocks / total_blocks) if total_blocks > 0 else 0.0
+
+        total_tokens = sum(self.seq_lengths.values())
+        token_capacity = allocated_blocks * self.block_size
+        internal_frag = (1.0 - (total_tokens / token_capacity)) if token_capacity > 0 else 0.0
+
+        total_transitions = 0
+        non_contiguous_transitions = 0
+        for blocks in self.block_tables.values():
+            for i in range(len(blocks) - 1):
+                total_transitions += 1
+                if blocks[i + 1] != blocks[i] + 1:
+                    non_contiguous_transitions += 1
+
+        external_frag = (non_contiguous_transitions / total_transitions) if total_transitions > 0 else 0.0
+
+        return {
+            "total_blocks": total_blocks,
+            "allocated_blocks": allocated_blocks,
+            "free_blocks": free_blocks,
+            "block_utilization": round(block_utilization, 4),
+            "total_tokens": total_tokens,
+            "token_capacity": token_capacity,
+            "internal_fragmentation_ratio": round(internal_frag, 4),
+            "external_fragmentation_ratio": round(external_frag, 4),
+        }
+
+    def defragment(self) -> dict[str, Any]:
+        """
+        Consolidates sparsely allocated physical blocks into contiguous virtual sequences.
+
+        Compaction Algorithm:
+        1. Traverses active sequences in sorted registration order.
+        2. Assigns contiguous physical block indices starting from 0, preserving shared blocks
+           for sequences forked with Copy-on-Write.
+        3. Copies key and value tensors from old block locations to new compacted block locations.
+        4. Zeros out reclaimed blocks above the compacted watermark to prevent stale state retention.
+        5. Updates sequence block tables, reference counts, and the free block pool.
+        6. Emits honest telemetry logging on before/after fragmentation ratios.
+
+        Returns:
+            Dictionary with compaction metrics and before/after fragmentation stats.
+        """
+        pre_stats = self.get_fragmentation_stats()
+        if not self.block_tables:
+            self.free_blocks = list(range(self.num_blocks))
+            self.block_ref_counts.clear()
+            return {
+                "compacted_blocks": 0,
+                "reclaimed_blocks": self.num_blocks,
+                "pre_stats": pre_stats,
+                "post_stats": pre_stats,
+            }
+
+        old_to_new: dict[int, int] = {}
+        next_new_block = 0
+
+        # Preserve sequence order and shared blocks across forked sequences
+        for seq_id in sorted(self.block_tables.keys()):
+            for old_block in self.block_tables[seq_id]:
+                if old_block not in old_to_new:
+                    old_to_new[old_block] = next_new_block
+                    next_new_block += 1
+
+        num_compacted = len(old_to_new)
+
+        already_compact = (
+            num_compacted == next_new_block
+            and all(k == v for k, v in old_to_new.items())
+            and self.free_blocks == list(range(num_compacted, self.num_blocks))
+        )
+
+        if not already_compact:
+            old_indices = list(old_to_new.keys())
+            new_indices = [old_to_new[b] for b in old_indices]
+
+            old_idx_t = torch.as_tensor(old_indices, dtype=torch.long, device=self.device)
+            new_idx_t = torch.as_tensor(new_indices, dtype=torch.long, device=self.device)
+
+            # Clone to decouple read from write buffer, preventing in-place corruption
+            temp_k = self.key_cache.index_select(0, old_idx_t).clone()
+            temp_v = self.value_cache.index_select(0, old_idx_t).clone()
+
+            self.key_cache.index_copy_(0, new_idx_t, temp_k)
+            self.value_cache.index_copy_(0, new_idx_t, temp_v)
+
+            # Zero out unused reclaimed blocks above the high watermark
+            if num_compacted < self.num_blocks:
+                self.key_cache[num_compacted:].zero_()
+                self.value_cache[num_compacted:].zero_()
+
+            # Remap block tables for all active sequences
+            for seq_id in self.block_tables:
+                self.block_tables[seq_id] = [old_to_new[b] for b in self.block_tables[seq_id]]
+
+            # Remap reference counts
+            new_ref_counts: dict[int, int] = collections.defaultdict(int)
+            for old_b, ref in self.block_ref_counts.items():
+                if old_b in old_to_new:
+                    new_ref_counts[old_to_new[old_b]] = ref
+            self.block_ref_counts = new_ref_counts
+
+            # Reset free blocks pool contiguously
+            self.free_blocks = list(range(num_compacted, self.num_blocks))
+
+        post_stats = self.get_fragmentation_stats()
+
+        logger.info(
+            "PagedKVCache defragmentation complete: compacted %d physical blocks across %d sequences. "
+            "External fragmentation: %.4f -> %.4f, Utilization: %.2f%%.",
+            num_compacted,
+            len(self.block_tables),
+            pre_stats["external_fragmentation_ratio"],
+            post_stats["external_fragmentation_ratio"],
+            post_stats["block_utilization"] * 100.0,
+        )
+
+        return {
+            "compacted_blocks": num_compacted,
+            "reclaimed_blocks": self.num_blocks - num_compacted,
+            "pre_stats": pre_stats,
+            "post_stats": post_stats,
+        }

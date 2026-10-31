@@ -8,11 +8,14 @@
 """
 AWQ: Activation-Aware Weight Quantization
 
-Identifies salient weight channels via activation magnitudes and protects them using per-channel scaling transformations before low-bit quantization.
+Identifies salient weight channels via activation magnitudes, protects them using
+per-channel scaling transformations, and quantizes weights onto a strict integer grid
+retaining explicit per-channel/per-group scaling factors.
 """
 
 from __future__ import annotations
-from typing import Any, Dict, Optional
+
+from typing import Any, Optional
 import torch
 import torch.nn as nn
 
@@ -23,13 +26,23 @@ __all__ = ["AWQQuantizer", "AWQCompressor", "quantize_model_awq"]
 
 
 class AWQQuantizer:
-    """Protects salient weights by observing activation magnitudes and re-scaling channels."""
+    """Protects salient weights by observing activation magnitudes and quantizing onto an integer grid."""
 
-    def __init__(self, layer: nn.Linear, bits: int = 4, alpha: float = 0.5) -> None:
+    def __init__(
+        self,
+        layer: nn.Linear,
+        bits: int = 4,
+        alpha: float = 0.5,
+        group_size: int = -1,
+    ) -> None:
         self.layer = layer
         self.bits = bits
         self.alpha = alpha
+        self.group_size = group_size
         self.act_scales = torch.zeros(layer.weight.shape[1], device=layer.weight.device, dtype=torch.float32)
+        self.qweight: Optional[torch.Tensor] = None
+        self.scales: Optional[torch.Tensor] = None
+        self.error: float = 0.0
 
     def observe(self, x: torch.Tensor) -> None:
         """Observes per-channel activation scales from calibration batches."""
@@ -38,27 +51,55 @@ class AWQQuantizer:
         s = torch.mean(torch.abs(x.to(torch.float32)), dim=0)
         self.act_scales = torch.maximum(self.act_scales, s)
 
-    def _quantize_int4(self, W: torch.Tensor) -> torch.Tensor:
-        """Symmetric per-channel INT4 quantization grid."""
-        _q_levels = 2 ** self.bits
+    def _quantize_to_grid(
+        self, W_scaled: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """Quantizes scaled weights to an exact integer grid and returns (q_int, weight_scale)."""
         q_max = 2 ** (self.bits - 1) - 1
-        q_min = -2 ** (self.bits - 1)
-        max_val = torch.amax(torch.abs(W), dim=-1, keepdim=True).clamp(min=1e-8)
-        scale = max_val / q_max
-        q = torch.clamp(torch.round(W / scale), q_min, q_max)
-        return q * scale
+        q_min = -(2 ** (self.bits - 1))
+        out_features, in_features = W_scaled.shape
+
+        if self.group_size > 0 and in_features % self.group_size == 0:
+            num_groups = in_features // self.group_size
+            W_grouped = W_scaled.reshape(out_features, num_groups, self.group_size)
+            max_val = torch.amax(torch.abs(W_grouped), dim=-1, keepdim=True).clamp(min=1e-8)
+            group_scales = max_val / float(q_max)
+            q_grouped = torch.clamp(torch.round(W_grouped / group_scales), q_min, q_max)
+            q_int = q_grouped.reshape(out_features, in_features).to(torch.int8)
+            weight_scale = group_scales.expand(out_features, num_groups, self.group_size).reshape(out_features, in_features)
+        else:
+            max_val = torch.amax(torch.abs(W_scaled), dim=-1, keepdim=True).clamp(min=1e-8)
+            scale = max_val / float(q_max)
+            q_int = torch.clamp(torch.round(W_scaled / scale), q_min, q_max).to(torch.int8)
+            weight_scale = scale.expand(out_features, in_features)
+
+        return q_int, weight_scale
 
     def quantize(self) -> torch.Tensor:
-        """Applies activation-aware channel re-scaling and quantizes."""
-        W = self.layer.weight.data.clone().to(torch.float32)
-        scales = self.act_scales.clamp(min=1e-5).pow(self.alpha)
+        """Applies activation-aware channel re-scaling, stores integer grid and explicit scale factors."""
+        orig_w = self.layer.weight.data.clone().to(torch.float32)
+        act_s = self.act_scales.clamp(min=1e-5).pow(self.alpha).to(orig_w.device)
 
-        W_scaled = W * scales.unsqueeze(0)
-        Q_scaled = self._quantize_int4(W_scaled)
-        Q = Q_scaled / scales.unsqueeze(0)
+        W_scaled = orig_w * act_s.unsqueeze(0)
+        q_int, weight_scale = self._quantize_to_grid(W_scaled)
 
-        self.layer.weight.data.copy_(Q.to(self.layer.weight.dtype))
-        return Q
+        # Combined per-channel/per-group scale factor: S_eff = weight_scale / act_s
+        effective_scale = weight_scale / act_s.unsqueeze(0)
+        W_dequant = q_int.to(torch.float32) * effective_scale
+
+        self.qweight = q_int
+        self.scales = effective_scale
+
+        self.layer.register_buffer("qweight", q_int)
+        self.layer.register_buffer("scales", effective_scale.to(self.layer.weight.dtype))
+        self.layer.register_buffer("weight_scale", weight_scale.to(self.layer.weight.dtype))
+        self.layer.register_buffer("act_scale", act_s.to(self.layer.weight.dtype))
+        self.layer.weight.data.copy_(W_dequant.to(self.layer.weight.dtype))
+
+        norm_orig = torch.norm(orig_w, p="fro").item()
+        norm_diff = torch.norm(orig_w - W_dequant, p="fro").item()
+        self.error = float(norm_diff / max(norm_orig, 1e-12))
+        return W_dequant
 
 
 @COMPRESSOR_REGISTRY.register("awq_real", is_alias=True)
@@ -72,25 +113,71 @@ class AWQCompressor(BaseCompressor):
         bits: int = 4,
         alpha: float = 0.5,
         group_size: int = 128,
+        calib_data: Optional[list[torch.Tensor]] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="awq", **kwargs)
         self.bits = bits
         self.alpha = alpha
         self.group_size = group_size
+        self.calib_data = calib_data
+        self.quantized_weights: dict[str, torch.Tensor] = {}
+        self.scales: dict[str, torch.Tensor] = {}
 
     def compress(self) -> tuple[nn.Module, dict[str, Any]]:
         """Applies AWQ quantization across all linear layers in model."""
-        stats = {"bits": self.bits, "alpha": self.alpha, "layers": []}
+        stats: dict[str, Any] = {
+            "bits": self.bits,
+            "alpha": self.alpha,
+            "group_size": self.group_size,
+            "layers": [],
+            "layer_errors": {},
+            "method": "awq",
+        }
+        total_params = 0
         for name, module in self.model.named_modules():
             if isinstance(module, nn.Linear):
-                awq = AWQQuantizer(module, bits=self.bits, alpha=self.alpha)
+                layer_key = name or "root"
+                awq = AWQQuantizer(
+                    module, bits=self.bits, alpha=self.alpha, group_size=self.group_size
+                )
+                if self.calib_data is not None:
+                    for batch in self.calib_data:
+                        awq.observe(batch)
                 awq.quantize()
-                stats["layers"].append(name)
+                if awq.qweight is not None:
+                    self.quantized_weights[f"{layer_key}.qweight"] = awq.qweight
+                if awq.scales is not None:
+                    self.scales[f"{layer_key}.scales"] = awq.scales
+                stats["layers"].append(layer_key)
+                stats["layer_errors"][layer_key] = awq.error
+                total_params += module.weight.numel()
+
         if not stats["layers"] and isinstance(self.model, nn.Linear):
-            awq = AWQQuantizer(self.model, bits=self.bits, alpha=self.alpha)
+            awq = AWQQuantizer(
+                self.model, bits=self.bits, alpha=self.alpha, group_size=self.group_size
+            )
+            if self.calib_data is not None:
+                for batch in self.calib_data:
+                    awq.observe(batch)
             awq.quantize()
+            if awq.qweight is not None:
+                self.quantized_weights["qweight"] = awq.qweight
+            if awq.scales is not None:
+                self.scales["scales"] = awq.scales
             stats["layers"].append("root")
+            stats["layer_errors"]["root"] = awq.error
+            total_params += self.model.weight.numel()
+
+        avg_err = (
+            sum(stats["layer_errors"].values()) / max(1, len(stats["layer_errors"]))
+            if stats["layer_errors"]
+            else 0.0
+        )
+        stats["avg_reconstruction_error"] = float(avg_err)
+        stats["total_parameters"] = total_params
+        stats["num_compressed_layers"] = len(stats["layers"])
+        stats["compression_ratio"] = round(16.0 / max(1, self.bits), 2)
         return self.model, stats
 
     def compress_to_tensors(self, model: Optional[nn.Module] = None) -> dict[str, torch.Tensor]:
@@ -101,6 +188,12 @@ class AWQCompressor(BaseCompressor):
             tensors[name] = param.data
         for name, buffer in m.named_buffers():
             tensors[name] = buffer.data
+        for k, v in self.quantized_weights.items():
+            if v is not None:
+                tensors[k] = v
+        for k, v in self.scales.items():
+            if v is not None:
+                tensors[k] = v
         return tensors
 
     def get_quantization_config(self) -> dict[str, Any]:
@@ -130,11 +223,12 @@ def quantize_model_awq(
     calibration_data: list[torch.Tensor],
     bits: int = 4,
     alpha: float = 0.5,
+    group_size: int = -1,
 ) -> nn.Module:
     """Applies AWQ quantization across all linear layers in model."""
-    for name, module in model.named_modules():
+    for _, module in model.named_modules():
         if isinstance(module, nn.Linear):
-            awq = AWQQuantizer(module, bits=bits, alpha=alpha)
+            awq = AWQQuantizer(module, bits=bits, alpha=alpha, group_size=group_size)
             for batch in calibration_data:
                 awq.observe(batch)
             awq.quantize()

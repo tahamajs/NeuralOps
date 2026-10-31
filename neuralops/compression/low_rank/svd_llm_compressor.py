@@ -482,22 +482,59 @@ class SVDLLMCompressor(BaseCompressor):
 
     def _robust_cholesky(self, C: torch.Tensor, n: int) -> torch.Tensor:
         """
-        Compute Cholesky factor S where S = cholesky(C + eps * I).
-        Paper specification: eps = 1e-6 * mean(diag(C))
-        Uses adaptive regularisation if C is singular or ill-conditioned.
+        Compute Cholesky factor or SVD-based matrix square root S where S @ S.T = C.
+        Paper specification: eps = 1e-6 * mean(diag(C)).
+
+        Safeguards Cholesky factorization with eigenvalue clipping to ensure
+        strictly positive eigenvalues even when calibration tokens M << d_in.
+        Falls back to SVD-based square root U @ diag(sqrt(S)) if Cholesky fails
+        due to non-positive definiteness or numerical ill-conditioning.
         """
-        mean_diag = torch.mean(torch.diag(C)).item()
+        device = C.device
+        dtype = C.dtype
+        C_sym = 0.5 * (C + C.t())
+        mean_diag = max(1e-12, float(torch.mean(torch.diag(C_sym)).item()))
+        eps_floor = max(1e-8, 1e-6 * mean_diag)
+
+        # 1. Eigenvalue clipping on symmetrized covariance
+        C_clipped = C_sym
+        try:
+            eigvals, eigvecs = torch.linalg.eigh(C_sym)
+            eigvals_clipped = torch.clamp(eigvals, min=eps_floor)
+            C_clipped = eigvecs @ torch.diag(eigvals_clipped) @ eigvecs.t()
+            C_clipped = 0.5 * (C_clipped + C_clipped.t())
+        except Exception as e:
+            logger.debug(
+                "Eigenvalue clipping in _robust_cholesky encountered exception: %s", e
+            )
+            C_clipped = C_sym + eps_floor * torch.eye(n, device=device, dtype=dtype)
+
+        # 2. Attempt Cholesky factorization with adaptive damping
         for exp in [-6, -5, -4, -3, -2, -1, 0]:
             eps = max(10**exp * mean_diag, 10**exp)
             try:
-                S = torch.linalg.cholesky(C + eps * torch.eye(n, device=C.device, dtype=C.dtype))
+                S = torch.linalg.cholesky(
+                    C_clipped + eps * torch.eye(n, device=device, dtype=dtype)
+                )
                 return S
             except Exception:
                 continue
 
-        eigvals, eigvecs = torch.linalg.eigh(C)
-        eigvals = torch.clamp(eigvals, min=1e-6)
-        return eigvecs @ torch.diag(torch.sqrt(eigvals))
+        # 3. Fallback to SVD-based square root U @ S^{1/2} if Cholesky fails
+        logger.debug(
+            "Cholesky factorization failed on non-positive definite covariance; falling back to SVD square root."
+        )
+        try:
+            U, s_vals, _ = torch.linalg.svd(C_clipped, full_matrices=False)
+            s_clamped = torch.clamp(s_vals, min=eps_floor)
+            sqrt_s = torch.sqrt(s_clamped)
+            # SVD-based square root S_svd satisfies S_svd @ S_svd.T = U @ diag(s) @ U.T = C
+            return U @ torch.diag(sqrt_s)
+        except Exception as e:
+            logger.warning(
+                "SVD square root fallback failed in _robust_cholesky: %s; using identity", e
+            )
+            return torch.eye(n, device=device, dtype=dtype)
 
     def _cholesky_whiten_and_decompose(
         self,

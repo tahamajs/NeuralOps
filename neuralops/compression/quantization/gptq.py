@@ -8,11 +8,14 @@
 """
 GPTQ: Accurate Post-Training Quantization for Large Language Models
 
-Minimizes layer reconstruction error using second-order Taylor expansions of the loss and Cholesky decomposition of the Hessian.
+Minimizes layer reconstruction error using second-order Taylor expansions of the loss,
+robust Tikhonov regularization with adaptive dampening, and Cholesky inversion of the Hessian.
 """
 
 from __future__ import annotations
-from typing import Any, Dict, Optional
+
+import math
+from typing import Any, Optional
 import torch
 import torch.nn as nn
 
@@ -40,6 +43,8 @@ class GPTQQuantizer:
         self.rows = layer.weight.shape[0]
         self.H = torch.zeros((self.columns, self.columns), device=layer.weight.device, dtype=torch.float32)
         self.nsamples = 0
+        self.error: float = 0.0
+        self.damp_val: float = 0.0
 
     def add_batch(self, x: torch.Tensor) -> None:
         """Accumulates Hessian matrix H from activations: H += X^T @ X."""
@@ -67,21 +72,62 @@ class GPTQQuantizer:
         return W
 
     def quantize(self, damp: float = 0.01) -> torch.Tensor:
-        """Runs exact column-by-column GPTQ quantization."""
+        """Runs exact column-by-column GPTQ quantization with robust Tikhonov regularization."""
         W = self.layer.weight.data.clone().to(torch.float32)
-        H = self.H / max(self.nsamples, 1)
+        orig_W = W.clone()
 
-        dead = torch.diag(H) == 0
-        H[dead, dead] = 1.0
+        # 1. Normalize accumulated Hessian
+        H = self.H.clone()
+        if self.nsamples > 0:
+            H = H / float(self.nsamples)
+        else:
+            H = torch.eye(self.columns, device=H.device, dtype=torch.float32)
 
-        damp_val = damp * torch.mean(torch.diag(H))
-        H[torch.eye(self.columns, dtype=torch.bool, device=H.device)] += damp_val
+        # 2. Handle zero/dead diagonal elements
+        diag = torch.diag(H)
+        dead = diag == 0.0
+        if dead.any():
+            diag_mean_nondead = diag[~dead].mean() if (~dead).any() else torch.tensor(1.0, device=H.device)
+            H[dead, dead] = diag_mean_nondead
 
-        try:
-            H_inv = torch.linalg.inv(H)
-        except Exception:
-            H_inv = torch.linalg.pinv(H)
+        # 3. Adaptive Tikhonov regularization: H + lambda * I
+        diag_mean = torch.mean(torch.diag(H)).item()
+        if not math.isfinite(diag_mean) or diag_mean <= 0.0:
+            diag_mean = 1.0
 
+        base_lambda = max(float(damp) * diag_mean, 1e-6)
+
+        # Inversion with multi-tier adaptive dampening escalation
+        H_inv = None
+        current_lambda = base_lambda
+        for _ in range(5):
+            H_reg = H.clone()
+            H_reg.diagonal().add_(current_lambda)
+            try:
+                L = torch.linalg.cholesky(H_reg)
+                H_inv = torch.cholesky_inverse(L)
+                if torch.isfinite(H_inv).all():
+                    break
+            except Exception:
+                try:
+                    inv_cand = torch.linalg.inv(H_reg)
+                    if torch.isfinite(inv_cand).all():
+                        H_inv = inv_cand
+                        break
+                except Exception:
+                    pass
+            current_lambda *= 10.0
+
+        if H_inv is None or not torch.isfinite(H_inv).all():
+            H_reg = H + current_lambda * torch.eye(self.columns, device=H.device, dtype=H.dtype)
+            try:
+                H_inv = torch.linalg.pinv(H_reg)
+            except Exception:
+                H_inv = (1.0 / current_lambda) * torch.eye(self.columns, device=H.device, dtype=H.dtype)
+
+        H_inv = torch.nan_to_num(H_inv, nan=0.0, posinf=1e8, neginf=-1e8)
+
+        # 4. Column-by-column quantization with Hessian error compensation
         if self.group_size > 0:
             for g in range(0, self.columns, self.group_size):
                 end = min(g + self.group_size, self.columns)
@@ -92,6 +138,11 @@ class GPTQQuantizer:
                 W = self._quantize_column(W, H_inv, i)
 
         self.layer.weight.data.copy_(W.to(self.layer.weight.dtype))
+
+        norm_orig = torch.norm(orig_W, p="fro").item()
+        norm_diff = torch.norm(orig_W - W, p="fro").item()
+        self.error = float(norm_diff / max(norm_orig, 1e-12))
+        self.damp_val = float(current_lambda)
         return W
 
 
@@ -117,18 +168,35 @@ class GPTQCompressor(BaseCompressor):
         self.quantized_weights: dict[str, torch.Tensor] = {}
 
     def compress(self) -> tuple[nn.Module, dict[str, Any]]:
-        """Compresses all linear layers in the model using GPTQ."""
-        stats = {"bits": self.bits, "group_size": self.group_size, "layers": []}
+        """Compresses all linear layers in the model using GPTQ with honest telemetry."""
+        stats: dict[str, Any] = {
+            "bits": self.bits,
+            "group_size": self.group_size,
+            "symmetric": self.sym,
+            "damp": self.damp,
+            "layers": [],
+            "layer_errors": {},
+            "layer_dampening": {},
+            "layer_nsamples": {},
+            "method": "gptq",
+        }
+        total_params = 0
         for name, module in self.model.named_modules():
             if isinstance(module, nn.Linear):
+                layer_key = name or "root"
                 quantizer = GPTQQuantizer(
                     module, bits=self.bits, sym=self.sym, group_size=self.group_size
                 )
                 quantizer.quantize(damp=self.damp)
-                self.quantized_weights[f"{name}.weight" if name else "weight"] = module.weight.data.clone()
+                self.quantized_weights[f"{layer_key}.weight"] = module.weight.data.clone()
                 if module.bias is not None:
-                    self.quantized_weights[f"{name}.bias" if name else "bias"] = module.bias.data.clone()
-                stats["layers"].append(name)
+                    self.quantized_weights[f"{layer_key}.bias"] = module.bias.data.clone()
+                stats["layers"].append(layer_key)
+                stats["layer_errors"][layer_key] = quantizer.error
+                stats["layer_dampening"][layer_key] = quantizer.damp_val
+                stats["layer_nsamples"][layer_key] = quantizer.nsamples
+                total_params += module.weight.numel()
+
         if not stats["layers"] and isinstance(self.model, nn.Linear):
             quantizer = GPTQQuantizer(
                 self.model, bits=self.bits, sym=self.sym, group_size=self.group_size
@@ -138,6 +206,20 @@ class GPTQCompressor(BaseCompressor):
             if self.model.bias is not None:
                 self.quantized_weights["bias"] = self.model.bias.data.clone()
             stats["layers"].append("root")
+            stats["layer_errors"]["root"] = quantizer.error
+            stats["layer_dampening"]["root"] = quantizer.damp_val
+            stats["layer_nsamples"]["root"] = quantizer.nsamples
+            total_params += self.model.weight.numel()
+
+        avg_err = (
+            sum(stats["layer_errors"].values()) / max(1, len(stats["layer_errors"]))
+            if stats["layer_errors"]
+            else 0.0
+        )
+        stats["avg_reconstruction_error"] = float(avg_err)
+        stats["num_compressed_layers"] = len(stats["layers"])
+        stats["total_parameters"] = total_params
+        stats["compression_ratio"] = round(16.0 / max(1, self.bits), 2)
         return self.model, stats
 
     def compress_to_tensors(self, model: Optional[nn.Module] = None) -> dict[str, torch.Tensor]:
@@ -182,7 +264,7 @@ def quantize_model_gptq(
     group_size: int = -1,
 ) -> nn.Module:
     """Quantizes all nn.Linear layers in model using GPTQ."""
-    for name, module in model.named_modules():
+    for _, module in model.named_modules():
         if isinstance(module, nn.Linear):
             quantizer = GPTQQuantizer(module, bits=bits, group_size=group_size)
             for batch in calibration_data:

@@ -6,9 +6,20 @@
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
-Native vLLM Integration Plugin
+vLLM Runtime Integration Bridge (v2.0 Roadmap)
 
-Registers custom attention backends, kernels, and model architectures within vLLM.
+Architectural Role & Forward Contract (NeuralOps v1.6.0 -> v2.0):
+This module defines the architectural contracts, metadata schemas, and registration
+interfaces for deep runtime integration with vLLM's PagedAttention engine.
+
+Fail-Closed Integration Policy:
+Direct execution within vLLM's scheduler and paged-cache write lifecycle is scheduled
+for NeuralOps v2.0. In v1.6.0, all forward execution paths, model loaders, and plugin
+registration hooks fail closed with `IntegrationNotImplementedError` rather than returning
+uncalibrated, mock, or fake outputs.
+
+For standalone serving with Hugging Face models, see `neuralops.serving.request_batcher`
+and `neuralops.export.serving`.
 """
 
 from __future__ import annotations

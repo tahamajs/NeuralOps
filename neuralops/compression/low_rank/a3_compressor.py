@@ -208,6 +208,7 @@ class A3FactorizedLinear(nn.Module):
 
 
 @COMPRESSOR_REGISTRY.register("a3_compressor")
+@COMPRESSOR_REGISTRY.register("a3", is_alias=True)
 class A3Compressor(BaseCompressor):
     """
     A3: Activation-aware factorized SVD compressor.

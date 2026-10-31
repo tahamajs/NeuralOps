@@ -401,6 +401,7 @@ class CURMoECompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("cur_moe_compressor")
+@COMPRESSOR_REGISTRY.register("cur_moe", is_alias=True)
 def cur_moe_factory(
     model: nn.Module,
     comp_config: Any | None = None,

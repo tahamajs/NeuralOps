@@ -173,6 +173,20 @@ class TestADMMHardened(unittest.TestCase):
         self.assertGreaterEqual(stats["actual_sparsity"], 0.50)
         self.assertGreaterEqual(stats["effective_compression_rate"], 4.0)
 
+        # Explicit binary mask verification
+        self.assertTrue(hasattr(model.attn["q_proj"], "pruning_mask"))
+        self.assertEqual(model.attn["q_proj"].pruning_mask.shape, (64, 64))
+        self.assertEqual(model.attn["q_proj"].pruning_mask.dtype, torch.bool)
+
+        # Honest telemetry verification
+        self.assertIn("active_weight_counts", stats)
+        self.assertIn("true_compression_ratio", stats)
+        self.assertGreaterEqual(stats["true_compression_ratio"], 2.0)
+        self.assertEqual(
+            stats["active_weight_counts"]["attn.q_proj"],
+            int(model.attn["q_proj"].pruning_mask.sum().item()),
+        )
+
     def test_target_attention_only_skips_ffn(self):
         """5. Verify target_attention_only=True strictly skips MLP/FFN and classifier."""
         model = ToyTransformer()

@@ -292,6 +292,7 @@ class AstroLinear(nn.Module):
 
 
 @COMPRESSOR_REGISTRY.register("astro_quantizer")
+@COMPRESSOR_REGISTRY.register("astro", is_alias=True)
 class AstroQuantizer(BaseCompressor):
     """
     AstroQuantizer: Uniform min-max / symmetric quantization engine with Fisher-adaptive bit allocation.

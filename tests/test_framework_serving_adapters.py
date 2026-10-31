@@ -150,6 +150,54 @@ def test_tgi_stats_tracking():
     assert s["total_tokens_generated"] >= 3
     assert "avg_latency_ms" in s
     assert "avg_tokens_per_sec" in s
+    assert "active_slots" in s
+    assert "free_slots" in s
+
+
+def test_tgi_dynamic_sequence_slotting_and_assembly():
+    """Verify dynamic sequence slotting, slot recycling, and batch assembly."""
+    batch = TGIRequestBatch(max_batch_size=3, max_seq_len=64)
+
+    req_a = TGIRequest("req_a", torch.tensor([1, 2, 3]), max_new_tokens=4)
+    req_b = TGIRequest("req_b", torch.tensor([10, 20]), max_new_tokens=4)
+    req_c = TGIRequest("req_c", torch.tensor([100, 200, 300, 400]), max_new_tokens=4)
+    req_d = TGIRequest("req_d", torch.tensor([9]), max_new_tokens=4)
+
+    batch.add(req_a)
+    batch.add(req_b)
+    batch.add(req_c)
+    batch.add(req_d)
+
+    # First 3 admitted into slots 0, 1, 2; 4th queued
+    assert req_a.slot_id == 0
+    assert req_b.slot_id == 1
+    assert req_c.slot_id == 2
+    assert req_d.slot_id is None
+    assert len(batch.queued_slots) == 1
+    assert batch.slot_table() == {0: "req_a", 1: "req_b", 2: "req_c"}
+
+    # Test assemble_batch (left-padded)
+    assembled = batch.assemble_batch(pad_token_id=0, padding_side="left")
+    assert assembled["input_ids"].shape == (3, 4)
+    assert assembled["attention_mask"].shape == (3, 4)
+    assert assembled["request_ids"] == ["req_a", "req_b", "req_c"]
+    assert assembled["slot_ids"] == [0, 1, 2]
+    # req_b was len 2, padded by 2 on the left
+    assert torch.equal(assembled["attention_mask"][1], torch.tensor([0, 0, 1, 1]))
+
+    # Test assemble_decode_batch
+    decode_tokens, req_ids, slot_ids = batch.assemble_decode_batch()
+    assert decode_tokens.shape == (3, 1)
+    assert req_ids == ["req_a", "req_b", "req_c"]
+    assert slot_ids == [0, 1, 2]
+    assert decode_tokens.squeeze().tolist() == [3, 20, 400]
+
+    # Remove req_b (slot 1): req_d should be admitted and assigned slot 1
+    batch.remove("req_b")
+    assert req_d.slot_id == 1
+    assert len(batch.active_slots) == 3
+    assert len(batch.queued_slots) == 0
+    assert batch.slot_table() == {0: "req_a", 1: "req_d", 2: "req_c"}
 
 
 def test_sglang_imports_cleanly():

@@ -108,6 +108,11 @@ class ADMMCompressor(BaseCompressor):
         self.layer_errors: dict[str, float] = {}
         self.layer_sparsities: dict[str, float] = {}
         self.layer_actual_sparsities: dict[str, float] = {}
+        self.masks: dict[str, torch.Tensor] = {}
+        self.layer_active_counts: dict[str, int] = {}
+        self.layer_total_counts: dict[str, int] = {}
+        self.layer_pruned_counts: dict[str, int] = {}
+        self.layer_compression_ratios: dict[str, float] = {}
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         if any(
@@ -243,6 +248,11 @@ class ADMMCompressor(BaseCompressor):
         self.layer_errors = {}
         self.layer_sparsities = {}
         self.layer_actual_sparsities = {}
+        self.masks = {}
+        self.layer_active_counts = {}
+        self.layer_total_counts = {}
+        self.layer_pruned_counts = {}
+        self.layer_compression_ratios = {}
 
         targets = [
             (name, mod)
@@ -340,6 +350,16 @@ class ADMMCompressor(BaseCompressor):
                 if self.fallback_to_original:
                     logger.info("ADMM: fallback to original on %s.", name)
                     self.fallback_layers.append(name)
+                    orig_mask = torch.ones_like(raw_w, dtype=torch.bool)
+                    target_mod.register_buffer("pruning_mask", orig_mask)
+                    target_mod.register_buffer("mask", orig_mask.to(dtype=raw_w.dtype))
+                    self.masks[name] = orig_mask
+                    num_w = raw_w.numel()
+                    self.layer_active_counts[name] = num_w
+                    self.layer_total_counts[name] = num_w
+                    self.layer_pruned_counts[name] = 0
+                    self.layer_compression_ratios[name] = 1.0
+                    self.layer_actual_sparsities[name] = 0.0
                     for p in module.parameters():
                         p.requires_grad = False
                     continue
@@ -357,6 +377,16 @@ class ADMMCompressor(BaseCompressor):
                     tuple(orig_shape),
                 )
                 self.fallback_layers.append(name)
+                orig_mask = torch.ones_like(raw_w, dtype=torch.bool)
+                target_mod.register_buffer("pruning_mask", orig_mask)
+                target_mod.register_buffer("mask", orig_mask.to(dtype=raw_w.dtype))
+                self.masks[name] = orig_mask
+                num_w = raw_w.numel()
+                self.layer_active_counts[name] = num_w
+                self.layer_total_counts[name] = num_w
+                self.layer_pruned_counts[name] = 0
+                self.layer_compression_ratios[name] = 1.0
+                self.layer_actual_sparsities[name] = 0.0
                 for p in module.parameters():
                     p.requires_grad = False
                 continue
@@ -364,8 +394,22 @@ class ADMMCompressor(BaseCompressor):
             with torch.no_grad():
                 target_mod.weight.data.copy_(res_w)
 
-            actual_zero_frac = float((res_w == 0).sum().item() / max(1, res_w.numel()))
+            binary_mask = (res_w != 0.0)
+            active_count = int(binary_mask.sum().item())
+            total_count = int(res_w.numel())
+            pruned_count = total_count - active_count
+            actual_zero_frac = float(pruned_count / max(1, total_count))
+            layer_comp_ratio = float(total_count / max(1, active_count))
+
             self.layer_actual_sparsities[name] = actual_zero_frac
+            self.layer_active_counts[name] = active_count
+            self.layer_total_counts[name] = total_count
+            self.layer_pruned_counts[name] = pruned_count
+            self.layer_compression_ratios[name] = layer_comp_ratio
+            self.masks[name] = binary_mask
+
+            target_mod.register_buffer("pruning_mask", binary_mask)
+            target_mod.register_buffer("mask", binary_mask.to(dtype=target_mod.weight.dtype))
 
             has_lora = (hasattr(module, "lora_A") and module.lora_A is not None) or hasattr(
                 module, "base_layer"
@@ -407,8 +451,14 @@ class ADMMCompressor(BaseCompressor):
             else 0.0
         )
 
+        total_active = sum(self.layer_active_counts.values())
+        total_params = sum(self.layer_total_counts.values())
+        total_pruned = total_params - total_active
+        overall_actual_sparsity = float(total_pruned / max(1, total_params))
+        true_comp_ratio = float(total_params / max(1, total_active))
+
         quant_factor = 16.0 / max(1, self.quant_bits)
-        sparse_factor = 1.0 / max(1e-6, 1.0 - avg_actual_sparsity)
+        sparse_factor = float(true_comp_ratio)
         effective_storage_comp_rate = round(quant_factor * sparse_factor, 2)
 
         stats.update(
@@ -418,13 +468,22 @@ class ADMMCompressor(BaseCompressor):
                 "layer_errors": self.layer_errors,
                 "layer_sparsities": self.layer_sparsities,
                 "layer_actual_sparsities": self.layer_actual_sparsities,
+                "active_weight_counts": self.layer_active_counts,
+                "total_weight_counts": self.layer_total_counts,
+                "pruned_weight_counts": self.layer_pruned_counts,
+                "layer_compression_ratios": self.layer_compression_ratios,
+                "total_active_weights": total_active,
+                "total_pruned_weights": total_pruned,
+                "total_weights": total_params,
                 "actual_sparsity": avg_actual_sparsity,
+                "overall_sparsity": overall_actual_sparsity,
                 "sparsity_target": self.sparsity,
                 "quant_bits": self.quant_bits,
                 "quant_per_channel": self.quant_per_channel,
                 "structured_24": self.structured_24,
                 "quant_factor": round(quant_factor, 2),
                 "sparse_factor": round(sparse_factor, 2),
+                "true_compression_ratio": round(true_comp_ratio, 4),
                 "effective_compression_rate": effective_storage_comp_rate,
                 "admm_iterations": self.max_iter,
                 "max_error": self.max_error,
@@ -446,6 +505,18 @@ class ADMMCompressor(BaseCompressor):
             effective_storage_comp_rate,
         )
         return self.model, stats
+
+    def compress_to_tensors(self, model: nn.Module | None = None) -> dict[str, torch.Tensor]:
+        """Returns compressed tensor dictionary including explicit binary masks."""
+        m = model if model is not None else self.model
+        tensors: dict[str, torch.Tensor] = {}
+        for name, param in m.named_parameters():
+            tensors[name] = param.data
+        for name, buffer in m.named_buffers():
+            tensors[name] = buffer.data
+        for name, mask in self.masks.items():
+            tensors[f"{name}.pruning_mask"] = mask
+        return tensors
 
 
 def admm_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:

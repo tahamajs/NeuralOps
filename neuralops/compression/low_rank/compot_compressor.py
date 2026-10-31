@@ -455,6 +455,8 @@ class COMPOTCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("compot_compressor")
+@COMPRESSOR_REGISTRY.register("compot", is_alias=True)
+@COMPRESSOR_REGISTRY.register("tri_branch_compressor", is_alias=True)
 def compot_compressor_factory(
     model: nn.Module,
     comp_config: Any | None = None,

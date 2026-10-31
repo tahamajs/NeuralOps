@@ -6,11 +6,17 @@
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
-Text Generation Inference (TGI) Integration Stub
+Text Generation Inference (TGI) Serving Integration Bridge (v2.0 Roadmap)
 
-TGI runtime integration is deferred to NeuralOps v2.0.
-For the request batcher and continuous generation adapter, see:
-    neuralops.serving.request_batcher
+Architectural Role & Forward Contract (NeuralOps v1.6.0 -> v2.0):
+This module defines the integration bridge for TGI runtime serving.
+
+In NeuralOps v1.6.0:
+1. TGI Runtime Plugin: Deep Rust/C++ runtime integration with TGI is scheduled for v2.0.
+   `register_neuralops_tgi_plugin` fails closed with `IntegrationNotImplementedError`
+   specifying the roadmap bridge contract (`docs/roadmap/TGI_PLAN.md`).
+2. Request Batcher & Continuous Generation: Lightweight continuous batching, dynamic sequence
+   slotting, and streaming iterators are re-exported here from `neuralops.serving.request_batcher`.
 """
 
 from __future__ import annotations
@@ -19,6 +25,13 @@ import logging
 from typing import Any
 
 from neuralops.core.errors import IntegrationNotImplementedError
+from neuralops.serving.request_batcher import (
+    TGIRequest,
+    TGIRequestSlot,
+    TGIRequestBatch,
+    TGIStreamingIterator,
+    TGIServingAdapter,
+)
 
 logger = logging.getLogger("NeuralOps.TGI")
 
@@ -26,57 +39,12 @@ logger = logging.getLogger("NeuralOps.TGI")
 def register_neuralops_tgi_plugin(*args: Any, **kwargs: Any) -> Any:
     """Register NeuralOps plugin within TGI runtime (deferred to v2.0)."""
     raise IntegrationNotImplementedError(
-        "TGI runtime integration is not implemented in NeuralOps v1.6.0 and is deferred to v2.0. "
-        "For request batching and generation, use neuralops.serving.request_batcher. "
+        "TGI runtime engine plugin registration is not implemented in NeuralOps v1.6.0 "
+        "and is deferred to v2.0. For request batching, dynamic sequence slotting, "
+        "and continuous generation, use `neuralops.serving.request_batcher`. "
         "See docs/roadmap/TGI_PLAN.md for details."
     )
 
-
-class TGIRequest:
-    """Stub for TGIRequest. Moved to neuralops.serving.request_batcher."""
-
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        raise IntegrationNotImplementedError(
-            "TGIRequest in neuralops.integrations.tgi is deferred to v2.0. "
-            "For the working implementation, use neuralops.serving.request_batcher.TGIRequest. "
-            "See docs/roadmap/TGI_PLAN.md for details."
-        )
-
-
-class TGIRequestBatch:
-    """Stub for TGIRequestBatch. Moved to neuralops.serving.request_batcher."""
-
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        raise IntegrationNotImplementedError(
-            "TGIRequestBatch in neuralops.integrations.tgi is deferred to v2.0. "
-            "For the working implementation, use neuralops.serving.request_batcher.TGIRequestBatch. "
-            "See docs/roadmap/TGI_PLAN.md for details."
-        )
-
-
-class TGIStreamingIterator:
-    """Stub for TGIStreamingIterator. Moved to neuralops.serving.request_batcher."""
-
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        raise IntegrationNotImplementedError(
-            "TGIStreamingIterator in neuralops.integrations.tgi is deferred to v2.0. "
-            "For the working implementation, use neuralops.serving.request_batcher.TGIStreamingIterator. "
-            "See docs/roadmap/TGI_PLAN.md for details."
-        )
-
-
-class TGIServingAdapter:
-    """Stub for TGIServingAdapter. Moved to neuralops.serving.request_batcher."""
-
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        raise IntegrationNotImplementedError(
-            "TGIServingAdapter in neuralops.integrations.tgi is deferred to v2.0. "
-            "For the working implementation, use neuralops.serving.request_batcher.TGIServingAdapter. "
-            "See docs/roadmap/TGI_PLAN.md for details."
-        )
-
-
-TGIRequestSlot = TGIRequest
 
 __all__ = [
     "register_neuralops_tgi_plugin",

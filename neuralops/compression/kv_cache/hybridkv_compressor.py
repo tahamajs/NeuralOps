@@ -180,6 +180,9 @@ class HybridKVCache:
 
 
 @COMPRESSOR_REGISTRY.register("hybridkv_compressor")
+@COMPRESSOR_REGISTRY.register("hybridkv", is_alias=True)
+@COMPRESSOR_REGISTRY.register("hybridkv_class", is_alias=True)
+@COMPRESSOR_REGISTRY.register("hybridkv_quantizer", is_alias=True)
 class HybridKVCompressor(BaseCompressor):
     """
     HybridKV Compressor: Classifies projection heads into static/dynamic types

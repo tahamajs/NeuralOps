@@ -101,6 +101,11 @@ class SparseGPTCompressor(BaseCompressor):
         self.fallback_to_original = bool(fallback_to_original)
         self.target_modules = target_modules
         self.layer_errors: dict[str, float] = {}
+        self.masks: dict[str, torch.Tensor] = {}
+        self.layer_active_counts: dict[str, int] = {}
+        self.layer_total_counts: dict[str, int] = {}
+        self.layer_pruned_counts: dict[str, int] = {}
+        self.layer_compression_ratios: dict[str, float] = {}
         self.stats: dict[str, Any] = {}
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
@@ -316,6 +321,19 @@ class SparseGPTCompressor(BaseCompressor):
         base_mod.weight.data = final_w.to(
             dtype=base_mod.weight.dtype, device=base_mod.weight.device
         )
+        binary_mask = (final_w != 0.0)
+        base_mod.register_buffer("pruning_mask", binary_mask)
+        base_mod.register_buffer("mask", binary_mask.to(dtype=base_mod.weight.dtype))
+        self.masks[name] = binary_mask
+
+        active_count = int(binary_mask.sum().item())
+        total_count = int(final_w.numel())
+        pruned_count = total_count - active_count
+        self.layer_active_counts[name] = active_count
+        self.layer_total_counts[name] = total_count
+        self.layer_pruned_counts[name] = pruned_count
+        self.layer_compression_ratios[name] = float(total_count / max(1, active_count))
+
         compressed_layer = base_mod
         if (
             hasattr(module, "lora_A")
@@ -344,6 +362,11 @@ class SparseGPTCompressor(BaseCompressor):
     def compress(self, **kwargs: Any) -> tuple[nn.Module, dict[str, Any]]:
         """Executes SparseGPT compression across all target linear layers."""
         self.layer_errors = {}
+        self.masks = {}
+        self.layer_active_counts = {}
+        self.layer_total_counts = {}
+        self.layer_pruned_counts = {}
+        self.layer_compression_ratios = {}
         activations_map = self._collect_layer_activations()
         pruned_layers_count = 0
 
@@ -355,12 +378,26 @@ class SparseGPTCompressor(BaseCompressor):
 
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
+
+        total_active = sum(self.layer_active_counts.values())
+        total_params = sum(self.layer_total_counts.values())
+        total_pruned = total_params - total_active
+        true_comp_ratio = float(total_params / max(1, total_active))
+
         stats.update(
             {
                 "pruned_layers": pruned_layers_count,
                 "sparsity_target": self.sparsity,
                 "structured_24": self.structured_24,
                 "layer_errors": self.layer_errors,
+                "active_weight_counts": self.layer_active_counts,
+                "total_weight_counts": self.layer_total_counts,
+                "pruned_weight_counts": self.layer_pruned_counts,
+                "layer_compression_ratios": self.layer_compression_ratios,
+                "total_active_weights": total_active,
+                "total_pruned_weights": total_pruned,
+                "total_weights": total_params,
+                "true_compression_ratio": round(true_comp_ratio, 4),
                 "target_attention_only": self.target_attention_only,
                 "fallback_to_original": self.fallback_to_original,
                 "max_error": self.max_error,
@@ -370,8 +407,21 @@ class SparseGPTCompressor(BaseCompressor):
         self.stats = stats
         return self.model, stats
 
+    def compress_to_tensors(self, model: nn.Module | None = None) -> dict[str, torch.Tensor]:
+        """Returns compressed tensor dictionary including explicit binary masks."""
+        m = model if model is not None else self.model
+        tensors: dict[str, torch.Tensor] = {}
+        for name, param in m.named_parameters():
+            tensors[name] = param.data
+        for name, buffer in m.named_buffers():
+            tensors[name] = buffer.data
+        for name, mask in self.masks.items():
+            tensors[f"{name}.pruning_mask"] = mask
+        return tensors
+
 
 @COMPRESSOR_REGISTRY.register("sparsegpt")
+@COMPRESSOR_REGISTRY.register("sparsegpt_compressor", is_alias=True)
 def sparsegpt_factory(
     model: Any,
     comp_config: Any = None,

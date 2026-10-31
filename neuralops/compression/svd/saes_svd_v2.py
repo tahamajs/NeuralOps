@@ -30,6 +30,10 @@ logger = logging.getLogger(__name__)
 
 
 @COMPRESSOR_REGISTRY.register("saes_svd_v2")
+@COMPRESSOR_REGISTRY.register("saes_svd_compressor", is_alias=True)
+@COMPRESSOR_REGISTRY.register("saes", is_alias=True)
+@COMPRESSOR_REGISTRY.register("saes_svd", is_alias=True)
+@COMPRESSOR_REGISTRY.register("cholesky_whitened_svd", is_alias=True)
 class SAESSVDCompressorV2(BaseCompressor):
     """SAESSVDCompressorV2 neural operator.
 

@@ -103,6 +103,9 @@ AdaptiveSVDLinear = SVDLinear
 
 
 @COMPRESSOR_REGISTRY.register("adaptive_ranks")
+@COMPRESSOR_REGISTRY.register("adaptive_compressor", is_alias=True)
+@COMPRESSOR_REGISTRY.register("adaptive_compressor_factory", is_alias=True)
+@COMPRESSOR_REGISTRY.register("adaptive_rank_svd", is_alias=True)
 class AdaptiveRanksCompressor(BaseCompressor):
     """AdaptiveRanksCompressor neural operator.
 

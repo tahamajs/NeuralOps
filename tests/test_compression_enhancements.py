@@ -51,6 +51,8 @@ def test_wanda_pruning():
     layer_mod, mask = wanda_prune_layer(layer, sparsity=0.5, act_norm=act_norm)
     assert mask.shape == (16, 16)
     assert torch.sum(layer.weight.data == 0) > 0
+    assert hasattr(layer_mod, "pruning_mask")
+    assert torch.equal(layer_mod.pruning_mask, mask)
 
 
 def test_lora_merge_and_extract():

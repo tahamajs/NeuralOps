@@ -52,6 +52,9 @@ _ATTN_NAMES = {
 
 
 @COMPRESSOR_REGISTRY.register("flap")
+@COMPRESSOR_REGISTRY.register("wanda", is_alias=True)
+@COMPRESSOR_REGISTRY.register("wanda_pruner", is_alias=True)
+@COMPRESSOR_REGISTRY.register("wanda_compressor", is_alias=True)
 class FLAPCompressor(BaseCompressor):
     """
     FLAP Compressor: Fluctuation-based Adaptive Structured Pruning.

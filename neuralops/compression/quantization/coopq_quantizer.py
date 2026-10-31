@@ -622,6 +622,7 @@ class CoopQQuantizer(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("coopq_quantizer")
+@COMPRESSOR_REGISTRY.register("coopq", is_alias=True)
 def coopq_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """CoopQ compressor factory function."""
     bits = kwargs.pop("bits", _cfg_get(comp_config, "coopq_bits", _cfg_get(comp_config, "bits", 4)))

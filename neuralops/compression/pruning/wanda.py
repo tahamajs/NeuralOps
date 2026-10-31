@@ -61,6 +61,8 @@ def wanda_prune_layer(
     mask = metric > threshold
 
     module.weight.data *= mask.to(module.weight.dtype)
+    module.register_buffer("pruning_mask", mask)
+    module.register_buffer("mask", mask.to(dtype=module.weight.dtype))
     return module, mask
 
 

@@ -6,9 +6,10 @@
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
-Serving Request Batcher
+Serving Request Batcher & Continuous Batch Scheduler
 
-Provides request queues, continuous batching, and streaming iterators for serving inference.
+Provides dynamic sequence slotting, continuous batching queues, left-padded
+batch assembly, and streaming iterators for high-throughput serving inference.
 """
 
 from __future__ import annotations
@@ -63,6 +64,7 @@ class TGIRequest:
 
         self.generated_ids: List[int] = []
         self.past_kv: Optional[Any] = None
+        self.slot_id: Optional[int] = None
         self.finished: bool = False
         self.finish_reason: Optional[str] = None
         self.created_at: float = time.time()
@@ -73,7 +75,7 @@ TGIRequestSlot = TGIRequest
 
 
 class TGIRequestBatch:
-    """Manages active and queued requests for the lightweight TGI-style adapter."""
+    """Manages active and queued requests with dynamic sequence slotting and batch assembly."""
 
     def __init__(self, max_batch_size: int = 32, max_seq_len: int = 2048):
         if any(
@@ -86,6 +88,8 @@ class TGIRequestBatch:
         self.active_slots: Dict[str, TGIRequest] = {}
         self.queued_slots: collections.deque[TGIRequest] = collections.deque()
         self.completed_slots: Dict[str, TGIRequest] = {}
+        self.free_slot_ids: List[int] = list(range(max_batch_size))
+        self.slot_to_request_id: Dict[int, str] = {}
 
     def add(self, request: TGIRequest) -> None:
         if request.request_id in self.active_slots or request.request_id in self.completed_slots:
@@ -94,7 +98,10 @@ class TGIRequestBatch:
             raise ValueError(f"request_id {request.request_id!r} is already queued")
         if request.input_ids.numel() + request.max_new_tokens > self.max_seq_len:
             raise ValueError("prompt plus max_new_tokens exceeds max_seq_len")
-        if len(self.active_slots) < self.max_batch_size:
+        if len(self.active_slots) < self.max_batch_size and self.free_slot_ids:
+            slot_id = self.free_slot_ids.pop(0)
+            request.slot_id = slot_id
+            self.slot_to_request_id[slot_id] = request.request_id
             self.active_slots[request.request_id] = request
         else:
             self.queued_slots.append(request)
@@ -103,6 +110,11 @@ class TGIRequestBatch:
         if request_id in self.active_slots:
             slot = self.active_slots.pop(request_id)
             slot.past_kv = None
+            if slot.slot_id is not None:
+                self.slot_to_request_id.pop(slot.slot_id, None)
+                self.free_slot_ids.append(slot.slot_id)
+                self.free_slot_ids.sort()
+                slot.slot_id = None
             self.completed_slots[request_id] = slot
         self.admit_queued()
 
@@ -110,25 +122,135 @@ class TGIRequestBatch:
         return [r_id for r_id, s in self.active_slots.items() if not s.finished]
 
     def admit_queued(self) -> None:
-        while self.queued_slots and len(self.active_slots) < self.max_batch_size:
+        while self.queued_slots and len(self.active_slots) < self.max_batch_size and self.free_slot_ids:
             slot = self.queued_slots.popleft()
+            slot_id = self.free_slot_ids.pop(0)
+            slot.slot_id = slot_id
+            self.slot_to_request_id[slot_id] = slot.request_id
             self.active_slots[slot.request_id] = slot
+
+    def get_slot_id(self, request_id: str) -> Optional[int]:
+        """Returns the assigned batch slot index (0..max_batch_size-1) for an active request."""
+        slot = self.active_slots.get(request_id)
+        return slot.slot_id if slot is not None else None
+
+    def get_request_by_slot(self, slot_id: int) -> Optional[TGIRequest]:
+        """Returns the active request occupying the given slot index."""
+        req_id = self.slot_to_request_id.get(slot_id)
+        return self.active_slots.get(req_id) if req_id is not None else None
+
+    def slot_table(self) -> Dict[int, Optional[str]]:
+        """Returns mapping of all slot indices (0..max_batch_size-1) to request IDs."""
+        return {slot_idx: self.slot_to_request_id.get(slot_idx) for slot_idx in range(self.max_batch_size)}
+
+    def assemble_batch(
+        self,
+        pad_token_id: int = 0,
+        padding_side: str = "left",
+    ) -> Dict[str, Any]:
+        """
+        Assembles active requests into a padded batch tensor with attention masks and slot indices.
+
+        Args:
+            pad_token_id: Token ID used for padding sequences of unequal length.
+            padding_side: "left" (standard for causal autoregressive generation) or "right".
+
+        Returns:
+            Dictionary containing:
+            - input_ids: Tensor [B, max_len] of padded prompt/context token IDs.
+            - attention_mask: Tensor [B, max_len] of 1 (real token) and 0 (padded token).
+            - request_ids: List[str] of request IDs corresponding to each row.
+            - slot_ids: List[int] of slot indices assigned to each row.
+            - seq_lens: List[int] of unpadded sequence lengths.
+            - max_len: Maximum unpadded sequence length across active requests.
+        """
+        active = [s for s in self.active_slots.values() if not s.finished and s.input_ids is not None]
+        if not active:
+            return {
+                "input_ids": torch.empty((0, 0), dtype=torch.long),
+                "attention_mask": torch.empty((0, 0), dtype=torch.long),
+                "request_ids": [],
+                "slot_ids": [],
+                "seq_lens": [],
+                "max_len": 0,
+            }
+
+        seq_lens = [len(s.input_ids) for s in active]
+        max_len = max(seq_lens)
+        device = active[0].input_ids.device
+        batch_size = len(active)
+
+        padded_inputs = torch.full((batch_size, max_len), pad_token_id, dtype=torch.long, device=device)
+        attention_mask = torch.zeros((batch_size, max_len), dtype=torch.long, device=device)
+        request_ids = []
+        slot_ids = []
+
+        for i, s in enumerate(active):
+            slen = seq_lens[i]
+            request_ids.append(s.request_id)
+            slot_ids.append(s.slot_id if s.slot_id is not None else i)
+            if padding_side == "left":
+                padded_inputs[i, max_len - slen :] = s.input_ids
+                attention_mask[i, max_len - slen :] = 1
+            else:
+                padded_inputs[i, :slen] = s.input_ids
+                attention_mask[i, :slen] = 1
+
+        return {
+            "input_ids": padded_inputs,
+            "attention_mask": attention_mask,
+            "request_ids": request_ids,
+            "slot_ids": slot_ids,
+            "seq_lens": seq_lens,
+            "max_len": max_len,
+        }
+
+    def assemble_decode_batch(
+        self,
+        active_ids: Optional[List[str]] = None,
+    ) -> Tuple[torch.Tensor, List[str], List[int]]:
+        """
+        Assembles single-step decode tokens into a unified [B, 1] tensor across active slots.
+
+        Args:
+            active_ids: Optional subset of request IDs to assemble. If None, uses all active requests.
+
+        Returns:
+            Tuple of:
+            - batched_tokens: Tensor [B, 1] with the most recent token for each request.
+            - request_ids: List[str] of request IDs in row order.
+            - slot_ids: List[int] of slot indices corresponding to each row.
+        """
+        if active_ids is None:
+            active_ids = self.active_request_ids()
+
+        tokens: List[int] = []
+        req_ids: List[str] = []
+        slot_ids: List[int] = []
+        device = None
+
+        for r_id in active_ids:
+            slot = self.active_slots.get(r_id)
+            if not slot or slot.finished or slot.input_ids is None:
+                continue
+            if device is None:
+                device = slot.input_ids.device
+            last_tok = slot.generated_ids[-1] if slot.generated_ids else int(slot.input_ids[-1].item())
+            tokens.append(last_tok)
+            req_ids.append(r_id)
+            slot_ids.append(slot.slot_id if slot.slot_id is not None else len(slot_ids))
+
+        if not tokens:
+            return torch.empty((0, 1), dtype=torch.long), [], []
+
+        tensor_device = device if device is not None else torch.device("cpu")
+        batched_tokens = torch.tensor(tokens, dtype=torch.long, device=tensor_device).unsqueeze(1)
+        return batched_tokens, req_ids, slot_ids
 
     def get_batched_inputs(self, pad_token_id: int = 0) -> torch.Tensor:
         """Returns dynamically left-padded batch tensor [B, max_len] for active requests."""
-        active = [s for s in self.active_slots.values() if not s.finished and s.input_ids is not None]
-        if not active:
-            return torch.empty((0, 0), dtype=torch.long)
-        max_len = max(len(s.input_ids) for s in active)
-        batch = []
-        for s in active:
-            pad_len = max_len - len(s.input_ids)
-            if pad_len > 0:
-                pad = torch.full((pad_len,), pad_token_id, dtype=torch.long, device=s.input_ids.device)
-                batch.append(torch.cat([pad, s.input_ids]))
-            else:
-                batch.append(s.input_ids)
-        return torch.stack(batch, dim=0)
+        batch_dict = self.assemble_batch(pad_token_id=pad_token_id, padding_side="left")
+        return batch_dict["input_ids"]
 
 
 class TGIStreamingIterator:
@@ -149,10 +271,10 @@ class TGIStreamingIterator:
 
 
 class TGIServingAdapter:
-    """Lightweight model-backed generation adapter with request queues and token iterators.
+    """Lightweight model-backed continuous generation adapter with dynamic sequence slotting.
 
-    It is not the Hugging Face TGI runtime and currently decodes active requests
-    sequentially rather than through a fused continuous batch.
+    Provides continuous dynamic batch scheduling, per-sequence slot assignment,
+    dynamic left-padded prompt assembly, and token streaming iterators.
     """
 
     def __init__(
@@ -189,6 +311,9 @@ class TGIServingAdapter:
         return {
             "total_requests": self._total_requests,
             "active_requests": len(self.batch_manager.active_request_ids()),
+            "active_slots": len(self.batch_manager.active_slots),
+            "free_slots": len(self.batch_manager.free_slot_ids),
+            "max_batch_size": self.max_batch_size,
             "queued_requests": len(self.batch_manager.queued_slots),
             "completed_requests": len(self.batch_manager.completed_slots),
             "total_tokens_generated": self._total_tokens_generated,
