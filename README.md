@@ -207,7 +207,6 @@ NeuralOps v1.7.0 delivers ergonomics, zero-overhead dispatch caching, multi-batc
 
 ## 🎓 Academic Monographs, Thesis & Defense Slides
 
-NeuralOps is developed at the **Department of Computer Engineering, College of Engineering, University of Tehran**.  
 All comprehensive scientific monographs, formal mathematical derivations, and physical silicon benchmark logs are permanently archived in the dedicated [Academic Monographs Release Hub](https://github.com/tahamajs/NeuralOps/releases/tag/academic-monographs) to maintain a lightweight software repository:
 
 | Document / Monograph | Focus & Scope | Format & Size | Direct Release Download |
