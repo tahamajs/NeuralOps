@@ -200,15 +200,25 @@ class UniversalArchitectureScanner:
         if mag_vector is not None:
             m = None
             if isinstance(mag_vector, (nn.ParameterDict, nn.ModuleDict, dict)):
-                for adapter_name in mag_vector:
-                    m = mag_vector[adapter_name]
-                    break
+                active = getattr(linear_or_conv, "active_adapter", None)
+                if isinstance(active, str) and active in mag_vector:
+                    m = mag_vector[active]
+                elif isinstance(active, list) and active and active[0] in mag_vector:
+                    m = mag_vector[active[0]]
+                else:
+                    for adapter_name in mag_vector:
+                        m = mag_vector[adapter_name]
+                        break
             elif isinstance(mag_vector, (torch.Tensor, nn.Parameter)):
                 m = mag_vector
             if m is not None:
-                v_norm = torch.linalg.norm(merged_w, dim=1, keepdim=True).clamp(min=1e-12)
-                m_expanded = m.view(-1, 1).to(device=merged_w.device, dtype=merged_w.dtype)
-                merged_w = m_expanded * (merged_w / v_norm)
+                m_t = m.detach().to(device=merged_w.device, dtype=merged_w.dtype)
+                if m_t.numel() == merged_w.shape[0]:
+                    v_norm = torch.linalg.norm(merged_w, dim=1, keepdim=True).clamp(min=1e-12)
+                    merged_w = m_t.view(-1, 1) * (merged_w / v_norm)
+                elif m_t.numel() == merged_w.shape[1]:
+                    v_norm = torch.linalg.norm(merged_w, dim=0, keepdim=True).clamp(min=1e-12)
+                    merged_w = m_t.view(1, -1) * (merged_w / v_norm)
                 logger.info("Applied DoRA magnitude vector normalization to %s", linear_or_conv.__class__.__name__)
 
         logger.info(
@@ -581,7 +591,27 @@ class UniversalArchitectureScanner:
                     f"q_width={W_q.shape[0]}, k_width={W_k.shape[0]}, head_dim={head_dim}"
                 )
             num_kv_heads = getattr(module, "num_key_value_heads", getattr(module, "num_kv_heads", W_k.shape[0] // head_dim))
-            is_causal = getattr(module, "is_causal", True if "llama" in cls_name or "qwen" in cls_name else False)
+            raw_causal = getattr(module, "is_causal", None)
+            if raw_causal is not None:
+                is_causal = bool(raw_causal)
+            else:
+                is_causal = bool(
+                    getattr(getattr(module, "config", None), "is_decoder", False)
+                    or any(
+                        arch in cls_name
+                        for arch in (
+                            "llama",
+                            "mistral",
+                            "gemma",
+                            "qwen",
+                            "gpt",
+                            "opt",
+                            "phi",
+                            "starcoder",
+                            "deepseek",
+                        )
+                    )
+                )
 
             return AttentionTargetSpec(
                 module_path=path,

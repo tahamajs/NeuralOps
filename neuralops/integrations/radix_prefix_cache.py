@@ -13,6 +13,7 @@ Provides a standalone Radix Trie prefix cache manager for subquadratic attention
 
 from __future__ import annotations
 
+import inspect
 import logging
 import threading
 import time
@@ -225,17 +226,18 @@ class SGLangRadixAdapter:
         with torch.no_grad():
             if matched_len > 0 and cached_kv is not None and matched_len < len(tokens):
                 suffix = inp[:, matched_len:]
-                outputs = self.model(suffix, past_key_values=cached_kv, use_cache=True)
+                pos_ids = torch.arange(matched_len, len(tokens), device=inp.device).unsqueeze(0)
+                outputs = _call_model(self.model, suffix, past_key_values=cached_kv, position_ids=pos_ids, use_cache=True)
                 full_kv = getattr(outputs, "past_key_values", cached_kv)
                 logits = outputs.logits[:, -1, :] if hasattr(outputs, "logits") else outputs[:, -1, :]
             elif matched_len == len(tokens) and cached_kv is not None:
                 # The cache already includes every prompt token, but does not retain
                 # the final-token logits needed for the next decode step.
-                outputs = self.model(inp, use_cache=True)
+                outputs = _call_model(self.model, inp, use_cache=True)
                 full_kv = getattr(outputs, "past_key_values", None)
                 logits = outputs.logits[:, -1, :] if hasattr(outputs, "logits") else outputs[:, -1, :]
             else:
-                outputs = self.model(inp, use_cache=True)
+                outputs = _call_model(self.model, inp, use_cache=True)
                 full_kv = getattr(outputs, "past_key_values", None)
                 logits = outputs.logits[:, -1, :] if hasattr(outputs, "logits") else outputs[:, -1, :]
 
@@ -250,7 +252,7 @@ class SGLangRadixAdapter:
 
         inp = torch.tensor([[last_token]], dtype=torch.long, device=self.device)
         with torch.no_grad():
-            outputs = self.model(inp, past_key_values=kv_cache, use_cache=True)
+            outputs = _call_model(self.model, inp, past_key_values=kv_cache, use_cache=True)
             new_kv = getattr(outputs, "past_key_values", kv_cache)
             logits = outputs.logits[:, -1, :] if hasattr(outputs, "logits") else outputs[:, -1, :]
             next_tok = int(torch.argmax(logits, dim=-1).item())
@@ -346,6 +348,24 @@ class SGLangRadixAdapter:
 
 # Canonical alias for standalone Radix tree
 RadixTree = SGLangRadixAdapter
+
+
+def _call_model(model: nn.Module, input_ids: torch.Tensor, **optional_kwargs: Any) -> Any:
+    """Pass only supported model kwargs without catching errors raised inside forward."""
+    try:
+        signature = inspect.signature(model.forward)
+    except (TypeError, ValueError):
+        return model(input_ids)
+    accepts_kwargs = any(
+        parameter.kind is inspect.Parameter.VAR_KEYWORD for parameter in signature.parameters.values()
+    )
+    accepted = {
+        name: value
+        for name, value in optional_kwargs.items()
+        if accepts_kwargs or name in signature.parameters
+    }
+    return model(input_ids, **accepted)
+
 
 __all__ = [
     "RadixPrefixNode",

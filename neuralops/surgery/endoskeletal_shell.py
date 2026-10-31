@@ -404,6 +404,9 @@ class UniversalAttentionBridge(nn.Module):
             self.lora_adapters["lora_B"] = orig_module.lora_B
         if hasattr(orig_module, "scaling"):
             self.scaling = orig_module.scaling
+        if hasattr(orig_module, "lora_magnitude_vector"):
+            self.lora_magnitude_vector = orig_module.lora_magnitude_vector
+            self.lora_adapters["lora_magnitude_vector"] = orig_module.lora_magnitude_vector
         if hasattr(orig_module, "peft_config"):
             self.peft_config = orig_module.peft_config
 
@@ -414,6 +417,12 @@ class UniversalAttentionBridge(nn.Module):
                 self.lora_adapters[f"{proj_attr}_lora_B"] = proj.lora_B
                 if hasattr(proj, "scaling"):
                     self.lora_adapters[f"{proj_attr}_scaling"] = proj.scaling
+                if hasattr(proj, "lora_magnitude_vector"):
+                    self.lora_adapters[f"{proj_attr}_lora_magnitude_vector"] = proj.lora_magnitude_vector
+                if hasattr(proj, "r"):
+                    self.lora_adapters[f"{proj_attr}_r"] = proj.r
+                if hasattr(proj, "lora_alpha"):
+                    self.lora_adapters[f"{proj_attr}_lora_alpha"] = proj.lora_alpha
 
         if self.lora_adapters:
             logger.info(
@@ -482,6 +491,9 @@ class UniversalAttentionBridge(nn.Module):
             if len(extra_outputs) > 1:
                 return (core_tensor, *extra_outputs)
             attn_weights = extra_outputs[0] if len(extra_outputs) > 0 else None
+            if "past_key_value" in kwargs or kwargs.get("use_cache", False):
+                present_kv = kwargs.get("past_key_value", None)
+                return (core_tensor, attn_weights, present_kv)
             return (core_tensor, attn_weights)
 
         if len(extra_outputs) > 0:

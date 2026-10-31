@@ -203,9 +203,9 @@ class UniversalAttentionWrapper(nn.Module):
         if "linear_attn" in self.layer_name and not output_attentions:
             return hidden
 
-        if fam in ("llama", "mistral", "qwen", "qwen3_5", "qwen2", "qwen2_5") or (
+        if fam in ("llama", "mistral", "qwen", "qwen3_5", "qwen2", "qwen2_5", "gemma", "gemma2") or (
             hasattr(cfg, "model_type")
-            and getattr(cfg, "model_type", "").lower() in ("llama", "mistral", "qwen2", "qwen2_5", "qwen")
+            and getattr(cfg, "model_type", "").lower() in ("llama", "mistral", "qwen2", "qwen2_5", "qwen", "gemma", "gemma2")
         ):
             try:
                 import transformers

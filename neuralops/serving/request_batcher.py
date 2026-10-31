@@ -449,8 +449,11 @@ class TGIServingAdapter:
                 logits = outputs.logits[:, -1, :] if hasattr(outputs, "logits") else outputs[:, -1, :]
                 slot.past_kv = getattr(outputs, "past_key_values", None)
             else:
-                full_context = torch.cat([slot.input_ids, torch.tensor(slot.generated_ids, device=self.device)])
-                outputs = self.model(full_context.unsqueeze(0))
+                full_context = torch.cat([
+                    slot.input_ids.to(self.device),
+                    torch.tensor(slot.generated_ids, dtype=torch.long, device=self.device),
+                ])
+                outputs = _call_model(self.model, full_context.unsqueeze(0))
                 logits = outputs.logits[:, -1, :] if hasattr(outputs, "logits") else outputs[:, -1, :]
 
             next_tok = self._sample_token(logits, slot.temperature, slot.top_k)
@@ -514,7 +517,7 @@ class TGIServingAdapter:
         """
         slots = []
         for i, p in enumerate(prompts):
-            req_id = f"req_{int(time.time() * 1000)}_{i}"
+            req_id = f"req_{int(time.time() * 1000)}_{self._total_requests}_{i}"
             slot = self.add_request(req_id, p, max_new_tokens=max_new_tokens, **kwargs)
             slots.append(slot)
 

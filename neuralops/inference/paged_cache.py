@@ -237,6 +237,16 @@ class PagedKVCache:
         if seq_id not in self.block_tables:
             raise KeyError(f"Sequence {seq_id} not found.")
         blocks = self.block_tables[seq_id]
+        if not blocks:
+            empty = torch.empty((0, self.block_size, self.num_heads, self.head_dim), dtype=self.dtype, device=self.device)
+            return empty, empty
+        if len(blocks) == 1:
+            b = blocks[0]
+            return self.key_cache[b : b + 1], self.value_cache[b : b + 1]
+        if all(blocks[i] == blocks[0] + i for i in range(1, len(blocks))):
+            start = blocks[0]
+            end = start + len(blocks)
+            return self.key_cache[start:end], self.value_cache[start:end]
         idx = torch.as_tensor(blocks, device=self.device, dtype=torch.long)
         return self.key_cache.index_select(0, idx), self.value_cache.index_select(0, idx)
 
@@ -256,7 +266,7 @@ class PagedKVCache:
             - external_fragmentation_ratio: Ratio of non-contiguous physical block transitions.
         """
         total_blocks = self.num_blocks
-        allocated_blocks = len(self.block_ref_counts)
+        allocated_blocks = sum(1 for count in self.block_ref_counts.values() if count > 0)
         free_blocks = len(self.free_blocks)
         block_utilization = (allocated_blocks / total_blocks) if total_blocks > 0 else 0.0
 
@@ -305,11 +315,14 @@ class PagedKVCache:
         if not self.block_tables:
             self.free_blocks = list(range(self.num_blocks))
             self.block_ref_counts.clear()
+            self.key_cache.zero_()
+            self.value_cache.zero_()
+            post_stats = self.get_fragmentation_stats()
             return {
                 "compacted_blocks": 0,
                 "reclaimed_blocks": self.num_blocks,
                 "pre_stats": pre_stats,
-                "post_stats": pre_stats,
+                "post_stats": post_stats,
             }
 
         old_to_new: dict[int, int] = {}
@@ -362,6 +375,10 @@ class PagedKVCache:
 
             # Reset free blocks pool contiguously
             self.free_blocks = list(range(num_compacted, self.num_blocks))
+
+        if num_compacted < self.num_blocks:
+            self.key_cache[num_compacted:].zero_()
+            self.value_cache[num_compacted:].zero_()
 
         post_stats = self.get_fragmentation_stats()
 

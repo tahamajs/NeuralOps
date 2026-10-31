@@ -128,17 +128,15 @@ def _set_nested_module(root: nn.Module, path: str, new_module: nn.Module) -> Non
     curr: Any = root
 
     for part in parts[:-1]:
-        if isinstance(curr, (nn.Sequential, nn.ModuleList)) and part.isdigit():
+        if isinstance(curr, (nn.Sequential, nn.ModuleList, list)) and part.isdigit():
             curr = curr[int(part)]
         elif isinstance(curr, (nn.ModuleDict, dict)) and part in curr:
             curr = curr[part]
-        elif hasattr(curr, part):
-            curr = getattr(curr, part)
         else:
             curr = getattr(curr, part)
 
     last_part = parts[-1]
-    if isinstance(curr, (nn.Sequential, nn.ModuleList)) and last_part.isdigit():
+    if isinstance(curr, (nn.Sequential, nn.ModuleList, list)) and last_part.isdigit():
         curr[int(last_part)] = new_module
     elif isinstance(curr, (nn.ModuleDict, dict)):
         curr[last_part] = new_module
