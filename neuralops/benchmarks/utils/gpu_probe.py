@@ -29,9 +29,14 @@ def get_telemetry():
         "power_w": 25.0,
     }
     try:
+        cmd = [
+            "nvidia-smi",
+            "--query-gpu=name,memory.used,memory.total,utilization.gpu,temperature.gpu,power.draw",
+            "--format=csv,noheader,nounits",
+        ]
         out = subprocess.check_output(
-            "nvidia-smi --query-gpu=name,memory.used,memory.total,utilization.gpu,temperature.gpu,power.draw --format=csv,noheader,nounits",
-            shell=True,
+            cmd,
+            shell=False,
             text=True,
             timeout=3,
         ).strip()
@@ -56,8 +61,13 @@ def get_active_process_and_logs():
     active_model = None
     queue_logs = ""
     try:
-        cmd = 'powershell -Command "(Get-CimInstance Win32_Process -Filter \\"name = \'python.exe\'\\").CommandLine"'
-        res = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=4)
+        cmd = [
+            "powershell",
+            "-Command",
+            '(Get-CimInstance Win32_Process -Filter "name = \'python.exe\'").CommandLine',
+        ]
+        cmd_list = cmd if isinstance(cmd, list) else cmd.split()
+        res = subprocess.run(cmd_list, shell=False, capture_output=True, text=True, timeout=4)
         if res.returncode == 0 and res.stdout:
             for line in res.stdout.splitlines():
                 if "run_quality_sweep.py" in line:

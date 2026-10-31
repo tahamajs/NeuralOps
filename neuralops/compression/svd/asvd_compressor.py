@@ -125,7 +125,7 @@ class ASVDCompressor(AASVDCompressor):
             from safetensors.torch import load_file
             state_dict = load_file(safetensor_path)
         elif os.path.exists(pt_path):
-            state_dict = torch.load(pt_path, map_location="cpu")
+            state_dict = torch.load(pt_path, map_location="cpu", weights_only=True)
         else:
             raise FileNotFoundError(f"No compressed model weights found at {path}")
 
