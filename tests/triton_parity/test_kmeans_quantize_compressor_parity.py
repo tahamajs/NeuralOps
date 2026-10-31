@@ -1,0 +1,39 @@
+#!/usr/bin/env python3
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
+"""
+Parity test for K-Means quantization compressor Triton kernel against PyTorch reference.
+"""
+
+import pytest
+import torch
+
+
+@pytest.mark.gpu
+def test_kmeans_quantize_compressor_parity():
+    if not torch.cuda.is_available():
+        pytest.skip("CUDA required")
+
+    from neuralops.ops.triton.quantize_kmeans import _kmeans_pytorch, kmeans_quantize_compress
+
+    torch.manual_seed(42)
+    W = torch.randn(256, 256, device="cuda", dtype=torch.float32)
+
+    with torch.no_grad():
+        ref_out = _kmeans_pytorch(W, num_clusters=16)
+        tri_out = kmeans_quantize_compress(W, num_clusters=16)
+
+    ref_err = ((W - ref_out).norm() / W.norm()).item()
+    tri_err = ((W - tri_out).norm() / W.norm()).item()
+
+    assert abs(tri_err - ref_err) <= 1e-3, (
+        f"kmeans Triton reconstruction error {tri_err:.6f} "
+        f"differs from PyTorch {ref_err:.6f} by more than 1e-3"
+    )
+
+    assert not torch.isnan(tri_out).any(), "kmeans output contains NaN"
+    assert not torch.isinf(tri_out).any(), "kmeans output contains Inf"
