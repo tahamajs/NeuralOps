@@ -11,8 +11,23 @@ Transactional Model Transformation Pipeline, Planning, and Execution.
 
 from __future__ import annotations
 
-from neuralops.pipeline_transform.errors import PlanningError
+from neuralops.pipeline_transform.auto_config import suggest_config
+from neuralops.pipeline_transform.dependencies import (
+    Conflict,
+    ConflictDetector,
+    ConflictSeverity,
+    DependencyGraph,
+    DependencyNode,
+    analyze_recipe,
+)
+from neuralops.pipeline_transform.errors import ConfigurationError, PlanningError
 from neuralops.pipeline_transform.executor import execute_plan
+from neuralops.pipeline_transform.hardware_planner import (
+    HardwareProfile,
+    KNOWN_HARDWARE_PROFILES,
+    ResourceEstimate,
+    estimate_resources,
+)
 from neuralops.pipeline_transform.plan import ExecutionPlan, Stage
 from neuralops.pipeline_transform.planner import plan_recipe
 from neuralops.pipeline_transform.result import PipelineError, PipelineResult, StageRecord
@@ -20,16 +35,28 @@ from neuralops.pipeline_transform.rollback import RollbackError
 from neuralops.pipeline_transform.snapshot import Snapshot, capture, restore
 
 __all__ = [
+    "Conflict",
+    "ConflictDetector",
+    "ConflictSeverity",
+    "ConfigurationError",
+    "DependencyGraph",
+    "DependencyNode",
     "ExecutionPlan",
+    "HardwareProfile",
+    "KNOWN_HARDWARE_PROFILES",
     "PipelineError",
     "PipelineResult",
     "PlanningError",
+    "ResourceEstimate",
     "RollbackError",
     "Snapshot",
     "Stage",
     "StageRecord",
+    "analyze_recipe",
     "capture",
+    "estimate_resources",
     "execute_plan",
     "plan_recipe",
     "restore",
+    "suggest_config",
 ]

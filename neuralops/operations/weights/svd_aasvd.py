@@ -57,6 +57,8 @@ CONTRACT = OperationContract(
     declares_mutations=["*.mlp.*", "*.self_attn.*_proj"],
     deterministic_given_seed=True,
     composable_with_self=True,
+    produces=["low_rank_projection"],
+    ordering_constraints=["after:attention.replace"],
 )
 
 

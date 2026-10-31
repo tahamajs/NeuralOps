@@ -33,6 +33,10 @@ class OperationContract:
     declares_mutations: List[str] = field(default_factory=list)
     deterministic_given_seed: bool = True
     composable_with_self: bool = False
+    requires: List[str] = field(default_factory=list)
+    produces: List[str] = field(default_factory=list)
+    conflicts: List[str] = field(default_factory=list)
+    ordering_constraints: List[str] = field(default_factory=list)
 
 
 class Operation(ABC):
@@ -50,6 +54,11 @@ class Operation(ABC):
     composable_with_self: bool
 
     contract: Optional[OperationContract] = None
+    requires: List[str] = []
+    produces: List[str] = []
+    mutates: List[str] = []
+    conflicts: List[str] = []
+    ordering_constraints: List[str] = []
 
     def __init__(self, contract: Optional[OperationContract] = None):
         c = contract or getattr(self, "contract", None)
@@ -65,6 +74,15 @@ class Operation(ABC):
             self.declares_mutations = c.declares_mutations
             self.deterministic_given_seed = c.deterministic_given_seed
             self.composable_with_self = c.composable_with_self
+            self.mutates = list(c.declares_mutations)
+            self.requires = list(getattr(c, "requires", []))
+            self.produces = list(getattr(c, "produces", []))
+            self.conflicts = list(getattr(c, "conflicts", []))
+            self.ordering_constraints = list(getattr(c, "ordering_constraints", []))
+
+    def simulate_output_shape(self, input_shape: Tuple[int, ...]) -> Tuple[int, ...]:
+        """Simulate output tensor shape given input shape."""
+        return input_shape
 
     def validate_preconditions(self, model_state: Dict[str, Any]) -> List[str]:
         """Verify whether the model satisfies all static prerequisites for this operation."""
