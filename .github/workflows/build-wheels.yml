@@ -1,54 +1,55 @@
-name: Build Binary Wheels
+name: Build Pre-compiled CUDA Wheels
 
 on:
+  push:
+    tags:
+      - 'v*'
   workflow_dispatch:
-  release:
-    types: [published]
-
-permissions:
-  contents: read
 
 jobs:
   build_wheels:
-    name: Build wheels on ${{ matrix.os }} - Py${{ matrix.python-version }} CUDA ${{ matrix.cuda-version }}
+    name: Build wheels for Python ${{ matrix.python }} on CUDA ${{ matrix.cuda }} (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04]
-        python-version: ["3.10", "3.11", "3.12"]
-        cuda-version: ["11.8", "12.1", "12.4"]
+        os: [ubuntu-latest]
+        python: ["cp310", "cp311", "cp312"]
+        cuda: ["12.1", "12.4", "12.8"]
+        manylinux_image: ["manylinux2014_x86_64"]
 
     steps:
-      - name: Checkout repository
+      - name: Checkout NeuralOps Repository
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
-      - name: Set up Python ${{ matrix.python-version }}
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: "3.11"
 
-      - name: Install cibuildwheel and build dependencies
+      - name: Install cibuildwheel
         run: |
           python -m pip install --upgrade pip
-          pip install cibuildwheel build wheel torch
+          python -m pip install cibuildwheel==2.19.1
 
-      - name: Configure CUDA Environment
-        run: |
-          echo "Building wheel for Python ${{ matrix.python-version }} with CUDA ${{ matrix.cuda-version }}"
-          echo "CUDA_VERSION=${{ matrix.cuda-version }}" >> $GITHUB_ENV
-          echo "TORCH_CUDA_ARCH_LIST=8.0;8.6;8.9;9.0" >> $GITHUB_ENV
-
-      - name: Build wheels via cibuildwheel
-        run: |
-          python -m cibuildwheel --output-dir dist/
+      - name: Build Binary Wheels with cibuildwheel
         env:
-          CIBW_BUILD: "cp${{ matrix.python-version }}-*"
-          CIBW_ARCHS_LINUX: "x86_64"
+          CIBW_BUILD: "${{ matrix.python }}-*"
+          CIBW_ARCHS: "x86_64"
+          CIBW_MANYLINUX_X86_64_IMAGE: "manylinux2014"
+          CIBW_ENVIRONMENT: >-
+            CUDA_VERSION=${{ matrix.cuda }}
+            TORCH_CUDA_ARCH_LIST="8.0;8.6;8.9;9.0"
+            FORCE_CUDA=1
+          CIBW_BEFORE_BUILD: "pip install torch --index-url https://download.pytorch.org/whl/cu${{ matrix.cuda }}"
+          CIBW_CONFIG_SETTINGS: "--config-file=pyproject.cuda.toml"
+        run: |
+          python -m cibuildwheel --output-dir dist
 
-      - name: Upload wheel artifacts
+      - name: Upload Built Wheels
         uses: actions/upload-artifact@v4
         with:
-          name: wheels-py${{ matrix.python-version }}-cuda${{ matrix.cuda-version }}
-          path: dist/*.whl
-          retention-days: 7
+          name: neuralops-cuda-wheels-${{ matrix.python }}-cu${{ matrix.cuda }}
+          path: ./dist/*.whl
