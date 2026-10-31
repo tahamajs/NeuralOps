@@ -24,6 +24,7 @@ import sys
 import time
 
 from neuralops import __version__
+from neuralops.core.diagnostics import diagnose_error
 
 try:
     from rich.console import Console
@@ -1505,7 +1506,8 @@ def main(argv: list[str] | None = None) -> int:
         if getattr(args, "verbose", False):
             import traceback
             traceback.print_exc()
-        print_cli_error(f"Execution failed ({err_type}): {e}")
+        diag = diagnose_error(e, auto_format=False)
+        print_cli_error(f"Execution failed ({err_type}): {e}", hint=diag)
         return 1
 
 
