@@ -47,3 +47,8 @@ def gpt2_inputs(gpt2_tokenizer):
 @pytest.fixture
 def distilbert_inputs(distilbert_tokenizer):
     return distilbert_tokenizer("Hello world", return_tensors="pt")
+
+
+@pytest.fixture
+def short_text_inputs(gpt2_inputs):
+    return gpt2_inputs
