@@ -89,6 +89,21 @@ class ToyModel(nn.Module):
         return x
 
 
+class ToyCausalLM(nn.Module):
+    """Toy causal language model with embedding and lm_head for token generation."""
+
+    def __init__(self, vocab_size: int = 100, dim: int = 16) -> None:
+        super().__init__()
+        self.embedding = nn.Embedding(vocab_size, dim)
+        self.block = ToyTransformerBlock(dim)
+        self.lm_head = nn.Linear(dim, vocab_size)
+
+    def forward(self, input_ids: torch.Tensor, **kwargs: Any) -> torch.Tensor:
+        x = self.embedding(input_ids)
+        x = self.block(x)
+        return self.lm_head(x)
+
+
 def test_canonical_package_version() -> None:
     """Verify that neuralops.__version__ and neuralops.get_version() report exactly '1.7.0'."""
     assert neuralops.__version__ == "1.7.0"
