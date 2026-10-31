@@ -16,8 +16,14 @@ from .memory_validator import MemoryTracker
 from .speed_validator import SpeedValidator
 from .training_validator import TrainingValidator
 from .report_generator import ReportGenerator
+from .base import Gate, GateResult, GateSeverity
+from .profiles import get_gates_for_profile
+from .result import ValidationResult
+from .runner import run_validation_gates
 
 __all__ = [
     'DataValidator', 'ModelValidator', 'NumericalValidator',
-    'MemoryTracker', 'SpeedValidator', 'TrainingValidator', 'ReportGenerator'
+    'MemoryTracker', 'SpeedValidator', 'TrainingValidator', 'ReportGenerator',
+    'Gate', 'GateResult', 'GateSeverity',
+    'ValidationResult', 'get_gates_for_profile', 'run_validation_gates',
 ]

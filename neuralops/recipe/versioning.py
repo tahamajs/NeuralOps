@@ -30,10 +30,12 @@ HISTORICAL_VERSIONS = {"neuralops/v0"}
 
 def check_language_version(recipe_or_dict: Any) -> None:
     """Verify that the recipe's apiVersion is supported by this runtime."""
-    if hasattr(recipe_or_dict, "apiVersion"):
+    if hasattr(recipe_or_dict, "apiVersion") and getattr(recipe_or_dict, "apiVersion"):
         version = recipe_or_dict.apiVersion
+    elif hasattr(recipe_or_dict, "version") and getattr(recipe_or_dict, "version"):
+        version = recipe_or_dict.version
     elif isinstance(recipe_or_dict, dict):
-        version = recipe_or_dict.get("apiVersion")
+        version = recipe_or_dict.get("apiVersion") or recipe_or_dict.get("version")
     else:
         return
 
