@@ -37,6 +37,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - CUDA C++ Level 1 backend mirrors are not implemented for these 14 modules (Level 2 Triton JIT + Level 3 PyTorch reference available).
   - Empirical downstream validation (SST-2, WikiText perplexity, physical GPU latency benchmarks) deferred to full hardware sweep.
 
+## [2.0.1] - 2026-11-01
+
+### Security & Hardening
+- Enforced `weights_only=True` on `torch.load` invocations across weight checkpoints and LoRA loaders (`asvd_compressor`, `cachenotes_compressor`, `svd_linear_attention`, `utils/lora.py`).
+- Eliminated shell-string subprocess command execution in hardware telemetry probe (`gpu_probe.py`), replacing with structured argument lists (`shell=False`).
+
+### Fixed
+- Corrected `__all__` export definitions in CUDA operator modules (`entmax_bisect`, `liquid_attention`, `mamba2_block`, `rms_variance_match`) from variable symbols to string literals.
+- Removed redundant dead import in `neuralops/__init__.py`.
+
+### Added
+- **Distributed & Sweeper Utilities**:
+  - `ParetoFrontierSweeper` (`neuralops.analysis.pareto_sweeper`): Multi-objective non-dominated Pareto trade-off computing across accuracy, latency, and compression.
+  - `FSDP2Wrapper` (`neuralops.distributed.fsdp2`): Fully Sharded Data Parallelism v2 configuration and wrapping interface.
+  - `MegatronTPHooks` (`neuralops.distributed.megatron_hooks`): Megatron-LM tensor-parallel state synchronization hooks.
+  - `UnifiedModelExporter` (`neuralops.export.unified`): Unified model export router for HF, ONNX, TorchScript, and Triton formats.
+  - `FLAWeightsConverter` (`neuralops.integrations.fla.weights_converter`): Weight converter mapping NeuralOps checkpoints to Flash Linear Attention (FLA) models.
+- **Testing**:
+  - Added end-to-end integration test (`tests/surgery/test_integration_real.py`) validating multi-stage surgery recipes on real GPT-2.
+
 ## [2.0.0] - 2026-11-01
 
 ### Major Release

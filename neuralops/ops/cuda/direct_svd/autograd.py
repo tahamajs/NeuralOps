@@ -11,35 +11,39 @@ Autograd Function for Direct SVD CUDA Kernel.
 
 from __future__ import annotations
 
+from pathlib import Path
 import torch
 from torch.autograd import Function
 
+_OPS = None
+
 
 def _get_direct_svd_ops():
+    global _OPS
+    if _OPS is not None:
+        return _OPS
+
     try:
         import direct_svd_ops
 
-        return direct_svd_ops
+        _OPS = direct_svd_ops
+        return _OPS
     except ImportError:
-        try:
-            from pathlib import Path
+        pass
 
-            from neuralops.ops.cuda._bindings import load_cuda_module
+    try:
+        from torch.utils.cpp_extension import load
 
-            pkg_dir = Path(__file__).parent
-            with open(pkg_dir / "binding.cpp", "r", encoding="utf-8") as f:
-                cpp_src = f.read()
-            with open(pkg_dir / "direct_svd.cu", "r", encoding="utf-8") as f:
-                cuda_src = f.read()
-
-            return load_cuda_module(
-                name="direct_svd_ops",
-                cpp_sources=cpp_src,
-                cuda_sources=cuda_src,
-                functions=["direct_svd_fwd"],
-            )
-        except Exception:
-            return None
+        pkg_dir = Path(__file__).parent
+        _OPS = load(
+            name="direct_svd_ops",
+            sources=[str(pkg_dir / "direct_svd.cu"), str(pkg_dir / "binding.cpp")],
+            extra_cuda_cflags=["-gencode=arch=compute_75,code=sm_75", "-O3"],
+            verbose=False,
+        )
+        return _OPS
+    except Exception:
+        return None
 
 
 class DirectSVDFunction(Function):

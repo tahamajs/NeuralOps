@@ -72,7 +72,7 @@ if TYPE_CHECKING:
     from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY  # noqa: F401
     from neuralops.kernels import list_cuda_kernels, list_triton_kernels  # noqa: F401
 
-__version__ = "2.0.0"
+__version__ = "2.0.1"
 
 _TORCH_FREE_SYMBOLS = frozenset({"__version__", "__doc__", "__all__", "pipeline"})
 try:
