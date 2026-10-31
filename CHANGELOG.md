@@ -5,6 +5,38 @@ All notable changes to the **NeuralOps** library (`SVD_linear_Attention`) will b
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Triton Kernel Pipeline Completion**:
+  - **Batch 3 Model Compressors (6 Triton Modules)**:
+    - `quantize_awq.py`: Activation-aware 4-bit weight quantization kernel with FP32 scaling (`awq_compress`, `awq_decompress`).
+    - `quantize_fp8.py`: Microscaling FP8 E4M3/E5M2 block quantization with dynamic scale estimation (`fp8_compressor_compress`, `fp8_compressor_decompress`).
+    - `quantize_kmeans.py`: Lloyd-Max 1D k-means vector centroid assignment and reconstruction kernel (`kmeans_quantize_compress`, `kmeans_quantize_decompress`). Parity tested on Tesla T4 GPU.
+    - `prune_wanda.py`: Weight-and-activation product magnitude pruning kernel with row-wise percentile thresholding (`wanda_compress`). Parity tested on Tesla T4 GPU.
+    - `prune_sparsegpt.py`: Second-order Cholesky/Hessian-reweighted greedy pruning kernel (`sparsegpt_compress`). Parity tested on Tesla T4 GPU.
+    - `prune_admm.py`: ADMM 2:4 fine-grained structured sparsity projection and reconstruction kernel (`admm_pruner_compress`).
+  - **Batch 2 Attention Kernels (8 Triton Modules)**:
+    - `routing_attention_triton.py`: Spherical k-means cluster-routed attention with centroid assignment (`routing_attention_forward`).
+    - `lsh_attention_triton.py`: Locality-Sensitive Hashing (LSH) random hyperplane bucketed causal attention (`lsh_attention_forward`).
+    - `cross_attention_triton.py`: Cross-attention forward kernel supporting asymmetric sequence lengths $L_q \neq L_{kv}$ (`cross_attention_forward`).
+    - `adaptive_sparse_triton.py`: Dynamic top-$k$ thresholded sparse attention with row-wise entropy masking (`adaptive_sparse_attention_forward`).
+    - `dynamic_conv_triton.py`: Dynamic input-dependent depthwise causal 1D convolution attention kernel (`dynamic_conv_attention_forward`).
+    - `token_compressed_triton.py`: Token pooling / stride compression and cross-attention forward kernel (`token_compressed_attention_forward`).
+    - `chela_slay_triton.py`: Chunked parallel causal linear associative scan attention kernel (`chela_slay_attention_forward`).
+    - `rala_attention_triton.py`: Rank-augmented recurrent linear associative scan with low-rank state update (`rala_attention_forward`).
+
+### Fixed
+- **Triton SVD Compressor Suitability Check**:
+  - Corrected `check_triton_suitability(tensor, kernel_name)` invocation across 4 call sites in `neuralops/ops/triton/low_rank.py` (`direct_svd`, `asvd`, `fwsvd`, and `hnc_svd`).
+
+### Verification & Status
+- **Tier 1 Verification**: All 14 new Triton modules (28 `@triton.jit` kernels) verified via CPU fallback and AST/interpreter checks without block pointers (`tl.make_block_ptr`) or scan primitives (`tl.associative_scan`).
+- **GPU Verification Status**: Physical GPU execution verified on Tesla T4 for `quantize_kmeans.py`, `prune_wanda.py`, and `prune_sparsegpt.py`. Parity verification for remaining compressor and attention kernels deferred to remote GPU host per AGENTS.md §3.1.
+- **Known Limitations**:
+  - CUDA C++ Level 1 backend mirrors are not implemented for these 14 modules (Level 2 Triton JIT + Level 3 PyTorch reference available).
+  - Empirical downstream validation (SST-2, WikiText perplexity, physical GPU latency benchmarks) deferred to full hardware sweep.
+
 ## [2.0.0] - 2026-11-01
 
 ### Major Release
