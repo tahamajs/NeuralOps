@@ -19,16 +19,32 @@ import torch
 
 logger = logging.getLogger("NeuralOps.Surgery.HFCacheBridge")
 
+from neuralops.core.errors import IntegrationNotImplementedError
+
 try:
     from transformers.cache_utils import Cache, DynamicCache
     _HF_CACHE_BASE = DynamicCache
-
 except (ImportError, AttributeError):
     class Cache:
         pass
     class DynamicCache:
         pass
     _HF_CACHE_BASE = object
+
+
+def validate_cache_format(cache: Any) -> None:
+    """Validate that the given cache format is supported by NeuralOps, failing closed otherwise."""
+    if cache is None:
+        return
+    cache_type_name = type(cache).__name__
+    unsupported = ("StaticCache", "OffloadedCache", "QuantizedCache", "EncoderDecoderCache", "SinkCache")
+    if any(u in cache_type_name for u in unsupported) or (
+        isinstance(cache, Cache) and not isinstance(cache, (DynamicCache, NeuralOpsHybridHFCache))
+    ):
+        raise IntegrationNotImplementedError(
+            f"Unsupported HuggingFace cache format: '{cache_type_name}'. "
+            "NeuralOps HFCacheBridge supports DynamicCache, NeuralOpsHybridHFCache, and standard tuple/list caches."
+        )
 
 
 class NeuralOpsHybridHFCache(_HF_CACHE_BASE):
@@ -443,12 +459,43 @@ class NeuralOpsHybridHFCache(_HF_CACHE_BASE):
             for index in range(len(self))
         )
 
+    @staticmethod
+    def convert_recurrent_state(
+        state: torch.Tensor,
+        target_format: str = "recurrent",
+    ) -> torch.Tensor:
+        """Convert between (B, H, L, D) token sequences and (B, H, Dk, Dv) recurrent states.
+
+        Args:
+            state: 4D Tensor containing either token sequence or recurrent state matrix.
+            target_format: 'recurrent' for (B, H, Dk, Dv) or 'kv' / 'sequence' for (B, H, L, D).
+
+        Returns:
+            Transformed Tensor matching the target representation contract.
+        """
+        if not isinstance(state, torch.Tensor) or state.ndim != 4:
+            return state
+
+        if target_format == "recurrent":
+            # If in sequence format (B, H, L, D) with L != D, compute outer product state (B, H, D, D)
+            if state.shape[-2] != state.shape[-1]:
+                k = state.float()
+                return torch.matmul(k.transpose(-2, -1), k).to(state.dtype)
+            return state
+        elif target_format in ("kv", "sequence"):
+            # If in recurrent matrix format (B, H, Dk, Dv), project to sequence summary (B, H, 1, Dv)
+            if state.shape[-2] == state.shape[-1]:
+                return state.mean(dim=-2, keepdim=True)
+            return state
+        return state
+
     @classmethod
     def from_legacy_cache(
         cls,
         past_key_values: Optional[Any] = None,
     ) -> NeuralOpsHybridHFCache:
         """Construct a compatible cache from a legacy tuple of key/value tensors or recurrent states."""
+        validate_cache_format(past_key_values)
         cache = cls()
         if past_key_values is not None:
             for layer_idx, item in enumerate(past_key_values):
@@ -501,5 +548,6 @@ HFCacheBridge = NeuralOpsHybridHFCache
 __all__ = [
     "HFCacheBridge",
     "NeuralOpsHybridHFCache",
+    "validate_cache_format",
     "wrap_model_for_generation",
 ]
