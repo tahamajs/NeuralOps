@@ -45,6 +45,7 @@ CONTRACT = OperationContract(
     declares_mutations=["*.self_attn", "*.attn"],
     deterministic_given_seed=True,
     composable_with_self=False,
+    conflicts=["low_rank_projection"],
 )
 
 

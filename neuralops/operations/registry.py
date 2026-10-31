@@ -28,6 +28,7 @@ logger = logging.getLogger("NeuralOps.Operations.Registry")
 
 # Internal storage: {op_name: {version: Operation_instance}}
 _OPERATION_REGISTRY: Dict[str, Dict[str, Operation]] = {}
+OPERATION_REGISTRY = _OPERATION_REGISTRY
 
 
 def register_operation(

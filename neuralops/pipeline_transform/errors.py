@@ -37,4 +37,22 @@ class PlanningError(NeuralOpsError):
         return f"{prefix} {self.message}"
 
 
-__all__ = ["PlanningError"]
+class ConfigurationError(NeuralOpsError):
+    """Raised when auto-configuration cannot satisfy specified hardware constraints."""
+
+    def __init__(
+        self,
+        message: str,
+        constraints: Optional[dict] = None,
+        error_code: str = "E_CONFIG_UNSATISFIABLE",
+    ) -> None:
+        super().__init__(message)
+        self.message = message
+        self.constraints = constraints or {}
+        self.error_code = error_code
+
+    def __str__(self) -> str:
+        return f"[{self.error_code}] {self.message} (constraints: {self.constraints})"
+
+
+__all__ = ["ConfigurationError", "PlanningError"]
