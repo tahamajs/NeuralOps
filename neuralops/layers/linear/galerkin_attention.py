@@ -638,6 +638,7 @@ class GalerkinAttention(BaseAttention):
                     out = self.out_proj(_sdpa_out) if not self.is_nested_encoder else _sdpa_out
                     return out, None
                 except Exception:
+                    # allowed-swallow: cleanup: non-fatal fallback handling
                     pass
 
             scale = 1.0 / math.sqrt(int(d))

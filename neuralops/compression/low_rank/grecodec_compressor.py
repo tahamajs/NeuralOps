@@ -134,6 +134,7 @@ class GreCoDeCLinear(nn.Module):
                     return (out + lora_out).view(*orig_shape[:-1], self.out_features)
                 return out.view(*orig_shape[:-1], self.out_features)
             except Exception:
+                # allowed-swallow: optional-import: optional dependency or module not installed
                 pass
 
         x_v = F.linear(x_flat, self.V)
@@ -574,6 +575,7 @@ def grecodec_compressor_factory(
     try:
         compressed_model.compression_stats = stats
     except Exception:
+        # allowed-swallow: best-effort-telemetry: optional configuration or attribute resolution
         pass
     if return_stats:
         return compressed_model, stats

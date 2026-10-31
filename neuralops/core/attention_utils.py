@@ -83,6 +83,7 @@ def enable_deterministic_attention(enabled: bool = True) -> bool:
     try:
         torch.use_deterministic_algorithms(enabled, warn_only=True)
     except Exception:
+        # allowed-swallow: cleanup: non-fatal fallback handling
         pass
     return prev
 

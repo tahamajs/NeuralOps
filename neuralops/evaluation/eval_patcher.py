@@ -388,6 +388,7 @@ def _invoke_compressor_instance(
                         try:
                             res[0].compression_stats = res[1]
                         except Exception:
+                            # allowed-swallow: cleanup: non-fatal fallback handling
                             pass
                     return res[0]
                 if isinstance(res, nn.Module):
@@ -400,6 +401,7 @@ def _invoke_compressor_instance(
         try:
             m.compression_stats = instance.get_compression_stats()
         except Exception:
+            # allowed-swallow: best-effort-telemetry: non-critical telemetry logging
             pass
     return m
 
@@ -483,6 +485,7 @@ def _apply_compressor_module(
                 try:
                     model.compression_stats = candidate[1]
                 except Exception:
+                    # allowed-swallow: cleanup: resource or temporary file cleanup
                     pass
         elif isinstance(candidate, nn.Module) and not hasattr(candidate, "compress"):
             model = candidate

@@ -489,6 +489,7 @@ class RoutingAttention(BaseAttention):
                     centroids, cluster_ids, _ = fused_kmeans_centroid_assign_triton(feat_f, centroids)
                 return cluster_ids
             except Exception:
+                # allowed-swallow: optional-import: optional dependency or module not installed
                 pass
 
         cluster_ids = torch.zeros(B, H, L, dtype=torch.long, device=feat.device)

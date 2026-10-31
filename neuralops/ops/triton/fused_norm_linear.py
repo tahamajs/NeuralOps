@@ -244,6 +244,7 @@ def fused_rmsnorm_gate_triton(
             )
             return out.view(*orig_shape)
         except Exception:
+            # allowed-swallow: cleanup: non-fatal fallback handling
             pass
     return fused_rmsnorm_gate(x, gate, norm_weight, eps=eps, activation=activation)
 

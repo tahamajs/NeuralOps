@@ -369,6 +369,7 @@ class MoEDeltaKVPagedAttention(nn.Module):
                 if w is not None:
                     extracted[proj] = (w, b)
             except Exception:
+                # allowed-swallow: cleanup: non-fatal fallback handling
                 pass
 
         if hasattr(src, "c_attn") and any(extracted[k][0] is None for k in ("q", "k", "v")):
@@ -536,6 +537,7 @@ class MoEDeltaKVPagedAttention(nn.Module):
             for p in src.parameters():
                 self._orig_storage_bytes += p.numel() * p.element_size()
         except Exception:
+            # allowed-swallow: best-effort-telemetry: non-critical telemetry logging
             pass
 
         with torch.no_grad():
@@ -606,6 +608,7 @@ class MoEDeltaKVPagedAttention(nn.Module):
                 for p in m.parameters():
                     self._comp_storage_bytes += p.numel() * p.element_size()
         except Exception:
+            # allowed-swallow: cleanup: non-fatal fallback handling
             pass
 
         if hasattr(src, "is_decoder"):

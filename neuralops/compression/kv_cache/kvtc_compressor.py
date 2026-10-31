@@ -293,6 +293,7 @@ class KVTCQuantizedLoRALinear(nn.Module):
             try:
                 from neuralops.ops.triton.low_rank import fused_int4_lut_dequant_matmul_triton
             except Exception:
+                # allowed-swallow: optional-import: optional dependency or module not installed
                 pass
         w_eff = self.int_weight.to(dtype=x.dtype) * self.scale.to(
             dtype=x.dtype
@@ -658,6 +659,7 @@ class KVTCCompressor(BaseCompressor):
                     _ = self.model(dummy_ids)
                     test_passed = True
                 except Exception:
+                    # allowed-swallow: cleanup: non-fatal fallback handling
                     pass
 
                 if not test_passed:

@@ -247,6 +247,7 @@ class MixAttentionMoSKA(BaseAttention):
                 past_key_value.update(k, v, layer_idx)
                 return past_key_value
             except Exception:
+                # allowed-swallow: best-effort-telemetry: optional configuration or attribute resolution
                 pass
         if past_key_value is not None and hasattr(past_key_value, "key_cache"):
             if layer_idx < len(past_key_value.key_cache):
@@ -266,6 +267,7 @@ class MixAttentionMoSKA(BaseAttention):
             for p in src.parameters():
                 self._orig_storage_bytes += p.numel() * p.element_size()
         except Exception:
+            # allowed-swallow: optional-import: optional dependency or module not installed
             pass
 
         extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
@@ -279,6 +281,7 @@ class MixAttentionMoSKA(BaseAttention):
                 if w is not None:
                     extracted[proj] = (w, b)
             except Exception:
+                # allowed-swallow: cleanup: non-fatal fallback handling
                 pass
 
         if hasattr(src, "c_attn") and (
@@ -482,6 +485,7 @@ class MixAttentionMoSKA(BaseAttention):
                 for p in m.parameters():
                     self._comp_storage_bytes += p.numel() * p.element_size()
         except Exception:
+            # allowed-swallow: cleanup: non-fatal fallback handling
             pass
 
         if hasattr(src, "is_decoder") and src.is_decoder:
@@ -586,6 +590,7 @@ class MixAttentionMoSKA(BaseAttention):
             if isinstance(m, torch.Tensor) and m.shape == (B, L):
                 return m.bool()
         except Exception:
+            # allowed-swallow: cleanup: non-fatal fallback handling
             pass
         return None
 

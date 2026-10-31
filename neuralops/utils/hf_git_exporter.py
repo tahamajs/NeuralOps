@@ -284,6 +284,7 @@ def upload_to_huggingface(
             try:
                 bin_file.unlink()
             except Exception:
+                # allowed-swallow: cleanup: resource or temporary file cleanup
                 pass
 
         acc = float(perf_metrics.get("accuracy_pct", 0.0))

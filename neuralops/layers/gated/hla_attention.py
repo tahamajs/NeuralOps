@@ -522,6 +522,7 @@ class HLAAttention(BaseAttention):
                 y_accel = hla_attention(q, k, v, decay, eps=1e-5)
                 return y_accel.to(q.dtype), (None, None)
             except Exception:
+                # allowed-swallow: optional-import: optional dependency or module not installed
                 pass
 
         C = self.chunk_size

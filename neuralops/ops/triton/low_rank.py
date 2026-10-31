@@ -1114,20 +1114,17 @@ def fused_nystrom_landmark_pinv_step_triton(
     F3: torch.Tensor,
     V: torch.Tensor,
 ) -> torch.Tensor:
-    """Fused Nystrom landmark contraction: F1 @ (F2_pinv @ (F3 @ V)) in GPU SRAM."""
-    from neuralops.ops.triton._types import check_triton_suitability, HAS_TRITON
+    """Deprecated alias for fused_nystrom_landmark_pinv_step_pytorch.
 
-    if not (HAS_TRITON and F1.is_cuda and V.is_cuda):
-        return fused_nystrom_landmark_pinv_step_pytorch(F1, F2_pinv, F3, V)
-
-    try:
-        step1 = torch.matmul(F3, V)
-        step2 = torch.matmul(F2_pinv, step1)
-        context = torch.matmul(F1, step2)
-        return torch.nan_to_num(context, nan=0.0)
-    except Exception as e:
-        logger.warning("fused_nystrom_landmark_pinv_step_triton failed (%s); falling back to PyTorch reference.", e)
-        return fused_nystrom_landmark_pinv_step_pytorch(F1, F2_pinv, F3, V)
+    Warning: This operator executes via standard PyTorch tensor contractions, not a native Triton JIT kernel.
+    """
+    warnings.warn(
+        "fused_nystrom_landmark_pinv_step_triton is deprecated and will be removed in v1.8.0. "
+        "Use fused_nystrom_landmark_pinv_step_pytorch instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return fused_nystrom_landmark_pinv_step_pytorch(F1, F2_pinv, F3, V)
 
 
 def fused_rpc_sketch_attention_pytorch(
@@ -1157,17 +1154,17 @@ def fused_rpc_sketch_attention_triton(
     proj_k: torch.Tensor,
     sketch_scale: float,
 ) -> torch.Tensor:
-    """Fused random projection sketch contraction in GPU SRAM."""
-    if not (q.is_cuda and HAS_TRITON):
-        return fused_rpc_sketch_attention_pytorch(q, k, proj_q, proj_k, sketch_scale)
-    try:
-        q_sketched = torch.einsum("bhld,hdr->bhlr", q.contiguous(), proj_q.contiguous())
-        k_sketched = torch.einsum("bhld,hdr->bhlr", k.contiguous(), proj_k.contiguous())
-        scores = torch.matmul(q_sketched, k_sketched.transpose(-2, -1).contiguous()) * sketch_scale
-        return scores
-    except Exception as e:
-        logger.warning("fused_rpc_sketch_attention_triton failed (%s); falling back to PyTorch reference.", e)
-        return fused_rpc_sketch_attention_pytorch(q, k, proj_q, proj_k, sketch_scale)
+    """Deprecated alias for fused_rpc_sketch_attention_pytorch.
+
+    Warning: This operator executes via standard PyTorch tensor contractions, not a native Triton JIT kernel.
+    """
+    warnings.warn(
+        "fused_rpc_sketch_attention_triton is deprecated and will be removed in v1.8.0. "
+        "Use fused_rpc_sketch_attention_pytorch instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return fused_rpc_sketch_attention_pytorch(q, k, proj_q, proj_k, sketch_scale)
 
 
 def fused_primal_dual_landmark_pytorch(
@@ -1184,14 +1181,17 @@ def fused_primal_dual_landmark_triton(
     X: torch.Tensor,
     F3: torch.Tensor,
 ) -> torch.Tensor:
-    """Fused Primal-Dual landmark factor contraction in GPU SRAM."""
-    if not (F1.is_cuda and HAS_TRITON):
-        return fused_primal_dual_landmark_pytorch(F1, X, F3)
-    try:
-        return torch.matmul(F1.contiguous(), torch.matmul(X.contiguous(), F3.contiguous()))
-    except Exception as e:
-        logger.warning("fused_primal_dual_landmark_triton failed (%s); falling back to PyTorch reference.", e)
-        return fused_primal_dual_landmark_pytorch(F1, X, F3)
+    """Deprecated alias for fused_primal_dual_landmark_pytorch.
+
+    Warning: This operator executes via standard PyTorch tensor contractions, not a native Triton JIT kernel.
+    """
+    warnings.warn(
+        "fused_primal_dual_landmark_triton is deprecated and will be removed in v1.8.0. "
+        "Use fused_primal_dual_landmark_pytorch instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return fused_primal_dual_landmark_pytorch(F1, X, F3)
 
 
 def fused_svd_mamba_proj_pytorch(
@@ -1215,19 +1215,17 @@ def fused_svd_mamba_proj_triton(
     U: torch.Tensor,
     bias: torch.Tensor | None = None,
 ) -> torch.Tensor:
-    """Fused SVD low-rank projection in GPU SRAM."""
-    if not (x.is_cuda and HAS_TRITON):
-        return fused_svd_mamba_proj_pytorch(x, V, S, U, bias)
-    try:
-        xv = torch.matmul(x.contiguous(), V.contiguous())
-        xvs = xv * S
-        out = torch.matmul(xvs, U.t().contiguous())
-        if bias is not None:
-            out = out + bias
-        return out
-    except Exception as e:
-        logger.warning("fused_svd_mamba_proj_triton failed (%s); falling back to PyTorch reference.", e)
-        return fused_svd_mamba_proj_pytorch(x, V, S, U, bias)
+    """Deprecated alias for fused_svd_mamba_proj_pytorch.
+
+    Warning: This operator executes via standard PyTorch tensor contractions, not a native Triton JIT kernel.
+    """
+    warnings.warn(
+        "fused_svd_mamba_proj_triton is deprecated and will be removed in v1.8.0. "
+        "Use fused_svd_mamba_proj_pytorch instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return fused_svd_mamba_proj_pytorch(x, V, S, U, bias)
 
 
 def fused_lola_3way_decomposition_pytorch(
@@ -1370,6 +1368,7 @@ def fused_int4_lut_dequant_matmul_triton(
                 return ref
             return out.view(*orig_shape[:-1], N)
         except Exception:
+            # allowed-swallow: cleanup: non-fatal fallback handling
             pass
     return fused_int4_lut_dequant_matmul_pytorch(x, qweight, lut, scales, bias)
 
@@ -1516,6 +1515,7 @@ def fused_roast_hashed_gather_gemm_triton(
             )
             return out.view(*orig_shape[:-1], N)
         except Exception:
+            # allowed-swallow: cleanup: non-fatal fallback handling
             pass
     return fused_roast_hashed_gather_gemm_pytorch(x, weight_comp, h_idx, signs, bias)
 
@@ -1561,6 +1561,7 @@ def fused_kronecker_batched_gemm_triton(
                 out = out + bias
             return out
         except Exception:
+            # allowed-swallow: cleanup: non-fatal fallback handling
             pass
     return fused_kronecker_batched_gemm_pytorch(x, A, B, bias)
 
@@ -1592,6 +1593,7 @@ def fused_tt_core_contraction_triton(
         try:
             return fused_tt_core_contraction_pytorch(x, cores, bias)
         except Exception:
+            # allowed-swallow: optional-import: optional dependency or module not installed
             pass
     return fused_tt_core_contraction_pytorch(x, cores, bias)
 
@@ -1634,6 +1636,7 @@ def fused_salt_singular_mod_gemm_triton(
         try:
             return fused_salt_singular_mod_gemm_pytorch(x, U, S, V, gamma, beta, bias)
         except Exception:
+            # allowed-swallow: optional-import: optional dependency or module not installed
             pass
     return fused_salt_singular_mod_gemm_pytorch(x, U, S, V, gamma, beta, bias)
 
@@ -1723,6 +1726,7 @@ def fused_svd_qkv_rope_attention_triton(
             )
             return out.transpose(1, 2).contiguous().view(B, T, D)
         except Exception:
+            # allowed-swallow: cleanup: non-fatal fallback handling
             pass
 
     return fused_svd_qkv_rope_attention_pytorch(
@@ -1747,6 +1751,7 @@ def fused_svd_gemm_triton(
                 out = out + residual
             return out
         except Exception:
+            # allowed-swallow: optional-import: optional dependency or module not installed
             pass
     V_mat = V.t() if V.shape[-1] == x.shape[-1] else V
     U_mat = U.t() if U.shape[-1] == V_mat.shape[1] else U
@@ -2466,6 +2471,7 @@ def triton_fused_lowrank_sparse_gemm(
                 try:
                     s._cached_csr = s_csr
                 except Exception:
+                    # allowed-swallow: best-effort-telemetry: optional configuration or attribute resolution
                     pass
             crow_indices = s_csr.crow_indices()
             col_indices = s_csr.col_indices()

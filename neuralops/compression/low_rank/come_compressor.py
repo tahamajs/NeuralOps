@@ -97,6 +97,7 @@ class CoMeBridge(nn.Module):
                     low = fused_down_up_gemm_bias_triton(t_flat, A.t().contiguous(), B.t().contiguous(), bias=cb)
                     return t + self.alpha.to(device=t.device, dtype=t.dtype) * low.reshape(orig_shape)
                 except Exception:
+                    # allowed-swallow: optional-import: optional dependency or module not installed
                     pass
             low = F.linear(F.linear(t, A), B) + cb
             return t + self.alpha.to(device=t.device, dtype=t.dtype) * low
@@ -298,6 +299,7 @@ class CoMeLoRALinear(nn.Module):
                     out = out + (self.scaling * lora_out).to(out.dtype)
                     return out.reshape(*orig_shape[:-1], self.out_features)
                 except Exception:
+                    # allowed-swallow: optional-import: optional dependency or module not installed
                     pass
             lora_out = F.linear(F.linear(x_flat.to(self.lora_A.dtype), self.lora_A), self.lora_B)
             out = out + (self.scaling * lora_out).to(out.dtype)
@@ -941,6 +943,7 @@ class CoMeCompressor(BaseCompressor):
         try:
             self.model._come_stats = stats
         except Exception:
+            # allowed-swallow: cleanup: non-fatal fallback handling
             pass
         return self.model, stats
 

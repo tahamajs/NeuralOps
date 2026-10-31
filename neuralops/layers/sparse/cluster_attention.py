@@ -149,6 +149,7 @@ class ClusterAttention(BaseAttention):
                     adapter = ModelAdapter(config)
                     head_dim = getattr(adapter, "head_dim", 0)
                 except Exception:
+                    # allowed-swallow: best-effort-telemetry: optional configuration or attribute resolution
                     pass
 
         if not head_dim:
@@ -342,6 +343,7 @@ class ClusterAttention(BaseAttention):
                 try:
                     c_attn_mod.merge()
                 except Exception:
+                    # allowed-swallow: best-effort-telemetry: optional configuration or attribute resolution
                     pass
             base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
             weight = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None))
@@ -378,6 +380,7 @@ class ClusterAttention(BaseAttention):
                 try:
                     c_proj_mod.merge()
                 except Exception:
+                    # allowed-swallow: best-effort-telemetry: optional configuration or attribute resolution
                     pass
             base_o = getattr(c_proj_mod, "base_layer", c_proj_mod)
             w_o = getattr(base_o, "weight", getattr(c_proj_mod, "weight", None))

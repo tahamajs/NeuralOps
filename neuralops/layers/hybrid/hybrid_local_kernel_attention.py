@@ -221,6 +221,7 @@ def _local_window_attention_v2(
             from neuralops.ops.cuda.hybrid_local_kernel import hybrid_local_attn
             return hybrid_local_attn(Q, K, V, radius=radius, is_causal=is_decoder)
         except Exception:
+            # allowed-swallow: optional-import: optional dependency or module not installed
             pass
 
     abs_q = (past_len + torch.arange(N, device=Q.device)).unsqueeze(1)
@@ -291,6 +292,7 @@ def _global_linear_attention_v2(
                 from neuralops.ops.triton.linear_attn import fused_svd_linear_chunk_scan_triton
                 return fused_svd_linear_chunk_scan_triton(phi_Q.to(Q.dtype), phi_K.to(Q.dtype), V, chunk_size=64, eps=1e-6)
             except Exception:
+                # allowed-swallow: optional-import: optional dependency or module not installed
                 pass
 
         chunk = 64

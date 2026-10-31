@@ -156,6 +156,7 @@ def finetune_classification(
                 try:
                     tracker.log_metrics({"train/loss": cur_loss, "train/epoch": epoch + (count / max(len(train_loader), 1))}, step=step)
                 except Exception:
+                    # allowed-swallow: best-effort-telemetry: non-critical telemetry logging
                     pass
 
             LOG_EVERY = 50
@@ -276,6 +277,7 @@ def train_kd(
                 try:
                     tracker.log_metrics({"kd/loss": step_loss, "kd/epoch": epoch + (count / max(len(train_loader), 1))}, step=step)
                 except Exception:
+                    # allowed-swallow: best-effort-telemetry: non-critical telemetry logging
                     pass
 
             if max_steps is not None and step >= max_steps:

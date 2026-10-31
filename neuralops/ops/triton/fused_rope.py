@@ -162,6 +162,7 @@ def fused_rope_embedding_kernel(
             )
             return out_q, out_k
         except Exception:
+            # allowed-swallow: cleanup: non-fatal fallback handling
             pass
 
     return fused_rope_embedding(q, k, cos, sin)
@@ -275,6 +276,7 @@ def fused_unified_rope_offset_triton(
             )
             return out_2d.view(orig_shape)
         except Exception:
+            # allowed-swallow: cleanup: non-fatal fallback handling
             pass
 
     return fused_unified_rope_offset_pytorch(x, cos, sin, rotary_dim)

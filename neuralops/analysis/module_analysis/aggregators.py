@@ -79,6 +79,7 @@ def get_best_dataset_result(rows: List[Dict[str, Any]], target_ds: str) -> str:
                     if val > 0:
                         valid_vals.append(val)
                 except Exception:
+                    # allowed-swallow: cleanup: non-fatal fallback handling
                     pass
         else:
             acc_str = r.get("accuracy_pct")
@@ -87,6 +88,7 @@ def get_best_dataset_result(rows: List[Dict[str, Any]], target_ds: str) -> str:
                     val = float(acc_str)
                     valid_vals.append(val)
                 except Exception:
+                    # allowed-swallow: cleanup: non-fatal fallback handling
                     pass
 
     if not valid_vals:

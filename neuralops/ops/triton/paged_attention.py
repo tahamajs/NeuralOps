@@ -173,6 +173,7 @@ def paged_attention_kernel(
             )
             return out
         except Exception:
+            # allowed-swallow: cleanup: non-fatal fallback handling
             pass
     return paged_attention_pytorch(q, k_cache, v_cache, block_tables, seq_lens, block_size=block_size)
 
@@ -299,6 +300,7 @@ def paged_recurrent_state_step_triton(
             )
             return out
         except Exception:
+            # allowed-swallow: cleanup: non-fatal fallback handling
             pass
 
     return paged_recurrent_state_step_pytorch(
@@ -367,6 +369,7 @@ def paged_kv_evict_compact_triton(
             )
             return k_out, v_out
         except Exception:
+            # allowed-swallow: cleanup: non-fatal fallback handling
             pass
 
     return k_cache[keep_indices], v_cache[keep_indices]

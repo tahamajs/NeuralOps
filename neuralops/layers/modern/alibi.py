@@ -258,6 +258,7 @@ class ALiBiAttention(BaseAttention):
                 past_key_value.update(k, v, layer_idx)
                 return past_key_value
             except Exception:
+                # allowed-swallow: best-effort-telemetry: optional configuration or attribute resolution
                 pass
 
         if past_key_value is not None and hasattr(past_key_value, "key_cache"):

@@ -70,6 +70,7 @@ def _autocast_off(x: torch.Tensor) -> contextlib.AbstractContextManager:
         try:
             return torch.autocast(device_type=dev_type, enabled=False)
         except Exception:
+            # allowed-swallow: best-effort-telemetry: optional configuration or attribute resolution
             pass
     return contextlib.nullcontext()
 
@@ -294,6 +295,7 @@ class AASVDCompressor(BaseCompressor):
                 if not should_compress_linear(self.model, name):
                     return False
             except Exception:
+                # allowed-swallow: cleanup: non-fatal fallback handling
                 pass
 
         if self.target_modules is not None:
@@ -578,6 +580,7 @@ class AASVDCompressor(BaseCompressor):
                 for p in target_mod.parameters():
                     self._orig_storage_bytes += p.numel() * p.element_size()
             except Exception:
+                # allowed-swallow: best-effort-telemetry: non-critical telemetry logging
                 pass
 
             cov_factors = cov_factor_cache.get(name)
@@ -633,6 +636,7 @@ class AASVDCompressor(BaseCompressor):
                 for p in svd_layer.parameters():
                     self._comp_storage_bytes += p.numel() * p.element_size()
             except Exception:
+                # allowed-swallow: best-effort-telemetry: optional configuration or attribute resolution
                 pass
 
         for name, mod in self.model.named_modules():
@@ -668,6 +672,7 @@ class AASVDCompressor(BaseCompressor):
                     for p in target.parameters():
                         comp_bytes_real += p.numel() * p.element_size()
                 except Exception:
+                    # allowed-swallow: best-effort-telemetry: optional configuration or attribute resolution
                     pass
         self._comp_storage_bytes = comp_bytes_real
 

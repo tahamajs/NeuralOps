@@ -298,6 +298,7 @@ def _get_gpu_telemetry_panel() -> Optional[Panel]:
                 telemetry.append(f"{temp}°C", style="bold white")
                 return Panel(telemetry, title="[bold green]⚡ Live Hardware Telemetry[/bold green]", border_style="green", padding=(0, 1))
     except Exception:
+        # allowed-swallow: best-effort-telemetry: non-critical telemetry logging
         pass
     return None
 
@@ -414,6 +415,7 @@ def run_interactive_ui(inspect_target: Optional[str] = None, snapshot: bool = Fa
                         cat = json.load(fp)
                     attns = cat.get("attentions", [])
                 except Exception:
+                    # allowed-swallow: optional-import: optional dependency or module not installed
                     pass
 
             if attns:
@@ -447,6 +449,7 @@ def run_interactive_ui(inspect_target: Optional[str] = None, snapshot: bool = Fa
                         cat = json.load(fp)
                     comps = cat.get("compressors", [])
                 except Exception:
+                    # allowed-swallow: optional-import: optional dependency or module not installed
                     pass
 
             if comps:
@@ -474,6 +477,7 @@ def run_interactive_ui(inspect_target: Optional[str] = None, snapshot: bool = Fa
                     attns = [item["name"] for item in cat.get("attentions", [])]
                     comps = [item["name"] for item in cat.get("compressors", [])]
                 except Exception:
+                    # allowed-swallow: optional-import: optional dependency or module not installed
                     pass
             if not attns:
                 from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY

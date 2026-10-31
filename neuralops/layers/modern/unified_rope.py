@@ -668,6 +668,7 @@ def inject_unified_rope(
             if ref is not None:
                 new_attn.to(device=ref.device, dtype=ref.dtype)
         except Exception:
+            # allowed-swallow: cleanup: non-fatal fallback handling
             pass
 
         spliced = False

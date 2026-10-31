@@ -578,6 +578,7 @@ class LiLLaMADistiller(BaseCompressor):
                 }
             )
         except Exception:
+            # allowed-swallow: cleanup: non-fatal fallback handling
             pass
 
         self.model._lillama_compressed = True

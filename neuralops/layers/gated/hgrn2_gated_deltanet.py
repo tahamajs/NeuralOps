@@ -228,6 +228,7 @@ class HGRN2GatedDeltaNet(BaseAttention):
             for p in old_attn.parameters():
                 self._orig_storage_bytes += p.numel() * p.element_size()
         except Exception:
+            # allowed-swallow: cleanup: non-fatal fallback handling
             pass
 
         hgrn_ok = False
@@ -277,6 +278,7 @@ class HGRN2GatedDeltaNet(BaseAttention):
                 for p in m.parameters():
                     self._comp_storage_bytes += p.numel() * p.element_size()
         except Exception:
+            # allowed-swallow: cleanup: non-fatal fallback handling
             pass
 
     def forward(

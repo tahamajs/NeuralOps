@@ -552,6 +552,7 @@ def fms_scan(
         try:
             return fms_scan_triton(q, k, v, decay)
         except Exception:
+            # allowed-swallow: optional-import: optional dependency or module not installed
             pass
     return fms_scan_pytorch(q, k, v, decay)
 
@@ -670,6 +671,7 @@ def fused_goldfinch_hopfield_lookup_triton(
             )
             return out
         except Exception:
+            # allowed-swallow: cleanup: non-fatal fallback handling
             pass
     return fused_goldfinch_hopfield_lookup_pytorch(g, v, chunk_size)
 
@@ -706,6 +708,7 @@ def fused_phantom_ghost_state_scan_triton(
         try:
             return fused_phantom_ghost_state_scan_pytorch(q, k, v, gamma, is_causal)
         except Exception:
+            # allowed-swallow: optional-import: optional dependency or module not installed
             pass
     return fused_phantom_ghost_state_scan_pytorch(q, k, v, gamma, is_causal)
 

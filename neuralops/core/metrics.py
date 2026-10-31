@@ -103,6 +103,7 @@ def compute_dataset_metrics(
                     4,
                 )
             except Exception:
+                # allowed-swallow: best-effort-telemetry: non-critical telemetry logging
                 pass
 
     except Exception as e:

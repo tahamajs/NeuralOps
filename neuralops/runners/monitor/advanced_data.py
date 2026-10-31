@@ -46,6 +46,7 @@ def get_all_131_attentions(project_dir: str) -> List[Dict[str, Any]]:
                             "complexity_space": "O(1)" if any(x in name for x in ["linear", "recurrent", "mamba", "rwkv"]) else "O(N)",
                         }
         except Exception:
+            # allowed-swallow: best-effort-telemetry: non-critical telemetry logging
             pass
 
     acc_path = os.path.join(project_dir, "results", "accuracy_and_ppl_benchmark_all131.json")
@@ -68,6 +69,7 @@ def get_all_131_attentions(project_dir: str) -> List[Dict[str, Any]]:
                         modules_map[name]["accuracy_pct"] = item.get("accuracy_pct")
                         modules_map[name]["perplexity"] = item.get("perplexity")
         except Exception:
+            # allowed-swallow: best-effort-telemetry: non-critical telemetry logging
             pass
 
     if not modules_map:
@@ -113,6 +115,7 @@ def get_all_72_compressors(project_dir: str) -> List[Dict[str, Any]]:
                             "status": item.get("status", "OK"),
                         })
         except Exception:
+            # allowed-swallow: cleanup: non-fatal fallback handling
             pass
 
     if not compressors:

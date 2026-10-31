@@ -363,6 +363,7 @@ class GatedDeltaNetBlock(BaseAttention):
                 try:
                     from neuralops.ops.triton.gdn_scan import fused_gdn_chunk_scan_triton
                 except Exception:
+                    # allowed-swallow: optional-import: optional dependency or module not installed
                     pass
 
             attn_out, attn_weights = self.attn(

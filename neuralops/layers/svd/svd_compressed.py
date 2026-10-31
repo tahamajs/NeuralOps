@@ -604,6 +604,7 @@ class SVDCompressedAttention(BaseAttention):
                     bias=self.q_up.bias,
                 )
             except Exception:
+                # allowed-swallow: cleanup: non-fatal fallback handling
                 pass
             out = self.q_up(self.q_down(x))
             if self.lora_rank > 0 and self.q_lora_A is not None and self.q_lora_B is not None:
@@ -628,6 +629,7 @@ class SVDCompressedAttention(BaseAttention):
                     bias=self.k_up.bias,
                 )
             except Exception:
+                # allowed-swallow: cleanup: non-fatal fallback handling
                 pass
             out = self.k_up(self.k_down(x))
             if self.lora_rank > 0 and self.k_lora_A is not None and self.k_lora_B is not None:
@@ -652,6 +654,7 @@ class SVDCompressedAttention(BaseAttention):
                     bias=self.v_up.bias,
                 )
             except Exception:
+                # allowed-swallow: cleanup: non-fatal fallback handling
                 pass
             out = self.v_up(self.v_down(x))
             if self.lora_rank > 0 and self.v_lora_A is not None and self.v_lora_B is not None:
@@ -676,6 +679,7 @@ class SVDCompressedAttention(BaseAttention):
                     bias=self.o_up.bias,
                 )
             except Exception:
+                # allowed-swallow: cleanup: non-fatal fallback handling
                 pass
             out = self.o_up(self.o_down(x))
             if self.lora_rank > 0 and self.o_lora_A is not None and self.o_lora_B is not None:

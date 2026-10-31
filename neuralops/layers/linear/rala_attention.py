@@ -190,6 +190,7 @@ class RALALinearAttention(BaseAttention):
                 src_device = next(source_attn.parameters()).device
                 self.to(src_device)
             except Exception:
+                # allowed-swallow: cleanup: non-fatal fallback handling
                 pass
 
         if target_dtype is not None:

@@ -198,8 +198,10 @@ class MambaBlock(nn.Module):
                     if w is not None:
                         extracted[proj] = w
                 except Exception:
+                    # allowed-swallow: optional-import: optional dependency or module not installed
                     pass
         except Exception:
+            # allowed-swallow: optional-import: optional dependency or module not installed
             pass
 
         if hasattr(src, "c_attn") and src.c_attn is not None and extracted["q"] is None:

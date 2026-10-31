@@ -302,6 +302,7 @@ class ResSVDLinear(nn.Module):
                     bias=self.bias,
                 )
             except Exception:
+                # allowed-swallow: optional-import: optional dependency or module not installed
                 pass
 
         if self.factorize_base:

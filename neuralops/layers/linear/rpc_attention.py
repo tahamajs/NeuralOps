@@ -342,6 +342,7 @@ class RPCAttention(BaseAttention):
             for p in src.parameters():
                 self._orig_storage_bytes += p.numel() * p.element_size()
         except Exception:
+            # allowed-swallow: cleanup: non-fatal fallback handling
             pass
 
         extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
@@ -494,6 +495,7 @@ class RPCAttention(BaseAttention):
             for buf in (self.proj_q, self.proj_k):
                 self._comp_storage_bytes += buf.numel() * buf.element_size()
         except Exception:
+            # allowed-swallow: cleanup: non-fatal fallback handling
             pass
 
         if hasattr(src, "is_decoder"):

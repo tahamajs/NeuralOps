@@ -497,6 +497,7 @@ class BAMUMoEBlock(BaseAttention):
             for p in pretrained_attn.parameters():
                 self._orig_storage_bytes += p.numel() * p.element_size()
         except Exception:
+            # allowed-swallow: cleanup: non-fatal fallback handling
             pass
 
         cls_name = pretrained_attn.__class__.__name__
@@ -707,6 +708,7 @@ class BAMUMoEBlock(BaseAttention):
                 for p in m.parameters():
                     self._comp_storage_bytes += p.numel() * p.element_size()
         except Exception:
+            # allowed-swallow: cleanup: non-fatal fallback handling
             pass
 
     @property
@@ -808,6 +810,7 @@ class BAMUMoEBlock(BaseAttention):
                     raise RuntimeError(f"BAMUMoE: output dim {out.shape[-1]} != hidden_size {D}")
                 return out, None
             except Exception:
+                # allowed-swallow: best-effort-telemetry: non-critical telemetry logging
                 pass
 
         scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale

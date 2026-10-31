@@ -615,6 +615,7 @@ class DecayLinearAttention(BaseAttention):
                             out = out.flip(dims=[2])
                         return out.to(q.dtype)
                     except Exception:
+                        # allowed-swallow: cleanup: non-fatal fallback handling
                         pass
                 if not reverse:
                     return gla_scan_triton(q.float(), k.float(), v.float(), lambdas.float()).to(q.dtype)

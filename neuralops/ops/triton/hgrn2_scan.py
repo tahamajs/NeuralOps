@@ -434,6 +434,7 @@ def hgrn2_scan(
                 f, iv, res_clip=res_clip, initial_state=initial_state, return_final_state=return_final_state
             )
         except Exception:
+            # allowed-swallow: optional-import: optional dependency or module not installed
             pass
     return hgrn2_scan_pytorch(
         f, iv, res_clip=res_clip, initial_state=initial_state, return_final_state=return_final_state

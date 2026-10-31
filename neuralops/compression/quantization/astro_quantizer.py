@@ -283,6 +283,7 @@ class AstroLinear(nn.Module):
             try:
                 from neuralops.ops.triton.low_rank import dynamic_fp8_quant_triton, fused_int4_lut_dequant_matmul_triton
             except Exception:
+                # allowed-swallow: optional-import: optional dependency or module not installed
                 pass
         return nn.functional.linear(
             x,

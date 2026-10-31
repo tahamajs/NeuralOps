@@ -509,6 +509,7 @@ class SpanExpandedAttention(BaseAttention):
                     positions.index_select(-1, keep_idx),
                 )
             except Exception:
+                # allowed-swallow: optional-import: optional dependency or module not installed
                 pass
 
         return (
@@ -670,6 +671,7 @@ class SpanExpandedAttention(BaseAttention):
                 out = self.out_proj(sdpa_out)
                 return out, None, present_key_value
             except Exception:
+                # allowed-swallow: cleanup: non-fatal fallback handling
                 pass
 
         scale = 1.0 / math.sqrt(int(Dh))

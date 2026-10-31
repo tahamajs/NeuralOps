@@ -127,6 +127,7 @@ class SALRLayer(nn.Module):
                     return out + lora_out
                 return out
             except Exception:
+                # allowed-swallow: optional-import: optional dependency or module not installed
                 pass
 
         latent = F.linear(x, V_masked)

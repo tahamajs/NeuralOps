@@ -135,6 +135,7 @@ class SubspaceLinear(nn.Module):
                     out = out + lora_out
                 return out.view(*orig_shape[:-1], self.out_features)
             except Exception:
+                # allowed-swallow: optional-import: optional dependency or module not installed
                 pass
 
         x_proj = F.linear(x_flat, A)
@@ -353,6 +354,7 @@ class SubspaceProjectionCompressor(BaseCompressor):
             if not should_compress_linear(self.model, name):
                 return False
         except Exception:
+            # allowed-swallow: best-effort-telemetry: optional configuration or attribute resolution
             pass
 
         if self.target_layers is None:

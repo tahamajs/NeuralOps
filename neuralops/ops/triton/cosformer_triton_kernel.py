@@ -351,6 +351,7 @@ class _CosformerAutograd(torch.autograd.Function):
                 ctx.save_for_backward(q, k, v, q_act, k_act, cos_m, sin_m, out)
                 return out
             except Exception:
+                # allowed-swallow: cleanup: non-fatal fallback handling
                 pass
         out = cosformer_pytorch_fwd(q_act, k_act, v, is_causal=is_causal, eps=eps, apply_act=False)
         ctx.save_for_backward(q, k, v, q_act, k_act, cos_m, sin_m, out)

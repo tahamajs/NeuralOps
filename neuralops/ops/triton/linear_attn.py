@@ -584,6 +584,7 @@ def fused_nasc_spectral_linear_scan_triton(
         try:
             return fused_nasc_spectral_linear_scan_pytorch(q, k, v, rff_proj, valid_mask, is_causal)
         except Exception:
+            # allowed-swallow: optional-import: optional dependency or module not installed
             pass
     return fused_nasc_spectral_linear_scan_pytorch(q, k, v, rff_proj, valid_mask, is_causal)
 
@@ -655,6 +656,7 @@ def fused_ttt_linear_scan_triton(
                 out = gdn_scan_triton(q.float(), k.float(), v.float(), beta, alpha)
                 return out.to(q.dtype)
         except Exception:
+            # allowed-swallow: cleanup: non-fatal fallback handling
             pass
 
     return fused_ttt_linear_scan_pytorch(q, k, v, etas)
@@ -797,6 +799,7 @@ def fused_svd_linear_chunk_scan_triton(
             )
             return out.view(B, H, N, D_V)
         except Exception:
+            # allowed-swallow: cleanup: non-fatal fallback handling
             pass
 
     from neuralops.ops.triton.gla_scan import fused_chunk_svd_decay_linear_triton

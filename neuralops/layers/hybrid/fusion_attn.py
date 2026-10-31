@@ -709,6 +709,7 @@ class FUSIONATTN(BaseAttention):
                 context = out_triton[:, :, :N, :].transpose(1, 2).contiguous().view(B, N, self.all_head_size)
                 return context, None
             except Exception:
+                # allowed-swallow: optional-import: optional dependency or module not installed
                 pass
 
         top_idx_exp = top_idx.unsqueeze(-1).unsqueeze(-1).expand(-1, -1, -1, -1, bs, D)

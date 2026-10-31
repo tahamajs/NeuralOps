@@ -387,6 +387,7 @@ def _benchmark_runtime_latency(
                 traj_fwd_ms.append(round(float(fwd_start[i].elapsed_time(fwd_end[i])), 4))
                 traj_bwd_ms.append(round(float(bwd_start[i].elapsed_time(bwd_end[i])), 4))
             except Exception:
+                # allowed-swallow: best-effort-telemetry: non-critical telemetry logging
                 pass
 
         peak_memory_mb = round(torch.cuda.max_memory_allocated(device) / (1024 * 1024), 2)

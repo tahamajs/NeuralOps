@@ -742,6 +742,7 @@ class KMeansCompressor(BaseCompressor):
                 }
             )
         except Exception:
+            # allowed-swallow: cleanup: non-fatal fallback handling
             pass
 
         self.model._kmeans_compressed = True

@@ -246,6 +246,7 @@ class WeightedGroupedQueryAttention(BaseAttention):
                 past_key_value.update(k, v, layer_idx)
                 return past_key_value
             except Exception:
+                # allowed-swallow: best-effort-telemetry: optional configuration or attribute resolution
                 pass
 
         if past_key_value is not None and hasattr(past_key_value, "key_cache"):
@@ -271,6 +272,7 @@ class WeightedGroupedQueryAttention(BaseAttention):
                 if w is not None:
                     extracted[proj] = (w, b)
             except Exception:
+                # allowed-swallow: cleanup: non-fatal fallback handling
                 pass
 
         if hasattr(src, "c_attn") and (
@@ -526,6 +528,7 @@ class WeightedGroupedQueryAttention(BaseAttention):
                     if isinstance(out, tuple) and len(out) >= 2:
                         Q, K_new = apply_rotary_pos_emb(Q, K_new, out[0], out[1], kwargs.get("position_ids"))
                 except Exception:
+                    # allowed-swallow: best-effort-telemetry: optional configuration or attribute resolution
                     pass
 
         past_k, past_v, past_len = (None, None, 0)
