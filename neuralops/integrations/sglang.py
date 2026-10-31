@@ -46,8 +46,15 @@ def register_neuralops_sglang_plugin(*args: Any, **kwargs: Any) -> Any:
     )
 
 
+from neuralops.integrations.sglang.radix_recurrent import (
+    RadixRecurrentNode,
+    RadixRecurrentTree,
+)
+
 __all__ = [
     "register_neuralops_sglang_plugin",
     "RadixPrefixNode",
+    "RadixRecurrentNode",
+    "RadixRecurrentTree",
     "SGLangRadixAdapter",
 ]
