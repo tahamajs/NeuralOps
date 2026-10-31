@@ -29,9 +29,9 @@ def _get_dummy_input(model: nn.Module, batch_size: int = 2, seq_len: int = 16) -
         return torch.randint(0, vocab_size, (batch_size, seq_len), device=device)
 
     if hidden_size is None:
-        # Check first linear layer for in_features if config is absent
+        # Check first layer for in_features if config is absent
         for m in model.modules():
-            if isinstance(m, nn.Linear):
+            if m is not model and hasattr(m, "in_features") and isinstance(getattr(m, "in_features", None), int):
                 hidden_size = m.in_features
                 break
         if hidden_size is None:
