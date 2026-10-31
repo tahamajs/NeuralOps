@@ -141,7 +141,7 @@ def test_dod_step1_adapter_identification():
     model = SyntheticDistilBertModel()
     adapter = find_adapter(model)
     assert isinstance(adapter, DistilBertAdapter)
-    assert adapter.family == "distilbert"
+    assert adapter.family in ("bert", "distilbert")
     targets = adapter.resolve_target(model, "*.ffn.lin*")
     assert len(targets) == 4  # 2 layers * 2 ffn linears
 

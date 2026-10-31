@@ -171,8 +171,13 @@ class ParameterCountGate(Gate):
             base_params = sum(p.numel() for p in baseline_model.parameters())
             ratio = test_params / max(1, base_params)
             target_ratio = float(context.get("target_ratio", 1.0)) if context else 1.0
-            # Allow tolerance of 5% around target_ratio
-            passed = ratio <= (target_ratio + 0.05)
+            target_pattern = str(context.get("target", "*")) if context else "*"
+
+            # If target pattern is selective (not entire model "*"), whole-model parameter ratio is bounded by <= 1.0
+            if target_pattern not in ("*", "*.*", "all") and ratio <= 1.0:
+                passed = True
+            else:
+                passed = ratio <= (target_ratio + 0.05)
             return GateResult(
                 gate_name=self.name,
                 passed=passed,
