@@ -58,7 +58,11 @@ def sync_readme(version: str) -> bool:
     if not readme_path.exists():
         return False
     content = readme_path.read_text(encoding="utf-8")
-    new_content = re.sub(r"v\d+\.\d+\.\d+", f"v{version}", content)
+    new_content = re.sub(r"# 🧬 NeuralOps v\d+\.\d+\.\d+", f"# 🧬 NeuralOps v{version}", content)
+    new_content = re.sub(r"badge/release-v\d+\.\d+\.\d+-blue\.svg", f"badge/release-v{version}-blue.svg", new_content)
+    new_content = re.sub(r"releases/tag/v\d+\.\d+\.\d+", f"releases/tag/v{version}", new_content)
+    new_content = re.sub(r"\|\s*\*\*v\d+\.\d+\.\d+\*\*\s*\(Current\)", f"| **v{version}** (Current)", new_content)
+    new_content = re.sub(r"neuralops v\d+\.\d+\.\d+", f"neuralops v{version}", new_content)
     if new_content != content:
         readme_path.write_text(new_content, encoding="utf-8")
         return True

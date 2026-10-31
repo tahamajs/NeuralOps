@@ -203,16 +203,20 @@ reloaded = neuralops.load_attention_from_hub("distilbert-base-uncased",
 
 ## 🚀 Key Capabilities in v2.0.1
 
-NeuralOps v2.0.1 delivers ergonomics, zero-overhead dispatch caching, multi-batch healing, and full provenance:
+NeuralOps v2.0.1 delivers declarative model transformation, transactional execution with rollback safety, 4-tier validation gates, security-hardened checkpointing, and expanded distributed scaling primitives:
 
 | Capability | Architecture Scope | Technical Implementation |
 | :--- | :--- | :--- |
+| **Declarative Recipe Language (NRL v1.0.0)** | `neuralops.recipe` | Declarative YAML specification for multi-stage model transformation with canonical SHA-256 hashing and static validation rules (W1–W15) |
+| **Transactional Execution & Rollback** | `neuralops.pipeline_transform` | Pre-execution planning, dependency graph DAG resolution, selective state snapshots, and automatic rollback on gate violation |
+| **4-Tier Quality Validation Gates** | `neuralops.validation` | Multi-tier validation contracts: L1 Structural, L2 Numerical (NoNaN/Inf), L3 Behavioral (Logit KL, Perplexity), L4 Empirical (Latency, VRAM, NIAH) |
+| **Security Hardening** | `torch.load` & telemetry probes | Enforced `weights_only=True` across all weight loaders; structured non-shell subprocess execution (`shell=False`) in system monitors |
 | **High-Level Ergonomics** | `neuralops.pipeline`, Top-level Facades | HuggingFace-style `pipeline("text-generation")` and direct aliases `transplant`, `compress`, `export` |
 | **Zero-Overhead Dispatch** | `UniversalAttentionWrapper` | Pre-resolves & caches dynamic forward dispatch mode (`_cached_dispatch_mode`), achieving $\mathcal{O}(1)$ overhead per token |
 | **Stateful Cache Bridge** | `HFCacheBridge` & Recurrent Layers | Preserves 4D recurrent state matrices `(B, H, Dk, Dv)` across sequence cropping and legacy conversions |
-| **Multi-Batch Calibration Healing**| `universal_calibrator` | Cycles through all cached calibration batches (`step % len(in_list)`) with non-finite loss diagnostic guards |
-| **Model Surgery Framework** | `neuralops.surgery` | Registry, declarative `SurgeryRecipe`, 5 validation gates, and 5 unified surgery operators |
-| **Silent Failure Eradication** | `neuralops.ops.triton.low_rank` | Replaced bare exception swallowing with structured logger warnings and fallback telemetry |
+| **Distributed & Pareto Tooling** | `neuralops.analysis`, `distributed` | Multi-objective `ParetoFrontierSweeper`, `FSDP2Wrapper`, `MegatronTPHooks`, and Flash Linear Attention (`FLAWeightsConverter`) |
+| **Model Surgery Framework** | `neuralops.surgery` | Registry, declarative `SurgeryRecipe`, 5 validation gates, and 5 unified surgery operators with real-model integration tests |
+| **Triton Hardware Kernels** | `neuralops.ops.triton` | 26 categorized Triton kernel modules (62 unified operators) including AWQ 4-bit, FP8 microscaling, Lloyd-Max k-means, Wanda, SparseGPT, and ADMM |
 | **PyPI Trusted Publishing** | `.github/workflows/publish_pypi_oidc.yml` | OpenID Connect (OIDC) tokenless release with dual Sigstore PEP 740 and SLSA build attestations |
 | **Dedicated Academic Hub** | `releases/tag/academic-monographs` | Standalone download hub for 317-page Master's Thesis, 50-slide defense presentation, and papers |
 
@@ -220,7 +224,7 @@ NeuralOps v2.0.1 delivers ergonomics, zero-overhead dispatch caching, multi-batc
 
 ## 📖 Table of Contents
 
-0. [Key Capabilities in v2.0.1](#-key-capabilities-in-v180)
+0. [Key Capabilities in v2.0.1](#-key-capabilities-in-v201)
 * [Academic Monographs, Master's Thesis & Conference Papers](#-academic-monographs-thesis--defense-slides)
 * [Interactive 3D Spaces & Hugging Face Ecosystem](#-interactive-3d-spaces--hugging-face-ecosystem)
 1. [Notebook Workflows](#1-notebook-workflows)
@@ -715,6 +719,11 @@ NeuralOps installs canonical binary commands (`neuralops`, `nops`, `nops-cli`, a
 ├────────────────────┬───────────────────────────────────────────────────┤
 │ Command            │ Primary Functional Operation                      │
 ├────────────────────┼───────────────────────────────────────────────────┤
+│ nops recipe plan   │ Pre-execution planning & dependency graph analysis│
+│ nops recipe exec   │ Transactional recipe execution with state rollback│
+│ nops recipe valid  │ Static YAML schema & contract validation (W1-W15) │
+│ nops ops list      │ Enumerate all 15 versioned operation contracts    │
+│ nops compat check  │ Runtime export compatibility (HF, vLLM, SGLang)   │
 │ neuralops list     │ Interactive catalog (131 Attentions, 72 Comp)     │
 │ neuralops test     │ Fast diagnostic test suite (health, kernels, surg)│
 │ neuralops train    │ Multi-corpus training, varlen packing, WSD & Lion │
@@ -1802,8 +1811,8 @@ The `neuralops` package is verified against strict packaging standards prior to 
 - [x] **Package Distribution**: Published on PyPI as [`neuralops v2.0.1`](https://pypi.org/project/neuralops/).
 - [x] **Trusted Publishing & Provenance**: Automated publish workflow using GitHub Actions OIDC (`actions/attest-build-provenance@v2` + `pypa/gh-action-pypi-publish@release/v1`) with cryptographic PEP 740 Sigstore provenance attestations.
 - [x] **Metadata Linter**: `twine check dist/*` passes with 0 warnings, 0 errors.
-- [x] **Wheel Hygiene**: Pure Python + Triton wheel (`neuralops-1.8.1-py3-none-any.whl`, size ~3.2 MB). Scratch files, test logs, and raw checkpoint weights are excluded via `pyproject.toml`.
-- [x] **Source Distribution**: Complete source archive includes all source files, C++/CUDA headers, LICENSE, and documentation (`neuralops-1.8.1.tar.gz`).
+- [x] **Wheel Hygiene**: Pure Python + Triton wheel (`neuralops-2.0.1-py3-none-any.whl`, size ~3.6 MB). Scratch files, test logs, and raw checkpoint weights are excluded via `pyproject.toml`.
+- [x] **Source Distribution**: Complete source archive includes all source files, C++/CUDA headers, LICENSE, and documentation (`neuralops-2.0.1.tar.gz`, size ~2.6 MB).
 - [x] **Git Provenance**: Release commit tagged matching origin `main` (`v2.0.1`).
 
 ---
@@ -1813,11 +1822,11 @@ The `neuralops` package is verified against strict packaging standards prior to 
 | NeuralOps Version | Python Versions | PyTorch Versions | Triton Versions | CUDA Versions | Supported OS |
 | :---: | :---: | :---: | :---: | :---: | :--- |
 | **v2.0.1** (Current) | `3.10`, `3.11`, `3.12`, `3.14` | `2.1.0` – `2.11.0+` | `3.0.0` – `3.6.0+` | `11.8`, `12.1`–`12.8`, `13.0`–`13.2` | Linux (Ubuntu, Debian, RHEL), macOS 13+, Windows 10/11 (WSL2) |
-| **v2.0.1** | `3.10`, `3.11`, `3.12`, `3.14` | `2.1.0` – `2.11.0+` | `3.0.0` – `3.6.0+` | `11.8`, `12.1`–`12.8`, `13.0`–`13.2` | Linux (Ubuntu, Debian, RHEL), macOS 13+, Windows 10/11 (WSL2) |
-| **v2.0.1** | `3.10`, `3.11`, `3.12`, `3.14` | `2.1.0` – `2.11.0+` | `3.0.0` – `3.6.0+` | `11.8`, `12.1`–`12.8`, `13.0`–`13.2` | Linux (Ubuntu, Debian, RHEL), macOS 13+, Windows 10/11 (WSL2) |
-| **v2.0.1** | `3.10`, `3.11`, `3.12`, `3.14` | `2.1.0` – `2.11.0+` | `3.0.0` – `3.6.0+` | `11.8`, `12.1`–`12.8`, `13.0`–`13.2` | Linux (Ubuntu, Debian, RHEL), macOS 13+, Windows 10/11 (WSL2) |
-| **v2.0.1** | `3.10`, `3.11`, `3.12`, `3.14` | `2.1.0` – `2.6.0+` | `3.0.0` – `3.6.0+` | `11.8`, `12.1`–`12.8`, `13.0`–`13.2` | Linux, macOS 13+, Windows 10/11 |
-| **v2.0.1** | `3.9`, `3.10`, `3.11` | `2.0.0` – `2.2.0` | `2.1.0` – `2.2.0` | `11.7`, `11.8`, `12.0` | Linux, macOS 12+ |
+| **v2.0.0** | `3.10`, `3.11`, `3.12`, `3.14` | `2.1.0` – `2.11.0+` | `3.0.0` – `3.6.0+` | `11.8`, `12.1`–`12.8`, `13.0`–`13.2` | Linux (Ubuntu, Debian, RHEL), macOS 13+, Windows 10/11 (WSL2) |
+| **v1.9.0** | `3.10`, `3.11`, `3.12`, `3.14` | `2.1.0` – `2.11.0+` | `3.0.0` – `3.6.0+` | `11.8`, `12.1`–`12.8`, `13.0`–`13.2` | Linux (Ubuntu, Debian, RHEL), macOS 13+, Windows 10/11 (WSL2) |
+| **v1.6.0** | `3.10`, `3.11`, `3.12`, `3.14` | `2.1.0` – `2.11.0+` | `3.0.0` – `3.6.0+` | `11.8`, `12.1`–`12.8`, `13.0`–`13.2` | Linux (Ubuntu, Debian, RHEL), macOS 13+, Windows 10/11 (WSL2) |
+| **v1.3.7** | `3.10`, `3.11`, `3.12`, `3.14` | `2.1.0` – `2.6.0+` | `3.0.0` – `3.6.0+` | `11.8`, `12.1`–`12.8`, `13.0`–`13.2` | Linux, macOS 13+, Windows 10/11 |
+| **v1.3.0** | `3.9`, `3.10`, `3.11` | `2.0.0` – `2.2.0` | `2.1.0` – `2.2.0` | `11.7`, `11.8`, `12.0` | Linux, macOS 12+ |
 
 ---
 
@@ -1868,7 +1877,7 @@ If you use NeuralOps, its subquadratic attention kernels, or model compression e
   year = {2026},
   publisher = {GitHub},
   howpublished = {\url{https://github.com/tahamajs/NeuralOps}},
-  version = {1.8.1}
+  version = {2.0.1}
 }
 ```
 
