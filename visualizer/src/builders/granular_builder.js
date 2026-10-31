@@ -198,7 +198,6 @@ export function buildMeshNodes(nodes, offsetX, isCompressedSide, context) {
         if (node.y > topY) topY = node.y;
 
         // Track Layer Y bounds for Residual Highways
-        const lIdx = node.parent_layer_index ?? (node.parent_layer_idx ?? 0);
         if (!layerMinMax.has(lIdx)) {
             layerMinMax.set(lIdx, { minY: node.y, maxY: node.y });
         } else {
