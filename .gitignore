@@ -9,8 +9,9 @@ paper/
 paper/**
 thesis_final/
 thesis_final/**
-academic/
+academic/*
 academic/**
+!academic/README.md
 results/
 results/**
 logs/
@@ -117,6 +118,7 @@ desktop.ini
 # Temporary, Log & Backup Files
 # ============================================================
 *.log
+texput.log
 *.tmp
 *.temp
 *.bak
