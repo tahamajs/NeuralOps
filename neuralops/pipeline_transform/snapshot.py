@@ -123,7 +123,7 @@ def capture(
                         val = getattr(cfg, k)
                         if not callable(val):
                             config_attrs[k] = copy.deepcopy(val)
-                    except Exception:
+                    except Exception:  # allowed-swallow: ignore unreadable dynamic attributes
                         pass
 
     # Capture RNG state if requested
