@@ -509,8 +509,30 @@ from neuralops.core.triton_linear_attn import fast_linear_attention, LinearAtten
 from neuralops.core.triton_sparse_attn import triton_block_sparse_attention
 
 
+_BATCH1_EXPORTS = {
+    "linformer_triton_forward": ("neuralops.ops.triton.linformer_triton", "linformer_triton_forward"),
+    "cosformer_triton_forward": ("neuralops.ops.triton.cosformer_triton", "cosformer_triton_forward"),
+    "performer_triton_forward": ("neuralops.ops.triton.performer_triton", "performer_triton_forward"),
+    "galerkin_triton_forward": ("neuralops.ops.triton.galerkin_triton", "galerkin_triton_forward"),
+    "spectra_triton_forward": ("neuralops.ops.triton.spectra_triton", "spectra_triton_forward"),
+    "tpa_triton_forward": ("neuralops.ops.triton.tpa_triton", "tpa_triton_forward"),
+    "nasc_triton_forward": ("neuralops.ops.triton.nasc_triton", "nasc_triton_forward"),
+    "adaptive_span_triton_forward": ("neuralops.ops.triton.adaptive_span_triton", "adaptive_span_triton_forward"),
+    "cluster_triton_forward": ("neuralops.ops.triton.cluster_triton", "cluster_triton_forward"),
+    "sink_attention_triton_forward": ("neuralops.ops.triton.sink_attention_triton", "sink_attention_triton_forward"),
+}
+
+
 def __getattr__(name: str) -> Any:
-    """Resolve specialized Triton operators from the canonical standalone package."""
+    """Resolve specialized Triton operators from the canonical standalone package or Batch 1 extensions."""
+    if name in _BATCH1_EXPORTS:
+        mod_name, attr_name = _BATCH1_EXPORTS[name]
+        import importlib
+        mod = importlib.import_module(mod_name)
+        val = getattr(mod, attr_name)
+        globals()[name] = val
+        return val
+
     try:
         from neuralops.ops.triton import standalone
 
