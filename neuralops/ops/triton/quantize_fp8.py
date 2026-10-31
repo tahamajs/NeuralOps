@@ -179,4 +179,6 @@ def fp8_compressor_compress(
     return out.reshape(W.shape).to(dtype=W.dtype)
 
 
-__all__ = ["fp8_compressor_compress"]
+fp8_compressor_compress_pytorch = _fp8_pytorch
+
+__all__ = ["fp8_compressor_compress", "fp8_compressor_compress_pytorch"]

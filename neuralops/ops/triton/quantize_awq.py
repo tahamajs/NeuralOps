@@ -195,4 +195,6 @@ def awq_compress(
     return out.reshape(W.shape).to(dtype=W.dtype)
 
 
-__all__ = ["awq_compress"]
+awq_compress_pytorch = _awq_pytorch
+
+__all__ = ["awq_compress", "awq_compress_pytorch"]
