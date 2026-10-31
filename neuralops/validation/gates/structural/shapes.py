@@ -18,6 +18,7 @@ import torch
 import torch.nn as nn
 
 from neuralops.validation.base import Gate, GateResult, GateSeverity
+from neuralops.validation.gates.numerical.forward_pass import _get_dummy_input
 
 
 class ShapesMatchGate(Gate):
@@ -61,22 +62,14 @@ class ShapesMatchGate(Gate):
         base_model.eval()
         device = next(active_model.parameters()).device if list(active_model.parameters()) else torch.device("cpu")
 
-        # Create dummy batch
-        vocab_size = getattr(getattr(active_model, "config", None), "vocab_size", None)
-        hidden_size = getattr(getattr(active_model, "config", None), "hidden_size", 64)
         seq_len = 16
         batch_size = 2
 
         with torch.no_grad():
             try:
-                if vocab_size is not None:
-                    dummy_in = torch.randint(0, vocab_size, (batch_size, seq_len), device=device)
-                    out_base = base_model(dummy_in)
-                    out_test = active_model(dummy_in)
-                else:
-                    dummy_in = torch.randn(batch_size, seq_len, hidden_size, device=device)
-                    out_base = base_model(dummy_in)
-                    out_test = active_model(dummy_in)
+                dummy_in = _get_dummy_input(active_model, batch_size=batch_size, seq_len=seq_len)
+                out_base = base_model(dummy_in)
+                out_test = active_model(dummy_in)
             except Exception as e:
                 return GateResult(
                     gate_name=self.name,
