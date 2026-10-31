@@ -41,6 +41,7 @@ from neuralops.surgery.shadow_twin import (
 )
 
 from neuralops.surgery.hf_cache_bridge import (
+    HFCacheBridge,
     NeuralOpsHybridHFCache,
     wrap_model_for_generation,
 )
@@ -97,6 +98,7 @@ __all__ = [
     "finalize_surgery",
     "patch_bridge_for_shadow_twin",
     "check_surgery_divergence",
+    "HFCacheBridge",
     "NeuralOpsHybridHFCache",
     "wrap_model_for_generation",
     "UniversalActivationCalibrator",

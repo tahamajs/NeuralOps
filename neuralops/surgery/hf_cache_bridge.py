@@ -353,14 +353,30 @@ class NeuralOpsHybridHFCache(_HF_CACHE_BASE):
         self._sync_base_layers()
 
     def crop(self, max_length: int) -> None:
-        """Crop full-attention caches; refuse when recurrent states cannot be rewound."""
-        if self.recurrent_state_cache or self.sliding_window_cache:
-            raise RuntimeError("Cannot crop recurrent or sliding-window state without a saved state checkpoint")
+        """Crop full-attention caches; preserves recurrent states without slicing."""
         target_length = max_length if max_length >= 0 else max(0, self._seen_tokens + max_length)
-        for index, (key, value) in enumerate(zip(self.key_cache, self.value_cache)):
-            if key.numel() > 0:
-                self.key_cache[index] = key[..., :target_length, :]
+        if self._seen_tokens <= target_length and max_length >= 0:
+            return
+
+        for index in range(len(self.key_cache)):
+            key = self.key_cache[index]
+            value = self.value_cache[index] if index < len(self.value_cache) else None
+            if key.numel() == 0:
+                continue
+            # For recurrent states (B, H, Dk, Dv), do not slice feature dimensions
+            if self.is_recurrent_layer(index) or self._is_recurrent_tensor(key, index):
+                continue
+            self.key_cache[index] = key[..., :target_length, :]
+            if value is not None and value.numel() > 0:
                 self.value_cache[index] = value[..., :target_length, :]
+
+        for index, (w_key, w_val) in list(self.sliding_window_cache.items()):
+            if w_key.shape[-2] > target_length:
+                self.sliding_window_cache[index] = (
+                    w_key[..., :target_length, :],
+                    w_val[..., :target_length, :],
+                )
+
         self._seen_tokens = min(self._seen_tokens, target_length)
         self._sync_base_layers()
 
@@ -370,6 +386,7 @@ class NeuralOpsHybridHFCache(_HF_CACHE_BASE):
         self.value_cache.clear()
         self.recurrent_state_cache.clear()
         self.sliding_window_cache.clear()
+        self._recurrent_layers.clear()
         self._seen_tokens = 0
         if hasattr(self, "layers"):
             self.layers.clear()
@@ -383,6 +400,9 @@ class NeuralOpsHybridHFCache(_HF_CACHE_BASE):
                 layer.keys = self.key_cache[index]
                 layer.values = self.value_cache[index]
                 layer.is_initialized = True
+                if self.is_recurrent_layer(index):
+                    layer.get_seq_length = lambda: self._seen_tokens
+                    layer.crop = lambda max_length: None
 
     def __getitem__(self, layer_idx: int) -> Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]:
         """Index access returning (key, value) tuple for layer_idx, compatible with legacy tuple caches."""
@@ -393,6 +413,11 @@ class NeuralOpsHybridHFCache(_HF_CACHE_BASE):
             value_states = self.value_cache[layer_idx]
             if key_states.numel() > 0:
                 return key_states, value_states
+        if layer_idx in self.recurrent_state_cache:
+            state = self.recurrent_state_cache[layer_idx]
+            if isinstance(state, tuple) and len(state) == 2:
+                return state
+            return state, state
         if layer_idx in self.sliding_window_cache:
             return self.sliding_window_cache[layer_idx]
         return None, None
@@ -421,14 +446,23 @@ class NeuralOpsHybridHFCache(_HF_CACHE_BASE):
     @classmethod
     def from_legacy_cache(
         cls,
-        past_key_values: Optional[Tuple[Tuple[torch.Tensor, torch.Tensor], ...]] = None,
+        past_key_values: Optional[Any] = None,
     ) -> NeuralOpsHybridHFCache:
-        """Construct a compatible cache from a legacy tuple of key/value tensors."""
+        """Construct a compatible cache from a legacy tuple of key/value tensors or recurrent states."""
         cache = cls()
         if past_key_values is not None:
-            for layer_idx, (key_states, value_states, *_) in enumerate(past_key_values):
-                if key_states is not None and value_states is not None:
-                    cache.update(key_states, value_states, layer_idx)
+            for layer_idx, item in enumerate(past_key_values):
+                if item is None:
+                    continue
+                if isinstance(item, (tuple, list)):
+                    if len(item) >= 2:
+                        k, v = item[0], item[1]
+                        if k is not None and v is not None:
+                            cache.update(k, v, layer_idx)
+                    elif len(item) == 1 and item[0] is not None:
+                        cache.update_recurrent_state(layer_idx, item[0])
+                elif isinstance(item, torch.Tensor):
+                    cache.update_recurrent_state(layer_idx, item)
         return cache
 
 
@@ -450,6 +484,8 @@ def wrap_model_for_generation(model: torch.nn.Module) -> torch.nn.Module:
                 past = kwargs.get("past_key_values")
                 if isinstance(past, NeuralOpsHybridHFCache):
                     model_inputs["past_key_values"] = past
+                elif past is not None:
+                    model_inputs["past_key_values"] = NeuralOpsHybridHFCache.from_legacy_cache(past)
                 else:
                     model_inputs["past_key_values"] = NeuralOpsHybridHFCache()
             return model_inputs
@@ -460,7 +496,10 @@ def wrap_model_for_generation(model: torch.nn.Module) -> torch.nn.Module:
     return model
 
 
+HFCacheBridge = NeuralOpsHybridHFCache
+
 __all__ = [
+    "HFCacheBridge",
     "NeuralOpsHybridHFCache",
     "wrap_model_for_generation",
 ]
