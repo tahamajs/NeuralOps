@@ -47,6 +47,7 @@ if TYPE_CHECKING:
         merge_for_inference,
         oneshot,
         patch_transformers,
+        pipeline,
         push_to_hub,
         recommend,
         replace_attention,
@@ -73,7 +74,7 @@ if TYPE_CHECKING:
 
 __version__ = "1.7.0"
 
-_TORCH_FREE_SYMBOLS = frozenset({"__version__", "__doc__", "__all__"})
+_TORCH_FREE_SYMBOLS = frozenset({"__version__", "__doc__", "__all__", "pipeline"})
 try:
     _TORCH_AVAILABLE = importlib.util.find_spec("torch") is not None
 except (ImportError, ValueError):
@@ -464,6 +465,7 @@ _API_EXPORTS = {
     "transplant": "neuralops.api",
     "export_model": "neuralops.api",
     "export": "neuralops.api",
+    "pipeline": "neuralops.api",
     "compile_to_so": "neuralops.api",
     "push_to_hub": "neuralops.api",
     "load_exported_model": "neuralops.api",
@@ -686,6 +688,7 @@ __all__ = [
     "create_compressor",
     "export_model",
     "export",
+    "pipeline",
     "compile_to_so",
     "push_to_hub",
     "load_exported_model",

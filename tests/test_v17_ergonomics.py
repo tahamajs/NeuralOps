@@ -21,6 +21,7 @@ from __future__ import annotations
 import logging
 import tempfile
 from pathlib import Path
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -33,6 +34,7 @@ from neuralops import (
     export,
     export_model,
     get_version,
+    pipeline,
     replace_attention,
     transplant,
     transplant_attention,
@@ -95,8 +97,8 @@ def test_canonical_package_version() -> None:
 
 
 def test_public_symbol_exposure() -> None:
-    """Verify that transplant, export, compress, replace_attention are exposed in __all__ and importable."""
-    expected_symbols = ["transplant", "export", "compress", "replace_attention"]
+    """Verify that transplant, export, compress, replace_attention, pipeline are exposed in __all__ and importable."""
+    expected_symbols = ["transplant", "export", "compress", "replace_attention", "pipeline"]
     for sym in expected_symbols:
         assert sym in neuralops.__all__, f"Symbol '{sym}' is missing from neuralops.__all__"
         attr = getattr(neuralops, sym, None)
@@ -108,6 +110,7 @@ def test_public_symbol_exposure() -> None:
     assert export is neuralops.export
     assert compress is neuralops.compress
     assert replace_attention is neuralops.replace_attention
+    assert neuralops.pipeline is not None
 
 
 def test_transplant_alias_identity_and_delegation() -> None:
@@ -256,6 +259,134 @@ def test_heal_replaced_model_nan_loss_warning(caplog: pytest.LogCaptureFixture) 
 
     assert result["num_healed_layers"] == 1
     assert any("Non-finite loss" in record.message for record in caplog.records)
+
+
+def test_cli_transplant_parser_ergonomics() -> None:
+    """Verify that transplant parser cleanly handles --target-attention, --output, --dataset."""
+    from neuralops.benchmarks.cli import _build_parser
+
+    parser = _build_parser()
+
+    # Test --target-attention and --output aliases
+    args1 = parser.parse_args([
+        "transplant",
+        "--model", "gpt2",
+        "--target-attention", "cosformer",
+        "--output", "models/custom_out",
+    ])
+    assert args1.model == "gpt2"
+    assert args1.attention == "cosformer"
+    assert args1.output_dir == "models/custom_out"
+
+    # Test --calibration-dataset alias
+    args2 = parser.parse_args([
+        "transplant",
+        "--model", "gpt2",
+        "--attention", "cosformer",
+        "--calibration-dataset", "wikitext",
+    ])
+    assert args2.calibration_text == "wikitext"
+
+    # Test --dataset alias
+    args3 = parser.parse_args([
+        "transplant",
+        "--model", "gpt2",
+        "--attention", "cosformer",
+        "--dataset", "sst2",
+    ])
+    assert args3.calibration_text == "sst2"
+
+
+def test_cli_compress_parser_ergonomics() -> None:
+    """Verify that compress parser cleanly handles --output, --dataset, --calibration-dataset."""
+    from neuralops.benchmarks.cli import _build_parser
+
+    parser = _build_parser()
+
+    # Test --output alias
+    args1 = parser.parse_args([
+        "compress",
+        "--model", "gpt2",
+        "--output", "results/compressed_gpt2",
+    ])
+    assert args1.model == "gpt2"
+    assert args1.output_dir == "results/compressed_gpt2"
+
+    # Test --dataset and --calibration-dataset
+    args2 = parser.parse_args([
+        "compress",
+        "--model", "gpt2",
+        "--dataset", "wikitext-2",
+    ])
+    assert args2.dataset == "wikitext-2"
+
+    args3 = parser.parse_args([
+        "compress",
+        "--model", "gpt2",
+        "--calibration-dataset", "c4",
+    ])
+    assert args3.dataset == "c4"
+
+
+def test_cli_compose_parser_separation() -> None:
+    """Verify that compose parser arguments do not contaminate compress subcommand."""
+    from neuralops.benchmarks.cli import _build_parser
+
+    parser = _build_parser()
+
+    # compress should reject --projection
+    with pytest.raises(SystemExit):
+        parser.parse_args(["compress", "--model", "gpt2", "--projection", "svd"])
+
+    # compose should accept --projection and --kernel-map
+    args = parser.parse_args(["compose", "--projection", "svd", "--kernel-map", "cosformer"])
+    assert args.projection == "svd"
+    assert args.kernel_map == "cosformer"
+
+
+def test_cli_architecture_mismatch_diagnostics(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Verify that main() catches architecture mismatches and prints a diagnostic card via print_cli_error."""
+    from neuralops.benchmarks import cli
+
+    error_calls: list[dict[str, Any]] = []
+
+    def mock_print_cli_error(msg: str, hint: str | None = None, title: str = "Execution Error") -> None:
+        error_calls.append({"msg": msg, "hint": hint, "title": title})
+
+    def mock_dispatch(_args: Any) -> int:
+        raise ValueError("Could not locate encoder in model architecture for selected attention")
+
+    monkeypatch.setattr(cli, "print_cli_error", mock_print_cli_error)
+    monkeypatch.setattr(cli, "_dispatch", mock_dispatch)
+
+    exit_code = cli.main(["transplant", "--model", "custom", "--attention", "cosformer"])
+    assert exit_code == 1
+    assert len(error_calls) == 1
+    assert error_calls[0]["title"] == "Architecture Mismatch"
+    assert "Architecture mismatch" in error_calls[0]["msg"]
+    assert "supported and compatible" in error_calls[0]["hint"]
+
+
+def test_pipeline_text_generation_ergonomics() -> None:
+    """Verify that neuralops.pipeline instantiates and executes text-generation."""
+    toy = ToyModel(num_layers=1, dim=16)
+
+    class MockTokenizer:
+        def __call__(self, text, return_tensors="pt", **kwargs):
+            return {"input_ids": torch.tensor([[1, 2, 3]])}
+
+        def batch_decode(self, token_ids, **kwargs):
+            return ["Generated: Hello NeuralOps"]
+
+        def decode(self, token_ids, **kwargs):
+            return "Generated: Hello NeuralOps"
+
+    pipe = neuralops.pipeline("text-generation", model=toy, tokenizer=MockTokenizer())
+    out = pipe("Hello")
+    assert isinstance(out, list)
+    assert len(out) == 1
+    assert "generated_text" in out[0]
+    assert "Hello NeuralOps" in out[0]["generated_text"]
 
 
 if __name__ == "__main__":

@@ -286,13 +286,13 @@ def _build_parser() -> argparse.ArgumentParser:
     trans_p.add_argument("--output-dir", "--save-dir", "--output", dest="output_dir", type=str, default="models/transplanted", help="Directory for the surgical model and manifest")
 
     compose_p = subparsers.add_parser("compose", help="Declaratively build custom attention via ComposableAttention")
-    comp_p.add_argument("--projection", type=str, default="dense", help="Projection type (dense, svd(rank=r), conv1d(k))")
-    comp_p.add_argument("--positional", type=str, default="none", help="Positional encoding (none, rope, alibi)")
-    comp_p.add_argument("--kernel-map", type=str, default="softmax", help="Feature map (softmax, elu+1, cosformer)")
-    comp_p.add_argument("--mask", type=str, default="causal", help="Masking (causal, sliding_window(w), sink(s))")
-    comp_p.add_argument("--engine", type=str, default="sdpa", help="Engine (sdpa, chunked_scan, delta_rule)")
-    comp_p.add_argument("--embed-dim", type=int, default=768, help="Hidden dimension")
-    comp_p.add_argument("--num-heads", type=int, default=12, help="Number of heads")
+    compose_p.add_argument("--projection", type=str, default="dense", help="Projection type (dense, svd(rank=r), conv1d(k))")
+    compose_p.add_argument("--positional", type=str, default="none", help="Positional encoding (none, rope, alibi)")
+    compose_p.add_argument("--kernel-map", type=str, default="softmax", help="Feature map (softmax, elu+1, cosformer)")
+    compose_p.add_argument("--mask", type=str, default="causal", help="Masking (causal, sliding_window(w), sink(s))")
+    compose_p.add_argument("--engine", type=str, default="sdpa", help="Engine (sdpa, chunked_scan, delta_rule)")
+    compose_p.add_argument("--embed-dim", type=int, default=768, help="Hidden dimension")
+    compose_p.add_argument("--num-heads", type=int, default=12, help="Number of heads")
 
     roof_p = subparsers.add_parser("roofline", help="Hardware Roofline & Arithmetic Intensity Analyzer for compiled Triton kernels")
     roof_p.add_argument("--module", type=str, default="gated_delta_net", help="Registered attention mechanism or ComposableAttention expression")
@@ -777,7 +777,18 @@ def handle_search(args: argparse.Namespace) -> int:
 def handle_compress(args: argparse.Namespace) -> int:
     """Executes model compression via the requested engine."""
     from neuralops.cli.compress_cmd import cmd_compress
-    return cmd_compress(args)
+    try:
+        return cmd_compress(args)
+    except Exception as e_comp:
+        err_str = f"{e_comp} {str(getattr(e_comp, '__cause__', '') or '')}"
+        if any(term in err_str.lower() for term in ["architecture", "could not locate", "unsupported model", "mismatch"]):
+            print_cli_error(
+                f"Model architecture incompatible with compressor: {e_comp}",
+                hint="Ensure the model contains compatible linear layers or attention projections for the requested compression engine.",
+                title="Architecture Mismatch",
+            )
+            return 1
+        raise
 
 
 
@@ -1092,10 +1103,12 @@ def _dispatch(args: argparse.Namespace) -> int:
         from transformers import AutoModel, AutoTokenizer
         from neuralops import transplant_attention
 
+        calib_text = getattr(args, "calibration_text", None) or getattr(args, "calibration_dataset", None) or getattr(args, "dataset", None)
+
         if not isinstance(args.rank, int) or isinstance(args.rank, bool) or args.rank < 1:
             raise ValueError("--rank must be a positive integer")
-        if (args.calibrate or args.heal) and not args.calibration_text:
-            raise ValueError("--calibrate and --heal require --calibration-text so real model inputs are used.")
+        if (args.calibrate or args.heal) and not calib_text:
+            raise ValueError("--calibrate and --heal require --calibration-text / --calibration-dataset so real model inputs are used.")
         if args.heal and (
             not isinstance(args.heal_steps, int)
             or isinstance(args.heal_steps, bool)
@@ -1116,14 +1129,32 @@ def _dispatch(args: argparse.Namespace) -> int:
                 teacher = AutoModel.from_pretrained(args.reference_model).to(device).eval()
             else:
                 teacher = copy.deepcopy(model).eval()
-            encoded = tokenizer(args.calibration_text, return_tensors="pt")
+            sample_text = calib_text
+            if sample_text and os.path.isfile(sample_text):
+                try:
+                    with open(sample_text, "r", encoding="utf-8") as f:
+                        sample_text = f.read(4096)
+                except Exception:
+                    pass
+            encoded = tokenizer(sample_text, return_tensors="pt")
             calibration_inputs = {
                 key: value.to(device)
                 for key, value in encoded.items()
                 if isinstance(value, torch.Tensor)
             }
         print(f"[+] Transplanting attention '{args.attention}' (rank={args.rank}, calibrate={args.calibrate})...")
-        transplanted = transplant_attention(model, args.attention, rank=args.rank)
+        try:
+            transplanted = transplant_attention(model, args.attention, rank=args.rank)
+        except Exception as e_trans:
+            err_str = f"{e_trans} {str(getattr(e_trans, '__cause__', '') or '')}"
+            if any(term in err_str.lower() for term in ["architecture", "could not locate", "unsupported model", "mismatch"]):
+                print_cli_error(
+                    f"Model architecture incompatible with attention '{args.attention}': {e_trans}",
+                    hint="Ensure the model has standard Transformer attention layers (e.g. GPT-2, LLaMA, Mistral, BERT) compatible with the transplant target.",
+                    title="Architecture Mismatch",
+                )
+                return 1
+            raise
 
         if args.calibrate:
             from neuralops.core._attention_surgery import calibrate_attention_subspace
@@ -1426,6 +1457,24 @@ def main(argv: list[str] | None = None) -> int:
                 "CUDA Out of Memory during execution.",
                 hint="Try reducing --batch-size, enabling --mixed-precision fp16/bf16, or increasing --grad-accum-steps."
             )
+            return 1
+        full_err_msg = f"{err_msg} {str(getattr(e, '__cause__', '') or '')}"
+        is_arch_mismatch = (
+            "architecture" in full_err_msg.lower()
+            or "unsupported model" in full_err_msg.lower()
+            or "could not locate" in full_err_msg.lower()
+            or ("dimension" in full_err_msg.lower() and "mismatch" in full_err_msg.lower())
+            or ("shape" in full_err_msg.lower() and "mismatch" in full_err_msg.lower())
+            or "unknown attention module" in full_err_msg.lower()
+            or "not registered in attention_registry" in full_err_msg.lower()
+        )
+        if is_arch_mismatch:
+            print_cli_error(
+                f"Architecture mismatch: {e}",
+                hint="Verify that the target model architecture is supported and compatible with the selected attention/compression module.",
+                title="Architecture Mismatch",
+            )
+            return 1
         if getattr(args, "verbose", False):
             import traceback
             traceback.print_exc()
