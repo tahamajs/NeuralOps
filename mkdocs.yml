@@ -125,5 +125,8 @@ nav:
       - Strategic Roadmap Overview: ROADMAP.md
       - High-Throughput FLA Kernels & Microarchitecture: ROADMAP_V1_7_KERNELS_AND_FLA.md
       - Systems, Surgery & Serving Ergonomics: ROADMAP_V1_7_SYSTEMS_AND_DEPLOYMENT.md
+  - Ecosystem:
+      - Model Zoo: model_zoo.md
+      - 3D Visualizer: visualizer.md
   - Changelog: changelog.md
   - Security: security.md

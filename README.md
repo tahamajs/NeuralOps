@@ -510,6 +510,19 @@ The registries contain 131 attention mechanisms and 72 compression engines. The 
 
 ### 6.1 Installation
 
+NeuralOps offers both pure-Python distributions and pre-compiled CUDA binary wheels:
+
+- **Pure Python (`neuralops`)**: Universal CPU / MPS fallback and Triton JIT compilation for all Linux/macOS environments.
+- **Pre-compiled CUDA (`neuralops-cuda`)**: High-performance pre-compiled C++/CUDA native extensions for NVIDIA GPUs (Ampere, Ada Lovelace, Hopper, Blackwell) across CUDA 12.1, 12.4, and 12.8:
+
+```bash
+# Pure Python distribution (CPU, MPS, Triton JIT on Linux)
+pip install neuralops
+
+# Pre-compiled CUDA acceleration wheels (maximum throughput, zero-compilation)
+pip install neuralops-cuda
+```
+
 The base `neuralops` package does not install PyTorch. Choose a runtime extra for
 the target machine; each runtime extra includes the shared core dependencies.
 For a custom CUDA or ROCm PyTorch wheel, install that wheel first using the
