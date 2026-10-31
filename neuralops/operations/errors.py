@@ -38,3 +38,18 @@ class OperationError(Exception):
         self.message = message
         self.error_code = error_code
         self.operation_name = operation_name
+
+
+class OperationExecutionError(OperationError):
+    """Raised when an operation fails during execution."""
+
+    def __init__(self, message: str, operation_name: Optional[str] = None):
+        super().__init__(message, error_code="E_OP_EXECUTION_FAILED", operation_name=operation_name)
+
+
+class PreconditionFailedError(OperationError):
+    """Raised when an operation precondition is unsatisfied."""
+
+    def __init__(self, message: str, operation_name: Optional[str] = None):
+        super().__init__(message, error_code=E_COMP_PRECONDITION_UNSATISFIED, operation_name=operation_name)
+

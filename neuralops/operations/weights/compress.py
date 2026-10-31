@@ -54,8 +54,11 @@ class WeightsCompressOperation(Operation):
         super().__init__(contract=CONTRACT)
 
     def apply(self, model: nn.Module, config: Dict[str, Any]) -> Tuple[nn.Module, Dict[str, Any]]:
-        # Default stub implementation; Sub-Agent A4 provides real AASVD
+        method = config.get("method", "aasvd")
+        if method in ("aasvd", "svd", "asvd"):
+            from neuralops.operations.weights.svd_aasvd import WeightsCompressAASVDOperation
+            return WeightsCompressAASVDOperation().apply(model, config)
         raise IntegrationNotImplementedError(
-            f"weights.compress method='{config.get('method')}' implementation stub. "
+            f"weights.compress method='{method}' implementation stub. "
             "Real AASVD algorithm is provided by neuralops.operations.weights.svd_aasvd."
         )

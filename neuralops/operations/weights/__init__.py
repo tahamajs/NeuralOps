@@ -13,8 +13,10 @@ from neuralops.operations.weights.compress import WeightsCompressOperation
 from neuralops.operations.weights.decompose import WeightsDecomposeOperation
 from neuralops.operations.weights.prune import WeightsPruneOperation
 from neuralops.operations.weights.quantize import WeightsQuantizeOperation
+from neuralops.operations.weights.svd_aasvd import WeightsCompressAASVDOperation
 
 __all__ = [
+    "WeightsCompressAASVDOperation",
     "WeightsCompressOperation",
     "WeightsDecomposeOperation",
     "WeightsPruneOperation",
