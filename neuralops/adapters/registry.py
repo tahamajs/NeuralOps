@@ -39,6 +39,21 @@ def find_adapter(model: nn.Module) -> Optional[ArchitectureAdapter]:
     return None
 
 
+def find_adapter_by_family(family: str) -> Optional[ArchitectureAdapter]:
+    """Find registered adapter matching model family name (case-insensitive)."""
+    norm = family.strip().lower()
+    for adapter in _ADAPTER_REGISTRY:
+        if adapter.family.lower() == norm:
+            return adapter
+        # Also check tested_model_ids or common aliases (e.g. distilbert -> bert)
+        if hasattr(adapter, "tested_model_ids"):
+            if any(norm in mid.lower() for mid in adapter.tested_model_ids):
+                return adapter
+        if norm in ("distilbert", "roberta") and adapter.family.lower() == "bert":
+            return adapter
+    return None
+
+
 def list_adapters() -> List[str]:
     """Return list of all registered adapter family names."""
     return [a.family for a in _ADAPTER_REGISTRY]

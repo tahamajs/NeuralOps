@@ -59,6 +59,10 @@ class ArchitectureAdapter(ABC):
         """Return specific mapping of supported operations to empirical support level."""
         raise NotImplementedError
 
+    def declared_capabilities(self) -> Dict[str, str]:
+        """Return mapping of declared operation capabilities."""
+        return self.get_capabilities()
+
     def check_precondition(self, model: nn.Module, precondition_name: str) -> Tuple[bool, str]:
         """Verify whether model satisfies the named precondition.
 
