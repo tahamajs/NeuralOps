@@ -638,8 +638,8 @@ class NystromAttention(BaseAttention):
             F2_pinv = self._iterative_pinv(F2, iters=self.pinv_iterations)
 
             try:
-                from neuralops.ops.triton.low_rank import fused_nystrom_landmark_pinv_step_triton
-                context = fused_nystrom_landmark_pinv_step_triton(F1, F2_pinv, F3, V)
+                from neuralops.ops.triton.low_rank import fused_nystrom_landmark_pinv_step_pytorch
+                context = fused_nystrom_landmark_pinv_step_pytorch(F1, F2_pinv, F3, V)
             except Exception:
                 step1 = torch.matmul(F3, V)
                 step2 = torch.matmul(F2_pinv, step1)

@@ -514,13 +514,9 @@ class PrimalAttention(BaseAttention):
                     del F2_pinv, I
 
                 from neuralops.ops.triton.low_rank import (
-                    fused_primal_dual_landmark_triton,
                     fused_primal_dual_landmark_pytorch,
                 )
-                try:
-                    attn_c = fused_primal_dual_landmark_triton(F1, X, F3)
-                except Exception:
-                    attn_c = fused_primal_dual_landmark_pytorch(F1, X, F3)
+                attn_c = fused_primal_dual_landmark_pytorch(F1, X, F3)
 
                 del F1, F2, F3, F2_f32, X
 
