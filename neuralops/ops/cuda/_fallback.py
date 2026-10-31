@@ -117,12 +117,27 @@ def _is_first_tensor_cpu(*args: Any, **kwargs: Any) -> bool:
     return False
 
 
+def _should_checkpoint() -> bool:
+    """Return True if activation checkpointing is enabled via environment."""
+    val = os.environ.get("NEURALOPS_AUTOGRAD_CHECKPOINT", "").strip().lower()
+    return val in ("1", "true", "yes", "on") and torch.is_grad_enabled()
+
+
 class _AutogradBridge(torch.autograd.Function):
     @staticmethod
     def forward(ctx, fwd_fn, bwd_ref_fn, reconstruct, *tensors):
-        with torch.no_grad():
-            args, kwargs = reconstruct(tensors)
-            out = fwd_fn(*args, **kwargs)
+        if _should_checkpoint():
+            import torch.utils.checkpoint
+
+            def _custom_fwd(*t):
+                a, kw = reconstruct(t)
+                return fwd_fn(*a, **kw)
+
+            out = torch.utils.checkpoint.checkpoint(_custom_fwd, *tensors, use_reentrant=False)
+        else:
+            with torch.no_grad():
+                args, kwargs = reconstruct(tensors)
+                out = fwd_fn(*args, **kwargs)
         ctx.bwd_ref_fn = bwd_ref_fn
         ctx.reconstruct = reconstruct
         ctx.save_for_backward(*tensors)
