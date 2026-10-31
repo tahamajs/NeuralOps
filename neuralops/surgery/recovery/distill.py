@@ -14,13 +14,6 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from neuralops.adaptation.distillation import (
-    BlockwiseOperatorCloningLoss,
-    HedgehogFeatureMapKDLoss,
-    LinearCKALoss,
-    LogitDistillationLoss,
-    MiniLMValueRelationKDLoss,
-)
 from neuralops.surgery.registry import register_surgery
 
 logger = logging.getLogger(__name__)
@@ -54,6 +47,14 @@ def distill_from_teacher(
     - operator: Blockwise operator cloning
     - cka: Linear CKA representation alignment
     """
+    from neuralops.trainer.distillation.multi_level_kd import (
+        BlockwiseOperatorCloningLoss,
+        HedgehogFeatureMapKDLoss,
+        LinearCKALoss,
+        LogitDistillationLoss,
+        MiniLMValueRelationKDLoss,
+    )
+
     if pillars is None:
         pillars = ["logit", "relation"]
 
@@ -69,7 +70,8 @@ def distill_from_teacher(
     if "logit" in pillars:
         losses["logit"] = LogitDistillationLoss(temperature=temperature)
     if "feature" in pillars:
-        losses["feature"] = HedgehogFeatureMapKDLoss(dim=kwargs.get("dim", 64))
+        chunk_size = kwargs.get("chunk_size", 64)
+        losses["feature"] = HedgehogFeatureMapKDLoss(chunk_size=chunk_size, temperature=temperature)
     if "relation" in pillars:
         losses["relation"] = MiniLMValueRelationKDLoss()
     if "operator" in pillars:

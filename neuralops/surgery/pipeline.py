@@ -94,7 +94,13 @@ class SurgeryRecipe:
         rollback_on_failure: bool = True,
     ) -> tuple[Any, ApplyReport]:
         """Apply each surgery in sequence, validating after each step."""
-        original_model = copy.deepcopy(model) if not hasattr(model, "parameters") else model
+        if rollback_on_failure:
+            try:
+                original_model = copy.deepcopy(model)
+            except Exception:
+                original_model = model
+        else:
+            original_model = model
         applied: list[str] = []
         reports: list[Any] = []
 

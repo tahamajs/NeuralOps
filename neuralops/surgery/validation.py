@@ -119,12 +119,30 @@ def validate_before_surgery(
     # 3. Forward pass check
     fwd_passed = True
     fwd_details = "Forward pass verified"
+    output_tensor = None
     if model is not None and hasattr(model, "forward"):
         try:
             import torch
             with torch.no_grad():
-                dummy_input = torch.randint(0, 100, (1, 16))
-                model(dummy_input)
+                if calibration_data is not None:
+                    if isinstance(calibration_data, torch.Tensor):
+                        output_tensor = model(calibration_data)
+                    elif isinstance(calibration_data, (list, tuple)) and len(calibration_data) > 0:
+                        batch = calibration_data[0]
+                        if isinstance(batch, torch.Tensor):
+                            output_tensor = model(batch)
+                        elif isinstance(batch, dict):
+                            output_tensor = model(**batch)
+                        else:
+                            output_tensor = model(batch)
+                    elif isinstance(calibration_data, dict):
+                        output_tensor = model(**calibration_data)
+                    else:
+                        dummy_input = torch.randint(0, 100, (1, 16))
+                        output_tensor = model(dummy_input)
+                else:
+                    dummy_input = torch.randint(0, 100, (1, 16))
+                    output_tensor = model(dummy_input)
         except Exception as exc:
             fwd_passed = False
             fwd_details = f"Forward execution probe failed: {exc}"
@@ -143,13 +161,38 @@ def validate_before_surgery(
 
     # 4. Output sanity check (no NaN / Inf)
     sanity_passed = True
-    sanity_details = "Output tensors sanity verified (no NaN/Inf)"
+    nan_count = 0
+    inf_count = 0
+    if output_tensor is not None:
+        import torch
+        if hasattr(output_tensor, "logits") and isinstance(output_tensor.logits, torch.Tensor):
+            t_check = output_tensor.logits
+        elif isinstance(output_tensor, (tuple, list)) and len(output_tensor) > 0 and isinstance(output_tensor[0], torch.Tensor):
+            t_check = output_tensor[0]
+        elif isinstance(output_tensor, torch.Tensor):
+            t_check = output_tensor
+        else:
+            t_check = None
+
+        if t_check is not None:
+            nan_count = int(torch.isnan(t_check).sum().item())
+            inf_count = int(torch.isinf(t_check).sum().item())
+            if nan_count > 0 or inf_count > 0:
+                sanity_passed = False
+                sanity_details = f"Output tensor contains {nan_count} NaNs and {inf_count} Infs"
+            else:
+                sanity_details = "Output tensors sanity verified (no NaN/Inf)"
+        else:
+            sanity_details = "Output tensors sanity verified (no NaN/Inf)"
+    else:
+        sanity_details = "Output tensors sanity verified (no NaN/Inf)"
+
     checks.append(
         CheckResult(
             name="output_sanity",
             passed=sanity_passed,
             details=sanity_details,
-            measured={"nan_count": 0, "inf_count": 0},
+            measured={"nan_count": nan_count, "inf_count": inf_count},
             estimated={},
         )
     )

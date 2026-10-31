@@ -101,6 +101,14 @@ def _shrink_gelu_mlp(mlp: nn.Module, ratio: float) -> nn.Module:
     return mlp
 
 
+def _get_layer_idx(name: str) -> int | None:
+    """Extract layer index from module path if present."""
+    for part in name.split("."):
+        if part.isdigit():
+            return int(part)
+    return None
+
+
 @register_surgery(
     name="shrink_mlp",
     category="mlp",
@@ -124,10 +132,19 @@ def shrink_mlp(
     if not isinstance(model, nn.Module):
         return model
 
+    target_layers: set[int] | None = None
+    if layers != "all" and isinstance(layers, (list, tuple, set)):
+        target_layers = set(layers)
+
     shrunk_count = 0
     for name, module in model.named_modules():
         mod_name_lower = name.lower()
         if "mlp" in mod_name_lower or "feedforward" in mod_name_lower or "ffn" in mod_name_lower:
+            if target_layers is not None:
+                layer_idx = _get_layer_idx(name)
+                if layer_idx is not None and layer_idx not in target_layers:
+                    continue
+
             # Check for SwiGLU
             if hasattr(module, "gate_proj") and hasattr(module, "up_proj") and hasattr(module, "down_proj"):
                 _shrink_swiglu_mlp(module, ratio)
