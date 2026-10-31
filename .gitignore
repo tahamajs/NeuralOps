@@ -219,3 +219,6 @@ __pycache__/
 *.lof
 *.lot
 *.out
+
+# Kaggle test outputs
+kaggle_*.txt
