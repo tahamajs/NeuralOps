@@ -83,7 +83,7 @@ def validate_recipe_static(recipe: Recipe) -> List[str]:
         seen_ids.add(op.id)
 
     # Type chain tracking (W10) and composability tracking (W12)
-    current_state: str = "base"
+    current_state: str = "loaded"
     seen_op_names: Dict[str, int] = {}
 
     for op in recipe.operations:
