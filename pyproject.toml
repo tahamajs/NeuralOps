@@ -145,7 +145,7 @@ unsloth = [
 ]
 
 fla = [
-    "fla-linear-attention>=0.2.0; sys_platform == 'linux'",
+    "fla-linear-attention>=0.2.0,<0.3; sys_platform == 'linux'",
 ]
 
 trl = [
@@ -209,7 +209,7 @@ neuralops = [
 ]
 
 [tool.ruff]
-target-version = "py314"
+target-version = "py310"
 line-length = 120
 exclude = [
     "paper/",
@@ -266,7 +266,7 @@ unfixable = ["B006"]
 
 [tool.black]
 line-length = 120
-target-version = ["py314"]
+target-version = ["py310"]
 extend-exclude = '''
 /(
     \.git
