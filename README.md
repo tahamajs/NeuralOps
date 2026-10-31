@@ -233,7 +233,7 @@ NeuralOps powers the official **[Hooshaai](https://huggingface.co/Hooshaai)** re
 
 ## 1. Notebook Workflows
 
-NeuralOps v1.7.0 retains the complete **27-notebook master suite** (00–25 plus the paper empirical master) and includes 2 additional integration notebooks, for 29 notebook files currently present in [`notebooks/`](notebooks/). Notebook count and execution status are reported separately from the 203-row benchmark gate; no notebook is treated as benchmark evidence unless its result is explicitly recorded:
+NeuralOps v1.8.1 retains the complete **27-notebook master suite** (00–25 plus the paper empirical master) and includes 2 additional integration notebooks, for 29 notebook files currently present in [`notebooks/`](notebooks/). Notebook count and execution status are reported separately from the 203-row benchmark gate; no notebook is treated as benchmark evidence unless its result is explicitly recorded:
 
 | # | Notebook File | Cells | Core Focus & Methodology | Primary Deliverables & Key Outputs |
 | :-: | :--- | :---: | :--- | :--- |
@@ -408,7 +408,7 @@ Measured on physical **NVIDIA GeForce RTX 4070 Laptop GPU** (Ada Lovelace SM 8.9
 
 ## 4. Production Serving & Speculative Decoding Engine
 
-NeuralOps v1.7.0 includes serving components for modern LLM deployment workloads. Their implementation is available, but historical savings and throughput figures are not part of the current 203-row release-gate evidence:
+NeuralOps v1.8.1 includes serving components for modern LLM deployment workloads. Their implementation is available, but historical savings and throughput figures are not part of the current 203-row release-gate evidence:
 
 ### 4.1 PagedKVCache: Non-Contiguous Virtual Memory Paging
 Traditional inference servers allocate contiguous memory buffers sized for maximum context length ($T_{\max} = 8192$), causing **60% to 80% memory fragmentation**. NeuralOps `PagedKVCache` resolves this via OS-inspired virtual memory paging:
@@ -549,7 +549,7 @@ APIs without PyTorch raises an actionable error that names the runtime extras.
 
 ### 6.2 Executed Notebook Quickstart
 
-The repository includes small, executed workflows for the main v1.7.0 paths:
+The repository includes small, executed workflows for the main v1.8.1 paths:
 
 - [`01_attention_surgery_and_lora.ipynb`](notebooks/01_attention_surgery_and_lora.ipynb) — attention surgery, LoRA, KD, and save/reload.
 - [`02_unified_training.ipynb`](notebooks/02_unified_training.ipynb) — standard, LoRA, KD, and hybrid `NeuralOpsTrainer` modes.
@@ -1023,7 +1023,7 @@ flowchart TD
 
 ## 9. Web Dashboard, Real-Time Monitoring & Roofline Visualizer
 
-NeuralOps v1.7.0 bundles an integrated Web Monitor and Telemetry Studio powered by FastAPI, Uvicorn, Server-Sent Events (SSE), and interactive Three.js WebGL:
+NeuralOps v1.8.1 bundles an integrated Web Monitor and Telemetry Studio powered by FastAPI, Uvicorn, Server-Sent Events (SSE), and interactive Three.js WebGL:
 
 ```text
 ┌────────────────────────────────────────────────────────────────────────┐
@@ -1600,7 +1600,7 @@ NeuralOps is engineered specifically for subquadratic attention transplantation,
 
 1. **Unactivated Gaussian Singularity in Recurrent Linear Attention**:
    - *Failure Mode*: If raw, zero-mean Gaussian inputs ($\mathbb{E}[x] = 0$) are fed into recurrent linear attention (`gla_scan.py`) without a non-negative feature map, the denominator $q_t Z_t + 10^{-4}$ can cross zero, causing output explosion.
-   - *Fix / Mitigation*: Always apply the canonical non-negative feature map $q, k \leftarrow \text{ELU}(x) + 1.0 > 0$. In v1.7.0, `gla_scan.py` includes hardware denominator safeguarding (`tl.maximum(denom, 1e-4)`).
+   - *Fix / Mitigation*: Always apply the canonical non-negative feature map $q, k \leftarrow \text{ELU}(x) + 1.0 > 0$. In v1.8.1, `gla_scan.py` includes hardware denominator safeguarding (`tl.maximum(denom, 1e-4)`).
 2. **Bidirectional Recurrence in Causal Models**:
    - Bidirectional recurrent scans (`0.5 * (y_fwd + y_bwd)`) are valid only for encoder backbones (BERT, RoBERTa). Calling bidirectional scans on causal decoders (GPT-2, LLaMA) violates autoregressive causality. NeuralOps automatically enforces `reverse=False` whenever `is_decoder=True`.
 3. **Small Batch GEMM Launch Overhead**:
@@ -1701,7 +1701,7 @@ All benchmark tables published in this document are generated from committed, ti
 | 72 Compression Engines Sweep | [`results/triton_all_72_compressors_benchmark.json`](results/triton_all_72_compressors_benchmark.json) | NVIDIA RTX 4070 SM 8.9 | Oct 2026 |
 | GPT-2 End-to-End Speedup | [`results/triton_e2e_gpt2_benchmark.json`](results/triton_e2e_gpt2_benchmark.json) | NVIDIA RTX 4070 SM 8.9 | Oct 2026 |
 | SST-2 Knowledge Distillation | [`results/sst2_kd_v2/sst2_kd_benchmark_v2.csv`](results/sst2_kd_v2/sst2_kd_benchmark_v2.csv) | NVIDIA RTX 4070 SM 8.9 | Oct 2026 |
-| Comprehensive Release Report | NeuralOps v1.7.0 Release Verification ([Section 16](#16-honest-performance-claims--fused-kernel-spectrum)) | NVIDIA RTX 4070 SM 8.9 | Oct 2026 |
+| Comprehensive Release Report | NeuralOps v1.8.1 Release Verification ([Section 16](#16-honest-performance-claims--fused-kernel-spectrum)) | NVIDIA RTX 4070 SM 8.9 | Oct 2026 |
 
 ---
 
@@ -1751,6 +1751,7 @@ The `neuralops` package is verified against strict packaging standards prior to 
 | NeuralOps Version | Python Versions | PyTorch Versions | Triton Versions | CUDA Versions | Supported OS |
 | :---: | :---: | :---: | :---: | :---: | :--- |
 | **v1.8.1** (Current) | `3.10`, `3.11`, `3.12`, `3.14` | `2.1.0` – `2.11.0+` | `3.0.0` – `3.6.0+` | `11.8`, `12.1`–`12.8`, `13.0`–`13.2` | Linux (Ubuntu, Debian, RHEL), macOS 13+, Windows 10/11 (WSL2) |
+| **v1.8.0** | `3.10`, `3.11`, `3.12`, `3.14` | `2.1.0` – `2.11.0+` | `3.0.0` – `3.6.0+` | `11.8`, `12.1`–`12.8`, `13.0`–`13.2` | Linux (Ubuntu, Debian, RHEL), macOS 13+, Windows 10/11 (WSL2) |
 | **v1.7.0** | `3.10`, `3.11`, `3.12`, `3.14` | `2.1.0` – `2.11.0+` | `3.0.0` – `3.6.0+` | `11.8`, `12.1`–`12.8`, `13.0`–`13.2` | Linux (Ubuntu, Debian, RHEL), macOS 13+, Windows 10/11 (WSL2) |
 | **v1.6.0** | `3.10`, `3.11`, `3.12`, `3.14` | `2.1.0` – `2.11.0+` | `3.0.0` – `3.6.0+` | `11.8`, `12.1`–`12.8`, `13.0`–`13.2` | Linux (Ubuntu, Debian, RHEL), macOS 13+, Windows 10/11 (WSL2) |
 | **v1.5.0** | `3.10`, `3.11`, `3.12`, `3.14` | `2.1.0` – `2.6.0+` | `3.0.0` – `3.6.0+` | `11.8`, `12.1`–`12.8`, `13.0`–`13.2` | Linux, macOS 13+, Windows 10/11 |
