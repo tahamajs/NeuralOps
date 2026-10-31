@@ -1931,6 +1931,16 @@
             "path": "content/framework/README.md"
         },
         {
+            "id": "visualizer3d.html",
+            "title": "Interactive 3D Architecture & Tensor Topology Studio (WebGL)",
+            "path": "visualizer3d.html"
+        },
+        {
+            "id": "dashboard.html",
+            "title": "Unified Architecture & Systems Dashboard (RTX 4070 Telemetry)",
+            "path": "dashboard.html"
+        },
+        {
             "id": "DEFENSE_PRESENTATION_SCRIPT.md",
             "title": "Master Defense Oral Delivery Script (50 Slides - Persian)",
             "path": "slides/DEFENSE_PRESENTATION_SCRIPT.md"
