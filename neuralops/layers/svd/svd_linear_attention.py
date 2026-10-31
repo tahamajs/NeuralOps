@@ -1385,7 +1385,7 @@ class SVDLinearAttention(BaseAttention):
             from safetensors.torch import load_file
             state = load_file(safetensor_path)
         elif os.path.exists(pt_path):
-            state = torch.load(pt_path, map_location="cpu")
+            state = torch.load(pt_path, map_location="cpu", weights_only=True)
         else:
             raise FileNotFoundError(f"No compressed weights found at {path}")
         self.load_state_dict(state, strict=False)

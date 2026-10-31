@@ -97,9 +97,18 @@ def get_doc_content(docs_dir: str, project_dir: str, mod_query: str) -> dict[str
 def stop_current_run() -> dict[str, Any]:
     """Safely halt current sweep process on GPU server."""
     try:
+        cmd = [
+            "ssh",
+            "-o",
+            "ConnectTimeout=2",
+            "-o",
+            "BatchMode=yes",
+            "gpu",
+            'taskkill /F /FI "COMMANDLINE eq *run_quality_sweep*"',
+        ]
         subprocess.run(
-            'ssh -o ConnectTimeout=2 -o BatchMode=yes gpu "taskkill /F /FI \\"COMMANDLINE eq *run_quality_sweep*\\""',
-            shell=True,
+            cmd,
+            shell=False,
             timeout=3,
         )
         return {"success": True, "message": "GPU run halted successfully."}

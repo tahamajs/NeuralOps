@@ -658,7 +658,7 @@ class CacheNotesCompressor(BaseCompressor):
         path = Path(path)
         if path.exists():
             try:
-                state_dict = torch.load(path, map_location=self.target_device)
+                state_dict = torch.load(path, map_location=self.target_device, weights_only=True)
                 self.cpt_generator.load_state_dict(state_dict)
                 self.cpt_generator_trained = True
                 self.cpt_generator.eval()
