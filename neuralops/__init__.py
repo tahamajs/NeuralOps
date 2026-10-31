@@ -59,7 +59,6 @@ if TYPE_CHECKING:
         train,
         transplant_attention,
         transplant,
-        export_model,
         export,
         validate,
     )

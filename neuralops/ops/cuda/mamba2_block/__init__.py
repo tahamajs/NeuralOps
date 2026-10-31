@@ -14,4 +14,4 @@ from neuralops.ops.cuda.mamba2_block.mamba2_block_autograd import (
     mamba2_block_ref,
 )
 
-__all__ = [mamba2_block, mamba2_block_ref]
+__all__ = ["mamba2_block", "mamba2_block_ref"]
