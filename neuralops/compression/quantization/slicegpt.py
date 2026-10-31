@@ -27,7 +27,7 @@ from neuralops.core.registry import COMPRESSOR_REGISTRY
 from neuralops.utils.compat import should_compress_linear
 
 try:
-    from neuralops.compression.aa_svd_compressor import SVDLinear
+    from neuralops.compression.svd.aa_svd_compressor import SVDLinear
 except Exception as _svd_import_err:
     SVDLinear = None
     _SVD_IMPORT_ERROR = str(_svd_import_err)

@@ -794,7 +794,7 @@ class CoMeCompressor(BaseCompressor):
                             r = max(1, min(int(self.rank), len(S)))
                         else:
                             r = max(1, int(len(S) * (1.0 - self.sparsity)))
-                        from neuralops.compression.aa_svd_compressor import (
+                        from neuralops.compression.svd.aa_svd_compressor import (
                             SVDLinear,
                         )
 

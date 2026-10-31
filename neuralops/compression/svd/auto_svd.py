@@ -22,7 +22,7 @@ import torch.nn.functional as F
 
 from neuralops.core.base import BaseCompressor
 from neuralops.core.registry import COMPRESSOR_REGISTRY
-from neuralops.compression.aa_svd_compressor import SVDLinear
+from neuralops.compression.svd.aa_svd_compressor import SVDLinear
 
 logger = logging.getLogger("NeuralOps.AutoSVD")
 
