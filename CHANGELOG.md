@@ -5,6 +5,19 @@ All notable changes to the **NeuralOps** library (`SVD_linear_Attention`) will b
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] - 2026-10-31
+
+### Added
+- **High-Level Ergonomics (`neuralops.pipeline`)**: Added unified HuggingFace-style `pipeline("text-generation", model=..., tokenizer=...)` enabling one-line model inference, tokenization, and decoding across subquadratic models.
+- **Top-Level Public Aliases**: Exported `transplant`, `compress`, and `export` at top-level `neuralops` alongside existing canonical routines.
+- **CLI Ergonomic Options**: Added modern aliases `--output`, `--dataset`, `--calibration-dataset`, and `--target-attention` to `neuralops` subcommands with formatted architecture mismatch diagnostic cards.
+- **HFCacheBridge & Recurrent State Hardening**: Hardened `neuralops.surgery.hf_cache_bridge.HFCacheBridge` to preserve 4D recurrent state matrices `(B, H, Dk, Dv)` during sequence cropping and legacy conversions.
+- **Multi-Batch Calibration Healing**: Enhanced `_heal_replaced_model_impl` to cycle across all cached calibration batches (`step % len(in_list)`) to eliminate single-batch starvation and emit structured warnings on non-finite loss.
+
+### Changed
+- **Zero-Overhead Dynamic Dispatch Optimization**: Accelerated `UniversalAttentionWrapper` by caching the resolved forward signature mode (`_cached_dispatch_mode`), achieving $\mathcal{O}(1)$ direct dispatch per token and zero closure allocations during generation.
+- **Silent Failure Eradication in Triton Operations**: Removed bare exception swallows in `neuralops.ops.triton.low_rank`, substituting structured warnings with error diagnostics and fallback tracking.
+
 ## [1.6.0] - 2026-10-23
 
 ### Added
