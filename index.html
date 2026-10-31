@@ -71,6 +71,112 @@
         </div>
     </div>
 
+    <!-- Academic Publications & Monograph Downloads Modal -->
+    <div id="publications-overlay" class="compare-overlay hidden" role="dialog" aria-modal="true">
+        <div class="compare-backdrop" id="publications-backdrop"></div>
+        <div class="compare-modal" style="max-width: 920px;">
+            <div class="compare-modal-header">
+                <div class="compare-modal-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                    <span>Academic Publications & Thesis Monograph Repository</span>
+                </div>
+                <button class="compare-close-btn" id="publications-close-btn" aria-label="Close publications">✕</button>
+            </div>
+            <div class="compare-modal-body" style="padding: 24px; max-height: 80vh; overflow-y: auto;">
+                <p style="color: #94a3b8; font-size: 0.95rem; margin-bottom: 20px; line-height: 1.6;">
+                    Direct PDF downloads for the complete academic monograph, defense slide deck, and conference submissions produced at the <strong>Department of Computer Engineering, College of Engineering, University of Tehran</strong>.
+                </p>
+
+                <div style="display: flex; flex-direction: column; gap: 16px;">
+                    <!-- Thesis Card -->
+                    <div style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(234, 88, 12, 0.35); border-radius: 12px; padding: 18px 20px; display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap;">
+                        <div style="flex: 1; min-width: 280px;">
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                                <span style="background: rgba(234, 88, 12, 0.2); color: #fb923c; font-size: 0.75rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(234, 88, 12, 0.4);">MASTER'S THESIS</span>
+                                <span style="color: #94a3b8; font-size: 0.8rem;">317 Pages · 205 MB</span>
+                            </div>
+                            <div style="font-size: 1.05rem; font-weight: 600; color: #f8fafc; margin-bottom: 4px;">University of Tehran Master's Thesis Monograph</div>
+                            <div style="font-size: 0.85rem; color: #94a3b8; line-height: 1.4;">Comprehensive Persian monograph with English abstract, theoretical proofs, 203 verified modules, and complete appendix.</div>
+                        </div>
+                        <a href="https://github.com/tahamajs/NeuralOps/releases/download/v1.7.0/NeuralOps_Master_Thesis_810101504.pdf" target="_blank" rel="noopener noreferrer" style="background: #ea580c; color: #ffffff; text-decoration: none; padding: 10px 18px; border-radius: 8px; font-weight: 600; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 8px; white-space: nowrap;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            Download PDF (205 MB)
+                        </a>
+                    </div>
+
+                    <!-- Defense Slides Card -->
+                    <div style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(59, 130, 246, 0.35); border-radius: 12px; padding: 18px 20px; display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap;">
+                        <div style="flex: 1; min-width: 280px;">
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                                <span style="background: rgba(59, 130, 246, 0.2); color: #60a5fa; font-size: 0.75rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(59, 130, 246, 0.4);">DEFENSE PRESENTATION</span>
+                                <span style="color: #94a3b8; font-size: 0.8rem;">50 Slides · 172 MB (or Web 45 MB)</span>
+                            </div>
+                            <div style="font-size: 1.05rem; font-weight: 600; color: #f8fafc; margin-bottom: 4px;">Master Thesis Oral Defense Slide Deck</div>
+                            <div style="font-size: 0.85rem; color: #94a3b8; line-height: 1.4;">Widescreen 16:9 presentation slides covering architectural synthesis, 3-level kernel dispatch, and Ada Lovelace hardware profiling.</div>
+                        </div>
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                            <a href="./slides/master_defense_2026.pdf" target="_blank" rel="noopener noreferrer" style="background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.5); color: #60a5fa; text-decoration: none; padding: 10px 14px; border-radius: 8px; font-weight: 600; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;">
+                                Web View (45 MB)
+                            </a>
+                            <a href="https://github.com/tahamajs/NeuralOps/releases/download/v1.7.0/NeuralOps_Thesis_Defense_Slides_810101504.pdf" target="_blank" rel="noopener noreferrer" style="background: #2563eb; color: #ffffff; text-decoration: none; padding: 10px 18px; border-radius: 8px; font-weight: 600; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 8px; white-space: nowrap;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                Full PDF (172 MB)
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- NeurIPS 2026 Paper -->
+                    <div style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 12px; padding: 18px 20px; display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap;">
+                        <div style="flex: 1; min-width: 280px;">
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                                <span style="background: rgba(16, 185, 129, 0.2); color: #34d399; font-size: 0.75rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(16, 185, 129, 0.4);">NEURIPS 2026 SUBMISSION</span>
+                                <span style="color: #94a3b8; font-size: 0.8rem;">Full Conference Paper · 64 MB</span>
+                            </div>
+                            <div style="font-size: 1.05rem; font-weight: 600; color: #f8fafc; margin-bottom: 4px;">NeuralOps: Subquadratic Sequence Modeling via Low-Rank Whitening</div>
+                            <div style="font-size: 0.85rem; color: #94a3b8; line-height: 1.4;">203-module empirical study, mathematical formulation of HNC-SVD whitening pullback, and 3-level kernel fallback contract.</div>
+                        </div>
+                        <a href="https://github.com/tahamajs/NeuralOps/releases/download/v1.7.0/NeuralOps_NeurIPS2026_Paper.pdf" target="_blank" rel="noopener noreferrer" style="background: #059669; color: #ffffff; text-decoration: none; padding: 10px 18px; border-radius: 8px; font-weight: 600; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 8px; white-space: nowrap;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            Download PDF (64 MB)
+                        </a>
+                    </div>
+
+                    <!-- ICLR 2027 Paper -->
+                    <div style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(168, 85, 247, 0.35); border-radius: 12px; padding: 18px 20px; display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap;">
+                        <div style="flex: 1; min-width: 280px;">
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                                <span style="background: rgba(168, 85, 247, 0.2); color: #c084fc; font-size: 0.75rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(168, 85, 247, 0.4);">ICLR 2027 SUBMISSION</span>
+                                <span style="color: #94a3b8; font-size: 0.8rem;">Full Conference Paper · 64 MB</span>
+                            </div>
+                            <div style="font-size: 1.05rem; font-weight: 600; color: #f8fafc; margin-bottom: 4px;">Deep In-Place Attention Surgery & 6-Pillar Subspace Distillation</div>
+                            <div style="font-size: 0.85rem; color: #94a3b8; line-height: 1.4;">In-place attention transplantation on pre-trained causal LLMs, calibration healing dynamics, and flat minima loss landscape analysis.</div>
+                        </div>
+                        <a href="https://github.com/tahamajs/NeuralOps/releases/download/v1.7.0/NeuralOps_ICLR2027_Paper.pdf" target="_blank" rel="noopener noreferrer" style="background: #7c3aed; color: #ffffff; text-decoration: none; padding: 10px 18px; border-radius: 8px; font-weight: 600; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 8px; white-space: nowrap;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            Download PDF (64 MB)
+                        </a>
+                    </div>
+
+                    <!-- MLSys 2027 Paper -->
+                    <div style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(236, 72, 153, 0.35); border-radius: 12px; padding: 18px 20px; display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap;">
+                        <div style="flex: 1; min-width: 280px;">
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                                <span style="background: rgba(236, 72, 153, 0.2); color: #f472b6; font-size: 0.75rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(236, 72, 153, 0.4);">MLSYS 2027 SUBMISSION</span>
+                                <span style="color: #94a3b8; font-size: 0.8rem;">Full Conference Paper · 68 MB</span>
+                            </div>
+                            <div style="font-size: 1.05rem; font-weight: 600; color: #f8fafc; margin-bottom: 4px;">High-Throughput Serving & GPU Kernel Microarchitecture for LLMs</div>
+                            <div style="font-size: 0.85rem; color: #94a3b8; line-height: 1.4;">GPU microarchitectural tuning on Ada Lovelace SM 8.9 (128-bit vectorization, warp shuffles) and vLLM / SGLang virtualized KV-cache.</div>
+                        </div>
+                        <a href="https://github.com/tahamajs/NeuralOps/releases/download/v1.7.0/NeuralOps_MLSys2027_Paper.pdf" target="_blank" rel="noopener noreferrer" style="background: #db2777; color: #ffffff; text-decoration: none; padding: 10px 18px; border-radius: 8px; font-weight: 600; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 8px; white-space: nowrap;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            Download PDF (68 MB)
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="app-container">
         <!-- SIDEBAR -->
         <aside id="sidebar" aria-label="Documentation Navigation">
@@ -193,6 +299,10 @@
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
                         Slides (50)
                     </a>
+                    <button id="publications-modal-btn" class="tb-action-btn" style="background: rgba(234, 88, 12, 0.15); border-color: rgba(234, 88, 12, 0.4); color: #fb923c; display: inline-flex; align-items: center; gap: 6px;" title="Download University Thesis, Defense Slides & Conference Papers (PDFs)">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                        Publications (PDFs)
+                    </button>
                     <button id="compare-modal-btn" class="tb-action-btn" title="Compare Architectures">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="3" x2="12" y2="21"/><line x1="3" y1="12" x2="21" y2="12"/></svg>
                         Compare
