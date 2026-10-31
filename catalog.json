@@ -1931,6 +1931,16 @@
             "path": "content/framework/README.md"
         },
         {
+            "id": "visualizer/index.html",
+            "title": "3D Neural Architecture Atlas (241 Research Modules)",
+            "path": "visualizer/index.html"
+        },
+        {
+            "id": "visualizer/latent_manifold.html",
+            "title": "3D Latent Manifold & SVD Spectral Decay Visualizer",
+            "path": "visualizer/latent_manifold.html"
+        },
+        {
             "id": "visualizer3d.html",
             "title": "Interactive 3D Architecture & Tensor Topology Studio (WebGL)",
             "path": "visualizer3d.html"
