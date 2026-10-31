@@ -6,21 +6,15 @@
 //   https://github.com/tahamajs/NeuralOps/graphs/contributors
 
 #include <torch/extension.h>
-#include <vector>
 
-torch::Tensor routing_attn_fwd(
+torch::Tensor routed_attention_forward(
     const torch::Tensor& q,
     const torch::Tensor& k,
     const torch::Tensor& v,
-    const torch::Tensor& route_weights,
-    int top_k
+    const torch::Tensor& cluster_ids,
+    double scale
 );
 
-std::vector<torch::Tensor> routing_attn_bwd(
-    const torch::Tensor& grad_out,
-    const torch::Tensor& q,
-    const torch::Tensor& k,
-    const torch::Tensor& v,
-    const torch::Tensor& route_weights,
-    int top_k
-);
+PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
+    m.def("routed_attention_forward", &routed_attention_forward, "Routed Attention Forward (CUDA)");
+}

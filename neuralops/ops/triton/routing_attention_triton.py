@@ -416,4 +416,6 @@ def routing_attention_forward(
     return outputs
 
 
-__all__ = ["routing_attention_forward", "_routing_attention_pytorch"]
+routing_attention_forward_pytorch = _routing_attention_pytorch
+
+__all__ = ["routing_attention_forward", "routing_attention_forward_pytorch", "_routing_attention_pytorch"]

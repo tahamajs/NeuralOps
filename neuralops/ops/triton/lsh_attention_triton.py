@@ -370,4 +370,6 @@ def lsh_attention_forward(
     return (accum / float(rounds_eff)).to(dtype)
 
 
-__all__ = ["lsh_attention_forward", "_lsh_attention_pytorch"]
+lsh_attention_forward_pytorch = _lsh_attention_pytorch
+
+__all__ = ["lsh_attention_forward", "lsh_attention_forward_pytorch", "_lsh_attention_pytorch"]
