@@ -180,11 +180,20 @@ def register_neuralops_vllm_plugin() -> bool:
     return False
 
 
+from neuralops.integrations.vllm.backend import (
+    NeuralOpsAttentionBackend,
+    NeuralOpsAttentionImpl,
+)
+from neuralops.integrations.vllm.state_table import PagedStateTable
+
 __all__ = [
     "NeuralOpsvLLMMetadata",
     "NeuralOpsvLLMImpl",
     "NeuralOpsvLLMAttentionBackend",
     "NeuralOpsForCausalLMvLLM",
+    "NeuralOpsAttentionBackend",
+    "NeuralOpsAttentionImpl",
+    "PagedStateTable",
     "register_neuralops_vllm_plugin",
     "vllm_is_available",
     "HAS_VLLM",
