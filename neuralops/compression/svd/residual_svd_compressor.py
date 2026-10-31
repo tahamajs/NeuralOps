@@ -437,6 +437,9 @@ class SpectralResidualLoRA(ResSVDCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("residual_svd_compressor")
+@COMPRESSOR_REGISTRY.register("res_svd", is_alias=True)
+@COMPRESSOR_REGISTRY.register("res_svd_compressor", is_alias=True)
+@COMPRESSOR_REGISTRY.register("spectral_residual_lora", is_alias=True)
 class ResidualSVDCompressor(ResSVDCompressor):
     """ResidualSVDCompressor neural operator.
 

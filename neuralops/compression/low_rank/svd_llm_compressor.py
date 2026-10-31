@@ -221,6 +221,7 @@ class SVDLLMLinear(nn.Module):
 
 
 @COMPRESSOR_REGISTRY.register("svd_llm_compressor")
+@COMPRESSOR_REGISTRY.register("svd_llm", is_alias=True)
 class SVDLLMCompressor(BaseCompressor):
     """
     SVD-LLM (ICLR 2025) Compressor with Cholesky activation whitening,

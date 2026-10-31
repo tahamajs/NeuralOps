@@ -490,22 +490,26 @@ class HessianNullSpaceSVDContinuation:
         H_X = torch.matmul(X_f.t(), X_f) / max(N, 1)
 
         reg = eps * (torch.trace(H_X) / float(d_in)).item() + 1e-6
+        if N < d_in:
+            reg = reg * (float(d_in) / float(max(N, 1)))
         S_X = H_X + reg * torch.eye(d_in, device=orig_device, dtype=torch.float32)
-        L = torch.linalg.cholesky(S_X)
-
-        W_white = torch.matmul(W_f, L)
 
         r = max(1, min(rank, min(W.shape) - 1)) if min(W.shape) > 1 else 1
-        U, S, Vh = torch.linalg.svd(W_white, full_matrices=False)
-        U_r = U[:, :r] * torch.sqrt(S[:r]).unsqueeze(0)
-        V_white_r = torch.sqrt(S[:r]).unsqueeze(1) * Vh[:r, :]
-
-        V_unwhitened = torch.linalg.solve_triangular(
-            L.t(), V_white_r.t(), upper=True
-        ).t()
-
-        A_r = U_r.to(device=orig_device, dtype=orig_dtype)
-        B_r = V_unwhitened.to(device=orig_device, dtype=orig_dtype)
+        try:
+            L = torch.linalg.cholesky(S_X)
+            W_white = torch.matmul(W_f, L)
+            U, S, Vh = torch.linalg.svd(W_white, full_matrices=False)
+            U_r = U[:, :r] * torch.sqrt(S[:r]).unsqueeze(0)
+            V_white_r = torch.sqrt(S[:r]).unsqueeze(1) * Vh[:r, :]
+            V_unwhitened = torch.linalg.solve_triangular(
+                L.t(), V_white_r.t(), upper=True
+            ).t()
+            A_r = U_r.to(device=orig_device, dtype=orig_dtype)
+            B_r = V_unwhitened.to(device=orig_device, dtype=orig_dtype)
+        except Exception:
+            U, S, Vh = torch.linalg.svd(W_f, full_matrices=False)
+            A_r = (U[:, :r] * torch.sqrt(S[:r]).unsqueeze(0)).to(device=orig_device, dtype=orig_dtype)
+            B_r = (torch.sqrt(S[:r]).unsqueeze(1) * Vh[:r, :]).to(device=orig_device, dtype=orig_dtype)
         return A_r, B_r
 
     def run_continuation(

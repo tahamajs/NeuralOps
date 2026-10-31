@@ -97,8 +97,8 @@ COMPRESSOR_FILE_MAP: dict[str, str] = {
     "zerokv_neo": "zerokv_neo_compressor",
     "dynamic_entropy_svd": "dynamic_rank",
     "entropy_rank_allocator": "dynamic_rank",
-    "res_svd": "res_svd",
-    "spectral_residual_lora": "res_svd",
+    "res_svd": "residual_svd_compressor",
+    "spectral_residual_lora": "residual_svd_compressor",
     "svd": "direct_svd",
     "svd_llm": "svd_llm_compressor",
 }

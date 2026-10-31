@@ -95,7 +95,11 @@ class GPTQQuantizer:
         if not math.isfinite(diag_mean) or diag_mean <= 0.0:
             diag_mean = 1.0
 
-        base_lambda = max(float(damp) * diag_mean, 1e-6)
+        if 0 < self.nsamples < self.columns:
+            sample_ratio = float(self.columns) / float(self.nsamples)
+            base_lambda = max(float(damp) * diag_mean * sample_ratio, 1e-4)
+        else:
+            base_lambda = max(float(damp) * diag_mean, 1e-6)
 
         # Inversion with multi-tier adaptive dampening escalation
         H_inv = None
@@ -146,6 +150,7 @@ class GPTQQuantizer:
         return W
 
 
+@COMPRESSOR_REGISTRY.register("gptq", is_alias=True)
 @COMPRESSOR_REGISTRY.register("gptq_real", is_alias=True)
 @COMPRESSOR_REGISTRY.register("gptq_compressor", is_alias=True)
 class GPTQCompressor(BaseCompressor):

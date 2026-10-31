@@ -44,6 +44,7 @@ _ATTN_NAMES = {
 
 
 @COMPRESSOR_REGISTRY.register("direct_svd")
+@COMPRESSOR_REGISTRY.register("svd", is_alias=True)
 @COMPRESSOR_REGISTRY.register("hnc_svd", is_alias=True)
 @COMPRESSOR_REGISTRY.register("hnc_svd_compressor", is_alias=True)
 class DirectSVDCompressor(BaseCompressor):

@@ -5,7 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
+r"""
 SmoothQuant: Accurate 8-Bit Weight and Activation Quantization
 
 Smooths activation outliers by mathematically migrating scale difficulty from activations
@@ -75,7 +75,7 @@ class SmoothQuantLinear(nn.Module):
             self.register_parameter("bias", None)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Applies fused activation outlier smoothing ($X' = X \cdot \operatorname{diag}(s)^{-1}$) and GEMM prior to downstream quantization via triton_fused_act_scale_quant_gemm."""
+        r"""Applies fused activation outlier smoothing ($X' = X \cdot \operatorname{diag}(s)^{-1}$) and GEMM prior to downstream quantization via triton_fused_act_scale_quant_gemm."""
         from neuralops.ops.triton.fused_norm_linear import triton_fused_act_scale_quant_gemm
 
         w_deq = (self.weight_int8.to(torch.float32) * self.weight_scale.to(torch.float32)).to(x.dtype)
@@ -89,7 +89,7 @@ def smoothquant_layer(
     act_scales: torch.Tensor | None = None,
     quantize: bool = True,
 ) -> tuple[nn.Linear, torch.Tensor]:
-    """Applies SmoothQuant to a linear layer.
+    r"""Applies SmoothQuant to a linear layer.
 
     Migrates activation outliers into weights:
       s = (a_max^alpha) / (w_max^(1-alpha))
@@ -181,6 +181,7 @@ def smoothquant_model(
     return scales
 
 
+@COMPRESSOR_REGISTRY.register("smoothquant", is_alias=True)
 @COMPRESSOR_REGISTRY.register("smoothquant_real", is_alias=True)
 @COMPRESSOR_REGISTRY.register("smoothquant_compressor", is_alias=True)
 class SmoothQuantCompressor(BaseCompressor):

@@ -159,7 +159,11 @@ def compute_empirical_hessian(
     if not math.isfinite(diag_mean) or diag_mean <= 0.0:
         diag_mean = 1.0
 
-    reg = max(float(damping) * diag_mean, 1e-5)
+    if N < d_in:
+        damping_eff = damping * (float(d_in) / float(max(N, 1)))
+        reg = max(float(damping_eff) * diag_mean, 1e-4)
+    else:
+        reg = max(float(damping) * diag_mean, 1e-5)
     H_reg = H + reg * torch.eye(d_in, device=device)
 
     H_inv = None
