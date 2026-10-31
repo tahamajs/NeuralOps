@@ -19,7 +19,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 
-from neuralops.layers.svd_linear_attention import (
+from neuralops.layers.svd.svd_linear_attention import (
     SVDLinear,
     SVDLinearAttention,
     inject_svd_linear_attention,

@@ -26,7 +26,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from neuralops.layers.gated_delta_net import LoRALinear
+from neuralops.layers.gated.gated_delta_net import LoRALinear
 from neuralops.core.adapters import UniversalAdapter
 from neuralops.core.base import BaseAttention
 from neuralops.core.utils.gqa import repeat_kv

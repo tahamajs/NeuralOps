@@ -33,7 +33,7 @@ from neuralops.core.utils.gqa import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
 
 try:
-    from neuralops.layers.simple_ssm import SimpleSSM
+    from neuralops.layers.ssm.simple_ssm import SimpleSSM
 except ImportError:
     try:
         from simple_ssm import SimpleSSM

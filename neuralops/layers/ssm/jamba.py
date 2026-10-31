@@ -23,8 +23,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from neuralops.layers.expert_choice_moe import ExpertChoiceMoE
-from neuralops.layers.simple_ssm import SimpleSSM
+from neuralops.layers.sparse.expert_choice_moe import ExpertChoiceMoE
+from neuralops.layers.ssm.simple_ssm import SimpleSSM
 from neuralops.core.attention_mask import get_token_valid_mask
 from neuralops.core.base import BaseAttention
 from neuralops.core.cache_utils import _read_cache, _write_cache, read_cache, write_cache

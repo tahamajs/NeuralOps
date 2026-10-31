@@ -48,7 +48,7 @@ except Exception:
     fast_linear_attention = None
 
 try:
-    from neuralops.layers.fused_svd_kernel import FusedSVDLinear, fused_svd_linear
+    from neuralops.layers.svd.fused_svd_kernel import FusedSVDLinear, fused_svd_linear
 
     HAS_FUSED_KERNEL = True
 except (ImportError, AttributeError):

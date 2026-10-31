@@ -284,7 +284,7 @@ class HymbaTransXBlock(BaseAttention):
             mt = str(getattr(config, "model_type", "")).lower()
             if not mt.startswith("gpt"):
                 try:
-                    from neuralops.layers.simple_ssm import SimpleSSM
+                    from neuralops.layers.ssm.simple_ssm import SimpleSSM
 
                     self.mamba = SimpleSSM(
                         d_model=self.dim, config=config, is_decoder=self.is_decoder
