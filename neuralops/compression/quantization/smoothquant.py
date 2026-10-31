@@ -11,6 +11,11 @@ SmoothQuant: Accurate 8-Bit Weight and Activation Quantization
 Smooths activation outliers by mathematically migrating scale difficulty from activations
 to weights via per-channel scaling factors, and completes the transformation by performing
 symmetric INT8 quantization on the migrated weights.
+
+Note on kernel naming: `triton_fused_act_scale_quant_gemm` applies per-channel activation
+outlier smoothing ($X' = X \cdot \operatorname{diag}(s)^{-1}$, $W' = W \cdot \operatorname{diag}(s)$)
+prior to downstream low-precision quantization, resolving the misnomer where 'quant' in the
+kernel name designates the pre-quantization scale-smoothing transform.
 """
 
 from __future__ import annotations
@@ -70,7 +75,7 @@ class SmoothQuantLinear(nn.Module):
             self.register_parameter("bias", None)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Applies smoothed activation scaling and GEMM with INT8 dequantized weights."""
+        """Applies fused activation outlier smoothing ($X' = X \cdot \operatorname{diag}(s)^{-1}$) and GEMM prior to downstream quantization via triton_fused_act_scale_quant_gemm."""
         from neuralops.ops.triton.fused_norm_linear import triton_fused_act_scale_quant_gemm
 
         w_deq = (self.weight_int8.to(torch.float32) * self.weight_scale.to(torch.float32)).to(x.dtype)
@@ -90,6 +95,10 @@ def smoothquant_layer(
       s = (a_max^alpha) / (w_max^(1-alpha))
       W' = W * diag(s)
       X' = X * diag(s)^-1
+
+    The runtime hook executes `triton_fused_act_scale_quant_gemm`, which applies per-channel
+    activation outlier smoothing ($X' = X \cdot \operatorname{diag}(s)^{-1}$, $W' = W \cdot \operatorname{diag}(s)$)
+    prior to downstream low-precision quantization, resolving the kernel misnomer.
 
     When quantize=True, completes the transformation by performing INT8 symmetric quantization:
       W_int8 = clamp(round(W' / scale_W), -128, 127)
