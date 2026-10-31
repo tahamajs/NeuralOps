@@ -35,46 +35,56 @@ Thank you for your interest in contributing to **NeuralOps**! We welcome contrib
 
 ## 🧩 Adding a New Attention Mechanism
 
-All attention mechanisms inherit from standard PyTorch `nn.Module` and are registered in `ATTENTION_REGISTRY`.
+All attention mechanisms inherit from `ModularAttention` (or `BaseAttention`) and are registered in `ATTENTION_REGISTRY`.
+Using `ModularAttention` provides a clean, zero-boilerplate workflow where QKV projections, GQA head broadcasting, causal masking, and output projections are handled automatically.
 
-1. **Create your module file** in the appropriate category under `neuralops/attentions/<category>/<module_name>.py`:
-   - `adaptive/`, `dense/`, `experimental/`, `fast_kernels/`, `gated/`, `hybrid/`, `linear/`, `modern/`, `sparse/`, `ssm/`, `svd/`.
+1. **Create your module file** in the appropriate category under `neuralops/layers/<category>/<module_name>.py`:
+   - Categories: `adaptive/`, `dense/`, `experimental/`, `fast_kernels/`, `gated/`, `hybrid/`, `linear/`, `modern/`, `sparse/`, `ssm/`, `svd/`.
 
-2. **Implement standard signatures**:
-   - The constructor must accept `(hidden_size: int, num_heads: int, **kwargs)`.
-   - The `forward` method must accept `(hidden_states: torch.Tensor, attention_mask: Optional[torch.Tensor] = None, **kwargs)` and return a tuple `(output: torch.Tensor, Optional[torch.Tensor])`.
+2. **Inherit from `ModularAttention` and implement `compute_attention`**:
+   You only need to write the mathematical kernel in `compute_attention(self, q, k, v, mask=None, **kwargs)`. All projections, shapes `[batch, num_heads, seq_len, head_dim]`, and GQA expansions are managed by the base class.
 
 3. **Register the module using `@register_attention`**:
    ```python
-   from torch import nn
    import torch
+   from neuralops.layers.base import ModularAttention
    from neuralops.core.registry import register_attention
 
    @register_attention(
-       name="my_fast_attention",
+       "my_fast_linear_attention",
        supports_causal=True,
-       supports_gqa=False,
+       supports_gqa=True,
        supports_rope=True,
-       requires_cuda=False,
    )
-   class MyFastAttention(nn.Module):
-       def __init__(self, hidden_size: int, num_heads: int, **kwargs):
-           super().__init__()
-           self.hidden_size = hidden_size
-           self.num_heads = num_heads
-           self.head_dim = hidden_size // num_heads
-           self.q_proj = nn.Linear(hidden_size, hidden_size)
-           self.k_proj = nn.Linear(hidden_size, hidden_size)
-           self.v_proj = nn.Linear(hidden_size, hidden_size)
-           self.out_proj = nn.Linear(hidden_size, hidden_size)
+   class MyFastLinearAttention(ModularAttention):
+       """Clean linear attention with subquadratic associative scan O(T * d^2)."""
 
-       def forward(self, hidden_states: torch.Tensor, attention_mask: torch.Tensor | None = None, **kwargs):
-           # Custom linear or kernel attention computation
-           out = self.out_proj(hidden_states)
-           return out, None
+       def compute_attention(
+           self,
+           q: torch.Tensor,
+           k: torch.Tensor,
+           v: torch.Tensor,
+           mask: torch.Tensor | None = None,
+           **kwargs,
+       ) -> torch.Tensor:
+           # 1. Apply kernel feature mapping: phi(x) = elu(x) + 1
+           phi_q = torch.nn.functional.elu(q) + 1.0
+           phi_k = torch.nn.functional.elu(k) + 1.0
+
+           # 2. Compute associative key-value memory state: O(T * d^2)
+           kv = torch.einsum("bhsn,bhsd->bhnd", phi_k, v)
+
+           # 3. Project context representation
+           out = torch.einsum("bhsn,bhnd->bhsd", phi_q, kv)
+           return out
    ```
 
-4. **Add module export in `neuralops/attentions/__init__.py`**.
+4. **Register the export in `neuralops/layers/<category>/__init__.py`**.
+
+5. **Verify with the 8-invariant test suite**:
+   ```bash
+   pytest tests/test_exhaustive_131_attentions_matrix.py -k "my_fast_linear_attention"
+   ```
 
 ---
 
@@ -82,7 +92,7 @@ All attention mechanisms inherit from standard PyTorch `nn.Module` and are regis
 
 Compressors reduce weight matrices or KV caches and are registered in `COMPRESSOR_REGISTRY`:
 
-1. **Implement your compressor** under `neuralops/compression_engine/<family>/<method>.py`:
+1. **Implement your compressor** under `neuralops/compression/<family>/<method>.py`:
    - `low_rank/`, `svd/`, `tensor_decomp/`, `pruning/`, `quantization/`, `kv_cache/`.
 
 2. **Implement the compression interface**:
