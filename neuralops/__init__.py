@@ -73,7 +73,7 @@ if TYPE_CHECKING:
     from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY  # noqa: F401
     from neuralops.kernels import list_cuda_kernels, list_triton_kernels  # noqa: F401
 
-__version__ = "1.8.1"
+__version__ = "1.9.0"
 
 _TORCH_FREE_SYMBOLS = frozenset({"__version__", "__doc__", "__all__", "pipeline"})
 try:
@@ -483,6 +483,8 @@ _API_EXPORTS = {
     "list_attentions": "neuralops.api",
     "list_compressors": "neuralops.api",
     "list_fla_attentions": "neuralops.integrations.fla",
+    "list_surgeries": "neuralops.surgery",
+    "SurgeryRecipe": "neuralops.surgery.pipeline",
     "force_kernel_backend": "neuralops.ops.cuda._fallback",
     "list_triton_kernels": "neuralops.kernels",
     "list_cuda_kernels": "neuralops.kernels",
@@ -707,6 +709,9 @@ __all__ = [
     "list_attentions",
     "list_compressors",
     "list_fla_attentions",
+    "list_surgeries",
+    "SurgeryRecipe",
+    "surgery",
     "force_kernel_backend",
     "get_attention_class",
     "get_compressor_class",

@@ -1,0 +1,11 @@
+recipe_version: "1.0"
+name: gpt2-fast
+base_model: gpt2
+surgeries:
+  - name: replace_attention
+    params:
+      attention: chunk_gla
+  - name: shrink_mlp
+    params:
+      ratio: 0.8
+recovery: []
