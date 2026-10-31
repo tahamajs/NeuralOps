@@ -14,10 +14,16 @@ from __future__ import annotations
 from neuralops.pipeline_transform.errors import PlanningError
 from neuralops.pipeline_transform.plan import ExecutionPlan, Stage
 from neuralops.pipeline_transform.planner import plan_recipe
+from neuralops.pipeline_transform.rollback import RollbackError
+from neuralops.pipeline_transform.snapshot import Snapshot, capture, restore
 
 __all__ = [
     "ExecutionPlan",
     "PlanningError",
+    "RollbackError",
+    "Snapshot",
     "Stage",
+    "capture",
     "plan_recipe",
+    "restore",
 ]
