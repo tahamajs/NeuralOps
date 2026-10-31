@@ -1929,6 +1929,16 @@
             "id": "README.md",
             "title": "Framework Documentation",
             "path": "content/framework/README.md"
+        },
+        {
+            "id": "DEFENSE_PRESENTATION_SCRIPT.md",
+            "title": "Master Defense Oral Delivery Script (50 Slides - Persian)",
+            "path": "slides/DEFENSE_PRESENTATION_SCRIPT.md"
+        },
+        {
+            "id": "DEFENSE_PRESENTATION_SCRIPT_EN.md",
+            "title": "Master Defense Oral Delivery Script (50 Slides - English)",
+            "path": "slides/DEFENSE_PRESENTATION_SCRIPT_EN.md"
         }
     ]
 }
