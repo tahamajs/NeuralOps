@@ -2,7 +2,7 @@
 
 <img src="assets/banner.svg" alt="NeuralOps Banner" width="100%" />
 
-# 🧬 NeuralOps v1.7.0
+# 🧬 NeuralOps v1.8.0
 
 ### **A correctness-gated platform for attention surgery, compression, and hardware-aware benchmarking**
 
@@ -11,7 +11,7 @@
 > **Registry count contract:** the current remote registry reports 131 attention mechanisms and 72 compression engines. Hardware source counts are reported separately.
 
 [![PyPI version](https://img.shields.io/pypi/v/neuralops.svg?color=blue&label=pypi%20neuralops)](https://pypi.org/project/neuralops/)
-[![Release](https://img.shields.io/badge/release-v1.7.0-blue.svg)](https://github.com/tahamajs/NeuralOps/releases/tag/v1.7.0)
+[![Release](https://img.shields.io/badge/release-v1.8.0-blue.svg)](https://github.com/tahamajs/NeuralOps/releases/tag/v1.8.0)
 [![PyPI Provenance](https://img.shields.io/badge/provenance-Sigstore%20SLSA-green.svg)](https://pypi.org/project/neuralops/)
 [![PyPI Downloads](https://img.shields.io/pypi/dm/neuralops.svg)](https://pypi.org/project/neuralops/)
 [![Python Versions](https://img.shields.io/pypi/pyversions/neuralops.svg)](https://pypi.org/project/neuralops/)
@@ -97,7 +97,7 @@ neuralops train \
 
 ### 🚀 High-Level Inference Pipeline
 
-NeuralOps v1.7.0 provides unified, Hugging Face-style inference pipelines that automatically handle tokenization, device staging, kv-cache routing, and autoregressive generation across subquadratic models:
+NeuralOps v1.8.0 provides unified, Hugging Face-style inference pipelines that automatically handle tokenization, device staging, kv-cache routing, and autoregressive generation across subquadratic models:
 
 ```python
 import neuralops
@@ -153,9 +153,9 @@ reloaded = neuralops.load_attention_from_hub("distilbert-base-uncased",
 
 ---
 
-## 🚀 Key Capabilities in v1.7.0
+## 🚀 Key Capabilities in v1.8.0
 
-NeuralOps v1.7.0 delivers ergonomics, zero-overhead dispatch caching, multi-batch healing, and full provenance:
+NeuralOps v1.8.0 delivers ergonomics, zero-overhead dispatch caching, multi-batch healing, and full provenance:
 
 | Capability | Architecture Scope | Technical Implementation |
 | :--- | :--- | :--- |
@@ -171,7 +171,7 @@ NeuralOps v1.7.0 delivers ergonomics, zero-overhead dispatch caching, multi-batc
 
 ## 📖 Table of Contents
 
-0. [Key Capabilities in v1.7.0](#-key-capabilities-in-v170)
+0. [Key Capabilities in v1.8.0](#-key-capabilities-in-v180)
 * [Academic Monographs, Master's Thesis & Conference Papers](#-academic-monographs-thesis--defense-slides)
 * [Interactive 3D Spaces & Hugging Face Ecosystem](#-interactive-3d-spaces--hugging-face-ecosystem)
 1. [Notebook Workflows](#1-notebook-workflows)
@@ -1067,6 +1067,7 @@ To maintain engineering transparency and forensic integrity, NeuralOps categoriz
 | Framework | Type | Upstream | CI/CD | Production | Verified Path | Notes |
 |:---|:---|:---:|:---:|:---:|:---|:---|
 | **HuggingFace Transformers** | Native Plugin | N/A | ✅ | ✅ **Supported** | `neuralops/integrations/hf_automodel.py`, `neuralops/core/_attention_injectors.py` | Supported (verified, CPU & GPU) |
+| **FLA (Flash Linear Attention)** | Optional Backend | `fla-linear-attention>=0.2.0` | ✅ Offline | ✅ **Supported (Fail-Closed)** | `neuralops/integrations/fla/` | Optional backend via `fla:*` prefix and `force_kernel_backend("fla")`; preserves 131-attention invariant (Linux + CUDA) |
 | **Safetensors** | Model Weights | N/A | ✅ | ✅ **Supported** | `neuralops/export/exporter.py` | Supported (built-in) |
 | **ONNX Runtime** | Compat Layer | N/A | ✅ | ✅ **Supported** | `neuralops/export/exporter.py` | Supported (requires neuralops[export]) |
 | **vLLM** | Adapter Scaffold | ⚠️ No PR | ⚠️ Stub | ❌ **Roadmap v2.0** | `neuralops/integrations/vllm.py` | Roadmap v2.0 (requires GPU) |
@@ -1736,12 +1737,12 @@ The complete directory and model synchronization utilities are documented in [`s
 
 The `neuralops` package is verified against strict packaging standards prior to every release:
 
-- [x] **Package Distribution**: Published on PyPI as [`neuralops v1.7.0`](https://pypi.org/project/neuralops/).
+- [x] **Package Distribution**: Published on PyPI as [`neuralops v1.8.0`](https://pypi.org/project/neuralops/).
 - [x] **Trusted Publishing & Provenance**: Automated publish workflow using GitHub Actions OIDC (`actions/attest-build-provenance@v2` + `pypa/gh-action-pypi-publish@release/v1`) with cryptographic PEP 740 Sigstore provenance attestations.
 - [x] **Metadata Linter**: `twine check dist/*` passes with 0 warnings, 0 errors.
-- [x] **Wheel Hygiene**: Pure Python + Triton wheel (`neuralops-1.7.0-py3-none-any.whl`, size ~3.2 MB). Scratch files, test logs, and raw checkpoint weights are excluded via `pyproject.toml`.
-- [x] **Source Distribution**: Complete source archive includes all source files, C++/CUDA headers, LICENSE, and documentation (`neuralops-1.7.0.tar.gz`).
-- [x] **Git Provenance**: Release commit tagged matching origin `main` (`v1.7.0`).
+- [x] **Wheel Hygiene**: Pure Python + Triton wheel (`neuralops-1.8.0-py3-none-any.whl`, size ~3.2 MB). Scratch files, test logs, and raw checkpoint weights are excluded via `pyproject.toml`.
+- [x] **Source Distribution**: Complete source archive includes all source files, C++/CUDA headers, LICENSE, and documentation (`neuralops-1.8.0.tar.gz`).
+- [x] **Git Provenance**: Release commit tagged matching origin `main` (`v1.8.0`).
 
 ---
 
@@ -1749,7 +1750,8 @@ The `neuralops` package is verified against strict packaging standards prior to 
 
 | NeuralOps Version | Python Versions | PyTorch Versions | Triton Versions | CUDA Versions | Supported OS |
 | :---: | :---: | :---: | :---: | :---: | :--- |
-| **v1.7.0** (Current) | `3.10`, `3.11`, `3.12`, `3.14` | `2.1.0` – `2.11.0+` | `3.0.0` – `3.6.0+` | `11.8`, `12.1`–`12.8`, `13.0`–`13.2` | Linux (Ubuntu, Debian, RHEL), macOS 13+, Windows 10/11 (WSL2) |
+| **v1.8.0** (Current) | `3.10`, `3.11`, `3.12`, `3.14` | `2.1.0` – `2.11.0+` | `3.0.0` – `3.6.0+` | `11.8`, `12.1`–`12.8`, `13.0`–`13.2` | Linux (Ubuntu, Debian, RHEL), macOS 13+, Windows 10/11 (WSL2) |
+| **v1.7.0** | `3.10`, `3.11`, `3.12`, `3.14` | `2.1.0` – `2.11.0+` | `3.0.0` – `3.6.0+` | `11.8`, `12.1`–`12.8`, `13.0`–`13.2` | Linux (Ubuntu, Debian, RHEL), macOS 13+, Windows 10/11 (WSL2) |
 | **v1.6.0** | `3.10`, `3.11`, `3.12`, `3.14` | `2.1.0` – `2.11.0+` | `3.0.0` – `3.6.0+` | `11.8`, `12.1`–`12.8`, `13.0`–`13.2` | Linux (Ubuntu, Debian, RHEL), macOS 13+, Windows 10/11 (WSL2) |
 | **v1.5.0** | `3.10`, `3.11`, `3.12`, `3.14` | `2.1.0` – `2.6.0+` | `3.0.0` – `3.6.0+` | `11.8`, `12.1`–`12.8`, `13.0`–`13.2` | Linux, macOS 13+, Windows 10/11 |
 | **v1.4.0** | `3.9`, `3.10`, `3.11` | `2.0.0` – `2.2.0` | `2.1.0` – `2.2.0` | `11.7`, `11.8`, `12.0` | Linux, macOS 12+ |
@@ -1803,7 +1805,7 @@ If you use NeuralOps, its subquadratic attention kernels, or model compression e
   year = {2026},
   publisher = {GitHub},
   howpublished = {\url{https://github.com/tahamajs/NeuralOps}},
-  version = {1.7.0}
+  version = {1.8.0}
 }
 ```
 

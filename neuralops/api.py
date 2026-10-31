@@ -89,7 +89,23 @@ def replace_attention(
     attn_name = attention or attention_type
     if not attn_name:
         raise ValueError("Must specify attention or attention_type.")
-    if attn_name not in ATTENTION_REGISTRY:
+    if attn_name.startswith("fla:"):
+        from neuralops.core.errors import IntegrationNotImplementedError
+        from neuralops.integrations.fla import (
+            fla_is_available,
+            SUPPORTED_FLA_ATTENTIONS,
+        )
+
+        if not fla_is_available():
+            raise IntegrationNotImplementedError(
+                f"Cannot replace attention with '{attn_name}': the 'fla' package is not installed. "
+                "Install it via: pip install 'neuralops[fla]' (requires Linux + CUDA)."
+            )
+        if attn_name not in SUPPORTED_FLA_ATTENTIONS:
+            raise IntegrationNotImplementedError(
+                f"Unsupported FLA attention '{attn_name}'. Supported mechanisms: {SUPPORTED_FLA_ATTENTIONS}"
+            )
+    elif attn_name not in ATTENTION_REGISTRY:
         raise ValueError(
             f"Unknown attention module '{attn_name}'. "
             f"Use neuralops.list_attentions() to see all {len(ATTENTION_REGISTRY)} available modules."
@@ -667,10 +683,18 @@ def _ensure_registries_loaded() -> None:
         logger.warning("Error loading neuralops.compression_engine: %s", exc)
 
 
-def list_attentions() -> List[str]:
+def list_attentions(include_extensions: bool = False) -> List[str]:
     """Return a sorted list of all available canonical attention module names."""
     _ensure_registries_loaded()
-    return sorted(list(ATTENTION_REGISTRY.keys()))
+    canonical = sorted(list(ATTENTION_REGISTRY.keys()))
+    if include_extensions:
+        try:
+            from neuralops.integrations.fla import list_fla_attentions
+
+            canonical.extend(list_fla_attentions())
+        except Exception:
+            pass
+    return canonical
 
 
 def list_compressors() -> List[str]:
@@ -700,6 +724,25 @@ def get_attention_class(name: str) -> Type[Any]:
     Returns:
         Registered attention class.
     """
+    if name.startswith("fla:"):
+        from neuralops.core.errors import IntegrationNotImplementedError
+        from neuralops.integrations.fla import (
+            EXTENSION_ATTENTION_REGISTRY,
+            SUPPORTED_FLA_ATTENTIONS,
+            fla_is_available,
+        )
+
+        if not fla_is_available():
+            raise IntegrationNotImplementedError(
+                f"Cannot load FLA attention '{name}': the 'fla' package is not installed. "
+                "Install it via: pip install 'neuralops[fla]' (requires Linux + CUDA)."
+            )
+        if name not in EXTENSION_ATTENTION_REGISTRY:
+            raise IntegrationNotImplementedError(
+                f"Unknown FLA attention '{name}'. Supported FLA attentions: {SUPPORTED_FLA_ATTENTIONS}"
+            )
+        return EXTENSION_ATTENTION_REGISTRY[name]
+
     if name not in ATTENTION_REGISTRY:
         raise KeyError(f"Unknown attention '{name}'. Available: {list_attentions()}")
     return ATTENTION_REGISTRY[name]

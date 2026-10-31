@@ -5,6 +5,25 @@ All notable changes to the **NeuralOps** library (`SVD_linear_Attention`) will b
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.0] - 2026-10-31
+
+### Added
+- **FLA Integration Subpackage (`neuralops.integrations.fla`)**: Optional, fail-closed integration with upstream `flash-linear-attention` (`fla-linear-attention`).
+- **`fla:*` Attention Extension Prefix**: Seamless surgery and module resolution via `replace_attention(model, "fla:gla")` and `get_attention_class("fla:gla")` utilizing isolated `EXTENSION_ATTENTION_REGISTRY` to strictly preserve the canonical 131 attention registry invariant.
+- **FLA Layer Adapter (`FLALayerAdapter`)**: Robust wrapper adapting official FLA linear attention layers to Hugging Face transformer signatures, including dynamic return-arity negotiation (3-tuple for LLaMA/Mistral/Qwen/GPT-2, 2-tuple for BERT/RoBERTa), bidirectional mask propagation, and fail-closed validation.
+- **Cache Translation Layer (`cache_translator`)**: Strict conversion between Hugging Face KV cache formats and FLA recurrent associative state matrices with fail-closed error handling.
+- **Kernel Dispatch Extension (Level 2b)**: Extended `force_kernel_backend("fla")` in `_fallback.py` to route execution to `fla.ops` when requested and fail closed when FLA is absent.
+- **Benchmark Comparative Flag (`--compare-with`)**: Added `--compare-with {fla,pytorch,cuda,triton}` to benchmark CLI, providing fail-closed diagnostic reporting when optional backends are unavailable.
+- **Public API Exports**: Exported `list_fla_attentions` and `force_kernel_backend` at top-level `neuralops`.
+
+### Fixed
+- **UniversalAttentionWrapper Dispatch Cache Verification**: Verified that `_cached_dispatch_mode` cleanly persists across forward executions, bypassing closure allocation and exception handling on the hot path.
+
+### Known Limitations
+- FLA requires Linux and NVIDIA CUDA; fail-closed behavior is enforced on macOS and Windows without CUDA.
+- FLA layer construction on physical hardware is deferred to remote GPU environments.
+- Upstream FLA package version is pinned to `fla-linear-attention>=0.2.0; sys_platform == 'linux'`.
+
 ## [1.7.0] - 2026-10-31
 
 ### Added

@@ -183,6 +183,13 @@ def _build_parser() -> argparse.ArgumentParser:
     run_p.add_argument("--push-to-hf", type=str, default=None, help="Hugging Face Hub repository ID to upload results")
     run_p.add_argument("--no-deduplicate", action="store_true", help="Disable run deduplication check")
     run_p.add_argument("--force-rerun", action="store_true", help="Force rerun even if identical run exists")
+    run_p.add_argument(
+        "--compare-with",
+        type=str,
+        default=None,
+        choices=["fla", "pytorch", "cuda", "triton"],
+        help="Compare benchmark execution and numerical parity against an alternate backend (e.g. 'fla')",
+    )
 
     res_p = subparsers.add_parser("resume", help="Resume interrupted sweep")
     res_p.add_argument("--output-dir", type=str, default="results", help="Output directory of interrupted run")
@@ -570,6 +577,18 @@ def handle_results(args: argparse.Namespace) -> None:
 
 
 def handle_run(args: argparse.Namespace) -> None:
+    compare_target = getattr(args, "compare_with", None)
+    if compare_target == "fla":
+        from neuralops.integrations.fla import fla_is_available
+
+        if not fla_is_available():
+            print_cli_error(
+                "Cannot compare with FLA: package not installed.",
+                hint="Run: pip install 'neuralops\\[fla]' (Linux + CUDA only).",
+                title="FLA Backend Missing",
+            )
+            sys.exit(1)
+
     requested_modules = getattr(args, "modules", None)
     if getattr(args, "device", None) == "cpu":
         # Worker subprocesses inherit this and cannot initialize CUDA.

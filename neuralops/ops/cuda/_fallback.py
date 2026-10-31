@@ -68,10 +68,20 @@ _DISPATCH_STATS: dict[str, int] = {
 def force_kernel_backend(backend: str) -> Generator[None, None, None]:
     """
     Context manager to force kernel execution backend.
-    Supported backends: 'auto', 'cuda', 'triton', 'pytorch'.
+    Supported backends: 'auto', 'cuda', 'triton', 'fla', 'pytorch'.
     """
-    if backend not in ("auto", "cuda", "triton", "pytorch"):
+    if backend not in ("auto", "cuda", "triton", "fla", "pytorch"):
         raise ValueError(f"Unknown backend: {backend}")
+    if backend == "fla":
+        from neuralops.integrations.fla import fla_is_available
+        from neuralops.core.errors import IntegrationNotImplementedError
+
+        if not fla_is_available():
+            raise IntegrationNotImplementedError(
+                "Cannot force kernel backend 'fla': the 'fla' package is not installed. "
+                "Install it via: pip install 'neuralops[fla]' (requires Linux + CUDA)."
+            )
+        logger.info("FLA backend explicitly selected; routing to fla.ops kernels.")
     token = _FORCED_BACKEND.set(backend)
     try:
         yield
