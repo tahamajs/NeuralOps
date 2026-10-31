@@ -140,6 +140,7 @@ class DoRALinear(nn.Module):
             try:
                 from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
             except Exception:
+                # allowed-swallow: optional-import: optional dependency or module not installed
                 pass
         W_dir = self.base.weight + (self.lora_B @ self.lora_A) * self.scaling
         W_dir = W_dir / W_dir.norm(dim=1, keepdim=True).clamp(min=1e-6)

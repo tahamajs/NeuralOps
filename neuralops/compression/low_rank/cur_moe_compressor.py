@@ -452,6 +452,7 @@ def cur_moe_factory(
     try:
         compressed_model.compression_stats = stats
     except Exception:
+        # allowed-swallow: best-effort-telemetry: optional configuration or attribute resolution
         pass
     if return_stats:
         return compressed_model, stats

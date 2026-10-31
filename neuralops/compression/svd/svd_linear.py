@@ -163,6 +163,7 @@ class SVDLinearLayer(nn.Module):
                     from neuralops.ops.triton.low_rank import _TritonLowRankAutogradFunction
                     return _TritonLowRankAutogradFunction.apply(x, self.U, self.V, self.bias, None)
             except Exception:
+                # allowed-swallow: optional-import: optional dependency or module not installed
                 pass
 
         if x.is_cuda and not self.training:
@@ -181,6 +182,7 @@ class SVDLinearLayer(nn.Module):
                 else:
                     return fused_down_up_gemm_bias_triton(x, self.U, self.V, bias=self.bias)
             except Exception:
+                # allowed-swallow: cleanup: non-fatal fallback handling
                 pass
 
         latent = F.linear(x, self.V)

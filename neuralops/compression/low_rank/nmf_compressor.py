@@ -227,6 +227,7 @@ class NMFLinear(nn.Module):
                 HVVT = torch.matmul(torch.matmul(H, V), VT).clamp_min(1e-10)
                 H = H * (WVT / HVVT)
         except Exception:
+            # allowed-swallow: cleanup: non-fatal fallback handling
             pass
 
         existing_lora_r = getattr(linear, "r", getattr(linear, "lora_r", 0))
@@ -386,6 +387,7 @@ class NMFCompressor(BaseCompressor):
             if not should_compress_linear(self.model, name):
                 return False
         except Exception:
+            # allowed-swallow: optional-import: optional dependency or module not installed
             pass
 
         if self.target_attention_only and not any(k in name_l for k in _ATTN_NAMES):

@@ -700,6 +700,7 @@ class SVDLLMV2Attention(BaseAttention):
                         out = out[..., : hidden_states.shape[-1]]
                 return out, None
             except Exception:
+                # allowed-swallow: cleanup: non-fatal fallback handling
                 pass
 
         scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale

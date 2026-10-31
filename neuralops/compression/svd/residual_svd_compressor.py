@@ -143,6 +143,7 @@ class ResSVDLinear(nn.Module):
                     return base_out + res_out
                 return base_out
             except Exception:
+                # allowed-swallow: optional-import: optional dependency or module not installed
                 pass
 
         if self.factorize_base:

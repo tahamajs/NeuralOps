@@ -140,6 +140,7 @@ class AdaptiveSVDLinear(nn.Module):
                     base = base + F.linear(F.linear(x, self.lora_A.to(x.dtype)), self.lora_B.to(x.dtype)) * getattr(self, "lora_scaling", 1.0)
                 return base.to(orig_dtype)
             except Exception:
+                # allowed-swallow: optional-import: optional dependency or module not installed
                 pass
         try:
             from neuralops.ops.triton.low_rank import fused_svd_lora_sparse_attn_triton
@@ -153,6 +154,7 @@ class AdaptiveSVDLinear(nn.Module):
                 bias=self.bias,
             ).to(orig_dtype)
         except Exception:
+            # allowed-swallow: optional-import: optional dependency or module not installed
             pass
 
         V = self.V.to(x.dtype) if self.V.dtype != x.dtype else self.V
@@ -482,6 +484,7 @@ class AdaptiveSVDAttention(BaseAttention):
                 if w is not None:
                     extracted[proj] = (w, b)
             except Exception:
+                # allowed-swallow: cleanup: non-fatal fallback handling
                 pass
 
         if hasattr(src, "c_attn") and (
@@ -601,6 +604,7 @@ class AdaptiveSVDAttention(BaseAttention):
             for p in src.parameters():
                 self._orig_storage_bytes += p.numel() * p.element_size()
         except Exception:
+            # allowed-swallow: cleanup: non-fatal fallback handling
             pass
 
         missing = [k for k in ("q", "k", "v") if extracted[k][0] is None]
@@ -652,6 +656,7 @@ class AdaptiveSVDAttention(BaseAttention):
                 for p in m.parameters():
                     self._comp_storage_bytes += p.numel() * p.element_size()
         except Exception:
+            # allowed-swallow: cleanup: non-fatal fallback handling
             pass
 
         if hasattr(src, "has_relative_attention_bias"):

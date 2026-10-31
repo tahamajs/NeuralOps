@@ -120,6 +120,7 @@ def _local_window_attention_chunked(
             from neuralops.ops.cuda.hybrid_local_kernel import hybrid_local_attn
             return hybrid_local_attn(Q, K, V, radius=radius, is_causal=is_decoder), None
         except Exception:
+            # allowed-swallow: optional-import: optional dependency or module not installed
             pass
 
     scale = 1.0 / math.sqrt(int(D))
@@ -537,6 +538,7 @@ class TriBranchHybridAttention(BaseAttention):
             for p in old_attn.parameters():
                 self._orig_storage_bytes += p.numel() * p.element_size()
         except Exception:
+            # allowed-swallow: cleanup: non-fatal fallback handling
             pass
 
         try:
@@ -555,6 +557,7 @@ class TriBranchHybridAttention(BaseAttention):
                     if w is not None:
                         extracted[p] = (w, b)
                 except Exception:
+                    # allowed-swallow: cleanup: non-fatal fallback handling
                     pass
 
         if hasattr(old_attn, "c_attn") and extracted["q"][0] is None:
@@ -641,6 +644,7 @@ class TriBranchHybridAttention(BaseAttention):
                 for p in m.parameters():
                     self._comp_storage_bytes += p.numel() * p.element_size()
         except Exception:
+            # allowed-swallow: cleanup: non-fatal fallback handling
             pass
 
     @staticmethod

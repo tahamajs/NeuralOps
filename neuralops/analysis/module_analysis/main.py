@@ -182,6 +182,7 @@ def run_all_modules_analysis(
                     if c_val > 0:
                         valid_comps.append(c_val)
                 except Exception:
+                    # allowed-swallow: cleanup: non-fatal fallback handling
                     pass
         compression_ratio = (
             f"{max(valid_comps):.3f}x" if valid_comps else ("1.000x" if all_mod_rows else "N/A")

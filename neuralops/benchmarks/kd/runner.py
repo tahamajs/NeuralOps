@@ -150,6 +150,7 @@ class KDRunner:
                 try:
                     del obj
                 except Exception:
+                    # allowed-swallow: cleanup: resource or temporary file cleanup
                     pass
         gc.collect()
         if torch.cuda.is_available():

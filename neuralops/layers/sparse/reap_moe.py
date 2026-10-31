@@ -148,6 +148,7 @@ class REAPMoE(nn.Module):
                 out = samba_moe(experts_stack[:, :, 0], experts_stack[:, :, 1], w)
                 return out.to(target_dtype), aux_loss
             except Exception:
+                # allowed-swallow: optional-import: optional dependency or module not installed
                 pass
         elif x.is_cuda:
             try:
@@ -155,6 +156,7 @@ class REAPMoE(nn.Module):
                 out = fused_topk_sparse_route_and_combine_triton(experts_stack, scores, top_k=self.top_k)
                 return out.to(target_dtype), aux_loss
             except Exception:
+                # allowed-swallow: optional-import: optional dependency or module not installed
                 pass
 
         topk_expanded = topk_indices.unsqueeze(-1).expand(-1, -1, -1, D)

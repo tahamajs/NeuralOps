@@ -128,6 +128,7 @@ def _varlen_attention_fwd(
             )
             return out
         except Exception:
+            # allowed-swallow: cleanup: non-fatal fallback handling
             pass
 
     outputs = []

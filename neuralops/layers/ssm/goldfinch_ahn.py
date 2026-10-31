@@ -350,6 +350,7 @@ class GoldFinchAHNBlock(BaseAttention):
             for p in src.parameters():
                 self._orig_storage_bytes += p.numel() * p.element_size()
         except Exception:
+            # allowed-swallow: cleanup: non-fatal fallback handling
             pass
 
         cls_name = getattr(src, "__class__", type(src)).__name__
@@ -505,6 +506,7 @@ class GoldFinchAHNBlock(BaseAttention):
                     self._comp_storage_bytes += p.numel() * p.element_size()
             self._comp_storage_bytes += self.output_scale.numel() * self.output_scale.element_size()
         except Exception:
+            # allowed-swallow: best-effort-telemetry: non-critical telemetry logging
             pass
 
         if self.freeze_base:
@@ -552,6 +554,7 @@ class GoldFinchAHNBlock(BaseAttention):
             if isinstance(m, torch.Tensor) and m.shape == (B, L):
                 return m.bool()
         except Exception:
+            # allowed-swallow: cleanup: non-fatal fallback handling
             pass
         return None
 

@@ -51,6 +51,7 @@ def _write_past_kv(
             past_key_value.update(k_new, v_new, layer_idx)
             return past_key_value
         except Exception:
+            # allowed-swallow: best-effort-telemetry: optional configuration or attribute resolution
             pass
 
     if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 2:

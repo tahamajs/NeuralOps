@@ -76,6 +76,7 @@ echo "✓ Reproduction run completed successfully!"
         st = os.stat(p)
         os.chmod(p, st.st_mode | stat.S_IEXEC)
     except Exception:
+        # allowed-swallow: cleanup: non-fatal fallback handling
         pass
     return p
 

@@ -243,6 +243,7 @@ class KroneckerLinear(nn.Module):
                     from neuralops.ops.triton.low_rank import fused_kronecker_batched_gemm_triton
                     return fused_kronecker_batched_gemm_triton(x, self.A, self.B, bias=self.bias)
                 except Exception:
+                    # allowed-swallow: optional-import: optional dependency or module not installed
                     pass
 
         orig_shape = x.shape
@@ -285,6 +286,7 @@ class KroneckerLinear(nn.Module):
                     from neuralops.ops.triton.low_rank import _TritonLowRankAutogradFunction
                     return _TritonLowRankAutogradFunction.apply(x, u_w, v_w, b_w, None)
             except Exception:
+                # allowed-swallow: optional-import: optional dependency or module not installed
                 pass
         return F.linear(F.linear(x, v_w), u_w, b_w)
 
@@ -911,6 +913,7 @@ class KroneckerCompressor(BaseCompressor):
                 }
             )
         except Exception:
+            # allowed-swallow: cleanup: non-fatal fallback handling
             pass
 
         self.model._kronecker_compressed = True

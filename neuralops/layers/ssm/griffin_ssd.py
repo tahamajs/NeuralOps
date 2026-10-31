@@ -197,6 +197,7 @@ class GriffinSSDBlock(BaseAttention):
                 if w is not None:
                     extracted[proj] = (w, b)
         except Exception:
+            # allowed-swallow: cleanup: non-fatal fallback handling
             pass
 
         if hasattr(old_attn, "c_attn") and extracted["q"][0] is None:

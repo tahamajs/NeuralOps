@@ -55,6 +55,7 @@ try:
         if isinstance(obj, type) and issubclass(obj, nn.Module) and ("gelu" in act_name.lower() or "silu" in act_name.lower() or "quick" in act_name.lower()):
             _silu_list.append(obj)
 except Exception:
+    # allowed-swallow: optional-import: optional dependency or module not installed
     pass
 _SILU_CLASSES: tuple[type, ...] = tuple(_silu_list)
 

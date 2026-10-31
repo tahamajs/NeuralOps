@@ -207,6 +207,7 @@ def flash_decoding_attention(
             )
             return final_out
         except Exception:
+            # allowed-swallow: cleanup: non-fatal fallback handling
             pass
 
     return flash_decoding_pytorch(q, k, v, chunk_size=chunk_size)

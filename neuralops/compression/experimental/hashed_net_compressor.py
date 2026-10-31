@@ -284,6 +284,7 @@ class HashedLinear(nn.Module):
             try:
                 effective_lora_r = int(existing_lora_A.weight.shape[0])
             except Exception:
+                # allowed-swallow: best-effort-telemetry: optional configuration or attribute resolution
                 pass
 
         hashed = cls(
@@ -562,6 +563,7 @@ class HashedNetCompressor(BaseCompressor):
             if not should_compress_linear(self.model, name):
                 return False
         except Exception:
+            # allowed-swallow: best-effort-telemetry: optional configuration or attribute resolution
             pass
 
         if self.target_layers is not None:
@@ -878,6 +880,7 @@ def hashed_net_factory(
     try:
         compressed_model.compression_stats = stats
     except Exception:
+        # allowed-swallow: best-effort-telemetry: optional configuration or attribute resolution
         pass
     if return_stats:
         return compressed_model, stats

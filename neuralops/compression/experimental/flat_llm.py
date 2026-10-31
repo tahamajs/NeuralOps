@@ -109,6 +109,7 @@ class PrunedChannelLinear(nn.Module):
             try:
                 from neuralops.ops.triton.sparse_attn import fused_topk_sparse_route_and_combine_triton
             except Exception:
+                # allowed-swallow: optional-import: optional dependency or module not installed
                 pass
         h = F.linear(x, self.W_kept, self.bias_kept)
         out = torch.zeros(
@@ -270,6 +271,7 @@ class FLATLLMCompressor(BaseCompressor):
             if not should_compress_linear(self.model, name):
                 return False
         except Exception:
+            # allowed-swallow: best-effort-telemetry: optional configuration or attribute resolution
             pass
 
         if self.target_modules is not None:

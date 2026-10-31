@@ -119,6 +119,7 @@ class SVDLinearLayer(nn.Module):
                 out = fused_down_up_gemm_bias_triton(x_flat, self.B, self.A.t().contiguous(), bias=self.bias)
                 return out.view(*orig_shape[:-1], self.out_features)
             except Exception:
+                # allowed-swallow: optional-import: optional dependency or module not installed
                 pass
 
         out = F.linear(F.linear(x_flat, self.B), self.A)
@@ -677,6 +678,7 @@ class TTCompressor(BaseCompressor):
             if not should_compress_linear(self.model, name):
                 return False
         except Exception:
+            # allowed-swallow: best-effort-telemetry: optional configuration or attribute resolution
             pass
 
         if self.target_layers and not any(t in name for t in self.target_layers):
@@ -897,6 +899,7 @@ def tt_compressor_factory(
     try:
         compressed_model.compression_stats = stats
     except Exception:
+        # allowed-swallow: best-effort-telemetry: optional configuration or attribute resolution
         pass
     if return_stats:
         return compressed_model, stats

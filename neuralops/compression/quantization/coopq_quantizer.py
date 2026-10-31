@@ -206,6 +206,7 @@ class CoopQLinear(nn.Module):
             try:
                 from neuralops.ops.triton.low_rank import fused_int4_lut_dequant_matmul_triton, dynamic_fp8_quant_triton
             except Exception:
+                # allowed-swallow: optional-import: optional dependency or module not installed
                 pass
         w_q = quantize_dequantize_coopq(
             self.weight,

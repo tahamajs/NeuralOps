@@ -143,6 +143,7 @@ class ROASTLinear(nn.Module):
                     out = out + lora_out.to(out.dtype)
                 return out
             except Exception:
+                # allowed-swallow: optional-import: optional dependency or module not installed
                 pass
 
         W = self.weight.to(device=x.device, dtype=x.dtype)

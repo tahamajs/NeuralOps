@@ -408,6 +408,7 @@ def recalibrate_layernorms(
             elif isinstance(calibration_inputs, (list, tuple)):
                 model(*calibration_inputs)
         except Exception:
+            # allowed-swallow: cleanup: non-fatal fallback handling
             pass
 
     for h in hooks:

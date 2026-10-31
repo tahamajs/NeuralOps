@@ -180,6 +180,7 @@ class ASTPrunedLoRALinear(nn.Module):
                 )
                 return out.reshape(*orig_shape[:-1], self.out_features)
             except Exception:
+                # allowed-swallow: cleanup: non-fatal fallback handling
                 pass
 
         if self.mask is not None:

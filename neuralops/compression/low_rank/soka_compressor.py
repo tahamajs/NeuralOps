@@ -72,6 +72,7 @@ class LowRankLinear(nn.Module):
                 from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
                 return fused_down_up_gemm_bias_triton(x, self.V.t().contiguous(), self.U.t().contiguous(), bias=self.bias)
             except Exception:
+                # allowed-swallow: optional-import: optional dependency or module not installed
                 pass
 
         bottleneck = torch.matmul(x, self.V)

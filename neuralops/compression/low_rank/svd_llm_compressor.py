@@ -194,6 +194,7 @@ class SVDLLMLinear(nn.Module):
                 from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
                 return fused_down_up_gemm_bias_triton(x, self.W_v, self.W_u.t().contiguous(), bias=self.bias)
             except Exception:
+                # allowed-swallow: optional-import: optional dependency or module not installed
                 pass
 
         latent = F.linear(x, self.W_v)

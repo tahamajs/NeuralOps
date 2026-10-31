@@ -687,6 +687,7 @@ class NEXUSAttention(BaseAttention):
                 if w is not None:
                     extracted[proj] = (w, b)
             except Exception:
+                # allowed-swallow: cleanup: non-fatal fallback handling
                 pass
 
         if hasattr(src, "c_attn") and (

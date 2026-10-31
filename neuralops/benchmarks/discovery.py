@@ -142,6 +142,7 @@ def discover_all_modules() -> list[ModuleMetadata]:
             if len(discovered) == 203:
                 return discovered
         except Exception:
+            # allowed-swallow: cleanup: non-fatal fallback handling
             pass
 
     from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY

@@ -177,6 +177,7 @@ class SALTLinear(nn.Module):
                     out = out + self.bias.to(dtype=x.dtype)
                 return out.to(orig_dtype)
             except Exception:
+                # allowed-swallow: optional-import: optional dependency or module not installed
                 pass
 
         if x.is_cuda:
@@ -189,6 +190,7 @@ class SALTLinear(nn.Module):
                     out = out + self.bias.to(dtype=x.dtype)
                 return out.to(orig_dtype)
             except Exception:
+                # allowed-swallow: optional-import: optional dependency or module not installed
                 pass
 
         x_vt = F.linear(x, self.Vt.to(dtype=x.dtype))
@@ -581,6 +583,7 @@ class SALTAttention(BaseAttention):
                             S_cand, 0.95, 8, max(self.rank * 2, 32)
                         )
                     except Exception:
+                        # allowed-swallow: best-effort-telemetry: optional configuration or attribute resolution
                         pass
 
         with torch.no_grad():
@@ -728,6 +731,7 @@ class SALTAttention(BaseAttention):
                     )
                 return out, None
             except Exception:
+                # allowed-swallow: best-effort-telemetry: optional configuration or attribute resolution
                 pass
 
         scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale

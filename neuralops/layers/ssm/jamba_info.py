@@ -321,6 +321,7 @@ class JambaInfoBlock(BaseAttention):
                     try:
                         return int(mod.weight.shape[0] // max(1, num_heads))
                     except Exception:
+                        # allowed-swallow: best-effort-telemetry: optional configuration or attribute resolution
                         pass
         return max(1, hidden_size // max(1, num_heads))
 

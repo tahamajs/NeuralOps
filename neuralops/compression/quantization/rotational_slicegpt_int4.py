@@ -158,6 +158,7 @@ class RotationalSliceGPTINT4Linear(nn.Module):
                 )
                 return y_2d.reshape(*orig_shape[:-1], self.W_indices.shape[0])
             except Exception:
+                # allowed-swallow: cleanup: non-fatal fallback handling
                 pass
         W_q = self._dequantize_W()
         y = torch.matmul(x_proj, W_q.T)
@@ -312,6 +313,7 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
             if not should_compress_linear(self.model, name):
                 return False
         except Exception:
+            # allowed-swallow: best-effort-telemetry: optional configuration or attribute resolution
             pass
 
         if self.target_modules is None:

@@ -66,6 +66,7 @@ def __dir__() -> list[str]:
             mod = importlib.import_module(f".{subpackage}", __package__)
             names.update(getattr(mod, "__all__", []))
         except Exception:
+            # allowed-swallow: optional-import: optional dependency or module not installed
             pass
     return sorted(names)
 

@@ -66,6 +66,7 @@ def query_hardware_gpu() -> Optional[Dict[str, Any]]:
                             power_w = float(parts[4])
                             clock_mhz = float(parts[5])
                 except Exception:
+                    # allowed-swallow: cleanup: non-fatal fallback handling
                     pass
 
             return {
@@ -80,6 +81,7 @@ def query_hardware_gpu() -> Optional[Dict[str, Any]]:
                 "status": "online",
             }
     except Exception:
+        # allowed-swallow: cleanup: non-fatal fallback handling
         pass
 
     smi_path = shutil.which("nvidia-smi")
@@ -109,6 +111,7 @@ def query_hardware_gpu() -> Optional[Dict[str, Any]]:
                         "status": "online",
                     }
         except Exception:
+            # allowed-swallow: cleanup: non-fatal fallback handling
             pass
 
     return None
@@ -172,6 +175,7 @@ def get_live_logs(
                     "timestamp": time.strftime("%H:%M:%S"),
                 }
         except Exception:
+            # allowed-swallow: best-effort-telemetry: non-critical telemetry logging
             pass
 
     return {

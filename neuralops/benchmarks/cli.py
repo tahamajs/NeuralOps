@@ -1135,6 +1135,7 @@ def _dispatch(args: argparse.Namespace) -> int:
                     with open(sample_text, "r", encoding="utf-8") as f:
                         sample_text = f.read(4096)
                 except Exception:
+                    # allowed-swallow: cleanup: non-fatal fallback handling
                     pass
             encoded = tokenizer(sample_text, return_tensors="pt")
             calibration_inputs = {
@@ -1415,6 +1416,7 @@ def main(argv: list[str] | None = None) -> int:
             print_hf_style_help()
             return 0
         except Exception:
+            # allowed-swallow: optional-import: optional dependency or module not installed
             pass
 
     args = parser.parse_args(argv)

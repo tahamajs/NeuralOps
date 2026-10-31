@@ -313,6 +313,7 @@ class ToMoELinear(nn.Module):
             try:
                 from neuralops.ops.triton.sparse_attn import fused_topk_sparse_route_and_combine_triton
             except Exception:
+                # allowed-swallow: optional-import: optional dependency or module not installed
                 pass
         topk_vals, topk_idx = torch.topk(router_logits, self.top_k, dim=-1)
         topk_weights = torch.softmax(topk_vals, dim=-1).to(x.dtype)

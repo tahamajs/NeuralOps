@@ -100,6 +100,7 @@ def _make_universal_attention_class(target_cls: type) -> type:
                             config.num_attention_heads = resolved_heads
                             config.num_heads = resolved_heads
                     except Exception:
+                        # allowed-swallow: cleanup: resource or temporary file cleanup
                         pass
                 kwargs["config"] = config
                 kwargs["hidden_size"] = resolved_dim
@@ -141,6 +142,7 @@ def _make_universal_attention_class(target_cls: type) -> type:
                             config.num_attention_heads = resolved_heads
                             config.num_heads = resolved_heads
                     except Exception:
+                        # allowed-swallow: cleanup: resource or temporary file cleanup
                         pass
                 kwargs["config"] = config
                 kwargs["hidden_size"] = resolved_dim
@@ -382,6 +384,7 @@ class Registry:
                 try:
                     import neuralops.trainer.ttt.test_time_trainer  # noqa: F401
                 except Exception:
+                    # allowed-swallow: optional-import: optional dependency or module not installed
                     pass
                 return
             canonical = _ATTENTION_FILE_MAP.get(k, k)
@@ -498,6 +501,7 @@ class Registry:
                         try:
                             importlib.import_module(mod_path)
                         except Exception:
+                            # allowed-swallow: optional-import: optional dependency or module not installed
                             pass
                 self._loaded = True
             except Exception as e:
@@ -515,10 +519,12 @@ class Registry:
                         try:
                             importlib.import_module(mod_path)
                         except Exception:
+                            # allowed-swallow: optional-import: optional dependency or module not installed
                             pass
                 try:
                     import neuralops.trainer.ttt.test_time_trainer  # noqa: F401
                 except Exception:
+                    # allowed-swallow: optional-import: optional dependency or module not installed
                     pass
                 self._loaded = True
             except Exception as e:

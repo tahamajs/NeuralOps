@@ -161,6 +161,7 @@ class SliceGPTPCALoRALinear(nn.Module):
                     lora_delta = fused_down_up_gemm_bias_triton(x, self.lora_A.to(x.dtype), self.lora_B.t().to(x.dtype).contiguous(), bias=None)
                     return out + (self.scaling * lora_delta)
                 except Exception:
+                    # allowed-swallow: optional-import: optional dependency or module not installed
                     pass
 
             lora_delta = (

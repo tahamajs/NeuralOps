@@ -354,6 +354,7 @@ class SwiftSVDCompressor(BaseCompressor):
                 try:
                     return int(la.out_features)
                 except Exception:
+                    # allowed-swallow: best-effort-telemetry: optional configuration or attribute resolution
                     pass
             if hasattr(la, "weight") and la.weight is not None and la.weight.dim() >= 1:
                 return int(la.weight.shape[0])

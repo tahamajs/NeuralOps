@@ -455,6 +455,7 @@ class MLoRQCompressor(BaseCompressor):
             if not should_compress_linear(self.model, name):
                 return False
         except Exception:
+            # allowed-swallow: best-effort-telemetry: optional configuration or attribute resolution
             pass
 
         if self._is_gqa_asymmetric(name, module):

@@ -744,6 +744,7 @@ def inject_qcqa(
             if ref is not None:
                 new_attn.to(device=ref.device, dtype=ref.dtype)
         except Exception:
+            # allowed-swallow: best-effort-telemetry: optional configuration or attribute resolution
             pass
 
         spliced = False

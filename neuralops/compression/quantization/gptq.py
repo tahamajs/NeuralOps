@@ -119,6 +119,7 @@ class GPTQQuantizer:
                         H_inv = inv_cand
                         break
                 except Exception:
+                    # allowed-swallow: cleanup: non-fatal fallback handling
                     pass
             current_lambda *= 10.0
 

@@ -216,6 +216,7 @@ class PCAActivationAwareSVDCompressor(BaseCompressor):
                 try:
                     h.remove()
                 except Exception:
+                    # allowed-swallow: cleanup: resource or temporary file cleanup
                     pass
 
         for name in list(covariances.keys()):

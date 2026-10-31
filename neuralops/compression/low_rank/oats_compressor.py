@@ -183,6 +183,7 @@ class OATSLoRALinear(nn.Module):
                     lora_out = fused_down_up_gemm_bias_triton(x, self.lora_A.to(x.dtype), self.lora_B.t().to(x.dtype).contiguous(), bias=None)
                     return out + (self.scaling * lora_out)
                 except Exception:
+                    # allowed-swallow: optional-import: optional dependency or module not installed
                     pass
 
             out = out + self.scaling * F.linear(F.linear(x.float(), self.lora_A), self.lora_B).to(

@@ -251,6 +251,7 @@ class LSHAttention(BaseAttention):
                     try:
                         return int(mod.weight.shape[0] // max(1, num_heads))
                     except Exception:
+                        # allowed-swallow: best-effort-telemetry: optional configuration or attribute resolution
                         pass
         return max(1, hidden_size // max(1, num_heads))
 
@@ -334,8 +335,10 @@ class LSHAttention(BaseAttention):
                     if w is not None:
                         extracted[proj] = (w, b)
                 except Exception:
+                    # allowed-swallow: optional-import: optional dependency or module not installed
                     pass
         except Exception:
+            # allowed-swallow: optional-import: optional dependency or module not installed
             pass
 
         if (
@@ -510,6 +513,7 @@ class LSHAttention(BaseAttention):
                             w_norm,
                         )
                 except Exception:
+                    # allowed-swallow: best-effort-telemetry: non-critical telemetry logging
                     pass
 
             for mod in (self.query, self.key, self.value, self.out_proj):

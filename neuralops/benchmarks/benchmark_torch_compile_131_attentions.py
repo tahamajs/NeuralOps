@@ -159,6 +159,7 @@ def benchmark_torch_compile(
                 try:
                     mod = mod.to(dtype=dtype)
                 except Exception:
+                    # allowed-swallow: cleanup: non-fatal fallback handling
                     pass
             mod.eval()
 

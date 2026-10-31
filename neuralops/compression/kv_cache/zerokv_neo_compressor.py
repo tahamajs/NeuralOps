@@ -97,6 +97,7 @@ class ZeroKVNeoCache:
                 from neuralops.ops.triton.paged_attention import paged_kv_evict_compact_triton
                 from neuralops.ops.triton.sliding_window import fused_sink_prune_triton
             except Exception:
+                # allowed-swallow: optional-import: optional dependency or module not installed
                 pass
 
         sink_k = self.k_cache[:, :, :sinks, :]

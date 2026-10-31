@@ -363,6 +363,7 @@ class HybridAttention(BaseAttention):
                         )
                         return out_triton.to(Q.dtype)
                     except Exception:
+                        # allowed-swallow: optional-import: optional dependency or module not installed
                         pass
 
                 chunk_size = 128

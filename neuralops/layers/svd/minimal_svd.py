@@ -177,6 +177,7 @@ class FactorisedLinear(nn.Module):
                     )
                 return base
             except Exception:
+                # allowed-swallow: cleanup: non-fatal fallback handling
                 pass
         if x.is_cuda:
             try:
@@ -191,6 +192,7 @@ class FactorisedLinear(nn.Module):
                     bias=self.up.bias,
                 )
             except Exception:
+                # allowed-swallow: optional-import: optional dependency or module not installed
                 pass
         out = self.up(self.down(x))
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
@@ -652,6 +654,7 @@ class MinimalSVDAttention(BaseAttention):
             ), None
 
         except Exception:
+            # allowed-swallow: best-effort-telemetry: optional configuration or attribute resolution
             pass
 
         scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale

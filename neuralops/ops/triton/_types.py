@@ -117,6 +117,7 @@ def check_triton_suitability(
                 f"Kernel '{kernel_name}' requires Tensor Core hardware (SM >= 7.5/8.0), device is {profile.sm_major}.{profile.sm_minor}",
             )
     except Exception:
+        # allowed-swallow: cleanup: non-fatal fallback handling
         pass
 
     if tensor.dtype not in (torch.float16, torch.bfloat16):

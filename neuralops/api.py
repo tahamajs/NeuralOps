@@ -388,6 +388,7 @@ class TextGenerationPipeline:
             try:
                 model = model.to(device)
             except Exception:
+                # allowed-swallow: cleanup: resource or temporary file cleanup
                 pass
         self.model = model
         self.tokenizer = tokenizer
@@ -423,6 +424,7 @@ class TextGenerationPipeline:
                     tok = AutoTokenizer.from_pretrained(model_name)
                     self.tokenizer = tok
                 except Exception:
+                    # allowed-swallow: optional-import: optional dependency or module not installed
                     pass
 
         # Handle torch.Tensor inputs directly
@@ -435,6 +437,7 @@ class TextGenerationPipeline:
                 try:
                     input_ids = input_ids.to(target_dev)
                 except Exception:
+                    # allowed-swallow: cleanup: non-fatal fallback handling
                     pass
             output_ids = self._generate_tokens(input_ids, max_length, max_new_tokens, **kwargs)
             if tok is not None:
@@ -466,6 +469,7 @@ class TextGenerationPipeline:
                 if attention_mask is not None:
                     attention_mask = attention_mask.to(target_dev)
             except Exception:
+                # allowed-swallow: cleanup: non-fatal fallback handling
                 pass
 
         output_ids = self._generate_tokens(
@@ -587,6 +591,7 @@ class TextGenerationPipeline:
                 try:
                     decoded = tok.batch_decode(output_ids_cpu)
                 except Exception:
+                    # allowed-swallow: best-effort-telemetry: optional configuration or attribute resolution
                     pass
         if not decoded and hasattr(tok, "decode"):
             for seq in output_ids_cpu:

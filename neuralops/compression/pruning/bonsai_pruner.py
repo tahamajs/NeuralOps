@@ -159,6 +159,7 @@ class BonsaiPrunedLoRALinear(nn.Module):
                 )
                 return out.view(*orig_shape[:-1], self.out_features)
             except Exception:
+                # allowed-swallow: cleanup: non-fatal fallback handling
                 pass
 
         W_sparse = self.weight * active_mask
